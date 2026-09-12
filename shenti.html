@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="身心体态观察记录——体态、肩颈弹响、胸廓旋转、睡眠、肠易激、打坐观照体验。数据保存在浏览器本地。">
+  <title>身心体态观察记录 · LTZZZ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 120px 7vw 60px; max-width: 900px; }
+    .page-hero h1 { font-size: clamp(36px,6vw,64px); margin: 0 0 20px; }
+    .log-form { background: #fff; border: 1px solid #ddd8ce; border-radius: 20px; padding: 32px; margin: 40px 0; }
+    .log-form label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .log-form textarea, .log-form input, .log-form select {
+      width: 100%; padding: 12px 14px; border: 1px solid #ddd8ce; border-radius: 12px;
+      font-size: 15px; margin-bottom: 20px; font-family: inherit; background: #fff;
+    }
+    .log-form textarea { min-height: 110px; resize: vertical; }
+    .records { margin-top: 40px; }
+    .log-item { background: #fff; border: 1px solid #ddd8ce; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+    .log-item .time { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .back-link { display: inline-block; margin-bottom: 30px; color: #555; text-decoration: none; font-size: 14px; }
+    .back-link:hover { color: #000; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="brand">LTZZZ <span>数字实验室</span></div>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="guan.html">观</a>
+      <a href="xingshen.html">行深</a>
+      <a href="shenti.html">体态</a>
+      <a href="index.html#po">魄 · 识神</a>
+      <a href="index.html#web3">Web3</a>
+    </nav>
+    <button id="connectWallet" class="wallet-btn">连接钱包</button>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <a href="index.html" class="back-link">← 返回首页</a>
+      <p class="eyebrow">身 · 心</p>
+      <h1>身心体态观察记录</h1>
+      <p class="lead">记录体态、肩颈弹响、胸廓旋转、睡眠、肠易激与打坐观照体验。数据保存在浏览器本地（localStorage），不会上传服务器。</p>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="log-form">
+        <h3 style="margin-top:0">今日记录</h3>
+
+        <label>日期</label>
+        <input type="date" id="logDate">
+
+        <label>睡眠状态</label>
+        <select id="sleep">
+          <option value="">选择</option>
+          <option>无困意，大脑紧绷</option>
+          <option>入睡困难</option>
+          <option>浅眠多梦（含梦境体感启示）</option>
+          <option>睡眠尚可</option>
+        </select>
+
+        <label>体态 / 骨骼筋膜体感（胸廓旋转、肩膀弹响、魄户张力等）</label>
+        <textarea id="bodyFeel" placeholder="例如：右脚迈步胸廓右拧，肩膀弹响，筋膜紧绷..."></textarea>
+
+        <label>肠道状态（肠易激）</label>
+        <select id="gut">
+          <option value="">选择</option>
+          <option>明显不适</option>
+          <option>轻微扰动</option>
+          <option>稳定平稳</option>
+        </select>
+
+        <label>观照、打坐、念头觉察记录</label>
+        <textarea id="mindNote" placeholder="观照体会、杂念变化、识神状态"></textarea>
+
+        <button class="button primary" onclick="saveLog()">保存本条记录</button>
+      </div>
+
+      <div class="records">
+        <h3>历史记录</h3>
+        <div id="logList"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2026 LTZZZ Digital Lab · 海韵天城</footer>
+  <script src="script.js"></script>
+  <script>
+    // 读取本地存储
+    function getLogs(){
+      let raw = localStorage.getItem("bodyLog");
+      return raw ? JSON.parse(raw) : [];
+    }
+    // 保存记录
+    function saveLog(){
+      const date = document.getElementById("logDate").value;
+      const sleep = document.getElementById("sleep").value;
+      const bodyFeel = document.getElementById("bodyFeel").value;
+      const gut = document.getElementById("gut").value;
+      const mindNote = document.getElementById("mindNote").value;
+      if(!date){
+        alert("请选择日期");
+        return;
+      }
+      const logs = getLogs();
+      logs.unshift({date,sleep,bodyFeel,gut,mindNote,created:Date.now()});
+      localStorage.setItem("bodyLog", JSON.stringify(logs));
+      renderList();
+      // 清空表单
+      document.getElementById("bodyFeel").value="";
+      document.getElementById("mindNote").value="";
+    }
+    // 渲染列表
+    function renderList(){
+      const logs = getLogs();
+      const container = document.getElementById("logList");
+      container.innerHTML="";
+      logs.forEach(item=>{
+        const div = document.createElement("div");
+        div.className="log-item";
+        div.innerHTML=`
+        <div class="time">${item.date}</div>
+        <div>睡眠：${item.sleep||"-"}</div>
+        <div>肠道：${item.gut||"-"}</div>
+        <div><b>体态体感：</b>${item.bodyFeel||"-"}</div>
+        <div><b>观照记录：</b>${item.mindNote||"-"}</div>
+        `;
+        container.appendChild(div);
+      })
+    }
+    // 页面加载读取记录
+    renderList();
+    // 默认填充今日日期
+    document.getElementById("logDate").valueAsDate = new Date();
+  </script>
+</body>
+</html>
