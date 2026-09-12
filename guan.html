@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>观 · LTZZZ 数字实验室</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 120px 7vw 60px; max-width: 900px; }
+    .page-hero h1 { font-size: clamp(36px,6vw,64px); margin: 0 0 20px; }
+    .observe-form { background: #fff; border: 1px solid #ddd8ce; border-radius: 20px; padding: 32px; margin: 40px 0; }
+    .observe-form label { display: block; font-weight: 600; margin-bottom: 8px; }
+    .observe-form textarea, .observe-form input, .observe-form select {
+      width: 100%; padding: 12px 14px; border: 1px solid #ddd8ce; border-radius: 12px;
+      font-size: 15px; margin-bottom: 20px; font-family: inherit;
+    }
+    .observe-form textarea { min-height: 120px; resize: vertical; }
+    .records { margin-top: 40px; }
+    .record-item { background: #fff; border: 1px solid #ddd8ce; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+    .record-item .meta { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .back-link { display: inline-block; margin-bottom: 30px; color: #555; text-decoration: none; font-size: 14px; }
+    .back-link:hover { color: #000; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="brand">LTZZZ <span>数字实验室</span></div>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="guan.html">观</a>
+      <a href="xingshen.html">行深</a>
+      <a href="index.html#po">魄 · 识神</a>
+      <a href="index.html#web3">Web3</a>
+    </nav>
+    <button id="connectWallet" class="wallet-btn">连接钱包</button>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <a href="index.html" class="back-link">← 返回首页</a>
+      <p class="eyebrow">觀</p>
+      <h1>观 —— 先看见</h1>
+      <p class="lead">观不是被动看，而是主动建立因果地图。观察链上数据、市场情绪、自身状态与习气模式。</p>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="observe-form">
+        <h3 style="margin-top:0">今日观察记录</h3>
+        <p style="color:#666;font-size:14px;margin-bottom:24px">记录会被保存在本地浏览器（localStorage），不会上传服务器。</p>
+        
+        <label>观察类型</label>
+        <select id="observeType">
+          <option value="chain">链上行为 / 资金流向</option>
+          <option value="emotion">自身情绪 / 决策模式</option>
+          <option value="body">身体反应 / 魄的躁动</option>
+          <option value="market">市场情绪</option>
+          <option value="other">其他</option>
+        </select>
+
+        <label>观察内容</label>
+        <textarea id="observeContent" placeholder="描述你今天观察到的现象、情绪或模式..."></textarea>
+
+        <label>强度（1-10）</label>
+        <input type="number" id="observeIntensity" min="1" max="10" value="5">
+
+        <button class="button primary" id="saveObserve">保存观察</button>
+      </div>
+
+      <div class="records">
+        <h3>历史观察</h3>
+        <div id="recordList"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2026 LTZZZ Digital Lab · 海韵天城</footer>
+  <script src="script.js"></script>
+  <script>
+    const STORAGE_KEY = 'ltzzz_observe_records';
+
+    function loadRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch { return []; }
+    }
+
+    function saveRecords(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function renderRecords() {
+      const list = loadRecords();
+      const container = document.getElementById('recordList');
+      if (!list.length) {
+        container.innerHTML = '<p style="color:#888">暂无记录，开始你的第一次观察吧。</p>';
+        return;
+      }
+      container.innerHTML = list.slice().reverse().map(r => `
+        <div class="record-item">
+          <div class="meta">${r.time} · ${r.type} · 强度 ${r.intensity}</div>
+          <div>${r.content}</div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('saveObserve').addEventListener('click', () => {
+      const type = document.getElementById('observeType').value;
+      const content = document.getElementById('observeContent').value.trim();
+      const intensity = document.getElementById('observeIntensity').value;
+      if (!content) {
+        alert('请填写观察内容');
+        return;
+      }
+      const typeMap = {
+        chain: '链上行为',
+        emotion: '情绪决策',
+        body: '身体/魄',
+        market: '市场情绪',
+        other: '其他'
+      };
+      const records = loadRecords();
+      records.push({
+        time: new Date().toLocaleString('zh-CN'),
+        type: typeMap[type] || type,
+        content,
+        intensity
+      });
+      saveRecords(records);
+      document.getElementById('observeContent').value = '';
+      renderRecords();
+    });
+
+    renderRecords();
+  </script>
+</body>
+</html>

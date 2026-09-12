@@ -9,7 +9,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   });
 });
 
-// 钱包连接相关
+// ========== 钱包连接（支持 MetaMask + 欧易 OKX Web3 钱包） ==========
 const connectBtn = document.getElementById('connectWallet');
 const connectBtn2 = document.getElementById('connectWallet2');
 const disconnectBtn = document.getElementById('disconnectWallet');
@@ -17,43 +17,60 @@ const walletStatus = document.getElementById('walletStatus');
 const walletDetail = document.getElementById('walletDetail');
 
 let currentAccount = null;
+let provider = null;
 
 function shortAddress(addr) {
   return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
 }
 
+function getProvider() {
+  // 优先欧易 OKX，其次 MetaMask，再次其他注入的 ethereum
+  if (window.okxwallet) return window.okxwallet;
+  if (window.ethereum) return window.ethereum;
+  return null;
+}
+
 function updateUI(account) {
   currentAccount = account;
   if (account) {
-    connectBtn.textContent = shortAddress(account);
-    connectBtn.classList.add('connected');
-    connectBtn2.style.display = 'none';
-    disconnectBtn.style.display = 'inline-block';
-    walletStatus.textContent = `已连接：${shortAddress(account)}`;
-    walletDetail.textContent = `已连接钱包：${account}`;
+    if (connectBtn) {
+      connectBtn.textContent = shortAddress(account);
+      connectBtn.classList.add('connected');
+    }
+    if (connectBtn2) connectBtn2.style.display = 'none';
+    if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
+    if (walletStatus) walletStatus.textContent = `已连接：${shortAddress(account)}`;
+    if (walletDetail) walletDetail.textContent = `已连接钱包：${account}`;
   } else {
-    connectBtn.textContent = '连接钱包';
-    connectBtn.classList.remove('connected');
-    connectBtn2.style.display = 'inline-block';
-    disconnectBtn.style.display = 'none';
-    walletStatus.textContent = '';
-    walletDetail.textContent = '尚未连接。点击右上角「连接钱包」开始。';
+    if (connectBtn) {
+      connectBtn.textContent = '连接钱包';
+      connectBtn.classList.remove('connected');
+    }
+    if (connectBtn2) connectBtn2.style.display = 'inline-block';
+    if (disconnectBtn) disconnectBtn.style.display = 'none';
+    if (walletStatus) walletStatus.textContent = '';
+    if (walletDetail) walletDetail.textContent = '尚未连接。点击右上角「连接钱包」开始（支持 MetaMask / 欧易 OKX）。';
   }
 }
 
 async function connectWallet() {
-  if (typeof window.ethereum === 'undefined') {
-    alert('请先安装 MetaMask 钱包插件');
+  provider = getProvider();
+  if (!provider) {
+    alert('未检测到钱包。请安装 MetaMask 或 欧易 OKX Web3 钱包插件后重试。');
     return;
   }
   try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (accounts.length > 0) {
+    const accounts = await provider.request({ method: 'eth_requestAccounts' });
+    if (accounts && accounts.length > 0) {
       updateUI(accounts[0]);
     }
   } catch (err) {
     console.error(err);
-    alert('连接失败，请重试');
+    if (err.code === 4001) {
+      alert('你拒绝了连接请求');
+    } else {
+      alert('连接失败，请重试');
+    }
   }
 }
 
@@ -65,13 +82,19 @@ if (connectBtn) connectBtn.addEventListener('click', connectWallet);
 if (connectBtn2) connectBtn2.addEventListener('click', connectWallet);
 if (disconnectBtn) disconnectBtn.addEventListener('click', disconnectWallet);
 
-// 页面加载时检查是否已连接
-if (typeof window.ethereum !== 'undefined') {
-  window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
-    if (accounts.length > 0) updateUI(accounts[0]);
-  });
+// 页面加载时检查已连接状态
+(async function initWallet() {
+  provider = getProvider();
+  if (!provider) return;
+  try {
+    const accounts = await provider.request({ method: 'eth_accounts' });
+    if (accounts && accounts.length > 0) updateUI(accounts[0]);
+  } catch (e) {}
 
-  window.ethereum.on('accountsChanged', accounts => {
-    updateUI(accounts.length > 0 ? accounts[0] : null);
-  });
-}
+  // 监听账户变化
+  if (provider.on) {
+    provider.on('accountsChanged', accounts => {
+      updateUI(accounts && accounts.length > 0 ? accounts[0] : null);
+    });
+  }
+})();
