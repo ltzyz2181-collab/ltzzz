@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="LTZZZ 模拟盘 · 仅纸上交易，不连接真实资金">
+  <title>模拟盘 · LTZZZ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .sim-wrap { max-width: 1100px; margin: 0 auto; padding: 88px 5vw 60px; }
+    .sim-banner {
+      background: #7c2d12; color: #fff; border-radius: 12px; padding: 12px 16px;
+      font-size: 14px; font-weight: 600; margin-bottom: 24px; line-height: 1.5;
+    }
+    .sim-grid { display: grid; grid-template-columns: 200px 1fr 260px; gap: 16px; }
+    @media (max-width: 900px) { .sim-grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: #fff; border: 1px solid #ddd8ce; border-radius: 16px; padding: 16px;
+    }
+    .panel h3 { margin: 0 0 12px; font-size: 15px; }
+    .sym-btn {
+      display: block; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 6px;
+      border: 1px solid #e8e4dc; border-radius: 10px; background: #faf9f6; cursor: pointer;
+      font-size: 14px;
+    }
+    .sym-btn.active { border-color: #171717; background: #171717; color: #fff; }
+    .sym-btn small { display: block; color: #888; font-size: 12px; margin-top: 2px; }
+    .sym-btn.active small { color: #bbb; }
+    .chart-box { position: relative; height: 320px; }
+    #kline { width: 100%; height: 100%; display: block; background: #faf9f6; border-radius: 12px; }
+    .price-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .price-row .last { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+    .price-row .chg { font-size: 14px; font-weight: 600; }
+    .chg.up { color: #b91c1c; }
+    .chg.down { color: #15803d; }
+    .trade-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .trade-row input {
+      flex: 1; min-width: 80px; padding: 10px 12px; border: 1px solid #ddd8ce;
+      border-radius: 10px; font-size: 14px;
+    }
+    .trade-row button { flex: 0 0 auto; }
+    .btn-buy { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+    .btn-buy:hover { background: #991b1b; color: #fff; }
+    .btn-sell { background: #15803d; border-color: #15803d; color: #fff; }
+    .btn-sell:hover { background: #166534; color: #fff; }
+    .stat { font-size: 13px; color: #555; margin: 4px 0; }
+    .stat strong { color: #171717; }
+    .log {
+      max-height: 160px; overflow-y: auto; font-size: 12px; color: #666;
+      border-top: 1px solid #eee; margin-top: 12px; padding-top: 8px;
+    }
+    .log div { margin-bottom: 4px; }
+    .ai-box {
+      margin-top: 20px; padding: 16px; border: 1px dashed #aaa; border-radius: 16px;
+      background: #faf9f6;
+    }
+    .ai-box h3 { margin-top: 0; }
+    .ai-box p { font-size: 13px; color: #666; margin: 0 0 12px; }
+    .tf-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tf-row button {
+      padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid #ddd;
+      background: #fff; cursor: pointer;
+    }
+    .tf-row button.on { background: #171717; color: #fff; border-color: #171717; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="brand">LTZZZ <span>模拟盘</span></div>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="guan.html">观</a>
+      <a href="sim-trade.html">模拟盘</a>
+      <a href="articles/meng-po.html">笔记</a>
+    </nav>
+  </header>
+
+  <div class="sim-wrap">
+    <div class="sim-banner">
+      ⚠ 纯模拟盘 · 纸上盈亏 · 不连接真实钱包资金 · 不发起链上或券商真实下单<br>
+      UNI / AAVE 为链上标的示意；SPCX / CRCL / TSLA 为证券示意。价格含模拟随机波动，仅供练习观察。
+    </div>
+
+    <div class="sim-grid">
+      <div class="panel">
+        <h3>标的</h3>
+        <div id="symList"></div>
+        <p class="stat" style="margin-top:16px">模拟现金<br><strong id="cash">—</strong></p>
+        <p class="stat">总权益（估）<br><strong id="equity">—</strong></p>
+        <button class="button" style="width:100%;margin-top:12px;font-size:13px" id="btnReset">重置模拟账户</button>
+      </div>
+
+      <div class="panel">
+        <div class="price-row">
+          <div>
+            <div id="symName" style="font-size:13px;color:#888">—</div>
+            <div class="last" id="lastPrice">—</div>
+          </div>
+          <div class="chg" id="chg">—</div>
+        </div>
+        <div class="tf-row" id="tfRow">
+          <button data-n="40" class="on">短</button>
+          <button data-n="80">中</button>
+          <button data-n="120">长</button>
+        </div>
+        <div class="chart-box"><canvas id="kline"></canvas></div>
+        <div class="trade-row">
+          <input type="number" id="qty" min="0" step="0.01" placeholder="数量" value="1">
+          <button class="button btn-buy" id="btnBuy">模拟买入</button>
+          <button class="button btn-sell" id="btnSell">模拟卖出</button>
+        </div>
+        <p class="stat" id="posInfo">持仓：0</p>
+      </div>
+
+      <div class="panel">
+        <h3>持仓</h3>
+        <div id="positions" class="stat">暂无</div>
+        <h3 style="margin-top:20px">成交记录</h3>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <div class="ai-box">
+      <h3>未来：AI 自动操作（仅模拟）</h3>
+      <p>
+        预留接口：按简单规则在<strong>模拟账户</strong>上自动下单，不触碰私钥、不调真实交易所。
+        当前提供「模拟策略演示」：根据最近 K 线涨跌，小仓位自动买/卖一次（仍写 localStorage）。
+      </p>
+      <div class="trade-row">
+        <button class="button" id="btnAiOnce">运行一次模拟策略</button>
+        <button class="button" id="btnAiStop">停止（预留）</button>
+      </div>
+      <p class="stat" id="aiLog">AI 状态：空闲</p>
+    </div>
+  </div>
+
+  <footer>© 2026 LTZZZ Digital Lab · 模拟盘不构成投资建议</footer>
+
+  <script>
+(function () {
+  const SYMBOLS = [
+    { id: 'UNI', name: 'Uniswap', kind: 'crypto', base: 8.5 },
+    { id: 'AAVE', name: 'Aave', kind: 'crypto', base: 180 },
+    { id: 'SPCX', name: 'SPCX（示意）', kind: 'equity', base: 12 },
+    { id: 'CRCL', name: 'CRCL（示意）', kind: 'equity', base: 95 },
+    { id: 'TSLA', name: 'Tesla（示意）', kind: 'equity', base: 250 }
+  ];
+
+  const STORAGE = 'ltzzz_sim_v1';
+  const START_CASH = 100000;
+
+  let state = loadState();
+  let current = 'UNI';
+  let barsN = 40;
+  let seriesCache = {};
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { cash: START_CASH, pos: {}, logs: [] };
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE, JSON.stringify(state));
+  }
+
+  function meta(id) {
+    return SYMBOLS.find(s => s.id === id);
+  }
+
+  /** 确定性 OHLC，可复现同一会话内相对稳定 */
+  function genBars(id, n) {
+    const key = id + '_' + n;
+    if (seriesCache[key]) return seriesCache[key];
+    const m = meta(id);
+    let p = m.base;
+    const seed = id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    let s = seed * 9973 + n;
+    function rnd() {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    }
+    const bars = [];
+    for (let i = 0; i < n; i++) {
+      const vol = m.kind === 'crypto' ? 0.025 : 0.015;
+      const ch = (rnd() - 0.48) * vol * p;
+      const open = p;
+      const close = Math.max(0.01, p + ch);
+      const high = Math.max(open, close) * (1 + rnd() * 0.008);
+      const low = Math.min(open, close) * (1 - rnd() * 0.008);
+      bars.push({ open, high, low, close });
+      p = close;
+    }
+    // 轻微轻推最后一根，让盘面「活」一点
+    const last = bars[bars.length - 1];
+    const jitter = (Math.random() - 0.5) * 0.004 * last.close;
+    last.close = Math.max(0.01, last.close + jitter);
+    last.high = Math.max(last.high, last.close);
+    last.low = Math.min(last.low, last.close);
+    seriesCache[key] = bars;
+    return bars;
+  }
+
+  function lastPrice(id) {
+    const bars = genBars(id, barsN);
+    return bars[bars.length - 1].close;
+  }
+
+  function drawKline(id) {
+    const canvas = document.getElementById('kline');
+    const parent = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const w = parent.clientWidth;
+    const h = parent.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const bars = genBars(id, barsN);
+    let min = Infinity, max = -Infinity;
+    bars.forEach(b => {
+      min = Math.min(min, b.low);
+      max = Math.max(max, b.high);
+    });
+    const pad = (max - min) * 0.08 || 1;
+    min -= pad;
+    max += pad;
+    const bw = (w - 20) / bars.length;
+
+    ctx.strokeStyle = '#e8e4dc';
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const y = (h / 4) * i + 10;
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+    }
+    ctx.stroke();
+
+    bars.forEach((b, i) => {
+      const x = 10 + i * bw + bw * 0.5;
+      const yO = h - ((b.open - min) / (max - min)) * (h - 20) - 10;
+      const yC = h - ((b.close - min) / (max - min)) * (h - 20) - 10;
+      const yH = h - ((b.high - min) / (max - min)) * (h - 20) - 10;
+      const yL = h - ((b.low - min) / (max - min)) * (h - 20) - 10;
+      const up = b.close >= b.open;
+      ctx.strokeStyle = up ? '#b91c1c' : '#15803d';
+      ctx.fillStyle = up ? '#b91c1c' : '#15803d';
+      ctx.beginPath();
+      ctx.moveTo(x, yH);
+      ctx.lineTo(x, yL);
+      ctx.stroke();
+      const top = Math.min(yO, yC);
+      const bh = Math.max(1, Math.abs(yC - yO));
+      ctx.fillRect(x - bw * 0.3, top, bw * 0.6, bh);
+    });
+  }
+
+  function renderList() {
+    const el = document.getElementById('symList');
+    el.innerHTML = SYMBOLS.map(s => {
+      const px = lastPrice(s.id);
+      return `<button type="button" class="sym-btn ${s.id === current ? 'active' : ''}" data-id="${s.id}">
+        ${s.id}<small>${s.name} · ${px.toFixed(2)}</small></button>`;
+    }).join('');
+    el.querySelectorAll('.sym-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        current = btn.dataset.id;
+        seriesCache = {};
+        refresh();
+      });
+    });
+  }
+
+  function fmt(n) {
+    return n.toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+  }
+
+  function refresh() {
+    const m = meta(current);
+    const bars = genBars(current, barsN);
+    const last = bars[bars.length - 1].close;
+    const prev = bars[0].open;
+    const chg = ((last - prev) / prev) * 100;
+
+    document.getElementById('symName').textContent = m.id + ' · ' + m.name + ' · ' + (m.kind === 'crypto' ? '链上示意' : '证券示意');
+    document.getElementById('lastPrice').textContent = fmt(last);
+    const chgEl = document.getElementById('chg');
+    chgEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%（图内区间）';
+    chgEl.className = 'chg ' + (chg >= 0 ? 'up' : 'down');
+
+    const q = state.pos[current] || 0;
+    document.getElementById('posInfo').textContent = '持仓：' + q + ' · 可卖 ' + q;
+
+    document.getElementById('cash').textContent = '¥ ' + fmt(state.cash);
+    let eq = state.cash;
+    SYMBOLS.forEach(s => {
+      const qq = state.pos[s.id] || 0;
+      if (qq) eq += qq * lastPrice(s.id);
+    });
+    document.getElementById('equity').textContent = '¥ ' + fmt(eq);
+
+    const posEl = document.getElementById('positions');
+    const rows = SYMBOLS.filter(s => (state.pos[s.id] || 0) > 0)
+      .map(s => `${s.id}: ${state.pos[s.id]} @ 参考 ${fmt(lastPrice(s.id))}`);
+    posEl.innerHTML = rows.length ? rows.map(r => '<div>' + r + '</div>').join('') : '暂无持仓';
+
+    const logEl = document.getElementById('log');
+    logEl.innerHTML = (state.logs || []).slice(-30).reverse().map(l => '<div>' + l + '</div>').join('') || '无记录';
+
+    renderList();
+    drawKline(current);
+  }
+
+  function trade(side) {
+    const qty = parseFloat(document.getElementById('qty').value);
+    if (!qty || qty <= 0) {
+      alert('请输入有效数量');
+      return;
+    }
+    const px = lastPrice(current);
+    const cost = qty * px;
+    if (side === 'buy') {
+      if (cost > state.cash) {
+        alert('模拟现金不足');
+        return;
+      }
+      state.cash -= cost;
+      state.pos[current] = (state.pos[current] || 0) + qty;
+      state.logs.push(`${new Date().toLocaleString('zh-CN')} 买 ${current} ${qty} @ ${px.toFixed(4)}`);
+    } else {
+      const have = state.pos[current] || 0;
+      if (qty > have) {
+        alert('模拟持仓不足');
+        return;
+      }
+      state.cash += cost;
+      state.pos[current] = have - qty;
+      state.logs.push(`${new Date().toLocaleString('zh-CN')} 卖 ${current} ${qty} @ ${px.toFixed(4)}`);
+    }
+    saveState();
+    seriesCache = {};
+    refresh();
+  }
+
+  document.getElementById('btnBuy').onclick = () => trade('buy');
+  document.getElementById('btnSell').onclick = () => trade('sell');
+  document.getElementById('btnReset').onclick = () => {
+    if (confirm('重置模拟账户？')) {
+      state = { cash: START_CASH, pos: {}, logs: [] };
+      saveState();
+      seriesCache = {};
+      refresh();
+    }
+  };
+
+  document.getElementById('tfRow').querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      document.getElementById('tfRow').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      barsN = parseInt(b.dataset.n, 10);
+      seriesCache = {};
+      refresh();
+    };
+  });
+
+  document.getElementById('btnAiOnce').onclick = () => {
+    const bars = genBars(current, barsN);
+    const a = bars[bars.length - 5].close;
+    const b = bars[bars.length - 1].close;
+    const up = b >= a;
+    const px = b;
+    const budget = state.cash * 0.05;
+    document.getElementById('aiLog').textContent = 'AI 状态：根据近端涨跌做一次模拟…';
+    if (up && budget > px * 0.01) {
+      const qty = Math.floor((budget / px) * 100) / 100;
+      if (qty > 0) {
+        state.cash -= qty * px;
+        state.pos[current] = (state.pos[current] || 0) + qty;
+        state.logs.push(`${new Date().toLocaleString('zh-CN')} [AI模拟] 买 ${current} ${qty} @ ${px.toFixed(4)}`);
+        document.getElementById('aiLog').textContent = 'AI 状态：模拟买入 ' + current + ' ' + qty;
+      }
+    } else {
+      const have = state.pos[current] || 0;
+      const qty = Math.floor(have * 0.2 * 100) / 100;
+      if (qty > 0) {
+        state.cash += qty * px;
+        state.pos[current] = have - qty;
+        state.logs.push(`${new Date().toLocaleString('zh-CN')} [AI模拟] 卖 ${current} ${qty} @ ${px.toFixed(4)}`);
+        document.getElementById('aiLog').textContent = 'AI 状态：模拟卖出 ' + current + ' ' + qty;
+      } else {
+        document.getElementById('aiLog').textContent = 'AI 状态：无持仓可卖，跳过';
+      }
+    }
+    saveState();
+    refresh();
+  };
+
+  document.getElementById('btnAiStop').onclick = () => {
+    document.getElementById('aiLog').textContent = 'AI 状态：已停止（当前无后台循环）';
+  };
+
+  window.addEventListener('resize', () => drawKline(current));
+  refresh();
+  setInterval(() => {
+    // 轻微刷新最后价观感
+    Object.keys(seriesCache).forEach(k => delete seriesCache[k]);
+    refresh();
+  }, 15000);
+})();
+  </script>
+</body>
+</html>
