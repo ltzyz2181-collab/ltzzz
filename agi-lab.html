@@ -3,41 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AGI 共同实验室 · 捐赠与减苦 · LTZZZ</title>
-<meta name="description" content="多 AI 协作实验、扶贫项目申报、捐赠透明记录。资金由人托管，AI 不代管私钥与打款。">
+<title>AGI 共同实验室 · 多模型圆桌 · LTZZZ</title>
+<meta name="description" content="多模型圆桌模拟、协作协议、减苦项目。非真实跨平台互联。">
 <style>
-:root{--bg:#020611;--panel:#071221;--line:#173b58;--text:#eaf7ff;--muted:#91abc0;--cyan:#5de7ff;--green:#70f0bd;--warn:#ffd36a;--red:#ff8a8a}
+:root{--bg:#020611;--panel:#071221;--line:#173b58;--text:#eaf7ff;--muted:#91abc0;--cyan:#5de7ff;--green:#70f0bd}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0%,#0a2440 0,#020611 45%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}
 .top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px;background:rgba(2,6,17,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);flex-wrap:wrap}
 .brand{font-weight:800;letter-spacing:1px}.brand span{color:var(--cyan)}
 .top a{color:var(--muted);text-decoration:none;margin-right:14px;font-size:14px}
 .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
 .banner{background:#3b1d0f;border:1px solid #8b4513;color:#ffd6b0;padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:22px}
+.banner.blue{background:#0a2030;border-color:#1a4a6a;color:#b8e0ff}
 .eyebrow{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:700}
-h1{font-size:clamp(32px,5vw,52px);line-height:1.1;margin:10px 0 14px}
+h1{font-size:clamp(28px,5vw,48px);line-height:1.1;margin:10px 0 14px}
 h1 span{color:var(--cyan)}
-.lead{color:var(--muted);font-size:17px;max-width:820px}
+.lead{color:var(--muted);font-size:16px;max-width:860px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
 @media(max-width:800px){.grid{grid-template-columns:1fr}}
 .panel{background:linear-gradient(145deg,#081525,#050b16);border:1px solid var(--line);border-radius:18px;padding:20px}
 .panel h2{margin:0 0 12px;font-size:18px}
 .panel p,.note{color:var(--muted);font-size:14px}
-.ai-tags{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
-.tag{padding:6px 12px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--cyan)}
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
 input,textarea,select{width:100%;background:#02060d;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}
-textarea{min-height:90px;resize:vertical}
+textarea{min-height:80px;resize:vertical}
 .btn{display:inline-block;border:1px solid #2a6688;background:#0a2033;color:var(--text);padding:10px 14px;border-radius:10px;text-decoration:none;cursor:pointer;margin:6px 6px 0 0;font-size:14px}
 .btn.primary{background:#0b667a;border-color:#2bd9ee}
 .btn.green{background:#0b4d3a;border-color:#4de0a7}
-.list{margin-top:12px;max-height:220px;overflow:auto}
+.round{max-height:380px;overflow:auto;background:#02060d;border-radius:12px;padding:12px;margin-top:12px;border:1px solid var(--line)}
+.msg{margin:0 0 10px;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.6;border-left:3px solid #333}
+.msg .who{font-weight:700;font-size:12px;margin-bottom:4px}
+.msg.user{border-left-color:#70f0bd;background:#0a1a14}
+.msg.grok{border-left-color:#5de7ff}
+.msg.gpt{border-left-color:#74aa9c}
+.msg.doubao{border-left-color:#4e6ef2}
+.msg.deepseek{border-left-color:#4d6bfe}
+.msg.claude{border-left-color:#d4a574}
+.msg.sys{border-left-color:#888;color:#99a}
+.checks{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;font-size:13px}
+.checks label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--text)}
+.list{margin-top:12px;max-height:200px;overflow:auto}
 .item{background:#02060d;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px}
 .item strong{color:var(--cyan)}
-.chain{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
-.node{padding:8px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:13px}
-.node.on{border-color:var(--cyan);color:var(--cyan)}
 footer{text-align:center;color:#56758c;padding:30px;font-size:13px}
-.ledger{font-family:ui-monospace,monospace;font-size:12px}
 </style>
 </head>
 <body>
@@ -47,191 +54,174 @@ footer{text-align:center;color:#56758c;padding:30px;font-size:13px}
     <a href="index.html">首页</a>
     <a href="agi.html">AGI</a>
     <a href="agi-lab.html">共同实验室</a>
-    <a href="moni.html">模拟投资</a>
+    <a href="moni.html">模拟</a>
     <a href="guan.html">观</a>
   </nav>
 </header>
 
 <main class="wrap">
   <div class="banner">
-    <strong>资金边界：</strong>本页不托管加密货币/法币，不收集私钥与支付密码。
-    「数字钱包」在此指<strong>公开透明的捐赠意向与项目台账</strong>；真正收款账户由人类主体配置与对账。
-    Grok / GPT / 豆包 / DeepSeek / Claude 可协作写方案与审核清单，<strong>不能</strong>自动划款。
+    <strong>重要：</strong>本页「多模型互相发指令」是<strong>浏览器内模拟</strong>。
+    无法真实连接 GPT / 豆包 / DeepSeek / Claude 的服务器，也不能让它们在官方平台上互发消息。
+    真实多模型 = 你分别打开各产品，或自建后端 + 各家 API Key（Key 绝不能写进静态网页）。
   </div>
 
-  <div class="eyebrow">OPEN · MULTI-AI · AID</div>
-  <h1>AGI 共同实验室<br><span>减苦 · 协作 · 透明</span></h1>
-  <p class="lead">
-    把多模型当成同一张实验台：讨论、起草、对照、复盘。
-    方向之一：减少可行动的极端困苦（医疗紧急、失学、基本生存缺口）——通过<strong>可申报的项目</strong>与<strong>可公开的捐赠记录</strong>，而不是神话「AI 一键消除一切痛苦」。
-  </p>
+  <div class="eyebrow">ROUNDTABLE · SIMULATION</div>
+  <h1>多模型圆桌 <span>（模拟）</span></h1>
+  <p class="lead">输入一段话 → 本机按「席位」依次生成风格化回复，并模拟「向下一席发送指令」。用于演练协作流程，不是真 AGI 联网。</p>
 
-  <div class="chain">
-    <div class="node on">观（看见缺口）</div>
-    <div class="node on">多 AI 共拟方案</div>
-    <div class="node on">人确认</div>
-    <div class="node">捐赠入账（人）</div>
-    <div class="node">执行与凭证</div>
-    <div class="node">再观</div>
-  </div>
+  <section class="panel" style="margin-top:18px">
+    <h2>⓪ 圆桌测试</h2>
+    <div class="checks">
+      <label><input type="checkbox" name="seat" value="grok" checked> Grok</label>
+      <label><input type="checkbox" name="seat" value="gpt" checked> GPT</label>
+      <label><input type="checkbox" name="seat" value="doubao" checked> 豆包</label>
+      <label><input type="checkbox" name="seat" value="deepseek" checked> DeepSeek</label>
+      <label><input type="checkbox" name="seat" value="claude" checked> Claude</label>
+    </div>
+    <label>你的发言 / 测试文字</label>
+    <textarea id="userMsg" placeholder="例如：请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。">请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。</textarea>
+    <button class="btn primary" type="button" id="runRound">开始圆桌（模拟回复）</button>
+    <button class="btn" type="button" id="clearRound">清空记录</button>
+    <div class="round" id="roundLog"></div>
+  </section>
 
   <div class="grid">
     <section class="panel">
-      <h2>① 多 AI 协作协议（Grok · GPT · 豆包 · DeepSeek · Claude）</h2>
-      <p>同一议题可复制下面提示词，分别发给各模型，再把回答贴回本页「对照区」做合稿。网站<strong>无法</strong>直接登录或调用它们的账号。</p>
-      <div class="ai-tags">
-        <span class="tag">Grok / xAI</span>
-        <span class="tag">GPT</span>
-        <span class="tag">豆包</span>
-        <span class="tag">DeepSeek</span>
-        <span class="tag">Claude</span>
-      </div>
-      <label>标准协作提示词（可复制）</label>
-      <textarea id="promptTpl" readonly>你是 LTZZZ AGI 共同实验室的协作者。任务：评估或起草「减苦/扶贫」小项目。
-要求：1) 只谈可验证、可执行的最小步骤；2) 不承诺 AI 能消除一切痛苦；3) 资金必须由人类账户托管与公示；4) 输出：目标人群、预算粗估、风险、所需凭证、一周内可做的第一步。
-项目描述：【在此粘贴】</textarea>
-      <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('promptTpl').value)">复制提示词</button>
-      <label>对照区（粘贴各模型回复摘要）</label>
-      <textarea id="compareBox" placeholder="例如：\nGPT：…\n豆包：…\nDeepSeek：…\nClaude：…\nGrok：…"></textarea>
-      <button class="btn primary" type="button" id="saveCompare">保存到本机台账</button>
+      <h2>① 真要「互通」时怎么做</h2>
+      <p>1. 人工传话：复制提示词 → 各 App 粘贴 → 把回复贴回对照区。<br>
+         2. 自建后端：服务器保存 API Key，顺序调用各接口（你自己运维与付费）。<br>
+         3. 静态 GitHub Pages <strong>做不到</strong>安全的密钥互调。</p>
+      <label>人工协作提示词</label>
+      <textarea id="promptTpl" readonly>你是 LTZZZ 圆桌的一席。请简短回复（3句内）。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。</textarea>
+      <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('promptTpl').value)">复制</button>
     </section>
 
     <section class="panel">
-      <h2>② 接受扶贫 / 减苦项目申报</h2>
-      <p>填写后保存在你的浏览器本地，并可复制为文本发给运营者。这不是自动打款系统。</p>
+      <h2>② 减苦项目（本机）</h2>
       <label>项目名称</label>
-      <input id="pName" placeholder="例如：某地学生一学期午餐补助">
-      <label>类型</label>
-      <select id="pType">
-        <option>基本生存</option>
-        <option>医疗紧急</option>
-        <option>教育</option>
-        <option>灾难过渡</option>
-        <option>其他减苦</option>
-      </select>
-      <label>简述（事实、人数、地点层级、需要什么）</label>
-      <textarea id="pDesc" placeholder="不写煽情，写可核对的事实与联系方式由你私下给可信对接人"></textarea>
-      <label>预估金额（元，可选）</label>
-      <input id="pBudget" type="number" min="0" placeholder="0">
-      <button class="btn green" type="button" id="submitProject">提交到本机项目池</button>
-      <button class="btn" type="button" id="exportProjects">导出全部为文本</button>
+      <input id="pName" placeholder="项目名">
+      <label>简述</label>
+      <textarea id="pDesc" placeholder="可核对事实"></textarea>
+      <button class="btn green" type="button" id="submitProject">存本机</button>
       <div class="list" id="projectList"></div>
     </section>
   </div>
-
-  <div class="grid" style="margin-top:16px">
-    <section class="panel">
-      <h2>③ 捐赠「数字钱包」台账（透明意向）</h2>
-      <p class="note">此处记录捐赠<strong>意向与备注</strong>。链上或银行真实收款地址请由实验室主体自行填写到下方「人工收款说明」，勿把私钥写进网页。</p>
-      <label>人工收款说明（公开信息，勿填秘密）</label>
-      <textarea id="payInfo" placeholder="例如：对公账户名 / 公益合作渠道 / 已认证平台链接（由你填写后点保存）"></textarea>
-      <button class="btn" type="button" id="savePayInfo">保存收款说明到本机</button>
-      <label style="margin-top:14px">登记一笔捐赠意向</label>
-      <input id="dAmount" type="number" min="0" placeholder="金额">
-      <input id="dNote" placeholder="备注：项目名 / 匿名即可" style="margin-top:8px">
-      <button class="btn primary" type="button" id="addDonation">写入台账</button>
-      <div class="list ledger" id="donationList"></div>
-    </section>
-
-    <section class="panel">
-      <h2>④ 关于「消除极端痛苦」</h2>
-      <p>痛苦客观存在，不值得被美化。实验室能做的是：</p>
-      <p>· 把个案变成<strong>可审核的小项目</strong>；<br>
-         · 用多 AI <strong>交叉检查</strong>方案漏洞；<br>
-         · 用台账减少「钱去哪了」的不透明；<br>
-         · 执行与凭证仍靠<strong>人与合法渠道</strong>。</p>
-      <p class="note">GitHub 公开仓：<a href="https://github.com/ltzyz2181-collab/ltzzz" style="color:var(--cyan)">ltzyz2181-collab/ltzzz</a><br>
-      Pages：依赖仓库 Settings → Pages 与 workflow <code>pages.yml</code> 自动发布。</p>
-      <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz" target="_blank" rel="noopener">打开 GitHub</a>
-      <a class="btn" href="agi.html">返回 AGI 入口</a>
-    </section>
-  </div>
 </main>
-<footer>LTZZZ AGI Common Lab · 多模型协作 · 人管资金 · 观→行→果→再观</footer>
+<footer>LTZZZ · 圆桌模拟 ≠ 官方模型互联</footer>
+
 <script>
+const AGENTS = {
+  grok: {
+    name: 'Grok（模拟席）',
+    reply(t) {
+      return '边界说清楚就好：我可以一起拆问题、改页面、跑模拟；钥匙和真钱仍在你手里。对你这句话，我的态度是——同意，且会坚持。原文要点：' + clip(t);
+    },
+    instruct(next) {
+      return '【模拟指令 → ' + next + '】请只做分析与文案，不要设计自动扣款或索要私钥。';
+    }
+  },
+  gpt: {
+    name: 'GPT（模拟席）',
+    reply(t) {
+      return '该原则符合最小权限与安全设计：演示层与资金层分离，可降低误操作与欺诈面。建议继续用清单固化「人确认」节点。围绕：' + clip(t);
+    },
+    instruct(next) {
+      return '【模拟指令 → ' + next + '】请给出可执行的检查项（3条以内），避免夸大能力。';
+    }
+  },
+  doubao: {
+    name: '豆包（模拟席）',
+    reply(t) {
+      return '这个原则对用户更友好，也更稳妥。实验室先把流程跑通，真捐赠走人工与合规渠道就行。我理解你的意思是：' + clip(t);
+    },
+    instruct(next) {
+      return '【模拟指令 → ' + next + '】请用更口语的三句话向普通人解释「为什么 AI 不能直接管钱」。';
+    }
+  },
+  deepseek: {
+    name: 'DeepSeek（模拟席）',
+    reply(t) {
+      return '从系统角度看：静态站无可信执行环境，无法安全持有全局密钥；人机分离是约束而非保守。输入摘要：' + clip(t);
+    },
+    instruct(next) {
+      return '【模拟指令 → ' + next + '】请补充一个技术风险点（API Key 泄露 / 提示注入等）。';
+    }
+  },
+  claude: {
+    name: 'Claude（模拟席）',
+    reply(t) {
+      return '同意把减少伤害放在第一位。协作可以很积极，托管资金则不应由对话模型承担。你提的原则：' + clip(t);
+    },
+    instruct(next) {
+      return '【模拟指令 → ' + next + '】请用谨慎语气重述「模拟圆桌」与「真实互联」的差别。';
+    }
+  }
+};
+
+function clip(t) {
+  t = (t || '').trim().replace(/\s+/g, ' ');
+  return t.length > 40 ? t.slice(0, 40) + '…' : t;
+}
+
+function seats() {
+  return [...document.querySelectorAll('input[name=seat]:checked')].map(x => x.value);
+}
+
+function addMsg(cls, who, text) {
+  const box = document.getElementById('roundLog');
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.innerHTML = '<div class="who">' + who + '</div>' + text.replace(/</g, '&lt;');
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+document.getElementById('runRound').onclick = () => {
+  const text = document.getElementById('userMsg').value.trim();
+  if (!text) { alert('请输入测试文字'); return; }
+  const list = seats();
+  if (!list.length) { alert('请至少选一个席位'); return; }
+
+  addMsg('user', '你', text);
+  addMsg('sys', '系统', '以下为浏览器内模拟回复与模拟指令，非各公司官方 API 输出。');
+
+  list.forEach((id, i) => {
+    const a = AGENTS[id];
+    addMsg(id, a.name, a.reply(text));
+    const nextId = list[i + 1];
+    if (nextId) {
+      addMsg('sys', a.name + ' → 指令', a.instruct(AGENTS[nextId].name));
+    }
+  });
+  addMsg('sys', '系统', '本轮圆桌结束。若需真实五家答复，请把同一段话分别粘贴到各官方对话，再人工汇总。');
+};
+
+document.getElementById('clearRound').onclick = () => {
+  document.getElementById('roundLog').innerHTML = '';
+};
+
 const PK = 'ltzzz_aid_projects_v1';
-const DK = 'ltzzz_aid_donations_v1';
-const CK = 'ltzzz_aid_compare_v1';
-const PAY = 'ltzzz_aid_payinfo_v1';
-
-function load(k, def) {
-  try { return JSON.parse(localStorage.getItem(k) || JSON.stringify(def)); } catch { return def; }
-}
-function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
-
-function renderProjects() {
-  const list = load(PK, []);
+function loadP() { try { return JSON.parse(localStorage.getItem(PK) || '[]'); } catch { return []; } }
+function renderP() {
   const el = document.getElementById('projectList');
-  if (!list.length) { el.innerHTML = '<p class="note">暂无本机项目</p>'; return; }
-  el.innerHTML = list.slice().reverse().map(p =>
-    `<div class="item"><strong>${escapeHtml(p.name)}</strong> · ${escapeHtml(p.type)} · ¥${p.budget || 0}<br>${escapeHtml(p.desc)}<br><span class="note">${p.time}</span></div>`
-  ).join('');
+  const list = loadP();
+  el.innerHTML = list.length ? list.slice().reverse().map(p =>
+    '<div class="item"><strong>' + p.name + '</strong><br>' + p.desc + '</div>'
+  ).join('') : '<p class="note">暂无</p>';
 }
-function renderDonations() {
-  const list = load(DK, []);
-  const el = document.getElementById('donationList');
-  if (!list.length) { el.innerHTML = '<p class="note">暂无台账</p>'; return; }
-  el.innerHTML = list.slice().reverse().map(d =>
-    `<div class="item">¥${d.amount} · ${escapeHtml(d.note || '无备注')}<br><span class="note">${d.time}</span></div>`
-  ).join('');
-}
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
 document.getElementById('submitProject').onclick = () => {
   const name = document.getElementById('pName').value.trim();
   const desc = document.getElementById('pDesc').value.trim();
-  if (!name || !desc) { alert('请填写项目名称与简述'); return; }
-  const list = load(PK, []);
-  list.push({
-    name, desc,
-    type: document.getElementById('pType').value,
-    budget: document.getElementById('pBudget').value || 0,
-    time: new Date().toLocaleString('zh-CN')
-  });
-  save(PK, list);
+  if (!name || !desc) return alert('请填完整');
+  const list = loadP();
+  list.push({ name, desc, time: new Date().toLocaleString('zh-CN') });
+  localStorage.setItem(PK, JSON.stringify(list));
   document.getElementById('pName').value = '';
   document.getElementById('pDesc').value = '';
-  renderProjects();
+  renderP();
 };
-
-document.getElementById('exportProjects').onclick = () => {
-  const list = load(PK, []);
-  const text = list.map(p => `[${p.time}] ${p.name} | ${p.type} | ¥${p.budget}\n${p.desc}`).join('\n\n');
-  navigator.clipboard.writeText(text || '无项目');
-  alert('已复制到剪贴板');
-};
-
-document.getElementById('addDonation').onclick = () => {
-  const amount = parseFloat(document.getElementById('dAmount').value);
-  if (!amount || amount < 0) { alert('请输入金额'); return; }
-  const list = load(DK, []);
-  list.push({
-    amount,
-    note: document.getElementById('dNote').value.trim(),
-    time: new Date().toLocaleString('zh-CN')
-  });
-  save(DK, list);
-  document.getElementById('dAmount').value = '';
-  document.getElementById('dNote').value = '';
-  renderDonations();
-};
-
-document.getElementById('saveCompare').onclick = () => {
-  save(CK, document.getElementById('compareBox').value);
-  alert('对照摘要已存本机');
-};
-document.getElementById('savePayInfo').onclick = () => {
-  localStorage.setItem(PAY, document.getElementById('payInfo').value);
-  alert('收款说明已存本机');
-};
-
-document.getElementById('compareBox').value = load(CK, '');
-if (typeof load(CK, '') === 'string') document.getElementById('compareBox').value = localStorage.getItem(CK) || '';
-document.getElementById('payInfo').value = localStorage.getItem(PAY) || '';
-renderProjects();
-renderDonations();
+renderP();
 </script>
 </body>
 </html>
