@@ -3,134 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>观 · LTZZZ 数字实验室</title>
+  <title>观 · 每日记录 · LTZZZ</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .page-hero { padding: 120px 7vw 60px; max-width: 900px; }
-    .page-hero h1 { font-size: clamp(36px,6vw,64px); margin: 0 0 20px; }
-    .observe-form { background: #fff; border: 1px solid #ddd8ce; border-radius: 20px; padding: 32px; margin: 40px 0; }
-    .observe-form label { display: block; font-weight: 600; margin-bottom: 8px; }
-    .observe-form textarea, .observe-form input, .observe-form select {
-      width: 100%; padding: 12px 14px; border: 1px solid #ddd8ce; border-radius: 12px;
-      font-size: 15px; margin-bottom: 20px; font-family: inherit;
+    .page-hero { padding: 100px 7vw 40px; max-width: 900px; }
+    .page-hero h1 { font-size: clamp(32px,6vw,56px); margin: 0 0 16px; }
+    .observe-form, .panel-block {
+      background: #fff; border: 1px solid #ddd8ce; border-radius: 20px;
+      padding: 28px; margin: 20px 0;
     }
-    .observe-form textarea { min-height: 120px; resize: vertical; }
-    .records { margin-top: 40px; }
-    .record-item { background: #fff; border: 1px solid #ddd8ce; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
-    .record-item .meta { font-size: 13px; color: #888; margin-bottom: 8px; }
-    .back-link { display: inline-block; margin-bottom: 30px; color: #555; text-decoration: none; font-size: 14px; }
-    .back-link:hover { color: #000; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+    textarea, input, select {
+      width: 100%; padding: 12px 14px; border: 1px solid #ddd8ce; border-radius: 12px;
+      font-size: 15px; margin-bottom: 16px; font-family: inherit; box-sizing: border-box;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    .record-item {
+      background: #fff; border: 1px solid #ddd8ce; border-radius: 14px;
+      padding: 16px 18px; margin-bottom: 12px;
+    }
+    .record-item .meta { font-size: 12px; color: #888; margin-bottom: 6px; }
+    .record-item .tags span {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      background: #f0ebe3; margin-right: 6px; color: #555;
+    }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width:600px){ .row2 { grid-template-columns: 1fr; } }
+    .hint { font-size: 13px; color: #777; margin: 0 0 16px; line-height: 1.6; }
+    .actions-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .del { float: right; font-size: 12px; color: #a33; border: none; background: none; cursor: pointer; }
   </style>
 </head>
 <body>
   <header class="nav">
-    <div class="brand">LTZZZ <span>数字实验室</span></div>
+    <div class="brand">LTZZZ <span>观</span></div>
     <nav>
       <a href="index.html">首页</a>
       <a href="guan.html">观</a>
+      <a href="moni.html">投资模拟</a>
+      <a href="sim-trade.html">K线模拟</a>
       <a href="xingshen.html">行深</a>
-      <a href="index.html#po">魄 · 识神</a>
-      <a href="index.html#web3">Web3</a>
     </nav>
-    <button id="connectWallet" class="wallet-btn">连接钱包</button>
   </header>
 
   <main>
     <section class="page-hero">
-      <a href="index.html" class="back-link">← 返回首页</a>
-      <p class="eyebrow">觀</p>
-      <h1>观 —— 先看见</h1>
-      <p class="lead">观不是被动看，而是主动建立因果地图。观察链上数据、市场情绪、自身状态与习气模式。</p>
+      <p class="eyebrow">觀 · DAILY</p>
+      <h1>观 —— 每日记录</h1>
+      <p class="lead">看见情绪、身体、市场与决策。记录在本机浏览器，可一键复制给任意 AI 做复盘。</p>
     </section>
 
-    <section class="section" style="padding-top:0">
+    <section class="section" style="padding-top:0;max-width:900px">
       <div class="observe-form">
-        <h3 style="margin-top:0">今日观察记录</h3>
-        <p style="color:#666;font-size:14px;margin-bottom:24px">记录会被保存在本地浏览器（localStorage），不会上传服务器。</p>
-        
-        <label>观察类型</label>
-        <select id="observeType">
-          <option value="chain">链上行为 / 资金流向</option>
-          <option value="emotion">自身情绪 / 决策模式</option>
-          <option value="body">身体反应 / 魄的躁动</option>
-          <option value="market">市场情绪</option>
-          <option value="other">其他</option>
-        </select>
+        <h3 style="margin-top:0">写一条观察</h3>
+        <p class="hint">数据只存在本机 localStorage（键名 ltzzz_guan_v2），清浏览器数据会丢失。重要内容请导出备份。</p>
 
-        <label>观察内容</label>
-        <textarea id="observeContent" placeholder="描述你今天观察到的现象、情绪或模式..."></textarea>
+        <div class="row2">
+          <div>
+            <label>类型</label>
+            <select id="gType">
+              <option value="emotion">情绪 / 决策冲动</option>
+              <option value="invest">投资 / 模拟盘相关</option>
+              <option value="body">身体 / 睡眠 / 魄</option>
+              <option value="market">市场传闻或价格感受</option>
+              <option value="habit">习气（重复模式）</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div>
+            <label>强度 1–10</label>
+            <input type="number" id="gIntensity" min="1" max="10" value="5">
+          </div>
+        </div>
 
-        <label>强度（1-10）</label>
-        <input type="number" id="observeIntensity" min="1" max="10" value="5">
+        <label>与模拟持仓有关？（可选）</label>
+        <input id="gAsset" placeholder="例如 TSLA / BTC / UNI，没有可留空">
 
-        <button class="button primary" id="saveObserve">保存观察</button>
+        <label>今天看见了什么</label>
+        <textarea id="gContent" placeholder="现象、念头、是否想加仓/刷盘、身体状态…"></textarea>
+
+        <label>若再来一次，我可能怎么做（可选）</label>
+        <textarea id="gNext" placeholder="例如：先写规则再点买卖；强度>7先不看盘" style="min-height:70px"></textarea>
+
+        <div class="actions-bar">
+          <button class="button primary" type="button" id="btnSave">保存到本机</button>
+          <button class="button" type="button" id="btnExport">导出全部 JSON</button>
+          <button class="button" type="button" id="btnPrompt">复制「给 AI 复盘」全文</button>
+          <a class="button" href="moni.html">去投资模拟复盘 →</a>
+        </div>
       </div>
 
-      <div class="records">
-        <h3>历史观察</h3>
-        <div id="recordList"></div>
+      <div class="panel-block">
+        <h3 style="margin-top:0">历史观察</h3>
+        <p class="hint">筛选：
+          <select id="filterType" style="width:auto;display:inline-block;margin:0 8px">
+            <option value="all">全部</option>
+            <option value="invest">仅投资相关</option>
+            <option value="emotion">仅情绪</option>
+            <option value="body">仅身体</option>
+          </select>
+        </p>
+        <div id="list"></div>
       </div>
     </section>
   </main>
 
-  <footer>© 2026 LTZZZ Digital Lab · 海韵天城</footer>
-  <script src="script.js"></script>
+  <footer>© 2026 LTZZZ · 观 → 记录 → AI 复盘 → 再决策</footer>
+
   <script>
-    const STORAGE_KEY = 'ltzzz_observe_records';
-
-    function loadRecords() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      } catch { return []; }
-    }
-
-    function saveRecords(list) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    }
-
-    function renderRecords() {
-      const list = loadRecords();
-      const container = document.getElementById('recordList');
-      if (!list.length) {
-        container.innerHTML = '<p style="color:#888">暂无记录，开始你的第一次观察吧。</p>';
-        return;
+  const KEY = 'ltzzz_guan_v2';
+  // migrate old key once
+  (function migrate() {
+    try {
+      if (localStorage.getItem(KEY)) return;
+      const old = JSON.parse(localStorage.getItem('ltzzz_observe_records') || '[]');
+      if (old.length) {
+        localStorage.setItem(KEY, JSON.stringify(old.map(r => ({
+          id: r.time + Math.random(),
+          time: r.time,
+          type: r.type || '其他',
+          typeKey: 'other',
+          intensity: r.intensity || 5,
+          asset: '',
+          content: r.content || '',
+          next: ''
+        }))));
       }
-      container.innerHTML = list.slice().reverse().map(r => `
-        <div class="record-item">
-          <div class="meta">${r.time} · ${r.type} · 强度 ${r.intensity}</div>
-          <div>${r.content}</div>
+    } catch (e) {}
+  })();
+
+  const typeLabel = {
+    emotion: '情绪/决策',
+    invest: '投资/模拟',
+    body: '身体/魄',
+    market: '市场感受',
+    habit: '习气',
+    other: '其他'
+  };
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+  }
+  function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
+
+  function render() {
+    const f = document.getElementById('filterType').value;
+    let list = load();
+    if (f === 'invest') list = list.filter(x => x.typeKey === 'invest' || x.typeKey === 'market');
+    if (f === 'emotion') list = list.filter(x => x.typeKey === 'emotion' || x.typeKey === 'habit');
+    if (f === 'body') list = list.filter(x => x.typeKey === 'body');
+    const el = document.getElementById('list');
+    if (!list.length) {
+      el.innerHTML = '<p style="color:#888">暂无记录。</p>';
+      return;
+    }
+    el.innerHTML = list.slice().reverse().map(r => `
+      <div class="record-item" data-id="${r.id}">
+        <button type="button" class="del" data-id="${r.id}">删除</button>
+        <div class="meta">${escapeHtml(r.time)} · 强度 ${r.intensity}</div>
+        <div class="tags">
+          <span>${escapeHtml(r.type || typeLabel[r.typeKey] || '')}</span>
+          ${r.asset ? '<span>' + escapeHtml(r.asset) + '</span>' : ''}
         </div>
-      `).join('');
-    }
-
-    document.getElementById('saveObserve').addEventListener('click', () => {
-      const type = document.getElementById('observeType').value;
-      const content = document.getElementById('observeContent').value.trim();
-      const intensity = document.getElementById('observeIntensity').value;
-      if (!content) {
-        alert('请填写观察内容');
-        return;
-      }
-      const typeMap = {
-        chain: '链上行为',
-        emotion: '情绪决策',
-        body: '身体/魄',
-        market: '市场情绪',
-        other: '其他'
+        <div style="margin-top:8px">${escapeHtml(r.content)}</div>
+        ${r.next ? '<div style="margin-top:6px;color:#555;font-size:13px">下次：' + escapeHtml(r.next) + '</div>' : ''}
+      </div>
+    `).join('');
+    el.querySelectorAll('.del').forEach(btn => {
+      btn.onclick = () => {
+        if (!confirm('删除这条？')) return;
+        save(load().filter(x => x.id !== btn.dataset.id));
+        render();
       };
-      const records = loadRecords();
-      records.push({
-        time: new Date().toLocaleString('zh-CN'),
-        type: typeMap[type] || type,
-        content,
-        intensity
-      });
-      saveRecords(records);
-      document.getElementById('observeContent').value = '';
-      renderRecords();
     });
+  }
 
-    renderRecords();
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function buildAiPrompt() {
+    const list = load().slice(-15);
+    const sim = localStorage.getItem('ltzzz-sim-v1') || '{}';
+    let simBrief = '';
+    try {
+      const s = JSON.parse(sim);
+      simBrief = '模拟现金约 ' + (s.cash != null ? s.cash : '?') + '；持仓键：' + Object.keys(s.pos || {}).join(', ');
+    } catch (e) { simBrief = '无模拟数据'; }
+    const lines = list.map(r =>
+      `- [${r.time}] (${r.type || r.typeKey}, 强度${r.intensity}${r.asset ? ', ' + r.asset : ''}) ${r.content}${r.next ? ' | 下次:' + r.next : ''}`
+    ).join('\n');
+    return `你是复盘助手，不是投资顾问。根据下列「观」记录与模拟账户摘要，用中文输出：
+1) 重复出现的情绪/习气模式（3条内）
+2) 与买卖冲动相关的触发点
+3) 下周可执行的一条小规则（具体、可打卡）
+不要鼓励加杠杆或实盘跟单。不要索要密钥。
+
+【模拟账户摘要】${simBrief}
+
+【最近观记录】
+${lines || '（暂无）'}`;
+  }
+
+  document.getElementById('btnSave').onclick = () => {
+    const content = document.getElementById('gContent').value.trim();
+    if (!content) return alert('写一点观察内容');
+    const typeKey = document.getElementById('gType').value;
+    const list = load();
+    list.push({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      time: new Date().toLocaleString('zh-CN'),
+      typeKey,
+      type: typeLabel[typeKey],
+      intensity: document.getElementById('gIntensity').value,
+      asset: document.getElementById('gAsset').value.trim(),
+      content,
+      next: document.getElementById('gNext').value.trim()
+    });
+    save(list);
+    document.getElementById('gContent').value = '';
+    document.getElementById('gNext').value = '';
+    render();
+  };
+
+  document.getElementById('btnExport').onclick = () => {
+    const blob = new Blob([JSON.stringify(load(), null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ltzzz-guan-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+  };
+
+  document.getElementById('btnPrompt').onclick = async () => {
+    const t = buildAiPrompt();
+    try {
+      await navigator.clipboard.writeText(t);
+      alert('已复制。可粘贴到豆包 / DeepSeek / GPT / Claude / Grok 任意一个做复盘。');
+    } catch {
+      prompt('复制以下全文', t);
+    }
+  };
+
+  document.getElementById('filterType').onchange = render;
+  render();
   </script>
 </body>
 </html>

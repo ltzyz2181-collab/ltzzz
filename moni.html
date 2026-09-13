@@ -5,30 +5,209 @@
 <title>LTZZZ · AI投资模拟实验室</title>
 <link rel="stylesheet" href="style.css">
 <style>
-.trade{max-width:1100px;margin:auto;padding:70px 5vw}.trade h1{font-size:clamp(34px,6vw,64px);line-height:1.1;margin:0 0 18px}.sub{color:#666;max-width:760px}.panel{margin-top:30px;background:#fff;border:1px solid #ddd8ce;border-radius:22px;padding:28px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stat{border:1px solid #ddd8ce;border-radius:16px;padding:18px}.stat b{display:block;font-size:25px;margin-top:6px}.row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:12px;align-items:end;margin-top:18px}.field label{display:block;font-size:13px;color:#777;margin-bottom:6px}.field input,.field select{width:100%;padding:11px;border:1px solid #ccc;border-radius:10px;font-size:15px}.buy,.sell,.reset{padding:11px 16px;border-radius:999px;border:1px solid #222;cursor:pointer;font-weight:700}.buy{background:#171717;color:#fff}.sell{background:#fff}.reset{margin-top:18px}.table{width:100%;border-collapse:collapse;margin-top:24px}.table th,.table td{padding:12px;border-bottom:1px solid #eee;text-align:left}.note{font-size:13px;color:#777;margin-top:18px;line-height:1.7}.ai{background:#171717;color:#fff}.ai p{color:#bbb}.ai button{margin-top:8px}.ai-result{margin-top:15px;padding:14px;border:1px solid #444;border-radius:12px;color:#ddd;display:none}.back{display:inline-block;margin-bottom:35px;color:#333;text-decoration:none}@media(max-width:800px){.stats,.row{grid-template-columns:1fr}.table{font-size:13px}}
+.trade{max-width:1100px;margin:auto;padding:70px 5vw}
+.trade h1{font-size:clamp(34px,6vw,56px);line-height:1.1;margin:0 0 18px}
+.sub{color:#666;max-width:760px}
+.panel{margin-top:24px;background:#fff;border:1px solid #ddd8ce;border-radius:22px;padding:28px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stat{border:1px solid #ddd8ce;border-radius:16px;padding:18px}
+.stat b{display:block;font-size:25px;margin-top:6px}
+.row{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:12px;align-items:end;margin-top:18px}
+.field label{display:block;font-size:13px;color:#777;margin-bottom:6px}
+.field input,.field select{width:100%;padding:11px;border:1px solid #ccc;border-radius:10px;font-size:15px}
+.buy,.sell,.reset{padding:11px 16px;border-radius:999px;border:1px solid #222;cursor:pointer;font-weight:700}
+.buy{background:#171717;color:#fff}.sell{background:#fff}
+.reset{margin-top:18px}
+.table{width:100%;border-collapse:collapse;margin-top:24px}
+.table th,.table td{padding:12px;border-bottom:1px solid #eee;text-align:left}
+.note{font-size:13px;color:#777;margin-top:18px;line-height:1.7}
+.ai{background:#171717;color:#fff}.ai p{color:#bbb}
+.ai button{margin-top:8px;margin-right:8px}
+.ai-result{margin-top:15px;padding:14px;border:1px solid #444;border-radius:12px;color:#ddd;white-space:pre-wrap;font-size:13px;line-height:1.6;display:none}
+.guan-box{margin-top:12px;padding:12px;border:1px solid #333;border-radius:12px;font-size:13px;color:#ccc;max-height:180px;overflow:auto}
+.back{display:inline-block;margin-bottom:28px;color:#333;text-decoration:none}
+@media(max-width:800px){.stats,.row{grid-template-columns:1fr}.table{font-size:13px}}
 </style></head>
 <body>
 <div class="trade">
-<a class="back" href="index.html">← 返回 LTZZZ 数字实验室</a>
+<a class="back" href="index.html">← 返回首页</a>
+<a class="back" href="guan.html" style="margin-left:12px">← 观 · 每日记录</a>
 <h1>AI 投资模拟实验室</h1>
-<p class="sub">第一阶段只用虚拟资金。这里可以记录买卖、持仓和盈亏，为以后研究 AI 策略、回测和自动化执行建立实验台。<b>不会连接真实账户，也不会发起真实交易。</b></p>
+<p class="sub">虚拟资金练习。与「观」共用本机记录：每天观察 → 模拟买卖 → 复制给 AI 复盘 → 改规则。<b>不连接真实账户。</b></p>
+
 <div class="panel">
-<div class="stats"><div class="stat">初始资金<b id="initial">¥100,000</b></div><div class="stat">现金余额<b id="cash">¥100,000</b></div><div class="stat">账户总资产<b id="total">¥100,000</b></div></div>
-<div class="row"><div class="field"><label>资产名称</label><select id="asset"><option>BTC</option><option>ETH</option><option>TSLA</option><option>自定义</option></select></div><div class="field"><label>模拟价格</label><input id="price" type="number" min="0" step="0.01" value="100"></div><div class="field"><label>数量</label><input id="qty" type="number" min="0" step="0.0001" value="1"></div><button class="buy" onclick="trade('buy')">模拟买入</button></div>
-<div class="row"><div class="field"><label>卖出资产</label><select id="sellAsset"></select></div><div class="field"><label>卖出价格</label><input id="sellPrice" type="number" min="0" step="0.01" value="100"></div><div class="field"><label>数量</label><input id="sellQty" type="number" min="0" step="0.0001" value="1"></div><button class="sell" onclick="trade('sell')">模拟卖出</button></div>
-<button class="reset" onclick="resetSim()">重置模拟账户</button>
-<table class="table"><thead><tr><th>资产</th><th>持仓</th><th>最新模拟价</th><th>市值</th><th>成本</th><th>浮动盈亏</th></tr></thead><tbody id="positions"></tbody></table>
-<p class="note">实验规则：所有价格由你手工输入，因此这是“交易逻辑模拟”，不是实时行情。下一步可以接入公开行情 API，再做历史回测。</p>
+<div class="stats">
+  <div class="stat">初始资金<b id="initial">¥100,000</b></div>
+  <div class="stat">现金余额<b id="cash">¥100,000</b></div>
+  <div class="stat">账户总资产<b id="total">¥100,000</b></div>
 </div>
-<div class="panel ai"><h2>AI 策略实验位</h2><p>现在先不让 AI 动真实的钱。以后这里可以接入 AI：读取行情 → 形成假设 → 风控检查 → 模拟下单 → 记录结果 → 回测比较。</p><button class="buy" onclick="aiSuggest()">让 AI 生成模拟策略建议</button><div id="aiResult" class="ai-result"></div></div>
+<div class="row">
+  <div class="field"><label>资产</label>
+    <select id="asset"><option>BTC</option><option>ETH</option><option>TSLA</option><option>UNI</option><option>AAVE</option><option>自定义</option></select>
+  </div>
+  <div class="field"><label>模拟价格</label><input id="price" type="number" min="0" step="0.01" value="100"></div>
+  <div class="field"><label>数量</label><input id="qty" type="number" min="0" step="0.0001" value="1"></div>
+  <button class="buy" type="button" onclick="trade('buy')">模拟买入</button>
 </div>
+<div class="row">
+  <div class="field"><label>卖出资产</label><select id="sellAsset"></select></div>
+  <div class="field"><label>卖出价格</label><input id="sellPrice" type="number" min="0" step="0.01" value="100"></div>
+  <div class="field"><label>数量</label><input id="sellQty" type="number" min="0" step="0.0001" value="1"></div>
+  <button class="sell" type="button" onclick="trade('sell')">模拟卖出</button>
+</div>
+<button class="reset" type="button" onclick="resetSim()">重置模拟账户</button>
+<table class="table">
+  <thead><tr><th>资产</th><th>持仓</th><th>最新模拟价</th><th>市值</th><th>成本</th><th>浮动盈亏</th></tr></thead>
+  <tbody id="positions"></tbody>
+</table>
+<p class="note">价格手工输入。成交会写入本机，并自动带一条简短「观」记录（类型：投资），方便闭环。</p>
+</div>
+
+<div class="panel ai">
+  <h2>复盘闭环（观 × 模拟）</h2>
+  <p>读取本机「观」记录 + 当前模拟持仓，生成可粘贴到任意 AI 的复盘提示词（不自动调用付费 API）。</p>
+  <button class="buy" type="button" onclick="showGuan()">显示最近「观」</button>
+  <button class="buy" type="button" onclick="copyReviewPrompt()">复制 AI 复盘全文</button>
+  <button class="buy" type="button" onclick="quickGuan()">补记一条投资观察</button>
+  <div id="guanBox" class="guan-box" style="display:none"></div>
+  <div id="aiResult" class="ai-result"></div>
+</div>
+</div>
+
 <script>
-const KEY='ltzzz-sim-v1';let s=JSON.parse(localStorage.getItem(KEY)||'null')||{cash:100000,pos:{}};
-function money(x){return '¥'+Number(x).toLocaleString('zh-CN',{maximumFractionDigits:2});}
-function save(){localStorage.setItem(KEY,JSON.stringify(s));render();}
-function trade(type){let a=(type==='buy'?document.getElementById('asset'):document.getElementById('sellAsset')).value;let p=Number(type==='buy'?document.getElementById('price').value:document.getElementById('sellPrice').value);let q=Number(type==='buy'?document.getElementById('qty').value:document.getElementById('sellQty').value);if(!(p>0&&q>0))return alert('请输入有效的价格和数量');s.pos[a] ||= {qty:0,cost:0,price:p};if(type==='buy'){if(p*q>s.cash)return alert('现金不足（模拟账户）');s.cash-=p*q;s.pos[a].qty+=q;s.pos[a].cost+=p*q;s.pos[a].price=p}else{if(!s.pos[a]||s.pos[a].qty<q)return alert('持仓不足');s.cash+=p*q;s.pos[a].qty-=q;s.pos[a].cost-=s.pos[a].cost*(q/(s.pos[a].qty+q));s.pos[a].price=p;if(s.pos[a].qty<=1e-9)delete s.pos[a]}save();}
-function render(){let total=s.cash;let rows='';let sell='';for(const [a,v] of Object.entries(s.pos)){let mv=v.qty*v.price, pnl=mv-v.cost;total+=mv;rows+=`<tr><td>${a}</td><td>${v.qty}</td><td>${money(v.price)}</td><td>${money(mv)}</td><td>${money(v.cost)}</td><td>${money(pnl)}</td></tr>`;sell+=`<option>${a}</option>`}document.getElementById('cash').textContent=money(s.cash);document.getElementById('total').textContent=money(total);document.getElementById('positions').innerHTML=rows||'<tr><td colspan="6">暂无持仓。先做第一笔模拟交易。</td></tr>';document.getElementById('sellAsset').innerHTML=sell||'<option>暂无持仓</option>';}
-function resetSim(){if(confirm('确定重置模拟账户？')){s={cash:100000,pos:{}};save();}}
-function aiSuggest(){let n=Object.keys(s.pos).length;let text=n?'当前已有持仓。AI实验第一原则：先记录规则和风险，再比较策略，不因为一次盈利就增加仓位。':'目前没有持仓。可以先选择一种资产，设定一条明确的买入/卖出规则，用虚拟资金跑10—20次，再看胜率、收益和最大回撤。';let el=document.getElementById('aiResult');el.textContent=text;el.style.display='block';}
+const KEY = 'ltzzz-sim-v1';
+const GUAN = 'ltzzz_guan_v2';
+let s = JSON.parse(localStorage.getItem(KEY) || 'null') || { cash: 100000, pos: {}, logs: [] };
+
+function money(x) {
+  return '¥' + Number(x).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+}
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(s));
+  render();
+}
+
+function pushGuan(content, asset) {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(GUAN) || '[]'); } catch (e) {}
+  list.push({
+    id: Date.now() + '-sim',
+    time: new Date().toLocaleString('zh-CN'),
+    typeKey: 'invest',
+    type: '投资/模拟',
+    intensity: 5,
+    asset: asset || '',
+    content,
+    next: ''
+  });
+  localStorage.setItem(GUAN, JSON.stringify(list));
+}
+
+function trade(type) {
+  const a = (type === 'buy' ? document.getElementById('asset') : document.getElementById('sellAsset')).value;
+  const p = Number(type === 'buy' ? document.getElementById('price').value : document.getElementById('sellPrice').value);
+  const q = Number(type === 'buy' ? document.getElementById('qty').value : document.getElementById('sellQty').value);
+  if (!(p > 0 && q > 0)) return alert('请输入有效价格和数量');
+  s.pos[a] ||= { qty: 0, cost: 0, price: p };
+  if (type === 'buy') {
+    if (p * q > s.cash) return alert('现金不足');
+    s.cash -= p * q;
+    s.pos[a].qty += q;
+    s.pos[a].cost += p * q;
+    s.pos[a].price = p;
+    pushGuan('模拟买入 ' + a + ' 数量' + q + ' 价格' + p, a);
+  } else {
+    if (!s.pos[a] || s.pos[a].qty < q) return alert('持仓不足');
+    const prev = s.pos[a].qty;
+    s.cash += p * q;
+    s.pos[a].cost -= s.pos[a].cost * (q / prev);
+    s.pos[a].qty -= q;
+    s.pos[a].price = p;
+    if (s.pos[a].qty <= 1e-9) delete s.pos[a];
+    pushGuan('模拟卖出 ' + a + ' 数量' + q + ' 价格' + p, a);
+  }
+  s.logs = s.logs || [];
+  s.logs.push({ t: new Date().toISOString(), type, a, p, q });
+  save();
+}
+
+function render() {
+  let total = s.cash;
+  let rows = '';
+  let sell = '';
+  for (const [a, v] of Object.entries(s.pos)) {
+    const mv = v.qty * v.price, pnl = mv - v.cost;
+    total += mv;
+    rows += `<tr><td>${a}</td><td>${v.qty}</td><td>${money(v.price)}</td><td>${money(mv)}</td><td>${money(v.cost)}</td><td>${money(pnl)}</td></tr>`;
+    sell += `<option>${a}</option>`;
+  }
+  document.getElementById('cash').textContent = money(s.cash);
+  document.getElementById('total').textContent = money(total);
+  document.getElementById('positions').innerHTML = rows || '<tr><td colspan="6">暂无持仓</td></tr>';
+  document.getElementById('sellAsset').innerHTML = sell || '<option>暂无持仓</option>';
+}
+
+function resetSim() {
+  if (confirm('确定重置模拟账户？')) {
+    s = { cash: 100000, pos: {}, logs: [] };
+    save();
+  }
+}
+
+function loadGuan() {
+  try { return JSON.parse(localStorage.getItem(GUAN) || '[]'); } catch { return []; }
+}
+
+function showGuan() {
+  const list = loadGuan().filter(x => x.typeKey === 'invest' || x.typeKey === 'emotion' || x.typeKey === 'market').slice(-8);
+  const box = document.getElementById('guanBox');
+  box.style.display = 'block';
+  box.textContent = list.length
+    ? list.map(r => r.time + ' · ' + (r.content || '')).join('\n')
+    : '暂无投资/情绪相关观记录。可去「观」页写，或点「补记」。';
+}
+
+function buildReviewPrompt() {
+  const list = loadGuan().slice(-12);
+  const pos = Object.entries(s.pos).map(([a, v]) => a + ':' + v.qty).join(', ') || '空仓';
+  const lines = list.map(r =>
+    `- [${r.time}] (${r.type}, 强度${r.intensity}) ${r.content}`
+  ).join('\n');
+  return `你是复盘助手，不是荐股机器人。根据模拟账户与「观」记录：
+1) 指出重复的情绪/冲动模式
+2) 指出与交易相关的触发点
+3) 给出一条下周可执行的小规则
+禁止鼓励实盘重仓；不要索要密钥。
+
+模拟现金：${s.cash}
+持仓：${pos}
+
+观记录：
+${lines || '（无）'}`;
+}
+
+async function copyReviewPrompt() {
+  const t = buildReviewPrompt();
+  const el = document.getElementById('aiResult');
+  el.style.display = 'block';
+  el.textContent = t;
+  try {
+    await navigator.clipboard.writeText(t);
+    alert('已复制到剪贴板，可粘贴到豆包/DeepSeek/GPT等');
+  } catch (e) {
+    alert('请手动全选下方文本复制');
+  }
+}
+
+function quickGuan() {
+  const content = prompt('补记一条投资相关观察：');
+  if (!content || !content.trim()) return;
+  pushGuan(content.trim(), '');
+  showGuan();
+  alert('已写入「观」记录');
+}
+
 render();
-</script></body></html>
+</script>
+</body>
+</html>
