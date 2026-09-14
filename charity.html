@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="LTZZZ 公益 · 捐助计划——捐助资金用于帮助身处极端贫困和痛苦中的人，资金使用公开、可查，受助记录持续更新。">
+<title>公益 · 捐助计划 · LTZZZ</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.charity-wrap{max-width:900px;margin:0 auto;padding:88px 7vw 60px}
+.charity-wrap h1{font-size:clamp(32px,5vw,56px);line-height:1.1;letter-spacing:-.04em;margin:0 0 12px}
+.charity-lead{font-size:17px;color:#666;margin:0 0 36px;max-width:680px}
+.charity-panel{background:#fff;border:1px solid #ddd8ce;border-radius:22px;padding:32px;margin-bottom:24px}
+.charity-panel h2{font-size:22px;margin:0 0 16px;letter-spacing:-.02em}
+.charity-text{font-size:17px;color:#444;line-height:2;white-space:pre-line;margin:0}
+.addr-box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f5f3ee;border:1px dashed #c9c2b4;border-radius:12px;padding:14px 16px;margin-top:18px}
+.addr-box code{font-size:14px;word-break:break-all;color:#171717;flex:1;min-width:240px}
+.note{font-size:13px;color:#888;margin-top:14px;line-height:1.7}
+.wallet-area{margin-top:22px}
+.records{list-style:none;padding:0;margin:0}
+.records li{padding:14px 0;border-bottom:1px solid #eee;font-size:15px;color:#444;line-height:1.7}
+.records li b{color:#171717;margin-right:10px;white-space:nowrap}
+.record-placeholder{font-size:14px;color:#999;border:1px dashed #ddd8ce;border-radius:12px;padding:18px;text-align:center;margin:0}
+.hint{font-size:13px;color:#888;margin-top:8px}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="brand">LTZZZ <span>公益 · 捐助计划</span></div>
+  <nav>
+    <a href="index.html">首页</a>
+    <a href="donate-sim.html">模拟捐赠</a>
+    <a href="ai-chat.html">AI对话（代理）</a>
+    <a href="agi.html">未来（AGI）</a>
+  </nav>
+</header>
+
+<main class="charity-wrap">
+  <p class="eyebrow">CHARITY · 捐助计划</p>
+  <h1>公益 · 捐助计划</h1>
+  <p class="charity-lead">每一笔捐助的去向都会公开、可查。如果你也认同这个方向，欢迎通过下方钱包地址捐助，任何金额都是帮助。</p>
+
+  <div class="charity-panel">
+    <h2>关于本项目的捐助计划</h2>
+    <p class="charity-text">本网站的捐助资金，目标用途是帮助身处极端贫困和痛苦中的人。
+这不是投资，不是入股，捐助者不获得任何回报、分成或所有权。
+资金使用方式会公开、可查，具体受助对象和发放记录会在这个页面持续更新。
+如果你也认同这个方向，欢迎通过页面上的钱包地址捐助，
+任何金额都是帮助。</p>
+  </div>
+
+  <div class="charity-panel">
+    <h2>如何捐助 · 钱包地址</h2>
+    <p style="margin:0;color:#555;font-size:15px">直接向以下地址转账（支持 ETH / ERC-20 代币）。转账前请核对地址，链上转账不可撤回。</p>
+    <div class="addr-box">
+      <code id="receiverAddress">0x0000000000000000000000000000000000dEaD</code>
+      <button class="button" type="button" id="copyAddress">复制地址</button>
+    </div>
+    <p class="note">* 当前页面显示的是网站代码（wallet.js）中配置的收款地址，为占位地址，正式对外公布前请替换成你的真实钱包地址。</p>
+    <div class="wallet-area">
+      <button id="connectWallet" class="wallet-btn">连接钱包</button>
+      <div id="walletStatus" class="wallet-status"></div>
+      <div id="walletBalances" class="wallet-balances" style="display:none"><span>ETH：<b id="ethBalance">--</b></span><span>USDT：<b id="usdtBalance">--</b></span><button id="refreshBalances" type="button">刷新</button></div>
+      <div id="walletDetail" class="hint"></div>
+    </div>
+  </div>
+
+  <div class="charity-panel">
+    <h2>受助记录</h2>
+    <!--
+      受助记录：在此手动添加，每一条复制一行 <li> 即可，例如：
+      <li><b>2026-09-01</b>某地 · 某某 · 用途：医疗救助</li>
+      添加后页面会自动隐藏下方的"暂无记录"占位文字。
+    -->
+    <ul id="records" class="records"></ul>
+    <p class="record-placeholder" id="recordsEmpty">暂无记录 —— 资金开始使用后，具体受助对象和发放记录会逐条更新在这里。</p>
+  </div>
+</main>
+
+<footer>© 2026 LTZZZ Digital Lab · 公益 · 捐助计划</footer>
+<script src="script.js"></script>
+<script>
+// 受助记录：有记录时自动隐藏"暂无记录"占位文字
+(function () {
+  const records = document.getElementById('records');
+  const empty = document.getElementById('recordsEmpty');
+  if (records && empty) {
+    if (records.children.length > 0) empty.style.display = 'none';
+  }
+})();
+
+// 复制收款地址
+document.getElementById('copyAddress').addEventListener('click', function () {
+  const addr = document.getElementById('receiverAddress').textContent.trim();
+  function fallback() {
+    const ta = document.createElement('textarea');
+    ta.value = addr;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); alert('已复制收款地址'); }
+    catch (e) { prompt('请手动复制收款地址：', addr); }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(function () { alert('已复制收款地址'); }, fallback);
+  } else {
+    fallback();
+  }
+});
+</script>
+</body>
+</html>
