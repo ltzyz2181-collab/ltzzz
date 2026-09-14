@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ 多 Agent 实验室</title>
+<meta name="description" content="LTZZZ 多 Agent 实验页：DeepSeek、豆包、ChatGPT、Grok、Claude。真实 API 通过后端代理接入。">
+<style>
+:root{--bg:#030812;--panel:#071321;--line:#173a57;--text:#eef8ff;--muted:#8eabc0;--cyan:#59e5ff;--green:#6bf0bb;--blue:#6b8cff;--gold:#ffd27a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#0a2540 0,#030812 45%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 22px;background:rgba(3,8,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.brand{font-weight:800;letter-spacing:1px}.brand span{color:var(--cyan)}nav a{color:var(--muted);text-decoration:none;margin-right:14px;font-size:14px}.wrap{max-width:1160px;margin:auto;padding:28px 20px 60px}.banner{padding:12px 15px;border-radius:12px;background:#0b2030;border:1px solid #20516e;color:#bfe5ff;font-size:13px;margin-bottom:18px}.eyebrow{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:700}h1{font-size:clamp(30px,5vw,52px);line-height:1.1;margin:10px 0}.lead{color:var(--muted);max-width:900px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:20px}@media(max-width:900px){.grid{grid-template-columns:1fr}}.panel{background:linear-gradient(145deg,#081726,#050b15);border:1px solid var(--line);border-radius:18px;padding:20px}.panel h2{margin:0 0 10px;font-size:19px}.panel p,.note{color:var(--muted);font-size:14px}.agents{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}@media(max-width:900px){.agents{grid-template-columns:repeat(2,1fr)}}.agent{background:#02070e;border:1px solid var(--line);border-radius:14px;padding:12px}.agent strong{display:block;margin-bottom:4px}.agent small{color:var(--muted)}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:11px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.row{grid-template-columns:1fr}}label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}input,textarea,select{width:100%;background:#02060d;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}textarea{min-height:120px;resize:vertical}.btn{display:inline-block;border:1px solid #2a6688;background:#0a2033;color:var(--text);padding:10px 14px;border-radius:10px;text-decoration:none;cursor:pointer;margin:8px 8px 0 0;font-size:14px}.btn.primary{background:#0b667a;border-color:#2bd9ee}.btn.green{background:#0b4d3a;border-color:#4de0a7}.btn.gold{background:#4f3b09;border-color:#b99130}.result{margin-top:14px;background:#02060d;border:1px solid var(--line);border-radius:12px;padding:14px;white-space:pre-wrap;min-height:100px}.status{font-size:13px;color:var(--muted);margin-top:8px}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.steps{padding-left:20px;color:var(--muted)}.steps li{margin:8px 0}footer{text-align:center;color:#55738a;padding:30px;font-size:13px}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">LTZZZ <span>MULTI AGENT LAB</span></div><nav><a href="index.html">首页</a><a href="agi-lab.html">共同实验室</a><a href="deepseek.html">DeepSeek</a><a href="wallet-lab.html">钱包</a></nav></header>
+<main class="wrap">
+<div class="banner"><strong>当前状态：</strong>这个页面现在先把“多 Agent”骨架和 DeepSeek 真实调用入口做起来。豆包真实调用需要你在 Cloudflare Worker 或其他后端配置 Agent Plan 专属 Key；不要把 Key 写进 GitHub 静态网页。</div>
+<div class="eyebrow">LTZZZ · AGENT ORCHESTRATOR</div>
+<h1>多 Agent 实验室</h1>
+<p class="lead">先验证两件事：① 页面能访问；② DeepSeek 能真实回答。豆包、ChatGPT、Grok、Claude 先作为 Agent 席位保留，接入后再切换为真实 API。</p>
+
+<section class="panel" style="margin-top:18px"><h2>五个 Agent</h2><div class="agents"><div class="agent"><strong>豆包 Agent</strong><small>中国互联网 / 执行 / Coding</small><span class="tag">待接入</span></div><div class="agent"><strong>DeepSeek Agent</strong><small>研究 / Coding / 分析</small><span class="tag">可测试</span></div><div class="agent"><strong>ChatGPT Agent</strong><small>总控 / 规划 / 汇总</small><span class="tag">总控位</span></div><div class="agent"><strong>Grok Agent</strong><small>实时信息 / 海外视角</small><span class="tag">待接入</span></div><div class="agent"><strong>Claude Agent</strong><small>长文 / 代码审查</small><span class="tag">待接入</span></div></div></section>
+
+<div class="grid">
+<section class="panel"><h2>① DeepSeek 真实调用测试</h2><p>把你自己的 Cloudflare Worker 地址填进来。Worker 负责持有 <span class="mono">DEEPSEEK_API_KEY</span>，网页本身不保存 Key。</p><label>DeepSeek Worker 地址</label><input id="deepEndpoint" placeholder="https://你的worker.workers.dev"><label>问题</label><textarea id="deepPrompt">请给我设计一个 LTZZZ 多 Agent 实验，要求今天就能验证。</textarea><button class="btn primary" id="deepRun">调用 DeepSeek</button><div class="status" id="deepStatus">等待测试</div><div class="result" id="deepResult">暂无结果</div></section>
+
+<section class="panel"><h2>② 豆包 Agent 接入口</h2><p>豆包使用方舟 Agent Plan 专属 Key。这里先准备接口位，等 Worker 部署好就可以接入。</p><div class="row"><div><label>豆包 Worker 地址</label><input id="doubaoEndpoint" placeholder="https://你的doubao-worker.workers.dev"></div><div><label>模型</label><input value="doubao-seed-evolving" id="doubaoModel"></div></div><label>测试问题</label><textarea id="doubaoPrompt">请把 LTZZZ 网站改造成一个可以验证多 Agent 协作的实验室，并列出今天可以执行的三步。</textarea><button class="btn green" id="doubaoRun">测试豆包 Agent</button><div class="status" id="doubaoStatus">尚未配置 Worker</div><div class="result" id="doubaoResult">暂无结果</div></section></div>
+
+<section class="panel" style="margin-top:16px"><h2>③ 让 ChatGPT 做总控</h2><p>后续把 DeepSeek / 豆包 / Grok / Claude 的结果交给总控 Agent，让它做任务拆分、汇总和实验记录。当前静态网页先保留结构，不假装已经实现跨平台真实互聊。</p><textarea id="orchestrator">任务：帮我设计一个今天可验证的 LTZZZ AI 赚钱实验。请先拆成：市场、技术、成本、验证指标，然后分别交给不同 Agent 分析，最后给出一个最小实验。</textarea><button class="btn gold" onclick="navigator.clipboard.writeText(document.getElementById('orchestrator').value);alert('总控提示词已复制')">复制总控提示词</button><a class="btn" href="agi-lab.html">查看原圆桌模拟</a></section>
+
+<section class="panel" style="margin-top:16px"><h2>④ 让豆包真正帮你“部署/改网站”</h2><ol class="steps"><li>在你的电脑准备 Node.js + Git。</li><li>安装火山引擎 Skills：<span class="mono">npx -y @volcengine/skills-setup@latest</span>。</li><li>在 Claude Code / 兼容 Agent 工具里启用火山引擎 Skills，并让模型使用 <span class="mono">doubao-seed-evolving</span>。</li><li>把本仓库 <span class="mono">ltzyz2181-collab/ltzzz</span> 克隆到电脑，让 Agent 在本地直接修改代码、运行检查、提交 Git。</li><li>GitHub Pages 会从 <span class="mono">main</span> 分支继续发布。</li></ol><p class="note">官方近期文档显示 <span class="mono">@volcengine/skills-setup</span> 用于向 Claude Code 等开发 Agent 注入火山引擎 Skills；Doubao-Seed-Evolving 可通过 Agent Plan 接入 Claude Code。它和“把豆包 API 直接放进公开网页”是两件事。</p></section>
+</main><footer>LTZZZ · 多 Agent 实验室 · 先验证，再扩展</footer>
+<script>
+async function callWorker(endpoint,prompt,statusEl,resultEl){
+  endpoint=(endpoint||'').trim(); if(!endpoint){statusEl.textContent='请先填写 Worker 地址';return}
+  statusEl.textContent='正在调用…'; resultEl.textContent='';
+  try{
+    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],temperature:.7})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data?.error?.message||data?.error||('HTTP '+r.status));
+    resultEl.textContent=data?.choices?.[0]?.message?.content||data?.output?.text||JSON.stringify(data,null,2);statusEl.textContent='调用成功';
+  }catch(e){statusEl.textContent='调用失败';resultEl.textContent=e.message+'\n\n如果是 CORS/网络错误，请检查 Worker 是否允许该站点访问。'}
+}
+document.getElementById('deepRun').onclick=()=>callWorker(document.getElementById('deepEndpoint').value,document.getElementById('deepPrompt').value,document.getElementById('deepStatus'),document.getElementById('deepResult'));
+document.getElementById('doubaoRun').onclick=()=>callWorker(document.getElementById('doubaoEndpoint').value,document.getElementById('doubaoPrompt').value,document.getElementById('doubaoStatus'),document.getElementById('doubaoResult'));
+</script>
+</body></html>
