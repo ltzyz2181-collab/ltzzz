@@ -1,7 +1,7 @@
 // ============ 连接 MetaMask 钱包 ============
 
 // 收款地址(以后你自己的钱包地址会放在这里)
-const RECEIVER_ADDRESS = "0x0000000000000000000000000000000000dEaD";
+const RECEIVER_ADDRESS = "0xb99C6751f443842F4987bb2017580405572Df905";
 
 async function connectWallet() {
   const statusBox = document.getElementById("walletStatusBox");
