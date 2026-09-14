@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模拟捐赠 · LTZZZ</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.wrap{max-width:720px;margin:0 auto;padding:88px 5vw 60px}
+.banner{background:#7c2d12;color:#fff;border-radius:12px;padding:12px 16px;font-size:14px;font-weight:600;margin-bottom:24px;line-height:1.5}
+.panel{background:#fff;border:1px solid #ddd8ce;border-radius:16px;padding:24px;margin-bottom:18px}
+.panel h2{margin:0 0 12px;font-size:18px}
+label{display:block;font-size:13px;color:#666;margin:12px 0 6px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd8ce;border-radius:10px;font-size:15px}
+textarea{min-height:72px;resize:vertical}
+.stat{font-size:14px;color:#555;margin:6px 0}
+.stat strong{color:#171717;font-size:22px}
+.log{max-height:220px;overflow:auto;font-size:13px;color:#555;border-top:1px solid #eee;margin-top:12px;padding-top:10px}
+.log div{margin-bottom:6px}
+.back{display:inline-block;margin-bottom:20px;color:#333;text-decoration:none}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="brand">LTZZZ <span>模拟捐赠</span></div>
+  <nav>
+    <a href="index.html">首页</a>
+    <a href="agi-lab.html">共同实验室</a>
+    <a href="ai-chat.html">AI对话</a>
+  </nav>
+</header>
+<div class="wrap">
+  <a class="back" href="index.html">← 返回</a>
+  <div class="banner">本页为本地模拟捐赠与模拟充值。数据仅存本机 localStorage，不连接真实支付、不转账、不调用支付宝/微信收款接口。</div>
+
+  <div class="panel">
+    <h2>模拟账户</h2>
+    <p class="stat">可用模拟余额<br><strong id="bal">¥ 0.00</strong></p>
+    <p class="stat">累计模拟捐赠<br><strong id="donated">¥ 0.00</strong></p>
+    <label>模拟充值金额（元）</label>
+    <input type="number" id="rechargeAmt" min="1" step="1" value="100">
+    <button class="button primary" type="button" id="btnRecharge" style="margin-top:12px">模拟充值</button>
+    <button class="button" type="button" id="btnReset" style="margin-top:12px;margin-left:8px">重置模拟账户</button>
+  </div>
+
+  <div class="panel">
+    <h2>模拟捐赠到项目</h2>
+    <label>项目</label>
+    <select id="project">
+      <option value="教育助学">教育助学</option>
+      <option value="医疗援助">医疗援助</option>
+      <option value="乡村振兴">乡村振兴</option>
+      <option value="应急救灾">应急救灾</option>
+      <option value="自定义">自定义</option>
+    </select>
+    <label>自定义项目名（选「自定义」时填写）</label>
+    <input id="customName" placeholder="可选">
+    <label>捐赠金额（元）</label>
+    <input type="number" id="donateAmt" min="1" step="1" value="10">
+    <label>备注</label>
+    <textarea id="note" placeholder="可选备注"></textarea>
+    <button class="button primary" type="button" id="btnDonate" style="margin-top:12px">确认模拟捐赠</button>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+<footer>© 2026 LTZZZ · 模拟捐赠页</footer>
+<script>
+(function () {
+  const KEY = 'ltzzz_donate_sim_v1';
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { balance: 0, donated: 0, logs: [] };
+  }
+  function save(s) {
+    localStorage.setItem(KEY, JSON.stringify(s));
+  }
+  function fmt(n) {
+    return Number(n).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  let state = load();
+
+  function render() {
+    document.getElementById('bal').textContent = '¥ ' + fmt(state.balance);
+    document.getElementById('donated').textContent = '¥ ' + fmt(state.donated);
+    const logEl = document.getElementById('log');
+    logEl.innerHTML = (state.logs || []).slice(-40).reverse().map(function (l) {
+      return '<div>' + l + '</div>';
+    }).join('') || '<div>暂无记录</div>';
+  }
+
+  document.getElementById('btnRecharge').onclick = function () {
+    const amt = parseFloat(document.getElementById('rechargeAmt').value);
+    if (!(amt > 0)) { alert('请输入有效金额'); return; }
+    state.balance += amt;
+    state.logs.push(new Date().toLocaleString('zh-CN') + ' 模拟充值 +' + fmt(amt));
+    save(state);
+    render();
+  };
+
+  document.getElementById('btnDonate').onclick = function () {
+    const amt = parseFloat(document.getElementById('donateAmt').value);
+    if (!(amt > 0)) { alert('请输入有效金额'); return; }
+    if (amt > state.balance) { alert('模拟余额不足，请先充值'); return; }
+    let name = document.getElementById('project').value;
+    if (name === '自定义') {
+      name = (document.getElementById('customName').value || '').trim() || '自定义项目';
+    }
+    const note = (document.getElementById('note').value || '').trim();
+    state.balance -= amt;
+    state.donated += amt;
+    state.logs.push(
+      new Date().toLocaleString('zh-CN') +
+      ' 模拟捐赠 ' + name + ' -' + fmt(amt) +
+      (note ? '（' + note + '）' : '')
+    );
+    save(state);
+    render();
+  };
+
+  document.getElementById('btnReset').onclick = function () {
+    if (!confirm('重置模拟账户？')) return;
+    state = { balance: 0, donated: 0, logs: [] };
+    save(state);
+    render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>

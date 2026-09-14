@@ -9,7 +9,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   });
 });
 
-// ========== 钱包连接（支持 MetaMask + 欧易 OKX Web3 钱包） ==========
+// ========== 钱包连接（仅观察：地址 + 余额） ==========
 const connectBtn = document.getElementById('connectWallet');
 const connectBtn2 = document.getElementById('connectWallet2');
 const disconnectBtn = document.getElementById('disconnectWallet');
@@ -19,15 +19,37 @@ const walletDetail = document.getElementById('walletDetail');
 let currentAccount = null;
 let provider = null;
 
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
+}
+
 function shortAddress(addr) {
   return addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '';
 }
 
 function getProvider() {
-  // 优先欧易 OKX，其次 MetaMask，再次其他注入的 ethereum
   if (window.okxwallet) return window.okxwallet;
   if (window.ethereum) return window.ethereum;
   return null;
+}
+
+function showNoWalletHelp() {
+  const mobile = isMobile();
+  let msg = '未检测到钱包注入。\n\n';
+  if (mobile) {
+    msg +=
+      '【手机端】普通浏览器通常没有钱包插件。\n' +
+      '请任选其一：\n' +
+      '1. 打开 MetaMask App 或 欧易 OKX App，用「应用内浏览器」打开本站\n' +
+      '2. 电脑浏览器安装 MetaMask / OKX 扩展后再试\n' +
+      '3. 使用支持 WalletConnect 的钱包 App（本页以 App 内置浏览器为主）\n\n' +
+      '本站只读取地址与余额。';
+  } else {
+    msg +=
+      '【电脑端】请安装并解锁 MetaMask 或 欧易 OKX 浏览器扩展，然后刷新本页再点「连接钱包」。\n\n' +
+      '本站只读取地址与余额。';
+  }
+  alert(msg);
 }
 
 function updateUI(account) {
@@ -41,7 +63,6 @@ function updateUI(account) {
     if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
     if (walletStatus) walletStatus.textContent = `已连接：${shortAddress(account)}`;
     if (walletDetail) walletDetail.textContent = `已连接钱包：${account}`;
-    // 连接成功后自动读取一次余额
     loadBalances(account);
   } else {
     if (connectBtn) {
@@ -51,7 +72,11 @@ function updateUI(account) {
     if (connectBtn2) connectBtn2.style.display = 'inline-block';
     if (disconnectBtn) disconnectBtn.style.display = 'none';
     if (walletStatus) walletStatus.textContent = '';
-    if (walletDetail) walletDetail.textContent = '尚未连接。点击右上角「连接钱包」开始（支持 MetaMask / 欧易 OKX）。';
+    if (walletDetail) {
+      walletDetail.textContent = isMobile()
+        ? '手机请用 MetaMask / OKX App 内置浏览器打开本站后再连接。'
+        : '尚未连接。点击右上角「连接钱包」（支持 MetaMask / 欧易 OKX）。';
+    }
     if (walletBalancesEl) walletBalancesEl.style.display = 'none';
     if (ethBalanceEl) ethBalanceEl.textContent = '--';
     if (usdtBalanceEl) usdtBalanceEl.textContent = '--';
@@ -61,7 +86,7 @@ function updateUI(account) {
 async function connectWallet() {
   provider = getProvider();
   if (!provider) {
-    alert('未检测到钱包。请安装 MetaMask 或 欧易 OKX Web3 钱包插件后重试。');
+    showNoWalletHelp();
     return;
   }
   try {
@@ -74,7 +99,7 @@ async function connectWallet() {
     if (err.code === 4001) {
       alert('你拒绝了连接请求');
     } else {
-      alert('连接失败，请重试');
+      alert('连接失败，请重试。若在手机，请用钱包 App 内置浏览器打开本站。');
     }
   }
 }
@@ -87,13 +112,11 @@ if (connectBtn) connectBtn.addEventListener('click', connectWallet);
 if (connectBtn2) connectBtn2.addEventListener('click', connectWallet);
 if (disconnectBtn) disconnectBtn.addEventListener('click', disconnectWallet);
 
-// ========== 余额显示（ETH / USDT，连接后自动读取 + 手动刷新） ==========
 const walletBalancesEl = document.getElementById('walletBalances');
 const ethBalanceEl = document.getElementById('ethBalance');
 const usdtBalanceEl = document.getElementById('usdtBalance');
 const refreshBalancesBtn = document.getElementById('refreshBalances');
 
-// 以太坊主网 USDT（ERC-20）合约地址
 const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 
 function hexToDecimal(hex, decimals) {
@@ -133,16 +156,18 @@ async function loadBalances(account) {
 
 if (refreshBalancesBtn) refreshBalancesBtn.addEventListener('click', () => loadBalances(currentAccount));
 
-// 页面加载时检查已连接状态
 (async function initWallet() {
   provider = getProvider();
-  if (!provider) return;
+  if (!provider) {
+    if (walletDetail && isMobile()) {
+      walletDetail.textContent = '手机请用 MetaMask / OKX App 内置浏览器打开本站后再连接。';
+    }
+    return;
+  }
   try {
     const accounts = await provider.request({ method: 'eth_accounts' });
     if (accounts && accounts.length > 0) updateUI(accounts[0]);
   } catch (e) {}
-
-  // 监听账户变化
   if (provider.on) {
     provider.on('accountsChanged', accounts => {
       updateUI(accounts && accounts.length > 0 ? accounts[0] : null);
