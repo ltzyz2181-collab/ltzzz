@@ -41,6 +41,8 @@ function updateUI(account) {
     if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
     if (walletStatus) walletStatus.textContent = `已连接：${shortAddress(account)}`;
     if (walletDetail) walletDetail.textContent = `已连接钱包：${account}`;
+    // 连接成功后自动读取一次余额
+    loadBalances(account);
   } else {
     if (connectBtn) {
       connectBtn.textContent = '连接钱包';
@@ -50,6 +52,9 @@ function updateUI(account) {
     if (disconnectBtn) disconnectBtn.style.display = 'none';
     if (walletStatus) walletStatus.textContent = '';
     if (walletDetail) walletDetail.textContent = '尚未连接。点击右上角「连接钱包」开始（支持 MetaMask / 欧易 OKX）。';
+    if (walletBalancesEl) walletBalancesEl.style.display = 'none';
+    if (ethBalanceEl) ethBalanceEl.textContent = '--';
+    if (usdtBalanceEl) usdtBalanceEl.textContent = '--';
   }
 }
 
@@ -81,6 +86,52 @@ function disconnectWallet() {
 if (connectBtn) connectBtn.addEventListener('click', connectWallet);
 if (connectBtn2) connectBtn2.addEventListener('click', connectWallet);
 if (disconnectBtn) disconnectBtn.addEventListener('click', disconnectWallet);
+
+// ========== 余额显示（ETH / USDT，连接后自动读取 + 手动刷新） ==========
+const walletBalancesEl = document.getElementById('walletBalances');
+const ethBalanceEl = document.getElementById('ethBalance');
+const usdtBalanceEl = document.getElementById('usdtBalance');
+const refreshBalancesBtn = document.getElementById('refreshBalances');
+
+// 以太坊主网 USDT（ERC-20）合约地址
+const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+
+function hexToDecimal(hex, decimals) {
+  try {
+    const raw = BigInt(hex);
+    const divisor = 10n ** BigInt(decimals);
+    const intPart = raw / divisor;
+    const fracPart = raw % divisor;
+    const fracStr = fracPart.toString().padStart(decimals, '0').replace(/0+$/, '');
+    const frac = fracStr ? fracStr.slice(0, 4) : '0';
+    return `${intPart}.${frac}`;
+  } catch (e) {
+    return '--';
+  }
+}
+
+async function loadBalances(account) {
+  if (!provider || !account) return;
+  if (walletBalancesEl) walletBalancesEl.style.display = 'flex';
+  if (ethBalanceEl) ethBalanceEl.textContent = '读取中…';
+  if (usdtBalanceEl) usdtBalanceEl.textContent = '读取中…';
+  try {
+    const [ethWei, usdtRaw] = await Promise.all([
+      provider.request({ method: 'eth_getBalance', params: [account, 'latest'] }),
+      provider.request({
+        method: 'eth_call',
+        params: [{ to: USDT_CONTRACT, data: '0x70a08231' + account.slice(2).toLowerCase().padStart(64, '0') }, 'latest'],
+      }),
+    ]);
+    if (ethBalanceEl) ethBalanceEl.textContent = hexToDecimal(ethWei, 18);
+    if (usdtBalanceEl) usdtBalanceEl.textContent = hexToDecimal(usdtRaw, 6);
+  } catch (e) {
+    if (ethBalanceEl) ethBalanceEl.textContent = '读取失败';
+    if (usdtBalanceEl) usdtBalanceEl.textContent = '读取失败';
+  }
+}
+
+if (refreshBalancesBtn) refreshBalancesBtn.addEventListener('click', () => loadBalances(currentAccount));
 
 // 页面加载时检查已连接状态
 (async function initWallet() {
