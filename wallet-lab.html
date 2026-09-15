@@ -60,8 +60,9 @@ html[lang="en"] .lang-toggle .lang-en{font-weight:600}
   <h2 data-i18n="donate.title">LTZZZ Support / Donate</h2>
   <p class="muted" data-i18n="donate.desc">支持 LTZZZ：选择资产（ETH / USDC）后点击「发起赞赏」，链上交易由你的钱包弹窗确认；赞赏记录进入收益控制台「LTZZZ 赞赏」，与平台收入分开统计。</p>
   <div class="tip-box">
-    <h3 data-i18n="donate.recv">LTZZZ 收款地址</h3>
-    <div class="addr" id="donateAddr">ltzzz.eth（填写你的 ENS 或 0x 地址）</div>
+    <h3 data-i18n="donate.recv">LTZZZ Settlement Wallet（唯一结算地址）</h3>
+    <div class="addr" id="donateAddr">加载中…</div>
+    <div style="font-size:11px;color:#7fae92;margin-top:6px">状态：<span id="donateLock">已锁定</span> · 网络：<span id="donateNet">Ethereum Mainnet</span> · 全站唯一，禁止前端修改</div>
   </div>
   <div class="row">
     <div>
@@ -79,6 +80,27 @@ html[lang="en"] .lang-toggle .lang-en{font-weight:600}
   <br>
   <button class="btn gold" id="donate" data-i18n="donate.btn">发起赞赏（钱包确认）</button>
   <div class="status" id="donateOut">尚未发起赞赏</div>
+</section>
+
+<section class="panel">
+  <h2 data-i18n="settle.title">Settlement Wallet · 结算钱包</h2>
+  <p class="muted" data-i18n="settle.desc">LTZZZ 唯一官方结算地址，全站所有链上收入（Donate / ETH / USDC / Agent Payment / Creator 链上收入）统一汇入。地址已锁定，禁止普通页面修改。</p>
+  <div class="tip-box">
+    <h3>唯一结算地址</h3>
+    <div class="addr" id="settleAddr">加载中…</div>
+  </div>
+  <div class="row">
+    <div><div class="small" data-i18n="settle.net">网络</div><div class="big" id="settleNet" style="font-size:16px">--</div></div>
+    <div><div class="small" data-i18n="settle.asset">资产</div><div class="big" id="settleAsset" style="font-size:16px">--</div></div>
+  </div>
+  <div class="row">
+    <div><div class="small" data-i18n="settle.eth">累计收到 ETH</div><div class="big" id="settleEth" style="font-size:18px">--</div></div>
+    <div><div class="small" data-i18n="settle.usdc">累计收到 USDC</div><div class="big" id="settleUsdc" style="font-size:18px">--</div></div>
+  </div>
+  <div class="small" style="margin-top:10px" data-i18n="settle.tx">交易记录</div>
+  <div class="ledger" id="settleTx" style="max-height:160px;overflow:auto;margin-top:6px"><div class="item">暂无交易记录</div></div>
+  <button class="btn" id="refreshSettle" data-i18n="settle.refresh">刷新链上余额</button>
+  <div class="status" id="settleOut" style="font-size:12px">连接钱包后可读取链上数据</div>
 </section>
 
 <section class="panel">
@@ -113,6 +135,14 @@ window.I18N_DICT = {
     "sim.desc": "只记录在本机浏览器，不产生链上交易。用于测试收益控制台统计。",
     "sim.placeholder": "例如 1 元",
     "sim.btn": "记录模拟捐赠",
+    "settle.title": "Settlement Wallet · 结算钱包",
+    "settle.desc": "LTZZZ 唯一官方结算地址，全站所有链上收入（Donate / ETH / USDC / Agent Payment / Creator 链上收入）统一汇入。地址已锁定，禁止普通页面修改。",
+    "settle.net": "网络",
+    "settle.asset": "资产",
+    "settle.eth": "累计收到 ETH",
+    "settle.usdc": "累计收到 USDC",
+    "settle.tx": "交易记录",
+    "settle.refresh": "刷新链上余额",
     "back": "← 返回 AGI 共同实验室"
   },
   en: {
@@ -134,11 +164,20 @@ window.I18N_DICT = {
     "sim.desc": "Stored only in this browser; no on-chain transaction is created. For testing revenue console statistics.",
     "sim.placeholder": "e.g. 1 yuan",
     "sim.btn": "Record Simulated Donation",
+    "settle.title": "Settlement Wallet",
+    "settle.desc": "LTZZZ's single official settlement address. All on-chain revenue (Donate / ETH / USDC / Agent Payment / Creator on-chain income) flows here. Address is locked; normal pages cannot modify it.",
+    "settle.net": "Network",
+    "settle.asset": "Assets",
+    "settle.eth": "Total ETH received",
+    "settle.usdc": "Total USDC received",
+    "settle.tx": "Transactions",
+    "settle.refresh": "Refresh On-chain Balance",
     "back": "← Back to AGI Common Lab"
   }
 };
 </script>
 <script src="i18n.js"></script>
+<script src="ltzzz-settlement.js"></script>
 <script>
 let provider=null,account=null;
 const $=id=>document.getElementById(id);
@@ -147,6 +186,22 @@ function usdcHex(v){return '0x'+BigInt(Math.round(Number(v)*1e6)).toString(16)}
 // USDC (Ethereum) 合约地址
 const USDC_ADDR='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 function detect(){provider=window.ethereum||window.okxwallet||null;return provider}
+
+// ===== 唯一结算地址（来自 ltzzz-settlement.js，全站单源）=====
+function settlementAddress() {
+  return window.LTZZZ_SETTLEMENT_WALLET && /^0x[a-fA-F0-9]{40}$/.test(window.LTZZZ_SETTLEMENT_WALLET.address)
+    ? window.LTZZZ_SETTLEMENT_WALLET.address : null;
+}
+(function () {
+  var addr = settlementAddress();
+  $('donateAddr').textContent = addr || '未配置';
+  $('donateLock').textContent = (window.LTZZZ_SETTLEMENT_WALLET && window.LTZZZ_SETTLEMENT_WALLET.status) || 'locked';
+  $('donateNet').textContent = (window.LTZZZ_SETTLEMENT_WALLET && window.LTZZZ_SETTLEMENT_WALLET.network) || '--';
+  $('settleAddr').textContent = addr || '未配置';
+  $('settleNet').textContent = (window.LTZZZ_SETTLEMENT_WALLET && window.LTZZZ_SETTLEMENT_WALLET.network) || '--';
+  $('settleAsset').textContent = (window.LTZZZ_SETTLEMENT_WALLET && window.LTZZZ_SETTLEMENT_WALLET.assets.join(', ')) || '--';
+})();
+
 async function connect(){
   if(!detect()){$('status').textContent='没有检测到浏览器钱包。手机请用 MetaMask/OKX App 的内置浏览器打开。';return}
   try{
@@ -204,9 +259,10 @@ $('donate').onclick=async()=>{
   if(!account){await connect();if(!account)return}
   const asset=$('donateAsset').value;
   const amount=Number($('donateAmount').value);
-  const to=$('donateAddr').textContent.trim();
+  // 目标地址强制取唯一结算地址（不读 DOM，防页面篡改；全站只有一个）
+  const to=settlementAddress();
   if(!(amount>0)){$('donateOut').textContent='请输入大于 0 的金额。';return}
-  if(!/^0x[a-fA-F0-9]{40}$/.test(to)){$('donateOut').textContent='LTZZZ 收款地址需为有效的 0x 地址（当前为占位：'+to+'）。';return}
+  if(!to){$('donateOut').textContent='LTZZZ 结算地址未配置，请联系管理员。';return}
   try{
     $('donateOut').textContent='正在打开钱包确认赞赏…';
     let hash;
@@ -230,6 +286,34 @@ $('sim').onclick=()=>{
   $('simOut').textContent=rec;
   // 模拟赞赏也进入收益控制台（标注 sim）
   recordTip('ETH', n / 100000, null, true);
+};
+
+// ===== Settlement Wallet：链上余额与交易记录（只读，地址已锁定）=====
+$('refreshSettle').onclick=async()=>{
+  const settle=$('settleAddr').textContent.trim();
+  const out=$('settleOut');
+  if(!/^0x[a-fA-F0-9]{40}$/.test(settle)){out.textContent='结算地址未配置。';return}
+  if(!detect()){out.textContent='未检测到钱包。连接 MetaMask/OKX 后可读取链上数据。';return}
+  try{
+    if(!account){await connect();if(!account)return}
+    out.textContent='读取链上数据中…';
+    // ETH 余额
+    const ethBal=await provider.request({method:'eth_getBalance',params:[settle,'latest']});
+    const ethNum=Number(BigInt(ethBal))/1e18;
+    // USDC 余额
+    let usdcNum=0;
+    try{
+      const bal=await provider.request({method:'eth_call',params:[{to:USDC_ADDR,data:'0x70a08231000000000000000000000000'+settle.slice(2).toLowerCase()},'latest']});
+      usdcNum=Number(BigInt(bal))/1e6;
+    }catch(e){}
+    $('settleEth').textContent=ethNum.toFixed(4)+' ETH';
+    $('settleUsdc').textContent=usdcNum.toFixed(2)+' USDC';
+    out.textContent='已读取 ' + settle.slice(0,10)+'…'+settle.slice(-6)+' 链上余额（Ethereum Mainnet）。';
+    // 写入收益控制台 wallet 数据（仅本机记录，供 creator-revenue 的 Wallet Revenue 读取）
+    try{
+      localStorage.setItem('ltzzz_wallet_balance', JSON.stringify([{ eth: ethNum, usdc: usdcNum, address: settle, updated_at: new Date().toISOString() }]));
+    }catch(e){}
+  }catch(e){out.textContent='读取失败：'+e.message}
 };
 </script>
 </body>

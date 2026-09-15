@@ -180,6 +180,7 @@ select,input[type=text]{width:100%;box-sizing:border-box;background:#faf8f4;bord
         <p data-i18n="plat.yt.desc">YouTube Data API · videos.insert · 可见性可切换</p>
         <span class="badge" id="ytBadge" data-i18n="plat.status">待连接</span>
         <div class="conn-status" id="ytStatus">未连接 · 最后一次发布：-- · 发布状态：--</div>
+        <div class="conn-status" id="ytChannel" style="font-size:12px;margin-top:4px">频道名称：-- · 频道 ID：--</div>
         <label data-i18n="plat.yt.privacy">可见性</label>
         <select id="ytPrivacy">
           <option value="private" data-i18n="plat.yt.private">PRIVATE（私密）</option>
@@ -188,6 +189,7 @@ select,input[type=text]{width:100%;box-sizing:border-box;background:#faf8f4;bord
         </select>
         <div class="btn-row">
           <button class="button" type="button" id="ytConnect" data-i18n="plat.connect">连接 YouTube</button>
+          <button class="button" type="button" id="ytDisconnect" style="opacity:.7" disabled>断开</button>
           <button class="button" type="button" id="ytPublish" data-i18n="plat.publish" disabled>发布到 YouTube（测试）</button>
         </div>
       </div>
@@ -360,7 +362,7 @@ window.I18N_DICT = {
 var DOUBAO_ENDPOINT = 'https://ltzzz-doubao-proxy.ltzyz2181.workers.dev';
 var SEEDANCE_ENDPOINT = 'https://ltzzz-seedance-proxy.ltzyz2181.workers.dev';
 var TIKTOK_ENDPOINT = 'https://ltzzz-tiktok-post.ltzyz2181.workers.dev';
-var YOUTUBE_ENDPOINT = 'https://ltzzz-youtube-post.ltzyz2181.workers.dev';
+var YOUTUBE_ENDPOINT = 'https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
 var RETURN_TO = location.protocol + '//' + location.host + '/creator-lab.html';
 
 var $ = function (id) { return document.getElementById(id); };
@@ -618,24 +620,23 @@ $('ttPublish').addEventListener('click', async function () {
 });
 
 // ===== 4. YouTube 连接与发布 =====
-$('ytConnect').addEventListener('click', async function () {
+$('ytConnect').addEventListener('click', function () {
   var s = $('ytStatus');
-  s.textContent = '正在获取 Google 授权链接…';
+  s.textContent = '正在跳转 Google 授权…';
+  // 新 Worker：GET /auth/youtube?return_to=  → 302 到 Google OAuth
+  window.location.href = YOUTUBE_ENDPOINT + '/auth/youtube?return_to=' + encodeURIComponent(RETURN_TO);
+});
+
+$('ytDisconnect').addEventListener('click', async function () {
+  var s = $('ytStatus');
+  s.textContent = '断开中…';
   try {
-    var r = await fetch(YOUTUBE_ENDPOINT + '/auth/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ return_to: RETURN_TO })
-    });
+    var r = await fetch(YOUTUBE_ENDPOINT + '/youtube/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     var d = await r.json();
-    if (d.ok && d.auth_url) {
-      s.textContent = '请在弹出窗口完成 Google 授权…';
-      window.open(d.auth_url, '_blank', 'width=560,height=700');
-    } else {
-      s.textContent = 'YouTube 未配置：' + (d.error || '缺 Google 凭据') + '（需要在 Worker Secret 设置 GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET）';
-    }
+    s.textContent = d.ok ? '已断开 YouTube 连接。' : '断开失败：' + (d.error || JSON.stringify(d));
+    refreshStatus();
   } catch (e) {
-    s.textContent = '连接失败：' + e.message;
+    s.textContent = '断开失败：' + e.message;
   }
 });
 
@@ -649,19 +650,26 @@ $('ytPublish').addEventListener('click', async function () {
   s.textContent = 'YouTube 发布中（测试，' + privacy + '）…';
   $('ytPublish').disabled = true;
   try {
-    var r = await fetch(YOUTUBE_ENDPOINT + '/upload', {
+    var r = await fetch(YOUTUBE_ENDPOINT + '/youtube/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ video_url: shot.url, title: title, description: desc, privacy: privacy })
+      body: JSON.stringify({ video_url: shot.url, title: title, description: desc, tags: [], privacyStatus: privacy, categoryId: '22' })
     });
     var d = await r.json();
     if (d.ok) {
-      s.textContent = 'YouTube 发布成功（' + d.privacy + '）· video_id=' + d.video_id + ' · ' + new Date().toLocaleString();
+      s.textContent = 'YouTube 上传成功（' + d.privacyStatus + '）· Video ID: ' + d.video_id + ' · ' + d.url + ' · ' + new Date().toLocaleString();
       $('ytBadge').textContent = '已连接';
       $('ytBadge').classList.add('connected');
+      // 写收益记录（creator-revenue 读取）
+      try {
+        var recs = JSON.parse(localStorage.getItem('ltzzz_revenue_records') || '[]');
+        if (!Array.isArray(recs)) recs = [];
+        recs.push({ platform: 'youtube', video_id: d.video_id, title: title, views: 0, revenue: 0, currency: 'USD', aicost: 0, published_at: d.published_at, privacyStatus: d.privacyStatus, url: d.url, status: 'published' });
+        localStorage.setItem('ltzzz_revenue_records', JSON.stringify(recs.slice(-50)));
+      } catch (e) {}
       refreshStatus();
     } else {
-      s.textContent = '发布失败：' + (d.error || JSON.stringify(d));
+      s.textContent = '上传失败：' + (d.error || JSON.stringify(d));
     }
   } catch (e) {
     s.textContent = '发布失败：' + e.message;
@@ -687,18 +695,22 @@ function refreshStatus() {
       }
     })
     .catch(function () {});
-  fetch(YOUTUBE_ENDPOINT + '/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+  fetch(YOUTUBE_ENDPOINT + '/youtube/status')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d.connected) {
         $('ytBadge').textContent = '已连接';
         $('ytBadge').classList.add('connected');
         $('ytPublish').disabled = false;
-        $('ytStatus').textContent = '已连接 · 频道：' + (d.channel || d.user_key) + ' · 最后一次发布：' + (d.last_publish || '--') + ' · 发布状态：' + (d.publish_status || '--');
+        $('ytDisconnect').disabled = false;
+        $('ytStatus').textContent = '已连接 · 频道：' + (d.channel_name || d.channel_id || '--') + ' · 最后一次发布：' + (d.last_publish || '--') + ' · 发布状态：' + (d.publish_status || '--');
+        $('ytChannel').textContent = '频道名称：' + (d.channel_name || '--') + ' · 频道 ID：' + (d.channel_id || '--');
       } else {
         $('ytBadge').textContent = '待连接';
         $('ytBadge').classList.remove('connected');
         $('ytPublish').disabled = true;
+        $('ytDisconnect').disabled = true;
+        $('ytChannel').textContent = '频道名称：-- · 频道 ID：--';
       }
     })
     .catch(function () {});
@@ -709,13 +721,15 @@ function refreshStatus() {
   var q = new URLSearchParams(location.search);
   var tt = q.get('tt_status');
   var yt = q.get('yt_status');
+  var ytu = q.get('yt_upload_status');
   if (tt) {
     if (tt.indexOf('connected') === 0) { $('ttBadge').textContent = '已连接'; $('ttBadge').classList.add('connected'); $('ttPublish').disabled = false; }
     $('ttStatus').textContent = 'TikTok 授权回调：' + decodeURIComponent(tt);
   }
-  if (yt) {
-    if (yt.indexOf('connected') === 0) { $('ytBadge').textContent = '已连接'; $('ytBadge').classList.add('connected'); $('ytPublish').disabled = false; }
-    $('ytStatus').textContent = 'YouTube 授权回调：' + decodeURIComponent(yt);
+  var ytFlag = yt || ytu;
+  if (ytFlag) {
+    if (ytFlag.indexOf('connected') === 0) { $('ytBadge').textContent = '已连接'; $('ytBadge').classList.add('connected'); $('ytPublish').disabled = false; }
+    $('ytStatus').textContent = 'YouTube 授权回调：' + decodeURIComponent(ytFlag);
   }
   if (tt || yt) { history.replaceState(null, '', location.pathname); }
   refreshStatus();

@@ -57,11 +57,11 @@
 <main class="creator-wrap">
   <p class="eyebrow" data-i18n="eyebrow">LTZZZ · REVENUE CONSOLE</p>
   <h1 data-i18n="h1">收益控制台</h1>
-  <p class="creator-lead" data-i18n="lead">平台收入（YouTube/TikTok/抖音/视频号）按平台自己的结算方式记录；LTZZZ 赞赏（ETH/USDC）进入钱包——两者分开统计，绝不伪装。</p>
+  <p class="creator-lead" data-i18n="lead">两套系统分开统计：<b>Creator Revenue</b>（YouTube/TikTok/抖音/视频号平台结算）与 <b>Wallet Revenue</b>（链上收入：ETH/USDC/赞赏）。平台官方收入绝不伪装成链上自动收入。</p>
 
   <section class="panel">
-    <h2 data-i18n="plat.title">平台收益</h2>
-    <p class="sub" data-i18n="plat.desc">每条记录含：platform / video_id / title / views / revenue / currency / published_at。平台 API 接入后自动填充；未接入显示「待连接」。</p>
+    <h2 data-i18n="plat.title">Creator Revenue · 平台收益</h2>
+    <p class="sub" data-i18n="plat.desc">平台官方结算收入（YouTube/TikTok/抖音/视频号），按平台自己的结算方式记录，与链上钱包分开。每条：platform / video_id / title / views / revenue / currency / published_at。YouTube 上传记录由 youtube.html 自动写入。</p>
     <div class="rev-grid">
       <div class="rev-card">
         <h3>YouTube</h3>
@@ -141,13 +141,79 @@
   </section>
 
   <section class="panel">
+    <h2 data-i18n="wrev.title">Wallet Revenue · 链上收入</h2>
+    <p class="sub" data-i18n="wrev.desc">链上实际到账收入（LTZZZ 唯一结算地址收到）：ETH / USDC / 赞赏。与 Creator Revenue（平台结算）严格分开，绝不伪装。</p>
+    <div class="rev-grid">
+      <div class="rev-card">
+        <h3 data-i18n="wrev.eth">ETH 链上收入</h3>
+        <span class="badge wallet" data-i18n="badge.wallet">链上</span>
+        <div class="metrics">
+          <div><span data-i18n="wrev.eth.total">累计收到 ETH</span><b id="wrev-eth">--</b></div>
+          <div><span data-i18n="wrev.tx.count">链上交易数</span><b id="wrev-eth-tx">--</b></div>
+          <div><span data-i18n="wrev.last">最后到账</span><b id="wrev-eth-last">--</b></div>
+        </div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="wrev.usdc">USDC 链上收入</h3>
+        <span class="badge wallet" data-i18n="badge.wallet">链上</span>
+        <div class="metrics">
+          <div><span data-i18n="wrev.usdc.total">累计收到 USDC</span><b id="wrev-usdc">--</b></div>
+          <div><span data-i18n="wrev.tx.count">链上交易数</span><b id="wrev-usdc-tx">--</b></div>
+          <div><span data-i18n="wrev.last">最后到账</span><b id="wrev-usdc-last">--</b></div>
+        </div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="wrev.tips">赞赏（钱包）</h3>
+        <span class="badge wallet" data-i18n="badge.tip">钱包赞赏</span>
+        <div class="metrics">
+          <div><span data-i18n="m.tip.eth">ETH 赞赏</span><b id="tip-eth2">--</b></div>
+          <div><span data-i18n="m.tip.usdc">USDC 赞赏</span><b id="tip-usdc2">--</b></div>
+          <div><span data-i18n="m.tip.count">赞赏次数</span><b id="tip-count2">--</b></div>
+          <div><span data-i18n="m.tip.last">最后一次</span><b id="tip-last2">--</b></div>
+        </div>
+        <div class="rec-list" id="tip-records2"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="settle.title">Settlement Wallet · 结算钱包</h2>
+    <p class="sub" data-i18n="settle.desc">LTZZZ 唯一官方结算地址，全站所有链上收入统一汇入；地址已锁定，禁止前端修改。来源：ltzzz-settlement.js。</p>
+    <div class="rev-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="rev-card">
+        <h3 data-i18n="settle.addr">唯一结算地址</h3>
+        <div style="font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all;margin-top:8px" id="settle-addr">--</div>
+        <div style="font-size:11px;color:#888;margin-top:8px" data-i18n="settle.locked">状态：已锁定</div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="settle.net">网络</h3>
+        <div class="metrics">
+          <div><span data-i18n="settle.chain">网络</span><b id="settle-net">--</b></div>
+          <div><span data-i18n="settle.asset">资产</span><b id="settle-assets">--</b></div>
+          <div><span data-i18n="settle.chainid">Chain ID</span><b id="settle-chainid">--</b></div>
+        </div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="settle.received">累计收到</h3>
+        <div class="metrics">
+          <div><span data-i18n="wrev.eth.total">ETH</span><b id="settle-eth">--</b></div>
+          <div><span data-i18n="wrev.usdc.total">USDC</span><b id="settle-usdc">--</b></div>
+          <div><span data-i18n="settle.txcount">交易记录数</span><b id="settle-txcount">--</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="rec-list" id="settle-tx" style="margin-top:12px"></div>
+    <p class="note" data-i18n="settle.note">链上交易记录由钱包实验室「刷新链上余额」读取后写入本机；正式链上查询可在接入 RPC 后自动获取。</p>
+  </section>
+
+  <section class="panel">
     <h2 data-i18n="sum.title">汇总</h2>
-    <p class="sub" data-i18n="sum.desc">平台合计：总收入 − AI 成本 = 净收入。钱包赞赏单独一行，不与平台收入相加。</p>
+    <p class="sub" data-i18n="sum.desc">Creator Revenue（平台合计）：总收入 − AI 成本 = 净收入。Wallet Revenue（链上）单独一行，两个系统绝不相加。</p>
     <div class="sum-grid">
       <div class="sum-card"><span data-i18n="sum.total">平台总收入</span><b id="sum-total">--</b></div>
       <div class="sum-card"><span data-i18n="sum.aicost">AI 成本</span><b id="sum-aicost">--</b></div>
       <div class="sum-card"><span data-i18n="sum.net">平台净收入</span><b id="sum-net">--</b></div>
-      <div class="sum-card light"><span data-i18n="sum.tips">钱包赞赏（ETH+USDC）</span><b id="sum-tips">--</b></div>
+      <div class="sum-card light"><span data-i18n="sum.tips">Wallet Revenue（ETH+USDC）</span><b id="sum-tips">--</b></div>
     </div>
     <p class="note" data-i18n="sum.note">数据待接入：平台 API 配置并授权后自动汇总。收益记录结构：{ platform, video_id, title, views, revenue, currency, published_at }。AI 制作成本由创作实验室按每次生产记录。</p>
   </section>
@@ -208,8 +274,28 @@ window.I18N_DICT = {
     "sum.note": "数据待接入：平台 API 配置并授权后自动汇总。收益记录结构：{ platform, video_id, title, views, revenue, currency, published_at }。AI 制作成本由创作实验室按每次生产记录。",
     "wallet.title": "钱包与结算",
     "wallet.desc": "钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。不要把平台官方提现方式伪装成区块链钱包；平台收入按平台自己的结算方式记录。",
+    "wrev.title": "Wallet Revenue · 链上收入",
+    "wrev.desc": "链上实际到账收入（LTZZZ 唯一结算地址收到）：ETH / USDC / 赞赏。与 Creator Revenue（平台结算）严格分开，绝不伪装。",
+    "wrev.eth": "ETH 链上收入",
+    "wrev.eth.total": "累计收到 ETH",
+    "wrev.usdc": "USDC 链上收入",
+    "wrev.usdc.total": "累计收到 USDC",
+    "wrev.tx.count": "链上交易数",
+    "wrev.last": "最后到账",
+    "wrev.tips": "赞赏（钱包）",
+    "settle.title": "Settlement Wallet · 结算钱包",
+    "settle.desc": "LTZZZ 唯一官方结算地址，全站所有链上收入统一汇入；地址已锁定，禁止前端修改。来源：ltzzz-settlement.js。",
+    "settle.addr": "唯一结算地址",
+    "settle.locked": "状态：已锁定",
+    "settle.net": "网络",
+    "settle.chain": "网络",
+    "settle.asset": "资产",
+    "settle.chainid": "Chain ID",
+    "settle.received": "累计收到",
+    "settle.txcount": "交易记录数",
+    "settle.note": "链上交易记录由钱包实验室「刷新链上余额」读取后写入本机；正式链上查询可在接入 RPC 后自动获取。",
     "wallet.btn": "进入钱包实验室 →",
-    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · 平台收入与钱包赞赏分开统计"
+    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · Creator Revenue 与 Wallet Revenue 分开统计"
   },
   en: {
     "_title": "LTZZZ Revenue Console",
@@ -255,12 +341,33 @@ window.I18N_DICT = {
     "sum.note": "Data pending: fills automatically once platform APIs are configured and authorized. Revenue record shape: { platform, video_id, title, views, revenue, currency, published_at }. AI production costs are recorded per production run.",
     "wallet.title": "Wallet & Settlement",
     "wallet.desc": "The wallet is used for: LTZZZ donations, experiment income records, and future Agent Payment experiments. Never disguise official platform payouts as a blockchain wallet; platform income is recorded per each platform's own settlement method.",
+    "wrev.title": "Wallet Revenue · On-chain",
+    "wrev.desc": "Actual on-chain income received by the LTZZZ settlement wallet: ETH / USDC / tips. Strictly separate from Creator Revenue (platform settlement) — never disguised.",
+    "wrev.eth": "ETH On-chain",
+    "wrev.eth.total": "Total ETH received",
+    "wrev.usdc": "USDC On-chain",
+    "wrev.usdc.total": "Total USDC received",
+    "wrev.tx.count": "On-chain txs",
+    "wrev.last": "Last received",
+    "wrev.tips": "Tips (Wallet)",
+    "settle.title": "Settlement Wallet",
+    "settle.desc": "LTZZZ's single official settlement address. All on-chain income flows here; address is locked, front-end cannot modify it. Source: ltzzz-settlement.js.",
+    "settle.addr": "Settlement Address",
+    "settle.locked": "Status: Locked",
+    "settle.net": "Network",
+    "settle.chain": "Network",
+    "settle.asset": "Assets",
+    "settle.chainid": "Chain ID",
+    "settle.received": "Total Received",
+    "settle.txcount": "Tx Records",
+    "settle.note": "On-chain tx records are written locally by Wallet Lab's “Refresh On-chain Balance”; production on-chain queries can be automated once an RPC is connected.",
     "wallet.btn": "Enter Wallet Lab →",
-    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · Platform revenue and wallet tips tracked separately"
+    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · Creator Revenue and Wallet Revenue tracked separately"
   }
 };
 </script>
 <script src="i18n.js"></script>
+<script src="ltzzz-settlement.js"></script>
 <script>
 /* 收益数据结构（用户指定）：
    { platform, video_id, title, views, revenue, currency, published_at }
@@ -323,10 +430,14 @@ function render() {
     var listEl = document.getElementById(id + '-records');
     var rs = records.filter(function (r) { return r.platform === k; });
     listEl.innerHTML = rs.slice(0, 4).map(function (r) {
+      var extra = '';
+      if (r.url) extra += '<a href="' + r.url + '" target="_blank" style="color:#1d5fa8">watch</a> ';
+      if (r.privacyStatus) extra += '<span class="tag">' + r.privacyStatus + '</span>';
+      if (r.published_at) extra += '<span>' + new Date(r.published_at).toLocaleDateString('zh-CN') + '</span>';
       return '<div class="rec-row"><span class="tag">' + (r.platform || '') + '</span>' +
         '<span>' + (r.title || '').slice(0, 24) + '</span>' +
         '<span class="amt">' + fmtMoney(r.revenue, r.currency) + '</span>' +
-        '<span>' + (r.video_id || '') + '</span></div>';
+        '<span>' + (r.video_id || '') + '</span>' + extra + '</div>';
     }).join('') || '<div class="rec-row">--</div>';
   });
 
@@ -359,6 +470,55 @@ function render() {
   document.getElementById('wallet-eth').textContent = wallet.eth ? Number(wallet.eth).toFixed(4) + ' ETH' : '--';
   document.getElementById('wallet-usdc').textContent = wallet.usdc ? Number(wallet.usdc).toFixed(2) + ' USDC' : '--';
   document.getElementById('wallet-addr').textContent = wallet.address || '--';
+
+  // ===== Wallet Revenue（链上收入，与 Creator Revenue 分开）=====
+  var ethTip2 = 0, usdcTip2 = 0;
+  tips.forEach(function (t) {
+    if (t.currency === 'ETH') ethTip2 += Number(t.amount) || 0;
+    if (t.currency === 'USDC') usdcTip2 += Number(t.amount) || 0;
+  });
+  // 链上收入 = 结算地址收到的余额（钱包实验室刷新写入）+ 赞赏记录
+  var ethTotal = (Number(wallet.eth) || 0);
+  var usdcTotal = (Number(wallet.usdc) || 0);
+  document.getElementById('wrev-eth').textContent = ethTotal ? ethTotal.toFixed(4) + ' ETH' : (ethTip2 ? ethTip2.toFixed(4) + ' ETH' : '--');
+  document.getElementById('wrev-usdc').textContent = usdcTotal ? usdcTotal.toFixed(2) + ' USDC' : (usdcTip2 ? usdcTip2.toFixed(2) + ' USDC' : '--');
+  var ethTxN = wallet.eth_tx_count || 0, usdcTxN = wallet.usdc_tx_count || 0;
+  document.getElementById('wrev-eth-tx').textContent = ethTxN || (tips.filter(function (t) { return t.currency === 'ETH'; }).length) || '--';
+  document.getElementById('wrev-usdc-tx').textContent = usdcTxN || (tips.filter(function (t) { return t.currency === 'USDC'; }).length) || '--';
+  document.getElementById('wrev-eth-last').textContent = wallet.updated_at ? new Date(wallet.updated_at).toLocaleString('zh-CN') : '--';
+  document.getElementById('wrev-usdc-last').textContent = wallet.updated_at ? new Date(wallet.updated_at).toLocaleString('zh-CN') : '--';
+  document.getElementById('tip-eth2').textContent = ethTip2 ? ethTip2.toFixed(4) + ' ETH' : '--';
+  document.getElementById('tip-usdc2').textContent = usdcTip2 ? usdcTip2.toFixed(2) + ' USDC' : '--';
+  document.getElementById('tip-count2').textContent = tips.length || '--';
+  var lastTip2 = tips[tips.length - 1];
+  document.getElementById('tip-last2').textContent = lastTip2 ? new Date(lastTip2.published_at).toLocaleString('zh-CN') : '--';
+  var tipList2 = document.getElementById('tip-records2');
+  tipList2.innerHTML = tips.slice(-4).reverse().map(function (t) {
+    return '<div class="rec-row"><span class="tag">' + t.currency + '</span>' +
+      '<span class="amt">' + t.amount + '</span><span>' + new Date(t.published_at).toLocaleString('zh-CN') + '</span>' +
+      (t.sim ? '<span class="tag">sim</span>' : '') + '</div>';
+  }).join('') || '<div class="rec-row">--</div>';
+
+  // ===== Settlement Wallet（唯一结算地址，只读）=====
+  var sw = window.LTZZZ_SETTLEMENT_WALLET || {};
+  document.getElementById('settle-addr').textContent = sw.address || '--';
+  document.getElementById('settle-net').textContent = sw.network || '--';
+  document.getElementById('settle-assets').textContent = (sw.assets || []).join(', ') || '--';
+  document.getElementById('settle-chainid').textContent = sw.chainId || '--';
+  document.getElementById('settle-eth').textContent = ethTotal ? ethTotal.toFixed(4) + ' ETH' : '--';
+  document.getElementById('settle-usdc').textContent = usdcTotal ? usdcTotal.toFixed(2) + ' USDC' : '--';
+  document.getElementById('settle-txcount').textContent = (wallet.tx_records && wallet.tx_records.length) || '--';
+  var txList = document.getElementById('settle-tx');
+  if (wallet.tx_records && wallet.tx_records.length) {
+    txList.innerHTML = wallet.tx_records.slice(-5).reverse().map(function (t) {
+      return '<div class="rec-row"><span class="tag">' + (t.asset || 'ETH') + '</span>' +
+        '<span class="amt">' + t.amount + '</span>' +
+        '<span>' + (t.hash || '').slice(0, 16) + '…</span>' +
+        '<span>' + (t.time || '') + '</span></div>';
+    }).join('');
+  } else {
+    txList.innerHTML = '<div class="rec-row">暂无链上交易记录（钱包实验室「刷新链上余额」后显示）</div>';
+  }
 }
 
 // 供 wallet-lab / creator-lab 调用：记录一笔平台收益（按用户指定结构）
