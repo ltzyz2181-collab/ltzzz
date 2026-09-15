@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ · Agent Payment Lab</title>
+<meta name="description" content="LTZZZ Agentic Payment 实验框架：x402、MPP、Agent Pay、预算、授权与交易账本。">
+<style>
+:root{--bg:#020711;--panel:#071321;--line:#173b58;--text:#eaf7ff;--muted:#8eaac0;--cyan:#59e5ff;--green:#6bf0bb;--gold:#ffd27a;--red:#ff8e8e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#0b2440 0,#020711 48%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 22px;background:rgba(2,7,17,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.brand{font-weight:800;letter-spacing:1px}.brand span{color:var(--cyan)}nav a{color:var(--muted);text-decoration:none;margin-right:14px;font-size:14px}.wrap{max-width:1160px;margin:auto;padding:28px 20px 60px}.eyebrow{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:700}h1{font-size:clamp(30px,5vw,52px);line-height:1.1;margin:10px 0}.lead{color:var(--muted);max-width:900px}.banner{padding:12px 15px;border-radius:12px;background:#10220e;border:1px solid #315d2c;color:#d5f8c6;font-size:13px;margin:18px 0}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:18px}@media(max-width:900px){.grid{grid-template-columns:1fr}}.panel{background:linear-gradient(145deg,#081827,#050b15);border:1px solid var(--line);border-radius:18px;padding:20px}.panel h2{margin:0 0 10px;font-size:19px}.muted{color:var(--muted);font-size:14px}.rails{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media(max-width:800px){.rails{grid-template-columns:1fr 1fr}}.rail{background:#02060d;border:1px solid var(--line);border-radius:14px;padding:14px}.rail strong{display:block;margin-bottom:5px}.tag{display:inline-block;margin-top:6px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;font-size:11px;color:var(--muted)}.ok{color:var(--green)}.soon{color:var(--gold)}.hold{color:var(--red)}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.row{grid-template-columns:1fr}}label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}input,textarea,select{width:100%;background:#02060d;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}textarea{min-height:90px;resize:vertical}.btn{display:inline-block;border:1px solid #2a6688;background:#0a2033;color:var(--text);padding:10px 14px;border-radius:10px;text-decoration:none;cursor:pointer;margin:8px 8px 0 0;font-size:14px}.btn.primary{background:#0b667a;border-color:#2bd9ee}.btn.green{background:#0b4d3a;border-color:#4de0a7}.btn.gold{background:#4f3b09;border-color:#b99130}.result{margin-top:12px;background:#02060d;border:1px solid var(--line);border-radius:12px;padding:14px;white-space:pre-wrap;min-height:80px}.ledger{max-height:240px;overflow:auto}.item{padding:10px 12px;border-bottom:1px solid #11304a;font-size:13px}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}footer{text-align:center;color:#55738a;padding:30px;font-size:13px}.switch{display:flex;gap:8px;flex-wrap:wrap}.switch button{border:1px solid var(--line);background:#02060d;color:var(--muted);padding:8px 10px;border-radius:999px;cursor:pointer}.switch button.active{border-color:#2bd9ee;color:var(--text);background:#0b3040}.big{font-size:28px;font-weight:800}.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">LTZZZ <span>AGENT PAYMENT LAB</span></div><nav><a href="index.html">首页</a><a href="agents.html">多 Agent</a><a href="wallet-lab.html">钱包</a></nav></header>
+<main class="wrap">
+<div class="eyebrow">AGENTIC COMMERCE · PAYMENTS</div>
+<h1>让 Agent 学会“花钱买服务”</h1>
+<p class="lead">第一阶段搭框架，不让模型直接碰银行卡。把“模型调用费用”和“Agentic Payment”分开：DeepSeek / 豆包 / Claude 等厂商账单仍由各自平台结算；LTZZZ 自己的 Agent 支付层负责预算、授权、报价、支付轨道、账本和以后接入 x402 / MPP / Visa / Mastercard。</p>
+<div class="banner"><strong>当前是可运行的框架实验：</strong>可以测试预算、审批、报价和账本；x402/MPP/Agent Pay 真正支付适配器暂未启用。页面不会伪造链上成交。</div>
+
+<section class="panel"><h2>① 支付轨道</h2><div class="rails">
+<div class="rail"><strong>x402</strong><span class="muted">HTTP 402 + 稳定币的互联网原生按次支付</span><div class="tag ok">框架已预留</div></div>
+<div class="rail"><strong>MPP</strong><span class="muted">Machine Payments Protocol：Agent 请求资源 → 支付授权 → 获得资源</span><div class="tag ok">框架已预留</div></div>
+<div class="rail"><strong>Visa Agentic</strong><span class="muted">卡网络 / Token / Agent 身份与授权</span><div class="tag soon">后接</div></div>
+<div class="rail"><strong>Mastercard Agent Pay</strong><span class="muted">Agent 身份、权限、预算和机器交易</span><div class="tag soon">后接</div></div>
+</div></section>
+
+<div class="grid">
+<section class="panel"><h2>② Agent 钱包政策</h2><div class="row"><div><label>Agent</label><select id="agent"><option>GPT 总控</option><option>豆包</option><option>DeepSeek</option><option>Grok</option><option>Claude</option></select></div><div><label>支付用途</label><select id="purpose"><option>API 调用</option><option>数据</option><option>计算</option><option>内容</option></select></div></div><div class="row"><div><label>本次预算（USD）</label><input id="budget" type="number" min="0" step="0.01" value="0.10"></div><div><label>单笔上限（USD）</label><input id="cap" type="number" min="0" step="0.01" value="0.02"></div></div><label>授权模式</label><div class="switch"><button class="active" data-mode="human">用户确认</button><button data-mode="policy">策略自动</button><button data-mode="vote">Agent 投票</button></div><button class="btn primary" id="savePolicy">保存策略</button><div class="result" id="policyResult">尚未保存</div></section>
+
+<section class="panel"><h2>③ 模拟报价 → 授权 → 记账</h2><p class="muted">先用本机模拟，把 Agent 支付生命周期跑通。</p><label>服务名</label><input id="service" value="DeepSeek API 调用"><label>服务报价（USD）</label><input id="quote" type="number" min="0" step="0.0001" value="0.002"><button class="btn green" id="payDemo">执行一次模拟支付</button><div class="result" id="payResult">等待执行</div></section>
+</div>
+
+<section class="panel" style="margin-top:16px"><h2>④ 统一交易账本</h2><div class="row"><div><div class="small">模拟余额</div><div class="big" id="balance">$1.0000</div></div><div><div class="small">今日模拟支出</div><div class="big" id="spent">$0.0000</div></div></div><div class="ledger" id="ledger"><div class="item">暂无交易</div></div><button class="btn" id="reset">重置模拟账本</button></section>
+
+<section class="panel" style="margin-top:16px"><h2>⑤ 下一步接入顺序</h2><ol class="muted"><li><b>x402：</b>先做一个 LTZZZ 自己的“付 0.001 USDC 才能调用一次的测试 API”，用作第一条真实 Agentic Payment。</li><li><b>MPP：</b>以后让服务端返回机器可读的支付要求，由 Agent 完成授权与请求。</li><li><b>Visa / Mastercard：</b>作为卡轨与企业级 Agent 身份、Token、权限和结算方向研究，不和加密钱包混为一谈。</li><li><b>模型账单：</b>DeepSeek / 豆包 / Claude 等平台目前仍按各自官方账户/组织的计费机制付款；LTZZZ 的 Agent 钱包不能凭空替它们“改成 x402 充值”。</li></ol></section>
+</main><footer>LTZZZ · Agent Payment Lab · 预算 → 授权 → 支付 → 记账 → 结算</footer>
+<script>
+const KEY='ltzzz_agent_pay_v1';
+let state=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{balance:1,spent:0,ledger:[],mode:'human',policy:null}}catch{return {balance:1,spent:0,ledger:[],mode:'human',policy:null}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render();}
+function render(){document.getElementById('balance').textContent='$'+state.balance.toFixed(4);document.getElementById('spent').textContent='$'+state.spent.toFixed(4);const l=document.getElementById('ledger');l.innerHTML=state.ledger.length?state.ledger.slice().reverse().map(x=>`<div class="item"><b>${x.service}</b> · ${x.agent} · ${x.rail}<br>${x.amount.toFixed(4)} USD · ${x.status} · ${x.time}</div>`).join(''):'<div class="item">暂无交易</div>';if(state.policy)document.getElementById('policyResult').textContent=JSON.stringify(state.policy,null,2)}
+document.querySelectorAll('.switch button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.switch button').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.mode=b.dataset.mode});
+document.getElementById('savePolicy').onclick=()=>{const agent=document.getElementById('agent').value;state.policy={agent,purpose:document.getElementById('purpose').value,budget:Number(document.getElementById('budget').value||0),singleCap:Number(document.getElementById('cap').value||0),mode:state.mode,updated:new Date().toLocaleString('zh-CN')};save()};
+document.getElementById('payDemo').onclick=()=>{const amount=Number(document.getElementById('quote').value||0),cap=Number(document.getElementById('cap').value||0),budget=Number(document.getElementById('budget').value||0),service=document.getElementById('service').value.trim()||'测试服务',agent=document.getElementById('agent').value;if(amount<=0)return alert('报价必须大于0');if(amount>cap)return document.getElementById('payResult').textContent='拒绝：超过单笔上限';if(amount>budget)return document.getElementById('payResult').textContent='拒绝：超过本次预算';if(amount>state.balance)return document.getElementById('payResult').textContent='拒绝：模拟余额不足';state.balance-=amount;state.spent+=amount;state.ledger.push({service,agent,rail:'SIMULATED',amount,status:'SIMULATED_SUCCESS',time:new Date().toLocaleString('zh-CN')});document.getElementById('payResult').textContent='模拟支付成功：'+amount.toFixed(4)+' USD\n下一步可把这一层替换成 x402/MPP adapter。';save()};
+document.getElementById('reset').onclick=()=>{state={balance:1,spent:0,ledger:[],mode:'human',policy:null};save();document.getElementById('payResult').textContent='已重置'};render();
+</script>
+</body></html>
