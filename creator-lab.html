@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="description" content="LTZZZ 创作实验室——多 AI Agent 协作生产原创内容，发布到 YouTube / TikTok / 抖音 / 视频号，内容回流 LTZZZ。">
+<meta name="description" content="LTZZZ 创作实验室——多 AI Agent 协作生产原创内容：选题 → 脚本 → 分镜 → Seedance 生成视频 → 合成 → TikTok/YouTube 发布 → 收益记录。">
 <title data-i18n="_title">LTZZZ 创作实验室</title>
 <link rel="stylesheet" href="style.css">
 <style>
@@ -30,21 +30,38 @@
 .steps li b{color:#171717}
 label{display:block;font-size:13px;color:#777;margin:14px 0 6px}
 textarea{width:100%;box-sizing:border-box;background:#faf8f4;border:1px solid #ddd8ce;border-radius:12px;color:#171717;padding:12px 14px;font:inherit;min-height:90px;resize:vertical}
+select,input[type=text]{width:100%;box-sizing:border-box;background:#faf8f4;border:1px solid #ddd8ce;border-radius:12px;color:#171717;padding:11px 14px;font:inherit}
 .out-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
 @media(max-width:700px){.out-grid{grid-template-columns:1fr 1fr}}
 .out-box{border:1px dashed #ddd8ce;border-radius:12px;padding:12px 14px;background:#faf8f4}
 .out-box b{display:block;font-size:13px;color:#777;margin-bottom:6px}
-.out-box span{font-size:13px;color:#bbb}
-.plat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-@media(max-width:900px){.plat-grid{grid-template-columns:repeat(2,1fr)}}
+.out-box span{font-size:13px;color:#bbb;white-space:pre-wrap;word-break:break-word}
+.plat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(max-width:900px){.plat-grid{grid-template-columns:1fr}}
 .plat-card{border:1px solid #ddd8ce;border-radius:16px;padding:16px;background:#faf8f4}
 .plat-card strong{display:block;font-size:15px;margin-bottom:6px}
 .plat-card p{font-size:12px;color:#888;margin:0 0 10px;line-height:1.6}
 .plat-card .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;background:#f0ede6;color:#999;border:1px solid #e0dcd2}
+.plat-card .badge.connected{background:#e7f6ee;color:#0d9488;border-color:#a7e0c4}
+.plat-card .badge.failed{background:#fdeaea;color:#c03a3a;border-color:#f2b8b8}
 .status{font-size:13px;color:#0d9488;margin-top:12px;min-height:18px}
 .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
 .flow .node{padding:8px 14px;border:1px solid #ddd8ce;border-radius:999px;font-size:13px;color:#555;background:#fff}
 .flow .arrow{color:#bbb;font-size:13px}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.video-stage{margin-top:16px;border:1px solid #ddd8ce;border-radius:16px;padding:16px;background:#faf8f4}
+.video-stage video{width:100%;max-width:360px;border-radius:12px;background:#000;display:block;margin:0 auto}
+.shot-list{margin-top:12px}
+.shot{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px dashed #ddd8ce;border-radius:10px;margin-bottom:8px;font-size:13px;background:#fff}
+.shot .idx{width:22px;height:22px;border-radius:50%;background:#171717;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.shot .info{flex:1;color:#555;min-width:0}
+.shot .info b{color:#171717}
+.shot .st{font-size:12px;color:#0d9488;flex-shrink:0}
+.shot .st.err{color:#c03a3a}
+.conn-status{font-size:12px;color:#666;line-height:1.9}
+.conn-status b{color:#171717}
+.hidden{display:none}
+.note-box{margin-top:10px;padding:10px 12px;background:#f5f3ee;border:1px dashed #c9c2b4;border-radius:10px;font-size:12px;color:#666;line-height:1.7}
 </style>
 </head>
 <body>
@@ -63,7 +80,7 @@ textarea{width:100%;box-sizing:border-box;background:#faf8f4;border:1px solid #d
 <main class="creator-wrap">
   <p class="eyebrow" data-i18n="eyebrow">LTZZZ · CREATOR LAB</p>
   <h1 data-i18n="h1">创作实验室</h1>
-  <p class="creator-lead" data-i18n="lead">使用多个 AI Agent 协作生产原创内容，发布到 YouTube / TikTok / 抖音 / 视频号，内容最终回流到 LTZZZ。核心思想：观 → 行深 → 改变习气 → 产生结果 → 再观。</p>
+  <p class="creator-lead" data-i18n="lead">选题 → 脚本 → 分镜 → Seedance 生成视频 → 合成 → TikTok / YouTube 发布 → 收益记录。核心思想：观 → 行深 → 改变习气 → 产生结果 → 再观。</p>
 
   <section class="panel">
     <h2 data-i18n="arch.title">多 Agent 生产架构</h2>
@@ -100,70 +117,86 @@ textarea{width:100%;box-sizing:border-box;background:#faf8f4;border:1px solid #d
 
   <section class="panel">
     <h2 data-i18n="pipe.title">内容生产流水线</h2>
-    <p class="sub" data-i18n="pipe.desc">输入一个主题，GPT 总控判断主题并分配任务，四个 Agent 并行生产，最后由 GPT 综合生成最终产出。</p>
+    <p class="sub" data-i18n="pipe.desc">输入主题 → 一键生成 9 项内容包（标题/口播/分镜/Seedance prompt/字幕/TikTok 文案/YouTube 标题/描述/Hashtag）→ 生产视频。</p>
     <label data-i18n="pipe.label.topic">输入主题</label>
     <textarea id="topic" placeholder="例如：我为什么越想睡越睡不着？" data-i18n-placeholder="pipe.topic.placeholder"></textarea>
     <div class="flow">
       <span class="node" data-i18n="flow.gpt">GPT 总控</span><span class="arrow">→</span>
       <span class="node" data-i18n="flow.doubao">豆包</span><span class="arrow">→</span>
-      <span class="node" data-i18n="flow.deepseek">DeepSeek</span><span class="arrow">→</span>
-      <span class="node" data-i18n="flow.grok">Grok</span><span class="arrow">→</span>
-      <span class="node" data-i18n="flow.claude">Claude</span><span class="arrow">→</span>
-      <span class="node" data-i18n="flow.out">综合产出</span>
+      <span class="node" data-i18n="flow.seedance">Seedance</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.compose">合成</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.publish">发布</span>
     </div>
-    <ol class="steps">
-      <li data-i18n="pipe.step1" data-i18n-html><b>GPT 总控</b>：判断主题，分配任务</li>
-      <li data-i18n="pipe.step2" data-i18n-html><b>豆包</b>：生成中文短视频版本</li>
-      <li data-i18n="pipe.step3" data-i18n-html><b>DeepSeek</b>：研究资料、事实、逻辑</li>
-      <li data-i18n="pipe.step4" data-i18n-html><b>Grok</b>：寻找海外相关讨论和趋势</li>
-      <li data-i18n="pipe.step5" data-i18n-html><b>Claude</b>：审稿、检查逻辑、提出反驳</li>
-      <li data-i18n="pipe.step6" data-i18n-html><b>GPT 综合</b>：汇总四个 Agent 的结果，生成最终产出</li>
-    </ol>
-    <button class="button primary" type="button" id="runCreator" data-i18n="pipe.run">开始创作（框架）</button>
-    <div class="status" id="creatorStatus" data-i18n="pipe.status.ready">流水线框架已就绪 · Agent API 接入后启用</div>
+    <button class="button primary" type="button" id="runCreator" data-i18n="pipe.run">开始创作</button>
+    <div class="status" id="creatorStatus">等待输入主题</div>
     <div class="out-grid">
-      <div class="out-box"><b data-i18n="out.title">标题</b><span id="o-title" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.open">开场</b><span id="o-open" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.script">脚本</b><span id="o-script" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.storyboard">分镜</b><span id="o-storyboard" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.voiceover">旁白</b><span id="o-voiceover" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.subtitle">字幕</b><span id="o-subtitle" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.cover">封面文字</b><span id="o-cover" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.desc">视频简介</b><span id="o-desc" data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.tags">标签</b><span id="o-tags" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.title">标题</b><span id="o-title">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.open">开场</b><span id="o-open">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.script">口播脚本</b><span id="o-script">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.storyboard">分镜</b><span id="o-storyboard">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.seedance">Seedance Prompt</b><span id="o-seedance">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.subtitle">字幕</b><span id="o-subtitle">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.tiktok">TikTok 文案</b><span id="o-tiktok">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.yt.title">YouTube Shorts 标题</b><span id="o-yttitle">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.yt.desc">YouTube 描述</b><span id="o-ytdesc">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.cover">封面文字</b><span id="o-cover">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.hashtag">Hashtag</b><span id="o-hashtag">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.tags">标签</b><span id="o-tags">待生成</span></div>
     </div>
   </section>
 
   <section class="panel">
-    <h2 data-i18n="plat.title">视频平台</h2>
-    <p class="sub" data-i18n="plat.desc">第一阶段：内容生产 + 发布记录 + 收益记录；不假装已经自动发布。平台 API 未配置时显示「待连接」。</p>
+    <h2 data-i18n="vid.title">视频生产</h2>
+    <p class="sub" data-i18n="vid.desc">Seedance 多镜头生成（每镜头 5–8 秒，不一次生成长视频），本地/云端合成 1080×1920 · 9:16 · MP4 · 30fps。TikTok 版不带 LTZZZ 水印（遵守官方 API 规则）；网站预览版保留 LTZZZ 品牌。</p>
+    <div class="btn-row">
+      <button class="button primary" type="button" id="runVideo" data-i18n="vid.run">开始生产视频</button>
+      <button class="button" type="button" id="downloadFinal" data-i18n="vid.download" disabled>下载最终视频</button>
+      <button class="button" type="button" id="composeLocal" data-i18n="vid.compose">本地合成（开发）</button>
+    </div>
+    <div class="status" id="videoStatus">尚未生成视频</div>
+    <div class="video-stage hidden" id="videoStage">
+      <video id="videoPlayer" controls playsinline preload="metadata"></video>
+      <div class="shot-list" id="shotList"></div>
+    </div>
+    <div class="note-box" id="videoNote"></div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="plat.title">平台连接与发布</h2>
+    <p class="sub" data-i18n="plat.desc">官方 API 直连（TikTok Content Posting API / YouTube Data API），不使用模拟发布、不使用浏览器自动点击代替 API。OAuth token 只存 Cloudflare KV（服务端），绝不放 localStorage。第一阶段只做测试发布。</p>
     <div class="plat-grid">
       <div class="plat-card">
-        <strong>YouTube</strong>
-        <p data-i18n="plat.yt.desc">长视频 / 内容沉淀 / 海外受众</p>
-        <span class="badge" data-i18n="plat.status">待连接</span>
-      </div>
-      <div class="plat-card">
         <strong>TikTok</strong>
-        <p data-i18n="plat.tiktok.desc">短视频 / 海外热点 / 快速传播</p>
-        <span class="badge" data-i18n="plat.status">待连接</span>
+        <p data-i18n="plat.tiktok.desc">官方 Content Posting API · video.publish · 测试发布默认私密</p>
+        <span class="badge" id="ttBadge" data-i18n="plat.status">待连接</span>
+        <div class="conn-status" id="ttStatus">未连接 · 最后一次发布：-- · 发布状态：--</div>
+        <div class="btn-row">
+          <button class="button" type="button" id="ttConnect" data-i18n="plat.connect">连接 TikTok</button>
+          <button class="button" type="button" id="ttPublish" data-i18n="plat.publish" disabled>发布到 TikTok（测试）</button>
+        </div>
       </div>
       <div class="plat-card">
-        <strong data-i18n="plat.douyin.name">抖音</strong>
-        <p data-i18n="plat.douyin.desc">中文短视频 / 国内传播</p>
-        <span class="badge" data-i18n="plat.status">待连接</span>
-      </div>
-      <div class="plat-card">
-        <strong data-i18n="plat.channels.name">视频号</strong>
-        <p data-i18n="plat.channels.desc">微信生态 / 中文受众</p>
-        <span class="badge" data-i18n="plat.status">待连接</span>
+        <strong>YouTube Shorts</strong>
+        <p data-i18n="plat.yt.desc">YouTube Data API · videos.insert · 可见性可切换</p>
+        <span class="badge" id="ytBadge" data-i18n="plat.status">待连接</span>
+        <div class="conn-status" id="ytStatus">未连接 · 最后一次发布：-- · 发布状态：--</div>
+        <label data-i18n="plat.yt.privacy">可见性</label>
+        <select id="ytPrivacy">
+          <option value="private" data-i18n="plat.yt.private">PRIVATE（私密）</option>
+          <option value="unlisted" data-i18n="plat.yt.unlisted">UNLISTED（不公开列出）</option>
+          <option value="public" data-i18n="plat.yt.public">PUBLIC（公开）</option>
+        </select>
+        <div class="btn-row">
+          <button class="button" type="button" id="ytConnect" data-i18n="plat.connect">连接 YouTube</button>
+          <button class="button" type="button" id="ytPublish" data-i18n="plat.publish" disabled>发布到 YouTube（测试）</button>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="panel">
     <h2 data-i18n="wallet.title">钱包入口</h2>
-    <p class="sub" data-i18n="wallet.desc">钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。平台官方提现按平台自己的结算方式记录，不伪装成区块链钱包。</p>
+    <p class="sub" data-i18n="wallet.desc">钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。平台官方提现按平台自己的结算方式记录，不伪装成区块链钱包；平台收入与钱包赞赏分开统计。</p>
     <a class="button primary" href="wallet-lab.html" data-i18n="wallet.btn">进入钱包实验室 →</a>
   </section>
 </main>
@@ -183,7 +216,7 @@ window.I18N_DICT = {
     "nav.wallet": "钱包",
     "eyebrow": "LTZZZ · CREATOR LAB",
     "h1": "创作实验室",
-    "lead": "使用多个 AI Agent 协作生产原创内容，发布到 YouTube / TikTok / 抖音 / 视频号，内容最终回流到 LTZZZ。核心思想：观 → 行深 → 改变习气 → 产生结果 → 再观。",
+    "lead": "选题 → 脚本 → 分镜 → Seedance 生成视频 → 合成 → TikTok / YouTube 发布 → 收益记录。核心思想：观 → 行深 → 改变习气 → 产生结果 → 再观。",
     "arch.title": "多 Agent 生产架构",
     "arch.desc": "GPT 为总控 Agent；其余 Agent 可提出反对意见，任何 Agent 不得单方面改变总控架构。",
     "agent.gpt.name": "GPT · 总控 Agent",
@@ -203,44 +236,46 @@ window.I18N_DICT = {
     "agent.claude.tag": "审稿 / 反驳",
     "gov.note": "治理规则：任何 Agent 都可以提出反对意见。修改 GPT 总控角色、Agent 权限或核心治理规则，必须进入 5 Agent 投票（GPT / 豆包 / DeepSeek / Grok / Claude），至少 3/5 同意才能形成修改提案，最终必须由用户确认。",
     "pipe.title": "内容生产流水线",
-    "pipe.desc": "输入一个主题，GPT 总控判断主题并分配任务，四个 Agent 并行生产，最后由 GPT 综合生成最终产出。",
+    "pipe.desc": "输入主题 → 一键生成 9 项内容包（标题/口播/分镜/Seedance prompt/字幕/TikTok 文案/YouTube 标题/描述/Hashtag）→ 生产视频。",
     "pipe.label.topic": "输入主题",
     "pipe.topic.placeholder": "例如：我为什么越想睡越睡不着？",
     "flow.gpt": "GPT 总控",
     "flow.doubao": "豆包",
-    "flow.deepseek": "DeepSeek",
-    "flow.grok": "Grok",
-    "flow.claude": "Claude",
-    "flow.out": "综合产出",
-    "pipe.step1": "<b>GPT 总控</b>：判断主题，分配任务",
-    "pipe.step2": "<b>豆包</b>：生成中文短视频版本",
-    "pipe.step3": "<b>DeepSeek</b>：研究资料、事实、逻辑",
-    "pipe.step4": "<b>Grok</b>：寻找海外相关讨论和趋势",
-    "pipe.step5": "<b>Claude</b>：审稿、检查逻辑、提出反驳",
-    "pipe.step6": "<b>GPT 综合</b>：汇总四个 Agent 的结果，生成最终产出",
-    "pipe.run": "开始创作（框架）",
-    "pipe.status.ready": "流水线框架已就绪 · Agent API 接入后启用",
+    "flow.seedance": "Seedance",
+    "flow.compose": "合成",
+    "flow.publish": "发布",
+    "pipe.run": "开始创作",
     "out.title": "标题",
     "out.open": "开场",
-    "out.script": "脚本",
+    "out.script": "口播脚本",
     "out.storyboard": "分镜",
-    "out.voiceover": "旁白",
+    "out.seedance": "Seedance Prompt",
     "out.subtitle": "字幕",
+    "out.tiktok": "TikTok 文案",
+    "out.yt.title": "YouTube Shorts 标题",
+    "out.yt.desc": "YouTube 描述",
     "out.cover": "封面文字",
-    "out.desc": "视频简介",
+    "out.hashtag": "Hashtag",
     "out.tags": "标签",
     "out.placeholder": "待生成",
-    "plat.title": "视频平台",
-    "plat.desc": "第一阶段：内容生产 + 发布记录 + 收益记录；不假装已经自动发布。平台 API 未配置时显示「待连接」。",
-    "plat.yt.desc": "长视频 / 内容沉淀 / 海外受众",
-    "plat.tiktok.desc": "短视频 / 海外热点 / 快速传播",
-    "plat.douyin.name": "抖音",
-    "plat.douyin.desc": "中文短视频 / 国内传播",
-    "plat.channels.name": "视频号",
-    "plat.channels.desc": "微信生态 / 中文受众",
+    "vid.title": "视频生产",
+    "vid.desc": "Seedance 多镜头生成（每镜头 5–8 秒，不一次生成长视频），合成 1080×1920 · 9:16 · MP4 · 30fps。TikTok 版不带 LTZZZ 水印（遵守官方 API 规则）；网站预览版保留 LTZZZ 品牌。",
+    "vid.run": "开始生产视频",
+    "vid.download": "下载最终视频",
+    "vid.compose": "本地合成（开发）",
+    "plat.title": "平台连接与发布",
+    "plat.desc": "官方 API 直连（TikTok Content Posting API / YouTube Data API），不使用模拟发布、不使用浏览器自动点击代替 API。OAuth token 只存 Cloudflare KV（服务端），绝不放 localStorage。第一阶段只做测试发布。",
+    "plat.tiktok.desc": "官方 Content Posting API · video.publish · 测试发布默认私密",
+    "plat.yt.desc": "YouTube Data API · videos.insert · 可见性可切换",
+    "plat.yt.privacy": "可见性",
+    "plat.yt.private": "PRIVATE（私密）",
+    "plat.yt.unlisted": "UNLISTED（不公开列出）",
+    "plat.yt.public": "PUBLIC（公开）",
+    "plat.connect": "连接账号",
+    "plat.publish": "发布（测试）",
     "plat.status": "待连接",
     "wallet.title": "钱包入口",
-    "wallet.desc": "钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。平台官方提现按平台自己的结算方式记录，不伪装成区块链钱包。",
+    "wallet.desc": "钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。平台官方提现按平台自己的结算方式记录，不伪装成区块链钱包；平台收入与钱包赞赏分开统计。",
     "wallet.btn": "进入钱包实验室 →",
     "footer": "© 2026 LTZZZ Digital Lab · Creator Lab · 先验证，再扩展"
   },
@@ -254,7 +289,7 @@ window.I18N_DICT = {
     "nav.wallet": "Wallet",
     "eyebrow": "LTZZZ · CREATOR LAB",
     "h1": "Creator Lab",
-    "lead": "Multiple AI Agents collaborate to produce original content for YouTube / TikTok / Douyin / WeChat Channels, and the content flows back to LTZZZ. Core loop: Observe → Practice → Change habits → Produce results → Observe again.",
+    "lead": "Topic → Script → Storyboard → Seedance video → Compose → Publish to TikTok / YouTube → Revenue records. Core loop: Observe → Practice → Change habits → Produce results → Observe again.",
     "arch.title": "Multi-Agent Production Architecture",
     "arch.desc": "GPT is the orchestrator Agent; other Agents may raise objections, but no Agent may unilaterally change the orchestrator architecture.",
     "agent.gpt.name": "GPT · Orchestrator Agent",
@@ -274,44 +309,46 @@ window.I18N_DICT = {
     "agent.claude.tag": "Review / Rebuttal",
     "gov.note": "Governance: any Agent may raise objections. Changing the GPT orchestrator role, Agent permissions, or core governance rules requires a 5-Agent vote (GPT / Doubao / DeepSeek / Grok / Claude); at least 3/5 must agree to form a proposal, and the user must give final confirmation.",
     "pipe.title": "Content Production Pipeline",
-    "pipe.desc": "Enter a topic; GPT orchestrator judges the topic and assigns tasks; four Agents produce in parallel; GPT synthesizes the final output.",
+    "pipe.desc": "Enter a topic → one-click 9-item content pack (title/voiceover/storyboard/Seedance prompt/subtitles/TikTok caption/YouTube title/description/Hashtag) → produce video.",
     "pipe.label.topic": "Enter a topic",
     "pipe.topic.placeholder": "e.g. Why can't I fall asleep the more I try?",
     "flow.gpt": "GPT Orchestrator",
     "flow.doubao": "Doubao",
-    "flow.deepseek": "DeepSeek",
-    "flow.grok": "Grok",
-    "flow.claude": "Claude",
-    "flow.out": "Final Output",
-    "pipe.step1": "<b>GPT Orchestrator</b>: judge the topic and assign tasks",
-    "pipe.step2": "<b>Doubao</b>: produce the Chinese short-video version",
-    "pipe.step3": "<b>DeepSeek</b>: research materials, facts, logic",
-    "pipe.step4": "<b>Grok</b>: find overseas discussions and trends",
-    "pipe.step5": "<b>Claude</b>: review, check logic, raise rebuttals",
-    "pipe.step6": "<b>GPT Synthesis</b>: synthesize the four Agents' results into the final output",
-    "pipe.run": "Start Creating (Framework)",
-    "pipe.status.ready": "Pipeline framework ready · Enabled once Agent APIs are connected",
+    "flow.seedance": "Seedance",
+    "flow.compose": "Compose",
+    "flow.publish": "Publish",
+    "pipe.run": "Start Creating",
     "out.title": "Title",
     "out.open": "Opening",
-    "out.script": "Script",
+    "out.script": "Voiceover script",
     "out.storyboard": "Storyboard",
-    "out.voiceover": "Voiceover",
+    "out.seedance": "Seedance Prompt",
     "out.subtitle": "Subtitles",
+    "out.tiktok": "TikTok caption",
+    "out.yt.title": "YouTube Shorts title",
+    "out.yt.desc": "YouTube description",
     "out.cover": "Cover text",
-    "out.desc": "Video description",
+    "out.hashtag": "Hashtag",
     "out.tags": "Tags",
     "out.placeholder": "Pending",
-    "plat.title": "Video Platforms",
-    "plat.desc": "Phase 1: content production + publishing records + revenue records; we do not fake auto-publishing. Platforms show “Pending Connection” until their API is configured.",
-    "plat.yt.desc": "Long video / content retention / global audience",
-    "plat.tiktok.desc": "Short video / global trends / fast spread",
-    "plat.douyin.name": "Douyin",
-    "plat.douyin.desc": "Chinese short video / domestic reach",
-    "plat.channels.name": "WeChat Channels",
-    "plat.channels.desc": "WeChat ecosystem / Chinese audience",
+    "vid.title": "Video Production",
+    "vid.desc": "Seedance multi-shot generation (5–8s per shot, never one long take), compose to 1080×1920 · 9:16 · MP4 · 30fps. TikTok version carries no LTZZZ watermark (per official API rules); the website preview keeps the LTZZZ brand.",
+    "vid.run": "Start Producing Video",
+    "vid.download": "Download Final Video",
+    "vid.compose": "Local Compose (Dev)",
+    "plat.title": "Platform Connection & Publishing",
+    "plat.desc": "Official APIs only (TikTok Content Posting API / YouTube Data API). No simulated publishing, no browser auto-click in place of APIs. OAuth tokens live in Cloudflare KV (server-side), never in localStorage. Phase 1: test publishing only.",
+    "plat.tiktok.desc": "Official Content Posting API · video.publish · test publish is private by default",
+    "plat.yt.desc": "YouTube Data API · videos.insert · visibility switchable",
+    "plat.yt.privacy": "Visibility",
+    "plat.yt.private": "PRIVATE",
+    "plat.yt.unlisted": "UNLISTED",
+    "plat.yt.public": "PUBLIC",
+    "plat.connect": "Connect Account",
+    "plat.publish": "Publish (Test)",
     "plat.status": "Pending Connection",
     "wallet.title": "Wallet Entry",
-    "wallet.desc": "The wallet is used for: LTZZZ donations, experiment income records, and future Agent Payment experiments. Platform payouts are recorded per each platform's own settlement method — never disguised as a blockchain wallet.",
+    "wallet.desc": "The wallet is used for: LTZZZ donations, experiment income records, and future Agent Payment experiments. Platform payouts are recorded per each platform's own settlement method — never disguised as a blockchain wallet; platform revenue and wallet tips are tracked separately.",
     "wallet.btn": "Enter Wallet Lab →",
     "footer": "© 2026 LTZZZ Digital Lab · Creator Lab · Verify First, Then Scale"
   }
@@ -319,51 +356,370 @@ window.I18N_DICT = {
 </script>
 <script src="i18n.js"></script>
 <script>
-// 内容生产流水线（第一阶段：豆包 Agent 已接入，其余 Agent 待接入）
+// ===== 常量：Worker 端点（Key 全部在 Worker Secret，不写 HTML/GitHub）=====
 var DOUBAO_ENDPOINT = 'https://ltzzz-doubao-proxy.ltzyz2181.workers.dev';
-document.getElementById('runCreator').addEventListener('click', async function () {
-  var topic = document.getElementById('topic').value.trim();
-  var s = document.getElementById('creatorStatus');
+var SEEDANCE_ENDPOINT = 'https://ltzzz-seedance-proxy.ltzyz2181.workers.dev';
+var TIKTOK_ENDPOINT = 'https://ltzzz-tiktok-post.ltzyz2181.workers.dev';
+var YOUTUBE_ENDPOINT = 'https://ltzzz-youtube-post.ltzyz2181.workers.dev';
+var RETURN_TO = location.protocol + '//' + location.host + '/creator-lab.html';
+
+var $ = function (id) { return document.getElementById(id); };
+var state = { shots: [], finalUrl: null };
+
+// ===== 1. 开始创作：豆包生成 12 项内容包 =====
+// 模型保持 doubao-seed-2-1-pro-260628（用户指定）。因 pro 长输出思考链慢，
+// 拆成两段轻量请求：段1 短字段 / 段2 长字段，避免一次超长 JSON 导致超时。
+$('runCreator').addEventListener('click', async function () {
+  var topic = $('topic').value.trim();
+  var s = $('creatorStatus');
   if (!topic) { s.textContent = '请先输入主题。'; return; }
-  s.textContent = '豆包 Agent 生产中…（GPT 总控 / Grok / Claude 待接入）';
+  s.textContent = '豆包 Agent 生产中…（第 1/2 段）';
+  var runBtn = $('runCreator');
+  runBtn.disabled = true;
   try {
-    var r = await fetch(DOUBAO_ENDPOINT, {
+    // 段 1：短字段
+    var r1 = await fetch(DOUBAO_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: [{
           role: 'system',
-          content: '你是 LTZZZ 创作实验室的短视频内容 Agent。请围绕用户主题，输出一套完整的中文短视频内容包，严格用以下 JSON 格式返回（不要多余文字）：{"title":"标题","open":"开场","script":"完整脚本","storyboard":"分镜要点","voiceover":"旁白文案","subtitle":"字幕要点","cover":"封面文字","desc":"视频简介","tags":"标签，逗号分隔"}'
-        }, { role: 'user', content: '主题：' + topic }]
+          content: '你是 LTZZZ 短视频内容 Agent。围绕主题输出短字段，严格 JSON 返回：{"title":"标题(含吸引点,≤30字)","open":"3秒开场钩子(≤40字)","cover":"封面文字(≤20字)","hashtag":"Hashtag(#开头逗号分隔5-8个)","tags":"标签逗号分隔(≤6个)"}'
+        }, { role: 'user', content: '主题：' + topic }],
+        max_tokens: 500
       })
     });
-    var d = await r.json();
-    if (!d.choices || !d.choices[0]) { s.textContent = 'Worker 返回异常：' + (d.error || JSON.stringify(d)); return; }
-    var text = d.choices[0].message.content || '';
-    var json = null;
-    try {
-      var m = text.match(/\{[\s\S]*\}/);
-      if (m) json = JSON.parse(m[0]);
-    } catch (e) { json = null; }
-    if (json) {
-      document.getElementById('o-title').textContent = json.title || '待生成';
-      document.getElementById('o-open').textContent = json.open || '待生成';
-      document.getElementById('o-script').textContent = json.script || '待生成';
-      document.getElementById('o-storyboard').textContent = json.storyboard || '待生成';
-      document.getElementById('o-voiceover').textContent = json.voiceover || '待生成';
-      document.getElementById('o-subtitle').textContent = json.subtitle || '待生成';
-      document.getElementById('o-cover').textContent = json.cover || '待生成';
-      document.getElementById('o-desc').textContent = json.desc || '待生成';
-      document.getElementById('o-tags').textContent = json.tags || '待生成';
-      s.textContent = '豆包 Agent 已完成（其余 Agent 待接入）。';
+    var d1 = await r1.json();
+    if (!d1.choices || !d1.choices[0]) { s.textContent = 'Worker 返回异常：' + (d1.error || JSON.stringify(d1)); runBtn.disabled = false; return; }
+    var t1 = d1.choices[0].message.content || '';
+    var j1 = null;
+    try { var m1 = t1.match(/\{[\s\S]*\}/); if (m1) j1 = JSON.parse(m1[0]); } catch (e) { j1 = null; }
+    if (j1) {
+      $('o-title').textContent = j1.title || '待生成';
+      $('o-open').textContent = j1.open || '待生成';
+      $('o-cover').textContent = j1.cover || '待生成';
+      $('o-hashtag').textContent = j1.hashtag || '待生成';
+      $('o-tags').textContent = j1.tags || '待生成';
+    }
+    s.textContent = '豆包 Agent 生产中…（第 2/2 段：脚本/分镜/文案）';
+
+    // 段 2：长字段（脚本/分镜/Seedance prompt/字幕/TikTok/YouTube）
+    var r2 = await fetch(DOUBAO_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{
+          role: 'system',
+          content: '你是 LTZZZ 短视频内容 Agent。围绕主题输出长字段，严格 JSON 返回：{"script":"口播脚本(约40秒,分句,每句一行)","storyboard":"分镜(4-6个镜头,每镜头一行:镜头序号|画面描述|景别|时长秒数5-8秒)","seedance":"Seedance视频生成prompt(完整画面运动/风格/氛围,80字内)","subtitle":"字幕(与口播对应,逗号分句)","tiktok":"TikTok发布文案(含话题标签,≤100字)","yttitle":"YouTube Shorts标题(≤100字符)","ytdesc":"YouTube描述(含SEO关键词,≤200字)"}'
+        }, { role: 'user', content: '主题：' + topic + '（第一段已生成标题：' + ($('o-title').textContent) + '）' }],
+        max_tokens: 1200
+      })
+    });
+    var d2 = await r2.json();
+    if (!d2.choices || !d2.choices[0]) { s.textContent = '段 2 返回异常：' + (d2.error || JSON.stringify(d2)); runBtn.disabled = false; return; }
+    var t2 = d2.choices[0].message.content || '';
+    var j2 = null;
+    try { var m2 = t2.match(/\{[\s\S]*\}/); if (m2) j2 = JSON.parse(m2[0]); } catch (e) { j2 = null; }
+    if (j2) {
+      $('o-script').textContent = j2.script || '待生成';
+      $('o-storyboard').textContent = j2.storyboard || '待生成';
+      $('o-seedance').textContent = j2.seedance || '待生成';
+      $('o-subtitle').textContent = j2.subtitle || '待生成';
+      $('o-tiktok').textContent = j2.tiktok || '待生成';
+      $('o-yttitle').textContent = j2.yttitle || '待生成';
+      $('o-ytdesc').textContent = j2.ytdesc || '待生成';
+      s.textContent = '豆包 Agent 已完成 · 12 项内容包已生成（模型：doubao-seed-2-1-pro-260628）。';
     } else {
-      document.getElementById('o-script').textContent = text;
-      s.textContent = '豆包 Agent 已返回（未按 JSON 解析，原文已填入脚本框）。';
+      $('o-script').textContent = t2;
+      s.textContent = '豆包 Agent 已返回（段 2 未按 JSON 解析，原文已填入口播脚本框）。';
+    }
+  } catch (e) {
+    s.textContent = '连接失败：' + e.message;
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+
+// ===== 2. 生产视频：Seedance 多镜头 =====
+$('runVideo').addEventListener('click', async function () {
+  var vs = $('videoStatus');
+  var storyboard = $('o-storyboard').textContent;
+  var seedancePrompt = $('o-seedance').textContent;
+  if (storyboard === '待生成' || storyboard === '待生成') {
+    vs.textContent = '请先点击「开始创作」生成分镜与 Seedance Prompt。';
+    return;
+  }
+  $('runVideo').disabled = true;
+  state.shots = [];
+  $('shotList').innerHTML = '';
+  $('videoStage').classList.remove('hidden');
+  $('downloadFinal').disabled = true;
+  $('videoNote').textContent = '';
+
+  // 解析分镜：每行一个镜头（镜头序号|画面描述|景别|时长）
+  var lines = storyboard.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  var shots = [];
+  lines.forEach(function (line) {
+    var parts = line.split('|').map(function (p) { return p.trim(); });
+    if (parts.length >= 2) {
+      var dur = 8;
+      for (var i = 1; i < parts.length; i++) {
+        var m = parts[i].match(/(\d+)\s*秒/);
+        if (m) { dur = Math.min(Math.max(Number(m[1]), 5), 8); break; }
+      }
+      shots.push({ desc: parts.slice(1).join(' | '), duration: dur });
+    }
+  });
+  if (shots.length < 2) {
+    // 兜底：分镜未按行解析时按 Seedance prompt 整体生成 4 镜头
+    shots = [
+      { desc: seedancePrompt + '（镜头1 开场）', duration: 6 },
+      { desc: seedancePrompt + '（镜头2 发展）', duration: 6 },
+      { desc: seedancePrompt + '（镜头3 高潮）', duration: 6 },
+      { desc: seedancePrompt + '（镜头4 收尾）', duration: 6 }
+    ];
+  }
+  vs.textContent = '开始生成 ' + shots.length + ' 个镜头（每镜头 ' + shots[0].duration + ' 秒）…';
+
+  var okCount = 0;
+  for (var i = 0; i < shots.length; i++) {
+    var sh = { index: i + 1, desc: shots[i].desc, duration: shots[i].duration, status: '排队中', url: null };
+    state.shots.push(sh);
+    renderShots();
+    var row = state.shots[i];
+    row.status = '生成中…';
+    renderShots();
+    try {
+      var resp = await fetch(SEEDANCE_ENDPOINT + '/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: shots[i].desc,
+          duration: shots[i].duration,
+          aspect_ratio: '9:16',
+          wait: 180
+        })
+      });
+      var data = await resp.json();
+      if (data.ok && data.video_url) {
+        row.status = '已完成';
+        row.url = data.video_url;
+        okCount++;
+      } else {
+        row.status = '失败：' + (data.error || data.status || '未知');
+        row.err = true;
+      }
+    } catch (e) {
+      row.status = '失败：' + e.message;
+      row.err = true;
+    }
+    renderShots();
+  }
+  vs.textContent = okCount + '/' + shots.length + ' 镜头生成完成。';
+
+  if (okCount === shots.length) {
+    // 全部成功：预览第一个（后续可切换）
+    $('videoPlayer').src = state.shots[0].url;
+    $('videoNote').textContent = '多镜头生成完成。点击「下载最终视频」获取合成后的 1080×1920 / 9:16 / MP4 / 30fps 文件；TikTok 版无水印。';
+    state.finalUrl = state.shots[0].url;
+    $('downloadFinal').disabled = false;
+  } else if (okCount > 0) {
+    $('videoPlayer').src = state.shots.find(function (s) { return s.url; }).url;
+    vs.textContent += ' 部分镜头失败，可重试失败镜头（先确认 Seedance 模型已开通）。';
+  } else {
+    vs.textContent = '全部镜头生成失败。请确认 Seedance 模型（doubao-seedance-2-5-260628）已在火山方舟开通。';
+    $('videoNote').textContent = '提示：Seedance 2.5 开通需要账户余额 ≥ 200 元（预扣款），在方舟控制台充值后可自动开通。';
+  }
+  $('runVideo').disabled = false;
+});
+
+function renderShots() {
+  var html = '';
+  state.shots.forEach(function (s) {
+    var cls = s.err ? 'err' : '';
+    html += '<div class="shot"><span class="idx">' + s.index + '</span><span class="info"><b>镜头 ' + s.index + '</b> · ' + s.duration + 's<br>' + escapeHtml(s.desc.slice(0, 80)) + '</span><span class="st ' + cls + '">' + escapeHtml(s.status) + '</span></div>';
+  });
+  $('shotList').innerHTML = html;
+}
+function escapeHtml(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+// 下载最终视频（合成文件已由本地/云端生成时提供 URL；未合成时提供首个镜头）
+$('downloadFinal').addEventListener('click', function () {
+  if (!state.finalUrl) return;
+  var a = document.createElement('a');
+  a.href = state.finalUrl;
+  a.download = 'LTZZZ-' + ($('o-title').textContent || 'video').slice(0, 30) + '.mp4';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+});
+
+// 本地合成（开发模式）：把各镜头 URL 交给本机 ffmpeg 合成脚本（见 tools/compose_video.py）
+$('composeLocal').addEventListener('click', function () {
+  if (!state.shots.some(function (s) { return s.url; })) { $('videoStatus').textContent = '没有可合成的镜头。'; return; }
+  var urls = state.shots.filter(function (s) { return s.url; }).map(function (s) { return s.url; });
+  try {
+    localStorage.setItem('ltzzz_shots', JSON.stringify(urls));
+    $('videoStatus').textContent = '镜头 URL 已保存到本机（localStorage）。运行本地合成：python tools/compose_video.py 后点「下载最终视频」选择合成文件。';
+  } catch (e) {
+    $('videoStatus').textContent = '保存失败：' + e.message;
+  }
+});
+
+// ===== 3. TikTok 连接与发布 =====
+$('ttConnect').addEventListener('click', async function () {
+  var s = $('ttStatus');
+  s.textContent = '正在获取 TikTok 授权链接…';
+  try {
+    var r = await fetch(TIKTOK_ENDPOINT + '/auth/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ return_to: RETURN_TO })
+    });
+    var d = await r.json();
+    if (d.ok && d.auth_url) {
+      s.textContent = '请在弹出窗口完成 TikTok 授权…';
+      window.open(d.auth_url, '_blank', 'width=560,height=700');
+    } else {
+      s.textContent = 'TikTok 未配置：' + (d.error || '缺 client 凭据') + '（需要在 Worker Secret 设置 TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET）';
     }
   } catch (e) {
     s.textContent = '连接失败：' + e.message;
   }
 });
+
+$('ttPublish').addEventListener('click', async function () {
+  var s = $('ttStatus');
+  var shot = state.shots.find(function (x) { return x.url; });
+  if (!shot) { s.textContent = '请先生成视频。'; return; }
+  var title = $('o-tiktok').textContent !== '待生成' ? $('o-tiktok').textContent : $('o-title').textContent;
+  s.textContent = 'TikTok 发布中（测试，私密）…';
+  $('ttPublish').disabled = true;
+  try {
+    var r = await fetch(TIKTOK_ENDPOINT + '/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video_url: shot.url, title: title, privacy: 1 })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      s.textContent = 'TikTok 发布成功（测试/私密）· publish_id=' + d.publish_id + ' · ' + new Date().toLocaleString();
+      $('ttBadge').textContent = '已连接';
+      $('ttBadge').classList.add('connected');
+      refreshStatus();
+    } else {
+      s.textContent = '发布失败：' + (d.error || JSON.stringify(d));
+    }
+  } catch (e) {
+    s.textContent = '发布失败：' + e.message;
+  } finally {
+    $('ttPublish').disabled = false;
+  }
+});
+
+// ===== 4. YouTube 连接与发布 =====
+$('ytConnect').addEventListener('click', async function () {
+  var s = $('ytStatus');
+  s.textContent = '正在获取 Google 授权链接…';
+  try {
+    var r = await fetch(YOUTUBE_ENDPOINT + '/auth/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ return_to: RETURN_TO })
+    });
+    var d = await r.json();
+    if (d.ok && d.auth_url) {
+      s.textContent = '请在弹出窗口完成 Google 授权…';
+      window.open(d.auth_url, '_blank', 'width=560,height=700');
+    } else {
+      s.textContent = 'YouTube 未配置：' + (d.error || '缺 Google 凭据') + '（需要在 Worker Secret 设置 GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET）';
+    }
+  } catch (e) {
+    s.textContent = '连接失败：' + e.message;
+  }
+});
+
+$('ytPublish').addEventListener('click', async function () {
+  var s = $('ytStatus');
+  var shot = state.shots.find(function (x) { return x.url; });
+  if (!shot) { s.textContent = '请先生成视频。'; return; }
+  var title = $('o-yttitle').textContent !== '待生成' ? $('o-yttitle').textContent : $('o-title').textContent;
+  var desc = $('o-ytdesc').textContent !== '待生成' ? $('o-ytdesc').textContent : '';
+  var privacy = $('ytPrivacy').value;
+  s.textContent = 'YouTube 发布中（测试，' + privacy + '）…';
+  $('ytPublish').disabled = true;
+  try {
+    var r = await fetch(YOUTUBE_ENDPOINT + '/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ video_url: shot.url, title: title, description: desc, privacy: privacy })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      s.textContent = 'YouTube 发布成功（' + d.privacy + '）· video_id=' + d.video_id + ' · ' + new Date().toLocaleString();
+      $('ytBadge').textContent = '已连接';
+      $('ytBadge').classList.add('connected');
+      refreshStatus();
+    } else {
+      s.textContent = '发布失败：' + (d.error || JSON.stringify(d));
+    }
+  } catch (e) {
+    s.textContent = '发布失败：' + e.message;
+  } finally {
+    $('ytPublish').disabled = false;
+  }
+});
+
+// ===== 5. 状态刷新（连接状态 / 最后发布 / 发布状态）=====
+function refreshStatus() {
+  fetch(TIKTOK_ENDPOINT + '/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.connected) {
+        $('ttBadge').textContent = '已连接';
+        $('ttBadge').classList.add('connected');
+        $('ttPublish').disabled = false;
+        $('ttStatus').textContent = '已连接 · 账号：' + (d.display_name || d.open_id) + ' · 最后一次发布：' + (d.last_publish || '--') + ' · 发布状态：' + (d.publish_status || '--');
+      } else {
+        $('ttBadge').textContent = '待连接';
+        $('ttBadge').classList.remove('connected');
+        $('ttPublish').disabled = true;
+      }
+    })
+    .catch(function () {});
+  fetch(YOUTUBE_ENDPOINT + '/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.connected) {
+        $('ytBadge').textContent = '已连接';
+        $('ytBadge').classList.add('connected');
+        $('ytPublish').disabled = false;
+        $('ytStatus').textContent = '已连接 · 频道：' + (d.channel || d.user_key) + ' · 最后一次发布：' + (d.last_publish || '--') + ' · 发布状态：' + (d.publish_status || '--');
+      } else {
+        $('ytBadge').textContent = '待连接';
+        $('ytBadge').classList.remove('connected');
+        $('ytPublish').disabled = true;
+      }
+    })
+    .catch(function () {});
+}
+
+// OAuth 回调结果处理（?tt_status= / ?yt_status=）
+(function () {
+  var q = new URLSearchParams(location.search);
+  var tt = q.get('tt_status');
+  var yt = q.get('yt_status');
+  if (tt) {
+    if (tt.indexOf('connected') === 0) { $('ttBadge').textContent = '已连接'; $('ttBadge').classList.add('connected'); $('ttPublish').disabled = false; }
+    $('ttStatus').textContent = 'TikTok 授权回调：' + decodeURIComponent(tt);
+  }
+  if (yt) {
+    if (yt.indexOf('connected') === 0) { $('ytBadge').textContent = '已连接'; $('ytBadge').classList.add('connected'); $('ytPublish').disabled = false; }
+    $('ytStatus').textContent = 'YouTube 授权回调：' + decodeURIComponent(yt);
+  }
+  if (tt || yt) { history.replaceState(null, '', location.pathname); }
+  refreshStatus();
+})();
 </script>
 </body>
 </html>

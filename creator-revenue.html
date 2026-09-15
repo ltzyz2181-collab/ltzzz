@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="description" content="LTZZZ 收益控制台——YouTube / TikTok / 抖音 / 视频号的播放量、粉丝、收入与 AI 制作成本统计框架。">
+<meta name="description" content="LTZZZ 收益控制台——YouTube / TikTok / 抖音 / 视频号 / LTZZZ 赞赏，平台收入与钱包赞赏分开统计。">
 <title data-i18n="_title">LTZZZ 收益控制台</title>
 <link rel="stylesheet" href="style.css">
 <style>
@@ -13,23 +13,32 @@
 .panel{background:#fff;border:1px solid #ddd8ce;border-radius:22px;padding:28px;margin-bottom:24px}
 .panel h2{font-size:22px;margin:0 0 8px;letter-spacing:-.02em}
 .panel .sub{font-size:14px;color:#888;margin:0 0 18px}
-.rev-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.rev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 @media(max-width:900px){.rev-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.rev-grid{grid-template-columns:1fr}}
 .rev-card{border:1px solid #ddd8ce;border-radius:16px;padding:18px;background:#faf8f4}
 .rev-card h3{margin:0 0 4px;font-size:16px}
 .rev-card .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;background:#f0ede6;color:#999;border:1px solid #e0dcd2;margin-top:4px}
+.rev-card .badge.wallet{background:#e7f0fb;color:#1d5fa8;border-color:#b6d4ef}
 .metrics{margin-top:12px;border-top:1px solid #f0ede6;padding-top:8px}
 .metrics div{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;color:#666;border-bottom:1px dashed #f0ede6}
 .metrics div:last-child{border-bottom:none}
 .metrics b{color:#171717;font-weight:600}
-.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-@media(max-width:700px){.sum-grid{grid-template-columns:1fr}}
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:700px){.sum-grid{grid-template-columns:repeat(2,1fr)}}
 .sum-card{border:1px solid #171717;border-radius:16px;padding:20px;background:#171717;color:#fff;text-align:center}
 .sum-card span{display:block;font-size:13px;color:#bbb;margin-bottom:8px}
 .sum-card b{font-size:26px;font-weight:700}
 .sum-card .unit{font-size:14px;color:#bbb;margin-left:4px;font-weight:400}
+.sum-card.light{background:#fff;color:#171717;border-color:#ddd8ce}
+.sum-card.light span{color:#888}
+.sum-card.light .unit{color:#888}
 .note{font-size:13px;color:#888;margin-top:14px;line-height:1.8}
+.rec-list{margin-top:10px;border-top:1px dashed #f0ede6;padding-top:8px}
+.rec-row{display:flex;gap:8px;align-items:center;font-size:12px;color:#666;padding:5px 0;border-bottom:1px dashed #f0ede6;flex-wrap:wrap}
+.rec-row:last-child{border-bottom:none}
+.rec-row .tag{background:#f0ede6;border-radius:6px;padding:1px 8px;font-size:11px;color:#555}
+.rec-row .amt{color:#171717;font-weight:600}
 </style>
 </head>
 <body>
@@ -48,76 +57,99 @@
 <main class="creator-wrap">
   <p class="eyebrow" data-i18n="eyebrow">LTZZZ · REVENUE CONSOLE</p>
   <h1 data-i18n="h1">收益控制台</h1>
-  <p class="creator-lead" data-i18n="lead">记录每个平台的播放量、粉丝、收入与 AI 制作成本。平台收入按照平台自己的结算方式记录，不伪装成区块链钱包。</p>
+  <p class="creator-lead" data-i18n="lead">平台收入（YouTube/TikTok/抖音/视频号）按平台自己的结算方式记录；LTZZZ 赞赏（ETH/USDC）进入钱包——两者分开统计，绝不伪装。</p>
 
   <section class="panel">
     <h2 data-i18n="plat.title">平台收益</h2>
-    <p class="sub" data-i18n="plat.desc">第一阶段为统计框架：平台 API 接入后自动填充；未接入时显示「待连接」与「--」。</p>
+    <p class="sub" data-i18n="plat.desc">每条记录含：platform / video_id / title / views / revenue / currency / published_at。平台 API 接入后自动填充；未接入显示「待连接」。</p>
     <div class="rev-grid">
       <div class="rev-card">
         <h3>YouTube</h3>
-        <span class="badge" data-i18n="badge.status">待连接</span>
+        <span class="badge" id="yt-badge" data-i18n="badge.status">待连接</span>
         <div class="metrics">
-          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
-          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
-          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
-          <div><span data-i18n="m.income">收入</span><b>--</b></div>
-          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
-          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
-          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+          <div><span data-i18n="m.views">播放量</span><b id="yt-views">--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b id="yt-fans">--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b id="yt-videos">--</b></div>
+          <div><span data-i18n="m.income">收入</span><b id="yt-income">--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b id="yt-aicost">--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b id="yt-net">--</b></div>
         </div>
+        <div class="rec-list" id="yt-records"></div>
       </div>
       <div class="rev-card">
         <h3>TikTok</h3>
-        <span class="badge" data-i18n="badge.status">待连接</span>
+        <span class="badge" id="tt-badge" data-i18n="badge.status">待连接</span>
         <div class="metrics">
-          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
-          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
-          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
-          <div><span data-i18n="m.income">收入</span><b>--</b></div>
-          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
-          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
-          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+          <div><span data-i18n="m.views">播放量</span><b id="tt-views">--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b id="tt-fans">--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b id="tt-videos">--</b></div>
+          <div><span data-i18n="m.income">收入</span><b id="tt-income">--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b id="tt-aicost">--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b id="tt-net">--</b></div>
         </div>
+        <div class="rec-list" id="tt-records"></div>
       </div>
       <div class="rev-card">
         <h3 data-i18n="card.douyin">抖音</h3>
         <span class="badge" data-i18n="badge.status">待连接</span>
         <div class="metrics">
-          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
-          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
-          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
-          <div><span data-i18n="m.income">收入</span><b>--</b></div>
-          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
-          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
-          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+          <div><span data-i18n="m.views">播放量</span><b id="dy-views">--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b id="dy-fans">--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b id="dy-videos">--</b></div>
+          <div><span data-i18n="m.income">收入</span><b id="dy-income">--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b id="dy-aicost">--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b id="dy-net">--</b></div>
         </div>
+        <div class="rec-list" id="dy-records"></div>
       </div>
       <div class="rev-card">
         <h3 data-i18n="card.channels">视频号</h3>
         <span class="badge" data-i18n="badge.status">待连接</span>
         <div class="metrics">
-          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
-          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
-          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
-          <div><span data-i18n="m.income">收入</span><b>--</b></div>
-          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
-          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
-          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+          <div><span data-i18n="m.views">播放量</span><b id="sp-views">--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b id="sp-fans">--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b id="sp-videos">--</b></div>
+          <div><span data-i18n="m.income">收入</span><b id="sp-income">--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b id="sp-aicost">--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b id="sp-net">--</b></div>
         </div>
+        <div class="rec-list" id="sp-records"></div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="card.tip">LTZZZ 赞赏</h3>
+        <span class="badge wallet" data-i18n="badge.tip">钱包赞赏</span>
+        <div class="metrics">
+          <div><span data-i18n="m.tip.eth">ETH 赞赏总额</span><b id="tip-eth">--</b></div>
+          <div><span data-i18n="m.tip.usdc">USDC 赞赏总额</span><b id="tip-usdc">--</b></div>
+          <div><span data-i18n="m.tip.count">赞赏次数</span><b id="tip-count">--</b></div>
+          <div><span data-i18n="m.tip.chain">链上</span><b id="tip-chain">--</b></div>
+          <div><span data-i18n="m.tip.last">最后一次</span><b id="tip-last">--</b></div>
+        </div>
+        <div class="rec-list" id="tip-records"></div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="card.wallet">钱包余额</h3>
+        <span class="badge wallet" data-i18n="badge.wallet">独立统计</span>
+        <div class="metrics">
+          <div><span data-i18n="m.wallet.eth">ETH</span><b id="wallet-eth">--</b></div>
+          <div><span data-i18n="m.wallet.usdc">USDC</span><b id="wallet-usdc">--</b></div>
+          <div><span data-i18n="m.wallet.addr">地址</span><b id="wallet-addr" style="font-size:11px;word-break:break-all">--</b></div>
+        </div>
+        <div class="note" data-i18n="wallet.note">钱包余额与平台收入分开统计：平台收入按平台结算，不伪装成直接进入 MetaMask。</div>
       </div>
     </div>
   </section>
 
   <section class="panel">
     <h2 data-i18n="sum.title">汇总</h2>
-    <p class="sub" data-i18n="sum.desc">四个平台合计：总收入 − AI 成本 = 净收入。</p>
+    <p class="sub" data-i18n="sum.desc">平台合计：总收入 − AI 成本 = 净收入。钱包赞赏单独一行，不与平台收入相加。</p>
     <div class="sum-grid">
-      <div class="sum-card"><span data-i18n="sum.total">总收入</span><b>--</b></div>
-      <div class="sum-card"><span data-i18n="sum.aicost">AI 成本</span><b>--</b></div>
-      <div class="sum-card"><span data-i18n="sum.net">净收入</span><b>--</b></div>
+      <div class="sum-card"><span data-i18n="sum.total">平台总收入</span><b id="sum-total">--</b></div>
+      <div class="sum-card"><span data-i18n="sum.aicost">AI 成本</span><b id="sum-aicost">--</b></div>
+      <div class="sum-card"><span data-i18n="sum.net">平台净收入</span><b id="sum-net">--</b></div>
+      <div class="sum-card light"><span data-i18n="sum.tips">钱包赞赏（ETH+USDC）</span><b id="sum-tips">--</b></div>
     </div>
-    <p class="note" data-i18n="sum.note">数据待接入：平台 API 配置并授权后，此处自动汇总播放量、粉丝、视频数与收入；AI 制作成本由创作实验室按每次生产记录。</p>
+    <p class="note" data-i18n="sum.note">数据待接入：平台 API 配置并授权后自动汇总。收益记录结构：{ platform, video_id, title, views, revenue, currency, published_at }。AI 制作成本由创作实验室按每次生产记录。</p>
   </section>
 
   <section class="panel">
@@ -127,10 +159,10 @@
   </section>
 </main>
 
-<footer data-i18n="footer">© 2026 LTZZZ Digital Lab · Revenue Console · 待连接 → 接入 API → 真实数据</footer>
+<footer data-i18n="footer">© 2026 LTZZZ Digital Lab · Revenue Console · 平台收入与钱包赞赏分开统计</footer>
 
 <script>
-/* creator-revenue.html 翻译字典：键名与页面 data-i18n 属性一一对应 */
+/* creator-revenue.html 翻译字典 */
 window.I18N_DICT = {
   zh: {
     "_title": "LTZZZ 收益控制台",
@@ -142,29 +174,42 @@ window.I18N_DICT = {
     "nav.wallet": "钱包",
     "eyebrow": "LTZZZ · REVENUE CONSOLE",
     "h1": "收益控制台",
-    "lead": "记录每个平台的播放量、粉丝、收入与 AI 制作成本。平台收入按照平台自己的结算方式记录，不伪装成区块链钱包。",
+    "lead": "平台收入（YouTube/TikTok/抖音/视频号）按平台自己的结算方式记录；LTZZZ 赞赏（ETH/USDC）进入钱包——两者分开统计，绝不伪装。",
     "plat.title": "平台收益",
-    "plat.desc": "第一阶段为统计框架：平台 API 接入后自动填充；未接入时显示「待连接」与「--」。",
+    "plat.desc": "每条记录含：platform / video_id / title / views / revenue / currency / published_at。平台 API 接入后自动填充；未接入显示「待连接」。",
     "badge.status": "待连接",
+    "badge.tip": "钱包赞赏",
+    "badge.wallet": "独立统计",
     "card.douyin": "抖音",
     "card.channels": "视频号",
+    "card.tip": "LTZZZ 赞赏",
+    "card.wallet": "钱包余额",
     "m.views": "播放量",
     "m.fans": "粉丝",
     "m.videos": "视频数量",
     "m.income": "收入",
-    "m.expense": "支出",
     "m.aicost": "AI 制作成本",
     "m.net": "净收入",
+    "m.tip.eth": "ETH 赞赏总额",
+    "m.tip.usdc": "USDC 赞赏总额",
+    "m.tip.count": "赞赏次数",
+    "m.tip.chain": "链上",
+    "m.tip.last": "最后一次",
+    "m.wallet.eth": "ETH",
+    "m.wallet.usdc": "USDC",
+    "m.wallet.addr": "地址",
+    "wallet.note": "钱包余额与平台收入分开统计：平台收入按平台结算，不伪装成直接进入 MetaMask。",
     "sum.title": "汇总",
-    "sum.desc": "四个平台合计：总收入 − AI 成本 = 净收入。",
-    "sum.total": "总收入",
+    "sum.desc": "平台合计：总收入 − AI 成本 = 净收入。钱包赞赏单独一行，不与平台收入相加。",
+    "sum.total": "平台总收入",
     "sum.aicost": "AI 成本",
-    "sum.net": "净收入",
-    "sum.note": "数据待接入：平台 API 配置并授权后，此处自动汇总播放量、粉丝、视频数与收入；AI 制作成本由创作实验室按每次生产记录。",
+    "sum.net": "平台净收入",
+    "sum.tips": "钱包赞赏（ETH+USDC）",
+    "sum.note": "数据待接入：平台 API 配置并授权后自动汇总。收益记录结构：{ platform, video_id, title, views, revenue, currency, published_at }。AI 制作成本由创作实验室按每次生产记录。",
     "wallet.title": "钱包与结算",
     "wallet.desc": "钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。不要把平台官方提现方式伪装成区块链钱包；平台收入按平台自己的结算方式记录。",
     "wallet.btn": "进入钱包实验室 →",
-    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · 待连接 → 接入 API → 真实数据"
+    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · 平台收入与钱包赞赏分开统计"
   },
   en: {
     "_title": "LTZZZ Revenue Console",
@@ -176,32 +221,181 @@ window.I18N_DICT = {
     "nav.wallet": "Wallet",
     "eyebrow": "LTZZZ · REVENUE CONSOLE",
     "h1": "Revenue Console",
-    "lead": "Track views, followers, income and AI production costs per platform. Platform income is recorded per each platform's own settlement method — never disguised as a blockchain wallet.",
+    "lead": "Platform revenue (YouTube/TikTok/Douyin/WeChat Channels) is recorded per each platform's own settlement method; LTZZZ tips (ETH/USDC) go to the wallet — tracked separately, never disguised.",
     "plat.title": "Platform Revenue",
-    "plat.desc": "Phase 1 is a statistics framework: figures fill automatically once platform APIs are connected; otherwise they show “Pending Connection” and “--”.",
+    "plat.desc": "Each record: platform / video_id / title / views / revenue / currency / published_at. Fills automatically once platform APIs are connected; otherwise “Pending Connection”.",
     "badge.status": "Pending Connection",
+    "badge.tip": "Wallet Tips",
+    "badge.wallet": "Separate",
     "card.douyin": "Douyin",
     "card.channels": "WeChat Channels",
+    "card.tip": "LTZZZ Tips",
+    "card.wallet": "Wallet Balance",
     "m.views": "Views",
     "m.fans": "Followers",
     "m.videos": "Videos",
     "m.income": "Income",
-    "m.expense": "Expenses",
     "m.aicost": "AI Production Cost",
     "m.net": "Net Income",
+    "m.tip.eth": "Total ETH tips",
+    "m.tip.usdc": "Total USDC tips",
+    "m.tip.count": "Tip count",
+    "m.tip.chain": "Chain",
+    "m.tip.last": "Last",
+    "m.wallet.eth": "ETH",
+    "m.wallet.usdc": "USDC",
+    "m.wallet.addr": "Address",
+    "wallet.note": "Wallet balance and platform revenue are tracked separately: platform revenue settles per platform, never disguised as flowing directly into MetaMask.",
     "sum.title": "Summary",
-    "sum.desc": "All four platforms: Total income − AI cost = Net income.",
-    "sum.total": "Total Income",
+    "sum.desc": "Platforms total: Total income − AI cost = Net income. Wallet tips are a separate line, never added to platform revenue.",
+    "sum.total": "Platform Total Income",
     "sum.aicost": "AI Cost",
-    "sum.net": "Net Income",
-    "sum.note": "Data pending: once platform APIs are configured and authorized, views, followers, video counts and income will aggregate here automatically; AI production costs are recorded per production run by the Creator Lab.",
+    "sum.net": "Platform Net Income",
+    "sum.tips": "Wallet Tips (ETH+USDC)",
+    "sum.note": "Data pending: fills automatically once platform APIs are configured and authorized. Revenue record shape: { platform, video_id, title, views, revenue, currency, published_at }. AI production costs are recorded per production run.",
     "wallet.title": "Wallet & Settlement",
     "wallet.desc": "The wallet is used for: LTZZZ donations, experiment income records, and future Agent Payment experiments. Never disguise official platform payouts as a blockchain wallet; platform income is recorded per each platform's own settlement method.",
     "wallet.btn": "Enter Wallet Lab →",
-    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · Pending → Connect APIs → Real Data"
+    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · Platform revenue and wallet tips tracked separately"
   }
 };
 </script>
 <script src="i18n.js"></script>
+<script>
+/* 收益数据结构（用户指定）：
+   { platform, video_id, title, views, revenue, currency, published_at }
+   平台收入与钱包赞赏分开统计：平台收入按平台结算，ETH/USDC 赞赏独立记录。 */
+var REVENUE_KEY = 'ltzzz_revenue_records';
+var TIPS_KEY = 'ltzzz_tips_records';
+var WALLET_KEY = 'ltzzz_wallet_balance';
+
+function readArr(key) {
+  try { var v = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function writeArr(key, arr) {
+  try { localStorage.setItem(key, JSON.stringify(arr.slice(-50))); } catch (e) {}
+}
+
+function fmtMoney(v, cur) {
+  if (v === null || v === undefined || isNaN(v)) return '--';
+  var sym = cur === 'USD' ? '$' : '¥';
+  return sym + Number(v).toFixed(2);
+}
+
+function render() {
+  var records = readArr(REVENUE_KEY);
+  var tips = readArr(TIPS_KEY);
+  var wallet = readArr(WALLET_KEY)[0] || {};
+
+  // 各平台汇总
+  var platforms = { youtube: { views: 0, income: 0, cost: 0, n: 0 },
+                    tiktok: { views: 0, income: 0, cost: 0, n: 0 },
+                    douyin: { views: 0, income: 0, cost: 0, n: 0 },
+                    shipinhao: { views: 0, income: 0, cost: 0, n: 0 } };
+  records.forEach(function (r) {
+    var p = platforms[r.platform];
+    if (!p) return;
+    p.views += Number(r.views) || 0;
+    p.income += Number(r.revenue) || 0;
+    p.cost += Number(r.aicost) || 0;
+    p.n++;
+  });
+  var platSum = { income: 0, cost: 0 };
+  Object.keys(platforms).forEach(function (k) {
+    var p = platforms[k];
+    var id = k === 'shipinhao' ? 'sp' : (k === 'douyin' ? 'dy' : k.slice(0, 2));
+    var el = function (s) { return document.getElementById(id + '-' + s); };
+    el('views').textContent = p.n ? p.views.toLocaleString() : '--';
+    el('fans').textContent = '--';
+    el('videos').textContent = p.n || '--';
+    el('income').textContent = p.n ? fmtMoney(p.income, 'USD') : '--';
+    el('aicost').textContent = p.n ? fmtMoney(p.cost, 'USD') : '--';
+    el('net').textContent = p.n ? fmtMoney(p.income - p.cost, 'USD') : '--';
+    if (p.n) { document.getElementById(id + '-badge').textContent = '已接入'; }
+    platSum.income += p.income;
+    platSum.cost += p.cost;
+    // 记录列表
+    var listEl = document.getElementById(id + '-records');
+    var rs = records.filter(function (r) { return r.platform === k; });
+    listEl.innerHTML = rs.slice(0, 4).map(function (r) {
+      return '<div class="rec-row"><span class="tag">' + (r.platform || '') + '</span>' +
+        '<span>' + (r.title || '').slice(0, 24) + '</span>' +
+        '<span class="amt">' + fmtMoney(r.revenue, r.currency) + '</span>' +
+        '<span>' + (r.video_id || '') + '</span></div>';
+    }).join('') || '<div class="rec-row">--</div>';
+  });
+
+  document.getElementById('sum-total').textContent = fmtMoney(platSum.income, 'USD');
+  document.getElementById('sum-aicost').textContent = fmtMoney(platSum.cost, 'USD');
+  document.getElementById('sum-net').textContent = fmtMoney(platSum.income - platSum.cost, 'USD');
+
+  // 赞赏（ETH/USDC）单独统计
+  var ethTip = 0, usdcTip = 0;
+  tips.forEach(function (t) {
+    if (t.currency === 'ETH') ethTip += Number(t.amount) || 0;
+    if (t.currency === 'USDC') usdcTip += Number(t.amount) || 0;
+  });
+  document.getElementById('tip-eth').textContent = tips.length ? ethTip.toFixed(4) + ' ETH' : '--';
+  document.getElementById('tip-usdc').textContent = tips.length ? usdcTip.toFixed(2) + ' USDC' : '--';
+  document.getElementById('tip-count').textContent = tips.length || '--';
+  document.getElementById('tip-chain').textContent = '链上';
+  var lastTip = tips[tips.length - 1];
+  document.getElementById('tip-last').textContent = lastTip ? new Date(lastTip.published_at).toLocaleString('zh-CN') : '--';
+  var tipList = document.getElementById('tip-records');
+  tipList.innerHTML = tips.slice(-4).reverse().map(function (t) {
+    return '<div class="rec-row"><span class="tag">' + t.currency + '</span>' +
+      '<span class="amt">' + t.amount + '</span><span>' + new Date(t.published_at).toLocaleString('zh-CN') + '</span></div>';
+  }).join('') || '<div class="rec-row">--</div>';
+
+  document.getElementById('sum-tips').textContent = tips.length
+    ? ethTip.toFixed(4) + ' ETH + ' + usdcTip.toFixed(2) + ' USDC' : '--';
+
+  // 钱包余额（独立于平台收入）
+  document.getElementById('wallet-eth').textContent = wallet.eth ? Number(wallet.eth).toFixed(4) + ' ETH' : '--';
+  document.getElementById('wallet-usdc').textContent = wallet.usdc ? Number(wallet.usdc).toFixed(2) + ' USDC' : '--';
+  document.getElementById('wallet-addr').textContent = wallet.address || '--';
+}
+
+// 供 wallet-lab / creator-lab 调用：记录一笔平台收益（按用户指定结构）
+window.LTZZZ_RECORD_REVENUE = function (rec) {
+  var records = readArr(REVENUE_KEY);
+  records.push({
+    platform: rec.platform || 'youtube',
+    video_id: rec.video_id || '',
+    title: rec.title || '',
+    views: rec.views || 0,
+    revenue: rec.revenue || 0,
+    currency: rec.currency || 'USD',
+    aicost: rec.aicost || 0,
+    published_at: rec.published_at || new Date().toISOString()
+  });
+  writeArr(REVENUE_KEY, records);
+  render();
+};
+
+// 记录一笔赞赏（ETH/USDC，链上真实交易）
+window.LTZZZ_RECORD_TIP = function (tip) {
+  var tips = readArr(TIPS_KEY);
+  tips.push({
+    currency: tip.currency === 'USDC' ? 'USDC' : 'ETH',
+    amount: tip.amount,
+    tx: tip.tx || '',
+    published_at: tip.published_at || new Date().toISOString()
+  });
+  writeArr(TIPS_KEY, tips);
+  render();
+};
+
+// 记录钱包余额（从 wallet-lab 读取）
+window.LTZZZ_SET_WALLET = function (w) {
+  var wallet = [{ eth: w.eth || 0, usdc: w.usdc || 0, address: w.address || '', updated_at: new Date().toISOString() }];
+  try { localStorage.setItem(WALLET_KEY, JSON.stringify(wallet)); } catch (e) {}
+  render();
+};
+
+// 页面加载时从 creator-lab 的发布结果读取（平台收益记录由 Worker 回调写入，此处渲染已有数据）
+render();
+</script>
 </body>
 </html>

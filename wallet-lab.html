@@ -11,16 +11,22 @@ body{margin:0;background:#050914;color:#eaf7ff;font-family:system-ui,-apple-syst
 .muted{color:#8da7bb}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:700px){.row{grid-template-columns:1fr}}
-input{width:100%;box-sizing:border-box;background:#02060d;color:#eaf7ff;border:1px solid #21405a;border-radius:10px;padding:12px;font:inherit}
+input,select{width:100%;box-sizing:border-box;background:#02060d;color:#eaf7ff;border:1px solid #21405a;border-radius:10px;padding:12px;font:inherit}
 .btn{padding:11px 16px;border-radius:10px;border:1px solid #36d9ee;background:#0a5264;color:white;cursor:pointer}
 .btn.green{border-color:#49d9a3;background:#0b4d3a}
+.btn.gold{border-color:#e8b93a;background:#5a4510;color:#fff}
 .status{padding:12px;background:#02060d;border-radius:10px;margin-top:12px;word-break:break-all}
 a{color:#5de7ff}
+label{display:block;font-size:13px;color:#8da7bb;margin:10px 0 5px}
 .lang-toggle{padding:6px 14px;border:1px solid #2a4a66;border-radius:999px;background:transparent;color:#8da7bb;font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit}
 .lang-toggle:hover{border-color:#5de7ff;color:#eaf7ff}
 .lang-toggle .lang-zh{font-weight:600}
 html[lang="en"] .lang-toggle .lang-zh{font-weight:400}
 html[lang="en"] .lang-toggle .lang-en{font-weight:600}
+.tip-box{border:1px solid #3a5a3a;background:#0a1a12;border-radius:12px;padding:14px;margin-top:12px}
+.tip-box h3{color:#49d9a3;margin:0 0 6px;font-size:15px}
+.tip-box .addr{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#9fd8bd;word-break:break-all;background:#06130c;border:1px dashed #2c4f3a;border-radius:8px;padding:10px}
+.sep{height:1px;background:#16304a;margin:18px 0}
 </style>
 </head>
 <body>
@@ -30,11 +36,13 @@ html[lang="en"] .lang-toggle .lang-en{font-weight:600}
   <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
 </div>
 <h1 data-i18n="h1">真实钱包实验室</h1>
-<p class="muted" data-i18n="desc">连接浏览器钱包，读取地址与余额；“真实转账”由钱包弹窗交给你本人确认。</p>
+<p class="muted" data-i18n="desc">连接浏览器钱包，读取地址与余额；“真实转账/赞赏”由钱包弹窗交给你本人确认。平台收入与钱包赞赏分开统计。</p>
+
 <section class="panel">
   <button class="btn" id="connect" data-i18n="connect">连接 MetaMask / OKX</button>
   <div class="status" id="status">未连接</div>
 </section>
+
 <section class="panel">
   <h2 data-i18n="send.title">真实 ETH 转账</h2>
   <div class="row">
@@ -45,9 +53,37 @@ html[lang="en"] .lang-toggle .lang-en{font-weight:600}
   <button class="btn green" id="send" data-i18n="send.btn">打开钱包确认转账</button>
   <div class="status" id="tx">尚未发起交易</div>
 </section>
+
+<div class="sep"></div>
+
+<section class="panel">
+  <h2 data-i18n="donate.title">LTZZZ Support / Donate</h2>
+  <p class="muted" data-i18n="donate.desc">支持 LTZZZ：选择资产（ETH / USDC）后点击「发起赞赏」，链上交易由你的钱包弹窗确认；赞赏记录进入收益控制台「LTZZZ 赞赏」，与平台收入分开统计。</p>
+  <div class="tip-box">
+    <h3 data-i18n="donate.recv">LTZZZ 收款地址</h3>
+    <div class="addr" id="donateAddr">ltzzz.eth（填写你的 ENS 或 0x 地址）</div>
+  </div>
+  <div class="row">
+    <div>
+      <label data-i18n="donate.asset">资产</label>
+      <select id="donateAsset">
+        <option value="ETH">ETH</option>
+        <option value="USDC">USDC</option>
+      </select>
+    </div>
+    <div>
+      <label data-i18n="donate.amount">金额</label>
+      <input id="donateAmount" type="number" min="0" step="0.01" placeholder="0.01">
+    </div>
+  </div>
+  <br>
+  <button class="btn gold" id="donate" data-i18n="donate.btn">发起赞赏（钱包确认）</button>
+  <div class="status" id="donateOut">尚未发起赞赏</div>
+</section>
+
 <section class="panel">
   <h2 data-i18n="sim.title">模拟捐赠</h2>
-  <p class="muted" data-i18n="sim.desc">只记录在本机浏览器，不产生链上交易。</p>
+  <p class="muted" data-i18n="sim.desc">只记录在本机浏览器，不产生链上交易。用于测试收益控制台统计。</p>
   <input id="simAmount" type="number" min="0" step="1" placeholder="例如 1 元" data-i18n-placeholder="sim.placeholder">
   <br><br>
   <button class="btn" id="sim" data-i18n="sim.btn">记录模拟捐赠</button>
@@ -56,19 +92,25 @@ html[lang="en"] .lang-toggle .lang-en{font-weight:600}
 <p class="muted"><a href="agi-lab.html" data-i18n="back">← 返回 AGI 共同实验室</a></p>
 </main>
 <script>
-/* 钱包实验室翻译字典：键名与页面 data-i18n 属性一一对应 */
+/* 钱包实验室翻译字典 */
 window.I18N_DICT = {
   zh: {
     "_title": "真实钱包实验室 · LTZZZ",
     "h1": "真实钱包实验室",
-    "desc": "连接浏览器钱包，读取地址与余额；“真实转账”由钱包弹窗交给你本人确认。",
+    "desc": "连接浏览器钱包，读取地址与余额；“真实转账/赞赏”由钱包弹窗交给你本人确认。平台收入与钱包赞赏分开统计。",
     "connect": "连接 MetaMask / OKX",
     "send.title": "真实 ETH 转账",
     "send.to": "收款地址",
     "send.amount": "金额（ETH）",
     "send.btn": "打开钱包确认转账",
+    "donate.title": "LTZZZ Support / Donate",
+    "donate.desc": "支持 LTZZZ：选择资产（ETH / USDC）后点击「发起赞赏」，链上交易由你的钱包弹窗确认；赞赏记录进入收益控制台「LTZZZ 赞赏」，与平台收入分开统计。",
+    "donate.recv": "LTZZZ 收款地址",
+    "donate.asset": "资产",
+    "donate.amount": "金额",
+    "donate.btn": "发起赞赏（钱包确认）",
     "sim.title": "模拟捐赠",
-    "sim.desc": "只记录在本机浏览器，不产生链上交易。",
+    "sim.desc": "只记录在本机浏览器，不产生链上交易。用于测试收益控制台统计。",
     "sim.placeholder": "例如 1 元",
     "sim.btn": "记录模拟捐赠",
     "back": "← 返回 AGI 共同实验室"
@@ -76,14 +118,20 @@ window.I18N_DICT = {
   en: {
     "_title": "Real Wallet Lab · LTZZZ",
     "h1": "Real Wallet Lab",
-    "desc": "Connect your browser wallet to read the address and balance; “real transfers” are confirmed by you in the wallet popup.",
+    "desc": "Connect your browser wallet to read the address and balance; “real transfers/tips” are confirmed by you in the wallet popup. Platform revenue and wallet tips are tracked separately.",
     "connect": "Connect MetaMask / OKX",
     "send.title": "Real ETH Transfer",
     "send.to": "Recipient address",
     "send.amount": "Amount (ETH)",
     "send.btn": "Open Wallet to Confirm Transfer",
+    "donate.title": "LTZZZ Support / Donate",
+    "donate.desc": "Support LTZZZ: choose asset (ETH / USDC) and tap “Send Tip”; the on-chain transaction is confirmed in your wallet popup. Tip records go to the Revenue Console “LTZZZ Tips”, tracked separately from platform revenue.",
+    "donate.recv": "LTZZZ Receiving Address",
+    "donate.asset": "Asset",
+    "donate.amount": "Amount",
+    "donate.btn": "Send Tip (Wallet Confirm)",
     "sim.title": "Simulated Donation",
-    "sim.desc": "Stored only in this browser; no on-chain transaction is created.",
+    "sim.desc": "Stored only in this browser; no on-chain transaction is created. For testing revenue console statistics.",
     "sim.placeholder": "e.g. 1 yuan",
     "sim.btn": "Record Simulated Donation",
     "back": "← Back to AGI Common Lab"
@@ -92,6 +140,85 @@ window.I18N_DICT = {
 </script>
 <script src="i18n.js"></script>
 <script>
-let provider=null,account=null;const $=id=>document.getElementById(id);function ethHex(v){return '0x'+BigInt(Math.round(Number(v)*1e18)).toString(16)}function detect(){provider=window.ethereum||window.okxwallet||null;return provider}async function connect(){if(!detect()){$('status').textContent='没有检测到浏览器钱包。手机请用 MetaMask/OKX App 的内置浏览器打开。';return}try{const a=await provider.request({method:'eth_requestAccounts'});account=a[0];$('status').textContent='已连接：'+account; }catch(e){$('status').textContent='连接取消或失败：'+e.message}}$('connect').onclick=connect;$('send').onclick=async()=>{if(!account){await connect();if(!account)return}const to=$('to').value.trim(),amount=$('amount').value.trim();if(!/^0x[a-fA-F0-9]{40}$/.test(to)){ $('tx').textContent='请输入有效的 0x 收款地址。';return}if(!(Number(amount)>0)){ $('tx').textContent='请输入大于 0 的 ETH 金额。';return}try{$('tx').textContent='正在打开钱包确认…';const hash=await provider.request({method:'eth_sendTransaction',params:[{from:account,to,value:ethHex(amount)}]});$('tx').textContent='交易已提交：'+hash}catch(e){$('tx').textContent='交易未完成：'+e.message}};$('sim').onclick=()=>{const n=Number($('simAmount').value);if(!(n>=0))return;$('simOut').textContent='本机已记录模拟捐赠：¥'+n.toFixed(2)+' · '+new Date().toLocaleString('zh-CN')};</script>
+let provider=null,account=null;
+const $=id=>document.getElementById(id);
+function ethHex(v){return '0x'+BigInt(Math.round(Number(v)*1e18)).toString(16)}
+function usdcHex(v){return '0x'+BigInt(Math.round(Number(v)*1e6)).toString(16)}
+// USDC (Ethereum) 合约地址
+const USDC_ADDR='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+function detect(){provider=window.ethereum||window.okxwallet||null;return provider}
+async function connect(){
+  if(!detect()){$('status').textContent='没有检测到浏览器钱包。手机请用 MetaMask/OKX App 的内置浏览器打开。';return}
+  try{
+    const a=await provider.request({method:'eth_requestAccounts'});
+    account=a[0];
+    $('status').textContent='已连接：'+account;
+    // 读取 ETH / USDC 余额并同步到收益控制台（分开统计，仅本机记录）
+    try{
+      const eth=await provider.request({method:'eth_getBalance',params:[account,'latest']});
+      const ethNum=Number(BigInt(eth))/1e18;
+      let usdcNum=0;
+      try{
+        const bal=await provider.request({method:'eth_call',params:[{to:USDC_ADDR,data:'0x70a08231000000000000000000000000'+account.slice(2).toLowerCase()},'latest']});
+        usdcNum=Number(BigInt(bal))/1e6;
+      }catch(e){}
+      $('status').textContent='已连接：'+account+' · ETH ≈ '+ethNum.toFixed(4)+' · USDC ≈ '+usdcNum.toFixed(2);
+      // 同步余额到收益控制台（独立统计，不进平台收入）
+      if(window.LTZZZ_SET_WALLET){
+        window.LTZZZ_SET_WALLET({eth:ethNum,usdc:usdcNum,address:account});
+      }
+    }catch(e){}
+  }catch(e){$('status').textContent='连接取消或失败：'+e.message}
+}
+$('connect').onclick=connect;
+
+$('send').onclick=async()=>{
+  if(!account){await connect();if(!account)return}
+  const to=$('to').value.trim(),amount=$('amount').value.trim();
+  if(!/^0x[a-fA-F0-9]{40}$/.test(to)){$('tx').textContent='请输入有效的 0x 收款地址。';return}
+  if(!(Number(amount)>0)){$('tx').textContent='请输入大于 0 的 ETH 金额。';return}
+  try{
+    $('tx').textContent='正在打开钱包确认…';
+    const hash=await provider.request({method:'eth_sendTransaction',params:[{from:account,to,value:ethHex(amount)}]});
+    $('tx').textContent='交易已提交：'+hash;
+  }catch(e){$('tx').textContent='交易未完成：'+e.message}
+};
+
+$('donate').onclick=async()=>{
+  if(!account){await connect();if(!account)return}
+  const asset=$('donateAsset').value;
+  const amount=Number($('donateAmount').value);
+  const to=$('donateAddr').textContent.trim();
+  if(!(amount>0)){$('donateOut').textContent='请输入大于 0 的金额。';return}
+  if(!/^0x[a-fA-F0-9]{40}$/.test(to)){$('donateOut').textContent='LTZZZ 收款地址需为有效的 0x 地址（当前为占位：'+to+'）。';return}
+  try{
+    $('donateOut').textContent='正在打开钱包确认赞赏…';
+    let hash;
+    if(asset==='ETH'){
+      hash=await provider.request({method:'eth_sendTransaction',params:[{from:account,to,value:ethHex(amount)}]});
+    }else{
+      // USDC：ERC-20 transfer(to, amount*1e6)
+      const data='0xa9059cbb'+'0'.repeat(24)+to.slice(2).toLowerCase()+usdcHex(amount).slice(2).padStart(64,'0');
+      hash=await provider.request({method:'eth_sendTransaction',params:[{from:account,to:USDC_ADDR,data,value:'0x0'}]});
+    }
+    $('donateOut').textContent='赞赏已提交（'+asset+' '+amount+'）：'+hash;
+    // 记录到收益控制台「LTZZZ 赞赏」（与平台收入分开统计）
+    if(window.LTZZZ_RECORD_TIP){
+      window.LTZZZ_RECORD_TIP({currency:asset,amount:amount,tx:hash,published_at:new Date().toISOString()});
+    }
+  }catch(e){$('donateOut').textContent='赞赏未完成：'+e.message}
+};
+
+$('sim').onclick=()=>{
+  const n=Number($('simAmount').value);
+  if(!(n>=0))return;
+  const rec='本机已记录模拟捐赠：¥'+n.toFixed(2)+' · '+new Date().toLocaleString('zh-CN');
+  $('simOut').textContent=rec;
+  // 模拟赞赏也进入收益控制台（标注 sim）
+  if(window.LTZZZ_RECORD_TIP){
+    window.LTZZZ_RECORD_TIP({currency:'ETH',amount:n/100000,sim:true,published_at:new Date().toISOString()});
+  }
+};
+</script>
 </body>
 </html>
