@@ -1,1 +1,80 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepSeek AI 对话 · LTZZZ</title><style>body{margin:0;background:#050914;color:#eaf7ff;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}.wrap{max-width:900px;margin:auto;padding:28px 18px 60px}.panel{background:#0a1422;border:1px solid #21405a;border-radius:18px;padding:20px;margin-top:18px}.muted{color:#8da7bb}.row{display:flex;gap:10px;flex-wrap:wrap}input,textarea{width:100%;box-sizing:border-box;background:#02060d;color:#eaf7ff;border:1px solid #21405a;border-radius:10px;padding:12px;font:inherit}textarea{min-height:150px}.btn{padding:11px 16px;border-radius:10px;border:1px solid #36d9ee;background:#0a5264;color:white;cursor:pointer}.out{white-space:pre-wrap;background:#02060d;border:1px solid #21405a;border-radius:12px;padding:15px;min-height:100px}.tag{color:#5de7ff;font-weight:700}a{color:#5de7ff}</style></head><body><main class="wrap"><p class="tag">LTZZZ · AI LAB</p><h1>DeepSeek 实时对话</h1><p class="muted">浏览器 → 你的 Cloudflare Worker → DeepSeek。API Key 只放 Worker 的 Secret，不放这里。</p><section class="panel"><label>你的 Worker 地址</label><input id="endpoint" value="https://ltzzz-deepseek-proxy.ltzyz2181.workers.dev"><br><br><label>发送给 DeepSeek</label><textarea id="msg" placeholder="例如：请分析 LTZZZ 下一步最值得验证的赚钱实验。"></textarea><br><button class="btn" id="send">发送</button></section><section class="panel"><h2>AI 回复</h2><div class="out" id="out">等待发送…</div></section><p class="muted"><a href="agi-lab.html">← 返回 AGI 共同实验室</a></p></main><script>const endpoint=document.getElementById('endpoint'),msg=document.getElementById('msg'),out=document.getElementById('out');document.getElementById('send').onclick=async()=>{const url=endpoint.value.trim(),text=msg.value.trim();if(!url||!text){out.textContent='请填写 Worker 地址和问题。';return}out.textContent='请求中…';try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:'你是 LTZZZ 数字实验室的研究助手。回答要具体、可验证、少空话。'}, {role:'user',content:text}]})});const d=await r.json();out.textContent=d.choices?.[0]?.message?.content||d.error||JSON.stringify(d,null,2)}catch(e){out.textContent='连接失败：'+e.message+'\n请检查 Worker 地址、部署状态和跨域设置。'}};</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="_title">DeepSeek AI 对话 · LTZZZ</title>
+<style>
+body{margin:0;background:#050914;color:#eaf7ff;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+.wrap{max-width:900px;margin:auto;padding:28px 18px 60px}
+.panel{background:#0a1422;border:1px solid #21405a;border-radius:18px;padding:20px;margin-top:18px}
+.muted{color:#8da7bb}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input,textarea{width:100%;box-sizing:border-box;background:#02060d;color:#eaf7ff;border:1px solid #21405a;border-radius:10px;padding:12px;font:inherit}
+textarea{min-height:150px}
+.btn{padding:11px 16px;border-radius:10px;border:1px solid #36d9ee;background:#0a5264;color:white;cursor:pointer}
+.out{white-space:pre-wrap;background:#02060d;border:1px solid #21405a;border-radius:12px;padding:15px;min-height:100px}
+.tag{color:#5de7ff;font-weight:700}
+a{color:#5de7ff}
+.lang-toggle{padding:6px 14px;border:1px solid #2a4a66;border-radius:999px;background:transparent;color:#8da7bb;font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit}
+.lang-toggle:hover{border-color:#5de7ff;color:#eaf7ff}
+.lang-toggle .lang-zh{font-weight:600}
+html[lang="en"] .lang-toggle .lang-zh{font-weight:400}
+html[lang="en"] .lang-toggle .lang-en{font-weight:600}
+</style>
+</head>
+<body>
+<main class="wrap">
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <p class="tag" style="margin:0">LTZZZ · AI LAB</p>
+  <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
+</div>
+<h1 data-i18n="h1">DeepSeek 实时对话</h1>
+<p class="muted" data-i18n="desc">浏览器 → 你的 Cloudflare Worker → DeepSeek。API Key 只放 Worker 的 Secret，不放这里。</p>
+<section class="panel">
+  <label data-i18n="label.endpoint">你的 Worker 地址</label>
+  <input id="endpoint" value="https://ltzzz-deepseek-proxy.ltzyz2181.workers.dev">
+  <br><br>
+  <label data-i18n="label.msg">发送给 DeepSeek</label>
+  <textarea id="msg" placeholder="例如：请分析 LTZZZ 下一步最值得验证的赚钱实验。" data-i18n-placeholder="msg.placeholder"></textarea>
+  <br>
+  <button class="btn" id="send" data-i18n="send">发送</button>
+</section>
+<section class="panel">
+  <h2 data-i18n="out.title">AI 回复</h2>
+  <div class="out" id="out">等待发送…</div>
+</section>
+<p class="muted"><a href="agi-lab.html" data-i18n="back">← 返回 AGI 共同实验室</a></p>
+</main>
+<script>
+/* DeepSeek 页翻译字典：键名与页面 data-i18n 属性一一对应 */
+window.I18N_DICT = {
+  zh: {
+    "_title": "DeepSeek AI 对话 · LTZZZ",
+    "h1": "DeepSeek 实时对话",
+    "desc": "浏览器 → 你的 Cloudflare Worker → DeepSeek。API Key 只放 Worker 的 Secret，不放这里。",
+    "label.endpoint": "你的 Worker 地址",
+    "label.msg": "发送给 DeepSeek",
+    "msg.placeholder": "例如：请分析 LTZZZ 下一步最值得验证的赚钱实验。",
+    "send": "发送",
+    "out.title": "AI 回复",
+    "back": "← 返回 AGI 共同实验室"
+  },
+  en: {
+    "_title": "DeepSeek AI Chat · LTZZZ",
+    "h1": "DeepSeek Live Chat",
+    "desc": "Browser → your Cloudflare Worker → DeepSeek. API keys live only in the Worker's Secrets, never here.",
+    "label.endpoint": "Your Worker URL",
+    "label.msg": "Send to DeepSeek",
+    "msg.placeholder": "e.g. Analyze the most worthwhile money-making experiment LTZZZ should validate next.",
+    "send": "Send",
+    "out.title": "AI Reply",
+    "back": "← Back to AGI Common Lab"
+  }
+};
+</script>
+<script src="i18n.js"></script>
+<script>
+const endpoint=document.getElementById('endpoint'),msg=document.getElementById('msg'),out=document.getElementById('out');document.getElementById('send').onclick=async()=>{const url=endpoint.value.trim(),text=msg.value.trim();if(!url||!text){out.textContent='请填写 Worker 地址和问题。';return}out.textContent='请求中…';try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:'你是 LTZZZ 数字实验室的研究助手。回答要具体、可验证、少空话。'}, {role:'user',content:text}]})});const d=await r.json();out.textContent=d.choices?.[0]?.message?.content||d.error||JSON.stringify(d,null,2)}catch(e){out.textContent='连接失败：'+e.message+'\n请检查 Worker 地址、部署状态和跨域设置。'}};</script>
+</body>
+</html>

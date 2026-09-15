@@ -3,63 +3,225 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LTZZZ 多 Agent 实验室</title>
+<title data-i18n="_title">LTZZZ 多 Agent 实验室</title>
 <meta name="description" content="LTZZZ 多 Agent 实验页：DeepSeek、豆包、ChatGPT、Grok、Claude。真实 API 通过后端代理接入。">
 <style>
 :root{--bg:#030812;--panel:#071321;--line:#173a57;--text:#eef8ff;--muted:#8eabc0;--cyan:#59e5ff;--green:#6bf0bb;--blue:#6b8cff;--gold:#ffd27a}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#0a2540 0,#030812 45%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 22px;background:rgba(3,8,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.brand{font-weight:800;letter-spacing:1px}.brand span{color:var(--cyan)}nav a{color:var(--muted);text-decoration:none;margin-right:14px;font-size:14px}.wrap{max-width:1160px;margin:auto;padding:28px 20px 60px}.banner{padding:12px 15px;border-radius:12px;background:#0b2030;border:1px solid #20516e;color:#bfe5ff;font-size:13px;margin-bottom:18px}.eyebrow{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:700}h1{font-size:clamp(30px,5vw,52px);line-height:1.1;margin:10px 0}.lead{color:var(--muted);max-width:900px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:20px}@media(max-width:900px){.grid{grid-template-columns:1fr}}.panel{background:linear-gradient(145deg,#081726,#050b15);border:1px solid var(--line);border-radius:18px;padding:20px}.panel h2{margin:0 0 10px;font-size:19px}.panel p,.note{color:var(--muted);font-size:14px}.agents{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}@media(max-width:900px){.agents{grid-template-columns:repeat(2,1fr)}}.agent{background:#02070e;border:1px solid var(--line);border-radius:14px;padding:12px}.agent strong{display:block;margin-bottom:4px}.agent small{color:var(--muted)}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:11px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.row{grid-template-columns:1fr}}label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}input,textarea,select{width:100%;background:#02060d;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}textarea{min-height:120px;resize:vertical}.btn{display:inline-block;border:1px solid #2a6688;background:#0a2033;color:var(--text);padding:10px 14px;border-radius:10px;text-decoration:none;cursor:pointer;margin:8px 8px 0 0;font-size:14px}.btn.primary{background:#0b667a;border-color:#2bd9ee}.btn.green{background:#0b4d3a;border-color:#4de0a7}.btn.gold{background:#4f3b09;border-color:#b99130}.result{margin-top:14px;background:#02060d;border:1px solid var(--line);border-radius:12px;padding:14px;white-space:pre-wrap;min-height:100px}.status{font-size:13px;color:var(--muted);margin-top:8px}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.steps{padding-left:20px;color:var(--muted)}.steps li{margin:8px 0}footer{text-align:center;color:#55738a;padding:30px;font-size:13px}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#0a2540 0,#030812 45%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 22px;background:rgba(3,8,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.brand{font-weight:800;letter-spacing:1px}.brand span{color:var(--cyan)}nav a{color:var(--muted);text-decoration:none;margin-right:14px;font-size:14px}.wrap{max-width:1160px;margin:auto;padding:28px 20px 60px}.banner{padding:12px 15px;border-radius:12px;background:#0b2030;border:1px solid #20516e;color:#bfe5ff;font-size:13px;margin-bottom:18px}.eyebrow{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:700}h1{font-size:clamp(30px,5vw,52px);line-height:1.1;margin:10px 0}.lead{color:var(--muted);max-width:900px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;margin-top:20px}@media(max-width:900px){.grid{grid-template-columns:1fr}}.panel{background:linear-gradient(145deg,#081726,#050b15);border:1px solid var(--line);border-radius:18px;padding:20px}.panel h2{margin:0 0 10px;font-size:19px}.panel p,.note{color:var(--muted);font-size:14px}.agents{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}@media(max-width:900px){.agents{grid-template-columns:repeat(2,1fr)}}.agent{background:#02070e;border:1px solid var(--line);border-radius:14px;padding:12px}.agent strong{display:block;margin-bottom:4px}.agent small{color:var(--muted)}.tag{display:inline-block;margin-top:7px;padding:3px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:11px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.row{grid-template-columns:1fr}}label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}input,textarea,select{width:100%;background:#02060d;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}textarea{min-height:120px;resize:vertical}.btn{display:inline-block;border:1px solid #2a6688;background:#0a2033;color:var(--text);padding:10px 14px;border-radius:10px;text-decoration:none;cursor:pointer;margin:8px 8px 0 0;font-size:14px}.btn.primary{background:#0b667a;border-color:#2bd9ee}.btn.green{background:#0b4d3a;border-color:#4de0a7}.btn.gold{background:#4f3b09;border-color:#b99130}.result{margin-top:14px;background:#02060d;border:1px solid var(--line);border-radius:12px;padding:14px;white-space:pre-wrap;min-height:100px}.status{font-size:13px;color:var(--muted);margin-top:8px}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.steps{padding-left:20px;color:var(--muted)}.steps li{margin:8px 0}footer{text-align:center;color:#55738a;padding:30px;font-size:13px}.lang-toggle{padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit}.lang-toggle:hover{border-color:var(--cyan);color:var(--text)}.lang-toggle .lang-zh{font-weight:600}html[lang="en"] .lang-toggle .lang-zh{font-weight:400}html[lang="en"] .lang-toggle .lang-en{font-weight:600}
 </style>
 </head>
 <body>
-<header class="top"><div class="brand">LTZZZ <span>MULTI AGENT LAB</span></div><nav><a href="index.html">首页</a><a href="agi-lab.html">共同实验室</a><a href="deepseek.html">DeepSeek</a><a href="wallet-lab.html">钱包</a></nav></header>
+<header class="top"><div class="brand">LTZZZ <span>MULTI AGENT LAB</span></div><nav><a href="index.html" data-i18n="nav.home">首页</a><a href="agi-lab.html" data-i18n="nav.agi-lab">共同实验室</a><a href="deepseek.html">DeepSeek</a><a href="wallet-lab.html" data-i18n="nav.wallet">钱包</a></nav><button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button></header>
 <main class="wrap">
-<div class="banner"><strong>当前状态：</strong>多 Agent 编排 Worker 已提供（总控 → 专家）。DeepSeek、豆包可接真实 API Key；Grok、Claude 保留接口位。所有 Key 只放后端环境变量，绝不写进网页。</div>
+<div class="banner" data-i18n="banner" data-i18n-html><strong>当前状态：</strong>多 Agent 编排 Worker 已提供（总控 → 专家）。DeepSeek、豆包可接真实 API Key；Grok、Claude 保留接口位。所有 Key 只放后端环境变量，绝不写进网页。</div>
 <div class="eyebrow">LTZZZ · AGENT ORCHESTRATOR</div>
-<h1>多 Agent 实验室</h1>
-<p class="lead">总控（ChatGPT，可配置）把问题拆成子任务，并行交给豆包 / DeepSeek / Grok / Claude 专家席；后端 Worker 持有全部 Key。未配置 Key 的席位会明确显示「接口位保留」，不假装已实现。</p>
+<h1 data-i18n="h1">多 Agent 实验室</h1>
+<p class="lead" data-i18n="lead">总控（ChatGPT，可配置）把问题拆成子任务，并行交给豆包 / DeepSeek / Grok / Claude 专家席；后端 Worker 持有全部 Key。未配置 Key 的席位会明确显示「接口位保留」，不假装已实现。</p>
 
-<section class="panel" style="margin-top:18px"><h2>五个 Agent</h2><div class="agents"><div class="agent"><strong>豆包 Agent</strong><small>中国互联网 / 执行 / Coding</small><span class="tag">可接真实 Key</span></div><div class="agent"><strong>DeepSeek Agent</strong><small>研究 / Coding / 分析</small><span class="tag">真实 API</span></div><div class="agent"><strong>ChatGPT Agent</strong><small>总控 / 规划 / 汇总</small><span class="tag">总控位 · 可配</span></div><div class="agent"><strong>Grok Agent</strong><small>实时信息 / 海外视角</small><span class="tag">接口位</span></div><div class="agent"><strong>Claude Agent</strong><small>长文 / 代码审查</small><span class="tag">接口位</span></div></div></section>
+<section class="panel" style="margin-top:18px"><h2 data-i18n="sec1.title">五个 Agent</h2><div class="agents"><div class="agent"><strong data-i18n="agent1.name">豆包 Agent</strong><small data-i18n="agent1.role">中国互联网 / 执行 / Coding</small><span class="tag" data-i18n="agent1.tag">可接真实 Key</span></div><div class="agent"><strong data-i18n="agent2.name">DeepSeek Agent</strong><small data-i18n="agent2.role">研究 / Coding / 分析</small><span class="tag" data-i18n="agent2.tag">真实 API</span></div><div class="agent"><strong data-i18n="agent3.name">ChatGPT Agent</strong><small data-i18n="agent3.role">总控 / 规划 / 汇总</small><span class="tag" data-i18n="agent3.tag">总控位 · 可配</span></div><div class="agent"><strong data-i18n="agent4.name">Grok Agent</strong><small data-i18n="agent4.role">实时信息 / 海外视角</small><span class="tag" data-i18n="agent4.tag">接口位</span></div><div class="agent"><strong data-i18n="agent5.name">Claude Agent</strong><small data-i18n="agent5.role">长文 / 代码审查</small><span class="tag" data-i18n="agent5.tag">接口位</span></div></div></section>
 
 <section class="panel" style="margin-top:18px">
 <div class="eyebrow">LIVE ORCHESTRATION</div>
-<h2>多 Agent 编排：总控 → 专家</h2>
-<p>总控（ChatGPT，可配置）把问题拆成 4 个子任务，并行交给 豆包 / DeepSeek / Grok / Claude 专家席。后端 Worker 持有全部 Key，网页不保存任何 Key；未配置 Key 的席位会明确显示「接口位保留」。</p>
-<label>编排 Worker 地址</label>
-<input id="orchEndpoint" placeholder="https://你的编排worker.workers.dev">
-<label>问题</label>
-<textarea id="orchQuestion">请设计一个 LTZZZ 今天就能验证的 AI 实验：用 AI 完成一件真实小事，并记录结果。</textarea>
-<button class="btn primary" id="orchRun">开始编排</button>
+<h2 data-i18n="sec2.title">多 Agent 编排：总控 → 专家</h2>
+<p data-i18n="sec2.desc">总控（ChatGPT，可配置）把问题拆成 4 个子任务，并行交给 豆包 / DeepSeek / Grok / Claude 专家席。后端 Worker 持有全部 Key，网页不保存任何 Key；未配置 Key 的席位会明确显示「接口位保留」。</p>
+<label data-i18n="label.endpoint">编排 Worker 地址</label>
+<input id="orchEndpoint" placeholder="https://你的编排worker.workers.dev" data-i18n-placeholder="endpoint.placeholder">
+<label data-i18n="label.question">问题</label>
+<textarea id="orchQuestion" data-i18n="q.default">请设计一个 LTZZZ 今天就能验证的 AI 实验：用 AI 完成一件真实小事，并记录结果。</textarea>
+<button class="btn primary" id="orchRun" data-i18n="run.btn">开始编排</button>
 <div class="status" id="orchStatus">等待开始</div>
 <div class="agents" style="margin-top:12px">
-<div class="agent"><strong>总控 · ChatGPT</strong><small>规划 / 汇总</small><span class="tag" id="st-plan">未开始</span></div>
-<div class="agent"><strong>豆包 Agent</strong><small>执行 / 工程</small><span class="tag" id="st-doubao">未开始</span></div>
-<div class="agent"><strong>DeepSeek Agent</strong><small>研究 / 分析</small><span class="tag" id="st-deepseek">未开始</span></div>
-<div class="agent"><strong>Grok Agent</strong><small>实时 / 海外</small><span class="tag" id="st-grok">未开始</span></div>
-<div class="agent"><strong>Claude Agent</strong><small>长文 / 审查</small><span class="tag" id="st-claude">未开始</span></div>
+<div class="agent"><strong data-i18n="seat1.name">总控 · ChatGPT</strong><small data-i18n="seat1.role">规划 / 汇总</small><span class="tag" id="st-plan">未开始</span></div>
+<div class="agent"><strong data-i18n="seat2.name">豆包 Agent</strong><small data-i18n="seat2.role">执行 / 工程</small><span class="tag" id="st-doubao">未开始</span></div>
+<div class="agent"><strong data-i18n="seat3.name">DeepSeek Agent</strong><small data-i18n="seat3.role">研究 / 分析</small><span class="tag" id="st-deepseek">未开始</span></div>
+<div class="agent"><strong data-i18n="seat4.name">Grok Agent</strong><small data-i18n="seat4.role">实时 / 海外</small><span class="tag" id="st-grok">未开始</span></div>
+<div class="agent"><strong data-i18n="seat5.name">Claude Agent</strong><small data-i18n="seat5.role">长文 / 审查</small><span class="tag" id="st-claude">未开始</span></div>
 </div>
-<h3 style="margin:16px 0 8px">任务计划</h3>
+<h3 style="margin:16px 0 8px" data-i18n="plan.title">任务计划</h3>
 <div class="result" id="orchPlan" style="min-height:64px">等待编排…</div>
-<h3 style="margin:16px 0 8px">专家回复</h3>
+<h3 style="margin:16px 0 8px" data-i18n="experts.title">专家回复</h3>
 <div class="row">
-<div><div class="status">豆包</div><div class="result" id="r-doubao" style="min-height:80px">—</div></div>
-<div><div class="status">DeepSeek</div><div class="result" id="r-deepseek" style="min-height:80px">—</div></div>
-<div><div class="status">Grok</div><div class="result" id="r-grok" style="min-height:80px">—</div></div>
-<div><div class="status">Claude</div><div class="result" id="r-claude" style="min-height:80px">—</div></div>
+<div><div class="status" data-i18n="lbl.doubao">豆包</div><div class="result" id="r-doubao" style="min-height:80px">—</div></div>
+<div><div class="status" data-i18n="lbl.deepseek">DeepSeek</div><div class="result" id="r-deepseek" style="min-height:80px">—</div></div>
+<div><div class="status" data-i18n="lbl.grok">Grok</div><div class="result" id="r-grok" style="min-height:80px">—</div></div>
+<div><div class="status" data-i18n="lbl.claude">Claude</div><div class="result" id="r-claude" style="min-height:80px">—</div></div>
 </div>
-<h3 style="margin:16px 0 8px">总控汇总</h3>
+<h3 style="margin:16px 0 8px" data-i18n="summary.title">总控汇总</h3>
 <div class="result" id="orchSummary" style="min-height:64px">—</div>
-<p class="note" style="margin-top:12px">部署编排 Worker：<span class="mono">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>，然后配置 Secret：<span class="mono">npx wrangler secret put DEEPSEEK_API_KEY</span>、<span class="mono">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span>（豆包用 Agent Plan 专属 Key，Base URL 默认 <span class="mono">https://ark.cn-beijing.volces.com/api/plan</span>，模型 <span class="mono">doubao-seed-evolving</span>）；可选 <span class="mono">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>。</p>
+<p class="note" style="margin-top:12px" data-i18n="note.deploy" data-i18n-html>部署编排 Worker：<span class="mono">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>，然后配置 Secret：<span class="mono">npx wrangler secret put DEEPSEEK_API_KEY</span>、<span class="mono">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span>（豆包用 Agent Plan 专属 Key，Base URL 默认 <span class="mono">https://ark.cn-beijing.volces.com/api/plan</span>，模型 <span class="mono">doubao-seed-evolving</span>）；可选 <span class="mono">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>。</p>
 </section>
 
 <div class="grid">
-<section class="panel"><h2>① DeepSeek 真实调用测试</h2><p>把你自己的 Cloudflare Worker 地址填进来。Worker 负责持有 <span class="mono">DEEPSEEK_API_KEY</span>，网页本身不保存 Key。</p><label>DeepSeek Worker 地址</label><input id="deepEndpoint" placeholder="https://你的worker.workers.dev"><label>问题</label><textarea id="deepPrompt">请给我设计一个 LTZZZ 多 Agent 实验，要求今天就能验证。</textarea><button class="btn primary" id="deepRun">调用 DeepSeek</button><div class="status" id="deepStatus">等待测试</div><div class="result" id="deepResult">暂无结果</div></section>
+<section class="panel"><h2 data-i18n="ds.title">① DeepSeek 真实调用测试</h2><p data-i18n="ds.desc" data-i18n-html>把你自己的 Cloudflare Worker 地址填进来。Worker 负责持有 <span class="mono">DEEPSEEK_API_KEY</span>，网页本身不保存 Key。</p><label data-i18n="ds.label.endpoint">DeepSeek Worker 地址</label><input id="deepEndpoint" placeholder="https://你的worker.workers.dev" data-i18n-placeholder="ds.endpoint.placeholder"><label data-i18n="ds.label.question">问题</label><textarea id="deepPrompt" data-i18n="ds.q.default">请给我设计一个 LTZZZ 多 Agent 实验，要求今天就能验证。</textarea><button class="btn primary" id="deepRun" data-i18n="ds.btn">调用 DeepSeek</button><div class="status" id="deepStatus">等待测试</div><div class="result" id="deepResult">暂无结果</div></section>
 
-<section class="panel"><h2>② 豆包 Agent 接入口</h2><p>豆包使用方舟 Agent Plan 专属 Key。这里先准备接口位，等 Worker 部署好就可以接入。</p><div class="row"><div><label>豆包 Worker 地址</label><input id="doubaoEndpoint" placeholder="https://你的doubao-worker.workers.dev"></div><div><label>模型</label><input value="doubao-seed-evolving" id="doubaoModel"></div></div><label>测试问题</label><textarea id="doubaoPrompt">请把 LTZZZ 网站改造成一个可以验证多 Agent 协作的实验室，并列出今天可以执行的三步。</textarea><button class="btn green" id="doubaoRun">测试豆包 Agent</button><div class="status" id="doubaoStatus">尚未配置 Worker</div><div class="result" id="doubaoResult">暂无结果</div></section></div>
+<section class="panel"><h2 data-i18n="db.title">② 豆包 Agent 接入口</h2><p data-i18n="db.desc">豆包使用方舟 Agent Plan 专属 Key。这里先准备接口位，等 Worker 部署好就可以接入。</p><div class="row"><div><label data-i18n="db.label.endpoint">豆包 Worker 地址</label><input id="doubaoEndpoint" placeholder="https://你的doubao-worker.workers.dev" data-i18n-placeholder="db.endpoint.placeholder"></div><div><label data-i18n="db.label.model">模型</label><input value="doubao-seed-evolving" id="doubaoModel"></div></div><label data-i18n="db.label.question">测试问题</label><textarea id="doubaoPrompt" data-i18n="db.q.default">请把 LTZZZ 网站改造成一个可以验证多 Agent 协作的实验室，并列出今天可以执行的三步。</textarea><button class="btn green" id="doubaoRun" data-i18n="db.btn">测试豆包 Agent</button><div class="status" id="doubaoStatus">尚未配置 Worker</div><div class="result" id="doubaoResult">暂无结果</div></section></div>
 
-<section class="panel" style="margin-top:16px"><h2>③ 让 ChatGPT 做总控</h2><p>后续把 DeepSeek / 豆包 / Grok / Claude 的结果交给总控 Agent，让它做任务拆分、汇总和实验记录。当前静态网页先保留结构，不假装已经实现跨平台真实互聊。</p><textarea id="orchestrator">任务：帮我设计一个今天可验证的 LTZZZ AI 赚钱实验。请先拆成：市场、技术、成本、验证指标，然后分别交给不同 Agent 分析，最后给出一个最小实验。</textarea><button class="btn gold" onclick="navigator.clipboard.writeText(document.getElementById('orchestrator').value);alert('总控提示词已复制')">复制总控提示词</button><a class="btn" href="agi-lab.html">查看原圆桌模拟</a></section>
+<section class="panel" style="margin-top:16px"><h2 data-i18n="gpt.title">③ 让 ChatGPT 做总控</h2><p data-i18n="gpt.desc">后续把 DeepSeek / 豆包 / Grok / Claude 的结果交给总控 Agent，让它做任务拆分、汇总和实验记录。当前静态网页先保留结构，不假装已经实现跨平台真实互聊。</p><textarea id="orchestrator" data-i18n="gpt.q.default">任务：帮我设计一个今天可验证的 LTZZZ AI 赚钱实验。请先拆成：市场、技术、成本、验证指标，然后分别交给不同 Agent 分析，最后给出一个最小实验。</textarea><button class="btn gold" onclick="navigator.clipboard.writeText(document.getElementById('orchestrator').value);alert('总控提示词已复制')" data-i18n="gpt.copy">复制总控提示词</button><a class="btn" href="agi-lab.html" data-i18n="gpt.view">查看原圆桌模拟</a></section>
 
-<section class="panel" style="margin-top:16px"><h2>④ 让豆包真正帮你“部署/改网站”</h2><ol class="steps"><li>在你的电脑准备 Node.js + Git。</li><li>安装火山引擎 Skills：<span class="mono">npx -y @volcengine/skills-setup@latest</span>。</li><li>在 Claude Code / 兼容 Agent 工具里启用火山引擎 Skills，并让模型使用 <span class="mono">doubao-seed-evolving</span>。</li><li>把本仓库 <span class="mono">ltzyz2181-collab/ltzzz</span> 克隆到电脑，让 Agent 在本地直接修改代码、运行检查、提交 Git。</li><li>GitHub Pages 会从 <span class="mono">main</span> 分支继续发布。</li></ol><p class="note">官方近期文档显示 <span class="mono">@volcengine/skills-setup</span> 用于向 Claude Code 等开发 Agent 注入火山引擎 Skills；Doubao-Seed-Evolving 可通过 Agent Plan 接入 Claude Code。它和“把豆包 API 直接放进公开网页”是两件事。</p></section>
-</main><footer>LTZZZ · 多 Agent 实验室 · 先验证，再扩展</footer>
+<section class="panel" style="margin-top:16px"><h2 data-i18n="dd.title">④ 让豆包真正帮你“部署/改网站”</h2><ol class="steps"><li data-i18n="dd.step1">在你的电脑准备 Node.js + Git。</li><li data-i18n="dd.step2" data-i18n-html>安装火山引擎 Skills：<span class="mono">npx -y @volcengine/skills-setup@latest</span>。</li><li data-i18n="dd.step3">在 Claude Code / 兼容 Agent 工具里启用火山引擎 Skills，并让模型使用 <span class="mono">doubao-seed-evolving</span>。</li><li data-i18n="dd.step4" data-i18n-html>把本仓库 <span class="mono">ltzyz2181-collab/ltzzz</span> 克隆到电脑，让 Agent 在本地直接修改代码、运行检查、提交 Git。</li><li data-i18n="dd.step5" data-i18n-html>GitHub Pages 会从 <span class="mono">main</span> 分支继续发布。</li></ol><p class="note" data-i18n="dd.note" data-i18n-html>官方近期文档显示 <span class="mono">@volcengine/skills-setup</span> 用于向 Claude Code 等开发 Agent 注入火山引擎 Skills；Doubao-Seed-Evolving 可通过 Agent Plan 接入 Claude Code。它和“把豆包 API 直接放进公开网页”是两件事。</p></section>
+</main><footer data-i18n="footer">LTZZZ · 多 Agent 实验室 · 先验证，再扩展</footer>
+<script>
+/* 多 Agent 实验室翻译字典：键名与页面 data-i18n 属性一一对应 */
+window.I18N_DICT = {
+  zh: {
+    "_title": "LTZZZ 多 Agent 实验室",
+    "nav.home": "首页",
+    "nav.agi-lab": "共同实验室",
+    "nav.wallet": "钱包",
+    "banner": "<strong>当前状态：</strong>多 Agent 编排 Worker 已提供（总控 → 专家）。DeepSeek、豆包可接真实 API Key；Grok、Claude 保留接口位。所有 Key 只放后端环境变量，绝不写进网页。",
+    "h1": "多 Agent 实验室",
+    "lead": "总控（ChatGPT，可配置）把问题拆成子任务，并行交给豆包 / DeepSeek / Grok / Claude 专家席；后端 Worker 持有全部 Key。未配置 Key 的席位会明确显示「接口位保留」，不假装已实现。",
+    "sec1.title": "五个 Agent",
+    "agent1.name": "豆包 Agent",
+    "agent1.role": "中国互联网 / 执行 / Coding",
+    "agent1.tag": "可接真实 Key",
+    "agent2.name": "DeepSeek Agent",
+    "agent2.role": "研究 / Coding / 分析",
+    "agent2.tag": "真实 API",
+    "agent3.name": "ChatGPT Agent",
+    "agent3.role": "总控 / 规划 / 汇总",
+    "agent3.tag": "总控位 · 可配",
+    "agent4.name": "Grok Agent",
+    "agent4.role": "实时信息 / 海外视角",
+    "agent4.tag": "接口位",
+    "agent5.name": "Claude Agent",
+    "agent5.role": "长文 / 代码审查",
+    "agent5.tag": "接口位",
+    "sec2.title": "多 Agent 编排：总控 → 专家",
+    "sec2.desc": "总控（ChatGPT，可配置）把问题拆成 4 个子任务，并行交给 豆包 / DeepSeek / Grok / Claude 专家席。后端 Worker 持有全部 Key，网页不保存任何 Key；未配置 Key 的席位会明确显示「接口位保留」。",
+    "label.endpoint": "编排 Worker 地址",
+    "endpoint.placeholder": "https://你的编排worker.workers.dev",
+    "label.question": "问题",
+    "q.default": "请设计一个 LTZZZ 今天就能验证的 AI 实验：用 AI 完成一件真实小事，并记录结果。",
+    "run.btn": "开始编排",
+    "seat1.name": "总控 · ChatGPT",
+    "seat1.role": "规划 / 汇总",
+    "seat2.name": "豆包 Agent",
+    "seat2.role": "执行 / 工程",
+    "seat3.name": "DeepSeek Agent",
+    "seat3.role": "研究 / 分析",
+    "seat4.name": "Grok Agent",
+    "seat4.role": "实时 / 海外",
+    "seat5.name": "Claude Agent",
+    "seat5.role": "长文 / 审查",
+    "plan.title": "任务计划",
+    "experts.title": "专家回复",
+    "lbl.doubao": "豆包",
+    "lbl.deepseek": "DeepSeek",
+    "lbl.grok": "Grok",
+    "lbl.claude": "Claude",
+    "summary.title": "总控汇总",
+    "note.deploy": "部署编排 Worker：<span class=\"mono\">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>，然后配置 Secret：<span class=\"mono\">npx wrangler secret put DEEPSEEK_API_KEY</span>、<span class=\"mono\">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span>（豆包用 Agent Plan 专属 Key，Base URL 默认 <span class=\"mono\">https://ark.cn-beijing.volces.com/api/plan</span>，模型 <span class=\"mono\">doubao-seed-evolving</span>）；可选 <span class=\"mono\">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>。",
+    "ds.title": "① DeepSeek 真实调用测试",
+    "ds.desc": "把你自己的 Cloudflare Worker 地址填进来。Worker 负责持有 <span class=\"mono\">DEEPSEEK_API_KEY</span>，网页本身不保存 Key。",
+    "ds.label.endpoint": "DeepSeek Worker 地址",
+    "ds.endpoint.placeholder": "https://你的worker.workers.dev",
+    "ds.label.question": "问题",
+    "ds.q.default": "请给我设计一个 LTZZZ 多 Agent 实验，要求今天就能验证。",
+    "ds.btn": "调用 DeepSeek",
+    "db.title": "② 豆包 Agent 接入口",
+    "db.desc": "豆包使用方舟 Agent Plan 专属 Key。这里先准备接口位，等 Worker 部署好就可以接入。",
+    "db.label.endpoint": "豆包 Worker 地址",
+    "db.endpoint.placeholder": "https://你的doubao-worker.workers.dev",
+    "db.label.model": "模型",
+    "db.label.question": "测试问题",
+    "db.q.default": "请把 LTZZZ 网站改造成一个可以验证多 Agent 协作的实验室，并列出今天可以执行的三步。",
+    "db.btn": "测试豆包 Agent",
+    "gpt.title": "③ 让 ChatGPT 做总控",
+    "gpt.desc": "后续把 DeepSeek / 豆包 / Grok / Claude 的结果交给总控 Agent，让它做任务拆分、汇总和实验记录。当前静态网页先保留结构，不假装已经实现跨平台真实互聊。",
+    "gpt.q.default": "任务：帮我设计一个今天可验证的 LTZZZ AI 赚钱实验。请先拆成：市场、技术、成本、验证指标，然后分别交给不同 Agent 分析，最后给出一个最小实验。",
+    "gpt.copy": "复制总控提示词",
+    "gpt.view": "查看原圆桌模拟",
+    "dd.title": "④ 让豆包真正帮你“部署/改网站”",
+    "dd.step1": "在你的电脑准备 Node.js + Git。",
+    "dd.step2": "安装火山引擎 Skills：<span class=\"mono\">npx -y @volcengine/skills-setup@latest</span>。",
+    "dd.step3": "在 Claude Code / 兼容 Agent 工具里启用火山引擎 Skills，并让模型使用 <span class=\"mono\">doubao-seed-evolving</span>。",
+    "dd.step4": "把本仓库 <span class=\"mono\">ltzyz2181-collab/ltzzz</span> 克隆到电脑，让 Agent 在本地直接修改代码、运行检查、提交 Git。",
+    "dd.step5": "GitHub Pages 会从 <span class=\"mono\">main</span> 分支继续发布。",
+    "dd.note": "官方近期文档显示 <span class=\"mono\">@volcengine/skills-setup</span> 用于向 Claude Code 等开发 Agent 注入火山引擎 Skills；Doubao-Seed-Evolving 可通过 Agent Plan 接入 Claude Code。它和“把豆包 API 直接放进公开网页”是两件事。",
+    "footer": "LTZZZ · 多 Agent 实验室 · 先验证，再扩展"
+  },
+  en: {
+    "_title": "LTZZZ Multi-Agent Lab",
+    "nav.home": "Home",
+    "nav.agi-lab": "Common Lab",
+    "nav.wallet": "Wallet",
+    "banner": "<strong>Status:</strong> The multi-agent orchestration Worker is live (orchestrator → experts). DeepSeek and Doubao can take real API keys; Grok and Claude keep slots reserved. All keys live only in backend environment variables — never in the webpage.",
+    "h1": "Multi-Agent Lab",
+    "lead": "The orchestrator (ChatGPT, configurable) splits a question into subtasks and hands them in parallel to Doubao / DeepSeek / Grok / Claude expert seats; the backend Worker holds all keys. Seats without a configured key clearly show “slot reserved” — nothing is faked.",
+    "sec1.title": "Five Agents",
+    "agent1.name": "Doubao Agent",
+    "agent1.role": "China internet / Execution / Coding",
+    "agent1.tag": "Real Key Ready",
+    "agent2.name": "DeepSeek Agent",
+    "agent2.role": "Research / Coding / Analysis",
+    "agent2.tag": "Real API",
+    "agent3.name": "ChatGPT Agent",
+    "agent3.role": "Orchestrator / Planning / Summary",
+    "agent3.tag": "Orchestrator · Configurable",
+    "agent4.name": "Grok Agent",
+    "agent4.role": "Live info / Global view",
+    "agent4.tag": "Slot Reserved",
+    "agent5.name": "Claude Agent",
+    "agent5.role": "Long-form / Code review",
+    "agent5.tag": "Slot Reserved",
+    "sec2.title": "Multi-Agent Orchestration: Orchestrator → Experts",
+    "sec2.desc": "The orchestrator (ChatGPT, configurable) splits a question into 4 subtasks and hands them in parallel to Doubao / DeepSeek / Grok / Claude expert seats. The backend Worker holds all keys; the webpage stores none. Seats without a key clearly show “slot reserved”.",
+    "label.endpoint": "Orchestrator Worker URL",
+    "endpoint.placeholder": "https://your-orchestrator.workers.dev",
+    "label.question": "Question",
+    "q.default": "Design an AI experiment LTZZZ can validate today: use AI to finish one small real task, and record the result.",
+    "run.btn": "Start Orchestration",
+    "seat1.name": "Orchestrator · ChatGPT",
+    "seat1.role": "Planning / Summary",
+    "seat2.name": "Doubao Agent",
+    "seat2.role": "Execution / Engineering",
+    "seat3.name": "DeepSeek Agent",
+    "seat3.role": "Research / Analysis",
+    "seat4.name": "Grok Agent",
+    "seat4.role": "Live / Global",
+    "seat5.name": "Claude Agent",
+    "seat5.role": "Long-form / Review",
+    "plan.title": "Task Plan",
+    "experts.title": "Expert Replies",
+    "lbl.doubao": "Doubao",
+    "lbl.deepseek": "DeepSeek",
+    "lbl.grok": "Grok",
+    "lbl.claude": "Claude",
+    "summary.title": "Orchestrator Summary",
+    "note.deploy": "Deploy the orchestration Worker: <span class=\"mono\">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>, then configure secrets: <span class=\"mono\">npx wrangler secret put DEEPSEEK_API_KEY</span>, <span class=\"mono\">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span> (Doubao uses the Agent Plan key; Base URL defaults to <span class=\"mono\">https://ark.cn-beijing.volces.com/api/plan</span>, model <span class=\"mono\">doubao-seed-evolving</span>); optional <span class=\"mono\">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>.",
+    "ds.title": "① DeepSeek Real-Call Test",
+    "ds.desc": "Paste your own Cloudflare Worker URL. The Worker holds <span class=\"mono\">DEEPSEEK_API_KEY</span>; the webpage itself never stores keys.",
+    "ds.label.endpoint": "DeepSeek Worker URL",
+    "ds.endpoint.placeholder": "https://your-worker.workers.dev",
+    "ds.label.question": "Question",
+    "ds.q.default": "Design an LTZZZ multi-agent experiment that can be validated today.",
+    "ds.btn": "Call DeepSeek",
+    "db.title": "② Doubao Agent Entry",
+    "db.desc": "Doubao uses the Ark Agent Plan dedicated key. This is a slot prepared now; it can be connected once the Worker is deployed.",
+    "db.label.endpoint": "Doubao Worker URL",
+    "db.endpoint.placeholder": "https://your-doubao-worker.workers.dev",
+    "db.label.model": "Model",
+    "db.label.question": "Test Question",
+    "db.q.default": "Turn the LTZZZ website into a lab that validates multi-agent collaboration, and list three steps executable today.",
+    "db.btn": "Test Doubao Agent",
+    "gpt.title": "③ Make ChatGPT the Orchestrator",
+    "gpt.desc": "Later, feed DeepSeek / Doubao / Grok / Claude outputs to the orchestrator Agent for task splitting, summary and experiment records. The static page keeps the structure now without pretending real cross-platform chat exists.",
+    "gpt.q.default": "Task: design a today-validatable LTZZZ AI money-making experiment. First split it into: market, tech, cost, validation metrics; then have different Agents analyze each; finally give one minimal experiment.",
+    "gpt.copy": "Copy Orchestrator Prompt",
+    "gpt.view": "View Original Roundtable Sim",
+    "dd.title": "④ Let Doubao Actually Deploy/Edit the Site",
+    "dd.step1": "Prepare Node.js + Git on your computer.",
+    "dd.step2": "Install Volcengine Skills: <span class=\"mono\">npx -y @volcengine/skills-setup@latest</span>.",
+    "dd.step3": "Enable Volcengine Skills in Claude Code / a compatible Agent tool, and let the model use <span class=\"mono\">doubao-seed-evolving</span>.",
+    "dd.step4": "Clone this repo <span class=\"mono\">ltzyz2181-collab/ltzzz</span> locally and let the Agent edit code, run checks and commit Git on your machine.",
+    "dd.step5": "GitHub Pages keeps publishing from the <span class=\"mono\">main</span> branch.",
+    "dd.note": "Recent official docs show <span class=\"mono\">@volcengine/skills-setup</span> injects Volcengine Skills into development Agents like Claude Code; Doubao-Seed-Evolving can be wired into Claude Code via Agent Plan. That is a different thing from “putting the Doubao API directly into a public webpage”.",
+    "footer": "LTZZZ · Multi-Agent Lab · Verify First, Then Scale"
+  }
+};
+</script>
+<script src="i18n.js"></script>
 <script>
 async function callWorker(endpoint,prompt,statusEl,resultEl){
   endpoint=(endpoint||'').trim(); if(!endpoint){statusEl.textContent='请先填写 Worker 地址';return}

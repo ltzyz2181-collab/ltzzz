@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="LTZZZ 未来 AGI：共同实验室、多模型协作、减苦项目与模拟投资。">
-<title>未来（AGI）· LTZZZ</title>
+<title data-i18n="_title">未来（AGI）· LTZZZ</title>
 <link rel="stylesheet" href="style.css">
 <style>
 body{background:#020817;color:#eef8ff}
@@ -19,42 +19,89 @@ body{background:#020817;color:#eef8ff}
 .agi-card{padding:22px;border:1px solid #164a70;border-radius:18px;background:linear-gradient(145deg,#071a31,#07101f)}
 .agi-card h2{margin-top:0;font-size:18px}
 .agi-card p{color:#9db6ce;line-height:1.7;font-size:14px}
-.back{display:inline-block;margin:16px 0;color:#63e8ff;text-decoration:none}
+.back{display:inline-block;margin:0;color:#63e8ff;text-decoration:none}
 .button{display:inline-block;padding:10px 16px;border-radius:999px;border:1px solid #2a6688;color:#eef8ff;text-decoration:none;margin-top:10px;font-size:14px}
 .button.primary{background:#0b667a;border-color:#2bd9ee}
 </style>
 </head>
 <body>
 <div class="agi-wrap">
-  <a class="back" href="index.html">← 返回 LTZZZ</a>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 16px">
+    <a class="back" href="index.html" data-i18n="back.home">← 返回 LTZZZ</a>
+    <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
+  </div>
   <section class="agi-hero"><img src="agi-hero.svg" alt="AGI"></section>
   <section class="agi-copy">
-    <h1>未来（AGI）实验室</h1>
-    <p>多模型协作（Grok / GPT / 豆包 / DeepSeek / Claude）、减苦项目申报、捐赠台账与投资模拟。资金由人管理；AI 负责分析与文书，不代管私钥、不自动打款。</p>
-    <p><a class="button primary" href="agi-lab.html">进入 AGI 共同实验室 · 捐赠与减苦 →</a></p>
+    <h1 data-i18n="agi.title">未来（AGI）实验室</h1>
+    <p data-i18n="agi.desc">多模型协作（Grok / GPT / 豆包 / DeepSeek / Claude）、减苦项目申报、捐赠台账与投资模拟。资金由人管理；AI 负责分析与文书，不代管私钥、不自动打款。</p>
+    <p><a class="button primary" href="agi-lab.html" data-i18n="agi.cta">进入 AGI 共同实验室 · 捐赠与减苦 →</a></p>
   </section>
   <section class="agi-grid">
     <article class="agi-card">
-      <h2>共同实验室</h2>
-      <p>标准提示词、多模型对照、项目池与透明台账。</p>
-      <a class="button" href="agi-lab.html">打开 →</a>
+      <h2 data-i18n="card1.title">共同实验室</h2>
+      <p data-i18n="card1.desc">标准提示词、多模型对照、项目池与透明台账。</p>
+      <a class="button" href="agi-lab.html" data-i18n="card1.cta">打开 →</a>
     </article>
     <article class="agi-card">
-      <h2>AI 投资模拟</h2>
-      <p>纸面资金与策略练习，不自动实盘。</p>
-      <a class="button" href="moni.html">模拟 →</a>
+      <h2 data-i18n="card2.title">AI 投资模拟</h2>
+      <p data-i18n="card2.desc">纸面资金与策略练习，不自动实盘。</p>
+      <a class="button" href="moni.html" data-i18n="card2.cta">模拟 →</a>
     </article>
     <article class="agi-card">
-      <h2>K 线模拟盘</h2>
-      <p>UNI / AAVE / 示意标的纸上交易。</p>
-      <a class="button" href="sim-trade.html">打开 →</a>
+      <h2 data-i18n="card3.title">K 线模拟盘</h2>
+      <p data-i18n="card3.desc">UNI / AAVE / 示意标的纸上交易。</p>
+      <a class="button" href="sim-trade.html" data-i18n="card3.cta">打开 →</a>
     </article>
     <article class="agi-card">
-      <h2>观 · 行深</h2>
-      <p>把体验与行为留在可复盘的记录里。</p>
-      <a class="button" href="guan.html">观 →</a>
+      <h2 data-i18n="card4.title">观 · 行深</h2>
+      <p data-i18n="card4.desc">把体验与行为留在可复盘的记录里。</p>
+      <a class="button" href="guan.html" data-i18n="card4.cta">观 →</a>
     </article>
   </section>
 </div>
+<script>
+/* AGI 页翻译字典：键名与页面 data-i18n 属性一一对应 */
+window.I18N_DICT = {
+  zh: {
+    "_title": "未来（AGI）· LTZZZ",
+    "back.home": "← 返回 LTZZZ",
+    "agi.title": "未来（AGI）实验室",
+    "agi.desc": "多模型协作（Grok / GPT / 豆包 / DeepSeek / Claude）、减苦项目申报、捐赠台账与投资模拟。资金由人管理；AI 负责分析与文书，不代管私钥、不自动打款。",
+    "agi.cta": "进入 AGI 共同实验室 · 捐赠与减苦 →",
+    "card1.title": "共同实验室",
+    "card1.desc": "标准提示词、多模型对照、项目池与透明台账。",
+    "card1.cta": "打开 →",
+    "card2.title": "AI 投资模拟",
+    "card2.desc": "纸面资金与策略练习，不自动实盘。",
+    "card2.cta": "模拟 →",
+    "card3.title": "K 线模拟盘",
+    "card3.desc": "UNI / AAVE / 示意标的纸上交易。",
+    "card3.cta": "打开 →",
+    "card4.title": "观 · 行深",
+    "card4.desc": "把体验与行为留在可复盘的记录里。",
+    "card4.cta": "观 →"
+  },
+  en: {
+    "_title": "Future (AGI) · LTZZZ",
+    "back.home": "← Back to LTZZZ",
+    "agi.title": "Future (AGI) Lab",
+    "agi.desc": "Multi-model collaboration (Grok / GPT / Doubao / DeepSeek / Claude), relief project submissions, donation ledger and investment simulation. Money is managed by humans; AI handles analysis and paperwork — it never holds private keys or auto-pays.",
+    "agi.cta": "Enter AGI Common Lab · Donate & Relief →",
+    "card1.title": "Common Lab",
+    "card1.desc": "Standard prompts, multi-model comparison, project pool and transparent ledger.",
+    "card1.cta": "Open →",
+    "card2.title": "AI Investment Simulation",
+    "card2.desc": "Paper trading and strategy practice, never auto-trading real funds.",
+    "card2.cta": "Simulate →",
+    "card3.title": "K-Line Simulator",
+    "card3.desc": "Paper trading on UNI / AAVE / demo assets.",
+    "card3.cta": "Open →",
+    "card4.title": "Observe · Practice",
+    "card4.desc": "Keep experiences and behaviors in reviewable records.",
+    "card4.cta": "Observe →"
+  }
+};
+</script>
+<script src="i18n.js"></script>
 </body>
 </html>

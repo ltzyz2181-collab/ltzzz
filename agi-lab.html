@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AGI 共同实验室 · 多模型圆桌 · LTZZZ</title>
+<title data-i18n="_title">AGI 共同实验室 · 多模型圆桌 · LTZZZ</title>
 <meta name="description" content="多模型圆桌模拟、协作协议、减苦项目。非真实跨平台互联。">
 <style>
 :root{--bg:#020611;--panel:#071221;--line:#173b58;--text:#eaf7ff;--muted:#91abc0;--cyan:#5de7ff;--green:#70f0bd}
@@ -45,71 +45,151 @@ textarea{min-height:80px;resize:vertical}
 .item{background:#02060d;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px}
 .item strong{color:var(--cyan)}
 footer{text-align:center;color:#56758c;padding:30px;font-size:13px}
+.lang-toggle{padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit}
+.lang-toggle:hover{border-color:var(--cyan);color:var(--text)}
+.lang-toggle .lang-zh{font-weight:600}
+html[lang="en"] .lang-toggle .lang-zh{font-weight:400}
+html[lang="en"] .lang-toggle .lang-en{font-weight:600}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand">LTZZZ <span>AGI COMMON LAB</span></div>
   <nav>
-    <a href="index.html">首页</a>
-    <a href="agi.html">AGI</a>
-    <a href="agi-lab.html">共同实验室</a>
-    <a href="moni.html">模拟</a>
-    <a href="guan.html">观</a>
+    <a href="index.html" data-i18n="nav.home">首页</a>
+    <a href="agi.html" data-i18n="nav.agi">AGI</a>
+    <a href="agi-lab.html" data-i18n="nav.agi-lab">共同实验室</a>
+    <a href="moni.html" data-i18n="nav.moni">模拟</a>
+    <a href="guan.html" data-i18n="nav.guan">观</a>
   </nav>
+  <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
 </header>
 
 <main class="wrap">
-  <div class="banner">
+  <div class="banner" data-i18n="banner" data-i18n-html>
     <strong>重要：</strong>本页「多模型互相发指令」是<strong>浏览器内模拟</strong>。
     无法真实连接 GPT / 豆包 / DeepSeek / Claude 的服务器，也不能让它们在官方平台上互发消息。
     真实多模型 = 你分别打开各产品，或自建后端 + 各家 API Key（Key 绝不能写进静态网页）。
   </div>
 
   <div class="eyebrow">ROUNDTABLE · SIMULATION</div>
-  <h1>多模型圆桌 <span>（模拟）</span></h1>
-  <p class="lead">输入一段话 → 本机按「席位」依次生成风格化回复，并模拟「向下一席发送指令」。用于演练协作流程，不是真 AGI 联网。</p>
+  <h1 data-i18n="h1" data-i18n-html>多模型圆桌 <span>（模拟）</span></h1>
+  <p class="lead" data-i18n="lead">输入一段话 → 本机按「席位」依次生成风格化回复，并模拟「向下一席发送指令」。用于演练协作流程，不是真 AGI 联网。</p>
 
   <section class="panel" style="margin-top:18px">
-    <h2>⓪ 圆桌测试</h2>
+    <h2 data-i18n="rt.title">⓪ 圆桌测试</h2>
     <div class="checks">
-      <label><input type="checkbox" name="seat" value="grok" checked> Grok</label>
-      <label><input type="checkbox" name="seat" value="gpt" checked> GPT</label>
-      <label><input type="checkbox" name="seat" value="doubao" checked> 豆包</label>
-      <label><input type="checkbox" name="seat" value="deepseek" checked> DeepSeek</label>
-      <label><input type="checkbox" name="seat" value="claude" checked> Claude</label>
+      <label><input type="checkbox" name="seat" value="grok" checked> <span data-i18n="chk.grok">Grok</span></label>
+      <label><input type="checkbox" name="seat" value="gpt" checked> <span data-i18n="chk.gpt">GPT</span></label>
+      <label><input type="checkbox" name="seat" value="doubao" checked> <span data-i18n="chk.doubao">豆包</span></label>
+      <label><input type="checkbox" name="seat" value="deepseek" checked> <span data-i18n="chk.deepseek">DeepSeek</span></label>
+      <label><input type="checkbox" name="seat" value="claude" checked> <span data-i18n="chk.claude">Claude</span></label>
     </div>
-    <label>你的发言 / 测试文字</label>
-    <textarea id="userMsg" placeholder="例如：请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。">请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。</textarea>
-    <button class="btn primary" type="button" id="runRound">开始圆桌（模拟回复）</button>
-    <button class="btn" type="button" id="clearRound">清空记录</button>
+    <label data-i18n="label.speech">你的发言 / 测试文字</label>
+    <textarea id="userMsg" placeholder="例如：请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。" data-i18n-placeholder="msg.placeholder" data-i18n="msg.default">请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。</textarea>
+    <button class="btn primary" type="button" id="runRound" data-i18n="run.btn">开始圆桌（模拟回复）</button>
+    <button class="btn" type="button" id="clearRound" data-i18n="clear.btn">清空记录</button>
     <div class="round" id="roundLog"></div>
   </section>
 
   <div class="grid">
     <section class="panel">
-      <h2>① 真要「互通」时怎么做</h2>
-      <p>1. 人工传话：复制提示词 → 各 App 粘贴 → 把回复贴回对照区。<br>
+      <h2 data-i18n="sec1.title">① 真要「互通」时怎么做</h2>
+      <p data-i18n="sec1.desc" data-i18n-html>1. 人工传话：复制提示词 → 各 App 粘贴 → 把回复贴回对照区。<br>
          2. 自建后端：服务器保存 API Key，顺序调用各接口（你自己运维与付费）。<br>
          3. 静态 GitHub Pages <strong>做不到</strong>安全的密钥互调。</p>
-      <label>人工协作提示词</label>
-      <textarea id="promptTpl" readonly>你是 LTZZZ 圆桌的一席。请简短回复（3句内）。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。</textarea>
-      <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('promptTpl').value)">复制</button>
+      <label data-i18n="label.prompt">人工协作提示词</label>
+      <textarea id="promptTpl" readonly data-i18n="prompt.default">你是 LTZZZ 圆桌的一席。请简短回复（3句内）。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。</textarea>
+      <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('promptTpl').value)" data-i18n="copy.btn">复制</button>
     </section>
 
     <section class="panel">
-      <h2>② 减苦项目（本机）</h2>
-      <label>项目名称</label>
-      <input id="pName" placeholder="项目名">
-      <label>简述</label>
-      <textarea id="pDesc" placeholder="可核对事实"></textarea>
-      <button class="btn green" type="button" id="submitProject">存本机</button>
+      <h2 data-i18n="sec2.title">② 减苦项目（本机）</h2>
+      <label data-i18n="label.name">项目名称</label>
+      <input id="pName" placeholder="项目名" data-i18n-placeholder="name.placeholder">
+      <label data-i18n="label.desc">简述</label>
+      <textarea id="pDesc" placeholder="可核对事实" data-i18n-placeholder="desc.placeholder"></textarea>
+      <button class="btn green" type="button" id="submitProject" data-i18n="save.btn">存本机</button>
       <div class="list" id="projectList"></div>
     </section>
   </div>
 </main>
-<footer>LTZZZ · 圆桌模拟 ≠ 官方模型互联</footer>
+<footer data-i18n="footer">LTZZZ · 圆桌模拟 ≠ 官方模型互联</footer>
 
+<script>
+/* AGI 共同实验室翻译字典：键名与页面 data-i18n 属性一一对应 */
+window.I18N_DICT = {
+  zh: {
+    "_title": "AGI 共同实验室 · 多模型圆桌 · LTZZZ",
+    "nav.home": "首页",
+    "nav.agi": "AGI",
+    "nav.agi-lab": "共同实验室",
+    "nav.moni": "模拟",
+    "nav.guan": "观",
+    "banner": "<strong>重要：</strong>本页「多模型互相发指令」是<strong>浏览器内模拟</strong>。无法真实连接 GPT / 豆包 / DeepSeek / Claude 的服务器，也不能让它们在官方平台上互发消息。真实多模型 = 你分别打开各产品，或自建后端 + 各家 API Key（Key 绝不能写进静态网页）。",
+    "h1": "多模型圆桌 <span>（模拟）</span>",
+    "lead": "输入一段话 → 本机按「席位」依次生成风格化回复，并模拟「向下一席发送指令」。用于演练协作流程，不是真 AGI 联网。",
+    "rt.title": "⓪ 圆桌测试",
+    "chk.grok": "Grok",
+    "chk.gpt": "GPT",
+    "chk.doubao": "豆包",
+    "chk.deepseek": "DeepSeek",
+    "chk.claude": "Claude",
+    "label.speech": "你的发言 / 测试文字",
+    "msg.placeholder": "例如：请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。",
+    "msg.default": "请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。",
+    "run.btn": "开始圆桌（模拟回复）",
+    "clear.btn": "清空记录",
+    "sec1.title": "① 真要「互通」时怎么做",
+    "sec1.desc": "1. 人工传话：复制提示词 → 各 App 粘贴 → 把回复贴回对照区。<br>2. 自建后端：服务器保存 API Key，顺序调用各接口（你自己运维与付费）。<br>3. 静态 GitHub Pages <strong>做不到</strong>安全的密钥互调。",
+    "label.prompt": "人工协作提示词",
+    "prompt.default": "你是 LTZZZ 圆桌的一席。请简短回复（3句内）。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。",
+    "copy.btn": "复制",
+    "sec2.title": "② 减苦项目（本机）",
+    "label.name": "项目名称",
+    "name.placeholder": "项目名",
+    "label.desc": "简述",
+    "desc.placeholder": "可核对事实",
+    "save.btn": "存本机",
+    "footer": "LTZZZ · 圆桌模拟 ≠ 官方模型互联"
+  },
+  en: {
+    "_title": "AGI Common Lab · Multi-Model Roundtable · LTZZZ",
+    "nav.home": "Home",
+    "nav.agi": "AGI",
+    "nav.agi-lab": "Common Lab",
+    "nav.moni": "Simulation",
+    "nav.guan": "Observe",
+    "banner": "<strong>Important:</strong> The “models sending instructions to each other” on this page is a <strong>simulation in your browser</strong>. It cannot actually connect to GPT / Doubao / DeepSeek / Claude servers, nor make them message each other on official platforms. Real multi-model work means opening each product yourself, or running your own backend with each vendor's API key (keys must never go into a static webpage).",
+    "h1": "Multi-Model Roundtable <span>(Simulation)</span>",
+    "lead": "Enter a message → this page generates stylized replies seat by seat and simulates “sending instructions to the next seat”. It is for rehearsing collaboration flows, not real AGI networking.",
+    "rt.title": "⓪ Roundtable Test",
+    "chk.grok": "Grok",
+    "chk.gpt": "GPT",
+    "chk.doubao": "Doubao",
+    "chk.deepseek": "DeepSeek",
+    "chk.claude": "Claude",
+    "label.speech": "Your Message / Test Text",
+    "msg.placeholder": "e.g. Evaluate in one sentence the principle that “the AI Common Lab only simulates; real money stays with humans”.",
+    "msg.default": "Evaluate in one sentence the principle that “the AI Common Lab only simulates; real money stays with humans”.",
+    "run.btn": "Start Roundtable (Simulated)",
+    "clear.btn": "Clear Log",
+    "sec1.title": "① If You Really Need “Interop”",
+    "sec1.desc": "1. Manual relay: copy the prompt → paste into each app → paste replies back for comparison.<br>2. Self-hosted backend: the server holds API keys and calls each interface in sequence (you operate and pay for it).<br>3. Static GitHub Pages <strong>cannot</strong> safely exchange secrets between APIs.",
+    "label.prompt": "Manual Collaboration Prompt",
+    "prompt.default": "You are a seat at the LTZZZ roundtable. Reply briefly (within 3 sentences). Principles: never hold user funds; keep simulation and real money separate; critique plan flaws openly.",
+    "copy.btn": "Copy",
+    "sec2.title": "② Relief Projects (Local)",
+    "label.name": "Project Name",
+    "name.placeholder": "Project name",
+    "label.desc": "Short Description",
+    "desc.placeholder": "Checkable facts",
+    "save.btn": "Save Locally",
+    "footer": "LTZZZ · Roundtable Sim ≠ Official Model Interop"
+  }
+};
+</script>
+<script src="i18n.js"></script>
 <script>
 const AGENTS = {
   grok: {
