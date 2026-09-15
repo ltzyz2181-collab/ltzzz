@@ -163,7 +163,11 @@ async function connect(){
         usdcNum=Number(BigInt(bal))/1e6;
       }catch(e){}
       $('status').textContent='已连接：'+account+' · ETH ≈ '+ethNum.toFixed(4)+' · USDC ≈ '+usdcNum.toFixed(2);
-      // 同步余额到收益控制台（独立统计，不进平台收入）
+      // 同步余额到收益控制台（独立统计，不进平台收入）——直接写共享 localStorage
+      try {
+        var w = [{ eth: ethNum, usdc: usdcNum, address: account, updated_at: new Date().toISOString() }];
+        localStorage.setItem('ltzzz_wallet_balance', JSON.stringify(w));
+      } catch (e) {}
       if(window.LTZZZ_SET_WALLET){
         window.LTZZZ_SET_WALLET({eth:ethNum,usdc:usdcNum,address:account});
       }
@@ -171,6 +175,18 @@ async function connect(){
   }catch(e){$('status').textContent='连接取消或失败：'+e.message}
 }
 $('connect').onclick=connect;
+
+function recordTip(currency, amount, tx, sim) {
+  // 直接写入共享 localStorage（与 creator-revenue.html 同一键），不依赖跨页面 hook
+  try {
+    var arr = JSON.parse(localStorage.getItem('ltzzz_tips_records') || '[]');
+    if (!Array.isArray(arr)) arr = [];
+    arr.push({ currency: currency, amount: amount, tx: tx || '', sim: !!sim, published_at: new Date().toISOString() });
+    localStorage.setItem('ltzzz_tips_records', JSON.stringify(arr.slice(-50)));
+  } catch (e) {}
+  // 兼容旧 hook（若页面已加载 creator-revenue 的脚本）
+  if (window.LTZZZ_RECORD_TIP) { window.LTZZZ_RECORD_TIP({ currency: currency, amount: amount, tx: tx, published_at: new Date().toISOString() }); }
+}
 
 $('send').onclick=async()=>{
   if(!account){await connect();if(!account)return}
@@ -203,9 +219,7 @@ $('donate').onclick=async()=>{
     }
     $('donateOut').textContent='赞赏已提交（'+asset+' '+amount+'）：'+hash;
     // 记录到收益控制台「LTZZZ 赞赏」（与平台收入分开统计）
-    if(window.LTZZZ_RECORD_TIP){
-      window.LTZZZ_RECORD_TIP({currency:asset,amount:amount,tx:hash,published_at:new Date().toISOString()});
-    }
+    recordTip(asset, amount, hash, false);
   }catch(e){$('donateOut').textContent='赞赏未完成：'+e.message}
 };
 
@@ -215,9 +229,7 @@ $('sim').onclick=()=>{
   const rec='本机已记录模拟捐赠：¥'+n.toFixed(2)+' · '+new Date().toLocaleString('zh-CN');
   $('simOut').textContent=rec;
   // 模拟赞赏也进入收益控制台（标注 sim）
-  if(window.LTZZZ_RECORD_TIP){
-    window.LTZZZ_RECORD_TIP({currency:'ETH',amount:n/100000,sim:true,published_at:new Date().toISOString()});
-  }
+  recordTip('ETH', n / 100000, null, true);
 };
 </script>
 </body>
