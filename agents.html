@@ -13,12 +13,43 @@
 <body>
 <header class="top"><div class="brand">LTZZZ <span>MULTI AGENT LAB</span></div><nav><a href="index.html">首页</a><a href="agi-lab.html">共同实验室</a><a href="deepseek.html">DeepSeek</a><a href="wallet-lab.html">钱包</a></nav></header>
 <main class="wrap">
-<div class="banner"><strong>当前状态：</strong>这个页面现在先把“多 Agent”骨架和 DeepSeek 真实调用入口做起来。豆包真实调用需要你在 Cloudflare Worker 或其他后端配置 Agent Plan 专属 Key；不要把 Key 写进 GitHub 静态网页。</div>
+<div class="banner"><strong>当前状态：</strong>多 Agent 编排 Worker 已提供（总控 → 专家）。DeepSeek、豆包可接真实 API Key；Grok、Claude 保留接口位。所有 Key 只放后端环境变量，绝不写进网页。</div>
 <div class="eyebrow">LTZZZ · AGENT ORCHESTRATOR</div>
 <h1>多 Agent 实验室</h1>
-<p class="lead">先验证两件事：① 页面能访问；② DeepSeek 能真实回答。豆包、ChatGPT、Grok、Claude 先作为 Agent 席位保留，接入后再切换为真实 API。</p>
+<p class="lead">总控（ChatGPT，可配置）把问题拆成子任务，并行交给豆包 / DeepSeek / Grok / Claude 专家席；后端 Worker 持有全部 Key。未配置 Key 的席位会明确显示「接口位保留」，不假装已实现。</p>
 
-<section class="panel" style="margin-top:18px"><h2>五个 Agent</h2><div class="agents"><div class="agent"><strong>豆包 Agent</strong><small>中国互联网 / 执行 / Coding</small><span class="tag">待接入</span></div><div class="agent"><strong>DeepSeek Agent</strong><small>研究 / Coding / 分析</small><span class="tag">可测试</span></div><div class="agent"><strong>ChatGPT Agent</strong><small>总控 / 规划 / 汇总</small><span class="tag">总控位</span></div><div class="agent"><strong>Grok Agent</strong><small>实时信息 / 海外视角</small><span class="tag">待接入</span></div><div class="agent"><strong>Claude Agent</strong><small>长文 / 代码审查</small><span class="tag">待接入</span></div></div></section>
+<section class="panel" style="margin-top:18px"><h2>五个 Agent</h2><div class="agents"><div class="agent"><strong>豆包 Agent</strong><small>中国互联网 / 执行 / Coding</small><span class="tag">可接真实 Key</span></div><div class="agent"><strong>DeepSeek Agent</strong><small>研究 / Coding / 分析</small><span class="tag">真实 API</span></div><div class="agent"><strong>ChatGPT Agent</strong><small>总控 / 规划 / 汇总</small><span class="tag">总控位 · 可配</span></div><div class="agent"><strong>Grok Agent</strong><small>实时信息 / 海外视角</small><span class="tag">接口位</span></div><div class="agent"><strong>Claude Agent</strong><small>长文 / 代码审查</small><span class="tag">接口位</span></div></div></section>
+
+<section class="panel" style="margin-top:18px">
+<div class="eyebrow">LIVE ORCHESTRATION</div>
+<h2>多 Agent 编排：总控 → 专家</h2>
+<p>总控（ChatGPT，可配置）把问题拆成 4 个子任务，并行交给 豆包 / DeepSeek / Grok / Claude 专家席。后端 Worker 持有全部 Key，网页不保存任何 Key；未配置 Key 的席位会明确显示「接口位保留」。</p>
+<label>编排 Worker 地址</label>
+<input id="orchEndpoint" placeholder="https://你的编排worker.workers.dev">
+<label>问题</label>
+<textarea id="orchQuestion">请设计一个 LTZZZ 今天就能验证的 AI 实验：用 AI 完成一件真实小事，并记录结果。</textarea>
+<button class="btn primary" id="orchRun">开始编排</button>
+<div class="status" id="orchStatus">等待开始</div>
+<div class="agents" style="margin-top:12px">
+<div class="agent"><strong>总控 · ChatGPT</strong><small>规划 / 汇总</small><span class="tag" id="st-plan">未开始</span></div>
+<div class="agent"><strong>豆包 Agent</strong><small>执行 / 工程</small><span class="tag" id="st-doubao">未开始</span></div>
+<div class="agent"><strong>DeepSeek Agent</strong><small>研究 / 分析</small><span class="tag" id="st-deepseek">未开始</span></div>
+<div class="agent"><strong>Grok Agent</strong><small>实时 / 海外</small><span class="tag" id="st-grok">未开始</span></div>
+<div class="agent"><strong>Claude Agent</strong><small>长文 / 审查</small><span class="tag" id="st-claude">未开始</span></div>
+</div>
+<h3 style="margin:16px 0 8px">任务计划</h3>
+<div class="result" id="orchPlan" style="min-height:64px">等待编排…</div>
+<h3 style="margin:16px 0 8px">专家回复</h3>
+<div class="row">
+<div><div class="status">豆包</div><div class="result" id="r-doubao" style="min-height:80px">—</div></div>
+<div><div class="status">DeepSeek</div><div class="result" id="r-deepseek" style="min-height:80px">—</div></div>
+<div><div class="status">Grok</div><div class="result" id="r-grok" style="min-height:80px">—</div></div>
+<div><div class="status">Claude</div><div class="result" id="r-claude" style="min-height:80px">—</div></div>
+</div>
+<h3 style="margin:16px 0 8px">总控汇总</h3>
+<div class="result" id="orchSummary" style="min-height:64px">—</div>
+<p class="note" style="margin-top:12px">部署编排 Worker：<span class="mono">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>，然后配置 Secret：<span class="mono">npx wrangler secret put DEEPSEEK_API_KEY</span>、<span class="mono">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span>（豆包用 Agent Plan 专属 Key，Base URL 默认 <span class="mono">https://ark.cn-beijing.volces.com/api/plan</span>，模型 <span class="mono">doubao-seed-evolving</span>）；可选 <span class="mono">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>。</p>
+</section>
 
 <div class="grid">
 <section class="panel"><h2>① DeepSeek 真实调用测试</h2><p>把你自己的 Cloudflare Worker 地址填进来。Worker 负责持有 <span class="mono">DEEPSEEK_API_KEY</span>，网页本身不保存 Key。</p><label>DeepSeek Worker 地址</label><input id="deepEndpoint" placeholder="https://你的worker.workers.dev"><label>问题</label><textarea id="deepPrompt">请给我设计一个 LTZZZ 多 Agent 实验，要求今天就能验证。</textarea><button class="btn primary" id="deepRun">调用 DeepSeek</button><div class="status" id="deepStatus">等待测试</div><div class="result" id="deepResult">暂无结果</div></section>
@@ -42,5 +73,44 @@ async function callWorker(endpoint,prompt,statusEl,resultEl){
 }
 document.getElementById('deepRun').onclick=()=>callWorker(document.getElementById('deepEndpoint').value,document.getElementById('deepPrompt').value,document.getElementById('deepStatus'),document.getElementById('deepResult'));
 document.getElementById('doubaoRun').onclick=()=>callWorker(document.getElementById('doubaoEndpoint').value,document.getElementById('doubaoPrompt').value,document.getElementById('doubaoStatus'),document.getElementById('doubaoResult'));
+
+// ---- 多 Agent 编排（总控 → 专家）----
+function seatStatus(id,text,ok){const el=document.getElementById(id);if(!el)return;el.textContent=text;el.style.borderColor=ok===true?'#4de0a7':ok===false?'#ff7a7a':'';el.style.color=ok===true?'#6bf0bb':ok===false?'#ff9d9d':'';}
+async function runOrchestrator(){
+  const endpoint=document.getElementById('orchEndpoint').value.trim();
+  const question=document.getElementById('orchQuestion').value.trim();
+  const statusEl=document.getElementById('orchStatus');
+  if(!endpoint){statusEl.textContent='请先填写编排 Worker 地址';return;}
+  if(!question){statusEl.textContent='请填写问题';return;}
+  statusEl.textContent='正在编排…';
+  document.getElementById('orchPlan').textContent='等待总控规划…';
+  document.getElementById('orchSummary').textContent='—';
+  ['st-plan','st-doubao','st-deepseek','st-grok','st-claude'].forEach(id=>seatStatus(id,'调用中…'));
+  ['r-doubao','r-deepseek','r-grok','r-claude'].forEach(id=>document.getElementById(id).textContent='—');
+  try{
+    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data?.error||('HTTP '+r.status));
+    seatStatus('st-plan','已完成',true);
+    const plan=data.plan||{};
+    document.getElementById('orchPlan').textContent='【规划来源：'+(plan.source||'?')+'】\n'+(plan.summary||'')+'\n\n任务拆分：\n'+(plan.tasks||[]).map(t=>'• '+t.agent+' → '+(t.focus||'')).join('\n');
+    const replies=data.replies||[];
+    const map={doubao:'st-doubao',deepseek:'st-deepseek',grok:'st-grok',claude:'st-claude'};
+    replies.forEach(reply=>{
+      const seatId=map[reply.agent];if(!seatId)return;
+      if(reply.ok){seatStatus(seatId,'已完成',true);document.getElementById('r-'+reply.agent).textContent='模型：'+(reply.model||'?')+'\n\n'+(reply.text||'');}
+      else if(reply.stub){seatStatus(seatId,'接口位保留');document.getElementById('r-'+reply.agent).textContent='（'+((reply.error||'未配置 Key'))+'）';}
+      else{seatStatus(seatId,'失败',false);document.getElementById('r-'+reply.agent).textContent='调用失败：'+(reply.error||'未知错误');}
+    });
+    document.getElementById('orchSummary').textContent=(data.summary?.text)||'(无汇总)';
+    const okCount=replies.filter(x=>x&&x.ok).length;
+    statusEl.textContent='编排完成：'+okCount+'/'+replies.length+' 个专家席返回真实回复'+(plan.source==='builtin-router'?'（总控未配置 Key，使用内置路由）':'');
+  }catch(e){
+    statusEl.textContent='编排失败';
+    ['st-doubao','st-deepseek','st-grok','st-claude'].forEach(id=>seatStatus(id,'失败',false));
+    document.getElementById('orchPlan').textContent=e.message+'\n\n如果是 CORS/网络错误，请检查编排 Worker 是否已部署并允许该站点访问。';
+  }
+}
+document.getElementById('orchRun').onclick=runOrchestrator;
 </script>
 </body></html>
