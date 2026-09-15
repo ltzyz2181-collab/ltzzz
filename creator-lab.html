@@ -122,15 +122,15 @@ textarea{width:100%;box-sizing:border-box;background:#faf8f4;border:1px solid #d
     <button class="button primary" type="button" id="runCreator" data-i18n="pipe.run">开始创作（框架）</button>
     <div class="status" id="creatorStatus" data-i18n="pipe.status.ready">流水线框架已就绪 · Agent API 接入后启用</div>
     <div class="out-grid">
-      <div class="out-box"><b data-i18n="out.title">标题</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.open">开场</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.script">脚本</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.storyboard">分镜</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.voiceover">旁白</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.subtitle">字幕</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.cover">封面文字</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.desc">视频简介</b><span data-i18n="out.placeholder">待生成</span></div>
-      <div class="out-box"><b data-i18n="out.tags">标签</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.title">标题</b><span id="o-title" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.open">开场</b><span id="o-open" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.script">脚本</b><span id="o-script" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.storyboard">分镜</b><span id="o-storyboard" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.voiceover">旁白</b><span id="o-voiceover" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.subtitle">字幕</b><span id="o-subtitle" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.cover">封面文字</b><span id="o-cover" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.desc">视频简介</b><span id="o-desc" data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.tags">标签</b><span id="o-tags" data-i18n="out.placeholder">待生成</span></div>
     </div>
   </section>
 
@@ -319,10 +319,50 @@ window.I18N_DICT = {
 </script>
 <script src="i18n.js"></script>
 <script>
-// 创作流水线框架：点击按钮仅提示框架状态，不调用任何 API
-document.getElementById('runCreator').addEventListener('click', function () {
+// 内容生产流水线（第一阶段：豆包 Agent 已接入，其余 Agent 待接入）
+var DOUBAO_ENDPOINT = 'https://ltzzz-doubao-proxy.ltzyz2181.workers.dev';
+document.getElementById('runCreator').addEventListener('click', async function () {
+  var topic = document.getElementById('topic').value.trim();
   var s = document.getElementById('creatorStatus');
-  s.textContent = '（第一阶段框架）Agent API 接入后，此处将展示五 Agent 生产结果';
+  if (!topic) { s.textContent = '请先输入主题。'; return; }
+  s.textContent = '豆包 Agent 生产中…（GPT 总控 / Grok / Claude 待接入）';
+  try {
+    var r = await fetch(DOUBAO_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{
+          role: 'system',
+          content: '你是 LTZZZ 创作实验室的短视频内容 Agent。请围绕用户主题，输出一套完整的中文短视频内容包，严格用以下 JSON 格式返回（不要多余文字）：{"title":"标题","open":"开场","script":"完整脚本","storyboard":"分镜要点","voiceover":"旁白文案","subtitle":"字幕要点","cover":"封面文字","desc":"视频简介","tags":"标签，逗号分隔"}'
+        }, { role: 'user', content: '主题：' + topic }]
+      })
+    });
+    var d = await r.json();
+    if (!d.choices || !d.choices[0]) { s.textContent = 'Worker 返回异常：' + (d.error || JSON.stringify(d)); return; }
+    var text = d.choices[0].message.content || '';
+    var json = null;
+    try {
+      var m = text.match(/\{[\s\S]*\}/);
+      if (m) json = JSON.parse(m[0]);
+    } catch (e) { json = null; }
+    if (json) {
+      document.getElementById('o-title').textContent = json.title || '待生成';
+      document.getElementById('o-open').textContent = json.open || '待生成';
+      document.getElementById('o-script').textContent = json.script || '待生成';
+      document.getElementById('o-storyboard').textContent = json.storyboard || '待生成';
+      document.getElementById('o-voiceover').textContent = json.voiceover || '待生成';
+      document.getElementById('o-subtitle').textContent = json.subtitle || '待生成';
+      document.getElementById('o-cover').textContent = json.cover || '待生成';
+      document.getElementById('o-desc').textContent = json.desc || '待生成';
+      document.getElementById('o-tags').textContent = json.tags || '待生成';
+      s.textContent = '豆包 Agent 已完成（其余 Agent 待接入）。';
+    } else {
+      document.getElementById('o-script').textContent = text;
+      s.textContent = '豆包 Agent 已返回（未按 JSON 解析，原文已填入脚本框）。';
+    }
+  } catch (e) {
+    s.textContent = '连接失败：' + e.message;
+  }
 });
 </script>
 </body>
