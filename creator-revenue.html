@@ -91,7 +91,7 @@
       </div>
       <div class="rev-card">
         <h3 data-i18n="card.douyin">抖音</h3>
-        <span class="badge" data-i18n="badge.status">待连接</span>
+        <span class="badge" id="dy-badge" data-i18n="badge.status">待连接</span>
         <div class="metrics">
           <div><span data-i18n="m.views">播放量</span><b id="dy-views">--</b></div>
           <div><span data-i18n="m.fans">粉丝</span><b id="dy-fans">--</b></div>
@@ -104,7 +104,7 @@
       </div>
       <div class="rev-card">
         <h3 data-i18n="card.channels">视频号</h3>
-        <span class="badge" data-i18n="badge.status">待连接</span>
+        <span class="badge" id="sp-badge" data-i18n="badge.status">待连接</span>
         <div class="metrics">
           <div><span data-i18n="m.views">播放量</span><b id="sp-views">--</b></div>
           <div><span data-i18n="m.fans">粉丝</span><b id="sp-fans">--</b></div>
@@ -304,7 +304,11 @@ function render() {
   var platSum = { income: 0, cost: 0 };
   Object.keys(platforms).forEach(function (k) {
     var p = platforms[k];
-    var id = k === 'shipinhao' ? 'sp' : (k === 'douyin' ? 'dy' : k.slice(0, 2));
+    var id = k; // youtube -> yt, tiktok -> tt, douyin -> dy, shipinhao -> sp
+    if (k === 'youtube') id = 'yt';
+    if (k === 'tiktok') id = 'tt';
+    if (k === 'douyin') id = 'dy';
+    if (k === 'shipinhao') id = 'sp';
     var el = function (s) { return document.getElementById(id + '-' + s); };
     el('views').textContent = p.n ? p.views.toLocaleString() : '--';
     el('fans').textContent = '--';
