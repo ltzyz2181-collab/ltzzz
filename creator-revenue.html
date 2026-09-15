@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="LTZZZ 收益控制台——YouTube / TikTok / 抖音 / 视频号的播放量、粉丝、收入与 AI 制作成本统计框架。">
+<title data-i18n="_title">LTZZZ 收益控制台</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.creator-wrap{max-width:1100px;margin:0 auto;padding:88px 7vw 60px}
+.creator-wrap h1{font-size:clamp(32px,5vw,56px);line-height:1.1;letter-spacing:-.04em;margin:0 0 12px}
+.creator-lead{font-size:17px;color:#666;margin:0 0 36px;max-width:760px}
+.panel{background:#fff;border:1px solid #ddd8ce;border-radius:22px;padding:28px;margin-bottom:24px}
+.panel h2{font-size:22px;margin:0 0 8px;letter-spacing:-.02em}
+.panel .sub{font-size:14px;color:#888;margin:0 0 18px}
+.rev-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:900px){.rev-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.rev-grid{grid-template-columns:1fr}}
+.rev-card{border:1px solid #ddd8ce;border-radius:16px;padding:18px;background:#faf8f4}
+.rev-card h3{margin:0 0 4px;font-size:16px}
+.rev-card .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;background:#f0ede6;color:#999;border:1px solid #e0dcd2;margin-top:4px}
+.metrics{margin-top:12px;border-top:1px solid #f0ede6;padding-top:8px}
+.metrics div{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;color:#666;border-bottom:1px dashed #f0ede6}
+.metrics div:last-child{border-bottom:none}
+.metrics b{color:#171717;font-weight:600}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.sum-grid{grid-template-columns:1fr}}
+.sum-card{border:1px solid #171717;border-radius:16px;padding:20px;background:#171717;color:#fff;text-align:center}
+.sum-card span{display:block;font-size:13px;color:#bbb;margin-bottom:8px}
+.sum-card b{font-size:26px;font-weight:700}
+.sum-card .unit{font-size:14px;color:#bbb;margin-left:4px;font-weight:400}
+.note{font-size:13px;color:#888;margin-top:14px;line-height:1.8}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="brand">LTZZZ <span data-i18n="brand.subtitle">收益控制台</span></div>
+  <nav>
+    <a href="index.html" data-i18n="nav.home">首页</a>
+    <a href="creator-lab.html" data-i18n="nav.creator">创作实验室</a>
+    <a href="creator-revenue.html" data-i18n="nav.revenue">收益控制台</a>
+    <a href="agents.html" data-i18n="nav.agents">多 Agent</a>
+    <a href="wallet-lab.html" data-i18n="nav.wallet">钱包</a>
+  </nav>
+  <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
+</header>
+
+<main class="creator-wrap">
+  <p class="eyebrow" data-i18n="eyebrow">LTZZZ · REVENUE CONSOLE</p>
+  <h1 data-i18n="h1">收益控制台</h1>
+  <p class="creator-lead" data-i18n="lead">记录每个平台的播放量、粉丝、收入与 AI 制作成本。平台收入按照平台自己的结算方式记录，不伪装成区块链钱包。</p>
+
+  <section class="panel">
+    <h2 data-i18n="plat.title">平台收益</h2>
+    <p class="sub" data-i18n="plat.desc">第一阶段为统计框架：平台 API 接入后自动填充；未接入时显示「待连接」与「--」。</p>
+    <div class="rev-grid">
+      <div class="rev-card">
+        <h3>YouTube</h3>
+        <span class="badge" data-i18n="badge.status">待连接</span>
+        <div class="metrics">
+          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
+          <div><span data-i18n="m.income">收入</span><b>--</b></div>
+          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+        </div>
+      </div>
+      <div class="rev-card">
+        <h3>TikTok</h3>
+        <span class="badge" data-i18n="badge.status">待连接</span>
+        <div class="metrics">
+          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
+          <div><span data-i18n="m.income">收入</span><b>--</b></div>
+          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+        </div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="card.douyin">抖音</h3>
+        <span class="badge" data-i18n="badge.status">待连接</span>
+        <div class="metrics">
+          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
+          <div><span data-i18n="m.income">收入</span><b>--</b></div>
+          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+        </div>
+      </div>
+      <div class="rev-card">
+        <h3 data-i18n="card.channels">视频号</h3>
+        <span class="badge" data-i18n="badge.status">待连接</span>
+        <div class="metrics">
+          <div><span data-i18n="m.views">播放量</span><b>--</b></div>
+          <div><span data-i18n="m.fans">粉丝</span><b>--</b></div>
+          <div><span data-i18n="m.videos">视频数量</span><b>--</b></div>
+          <div><span data-i18n="m.income">收入</span><b>--</b></div>
+          <div><span data-i18n="m.expense">支出</span><b>--</b></div>
+          <div><span data-i18n="m.aicost">AI 制作成本</span><b>--</b></div>
+          <div><span data-i18n="m.net">净收入</span><b>--</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="sum.title">汇总</h2>
+    <p class="sub" data-i18n="sum.desc">四个平台合计：总收入 − AI 成本 = 净收入。</p>
+    <div class="sum-grid">
+      <div class="sum-card"><span data-i18n="sum.total">总收入</span><b>--</b></div>
+      <div class="sum-card"><span data-i18n="sum.aicost">AI 成本</span><b>--</b></div>
+      <div class="sum-card"><span data-i18n="sum.net">净收入</span><b>--</b></div>
+    </div>
+    <p class="note" data-i18n="sum.note">数据待接入：平台 API 配置并授权后，此处自动汇总播放量、粉丝、视频数与收入；AI 制作成本由创作实验室按每次生产记录。</p>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="wallet.title">钱包与结算</h2>
+    <p class="sub" data-i18n="wallet.desc">钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。不要把平台官方提现方式伪装成区块链钱包；平台收入按平台自己的结算方式记录。</p>
+    <a class="button primary" href="wallet-lab.html" data-i18n="wallet.btn">进入钱包实验室 →</a>
+  </section>
+</main>
+
+<footer data-i18n="footer">© 2026 LTZZZ Digital Lab · Revenue Console · 待连接 → 接入 API → 真实数据</footer>
+
+<script>
+/* creator-revenue.html 翻译字典：键名与页面 data-i18n 属性一一对应 */
+window.I18N_DICT = {
+  zh: {
+    "_title": "LTZZZ 收益控制台",
+    "brand.subtitle": "收益控制台",
+    "nav.home": "首页",
+    "nav.creator": "创作实验室",
+    "nav.revenue": "收益控制台",
+    "nav.agents": "多 Agent",
+    "nav.wallet": "钱包",
+    "eyebrow": "LTZZZ · REVENUE CONSOLE",
+    "h1": "收益控制台",
+    "lead": "记录每个平台的播放量、粉丝、收入与 AI 制作成本。平台收入按照平台自己的结算方式记录，不伪装成区块链钱包。",
+    "plat.title": "平台收益",
+    "plat.desc": "第一阶段为统计框架：平台 API 接入后自动填充；未接入时显示「待连接」与「--」。",
+    "badge.status": "待连接",
+    "card.douyin": "抖音",
+    "card.channels": "视频号",
+    "m.views": "播放量",
+    "m.fans": "粉丝",
+    "m.videos": "视频数量",
+    "m.income": "收入",
+    "m.expense": "支出",
+    "m.aicost": "AI 制作成本",
+    "m.net": "净收入",
+    "sum.title": "汇总",
+    "sum.desc": "四个平台合计：总收入 − AI 成本 = 净收入。",
+    "sum.total": "总收入",
+    "sum.aicost": "AI 成本",
+    "sum.net": "净收入",
+    "sum.note": "数据待接入：平台 API 配置并授权后，此处自动汇总播放量、粉丝、视频数与收入；AI 制作成本由创作实验室按每次生产记录。",
+    "wallet.title": "钱包与结算",
+    "wallet.desc": "钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。不要把平台官方提现方式伪装成区块链钱包；平台收入按平台自己的结算方式记录。",
+    "wallet.btn": "进入钱包实验室 →",
+    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · 待连接 → 接入 API → 真实数据"
+  },
+  en: {
+    "_title": "LTZZZ Revenue Console",
+    "brand.subtitle": "Revenue Console",
+    "nav.home": "Home",
+    "nav.creator": "Creator Lab",
+    "nav.revenue": "Revenue Console",
+    "nav.agents": "Multi-Agent",
+    "nav.wallet": "Wallet",
+    "eyebrow": "LTZZZ · REVENUE CONSOLE",
+    "h1": "Revenue Console",
+    "lead": "Track views, followers, income and AI production costs per platform. Platform income is recorded per each platform's own settlement method — never disguised as a blockchain wallet.",
+    "plat.title": "Platform Revenue",
+    "plat.desc": "Phase 1 is a statistics framework: figures fill automatically once platform APIs are connected; otherwise they show “Pending Connection” and “--”.",
+    "badge.status": "Pending Connection",
+    "card.douyin": "Douyin",
+    "card.channels": "WeChat Channels",
+    "m.views": "Views",
+    "m.fans": "Followers",
+    "m.videos": "Videos",
+    "m.income": "Income",
+    "m.expense": "Expenses",
+    "m.aicost": "AI Production Cost",
+    "m.net": "Net Income",
+    "sum.title": "Summary",
+    "sum.desc": "All four platforms: Total income − AI cost = Net income.",
+    "sum.total": "Total Income",
+    "sum.aicost": "AI Cost",
+    "sum.net": "Net Income",
+    "sum.note": "Data pending: once platform APIs are configured and authorized, views, followers, video counts and income will aggregate here automatically; AI production costs are recorded per production run by the Creator Lab.",
+    "wallet.title": "Wallet & Settlement",
+    "wallet.desc": "The wallet is used for: LTZZZ donations, experiment income records, and future Agent Payment experiments. Never disguise official platform payouts as a blockchain wallet; platform income is recorded per each platform's own settlement method.",
+    "wallet.btn": "Enter Wallet Lab →",
+    "footer": "© 2026 LTZZZ Digital Lab · Revenue Console · Pending → Connect APIs → Real Data"
+  }
+};
+</script>
+<script src="i18n.js"></script>
+</body>
+</html>

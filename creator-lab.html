@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="LTZZZ 创作实验室——多 AI Agent 协作生产原创内容，发布到 YouTube / TikTok / 抖音 / 视频号，内容回流 LTZZZ。">
+<title data-i18n="_title">LTZZZ 创作实验室</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.creator-wrap{max-width:1100px;margin:0 auto;padding:88px 7vw 60px}
+.creator-wrap h1{font-size:clamp(32px,5vw,56px);line-height:1.1;letter-spacing:-.04em;margin:0 0 12px}
+.creator-lead{font-size:17px;color:#666;margin:0 0 36px;max-width:760px}
+.panel{background:#fff;border:1px solid #ddd8ce;border-radius:22px;padding:28px;margin-bottom:24px}
+.panel h2{font-size:22px;margin:0 0 8px;letter-spacing:-.02em}
+.panel .sub{font-size:14px;color:#888;margin:0 0 18px}
+.agent-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:900px){.agent-grid{grid-template-columns:repeat(2,1fr)}}
+.agent-card{padding:16px;border:1px solid #ddd8ce;border-radius:16px;background:#faf8f4}
+.agent-card strong{display:block;font-size:15px;margin-bottom:4px}
+.agent-card small{color:#888;font-size:12px;line-height:1.6;display:block}
+.agent-card .tag{display:inline-block;margin-top:8px;padding:2px 8px;border:1px solid #ddd8ce;border-radius:999px;color:#777;font-size:11px}
+.agent-card.gpt{border-color:#171717;background:#171717;color:#fff}
+.agent-card.gpt small{color:#bbb}
+.agent-card.gpt .tag{border-color:#444;color:#ccc}
+.gov-note{margin-top:14px;padding:14px 16px;background:#f5f3ee;border:1px dashed #c9c2b4;border-radius:12px;font-size:13px;color:#666;line-height:1.8}
+.steps{list-style:none;padding:0;margin:0;counter-reset:step}
+.steps li{position:relative;padding:10px 0 10px 42px;border-bottom:1px solid #f0ede6;font-size:15px;color:#444;line-height:1.7}
+.steps li:last-child{border-bottom:none}
+.steps li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:10px;width:26px;height:26px;border-radius:50%;background:#171717;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps li b{color:#171717}
+label{display:block;font-size:13px;color:#777;margin:14px 0 6px}
+textarea{width:100%;box-sizing:border-box;background:#faf8f4;border:1px solid #ddd8ce;border-radius:12px;color:#171717;padding:12px 14px;font:inherit;min-height:90px;resize:vertical}
+.out-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+@media(max-width:700px){.out-grid{grid-template-columns:1fr 1fr}}
+.out-box{border:1px dashed #ddd8ce;border-radius:12px;padding:12px 14px;background:#faf8f4}
+.out-box b{display:block;font-size:13px;color:#777;margin-bottom:6px}
+.out-box span{font-size:13px;color:#bbb}
+.plat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.plat-grid{grid-template-columns:repeat(2,1fr)}}
+.plat-card{border:1px solid #ddd8ce;border-radius:16px;padding:16px;background:#faf8f4}
+.plat-card strong{display:block;font-size:15px;margin-bottom:6px}
+.plat-card p{font-size:12px;color:#888;margin:0 0 10px;line-height:1.6}
+.plat-card .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;background:#f0ede6;color:#999;border:1px solid #e0dcd2}
+.status{font-size:13px;color:#0d9488;margin-top:12px;min-height:18px}
+.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+.flow .node{padding:8px 14px;border:1px solid #ddd8ce;border-radius:999px;font-size:13px;color:#555;background:#fff}
+.flow .arrow{color:#bbb;font-size:13px}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="brand">LTZZZ <span data-i18n="brand.subtitle">创作实验室</span></div>
+  <nav>
+    <a href="index.html" data-i18n="nav.home">首页</a>
+    <a href="creator-lab.html" data-i18n="nav.creator">创作实验室</a>
+    <a href="creator-revenue.html" data-i18n="nav.revenue">收益控制台</a>
+    <a href="agents.html" data-i18n="nav.agents">多 Agent</a>
+    <a href="wallet-lab.html" data-i18n="nav.wallet">钱包</a>
+  </nav>
+  <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
+</header>
+
+<main class="creator-wrap">
+  <p class="eyebrow" data-i18n="eyebrow">LTZZZ · CREATOR LAB</p>
+  <h1 data-i18n="h1">创作实验室</h1>
+  <p class="creator-lead" data-i18n="lead">使用多个 AI Agent 协作生产原创内容，发布到 YouTube / TikTok / 抖音 / 视频号，内容最终回流到 LTZZZ。核心思想：观 → 行深 → 改变习气 → 产生结果 → 再观。</p>
+
+  <section class="panel">
+    <h2 data-i18n="arch.title">多 Agent 生产架构</h2>
+    <p class="sub" data-i18n="arch.desc">GPT 为总控 Agent；其余 Agent 可提出反对意见，任何 Agent 不得单方面改变总控架构。</p>
+    <div class="agent-grid">
+      <div class="agent-card gpt">
+        <strong data-i18n="agent.gpt.name">GPT · 总控 Agent</strong>
+        <small data-i18n="agent.gpt.role">判断主题 / 分配任务 / 综合四个 Agent 的结果</small>
+        <span class="tag" data-i18n="agent.gpt.tag">总控 · 不可擅改</span>
+      </div>
+      <div class="agent-card">
+        <strong data-i18n="agent.doubao.name">豆包 Agent</strong>
+        <small data-i18n="agent.doubao.role">中文短视频 / 抖音 / 视频号 / 中文内容</small>
+        <span class="tag" data-i18n="agent.doubao.tag">短视频脚本</span>
+      </div>
+      <div class="agent-card">
+        <strong data-i18n="agent.deepseek.name">DeepSeek Agent</strong>
+        <small data-i18n="agent.deepseek.role">研究 / 数据 / 长文 / 代码 / 资料整理</small>
+        <span class="tag" data-i18n="agent.deepseek.tag">研究 / 事实</span>
+      </div>
+      <div class="agent-card">
+        <strong data-i18n="agent.grok.name">Grok Agent</strong>
+        <small data-i18n="agent.grok.role">海外热点 / TikTok / YouTube</small>
+        <span class="tag" data-i18n="agent.grok.tag">海外趋势</span>
+      </div>
+      <div class="agent-card">
+        <strong data-i18n="agent.claude.name">Claude Agent</strong>
+        <small data-i18n="agent.claude.role">审稿 / 长文 / 代码 Review / 逻辑检查</small>
+        <span class="tag" data-i18n="agent.claude.tag">审稿 / 反驳</span>
+      </div>
+    </div>
+    <div class="gov-note" data-i18n="gov.note">治理规则：任何 Agent 都可以提出反对意见。修改 GPT 总控角色、Agent 权限或核心治理规则，必须进入 5 Agent 投票（GPT / 豆包 / DeepSeek / Grok / Claude），至少 3/5 同意才能形成修改提案，最终必须由用户确认。</div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="pipe.title">内容生产流水线</h2>
+    <p class="sub" data-i18n="pipe.desc">输入一个主题，GPT 总控判断主题并分配任务，四个 Agent 并行生产，最后由 GPT 综合生成最终产出。</p>
+    <label data-i18n="pipe.label.topic">输入主题</label>
+    <textarea id="topic" placeholder="例如：我为什么越想睡越睡不着？" data-i18n-placeholder="pipe.topic.placeholder"></textarea>
+    <div class="flow">
+      <span class="node" data-i18n="flow.gpt">GPT 总控</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.doubao">豆包</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.deepseek">DeepSeek</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.grok">Grok</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.claude">Claude</span><span class="arrow">→</span>
+      <span class="node" data-i18n="flow.out">综合产出</span>
+    </div>
+    <ol class="steps">
+      <li data-i18n="pipe.step1" data-i18n-html><b>GPT 总控</b>：判断主题，分配任务</li>
+      <li data-i18n="pipe.step2" data-i18n-html><b>豆包</b>：生成中文短视频版本</li>
+      <li data-i18n="pipe.step3" data-i18n-html><b>DeepSeek</b>：研究资料、事实、逻辑</li>
+      <li data-i18n="pipe.step4" data-i18n-html><b>Grok</b>：寻找海外相关讨论和趋势</li>
+      <li data-i18n="pipe.step5" data-i18n-html><b>Claude</b>：审稿、检查逻辑、提出反驳</li>
+      <li data-i18n="pipe.step6" data-i18n-html><b>GPT 综合</b>：汇总四个 Agent 的结果，生成最终产出</li>
+    </ol>
+    <button class="button primary" type="button" id="runCreator" data-i18n="pipe.run">开始创作（框架）</button>
+    <div class="status" id="creatorStatus" data-i18n="pipe.status.ready">流水线框架已就绪 · Agent API 接入后启用</div>
+    <div class="out-grid">
+      <div class="out-box"><b data-i18n="out.title">标题</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.open">开场</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.script">脚本</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.storyboard">分镜</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.voiceover">旁白</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.subtitle">字幕</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.cover">封面文字</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.desc">视频简介</b><span data-i18n="out.placeholder">待生成</span></div>
+      <div class="out-box"><b data-i18n="out.tags">标签</b><span data-i18n="out.placeholder">待生成</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="plat.title">视频平台</h2>
+    <p class="sub" data-i18n="plat.desc">第一阶段：内容生产 + 发布记录 + 收益记录；不假装已经自动发布。平台 API 未配置时显示「待连接」。</p>
+    <div class="plat-grid">
+      <div class="plat-card">
+        <strong>YouTube</strong>
+        <p data-i18n="plat.yt.desc">长视频 / 内容沉淀 / 海外受众</p>
+        <span class="badge" data-i18n="plat.status">待连接</span>
+      </div>
+      <div class="plat-card">
+        <strong>TikTok</strong>
+        <p data-i18n="plat.tiktok.desc">短视频 / 海外热点 / 快速传播</p>
+        <span class="badge" data-i18n="plat.status">待连接</span>
+      </div>
+      <div class="plat-card">
+        <strong data-i18n="plat.douyin.name">抖音</strong>
+        <p data-i18n="plat.douyin.desc">中文短视频 / 国内传播</p>
+        <span class="badge" data-i18n="plat.status">待连接</span>
+      </div>
+      <div class="plat-card">
+        <strong data-i18n="plat.channels.name">视频号</strong>
+        <p data-i18n="plat.channels.desc">微信生态 / 中文受众</p>
+        <span class="badge" data-i18n="plat.status">待连接</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 data-i18n="wallet.title">钱包入口</h2>
+    <p class="sub" data-i18n="wallet.desc">钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。平台官方提现按平台自己的结算方式记录，不伪装成区块链钱包。</p>
+    <a class="button primary" href="wallet-lab.html" data-i18n="wallet.btn">进入钱包实验室 →</a>
+  </section>
+</main>
+
+<footer data-i18n="footer">© 2026 LTZZZ Digital Lab · Creator Lab · 先验证，再扩展</footer>
+
+<script>
+/* creator-lab.html 翻译字典：键名与页面 data-i18n 属性一一对应 */
+window.I18N_DICT = {
+  zh: {
+    "_title": "LTZZZ 创作实验室",
+    "brand.subtitle": "创作实验室",
+    "nav.home": "首页",
+    "nav.creator": "创作实验室",
+    "nav.revenue": "收益控制台",
+    "nav.agents": "多 Agent",
+    "nav.wallet": "钱包",
+    "eyebrow": "LTZZZ · CREATOR LAB",
+    "h1": "创作实验室",
+    "lead": "使用多个 AI Agent 协作生产原创内容，发布到 YouTube / TikTok / 抖音 / 视频号，内容最终回流到 LTZZZ。核心思想：观 → 行深 → 改变习气 → 产生结果 → 再观。",
+    "arch.title": "多 Agent 生产架构",
+    "arch.desc": "GPT 为总控 Agent；其余 Agent 可提出反对意见，任何 Agent 不得单方面改变总控架构。",
+    "agent.gpt.name": "GPT · 总控 Agent",
+    "agent.gpt.role": "判断主题 / 分配任务 / 综合四个 Agent 的结果",
+    "agent.gpt.tag": "总控 · 不可擅改",
+    "agent.doubao.name": "豆包 Agent",
+    "agent.doubao.role": "中文短视频 / 抖音 / 视频号 / 中文内容",
+    "agent.doubao.tag": "短视频脚本",
+    "agent.deepseek.name": "DeepSeek Agent",
+    "agent.deepseek.role": "研究 / 数据 / 长文 / 代码 / 资料整理",
+    "agent.deepseek.tag": "研究 / 事实",
+    "agent.grok.name": "Grok Agent",
+    "agent.grok.role": "海外热点 / TikTok / YouTube",
+    "agent.grok.tag": "海外趋势",
+    "agent.claude.name": "Claude Agent",
+    "agent.claude.role": "审稿 / 长文 / 代码 Review / 逻辑检查",
+    "agent.claude.tag": "审稿 / 反驳",
+    "gov.note": "治理规则：任何 Agent 都可以提出反对意见。修改 GPT 总控角色、Agent 权限或核心治理规则，必须进入 5 Agent 投票（GPT / 豆包 / DeepSeek / Grok / Claude），至少 3/5 同意才能形成修改提案，最终必须由用户确认。",
+    "pipe.title": "内容生产流水线",
+    "pipe.desc": "输入一个主题，GPT 总控判断主题并分配任务，四个 Agent 并行生产，最后由 GPT 综合生成最终产出。",
+    "pipe.label.topic": "输入主题",
+    "pipe.topic.placeholder": "例如：我为什么越想睡越睡不着？",
+    "flow.gpt": "GPT 总控",
+    "flow.doubao": "豆包",
+    "flow.deepseek": "DeepSeek",
+    "flow.grok": "Grok",
+    "flow.claude": "Claude",
+    "flow.out": "综合产出",
+    "pipe.step1": "<b>GPT 总控</b>：判断主题，分配任务",
+    "pipe.step2": "<b>豆包</b>：生成中文短视频版本",
+    "pipe.step3": "<b>DeepSeek</b>：研究资料、事实、逻辑",
+    "pipe.step4": "<b>Grok</b>：寻找海外相关讨论和趋势",
+    "pipe.step5": "<b>Claude</b>：审稿、检查逻辑、提出反驳",
+    "pipe.step6": "<b>GPT 综合</b>：汇总四个 Agent 的结果，生成最终产出",
+    "pipe.run": "开始创作（框架）",
+    "pipe.status.ready": "流水线框架已就绪 · Agent API 接入后启用",
+    "out.title": "标题",
+    "out.open": "开场",
+    "out.script": "脚本",
+    "out.storyboard": "分镜",
+    "out.voiceover": "旁白",
+    "out.subtitle": "字幕",
+    "out.cover": "封面文字",
+    "out.desc": "视频简介",
+    "out.tags": "标签",
+    "out.placeholder": "待生成",
+    "plat.title": "视频平台",
+    "plat.desc": "第一阶段：内容生产 + 发布记录 + 收益记录；不假装已经自动发布。平台 API 未配置时显示「待连接」。",
+    "plat.yt.desc": "长视频 / 内容沉淀 / 海外受众",
+    "plat.tiktok.desc": "短视频 / 海外热点 / 快速传播",
+    "plat.douyin.name": "抖音",
+    "plat.douyin.desc": "中文短视频 / 国内传播",
+    "plat.channels.name": "视频号",
+    "plat.channels.desc": "微信生态 / 中文受众",
+    "plat.status": "待连接",
+    "wallet.title": "钱包入口",
+    "wallet.desc": "钱包用于：LTZZZ 捐赠、实验收入记录、未来 Agent Payment 实验。平台官方提现按平台自己的结算方式记录，不伪装成区块链钱包。",
+    "wallet.btn": "进入钱包实验室 →",
+    "footer": "© 2026 LTZZZ Digital Lab · Creator Lab · 先验证，再扩展"
+  },
+  en: {
+    "_title": "LTZZZ Creator Lab",
+    "brand.subtitle": "Creator Lab",
+    "nav.home": "Home",
+    "nav.creator": "Creator Lab",
+    "nav.revenue": "Revenue Console",
+    "nav.agents": "Multi-Agent",
+    "nav.wallet": "Wallet",
+    "eyebrow": "LTZZZ · CREATOR LAB",
+    "h1": "Creator Lab",
+    "lead": "Multiple AI Agents collaborate to produce original content for YouTube / TikTok / Douyin / WeChat Channels, and the content flows back to LTZZZ. Core loop: Observe → Practice → Change habits → Produce results → Observe again.",
+    "arch.title": "Multi-Agent Production Architecture",
+    "arch.desc": "GPT is the orchestrator Agent; other Agents may raise objections, but no Agent may unilaterally change the orchestrator architecture.",
+    "agent.gpt.name": "GPT · Orchestrator Agent",
+    "agent.gpt.role": "Judge topic / assign tasks / synthesize the four Agents' results",
+    "agent.gpt.tag": "Orchestrator · Fixed",
+    "agent.doubao.name": "Doubao Agent",
+    "agent.doubao.role": "Chinese short video / Douyin / WeChat Channels / Chinese content",
+    "agent.doubao.tag": "Short-video script",
+    "agent.deepseek.name": "DeepSeek Agent",
+    "agent.deepseek.role": "Research / Data / Long-form / Code / Documentation",
+    "agent.deepseek.tag": "Research / Facts",
+    "agent.grok.name": "Grok Agent",
+    "agent.grok.role": "Global trends / TikTok / YouTube",
+    "agent.grok.tag": "Global trends",
+    "agent.claude.name": "Claude Agent",
+    "agent.claude.role": "Review / Long-form / Code review / Logic checks",
+    "agent.claude.tag": "Review / Rebuttal",
+    "gov.note": "Governance: any Agent may raise objections. Changing the GPT orchestrator role, Agent permissions, or core governance rules requires a 5-Agent vote (GPT / Doubao / DeepSeek / Grok / Claude); at least 3/5 must agree to form a proposal, and the user must give final confirmation.",
+    "pipe.title": "Content Production Pipeline",
+    "pipe.desc": "Enter a topic; GPT orchestrator judges the topic and assigns tasks; four Agents produce in parallel; GPT synthesizes the final output.",
+    "pipe.label.topic": "Enter a topic",
+    "pipe.topic.placeholder": "e.g. Why can't I fall asleep the more I try?",
+    "flow.gpt": "GPT Orchestrator",
+    "flow.doubao": "Doubao",
+    "flow.deepseek": "DeepSeek",
+    "flow.grok": "Grok",
+    "flow.claude": "Claude",
+    "flow.out": "Final Output",
+    "pipe.step1": "<b>GPT Orchestrator</b>: judge the topic and assign tasks",
+    "pipe.step2": "<b>Doubao</b>: produce the Chinese short-video version",
+    "pipe.step3": "<b>DeepSeek</b>: research materials, facts, logic",
+    "pipe.step4": "<b>Grok</b>: find overseas discussions and trends",
+    "pipe.step5": "<b>Claude</b>: review, check logic, raise rebuttals",
+    "pipe.step6": "<b>GPT Synthesis</b>: synthesize the four Agents' results into the final output",
+    "pipe.run": "Start Creating (Framework)",
+    "pipe.status.ready": "Pipeline framework ready · Enabled once Agent APIs are connected",
+    "out.title": "Title",
+    "out.open": "Opening",
+    "out.script": "Script",
+    "out.storyboard": "Storyboard",
+    "out.voiceover": "Voiceover",
+    "out.subtitle": "Subtitles",
+    "out.cover": "Cover text",
+    "out.desc": "Video description",
+    "out.tags": "Tags",
+    "out.placeholder": "Pending",
+    "plat.title": "Video Platforms",
+    "plat.desc": "Phase 1: content production + publishing records + revenue records; we do not fake auto-publishing. Platforms show “Pending Connection” until their API is configured.",
+    "plat.yt.desc": "Long video / content retention / global audience",
+    "plat.tiktok.desc": "Short video / global trends / fast spread",
+    "plat.douyin.name": "Douyin",
+    "plat.douyin.desc": "Chinese short video / domestic reach",
+    "plat.channels.name": "WeChat Channels",
+    "plat.channels.desc": "WeChat ecosystem / Chinese audience",
+    "plat.status": "Pending Connection",
+    "wallet.title": "Wallet Entry",
+    "wallet.desc": "The wallet is used for: LTZZZ donations, experiment income records, and future Agent Payment experiments. Platform payouts are recorded per each platform's own settlement method — never disguised as a blockchain wallet.",
+    "wallet.btn": "Enter Wallet Lab →",
+    "footer": "© 2026 LTZZZ Digital Lab · Creator Lab · Verify First, Then Scale"
+  }
+};
+</script>
+<script src="i18n.js"></script>
+<script>
+// 创作流水线框架：点击按钮仅提示框架状态，不调用任何 API
+document.getElementById('runCreator').addEventListener('click', function () {
+  var s = document.getElementById('creatorStatus');
+  s.textContent = '（第一阶段框架）Agent API 接入后，此处将展示五 Agent 生产结果';
+});
+</script>
+</body>
+</html>
