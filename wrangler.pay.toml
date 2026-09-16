@@ -1,0 +1,25 @@
+# LTZZZ AI 财务实验 · 支付宝支付代理 Worker
+# 部署（分阶段）：
+#   1) wrangler deploy -c wrangler.pay.toml                    # 先部署骨架（/health 可访问）
+#   2) wrangler secret put ALIPAY_APP_ID         --config wrangler.pay.toml   # 支付宝应用 APPID（也可用 vars 覆盖）
+#   3) wrangler secret put ALIPAY_PRIVATE_KEY    --config wrangler.pay.toml   # RSA2 应用私钥（PEM，PKCS1/PKCS8 均可）
+#   4) wrangler secret put ALIPAY_PUBLIC_KEY     --config wrangler.pay.toml   # 支付宝公钥（SPKI PEM）
+#   5) wrangler secret put LTZZZ_AGENT_TOKEN     --config wrangler.pay.toml   # AI 代理令牌（豆包调用用）
+#   6) 沙盒测试通过后：wrangler secret put ALIPAY_ENV --config wrangler.pay.toml = prod
+#   7) 企业档位：PAY_MODE=transfer + LTZZZ_ALLOWED_VENDORS 白名单
+name = "ltzzz-pay-proxy"
+main = "ltzzz-pay-proxy-worker.mjs"
+compatibility_date = "2026-09-11"
+
+[vars]
+ALIPAY_ENV = "sandbox"
+PAY_MODE = "manual"
+LTZZZ_MAX_BUDGET = "400"
+LTZZZ_INITIAL_BALANCE = "400"
+LTZZZ_MAX_AMOUNT = "50"
+LTZZZ_PAY_CHANNELS = "balance"
+LTZZZ_NOTIFY_URL = "https://ltzzz-pay-proxy.ltzyz2181.workers.dev/order/notify"
+
+[[kv_namespaces]]
+binding = "LTZZZ_PAY"
+id = "6c54189279b84d51bc9f616843030baa"
