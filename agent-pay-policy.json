@@ -1,0 +1,31 @@
+{
+  "version": "0.1",
+  "governance": {
+    "controller": "ChatGPT",
+    "experts": ["Doubao", "DeepSeek", "Grok", "Claude"],
+    "architecture_change": {
+      "required_yes_votes": 3,
+      "total_agents": 5,
+      "user_confirmation_required": true
+    }
+  },
+  "payment": {
+    "default_currency": "USD",
+    "rails": ["x402", "MPP", "visa-agentic", "mastercard-agent-pay"],
+    "modes": ["human-confirm", "policy-auto", "agent-vote"],
+    "default_mode": "human-confirm",
+    "default_budget_usd": 1.0,
+    "default_single_cap_usd": 0.02,
+    "stablecoin": {
+      "planned": "USDC",
+      "status": "not-live"
+    }
+  },
+  "providers": {
+    "DeepSeek": {"billing": "provider-account", "agent_payment": "adapter-planned"},
+    "Doubao": {"billing": "provider-account", "agent_payment": "adapter-planned"},
+    "Claude": {"billing": "provider-account", "agent_payment": "adapter-planned"},
+    "Grok": {"billing": "provider-account", "agent_payment": "adapter-planned"}
+  },
+  "rule": "LTZZZ Agentic Payment is a separate payment-control layer; it does not replace a model provider's own billing system."
+}

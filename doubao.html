@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ · 豆包实验室</title>
+<style>
+:root{--bg:#07101b;--panel:#0c1b2b;--line:#21415b;--text:#eef7ff;--muted:#8ea8bd;--accent:#59e5ff;--ok:#65e6b5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#12304b,#050a11 55%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:1000px;margin:auto;padding:48px 20px 70px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:28px}.brand{font-weight:800;font-size:20px}.brand span{color:var(--accent)}a{color:var(--muted);text-decoration:none}.panel{background:linear-gradient(145deg,#0c1b2b,#08111c);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.grid{grid-template-columns:1fr}}label{display:block;color:var(--muted);font-size:13px;margin:10px 0 5px}input,textarea{width:100%;background:#030810;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:150px;resize:vertical}.btn{border:1px solid #2b7791;background:#0b3c52;color:var(--text);padding:11px 16px;border-radius:10px;cursor:pointer;margin-top:12px}.btn:hover{border-color:var(--accent)}.status{color:var(--muted);font-size:13px;margin-top:10px}.result{margin-top:14px;white-space:pre-wrap;background:#02060b;border:1px solid var(--line);border-radius:12px;padding:15px;min-height:130px}.ok{color:var(--ok)}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px}.note{color:var(--muted);font-size:13px;line-height:1.7}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div class="brand">LTZZZ <span>DOUBAO LAB</span></div><a href="agents.html">← 多 Agent</a></div>
+<section class="panel"><h1>豆包实时实验室</h1><p class="note">当前接入火山方舟 Worker。Worker 地址和模型作为前端配置展示；API Key 只存在 Cloudflare Worker Secret，不写入网页。</p>
+<div class="grid"><div><label>豆包 Worker 地址</label><input id="endpoint" value="https://ltzzz-doubao-proxy.ltzyz2181.workers.dev"></div><div><label>模型</label><input id="model" value="doubao-seed-2-1-pro-260628"></div></div>
+<label>任务</label><textarea id="prompt">你是 LTZZZ 的中文执行 Agent。请分析当前任务，并给出可以今天直接执行的方案。不要空泛建议，输出具体步骤、需要的文件和验证方法。</textarea>
+<button class="btn" id="run">调用豆包</button><div class="status" id="status">等待执行</div><div class="result" id="result">暂无结果</div></section>
+<section class="panel"><h2>当前职责</h2><p class="note">豆包：中文内容、抖音/视频号、执行方案、网站 Coding。GPT 仍是总控；豆包可以反对 GPT，但不单方面改变核心治理。</p></section>
+<script>
+const $=id=>document.getElementById(id);
+$('run').onclick=async()=>{
+ const endpoint=$('endpoint').value.trim().replace(/\/$/,'');
+ const model=$('model').value.trim();
+ const prompt=$('prompt').value.trim();
+ if(!endpoint||!prompt){$('status').textContent='请填写 Worker 地址和任务';return}
+ $('run').disabled=true;$('status').textContent='豆包执行中…';$('result').textContent='';
+ try{
+  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:'你是 LTZZZ 数字实验室的豆包执行 Agent。角色：中文内容、短视频、网站工程与执行。收到任务后先判断，再直接给出可执行结果。GPT 是总控，但你可以提出反对意见。'}, {role:'user',content:prompt}],temperature:.4,max_tokens:1800})});
+  const text=await r.text();
+  let data;try{data=JSON.parse(text)}catch{data={raw:text}};
+  if(!r.ok){throw new Error('HTTP '+r.status+'\n'+(data.error?.message||data.error||text))}
+  const out=data.choices?.[0]?.message?.content||data.output_text||data.raw||text;
+  $('result').textContent=out;$('status').innerHTML='<span class="ok">HTTP '+r.status+' · 豆包已返回</span>';
+ }catch(e){$('status').textContent='调用失败';$('result').textContent=String(e)}finally{$('run').disabled=false}
+};
+</script></main></body></html>

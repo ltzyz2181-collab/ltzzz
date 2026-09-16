@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>行深 · LTZZZ 数字实验室</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-hero { padding: 120px 7vw 60px; max-width: 900px; }
+    .page-hero h1 { font-size: clamp(36px,6vw,64px); margin: 0 0 20px; }
+    .practice-card { background: #fff; border: 1px solid #ddd8ce; border-radius: 20px; padding: 28px; margin-bottom: 20px; }
+    .practice-card h3 { margin: 0 0 12px; }
+    .practice-card p { color: #555; margin: 0 0 16px; }
+    .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0ece4; }
+    .check-item:last-child { border-bottom: none; }
+    .check-item input { width: 18px; height: 18px; }
+    .progress-bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin: 20px 0; }
+    .progress-fill { height: 100%; background: #171717; width: 0%; transition: width .3s; }
+    .back-link { display: inline-block; margin-bottom: 30px; color: #555; text-decoration: none; font-size: 14px; }
+    .back-link:hover { color: #000; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="brand">LTZZZ <span>数字实验室</span></div>
+    <nav>
+      <a href="index.html">首页</a>
+      <a href="guan.html">观</a>
+      <a href="xingshen.html">行深</a>
+      <a href="index.html#po">魄 · 识神</a>
+      <a href="index.html#web3">Web3</a>
+    </nav>
+    <button id="connectWallet" class="wallet-btn">连接钱包</button>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <a href="index.html" class="back-link">← 返回首页</a>
+      <p class="eyebrow">行深</p>
+      <h1>行深 —— 真正做到</h1>
+      <p class="lead">把实验推进到可验证、可复现的程度。用反馈循环让改变真正发生。</p>
+    </section>
+
+    <section class="section" style="padding-top:0">
+      <div class="practice-card">
+        <h3>今日践行清单</h3>
+        <p>勾选完成后进度会自动保存到本地。</p>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div id="checklist">
+          <div class="check-item"><input type="checkbox" data-id="1"> <span>完成一次「观」的记录</span></div>
+          <div class="check-item"><input type="checkbox" data-id="2"> <span>回顾昨天的情绪或决策模式</span></div>
+          <div class="check-item"><input type="checkbox" data-id="3"> <span>设计一个小实验（可验证）</span></div>
+          <div class="check-item"><input type="checkbox" data-id="4"> <span>执行并记录结果</span></div>
+          <div class="check-item"><input type="checkbox" data-id="5"> <span>根据反馈调整下一步</span></div>
+        </div>
+      </div>
+
+      <div class="practice-card">
+        <h3>行深原则</h3>
+        <ul style="color:#555;padding-left:20px;margin:0">
+          <li>不追求一次做完，追求可复现</li>
+          <li>每次实验都留下可观察的结果</li>
+          <li>用数据而不是感觉判断进展</li>
+          <li>小步快跑，持续修正习气</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2026 LTZZZ Digital Lab · 海韵天城</footer>
+  <script src="script.js"></script>
+  <script>
+    const KEY = 'ltzzz_xingshen_checks';
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; }
+    }
+    function save(data) { localStorage.setItem(KEY, JSON.stringify(data)); }
+
+    function updateProgress() {
+      const checks = document.querySelectorAll('#checklist input');
+      const done = [...checks].filter(c => c.checked).length;
+      const pct = Math.round((done / checks.length) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    const data = load();
+    document.querySelectorAll('#checklist input').forEach(input => {
+      if (data[input.dataset.id]) input.checked = true;
+      input.addEventListener('change', () => {
+        const d = load();
+        d[input.dataset.id] = input.checked;
+        save(d);
+        updateProgress();
+      });
+    });
+    updateProgress();
+  </script>
+</body>
+</html>

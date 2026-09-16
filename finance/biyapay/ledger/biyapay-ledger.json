@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "mode": "DRY-RUN",
+    "initialBalance": 10,
+    "finalBalance": 6,
+    "maxAmount": 5,
+    "failLimit": 3,
+    "paused": false,
+    "runAt": "2026-09-16T06:25:05.228Z",
+    "ai": "豆包",
+    "note": "纯模拟，不涉及真实资金；等待官方 API 确认与用户授权后转为真实模式"
+  },
+  "allowed": [
+    "Claude",
+    "OpenAI",
+    "GitHub",
+    "GitHub Copilot",
+    "Cloudflare",
+    "AI API",
+    "AI视频生成",
+    "AI图片生成",
+    "AI音频",
+    "翻译",
+    "数据服务",
+    "海外软件",
+    "SaaS",
+    "VPS",
+    "域名",
+    "网站服务",
+    "开发工具",
+    "自动化工具",
+    "内容生产工具",
+    "其他合法数字服务"
+  ],
+  "ledger": [
+    {
+      "time": "2026-09-16T06:25:05.226Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "Claude",
+      "service": "AI API 订阅",
+      "amount": 1,
+      "reason": "LTZZZ 内容生产与实验（Claude 能力接入）",
+      "expect": "生成实验内容/自动化脚本",
+      "result": "SUCCESS",
+      "tx": "BDP-MU3PUS3V",
+      "balanceAfter": 9,
+      "review": "继续（达到预期则续费，未达到则停止）",
+      "blocked": null
+    },
+    {
+      "time": "2026-09-16T06:25:05.227Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "GitHub Copilot",
+      "service": "开发工具",
+      "amount": 10,
+      "reason": "代码辅助（实验性评估）",
+      "expect": "提升开发效率",
+      "result": "BLOCKED",
+      "tx": null,
+      "balanceAfter": null,
+      "review": "停止/人工检查",
+      "blocked": "OVER_MAX"
+    },
+    {
+      "time": "2026-09-16T06:25:05.227Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "OpenAI",
+      "service": "AI API",
+      "amount": 1,
+      "reason": "小额 API 实验",
+      "expect": "生成测试样本",
+      "result": "FAILED",
+      "tx": null,
+      "balanceAfter": null,
+      "review": "失败：记录原因，不无限重试；连续 3 次自动暂停",
+      "blocked": null
+    },
+    {
+      "time": "2026-09-16T06:25:05.227Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "OpenAI",
+      "service": "AI API",
+      "amount": 1,
+      "reason": "小额 API 实验（重试判断）",
+      "expect": "生成测试样本",
+      "result": "FAILED",
+      "tx": null,
+      "balanceAfter": null,
+      "review": "失败：记录原因，不无限重试；连续 3 次自动暂停",
+      "blocked": null
+    },
+    {
+      "time": "2026-09-16T06:25:05.228Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "OpenAI",
+      "service": "AI API",
+      "amount": 1,
+      "reason": "小额 API 实验（重试判断）",
+      "expect": "生成测试样本",
+      "result": "FAILED",
+      "tx": null,
+      "balanceAfter": null,
+      "review": "失败：记录原因，不无限重试；连续 3 次自动暂停",
+      "blocked": null
+    },
+    {
+      "time": "2026-09-16T06:25:05.228Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "Cloudflare",
+      "service": "域名/网站服务",
+      "amount": 1,
+      "reason": "熔断后不应再支付（应被 PAUSED 拦截）",
+      "expect": "验证熔断生效",
+      "result": "BLOCKED",
+      "tx": null,
+      "balanceAfter": null,
+      "review": "停止/人工检查",
+      "blocked": "PAUSED"
+    },
+    {
+      "time": "2026-09-16T06:25:05.228Z",
+      "ai": "豆包",
+      "mode": "DRY-RUN",
+      "object": "VPS",
+      "service": "VPS/云服务器",
+      "amount": 3,
+      "reason": "熔断解除后测试",
+      "expect": "验证恢复后继续",
+      "result": "SUCCESS",
+      "tx": "BDP-MU3PUS3W",
+      "balanceAfter": 6,
+      "review": "继续（达到预期则续费，未达到则停止）",
+      "blocked": null
+    }
+  ],
+  "replay": [
+    {
+      "object": "Claude",
+      "count": 1,
+      "spent": 1,
+      "verdict": "继续（dry-run，待真实使用后评估）"
+    },
+    {
+      "object": "VPS",
+      "count": 1,
+      "spent": 3,
+      "verdict": "继续（dry-run，待真实使用后评估）"
+    }
+  ],
+  "decisionLog": [
+    {
+      "object": "Claude",
+      "amount": 1,
+      "decision": "SUCCESS",
+      "note": "继续（达到预期则续费，未达到则停止）"
+    },
+    {
+      "object": "GitHub Copilot",
+      "amount": 10,
+      "decision": "BLOCKED",
+      "note": "停止/人工检查"
+    },
+    {
+      "object": "OpenAI",
+      "amount": 1,
+      "decision": "FAILED",
+      "note": "失败：记录原因，不无限重试；连续 3 次自动暂停"
+    },
+    {
+      "object": "OpenAI",
+      "amount": 1,
+      "decision": "FAILED",
+      "note": "失败：记录原因，不无限重试；连续 3 次自动暂停"
+    },
+    {
+      "object": "OpenAI",
+      "amount": 1,
+      "decision": "FAILED",
+      "note": "失败：记录原因，不无限重试；连续 3 次自动暂停"
+    },
+    {
+      "object": "Cloudflare",
+      "amount": 1,
+      "decision": "BLOCKED",
+      "note": "停止/人工检查"
+    },
+    {
+      "object": "VPS",
+      "amount": 3,
+      "decision": "SUCCESS",
+      "note": "继续（达到预期则续费，未达到则停止）"
+    }
+  ]
+}
