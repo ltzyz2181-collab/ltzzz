@@ -57,6 +57,14 @@ npx wrangler secret put ALIPAY_PUBLIC_KEY    # 支付宝公钥（SPKI PEM）
 | `POST /roi` | token | AI 回填投资回报记录 |
 | `POST /pause` `POST /resume` | token | 暂停/恢复（全局或指定服务商） |
 
+## 四·五、支付状态机（任务六）
+
+订单状态：`pending`（已下单）→ `paid`（已支付）→ `settled`（已结算）；终态另有 `failed / cancelled / timeout`。
+
+每笔订单保存：**订单号、服务商、金额、时间、状态、用途、任务ID**。
+支付模块**只保存上述订单信息**；**不保存支付宝密码、支付密码、银行卡密码**（这些密码只存在于用户支付宝 App 端）。
+未经人工/AI 共同授权，不得自行增加预算或无限自动扣款。
+
 ## 五、部署顺序状态
 
 | 步骤 | 状态 | 说明 |
