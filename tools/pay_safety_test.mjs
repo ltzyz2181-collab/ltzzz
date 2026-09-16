@@ -68,7 +68,11 @@ console.log('\n[3] RSA2 sign/verify');
 console.log('\n[4] buildSignString');
 {
   const s = buildSignString({ z: '1', a: '2', sign: 'x', sign_type: 'RSA2', b: '3' });
-  ok('按键名升序且剔除 sign/sign_type', s === 'a=2&b=3&z=1');
+  // 请求签名（默认）：仅剔除 sign，保留 sign_type（支付宝 API 请求签名规范）
+  ok('请求签名保留 sign_type', s === 'a=2&b=3&sign_type=RSA2&z=1');
+  // 异步通知验签：同时剔除 sign 与 sign_type
+  const s2 = buildSignString({ z: '1', a: '2', sign: 'x', sign_type: 'RSA2', b: '3' }, { excludeSignType: true });
+  ok('异步通知验签剔除 sign/sign_type', s2 === 'a=2&b=3&z=1');
 }
 
 /* ---------- 5. 决策安全规则 ---------- */

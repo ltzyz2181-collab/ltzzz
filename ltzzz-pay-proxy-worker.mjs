@@ -120,12 +120,13 @@ async function rsa2Verify(text, signature, publicPem) {
   } catch (e) { return false; }
 }
 
-// 支付宝签名串：剔除 sign/sign_type 后按键名升序 key=value&...（value 原样）
+// 支付宝签名串：按键名升序 key=value&...（value 原样）。请求签名须保留 sign_type、仅剔除 sign；
+// 异步通知验签须同时剔除 sign 与 sign_type（传 opts.excludeSignType=true）。
 // 注意：官方要求"参数值先做 URLDecode，再按字典序拼接"——本实现收到的参数已由框架解码，
 //       与官方 Java SDK AlipaySignature.getSignContent 行为一致。
-function buildSignString(params) {
+function buildSignString(params, opts = {}) {
   return Object.keys(params)
-    .filter(k => k !== 'sign' && k !== 'sign_type' && params[k] !== undefined && params[k] !== null && params[k] !== '')
+    .filter(k => k !== 'sign' && (opts.excludeSignType ? k !== 'sign_type' : true) && params[k] !== undefined && params[k] !== null && params[k] !== '')
     .sort()
     .map(k => `${k}=${params[k]}`)
     .join('&');
@@ -147,11 +148,11 @@ function isBlockedCategory(cat) {
 
 function now() { return new Date().toISOString(); }
 
-// 支付宝要求 timestamp 为 GMT+8 本地时间（不能直接拿 UTC 字符串替换时区标记）
+// 支付宝要求 timestamp 为 GMT+8 本地时间，格式 yyyy-MM-dd HH:mm:ss（不带时区后缀）
 function alipayTimestamp() {
   const d = new Date();
   const local = new Date(d.getTime() + 8 * 3600 * 1000);
-  return local.toISOString().replace(/\.\d+Z$/, '+08:00').replace('T', ' ');
+  return `${local.getUTCFullYear()}-${String(local.getUTCMonth() + 1).padStart(2, '0')}-${String(local.getUTCDate()).padStart(2, '0')} ${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')}:${String(local.getUTCSeconds()).padStart(2, '0')}`;
 }
 
 function json(body, status = 200, extra = {}) {
@@ -531,7 +532,7 @@ export default {
       const existing = await kv.get(`ltzzz:order:${body.out_trade_no || body.out_biz_no || ''}`, 'json');
       const rail = existing && existing.rail === 'transfer' ? 'transfer' : 'trade';
       if (rail === 'transfer') {
-        const data = await alipayRequest(env, 'alipay.fund.trans.common.query', { out_biz_no: body.out_trade_no || body.out_biz_no });
+        const data = await alipayRequest(env, 'alipay.fund.trans.common.query', { out_biz_no: body.out_trade_no || body.out_biz_no, product_code: 'TRANS_ACCOUNT_NO_PWD', biz_scene: 'DIRECT_TRANSFER' });
         const res = findResponse(data);
         if (!res) return json({ error: '查询失败' }, 502);
         if (res.ok) {
@@ -556,6 +557,16 @@ export default {
     if (path === '/refund' && req.method === 'POST') {
       const amount = normalizeAmount(body.amount);
       if (amount === null) return json({ error: '金额非法' }, 400);
+      // 记账冲回模式（bookkeeping=true）：沙盒测试冲回 / 线下退款等无需真实支付宝退款的情形。
+      // 只做账务冲回（refunded 增加）并留痕，不调用支付宝退款接口。
+      if (body.bookkeeping === true || body.bookkeeping === 'true') {
+        const bal = await getBalance(kv);
+        if (!bal) return json({ error: '余额未初始化' }, 500);
+        bal.refunded = Math.round((bal.refunded + amount) * 100) / 100;
+        await setBalance(kv, bal);
+        await appendLedger(kv, { time: now(), event: 'refund', vendor: body.vendor || null, item: body.item || '记账冲回', amount, reason: body.reason || 'AI 实验复盘退款', project: body.project || 'LTZZZ', order_no: body.order_no || body.out_trade_no || null, result: 'success', balance_after: Math.round((bal.initial + bal.refunded - bal.spent) * 100) / 100 });
+        return json({ ok: true, bookkeeping: true, balance_after: Math.round((bal.initial + bal.refunded - bal.spent) * 100) / 100 });
+      }
       const data = await alipayRequest(env, 'alipay.trade.refund', {
         out_trade_no: body.out_trade_no,
         refund_amount: amount.toFixed(2),
@@ -640,7 +651,7 @@ export default {
   async handleNotify(req, env, kv) {
     const params = await readBody(req);
     if (!env.ALIPAY_PUBLIC_KEY) return new Response('fail', { status: 200 }); // 未配置公钥：无法验签，按协议返回 fail（勿用 JSON/500）
-    const ok = await rsa2Verify(buildSignString(params), params.sign || '', env.ALIPAY_PUBLIC_KEY);
+    const ok = await rsa2Verify(buildSignString(params, { excludeSignType: true }), params.sign || '', env.ALIPAY_PUBLIC_KEY);
     if (!ok) return new Response('fail', { status: 200 });
     // 转账类通知可能不携带 app_id：仅当出现且不匹配时才拒绝
     if (params.app_id && params.app_id !== env.ALIPAY_APP_ID) return new Response('fail', { status: 200 });
