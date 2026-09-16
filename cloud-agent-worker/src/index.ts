@@ -78,7 +78,15 @@ function jobOutputPath(id: string) { return `${JOB_ROOT}/${id}.log`; }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === "OPTIONS") return new Response(null, { headers: { "access-control-allow-origin": "https://ltzzz.com", "access-control-allow-methods": "GET,POST,OPTIONS", "access-control-allow-headers": "Content-Type,X-LTZZZ-Deploy-Token" } });
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "access-control-allow-origin": "https://ltzzz.com",
+          "access-control-allow-methods": "GET,POST,OPTIONS",
+          "access-control-allow-headers": "Content-Type,X-LTZZZ-Deploy-Token",
+        },
+      });
+    }
 
     const url = new URL(request.url);
     if (url.pathname === "/health") return cors({ ok: true, worker: "ltzzz-cloud-agent", repo: REPO, cloud: true });
@@ -97,9 +105,9 @@ export default {
     if (request.method === "POST" && url.pathname === "/run") {
       const body: any = await request.json().catch(() => ({}));
       const task = String(body.task || "").trim();
-      const mode = String(body.mode || "ltzy-docs");
+      const mode = String(body.mode || "ltzyz-docs");
       if (!task) return cors({ error: "task required" }, 400);
-      if (mode === "local") return cors({ error: "local mode requires a Local Agent Bridge; use ltzzz-docs cloud mode" }, 400);
+      if (mode === "local") return cors({ error: "local mode requires a Local Agent Bridge; use ltzyz-docs cloud mode" }, 400);
 
       const prep = await sandbox.exec(`if [ ! -d ${WORKSPACE}/.git ]; then git clone https://github.com/${REPO}.git ${WORKSPACE}; fi`);
       if (!prep.success) return cors({ error: "workspace init failed", detail: prep.stderr || prep.stdout }, 500);
@@ -113,20 +121,41 @@ export default {
       const logFile = jobOutputPath(id);
       await sandbox.writeFile(statusFile, JSON.stringify({ id, status: "queued", summary: plan.summary || "", notes: plan.notes || "", startedAt: new Date().toISOString() }));
 
-      const script = [
+      const lines: string[] = [
         "#!/usr/bin/env bash",
-        "set -o pipefail",
+        "set +e",
         `cd ${WORKSPACE}`,
         `echo '[LTZZZ] start ${id}' > ${logFile}`,
-        ...commands.map((c: string) => `${c} >> ${logFile} 2>&1`),
-        "code=$?",
+        `python3 - <<'PY'\nimport json,datetime\np='${statusFile}'\ns=json.load(open(p))\ns['status']='running'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
+        "code=0",
+      ];
+      for (const command of commands) {
+        lines.push(`if [ \"$code\" -eq 0 ]; then ${command} >> ${logFile} 2>&1; code=$?; fi`);
+      }
+      lines.push(
         `printf '\\n[LTZZZ] exit=%s\\n' "$code" >> ${logFile}`,
-        `python3 - <<'PY'\nimport json,datetime\np='${statusFile}'\ntry: s=json.load(open(p))\nexcept: s={}\ns['status']='completed' if ${code}==0 else 'failed'\ns['exitCode']=${code}\ns['finishedAt']=datetime.datetime.utcnow().isoformat()+'Z'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
+        `python3 - <<'PY'\nimport json,datetime\np='${statusFile}'\ntry: s=json.load(open(p))\nexcept: s={}\ns['status']='completed' if ${"$code"} == 0 else 'failed'\ns['exitCode']=int(${"$code"})\ns['finishedAt']=datetime.datetime.utcnow().isoformat()+'Z'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
+        'exit "$code"',
+      );
+
+      // Replace the status-expression placeholders with shell variables evaluated at runtime.
+      const script = lines.join("\n").replace("'completed' if $code == 0 else 'failed'", "'completed' if int(open('/proc/self/stat').read().split()[2]) == 0 else 'failed'");
+      // The shell status is also written by the following wrapper, which avoids trusting model output.
+      const wrapped = [
+        "#!/usr/bin/env bash",
+        "set +e",
+        `cd ${WORKSPACE}`,
+        `echo '[LTZZZ] start ${id}' > ${logFile}`,
+        `python3 - <<'PY'\nimport json\np='${statusFile}'\ns=json.load(open(p))\ns['status']='running'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
+        "code=0",
+        ...commands.map((command: string) => `if [ \"$code\" -eq 0 ]; then ${command} >> ${logFile} 2>&1; code=$?; fi`),
+        `printf '\\n[LTZZZ] exit=%s\\n' "$code" >> ${logFile}`,
+        `CODE="$code" python3 - <<'PY'\nimport json,datetime,os\np='${statusFile}'\ns=json.load(open(p))\ncode=int(os.environ.get('CODE','1'))\ns['status']='completed' if code==0 else 'failed'\ns['exitCode']=code\ns['finishedAt']=datetime.datetime.utcnow().isoformat()+'Z'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
+        'exit "$code"',
       ].join("\n");
 
-      await sandbox.writeFile(`/workspace/jobs/${id}.sh`, script);
+      await sandbox.writeFile(`/workspace/jobs/${id}.sh`, wrapped);
       await sandbox.exec(`chmod +x /workspace/jobs/${id}.sh`);
-      await sandbox.setEnvVars({ JOB_ID: id });
       await sandbox.startProcess(`bash /workspace/jobs/${id}.sh`, { cwd: "/workspace" });
 
       return cors({ ok: true, status: "running", jobId: id, summary: plan.summary || "", notes: plan.notes || "" });
