@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LTZZZ 云端部署 Agent</title>
 <style>
-:root{--bg:#050a12;--panel:#0b1422;--line:#20364b;--text:#edf7ff;--muted:#8fa8ba;--cyan:#54e4ff;--green:#63e6af;--red:#ff7d7d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#102c43 0,#050a12 48%);color:var(--text);font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}.top{position:sticky;top:0;padding:14px 20px;border-bottom:1px solid var(--line);background:rgba(5,10,18,.92);backdrop-filter:blur(10px);z-index:5}.wrap{max-width:1100px;margin:auto;padding:28px 18px 60px}.brand{font-weight:800}.brand span{color:var(--cyan)}.lead{color:var(--muted);max-width:900px}.panel{background:linear-gradient(145deg,#0b1624,#070d17);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}.mode{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mode label{border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;background:#070d16}.mode input{margin-right:8px}.mode .active{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(84,228,255,.18)}textarea,input{width:100%;background:#040810;border:1px solid var(--line);border-radius:11px;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:170px;resize:vertical}.btn{border:1px solid #2c7088;background:#0a2434;color:var(--text);padding:10px 16px;border-radius:11px;cursor:pointer;font:inherit}.btn.primary{background:#0c6072;border-color:#44e2fa}.btn:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.status{margin-top:12px;color:var(--muted);font-size:14px}.log{margin-top:14px;background:#02060b;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:190px;white-space:pre-wrap;font:13px ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 9px;color:var(--muted);font-size:12px;margin-right:6px}.note{color:var(--muted);font-size:13px;line-height:1.7}.tokenRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}@media(max-width:700px){.mode,.tokenRow{grid-template-columns:1fr}}
+:root{--bg:#050a12;--panel:#0b1422;--line:#20364b;--text:#edf7ff;--muted:#8fa8ba;--cyan:#54e4ff;--green:#63e6af;--red:#ff7d7d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#102c43 0,#050a12 48%);color:var(--text);font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}.top{position:sticky;top:0;padding:14px 20px;border-bottom:1px solid var(--line);background:rgba(5,10,18,.92);backdrop-filter:blur(10px);z-index:5}.wrap{max-width:1100px;margin:auto;padding:28px 18px 60px}.brand{font-weight:800}.brand span{color:var(--cyan)}.lead{color:var(--muted);max-width:900px}.panel{background:linear-gradient(145deg,#0b1624,#070d17);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}.mode{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mode label{border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;background:#070d16}.mode input{margin-right:8px}.mode .active{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(84,228,255,.18)}textarea,input{width:100%;background:#040810;border:1px solid var(--line);border-radius:11px;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:250px;resize:vertical}.btn{border:1px solid #2c7088;background:#0a2434;color:var(--text);padding:10px 16px;border-radius:11px;cursor:pointer;font:inherit}.btn.primary{background:#0c6072;border-color:#44e2fa}.btn:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.status{margin-top:12px;color:var(--muted);font-size:14px}.log{margin-top:14px;background:#02060b;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:190px;white-space:pre-wrap;font:13px ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 9px;color:var(--muted);font-size:12px;margin-right:6px}.note{color:var(--muted);font-size:13px;line-height:1.7}.tokenRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.observer{display:grid;grid-template-columns:1fr 1fr;gap:12px}.observer div{background:#060d16;border:1px solid var(--line);border-radius:12px;padding:12px}.observer strong{display:block}.observer span{color:var(--muted);font-size:13px}@media(max-width:700px){.mode,.tokenRow,.observer{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -17,16 +17,58 @@
 <section class="panel">
 <h2>工作模式</h2>
 <div class="mode">
-<label id="cloudMode"><input type="radio" name="mode" value="ltzyz-docs" checked> <strong>LTZZZ 项目文档（云端）</strong><div class="note">使用 Cloudflare 云端工作区，读取 GitHub 仓库和项目文档；这是默认模式。</div></label>
+<label id="cloudMode"><input type="radio" name="mode" value="ltzyz-docs" checked> <strong>LTZZZ 项目文档（云端）</strong><div class="note">使用 Cloudflare 云端工作区，读取 GitHub 仓库和项目文档；这是默认模式，也是当前推荐模式。</div></label>
 <label id="localMode"><input type="radio" name="mode" value="local"> <strong>本地电脑（预留）</strong><div class="note">网页不能直接控制你的电脑；需要以后接入本地 Agent Bridge 才会启用。</div></label>
 </div>
 </section>
 
 <section class="panel">
+<h2>LTZZZ 考察员：Microsoft</h2>
+<div class="observer">
+<div><strong>Microsoft / Azure / Foundry</strong><span>独立考察员：从云架构、Agent、API、可观测性、成本与工程化角度检查 LTZZZ。</span></div>
+<div><strong>考察目标</strong><span>不取代 GPT 总控，不改变 3/5 治理；发现架构缺口、追踪/评测问题和可迁移接口，给出可执行建议。</span></div>
+</div>
+<p class="note">Microsoft 作为“考察员”而不是第六个总控：重点看 Azure/Foundry 的 Agent、模型、工具、tracing、monitoring、evaluations、RBAC 等能力如何作为 LTZZZ 的外部参照；暂不要求迁移现有 Cloudflare 生产系统。 citeturn230728search12</p>
+</section>
+
+<section class="panel">
 <h2>给豆包的任务</h2>
-<textarea id="task" placeholder="例如：检查当前视频生产链，解决 Seedance ModelNotOpen 阻塞，并把可用的 Gemini/Veo 或 FFmpeg fallback 接进 creator-lab。完成后测试并部署。">检查当前 LTZZZ 视频生产链。优先解决当前阻塞，让 creator-lab 可以稳定产出 MP4；检查已有 Doubao、Seedance、YouTube Worker、FFmpeg 与项目文档。能在云端直接完成的就直接完成、测试并部署，不要只给我命令说明。保持 GPT 总控与 3/5 治理。完成后报告改了什么、哪些真实测试通过、还有什么凭证缺口。</textarea>
+<textarea id="task" placeholder="云端任务会在这里直接交给豆包">你现在是 LTZZZ 云端执行 Agent。请直接在 Cloudflare Sandbox 中检查并执行下面整个任务，不要只给我命令说明。
+
+【总目标】把 LTZZZ 从静态 GitHub Pages + 若干 Worker，逐步升级为云端可持续运行的 AI 数字实验室，后续尽量不依赖我的本地电脑。
+
+【治理】GPT = 总控；豆包 = 执行；DeepSeek = 研究/资料/代码；Grok = 海外趋势；Claude = Review；Microsoft = 独立考察员。其他 Agent 可以不同意 GPT，但不得单方面改变 GPT 总控或 3/5 核心治理。任何核心治理变化仍需 3/5 投票 + 用户确认。
+
+【1 云端工作区】
+检查 cloud-agent-worker、cloud-agent.html、AGENT.md、Wrangler 配置和 Cloudflare Sandbox。确保可以在云端 clone LTZZZ、修改、测试、提交 GitHub，并用 Wrangler 部署 Worker。检查掉线/重新部署后工作区能否恢复。绝不把 Secret 写入 GitHub、HTML、日志。
+
+【2 视频生产】
+检查 creator-lab、Doubao Worker、Seedance Worker、Gemini/Veo Worker、FFmpeg。Gemini Worker 当前已修复且 /health 已返回 model=veo-3.1-generate-preview；保留现有可用链路。Seedance ModelNotOpen 不得阻塞生产。实现 Gemini/Veo → Seedance → FFmpeg 的可用状态检测与 fallback，统一输出 MP4。
+
+【3 YouTube/TikTok】
+检查现有 YouTube/TikTok Worker 和 creator-lab。测试默认 YouTube Private。确认 OAuth、上传和错误状态真实，不得伪造“已发布”。
+
+【4 AI 付款工具】
+检查现有 agent-pay.html、agent-payment-policy.json、agent-pay-worker.js。把当前模拟支付框架向真实 Agentic Payment 方向推进：优先接 Cloudflare Agents 的 x402 与 MPP 结构；先使用 base-sepolia 测试网，不做生产自动付款。目标：Agent 请求付费 API → 收到 HTTP 402 → 读取 payment challenge → 完成测试网支付 → 携带 payment proof 重试 → 记录 settlement/receipt。现有 LTZZZ 结算钱包结构保持不变。生产支付必须有显式开关，默认关闭。
+Cloudflare Agents 当前官方支持 x402 与 MPP；x402 可以保护 HTTP 内容和 MCP 工具，MPP 支持稳定币及其他支付方法。 citeturn230728search1turn230728search2
+
+【5 Microsoft 考察员】
+新增一份可持续更新的“Microsoft/LTZZZ 考察报告”：
+A. LTZZZ 当前架构与 Azure/Foundry 的兼容点；
+B. Agent tracing / monitoring / evaluations / RBAC 可借鉴什么；
+C. 哪些 Cloudflare 已足够；哪些能力可以保留 Azure/Foundry 备用；
+D. 不迁移生产系统，只输出接口设计和评测建议。
+
+【6 网站】
+把这些状态接入 ltzzz.com 的云端 Agent 页面；用户今后优先从 ltzzz.com/cloud-agent.html 发任务。
+
+【执行规则】
+先检查现状 → 修改 → 测试 → git diff/status → commit/push → Cloudflare 部署 → health 验证。
+能直接完成的直接完成，不要停下来只问“要不要继续”。
+不要删除无关文件，不要另起一套重复系统。
+完成后返回：已完成项目、真实测试结果、仍缺少的 Secret/第三方凭证、下一阶段建议。</textarea>
 <div class="tokenRow"><input id="endpoint" placeholder="云端 Agent Worker 地址" value="https://ltzzz-cloud-agent.ltzyz2181.workers.dev"><input id="auth" type="password" placeholder="部署授权码（Worker Secret 对应值）" autocomplete="off"></div>
-<div class="row" style="margin-top:12px"><button class="btn primary" id="run">发送给豆包并执行</button><span class="pill">GPT = 总控</span><span class="pill">豆包 = 执行</span><span class="pill">云端 Sandbox</span></div>
+<div class="row" style="margin-top:12px"><button class="btn primary" id="run">发送给豆包并执行</button><span class="pill">GPT = 总控</span><span class="pill">豆包 = 执行</span><span class="pill">Microsoft = 考察员</span><span class="pill">Cloudflare Sandbox</span></div>
 <div class="status" id="status">等待任务</div>
 <div class="log" id="log">尚未运行。</div>
 </section>
@@ -34,7 +76,7 @@
 <section class="panel">
 <h2>当前原则</h2>
 <p class="note">豆包可以提出不同意见，但不能自行改变 GPT 总控和 3/5 投票治理。部署 Agent 只允许在云端工作区执行；API Key、Cloudflare Token、GitHub Token 均由 Worker Secret 管理，不写入网页。</p>
-<p class="note">支付部分：LTZZZ 已有 Agent Payment 框架文件和模拟 402 流程，但目前不是“真实自动付款 Agent”。后续可以把真实机器付款通道接入云端 Agent。</p>
+<p class="note">支付目前分两层：LTZZZ 已有 Agent Payment 框架；下一步推进 Cloudflare Agents 的 x402 / MPP 测试网链路。Cloudflare 官方已提供 Agentic Payments、Sandbox 与 x402/MPP 支持。 citeturn230728search1turn230728search6</p>
 </section>
 </main>
 <script>
