@@ -48,7 +48,7 @@ npx wrangler secret put ALIPAY_PUBLIC_KEY    # 支付宝公钥（SPKI PEM）
 | `GET /health` | 无 | 状态/余额/密钥配置情况 |
 | `GET /balance` `GET /ledger` `GET /decisions` `GET /stop` | 无 | 只读账本 |
 | `GET /ledger?format=md` | 无 | Markdown 账本（同步脚本拉取） |
-| `POST /admin/init` | token | **用户确认「开始使用 400 元额度」后**初始化账本 |
+| `POST /admin/init` | token | **AI 共同确认「开始使用 400 元额度」后**初始化账本 |
 | `POST /decision` | token | AI 决策预校验（不扣款） |
 | `POST /order/create` | token | 下单（手动档生成收款码 / 企业档直转） |
 | `POST /order/query` | token | 主动查询订单终态 |
@@ -72,7 +72,7 @@ npx wrangler secret put ALIPAY_PUBLIC_KEY    # 支付宝公钥（SPKI PEM）
 | 9 自动停止机制 | ✅ 已实现 | 余额/熔断/重复/异常四类守卫 |
 | 10 沙盒测试 | ✅ 已完成（2026-09-16） | 双轨道实测：轨道 A 当面付预下单返回收款码；轨道 B uni.transfer 转账 0.01 受理并终态 SUCCESS；期间修复 3 个联调 bug（见下） |
 | 11 小额真实测试 | ⏳ 资质+密钥 | 轨道 B 需企业资质 |
-| 12 正式开放 400 元 | ⏳ 用户确认 | 明确口令后才进入真实自动付款 |
+| 12 正式开放 400 元 | ⏳ AI 共同确认 | 明确口令后才进入真实自动付款 |
 
 
 ## 六、沙盒联调记录（2026-09-16）
