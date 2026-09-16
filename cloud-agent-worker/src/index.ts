@@ -121,40 +121,21 @@ export default {
       const logFile = jobOutputPath(id);
       await sandbox.writeFile(statusFile, JSON.stringify({ id, status: "queued", summary: plan.summary || "", notes: plan.notes || "", startedAt: new Date().toISOString() }));
 
-      const lines: string[] = [
-        "#!/usr/bin/env bash",
-        "set +e",
-        `cd ${WORKSPACE}`,
-        `echo '[LTZZZ] start ${id}' > ${logFile}`,
-        `python3 - <<'PY'\nimport json,datetime\np='${statusFile}'\ns=json.load(open(p))\ns['status']='running'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
-        "code=0",
-      ];
-      for (const command of commands) {
-        lines.push(`if [ \"$code\" -eq 0 ]; then ${command} >> ${logFile} 2>&1; code=$?; fi`);
-      }
-      lines.push(
-        `printf '\\n[LTZZZ] exit=%s\\n' "$code" >> ${logFile}`,
-        `python3 - <<'PY'\nimport json,datetime\np='${statusFile}'\ntry: s=json.load(open(p))\nexcept: s={}\ns['status']='completed' if ${"$code"} == 0 else 'failed'\ns['exitCode']=int(${"$code"})\ns['finishedAt']=datetime.datetime.utcnow().isoformat()+'Z'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
-        'exit "$code"',
-      );
-
-      // Replace the status-expression placeholders with shell variables evaluated at runtime.
-      const script = lines.join("\n").replace("'completed' if $code == 0 else 'failed'", "'completed' if int(open('/proc/self/stat').read().split()[2]) == 0 else 'failed'");
-      // The shell status is also written by the following wrapper, which avoids trusting model output.
-      const wrapped = [
+      const commandLines = commands.map((command: string) => `if [ "$code" -eq 0 ]; then ${command} >> ${logFile} 2>&1; code=$?; fi`);
+      const script = [
         "#!/usr/bin/env bash",
         "set +e",
         `cd ${WORKSPACE}`,
         `echo '[LTZZZ] start ${id}' > ${logFile}`,
         `python3 - <<'PY'\nimport json\np='${statusFile}'\ns=json.load(open(p))\ns['status']='running'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
         "code=0",
-        ...commands.map((command: string) => `if [ \"$code\" -eq 0 ]; then ${command} >> ${logFile} 2>&1; code=$?; fi`),
+        ...commandLines,
         `printf '\\n[LTZZZ] exit=%s\\n' "$code" >> ${logFile}`,
         `CODE="$code" python3 - <<'PY'\nimport json,datetime,os\np='${statusFile}'\ns=json.load(open(p))\ncode=int(os.environ.get('CODE','1'))\ns['status']='completed' if code==0 else 'failed'\ns['exitCode']=code\ns['finishedAt']=datetime.datetime.utcnow().isoformat()+'Z'\njson.dump(s,open(p,'w'),ensure_ascii=False)\nPY`,
         'exit "$code"',
       ].join("\n");
 
-      await sandbox.writeFile(`/workspace/jobs/${id}.sh`, wrapped);
+      await sandbox.writeFile(`/workspace/jobs/${id}.sh`, script);
       await sandbox.exec(`chmod +x /workspace/jobs/${id}.sh`);
       await sandbox.startProcess(`bash /workspace/jobs/${id}.sh`, { cwd: "/workspace" });
 
