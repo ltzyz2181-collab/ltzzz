@@ -8,6 +8,9 @@ LTZZZ 视频合成脚本（本地/开发工具）
   python tools/compose_video.py shot1.mp4 shot2.mp4 ... -o final.mp4
   python tools/compose_video.py --from-list shots.txt -o final.mp4
   python tools/compose_video.py --local   # 从 localStorage 导出的 shots.json
+  python tools/compose_video.py --local-job job.json -o final.mp4
+      # FFmpeg 本地兜底引擎：SVG 设计稿 + 字幕 + 可选 edge-tts 配音 → 1080×1920/9:16/30fps/H.264
+      # （无素材也可出片；见 tools/ffmpeg_engine.py）
 
 依赖：ffmpeg 9.x（winget install Gyan.FFmpeg）
 
@@ -108,7 +111,19 @@ def main():
     ap.add_argument("--from-list", help="text file with one video URL/path per line")
     ap.add_argument("--local", action="store_true",
                     help="read shots from localStorage export (shots.json)")
+    ap.add_argument("--local-job", help="FFmpeg 本地兜底引擎：job.json（title/script/subtitle/storyboard/shots/tts）")
     args = ap.parse_args()
+
+    if args.local_job:
+        import ffmpeg_engine
+        with open(args.local_job, encoding="utf-8-sig") as f:
+            job = json.load(f)
+        meta = ffmpeg_engine.compose_job(job, args.out)
+        print("\n✅ Done:", meta["path"])
+        for k, v in meta.items():
+            if k != "path":
+                print(f"   {k}: {v}")
+        return
 
     shots = list(args.shots)
     if args.from_list:
