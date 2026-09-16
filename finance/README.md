@@ -84,3 +84,11 @@ npx wrangler secret put ALIPAY_PUBLIC_KEY    # 支付宝公钥（SPKI PEM）
 - **熔断真实触发验证**：签名 bug 期间连续失败 3 次 → 服务商自动暂停（/order/create 403），恢复后继续，验证了自动停止机制真实生效。
 - **新增**：/refund 支持 ookkeeping=true 记账冲回（沙盒测试冲回/线下退款场景）。
 - **测试后状态**：账本已清空、余额 400.00、PAY_MODE=manual（安全默认）、正式启用仍需用户口令。
+## 七、正式环境进展（2026-09-16）
+
+- **正式应用已创建**：LTZZZ数字实验室（网页应用），APPID 2021007101625045，绑定商家账号 世章印章（广州）有限责任公司（PID 2088531262155266）。
+- **接口加签已配置（证书模式）**：单笔转账到支付宝产品正式环境必选证书；应用公钥证书/支付宝公钥证书/根证书已下载，app_cert_sn 与 alipay_root_cert_sn 已计算。Worker 已支持证书模式（配置 ALIPAY_APP_CERT_SN / ALIPAY_ROOT_CERT_SN 后自动携带 cert_sn 参数并参与签名）。
+- **当面付已开通**（轨道 A 收款产品）；**商家转账（原转账到支付宝账户）未开通**：签约时被支付宝风控拦截（提示致电 95188），需用户本人操作或稍后重试。
+- **转账场景（2026 新规）**：uni.transfer 请求已内置 transfer_scene_name + transfer_scene_report_infos（默认业务结算，可按供应商配置）。
+- **切换正式环境的前置条件**：① 商家转账签约通过（用户操作）；② 应用提审上线（开发中→已上线）；③ 替换 Secret 为正式密钥 + ALIPAY_ENV=prod。在此之前保持沙箱环境不变。
+- **正式密钥材料**：存放于 C:\Users\李天柱\Doubao\chats\2026-09-16\new-chat-3\_alipay_prod\（应用私钥/CSR/证书），敏感文件，正式切换完成后删除。

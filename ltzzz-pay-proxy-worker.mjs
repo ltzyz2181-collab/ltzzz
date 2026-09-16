@@ -207,6 +207,11 @@ async function alipayRequest(env, method, bizContent, extra = {}) {
     biz_content: JSON.stringify(bizContent),
   };
   if (extra.notify_url) params.notify_url = extra.notify_url;
+  // 证书模式（正式环境转账类产品必选）：配置了证书序列号则携带 app_cert_sn / alipay_root_cert_sn（参与签名）
+  if (env.ALIPAY_APP_CERT_SN && env.ALIPAY_ROOT_CERT_SN) {
+    params.app_cert_sn = env.ALIPAY_APP_CERT_SN;
+    params.alipay_root_cert_sn = env.ALIPAY_ROOT_CERT_SN;
+  }
   const signStr = buildSignString(params);
   params.sign = await rsa2Sign(signStr, env.ALIPAY_PRIVATE_KEY);
 
