@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ 云端部署 Agent</title>
+<style>
+:root{--bg:#050a12;--panel:#0b1422;--line:#20364b;--text:#edf7ff;--muted:#8fa8ba;--cyan:#54e4ff;--green:#63e6af;--red:#ff7d7d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#102c43 0,#050a12 48%);color:var(--text);font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}.top{position:sticky;top:0;padding:14px 20px;border-bottom:1px solid var(--line);background:rgba(5,10,18,.92);backdrop-filter:blur(10px);z-index:5}.wrap{max-width:1100px;margin:auto;padding:28px 18px 60px}.brand{font-weight:800}.brand span{color:var(--cyan)}.lead{color:var(--muted);max-width:900px}.panel{background:linear-gradient(145deg,#0b1624,#070d17);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}.mode{display:grid;grid-template-columns:1fr 1fr;gap:12px}.mode label{border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;background:#070d16}.mode input{margin-right:8px}.mode .active{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(84,228,255,.18)}textarea,input,select{width:100%;background:#040810;border:1px solid var(--line);border-radius:11px;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:170px;resize:vertical}.btn{border:1px solid #2c7088;background:#0a2434;color:var(--text);padding:10px 16px;border-radius:11px;cursor:pointer;font:inherit}.btn.primary{background:#0c6072;border-color:#44e2fa}.btn:disabled{opacity:.5;cursor:not-allowed}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.status{margin-top:12px;color:var(--muted);font-size:14px}.log{margin-top:14px;background:#02060b;border:1px solid var(--line);border-radius:12px;padding:14px;min-height:190px;white-space:pre-wrap;font:13px ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 9px;color:var(--muted);font-size:12px;margin-right:6px}.note{color:var(--muted);font-size:13px;line-height:1.7}@media(max-width:700px){.mode{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">LTZZZ <span>CLOUD DEPLOY AGENT</span></div></header>
+<main class="wrap">
+<h1>云端部署 Agent</h1>
+<p class="lead">从 ltzzz.com 直接给豆包下达执行任务。默认工作区放在 Cloudflare Sandbox，不需要依赖你的本地电脑；Agent 可以读取 LTZZZ 项目文档、修改代码、测试、提交 GitHub，并在获得 Cloudflare 凭证后执行 Worker 部署。</p>
+
+<section class="panel">
+<h2>工作模式</h2>
+<div class="mode">
+<label id="cloudMode"><input type="radio" name="mode" value="ltzzz-docs" checked> <strong>LTZZZ 项目文档（云端）</strong><div class="note">使用 Cloudflare 云端工作区，读取 GitHub 仓库和项目文档；这是默认模式。</div></label>
+<label id="localMode"><input type="radio" name="mode" value="local"> <strong>本地电脑（预留）</strong><div class="note">网页不能直接控制你的电脑；需要以后接入本地 Agent Bridge 才会启用。</div></label>
+</div>
+</section>
+
+<section class="panel">
+<h2>给豆包的任务</h2>
+<textarea id="task" placeholder="例如：检查当前视频生产链，解决 Seedance ModelNotOpen 阻塞，并把可用的 Gemini/Veo 或 FFmpeg fallback 接进 creator-lab。完成后测试并部署。">检查当前 LTZZZ 视频生产链。优先解决当前阻塞，让 creator-lab 可以稳定产出 MP4；检查已有 Doubao、Seedance、YouTube Worker、FFmpeg 与项目文档。能在云端直接完成的就直接完成、测试并部署，不要只给我命令说明。保持 GPT 总控与 3/5 治理。完成后报告改了什么、哪些真实测试通过、还有什么凭证缺口。</textarea>
+<div class="row" style="margin-top:12px"><button class="btn primary" id="run">发送给豆包并执行</button><span class="pill">GPT = 总控</span><span class="pill">豆包 = 执行</span><span class="pill">云端 Sandbox</span></div>
+<div class="status" id="status">等待任务</div>
+<div class="log" id="log">尚未运行。</div>
+</section>
+
+<section class="panel">
+<h2>当前原则</h2>
+<p class="note">豆包可以提出不同意见，但不能自行改变 GPT 总控和 3/5 投票治理。部署 Agent 只允许在云端工作区执行；API Key、Cloudflare Token、GitHub Token 均由 Worker Secret 管理，不写入网页。</p>
+<p class="note">支付部分：LTZZZ 已有 Agent Payment 框架文件和模拟 402 流程，但目前不是“真实自动付款 Agent”。下一阶段可把它接到 Cloudflare Agents 的 Payments 工具和真实 x402/MPP 通道。</p>
+</section>
+</main>
+<script>
+const ENDPOINT = localStorage.getItem('ltzzz_cloud_agent_endpoint') || 'https://ltzzz-cloud-agent.ltzyz2181.workers.dev';
+const taskEl=document.getElementById('task'), run=document.getElementById('run'), status=document.getElementById('status'), log=document.getElementById('log');
+for(const el of document.querySelectorAll('.mode label')){el.addEventListener('click',()=>{for(const x of document.querySelectorAll('.mode label'))x.classList.remove('active');el.classList.add('active')})}
+document.getElementById('cloudMode').classList.add('active');
+run.addEventListener('click',async()=>{
+ const mode=document.querySelector('input[name="mode"]:checked').value;
+ if(mode==='local'){status.textContent='本地电脑模式尚未连接 Local Agent Bridge；请改用 LTZZZ 项目文档（云端）模式。';return}
+ const task=taskEl.value.trim(); if(!task)return;
+ run.disabled=true; status.textContent='豆包执行中…'; log.textContent='正在发送任务到云端 Agent…';
+ try{
+  const r=await fetch(ENDPOINT+'/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,task,repo:'ltzyz2181-collab/ltzzz'})});
+  const data=await r.json();
+  if(!r.ok)throw new Error(data.error||('HTTP '+r.status));
+  status.textContent=data.status||'任务完成';
+  log.textContent=(data.summary||'')+'\n\n'+(data.output||'');
+ }catch(e){status.textContent='执行失败';log.textContent=String(e)}finally{run.disabled=false}
+});
+</script>
+</body>
+</html>
