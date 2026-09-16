@@ -57,3 +57,9 @@ npx wrangler secret put XAI_API_KEY
 ---
 
 © 2026 LTZZZ Digital Lab
+
+## 视频引擎 fallback 部署状态（2026-09-16）
+- **本地 FFmpeg 合成链路已真实验证**：python tools/ltzzz_video_server.py（127.0.0.1:8788，CORS 全开仅本机）→ GET /health、POST /generate。实测合成 ltzzz-20260916-135952.mp4：1080×1920 · 9:16 · 30fps · H.264 · AAC，下载链路 HTTP 200 video/mp4。creator-lab.html 引擎选择（auto/gemini/seedance/ffmpeg）+ 状态徽章 + 下载 MP4 按钮已就绪。
+- **ltzzz-gemini-video-proxy**：已部署（/health ok），缺 Cloudflare Secret GEMINI_API_KEY（Google AI Studio Key）。
+- **ltzzz-youtube-post**：已部署（OAuth + videos.insert，默认 privacy=private），缺 Cloudflare Secret GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET 及首次 OAuth 授权。
+- **定时监控**：每 2 小时检查支付宝应用审核状态，通过后自动发起 0.1 元转账测试到白名单收款方。
