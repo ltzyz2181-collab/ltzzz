@@ -469,11 +469,10 @@ export default {
           product_code: 'TRANS_ACCOUNT_NO_PWD',
           biz_scene: 'DIRECT_TRANSFER',
           order_title: String(p.item || p.vendor).slice(0, 40),
-          payee_info: {
-            identity: vendor.identity,
-            identity_type: vendor.identity_type || 'ALIPAY_LOGON_ID',
-            name: vendor.name || '',
-          },
+          payee_info: Object.assign(
+            { identity: vendor.identity, identity_type: vendor.identity_type || 'ALIPAY_LOGON_ID' },
+            vendor.name ? { name: vendor.name } : {}
+          ),
           transfer_scene_name: transferScene,
           transfer_scene_report_infos: [
             { info_type: `${transferScene}说明`, info_content: String(p.reason || p.item || 'LTZZZ 实验采购').slice(0, 256) },

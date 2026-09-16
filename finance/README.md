@@ -92,3 +92,7 @@ npx wrangler secret put ALIPAY_PUBLIC_KEY    # 支付宝公钥（SPKI PEM）
 - **转账场景（2026 新规）**：uni.transfer 请求已内置 transfer_scene_name + transfer_scene_report_infos（默认业务结算，可按供应商配置）。
 - **切换正式环境的前置条件**：① 商家转账签约通过（用户操作）；② 应用提审上线（开发中→已上线）；③ 替换 Secret 为正式密钥 + ALIPAY_ENV=prod。在此之前保持沙箱环境不变。
 - **正式密钥材料**：存放于 C:\Users\李天柱\Doubao\chats\2026-09-16\new-chat-3\_alipay_prod\（应用私钥/CSR/证书），敏感文件，正式切换完成后删除。
+- **正式密钥切换完成（2026-09-16 下午）**：ALIPAY_APP_ID 已换为正式 2021007101625045；私钥/公钥/证书 SN 已更新为正式值；ALIPAY_ENV=prod、PAY_MODE=transfer 已部署。
+- **证书 SN 官方算法（踩坑记录）**：app_cert_sn 与 alipay_root_cert_sn 均为 MD5(签发机构issuer名称 + 序列号十进制字符串)，不是 openssl serial、不是证书内容/DER MD5。官方 Node SDK lipay-sdk/dist/commonjs/antcertutil.js 的 getSN() 为唯一权威实现；root 仅取 RSA 签名（signatureOID 以 1.2.840.113549.1.1 开头）的证书，多张用 _ 连接。当前值：APP=e56570ea0fc4d4814fbecb6148c62483，ROOT=687b59193f3f462dd5336e5abf83c5d8_02941eef3187dddf3d3b83462e1dfcf6。
+- **证书校验已通过**：40002（无效根证书序列号）→ 换官方算法后消失；当前卡点为 40003 应用未上线 → 已在开放平台提审，状态审核中（平台承诺 1 天内完成）。
+- **正式链路进度**：沙箱 30/30 单测 ✅ → 正式密钥/证书配置 ✅ → 证书 SN 校验 ✅ → 应用提审（审核中）→ 审核通过后重测 0.1 元转账（收款方 13424479743 已在白名单）。
