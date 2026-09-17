@@ -1,22 +1,21 @@
-# LTZZZ 实验室内核（lab/）
+# LTZZZ Lab
 
-> 网站是皮肤；这里是长期记忆、任务与资产索引。
-> 任何 AI 开始工作前，应先读：`MEMORY.md` → `DECISIONS.md` → `tasks.md` → `CAPABILITY_MAP.md`。
+**观 → 行深 → 实验 → 结果**
 
-## 文件
+这里是 LTZZZ 的长期记忆、任务池、能力地图与实验资产入口。
 
-| 文件 | 用途 |
-|------|------|
-| `MEMORY.md` | 项目是谁、已验证链路、失败教训、禁区 |
-| `DECISIONS.md` | 已拍板决策（日期 + 结论） |
-| `tasks.md` | 任务池：待办 / 进行 / 完成 / 关闭 |
-| `CAPABILITY_MAP.md` | 各 AI 分工与禁止事项 |
-| `experiments/` | 实验卡片（观→行深→实验→结果） |
-| `assets-index.md` | 产出资产索引（代码、页面、部署） |
+## 核心文件
+- [MEMORY.md](./MEMORY.md) — 长期事实与已知坑
+- [DECISIONS.md](./DECISIONS.md) — 已拍板决策
+- [tasks.md](./tasks.md) — 当前任务池
+- [CAPABILITY_MAP.md](./CAPABILITY_MAP.md) — AI 分工与禁区
+- [ASSETS.md](./ASSETS.md) — 资产登记
+- [experiments/](./experiments/) — 可引用实验卡
 
-## 规则（简）
+## 协作原则
+AI 负责读取、分析、提议和整理；人负责最终合并、部署、域名、资金与密钥。
 
-1. **人**合并代码、部署、管钥匙与资金。
-2. **AI**提议与起草；完成必须留下结果记录，不能只说「做完了」。
-3. 私钥、API Key、助记词：**永不**写入本目录或公开仓库。
-4. 长任务结束时，建议追加 1～3 句到 MEMORY 或 DECISIONS。
+任何“完成”都必须能回到一个结果和一个资产路径。失败同样是资产：记录错误、原因、修正和以后如何避免。
+
+## 海外线
+LTZZZ Lab 的英文内容以可验证实验和失败复盘为主，与中文实验室共享同一事实源。
