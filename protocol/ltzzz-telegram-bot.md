@@ -1,6 +1,6 @@
 # LTZZZ Telegram Bot 规范
 
-> 状态：规范与代码框架就绪；Bot Token 待用户创建（@BotFather → /newbot）。
+> 状态：**Worker 代码已就绪**（`telegram-bot-worker.js`）；Bot Token 待用户创建（@BotFather → /newbot）→ 拿到后部署 + 配 Secret + setWebhook。
 > 第一阶段权限：收消息 / 回复 / 发文件 / 发图片 / 发视频 / 发任务结果 / 发捐赠通知。
 
 ## 权限边界（禁止）
@@ -32,5 +32,6 @@
 
 ## 待办
 
+- [x] Worker 代码就绪（`telegram-bot-worker.js`：/webhook · /send · /status；支持文本/图片/视频/文件）
 - [ ] 用户在 Telegram 创建 Bot（@BotFather → /newbot → 复制 Token）
-- [ ] 配置 Secret + 部署 Worker + setWebhook
+- [ ] 配置 Secret（TELEGRAM_BOT_TOKEN、TELEGRAM_CHAT_ID、TELEGRAM_SECRET）+ 部署 Worker + setWebhook
