@@ -13,6 +13,13 @@
 > 输入列＝**仓库阅读源**（当日从仓库里读什么）；输出列＝**落盘路径**（统一落到 `knowledge/daily/<channel>/YYYY-MM-DD.md`）。
 > 所有失败均不抛崩调度器：按「失败重试」列指数退避重试，仍失败记入 `waiting_manual`。
 
+> **🚨【MUST 强制项 · 每日必跑】本表六项每日任务（GPT / 豆包 / XAI·Grok / Claude / DeepSeek / Copilot）均为 `mandatory: true`，是「强制每天执行」的硬约束，不是可选项。**
+> **强制规则（无任何例外）：**
+> 1. **不得跳过**：六个通道每个自然日（UTC+8）都必须触发执行，哪怕当天没有真实 API Key、上游不可用、预算触线，也绝不允许整项 skip。
+> 2. **无 Key 也必须产出当日记录**：没有 API Key 时统一走 **dry-run**，当日仍必须落盘 `knowledge/daily/<channel>/YYYY-MM-DD.md`（`<channel>` ∈ `gpt`/`doubao`/`xia`/`claude`/`deepseek`/`copilot`），文件头标 `dry_run=true` 与 `WAITING_CREDENTIAL`，写明 dry-run 占位原因。
+> 3. **不得留空**：当日文件必须存在且非空壳——至少包含「## 仓库阅读记录」「## 当日产出」（dry-run 时写「无（原因：…，等待人工凭证）」）与 `## polish` 小节；禁止把当天通道直接删掉、禁止用空文件占位充数、禁止伪造真实产出内容。
+> 4. 预算红线（豆包/DeepSeek 各 20 RMB）、凭证只进 Secret、polish 的 proposed/applied 诚信双层——三者不变，见第 3、5 章。
+
 | 编号 | 通道(channel) | 任务内容 | 输入＝仓库阅读源 | 输出落盘路径 | cron(UTC) | UTC+8 触发 | 失败重试 |
 |---|---|---|---|---|---|---|---|
 | 1 | **GPT**（`gpt`） | ①当日规划＋部署 1 条可执行任务；②记录昨日记忆；③每天一段「怜悯之心」（朝向「知其固然如此、知其本不该如此」）；④每天 ≥1 条模板打磨提案 | `knowledge/ai-chats/` 昨日记录、`knowledge/daily/` 前日台账、`knowledge/memory-review/` 昨日复盘 | `knowledge/daily/gpt/YYYY-MM-DD.md` | `0 0 * * *` | 08:00 | 2 次（500ms→1s 退避） |

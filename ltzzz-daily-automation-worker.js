@@ -512,16 +512,28 @@ async function taskCopilotDaily(env, ctx) {
 }
 
 /* ---- 任务表 --------------------------------------------------- */
+/**
+ * TASK_TABLE —— 六通道每日任务表。
+ * 🚨【强制每天执行 / MUST】下列六项全部 mandatory: true，是硬约束，不是可选项：
+ *   - 不得 skip：每个自然日（UTC+8）六个通道都必须触发执行，无 Key / 上游不可用 / 预算触线也不准整项跳过。
+ *   - 无 Key 也必须产出当日 dry-run 记录：统一落盘 knowledge/daily/<channel>/YYYY-MM-DD.md，
+ *     文件头 dry_run=true + WAITING_CREDENTIAL，写明 dry-run 占位原因；不得留空、不得伪造真实产出。
+ *   - 预算红线（豆包/DeepSeek 各 20 RMB）、凭证只进 Secret、polish 的 proposed/applied 诚信双层均不变。
+ */
 const TASK_TABLE = {
-  "gpt-daily":      { ai: "GPT",              fn: taskGptDaily,      retry: 2, cronCst: "08:00" },
-  "claude-daily":   { ai: "Claude",           fn: taskClaudeDaily,   retry: 2, cronCst: "09:30" },
-  "doubao-daily":   { ai: "豆包",             fn: taskDoubaoDaily,   retry: 1, cronCst: "11:00" },
-  "deepseek-daily": { ai: "DeepSeek",         fn: taskDeepseekDaily, retry: 2, cronCst: "06:30" },
-  "copilot-daily":  { ai: "Microsoft Copilot",fn: taskCopilotDaily,  retry: 2, cronCst: "14:00" },
-  "xia-daily":      { ai: "XAI/Grok",         fn: taskXiaDaily,      retry: 2, cronCst: "16:00" },
+  "gpt-daily":      { ai: "GPT",               fn: taskGptDaily,      retry: 2, cronCst: "08:00", mandatory: true },
+  "claude-daily":   { ai: "Claude",            fn: taskClaudeDaily,   retry: 2, cronCst: "09:30", mandatory: true },
+  "doubao-daily":   { ai: "豆包",              fn: taskDoubaoDaily,   retry: 1, cronCst: "11:00", mandatory: true },
+  "deepseek-daily": { ai: "DeepSeek",           fn: taskDeepseekDaily, retry: 2, cronCst: "06:30", mandatory: true },
+  "copilot-daily":  { ai: "Microsoft Copilot",  fn: taskCopilotDaily,  retry: 2, cronCst: "14:00", mandatory: true },
+  "xia-daily":      { ai: "XAI/Grok",           fn: taskXiaDaily,       retry: 2, cronCst: "16:00", mandatory: true },
 };
 
-/** 失败重试：指数退避最多 retry 次；全部失败记录 waiting_manual，不抛崩调度 */
+/**
+ * 失败重试：指数退避最多 retry 次；全部失败记录 waiting_manual，不抛崩调度。
+ * 🚨 强制项（mandatory=true）：即便无 Key，各 fn 也已落盘当日 dry-run 记录；
+ *    重试仍失败时除记 waiting_manual 外，必须保留/补写当日 dry-run 占位文件，不得 skip、不得留空。
+ */
 async function dispatchTask(key, env, ctx) {
   const entry = TASK_TABLE[key];
   if (!entry) {
@@ -533,16 +545,16 @@ async function dispatchTask(key, env, ctx) {
   for (let attempt = 0; attempt <= maxRetry; attempt++) {
     try {
       const result = await entry.fn(env, ctx);
-      logDry("dispatch.ok", { key, attempt: attempt + 1, dry_run: true });
+      logDry("dispatch.ok", { key, attempt: attempt + 1, mandatory: !!entry.mandatory, dry_run: true, note: entry.mandatory ? "mandatory: 当日 dry-run 记录已产出，不得 skip" : undefined });
       return result;
     } catch (e) {
       lastErr = e;
-      logDry("dispatch.retry", { key, attempt: attempt + 1, maxRetry: maxRetry + 1, error: String(e && e.message || e) });
+      logDry("dispatch.retry", { key, attempt: attempt + 1, maxRetry: maxRetry + 1, mandatory: !!entry.mandatory, error: String(e && e.message || e) });
       if (attempt < maxRetry) await new Promise((r) => setTimeout(r, 500 * Math.pow(2, attempt)));
     }
   }
-  logDry("dispatch.failed_waiting_manual", { key, error: String(lastErr && lastErr.message || lastErr) });
-  return { ok: false, status: "waiting_manual", error: String(lastErr && lastErr.message || lastErr) };
+  logDry("dispatch.failed_waiting_manual", { key, mandatory: !!entry.mandatory, dry_run: true, error: String(lastErr && lastErr.message || lastErr), note: "mandatory: 重试仍失败也必须保留当日 dry-run 占位文件，不得 skip / 留空" });
+  return { ok: false, status: "waiting_manual", mandatory: !!entry.mandatory, dry_run: true, error: String(lastErr && lastErr.message || lastErr) };
 }
 
 /* ================================================================
