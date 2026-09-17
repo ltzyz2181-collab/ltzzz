@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-09-17 · 治理条款覆盖、经费来源、上架条件与防抄袭保密红线
+
+- **结论：** 既有治理条款（`security-redlines.md` / `AGI-CO-MANAGEMENT.md` / 新建 `ip-protection.md`）统一覆盖 **APP / Web3 项目**，不局限于站点。
+- **经费来源：** LTZZZ 自身营收，不外部融资、不接受「AI 表忠心式」转账；AI 不持钥、不当 Safe owner。
+- **上架条件：** 钱包经费达标（覆盖上架、合规、运维与缓冲）才上 App Store / Google Play / 交易所；未达标前不提交。
+- **防抄袭与保密红线（写入 `protocol/ip-protection.md`）：**
+  1. 六通道 AI 不得泄露代码、产品规划、商业计划、未公开功能；违反即切断通道并记录事件。
+  2. 敏感逻辑 / 密钥 / 规划服务端化（Cloudflare Worker + 私有仓库）。
+  3. 公开 GitHub 仓 `ltzyz2181-collab/ltzzz` 只放站点静态资源；凭证私钥 / 助记词 / Token / Cookie 永不入库。
+- **品牌 logo：** 三候选待用户选定；**未定稿前不写死**到代码与公开文档。
+
 ## 2026-09-17 · 独立资金池与记录架构
 
 - **结论：** 采用 `finance/FUND_POOLS.md`：运营 EOA、以太坊 Safe 3/5、公益展示、API 服务商账户、法币商户、pay-proxy KV 账本分池记录。

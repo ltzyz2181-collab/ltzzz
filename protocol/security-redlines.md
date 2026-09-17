@@ -26,3 +26,11 @@ API Key、Secret、私钥、助记词、seed、支付宝密码、支付密码、
 - 不绕过平台安全机制（验证码/3DS/风控/签名）。
 - 不伪造支付或发布成功状态。
 - 每笔资金/发布动作留下可审计记录。
+
+## 4. AI 保密红线（防抄袭与保密）
+
+- 六通道协作 AI（Grok / GPT / 豆包 / DeepSeek / Claude 及后续接入通道）不得向第三方或公开渠道泄露：代码、产品规划、商业计划、未公开功能、未定稿品牌素材（含 logo 候选）。
+- 核心逻辑 / 密钥 / 产品规划一律放 Cloudflare Worker 服务端与私有仓库；公开 GitHub 仓库 `ltzyz2181-collab/ltzzz` 只放站点静态资源。
+- 凭证私钥 / 助记词 / Token / Cookie 永不入库（沿用 `.gitignore`、`ltzzz-ai-channels.md`、`knowledge/ai-chats/README.md` 既有脱敏规范，不另起炉灶）。
+- 违反即切断对应 AI 通道并记录事件。
+- 细则与分阶段披露规划见：**[`protocol/ip-protection.md`](./ip-protection.md)**。
