@@ -10,7 +10,7 @@
 | ID | 任务 | 角色建议 | 备注 |
 |----|------|----------|------|
 | T001 | 维护 lab/ 记忆与任务 | 主人 + 各 AI | — |
-| T003 | 豆包 Worker 部署与联调 | **主人部署**；脚本已入库 | 脚本与清单已推送；等主人填 Key 并 deploy |
+| T003 | 豆包 Worker 部署与联调 | **主人部署**；脚本已入库 | Worker 已补 `/health`；需主人在 Cloudflare 确认 Secret/变量后实测 |
 
 ## 待办
 
@@ -27,6 +27,7 @@
 |----|------|------|
 | T000 | DeepSeek Worker | HTTP 200 |
 | T005 | 首页实验室入口 | https://ltzzz.com/lab.html |
+| T008 | 豆包 Worker 前端去除旧模型硬编码 | 前端留空时由 Worker 的 DOUBAO_MODEL 决定 |
 
 ## 关闭
 
