@@ -17,11 +17,21 @@
 
 > 术语基线：身体=三维装备；魄（含尸狗）；识神/元神；习气；网状因果。
 
+## 强制执行约定（MUST · 六通道每日必跑）
+
+> 与 `protocol/ltzzz-daily-automation.md` 第 1 章「MUST 强制项」、`ltzzz-daily-automation-worker.js` 的 `TASK_TABLE`（六项均 `mandatory: true`）三方对齐。
+
+1. **每天必有一篇**：六个通道（gpt / doubao / xia / claude / deepseek / copilot）每个自然日（UTC+8）**都必须**在本目录下有一篇当日文件 `<channel>/YYYY-MM-DD.md`，是硬约束，不是可选项。
+2. **无 Key 写 dry-run 占位**：没有对应 API Key、上游不可用或预算触线时，**不得跳过该通道**；当天仍要建出文件，文件头标 `dry_run=true` 与 `WAITING_CREDENTIAL`，并在「## 当日产出」写明原因（如「无（原因：等待人工凭证 xxx，本次 dry-run 占位）」）。
+3. **不得留空、不得伪造**：当日文件必须真实存在且非空壳——至少保留「## 仓库阅读记录」「## 当日产出」「## polish」三个小节；禁止把当天通道删掉、禁止用空文件充数、禁止把 dry-run 占位伪造成真实产出。
+4. 不补历史：只保证「当天」六篇齐备，不为过去缺漏的日子回填；历史缺漏由 `memory-review` 对账时另行标注。
+5. 不变项：预算红线（豆包/DeepSeek 各 20 RMB）、凭证只进 Secret、polish 的 proposed/applied 诚信双层——均维持原约定，见文末「诚信红线」。
+
 ## 二、文件命名
 
 - 每个通道每日一个文件：`<channel>/YYYY-MM-DD.md`，例如 `gpt/2026-09-18.md`。
 - 日期用 UTC+8（Asia/Shanghai），与 cron 触发对齐。
-- 不补历史：没有当天产出就不建文件，或只建带 `dry_run=true`/`WAITING_CREDENTIAL` 头的空壳，**严禁伪造当日内容**。
+- 不补历史：只保证「当天」六篇齐备；当天即便没跑通/无凭证，也**必须**建带 `dry_run=true`/`WAITING_CREDENTIAL` 头的当日文件并写明原因（见上节「强制执行约定」），**严禁伪造当日内容**。
 
 ## 三、每文件小节模板
 
