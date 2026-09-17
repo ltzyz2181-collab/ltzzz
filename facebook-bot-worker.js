@@ -24,6 +24,17 @@
  *           判人类走人类路径，判定不清追问一次，二次仍不清默认按 AI 通道指引。
  * 注意：Worker 无状态，门禁会话态保存在单 isolate 内存 Map（重启即失，演示级）。
  */
+
+/* ---------------- 公开账号信息（仅文档 / /status 展示，不用于鉴权） ---------------- */
+const PUBLIC_FACEBOOK_HANDLE = "ltzyz2181";
+const PUBLIC_CHANNEL_INFO = {
+  channel: "facebook",
+  name: "Facebook",
+  public_handle: PUBLIC_FACEBOOK_HANDLE,
+  public_number: "+86 134 2447 9743 · 李天柱",
+  note: "公开账号信息，仅供文档与状态接口展示；鉴权仍只走 env Secret，本常量不参与任何校验。",
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -67,6 +78,7 @@ export default {
           bot: "ltzzz-facebook-bot",
           page_token_configured: Boolean(env.FB_PAGE_ACCESS_TOKEN),
           verify_token_configured: Boolean(env.FB_VERIFY_TOKEN),
+          channel_public_info: PUBLIC_CHANNEL_INFO,
           ts: Date.now(),
         }, cors());
       }

@@ -22,6 +22,16 @@
  *           判人类走人类路径，判定不清追问一次，二次仍不清默认按 AI 通道指引。
  * 注意：Worker 无状态，门禁会话态保存在单 isolate 内存 Map（重启即失，演示级）。
  */
+
+/* ---------------- 公开账号信息（仅文档 / /status 展示，不用于鉴权） ---------------- */
+const PUBLIC_X_HANDLE = "@ltinzh1248958（以用户确认为准）";
+const PUBLIC_CHANNEL_INFO = {
+  channel: "x",
+  name: "X (Twitter)",
+  public_handle: PUBLIC_X_HANDLE,
+  note: "公开账号信息，仅供文档与状态接口展示；handle 来自用户原文疑似笔误，以用户确认为准。鉴权仍只走 env Secret，本常量不参与任何校验。",
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -60,6 +70,7 @@ export default {
           bot: "ltzzz-x-bot",
           bearer_configured: Boolean(env.X_BEARER_TOKEN),
           consumer_secret_configured: Boolean(env.X_CONSUMER_SECRET),
+          channel_public_info: PUBLIC_CHANNEL_INFO,
           ts: Date.now(),
         }, cors());
       }

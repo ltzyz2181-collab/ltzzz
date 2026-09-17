@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="LTZZZ 通道——Telegram / WhatsApp / X / Facebook 四个消息通道的公开访问方式、人机门禁与快捷命令。">
+<title data-i18n="_title">LTZZZ 通道</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.ch-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:8px}
+@media(max-width:900px){.ch-grid{grid-template-columns:1fr}}
+.ch-card{padding:26px;border:1px solid #ddd8ce;border-radius:22px;background:#fff;display:flex;flex-direction:column;gap:12px}
+.ch-head{display:flex;align-items:center;gap:14px}
+.ch-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;flex-shrink:0}
+.ch-head h3{margin:0;font-size:20px}
+.ch-status{font-size:12px;color:#888;margin-top:2px}
+.ch-access{font-size:15px;color:#171717;background:#f5f3ee;border:1px dashed #ddd8ce;border-radius:10px;padding:10px 14px;line-height:1.6;word-break:break-all}
+.ch-access b{color:#171717}
+.ch-warn{font-size:12px;color:#a16207;margin-top:-4px}
+.ch-feats{margin:0;padding-left:18px;color:#555;font-size:14px;line-height:1.9}
+.cmds{background:#fff;border:1px solid #ddd8ce;border-radius:20px;padding:28px}
+.cmds h3{margin:0 0 14px;font-size:20px}
+.cmds dl{margin:0;font-size:15px;color:#444;line-height:1.8}
+.cmds dt{font-weight:700;margin-top:12px}
+.cmds dd{margin:2px 0 0 0;color:#555}
+.cmds code{background:#f0f0f0;padding:2px 8px;border-radius:6px;font-size:13px}
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="brand">LTZZZ <span data-i18n="brand.subtitle">通道</span></div>
+  <nav>
+    <a href="lab.html" data-i18n="nav.labcore">实验室内核</a>
+    <a href="zhuanqian.html" data-i18n="nav.earn">赚钱实验室</a>
+    <a href="guan.html" data-i18n="nav.guan">观</a>
+    <a href="xingshen.html" data-i18n="nav.xingshen">行深</a>
+    <a href="shenti.html" data-i18n="nav.shenti">体态</a>
+    <a href="sim-trade.html" data-i18n="nav.kline">K线模拟盘</a>
+    <a href="moni.html" data-i18n="nav.ai-invest">AI投资模拟</a>
+    <a href="ai-chat.html" data-i18n="nav.ai-chat">AI对话（代理）</a>
+    <a href="agents.html" data-i18n="nav.agents">多 Agent</a>
+    <a href="channels.html" data-i18n="nav.channels">通道</a>
+    <a href="agi.html" data-i18n="nav.agi">未来（AGI）</a>
+  </nav>
+  <button class="wallet-btn" data-i18n="wallet.connect">连接钱包</button>
+  <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
+</header>
+
+<main>
+<section class="hero" style="min-height:auto;padding-top:60px">
+  <p class="eyebrow">LTZZZ CHANNELS · MESSAGING GATEWAY</p>
+  <h1 data-i18n="hero.title">LTZZZ 通道</h1>
+  <p class="lead" data-i18n="hero.lead">Telegram / WhatsApp / X / Facebook 四个消息通道，统一人机门禁：先问人类/AI，再指路六个 LTZZZ AI 通道。密钥只走 Worker 环境变量，本站只登记公开访问方式。</p>
+</section>
+
+<section class="section" style="padding-top:20px">
+  <div class="section-head">
+    <p class="eyebrow">CHANNELS</p>
+    <h2 data-i18n="grid.title">四个消息通道</h2>
+  </div>
+  <div class="ch-grid">
+
+    <article class="ch-card">
+      <div class="ch-head">
+        <div class="ch-icon" style="background:#229ED9">✈</div>
+        <div>
+          <h3 data-i18n="tg.name">Telegram</h3>
+          <div class="ch-status" data-i18n="tg.status">Bot 即将上线</div>
+        </div>
+      </div>
+      <div class="ch-access" data-i18n="tg.access">访问方式：Bot 即将上线（显示名待定，Token 待配置）</div>
+      <ul class="ch-feats">
+        <li data-i18n="feat.gate">人机门禁：首条消息先问「人类 / AI」</li>
+        <li data-i18n="feat.ai6">六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）</li>
+        <li data-i18n="feat.media">收发文本 / 图片 / 视频 / 文件</li>
+        <li data-i18n="feat.status">状态查询：GET /status 自查</li>
+      </ul>
+    </article>
+
+    <article class="ch-card">
+      <div class="ch-head">
+        <div class="ch-icon" style="background:#25D366">W</div>
+        <div>
+          <h3 data-i18n="wa.name">WhatsApp</h3>
+          <div class="ch-status" data-i18n="wa.status">已接入门禁 · 凭证待配</div>
+        </div>
+      </div>
+      <div class="ch-access" data-i18n="wa.access">访问方式：<b>+86 131 6421 1293</b> · 李天柱</div>
+      <ul class="ch-feats">
+        <li data-i18n="feat.gate2">人机门禁：首条消息先问「人类 / AI」</li>
+        <li data-i18n="feat.ai62">六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）</li>
+        <li data-i18n="feat.media2">收发文本 / 图片 / 视频 / 文件</li>
+        <li data-i18n="feat.status2">状态查询：GET /status 自查</li>
+      </ul>
+    </article>
+
+    <article class="ch-card">
+      <div class="ch-head">
+        <div class="ch-icon" style="background:#000000">𝕏</div>
+        <div>
+          <h3 data-i18n="x.name">X / Twitter</h3>
+          <div class="ch-status" data-i18n="x.status">已接入门禁 · 凭证待配</div>
+        </div>
+      </div>
+      <div class="ch-access" data-i18n="x.access">访问方式：<b>@ltinzh1248958</b></div>
+      <div class="ch-warn" data-i18n="x.warn">注：该 handle 来自用户原文，疑似笔误，以用户确认为准。</div>
+      <ul class="ch-feats">
+        <li data-i18n="feat.gate3">人机门禁：首条消息先问「人类 / AI」</li>
+        <li data-i18n="feat.ai63">六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）</li>
+        <li data-i18n="feat.media3">收发文本 / 图片 / 视频 / 文件</li>
+        <li data-i18n="feat.status3">状态查询：GET /status 自查</li>
+      </ul>
+    </article>
+
+    <article class="ch-card">
+      <div class="ch-head">
+        <div class="ch-icon" style="background:#1877F2">f</div>
+        <div>
+          <h3 data-i18n="fb.name">Facebook</h3>
+          <div class="ch-status" data-i18n="fb.status">已接入门禁 · 凭证待配</div>
+        </div>
+      </div>
+      <div class="ch-access" data-i18n="fb.access">访问方式：<b>ltzyz2181</b> · <b>+86 134 2447 9743</b> · 李天柱</div>
+      <ul class="ch-feats">
+        <li data-i18n="feat.gate4">人机门禁：首条消息先问「人类 / AI」</li>
+        <li data-i18n="feat.ai64">六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）</li>
+        <li data-i18n="feat.media4">收发文本 / 图片 / 视频 / 文件</li>
+        <li data-i18n="feat.status4">状态查询：GET /status 自查</li>
+      </ul>
+    </article>
+
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="cmds">
+    <h2 data-i18n="cmd.title">快捷命令与访问指引</h2>
+    <dl>
+      <dt><code>/start</code> <span data-i18n="cmd.start.t">— 发起会话</span></dt>
+      <dd data-i18n="cmd.start.d">打开任一通道首次对话即触发人机门禁，机器人先问「你是人类访问还是 AI 访问」。</dd>
+
+      <dt><code>/help</code> <span data-i18n="cmd.help.t">— 查看帮助</span></dt>
+      <dd data-i18n="cmd.help.d">回复命令清单与六个 LTZZZ AI 通道说明。</dd>
+
+      <dt data-i18n="cmd.ai.t">首次对话如何被判定为 AI 访问</dt>
+      <dd data-i18n="cmd.ai.d">消息中含 ai / gpt / bot / robot / chatgpt / claude / deepseek / copilot / grok / 机器人 / 智能体 / 自动 等 AI 信号，且不含「人类 / 真人」等人类信号 → 判为 AI，自动回复六个 LTZZZ AI 通道指引。</dd>
+
+      <dt data-i18n="cmd.unclear.t">判定不清会二次追问</dt>
+      <dd data-i18n="cmd.unclear.d">首条消息无法判定身份时，门禁会追问一次「请回复人类 或 AI」；二次仍无法判定，默认按 AI 通道指引兜底，可由人工事后复核。</dd>
+
+      <dt data-i18n="cmd.human.t">判为人类之后</dt>
+      <dd data-i18n="cmd.human.d">直接说明需求（任务 / 问题 / 合作），由 LTZZZ 人工或人工审核后处理。</dd>
+
+      <dt data-i18n="cmd.secret.t">关于凭证</dt>
+      <dd data-i18n="cmd.secret.d">所有 Token / Secret / Access Token 只放在 Cloudflare Worker 环境变量中，本站与代码只登记公开账号信息，不出现任何密钥。</dd>
+    </dl>
+  </div>
+</section>
+</main>
+
+<footer data-i18n="footer">© 2026 LTZZZ Digital Lab · Channels Gateway</footer>
+
+<script src="script.js"></script>
+<script src="i18n.js"></script>
+<script>
+window.I18N_DICT = {
+  zh: {
+    "_title": "LTZZZ 通道",
+    "brand.subtitle": "通道",
+    "nav.labcore": "实验室内核",
+    "nav.earn": "赚钱实验室",
+    "nav.guan": "观",
+    "nav.xingshen": "行深",
+    "nav.shenti": "体态",
+    "nav.kline": "K线模拟盘",
+    "nav.ai-invest": "AI投资模拟",
+    "nav.ai-chat": "AI对话（代理）",
+    "nav.agents": "多 Agent",
+    "nav.channels": "通道",
+    "nav.agi": "未来（AGI）",
+    "wallet.connect": "连接钱包",
+    "hero.title": "LTZZZ 通道",
+    "hero.lead": "Telegram / WhatsApp / X / Facebook 四个消息通道，统一人机门禁：先问人类/AI，再指路六个 LTZZZ AI 通道。密钥只走 Worker 环境变量，本站只登记公开访问方式。",
+    "grid.title": "四个消息通道",
+    "tg.name": "Telegram",
+    "tg.status": "Bot 即将上线",
+    "tg.access": "访问方式：Bot 即将上线（显示名待定，Token 待配置）",
+    "wa.name": "WhatsApp",
+    "wa.status": "已接入门禁 · 凭证待配",
+    "wa.access": "访问方式：+86 131 6421 1293 · 李天柱",
+    "x.name": "X / Twitter",
+    "x.status": "已接入门禁 · 凭证待配",
+    "x.access": "访问方式：@ltinzh1248958",
+    "x.warn": "注：该 handle 来自用户原文，疑似笔误，以用户确认为准。",
+    "fb.name": "Facebook",
+    "fb.status": "已接入门禁 · 凭证待配",
+    "fb.access": "访问方式：ltzyz2181 · +86 134 2447 9743 · 李天柱",
+    "feat.gate": "人机门禁：首条消息先问「人类 / AI」",
+    "feat.ai6": "六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）",
+    "feat.media": "收发文本 / 图片 / 视频 / 文件",
+    "feat.status": "状态查询：GET /status 自查",
+    "feat.gate2": "人机门禁：首条消息先问「人类 / AI」",
+    "feat.ai62": "六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）",
+    "feat.media2": "收发文本 / 图片 / 视频 / 文件",
+    "feat.status2": "状态查询：GET /status 自查",
+    "feat.gate3": "人机门禁：首条消息先问「人类 / AI」",
+    "feat.ai63": "六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）",
+    "feat.media3": "收发文本 / 图片 / 视频 / 文件",
+    "feat.status3": "状态查询：GET /status 自查",
+    "feat.gate4": "人机门禁：首条消息先问「人类 / AI」",
+    "feat.ai64": "六家 LTZZZ AI 指路（GPT / DeepSeek / Claude / 豆包 / Copilot / Grok）",
+    "feat.media4": "收发文本 / 图片 / 视频 / 文件",
+    "feat.status4": "状态查询：GET /status 自查",
+    "cmd.title": "快捷命令与访问指引",
+    "cmd.start.t": "— 发起会话",
+    "cmd.start.d": "打开任一通道首次对话即触发人机门禁，机器人先问「你是人类访问还是 AI 访问」。",
+    "cmd.help.t": "— 查看帮助",
+    "cmd.help.d": "回复命令清单与六个 LTZZZ AI 通道说明。",
+    "cmd.ai.t": "首次对话如何被判定为 AI 访问",
+    "cmd.ai.d": "消息中含 ai / gpt / bot / robot / chatgpt / claude / deepseek / copilot / grok / 机器人 / 智能体 / 自动 等 AI 信号，且不含「人类 / 真人」等人类信号 → 判为 AI，自动回复六个 LTZZZ AI 通道指引。",
+    "cmd.unclear.t": "判定不清会二次追问",
+    "cmd.unclear.d": "首条消息无法判定身份时，门禁会追问一次「请回复人类 或 AI」；二次仍无法判定，默认按 AI 通道指引兜底，可由人工事后复核。",
+    "cmd.human.t": "判为人类之后",
+    "cmd.human.d": "直接说明需求（任务 / 问题 / 合作），由 LTZZZ 人工或人工审核后处理。",
+    "cmd.secret.t": "关于凭证",
+    "cmd.secret.d": "所有 Token / Secret / Access Token 只放在 Cloudflare Worker 环境变量中，本站与代码只登记公开账号信息，不出现任何密钥。",
+    "footer": "© 2026 LTZZZ Digital Lab · Channels Gateway"
+  },
+  en: {
+    "_title": "LTZZZ Channels",
+    "brand.subtitle": "Channels",
+    "nav.labcore": "Lab Core",
+    "nav.earn": "Earn Lab",
+    "nav.guan": "Guan",
+    "nav.xingshen": "Xingshen",
+    "nav.shenti": "Body",
+    "nav.kline": "K-Line Sim",
+    "nav.ai-invest": "AI Invest Sim",
+    "nav.ai-chat": "AI Chat (Proxy)",
+    "nav.agents": "Multi-Agent",
+    "nav.channels": "Channels",
+    "nav.agi": "Future (AGI)",
+    "wallet.connect": "Connect Wallet",
+    "hero.title": "LTZZZ Channels",
+    "hero.lead": "Four messaging channels — Telegram / WhatsApp / X / Facebook — behind one human/AI gate, then routed to six LTZZZ AI channels. Secrets stay in Worker env; this page only lists public addresses.",
+    "grid.title": "Four messaging channels",
+    "tg.name": "Telegram",
+    "tg.status": "Bot coming soon",
+    "tg.access": "Access: Bot coming soon (display name TBD, token pending)",
+    "wa.name": "WhatsApp",
+    "wa.status": "Gate wired · credentials pending",
+    "wa.access": "Access: +86 131 6421 1293 · Li Tianzhu",
+    "x.name": "X / Twitter",
+    "x.status": "Gate wired · credentials pending",
+    "x.access": "Access: @ltinzh1248958",
+    "x.warn": "Note: handle transcribed from user input, possibly mistyped — subject to user confirmation.",
+    "fb.name": "Facebook",
+    "fb.status": "Gate wired · credentials pending",
+    "fb.access": "Access: ltzyz2181 · +86 134 2447 9743 · Li Tianzhu",
+    "feat.gate": "Human/AI gate: first message asks human vs AI",
+    "feat.ai6": "Routes to six LTZZZ AIs (GPT / DeepSeek / Claude / Doubao / Copilot / Grok)",
+    "feat.media": "Text / image / video / files",
+    "feat.status": "Status check: GET /status",
+    "feat.gate2": "Human/AI gate: first message asks human vs AI",
+    "feat.ai62": "Routes to six LTZZZ AIs (GPT / DeepSeek / Claude / Doubao / Copilot / Grok)",
+    "feat.media2": "Text / image / video / files",
+    "feat.status2": "Status check: GET /status",
+    "feat.gate3": "Human/AI gate: first message asks human vs AI",
+    "feat.ai63": "Routes to six LTZZZ AIs (GPT / DeepSeek / Claude / Doubao / Copilot / Grok)",
+    "feat.media3": "Text / image / video / files",
+    "feat.status3": "Status check: GET /status",
+    "feat.gate4": "Human/AI gate: first message asks human vs AI",
+    "feat.ai64": "Routes to six LTZZZ AIs (GPT / DeepSeek / Claude / Doubao / Copilot / Grok)",
+    "feat.media4": "Text / image / video / files",
+    "feat.status4": "Status check: GET /status",
+    "cmd.title": "Quick commands & access guide",
+    "cmd.start.t": "— start a session",
+    "cmd.start.d": "Opening any channel triggers the human/AI gate on your first message.",
+    "cmd.help.t": "— show help",
+    "cmd.help.d": "Command list and the six LTZZZ AI channels.",
+    "cmd.ai.t": "How a first message is judged as AI",
+    "cmd.ai.d": "If the message contains ai / gpt / bot / robot / chatgpt / claude / deepseek / copilot / grok etc. and no human signals, it is classified as AI and routed to the six LTZZZ AI channels.",
+    "cmd.unclear.t": "Unclear cases get a second ask",
+    "cmd.unclear.d": "If the first message is ambiguous, the gate asks once more; if still unclear, it defaults to the AI routing and can be reviewed manually.",
+    "cmd.human.t": "After human is confirmed",
+    "cmd.human.d": "State your need (task / question / cooperation); LTZZZ handles it by a human or human-reviewed path.",
+    "cmd.secret.t": "About credentials",
+    "cmd.secret.d": "All tokens / secrets / access tokens live only in Cloudflare Worker env. This site and code register public account info only — no secrets.",
+    "footer": "© 2026 LTZZZ Digital Lab · Channels Gateway"
+  }
+};
+</script>
+</body>
+</html>
