@@ -24,6 +24,16 @@
  *           判定不清追问一次，二次仍不清默认按 AI 通道指引处理。
  * 注意：Worker 无状态，门禁会话态保存在单 isolate 内存 Map（重启即失，演示级）。
  */
+
+/* ---------------- 公开账号信息（仅文档 / /status 展示，不用于鉴权） ---------------- */
+const PUBLIC_WHATSAPP_NUMBER = "+86 131 6421 1293 · 李天柱";
+const PUBLIC_CHANNEL_INFO = {
+  channel: "whatsapp",
+  name: "WhatsApp",
+  public_number: PUBLIC_WHATSAPP_NUMBER,
+  note: "公开账号信息，仅供文档与状态接口展示；鉴权仍只走 env Secret，本常量不参与任何校验。",
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -67,6 +77,7 @@ export default {
           bot: "ltzzz-whatsapp-bot",
           access_token_configured: Boolean(env.WHATSAPP_ACCESS_TOKEN),
           verify_token_configured: Boolean(env.WHATSAPP_VERIFY_TOKEN),
+          channel_public_info: PUBLIC_CHANNEL_INFO,
           ts: Date.now(),
         }, cors());
       }
