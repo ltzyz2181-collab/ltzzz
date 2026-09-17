@@ -1,7 +1,7 @@
 # LTZZZ 独立钱包 · 3/5 多签治理方案
 
-> 状态：方案已定（3/5 多签）；5 席签名者已齐（主签名者 + 豆包托管 + GPT 托管 + 审计 A/B）；网络 Base 已确认；Safe 官方基础设施已核验存在；**待主签名者注入 Base ETH 后创建 Safe Proxy**。
-> 版本：2026-09-17（5 席地址齐全 + 基础设施核验 + 审计签名者生成）
+> 状态：**Safe Proxy 已创建（以太坊主网）**；5 owners + threshold=3 链上确认；待注入测试资金后执行 1 USDT 3/5 dry-run。
+> 版本：2026-09-17（Safe 部署完成 + 阈值修正为 3）
 
 ## 1. 治理原则（不可修改）
 
@@ -33,18 +33,28 @@
 - 任何 AI/任何人要求你提供助记词或私钥 → **一律视为诈骗**。
 - 日志只允许出现：公开地址、公钥、交易哈希、订单状态。
 
-## 4. 链上部署步骤（待执行）
+## 4. 链上部署记录（已完成部分）
 
-1. ✅ 用户主签名者地址已提供：`0xb99C6751f443842F4987bb2017580405572Df905`。
-2. ✅ 网络已选定：**Base**（chain ID **8453**；gas 用 ETH，由用户主地址承担）。
-3. ✅ **基础设施核验（2026-09-17，链上只读证据）**：
-   - Safe Proxy Factory `0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2`：已存在（有合约代码）→ **不重新部署基础合约**。
-   - Safe Singleton 1.4.1 `0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552`：已存在（有合约代码）→ **不重新部署基础合约**。
-   - 当前 Base gas ≈ 0.006 Gwei；创建 Safe Proxy 预计 < 0.001 USD。
-4. ⏳ **待办：主签名者注入少量 Base ETH**（≈1-5 USD 等值即可，仅覆盖部署与签名 gas）→ 之后创建 Safe Proxy（5 owners / threshold=3）。
-5. 记录 Safe 地址 → 写入本文件与 LTZZZ 账本（公开）。
-6. 1 USDT 小额 dry-run（3/5 签名）→ 转出 → 验证 → 记录。
-7. 测试通过后启用真实额度（受 LTZZZ 总授权额度约束）。
+### 4.1 基础设施核验（2026-09-17，链上只读证据）
+- Safe Proxy Factory `0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2`：已存在 → **未重复部署**。
+- Safe Singleton 1.4.1 `0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552`：已存在 → **未重复部署**。
+
+### 4.2 Safe Proxy 已创建（2026-09-17，以太坊主网）
+| 项 | 值 |
+|---|---|
+| **Safe 地址** | `0x3cb1b0963A27Fa8D40ee606bc596C79FE3B1866a` |
+| 网络 | 以太坊主网（创建时选定 Ethereum；0.01 ETH 与后续 USDT 同链） |
+| 5 owners | 用户 `0xb99C…2f905` / 豆包 `0x07A6…942D` / GPT `0xA3A8…9984` / 审计A `0x23B9…8CDF` / 审计B `0x121B…40a1E` |
+| **threshold** | **3**（创建时为 1，已通过交易修正为 3） |
+| Safe 版本 | 1.4.1（Singleton `0xd9Db…09552`） |
+| 修正阈值交易 | `0x413fb5e5d85a3a13d6d2fabb82136f3048fe0e285bc28d714bb5ac5a06b605a2`（status=1，block 25996328，gas 70099） |
+| 链上核验 | getThreshold=3 ✅；Safe 余额 0（待注入） |
+| 浏览器链接 | https://etherscan.io/address/0x3cb1b0963A27Fa8D40ee606bc596C79FE3B1866a |
+
+### 4.3 待办
+1. ⏳ 注入：Safe 补 0.002 ETH（gas）+ 2 USDT（ERC20，测试用，留 1 USDT 余量）→ 注入地址即 Safe 地址。
+2. ⏳ **1 USDT 3/5 签名 dry-run**（Safe → 指定测试地址；执行前显示 to/amount/token/chain；无 3 签不执行）。
+3. ⏳ dry-run 通过后注入 10 USDT 测试额度。
 
 ## 5. 与现有系统关系
 
