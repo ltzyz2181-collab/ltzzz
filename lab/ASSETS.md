@@ -2,15 +2,17 @@
 
 > 只登记公开、可复现的资产索引；不登记 API Key、私钥、助记词、验证码等秘密。
 
-| ID | 类型 | 资产 | 路径 / URL | 日期 | 关联实验 | 备注 |
+| ID | 类型 | 资产 | 路径 / URL | 日期 | 关联任务/实验 | 备注 |
 |---|---|---|---|---|---|---|
 | AST-001 | 仓库 | LTZZZ 主仓库 | `ltzyz2181-collab/ltzzz` | 2026-09-17 | — | 唯一事实源之一 |
-| AST-002 | 网站 | LTZZZ | `https://ltzzz.com` | 2026-09-17 | — | GitHub Pages + CNAME |
-| AST-003 | 文档 | LTZZZ Memory | `lab/MEMORY.md` | 2026-09-17 | — | 长期事实 |
-| AST-004 | 文档 | 决策日志 | `lab/DECISIONS.md` | 2026-09-17 | — | 已拍板事项 |
-| AST-005 | 文档 | 任务池 | `lab/tasks.md` | 2026-09-17 | — | 工作入口 |
-| AST-006 | 文档 | 能力地图 | `lab/CAPABILITY_MAP.md` | 2026-09-17 | — | AI 分工与禁区 |
-| AST-007 | 文档 | 实验模板 | `lab/experiments/_template.md` | 2026-09-17 | — | 实验卡标准 |
+| AST-002 | 网站 | LTZZZ | `https://ltzzz.com` | 2026-09-17 | T005 | GitHub Pages + CNAME |
+| AST-003 | 文档 | LTZZZ Memory | `lab/MEMORY.md` | 2026-09-17 | T001 | 长期事实 |
+| AST-004 | 文档 | 决策日志 | `lab/DECISIONS.md` | 2026-09-17 | T001 | 已拍板事项 |
+| AST-005 | 文档 | 任务池 | `lab/tasks.md` | 2026-09-17 | T001 | 工作入口 |
+| AST-006 | 文档 | 能力地图 | `lab/CAPABILITY_MAP.md` | 2026-09-17 | T001 | AI 分工与禁区 |
+| AST-007 | 文档 | 实验模板 | `lab/experiments/_template.md` | 2026-09-17 | T006 | 实验卡标准 |
+| AST-008 | 文档 | Lab 入口与交接协议 | `lab/README.md` | 2026-09-17 | T010 | 固定读取顺序与完成定义 |
+| AST-009 | 文档 | 部署核查 | `lab/DEPLOYMENT_CHECK.md` | 2026-09-17 | T003/T009 | 区分代码入库与线上实测 |
 
 ## 登记规则
 - 页面上线：记录 URL + 日期。
