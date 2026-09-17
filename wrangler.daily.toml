@@ -1,0 +1,68 @@
+# =====================================================================
+# LTZZZ 六 AI 每日自动化调度 · Worker 配置
+# 入口：ltzzz-daily-automation-worker.js  ->  scheduled() cron 触发器
+# 部署：wrangler deploy -c wrangler.daily.toml
+# =====================================================================
+#
+# 【cron 时区换算说明（重要）】
+# Cloudflare Workers 的 cron 表达式固定按 **UTC** 解释，不随浏览器/本地时区变化。
+# 本仓库业务时间一律按 **UTC+8（Asia/Shanghai）**。换算规则：UTC+8 时间 − 8 小时 = UTC 时间。
+# 例：UTC+8 08:00 → UTC 00:00；UTC+8 06:30 → UTC 前一天 22:30（即 cron 的“前一日 22:30”在 UTC 视角下
+#     实际触发时，对应的已是 UTC+8 当天早上）。逐条对照见下表：
+#
+#   任务               AI               UTC+8 触发   UTC cron      本次落地 cron 字段
+#   -----------------  ---------------  -----------  ------------  --------------------------
+#   deepseek-clean     DeepSeek         06:30        前一日 22:30  "30 22 * * *"
+#   gpt-daily-plan     GPT              08:00        当日 00:00    "0 0 * * *"
+#   claude-review      Claude           09:30        当日 01:30    "30 1 * * *"
+#   doubao-video       豆包             11:00        当日 03:00    "0 3 * * *"
+#   copilot-western    Microsoft Copilot 14:00       当日 06:00    "0 6 * * *"
+#   xia-altview        XIA(Grok)        16:00        当日 08:00    "0 8 * * *"
+#
+# 时序设计（UTC+8）：先清洗前一日记录(06:30) → 出当日规划(08:00) → 复盘清洗稿(09:30)
+#   → 当日出片(11:00) → 西方对照(14:00) → 另类视角(16:00)。
+# =====================================================================
+
+name = "ltzzz-daily-automation"
+main = "ltzzz-daily-automation-worker.js"
+compatibility_date = "2026-09-17"
+
+# ---- 每日 cron（UTC）。共 6 条，与上方换算表一一对应 ----
+[triggers]
+crons = [
+  "30 22 * * *",   # deepseek-clean     UTC+8 06:30
+  "0 0 * * *",     # gpt-daily-plan     UTC+8 08:00
+  "30 1 * * *",    # claude-review      UTC+8 09:30
+  "0 3 * * *",     # doubao-video       UTC+8 11:00
+  "0 6 * * *",     # copilot-western    UTC+8 14:00
+  "0 8 * * *",     # xia-altview        UTC+8 16:00
+]
+
+[vars]
+# 业务时区偏移（小时），代码据此计算 UTC+8 的“今天/昨天”
+TZ_OFFSET_HOURS = "8"
+
+# ---- 预算守卫（代码强制；仅放限额，不放 Key）----
+# 对齐 finance/budgets.md：豆包 / DeepSeek 各 20 RMB；80% 预警、100% 停止 -> waiting_approval
+DOUBAO_BUDGET_LIMIT = "20"      # RMB 上限
+DEEPSEEK_BUDGET_LIMIT = "20"    # RMB 上限
+# 已消耗额度：当前 dry-run 一律为 0；真实值应由 KV/R2 账本回写，这里仅作占位/演示覆盖
+DOUBAO_BUDGET_SPENT = "0"
+DEEPSEEK_BUDGET_SPENT = "0"
+
+# 当日视频台账序号占位（真实应从 content-registry 自增读取）
+TODAY_CONTENT_SEQ = "1"
+
+# ---- 密钥：一律用 wrangler secret put 注入，绝不写进本文件 / 仓库 ----
+# 【等待人工凭证】清单（在 Cloudflare 控制台或 CLI 注入，禁止提交到 Git）：
+#   OPENAI_API_KEY / DEEPSEEK_API_KEY / ANTHROPIC_API_KEY /
+#   DOUBAO_API_KEY / COPILOT_TOKEN / XIA_GROK_API_KEY /
+#   GEMINI_VIDEO_KEY（Veo） / SEEDANCE_KEY / LTZZZ_AGENT_TOKEN
+# 见 protocol/ltzzz-daily-automation.md 的“等待人工凭证”清单。
+
+# ---- 落盘存储（可选）：真实部署时把每日产物写入 R2 ----
+# 未绑定 R2 时，writeArtifact 自动退化为 dry-run 日志（log-only），不报错。
+# 绑定示例（部署后把 id 填回）：
+# [[r2_buckets]]
+# binding = "LTZZZ_ARTIFACTS"
+# bucket_name = "ltzzz-knowledge"
