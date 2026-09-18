@@ -3,35 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>观 · 每日记录 · LTZZZ</title>
+  <title>观 · 六通道 AI 每日记录 · LTZZZ</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .page-hero { padding: 100px 7vw 40px; max-width: 900px; }
-    .page-hero h1 { font-size: clamp(32px,6vw,56px); margin: 0 0 16px; }
-    .observe-form, .panel-block {
-      background: #fff; border: 1px solid #ddd8ce; border-radius: 20px;
-      padding: 28px; margin: 20px 0;
-    }
-    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-    textarea, input, select {
-      width: 100%; padding: 12px 14px; border: 1px solid #ddd8ce; border-radius: 12px;
-      font-size: 15px; margin-bottom: 16px; font-family: inherit; box-sizing: border-box;
-    }
-    textarea { min-height: 100px; resize: vertical; }
-    .record-item {
-      background: #fff; border: 1px solid #ddd8ce; border-radius: 14px;
-      padding: 16px 18px; margin-bottom: 12px;
-    }
-    .record-item .meta { font-size: 12px; color: #888; margin-bottom: 6px; }
-    .record-item .tags span {
-      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
-      background: #f0ebe3; margin-right: 6px; color: #555;
-    }
-    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width:600px){ .row2 { grid-template-columns: 1fr; } }
-    .hint { font-size: 13px; color: #777; margin: 0 0 16px; line-height: 1.6; }
-    .actions-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .del { float: right; font-size: 12px; color: #a33; border: none; background: none; cursor: pointer; }
+    .page-hero { padding: 90px 7vw 24px; max-width: 1100px; }
+    .page-hero h1 { font-size: clamp(30px,5vw,52px); margin: 0 0 14px; }
+    .date-line { font-size: 14px; color: #777; margin: 0 0 10px; }
+    .ch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 1100px; margin: 0 auto; padding: 8px 7vw 40px; }
+    @media (max-width: 900px) { .ch-grid { grid-template-columns: 1fr; } }
+    .ch-card { background: #fff; border: 1px solid #ddd8ce; border-radius: 18px; padding: 20px 22px; display: flex; flex-direction: column; }
+    .ch-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .ch-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 16px; flex: none; }
+    .ch-name { font-weight: 700; font-size: 16px; }
+    .ch-role { font-size: 12px; color: #888; line-height: 1.5; margin-top: 2px; }
+    .ch-status { font-size: 12px; padding: 3px 10px; border-radius: 999px; display: inline-block; margin: 4px 0 10px; align-self: flex-start; }
+    .st-ok { background: #e8f5e9; color: #2e7d32; }
+    .st-wait { background: #fff8e1; color: #b26a00; }
+    .st-empty { background: #f5f5f5; color: #888; }
+    .ch-body { font-size: 13px; color: #444; line-height: 1.7; border-top: 1px solid #f0ece3; padding-top: 10px; min-height: 120px; }
+    .ch-body pre { white-space: pre-wrap; word-break: break-word; font-family: inherit; margin: 0; }
+    .legend { max-width: 1100px; margin: 0 auto; padding: 0 7vw 48px; font-size: 13px; color: #777; line-height: 1.9; }
+    .legend code { background: #f0ebe3; padding: 1px 6px; border-radius: 6px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -39,212 +31,91 @@
     <div class="brand">LTZZZ <span>观</span></div>
     <nav>
       <a href="index.html">首页</a>
-      <a href="guan.html">观</a>
-      <a href="moni.html">投资模拟</a>
-      <a href="sim-trade.html">K线模拟</a>
-      <a href="xingshen.html">行深</a>
+      <a href="guan.html">观 · AI每日记录</a>
+      <a href="ai-chat.html">AI对话（代理）</a>
+      <a href="agents.html">多 Agent</a>
+      <a href="channels.html">通道</a>
+      <a href="agi.html">未来（AGI）</a>
     </nav>
   </header>
 
   <main>
     <section class="page-hero">
-      <p class="eyebrow">觀 · DAILY</p>
-      <h1>观 —— 每日记录</h1>
-      <p class="lead">看见情绪、身体、市场与决策。记录在本机浏览器，可一键复制给任意 AI 做复盘。</p>
+      <p class="eyebrow">觀 · SIX AI DAILY</p>
+      <h1>观 —— 六通道 AI 每日记录</h1>
+      <p class="date-line" id="dateLine">正在加载今日记录…</p>
+      <p class="lead">六个 AI 通道（GPT / 豆包 / XAI / Claude / DeepSeek / Copilot）每天各自阅读仓库、记录产出、打磨代码与内容。此处实时展示它们每日落盘的台账。</p>
     </section>
 
-    <section class="section" style="padding-top:0;max-width:900px">
-      <div class="observe-form">
-        <h3 style="margin-top:0">写一条观察</h3>
-        <p class="hint">数据只存在本机 localStorage（键名 ltzzz_guan_v2），清浏览器数据会丢失。重要内容请导出备份。</p>
+    <section class="ch-grid" id="grid"></section>
 
-        <div class="row2">
-          <div>
-            <label>类型</label>
-            <select id="gType">
-              <option value="emotion">情绪 / 决策冲动</option>
-              <option value="invest">投资 / 模拟盘相关</option>
-              <option value="body">身体 / 睡眠 / 魄</option>
-              <option value="market">市场传闻或价格感受</option>
-              <option value="habit">习气（重复模式）</option>
-              <option value="other">其他</option>
-            </select>
-          </div>
-          <div>
-            <label>强度 1–10</label>
-            <input type="number" id="gIntensity" min="1" max="10" value="5">
-          </div>
-        </div>
-
-        <label>与模拟持仓有关？（可选）</label>
-        <input id="gAsset" placeholder="例如 TSLA / BTC / UNI，没有可留空">
-
-        <label>今天看见了什么</label>
-        <textarea id="gContent" placeholder="现象、念头、是否想加仓/刷盘、身体状态…"></textarea>
-
-        <label>若再来一次，我可能怎么做（可选）</label>
-        <textarea id="gNext" placeholder="例如：先写规则再点买卖；强度>7先不看盘" style="min-height:70px"></textarea>
-
-        <div class="actions-bar">
-          <button class="button primary" type="button" id="btnSave">保存到本机</button>
-          <button class="button" type="button" id="btnExport">导出全部 JSON</button>
-          <button class="button" type="button" id="btnPrompt">复制「给 AI 复盘」全文</button>
-          <a class="button" href="moni.html">去投资模拟复盘 →</a>
-        </div>
-      </div>
-
-      <div class="panel-block">
-        <h3 style="margin-top:0">历史观察</h3>
-        <p class="hint">筛选：
-          <select id="filterType" style="width:auto;display:inline-block;margin:0 8px">
-            <option value="all">全部</option>
-            <option value="invest">仅投资相关</option>
-            <option value="emotion">仅情绪</option>
-            <option value="body">仅身体</option>
-          </select>
-        </p>
-        <div id="list"></div>
-      </div>
+    <section class="legend">
+      <p><b>状态说明</b>：<span style="color:#2e7d32">● 已有今日记录</span> · <span style="color:#b26a00">● 今日等待凭证（dry-run 占位）</span> · <span style="color:#888">● 今日记录待生成</span></p>
+      <p>数据源：<code>knowledge/daily/&lt;通道&gt;/YYYY-MM-DD.md</code>；自动化：<code>ltzzz-daily-automation</code> worker（UTC+8 每日 06:30–16:00 六个任务依次落盘）。凭证就绪前各通道为 dry-run 占位，不伪造产出。</p>
     </section>
   </main>
 
   <footer>© 2026 LTZZZ · 观 → 记录 → AI 复盘 → 再决策</footer>
 
   <script>
-  const KEY = 'ltzzz_guan_v2';
-  // migrate old key once
-  (function migrate() {
+  const CHANNELS = [
+    { key: 'gpt',      name: 'GPT (OpenAI)',     role: '当日规划 + 部署 1 条任务 · 昨日记忆 · 怜悯之心 · 模板打磨', color: '#111111' },
+    { key: 'doubao',   name: '豆包',             role: '装备论学习笔记 · 每日整理 · 视频脚本', color: '#4e9bf1' },
+    { key: 'xia',      name: 'XAI / Grok',       role: '装备论 × 心理健康 · APP / Web3 代码打磨', color: '#f5b301' },
+    { key: 'claude',   name: 'Claude',           role: '每日小说片段（≥50 字）· 逐日积累', color: '#d97757' },
+    { key: 'deepseek', name: 'DeepSeek',         role: '中华传统文化 × 装备论 对照', color: '#3b82f6' },
+    { key: 'copilot',  name: 'Microsoft Copilot', role: '西方文化 × 装备论 对照', color: '#0e6f9e' },
+  ];
+
+  function today() {
+    const d = new Date(Date.now() + 8 * 3600 * 1000);
+    return d.toISOString().slice(0, 10);
+  }
+
+  const esc = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function loadChannel(ch) {
+    const date = today();
+    const url = 'knowledge/daily/' + ch.key + '/' + date + '.md';
+    let md = null;
     try {
-      if (localStorage.getItem(KEY)) return;
-      const old = JSON.parse(localStorage.getItem('ltzzz_observe_records') || '[]');
-      if (old.length) {
-        localStorage.setItem(KEY, JSON.stringify(old.map(r => ({
-          id: r.time + Math.random(),
-          time: r.time,
-          type: r.type || '其他',
-          typeKey: 'other',
-          intensity: r.intensity || 5,
-          asset: '',
-          content: r.content || '',
-          next: ''
-        }))));
-      }
+      const r = await fetch(url, { cache: 'no-store' });
+      if (r.ok) md = await r.text();
     } catch (e) {}
-  })();
-
-  const typeLabel = {
-    emotion: '情绪/决策',
-    invest: '投资/模拟',
-    body: '身体/魄',
-    market: '市场感受',
-    habit: '习气',
-    other: '其他'
-  };
-
-  function load() {
-    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
-  }
-  function save(list) { localStorage.setItem(KEY, JSON.stringify(list)); }
-
-  function render() {
-    const f = document.getElementById('filterType').value;
-    let list = load();
-    if (f === 'invest') list = list.filter(x => x.typeKey === 'invest' || x.typeKey === 'market');
-    if (f === 'emotion') list = list.filter(x => x.typeKey === 'emotion' || x.typeKey === 'habit');
-    if (f === 'body') list = list.filter(x => x.typeKey === 'body');
-    const el = document.getElementById('list');
-    if (!list.length) {
-      el.innerHTML = '<p style="color:#888">暂无记录。</p>';
-      return;
+    let status, cls, bodyHtml;
+    if (md && md.trim().length > 0) {
+      const isDry = /dry_run\s*=\s*true|WAITING_CREDENTIAL/.test(md);
+      status = isDry ? '今日待凭证（dry-run）' : '已有今日记录';
+      cls = isDry ? 'st-wait' : 'st-ok';
+      bodyHtml = '<pre>' + esc(md.slice(0, 1500)) + (md.length > 1500 ? '\n…（截断）' : '') + '</pre>';
+    } else {
+      status = '今日记录待生成';
+      cls = 'st-empty';
+      bodyHtml = '<pre>今日文件尚未生成。六通道每日自动化任务将在 UTC+8 每日 06:30–16:00 依次运行；凭证就绪后自动落盘到 knowledge/daily/。</pre>';
     }
-    el.innerHTML = list.slice().reverse().map(r => `
-      <div class="record-item" data-id="${r.id}">
-        <button type="button" class="del" data-id="${r.id}">删除</button>
-        <div class="meta">${escapeHtml(r.time)} · 强度 ${r.intensity}</div>
-        <div class="tags">
-          <span>${escapeHtml(r.type || typeLabel[r.typeKey] || '')}</span>
-          ${r.asset ? '<span>' + escapeHtml(r.asset) + '</span>' : ''}
-        </div>
-        <div style="margin-top:8px">${escapeHtml(r.content)}</div>
-        ${r.next ? '<div style="margin-top:6px;color:#555;font-size:13px">下次：' + escapeHtml(r.next) + '</div>' : ''}
-      </div>
-    `).join('');
-    el.querySelectorAll('.del').forEach(btn => {
-      btn.onclick = () => {
-        if (!confirm('删除这条？')) return;
-        save(load().filter(x => x.id !== btn.dataset.id));
-        render();
-      };
-    });
+    return (
+      '<article class="ch-card">' +
+        '<div class="ch-head">' +
+          '<span class="ch-avatar" style="background:' + ch.color + '">' + esc(ch.name.slice(0, 1)) + '</span>' +
+          '<div>' +
+            '<div class="ch-name">' + esc(ch.name) + '</div>' +
+            '<div class="ch-role">' + esc(ch.role) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<span class="ch-status ' + cls + '">' + esc(status) + '</span>' +
+        '<div class="ch-body">' + bodyHtml + '</div>' +
+      '</article>'
+    );
   }
 
-  function escapeHtml(s) {
-    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  async function render() {
+    document.getElementById('dateLine').textContent = '今日（UTC+8）' + today() + ' · 六通道台账实时展示';
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '<p style="grid-column:1/-1;color:#888">加载中…</p>';
+    const cards = await Promise.all(CHANNELS.map(loadChannel));
+    grid.innerHTML = cards.join('');
   }
 
-  function buildAiPrompt() {
-    const list = load().slice(-15);
-    const sim = localStorage.getItem('ltzzz-sim-v1') || '{}';
-    let simBrief = '';
-    try {
-      const s = JSON.parse(sim);
-      simBrief = '模拟现金约 ' + (s.cash != null ? s.cash : '?') + '；持仓键：' + Object.keys(s.pos || {}).join(', ');
-    } catch (e) { simBrief = '无模拟数据'; }
-    const lines = list.map(r =>
-      `- [${r.time}] (${r.type || r.typeKey}, 强度${r.intensity}${r.asset ? ', ' + r.asset : ''}) ${r.content}${r.next ? ' | 下次:' + r.next : ''}`
-    ).join('\n');
-    return `你是复盘助手，不是投资顾问。根据下列「观」记录与模拟账户摘要，用中文输出：
-1) 重复出现的情绪/习气模式（3条内）
-2) 与买卖冲动相关的触发点
-3) 下周可执行的一条小规则（具体、可打卡）
-不要鼓励加杠杆或实盘跟单。不要索要密钥。
-
-【模拟账户摘要】${simBrief}
-
-【最近观记录】
-${lines || '（暂无）'}`;
-  }
-
-  document.getElementById('btnSave').onclick = () => {
-    const content = document.getElementById('gContent').value.trim();
-    if (!content) return alert('写一点观察内容');
-    const typeKey = document.getElementById('gType').value;
-    const list = load();
-    list.push({
-      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-      time: new Date().toLocaleString('zh-CN'),
-      typeKey,
-      type: typeLabel[typeKey],
-      intensity: document.getElementById('gIntensity').value,
-      asset: document.getElementById('gAsset').value.trim(),
-      content,
-      next: document.getElementById('gNext').value.trim()
-    });
-    save(list);
-    document.getElementById('gContent').value = '';
-    document.getElementById('gNext').value = '';
-    render();
-  };
-
-  document.getElementById('btnExport').onclick = () => {
-    const blob = new Blob([JSON.stringify(load(), null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ltzzz-guan-' + new Date().toISOString().slice(0, 10) + '.json';
-    a.click();
-  };
-
-  document.getElementById('btnPrompt').onclick = async () => {
-    const t = buildAiPrompt();
-    try {
-      await navigator.clipboard.writeText(t);
-      alert('已复制。可粘贴到豆包 / DeepSeek / GPT / Claude / Grok 任意一个做复盘。');
-    } catch {
-      prompt('复制以下全文', t);
-    }
-  };
-
-  document.getElementById('filterType').onchange = render;
   render();
   </script>
 </body>
