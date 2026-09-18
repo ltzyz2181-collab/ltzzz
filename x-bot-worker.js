@@ -62,6 +62,28 @@ export default {
         return await handleSend(request, env);
       }
 
+      // ---- 发送测试（GET，浏览器直开）：?to=用户名&text=内容 ----
+      if (path === "/sendtest" && request.method === "GET") {
+        const to = (url.searchParams.get("to") || "").replace(/^@/, "").trim();
+        const text = (url.searchParams.get("text") || "LTZZZ 发送测试 ✅").trim();
+        if (!to) return json({ ok: false, error: "missing to" }, { status: 400, ...cors() });
+        const ures = await fetch(`https://api.twitter.com/2/users/by/username/${encodeURIComponent(to)}`, {
+          headers: { Authorization: `Bearer ${env.X_BEARER_TOKEN || ""}` },
+        });
+        const ubody = await ures.json().catch(() => null);
+        const uid = ubody?.data?.id || null;
+        let send = null;
+        if (uid) {
+          const sres = await fetch(`https://api.twitter.com/2/dm_conversations/with/${uid}/messages`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${env.X_BEARER_TOKEN || ""}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ text: String(text).slice(0, 10000) }),
+          });
+          send = await sres.json().catch(() => ({ status: sres.status }));
+        }
+        return json({ ok: true, to, user_id: uid, user_lookup: ubody, send_result: send }, cors());
+      }
+
       // ---- 健康检查 ----
       if (path === "/status" && request.method === "GET") {
         return json({
