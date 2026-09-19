@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LTZZZ 每日运行 · 6 AI 自动记录</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background: #0a0e1a; color: #e8ecf4; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .daily-wrap { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+  .daily-header { text-align: center; margin-bottom: 40px; }
+  .daily-header h1 { font-size: 32px; margin: 0 0 8px; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .daily-header .date { color: #8b95a8; font-size: 14px; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: #131929; border: 1px solid #1e2a45; border-radius: 16px; padding: 20px; text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: 700; }
+  .stat-card .label { font-size: 12px; color: #8b95a8; margin-top: 4px; }
+  .ai-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+  .ai-card { background: #131929; border: 1px solid #1e2a45; border-radius: 16px; padding: 20px; }
+  .ai-card .ai-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .ai-card .ai-name { font-size: 18px; font-weight: 600; }
+  .status { display: inline-block; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+  .status.green { background: #064e3b; color: #34d399; }
+  .status.yellow { background: #422006; color: #fbbf24; }
+  .status.red { background: #450a0a; color: #f87171; }
+  .status.gray { background: #1f2937; color: #9ca3af; }
+  .ai-card .ai-body { font-size: 13px; color: #b0b8c8; line-height: 1.7; }
+  .pub-section { margin-bottom: 32px; }
+  .pub-section h2 { font-size: 20px; margin: 0 0 16px; }
+  .pub-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pub-card { background: #131929; border: 1px solid #1e2a45; border-radius: 12px; padding: 16px; text-align: center; }
+  .pub-card .pub-name { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .next-section { background: #131929; border: 1px solid #1e2a45; border-radius: 16px; padding: 24px; }
+  .next-section h2 { font-size: 20px; margin: 0 0 16px; }
+  .next-section ul { margin: 0; padding-left: 20px; line-height: 2; color: #b0b8c8; font-size: 14px; }
+  @media (max-width: 768px) { .stats-row, .ai-grid, .pub-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="brand">LTZZZ <span>数字实验室</span></div>
+  <nav>
+    <a href="index.html">首页</a>
+    <a href="lab.html">实验室内核</a>
+    <a href="guan.html">6 AI 每日记录</a>
+    <a href="agents.html">多 Agent</a>
+    <a href="agi.html">未来（AGI）</a>
+  </nav>
+</nav>
+
+<main class="daily-wrap">
+  <div class="daily-header">
+    <h1>📊 LTZZZ 每日运行</h1>
+    <p class="date" id="todayDate">2026-09-19 · 星期六</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" style="color:#34d399">1</div>
+      <div class="label">✅ 今日完成</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#f87171">6</div>
+      <div class="label">🔴 等 API Key</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#fbbf24">3</div>
+      <div class="label">🟡 等人工凭证</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" style="color:#60a5fa">2</div>
+      <div class="label">🟢 已上线通道</div>
+    </div>
+  </div>
+
+  <h2 style="margin:0 0 16px; font-size:20px">🤖 六 AI 模块</h2>
+  <div class="ai-grid">
+    <div class="ai-card">
+      <div class="ai-head">
+        <span class="ai-name">GPT</span>
+        <span class="status red">🔴 等 API</span>
+      </div>
+      <div class="ai-body">
+        每日任务：读仓库记忆 → 写规划 → 部署一条任务 → 打磨代码<br>
+        当前状态：代码就绪，缺 OPENAI_API_KEY
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ai-head">
+        <span class="ai-name">豆包</span>
+        <span class="status red">🔴 等 API</span>
+      </div>
+      <div class="ai-body">
+        每日任务：读仓库 → 整理装备论 → 生成视频脚本 → 打磨代码<br>
+        当前状态：代码就绪，缺 DOUBAO_API_KEY
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ai-head">
+        <span class="ai-name">Grok / XAI</span>
+        <span class="status red">🔴 等 API</span>
+      </div>
+      <div class="ai-body">
+        每日任务：读仓库 → 心理健康清单 → 打磨 APP/Web3 代码<br>
+        当前状态：代码就绪，缺 XAI_API_KEY
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ai-head">
+        <span class="ai-name">Claude</span>
+        <span class="status red">🔴 等 API</span>
+      </div>
+      <div class="ai-body">
+        每日任务：读仓库 → 写 50 字小说 → 连续记录<br>
+        当前状态：代码就绪，缺 ANTHROPIC_API_KEY
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ai-head">
+        <span class="ai-name">DeepSeek</span>
+        <span class="status red">🔴 等 API</span>
+      </div>
+      <div class="ai-body">
+        每日任务：读仓库 → 对照传统文化与装备论异同<br>
+        当前状态：代码就绪，缺 DEEPSEEK_API_KEY
+      </div>
+    </div>
+    <div class="ai-card">
+      <div class="ai-head">
+        <span class="ai-name">Microsoft</span>
+        <span class="status red">🔴 等 API</span>
+      </div>
+      <div class="ai-body">
+        每日任务：读仓库 → 对照西方文化与装备论异同<br>
+        当前状态：代码就绪，缺 MICROSOFT_API_KEY
+      </div>
+    </div>
+  </div>
+
+  <div class="pub-section">
+    <h2>📡 发布通道</h2>
+    <div class="pub-grid">
+      <div class="pub-card">
+        <div class="pub-name">Telegram</div>
+        <span class="status green">🟢 已部署</span>
+      </div>
+      <div class="pub-card">
+        <div class="pub-name">X (Twitter)</div>
+        <span class="status green">🟢 已部署</span>
+      </div>
+      <div class="pub-card">
+        <div class="pub-name">Facebook</div>
+        <span class="status gray">⚪ 未启用</span>
+      </div>
+      <div class="pub-card">
+        <div class="pub-name">WhatsApp</div>
+        <span class="status gray">⚪ 未启用</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="next-section">
+    <h2>📋 下一步</h2>
+    <ul>
+      <li>等用户提供 6 AI API Key → 部署每日自动化 Worker</li>
+      <li>等用户提供 WhatsApp/Facebook 凭证 → 部署对应机器人</li>
+      <li>配置 GitHub Actions 每日定时触发</li>
+      <li>支付宝转账：风控中，7 天后重新签约（约 2026-09-26）</li>
+    </ul>
+  </div>
+</main>
+
+<footer style="text-align:center;padding:24px;color:#8b95a8;font-size:13px">© 2026 LTZZZ Digital Lab · Daily Automation Phase-1</footer>
+</body>
+</html>
