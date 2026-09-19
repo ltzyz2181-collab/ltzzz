@@ -1,38 +1,34 @@
 # LTZZZ 任务池
 
-状态：`待办` | `进行` | `完成` | `关闭`  
-改状态必须保留一行简短结果或链接；AI 只能提议，不能擅自结案。
-
 ---
 
 ## 进行中
 
-| ID | 任务 | 角色建议 | 验收 |
-|----|------|----------|------|
-| T001 | 维护 lab/ 记忆与任务 | 主人 + 各 AI | 事实源结构稳定，长任务按 README 交接 |
-| T003 | 豆包 Worker 部署与联调 | **主人部署**；AI 协助排错 | Cloudflare 配置正确；`/health` 正常；真实模型请求成功并记录结果 |
+| ID | 任务 | 备注 |
+|----|------|------|
+| T010 | 凭证制度：关键 Secret 只在 CF | 文档已写；主人按通道补 Secret |
+| T011 | AGI 圆桌页主视觉改版 | 要求已定；排版实施中 |
 
 ## 待办
 
-| ID | 任务 | 角色建议 | 验收 |
-|----|------|----------|------|
-| T002 | 主人审阅 MEMORY.md | 主人 | 事实准确 |
-| T004 | 视频立项确认主方向 | 主人 | 写入 DECISIONS |
-| T006 | 更多实验卡 | 各 AI | `experiments/` 有结果卡 |
-| T007 | 确认公益收款地址 | 主人 | MEMORY 更新 |
-| T009 | 复核全部线上 Worker | 主人 + 各 AI | 按 `DEPLOYMENT_CHECK.md` 完成健康检查 + 真实请求 |
+| ID | 任务 | 备注 |
+|----|------|------|
+| T012 | 支付宝权限恢复后 0.1 元人工测 | 等官方 |
+| T013 | PayPal：主人写入 CLIENT_ID/SECRET 后测 /health 与 sandbox oauth | 不真扣款 |
+| T014 | Telegram：Bot Token 仅 Secret；通知类 webhook | 不存卡号 |
 
 ## 完成
 
 | ID | 任务 | 结果 |
 |----|------|------|
-| T000 | DeepSeek Worker | 历史实测 HTTP 200 |
-| T005 | 首页实验室入口 | `https://ltzzz.com/lab.html` |
-| T008 | 豆包 Worker 前端去除旧模型硬编码 | 前端留空时由 Worker 的 `DOUBAO_MODEL` 决定 |
-| T010 | Lab 内核骨架 | MEMORY / DECISIONS / tasks / CAPABILITY_MAP / ASSETS / 实验模板均已入库 |
+| T003 | 豆包 Worker | 🟢 health + 链路正常 |
+| T005 | 首页实验室入口 | lab.html |
+| T008 | 资金池架构文档 | FUND_POOLS + PAYMENT_LAYERS |
+| T009 | PayPal Worker 骨架入库 | paypal-proxy-worker.mjs（无真付） |
 
-## 关闭
+## 关闭 / 禁止
 
-| ID | 任务 | 原因 |
-|----|------|------|
-| — | — | — |
+| 项 | 原因 |
+|----|------|
+| AI 控制真钱包 / 导入「角色私钥」共签 | 安全与治理禁止 |
+| 近期真实支付与自动转账 | 主人与总控约定 |
