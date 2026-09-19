@@ -1,0 +1,13 @@
+# LTZZZ PayPal 代理骨架
+# 部署：npx wrangler deploy -c wrangler.paypal.toml
+# Secrets：
+#   npx wrangler secret put PAYPAL_CLIENT_ID --config wrangler.paypal.toml
+#   npx wrangler secret put PAYPAL_CLIENT_SECRET --config wrangler.paypal.toml
+#   npx wrangler secret put LTZZZ_AGENT_TOKEN --config wrangler.paypal.toml
+# 可选：PAYPAL_WEBHOOK_ID
+name = "ltzzz-paypal-proxy"
+main = "paypal-proxy-worker.mjs"
+compatibility_date = "2026-09-16"
+
+[vars]
+PAYPAL_ENV = "sandbox"
