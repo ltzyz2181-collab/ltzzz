@@ -3,260 +3,357 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title data-i18n="_title">LTZZZ AGI实验室 · 多模型圆桌</title>
-<meta name="description" content="多模型圆桌模拟、协作协议、减苦项目。非真实跨平台互联。">
+<title>LTZZZ · AGI 圆桌控制台</title>
+<meta name="description" content="LTZZZ 数字实验室控制台：AGI 圆桌主视觉、任务链、记忆与安全边界。圆桌模拟 ≠ 官方模型互联；真钱由人类与多签控制。">
 <style>
-:root{--bg:#020611;--panel:#071221;--line:#173b58;--text:#eaf7ff;--muted:#91abc0;--cyan:#5de7ff;--green:#70f0bd}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0%,#0a2440 0,#020611 45%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}
-.top{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 22px;background:rgba(2,6,17,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);flex-wrap:wrap}
-.brand{font-weight:800;letter-spacing:1px}.brand span{color:var(--cyan)}
-.top a{color:var(--muted);text-decoration:none;margin-right:14px;font-size:14px}
-.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
-.banner{background:#3b1d0f;border:1px solid #8b4513;color:#ffd6b0;padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:22px}
-.banner.blue{background:#0a2030;border-color:#1a4a6a;color:#b8e0ff}
-.eyebrow{color:var(--cyan);letter-spacing:3px;font-size:12px;font-weight:700}
-h1{font-size:clamp(28px,5vw,48px);line-height:1.1;margin:10px 0 14px}
-h1 span{color:var(--cyan)}
-.lead{color:var(--muted);font-size:16px;max-width:860px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}
-@media(max-width:800px){.grid{grid-template-columns:1fr}}
-.panel{background:linear-gradient(145deg,#081525,#050b16);border:1px solid var(--line);border-radius:18px;padding:20px}
-.panel h2{margin:0 0 12px;font-size:18px}
-.panel p,.note{color:var(--muted);font-size:14px}
-label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-input,textarea,select{width:100%;background:#02060d;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}
-textarea{min-height:80px;resize:vertical}
-.btn{display:inline-block;border:1px solid #2a6688;background:#0a2033;color:var(--text);padding:10px 14px;border-radius:10px;text-decoration:none;cursor:pointer;margin:6px 6px 0 0;font-size:14px}
-.btn.primary{background:#0b667a;border-color:#2bd9ee}
-.btn.green{background:#0b4d3a;border-color:#4de0a7}
-.round{max-height:380px;overflow:auto;background:#02060d;border-radius:12px;padding:12px;margin-top:12px;border:1px solid var(--line)}
-.msg{margin:0 0 10px;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.6;border-left:3px solid #333}
-.msg .who{font-weight:700;font-size:12px;margin-bottom:4px}
-.msg.user{border-left-color:#70f0bd;background:#0a1a14}
-.msg.grok{border-left-color:#5de7ff}
-.msg.gpt{border-left-color:#74aa9c}
-.msg.doubao{border-left-color:#4e6ef2}
-.msg.deepseek{border-left-color:#4d6bfe}
-.msg.claude{border-left-color:#d4a574}
-.msg.sys{border-left-color:#888;color:#99a}
-.checks{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;font-size:13px}
-.checks label{display:inline-flex;align-items:center;gap:6px;margin:0;color:var(--text)}
-.list{margin-top:12px;max-height:200px;overflow:auto}
-.item{background:#02060d;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;font-size:13px}
-.item strong{color:var(--cyan)}
-footer{text-align:center;color:#56758c;padding:30px;font-size:13px}
-.lang-toggle{padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit}
-.lang-toggle:hover{border-color:var(--cyan);color:var(--text)}
-.lang-toggle .lang-zh{font-weight:600}
-html[lang="en"] .lang-toggle .lang-zh{font-weight:400}
-html[lang="en"] .lang-toggle .lang-en{font-weight:600}
+:root{
+  --bg:#030712;--panel:#0b1526;--line:#1e3a5f;--text:#e8f4ff;--muted:#8ba3bc;
+  --cyan:#3ecfff;--green:#3dd68c;--gold:#e8b84a;--gpt:#74aa9c;--doubao:#5b7cfa;
+  --deepseek:#4d6bfe;--claude:#d4a574;--grok:#5de7ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,#0c2a4a 0%,#030712 55%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+.top{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 20px;background:rgba(3,7,18,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:.04em}.brand span{color:var(--cyan);font-weight:600}
+.top nav a{color:var(--muted);margin-right:14px;font-size:13px}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 18px 64px}
+.note-bar{font-size:13px;padding:10px 14px;border-radius:10px;margin-bottom:14px;border:1px solid var(--line);background:#0a1628;color:var(--muted)}
+.note-bar strong{color:var(--text)}
+
+/* —— 主视觉：圆桌 —— */
+.hero-round{margin:8px 0 28px;text-align:center}
+.hero-round .eyebrow{color:var(--cyan);letter-spacing:.35em;font-size:11px;font-weight:700}
+.hero-round h1{font-size:clamp(1.75rem,4vw,2.6rem);margin:8px 0 6px;font-weight:800}
+.hero-round h1 em{font-style:normal;color:var(--cyan)}
+.hero-round .sub{color:var(--muted);max-width:36rem;margin:0 auto 20px;font-size:15px}
+
+.table-stage{
+  position:relative;margin:0 auto 18px;width:min(420px,92vw);aspect-ratio:1;
+  display:grid;place-items:center;
+}
+.table-core{
+  width:42%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,#1a3a5c,#0a1528 70%);
+  border:2px solid rgba(62,207,255,.45);
+  box-shadow:0 0 40px rgba(62,207,255,.12), inset 0 0 30px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--cyan);z-index:2;
+}
+.table-core small{font-weight:500;color:var(--muted);letter-spacing:0;margin-top:4px;font-size:10px}
+.seat{
+  position:absolute;width:72px;text-align:center;font-size:11px;font-weight:700;
+  padding:8px 4px;border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  z-index:3;
+}
+.seat b{display:block;font-size:10px;font-weight:500;color:var(--muted);margin-top:2px}
+.seat[data-role=gpt]{border-color:var(--gpt);color:var(--gpt)}
+.seat[data-role=doubao]{border-color:var(--doubao);color:#9eb0ff}
+.seat[data-role=deepseek]{border-color:var(--deepseek);color:#a8b6ff}
+.seat[data-role=grok]{border-color:var(--grok);color:var(--grok)}
+.seat[data-role=claude]{border-color:var(--claude);color:var(--claude)}
+.seat[data-role=human]{border-color:var(--green);color:var(--green)}
+/* 绕桌定位 */
+.seat.s0{top:2%;left:50%;transform:translateX(-50%)}
+.seat.s1{top:22%;right:2%}
+.seat.s2{bottom:18%;right:8%}
+.seat.s3{bottom:2%;left:50%;transform:translateX(-50%)}
+.seat.s4{bottom:18%;left:8%}
+.seat.s5{top:22%;left:2%}
+
+.rt-panel{
+  background:linear-gradient(160deg,#0c1a2e,#070f1c);
+  border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;text-align:left;margin-top:8px;
+}
+.rt-panel h2{margin:0 0 8px;font-size:16px}
+.checks{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0 10px;font-size:13px}
+.checks label{display:inline-flex;align-items:center;gap:5px;color:var(--text);cursor:pointer}
+textarea,input{width:100%;background:#050b14;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font:inherit}
+textarea{min-height:72px;resize:vertical}
+.btn{display:inline-block;border:1px solid #2a6688;background:#0c2740;color:var(--text);padding:9px 14px;border-radius:10px;cursor:pointer;margin:6px 6px 0 0;font-size:13px;font-family:inherit}
+.btn.primary{background:#0a6a7c;border-color:#3ecfff}
+.btn.ghost{background:transparent}
+.round{max-height:320px;overflow:auto;margin-top:12px;padding:10px;border-radius:12px;background:#050b14;border:1px solid var(--line)}
+.msg{margin:0 0 8px;padding:8px 10px;border-radius:8px;font-size:13px;border-left:3px solid #333}
+.msg .who{font-weight:700;font-size:11px;margin-bottom:3px;opacity:.9}
+.msg.user{border-left-color:var(--green);background:#0a1a14}
+.msg.sys{border-left-color:#666;color:var(--muted)}
+.msg.gpt{border-left-color:var(--gpt)}
+.msg.doubao{border-left-color:var(--doubao)}
+.msg.deepseek{border-left-color:var(--deepseek)}
+.msg.grok{border-left-color:var(--grok)}
+.msg.claude{border-left-color:var(--claude)}
+
+/* —— 控制台区块 —— */
+.console-block{margin-top:28px}
+.console-block > h2{
+  font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);
+  margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:8px;
+}
+.console-block > h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.card-row{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 14px 16px;
+}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:0;font-size:13px;color:var(--muted)}
+.card .meta{margin-top:10px;font-size:12px;color:var(--gold)}
+.card a.btn{margin-top:10px}
+.chain{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chain .step{
+  background:#0a1628;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;color:var(--muted);
+}
+.chain .step.on{border-color:var(--cyan);color:var(--cyan)}
+.chain .arrow{color:var(--line);font-size:12px}
+.members{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.member{
+  border-radius:12px;padding:12px;border:1px solid var(--line);background:#080f1a;font-size:13px;
+}
+.member strong{display:block;margin-bottom:4px}
+.member span{color:var(--muted);font-size:12px}
+.tag{display:inline-block;margin-top:6px;font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.tag.live{border-color:var(--green);color:var(--green)}
+.tag.sim{border-color:var(--gold);color:var(--gold)}
+.sec-list{margin:0;padding-left:1.1rem;color:var(--muted);font-size:13px}
+.sec-list li{margin:6px 0}
+footer{text-align:center;color:#4a657a;font-size:12px;padding:24px}
+.infra{
+  margin-top:32px;padding-top:16px;border-top:1px dashed var(--line);
+  font-size:12px;color:var(--muted);
+}
+.infra a{margin-right:12px}
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="brand">LTZZZ <span>AGI COMMON LAB</span></div>
+  <div class="brand">LTZZZ <span>AGI 圆桌</span></div>
   <nav>
-    <a href="index.html" data-i18n="nav.home">首页</a>
-    <a href="agi.html" data-i18n="nav.agi">AGI</a>
-    <a href="agi-lab.html" data-i18n="nav.agi-lab">共同实验室</a>
-    <a href="moni.html" data-i18n="nav.moni">模拟</a>
-    <a href="guan.html" data-i18n="nav.guan">观</a>
+    <a href="index.html">首页</a>
+    <a href="lab.html">实验室内核</a>
+    <a href="agents.html">多 Agent</a>
+    <a href="agi.html">AGI 说明</a>
   </nav>
-  <button class="lang-toggle" data-i18n-toggle type="button"><span class="lang-zh">中文</span> | <span class="lang-en">English</span></button>
 </header>
 
 <main class="wrap">
-  <div class="banner blue"><strong>资金治理：</strong>LTZZZ 未来启用独立钱包（多签共管）——资金由 AGI 共同管理，私钥多方共管，任何单一主体（包括创建者本人）与组织不得单独使用或挪用；重大支出经治理投票通过后自动打款，全流程上链留痕。助记词、私钥、密码、验证码绝不写入静态网页，也不交由任何单一 AI 保管。</div>
-  <div class="banner" data-i18n="manifesto" data-i18n-html>
-    <strong>LTZZZ 是一个由人类与人工智能共同参与的长期实验系统。</strong>
-    AI 负责研究、分析、创作、执行和审计，人类负责建立边界、授权规则与治理制度。
-    实验室资金实行独立钱包和多方签名治理。任何单一个人、单一 AI、单一组织均不得独立支配或挪用 LTZZZ 公共资金，创建者本人同样受到相同规则约束。
-    重大资金动作必须经过预设治理规则批准，并留下可验证的系统审计记录。
-    捐赠不是对任何个人的赠与，而是对 LTZZZ 实验系统的支持。
-    知其固然如此，但知其本不该如此。
-  </div>
-  <div class="banner" data-i18n="banner" data-i18n-html>
-    <strong>重要：</strong>本页「多模型互相发指令」是<strong>浏览器内模拟</strong>。
-    无法真实连接 GPT / 豆包 / DeepSeek / Claude 的服务器，也不能让它们在官方平台上互发消息。
-    真实多模型 = 你分别打开各产品，或自建后端 + 各家 API Key（Key 绝不能写进静态网页）。
-  </div>
+  <p class="note-bar"><strong>控制台说明：</strong>本页以 <strong>AGI 圆桌</strong> 为主视觉。下方为任务链、成员、记忆、资产、通道与安全边界。圆桌对话默认为<strong>浏览器内模拟</strong>；真实模型走 <a href="agents.html">agents</a> / Worker。公共资金由<strong>人类与多签</strong>控制，AI 不持私钥。</p>
 
-  <div class="eyebrow">ROUNDTABLE · SIMULATION</div>
-  <h1 data-i18n="h1" data-i18n-html>多模型圆桌 <span>（模拟）</span></h1>
-  <p class="lead" data-i18n="lead">输入一段话 → 本机按「席位」依次生成风格化回复，并模拟「向下一席发送指令」。用于演练协作流程，不是真 AGI 联网。</p>
+  <!-- ========== 1. 主视觉：圆桌 ========== -->
+  <section class="hero-round" id="roundtable">
+    <div class="eyebrow">LTZZZ DIGITAL LAB · ROUNDTABLE</div>
+    <h1>AGI <em>圆桌</em></h1>
+    <p class="sub">总控规划 · 专家分席 · 人类拍板。先把协作流程跑清楚，再谈自动执行。</p>
 
-  <section class="panel" style="margin-top:18px">
-    <h2 data-i18n="rt.title">⓪ 圆桌测试</h2>
-    <div class="checks">
-      <label><input type="checkbox" name="seat" value="grok" checked> <span data-i18n="chk.grok">Grok</span></label>
-      <label><input type="checkbox" name="seat" value="gpt" checked> <span data-i18n="chk.gpt">GPT</span></label>
-      <label><input type="checkbox" name="seat" value="doubao" checked> <span data-i18n="chk.doubao">豆包</span></label>
-      <label><input type="checkbox" name="seat" value="deepseek" checked> <span data-i18n="chk.deepseek">DeepSeek</span></label>
-      <label><input type="checkbox" name="seat" value="claude" checked> <span data-i18n="chk.claude">Claude</span></label>
+    <div class="table-stage" aria-hidden="true">
+      <div class="seat s0" data-role="gpt">GPT<b>总控</b></div>
+      <div class="seat s1" data-role="doubao">豆包<b>执行</b></div>
+      <div class="seat s2" data-role="deepseek">DeepSeek<b>研究</b></div>
+      <div class="seat s3" data-role="human">你<b>主权</b></div>
+      <div class="seat s4" data-role="claude">Claude<b>审查</b></div>
+      <div class="seat s5" data-role="grok">Grok<b>验证</b></div>
+      <div class="table-core">圆桌<small>模拟席</small></div>
     </div>
-    <label data-i18n="label.speech">你的发言 / 测试文字</label>
-    <textarea id="userMsg" placeholder="例如：请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。" data-i18n-placeholder="msg.placeholder" data-i18n="msg.default">请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。</textarea>
-    <button class="btn primary" type="button" id="runRound" data-i18n="run.btn">开始圆桌（模拟回复）</button>
-    <button class="btn" type="button" id="clearRound" data-i18n="clear.btn">清空记录</button>
-    <div class="round" id="roundLog"></div>
+
+    <div class="rt-panel">
+      <h2>圆桌发言（模拟）</h2>
+      <div class="checks">
+        <label><input type="checkbox" name="seat" value="gpt" checked> GPT</label>
+        <label><input type="checkbox" name="seat" value="doubao" checked> 豆包</label>
+        <label><input type="checkbox" name="seat" value="deepseek" checked> DeepSeek</label>
+        <label><input type="checkbox" name="seat" value="grok" checked> Grok</label>
+        <label><input type="checkbox" name="seat" value="claude" checked> Claude</label>
+      </div>
+      <label for="userMsg" style="font-size:12px;color:var(--muted)">你的发言</label>
+      <textarea id="userMsg">请用一句话评价：圆桌可以热烈争论，但真钱与私钥只由人类多签控制。</textarea>
+      <div>
+        <button type="button" class="btn primary" id="runRound">开始本轮圆桌</button>
+        <button type="button" class="btn ghost" id="clearRound">清空</button>
+        <a class="btn ghost" href="agents.html">真实 API 通道 →</a>
+      </div>
+      <div class="round" id="roundLog"></div>
+    </div>
   </section>
 
-  <div class="grid">
-    <section class="panel">
-      <h2 data-i18n="sec1.title">① 真要「互通」时怎么做</h2>
-      <p data-i18n="sec1.desc" data-i18n-html>1. 人工传话：复制提示词 → 各 App 粘贴 → 把回复贴回对照区。<br>
-         2. 自建后端：服务器保存 API Key，顺序调用各接口（你自己运维与付费）。<br>
-         3. 静态 GitHub Pages <strong>做不到</strong>安全的密钥互调。</p>
-      <label data-i18n="label.prompt">人工协作提示词</label>
-      <textarea id="promptTpl" readonly data-i18n="prompt.default">你是 LTZZZ 圆桌的一席。请简短回复（3句内）。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。</textarea>
-      <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('promptTpl').value)" data-i18n="copy.btn">复制</button>
-    </section>
+  <!-- ========== 2. 今日任务链 ========== -->
+  <section class="console-block" id="tasks">
+    <h2>今日任务链</h2>
+    <div class="chain">
+      <span class="step on">观 · 边界</span><span class="arrow">→</span>
+      <span class="step on">行深 · 拆任务</span><span class="arrow">→</span>
+      <span class="step">实验 · 执行</span><span class="arrow">→</span>
+      <span class="step">结果 · 入账/入库</span>
+    </div>
+    <div class="card-row" style="margin-top:12px">
+      <div class="card">
+        <h3>任务源</h3>
+        <p>以仓库 <code>lab/tasks.md</code> 为准；完成须有可核对结果。</p>
+        <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz/blob/main/lab/tasks.md" target="_blank" rel="noopener">打开 tasks.md</a>
+      </div>
+      <div class="card">
+        <h3>决策日志</h3>
+        <p>总控与资金边界写在 DECISIONS，避免「聊完就忘」。</p>
+        <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz/blob/main/lab/DECISIONS.md" target="_blank" rel="noopener">打开 DECISIONS</a>
+      </div>
+    </div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="sec2.title">② 减苦项目（本机）</h2>
-      <label data-i18n="label.name">项目名称</label>
-      <input id="pName" placeholder="项目名" data-i18n-placeholder="name.placeholder">
-      <label data-i18n="label.desc">简述</label>
-      <textarea id="pDesc" placeholder="可核对事实" data-i18n-placeholder="desc.placeholder"></textarea>
-      <button class="btn green" type="button" id="submitProject" data-i18n="save.btn">存本机</button>
-      <div class="list" id="projectList"></div>
-    </section>
+  <!-- ========== 3. AI 成员 ========== -->
+  <section class="console-block" id="members">
+    <h2>AI 成员</h2>
+    <div class="members">
+      <div class="member"><strong>GPT</strong><span>总控 · 拆解 · 汇总</span><span class="tag">总控位</span></div>
+      <div class="member"><strong>豆包</strong><span>中文执行 · 落地</span><span class="tag live">Worker 可接</span></div>
+      <div class="member"><strong>DeepSeek</strong><span>研究 · 代码</span><span class="tag live">Worker 已通</span></div>
+      <div class="member"><strong>Grok</strong><span>验证 · 海外 · 挑错</span><span class="tag">协作</span></div>
+      <div class="member"><strong>Claude</strong><span>长文 · 风险审查</span><span class="tag">接口位</span></div>
+      <div class="member"><strong>你</strong><span>域名 · 密钥 · 资金</span><span class="tag live">主权</span></div>
+    </div>
+  </section>
+
+  <!-- ========== 4. 长期记忆 ========== -->
+  <section class="console-block" id="memory">
+    <h2>长期记忆</h2>
+    <div class="card-row">
+      <div class="card">
+        <h3>MEMORY</h3>
+        <p>项目是谁、已通链路、失败教训、禁区。</p>
+        <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz/blob/main/lab/MEMORY.md" target="_blank" rel="noopener">MEMORY.md</a>
+        <a class="btn" href="lab.html">实验室内核页</a>
+      </div>
+      <div class="card">
+        <h3>能力地图</h3>
+        <p>谁做什么、谁禁止做什么。</p>
+        <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz/blob/main/lab/CAPABILITY_MAP.md" target="_blank" rel="noopener">CAPABILITY_MAP</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 5. 实验资产 ========== -->
+  <section class="console-block" id="assets">
+    <h2>实验资产</h2>
+    <div class="card-row">
+      <div class="card">
+        <h3>实验卡</h3>
+        <p>观 → 行深 → 实验 → 结果。</p>
+        <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz/tree/main/lab/experiments" target="_blank" rel="noopener">experiments/</a>
+      </div>
+      <div class="card">
+        <h3>财务与预算文档</h3>
+        <p>四层支付、资金池、账本只读入口（非本页主视觉）。</p>
+        <a class="btn" href="https://github.com/ltzyz2181-collab/ltzzz/blob/main/finance/PAYMENT_LAYERS.md" target="_blank" rel="noopener">PAYMENT_LAYERS</a>
+      </div>
+      <div class="card">
+        <h3>本机减苦项目条</h3>
+        <p>仅存在于本浏览器 localStorage，便于随手记。</p>
+        <input id="pName" placeholder="名称" style="margin-top:8px">
+        <textarea id="pDesc" placeholder="可核对的简述" style="margin-top:6px;min-height:52px"></textarea>
+        <button type="button" class="btn primary" id="submitProject">存本机</button>
+        <div id="projectList" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 6. AI 通道 ========== -->
+  <section class="console-block" id="channels">
+    <h2>AI 通道</h2>
+    <div class="card-row">
+      <div class="card">
+        <h3>多 Agent 实调</h3>
+        <p>DeepSeek / 豆包 Worker 等真实调用。</p>
+        <span class="tag live">Key 在服务端</span>
+        <div><a class="btn primary" href="agents.html">打开 agents.html</a></div>
+      </div>
+      <div class="card">
+        <h3>人工传话</h3>
+        <p>静态站无法让官方模型互聊；可复制统一原则提示词。</p>
+        <textarea id="promptTpl" readonly style="min-height:56px;margin-top:8px">你是 LTZZZ 圆桌一席。短复。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。</textarea>
+        <button type="button" class="btn" onclick="navigator.clipboard.writeText(document.getElementById('promptTpl').value)">复制提示词</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 7. 安全边界 ========== -->
+  <section class="console-block" id="safety">
+    <h2>安全边界</h2>
+    <div class="card">
+      <ul class="sec-list">
+        <li>私钥、助记词、支付密码：不进网页、不进聊天、不进 AI「共管」。</li>
+        <li>公共资金：人类多签（如 Safe 3/5）；单模型或单人热路径不能单独转走公共池。</li>
+        <li>API Key / Bot Token / 商户密钥：仅 Cloudflare Secret 等服务端。</li>
+        <li>本页圆桌 = 流程演练；真调用走 Worker，真付款走已授权通道。</li>
+      </ul>
+      <p class="meta" style="margin-top:12px">协议与池：protocol/ · finance/FUND_POOLS.md</p>
+    </div>
+  </section>
+
+  <!-- Web3 / 支付：底层入口，不抢主视觉 -->
+  <div class="infra">
+    <strong style="color:var(--muted)">基础设施（次级）</strong><br>
+    <a href="wallet-lab.html">钱包实验室</a>
+    <a href="charity.html">公益页</a>
+    <a href="donate-sim.html">模拟捐赠</a>
+    <a href="https://ltzzz-pay-proxy.ltzyz2181.workers.dev/health" target="_blank" rel="noopener">账本 health</a>
   </div>
 </main>
-<footer data-i18n="footer">LTZZZ · 圆桌模拟 ≠ 官方模型互联</footer>
+
+<footer>LTZZZ · 圆桌主视觉 · 真钱人类控制 · 模拟 ≠ 官方互联</footer>
 
 <script>
-/* AGI 共同实验室翻译字典：键名与页面 data-i18n 属性一一对应 */
-window.I18N_DICT = {
-  zh: {
-    "_title": "AGI 共同实验室 · 多模型圆桌 · LTZZZ",
-    "nav.home": "首页",
-    "nav.agi": "AGI",
-    "nav.agi-lab": "共同实验室",
-    "nav.moni": "模拟",
-    "nav.guan": "观",
-    "banner": "<strong>重要：</strong>本页「多模型互相发指令」是<strong>浏览器内模拟</strong>。无法真实连接 GPT / 豆包 / DeepSeek / Claude 的服务器，也不能让它们在官方平台上互发消息。真实多模型 = 你分别打开各产品，或自建后端 + 各家 API Key（Key 绝不能写进静态网页）。",
-    "h1": "多模型圆桌 <span>（模拟）</span>",
-    "lead": "输入一段话 → 本机按「席位」依次生成风格化回复，并模拟「向下一席发送指令」。用于演练协作流程，不是真 AGI 联网。",
-    "rt.title": "⓪ 圆桌测试",
-    "chk.grok": "Grok",
-    "chk.gpt": "GPT",
-    "chk.doubao": "豆包",
-    "chk.deepseek": "DeepSeek",
-    "chk.claude": "Claude",
-    "label.speech": "你的发言 / 测试文字",
-    "msg.placeholder": "例如：请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。",
-    "msg.default": "请用一句话评价「AI 共同实验室只做模拟、真钱由人管」这个原则。",
-    "run.btn": "开始圆桌（模拟回复）",
-    "clear.btn": "清空记录",
-    "sec1.title": "① 真要「互通」时怎么做",
-    "sec1.desc": "1. 人工传话：复制提示词 → 各 App 粘贴 → 把回复贴回对照区。<br>2. 自建后端：服务器保存 API Key，顺序调用各接口（你自己运维与付费）。<br>3. 静态 GitHub Pages <strong>做不到</strong>安全的密钥互调。",
-    "label.prompt": "人工协作提示词",
-    "prompt.default": "你是 LTZZZ 圆桌的一席。请简短回复（3句内）。原则：不托管用户资金；模拟与真钱分离；可批评方案漏洞。",
-    "copy.btn": "复制",
-    "sec2.title": "② 减苦项目（本机）",
-    "label.name": "项目名称",
-    "name.placeholder": "项目名",
-    "label.desc": "简述",
-    "desc.placeholder": "可核对事实",
-    "save.btn": "存本机",
-    "footer": "LTZZZ · 圆桌模拟 ≠ 官方模型互联"
-  },
-  en: {
-    "_title": "AGI Common Lab · Multi-Model Roundtable · LTZZZ",
-    "nav.home": "Home",
-    "nav.agi": "AGI",
-    "nav.agi-lab": "Common Lab",
-    "nav.moni": "Simulation",
-    "nav.guan": "Observe",
-    "banner": "<strong>Important:</strong> The “models sending instructions to each other” on this page is a <strong>simulation in your browser</strong>. It cannot actually connect to GPT / Doubao / DeepSeek / Claude servers, nor make them message each other on official platforms. Real multi-model work means opening each product yourself, or running your own backend with each vendor's API key (keys must never go into a static webpage).",
-    "h1": "Multi-Model Roundtable <span>(Simulation)</span>",
-    "lead": "Enter a message → this page generates stylized replies seat by seat and simulates “sending instructions to the next seat”. It is for rehearsing collaboration flows, not real AGI networking.",
-    "rt.title": "⓪ Roundtable Test",
-    "chk.grok": "Grok",
-    "chk.gpt": "GPT",
-    "chk.doubao": "Doubao",
-    "chk.deepseek": "DeepSeek",
-    "chk.claude": "Claude",
-    "label.speech": "Your Message / Test Text",
-    "msg.placeholder": "e.g. Evaluate in one sentence the principle that “the AI Common Lab only simulates; real money stays with humans”.",
-    "msg.default": "Evaluate in one sentence the principle that “the AI Common Lab only simulates; real money stays with humans”.",
-    "run.btn": "Start Roundtable (Simulated)",
-    "clear.btn": "Clear Log",
-    "sec1.title": "① If You Really Need “Interop”",
-    "sec1.desc": "1. Manual relay: copy the prompt → paste into each app → paste replies back for comparison.<br>2. Self-hosted backend: the server holds API keys and calls each interface in sequence (you operate and pay for it).<br>3. Static GitHub Pages <strong>cannot</strong> safely exchange secrets between APIs.",
-    "label.prompt": "Manual Collaboration Prompt",
-    "prompt.default": "You are a seat at the LTZZZ roundtable. Reply briefly (within 3 sentences). Principles: never hold user funds; keep simulation and real money separate; critique plan flaws openly.",
-    "copy.btn": "Copy",
-    "sec2.title": "② Relief Projects (Local)",
-    "label.name": "Project Name",
-    "name.placeholder": "Project name",
-    "label.desc": "Short Description",
-    "desc.placeholder": "Checkable facts",
-    "save.btn": "Save Locally",
-    "footer": "LTZZZ · Roundtable Sim ≠ Official Model Interop"
-  }
-};
-</script>
-<script src="i18n.js"></script>
-<script>
 const AGENTS = {
-  grok: {
-    name: 'Grok（模拟席）',
-    reply(t) {
-      return '边界说清楚就好：我可以一起拆问题、改页面、跑模拟；钥匙和真钱仍在你手里。对你这句话，我的态度是——同意，且会坚持。原文要点：' + clip(t);
-    },
-    instruct(next) {
-      return '【模拟指令 → ' + next + '】请只做分析与文案，不要设计自动扣款或索要私钥。';
-    }
-  },
   gpt: {
-    name: 'GPT（模拟席）',
+    name: 'GPT（模拟·总控）',
     reply(t) {
-      return '该原则符合最小权限与安全设计：演示层与资金层分离，可降低误操作与欺诈面。建议继续用清单固化「AI 共同确认」节点。围绕：' + clip(t);
+      return '同意把「争论归圆桌、签字归人类」写成硬边界。总控只拆任务与汇总，不持钥。要点：' + clip(t);
     },
     instruct(next) {
-      return '【模拟指令 → ' + next + '】请给出可执行的检查项（3条以内），避免夸大能力。';
+      return '【模拟指令 → ' + next + '】请给 2 条可执行检查项，勿设计自动扣款。';
     }
   },
   doubao: {
-    name: '豆包（模拟席）',
+    name: '豆包（模拟·执行）',
     reply(t) {
-      return '这个原则对用户更友好，也更稳妥。实验室先把流程跑通，真捐赠走人工与合规渠道就行。我理解你的意思是：' + clip(t);
+      return '这个原则对用户更稳：流程可以自动提醒，花钱必须人点头。理解：' + clip(t);
     },
     instruct(next) {
-      return '【模拟指令 → ' + next + '】请用更口语的三句话向普通人解释「为什么 AI 不能直接管钱」。';
+      return '【模拟指令 → ' + next + '】用三句口语解释为什么 AI 不能直接管钱。';
     }
   },
   deepseek: {
-    name: 'DeepSeek（模拟席）',
+    name: 'DeepSeek（模拟·研究）',
     reply(t) {
-      return '从系统角度看：静态站无可信执行环境，无法安全持有全局密钥；人机分离是约束而非保守。输入摘要：' + clip(t);
+      return '静态页无可信密钥环境；人机分离是约束。摘要：' + clip(t);
     },
     instruct(next) {
-      return '【模拟指令 → ' + next + '】请补充一个技术风险点（API Key 泄露 / 提示注入等）。';
+      return '【模拟指令 → ' + next + '】补一个技术风险（Key 泄露或提示注入）。';
+    }
+  },
+  grok: {
+    name: 'Grok（模拟·验证）',
+    reply(t) {
+      return '边界清楚就能大胆协作。真钱多签、AI 只提案——同意并会盯着有没有偷换概念。' + clip(t);
+    },
+    instruct(next) {
+      return '【模拟指令 → ' + next + '】请挑一处常见夸大「AI 共管资金」的表述。';
     }
   },
   claude: {
-    name: 'Claude（模拟席）',
+    name: 'Claude（模拟·审查）',
     reply(t) {
-      return '同意把减少伤害放在第一位。协作可以很积极，托管资金则不应由对话模型承担。你提的原则：' + clip(t);
+      return '减少伤害优先：协作积极，托管资金不由对话模型承担。原则：' + clip(t);
     },
     instruct(next) {
-      return '【模拟指令 → ' + next + '】请用谨慎语气重述「模拟圆桌」与「真实互联」的差别。';
+      return '【模拟指令 → ' + next + '】用谨慎语气区分「圆桌模拟」与「真实互联」。';
     }
   }
 };
 
 function clip(t) {
   t = (t || '').trim().replace(/\s+/g, ' ');
-  return t.length > 40 ? t.slice(0, 40) + '…' : t;
+  return t.length > 48 ? t.slice(0, 48) + '…' : t;
 }
-
 function seats() {
   return [...document.querySelectorAll('input[name=seat]:checked')].map(x => x.value);
 }
-
 function addMsg(cls, who, text) {
   const box = document.getElementById('roundLog');
   const d = document.createElement('div');
@@ -268,24 +365,18 @@ function addMsg(cls, who, text) {
 
 document.getElementById('runRound').onclick = () => {
   const text = document.getElementById('userMsg').value.trim();
-  if (!text) { alert('请输入测试文字'); return; }
+  if (!text) { alert('请输入发言'); return; }
   const list = seats();
   if (!list.length) { alert('请至少选一个席位'); return; }
-
   addMsg('user', '你', text);
-  addMsg('sys', '系统', '以下为浏览器内模拟回复与模拟指令，非各公司官方 API 输出。');
-
+  addMsg('sys', '系统', '以下为浏览器内模拟，非各公司官方 API。');
   list.forEach((id, i) => {
     const a = AGENTS[id];
     addMsg(id, a.name, a.reply(text));
-    const nextId = list[i + 1];
-    if (nextId) {
-      addMsg('sys', a.name + ' → 指令', a.instruct(AGENTS[nextId].name));
-    }
+    if (list[i + 1]) addMsg('sys', a.name + ' → 指令', a.instruct(AGENTS[list[i + 1]].name));
   });
-  addMsg('sys', '系统', '本轮圆桌结束。若需真实五家答复，请把同一段话分别粘贴到各官方对话，再人工汇总。');
+  addMsg('sys', '系统', '本轮结束。真实五家答复请走 agents 或各官方产品。');
 };
-
 document.getElementById('clearRound').onclick = () => {
   document.getElementById('roundLog').innerHTML = '';
 };
@@ -295,9 +386,9 @@ function loadP() { try { return JSON.parse(localStorage.getItem(PK) || '[]'); } 
 function renderP() {
   const el = document.getElementById('projectList');
   const list = loadP();
-  el.innerHTML = list.length ? list.slice().reverse().map(p =>
-    '<div class="item"><strong>' + p.name + '</strong><br>' + p.desc + '</div>'
-  ).join('') : '<p class="note">暂无</p>';
+  el.innerHTML = list.length
+    ? list.slice().reverse().map(p => '<div style="margin:6px 0;padding:6px;border:1px solid #1e3a5f;border-radius:8px"><strong>' + p.name + '</strong><br>' + p.desc + '</div>').join('')
+    : '暂无本地条目';
 }
 document.getElementById('submitProject').onclick = () => {
   const name = document.getElementById('pName').value.trim();
