@@ -101,31 +101,48 @@ async function writeArtifact(path, content, env, ctx) {
  * 真实部署应改为列举 R2 绑定 LTZZZ_ARTIFACTS 前缀下的对象，作为“今日已阅读”清单。
  * 返回 { sources:[...], manifest:[...], dry_run, note }
  */
-function scanRepo() {
+async function scanRepo(env) {
+  // Memory Engine v1: 所有 AI 先读取统一长期记忆入口。
+  // 优先读取 R2 中同步的 ltzzz-memory/；没有 R2 时明确标记为未真实读取，禁止伪造。
+  const memoryFiles = [
+    "ltzzz-memory/README.md",
+    "ltzzz-memory/装备论.md",
+    "ltzzz-memory/魄.md",
+    "ltzzz-memory/识神.md",
+    "ltzzz-memory/梦境数据库.md",
+    "ltzzz-memory/文明研究.md",
+    "ltzzz-memory/项目历史.md",
+    "ltzzz-memory/重要事件.md",
+    "ltzzz-memory/memory-engine.md",
+    "ltzzz-memory/Daily-AI-Scheduler.md"
+  ];
   const sources = [
+    "ltzzz-memory/",
     "knowledge/", "knowledge/ai-chats/", "knowledge/memory-review/",
-    "articles/", "protocol/",
+    "articles/", "protocol/"
   ];
-  // dry-run 占位清单（真实部署由 R2 list 返回）
-  const manifest = [
-    "knowledge/AI-ARCHIVE-INDEX.md",
-    "knowledge/ai-chats/GPT/index.md",
-    "knowledge/ai-chats/Doubao/index.md",
-    "knowledge/ai-chats/DeepSeek/index.md",
-    "knowledge/ai-chats/XIA/2026-09-chat-index.md",
-    "knowledge/ai-chats/Microsoft/index.md",
-    "articles/xingmeng-changyu.html",
-    "articles/meng-po.html",
-    "articles/qingxi-bunengkong.html",
-    "protocol/ltzzz-daily-automation.md",
-    "protocol/security-redlines.md",
-    "protocol/video-pipeline.md",
-  ];
+
+  if (env && env.LTZZZ_ARTIFACTS && typeof env.LTZZZ_ARTIFACTS.get === "function") {
+    const manifest = [];
+    for (const path of memoryFiles) {
+      const obj = await env.LTZZZ_ARTIFACTS.get(path);
+      manifest.push({ path, readable: !!obj });
+    }
+    return {
+      sources,
+      manifest,
+      dry_run: false,
+      memory_engine: "v1",
+      note: "Memory Engine 统一入口：每个 AI 开工前检查 ltzzz-memory 全部核心文件；缺失文件明确记录，不伪造已读取。"
+    };
+  }
+
   return {
     sources,
-    manifest,
+    manifest: memoryFiles.map((path) => ({ path, readable: false })),
     dry_run: true,
-    note: "dry-run 占位文件清单；真实部署应列举 R2(LTZZZ_ARTIFACTS) 前缀对象作为“今日已阅读”。",
+    memory_engine: "v1",
+    note: "未绑定 R2，当前仅建立统一 Memory manifest；必须同步 ltzzz-memory 到 Worker 可读取存储后，才能标记真实已读取。"
   };
 }
 
