@@ -287,7 +287,7 @@ function makeContentId(compact, seq) {
  * ---------------------------------------------------------------- */
 async function taskGptDaily(env, ctx) {
   const { today, yesterday, compact } = localDates(env);
-  const scan = scanRepo();
+  const scan = await scanRepo(env);
 
   // ① 当日规划 + 派单
   const ai = await callAI({
@@ -351,7 +351,7 @@ async function taskGptDaily(env, ctx) {
  * ---------------------------------------------------------------- */
 async function taskDoubaoDaily(env, ctx) {
   const { today, compact } = localDates(env);
-  const scan = scanRepo();
+  const scan = await scanRepo(env);
 
   // 装备论学习笔记（魄/识神/三维装备肉身）
   const note = await callAI({
@@ -409,7 +409,7 @@ async function taskDoubaoDaily(env, ctx) {
  * ---------------------------------------------------------------- */
 async function taskXiaDaily(env, ctx) {
   const { today } = localDates(env);
-  const scan = scanRepo();
+  const scan = await scanRepo(env);
 
   const mental = await callAI({
     channel: "xia", env, ctx, taskName: "xia-daily.mental",
@@ -451,7 +451,7 @@ async function taskXiaDaily(env, ctx) {
  * ---------------------------------------------------------------- */
 async function taskClaudeDaily(env, ctx) {
   const { today, yesterday } = localDates(env);
-  const scan = scanRepo();
+  const scan = await scanRepo(env);
 
   const fiction = await callAI({
     channel: "claude", env, ctx, taskName: "claude-daily.fiction",
@@ -477,7 +477,7 @@ async function taskClaudeDaily(env, ctx) {
  * ---------------------------------------------------------------- */
 async function taskDeepseekDaily(env, ctx) {
   const { today } = localDates(env);
-  const scan = scanRepo();
+  const scan = await scanRepo(env);
 
   const compare = await callAI({
     channel: "deepseek", env, ctx, taskName: "deepseek-daily.compare",
@@ -505,7 +505,7 @@ async function taskDeepseekDaily(env, ctx) {
  * ---------------------------------------------------------------- */
 async function taskCopilotDaily(env, ctx) {
   const { today } = localDates(env);
-  const scan = scanRepo();
+  const scan = await scanRepo(env);
 
   const compare = await callAI({
     channel: "copilot", env, ctx, taskName: "copilot-daily.compare",
