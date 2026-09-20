@@ -1,0 +1,75 @@
+name: Sync Memory Manifest
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ltzzz-memory/**'
+      - 'lab/MEMORY.md'
+      - 'lab/DECISIONS.md'
+      - 'lab/tasks.md'
+      - 'lab/CAPABILITY_MAP.md'
+      - 'lab/README.md'
+      - 'memory/daily/**'
+      - 'tools/build-memory-manifest.mjs'
+      - '.github/workflows/sync-memory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-memory
+  cancel-in-progress: true
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build manifest.json
+        run: node tools/build-memory-manifest.mjs
+
+      - name: Commit manifest if changed
+        run: |
+          git config user.name "ltzzz-memory-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ltzzz-memory/manifest.json
+          if git diff --staged --quiet; then
+            echo "manifest unchanged"
+          else
+            git commit -m "chore(memory): refresh ltzzz-memory/manifest.json"
+            git push
+          fi
+
+      - name: Optional R2 sync note
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ -z "${R2_ACCESS_KEY_ID:-}" ] || [ -z "${R2_SECRET_ACCESS_KEY:-}" ] || [ -z "${R2_BUCKET:-}" ] || [ -z "${CF_ACCOUNT_ID:-}" ]; then
+            echo "R2 secrets not fully configured — skip object upload."
+            echo "Gateway still works via GitHub raw."
+            exit 0
+          fi
+          echo "R2 secrets present. Install aws CLI and sync prefix..."
+          pip install -q awscli
+          export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
+          export AWS_DEFAULT_REGION=auto
+          ENDPOINT="https://${CF_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws s3 sync ltzzz-memory "s3://${R2_BUCKET}/ltzzz-memory" --endpoint-url "$ENDPOINT" --exclude "*" --include "*.md" --include "*.json" --include "*.txt"
+          aws s3 sync lab "s3://${R2_BUCKET}/lab" --endpoint-url "$ENDPOINT" --exclude "*" --include "MEMORY.md" --include "DECISIONS.md" --include "tasks.md" --include "CAPABILITY_MAP.md" --include "README.md"
+          if [ -d memory/daily ]; then
+            aws s3 sync memory/daily "s3://${R2_BUCKET}/memory/daily" --endpoint-url "$ENDPOINT" || true
+          fi
+          echo "R2 sync attempted."
