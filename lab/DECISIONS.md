@@ -4,20 +4,16 @@
 
 ---
 
+## 2026-09-21 · Memory Gateway 现网 + Daily 先巡查
+
+- Memory Gateway 只读已上线：source=github，R2 不必配。
+- Daily：先 dry-run 巡查，不塞六把 Key，不宣称六 AI 真在写稿。
+- **T022：Gateway 通后再接 Scheduler 写 daily 摘要。不要颠倒。**
+- wrangler deploy Daily Worker 仍由主人本机执行。
+- 支付 / 私钥 / 自动发片：仍禁。
+
 ## 2026-09-19 · 支付四层 + 凭证云端化 + 近期边界
 
-- **四层支付：** 收款 → AI 服务采购 → AI 小额实验 → 公共资金（多签+审计）。见 `finance/PAYMENT_LAYERS.md`。
-- **前提：** 主人侧不依赖本地配置文件；凭证进 Cloudflare Secret，AI 不索要密码。
-- **近期禁止：** 真实支付测试、自动转账、碰钱包私钥、把 MetaMask 导入「AI 私钥」当共管。
-- **支付宝：** 技术曾调通 API，业务返回 40006 权限不足；继续等官方权限/重签。
-- **PayPal：** 仅部署/入库骨架（health + oauth 服务端换票 + webhook 未验签不入账）；Secret 由主人自填。
-- **AGI 圆桌页：** 主视觉为圆桌；任务链/记忆/资产/通道/安全次之；Web3 不抢首页主视觉（排版迭代中）。
-- **公共资金：** 任一 GPT/豆包/单一人不能单独转走 Safe 公共资金。
-
-## 2026-09-17 · 独立资金池
-
-- `finance/FUND_POOLS.md`；Safe `0x3cb1…866a` ETH 3/5；OPS `0xb99C…F905`。
-
-## 2026-09 · 总控与 lab/
-
+- 四层支付：收款 → AI 服务采购 → AI 小额实验 → 公共资金（多签+审计）。
+- 近期禁止：真实支付测试、自动转账、碰钱包私钥。
 - GPT 总控（主人授权范围内）；lab/ 记忆与任务；人持钥。
