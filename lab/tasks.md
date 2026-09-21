@@ -19,8 +19,9 @@
 
 | ID | 任务 | 结果 |
 |----|------|------|
-| T022 | Gateway 通后再接 Scheduler 写 daily 摘要 | dry-run：patrol 读 Gateway/Daily `/health`+`/manifest`，写 `memory/daily/summary-YYYY-MM-DD.md`。不塞 Key、不调模型、不配 R2 |
-| T023 | Daily Worker wrangler deploy | https://ltzzz-daily-automation.ltzyz2181.workers.dev/health · dry_run=true · EXP-005 |
+| T024 | wallet/ 账本 | balances / deposits / withdrawals / transactions / addresses；每笔 11 字段；出金须人工确认；无私钥 |
+| T022 | Gateway 通后再接 Scheduler 写 daily 摘要 | dry-run：patrol 写 summary |
+| T023 | Daily Worker wrangler deploy | dry_run=true · EXP-005 |
 | T020 | Memory Gateway 线上 | `/health` ok；r2_bound=false。EXP-004 |
 | T019 | Memory Gateway + manifest 同步链路（代码） | 已进 main |
 | T008 | 资金池架构文档 | finance/ |
