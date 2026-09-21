@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LTZZZ OS</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { max-width: 720px; margin: 0 auto; padding: 1.5rem; font-family: ui-monospace, Menlo, monospace; }
+    pre { background: #0b0f14; color: #d7f5d0; padding: 1.2rem; border-radius: 12px; overflow: auto; }
+    .muted { color: #888; font-size: 0.9rem; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <p><a href="/">← LTZZZ</a> · <a href="lab.html">lab</a></p>
+  <pre id="panel">loading…</pre>
+  <p class="muted" id="meta"></p>
+  <script>
+    const lights = {
+      memory: '🟢',
+      tasks: '🟢',
+      assets: '🟢',
+      ai: '🟡',
+      results: '🟡',
+      GPT: '🟢',
+      Doubao: '🟡',
+      Claude: '🟡',
+      Grok: '🟡',
+      DeepSeek: '🟡',
+      Microsoft: '🟡'
+    };
+    async function load() {
+      let state = { memory_id: 'STATE-pending', timestamp: '' };
+      try {
+        state = await fetch('/memory/state/CURRENT.json', { cache: 'no-store' }).then((r) => r.json());
+      } catch {}
+      let gw = { r2_bound: false };
+      try {
+        gw = await fetch('https://ltzzz-memory-gateway.ltzyz2181.workers.dev/health', { cache: 'no-store' }).then((r) => r.json());
+      } catch {}
+      const mid = state.memory_id || 'STATE-unknown';
+      const panel = `LTZZZ OS
+────────────────────
+Memory       ${lights.memory}   gateway r2_bound=${gw.r2_bound}
+Tasks        ${lights.tasks}
+Assets       ${lights.assets}   KV prefix asset:/withdraw:
+AI           ${lights.ai}   verified map, not all live calls
+Results      ${lights.results}   RESULT ≠ VERIFY yet
+Today's State
+────────────────────
+Memory ID: ${mid}
+GPT          ${lights.GPT}
+Doubao       ${lights.Doubao}
+Claude       ${lights.Claude}
+Grok         ${lights.Grok}
+DeepSeek     ${lights.DeepSeek}
+Microsoft    ${lights.Microsoft}   not deployed
+Today's Tasks
+────────────────────
+01 Memory Engine
+02 AI execution
+03 Verification
+04 Asset
+05 Next task`;
+      document.getElementById('panel').textContent = panel;
+      document.getElementById('meta').textContent = (state.timestamp || '') + ' · files_read=' + ((state.files_read || []).length);
+    }
+    load();
+  </script>
+</body>
+</html>
