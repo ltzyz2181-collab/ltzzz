@@ -1,7 +1,6 @@
 /**
- * LTZZZ Memory Engine — shared OS state.
- * Reads core memory files (R2 first, GitHub fallback), writes STATE snapshot + memory_id.
- * Does not call model APIs. Does not pay. Does not publish.
+ * Memory Engine: REAL reads, not exists-only probes.
+ * Records memory_id, files_read, files_missing, snapshot_hash, timestamp.
  */
 const CORE = [
   'ltzzz-memory/README.md',
@@ -17,6 +16,7 @@ const CORE = [
   'lab/tasks.md',
 ];
 const RAW = 'https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main';
+const AIS = ['GPT', '豆包', 'Claude', 'Grok', 'DeepSeek'];
 
 export default {
   async fetch(request, env) {
@@ -26,85 +26,90 @@ export default {
       return json({
         ok: true,
         service: 'ltzzz-memory-engine',
+        mode: 'real-read',
         r2_bound: Boolean(env.MEMORY_BUCKET),
-        cron: '50 23 * * *',
         core: CORE,
       });
     }
     if (path === '/snapshot' || path === '/run') {
-      const snap = await buildSnapshot(env);
-      return json(snap);
+      return json(await buildSnapshot(env));
     }
     return json({ endpoints: ['/health', '/snapshot'] });
   },
-  async scheduled(event, env) {
+  async scheduled(_e, env) {
     await buildSnapshot(env);
   },
 };
 
-async function getPath(env, path) {
+async function readOne(env, path) {
   if (env.MEMORY_BUCKET) {
     try {
       const obj = await env.MEMORY_BUCKET.get(path);
       if (obj) {
-        return { path, exists: true, readable: true, source: 'r2', bytes: (await obj.text()).length };
+        const text = await obj.text();
+        if (text && text.length) {
+          return { path, read: true, source: 'r2', bytes: text.length, text };
+        }
       }
     } catch (e) {
-      return { path, exists: false, readable: false, source: 'r2-error', error: String(e) };
+      return { path, read: false, source: 'r2-error', error: String(e), text: '' };
     }
   }
-  const r = await fetch(RAW + '/' + path.split('/').map(encodeURIComponent).join('/'));
-  if (!r.ok) return { path, exists: false, readable: false, source: 'github', status: r.status };
-  const body = await r.text();
-  return { path, exists: true, readable: true, source: 'github', bytes: body.length, preview: body.slice(0, 240) };
-}
-
-async function loadFull(env, path) {
-  if (env.MEMORY_BUCKET) {
-    try {
-      const obj = await env.MEMORY_BUCKET.get(path);
-      if (obj) return await obj.text();
-    } catch {}
-  }
-  const r = await fetch(RAW + '/' + path.split('/').map(encodeURIComponent).join('/'));
-  return r.ok ? await r.text() : '';
+  const r = await fetch(RAW + '/' + path.split('/').map(encodeURIComponent).join('/'), {
+    headers: { 'User-Agent': 'ltzzz-memory-engine/2.0' },
+  });
+  if (!r.ok) return { path, read: false, source: 'github', status: r.status, text: '' };
+  const text = await r.text();
+  if (!text) return { path, read: false, source: 'github-empty', text: '' };
+  return { path, read: true, source: 'github', bytes: text.length, text };
 }
 
 async function buildSnapshot(env) {
+  const timestamp = new Date().toISOString();
   const day = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10).replace(/-/g, '');
-  const probes = [];
-  for (const p of CORE) probes.push(await getPath(env, p));
-  const parts = [];
-  for (const p of CORE) {
-    const text = await loadFull(env, p);
-    parts.push('## ' + p + '\n\n' + text);
-  }
-  const blob = parts.join('\n\n---\n\n');
-  const memory_id = 'STATE-' + day + '-' + await shortHash(blob);
+  const loaded = [];
+  for (const p of CORE) loaded.push(await readOne(env, p));
+
+  const files_read = loaded.filter((f) => f.read).map((f) => f.path);
+  const files_missing = loaded.filter((f) => !f.read).map((f) => f.path);
+  const blob = loaded
+    .filter((f) => f.read)
+    .map((f) => '## ' + f.path + '\n\n' + f.text)
+    .join('\n\n---\n\n');
+  const snapshot_hash = await sha256hex(blob);
+  const memory_id = 'STATE-' + day + '-' + snapshot_hash.slice(0, 12);
+
   const snapshot = {
-    ok: true,
+    ok: files_missing.length === 0,
+    mode: 'real-read',
     memory_id,
-    state: 'STATE-' + day,
-    generated_at: new Date().toISOString(),
+    files_read,
+    files_missing,
+    snapshot_hash,
+    timestamp,
+    bytes: blob.length,
     r2_bound: Boolean(env.MEMORY_BUCKET),
-    files: probes,
-    context_header:
-      'LTZZZ OS shared memory. memory_id=' +
-      memory_id +
-      '. Read this snapshot before answering. Do not invent unread files.',
+    context_header: 'memory_id=' + memory_id + ' snapshot_hash=' + snapshot_hash,
     context: blob.slice(0, 180000),
-    ais: ['GPT', '豆包', 'Claude', 'Grok', 'DeepSeek', 'Microsoft'],
+    ais: AIS,
+    review_chain: ['GPT', 'DeepSeek', 'Claude', 'Grok', 'GPT'],
     publish: false,
     payment: false,
   };
+
   if (env.MEMORY_BUCKET) {
     try {
-      await env.MEMORY_BUCKET.put('memory/state/' + snapshot.state + '.json', JSON.stringify(snapshot));
-      await env.MEMORY_BUCKET.put('memory/state/CURRENT.json', JSON.stringify({
-        memory_id,
-        state: snapshot.state,
-        generated_at: snapshot.generated_at,
-      }));
+      await env.MEMORY_BUCKET.put('memory/state/' + memory_id + '.json', JSON.stringify(snapshot));
+      await env.MEMORY_BUCKET.put(
+        'memory/state/CURRENT.json',
+        JSON.stringify({
+          memory_id,
+          files_read,
+          files_missing,
+          snapshot_hash,
+          timestamp,
+        }),
+      );
       snapshot.written_r2 = true;
     } catch (e) {
       snapshot.written_r2 = false;
@@ -116,9 +121,9 @@ async function buildSnapshot(env) {
   return snapshot;
 }
 
-async function shortHash(s) {
+async function sha256hex(s) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return [...new Uint8Array(buf)].slice(0, 6).map((b) => b.toString(16).padStart(2, '0')).join('');
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function json(obj, status = 200) {

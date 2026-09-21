@@ -16,40 +16,36 @@ const CORE = [
   'lab/tasks.md',
 ];
 
+const timestamp = new Date().toISOString();
 const day = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10).replace(/-/g, '');
-const files = CORE.map((path) => {
-  const exists = existsSync(path);
-  const text = exists ? readFileSync(path, 'utf8') : '';
-  return { path, exists, readable: exists, bytes: text.length, text };
+
+const loaded = CORE.map((path) => {
+  if (!existsSync(path)) return { path, read: false, text: '', bytes: 0 };
+  const text = readFileSync(path, 'utf8');
+  return { path, read: Boolean(text), text, bytes: text.length };
 });
-const blob = files.map((f) => `## ${f.path}\n\n${f.text}`).join('\n\n---\n\n');
-const memory_id = 'STATE-' + day + '-' + createHash('sha256').update(blob).digest('hex').slice(0, 12);
+
+const files_read = loaded.filter((f) => f.read).map((f) => f.path);
+const files_missing = loaded.filter((f) => !f.read).map((f) => f.path);
+const blob = loaded.filter((f) => f.read).map((f) => `## ${f.path}\n\n${f.text}`).join('\n\n---\n\n');
+const snapshot_hash = createHash('sha256').update(blob).digest('hex');
+const memory_id = 'STATE-' + day + '-' + snapshot_hash.slice(0, 12);
 
 mkdirSync('memory/state', { recursive: true });
-const md = [
-  `# ${memory_id}`,
-  '',
-  `- generated_at: ${new Date().toISOString()}`,
-  `- r2: pending bind (repo snapshot always written)`,
-  `- AIs: GPT / 豆包 / Claude / Grok / DeepSeek / Microsoft`,
-  '',
-  '## probe',
-  '',
-  '| path | exists | readable | bytes |',
-  '|------|--------|----------|-------|',
-  ...files.map((f) => `| ${f.path} | ${f.exists} | ${f.readable} | ${f.bytes} |`),
-  '',
-  '## context',
-  '',
-  'Each AI must cite this memory_id in outputs.',
-  '',
-  blob.slice(0, 120000),
-  '',
-].join('\n');
-
-writeFileSync(`memory/state/STATE-${day}.md`, md);
+const current = { memory_id, files_read, files_missing, snapshot_hash, timestamp, bytes: blob.length, mode: 'real-read' };
+writeFileSync('memory/state/CURRENT.json', JSON.stringify(current, null, 2));
 writeFileSync(
-  'memory/state/CURRENT.json',
-  JSON.stringify({ memory_id, state: `STATE-${day}`, generated_at: new Date().toISOString(), files: files.map(({ text, ...r }) => r) }, null, 2),
+  `memory/state/${memory_id}.md`,
+  [
+    `# ${memory_id}`,
+    '',
+    `- snapshot_hash: ${snapshot_hash}`,
+    `- timestamp: ${timestamp}`,
+    `- files_read: ${files_read.length}`,
+    `- files_missing: ${files_missing.length ? files_missing.join(', ') : '(none)'}`,
+    '',
+    blob.slice(0, 120000),
+    '',
+  ].join('\n'),
 );
-console.log(memory_id);
+console.log(JSON.stringify(current));
