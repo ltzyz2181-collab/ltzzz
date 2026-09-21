@@ -20,7 +20,8 @@
 
 | ID | 任务 | 结果 |
 |----|------|------|
-| T025 | 视频结果流水线入库 | results/video + assets/video；发布默认 waiting_human |
+| T027 | Webhook 部署入口 | webhook-deploy.yml + hooks/ 接收端；禁止发片/转账 |
+| T025 | 视频结果流水线入库 | results/video；发布默认 waiting_human |
 | T024 | wallet/ 账本 | 11 字段；出金须人工确认 |
 | T022 | Gateway 通后再接 Scheduler 写 daily 摘要 | dry-run summary |
 | T023 | Daily Worker wrangler deploy | dry_run=true · EXP-005 |
