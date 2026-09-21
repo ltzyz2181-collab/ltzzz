@@ -1,0 +1,29 @@
+name: Deploy ledger KV worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'wrangler.ledger.toml'
+      - 'ltzzz-ledger-worker.js'
+      - '.github/workflows/deploy-ledger.yml'
+
+jobs:
+  try-create-then-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Try create LTZZZ_LEDGER_KV (often 10000 permission)
+        uses: cloudflare/wrangler-action@v4
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: kv namespace create LTZZZ_LEDGER_KV
+      - name: Deploy ledger on shared KV prefix
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.ledger.toml
