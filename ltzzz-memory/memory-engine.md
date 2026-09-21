@@ -1,33 +1,22 @@
-# Memory Engine 规格
+# Memory Engine · OS 环
 
-## 输入
-- LTZZZ Memory 文件
-- Tasks
-- Assets
-- AI execution logs
-- Results
-- 重要事件与决定
+```
+Memory Files
+     ↓
+Memory Engine
+     ↓
+STATE-YYYYMMDD + memory_id
+     ↓
+GPT / 豆包 / Claude / Grok / DeepSeek / Microsoft
+     ↓
+输出必须带上 memory_id
+```
 
-## 每日流程
-1. 生成 memory manifest。
-2. 所有 AI 开工前读取 manifest。
-3. 按任务需要读取长期记忆全文。
-4. 执行任务。
-5. 输出结果、证据、失败原因。
-6. 提取候选长期记忆。
-7. 去重/冲突检测。
-8. 高影响内容进入人工确认队列。
-9. 写入 daily memory。
-10. 更新 capabilities / results / next steps。
+每日开始：R2.get(path) → exists → readable=true；否则 GitHub raw。
 
-## 冲突处理
-不同 AI 结论不一致时，不覆盖旧结论；记录：
-- claim
-- source
-- model
-- date
-- evidence
-- confidence/status
+核心文件：README / 装备论 / 魄 / 识神 / 梦境数据库 / 文明研究 / 项目历史 / 重要事件
 
-## 目标
-让 LTZZZ 不只是“每个 AI 每天重新聊天”，而是让不同 AI 在同一个长期状态上共同演化。
+Daily cron（已写进 wrangler.daily.toml，需 wrangler deploy 才算现网打开）：
+DeepSeek 06:30 · GPT 08:00 · Claude 09:30 · 豆包 11:00 · Microsoft 14:00 · Grok 16:00
+
+调度仍可 dry-run（无 Key 不调模型）。R2 用于共同记忆副本，不存私钥。

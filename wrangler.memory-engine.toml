@@ -1,0 +1,13 @@
+name = "ltzzz-memory-engine"
+main = "memory-engine-worker.js"
+compatibility_date = "2026-09-21"
+
+[triggers]
+crons = ["50 23 * * *"]  # UTC 23:50 = UTC+8 07:50, before GPT 08:00
+
+[vars]
+GATEWAY_URL = "https://ltzzz-memory-gateway.ltzyz2181.workers.dev"
+
+[[r2_buckets]]
+binding = "MEMORY_BUCKET"
+bucket_name = "ltzzz-memory"
