@@ -7,39 +7,39 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  deploy-daily-cron:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Require CF token
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          test -n "$CLOUDFLARE_API_TOKEN"
-          test -n "$CLOUDFLARE_ACCOUNT_ID"
-      - name: Create R2 bucket if missing
+      - name: Deploy Daily Scheduler with cron triggers
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: r2 bucket create ltzzz-memory
-        continue-on-error: true
-      - name: Deploy Memory Gateway with R2
+          command: deploy -c wrangler.daily.toml
+
+  deploy-r2-workers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create R2 bucket ltzzz-memory
         uses: cloudflare/wrangler-action@v4
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: r2 bucket create ltzzz-memory
+      - name: Deploy Memory Gateway (needs R2 bucket + token Workers R2 Write)
+        uses: cloudflare/wrangler-action@v4
+        continue-on-error: true
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy -c wrangler.memory-gateway.toml
       - name: Deploy Memory Engine
         uses: cloudflare/wrangler-action@v4
+        continue-on-error: true
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy -c wrangler.memory-engine.toml
-      - name: Deploy Daily Scheduler (cron on)
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy -c wrangler.daily.toml
