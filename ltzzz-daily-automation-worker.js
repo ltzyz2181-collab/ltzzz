@@ -200,7 +200,11 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     logDry("ai.blocked", { taskName, channel, status: budget.status, pct: budget.pct });
     return { ok: false, status: "waiting_approval", budget, dry_run: true };
   }
-  const keyName = `${channel.toUpperCase()}_API_KEY`;
+  let keyName;
+  if (channel === "gpt") keyName = "OPENAI_API_KEY";
+  else if (channel === "claude") keyName = "ANTHROPIC_API_KEY";
+  else if (channel === "xia") keyName = "XIA_GROK_API_KEY";
+  else keyName = `${channel.toUpperCase()}_API_KEY`;
   const hasKey = !!(env && env[keyName]);
   if (!hasKey) {
     // 【等待人工凭证】：不伪造 Key，直接占位
@@ -214,10 +218,107 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
       placeholder: `[dry-run 占位输出] ${taskName} 基于 prompt 生成的 ${expect}（无真实 Key，等待人工凭证 ${keyName}）`,
     };
   }
-  // 有 Key：真实调用在此接入对应上游（GPT/DeepSeek/Claude/豆包/Copilot/Grok）。
-  // 当前环境不预置任何真实 Key，因此正常不会走到这里；走到即视为已授权的真实调用。
-  logDry("ai.live-skeleton", { taskName, channel, keyMask: maskSecret(env[keyName]), note: "真实上游 fetch 待接入" });
-  return { ok: true, status: "live-skeleton", dry_run: false, budget };
+  // 有 Key：真实 API 调用
+  logDry("ai.live-call", { taskName, channel, keyMask: maskSecret(env[keyName]) });
+
+  let apiUrl, model, apiKey, extraHeaders = {};
+
+  if (channel === "gpt") {
+    apiUrl = "https://api.openai.com/v1/chat/completions";
+    model = "gpt-3.5-turbo";
+    apiKey = env.OPENAI_API_KEY;
+  } else if (channel === "deepseek") {
+    apiUrl = "https://api.deepseek.com/v1/chat/completions";
+    model = "deepseek-chat";
+    apiKey = env.DEEPSEEK_API_KEY;
+  } else if (channel === "claude") {
+    apiUrl = "https://api.anthropic.com/v1/messages";
+    model = "claude-3-5-sonnet-20241022";
+    apiKey = env.ANTHROPIC_API_KEY;
+    extraHeaders["anthropic-version"] = "2023-06-01";
+  } else if (channel === "doubao") {
+    apiUrl = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+    model = "ep-20240919150030-7xqvw";
+    apiKey = env.DOUBAO_API_KEY;
+  } else if (channel === "xia") {
+    apiUrl = "https://api.x.ai/v1/chat/completions";
+    model = "grok-beta";
+    apiKey = env.XIA_GROK_API_KEY;
+  } else {
+    return { ok: true, status: "live-skeleton", dry_run: false, budget, placeholder: `[live-skeleton] ${channel} 通道待接入` };
+  }
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      ...extraHeaders,
+    };
+
+    let body;
+    if (channel === "claude") {
+      body = {
+        model: model,
+        max_tokens: 500,
+        messages: [
+          { role: "user", content: prompt },
+        ],
+      };
+    } else {
+      body = {
+        model: model,
+        messages: [
+          { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 500,
+      };
+    }
+
+    const resp = await fetch(apiUrl, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      logDry("ai.error", { taskName, channel, status: resp.status, error: errText.slice(0, 200) });
+      return {
+        ok: false,
+        status: "api_error",
+        dry_run: false,
+        budget,
+        error: `API 返回 ${resp.status}: ${errText.slice(0, 100)}`,
+      };
+    }
+
+    const data = await resp.json();
+    let output;
+    if (channel === "claude") {
+      output = data.content?.[0]?.text || JSON.stringify(data);
+    } else {
+      output = data.choices?.[0]?.message?.content || JSON.stringify(data);
+    }
+
+    return {
+      ok: true,
+      status: "live",
+      dry_run: false,
+      budget,
+      output: output,
+      placeholder: output,
+    };
+  } catch (err) {
+    logDry("ai.exception", { taskName, channel, error: String(err) });
+    return {
+      ok: false,
+      status: "exception",
+      dry_run: false,
+      budget,
+      error: String(err),
+    };
+  }
 }
 
 /* ================================================================
@@ -343,7 +444,7 @@ async function taskGptDaily(env, ctx) {
   const path = dailyPath("gpt", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.gpt-daily", { today, path, task_id, polish_count: polish.length, dry_run: ai.dry_run });
-  return { task: "gpt-daily", ok: true, path, task_id, polish: polish.map((p) => ({ file: p.file, status: p.status })), dry_run: true };
+  return { task: "gpt-daily", ok: true, path, task_id, polish: polish.map((p) => ({ file: p.file, status: p.status })), dry_run: ai.dry_run };
 }
 
 /* ---- 任务 2：豆包 每日 ------------------------------------------
@@ -400,7 +501,7 @@ async function taskDoubaoDaily(env, ctx) {
   const path = dailyPath("doubao", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.doubao-daily", { today, path, contentId, registryPath, polish_count: polish.length, dry_run: true, budget: note.budget });
-  return { task: "doubao-daily", ok: true, path, contentId, registryPath, budget: note.budget, dry_run: true };
+  return { task: "doubao-daily", ok: true, path, contentId, registryPath, budget: note.budget, dry_run: note.dry_run };
 }
 
 /* ---- 任务 3：XAI/Grok 每日 --------------------------------------
@@ -443,7 +544,7 @@ async function taskXiaDaily(env, ctx) {
   const path = dailyPath("xia", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.xia-daily", { today, path, polish_count: polish.length, dry_run: true });
-  return { task: "xia-daily", ok: true, path, dry_run: true };
+  return { task: "xia-daily", ok: true, path, dry_run: mental.dry_run };
 }
 
 /* ---- 任务 4：Claude 每日 ----------------------------------------
@@ -469,7 +570,7 @@ async function taskClaudeDaily(env, ctx) {
   const path = dailyPath("claude", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.claude-daily", { today, path, dry_run: true });
-  return { task: "claude-daily", ok: true, path, dry_run: true };
+  return { task: "claude-daily", ok: true, path, dry_run: fiction.dry_run };
 }
 
 /* ---- 任务 5：DeepSeek 每日 --------------------------------------
@@ -497,7 +598,7 @@ async function taskDeepseekDaily(env, ctx) {
   const path = dailyPath("deepseek", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.deepseek-daily", { today, path, dry_run: true, budget: compare.budget });
-  return { task: "deepseek-daily", ok: true, path, budget: compare.budget, dry_run: true };
+  return { task: "deepseek-daily", ok: true, path, budget: compare.budget, dry_run: compare.dry_run };
 }
 
 /* ---- 任务 6：Microsoft Copilot 每日 ------------------------------
@@ -624,3 +725,4 @@ export default {
     return new Response(JSON.stringify({ ok: false, error: "not found" }), { status: 404 });
   },
 };
+
