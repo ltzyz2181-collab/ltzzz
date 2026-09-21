@@ -23,6 +23,8 @@ jobs:
           fetch-depth: 0
 
       - name: Probe live endpoints + write dry-run summary (no AI keys)
+        env:
+          DAY: ${{ steps.date.outputs.day }}
         run: |
           set -euo pipefail
           DAY=$(date -u +%F)
@@ -35,6 +37,12 @@ jobs:
           DAILY_HEALTH=$(curl -sS --fail "$DA/health" || echo '{"ok":false}')
           DOUBAO_HEALTH=$(curl -sS --fail "$DB/health" || echo '{"ok":false,"note":"doubao health unreachable"}')
           echo "$HEALTH" | python3 -c "import sys,json; d=json.load(sys.stdin); assert d.get('ok') is True, d"
+
+          # 保存 JSON 到临时文件，避免嵌套引号
+          echo "$HEALTH" > /tmp/health.json
+          echo "$MANIFEST" > /tmp/manifest.json
+          echo "$DAILY_HEALTH" > /tmp/daily.json
+
           {
             echo "# Memory patrol · ${DAY}"
             echo
@@ -68,17 +76,13 @@ jobs:
             echo '```'
           } > "memory/daily/patrol-${DAY}.md"
 
-          python3 - <<'PY'
-          import json, os, datetime
-          day = os.popen("date -u +%F").read().strip()
-          health = json.loads(open("/dev/stdin").read()) if False else json.loads('''%s''' % open(0).read() if False else "")
-          PY
-          python3 -c "
-          import json, pathlib, datetime, os
-          day = '''${DAY}'''
-          health = json.loads('''$(printf '%s' "$HEALTH" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin)))')''')
-          manifest = json.loads('''$(printf '%s' "$MANIFEST" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin)))')''')
-          daily = json.loads('''$(printf '%s' "$DAILY_HEALTH" | python3 -c 'import sys,json; print(json.dumps(json.load(sys.stdin)))')''')
+          # 用 python 从文件读取 JSON，生成 summary
+          DAY="$DAY" python3 << 'PY'
+          import json, pathlib, os
+          day = os.environ['DAY']
+          health = json.load(open('/tmp/health.json'))
+          manifest = json.load(open('/tmp/manifest.json'))
+          daily = json.load(open('/tmp/daily.json'))
           files = manifest.get('files') or []
           read_order = manifest.get('read_order') or []
           dry = daily.get('dry_run', True)
@@ -111,7 +115,7 @@ jobs:
           lines.append('Human remains in control of keys, wallet, and Pages.')
           pathlib.Path(f'memory/daily/summary-{day}.md').write_text('\n'.join(lines)+'\n', encoding='utf-8')
           print('wrote', f'memory/daily/summary-{day}.md')
-          "
+          PY
 
       - name: Commit patrol log + summary
         run: |
