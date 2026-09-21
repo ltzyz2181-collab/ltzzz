@@ -1,0 +1,33 @@
+name: Deploy KV-reuse settlement + assets
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'wrangler.t026.toml'
+      - 'wrangler.auto-withdraw.toml'
+      - 't026-video-assets-worker.js'
+      - 'auto-withdraw-worker.js'
+      - '.github/workflows/deploy-kv-reuse.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy video assets (shared KV)
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.t026.toml
+      - name: Deploy settlement ledger (shared KV, test mode)
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.auto-withdraw.toml
