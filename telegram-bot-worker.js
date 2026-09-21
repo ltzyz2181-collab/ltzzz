@@ -16,6 +16,10 @@ export default {
         return json({ ok: true, bot: "ltzzz-telegram-bot", ts: Date.now() }, cors());
       }
 
+      if (path === "/setup-webhook" && request.method === "GET") {
+        return await setupWebhook(env);
+      }
+
       if (path === "/webhook" && request.method === "POST") {
         return await handleWebhook(request, env);
       }
@@ -388,4 +392,30 @@ async function tgApi(token, method, payload) {
     body: JSON.stringify(payload),
   });
   return resp.json().catch(() => null);
+}
+
+/* ============ 自动配置 Webhook ============ */
+
+async function setupWebhook(env) {
+  const token = env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    return json({ ok: false, error: "missing TELEGRAM_BOT_TOKEN" }, { status: 500, ...cors() });
+  }
+
+  const webhookUrl = "https://ltzzz-telegram-bot.ltzyz2181.workers.dev/webhook";
+
+  const setResult = await tgApi(token, "setWebhook", {
+    url: webhookUrl,
+    secret_token: env.TELEGRAM_SECRET || undefined,
+    drop_pending_updates: false,
+  });
+
+  const getResult = await tgApi(token, "getWebhookInfo", {});
+
+  return json({
+    ok: true,
+    set_webhook_result: setResult,
+    current_webhook_info: getResult && getResult.result,
+    note: "Webhook 已自动配置完成",
+  }, cors());
 }
