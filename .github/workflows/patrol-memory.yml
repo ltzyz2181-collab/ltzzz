@@ -1,0 +1,47 @@
+name: Patrol Memory Gateway
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # UTC 00:00 = 北京 08:00
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patrol:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe gateway (no secrets, no AI keys)
+        run: |
+          set -e
+          DAY=$(date -u +%F)
+          mkdir -p memory/daily
+          {
+            echo "# Memory patrol · ${DAY}"
+            echo
+            echo "- mode: dry-run / inspect only"
+            echo "- no API keys used"
+            echo "- r2 not required"
+            echo
+            echo "## /health"
+            echo
+            echo '```json'
+            curl -sS "https://ltzzz-memory-gateway.ltzyz2181.workers.dev/health"
+            echo
+            echo '```'
+            echo
+            echo "## /manifest keys"
+            echo
+            echo '```json'
+            curl -sS "https://ltzzz-memory-gateway.ltzyz2181.workers.dev/manifest" | python3 -c "import sys,json; d=json.load(sys.stdin); print(json.dumps({k:d.get(k) for k in ('ok','source','generated_at','read_order')},ensure_ascii=False,indent=2))"
+            echo '```'
+          } > "memory/daily/patrol-${DAY}.md"
+      - name: Commit patrol log if changed
+        run: |
+          git config user.name "ltzzz-patrol"
+          git config user.email "ltzzz-patrol@users.noreply.github.com"
+          git add memory/daily/patrol-*.md
+          git diff --cached --quiet || git commit -m "chore(patrol): memory gateway daily inspect"
+          git push || true
