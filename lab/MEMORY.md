@@ -20,7 +20,8 @@
 | Memory Gateway | 可用（`ok:true`，source=github，r2_bound=false） |
 | DeepSeek Worker | 可用 |
 | 豆包 Worker | 2026-09-21 复测 `/health` ok=true，has_key=true |
-| Daily Scheduler Worker | 代码已入库；线上 wrangler 待主人 |
+| Daily Scheduler Worker | 线上 `/health` ok，**dry_run=true** |
+| Patrol → daily summary | T022：Actions 写 `memory/daily/summary-*.md`，仍 dry-run |
 | 钱包连接只读 | 可用 |
 | pay-proxy 账本只读 | 可用 |
 | Safe 3/5 链上 | 已确认 |
@@ -29,7 +30,7 @@
 ## 失败与禁区
 
 | 事件 | 教训 |
-|------|------|
+|----|------|
 | 提币错网（X Layer） | 网络必须与收款方一致 |
 | 豆包 TikTok OAuth 502 | 与方舟 API 无关 |
 | 支付宝权限/风控 | 等官方重签；不绕过 |

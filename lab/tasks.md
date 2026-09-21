@@ -6,7 +6,6 @@
 
 | ID | 任务 | 备注 |
 |----|------|------|
-| T022 | Gateway 通后再接 Scheduler 写 daily 摘要 | Worker 已上；dry_run=true。下一步是读 Gateway 写摘要，不是塞 Key |
 | T010 | 凭证制度 | Secret 只在 CF |
 
 ## 待办
@@ -20,6 +19,7 @@
 
 | ID | 任务 | 结果 |
 |----|------|------|
+| T022 | Gateway 通后再接 Scheduler 写 daily 摘要 | dry-run：patrol 读 Gateway/Daily `/health`+`/manifest`，写 `memory/daily/summary-YYYY-MM-DD.md`。不塞 Key、不调模型、不配 R2 |
 | T023 | Daily Worker wrangler deploy | https://ltzzz-daily-automation.ltzyz2181.workers.dev/health · dry_run=true · EXP-005 |
 | T020 | Memory Gateway 线上 | `/health` ok；r2_bound=false。EXP-004 |
 | T019 | Memory Gateway + manifest 同步链路（代码） | 已进 main |
