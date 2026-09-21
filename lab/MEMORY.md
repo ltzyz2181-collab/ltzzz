@@ -1,6 +1,6 @@
 # LTZZZ 长期记忆
 
-最后更新：2026-09-20
+最后更新：2026-09-21
 
 ## 项目是什么
 
@@ -10,38 +10,21 @@
 - **网站：** https://ltzzz.com
 - **仓库：** https://github.com/ltzyz2181-collab/ltzzz
 - **主权：** 人类控制域名、仓库、钱包与商户
-
-## 核心心法（2026-09-20 补充）
-
-- **观·行深 对残破装备很重要**
-- 睡姿调整：右侧屁股垫东西、左侧肩膀垫东西
-- 站姿调整：右脚向前大迈一步
-- 以上都是统一道理——发现 LTZZZ 哪些"姿势"要改
-- **念头不是识神思考来的**——站几天内，念头都是一股脑进来的
-- 每天"观·行深"对 LTZZZ 改变会很大
-- 6 AI 每日任务要加入：观察 LTZZZ 的"姿势"问题，提出调整建议
-
-## 资金池（摘要）
-
-详见 `finance/FUND_POOLS.md`。
-
-| 池 | 地址/载体 |
-|----|-----------|
-| OPS 热钱包 | `0xb99C6751f443842F4987bb2017580405572Df905` |
-| SAFE 共管 3/5（Ethereum） | `0x3cb1b0963A27Fa8D40ee606bc596C79FE3B1866a` |
-| 账本 Worker | `https://ltzzz-pay-proxy.ltzyz2181.workers.dev` |
+- **记忆入口：** https://ltzzz-memory-gateway.ltzyz2181.workers.dev
 
 ## 已验证链路
 
 | 项 | 状态 |
 |----|------|
 | GitHub Pages | 可用 |
+| Memory Gateway | 可用（`ok:true`，source=github，r2_bound=false） |
 | DeepSeek Worker | 可用 |
-| 豆包 Worker | 可用（health + 链路正常） |
+| 豆包 Worker | 2026-09-21 复测 `/health` ok=true，has_key=true |
+| Daily Scheduler Worker | 代码已入库；线上 wrangler 待主人 |
 | 钱包连接只读 | 可用 |
 | pay-proxy 账本只读 | 可用 |
 | Safe 3/5 链上 | 已确认 |
-| 支付宝真付 | 挂起（风控/重签） |
+| 支付宝真付 | 挂起 |
 
 ## 失败与禁区
 
@@ -52,7 +35,7 @@
 | 支付宝权限/风控 | 等官方重签；不绕过 |
 | Key 进前端 | 禁止 |
 | AI 当多签 owner | 禁止 |
-| **账号被封（检测到机器人）** | **2026-09-21 教训：不要用 AI 自动登录/操作账号，容易被检测为机器人导致封号。以后邮箱登录、注册账号等敏感操作一律由用户手动完成，AI 只辅助指导步骤，不代操作。** |
+| 账号被封（机器人） | 不代登录、不代操作账号 |
 
 ## 禁区（对所有 AI）
 
