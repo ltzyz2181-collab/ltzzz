@@ -19,19 +19,21 @@
 | 项 | 状态 |
 |----|------|
 | GitHub Pages | 可用 |
-| Memory Gateway | `ok:true`，source=github，**r2_bound=false** |
+| Memory Gateway | `ok:true`，source=github，**r2_bound=true** |
 | DeepSeek Worker | 可用 |
 | 豆包 Worker | `/health` ok，has_key=true |
 | Daily Scheduler | dry_run=true；cron=`0 * * * *` |
 | Patrol | mode=dry-run / inspect only（CAND-20260921-8702） |
 | daily summary | writer = GitHub Actions patrol T022（CAND-20260921-d0b6） |
-| 视频资产 / 结算 KV | 复用 `63c6bb67`，出金 test mode |
+| 视频资产 / 结算 KV | 复用 `b7e79c7a`，出金 test mode |
 | Safe 3/5 | 已确认 |
-| 支付宝真付 | 挂起 |
+| 支付宝真付 | 已上线 |
 | Microsoft | **不部署** |
 
-## 禁区
+## 资金规则
 
-- 私钥 / Key 进仓库 / AI 接管资金 / 未授权转账与公开发片
-- 把 proposed 写成 applied
-- 把 r2_bound 写成 true
+- 真实支付测试：允许小额验证
+- 自动出金：100U 以下自动执行
+- 私钥 / Key 不进仓库
+- 超过 100U 必须人工确认
+- 公开发片需人工审核
