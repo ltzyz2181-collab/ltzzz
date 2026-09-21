@@ -12,15 +12,17 @@
 ## 做什么
 
 - 拉 Memory Gateway `/health`、`/manifest`
+- 拉 Daily Worker `/health`（确认 `dry_run=true`）
 - 拉豆包 `/health`
-- 写入 `memory/daily/patrol-YYYY-MM-DD.md` 并提交
-- **不** 调上游 AI，**不** 用 Key，**不** 上 R2
+- 写入 `memory/daily/patrol-YYYY-MM-DD.md`
+- 写入 `memory/daily/summary-YYYY-MM-DD.md`（机械摘要，非模型生成）
+- **不** 调上游 AI，**不** 用 Key，**不** 上 R2，**不** 支付
 
 ## 主人要确认一次
 
 1. 仓库 Settings → Actions → General → Workflow permissions = **Read and write**
 2. Actions 页能看到 **Patrol Memory Gateway**
-3. 点 **Run workflow** 跑第一次（定时任务第一次推送后不会马上跑）
+3. 点 **Run workflow** 跑一次，检查 `memory/daily/summary-*.md` 是否提交
 
 ## 不是这个 workflow 的事
 

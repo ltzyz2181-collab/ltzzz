@@ -23,9 +23,9 @@
 ## 4. Daily Scheduler
 
 - 代码入库：`ltzzz-daily-automation-worker.js` + `wrangler.daily.toml`
-- GitHub 巡查：`.github/workflows/patrol-memory.yml`
-- 线上 Worker：待主人 `npx wrangler deploy -c wrangler.daily.toml`
-- EXP-005 保持「进行中」直到 `/health` 贴出。
+- 线上 Worker：https://ltzzz-daily-automation.ltzyz2181.workers.dev/health · **dry_run=true**
+- GitHub 巡查：`.github/workflows/patrol-memory.yml` 写 patrol + **summary**（T022）
+- 真模型调用：未开
 
 ## 5. 未部署
 

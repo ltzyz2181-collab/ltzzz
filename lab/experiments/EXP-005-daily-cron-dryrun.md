@@ -15,7 +15,7 @@
 ## 实验（做了什么）
 
 - Worker 线上：https://ltzzz-daily-automation.ltzyz2181.workers.dev/health
-- GitHub Actions：Patrol Memory Gateway 最新跑通（主人报告）
+- GitHub Actions：Patrol Memory Gateway 读 Gateway 写 `patrol-*.md` + `summary-*.md`（T022）
 
 ## 结果（可核对）
 
@@ -36,8 +36,8 @@
 
 ## 下一步
 
-T022：Scheduler 读 Gateway 后写 daily 摘要（仍 dry-run）。不塞六把 Key，不配 R2。
+保持 dry-run。主人在 Actions 再跑一次 Patrol，确认 `memory/daily/summary-YYYY-MM-DD.md` 出现。不塞六把 Key，不配 R2。
 
 ## 关联
 
-- 任务 ID：T023 完成；T022 进行中
+- 任务 ID：T023、T022 完成（仍 dry-run）

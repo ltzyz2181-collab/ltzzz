@@ -4,6 +4,12 @@
 
 ---
 
+## 2026-09-21 · T022 摘要仍 dry-run
+
+- Scheduler / Patrol 只读 Gateway + Daily `/health`，写 `memory/daily/summary-*.md`。
+- 仍不塞六把 Key、不配 R2、不宣称六 AI 真在写稿。
+- 支付 / 私钥 / 自动发片：仍禁。
+
 ## 2026-09-21 · Memory Gateway 现网 + Daily 先巡查
 
 - Memory Gateway 只读已上线：source=github，R2 不必配。
