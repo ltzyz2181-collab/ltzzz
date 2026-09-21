@@ -1,18 +1,7 @@
-# LTZZZ Memory Gateway
-# 最小部署（仅 GitHub 源，无需 R2）：
-#   npx wrangler deploy memory-gateway-worker.js --name ltzzz-memory-gateway --compatibility-date 2026-09-16
-# 或：
-#   npx wrangler deploy -c wrangler.memory-gateway.toml
-#
-# 可选 R2（Actions 同步后加速/离线副本）：
-#   1) 控制台创建 bucket，例如 ltzzz-memory
-#   2) 取消下面 [[r2_buckets]] 注释并填 bucket_name
-#   3) 配置 GitHub Secrets 后跑 sync-memory workflow
-
 name = "ltzzz-memory-gateway"
 main = "memory-gateway-worker.js"
 compatibility_date = "2026-09-16"
 
-# [[r2_buckets]]
-# binding = "MEMORY_BUCKET"
-# bucket_name = "ltzzz-memory"
+[[r2_buckets]]
+binding = "MEMORY_BUCKET"
+bucket_name = "ltzzz-memory"
