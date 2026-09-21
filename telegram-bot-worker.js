@@ -1,16 +1,6 @@
 /**
  * LTZZZ Telegram Bot Worker
- * 接口：/webhook (Telegram 回调) · /send (发文本/图片/视频/文件) · /status (健康检查)
- * Secret 要求：TELEGRAM_BOT_TOKEN（BotFather）、TELEGRAM_CHAT_ID（管理会话，可选）、TELEGRAM_SECRET（webhook 校验，可选但推荐）
- * 权限边界：仅限 LTZZZ Bot 自身会话；不删除/转移/改安全设置。
- *
- * 人机访问门禁（/webhook 普通消息）：
- *   提问(ASK) → 判定(AI / 人类 / 不清) → 分支回复。
- *   状态存于进程内 Map（按 chatId）；Worker 多实例/冷启动后会丢失，
- *   生产环境如需跨实例持久化可改用 KV（命名空间预留：LTZZZ_GATE_KV，可选）。
- *
- * 硬约束：本环境无真实 Bot Token；TELEGRAM_BOT_TOKEN 仅留 env 占位，
- *         等待人工凭证（@BotFather），绝不伪造、不写日志/回复正文。
+ * 完整流程：/start → 人类/AI → 6 AI → 会员 → 服务 → 任务 → 结果
  */
 export default {
   async fetch(request, env) {
@@ -56,74 +46,123 @@ function json(obj, extra = {}) {
   });
 }
 
-/* ============ 人机门禁：状态与文案 ============ */
+/* ============ 状态机 ============ */
 
-// 门禁状态：undefined=未提问；ASKED=已提问待回复；ASKED_AGAIN=已二次追问；PASS_AI / PASS_HUMAN=已放行
-const gateState = new Map();
+// 每个 chatId 的对话状态
+const userState = new Map();
 
-const GATE_QUESTION =
-  "您好，访问 LTZZZ 的是【人类】还是【AI】？请回复：人类 / AI。";
+// 状态：
+// WELCOME: 刚启动，还没选人类/AI
+// HUMAN_MAIN: 人类主菜单
+// AI_MAIN: AI 主菜单
+// AI_CHOOSE: 选 6 AI 中的哪一个
+// MEMBER: 会员菜单
+// SERVICE: 服务菜单
+// TASK: 提交任务
+// RESULT: 查询结果
 
-const GATE_REASK =
-  "没太辨认出来 😅 麻烦再回一句：您是【人类】还是【AI】？（直接回复：人类 或 AI）";
+/* ============ 菜单文案 ============ */
 
-// AI 关键词（大小写不敏感）：
-//  - 独立 token：ai / bot / agent / gpt / openai / grok / xia（避免误命中 email/said 等含 ai 子串的词）
-//  - 中文与通道自报名：机器人、deepseek、claude、豆包/doubao、copilot
-const AI_KEYWORD_RE =
-  /(^|[^a-zA-Z])ai([^a-zA-Z]|$)|\bbot\b|\bagent\b|\bgpt\b|\bopenai\b|\bgrok\b|\bxia\b|机器人|deepseek|claude|豆包|doubao|copilot/i;
-// 人类关键词
-const HUMAN_KEYWORD_RE = /人类|真人|我是人|是个人|你好呀|人类访问/;
+const WELCOME_TEXT = `👋 欢迎来到 LTZZZ AGI 实验室！
 
-const AI_VISITOR_REPLY = [
-  "检测到 AI 访问 🤖 这里是 LTZZZ 面向 AI 代理的六条对话通道，按以下方式找到对应的 LTZZZ AI：",
-  "",
-  "1. GPT(OpenAI)",
-  "   · 代理 Worker：`ltzzz-gpt-proxy-worker.js`（接口 `POST /chat`）",
-  "   · 网页入口：`ai-chat.html`",
-  "2. DeepSeek",
-  "   · 代理 Worker：`deepseek-proxy-worker.js`（接口 `POST /chat`）",
-  "   · 网页入口：`deepseek.html`",
-  "3. Claude",
-  "   · 代理 Worker：`claude-proxy-worker.js`（接口 `POST /chat`）",
-  "   · 网页入口：`claude.html`",
-  "4. 豆包",
-  "   · 代理 Worker：`doubao-proxy-worker.js`（接口 `POST /chat`）",
-  "   · 网页入口：`doubao.html`",
-  "5. Microsoft Copilot",
-  "   · 知识库入口：`knowledge/ai-chats/Microsoft/`",
-  "6. XIA(Grok)",
-  "   · 知识库入口：`knowledge/ai-chats/XIA/`",
-  "",
-  "AI 代理请通过对应 Worker 的 `/chat` 接口接入，或从上述网页入口进入实验室。",
-].join("\n");
+请选择您的身份：
+1️⃣ 人类
+2️⃣ AI
 
-const HUMAN_VISITOR_REPLY = [
-  "检测到人类访问 👋 欢迎来到 LTZZZ AGI 实验室。",
-  "",
-  "· 站点主页：https://ltzzz.com （GitHub Pages 托管）",
-  "· 实验室导航：https://ltzzz.com/agents.html （各 AI 通道与代理实验入口）",
-  "· 真人沟通入口：可直接在本 Bot 对话留言，或通过站点页脚的联系方式找到 LTZZZ 维护者；",
-  "  管理会话由 TELEGRAM_CHAT_ID 配置，真人消息会被人工查阅。",
-].join("\n");
+直接回复数字 1 或 2，或回复「人类」/「AI」`;
 
-function classifyVisitor(text) {
-  const t = String(text || "");
-  if (AI_KEYWORD_RE.test(t)) return "ai";
-  if (HUMAN_KEYWORD_RE.test(t) || /^人/.test(t)) return "human";
-  return "unknown";
-}
+const HUMAN_MENU = `👤 人类用户主菜单
 
-/* ============ Webhook 处理 ============ */
+请选择您需要的服务：
+1️⃣ 会员中心
+2️⃣ 服务大厅
+3️⃣ 我的任务
+4️⃣ 我的结果
+5️⃣ 联系管理员
+
+直接回复数字选择`;
+
+const AI_MENU = `🤖 AI 用户主菜单
+
+这里是 LTZZZ 面向 AI 代理的六条对话通道：
+
+1️⃣ GPT (OpenAI)
+2️⃣ DeepSeek
+3️⃣ Claude
+4️⃣ 豆包
+5️⃣ Grok (XAI)
+6️⃣ Microsoft Copilot
+
+请选择要接入的 AI（回复数字 1-6）`;
+
+const AI_CHANNEL_DETAIL = {
+  1: `🤖 GPT (OpenAI)
+· 代理 Worker：ltzzz-gpt-proxy-worker.js
+· 接口：POST /chat
+· 网页入口：ai-chat.html`,
+  2: `🤖 DeepSeek
+· 代理 Worker：deepseek-proxy-worker.js
+· 接口：POST /chat
+· 网页入口：deepseek.html`,
+  3: `🤖 Claude
+· 代理 Worker：claude-proxy-worker.js
+· 接口：POST /chat
+· 网页入口：claude.html`,
+  4: `🤖 豆包
+· 代理 Worker：doubao-proxy-worker.js
+· 接口：POST /chat
+· 网页入口：doubao.html`,
+  5: `🤖 Grok (XAI)
+· 知识库入口：knowledge/ai-chats/XIA/`,
+  6: `🤖 Microsoft Copilot
+· 知识库入口：knowledge/ai-chats/Microsoft/`,
+};
+
+const MEMBER_MENU = `💎 会员中心
+
+1️⃣ 查看会员等级
+2️⃣ 会员权益说明
+3️⃣ 开通/续费会员
+4️⃣ 返回主菜单
+
+直接回复数字选择`;
+
+const SERVICE_MENU = `🛠️ 服务大厅
+
+1️⃣ AI 对话服务
+2️⃣ 内容生成服务
+3️⃣ 数据分析服务
+4️⃣ 定制开发服务
+5️⃣ 返回主菜单
+
+直接回复数字选择`;
+
+const TASK_MENU = `📝 我的任务
+
+1️⃣ 提交新任务
+2️⃣ 查看进行中任务
+3️⃣ 查看历史任务
+4️⃣ 返回主菜单
+
+直接回复数字选择`;
+
+const RESULT_MENU = `📊 我的结果
+
+1️⃣ 今日产出
+2️⃣ 本周产出
+3️⃣ 全部结果
+4️⃣ 返回主菜单
+
+直接回复数字选择`;
+
+/* ============ 指令处理 ============ */
 
 async function handleWebhook(request, env) {
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) {
-    // 未配置 Token：仍返回 200 以避免 Telegram 反复重试；明确标记等待人工凭证
     return json({ ok: false, error: "missing TELEGRAM_BOT_TOKEN", note: "等待人工凭证（@BotFather）" }, { status: 500, ...cors() });
   }
 
-  // 若配置了 TELEGRAM_SECRET，校验 Telegram 请求头（防伪造 webhook）
   if (env.TELEGRAM_SECRET) {
     const got = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
     if (got !== env.TELEGRAM_SECRET) {
@@ -139,17 +178,7 @@ async function handleWebhook(request, env) {
     const chatId = msg.chat && msg.chat.id;
     const text = msg.text.trim();
 
-    let reply;
-
-    // 既有指令行为保留：/start /help /status 前缀
-    if (text === "/start" || text === "/help") {
-      reply = "LTZZZ AGI 实验室 Bot 在线。可接收任务结果 / 通知 / 文件。";
-    } else if (text.toLowerCase().startsWith("status")) {
-      reply = `LTZZZ Bot 正常 · 收到消息: ${String(text).slice(0, 80)}`;
-    } else {
-      // 普通消息 → 人机门禁
-      reply = await gateReply(chatId, text);
-    }
+    let reply = await handleMessage(chatId, text);
 
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
@@ -161,52 +190,164 @@ async function handleWebhook(request, env) {
   return json({ ok: true }, cors());
 }
 
-// 门禁状态机：提问 → 判定 → 分支回复
-async function gateReply(chatId, text) {
-  const state = gateState.get(chatId);
+async function handleMessage(chatId, text) {
+  const state = userState.get(chatId) || "WELCOME";
 
-  if (!state) {
-    // 首次普通消息：反问
-    gateState.set(chatId, "ASKED");
-    return GATE_QUESTION;
-  }
-
-  if (state === "PASS_AI") {
-    return AI_VISITOR_REPLY; // 已识别为 AI，直接走 AI 通道回复
-  }
-  if (state === "PASS_HUMAN") {
-    return HUMAN_VISITOR_REPLY; // 已识别为人类，直接走人类路径
+  // /start 指令
+  if (text === "/start") {
+    userState.set(chatId, "WELCOME");
+    return WELCOME_TEXT;
   }
 
-  // 处于待判定状态：对访客回复做关键词判定
-  const verdict = classifyVisitor(text);
-
-  if (verdict === "ai") {
-    gateState.set(chatId, "PASS_AI");
-    return AI_VISITOR_REPLY;
+  // 状态机处理
+  switch (state) {
+    case "WELCOME":
+      return handleWelcome(chatId, text);
+    case "HUMAN_MAIN":
+      return handleHumanMenu(chatId, text);
+    case "AI_MAIN":
+      return handleAIMenu(chatId, text);
+    case "MEMBER":
+      return handleMemberMenu(chatId, text);
+    case "SERVICE":
+      return handleServiceMenu(chatId, text);
+    case "TASK":
+      return handleTaskMenu(chatId, text);
+    case "RESULT":
+      return handleResultMenu(chatId, text);
+    default:
+      userState.set(chatId, "WELCOME");
+      return WELCOME_TEXT;
   }
-  if (verdict === "human") {
-    gateState.set(chatId, "PASS_HUMAN");
-    return HUMAN_VISITOR_REPLY;
-  }
-
-  // 判定不清
-  if (state === "ASKED") {
-    gateState.set(chatId, "ASKED_AGAIN");
-    return GATE_REASK; // 礼貌追问一次，不重复长文本
-  }
-  // 已二次追问仍不清：给一句短提示并重置，避免无限循环
-  gateState.delete(chatId);
-  return "仍未识别到类型，您可以稍后直接回复「人类」或「AI」重新开始访问。";
 }
 
-/* ============ /send 处理（保持不变） ============ */
+function handleWelcome(chatId, text) {
+  const t = text.toLowerCase();
+  if (t === "1" || t === "人类" || t === "human") {
+    userState.set(chatId, "HUMAN_MAIN");
+    return HUMAN_MENU;
+  }
+  if (t === "2" || t === "ai" || t === "机器人") {
+    userState.set(chatId, "AI_MAIN");
+    return AI_MENU;
+  }
+  return WELCOME_TEXT;
+}
+
+function handleHumanMenu(chatId, text) {
+  const t = text;
+  if (t === "1") {
+    userState.set(chatId, "MEMBER");
+    return MEMBER_MENU;
+  }
+  if (t === "2") {
+    userState.set(chatId, "SERVICE");
+    return SERVICE_MENU;
+  }
+  if (t === "3") {
+    userState.set(chatId, "TASK");
+    return TASK_MENU;
+  }
+  if (t === "4") {
+    userState.set(chatId, "RESULT");
+    return RESULT_MENU;
+  }
+  if (t === "5") {
+    return "📞 管理员联系方式：ltzyz2181@gmail.com\n\n" + HUMAN_MENU;
+  }
+  return HUMAN_MENU;
+}
+
+function handleAIMenu(chatId, text) {
+  const t = text;
+  if (["1", "2", "3", "4", "5", "6"].includes(t)) {
+    const detail = AI_CHANNEL_DETAIL[t];
+    return detail + "\n\n" + AI_MENU;
+  }
+  return AI_MENU;
+}
+
+function handleMemberMenu(chatId, text) {
+  const t = text;
+  if (t === "1") {
+    return "💎 当前会员等级：普通用户\n\n" + MEMBER_MENU;
+  }
+  if (t === "2") {
+    return "💎 会员权益：\n· 无限 AI 对话\n· 优先任务处理\n· 专属通道\n· 月度报告\n\n" + MEMBER_MENU;
+  }
+  if (t === "3") {
+    return "💎 开通/续费会员：\n请联系管理员 ltzyz2181@gmail.com\n\n" + MEMBER_MENU;
+  }
+  if (t === "4") {
+    userState.set(chatId, "HUMAN_MAIN");
+    return HUMAN_MENU;
+  }
+  return MEMBER_MENU;
+}
+
+function handleServiceMenu(chatId, text) {
+  const t = text;
+  if (t === "1") {
+    return "🛠️ AI 对话服务：\n· GPT / DeepSeek / Claude / 豆包 / Grok / Copilot\n· 24x7 在线\n\n" + SERVICE_MENU;
+  }
+  if (t === "2") {
+    return "🛠️ 内容生成服务：\n· 文章 / 脚本 / 文案 / 视频脚本\n· 每日自动产出\n\n" + SERVICE_MENU;
+  }
+  if (t === "3") {
+    return "🛠️ 数据分析服务：\n· 财务 / 市场 / 用户行为分析\n· 可视化报告\n\n" + SERVICE_MENU;
+  }
+  if (t === "4") {
+    return "🛠️ 定制开发服务：\n· Web / App / 自动化脚本\n· 按需报价\n\n" + SERVICE_MENU;
+  }
+  if (t === "5") {
+    userState.set(chatId, "HUMAN_MAIN");
+    return HUMAN_MENU;
+  }
+  return SERVICE_MENU;
+}
+
+function handleTaskMenu(chatId, text) {
+  const t = text;
+  if (t === "1") {
+    return "📝 提交新任务：\n请直接描述您的任务需求，管理员会在 24 小时内回复。\n\n" + TASK_MENU;
+  }
+  if (t === "2") {
+    return "📝 进行中任务：暂无\n\n" + TASK_MENU;
+  }
+  if (t === "3") {
+    return "📝 历史任务：暂无\n\n" + TASK_MENU;
+  }
+  if (t === "4") {
+    userState.set(chatId, "HUMAN_MAIN");
+    return HUMAN_MENU;
+  }
+  return TASK_MENU;
+}
+
+function handleResultMenu(chatId, text) {
+  const t = text;
+  if (t === "1") {
+    return "📊 今日产出：\n· 6 AI 每日报告已生成\n· 详见 https://ltzzz.com/agents.html\n\n" + RESULT_MENU;
+  }
+  if (t === "2") {
+    return "📊 本周产出：\n· 详见实验室归档\n\n" + RESULT_MENU;
+  }
+  if (t === "3") {
+    return "📊 全部结果：\n· 详见 https://ltzzz.com\n\n" + RESULT_MENU;
+  }
+  if (t === "4") {
+    userState.set(chatId, "HUMAN_MAIN");
+    return HUMAN_MENU;
+  }
+  return RESULT_MENU;
+}
+
+/* ============ /send 处理 ============ */
 
 async function handleSend(request, env) {
   const token = env.TELEGRAM_BOT_TOKEN;
   if (!token) return json({ ok: false, error: "missing TELEGRAM_BOT_TOKEN" }, { status: 500, ...cors() });
 
-  // 若配置了 TELEGRAM_SECRET，/send 也要求 Authorization Bearer <TELEGRAM_SECRET>
   if (env.TELEGRAM_SECRET) {
     const auth = request.headers.get("Authorization") || "";
     if (auth !== `Bearer ${env.TELEGRAM_SECRET}`) {
@@ -220,7 +361,6 @@ async function handleSend(request, env) {
   const chatId = body.chat_id || env.TELEGRAM_CHAT_ID;
   if (!chatId) return json({ ok: false, error: "missing chat_id" }, cors());
 
-  // 支持：text / photo / video / document + caption
   let method, payload;
   if (body.photo) {
     method = "sendPhoto";
