@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Daily 巡查 · LTZZZ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="index.html">LTZZZ <span>Daily 巡查</span></a>
+  <nav>
+    <a href="lab.html">实验室内核</a>
+    <a href="daily.html">每日运行</a>
+    <a href="https://ltzzz-memory-gateway.ltzyz2181.workers.dev/health" target="_blank" rel="noopener">Gateway /health</a>
+  </nav>
+</header>
+<main class="section">
+  <p class="eyebrow">DRY-RUN · NO KEYS · NO R2 REQUIRED</p>
+  <h1>Daily 巡查模式</h1>
+  <p class="lead">无 API Key、无 R2。只确认记忆入口活着、cron/巡查会响、日志诚实。不生成假「已读取 / 已改文件 / 已发片」。</p>
+  <div class="actions">
+    <a class="button primary" href="https://ltzzz-memory-gateway.ltzyz2181.workers.dev/health" target="_blank" rel="noopener">Memory Gateway /health →</a>
+    <a class="button" href="https://ltzzz-memory-gateway.ltzyz2181.workers.dev/manifest" target="_blank" rel="noopener">/manifest →</a>
+    <a class="button" href="https://ltzzz-doubao-proxy.ltzyz2181.workers.dev/health" target="_blank" rel="noopener">豆包 /health →</a>
+    <a class="button" href="lab/experiments/EXP-005-daily-cron-dryrun.md">EXP-005 说明 →</a>
+  </div>
+  <section class="content-block" style="margin-top:36px">
+    <div class="text-block">
+      <h3>现网已核</h3>
+      <ul>
+        <li>Gateway <code>ok: true</code> · <code>r2_bound: false</code> · source=github</li>
+        <li>豆包 <code>ok: true</code> · has_key=true · model_configured=true（本次不打真对话）</li>
+        <li>Daily Worker：代码已入库。为上 cron 需主人 <code>npx wrangler deploy -c wrangler.daily.toml</code></li>
+        <li>GitHub Actions 巡查：<code>.github/workflows/patrol-memory.yml</code>（无 Key）</li>
+      </ul>
+      <h3>主人要做的唯一步（Daily Worker）</h3>
+      <pre>npx wrangler deploy -c wrangler.daily.toml
+# 然后打开
+# https://ltzzz-daily-automation.&lt;子域&gt;.workers.dev/health
+# https://ltzzz-daily-automation.&lt;子域&gt;.workers.dev/run?task=gpt-daily</pre>
+      <p>期望：<code>dry_run=true</code>。没有 Key 也算巡查成功。不要先塞六把 Key，不要配 R2。</p>
+    </div>
+  </section>
+</main>
+<footer>© 2026 LTZZZ · patrol only</footer>
+</body>
+</html>
