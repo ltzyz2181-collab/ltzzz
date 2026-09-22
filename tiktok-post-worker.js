@@ -2,6 +2,8 @@
  * LTZZZ TikTok OAuth + Content Posting proxy
  * Secrets: TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET
  * KV binding: KV
+ * Sandbox: user.info.basic + video.upload (draft)
+ * Production review may later add video.publish
  */
 export default {
   async fetch(request, env) {
@@ -26,6 +28,7 @@ export default {
           has_key: Boolean(env.TIKTOK_CLIENT_KEY),
           has_secret: Boolean(env.TIKTOK_CLIENT_SECRET),
           kv: Boolean(env.KV),
+          scopes: 'user.info.basic,video.upload',
         });
       }
 
@@ -59,7 +62,6 @@ export default {
     } catch (e) {
       const msg = e && e.message ? e.message : String(e);
       const statusCode = e && e.status ? e.status : 500;
-      // Prefer redirect to frontend with error so user never sees bare 1101
       if (path === '/auth/callback') {
         const dest =
           'https://ltzzz.com/creator-lab.html?tt_status=' +
@@ -74,6 +76,9 @@ export default {
 const OAUTH_BASE = 'https://www.tiktok.com/v2/auth/authorize';
 const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
 const API_BASE = 'https://open.tiktokapis.com/v2';
+
+// Sandbox apps often only enable video.upload (draft), not video.publish
+const DEFAULT_SCOPES = ['user.info.basic', 'video.upload'];
 
 function need(env) {
   const missing = [];
@@ -103,10 +108,13 @@ async function authStart(env, body, requestUrl) {
     (body.redirect_uri || '').trim() || requestUrl.origin + '/auth/callback';
   const returnTo =
     (body.return_to || '').trim() || 'https://ltzzz.com/creator-lab.html';
-  const scopes = ['user.info.basic', 'video.publish'];
+  // body.scopes optional override, comma-separated
+  const scopes = body.scopes
+    ? String(body.scopes).split(',').map((s) => s.trim()).filter(Boolean)
+    : DEFAULT_SCOPES;
   const state = btoa(JSON.stringify({ r: returnTo, u: redirectUri, t: Date.now() })).replace(/=+$/, '');
   const params = new URLSearchParams({
-    client_key: env.TIKTOK_CLIENT_KEY,
+    client_key: env.TIKTOK_CLIENT_KEY.trim(),
     response_type: 'code',
     scope: scopes.join(','),
     redirect_uri: redirectUri,
@@ -117,6 +125,7 @@ async function authStart(env, body, requestUrl) {
     auth_url: OAUTH_BASE + '?' + params.toString(),
     redirect_uri: redirectUri,
     return_to: returnTo,
+    scopes: scopes.join(','),
   };
 }
 
@@ -141,7 +150,6 @@ async function authCallback(env, body) {
 
   const code = (body.code || '').trim();
   if (!code) {
-    // Bare open of /auth/callback without code — not a crash
     return redirect(
       returnTo + '?tt_status=' + encodeURIComponent('error:missing_code')
     );
@@ -151,8 +159,8 @@ async function authCallback(env, body) {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_key: env.TIKTOK_CLIENT_KEY,
-      client_secret: env.TIKTOK_CLIENT_SECRET,
+      client_key: env.TIKTOK_CLIENT_KEY.trim(),
+      client_secret: env.TIKTOK_CLIENT_SECRET.trim(),
       code,
       grant_type: 'authorization_code',
       redirect_uri: redirectUri,
