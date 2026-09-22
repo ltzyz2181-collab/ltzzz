@@ -1,9 +1,7 @@
 /**
  * LTZZZ TikTok OAuth + Content Posting proxy
  * Secrets: TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET
- * KV binding: KV
- * Sandbox: user.info.basic + video.upload (draft)
- * Production review may later add video.publish
+ * Scopes (sandbox): user.info.basic, video.upload
  */
 export default {
   async fetch(request, env) {
@@ -29,6 +27,9 @@ export default {
           has_secret: Boolean(env.TIKTOK_CLIENT_SECRET),
           kv: Boolean(env.KV),
           scopes: 'user.info.basic,video.upload',
+          key_prefix: env.TIKTOK_CLIENT_KEY
+            ? String(env.TIKTOK_CLIENT_KEY).trim().slice(0, 6)
+            : null,
         });
       }
 
@@ -63,10 +64,10 @@ export default {
       const msg = e && e.message ? e.message : String(e);
       const statusCode = e && e.status ? e.status : 500;
       if (path === '/auth/callback') {
-        const dest =
+        return redirect(
           'https://ltzzz.com/creator-lab.html?tt_status=' +
-          encodeURIComponent('error:' + msg.slice(0, 180));
-        return redirect(dest);
+            encodeURIComponent('error:' + msg.slice(0, 180))
+        );
       }
       return json({ ok: false, error: msg }, statusCode);
     }
@@ -76,8 +77,6 @@ export default {
 const OAUTH_BASE = 'https://www.tiktok.com/v2/auth/authorize';
 const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/';
 const API_BASE = 'https://open.tiktokapis.com/v2';
-
-// Sandbox apps often only enable video.upload (draft), not video.publish
 const DEFAULT_SCOPES = ['user.info.basic', 'video.upload'];
 
 function need(env) {
@@ -99,6 +98,14 @@ function parseState(raw) {
   }
 }
 
+function brief(obj) {
+  try {
+    return JSON.stringify(obj).slice(0, 160);
+  } catch {
+    return String(obj).slice(0, 160);
+  }
+}
+
 async function authStart(env, body, requestUrl) {
   const missing = need(env);
   if (missing.length) {
@@ -108,13 +115,14 @@ async function authStart(env, body, requestUrl) {
     (body.redirect_uri || '').trim() || requestUrl.origin + '/auth/callback';
   const returnTo =
     (body.return_to || '').trim() || 'https://ltzzz.com/creator-lab.html';
-  // body.scopes optional override, comma-separated
   const scopes = body.scopes
     ? String(body.scopes).split(',').map((s) => s.trim()).filter(Boolean)
     : DEFAULT_SCOPES;
-  const state = btoa(JSON.stringify({ r: returnTo, u: redirectUri, t: Date.now() })).replace(/=+$/, '');
+  const state = btoa(
+    JSON.stringify({ r: returnTo, u: redirectUri, t: Date.now() })
+  ).replace(/=+$/, '');
   const params = new URLSearchParams({
-    client_key: env.TIKTOK_CLIENT_KEY.trim(),
+    client_key: String(env.TIKTOK_CLIENT_KEY).trim(),
     response_type: 'code',
     scope: scopes.join(','),
     redirect_uri: redirectUri,
@@ -138,13 +146,19 @@ async function authCallback(env, body) {
   const missing = need(env);
   if (missing.length) {
     return redirect(
-      returnTo + '?tt_status=' + encodeURIComponent('error:missing:' + missing.join(','))
+      returnTo +
+        '?tt_status=' +
+        encodeURIComponent('error:missing:' + missing.join(','))
     );
   }
 
   if (body.error) {
     return redirect(
-      returnTo + '?tt_status=' + encodeURIComponent('error:' + body.error)
+      returnTo +
+        '?tt_status=' +
+        encodeURIComponent(
+          'error:' + body.error + ':' + (body.error_description || '')
+        )
     );
   }
 
@@ -155,42 +169,71 @@ async function authCallback(env, body) {
     );
   }
 
+  const form = new URLSearchParams({
+    client_key: String(env.TIKTOK_CLIENT_KEY).trim(),
+    client_secret: String(env.TIKTOK_CLIENT_SECRET).trim(),
+    code,
+    grant_type: 'authorization_code',
+    redirect_uri: redirectUri,
+  });
+
   const r = await fetch(TOKEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_key: env.TIKTOK_CLIENT_KEY.trim(),
-      client_secret: env.TIKTOK_CLIENT_SECRET.trim(),
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-    }).toString(),
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Cache-Control': 'no-cache',
+    },
+    body: form.toString(),
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) {
+
+  const rawText = await r.text();
+  let data = {};
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    data = { parse_error: true, raw: rawText.slice(0, 120) };
+  }
+
+  // TikTok sometimes nests under data
+  const accessToken =
+    data.access_token ||
+    (data.data && data.data.access_token) ||
+    null;
+  const openId =
+    data.open_id || (data.data && data.data.open_id) || null;
+
+  if (!r.ok || data.error || data.error_code) {
     return redirect(
       returnTo +
         '?tt_status=' +
         encodeURIComponent(
-          'error:token_' + r.status + '_' + JSON.stringify(data).slice(0, 120)
+          'error:token_' +
+            r.status +
+            '_' +
+            (data.error || data.error_code || 'fail') +
+            '_' +
+            (data.error_description || data.message || brief(data))
         )
     );
   }
 
-  const accessToken = data.access_token;
-  const openId = data.open_id;
   if (!accessToken || !openId) {
     return redirect(
-      returnTo + '?tt_status=' + encodeURIComponent('error:no_token_in_response')
+      returnTo +
+        '?tt_status=' +
+        encodeURIComponent('error:no_token:' + brief(data))
     );
   }
 
   const record = {
     open_id: openId,
     access_token: accessToken,
-    refresh_token: data.refresh_token || null,
-    expires_in: data.expires_in || null,
-    scope: data.scope || null,
+    refresh_token:
+      data.refresh_token ||
+      (data.data && data.data.refresh_token) ||
+      null,
+    expires_in: data.expires_in || (data.data && data.data.expires_in) || null,
+    scope: data.scope || (data.data && data.data.scope) || null,
     connected_at: new Date().toISOString(),
     last_publish: null,
     publish_status: 'none',
