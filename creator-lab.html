@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LTZZZ 创作实验室</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body{max-width:900px;margin:0 auto;padding:24px;font-family:system-ui,sans-serif}
+.panel{border:1px solid #ddd;border-radius:16px;padding:20px;margin:16px 0}
+.btn{display:inline-block;padding:10px 16px;background:#171717;color:#fff;border-radius:10px;text-decoration:none;border:0;cursor:pointer;margin:4px}
+.muted{color:#666;font-size:14px}
+code{background:#f4f4f4;padding:2px 6px;border-radius:4px}
+</style>
+</head>
+<body>
+<p><a href="/">← 首页</a></p>
+<h1>创作实验室</h1>
+<p class="muted">页面曾误覆盖，已用精简版恢复。完整 UI 将再合并；YouTube / TikTok 连接地址已纠正。</p>
+
+<div class="panel">
+  <h2>TikTok</h2>
+  <p class="muted">Worker: <code>ltzzz-tiktok-post</code> · health 已验证 has_key/secret/kv</p>
+  <button class="btn" type="button" id="tt">连接 TikTok</button>
+  <pre id="ttOut" class="muted"></pre>
+</div>
+
+<div class="panel">
+  <h2>YouTube</h2>
+  <p class="muted">Worker: <code>ltzzz-youtube-upload</code>（不是 youtube-post）</p>
+  <p class="muted">Google 控制台回调必须是：</p>
+  <p><code>https://ltzzz-youtube-upload.ltzyz2181.workers.dev/oauth/youtube/callback</code></p>
+  <button class="btn" type="button" id="yt">连接 YouTube</button>
+  <pre id="ytOut" class="muted"></pre>
+</div>
+
+<script>
+var TT = 'https://ltzzz-tiktok-post.ltzyz2181.workers.dev';
+var YT = 'https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
+var RETURN_TO = location.origin + '/creator-lab.html';
+document.getElementById('tt').onclick = async function () {
+  var o = document.getElementById('ttOut');
+  o.textContent = '请求授权链接…';
+  try {
+    var r = await fetch(TT + '/auth/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ return_to: RETURN_TO })
+    });
+    var d = await r.json();
+    if (d.auth_url) location.href = d.auth_url;
+    else o.textContent = JSON.stringify(d, null, 2);
+  } catch (e) { o.textContent = String(e); }
+};
+document.getElementById('yt').onclick = function () {
+  location.href = YT + '/auth/youtube?return_to=' + encodeURIComponent(RETURN_TO);
+};
+// status
+fetch(TT + '/health').then(r=>r.json()).then(d=>{
+  document.getElementById('ttOut').textContent = 'health: ' + JSON.stringify(d);
+}).catch(()=>{});
+fetch(YT + '/health').then(r=>r.json()).then(d=>{
+  document.getElementById('ytOut').textContent = 'health: ' + JSON.stringify(d);
+}).catch(e=>{
+  document.getElementById('ytOut').textContent = 'health 失败（Worker 可能未部署 /health）：' + e;
+});
+</script>
+</body>
+</html>
