@@ -1,0 +1,163 @@
+/**
+ * LTZZZ PayPal Sandbox 收款代理
+ * 路由：
+ *   GET  /health         健康检查
+ *   POST /create-order   创建 PayPal 订单（Bearer token）
+ *   POST /webhook        PayPal 异步支付通知（验签）
+ *   GET  /balance        收款统计（Bearer token）
+ */
+
+const GATEWAYS = {
+  sandbox: 'https://api-m.sandbox.paypal.com',
+  live: 'https://api-m.paypal.com',
+};
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+function now() { return new Date().toISOString(); }
+
+async function getAccessToken(env, kv) {
+  const cached = await kv.get('pp:token', 'json');
+  if (cached && cached.exp > Date.now() + 60000) return cached.t;
+
+  const gw = GATEWAYS[env.PAYPAL_ENV || 'sandbox'];
+  const basic = btoa(`${env.PAYPAL_CLIENT_ID}:${env.PAYPAL_CLIENT_SECRET}`);
+  const r = await fetch(`${gw}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: { Authorization: `Basic ${basic}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=client_credentials',
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(`OAuth ${r.status}: ${JSON.stringify(d)}`);
+  await kv.put('pp:token', JSON.stringify({ t: d.access_token, exp: Date.now() + d.expires_in * 1000 }));
+  return d.access_token;
+}
+
+async function createOrder(env, kv, { amount, item }) {
+  const gw = GATEWAYS[env.PAYPAL_ENV || 'sandbox'];
+  const tok = await getAccessToken(env, kv);
+  const r = await fetch(`${gw}/v2/checkout/orders`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      intent: 'CAPTURE',
+      purchase_units: [{
+        amount: { currency_code: 'USD', value: Number(amount).toFixed(2) },
+        description: String(item || 'LTZZZ').slice(127),
+      }],
+      application_context: { brand_name: 'LTZZZ', user_action: 'PAY_NOW', shipping_preference: 'NO_SHIPPING' },
+    }),
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(`createOrder: ${JSON.stringify(d)}`);
+  const approve = d.links?.find(l => l.rel === 'approve');
+  return { order_id: d.id, status: d.status, approve_url: approve?.href || null };
+}
+
+async function verifyWebhook(env, kv, headers, bodyText) {
+  const gw = GATEWAYS[env.PAYPAL_ENV || 'sandbox'];
+  const tok = await getAccessToken(env, kv);
+  const r = await fetch(`${gw}/v1/notifications/verify-webhook-signature`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      auth_algo: headers.get('paypal-auth-algo'),
+      cert_url: headers.get('paypal-cert-url'),
+      transmission_id: headers.get('paypal-transmission-id'),
+      transmission_sig: headers.get('paypal-transmission-sig'),
+      transmission_time: headers.get('paypal-transmission-time'),
+      webhook_id: env.PAYPAL_WEBHOOK_ID,
+      webhook_event: JSON.parse(bodyText),
+    }),
+  });
+  const d = await r.json();
+  return d.verification_status === 'SUCCESS';
+}
+
+async function recordPayment(kv, event) {
+  const cap = event.resource?.purchase_units?.[0]?.payments?.captures?.[0];
+  const amt = Number(cap?.amount?.value || 0);
+  const stats = await kv.get('pp:stats', 'json') || { usd: 0, count: 0, orders: {} };
+  stats.usd = Math.round((stats.usd + amt) * 100) / 100;
+  stats.count += 1;
+  const oid = event.resource?.id || 'unknown';
+  stats.orders[oid] = { time: now(), amount: amt, payer: event.resource?.payer?.email_address || null, status: event.event_type };
+  await kv.put('pp:stats', JSON.stringify(stats));
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/+$/, '') || '/';
+    const kv = env.PAYPAL_KV;
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      }});
+    }
+
+    const authed = () => {
+      const a = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+      return a === env.LTZZZ_AGENT_TOKEN;
+    };
+
+    if (path === '/health' && request.method === 'GET') {
+      return json({
+        ok: true, time: now(), service: 'ltzzz-paypal-proxy',
+        env: env.PAYPAL_ENV || 'sandbox',
+        configured: {
+          client_id: !!env.PAYPAL_CLIENT_ID,
+          secret: !!env.PAYPAL_CLIENT_SECRET,
+          webhook_id: !!env.PAYPAL_WEBHOOK_ID,
+          agent_token: !!env.LTZZZ_AGENT_TOKEN,
+          kv: !!kv,
+        },
+      });
+    }
+
+    if (path === '/create-order' && request.method === 'POST') {
+      if (!authed()) return json({ error: 'unauthorized' }, 401);
+      try {
+        const body = await request.json();
+        const r = await createOrder(env, kv, body);
+        return json({ ok: true, ...r });
+      } catch (e) {
+        return json({ ok: false, error: e.message }, 500);
+      }
+    }
+
+    if (path === '/webhook' && request.method === 'POST') {
+      const bodyText = await request.text();
+      try {
+        const ok = await verifyWebhook(env, kv, request.headers, bodyText);
+        if (!ok) return json({ error: 'invalid signature' }, 403);
+        const ev = JSON.parse(bodyText);
+        if (ev.event_type === 'PAYMENT.CAPTURE.COMPLETED') await recordPayment(kv, ev);
+        return json({ received: true });
+      } catch (e) {
+        return json({ error: e.message }, 500);
+      }
+    }
+
+    if (path === '/balance' && request.method === 'GET') {
+      if (!authed()) return json({ error: 'unauthorized' }, 401);
+      const stats = await kv.get('pp:stats', 'json') || { usd: 0, count: 0, orders: {} };
+      return json({ ok: true, ...stats });
+    }
+
+    return json({ error: 'not found' }, 404);
+  },
+};
