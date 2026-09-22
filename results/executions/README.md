@@ -1,23 +1,16 @@
-# Execution ID
-
-所有 AI 工作按一条链记，不再各说各话。
+# Execution 链
 
 ```
 TASK-YYYYMMDD-NNN
        ↓
-EXEC-YYYYMMDD-<AI>-NNN
+EXEC-YYYYMMDD-<AI>-NNN   +　Output
+       ↓
+VERIFY-YYYYMMDD-NNN
        ↓
 RESULT-YYYYMMDD-NNN
        ↓
-VERIFY-YYYYMMDD-NNN
+Memory（晋升队列，高影响人工）
 ```
 
-| 前缀 | 谁写 | 含义 |
-|------|------|------|
-| TASK | 人 / GPT 拆解 | 要做什么 |
-| EXEC | 某个 AI | 必须带 memory_id |
-| RESULT | 汇总 | 产出 + 证据 |
-| VERIFY | 交叉审 | DeepSeek→Claude→Grok→GPT |
-
-禁止把 EXEC 直接当 RESULT。禁止不带 memory_id 的 EXEC。
-微软不再部署。
+模板：`_TEMPLATE-TASK.md` 等。
+禁止：EXEC 当 RESULT；不带 memory_id 的 EXEC。
