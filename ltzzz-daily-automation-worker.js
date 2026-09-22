@@ -102,8 +102,6 @@ async function writeArtifact(path, content, env, ctx) {
  * 返回 { sources:[...], manifest:[...], dry_run, note }
  */
 async function scanRepo(env) {
-  // Memory Engine v1: 所有 AI 先读取统一长期记忆入口。
-  // 优先读取 R2 中同步的 ltzzz-memory/；没有 R2 时明确标记为未真实读取，禁止伪造。
   const memoryFiles = [
     "ltzzz-memory/README.md",
     "ltzzz-memory/装备论.md",
@@ -122,6 +120,39 @@ async function scanRepo(env) {
     "articles/", "protocol/"
   ];
 
+  // 优先：通过 Memory Gateway HTTP 读取（已在线，source=github）
+  const gatewayBase = env.MEMORY_GATEWAY_URL || "https://ltzzz-memory-gateway.ltzyz2181.workers.dev";
+  if (gatewayBase) {
+    try {
+      const manifest = [];
+      let allOk = true;
+      for (const path of memoryFiles) {
+        try {
+          const resp = await fetch(`${gatewayBase}/file?path=${encodeURIComponent(path)}`, {
+            cf: { cacheTtl: 300 },
+          });
+          const ok = resp.ok;
+          manifest.push({ path, readable: ok });
+          if (!ok) allOk = false;
+        } catch (_e) {
+          manifest.push({ path, readable: false });
+          allOk = false;
+        }
+      }
+      return {
+        sources,
+        manifest,
+        dry_run: false,
+        memory_engine: "v2",
+        source: "gateway_http",
+        note: `Memory Gateway HTTP 读取：${manifest.filter(m=>m.readable).length}/${memoryFiles.length} 文件可读`,
+      };
+    } catch (_e) {
+      // Gateway 不可达，降级
+    }
+  }
+
+  // 次选：R2 绑定
   if (env && env.LTZZZ_ARTIFACTS && typeof env.LTZZZ_ARTIFACTS.get === "function") {
     const manifest = [];
     for (const path of memoryFiles) {
@@ -133,7 +164,8 @@ async function scanRepo(env) {
       manifest,
       dry_run: false,
       memory_engine: "v1",
-      note: "Memory Engine 统一入口：每个 AI 开工前检查 ltzzz-memory 全部核心文件；缺失文件明确记录，不伪造已读取。"
+      source: "r2",
+      note: "Memory Engine v1 (R2)",
     };
   }
 
@@ -142,7 +174,7 @@ async function scanRepo(env) {
     manifest: memoryFiles.map((path) => ({ path, readable: false })),
     dry_run: true,
     memory_engine: "v1",
-    note: "未绑定 R2，当前仅建立统一 Memory manifest；必须同步 ltzzz-memory 到 Worker 可读取存储后，才能标记真实已读取。"
+    note: "Gateway 不可达且未绑 R2，仅 manifest 占位。",
   };
 }
 
@@ -203,7 +235,8 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
   let keyName;
   if (channel === "gpt") keyName = "OPENAI_API_KEY";
   else if (channel === "claude") keyName = "ANTHROPIC_API_KEY";
-  else if (channel === "xia") keyName = "XIA_GROK_API_KEY";
+  else if (channel === "xia") keyName = "XAI_API_KEY";
+  else if (channel === "doubao") keyName = "ARK_API_KEY";
   else keyName = `${channel.toUpperCase()}_API_KEY`;
   const hasKey = !!(env && env[keyName]);
   if (!hasKey) {
@@ -238,12 +271,12 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     extraHeaders["anthropic-version"] = "2023-06-01";
   } else if (channel === "doubao") {
     apiUrl = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-    model = "ep-20240919150030-7xqvw";
-    apiKey = env.DOUBAO_API_KEY;
+    model = "doubao-seed-1-6-250615";
+    apiKey = env.ARK_API_KEY;
   } else if (channel === "xia") {
     apiUrl = "https://api.x.ai/v1/chat/completions";
-    model = "grok-beta";
-    apiKey = env.XIA_GROK_API_KEY;
+    model = "grok-2-latest";
+    apiKey = env.XAI_API_KEY;
   } else {
     return { ok: true, status: "live-skeleton", dry_run: false, budget, placeholder: `[live-skeleton] ${channel} 通道待接入` };
   }
@@ -685,16 +718,23 @@ export default {
    * 通过 CRON_MAP 把 cron 字符串映射到任务 key（与 wrangler.daily.toml 的 crons 一致）。
    */
   async scheduled(event, env, ctx) {
-    const CRON_MAP = {
-      "30 22 * * *": "deepseek-daily",     // 22:30 UTC = 次日 06:30 UTC+8
-      "0 0 * * *":   "gpt-daily",          // 00:00 UTC = 08:00 UTC+8
-      "30 1 * * *":  "claude-daily",       // 01:30 UTC = 09:30 UTC+8
-      "0 3 * * *":   "doubao-daily",       // 03:00 UTC = 11:00 UTC+8
-      "0 6 * * *":   "copilot-daily",      // 06:00 UTC = 14:00 UTC+8
-      "0 8 * * *":   "xia-daily",          // 08:00 UTC = 16:00 UTC+8
+    // 每小时触发一次，按 UTC 小时路由到对应任务（CST=UTC+8）
+    const now = new Date();
+    const utcHour = now.getUTCHours();
+    const HOUR_MAP = {
+      22: "deepseek-daily",   // 22:00 UTC = 06:00 CST
+      0:  "gpt-daily",        // 00:00 UTC = 08:00 CST
+      1:  "claude-daily",     // 01:00 UTC = 09:00 CST
+      3:  "doubao-daily",     // 03:00 UTC = 11:00 CST
+      6:  "copilot-daily",    // 06:00 UTC = 14:00 CST
+      8:  "xia-daily",        // 08:00 UTC = 16:00 CST
     };
-    const key = CRON_MAP[event.cron] || "gpt-daily"; // 兜底跑一次 GPT 每日
-    logDry("scheduled.trigger", { cron: event.cron, mapped: key, dry_run: true });
+    const key = HOUR_MAP[utcHour] || null;
+    if (!key) {
+      console.log(JSON.stringify({ at: new Date().toISOString(), skip: true, utcHour, reason: "no task this hour" }));
+      return;
+    }
+    console.log(JSON.stringify({ at: new Date().toISOString(), scheduled: key, utcHour }));
     const result = await dispatchTask(key, env, ctx);
     return result;
   },
