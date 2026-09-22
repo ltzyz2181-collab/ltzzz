@@ -1,0 +1,109 @@
+{
+  "date": "2026-09-22",
+  "generated_at": "2026-09-22T02:29:40.905Z",
+  "source": "results/daily/2026-09-22.md",
+  "schema_version": "1.0",
+  "honesty": {
+    "ai_calls_realized": false,
+    "note": "JSON 由 Markdown 日报静态生成；外部 AI 真实调用状态以 md 内文字为准。"
+  },
+  "summary": {
+    "ais_total": 7,
+    "ais_ok": 3,
+    "ais_blocked": 4,
+    "ais_waiting": 0,
+    "pub_total": 5,
+    "pub_ok": 2,
+    "pub_off": 2
+  },
+  "ais": [
+    {
+      "name": "GPT 总控",
+      "status": "ok",
+      "statusText": "🟢 已执行",
+      "output": "整理 Memory→Daily→前端接入方案，确认数据链路",
+      "error": ""
+    },
+    {
+      "name": "豆包",
+      "status": "ok",
+      "statusText": "🟢 已执行",
+      "output": "写入接入方案文档、生成今日日报、重跑 build 脚本",
+      "error": "外部 API 未直接调用"
+    },
+    {
+      "name": "Grok/XAI",
+      "status": "blocked",
+      "statusText": "🔴 等人工凭证",
+      "output": "无外部 API 实时结果",
+      "error": "缺可执行凭证"
+    },
+    {
+      "name": "Claude",
+      "status": "blocked",
+      "statusText": "🔴 等人工凭证",
+      "output": "总控代记角色模板，未伪装成外部调用",
+      "error": "缺可执行凭证"
+    },
+    {
+      "name": "DeepSeek",
+      "status": "blocked",
+      "statusText": "🔴 等人工凭证",
+      "output": "总控代记异同对照模板，未伪装成外部调用",
+      "error": "缺可执行凭证"
+    },
+    {
+      "name": "Microsoft/Copilot",
+      "status": "blocked",
+      "statusText": "🔴 等人工凭证",
+      "output": "未启用",
+      "error": "缺可执行凭证"
+    },
+    {
+      "name": "总控",
+      "status": "ok",
+      "statusText": "🟢 已执行",
+      "output": "数据链路审查、接入方案落地",
+      "error": ""
+    }
+  ],
+  "publish": [
+    {
+      "channel": "Telegram",
+      "status": "ok",
+      "statusText": "🟢 已部署",
+      "note": "ltzzz-telegram-bot.ltzyz2181.workers.dev"
+    },
+    {
+      "channel": "X",
+      "status": "ok",
+      "statusText": "🟢 已部署",
+      "note": "Worker 代码就绪"
+    },
+    {
+      "channel": "TikTok",
+      "status": "waiting",
+      "statusText": "🟡 审核中",
+      "note": "已提交，OAuth 待审核通过"
+    },
+    {
+      "channel": "Facebook",
+      "status": "off",
+      "statusText": "⚪ 未启用",
+      "note": "代码就绪，缺 Graph API 凭证"
+    },
+    {
+      "channel": "WhatsApp",
+      "status": "off",
+      "statusText": "⚪ 未启用",
+      "note": "代码就绪，缺 Business API 凭证"
+    }
+  ],
+  "next_steps": [
+    "等 TikTok 审核通过后跑通 OAuth 授权",
+    "创建 R2 桶 ltzzz-memory，解锁 Memory Engine 持久化",
+    "配置 GitHub Action：push 后自动跑 build-daily-data.js",
+    "daily.html 加日期选择器和 Memory 快照展示",
+    "六 AI API Key 已配 Secret，等解锁后关闭 dry_run"
+  ]
+}
