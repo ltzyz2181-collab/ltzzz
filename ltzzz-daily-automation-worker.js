@@ -753,7 +753,7 @@ export default {
       }), { headers: { "Content-Type": "application/json; charset=utf-8" } });
     }
     if (url.pathname === "/run") {
-      // 简单令牌保护；未配置 LTZZZ_AGENT_TOKEN 时仅允许 dry-run 手动调试
+      // 调试模式：/run 无需 token（生产可通过设置 LTZZZ_AGENT_TOKEN 启用保护）
       const token = request.headers.get("Authorization") || "";
       if (env.LTZZZ_AGENT_TOKEN && token !== `Bearer ${env.LTZZZ_AGENT_TOKEN}`) {
         return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), { status: 401 });
