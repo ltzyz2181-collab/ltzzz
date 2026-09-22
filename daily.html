@@ -59,6 +59,11 @@
 
   <div class="stats-row" id="statsRow"></div>
 
+  <div class="next-section" style="margin-bottom:32px">
+    <h2>🧠 Memory 记忆中心</h2>
+    <div id="memStatus" style="font-size:14px;color:#b0b8c8;line-height:1.8">加载中…</div>
+  </div>
+
   <h2 style="margin:0 0 16px; font-size:20px">🤖 六 AI 模块</h2>
   <div class="ai-grid" id="aiGrid"></div>
 
@@ -127,6 +132,22 @@ function renderNext(steps) {
     "<li>（暂无）</li>";
 }
 
+async function loadMem() {
+  const el = document.getElementById("memStatus");
+  try {
+    const gw = "https://ltzzz-memory-gateway.ltzyz2181.workers.dev";
+    const [h, m] = await Promise.all([
+      fetch(gw + "/health").then(r => r.json()),
+      fetch(gw + "/manifest").then(r => r.json()).catch(() => null),
+    ]);
+    const files = m && m.files ? m.files.length : "?";
+    const bound = h.r2_bound ? "✅ R2 已绑定" : "🟡 R2 未绑定（GitHub 源）";
+    el.innerHTML = `Gateway: ${h.ok ? "✅ 在线" : "❌ 离线"} · 源: ${h.source || "?"} · ${bound} · 记忆文件: ${files} 个 · <a href="${gw}/manifest" target="_blank" style="color:#60a5fa">查看清单</a>`;
+  } catch (e) {
+    el.textContent = "Gateway 不可达: " + e.message;
+  }
+}
+
 async function load() {
   try {
     const res = await fetch("daily-data.json?t=" + Date.now(), { cache: "no-store" });
@@ -144,6 +165,7 @@ async function load() {
   }
 }
 load();
+loadMem();
 </script>
 </body>
 </html>
