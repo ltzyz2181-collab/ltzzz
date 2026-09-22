@@ -20,11 +20,12 @@
   .ai-card .ai-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
   .ai-card .ai-name { font-size: 18px; font-weight: 600; }
   .status { display: inline-block; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; }
-  .status.green { background: #064e3b; color: #34d399; }
-  .status.yellow { background: #422006; color: #fbbf24; }
-  .status.red { background: #450a0a; color: #f87171; }
-  .status.gray { background: #1f2937; color: #9ca3af; }
+  .status.ok { background: #064e3b; color: #34d399; }
+  .status.waiting { background: #422006; color: #fbbf24; }
+  .status.blocked { background: #450a0a; color: #f87171; }
+  .status.off { background: #1f2937; color: #9ca3af; }
   .ai-card .ai-body { font-size: 13px; color: #b0b8c8; line-height: 1.7; }
+  .ai-card .ai-err { font-size: 12px; color: #f87171; margin-top: 6px; }
   .pub-section { margin-bottom: 32px; }
   .pub-section h2 { font-size: 20px; margin: 0 0 16px; }
   .pub-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -33,6 +34,7 @@
   .next-section { background: #131929; border: 1px solid #1e2a45; border-radius: 16px; padding: 24px; }
   .next-section h2 { font-size: 20px; margin: 0 0 16px; }
   .next-section ul { margin: 0; padding-left: 20px; line-height: 2; color: #b0b8c8; font-size: 14px; }
+  .honesty-note { font-size: 12px; color: #6b7280; text-align: center; margin-top: 8px; }
   @media (max-width: 768px) { .stats-row, .ai-grid, .pub-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -51,125 +53,97 @@
 <main class="daily-wrap">
   <div class="daily-header">
     <h1>📊 LTZZZ 每日运行</h1>
-    <p class="date" id="todayDate">2026-09-19 · 星期六</p>
+    <p class="date" id="todayDate">加载中…</p>
+    <p class="honesty-note" id="honestyNote"></p>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="num" style="color:#34d399">1</div>
-      <div class="label">✅ 今日完成</div>
-    </div>
-    <div class="stat-card">
-      <div class="num" style="color:#f87171">6</div>
-      <div class="label">🔴 等 API Key</div>
-    </div>
-    <div class="stat-card">
-      <div class="num" style="color:#fbbf24">3</div>
-      <div class="label">🟡 等人工凭证</div>
-    </div>
-    <div class="stat-card">
-      <div class="num" style="color:#60a5fa">2</div>
-      <div class="label">🟢 已上线通道</div>
-    </div>
-  </div>
+  <div class="stats-row" id="statsRow"></div>
 
   <h2 style="margin:0 0 16px; font-size:20px">🤖 六 AI 模块</h2>
-  <div class="ai-grid">
-    <div class="ai-card">
-      <div class="ai-head">
-        <span class="ai-name">GPT</span>
-        <span class="status red">🔴 等 API</span>
-      </div>
-      <div class="ai-body">
-        每日任务：读仓库记忆 → 写规划 → 部署一条任务 → 打磨代码<br>
-        当前状态：代码就绪，缺 OPENAI_API_KEY
-      </div>
-    </div>
-    <div class="ai-card">
-      <div class="ai-head">
-        <span class="ai-name">豆包</span>
-        <span class="status red">🔴 等 API</span>
-      </div>
-      <div class="ai-body">
-        每日任务：读仓库 → 整理装备论 → 生成视频脚本 → 打磨代码<br>
-        当前状态：代码就绪，缺 DOUBAO_API_KEY
-      </div>
-    </div>
-    <div class="ai-card">
-      <div class="ai-head">
-        <span class="ai-name">Grok / XAI</span>
-        <span class="status red">🔴 等 API</span>
-      </div>
-      <div class="ai-body">
-        每日任务：读仓库 → 心理健康清单 → 打磨 APP/Web3 代码<br>
-        当前状态：代码就绪，缺 XAI_API_KEY
-      </div>
-    </div>
-    <div class="ai-card">
-      <div class="ai-head">
-        <span class="ai-name">Claude</span>
-        <span class="status red">🔴 等 API</span>
-      </div>
-      <div class="ai-body">
-        每日任务：读仓库 → 写 50 字小说 → 连续记录<br>
-        当前状态：代码就绪，缺 ANTHROPIC_API_KEY
-      </div>
-    </div>
-    <div class="ai-card">
-      <div class="ai-head">
-        <span class="ai-name">DeepSeek</span>
-        <span class="status red">🔴 等 API</span>
-      </div>
-      <div class="ai-body">
-        每日任务：读仓库 → 对照传统文化与装备论异同<br>
-        当前状态：代码就绪，缺 DEEPSEEK_API_KEY
-      </div>
-    </div>
-    <div class="ai-card">
-      <div class="ai-head">
-        <span class="ai-name">Microsoft</span>
-        <span class="status red">🔴 等 API</span>
-      </div>
-      <div class="ai-body">
-        每日任务：读仓库 → 对照西方文化与装备论异同<br>
-        当前状态：代码就绪，缺 MICROSOFT_API_KEY
-      </div>
-    </div>
-  </div>
+  <div class="ai-grid" id="aiGrid"></div>
 
   <div class="pub-section">
     <h2>📡 发布通道</h2>
-    <div class="pub-grid">
-      <div class="pub-card">
-        <div class="pub-name">Telegram</div>
-        <span class="status green">🟢 已部署</span>
-      </div>
-      <div class="pub-card">
-        <div class="pub-name">X (Twitter)</div>
-        <span class="status green">🟢 已部署</span>
-      </div>
-      <div class="pub-card">
-        <div class="pub-name">Facebook</div>
-        <span class="status gray">⚪ 未启用</span>
-      </div>
-      <div class="pub-card">
-        <div class="pub-name">WhatsApp</div>
-        <span class="status gray">⚪ 未启用</span>
-      </div>
-    </div>
+    <div class="pub-grid" id="pubGrid"></div>
   </div>
 
   <div class="next-section">
     <h2>📋 下一步</h2>
-    <ul>
-      <li>等用户提供 6 AI API Key → 部署每日自动化 Worker</li>
-      <li>等用户提供 WhatsApp/Facebook 凭证 → 部署对应机器人</li>
-      <li>配置 GitHub Actions 每日定时触发</li>
-      <li>支付宝转账：风控中，7 天后重新签约（约 2026-09-26）</li>
-    </ul>
+    <ul id="nextList"></ul>
   </div>
 </main>
 
 <footer style="text-align:center;padding:24px;color:#8b95a8;font-size:13px">© 2026 LTZZZ Digital Lab · Daily Automation Phase-1</footer>
+
+<script>
+// 状态 -> {class, label}
+const STATUS_MAP = {
+  ok:       { cls: "ok",       label: "🟢 已执行" },
+  waiting:  { cls: "waiting", label: "🟡 等凭证" },
+  blocked:  { cls: "blocked", label: "🔴 等 API" },
+  off:      { cls: "off",     label: "⚪ 未启用" },
+  unknown:  { cls: "off",     label: "⚪ 未知" },
+};
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function renderStats(s) {
+  const cards = [
+    { num: s.ais_ok,       color: "#34d399", label: "✅ 已执行/在线" },
+    { num: s.ais_blocked,  color: "#f87171", label: "🔴 等 API" },
+    { num: s.ais_waiting,  color: "#fbbf24", label: "🟡 等人工凭证" },
+    { num: s.pub_ok,       color: "#60a5fa", label: "🟢 已上线通道" },
+  ];
+  document.getElementById("statsRow").innerHTML = cards.map(c =>
+    `<div class="stat-card"><div class="num" style="color:${c.color}">${c.num}</div><div class="label">${c.label}</div></div>`
+  ).join("");
+}
+
+function renderAis(ais) {
+  document.getElementById("aiGrid").innerHTML = ais.map(a => {
+    const st = STATUS_MAP[a.status] || STATUS_MAP.unknown;
+    const err = a.error ? `<div class="ai-err">⚠ ${esc(a.error)}</div>` : "";
+    return `<div class="ai-card">
+      <div class="ai-head"><span class="ai-name">${esc(a.name)}</span>
+        <span class="status ${st.cls}">${esc(st.label)}</span></div>
+      <div class="ai-body">${esc(a.output) || "—"}${err}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderPublish(pub) {
+  document.getElementById("pubGrid").innerHTML = pub.map(p => {
+    const st = STATUS_MAP[p.status] || STATUS_MAP.unknown;
+    return `<div class="pub-card">
+      <div class="pub-name">${esc(p.channel)}</div>
+      <span class="status ${st.cls}">${esc(st.label)}</span>
+    </div>`;
+  }).join("");
+}
+
+function renderNext(steps) {
+  document.getElementById("nextList").innerHTML =
+    (steps || []).map(s => `<li>${esc(s)}</li>`).join("") ||
+    "<li>（暂无）</li>";
+}
+
+async function load() {
+  try {
+    const res = await fetch("daily-data.json?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const d = await res.json();
+    document.getElementById("todayDate").textContent = d.date + " · 数据来自 results/daily";
+    if (d.honesty) document.getElementById("honestyNote").textContent = d.honesty.note || "";
+    renderStats(d.summary || {});
+    renderAis(d.ais || []);
+    renderPublish(d.publish || []);
+    renderNext(d.next_steps || []);
+  } catch (e) {
+    document.getElementById("todayDate").textContent = "daily-data.json 未生成 — 请先运行 node scripts/build-daily-data.js";
+    console.error("daily-data load failed:", e);
+  }
+}
+load();
+</script>
 </body>
 </html>
