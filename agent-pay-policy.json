@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "governance": {
     "controller": "ChatGPT",
     "experts": ["Doubao", "DeepSeek", "Grok", "Claude"],
@@ -16,10 +16,30 @@
     "default_mode": "human-confirm",
     "default_budget_usd": 1.0,
     "default_single_cap_usd": 0.02,
+    "real_funds_enabled": false,
     "stablecoin": {
       "planned": "USDC",
       "status": "not-live"
     }
+  },
+  "treasury": {
+    "base": "Safe Smart Account",
+    "agent_signer": "restricted-module-or-allowance-only",
+    "production_auto_withdraw": false,
+    "required_controls": [
+      "memory-gate",
+      "payment-proposal",
+      "budget-check",
+      "single-tx-cap",
+      "daily-limit",
+      "monthly-limit",
+      "chain-allowlist",
+      "token-allowlist",
+      "destination-allowlist",
+      "human-confirm-threshold",
+      "receipt-verification",
+      "ledger-write"
+    ]
   },
   "providers": {
     "DeepSeek": {"billing": "provider-account", "agent_payment": "adapter-planned"},
@@ -27,5 +47,5 @@
     "Claude": {"billing": "provider-account", "agent_payment": "adapter-planned"},
     "Grok": {"billing": "provider-account", "agent_payment": "adapter-planned"}
   },
-  "rule": "LTZZZ Agentic Payment is a separate payment-control layer; it does not replace a model provider's own billing system."
+  "rule": "LTZZZ Agentic Payment is a separate payment-control layer; it does not replace a model provider's own billing system. No AI may independently modify treasury policy or move LTZZZ production funds."
 }
