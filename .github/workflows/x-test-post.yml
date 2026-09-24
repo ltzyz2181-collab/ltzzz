@@ -1,0 +1,23 @@
+name: LTZZZ X manual test post
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: 'Test post text'
+        required: false
+        default: 'LTZZZ 测试动态：观，行深。今天开始让 AI、代码、记忆与真实结果一起长期演化。'
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publish one test post
+        env:
+          X_USER_ACCESS_TOKEN: ${{ secrets.X_USER_ACCESS_TOKEN }}
+          X_TEST_TEXT: ${{ inputs.text }}
+        run: node scripts/x-test-post.mjs

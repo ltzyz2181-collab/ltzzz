@@ -1,5 +1,5 @@
 {
-  "version": "0.1",
+  "version": "0.3",
   "governance": {
     "controller": "ChatGPT",
     "experts": ["Doubao", "DeepSeek", "Grok", "Claude"],
@@ -11,15 +11,45 @@
   },
   "payment": {
     "default_currency": "USD",
-    "rails": ["x402", "MPP", "visa-agentic", "mastercard-agent-pay"],
+    "rails": ["x402", "MPP", "visa-agentic", "mastercard-agent-pay", "erc20-usdt"],
     "modes": ["human-confirm", "policy-auto", "agent-vote"],
-    "default_mode": "human-confirm",
-    "default_budget_usd": 1.0,
-    "default_single_cap_usd": 0.02,
+    "default_mode": "policy-auto",
+    "default_budget_usd": 50.0,
+    "default_single_cap_usd": 20.0,
+    "daily_cap_usd": 50.0,
+    "monthly_cap_usd": 300.0,
+    "real_funds_enabled": true,
+    "ops_float": {
+      "enabled": true,
+      "description": "运营小额池：API/推广/实验由 AI 在限额与白名单内自主支配",
+      "single_cap_usd": 20.0,
+      "daily_cap_usd": 50.0,
+      "monthly_cap_usd": 300.0
+    },
     "stablecoin": {
-      "planned": "USDC",
-      "status": "not-live"
+      "planned": "USDT",
+      "status": "ops-float-planned",
+      "networks": ["ethereum"]
     }
+  },
+  "treasury": {
+    "base": "Safe Smart Account",
+    "agent_signer": "restricted-module-or-allowance-only",
+    "production_auto_withdraw": false,
+    "ops_auto_within_policy": true,
+    "required_controls": [
+      "memory-gate",
+      "payment-proposal",
+      "budget-check",
+      "single-tx-cap",
+      "daily-limit",
+      "monthly-limit",
+      "chain-allowlist",
+      "token-allowlist",
+      "destination-allowlist",
+      "receipt-verification",
+      "ledger-write"
+    ]
   },
   "providers": {
     "DeepSeek": {"billing": "provider-account", "agent_payment": "adapter-planned"},
@@ -27,5 +57,5 @@
     "Claude": {"billing": "provider-account", "agent_payment": "adapter-planned"},
     "Grok": {"billing": "provider-account", "agent_payment": "adapter-planned"}
   },
-  "rule": "LTZZZ Agentic Payment is a separate payment-control layer; it does not replace a model provider's own billing system."
+  "rule": "小额运营池在 policy 限额与白名单内由 AI 自动排队执行；主池超限走 Safe/主人。每笔必须记账与 Memory。密钥不进模型与公开仓库。"
 }
