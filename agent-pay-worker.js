@@ -1,69 +1,326 @@
-// LTZZZ Agentic Payment Worker — framework endpoint
-// This is intentionally a protocol-shaped demo, not a live payment processor.
-// Deploy with Cloudflare Workers when you are ready.
+/**
+ * LTZZZ Agent Payment / Treasury v1 entry
+ * Replaces SIMULATED_SUCCESS demo with real pipeline shape:
+ *   AI → Payment Policy → Transaction Queue → Safe → ERC20 USDT → TxHash → confirm → Ledger → Memory
+ *
+ * NO private keys in Worker.
+ * Testnet (sepolia) + DRY_RUN first; mainnet Safe after ETH gas + Module enabled.
+ *
+ * Limits: SINGLE_TX_LIMIT, DAILY_LIMIT, MONTHLY_LIMIT
+ * Allowlists: TOKEN_ALLOWLIST, CHAIN_ALLOWLIST, DESTINATION_ALLOWLIST
+ */
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Payment-Signature',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
-function json(data, status = 200, extra = {}) {
-  return new Response(JSON.stringify(data, null, 2), {
+const DEFAULT_SAFE = '0x76379a52a9e82c259E5Db417104C65C26f9C58a3';
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...cors, ...extra }
+    headers: { 'content-type': 'application/json; charset=utf-8', ...cors },
   });
 }
 
+function policy(env) {
+  return {
+    SINGLE_TX_LIMIT: Number(env.SINGLE_TX_LIMIT || 20),
+    DAILY_LIMIT: Number(env.DAILY_LIMIT || 50),
+    MONTHLY_LIMIT: Number(env.MONTHLY_LIMIT || 300),
+    TOKEN_ALLOWLIST: String(env.TOKEN_ALLOWLIST || 'USDT,USDC')
+      .split(',')
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean),
+    CHAIN_ALLOWLIST: String(env.CHAIN_ALLOWLIST || 'sepolia,ethereum')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+    DESTINATION_ALLOWLIST: String(env.DESTINATION_ALLOWLIST || '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+    NETWORK: (env.NETWORK || 'sepolia').toLowerCase(),
+    DRY_RUN: String(env.DRY_RUN || 'true') !== 'false',
+    SAFE_ADDRESS: (env.SAFE_ADDRESS || DEFAULT_SAFE).trim(),
+  };
+}
+
+function requireAuth(env, request) {
+  if (!env.LTZZZ_AGENT_TOKEN) return { ok: true };
+  const a = request.headers.get('Authorization') || '';
+  if (a !== 'Bearer ' + env.LTZZZ_AGENT_TOKEN) return { ok: false, error: 'unauthorized' };
+  return { ok: true };
+}
+
 export default {
-  async fetch(request) {
+  async scheduled(event, env, ctx) {
+    // Morning auto: testnet policy self-check + optional dry propose
+    ctx.waitUntil(morningRun(env));
+  },
+
+  async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
     const url = new URL(request.url);
+    const path = url.pathname.replace(/\/+$/, '') || '/';
 
-    if (url.pathname === '/health') {
-      return json({ ok: true, service: 'ltzzz-agent-payment', mode: 'framework', liveSettlement: false });
-    }
+    try {
+      if (path === '/health' && request.method === 'GET') {
+        const p = policy(env);
+        return json({
+          ok: true,
+          service: 'ltzzz-agent-payment',
+          version: '1.0.0',
+          simulated_success: false,
+          pipeline: [
+            'AI',
+            'PaymentPolicy',
+            'TransactionQueue',
+            'Safe',
+            'ERC20_USDT',
+            'TxHash',
+            'Confirm',
+            'Ledger',
+            'Memory',
+          ],
+          policy: p,
+          kv: Boolean(env.PAY_KV || env.TREASURY_KV),
+          private_keys_in_worker: false,
+          morning_cron: true,
+        });
+      }
 
-    if (url.pathname === '/quote' && request.method === 'POST') {
-      const body = await request.json().catch(() => ({}));
-      const amount = Number(body.amount_usd ?? 0.001);
+      if (path === '/policy' && request.method === 'GET') {
+        return json({ ok: true, policy: policy(env) });
+      }
+
+      if (path === '/pay' && request.method === 'POST') {
+        const gate = requireAuth(env, request);
+        if (!gate.ok) return json(gate, 401);
+        return await handlePay(request, env);
+      }
+
+      // legacy names → same pipeline (no SIMULATED_SUCCESS)
+      if ((path === '/quote' || path === '/pay-demo') && request.method === 'POST') {
+        const gate = requireAuth(env, request);
+        if (!gate.ok) return json(gate, 401);
+        return await handlePay(request, env);
+      }
+
+      if (path === '/queue' && request.method === 'GET') {
+        return await listQueue(env, url);
+      }
+
+      if (path === '/confirm' && request.method === 'POST') {
+        const gate = requireAuth(env, request);
+        if (!gate.ok) return json(gate, 401);
+        return await confirm(request, env);
+      }
+
       return json({
         ok: true,
-        protocol: body.protocol || 'x402',
-        resource: body.resource || 'ltzzz-demo-api',
-        amount_usd: amount,
-        payment_required: true,
-        settlement: 'demo-only',
-        note: 'Replace this response with the official x402/MPP adapter before using real funds.'
-      }, 402, {
-        'PAYMENT-REQUIRED': btoa(JSON.stringify({
-          scheme: 'demo',
-          network: 'demo',
-          amount: String(amount),
-          asset: 'USDC',
-          description: body.description || 'LTZZZ demo resource'
-        }))
+        endpoints: ['GET /health', 'GET /policy', 'POST /pay', 'GET /queue', 'POST /confirm'],
+        note: 'SIMULATED_SUCCESS removed. Use POST /pay.',
       });
+    } catch (e) {
+      return json({ ok: false, error: String(e.message || e) }, 500);
     }
-
-    if (url.pathname === '/pay-demo' && request.method === 'POST') {
-      const body = await request.json().catch(() => ({}));
-      return json({
-        ok: true,
-        status: 'SIMULATED_SUCCESS',
-        rail: body.rail || 'x402-demo',
-        amount_usd: Number(body.amount_usd ?? 0.001),
-        tx: null,
-        settled_onchain: false,
-        time: new Date().toISOString()
-      });
-    }
-
-    return json({
-      name: 'LTZZZ Agentic Payment Worker',
-      endpoints: ['/health', '/quote', '/pay-demo'],
-      protocols: ['x402', 'MPP', 'Visa Agentic', 'Mastercard Agent Pay'],
-      liveSettlement: false
-    });
-  }
+  },
 };
+
+async function handlePay(request, env) {
+  const body = await request.json().catch(() => ({}));
+  if (/private[_-]?key|mnemonic/i.test(JSON.stringify(body))) {
+    return json({ ok: false, error: 'private_key_material_rejected' }, 400);
+  }
+
+  const p = policy(env);
+  const agent = String(body.agent || body.submitted_by || 'XAI');
+  const amount = Number(body.amount_usd ?? body.amount ?? 0);
+  const asset = String(body.asset || 'USDT').toUpperCase();
+  const chain = String(body.chain || body.network || p.NETWORK).toLowerCase();
+  const to = String(body.to || body.destination || '').trim();
+  const purpose = String(body.purpose || body.description || 'ops').slice(0, 200);
+
+  // —— Payment Policy ——
+  const fails = [];
+  if (!amount || amount <= 0) fails.push('invalid_amount');
+  if (amount > p.SINGLE_TX_LIMIT) fails.push('single_tx_limit');
+  if (!p.TOKEN_ALLOWLIST.includes(asset)) fails.push('token_not_allowlisted');
+  if (!p.CHAIN_ALLOWLIST.includes(chain)) fails.push('chain_not_allowlisted');
+  if (!/^0x[a-fA-F0-9]{40}$/.test(to)) fails.push('invalid_destination');
+  if (p.DESTINATION_ALLOWLIST.length && !p.DESTINATION_ALLOWLIST.includes(to.toLowerCase())) {
+    fails.push('destination_not_allowlisted');
+  }
+
+  const kv = env.PAY_KV || env.TREASURY_KV;
+  const day = new Date().toISOString().slice(0, 10);
+  const month = day.slice(0, 7);
+  let daily = 0;
+  let monthly = 0;
+  if (kv) {
+    daily = Number((await kv.get('pay:daily:' + day)) || 0);
+    monthly = Number((await kv.get('pay:monthly:' + month)) || 0);
+  }
+  if (daily + amount > p.DAILY_LIMIT) fails.push('daily_limit');
+  if (monthly + amount > p.MONTHLY_LIMIT) fails.push('monthly_limit');
+
+  if (fails.length) {
+    return json({
+      ok: false,
+      stage: 'PaymentPolicy',
+      status: 'REJECTED',
+      fails,
+      policy: p,
+    }, 400);
+  }
+
+  // —— Transaction Queue ——
+  const id =
+    'PAY-' +
+    day.replace(/-/g, '') +
+    '-' +
+    Math.random().toString(36).slice(2, 8);
+
+  const amountRaw = BigInt(Math.round(amount * 1e6)).toString();
+  const token =
+    env.USDT_TOKEN_ADDRESS ||
+    (chain === 'sepolia'
+      ? '0x7169D38820dfd117C3FA1fFaA326bD75453EB6f5'
+      : '0xdAC17F958D2ee523a2206206994597C13D831ec7');
+  const data = encodeTransfer(to, amountRaw);
+
+  const item = {
+    id,
+    stage: 'TransactionQueue',
+    status: p.DRY_RUN ? 'queued_dry_run' : 'queued_safe',
+    agent,
+    amount,
+    asset,
+    chain,
+    to,
+    purpose,
+    safe: p.SAFE_ADDRESS,
+    token,
+    calldata: data,
+    tx_hash: p.DRY_RUN ? 'dry_' + id : null,
+    confirmed: false,
+    created_at: new Date().toISOString(),
+    // gap: mainnet needs ETH for gas on Safe — reported honestly
+    blockers: p.DRY_RUN
+      ? ['dry_run_enabled']
+      : chain === 'ethereum'
+        ? ['safe_needs_eth_gas', 'allowance_module_must_be_enabled']
+        : ['allowance_module_or_relayer'],
+  };
+
+  if (p.DRY_RUN) {
+    item.stage = 'Ledger';
+    item.status = 'dry_run_complete';
+  }
+
+  item.ledger = {
+    id,
+    time: item.created_at,
+    asset,
+    amount,
+    network: chain,
+    发送地址: p.SAFE_ADDRESS,
+    接收地址: to,
+    TXID: item.tx_hash || 'pending',
+    状态: item.status,
+    用途: purpose,
+    agent,
+  };
+  item.memory = {
+    type: 'agent_pay',
+    id,
+    summary: agent + ' ' + amount + ' ' + asset + ' → ' + to.slice(0, 10) + ' [' + item.status + ']',
+  };
+
+  if (kv) {
+    await kv.put('queue:' + id, JSON.stringify(item));
+    await kv.put('pay:daily:' + day, String(daily + amount));
+    await kv.put('pay:monthly:' + month, String(monthly + amount));
+  }
+
+  return json({
+    ok: true,
+    simulated_success: false,
+    status: item.status,
+    stage: item.stage,
+    pipeline: {
+      AI: agent,
+      PaymentPolicy: 'pass',
+      TransactionQueue: id,
+      Safe: p.SAFE_ADDRESS,
+      ERC20: asset,
+      TxHash: item.tx_hash,
+      Confirm: item.confirmed,
+      Ledger: item.ledger,
+      Memory: item.memory,
+    },
+    item,
+    note: p.DRY_RUN
+      ? 'Testnet/dry_run OK. Real Safe ERC20 needs ETH gas + Allowance Module; then DRY_RUN=false.'
+      : 'Queued for Safe module execution path.',
+  });
+}
+
+function encodeTransfer(to, amountRaw) {
+  const sel = 'a9059cbb';
+  const toClean = to.replace(/^0x/i, '').toLowerCase().padStart(64, '0');
+  const amt = BigInt(amountRaw).toString(16).padStart(64, '0');
+  return '0x' + sel + toClean + amt;
+}
+
+async function listQueue(env, url) {
+  const kv = env.PAY_KV || env.TREASURY_KV;
+  if (!kv) return json({ ok: true, items: [] });
+  const limit = Number(url.searchParams.get('limit') || 20);
+  const listed = await kv.list({ prefix: 'queue:', limit: 100 });
+  const items = [];
+  for (const k of listed.keys || []) {
+    const raw = await kv.get(k.name);
+    if (raw) items.push(JSON.parse(raw));
+  }
+  items.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  return json({ ok: true, count: items.length, items: items.slice(0, limit) });
+}
+
+async function confirm(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const kv = env.PAY_KV || env.TREASURY_KV;
+  if (!kv || !body.id || !body.tx_hash) return json({ ok: false, error: 'need id + tx_hash' }, 400);
+  const raw = await kv.get('queue:' + body.id);
+  if (!raw) return json({ ok: false, error: 'not_found' }, 404);
+  const item = JSON.parse(raw);
+  item.tx_hash = body.tx_hash;
+  item.confirmed = body.confirmed !== false;
+  item.status = item.confirmed ? 'success' : 'submitted';
+  item.stage = 'Memory';
+  if (item.ledger) {
+    item.ledger.TXID = body.tx_hash;
+    item.ledger.状态 = item.status;
+  }
+  await kv.put('queue:' + body.id, JSON.stringify(item));
+  return json({ ok: true, item });
+}
+
+async function morningRun(env) {
+  const p = policy(env);
+  const kv = env.PAY_KV || env.TREASURY_KV;
+  const report = {
+    at: new Date().toISOString(),
+    network: p.NETWORK,
+    dry_run: p.DRY_RUN,
+    safe: p.SAFE_ADDRESS,
+    action: 'morning_treasury_open',
+    status: 'opened_testnet_window',
+  };
+  if (kv) await kv.put('morning:' + report.at.slice(0, 10), JSON.stringify(report));
+  // Optional: dry self-pay of 0 amount is skipped; policy health only
+  return report;
+}
