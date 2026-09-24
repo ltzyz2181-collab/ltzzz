@@ -1,13 +1,10 @@
 /**
  * LTZZZ Agent Treasury Engine v1
- * Agent → Allowance check → Safe Module path → ERC20 → TxHash → Ledger → Memory → Telegram
+ * Agent → Allowance check → Safe Module path → ERC20 calldata → TxHash → Ledger → Memory → Telegram
  *
- * Design: Safe official Allowance / Spending Module pattern.
- * Worker holds NO Safe owner keys. Optional EXECUTOR only for testnet relayer later.
- * Existing Safe preserved: SAFE_ADDRESS default 0x76379a52a9e82c259E5Db417104C65C26f9C58a3
- *
- * Agents: GPT | Doubao | XAI (Grok) — each SINGLE_TX_LIMIT / DAILY_LIMIT / TOKEN_ALLOWANCE
- * Network: sepolia first (NETWORK=sepolia), mainnet when READY
+ * NO private keys in this Worker. No mnemonics. No owner keys.
+ * Safe preserved: 0x76379a52a9e82c259E5Db417104C65C26f9C58a3
+ * Agents GPT|Doubao|XAI: propose + limits only.
  */
 
 const cors = {
@@ -24,10 +21,9 @@ const DEFAULT_AGENTS = {
   XAI: { SINGLE_TX_LIMIT: 20, DAILY_LIMIT: 50, TOKEN_ALLOWANCE: 300, paused: false },
 };
 
-// USDT mainnet; sepolia may use mock — configurable
 const TOKEN_ADDR = {
   ethereum: { USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
-  sepolia: { USDT: '0x7169D38820dfd117C3FA1fFaA326bD75453EB6f5' }, // placeholder / override via env
+  sepolia: { USDT: '0x7169D38820dfd117C3FA1fFaA326bD75453EB6f5' },
 };
 
 function json(data, status = 200) {
@@ -66,7 +62,7 @@ async function enginePaused(env) {
 }
 
 function requireAuth(env, request) {
-  if (!env.LTZZZ_AGENT_TOKEN) return { ok: true }; // allow if not set (dev)
+  if (!env.LTZZZ_AGENT_TOKEN) return { ok: true };
   const authz = request.headers.get('Authorization') || '';
   if (authz !== 'Bearer ' + env.LTZZZ_AGENT_TOKEN) return { ok: false, error: 'unauthorized' };
   return { ok: true };
@@ -80,7 +76,6 @@ function normalizeAgent(name) {
   return n;
 }
 
-/** ERC20 transfer(address,uint256) selector + args (amount in smallest units passed by caller or decimals=6 USDT) */
 function encodeErc20Transfer(to, amountRaw) {
   const sel = 'a9059cbb';
   const toClean = to.replace(/^0x/i, '').toLowerCase().padStart(64, '0');
@@ -89,7 +84,6 @@ function encodeErc20Transfer(to, amountRaw) {
 }
 
 function usdtToRaw(amount) {
-  // USDT 6 decimals
   return BigInt(Math.round(Number(amount) * 1e6));
 }
 
@@ -105,15 +99,15 @@ export default {
         return json({
           ok: true,
           service: 'ltzzz-treasury-engine',
-          version: '1.0.0',
+          version: '1.0.1',
           network: network(env),
           safe: safeAddress(env),
           paused: await enginePaused(env),
           agents,
           kv: Boolean(env.TREASURY_KV),
+          private_keys_in_worker: false,
           mode: String(env.DRY_RUN || 'true') !== 'false' ? 'testnet_dry_run' : 'live_queue',
           safe_module: 'allowance_module_path',
-          note: 'Does not replace existing Safe; no owner private key in Worker',
         });
       }
 
@@ -133,7 +127,7 @@ export default {
         if (body.TOKEN_ALLOWANCE != null) agents[a].TOKEN_ALLOWANCE = Number(body.TOKEN_ALLOWANCE);
         if (body.paused != null) agents[a].paused = Boolean(body.paused);
         await saveAgents(env, agents);
-        await notify(env, `⚙️ 额度已更新 ${a}: 单笔${agents[a].SINGLE_TX_LIMIT} 日${agents[a].DAILY_LIMIT} 总额度${agents[a].TOKEN_ALLOWANCE}`);
+        await notify(env, '额度已更新 ' + a);
         return json({ ok: true, agent: a, config: agents[a] });
       }
 
@@ -141,7 +135,7 @@ export default {
         const gate = requireAuth(env, request);
         if (!gate.ok) return json(gate, 401);
         if (env.TREASURY_KV) await env.TREASURY_KV.put('config:paused', 'true');
-        await notify(env, '⏸ Treasury 已暂停');
+        await notify(env, 'Treasury 已暂停');
         return json({ ok: true, paused: true });
       }
 
@@ -149,7 +143,7 @@ export default {
         const gate = requireAuth(env, request);
         if (!gate.ok) return json(gate, 401);
         if (env.TREASURY_KV) await env.TREASURY_KV.put('config:paused', 'false');
-        await notify(env, '▶️ Treasury 已恢复');
+        await notify(env, 'Treasury 已恢复');
         return json({ ok: true, paused: false });
       }
 
@@ -171,16 +165,8 @@ export default {
 
       return json({
         ok: true,
-        endpoints: [
-          'GET /health',
-          'GET /agents',
-          'POST /agents/config',
-          'POST /pause',
-          'POST /resume',
-          'POST /propose',
-          'GET /list',
-          'POST /confirm',
-        ],
+        private_keys_in_worker: false,
+        endpoints: ['GET /health', 'GET /agents', 'POST /agents/config', 'POST /pause', 'POST /resume', 'POST /propose', 'GET /list', 'POST /confirm'],
       });
     } catch (e) {
       return json({ ok: false, error: String(e.message || e) }, 500);
@@ -190,17 +176,23 @@ export default {
 
 async function propose(request, env) {
   if (await enginePaused(env)) {
-    await notify(env, '❌ 提案失败：Treasury 已暂停');
+    await notify(env, '提案失败：Treasury 已暂停');
     return json({ ok: false, error: 'engine_paused' }, 403);
   }
 
   const body = await request.json().catch(() => ({}));
+  // Reject accidental key material in body
+  const blob = JSON.stringify(body);
+  if (/private[_-]?key|mnemonic|seed phrase/i.test(blob)) {
+    return json({ ok: false, error: 'private_key_material_rejected' }, 400);
+  }
+
   const agent = normalizeAgent(body.agent || body.submitted_by || 'GPT');
   const agents = await loadAgents(env);
   const cfg = agents[agent] || DEFAULT_AGENTS.GPT;
 
   if (cfg.paused) {
-    await notify(env, `❌ ${agent} 提案失败：该 Agent 已暂停`);
+    await notify(env, agent + ' 提案失败：Agent 已暂停');
     return json({ ok: false, error: 'agent_paused', agent }, 403);
   }
 
@@ -213,17 +205,16 @@ async function propose(request, env) {
   if (!amount || amount <= 0) return json({ ok: false, error: 'invalid_amount' }, 400);
   if (!/^0x[a-fA-F0-9]{40}$/.test(to)) return json({ ok: false, error: 'invalid_to' }, 400);
 
-  await notify(env, `📋 提案\nAgent: ${agent}\n金额: ${amount} ${asset}\n至: ${to.slice(0, 8)}…\n用途: ${purpose}\n网络: ${net}`);
+  await notify(env, '提案 ' + agent + ' ' + amount + ' ' + asset + ' ' + net);
 
-  // Allowance checks
   if (amount > cfg.SINGLE_TX_LIMIT) {
-    await notify(env, `❌ 失败：超过单笔限额 ${cfg.SINGLE_TX_LIMIT}`);
+    await notify(env, '失败：超过单笔限额');
     return json({ ok: false, error: 'single_tx_limit', limit: cfg.SINGLE_TX_LIMIT }, 400);
   }
 
   const day = new Date().toISOString().slice(0, 10);
-  const dailyKey = `agent:${agent}:daily:${day}`;
-  const allowKey = `agent:${agent}:spent_allowance`;
+  const dailyKey = 'agent:' + agent + ':daily:' + day;
+  const allowKey = 'agent:' + agent + ':spent_allowance';
   let daily = 0;
   let spentAllow = 0;
   if (env.TREASURY_KV) {
@@ -231,27 +222,24 @@ async function propose(request, env) {
     spentAllow = Number((await env.TREASURY_KV.get(allowKey)) || 0);
   }
   if (daily + amount > cfg.DAILY_LIMIT) {
-    await notify(env, `❌ 失败：超过日限额 ${cfg.DAILY_LIMIT}（已用 ${daily}）`);
+    await notify(env, '失败：超过日限额');
     return json({ ok: false, error: 'daily_limit', limit: cfg.DAILY_LIMIT, daily }, 400);
   }
   if (spentAllow + amount > cfg.TOKEN_ALLOWANCE) {
-    await notify(env, `❌ 失败：超过 TOKEN_ALLOWANCE ${cfg.TOKEN_ALLOWANCE}`);
+    await notify(env, '失败：超过 TOKEN_ALLOWANCE');
     return json({ ok: false, error: 'token_allowance', limit: cfg.TOKEN_ALLOWANCE }, 400);
   }
 
-  const id = `TX-${day.replace(/-/g, '')}-${agent}-${Math.random().toString(36).slice(2, 7)}`;
-  const token =
-    (env.USDT_TOKEN_ADDRESS ||
-      (TOKEN_ADDR[net] && TOKEN_ADDR[net][asset]) ||
-      TOKEN_ADDR.ethereum.USDT).trim();
+  const id = 'TX-' + day.replace(/-/g, '') + '-' + agent + '-' + Math.random().toString(36).slice(2, 7);
+  const token = (env.USDT_TOKEN_ADDRESS || (TOKEN_ADDR[net] && TOKEN_ADDR[net][asset]) || TOKEN_ADDR.ethereum.USDT).trim();
   const amountRaw = usdtToRaw(amount).toString();
   const data = encodeErc20Transfer(to, amountRaw);
-
   const dry = String(env.DRY_RUN || 'true') !== 'false';
+
   const record = {
     id,
     agent,
-    status: dry ? 'proposed_dry_run' : 'proposed_awaiting_module',
+    status: dry ? 'executed_dry_run' : 'proposed_awaiting_module',
     amount,
     asset,
     network: net,
@@ -261,27 +249,12 @@ async function propose(request, env) {
     purpose,
     amount_raw: amountRaw,
     calldata: data,
-    safe_tx: {
-      to: token,
-      value: '0',
-      data,
-      operation: 0,
-      note: 'ERC20.transfer via Safe; enable Allowance Module on Safe for agent delegate',
-    },
-    tx_hash: null,
+    safe_tx: { to: token, value: '0', data, operation: 0 },
+    tx_hash: dry ? 'dry_' + id : null,
     confirmed: false,
     created_at: new Date().toISOString(),
-    ledger: null,
-    memory: null,
+    private_key_used: false,
   };
-
-  // Simulated module path on dry_run / testnet without executor key
-  if (dry) {
-    record.status = 'executed_dry_run';
-    record.tx_hash = 'dry_' + id;
-    record.confirmed = false;
-    record.note = 'Testnet/dry: calldata ready; enable Safe Allowance Module + fund testnet for real TxHash';
-  }
 
   record.ledger = {
     id,
@@ -292,16 +265,14 @@ async function propose(request, env) {
     发送地址: record.safe,
     接收地址: to,
     TXID: record.tx_hash || 'pending',
-    手续费: 'pending',
     状态: record.status,
     用途: purpose,
-    人工确认: dry ? 'dry_run' : 'module',
     agent,
   };
   record.memory = {
     type: 'treasury_tx',
     id,
-    summary: `${agent} ${amount} ${asset} → ${to.slice(0, 10)}… [${record.status}]`,
+    summary: agent + ' ' + amount + ' ' + asset + ' [' + record.status + ']',
   };
 
   if (env.TREASURY_KV) {
@@ -311,23 +282,15 @@ async function propose(request, env) {
     await env.TREASURY_KV.put('result:' + id, JSON.stringify(record.ledger));
   }
 
-  await notify(
-    env,
-    record.tx_hash
-      ? `✅ 执行路径完成（${dry ? 'dry_run' : 'live'}）\nID: ${id}\nTx: ${record.tx_hash}`
-      : `⏳ 待 Safe Module 执行\nID: ${id}`
-  );
+  await notify(env, dry ? 'dry_run 完成 ' + id : '待 Safe Module ' + id);
 
   return json({
     ok: true,
     decision: 'allowance_pass',
     dry_run: dry,
-    network: net,
+    private_key_used: false,
     record,
-    persist: {
-      results_path: `results/treasury/${id}.json`,
-      memory: record.memory,
-    },
+    persist: { results_path: 'results/treasury/' + id + '.json', memory: record.memory },
   });
 }
 
@@ -355,13 +318,14 @@ async function confirmOnchain(request, env) {
   record.tx_hash = tx_hash;
   record.confirmed = Boolean(body.confirmed !== false);
   record.status = record.confirmed ? 'success' : 'submitted';
+  record.private_key_used = false;
   if (record.ledger) {
     record.ledger.TXID = tx_hash;
     record.ledger.状态 = record.status;
   }
   await env.TREASURY_KV.put('tx:' + id, JSON.stringify(record));
   await env.TREASURY_KV.put('result:' + id, JSON.stringify(record.ledger));
-  await notify(env, `${record.confirmed ? '✅ 成功' : '⏳ 已提交'} ${id}\nTxHash: ${tx_hash}`);
+  await notify(env, (record.confirmed ? '成功 ' : '已提交 ') + id + ' ' + tx_hash);
   return json({ ok: true, record });
 }
 
@@ -370,12 +334,10 @@ async function notify(env, text) {
   const chat = env.TELEGRAM_CHAT_ID;
   if (!token || !chat) return;
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: chat, text: String(text).slice(0, 3500) }),
     });
-  } catch {
-    /* ignore */
-  }
+  } catch (_) {}
 }
