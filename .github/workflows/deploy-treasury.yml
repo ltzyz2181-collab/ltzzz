@@ -1,4 +1,4 @@
-name: Deploy LTZZZ Treasury Queue
+name: Deploy LTZZZ Treasury
 
 on:
   workflow_dispatch:
@@ -6,7 +6,9 @@ on:
     branches: [main]
     paths:
       - 'treasury-queue-worker.js'
+      - 'treasury-engine-worker.js'
       - 'wrangler.treasury.toml'
+      - 'wrangler.treasury-engine.toml'
       - '.github/workflows/deploy-treasury.yml'
 
 jobs:
@@ -14,8 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v4
+      - name: Deploy queue
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy -c wrangler.treasury.toml
+        continue-on-error: true
+      - name: Deploy engine v1
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.treasury-engine.toml
