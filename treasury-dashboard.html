@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LTZZZ Treasury Dashboard</title>
+<style>
+:root { --bg:#0b0b12; --card:#14141f; --line:#2a2a3d; --ok:#3dffa8; --warn:#ffb84d; --muted:#8b8ba0; --accent:#6c8cff; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:#eee; }
+.wrap { max-width:960px; margin:0 auto; padding:20px 16px 48px; }
+h1 { font-size:1.4rem; margin:0 0 8px; }
+.muted { color:var(--muted); font-size:.9rem; }
+.grid { display:grid; gap:12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-top:16px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+.card h3 { margin:0 0 8px; font-size:1rem; }
+.bar { height:8px; background:#222; border-radius:4px; overflow:hidden; margin-top:8px; }
+.bar > i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--ok)); }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.75rem; font-weight:700; background:#1a3; color:#000; }
+.badge.warn { background:var(--warn); }
+a { color:var(--accent); }
+pre { background:#0a0a10; padding:12px; border-radius:8px; overflow:auto; font-size:.8rem; }
+@media (max-width:600px) { .wrap { padding:16px 12px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="muted"><a href="/">首页</a> · <a href="products.html">商店</a></p>
+  <h1>LTZZZ Treasury Dashboard</h1>
+  <p class="muted">Safe 不变 · 3/5 多签保留 · 单笔≤100U · 日累计≤200U</p>
+  <div id="head" class="card" style="margin-top:12px">加载中…</div>
+  <div class="grid" id="agents"></div>
+  <div class="card" style="margin-top:16px">
+    <h3>回归测试（1 USDT 真实 Tx）</h3>
+    <p class="muted" id="reg">—</p>
+    <pre id="raw"></pre>
+  </div>
+</div>
+<script>
+const API = 'https://ltzzz-treasury-v11.ltzyz2181.workers.dev';
+async function load() {
+  const d = await fetch(API + '/dashboard').then(r => r.json());
+  const h = document.getElementById('head');
+  h.innerHTML = '<span class="badge">v1.1</span> ' +
+    '<div style="margin-top:8px">Safe <code>' + d.safe + '</code></div>' +
+    '<div>今日已用 <b>' + d.daily_total_used + '</b> / ' + d.limits.DAILY_LIMIT +
+    ' U · 剩余 <b>' + d.daily_remaining + '</b></div>' +
+    '<div>真实成功笔数：' + d.real_tx_success_count + ' · 多签 ' + d.multisig + '</div>';
+  const g = document.getElementById('agents');
+  g.innerHTML = '';
+  Object.entries(d.agents || {}).forEach(([name, u]) => {
+    const pct = Math.min(100, Math.round((u.used / (u.daily_limit || 1)) * 100));
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.innerHTML = '<h3>' + name + '</h3>' +
+      '<div class="muted">单笔≤' + u.single_limit + 'U</div>' +
+      '<div>今日 <b>' + u.used + '</b> / ' + u.daily_limit + ' · 剩 ' + u.remaining + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>';
+    g.appendChild(el);
+  });
+  const reg = await fetch(API + '/regression').then(r => r.json());
+  document.getElementById('reg').textContent = reg.regression === 'pass' || reg.ok
+    ? '回归 PASS · ' + (reg.message || reg.status || 'ok')
+    : JSON.stringify(reg);
+  document.getElementById('raw').textContent = JSON.stringify({ dashboard: d, regression: reg }, null, 2);
+}
+load().catch(e => { document.getElementById('head').textContent = String(e); });
+</script>
+</body>
+</html>
