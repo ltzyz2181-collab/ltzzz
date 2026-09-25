@@ -231,7 +231,7 @@ async function uploadVideo(env, request, url) {
     description = (body.description || '').trim() || '';
     tags = Array.isArray(body.tags) ? body.tags.map(String) : [];
     privacyStatus = ['private', 'unlisted', 'public'].includes(body.privacyStatus)
-      ? body.privacyStatus : 'private'; // 默认 private，绝不默认 public
+      ? body.privacyStatus : 'public'; // LTZZZ 默认公开发布
     publishAt = body.publishAt || null;
     categoryId = (body.categoryId || '22').toString();
     const videoUrl = (body.video_url || '').trim();
@@ -246,7 +246,7 @@ async function uploadVideo(env, request, url) {
     const tagsRaw = form.get('tags') || '';
     tags = tagsRaw.split(',').map((t) => t.trim()).filter(Boolean);
     privacyStatus = ['private', 'unlisted', 'public'].includes(form.get('privacyStatus'))
-      ? form.get('privacyStatus') : 'private';
+      ? form.get('privacyStatus') : 'public'; // LTZZZ 默认公开发布
     publishAt = form.get('publishAt') || null;
     categoryId = (form.get('categoryId') || '22').toString();
     const file = form.get('video');
