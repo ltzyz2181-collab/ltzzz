@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LTZZZ 数字产品商店</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0a0f; color: #fff; line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+h1 { text-align: center; font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, #00f0ff, #ff00e5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { text-align: center; color: #888; margin-bottom: 50px; font-size: 1.1rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+.card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px; padding: 28px; transition: transform 0.2s, border-color 0.2s; }
+.card:hover { transform: translateY(-4px); border-color: #00f0ff; }
+.category { font-size: 0.85rem; color: #00f0ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.name { font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; }
+.price { font-size: 1.8rem; font-weight: 700; color: #ff00e5; margin: 16px 0; }
+.price::before { content: "¥"; font-size: 1rem; opacity: 0.7; }
+.desc { color: #aaa; font-size: 0.95rem; margin-bottom: 16px; }
+.delivery { font-size: 0.85rem; color: #666; padding-top: 16px; border-top: 1px solid #2a2a4a; }
+.badge { display: inline-block; background: #00ff88; color: #000; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.platforms { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.platform-tag { font-size: 0.75rem; background: #2a2a4a; padding: 4px 10px; border-radius: 6px; color: #aaa; }
+.loading { text-align: center; padding: 100px; color: #666; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>LTZZZ 数字产品商店</h1>
+  <p class="subtitle">AI 工具 · 自动化服务 · 帮你省时间赚钱</p>
+  <div class="grid" id="productGrid">
+    <div class="loading">加载产品中...</div>
+  </div>
+</div>
+<script>
+fetch('daily-data/products.json')
+  .then(r => r.json())
+  .then(data => {
+    const grid = document.getElementById('productGrid');
+    grid.innerHTML = '';
+    data.products.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="category">${p.category}</div>
+        <div class="name">${p.name}</div>
+        <div class="price">${p.price}</div>
+        <div class="desc">${p.description}</div>
+        <div class="delivery">🚚 ${p.delivery}</div>
+        <div class="platforms">
+          ${p.platforms.map(pl => `<span class="platform-tag">${pl}</span>`).join('')}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  })
+  .catch(err => {
+    document.getElementById('productGrid').innerHTML = '<div class="loading">产品加载失败，请稍后再试</div>';
+  });
+</script>
+</body>
+</html>
