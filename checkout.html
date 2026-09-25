@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LTZZZ 结账</title>
+<style>
+:root { --bg:#0a0a0f; --card:#141422; --line:#2a2a4a; --accent:#00e5ff; --pink:#ff3d9a; --muted:#9aa; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, -apple-system, sans-serif; background:var(--bg); color:#fff; line-height:1.5; }
+.wrap { max-width:520px; margin:0 auto; padding:20px 16px 48px; }
+a { color:var(--accent); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; }
+h1 { font-size:1.35rem; margin:0 0 8px; }
+.muted { color:var(--muted); font-size:.9rem; }
+.price { font-size:1.6rem; color:var(--pink); font-weight:700; }
+.row { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+button, .btn { appearance:none; border:0; border-radius:10px; padding:12px 16px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; text-align:center; }
+.primary { background:linear-gradient(90deg,var(--accent),#7c5cff); color:#000; }
+.ghost { background:#222; color:#fff; border:1px solid var(--line); }
+input, select { width:100%; padding:12px; border-radius:10px; border:1px solid var(--line); background:#0d0d14; color:#fff; margin-top:8px; }
+label { font-size:.85rem; color:var(--muted); }
+#status { white-space:pre-wrap; font-size:.85rem; color:#ccc; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#1e3; color:#000; font-size:.75rem; font-weight:700; }
+.badge.warn { background:#fa0; }
+@media (max-width:480px) { .wrap { padding:16px 12px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="muted"><a href="/">首页</a> · <a href="products.html">商店</a></p>
+  <h1>结账 · Checkout</h1>
+  <p class="muted">人民币标价 · 可切换 USD · 手机可用</p>
+
+  <div class="card" id="productCard">加载中…</div>
+
+  <div class="card">
+    <label>联系方式（邮箱 / Telegram）</label>
+    <input id="contact" placeholder="you@email.com 或 @telegram" />
+    <label style="display:block;margin-top:12px">币种</label>
+    <select id="currency">
+      <option value="CNY">CNY 人民币</option>
+      <option value="USD">USD 美元</option>
+    </select>
+    <label style="display:block;margin-top:12px">支付方式</label>
+    <select id="rail">
+      <option value="manual_cny">人民币转账 / 人工确认（可成交）</option>
+      <option value="crypto">USDT 链上（转账后确认）</option>
+      <option value="paypal">PayPal（适配层，未验签前不自动发货）</option>
+      <option value="biyapay">U卡 / BiyaPay（适配层 dry-run）</option>
+    </select>
+    <div class="row">
+      <button class="primary" id="btnOrder" type="button">创建订单</button>
+      <button class="ghost" id="btnIntent" type="button">生成支付说明</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="status" class="muted">选择商品并创建订单。</div>
+  </div>
+</div>
+<script>
+const API = 'https://ltzzz-sell-order.ltzyz2181.workers.dev';
+const params = new URLSearchParams(location.search);
+let productId = params.get('product') || 'ai-template-pack';
+let orderId = params.get('order') || null;
+let product = null;
+
+async function loadCatalog() {
+  const r = await fetch(API + '/catalog');
+  const d = await r.json();
+  product = (d.products || []).find(p => p.id === productId) || (d.products || [])[0];
+  if (!product) {
+    document.getElementById('productCard').textContent = '目录加载失败';
+    return;
+  }
+  productId = product.id;
+  renderProduct();
+  if (orderId) {
+    const o = await fetch(API + '/order?id=' + encodeURIComponent(orderId)).then(r => r.json());
+    if (o.order) showOrder(o.order);
+  }
+}
+function renderProduct() {
+  const cur = document.getElementById('currency').value;
+  const price = cur === 'USD' ? product.price_usd + ' USD' : '¥' + product.price_cny;
+  document.getElementById('productCard').innerHTML =
+    '<div class="badge">体验款</div>' +
+    '<h2 style="margin:8px 0 4px;font-size:1.2rem">' + product.name + '</h2>' +
+    '<div class="price">' + price + '</div>' +
+    '<p class="muted">' + (product.description || '') + '</p>';
+}
+document.getElementById('currency').onchange = renderProduct;
+
+document.getElementById('btnOrder').onclick = async () => {
+  const body = {
+    product_id: productId,
+    currency: document.getElementById('currency').value,
+    contact: document.getElementById('contact').value,
+  };
+  const r = await fetch(API + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  if (!d.ok) { document.getElementById('status').textContent = JSON.stringify(d, null, 2); return; }
+  orderId = d.order.id;
+  history.replaceState({}, '', '?product=' + productId + '&order=' + orderId);
+  showOrder(d.order);
+};
+
+document.getElementById('btnIntent').onclick = async () => {
+  if (!orderId) { alert('请先创建订单'); return; }
+  const body = { order_id: orderId, rail: document.getElementById('rail').value };
+  const r = await fetch(API + '/pay/intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json();
+  document.getElementById('status').textContent = JSON.stringify(d, null, 2);
+};
+
+function showOrder(o) {
+  document.getElementById('status').textContent =
+    '订单 ' + o.id + '\n状态 ' + o.status + '\n金额 ' + o.amount + ' ' + o.currency +
+    (o.delivery_payload ? '\n交付\n' + JSON.stringify(o.delivery_payload, null, 2) : '\n下一步：选择支付方式并生成支付说明');
+}
+loadCatalog().catch(e => { document.getElementById('productCard').textContent = String(e); });
+</script>
+</body>
+</html>
