@@ -1,0 +1,21 @@
+name: Deploy LTZZZ Treasury v1.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'treasury-v11-worker.js'
+      - 'wrangler.treasury-v11.toml'
+      - '.github/workflows/deploy-treasury-v11.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.treasury-v11.toml
