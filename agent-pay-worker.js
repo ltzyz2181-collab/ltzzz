@@ -1,13 +1,11 @@
 /**
  * LTZZZ Agent Payment / Treasury v1 entry
- * Replaces SIMULATED_SUCCESS demo with real pipeline shape:
- *   AI → Payment Policy → Transaction Queue → Safe → ERC20 USDT → TxHash → confirm → Ledger → Memory
+ * AI → PaymentPolicy → TransactionQueue → Safe (Allowance Module) → ERC20 → TxHash → Confirm → Ledger → Memory
  *
- * NO private keys in Worker.
- * Testnet (sepolia) + DRY_RUN first; mainnet Safe after ETH gas + Module enabled.
- *
- * Limits: SINGLE_TX_LIMIT, DAILY_LIMIT, MONTHLY_LIMIT
- * Allowlists: TOKEN_ALLOWLIST, CHAIN_ALLOWLIST, DESTINATION_ALLOWLIST
+ * NO owner private keys in Worker.
+ * Safe address fixed default: 0x76379a52a9e82c259E5Db417104C65C26f9C58a3
+ * Limits: SINGLE_TX_LIMIT / DAILY_LIMIT / MONTHLY_LIMIT
+ * Agents: GPT | Doubao | XAI (and others) via body.agent
  */
 
 const cors = {
@@ -45,7 +43,17 @@ function policy(env) {
     NETWORK: (env.NETWORK || 'sepolia').toLowerCase(),
     DRY_RUN: String(env.DRY_RUN || 'true') !== 'false',
     SAFE_ADDRESS: (env.SAFE_ADDRESS || DEFAULT_SAFE).trim(),
+    // Optional: deployed Allowance Module on the Safe (set after Safe UI enable)
+    ALLOWANCE_MODULE_ADDRESS: (env.ALLOWANCE_MODULE_ADDRESS || '').trim() || null,
   };
+}
+
+function normalizeAgent(name) {
+  const n = String(name || 'XAI').trim();
+  if (/^gpt$/i.test(n) || /chatgpt/i.test(n)) return 'GPT';
+  if (/豆包|doubao/i.test(n)) return 'Doubao';
+  if (/xai|grok/i.test(n)) return 'XAI';
+  return n;
 }
 
 function requireAuth(env, request) {
@@ -55,9 +63,39 @@ function requireAuth(env, request) {
   return { ok: true };
 }
 
+/** Explicit stage flags for LTZZZ-TREASURY-P0-TODAY */
+function readiness(env, extras = {}) {
+  const p = policy(env);
+  const CODE_READY = true;
+  const TESTNET_OK = p.NETWORK === 'sepolia' || p.DRY_RUN === true;
+  const MAINNET_READY =
+    p.NETWORK === 'ethereum' &&
+    p.DRY_RUN === false &&
+    Boolean(p.ALLOWANCE_MODULE_ADDRESS) &&
+    String(env.ETH_GAS_FUNDED || '') === 'true';
+  const REAL_TX_SUCCESS = Boolean(extras.real_tx_success);
+
+  return {
+    CODE_READY,
+    TESTNET_OK,
+    MAINNET_READY,
+    REAL_TX_SUCCESS,
+    detail: {
+      safe: p.SAFE_ADDRESS,
+      network: p.NETWORK,
+      dry_run: p.DRY_RUN,
+      allowance_module: p.ALLOWANCE_MODULE_ADDRESS,
+      eth_gas_funded_flag: String(env.ETH_GAS_FUNDED || 'false'),
+      private_keys_in_worker: false,
+      next: MAINNET_READY
+        ? 'Submit POST /pay with DRY_RUN=false; confirm via POST /confirm with TxHash'
+        : 'Tomorrow: fund Safe with ETH gas → enable Allowance Module → set ALLOWANCE_MODULE_ADDRESS + ETH_GAS_FUNDED=true + DRY_RUN=false',
+    },
+  };
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    // Morning auto: testnet policy self-check + optional dry propose
     ctx.waitUntil(morningRun(env));
   },
 
@@ -69,16 +107,22 @@ export default {
     try {
       if (path === '/health' && request.method === 'GET') {
         const p = policy(env);
+        const kv = env.PAY_KV || env.TREASURY_KV;
+        let realSuccessCount = 0;
+        if (kv) {
+          const n = await kv.get('meta:real_tx_success_count');
+          realSuccessCount = Number(n || 0);
+        }
         return json({
           ok: true,
           service: 'ltzzz-agent-payment',
-          version: '1.0.0',
+          version: '1.1.0',
           simulated_success: false,
           pipeline: [
             'AI',
             'PaymentPolicy',
             'TransactionQueue',
-            'Safe',
+            'SafeAllowanceModule',
             'ERC20_USDT',
             'TxHash',
             'Confirm',
@@ -86,9 +130,24 @@ export default {
             'Memory',
           ],
           policy: p,
-          kv: Boolean(env.PAY_KV || env.TREASURY_KV),
+          readiness: readiness(env, { real_tx_success: realSuccessCount > 0 }),
+          kv: Boolean(kv),
           private_keys_in_worker: false,
           morning_cron: true,
+          agents_supported: ['GPT', 'Doubao', 'XAI'],
+        });
+      }
+
+      if (path === '/status' && request.method === 'GET') {
+        const kv = env.PAY_KV || env.TREASURY_KV;
+        let realSuccessCount = 0;
+        if (kv) {
+          realSuccessCount = Number((await kv.get('meta:real_tx_success_count')) || 0);
+        }
+        return json({
+          ok: true,
+          readiness: readiness(env, { real_tx_success: realSuccessCount > 0 }),
+          real_tx_success_count: realSuccessCount,
         });
       }
 
@@ -102,7 +161,6 @@ export default {
         return await handlePay(request, env);
       }
 
-      // legacy names → same pipeline (no SIMULATED_SUCCESS)
       if ((path === '/quote' || path === '/pay-demo') && request.method === 'POST') {
         const gate = requireAuth(env, request);
         if (!gate.ok) return json(gate, 401);
@@ -121,8 +179,14 @@ export default {
 
       return json({
         ok: true,
-        endpoints: ['GET /health', 'GET /policy', 'POST /pay', 'GET /queue', 'POST /confirm'],
-        note: 'SIMULATED_SUCCESS removed. Use POST /pay.',
+        endpoints: [
+          'GET /health',
+          'GET /status',
+          'GET /policy',
+          'POST /pay',
+          'GET /queue',
+          'POST /confirm',
+        ],
       });
     } catch (e) {
       return json({ ok: false, error: String(e.message || e) }, 500);
@@ -137,14 +201,13 @@ async function handlePay(request, env) {
   }
 
   const p = policy(env);
-  const agent = String(body.agent || body.submitted_by || 'XAI');
+  const agent = normalizeAgent(body.agent || body.submitted_by || 'XAI');
   const amount = Number(body.amount_usd ?? body.amount ?? 0);
   const asset = String(body.asset || 'USDT').toUpperCase();
   const chain = String(body.chain || body.network || p.NETWORK).toLowerCase();
   const to = String(body.to || body.destination || '').trim();
   const purpose = String(body.purpose || body.description || 'ops').slice(0, 200);
 
-  // —— Payment Policy ——
   const fails = [];
   if (!amount || amount <= 0) fails.push('invalid_amount');
   if (amount > p.SINGLE_TX_LIMIT) fails.push('single_tx_limit');
@@ -174,13 +237,15 @@ async function handlePay(request, env) {
       status: 'REJECTED',
       fails,
       policy: p,
+      agent,
     }, 400);
   }
 
-  // —— Transaction Queue ——
   const id =
     'PAY-' +
     day.replace(/-/g, '') +
+    '-' +
+    agent +
     '-' +
     Math.random().toString(36).slice(2, 8);
 
@@ -192,10 +257,21 @@ async function handlePay(request, env) {
       : '0xdAC17F958D2ee523a2206206994597C13D831ec7');
   const data = encodeTransfer(to, amountRaw);
 
+  // Safe Allowance Module execution envelope (no private key — module executes within on-chain allowance)
+  const allowancePath = {
+    module: p.ALLOWANCE_MODULE_ADDRESS || 'NOT_SET_ENABLE_IN_SAFE_UI',
+    safe: p.SAFE_ADDRESS,
+    token,
+    to,
+    amount_raw: amountRaw,
+    erc20_transfer_data: data,
+    note: 'Enable Safe Allowance/Spending Module on Safe; set ALLOWANCE_MODULE_ADDRESS; fund ETH for gas; then DRY_RUN=false',
+  };
+
   const item = {
     id,
     stage: 'TransactionQueue',
-    status: p.DRY_RUN ? 'queued_dry_run' : 'queued_safe',
+    status: p.DRY_RUN ? 'queued_dry_run' : 'queued_allowance_module',
     agent,
     amount,
     asset,
@@ -205,15 +281,16 @@ async function handlePay(request, env) {
     safe: p.SAFE_ADDRESS,
     token,
     calldata: data,
+    allowance_module: allowancePath,
     tx_hash: p.DRY_RUN ? 'dry_' + id : null,
     confirmed: false,
     created_at: new Date().toISOString(),
-    // gap: mainnet needs ETH for gas on Safe — reported honestly
     blockers: p.DRY_RUN
       ? ['dry_run_enabled']
-      : chain === 'ethereum'
-        ? ['safe_needs_eth_gas', 'allowance_module_must_be_enabled']
-        : ['allowance_module_or_relayer'],
+      : [
+          ...(p.ALLOWANCE_MODULE_ADDRESS ? [] : ['allowance_module_address_not_set']),
+          ...(String(env.ETH_GAS_FUNDED || '') === 'true' ? [] : ['safe_needs_eth_gas']),
+        ],
   };
 
   if (p.DRY_RUN) {
@@ -251,11 +328,14 @@ async function handlePay(request, env) {
     simulated_success: false,
     status: item.status,
     stage: item.stage,
+    agent,
+    readiness: readiness(env),
     pipeline: {
       AI: agent,
       PaymentPolicy: 'pass',
       TransactionQueue: id,
       Safe: p.SAFE_ADDRESS,
+      AllowanceModule: allowancePath.module,
       ERC20: asset,
       TxHash: item.tx_hash,
       Confirm: item.confirmed,
@@ -263,9 +343,6 @@ async function handlePay(request, env) {
       Memory: item.memory,
     },
     item,
-    note: p.DRY_RUN
-      ? 'Testnet/dry_run OK. Real Safe ERC20 needs ETH gas + Allowance Module; then DRY_RUN=false.'
-      : 'Queued for Safe module execution path.',
   });
 }
 
@@ -305,8 +382,21 @@ async function confirm(request, env) {
     item.ledger.TXID = body.tx_hash;
     item.ledger.状态 = item.status;
   }
+  if (item.memory) {
+    item.memory.summary = (item.memory.summary || '') + ' tx=' + body.tx_hash;
+  }
   await kv.put('queue:' + body.id, JSON.stringify(item));
-  return json({ ok: true, item });
+  if (item.confirmed && !String(body.tx_hash).startsWith('dry_')) {
+    const n = Number((await kv.get('meta:real_tx_success_count')) || 0) + 1;
+    await kv.put('meta:real_tx_success_count', String(n));
+  }
+  return json({
+    ok: true,
+    item,
+    readiness: readiness(env, {
+      real_tx_success: item.confirmed && !String(body.tx_hash).startsWith('dry_'),
+    }),
+  });
 }
 
 async function morningRun(env) {
@@ -317,10 +407,9 @@ async function morningRun(env) {
     network: p.NETWORK,
     dry_run: p.DRY_RUN,
     safe: p.SAFE_ADDRESS,
+    readiness: readiness(env),
     action: 'morning_treasury_open',
-    status: 'opened_testnet_window',
   };
   if (kv) await kv.put('morning:' + report.at.slice(0, 10), JSON.stringify(report));
-  // Optional: dry self-pay of 0 amount is skipped; policy health only
   return report;
 }
