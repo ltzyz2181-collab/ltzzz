@@ -2,7 +2,6 @@ name = "ltzzz-agent-pay"
 main = "agent-pay-worker.js"
 compatibility_date = "2026-09-24"
 
-# 00:30 UTC = 08:30 Asia/Shanghai — 每天早上开通窗口
 [triggers]
 crons = ["30 0 * * *"]
 
@@ -13,11 +12,11 @@ id = "63c6bb670cfc42b18b4d232605d5bcad"
 [vars]
 NETWORK = "sepolia"
 DRY_RUN = "true"
-SINGLE_TX_LIMIT = "20"
-DAILY_LIMIT = "50"
-MONTHLY_LIMIT = "300"
+# 与主人确认的运营限额对齐（主网真实执行仍须 Safe 签名/Module）
+SINGLE_TX_LIMIT = "100"
+DAILY_LIMIT = "200"
+MONTHLY_LIMIT = "2000"
 TOKEN_ALLOWLIST = "USDT,USDC"
 CHAIN_ALLOWLIST = "sepolia,ethereum"
-# DESTINATION_ALLOWLIST 空 = 仅校验地址格式；上主网前填白名单
 DESTINATION_ALLOWLIST = ""
 SAFE_ADDRESS = "0x76379a52a9e82c259E5Db417104C65C26f9C58a3"
