@@ -26,8 +26,10 @@ label { font-size:.85rem; color:var(--muted); }
 .pay-row .k { font-size:.8rem; color:var(--muted); }
 .pay-row .v { font-size:1rem; word-break:break-all; font-family:ui-monospace,monospace; margin-top:4px; }
 .pay-warn { font-size:.85rem; color:#fa0; margin-top:12px; line-height:1.45; }
+.confirm-box { margin-top:16px; padding-top:16px; border-top:1px solid var(--line); }
 #status { white-space:pre-wrap; font-size:.85rem; color:#ccc; }
 .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#1e3; color:#000; font-size:.75rem; font-weight:700; }
+.ok { color:var(--ok); }
 </style>
 </head>
 <body>
@@ -52,7 +54,7 @@ label { font-size:.85rem; color:var(--muted); }
     </div>
   </div>
   <div class="card" id="payCard" style="display:none"><div id="payBox"></div></div>
-  <div class="card"><div id="status" class="muted">创建订单后会自动生成 USDT 支付说明（地址/金额/网络）。</div></div>
+  <div class="card"><div id="status" class="muted">创建订单 → 支付说明 → 填 TxHash 确认到账。</div></div>
 </div>
 <script>
 const API = 'https://ltzzz-sell-order.ltzyz2181.workers.dev';
@@ -71,8 +73,13 @@ async function loadCatalog() {
   if (orderId) {
     const o = await fetch(API + '/order?id=' + encodeURIComponent(orderId)).then(r => r.json());
     if (o.order) {
-      showOrder(o.order);
-      if (document.getElementById('rail').value === 'crypto') genIntent();
+      lastOrder = o.order;
+      if (o.order.status === 'paid') {
+        showPaid(o.order);
+      } else {
+        showOrder(o.order);
+        if (document.getElementById('rail').value === 'crypto') genIntent();
+      }
     }
   }
 }
@@ -107,6 +114,15 @@ function showOrder(o) {
   lastOrder = o;
   document.getElementById('status').textContent = '订单 ' + o.id + '\n状态 ' + o.status + '\n金额 ' + o.amount + ' ' + o.currency;
 }
+function showPaid(o) {
+  document.getElementById('payCard').style.display = 'block';
+  document.getElementById('payBox').innerHTML =
+    '<div class="pay-box"><h3 class="ok">已付款 · 订单完成</h3>' +
+    '<div class="pay-row"><div class="k">订单号</div><div class="v">' + o.id + '</div></div>' +
+    '<div class="pay-row"><div class="k">TxHash</div><div class="v">' + (o.tx_ref || (o.ledger && o.ledger.TXID) || '') + '</div></div>' +
+    '<p class="muted">' + ((o.delivery_payload && o.delivery_payload.message) || '交付处理中') + '</p></div>';
+  document.getElementById('status').textContent = '订单 ' + o.id + ' 已付款\n' + (o.tx_ref || '');
+}
 function showPayInstructions(d) {
   const a = d.adapter || {};
   const o = d.order || lastOrder || {};
@@ -123,13 +139,37 @@ function showPayInstructions(d) {
       '<div class="pay-row"><div class="k">收款地址（USDT ERC20）</div><div class="v">' + to + '</div></div>' +
       '<div class="pay-row"><div class="k">备注 / 订单号</div><div class="v">' + memo + '</div></div>' +
       '<div class="row"><button type="button" class="ghost" id="btnCopy">复制收款地址</button></div>' +
-      '<p class="pay-warn">只使用以太坊主网 ERC20。勿选 TRC20 / BSC。转完把 TxHash 发邮箱或 @ltzzz_agi_lab_bot。</p></div>';
+      '<div class="confirm-box">' +
+      '<label>转账完成后粘贴 TxHash</label>' +
+      '<input id="txHashInput" placeholder="0x..." />' +
+      '<div class="row" style="margin-top:10px"><button type="button" class="primary" id="btnConfirm">提交并确认到账</button></div>' +
+      '<p class="pay-warn">只使用以太坊主网 ERC20。提交后系统会记录 TxHash 并更新订单。</p>' +
+      '</div></div>';
     document.getElementById('status').textContent = '订单 ' + (o.id || orderId) + ' 等待到账\n' + to + '\n' + amt + ' USDT · Ethereum ERC20';
     const btn = document.getElementById('btnCopy');
     if (btn) btn.onclick = () => navigator.clipboard.writeText(to).then(() => { btn.textContent = '已复制'; });
+    const cbtn = document.getElementById('btnConfirm');
+    if (cbtn) cbtn.onclick = submitConfirm;
     return;
   }
   box.innerHTML = '<pre style="white-space:pre-wrap;font-size:.85rem">' + JSON.stringify(d, null, 2) + '</pre>';
+}
+async function submitConfirm() {
+  const tx = (document.getElementById('txHashInput').value || '').trim();
+  if (!/^0x[a-fA-F0-9]{64}$/.test(tx)) { alert('请填写完整 TxHash（0x 开头）'); return; }
+  if (!orderId) { alert('无订单号'); return; }
+  const d = await fetch(API + '/pay/confirm', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order_id: orderId, tx_hash: tx, rail: 'crypto' })
+  }).then(r => r.json()).catch(e => ({ ok: false, error: String(e) }));
+  if (!d.ok) {
+    document.getElementById('status').textContent = '确认失败：' + JSON.stringify(d);
+    alert('确认失败，请看下方状态或联系 Bot');
+    return;
+  }
+  if (d.order) showPaid(d.order);
+  else document.getElementById('status').textContent = JSON.stringify(d, null, 2);
 }
 loadCatalog().catch(e => { document.getElementById('productCard').textContent = String(e); });
 </script>
