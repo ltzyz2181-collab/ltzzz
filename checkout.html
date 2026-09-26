@@ -15,7 +15,7 @@ h1 { font-size:1.35rem; margin:0 0 8px; }
 .muted { color:var(--muted); font-size:.9rem; }
 .price { font-size:1.6rem; color:var(--pink); font-weight:700; }
 .row { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-button, .btn { appearance:none; border:0; border-radius:10px; padding:12px 16px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; text-align:center; }
+button, .btn { appearance:none; border:0; border-radius:10px; padding:12px 16px; font-weight:600; cursor:pointer; }
 .primary { background:linear-gradient(90deg,var(--accent),#7c5cff); color:#000; }
 .ghost { background:#222; color:#fff; border:1px solid var(--line); }
 input, select { width:100%; padding:12px; border-radius:10px; border:1px solid var(--line); background:#0d0d14; color:#fff; margin-top:8px; }
@@ -28,64 +28,44 @@ label { font-size:.85rem; color:var(--muted); }
 .pay-warn { font-size:.85rem; color:#fa0; margin-top:12px; line-height:1.45; }
 #status { white-space:pre-wrap; font-size:.85rem; color:#ccc; }
 .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#1e3; color:#000; font-size:.75rem; font-weight:700; }
-@media (max-width:480px) { .wrap { padding:16px 12px 40px; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="muted"><a href="/">首页</a> · <a href="products.html">商店</a></p>
   <h1>结账 · Checkout</h1>
-  <p class="muted">人民币标价 · 可切换 USD · 手机可用</p>
-
   <div class="card" id="productCard">加载中…</div>
-
   <div class="card">
     <label>联系方式（邮箱 / Telegram）</label>
     <input id="contact" placeholder="you@email.com 或 @telegram" />
     <label style="display:block;margin-top:12px">币种</label>
-    <select id="currency">
-      <option value="CNY">CNY 人民币</option>
-      <option value="USD">USD 美元</option>
-    </select>
+    <select id="currency"><option value="CNY">CNY 人民币</option><option value="USD">USD 美元</option></select>
     <label style="display:block;margin-top:12px">支付方式</label>
     <select id="rail">
       <option value="crypto">USDT 链上（推荐）</option>
       <option value="manual_cny">人民币转账 / 人工确认</option>
-      <option value="paypal">PayPal（未验签前不自动发货）</option>
-      <option value="biyapay">U卡 / BiyaPay（适配层）</option>
+      <option value="paypal">PayPal</option>
     </select>
     <div class="row">
       <button class="primary" id="btnOrder" type="button">创建订单</button>
       <button class="ghost" id="btnIntent" type="button">生成支付说明</button>
     </div>
   </div>
-
-  <div class="card" id="payCard" style="display:none">
-    <div id="payBox"></div>
-  </div>
-
-  <div class="card">
-    <div id="status" class="muted">选择商品 → 创建订单 → 生成支付说明。USDT 会显示收款地址与网络。</div>
-  </div>
+  <div class="card" id="payCard" style="display:none"><div id="payBox"></div></div>
+  <div class="card"><div id="status" class="muted">创建订单后点「生成支付说明」，USDT 会显示收款地址与网络。</div></div>
 </div>
 <script>
 const API = 'https://ltzzz-sell-order.ltzyz2181.workers.dev';
-// 客户付款进 LTZZZ Safe（金库），不是个人 U 卡提现地址
 const USDT_RECV = '0x76379a52a9e82c259E5Db417104C65C26f9C58a3';
 const params = new URLSearchParams(location.search);
 let productId = params.get('product') || 'ai-template-pack';
 let orderId = params.get('order') || null;
 let product = null;
 let lastOrder = null;
-
 async function loadCatalog() {
-  const r = await fetch(API + '/catalog');
-  const d = await r.json();
+  const d = await fetch(API + '/catalog').then(r => r.json());
   product = (d.products || []).find(p => p.id === productId) || (d.products || [])[0];
-  if (!product) {
-    document.getElementById('productCard').textContent = '目录加载失败';
-    return;
-  }
+  if (!product) { document.getElementById('productCard').textContent = '目录加载失败'; return; }
   productId = product.id;
   renderProduct();
   if (orderId) {
@@ -96,98 +76,54 @@ async function loadCatalog() {
 function renderProduct() {
   const cur = document.getElementById('currency').value;
   const price = cur === 'USD' ? product.price_usd + ' USD' : '¥' + product.price_cny;
-  document.getElementById('productCard').innerHTML =
-    '<div class="badge">体验款</div>' +
-    '<h2 style="margin:8px 0 4px;font-size:1.2rem">' + product.name + '</h2>' +
-    '<div class="price">' + price + '</div>' +
-    '<p class="muted">' + (product.description || '') + '</p>';
+  document.getElementById('productCard').innerHTML = '<div class="badge">体验款</div><h2 style="margin:8px 0 4px;font-size:1.2rem">' + product.name + '</h2><div class="price">' + price + '</div><p class="muted">' + (product.description || '') + '</p>';
 }
 document.getElementById('currency').onchange = renderProduct;
-
 document.getElementById('btnOrder').onclick = async () => {
-  const body = {
-    product_id: productId,
-    currency: document.getElementById('currency').value,
-    contact: document.getElementById('contact').value,
-  };
-  const r = await fetch(API + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const d = await r.json();
+  const body = { product_id: productId, currency: document.getElementById('currency').value, contact: document.getElementById('contact').value };
+  const d = await fetch(API + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
   if (!d.ok) { document.getElementById('status').textContent = JSON.stringify(d, null, 2); return; }
-  orderId = d.order.id;
-  lastOrder = d.order;
+  orderId = d.order.id; lastOrder = d.order;
   history.replaceState({}, '', '?product=' + productId + '&order=' + orderId);
   showOrder(d.order);
-  // 选了 USDT 时自动生成支付说明
-  if (document.getElementById('rail').value === 'crypto') {
-    document.getElementById('btnIntent').click();
-  }
+  if (document.getElementById('rail').value === 'crypto') document.getElementById('btnIntent').click();
 };
-
 document.getElementById('btnIntent').onclick = async () => {
   if (!orderId) { alert('请先创建订单'); return; }
-  const rail = document.getElementById('rail').value;
-  const body = { order_id: orderId, rail: rail };
-  const r = await fetch(API + '/pay/intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const d = await r.json();
-  if (!d.ok) {
-    document.getElementById('status').textContent = JSON.stringify(d, null, 2);
-    return;
-  }
+  const d = await fetch(API + '/pay/intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, rail: document.getElementById('rail').value }) }).then(r => r.json());
+  if (!d.ok) { document.getElementById('status').textContent = JSON.stringify(d, null, 2); return; }
   if (d.order) lastOrder = d.order;
   showPayInstructions(d);
 };
-
 function showOrder(o) {
   lastOrder = o;
-  document.getElementById('status').textContent =
-    '订单 ' + o.id + '\n状态 ' + o.status + '\n金额 ' + o.amount + ' ' + o.currency +
-    '\n下一步：点「生成支付说明」（USDT 会显示收款地址）';
+  document.getElementById('status').textContent = '订单 ' + o.id + '\n状态 ' + o.status + '\n金额 ' + o.amount + ' ' + o.currency + '\n下一步：点「生成支付说明」';
 }
-
 function showPayInstructions(d) {
   const a = d.adapter || {};
   const o = d.order || lastOrder || {};
   const card = document.getElementById('payCard');
   const box = document.getElementById('payBox');
   card.style.display = 'block';
-
   if (a.rail === 'crypto_usdt' || a.rail === 'crypto') {
     const to = a.to || USDT_RECV;
     const amt = a.amount_hint != null ? a.amount_hint : (o.amount_usd || o.amount);
     const memo = a.memo || o.id || orderId;
-    box.innerHTML =
-      '<div class="pay-box">' +
-      '<h3>请按以下信息支付 USDT</h3>' +
+    box.innerHTML = '<div class="pay-box"><h3>请按以下信息支付 USDT</h3>' +
       '<div class="pay-row"><div class="k">网络（必须选对）</div><div class="v">Ethereum · ERC20 主网</div></div>' +
       '<div class="pay-row"><div class="k">资产</div><div class="v">USDT</div></div>' +
       '<div class="pay-row"><div class="k">金额</div><div class="v">' + amt + ' USDT</div></div>' +
       '<div class="pay-row"><div class="k">收款地址（USDT ERC20）</div><div class="v" id="recvAddr">' + to + '</div></div>' +
-      '<div class="pay-row"><div class="k">备注 / Memo（订单号）</div><div class="v">' + memo + '</div></div>' +
+      '<div class="pay-row"><div class="k">备注 / 订单号</div><div class="v">' + memo + '</div></div>' +
       '<div class="row"><button type="button" class="ghost" id="btnCopy">复制收款地址</button></div>' +
-      '<p class="pay-warn">⚠️ 请只使用以太坊主网 ERC20。勿选 TRC20 / BSC / 其他链，错链无法自动找回。<br>转账完成后把 TxHash 发到联系邮箱或 Telegram Bot，我们确认后交付。</p>' +
-      '</div>';
-    document.getElementById('status').textContent =
-      '订单 ' + (o.id || orderId) + ' · 等待链上到账\n收款: ' + to + '\n金额: ' + amt + ' USDT · Ethereum ERC20';
+      '<p class="pay-warn">请只使用以太坊主网 ERC20。勿选 TRC20 / BSC。转完把 TxHash 发邮箱或 Telegram Bot。</p></div>';
+    document.getElementById('status').textContent = '订单 ' + (o.id || orderId) + ' 等待到账\n' + to + '\n' + amt + ' USDT · Ethereum ERC20';
     const btn = document.getElementById('btnCopy');
-    if (btn) btn.onclick = () => {
-      navigator.clipboard.writeText(to).then(() => { btn.textContent = '已复制'; }).catch(() => { alert(to); });
-    };
+    if (btn) btn.onclick = () => navigator.clipboard.writeText(to).then(() => { btn.textContent = '已复制'; });
     return;
   }
-
-  if (a.rail === 'manual_cny') {
-    box.innerHTML =
-      '<div class="pay-box"><h3>人民币支付说明</h3>' +
-      '<p>金额约 ¥' + (o.amount_cny || o.amount) + '</p>' +
-      '<p class="muted">' + (a.instructions || '联系 TG @ltzzz_agi_lab_bot 或邮箱，备注订单号后转账。') + '</p></div>';
-    document.getElementById('status').textContent = a.instructions || JSON.stringify(a, null, 2);
-    return;
-  }
-
   box.innerHTML = '<pre style="white-space:pre-wrap;font-size:.85rem">' + JSON.stringify(d, null, 2) + '</pre>';
-  document.getElementById('status').textContent = JSON.stringify(a, null, 2);
 }
-
 loadCatalog().catch(e => { document.getElementById('productCard').textContent = String(e); });
 </script>
 </body>
