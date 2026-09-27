@@ -11,3 +11,10 @@
 - 发布状态
 - 外部 URL/平台 ID
 - 验证状态
+
+## 视频通道
+
+- `assets/video/`：通用视频资产（T026）
+- `assets/video/muse/`：Google Muse 生成成片（命名/字段/状态机见该目录 README）
+  - 读取/校验：`node scripts/scan-muse-assets.js`（输出 manifest，仅 `reviewed + human_confirm=true` 可发布）
+
