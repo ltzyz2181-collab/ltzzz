@@ -35,13 +35,13 @@ npx wrangler secret put XAI_API_KEY
 
 ## 部署到 GitHub Pages（只需做一次）
 
-1. 打开仓库：https://github.com/ltzyz2181-collab/-
+1. 打开仓库：https://github.com/ltzyz2181-collab/ltzzz
 2. 点击 **Settings** → 左侧 **Pages**
 3. Source 选择 **Deploy from a branch**
 4. Branch 选择 **main**，Folder 选择 **/ (root)**
 5. 点击 **Save**
 6. 等待 1-2 分钟即可访问：
-   - https://ltzyz2181-collab.github.io/-/
+   - https://ltzyz2181-collab.github.io/ltzzz/
    - 或绑定后的 https://ltzzz.com
 
 ## 项目理念（前端已体现）
