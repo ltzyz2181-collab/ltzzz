@@ -131,6 +131,7 @@ textarea{min-height:90px;resize:vertical}
 
 <script>
 var WORKER = 'https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
+var RECORD_WORKER = 'https://ltzzz-youtube-record.ltzyz2181.workers.dev';
 var RETURN_TO = location.protocol + '//' + location.host + '/youtube.html';
 var $ = function (id) { return document.getElementById(id); };
 
@@ -261,6 +262,18 @@ async function handleUploadResponse(r, msg) {
         published_at: d.published_at, privacyStatus: d.privacyStatus, url: d.url, status: 'published'
       });
       localStorage.setItem('ltzzz_revenue_records', JSON.stringify(recs.slice(-50)));
+      // 同记录推送仓库持久化（record worker 写 data/records/youtube-publish-log.json）
+      try {
+        fetch(RECORD_WORKER + '/record', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            platform: 'youtube', video_id: d.video_id, title: d.title, views: 0,
+            revenue: 0, currency: 'USD', aicost: 0,
+            published_at: d.published_at, privacy_status: d.privacyStatus, url: d.url, status: 'published', source: 'youtube_html'
+          })
+        }).catch(function () {});
+      } catch (e2) {}
     } catch (e) {}
   } else {
     msg.textContent = '上传失败：' + (d.error || JSON.stringify(d));
