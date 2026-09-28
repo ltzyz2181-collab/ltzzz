@@ -33,6 +33,7 @@ function nowCST() {
 
 const today = todayCST();
 const MICROSOFT_ENABLED = process.env.MICROSOFT_ENABLED === "true";
+const PENDING_FILE = path.join(DATA, "tasks", "pending-reminders.json");
 
 // 通道 → 调用模块 / 密钥名 / 每日任务文案
 const CHANNELS = [
@@ -70,6 +71,7 @@ async function main() {
   ensureDir(path.join(DATA, "reports"));
 
   const taskDefs = readJson(path.join(DATA, "tasks", "daily-tasks.json"), { tasks: [] });
+  const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
   const tasks = [];
   const failures = [];
   const userActionRequired = [];
@@ -79,11 +81,16 @@ async function main() {
     const mem = readJson(memPath, { agent: ch.agent, last_updated: null, context_summary: "", entries: [], constraints: [] });
     const def = taskDefs.tasks?.find((t) => t.agent === ch.agent);
     const last3 = mem.entries.slice(-3).map((e) => `[${e.date}] ${e.task}：${String(e.output).slice(0, 200)}`).join("\n");
+    const rem = pending.reminders?.[ch.agent];
+    const urge = rem && rem.status === "pending"
+      ? `\n\n⚠️ 催办：你在 ${rem.date} 的任务未完成（状态：${rem.status_reason || "未知"}，原因：${rem.reason || "未说明"}）。请本次优先补做该日任务，并在产出开头以「【补做 ${rem.date}】」标注；若确因密钥/余额等外部原因无法完成，在产出开头说明原因。`
+      : "";
 
     const prompt =
       `今天是 ${today}（UTC+8）。你的每日任务：${ch.task}\n\n` +
       `长期记忆摘要（context_summary）：${mem.context_summary || "（空）"}\n\n` +
       (last3 ? `最近产出（续上下文）：\n${last3}\n\n` : "") +
+      (urge ? `${urge}\n` : "") +
       `请直接输出当日产出，不需要解释过程。`;
 
     let mod;
@@ -100,10 +107,17 @@ async function main() {
       mem.context_summary = `${ch.agent} ${today}：${res.output.slice(0, 140)}`;
       mem.last_updated = nowCST();
       writeJson(memPath, mem);
+      if (pending.reminders && pending.reminders[ch.agent]) delete pending.reminders[ch.agent];
       tasks.push({ agent: ch.agent, task: ch.task, status: "success", output_preview: res.output.slice(0, 120), full_output_file: `data/memory/${ch.agent}.json` });
       console.log(`[run-daily-tasks] ${ch.agent}: success`);
     } else {
       failures.push({ agent: ch.agent, task: ch.task, status: res.status, error: res.error });
+      pending.reminders[ch.agent] = {
+        date: today,
+        status: "pending",
+        status_reason: res.status,
+        reason: String(res.error || "").slice(0, 200),
+      };
       tasks.push({ agent: ch.agent, task: ch.task, status: res.status, output_preview: res.status === "not_configured" ? "无 API Key，未调用（dry-run）" : "调用失败，见 failures", full_output_file: `data/memory/${ch.agent}.json` });
       console.log(`[run-daily-tasks] ${ch.agent}: ${res.status}`);
     }
@@ -125,11 +139,15 @@ async function main() {
     generated_at: nowCST(),
     tasks,
     failures,
+    pending_reminders: pending.reminders,
     user_action_required: userActionRequired,
   };
   writeJson(path.join(DATA, "results", `${today}.json`), result);
+  pending.updated_at = nowCST();
+  writeJson(PENDING_FILE, pending);
 
   // 每日报告
+  const pendingEntries = Object.entries(pending.reminders || {});
   const lines = [
     `# LTZZZ 每日报告 · ${today}`,
     "",
@@ -140,6 +158,7 @@ async function main() {
     ...tasks.map((t) => `| ${t.agent} | ${t.status} | ${String(t.output_preview || "").replace(/\|/g, "\\|").slice(0, 80)} |`),
     "",
     failures.length ? `## 失败/未配置\n\n${failures.map((f) => `- ${f.agent}: ${f.status} — ${f.error}`).join("\n")}\n` : "",
+    pendingEntries.length ? `## 催办中（未完成任务，下次运行自动注入 prompt 促其补做）\n\n${pendingEntries.map(([a, r]) => `- ${a}: ${r.date} ${r.status_reason || r.status} — ${r.reason}`).join("\n")}\n` : "",
     userActionRequired.length ? `## 需要用户操作\n\n${userActionRequired.map((u) => `- [ ] ${u}`).join("\n")}\n` : "",
   ];
   fs.writeFileSync(path.join(DATA, "reports", "latest.md"), lines.join("\n"), "utf8");
