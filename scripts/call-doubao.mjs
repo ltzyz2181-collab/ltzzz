@@ -1,12 +1,12 @@
 /**
  * call-doubao.mjs — 豆包通道真实调用
  * 端点：默认火山方舟 v3（OpenAI 兼容，已实测该 Key 可用）；可用环境变量切换到 Agent Plan 端点
- * 默认 Base https://ark.cn-beijing.volces.com/api/v3，模型 doubao-1-5-pro-32k-250115
+ * 默认 Base https://ark.cn-beijing.volces.com/api/v3，模型 doubao-seed-evolving（实测可调用）
  * 密钥：DOUBAO_API_KEY（兼容旧 ARK_API_KEY），GitHub Secrets 注入
  * 实现：先试 OpenAI 风格 {base}/chat/completions；404/405 时退回 Anthropic 风格 {base}/v1/messages
  */
 const BASE = () => process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const MODEL = () => process.env.DOUBAO_MODEL || "doubao-1-5-pro-32k-250115";
+const MODEL = () => process.env.DOUBAO_MODEL || "doubao-seed-evolving";
 
 async function tryOpenAICompatible(apiKey, prompt, base, model) {
   const resp = await fetch(`${base}/chat/completions`, {
