@@ -5,8 +5,17 @@
 | AI | 状态 | 产出预览 |
 |---|---|---|
 | gpt | api_error | 调用失败，见 failures |
-| doubao | api_error | 调用失败，见 failures |
-| grok | api_error | 调用失败，见 failures |
+| doubao | success | # 2026-09-28 每日产出（UTC+8）
+
+## 执行要点
+
+1. 整理当前可确认的仓库结构、自动化任务与持久化状态。
+2. 沉淀“装备论 × 观行深” |
+| grok | success | # 2026-09-28｜LTZZZ 日产
+
+## ① AI 对心理健康的实际作用（装备论）
+
+**命题：AI 是外置识神接口，不是元神；它对心理健康的真实作用 |
 | claude | api_error | 调用失败，见 failures |
 | deepseek | success | ## 2026-09-28 异同记录
 
@@ -25,8 +34,6 @@
     "error": {
         "message": "You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/.",
         "type": "insufficient
-- doubao: api_error — openai-style 404/405，anthropic-style HTTP 401: {"error":{"code":"AuthenticationError","message":"the API key or AK/SK in the request is missing or invalid. request id: 021790560776906b79d8748f7bc7d5b56cf6863add8bd06dd99a8","param":"","type":"Unaut
-- grok: api_error — HTTP 404: {"code":"not-found","error":"The model grok-2-latest does not exist or your team 8c4ed0f5-139c-4529-8a47-bc2daeea2425 does not have access to it. If you believe this is a mistake, please contact suppo
 - claude: api_error — HTTP 400: {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_i
 
 ## 需要用户操作
