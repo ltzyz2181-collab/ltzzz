@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LTZZZ 数据看板 · 记忆 / 任务 / 结果 / 销售 / 资产</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background:#0a0e1a; color:#e8ecf4; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:1200px; margin:0 auto; padding:32px 20px 60px; }
+  header.top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  header.top h1 { font-size:26px; margin:0; background:linear-gradient(90deg,#60a5fa,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  header.top .sub { color:#8b95a8; font-size:13px; }
+  .sec { margin:34px 0 0; }
+  .sec h2 { font-size:19px; margin:0 0 14px; display:flex; align-items:center; gap:8px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+  .card { background:#131929; border:1px solid #1e2a45; border-radius:14px; padding:16px 18px; }
+  .card h3 { margin:0 0 8px; font-size:15px; }
+  .card .meta { color:#8b95a8; font-size:12px; margin-bottom:8px; }
+  .card p { font-size:13px; line-height:1.7; color:#b0b8c8; margin:4px 0; }
+  .tag { display:inline-block; padding:2px 9px; border-radius:99px; font-size:11px; font-weight:600; }
+  .tag.ok{ background:#064e3b; color:#34d399; } .tag.waiting,.tag.skipped{ background:#422006; color:#fbbf24; }
+  .tag.failed,.tag.api_error{ background:#450a0a; color:#f87171; } .tag.deployed{ background:#1e3a8a; color:#93c5fd; }
+  .tag.deferred{ background:#422006; color:#fbbf24; } .tag.not_configured{ background:#1f2937; color:#9ca3af; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid #1e2a45; vertical-align:top; }
+  th { color:#8b95a8; font-weight:600; }
+  pre { white-space:pre-wrap; word-break:break-word; font-size:12.5px; background:#0d1322; border:1px solid #1e2a45; border-radius:10px; padding:14px; line-height:1.7; }
+  .empty { color:#6b7280; font-size:13px; }
+  footer { text-align:center; color:#6b7280; font-size:12px; margin-top:48px; }
+  .nav { margin-bottom:20px; }
+  .nav a { color:#93c5fd; text-decoration:none; font-size:13px; margin-right:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>LTZZZ 数据看板</h1>
+      <div class="sub">记忆 · 任务 · 结果 · 销售 · 资产 — 数据源：仓库 data/ JSON（GitHub Pages 只展示，不计算）</div>
+    </div>
+    <div class="nav"><a href="index.html">首页</a><a href="daily.html">每日运行</a><a href="guan.html">六通道记录</a></div>
+  </header>
+
+  <section class="sec" id="memSec">
+    <h2>🧠 记忆中心（data/memory/）</h2>
+    <div class="grid" id="memGrid"><div class="card empty">加载中…</div></div>
+  </section>
+
+  <section class="sec">
+    <h2>📋 任务（data/tasks/）</h2>
+    <div id="taskBox" class="card empty">加载中…</div>
+  </section>
+
+  <section class="sec">
+    <h2>📊 结果（data/results/ + data/reports/）</h2>
+    <div id="resultBox" class="card empty">加载中…</div>
+    <div style="margin-top:14px" id="reportBox" class="card empty">加载中…</div>
+  </section>
+
+  <section class="sec">
+    <h2>💰 销售（data/sales/） · 资产（data/assets/）</h2>
+    <div class="grid">
+      <div id="salesBox" class="card empty">加载中…</div>
+      <div id="assetsBox" class="card empty">加载中…</div>
+      <div class="card"><h3>说明</h3><p>销售/资产当前为通用模板。待确认定义后填充：卖什么、线索来源、展示指标；钱包 USDT 余额（链上/手动）、域名、成本。</p></div>
+    </div>
+  </section>
+
+  <footer>© 2026 LTZZZ Digital Lab · data/ JSON 持久化 · 每日由 Daily Agent Tasks 更新</footer>
+</div>
+
+<script>
+const esc = (s) => String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const tag = (st) => `<span class="tag ${esc(st)}">${esc(st)}</span>`;
+
+async function jget(url) {
+  const r = await fetch(url + "?t=" + Date.now(), { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+async function loadMem() {
+  const agents = ["gpt","doubao","deepseek","grok","claude","microsoft"];
+  const box = document.getElementById("memGrid");
+  const cards = await Promise.all(agents.map(async (a) => {
+    try {
+      const m = await jget(`data/memory/${a}.json`);
+      const last = m.entries && m.entries.length ? m.entries[m.entries.length-1] : null;
+      return `<div class="card"><h3>${esc(a)} ${tag("ok")}</h3>
+        <div class="meta">更新：${esc(m.last_updated || "—")} · entries ${m.entries ? m.entries.length : 0}</div>
+        <p><b>摘要：</b>${esc((m.context_summary||"").slice(0,150))}</p>
+        ${last ? `<p><b>最近：</b>${esc((last.output||"").slice(0,110))}</p>` : "<p class='empty'>暂无产出（等待首次触发）</p>"}</div>`;
+    } catch (e) {
+      return `<div class="card"><h3>${esc(a)} ${tag("not_configured")}</h3><p class="empty">加载失败：${esc(e.message)}</p></div>`;
+    }
+  }));
+  box.innerHTML = cards.join("");
+}
+
+async function loadTasks() {
+  const box = document.getElementById("taskBox");
+  try {
+    const t = await jget("data/tasks/daily-tasks.json");
+    const rows = (t.tasks||[]).map(x =>
+      `<tr><td>${esc(x.agent)}</td><td>${esc(x.task)}</td><td>${esc(x.trigger||"—")}</td><td>${tag(x.status)}</td></tr>`).join("");
+    box.innerHTML = `<table><tr><th>AI</th><th>任务</th><th>触发</th><th>状态</th></tr>${rows}</table>
+      <div class="meta" style="margin-top:10px">触发：${esc(t.trigger||"")}</div>`;
+  } catch (e) { box.innerHTML = `<p class="empty">加载失败：${esc(e.message)}</p>`; }
+}
+
+async function loadResults() {
+  const rb = document.getElementById("resultBox");
+  const rp = document.getElementById("reportBox");
+  try {
+    const today = new Date(Date.now()+8*3600*1000).toISOString().slice(0,10);
+    const r = await jget(`data/results/${today}.json`);
+    const rows = (r.tasks||[]).map(x =>
+      `<tr><td>${esc(x.agent)}</td><td>${esc(x.task)}</td><td>${tag(x.status)}</td><td>${esc((x.output_preview||x.reason||"").slice(0,80))}</td></tr>`).join("");
+    rb.innerHTML = `<table><tr><th>AI</th><th>任务</th><th>状态</th><th>产出预览</th></tr>${rows}</table>
+      ${(r.user_action_required||[]).length ? `<div class="meta" style="margin-top:10px">需要操作：${esc(r.user_action_required.join("；"))}</div>` : ""}`;
+  } catch (e) {
+    rb.innerHTML = `<p class="empty">今日结果未生成（${esc(e.message)}）。首次运行见 data/results/2026-09-28.json。</p>`;
+    try {
+      const r = await jget("data/results/2026-09-28.json");
+      const rows = (r.tasks||[]).map(x =>
+        `<tr><td>${esc(x.agent)}</td><td>${esc(x.task)}</td><td>${tag(x.status)}</td><td>${esc((x.output_preview||"").slice(0,80))}</td></tr>`).join("");
+      rb.innerHTML = `<table><tr><th>AI</th><th>任务</th><th>状态</th><th>产出预览</th></tr>${rows}</table>`;
+    } catch (_e2) { /* keep empty */ }
+  }
+  try {
+    const r = await fetch("data/reports/latest.md?t=" + Date.now(), { cache: "no-store" });
+    if (r.ok) rp.innerHTML = `<pre>${esc(await r.text())}</pre>`;
+    else rp.innerHTML = `<p class="empty">报告未生成。</p>`;
+  } catch (e) { rp.innerHTML = `<p class="empty">报告加载失败：${esc(e.message)}</p>`; }
+}
+
+async function loadSalesAssets() {
+  const sb = document.getElementById("salesBox");
+  const ab = document.getElementById("assetsBox");
+  try {
+    const s = await jget("data/sales/leads.json");
+    sb.innerHTML = `<h3>销售 leads</h3><div class="meta">更新：${esc(s.updated_at||"—")}</div>
+      <p>线索：${(s.leads||[]).length} · 订单：${(s.orders||[]).length} · 收入：¥${(s.revenue&&s.revenue.total_cny)||0} / USDT ${(s.revenue&&s.revenue.total_usdt)||0}</p>
+      <p class="empty">${esc(s.note||"")}</p>`;
+  } catch (e) { sb.innerHTML = `<p class="empty">加载失败：${esc(e.message)}</p>`; }
+  try {
+    const a = await jget("data/assets/balances.json");
+    ab.innerHTML = `<h3>资产 balances</h3><div class="meta">更新：${esc(a.updated_at||"—")}</div>
+      <p>钱包：${(a.wallets||[]).length} 个 · 域名：${(a.domains||[]).map(d=>esc(d.name)).join("、")||"—"}</p>
+      <p>月成本：¥${(a.costs&&a.costs.monthly_cny)||0}</p><p class="empty">${esc(a.note||"")}</p>`;
+  } catch (e) { ab.innerHTML = `<p class="empty">加载失败：${esc(e.message)}</p>`; }
+}
+
+loadMem(); loadTasks(); loadResults(); loadSalesAssets();
+</script>
+</body>
+</html>

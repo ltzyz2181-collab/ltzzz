@@ -1,0 +1,88 @@
+{
+  "date": "2026-09-28",
+  "run_type": "deploy_dryrun",
+  "deploy_note": "本日完成 JSON 持久化系统部署（data/memory + tasks + results + sales + assets + reports、6 个调用脚本、daily-agent-tasks 工作流、dashboard.html、Pages 构建修复）。上方 tasks 为部署后本地 dry-run 的诚实记录：5 通道无 Key 未调用，微软席按用户指示 skipped。首次真实调用待 GitHub Secrets 配置后在 Actions 手动/定时触发。",
+  "generated_at": "2026-09-28T09:30:38+08:00",
+  "tasks": [
+    {
+      "agent": "gpt",
+      "task": "读取仓库内容（knowledge/、articles/、protocol/），规划并记录一条任务；对记忆/任务模板做一次小修订（以 proposal 形式提出，不伪造已落地）",
+      "status": "not_configured",
+      "output_preview": "无 API Key，未调用（dry-run）",
+      "full_output_file": "data/memory/gpt.json"
+    },
+    {
+      "agent": "doubao",
+      "task": "读取仓库内容，整理一次；产出一份视频脚本草稿（≤60 秒、9:16、中文口播，围绕装备论/观行深主题）",
+      "status": "not_configured",
+      "output_preview": "无 API Key，未调用（dry-run）",
+      "full_output_file": "data/memory/doubao.json"
+    },
+    {
+      "agent": "grok",
+      "task": "读取仓库内容，记录一条「AI 对心理健康某方面的实际作用」（装备论视角：三维装备/魄含尸狗/识神元神/习气/网状因果）；并对 App/Web3 代码（app.html、wallet-lab.html、contracts/）提出 polish 提案",
+      "status": "not_configured",
+      "output_preview": "无 API Key，未调用（dry-run）",
+      "full_output_file": "data/memory/grok.json"
+    },
+    {
+      "agent": "claude",
+      "task": "读取仓库内容，写一段不少于 50 字的小说片段，承接前日连载（逐日连续积累，备写网文）",
+      "status": "not_configured",
+      "output_preview": "无 API Key，未调用（dry-run）",
+      "full_output_file": "data/memory/claude.json"
+    },
+    {
+      "agent": "deepseek",
+      "task": "读取仓库内容，对照中华传统文化（道家/佛家/中医等）与项目理念（装备论：观/行深/三维装备/魄/识神/习气/网状因果），记录一条异同",
+      "status": "not_configured",
+      "output_preview": "无 API Key，未调用（dry-run）",
+      "full_output_file": "data/memory/deepseek.json"
+    },
+    {
+      "agent": "microsoft",
+      "task": "西方文化 × 项目理念 异同 1 条",
+      "status": "skipped",
+      "output_preview": "按用户指示暂不部署（Copilot API 面向企业 M365）",
+      "full_output_file": "data/memory/microsoft.json"
+    }
+  ],
+  "failures": [
+    {
+      "agent": "gpt",
+      "task": "读取仓库内容（knowledge/、articles/、protocol/），规划并记录一条任务；对记忆/任务模板做一次小修订（以 proposal 形式提出，不伪造已落地）",
+      "status": "not_configured",
+      "error": "OPENAI_API_KEY 未配置（请在 GitHub Secrets 添加）"
+    },
+    {
+      "agent": "doubao",
+      "task": "读取仓库内容，整理一次；产出一份视频脚本草稿（≤60 秒、9:16、中文口播，围绕装备论/观行深主题）",
+      "status": "not_configured",
+      "error": "DOUBAO_API_KEY（或 ARK_API_KEY）未配置（请在 GitHub Secrets 添加）"
+    },
+    {
+      "agent": "grok",
+      "task": "读取仓库内容，记录一条「AI 对心理健康某方面的实际作用」（装备论视角：三维装备/魄含尸狗/识神元神/习气/网状因果）；并对 App/Web3 代码（app.html、wallet-lab.html、contracts/）提出 polish 提案",
+      "status": "not_configured",
+      "error": "XAI_API_KEY 未配置（请在 GitHub Secrets 添加）"
+    },
+    {
+      "agent": "claude",
+      "task": "读取仓库内容，写一段不少于 50 字的小说片段，承接前日连载（逐日连续积累，备写网文）",
+      "status": "not_configured",
+      "error": "ANTHROPIC_API_KEY 未配置（请在 GitHub Secrets 添加）"
+    },
+    {
+      "agent": "deepseek",
+      "task": "读取仓库内容，对照中华传统文化（道家/佛家/中医等）与项目理念（装备论：观/行深/三维装备/魄/识神/习气/网状因果），记录一条异同",
+      "status": "not_configured",
+      "error": "DEEPSEEK_API_KEY 未配置（请在 GitHub Secrets 添加）"
+    }
+  ],
+  "user_action_required": [
+    "确认微软席执行方案：A. 委托 GPT/Claude 执行（results 标注 executed_by）；B. 申请 Microsoft 365 Copilot API",
+    "确认销售系统定义：卖什么（服务/数字产品/会员）、线索来源（网站表单/手动录入）、展示指标（订单数/收入/转化率）",
+    "确认资产系统定义：钱包 USDT 余额（链上自动查询 or 手动更新）、域名、服务器成本等",
+    "确认 GitHub Actions Secrets 已配置：OPENAI_API_KEY / DOUBAO_API_KEY / DEEPSEEK_API_KEY / XAI_API_KEY / ANTHROPIC_API_KEY"
+  ]
+}
