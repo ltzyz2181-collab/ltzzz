@@ -36,3 +36,5 @@
 - **说明**：已按新规默认公开（2026-09-28 用户设定：以后上传默认 Public 全自动；本条为旧规 private）；后续每次上传成功由 record worker 自动追加记录并 commit。
 
 > 新规（2026-09-28 用户设定）：以后所有视频默认 Public 公开上传，全自动，无需人工确认。
+
+> ⚠️ 2026-09-28 17:14 一键转公开尝试失败：`403 insufficientPermissions`（OAuth 仅 upload 权限）。已把 Worker scope 扩至 youtube.force-ssl 并部署，重新授权后可用；在此之前转公开请用 YouTube Studio 手动改可见范围。
