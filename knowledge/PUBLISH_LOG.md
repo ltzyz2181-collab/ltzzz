@@ -33,4 +33,6 @@
 
 - **链接**：https://www.youtube.com/watch?v=HKhUA5CRPfc
 - **记录文件**：data/records/youtube-publish-log.json（worker 自动写入；本条约由人工核实截图后回填）
-- **说明**：私密待人工确认转公开；后续每次上传成功由 record worker 自动追加记录并 commit。
+- **说明**：已按新规默认公开（2026-09-28 用户设定：以后上传默认 Public 全自动；本条为旧规 private）；后续每次上传成功由 record worker 自动追加记录并 commit。
+
+> 新规（2026-09-28 用户设定）：以后所有视频默认 Public 公开上传，全自动，无需人工确认。
