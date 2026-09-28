@@ -383,6 +383,23 @@ function readArr(key) {
 function writeArr(key, arr) {
   try { localStorage.setItem(key, JSON.stringify(arr.slice(-50))); } catch (e) {}
 }
+// 从仓库拉取持久化发布记录并合并（data/records/youtube-publish-log.json，GitHub Pages 托管；上传记录由 youtube.html → record worker 自动写入）
+function mergeRemote(records) {
+  return fetch('https://ltzzz.com/data/records/youtube-publish-log.json')
+    .then(function (r) { return r.ok ? r.json() : []; })
+    .catch(function () { return []; })
+    .then(function (remote) {
+      if (!Array.isArray(remote)) return records;
+      var map = {};
+      records.forEach(function (r) { map[(r.platform || '') + ':' + (r.video_id || r.id || '')] = r; });
+      remote.forEach(function (r) {
+        var k = (r.platform || '') + ':' + (r.video_id || '');
+        if (k && !map[k]) { records.push(r); map[k] = r; }
+      });
+      writeArr(REVENUE_KEY, records);
+      return records;
+    });
+}
 
 function fmtMoney(v, cur) {
   if (v === null || v === undefined || isNaN(v)) return '--';
@@ -560,6 +577,7 @@ window.LTZZZ_SET_WALLET = function (w) {
 
 // 页面加载时从 creator-lab 的发布结果读取（平台收益记录由 Worker 回调写入，此处渲染已有数据）
 render();
+mergeRemote(readArr(REVENUE_KEY)).then(function () { render(); });
 </script>
 </body>
 </html>

@@ -18,3 +18,19 @@
 
 - **说明**：本次为链路验证（私密），未经用户确认不转为公开。
 - **下一步**：确认两平台私密可见 → 决定是否转为公开/删除；自动化上传链路（OAuth 授权 + publish_now.py）待授权后启用。
+
+---
+
+## 2026-09-28 · 自动化链路首条真实发布（私密）
+
+- **视频**：LTZZZ 2026-09-28（手机经 youtube.html → Worker OAuth 上传）
+- **OAuth**：YouTube 已连接（channel: LTZZZ / UCnKqseQ7uivSc7FN38ccRUA）
+- **发布平台与状态**：
+
+| 平台 | 状态 | 可见范围 | 上传方式 | Video ID |
+|---|---|---|---|---|
+| YouTube | ✅ 已上传 | 私密（private） | youtube.html 上传 | HKhUA5CRPfc |
+
+- **链接**：https://www.youtube.com/watch?v=HKhUA5CRPfc
+- **记录文件**：data/records/youtube-publish-log.json（worker 自动写入；本条约由人工核实截图后回填）
+- **说明**：私密待人工确认转公开；后续每次上传成功由 record worker 自动追加记录并 commit。
