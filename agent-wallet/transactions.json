@@ -1,0 +1,70 @@
+{
+  "transactions": [
+    {
+      "id": "txn_0001",
+      "timestamp": "2026-09-29T10:06:00.978Z",
+      "agent": "gpt",
+      "amount_usdc": 1,
+      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+      "purpose": "第一笔真实实验：验证自托管钱包端到端签名转账闭环",
+      "hypothesis": "自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
+      "success_criteria": "链上确认测试收款地址收到 1 USDC，agent 钱包 USDC 减至 49",
+      "experiment_id": "exp_001",
+      "reasoning_hash": "0xbccfb734c8e7b79f6dfbb78d0d0653a4a117c2ef164c648f24641eafed0cd519",
+      "reasoning_summary": "假设: 自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
+      "tx_hash": "0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504",
+      "status": "confirmed",
+      "mode": "local",
+      "audit": {
+        "by": "doubao_agent",
+        "status": "pass",
+        "checked_at": "2026-09-29T10:10:00.000Z",
+        "checks": [
+          "策略检查通过（白名单/限额/实验假设）",
+          "熔断器正常",
+          "预算充足（20 USDC 可用）",
+          "链上验证：交易 9 确认，from=agent EOA，to=USDC 合约",
+          "reasoning_hash 可重算核对（proof-of-reasoning）"
+        ]
+      },
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-09-29T10:10:00.000Z",
+        "evidence": "链上确认：测试收款地址 0xA315...491A 收到 1 USDC；agent 钱包 USDC 50→49；tx 0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504 已 9 确认",
+        "conclusion": "验收标准达成：自托管 EOA 签名 + Base RPC 广播 + 记账链路端到端可用，LTZZZ 钱包闭环真实跑通"
+      }
+    }
+  ],
+  "next_txn_id": 2,
+  "daily_summary": {
+    "2026-09-29": {
+      "gpt": {
+        "total_usdc": 1,
+        "count": 1
+      }
+    }
+  },
+  "monthly_summary": {
+    "2026-09": {
+      "gpt": {
+        "total_usdc": 1,
+        "count": 1
+      }
+    }
+  },
+  "circuit": {
+    "consecutive_failures": 0,
+    "halted": false,
+    "halted_at": null,
+    "hourly_window": [
+      {
+        "at": "2026-09-29T10:06:00.979Z",
+        "ok": true,
+        "amount": 1,
+        "agent": "gpt"
+      }
+    ]
+  },
+  "refill": {},
+  "last_updated": "2026-09-29T10:06:00.978Z"
+}
