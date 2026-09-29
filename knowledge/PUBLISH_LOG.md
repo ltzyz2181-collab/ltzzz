@@ -34,3 +34,12 @@
 - **链接**：https://www.youtube.com/watch?v=HKhUA5CRPfc
 - **记录文件**：data/records/youtube-publish-log.json（worker 自动写入；本条约由人工核实截图后回填）
 - **说明**：私密待人工确认转公开；后续每次上传成功由 record worker 自动追加记录并 commit。
+
+---
+
+## 2026-09-29 · 已验证转公开（端到端核验）
+
+- **视频**：HKhUA5CRPfc「LTZZZ 2026-09-28」由 set-privacy 转为 **public**
+- **核验方式（无鉴权权威通道）**：YouTube 频道 RSS feed（只列公开视频）含 `videoId=HKhUA5CRPfc / title=LTZZZ 2026-09-28`；Worker `/youtube/status` 返回 connected:true（channel LTZZZ / UCnKqseQ7uivSc7FN38ccRUA）
+- **结论**：视频真实公开，任何人可访问：https://www.youtube.com/watch?v=HKhUA5CRPfc
+- **遗留**：Worker last_publish 仍为 null（发布成功记录未回填）；data/records/youtube-publish-log.json 未生成（record worker 自动落库待修复）；自动发布端到端（定时触发→生成真实视频→上传 public→记录）仍未打通，卡在真实视频文件 + 定时触发。
