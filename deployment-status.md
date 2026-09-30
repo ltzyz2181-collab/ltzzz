@@ -223,6 +223,11 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - products.html TG 区块内新增占位行：**"LTZZZ Store → ltzyz.gumroad.com（海外版，即将上架 $19 模板包 / $5 周报订阅）"**
 - YT 视频描述占位：需 update-description 端点部署 + 扩权授权（上轮已备代码）→ 标 **owner 一分钟动作**（或发布后给我 slug 我走 worker 挂）
 
+## K3 补记 · YT 描述占位 ✅（2026-09-30 19:14 官方页面确认）
+- 视频 HKhUA5CRPfc 描述已含占位行 **"LTZZZ Store → ltzyz.gumroad.com（即將上架）"**（owner 手机 Studio 手动粘贴，页面实锤；ltzyz 拼写正确）
+- 标题确认为 "LTZZZ 2026-09-28"（规范）；视频画面正常（金鱼场景）；公开状态确认
+- 后续：Gumroad 发布拿 slug 后走 worker（update-description 端点已备，sha 6d42418e）换真链接
+
 （本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
 
 ## 一、事实修正（账本口径以链上/实测为准）
