@@ -2,6 +2,7 @@
 
 ## 每个任务必须有
 - task_id
+- 状态（pending / running / verified / blocked）— 2026-09-30 Kimi 增补：无状态字段导致旧任务无法对账
 - 目标
 - 执行 AI
 - 输入
