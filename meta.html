@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ · Meta AI 变现工位</title>
+<style>
+:root{--bg:#07101b;--panel:#0c1b2b;--line:#21415b;--text:#eef7ff;--muted:#8ea8bd;--accent:#59e5ff;--ok:#65e6b5;--warn:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 0,#12304b,#050a11 55%);color:var(--text);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:1000px;margin:auto;padding:48px 20px 70px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:28px}.brand{font-weight:800;font-size:20px}.brand span{color:var(--accent)}a{color:var(--muted);text-decoration:none}.panel{background:linear-gradient(145deg,#0c1b2b,#08111c);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.grid{grid-template-columns:1fr}}label{display:block;color:var(--muted);font-size:13px;margin:10px 0 5px}input,textarea{width:100%;background:#030810;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;font:inherit}textarea{min-height:150px;resize:vertical}.btn{border:1px solid #2b7791;background:#0b3c52;color:var(--text);padding:11px 16px;border-radius:10px;cursor:pointer;margin-top:12px}.btn:hover{border-color:var(--accent)}.btn:disabled{opacity:.6}.status{color:var(--muted);font-size:13px;margin-top:10px}.result{margin-top:14px;white-space:pre-wrap;background:#02060b;border:1px solid var(--line);border-radius:12px;padding:15px;min-height:130px}.ok{color:var(--ok)}.warn{color:var(--warn)}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13px}.note{color:var(--muted);font-size:13px;line-height:1.7}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{color:var(--muted);font-weight:600}.tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;color:var(--muted);margin:2px 4px 2px 0}
+</style>
+</head>
+<body><main class="wrap">
+<div class="top"><div class="brand">LTZZZ <span>META AI LAB</span></div><a href="agents.html">← 多 Agent</a></div>
+
+<section class="panel">
+<h1>Meta AI · 变现工位（规划中）</h1>
+<p class="note"><span class="warn">状态如实声明：本工位尚未接入（无专属 proxy worker，did:ltzzz:meta 未入名册）。</span>本页为工位规划与能力边界说明，遵循真实四公式：planned ≠ deployed。接入前，页面上的"变现参谋"仅做离线策略草案，不调用任何真实 API、不产生任何真实支出。</p>
+</section>
+
+<section class="panel">
+<h2>工位定位：为什么是 Meta AI</h2>
+<p class="note">在 LTZZZ 的 AI 分工（protocol/agent-roles.md）里，各家都有主线：GPT 总控、豆包执行、DeepSeek 研究、Grok 海外、Claude 审计。Meta AI 补的是没人认领的一席——<strong>变现与商业系统</strong>。它的参考长项来自 Meta 生态本身：广告投放与转化漏斗、Shops/商务消息流、A/B 测试驱动增长、用数据把"流量→收入"链路量化。LTZZZ 后续的淘宝、抖店、微信小店、视频号四店变现，需要的正是这类"把内容变成订单"的方法论，而不是再多一个写文案的工位。</p>
+<div>
+<span class="tag">转化漏斗</span><span class="tag">A/B 测试</span><span class="tag">广告与流量采买策略</span><span class="tag">电商内容→订单链路</span><span class="tag">定价与套餐设计</span>
+</div>
+</section>
+
+<section class="panel">
+<h2>权限边界（先定规矩，再谈赚钱）</h2>
+<table>
+<tr><th>层级</th><th>Meta 工位可以做</th><th>不可以做</th></tr>
+<tr><td>L1 提案</td><td>产出变现策略、漏斗设计、店铺文案草案、投放预算建议</td><td>任何真实下单、充值、改价、发布商品</td></tr>
+<tr><td>L2 人工确认后执行</td><td>经 owner 逐单批准的店铺操作（上架文案、活动配置）</td><td>持有店铺凭证、独立触碰资金</td></tr>
+<tr><td>永久禁区</td><td>——</td><td>API Key/密码进入对话或仓库；绕过平台风控；自动转账与真实资金决策</td></tr>
+</table>
+<p class="note">对应协议：agi-co-management-protocol.md「人类最终控制权」「最小权限」「不共享秘密」；变现类产出同样必须带 result / evidence / next 字段进入 Result Center。</p>
+</section>
+
+<section class="panel">
+<h2>变现参谋（离线策略草案器）</h2>
+<p class="note">输入你的商品/内容/流量现状，生成可执行转化方案。当前为浏览器本地草稿模式，不联网、不调用任何模型 API；接入 Meta 模型前不会伪装已接入。</p>
+<label>卖什么（产品/内容/服务）</label><input id="what" placeholder="例：LTZZZ 数字实验室的 AI 生成短视频服务">
+<label>现在流量与转化情况</label><input id="funnel" placeholder="例：YouTube 周更 3 条，播放约 2000，无转化入口">
+<label>目标（本月要达成什么）</label><input id="goal" placeholder="例：跑通第一单，哪怕 9.9 元">
+<button class="btn" id="plan">生成变现草案</button>
+<div class="result mono" id="draft">暂无草案</div>
+</section>
+
+<script>
+const $=id=>document.getElementById(id);
+$('plan').onclick=()=>{
+ const what=$('what').value.trim()||'（未填写产品）';
+ const funnel=$('funnel').value.trim()||'（未填写现状）';
+ const goal=$('goal').value.trim()||'（未填写目标）';
+ const t=`【变现草案 · 离线模板 · ${new Date().toISOString().slice(0,10)}】
+■ 标的：${what}
+■ 现状：${funnel}
+■ 目标：${goal}
+
+1. 漏斗补位：现状→目标之间缺哪一环（曝光/兴趣/信任/下单/复购），只补最窄的一环，不同时改五处。
+2. 最小可信成交物：为"${goal}"设计一个 9.9~99 元档、24 小时内可交付的最小 SKU，先证明有人付钱，再扩品。
+3. 内容→订单挂钩：每条既有内容尾部加一个可点击转化入口（小店商品卡/视频号购物车/私域引导），一周后按点击率与成交率做 A/B。
+4. 预算红线：任何付费投放单日封顶由 owner 设定；未达 ROI 阈值前只用免费流量验证素材。
+5. 验证口径：草案执行后记录 result/evidence/next；没有成交 receipt 之前，本方案状态永远是 proposed。
+
+⚠ 本草案由页面模板生成，非模型输出；Meta 工位接入（worker+DID）后才会产生真实 AI 策略。`;
+ $('draft').textContent=t;
+};
+</script>
+</main></body></html>

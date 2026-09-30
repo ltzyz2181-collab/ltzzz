@@ -1,0 +1,47 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:ltzzz:deepseek",
+  "alsoKnownAs": ["erc8004:pending-mainnet-mapping"],
+  "controller": "did:ltzzz:owner",
+  "verificationMethod": [
+    {
+      "id": "did:ltzzz:deepseek#guardian-key-1",
+      "type": "EcdsaSecp256r1VerificationKey2019",
+      "controller": "did:ltzzz:deepseek",
+      "publicKeyJwk": {
+        "kty": "EC", "crv": "P-256", "x": "PLACEHOLDER_X", "y": "PLACEHOLDER_Y",
+        "note": "占位符。真实密钥由 owner 在安全环境生成，仅公钥入库。"
+      }
+    }
+  ],
+  "authentication": ["did:ltzzz:deepseek#guardian-key-1"],
+  "assertionMethod": ["did:ltzzz:deepseek#guardian-key-1"],
+  "service": [
+    {
+      "id": "did:ltzzz:deepseek#a2a-card",
+      "type": "agent-card",
+      "serviceEndpoint": "https://ltzzz.com/api/agents/deepseek/card",
+      "note": "对应 deepseek-proxy-worker.js；端点状态：worker 代码存在，路由待部署"
+    }
+  ],
+  "ltzzz:profile": {
+    "role": "研究、资料、代码、长文本处理、聊天记录清洗、批量文案与数据分析；中文规则与传统文化/装备论对照",
+    "votingSeat": true,
+    "walletTier": "L1 只读",
+    "channels": ["deepseek-proxy-worker", "knowledge/ai-chats/DeepSeek 6 篇（含修行对照）"]
+  },
+  "ltzzz:memoryGate": {
+    "requiredReads": [
+      "ltzzz-memory/README.md", "ltzzz-memory/重要事件.md", "ltzzz-memory/项目历史.md",
+      "ltzzz-memory/装备论.md", "ltzzz-memory/魄.md", "ltzzz-memory/识神.md",
+      "ltzzz-memory/梦境数据库.md", "ltzzz-memory/文明研究.md", "当日/昨日 Task-Result 摘要"
+    ],
+    "truthContract": ["proposed != applied", "planned != deployed", "API存在 != API已验证", "AI回复 != 实际结果"],
+    "outputSchema": "每条产出必须带 result / evidence / next 字段，缺失视为未过 Gate",
+    "specialNote": "涉及修行/梦境内容时遵守 AI-ARCHIVE-INDEX 审核底线：体验≠科学事实，AI推测≠用户确认"
+  },
+  "proof": { "type": "PLACEHOLDER", "note": "guardian 2/3 签名字段，X2 阶段完成" }
+}

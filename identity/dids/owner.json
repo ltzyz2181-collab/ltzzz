@@ -1,0 +1,43 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:ltzzz:owner",
+  "controller": "did:ltzzz:owner",
+  "verificationMethod": [
+    {
+      "id": "did:ltzzz:owner#guardian-key-1",
+      "type": "EcdsaSecp256r1VerificationKey2019",
+      "controller": "did:ltzzz:owner",
+      "publicKeyJwk": {
+        "kty": "EC", "crv": "P-256", "x": "PLACEHOLDER_X", "y": "PLACEHOLDER_Y",
+        "note": "owner 真实公钥由本人离线生成后填入；本文件绝不含私钥/助记词。"
+      }
+    }
+  ],
+  "authentication": ["did:ltzzz:owner#guardian-key-1"],
+  "assertionMethod": ["did:ltzzz:owner#guardian-key-1"],
+  "service": [
+    {
+      "id": "did:ltzzz:owner#veto",
+      "type": "HumanVetoEndpoint",
+      "serviceEndpoint": "agi-console.html proposeVeto -> ReputationRegistry.proposeVeto()",
+      "note": "合约层 proposeVeto 任何人可调用；链上治理层 owner 身份使否决具备最终性"
+    }
+  ],
+  "ltzzz:profile": {
+    "role": "人类锚点（Human Owner）：最终审批高风险动作与真实资金权限",
+    "votingSeat": "高于 3/5 治理：核心治理修改需 AI ≥3/5 后再经 owner 确认",
+    "walletTier": "最高（Safe guardian 之一，主地址待 X2 提供）",
+    "inviolable": [
+      "本 DID 不可被任何 AI 投票移除（agi-co-management-protocol.md 第 1 条：人类最终控制权）",
+      "涉及真钱的最终支出/转账决策必须先询问 owner（web3-agent-treasury-design.md 核心安全规则第 10 条）",
+      "高影响决定、资金、安全、账号权限的记忆写入必须 owner 确认（ltzzz-memory/README.md 写入规则）"
+    ]
+  },
+  "ltzzz:memoryGate": {
+    "note": "owner 不受 AI Gate 约束，但 owner 的记录（重要事件.md）是所有 AI 的必读输入"
+  },
+  "proof": { "type": "PLACEHOLDER", "note": "由 3 guardian 中的其余两方签名背书" }
+}

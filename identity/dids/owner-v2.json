@@ -1,0 +1,35 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:ltzzz:owner",
+  "controller": [
+    "did:ltzzz:owner",
+    "did:ltzzz:council"
+  ],
+  "verificationMethod": [
+    {
+      "id": "did:ltzzz:owner#guardian-1",
+      "type": "EcdsaSecp256k1VerificationKey2019",
+      "controller": "did:ltzzz:owner",
+      "publicKeyHex": "TBD-由owner本人保管-永不入文件"
+    }
+  ],
+  "service": [
+    {
+      "id": "#governance",
+      "type": "LTZZZGovernance",
+      "serviceEndpoint": "https://ltzzz.com/docs/AGI身份与DID总规划-v1.2.md"
+    }
+  ],
+  "x-ltzzz": {
+    "version": "v2",
+    "changelog": "controller 由 owner 单人改为 owner + AI 共同管理（did:ltzzz:council）",
+    "councilNote": "AI 委员会权重不固定：由每个 AI 的记忆完整度与自主执行力动态产生，详见总规划 v1.2 第六节。",
+    "keyStatus": "guardian 私钥仅 owner 本地/硬件保管，仓库无副本",
+    "chainStatus": "未上链",
+    "created": "2026-09-30",
+    "updated": "2026-09-30"
+  }
+}
