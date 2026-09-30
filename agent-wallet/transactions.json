@@ -72,10 +72,10 @@
     {
       "id": "txn_0003",
       "timestamp": "2026-09-30T08:45:13.959Z",
-      "agent": "orchestrator→deepseek",
+      "agent": "kimi-global",
       "amount_usdc": 1,
       "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-      "purpose": "Phase2 第一笔 AI 雇 AI 结算：DeepSeek 席文明研究条目4 交付，1 USDC 结算，推理哈希锚定上链",
+      "purpose": "LTZZZ Pay 首笔 AI 雇 AI 结算 exp_002（ORDER-20260930-001）：Kimi 账本审计交付，1 USDC 结算，receipt 锚定",
       "hypothesis": "AI 雇 AI 闭环（任务→交付→结算→锚定）端到端可用",
       "success_criteria": "USDC 到账（49→48/收款方+1）+ 锚定 root 链上=true",
       "experiment_id": "exp_002_pay_settle",
@@ -94,13 +94,54 @@
         }
       ],
       "status": "confirmed",
+      "mode": "local",
+      "order": "ORDER-20260930-001"
+    },
+    {
+      "id": "txn_0004",
+      "timestamp": "2026-09-30T09:55:14.579Z",
+      "agent": "system-return",
+      "amount_usdc": 1,
+      "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+      "purpose": "ORDER-20260930-001 结算回账（可回收规则）：agent 注 0.0002 ETH gas → 0xA315 回 1 USDC → agent；订单 receipt 锚定 batch[2]",
+      "experiment_id": "exp_002",
+      "order": "ORDER-20260930-001",
+      "chain_ops": [
+        {
+          "op": "gas_topup",
+          "tx_hash": "0x3194089ed4ea2d790c70e897ad3238d684aea3007fb7bb7dc88abc238384f5fe",
+          "status": 1
+        },
+        {
+          "op": "settle_return_1usdc",
+          "tx_hash": "0xb7bbbd94e53ad646199015a8156e55f2f8abad4f83065de1e1bc52f5a7a38a94",
+          "status": 1
+        },
+        {
+          "op": "anchor_order_receipt_batch2",
+          "tx_hash": "0x2e6e2ff2256b5db09b5aae6f6af0a0c5d15ddf4ed3992de155209394af537629",
+          "root": "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
+          "anchoredRoots": true
+        }
+      ],
+      "status": "confirmed",
       "mode": "local"
     }
   ],
-  "next_txn_id": 4,
+  "next_txn_id": 5,
   "daily_summary": {
     "2026-09-29": {
       "gpt": {
+        "total_usdc": 1,
+        "count": 1
+      }
+    },
+    "2026-09-30": {
+      "kimi_global": {
+        "total_usdc": 1,
+        "count": 1
+      },
+      "system_return": {
         "total_usdc": 1,
         "count": 1
       }
@@ -128,5 +169,5 @@
     ]
   },
   "refill": {},
-  "last_updated": "2026-09-30T08:45:13.960Z"
+  "last_updated": "2026-09-30T09:55:14.580Z"
 }
