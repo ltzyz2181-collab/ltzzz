@@ -79,3 +79,37 @@ Last policy update: 2026-09-18
 - ⏳ 接收测试：需第二 X 账号或朋友给 @ltzzz_bot 发私信（主人不能和自己的 bot 私聊）
 - ⚠️ 聊天中已暴露 X 凭证，测试通过后需 Rotate token + 重新注册 chat keys 轮换
 f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitignore本地凭证)
+
+---
+
+# 通道B执行回执 · 豆包代部署（2026-09-30）
+
+## D1 总控产出推送 ✅
+- 本地 commit `af91180`（orchestrator: qianwen+kimi worker slots, DID v2 council, pay-policy v0.4, memory ledgers）
+- 远程已就位（API 直推 10 文件）：qianwen-proxy-worker.js / kimi-proxy-worker.js / agent-pay-policy-v0.4.json / meta.html / ops/SECURITY-INCIDENT-secrets-exposure-20260930.md / ltzzz-memory/（梦境数据库-v1·入档 / 重要事件-入档 / 文明研究-v1·入档）
+- `ltzzz-secrets.md` 未入库（git ls-files 复核通过）
+
+## D2 Worker 部署 ✅（wrangler 输出 = CF 官方确认）
+| Worker | URL | Version ID |
+|---|---|---|
+| ltzzz-qianwen-proxy | https://ltzzz-qianwen-proxy.ltzyz2181.workers.dev | 4dbf38b1-fcf5-4329-adc2-ea683b6011bf |
+| ltzzz-kimi-proxy | https://ltzzz-kimi-proxy.ltzyz2181.workers.dev | 5117a20a-9bc9-4e9a-bab4-291190d70dfa |
+
+## D2 Secret 配置 ❌（BLOCKED，执行单红线如实报）
+- `QWEN_API_KEY`：**Key.doc 中不存在**——Key.doc 为 WPS 格式，仅含 DeepSeek / 克劳德(Anthropic) / GPT(OpenAI) 三个 key，**无千问/百炼 key**
+- `KIMI_API_KEY`：**Key.doc 中不存在**——无 Moonshot key
+- 结果：两 Worker `has_key=false`；POST 真实调用无法执行
+
+## D3 三关验证 ⏳（缺 key → 按执行单规则报**未完成**，不报已部署）
+- a/b. `GET /health`：Worker 已部署（wrangler/CF 确认线上存在），但 `has_key:false` 不满足验收硬条件；workers.dev 域名大陆被墙，需外网 curl 复核 200
+- c. `POST` 真实消息：未执行（无 QWEN/KIMI key）
+- **结论：未完成——缺千问与 Kimi 的 API Key**
+
+## D4 meta.html ✅
+- `https://ltzzz.com/meta.html` → **HTTP 200**（D1 推送后 Pages 自动发布，404 已消除）
+
+## 需要 owner 提供（只进 Worker Secret，不写仓库/对话）
+1. `QWEN_API_KEY`（阿里云百炼，sk- 开头）→ 我配 Secret 后完成三关 a/b/c
+2. `KIMI_API_KEY`（Moonshot，sk- 开头）→ 同上
+
+（本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
