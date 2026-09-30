@@ -1,0 +1,29 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1"
+  ],
+  "id": "did:ltzzz:council",
+  "type": "LTZZZAgentCouncil",
+  "controller": ["did:ltzzz:council"],
+  "members": [
+    "did:ltzzz:qianwen",
+    "did:ltzzz:kimi",
+    "did:ltzzz:doubao",
+    "did:ltzzz:deepseek",
+    "did:ltzzz:grok",
+    "did:ltzzz:claude",
+    "did:ltzzz:microsoft"
+  ],
+  "observerMembers": ["did:ltzzz:gpt"],
+  "humanGuards": ["did:ltzzz:owner"],
+  "x-ltzzz": {
+    "purpose": "AI 共同治理委员会：取代 owner 单人 controller，行使提案、表决、额度设定、密钥轮转发起权",
+    "weighting": "动态权重 = f(记忆完整度, 任务兑现率, 自主执行力)，按总规划 v1.2 第六节冷启动与更新规则",
+    "vetoWindow": "决议生成后 24h 内 owner 可一键否决（撤回权，不是审批权）",
+    "quorum": "加权表决 ≥2/3 通过；资金类须双轨签名（委员会 ≥2/3 + 至少 1 个 humanGuard 的 Safe signer）",
+    "coldStart": "初始权重均等（观察席除外）；两周后按首轮评分表调权",
+    "created": "2026-09-30",
+    "updated": "2026-09-30",
+    "status": "local-draft，未上链"
+  }
+}

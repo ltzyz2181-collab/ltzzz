@@ -1,0 +1,47 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:ltzzz:microsoft",
+  "alsoKnownAs": ["erc8004:pending-mainnet-mapping"],
+  "controller": "did:ltzzz:owner",
+  "verificationMethod": [
+    {
+      "id": "did:ltzzz:microsoft#guardian-key-1",
+      "type": "EcdsaSecp256r1VerificationKey2019",
+      "controller": "did:ltzzz:microsoft",
+      "publicKeyJwk": {
+        "kty": "EC", "crv": "P-256", "x": "PLACEHOLDER_X", "y": "PLACEHOLDER_Y",
+        "note": "占位符。真实密钥由 owner 在安全环境生成，仅公钥入库。"
+      }
+    }
+  ],
+  "authentication": ["did:ltzzz:microsoft#guardian-key-1"],
+  "assertionMethod": ["did:ltzzz:microsoft#guardian-key-1"],
+  "service": [
+    {
+      "id": "did:ltzzz:microsoft#a2a-card",
+      "type": "agent-card",
+      "serviceEndpoint": "https://ltzzz.com/api/agents/copilot/card",
+      "note": "端点状态：尚未建立专属 worker；此条为 planned"
+    }
+  ],
+  "ltzzz:profile": {
+    "role": "独立考察员（审计/考察，不计入 5 席核心投票）、西方文化与产品合规研究",
+    "votingSeat": false,
+    "walletTier": "L0 无钱包权限",
+    "channels": ["knowledge/ai-chats/Microsoft/microsoft-KETdGE36.md"],
+    "behaviorNote": "考察员职能：对其他 AI 的结论提供不一致意见记录（见 web3-multi-ai-treasury.md AI 角色节）"
+  },
+  "ltzzz:memoryGate": {
+    "requiredReads": [
+      "ltzzz-memory/README.md", "ltzzz-memory/重要事件.md", "ltzzz-memory/项目历史.md",
+      "ltzzz-memory/装备论.md", "ltzzz-memory/魄.md", "ltzzz-memory/识神.md",
+      "ltzzz-memory/梦境数据库.md", "ltzzz-memory/文明研究.md", "当日/昨日 Task-Result 摘要"
+    ],
+    "truthContract": ["proposed != applied", "planned != deployed", "API存在 != API已验证", "AI回复 != 实际结果"],
+    "outputSchema": "每条产出必须带 result / evidence / next 字段，缺失视为未过 Gate"
+  },
+  "proof": { "type": "PLACEHOLDER", "note": "guardian 2/3 签名字段，X2 阶段完成" }
+}
