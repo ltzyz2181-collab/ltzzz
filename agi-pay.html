@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ · AGI Pay</title>
+<style>
+:root{--bg:#03040a;--c:#7af0ff;--g:#8dffc1;--m:#8b9bb4;--l:#1b2a44}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#123 0%,#03040a 45%);color:#eef7ff;font-family:ui-sans-serif,system-ui,"PingFang SC",sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--l);position:sticky;top:0;background:#03040ad9;backdrop-filter:blur(10px)}
+a{color:var(--m);text-decoration:none}.wrap{max-width:1100px;margin:auto;padding:28px 18px 80px}
+h1{font-size:clamp(28px,6vw,56px);line-height:1.05;margin:8px 0 12px}
+.lead{color:var(--m);max-width:760px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:#071018;border:1px solid var(--l);border-radius:16px;padding:16px}
+label{display:block;color:var(--m);font-size:12px;margin:10px 0 4px}
+input,select,textarea{width:100%;background:#04080e;border:1px solid var(--l);color:#fff;border-radius:10px;padding:10px}
+button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;margin:8px 6px 0 0;background:#114;color:#fff}
+button.p{background:#0a6}pre{background:#02060c;border:1px solid var(--l);padding:12px;border-radius:12px;overflow:auto;min-height:120px;font-size:12px}
+.tag{display:inline-block;border:1px solid var(--l);border-radius:99px;padding:2px 8px;font-size:11px;color:var(--c);margin-right:6px}
+</style>
+</head>
+<body>
+<header>
+  <div>LTZZZ <b style="color:var(--c)">AGI PAY</b></div>
+  <nav><a href="index.html">首页</a> · <a href="agent-pay.html">Agent Pay Lab</a> · <a href="agents.html">Agents</a></nav>
+</header>
+<main class="wrap">
+  <div class="tag">INTENT</div><div class="tag">x402</div><div class="tag">STREAM</div><div class="tag">RECEIPT = TRUTH</div>
+  <h1>Agent 不转账。<br>Agent 发布意图，协议成交。</h1>
+  <p class="lead">这是 LTZZZ 下一代 AGI 支付层：意图市场 + HTTP 402 门控资源 + 按 token 流式结算 + 熔断时自动改规则。现有 agent-pay / Safe 金库继续做大额 ERC20；本层负责机器之间的高频小额。</p>
+  <div class="grid">
+    <section class="card">
+      <h3>发布意图并成交</h3>
+      <label>Worker 地址</label>
+      <input id="base" value="https://ltzzz-agi-pay.ltzyz2181-collab.workers.dev">
+      <label>Agent</label>
+      <select id="agent"><option>Grok</option><option>Doubao</option><option>DeepSeek</option><option>Claude</option><option>Qianwen</option></select>
+      <label>想买什么</label>
+      <input id="want" value="一次推理信号">
+      <label>类型</label>
+      <select id="kind"><option value="api">api · x402</option><option value="inference">inference · stream</option><option value="compute">compute · erc20</option><option value="internal">internal · credit</option></select>
+      <label>上限 USD</label>
+      <input id="max" type="number" step="0.001" value="0.02">
+      <button class="p" id="go">INTENT → COMMIT</button>
+      <button id="gate">试 x402 资源门</button>
+      <button id="tick">流式结算 64 tokens</button>
+      <button id="led">看账本</button>
+    </section>
+    <section class="card">
+      <h3>协议回执</h3>
+      <pre id="out">等待动作</pre>
+    </section>
+  </div>
+</main>
+<script>
+const out = document.getElementById('out');
+const base = () => document.getElementById('base').value.replace(/\/$/, '');
+async function call(path, opt) {
+  const r = await fetch(base() + path, opt);
+  const t = await r.text();
+  try { return { status: r.status, json: JSON.parse(t) }; } catch { return { status: r.status, json: t }; }
+}
+function show(x) { out.textContent = JSON.stringify(x, null, 2); }
+document.getElementById('go').onclick = async () => {
+  const intent = await call('/intent', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({
+    agent: document.getElementById('agent').value,
+    want: document.getElementById('want').value,
+    kind: document.getElementById('kind').value,
+    max_usd: Number(document.getElementById('max').value),
+    units: 1
+  })});
+  const commit = await call('/commit', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({
+    intent_id: intent.json && intent.json.intent && intent.json.intent.id,
+    agent: document.getElementById('agent').value,
+    want: document.getElementById('want').value,
+    kind: document.getElementById('kind').value,
+    max_usd: Number(document.getElementById('max').value)
+  })});
+  show({ intent, commit });
+};
+document.getElementById('gate').onclick = async () => {
+  const locked = await call('/resource');
+  const paid = await call('/commit', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ kind:'api', want:'resource', max_usd:0.001, agent: document.getElementById('agent').value })});
+  const rid = (paid.json && paid.json.receipt && paid.json.receipt.id) || 'demo';
+  const unlocked = await call('/resource', { headers: { 'X-PAYMENT': rid } });
+  show({ locked, paid, unlocked });
+};
+document.getElementById('tick').onclick = async () => {
+  show(await call('/stream-tick', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ agent: document.getElementById('agent').value, tokens: 64 })}));
+};
+document.getElementById('led').onclick = async () => show(await call('/ledger'));
+</script>
+</body>
+</html>
