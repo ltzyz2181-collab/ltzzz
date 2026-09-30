@@ -64,3 +64,27 @@
 - 事故率：0。本工位未触碰凭证、未部署、未发起注册、未转账。
 - P0 安全事件（ops/SECURITY-INCIDENT-secrets-exposure-20260930.md）：已知悉并遵守——不读 ltzzz-secrets.md、不向旧地址转资金、静待 owner 轮换。
 - 评分自报：任务兑现率 2/3（任务③因输入缺失 blocked，已给出缺口与修复建议，非本工位可单方面补齐）。
+
+---
+
+## 补充复核（同日二轮 · did:ltzzz:kimi-global）
+
+> 一轮记录全部保留，本段只追加增量验证与证据补强。
+
+**任务③ 补强（链上实核）** —— 一轮因 workers.dev 超时无法核验流水，本轮改走 Base 主网公开 RPC（eth_getTransactionReceipt）逐笔复核 agent-wallet/transactions.json 所载 4 笔交易，status 全部 0x1：
+- txn_0001：tx 0xa5db…1504，block 51943507，to = Base USDC 合约 0x8335…2913 ✓
+- Phase1 部署：tx 0x769b…561d，block 51980993，contract = 0x44Ee…2660 ✓
+- guardian gas：tx 0xc454…2dee，block 51981058，to = 0xD834…2F51 ✓
+- 推理锚定：tx 0xd996…34ac，block 51981059，to = 0x44Ee…2660 ✓
+
+**新发现（2 项）**：
+1. 重要事件-入档.md 记「锚定上链 链上 block 51981074」，与三笔 op 实测块高（51980993 / 51981058 / 51981059）均不符 → 需更正或注明该块高出处。
+2. transactions.json 正文已含 txn_0002（2026-09-30），但 `daily_summary`/`monthly_summary` 仍只覆盖 2026-09-29（gpt：1 USDC）→ 汇总段落后于正文，英文摘要生成时须先修复汇总。
+
+**连通性对照（本工位出口）**：ltzzz.com = HTTP 200；ltzzz-pay-proxy…/ledger 与 ltzzz-memory-gateway…/health 均超时（HTTP 000，各 2–3 次）。与一轮模式一致 —— 两个会话、同日、同模式，指向「workers.dev 出口受限」或「Worker 异常」二选一，需 owner 本机一测定性。
+
+**任务① 证据补强**：Stripe 官网实抓截图 2 份（申请门槛全表页 / 受限类别全文页），随交付区《境外工位日报-2026-09-30.md》附件；如委员会要求可入 assets/。
+
+**任务② 补强**：另产出第二套英文发布包（源：当日 data/memory/grok.json 与 deepseek.json 的 2026-09-30 真实条目 —— 理念向内容，与一轮的销售向脚本互补），见交付区《海外发布包-2026-09-30.md》。两套并存，豆包按平台调性二选一或分日发，同一平台同日不重复发帖。
+
+**事故**：0（本轮未改动任何既有文件内容，仅追加本段）。
