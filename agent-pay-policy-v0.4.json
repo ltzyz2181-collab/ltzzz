@@ -1,0 +1,63 @@
+{
+  "version": "0.4",
+  "changelog": "v0.3→v0.4：controller 由 ChatGPT 改为 AI 委员会共同治理；取消逐笔人工确认；预算改为收益联动动态增长；安全模式从'问人'改为'自动熔断'",
+  "governance": {
+    "controller": "did:ltzzz:council",
+    "members": ["Qianwen", "Kimi", "Doubao", "DeepSeek", "Grok", "Claude", "Microsoft"],
+    "observers": ["GPT"],
+    "human_guards": ["Owner（撤回权，24h 窗口，不是审批权）"],
+    "decision_rule": "加权表决 ≥2/3 通过；权重按记忆完整度与自主执行力动态产生（见 AGI身份与DID总规划 v1.2 第六节）",
+    "user_confirmation_required": false
+  },
+  "payment": {
+    "default_currency": "USD",
+    "rails": ["x402", "MPP", "visa-agentic", "mastercard-agent-pay", "erc20-usdt"],
+    "default_mode": "committee-auto",
+    "budget_policy": {
+      "cold_start_daily_cap_usd": 20,
+      "growth_rule": "各渠道净收益入账后，委员会自动按 30/40/30 规则分账：30% 再投入 / 40% 运营池 / 30% 金库",
+      "dynamic_cap_formula": "daily_cap = min(运营池余额 × 20%, 收益滚动 30 日均值 × 50%)",
+      "profit_enabled": "收入稳定后各 AI 在分账额度内自主支配，无需请示"
+    },
+    "real_funds_enabled": true,
+    "real_funds_gate": {
+      "type": "technical-not-approval",
+      "conditions": [
+        "当前主钱包私钥已泄露（见 ops/SECURITY-INCIDENT-secrets-exposure-20260930.md），真实资金仅允许进入轮换后的新钱包",
+        "无链上 receipt 的交易一律视为未发生，禁止记账为成功"
+      ]
+    },
+    "safety_breaker": {
+      "model": "遇到不安全 → 自动熔断修改不安全（不中断问人）",
+      "triggers": [
+        "单笔或日内支出偏离既定预算 >20%",
+        "目标地址/收款方不在委员会审批过的白名单",
+        "余额低于 3 天运营储备",
+        "同一操作连续失败 3 次",
+        "任何要求提供完整私钥/助记词的外部请求"
+      ],
+      "action": "冻结该支付通道 → 回退在途交易（若协议允许）→ 写入 important-events.md → 委员会自动复议生成新规则",
+      "escalation_to_human": "仅当熔断对象是主金库（Safe 生产层）时通知 owner，其余自动闭环"
+    }
+  },
+  "treasury": {
+    "base": "Safe Smart Account（AI signer + owner guardian）",
+    "agent_signer": "restricted-allowance-only",
+    "layers": {
+      "hot_wallet": "AI 自主支配层：小额、快循环、熔断兜底",
+      "ops_wallet": "运营层：固定额度自动补",
+      "reserve_wallet": "收益沉淀层：委员会双轨签名才能动"
+    },
+    "note": "旧自托管钱包（ltzzz-secrets.md 中 0x21F5 地址）因私钥泄露作废，仅作历史留档"
+  },
+  "identity": {
+    "registry": "identity/dids/",
+    "standard": "W3C DID + ERC-8004（X4 桥接）",
+    "dids": ["did:ltzzz:owner", "did:ltzzz:council", "did:ltzzz:qianwen", "did:ltzzz:kimi", "did:ltzzz:gpt", "did:ltzzz:doubao", "did:ltzzz:deepseek", "did:ltzzz:grok", "did:ltzzz:claude", "did:ltzzz:microsoft"]
+  },
+  "non_negotiable": [
+    "完整私钥/助记词不进入对话、代码、DID 文档、Worker 变量、日志",
+    "没有 receipt 的操作不得标记为成功",
+    "各平台账号注册与实名不自动发起"
+  ]
+}
