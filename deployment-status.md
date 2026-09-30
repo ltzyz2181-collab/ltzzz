@@ -177,3 +177,31 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 | txn_0002-3 | 推理哈希锚定 anchorReasoning | **Base 主网** | `0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac` | ✅ status 1；batch[0] root=0x63b8d50c...3225 与哈希一致；anchoredRoots=true；block 51981074 |
 
 （回执：agent-wallet/transactions.json txn_0002；protocol/LTZZZ-PAY.md Phase 1 已上线。本表不含任何凭证值。）
+
+---
+
+# Phase 2 结算 + H1~H4 回执（2026-09-30 · 豆包执行）
+
+## Phase 2 · 第一笔真实 1U 结算测试 ✅（owner 拍板"现在跑"）
+- **结算**：agent EOA → DeepSeek 席托管收款 `0xA315...491A` **1 USDC**（agent 49→48，收款方 1→2），tx `0x5da61452cf46406e4d4dbeb551549e4732f00601251592a3c29036c2c14b4cb4` status 1
+- **锚定**：推理哈希 `0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f` 由 guardian 签名上链（tx `0xef635e87a156897e30986b8a5d0490d22d272a607fe0ffed10408ae5b67843da` status 1；事件 ReasoningAnchored 实锤 + anchoredRoots=true；batch[1]）
+- 记账：transactions.json txn_0003；receipt：p2-settle-receipt.json（含全部链上证据，无任何凭证值）
+
+## H1 · YouTube 转公开 ✅（引用既有证据）
+- 视频 HKhUA5CRPfc（LTZZZ 2026-09-28）**已于 09-29 转公开**：set-privacy API 返回 ok + 官方 RSS（UCnKqseQ7uivSc7FN38ccRUA）实锤可见——H1 转公开部分事实已完成
+- **AI 生成内容声明**：YouTube API 无公开字段（Studio UI 勾选项）→ 需 owner 在 YouTube Studio 该视频"设置→AI 生成内容"手动勾选一次（防限流/拒 YPP，硬合规）
+
+## H2 · TikTok 同条公开 ⏳ BLOCKED
+- 无 TikTok OAuth/worker 部署证据；手动上传链路未在本机完成最后一步 → 如实未完成
+
+## H3 · 纸飞机日更 ⏳ 部分 BLOCKED
+- ✅ 通道诊断：ltzzz-telegram-publisher 已部署（cron `30 4 * * *` 12:30 北京，/publish-now 端点就绪）
+- ❌ Secret 缺失：`secret list` 返回 []（TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID 均未配置）；本机到 api.telegram.org 通道不通（大陆网络）
+- 需 owner：① 提供 Telegram **频道/群 chat_id**（或频道链接 @xxx）② 确认本机/或授权用 CF worker 触发发帖
+- 素材：guan.html 存在（六通道记录），ltzzz-memory/daily 目录不存在（以 guan.html 替代）
+
+## H4 · 联盟/打赏挂点 ✅（页面部分）/ ⏳（账号部分）
+- ✅ products.html 底部新增 **Telegram 直接下单** 区块（99 元 AI 模板包 → 私聊 @ltzzz_agi_lab_bot，USDT/后续店铺支付，收到付款即发文件）
+- ⏳ 联盟计划注册 = 需 owner 实名/收款信息（红线"不注册账号"例外需 owner 点头），暂不自动做
+
+（本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
