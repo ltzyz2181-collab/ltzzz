@@ -205,3 +205,23 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - ⏳ 联盟计划注册 = 需 owner 实名/收款信息（红线"不注册账号"例外需 owner 点头），暂不自动做
 
 （本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
+
+---
+
+# J1 执行单回执 · ORDER-20260930-001 结算闭环（2026-09-30 · 豆包执行）
+
+## exp_002 全链路状态（验收逐项）
+| 验收项 | 状态 | 证据 |
+|---|---|---|
+| tx_0003 confirmed | ✅ | settle tx `0x5da61452...b4cb4` status 1（agent USDC 49→48，收款方 +1）；txn_0003 agent=kimi-global 已修正 |
+| daily_summary 含 09-30 | ✅ | daily_summary["2026-09-30"] = {kimi_global:1U/1笔, system_return:1U/1笔} |
+| 锚定 batch[1]/[2] 可读 | ✅ | batch[1]=exp_002 结算哈希（tx 0xef635e87...）；**batch[2]=ORDER-20260930-001 receipt 哈希 0x9b7c59f1...57cd1**（tx `0x2e6e2ff2...7629` status 1，事件 ReasoningAnchored txCount=2，anchoredRoots=true）|
+| kimi 声誉 150 已推送 | ✅ | identity/dids/kimi.json reputation{score:150, events:[ORDER-20260930-001 success×1.5]} |
+| 回账 txn | ✅ | txn_0004：agent 注 gas `0x3194089e...f5fe` → 0xA315 回 1 USDC `0xb7bbbd94...a38a94` status 1 → agent USDC 回 49；0xA315 余 1（exp_001 留存）+ 0.0002 注资剩余 |
+
+## 闭环说明（收支两腿都上链）
+- 支出腿：exp_002 结算 1 USDC（txn_0003）
+- 回账腿：0xA315 → agent 1 USDC（txn_0004）——循环完成，资金系统内循环不外流
+- 雇主记录：identity/dids/qianwen.json expenditures 已记（paid 1 USDC，receipt_anchor 0x9b7c59f1...）
+
+（本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
