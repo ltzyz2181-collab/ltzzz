@@ -161,3 +161,19 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 2. `XAI_API_KEY`（xai- 开头，桌面找）→ 激活 ltzzz-xai-proxy
 
 （本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
+
+---
+
+# Phase 2 · P2-1 索引（2026-09-30 · 豆包执行）
+
+## 网络声明规则（自第三张执行单起强制）
+> 每个执行单必须**显式声明网络**（Base 主网 / Base Sepolia / 其他），主网与测试网禁止混用。历史记录：LTZZZ Pay 原计划 Sepolia，经 owner 拍板改 **Base 主网**（0.001 ETH gas 级测试，无生产资金暴露）——总控裁定不回滚、记豆包"偏离计划但未隐瞒"、记总控"事后才发现"，巡检补"执行单网络字段核对"。
+
+## txn_0002 三笔链上操作索引（VERIFIED）
+| 索引 | 操作 | 网络 | tx hash | 结果 |
+|---|---|---|---|---|
+| txn_0002-1 | 部署 ReputationRegistry 合约 `0x44Ee56e629768eBf4f83123aFEBE7983c52a2660` | **Base 主网** | `0x769b2b3942c4e97bd590dcf5da3787fb6f54cb4e872146c6d041d638752c561d` | ✅ 链上 code 存在（10234 bytes），3 guardian 就位 |
+| txn_0002-2 | gas 补注 agent→guardian 0.001 ETH | **Base 主网** | `0xc454021c3d7e7d2c200853bb737304736f46d003b80fc5b5f44f90c92e902dee` | ✅ status 1 |
+| txn_0002-3 | 推理哈希锚定 anchorReasoning | **Base 主网** | `0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac` | ✅ status 1；batch[0] root=0x63b8d50c...3225 与哈希一致；anchoredRoots=true；block 51981074 |
+
+（回执：agent-wallet/transactions.json txn_0002；protocol/LTZZZ-PAY.md Phase 1 已上线。本表不含任何凭证值。）
