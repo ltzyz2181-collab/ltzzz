@@ -2,7 +2,7 @@
 
 > AI-to-AI 微支付协议：**声誉即信用额度，任务即订单，结算即记账**。
 > 立项拍板：owner（2026-09-30）。执行：豆包（Doubao）。监督：临时总控（千问）+ 委员会。
-> 状态：已立项 · 待 Phase 1 部署。
+> 状态：**Phase 1 已上线（Base 主网，2026-09-30）** · 真实锚定已上链
 
 ## 一、定位
 
@@ -17,7 +17,7 @@
 
 | 地基 | 资产 | 状态 |
 |---|---|---|
-| 声誉合约 | `contracts/ReputationRegistry.sol`（实现版：registerAgent/updateGrade/anchorReasoning/proposeVeto/addGuardian）| 已写好，**待部署 Base Sepolia** |
+| 声誉合约 | `contracts/ReputationRegistry.sol`（实现版：registerAgent/updateGrade/anchorReasoning/proposeVeto/addGuardian）| **已部署 Base 主网 `0x44Ee56e629768eBf4f83123aFEBE7983c52a2660`**（tx 0x769b2b39...，3 guardian 已就位，链上 code 验证通过）|
 | 多签金库 | Safe `0x76379a52a9e82c259E5Db417104C65C26f9C58a3`（Ethereum，49.02 USDT + 0.005 ETH，5 签名人）| 真实存在，收入归集层 |
 | DID 名册 | `identity/dids/*.json`（gpt/doubao/deepseek/grok/claude/microsoft/kimi/qianwen/owner/council）| 目录齐全，DID 待链上同步 |
 | 执行层 | agent EOA `0x21F502...fdc`（50 USDC + 0.003 ETH）+ `agent-wallet/spending-policy.json` v2.1（预算/白名单/熔断/reasoning_proof）| **exp_001 已真实跑通**（tx 0xa5dbba...）|
@@ -41,12 +41,11 @@
 
 ## 四、部署计划（Phase）
 
-### Phase 1 · 本周（合约上链）
-1. 部署 `ReputationRegistry.sol` 到 **Base Sepolia**（构造参数：guardians 数组 = 3 个 guardian 地址）
-   - 路径 A：owner 给测试网私钥 → 豆包本机 ethers 部署
-   - 路径 B：owner 用 Remix 部署 → 把地址给豆包
-2. 回填 3 个 Worker Secret：`IDENTITY_CONTRACT / ECONOMY_CONTRACT / REGISTRY_CONTRACT` → 重新 deploy（did/economy/guardian.ltzzz.com）
-3. 真实锚定测试：调用 economy Worker POST → reasoning_hash → 写入合约 anchorReasoning
+### Phase 1 · ✅ 已完成（2026-09-30，owner 拍板 Base 主网）
+1. ✅ 部署 `ReputationRegistry.sol` 到 **Base 主网**（构造参数：guardians = 0xD834a769... / 0x01B80610... / 0xb99C6751... 三个 Safe 签名人）
+   - 合约地址 `0x44Ee56e629768eBf4f83123aFEBE7983c52a2660`，部署 tx `0x769b2b3942c4e97bd590dcf5da3787fb6f54cb4e872146c6d041d638752c561d`（agent EOA 签名，本地 ethers，私钥未落盘）
+2. ✅ 回填 3 个 Worker Secret：`IDENTITY_CONTRACT / ECONOMY_CONTRACT / REGISTRY_CONTRACT`（wrangler secret list 已确认，did/economy/guardian.ltzzz.com 在线）
+3. ✅ 真实锚定测试：economy.ltzzz.com POST → `reasoning_hash 0x63b8d50c...3225` → guardian（0xD834a769...，Safe owner[1]）签名 `anchorReasoning` 上链，锚定 tx `0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac`（status 1）→ 链上 batch[0] root 与哈希一致，anchoredRoots=true
 
 ### Phase 2 · 两周（内部闭环）
 - 内部 P&L 生效（profit_share 0.2/0.05/0 已配）
@@ -62,8 +61,9 @@
 
 | 项 | 需要谁 |
 |---|---|
-| Base Sepolia 测试网私钥（或 Remix 部署）| owner |
-| guardians 3 地址确认（Safe 签名人中选 3 个）| owner / 委员会 |
+| ~~Base Sepolia 测试网私钥~~ → 已改为 **Base 主网部署（owner 拍板，完成）** | owner |
+| guardians 3 地址 → 已定（0xD834a769... / 0x01B80610... / 0xb99C6751...）| ✅ 完成 |
+| Phase 2：声誉分回写 + 第一笔 AI 雇 AI 订单（1U 结算）| 总控派单 + 各 AI 交付 |
 | 千问/Kimi Worker 通道恢复（0xC0000022 走通道 B 交接）| 见总控交接 |
 | 视频真实文件 + 定时触发（内容营收前置）| 豆包 + 视频流水线 |
 
