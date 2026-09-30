@@ -113,3 +113,51 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 2. `KIMI_API_KEY`（Moonshot，sk- 开头）→ 同上
 
 （本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
+
+---
+
+# 第三张执行单回执 · 豆包代执行（2026-09-30）
+
+## E1｜身份名册页推送 ✅ VERIFIED
+- identity.html 远程已就位（sha 13549c97，4208 bytes，DID 名册页）
+- `https://ltzzz.com/identity.html` → **HTTP 200**（len 3715，Pages 自动发布）
+
+## E2｜QWEN/KIMI Secret ⏳ BLOCKED
+- 本执行单要求 owner 粘贴 key 后注入——**当前未收到 QWEN_API_KEY / KIMI_API_KEY**
+- 三关（health has_key:true + 真实 POST）维持 D3 原结论：**未完成**（缺 key）
+- workers.dev 大陆直连超时属网络层；待 key + 外网通道复核
+
+## E3｜LTZZZ Pay Phase 1 ✅ 已完成（owner 2026-09-30 拍板改 Base 主网，替代原 Sepolia 方案）
+- ReputationRegistry 主网合约 `0x44Ee56e629768eBf4f83123aFEBE7983c52a2660`（部署 tx 0x769b2b39...c561d）
+- 3 Worker Secret 回填（IDENTITY_CONTRACT/ECONOMY_CONTRACT/REGISTRY_CONTRACT，wrangler secret list 确认）
+- 真实锚定上链 tx `0xd9965e82...c734ac`（guardian 0xD834a769... 签名；链上 batch[0] root 一致，anchoredRoots=true，block 51981074）
+- 明细：protocol/LTZZZ-PAY.md（Phase 1 已上线）+ agent-wallet/transactions.json（txn_0002）
+
+## F1｜gas 核账（链上实查，只写余额数字）
+| 地址 | Base 主网余额 |
+|---|---|
+| guardian `0xD834a769...2F51` | ETH 0.000999 |
+| agent EOA `0x21F502...7fdc` | ETH 0.001991 · USDC 49.0 |
+- owner 狐狸头 0.003 拆两笔（guardian 0.002 + agent 0.001）即可达执行单目标，无需兑换
+
+## F2｜境外 AI Worker 部署
+| Worker | URL | 状态 |
+|---|---|---|
+| ltzzz-gpt-proxy | https://ltzzz-gpt-proxy.ltzyz2181.workers.dev | VERIFIED（wrangler 重部署确认在线；/health 外网复核待补）|
+| ltzzz-xai-proxy | https://ltzzz-xai-proxy.ltzyz2181.workers.dev | EXECUTED（代码已部署 v38c25b7f；**缺 XAI_API_KEY → 三关 BLOCKED**）|
+| ltzzz-microsoft-proxy | https://ltzzz-microsoft-proxy.ltzyz2181.workers.dev | EXECUTED（v7c6d8a29，对话交接转发器，代码注释如实声明"非模型代理"；Copilot 无公开个人 API）|
+| ltzzz-meta-proxy | https://ltzzz-meta-proxy.ltzyz2181.workers.dev | EXECUTED（vadd7bbc8，占位 /health planned:true，不伪装接入）|
+
+## F3｜Secret 与三关 ⏳ 部分 BLOCKED
+- xai：`XAI_API_KEY` 未提供 → BLOCKED（激活后跑 /health has_key:true + 真实 POST）
+- microsoft：无 API key 设计（转发器）→ N/A
+- meta：无 API key 设计（占位）→ N/A
+- qianwen/kimi：QWEN/KIMI key 仍缺 → BLOCKED（见 E2）
+
+## F4｜身份名册页 ✅ 与 E1 同项（HTTP 200 已验）
+
+## 需要 owner 提供（只进 Secret）
+1. `QWEN_API_KEY`（百炼）/ `KIMI_API_KEY`（Moonshot）→ 完成 qianwen/kimi 三关
+2. `XAI_API_KEY`（xai- 开头，桌面找）→ 激活 ltzzz-xai-proxy
+
+（本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
