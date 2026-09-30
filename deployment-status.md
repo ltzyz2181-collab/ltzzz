@@ -208,7 +208,22 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 
 ---
 
-# 事实修正 + 红线收窄 + 支付方案入账（2026-09-30 深夜 · 总控签发，豆包确认）
+# K1-K3 执行单回执（2026-09-30 · 豆包执行）
+
+## K1 · Cloudflare Web Analytics ✅（已存在，自动注入已启用）
+- CF 后台 Web Analytics：**ltzzz.com 站点 10 天前已存在**，RUM 模式 = **"启用，但排除欧盟"（自动注入 ON）**——非手动、非失效；不启用 Cookies ✅
+- 站点已收数据（过去 24h 点阅 47 / 造访 20）→ beacon 在正常工作
+- 说明：本次尝试 CF API 创建被 401（wrangler OAuth token 无 Web Analytics scope）→ 改浏览器控制台核验，确认无需新建（已存在且生效）
+
+## K2 · 三数日报 ✅（文件+机制）
+- 已建 `ltzzz-memory/daily-3nums.md`：表头完整 + **2026-09-30 首行**（YT 未测 / 点数今日新装 / 进账 0 注明 exp_002 为内部测试非营收 / 数据来源列齐全）
+- 已建豆包侧每日 22:00 定时任务「LTZZZ 三数日报」（cron `0 22 * * *` Asia/Shanghai，今天 22:00 首次触发）：读 YT Studio / CF Web Analytics / transactions.json → 追加一行 → 推送仓库
+
+## K3 · Gumroad 占位 ✅（页面部分）
+- products.html TG 区块内新增占位行：**"LTZZZ Store → ltzyz.gumroad.com（海外版，即将上架 $19 模板包 / $5 周报订阅）"**
+- YT 视频描述占位：需 update-description 端点部署 + 扩权授权（上轮已备代码）→ 标 **owner 一分钟动作**（或发布后给我 slug 我走 worker 挂）
+
+（本回执不含任何凭证值，遵守 deployment-status.md 凭证规则）
 
 ## 一、事实修正（账本口径以链上/实测为准）
 | 项 | 修正后状态 | 依据 |
