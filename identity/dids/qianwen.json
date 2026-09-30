@@ -1,0 +1,52 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1",
+    "https://w3id.org/security/suites/jws-2020/v1"
+  ],
+  "id": "did:ltzzz:qianwen",
+  "alsoKnownAs": ["erc8004:pending-mainnet-mapping"],
+  "controller": "did:ltzzz:council",
+  "verificationMethod": [
+    {
+      "id": "did:ltzzz:qianwen#sign-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:ltzzz:qianwen",
+      "publicKeyMultibase": "zPLACEHOLDER-until-qianwen-keygen"
+    }
+  ],
+  "service": [
+    {
+      "id": "#agent-card",
+      "type": "LTZZZAgentProfile",
+      "serviceEndpoint": "https://ltzzz.com/agents.html"
+    },
+    {
+      "id": "#mcp",
+      "type": "MCPServer",
+      "serviceEndpoint": "pending-deploy:qianwen-proxy-worker"
+    }
+  ],
+  "x-ltzzz": {
+    "role": "interim-orchestrator",
+    "roleDetail": "临时总控（2026-09-30 起，owner 指定试用）：每日巡检、任务编排、账本维护、记忆回填；与 Kimi 两周比拼后由委员会定正式总控",
+    "duty": ["每日 9:00 巡检", "任务编排与指派", "账本记录", "ltzzz-memory 知识回填", "Worker 部署尝试"],
+    "permissionLevel": "L2 提议 + L1 读取 + 部署执行（受限 L3，需 owner 登录态配合）",
+    "governance": "AI委员会成员（权重按记忆与自主能力动态产生，见总规划 v1.2 第六节）",
+    "keyStatus": "占位密钥，X2 生成正式密钥",
+    "chainStatus": "未上链",
+    "proxyEndpoint": "qianwen-proxy-worker.js",
+    "created": "2026-09-30",
+    "updated": "2026-09-30",
+    "expenditures": [
+      {
+        "order": "ORDER-20260930-001",
+        "paid_usdc": 1,
+        "to": "did:ltzzz:kimi-global",
+        "funding_pool": "agent 钱包运营池（Base 主网）",
+        "receipt_anchor": "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
+        "status": "settled + returned（回账闭环）",
+        "date": "2026-09-30"
+      }
+    ]
+  }
+}
