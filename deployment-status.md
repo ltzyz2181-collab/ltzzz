@@ -408,3 +408,11 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
   - telegram-bot-worker（Version 759cc1e7-9156-4420-a5c6-3c9e6cca804f）health=ok:true has_token:true
   - x-bot-worker（Version d68f3a92-87cf-45ea-a3ff-4d9017a037e3）5 secrets 注入；/health not_found（代码无该路由，功能路由待确认）
 - 微信系凭据已录，部署=微信后台配置（需 owner 本人登录微信开放平台/小店后台，AI 不代登录）
+
+
+## 补充8 · Kimi 槽位 + X Publisher + 商品页双轨（2026-10-01，豆包执行）
+- ltzzz-daily-automation-worker.js：从 commit 605afe2 恢复原版（XAI 占位版已覆盖）+ 应用 kimi-slot-patch（七通道，kimi-daily 17:00 CST mandatory，HOUR_MAP 09:00 UTC；模型修正 kimi-k2.6——moonshot-v1-8k 已下线；无本地 MOONSHOT_API_KEY 时走 api-kimi.ltzzz.com proxy 内置 Key，实测可用 usage=38）
+- 部署 ltzzz-daily-automation-worker（33.23 KiB，workers.dev 上线）；⛔ cron 未生效：账户免费版 5 cron 配额已满（需升 Paid 或删旧 cron）
+- x-publisher-worker.js：OAuth 1.0a 签名改造（原 Bearer 用不了 1.0a token）+ 4 secret 注入 + 部署（Version 2d4b7ff3）
+- products.html：区域切换（cn/global）+ 国内微信路径 + 海外 $ 主价 + 新增 agent-starter/muse-budget 卡片 + TG 双按钮
+- Kimi proxy（api-kimi.ltzzz.com）实测 kimi-k2.6 调用 OK（usage=38）

@@ -1,8 +1,7 @@
 /**
  * LTZZZ X Publisher
  * Activation date: 2026-10-01 (Asia/Shanghai).
- * Before activation it deliberately does nothing.
- * Secret required: X_USER_ACCESS_TOKEN (OAuth 2 user access token with post/write scope).
+ * Secrets: X_CONSUMER_KEY / X_CONSUMER_SECRET / X_ACCESS_TOKEN / X_ACCESS_SECRET（OAuth 1.0a 发推签名）
  */
 
 const ACTIVATION = '2026-10-01T00:00:00+08:00';
@@ -29,16 +28,44 @@ export default {
 async function publish(env) {
   const now = new Date();
   if (now < new Date(ACTIVATION)) return { ok: true, skipped: true, reason: 'before_activation' };
-  const token = env.X_USER_ACCESS_TOKEN;
-  if (!token) return { ok: false, blocked: true, reason: 'missing_X_USER_ACCESS_TOKEN' };
+  const { X_CONSUMER_KEY, X_CONSUMER_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET } = env;
+  if (!X_CONSUMER_KEY || !X_CONSUMER_SECRET || !X_ACCESS_TOKEN || !X_ACCESS_SECRET) {
+    return { ok: false, blocked: true, reason: 'missing_oauth1_credentials' };
+  }
 
   const day = Math.floor((now.getTime() - new Date(ACTIVATION).getTime()) / 86400000);
   const text = `${POSTS[day % POSTS.length]}\n\n#LTZZZ #AI #AGI #Web3`;
-  const r = await fetch('https://api.x.com/2/tweets', {
+  const r = await oauth1Fetch('https://api.x.com/2/tweets', { text }, { key: X_CONSUMER_KEY, secret: X_CONSUMER_SECRET }, { token: X_ACCESS_TOKEN, secret: X_ACCESS_SECRET });
+  return { ok: r.ok, status: r.status, data: await r.json().catch(() => null) };
+}
+
+/* ---- OAuth 1.0a 签名（HMAC-SHA1）---- */
+function oenc(s) {
+  return encodeURIComponent(String(s)).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+}
+async function hmacSha1B64(key, msg) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(key), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
+  const s = await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg));
+  return btoa(String.fromCharCode(...new Uint8Array(s)));
+}
+async function oauth1Fetch(url, body, consumer, access) {
+  const oauth = {
+    oauth_consumer_key: consumer.key,
+    oauth_nonce: Math.random().toString(36).slice(2) + Date.now().toString(36),
+    oauth_signature_method: 'HMAC-SHA1',
+    oauth_timestamp: Math.floor(Date.now() / 1000),
+    oauth_token: access.token,
+    oauth_version: '1.0',
+  };
+  const params = { ...oauth, ...body };
+  const paramStr = Object.keys(params).sort().map((k) => `${oenc(k)}=${oenc(params[k])}`).join('&');
+  const base = `POST&${oenc(url)}&${oenc(paramStr)}`;
+  const sigKey = `${oenc(consumer.secret)}&${oenc(access.secret)}`;
+  oauth.oauth_signature = await hmacSha1B64(sigKey, base);
+  const authHeader = 'OAuth ' + Object.keys(oauth).sort().map((k) => `${oenc(k)}="${oenc(oauth[k])}"`).join(', ');
+  return fetch(url, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
+    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
-  const data = await r.json().catch(() => null);
-  return { ok: r.ok, status: r.status, data };
 }
