@@ -65,6 +65,10 @@ export default {
           if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
           return json(await disconnect(env, request));
 
+        case '/youtube/update-description':
+          if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+          return json(await updateDescription(env, request, url));
+
         default:
           return json({ error: 'Unknown path: ' + path }, 404);
       }
@@ -78,7 +82,7 @@ const OAUTH_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
 const OAUTH_TOKEN = 'https://oauth2.googleapis.com/token';
 const YT_UPLOAD = 'https://www.googleapis.com/upload/youtube/v3/videos';
 const YT_CHANNELS = 'https://www.googleapis.com/youtube/v3/channels';
-const SCOPE = 'https://www.googleapis.com/auth/youtube.upload';
+const SCOPE = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube'; // 扩权：upload + 编辑已有视频（videos.update），部署后需重新 OAuth 授权
 
 function need(env) {
   const missing = [];
@@ -207,6 +211,61 @@ async function disconnect(env, request) {
   const uk = body.user_key || 'default';
   await env.KV.delete('yt:' + uk);
   return { ok: true, disconnected: true };
+}
+
+// ============ Update Description（Gumroad 挂点）============
+
+async function updateDescription(env, request, url) {
+  const missing = need(env);
+  if (missing.length) throw Object.assign(new Error('Missing secrets: ' + missing.join(', ')), { status: 500 });
+
+  const uk = url.searchParams.get('user_key') || 'default';
+  const raw = await env.KV.get('yt:' + uk, 'json');
+  if (!raw) throw Object.assign(new Error('YouTube not connected. Run /auth/youtube first.'), { status: 401 });
+  const tokens = await refreshIfNeeded(env, raw, uk);
+
+  const body = await request.json().catch(() => ({}));
+  const videoId = body.video_id || url.searchParams.get('video_id');
+  if (!videoId) throw Object.assign(new Error('video_id required'), { status: 400 });
+  // description 与 append 互斥：append=true 时在现有描述末尾追加（Gumroad 挂点默认追加）
+  let description = (body.description || '').trim().slice(0, 5000) || '';
+  const append = body.append === true;
+
+  // 读取现有视频（snippet）
+  const getRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' + encodeURIComponent(videoId), {
+    headers: { 'Authorization': 'Bearer ' + tokens.access_token },
+  });
+  const getData = await getRes.json().catch(() => ({}));
+  const item = getData.items?.[0];
+  if (!item) throw Object.assign(new Error('video not found: ' + videoId), { status: getRes.status === 404 ? 404 : 500 });
+
+  const snippet = item.snippet || {};
+  if (append) {
+    const existing = snippet.description || '';
+    const sep = existing && !existing.endsWith('\n') ? '\n' : '';
+    description = (existing + sep + description).slice(0, 5000);
+  }
+  if (!description) throw Object.assign(new Error('description empty after merge'), { status: 400 });
+
+  // videos.update（snippet 需传完整 snippet：title/description/tags/categoryId 等）
+  const updateRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet', {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + tokens.access_token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: videoId,
+      snippet: {
+        title: snippet.title || '',
+        description,
+        tags: snippet.tags || [],
+        categoryId: snippet.categoryId || '22',
+      },
+    }),
+  });
+  const updateData = await updateRes.json().catch(() => ({}));
+  if (!updateRes.ok || updateData.error) {
+    return { ok: false, http: updateRes.status, error: updateData.error || updateData, note: '可能原因：scope 不含 youtube（需重新 OAuth 授权）' };
+  }
+  return { ok: true, video_id: videoId, description, updated_at: new Date().toISOString() };
 }
 
 // ============ Upload ============

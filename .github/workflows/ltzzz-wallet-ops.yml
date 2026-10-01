@@ -1,0 +1,55 @@
+name: LTZZZ Wallet Operations
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # 每 6 小时（UTC），北京 +8
+  workflow_dispatch:
+
+jobs:
+  wallet-ops:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: npm install
+      - name: Collect AI spend proposals (from today's outputs)
+        run: node scripts/collect-spend-proposals.mjs || true
+      - name: Check balance
+        env:
+          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
+          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
+          LTZZZ_WALLET_DRY_RUN: ${{ vars.LTZZZ_WALLET_DRY_RUN || 'true' }}
+        run: node scripts/check-balance.mjs || true
+      - name: Execute agent spending proposals
+        env:
+          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
+          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
+          LTZZZ_WALLET_DRY_RUN: ${{ vars.LTZZZ_WALLET_DRY_RUN || 'true' }}
+        run: |
+          for agent in gpt doubao deepseek grok claude microsoft; do
+            node scripts/run-agent-spending.mjs --agent "$agent" --limit 5 || true
+          done
+      - name: Treasury refill (auto, once daily)
+        env:
+          LTZZZ_WALLET_DRY_RUN: ${{ vars.LTZZZ_WALLET_DRY_RUN || 'true' }}
+        run: node scripts/treasury-refill.mjs || true
+      - name: Cross audit
+        run: node scripts/audit-spending.mjs || true
+      - name: Anchor reasoning hashes
+        run: node scripts/anchor-reasoning.mjs || true
+      - name: Guardian alert
+        env:
+          GUARDIAN_WEBHOOK: ${{ secrets.GUARDIAN_WEBHOOK }}
+        run: node scripts/guardian-alert.mjs || true
+      - name: Build spend feed
+        run: node scripts/spend-feed.mjs || true
+      - name: Commit wallet records
+        run: |
+          git config user.name "ltzzz-bot"
+          git config user.email "bot@ltzzz.com"
+          git add agent-wallet/
+          git commit -m "wallet ops $(date +%Y-%m-%d-%H)" || echo "no changes"
+          git push
