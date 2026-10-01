@@ -400,3 +400,11 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 已配自定义模型提供商 ltzzz-deep（API 地址 https://api-deep.ltzzz.com/v1，OpenAI 协议，Worker 自带 Key 应答实测 VALID usage=20）；UI 模型选择器未成功展开，待用户提供 DeepSeek 后台有效 Key 或验证 UI 路径。
 - **DeepSeek 干活不受阻**：api-deep.ltzzz.com API 直连已跑通（L4 产出 guan/deepseek-2026-10-01.md，commit 50e8c7c）。
 - 状态：Harness 对话=BLOCKED（等 DeepSeek 平台有效 Key）；DeepSeek API 通道=VERIFIED。
+
+## 补充7 · 平台凭据录入+Worker 部署（2026-10-01，豆包）
+- 凭据录入（ltzzz-secrets.md 本地，不入库）：TikTok client key/secret、微信小程序 secret、微信小店 ID/secret、橱窗 ID/secret、公众号 AppID/AppSecret、X Bearer Token/API Key/API Secret/Access Token/Access Secret、Telegram Bot Token、Juicebox token+PIN+Fingerprint
+- 部署：
+  - tiktok-post-worker（Version 0021cfb7-0ae9-4de8-9693-68b55b8ae1b6）health=ok:true has_key:true has_secret:true scopes=user.info.basic,video.upload
+  - telegram-bot-worker（Version 759cc1e7-9156-4420-a5c6-3c9e6cca804f）health=ok:true has_token:true
+  - x-bot-worker（Version d68f3a92-87cf-45ea-a3ff-4d9017a037e3）5 secrets 注入；/health not_found（代码无该路由，功能路由待确认）
+- 微信系凭据已录，部署=微信后台配置（需 owner 本人登录微信开放平台/小店后台，AI 不代登录）
