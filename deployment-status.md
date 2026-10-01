@@ -376,3 +376,7 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 2345Soft + 2345 全家桶（AvScan/PCSafe/SafeCenter/ShieldExplorer + 注册表 HKCU\SOFTWARE\2345.com）：**已全部卸载干净，复查零残留** ✅
 - 无 2345 进程/服务/计划任务/自启动（清理前已确认，非拦截元凶）
 - 重启：待 owner 定时机；重启后 node --version 验证 0xC0000142 是否消失
+## 10-01 补充 4 · L4 完成 + Harness 安装（M4 进展）
+- L4：DeepSeek API 真实调用完成（api-deep.ltzzz.com，UTF-8，usage 856）→ guan 条目 6 条入库 ltzzz-memory/guan/deepseek-2026-10-01.md（commit 50e8c7c）；首次调用编码乱码被 DeepSeek 如实报告（可靠性验证）
+- M4：DeepSeek Harness v0.1.7-rc.2 已下载安装（官方 download.deepseek.com，274.9MB，Programs\DeepSeek Harness + 桌面/开始菜单快捷方式 + 注册表卸载项齐全）
+- M4 评估：Harness 需登录 DeepSeek 账号 → 三项评估（本地读写/定时任务/wrangler+git）待 owner 登录后执行；AI 不代登录不填凭据
