@@ -302,3 +302,30 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 
 ## 明日第一步
 等 owner 任一凭证到位即执行对应项；视频草稿待用户"按要求生成"确认后走生成+上传。
+
+---
+
+# 第八张执行单回执 · 2026-10-01（豆包）
+
+## L1 · DeepSeek 槽位补部署 — ✅ 已部署 + Secret 已注入
+- wrangler deploy ltzzz-deepseek-proxy（deepseek-proxy-worker-v2.js，含 /health），Version ID ec3a5300
+- DEEPSEEK_API_KEY 已注入 wrangler Secret（值未入库/未进对话）
+- 说明：v2 源码确认存在于仓库本地（deepseek-proxy-worker-v2.js，3080 bytes，含 /health + DEEPSEEK_API_KEY 引用）
+
+## L2 · 自定义域名治本 — 🔶 路由已绑，DNS 记录待建
+- 三个 route 已绑定：api-deep/api-qianwen/api-kimi.ltzzz.com → 对应 proxy（wrangler deploy --route，triggers 已注册）
+- qianwen/kimi 重部署 Version：fb990ad2 / 9c704471（Secret 保留，未清空）
+- 卡点：DNS 记录未创建——wrangler OAuth token 无 DNS 写权限（POST dns_records 403）；/workers/domains POST 405（端点不支持）；wrangler v4 无 routes/domain CLI
+- 待外网：CF 控制台建三条 CNAME（api-deep → ltzzz-deepseek-proxy.44acab…1972.workers.dev，proxied），或 owner 创建带 DNS:Edit 的 API Token
+
+## L3 · 内容滞后三处修正 — ✅ 已推送（Pages 构建中）
+- identity.html：Base Sepolia → Base 主网已上线 + 合约 0x44Ee…2660 + J1 锚定 batch 2（sha 4f5b201c）
+- dashboard.html：补链上状态区块（三地址余额 block 52013870 + Phase2 说明）（sha 26e05dca）
+- agents.html：编排 Worker 占位 → 明确"占位 · 未部署"（zh/en 字典同步）（sha 403003d4）
+
+## F1 · gas 核验（10-01 block 52013870）
+- guardian 0.000997 ETH / agent 0.001791 ETH / test 0xA315 0.000199 ETH —— 均为旧额，owner 两笔大额未上 Base
+- 处置（按 owner 令"gas 你来办"）：现有余额足以支撑小额链上操作；后续如需要内部调配（agent→guardian 注 gas），不动主钱包
+
+## 明日第一步
+外网开好后：CF 控制台登录（邮箱密码）→ 建 3 条 CNAME → 三子域 health 验收（期望 ok:true + has_key:true）→ L4 由总控发起真实调用。
