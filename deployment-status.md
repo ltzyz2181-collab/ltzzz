@@ -347,3 +347,32 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 判定：owner 指令"Wise 企业账户设为提现方式"当前无法执行——该 Gumroad 账号未开放 Wise 集成（或地区限制）
 - 未填任何银行账户信息（涉及实名/身份字段，红线不编造）；未保存任何 payout 变更
 - 待 owner 决策：① 提供 Wise 账号可用国家/或确认 Gumroad 侧是否需先绑 Wise 官网账号；② 或改回 PayPal 提现
+
+## 10-01 补充 2 · Gumroad 产品发布 — ✅ 已上线（M1 前提全部就绪）
+- 产品：**LTZZZ AI Agent Starter Pack**，价格 **$19**，类型=Digital product
+- 链接：**https://ltzyz.gumroad.com/l/ugyhy**（已发布，Unpublish 按钮可见=线上）
+- 交付文件：`products/LTZZZ-AI-Agent-Starter-Pack.md`（20 条真实运营模式精选，4.1 KB，已上传 Content tab）
+- 描述：英文，593 字符（记忆即数据库/链上结算/自托管钱包/YT 自动发布等卖点）
+- 收款：**PayPal Connect 已绑定**（个人账户 ltzyz2181@gmail.com，官方绿提示确认）；Stripe 银行线暂停不影响 PayPal 收款
+- 发布权：owner 已授权推进（"开始吧"）；未设限时价/未开 affiliate（待 owner 后续决定）
+- 里程碑：**M1 前提=收款通道 ✅ + 产品 ✅ + 流量挂点 ✅（YT 描述已挂正式链接）**，只差第一笔外部进账
+
+## 10-01 补充 3 · YT 视频更新 — ✅ VERIFIED（Studio 已保存）
+- 视频 HKhUA5CRPfc（https://youtube.com/shorts/HKhUA5CRPfc）
+- 描述更新：占位 → 正式「LTZZZ Store: https://ltzyz.gumroad.com/l/ugyhy + Telegram @ltzzz_agi_lab_bot + #LTZZZ #AI #AGI #digital-lab」（106 字符，已保存）
+- **AI 生成内容声明：已选「是」+ 场景「出現看似真實但從未發生的場景」**，保存成功（页面提示「已儲存所有變更」）
+- 备注：声明作用=避免限流/拒 YPP；YPP 4000 小时从公开后开始计时
+
+## 10-01 · 第九张执行单 M1–M4 回执（豆包）
+- **M1 真相源**：ltzzz-repo=唯一真相源 ✅；**ltzzz-deploy / ltzzz 桌面目录已不存在**（owner 侧清理，回退风险天然消除）；今后所有 git/wrangler 操作 cwd=ltzzz-repo，回执首行标工作目录
+- **M2 凭据隔离**：CREDENTIALS-BACKUP.md / LTZZZ-PAYMENT-AND-CREDENTIALS.md / private.wx0b43a6cf2cb2b07d.key 在 ltzzz-repo/ltzzz-deploy/ltzzz 工作树（含根级）均无（Glob 全树核对）→ SAFE，未复制未读取内容
+- **M3 L1–L3 续办**：非未办——L1/L2/L3 已于 10-01 完成并 VERIFIED（三子域 /health 今日复核：api-deep/api-qianwen/api-kimi 全 ok:true+has_key:true；identity/dashboard/agents 三页已推 sha 4f5b201c/26e05dca/403003d4）
+- **M4 DeepSeek Harness**：**Harness v0.2 桌面版未安装**（AppData\Local\Programs 无）→ 评估无法执行，待 owner 安装后测三件事（本地文件读写/定时任务/可跑 wrangler+git），AI 不代注册不填凭据
+
+## 10-01 · 修通道执行回执（千问故障码相关）
+- 豆包通道全程正常（node v22.23.2 / git 2.55.0）；PowerShell 工具曾短暂 cwd 失效，已自行恢复
+- icacls $env:TEMP /reset /t /q：2676 files / 0 failed ✅
+- 火绒：不在（残留空目录已删）
+- 2345Soft + 2345 全家桶（AvScan/PCSafe/SafeCenter/ShieldExplorer + 注册表 HKCU\SOFTWARE\2345.com）：**已全部卸载干净，复查零残留** ✅
+- 无 2345 进程/服务/计划任务/自启动（清理前已确认，非拦截元凶）
+- 重启：待 owner 定时机；重启后 node --version 验证 0xC0000142 是否消失
