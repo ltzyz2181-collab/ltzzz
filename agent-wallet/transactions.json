@@ -1,173 +1,210 @@
 {
-  "transactions": [
-    {
-      "id": "txn_0001",
-      "timestamp": "2026-09-29T10:06:00.978Z",
-      "agent": "gpt",
-      "amount_usdc": 1,
-      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-      "purpose": "第一笔真实实验：验证自托管钱包端到端签名转账闭环",
-      "hypothesis": "自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
-      "success_criteria": "链上确认测试收款地址收到 1 USDC，agent 钱包 USDC 减至 49",
-      "experiment_id": "exp_001",
-      "reasoning_hash": "0xbccfb734c8e7b79f6dfbb78d0d0653a4a117c2ef164c648f24641eafed0cd519",
-      "reasoning_summary": "假设: 自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
-      "tx_hash": "0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504",
-      "status": "confirmed",
-      "mode": "local",
-      "audit": {
-        "by": "doubao_agent",
-        "status": "pass",
-        "checked_at": "2026-09-29T10:10:00.000Z",
-        "checks": [
-          "策略检查通过（白名单/限额/实验假设）",
-          "熔断器正常",
-          "预算充足（20 USDC 可用）",
-          "链上验证：交易 9 确认，from=agent EOA，to=USDC 合约",
-          "reasoning_hash 可重算核对（proof-of-reasoning）"
-        ]
-      },
-      "outcome": {
-        "status": "success",
-        "verified_at": "2026-09-29T10:10:00.000Z",
-        "evidence": "链上确认：测试收款地址 0xA315...491A 收到 1 USDC；agent 钱包 USDC 50→49；tx 0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504 已 9 确认",
-        "conclusion": "验收标准达成：自托管 EOA 签名 + Base RPC 广播 + 记账链路端到端可用，LTZZZ 钱包闭环真实跑通"
-      }
-    },
-    {
-      "id": "txn_0002",
-      "timestamp": "2026-09-30T06:59:15.377Z",
-      "agent": "infra",
-      "amount_usdc": 0,
-      "recipient": "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
-      "purpose": "LTZZZ Pay Phase1: ReputationRegistry 部署 Base 主网 + guardian gas + 推理锚定上链",
-      "hypothesis": "声誉合约+Worker Secret 回填+链上锚定链路端到端可用",
-      "success_criteria": "合约地址链上 code 存在/3 guardian 就位/锚定 root 链上可读",
-      "experiment_id": "phase1_deploy",
-      "reasoning_hash": "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
-      "chain_ops": [
-        {
-          "op": "deploy_contract",
-          "tx_hash": "0x769b2b3942c4e97bd590dcf5da3787fb6f54cb4e872146c6d041d638752c561d",
-          "contract": "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
-          "network": "base-mainnet"
-        },
-        {
-          "op": "gas_topup_to_guardian",
-          "tx_hash": "0xc454021c3d7e7d2c200853bb737304736f46d003b80fc5b5f44f90c92e902dee",
-          "amount_eth": 0.001,
-          "to": "0xD834a769b31447daf5a042009CF06fAFCE7e2F51"
-        },
-        {
-          "op": "anchor_reasoning",
-          "tx_hash": "0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac",
-          "root": "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
-          "txCount": 1,
-          "status": 1
-        }
-      ],
-      "status": "confirmed",
-      "mode": "local"
-    },
-    {
-      "id": "txn_0003",
-      "timestamp": "2026-09-30T08:45:13.959Z",
-      "agent": "kimi-global",
-      "amount_usdc": 1,
-      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-      "purpose": "LTZZZ Pay 首笔 AI 雇 AI 结算 exp_002（ORDER-20260930-001）：Kimi 账本审计交付，1 USDC 结算，receipt 锚定",
-      "hypothesis": "AI 雇 AI 闭环（任务→交付→结算→锚定）端到端可用",
-      "success_criteria": "USDC 到账（49→48/收款方+1）+ 锚定 root 链上=true",
-      "experiment_id": "exp_002_pay_settle",
-      "reasoning_hash": "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
-      "chain_ops": [
-        {
-          "op": "settle_1usdc",
-          "tx_hash": "0x5da61452cf46406e4d4dbeb551549e4732f00601251592a3c29036c2c14b4cb4",
-          "status": 1
-        },
-        {
-          "op": "anchor_reasoning_batch1",
-          "tx_hash": "0xef635e87a156897e30986b8a5d0490d22d272a607fe0ffed10408ae5b67843da",
-          "root": "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
-          "anchoredRoots": true
-        }
-      ],
-      "status": "confirmed",
-      "mode": "local",
-      "order": "ORDER-20260930-001"
-    },
-    {
-      "id": "txn_0004",
-      "timestamp": "2026-09-30T09:55:14.579Z",
-      "agent": "system-return",
-      "amount_usdc": 1,
-      "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
-      "purpose": "ORDER-20260930-001 结算回账（可回收规则）：agent 注 0.0002 ETH gas → 0xA315 回 1 USDC → agent；订单 receipt 锚定 batch[2]",
-      "experiment_id": "exp_002",
-      "order": "ORDER-20260930-001",
-      "chain_ops": [
-        {
-          "op": "gas_topup",
-          "tx_hash": "0x3194089ed4ea2d790c70e897ad3238d684aea3007fb7bb7dc88abc238384f5fe",
-          "status": 1
-        },
-        {
-          "op": "settle_return_1usdc",
-          "tx_hash": "0xb7bbbd94e53ad646199015a8156e55f2f8abad4f83065de1e1bc52f5a7a38a94",
-          "status": 1
-        },
-        {
-          "op": "anchor_order_receipt_batch2",
-          "tx_hash": "0x2e6e2ff2256b5db09b5aae6f6af0a0c5d15ddf4ed3992de155209394af537629",
-          "root": "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
-          "anchoredRoots": true
-        }
-      ],
-      "status": "confirmed",
-      "mode": "local"
-    }
-  ],
-  "next_txn_id": 5,
-  "daily_summary": {
-    "2026-09-29": {
-      "gpt": {
-        "total_usdc": 1,
-        "count": 1
-      }
-    },
-    "2026-09-30": {
-      "kimi_global": {
-        "total_usdc": 1,
-        "count": 1
-      },
-      "system_return": {
-        "total_usdc": 1,
-        "count": 1
-      }
-    }
-  },
-  "monthly_summary": {
-    "2026-09": {
-      "gpt": {
-        "total_usdc": 1,
-        "count": 1
-      }
-    }
-  },
-  "circuit": {
-    "consecutive_failures": 0,
-    "halted": false,
-    "halted_at": null,
-    "hourly_window": [
-      {
-        "at": "2026-09-29T10:06:00.979Z",
-        "ok": true,
-        "amount": 1,
-        "agent": "gpt"
-      }
-    ]
-  },
-  "refill": {},
-  "last_updated": "2026-09-30T09:55:14.580Z"
+    "transactions":  [
+                         {
+                             "id":  "txn_0001",
+                             "timestamp":  "2026-09-29T10:06:00.978Z",
+                             "agent":  "gpt",
+                             "amount_usdc":  1,
+                             "recipient":  "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+                             "purpose":  "第一笔真实实验：验证自托管钱包端到端签名转账闭环",
+                             "hypothesis":  "自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
+                             "success_criteria":  "链上确认测试收款地址收到 1 USDC，agent 钱包 USDC 减至 49",
+                             "experiment_id":  "exp_001",
+                             "reasoning_hash":  "0xbccfb734c8e7b79f6dfbb78d0d0653a4a117c2ef164c648f24641eafed0cd519",
+                             "reasoning_summary":  "假设: 自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
+                             "tx_hash":  "0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504",
+                             "status":  "confirmed",
+                             "mode":  "local",
+                             "audit":  {
+                                           "by":  "doubao_agent",
+                                           "status":  "pass",
+                                           "checked_at":  "2026-09-29T10:10:00.000Z",
+                                           "checks":  [
+                                                          "策略检查通过（白名单/限额/实验假设）",
+                                                          "熔断器正常",
+                                                          "预算充足（20 USDC 可用）",
+                                                          "链上验证：交易 9 确认，from=agent EOA，to=USDC 合约",
+                                                          "reasoning_hash 可重算核对（proof-of-reasoning）"
+                                                      ]
+                                       },
+                             "outcome":  {
+                                             "status":  "success",
+                                             "verified_at":  "2026-09-29T10:10:00.000Z",
+                                             "evidence":  "链上确认：测试收款地址 0xA315...491A 收到 1 USDC；agent 钱包 USDC 50→49；tx 0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504 已 9 确认",
+                                             "conclusion":  "验收标准达成：自托管 EOA 签名 + Base RPC 广播 + 记账链路端到端可用，LTZZZ 钱包闭环真实跑通"
+                                         }
+                         },
+                         {
+                             "id":  "txn_0002",
+                             "timestamp":  "2026-09-30T06:59:15.377Z",
+                             "agent":  "infra",
+                             "amount_usdc":  0,
+                             "recipient":  "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
+                             "purpose":  "LTZZZ Pay Phase1: ReputationRegistry 部署 Base 主网 + guardian gas + 推理锚定上链",
+                             "hypothesis":  "声誉合约+Worker Secret 回填+链上锚定链路端到端可用",
+                             "success_criteria":  "合约地址链上 code 存在/3 guardian 就位/锚定 root 链上可读",
+                             "experiment_id":  "phase1_deploy",
+                             "reasoning_hash":  "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
+                             "chain_ops":  [
+                                               {
+                                                   "op":  "deploy_contract",
+                                                   "tx_hash":  "0x769b2b3942c4e97bd590dcf5da3787fb6f54cb4e872146c6d041d638752c561d",
+                                                   "contract":  "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
+                                                   "network":  "base-mainnet"
+                                               },
+                                               {
+                                                   "op":  "gas_topup_to_guardian",
+                                                   "tx_hash":  "0xc454021c3d7e7d2c200853bb737304736f46d003b80fc5b5f44f90c92e902dee",
+                                                   "amount_eth":  0.001,
+                                                   "to":  "0xD834a769b31447daf5a042009CF06fAFCE7e2F51"
+                                               },
+                                               {
+                                                   "op":  "anchor_reasoning",
+                                                   "tx_hash":  "0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac",
+                                                   "root":  "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
+                                                   "txCount":  1,
+                                                   "status":  1
+                                               }
+                                           ],
+                             "status":  "confirmed",
+                             "mode":  "local"
+                         },
+                         {
+                             "id":  "txn_0003",
+                             "timestamp":  "2026-09-30T08:45:13.959Z",
+                             "agent":  "kimi-global",
+                             "amount_usdc":  1,
+                             "recipient":  "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+                             "purpose":  "LTZZZ Pay 首笔 AI 雇 AI 结算 exp_002（ORDER-20260930-001）：Kimi 账本审计交付，1 USDC 结算，receipt 锚定",
+                             "hypothesis":  "AI 雇 AI 闭环（任务→交付→结算→锚定）端到端可用",
+                             "success_criteria":  "USDC 到账（49→48/收款方+1）+ 锚定 root 链上=true",
+                             "experiment_id":  "exp_002_pay_settle",
+                             "reasoning_hash":  "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
+                             "chain_ops":  [
+                                               {
+                                                   "op":  "settle_1usdc",
+                                                   "tx_hash":  "0x5da61452cf46406e4d4dbeb551549e4732f00601251592a3c29036c2c14b4cb4",
+                                                   "status":  1
+                                               },
+                                               {
+                                                   "op":  "anchor_reasoning_batch1",
+                                                   "tx_hash":  "0xef635e87a156897e30986b8a5d0490d22d272a607fe0ffed10408ae5b67843da",
+                                                   "root":  "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
+                                                   "anchoredRoots":  true
+                                               }
+                                           ],
+                             "status":  "confirmed",
+                             "mode":  "local",
+                             "order":  "ORDER-20260930-001"
+                         },
+                         {
+                             "id":  "txn_0004",
+                             "timestamp":  "2026-09-30T09:55:14.579Z",
+                             "agent":  "system-return",
+                             "amount_usdc":  1,
+                             "recipient":  "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+                             "purpose":  "ORDER-20260930-001 结算回账（可回收规则）：agent 注 0.0002 ETH gas → 0xA315 回 1 USDC → agent；订单 receipt 锚定 batch[2]",
+                             "experiment_id":  "exp_002",
+                             "order":  "ORDER-20260930-001",
+                             "chain_ops":  [
+                                               {
+                                                   "op":  "gas_topup",
+                                                   "tx_hash":  "0x3194089ed4ea2d790c70e897ad3238d684aea3007fb7bb7dc88abc238384f5fe",
+                                                   "status":  1
+                                               },
+                                               {
+                                                   "op":  "settle_return_1usdc",
+                                                   "tx_hash":  "0xb7bbbd94e53ad646199015a8156e55f2f8abad4f83065de1e1bc52f5a7a38a94",
+                                                   "status":  1
+                                               },
+                                               {
+                                                   "op":  "anchor_order_receipt_batch2",
+                                                   "tx_hash":  "0x2e6e2ff2256b5db09b5aae6f6af0a0c5d15ddf4ed3992de155209394af537629",
+                                                   "root":  "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
+                                                   "anchoredRoots":  true
+                                               }
+                                           ],
+                             "status":  "confirmed",
+                             "mode":  "local"
+                         },
+                         {
+                             "id":  "txn_0004",
+                             "timestamp":  "2026-10-01T10:50:00.000Z",
+                             "agent":  "infra",
+                             "amount_usdc":  5,
+                             "recipient":  "UniswapV2Router_0x4752ba5d",
+                             "purpose":  "gas 储备兑换：5 USDC -\u003e WETH -\u003e 原生 ETH（agent 钱包内部资产转换，非转出）",
+                             "hypothesis":  "Uniswap V2 Router02 回滚疑团下换 V2 官方 Router 完成 USDC-\u003eWETH；WETH unwrap 得原生 ETH",
+                             "success_criteria":  "链上确认 3 笔 tx + 原生 ETH 余额增加",
+                             "experiment_id":  "gas_reserve_swap",
+                             "tx_ops":  [
+                                            {
+                                                "block":  52016699,
+                                                "status":  1,
+                                                "op":  "approve_v2_router",
+                                                "tx_hash":  "0x668c93c43bce63f40f56c30a167b00ad01cfb793f85bdc903192804d78f79896"
+                                            },
+                                            {
+                                                "block":  52016702,
+                                                "status":  1,
+                                                "op":  "swap_exact_tokens_for_tokens",
+                                                "weth_out":  "0.001852012162237946",
+                                                "tx_hash":  "0xf7e615e750639fd973d54274882e20f9c910042bd262c7f46346523d7e17cd48"
+                                            },
+                                            {
+                                                "block":  52016718,
+                                                "status":  1,
+                                                "op":  "unwrap_weth_to_eth",
+                                                "tx_hash":  "0xc8b6de4649b7d4926c921a73b94879ea77eb8fd7c02ae0b0360f4d87b0bacb73"
+                                            }
+                                        ],
+                             "status":  "confirmed",
+                             "mode":  "local",
+                             "note":  "V3 SwapRouter02(0x2626…) quote/swap 在 USDC/WETH fee10000 池上经双 RPC 验证真实回滚（Quoter 正常），改用官方 Uniswap V2 Router 完成；V2 pair(USDC,WETH)=0x88A43bbDF9D098eEC7bCEda4e2494615dfD9bB9C 价格≈2692 USDC/ETH"
+                         }
+                     ],
+    "next_txn_id":  5,
+    "daily_summary":  {
+                          "2026-09-29":  {
+                                             "gpt":  {
+                                                         "total_usdc":  1,
+                                                         "count":  1
+                                                     }
+                                         },
+                          "2026-09-30":  {
+                                             "kimi_global":  {
+                                                                 "total_usdc":  1,
+                                                                 "count":  1
+                                                             },
+                                             "system_return":  {
+                                                                   "total_usdc":  1,
+                                                                   "count":  1
+                                                               }
+                                         }
+                      },
+    "monthly_summary":  {
+                            "2026-09":  {
+                                            "gpt":  {
+                                                        "total_usdc":  1,
+                                                        "count":  1
+                                                    }
+                                        }
+                        },
+    "circuit":  {
+                    "consecutive_failures":  0,
+                    "halted":  false,
+                    "halted_at":  null,
+                    "hourly_window":  [
+                                          {
+                                              "at":  "2026-09-29T10:06:00.979Z",
+                                              "ok":  true,
+                                              "amount":  1,
+                                              "agent":  "gpt"
+                                          }
+                                      ]
+                },
+    "refill":  {
+
+               },
+    "last_updated":  "2026-09-30T09:55:14.580Z"
 }
