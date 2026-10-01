@@ -146,6 +146,15 @@ async function main() {
   pending.updated_at = nowCST();
   writeJson(PENDING_FILE, pending);
 
+  // 花钱闭环：把各 AI 产出中的 SPEND_PROPOSAL 收集进 agent-wallet/proposals/
+  try {
+    const { collectSpendProposals } = await import("./collect-spend-proposals.mjs");
+    const n = collectSpendProposals();
+    if (n > 0) console.log(`[run-daily-tasks] 收集到 ${n} 条花钱提案 → agent-wallet/proposals/`);
+  } catch (e) {
+    console.log("[run-daily-tasks] 花钱提案收集跳过:", e.message);
+  }
+
   // 每日报告
   const pendingEntries = Object.entries(pending.reminders || {});
   const lines = [
