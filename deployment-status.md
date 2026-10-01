@@ -386,3 +386,10 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 授权尝试 4 次：authorize 页多次跳转失效（authorize_id 一次性，页面刷新即失效）；Google 登录授权页已到「继续」一步仍跳走
 - 结论：DeepSeek Harness 9-30 刚上线（rc.2），Web 授权链路不稳定 → M4 三项评估 BLOCKED（待平台稳定后重试，owner 本人登录授权）
 - DeepSeek 未闲置：L4 API 真实调用已完成（guan 条目入库 50e8c7c），研究工作由 API 通道正常运转
+
+### 10-02 补充 5 · Harness 已登录 + M4 评估（API Key 路线，OAuth 放弃）
+- 登录方式：OAuth 反复 STATE_INVALID/超时（平台刚上线不稳）→ 改用「添加 API Key」直连（DeepSeek Key 本地剪贴板粘贴入 Harness，Key 不入库不入对话）→ 主界面进入成功（模型 DeepSeek-V41-Flash）
+- M4 ① 本地文件读写：输入框支持 @文件引用 ✅ 具备
+- M4 ③ 命令执行：插件区含「终端」插件（限时/限输出）✅ 具备（git/wrangler 可测）
+- M4 ② 定时任务：官方 7 插件（团队/授权审查/语音/终端/循环/子智能体/搜索）中未见定时任务插件 → 未发现（如实，待确认工作区能力）
+- 待办：克劳德充值付款（U 卡到账 5.99U，缺卡有效期/CVV + Anthropic 控制台页面）
