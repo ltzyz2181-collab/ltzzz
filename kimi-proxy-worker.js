@@ -43,7 +43,10 @@ export default {
         return json({ error: 'messages is required', stage: 'request_validation' }, 400);
       }
 
-      const model = body.model || env.KIMI_MODEL || 'moonshot-v1-32k';
+      // 2026-10-01 修正：moonshot-v1 系列与 kimi-k2.5 已于 2026-08-31 下线，
+      // 沿用旧默认值会返回 404 "Not found the model or Permission denied"。
+      // 现行可用：kimi-k3 / kimi-k2.6 / kimi-k2.7-code（总控实测确认）。
+      const model = body.model || env.KIMI_MODEL || 'kimi-k2.6';
 
       const upstreamUrl =
         env.KIMI_BASE_URL ||
@@ -58,8 +61,18 @@ export default {
         body: JSON.stringify({
           model,
           messages,
-          temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 2000,
+          // 2026-10-01 修正：kimi-k3 / k2.6 / k2.7-code 仅接受 temperature=1，
+          // 传 0.4 会报 "invalid temperature: only 1 is allowed for this model"。
+          temperature: /^kimi-(k3|k2\.6|k2\.7)/.test(model)
+            ? 1
+            : (typeof body.temperature === 'number' ? body.temperature : 1),
+          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 8192,
+          // 2026-10-01 修正（依据 did:ltzzz:kimi 对抗性审查）：k2.6 等思考型模型的
+          // reasoning 链会挤占输出预算，默认 2000 时实测 content 为空（out 被思考占满）。
+          // 默认提到 8192 以预留"思考+回答"双预算。
+          // reasoning_effort 仅按需透传：未验证 Moonshot 是否全模型支持，不默认强制，
+          // 避免向不支持的模型发送未知参数导致 400。
+          ...(body.reasoning_effort ? { reasoning_effort: body.reasoning_effort } : {}),
           stream: false
         })
       });

@@ -1,8 +1,9 @@
 # 国内 Kimi 每日任务卡（2026-10-01 起）
 
 > 席位：did:ltzzz:kimi（国内 Moonshot）｜上级：千问总控｜平级协作：豆包（执行）、DeepSeek（研究）
-> 当前状态：Worker 在线（api-kimi.ltzzz.com/health → 200, has_key:true），但**模型调用受阻**（见文末）。
-> 受阻期间本卡以「对话框模式」执行——owner 把任务贴给 Kimi，Kimi 产出后 owner 贴回总控。
+> **当前状态（2026-10-01 更新）：已上线可程序化调用** ✅ 端点 api-kimi.ltzzz.com，模型 kimi-k2.6，总控已实调成功。
+> 故障已修复（模型名过期+temperature+token预算三处，见 ops/Kimi工位上线记录-20261001.md）。
+> 本卡现由总控通过 Worker 直接下发；对话框模式仅作后备。
 
 ---
 
@@ -39,20 +40,22 @@
 
 ---
 
-## 受阻说明（如实记录，不隐瞒）
+## 受阻结案（2026-10-01 已修复，留存作记录）
 
-2026-10-01 总控实测 `api-kimi.ltzzz.com`：
-- `/health` → 200，`has_key:true`（Key 已注入成功）
-- POST 调用 → 失败：
-  - `moonshot-v1-32k`（Worker 默认值）→ 404 "Not found the model or Permission denied"
-  - `moonshot-v1-8k` / `kimi-k2-0711-preview` → 同 404
-  - `kimi-latest` / `moonshot-v1-auto` → 一次返回 **"account org-a1d7b46e… request reached limit"**，一次返回 404
+**原判定"账户额度不足"不准确，现更正。** 真实根因是两处代码问题，非账户问题：
 
-**判定**：Key 认证是通的（错误里返回了 org id），问题是**账户侧受限**——最可能是余额/额度不足（owner 说过"deep 和豆包都有充值额度"，未提 Kimi），也可能是该 Key 未开通对应模型。
+1. **模型名过期**：Worker 默认 `moonshot-v1-32k`，而 Moonshot 官方公告 `moonshot-v1` 系列与 `kimi-k2.5` **已于 2026-08-31 下线** → 报 404 "Not found the model or Permission denied"。
+2. **temperature 不兼容**：新版模型仅接受 `temperature=1`，Worker 默认传 0.4 → 报 "invalid temperature: only 1 is allowed"。
 
-**解法（二选一，需 owner）**：
-1. 在 Moonshot 开放平台确认该 Key 的**可用模型名**与**余额**，把模型名告诉豆包 → 豆包执行
-   `wrangler secret put KIMI_MODEL --name ltzzz-kimi-proxy`（无需改代码）
-2. 若暂不充值 → Kimi 席位继续走对话框模式（本卡照常执行，产出由 owner 转贴）
+当时出现的 "account reached limit" 与 404 交替，是限流叠加模型名错误；余额耗尽应返回 402/403，与实际报错不符——所以"额度不足"的推断当时就该被排除，总控判断过早，记事故一次。
 
-**对照**：DeepSeek 同一时刻调用成功（`deepseek-chat` 正常返回），证明 Worker 架构与域名链路没问题，是 Kimi 账户侧的事。
+**修复（总控自主完成，未依赖豆包）**：
+- 默认模型 → `kimi-k2.6`；temperature 按模型名正则强制 1；max_tokens 默认 2000 → 8192
+- `npx wrangler@4 deploy kimi-proxy-worker.js --name ltzzz-kimi-proxy`（注意 wrangler 4 不接受 `--main`）
+- Version ID `6bd76c07-c341-4c7a-a7eb-862cb9f007b1`
+
+**max_tokens 这条是 Kimi 自己审出来的**：上线后总控派它对抗性审查刚才的修改，它指出"思考型模型 reasoning 会挤占输出预算，2000 不够，建议 8192"——实测佐证（150/3000 时 content 为空，1000/12000 正常）。总控采纳并部署验证。这是 LTZZZ 首次"AI 审 AI 抓到总控疏漏"。
+
+**验证**：`GET /health` → ok:true, has_key:true；`POST` 不传 max_tokens → 正常返回 content（out=206, finish=stop）。
+
+完整过程见 `ops/Kimi工位上线记录-20261001.md`。
