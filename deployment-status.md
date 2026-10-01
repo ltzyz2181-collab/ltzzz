@@ -393,3 +393,10 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - M4 ③ 命令执行：插件区含「终端」插件（限时/限输出）✅ 具备（git/wrangler 可测）
 - M4 ② 定时任务：官方 7 插件（团队/授权审查/语音/终端/循环/子智能体/搜索）中未见定时任务插件 → 未发现（如实，待确认工作区能力）
 - 待办：克劳德充值付款（U 卡到账 5.99U，缺卡有效期/CVV + Anthropic 控制台页面）
+
+## 补充6 · Harness/DeepSeek Key 核验（2026-10-01 豆包）
+- Harness v0.1.7-rc.2 已装、API Key 路线进入主界面 ✅；M4-① 本地文件引用（@文件）✅；③ 终端插件可执行命令 ✅；② 定时任务=官方插件清单未见（BLOCKED）。
+- **Harness DeepSeek 官方 Key 实测**：Key.doc 全部 5 个 sk- Key 直连 api.deepseek.com 均 INVALID；唯一有效 DeepSeek Key 在 Cloudflare Worker secret 内（无法导出明文）→ Harness 官方配置 AUTH 失败（"API密钥无效"）。
+- 已配自定义模型提供商 ltzzz-deep（API 地址 https://api-deep.ltzzz.com/v1，OpenAI 协议，Worker 自带 Key 应答实测 VALID usage=20）；UI 模型选择器未成功展开，待用户提供 DeepSeek 后台有效 Key 或验证 UI 路径。
+- **DeepSeek 干活不受阻**：api-deep.ltzzz.com API 直连已跑通（L4 产出 guan/deepseek-2026-10-01.md，commit 50e8c7c）。
+- 状态：Harness 对话=BLOCKED（等 DeepSeek 平台有效 Key）；DeepSeek API 通道=VERIFIED。
