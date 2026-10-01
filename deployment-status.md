@@ -380,3 +380,9 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - L4：DeepSeek API 真实调用完成（api-deep.ltzzz.com，UTF-8，usage 856）→ guan 条目 6 条入库 ltzzz-memory/guan/deepseek-2026-10-01.md（commit 50e8c7c）；首次调用编码乱码被 DeepSeek 如实报告（可靠性验证）
 - M4：DeepSeek Harness v0.1.7-rc.2 已下载安装（官方 download.deepseek.com，274.9MB，Programs\DeepSeek Harness + 桌面/开始菜单快捷方式 + 注册表卸载项齐全）
 - M4 评估：Harness 需登录 DeepSeek 账号 → 三项评估（本地读写/定时任务/wrangler+git）待 owner 登录后执行；AI 不代登录不填凭据
+
+### 10-01 M4 补充 · Harness 授权状态=BLOCKED（平台刚上线不稳定）
+- 已安装 v0.1.7-rc.2（官方包，Programs\DeepSeek Harness，桌面快捷方式）
+- 授权尝试 4 次：authorize 页多次跳转失效（authorize_id 一次性，页面刷新即失效）；Google 登录授权页已到「继续」一步仍跳走
+- 结论：DeepSeek Harness 9-30 刚上线（rc.2），Web 授权链路不稳定 → M4 三项评估 BLOCKED（待平台稳定后重试，owner 本人登录授权）
+- DeepSeek 未闲置：L4 API 真实调用已完成（guan 条目入库 50e8c7c），研究工作由 API 通道正常运转
