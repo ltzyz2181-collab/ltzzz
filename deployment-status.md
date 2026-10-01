@@ -329,3 +329,21 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 
 ## 明日第一步
 外网开好后：CF 控制台登录（邮箱密码）→ 建 3 条 CNAME → 三子域 health 验收（期望 ok:true + has_key:true）→ L4 由总控发起真实调用。
+## L2 · 自定义域名治本 — ✅ VERIFIED（10-01 三条 CNAME 全建+大陆直连验收）
+- CF 控制台（ltzyz2181@gmail.com 登录）DNS 新建 3 条 CNAME（proxied=开，TTL 自动）：
+  - api-deep.ltzzz.com    → ltzzz-deepseek-proxy.44acab6e47bc1efd0e86b2f5b6bc1972.workers.dev
+  - api-qianwen.ltzzz.com → ltzzz-qianwen-proxy.44acab6e47bc1efd0e86b2f5b6bc1972.workers.dev
+  - api-kimi.ltzzz.com    → ltzzz-kimi-proxy.44acab6e47bc1efd0e86b2f5b6bc1972.workers.dev
+- 本机（大陆网络）curl 三子域 /health，全部 HTTP 200：
+  - api-deep：{"ok":true,"service":"ltzzz-deepseek-proxy","did":"did:ltzzz:deepseek","has_key":true}
+  - api-qianwen：{"ok":true,"has_key":true}
+  - api-kimi：{"ok":true,"has_key":true}
+- 结论：workers.dev 被墙死结已解开，总控可经 api-*.ltzzz.com 直连调 Key（D3 三关 a/b 全过；c 真实 POST 由 L4 总控发起）
+- 备注：CF DNS API 写权限 wrangler OAuth 不具备（403），最终走控制台 GUI 完成；DNS zone id 29f79cc7ef7b8477f9acaa4d049b0443
+
+## 10-01 补充 · Gumroad 后台核验（Wise 提现指令执行结果）
+- 已用 ltzyz2181@gmail.com（Google OAuth）登录 Gumroad：app.gumroad.com → Settings → Payments
+- 页面事实：Payout method 仅两项 = Bank Account（SGD，新加坡地区表单，含 NRIC）+ PayPal；**无 Wise 提现选项**
+- 判定：owner 指令"Wise 企业账户设为提现方式"当前无法执行——该 Gumroad 账号未开放 Wise 集成（或地区限制）
+- 未填任何银行账户信息（涉及实名/身份字段，红线不编造）；未保存任何 payout 变更
+- 待 owner 决策：① 提供 Wise 账号可用国家/或确认 Gumroad 侧是否需先绑 Wise 官网账号；② 或改回 PayPal 提现
