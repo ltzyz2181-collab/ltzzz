@@ -133,12 +133,12 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 真实锚定上链 tx `0xd9965e82...c734ac`（guardian 0xD834a769... 签名；链上 batch[0] root 一致，anchoredRoots=true，block 51981074）
 - 明细：protocol/LTZZZ-PAY.md（Phase 1 已上线）+ agent-wallet/transactions.json（txn_0002）
 
-## F1｜gas 核账（链上实查，只写余额数字）
-| 地址 | Base 主网余额 |
-|---|---|
-| guardian `0xD834a769...2F51` | ETH 0.000999 |
-| agent EOA `0x21F502...7fdc` | ETH 0.001991 · USDC 49.0 |
-- owner 狐狸头 0.003 拆两笔（guardian 0.002 + agent 0.001）即可达执行单目标，无需兑换
+## F1｜gas 核账（链上实查，只写余额数字）✅ 2026-10-02 复检通过
+| 地址 | Base 主网余额（Blockscout v2 实查）| 说明 |
+|---|---|---|
+| guardian `0xD834a769...2F51` | ETH **0.00599774** | OKX 提币 0.005 已到账（txn_0009 · 提币单 434554198 · Base）|
+| agent EOA `0x21F502...7fdc` | ETH **0.00364094** | OKX 提币 0.003 已到账（txn_0010 · 提币单 434555994 · Base）|
+- 两笔均为 OKX→Base 主网（8453）提币，链上余额含新注入；F1 由 BLOCKED 转 **VERIFIED**（先前实测旧额 0.000997/0.001791 已叠加新额）
 
 ## F2｜境外 AI Worker 部署
 | Worker | URL | 状态 |
@@ -235,7 +235,7 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 |---|---|---|
 | YT 视频公开 | ✅ 已公开（9-29 转公开，RSS 实锤 HKhUA5CRPfc）| 官方 RSS 可列即公开；M1 前提部分达成 |
 | AI 内容声明 | ⚠️ 已公开未声明（风险>不公开）| 需 owner 在 YouTube Studio 该视频补勾（API 无字段）|
-| gas 注入 | ⛔ **BLOCKED→待 F1 复检**：实测 guardian 0.000999 / agent 0.001991 均为旧额，新注入未上链；owner 上午一笔走 Ethereum 网络（错网，已叫停）→ 正确动作=微信/交易所切 **Base** 网络重发 guardian 0.005 + agent 0.003 | 链上核账为准 |
+| gas 注入 | ✅ **VERIFIED（2026-10-02 F1 复检通过）**：guardian 0.005 + agent 0.003 两笔 OKX 提币均 Base 主网到账（txn_0009/txn_0010，提币单 434554198/434555994）；链上实查 guardian 0.00599774 / agent 0.00364094 ETH | Blockscout v2 实查为准 |
 | @ltzzz_agi_lab_bot | 🔶 NEEDS_CHECK：部署记录在案，存活未独立复核（本机到 api.telegram.org 不通）| H3 解锁仅差：①频道 chat_id ②外网通道 |
 
 ## 二、红线收窄（豆包提出，委员会采纳）
