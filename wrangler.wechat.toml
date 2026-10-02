@@ -1,0 +1,13 @@
+name = "ltzzz-wechat-publisher"
+main = "ltzzz-wechat-publisher-worker.js"
+compatibility_date = "2026-09-17"
+
+[triggers]
+crons = ["0 12 * * *"]   # 每天 20:00 CST（UTC+8）自动建草稿
+
+[vars]
+AUTO_MASS = "0"          # 默认只建草稿等人工过目；=1 时才自动群发
+
+[[r2_buckets]]
+binding = "MEMORY_BUCKET"
+bucket_name = "ltzzz-memory"
