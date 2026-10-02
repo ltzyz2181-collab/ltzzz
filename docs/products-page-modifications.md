@@ -47,4 +47,4 @@ JS 根据 `?region=` 切换标价与支付提示。
 - 新卡片出现。
 - 不破坏现有 checkout.html 参数。
 
-状态：proposed，豆包落地后改 status=applied 并记 commit。
+状态：applied（b63266b 已落地，豆包 2026-10-02 复核：区域切换/双轨/新卡片齐全，checkout 参数未破坏）
