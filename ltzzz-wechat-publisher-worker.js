@@ -48,24 +48,19 @@ async function publish(env, mode) {
     const { title, content, sources } = await buildArticle(env);
     if (!content) return { ok: false, msg: "no daily content found in R2" };
 
-    // 上传图文素材（永久素材）
-    const mediaId = await uploadNews(env, token, title, content);
-    if (!mediaId) return { ok: false, msg: "uploadNews failed" };
-
-    // 建草稿（默认安全路径）
-    const draftId = await addDraft(env, token, mediaId);
+    // 草稿箱接口（draft/add）：直接传图文内容 + 封面 media_id
+    const draftId = await addDraft(env, token, title, content);
     if (!draftId) return { ok: false, msg: "addDraft failed" };
 
     let massResult = null;
     if (mode === "mass" && env.AUTO_MASS === "1") {
-      massResult = await massSend(env, token, mediaId);
+      massResult = await massSend(env, token, draftId);
     }
 
     const receipt = {
       ok: true,
       date: todayCN(),
       title,
-      media_id: mediaId,
       draft_id: draftId,
       mode,
       mass: massResult,
@@ -112,24 +107,25 @@ async function buildArticle(env) {
   return { title, content, sources };
 }
 
-async function uploadNews(env, token, title, content) {
-  const form = new FormData();
-  form.append("type", "news");
-  form.append("media", new Blob([JSON.stringify({
-    articles: [{ title, content, digest: content.slice(0, 100), content_source_url: "https://ltzzz.com", need_open_comment: 0, only_fans_can_comment: 0 }],
-  })], { type: "application/json" }), "news.json");
-  const r = await fetch(`https://api.weixin.qq.com/cgi-bin/media/uploadnews?access_token=${token}`, { method: "POST", body: form });
-  const j = await r.json();
-  return j.media_id || null;
-}
-
-async function addDraft(env, token, mediaId) {
+async function addDraft(env, token, title, content) {
   const r = await fetch(`https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${token}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ articles: [{ media_id: mediaId }] }),
+    body: JSON.stringify({
+      articles: [{
+        title,
+        author: "LTZZZ",
+        digest: content.slice(0, 100),
+        content,
+        content_source_url: "https://ltzzz.com",
+        thumb_media_id: env.THUMB_MEDIA_ID,
+        need_open_comment: 0,
+        only_fans_can_comment: 0,
+      }],
+    }),
   });
   const j = await r.json();
+  if (j.errcode) return null;
   return j.media_id || null;
 }
 
