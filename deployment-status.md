@@ -416,3 +416,48 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - x-publisher-worker.js：OAuth 1.0a 签名改造（原 Bearer 用不了 1.0a token）+ 4 secret 注入 + 部署（Version 2d4b7ff3）
 - products.html：区域切换（cn/global）+ 国内微信路径 + 海外 $ 主价 + 新增 agent-starter/muse-budget 卡片 + TG 双按钮
 - Kimi proxy（api-kimi.ltzzz.com）实测 kimi-k2.6 调用 OK（usage=38）
+
+---
+
+# 每日巡检回执 · 2026-10-02（千问 · 通道恢复后首次自主执行 A→E）
+
+## G · 本机命令通道：✅ 已恢复
+- `echo ok` 直接返回 `ok`（10-01 两轮均为 exit 0xC0000142）；git / npx wrangler / curl.exe 全部可用。
+- 归因：10-01 豆包修通道回执（icacls TEMP reset + 2345 全家桶卸载 + 重启时机）生效。G 节关闭。
+
+## A · git 提交推送：✅ VERIFIED（缺口由豆包 10-01 夜推送闭合，千问拉取确认）
+- fetch 后发现 origin/main 领先 7 提交（0fbb214→dc105bd），ff-only 合并。
+- 远端实测（git ls-tree origin/main）：10-01 第二轮巡检列出的 16 个缺失路径**全部入库**——docs 4 份新文档 ✅、identity/dids 11 份 JSON + README ✅、protocol/部署流程-v1.md + 豆包交接指令-v1.0.md ✅。
+- 本轮无新文件需提交（工作树仅 ltzzz-memory/daily-3nums.md 为引擎自动生成脏文件，不代提交）。
+- ltzzz-secrets.md 红线：未 add、未读取、未推送 ✅。
+
+## B · wrangler 部署两个 Worker：✅ VERIFIED
+- 账号：ltzyz2181@gmail.com（wrangler whoami 实测，OAuth token 含 workers:write）。
+- ltzzz-qianwen-proxy：deployed, **Version ID 8c0e6e0f-72ee-47bf-8bd8-c75176ba19ab**（2026-10-02T01:08Z，2.77 KiB）
+- ltzzz-kimi-proxy：deployed, **Version ID e4058c96-add6-4b1f-a89f-b55cefac20c7**（2026-10-02T01:09Z，3.48 KiB）
+- 注：新版 wrangler 4.146.0 已废弃 `--main`，改用位置参数（流程文档 B 节命令需相应更新）。
+- Secret：QWEN_API_KEY / KIMI_API_KEY **均已存在于 Worker**（/health has_key:true 实测；wrangler 部署不清 secret，为豆包 10-01 注入）。本轮**未重注入、未读 Key.doc、值未进对话** ✅。
+
+## C · 部署后验证：✅ VERIFIED（无 key 阻塞——与 10-01 预判相反，key 已在）
+| 端点 | /health | 真实调用 |
+|---|---|---|
+| ltzzz-qianwen-proxy.workers.dev | ok:true has_key:true（01:09:07Z） | POST → qwen-plus 返回「总控在线」✅ |
+| ltzzz-kimi-proxy.workers.dev | ok:true has_key:true（01:09:09Z） | POST → kimi-k2.6 返回「总控在线」✅ |
+| api-qianwen.ltzzz.com（豆包 10-01 建的 CNAME） | ok:true has_key:true（01:11:41Z）——重部署后路由未受影响 | — |
+| api-kimi.ltzzz.com | ok:true has_key:true（01:11:43Z） | — |
+- 编码坑复现确认：PowerShell 直发中文 JSON 会乱码（qwen 收到"??"），须 `[Text.Encoding]::UTF8.GetBytes()` 转字节体（与 L4 DeepSeek 首调乱码同因）。
+
+## E · 页面发布：✅ VERIFIED
+- https://ltzzz.com/ 200（四区块完整）；/meta.html 200；/identity.html 200。
+- docs 新文件线上可访问（Pages 发布滞后于 git，实测）：docs/AGI身份与DID总规划-v1.1.md → **HTTP 200**（此前 404 缺口闭合）。
+
+## F · 转账测试：⛔ 仍未执行（暂缓条件 2/3 未满足，非通道问题）
+- 通道故障这条已消除，但：②交易所提现地址簿未添加 0x1893（需 owner 平台内人工一次）③提现网络未确认（须与收款网络一致）。
+- U 卡地址 0x1893…0eF7 本巡检窗口**无新链上交易**；blocked 分录已合并 `wallet/transactions.md`（PENDING 文件已删）。
+
+## 状态上调声明
+- qianwen/kimi 两 Worker 由「历史回执称已部署/无法验证」上调为 **VERIFIED（deployed + /health + 真实调用三重证据）**。
+- 09-30 D1「docs 未入库」与 10-01 第二轮「16 路径缺口」两笔欠账：已闭合（豆包推送 + 千问远端实测）。
+- 下一步：① owner 完成 F 前置两动作；② protocol/部署流程-v1.md B 节命令更新为 wrangler v4 位置参数语法；③ ltzzz-daily cron 配额满（5/5）待 owner 升 Paid 或删旧。
+
+（本回执不含任何凭证值；钱包地址沿用截断口径。）
