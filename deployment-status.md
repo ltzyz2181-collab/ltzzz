@@ -494,6 +494,23 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
   - `x402engine`：113 API 路由 / 77 LLM 路由 pay-per-call，无 key（railway 托管）
   - 下一步：待总控/owner 拍板选一家（建议 agent402.tools），把端点+收款地址加进 spending-policy.json x402_endpoints → agent-pay-worker 付 1–2 USDC 买一次真实调用（tx_hash + 结果入库）。**未获批不支付。**
 - N3：① doubao DOUBAO_MODEL Secret 值=Key.doc 火山方舟段（待确认是否为方舟当前启用 Endpoint）；② xia 等 Grok 报团队可用模型名；③ gpt 401 需 owner platform.openai.com 重生成；④ claude 余额不足不修（对话框模式）。
+
+## K5 · 四席死通道修复完成（2026-10-02 豆包 · N3 收口）
+实测（直连 API + daily worker /run 真实调用）：
+| 通道 | 桌面 Key | 选型（最小额度档）| 结果 |
+|---|---|---|---|
+| doubao | 方舟 ark key 有效 | **doubao-seed-2-1-turbo-260628**（已开通；lite 未开通报 ModelNotOpen）| 注入 ARK_API_KEY + DOUBAO_MODEL → /run?task=doubao-daily **dry_run=false**（budget 20 元，pct=0 起算）|
+| xia | xAI key 有效 | **grok-4.20-non-reasoning**（团队无 grok-4 老名权限，但有 4.20 全系；non-reasoning 比 reasoning 便宜）| 注入 XAI_MODEL → xia-daily **dry_run=false** |
+| gpt | 两个 sk-proj **均有效**（worker 里是旧 key）| gpt-4o-mini（最便宜档）| 注入 OPENAI_API_KEY → gpt-daily **dry_run=false** |
+| deepseek | deep key 有效 | deepseek-chat | 注入 DEEPSEEK_API_KEY → deepseek-daily **dry_run=false**（budget 20 元）|
+- 产物落 R2：knowledge/daily/{doubao,xia,gpt,deepseek}/YYYY-MM-DD.md（花钱即见产物，budget.spent/pct 实时可查）。
+- 备注：doubao-daily 手动 /run 首跑超时（turbo 思考慢 + 90s 限制），240s 重试 200 OK；cron 执行无此限制。
+
+## K6 · 公众号回调（承接上段，owner 待办）
+- 端点已上线并验证（GET 验签/403 拒错签/POST click+文本回复均通过）。**待 owner 在 mp.weixin.qq.com**：
+  1. 基本配置→服务器配置：URL=`https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/wechat`、Token=`LTZZZ_WECHAT_TK_2026`、明文模式→保存并启用；
+  2. 自定义菜单：确认类型（view 免回调直接用；click 已能回复）+ 确认菜单已发布（看不到=未发布）。
+- 服务号信息（owner 提供）：类型不可变更；简介「印章备案查询/刻章鉴别/游戏在线/电影在线/视频资源/电视剧更新」为历史遗留，与 LTZZZ（AI 数字实验室，英文为主）定位不符——**简介可改**（微信后台「设置与开发」→公众号设置→简介，一年限改若干次，改前先定文案）。
 - 红线核验：Key 值全程只进 Secret/内存，未入对话、未入库、未落盘明文（临时脚本仅输出掩码/状态）；ltzzz-secrets.md 未触碰。
 
 
