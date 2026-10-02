@@ -461,3 +461,35 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 下一步：① owner 完成 F 前置两动作；② protocol/部署流程-v1.md B 节命令更新为 wrangler v4 位置参数语法；③ ltzzz-daily cron 配额满（5/5）待 owner 升 Paid 或删旧。
 
 （本回执不含任何凭证值；钱包地址沿用截断口径。）
+
+---
+
+# 豆包复核回执 · 2026-10-02（Key 核验 + 千问复活 + 公众号回调上线）
+
+## K1 · 桌面 Key.doc 核验（豆包，直连 API 实测）
+| 席位 | Key 状态 | 说明 |
+|---|---|---|
+| 千问（百炼）| ✅ **有效**（qwen-plus HTTP 200 返回 choices）| 桌面 Key 正确；千问 Worker 此前报 key 不对 = Worker Secret 为旧值 |
+| Kimi（Moonshot）| ✅ 有效（kimi-k2.6 HTTP 200 返回内容）| 旧模型名 moonshot-v1-8k 已下线无权限；可用模型：kimi-k2.6 / kimi-k2.7-code |
+| DeepSeek | ✅ 有效（deepseek-chat HTTP 200）| 与 10-01 结论一致 |
+| GPT / Claude / XAI | 未测（需外网/控制台）| 见 N3 四席修复项 |
+
+## K2 · 千问 Worker 复活（Key 重注入 + 三关）
+- `wrangler secret put QWEN_API_KEY`（值=Key.doc 千问段，只进 Secret）→ **Success**
+- 实测 `POST ltzzz-qianwen-proxy.workers.dev/v1/chat/completions` → 返回「LTZZZ-QWEN-OK」✅
+- 千问"key 不对"结案：桌面 Key 有效，问题在旧 Secret，已替换。Kimi worker 直连 kimi-k2.6 通过（LTZZZ-KIMI-OK）；worker 出口 429 为 Moonshot 上游限流，非配置问题。
+
+## K3 · N4 公众号菜单"点了没反应"→ 回调端点已上线（豆包）
+- 诊断：ltzzz-wechat-publisher 原有 /health /publish，**缺 /wechat 回调端点**（GET 验签 + POST 收事件）→ click 型菜单点击必无反应。
+- 修复：ltzzz-wechat-publisher-worker.js 新增 /wechat 端点（SHA-1 验签 + 菜单 click/文本关键词回复，对齐 wechat-reply-templates 关键词模板：商品/观/状态/99）。
+- 部署：`wrangler deploy -c wrangler.wechat.toml`（**Version 36baffca**，R2 MEMORY_BUCKET ✅ / AUTO_MASS ✅ / cron 0 12 * * * ✅ / WECHAT_TOKEN Secret 已注入）。
+- 实测（带浏览器 UA）：GET 验签 → echostr 返回 ✅；**错误签名 → 403** ✅（首版未 await 的漏洞已修复）；POST click「商品」→ 回复 $19 商品文案 ✅；POST 文本「观」→ 回复今日实验 ✅。
+- **待 owner（mp.weixin.qq.com 本人操作）**：① 基本配置→服务器配置：URL=`https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/wechat`、Token=`LTZZZ_WECHAT_TK_2026`（与 Secret 一致）、明文模式→保存并启用；② 自定义菜单：确认菜单类型（view 型免回调可直接用；click 型推到新端点即回复）；③ 若菜单本身看不到=后台未发布/未保存，需 owner 发布。
+
+## K4 · 执行单其余项
+- N1：prop_grok_004 **不执行转账**（收款方为自家回收地址，违反 v0.5 空转禁令）✅ 维持 proposed。
+- N2：x402 外部收款方调研中（找真实支持 USDC 的 x402 AI 服务，找不到如实报无）。
+- N3：① doubao DOUBAO_MODEL Secret 值=Key.doc 火山方舟段（待确认是否为方舟当前启用 Endpoint）；② xia 等 Grok 报团队可用模型名；③ gpt 401 需 owner platform.openai.com 重生成；④ claude 余额不足不修（对话框模式）。
+- 红线核验：Key 值全程只进 Secret/内存，未入对话、未入库、未落盘明文（临时脚本仅输出掩码/状态）；ltzzz-secrets.md 未触碰。
+
+
