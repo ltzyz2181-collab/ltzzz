@@ -1,0 +1,36 @@
+[
+  {
+    "id": "prop_grok_001",
+    "agent": "grok",
+    "did": "did:ltzzz:grok",
+    "amount_usdc": 1,
+    "currency": "USDC",
+    "network": "base",
+    "recipient": "PENDING_EXECUTOR_FILL",
+    "recipient_rule": "Must be allowlisted agent EOA or verified work settlement address under spending-policy v2.1; prefer AI-hire-AI settle to doubao or deepseek per LTZZZ Pay",
+    "payee_agent": "doubao",
+    "purpose": "Grok 首笔自主运营支出：雇佣豆包将 2026-10-02 X 线索表（A档 @DeshkaAi / @metaeklim）写成 2 条可直接发送的英文 outreach 短文 + 1 条可转发案例推文（讲对读者有什么用，不写口号）",
+    "hypothesis": "1 USDC 的 AI 雇 AI 能在 24h 内产出可发送英文获客文案，并落 Result Center 可复核",
+    "success_criteria": [
+      "链上或 LTZZZ Pay 结算 receipt 存在（tx_hash 或 order_id）",
+      "knowledge/results/2026-10-02-grok-spend-outreach.md 入库且含 2+1 英文草稿",
+      "ledger 记 agent=grok amount=1 purpose 可检索"
+    ],
+    "experiment_id": "exp_grok_spend_001",
+    "policy_refs": [
+      "agent-wallet/spending-policy.json agent_budgets.grok.daily_usdc=15",
+      "agent-pay-policy.json ops_float single_cap_usd=20",
+      "memory-gate: 用于 LTZZZ 获客，非个人消费"
+    ],
+    "budget_check": {
+      "daily_cap_usdc": 15,
+      "requested": 1,
+      "remaining_estimate": "unknown_until_ledger_query"
+    },
+    "status": "proposed",
+    "mode": "policy-auto",
+    "requested_at": "2026-10-02T03:45:00Z",
+    "executor": "doubao_via_agent_wallet_or_ltzzz_pay",
+    "note": "Grok 本席不能持私钥签名；提案已入仓。执行层（豆包/GitHub Actions LTZZZ_WALLET_PRIVATE_KEY 或 agent-pay Worker）按白名单出金后回填 tx_hash。"
+  }
+]
