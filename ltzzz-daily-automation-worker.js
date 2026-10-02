@@ -102,16 +102,19 @@ async function writeArtifact(path, content, env, ctx) {
  * 返回 { sources:[...], manifest:[...], dry_run, note }
  */
 async function scanRepo(env) {
+  // 2026-10-02 修正：优先读「-入档」版（有真实记录）。原清单读的 魄.md/识神.md 等在 GitHub 上
+  // 仍是 300-650B 的空模板（只有字段格式无记录），AI 每天读到的是空壳 → 盲写。
+  // 入档版缺失时网关返回 404、readable=false，不影响其余文件读取。
   const memoryFiles = [
     "ltzzz-memory/README.md",
+    "ltzzz-memory/重要事件-入档.md",
+    "ltzzz-memory/魄-入档.md",
+    "ltzzz-memory/识神-入档.md",
+    "ltzzz-memory/梦境数据库-入档.md",
+    "ltzzz-memory/文明研究-入档.md",
+    "ltzzz-memory/文明研究-DeepSeek提炼.md",
     "ltzzz-memory/装备论.md",
-    "ltzzz-memory/魄.md",
-    "ltzzz-memory/识神.md",
-    "ltzzz-memory/梦境数据库.md",
-    "ltzzz-memory/文明研究.md",
     "ltzzz-memory/项目历史.md",
-    "ltzzz-memory/重要事件.md",
-    "ltzzz-memory/memory-engine.md",
     "ltzzz-memory/Daily-AI-Scheduler.md"
   ];
   const sources = [
@@ -120,35 +123,112 @@ async function scanRepo(env) {
     "articles/", "protocol/"
   ];
 
-  // 优先：通过 Memory Gateway HTTP 读取（已在线，source=github）
-  const gatewayBase = env.MEMORY_GATEWAY_URL || "https://ltzzz-memory-gateway.ltzyz2181.workers.dev";
-  if (gatewayBase) {
+  // 2026-10-02 修正 v5（根因级）：
+  //  v2 只判 resp.ok 不读正文 → AI 盲写；
+  //  v3 逐个 /file 读正文 → 边缘内串行 10 次子请求全败（0/10）；
+  //  v4 改走网关 /bundle 单请求 → 仍 0/10（外部同端点实测 200/31KB，故判定为
+  //      跨 Worker 子请求链在免费额度下不稳定：daily → gateway → github raw 两层）。
+  //  v5 改为**本 Worker 直连 GitHub raw 并行拉取**（Promise.all + 单文件超时），
+  //      彻底去掉中间网关层；网关与 R2 仅作降级备选。
+  const REPO_RAW = "https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main";
+  const CONTENT_BUDGET = 24000; // 注入 prompt 的总字节上限，避免超上下文
+  const PER_FILE_TIMEOUT = 8000;
+
+  async function fetchOne(path) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), PER_FILE_TIMEOUT);
     try {
-      const manifest = [];
-      let allOk = true;
-      for (const path of memoryFiles) {
-        try {
-          const resp = await fetch(`${gatewayBase}/file?path=${encodeURIComponent(path)}`, {
-            cf: { cacheTtl: 300 },
-          });
-          const ok = resp.ok;
-          manifest.push({ path, readable: ok });
-          if (!ok) allOk = false;
-        } catch (_e) {
-          manifest.push({ path, readable: false });
-          allOk = false;
-        }
+      const resp = await fetch(`${REPO_RAW}/${path}`, {
+        signal: ctrl.signal,
+        cf: { cacheTtl: 300 },
+      });
+      if (!resp.ok) return { path, readable: false, status: resp.status };
+      const body = await resp.text();
+      return { path, readable: !!(body && body.trim().length > 0), bytes: (body || "").length, body: body || "" };
+    } catch (e) {
+      return { path, readable: false, error: String((e && e.message) || e).slice(0, 80) };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  try {
+    const results = await Promise.all(memoryFiles.map(fetchOne));
+    const manifest = [];
+    const contents = [];
+    let totalBytes = 0;
+    for (const r of results) {
+      manifest.push({ path: r.path, readable: r.readable, bytes: r.bytes, status: r.status, error: r.error });
+      if (r.readable && totalBytes < CONTENT_BUDGET) {
+        const slice = r.body.slice(0, Math.max(0, CONTENT_BUDGET - totalBytes));
+        contents.push(`\n\n===== ${r.path} =====\n${slice}`);
+        totalBytes += slice.length;
       }
+    }
+    const okCount = manifest.filter((m) => m.readable).length;
+    if (okCount > 0) {
       return {
         sources,
         manifest,
+        contents,
+        content_bytes: totalBytes,
         dry_run: false,
-        memory_engine: "v2",
-        source: "gateway_http",
-        note: `Memory Gateway HTTP 读取：${manifest.filter(m=>m.readable).length}/${memoryFiles.length} 文件可读`,
+        memory_engine: "v5",
+        source: "github_raw_direct",
+        note: `GitHub raw 并行直读：${okCount}/${memoryFiles.length} 文件可读，注入正文 ${totalBytes} 字节`,
       };
-    } catch (_e) {
-      // Gateway 不可达，降级
+    }
+    // 直连全败 → 记失败原因，降级走网关 bundle
+    var directFail = manifest.map((m) => `${m.path.split("/").pop()}:${m.status || m.error || "?"}`).join(", ");
+  } catch (e) {
+    var directFail = "exception:" + String((e && e.message) || e).slice(0, 100);
+  }
+
+  // —— 降级：Memory Gateway /bundle ——
+  const gatewayBase = env.MEMORY_GATEWAY_URL || "https://ltzzz-memory-gateway.ltzyz2181.workers.dev";
+  if (gatewayBase) {
+    try {
+      const bResp = await fetch(`${gatewayBase}/bundle?paths=${encodeURIComponent(memoryFiles.join(","))}`, {
+        cf: { cacheTtl: 300 },
+      });
+      if (bResp.ok) {
+        const bData = await bResp.json();
+        const manifest = [];
+        const contents = [];
+        let totalBytes = 0;
+        const got = new Map();
+        for (const f of (bData.files || [])) {
+          if (f && f.path && typeof f.content === "string" && f.content.trim().length > 0) got.set(f.path, f.content);
+        }
+        for (const path of memoryFiles) {
+          const body = got.get(path);
+          if (body) {
+            manifest.push({ path, readable: true, bytes: body.length });
+            if (totalBytes < CONTENT_BUDGET) {
+              const slice = body.slice(0, Math.max(0, CONTENT_BUDGET - totalBytes));
+              contents.push(`\n\n===== ${path} =====\n${slice}`);
+              totalBytes += slice.length;
+            }
+          } else {
+            manifest.push({ path, readable: false });
+          }
+        }
+        const okCount = manifest.filter((m) => m.readable).length;
+        if (okCount > 0) {
+          return {
+            sources, manifest, contents, content_bytes: totalBytes,
+            dry_run: false, memory_engine: "v5", source: "gateway_bundle",
+            note: `Gateway /bundle 读取：${okCount}/${memoryFiles.length} 文件可读，注入正文 ${totalBytes} 字节（直连失败：${String(directFail).slice(0, 120)}）`,
+          };
+        }
+      }
+    } catch (e) {
+      return {
+        sources,
+        manifest: memoryFiles.map((path) => ({ path, readable: false })),
+        contents: [], content_bytes: 0, dry_run: true, memory_engine: "v5",
+        note: `直连与网关均失败。直连：${String(directFail).slice(0, 120)}；网关：${String((e && e.message) || e).slice(0, 100)}`,
+      };
     }
   }
 
@@ -181,11 +261,21 @@ async function scanRepo(env) {
 /** 把 scanRepo() 渲染成 Markdown「## 今日已阅读」小节 */
 function renderScanSection(scan) {
   const dirLines = scan.sources.map((d) => `  - ${d}/`).join("\n");
-  const fileLines = scan.manifest.map((f) => `  - ${f}`).join("\n");
+  // 2026-10-02 修正：manifest 元素是 {path,readable} 对象，原 `${f}` 会输出 [object Object]。
+  const fileLines = scan.manifest.map((f) => {
+    const p = (f && typeof f === "object") ? f.path : String(f);
+    const ok = (f && typeof f === "object") ? (f.readable ? "✓" : "✗未读到") : "";
+    return `  - ${p} ${ok}`;
+  }).join("\n");
   return (
     `## 今日已阅读（scanRepo）\n\n` +
     `> 开工前先通读仓库既有内容。dry_run=${scan.dry_run}　${scan.note}\n\n` +
-    `**阅读目录**\n${dirLines}\n\n**文件清单（占位）**\n${fileLines}\n`
+    `**阅读目录**\n${dirLines}\n\n**文件清单**\n${fileLines}\n` +
+    // 2026-10-02 修正（根因级）：把真实正文注入 prompt，AI 才有东西可读，
+    // 不再出现"我没有实际访问你本地仓库的能力"。
+    (Array.isArray(scan.contents) && scan.contents.length
+      ? `\n## 记忆正文（真实内容，据此作答，禁止声称读不到）\n${scan.contents.join("")}\n`
+      : `\n> ⚠ 记忆正文为空（0 文件可读）：请在产出中如实写明"未读到仓库内容"，不得凭空编造引用。\n`)
   );
 }
 
@@ -284,15 +374,22 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     apiKey = env.ANTHROPIC_API_KEY;
     extraHeaders["anthropic-version"] = "2023-06-01";
   } else if (channel === "doubao") {
-    apiUrl = "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
-    model = "doubao-seed-1-6-250615";
+    apiUrl = env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3/chat/completions";
+    // 2026-10-02 修正：原硬编码 "doubao-seed-1-6-250615" 已被方舟下线 → 上游 404，
+    // 但该虚报长期被 dry_run:false 掩盖。改为优先读 DOUBAO_MODEL Secret（部署时已配），
+    // 换模型只需改 Secret，不必改代码重部署。
+    model = env.DOUBAO_MODEL || "doubao-seed-1-6-250615";
     apiKey = env.ARK_API_KEY;
   } else if (channel === "xia") {
-    apiUrl = "https://api.x.ai/v1/chat/completions";
-    model = "grok-2-latest";
+    apiUrl = env.XAI_BASE_URL || "https://api.x.ai/v1/chat/completions";
+    // 同上：grok-2-latest 可能已更名，改为可配（XAI_MODEL），默认值保留兜底。
+    model = env.XAI_MODEL || "grok-2-latest";
     apiKey = env.XAI_API_KEY;
   } else {
-    return { ok: true, status: "live-skeleton", dry_run: false, budget, placeholder: `[live-skeleton] ${channel} 通道待接入` };
+    // 2026-10-02 修正（总控自查）：live-skeleton 是占位骨架、未发生任何上游调用，
+    // 原先返回 dry_run:false 属虚报——违反四公式"AI回复≠实际结果"。
+    // 正确口径：未真实调用 = dry_run:true + status 明示 skeleton。
+    return { ok: true, status: "skeleton", dry_run: true, budget, placeholder: `[skeleton] ${channel} 通道未配置上游，未发生真实调用` };
   }
 
   try {
@@ -306,7 +403,7 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     if (channel === "claude") {
       body = {
         model: model,
-        max_tokens: 500,
+        max_tokens: 4000, // 2026-10-02 修正：原 500 对思考型模型(kimi-k2.6等)会被 reasoning 占满导致 content 空
         messages: [
           { role: "user", content: prompt },
         ],
@@ -318,7 +415,8 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
           { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
           { role: "user", content: prompt },
         ],
-        max_tokens: 500,
+        max_tokens: 4000, // 2026-10-02 修正：原 500 导致 kimi-k2.6 等思考型模型 reasoning 占满、content 为空
+        // kimi 新版模型仅接受 temperature=1，故此处不再传 temperature（交由上游默认）
       };
     }
 
@@ -331,21 +429,48 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     if (!resp.ok) {
       const errText = await resp.text();
       logDry("ai.error", { taskName, channel, status: resp.status, error: errText.slice(0, 200) });
+      // 2026-10-02 修正（第5处虚报）：API 报错 = 未产生任何真实模型输出，
+      // 原返回 dry_run:false 会让产出顶部显示"已成功"、正文却回退占位文案，两头失真。
+      // 现改为 dry_run:true + status:api_error + 把真实错误写进 placeholder，如实暴露。
+      const brief = errText.slice(0, 160).replace(/\s+/g, " ");
       return {
         ok: false,
         status: "api_error",
-        dry_run: false,
+        dry_run: true,
         budget,
-        error: `API 返回 ${resp.status}: ${errText.slice(0, 100)}`,
+        error: `API 返回 ${resp.status}: ${brief}`,
+        placeholder: `（本段无真实模型输出。上游返回 HTTP ${resp.status}：${brief}。常见原因：余额不足 / Key 失效 / 模型名已下线。不得据此声称任务完成。）`,
       };
     }
 
     const data = await resp.json();
     let output;
     if (channel === "claude") {
-      output = data.content?.[0]?.text || JSON.stringify(data);
+      output = data.content?.[0]?.text || "";
     } else {
-      output = data.choices?.[0]?.message?.content || JSON.stringify(data);
+      const msg = data.choices?.[0]?.message || {};
+      // 2026-10-02 修正：kimi-k2.6 / doubao-seed 等思考型模型在 max_tokens 偏小时，
+      // content 常为空字符串而正文全在 reasoning_content（实测 kimi out=3000 时 content 为空）。
+      // 原实现 `|| JSON.stringify(data)` 会把整包 JSON 当"成功输出"写进记忆库，属伪成功。
+      output = (typeof msg.content === "string" && msg.content.trim())
+        ? msg.content
+        : (typeof msg.reasoning_content === "string" && msg.reasoning_content.trim()
+            ? `[模型仅返回推理过程，正文为空——疑似 max_tokens 不足]\n${msg.reasoning_content.slice(0, 2000)}`
+            : "");
+    }
+
+    // 空输出不得算成功：如实报 dry_run，避免"跑过了"的假象
+    if (!output || !String(output).trim()) {
+      const fr = data.choices?.[0]?.finish_reason || data.stop_reason || "unknown";
+      logDry("ai.empty_output", { taskName, channel, finish_reason: fr });
+      return {
+        ok: false,
+        status: "empty_output",
+        dry_run: true,
+        budget,
+        error: `上游返回 200 但正文为空（finish_reason=${fr}）。常见原因：max_tokens 被思考过程占满。`,
+        placeholder: `（本段无真实模型输出：上游 200 但 content 为空，finish_reason=${fr}。不得据此声称任务完成。）`,
+      };
     }
 
     return {
@@ -590,7 +715,7 @@ async function taskXiaDaily(env, ctx) {
 
   const path = dailyPath("xia", today);
   await writeArtifact(path, body, env, ctx);
-  logDry("task.xia-daily", { today, path, polish_count: polish.length, dry_run: true });
+  logDry("task.xia-daily", { today, path, polish_count: polish.length, dry_run: mental.dry_run });
   return { task: "xia-daily", ok: true, path, dry_run: mental.dry_run };
 }
 
@@ -616,7 +741,7 @@ async function taskClaudeDaily(env, ctx) {
 
   const path = dailyPath("claude", today);
   await writeArtifact(path, body, env, ctx);
-  logDry("task.claude-daily", { today, path, dry_run: true });
+  logDry("task.claude-daily", { today, path, dry_run: fiction.dry_run });
   return { task: "claude-daily", ok: true, path, dry_run: fiction.dry_run };
 }
 
@@ -638,13 +763,15 @@ async function taskDeepseekDaily(env, ctx) {
     `> dry_run=${compare.dry_run}　预算：DeepSeek 通道 checkBudget 守卫　生成时间(UTC+8)：${new Date().toISOString()}\n\n` +
     renderScanSection(scan) + "\n" +
     `## 中华传统文化 × 装备论（每日 1 条对照）\n\n` +
-    `**相同点**\n- （占位，待接入 DEEPSEEK_API_KEY）\n\n` +
-    `**不同点**\n- （占位，待接入凭证）\n\n` +
-    `**原文对照**\n\n${compare.placeholder || "（占位输出）"}\n`;
+    // 2026-10-02 修正：原模板硬编码"相同点（占位，待接入 DEEPSEEK_API_KEY）"，
+    // 即使真实输出已生成也显示"待接入"，属误导。改为按 dry_run 如实呈现。
+    (compare.dry_run
+      ? `> dry_run：DEEPSEEK_API_KEY 未配置或预算停付，本条无真实模型输出。\n`
+      : `${compare.placeholder || compare.output || "（模型返回空）"}\n`);
 
   const path = dailyPath("deepseek", today);
   await writeArtifact(path, body, env, ctx);
-  logDry("task.deepseek-daily", { today, path, dry_run: true, budget: compare.budget });
+  logDry("task.deepseek-daily", { today, path, dry_run: compare.dry_run, budget: compare.budget });
   return { task: "deepseek-daily", ok: true, path, budget: compare.budget, dry_run: compare.dry_run };
 }
 
@@ -666,14 +793,16 @@ async function taskCopilotDaily(env, ctx) {
     `> dry_run=${compare.dry_run}　生成时间(UTC+8)：${new Date().toISOString()}\n\n` +
     renderScanSection(scan) + "\n" +
     `## 西方文化 × 装备论（每日 1 条对照）\n\n` +
-    `**相同点**\n- （占位，待接入 COPILOT_TOKEN）\n\n` +
-    `**不同点**\n- （占位，待接入凭证）\n\n` +
-    `**原文对照**\n\n${compare.placeholder || "（占位输出）"}\n`;
+    // 2026-10-02 修正：同 deepseek，去掉硬编码死占位，按 dry_run 如实呈现
+    (compare.dry_run
+      ? `> dry_run：COPILOT 凭证未配置，本条无真实模型输出。\n`
+      : `${compare.placeholder || compare.output || "（模型返回空）"}\n`);
 
   const path = dailyPath("copilot", today);
   await writeArtifact(path, body, env, ctx);
-  logDry("task.copilot-daily", { today, path, dry_run: true });
-  return { task: "copilot-daily", ok: true, path, dry_run: true };
+  // 2026-10-02 修正：原硬编码 dry_run:true 属反向虚报（真跑成功也报空跑），改为透传实际状态
+  logDry("task.copilot-daily", { today, path, dry_run: compare.dry_run });
+  return { task: "copilot-daily", ok: true, path, dry_run: compare.dry_run };
 }
 
 /* ---- 任务 7：Kimi / Moonshot 每日 -------------------------------
