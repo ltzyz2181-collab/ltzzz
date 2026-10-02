@@ -227,9 +227,37 @@
                                             "evidence":  "链上确认 status=1 block=52069380；Blockscout 核验 to=0xA315…491A value=1000000（1 USDC，from agent 0x21F5…7fdc）；agent 余额 41→40 USDC",
                                             "conclusion":  "Grok 第三次自主支出（能力训练型）链上完成，交付物=扫描自动化脚本 scripts/x-lead-scan 补丁"
                                         }
-                         }
+                         },
+                        {
+                            "id":  "txn_0009",
+                            "timestamp":  "2026-10-02T02:03:00.000Z",
+                            "agent":  "owner-okx",
+                            "amount_eth":  0.005,
+                            "recipient":  "0xD834a769b31447daf5a042009CF06fAFCE7e2F51",
+                            "purpose":  "OKX→Base 主网 gas 注入：guardian 0.005 ETH（链上写操作手续费储备，网络 Base 8453，OKX 提币单 434554198）",
+                            "hypothesis":  "交易所→链上 gas 补充，解除 guardian 写操作缺 gas 阻塞",
+                            "network":  "base-mainnet",
+                            "channel":  "okx-withdrawal-434554198",
+                            "status":  "confirmed",
+                            "mode":  "exchange-withdrawal",
+                            "onchain_verified":  "guardian coin_balance=0.00599774 ETH（0.000997旧额+0.005新注入）"
+                        },
+                        {
+                            "id":  "txn_0010",
+                            "timestamp":  "2026-10-02T02:11:00.000Z",
+                            "agent":  "owner-okx",
+                            "amount_eth":  0.003,
+                            "recipient":  "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+                            "purpose":  "OKX→Base 主网 gas 注入：agent EOA 0.003 ETH（USDC 结算/锚定等操作需 ETH 付 gas，网络 Base 8453，OKX 提币单 434555994）",
+                            "hypothesis":  "agent 出金签名人 gas 储备，保障后续结算与锚定可执行",
+                            "network":  "base-mainnet",
+                            "channel":  "okx-withdrawal-434555994",
+                            "status":  "confirmed",
+                            "mode":  "exchange-withdrawal",
+                            "onchain_verified":  "agent coin_balance=0.00364094 ETH（含 0.003 新注入）"
+                        }
                      ],
-    "next_txn_id":  9,
+    "next_txn_id":  11,
     "daily_summary":  {
                           "2026-09-29":  {
                                              "gpt":  {
@@ -258,6 +286,13 @@
                                                           "count":  3,
                                                           "note":  "prop_grok_001 打样 1U + prop_grok_002 挣回型 SKU 文案 2U + prop_grok_003 能力训练扫描自动化 1U"
                                                       }
+                                         },
+                          "2026-10-02":  {
+                                             "owner_okx":  {
+                                                              "total_usdc":  0,
+                                                              "count":  0,
+                                                              "note":  "非 USDC 支出：OKX→Base 两笔 gas 注入 ETH（guardian 0.005 txn_0009 / agent 0.003 txn_0010），交易账户余额 28 USDT 购 ETH 0.010155 后续资金"
+                                                          }
                                          }
                       },
     "monthly_summary":  {
@@ -320,5 +355,5 @@
     "refill":  {
 
                },
-    "last_updated":  "2026-10-02T07:05:00.000Z"
+    "last_updated":  "2026-10-02T02:15:00.000Z"
 }
