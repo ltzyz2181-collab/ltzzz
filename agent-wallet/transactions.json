@@ -161,9 +161,31 @@
                              "status":  "confirmed",
                              "mode":  "local",
                              "note":  "V3 SwapRouter02(0x2626…) quote/swap 在 USDC/WETH fee10000 池上经双 RPC 验证真实回滚（Quoter 正常），改用官方 Uniswap V2 Router 完成；V2 pair(USDC,WETH)=0x88A43bbDF9D098eEC7bCEda4e2494615dfD9bB9C 价格≈2692 USDC/ETH"
+                         },
+                         {
+                             "id":  "txn_0006",
+                             "timestamp":  "2026-10-01T13:35:00.000Z",
+                             "agent":  "grok",
+                             "amount_usdc":  1,
+                             "recipient":  "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+                             "purpose":  "LTZZZ 首个海外 AI 真实花钱打样 prop_grok_001：XAI/Grok 自主提案，agent 运营池出 1 USDC 至测试回收地址（可回收），验证 AI 提案→白名单出金→链上留痕→AI 验收闭环",
+                             "hypothesis":  "AI 自主出金闭环（提案→策略校验→出金→账本→声誉）端到端可用",
+                             "success_criteria":  "1 USDC 到账 0xA315 + tx confirmed + 账本回填 + 英文 outreach 入库",
+                             "experiment_id":  "prop_grok_001",
+                             "proposal":  "agent-wallet/proposals/grok.json#prop_grok_001",
+                             "reasoning_summary":  "Grok 提案雇佣豆包产出英文获客 outreach；资金用于 LTZZZ 获客，符合政策；单笔 1 USDC 远低于 20 上限",
+                             "tx_hash":  "0xead7539e3b6acc8f65c942f856ae84d6440665ebd21e002d340a65096c3bf117",
+                             "status":  "confirmed",
+                             "mode":  "local",
+                             "outcome":  {
+                                            "status":  "success",
+                                            "verified_at":  "2026-10-01T13:36:00.000Z",
+                                            "evidence":  "链上确认 status=1 block=52063278；agent 钱包 USDC 45→44（1 USDC 出账）；Grok 成为账本上第一个真动过钱的海外 AI",
+                                            "conclusion":  "AI 自主出金闭环跑通：Grok 提案→豆包执行→链上确认→账本留痕"
+                                        }
                          }
                      ],
-    "next_txn_id":  6,
+    "next_txn_id":  7,
     "daily_summary":  {
                           "2026-09-29":  {
                                              "gpt":  {
@@ -186,7 +208,12 @@
                                                            "total_usdc":  5,
                                                            "count":  1,
                                                            "note":  "内部资产转换 USDC→WETH→ETH，非营收非对外转出"
-                                                         }
+                                                         },
+                                             "grok":  {
+                                                          "total_usdc":  1,
+                                                          "count":  1,
+                                                          "note":  "prop_grok_001 首个 AI 自主出金打样"
+                                                      }
                                          }
                       },
     "monthly_summary":  {
@@ -208,7 +235,11 @@
                                             "infra":  {
                                                           "total_usdc":  5,
                                                           "count":  1
-                                                      }
+                                                      },
+                                            "grok":  {
+                                                         "total_usdc":  1,
+                                                         "count":  1
+                                                     }
                                         }
                         },
     "circuit":  {
@@ -221,11 +252,17 @@
                                               "ok":  true,
                                               "amount":  1,
                                               "agent":  "gpt"
+                                          },
+                                          {
+                                              "at":  "2026-10-01T13:35:00.000Z",
+                                              "ok":  true,
+                                              "amount":  1,
+                                              "agent":  "grok"
                                           }
                                       ]
                 },
     "refill":  {
 
                },
-    "last_updated":  "2026-10-01T18:20:52.197Z"
+    "last_updated":  "2026-10-01T13:36:00.000Z"
 }
