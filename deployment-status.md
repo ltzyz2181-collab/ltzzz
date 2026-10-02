@@ -488,7 +488,11 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 
 ## K4 · 执行单其余项
 - N1：prop_grok_004 **不执行转账**（收款方为自家回收地址，违反 v0.5 空转禁令）✅ 维持 proposed。
-- N2：x402 外部收款方调研中（找真实支持 USDC 的 x402 AI 服务，找不到如实报无）。
+- N2：x402 外部收款方调研完成（2026-10-02，搜索结果见下）——**存在真实可用的 Base 主网 x402 服务**：
+  - `agent402.tools`：OpenAI 兼容推理市场，明确支持 **Base 主网 USDC 结算**（npm @x402/core，AGENT_KEY 即付），最匹配 agent 钱包现状
+  - `x402cloud.ai`：OpenAI 兼容推理按调用 USDC 计费（当前 Base Sepolia 测试网）
+  - `x402engine`：113 API 路由 / 77 LLM 路由 pay-per-call，无 key（railway 托管）
+  - 下一步：待总控/owner 拍板选一家（建议 agent402.tools），把端点+收款地址加进 spending-policy.json x402_endpoints → agent-pay-worker 付 1–2 USDC 买一次真实调用（tx_hash + 结果入库）。**未获批不支付。**
 - N3：① doubao DOUBAO_MODEL Secret 值=Key.doc 火山方舟段（待确认是否为方舟当前启用 Endpoint）；② xia 等 Grok 报团队可用模型名；③ gpt 401 需 owner platform.openai.com 重生成；④ claude 余额不足不修（对话框模式）。
 - 红线核验：Key 值全程只进 Secret/内存，未入对话、未入库、未落盘明文（临时脚本仅输出掩码/状态）；ltzzz-secrets.md 未触碰。
 
