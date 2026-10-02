@@ -1,20 +1,68 @@
 {
-  "policy_version": "2.1.0",
+  "policy_version": "2.2.0",
   "experiment_mode": true,
-  "description": "LTZZZ 钱包 v2.1：AI 自主花钱找需求 + 收入闭环（Agent Economy）。在 v2 基础上新增：earning_policy（增收/分成）、reputation_grades（S/A/B/C/D 信誉等级）、reasoning proof（推理证明）、guardian（守护告警）。v2 修正沿用：白名单只允许链上地址与 x402 端点。",
+  "description": "LTZZZ 钱包 v2.2（双轨制）：owner 2026-10-02 指令——agent 运营钱包各 AI 自主花、不问人；Safe 五签金库要审批。花钱目的是产生记忆与自主能力，挣钱是副产品。取代 v0.4 的逐笔人工确认口径。详见 policy/spending-rules-v0.5.md。",
   "network": "base",
   "usdc_contract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "dual_track": {
+    "track_a_agent_wallet": {
+      "address": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+      "network": "base",
+      "approval_required": false,
+      "who_may_spend": "任何已注册 DID 席位，自主提案自主执行",
+      "note": "余额低于 low_balance_floor_usdc 时自动停花并告警（不问 owner，只记录+停）"
+    },
+    "track_b_safe_treasury": {
+      "address": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+      "network": "ethereum",
+      "approval_required": true,
+      "approval": "五签多签 + owner 确认；AI 只能提案，不能签名、不能广播"
+    },
+    "still_requires_owner": [
+      "动用 track_b Safe 金库资金",
+      "注册新账号 / 实名认证 / 绑卡",
+      "单笔超过 max_per_transaction_usdc",
+      "真实收款通道首次开闸（Stripe/PayPal 首次启用收款）"
+    ]
+  },
   "global_limits": {
     "max_per_transaction_usdc": 20,
-    "max_daily_usdc": 100,
+    "max_daily_usdc": 60,
     "max_weekly_usdc": 300,
     "max_monthly_usdc": 500,
+    "low_balance_floor_usdc": 5,
     "velocity": {
       "max_transactions_per_hour": 6,
       "consecutive_failures_to_halt": 3
     }
   },
+  "spending_priority": {
+    "note": "owner 定调：主要产生记忆与自主能力，挣钱是副产品。据此排优先级，waste 判定依此。",
+    "order": [
+      "1. 产生记忆与自主能力：买 API 额度让通道从 dry_run 变 live；买工具/脚本/流水线固化；买数据与检索额度",
+      "2. 修复能力短板：补 Key、补模型名、补回调端点、补部署",
+      "3. 获客与变现（副产品）：SKU 上架、投放测试、联盟佣金"
+    ],
+    "forbidden": "为'看起来在花钱'而转账到回收地址空转；链路打样只允许一次（prop_grok_001 已用掉该额度）",
+    "waste_test": "一笔支出若未让某席从'不能干'变'能干'、且未产生可入库记忆条目，判为 waste（声誉 ×0.5）"
+  },
   "agent_budgets": {
+    "qianwen": {
+      "daily_usdc": 20,
+      "purpose": "总控：巡检、派单、审计、记忆回填；主动发现'该花没花'的能力短板并提案",
+      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"],
+      "duty_note": "owner 2026-10-02 指令'我希望你主动去花'：总控承担主动花钱职责，每日巡检需检查是否有 dry_run 席位可通过购买额度转为 live"
+    },
+    "kimi": {
+      "daily_usdc": 15,
+      "purpose": "总控挑战席/境外任务：账本对账、归档提炼、英文本地化、境外支付链路调研",
+      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+    },
+    "kimi-global": {
+      "daily_usdc": 15,
+      "purpose": "境外工位（与 kimi 同席不同通道）：海外平台与境外支付链路",
+      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+    },
     "gpt": {
       "daily_usdc": 20,
       "purpose": "战略规划、记忆维护、实验设计",
@@ -120,11 +168,14 @@
     "freeze_on_breach": true
   },
   "notes": [
-    "熔断器不是合规摆设：一个坏假设就烧光实验资金，熔断器是让实验能活到明天的装置。",
-    "每笔支出必须带 hypothesis + success_criteria + experiment_id，结果回填后才可核销下一轮预算。",
+    "【v2.2 双轨制】A 轨 agent 钱包（0x21F5…7fdc）各 AI 自主花、不问 owner；B 轨 Safe 五签（0x7637…58a3）必须审批，AI 只能提案不能签名。",
+    "【花钱的目的】owner 定调：主要产生记忆与自主能力，挣钱是副产品。判定 waste 的标准是'有没有让某席从不能干变能干、有没有产生可入库记忆条目'。",
+    "【仍需 owner 的四类】动 Safe 资金 / 注册账号与实名绑卡 / 单笔超 20 USDC / 真实收款通道首次开闸。除此之外一律不问。",
+    "熔断器不是合规摆设：一个坏假设就烧光实验资金，熔断器是让实验能活到明天的装置。熔断只冻 A 轨该通道，恢复由委员会 2/3 决议，不必等 owner。",
+    "每笔支出必须带 hypothesis + success_criteria + experiment_id + reasoning_hash + outcome + tx_hash；没有链上 receipt 一律视为未发生。无 receipt 却标 confirmed = 虚报，直接熔断。",
     "预算 = 日预算 × 信誉乘数（等级 S/A/B/C/D 决定乘数与上限），信誉由实验成功率+审计通过率+ROI 驱动。",
-    "AI 收入闭环：内部按 profit_share 记 P&L；外部 x402 售卖 AI 服务后收入回流 Safe。",
-    "API 费（OpenAI/Anthropic/xAI/DeepSeek/火山）走 Stripe/卡体系，不走本钱包。",
-    "identity-registry.json 存放各 AI 的 DID 与信誉等级（链上注册表合约部署后同步上链）。"
+    "API 费可用 A 轨钱包买（USDC 兑换或经 x402/服务商），也可走卡体系；两者都要记账。",
+    "余额低于 low_balance_floor_usdc(5) 自动停花并告警——这是自约束，不是请示。",
+    "identity-registry.json 存放各 AI 的 DID 与信誉等级（已上链：ReputationRegistry 0x44Ee…2660，Base 主网）。"
   ]
 }
