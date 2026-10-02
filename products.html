@@ -50,12 +50,13 @@ h1 { text-align: center; font-size: clamp(1.6rem, 4vw, 2.5rem); margin-bottom: 1
     <div class="tg-desc">99 元 AI 模板包 → 私聊 <b>@ltzzz_agi_lab_bot</b> 下单，USDT / 后续店铺支付 · 收到付款即发交付文件</div>
     <a class="tg-btn" href="https://t.me/ltzzz_agi_lab_bot" target="_blank" rel="noopener">在 Telegram 私聊下单</a>
     <div class="tg-desc" style="margin-top:10px;color:#888">🇨🇳 微信下单：公众号回复 <b>下单 99</b>（订单号 WX-YYYYMMDD-XXXX 自动生成），人工确认收款后发货 · USDT 发 Tx 自动发货</div>
-    <div class="tg-desc" style="margin-top:10px;color:#666">🌍 LTZZZ Store → <b>ltzyz.gumroad.com</b>（海外版：$19 模板包 / $5 周报订阅 / $29 Agent 起步包）</div>
+    <div class="tg-desc" style="margin-top:10px;color:#666">🌍 LTZZZ Store → <a href="https://ltzyz.gumroad.com" target="_blank" rel="noopener" style="color:#00f0ff">ltzyz.gumroad.com</a>（海外版：$19 模板包 / $5 周报订阅 / $29 Agent 起步包）</div>
   </div>
 </div>
 <script>
 const fallback = { products: [
   { id:'ai-template-pack', name:'AI 模板包', price:99, price_usd:14, category:'数字产品', description:'100+ 提示词模板，全平台覆盖', delivery:'下单后数字链接交付' },
+  { id:'agent-economy-kit', name:'AI Agent Economy Starter Kit', price:19, price_usd:19, category:'Digital Product', description:'Run your own multi-AI money loop with on-chain receipts — proposals, policy checks, ledger, reputation', delivery:'Instant delivery via Gumroad', gumroad:'https://ltzyz.gumroad.com/l/ugyhy' },
   { id:'weekly-report', name:'行业周报（月）', price:49, price_usd:7, category:'内容', description:'每周一推送', delivery:'邮箱/TG' },
   { id:'tg-bot-custom', name:'Telegram 机器人定制', price:599, price_usd:85, category:'服务', description:'定制 Bot 含部署', delivery:'服务交付' },
   { id:'agent-starter', name:'AI Agent 起步包', price:199, price_usd:29, category:'数字产品', description:'含 DID 模板、Memory Gate 清单、Daily Worker 示例', delivery:'网盘+仓库 fork 指南' },
@@ -76,7 +77,7 @@ function render(data) {
       '<div class="name">' + p.name + '</div>' +
       '<div class="price-row"><span class="price">' + main + '</span><span class="usd">' + sub + '</span></div>' +
       '<div class="desc">' + (p.description||'') + '</div>' +
-      '<a class="btn" href="checkout.html?product=' + encodeURIComponent(p.id) + '">购买 / Checkout</a>';
+      '<a class="btn" ' + (p.gumroad ? 'href="' + p.gumroad + '" target="_blank" rel="noopener"' : 'href="checkout.html?product=' + encodeURIComponent(p.id) + '"') + '>' + (p.gumroad ? 'Buy on Gumroad' : '购买 / Checkout') + '</a>';
     grid.appendChild(el);
   });
 }
