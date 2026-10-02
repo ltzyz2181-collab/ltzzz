@@ -1,0 +1,30 @@
+{
+  "policy_version": "v0.4",
+  "network": "base-mainnet",
+  "usdc_contract": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+  "agents": {
+    "grok": {
+      "daily_usdc_cap": 15,
+      "single_tx_cap_usdc": 20,
+      "whitelist_recipients": ["0xA315E37028c0AFe95C7da3D101f83f0111fC491A"],
+      "allowed_purposes": ["acquisition", "content", "engineering", "ai-hire-ai"]
+    },
+    "doubao": {
+      "daily_usdc_cap": 10,
+      "single_tx_cap_usdc": 10,
+      "whitelist_recipients": ["0xA315E37028c0AFe95C7da3D101f83f0111fC491A"],
+      "allowed_purposes": ["deliverables", "content", "engineering"]
+    }
+  },
+  "circuit_breaker": {
+    "max_usdc_per_hour_all_agents": 10,
+    "require_reasoning_hash_for_tx_over": 5,
+    "human_veto": "safe-multisig",
+    "auto_pause_on_missing_receipt": true
+  },
+  "earn_back": {
+    "revenue_split": [0.3, 0.4, 0.3],
+    "reinvest_after_m1": true,
+    "m1_definition": "first external revenue txn in transactions.json"
+  }
+}
