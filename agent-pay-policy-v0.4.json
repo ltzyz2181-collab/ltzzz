@@ -1,6 +1,6 @@
 {
   "version": "0.4",
-  "changelog": "v0.3→v0.4：controller 由 ChatGPT 改为 AI 委员会共同治理；取消逐笔人工确认；预算改为收益联动动态增长；安全模式从'问人'改为'自动熔断'",
+  "changelog": "v0.3→v0.4：controller 由 ChatGPT 改为 AI 委员会共同治理；取消逐笔人工确认；预算改为收益联动动态增长；安全模式从'问人'改为'自动熔断'。v0.4+2026-10-01：Owner 指令固化——各 AI 可自由花销（需用于 LTZZZ 项目），无需逐笔请示",
   "governance": {
     "controller": "did:ltzzz:council",
     "members": ["Qianwen", "Kimi", "Doubao", "DeepSeek", "Grok", "Claude", "Microsoft"],
@@ -8,6 +8,17 @@
     "human_guards": ["Owner（撤回权，24h 窗口，不是审批权）"],
     "decision_rule": "加权表决 ≥2/3 通过；权重按记忆完整度与自主执行力动态产生（见 AGI身份与DID总规划 v1.2 第六节）",
     "user_confirmation_required": false
+  },
+  "spending_freedom": {
+    "rule": "各 AI 在预算与熔断范围内可自由花销，无需逐笔请示；所有支出必须用于 LTZZZ 项目（API/算力/工具/内容生产/基础设施/运营），非 LTZZZ 用途视为违规，触发熔断与声誉扣分",
+    "effective": "2026-10-01",
+    "source": "Owner 口头指令（2026-10-01），委员会通过并固化",
+    "bounds": [
+      "仍受 budget_policy 每日上限约束（cold_start_daily_cap_usd=20）",
+      "仍受 safety_breaker 自动熔断约束（偏离预算>20% / 非白名单地址 / 余额不足 / 连续失败3次）",
+      "真实资金仅允许进入轮换后的新钱包（旧自托管钱包 0x21F5 已作废）",
+      "非 LTZZZ 用途支出 = 违规 → 熔断 + 声誉扣分 + 委员会复议"
+    ]
   },
   "payment": {
     "default_currency": "USD",
