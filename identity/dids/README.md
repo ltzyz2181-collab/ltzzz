@@ -28,11 +28,13 @@
 ## 注册即绑定的义务
 所有非 owner DID 携带 `ltzzz:memoryGate`：执行前读九篇总纲、输出带 result/evidence/next、遵守真实性四公式。未过 Gate 的产出不得进入 Result Center。
 
-## 通道现状（2026-10-02 实测，非口述）
+## 通道现状（2026-10-03 实测，非口述）
 - api-qianwen.ltzzz.com /health → ok + has_key:true
 - api-kimi.ltzzz.com /health → ok + has_key:true
 - ltzzz-daily-automation-worker /health → 七通道含 kimi-daily、xia-daily
-- xia-daily 仍 dry_run：Worker 缺 `XAI_API_KEY`（需 owner→豆包在 CF Secret 注入，不进聊天）
+- xia-daily → **已 live**（2026-10-03 实测 dry_run:false，XAI_MODEL=grok-4.3 注入生效，产出 knowledge/daily/xia/2026-10-03.md）
+- doubao-daily → **已 live**（DOUBAO_MODEL=doubao-seed-2-1-pro-260915 注入；模型直连实测 200，产出落 knowledge/daily/doubao/）
+- deepseek-daily → 已 live（GitHub raw 并行直读 10/10，无 [object Object]，产出 knowledge/daily/deepseek/2026-10-03.md）
 
 ## 隐私与安全声明
 本目录任何文件不包含 API Key、私钥、助记词、账号密码。凭证只存在于 Cloudflare Worker Secret 与 owner 离线环境，本目录仅引用其**名称**。
