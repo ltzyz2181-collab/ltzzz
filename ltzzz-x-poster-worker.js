@@ -1,5 +1,7 @@
-﻿// LTZZZ 路 X (Twitter) 鑷姩鍙戝笘 Worker
-// POST /tweet   { "text": "..." }  鈫?鍙戜竴鏉℃帹鏂?// GET  /health
+﻿// LTZZZ X (Twitter) auto-poster Worker
+// POST /tweet   { "text": "..." } -> post a tweet (OAuth2 Bearer preferred, OAuth1 fallback)
+// POST /refresh -> exchange refresh token for new access token (OAuth2)
+// GET  /health
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -8,7 +10,6 @@ function json(data, status = 200) {
   });
 }
 
-// Web Crypto HMAC-SHA1 鈫?Base64
 async function hmacSha1Base64(keyStr, dataStr) {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -18,7 +19,6 @@ async function hmacSha1Base64(keyStr, dataStr) {
   return btoa(String.fromCharCode(...new Uint8Array(sig)));
 }
 
-// RFC 3986 涓ユ牸 percent-encode锛堟瘮 encodeURIComponent 鏇翠弗鏍硷級
 function rfc3986(s) {
   return encodeURIComponent(s)
     .replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28')
@@ -56,6 +56,11 @@ export default {
           consumer: !!env.X_CONSUMER_KEY,
           access: !!env.X_ACCESS_TOKEN,
           tokenSecret: !!env.X_ACCESS_SECRET
+        },
+        oauth2: {
+          userToken: !!env.X_USER_TOKEN,
+          refreshToken: !!env.X_REFRESH_TOKEN,
+          client: !!env.X_CLIENT_ID && !!env.X_CLIENT_SECRET
         }
       });
     }
@@ -68,28 +73,55 @@ export default {
       const text = String(body.text || '').slice(0, 280);
       if (!text) return json({ error: 'text is required' }, 400);
 
-      const secrets = {
-        consumerKey: env.X_CONSUMER_KEY,
-        consumerSecret: env.X_CONSUMER_SECRET,
-        accessToken: env.X_ACCESS_TOKEN,
-        accessSecret: env.X_ACCESS_SECRET
-      };
-      if (!secrets.consumerKey || !secrets.accessToken) {
-        return json({ ok: false, error: 'X credentials not configured' }, 500);
+      const apiUrl = 'https://api.x.com/2/tweets';
+      let headers = { 'Content-Type': 'application/json' };
+
+      if (env.X_USER_TOKEN) {
+        // OAuth2 user-context Bearer (preferred, no signature)
+        headers['Authorization'] = 'Bearer ' + env.X_USER_TOKEN;
+      } else {
+        const secrets = {
+          consumerKey: env.X_CONSUMER_KEY,
+          consumerSecret: env.X_CONSUMER_SECRET,
+          accessToken: env.X_ACCESS_TOKEN,
+          accessSecret: env.X_ACCESS_SECRET
+        };
+        if (!secrets.consumerKey || !secrets.accessToken) {
+          return json({ ok: false, error: 'X credentials not configured' }, 500);
+        }
+        const header = await oauthHeader('POST', apiUrl, {}, secrets);
+        if (url.searchParams.has('debug')) return json({ debug: header, secrets: secrets });
+        headers['Authorization'] = header;
       }
 
-      const apiUrl = 'https://api.twitter.com/2/tweets';
-      const header = await oauthHeader('POST', apiUrl, {}, secrets);
-      if (new URL(request.url).searchParams.has('debug')) return json({debug: header, secrets: secrets});
       const r = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Authorization': header,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({ text })
       });
-      const j = await r.json();
+      const j = await r.json().catch(() => ({}));
+      return json({ ok: r.ok, data: j, http: r.status }, r.ok ? 200 : 500);
+    }
+
+    if (url.pathname === '/refresh' && request.method === 'POST') {
+      const auth = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+      if (auth !== env.LTZZZ_AGENT_TOKEN) return json({ error: 'unauthorized' }, 401);
+      if (!env.X_REFRESH_TOKEN || !env.X_CLIENT_ID || !env.X_CLIENT_SECRET) {
+        return json({ ok: false, error: 'refresh credentials not configured' }, 500);
+      }
+      const body = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: env.X_REFRESH_TOKEN,
+        client_id: env.X_CLIENT_ID,
+        client_secret: env.X_CLIENT_SECRET
+      });
+      const r = await fetch('https://api.x.com/2/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+      const j = await r.json().catch(() => ({}));
+      // NOTE: rotated refresh token (if any) must be re-injected by the operator.
       return json({ ok: r.ok, data: j, http: r.status }, r.ok ? 200 : 500);
     }
 
