@@ -117,7 +117,7 @@ export default {
 async function publishToYouTube(env, videoKey, title, description) {
   // 上传 worker 需要公开可拉取的 video_url；R2 key 不是 URL。
   // 若配置了 PUBLIC_VIDEO_BASE（R2 自定义域名或公共访问前缀），则拼 URL；否则报需人工上传。
-  const base = env.PUBLIC_VIDEO_BASE; // 例如 https://videos.ltzzz.com/
+  const base = env.PUBLIC_VIDEO_BASE || 'https://videos.ltzzz.com/'; // 默认走 r2-public worker 公共域
   if (!base) {
     return { ok: false, error: 'PUBLIC_VIDEO_BASE not set — R2 直链未配，无法 worker 拉取上传；请配置 R2 自定义域名后启用自动发' };
   }
