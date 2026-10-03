@@ -1,52 +1,70 @@
 {
-  "version": "1.0",
-  "updated_at": "2026-09-28T09:26:00+08:00",
-  "trigger": "GitHub Actions daily-agent-tasks.yml：cron '0 0 * * *'（UTC，北京时间 08:00）+ workflow_dispatch 手动触发；由 scripts/run-daily-tasks.mjs 读取 data/memory/<agent>.json 拼上下文后调用各 AI API；密钥只存 GitHub Secrets，不写入代码、不发给任何 AI",
+  "version": "1.1",
+  "updated_at": "2026-10-02T17:10:00-07:00",
+  "trigger": "GitHub Actions daily-agent-tasks.yml：cron '0 0 * * *'（UTC，北京时间 08:00，GitHub 可能延迟启动）+ workflow_dispatch 手动触发；scripts/run-daily-tasks.mjs 每次实际读取六份核心记忆，再调用已配置模型；密钥只从 GitHub Secrets 注入，不写入代码、不传给模型。",
+  "core_memory": {
+    "files": [
+      "ltzzz-memory/魄.md",
+      "ltzzz-memory/识神.md",
+      "ltzzz-memory/梦境数据库.md",
+      "ltzzz-memory/文明研究.md",
+      "ltzzz-memory/项目历史.md",
+      "ltzzz-memory/重要事件.md"
+    ],
+    "reflection_file": "data/reflections/YYYY-MM-DD.md",
+    "execution_log": "data/results/YYYY-MM-DD.json",
+    "latest_summary": "data/reports/latest.md",
+    "promotion_policy": "读后感只保存为每日候选，不自动修改 ltzzz-memory/ 长期记忆文件；高影响记忆按 PROMOTION.md 等待人工确认。"
+  },
   "honesty_rules": [
-    "无 API Key / API 失败 → results 记 failed/not_configured，不伪造产出",
-    "微软席未部署：不加入自动流程，results 记 skipped 并保留 user_action_required"
+    "每次运行记录实际读取的文件路径、字节数、SHA-256 与 complete/partial/unavailable 状态；未读取不得声称已读取。",
+    "无 API Key / API 失败 → results 记 failed/not_configured，不伪造产出。",
+    "核心记忆只作研究材料；区分模板、观察、假设和已验证事实；缺失文件时明确标记。",
+    "读后感保存为每日候选，不自动写回六份核心记忆。",
+    "本任务只生成读后感和执行建议，不产生 SPEND_PROPOSAL，不执行钱包、转账或付款操作。",
+    "微软席未部署：不加入自动流程，results 记 skipped 并保留 user_action_required。"
   ],
   "tasks": [
     {
       "agent": "gpt",
-      "task": "读取仓库内容，规划并记录一条任务；对记忆/任务模板做一次小修订",
+      "task": "基于六份核心记忆写简明读后感，提出一项可验证的下一步任务和一条记忆候选建议。",
       "trigger": "OPENAI_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/gpt.json 当日新增 entry；data/results/<当日>.json 有记录；模板修订以 polish/proposal 形式提出",
+      "acceptance": "data/memory/gpt.json 当日新增 entry，标注实际读取的核心文件；data/reflections/YYYY-MM-DD.md 有 GPT 读后感；data/results/YYYY-MM-DD.json 有文件读取审计与模型状态。",
       "status": "deployed"
     },
     {
       "agent": "doubao",
-      "task": "读取仓库内容，整理一次；产出一份视频脚本草稿",
-      "trigger": "DOUBAO_API_KEY（Agent Plan，模型 doubao-seed-evolving）+ 定时任务脚本",
-      "acceptance": "data/memory/doubao.json 当日新增 entry（含视频脚本草稿）；results 有记录",
+      "task": "基于六份核心记忆写简明读后感，并产出一份围绕观/行深主题的中文短视频脚本草稿（≤60 秒、9:16）；不得发布。",
+      "trigger": "DOUBAO_API_KEY + 定时任务脚本",
+      "acceptance": "data/memory/doubao.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感与草稿；results 有完整读取审计。",
       "status": "deployed"
     },
     {
       "agent": "grok",
-      "task": "读取仓库内容，记录一条「AI 对心理健康某方面的实际作用」；维护 App / Web3 代码",
+      "task": "基于六份核心记忆写简明读后感，并从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码。",
       "trigger": "XAI_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/grok.json 当日新增 entry；App/Web3 打磨以 polish 提案记录",
+      "acceptance": "data/memory/grok.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感；results 有完整读取审计。",
       "status": "deployed"
     },
     {
       "agent": "claude",
-      "task": "读取仓库内容，写一段不少于 50 字的小说片段，逐日连载",
+      "task": "基于六份核心记忆写简明读后感，并为原有小说连载写一段不少于 50 字的草稿；不改核心记忆。",
       "trigger": "ANTHROPIC_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/claude.json 当日新增 entry，片段 ≥50 字且承接前日",
+      "acceptance": "data/memory/claude.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 记录读后感或明确记录调用失败；results 保留状态。",
       "status": "deployed"
     },
     {
       "agent": "deepseek",
-      "task": "读取仓库内容，对照中华传统文化与项目理念，记录一条异同",
+      "task": "基于六份核心记忆写简明读后感，并比较中华传统文化与项目理念的一项异同，分清出处、观察和推测。",
       "trigger": "DEEPSEEK_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/deepseek.json 当日新增 entry",
+      "acceptance": "data/memory/deepseek.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感与比较；results 有完整读取审计。",
       "status": "deployed"
     },
     {
       "agent": "microsoft",
-      "task": "读取仓库内容，对照西方文化与项目理念，记录一条异同",
+      "task": "阅读六份核心记忆并比较西方文化与项目理念的一项异同。",
       "trigger": "暂不部署（Copilot API 面向企业 M365，个人开发者难以直接调用）",
-      "acceptance": "等待用户确认：A. 由 GPT/Claude 委托执行（results 标注 agent=microsoft, executed_by=claude/gpt）；B. 申请 Microsoft 365 Copilot API",
+      "acceptance": "等待用户确认：A. 委托 GPT/Claude 执行（results 标注 agent=microsoft, executed_by=claude/gpt）；B. 申请 Microsoft 365 Copilot API",
       "status": "deferred"
     }
   ]
