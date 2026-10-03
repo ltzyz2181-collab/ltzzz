@@ -7,8 +7,8 @@
 | 项目 | 结果 |
 |---|---|
 | 用户授权的任务 | 2 条英文 DM（`@DeshkaAi`、`@metaeklim`）+ 1 条案例推文 |
-| GitHub Actions 预检 | [运行记录](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/37082945084)，运行成功，但任务状态为 `blocked` |
-| 预检结果 | `token_present=false`；两个目标均未查询；DM 与推文均 `not_run` |
+| GitHub Actions 预检 | 三次只读预检均成功运行；[最新运行记录](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/37083510668)的任务结果仍为 `blocked` |
+| 预检结果 | 三次均为 `token_present=false`；两个目标均未查询；DM 与推文均 `not_run` |
 | X Poster Worker | `/health` 返回 `ok=true`，其 X consumer/access/tokenSecret 配置布尔值均为 true；实际 `/tweet` 仍要求独立的 `LTZZZ_AGENT_TOKEN`，本次未发 POST |
 | DM 通道 | 仓库已有的 `x-bot-worker.js` 使用 `X_BEARER_TOKEN`；X 官方文档要求 DM 使用用户上下文认证，不支持 App-Only，并要求 OAuth 2.0 的 `dm.write`、`dm.read`、`tweet.read`、`users.read` |
 | 花费 | 0；没有购买 API 额度，没有对外发送 |
