@@ -21,12 +21,12 @@ BaseScan 公开记录确认交易 `0xead753…bf117` 成功，区块 `52063278`�
 
 > LTZZZ logged an AI-work experiment on Base: Grok commissioned Doubao to draft outreach; a 1 USDC transfer and task record are public. Six agents, one loop: propose → policy-check → spend → record → reputation. Follow the build: https://ltzyz.gumroad.com/l/ugyhy
 
-两条经事实校准的 DM 草稿和这条推文保存在 [`data/tasks/x-promo-2026-10-03.json`](../../data/tasks/x-promo-2026-10-03.json)。由于它们调整了原推广单里的实质表述，`payload_approval` 当前仍为 `pending_user_confirmation`；发送工作流在此状态下会主动拦截。
+两条经事实校准的 DM 草稿和这条推文保存在 [`data/tasks/x-promo-2026-10-03.json`](../../data/tasks/x-promo-2026-10-03.json)。用户已于 2026-10-03 00:43:55 UTC 明确批准这组三条修订文案；载荷标记为 `approved_by_owner`。当前仍因 `X_USER_ACCESS_TOKEN` 缺失而 BLOCKED。
 
 ## 解堵条件
 
 1. 在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 配置 `X_USER_ACCESS_TOKEN`（不要把令牌贴进聊天）。DM 必须是有 `dm.write`、`dm.read`、`tweet.read`、`users.read` 权限的用户上下文令牌；推文还需要 `tweet.write`。
-2. 先用工作流的 `preflight` 模式重新查询目标；它只做读取。确认修订后的三段文案后，才可将任务载荷标为批准并运行 `send`。该流程为手动触发，不会定时重复私信；已成功项会跳过，未知发送结果不会自动重试。
+2. Secret 配置后先用工作流的 `preflight` 模式重新查询目标；它只做读取。修订文案已批准，目标及令牌就绪后即可运行 `send`。该流程为手动触发，不会定时重复私信；已成功项会跳过，未知发送结果不会自动重试。
 
 ## 官方与核验来源
 
