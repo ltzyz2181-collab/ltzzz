@@ -1,0 +1,51 @@
+name: LTZZZ X promo one-time outreach
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'preflight = read-only lookup; send = submit the reviewed campaign once'
+        required: true
+        type: choice
+        options:
+          - preflight
+          - send
+        default: preflight
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-x-promo-2026-10-03
+  cancel-in-progress: false
+
+jobs:
+  outreach:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run X campaign
+        env:
+          X_USER_ACCESS_TOKEN: ${{ secrets.X_USER_ACCESS_TOKEN }}
+          X_PROMO_MODE: ${{ inputs.mode }}
+        run: node scripts/x-promo-outreach.mjs
+      - name: Commit execution receipt
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add knowledge/results/2026-10-03-x-promo-receipt.json
+          if git diff --cached --quiet; then
+            echo 'No receipt changes to commit.'
+          else
+            git commit -m 'chore: record X promo preflight or execution receipt'
+            git push origin HEAD:main
+          fi
