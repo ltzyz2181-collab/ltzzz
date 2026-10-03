@@ -19,14 +19,15 @@ $mp4Key   = "queue/$Name.mp4"
 $metaKey  = "queue/$Name.meta.json"
 
 Write-Output "==> 上传视频到 R2 $mp4Key"
-wrangler r2 object put $bucket $mp4Key --file $Video
+# wrangler v4 语法：objectPath 必须是 {bucket}/{key} 一个参数
+wrangler r2 object put "$bucket/$mp4Key" --file $Video --remote
 if ($LASTEXITCODE -ne 0) { Write-Error "视频上传失败"; exit 1 }
 
 $meta = @{ title = $Title; description = $Description; created = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ') } | ConvertTo-Json -Compress
 $metaFile = Join-Path $env:TEMP "queue-meta-$Name.json"
 [IO.File]::WriteAllText($metaFile, $meta, (New-Object Text.UTF8Encoding $false))
 Write-Output "==> 上传元数据到 R2 $metaKey"
-wrangler r2 object put $bucket $metaKey --file $metaFile
+wrangler r2 object put "$bucket/$metaKey" --file $metaFile --remote
 if ($LASTEXITCODE -ne 0) { Write-Error "元数据上传失败"; exit 1 }
 Remove-Item $metaFile -Force
 
