@@ -69,6 +69,10 @@ export default {
           if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
           return json(await updateDescription(env, request, url));
 
+        case '/youtube/update-status':
+          if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+          return json(await updateStatus(env, request, url));
+
         default:
           return json({ error: 'Unknown path: ' + path }, 404);
       }
@@ -266,6 +270,45 @@ async function updateDescription(env, request, url) {
     return { ok: false, http: updateRes.status, error: updateData.error || updateData, note: '可能原因：scope 不含 youtube（需重新 OAuth 授权）' };
   }
   return { ok: true, video_id: videoId, description, updated_at: new Date().toISOString() };
+}
+
+// ============ Update Status（private/unlisted → public 自动转公开）============
+
+async function updateStatus(env, request, url) {
+  const missing = need(env);
+  if (missing.length) throw Object.assign(new Error('Missing secrets: ' + missing.join(', ')), { status: 500 });
+
+  const uk = url.searchParams.get('user_key') || 'default';
+  const raw = await env.KV.get('yt:' + uk, 'json');
+  if (!raw) throw Object.assign(new Error('YouTube not connected. Run /auth/youtube first.'), { status: 401 });
+  const tokens = await refreshIfNeeded(env, raw, uk);
+
+  const body = await request.json().catch(() => ({}));
+  const videoId = body.video_id || url.searchParams.get('video_id');
+  if (!videoId) throw Object.assign(new Error('video_id required'), { status: 400 });
+  const privacyStatus = ['private', 'unlisted', 'public'].includes(body.privacyStatus) ? body.privacyStatus : 'public';
+
+  // videos.update（part=status 改可见性；snippet 需带全量否则可能丢字段，先读再改）
+  const getRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=' + encodeURIComponent(videoId), {
+    headers: { 'Authorization': 'Bearer ' + tokens.access_token },
+  });
+  const getData = await getRes.json().catch(() => ({}));
+  const item = getData.items?.[0];
+  if (!item) throw Object.assign(new Error('video not found: ' + videoId), { status: getRes.status === 404 ? 404 : 500 });
+
+  const updateRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=status', {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + tokens.access_token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: videoId,
+      status: { privacyStatus, selfDeclaredMadeForKids: item.status?.selfDeclaredMadeForKids ?? false },
+    }),
+  });
+  const updateData = await updateRes.json().catch(() => ({}));
+  if (!updateRes.ok || updateData.error) {
+    return { ok: false, http: updateRes.status, error: updateData.error || updateData, note: '可能原因：scope 不含 youtube（需重新 OAuth 授权）' };
+  }
+  return { ok: true, video_id: videoId, privacyStatus, updated_at: new Date().toISOString() };
 }
 
 // ============ Upload ============
