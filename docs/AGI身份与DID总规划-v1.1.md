@@ -1,14 +1,16 @@
-# LTZZZ AGI 身份与 DID 总规划 v1.1
+# LTZZZ AGI 身份与 DID 总规划 v1.2
 
 > 初稿见同目录 `AGI身份与DID总规划.md`（v1.0）。v1.1 补入 ltzzz-memory 总纲要求，并把"X0：本地 DID 文档"从计划变为已产出（见 `identity/dids/`）。
+> v1.2（2026-10-03）：DID 实际落盘 **11 份**（修正原 7 份口径，新增 council/owner-v2/kimi/qianwen）；X2 已从"Base Sepolia 计划"改为"**Base 主网已上线**"（ReputationRegistry 0x44Ee…2660，J1 结算已锚定 batch 2）。
 > 目标：先给每个 AI 注册 DID，搭一套"今天 LTZZZ 直接能用、未来任何 AGI 都能接入"的身份—声誉—资金三层系统。
 > 红线继承：AI 永远不持有完整私钥；涉及真钱的最终决策先问人类；高影响决定、资金、安全、账号权限必须人工确认（ltzzz-memory/README.md 写入规则原文）。
 
-## 〇、v1.1 相对 v1.0 的三处变更
+## 〇、v1.2 相对 v1.0/v1.1 的变更
 
 1. 新增"Memory Gate 是身份的一部分"条款（见第三节末）。
-2. X0 已执行：7 份 DID 文档已落盘 `identity/dids/`，公钥为占位符，链上绑定全部标注 pending——严格遵守"planned ≠ deployed"。
+2. X0 已执行：**11 份** DID 文档已落盘 `identity/dids/`，公钥为占位符，链上绑定（registerAgent）全部标注 pending——严格遵守"planned ≠ deployed"。
 3. 依据"大道至简"，砍掉自造轮子路线：不新写身份合约，复用已有 `ReputationRegistry.sol`；`did:ltzzz` 仅作内部方法名，对外一律桥接 ERC-8004。
+4. **X2 状态更新（v1.2）**：ReputationRegistry 已部署到 **Base 主网**（合约 `0x44Ee56e629768eBf4f83123aFEBE7983c52a2660`，网络声明=Base 主网），不再走 Sepolia 演练；各 Agent 的 registerAgent 仍为待办（合约在主网 ≠ DID 已上链）。
 
 ## 一、借鉴对象（真实存在，已核实）
 
@@ -61,10 +63,10 @@ DID 绑定的是**代理端点和公钥**，不是任何平台登录凭证。各
 
 ## 四、执行路线
 
-- **X0（本地，本轮已完成）**：7 份 DID 文档 JSON-LD 落 `identity/dids/`，公钥为占位密钥对。✅
+- **X0（本地，本轮已完成）**：11 份 DID 文档 JSON-LD 落 `identity/dids/`（gpt/doubao/deepseek/grok/claude/microsoft/kimi/qianwen/council/owner/owner-v2），公钥为占位密钥对。✅
 - **X0.5（下一步，本地）**：把 ai-chats 里已有的真实观察，按模板回填 `ltzzz-memory/` 的魄/识神/梦境数据库等空文件——否则 Memory Gate 读到的是空白。
 - **X1（本地）**：DID 哈希（Merkle root）进每日巡检，`ltzzz-daily-automation-worker` 校验一致性。
-- **X2（需你提供）**：3 个 Safe guardian 主地址确认 → 部署 ReputationRegistry 到 Base Sepolia → 逐个 `registerAgent` 上链 → 存 receipt。
+- **X2（已部署，2026-10-01）**：ReputationRegistry 已部署到 **Base 主网**（合约 `0x44Ee56e629768eBf4f83123aFEBE7983c52a2660`），J1 结算锚定已完成（batch 2）；逐个 `registerAgent` 上链仍为待办（合约在主网 ≠ DID 已绑定）。
 - **X3（链上验证后）**：任务台账按 PAY-ID / TASK-ID / DID 三键关联，打通观→Memory Gate→Policy→Result Center。
 - **X4（主网小额验证后）**：桥接 ERC-8004 主网 Identity Registry，LTZZZ 的 AI 进入公开 Agent 浏览器。
 - **X5（远期）**：Validation 层（TEE/重执行证明），届时才研究自托管执行器与阈值签名。
