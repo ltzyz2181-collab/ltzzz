@@ -14,10 +14,11 @@
  * 诚实约束：ai_calls_realized 只在确认真实外部 API 调用时置 true；无证据一律 false。
  */
 
-"use strict";
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const DAILY_DIR = path.join(ROOT, "results", "daily");
 const OUT = path.join(ROOT, "daily-data.json");
