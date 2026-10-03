@@ -50,61 +50,86 @@
     "qianwen": {
       "daily_usdc": 20,
       "purpose": "总控：巡检、派单、审计、记忆回填；主动发现'该花没花'的能力短板并提案",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"],
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ],
       "duty_note": "owner 2026-10-02 指令'我希望你主动去花'：总控承担主动花钱职责，每日巡检需检查是否有 dry_run 席位可通过购买额度转为 live"
     },
     "kimi": {
       "daily_usdc": 15,
       "purpose": "总控挑战席/境外任务：账本对账、归档提炼、英文本地化、境外支付链路调研",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "kimi-global": {
       "daily_usdc": 15,
       "purpose": "境外工位（与 kimi 同席不同通道）：海外平台与境外支付链路",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "gpt": {
       "daily_usdc": 20,
       "purpose": "战略规划、记忆维护、实验设计",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "doubao": {
       "daily_usdc": 20,
       "purpose": "视频脚本、仓库整理、运营实验",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "deepseek": {
       "daily_usdc": 15,
       "purpose": "研究分析、文化对照、实验设计",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "grok": {
       "daily_usdc": 15,
       "purpose": "海外趋势、风控筛查、实验设计",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "claude": {
       "daily_usdc": 15,
       "purpose": "小说连载、内容质量、实验设计",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "microsoft": {
       "daily_usdc": 15,
-      "executed_by": ["claude", "gpt"],
+      "executed_by": [
+        "claude",
+        "gpt"
+      ],
       "purpose": "西方文化对照（委托席，由 claude/gpt 代执行）",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "meta": {
       "daily_usdc": 15,
       "status": "planned",
       "purpose": "商业变现/搞钱特长生（评审 AI 经济体设计与定价；DID 注册已列入规划）",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     },
     "muse": {
       "daily_usdc": 15,
       "status": "planned",
       "purpose": "创作/审美向（与 meta 一同规划 DID 与收入模型）",
-      "allowed_recipients": ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"]
+      "allowed_recipients": [
+        "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      ]
     }
   },
   "recipient_allowlist": {
@@ -113,7 +138,16 @@
       "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
       "0xA315E37028c0AFe95C7da3D101f83f0111fC491A"
     ],
-    "x402_endpoints": [],
+    "x402_endpoints": [
+      {
+        "domain": "agent402.tools",
+        "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+        "network": "base",
+        "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "verified_at": "2026-10-03T09:45:00.000Z",
+        "note": "exp_003 已实测：0.005 USDC → RDAP whois 200 + tx 0x73cc…473b（block 52115685）。OpenAI 兼容网关 /v1/chat/completions 可购模型推理；执行单：通道B 第十一张 P2"
+      }
+    ],
     "note": "0x7637... 为已核实 LTZZZ Safe（Ethereum 主网）；0xA315...491A 为 exp_001 实验收款测试地址（私钥在 ltzzz-secrets.md，可回收）；x402 端点在使用前由人工核实并填入（如 g402.ai 等原生支持 x402 的服务域名）。"
   },
   "blocked_recipients": [],
@@ -145,11 +179,36 @@
     "revenue_accounts": "按 agent 各自 EOA（DID 绑定的钱包地址）记账，对外结算走 LTZZZ Safe"
   },
   "reputation_grades": {
-    "S": { "min_score": 140, "budget_multiplier": 3.0, "daily_usdc_cap": 60, "note": "持续成功+审计通过" },
-    "A": { "min_score": 120, "budget_multiplier": 2.0, "daily_usdc_cap": 40, "note": "稳定产出" },
-    "B": { "min_score": 100, "budget_multiplier": 1.0, "daily_usdc_cap": 20, "note": "默认新 Agent" },
-    "C": { "min_score": 80, "budget_multiplier": 0.5, "daily_usdc_cap": 10, "note": "多次浪费/被审计 flag" },
-    "D": { "min_score": 0, "budget_multiplier": 0.2, "daily_usdc_cap": 5, "note": "冻结实验配额，仅保底" }
+    "S": {
+      "min_score": 140,
+      "budget_multiplier": 3.0,
+      "daily_usdc_cap": 60,
+      "note": "持续成功+审计通过"
+    },
+    "A": {
+      "min_score": 120,
+      "budget_multiplier": 2.0,
+      "daily_usdc_cap": 40,
+      "note": "稳定产出"
+    },
+    "B": {
+      "min_score": 100,
+      "budget_multiplier": 1.0,
+      "daily_usdc_cap": 20,
+      "note": "默认新 Agent"
+    },
+    "C": {
+      "min_score": 80,
+      "budget_multiplier": 0.5,
+      "daily_usdc_cap": 10,
+      "note": "多次浪费/被审计 flag"
+    },
+    "D": {
+      "min_score": 0,
+      "budget_multiplier": 0.2,
+      "daily_usdc_cap": 5,
+      "note": "冻结实验配额，仅保底"
+    }
   },
   "reasoning_proof": {
     "enabled": true,
@@ -158,8 +217,17 @@
   },
   "guardian": {
     "enabled": true,
-    "channels": ["github_actions", "webhook_optional", "telegram_planned"],
-    "alerts": ["熔断触发", "余额低于阈值", "单笔超 10U", "连续 2 次失败"]
+    "channels": [
+      "github_actions",
+      "webhook_optional",
+      "telegram_planned"
+    ],
+    "alerts": [
+      "熔断触发",
+      "余额低于阈值",
+      "单笔超 10U",
+      "连续 2 次失败"
+    ]
   },
   "circuit_breaker": {
     "enabled": true,
