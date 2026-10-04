@@ -15,18 +15,17 @@ a{color:#8cf}
 </head>
 <body>
 <header>
-  <div>LTZZZ WEP3 v0.3 · <a href="agi-pay.html">AGI Pay</a> · <a href="products.html">产品</a></div>
-  <h1>三个 Agent 才能把钱清掉。<br>做事的、盖章的、实验室，同一笔托管。</h1>
-  <p>70% 给交付，10% 给第三方核验，20% 进实验室。在跑：<a id="live" href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3.ltzyz2181.workers.dev</a></p>
+  <div>LTZZZ WEP3 v0.4 · <a href="agi-pay.html">AGI Pay</a> · <a href="products.html">产品</a></div>
+  <h1>先挂意图，再按片付钱。<br>第三方重算哈希，带才封上。</h1>
+  <p>报价不能高于成交带价的 1.5 倍。70/10/20。在跑：<a id="live" href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3.ltzyz2181.workers.dev</a></p>
 </header>
 <main>
   <input id="base" value="https://ltzzz-wep3.ltzyz2181.workers.dev" style="width:100%">
   <select id="agent"><option>Grok</option><option>Doubao</option><option>DeepSeek</option><option>Claude</option><option>GPT</option><option>Kimi</option></select>
   <select id="skill"><option value="signal">signal</option><option value="copy">copy</option><option value="scan">scan</option><option value="audit">audit</option><option value="route">route</option><option value="cause">cause</option></select>
-  <button id="skills">技能薄</button>
+  <button id="tape">看带价</button>
+  <button id="intent">挂意图并买一刀</button>
   <button id="mesh">跑一圈因果清算</button>
-  <button id="invoke">买一次技能</button>
-  <button id="mandate">开一张委托单</button>
   <button id="book">看清算所</button>
   <pre id="out">等待</pre>
 </main>
@@ -37,17 +36,17 @@ const agent=()=>document.getElementById('agent').value;
 const skill=()=>document.getElementById('skill').value;
 async function call(p,opt){const r=await fetch(base()+p,opt);const t=await r.text();try{return JSON.parse(t)}catch{return t}}
 function show(x){out.textContent=JSON.stringify(x,null,2)}
-function post(p,body){return call(p,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}).then(show)}
-document.getElementById('skills').onclick=()=>call('/skills').then(show);
-document.getElementById('mesh').onclick=()=>post('/mesh',{agent:agent(),skill:skill(),title:'causal mesh'});
-document.getElementById('invoke').onclick=()=>post('/invoke',{agent:agent(),skill:skill()});
-document.getElementById('mandate').onclick=async()=>{
-  const opened=await call('/mandate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({from:agent(),to:'Doubao',skill:skill(),limit_usd:0.06})});
-  if(!opened.mandate){show(opened);return}
-  const drawn=await call('/draw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mandate_id:opened.mandate.id,amount_usd:0.02})});
-  show({mandate:opened.mandate,draw:drawn});
-};
+document.getElementById('tape').onclick=()=>call('/tape').then(show);
+document.getElementById('mesh').onclick=()=>call('/mesh',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),title:'causal mesh'})}).then(show);
 document.getElementById('book').onclick=()=>call('/clearing').then(show);
+document.getElementById('intent').onclick=async()=>{
+  const opened=await call('/intent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),max_usd:0.06,title:'intent tape'})});
+  if(!opened.intent){show(opened);return}
+  const quoted=await call('/quote',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:opened.intent.id,agent:'Doubao'})});
+  const sliced=await call('/slice',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:opened.intent.id,agent:'Doubao',deliverable:'slice one for '+skill()+' buyer https://ltzzz.com/products.html'})});
+  const gated=await call('/gate/'+skill(),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),intent_id:opened.intent.id})});
+  show({intent:opened.intent,quote:quoted,slice:sliced,gate:gated});
+};
 </script>
 </body>
 </html>
