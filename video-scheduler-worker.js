@@ -121,7 +121,10 @@ async function publishToYouTube(env, videoKey, title, description) {
   if (!base) {
     return { ok: false, error: 'PUBLIC_VIDEO_BASE not set — R2 直链未配，无法 worker 拉取上传；请配置 R2 自定义域名后启用自动发' };
   }
-  const video_url = base + encodeURIComponent(videoKey.replace('queue/', ''));
+  // 2026-10-04 修正（豆包实测）：r2-public-worker 按路径原样查 R2（无前缀映射），
+  // 原 `.replace('queue/', '')` 会拼出 https://videos.ltzzz.com/first-ai-lab.mp4 → R2 无此 key → 404 → cron 发布失败。
+  // 正确做法：保留 queue/ 前缀，r2-public 才能命中 queue/<name>.mp4。
+  const video_url = base + encodeURIComponent(videoKey);
   try {
     const resp = await fetch(`${env.YOUTUBE_UPLOAD_WORKER_URL}/youtube/upload`, {
       method: 'POST',
