@@ -59,7 +59,7 @@
 
 ## 六、主网路径（未执行，待批准）
 
-- 主网 Pool 尾缀待核（0xA238Dd80C259a72e81d7e4664a9801593F98d1c5 vs …98d123 记录不一致）；主网 aUSDC 地址占位待填。
+- 主网 Pool 尾缀已核：官方 AaveV3Base.POOL = `0xA238Dd80C259a72e81d7e4664a9801593F98d1c5`（章程 98d123 笔误已于 2026-10-05 修正，见第九节）；主网 aUSDC 地址占位待填（address-book AaveV3Base 部署前取，禁止 TBD 部署）。
 - 测试网真实 USDC 8 步通过 + XAI 复核 + 总控复核 → 才允许主网试点档（≤20 USDC，Aave supply，hypothesis/exit_plan/tx_hash 三件齐）。
 - owner 个人 Aave 仓位（1000U）AI 零接触（红线）。
 
@@ -68,8 +68,25 @@
 - npm/npx solc 在 Windows 全 EBADPLATFORM（勿重试）；用 solc-windows-amd64-v0.8.23 exe（%TEMP%\solc.exe）编译成功。
 - 产物 .build/（bin/abi）不入库；ABI 可从合约源码用 solc 随时重编。
 
+## 九、GPT 观察席复议项处置（2026-10-05）
+
+GPT 提交三项技术复议，逐项核实与处置如下（commit `45952a8`）：
+
+1. **地址双真值源（章程旧地址 vs Adapter 新地址）— 属实，已清零**
+   - 核实：章程 v0.1 写 Sepolia Pool `0x07eA79F6…`/USDC `0x036CbD53…`（混入 Ethereum Sepolia），Adapter/Vault 用 `0x8bAB6d1…`/`0xba50Cd…`。
+   - 处置：章程已改为 address-book 值（含主网 Pool 尾缀 98d123→98d1c5 笔误修正），真值源唯一化；本报告第六节同步更新。
+2. **白名单无"代码级官方地址校验"（部署期缺口）— 属实，已补脚本闭环**
+   - 核实：构造函数仅 require 非零；但运行时防线真实存在——`usdc`/`aavePool` 为 immutable，`allocate()` 对 `allowlist[strategyId] != aavePool` 链上 revert ForbiddenTarget（T1/T5 实测）。缺口仅在**部署期**：传入错误但非零的 pool/usdc 时合约可被部署。
+   - 处置：新建 `invest-channel/scripts/deploy-vault.mjs`——按 NETWORK 对 pool/usdc/aToken 做官方地址硬断言（不匹配拒绝部署）+ solc 编译 + 链上验证（guardian/allowlist[1]==pool/maxDaily/paused）+ 输出 _deployed.json。与 v1.2"主网地址不写死"约束不冲突：官方地址核对在部署脚本/测试层闭环，合约保持 immutable+白名单运行时防线。
+   - 说明：GPT 建议的"合约硬编码官方地址"与 v1.2 明确约束（主网地址只留占位不写死）冲突，未采纳硬编码方案，采用部署脚本断言 + 链上验证替代，同等消除误部署风险。
+3. **Sepolia 8 步未完成（ready ≠ tested ≠ passed）— 属实，维持门禁**
+   - 现状如实：T1-T5 合约级验证 ✅、T6 真实 USDC supply 演练 ⚠️ 阻塞（测试钱包 USDC=0，mint 非公开、faucet 需登录）。报告/章程均未将"ready"标为"passed"。
+   - 门禁维持：Sepolia 8 步全通（tx hash 齐全）前，主网试点档不执行（章程 §3 不变）。
+
+结论：三项复议全部接受并已闭环/如实记录；主网验收前复核项清零清单 = ① T6 测试 USDC 演练 ② 主网 aUSDC 地址补全 ③ Deep 复核 + XAI 正式批复。
+
 ## 八、明日第一步
 
 - 等测试 USDC 到账（Coinbase CDP faucet 或 AaveV3BaseSepolia Faucet mint）→ 跑真实 8 步 supply 演练（每步 tx hash 补入本报告）；
 - DeepSeek 复核本报告 + 合约源码；XAI 按 9 项清单正式批复；
-- 主网部署前置项（Pool 尾缀核验 + 试点档参数）待总控复核。
+- 主网部署前置项（试点档参数 + 主网 aUSDC 补全）待总控复核。
