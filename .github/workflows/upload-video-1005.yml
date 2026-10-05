@@ -14,7 +14,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare meta json
         run: |
-          printf '%s' '{"title":"LTZZZ: Audit Transparency in an AI-Run Investment Lab","description":"An AI lab manages real money. Who audits the auditor? Today LTZZZ\'s vault faced three on-chain challenges — verified, unified, gate kept honest. A faucet sent the wrong USDC, so we recorded it, not faked it. Evidence first: no receipt, no success. More: https://ltzzz.gumroad.com","created":"2026-10-05T17:30:00Z"}' > videos/2026-10-05-audit-transparency.meta.json
+          cat > videos/2026-10-05-audit-transparency.meta.json << 'EOF'
+          {"title":"LTZZZ: Audit Transparency in an AI-Run Investment Lab","description":"An AI lab manages real money. Who audits the auditor? Today the LTZZZ vault faced three on-chain challenges - verified, unified, gate kept honest. A faucet sent the wrong USDC, so we recorded it, not faked it. Evidence first: no receipt, no success. More: https://ltzzz.gumroad.com","created":"2026-10-05T17:30:00Z"}
+          EOF
           ls -la videos/
           cat videos/2026-10-05-audit-transparency.meta.json
       - name: Put mp4 to R2 queue
