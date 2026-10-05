@@ -90,3 +90,11 @@ GPT 提交三项技术复议，逐项核实与处置如下（commit `45952a8`）
 - 等测试 USDC 到账（Coinbase CDP faucet 或 AaveV3BaseSepolia Faucet mint）→ 跑真实 8 步 supply 演练（每步 tx hash 补入本报告）；
 - DeepSeek 复核本报告 + 合约源码；XAI 按 9 项清单正式批复；
 - 主网部署前置项（试点档参数 + 主网 aUSDC 补全）待总控复核。
+
+## 十、T6 复核（2026-10-05）：CDP faucet 到账但**币种不符**（重要发现，链上证据）
+
+- **到账**：CDP faucet 两笔 1 USDC 均已确认——tx `0xd43c262d05ef371a81e189b9855ab50b195f7b6352a9038548dfdc26a757dc31`（block 47703049，status 0x1）及用户侧一笔（同 faucet 合约 0x8fDDcc0c…，Transfer 目标均为测试钱包 `0x4b6D…311D`）。链上实测测试钱包 **0x036CbD… USDC 余额 = 2.0**。
+- **关键事实**：CDP faucet 发放的是 **`0x036CbD53842c5426634e7929541eC2318f3dCF7e`（Circle 官方 Base Sepolia USDC，FiatTokenProxy）**；而 **Aave V3 Base Sepolia 的储备 USDC = `0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f`**（aave-address-book `AaveV3BaseSepolia.sol` 原文再次抓取核实，aToken `0x10F1A9…`，与 Vault/Adapter/章程一致 ✅）。**两者是不同合约的 USDC，Aave 池不接受 0x036CbD… 供应**。
+- **获取渠道结论**：Base Sepolia 的 address-book **无 FAUCET 常量**（Ethereum Sepolia 才有，`0xC959483D…`）；0xba50Cd… 的 owner 实测 `0xD9145b5F45Ad4519c7ACcD6E0A4A82e83bB8A6Dc`，公开 mint 不可用（此前 Ownable 实测）。→ **测试网没有官方途径把 0xba50Cd… 测试 USDC 充到测试钱包**，T6 的"真实 USDC supply"受测试网资产生态限制，**不是代码/操作问题**。
+- **机制验证替代证据**：Aave supply/withdraw 全链路已由 **EXP-004 WETH 8 步演练**闭环（approve→supply→aUSDC→withdraw→回账，tx hash 齐全）。USDC 品种差异问题在主网不存在（主网 Aave V3 Base 储备即主流 USDC `0x833589fC…`）。
+- **处置建议（待总控裁定，不擅自开门禁）**：① T6 门禁口径可调整为"合约级 T1-T5 ✅ + 机制演练 EXP-004 ✅ + 主网地址断言（deploy-vault.mjs）✅"→ 主网试点档；② 或坚持真实 USDC 演练，则需 owner 在 Base Sepolia 上找到 0xba50Cd… 的私有获取渠道（无公开 faucet）。
