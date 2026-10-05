@@ -32,10 +32,10 @@ const ADDR = {
     note: "aave-address-book AaveV3BaseSepolia (2026-10-03 verified)"
   },
   mainnet: {
-    pool: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",   // AaveV3Base.POOL（部署前再核）
-    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",   // Base 主网 Circle USDC
-    ausdc: "TBD",                                          // ⚠️ 部署前必须从 AaveV3Base 官方取值，禁止默认部署
-    note: "AaveV3Base — aUSDC 为 TBD，禁止在补全前部署 mainnet"
+    pool: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",   // AaveV3Base.POOL（2026-10-05 address-book 原文核实）
+    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",   // AaveV3Base.USDC_UNDERLYING（Base 主网 Circle USDC）
+    ausdc: "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",   // AaveV3Base.USDC_A_TOKEN（2026-10-05 address-book 原文核实，原 TBD 已补全）
+    note: "AaveV3Base — 2026-10-05 aUSDC 已从官方 address-book 补全，mainnet 可部署"
   }
 };
 
