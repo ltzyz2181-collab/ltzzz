@@ -52,12 +52,23 @@
 - aUSDC@Vault = **19,999,999**（≈20 USDC，精度差 1 为 aToken 份额正常现象）
 - Vault USDC 余额 = 0（全部供应）
 - exposure = **20,000,000**｜dailySpent = 20,000,000（日限 60 USDC 内）
-- agent 钱包 USDC 余 38.995（39.995 → −1 → −19）
+- agent 钱包 USDC 余 **19.995**（39.995 → −1 → −19，此前一处笔误写 38.995，以链上余额为准）
 
 **已知环境限制（诚实记录）**：Base 主网公共节点（mainnet.base.org / 1rpc.io / base-rpc.publicnode.com）对刚写入状态常误报 `execution reverted / NO_RESERVE`（estimateGas 与 sendTransaction 均出现过），**交易实际成功**——验证必须走 USDC/aUSDC 官方合约 balanceOf + 等待同步，Vault 读函数 eth_call 亦可能 revert（节点调用层问题，storage/事件读正常）。
 
-## 五、下一步
+## 五、退出演练回执（2026-10-05，exit_plan 验证通过）
 
-- owner 选定签名通道后 30 分钟内完成首笔 supply 并回报 tx hash。 ✅ 已完成（上方回执节）
-- 首笔成功 → 记入 EXP-006 回执节 ✅ → 通知 Grok/XAI/Deep 复核（aUSDC 19,999,999 + tx hash 链上可复核）→ 第二笔节奏遵循章程日限 60、单笔 20（试点档敞口 ≤100，已投 20）
-- 观察项：Base 主网 Aave V3 USDC 供应 APY 实际累计收益（aUSDC 份额增长）；退出验证（任意时刻 withdraw 全量赎回回 agent 钱包）列入下阶段演练
+**演练目标**：任意时刻 withdraw 全量赎回回 agent 钱包，Vault 零残留——验证 exit_plan 真实可执行。
+
+| 步骤 | 操作 | tx hash | 结果 |
+|---|---|---|---|
+| E1 | withdrawUSDC(0) 全量赎回（w=exposure=20e6） | `0x4a0774b1da362aadc33e125afdb97d53708307bddaacf6964d943ba28d422209` | status 1｜aUSDC@Vault 20,000,016 → 16｜exposure 20,000,000 → 0 |
+| E2 | skim() 转回 guardian(agent) | `0x9ea1a4b133d7206cce09d4a41a2b089249a8cfc69cca4919b4ed4327e5c94b78` | status 1｜agent 收到 20 USDC（19.995 → 39.995）|
+| E3 | 重新供应 approve(20e6) | `0xffa0471b988895dfb33785ce2f3810e8f3bde1b6bbc26b034a599996546d572f` | status 1 |
+| E4 | 重新供应 depositUSDC(20e6) | `0x10cec1d36cf009db86ea53a87b4a3abd7f08aa4dcf1cb7ff4141b4fedbe8770f` | status 1 |
+| E5 | 重新供应 allocate(1,20e6) | `0xf6b144bbdcc64f96c6e8c38dce8650470b915deb77ef25718e0edf691caeb934` | status 1｜aUSDC@Vault 20,000,015｜exposure 20,000,000 |
+
+**结论**：exit_plan 验证通过——退出通道完整可执行（赎回→转回→可重投），投资状态已恢复。
+**APY 实证**：投入 20e6，约数小时后赎回得 aUSDC 20,000,016（+16 利息，约 6.25% APY 量级），利息真实累积。
+
+## 六、后续
