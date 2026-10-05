@@ -86,6 +86,9 @@ contract LTZZZVault {
         maxDailyUsdc = _maxDailyUsdc;
         guardianSigners = _guardianSigners;
         allowlist[1] = _aavePool; // 默认策略 1 = Aave V3 supply（v1 单策略）
+        // 2026-10-05 主网执行前修复（实践发现）：allocate 要求 Vault→Pool 的 USDC allowance，
+        // 原合约无任何 approve 入口 → 必然 NO_ALLOWANCE revert。一次性 max approve（Aave 推荐做法）。
+        IERC20(_usdc).approve(_aavePool, type(uint256).max);
     }
 
     // ─── 管理（onlyGuardian）───
@@ -201,6 +204,7 @@ interface IERC20 {
     function allowance(address, address) external view returns (uint256);
     function transferFrom(address, address, uint256) external returns (bool);
     function transfer(address, uint256) external returns (bool);
+    function approve(address, uint256) external returns (bool); // 2026-10-05 主网执行前修复补充
 }
 
 interface IPool {

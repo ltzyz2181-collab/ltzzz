@@ -94,7 +94,7 @@ async function main() {
   const signers = env("SIGNERS", DEFAULT_SIGNERS.join(",")).split(",").map(s => s.trim());
   if (signers.length !== 5) throw new Error(`SIGNERS 必须 5 个，当前 ${signers.length}`);
   const factory = new ethers.ContractFactory(abi, "0x" + bin, wallet);
-  console.log(`部署中（guardian=${guardian} maxDaily=${maxDaily / 1e6} USDC）...`);
+  console.log(`部署中（guardian=${guardian} maxDaily=${ethers.formatUnits(maxDaily, 6)} USDC）...`);
   const vault = await factory.deploy(guardian, addr.pool, addr.usdc, addr.ausdc, maxDaily, signers);
   const receipt = await vault.deploymentTransaction().wait();
   console.log(`✅ 部署 tx: ${receipt.hash}  block: ${receipt.blockNumber}  status: ${receipt.status}  Vault: ${await vault.getAddress()}`);
@@ -107,7 +107,7 @@ async function main() {
   const checks = {
     guardian: g === guardian ? "OK" : `MISMATCH(${g})`,
     allowlist1_isPool: al.toLowerCase() === addr.pool.toLowerCase() ? "OK" : `MISMATCH(${al})`,
-    maxDailyUsdc: md.toString() === maxDaily.toString() ? `OK(${md / 1e6}U)` : `MISMATCH(${md})`,
+    maxDailyUsdc: md.toString() === maxDaily.toString() ? `OK(${ethers.formatUnits(md, 6)}U)` : `MISMATCH(${md})`,
     paused: ps === false ? "OK(false)" : `UNEXPECTED(${ps})`
   };
   console.log("链上验证:", JSON.stringify(checks, null, 2));
