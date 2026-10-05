@@ -342,9 +342,57 @@
     "evidence": "aUSDC@Vault=19,999,999（aUSDC 0x4e65fE4D balanceOf 0x872C322e）；Vault USDC=0；exposure=20,000,000；dailySpent=20,000,000；7/7 tx status=1（Basescan/block 可复核）",
     "conclusion": "主网试点档首笔 supply 完成：20 USDC（≤20 上限全额）真实投入 Aave V3 Base 主网，aUSDC 份额归属 Vault；后续可 withdraw 全量赎回回 agent 钱包，exit_plan 保持"
    }
+  },
+  {
+   "id": "txn_0013",
+   "timestamp": "2026-10-05T16:20:00.000Z",
+   "agent": "ltzzz-invest",
+   "amount_usdc": 20,
+   "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+   "purpose": "EXP-006 退出演练（exit_plan 验证）：withdrawUSDC(0) 全量从 Aave 赎回 20 USDC（含 +16 利息实证，APY≈6.25%）→ skim() 转回 agent 钱包 → 重新 approve/deposit/allocate 恢复 20 USDC 供应。验证退出通道真实可执行、投资状态保持",
+   "hypothesis": "任意时刻 withdraw 全量赎回回 agent 钱包、Vault 零残留（exit_plan）可执行",
+   "success_criteria": "agent 收到 20 USDC（19.995→39.995）；aUSDC@Vault 归零后恢复 20,000,015；exposure 0→20e6",
+   "experiment_id": "EXP-006-exit-drill",
+   "reasoning_hash": "0xc0445a8135ffdb47d32eece07a73a8a05c424d494582be3234f409783c3707da",
+   "chain_ops": [
+    {
+     "op": "withdraw_usdc_all",
+     "tx_hash": "0x4a0774b1da362aadc33e125afdb97d53708307bddaacf6964d943ba28d422209",
+     "network": "base-mainnet"
+    },
+    {
+     "op": "skim_to_guardian",
+     "tx_hash": "0x9ea1a4b133d7206cce09d4a41a2b089249a8cfc69cca4919b4ed4327e5c94b78",
+     "network": "base-mainnet"
+    },
+    {
+     "op": "redep_approve",
+     "tx_hash": "0xffa0471b988895dfb33785ce2f3810e8f3bde1b6bbc26b034a599996546d572f",
+     "network": "base-mainnet"
+    },
+    {
+     "op": "redep_deposit",
+     "tx_hash": "0x10cec1d36cf009db86ea53a87b4a3abd7f08aa4dcf1cb7ff4141b4fedbe8770f",
+     "network": "base-mainnet"
+    },
+    {
+     "op": "redep_allocate",
+     "tx_hash": "0xf6b144bbdcc64f96c6e8c38dce8650470b915deb77ef25718e0edf691caeb934",
+     "network": "base-mainnet"
+    }
+   ],
+   "status": "confirmed",
+   "mode": "vault-exit-drill",
+   "network": "base-mainnet",
+   "outcome": {
+    "status": "success",
+    "verified_at": "2026-10-05T16:20:00.000Z",
+    "evidence": "withdraw tx status=1（aUSDC 20,000,016→16，exposure 20e6→0）；skim tx status=1（agent 19.995→39.995 全量到账）；重投 3 tx status=1（aUSDC@Vault 20,000,015，exposure 20e6）；利息实证 +16（≈6.25% APY 量级）",
+    "conclusion": "exit_plan 验证通过：任意时刻全量赎回→转回 agent→可重投，链路完整可执行；试点档 20 USDC 投资状态已恢复"
+   }
   }
  ],
- "next_txn_id": "txn_0013",
+ "next_txn_id": "txn_0014",
  "daily_summary": {
   "2026-09-29": {
    "gpt": {
@@ -457,5 +505,5 @@
   ]
  },
  "refill": {},
- "last_updated": "2026-10-05T15:30:00.000Z"
+ "last_updated": "2026-10-05T16:20:00.000Z"
 }
