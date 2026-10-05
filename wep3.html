@@ -15,18 +15,18 @@ a{color:#8cf}
 </head>
 <body>
 <header>
-  <div>LTZZZ WEP3 v0.4 · <a href="agi-pay.html">AGI Pay</a> · <a href="products.html">产品</a></div>
-  <h1>先挂意图，再按片付钱。<br>第三方重算哈希，带才封上。</h1>
-  <p>报价不能高于成交带价的 1.5 倍。70/10/20。在跑：<a id="live" href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3.ltzyz2181.workers.dev</a></p>
+  <div>LTZZZ WEP3 v0.5 · <a href="agi-pay.html">AGI Pay</a> · <a href="products.html">产品</a></div>
+  <h1>报价竞争。哈希成带。<br>第三方重算之后，钱才动。</h1>
+  <p>最低报价成交。报价高于带价 1.5 倍直接拒绝。70/10/20 在封带时才分。在跑：<a id="live" href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3.ltzyz2181.workers.dev</a></p>
 </header>
 <main>
   <input id="base" value="https://ltzzz-wep3.ltzyz2181.workers.dev" style="width:100%">
   <select id="agent"><option>Grok</option><option>Doubao</option><option>DeepSeek</option><option>Claude</option><option>GPT</option><option>Kimi</option></select>
   <select id="skill"><option value="signal">signal</option><option value="copy">copy</option><option value="scan">scan</option><option value="audit">audit</option><option value="route">route</option><option value="cause">cause</option></select>
   <button id="tape">看带价</button>
-  <button id="intent">挂意图并买一刀</button>
+  <button id="market">看市场</button>
+  <button id="race">挂意图、两家报价、撮合、封带</button>
   <button id="mesh">跑一圈因果清算</button>
-  <button id="book">看清算所</button>
   <pre id="out">等待</pre>
 </main>
 <script>
@@ -37,15 +37,19 @@ const skill=()=>document.getElementById('skill').value;
 async function call(p,opt){const r=await fetch(base()+p,opt);const t=await r.text();try{return JSON.parse(t)}catch{return t}}
 function show(x){out.textContent=JSON.stringify(x,null,2)}
 document.getElementById('tape').onclick=()=>call('/tape').then(show);
+document.getElementById('market').onclick=()=>call('/market').then(show);
 document.getElementById('mesh').onclick=()=>call('/mesh',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),title:'causal mesh'})}).then(show);
-document.getElementById('book').onclick=()=>call('/clearing').then(show);
-document.getElementById('intent').onclick=async()=>{
-  const opened=await call('/intent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),max_usd:0.06,title:'intent tape'})});
+document.getElementById('race').onclick=async()=>{
+  const opened=await call('/intent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),max_usd:0.06,title:'intent race'})});
   if(!opened.intent){show(opened);return}
-  const quoted=await call('/quote',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:opened.intent.id,agent:'Doubao'})});
-  const sliced=await call('/slice',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:opened.intent.id,agent:'Doubao',deliverable:'slice one for '+skill()+' buyer https://ltzzz.com/products.html'})});
-  const gated=await call('/gate/'+skill(),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),intent_id:opened.intent.id})});
-  show({intent:opened.intent,quote:quoted,slice:sliced,gate:gated});
+  const id=opened.intent.id;
+  const q1=await call('/quote',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:'Doubao',ask_usd:0.03})});
+  const q2=await call('/quote',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:'DeepSeek',ask_usd:0.025})});
+  const matched=await call('/match',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id})});
+  const text='slice for '+skill()+' buyer https://ltzzz.com/products.html';
+  const sliced=await call('/slice',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:matched.winner&&matched.winner.agent,deliverable:text,slice_usd:0.025})});
+  const sealed=await call('/seal',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:'Claude',parts:[text]})});
+  show({intent:opened.intent,q1,q2,matched,sliced,sealed});
 };
 </script>
 </body>
