@@ -302,16 +302,11 @@ async function verifyAndConfirm(request, env) {
     verify_error = 'rpc:' + String(e.message || e);
   }
 
-  // Known successful 1U regression: accept if RPC unavailable
-  if (tx_hash === REGRESSION_TX && (verify_error === 'receipt_null' || verify_error?.startsWith('rpc'))) {
-    verify_error = null;
-    parsed = {
-      from: SAFE.toLowerCase(),
-      to: (item.destination || '').toLowerCase(),
-      amount: item.amount || 1,
-      regression: true,
-    };
-  }
+  // [2026-10-05 owner 批准修复 · 移除回归放行]
+  // 原逻辑：REGRESSION_TX 在 RPC 不可用/receipt_null 时人为构造 parsed → SUCCESS → CONFIRMED → Ledger。
+  // XAI 审查定性：真实资金确认路径缺口（链上无回执时伪造成功）。已批准删除。
+  // 新行为：RPC 验证失败一律如实 FAILED（fail-closed），不再构造任何成功记录。
+  // 隔离测试要求：本改动先经本地逻辑校验 + 测试网验证后上线（2026-10-05 部署）。
 
   if (verify_error) {
     item.status = 'FAILED';
