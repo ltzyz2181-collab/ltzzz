@@ -149,9 +149,24 @@ async function streamTick(request, env) {
   await kvPut(env, 'agi-pay:daily:' + day, spent + price);
   return json({ ok: true, receipt, stream: 'continue' });
 }
+// ─── 鉴权：按 HTTP 方法闸（默认拒绝所有写请求），fail-closed ───
+// 设计：POST 一律需 Bearer LTZZZ_AGENT_TOKEN；未配 Secret → 503（拒绝放行）；
+// GET /health /ledger 保持公开。列白名单易漏，方法闸新端点自动受保护。
+function requireAuth(request, env) {
+  const token = env.LTZZZ_AGENT_TOKEN;
+  if (!token) return json({ ok: false, error: 'auth_not_configured', detail: 'LTZZZ_AGENT_TOKEN missing; fail-closed' }, 503);
+  const auth = request.headers.get('Authorization') || '';
+  if (auth !== `Bearer ${token}`) return json({ ok: false, error: 'unauthorized' }, 401);
+  return null;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
+    if (request.method === 'POST') {
+      const deny = requireAuth(request, env); // 先闸后业务
+      if (deny) return deny;
+    }
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, '') || '/';
     try {
