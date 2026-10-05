@@ -30,10 +30,27 @@ export async function reasoningHash(fields) {
   return await sha256Hex(payload);
 }
 
+// 鉴权：按 HTTP 方法闸（默认拒绝所有写请求），fail-closed（SEC-010）
+// POST 一律需 Bearer LTZZZ_AGENT_TOKEN；未配 Secret → 503 拒绝放行；GET 保持公开。
+function requireAuth(request, env) {
+  const token = env.LTZZZ_AGENT_TOKEN;
+  if (!token) {
+    return json({ ok: false, error: "auth_not_configured", detail: "LTZZZ_AGENT_TOKEN missing; fail-closed" }, 503);
+  }
+  const auth = request.headers.get("Authorization") || "";
+  if (auth !== `Bearer ${token}`) return json({ ok: false, error: "unauthorized" }, 401);
+  return null;
+}
+
 export default {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" } });
+    }
+
+    if (request.method === "POST") {
+      const deny = requireAuth(request, env); // 先闸后业务
+      if (deny) return deny;
     }
 
     if (request.method === "GET") {
