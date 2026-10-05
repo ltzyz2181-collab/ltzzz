@@ -6,8 +6,9 @@
 ## 1. 标的与白名单（禁区代码层 revert）
 
 - 仅允许：**Aave V3 Base 主网 / Base Sepolia 测试网**，资产 **USDC**。
-- 白名单池：Aave V3 Pool（主网 0xA238Dd80C259a72e81d7e4664a9801593F98d123，Sepolia 0x07eA79F68B2B3df564D0A34F8e19D9B1e339814b，以官方 address-book 为准）。
-- 白名单资产：USDC（Base 主网 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913；Sepolia 测试 0x036CbD53842c5426634e7929541eC2318f3dCF7e）。
+- 白名单池：Aave V3 Pool（主网 0xA238Dd80C259a72e81d7e4664a9801593F98d1c5，Sepolia 0x8bAB6d1b75f19e9eD9fCe8b9BD338844fF79aE27，以官方 address-book 为准；主网尾缀已由 98d123 修正为 98d1c5）。
+- 白名单资产：USDC（Base 主网 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913；Sepolia 测试 0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f）。
+- 地址真值源唯一化：**以 bgd-labs/aave-address-book（src/AaveV3BaseSepolia.sol）为准**；本文件与 invest-channel/ 代码已对齐（2026-10-04 修正，消除双真值源）。部署时由 invest-channel/scripts/deploy-vault.mjs 做官方地址断言（per-network 硬校验），断言失败拒绝部署。
 - 非白名单 pool/asset → 合约 revert（禁区不可绕过）。
 
 ## 2. 限额（代码化，不可被调用方覆盖）
