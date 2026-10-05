@@ -2,6 +2,13 @@
 
 日期：2026-10-04 ｜ 执行席：豆包 ｜ 章程：policy/web3-investment-charter-v0.1.md（owner 一票生效）
 
+## v1.2 终版结果（2026-10-04 更新，详见 knowledge/results/EXP-005-invest-vault-testnet.md）
+
+- Vault `0x4Bc520c6ec4036D3E0C44b0F1E2EDDc5d269a123`（部署 tx 0xe8aa84…，block 47,699,905）
+- 合约级验证 T1-T5 全部通过（ForbiddenTarget / NOT_AUTHORIZED / DAILY_CAP / PAUSED / 白名单==Pool），修复 tx 0xdb104eec…（日限恢复 200e6）
+- T6 真实 USDC supply 演练待测试 USDC 到账（机制已由 EXP-004 WETH 演练覆盖）
+- 事故记录：0x2d7d7c1 换算误判（实际 47,699,905 非 2.99M，链未重置）；RPC eth_call 滞后 ~1 块（等待后读数正确）；_tmp-deploy2 意外部署 Vault B 0xc0A407…（无资金弃用）
+
 ## 已完成
 
 1. **章程落库**：policy/web3-investment-charter-v0.1.md（试点档 ≤20U / 敞口 ≤100U / 只投 Aave V3 / 无需审批 / 禁区 revert / 1000U 个人仓位零接触）。
