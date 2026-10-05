@@ -12,12 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download rendered video
+      - name: Prepare meta json
         run: |
-          mkdir -p videos
-          curl -sL --max-time 180 -o videos/2026-10-05-audit-transparency.mp4 "https://aka.doubaocdn.com/s/YKh32o6UUD"
-          ls -la videos/
           printf '%s' '{"title":"LTZZZ: Audit Transparency in an AI-Run Investment Lab","description":"An AI lab manages real money. Who audits the auditor? Today LTZZZ\'s vault faced three on-chain challenges — verified, unified, gate kept honest. A faucet sent the wrong USDC, so we recorded it, not faked it. Evidence first: no receipt, no success. More: https://ltzzz.gumroad.com","created":"2026-10-05T17:30:00Z"}' > videos/2026-10-05-audit-transparency.meta.json
+          ls -la videos/
           cat videos/2026-10-05-audit-transparency.meta.json
       - name: Put mp4 to R2 queue
         run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-05-audit-transparency.mp4" --file videos/2026-10-05-audit-transparency.mp4 --remote
