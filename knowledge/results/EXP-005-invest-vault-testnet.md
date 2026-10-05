@@ -98,3 +98,15 @@ GPT 提交三项技术复议，逐项核实与处置如下（commit `45952a8`）
 - **获取渠道结论**：Base Sepolia 的 address-book **无 FAUCET 常量**（Ethereum Sepolia 才有，`0xC959483D…`）；0xba50Cd… 的 owner 实测 `0xD9145b5F45Ad4519c7ACcD6E0A4A82e83bB8A6Dc`，公开 mint 不可用（此前 Ownable 实测）。→ **测试网没有官方途径把 0xba50Cd… 测试 USDC 充到测试钱包**，T6 的"真实 USDC supply"受测试网资产生态限制，**不是代码/操作问题**。
 - **机制验证替代证据**：Aave supply/withdraw 全链路已由 **EXP-004 WETH 8 步演练**闭环（approve→supply→aUSDC→withdraw→回账，tx hash 齐全）。USDC 品种差异问题在主网不存在（主网 Aave V3 Base 储备即主流 USDC `0x833589fC…`）。
 - **处置建议（待总控裁定，不擅自开门禁）**：① T6 门禁口径可调整为"合约级 T1-T5 ✅ + 机制演练 EXP-004 ✅ + 主网地址断言（deploy-vault.mjs）✅"→ 主网试点档；② 或坚持真实 USDC 演练，则需 owner 在 Base Sepolia 上找到 0xba50Cd… 的私有获取渠道（无公开 faucet）。
+
+## 十一、owner 门禁裁定（2026-10-05）：方案 A 放行主网试点档
+
+- **裁定人**：owner（一票）｜**时间**：2026-10-05｜**内容**：走方案 A——「合约级验证 T1-T5 ✅ + 机制演练 EXP-004（WETH 8 步）✅ + 部署断言（deploy-vault.mjs 官方地址硬校验）✅」放行主网试点档。
+- **试点档参数**（章程 §2 不变）：Base 主网 Aave V3，单笔 ≤20 USDC、敞口 ≤100 USDC、只投 Aave V3、A 轨免审批（≤20U 档）、hypothesis/exit_plan/tx_hash 三件齐全才执行、禁区 revert。
+- **执行前置项（未清零前不执行）**：
+  1. 主网 aUSDC 地址从 address-book `AaveV3Base.sol` 补全（deploy-vault.mjs 对 TBD 拒部署）；
+  2. 主网部署 Vault 用 deploy-vault.mjs（官方地址断言 + 链上验证），不重蹈 Sepolia 部署脚本副作用；
+  3. 实际 supply 前用 agent 钱包（0x21F5…）Base 主网 USDC（≈40，其中 ≤20 试投）确认余额与 gas；
+  4. 执行后回填 transactions.json（agent=ltzzz-invest · status=confirmed · 真 tx_hash）并入库 knowledge/results/。
+- **资金边界**：owner 个人 Aave 1000U 零接触不变；B 轨 5 签不动；测试网一周循环（Deep）与主网试点档并行推进，互不阻塞。
+- **验收**：主网试点档首笔 supply tx 成功后，以链上 hash + aUSDC 份额为证据记入 EXP-006。

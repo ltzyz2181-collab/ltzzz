@@ -28,4 +28,16 @@
 
 ## 四、状态
 
-- 测试 USDC：等 Coinbase CDP faucet 发放（豆包正在处理）；测试钱包 ETH 0.0000026（gas 足够小额 tx，若不足会再领）。
+- 测试 USDC：CDP faucet **已到账 2 USDC**（tx `0xd43c26…` status 1，block 47703049）——但**币种为 0x036CbD…，非 Aave 池储备 USDC（0xba50Cd…）**；Base Sepolia 无官方途径 mint 池储备 USDC（详见 EXP-005-invest-vault-testnet.md 第十节）。一周循环中 supply 用币请自行说明来源（如 swap/可用币/WETH 替代），禁止编造到账。
+
+## 五、回执验收标准 v2（2026-10-05 · owner 明确，强制）
+
+**每天催交回执**。每日回执**必须带三要素**，缺一视为未通过：
+
+1. **当天 tx hash**（真实链上，Basescan/RPC 可复核）；
+2. **aUSDC 余额截图**（当天链上读值画面）；
+3. **与前一天余额的差值**（算出份额增量/减量）。
+
+- 没回执的那天 → 标记 **「未执行」**，**不算通过**。
+- 回执写入 `knowledge/results/EXP-005-weekly-drill/YYYY-MM-DD.md` 并 **push 到仓库**（不 push 不算交）。
+- 第 7 天除上述三要素外，附「转回完成」结论：Vault 内 USDC=0、测试钱包余额=初始+利息、全部 tx hash 清单。
