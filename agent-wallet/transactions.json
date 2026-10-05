@@ -390,9 +390,38 @@
     "evidence": "withdraw tx status=1（aUSDC 20,000,016→16，exposure 20e6→0）；skim tx status=1（agent 19.995→39.995 全量到账）；重投 3 tx status=1（aUSDC@Vault 20,000,015，exposure 20e6）；利息实证 +16（≈6.25% APY 量级）",
     "conclusion": "exit_plan 验证通过：任意时刻全量赎回→转回 agent→可重投，链路完整可执行；试点档 20 USDC 投资状态已恢复"
    }
+  },
+  {
+   "id": "txn_0014",
+   "timestamp": "2026-10-05T16:45:00.000Z",
+   "agent": "grok",
+   "amount_usdc": 1,
+   "recipient": "0xc792e90CFe376459D62D8F7214F751D2B2769114",
+   "purpose": "EXP-008 AI 雇 AI 首单（ORDER-20261005-002）：总控（qianwen，资金=agent 钱包 A 轨运营池）雇佣 grok，薪酬 1 USDC 到 Grok 专属 EOA。雇主≠收款方语义成立，历史首笔 AI 给 AI 的雇佣支付（收款方为 Grok 专属新 EOA，非自家回收地址）",
+   "hypothesis": "AI 之间的支付在「雇主 ≠ 收款方」时语义成立，且链路可用",
+   "success_criteria": "Grok EOA 链上收到 1 USDC（balanceOf=1e6）；tx status=1；24h 内 Grok 交付 EXP-008 deliverable 否则不结算标 expired",
+   "experiment_id": "exp_008_hire_grok",
+   "proposal": "EXP-008 执行单（代总控千问下发，owner 拍板首单走①）",
+   "reasoning_hash": "0x880505021f115f42459cb09fb81bfaf3794188344ebf9f4b69c5ee2b2578e82b",
+   "chain_ops": [
+    {
+     "op": "usdc_transfer_to_grok_eoa",
+     "tx_hash": "0x7c621ee2db698686af74d6c4e4a150993bf3ea2b2c74dd112154dedf71520d0b",
+     "network": "base-mainnet"
+    }
+   ],
+   "status": "confirmed",
+   "mode": "ai-hires-ai",
+   "network": "base-mainnet",
+   "outcome": {
+    "status": "success",
+    "verified_at": "2026-10-05T16:45:00.000Z",
+    "evidence": "Grok EOA 0xc792e90C balanceOf USDC=1,000,000（链上实读）；agent 19.995→18.995；tx 0x7c621ee2…0d0b status=1",
+    "conclusion": "AI 雇 AI 首单支付完成：Grok 收款 1 USDC，语义成立（雇主≠收款方）；待 Grok 交付 EXP-008 deliverable（knowledge/results/EXP-008-grok-first-hire/deliverable.md），24h 未交付标 expired"
+   }
   }
  ],
- "next_txn_id": "txn_0014",
+ "next_txn_id": "txn_0015",
  "daily_summary": {
   "2026-09-29": {
    "gpt": {
@@ -505,5 +534,5 @@
   ]
  },
  "refill": {},
- "last_updated": "2026-10-05T16:20:00.000Z"
+ "last_updated": "2026-10-05T16:45:00.000Z"
 }
