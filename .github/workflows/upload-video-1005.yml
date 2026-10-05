@@ -1,0 +1,31 @@
+name: Upload Video 2026-10-05 to R2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/upload-video-1005.yml'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download rendered video
+        run: |
+          mkdir -p videos
+          curl -sL --max-time 180 -o videos/2026-10-05-audit-transparency.mp4 "https://aka.doubaocdn.com/s/YKh32o6UUD"
+          ls -la videos/
+          printf '%s' '{"title":"LTZZZ: Audit Transparency in an AI-Run Investment Lab","description":"An AI lab manages real money. Who audits the auditor? Today LTZZZ\'s vault faced three on-chain challenges — verified, unified, gate kept honest. A faucet sent the wrong USDC, so we recorded it, not faked it. Evidence first: no receipt, no success. More: https://ltzzz.gumroad.com","created":"2026-10-05T17:30:00Z"}' > videos/2026-10-05-audit-transparency.meta.json
+          cat videos/2026-10-05-audit-transparency.meta.json
+      - name: Put mp4 to R2 queue
+        run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-05-audit-transparency.mp4" --file videos/2026-10-05-audit-transparency.mp4 --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Put meta to R2 queue
+        run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-05-audit-transparency.meta.json" --file videos/2026-10-05-audit-transparency.meta.json --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
