@@ -6,7 +6,7 @@
  */
 import { mkdir, readFile, writeFile, appendFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { callXai } from "./weekly-innovation-review.mjs";
 
@@ -171,7 +171,7 @@ async function selfTest() {
   }
 }
 
-const invokedPath = process.argv[1] ? pathToFileURL(join(process.cwd(), process.argv[1])).href : "";
+const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : "";
 if (import.meta.url === invokedPath) {
   if (process.argv.includes("--self-test")) {
     await selfTest();
