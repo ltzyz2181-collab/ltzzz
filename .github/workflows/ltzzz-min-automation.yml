@@ -7,6 +7,12 @@ on:
     # 每周一 15:00 UTC 周消化
     - cron: '0 15 * * 1'
   workflow_dispatch:
+    inputs:
+      retry_blocked:
+        description: "今日周报受阻时，使用下一个模型回退重试一次"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -76,7 +82,13 @@ jobs:
       - name: Generate weekly core-memory innovation review
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-        run: node scripts/weekly-innovation-review.mjs
+          RETRY_BLOCKED: ${{ github.event.inputs.retry_blocked || 'false' }}
+        run: |
+          if [ "$RETRY_BLOCKED" = "true" ]; then
+            node scripts/weekly-innovation-review.mjs --retry-blocked
+          else
+            node scripts/weekly-innovation-review.mjs
+          fi
       - name: Commit digest and innovation report
         run: |
           git config user.name "ltzzz-xai-bot"

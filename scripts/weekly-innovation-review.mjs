@@ -4,7 +4,7 @@
  * Reads only public project documents and writes a dated Markdown report.
  * API credentials are read from the process environment and are never logged or written.
  */
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -165,6 +165,7 @@ export async function callXai({ apiKey, prompt, fetchImpl = fetch }) {
   if (!apiKey) return { ok: false, reason: "XAI_API_KEY 未配置" };
   let lastStatus = 0;
   let lastCode = "";
+  let timeoutFallbackUsed = false;
 
   for (const model of [...new Set(MODEL_CANDIDATES)]) {
     try {
@@ -194,6 +195,10 @@ export async function callXai({ apiKey, prompt, fetchImpl = fetch }) {
       return { ok: true, model, output, tokens: Number(data?.usage?.total_tokens) || 0 };
     } catch (error) {
       const isTimeout = error?.name === "TimeoutError" || error?.name === "AbortError";
+      if (isTimeout && !timeoutFallbackUsed) {
+        timeoutFallbackUsed = true;
+        continue;
+      }
       return { ok: false, reason: isTimeout ? "XAI API timeout" : "XAI API request failed" };
     }
   }
@@ -205,16 +210,23 @@ export async function runWeeklyReview({
   apiKey = process.env.XAI_API_KEY,
   fetchImpl = fetch,
   now = new Date(),
+  retryBlocked = false,
 } = {}) {
   const sources = await collectSources(root);
   const date = now.toISOString().slice(0, 10);
   const outDir = join(root, "knowledge", "results");
   const outPath = join(outDir, `weekly-innovation-${date}.md`);
   await mkdir(outDir, { recursive: true });
+  let replaceExisting = false;
   try {
-    await access(outPath);
-    return { status: "already_exists", outPath };
-  } catch { /* first run for this UTC date */ }
+    const existing = await readFile(outPath, "utf8");
+    if (!retryBlocked || !existing.includes("> 状态：受阻；未生成 AI 分析")) {
+      return { status: "already_exists", outPath };
+    }
+    replaceExisting = true;
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
 
   let status = "complete";
   let model = "not_called";
@@ -252,7 +264,7 @@ export async function runWeeklyReview({
     "> 自动周报只提出研究与实验方案，不代表已执行交易、付款、部署或修改治理政策。",
     "",
   ].join("\n");
-  await writeFile(outPath, report, { encoding: "utf8", flag: "wx" });
+  await writeFile(outPath, report, { encoding: "utf8", flag: replaceExisting ? "w" : "wx" });
   return { status, outPath, model, reason };
 }
 
@@ -278,7 +290,7 @@ if (import.meta.url === invokedPath) {
   if (process.argv.includes("--self-test")) {
     selfTest();
   } else {
-    const result = await runWeeklyReview();
+    const result = await runWeeklyReview({ retryBlocked: process.argv.includes("--retry-blocked") });
     const detail = result.reason ? ` · ${result.reason}` : "";
     console.log(`weekly review ${result.status}${detail}: ${result.outPath}`);
   }
