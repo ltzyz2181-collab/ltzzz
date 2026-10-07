@@ -219,11 +219,14 @@ export async function runWeeklyReview({
   let status = "complete";
   let model = "not_called";
   let body = "";
+  let reason = "";
   if (sources.missingCore.length) {
     status = "blocked";
+    reason = "核心记忆缺失";
     body = `核心记忆缺失，未调用模型：${sources.missingCore.join(", ")}。`;
   } else if (!apiKey) {
     status = "blocked";
+    reason = "XAI_API_KEY 未配置";
     body = "XAI_API_KEY 未配置；本周未调用模型，也未生成 AI 分析。";
   } else {
     const result = await callXai({ apiKey, prompt: buildPrompt(sources), fetchImpl });
@@ -232,6 +235,7 @@ export async function runWeeklyReview({
       body = result.output;
     } else {
       status = "blocked";
+      reason = result.reason;
       body = `${result.reason}；本周未生成 AI 分析。`;
     }
   }
@@ -249,7 +253,7 @@ export async function runWeeklyReview({
     "",
   ].join("\n");
   await writeFile(outPath, report, { encoding: "utf8", flag: "wx" });
-  return { status, outPath, model };
+  return { status, outPath, model, reason };
 }
 
 function selfTest() {
@@ -275,6 +279,7 @@ if (import.meta.url === invokedPath) {
     selfTest();
   } else {
     const result = await runWeeklyReview();
-    console.log(`weekly review ${result.status}: ${result.outPath}`);
+    const detail = result.reason ? ` · ${result.reason}` : "";
+    console.log(`weekly review ${result.status}${detail}: ${result.outPath}`);
   }
 }
