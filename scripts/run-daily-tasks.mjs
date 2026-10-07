@@ -111,6 +111,7 @@ async function main() {
 
   const taskDefs = readJson(path.join(DATA, "tasks", "daily-tasks.json"), { tasks: [] });
   const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
+  pending.reminders ||= {};
   const tasks = [];
   const failures = [];
   const userActionRequired = [];

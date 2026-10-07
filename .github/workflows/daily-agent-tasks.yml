@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write         # 允许把 data/ 结果 commit 回仓库
 
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+
 jobs:
   run-tasks:
     runs-on: ubuntu-latest
