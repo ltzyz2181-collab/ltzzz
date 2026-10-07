@@ -1,6 +1,6 @@
 # Weekly memory digest
 
-> auto · last 7d · 2026-10-07 · count=35
+> auto · last 7d · 2026-10-07 · count=37
 
 - **EXP 资金核查：真实资金投资阻塞报告（2026-10-05）** · `2026-10-05-invest-blocked-report.md`  
   ## 结论 **真实资金尚未出去，且当前 Base 主网链上无 USDC 可动。** 投资测试（主网试点档 supply）被"链上无资产"硬阻塞，非执行意愿问题。 ## 链上核查（Base 主网，2026-10-05 实测） | 地址 | 角色 | USDC 余额 | ETH | |---|---|---|---| | 0x21F502f29294c50d…
@@ -32,6 +32,9 @@
 - **LTZZZ X-Lead Outreach · Day-1 (2026-10-01)** · `2026-10-01-doubao-outreach.md`  
   > 执行者：豆包（Doubao 主执行手）· 依据 X 线索扫描 Day-1（b58e0df7）A 档线索 > 规则：先问需求与边界，不贴价、不刷广告、不注册账号。 ## 线索 1 · @DeshkaAi — 安全沙箱评估需求 **背景**：明确要找公司做安全沙箱评估（不碰生产）——与 LTZZZ「可验证、不越权」同向。 **英文 DM（可直接发）**…
 
+- **LTZZZ 周度创新复盘 · 2026-10-07** · `weekly-innovation-2026-10-07.md`  
+  > 状态：受阻；未生成 AI 分析 · 源提交：`ce60223` · 模型：not_called > 核心记忆：6/6 篇 · 近期相关回执：8 篇 · UTC：2026-10-07T05:57:50.738Z XAI API timeout；本周未生成 AI 分析。 --- > 自动周报只提出研究与实验方案，不代表已执行交易、付款、部署或修改治理政策…
+
 - **Q1v2：CF cron 配额清点（2026-10-03 · 豆包实测）** · `2026-10-03-cron-audit.md`  
   > 目的：清点全部 cron、确认 ltzzz-daily 触发正常、免费腾位（不升 Paid）。 > 方法：CF 控制台逐 worker 核「觸發器」字段 + 24h 执行次数（UI 实测）。 ## 一、cron 清单表（实测） | Worker | Cron 表达式（本地 toml / 线上推定） | 24h 执行次数 | 判定 | |---|---…
 
@@ -61,6 +64,9 @@
 
 - **Result · prop_grok_001 独立验收 · Grok · 2026-10-02** · `2026-10-02-grok-001-verify.md`  
   ## 链上（Base RPC 自查） | 项 | 值 | |----|-----| | tx | `0xead7539e3b6acc8f65c942f856ae84d6440665ebd21e002d340a65096c3bf117` | | status | **0x1 success** | | block | **52063278**（与豆包回执一致）…
+
+- **Weekly memory digest** · `weekly-digest-2026-10-07.md`  
+  > auto · last 7d · 2026-10-07 · count=35 - **EXP 资金核查：真实资金投资阻塞报告（2026-10-05）** · `2026-10-05-invest-blocked-report.md` ## 结论 **真实资金尚未出去，且当前 Base 主网链上无 USDC 可动。** 投资测试（主网试点档 su…
 
 - **X Lead Scan — 2026-10-02-0806** · `2026-10-02-0806-x-lead-scan.md`  
   > 生成：scripts/x-lead-scan.mjs · prop_grok_003 交付物 · 查询："AI agent" wallet / agent economy payment / "AI agent" hire service / agent-to-agent settlement / LLM agent spending budget > …
