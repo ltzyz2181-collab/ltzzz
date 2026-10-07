@@ -1,0 +1,78 @@
+name: LTZZZ min automation (no Doubao)
+
+on:
+  schedule:
+    # 每日 14:00 UTC ≈ 22:00 上海
+    - cron: '0 14 * * *'
+    # 每周一 15:00 UTC 周消化
+    - cron: '0 15 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  daily-scan-stub:
+    if: github.event.schedule == '0 14 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write daily scan receipt (honest empty if no X credits)
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          mkdir -p knowledge/results knowledge/memory
+          FILE="knowledge/results/${DATE}-x-lead-scan.md"
+          if [ -f "$FILE" ]; then
+            echo "exists $FILE"
+          else
+            cat > "$FILE" << EOF
+          # X Lead Scan — ${DATE}
+
+          > auto: ltzzz-min-automation.yml · 无 X API 额度时允许 0 条
+
+          _本日扫描由 Actions 占位；有 X 额度时改为 scripts/x-lead-scan.mjs。_
+
+          | # | 账号 | 摘要 | 类型 |
+          |---|------|------|------|
+          | — | — | 0 条（credits/token 未注入本 workflow） | — |
+
+          status: auto-stub
+          EOF
+          fi
+          # daily-3nums 追加行（若无今日行）
+          mkdir -p ltzzz-memory
+          NUMS=ltzzz-memory/daily-3nums.md
+          if [ ! -f "$NUMS" ]; then
+            echo '| 日期 | YT播放 | 站点点数 | 加购/结算点击 | 进账 | 数据来源 | 抄录人 |' > "$NUMS"
+            echo '| ---------- | ---- | ------- | ------- | --- | ---- | --- |' >> "$NUMS"
+          fi
+          if ! grep -q "$DATE" "$NUMS" 2>/dev/null; then
+            echo "| $DATE | 未测 | 未测 | 未测 | 0 | Actions 自动行（待 CF RUM 回填） | xai-actions |" >> "$NUMS"
+          fi
+      - name: Commit
+        run: |
+          git config user.name "ltzzz-xai-bot"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results ltzzz-memory/daily-3nums.md || true
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "auto: daily scan stub + 3nums row $(date -u +%Y-%m-%d)"
+          git push
+
+  weekly-digest:
+    if: github.event.schedule == '0 15 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run weekly memory digest
+        run: node scripts/weekly-memory-digest.mjs knowledge/results 7
+      - name: Commit digest
+        run: |
+          git config user.name "ltzzz-xai-bot"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/weekly-digest-*.md || true
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "auto: weekly memory digest"
+          git push
