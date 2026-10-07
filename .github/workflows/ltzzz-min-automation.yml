@@ -17,6 +17,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+
 jobs:
   daily-scan-stub:
     if: github.event.schedule == '0 14 * * *' || github.event_name == 'workflow_dispatch'

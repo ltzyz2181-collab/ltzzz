@@ -1,0 +1,42 @@
+name: Kimi Global Weekly AI Hire & Investment
+
+on:
+  schedule:
+    - cron: '0 1 * * 1' # 每周一 09:00 Asia/Shanghai（GitHub cron 使用 UTC）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+
+jobs:
+  hire-and-invest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Generate Kimi Global weekly proposal (xAI/Grok engine; no Moonshot API)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: node scripts/kimi-global-weekly.mjs
+      - name: Commit proposal
+        run: |
+          git config user.name "ltzzz-kimi-global-bot"
+          git config user.email "bot@ltzzz.local"
+          git add ltzzz-memory/kimi-weekly/*.md
+          if git diff --cached --quiet; then
+            echo "No new proposal to commit"
+            exit 0
+          fi
+          git commit -m "auto: kimi-global weekly hire and investment proposal $(date -u +%Y-%m-%d)"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

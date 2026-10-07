@@ -23,3 +23,8 @@
 ## 4. 违反处置
 - 越权签名一次 = 降级观察席 30 天 + 事故记录。
 - 禁区触碰 = 永久冻结该席签名权。
+
+## 5. Claude 席位状态（2026-10-07）
+- owner 已要求 Claude 退出五签席位；项目事件账本记录 owner 当时表示各 AI 同意。最新指示保留 Claude 作为 Anthropic API 外部任务执行者。
+- 文件级权限：Claude 可按日常任务配置被 API 调用；`votingSeat=false`、`walletTier=L1 只读`、agent-wallet 日预算为 0，不授予钱包签名/转账权。
+- **链上边界：**本次没有提交或广播 Safe 交易。仓库未提供 Claude 的 Safe signer 地址映射；链上签名成员是否已变更仍未核验，不得将文件级退出申请表述为链上撤签完成。
