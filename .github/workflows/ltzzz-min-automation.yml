@@ -59,12 +59,14 @@ jobs:
           git push
 
   weekly-digest:
-    if: github.event.schedule == '0 15 * * 1' || github.event_name == 'workflow_dispatch'
+    needs: daily-scan-stub
+    if: ${{ always() && (github.event.schedule == '0 15 * * 1' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -82,4 +84,6 @@ jobs:
           git add knowledge/results/weekly-digest-*.md knowledge/results/weekly-innovation-*.md || true
           git diff --staged --quiet && echo "no changes" && exit 0
           git commit -m "auto: weekly memory and innovation review $(date -u +%Y-%m-%d)"
-          git push
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
