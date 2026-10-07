@@ -61,18 +61,25 @@ jobs:
   weekly-digest:
     if: github.event.schedule == '0 15 * * 1' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Run weekly memory digest
         run: node scripts/weekly-memory-digest.mjs knowledge/results 7
-      - name: Commit digest
+      - name: Generate weekly core-memory innovation review
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: node scripts/weekly-innovation-review.mjs
+      - name: Commit digest and innovation report
         run: |
           git config user.name "ltzzz-xai-bot"
           git config user.email "bot@ltzzz.local"
-          git add knowledge/results/weekly-digest-*.md || true
+          git add knowledge/results/weekly-digest-*.md knowledge/results/weekly-innovation-*.md || true
           git diff --staged --quiet && echo "no changes" && exit 0
-          git commit -m "auto: weekly memory digest"
+          git commit -m "auto: weekly memory and innovation review $(date -u +%Y-%m-%d)"
           git push
