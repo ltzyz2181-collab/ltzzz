@@ -31,7 +31,13 @@ jobs:
         run: |
           git config user.name "ltzzz-kimi-global-bot"
           git config user.email "bot@ltzzz.local"
-          git add ltzzz-memory/kimi-weekly/*.md
+          shopt -s nullglob
+          reports=(ltzzz-memory/kimi-weekly/*.md)
+          if [ "${#reports[@]}" -eq 0 ]; then
+            echo "::error::The generator completed without creating a Kimi weekly report"
+            exit 1
+          fi
+          git add -- "${reports[@]}"
           if git diff --cached --quiet; then
             echo "No new proposal to commit"
             exit 0
