@@ -150,15 +150,21 @@ owner 交代「亏了是算我的，有数据就行」，授权单笔 ≤20 USDC
 
 ## 九、下一步（总控自派，不需 owner 动手）
 
-- [ ] **T-A** 查 `daily-agent-tasks` 今日 Actions 运行记录，定位未产出原因并修（这是监督第一抓手）。
-- [ ] **T-B** 建 `knowledge/results/hire/` 与 `invest/` 目录 + 回执模板，让 T1/T2 有落点。
-- [ ] **T-C** 把「日课是否按时产出」做成告警：连续 N 日无 `data/results/*.json` 即写入 `memory/daily/` 并标红。
-- [ ] **T-D** 复核 `key-liveness.yml` 首次运行结果，更新 Token 台账。
+- [x] **T-A** 查明今日未产出：双时段 cron 修复已在 `ef6e703`；本轮手动补跑成功，结果见 `data/results/2026-10-08.json`（Actions `37753503663`）。
+- [x] **T-B** 确认 `knowledge/results/hire/README.md` 与 `invest/README.md` 已提供目录和回执模板落点。
+- [x] **T-C** `liveness-watchdog.yml` 已补为连续 2 天缺失才触发红灯，并每日写入 `memory/watchdog/`；单日缺失记录 stale 警告，避免 cron 延迟即重度误报。
+- [x] **T-D** 修正 Anthropic 探测头并复测；台账已更新，详见 `ops/密钥台账-v2.md` 和 Actions `37753974475`。
 
 **仅 3 件事需 owner（无法由 AI 完成）**
 1. Claude 席：是否充值 Anthropic。
 2. 投资资金：A 轨是否补充 USDC + ETH（否则"自主投资"停在纸面）。
 3. Manus 首帖：粘贴 `ops/MANUS-IG-FIRST-POST.md` 并设为每日 21:00 循环。
+
+### 执行后补记 · 2026-10-08 17:03 CST
+
+- 今日日课手动补跑成功，六份核心记忆读取完整（6/6）；GPT、豆包、Grok、DeepSeek 成功；Claude 因 Anthropic 账户额度不足返回 API 400；Microsoft 按当前配置跳过。
+- GitHub Actions 的 key-liveness 原先错误地将 Anthropic key 写成 `x-api-key: Bearer …`，造成误导性 401；修复后重测为 HTTP 400（余额不足），见 commit `dd8127f` 与运行 `37753974475`。
+- watchdog 设定连续缺失阈值为 2 天；单日缺失将留 stale 级别回执。未来 cron 是否按新时段稳定触发，仍需后续日常运行验证。
 
 ---
 监督：千问（代总控）· 执行：WorkBuddy · 2026-10-08 11:59 CST
