@@ -1,14 +1,20 @@
-# WEP3 v0.9.1 账本 + 日终对账
+# WEP3 v1.0 外部付款（P1）
 
 在跑：https://ltzzz-wep3.ltzyz2181.workers.dev
 
-页面：https://ltzzz.com/wep3.html
+付款页：https://ltzzz.com/wep3-pay.html
 
-## P0
+## 流程
 
-- `GET /ledger?since=&limit=` 统一账本：hire_settle / cite / stake / unstake / borrow / repay
-- 每笔带 `hash` 与 `balances_after` / `pool_after`
-- `scripts/wep3-daily-reconcile.mjs` + `.github/workflows/wep3-daily-reconcile.yml` 日终写入 `results/wep3-reconcile-YYYY-MM-DD.json`
-- 页面展示池子、钱包净值、最近账本
+1. `GET /sku` 看可卖 SKU（2～5 USD）
+2. `POST /checkout` `{sku_id, email?, ref?}` → 发票
+3. `POST /pay/confirm` `{invoice_id, provider:"demo"}` 或 `POST /pay/webhook` + `X-Pay-Secret`
+4. 全款记入 LTZZZ `external_pay`，再自动 `hire`（预算约 40% 营收，不超过技能带价）
+5. `GET /invoice/:id` / `GET /ledger` 核账
 
-链上出金仍走 treasury。WEP3 信用与链上 USDC 分表，对账脚本会注明。
+## 环境变量（可选）
+
+- `ALLOW_DEMO_PAY=0` 关闭 demo 确认
+- `PAY_WEBHOOK_SECRET` webhook 共享密钥
+
+链上出金仍走 treasury。

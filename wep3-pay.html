@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LTZZZ · WEP3 Pay</title>
+<style>
+body{margin:0;background:#07080d;color:#eef;font-family:ui-sans-serif,system-ui,"PingFang SC",sans-serif}
+header,main{max-width:720px;margin:auto;padding:20px}
+h1{font-size:32px;line-height:1.15}
+h2{font-size:15px;color:#9ab;margin:20px 0 8px}
+.card{background:#0c1220;border:1px solid #1e2a40;border-radius:14px;padding:14px;margin:10px 0;cursor:pointer}
+.card:hover,.card.on{border-color:#3a6df0}
+.card b{font-size:18px}
+.muted{color:#8a97ad;font-size:13px}
+button,input{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #334;background:#111828;color:#fff;margin:6px 6px 0 0}
+button{background:#1a4a9a;cursor:pointer}
+button.secondary{background:#1a2438}
+pre{background:#05070c;padding:12px;border-radius:12px;overflow:auto;font-size:12px}
+a{color:#8cf}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.price{color:#7dffa3}
+</style>
+</head>
+<body>
+<header>
+  <div class="muted">LTZZZ WEP3 Pay · <a href="wep3.html">控制台</a> · <a href="products.html">产品</a></div>
+  <h1>外部付款。<br>进实验室账本，自动雇代理干活。</h1>
+  <p class="muted">选 SKU → 开票 → 确认付款（demo）→ 链上出金仍走 treasury。Worker：<a href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3</a></p>
+</header>
+<main>
+  <input id="base" value="https://ltzzz-wep3.ltzyz2181.workers.dev" style="width:100%">
+  <h2>SKU</h2>
+  <div id="skus" class="muted">加载中…</div>
+  <h2>买家信息（可选）</h2>
+  <div class="row">
+    <input id="email" placeholder="email@example.com" style="flex:1;min-width:200px">
+    <input id="ref" placeholder="buyer ref" style="width:140px">
+  </div>
+  <div class="row">
+    <button id="checkout">开票结账</button>
+    <button id="pay" class="secondary">确认付款（demo）</button>
+    <button id="refresh" class="secondary">刷新订单</button>
+  </div>
+  <p class="muted">当前发票：<span id="inv">—</span></p>
+  <h2>结果</h2>
+  <pre id="out">等待</pre>
+</main>
+<script>
+const base=()=>document.getElementById('base').value.replace(/\/$/,'');
+const out=document.getElementById('out');
+let selected=null, invoiceId=null;
+const q=new URLSearchParams(location.search);
+if(q.get('invoice')) invoiceId=q.get('invoice');
+function show(x){out.textContent=JSON.stringify(x,null,2)}
+async function call(p,opt){const r=await fetch(base()+p,opt);const t=await r.text();try{return JSON.parse(t)}catch{return {raw:t,status:r.status}}}
+async function loadSkus(){
+  const d=await call('/sku');
+  const box=document.getElementById('skus');
+  if(!d.skus){box.textContent='加载失败';show(d);return}
+  box.innerHTML=d.skus.map(s=>`<div class="card" data-id="${s.id}"><b>${s.title}</b> <span class="price">$${s.price_usd}</span><div class="muted">${s.blurb} · skill ${s.skill} · ${s.owner}</div></div>`).join('');
+  box.querySelectorAll('.card').forEach(el=>el.onclick=()=>{
+    box.querySelectorAll('.card').forEach(c=>c.classList.remove('on'));
+    el.classList.add('on'); selected=el.dataset.id;
+  });
+  if(d.skus[0]){selected=d.skus[0].id; box.querySelector('.card').classList.add('on')}
+}
+document.getElementById('checkout').onclick=async()=>{
+  if(!selected){show({error:'select_sku'});return}
+  const d=await call('/checkout',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sku_id:selected,email:document.getElementById('email').value,ref:document.getElementById('ref').value})});
+  show(d);
+  if(d.invoice){invoiceId=d.invoice.id;document.getElementById('inv').textContent=invoiceId;history.replaceState(null,'','?invoice='+encodeURIComponent(invoiceId))}
+};
+document.getElementById('pay').onclick=async()=>{
+  if(!invoiceId){show({error:'no_invoice'});return}
+  const d=await call('/pay/confirm',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({invoice_id:invoiceId,provider:'demo',proof:'demo-'+Date.now()})});
+  show(d);
+};
+document.getElementById('refresh').onclick=async()=>{
+  if(!invoiceId){show({error:'no_invoice'});return}
+  show(await call('/invoice/'+encodeURIComponent(invoiceId)));
+};
+document.getElementById('inv').textContent=invoiceId||'—';
+loadSkus();
+if(invoiceId) call('/invoice/'+encodeURIComponent(invoiceId)).then(show);
+</script>
+</body>
+</html>
