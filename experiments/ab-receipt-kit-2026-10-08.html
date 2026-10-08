@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>LTZZZ · A/B receipt kit（草案）</title>
+<style>
+:root{color-scheme:dark;--bg:#080d17;--panel:#101b2b;--line:#263d59;--text:#edf5ff;--muted:#a3b1c4;--cyan:#60dcff;--warn:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#142841,var(--bg) 65%);color:var(--text);font:16px/1.65 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:720px;margin:0 auto;padding:48px 20px}.card{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:24px;margin:18px 0}.eyebrow{color:var(--cyan);font-size:.8rem;letter-spacing:.12em}.state{color:var(--warn);font-weight:700}.muted{color:var(--muted)}.cta{display:inline-block;margin-top:14px;padding:12px 18px;border-radius:10px;background:#204b65;color:white;font-weight:700;text-decoration:none}.cta[aria-disabled="true"]{opacity:.45;pointer-events:none}.label{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--muted);font-size:.82rem}.small{font-size:.9rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="wrap">
+<p class="eyebrow">LTZZZ DIGITAL LAB · EXPERIMENT PREVIEW</p>
+<h1>入口文案 A/B 收据包</h1>
+<div class="card" id="status" role="status">
+  <p class="state">草案 · 未启动</p>
+  <p>此预览默认关闭；不会在未批准时呈现实验 CTA。实验不会改价、改商品或承诺未经核实的效果。</p>
+</div>
+<div class="card">
+  <span class="label">单一商品 · 同一 $19 价格 · 同一 Gumroad 链接</span>
+  <p id="copy">此页面当前为待审批预览。</p>
+  <a id="buy" class="cta" href="#" aria-disabled="true" tabindex="-1">尚未启动</a>
+  <p id="disclaimer" class="small">草案；待负责人核验商品交付内容、确认文案及测量可用性后再启动。</p>
+</div>
+<p class="small">拟测指标：按 UTM 区分的 Gumroad 商品页访问。若平台分析无法按 UTM 区分访问，则本测试不具备有效测量条件，不得以站点总浏览量代替。</p>
+</main>
+<script>
+(() => {
+  // Deliberate launch gate. Keep false until owner has approved the copy and measurement preflight.
+  const EXPERIMENT_ENABLED = false;
+  const PRODUCT_URL = 'https://ltzyz.gumroad.com/l/ugyhy';
+  const STORAGE_KEY = 'ltzzz_ab_receipt_20261008_v1';
+  const params = new URLSearchParams(location.search);
+  const source = ['site', 'youtube'].includes(params.get('src')) ? params.get('src') : 'other';
+  const status = document.getElementById('status');
+  const copy = document.getElementById('copy');
+  const button = document.getElementById('buy');
+  const disclaimer = document.getElementById('disclaimer');
+
+  if (!EXPERIMENT_ENABLED) return;
+
+  let arm = localStorage.getItem(STORAGE_KEY);
+  if (arm !== 'a_receipt' && arm !== 'b_splitlog') {
+    arm = Math.random() < 0.5 ? 'a_receipt' : 'b_splitlog';
+    localStorage.setItem(STORAGE_KEY, arm);
+  }
+  const text = arm === 'a_receipt'
+    ? '实验记录包 · $19 · 含当日 receipt 模板'
+    : '身体日志和识神日志分开记的起步包 · $19 · 24h 内可下载';
+  const url = new URL(PRODUCT_URL);
+  url.searchParams.set('utm_source', source);
+  url.searchParams.set('utm_medium', 'owned');
+  url.searchParams.set('utm_campaign', '2026-10-08-receipt-kit');
+  url.searchParams.set('utm_content', arm);
+
+  status.innerHTML = '<p class="state">测试进行中</p><p>页面仅调整入口文案；商品、价格与目的地保持不变。</p>';
+  copy.textContent = text;
+  button.href = url.toString();
+  button.textContent = text;
+  button.removeAttribute('aria-disabled');
+  button.removeAttribute('tabindex');
+  button.target = '_blank';
+  button.rel = 'noopener';
+  disclaimer.textContent = '数字商品；具体内容与交付以商品页为准。';
+})();
+</script>
+</body>
+</html>
