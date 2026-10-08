@@ -1,15 +1,23 @@
 name: Daily Agent Tasks
 
+# 说明（2026-10-08 总控修复）：
+# 1) 原 cron '0 0 * * *' 名义北京 08:00，但实测实际生成于 12:03/12:51/12:18
+#    —— GitHub 免费档 cron 高延迟 + 本仓 write 工作流串行排队所致。
+#    改为双档触发：主跑 UTC 22:00（北京 06:00，提前量）+ 兜底 UTC 06:00（北京 14:00）。
+#    谁先跑成谁产出；脚本按日期幂等，重复跑不覆盖已存在的当日结果。
+# 2) 原并发组 ltzzz-main-writes 与 patrol/memory/pages 抢锁，导致日课被无限期推后。
+#    日课改用独立并发组，避免被其他写工作流阻塞。
 on:
   schedule:
-    - cron: '0 0 * * *'   # 每天 UTC 00:00 = 北京时间 08:00
+    - cron: '0 22 * * *'   # UTC 22:00 = 北京 06:00（主跑，提前量）
+    - cron: '0 6 * * *'    # UTC 06:00 = 北京 14:00（兜底）
   workflow_dispatch:      # 支持手动触发
 
 permissions:
   contents: write         # 允许把 data/ 结果 commit 回仓库
 
 concurrency:
-  group: ltzzz-main-writes
+  group: ltzzz-daily-agent-tasks   # 独立锁，不与 patrol/memory 抢
   cancel-in-progress: false
 
 jobs:
@@ -17,12 +25,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      - name: Preflight — 当日是否已产出（幂等）
+        id: preflight
+        run: |
+          D=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+          echo "today=$D" >> "$GITHUB_OUTPUT"
+          if [ -f "data/results/$D.json" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::data/results/$D.json 已存在，跳过（幂等）"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::data/results/$D.json 缺失，执行日课"
+          fi
+
       - name: Run daily tasks
+        if: steps.preflight.outputs.skip == 'false'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
@@ -32,9 +56,28 @@ jobs:
         run: node scripts/run-daily-tasks.mjs
 
       - name: Commit results
+        if: steps.preflight.outputs.skip == 'false'
         run: |
           git config user.name "ltzzz-bot"
           git config user.email "bot@ltzzz.com"
           git add data/
-          git commit -m "daily agent tasks $(date +%Y-%m-%d)" || echo "no changes"
-          git push
+          if git diff --staged --quiet; then
+            echo "no changes"
+            exit 0
+          fi
+          git commit -m "daily agent tasks $(TZ=Asia/Shanghai date +%Y-%m-%d)"
+          # 防与其他写工作流冲突：先 rebase 再推
+          git fetch origin main
+          git rebase origin/main || true
+          git push origin HEAD:main
+
+      - name: Postflight — 产出校验
+        if: steps.preflight.outputs.skip == 'false'
+        run: |
+          D="${{ steps.preflight.outputs.today }}"
+          if [ -f "data/results/$D.json" ]; then
+            echo "::notice::OK 已产出 data/results/$D.json ($(stat -c%s "data/results/$D.json") bytes)"
+          else
+            echo "::error::FAIL 日课未产出 data/results/$D.json —— 这是活性告警，需总控介入"
+            exit 1
+          fi
