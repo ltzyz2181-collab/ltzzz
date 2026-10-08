@@ -34,10 +34,18 @@ jobs:
               echo "  {\"seat\":\"$name\",\"status\":\"no_secret\",\"http\":null}," >> "$OUT"
               echo "$name: NO_SECRET"; return
             fi
-            resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
-              -H "Content-Type: application/json" \
-              -H "$auth: Bearer $key" \
-              -d "$body" 2>/dev/null)
+            if [ "$auth" = "x-api-key" ]; then
+              resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
+                -H "Content-Type: application/json" \
+                -H "x-api-key: $key" \
+                -H "anthropic-version: 2023-06-01" \
+                -d "$body" 2>/dev/null)
+            else
+              resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
+                -H "Content-Type: application/json" \
+                -H "$auth: Bearer $key" \
+                -d "$body" 2>/dev/null)
+            fi
             code=$(echo "$resp" | tail -1)
             echo "  {\"seat\":\"$name\",\"status\":\"http_$code\",\"http\":$code}," >> "$OUT"
             echo "$name -> HTTP $code"
