@@ -4,7 +4,9 @@ Manus，你已被授权顶豆包班负责 LTZZZ Instagram 日更（SOP 见仓库
 
 ## 任务：发布 LTZZZ IG 第一帖
 
-- **image_url**：`https://ltzzz.com/assets/ig/2026-10-08.png`
+- **image_url（主）**：`https://ltzzz.com/assets/ig/2026-10-08.png`
+- **image_url（备，立即可用）**：`https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/assets/ig/2026-10-08.png`
+  - 主 URL 等 Pages 构建完成后生效（约 3-5 分钟）；备用 URL 已验证 200 / image/png / 1080×1080，可直接用。
 - **caption**：
 
 ```
