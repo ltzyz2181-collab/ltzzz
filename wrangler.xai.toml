@@ -1,0 +1,20 @@
+# LTZZZ · XAI (Grok) API proxy Worker
+# 部署（需先配置 Secret）：
+#   wrangler secret put XAI_API_KEY -c wrangler.xai.toml
+#   wrangler deploy -c wrangler.xai.toml
+# 自定义域名：api-grok.ltzzz.com（workers.dev 在部分网络环境不可达）
+name = "ltzzz-xai-proxy"
+main = "xai-proxy-worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+XAI_MODEL = "grok-4-fast"
+XAI_BASE_URL = "https://api.x.ai/v1/chat/completions"
+
+# 自定义域名需 DNS/Zone 写权限：
+#   当前 CF Token 具备 Workers:Edit，但缺 DNS:Edit / Zone:Workers Routes:Edit
+#   故 routes 段暂时注释，待 token 补权后启用。
+# [[routes]]
+# pattern = "api-grok.ltzzz.com/*"
+# zone_name = "ltzzz.com"
