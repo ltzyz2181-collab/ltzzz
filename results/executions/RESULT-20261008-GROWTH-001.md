@@ -4,7 +4,7 @@
 - execs: [EXEC-20261008-GROK-001]
 - verify: VERIFY-20261008-GROWTH-001
 - timestamp: 2026-10-08 UTC
-- status: verified (bounded to experiment design)
+- status: verified (bounded to experiment design and docs deployment)
 
 ## 摘要
 
@@ -15,13 +15,15 @@
 - 设计交付：`growth/experiments/EXP-2026-10-08-GROK-IMAGINE.md`
 - 独立验证：`results/executions/VERIFY-20261008-GROWTH-001.md`
 - 仓库任务来源：https://github.com/ltzyz2181-collab/ltzzz/issues/10
+- Pages 工作流：成功，运行 ID `37837360520`，提交 `3d1e20c141d109f6252568ffc8832d312880b82b`；https://github.com/ltzyz2181-collab/ltzzz/actions/runs/37837360520
+- 线上验证：`https://ltzzz.com` 返回 HTTP 200；实验计划 Markdown 路径返回 `text/markdown`。
 - 验证范围：文档字段与三项实验结构已检查；无真实流量、发布或销售数据被声称。
 
 ## 改动 / 原因
 
 - 改动：新增增长实验计划及本结果记录。
 - 原因：以可证伪假设和可复核证据推进 issue #10 的增长实验设计，避免把宣传邮件误当作产品发布授权。
-- 部署：提交到 `main` 后会触发仓库既有 GitHub Pages 工作流；本次未改变线上网站功能，也未向外部渠道发帖。
+- 部署：内容已提交到 `main` 并由既有 GitHub Pages 工作流自动部署。此次只发布了计划/结果文档，没有改变线上网站功能，也未向外部渠道发帖。
 
 ## 未完成项
 
