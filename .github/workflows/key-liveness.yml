@@ -1,0 +1,62 @@
+name: Key Liveness Probe (AI seats)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 1 * * *'   # 每日 UTC 01:30 = 北京 09:30
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe each AI seat key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+        run: |
+          mkdir -p knowledge/results
+          OUT="knowledge/results/key-liveness-$(date -u +%Y-%m-%d).json"
+          echo "[" > "$OUT"
+          probe() {
+            local name="$1"; local url="$2"; local key="$3"; local auth="$4"; local body="$5"
+            local code resp
+            if [ -z "$key" ]; then
+              echo "  {\"seat\":\"$name\",\"status\":\"no_secret\",\"http\":null}," >> "$OUT"
+              echo "$name: NO_SECRET"; return
+            fi
+            resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
+              -H "Content-Type: application/json" \
+              -H "$auth: Bearer $key" \
+              -d "$body" 2>/dev/null)
+            code=$(echo "$resp" | tail -1)
+            echo "  {\"seat\":\"$name\",\"status\":\"http_$code\",\"http\":$code}," >> "$OUT"
+            echo "$name -> HTTP $code"
+          }
+          probe "gpt"       "https://api.openai.com/v1/chat/completions"    "$OPENAI_API_KEY"    "Authorization" '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+          probe "deepseek"  "https://api.deepseek.com/chat/completions"     "$DEEPSEEK_API_KEY"  "Authorization" '{"model":"deepseek-chat","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+          probe "grok"      "https://api.x.ai/v1/chat/completions"          "$XAI_API_KEY"       "Authorization" '{"model":"grok-4-fast","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+          probe "claude"    "https://api.anthropic.com/v1/messages"         "$ANTHROPIC_API_KEY" "x-api-key"     '{"model":"claude-3-5-haiku-20241022","max_tokens":5,"messages":[{"role":"user","content":"ping"}]}'
+          probe "kimi"      "https://api.moonshot.cn/v1/chat/completions"   "$MOONSHOT_API_KEY"  "Authorization" '{"model":"moonshot-v1-8k","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+          echo "  {\"seat\":\"_end\",\"status\":\"done\"}" >> "$OUT"
+          echo "]" >> "$OUT"
+          echo "----- result -----"
+          cat "$OUT"
+
+      - name: Commit probe result
+        run: |
+          git config user.name "ltzzz-xai-bot"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/key-liveness-*.json || true
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "chore(probe): AI seat key liveness $(date -u +%Y-%m-%d)"
+          git push
