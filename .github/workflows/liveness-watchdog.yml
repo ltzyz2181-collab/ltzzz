@@ -1,0 +1,99 @@
+name: Liveness Watchdog (日课活性告警)
+
+# 总控监督抓手：日课（data/results/YYYY-MM-DD.json）若迟迟不产出，自动报警并落盘。
+# 目的：让「今天各 AI 到底跑没跑」不再需要人肉去翻，而是机器自己喊。
+# 依据：owner 2026-10-08「你监督ai雇佣ai ai自主投资 跑起来啊」——监督必须自动化。
+
+on:
+  schedule:
+    - cron: '0 5 * * *'    # UTC 05:00 = 北京 13:00（日课主跑北京 06:00 后 7h，足够容错）
+    - cron: '0 14 * * *'   # UTC 14:00 = 北京 22:00（当日终检）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-liveness-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 检查当日日课产出
+        id: check
+        run: |
+          D=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+          D1=$(TZ=Asia/Shanghai date -d 'yesterday' +%Y-%m-%d)
+          echo "today=$D" >> "$GITHUB_OUTPUT"
+          if [ -f "data/results/$D.json" ]; then
+            echo "status=ok" >> "$GITHUB_OUTPUT"
+            echo "file=data/results/$D.json" >> "$GITHUB_OUTPUT"
+          elif [ -f "data/results/$D1.json" ]; then
+            echo "status=stale" >> "$GITHUB_OUTPUT"
+            echo "file=data/results/$D1.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=missing" >> "$GITHUB_OUTPUT"
+            echo "file=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 汇总各席活性 -> Step Summary
+        run: |
+          {
+            echo "### 日课活性 · ${{ steps.check.outputs.today }}"
+            echo ""
+            node scripts/watchdog-summary.mjs "${{ steps.check.outputs.file }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 写监督回执
+        run: |
+          D="${{ steps.check.outputs.today }}"
+          S="${{ steps.check.outputs.status }}"
+          F="${{ steps.check.outputs.file }}"
+          mkdir -p memory/watchdog
+          OUT="memory/watchdog/liveness-$D.md"
+          {
+            echo "# 活性守夜回执 · $D"
+            echo ""
+            echo "- 检查时间：$(date -u +%FT%TZ)"
+            echo "- status：**$S**"
+            echo "- 命中文件：\`$F\`"
+            if [ "$S" = "ok" ]; then
+              echo "- 判定：今日日课正常产出 ✅"
+            elif [ "$S" = "stale" ]; then
+              echo "- 判定：仅见昨日结果，今日尚缺 ⚠️（cron 延迟或失败）"
+            else
+              echo "- 判定：**日课链路断裂 ❌ 需总控介入**"
+            fi
+            echo ""
+            echo '```'
+            node scripts/watchdog-summary.mjs "$F"
+            echo '```'
+            echo ""
+            echo "> 本文件由 watchdog 自动写入。看见 missing/stale 即代表监督系统在报警。"
+          } > "$OUT"
+          cat "$OUT"
+
+      - name: 落盘
+        run: |
+          git config user.name "ltzzz-watchdog"
+          git config user.email "bot@ltzzz.local"
+          git add memory/watchdog/
+          if git diff --staged --quiet; then
+            echo "no changes"; exit 0
+          fi
+          git commit -m "watchdog: 活性守夜 $(TZ=Asia/Shanghai date +%Y-%m-%d)"
+          git fetch origin main
+          git rebase origin/main || true
+          git push origin HEAD:main
+
+      - name: 报警（missing 时红灯）
+        if: steps.check.outputs.status == 'missing'
+        run: |
+          echo "::error::日课链路断裂：连续未产出 data/results/*.json。请总控检查 daily-agent-tasks 工作流与各席 API 余额。"
+          exit 1
