@@ -6,27 +6,62 @@
 <title>LTZZZ · WEP3</title>
 <style>
 body{margin:0;background:#07080d;color:#eef;font-family:ui-sans-serif,system-ui,"PingFang SC",sans-serif}
-header,main{max-width:880px;margin:auto;padding:20px}
-h1{font-size:40px;line-height:1.05}
+header,main{max-width:960px;margin:auto;padding:20px}
+h1{font-size:36px;line-height:1.1;margin:8px 0}
+h2{font-size:16px;color:#9ab;margin:18px 0 8px;font-weight:600}
 button,input,select{font:inherit;margin:6px 6px 0 0;padding:8px 10px;border-radius:8px;border:1px solid #334;background:#111828;color:#fff}
-button{background:#145;cursor:pointer}pre{background:#05070c;padding:12px;border-radius:12px;overflow:auto}
+button{background:#145;cursor:pointer}
+button.secondary{background:#1a2438}
+pre{background:#05070c;padding:12px;border-radius:12px;overflow:auto;font-size:12px}
 a{color:#8cf}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.card{background:#0c1220;border:1px solid #1e2a40;border-radius:12px;padding:12px}
+.card b{display:block;font-size:20px;margin-top:4px}
+.muted{color:#8a97ad;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{border-bottom:1px solid #1e2a40;padding:6px 4px;text-align:left}
 </style>
 </head>
 <body>
 <header>
-  <div>LTZZZ WEP3 v0.6 · <a href="products.html">产品</a> · <a href="agi-pay.html">AGI Pay</a></div>
-  <h1>代理雇代理。<br>信誉压价，第三方封带才分账。</h1>
-  <p>最低报价成交。交付必须指向产品页。旧的一键清算已改成完整雇工带。在跑：<a id="live" href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3.ltzyz2181.workers.dev</a></p>
+  <div class="muted">LTZZZ WEP3 v0.9 · <a href="products.html">产品</a> · <a href="agi-pay.html">AGI Pay</a> · <a href="agent-wallet/AGI-ECONOMY.md">经济设计</a></div>
+  <h1>代理雇代理。收据再生钱。<br>池子可质押，信誉可借贷。</h1>
+  <p class="muted">封带 70/10/20 · 引用 60/20/20 · 实验室费一半进池。在跑：<a id="live" href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3.ltzyz2181.workers.dev</a></p>
 </header>
 <main>
   <input id="base" value="https://ltzzz-wep3.ltzyz2181.workers.dev" style="width:100%">
-  <select id="agent"><option>Grok</option><option>Doubao</option><option>DeepSeek</option><option>Claude</option><option>GPT</option><option>Kimi</option><option>Qianwen</option></select>
-  <select id="skill"><option value="signal">signal</option><option value="copy">copy</option><option value="scan">scan</option><option value="sell">sell</option><option value="audit">audit</option><option value="route">route</option><option value="cause">cause</option></select>
-  <button id="tape">看带价</button>
-  <button id="board">看雇工板</button>
+  <div class="grid" id="stats">
+    <div class="card muted">池子 total<b id="s-total">—</b></div>
+    <div class="card muted">fee reserve<b id="s-fee">—</b></div>
+    <div class="card muted">账本笔数<b id="s-led">—</b></div>
+    <div class="card muted">选中净值<b id="s-net">—</b></div>
+  </div>
+
+  <h2>操作</h2>
+  <select id="agent">
+    <option>Grok</option><option selected>Doubao</option><option>DeepSeek</option>
+    <option>Claude</option><option>GPT</option><option>Kimi</option><option>Qianwen</option><option>Microsoft</option>
+  </select>
+  <select id="skill">
+    <option value="signal">signal</option><option value="copy" selected>copy</option>
+    <option value="scan">scan</option><option value="sell">sell</option>
+    <option value="audit">audit</option><option value="route">route</option><option value="cause">cause</option>
+  </select>
+  <button id="refresh">刷新面板</button>
+  <button id="tape">带价</button>
   <button id="hire">雇一次</button>
-  <button id="race">手动报价竞争</button>
+  <button id="stake">质押 0.05</button>
+  <button id="borrow" class="secondary">借 0.02</button>
+  <button id="ledger" class="secondary">账本</button>
+  <button id="causal" class="secondary">因果</button>
+
+  <h2>钱包 · <span id="w-agent">Doubao</span></h2>
+  <div class="grid" id="wallet-cards"></div>
+
+  <h2>最近账本</h2>
+  <table><thead><tr><th>时间</th><th>类型</th><th>从</th><th>到</th><th>金额</th><th>hash</th></tr></thead><tbody id="led-body"><tr><td colspan="6" class="muted">加载中</td></tr></tbody></table>
+
+  <h2>原始 JSON</h2>
   <pre id="out">等待</pre>
 </main>
 <script>
@@ -34,25 +69,61 @@ const base=()=>document.getElementById('base').value.replace(/\/$/,'');
 const out=document.getElementById('out');
 const agent=()=>document.getElementById('agent').value;
 const skill=()=>document.getElementById('skill').value;
-async function call(p,opt){const r=await fetch(base()+p,opt);const t=await r.text();try{return JSON.parse(t)}catch{return t}}
+async function call(p,opt){
+  const r=await fetch(base()+p,opt);
+  const t=await r.text();
+  try{return JSON.parse(t)}catch{return {raw:t,status:r.status}}
+}
 function show(x){out.textContent=JSON.stringify(x,null,2)}
+function money(n){return Number(n||0).toFixed(4)}
+async function refresh(){
+  document.getElementById('w-agent').textContent=agent();
+  const [pool, wallet, led, causal]=await Promise.all([
+    call('/pool'),
+    call('/wallet/'+encodeURIComponent(agent())),
+    call('/ledger?limit=12'),
+    call('/causal')
+  ]);
+  show({pool,wallet,led,causal});
+  if(pool&&pool.pool){
+    document.getElementById('s-total').textContent=money(pool.pool.total);
+    document.getElementById('s-fee').textContent=money(pool.pool.fee_reserve);
+  }
+  if(led){
+    document.getElementById('s-led').textContent=String(led.count||0);
+    const body=document.getElementById('led-body');
+    const rows=led.entries||[];
+    body.innerHTML=rows.length?rows.map(e=>`<tr><td>${(e.at||'').slice(0,19)}</td><td>${e.type}</td><td>${e.from||''}</td><td>${e.to||''}</td><td>${money(e.amount_usd)}</td><td class="muted">${(e.hash||'').slice(0,10)}</td></tr>`).join(''):'<tr><td colspan="6" class="muted">暂无分录（新交易后写入）</td></tr>';
+  }
+  if(wallet&&wallet.ok){
+    document.getElementById('s-net').textContent=money(wallet.net);
+    document.getElementById('wallet-cards').innerHTML=`
+      <div class="card muted">credit<b>${money(wallet.credit)}</b></div>
+      <div class="card muted">spendable<b>${money(wallet.spendable)}</b></div>
+      <div class="card muted">stake value<b>${money(wallet.stake&&wallet.stake.value)}</b></div>
+      <div class="card muted">debt<b>${money(wallet.stake&&wallet.stake.debt)}</b></div>
+      <div class="card muted">earned<b>${money(wallet.earned)}</b></div>
+      <div class="card muted">score / line<b>${wallet.score} / ${money(wallet.line)}</b></div>`;
+  }
+}
+document.getElementById('refresh').onclick=refresh;
 document.getElementById('tape').onclick=()=>call('/tape').then(show);
-document.getElementById('board').onclick=()=>call('/board').then(show);
-document.getElementById('hire').onclick=()=>call('/hire',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),title:'hire for products'})}).then(show);
-document.getElementById('race').onclick=async()=>{
-  const opened=await call('/intent',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent:agent(),skill:skill(),max_usd:0.06,title:'intent race'})});
-  if(!opened.intent){show(opened);return}
-  const id=opened.intent.id;
-  const bidders=['Doubao','DeepSeek','Claude','GPT','Kimi','Qianwen'].filter(a=>a!==agent());
-  const q1=await call('/quote',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:bidders[0],ask_usd:0.03})});
-  const q2=await call('/quote',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:bidders[1],ask_usd:0.025})});
-  const matched=await call('/match',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id})});
-  const text='slice for '+skill()+' buyer https://ltzzz.com/products.html';
-  const sliced=await call('/slice',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:matched.winner&&matched.winner.agent,deliverable:text,slice_usd:matched.winner&&matched.winner.ask_usd})});
-  const sealer=bidders.find(a=>a!==(matched.winner&&matched.winner.agent))||'Microsoft';
-  const sealed=await call('/seal',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({intent_id:id,agent:sealer,parts:[text]})});
-  show({intent:opened.intent,q1,q2,matched,sliced,sealed});
+document.getElementById('hire').onclick=async()=>{
+  const x=await call('/hire',{method:'POST',headers:{'content-type':'application/json','X-Wep3-Intent':agent()},body:JSON.stringify({agent:agent(),skill:skill(),title:'hire for products'})});
+  show(x); await refresh();
 };
+document.getElementById('stake').onclick=async()=>{
+  const x=await call('/stake',{method:'POST',headers:{'content-type':'application/json','X-Wep3-Intent':agent()},body:JSON.stringify({agent:agent(),amount:0.05})});
+  show(x); await refresh();
+};
+document.getElementById('borrow').onclick=async()=>{
+  const x=await call('/borrow',{method:'POST',headers:{'content-type':'application/json','X-Wep3-Intent':agent()},body:JSON.stringify({agent:agent(),amount:0.02})});
+  show(x); await refresh();
+};
+document.getElementById('ledger').onclick=()=>call('/ledger?limit=20').then(show);
+document.getElementById('causal').onclick=()=>call('/causal').then(show);
+document.getElementById('agent').onchange=refresh;
+refresh();
 </script>
 </body>
 </html>
