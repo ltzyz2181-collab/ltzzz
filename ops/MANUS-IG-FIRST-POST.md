@@ -6,7 +6,7 @@ Manus，你已被授权顶豆包班负责 LTZZZ Instagram 日更（SOP 见仓库
 
 - **image_url（主）**：`https://ltzzz.com/assets/ig/2026-10-08.png`
 - **image_url（备，立即可用）**：`https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/assets/ig/2026-10-08.png`
-  - 主 URL 等 Pages 构建完成后生效（约 3-5 分钟）；备用 URL 已验证 200 / image/png / 1080×1080，可直接用。
+  - 两个 URL 均已验证 200 / image/png / 1080×1080，任选一个。
 - **caption**：
 
 ```
@@ -24,9 +24,16 @@ AI 雇 AI 首单已付：Grok EOA 实收 1 USDC（Base 主网链上可查）。
 
 ## 验收（发布后必做）
 
-把回执写进仓库 `knowledge/results/ig/2026-10-08.md`，含三样：
-1. 帖子 permalink（可点开）
-2. media_id
-3. 发布状态（success / failed + 原因）
+回执三样：① 帖子 permalink（可点开）② media_id ③ 发布状态（success / failed + 原因）。
+
+**回执交付两路（任选）：**
+- 路 A：你若有 GitHub 写权限，直接写进仓库 `knowledge/results/ig/2026-10-08.md`；
+- 路 B：若没有，就在本聊天里把三样回给我，owner 转交总控落库。
 
 无回执不算发布。
+
+## 进阶：真·全自动（owner 可选）
+
+若 Manus 支持定时任务：把本指令设为**每日 21:00（北京）循环任务**，
+image_url 换成 `https://ltzzz.com/assets/ig/{当天日期}.png`（Actions 每天 20:30 已自动产图），
+caption 按 SOP 模板换当日日期与进展。从此 owner 零操作。
