@@ -1,0 +1,47 @@
+name: IG Daily Card (render + commit)
+
+on:
+  schedule:
+    - cron: '30 12 * * *'   # 每日 UTC 12:30 = 北京 20:30（发帖前产图）
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ig-daily-card.yml'
+      - 'scripts/render-ig-card.py'
+      - 'assets/ig/cards/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install CJK fonts + pillow
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          pip install pillow
+      - name: Render today's IG card
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          python3 scripts/render-ig-card.py --date "$DATE" \
+            --content "assets/ig/cards/${DATE}.txt" \
+            --out "assets/ig/${DATE}.png" || \
+          python3 scripts/render-ig-card.py --date "$DATE" \
+            --out "assets/ig/${DATE}.png"
+      - name: Commit card
+        run: |
+          git config user.name "ltzzz-xai-bot"
+          git config user.email "bot@ltzzz.local"
+          git add assets/ig/
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "auto: IG daily card $(date -u +%Y-%m-%d)"
+          git fetch origin main
+          git rebase origin/main || true
+          git push origin HEAD:main
