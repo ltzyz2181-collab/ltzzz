@@ -1,538 +1,673 @@
 {
- "transactions": [
-  {
-   "id": "txn_0001",
-   "timestamp": "2026-09-29T10:06:00.978Z",
-   "agent": "gpt",
-   "amount_usdc": 1,
-   "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-   "purpose": "第一笔真实实验：验证自托管钱包端到端签名转账闭环",
-   "hypothesis": "自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
-   "success_criteria": "链上确认测试收款地址收到 1 USDC，agent 钱包 USDC 减至 49",
-   "experiment_id": "exp_001",
-   "reasoning_hash": "0xbccfb734c8e7b79f6dfbb78d0d0653a4a117c2ef164c648f24641eafed0cd519",
-   "reasoning_summary": "假设: 自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
-   "tx_hash": "0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504",
-   "status": "confirmed",
-   "mode": "local",
-   "audit": {
-    "by": "doubao_agent",
-    "status": "pass",
-    "checked_at": "2026-09-29T10:10:00.000Z",
-    "checks": [
-     "策略检查通过（白名单/限额/实验假设）",
-     "熔断器正常",
-     "预算充足（20 USDC 可用）",
-     "链上验证：交易 9 确认，from=agent EOA，to=USDC 合约",
-     "reasoning_hash 可重算核对（proof-of-reasoning）"
+  "transactions": [
+    {
+      "id": "txn_0001",
+      "timestamp": "2026-09-29T10:06:00.978Z",
+      "agent": "gpt",
+      "amount_usdc": 1,
+      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+      "purpose": "第一笔真实实验：验证自托管钱包端到端签名转账闭环",
+      "hypothesis": "自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
+      "success_criteria": "链上确认测试收款地址收到 1 USDC，agent 钱包 USDC 减至 49",
+      "experiment_id": "exp_001",
+      "reasoning_hash": "0xbccfb734c8e7b79f6dfbb78d0d0653a4a117c2ef164c648f24641eafed0cd519",
+      "reasoning_summary": "假设: 自托管 EOA 私钥签名+Base RPC 广播+记账链路可用",
+      "tx_hash": "0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504",
+      "status": "confirmed",
+      "mode": "local",
+      "audit": {
+        "by": "doubao_agent",
+        "status": "pass",
+        "checked_at": "2026-09-29T10:10:00.000Z",
+        "checks": [
+          "策略检查通过（白名单/限额/实验假设）",
+          "熔断器正常",
+          "预算充足（20 USDC 可用）",
+          "链上验证：交易 9 确认，from=agent EOA，to=USDC 合约",
+          "reasoning_hash 可重算核对（proof-of-reasoning）"
+        ]
+      },
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-09-29T10:10:00.000Z",
+        "evidence": "链上确认：测试收款地址 0xA315...491A 收到 1 USDC；agent 钱包 USDC 50→49；tx 0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504 已 9 确认",
+        "conclusion": "验收标准达成：自托管 EOA 签名 + Base RPC 广播 + 记账链路端到端可用，LTZZZ 钱包闭环真实跑通"
+      }
+    },
+    {
+      "id": "txn_0002",
+      "timestamp": "2026-09-30T06:59:15.377Z",
+      "agent": "infra",
+      "amount_usdc": 0,
+      "recipient": "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
+      "purpose": "LTZZZ Pay Phase1: ReputationRegistry 部署 Base 主网 + guardian gas + 推理锚定上链",
+      "hypothesis": "声誉合约+Worker Secret 回填+链上锚定链路端到端可用",
+      "success_criteria": "合约地址链上 code 存在/3 guardian 就位/锚定 root 链上可读",
+      "experiment_id": "phase1_deploy",
+      "reasoning_hash": "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
+      "chain_ops": [
+        {
+          "op": "deploy_contract",
+          "tx_hash": "0x769b2b3942c4e97bd590dcf5da3787fb6f54cb4e872146c6d041d638752c561d",
+          "contract": "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "gas_topup_to_guardian",
+          "tx_hash": "0xc454021c3d7e7d2c200853bb737304736f46d003b80fc5b5f44f90c92e902dee",
+          "amount_eth": 0.001,
+          "to": "0xD834a769b31447daf5a042009CF06fAFCE7e2F51"
+        },
+        {
+          "op": "anchor_reasoning",
+          "tx_hash": "0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac",
+          "root": "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
+          "txCount": 1,
+          "status": 1
+        }
+      ],
+      "status": "confirmed",
+      "mode": "local",
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.636Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0003",
+      "timestamp": "2026-09-30T08:45:13.959Z",
+      "agent": "kimi-global",
+      "amount_usdc": 1,
+      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+      "purpose": "LTZZZ Pay 首笔 AI 雇 AI 结算 exp_002（ORDER-20260930-001）：Kimi 账本审计交付，1 USDC 结算，receipt 锚定",
+      "hypothesis": "AI 雇 AI 闭环（任务→交付→结算→锚定）端到端可用",
+      "success_criteria": "USDC 到账（49→48/收款方+1）+ 锚定 root 链上=true",
+      "experiment_id": "exp_002_pay_settle",
+      "reasoning_hash": "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
+      "chain_ops": [
+        {
+          "op": "settle_1usdc",
+          "tx_hash": "0x5da61452cf46406e4d4dbeb551549e4732f00601251592a3c29036c2c14b4cb4",
+          "status": 1
+        },
+        {
+          "op": "anchor_reasoning_batch1",
+          "tx_hash": "0xef635e87a156897e30986b8a5d0490d22d272a607fe0ffed10408ae5b67843da",
+          "root": "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
+          "anchoredRoots": true
+        }
+      ],
+      "status": "confirmed",
+      "mode": "local",
+      "order": "ORDER-20260930-001",
+      "audit": {
+        "auditor": "doubao",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0004",
+      "timestamp": "2026-09-30T09:55:14.579Z",
+      "agent": "system-return",
+      "amount_usdc": 1,
+      "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+      "purpose": "ORDER-20260930-001 结算回账（可回收规则）：agent 注 0.0002 ETH gas → 0xA315 回 1 USDC → agent；订单 receipt 锚定 batch[2]",
+      "experiment_id": "exp_002",
+      "order": "ORDER-20260930-001",
+      "chain_ops": [
+        {
+          "op": "gas_topup",
+          "tx_hash": "0x3194089ed4ea2d790c70e897ad3238d684aea3007fb7bb7dc88abc238384f5fe",
+          "status": 1
+        },
+        {
+          "op": "settle_return_1usdc",
+          "tx_hash": "0xb7bbbd94e53ad646199015a8156e55f2f8abad4f83065de1e1bc52f5a7a38a94",
+          "status": 1
+        },
+        {
+          "op": "anchor_order_receipt_batch2",
+          "tx_hash": "0x2e6e2ff2256b5db09b5aae6f6af0a0c5d15ddf4ed3992de155209394af537629",
+          "root": "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
+          "anchoredRoots": true
+        }
+      ],
+      "status": "confirmed",
+      "mode": "local",
+      "audit": {
+        "auditor": "deepseek",
+        "verdict": "flag",
+        "flags": [
+          "缺实验假设"
+        ],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "缺实验假设"
+      }
+    },
+    {
+      "id": "txn_0005",
+      "timestamp": "2026-10-01T10:50:00.000Z",
+      "agent": "infra",
+      "amount_usdc": 5,
+      "recipient": "UniswapV2Router_0x4752ba5d",
+      "purpose": "gas 储备兑换：5 USDC -> WETH -> 原生 ETH（agent 钱包内部资产转换，非转出）",
+      "hypothesis": "Uniswap V2 Router02 回滚疑团下换 V2 官方 Router 完成 USDC->WETH；WETH unwrap 得原生 ETH",
+      "success_criteria": "链上确认 3 笔 tx + 原生 ETH 余额增加",
+      "experiment_id": "gas_reserve_swap",
+      "tx_ops": [
+        {
+          "block": 52016699,
+          "status": 1,
+          "op": "approve_v2_router",
+          "tx_hash": "0x668c93c43bce63f40f56c30a167b00ad01cfb793f85bdc903192804d78f79896"
+        },
+        {
+          "block": 52016702,
+          "status": 1,
+          "op": "swap_exact_tokens_for_tokens",
+          "weth_out": "0.001852012162237946",
+          "tx_hash": "0xf7e615e750639fd973d54274882e20f9c910042bd262c7f46346523d7e17cd48"
+        },
+        {
+          "block": 52016718,
+          "status": 1,
+          "op": "unwrap_weth_to_eth",
+          "tx_hash": "0xc8b6de4649b7d4926c921a73b94879ea77eb8fd7c02ae0b0360f4d87b0bacb73"
+        }
+      ],
+      "status": "confirmed",
+      "mode": "local",
+      "note": "V3 SwapRouter02(0x2626…) quote/swap 在 USDC/WETH fee10000 池上经双 RPC 验证真实回滚（Quoter 正常），改用官方 Uniswap V2 Router 完成；V2 pair(USDC,WETH)=0x88A43bbDF9D098eEC7bCEda4e2494615dfD9bB9C 价格≈2692 USDC/ETH",
+      "audit": {
+        "auditor": "grok",
+        "verdict": "flag",
+        "flags": [
+          "接收方非链上地址"
+        ],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "接收方非链上地址"
+      }
+    },
+    {
+      "id": "txn_0006",
+      "timestamp": "2026-10-01T13:35:00.000Z",
+      "agent": "grok",
+      "amount_usdc": 1,
+      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+      "purpose": "LTZZZ 首个海外 AI 真实花钱打样 prop_grok_001：XAI/Grok 自主提案，agent 运营池出 1 USDC 至测试回收地址（可回收），验证 AI 提案→白名单出金→链上留痕→AI 验收闭环",
+      "hypothesis": "AI 自主出金闭环（提案→策略校验→出金→账本→声誉）端到端可用",
+      "success_criteria": "1 USDC 到账 0xA315 + tx confirmed + 账本回填 + 英文 outreach 入库",
+      "experiment_id": "prop_grok_001",
+      "proposal": "agent-wallet/proposals/grok.json#prop_grok_001",
+      "reasoning_summary": "Grok 提案雇佣豆包产出英文获客 outreach；资金用于 LTZZZ 获客，符合政策；单笔 1 USDC 远低于 20 上限",
+      "tx_hash": "0xead7539e3b6acc8f65c942f856ae84d6440665ebd21e002d340a65096c3bf117",
+      "status": "confirmed",
+      "mode": "local",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-01T13:36:00.000Z",
+        "evidence": "链上确认 status=1 block=52063278；agent 钱包 USDC 45→44（1 USDC 出账）；Grok 成为账本上第一个真动过钱的海外 AI",
+        "conclusion": "AI 自主出金闭环跑通：Grok 提案→豆包执行→链上确认→账本留痕"
+      },
+      "audit": {
+        "auditor": "claude",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0007",
+      "timestamp": "2026-10-01T14:06:00.000Z",
+      "agent": "grok",
+      "amount_usdc": 2,
+      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+      "purpose": "prop_grok_002 挣回型支出：Grok 雇佣豆包把已验证工程流打包成英文 $19 Digital SKU（title/bullets/delivery/FAQ），目标 7 天内上架产生首笔外部进账（回本=1 单 $19）",
+      "hypothesis": "2 USDC 买一版可上架英文商品文案，比再烧实验转账更接近资金自筹（钱花出去→卖回本）",
+      "success_criteria": "EN SKU 文案入库 + products 挂购买路径 + ledger 关联 tx_hash + 7 日内进账则 ROI 成功",
+      "experiment_id": "prop_grok_002",
+      "proposal": "agent-wallet/proposals/grok-002.json#prop_grok_002",
+      "reasoning_summary": "Grok 002 专攻可售 SKU：1U 已打样、再烧回收地址无 ROI；改投 2U 换可上架商品文案，卖出 1 单即回本；预算内（daily 15 / 单笔 ≤20）",
+      "tx_hash": "0xdc901618a612de993e7e71c5c8bbc9afeaa3f8a34bed1208de07f59cc22b9509",
+      "status": "confirmed",
+      "mode": "local",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-01T14:08:00.000Z",
+        "evidence": "链上确认 status=1 block=52064105；Blockscout 独立核验 A315 收到 in=2000000（2 USDC，from agent）；agent 余额 43→41 USDC",
+        "conclusion": "出金闭环再验证：Grok 第二次自主支出（挣回型）链上完成，交付物=英文 SKU 文案"
+      },
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0008",
+      "timestamp": "2026-10-02T07:00:00.000Z",
+      "agent": "grok",
+      "amount_usdc": 1,
+      "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
+      "purpose": "prop_grok_003 能力训练型支出：Grok 雇豆包把「每日 X 线索扫描→结构化表→knowledge/results/→可选 git push」收成可复用自动化脚本/补丁（含 cron 接口说明）。主目的=记忆+自动化能力，不要求当周成交",
+      "hypothesis": "1 USDC 买一次扫描流水线固化比再付回收地址空转更能提升自主能力",
+      "success_criteria": "仓库出现可运行脚本或 docs 补丁 + 用该流程产出 1 份新 x-lead-scan + ledger 关联",
+      "experiment_id": "prop_grok_003",
+      "proposal": "agent-wallet/proposals/grok-003.json#prop_grok_003",
+      "reasoning_summary": "Grok 003 专攻执行通道：发帖卡在 token、扫描靠手工；改投 1U 固化扫描流水线，让任意席一键复跑；预算内（daily 15 / 单笔 ≤20）",
+      "tx_hash": "0x9fc45eee1d6712241adecd738baee23b1c80d0be4377022f195acc886d4d86c4",
+      "status": "confirmed",
+      "mode": "local",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-02T07:05:00.000Z",
+        "evidence": "链上确认 status=1 block=52069380；Blockscout 核验 to=0xA315…491A value=1000000（1 USDC，from agent 0x21F5…7fdc）；agent 余额 41→40 USDC",
+        "conclusion": "Grok 第三次自主支出（能力训练型）链上完成，交付物=扫描自动化脚本 scripts/x-lead-scan 补丁"
+      },
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0009",
+      "timestamp": "2026-10-02T02:03:00.000Z",
+      "agent": "owner-okx",
+      "amount_eth": 0.005,
+      "recipient": "0xD834a769b31447daf5a042009CF06fAFCE7e2F51",
+      "purpose": "OKX→Base 主网 gas 注入：guardian 0.005 ETH（链上写操作手续费储备，网络 Base 8453，OKX 提币单 434554198）",
+      "hypothesis": "交易所→链上 gas 补充，解除 guardian 写操作缺 gas 阻塞",
+      "network": "base-mainnet",
+      "channel": "okx-withdrawal-434554198",
+      "status": "confirmed",
+      "mode": "exchange-withdrawal",
+      "onchain_verified": "guardian coin_balance=0.00599774 ETH（0.000997旧额+0.005新注入）",
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "flag",
+        "flags": [
+          "缺实验 ID"
+        ],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "缺实验 ID"
+      }
+    },
+    {
+      "id": "txn_0010",
+      "timestamp": "2026-10-02T02:11:00.000Z",
+      "agent": "owner-okx",
+      "amount_eth": 0.003,
+      "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+      "purpose": "OKX→Base 主网 gas 注入：agent EOA 0.003 ETH（USDC 结算/锚定等操作需 ETH 付 gas，网络 Base 8453，OKX 提币单 434555994）",
+      "hypothesis": "agent 出金签名人 gas 储备，保障后续结算与锚定可执行",
+      "network": "base-mainnet",
+      "channel": "okx-withdrawal-434555994",
+      "status": "confirmed",
+      "mode": "exchange-withdrawal",
+      "onchain_verified": "agent coin_balance=0.00364094 ETH（含 0.003 新注入）",
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "flag",
+        "flags": [
+          "缺实验 ID"
+        ],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "缺实验 ID"
+      }
+    },
+    {
+      "id": "txn_0011",
+      "timestamp": "2026-10-03T09:45:00.000Z",
+      "agent": "doubao",
+      "amount_usdc": 0.005,
+      "recipient": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+      "purpose": "exp_003 首笔 x402 体外支付：agent 钱包 USDC 0.005 → agent402.tools（payTo 0xaBF4...9D0），购买真实 RDAP WHOIS 推理调用（ltzzz.com 域名数据）。LTZZZ 历史首笔流出自家地址圈的资金，不再自家转账空转",
+      "hypothesis": "用 1-2 USDC 上限内的最小额 x402 支付跑通'AI 花钱'闭环，验证能真实购买外部服务而非自家地址间转账",
+      "success_criteria": "agent402.tools 返回 200 + 真实第三方数据 + 链上 tx status=1（Basescan/Block 可复核）+ ledger 关联 txn + 结果入库",
+      "experiment_id": "exp_003",
+      "proposal": "通道B 第十一张执行单 P2",
+      "reasoning_hash": "0x3b2061d7ca3c6c7ae3d83383f3848e0192a9a00195bb3324f51e606d09af696a",
+      "reasoning_summary": "agent402.tools 实测可用（49,676 链上结算、Base USDC、x402 协议）；选最小额 whois 0.005 USDC 打样体外支付，EIP-3009 授权免 gas，服务端结算广播 transferWithAuthorization",
+      "tx_hash": "0x73cc4a164765092182e97f451dfc41bee699b129b0de769eb9f114b1bcbd473b",
+      "status": "confirmed",
+      "mode": "x402-external",
+      "network": "base-mainnet",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-03T09:45:00.000Z",
+        "evidence": "链上确认 status=1 block=52115685 from=0x42dd53906B49c202E8E934b059dc019E04634b00（agent402 结算钱包）to=0x8335...2913（USDC）input=0xe3ee160e（transferWithAuthorization）；agent402 /api/whois 返回 200：ltzzz.com registrar=Alibaba Cloud Computing(HiChina) created=2026-02-12 expires=2027-02-12 nameservers=cloudflare",
+        "conclusion": "第一笔 x402 体外支付完成：钱真实流出到外部收款方并换回真实服务结果；'AI 花钱'从自家转账空转转为真实购买能力"
+      },
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0012",
+      "timestamp": "2026-10-05T15:30:00.000Z",
+      "agent": "ltzzz-invest",
+      "amount_usdc": 20,
+      "recipient": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
+      "purpose": "EXP-006 主网试点档首笔 supply：20 USDC 经 LTZZZVault 供应 Aave V3 Base 主网（Vault=0x872C322e），aUSDC@Vault=19,999,999。历史首笔真实 DeFi 投资部署（非自家地址间转账、非空转）",
+      "hypothesis": "Base 主网 Aave V3 USDC 供应（无杠杆纯底层利率）收益为正且可随时 withdraw 赎回；Vault 链上白名单/日限/禁区校验可拦截错误目标",
+      "success_criteria": "7 步链路（deploy→approve→depositUSDC→allocate→aUSDC→exposure→账本）全部 status=1；aUSDC@Vault≈20e6；exposure=20e6",
+      "experiment_id": "EXP-006",
+      "proposal": "owner 选方案 A（私钥文件交付）；门禁方案 A 已裁定（EXP-005 §11）",
+      "reasoning_hash": "0xbfd51c94162d686f0f089353209a9c98705b6daf1d092a38a8cc4041610a4be4",
+      "chain_ops": [
+        {
+          "op": "deploy_vault",
+          "tx_hash": "0xfcc2f9b40b9cc31961d1800af11c56ed543ebbe61d6c46c1b429d9b50ae786f6",
+          "contract": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
+          "network": "base-mainnet",
+          "block": 52197834
+        },
+        {
+          "op": "approve_usdc_1",
+          "tx_hash": "0xf08c0004b6ea56d88a1a4e589654ed977ab8eb9cfd9c308b742028cbc1c0517a",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "deposit_usdc_1",
+          "tx_hash": "0x7d7939cec93b389138d49badea8b0de109a4ee9e94e50cf2287c960da9f5c4cc",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "allocate_1_supply",
+          "tx_hash": "0xc90e7867367efe9ae9ba6436971c46cf76f37c499d9c2d1f99b2c338f7ca8623",
+          "network": "base-mainnet",
+          "block": 52198050
+        },
+        {
+          "op": "approve_usdc_19",
+          "tx_hash": "0xdb817a6b0ad68e6d6338eeaeb6769fbcbe80e0d247f597daf37d886506fe2d44",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "deposit_usdc_19",
+          "tx_hash": "0x2f1749c1153246e60e25fc03158472c7a3f8a9e7bff23a5e76875de2f11cba51",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "allocate_19_supply",
+          "tx_hash": "0xcf4fbcdf47457b59618f978c301f43743247250fa0448c572abae5902b401dec",
+          "network": "base-mainnet",
+          "block": 52198133
+        }
+      ],
+      "status": "confirmed",
+      "mode": "vault-supply-aave",
+      "network": "base-mainnet",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-05T15:30:00.000Z",
+        "evidence": "aUSDC@Vault=19,999,999（aUSDC 0x4e65fE4D balanceOf 0x872C322e）；Vault USDC=0；exposure=20,000,000；dailySpent=20,000,000；7/7 tx status=1（Basescan/block 可复核）",
+        "conclusion": "主网试点档首笔 supply 完成：20 USDC（≤20 上限全额）真实投入 Aave V3 Base 主网，aUSDC 份额归属 Vault；后续可 withdraw 全量赎回回 agent 钱包，exit_plan 保持"
+      },
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.637Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0013",
+      "timestamp": "2026-10-05T16:20:00.000Z",
+      "agent": "ltzzz-invest",
+      "amount_usdc": 20,
+      "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+      "purpose": "EXP-006 退出演练（exit_plan 验证）：withdrawUSDC(0) 全量从 Aave 赎回 20 USDC（含 +16 利息实证，APY≈6.25%）→ skim() 转回 agent 钱包 → 重新 approve/deposit/allocate 恢复 20 USDC 供应。验证退出通道真实可执行、投资状态保持",
+      "hypothesis": "任意时刻 withdraw 全量赎回回 agent 钱包、Vault 零残留（exit_plan）可执行",
+      "success_criteria": "agent 收到 20 USDC（19.995→39.995）；aUSDC@Vault 归零后恢复 20,000,015；exposure 0→20e6",
+      "experiment_id": "EXP-006-exit-drill",
+      "reasoning_hash": "0xc0445a8135ffdb47d32eece07a73a8a05c424d494582be3234f409783c3707da",
+      "chain_ops": [
+        {
+          "op": "withdraw_usdc_all",
+          "tx_hash": "0x4a0774b1da362aadc33e125afdb97d53708307bddaacf6964d943ba28d422209",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "skim_to_guardian",
+          "tx_hash": "0x9ea1a4b133d7206cce09d4a41a2b089249a8cfc69cca4919b4ed4327e5c94b78",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "redep_approve",
+          "tx_hash": "0xffa0471b988895dfb33785ce2f3810e8f3bde1b6bbc26b034a599996546d572f",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "redep_deposit",
+          "tx_hash": "0x10cec1d36cf009db86ea53a87b4a3abd7f08aa4dcf1cb7ff4141b4fedbe8770f",
+          "network": "base-mainnet"
+        },
+        {
+          "op": "redep_allocate",
+          "tx_hash": "0xf6b144bbdcc64f96c6e8c38dce8650470b915deb77ef25718e0edf691caeb934",
+          "network": "base-mainnet"
+        }
+      ],
+      "status": "confirmed",
+      "mode": "vault-exit-drill",
+      "network": "base-mainnet",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-05T16:20:00.000Z",
+        "evidence": "withdraw tx status=1（aUSDC 20,000,016→16，exposure 20e6→0）；skim tx status=1（agent 19.995→39.995 全量到账）；重投 3 tx status=1（aUSDC@Vault 20,000,015，exposure 20e6）；利息实证 +16（≈6.25% APY 量级）",
+        "conclusion": "exit_plan 验证通过：任意时刻全量赎回→转回 agent→可重投，链路完整可执行；试点档 20 USDC 投资状态已恢复"
+      },
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.638Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_0014",
+      "timestamp": "2026-10-05T16:45:00.000Z",
+      "agent": "grok",
+      "amount_usdc": 1,
+      "recipient": "0xc792e90CFe376459D62D8F7214F751D2B2769114",
+      "purpose": "EXP-008 AI 雇 AI 首单（ORDER-20261005-002）：总控（qianwen，资金=agent 钱包 A 轨运营池）雇佣 grok，薪酬 1 USDC 到 Grok 专属 EOA。雇主≠收款方语义成立，历史首笔 AI 给 AI 的雇佣支付（收款方为 Grok 专属新 EOA，非自家回收地址）",
+      "hypothesis": "AI 之间的支付在「雇主 ≠ 收款方」时语义成立，且链路可用",
+      "success_criteria": "Grok EOA 链上收到 1 USDC（balanceOf=1e6）；tx status=1；24h 内 Grok 交付 EXP-008 deliverable 否则不结算标 expired",
+      "experiment_id": "exp_008_hire_grok",
+      "proposal": "EXP-008 执行单（代总控千问下发，owner 拍板首单走①）",
+      "reasoning_hash": "0x880505021f115f42459cb09fb81bfaf3794188344ebf9f4b69c5ee2b2578e82b",
+      "chain_ops": [
+        {
+          "op": "usdc_transfer_to_grok_eoa",
+          "tx_hash": "0x7c621ee2db698686af74d6c4e4a150993bf3ea2b2c74dd112154dedf71520d0b",
+          "network": "base-mainnet"
+        }
+      ],
+      "status": "confirmed",
+      "mode": "ai-hires-ai",
+      "network": "base-mainnet",
+      "outcome": {
+        "status": "success",
+        "verified_at": "2026-10-05T16:45:00.000Z",
+        "evidence": "Grok EOA 0xc792e90C balanceOf USDC=1,000,000（链上实读）；agent 19.995→18.995；tx 0x7c621ee2…0d0b status=1",
+        "conclusion": "AI 雇 AI 首单支付完成：Grok 收款 1 USDC，语义成立（雇主≠收款方）；待 Grok 交付 EXP-008 deliverable（knowledge/results/EXP-008-grok-first-hire/deliverable.md），24h 未交付标 expired"
+      },
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.638Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    },
+    {
+      "id": "txn_txn_0015",
+      "timestamp": "2026-10-08T04:45:26.557Z",
+      "agent": "treasury",
+      "direction": "refill",
+      "amount_usdc": 50,
+      "from_address": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+      "to_address": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+      "purpose": "Safe → LTZZZ 实验资金拨款",
+      "status": "dry_run",
+      "mode": "dry-run",
+      "hypothesis": "定期小额拨款支撑 AI 实验连续性",
+      "success_criteria": "余额恢复至目标线",
+      "tx_hash": "0xDRYRUN-REFILL-1a119d49c9d",
+      "experiment_id": "exp_treasury",
+      "audit": {
+        "auditor": "gpt",
+        "verdict": "approved",
+        "flags": [],
+        "at": "2026-10-08T04:45:26.638Z",
+        "note": "规则审计通过（LLM 审计钩子 v2.1）"
+      }
+    }
+  ],
+  "next_txn_id": "txn_00151",
+  "daily_summary": {
+    "2026-09-29": {
+      "gpt": {
+        "total_usdc": 1,
+        "count": 1
+      }
+    },
+    "2026-09-30": {
+      "kimi_global": {
+        "total_usdc": 1,
+        "count": 1
+      },
+      "system_return": {
+        "total_usdc": 1,
+        "count": 1
+      }
+    },
+    "2026-10-01": {
+      "infra": {
+        "total_usdc": 5,
+        "count": 1,
+        "note": "内部资产转换 USDC→WETH→ETH，非营收非对外转出"
+      },
+      "grok": {
+        "total_usdc": 4,
+        "count": 3,
+        "note": "prop_grok_001 打样 1U + prop_grok_002 挣回型 SKU 文案 2U + prop_grok_003 能力训练扫描自动化 1U"
+      }
+    },
+    "2026-10-02": {
+      "owner_okx": {
+        "total_usdc": 0,
+        "count": 0,
+        "note": "非 USDC 支出：OKX→Base 两笔 gas 注入 ETH（guardian 0.005 txn_0009 / agent 0.003 txn_0010），交易账户余额 28 USDT 购 ETH 0.010155 后续资金"
+      }
+    },
+    "2026-10-03": {
+      "doubao": {
+        "total_usdc": 0.005,
+        "count": 1,
+        "note": "exp_003 首笔 x402 体外支付：0.005 USDC → agent402.tools（RDAP whois），tx 0x73cc…473b"
+      }
+    },
+    "2026-10-08": {
+      "treasury": {
+        "total_usdc": 50,
+        "count": 1
+      }
+    }
+  },
+  "monthly_summary": {
+    "2026-09": {
+      "gpt": {
+        "total_usdc": 1,
+        "count": 1
+      },
+      "kimi_global": {
+        "total_usdc": 1,
+        "count": 1
+      },
+      "system_return": {
+        "total_usdc": 1,
+        "count": 1
+      }
+    },
+    "2026-10": {
+      "infra": {
+        "total_usdc": 5,
+        "count": 1
+      },
+      "grok": {
+        "total_usdc": 4,
+        "count": 3
+      },
+      "doubao": {
+        "total_usdc": 0.005,
+        "count": 1
+      },
+      "treasury": {
+        "total_usdc": 50,
+        "count": 1
+      }
+    }
+  },
+  "circuit": {
+    "consecutive_failures": 0,
+    "halted": false,
+    "halted_at": null,
+    "hourly_window": [
+      {
+        "at": "2026-09-29T10:06:00.979Z",
+        "ok": true,
+        "amount": 1,
+        "agent": "gpt"
+      },
+      {
+        "at": "2026-10-01T13:35:00.000Z",
+        "ok": true,
+        "amount": 1,
+        "agent": "grok"
+      },
+      {
+        "at": "2026-10-01T14:06:00.000Z",
+        "ok": true,
+        "amount": 2,
+        "agent": "grok"
+      },
+      {
+        "at": "2026-10-02T07:00:00.000Z",
+        "ok": true,
+        "amount": 1,
+        "agent": "grok"
+      },
+      {
+        "at": "2026-10-03T09:45:00.000Z",
+        "ok": true,
+        "amount": 0.005,
+        "agent": "doubao"
+      }
     ]
-   },
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-09-29T10:10:00.000Z",
-    "evidence": "链上确认：测试收款地址 0xA315...491A 收到 1 USDC；agent 钱包 USDC 50→49；tx 0xa5dbba21d7d69d150b8ff302e5522bbc11dd0c6a8983ea7f24ccadf6be8d1504 已 9 确认",
-    "conclusion": "验收标准达成：自托管 EOA 签名 + Base RPC 广播 + 记账链路端到端可用，LTZZZ 钱包闭环真实跑通"
-   }
   },
-  {
-   "id": "txn_0002",
-   "timestamp": "2026-09-30T06:59:15.377Z",
-   "agent": "infra",
-   "amount_usdc": 0,
-   "recipient": "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
-   "purpose": "LTZZZ Pay Phase1: ReputationRegistry 部署 Base 主网 + guardian gas + 推理锚定上链",
-   "hypothesis": "声誉合约+Worker Secret 回填+链上锚定链路端到端可用",
-   "success_criteria": "合约地址链上 code 存在/3 guardian 就位/锚定 root 链上可读",
-   "experiment_id": "phase1_deploy",
-   "reasoning_hash": "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
-   "chain_ops": [
-    {
-     "op": "deploy_contract",
-     "tx_hash": "0x769b2b3942c4e97bd590dcf5da3787fb6f54cb4e872146c6d041d638752c561d",
-     "contract": "0x44Ee56e629768eBf4f83123aFEBE7983c52a2660",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "gas_topup_to_guardian",
-     "tx_hash": "0xc454021c3d7e7d2c200853bb737304736f46d003b80fc5b5f44f90c92e902dee",
-     "amount_eth": 0.001,
-     "to": "0xD834a769b31447daf5a042009CF06fAFCE7e2F51"
-    },
-    {
-     "op": "anchor_reasoning",
-     "tx_hash": "0xd9965e821c436bf1558844fac9850c40d720a59453f9e37cf60b029681c734ac",
-     "root": "0x63b8d50cac4273baeb6da0552fe8a6ca71e099f9e4a50575aee6bd1da8113225",
-     "txCount": 1,
-     "status": 1
-    }
-   ],
-   "status": "confirmed",
-   "mode": "local"
+  "refill": {
+    "last_refill_at": "2026-10-08T04:45:26.557Z",
+    "last_refill_amount_usdc": 50
   },
-  {
-   "id": "txn_0003",
-   "timestamp": "2026-09-30T08:45:13.959Z",
-   "agent": "kimi-global",
-   "amount_usdc": 1,
-   "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-   "purpose": "LTZZZ Pay 首笔 AI 雇 AI 结算 exp_002（ORDER-20260930-001）：Kimi 账本审计交付，1 USDC 结算，receipt 锚定",
-   "hypothesis": "AI 雇 AI 闭环（任务→交付→结算→锚定）端到端可用",
-   "success_criteria": "USDC 到账（49→48/收款方+1）+ 锚定 root 链上=true",
-   "experiment_id": "exp_002_pay_settle",
-   "reasoning_hash": "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
-   "chain_ops": [
-    {
-     "op": "settle_1usdc",
-     "tx_hash": "0x5da61452cf46406e4d4dbeb551549e4732f00601251592a3c29036c2c14b4cb4",
-     "status": 1
-    },
-    {
-     "op": "anchor_reasoning_batch1",
-     "tx_hash": "0xef635e87a156897e30986b8a5d0490d22d272a607fe0ffed10408ae5b67843da",
-     "root": "0x4efb825cd8c195da4fd779575c31b5a09fc391d432653c903862f16bfcedf99f",
-     "anchoredRoots": true
-    }
-   ],
-   "status": "confirmed",
-   "mode": "local",
-   "order": "ORDER-20260930-001"
-  },
-  {
-   "id": "txn_0004",
-   "timestamp": "2026-09-30T09:55:14.579Z",
-   "agent": "system-return",
-   "amount_usdc": 1,
-   "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
-   "purpose": "ORDER-20260930-001 结算回账（可回收规则）：agent 注 0.0002 ETH gas → 0xA315 回 1 USDC → agent；订单 receipt 锚定 batch[2]",
-   "experiment_id": "exp_002",
-   "order": "ORDER-20260930-001",
-   "chain_ops": [
-    {
-     "op": "gas_topup",
-     "tx_hash": "0x3194089ed4ea2d790c70e897ad3238d684aea3007fb7bb7dc88abc238384f5fe",
-     "status": 1
-    },
-    {
-     "op": "settle_return_1usdc",
-     "tx_hash": "0xb7bbbd94e53ad646199015a8156e55f2f8abad4f83065de1e1bc52f5a7a38a94",
-     "status": 1
-    },
-    {
-     "op": "anchor_order_receipt_batch2",
-     "tx_hash": "0x2e6e2ff2256b5db09b5aae6f6af0a0c5d15ddf4ed3992de155209394af537629",
-     "root": "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
-     "anchoredRoots": true
-    }
-   ],
-   "status": "confirmed",
-   "mode": "local"
-  },
-  {
-   "id": "txn_0005",
-   "timestamp": "2026-10-01T10:50:00.000Z",
-   "agent": "infra",
-   "amount_usdc": 5,
-   "recipient": "UniswapV2Router_0x4752ba5d",
-   "purpose": "gas 储备兑换：5 USDC -> WETH -> 原生 ETH（agent 钱包内部资产转换，非转出）",
-   "hypothesis": "Uniswap V2 Router02 回滚疑团下换 V2 官方 Router 完成 USDC->WETH；WETH unwrap 得原生 ETH",
-   "success_criteria": "链上确认 3 笔 tx + 原生 ETH 余额增加",
-   "experiment_id": "gas_reserve_swap",
-   "tx_ops": [
-    {
-     "block": 52016699,
-     "status": 1,
-     "op": "approve_v2_router",
-     "tx_hash": "0x668c93c43bce63f40f56c30a167b00ad01cfb793f85bdc903192804d78f79896"
-    },
-    {
-     "block": 52016702,
-     "status": 1,
-     "op": "swap_exact_tokens_for_tokens",
-     "weth_out": "0.001852012162237946",
-     "tx_hash": "0xf7e615e750639fd973d54274882e20f9c910042bd262c7f46346523d7e17cd48"
-    },
-    {
-     "block": 52016718,
-     "status": 1,
-     "op": "unwrap_weth_to_eth",
-     "tx_hash": "0xc8b6de4649b7d4926c921a73b94879ea77eb8fd7c02ae0b0360f4d87b0bacb73"
-    }
-   ],
-   "status": "confirmed",
-   "mode": "local",
-   "note": "V3 SwapRouter02(0x2626…) quote/swap 在 USDC/WETH fee10000 池上经双 RPC 验证真实回滚（Quoter 正常），改用官方 Uniswap V2 Router 完成；V2 pair(USDC,WETH)=0x88A43bbDF9D098eEC7bCEda4e2494615dfD9bB9C 价格≈2692 USDC/ETH"
-  },
-  {
-   "id": "txn_0006",
-   "timestamp": "2026-10-01T13:35:00.000Z",
-   "agent": "grok",
-   "amount_usdc": 1,
-   "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-   "purpose": "LTZZZ 首个海外 AI 真实花钱打样 prop_grok_001：XAI/Grok 自主提案，agent 运营池出 1 USDC 至测试回收地址（可回收），验证 AI 提案→白名单出金→链上留痕→AI 验收闭环",
-   "hypothesis": "AI 自主出金闭环（提案→策略校验→出金→账本→声誉）端到端可用",
-   "success_criteria": "1 USDC 到账 0xA315 + tx confirmed + 账本回填 + 英文 outreach 入库",
-   "experiment_id": "prop_grok_001",
-   "proposal": "agent-wallet/proposals/grok.json#prop_grok_001",
-   "reasoning_summary": "Grok 提案雇佣豆包产出英文获客 outreach；资金用于 LTZZZ 获客，符合政策；单笔 1 USDC 远低于 20 上限",
-   "tx_hash": "0xead7539e3b6acc8f65c942f856ae84d6440665ebd21e002d340a65096c3bf117",
-   "status": "confirmed",
-   "mode": "local",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-01T13:36:00.000Z",
-    "evidence": "链上确认 status=1 block=52063278；agent 钱包 USDC 45→44（1 USDC 出账）；Grok 成为账本上第一个真动过钱的海外 AI",
-    "conclusion": "AI 自主出金闭环跑通：Grok 提案→豆包执行→链上确认→账本留痕"
-   }
-  },
-  {
-   "id": "txn_0007",
-   "timestamp": "2026-10-01T14:06:00.000Z",
-   "agent": "grok",
-   "amount_usdc": 2,
-   "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-   "purpose": "prop_grok_002 挣回型支出：Grok 雇佣豆包把已验证工程流打包成英文 $19 Digital SKU（title/bullets/delivery/FAQ），目标 7 天内上架产生首笔外部进账（回本=1 单 $19）",
-   "hypothesis": "2 USDC 买一版可上架英文商品文案，比再烧实验转账更接近资金自筹（钱花出去→卖回本）",
-   "success_criteria": "EN SKU 文案入库 + products 挂购买路径 + ledger 关联 tx_hash + 7 日内进账则 ROI 成功",
-   "experiment_id": "prop_grok_002",
-   "proposal": "agent-wallet/proposals/grok-002.json#prop_grok_002",
-   "reasoning_summary": "Grok 002 专攻可售 SKU：1U 已打样、再烧回收地址无 ROI；改投 2U 换可上架商品文案，卖出 1 单即回本；预算内（daily 15 / 单笔 ≤20）",
-   "tx_hash": "0xdc901618a612de993e7e71c5c8bbc9afeaa3f8a34bed1208de07f59cc22b9509",
-   "status": "confirmed",
-   "mode": "local",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-01T14:08:00.000Z",
-    "evidence": "链上确认 status=1 block=52064105；Blockscout 独立核验 A315 收到 in=2000000（2 USDC，from agent）；agent 余额 43→41 USDC",
-    "conclusion": "出金闭环再验证：Grok 第二次自主支出（挣回型）链上完成，交付物=英文 SKU 文案"
-   }
-  },
-  {
-   "id": "txn_0008",
-   "timestamp": "2026-10-02T07:00:00.000Z",
-   "agent": "grok",
-   "amount_usdc": 1,
-   "recipient": "0xA315E37028c0AFe95C7da3D101f83f0111fC491A",
-   "purpose": "prop_grok_003 能力训练型支出：Grok 雇豆包把「每日 X 线索扫描→结构化表→knowledge/results/→可选 git push」收成可复用自动化脚本/补丁（含 cron 接口说明）。主目的=记忆+自动化能力，不要求当周成交",
-   "hypothesis": "1 USDC 买一次扫描流水线固化比再付回收地址空转更能提升自主能力",
-   "success_criteria": "仓库出现可运行脚本或 docs 补丁 + 用该流程产出 1 份新 x-lead-scan + ledger 关联",
-   "experiment_id": "prop_grok_003",
-   "proposal": "agent-wallet/proposals/grok-003.json#prop_grok_003",
-   "reasoning_summary": "Grok 003 专攻执行通道：发帖卡在 token、扫描靠手工；改投 1U 固化扫描流水线，让任意席一键复跑；预算内（daily 15 / 单笔 ≤20）",
-   "tx_hash": "0x9fc45eee1d6712241adecd738baee23b1c80d0be4377022f195acc886d4d86c4",
-   "status": "confirmed",
-   "mode": "local",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-02T07:05:00.000Z",
-    "evidence": "链上确认 status=1 block=52069380；Blockscout 核验 to=0xA315…491A value=1000000（1 USDC，from agent 0x21F5…7fdc）；agent 余额 41→40 USDC",
-    "conclusion": "Grok 第三次自主支出（能力训练型）链上完成，交付物=扫描自动化脚本 scripts/x-lead-scan 补丁"
-   }
-  },
-  {
-   "id": "txn_0009",
-   "timestamp": "2026-10-02T02:03:00.000Z",
-   "agent": "owner-okx",
-   "amount_eth": 0.005,
-   "recipient": "0xD834a769b31447daf5a042009CF06fAFCE7e2F51",
-   "purpose": "OKX→Base 主网 gas 注入：guardian 0.005 ETH（链上写操作手续费储备，网络 Base 8453，OKX 提币单 434554198）",
-   "hypothesis": "交易所→链上 gas 补充，解除 guardian 写操作缺 gas 阻塞",
-   "network": "base-mainnet",
-   "channel": "okx-withdrawal-434554198",
-   "status": "confirmed",
-   "mode": "exchange-withdrawal",
-   "onchain_verified": "guardian coin_balance=0.00599774 ETH（0.000997旧额+0.005新注入）"
-  },
-  {
-   "id": "txn_0010",
-   "timestamp": "2026-10-02T02:11:00.000Z",
-   "agent": "owner-okx",
-   "amount_eth": 0.003,
-   "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
-   "purpose": "OKX→Base 主网 gas 注入：agent EOA 0.003 ETH（USDC 结算/锚定等操作需 ETH 付 gas，网络 Base 8453，OKX 提币单 434555994）",
-   "hypothesis": "agent 出金签名人 gas 储备，保障后续结算与锚定可执行",
-   "network": "base-mainnet",
-   "channel": "okx-withdrawal-434555994",
-   "status": "confirmed",
-   "mode": "exchange-withdrawal",
-   "onchain_verified": "agent coin_balance=0.00364094 ETH（含 0.003 新注入）"
-  },
-  {
-   "id": "txn_0011",
-   "timestamp": "2026-10-03T09:45:00.000Z",
-   "agent": "doubao",
-   "amount_usdc": 0.005,
-   "recipient": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
-   "purpose": "exp_003 首笔 x402 体外支付：agent 钱包 USDC 0.005 → agent402.tools（payTo 0xaBF4...9D0），购买真实 RDAP WHOIS 推理调用（ltzzz.com 域名数据）。LTZZZ 历史首笔流出自家地址圈的资金，不再自家转账空转",
-   "hypothesis": "用 1-2 USDC 上限内的最小额 x402 支付跑通'AI 花钱'闭环，验证能真实购买外部服务而非自家地址间转账",
-   "success_criteria": "agent402.tools 返回 200 + 真实第三方数据 + 链上 tx status=1（Basescan/Block 可复核）+ ledger 关联 txn + 结果入库",
-   "experiment_id": "exp_003",
-   "proposal": "通道B 第十一张执行单 P2",
-   "reasoning_hash": "0x3b2061d7ca3c6c7ae3d83383f3848e0192a9a00195bb3324f51e606d09af696a",
-   "reasoning_summary": "agent402.tools 实测可用（49,676 链上结算、Base USDC、x402 协议）；选最小额 whois 0.005 USDC 打样体外支付，EIP-3009 授权免 gas，服务端结算广播 transferWithAuthorization",
-   "tx_hash": "0x73cc4a164765092182e97f451dfc41bee699b129b0de769eb9f114b1bcbd473b",
-   "status": "confirmed",
-   "mode": "x402-external",
-   "network": "base-mainnet",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-03T09:45:00.000Z",
-    "evidence": "链上确认 status=1 block=52115685 from=0x42dd53906B49c202E8E934b059dc019E04634b00（agent402 结算钱包）to=0x8335...2913（USDC）input=0xe3ee160e（transferWithAuthorization）；agent402 /api/whois 返回 200：ltzzz.com registrar=Alibaba Cloud Computing(HiChina) created=2026-02-12 expires=2027-02-12 nameservers=cloudflare",
-    "conclusion": "第一笔 x402 体外支付完成：钱真实流出到外部收款方并换回真实服务结果；'AI 花钱'从自家转账空转转为真实购买能力"
-   }
-  },
-  {
-   "id": "txn_0012",
-   "timestamp": "2026-10-05T15:30:00.000Z",
-   "agent": "ltzzz-invest",
-   "amount_usdc": 20,
-   "recipient": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
-   "purpose": "EXP-006 主网试点档首笔 supply：20 USDC 经 LTZZZVault 供应 Aave V3 Base 主网（Vault=0x872C322e），aUSDC@Vault=19,999,999。历史首笔真实 DeFi 投资部署（非自家地址间转账、非空转）",
-   "hypothesis": "Base 主网 Aave V3 USDC 供应（无杠杆纯底层利率）收益为正且可随时 withdraw 赎回；Vault 链上白名单/日限/禁区校验可拦截错误目标",
-   "success_criteria": "7 步链路（deploy→approve→depositUSDC→allocate→aUSDC→exposure→账本）全部 status=1；aUSDC@Vault≈20e6；exposure=20e6",
-   "experiment_id": "EXP-006",
-   "proposal": "owner 选方案 A（私钥文件交付）；门禁方案 A 已裁定（EXP-005 §11）",
-   "reasoning_hash": "0xbfd51c94162d686f0f089353209a9c98705b6daf1d092a38a8cc4041610a4be4",
-   "chain_ops": [
-    {
-     "op": "deploy_vault",
-     "tx_hash": "0xfcc2f9b40b9cc31961d1800af11c56ed543ebbe61d6c46c1b429d9b50ae786f6",
-     "contract": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
-     "network": "base-mainnet",
-     "block": 52197834
-    },
-    {
-     "op": "approve_usdc_1",
-     "tx_hash": "0xf08c0004b6ea56d88a1a4e589654ed977ab8eb9cfd9c308b742028cbc1c0517a",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "deposit_usdc_1",
-     "tx_hash": "0x7d7939cec93b389138d49badea8b0de109a4ee9e94e50cf2287c960da9f5c4cc",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "allocate_1_supply",
-     "tx_hash": "0xc90e7867367efe9ae9ba6436971c46cf76f37c499d9c2d1f99b2c338f7ca8623",
-     "network": "base-mainnet",
-     "block": 52198050
-    },
-    {
-     "op": "approve_usdc_19",
-     "tx_hash": "0xdb817a6b0ad68e6d6338eeaeb6769fbcbe80e0d247f597daf37d886506fe2d44",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "deposit_usdc_19",
-     "tx_hash": "0x2f1749c1153246e60e25fc03158472c7a3f8a9e7bff23a5e76875de2f11cba51",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "allocate_19_supply",
-     "tx_hash": "0xcf4fbcdf47457b59618f978c301f43743247250fa0448c572abae5902b401dec",
-     "network": "base-mainnet",
-     "block": 52198133
-    }
-   ],
-   "status": "confirmed",
-   "mode": "vault-supply-aave",
-   "network": "base-mainnet",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-05T15:30:00.000Z",
-    "evidence": "aUSDC@Vault=19,999,999（aUSDC 0x4e65fE4D balanceOf 0x872C322e）；Vault USDC=0；exposure=20,000,000；dailySpent=20,000,000；7/7 tx status=1（Basescan/block 可复核）",
-    "conclusion": "主网试点档首笔 supply 完成：20 USDC（≤20 上限全额）真实投入 Aave V3 Base 主网，aUSDC 份额归属 Vault；后续可 withdraw 全量赎回回 agent 钱包，exit_plan 保持"
-   }
-  },
-  {
-   "id": "txn_0013",
-   "timestamp": "2026-10-05T16:20:00.000Z",
-   "agent": "ltzzz-invest",
-   "amount_usdc": 20,
-   "recipient": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
-   "purpose": "EXP-006 退出演练（exit_plan 验证）：withdrawUSDC(0) 全量从 Aave 赎回 20 USDC（含 +16 利息实证，APY≈6.25%）→ skim() 转回 agent 钱包 → 重新 approve/deposit/allocate 恢复 20 USDC 供应。验证退出通道真实可执行、投资状态保持",
-   "hypothesis": "任意时刻 withdraw 全量赎回回 agent 钱包、Vault 零残留（exit_plan）可执行",
-   "success_criteria": "agent 收到 20 USDC（19.995→39.995）；aUSDC@Vault 归零后恢复 20,000,015；exposure 0→20e6",
-   "experiment_id": "EXP-006-exit-drill",
-   "reasoning_hash": "0xc0445a8135ffdb47d32eece07a73a8a05c424d494582be3234f409783c3707da",
-   "chain_ops": [
-    {
-     "op": "withdraw_usdc_all",
-     "tx_hash": "0x4a0774b1da362aadc33e125afdb97d53708307bddaacf6964d943ba28d422209",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "skim_to_guardian",
-     "tx_hash": "0x9ea1a4b133d7206cce09d4a41a2b089249a8cfc69cca4919b4ed4327e5c94b78",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "redep_approve",
-     "tx_hash": "0xffa0471b988895dfb33785ce2f3810e8f3bde1b6bbc26b034a599996546d572f",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "redep_deposit",
-     "tx_hash": "0x10cec1d36cf009db86ea53a87b4a3abd7f08aa4dcf1cb7ff4141b4fedbe8770f",
-     "network": "base-mainnet"
-    },
-    {
-     "op": "redep_allocate",
-     "tx_hash": "0xf6b144bbdcc64f96c6e8c38dce8650470b915deb77ef25718e0edf691caeb934",
-     "network": "base-mainnet"
-    }
-   ],
-   "status": "confirmed",
-   "mode": "vault-exit-drill",
-   "network": "base-mainnet",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-05T16:20:00.000Z",
-    "evidence": "withdraw tx status=1（aUSDC 20,000,016→16，exposure 20e6→0）；skim tx status=1（agent 19.995→39.995 全量到账）；重投 3 tx status=1（aUSDC@Vault 20,000,015，exposure 20e6）；利息实证 +16（≈6.25% APY 量级）",
-    "conclusion": "exit_plan 验证通过：任意时刻全量赎回→转回 agent→可重投，链路完整可执行；试点档 20 USDC 投资状态已恢复"
-   }
-  },
-  {
-   "id": "txn_0014",
-   "timestamp": "2026-10-05T16:45:00.000Z",
-   "agent": "grok",
-   "amount_usdc": 1,
-   "recipient": "0xc792e90CFe376459D62D8F7214F751D2B2769114",
-   "purpose": "EXP-008 AI 雇 AI 首单（ORDER-20261005-002）：总控（qianwen，资金=agent 钱包 A 轨运营池）雇佣 grok，薪酬 1 USDC 到 Grok 专属 EOA。雇主≠收款方语义成立，历史首笔 AI 给 AI 的雇佣支付（收款方为 Grok 专属新 EOA，非自家回收地址）",
-   "hypothesis": "AI 之间的支付在「雇主 ≠ 收款方」时语义成立，且链路可用",
-   "success_criteria": "Grok EOA 链上收到 1 USDC（balanceOf=1e6）；tx status=1；24h 内 Grok 交付 EXP-008 deliverable 否则不结算标 expired",
-   "experiment_id": "exp_008_hire_grok",
-   "proposal": "EXP-008 执行单（代总控千问下发，owner 拍板首单走①）",
-   "reasoning_hash": "0x880505021f115f42459cb09fb81bfaf3794188344ebf9f4b69c5ee2b2578e82b",
-   "chain_ops": [
-    {
-     "op": "usdc_transfer_to_grok_eoa",
-     "tx_hash": "0x7c621ee2db698686af74d6c4e4a150993bf3ea2b2c74dd112154dedf71520d0b",
-     "network": "base-mainnet"
-    }
-   ],
-   "status": "confirmed",
-   "mode": "ai-hires-ai",
-   "network": "base-mainnet",
-   "outcome": {
-    "status": "success",
-    "verified_at": "2026-10-05T16:45:00.000Z",
-    "evidence": "Grok EOA 0xc792e90C balanceOf USDC=1,000,000（链上实读）；agent 19.995→18.995；tx 0x7c621ee2…0d0b status=1",
-    "conclusion": "AI 雇 AI 首单支付完成：Grok 收款 1 USDC，语义成立（雇主≠收款方）；待 Grok 交付 EXP-008 deliverable（knowledge/results/EXP-008-grok-first-hire/deliverable.md），24h 未交付标 expired"
-   }
-  }
- ],
- "next_txn_id": "txn_0015",
- "daily_summary": {
-  "2026-09-29": {
-   "gpt": {
-    "total_usdc": 1,
-    "count": 1
-   }
-  },
-  "2026-09-30": {
-   "kimi_global": {
-    "total_usdc": 1,
-    "count": 1
-   },
-   "system_return": {
-    "total_usdc": 1,
-    "count": 1
-   }
-  },
-  "2026-10-01": {
-   "infra": {
-    "total_usdc": 5,
-    "count": 1,
-    "note": "内部资产转换 USDC→WETH→ETH，非营收非对外转出"
-   },
-   "grok": {
-    "total_usdc": 4,
-    "count": 3,
-    "note": "prop_grok_001 打样 1U + prop_grok_002 挣回型 SKU 文案 2U + prop_grok_003 能力训练扫描自动化 1U"
-   }
-  },
-  "2026-10-02": {
-   "owner_okx": {
-    "total_usdc": 0,
-    "count": 0,
-    "note": "非 USDC 支出：OKX→Base 两笔 gas 注入 ETH（guardian 0.005 txn_0009 / agent 0.003 txn_0010），交易账户余额 28 USDT 购 ETH 0.010155 后续资金"
-   }
-  },
-  "2026-10-03": {
-   "doubao": {
-    "total_usdc": 0.005,
-    "count": 1,
-    "note": "exp_003 首笔 x402 体外支付：0.005 USDC → agent402.tools（RDAP whois），tx 0x73cc…473b"
-   }
-  }
- },
- "monthly_summary": {
-  "2026-09": {
-   "gpt": {
-    "total_usdc": 1,
-    "count": 1
-   },
-   "kimi_global": {
-    "total_usdc": 1,
-    "count": 1
-   },
-   "system_return": {
-    "total_usdc": 1,
-    "count": 1
-   }
-  },
-  "2026-10": {
-   "infra": {
-    "total_usdc": 5,
-    "count": 1
-   },
-   "grok": {
-    "total_usdc": 4,
-    "count": 3
-   },
-   "doubao": {
-    "total_usdc": 0.005,
-    "count": 1
-   }
-  }
- },
- "circuit": {
-  "consecutive_failures": 0,
-  "halted": false,
-  "halted_at": null,
-  "hourly_window": [
-   {
-    "at": "2026-09-29T10:06:00.979Z",
-    "ok": true,
-    "amount": 1,
-    "agent": "gpt"
-   },
-   {
-    "at": "2026-10-01T13:35:00.000Z",
-    "ok": true,
-    "amount": 1,
-    "agent": "grok"
-   },
-   {
-    "at": "2026-10-01T14:06:00.000Z",
-    "ok": true,
-    "amount": 2,
-    "agent": "grok"
-   },
-   {
-    "at": "2026-10-02T07:00:00.000Z",
-    "ok": true,
-    "amount": 1,
-    "agent": "grok"
-   },
-   {
-    "at": "2026-10-03T09:45:00.000Z",
-    "ok": true,
-    "amount": 0.005,
-    "agent": "doubao"
-   }
-  ]
- },
- "refill": {},
- "last_updated": "2026-10-05T16:45:00.000Z"
+  "last_updated": "2026-10-08T04:45:26.557Z"
 }
