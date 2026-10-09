@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { classifyTaskOutcome } from "./task-outcome.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -202,6 +203,10 @@ async function main() {
 
   tasks.push({agent: "claude", status: "disabled_by_owner", task: "席位停用", output_preview: "owner 2026-10-09 决定放弃；未调用 Anthropic API"});
 
+  for (const task of tasks) {
+    Object.assign(task, classifyTaskOutcome({ status: task.status, hasOutput: Boolean(task.output_preview) }));
+  }
+
   const reflectionRelativePath = `data/reflections/${today}.md`;
   const reflectionLines = [
     `# LTZZZ 核心记忆读后感 · ${today}`,
@@ -261,11 +266,13 @@ async function main() {
     "|---|---|---|",
     ...coreMemory.audit.files.map((file) => `| \`${file.path}\` | ${file.status} | ${file.sha256 || "—"} |`),
     "",
+    "- 状态口径：模型调用成功不等于交付验收；本任务不执行资金操作。",
+    "",
     "## 各 AI 状态",
     "",
-    "| AI | 状态 | 产出预览 |",
-    "|---|---|---|",
-    ...tasks.map((task) => `| ${task.agent} | ${task.status} | ${String(task.output_preview || "").replace(/\s+/g, " ").replace(/\|/g, "\\|").slice(0, 120)} |`),
+    "| AI | 执行状态 | 交付状态 | 经济状态 | 产出预览 |",
+    "|---|---|---|---|---|",
+    ...tasks.map((task) => `| ${task.agent} | ${task.execution_status} | ${task.delivery_status} | ${task.economic_status} | ${String(task.output_preview || "").replace(/\s+/g, " ").replace(/\|/g, "\\|").slice(0, 120)} |`),
     "",
     failures.length ? `## 失败/未配置\n\n${failures.map((failure) => `- ${failure.agent}: ${failure.status} — ${failure.error}`).join("\n")}\n` : "",
     pendingEntries.length ? `## 催办中（未完成任务，下次运行自动注入 prompt）\n\n${pendingEntries.map(([agent, reminder]) => `- ${agent}: ${reminder.date} ${reminder.status_reason || reminder.status} — ${reminder.reason}`).join("\n")}\n` : "",

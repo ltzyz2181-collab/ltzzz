@@ -32,6 +32,9 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Test execution, delivery, and economic status classification
+        run: node --test scripts/tests/task-outcome.test.mjs
+
       - name: Preflight — 当日是否已产出（幂等）
         id: preflight
         run: |
@@ -52,7 +55,6 @@ jobs:
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/run-daily-tasks.mjs
 
       - name: Commit results
