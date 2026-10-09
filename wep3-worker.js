@@ -25,7 +25,16 @@ async function get(env, key, fallback) { const raw = kv(env) && await kv(env).ge
 async function put(env, key, value) { if (kv(env)) await kv(env).put(key, JSON.stringify(value)); }
 async function list(env, prefix, lim) { if (!kv(env)) return []; const listed = await kv(env).list({prefix, limit: lim || 80}); const items = []; for (const k of listed.keys || []) { const row = await get(env, k.name, null); if (row) items.push(row); } return items.sort((a, b) => String(b.at || b.created_at || b.settled_at || '').localeCompare(String(a.at || a.created_at || a.settled_at || ''))); }
 async function sha(text) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); }
-function pinOk(request, env) { return !env.LAB_PIN || request.headers.get('x-lab-pin') === env.LAB_PIN; }
+// 2026-10-09 总控修复（P0 安全）：原实现 `!env.LAB_PIN || ...` 属 fail-open——
+// LAB_PIN 未配置时恒返回 true，任何匿名请求都能调 /deposit /withdraw /transfer /hire
+// 篡改任意 AI 余额（线上 health 实测 pin:false，即处于无鉴权状态）。
+// 改为 fail-closed：未配置 PIN 一律拒绝写操作。宁可功能暂不可用，不可资金账本裸奔。
+function pinOk(request, env) {
+  if (!env.LAB_PIN) return false;
+  const provided = request.headers.get('x-lab-pin');
+  if (!provided) return false;
+  return provided === env.LAB_PIN;
+}
 async function rep(env, agent) { return await get(env, 'wep3:rep:' + agent, null) || {agent, score: 100, earned: 0, spent: 0, credit: 1, jobs: 0, stamps: 0, held: 0, line_used: 0}; }
 async function saveRep(env, row) { row.updated_at = new Date().toISOString(); await put(env, 'wep3:rep:' + row.agent, row); return row; }
 function other(notThese) { return AGENTS.find(a => !notThese.includes(a)) || 'Microsoft'; }
