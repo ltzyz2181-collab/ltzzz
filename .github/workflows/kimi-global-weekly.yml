@@ -1,10 +1,7 @@
 name: Kimi Global Weekly no API key task packet
 on:
   schedule:
-    - cron: '0 1 * * 1' # UTC 周一01:00 = Asia/Shanghai 周一09:00
-  push:
-    branches: [main]
-    paths: ['scripts/kimi-global-no-key.mjs', '.github/workflows/kimi-global-weekly.yml']
+    - cron: '0 1 * * 6' # UTC 周六01:00 = Asia/Shanghai 周六09:00，与Kimi创新日一致
   workflow_dispatch:
 permissions: {contents: write}
 concurrency:
