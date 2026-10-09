@@ -29,6 +29,12 @@ export default {
       });
     }
 
+    if (request.method === 'POST' && url.pathname === '/diagnose-regions') {
+      if (!env.KIMI_DIAGNOSTIC_TOKEN) return json({error:'diagnostic_auth_missing'},503);
+      if (request.headers.get('Authorization') !== `Bearer ${env.KIMI_DIAGNOSTIC_TOKEN}`) return json({error:'unauthorized'},401);
+      return diagnoseRegions(env);
+    }
+
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
@@ -105,4 +111,21 @@ function json(data, status = 200) {
     status,
     headers: { ...cors(), 'Content-Type': 'application/json; charset=utf-8' }
   });
+}
+
+async function diagnoseRegions(env) {
+ const results=[];
+ for(const region of ['cn','ai']){
+  const result={region,base:'https://api.moonshot.'+region+'/v1'};
+  if(!env.KIMI_API_KEY){result.status='missing_worker_secret';results.push(result);continue;}
+  try{
+   const headers={Authorization:'Bearer '+env.KIMI_API_KEY};
+   const response=await fetch(result.base+'/users/me/balance',{headers,signal:AbortSignal.timeout(15000)});
+   const body=await response.json().catch(()=>({}));result.balance_http=response.status;
+   if(response.ok)result.balance={available_balance:body.available_balance??body.data?.available_balance,cash_balance:body.cash_balance??body.data?.cash_balance,voucher_balance:body.voucher_balance??body.data?.voucher_balance};
+   result.error_type=body.error?.type||null;result.organization_hint=String(body.error?.message||'').match(/org-[A-Za-z0-9]+/)?.[0]||null;
+   const models=await fetch(result.base+'/models',{headers,signal:AbortSignal.timeout(15000)});const m=await models.json().catch(()=>({}));result.models_http=models.status;result.models=(m.data||[]).map(x=>x.id);
+  }catch{result.status='timeout_or_network_error';}results.push(result);
+ }
+ return json({at:new Date().toISOString(),has_worker_key:Boolean(env.KIMI_API_KEY),configured_upstream:env.KIMI_BASE_URL||'https://api.moonshot.cn/v1/chat/completions',matches_domestic_screenshot_key_suffix:Boolean(env.KIMI_API_KEY?.endsWith('e9T9S')),results});
 }
