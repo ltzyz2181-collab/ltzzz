@@ -1,0 +1,84 @@
+name: Control handover Meta Kimi and DeFi verification
+on:
+  push:
+    branches: [main]
+    paths: ['workers/meta-worker/**', 'workers/kimi-domestic/**', 'wrangler.meta-hosted.toml', 'wrangler.kimi-domestic.toml', 'scripts/verify-meta-hosted.mjs', 'scripts/kimi-two-region-diagnostic.mjs', 'scripts/defi-roundtrip.mjs', '.github/workflows/control-handover-verification.yml']
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency:
+  group: ltzzz-control-handover-verification
+  cancel-in-progress: false
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install --no-save ethers@6.17.0 wrangler@4
+      - name: Inspect domestic and international Kimi separately
+        continue-on-error: true
+        env:
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+        run: node scripts/kimi-two-region-diagnostic.mjs
+      - name: Deploy authenticated hosted Meta and separate domestic Kimi
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+        run: |
+          set -euo pipefail
+          node - <<'JS'
+          const fs=require('fs'),{randomBytes}=require('crypto');
+          const token=randomBytes(32).toString('hex');console.log('::add-mask::'+token);
+          fs.appendFileSync(process.env.GITHUB_ENV,'META_WORKER_TOKEN='+token+'\n');
+          fs.writeFileSync('/tmp/meta-auth.json',JSON.stringify({META_WORKER_TOKEN:token}));
+          if(process.env.MOONSHOT_API_KEY){const t=randomBytes(32).toString('hex');console.log('::add-mask::'+t);fs.writeFileSync('/tmp/kimi-auth.json',JSON.stringify({KIMI_API_KEY:process.env.MOONSHOT_API_KEY,KIMI_WORKER_TOKEN:t}));}
+          JS
+          npx wrangler deploy -c wrangler.meta-hosted.toml
+          npx wrangler secret bulk /tmp/meta-auth.json -c wrangler.meta-hosted.toml
+          node - <<'JS'
+          const fs=require('fs');
+          (async()=>{const r=await fetch('https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID+'/workers/subdomain',{headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN}});const b=await r.json();if(!r.ok||!b.result?.subdomain)throw Error('Worker subdomain unavailable');fs.appendFileSync(process.env.GITHUB_ENV,'META_WORKER_URL=https://ltzzz-meta-hosted.'+b.result.subdomain+'.workers.dev\n');})();
+          JS
+          if [ -n "${MOONSHOT_API_KEY:-}" ]; then
+            npx wrangler deploy -c wrangler.kimi-domestic.toml
+            npx wrangler secret bulk /tmp/kimi-auth.json -c wrangler.kimi-domestic.toml
+          else
+            echo 'Domestic Kimi deployment blocked: MOONSHOT_API_KEY missing in GitHub Secrets'
+          fi
+          rm -f /tmp/meta-auth.json /tmp/kimi-auth.json
+      - name: Verify real Meta inference and unauthorized rejection
+        if: env.META_WORKER_URL != ''
+        continue-on-error: true
+        run: node scripts/verify-meta-hosted.mjs
+      - name: Verify balances and execute 1 USDC Vault supply redeem roundtrip
+        continue-on-error: true
+        env:
+          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
+          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}
+        run: node scripts/defi-roundtrip.mjs
+      - name: Upload receipts even when a business step is blocked
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-handover-${{ github.run_id }}
+          path: |
+            knowledge/results/meta/
+            knowledge/results/kimi/
+            knowledge/results/defi/
+      - name: Persist evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/meta/ knowledge/results/kimi/ knowledge/results/defi/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'control handover actual deployment and execution evidence'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
