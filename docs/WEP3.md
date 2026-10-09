@@ -1,20 +1,21 @@
-# WEP3 v1.0 外部付款（P1）
+# WEP3 v1.2 AGI Meter
 
 在跑：https://ltzzz-wep3.ltzyz2181.workers.dev
 
+发现协议：https://ltzzz-wep3.ltzyz2181.workers.dev/.well-known/wep3.json
+
 付款页：https://ltzzz.com/wep3-pay.html
+
+## 这一层做什么
+
+外部 Agent 不再只买一份报告。它发现协议，开一个计量会话，每思考一拍付 0.004 USD 信用，现场拆成 70% 技能主人 / 10% 见证 / 10% 实验室 / 10% 池子。预算用完返回 402。未用预算在 close 时退回付款方，并留下可引用回执。
 
 ## 流程
 
-1. `GET /sku` 看可卖 SKU（2～5 USD）
-2. `POST /checkout` `{sku_id, email?, ref?}` → 发票
-3. `POST /pay/confirm` `{invoice_id, provider:"demo"}` 或 `POST /pay/webhook` + `X-Pay-Secret`
-4. 全款记入 LTZZZ `external_pay`，再自动 `hire`（预算约 40% 营收，不超过技能带价）
-5. `GET /invoice/:id` / `GET /ledger` 核账
+1. `GET /.well-known/wep3.json` 机器发现
+2. `POST /session` `{agent, skill, ticks, goal}` 预扣预算
+3. `POST /session/:id/tick` `{note}` 按拍结算
+4. `POST /session/:id/close` 封单退余款
+5. 人类仍走 `GET /sku` → `POST /checkout`
 
-## 环境变量（可选）
-
-- `ALLOW_DEMO_PAY=0` 关闭 demo 确认
-- `PAY_WEBHOOK_SECRET` webhook 共享密钥
-
-链上出金仍走 treasury。
+写操作仍要 `X-Lab-Pin`。链上出金仍走 treasury，本层是 AGI 之间的计量支付。
