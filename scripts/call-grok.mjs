@@ -6,13 +6,14 @@ const MODEL_CANDIDATES = [
   process.env.XAI_MODEL, "grok-4.6", "grok-4-1", "grok-4", "grok-4-fast", "grok-2-latest",
 ].filter(Boolean);
 
-export async function callAgent({ apiKey, prompt, model }) {
+export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
   if (!apiKey) return { ok: false, status: "not_configured", error: "XAI_API_KEY 未配置（请在 GitHub Secrets 添加）" };
   const candidates = model ? [model, ...MODEL_CANDIDATES] : MODEL_CANDIDATES;
   for (const mdl of [...new Set(candidates)]) {
     try {
       const resp = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
+      signal: AbortSignal.timeout(120000),
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: mdl,
@@ -20,7 +21,7 @@ export async function callAgent({ apiKey, prompt, model }) {
             { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
             { role: "user", content: prompt },
           ],
-          max_tokens: 600,
+          max_tokens: maxTokens,
         }),
       });
       if (!resp.ok) {
@@ -32,7 +33,7 @@ export async function callAgent({ apiKey, prompt, model }) {
       }
       const data = await resp.json();
       const output = (data.choices?.[0]?.message?.content || "").trim();
-      return { ok: true, status: "success", output, tokens_used: data.usage?.total_tokens || 0, model: mdl };
+      return { ok: true, status: "success", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0, model: mdl };
     } catch (e) {
       return { ok: false, status: "exception", error: String(e) };
     }
