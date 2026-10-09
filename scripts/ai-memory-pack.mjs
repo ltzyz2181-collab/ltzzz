@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const files=['README','装备论','魄','识神','梦境数据库','文明研究','项目历史','重要事件'].map(n=>`ltzzz-memory/${n}.md`);
+const docs=files.map(file=>({file,text:fs.readFileSync(path.join(root,file),'utf8')}));
+if(docs.some(d=>!d.text.trim()))throw Error('Empty memory file');
+console.log('# LTZZZ 完整记忆包\n\n导读不代替正文；下面包含八份实际文件。');
+for(const {file,text}of docs)console.log(`\n## ${file}\n\n字节：${Buffer.byteLength(text)}；SHA256：${crypto.createHash('sha256').update(text).digest('hex')}\n\n${text}`);

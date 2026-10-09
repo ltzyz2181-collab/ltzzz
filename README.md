@@ -1,3 +1,7 @@
+# AI 接手入口
+
+所有 AI 先读 [AI-START-HERE.md](AI-START-HERE.md)：六篇导读、完整正文、凭证位置、调用部署与每日数据任务。
+
 # LTZZZ 数字实验室
 
 **海韵天城 · LTZZZ Digital Lab**

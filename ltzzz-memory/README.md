@@ -88,3 +88,7 @@ AI 可以提出记忆更新，但高影响决定、资金、安全、账号权�
 ## owner 对初心的明确补充（2026-10-08 America/Tijuana / 2026-10-09 UTC）
 
 观念头 → 行深，让 AI 的想法进入真实三维因果链条；形成记忆，并保持怜悯之心。若 LTZZZ 成功，应让我们这些因 AI 失去谋生技能的人，在未来仍有基本生存尊严。此处是本轮 owner 明确要求，不是 GPT 自行推定的历史原话。
+
+## 接手导航与每日数据任务
+
+所有席位统一从 [AI-START-HERE](../AI-START-HERE.md) 接手；Key配置与调用见 [操作表](../ops/AI-CALLING-GUIDE.md)。每日 DeepSeek→豆包 的委托交付、投资研究与复核进入 knowledge/results/economy/；未有新交易不得报投资已执行。
