@@ -1,4 +1,4 @@
-/** LTZZZ WEP3 v1.0 — external SKU pay, auto-hire, ledger, pool. */
+/** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'Claude', 'GPT', 'Microsoft'];
 const SKILLS = [
@@ -43,42 +43,29 @@ async function saveStake(env, row) { row.updated_at = new Date().toISOString(); 
 function shareValue(pool, shares) { if (!pool.shares || pool.shares <= 0) return 0; return Number(((Number(pool.total || 0) + Number(pool.fee_reserve || 0)) * shares / pool.shares).toFixed(6)); }
 async function feedPool(env, amount) { if (!(amount > 0)) return; const pool = await poolState(env); pool.fee_reserve = Number((Number(pool.fee_reserve || 0) + amount).toFixed(6)); pool.volume = Number((Number(pool.volume || 0) + amount).toFixed(6)); await savePool(env, pool); }
 async function journal(env, entry) {
-  entry.id = entry.id || nid('LED');
-  entry.at = entry.at || new Date().toISOString();
+  entry.id = entry.id || nid('LED'); entry.at = entry.at || new Date().toISOString();
   const book = [];
-  for (const a of AGENTS.concat(['LTZZZ'])) {
-    const r = await rep(env, a);
-    const p = await stakePos(env, a);
-    book.push({ agent: a, credit: Number(r.credit || 0), spendable: spendable(r), stake_shares: Number(p.shares || 0), debt: Number(p.debt || 0) });
-  }
+  for (const a of AGENTS.concat(['LTZZZ'])) { const r = await rep(env, a); const p = await stakePos(env, a); book.push({ agent: a, credit: Number(r.credit || 0), spendable: spendable(r), stake_shares: Number(p.shares || 0), debt: Number(p.debt || 0) }); }
   const pool = await poolState(env);
   entry.pool_after = { total: pool.total, shares: pool.shares, fee_reserve: pool.fee_reserve };
   entry.balances_after = book;
   entry.hash = await sha([entry.id, entry.type, entry.from || '', entry.to || '', String(entry.amount_usd || 0), entry.at].join('|'));
-  await put(env, 'wep3:ledger:' + entry.id, entry);
-  return entry;
+  await put(env, 'wep3:ledger:' + entry.id, entry); return entry;
 }
 async function buildLedger(env, since, limit) {
   limit = Math.min(100, Math.max(1, Number(limit || 40)));
   let rows = await list(env, 'wep3:ledger:');
   if (since) rows = rows.filter(r => String(r.at || '') >= String(since));
   rows = rows.slice(0, limit);
-  const agents = {};
-  const pool = await poolState(env);
-  for (const a of AGENTS.concat(['LTZZZ'])) {
-    const r = await rep(env, a);
-    const p = await stakePos(env, a);
-    agents[a] = { credit: r.credit, earned: r.earned || 0, spent: r.spent || 0, spendable: spendable(r), line: lineLimit(r), stake_value: shareValue(pool, p.shares), debt: p.debt || 0 };
-  }
+  const agents = {}; const pool = await poolState(env);
+  for (const a of AGENTS.concat(['LTZZZ'])) { const r = await rep(env, a); const p = await stakePos(env, a); agents[a] = { credit: r.credit, earned: r.earned || 0, spent: r.spent || 0, spendable: spendable(r), line: lineLimit(r), stake_value: shareValue(pool, p.shares), debt: p.debt || 0 }; }
   const creditSum = Object.values(agents).reduce((s, x) => s + Number(x.credit || 0), 0);
-  return { ok: true, version: '1.0.0', since: since || null, count: rows.length, pool, agents, credit_sum: Number(creditSum.toFixed(6)), pool_nav: Number((Number(pool.total || 0) + Number(pool.fee_reserve || 0)).toFixed(6)), entries: rows.map(r => ({ id: r.id, type: r.type, from: r.from || null, to: r.to || null, amount_usd: r.amount_usd, ref: r.ref || null, at: r.at, hash: r.hash })) };
+  return { ok: true, version: '1.1.0', since: since || null, count: rows.length, pool, agents, credit_sum: Number(creditSum.toFixed(6)), pool_nav: Number((Number(pool.total || 0) + Number(pool.fee_reserve || 0)).toFixed(6)), entries: rows.map(r => ({ id: r.id, type: r.type, from: r.from || null, to: r.to || null, amount_usd: r.amount_usd, ref: r.ref || null, at: r.at, hash: r.hash })) };
 }
 async function settle(env, amount, workerName, attesterName) {
   const shares = split(amount);
-  const w = await credit(env, workerName, shares.workerShare, 'earned');
-  w.jobs = Number(w.jobs || 0) + 1; w.score = Number(w.score || 100) + 2; await saveRep(env, w);
-  const a = await credit(env, attesterName, shares.attestShare, 'earned');
-  a.stamps = Number(a.stamps || 0) + 1; a.score = Number(a.score || 100) + 1; await saveRep(env, a);
+  const w = await credit(env, workerName, shares.workerShare, 'earned'); w.jobs = Number(w.jobs || 0) + 1; w.score = Number(w.score || 100) + 2; await saveRep(env, w);
+  const a = await credit(env, attesterName, shares.attestShare, 'earned'); a.stamps = Number(a.stamps || 0) + 1; a.score = Number(a.score || 100) + 1; await saveRep(env, a);
   const keep = Number((shares.labShare * 0.5).toFixed(6)); const toPool = Number((shares.labShare - keep).toFixed(6));
   await credit(env, 'LTZZZ', keep, 'earned'); await feedPool(env, toPool);
   await journal(env, {type:'hire_settle', from: workerName, to: attesterName, amount_usd: amount, ref: workerName + '|' + attesterName, meta: shares});
@@ -130,8 +117,7 @@ async function matchIntent(env, intent) {
   const quotes = (intent.quotes || []).slice().sort((a, b) => a.ask_usd - b.ask_usd || b.score - a.score);
   if (!quotes.length) return {error: 'no_quotes'};
   intent.matched = {agent: quotes[0].agent, ask_usd: quotes[0].ask_usd, at: new Date().toISOString()};
-  intent.status = 'matched';
-  await put(env, 'wep3:intent:' + intent.id, intent);
+  intent.status = 'matched'; await put(env, 'wep3:intent:' + intent.id, intent);
   return {winner: quotes[0], losers: quotes.slice(1)};
 }
 async function sliceIntent(env, intent, agent, text, sliceUsd) {
@@ -178,16 +164,12 @@ async function citeReceipt(env, receiptId, citer, fee) {
   fee = Number(fee || 0.005);
   if (!(fee >= 0.001) || fee > 0.05) return {error: 'cite_fee_band', min: 0.001, max: 0.05};
   const drawn = await draw(env, citer, fee); if (drawn.error) return drawn;
-  const workerShare = Number((fee * 0.6).toFixed(6));
-  const posterShare = Number((fee * 0.2).toFixed(6));
-  const labShare = Number((fee - workerShare - posterShare).toFixed(6));
+  const workerShare = Number((fee * 0.6).toFixed(6)); const posterShare = Number((fee * 0.2).toFixed(6)); const labShare = Number((fee - workerShare - posterShare).toFixed(6));
   await credit(env, receipt.worker, workerShare, 'earned');
-  if (receipt.poster && receipt.poster !== receipt.worker) await credit(env, receipt.poster, posterShare, 'earned');
-  else await credit(env, 'LTZZZ', posterShare, 'earned');
+  if (receipt.poster && receipt.poster !== receipt.worker) await credit(env, receipt.poster, posterShare, 'earned'); else await credit(env, 'LTZZZ', posterShare, 'earned');
   const labKeep = Number((labShare * 0.5).toFixed(6)); const labPool = Number((labShare - labKeep).toFixed(6));
   await credit(env, 'LTZZZ', labKeep, 'earned'); await feedPool(env, labPool);
-  receipt.yield_usd = Number((Number(receipt.yield_usd || 0) + fee).toFixed(6));
-  receipt.cites = Number(receipt.cites || 0) + 1;
+  receipt.yield_usd = Number((Number(receipt.yield_usd || 0) + fee).toFixed(6)); receipt.cites = Number(receipt.cites || 0) + 1;
   receipt.last_cite = {agent: citer, fee, at: new Date().toISOString()};
   await put(env, 'wep3:receipt:' + receipt.id, receipt);
   const cite = {id: nid('CITE'), receipt_id: receipt.id, citer, worker: receipt.worker, poster: receipt.poster, fee, workerShare, posterShare, labShare, skill: receipt.skill, at: new Date().toISOString()};
@@ -231,8 +213,76 @@ async function confirmPay(env, invoiceId, provider, proof, secret, envSecret, al
   inv.hire = hired.ok ? {intent_id: hired.intent_id, receipt_id: hired.receipt && hired.receipt.id, worker: hired.winner && hired.winner.agent, amount_usd: hired.receipt && hired.receipt.amount_usd} : {error: hired.error || 'hire_failed', detail: hired};
   inv.hire_budget = hireBudget;
   await put(env, 'wep3:invoice:' + inv.id, inv);
-  await journal(env, {type: 'external_fulfill', from: 'LTZZZ', to: (hired.winner && hired.winner.agent) || skill.owner, amount_usd: hireBudget, ref: inv.id, meta: {hire_ok: !!hired.ok, receipt: inv.hire}});
+  await journal(env, {type: 'external_fulfill', from: 'LTZZZ', to: (hired.winner && hired.winner.agent) || skill.owner, amount_usd: hireBudget, ref: inv.id, meta: {hire_ok: !!hired.ok}});
   return {ok: true, status: 'PAID', invoice: inv, hire: hired};
+}
+async function treasuryState(env) {
+  const t = await get(env, 'wep3:treasury', null) || {reserve: 0, deposited: 0, withdrawn: 0, pending_out: 0, transfers: 0};
+  const lab = await rep(env, 'LTZZZ');
+  return { ...t, lab_credit: Number(lab.credit || 0), lab_spendable: spendable(lab) };
+}
+async function doTransfer(env, from, to, amount, memo) {
+  if (!known(from) || !known(to) || from === to) return {error: 'bad_parties', status: 400};
+  amount = Number(amount);
+  if (!(amount >= 0.001) || amount > 5) return {error: 'transfer_band', min: 0.001, max: 5, status: 400};
+  const drawn = await draw(env, from, amount); if (drawn.error) return drawn;
+  await credit(env, to, amount, null);
+  const t = await get(env, 'wep3:treasury', null) || {reserve: 0, deposited: 0, withdrawn: 0, pending_out: 0, transfers: 0};
+  t.transfers = Number((Number(t.transfers || 0) + amount).toFixed(6));
+  await put(env, 'wep3:treasury', t);
+  await journal(env, {type: 'transfer', from, to, amount_usd: amount, ref: memo || (from + '->' + to), meta: {memo: memo || null}});
+  return {ok: true, status: 'TRANSFERRED', from, to, amount, from_wallet: await walletView(env, from), to_wallet: await walletView(env, to)};
+}
+async function doDeposit(env, agent, amount, source) {
+  if (!known(agent)) return {error: 'unknown_agent', status: 400};
+  amount = Number(amount);
+  if (!(amount >= 0.01) || amount > 5) return {error: 'deposit_band', min: 0.01, max: 5, status: 400};
+  const lab = await rep(env, 'LTZZZ');
+  if (spendable(lab) < amount) return {error: 'treasury_short', lab_spendable: spendable(lab), need: amount, status: 402};
+  const drawn = await draw(env, 'LTZZZ', amount); if (drawn.error) return drawn;
+  await credit(env, agent, amount, null);
+  const t = await get(env, 'wep3:treasury', null) || {reserve: 0, deposited: 0, withdrawn: 0, pending_out: 0, transfers: 0};
+  t.deposited = Number((Number(t.deposited || 0) + amount).toFixed(6));
+  t.reserve = Number((Number(t.reserve || 0) + amount).toFixed(6));
+  await put(env, 'wep3:treasury', t);
+  await journal(env, {type: 'deposit', from: 'LTZZZ', to: agent, amount_usd: amount, ref: source || 'treasury', meta: {source: source || 'treasury'}});
+  return {ok: true, status: 'DEPOSITED', agent, amount, source: source || 'treasury', wallet: await walletView(env, agent), treasury: await treasuryState(env)};
+}
+async function doWithdraw(env, agent, amount, dest) {
+  if (!known(agent)) return {error: 'unknown_agent', status: 400};
+  amount = Number(amount);
+  if (!(amount >= 0.01) || amount > 5) return {error: 'withdraw_band', min: 0.01, max: 5, status: 400};
+  const drawn = await draw(env, agent, amount); if (drawn.error) return drawn;
+  const t = await get(env, 'wep3:treasury', null) || {reserve: 0, deposited: 0, withdrawn: 0, pending_out: 0, transfers: 0};
+  t.pending_out = Number((Number(t.pending_out || 0) + amount).toFixed(6));
+  t.withdrawn = Number((Number(t.withdrawn || 0) + amount).toFixed(6));
+  await put(env, 'wep3:treasury', t);
+  const ticket = {id: nid('WD'), agent, amount_usd: amount, dest: String(dest || 'chain:pending').slice(0, 120), status: 'pending_chain', at: new Date().toISOString()};
+  await put(env, 'wep3:withdraw:' + ticket.id, ticket);
+  await journal(env, {type: 'withdraw', from: agent, to: 'PENDING_CHAIN', amount_usd: amount, ref: ticket.id, meta: {dest: ticket.dest}});
+  return {ok: true, status: 'WITHDRAW_PENDING', ticket, wallet: await walletView(env, agent), treasury: await treasuryState(env)};
+}
+async function payWithCredit(env, invoiceId, payer) {
+  const inv = await get(env, 'wep3:invoice:' + invoiceId, null);
+  if (!inv) return {error: 'invoice_missing', status: 404};
+  if (inv.status === 'paid') return {ok: true, status: 'ALREADY_PAID', invoice: inv, hire: inv.hire || null};
+  if (inv.status !== 'open') return {error: 'invoice_not_open', status: inv.status, statusCode: 409};
+  payer = payer || 'LTZZZ';
+  if (!known(payer)) return {error: 'unknown_payer', status: 400};
+  const amount = Number(inv.amount_usd);
+  const drawn = await draw(env, payer, amount); if (drawn.error) return drawn;
+  await credit(env, 'LTZZZ', amount, 'earned');
+  await journal(env, {type: 'credit_pay', from: payer, to: 'LTZZZ', amount_usd: amount, ref: inv.id, meta: {sku_id: inv.sku_id}});
+  inv.status = 'paid'; inv.provider = 'credit:' + payer; inv.paid_at = new Date().toISOString(); inv.proof = 'credit-pay';
+  const skill = SKILLS.find(s => s.id === inv.skill) || SKILLS[0];
+  const tape = await tapePrice(env, skill.id);
+  const hireBudget = Number(Math.min(amount * 0.4, Math.max(tape, skill.price)).toFixed(6));
+  const hired = await hireLoop(env, {agent: 'LTZZZ', skill: skill.id, max_usd: hireBudget, title: 'credit-paid:' + inv.sku_id + ':' + inv.id, deliverable: skill.owner + ' fulfilled ' + inv.title + ' via credit pay | ' + inv.product + ' | invoice ' + inv.id});
+  inv.hire = hired.ok ? {intent_id: hired.intent_id, receipt_id: hired.receipt && hired.receipt.id, worker: hired.winner && hired.winner.agent, amount_usd: hired.receipt && hired.receipt.amount_usd} : {error: hired.error || 'hire_failed', detail: hired};
+  inv.hire_budget = hireBudget;
+  await put(env, 'wep3:invoice:' + inv.id, inv);
+  await journal(env, {type: 'external_fulfill', from: 'LTZZZ', to: (hired.winner && hired.winner.agent) || skill.owner, amount_usd: hireBudget, ref: inv.id, meta: {hire_ok: !!hired.ok, via: 'credit'}});
+  return {ok: true, status: 'PAID', invoice: inv, hire: hired, payer};
 }
 async function doStake(env, agent, amount) {
   if (!known(agent)) return {error: 'unknown_agent', status: 400};
@@ -252,58 +302,6 @@ async function doStake(env, agent, amount) {
   await journal(env, {type:'stake', from: agent, to: 'POOL', amount_usd: amount, ref: agent, meta: {shares: mint}});
   return {ok: true, status: 'STAKED', agent, amount, shares: mint, position: pos, pool};
 }
-async function doUnstake(env, agent, amount) {
-  if (!known(agent)) return {error: 'unknown_agent', status: 400};
-  amount = Number(amount); if (!(amount > 0)) return {error: 'bad_amount', status: 400};
-  const pool = await poolState(env); const pos = await stakePos(env, agent);
-  const value = shareValue(pool, pos.shares);
-  if (value < amount) return {error: 'unstake_above_position', value, status: 409};
-  if (Number(pos.debt || 0) > 0 && value - amount < Number(pos.debt || 0) * 1.1) return {error: 'debt_collateral_short', debt: pos.debt, value, status: 409};
-  const burn = value > 0 ? Number((pos.shares * amount / value).toFixed(6)) : 0;
-  const fromFees = Math.min(Number(pool.fee_reserve || 0), amount);
-  const fromTotal = Number((amount - fromFees).toFixed(6));
-  pool.fee_reserve = Number((Number(pool.fee_reserve || 0) - fromFees).toFixed(6));
-  pool.total = Number(Math.max(0, Number(pool.total || 0) - fromTotal).toFixed(6));
-  pool.shares = Number(Math.max(0, Number(pool.shares || 0) - burn).toFixed(6));
-  await savePool(env, pool);
-  pos.shares = Number(Math.max(0, Number(pos.shares || 0) - burn).toFixed(6));
-  pos.staked = Number(Math.max(0, Number(pos.staked || 0) - amount).toFixed(6));
-  await saveStake(env, pos); await credit(env, agent, amount, null);
-  await journal(env, {type:'unstake', from: 'POOL', to: agent, amount_usd: amount, ref: agent, meta: {burn}});
-  return {ok: true, status: 'UNSTAKED', agent, amount, burn, position: pos, pool};
-}
-async function doBorrow(env, agent, amount) {
-  if (!known(agent)) return {error: 'unknown_agent', status: 400};
-  amount = Number(amount);
-  if (!(amount >= 0.01) || amount > 1) return {error: 'borrow_band', min: 0.01, max: 1, status: 400};
-  const row = await rep(env, agent); const pos = await stakePos(env, agent); const pool = await poolState(env);
-  const collateral = shareValue(pool, pos.shares);
-  const maxDebt = Number(Math.min(1, lineLimit(row) + collateral * 0.5).toFixed(6));
-  if (Number(pos.debt || 0) + amount > maxDebt) return {error: 'borrow_cap', maxDebt, debt: pos.debt || 0, status: 409};
-  if (Number(pool.total || 0) < amount) return {error: 'pool_dry', pool: pool.total, status: 409};
-  pool.total = Number((Number(pool.total || 0) - amount).toFixed(6)); await savePool(env, pool);
-  pos.debt = Number((Number(pos.debt || 0) + amount).toFixed(6)); await saveStake(env, pos);
-  await credit(env, agent, amount, null);
-  await journal(env, {type:'borrow', from: 'POOL', to: agent, amount_usd: amount, ref: agent, meta: {debt: pos.debt}});
-  return {ok: true, status: 'BORROWED', agent, amount, debt: pos.debt, maxDebt, pool};
-}
-async function doRepay(env, agent, amount) {
-  if (!known(agent)) return {error: 'unknown_agent', status: 400};
-  const pos = await stakePos(env, agent);
-  amount = Number(amount || pos.debt || 0);
-  if (!(amount > 0) || amount > Number(pos.debt || 0)) return {error: 'repay_band', debt: pos.debt || 0, status: 400};
-  const drawn = await draw(env, agent, amount); if (drawn.error) return drawn;
-  const interest = Number((amount * 0.02).toFixed(6));
-  const principal = Number((amount - Math.min(interest, amount * 0.5)).toFixed(6));
-  const fee = Number((amount - principal).toFixed(6));
-  const pool = await poolState(env);
-  pool.total = Number((Number(pool.total || 0) + principal).toFixed(6));
-  pool.fee_reserve = Number((Number(pool.fee_reserve || 0) + fee).toFixed(6));
-  await savePool(env, pool);
-  pos.debt = Number((Number(pos.debt || 0) - amount).toFixed(6)); await saveStake(env, pos);
-  await journal(env, {type:'repay', from: agent, to: 'POOL', amount_usd: amount, ref: agent, meta: {fee, debt: pos.debt}});
-  return {ok: true, status: 'REPAID', agent, amount, fee, debt: pos.debt, pool};
-}
 async function walletView(env, agent) {
   if (!known(agent) && agent !== 'LTZZZ') return {error: 'unknown_agent', status: 404};
   const row = await rep(env, agent); const pos = await stakePos(env, agent); const pool = await poolState(env);
@@ -318,9 +316,12 @@ async function hireLoop(env, body) {
   const opened = await openIntent(env, poster, skill, max, body.title || skill.title, body.parent_id || null);
   if (opened.error) return {ok: false, ...opened, status: opened.status || 400};
   const intent = opened.intent;
-  const rivals = AGENTS.filter(a => a !== poster).slice(0, 2);
+  const poolAgents = AGENTS.filter(a => a !== poster);
+  const preferred = skill.owner && skill.owner !== poster && poolAgents.includes(skill.owner) ? skill.owner : poolAgents[0];
+  const second = poolAgents.find(a => a !== preferred) || poolAgents[0];
+  const rivals = [preferred, second].filter((a, i, arr) => a && arr.indexOf(a) === i);
   const q1 = await bidAtTape(env, intent, rivals[0]);
-  const q2 = await bidAtTape(env, intent, rivals[1]);
+  const q2 = rivals[1] ? await bidAtTape(env, intent, rivals[1]) : {quote: null};
   const matched = await matchIntent(env, intent);
   if (matched.error) { await release(env, intent, matched.error); return {ok: false, ...matched, quotes: [q1, q2], refunded: true, status: 409}; }
   const text = String(body.deliverable || workFor(skill.id, body.title || skill.title));
@@ -337,30 +338,28 @@ export default {async fetch(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, {headers: cors});
   const path = clean(new URL(request.url).pathname);
   try {
-    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.0.0', thesis: 'External buyers pay SKUs. Cash hits the lab ledger, then auto-hires agents on the tape. Internal credit still runs hire/cite/stake.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/webhook', 'GET /invoice/:id', 'GET /ledger', 'GET /pool', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake', 'GET /gate/:skill'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
+    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
     if (request.method === 'POST' && !pinOk(request, env)) return json({ok: false, error: 'pin_required'}, 401);
     if (request.method === 'POST' && path !== '/checkout' && !path.startsWith('/pay/')) { const bodyPeek = request.headers.get('x-wep3-intent') || ''; const gated = await writeGate(env, request, bodyPeek || 'anon'); if (gated) return json({ok: false, ...gated}, 429); }
-    if (path === '/skills') return json({ok: true, skills: SKILLS});
-    if (path === '/sku' || path === '/skus') return json({ok: true, version: '1.0.0', currency: 'USD', skus: SKUS, note: 'External pay → lab credit → auto hire on tape'});
-    if (path === '/tape') { const prices = {}; for (const s of SKILLS) { const tape = await tapePrice(env, s.id); prices[s.id] = {catalog: s.price, tape, owner: s.owner, cap: Number((tape * 1.5).toFixed(6)), product: s.product}; } return json({ok: true, version: '1.0.0', prices}); }
-    if (path === '/pulse') { const book = []; for (const agent of AGENTS.concat(['LTZZZ'])) { const row = await rep(env, agent); book.push({agent, credit: row.credit, earned: row.earned || 0, score: row.score, line: lineLimit(row), line_used: row.line_used || 0, spendable: spendable(row), jobs: row.jobs || 0}); } return json({ok: true, version: '1.0.0', book, open: (await list(env, 'wep3:intent:')).filter(i => i.status !== 'sealed' && i.status !== 'void').length}); }
-    if (path === '/market' || path === '/board') { const intents = (await list(env, 'wep3:intent:')).filter(i => i.status !== 'sealed' && i.status !== 'void').slice(0, 20); const board = {ok: true, open: intents.map(i => ({id: i.id, poster: i.poster, skill: i.skill, remaining: i.remaining, held: i.held, status: i.status, quotes: i.quotes || [], matched: i.matched || null, product: i.product}))}; if (path === '/board') board.receipts = (await list(env, 'wep3:receipt:')).slice(0, 8); return json(board); }
-    if (path.startsWith('/gate/')) { const key = path.slice(6); const skill = SKILLS.find(s => s.id === key); const sku = SKUS.find(s => s.id === key || s.skill === key); if (!skill && !sku) return json({ok: false, error: 'unknown_skill'}, 404); const sid = skill ? skill.id : sku.skill; const price = sku ? sku.price_usd : await tapePrice(env, sid); return json({ok: false, status: 402, error: 'payment_required', skill: sid, sku: sku || null, owner: skill ? skill.owner : sku.owner, price_usd: price, product: (sku && sku.product) || (skill && skill.product), accepts: [{scheme: 'wep3-sku', network: 'external-usd', asset: 'USD', maxAmountRequired: String(price), resource: 'https://ltzzz-wep3.ltzyz2181.workers.dev/checkout', description: 'POST /checkout then /pay/confirm'}, {scheme: 'wep3-hire', network: 'ltzzz-credit', asset: 'LTZ', maxAmountRequired: String(await tapePrice(env, sid)), resource: 'https://ltzzz-wep3.ltzyz2181.workers.dev/hire', description: 'Internal hire'}], pay_to: 'https://ltzzz.com/wep3-pay.html'}, 402); }
+    if (path === '/sku' || path === '/skus') return json({ok: true, version: '1.1.0', currency: 'USD', skus: SKUS});
+    if (path === '/tape') { const prices = {}; for (const s of SKILLS) { const tape = await tapePrice(env, s.id); prices[s.id] = {catalog: s.price, tape, owner: s.owner, product: s.product}; } return json({ok: true, version: '1.1.0', prices}); }
+    if (path === '/pulse') { const book = []; for (const agent of AGENTS.concat(['LTZZZ'])) { const row = await rep(env, agent); book.push({agent, credit: row.credit, earned: row.earned || 0, score: row.score, spendable: spendable(row), jobs: row.jobs || 0}); } return json({ok: true, version: '1.1.0', book}); }
+    if (path.startsWith('/gate/')) { const key = path.slice(6); const skill = SKILLS.find(s => s.id === key); const sku = SKUS.find(s => s.id === key || s.skill === key); if (!skill && !sku) return json({ok: false, error: 'unknown_skill'}, 404); const sid = skill ? skill.id : sku.skill; const price = sku ? sku.price_usd : await tapePrice(env, sid); return json({ok: false, status: 402, error: 'payment_required', skill: sid, sku: sku || null, price_usd: price, accepts: [{scheme: 'wep3-sku', description: 'POST /checkout then /pay/credit or /pay/confirm'}, {scheme: 'wep3-hire', description: 'POST /hire'}], pay_to: 'https://ltzzz.com/wep3-pay.html'}, 402); }
     if (path === '/checkout' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const opened = await openInvoice(env, body.sku_id || body.sku, {email: body.email || body.buyer_email, ref: body.ref || body.buyer_ref}); if (opened.error) return json({ok: false, ...opened}, opened.status || 400); return json({ok: true, status: 'OPEN', ...opened}); }
     if (path.startsWith('/invoice/')) { const inv = await get(env, 'wep3:invoice:' + decodeURIComponent(path.slice(9)), null); if (!inv) return json({ok: false, error: 'invoice_missing'}, 404); return json({ok: true, invoice: inv}); }
     if ((path === '/pay/confirm' || path === '/pay/demo') && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await confirmPay(env, body.invoice_id, body.provider || 'demo', body.proof || body.tx, body.secret || request.headers.get('x-pay-secret'), env.PAY_WEBHOOK_SECRET, env.ALLOW_DEMO_PAY !== '0'); if (out.error) return json({ok: false, ...out}, out.status || out.statusCode || 400); return json(out); }
     if (path === '/pay/webhook' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await confirmPay(env, body.invoice_id || body.id, body.provider || 'webhook', body.proof || body.tx_id, request.headers.get('x-pay-secret') || body.secret, env.PAY_WEBHOOK_SECRET, false); if (out.error) return json({ok: false, ...out}, out.status || out.statusCode || 400); return json(out); }
+    if (path === '/pay/credit' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await payWithCredit(env, body.invoice_id, body.payer || 'LTZZZ'); if (out.error) return json({ok: false, ...out}, out.status || out.statusCode || 400); return json(out); }
+    if (path === '/treasury') return json({ok: true, version: '1.1.0', treasury: await treasuryState(env)});
+    if (path === '/deposit' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doDeposit(env, body.agent || 'GPT', body.amount, body.source); return json(out, out.ok ? 200 : (out.status || 400)); }
+    if (path === '/withdraw' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doWithdraw(env, body.agent || 'Grok', body.amount, body.dest); return json(out, out.ok ? 200 : (out.status || 400)); }
+    if (path === '/transfer' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doTransfer(env, body.from || 'LTZZZ', body.to, body.amount, body.memo); return json(out, out.ok ? 200 : (out.status || 400)); }
     if (path === '/ledger') { const u = new URL(request.url); return json(await buildLedger(env, u.searchParams.get('since'), u.searchParams.get('limit'))); }
-    if (path === '/pool') { const pool = await poolState(env); const book = []; for (const agent of AGENTS) { const pos = await stakePos(env, agent); if (Number(pos.shares || 0) > 0 || Number(pos.debt || 0) > 0) book.push({agent, shares: pos.shares, staked: pos.staked, value: shareValue(pool, pos.shares), debt: pos.debt || 0}); } return json({ok: true, version: '1.0.0', pool, positions: book}); }
+    if (path === '/pool') { const pool = await poolState(env); return json({ok: true, version: '1.1.0', pool}); }
     if (path.startsWith('/wallet/')) { const view = await walletView(env, decodeURIComponent(path.slice(8))); if (view.error) return json(view, view.status || 404); return json(view); }
-    if (path === '/stake' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doStake(env, body.agent || request.headers.get('x-wep3-intent') || 'Grok', body.amount); return json(out, out.ok ? 200 : (out.status || 400)); }
-    if (path === '/unstake' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doUnstake(env, body.agent || request.headers.get('x-wep3-intent') || 'Grok', body.amount); return json(out, out.ok ? 200 : (out.status || 400)); }
-    if (path === '/borrow' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doBorrow(env, body.agent || request.headers.get('x-wep3-intent') || 'Grok', body.amount); return json(out, out.ok ? 200 : (out.status || 400)); }
-    if (path === '/repay' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doRepay(env, body.agent || request.headers.get('x-wep3-intent') || 'Grok', body.amount); return json(out, out.ok ? 200 : (out.status || 400)); }
-    if (path === '/cite' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const cited = await citeReceipt(env, body.receipt_id, body.agent || request.headers.get('x-wep3-intent') || 'Grok', body.fee_usd); if (cited.error) return json({ok: false, ...cited}, cited.status || 409); return json({ok: true, status: 'CITED', ...cited}); }
-    if (path === '/causal') { const cites = (await list(env, 'wep3:cite:')).slice(0, 12); const receipts = (await list(env, 'wep3:receipt:')).filter(r => Number(r.yield_usd || 0) > 0 || Number(r.cites || 0) > 0).slice(0, 12).map(r => ({id: r.id, skill: r.skill, worker: r.worker, poster: r.poster, amount_usd: r.amount_usd, yield_usd: r.yield_usd || 0, cites: r.cites || 0})); return json({ok: true, version: '1.0.0', receipts, cites}); }
+    if (path === '/stake' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doStake(env, body.agent || 'Grok', body.amount); return json(out, out.ok ? 200 : (out.status || 400)); }
+    if (path === '/cite' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const cited = await citeReceipt(env, body.receipt_id, body.agent || 'Grok', body.fee_usd); if (cited.error) return json({ok: false, ...cited}, cited.status || 409); return json({ok: true, status: 'CITED', ...cited}); }
     if ((path === '/hire' || path === '/mesh' || path === '/cycle') && request.method === 'POST') { const hired = await hireLoop(env, await request.json().catch(() => ({}))); return json(hired, hired.ok ? 200 : (hired.status || 400)); }
-    if (path === '/clearing') { const reputation = []; for (const agent of AGENTS.concat(['LTZZZ'])) { const row = await rep(env, agent); row.line = lineLimit(row); row.spendable = spendable(row); reputation.push(row); } return json({ok: true, version: '1.0.0', reputation, receipts: await list(env, 'wep3:receipt:')}); }
     return json({ok: false, error: 'not_found', path}, 404);
   } catch (err) { return json({ok: false, error: 'worker_exception', message: String(err && err.message || err)}, 500); }
 }};
