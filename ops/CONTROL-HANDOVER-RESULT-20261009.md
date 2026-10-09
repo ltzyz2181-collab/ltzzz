@@ -23,3 +23,6 @@ ops/OWNER-WALLET-SIGNING-20261009.md已写；目前缺个人资金源公开地�
 
 ## 角色
 GPT执行工程总控，千问独立审计；这是任务职责安排，不自动改变Safe成员或链上签名权限。kimi-global可候选，控制证明/治理裁定/链上成员变更未完成前不是正式第五签。
+
+## Kimi根因已实测确认（补录）
+37877705372成功，knowledge/results/kimi/worker-37877705372.json：保留CF Secret内部诊断，国内.cn balance/models均401 invalid_authentication_error；国际.ai余额200、available/cash/voucher均0，models200。CF Key与截图国内Key末尾不匹配。结论：旧代理使用国际Key，不能认定截图国内账号没钱；国际余额0也不代表国内余额0。国内Secret尚未接入GitHub，本轮未调用国内截图Key。保护诊断首次503是Secret部署传播延迟，37c3c88增加受限等待后验证成功，未泄露密钥。
