@@ -1,7 +1,7 @@
 {
   "version": "1.1",
-  "updated_at": "2026-10-07T14:20:00+08:00",
-  "trigger": "GitHub Actions daily-agent-tasks.yml：cron '0 0 * * *'（UTC，北京时间 08:00，GitHub 可能延迟启动）+ workflow_dispatch 手动触发；scripts/run-daily-tasks.mjs 每次实际读取六份核心记忆，再调用已配置模型；密钥只从 GitHub Secrets 注入，不写入代码、不传给模型。",
+  "updated_at": "2026-10-09",
+  "trigger": "GitHub Actions daily-agent-tasks.yml：cron UTC 22:00 主跑 + UTC 06:00 兜底（GitHub 可能延迟启动）+ workflow_dispatch 手动触发；scripts/run-daily-tasks.mjs 每次实际读取六份核心记忆，再调用已配置模型；密钥只从 GitHub Secrets 注入，不写入代码、不传给模型。",
   "core_memory": {
     "files": [
       "ltzzz-memory/魄.md",
@@ -22,7 +22,7 @@
     "核心记忆只作研究材料；区分模板、观察、假设和已验证事实；缺失文件时明确标记。",
     "读后感保存为每日候选，不自动写回六份核心记忆。",
     "本任务只生成读后感和执行建议，不产生 SPEND_PROPOSAL，不执行钱包、转账或付款操作。",
-    "微软席未部署：不加入自动流程，results 记 skipped 并保留 user_action_required。"
+    "Microsoft逻辑席由GPT委托执行，results标executed_by=gpt；Claude停用，不再催充值。"
   ],
   "tasks": [
     {
@@ -48,10 +48,10 @@
     },
     {
       "agent": "claude",
-      "task": "基于六份核心记忆写简明读后感，并为原有小说连载写一段不少于 50 字的草稿；不改核心记忆。",
-      "trigger": "ANTHROPIC_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/claude.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 记录读后感或明确记录调用失败；results 保留状态。",
-      "status": "deployed"
+      "task": "owner决定放弃Claude席位",
+      "trigger": "停用：不调用Anthropic API",
+      "acceptance": "results明确记录disabled_by_owner；保留历史结果",
+      "status": "disabled_by_owner"
     },
     {
       "agent": "deepseek",
@@ -62,10 +62,11 @@
     },
     {
       "agent": "microsoft",
-      "task": "阅读六份核心记忆并比较西方文化与项目理念的一项异同。",
-      "trigger": "暂不部署（Copilot API 面向企业 M365，个人开发者难以直接调用）",
-      "acceptance": "等待用户确认：A. 委托 GPT/Claude 执行（results 标注 agent=microsoft, executed_by=claude/gpt）；B. 申请 Microsoft 365 Copilot API",
-      "status": "deferred"
+      "task": "比较西方文化与项目理念的一项异同；署名GPT委托执行，非Copilot产出。",
+      "trigger": "OPENAI_API_KEY；委托GPT执行",
+      "acceptance": "结果agent=microsoft、executed_by=gpt；不得伪称Copilot产出",
+      "status": "delegated",
+      "executed_by": "gpt"
     }
   ]
 }
