@@ -11,7 +11,8 @@ try{
  const a=new Contract(aAddress,['function balanceOf(address) view returns(uint256)'],p);
  const vault=new Contract(vaultAddress,['function guardian() view returns(address)','function usdc() view returns(address)','function aavePool() view returns(address)','function aToken() view returns(address)','function paused() view returns(bool)','function humanVetoed() view returns(bool)','function getExposure() view returns(uint256)','function depositUSDC(uint256)','function allocate(uint256,uint256)','function withdrawUSDC(uint256)','function skim()'],p);
  const block=await p.getBlockNumber();const overrides={blockTag:block};
- const before=await token.balanceOf(walletAddress,overrides);const reserve=await token.balanceOf(vaultAddress,overrides);const exposure=await vault.getExposure(overrides);
+ const before=await token.balanceOf(walletAddress,overrides);record.snapshot={block,wallet:walletAddress,usdc:formatUnits(before,6),eth:formatEther(await p.getBalance(walletAddress,block))};record.status="wallet_balance_verified";save();
+ const reserve=await token.balanceOf(vaultAddress,overrides);const exposure=await vault.getExposure(overrides);
  record.snapshot={block,wallet:walletAddress,usdc:formatUnits(before,6),eth:formatEther(await p.getBalance(walletAddress,block)),vault_usdc:formatUnits(reserve,6),vault_ausdc:formatUnits(await a.balanceOf(vaultAddress,overrides),6),exposure_usdc:formatUnits(exposure,6)};record.status='balance_verified';save();
  phase='check_signer';const key=process.env.LTZZZ_WALLET_PRIVATE_KEY;if(!key){record.status='blocked_missing_wallet_secret';save();process.exit(0);}
  const signer=new Wallet(key,p);if(signer.address.toLowerCase()!==walletAddress.toLowerCase())throw Error('signer_address_mismatch');
