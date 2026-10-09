@@ -381,10 +381,23 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     model = env.DOUBAO_MODEL || "doubao-seed-1-6-250615";
     apiKey = env.ARK_API_KEY;
   } else if (channel === "xia") {
-    apiUrl = env.XAI_BASE_URL || "https://api.x.ai/v1/chat/completions";
-    // 同上：grok-2-latest 可能已更名，改为可配（XAI_MODEL），默认值保留兜底。
-    model = env.XAI_MODEL || "grok-2-latest";
-    apiKey = env.XAI_API_KEY;
+    // 2026-10-09 总控修正：本 Worker 的 XAI_API_KEY 与 ltzzz-xai-proxy 的是两把不同 key
+    // （实测：proxy 用 grok-4-fast 正常返回；本 Worker 用同名报
+    //   "team 8c4ed0f5… does not have access to it"，换 grok-4/grok-4-fast 均 404）。
+    // 2026-10-09 总控修正（根因）：Worker 之间不能通过 *.workers.dev 互调，
+    // Cloudflare 返回 error code 1042（实测：本 Worker 打 proxy 的 workers.dev 地址报 404/1042，
+    // 而从外部打同一个 workers.dev 地址却正常）。这与 kimi 通道当初必须挂自定义域名是同一原因。
+    // 已给 xai proxy 挂上 api-xai.ltzzz.com（实测 health + 真实调用 grok-4-fast 均 OK），改走该域名。
+    // 顺带结论：CF Token 具备挂 Custom Domain 的能力（走 workers_routes + ssl_certs 权限），
+    // 不需要 DNS:Edit——此前 wrangler.xai.toml 里"缺 DNS 权限故 routes 注释"的判断不成立。
+    model = env.XAI_MODEL || "grok-4-fast";
+    if (env.XAI_BASE_URL) {
+      apiUrl = env.XAI_BASE_URL;
+      apiKey = env.XAI_API_KEY;
+    } else {
+      apiUrl = "https://api-xai.ltzzz.com/";
+      apiKey = "ltzzz-xai-proxy"; // proxy 内置真实 key；此值仅为占位标识，不含凭证
+    }
   } else {
     // 2026-10-02 修正（总控自查）：live-skeleton 是占位骨架、未发生任何上游调用，
     // 原先返回 dry_run:false 属虚报——违反四公式"AI回复≠实际结果"。
