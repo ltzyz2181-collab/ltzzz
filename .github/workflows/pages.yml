@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
   workflow_run:
-    workflows: ["Kimi Global Weekly AI Hire & Investment"]
+    workflows: ["Kimi Global Weekly AI Hire & Investment", "Kimi Global Weekly no API key task packet", "Execute LTZZZ AI task queue", "Control handover Meta Kimi and DeFi verification", "LTZZZ Wallet Operations", "IG Daily Card (render + commit)", "Daily Agent Tasks", "Daily DeepSeek Doubao hire and investment data", "Weekly innovation rotating AI seats", "Autonomous coordinator daily receipt review", "DeFi pilot automated chain data"]
     types: [completed]
     branches: [main]
 
@@ -33,7 +33,9 @@ jobs:
         with:
           node-version: '20'
       - name: Build daily-data
-        run: node scripts/build-daily-data.js
+        run: |
+          node scripts/build-daily-data.js
+          node scripts/build-site-status.mjs
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

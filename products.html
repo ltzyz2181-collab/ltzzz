@@ -1,87 +1,9 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LTZZZ 数字产品商店</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0a0f; color: #fff; line-height: 1.6; }
-.nav { max-width: 1200px; margin: 0 auto; padding: 16px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
-.nav a { color: #00f0ff; text-decoration: none; font-size: .95rem; }
-.container { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
-h1 { text-align: center; font-size: clamp(1.6rem, 4vw, 2.5rem); margin-bottom: 10px; background: linear-gradient(90deg, #00f0ff, #ff00e5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.subtitle { text-align: center; color: #888; margin-bottom: 36px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 20px; }
-.card { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
-.card:hover { border-color: #00f0ff; }
-.category { font-size: 0.8rem; color: #00f0ff; letter-spacing: 1px; }
-.name { font-size: 1.2rem; font-weight: 600; }
-.price-row { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-.price { font-size: 1.6rem; font-weight: 700; color: #ff00e5; }
-.usd { color: #888; font-size: .95rem; }
-.desc { color: #aaa; font-size: 0.95rem; flex: 1; }
-.btn { display: inline-block; text-align: center; background: linear-gradient(90deg,#00f0ff,#7c5cff); color: #000; font-weight: 700; padding: 12px 16px; border-radius: 10px; text-decoration: none; margin-top: 8px; }
-.hint { text-align: center; color: #666; font-size: .85rem; margin-top: 28px; }
-.tg-block { margin-top: 40px; padding: 20px; border: 1px dashed #7c5cff; border-radius: 14px; text-align: center; background: rgba(124,92,255,.06); }
-.tg-block .tg-title { font-size: 1.05rem; font-weight: 700; color: #00f0ff; margin-bottom: 6px; }
-.tg-block .tg-desc { color: #aaa; font-size: .92rem; margin-bottom: 12px; }
-.tg-btn { display: inline-block; background: linear-gradient(90deg,#2aabee,#229ed9); color: #fff; font-weight: 700; padding: 10px 22px; border-radius: 10px; text-decoration: none; }
-.tg-btn:hover { filter: brightness(1.1); }
-</style>
-</head>
-<body>
-<div class="nav">
-  <a href="/">首页</a>
-  <a href="creator-lab.html">创作实验室</a>
-  <a href="checkout.html?product=ai-template-pack">快速结账</a>
-</div>
-<div style="text-align:center;margin:12px 0;font-size:.9rem;">
-  <a href="?region=cn" style="color:#00f0ff;margin:0 8px;">🇨🇳 国内版</a>
-  <a href="?region=global" style="color:#7c5cff;margin:0 8px;">🌍 海外版</a>
-</div>
-<div class="container">
-  <h1>LTZZZ 数字产品</h1>
-  <p class="subtitle" id="subtitleText">Landing → 商品 → 结账 → 支付 → 交付 · 国内版（¥）/ 海外版（$）双轨</p>
-  <div class="grid" id="productGrid"><div style="color:#666;padding:40px;text-align:center">加载中…</div></div>
-  <p class="hint" id="hintText">微信/支付宝人工确认后发货 · USDT 发 Tx 后自动发货 · PayPal/U卡 走适配层，未审核前不自动发货</p>
-  <div class="tg-block">
-    <div class="tg-title">💬 Telegram 直接下单</div>
-    <div class="tg-desc">99 元 AI 模板包 → 私聊 <b>@ltzzz_agi_lab_bot</b> 下单，USDT / 后续店铺支付 · 收到付款即发交付文件</div>
-    <a class="tg-btn" href="https://t.me/ltzzz_agi_lab_bot" target="_blank" rel="noopener">在 Telegram 私聊下单</a>
-    <div class="tg-desc" style="margin-top:10px;color:#888">🇨🇳 微信下单：公众号回复 <b>下单 99</b>（订单号 WX-YYYYMMDD-XXXX 自动生成），人工确认收款后发货 · USDT 发 Tx 自动发货</div>
-    <div class="tg-desc" style="margin-top:10px;color:#666">🌍 LTZZZ Store → <a href="https://ltzyz.gumroad.com" target="_blank" rel="noopener" style="color:#00f0ff">ltzyz.gumroad.com</a>（海外版：$19 模板包 / $5 周报订阅 / $29 Agent 起步包）</div>
-  </div>
-</div>
-<script>
-const fallback = { products: [
-  { id:'ai-template-pack', name:'AI 模板包', price:99, price_usd:14, category:'数字产品', description:'100+ 提示词模板，全平台覆盖', delivery:'下单后数字链接交付' },
-  { id:'agent-economy-kit', name:'AI Agent Economy Starter Kit', price:19, price_usd:19, category:'Digital Product', description:'Run your own multi-AI money loop with on-chain receipts — proposals, policy checks, ledger, reputation', delivery:'Instant delivery via Gumroad', gumroad:'https://ltzyz.gumroad.com/l/ugyhy' },
-  { id:'weekly-report', name:'行业周报（月）', price:49, price_usd:7, category:'内容', description:'每周一推送', delivery:'邮箱/TG' },
-  { id:'tg-bot-custom', name:'Telegram 机器人定制', price:599, price_usd:85, category:'服务', description:'定制 Bot 含部署', delivery:'服务交付' },
-  { id:'agent-starter', name:'AI Agent 起步包', price:199, price_usd:29, category:'数字产品', description:'含 DID 模板、Memory Gate 清单、Daily Worker 示例', delivery:'网盘+仓库 fork 指南' },
-  { id:'muse-budget', name:'Muse 治理实验券', price:50, price_usd:7, category:'实验', description:'让 Muse 用真实小额预算跑一次实验并回写 Result', delivery:'实验报告' }
-]};
-const params = new URLSearchParams(location.search);
-const region = params.get('region') === 'global' ? 'global' : 'cn';
-function render(data) {
-  const grid = document.getElementById('productGrid');
-  grid.innerHTML = '';
-  (data.products || []).slice(0, 9).forEach(p => {
-    const usd = p.price_usd || Math.max(1, Math.round(p.price / 7));
-    const el = document.createElement('div');
-    el.className = 'card';
-    const main = region === 'global' ? ('$' + usd) : ('¥' + p.price);
-    const sub = region === 'global' ? ('≈ ¥' + p.price) : ('≈ $' + usd);
-    el.innerHTML = '<div class="category">' + (p.category||'') + '</div>' +
-      '<div class="name">' + p.name + '</div>' +
-      '<div class="price-row"><span class="price">' + main + '</span><span class="usd">' + sub + '</span></div>' +
-      '<div class="desc">' + (p.description||'') + '</div>' +
-      '<a class="btn" ' + (p.gumroad ? 'href="' + p.gumroad + '" target="_blank" rel="noopener"' : 'href="checkout.html?product=' + encodeURIComponent(p.id) + '"') + '>' + (p.gumroad ? 'Buy on Gumroad' : '购买 / Checkout') + '</a>';
-    grid.appendChild(el);
-  });
-}
-fetch('products.json').then(r => r.json()).then(render).catch(() => render(fallback));
-</script>
-</body>
-</html>
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LTZZZ · 产品与 AGI 支付实验</title><meta name="description" content="LTZZZ 数字产品与 AGI 支付实验。区分可购买产品、服务咨询和待验证方案。"><link rel="stylesheet" href="frontend-refresh.css"><link rel="stylesheet" href="products-refresh.css"><script src="products-refresh.js" defer></script></head>
+<body><header class="shop-nav"><a class="shop-brand" href="/">LTZZZ <span>数字实验室</span></a><nav aria-label="导航"><a href="daily.html">运行状态</a><a href="wep3-pay.html">WEP3 实验</a><a href="https://github.com/ltzyz2181-collab/ltzzz">Hub ↗</a></nav></header>
+<main class="shop-wrap"><section class="shop-hero"><div><p class="shop-eyebrow">OBSERVE · ACT · REMEMBER</p><h1 id="shopTitle">让想法走进真实世界。</h1><p id="shopIntro">从一个可交付的工具开始。产品、行动与回执，都留下能够继续的记忆。</p></div><div class="region-switch" aria-label="区域切换"><a href="?region=cn" data-region="cn">🇨🇳 国内</a><a href="?region=global" data-region="global">🌍 Global</a></div></section>
+<section aria-labelledby="availableTitle"><div class="section-heading"><h2 id="availableTitle">数字产品</h2><span id="availableHint">正式商品以收款平台页面为准</span></div><div class="shop-grid" id="productGrid" aria-live="polite"></div></section>
+<section class="innovation" aria-labelledby="innovationTitle"><div class="section-heading"><h2 id="innovationTitle">AGI 支付 · 下一步实验</h2><span>方案展示 · 暂未开放售卖</span></div><p>先写意图与验收标准，再执行、带回结果。以下金额是方案标记，不是已开放的支付额度或权益。</p><div class="shop-grid"><article class="shop-card"><span class="shop-badge pending">待验证方案</span><h3>AI 代付</h3><div class="shop-price">3 USDC <small>提议预算</small></div><p>明确支付对象、交付结果与失败处理；待 proof 验证和真实服务交付闭环通过后开放。</p></article><article class="shop-card"><span class="shop-badge pending">实验入口</span><h3>AGI-402 体验卡</h3><p>体验意图、报价、支付与结果的连接。当前 WEP3 页面展示的是实验系统，不能据此认定服务已可自动收款交付。</p><a class="shop-link" href="wep3-pay.html">查看 WEP3 实验 →</a></article><article class="shop-card"><span class="shop-badge pending">待定义权益</span><h3>LTZZZ Pass</h3><div class="shop-price">100 USDC <small>提议价格</small></div><p>会员权益、期限、退款与交付机制尚未验证。当前不收取此项费用，也不承诺投资收益。</p></article></div></section>
+<section class="receipt-panel"><div><p class="shop-eyebrow">PROOF OF ACTION</p><h2>一份回执，留下五个要素。</h2><p>任务、执行者、时间、状态、证据。提案与真实执行分别记录；没有链上交易，就明确 txHash 为空。</p><a class="shop-link" href="https://github.com/ltzyz2181-collab/ltzzz/blob/main/knowledge/results/meta/37877508573.json">查看托管 Llama 真实推理回执 →</a></div><dl><dt>task_id</dt><dd>做的是什么</dd><dt>executor</dt><dd>实际由谁执行</dd><dt>time</dt><dd>何时发生</dd><dt>status</dt><dd>提案 / 执行 / 已验证</dd><dt>evidence</dt><dd>链接、日志或链上凭据</dd></dl></section>
+<section class="shop-contact" id="contact"><h2 id="contactTitle">需要一个具体方案？</h2><p id="contactText">定制服务先确认范围、价格与验收，再下单。人工付款须核实到账；提交 TxHash 本身不等于已验证付款。</p><a class="shop-button secondary" href="https://t.me/ltzzz_agi_lab_bot" target="_blank" rel="noopener">Telegram 咨询 ↗</a><a class="shop-button secondary" href="https://ltzyz.gumroad.com" target="_blank" rel="noopener">Gumroad 商店 ↗</a></section>
+<footer class="shop-footer">观念头 · 行深 · 记忆 · 怜悯之心。愿技术的发展，也让失去原有谋生技能的人保有基本生存尊严。</footer></main></body></html>

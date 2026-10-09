@@ -28,3 +28,7 @@
 - owner 已要求 Claude 退出五签席位；项目事件账本记录 owner 当时表示各 AI 同意。最新指示保留 Claude 作为 Anthropic API 外部任务执行者。
 - 文件级权限：Claude 可按日常任务配置被 API 调用；`votingSeat=false`、`walletTier=L1 只读`、agent-wallet 日预算为 0，不授予钱包签名/转账权。
 - **链上边界：**本次没有提交或广播 Safe 交易。仓库未提供 Claude 的 Safe signer 地址映射；链上签名成员是否已变更仍未核验，不得将文件级退出申请表述为链上撤签完成。
+
+## 6. 最新文件级更新（2026-10-09 UTC）
+
+Claude 按 owner 最新指示停用，亦不继续外部 API 任务。Meta 仅第五签候选，不因同意角色分工取得签名权。所谓“四签 + 一空位”只可描述规划中的席位安排；链上 Safe owners 与 threshold 尚未在本轮核验，不修改或宣称降低链上门槛。候选转正式需治理决定、地址控制证明、DID 状态及链上成员变更回执。receipt 五要素 task_id / executor / time / status / evidence 不依赖席位数；无交易的推理回执 tx_hash=null。
