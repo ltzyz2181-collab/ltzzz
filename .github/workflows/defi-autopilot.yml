@@ -1,0 +1,38 @@
+name: DeFi pilot automated chain data
+on:
+  schedule:
+    - cron: '40 3 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/defi-autopilot.mjs', '.github/workflows/defi-autopilot.yml']
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: ltzzz-defi-autopilot, cancel-in-progress: false}
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install --no-save ethers@6.17.0
+      - name: Observe daily and run authorized 1 USDC pilot on Tuesday only
+        env:
+          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
+          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}
+        run: |
+          if [ "$(TZ=Asia/Shanghai date +%u)" = '2' ]; then export LTZZZ_AUTOPILOT_EXECUTE=1; fi
+          node scripts/defi-autopilot.mjs
+      - name: Save all chain observations and transaction status
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/defi/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'DeFi automated pilot actual chain data'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

@@ -38,3 +38,7 @@ gh workflow run daily-economy.yml --repo ltzyz2181-collab/ltzzz
 ```
 
 没有git：从本页点击六篇，在GitHub选 Raw读取正文。不把导读或空模板当作读完。无需 API Key 的外部席可通过文件/Issue/PR参与。
+
+## 离线总控与轮班创新
+
+[运行与轮班说明](ops/AUTONOMOUS-CONTROL-20261009.md) · [创新实验页](innovation.html)。总控每日自动读回执与派下一轮任务；轮班模型不集中同一天，部署/工程派单/否决均留真实记录。

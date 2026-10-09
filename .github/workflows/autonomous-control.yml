@@ -1,0 +1,38 @@
+name: Autonomous coordinator daily receipt review
+on:
+  schedule:
+    - cron: '20 8 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/run-autonomous-control.mjs', '.github/workflows/autonomous-control.yml']
+  workflow_run:
+    workflows: ['Daily DeepSeek Doubao hire and investment data', 'DeFi pilot automated chain data']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: ltzzz-autonomous-control, cancel-in-progress: false}
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Read real receipts and dispatch next daily tasks
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/run-autonomous-control.mjs
+      - name: Persist coordinator decisions
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/control/ ltzzz-memory/tasks/control/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'autonomous coordinator daily real receipt review and dispatch'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
