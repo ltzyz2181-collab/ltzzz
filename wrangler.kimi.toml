@@ -3,4 +3,7 @@ main = "kimi-proxy-worker.js"
 compatibility_date = "2026-10-01"
 
 [vars]
-KIMI_BASE_URL = "https://api.moonshot.ai/v1/chat/completions"
+# 2026-10-09 总控修正：原为境外端点 api.moonshot.ai，与当前配置的国内 key 不匹配 → 401 Invalid Authentication。
+# owner 核实国内 key（尾号 9T9S）有 ¥14 余额，实测 api.moonshot.cn 返回 200 OK。
+# 境外 key（尾号 q2as）所属账户 org-799c4b42 欠费 suspended，其对应境外端点暂不可用，待充值后另配独立 proxy。
+KIMI_BASE_URL = "https://api.moonshot.cn/v1/chat/completions"
