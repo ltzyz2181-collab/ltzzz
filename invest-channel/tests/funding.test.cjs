@@ -27,7 +27,7 @@ await(await r.connect(executor).pull(100000000,id('second'))).wait();
 await assert.rejects(r.connect(executor).pull.staticCall(1,id('third')));
 assert.equal(await u.balanceOf(await treasury.getAddress()),200000000n);
 await provider.send('evm_increaseTime',[86400]);await provider.send('evm_mine',[]);
-await(await p.setFail(true)).wait();await assert.rejects(r.connect(executor).pull.staticCall(1000000,id('failure')));assert.equal(await r.usedIntent(id('failure')),false);
+await(await p.setFail(true)).wait();const ownerABefore=await a.balanceOf(await owner.getAddress());const principalBefore=await r.principalOutstanding();const failedTx=await r.connect(executor).pull(1000000,id('failure'),{gasLimit:500000});await assert.rejects(failedTx.wait());assert.equal(await r.usedIntent(id('failure')),false);assert.equal(await a.balanceOf(await owner.getAddress()),ownerABefore);assert.equal(await r.principalOutstanding(),principalBefore);
 await(await p.setFail(false)).wait();await(await u.connect(treasury).approve(await r.getAddress(),50000000)).wait();await(await r.connect(treasury).returnPrincipal(50000000)).wait();assert.equal(await u.balanceOf(await owner.getAddress()),50000000n);assert.equal(await r.principalOutstanding(),150000000n);
 await assert.rejects(r.connect(executor).acceptLoss.staticCall(1));await(await r.acceptLoss(1000000)).wait();assert.equal(await r.principalOutstanding(),149000000n);
 await(await r.configure(true,await executor.getAddress(),0)).wait();await assert.rejects(r.connect(executor).pull.staticCall(1,id('stop')));
