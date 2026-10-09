@@ -1,48 +1,32 @@
-name: Kimi Global Weekly AI Hire & Investment
-
+name: Kimi Global Weekly no API key task packet
 on:
   schedule:
-    - cron: '0 1 * * 1' # 每周一 09:00 Asia/Shanghai（GitHub cron 使用 UTC）
+    - cron: '0 1 * * 1' # UTC 周一01:00 = Asia/Shanghai 周一09:00
+  push:
+    branches: [main]
+    paths: ['scripts/kimi-global-no-key.mjs', '.github/workflows/kimi-global-weekly.yml']
   workflow_dispatch:
-
-permissions:
-  contents: write
-
+permissions: {contents: write}
 concurrency:
-  group: ltzzz-main-writes
+  group: ltzzz-kimi-global-no-key
   cancel-in-progress: false
-
 jobs:
-  hire-and-invest:
+  dispatch:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Generate Kimi Global weekly proposal (xAI/Grok engine; no Moonshot API)
-        env:
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-        run: node scripts/kimi-global-weekly.mjs
-      - name: Commit proposal
+        with: {node-version: '22'}
+      - name: Read actual memory and issue an external agent task without any model API
+        run: node scripts/kimi-global-no-key.mjs
+      - name: Commit task packet, never claim model delivery
         run: |
-          git config user.name "ltzzz-kimi-global-bot"
-          git config user.email "bot@ltzzz.local"
-          shopt -s nullglob
-          reports=(ltzzz-memory/kimi-weekly/*.md)
-          if [ "${#reports[@]}" -eq 0 ]; then
-            echo "::error::The generator completed without creating a Kimi weekly report"
-            exit 1
-          fi
-          git add -- "${reports[@]}"
-          if git diff --cached --quiet; then
-            echo "No new proposal to commit"
-            exit 0
-          fi
-          git commit -m "auto: kimi-global weekly hire and investment proposal $(date -u +%Y-%m-%d)"
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add ltzzz-memory/kimi-weekly/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'dispatch no-key kimi-global weekly task packet'
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
