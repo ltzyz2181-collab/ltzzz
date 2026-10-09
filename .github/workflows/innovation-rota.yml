@@ -1,0 +1,39 @@
+name: Weekly innovation rotating AI seats
+on:
+  schedule:
+    - cron: '15 2 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/run-innovation-rota.mjs', '.github/workflows/innovation-rota.yml']
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: ltzzz-innovation-rota, cancel-in-progress: false}
+jobs:
+  innovate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Today's seat proposes and GPT decides
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          XAI_MODEL: ${{ vars.XAI_MODEL }}
+        run: node scripts/run-innovation-rota.mjs
+      - name: Save decisions experiments and tasks
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add innovation/ knowledge/results/innovation/ ltzzz-memory/tasks/innovation/ ops/task-queue.json
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'weekly rotating innovation actual proposals decisions and experiment data'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

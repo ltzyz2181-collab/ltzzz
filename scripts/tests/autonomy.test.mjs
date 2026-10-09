@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {evaluateExperiment,jsonOutput,projectScope,taskScope} from '../autonomy-core.mjs';
+test('all supported experiments execute and distinguish simulated data from finance',()=>{for(const kind of ['receipt_hash_benchmark','intent_schema_trial','hire_acceptance_trial']){const r=evaluateExperiment(kind);assert.equal(r.status,'passed');assert.equal(r.tx_hash,null);assert.ok(r.measurement);}assert.throws(()=>evaluateExperiment('transfer'));});
+test('decision JSON accepts markdown wrappers, rejects invalid payloads',()=>{assert.equal(jsonOutput('```json\n{"decision":"reject"}\n```').decision,'reject');assert.throws(()=>jsonOutput('not json'));});
+test('all active seats have a single weekly assignment, Claude disabled',()=>{const cfg=JSON.parse(fs.readFileSync('config/innovation-rota.json'));const seats=Object.values(cfg.days).flat().map(s=>s.seat);assert.equal(new Set(seats).size,seats.length);assert.ok(cfg.disabled.includes('claude'));assert.ok(!seats.includes('claude'));});
+
+test('project scope rejects unsupported physiology payment and irrelevant daily tasks',()=>{assert.equal(projectScope('EMG穴位付款'),false);assert.equal(taskScope('研究识神与脑区两周实验'),false);assert.equal(taskScope('Aave本金与ETH gas断言'),true);});

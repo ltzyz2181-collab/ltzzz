@@ -1,0 +1,9 @@
+import fs from 'node:fs';import {createHash} from 'node:crypto';import {execFileSync} from 'node:child_process';
+const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const paths=['魄.md','识神.md','梦境数据库.md','文明研究.md','项目历史.md','重要事件.md'];const sources=paths.map(name=>{const path='ltzzz-memory/'+name;const content=fs.readFileSync(path,'utf8');return {path,sha256:createHash('sha256').update(content).digest('hex'),content};});
+const po=sources[0].content;const starts=[...po.matchAll(/^## 条目\s+\d+\s*[｜|].*$/gm)].map(m=>m.index);const selected=starts.slice(0,5).map((n,i)=>po.slice(n,starts[i+1]??po.length).trim());
+const events=sources[5].content.split(/\r?\n/).filter(x=>/^\|\s*20\d{2}-\d{2}-\d{2}\s*\|/.test(x)).slice(-16);
+const out='ltzzz-memory/kimi-weekly/'+date+'-task.md';fs.mkdirSync('ltzzz-memory/kimi-weekly',{recursive:true});if(fs.existsSync(out)){console.log('Packet already exists; never overwrite external delivery');process.exit(0);}
+const commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const text=`# kimi-global 零API任务包 · ${date}\n\n状态：awaiting_external_agent；模型：未调用；签名/付款/投资：未执行。\n身份标签 did:ltzzz:kimi-global 不等于链上DID注册或正式五签。\n源提交：${commit}\n读取数：魄${selected.length}/5；事件${events.length}/16。数量不足应在交付中说明，不能补造。\n\n## 正式派单\n无需Moonshot/XAI Key。由通过git clone/Hub读取任务的外部Kimi执行席接单。读六个源文件，结合以下材料提出一项AI雇AI实验和一项Aave小额投资实验，写假设、预算、退出路径、失败判据和回执。输出 proposals/${date}-kimi-global.md，含executed_by、source_commit、证据引用；提PR。GPT验收、千问独立审计。接单后另写 accepted receipt；不能把模板生成当AI交付。\n\n## 源文件摘要校验\n${sources.map(x=>'- '+x.path+' SHA256 '+x.sha256).join('\n')}\n\n## 魄五条\n${selected.join('\n\n')}\n\n## 最新16条事件\n${events.join('\n')}\n`;
+fs.writeFileSync(out,text);console.log('Generated no-key task packet: '+out);
