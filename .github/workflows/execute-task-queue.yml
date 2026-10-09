@@ -1,0 +1,41 @@
+name: Execute LTZZZ AI task queue
+on:
+  push:
+    branches: [main]
+    paths: ['ops/task-queue.json', 'scripts/run-task-queue.mjs', '.github/workflows/execute-task-queue.yml']
+  schedule:
+    - cron: '15 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - name: Execute real provider calls
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: node scripts/run-task-queue.mjs
+      - name: Save execution receipts
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add ops/runs/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "task queue real execution receipts"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
