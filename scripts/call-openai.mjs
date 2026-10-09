@@ -7,6 +7,7 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
   try {
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
+      signal: AbortSignal.timeout(120000),
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: model || process.env.OPENAI_MODEL || "gpt-4o-mini",
