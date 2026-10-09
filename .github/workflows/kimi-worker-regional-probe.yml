@@ -33,7 +33,7 @@ jobs:
       - name: Diagnose using retained Worker Secret, never export it
         run: |
           node - <<'JS'
-          const fs=require('fs');(async()=>{const base='https://api-kimi.ltzzz.com';const r=await fetch(base+'/diagnose-regions',{method:'POST',headers:{Authorization:'Bearer '+process.env.KIMI_DIAGNOSTIC_TOKEN},signal:AbortSignal.timeout(90000)});const body=await r.json();fs.mkdirSync('knowledge/results/kimi',{recursive:true});fs.writeFileSync('knowledge/results/kimi/worker-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({http:r.status,...body},null,2));if(!r.ok)process.exitCode=1;})();
+          const fs=require('fs');(async()=>{let record;for(let attempt=0;attempt<8;attempt++){for(const base of ['https://api-kimi.ltzzz.com','https://ltzzz-kimi-proxy.ltzyz2181.workers.dev']){const r=await fetch(base+'/diagnose-regions',{method:'POST',headers:{Authorization:'Bearer '+process.env.KIMI_DIAGNOSTIC_TOKEN},signal:AbortSignal.timeout(90000)});const body=await r.json();record={base,http:r.status,attempt,...body};if(r.ok)break;}if(record.http===200)break;await new Promise(resolve=>setTimeout(resolve,5000));}fs.mkdirSync('knowledge/results/kimi',{recursive:true});fs.writeFileSync('knowledge/results/kimi/worker-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(record,null,2));if(record.http!==200)process.exitCode=1;})();
           JS
       - name: Persist result
         if: always()
