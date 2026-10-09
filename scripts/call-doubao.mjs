@@ -8,9 +8,10 @@
 const BASE = () => process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
 const MODEL = () => process.env.DOUBAO_MODEL || "doubao-seed-evolving";
 
-async function tryOpenAICompatible(apiKey, prompt, base, model) {
+async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens) {
   const resp = await fetch(`${base}/chat/completions`, {
     method: "POST",
+      signal: AbortSignal.timeout(120000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
@@ -18,7 +19,7 @@ async function tryOpenAICompatible(apiKey, prompt, base, model) {
         { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
         { role: "user", content: prompt },
       ],
-      max_tokens: 600,
+      max_tokens: maxTokens,
     }),
   });
   if (!resp.ok) {
@@ -28,16 +29,17 @@ async function tryOpenAICompatible(apiKey, prompt, base, model) {
   }
   const data = await resp.json();
   const output = (data.choices?.[0]?.message?.content || "").trim();
-  return { kind: "ok", output, tokens_used: data.usage?.total_tokens || 0 };
+  return { kind: "ok", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0 };
 }
 
-async function tryAnthropicCompatible(apiKey, prompt, base, model) {
+async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   const resp = await fetch(`${base}/v1/messages`, {
     method: "POST",
+      signal: AbortSignal.timeout(120000),
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
       model,
-      max_tokens: 600,
+      max_tokens: maxTokens,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -50,15 +52,15 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model) {
   return { kind: "ok", output, tokens_used: data.usage?.input_tokens || 0 };
 }
 
-export async function callAgent({ apiKey, prompt, model }) {
+export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
   if (!apiKey) return { ok: false, status: "not_configured", error: "DOUBAO_API_KEY（或 ARK_API_KEY）未配置（请在 GitHub Secrets 添加）" };
   const base = BASE();
   const mdl = model || MODEL();
   try {
-    const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl);
-    if (r1.kind === "ok") return { ok: true, status: "success", output: r1.output, tokens_used: r1.tokens_used };
+    const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl, maxTokens);
+    if (r1.kind === "ok") return { ok: true, status: "success", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used };
     if (r1.kind === "unsupported") {
-      const r2 = await tryAnthropicCompatible(apiKey, prompt, base, mdl);
+      const r2 = await tryAnthropicCompatible(apiKey, prompt, base, mdl, maxTokens);
       if (r2.kind === "ok") return { ok: true, status: "success", output: r2.output, tokens_used: r2.tokens_used };
       return { ok: false, status: "api_error", error: `openai-style 404/405，anthropic-style HTTP ${r2.status}: ${r2.text}` };
     }

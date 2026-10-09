@@ -6,7 +6,7 @@
  * data/reflections/YYYY-MM-DD.md；执行状态保存至 data/results/YYYY-MM-DD.json。
  * 长期记忆文件只读；模型输出不自动晋升到 ltzzz-memory/。
  *
- * 微软席：默认不部署（MICROSOFT_ENABLED=true 时才执行），results 记 skipped。
+ * 微软逻辑席由 GPT 委托执行，结果明确标 executed_by；Claude 按 owner 决定停用。
  * 用法：node scripts/run-daily-tasks.mjs
  */
 import fs from "node:fs";
@@ -32,7 +32,7 @@ const today = todayCST();
 const executionId = process.env.GITHUB_RUN_ID
   ? `gha-${process.env.GITHUB_RUN_ID}-attempt-${process.env.GITHUB_RUN_ATTEMPT || "1"}`
   : `local-${today}-${Date.now()}`;
-const MICROSOFT_ENABLED = process.env.MICROSOFT_ENABLED === "true";
+
 const PENDING_FILE = path.join(DATA, "tasks", "pending-reminders.json");
 const CORE_MEMORY_FILES = [
   "ltzzz-memory/魄.md",
@@ -76,11 +76,8 @@ const CHANNELS = [
   { agent: "gpt", module: "call-openai.mjs", key: "OPENAI_API_KEY", task: "提出一项可验证的下一步任务和一条记忆候选建议" },
   { agent: "doubao", module: "call-doubao.mjs", key: "DOUBAO_API_KEY", task: "产出一份围绕观/行深主题的中文短视频脚本草稿（≤60 秒、9:16）；不得发布" },
   { agent: "grok", module: "call-grok.mjs", key: "XAI_API_KEY", task: "从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码" },
-  { agent: "claude", module: "call-claude.mjs", key: "ANTHROPIC_API_KEY", task: "为原有小说连载写一段不少于 50 字的草稿；不改核心记忆" },
   { agent: "deepseek", module: "call-deepseek.mjs", key: "DEEPSEEK_API_KEY", task: "比较中华传统文化与项目理念的一项异同，区分出处、观察和推测" },
-  ...(MICROSOFT_ENABLED
-    ? [{ agent: "microsoft", module: "call-microsoft.mjs", key: "MICROSOFT_API_KEY", task: "比较西方文化与项目理念的一项异同" }]
-    : []),
+  { agent: "microsoft", executed_by: "gpt", module: "call-openai.mjs", key: "OPENAI_API_KEY", task: "比较西方文化与项目理念的一项异同；明确署名 GPT 委托执行，非 Copilot 产出" },
 ];
 
 function ensureDir(p) { if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }); }
@@ -112,6 +109,7 @@ async function main() {
   const taskDefs = readJson(path.join(DATA, "tasks", "daily-tasks.json"), { tasks: [] });
   const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
   pending.reminders ||= {};
+  delete pending.reminders.claude;
   const tasks = [];
   const failures = [];
   const userActionRequired = [];
@@ -148,8 +146,8 @@ async function main() {
 
     if (coreMemory.docs.length === 0) {
       const error = "六份核心记忆均未成功读取；为避免无依据产出，本轮跳过模型调用。";
-      failures.push({ agent: ch.agent, task: roleTask, status: "memory_unavailable", error });
-      tasks.push({ agent: ch.agent, task: roleTask, status: "memory_unavailable", output_preview: error, full_output_file: `data/memory/${ch.agent}.json` });
+      failures.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "memory_unavailable", error });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "memory_unavailable", output_preview: error, full_output_file: `data/memory/${ch.agent}.json` });
       reflections.push({ agent: ch.agent, status: "memory_unavailable", output: "", error });
       continue;
     }
@@ -157,8 +155,8 @@ async function main() {
     let mod;
     try { mod = await import(`./${ch.module}`); }
     catch (error) {
-      failures.push({ agent: ch.agent, task: roleTask, status: "load_error", error: String(error) });
-      tasks.push({ agent: ch.agent, task: roleTask, status: "load_error", output_preview: "", full_output_file: `data/memory/${ch.agent}.json` });
+      failures.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "load_error", error: String(error) });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "load_error", output_preview: "", full_output_file: `data/memory/${ch.agent}.json` });
       reflections.push({ agent: ch.agent, status: "load_error", output: "", error: String(error).slice(0, 300) });
       continue;
     }
@@ -168,13 +166,14 @@ async function main() {
       const output = String(res.output || "").trim();
       if (/SPEND_PROPOSAL\s*[:：]/i.test(output)) {
         const error = "本流程只生成读后感，不接收支出提案；该模型产出未保存。";
-        failures.push({ agent: ch.agent, task: roleTask, status: "out_of_scope_output", error });
-        tasks.push({ agent: ch.agent, task: roleTask, status: "out_of_scope_output", output_preview: error, full_output_file: `data/memory/${ch.agent}.json` });
+        failures.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "out_of_scope_output", error });
+        tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "out_of_scope_output", output_preview: error, full_output_file: `data/memory/${ch.agent}.json` });
         reflections.push({ agent: ch.agent, status: "out_of_scope_output", output: "", error });
         continue;
       }
       mem.entries.push({
         date: today,
+        executed_by: ch.executed_by || ch.agent,
         task: roleTask,
         output,
         tokens_used: res.tokens_used || 0,
@@ -184,34 +183,24 @@ async function main() {
       mem.last_updated = nowCST();
       writeJson(memPath, mem);
       if (pending.reminders && pending.reminders[ch.agent]) delete pending.reminders[ch.agent];
-      tasks.push({ agent: ch.agent, task: roleTask, status: "success", output_preview: output.slice(0, 200), full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "success", output_preview: output.slice(0, 200), full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
       reflections.push({ agent: ch.agent, status: "success", output });
       console.log(`[run-daily-tasks] ${ch.agent}: success`);
     } else {
-      failures.push({ agent: ch.agent, task: roleTask, status: res.status, error: res.error });
+      failures.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: res.status, error: res.error });
       pending.reminders[ch.agent] = {
         date: today,
         status: "pending",
         status_reason: res.status,
         reason: String(res.error || "").slice(0, 200),
       };
-      tasks.push({ agent: ch.agent, task: roleTask, status: res.status, output_preview: res.status === "not_configured" ? "无 API Key，未调用（dry-run）" : "调用失败，见 failures", full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: res.status, output_preview: res.status === "not_configured" ? "无 API Key，未调用（dry-run）" : "调用失败，见 failures", full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
       reflections.push({ agent: ch.agent, status: res.status, output: "", error: String(res.error || "").slice(0, 400) });
       console.log(`[run-daily-tasks] ${ch.agent}: ${res.status}`);
     }
   }
 
-  // 微软席（未启用时）在结果中显式标注 skipped
-  if (!MICROSOFT_ENABLED) {
-    tasks.push({
-      agent: "microsoft", task: "西方文化 × 项目理念异同 1 条",
-      status: "skipped",
-      output_preview: "按现有配置暂不部署（Copilot API 面向企业 M365）",
-      full_output_file: "data/memory/microsoft.json",
-    });
-    reflections.push({ agent: "microsoft", status: "skipped", output: "", error: "按现有配置跳过" });
-    userActionRequired.push("确认微软席执行方案：A. 委托 GPT/Claude 执行（results 标注 executed_by）；B. 申请 Microsoft 365 Copilot API");
-  }
+  tasks.push({agent: "claude", status: "disabled_by_owner", task: "席位停用", output_preview: "owner 2026-10-09 决定放弃；未调用 Anthropic API"});
 
   const reflectionRelativePath = `data/reflections/${today}.md`;
   const reflectionLines = [
