@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "key_values": "Never stored here; injected into the executor from GitHub Actions or Cloudflare Secrets",
+  "providers": {
+    "gpt": {
+      "module": "scripts/call-openai.mjs",
+      "secret": "OPENAI_API_KEY",
+      "model_env": "OPENAI_MODEL",
+      "default_model": "gpt-4o-mini",
+      "mode": "github_actions"
+    },
+    "deepseek": {
+      "module": "scripts/call-deepseek.mjs",
+      "secret": "DEEPSEEK_API_KEY",
+      "model_env": "DEEPSEEK_MODEL",
+      "default_model": "deepseek-chat",
+      "mode": "github_actions"
+    },
+    "doubao": {
+      "module": "scripts/call-doubao.mjs",
+      "secret": "DOUBAO_API_KEY",
+      "model_env": "DOUBAO_MODEL",
+      "default_model": "doubao-seed-evolving",
+      "base_env": "DOUBAO_BASE_URL",
+      "mode": "github_actions"
+    },
+    "grok": {
+      "module": "scripts/call-grok.mjs",
+      "secret": "XAI_API_KEY",
+      "model_env": "XAI_MODEL",
+      "mode": "github_actions",
+      "note": "Cloudflare XAI proxy key and Actions key may belong to different teams"
+    },
+    "qianwen": {
+      "secret": "QWEN_API_KEY",
+      "mode": "cloudflare_worker",
+      "note": "qianwen-proxy-worker.js consumes env.QWEN_API_KEY; stored in Cloudflare, not assumed in GitHub"
+    },
+    "kimi_domestic": {
+      "secret": "MOONSHOT_API_KEY",
+      "mode": "blocked_configuration",
+      "note": "Domestic screenshot balance is not proof that this executor has the corresponding key"
+    },
+    "kimi_global": {
+      "secret": "KIMI_API_KEY",
+      "mode": "external_hub_task",
+      "note": "Existing international Worker key diagnostic balance0; never substitute for domestic key"
+    },
+    "meta_hosted": {
+      "secret": "META_WORKER_TOKEN",
+      "mode": "cloudflare_workers_ai",
+      "config": "wrangler.meta-hosted.toml",
+      "note": "Hosted Llama; not official Meta chat or Instagram API"
+    },
+    "claude": {
+      "secret": "ANTHROPIC_API_KEY",
+      "mode": "disabled_by_owner"
+    },
+    "microsoft": {
+      "delegate": "gpt",
+      "mode": "delegated"
+    },
+    "manus": {
+      "mode": "external_hub_task"
+    },
+    "workbuddy": {
+      "mode": "external_hub_task"
+    }
+  }
+}

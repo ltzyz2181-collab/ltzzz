@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {runEconomy,CORE_FILES} from '../run-daily-economy.mjs';
+function fixture(){const root=fs.mkdtempSync(path.join(os.tmpdir(),'ltzzz-economy-test-'));for(const f of [...CORE_FILES,'ltzzz-memory/装备论.md','ltzzz-memory/README.md']){fs.mkdirSync(path.dirname(path.join(root,f)),{recursive:true});fs.writeFileSync(path.join(root,f),'test memory '+f);}fs.mkdirSync(path.join(root,'config'));fs.copyFileSync('config/ai-providers.json',path.join(root,'config/ai-providers.json'));return root;}
+test('two actual executor calls, saved outputs, no payment claim, same-day idempotence',async()=>{const root=fixture();try{const calls=[];const call=async({agent,prompt})=>{calls.push(agent);assert.match(prompt,/test memory/);return {ok:true,output:agent+' deliverable',tokens_used:123};};const r=await runEconomy({root,date:'2026-10-09',call});assert.deepEqual(calls,['deepseek','doubao']);assert.equal(r.status,'submitted_pending_review');assert.equal(r.hiring.paid,false);assert.equal(r.investment.tx_hash,null);assert.equal(r.memory.length,8);await runEconomy({root,date:'2026-10-09',call});assert.equal(calls.length,2);assert.ok(fs.existsSync(path.join(root,'knowledge/results/hire/2026-10-09.json')));}finally{fs.rmSync(root,{recursive:true,force:true});}});
+test('truncated dispatch does not trigger downstream or claim complete',async()=>{const root=fixture();try{let calls=0;const r=await runEconomy({root,date:'2026-10-09',call:async()=>{calls++;return {ok:true,output:'incomplete',finish_reason:'length'};}});assert.equal(calls,1);assert.equal(r.status,'blocked_or_incomplete');assert.equal(r.hiring.status,'blocked_upstream');}finally{fs.rmSync(root,{recursive:true,force:true});}});
+test('missing required memory fails before any call',async()=>{const root=fixture();try{fs.unlinkSync(path.join(root,CORE_FILES[0]));let calls=0;await assert.rejects(runEconomy({root,date:'2026-10-09',call:async()=>{calls++;}}));assert.equal(calls,0);}finally{fs.rmSync(root,{recursive:true,force:true});}});
