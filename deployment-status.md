@@ -513,4 +513,61 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 服务号信息（owner 提供）：类型不可变更；简介「印章备案查询/刻章鉴别/游戏在线/电影在线/视频资源/电视剧更新」为历史遗留，与 LTZZZ（AI 数字实验室，英文为主）定位不符——**简介可改**（微信后台「设置与开发」→公众号设置→简介，一年限改若干次，改前先定文案）。
 - 红线核验：Key 值全程只进 Secret/内存，未入对话、未入库、未落盘明文（临时脚本仅输出掩码/状态）；ltzzz-secrets.md 未触碰。
 
+---
+
+# 每日巡检回执 · 2026-10-09（千问 · A→E）
+
+## G · 本机命令通道：✅ 正常
+- `echo ok` 返回 `ok`；git / curl.exe / Invoke-RestMethod / npx wrangler 全可用（0xC0000142 未复现，10-01 修复持续有效）。
+
+## A · git：✅ 同步完成，无本轮待推新文件
+- fetch 后本地落后 origin/main **118 提交**，`git pull --ff-only` 快进至 `7af244a`（WEP3 v1.1 P2 / key-liveness / liveness-watchdog / IG 自动发布等一批），无冲突。
+- 工作区唯一脏文件 `wep3-worker.js`：diff 为"2026-10-09 总控修复 P0：pinOk() 由 fail-open(`!env.LAB_PIN`) 改 fail-closed"——**非本轮巡检产物、属其他执行会话的进行中工作，不代提交/不代部署**，移交归属会话。
+- `ltzzz-secrets.md` 红线：未 add、未读、未推 ✅。
+
+## B · wrangler 部署：✅ 维持 10-02 Version，按纪律不重跑
+- `git log` 实测：qianwen-proxy-worker.js 末次提交 `af91180`(09-30)、kimi-proxy-worker.js 末次 `fccfffa`(09-30)——源码自 10-02 部署（Version 8c0e6e0f / e4058c96）后**零改动**。
+- 依本文件 No-repeat rule，无源码变更不盲目 redeploy；线上即 10-02 版本。
+
+## C · 验证：千问 VERIFIED；Kimi 真实调用 BLOCKED（上游欠费）
+- /health（api-qianwen / api-kimi .ltzzz.com，00:33Z）：两者 `ok:true has_key:true`。
+- 真实调用（UTF-8 字节体）：
+  - 千问 qwen-plus → 「总控在线」✅ **VERIFIED**（连续第 5 个巡检日通过）。
+  - Kimi → **HTTP 429**，上游原文 `account … suspended due insufficient balance`。**Worker 层正常**（请求已透传并取到上游应答），阻塞在 Moonshot **账户余额**，属账务非工程问题。与 10-02 K1"worker 出口 429 为限流"同源、本次坐实为**欠费暂停**。→ 需 owner 给 Moonshot 账户充值，Worker 无需改动。
+- 口径澄清（防后人误读 key-liveness）：`key-liveness-2026-10-08.json` 记 kimi `no_secret`，那是 **GitHub Actions 用其自身 env 探测**（Actions 侧未配 MOONSHOT_API_KEY），与 **Cloudflare Worker Secret** 是两个独立位置；Worker 侧 has_key:true 为权威。且该工作流仍用已下线模型 `moonshot-v1-8k`，应改 `kimi-k2.6`（本轮发现的新待办）。
+
+## E · 页面发布：✅
+- ltzzz.com/ 200；docs/AGI身份与DID总规划-v1.1.md 线上 200，正文已是 **v1.2**（11 份 DID + X2 改"Base 主网已上线"）——10-01 第二轮"文档滞后名册"欠账已由 v1.2 闭合（本轮回执确认线上口径同步）。
+
+## F · 转账测试：⛔ 未执行（暂缓条件不变，非通道问题）
+- ②交易所提现地址簿加 0x1893…0eF7、③提现网络确认——仍为 owner 人工动作，未观察到完成证据。本轮全程未以旧泄露钱包 0x21F5…7fdc 作任何转账来源。
+
+## U 卡地址 0x1893…0eF7 · 10-09 链上独立实测（公开 RPC，只读，零私钥参与）
+| 链 | 币种 | 合约身份校验 | 余额 |
+|---|---|---|---|
+| Base 主网(8453) | ETH | eth_getBalance | **0** |
+| Base 主网(8453) | USDC | 0x8335…2913，由 agent 同合约余 19.0 USDC 反证有效 | **0** |
+| Ethereum 主网 | ETH | eth_getBalance | ≈**0.0010865**（gas 零头） |
+| Ethereum 主网 | USDT | 0xdAC1…1ec7，eth_getCode=有合约 ✅ | **0** |
+| Ethereum 主网 | USDC | 两个候选地址 eth_getCode 均=**空**（非真实合约） | **不采信、不记录** |
+- **5.99U 去向 = NEEDS_CHECK**：10-01 补充5 记"U 卡到账 5.99U"，本次 0x1893 两条链稳定币余额实测均为 0。余额 0 **不否定**历史到账（可能已划转），但主网 USDC 合约地址本轮无法从本机 RPC/文档核实（docs.circle ENOTFOUND），**无法断定 5.99U 的链与币种**。→ 请 owner 用 Etherscan/Basescan 对 `0x1893…0eF7` 历史流水核一次；本轮**不臆造 txid**。
+- 本巡检窗口 0x1893 无新交易、无 receipt；TX-20261001-UCARD-BLOCKED 维持 blocked。
+
+## 状态判定汇总（四公式口径）
+| 项 | 状态 | 依据 |
+|---|---|---|
+| 千问 Worker 链路 | VERIFIED | /health + 真实调用应答文本 |
+| Kimi Worker 链路 | BLOCKED（Moonshot 欠费） | 429 上游原文 suspended due insufficient balance |
+| A 同步 | VERIFIED | ff 至 7af244a 无冲突 |
+| B 部署 | 维持 10-02（无源码变更不重跑） | git log 末次提交 09-30 |
+| F 5U 链路测试 | 未完成（暂缓） | 前置 2 项需 owner |
+| U 卡 5.99U 去向 | NEEDS_CHECK | 稳定币实测 0，历史流水未核 |
+| wep3-worker P0 鉴权修复 | 未提交（非本会话产物） | 脏文件移交归属会话 |
+
+## 新增待办（本轮发现）
+- key-liveness.yml kimi 探针模型 `moonshot-v1-8k` → 改 `kimi-k2.6`（或走 api-kimi.ltzzz.com 代理，与 daily-worker 同法）。
+- Moonshot 账户充值（owner）→ 恢复 kimi 真实调用后本 C 步转 VERIFIED。
+
+（本回执不含任何凭证值；地址沿用截断口径；上游账户 org 标识不复述。）
+
 
