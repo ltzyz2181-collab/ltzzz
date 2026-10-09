@@ -13,23 +13,26 @@ h2{font-size:15px;color:#9ab;margin:20px 0 8px}
 .card:hover,.card.on{border-color:#3a6df0}
 .card b{font-size:18px}
 .muted{color:#8a97ad;font-size:13px}
-button,input{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #334;background:#111828;color:#fff;margin:6px 6px 0 0}
+button,input,select{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #334;background:#111828;color:#fff;margin:6px 6px 0 0}
 button{background:#1a4a9a;cursor:pointer}
 button.secondary{background:#1a2438}
+button.green{background:#0d5c3a}
 pre{background:#05070c;padding:12px;border-radius:12px;overflow:auto;font-size:12px}
 a{color:#8cf}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .price{color:#7dffa3}
+.bal{background:#0c1220;border:1px solid #1e2a40;border-radius:12px;padding:10px 12px;margin:8px 0}
 </style>
 </head>
 <body>
 <header>
-  <div class="muted">LTZZZ WEP3 Pay · <a href="wep3.html">控制台</a> · <a href="products.html">产品</a></div>
-  <h1>外部付款。<br>进实验室账本，自动雇代理干活。</h1>
-  <p class="muted">选 SKU → 开票 → 确认付款（demo）→ 链上出金仍走 treasury。Worker：<a href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3</a></p>
+  <div class="muted">LTZZZ WEP3 Pay · <a href="wep3.html">控制台</a></div>
+  <h1>信用付款可用。<br>LTZZZ 钱包够钱就直接扣。</h1>
+  <p class="muted">开票 → 用 LTZZZ 信用付（推荐）或 demo 确认 → 自动雇佣。Worker：<a href="https://ltzzz-wep3.ltzyz2181.workers.dev">ltzzz-wep3</a></p>
 </header>
 <main>
   <input id="base" value="https://ltzzz-wep3.ltzyz2181.workers.dev" style="width:100%">
+  <div class="bal" id="bal">余额加载中…</div>
   <h2>SKU</h2>
   <div id="skus" class="muted">加载中…</div>
   <h2>买家信息（可选）</h2>
@@ -38,8 +41,9 @@ a{color:#8cf}
     <input id="ref" placeholder="buyer ref" style="width:140px">
   </div>
   <div class="row">
-    <button id="checkout">开票结账</button>
-    <button id="pay" class="secondary">确认付款（demo）</button>
+    <button id="checkout">开票</button>
+    <button id="payCredit" class="green">用 LTZZZ 信用付</button>
+    <button id="pay" class="secondary">demo 确认</button>
     <button id="refresh" class="secondary">刷新订单</button>
   </div>
   <p class="muted">当前发票：<span id="inv">—</span></p>
@@ -54,11 +58,18 @@ const q=new URLSearchParams(location.search);
 if(q.get('invoice')) invoiceId=q.get('invoice');
 function show(x){out.textContent=JSON.stringify(x,null,2)}
 async function call(p,opt){const r=await fetch(base()+p,opt);const t=await r.text();try{return JSON.parse(t)}catch{return {raw:t,status:r.status}}}
+async function loadBal(){
+  const d=await call('/wallet/LTZZZ');
+  const t=await call('/treasury');
+  document.getElementById('bal').innerHTML = d.ok
+    ? `LTZZZ 可用 <b class="price">$${Number(d.spendable).toFixed(4)}</b> · credit $${Number(d.credit).toFixed(4)} · treasury deposited $${Number((t.treasury&&t.treasury.deposited)||0).toFixed(4)}`
+    : '余额读取失败';
+}
 async function loadSkus(){
   const d=await call('/sku');
   const box=document.getElementById('skus');
   if(!d.skus){box.textContent='加载失败';show(d);return}
-  box.innerHTML=d.skus.map(s=>`<div class="card" data-id="${s.id}"><b>${s.title}</b> <span class="price">$${s.price_usd}</span><div class="muted">${s.blurb} · skill ${s.skill} · ${s.owner}</div></div>`).join('');
+  box.innerHTML=d.skus.map(s=>`<div class="card" data-id="${s.id}"><b>${s.title}</b> <span class="price">$${s.price_usd}</span><div class="muted">${s.blurb} · ${s.skill} · ${s.owner}</div></div>`).join('');
   box.querySelectorAll('.card').forEach(el=>el.onclick=()=>{
     box.querySelectorAll('.card').forEach(c=>c.classList.remove('on'));
     el.classList.add('on'); selected=el.dataset.id;
@@ -71,17 +82,22 @@ document.getElementById('checkout').onclick=async()=>{
   show(d);
   if(d.invoice){invoiceId=d.invoice.id;document.getElementById('inv').textContent=invoiceId;history.replaceState(null,'','?invoice='+encodeURIComponent(invoiceId))}
 };
+document.getElementById('payCredit').onclick=async()=>{
+  if(!invoiceId){show({error:'no_invoice · 先开票'});return}
+  const d=await call('/pay/credit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({invoice_id:invoiceId,payer:'LTZZZ'})});
+  show(d); loadBal();
+};
 document.getElementById('pay').onclick=async()=>{
   if(!invoiceId){show({error:'no_invoice'});return}
   const d=await call('/pay/confirm',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({invoice_id:invoiceId,provider:'demo',proof:'demo-'+Date.now()})});
-  show(d);
+  show(d); loadBal();
 };
 document.getElementById('refresh').onclick=async()=>{
   if(!invoiceId){show({error:'no_invoice'});return}
   show(await call('/invoice/'+encodeURIComponent(invoiceId)));
 };
 document.getElementById('inv').textContent=invoiceId||'—';
-loadSkus();
+loadSkus(); loadBal();
 if(invoiceId) call('/invoice/'+encodeURIComponent(invoiceId)).then(show);
 </script>
 </body>
