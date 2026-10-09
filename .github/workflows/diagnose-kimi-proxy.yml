@@ -1,0 +1,29 @@
+name: Diagnose Kimi proxy current account
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/diagnose-kimi-proxy.mjs', '.github/workflows/diagnose-kimi-proxy.yml']
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: node scripts/diagnose-kimi-proxy.mjs
+      - name: Save diagnostic
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/kimi-proxy-diagnostic-*.json
+          git commit -m "Kimi proxy actual call receipt"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
