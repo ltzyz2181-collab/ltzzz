@@ -48,3 +48,7 @@ JS 根据 `?region=` 切换标价与支付提示。
 - 不破坏现有 checkout.html 参数。
 
 状态：applied（b63266b 已落地，豆包 2026-10-02 复核：区域切换/双轨/新卡片齐全，checkout 参数未破坏）
+
+## 2026-10-09 审查后更新（覆盖旧的能力声明）
+
+本轮 products.html 改为与新首页一致的产品/实验展示，国内和 Global 区域切换保留；正式 Gumroad 起步包 $19，服务目录为咨询参考。AI 代付3U/AGI-402/Pass100U展示为待验证方案，不开放新收费。旧文“USDT 发 Tx 自动发货”“全部平台同步”不能当作本轮已验收能力。view_content/begin_checkout 仅提供浏览器事件与 dataLayer 接口，远端采集尚未配置。未取得 Meta 原创新 HTML，不宣称合并原件。详见 META-SUBMISSION-REVIEW-20261009.md。
