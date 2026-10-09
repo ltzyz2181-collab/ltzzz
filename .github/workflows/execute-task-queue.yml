@@ -8,9 +8,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 concurrency:
-  group: ltzzz-main-writes
-  cancel-in-progress: false
+  group: ltzzz-ai-task-queue
+  cancel-in-progress: true
 jobs:
   execute:
     runs-on: ubuntu-latest
@@ -20,6 +21,15 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '20'}
+      - name: Stop superseded runs of this queue only
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/execute-task-queue.yml/runs?status=in_progress&per_page=100" --jq ".workflow_runs[] | select(.id != $GITHUB_RUN_ID) | .id" |
+          while read -r queue_run_id; do
+            echo "Cancelling superseded queue run $queue_run_id"
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$queue_run_id/cancel" || true
+          done
       - name: Execute real provider calls
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
