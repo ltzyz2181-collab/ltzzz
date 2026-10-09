@@ -1,0 +1,43 @@
+name: Owner Aave funding 100 per tx 200 per day
+on:
+  push:
+    branches: [main]
+    paths: ['invest-channel/contracts/OwnerAaveFunding.sol', 'scripts/aave-owner-funding.mjs', '.github/workflows/aave-owner-funding.yml']
+  schedule:
+    - cron: '45 * * * *'
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency:
+  group: ltzzz-main-writes
+  cancel-in-progress: false
+jobs:
+  funding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: npm install --no-save ethers@6.17.0 solc@0.8.30 ganache@7.9.2
+      - name: Verify financial invariants
+        run: node invest-channel/tests/funding.test.cjs
+      - name: Compile, deploy if configured, refill verified shortage
+        env:
+          FUNDING_OWNER: ${{ vars.FUNDING_OWNER }}
+          FUNDING_TREASURY: ${{ vars.FUNDING_TREASURY }}
+          FUNDING_ROUTER_ADDRESS: ${{ vars.FUNDING_ROUTER_ADDRESS }}
+          FUNDING_EXECUTOR_KEY: ${{ secrets.FUNDING_EXECUTOR_KEY }}
+          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}
+        run: node scripts/aave-owner-funding.mjs
+      - name: Persist actual receipt or blocking reason
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/funding/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "owner Aave funding execution receipt"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
