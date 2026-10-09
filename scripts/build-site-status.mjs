@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 const root=new URL('../',import.meta.url);const read=p=>{try{return JSON.parse(fs.readFileSync(new URL(p,root),'utf8'));}catch{return null;}};
 const files=(dir)=>{try{return fs.readdirSync(new URL(dir+'/',root)).filter(x=>x.endsWith('.json')).map(x=>({path:dir+'/'+x,data:read(dir+'/'+x)})).filter(x=>x.data);}catch{return [];}};
-const latest=dir=>files(dir).sort((a,b)=>String(b.data.at||b.data.generated_at||b.data.date||'').localeCompare(String(a.data.at||a.data.generated_at||a.data.date||'')))[0];
+const observed=data=>data.at||data.generated_at||data.completed_at||data.results?.at(-1)?.at||data.date||'';
+const latest=dir=>files(dir).sort((a,b)=>String(observed(b.data)).localeCompare(String(observed(a.data))))[0];
 const daily=latest('data/results');const meta=latest('knowledge/results/meta');const defi=latest('knowledge/results/defi');const kimi=files('knowledge/results/kimi').filter(x=>x.data.has_worker_key).sort((a,b)=>String(b.data.at).localeCompare(String(a.data.at)))[0];
 const config=read('data/tasks/daily-tasks.json');const entries=(daily?.data.tasks||[]);const success=entries.filter(t=>t.status==='success');
 const roles=[['gpt','GPT','工程总控'],['grok','XAI / Grok','产品与安全工程'],['deepseek','DeepSeek','投资研究与数值核查'],['doubao','豆包','视频与流水线集成'],['qianwen','千问','独立审计与总控备援'],['kimi','国内 Kimi','中文记忆校对'],['kimi-global','国际 Kimi','海外研究与雇佣提案'],['meta','Meta','提案复核 · 托管 Llama'],['microsoft','Microsoft','GPT 委托分析席'],['manus','Manus','浏览器与平台执行'],['workbuddy','Workbuddy','调度与跟单'],['claude','Claude','已停用 · 保留历史']];
