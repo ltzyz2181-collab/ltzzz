@@ -11,6 +11,7 @@ const MODEL = () => process.env.DOUBAO_MODEL || "doubao-seed-evolving";
 async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens) {
   const resp = await fetch(`${base}/chat/completions`, {
     method: "POST",
+      signal: AbortSignal.timeout(120000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
@@ -34,6 +35,7 @@ async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens) {
 async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   const resp = await fetch(`${base}/v1/messages`, {
     method: "POST",
+      signal: AbortSignal.timeout(120000),
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
       model,
