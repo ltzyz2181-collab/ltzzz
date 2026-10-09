@@ -36,3 +36,6 @@ export function evaluateExperiment(kind){
  }
  throw Error('unsupported_experiment');
 }
+
+export function projectScope(text){return !/EMG|肌电|穴位|魄户|生物信号|人体试验|针灸/i.test(String(text));}
+export function taskScope(text){return projectScope(text)&&/Aave|WEP3|receipt|支付|雇佣|订单|USDC|gas|回执|产品|投资/i.test(String(text));}
