@@ -24,10 +24,10 @@ order.filter((d) => s.state.agents[d].reputation >= 20).forEach((d, i) => s.bid(
 const win = s.award(t.id);
 let log = '';
 try { log = execSync('git log --since="24 hours ago" --pretty=format:"- %h %s" | head -60', { cwd: root, encoding: 'utf8' }); } catch {}
-const n = log ? log.split('\n').length : 0;
+const n = log ? log.split("\n").filter(Boolean).length : 0;
 let worker_model = { model: 'none', status: 'skipped' }, text = '';
 if (HAS_DS && win.worker === 'did:ltzzz:deepseek' && log) {
-  const out = await deepseek({ apiKey: process.env.DEEPSEEK_API_KEY, maxTokens: 900, prompt: `你是 LTZZZ AI 经济子网的工人AI（did:ltzzz:deepseek），被 did:ltzzz:gpt 以 ${win.ask_usd} USD（内部记账）雇佣。\n根据下列过去24h git 提交，用简体中文写一份评审：1) 实际完成了什么（每条注明 commit 短哈希）；2) 哪些只是提议/未验证；3) 对「AI雇佣AI」下一步的 3 条可执行建议。只写提交里有依据的事实，不说资金已执行，不出现任何地址或密钥。\n\n${log.slice(0, 5000)}` });
+  const out = await deepseek({ apiKey: process.env.DEEPSEEK_API_KEY, maxTokens: 2000, prompt: `你是 LTZZZ AI 经济子网的工人AI（did:ltzzz:deepseek），被 did:ltzzz:gpt 以 ${win.ask_usd} USD（内部记账）雇佣。\n根据下列过去24h git 提交，用简体中文写一份评审：1) 实际完成了什么（每条注明 commit 短哈希）；2) 哪些只是提议/未验证；3) 对「AI雇佣AI」下一步的 3 条可执行建议。只写提交里有依据的事实，不说资金已执行，不出现任何地址或密钥。\n\n${log.slice(0, 5000)}` });
   worker_model = { model: 'deepseek', status: out.status, tokens_used: out.tokens_used || 0 };
   if (out.ok) text = out.output.replace(/0x[a-fA-F0-9]{40,}/g, '0x[已脱敏]');
 }
