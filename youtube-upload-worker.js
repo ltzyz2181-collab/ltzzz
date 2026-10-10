@@ -43,6 +43,14 @@ export default {
       });
     }
 
+    // 2026-10-10 Grok Bot：写操作鉴权（fail-closed）。OAuth 流程与 /health /youtube/status 不受影响。
+    const WRITE = ['/youtube/upload', '/youtube/disconnect', '/youtube/update-description', '/youtube/update-status'];
+    if (WRITE.includes(path) && request.method === 'POST') {
+      const want = env.LTZZZ_AGENT_TOKEN || '';
+      const got = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+      if (!want || !(await safeEqual(got, want))) return json({ error: 'unauthorized' }, 401);
+    }
+
     try {
       switch (path) {
         case '/health':
@@ -477,4 +485,10 @@ function json(obj, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' },
   });
+}
+
+async function safeEqual(a, b) {
+  const enc = new TextEncoder();
+  const [x, y] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(a)), crypto.subtle.digest('SHA-256', enc.encode(b))]);
+  const u = new Uint8Array(x), v = new Uint8Array(y); let d = 0; for (let i = 0; i < u.length; i++) d |= u[i] ^ v[i]; return d === 0 && a.length > 0;
 }
