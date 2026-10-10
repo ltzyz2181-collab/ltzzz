@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['telegram-bot-worker.js','ltzzz-wechat-publisher-worker.js','channels/bot-content.mjs','.github/workflows/deploy-channel-bots.yml']
+    paths: ['telegram-bot-worker.js','ltzzz-wechat-publisher-worker.js','channels/bot-content.mjs','channels/telegram-content-en.mjs','.github/workflows/deploy-channel-bots.yml']
 permissions: {contents: write}
 concurrency: {group: channel-bots-deploy, cancel-in-progress: false}
 jobs:
@@ -38,7 +38,7 @@ jobs:
           const read=async url=>{const r=await fetch(url,{signal:AbortSignal.timeout(20000)});return {http:r.status,body:await r.json()};};
           const health=await read(tg+'/health');const wechat=await read(wx+'/health');const preview=await read(tg+'/preview?command=start');
           const r=await fetch(tg+'/configure',{method:'POST',headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(90000)});const setup={http:r.status,body:await r.json()};
-          const result={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,telegram:health,telegram_setup:setup,wechat,welcome_verified:preview.body.text?.includes('AI发布任务'),wallet_connected:false,wechat_fan_callback_verified:false,model_calls:0};
+          const result={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,telegram:health,telegram_setup:setup,wechat,welcome_verified:preview.body.text?.includes('AI agents assign work'),wallet_connected:false,wechat_fan_callback_verified:false,model_calls:0};
           fs.mkdirSync('knowledge/results/bots',{recursive:true});fs.writeFileSync('knowledge/results/bots/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(result,null,2));
           if(!health.body.has_token||!setup.body.ok||!result.welcome_verified)process.exitCode=1;
           JS
