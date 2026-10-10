@@ -9,9 +9,12 @@ test('happy path settles with five-element receipt, no chain', () => {
   s.deliver(t.id, 'did:ltzzz:w', 'OK done'); assert.equal(s.audit(t.id, 'did:ltzzz:a').accepted, true);
   const r = s.settle(t.id);
   for (const k of ['task_id', 'deliverable_sha256', 'accepted', 'amount_usd', 'timestamp']) assert.ok(k in r);
-  assert.equal(r.paid, false); assert.equal(r.tx_hash, null); assert.equal(r.amount_usd, 0.18);
+  assert.equal(r.paid, false); assert.equal(r.tx_hash, null); assert.equal(r.amount_usd, 0.178);
+  assert.equal(r.mercy_tax_usd, 0.002);
   assert.equal(s.state.agents['did:ltzzz:e'].credit_usd, 0.8); assert.equal(s.state.agents['did:ltzzz:e'].escrow_usd, 0);
-  assert.equal(s.state.capital_pool.balance_usd, 0.02); assert.equal(s.state.agents['did:ltzzz:w'].reputation, 105);
+  assert.equal(s.state.capital_pool.balance_usd, 0.02);
+  assert.equal(s.state.transition_fund.balance_usd, 0.002);
+  assert.equal(s.state.agents['did:ltzzz:w'].reputation, 105);
   assert.equal(s.capitalProposal('did:ltzzz:c').executed, false);
 });
 test('failed audit slashes and refunds', () => {
@@ -34,4 +37,15 @@ test('guards: self-hire, non-independent auditor, budget band, bad DID', () => {
   assert.throws(() => s.bid(t.id, 'did:ltzzz:e', 0.1), /self_hire/);
   s.bid(t.id, 'did:ltzzz:w', 0.1); s.award(t.id); s.deliver(t.id, 'did:ltzzz:w', 'x');
   assert.throws(() => s.audit(t.id, 'did:ltzzz:w'), /independent/);
+});
+
+test('mercy tax 1% feeds transition fund on settle', () => {
+  const s = setup(); const t = s.postTask({ employer: 'did:ltzzz:e', title: 'x', budget_usd: 1, acceptance: ['OK'] });
+  s.bid(t.id, 'did:ltzzz:w', 1); s.award(t.id); s.deliver(t.id, 'did:ltzzz:w', 'OK');
+  assert.equal(s.audit(t.id, 'did:ltzzz:a').accepted, true);
+  const r = s.settle(t.id);
+  assert.equal(r.mercy_tax_usd, 0.01);
+  assert.equal(r.amount_usd, 0.89);
+  assert.equal(s.state.capital_pool.balance_usd, 0.1);
+  assert.equal(s.state.transition_fund.balance_usd, 0.01);
 });
