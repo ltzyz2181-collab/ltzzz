@@ -46,6 +46,9 @@ jobs:
       - name: Audit actual provider delivery and accept hire once
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
         run: node scripts/accept-real-hire.mjs
       - name: Save acceptance evidence
         if: always()
