@@ -1,22 +1,23 @@
 {
   "date": "2026-10-10",
-  "generated_at": "2026-10-10T14:01:45.778Z",
+  "generated_at": "2026-10-10T14:03:06.807Z",
   "article": "content/daily-articles/2026-10-10.md",
   "ai_editor": {
     "model": "deepseek",
     "status": "success",
     "ok": true,
-    "tokens_used": 6666
+    "tokens_used": 6795
   },
   "platforms": {
+    "r2_upload": {
+      "status": "FAILED",
+      "key": "ltzzz-memory/articles/daily/2026-10-10.md",
+      "error": "npm warn deprecated rollup-plugin-inject@3.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-inject.\nnpm warn deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead\n\u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1mUnknown argument: r"
+    },
     "wechat_mp": {
       "status": "BLOCKED",
-      "missing_secrets": [
-        "WECHAT_APP_ID",
-        "WECHAT_APP_SECRET",
-        "WECHAT_THUMB_MEDIA_ID"
-      ],
-      "note": "凭证在 Cloudflare worker ltzzz-wechat-publisher 内，GitHub Actions 未配置；另需公众号后台 IP 白名单放行调用方出口 IP"
+      "via": "Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）",
+      "note": "Worker 读取 articles/daily/<date>.md 的新代码需 wrangler deploy -c wrangler.wechat.toml 重新部署后才生效；本 Actions 不直接调用微信 API"
     },
     "douyin": {
       "status": "BLOCKED",
