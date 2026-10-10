@@ -1,0 +1,18 @@
+{
+  "video": "videos/2026-10-05-audit-transparency.mp4",
+  "spec": "720x1280 竖屏, 约15秒, 2.6MB",
+  "checked_at": "2026-10-10T20:40:00Z",
+  "original_failure": {
+    "workflow": "upload-video-1005.yml",
+    "runs": [37290760894, 37291104929, 37291393814],
+    "failed_step": "Put mp4 to R2 queue",
+    "cause": "wrangler r2 object put 失败；同一 CLOUDFLARE_API_TOKEN 于 2026-10-10 写 R2 返回 403 Authentication error（token 无 R2 对象写权限）→ 视频从未进入 ltzzz-videos/queue/，调度器无片可发"
+  },
+  "platforms": {
+    "youtube": {"status": "BLOCKED", "path": "ltzzz-youtube-upload worker /youtube/upload（multipart 直传，绕开 R2）", "error": "Token refresh failed: 400（KV 中 OAuth refresh_token 已失效；2026-10-04 授权）", "fix": "owner 用频道 Google 账号重新授权：https://ltzzz-youtube-upload.ltzyz2181.workers.dev/auth/youtube"},
+    "instagram": {"status": "BLOCKED", "cause": "仓库与 Actions Secrets 无 Instagram Graph API 发布路径/凭证（meta-proxy 为 503 planned，facebook-bot 仅消息）"},
+    "douyin": {"status": "MANUAL_READY", "file": "content/video-publish/2026-10-05-audit-transparency-cn.md"},
+    "shipinhao": {"status": "MANUAL_READY", "file": "content/video-publish/2026-10-05-audit-transparency-cn.md"}
+  },
+  "published_urls": []
+}
