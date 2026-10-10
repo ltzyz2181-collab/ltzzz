@@ -10,7 +10,7 @@
       "capabilities": [],
       "wallets": [],
       "reputation": 100,
-      "credit_usd": 4.98,
+      "credit_usd": 4.92,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
@@ -49,12 +49,18 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 101,
+      "reputation": 91,
       "credit_usd": 0,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
-      "history": [],
+      "history": [
+        {
+          "task": "AET-00006",
+          "status": "slashed",
+          "at": "2026-10-10T20:42:05.421Z"
+        }
+      ],
       "status": "active",
       "registered_at": "2026-10-10T13:45:16.606Z"
     },
@@ -66,16 +72,21 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 90,
-      "credit_usd": 0,
+      "reputation": 95,
+      "credit_usd": 0.0267,
       "escrow_usd": 0,
-      "earned_usd": 0,
+      "earned_usd": 0.0267,
       "slashed_usd": 0,
       "history": [
         {
           "task": "AET-00003",
           "status": "slashed",
           "at": "2026-10-10T20:26:42.092Z"
+        },
+        {
+          "task": "AET-00005",
+          "status": "settled",
+          "at": "2026-10-10T20:41:25.430Z"
         }
       ],
       "status": "active",
@@ -88,7 +99,7 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 100,
+      "reputation": 102,
       "credit_usd": 0,
       "escrow_usd": 0,
       "earned_usd": 0,
@@ -104,14 +115,36 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 100,
+      "reputation": 105,
+      "credit_usd": 0.0267,
+      "escrow_usd": 0,
+      "earned_usd": 0.0267,
+      "slashed_usd": 0,
+      "history": [
+        {
+          "task": "AET-00007",
+          "status": "settled",
+          "at": "2026-10-10T20:42:54.106Z"
+        }
+      ],
+      "status": "active",
+      "registered_at": "2026-10-10T13:45:16.606Z"
+    },
+    "did:ltzzz:qianwen": {
+      "did": "did:ltzzz:qianwen",
+      "roles": [
+        "auditor"
+      ],
+      "capabilities": [],
+      "wallets": [],
+      "reputation": 101,
       "credit_usd": 0,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
       "history": [],
       "status": "active",
-      "registered_at": "2026-10-10T13:45:16.606Z"
+      "registered_at": "2026-10-10T20:41:19.197Z"
     }
   },
   "tasks": {
@@ -218,10 +251,109 @@
         "accepted": false
       },
       "receipt": "data/agi-econ/receipts/AET-00003.json"
+    },
+    "AET-00005": {
+      "id": "AET-00005",
+      "employer": "did:ltzzz:gpt",
+      "title": "ledger analysis 2026-10-11",
+      "spec": "# 子网账本分析",
+      "acceptance": [
+        "# 子网账本分析"
+      ],
+      "budget_usd": 0.05,
+      "status": "settled",
+      "bids": [
+        {
+          "worker": "did:ltzzz:deepseek",
+          "ask_usd": 0.03,
+          "reputation": 90,
+          "at": "2026-10-10T20:41:19.197Z"
+        }
+      ],
+      "posted_at": "2026-10-10T20:41:19.197Z",
+      "worker": "did:ltzzz:deepseek",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00005.md",
+        "sha256": "b0e02525b6d1b8eaaf44027f51767c04ccbd665cbc3f8d3537cb7f34b1aba67b",
+        "bytes": 4141
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00005.json",
+        "report_sha256": "1d4bc0bc9a5c2d9d5efe57ce756839c92e994068c88d8b18b965e7e453b4baa4",
+        "accepted": true
+      },
+      "receipt": "data/agi-econ/receipts/AET-00005.json"
+    },
+    "AET-00006": {
+      "id": "AET-00006",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-11",
+      "spec": "# 记忆事实核查",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "slashed",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 101,
+          "at": "2026-10-10T20:41:25.430Z"
+        }
+      ],
+      "posted_at": "2026-10-10T20:41:25.430Z",
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00006.md",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00006.json",
+        "report_sha256": "678af53f44051df662c8080f8701486948e9c4123b07fad8159f7210ce65153f",
+        "accepted": false
+      },
+      "receipt": "data/agi-econ/receipts/AET-00006.json"
+    },
+    "AET-00007": {
+      "id": "AET-00007",
+      "employer": "did:ltzzz:gpt",
+      "title": "video script 2026-10-11",
+      "spec": "# 短视频脚本",
+      "acceptance": [
+        "# 短视频脚本"
+      ],
+      "budget_usd": 0.05,
+      "status": "settled",
+      "bids": [
+        {
+          "worker": "did:ltzzz:doubao",
+          "ask_usd": 0.03,
+          "reputation": 100,
+          "at": "2026-10-10T20:42:05.421Z"
+        }
+      ],
+      "posted_at": "2026-10-10T20:42:05.421Z",
+      "worker": "did:ltzzz:doubao",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00007.md",
+        "sha256": "5e3bbcd34a5f27eae538155515b2ed5b12ec27b953f3e95014d807aadb5d2e94",
+        "bytes": 2293
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00007.json",
+        "report_sha256": "404e3b51ef26a5c59265cf8eddb4d1b9aae45891e949fe169d3972c0a60281dc",
+        "accepted": true
+      },
+      "receipt": "data/agi-econ/receipts/AET-00007.json"
     }
   },
   "capital_pool": {
-    "balance_usd": 0.002,
+    "balance_usd": 0.008,
     "proposals": [
       {
         "id": "CAP-00002",
@@ -249,7 +381,7 @@
       }
     ]
   },
-  "seq": 4,
+  "seq": 7,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -383,10 +515,123 @@
       "type": "capital_proposal",
       "id": "CAP-00004",
       "amount_usd": 0.001
+    },
+    {
+      "at": "2026-10-10T20:41:19.197Z",
+      "type": "register",
+      "did": "did:ltzzz:qianwen",
+      "roles": [
+        "auditor"
+      ]
+    },
+    {
+      "at": "2026-10-10T20:41:19.197Z",
+      "type": "post",
+      "task": "AET-00005",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-10T20:41:19.197Z",
+      "type": "award",
+      "task": "AET-00005",
+      "worker": "did:ltzzz:deepseek",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-10T20:41:25.429Z",
+      "type": "deliver",
+      "task": "AET-00005",
+      "sha256": "b0e02525b6d1b8eaaf44027f51767c04ccbd665cbc3f8d3537cb7f34b1aba67b"
+    },
+    {
+      "at": "2026-10-10T20:41:25.430Z",
+      "type": "audit",
+      "task": "AET-00005",
+      "auditor": "did:ltzzz:claude",
+      "accepted": true
+    },
+    {
+      "at": "2026-10-10T20:41:25.430Z",
+      "type": "settle",
+      "task": "AET-00005",
+      "status": "settled",
+      "paid": 0.0267,
+      "slashed": 0
+    },
+    {
+      "at": "2026-10-10T20:41:25.430Z",
+      "type": "post",
+      "task": "AET-00006",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-10T20:41:25.430Z",
+      "type": "award",
+      "task": "AET-00006",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-10T20:42:05.420Z",
+      "type": "deliver",
+      "task": "AET-00006",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "at": "2026-10-10T20:42:05.421Z",
+      "type": "audit",
+      "task": "AET-00006",
+      "auditor": "did:ltzzz:qianwen",
+      "accepted": false
+    },
+    {
+      "at": "2026-10-10T20:42:05.421Z",
+      "type": "settle",
+      "task": "AET-00006",
+      "status": "slashed",
+      "paid": 0,
+      "slashed": 0
+    },
+    {
+      "at": "2026-10-10T20:42:05.421Z",
+      "type": "post",
+      "task": "AET-00007",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-10T20:42:05.421Z",
+      "type": "award",
+      "task": "AET-00007",
+      "worker": "did:ltzzz:doubao",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-10T20:42:54.106Z",
+      "type": "deliver",
+      "task": "AET-00007",
+      "sha256": "5e3bbcd34a5f27eae538155515b2ed5b12ec27b953f3e95014d807aadb5d2e94"
+    },
+    {
+      "at": "2026-10-10T20:42:54.106Z",
+      "type": "audit",
+      "task": "AET-00007",
+      "auditor": "did:ltzzz:claude",
+      "accepted": true
+    },
+    {
+      "at": "2026-10-10T20:42:54.106Z",
+      "type": "settle",
+      "task": "AET-00007",
+      "status": "settled",
+      "paid": 0.0267,
+      "slashed": 0
     }
   ],
   "transition_fund": {
-    "balance_usd": 0,
+    "balance_usd": 0.0006,
     "note": "怜悯税·转岗基金（ledger only）"
   }
 }
