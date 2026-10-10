@@ -322,6 +322,7 @@ async function hireLoop(env, body) {
   if (!body.deliverable || !body.evidence_path || !body.audit_report || body.audit_report.accepted !== true || !AGENTS.includes(body.audit_report.auditor) || body.audit_report.auditor === body.agent || !body.worker || body.audit_report.auditor === body.worker) return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
   const actualHash=await sha(String(body.deliverable));
   if(body.audit_report.deliverable_sha256!==actualHash) return {ok:false,error:'audit_hash_mismatch',status:422};
+  const duplicate=await get(env,'wep3:delivery:'+actualHash,null);if(duplicate)return {ok:true,status:'ALREADY_SETTLED',receipt:duplicate,paid:false,tx_hash:null};
   const poster = body.agent || 'Grok';
   const skill = SKILLS.find(s => s.id === body.skill && s.owner !== poster) || SKILLS.find(s => s.owner !== poster) || SKILLS[1];
   const tape = await tapePrice(env, skill.id);
@@ -345,10 +346,49 @@ async function hireLoop(env, body) {
   const sealed = await sealIntent(env, intent, sealer, [text]);
   if (sealed.error) { await release(env, intent, sealed.error); return {ok: false, ...sealed, refunded: true, status: 409}; }
   sealed.receipt.evidence_path=body.evidence_path;sealed.receipt.audit=body.audit_report;sealed.receipt.paid=false;sealed.receipt.settlement_mode='internal_credit';sealed.receipt.tx_hash=null;await put(env,'wep3:receipt:'+sealed.receipt.id,sealed.receipt);
+  await put(env,'wep3:delivery:'+actualHash,sealed.receipt);
   let causal = null;
   if (body.cite_receipt) causal = await citeReceipt(env, body.cite_receipt, poster, body.cite_usd || 0.005);
   return {ok: true, status: 'HIRED', intent_id: intent.id, skill: skill.id, product: skill.product, quotes: [q1.quote, q2.quote], winner: matched.winner, sealer, deliverable: text, receipt: sealed.receipt, refund: sealed.refund, causal};
 }
+async function okxSign(secret, timestamp, method, path, body) {
+  const prehash = timestamp + method.toUpperCase() + path + (body || '');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(prehash));
+  const bytes = new Uint8Array(sig);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+async function okxBalance(env) {
+  const apiKey = env.OKX_API_KEY;
+  const secret = env.OKX_SECRET_KEY;
+  const pass = env.OKX_PASSPHRASE;
+  if (!apiKey || !secret || !pass) {
+    return {ok: false, error: 'okx_env_missing', need: ['OKX_API_KEY', 'OKX_SECRET_KEY', 'OKX_PASSPHRASE']};
+  }
+  const path = '/api/v5/account/balance';
+  const timestamp = new Date().toISOString();
+  const sign = await okxSign(secret, timestamp, 'GET', path, '');
+  const res = await fetch('https://www.okx.com' + path, {
+    method: 'GET',
+    headers: {
+      'OK-ACCESS-KEY': apiKey,
+      'OK-ACCESS-SIGN': sign,
+      'OK-ACCESS-TIMESTAMP': timestamp,
+      'OK-ACCESS-PASSPHRASE': pass,
+      'Content-Type': 'application/json'
+    }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (String(data.code) !== '0') {
+    return {ok: false, error: 'okx_api', status: res.status, code: data.code, msg: data.msg || data};
+  }
+  const row = (data.data && data.data[0]) || {};
+  const details = (row.details || []).map(d => ({ccy: d.ccy, eq: d.eq, avail: d.availBal, frozen: d.frozenBal})).filter(d => Number(d.eq || 0) > 0 || Number(d.avail || 0) > 0);
+  return {ok: true, service: 'okx', account: env.OKX_ACCOUNT_LABEL || 'ltzzz', totalEq: row.totalEq, details, at: timestamp};
+}
+
 export default {async fetch(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, {headers: cors});
   const path = clean(new URL(request.url).pathname);
@@ -356,6 +396,7 @@ export default {async fetch(request, env) {
     if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
     if (request.method === 'POST' && !pinOk(request, env)) return json({ok: false, error: 'pin_required'}, 401);
     if (request.method === 'POST' && path !== '/checkout' && !path.startsWith('/pay/')) { const bodyPeek = request.headers.get('x-wep3-intent') || ''; const gated = await writeGate(env, request, bodyPeek || 'anon'); if (gated) return json({ok: false, ...gated}, 429); }
+    if(path==='/okx/balance'){if(!pinOk(request,env))return json({error:'pin_required'},401);return json(await okxBalance(env));}
     if (path === '/sku' || path === '/skus') return json({ok: true, version: '1.1.0', currency: 'USD', skus: SKUS});
     if (path === '/tape') { const prices = {}; for (const s of SKILLS) { const tape = await tapePrice(env, s.id); prices[s.id] = {catalog: s.price, tape, owner: s.owner, product: s.product}; } return json({ok: true, version: '1.1.0', prices}); }
     if (path === '/pulse') { const book = []; for (const agent of AGENTS.concat(['LTZZZ'])) { const row = await rep(env, agent); book.push({agent, credit: row.credit, earned: row.earned || 0, score: row.score, spendable: spendable(row), jobs: row.jobs || 0}); } return json({ok: true, version: '1.1.0', book}); }
