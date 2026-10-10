@@ -1,6 +1,8 @@
 import fs from 'node:fs';import crypto from 'node:crypto';
 const root='knowledge/results/economy';let item;
+const latestFile='knowledge/results/wep3/latest.json';
 const deliveryFile='knowledge/results/wep3/delivery-'+new Date().toISOString().slice(0,10)+'.json';
+if(fs.existsSync(latestFile)){const l=JSON.parse(fs.readFileSync(latestFile));if(l.source===deliveryFile&&l.status==='internal_credit_settled'){console.log('Already settled this daily delivery; no duplicate API calls');process.exit(0);}}
 if(fs.existsSync(deliveryFile)){item=JSON.parse(fs.readFileSync(deliveryFile));}else{
  const {callAgent}=await import('./call-doubao.mjs');
  const d=await callAgent({apiKey:process.env.DOUBAO_API_KEY,prompt:'雇主DeepSeek的固定工程订单：给LTZZZ AI雇佣AI服务交付一个公开可复用的验收清单。只写8条可操作测试：真实交付、验收hash、独立审计、失败退款、重复结算、额度、账本守恒、内部积分与真钱区分。每条给输入/预期。不要计划、个人材料或声称已部署。300字以内。',maxTokens:800});
