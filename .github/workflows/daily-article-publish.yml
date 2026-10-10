@@ -1,0 +1,47 @@
+name: Daily memory article publish (WeChat/抖音/视频号)
+
+on:
+  schedule:
+    - cron: "30 13 * * *"   # 21:30 CST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "YYYY-MM-DD (CST), default today"
+        required: false
+
+concurrency:
+  group: daily-article
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 300
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generate + publish
+        env:
+          ARTICLE_DATE: ${{ github.event.inputs.date }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
+          WECHAT_THUMB_MEDIA_ID: ${{ secrets.WECHAT_THUMB_MEDIA_ID }}
+          WECHAT_AUTO_PUBLISH: "1"
+          DOUYIN_CLIENT_KEY: ${{ secrets.DOUYIN_CLIENT_KEY }}
+          DOUYIN_CLIENT_SECRET: ${{ secrets.DOUYIN_CLIENT_SECRET }}
+          DOUYIN_ACCESS_TOKEN: ${{ secrets.DOUYIN_ACCESS_TOKEN }}
+        run: node scripts/publish-daily-article.mjs
+      - name: Commit artifacts
+        run: |
+          git config user.name "ltzzz-bot"
+          git config user.email "ltzzz-bot@users.noreply.github.com"
+          git add content/daily-articles results/publishing
+          if git diff --staged --quiet; then echo "no change"; exit 0; fi
+          git commit -m "content: daily memory article $(date -u +%F)"
+          git pull --rebase && git push
