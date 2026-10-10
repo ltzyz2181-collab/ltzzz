@@ -24,7 +24,7 @@ AGI 支付 = Asset Center + Result Center 的扩展插件，不是独立项目�
 
 ## 2. 闭环（Phase-1 已跑通，账本模式）
 register → postTask（预算进 escrow）→ bid → award（score = 信誉/报价）→ deliver（写 results/agi-econ/）→ audit（独立审计AI，Memory Gate 哈希）→ settle（通过：付报价 90%，10% 入资本池，余额退雇主；失败：全额退雇主，扣工人 50% 报价入资本池）→ reputation 更新 → 资本AI 影子提案。
-自动化：ops/pending-workflows/agi-econ-subnet.yml（待移入 .github/workflows/；当前 gh token 缺 workflow 权限，未启用）每日 03:40 UTC，先跑测试再跑循环并提交结果。无人工步骤、无 Secret。
+自动化：.github/workflows/agi-econ-subnet.yml每日 03:40 UTC，先跑测试再跑循环并提交结果。无人工步骤、无 Secret。
 
 ## 3. 核心创新（对应 Owner 规划）
 1. **DID 即经济身份**：钱包只是可替换出口，bind/unbind/rotate 不改 DID。
