@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['wep3-worker.js', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs']
+    paths: ['wep3-worker.js', 'wep3-ledger.js', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs', 'scripts/wep3-acceptance.mjs']
 permissions: {contents: write}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
@@ -18,7 +18,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --check wep3-worker.js
+      - run: node --test scripts/tests/wep3*.test.mjs
       - run: npm install --no-save wrangler@4
+      - run: node scripts/test-wep3-runtime.mjs
       - name: Deploy and retain service authentication
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -41,9 +43,9 @@ jobs:
           const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
           const h=await fetch(base+'/health');const health=await h.json();
           const w=await fetch(base+'/hire',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-          const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,anonymous_write_http:w.status,real_hire_verified:false,tx_hash:null};
+          const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,atomic_ledger_ready:health.atomic_ledger_ready,anonymous_write_http:w.status,real_hire_verified:false,tx_hash:null};
           fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));
-          if(!h.ok||!health.pin||w.status!==401)process.exitCode=1;
+          if(!h.ok||!health.pin||!health.atomic_ledger_ready||w.status!==401)process.exitCode=1;
           JS
       - name: Audit actual provider delivery and accept hire once
         env:

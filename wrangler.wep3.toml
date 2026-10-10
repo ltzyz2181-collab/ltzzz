@@ -8,3 +8,13 @@ id = "63c6bb670cfc42b18b4d232605d5bcad"
 
 [vars]
 SINGLE_CAP = "5"
+# First deploy is read-only. Set to 1 only after the documented KV cutover checks.
+LEGACY_KV_FROZEN = "0"
+
+[[durable_objects.bindings]]
+name = "WEP3_LEDGER"
+class_name = "Wep3Ledger"
+
+[[migrations]]
+tag = "wep3-ledger-v1"
+new_sqlite_classes = ["Wep3Ledger"]
