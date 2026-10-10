@@ -1,21 +1,59 @@
 name: Deploy LTZZZ WEP3
-
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - 'wep3-worker.js'
-      - 'wrangler.wep3.toml'
-      - '.github/workflows/deploy-wep3.yml'
-
+    paths: ['wep3-worker.js', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs']
+permissions: {contents: write}
+concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy -c wrangler.wep3.toml
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check wep3-worker.js
+      - run: npm install --no-save wrangler@4
+      - name: Deploy and retain service authentication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LAB_PIN: ${{ secrets.LAB_PIN }}
+        run: |
+          npx wrangler deploy -c wrangler.wep3.toml
+          node - <<'JS'
+          const fs=require('fs'),c=require('crypto');const token=c.randomBytes(32).toString('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\n');fs.writeFileSync('/tmp/hire-token.json',JSON.stringify({WEP3_RUNNER_TOKEN:token}));
+          JS
+          npx wrangler secret bulk /tmp/hire-token.json -c wrangler.wep3.toml
+          rm /tmp/hire-token.json
+          if [ -n "$LAB_PIN" ]; then
+            printf '%s' "$LAB_PIN" | npx wrangler secret put LAB_PIN -c wrangler.wep3.toml
+          fi
+      - name: Verify public health and anonymous write rejection
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
+          const h=await fetch(base+'/health');const health=await h.json();
+          const w=await fetch(base+'/hire',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+          const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,anonymous_write_http:w.status,real_hire_verified:false,tx_hash:null};
+          fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));
+          if(!h.ok||!health.pin||w.status!==401)process.exitCode=1;
+          JS
+      - name: Audit actual provider delivery and accept hire once
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/accept-real-hire.mjs
+      - name: Save acceptance evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/wep3/ || true
+          git diff --staged --quiet && exit 0
+          git commit -m 'WEP3 actual deployment acceptance'
+          git pull --rebase origin main
+          git push origin HEAD:main
