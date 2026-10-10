@@ -60,5 +60,8 @@ jobs:
           git add knowledge/results/wep3/ || true
           git diff --staged --quiet && exit 0
           git commit -m 'WEP3 actual deployment acceptance'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
