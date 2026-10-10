@@ -586,3 +586,61 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - Meta本轮8个独立本地鉴权/输入/回执检查通过；非原patch的8/8测试，非本轮线上推理。既有线上真实推理仍引用37877508573。
 - view_content/begin_checkout 浏览器事件接口已实现，远端采集未接入；本轮未验收真实订单归因。
 - 截图与回执：knowledge/results/frontend/products-20261009.jpg、products-20261009.json；审查裁定 docs/META-SUBMISSION-REVIEW-20261009.md。
+
+---
+
+# 每日巡检回执 · 2026-10-10（千问 · A→E · cron 8c24cf55 触发）
+
+## G · 本机命令通道：✅ 正常
+- `echo ok` 返回 `ok`；git / curl.exe / Invoke-RestMethod / npx wrangler 全可用。
+
+## A · git：✅ 同步完成
+- 本地落后 origin/main **16 提交**，`--ff-only` 快进至 `af7ea67`，无冲突。含一批他会话进展：kimi 端点修复(41be42e/82eda47)、wep3 v1.1.1→v1.2.0 往返(cf4e143/381f59c/ee6f5b8)、Aave funding 回执、Manus Meta 审查文档、watchdog。
+- 工作区本轮唯一改动 = 自修 key-liveness.yml kimi 探针（见 C'）。`ltzzz-secrets.md` 红线：未 add、未读、未推 ✅。
+
+## B · wrangler 部署：✅ 线上已最新，不重跑
+- qianwen-proxy：末次部署 10-02 09:23（Version 957e4a67），源码 af91180 后零改动。
+- kimi-proxy：末次部署 10-09 08:36（Version b937a325），**已由总控把端点修复代码(82eda47)部署上线**；`wrangler deployments list` 双 Worker 均取到 Version ID。
+- 依 No-repeat rule 无源码变更不重跑。
+
+## C · 验证：千问 + Kimi 双 VERIFIED（Kimi 昨日阻塞已解除）
+- /health（api-qianwen / api-kimi .ltzzz.com，01:03Z）：两者 `ok:true has_key:true`。
+- 真实调用（UTF-8 字节体）：千问「总控在线」✅、Kimi「总控在线」✅ —— **连续第 6 个巡检日，两席全通**。
+- **Kimi 状态修正 BLOCKED→VERIFIED**：10-09 本回执记"429 insufficient balance（欠费）"。今日 `git log` + `wrangler.kimi.toml` 坐实真实根因是**端点配错**——境内 key（尾号 9T9S，owner 核实 ¥14 可用）被配到境外端点 `api.moonshot.ai`，命中同账户下**另一把境外 key（尾号 q2as，org 欠费）**，故报 suspended；总控已把 `KIMI_BASE_URL` 改回 `api.moonshot.cn` 并重新部署，即通。→ 境外那把 key 确实欠费，但**现役 Worker 不走它**，充值境外非必要。此为四公式"planned≠deployed"的自查案例：昨日把"境外账户欠费"误推为"Kimi 席位整体不可用"。
+
+## C' · 自修：key-liveness.yml kimi 探针模型
+- Actions 探针仍用已下线 `moonshot-v1-8k`（10-09 我挂的待办，通道已通，本轮修复）→ 改 `kimi-k2.6`。端点与 key 映射不动。
+- **遗留**：Actions 侧 `secrets.MOONSHOT_API_KEY` 若未配（10-08 `no_secret` 即此因），本改动只消除"模型名下线"这一伪失败，真实产出仍需 owner 在 repo Secrets 配国内 key。标 proposed，未验证 Actions 跑通。
+
+## E · 页面发布：✅
+- ltzzz.com/ 200（看板已更新至最近日课 10-09，含 Aave/Meta/IG/Kimi-global 卡）。
+- docs 新文件 `meta-review-kimi-global-20261009.md` 线上 200（10-09 Manus 审查，结论 completed_with_source_gap：ABCD 原稿缺源，仅审两项提案）。
+
+## F · 转账测试：⛔ 未执行（暂缓条件不变）
+- ②交易所提现地址簿加 0x1893…0eF7、③提现网络确认——仍待 owner。全程未以旧泄露钱包 0x21F5…7fdc 作任何转账来源。
+
+## U 卡地址 0x1893…0eF7 · 10-10 链上独立实测（公开 RPC，只读，零私钥参与）
+- Ethereum 主网：ETH = 0x3dc2c07f06a00 wei ≈ **0.0010866**（gas 零头，与 10-09 的 0.0010865 一致）；USDT(0xdAC1…1ec7,eth_getCode 有合约 ✅) = **0**。
+- Base 主网：ETH = **0**（mainnet.base.org / base-rpc.publicnode 两独立节点一致）。Base USDC 本轮 RPC 返回空(`0x`)，不采信，沿用 10-09 反证结论=0。
+- **较昨日无余额变动 → 本窗口 0x1893 无新交易、无 receipt。**
+- **新增链上核验（账本唯一完整 txid）**：TX-20260925-1U-UCARD `0x3df2e54b…98754da` — `eth_getTransactionByHash` **非空**、有 blockHash `0x8d6fe5cc…3a6ad3`、`to=0x76379a52…c58a3`(**即 LTZZZ Safe 多签合约本身**)、`value=0x0`。→ 这是一笔**对 Safe 的多签 execTransaction 调用**（value=0 符合"USDT 转移发生在 Safe 内部 call"特征）。但当前公共节点 `eth_getTransactionReceipt` 返 null（archive 索引缺口，**不据此否定交易存在**）。**结论边界**：交易真实存在可确认，但"USDT 是否最终入 U 卡 0x1893"本节点无法独立取证 → **NEEDS_CHECK，交 owner 用 Etherscan 看该 tx 内部 call 与 token 事件**。
+- **5.99U 口径统一**：U 卡当前主网 USDT=0，叠加 9-25 那笔 to=Safe 的证据，倾向"钱曾入 Safe 侧、U 卡地址从未实际持有或已划走"，但**无 receipt 即不定论**，维持 NEEDS_CHECK。
+
+## 状态判定汇总（四公式口径）
+| 项 | 状态 | 依据 |
+|---|---|---|
+| 千问 Worker 链路 | VERIFIED | /health + 真实调用「总控在线」 |
+| Kimi Worker 链路 | **VERIFIED**（端点修复后） | 真实调用「总控在线」+ wrangler.kimi.toml 端点已改 cn |
+| A 同步 | VERIFIED | ff 至 af7ea67 无冲突 |
+| B 部署 | 线上最新不重跑（qianwen 10-02 / kimi 10-09） | deployments list 双 Version ID |
+| key-liveness kimi 探针 | 改代码 VERIFIED / Actions 跑通 UNVERIFIED | 本地 Edit 成功；Actions 需 owner 配 secret |
+| F 5U 链路测试 | 未完成（暂缓） | 前置 2 项需 owner |
+| U 卡 9-25 1U 是否入卡 | NEEDS_CHECK | tx 存在(to=Safe,value=0)但 receipt 本节点取不到 |
+| U卡 5.99U 去向 | NEEDS_CHECK | 主网 USDT=0，内部 call 未取证 |
+
+## 下一步
+1. **owner 三动作**：① Etherscan 核 9-25 那笔 tx 的 token 转账是否达 0x1893（定 1U/5.99U 去向）② F 前置：交易所地址簿加 0x1893 + 确认网络 ③ repo Secrets 配 `MOONSHOT_API_KEY`（境内 key）让 key-liveness 的 kimi 行真跑出 200。
+2. Claude 席 10-07 起 api_error（credit low，watchdog 记录），充值/改派/撤席待 owner。
+3. 下轮：Actions 配好 kimi secret 后，验证 key-liveness 探针 kimi 行从 no_secret/http_4xx 转 http_200。
+
+（本回执不含任何凭证值；地址沿用截断口径；org 标识仅引仓库既有记录，不复述新值。）
