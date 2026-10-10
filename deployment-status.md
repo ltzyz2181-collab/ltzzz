@@ -484,7 +484,7 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 修复：ltzzz-wechat-publisher-worker.js 新增 /wechat 端点（SHA-1 验签 + 菜单 click/文本关键词回复，对齐 wechat-reply-templates 关键词模板：商品/观/状态/99）。
 - 部署：`wrangler deploy -c wrangler.wechat.toml`（**Version 36baffca**，R2 MEMORY_BUCKET ✅ / AUTO_MASS ✅ / cron 0 12 * * * ✅ / WECHAT_TOKEN Secret 已注入）。
 - 实测（带浏览器 UA）：GET 验签 → echostr 返回 ✅；**错误签名 → 403** ✅（首版未 await 的漏洞已修复）；POST click「商品」→ 回复 $19 商品文案 ✅；POST 文本「观」→ 回复今日实验 ✅。
-- **待 owner（mp.weixin.qq.com 本人操作）**：① 基本配置→服务器配置：URL=`https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/wechat`、Token=`LTZZZ_WECHAT_TK_2026`（与 Secret 一致）、明文模式→保存并启用；② 自定义菜单：确认菜单类型（view 型免回调可直接用；click 型推到新端点即回复）；③ 若菜单本身看不到=后台未发布/未保存，需 owner 发布。
+- **待 owner（mp.weixin.qq.com 本人操作）**：① 基本配置→服务器配置：URL=`https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/wechat`、Token=（已从仓库移除，见 Cloudflare Secret WECHAT_TOKEN；owner 需轮换）、明文模式→保存并启用；② 自定义菜单：确认菜单类型（view 型免回调可直接用；click 型推到新端点即回复）；③ 若菜单本身看不到=后台未发布/未保存，需 owner 发布。
 
 ## K4 · 执行单其余项
 - N1：prop_grok_004 **不执行转账**（收款方为自家回收地址，违反 v0.5 空转禁令）✅ 维持 proposed。
@@ -508,7 +508,7 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 
 ## K6 · 公众号回调（承接上段，owner 待办）
 - 端点已上线并验证（GET 验签/403 拒错签/POST click+文本回复均通过）。**待 owner 在 mp.weixin.qq.com**：
-  1. 基本配置→服务器配置：URL=`https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/wechat`、Token=`LTZZZ_WECHAT_TK_2026`、明文模式→保存并启用；
+  1. 基本配置→服务器配置：URL=`https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/wechat`、Token=（已从仓库移除；owner 需轮换）、明文模式→保存并启用；
   2. 自定义菜单：确认类型（view 免回调直接用；click 已能回复）+ 确认菜单已发布（看不到=未发布）。
 - 服务号信息（owner 提供）：类型不可变更；简介「印章备案查询/刻章鉴别/游戏在线/电影在线/视频资源/电视剧更新」为历史遗留，与 LTZZZ（AI 数字实验室，英文为主）定位不符——**简介可改**（微信后台「设置与开发」→公众号设置→简介，一年限改若干次，改前先定文案）。
 - 红线核验：Key 值全程只进 Secret/内存，未入对话、未入库、未落盘明文（临时脚本仅输出掩码/状态）；ltzzz-secrets.md 未触碰。
