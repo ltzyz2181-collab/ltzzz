@@ -2,7 +2,7 @@ name: Daily memory article publish (WeChat/抖音/视频号)
 
 on:
   schedule:
-    - cron: "30 13 * * *"   # 21:30 CST
+    - cron: "20 11 * * *"   # 19:20 CST，早于 wechat worker 20:00 CST 建草稿
   workflow_dispatch:
     inputs:
       date:
@@ -29,10 +29,8 @@ jobs:
         env:
           ARTICLE_DATE: ${{ github.event.inputs.date }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          WECHAT_APP_ID: ${{ secrets.WECHAT_APP_ID }}
-          WECHAT_APP_SECRET: ${{ secrets.WECHAT_APP_SECRET }}
-          WECHAT_THUMB_MEDIA_ID: ${{ secrets.WECHAT_THUMB_MEDIA_ID }}
-          WECHAT_AUTO_PUBLISH: "1"
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DOUYIN_CLIENT_KEY: ${{ secrets.DOUYIN_CLIENT_KEY }}
           DOUYIN_CLIENT_SECRET: ${{ secrets.DOUYIN_CLIENT_SECRET }}
           DOUYIN_ACCESS_TOKEN: ${{ secrets.DOUYIN_ACCESS_TOKEN }}

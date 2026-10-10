@@ -188,8 +188,23 @@ async function getAccessToken(env) {
   return j.access_token || null;
 }
 
+// 2026-10-10 Grok Bot：优先使用 Actions 生成的 AI 编辑日报（articles/daily/<date>.md，已脱敏），没有再回退旧拼接
+function mdToHtml(md) {
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  return md.split("\n").filter((l) => !/^# /.test(l)).map((l) => {
+    if (/^#{2,3} /.test(l)) return `<h3>${esc(l.replace(/^#+ /, ""))}</h3>`;
+    if (/^[-*] /.test(l)) return `<p>• ${esc(l.slice(2))}</p>`;
+    return l.trim() ? `<p>${esc(l)}</p>` : "";
+  }).join("");
+}
 async function buildArticle(env) {
   const date = todayCN(); // YYYY-MM-DD
+  const ai = await env.MEMORY_BUCKET.get(`articles/daily/${date}.md`);
+  if (ai) {
+    const md = await ai.text();
+    const t = (md.match(/^# (.+)$/m) || [])[1];
+    if (md.trim()) return { title: (t || `LTZZZ 每日实验 · ${date}`).slice(0, 64), content: mdToHtml(md), sources: [`articles/daily/${date}.md`] };
+  }
   const prefix = "knowledge/daily/";
   const listed = await env.MEMORY_BUCKET.list({ prefix });
   let parts = [];

@@ -26,18 +26,11 @@ const PROMPT = (src) => `你是 LTZZZ 数字实验室的编辑。根据下面「
 
 ${src}`;
 
-async function wechat(title, md) {
-  const id = process.env.WECHAT_APP_ID, sec = process.env.WECHAT_APP_SECRET, thumb = process.env.WECHAT_THUMB_MEDIA_ID;
-  const missing = [!id && 'WECHAT_APP_ID', !sec && 'WECHAT_APP_SECRET', !thumb && 'WECHAT_THUMB_MEDIA_ID'].filter(Boolean);
-  if (missing.length) return { status: 'BLOCKED', missing_secrets: missing, note: '凭证在 Cloudflare worker ltzzz-wechat-publisher 内，GitHub Actions 未配置；另需公众号后台 IP 白名单放行调用方出口 IP' };
-  const tk = await (await fetch(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${id}&secret=${sec}`)).json();
-  if (!tk.access_token) return { status: 'FAILED', step: 'token', errcode: tk.errcode, errmsg: tk.errmsg };
-  const html = md.split('\n').filter((l) => !l.startsWith('# ')).map((l) => l.trim() ? `<p>${l.replace(/[<>]/g, '')}</p>` : '').join('');
-  const d = await (await fetch(`https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${tk.access_token}`, { method: 'POST', body: JSON.stringify({ articles: [{ title: title.slice(0, 64), author: 'LTZZZ', digest: '', content: html, thumb_media_id: thumb, need_open_comment: 0 }] }) })).json();
-  if (!d.media_id) return { status: 'FAILED', step: 'draft/add', errcode: d.errcode, errmsg: d.errmsg };
-  if (process.env.WECHAT_AUTO_PUBLISH !== '1') return { status: 'DRAFT_CREATED', media_id: d.media_id };
-  const p = await (await fetch(`https://api.weixin.qq.com/cgi-bin/freepublish/submit?access_token=${tk.access_token}`, { method: 'POST', body: JSON.stringify({ media_id: d.media_id }) })).json();
-  return p.errcode ? { status: 'FAILED', step: 'freepublish', media_id: d.media_id, errcode: p.errcode, errmsg: p.errmsg } : { status: 'PUBLISH_SUBMITTED', media_id: d.media_id, publish_id: p.publish_id, note: '异步发布；结果需 freepublish/get 查询' };
+function uploadR2(file) {
+  if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) return { status: 'SKIPPED', missing_secrets: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'].filter((k) => !process.env[k]) };
+  const key = `ltzzz-memory/articles/daily/${DATE}.md`;
+  try { execSync(`npx --yes wrangler@3 r2 object put "${key}" --file "${file}" --content-type "text/markdown; charset=utf-8" --remote`, { stdio: 'pipe' }); return { status: 'UPLOADED', key }; }
+  catch (e) { return { status: 'FAILED', key, error: String(e.stderr || e.message).slice(0, 300) }; }
 }
 
 const src = gather();
@@ -51,12 +44,13 @@ const body = article.replace(/^# .+$/m, '').replace(/[#*`>]/g, '').trim();
 const short = body.replace(/\s+/g, ' ').slice(0, 260);
 fs.writeFileSync(`${outDir}/${DATE}-douyin.md`, `# 抖音口播脚本 ${DATE}\n规格：9:16 / ≤60秒 / 中文口播\n\n标题：${title}\n\n口播：${short}……\n\n话题：#AI #LTZZZ #观行深\n状态：待发布（无抖音开放平台已审核应用凭证）\n`);
 fs.writeFileSync(`${outDir}/${DATE}-shipinhao.md`, `# 视频号文案 ${DATE}\n\n${title}\n\n${short}……\n\n延伸阅读：公众号同名文章\n状态：待人工发布（视频号无通用公开发帖 API）\n`);
-const wx = await wechat(title, article);
+const r2 = uploadR2(`${outDir}/${DATE}.md`);
 const env = (k) => !!process.env[k];
 const receipt = { date: DATE, generated_at: new Date().toISOString(), article: `${outDir}/${DATE}.md`,
   ai_editor: { model: 'deepseek', status: ai.status, ok: !!ai.ok, tokens_used: ai.tokens_used || 0, error: ai.ok ? undefined : ai.error },
   platforms: {
-    wechat_mp: wx,
+    r2_upload: r2,
+    wechat_mp: { status: r2.status === 'UPLOADED' ? 'QUEUED_FOR_WORKER_DRAFT' : 'BLOCKED', via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: 'Worker 读取 articles/daily/<date>.md 的新代码需 wrangler deploy -c wrangler.wechat.toml 重新部署后才生效；本 Actions 不直接调用微信 API' },
     douyin: env('DOUYIN_CLIENT_KEY') && env('DOUYIN_CLIENT_SECRET') && env('DOUYIN_ACCESS_TOKEN') ? { status: 'READY_NOT_IMPLEMENTED' } : { status: 'BLOCKED', file: `${outDir}/${DATE}-douyin.md`, missing_secrets: ['DOUYIN_CLIENT_KEY', 'DOUYIN_CLIENT_SECRET', 'DOUYIN_ACCESS_TOKEN'], need: '抖音开放平台(open.douyin.com)已审核移动/网站应用 + video.create 权限 + 账号 OAuth 授权；且需要成片视频文件' },
     shipinhao: { status: 'BLOCKED', file: `${outDir}/${DATE}-shipinhao.md`, need: '视频号无通用公开发帖 API；需人工在视频号助手发布，或企业主体申请视频号相关开放能力' },
     youtube: { status: 'SKIPPED', owner: '豆包' }, instagram: { status: 'SKIPPED', owner: 'Manus' } } };
