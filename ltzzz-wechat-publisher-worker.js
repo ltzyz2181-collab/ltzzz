@@ -200,10 +200,15 @@ function mdToHtml(md) {
 async function buildArticle(env) {
   const date = todayCN(); // YYYY-MM-DD
   const ai = await env.MEMORY_BUCKET.get(`articles/daily/${date}.md`);
-  if (ai) {
-    const md = await ai.text();
+  let md = ai ? await ai.text() : "";
+  let src = `articles/daily/${date}.md`;
+  if (!md) { // R2 未写入时回退到公开仓库（Actions daily-article-publish 已提交）
+    src = `https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/content/daily-articles/${date}.md`;
+    const r = await fetch(src); md = r.ok ? await r.text() : "";
+  }
+  if (md) {
     const t = (md.match(/^# (.+)$/m) || [])[1];
-    if (md.trim()) return { title: (t || `LTZZZ 每日实验 · ${date}`).slice(0, 64), content: mdToHtml(md), sources: [`articles/daily/${date}.md`] };
+    if (md.trim()) return { title: (t || `LTZZZ 每日实验 · ${date}`).slice(0, 64), content: mdToHtml(md), sources: [src] };
   }
   const prefix = "knowledge/daily/";
   const listed = await env.MEMORY_BUCKET.list({ prefix });

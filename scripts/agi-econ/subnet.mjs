@@ -73,7 +73,7 @@ export class Subnet {
   memoryGateDigest() {
     return MEMORY_GATE.map((p) => { const abs = path.join(this.root, p); return fs.existsSync(abs) ? { path: p, sha256: sha256(fs.readFileSync(abs)) } : { path: p, missing: true }; });
   }
-  audit(taskId, auditor, checkFn) {
+  audit(taskId, auditor, checkFn, extra = null) {
     const t = this.state.tasks[taskId]; this.agent(auditor);
     if (auditor === t.worker || auditor === t.employer) throw new Error('auditor_must_be_independent');
     if (t.status !== 'delivered') throw new Error('not_delivered');
@@ -82,7 +82,7 @@ export class Subnet {
     const checks = { file_exists: body.length > 0, hash_match: sha256(body) === t.deliverable.sha256, memory_gate_read: gate.every((g) => !g.missing),
       acceptance: checkFn ? !!checkFn(body, t) : (t.acceptance || []).every((k) => body.includes(k)) };
     const accepted = Object.values(checks).every(Boolean);
-    const report = { task_id: t.id, auditor, deliverable_sha256: t.deliverable.sha256, checks, accepted, memory_gate: gate, at: this.now() };
+    const report = { task_id: t.id, auditor, deliverable_sha256: t.deliverable.sha256, checks, accepted, memory_gate: gate, ...(extra ? { model_audit: extra } : {}), at: this.now() };
     const rjson = JSON.stringify(report, null, 2); report.report_sha256 = sha256(rjson);
     const rel = `data/agi-econ/audits/${t.id}.json`; fs.mkdirSync(path.join(this.root, path.dirname(rel)), { recursive: true });
     fs.writeFileSync(path.join(this.root, rel), JSON.stringify(report, null, 2) + '\n');

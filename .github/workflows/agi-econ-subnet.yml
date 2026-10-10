@@ -23,9 +23,11 @@ jobs:
           node-version: 20
       - name: Tests
         run: node --test scripts/tests/agi-econ.test.mjs
-      - name: Run cycle (ledger only; optional DeepSeek for deliverable)
+      - name: Run cycle (ledger only; DeepSeek worker, xAI/OpenAI auditor)
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node scripts/agi-econ/run-cycle.mjs
       - name: Commit results
         run: |
