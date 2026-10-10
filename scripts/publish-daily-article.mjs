@@ -29,7 +29,7 @@ ${src}`;
 function uploadR2(file) {
   if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) return { status: 'SKIPPED', missing_secrets: ['CLOUDFLARE_API_TOKEN', 'CLOUDFLARE_ACCOUNT_ID'].filter((k) => !process.env[k]) };
   const key = `ltzzz-memory/articles/daily/${DATE}.md`;
-  try { execSync(`npx --yes wrangler@3 r2 object put "${key}" --file "${file}" --content-type "text/markdown; charset=utf-8" --remote`, { stdio: 'pipe' }); return { status: 'UPLOADED', key }; }
+  try { execSync(`npx --yes wrangler@4 r2 object put "${key}" --file "${file}" --content-type "text/markdown; charset=utf-8" --remote`, { stdio: 'pipe' }); return { status: 'UPLOADED', key }; }
   catch (e) { return { status: 'FAILED', key, error: String(e.stderr || e.message).slice(0, 300) }; }
 }
 
