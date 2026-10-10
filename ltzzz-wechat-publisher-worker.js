@@ -1,3 +1,4 @@
+import {reply as channelReply} from './channels/bot-content.mjs';
 /**
  * LTZZZ WeChat Publisher Worker
  * 公众号每日图文发布：读 R2 当日 AI 产物 → 组装图文 → 建草稿（人工过目）→（配置开启后）群发
@@ -34,6 +35,7 @@ export default {
       });
     }
     if (url.pathname === "/publish" && request.method === "POST") {
+      if(!env.BOT_ADMIN_TOKEN || request.headers.get("Authorization")!=="Bearer "+env.BOT_ADMIN_TOKEN)return json({error:"unauthorized"},401);
       const mode = url.searchParams.get("mode") || "draft";
       const out = await publish(env, mode);
       return json(out, out.ok ? 200 : 500);
@@ -64,6 +66,7 @@ export default {
         return json({ ok: false, msg: "bad signature" }, 403);
       }
       const xml = await request.text();
+      if(xml.includes("<Encrypt>"))return json({error:"encrypted_callback_not_supported"},422);
       const replyXml = await handleWechatMessage(xml);
       return new Response(replyXml, {
         headers: { "Content-Type": "application/xml; charset=utf-8" },
@@ -95,8 +98,8 @@ async function handleWechatMessage(xml) {
     const m2 = xml.match(new RegExp("<" + tag + ">([\\s\\S]*?)</" + tag + ">"));
     return m2 ? m2[1] : "";
   };
-  const from = g("FromUserName"); // 粉丝 openid
-  const to = g("ToUserName");     // 公众号原始 ID
+  const from = g("FromUserName").replace(/\]\]>/g,""); // 粉丝 openid
+  const to = g("ToUserName").replace(/\]\]>/g,"");     // 公众号原始 ID
   const msgType = g("MsgType");
   const event = g("Event");
   const eventKey = g("EventKey");
@@ -105,11 +108,11 @@ async function handleWechatMessage(xml) {
   let reply = "";
   // 菜单 click 事件：按 EventKey 回复
   if (msgType === "event" && event === "CLICK") {
-    reply = keywordReply(eventKey);
+    reply = await channelReply(eventKey);
   } else if (msgType === "event" && event === "subscribe") {
-    reply = "欢迎加入 LTZZZ 数字实验室。回复「商品」查看 AI 模板包，「观」看今日实验，「状态」查系统。";
+    reply = await channelReply("start");
   } else if (msgType === "text" && content) {
-    reply = keywordReply(content);
+    reply = await channelReply(content);
   }
 
   if (!reply) return "success";
