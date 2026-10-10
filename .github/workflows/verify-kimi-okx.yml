@@ -1,0 +1,34 @@
+name: Kimi regions and OKX read-only verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/verify-kimi-okx.mjs', '.github/workflows/verify-kimi-okx.yml']
+permissions: {contents: write}
+concurrency: {group: connectivity-verification, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/verify-kimi-okx.mjs
+        env:
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          MOONSHOT_API_KEY_INTL: ${{ secrets.MOONSHOT_API_KEY_INTL }}
+          MOONSHOT_API_KEY_: ${{ secrets.MOONSHOT_API_KEY_ }}
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
+      - name: Save actual receipts
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/connectivity/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Kimi two-region and OKX read-only actual verification'
+          git pull --rebase origin main
+          git push origin HEAD:main
