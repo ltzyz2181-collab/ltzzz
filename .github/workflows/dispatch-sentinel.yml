@@ -1,0 +1,27 @@
+name: Hourly Hub dispatch sentinel
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+    paths: ['ops/dispatch/**', 'scripts/dispatch-sentinel.mjs', '.github/workflows/dispatch-sentinel.yml']
+permissions: {contents: write}
+concurrency: {group: dispatch-sentinel, cancel-in-progress: false}
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/dispatch-sentinel.mjs
+      - run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/dispatch/latest.json
+          git diff --staged --quiet && exit 0
+          git commit -m 'Hub dispatch index without model calls'
+          git pull --rebase origin main
+          git push origin HEAD:main
