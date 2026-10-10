@@ -35,6 +35,7 @@ const out = [];
 for (const [did, roles] of [['did:ltzzz:gpt', ['employer']], ['did:ltzzz:claude', ['auditor']], ['did:ltzzz:qianwen', ['auditor']], ['did:ltzzz:deepseek', ['worker']], ['did:ltzzz:kimi', ['worker']], ['did:ltzzz:doubao', ['worker']]]) s.register({ did, roles });
 for (const j of JOBS) {
   if (Object.values(s.state.tasks).some((t) => t.title === j.title)) { out.push({ seat: j.seat, status: 'already_ran' }); continue; }
+  if (!process.env[j.key]) { out.push({ seat: j.seat, model: j.model, api: 'not_configured', missing_secret: j.key }); continue; } // no hire without capability
   const emp = s.state.agents['did:ltzzz:gpt']; if (emp.credit_usd < 0.05) emp.credit_usd = 5; // internal credit only
   const t = s.postTask({ employer: 'did:ltzzz:gpt', title: j.title, spec: j.mark, budget_usd: 0.05, acceptance: [j.mark] });
   if (s.state.agents[j.seat].reputation < 20) { out.push({ seat: j.seat, status: 'reputation_too_low' }); continue; }
