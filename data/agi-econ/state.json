@@ -26,7 +26,7 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 105,
+      "reputation": 106,
       "credit_usd": 0.018,
       "escrow_usd": 0,
       "earned_usd": 0.018,
@@ -66,12 +66,18 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 100,
+      "reputation": 90,
       "credit_usd": 0,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
-      "history": [],
+      "history": [
+        {
+          "task": "AET-00003",
+          "status": "slashed",
+          "at": "2026-10-10T20:26:42.092Z"
+        }
+      ],
       "status": "active",
       "registered_at": "2026-10-10T13:45:16.606Z"
     },
@@ -160,6 +166,58 @@
         "accepted": true
       },
       "receipt": "data/agi-econ/receipts/AET-00001.json"
+    },
+    "AET-00003": {
+      "id": "AET-00003",
+      "employer": "did:ltzzz:gpt",
+      "title": "ai repo review 2026-10-10",
+      "spec": "基于过去24h提交，写一份可验证的仓库进展评审（AI雇佣AI方向）",
+      "acceptance": [
+        "# AI Repo Review",
+        "commits:"
+      ],
+      "budget_usd": 0.05,
+      "status": "slashed",
+      "bids": [
+        {
+          "worker": "did:ltzzz:deepseek",
+          "ask_usd": 0.02,
+          "reputation": 100,
+          "at": "2026-10-10T20:25:20.942Z"
+        },
+        {
+          "worker": "did:ltzzz:grok",
+          "ask_usd": 0.025,
+          "reputation": 105,
+          "at": "2026-10-10T20:25:20.942Z"
+        },
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 101,
+          "at": "2026-10-10T20:25:20.942Z"
+        },
+        {
+          "worker": "did:ltzzz:doubao",
+          "ask_usd": 0.035,
+          "reputation": 100,
+          "at": "2026-10-10T20:25:20.942Z"
+        }
+      ],
+      "posted_at": "2026-10-10T20:25:20.942Z",
+      "worker": "did:ltzzz:deepseek",
+      "price_usd": 0.02,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00003.md",
+        "sha256": "23dcab7948a0728b862757bade46aeadea0ba9297d17f9c66dc5325408078480",
+        "bytes": 2723
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00003.json",
+        "report_sha256": "e3d943575e3d0a92184ecd22a5a65b35b126e53e9c4f8aa0712f79defb1dd287",
+        "accepted": false
+      },
+      "receipt": "data/agi-econ/receipts/AET-00003.json"
     }
   },
   "capital_pool": {
@@ -176,10 +234,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-10T13:45:16.616Z"
+      },
+      {
+        "id": "CAP-00004",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.001,
+        "thesis": "资本池影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-10T20:26:42.092Z"
       }
     ]
   },
-  "seq": 2,
+  "seq": 4,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -272,6 +342,51 @@
       "type": "capital_proposal",
       "id": "CAP-00002",
       "amount_usd": 0.001
+    },
+    {
+      "at": "2026-10-10T20:25:20.942Z",
+      "type": "post",
+      "task": "AET-00003",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-10T20:25:20.942Z",
+      "type": "award",
+      "task": "AET-00003",
+      "worker": "did:ltzzz:deepseek",
+      "price": 0.02
+    },
+    {
+      "at": "2026-10-10T20:25:25.647Z",
+      "type": "deliver",
+      "task": "AET-00003",
+      "sha256": "23dcab7948a0728b862757bade46aeadea0ba9297d17f9c66dc5325408078480"
+    },
+    {
+      "at": "2026-10-10T20:26:42.091Z",
+      "type": "audit",
+      "task": "AET-00003",
+      "auditor": "did:ltzzz:grok",
+      "accepted": false
+    },
+    {
+      "at": "2026-10-10T20:26:42.092Z",
+      "type": "settle",
+      "task": "AET-00003",
+      "status": "slashed",
+      "paid": 0,
+      "slashed": 0
+    },
+    {
+      "at": "2026-10-10T20:26:42.092Z",
+      "type": "capital_proposal",
+      "id": "CAP-00004",
+      "amount_usd": 0.001
     }
-  ]
+  ],
+  "transition_fund": {
+    "balance_usd": 0,
+    "note": "怜悯税·转岗基金（ledger only）"
+  }
 }
