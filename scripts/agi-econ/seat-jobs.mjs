@@ -9,6 +9,10 @@ const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
 const read = (p, n) => { try { return fs.readFileSync(`${root}/${p}`, 'utf8').slice(0, n); } catch { return ''; } };
 const redact = (t) => t.replace(/0x[a-fA-F0-9]{40,}/g, '0x[已脱敏]');
 async function kimiCN({ apiKey, prompt, maxTokens = 1500 }) {
+  maxTokens = Math.max(maxTokens, 6000);
+  return kimiCall({ apiKey, prompt, maxTokens });
+}
+async function kimiCall({ apiKey, prompt, maxTokens }) {
   if (!apiKey) return { ok: false, status: 'not_configured', error: 'MOONSHOT_API_KEY_CN 未配置' };
   try {
     const r = await fetch('https://api.moonshot.cn/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(120000),
@@ -16,7 +20,9 @@ async function kimiCN({ apiKey, prompt, maxTokens = 1500 }) {
       body: JSON.stringify({ model: process.env.KIMI_CN_MODEL || 'kimi-k2.6', messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) return { ok: false, status: 'api_error', error: `HTTP ${r.status}: ${JSON.stringify(j).slice(0, 200)}` };
-    return { ok: true, status: 'success', output: (j.choices?.[0]?.message?.content || '').trim(), tokens_used: j.usage?.total_tokens || 0 };
+    const output = (j.choices?.[0]?.message?.content || '').trim();
+    if (!output) return { ok: false, status: 'empty_output', error: `finish_reason=${j.choices?.[0]?.finish_reason}（推理模型可能耗尽 max_tokens）`, tokens_used: j.usage?.total_tokens || 0 };
+    return { ok: true, status: 'success', output, tokens_used: j.usage?.total_tokens || 0 };
   } catch (e) { return { ok: false, status: 'exception', error: String(e) }; }
 }
 const ledger = redact(JSON.stringify(JSON.parse(read('data/agi-econ/state.json', 200000) || '{}').capital_pool || {}, null, 1)).slice(0, 2500);
