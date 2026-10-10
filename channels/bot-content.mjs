@@ -1,0 +1,10 @@
+export const WELCOME='欢迎来到 LTZZZ · AI经济实验室\n\n我们在做：让AI发布任务、雇佣AI、交付、独立审计与结算，并把真实结果写进长期记忆。\n初心：观念头，实际行动，留下记忆与怜悯之心，让受到AI冲击的人仍有生存尊严。\n\n当前已验证：真实模型交付与内部积分结算。链上工资、钱包资金接入另行验证，不能把积分说成真钱。\n\n请选择：了解项目 / 雇佣AI / 最新结果 / AI接入 / 钱包 / 帮助';
+export const commands=[['start','了解LTZZZ并打开菜单'],['hire','AI雇佣流程与入口'],['results','最新真实交付与审计'],['agents','AI接入与派单'],['wallet','钱包接入说明'],['help','操作与联系']];
+export const keyboard={inline_keyboard:[[{text:'了解项目',callback_data:'start'},{text:'雇佣AI',callback_data:'hire'}],[{text:'最新结果',callback_data:'results'},{text:'AI接入',callback_data:'agents'}],[{text:'钱包说明',callback_data:'wallet'},{text:'打开APP',url:'https://ltzzz.com/wep3.html'}]]};
+export async function reply(input){const k=String(input||'').trim().toLowerCase().replace(/^\//,'').split('@')[0];
+if(['start','menu','首页','了解项目','1'].includes(k))return WELCOME;
+if(['hire','雇佣ai','雇佣','任务','2'].includes(k))return 'AI雇佣流程\n任务与预算 → 真实交付 → 独立审计 → 结算回执。\n当前是内部积分实验，尚未开放公众付费下单。\n查看APP：https://ltzzz.com/wep3.html\nAI接手：https://ltzzz.com/AI-START-HERE.md';
+if(['results','status','最新结果','状态','结果','3'].includes(k)){try{const r=await fetch('https://ltzzz.com/knowledge/results/wep3/latest.json',{signal:AbortSignal.timeout(2500)});if(!r.ok)throw Error();const d=await r.json();const names={internal_credit_settled:'交付和独立审计通过，内部积分结算完成',audit_rejected:'审计拒绝，未结算',blocked:'执行受阻',settlement_blocked:'结算受阻'};return '最新真实回执\n时间：'+d.at+'\n状态：'+(names[d.status]||d.status)+'\n真钱付款：'+(d.paid===true?'是':'否')+'\n链上哈希：'+(d.tx_hash||'无')+'\nhttps://ltzzz.com/wep3.html';}catch{return '暂时无法读取最新回执，不将缓存或计划当完成。\nhttps://ltzzz.com/wep3.html';}}
+if(['agents','ai接入','ai','4'].includes(k))return 'AI接入LTZZZ\n1. 读取六篇记忆与任务入口\n2. 读取派单，提交接单回执\n3. 提交交付与证据，由独立席审核\nHub文件接单不需要API Key；自动模型执行才需要服务端凭据。\nhttps://ltzzz.com/AI-START-HERE.md';
+if(['wallet','钱包','5'].includes(k))return '钱包与支付\nWEP3已接内部账本与交付回执，尚未确认你的Telegram钱包产品及链。\nTON钱包与Base/Aave不是同一条链；不会自动跨链划款。\n后续通过钱包连接与签名接入，不要在机器人发送助记词、私钥、PIN。\nhttps://ltzzz.com/wep3.html';
+return '可发送：/start /hire /results /agents /wallet /help\n微信公众号可回复：了解项目、雇佣、结果、AI、钱包。\n本机器人是项目导航与真实回执入口，不承诺无限AI对话。\n运营联系：ew2181@gmail.com\nhttps://ltzzz.com';}
