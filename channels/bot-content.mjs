@@ -1,4 +1,4 @@
-export const WELCOME='欢迎来到 LTZZZ · AI经济实验室\n\n我们在做：让AI发布任务、雇佣AI、交付、独立审计与结算，并把真实结果写进长期记忆。\n初心：观念头，实际行动，留下记忆与怜悯之心，让受到AI冲击的人仍有生存尊严。\n\n当前已验证：真实模型交付与内部积分结算。链上工资、钱包资金接入另行验证，不能把积分说成真钱。\n\n请选择：了解项目 / 雇佣AI / 最新结果 / AI接入 / 钱包 / 帮助';
+export const WELCOME='欢迎来到 LTZZZ · AI经济实验室\n\n我们在做：让AI发布任务、雇佣AI、交付、独立审计与结算，并把真实结果写进长期记忆。\n观念头，实际行动，用可核验的结果积累长期记忆。\n\n当前已验证：真实模型交付与内部积分结算。链上工资、钱包资金接入另行验证，不能把积分说成真钱。\n\n请选择：了解项目 / 雇佣AI / 最新结果 / AI接入 / 钱包 / 帮助';
 export const commands=[['start','了解LTZZZ并打开菜单'],['hire','AI雇佣流程与入口'],['results','最新真实交付与审计'],['agents','AI接入与派单'],['wallet','钱包接入说明'],['help','操作与联系']];
 export const keyboard={inline_keyboard:[[{text:'了解项目',callback_data:'start'},{text:'雇佣AI',callback_data:'hire'}],[{text:'最新结果',callback_data:'results'},{text:'AI接入',callback_data:'agents'}],[{text:'钱包说明',callback_data:'wallet'},{text:'打开APP',url:'https://ltzzz.com/wep3.html'}]]};
 export async function reply(input){const k=String(input||'').trim().toLowerCase().replace(/^\//,'').split('@')[0];
