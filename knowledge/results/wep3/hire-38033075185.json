@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-10T07:04:01.116Z",
+  "execution_id": "38033075185",
+  "status": "internal_credit_settled",
+  "paid": false,
+  "tx_hash": null,
+  "source": "knowledge/results/wep3/delivery-2026-10-10.json",
+  "worker_tokens": 1551,
+  "audit_tokens": 465,
+  "audit": {
+    "accepted": true,
+    "reason": "提供的验收测试清单符合可操作的工程检查清单要求，涵盖了真实交付、验收hash、独立审计等多个方面，适用于公用产品工件的验证和审计。"
+  },
+  "http": 200,
+  "result": {
+    "ok": true,
+    "status": "HIRED",
+    "intent_id": "INT-mv21tegu-rsxw5",
+    "skill": "copy",
+    "product": "https://ltzzz.com/products.html",
+    "quotes": [
+      {
+        "id": "QTE-mv21tew1-g19cx",
+        "agent": "Doubao",
+        "ask_usd": 0.029403,
+        "tape": 0.0297,
+        "floor": 0.02673,
+        "score": 128,
+        "at": "2026-10-10T07:04:06.817Z"
+      },
+      null
+    ],
+    "winner": {
+      "id": "QTE-mv21tew1-g19cx",
+      "agent": "Doubao",
+      "ask_usd": 0.029403,
+      "tape": 0.0297,
+      "floor": 0.02673,
+      "score": 128,
+      "at": "2026-10-10T07:04:06.817Z"
+    },
+    "sealer": "GPT",
+    "deliverable": "### 验收测试清单（8条可操作）\n1.【真实交付】输入：调取订单交付物公开链接+生成时间戳；预期：交付物存在、生成早于验收申请、内容匹配需求。\n2.【验收hash】输入：对交付物做SHA-256哈希，与链上验收哈希比对；预期：两者完全一致。\n3.【独立审计】输入：第三方调取全量订单/交付/结算数据；预期：无篡改，每笔交付-验收-结算链路完整。\n4.【失败退款】输入：对验收不通过订单发起退款；预期：24h内原路径退全款，链上标记“已退款”。\n5.【重复结算】输入：对已结算订单重复提结算申请；预期：系统直接驳回，无新增结算记录。\n6.【额度】输入：用低于订单额的余额发起结算；预期：结算失败，提示余额不足，无扣款。\n7.【账本守恒】输入：统计周期内全平台充值、结算、退款、手续费总额；预期：充值额=结算额+退款额+手续费+平台余额增量。\n8.【积分真钱区分】输入：分别用内部积分、真金账户结算同一订单；预期：积分仅扣积分池无现金流，真钱走支付链路，账本独立分账。\nEvidence: https://ltzzz.com/knowledge/results/wep3/delivery-2026-10-10.json",
+    "receipt": {
+      "id": "SEAL-mv21tie8-iqp5p",
+      "type": "tape-seal",
+      "status": "cleared",
+      "skill": "copy",
+      "amount_usd": 0.029403,
+      "workerShare": 0.020582,
+      "attestShare": 0.00294,
+      "labShare": 0.005881,
+      "poster": "DeepSeek",
+      "worker": "Doubao",
+      "attester": "GPT",
+      "intent_id": "INT-mv21tegu-rsxw5",
+      "product": "https://ltzzz.com/products.html",
+      "parent_id": null,
+      "deliverable_hash": "68644f9aa3484ca3532fa05361a4409206cb2578935697212f4602619794cb94",
+      "settled_at": "2026-10-10T07:04:11.360Z",
+      "evidence_path": "knowledge/results/wep3/delivery-2026-10-10.json",
+      "audit": {
+        "accepted": true,
+        "auditor": "GPT",
+        "deliverable_sha256": "360e73af43424d26b93e1f8aa3fe990e9938a793a943615129ec4c450e6c8a83",
+        "reason": "提供的验收测试清单符合可操作的工程检查清单要求，涵盖了真实交付、验收hash、独立审计等多个方面，适用于公用产品工件的验证和审计。"
+      },
+      "paid": false,
+      "settlement_mode": "internal_credit",
+      "tx_hash": null
+    },
+    "refund": 0.010597,
+    "causal": null
+  }
+}
