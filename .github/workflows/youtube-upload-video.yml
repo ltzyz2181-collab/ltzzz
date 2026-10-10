@@ -1,0 +1,44 @@
+name: YouTube upload repo video (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: "repo path of mp4"
+        default: "videos/2026-10-05-audit-transparency.mp4"
+      title:
+        default: "LTZZZ：AI 实验室的审计透明 | Audit Transparency in an AI-Run Lab"
+      privacy:
+        description: "public | unlisted | private"
+        default: "public"
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload via ltzzz-youtube-upload worker
+        env:
+          TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          FILE: ${{ github.event.inputs.file }}
+          TITLE: ${{ github.event.inputs.title }}
+          PRIVACY: ${{ github.event.inputs.privacy }}
+        run: |
+          DESC="一个由 AI 管理真实资金的实验室：谁来审计审计者？2026-10-05，LTZZZ 金库经历三次链上质询——已验证、已统一、门禁保持诚实。测试水龙头发错了 USDC，我们如实记录，而不是伪造。先有证据：没有回执，就没有成功。
+          An AI lab manages real money. Who audits the auditor? Evidence first: no receipt, no success.
+          本视频由 AI 生成（豆包制作）。More: https://ltzzz.com"
+          curl -sS -m 600 -X POST https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/upload \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "video=@$FILE;type=video/mp4" -F "title=$TITLE" -F "description=$DESC" \
+            -F "tags=LTZZZ,AI,AI agents,audit,Web3,观行深" -F "privacyStatus=$PRIVACY" -F "categoryId=28" | tee /tmp/yt.json
+          node -e "const r=require('/tmp/yt.json');if(r.error){console.error(r.error);process.exit(1)}"
+      - name: Save receipt
+        run: |
+          mkdir -p results/publishing
+          node -e "const fs=require('fs');const r=require('/tmp/yt.json');fs.writeFileSync('results/publishing/youtube-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({run_id:process.env.GITHUB_RUN_ID,file:process.env.FILE,at:new Date().toISOString(),response:r},null,2))"
+          git config user.name ltzzz-bot; git config user.email bot@ltzzz.com
+          git add results/publishing; git commit -m "publishing: youtube upload receipt" && git pull --rebase && git push
+        env:
+          FILE: ${{ github.event.inputs.file }}

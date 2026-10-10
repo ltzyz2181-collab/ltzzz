@@ -21,6 +21,14 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy -c wrangler.youtube-upload.toml
+      - name: Inject upload admin key (reuse LTZZZ_AGENT_TOKEN)
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: secret put LTZZZ_AGENT_TOKEN -c wrangler.youtube-upload.toml
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
       - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
