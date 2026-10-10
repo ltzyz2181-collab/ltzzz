@@ -10,7 +10,7 @@ export const MEMORY_GATE = [
   'ltzzz-memory/魄.md', 'ltzzz-memory/识神.md', 'ltzzz-memory/梦境数据库.md', 'ltzzz-memory/文明研究.md',
   'policy/AGI-PAY-v0.1.md',
 ];
-export const RULES = { capital_share: 0.1, slash_rate: 0.5, rep_win: 5, rep_fail: -10, rep_audit: 1, min_rep_to_bid: 20, max_budget_usd: 5, start_rep: 100 };
+export const RULES = { capital_share: 0.1, mercy_tax: 0.01, slash_rate: 0.5, rep_win: 5, rep_fail: -10, rep_audit: 1, min_rep_to_bid: 20, max_budget_usd: 5, start_rep: 100 };
 export const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 const r6 = (n) => Number(Number(n).toFixed(6));
 
@@ -20,7 +20,7 @@ export class Subnet {
     this.dir = path.join(root, 'data/agi-econ');
     this.file = path.join(this.dir, 'state.json');
     this.state = fs.existsSync(this.file) ? JSON.parse(fs.readFileSync(this.file, 'utf8'))
-      : { version: 1, mode: 'ledger', agents: {}, tasks: {}, capital_pool: { balance_usd: 0, proposals: [] }, seq: 0, events: [] };
+      : { version: 1, mode: 'ledger', agents: {}, tasks: {}, capital_pool: { balance_usd: 0, proposals: [] }, transition_fund: { balance_usd: 0, note: '怜悯税·转岗基金（ledger only）' }, seq: 0, events: [] };
   }
   save() { fs.mkdirSync(this.dir, { recursive: true }); fs.writeFileSync(this.file, JSON.stringify(this.state, null, 2) + '\n'); }
   id(p) { this.state.seq += 1; return `${p}-${String(this.state.seq).padStart(5, '0')}`; }
@@ -93,12 +93,17 @@ export class Subnet {
     const t = this.state.tasks[taskId]; if (t.status !== 'audited') throw new Error('not_audited');
     const e = this.state.agents[t.employer], w = this.state.agents[t.worker];
     e.escrow_usd = r6(e.escrow_usd - t.budget_usd);
-    let paid = 0, slashed = 0, capital = 0;
+    let paid = 0, slashed = 0, capital = 0, mercy = 0;
+    if (!this.state.transition_fund) this.state.transition_fund = { balance_usd: 0, note: '怜悯税·转岗基金（ledger only）' };
     if (t.audit.accepted) {
-      capital = r6(t.price_usd * RULES.capital_share); paid = r6(t.price_usd - capital);
+      capital = r6(t.price_usd * RULES.capital_share);
+      mercy = r6(t.price_usd * RULES.mercy_tax);
+      paid = r6(t.price_usd - capital - mercy);
       w.credit_usd = r6(w.credit_usd + paid); w.earned_usd = r6(w.earned_usd + paid); w.reputation += RULES.rep_win;
       e.credit_usd = r6(e.credit_usd + t.budget_usd - t.price_usd); // refund unused budget
-      this.state.capital_pool.balance_usd = r6(this.state.capital_pool.balance_usd + capital); t.status = 'settled';
+      this.state.capital_pool.balance_usd = r6(this.state.capital_pool.balance_usd + capital);
+      this.state.transition_fund.balance_usd = r6(this.state.transition_fund.balance_usd + mercy);
+      t.status = 'settled';
     } else {
       e.credit_usd = r6(e.credit_usd + t.budget_usd); // full refund
       slashed = r6(Math.min(w.credit_usd, t.price_usd * RULES.slash_rate)); w.credit_usd = r6(w.credit_usd - slashed); w.slashed_usd = r6(w.slashed_usd + slashed);
@@ -106,7 +111,8 @@ export class Subnet {
     }
     // receipt five elements: task_id, deliverable_sha256, accepted, amount_usd, timestamp
     const receipt = { task_id: t.id, deliverable_sha256: t.deliverable.sha256, accepted: t.audit.accepted, amount_usd: paid, timestamp: this.now(),
-      employer: t.employer, worker: t.worker, slashed_usd: slashed, capital_pool_usd: capital, audit_report_sha256: t.audit.report_sha256,
+      employer: t.employer, worker: t.worker, slashed_usd: slashed, capital_pool_usd: capital, mercy_tax_usd: mercy,
+      transition_fund_usd: this.state.transition_fund.balance_usd, audit_report_sha256: t.audit.report_sha256,
       evidence_path: t.deliverable.path, settlement_mode: 'internal_credit', paid: false, tx_hash: null, status: 'ledger_only' };
     const rel = `data/agi-econ/receipts/${t.id}.json`; fs.mkdirSync(path.join(this.root, path.dirname(rel)), { recursive: true });
     fs.writeFileSync(path.join(this.root, rel), JSON.stringify(receipt, null, 2) + '\n');

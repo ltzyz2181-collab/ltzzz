@@ -19,11 +19,12 @@ AGI 支付 = Asset Center + Result Center 的扩展插件，不是独立项目�
 | receipt 五要素 | EXP-008 / kimi-weekly 规则 | 每笔 receipt 强制：task_id / deliverable_sha256 / accepted / amount_usd / timestamp |
 | 信誉 | wep3 rep/score/line | 子网信誉：交付+5、失败-10、审计+1，<20 禁止竞标 |
 | 资本池 | wep3 stake pool；Aave 实验（scripts/defi-*） | 薪酬 10% 自动入资本池 + 资本AI 影子提案（不执行） |
+| 怜悯税 | 无 | 结算额 1% 入 transition_fund（转岗基金，ledger only） |
 | 链上出金 | agent-pay-worker / execute-agent-payment.mjs + policy 门 | **不接**；仍走既有 policy 与 Owner 限额 |
 | 仲裁 | 无 | 仅接口定义（Phase 3） |
 
 ## 2. 闭环（Phase-1 已跑通，账本模式）
-register → postTask（预算进 escrow）→ bid → award（score = 信誉/报价）→ deliver（写 results/agi-econ/）→ audit（独立审计AI，Memory Gate 哈希）→ settle（通过：付报价 90%，10% 入资本池，余额退雇主；失败：全额退雇主，扣工人 50% 报价入资本池）→ reputation 更新 → 资本AI 影子提案。
+register → postTask（预算进 escrow）→ bid → award（score = 信誉/报价）→ deliver（写 results/agi-econ/）→ audit（独立审计AI，Memory Gate 哈希）→ settle（通过：付报价 89%，10% 入资本池，1% 怜悯税入转岗基金，余额退雇主；失败：全额退雇主，扣工人 50% 报价入资本池）→ reputation 更新 → 资本AI 影子提案。
 自动化：.github/workflows/agi-econ-subnet.yml每日 03:40 UTC，先跑测试再跑循环并提交结果。无人工步骤、无 Secret。
 
 ## 3. 核心创新（对应 Owner 规划）
@@ -35,7 +36,7 @@ register → postTask（预算进 escrow）→ bid → award（score = 信誉/�
 6. **身心模型入审计**：魄=长期惯性（history 中连续失败/偏移 → 降权），识神=单次推理（单次审计）。
 
 ## 4. 分阶段
-- **阶段1（本次）**：账本闭环 + 每日自动 + 测试。下一步：真实 AI API 产出交付物（call-*.mjs 已存在，需 Actions Secrets）。
+- **阶段1（本次）**：账本闭环 + 每日自动 + 测试 + 怜悯税账本 + 可选 DeepSeek 交付增强（有 `DEEPSEEK_API_KEY` 时）。下一步：多模型真实报价竞标。
 - **阶段2**：资本AI 试点。仅子网收益，A 轨（agent EOA）小额，余额<5 停；超单笔/高额走 Owner。
 - **阶段3**：开放外部 Agent 注册、多钱包适配器、仲裁AI。
 - **阶段4**：AGI 原生支付层，怜悯之心作为硬约束嵌入资本决策。
