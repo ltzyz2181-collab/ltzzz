@@ -29,6 +29,13 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: node scripts/agi-econ/run-cycle.mjs
+      - name: Seat jobs (Doubao / DeepSeek / Kimi-CN real deliverables, ledger only)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+        run: node scripts/agi-econ/seat-jobs.mjs
       - name: Commit results
         run: |
           git config user.name "ltzzz-bot"
