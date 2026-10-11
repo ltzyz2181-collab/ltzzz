@@ -654,3 +654,60 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - **视频号平台发布：未完成**。没有经过验证的登录发布通道，没有真实链接。
 - Manus国内视频发布任务已落盘ops/dispatch/MANUS-CN-DAILY-PUBLISH.md；尚未收到接单，不能称为Manus自动发布已部署。
 - deployment-status.md最新内容已移除公开服务器Token值；旧历史泄露需owner在公众号后台轮换并同步Worker Secret，不在Hub写凭据。
+
+---
+
+# 每日巡检回执 · 2026-10-11（千问 · A→E · cron 8c24cf55 触发）
+
+## G · 本机命令通道：✅ 正常（连续第 9 日）
+- `echo ok` 返回 `ok`；git / curl.exe / npx wrangler 全可用。
+
+## A · git：✅ 同步完成
+- 本地落后 origin/main **85 提交**，`--ff-only` 快进至 `07e33de`，无冲突、工作区干净。新增面很大：agi-econ 子网（协议+脚本+审计回执 AET-00001~7）、渠道机器人部署流、日更文章发布流、dispatch 派单制、wep3 v2 大改（+422 行）、Telegram bot worker 重构等——均为他会话产物，本巡检只读不改。
+- `ltzzz-secrets.md` 红线：未 add、未读、未推 ✅。
+
+## B · wrangler 部署：✅ 线上已最新，不重跑
+- qianwen-proxy：源码末次提交仍 af91180（09-30），线上版本不变。
+- kimi-proxy：`wrangler deployments list` 实测最新部署 **10-10 01:24（Version 1ecea0ac，message「新增祕密: MOONSHOT_API_KEY」）**——总控已把国内 key 配进 Worker Secret；其前为 10-09 b937a325（端点修复版）。源码 82eda47 后无新改动，按 No-repeat rule 不重跑。
+
+## C · 验证：千问 VERIFIED / Kimi BLOCKED（上游过载）
+- /health（api-qianwen / api-kimi .ltzzz.com，01:03Z）：两者 `ok:true has_key:true`。
+- 真实调用（UTF-8 文件体，curl）：**千问 200，qwen-plus 返回「总控在线」✅**；**Kimi 429 ×2**（首次+重试各一），上游原文 `engine_overloaded_error`（"The engine is currently overloaded"）——性质是 **Moonshot 服务过载**，与 10-09 的"余额欠费"、10-10 已解说的"端点错配"均不同：key 已对、端点已对、Worker 正常转发，是上游引擎容量问题。**本轮判 Kimi BLOCKED（瞬时），非配置回退**；连续两轮 VERIFIED→本轮过载，倾向瞬时，下轮复测。
+- C' · key-liveness 自检：仓库版已被他会话升级（kimi 拆 cn/intl 双探针 + kimi-k2.6，吸收了我的 10-10 修复方向，不 revert）。**观察到 schedule 疑点**：`cron: '30 1 * * 1'` 注释写"每日"但表达式是**每周一**——按指令不擅改他会话文件，移交 owner/归属会话定夺。自检最新产出仍停在 key-liveness-2026-10-09.json（10-10/10-11 无新产出，与每周一排班一致）。
+
+## E · 页面发布：✅
+- ltzzz.com/ → 200；docs/AGI身份与DID总规划-v1.1.md → 200。名册 identity/dids/ 12 项（11 席+README）与 v1.2 口径一致，链上 registerAgent 仍全部"待"（无 receipt）。
+
+## F · 转账测试：⛔ 未执行（暂缓条件不变）
+- ②交易所地址簿加 0x1893…0eF7、③网络确认仍待 owner。全程未以旧泄露钱包 0x21F5…7fdc 作任何转账来源。
+
+## U 卡地址 0x1893…0eF7 · 10-11 链上复核（公开 RPC 只读，零私钥）
+- 主网 ETH = 0x3dc2c07f06a00 ≈ **0.0010865**（与 10-09/10-10 完全一致）；主网 USDT = **0**；Base ETH = **0**。
+- **连续第三个巡检窗口零变动 → 0x1893 无新交易、无 receipt，不加分录行。**
+- 1U/5.99U 去向维持 NEEDS_CHECK（待 owner Etherscan 看 9-25 tx 内部 call）。
+
+## 资金侧新事实核对（他会话提交，本巡检独立验证）
+- `73dcf48 "owner Aave funding execution receipt"`：**名不副实**——回执内容 `status:"blocked_configuration"`（缺 FUNDING_OWNER/TREASURY/FUNDING_EXECUTOR_KEY），`deployed:false`，**无 txid**。按四公式：Aave 资金流 **未完成**，勿被 commit message 误导。
+- `68f1128 wallet ops`：仅 spend-feed.json 一行改动，账本 transactions.md 无新分录。
+
+## 状态判定汇总
+| 项 | 状态 | 依据 |
+|---|---|---|
+| 千问 Worker | VERIFIED | 真实调用 200「总控在线」 |
+| Kimi Worker | BLOCKED（上游 engine_overloaded，瞬时） | 429×2 原文可复现；health has_key:true |
+| Kimi Secret 配置 | VERIFIED（改善） | 10-10 部署 1ecea0ac 含 MOONSHOT_API_KEY |
+| A 同步 | VERIFIED | ff 至 07e33de |
+| B 部署 | 线上最新不重跑 | deployments list Version ID |
+| 页面/DID 文档 | VERIFIED | 200 |
+| F 转账 | 未完成 | 前置待 owner |
+| Aave 资金执行 | **未完成**（blocked_configuration） | 回执无 txid、deployed:false |
+| U 卡流水 | NEEDS_CHECK（不变） | 三窗口余额零变动 |
+| key-liveness 每日排班 | NEEDS_CHECK（疑点移交） | cron 表达式=每周一，注释称每日 |
+
+## 下一步
+1. 下轮复测 Kimi 真实调用：过载通常分钟级恢复，若连续 2 日 429 再查 Moonshot 控制台。
+2. owner 三个一次性动作不变：Etherscan 核 9-25 tx / 交易所地址簿+网络确认 / （原 MOONSHOT_API_KEY 配置已由总控 10-10 在 Worker 侧完成，若 Actions repo secret 仍未配则一并补）。
+3. Aave 资金流若要真执行，需 owner 定 FUNDING_OWNER/TREASURY 地址并注入执行密钥（走 Secret，不进对话）。
+4. key-liveness 排班疑点移交归属会话/owner 定夺，本巡检不擅改。
+
+（本回执不含任何凭证值；地址沿用截断口径。）
