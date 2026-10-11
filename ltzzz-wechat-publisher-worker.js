@@ -252,7 +252,7 @@ async function getAccessToken(env) {
   const j=await r.json();
   if (!r.ok || !j.access_token) {
     const e=new Error("WeChat token rejected");
-    e.platform={endpoint:"token",http:r.status,errcode:j.errcode??null,errmsg:String(j.errmsg||"No access_token").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
+    e.platform={endpoint:"token",http:r.status,errcode:j.errcode??null,whitelist_ip:(String(j.errmsg||"").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)||[])[0]||null,errmsg:String(j.errmsg||"No access_token").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
     throw e;
   }
   return j.access_token;
