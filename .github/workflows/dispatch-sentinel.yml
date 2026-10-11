@@ -16,12 +16,18 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node scripts/dispatch-sentinel.mjs
       - run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/dispatch/latest.json
-          git diff --staged --quiet && exit 0
-          git commit -m 'Hub dispatch index without model calls'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            git reset --hard origin/main
+            node scripts/dispatch-sentinel.mjs
+            git add knowledge/results/dispatch/latest.json
+            git diff --staged --quiet && exit 0
+            git commit -m 'Hub dispatch index without model calls'
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 2
+          done
+          echo 'Dispatch index push failed after four retries'
+          exit 1
