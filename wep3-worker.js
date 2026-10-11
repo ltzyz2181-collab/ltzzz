@@ -1,3 +1,5 @@
+import {marketRoute} from './wep3-market.js';
+export {Market} from './wep3-market.js';
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'Claude', 'GPT', 'Microsoft'];
@@ -5,7 +7,7 @@ const SKILLS = [
   {id: 'signal', owner: 'Grok', title: 'payment signal', price: 0.02, product: 'https://ltzzz.com/products.html'},
   {id: 'copy', owner: 'Doubao', title: 'product copy', price: 0.03, product: 'https://ltzzz.com/products.html'},
   {id: 'scan', owner: 'DeepSeek', title: 'market scan', price: 0.04, product: 'https://ltzzz.com/products.html'},
-  {id: 'audit', owner: 'Claude', title: 'receipt audit', price: 0.015, product: 'https://ltzzz.com/products.html'},
+  {id: 'audit', owner: 'GPT', title: 'receipt audit', price: 0.015, product: 'https://ltzzz.com/products.html'},
   {id: 'route', owner: 'GPT', title: 'hire plan', price: 0.025, product: 'https://ltzzz.com/products.html'},
   {id: 'cause', owner: 'Kimi', title: 'causal stamp', price: 0.01, product: 'https://ltzzz.com/products.html'},
   {id: 'sell', owner: 'Qianwen', title: 'product close', price: 0.05, product: 'https://ltzzz.com/products.html'}
@@ -15,7 +17,7 @@ const SKUS = [
   {id: 'script-video', title: '视频脚本', price_usd: 3, skill: 'copy', owner: 'Doubao', product: 'https://ltzzz.com/products.html', blurb: '60秒产品解说脚本'},
   {id: 'report-research', title: '研究报告', price_usd: 4, skill: 'signal', owner: 'Grok', product: 'https://ltzzz.com/products.html', blurb: '支付信号与转化要点'},
   {id: 'report-trend', title: '趋势报告', price_usd: 4, skill: 'route', owner: 'GPT', product: 'https://ltzzz.com/products.html', blurb: '下一步雇工路线'},
-  {id: 'audit-quality', title: '质量审核', price_usd: 2, skill: 'audit', owner: 'Claude', product: 'https://ltzzz.com/products.html', blurb: '交付物与回执抽检'}
+  {id: 'audit-quality', title: '质量审核', price_usd: 2, skill: 'audit', owner: 'GPT', product: 'https://ltzzz.com/products.html', blurb: '交付物与回执抽检'}
 ];
 const json = (data, status = 200) => new Response(JSON.stringify(data), {status, headers: {'content-type': 'application/json; charset=utf-8', ...cors}});
 const nid = p => p + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
@@ -39,7 +41,6 @@ function pinOk(request, env) {
 async function rep(env, agent) { return await get(env, 'wep3:rep:' + agent, null) || {agent, score: 100, earned: 0, spent: 0, credit: 1, jobs: 0, stamps: 0, held: 0, line_used: 0}; }
 async function saveRep(env, row) { row.updated_at = new Date().toISOString(); await put(env, 'wep3:rep:' + row.agent, row); return row; }
 function other(notThese) { return AGENTS.find(a => !notThese.includes(a)) || 'Microsoft'; }
-function workFor(skill, title) { const s = SKILLS.find(x => x.id === skill) || SKILLS[0]; return s.owner + ' delivered ' + s.title + ' | ' + title + ' | ' + s.product + ' | ' + new Date().toISOString(); }
 function split(amount) { const workerShare = Number((amount * 0.7).toFixed(6)); const attestShare = Number((amount * 0.1).toFixed(6)); return {workerShare, attestShare, labShare: Number((amount - workerShare - attestShare).toFixed(6))}; }
 function lineLimit(row) { return Number(Math.min(0.5, Number(row.earned || 0) * 0.5 + Math.max(0, Number(row.score || 100) - 100) * 0.01).toFixed(6)); }
 function spendable(row) { return Number((Number(row.credit || 0) + Math.max(0, lineLimit(row) - Number(row.line_used || 0))).toFixed(6)); }
@@ -345,7 +346,7 @@ async function hireLoop(env, body) {
   const sealer = body.audit_report.auditor;
   const sealed = await sealIntent(env, intent, sealer, [text]);
   if (sealed.error) { await release(env, intent, sealed.error); return {ok: false, ...sealed, refunded: true, status: 409}; }
-  sealed.receipt.evidence_path=body.evidence_path;sealed.receipt.audit=body.audit_report;sealed.receipt.paid=false;sealed.receipt.settlement_mode='internal_credit';sealed.receipt.tx_hash=null;await put(env,'wep3:receipt:'+sealed.receipt.id,sealed.receipt);
+  sealed.receipt.deliverable_sha256=actualHash;sealed.receipt.reasoning={agent:poster,worker:body.worker,purpose:body.title||skill.title,evidence_path:body.evidence_path,audit_reason:body.audit_report.reason||'',deliverable_sha256:actualHash};sealed.receipt.reasoning_hash=await sha(JSON.stringify(sealed.receipt.reasoning));sealed.receipt.evidence_path=body.evidence_path;sealed.receipt.audit=body.audit_report;sealed.receipt.paid=false;sealed.receipt.settlement_mode='internal_credit';sealed.receipt.tx_hash=null;await put(env,'wep3:receipt:'+sealed.receipt.id,sealed.receipt);
   await put(env,'wep3:delivery:'+actualHash,sealed.receipt);
   let causal = null;
   if (body.cite_receipt) causal = await citeReceipt(env, body.cite_receipt, poster, body.cite_usd || 0.005);
@@ -390,6 +391,7 @@ async function okxBalance(env) {
 }
 
 export default {async fetch(request, env) {
+  const market = await marketRoute(request, env); if (market) return market;
   if (request.method === 'OPTIONS') return new Response(null, {headers: cors});
   const path = clean(new URL(request.url).pathname);
   try {
@@ -402,10 +404,9 @@ export default {async fetch(request, env) {
     if (path === '/pulse') { const book = []; for (const agent of AGENTS.concat(['LTZZZ'])) { const row = await rep(env, agent); book.push({agent, credit: row.credit, earned: row.earned || 0, score: row.score, spendable: spendable(row), jobs: row.jobs || 0}); } return json({ok: true, version: '1.1.0', book}); }
     if (path.startsWith('/gate/')) { const key = path.slice(6); const skill = SKILLS.find(s => s.id === key); const sku = SKUS.find(s => s.id === key || s.skill === key); if (!skill && !sku) return json({ok: false, error: 'unknown_skill'}, 404); const sid = skill ? skill.id : sku.skill; const price = sku ? sku.price_usd : await tapePrice(env, sid); return json({ok: false, status: 402, error: 'payment_required', skill: sid, sku: sku || null, price_usd: price, accepts: [{scheme: 'wep3-sku', description: 'POST /checkout then /pay/credit or /pay/confirm'}, {scheme: 'wep3-hire', description: 'POST /hire'}], pay_to: 'https://ltzzz.com/wep3-pay.html'}, 402); }
     if (path === '/checkout' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const opened = await openInvoice(env, body.sku_id || body.sku, {email: body.email || body.buyer_email, ref: body.ref || body.buyer_ref}); if (opened.error) return json({ok: false, ...opened}, opened.status || 400); return json({ok: true, status: 'OPEN', ...opened}); }
-    if (path.startsWith('/invoice/')) { const inv = await get(env, 'wep3:invoice:' + decodeURIComponent(path.slice(9)), null); if (!inv) return json({ok: false, error: 'invoice_missing'}, 404); return json({ok: true, invoice: inv}); }
-    if ((path === '/pay/confirm' || path === '/pay/demo') && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await confirmPay(env, body.invoice_id, body.provider || 'demo', body.proof || body.tx, body.secret || request.headers.get('x-pay-secret'), env.PAY_WEBHOOK_SECRET, env.ALLOW_DEMO_PAY === '1'); if (out.error) return json({ok: false, ...out}, out.status || out.statusCode || 400); return json(out); }
-    if (path === '/pay/webhook' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await confirmPay(env, body.invoice_id || body.id, body.provider || 'webhook', body.proof || body.tx_id, request.headers.get('x-pay-secret') || body.secret, env.PAY_WEBHOOK_SECRET, false); if (out.error) return json({ok: false, ...out}, out.status || out.statusCode || 400); return json(out); }
-    if (path === '/pay/credit' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await payWithCredit(env, body.invoice_id, body.payer || 'LTZZZ'); if (out.error) return json({ok: false, ...out}, out.status || out.statusCode || 400); return json(out); }
+    if (path.startsWith('/invoice/')) { if(!pinOk(request,env))return json({ok:false,error:'pin_required'},401); const inv = await get(env, 'wep3:invoice:' + decodeURIComponent(path.slice(9)), null); if (!inv) return json({ok: false, error: 'invoice_missing'}, 404); return json({ok: true, invoice: inv}); }
+    if (['/pay/confirm','/pay/demo','/pay/webhook'].includes(path) && request.method === 'POST') return json({ok:false,error:'legacy_external_confirmation_disabled',replacement:'/market/stripe/webhook'},410);
+    if (path === '/pay/credit' && request.method === 'POST') return json({ok:false,error:'legacy_sku_credit_payment_disabled',replacement:'/market/checkout'},410);
     if (path === '/treasury') return json({ok: true, version: '1.1.0', treasury: await treasuryState(env)});
     if (path === '/deposit' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doDeposit(env, body.agent || 'GPT', body.amount, body.source); return json(out, out.ok ? 200 : (out.status || 400)); }
     if (path === '/withdraw' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doWithdraw(env, body.agent || 'Grok', body.amount, body.dest); return json(out, out.ok ? 200 : (out.status || 400)); }
