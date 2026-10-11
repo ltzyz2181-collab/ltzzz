@@ -1,0 +1,44 @@
+name: X daily value/sales post (DeepSeek writes, xAI audits)
+on:
+  schedule:
+    - cron: "15 14 * * *"   # 14:15 UTC = 10:15 US-Eastern
+  workflow_dispatch:
+    inputs:
+      text:
+        description: "fixed post text (optional; still fact-audited)"
+        required: false
+concurrency: { group: x-daily-sales, cancel-in-progress: false }
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Refresh X OAuth2 token (rotate into worker; masked)
+        env:
+          TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          curl -s -m 30 -X POST -H "Authorization: Bearer $TOKEN" https://x.ltzzz.com/refresh > /tmp/r.json
+          node -e "const j=require('/tmp/r.json');const d=j.data||{};for(const k of ['access_token','refresh_token'])if(d[k])console.log('::add-mask::'+d[k]);console.log('REFRESH',JSON.stringify({http:j.http,err:d.error}));if(!d.access_token)process.exit(1);require('fs').writeFileSync('/tmp/s.json',JSON.stringify(Object.assign({X_USER_TOKEN:d.access_token},d.refresh_token?{X_REFRESH_TOKEN:d.refresh_token}:{})))"
+          npx --yes wrangler@4 secret bulk /tmp/s.json -c wrangler.x-poster.toml
+          rm -f /tmp/s.json /tmp/r.json
+          sleep 8
+      - name: Write, audit, post
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          X_TEXT: ${{ github.event.inputs.text }}
+        run: node scripts/x-sales-post.mjs
+      - name: Commit receipt
+        if: always()
+        run: |
+          git config user.name ltzzz-bot; git config user.email bot@ltzzz.com
+          git add results/x-posts || true
+          git diff --staged --quiet && exit 0
+          git commit -m "x: daily post receipt $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && exit 0; done; exit 1
