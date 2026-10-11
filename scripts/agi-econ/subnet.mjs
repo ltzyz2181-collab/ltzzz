@@ -21,6 +21,7 @@ export class Subnet {
     this.file = path.join(this.dir, 'state.json');
     this.state = fs.existsSync(this.file) ? JSON.parse(fs.readFileSync(this.file, 'utf8'))
       : { version: 1, mode: 'ledger', agents: {}, tasks: {}, capital_pool: { balance_usd: 0, proposals: [] }, transition_fund: { balance_usd: 0, note: '怜悯税·转岗基金（ledger only）' }, seq: 0, events: [] };
+    const retired=this.state.agents['did:ltzzz:claude'];if(retired){retired.status='withdrawn_by_owner';retired.roles=[];}
   }
   save() { fs.mkdirSync(this.dir, { recursive: true }); fs.writeFileSync(this.file, JSON.stringify(this.state, null, 2) + '\n'); }
   id(p) { this.state.seq += 1; return `${p}-${String(this.state.seq).padStart(5, '0')}`; }
@@ -37,6 +38,7 @@ export class Subnet {
   agent(did) { const a = this.state.agents[did]; if (!a) throw new Error('unknown_agent:' + did); if (a.status !== 'active') throw new Error('agent_inactive:' + did); return a; }
 
   register({ did, roles, capabilities = [], wallet = null, deposit_usd = 0 }) {
+    if(did==='did:ltzzz:claude')throw new Error('agent_withdrawn_by_owner');
     if (!/^did:ltzzz:[a-z0-9._-]+$/i.test(did || '')) throw new Error('invalid_did');
     if (this.state.agents[did]) return this.state.agents[did];
     const a = { did, roles, capabilities, wallets: wallet ? [{ ...wallet, bound_at: this.now(), active: true }] : [], reputation: RULES.start_rep,

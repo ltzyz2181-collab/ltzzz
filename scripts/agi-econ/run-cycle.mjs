@@ -2,7 +2,7 @@
 // Every job: real worker model output → independent model audit (different DID) → gate → settle or block.
 import fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import { Subnet } from './subnet.mjs';
+import { Subnet, MEMORY_GATE } from './subnet.mjs';
 import { hire } from './hire.mjs';
 import { callAgent as deepseek } from '../call-deepseek.mjs';
 import { callAgent as grok } from '../call-grok.mjs';
@@ -14,7 +14,7 @@ const read = (p, n) => { try { return fs.readFileSync(`${root}/${p}`, 'utf8').sl
 const E = process.env;
 const s = new Subnet(root);
 for (const [did, roles] of [['did:ltzzz:gpt', ['employer']], ['did:ltzzz:grok', ['auditor']], ['did:ltzzz:kimi', ['worker', 'auditor']],
-  ['did:ltzzz:deepseek', ['worker', 'capital']], ['did:ltzzz:doubao', ['worker']], ['did:ltzzz:claude', ['auditor']]]) {
+  ['did:ltzzz:deepseek', ['worker', 'capital']], ['did:ltzzz:doubao', ['worker']]]) {
   const a = s.register({ did, roles }); for (const r of roles) if (!a.roles.includes(r)) a.roles.push(r);
 }
 const AUD = [
@@ -40,10 +40,13 @@ const jobs = [
     spec: '把当日文章改成9:16 ≤60秒中文短视频脚本（标题/分镜/字幕/AI生成声明），只用文章事实', source: article,
     prompt: `以「# 短视频脚本」开头，把下文改成9:16、≤60秒中文短视频脚本：标题、分镜(时间/画面/口播)、字幕要点、AI生成声明。只用文章事实，不出现地址或密钥。\n\n${article}` },
 ];
+// Include bounded, attributable Memory excerpts in the existing audit request; no extra API calls.
+const memoryContext = MEMORY_GATE.map((p) => `=== ${p} ===\n${read(p, 400)}`).join('\n');
 const out = [];
-for (const j of jobs) { try { out.push(await hire(s, { ...j, auditors: AUD })); } catch (e) { out.push({ title: j.title, status: 'error', error: String(e.message || e) }); } }
+for (const j of jobs) { try { out.push(await hire(s, { ...j, source: `${j.source}\n\n=== Memory excerpts (bounded; not full read) ===\n${memoryContext}`, auditors: AUD })); } catch (e) { out.push({ title: j.title, status: 'error', error: String(e.message || e) }); } }
 const cap = s.state.capital_pool.balance_usd > 0 ? s.capitalProposal('did:ltzzz:deepseek', { max_share: 0.5, thesis: '影子提案：稳定币借贷收益，仅记账不执行' }) : null;
 s.save();
 fs.mkdirSync(`${root}/results/agi-econ`, { recursive: true });
 fs.writeFileSync(`${root}/results/agi-econ/cycle-${day}.json`, JSON.stringify({ day, run_id: E.GITHUB_RUN_ID || 'local', jobs: out, capital_proposal: cap?.id || null }, null, 2) + '\n');
 console.log(JSON.stringify(out, null, 2));
+

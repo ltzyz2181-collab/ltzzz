@@ -1,6 +1,11 @@
 name: Kimi regions and OKX read-only verification
 on:
   workflow_dispatch:
+    inputs:
+      include_kimi_generation:
+        type: boolean
+        default: false
+        description: Explicit optional paid model call; regular probe is weekly
   push:
     branches: [main]
     paths: ['scripts/verify-kimi-okx.mjs', '.github/workflows/verify-kimi-okx.yml']
@@ -21,8 +26,9 @@ jobs:
           MOONSHOT_API_KEY_INTL: ${{ secrets.MOONSHOT_API_KEY_INTL }}
           MOONSHOT_API_KEY_: ${{ secrets.MOONSHOT_API_KEY_ }}
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          VERIFY_KIMI_MODEL_CALLS: ${{ inputs.include_kimi_generation && '1' || '0' }}
       - name: Save actual receipts
         run: |
           git config user.name ltzzz-bot

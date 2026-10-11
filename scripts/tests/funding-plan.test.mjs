@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {fundingAmount} from '../funding-plan.mjs';
+const base={balance:0n,dailyPulled:0n,grantRemaining:1000000000n,lifetimePulled:0n};
+test('first pull is one USDC even with a 100 USDC shortfall',()=>assert.equal(fundingAmount(base).amount,1000000n));
+test('later pull fills only shortage and never exceeds grant or daily remainder',()=>{assert.equal(fundingAmount({...base,balance:1000000n,lifetimePulled:1000000n}).amount,99000000n);assert.equal(fundingAmount({...base,lifetimePulled:1n,dailyPulled:190000000n}).amount,10000000n);assert.equal(fundingAmount({...base,lifetimePulled:1n,grantRemaining:7000000n}).amount,7000000n)});
+test('funding stops at balance target, daily cap and exhausted grant',()=>{assert.equal(fundingAmount({...base,balance:100000000n}).status,'no_refill_needed');assert.equal(fundingAmount({...base,dailyPulled:200000000n}).amount,0n);assert.equal(fundingAmount({...base,grantRemaining:0n}).amount,0n)});
+test('negative, fractional and excessive targets cannot become calldata',()=>{assert.throws(()=>fundingAmount({...base,balance:-1n}));assert.throws(()=>fundingAmount({...base,target:100000001n}));assert.throws(()=>fundingAmount({...base,dailyPulled:0.1}));});
