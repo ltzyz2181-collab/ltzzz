@@ -24,6 +24,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LAB_PIN: ${{ secrets.LAB_PIN }}
+          X402_RECEIVE_ADDRESS: ${{ secrets.X402_RECEIVE_ADDRESS }}
+          X402_LIVE: ${{ secrets.X402_LIVE }}
         run: |
           npx wrangler deploy -c wrangler.wep3.toml
           node - <<'JS'
@@ -34,7 +36,20 @@ jobs:
           if [ -n "$LAB_PIN" ]; then
             printf '%s' "$LAB_PIN" | npx wrangler secret put LAB_PIN -c wrangler.wep3.toml
           fi
-      - name: Verify public health and anonymous write rejection
+          # Base USDC / x402 live rail (optional until secrets exist)
+          if [ -n "$X402_RECEIVE_ADDRESS" ]; then
+            printf '%s' "$X402_RECEIVE_ADDRESS" | npx wrangler secret put X402_RECEIVE_ADDRESS -c wrangler.wep3.toml
+            echo 'X402_RECEIVE_ADDRESS configured'
+          else
+            echo 'X402_RECEIVE_ADDRESS not set — challenge uses simulated treasury address'
+          fi
+          if [ -n "$X402_LIVE" ]; then
+            printf '%s' "$X402_LIVE" | npx wrangler secret put X402_LIVE -c wrangler.wep3.toml
+            echo 'X402_LIVE configured'
+          else
+            echo 'X402_LIVE not set — 0x proofs stay simulated until enabled'
+          fi
+      - name: Verify public health, x402, and anonymous write rejection
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
@@ -43,9 +58,16 @@ jobs:
           const w=await fetch(base+'/hire',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
           const catalogResponse=await fetch(base+'/market/catalog');const catalog=await catalogResponse.json();
           const blocked=await fetch(base+'/market/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-          const report={market_http:catalogResponse.status,market:catalog,anonymous_market_complete_http:blocked.status,at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,anonymous_write_http:w.status,real_hire_verified:false,tx_hash:null};
+          const chRes=await fetch(base+'/market/x402/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skill:'audit',brief:'deploy verify brief for x402 challenge path'})});
+          const ch=await chRes.json();
+          let verify={ok:false};let verifyHttp=0;
+          if(ch.challenge_id){
+            const vRes=await fetch(base+'/market/x402/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challenge_id:ch.challenge_id,proof:'sim_deploy_'+Date.now()})});
+            verifyHttp=vRes.status;verify=await vRes.json();
+          }
+          const report={market_http:catalogResponse.status,market:catalog,anonymous_market_complete_http:blocked.status,at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,anonymous_write_http:w.status,x402_challenge_http:chRes.status,x402_challenge_ok:!!ch.challenge_id,x402_verify_http:verifyHttp,x402_verify_ok:!!verify.ok,x402_order_id:verify.order_id||null,real_hire_verified:false,tx_hash:null};
           fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));
-          if(!h.ok||!health.pin||w.status!==401||!catalogResponse.ok||!catalog.ok||blocked.status!==401)process.exitCode=1;
+          if(!h.ok||!health.pin||w.status!==401||!catalogResponse.ok||!catalog.ok||blocked.status!==401||!ch.challenge_id||!verify.ok)process.exitCode=1;
           JS
       - name: Audit actual provider delivery and accept hire once
         if: github.event_name != 'push'
