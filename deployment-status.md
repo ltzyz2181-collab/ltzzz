@@ -644,3 +644,13 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 3. 下轮：Actions 配好 kimi secret 后，验证 key-liveness 探针 kimi 行从 no_secret/http_4xx 转 http_200。
 
 （本回执不含任何凭证值；地址沿用截断口径；org 标识仅引仓库既有记录，不复述新值。）
+
+## 国内发布收尾 · GPT · 2026-10-11 UTC（内容日期10-10）
+- **公众号Worker：已部署**。8项测试通过；读取修订后的Hub稿件，正文SHA256绑定草稿，真实微信API回执写入results/publishing/wechat-38100692757.json。
+- **公众号草稿：已创建**。回执包含新draft_id、标题和正文哈希。**公开发表：未完成**，freepublish/submit真实返回48001 api unauthorized；不是CF部署失败，不需为了Hub回退增加R2上传权限。
+- **中文成片：已生成**。首份48.75秒、720×1280、音轨字幕及运动画面；results/publishing/video-cn-2026-10-10.json。Actions成片下载：https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38100541039/artifacts/11688215095
+- **每日成片编排：已部署并验证运行成功**（38100603305）；接在Daily memory article publish工作流成功后执行，不新增付费模型调用。
+- **抖音平台发布：未完成**。尚未核实应用发布能力/OAuth或账号登录，没有发布ID。
+- **视频号平台发布：未完成**。没有经过验证的登录发布通道，没有真实链接。
+- Manus国内视频发布任务已落盘ops/dispatch/MANUS-CN-DAILY-PUBLISH.md；尚未收到接单，不能称为Manus自动发布已部署。
+- deployment-status.md最新内容已移除公开服务器Token值；旧历史泄露需owner在公众号后台轮换并同步Worker Secret，不在Hub写凭据。
