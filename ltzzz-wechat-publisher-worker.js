@@ -37,7 +37,10 @@ export default {
     if (url.pathname === "/publish" && request.method === "POST") {
       if(!env.BOT_ADMIN_TOKEN || request.headers.get("Authorization")!=="Bearer "+env.BOT_ADMIN_TOKEN)return json({error:"unauthorized"},401);
       const mode = url.searchParams.get("mode") || "draft";
-      const out = await publish(env, mode);
+      if (!["draft","publish"].includes(mode)) return json({ok:false,error:"invalid_mode"},400);
+      const date = url.searchParams.get("date") || todayCN();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ok:false,error:"invalid_date"},400);
+      const out = await publish(env, mode, date);
       return json(out, out.ok ? 200 : 500);
     }
     // —— 微信服务器配置验签（GET）——
@@ -147,45 +150,77 @@ function keywordReply(kw) {
 }
 
 
-async function publish(env, mode) {
-  try {
-    const token = await getAccessToken(env);
-    if (!token) return { ok: false, msg: "token failed: check WECHAT_APP_ID/SECRET" };
-
-    const { title, content, sources } = await buildArticle(env);
-    if (!content) return { ok: false, msg: "no daily content found in R2" };
-
-    // 草稿箱接口（draft/add）：直接传图文内容 + 封面 media_id
-    const draftId = await addDraft(env, token, title, content);
-    if (!draftId) return { ok: false, msg: "addDraft failed" };
-
-    let massResult = null;
-    if (mode === "mass" && env.AUTO_MASS === "1") {
-      massResult = await massSend(env, token, draftId);
-    }
-
-    const receipt = {
-      ok: true,
-      date: todayCN(),
-      title,
-      draft_id: draftId,
-      mode,
-      mass: massResult,
-      sources,
-      at: new Date().toISOString(),
-    };
-    await env.MEMORY_BUCKET.put(`wechat/publish/${todayCN()}.json`, JSON.stringify(receipt, null, 2));
-    return receipt;
-  } catch (e) {
-    return { ok: false, msg: "error: " + e.message };
-  }
-}
-
-async function getAccessToken(env) {
-  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${env.WECHAT_APP_ID}&secret=${env.WECHAT_APP_SECRET}`;
-  const r = await fetch(url);
+async function wxCall(endpoint, token, body) {
+  const r = await fetch("https://api.weixin.qq.com/cgi-bin/"+endpoint+(token?"?access_token="+encodeURIComponent(token):""), {
+    method: body ? "POST" : "GET",
+    headers: {"Content-Type":"application/json"},
+    ...(body ? {body:JSON.stringify(body)} : {}),
+    signal: AbortSignal.timeout(20000),
+  });
   const j = await r.json();
-  return j.access_token || null;
+  if (!r.ok || j.errcode) {
+    const error = new Error("WeChat "+endpoint+" rejected");
+    error.platform = {endpoint,http:r.status,errcode:j.errcode ?? null,errmsg:String(j.errmsg || "HTTP error").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
+    throw error;
+  }
+  return j;
+}
+async function publish(env, mode, date=todayCN()) {
+  const key = "wechat/publish/"+date+".json";
+  let receipt = {ok:false,date,mode,status:"BLOCKED",published:false,at:new Date().toISOString()};
+  try {
+    const prior = await env.MEMORY_BUCKET.get(key);
+    if (prior) receipt = {...receipt,...JSON.parse(await prior.text()),mode,at:new Date().toISOString()};
+    if (receipt.published || (mode==="draft" && receipt.draft_id)) return {...receipt,ok:true,reused:true};
+    if (receipt.status==="DRAFT_SUBMITTING" || receipt.status==="PUBLISH_SUBMITTING") {
+      return {...receipt,ok:false,status:"NEEDS_RECONCILIATION",msg:"Previous request had no confirmed response; do not duplicate automatically"};
+    }
+    const token = await getAccessToken(env);
+    if (!receipt.draft_id) {
+      const {title,content,sources} = await buildArticle(env,date);
+      if (!content) return {...receipt,msg:"No dated article found",status:"NO_CONTENT"};
+      receipt = {...receipt,title,sources,status:"DRAFT_SUBMITTING"};
+      await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt));
+      receipt.draft_id = await addDraft(env,token,title,content);
+      receipt.status = "DRAFT_CREATED";
+      receipt.ok = true;
+      await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt));
+    }
+    if (mode==="publish") {
+      if (!receipt.publish_id) {
+        receipt.status = "PUBLISH_SUBMITTING";
+        await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt));
+        const submitted = await wxCall("freepublish/submit",token,{media_id:receipt.draft_id});
+        if (!submitted.publish_id) throw new Error("WeChat submit returned no publish_id");
+        receipt.publish_id = submitted.publish_id;
+        receipt.status = "PUBLISH_PENDING";
+        await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt));
+      }
+      const check = await wxCall("freepublish/get",token,{publish_id:receipt.publish_id});
+      receipt.publish_status = check.publish_status;
+      receipt.published = check.publish_status===0;
+      receipt.article_id = check.article_id || null;
+      receipt.article_urls = (check.article_detail?.item || []).map(x=>x.article_url).filter(Boolean);
+      receipt.status = receipt.published ? "PUBLISHED" : check.publish_status===1 ? "PUBLISH_PENDING" : "PUBLISH_FAILED";
+      receipt.ok = receipt.published || check.publish_status===1;
+    }
+  } catch (e) {
+    receipt = {...receipt,ok:false,published:false,status:"BLOCKED",error:e.platform || {message:"Publishing request failed",type:e.name}};
+  }
+  try { await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt,null,2)); }
+  catch { receipt.receipt_persistence_failed=true;receipt.ok=false; }
+  return receipt;
+}
+async function getAccessToken(env) {
+  if (!env.WECHAT_APP_ID || !env.WECHAT_APP_SECRET) throw new Error("WECHAT_APP_ID/SECRET missing");
+  const r=await fetch("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="+encodeURIComponent(env.WECHAT_APP_ID)+"&secret="+encodeURIComponent(env.WECHAT_APP_SECRET),{signal:AbortSignal.timeout(20000)});
+  const j=await r.json();
+  if (!r.ok || !j.access_token) {
+    const e=new Error("WeChat token rejected");
+    e.platform={endpoint:"token",http:r.status,errcode:j.errcode??null,errmsg:String(j.errmsg||"No access_token").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
+    throw e;
+  }
+  return j.access_token;
 }
 
 // 2026-10-10 Grok Bot：优先使用 Actions 生成的 AI 编辑日报（articles/daily/<date>.md，已脱敏），没有再回退旧拼接
@@ -197,8 +232,8 @@ function mdToHtml(md) {
     return l.trim() ? `<p>${esc(l)}</p>` : "";
   }).join("");
 }
-async function buildArticle(env) {
-  const date = todayCN(); // YYYY-MM-DD
+async function buildArticle(env, date = todayCN()) {
+  // explicit CST date // YYYY-MM-DD
   const ai = await env.MEMORY_BUCKET.get(`articles/daily/${date}.md`);
   let md = ai ? await ai.text() : "";
   let src = `articles/daily/${date}.md`;
@@ -234,35 +269,11 @@ async function buildArticle(env) {
   return { title, content, sources };
 }
 
-async function addDraft(env, token, title, content) {
-  const r = await fetch(`https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${token}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      articles: [{
-        title,
-        author: "LTZZZ",
-        digest: content.slice(0, 100),
-        content,
-        content_source_url: "https://ltzzz.com",
-        thumb_media_id: env.THUMB_MEDIA_ID,
-        need_open_comment: 0,
-        only_fans_can_comment: 0,
-      }],
-    }),
-  });
-  const j = await r.json();
-  if (j.errcode) return null;
-  return j.media_id || null;
-}
-
-async function massSend(env, token, mediaId) {
-  const r = await fetch(`https://api.weixin.qq.com/cgi-bin/message/mass/sendall?access_token=${token}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filter: { is_to_all: true }, mpnews: { media_id: mediaId }, msgtype: "mpnews", send_ignore_reprint: 1 }),
-  });
-  return await r.json();
+async function addDraft(env,token,title,content) {
+  if (!env.THUMB_MEDIA_ID) throw new Error("THUMB_MEDIA_ID missing");
+  const j=await wxCall("draft/add",token,{articles:[{title,author:"LTZZZ",digest:content.replace(/<[^>]+>/g,"").slice(0,100),content,content_source_url:"https://ltzzz.com",thumb_media_id:env.THUMB_MEDIA_ID,need_open_comment:0,only_fans_can_comment:0}]});
+  if (!j.media_id) throw new Error("No draft media_id");
+  return j.media_id;
 }
 
 function todayCN() {

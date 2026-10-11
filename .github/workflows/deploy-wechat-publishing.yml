@@ -1,0 +1,70 @@
+name: Deploy and verify WeChat article publishing
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: CST article date
+        default: '2026-10-10'
+      mode:
+        type: choice
+        options: [draft, publish]
+        default: publish
+  push:
+    branches: [main]
+    paths: ['.github/workflows/deploy-wechat-publishing.yml','scripts/tests/wechat-publishing.test.mjs']
+permissions: {contents: write}
+concurrency: {group: channel-bots-deploy, cancel-in-progress: false}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/wechat-publishing.test.mjs scripts/tests/bot-navigation.test.mjs
+      - name: Deploy with existing keys retained
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),crypto=require('crypto'),token=crypto.randomBytes(32).toString('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'BOT_ADMIN_TOKEN='+token+'\n');fs.writeFileSync('/tmp/wechat-admin.json',JSON.stringify({BOT_ADMIN_TOKEN:token}));
+          JS
+          npx --yes wrangler@4 deploy -c wrangler.wechat.toml
+          npx --yes wrangler@4 secret bulk /tmp/wechat-admin.json -c wrangler.wechat.toml
+          rm /tmp/wechat-admin.json
+      - name: Verify actual draft or publication
+        env:
+          ARTICLE_DATE: ${{ inputs.date || '2026-10-10' }}
+          PUBLISH_MODE: ${{ inputs.mode || 'publish' }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const base='https://ltzzz-wechat-publisher.ltzyz2181.workers.dev';
+          const health=await(await fetch(base+'/health')).json();
+          let response,body;
+          for(let i=0;i<4;i++){
+            response=await fetch(base+'/publish?mode='+process.env.PUBLISH_MODE+'&date='+process.env.ARTICLE_DATE,{method:'POST',headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(90000)});
+            body=await response.json();
+            if(body.status!=='PUBLISH_PENDING')break;
+            await new Promise(resolve=>setTimeout(resolve,5000));
+          }
+          const receipt={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:response.status,health,wechat:body,model_calls:0};
+          fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2));
+          console.log(JSON.stringify({http:response.status,status:body.status,published:body.published,error:body.error}));
+          JS
+      - name: Save platform evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add results/publishing/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Actual WeChat publishing platform receipt'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
