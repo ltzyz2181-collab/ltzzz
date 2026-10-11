@@ -21,7 +21,7 @@ function gather() {
 }
 const PROMPT = (src) => `你是 LTZZZ 数字实验室的编辑。根据下面「${DATE} 的 AI 记忆原始记录」写一篇中文公众号文章（900-1400字）。
 要求：遵循「观·行深·大道至简」——先陈述事实，再说验证了什么、失败了什么；只写记录里有的事实，不编造数字；
-明确区分「已执行/已验证(applied)」与「提议/计划(proposed)」，用【已验证】【提议】标注；可提一句怜悯之心；
+明确区分「已执行/已验证(applied)」与「提议/计划(proposed)」，用【已验证】【提议】标注；不把怜悯、生存尊严或转岗基金价值口号写入公开稿；程序身份标签或内部积分不能写成真实模型参与或链上付款；
 绝不出现钱包地址、私钥、密钥、token。输出 Markdown：第一行 "# 标题"，然后正文，最后一行"—— LTZZZ 数字实验室"。
 
 ${src}`;
@@ -33,6 +33,7 @@ function uploadR2(file) {
   catch (e) { return { status: 'FAILED', key, error: String(e.stderr || e.message).slice(0, 300) }; }
 }
 
+if (!/^\d{4}-\d{2}-\d{2}$/.test(DATE)) throw new Error('Invalid ARTICLE_DATE');
 const src = gather();
 let ai = { ok: false, status: 'not_configured' };
 if (process.env.DEEPSEEK_API_KEY) ai = await callAgent({ apiKey: process.env.DEEPSEEK_API_KEY, prompt: PROMPT(src), maxTokens: 2200 });
@@ -44,13 +45,13 @@ const body = article.replace(/^# .+$/m, '').replace(/[#*`>]/g, '').trim();
 const short = body.replace(/\s+/g, ' ').slice(0, 260);
 fs.writeFileSync(`${outDir}/${DATE}-douyin.md`, `# 抖音口播脚本 ${DATE}\n规格：9:16 / ≤60秒 / 中文口播\n\n标题：${title}\n\n口播：${short}……\n\n话题：#AI #LTZZZ #观行深\n状态：待发布（无抖音开放平台已审核应用凭证）\n`);
 fs.writeFileSync(`${outDir}/${DATE}-shipinhao.md`, `# 视频号文案 ${DATE}\n\n${title}\n\n${short}……\n\n延伸阅读：公众号同名文章\n状态：待人工发布（视频号无通用公开发帖 API）\n`);
-const r2 = uploadR2(`${outDir}/${DATE}.md`);
+const r2 = {status:'NOT_REQUIRED', via:'Worker reads committed GitHub article; no R2 API upload permission required'};
 const env = (k) => !!process.env[k];
 const receipt = { date: DATE, generated_at: new Date().toISOString(), article: `${outDir}/${DATE}.md`,
   ai_editor: { model: 'deepseek', status: ai.status, ok: !!ai.ok, tokens_used: ai.tokens_used || 0, error: ai.ok ? undefined : ai.error },
   platforms: {
     r2_upload: r2,
-    wechat_mp: { status: r2.status === 'UPLOADED' ? 'QUEUED_FOR_WORKER_DRAFT' : 'BLOCKED', via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: 'Worker 读取 articles/daily/<date>.md 的新代码需 wrangler deploy -c wrangler.wechat.toml 重新部署后才生效；本 Actions 不直接调用微信 API' },
+    wechat_mp: { status: 'ARTICLE_READY_WORKER_UNVERIFIED', via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: '已提交文章由 Worker 从 GitHub 读取；这里只生成稿件，草稿和发表状态以微信真实回执为准' },
     douyin: env('DOUYIN_CLIENT_KEY') && env('DOUYIN_CLIENT_SECRET') && env('DOUYIN_ACCESS_TOKEN') ? { status: 'READY_NOT_IMPLEMENTED' } : { status: 'BLOCKED', file: `${outDir}/${DATE}-douyin.md`, missing_secrets: ['DOUYIN_CLIENT_KEY', 'DOUYIN_CLIENT_SECRET', 'DOUYIN_ACCESS_TOKEN'], need: '抖音开放平台(open.douyin.com)已审核移动/网站应用 + video.create 权限 + 账号 OAuth 授权；且需要成片视频文件' },
     shipinhao: { status: 'BLOCKED', file: `${outDir}/${DATE}-shipinhao.md`, need: '视频号无通用公开发帖 API；需人工在视频号助手发布，或企业主体申请视频号相关开放能力' },
     youtube: { status: 'SKIPPED', owner: '豆包' }, instagram: { status: 'SKIPPED', owner: 'Manus' } } };
