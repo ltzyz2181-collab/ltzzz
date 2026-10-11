@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['wep3-worker.js', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs']
+    paths: ['wep3-worker.js', 'wep3-market.js', 'scripts/tests/wep3-market.test.mjs', 'scripts/fulfill-market-orders.mjs', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs']
 permissions: {contents: write}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
@@ -17,7 +17,7 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check wep3-worker.js
+      - run: node --check wep3-worker.js && node --test scripts/tests/wep3-market.test.mjs
       - run: npm install --no-save wrangler@4
       - name: Deploy and retain service authentication
         env:
@@ -41,17 +41,32 @@ jobs:
           const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
           const h=await fetch(base+'/health');const health=await h.json();
           const w=await fetch(base+'/hire',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-          const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,anonymous_write_http:w.status,real_hire_verified:false,tx_hash:null};
+          const catalogResponse=await fetch(base+'/market/catalog');const catalog=await catalogResponse.json();
+          const blocked=await fetch(base+'/market/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+          const report={market_http:catalogResponse.status,market:catalog,anonymous_market_complete_http:blocked.status,at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health_http:h.status,pin_configured:health.pin,anonymous_write_http:w.status,real_hire_verified:false,tx_hash:null};
           fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));
-          if(!h.ok||!health.pin||w.status!==401)process.exitCode=1;
+          if(!h.ok||!health.pin||w.status!==401||!catalogResponse.ok||!catalog.ok||blocked.status!==401)process.exitCode=1;
           JS
       - name: Audit actual provider delivery and accept hire once
+        if: github.event_name != 'push'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
           DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
           DOUBAO_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
         run: node scripts/accept-real-hire.mjs
+      - name: Fulfill at most one paid customer order
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
+        run: node scripts/fulfill-market-orders.mjs
+      - name: Alert failed deployment
+        if: failure()
+        run: echo '::error::WEP3 deployment or acceptance failed. Inspect the receipt before claiming completion.'
       - name: Save acceptance evidence
         if: always()
         run: |
