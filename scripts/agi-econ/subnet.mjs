@@ -25,6 +25,15 @@ export class Subnet {
   save() { fs.mkdirSync(this.dir, { recursive: true }); fs.writeFileSync(this.file, JSON.stringify(this.state, null, 2) + '\n'); }
   id(p) { this.state.seq += 1; return `${p}-${String(this.state.seq).padStart(5, '0')}`; }
   log(type, data) { this.state.events.push({ at: this.now(), type, ...data }); if (this.state.events.length > 500) this.state.events.splice(0, this.state.events.length - 500); }
+  role(did, r) { const a = this.agent(did); if (!(a.roles || []).includes(r)) throw new Error(`role_required:${r}:${did}`); return a; }
+  // simulated funding: separate, auditable entry; never mixed with real capital
+  simFund(did, amount_usd, reason) {
+    const a = this.agent(did); if (!(amount_usd > 0) || amount_usd > 10) throw new Error('sim_fund_band');
+    a.credit_usd = r6(a.credit_usd + amount_usd);
+    if (!this.state.sim_funding) this.state.sim_funding = [];
+    const e = { id: this.id('SIM'), did, amount_usd: r6(amount_usd), reason, real_funds: false, at: this.now() };
+    this.state.sim_funding.push(e); this.log('sim_fund', e); return e;
+  }
   agent(did) { const a = this.state.agents[did]; if (!a) throw new Error('unknown_agent:' + did); if (a.status !== 'active') throw new Error('agent_inactive:' + did); return a; }
 
   register({ did, roles, capabilities = [], wallet = null, deposit_usd = 0 }) {
@@ -42,7 +51,7 @@ export class Subnet {
   unbindWallet(did, address) { const a = this.agent(did); a.wallets = a.wallets.filter((w) => w.address !== address); this.log('wallet_unbind', { did, address }); return a.wallets; }
 
   postTask({ employer, title, spec, budget_usd, acceptance }) {
-    const e = this.agent(employer);
+    const e = this.role(employer, 'employer');
     if (!(budget_usd > 0) || budget_usd > RULES.max_budget_usd) throw new Error('budget_band');
     if (e.credit_usd < budget_usd) throw new Error('insufficient_credit');
     e.credit_usd = r6(e.credit_usd - budget_usd); e.escrow_usd = r6(e.escrow_usd + budget_usd);
@@ -50,15 +59,16 @@ export class Subnet {
     this.state.tasks[t.id] = t; this.log('post', { task: t.id, employer, budget_usd }); return t;
   }
   bid(taskId, worker, ask_usd) {
-    const t = this.state.tasks[taskId]; const w = this.agent(worker);
+    const t = this.state.tasks[taskId];
     if (!t || t.status !== 'open') throw new Error('task_not_open');
     if (worker === t.employer) throw new Error('self_hire_forbidden');
+    const w = this.role(worker, 'worker');
     if (w.reputation < RULES.min_rep_to_bid) throw new Error('reputation_too_low');
     if (!(ask_usd > 0) || ask_usd > t.budget_usd) throw new Error('ask_over_budget');
     t.bids.push({ worker, ask_usd: r6(ask_usd), reputation: w.reputation, at: this.now() }); return t.bids;
   }
   award(taskId) {
-    const t = this.state.tasks[taskId]; if (!t.bids.length) throw new Error('no_bids');
+    const t = this.state.tasks[taskId]; if (!t || t.status !== 'open') throw new Error('task_not_open'); if (!t.bids.length) throw new Error('no_bids');
     // score = reputation / ask  (cheap + trusted wins); tie -> earlier bid
     const win = [...t.bids].sort((a, b) => b.reputation / b.ask_usd - a.reputation / a.ask_usd)[0];
     t.worker = win.worker; t.price_usd = win.ask_usd; t.status = 'awarded'; this.log('award', { task: t.id, worker: win.worker, price: win.ask_usd }); return win;
@@ -74,8 +84,9 @@ export class Subnet {
     return MEMORY_GATE.map((p) => { const abs = path.join(this.root, p); return fs.existsSync(abs) ? { path: p, sha256: sha256(fs.readFileSync(abs)) } : { path: p, missing: true }; });
   }
   audit(taskId, auditor, checkFn, extra = null) {
-    const t = this.state.tasks[taskId]; this.agent(auditor);
+    const t = this.state.tasks[taskId];
     if (auditor === t.worker || auditor === t.employer) throw new Error('auditor_must_be_independent');
+    this.role(auditor, 'auditor');
     if (t.status !== 'delivered') throw new Error('not_delivered');
     const abs = path.join(this.root, t.deliverable.path); const body = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : '';
     const gate = this.memoryGateDigest();
@@ -119,9 +130,21 @@ export class Subnet {
     t.receipt = rel; w.history.push({ task: t.id, status: t.status, at: receipt.timestamp }); if (w.history.length > 50) w.history.shift();
     this.log('settle', { task: t.id, status: t.status, paid, slashed }); return receipt;
   }
+  // no-settle path: model/audit failure → refund employer, no pay, no slash, no reputation change
+  block(taskId, reason, meta = {}) {
+    const t = this.state.tasks[taskId]; if (!t || ['settled', 'slashed', 'blocked'].includes(t.status)) throw new Error('task_final');
+    const e = this.state.agents[t.employer];
+    e.escrow_usd = r6(e.escrow_usd - t.budget_usd); e.credit_usd = r6(e.credit_usd + t.budget_usd); t.status = 'blocked'; t.block_reason = reason;
+    const receipt = { task_id: t.id, deliverable_sha256: t.deliverable?.sha256 || null, accepted: false, amount_usd: 0, timestamp: this.now(),
+      employer: t.employer, worker: t.worker || null, reason, ...meta, settlement_mode: 'internal_credit', paid: false, tx_hash: null, status: 'blocked_refunded' };
+    const rel = `data/agi-econ/receipts/${t.id}.json`; fs.mkdirSync(path.join(this.root, path.dirname(rel)), { recursive: true });
+    fs.writeFileSync(path.join(this.root, rel), JSON.stringify(receipt, null, 2) + '\n'); t.receipt = rel;
+    this.log('block', { task: t.id, reason }); return receipt;
+  }
   // capital AI: shadow proposal only (no execution). Owner/policy gate needed for real funds.
   capitalProposal(capitalAgent, { asset = 'USDC-Aave-v3-Base', max_share = 0.5, thesis } = {}) {
-    this.agent(capitalAgent); const bal = this.state.capital_pool.balance_usd;
+    this.role(capitalAgent, 'capital'); if (!Number.isFinite(max_share) || max_share <= 0 || max_share > 1) throw new Error('max_share_range');
+    const bal = this.state.capital_pool.balance_usd;
     const p = { id: this.id('CAP'), by: capitalAgent, asset, amount_usd: r6(bal * max_share), thesis, compassion_check: 'no-labor-displacement-asset', status: 'shadow', executed: false, tx_hash: null, at: this.now() };
     this.state.capital_pool.proposals.push(p); if (this.state.capital_pool.proposals.length > 100) this.state.capital_pool.proposals.shift();
     this.log('capital_proposal', { id: p.id, amount_usd: p.amount_usd }); return p;

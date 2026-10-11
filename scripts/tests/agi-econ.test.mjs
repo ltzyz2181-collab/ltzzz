@@ -49,3 +49,44 @@ test('mercy tax 1% feeds transition fund on settle', () => {
   assert.equal(s.state.capital_pool.balance_usd, 0.1);
   assert.equal(s.state.transition_fund.balance_usd, 0.01);
 });
+
+// ---- GPT总控 review 2026-10-11: counter-example tests ----
+import { gate } from '../agi-econ/gate.mjs';
+import { hire } from '../agi-econ/hire.mjs';
+const okW = { ok: true, output: '# M real', finish_reason: 'stop' };
+const okV = { status: 'success', model: 'xai', did: 'did:ltzzz:grok', accepted: true };
+test('gate: model failure / empty / truncated / no audit / identity mismatch never settle', () => {
+  assert.equal(gate({ worker: { ok: false }, verdict: okV, workerDid: 'did:ltzzz:deepseek', auditorDid: 'did:ltzzz:grok' }).settle, false);
+  assert.equal(gate({ worker: { ok: true, output: '  ' }, verdict: okV, workerDid: 'did:ltzzz:deepseek', auditorDid: 'did:ltzzz:grok' }).reason, 'worker_output_empty');
+  assert.equal(gate({ worker: { ...okW, finish_reason: 'length' }, verdict: okV, workerDid: 'did:ltzzz:deepseek', auditorDid: 'did:ltzzz:grok' }).reason, 'worker_output_truncated');
+  assert.equal(gate({ worker: okW, verdict: { status: 'api_error' }, workerDid: 'did:ltzzz:deepseek', auditorDid: undefined }).reason, 'audit_unavailable');
+  assert.equal(gate({ worker: okW, verdict: { ...okV, model: 'openai' }, workerDid: 'did:ltzzz:deepseek', auditorDid: 'did:ltzzz:grok' }).reason, 'auditor_identity_mismatch');
+  assert.deepEqual(gate({ worker: okW, verdict: okV, workerDid: 'did:ltzzz:deepseek', auditorDid: 'did:ltzzz:grok' }), { settle: true, accepted: true });
+  assert.equal(gate({ worker: okW, verdict: { ...okV, accepted: false }, workerDid: 'did:ltzzz:deepseek', auditorDid: 'did:ltzzz:grok' }).accepted, false);
+});
+function econ() { const s = new Subnet(tmp()); s.register({ did: 'did:ltzzz:gpt', roles: ['employer'] }); s.register({ did: 'did:ltzzz:deepseek', roles: ['worker'] }); s.register({ did: 'did:ltzzz:grok', roles: ['auditor'] }); return s; }
+const job = (over) => ({ worker: 'did:ltzzz:deepseek', workerModel: 'deepseek', workerKey: 'k', title: 't' + Math.random(), spec: 's', mark: '# M', prompt: 'p', source: 'src', ...over });
+test('hire: worker model failure → blocked, refunded, no reputation change, sim funding recorded separately', async () => {
+  const s = econ(); const r = await hire(s, job({ workerCall: async () => ({ ok: false, status: 'api_error' }), auditors: [] }));
+  assert.equal(r.status, 'blocked_refunded'); const e = s.state.agents['did:ltzzz:gpt'];
+  assert.equal(e.escrow_usd, 0); assert.equal(e.credit_usd, 5); assert.equal(s.state.agents['did:ltzzz:deepseek'].reputation, 100);
+  assert.equal(s.state.sim_funding.length, 1); assert.equal(s.state.sim_funding[0].real_funds, false); assert.equal(s.state.capital_pool.balance_usd, 0);
+});
+test('hire: truncated output and failed audit do not settle', async () => {
+  const s = econ();
+  const t1 = await hire(s, job({ workerCall: async () => ({ ...okW, finish_reason: 'length' }), auditors: [{ model: 'xai', did: 'did:ltzzz:grok', key: 'k', fn: async () => ({ ok: true, output: '{"accepted":true}' }) }] }));
+  assert.equal(t1.reason, 'worker_output_truncated');
+  const t2 = await hire(s, job({ workerCall: async () => okW, auditors: [{ model: 'xai', did: 'did:ltzzz:grok', key: 'k', fn: async () => ({ ok: false, status: 'api_error' }) }] }));
+  assert.equal(t2.reason, 'audit_unavailable'); assert.equal(s.state.agents['did:ltzzz:deepseek'].earned_usd, 0);
+  const t3 = await hire(s, job({ workerCall: async () => okW, auditors: [{ model: 'xai', did: 'did:ltzzz:grok', key: 'k', fn: async () => ({ ok: true, output: '{"accepted":true,"score":90}' }) }] }));
+  assert.equal(t3.status, 'settled'); assert.ok(s.state.agents['did:ltzzz:deepseek'].earned_usd > 0);
+});
+test('award twice is rejected; roles enforced; max_share validated', () => {
+  const s = setup(); const t = s.postTask({ employer: 'did:ltzzz:e', title: 'x', budget_usd: 0.5 });
+  s.bid(t.id, 'did:ltzzz:w', 0.1); s.award(t.id); assert.throws(() => s.award(t.id), /task_not_open/);
+  assert.throws(() => s.postTask({ employer: 'did:ltzzz:w', title: 'y', budget_usd: 0.1 }), /role_required/);
+  const t2 = s.postTask({ employer: 'did:ltzzz:e', title: 'z', budget_usd: 0.1 });
+  assert.throws(() => s.bid(t2.id, 'did:ltzzz:a', 0.05), /role_required/);
+  for (const v of [NaN, 0, -1, 1.5, Infinity]) assert.throws(() => s.capitalProposal('did:ltzzz:c', { max_share: v }), /max_share_range/);
+  assert.throws(() => s.capitalProposal('did:ltzzz:w'), /role_required/);
+});
