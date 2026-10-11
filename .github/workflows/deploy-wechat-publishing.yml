@@ -46,12 +46,12 @@ jobs:
           const health=await(await fetch(base+'/health')).json();
           let response,body;
           for(let i=0;i<12;i++){
-            response=await fetch(base+'/draft-diagnostics?date='+process.env.ARTICLE_DATE+'&expected_app_id=wxdabcfdf41f413f33',{headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(90000)});
+            response=await fetch(base+'/publish?mode=draft&date='+process.env.ARTICLE_DATE,{method:'POST',headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(90000)});
             body=await response.json();
             if(response.status!==401 && body.status!=='PUBLISH_PENDING')break;
             await new Promise(resolve=>setTimeout(resolve,5000));
           }
-          const receipt={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:response.status,health,diagnostics:body,read_only:true,model_calls:0};
+          const receipt={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:response.status,health,draft:body,read_only:false,model_calls:0};
           fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-diagnostics-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2));
           console.log(JSON.stringify({http:response.status,status:body.status,published:body.published,error:body.error}));
           if(response.status===401)process.exitCode=1;

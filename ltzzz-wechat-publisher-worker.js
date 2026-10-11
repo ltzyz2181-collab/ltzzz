@@ -186,7 +186,16 @@ async function publish(env, mode, date=todayCN()) {
   let receipt = {ok:false,date,mode,status:"BLOCKED",published:false,at:new Date().toISOString()};
   try {
     const prior = await env.MEMORY_BUCKET.get(key);
-    if (prior) receipt = {...receipt,...JSON.parse(await prior.text()),mode,at:new Date().toISOString()};
+    const accountHash=[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(env.WECHAT_APP_ID||"")))].map(x=>x.toString(16).padStart(2,"0")).join("");
+    if(prior){
+      const saved=JSON.parse(await prior.text());
+      if(saved.account_hash===accountHash)receipt={...receipt,...saved,mode,at:new Date().toISOString()};
+      else{
+        await env.MEMORY_BUCKET.put("wechat/publish/archive/"+date+"-"+(saved.account_hash||"legacy")+".json",JSON.stringify(saved));
+        receipt.previous_account_draft_preserved=true;
+      }
+    }
+    receipt.account_hash=accountHash;
     const article=await buildArticle(env,date);
     if(!article.content)return {...receipt,ok:false,status:"NO_CONTENT",published:false};
     const hash=[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(article.content)))].map(x=>x.toString(16).padStart(2,"0")).join("");
