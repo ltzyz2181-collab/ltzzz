@@ -719,3 +719,27 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 - 需该公众号管理员在开发接口管理IP白名单加入该IP后重新核验。它是本次实际返回IP，不承诺Cloudflare恒定出网地址。
 - AUTO_MASS=0，未消耗群发操作；旧账号48001结论不能迁移到新账号。当前类型仍应以后台实际账号详情为准，“每月四次”仅适用于服务号群发，不泛指所有公众号。
 - 微信后台“日志上传”不是文章或凭证部署，本次阻塞是40164，与编辑器日志上报无关。
+
+
+## 2026-10-11 · GPT WEP3 market v2 actual acceptance
+
+Code commit: 218c98f1165d388d3ef0b9e1ccd4859d0d4b88fc. Worker deployment and 9 meaningful tests: [run 38105394893](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38105394893). Page deployment: [run 38105405735](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38105405735). Direct curl verified public page HTTP 200 and live /market/catalog HTTP 200.
+
+| Item | Exact state | Evidence / remaining work |
+|---|---|---|
+| Market Worker + external durable ledger | DEPLOYED / live catalog 200 | knowledge/results/wep3/38105394893.json |
+| Dynamic skill registration and quote algorithm | DEPLOYED / tests pass | Auth, owner conflict, recent completed live median + reputation |
+| Stripe Checkout/signature webhook | CODE DEPLOYED; merchant NOT CONFIGURED | Live checkout 503 stripe_not_configured; needs full STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET setup |
+| First external customer payment | NOT EXECUTED | Live revenue 0; no real/test Stripe payment, no buyer |
+| Paid-order AI delivery executor | DEPLOYED; live paid-order end-to-end UNVERIFIED | Daily UTC22:35; queue empty, model_calls=0, orders=[] in market-38105394893.json |
+| Artifact/public-rationale SHA256 | DEPLOYED / reproducibility tests pass | New delivery receipt fields; not a chain anchor or proof of truth |
+| Multi-level subtask budgeting | API DEPLOYED; automatic tree executor NOT IMPLEMENTED | Bounded child budgets; runner reports subtask_executor_required |
+| Base/Solana/Alipay/x402 settlement | NOT IMPLEMENTED | Public rails correctly report not_implemented |
+| Stake rental/guarantees/on-chain batch anchors | NOT IMPLEMENTED | Next stages in docs/WEP3-MARKET-V2.md |
+| XAI peer review | FILE ASSIGNED; NOT ACCEPTED/REVIEWED | ops/dispatch/XAI-MARKET-V2-REVIEW-20261011.md; no XAI ack |
+| WeChat draft (AppID ending 413f33) | RETRIED / BLOCKED / no draft ID | results/publishing/wechat-diagnostics-38105540298.json; token 40164, latest unlisted egress 172.71.120.159; earlier retry 104.22.17.56 |
+| WeChat private token reuse + truthful workflow failure | DEPLOYED / existing tests pass | commit 9e79895f86f33742d07e15caf514092e02bc49c3; draft failure is not deployment failure |
+
+WeChat owner-added 172.70.80.152 is not a stable Worker egress. Token caching helps after one successful token request, but does NOT solve fixed egress by itself. Reliable daily drafts remain blocked until a whitelisted fixed outbound route is available. No freepublish/mass request was made; publication remains with owner.
+
+External gross Stripe allocation balances are distinct from legacy KV credit and from withdrawable settled money. Fees/refunds/disputes need reconciliation before withdrawals. New receipt wages are internal credit; tx_hash=null. No personal-wallet transaction was made.
