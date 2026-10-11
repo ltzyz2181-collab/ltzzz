@@ -711,3 +711,11 @@ f687452 (chore: 提交x-bot worker(sendtest)、部署状态、logo资产; gitign
 4. key-liveness 排班疑点移交归属会话/owner 定夺，本巡检不擅改。
 
 （本回执不含任何凭证值；地址沿用截断口径。）
+
+## LTZZZ公众号账号切换 · 2026-10-11 UTC
+- owner上传文档确认：LTZZZ数字实验室，目标AppID尾号413f33；配套AppSecret仅经一次性RSA-OAEP密文送到Actions临时内存/文件，已注入Cloudflare Secret，无新增密钥明文入库。
+- **已部署/已配置**：Worker健康检查expected_account_matches=true，实际appid_suffix=413f33；8项原有测试通过。旧账号草稿隔离归档，不能跨账号复用。
+- **草稿未完成/平台未发布**：results/publishing/wechat-diagnostics-38104636010.json；微信token接口返回40164 IP不在白名单，本次微信报告的出网IP=172.70.80.152。
+- 需该公众号管理员在开发接口管理IP白名单加入该IP后重新核验。它是本次实际返回IP，不承诺Cloudflare恒定出网地址。
+- AUTO_MASS=0，未消耗群发操作；旧账号48001结论不能迁移到新账号。当前类型仍应以后台实际账号详情为准，“每月四次”仅适用于服务号群发，不泛指所有公众号。
+- 微信后台“日志上传”不是文章或凭证部署，本次阻塞是40164，与编辑器日志上报无关。
