@@ -248,14 +248,23 @@ async function publish(env, mode, date=todayCN()) {
 }
 async function getAccessToken(env) {
   if (!env.WECHAT_APP_ID || !env.WECHAT_APP_SECRET) throw new Error("WECHAT_APP_ID/SECRET missing");
-  const r=await fetch("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="+encodeURIComponent(env.WECHAT_APP_ID)+"&secret="+encodeURIComponent(env.WECHAT_APP_SECRET),{signal:AbortSignal.timeout(20000)});
-  const j=await r.json();
-  if (!r.ok || !j.access_token) {
+  // Private bucket only: reuse the same account token for the draft and its verification.
+  const scope=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(env.WECHAT_APP_ID));
+  const key='wechat/private/token-'+Array.from(new Uint8Array(scope)).map(x=>x.toString(16).padStart(2,'0')).join('')+'.json';
+  try{const cached=await env.MEMORY_BUCKET?.get(key);if(cached){const value=JSON.parse(await cached.text());if(value.access_token&&value.expires_at>Date.now()+120000)return value.access_token;}}catch{}
+  let last;
+  for(let attempt=0;attempt<3;attempt++){
+    const r=await fetch("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="+encodeURIComponent(env.WECHAT_APP_ID)+"&secret="+encodeURIComponent(env.WECHAT_APP_SECRET),{signal:AbortSignal.timeout(20000)});
+    const j=await r.json();
+    if(r.ok&&j.access_token){
+      if(env.MEMORY_BUCKET)await env.MEMORY_BUCKET.put(key,JSON.stringify({access_token:j.access_token,expires_at:Date.now()+Math.min(Number(j.expires_in)||7200,7200)*1000}));
+      return j.access_token;
+    }
     const e=new Error("WeChat token rejected");
     e.platform={endpoint:"token",http:r.status,errcode:j.errcode??null,whitelist_ip:(String(j.errmsg||"").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)||[])[0]||null,errmsg:String(j.errmsg||"No access_token").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
-    throw e;
+    last=e;if(j.errcode!==40164)break;
   }
-  return j.access_token;
+  throw last;
 }
 
 // 2026-10-10 Grok Bot：优先使用 Actions 生成的 AI 编辑日报（articles/daily/<date>.md，已脱敏），没有再回退旧拼接
