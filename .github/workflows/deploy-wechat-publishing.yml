@@ -35,7 +35,7 @@ jobs:
           npx --yes wrangler@4 deploy -c wrangler.wechat.toml
           npx --yes wrangler@4 secret bulk /tmp/wechat-admin.json -c wrangler.wechat.toml
           rm /tmp/wechat-admin.json
-      - name: Read-only account and draft verification
+      - name: Verify confirmed account draft and read back
         env:
           ARTICLE_DATE: ${{ inputs.date || '2026-10-10' }}
           PUBLISH_MODE: ${{ inputs.mode || 'publish' }}
@@ -51,7 +51,9 @@ jobs:
             if(response.status!==401 && body.status!=='PUBLISH_PENDING')break;
             await new Promise(resolve=>setTimeout(resolve,5000));
           }
-          const receipt={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:response.status,health,draft:body,read_only:false,model_calls:0};
+          const diagnosticResponse=await fetch(base+'/draft-diagnostics?date='+process.env.ARTICLE_DATE+'&expected_app_id=wxdabcfdf41f413f33',{headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(30000)});
+          const diagnostics=await diagnosticResponse.json();
+          const receipt={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:response.status,health,draft:body,diagnostics,read_only:false,model_calls:0};
           fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-diagnostics-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2));
           console.log(JSON.stringify({http:response.status,status:body.status,published:body.published,error:body.error}));
           if(response.status===401)process.exitCode=1;
