@@ -11,12 +11,13 @@ let text = (E.X_TEXT || '').trim();
 if (!text) {
   const angles = ['一个具体文件能解决的问题', '如何用回执验证 AI 是否真的干了活', '给 agent 设花费上限的做法', 'AI 雇佣 AI 的实验日志式分享', '30 天退款与适合人群'];
   const angle = angles[new Date().getUTCDate() % angles.length];
-  const w = await deepseek({ apiKey: E.DEEPSEEK_API_KEY, maxTokens: 400, prompt: `Write ONE English post for X (max 260 characters incl. link) from the LTZZZ lab account. Angle: ${angle}. Give real value first, then softly mention the product with its link. Use ONLY facts below; no revenue/sales/earnings claims, no hype, max 2 hashtags, no emojis spam. Must differ from recent posts. Output the post text only.\n\nFACTS:\n${facts}\n\nRECENT POSTS:\n${prev}` });
+  const w = await deepseek({ apiKey: E.DEEPSEEK_API_KEY, maxTokens: 400, prompt: `Write ONE English post for X (max 260 characters incl. link) from the LTZZZ lab account. Angle: ${angle}. Give real value first, then softly mention the product. ${E.X_ALLOW_LINK === '1' ? 'Include the product link.' : 'Do NOT include any URL (X charges ~$0.20 per post with a link); say "link in profile" instead.'} Use ONLY facts below; no revenue/sales/earnings claims, no hype, max 2 hashtags, no emojis spam. Must differ from recent posts. Output the post text only.\n\nFACTS:\n${facts}\n\nRECENT POSTS:\n${prev}` });
   receipt.writer = { model: 'deepseek', status: w.status, tokens: w.tokens_used || 0 };
   text = w.ok ? w.output.trim().replace(/^"|"$/g, '') : '';
 }
 receipt.text = text;
-if (!text || text.length > 280) { receipt.status = 'BLOCKED'; receipt.reason = !text ? 'writer_failed' : 'too_long'; }
+if (text && E.X_ALLOW_LINK !== '1' && /https?:\/\//.test(text) && !E.X_TEXT) { receipt.status = 'BLOCKED'; receipt.reason = 'link_not_allowed_cost'; }
+else if (!text || text.length > 280) { receipt.status = 'BLOCKED'; receipt.reason = !text ? 'writer_failed' : 'too_long'; }
 else {
   const a = await grok({ apiKey: E.XAI_API_KEY, maxTokens: 300, prompt: `You are a strict fact auditor. Check this X post against FACTS. Reject if it contains any claim not supported by FACTS (revenue, sales, customers, guarantees, fake urgency), is spammy, or the link is wrong. Output JSON only: {"accepted":true|false,"issues":["..."]}\n\nFACTS:\n${facts}\n\nPOST:\n${text}` });
   let v = null; try { v = JSON.parse(a.output.match(/\{[\s\S]*\}/)[0]); } catch {}
