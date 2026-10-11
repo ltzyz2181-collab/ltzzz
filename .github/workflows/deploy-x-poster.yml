@@ -18,6 +18,6 @@ jobs:
         env:
           TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: |
-          sleep 5
-          curl -s -m 30 -H "Authorization: Bearer $TOKEN" https://ltzzz-x-poster.ltzyz2181.workers.dev/me > /tmp/me.json
+          sleep 8
+          curl -s -m 30 -H "Authorization: Bearer $TOKEN" https://x.ltzzz.com/me > /tmp/me.json
           node -e "const j=require('/tmp/me.json');const f=x=>x&&({http:x.http,username:x.body?.data?.username,title:x.body?.title,detail:x.body?.detail,reason:x.body?.reason});console.log('DIAG',JSON.stringify({err:j.error,oauth1:f(j.oauth1),oauth2:f(j.oauth2)}))"
