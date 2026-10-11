@@ -67,7 +67,7 @@ export default {
 
     if (url.pathname === '/tweet' && request.method === 'POST') {
       const auth = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-      if (auth !== env.LTZZZ_AGENT_TOKEN) return json({ error: 'unauthorized' }, 401);
+      if (!env.LTZZZ_AGENT_TOKEN || auth !== env.LTZZZ_AGENT_TOKEN) return json({ error: 'unauthorized' }, 401);
 
       const body = await request.json().catch(() => ({}));
       const text = String(body.text || '').slice(0, 280);
@@ -76,8 +76,9 @@ export default {
       const apiUrl = 'https://api.x.com/2/tweets';
       let headers = { 'Content-Type': 'application/json' };
 
-      if (env.X_USER_TOKEN) {
-        // OAuth2 user-context Bearer (preferred, no signature)
+      // 2026-10-11 Grok Bot: prefer OAuth1.0a (non-expiring user tokens); OAuth2 user token expires in ~2h
+      const useOauth1 = !!(env.X_CONSUMER_KEY && env.X_CONSUMER_SECRET && env.X_ACCESS_TOKEN && env.X_ACCESS_SECRET) && url.searchParams.get('auth') !== 'oauth2';
+      if (!useOauth1 && env.X_USER_TOKEN) {
         headers['Authorization'] = 'Bearer ' + env.X_USER_TOKEN;
       } else {
         const secrets = {
@@ -90,7 +91,6 @@ export default {
           return json({ ok: false, error: 'X credentials not configured' }, 500);
         }
         const header = await oauthHeader('POST', apiUrl, {}, secrets);
-        if (url.searchParams.has('debug')) return json({ debug: header, secrets: secrets });
         headers['Authorization'] = header;
       }
 
@@ -103,9 +103,22 @@ export default {
       return json({ ok: r.ok, data: j, http: r.status }, r.ok ? 200 : 500);
     }
 
+    if (url.pathname === '/me' && request.method === 'GET') {
+      const auth = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+      if (!env.LTZZZ_AGENT_TOKEN || auth !== env.LTZZZ_AGENT_TOKEN) return json({ error: 'unauthorized' }, 401);
+      const meUrl = 'https://api.x.com/2/users/me';
+      const out = {};
+      if (env.X_CONSUMER_KEY && env.X_ACCESS_TOKEN) {
+        const h = await oauthHeader('GET', meUrl, {}, { consumerKey: env.X_CONSUMER_KEY, consumerSecret: env.X_CONSUMER_SECRET, accessToken: env.X_ACCESS_TOKEN, accessSecret: env.X_ACCESS_SECRET });
+        const r = await fetch(meUrl, { headers: { Authorization: h } }); out.oauth1 = { http: r.status, body: await r.json().catch(() => ({})) };
+      }
+      if (env.X_USER_TOKEN) { const r = await fetch(meUrl, { headers: { Authorization: 'Bearer ' + env.X_USER_TOKEN } }); out.oauth2 = { http: r.status, body: await r.json().catch(() => ({})) }; }
+      return json(out);
+    }
+
     if (url.pathname === '/refresh' && request.method === 'POST') {
       const auth = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-      if (auth !== env.LTZZZ_AGENT_TOKEN) return json({ error: 'unauthorized' }, 401);
+      if (!env.LTZZZ_AGENT_TOKEN || auth !== env.LTZZZ_AGENT_TOKEN) return json({ error: 'unauthorized' }, 401);
       if (!env.X_REFRESH_TOKEN || !env.X_CLIENT_ID || !env.X_CLIENT_SECRET) {
         return json({ ok: false, error: 'refresh credentials not configured' }, 500);
       }
