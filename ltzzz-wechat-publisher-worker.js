@@ -34,6 +34,20 @@ export default {
         auto_mass: env.AUTO_MASS === "1",
       });
     }
+    if(url.pathname==="/draft-diagnostics" && request.method==="GET"){
+      if(!env.BOT_ADMIN_TOKEN || request.headers.get("Authorization")!=="Bearer "+env.BOT_ADMIN_TOKEN)return json({error:"unauthorized"},401);
+      const date=url.searchParams.get("date")||todayCN();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return json({error:"invalid_date"},400);
+      const result={ok:false,date,app_id_matches:env.WECHAT_APP_ID===url.searchParams.get("expected_app_id"),app_id_suffix:String(env.WECHAT_APP_ID||"").slice(-6),draft_found:false,read_only:true};
+      try{
+        const saved=await env.MEMORY_BUCKET.get("wechat/publish/"+date+".json");
+        const receipt=saved?JSON.parse(await saved.text()):{};
+        if(!receipt.draft_id)return json({...result,error:"No stored draft ID"},404);
+        const token=await getAccessToken(env);
+        const draft=await wxCall("draft/get",token,{media_id:receipt.draft_id});
+        return json({...result,ok:true,draft_found:true,draft_id:receipt.draft_id,titles:(draft.news_item||[]).map(x=>x.title),source_article_hash:receipt.article_hash||null});
+      }catch(e){return json({...result,error:e.platform||{message:"Read-only draft query failed"}},500);}
+    }
     if (url.pathname === "/publish" && request.method === "POST") {
       if(!env.BOT_ADMIN_TOKEN || request.headers.get("Authorization")!=="Bearer "+env.BOT_ADMIN_TOKEN)return json({error:"unauthorized"},401);
       const mode = url.searchParams.get("mode") || "draft";
