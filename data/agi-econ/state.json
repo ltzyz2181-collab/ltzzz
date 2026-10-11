@@ -490,6 +490,38 @@
         "accepted": false
       },
       "receipt": "data/agi-econ/receipts/AET-00011.json"
+    },
+    "AET-00013": {
+      "id": "AET-00013",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-11 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 91,
+          "at": "2026-10-11T10:18:26.721Z"
+        }
+      ],
+      "posted_at": "2026-10-11T10:18:26.721Z",
+      "run_id": "38131468652",
+      "attempt": 2,
+      "bid_mode": "program_rule",
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00013.md",
+        "sha256": "902b9b3e38d922bf45b6ba77e03e3507f11f77da948c49395781fb9ea2b28edc",
+        "bytes": 2471
+      },
+      "block_reason": "worker_output_truncated",
+      "receipt": "data/agi-econ/receipts/AET-00013.json"
     }
   },
   "capital_pool": {
@@ -530,10 +562,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-11T02:37:33.099Z"
+      },
+      {
+        "id": "CAP-00014",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.0145,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-11T10:22:30.655Z"
       }
     ]
   },
-  "seq": 12,
+  "seq": 14,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -910,6 +954,38 @@
       "at": "2026-10-11T02:37:33.099Z",
       "type": "capital_proposal",
       "id": "CAP-00012",
+      "amount_usd": 0.0145
+    },
+    {
+      "at": "2026-10-11T10:18:26.721Z",
+      "type": "post",
+      "task": "AET-00013",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-11T10:18:26.721Z",
+      "type": "award",
+      "task": "AET-00013",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-11T10:21:12.710Z",
+      "type": "deliver",
+      "task": "AET-00013",
+      "sha256": "902b9b3e38d922bf45b6ba77e03e3507f11f77da948c49395781fb9ea2b28edc"
+    },
+    {
+      "at": "2026-10-11T10:22:30.654Z",
+      "type": "block",
+      "task": "AET-00013",
+      "reason": "worker_output_truncated"
+    },
+    {
+      "at": "2026-10-11T10:22:30.655Z",
+      "type": "capital_proposal",
+      "id": "CAP-00014",
       "amount_usd": 0.0145
     }
   ],
