@@ -1,0 +1,50 @@
+name: Render Chinese daily video for Douyin and Channels
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Article date
+        default: '2026-10-10'
+  push:
+    branches: [main]
+    paths: ['tools/render_cn_daily_video.py','.github/workflows/render-cn-daily-video.yml']
+permissions: {contents: write}
+concurrency: {group: cn-daily-video, cancel-in-progress: false}
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install video renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          pip install pillow edge-tts
+      - name: Render and verify real MP4
+        env:
+          ARTICLE_DATE: ${{ inputs.date || '2026-10-10' }}
+        run: python tools/render_cn_daily_video.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cn-daily-video-${{ github.run_id }}
+          path: |
+            video-output/*-cn-daily.mp4
+            video-output/captions.srt
+            results/publishing/video-cn-*.json
+          retention-days: 7
+      - name: Save honest rendering receipt
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add results/publishing/video-cn-*.json
+          git diff --staged --quiet && exit 0
+          git commit -m 'Chinese daily video rendered; external publication pending'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
