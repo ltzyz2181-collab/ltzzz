@@ -42,8 +42,12 @@ const title = (article.match(/^# (.+)$/m) || [, `LTZZZ 日记录 ${DATE}`])[1].t
 const outDir = 'content/daily-articles'; fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(`${outDir}/${DATE}.md`, article + '\n');
 const body = article.replace(/^# .+$/m, '').replace(/[#*`>]/g, '').trim();
-const short = body.replace(/\s+/g, ' ').slice(0, 260);
-fs.writeFileSync(`${outDir}/${DATE}-douyin.md`, `# 抖音口播脚本 ${DATE}\n规格：9:16 / ≤60秒 / 中文口播\n\n标题：${title}\n\n口播：${short}……\n\n话题：#AI #LTZZZ #观行深\n状态：待发布（无抖音开放平台已审核应用凭证）\n`);
+const clean = body.replace(/\s+/g,' ');
+const sentences = clean.match(/[^。！？]+[。！？]/g) || [];
+let short='';
+for(const s of sentences){if((short+s).length>260)break;short+=s;}
+if(!short)short=clean.slice(0,220)+'。';
+fs.writeFileSync(`${outDir}/${DATE}-douyin.md`, `# 抖音口播脚本 ${DATE}\n规格：9:16 / ≤60秒 / 中文口播\n\n标题：${title}\n\n口播：${short}\n\n话题：#AI #LTZZZ #观行深\n状态：待发布（无抖音开放平台已审核应用凭证）\n`);
 fs.writeFileSync(`${outDir}/${DATE}-shipinhao.md`, `# 视频号文案 ${DATE}\n\n${title}\n\n${short}……\n\n延伸阅读：公众号同名文章\n状态：待人工发布（视频号无通用公开发帖 API）\n`);
 const r2 = {status:'NOT_REQUIRED', via:'Worker reads committed GitHub article; no R2 API upload permission required'};
 const env = (k) => !!process.env[k];

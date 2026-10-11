@@ -5,6 +5,9 @@ on:
       date:
         description: Article date
         default: '2026-10-10'
+  workflow_run:
+    workflows: ['Daily memory article publish (WeChat/抖音/视频号)']
+    types: [completed]
   push:
     branches: [main]
     paths: ['tools/render_cn_daily_video.py','.github/workflows/render-cn-daily-video.yml']
@@ -12,6 +15,7 @@ permissions: {contents: write}
 concurrency: {group: cn-daily-video, cancel-in-progress: false}
 jobs:
   render:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -26,7 +30,7 @@ jobs:
           pip install pillow edge-tts
       - name: Render and verify real MP4
         env:
-          ARTICLE_DATE: ${{ inputs.date || '2026-10-10' }}
+          ARTICLE_DATE: ${{ inputs.date || (github.event_name == 'push' && '2026-10-10') || '' }}
         run: python tools/render_cn_daily_video.py
       - uses: actions/upload-artifact@v4
         with:

@@ -2,7 +2,9 @@
 import asyncio, json, os, re, subprocess, pathlib
 from PIL import Image, ImageDraw, ImageFont
 import edge_tts
-date=os.environ.get("ARTICLE_DATE","2026-10-10")
+from datetime import datetime
+from zoneinfo import ZoneInfo
+date=os.environ.get("ARTICLE_DATE") or datetime.now(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d")
 if not re.fullmatch(r"\d{4}-\d{2}-\d{2}",date): raise ValueError("Invalid date")
 out=pathlib.Path("video-output"); out.mkdir(exist_ok=True)
 source=pathlib.Path(f"content/daily-articles/{date}-douyin.md")
