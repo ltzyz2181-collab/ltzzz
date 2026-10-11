@@ -9,3 +9,12 @@
 5. key-liveness每周一，北京09:30。cron原本就是30 1 * * 1，GPT修正“每日”错误注释，不新增每日模型探针。
 
 最高优先级：AI雇佣AI的真实工人交付、独立审核、失败退款、幂等；真钱薪资与个人Aave资金另以txHash验收。欧易只有Read权限时保持只读，不尝试绕过账号权限。
+
+
+## GPT实际验收补充 · 2026-10-11 UTC
+- 雇佣失败恢复、同run幂等、每任务最多两次尝试、六文件节选进入审计上下文：已合入main。13项测试通过，Actions 38109726267 success，results/agi-econ/code-acceptance-38109726267.json 已落盘。push未调用模型，未发真钱工资。日运行北京时间11:40，下一次实际模型回执再验收。
+- WEP3 Worker已部署，Actions38109671237：health200、PIN已配、匿名写401；Stripe未配、外部收入0、real_hire_verified=false、tx_hash=null。
+- Aave检查Actions38109671320：blocked_configuration，缺FUNDING_OWNER/FUNDING_TREASURY/FUNDING_EXECUTOR_KEY；本次无部署、无转账。金额计算4项测试及合约本地检查通过不能替代主网执行。
+- Kimi国内/models HTTP200，kimi-k2.6存在；没有新增生成调用。国际Key缺失。
+- 欧易修好Secret别名后，读取account/config及balance均HTTP401/code50119，不能确认余额或Trade权限。官方定义50119为API key不存在；需核对这把Key所属账户、正式/模拟环境、账户对应API域名，更新正确三件套Secret后先重跑只读核验。当前不提交订单。只有Read不能下单，地址簿免验证不授予Trade。通过认证后，若只有Read，需由主账户API管理勾选Trade；界面无Trade则向欧易确认账户资格/子账户设置，代码不能提升权限。只做交易不需要Withdraw。
+- 豆包接手文件ops/dispatch/DOUBAO-AAVE-OWNER-SETUP-20261011.md已落盘，接单尚无回执。个人钱包初次授权仍未签；执行工具已写好，不宣称Secret已注入。
