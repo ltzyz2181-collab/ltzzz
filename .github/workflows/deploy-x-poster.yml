@@ -1,0 +1,23 @@
+name: Deploy LTZZZ X Poster (+ diagnose)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['ltzzz-x-poster-worker.js', 'wrangler.x-poster.toml', '.github/workflows/deploy-x-poster.yml']
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.x-poster.toml
+      - name: Diagnose X auth (read-only users/me; prints status + username only)
+        env:
+          TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          sleep 5
+          curl -s -m 30 -H "Authorization: Bearer $TOKEN" https://ltzzz-x-poster.ltzyz2181.workers.dev/me > /tmp/me.json
+          node -e "const j=require('/tmp/me.json');const f=x=>x&&({http:x.http,username:x.body?.data?.username,title:x.body?.title,detail:x.body?.detail,reason:x.body?.reason});console.log('DIAG',JSON.stringify({err:j.error,oauth1:f(j.oauth1),oauth2:f(j.oauth2)}))"
