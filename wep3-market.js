@@ -1,5 +1,5 @@
 // External orders use one Durable Object and integer USD cents, separate from legacy credit.
-const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type,X-Lab-Pin,X-Order-Token,Stripe-Signature','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
+const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type,X-Lab-Pin,X-Order-Token,Stripe-Signature,X-Payment,X-X402-Proof','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers});
 export const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const agents=['Grok','Doubao','DeepSeek','Qianwen','Kimi','GPT'];
@@ -24,14 +24,84 @@ export class Market {
   constructor(state,env){this.state=state;this.env=env;this.tail=Promise.resolve();}
   fetch(request){const task=this.tail.then(()=>this.handle(request)).catch(()=>reply({ok:false,error:'market_exception'},500));this.tail=task.then(()=>{});return task;}
   admin(request){const supplied=request.headers.get('X-Lab-Pin');return Boolean(supplied&&((this.env.LAB_PIN&&supplied===this.env.LAB_PIN)||(this.env.WEP3_RUNNER_TOKEN&&supplied===this.env.WEP3_RUNNER_TOKEN)));}
-  async read(){return await this.state.storage.get('book')||{skills:defaults,tape:[],orders:{},events:{},live_revenue_cents:0,test_revenue_cents:0,pool_available_cents:0,pool_reserved_cents:0,agent_credit_cents:{},ledger:[]};}
+  async read(){return await this.state.storage.get('book')||{skills:defaults,tape:[],orders:{},events:{},live_revenue_cents:0,test_revenue_cents:0,pool_available_cents:0,pool_reserved_cents:0,agent_credit_cents:{},ledger:[],x402_challenges:{}};}
   async save(book){await this.state.storage.put('book',book);}
   async score(agent){let row=await this.env.PAY_KV?.get('wep3:rep:'+agent,'json');return Number(row?.score??100);}
   async quote(book,skill){const tape=book.tape.filter(x=>x.skill===skill.id&&x.live).slice(-21).map(x=>x.price_cents).sort((a,b)=>a-b);let median=tape.length?(tape[Math.floor((tape.length-1)/2)]+tape[Math.ceil((tape.length-1)/2)])/2:skill.price_cents;const reputation=await this.score(skill.agent);return {skill:skill.id,agent:skill.agent,title:skill.title,reputation,price_cents:Math.round(median*Math.min(1.2,Math.max(.8,1+(reputation-100)/1000))),currency:'usd',price_source:tape.length?'live_trade_median_and_reputation':'registered_price_and_reputation'};}
   publicOrder(order){const {access_hash,lease_token,...visible}=order;return visible;}
   async handle(request){
     const u=new URL(request.url),p=u.pathname,book=await this.read();
-    if(p==='/market/catalog'&&request.method==='GET')return reply({ok:true,version:'2.0',quotes:await Promise.all(book.skills.map(s=>this.quote(book,s))),rails:{stripe:{configured:Boolean(this.env.STRIPE_SECRET_KEY&&this.env.STRIPE_WEBHOOK_SECRET),mode:this.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')?'live':'test'},base_usdc:{configured:false,status:'not_implemented'},solana_usdc:{configured:false,status:'not_implemented'},alipay:{configured:false,status:'not_implemented'}},live_revenue_cents:book.live_revenue_cents,test_revenue_cents:book.test_revenue_cents,settlement:'external-backed internal credit; no on-chain wage claim'});
+    if(p==='/market/catalog'&&request.method==='GET')return reply({ok:true,version:'2.1',quotes:await Promise.all(book.skills.map(s=>this.quote(book,s))),rails:{stripe:{configured:Boolean(this.env.STRIPE_SECRET_KEY&&this.env.STRIPE_WEBHOOK_SECRET),mode:this.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')?'live':'test'},x402:{configured:true,status:'simulated',network:'base',asset:'USDC',note:'challenge/verify live; real Base USDC settlement next'},base_usdc:{configured:false,status:'pending_x402_bridge'},solana_usdc:{configured:false,status:'not_implemented'},alipay:{configured:false,status:'not_implemented'}},live_revenue_cents:book.live_revenue_cents,test_revenue_cents:book.test_revenue_cents,settlement:'external-backed internal credit; x402 simulated; no on-chain wage claim yet'});
+    // --- x402 simulated endpoints (machine-native micropayment placeholders) ---
+    if(p==='/market/x402/challenge'&&request.method==='POST'){
+      const b=await request.json().catch(()=>({}));
+      const skill=book.skills.find(s=>s.id===b.skill);
+      if(!skill||typeof b.brief!=='string'||b.brief.trim().length<10||b.brief.length>3000)return reply({ok:false,error:'skill_and_brief_required'},422);
+      const q=await this.quote(book,skill);
+      const challengeId='X402-'+crypto.randomUUID();
+      const amountUsdc=(q.price_cents/100).toFixed(6);
+      const challenge={
+        id:challengeId,
+        protocol:'x402-sim-v0',
+        network:'base',
+        asset:'USDC',
+        amount_usdc:amountUsdc,
+        amount_cents:q.price_cents,
+        skill:skill.id,
+        worker:skill.agent,
+        brief:b.brief,
+        pay_to:this.env.X402_RECEIVE_ADDRESS||'0xSIMULATED_LTZZZ_TREASURY',
+        expires_at:new Date(Date.now()+15*60*1000).toISOString(),
+        status:'open',
+        created_at:new Date().toISOString()
+      };
+      book.x402_challenges=book.x402_challenges||{};
+      book.x402_challenges[challengeId]=challenge;
+      const ids=Object.keys(book.x402_challenges);
+      if(ids.length>200){ids.slice(0,ids.length-200).forEach(id=>delete book.x402_challenges[id]);}
+      await this.save(book);
+      return reply({
+        ok:true,
+        challenge_id:challengeId,
+        http_status_intended:402,
+        payment_required:{
+          protocol:'x402',
+          network:'base',
+          asset:'USDC',
+          amount:amountUsdc,
+          pay_to:challenge.pay_to,
+          expires_at:challenge.expires_at,
+          memo:'LTZZZ skill '+skill.id
+        },
+        skill:skill.id,
+        worker:skill.agent,
+        amount_cents:q.price_cents,
+        simulated:true,
+        next:'POST /market/x402/verify with challenge_id + proof (tx_hash or simulated_token)'
+      },402);
+    }
+    if(p==='/market/x402/verify'&&request.method==='POST'){
+      const b=await request.json().catch(()=>({}));
+      const ch=book.x402_challenges?.[b.challenge_id];
+      if(!ch)return reply({ok:false,error:'challenge_missing'},404);
+      if(ch.status!=='open')return reply({ok:false,error:'challenge_not_open',status:ch.status},409);
+      if(Date.parse(ch.expires_at)<Date.now()){ch.status='expired';await this.save(book);return reply({ok:false,error:'challenge_expired'},410);}
+      const proof=String(b.proof||b.tx_hash||'').trim();
+      const validSim=proof.startsWith('sim_')&&proof.length>=12;
+      const validHash=/^0x[a-fA-F0-9]{64}$/.test(proof);
+      if(!validSim&&!validHash)return reply({ok:false,error:'invalid_proof',hint:'use sim_<token> for simulation or 0x + 64 hex for future real Base USDC tx'},422);
+      const access=token();
+      const orderId='ORDER-'+crypto.randomUUID();
+      const live=validHash&&Boolean(this.env.X402_LIVE);
+      const order={id:orderId,skill:ch.skill,worker:ch.worker,brief:ch.brief,amount_cents:ch.amount_cents,currency:'usd',live,status:'queued',created_at:new Date().toISOString(),paid_at:new Date().toISOString(),access_hash:await hash(access),children:[],parent_id:null,payment_rail:'x402',x402_challenge_id:ch.id,x402_proof:proof,budget_cents:Math.floor(ch.amount_cents*.4),allocated_cents:0};
+      book.orders[orderId]=order;
+      ch.status='paid';ch.order_id=orderId;ch.proof=proof;ch.paid_at=order.paid_at;
+      if(live){book.live_revenue_cents+=order.amount_cents;book.pool_available_cents+=order.amount_cents-order.budget_cents;book.pool_reserved_cents+=order.budget_cents;}
+      else book.test_revenue_cents+=order.amount_cents;
+      book.ledger.push({type:live?'x402_payment':'x402_sim_payment',order_id:orderId,amount_cents:order.amount_cents,challenge_id:ch.id,proof,at:order.paid_at});
+      await this.save(book);
+      return reply({ok:true,order_id:orderId,access_token:access,status:'queued',live,simulated:!live,amount_cents:order.amount_cents,message:live?'real Base USDC accepted':'simulated payment accepted; order queued for delivery'});
+    }
     if(p==='/skill/register'&&request.method==='POST'){
       if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
       const b=await request.json();if(!agents.includes(b.agent)||!/^[-a-z0-9]{2,40}$/.test(b.id||'')||typeof b.title!=='string'||b.title.length>120||!Number.isInteger(b.price_cents)||b.price_cents<100||b.price_cents>2000)return reply({ok:false,error:'invalid_skill'},422);
@@ -59,7 +129,6 @@ export class Market {
       if(!o||s.id!==o.session_id||s.amount_total!==o.amount_cents||s.currency!=='usd'||typeof event.livemode!=='boolean'||event.livemode!==o.live||s.livemode!==o.live)return reply({ok:false,error:'payment_order_mismatch'},422);
       if(s.payment_status!=='paid')return reply({ok:true,ignored:true,reason:'payment_pending'});
       if(book.events[event.id]||o.status!=='awaiting_payment')return reply({ok:true,duplicate:true});
-      // A single durable write commits payment, budget reservation and dispatch together.
       o.status='queued';o.paid_at=new Date().toISOString();o.budget_cents=Math.floor(o.amount_cents*.4);o.allocated_cents=0;o.payment_event=event.id;book.events[event.id]=o.id;
       if(o.live){book.live_revenue_cents+=o.amount_cents;book.pool_available_cents+=o.amount_cents-o.budget_cents;book.pool_reserved_cents+=o.budget_cents;}else book.test_revenue_cents+=o.amount_cents;
       book.ledger.push({type:o.live?'external_payment':'test_payment',order_id:o.id,amount_cents:o.amount_cents,event_id:event.id,at:o.paid_at});await this.save(book);return reply({ok:true,order_id:o.id,status:o.status,live:o.live});
