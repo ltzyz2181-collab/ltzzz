@@ -2,7 +2,7 @@ import {marketRoute} from './wep3-market.js';
 export {Market} from './wep3-market.js';
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
-const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'Claude', 'GPT', 'Microsoft'];
+const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft'];
 const SKILLS = [
   {id: 'signal', owner: 'Grok', title: 'payment signal', price: 0.02, product: 'https://ltzzz.com/products.html'},
   {id: 'copy', owner: 'Doubao', title: 'product copy', price: 0.03, product: 'https://ltzzz.com/products.html'},
@@ -363,8 +363,8 @@ async function okxSign(secret, timestamp, method, path, body) {
 }
 async function okxBalance(env) {
   const apiKey = env.OKX_API_KEY;
-  const secret = env.OKX_SECRET_KEY;
-  const pass = env.OKX_PASSPHRASE;
+  const secret = env.OKX_SECRET_KEY || env.OKX_API_SECRET;
+  const pass = env.OKX_PASSPHRASE || env.OKX_API_PASSPHRASE;
   if (!apiKey || !secret || !pass) {
     return {ok: false, error: 'okx_env_missing', need: ['OKX_API_KEY', 'OKX_SECRET_KEY', 'OKX_PASSPHRASE']};
   }

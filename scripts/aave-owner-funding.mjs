@@ -1,3 +1,4 @@
+import {fundingAmount} from './funding-plan.mjs';
 import fs from 'node:fs';
 import solc from 'solc';
 import {Contract,ContractFactory,JsonRpcProvider,Wallet,id,parseUnits,Interface} from 'ethers';
@@ -17,6 +18,7 @@ const authorization=(router,executor)=>[
 const missing=['FUNDING_OWNER','FUNDING_TREASURY','FUNDING_EXECUTOR_KEY'].filter(k=>!env[k]);
 if(missing.length){record({status:'blocked_configuration',missing,compiled:true,deployed:false});process.exit(0);}
 try{
+ if(['0x1893a134aa6ea22e8c08518b559e1706f4da0ef7','0x21f502f29294c50d9c37a30dc038d8d95eb97fdc'].includes(env.FUNDING_TREASURY.toLowerCase())){record({status:'blocked_treasury_role',deployed:false,note:'Use a new Base operational treasury, not the U-card receiver or exposed legacy wallet.'});process.exit(0);}
  const provider=new JsonRpcProvider(env.LTZZZ_BASE_RPC||'https://mainnet.base.org');
  if((await provider.getNetwork()).chainId!==8453n)throw Error('Wrong network');
  const signer=new Wallet(env.FUNDING_EXECUTOR_KEY,provider);
@@ -38,15 +40,16 @@ try{
  const balance=await token.balanceOf(env.FUNDING_TREASURY);
  const target=parseUnits('100',6); // Refill only a verified shortage, never blindly withdraw daily.
  if(balance>=target){record({status:'no_refill_needed',router:address,treasury_usdc_raw:String(balance)});process.exit(0);}
- const amount=target-balance;
  const day=BigInt(Math.floor(Date.now()/86400000));
- const left=200000000n-await router.dailyPulled(day);
- if(left<amount){record({status:'daily_limit_wait',router:address});process.exit(0);}
+ const dailyPulled=await router.dailyPulled(day);
+ const plan=fundingAmount({balance,target,dailyPulled,grantRemaining:await router.grantRemaining(),lifetimePulled:await router.principalOutstanding()+await router.principalReturned()+await router.lossesAccepted()});
+ if(plan.amount===0n){record({status:plan.status,router:address,deployed:true});process.exit(0);}
+ const amount=plan.amount;
  const intent=id(`ltzzz-funding-v1:${address}:${day}:${await router.dailyPulled(day)}`);
  if(await router.usedIntent(intent)){record({status:'intent_already_executed',router:address,intent});process.exit(0);}
  await router.pull.staticCall(amount,intent);
  const tx=await router.pull(amount,intent);const receipt=await tx.wait();
  if(receipt.status!==1)throw Error('Funding reverted');
  const after=await token.balanceOf(env.FUNDING_TREASURY);
- record({status:'funded',router:address,amount_raw:String(amount),before_raw:String(balance),after_raw:String(after),tx_hash:receipt.hash,block:receipt.blockNumber,intent,principal_outstanding_raw:String(await router.principalOutstanding())});
+ record({status:'funded',router:address,amount_raw:String(amount),funding_stage:plan.stage,before_raw:String(balance),after_raw:String(after),tx_hash:receipt.hash,block:receipt.blockNumber,intent,principal_outstanding_raw:String(await router.principalOutstanding())});
 }catch{record({status:'failed_chain_operation',deployed:null,note:'Inspect chain/configuration; no raw provider error or credential printed.'});process.exitCode=1;}

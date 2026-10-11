@@ -99,8 +99,8 @@
     },
     "claude": {
       "daily_usdc": 0,
-      "status": "external_api_only",
-      "purpose": "可由 Anthropic API 受雇执行内容任务；agent-wallet 预算为 0，不签名或转账",
+      "status": "withdrawn_by_owner",
+      "purpose": "已撤席；停止外部任务、审计和钱包签名",
       "allowed_recipients": [
         "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
       ]
@@ -108,10 +108,9 @@
     "microsoft": {
       "daily_usdc": 15,
       "executed_by": [
-        "claude",
         "gpt"
       ],
-      "purpose": "西方文化对照（委托席，可由 Claude/GPT 代执行；Claude 仅 API 工作，不签名）",
+      "purpose": "微软逻辑席仅由GPT委托执行",
       "allowed_recipients": [
         "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
       ]
@@ -158,7 +157,7 @@
     "outcome_required_before_refill": true,
     "claim_multiplier": {
       "success": 1.5,
-      "neutral": 1.0,
+      "neutral": 1,
       "waste": 0.5
     }
   },
@@ -175,26 +174,26 @@
       "doubao_video_script": 3,
       "deepseek_research_report": 4,
       "grok_trend_report": 4,
-      "claude_quality_review": 2
+      "gpt_quality_review": 2
     },
     "revenue_accounts": "按 agent 各自 EOA（DID 绑定的钱包地址）记账，对外结算走 LTZZZ Safe"
   },
   "reputation_grades": {
     "S": {
       "min_score": 140,
-      "budget_multiplier": 3.0,
+      "budget_multiplier": 3,
       "daily_usdc_cap": 60,
       "note": "持续成功+审计通过"
     },
     "A": {
       "min_score": 120,
-      "budget_multiplier": 2.0,
+      "budget_multiplier": 2,
       "daily_usdc_cap": 40,
       "note": "稳定产出"
     },
     "B": {
       "min_score": 100,
-      "budget_multiplier": 1.0,
+      "budget_multiplier": 1,
       "daily_usdc_cap": 20,
       "note": "默认新 Agent"
     },

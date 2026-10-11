@@ -3,7 +3,7 @@ name: Key Liveness Probe (AI seats)
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 1 * * 1'   # 每日 UTC 01:30 = 北京 09:30
+    - cron: '30 1 * * 1'   # 每周一 UTC 01:30 = 北京周一 09:30（owner确认每周）
 
 permissions:
   contents: write
@@ -29,25 +29,28 @@ jobs:
           echo "[" > "$OUT"
           probe() {
             local name="$1"; local url="$2"; local key="$3"; local auth="$4"; local body="$5"
-            local code resp
+            local code resp timeout=30 status
+            [[ "$name" == kimi_* ]] && timeout=300
             if [ -z "$key" ]; then
               echo "  {\"seat\":\"$name\",\"status\":\"no_secret\",\"http\":null}," >> "$OUT"
               echo "$name: NO_SECRET"; return
             fi
             if [ "$auth" = "x-api-key" ]; then
-              resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
+              resp=$(curl -s -m "$timeout" -w "\n%{http_code}" -X POST "$url" \
                 -H "Content-Type: application/json" \
                 -H "x-api-key: $key" \
                 -H "anthropic-version: 2023-06-01" \
-                -d "$body" 2>/dev/null)
+                -d "$body" 2>/dev/null) || true
             else
-              resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
+              resp=$(curl -s -m "$timeout" -w "\n%{http_code}" -X POST "$url" \
                 -H "Content-Type: application/json" \
                 -H "$auth: Bearer $key" \
-                -d "$body" 2>/dev/null)
+                -d "$body" 2>/dev/null) || true
             fi
             code=$(echo "$resp" | tail -1)
-            echo "  {\"seat\":\"$name\",\"status\":\"http_$code\",\"http\":$code}," >> "$OUT"
+            status="http_$code"
+            if [ "$code" = "000" ] || ! [[ "$code" =~ ^[1-5][0-9][0-9]$ ]]; then code=null; status=network_or_timeout; fi
+            echo "  {\"seat\":\"$name\",\"status\":\"$status\",\"http\":$code}," >> "$OUT"
             echo "$name -> HTTP $code"
           }
           probe "gpt"       "https://api.openai.com/v1/chat/completions"    "$OPENAI_API_KEY"    "Authorization" '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
