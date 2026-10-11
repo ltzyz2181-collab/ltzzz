@@ -1,0 +1,31 @@
+name: Daily Kimi Meta Codex Hub assignments
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 0 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/generate-external-daily.mjs','.github/workflows/external-daily-dispatch.yml']
+permissions: {contents: write}
+concurrency: {group: external-daily-dispatch, cancel-in-progress: false}
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/generate-external-daily.mjs
+      - run: node scripts/dispatch-sentinel.mjs
+      - run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add ops/dispatch/ knowledge/results/dispatch/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Daily external seat assignments without model calls'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
