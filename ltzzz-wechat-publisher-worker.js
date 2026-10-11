@@ -171,15 +171,25 @@ async function publish(env, mode, date=todayCN()) {
   try {
     const prior = await env.MEMORY_BUCKET.get(key);
     if (prior) receipt = {...receipt,...JSON.parse(await prior.text()),mode,at:new Date().toISOString()};
-    if (receipt.published || (mode==="draft" && receipt.draft_id)) return {...receipt,ok:true,reused:true};
+    const article=await buildArticle(env,date);
+    if(!article.content)return {...receipt,ok:false,status:"NO_CONTENT",published:false};
+    const hash=[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(article.content)))].map(x=>x.toString(16).padStart(2,"0")).join("");
+    if(receipt.published)return {...receipt,ok:true,reused:true};
+    if(receipt.draft_id && receipt.article_hash!==hash){
+      if(receipt.publish_id)return {...receipt,ok:false,status:"NEEDS_RECONCILIATION",msg:"Content changed after publish submit"};
+      receipt.legacy_draft_id=receipt.draft_id;
+      delete receipt.draft_id;delete receipt.error;
+      receipt.status="ARTICLE_READY";
+    }
+    if(mode==="draft" && receipt.draft_id)return {...receipt,ok:true,reused:true};
     if (receipt.status==="DRAFT_SUBMITTING" || receipt.status==="PUBLISH_SUBMITTING") {
       return {...receipt,ok:false,status:"NEEDS_RECONCILIATION",msg:"Previous request had no confirmed response; do not duplicate automatically"};
     }
     const token = await getAccessToken(env);
     if (!receipt.draft_id) {
-      const {title,content,sources} = await buildArticle(env,date);
+      const {title,content,sources} = article;
       if (!content) return {...receipt,msg:"No dated article found",status:"NO_CONTENT"};
-      receipt = {...receipt,title,sources,status:"DRAFT_SUBMITTING"};
+      receipt = {...receipt,title,sources,article_hash:hash,status:"DRAFT_SUBMITTING"};
       await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt));
       receipt.draft_id = await addDraft(env,token,title,content);
       receipt.status = "DRAFT_CREATED";
@@ -205,7 +215,7 @@ async function publish(env, mode, date=todayCN()) {
       receipt.ok = receipt.published || check.publish_status===1;
     }
   } catch (e) {
-    receipt = {...receipt,ok:false,published:false,status:"BLOCKED",error:e.platform || {message:"Publishing request failed",type:e.name}};
+    receipt = {...receipt,ok:false,published:false,status:e.platform ? "BLOCKED" : "NEEDS_RECONCILIATION",error:e.platform || {message:"Publishing request failed",type:e.name}};
   }
   try { await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt,null,2)); }
   catch { receipt.receipt_persistence_failed=true;receipt.ok=false; }
@@ -234,12 +244,13 @@ function mdToHtml(md) {
 }
 async function buildArticle(env, date = todayCN()) {
   // explicit CST date // YYYY-MM-DD
-  const ai = await env.MEMORY_BUCKET.get(`articles/daily/${date}.md`);
-  let md = ai ? await ai.text() : "";
-  let src = `articles/daily/${date}.md`;
-  if (!md) { // R2 未写入时回退到公开仓库（Actions daily-article-publish 已提交）
-    src = `https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/content/daily-articles/${date}.md`;
-    const r = await fetch(src); md = r.ok ? await r.text() : "";
+  let src = `https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/content/daily-articles/${date}.md`;
+  const remote=await fetch(src,{signal:AbortSignal.timeout(15000)});
+  let md=remote.ok?await remote.text():"";
+  if(!md){
+    src=`articles/daily/${date}.md`;
+    const ai=await env.MEMORY_BUCKET.get(src);
+    md=ai?await ai.text():"";
   }
   if (md) {
     const t = (md.match(/^# (.+)$/m) || [])[1];
