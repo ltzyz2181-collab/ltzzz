@@ -1,0 +1,93 @@
+name: Provision owner confirmed WeChat account
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/provision-wechat-account.yml']
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: channel-bots-deploy, cancel-in-progress: false}
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Create temporary encryption public key
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),crypto=require('crypto'),{publicKey,privateKey}=crypto.generateKeyPairSync('rsa',{modulusLength:3072,publicKeyEncoding:{type:'spki',format:'pem'},privateKeyEncoding:{type:'pkcs8',format:'pem'}});
+          fs.writeFileSync('/tmp/wechat-private.pem',privateKey,{mode:0o600});
+          fs.mkdirSync('ops/provision',{recursive:true});
+          fs.writeFileSync('ops/provision/wechat-'+process.env.GITHUB_RUN_ID+'.public.pem',publicKey);
+          console.log('Public key fingerprint: '+crypto.createHash('sha256').update(publicKey).digest('hex'));
+          JS
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add ops/provision/
+          git commit -m 'One-time WeChat provisioning public encryption key'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then break; fi
+          done
+      - name: Await encrypted owner credential
+        run: |
+          for attempt in $(seq 1 80); do
+            git fetch origin main
+            if git show "origin/main:ops/provision/wechat-$GITHUB_RUN_ID.encrypted" > /tmp/wechat.encrypted 2>/dev/null; then exit 0; fi
+            sleep 5
+          done
+          echo 'No encrypted credential received within provisioning window'
+          exit 1
+      - name: Decrypt validate and inject directly into Cloudflare Secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),crypto=require('crypto');
+          const plain=crypto.privateDecrypt({key:fs.readFileSync('/tmp/wechat-private.pem'),oaepHash:'sha256',padding:crypto.constants.RSA_PKCS1_OAEP_PADDING},Buffer.from(fs.readFileSync('/tmp/wechat.encrypted','utf8').trim(),'base64'));
+          const obj=JSON.parse(plain);
+          if(obj.WECHAT_APP_ID!=='wxdabcfdf41f413f33'||typeof obj.WECHAT_APP_SECRET!=='string'||!/^[a-f0-9]{32}$/.test(obj.WECHAT_APP_SECRET))throw Error('Credential format/account mismatch');
+          console.log('::add-mask::'+obj.WECHAT_APP_SECRET);
+          obj.BOT_ADMIN_TOKEN=crypto.randomBytes(32).toString('hex');
+          console.log('::add-mask::'+obj.BOT_ADMIN_TOKEN);
+          fs.appendFileSync(process.env.GITHUB_ENV,'BOT_ADMIN_TOKEN='+obj.BOT_ADMIN_TOKEN+'\n');
+          fs.writeFileSync('/tmp/wechat-secrets.json',JSON.stringify(obj),{mode:0o600});
+          JS
+          npx --yes wrangler@4 secret bulk /tmp/wechat-secrets.json -c wrangler.wechat.toml
+          npx --yes wrangler@4 deploy -c wrangler.wechat.toml
+          rm -f /tmp/wechat-secrets.json /tmp/wechat-private.pem /tmp/wechat.encrypted
+      - name: Verify exact account and draft capability
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const base='https://ltzzz-wechat-publisher.ltzyz2181.workers.dev';
+          let response,body;
+          for(let i=0;i<12;i++){
+            response=await fetch(base+'/publish?mode=draft&date=2026-10-10',{method:'POST',headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(90000)});
+            body=await response.json();
+            if(response.status!==401 && body.status!=='ACCOUNT_MISMATCH')break;
+            await new Promise(r=>setTimeout(r,5000));
+          }
+          const health=await(await fetch(base+'/health')).json();
+          const receipt={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,health,http:response.status,draft:body,published:false,model_calls:0,credentials_in_repo:false};
+          fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-account-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2));
+          console.log(JSON.stringify({account_matches:health.expected_account_matches,status:body.status,error:body.error,draft_created:!!body.draft_id}));
+          if(!health.expected_account_matches)process.exitCode=1;
+          JS
+      - name: Save receipt and remove temporary encrypted input
+        if: always()
+        run: |
+          git pull --rebase origin main
+          rm -f "ops/provision/wechat-$GITHUB_RUN_ID.encrypted" "ops/provision/wechat-$GITHUB_RUN_ID.public.pem"
+          git add results/publishing/ ops/provision/
+          git diff --staged --quiet && exit 0
+          git commit -m 'WeChat account provisioning evidence; temporary input removed'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
