@@ -28,6 +28,7 @@ export default {
         ok: true,
         service: "ltzzz-wechat-publisher",
         app_id: !!env.WECHAT_APP_ID,
+        expected_account_matches: !!env.WECHAT_EXPECTED_APP_ID && env.WECHAT_APP_ID===env.WECHAT_EXPECTED_APP_ID,
         has_secret: !!env.WECHAT_APP_SECRET,
         has_token: !!env.WECHAT_TOKEN,
         r2: !!env.MEMORY_BUCKET,
@@ -180,6 +181,7 @@ async function wxCall(endpoint, token, body) {
   return j;
 }
 async function publish(env, mode, date=todayCN()) {
+  if(env.WECHAT_EXPECTED_APP_ID && env.WECHAT_APP_ID!==env.WECHAT_EXPECTED_APP_ID)return {ok:false,status:"ACCOUNT_MISMATCH",published:false,msg:"Configured WeChat AppID does not match owner confirmed account; no draft created"};
   const key = "wechat/publish/"+date+".json";
   let receipt = {ok:false,date,mode,status:"BLOCKED",published:false,at:new Date().toISOString()};
   try {
