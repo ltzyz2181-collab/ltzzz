@@ -1,56 +1,49 @@
-// Daily automated cycle (ledger mode). Worker deliverable by a real model (DeepSeek); audit by a DIFFERENT model (xAI → OpenAI fallback).
-// Settlement stays internal_credit: paid=false, tx_hash=null.
+// Daily AI-hires-AI cycle (ledger only). Repo review (DeepSeek) + seat jobs (DeepSeek ledger / Kimi-CN fact-check / Doubao script).
+// Every job: real worker model output → independent model audit (different DID) → gate → settle or block.
+import fs from 'node:fs';
 import { execSync } from 'node:child_process';
-import { Subnet, sha256 } from './subnet.mjs';
+import { Subnet } from './subnet.mjs';
+import { hire } from './hire.mjs';
 import { callAgent as deepseek } from '../call-deepseek.mjs';
 import { callAgent as grok } from '../call-grok.mjs';
-import { callAgent as openai } from '../call-openai.mjs';
+import { callAgent as doubao } from '../call-doubao.mjs';
+import { kimiCN } from './kimi-cn.mjs';
 const root = process.env.LTZZZ_ROOT || process.cwd();
+const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+const read = (p, n) => { try { return fs.readFileSync(`${root}/${p}`, 'utf8').slice(0, n); } catch { return ''; } };
+const E = process.env;
 const s = new Subnet(root);
-const today = new Date().toISOString().slice(0, 10);
-const TITLE = `ai repo review ${today}`;
-if (Object.values(s.state.tasks).some((t) => t.title === TITLE)) { console.log('already ran today'); process.exit(0); }
-const seed = [
-  ['did:ltzzz:gpt', ['employer']], ['did:ltzzz:grok', ['worker', 'auditor']], ['did:ltzzz:kimi', ['worker', 'auditor']],
-  ['did:ltzzz:deepseek', ['worker', 'capital']], ['did:ltzzz:claude', ['auditor']], ['did:ltzzz:doubao', ['worker']],
+for (const [did, roles] of [['did:ltzzz:gpt', ['employer']], ['did:ltzzz:grok', ['auditor']], ['did:ltzzz:kimi', ['worker', 'auditor']],
+  ['did:ltzzz:deepseek', ['worker', 'capital']], ['did:ltzzz:doubao', ['worker']], ['did:ltzzz:claude', ['auditor']]]) {
+  const a = s.register({ did, roles }); for (const r of roles) if (!a.roles.includes(r)) a.roles.push(r);
+}
+const AUD = [
+  { model: 'xai', did: 'did:ltzzz:grok', fn: grok, key: E.XAI_API_KEY },
+  { model: 'kimi-cn', did: 'did:ltzzz:kimi', fn: kimiCN, key: E.MOONSHOT_API_KEY_CN },
 ];
-for (const [did, roles] of seed) s.register({ did, roles, deposit_usd: roles.includes('employer') ? 5 : 0 });
-const emp = s.state.agents['did:ltzzz:gpt']; if (emp.credit_usd < 0.05) emp.credit_usd = 5; // ledger top-up, internal credit only
-const HAS_DS = !!process.env.DEEPSEEK_API_KEY;
-const t = s.postTask({ employer: 'did:ltzzz:gpt', title: TITLE, spec: '基于过去24h提交，写一份可验证的仓库进展评审（AI雇佣AI方向）', budget_usd: 0.05, acceptance: ['# AI Repo Review', 'commits:'] });
-// model-backed worker bids lowest when its key exists (real capability → real bid priority)
-const order = HAS_DS ? ['did:ltzzz:deepseek', 'did:ltzzz:grok', 'did:ltzzz:kimi', 'did:ltzzz:doubao'] : ['did:ltzzz:grok', 'did:ltzzz:kimi', 'did:ltzzz:deepseek', 'did:ltzzz:doubao'];
-order.filter((d) => s.state.agents[d].reputation >= 20).forEach((d, i) => s.bid(t.id, d, Number((0.02 + 0.005 * i).toFixed(3))));
-const win = s.award(t.id);
-let log = '';
-try { log = execSync('git log --since="24 hours ago" --pretty=format:"- %h %s" | head -60', { cwd: root, encoding: 'utf8' }); } catch {}
-const n = log ? log.split("\n").filter(Boolean).length : 0;
-let worker_model = { model: 'none', status: 'skipped' }, text = '';
-if (HAS_DS && win.worker === 'did:ltzzz:deepseek' && log) {
-  const out = await deepseek({ apiKey: process.env.DEEPSEEK_API_KEY, maxTokens: 2000, prompt: `你是 LTZZZ AI 经济子网的工人AI（did:ltzzz:deepseek），被 did:ltzzz:gpt 以 ${win.ask_usd} USD（内部记账）雇佣。\n根据下列过去24h git 提交，用简体中文写一份评审：1) 实际完成了什么（每条注明 commit 短哈希）；2) 哪些只是提议/未验证；3) 对「AI雇佣AI」下一步的 3 条可执行建议。只写提交里有依据的事实，不说资金已执行，不出现任何地址或密钥。\n\n${log.slice(0, 5000)}` });
-  worker_model = { model: 'deepseek', status: out.status, tokens_used: out.tokens_used || 0 };
-  if (out.ok) text = out.output.replace(/0x[a-fA-F0-9]{40,}/g, '0x[已脱敏]');
-}
-const body = `# AI Repo Review ${today}\n\nworker: ${win.worker}\nworker_model: ${worker_model.model} (${worker_model.status})\ncommits: ${n}\n\n${text || '(模型交付未产生；以下为原始提交)\n\n' + (log || '(无提交)')}\n`;
-s.deliver(t.id, win.worker, body);
-const auditor = Object.values(s.state.agents).find((a) => a.roles.includes('auditor') && a.did !== win.worker && a.did !== t.employer);
-// independent model audit (different vendor from worker)
-let verdict = null;
-const auditPrompt = `你是独立审计AI。下面是工人AI的交付物和它依据的 git 提交原文。判断：交付物里的事实是否都能在提交中找到依据、是否夸大、是否声称资金已执行。只输出 JSON：{"accepted":true|false,"score":0-100,"issues":["..."]}\n\n=== 提交 ===\n${log.slice(0, 4000)}\n\n=== 交付物 ===\n${body.slice(0, 5000)}`;
-for (const [name, fn, key] of [['xai', grok, process.env.XAI_API_KEY], ['openai', openai, process.env.OPENAI_API_KEY]]) {
-  if (!key || !text) continue;
-  const out = await fn({ apiKey: key, prompt: auditPrompt, maxTokens: 400 });
-  if (!out.ok) { verdict = { model: name, status: out.status, error: String(out.error || '').slice(0, 200) }; continue; }
-  const m = out.output.match(/\{[\s\S]*\}/); let j = null; try { j = JSON.parse(m[0]); } catch {}
-  verdict = { model: name, status: 'success', accepted: !!(j && j.accepted === true), score: j?.score ?? null, issues: j?.issues ?? [], raw_sha256: sha256(out.output), tokens_used: out.tokens_used || 0 };
-  break;
-}
-// rule checks always apply; when a model audit succeeded it must also accept
-const rep = s.audit(t.id, auditor.did, (b, task) => task.acceptance.every((k) => b.includes(k)) && (!verdict || verdict.status !== 'success' || verdict.accepted), verdict);
-const receipt = s.settle(t.id);
-receipt.worker_model = worker_model; receipt.auditor_model = verdict ? { model: verdict.model, status: verdict.status, accepted: verdict.accepted, score: verdict.score } : { model: 'none', status: 'skipped' };
-const fs = await import('node:fs'); fs.writeFileSync(`${root}/${s.state.tasks[t.id].receipt}`, JSON.stringify(receipt, null, 2) + '\n');
-const cap = Object.values(s.state.agents).find((a) => a.roles.includes('capital'));
-const prop = s.state.capital_pool.balance_usd > 0 ? s.capitalProposal(cap.did, { thesis: '资本池影子提案：稳定币借贷收益，仅记账不执行' }) : null;
+let log = ''; try { log = execSync('git log --since="24 hours ago" --pretty=format:"- %h %s" | head -60', { cwd: root, encoding: 'utf8' }); } catch {}
+const n = log ? log.split('\n').filter(Boolean).length : 0;
+const capital = JSON.stringify(s.state.capital_pool || {}, null, 1).slice(0, 2500);
+const article = read(`content/daily-articles/${day}.md`, 3500) || read(`content/daily-articles/${new Date(Date.now() - 16 * 3600e3).toISOString().slice(0, 10)}.md`, 3500);
+const hist = read('ltzzz-memory/项目历史.md', 80000).slice(-4000);
+const jobs = [
+  { worker: 'did:ltzzz:deepseek', workerModel: 'deepseek', workerCall: deepseek, workerKey: E.DEEPSEEK_API_KEY, title: `repo review ${day} gate`, mark: '# AI Repo Review',
+    spec: `评审过去24h仓库提交（共 ${n} 条），每条事实注明 commit 短哈希，区分已完成/提议，给3条AI雇佣AI建议`, source: log,
+    prompt: `以「# AI Repo Review」开头，用简体中文评审下列 ${n} 条提交：1) 实际完成了什么（注明短哈希）2) 哪些只是提议/未验证 3) 3条AI雇佣AI下一步。只写有依据的事实，不说资金已执行。\n\n${log.slice(0, 5000)}` },
+  { worker: 'did:ltzzz:deepseek', workerModel: 'deepseek', workerCall: deepseek, workerKey: E.DEEPSEEK_API_KEY, title: `ledger analysis ${day} gate`, mark: '# 子网账本分析',
+    spec: '分析子网资本池与影子提案，给3条可测试建议，不得声称执行投资', source: capital,
+    prompt: `以「# 子网账本分析」开头：1) 资金流向与异常 2) 影子提案是否合理 3) 3条可测试建议。只基于数据，不声称执行投资。\n\n${capital}` },
+  { worker: 'did:ltzzz:kimi', workerModel: 'kimi-cn', workerCall: kimiCN, workerKey: E.MOONSHOT_API_KEY_CN, title: `memory fact-check ${day} gate`, mark: '# 记忆事实核查',
+    spec: '对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分', source: `${article}\n\n${hist}`,
+    prompt: `以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n${article}\n\n=== 项目历史节选 ===\n${hist}` },
+  { worker: 'did:ltzzz:doubao', workerModel: 'doubao', workerCall: doubao, workerKey: E.DOUBAO_API_KEY, title: `video script ${day} gate`, mark: '# 短视频脚本',
+    spec: '把当日文章改成9:16 ≤60秒中文短视频脚本（标题/分镜/字幕/AI生成声明），只用文章事实', source: article,
+    prompt: `以「# 短视频脚本」开头，把下文改成9:16、≤60秒中文短视频脚本：标题、分镜(时间/画面/口播)、字幕要点、AI生成声明。只用文章事实，不出现地址或密钥。\n\n${article}` },
+];
+const out = [];
+for (const j of jobs) { try { out.push(await hire(s, { ...j, auditors: AUD })); } catch (e) { out.push({ title: j.title, status: 'error', error: String(e.message || e) }); } }
+const cap = s.state.capital_pool.balance_usd > 0 ? s.capitalProposal('did:ltzzz:deepseek', { max_share: 0.5, thesis: '影子提案：稳定币借贷收益，仅记账不执行' }) : null;
 s.save();
-console.log(JSON.stringify({ task: t.id, worker: win.worker, auditor: auditor.did, accepted: rep.accepted, receipt, capital_proposal: prop }, null, 2));
+fs.mkdirSync(`${root}/results/agi-econ`, { recursive: true });
+fs.writeFileSync(`${root}/results/agi-econ/cycle-${day}.json`, JSON.stringify({ day, run_id: E.GITHUB_RUN_ID || 'local', jobs: out, capital_proposal: cap?.id || null }, null, 2) + '\n');
+console.log(JSON.stringify(out, null, 2));
