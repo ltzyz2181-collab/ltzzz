@@ -6,7 +6,7 @@ export async function kimiCN({ apiKey, prompt, maxTokens = 1500 }) {
 export async function kimiCall({ apiKey, prompt, maxTokens }) {
   if (!apiKey) return { ok: false, status: 'not_configured', error: 'MOONSHOT_API_KEY_CN 未配置' };
   try {
-    const r = await fetch('https://api.moonshot.cn/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(120000),
+    const r = await fetch('https://api.moonshot.cn/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(280000),
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({ model: process.env.KIMI_CN_MODEL || 'kimi-k2.6', messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens }) });
     const j = await r.json().catch(() => ({}));
