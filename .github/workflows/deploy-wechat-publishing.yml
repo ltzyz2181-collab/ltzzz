@@ -35,10 +35,10 @@ jobs:
           npx --yes wrangler@4 deploy -c wrangler.wechat.toml
           npx --yes wrangler@4 secret bulk /tmp/wechat-admin.json -c wrangler.wechat.toml
           rm /tmp/wechat-admin.json
-      - name: Verify account and capture required whitelist IP
+      - name: Retry draft after owner whitelist update
         env:
           ARTICLE_DATE: ${{ inputs.date || '2026-10-10' }}
-          PUBLISH_MODE: ${{ inputs.mode || 'publish' }}
+          PUBLISH_MODE: ${{ inputs.mode || 'draft' }}
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
