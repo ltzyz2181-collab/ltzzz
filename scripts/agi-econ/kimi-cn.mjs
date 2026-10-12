@@ -1,27 +1,27 @@
-// Kimi domestic (api.moonshot.cn) caller; key from env only.
-export async function kimiCN({ apiKey, prompt, maxTokens = 1500 }) {
-  maxTokens = Math.min(6000, Math.max(maxTokens, 1500));
-  return kimiCall({ apiKey, prompt, maxTokens });
-}
-export async function kimiCall({ apiKey, prompt, maxTokens }) {
-  if (!process.env.LTZZZ_AGENT_TOKEN) return {ok:false,status:'gateway_auth_missing',error:'LTZZZ_AGENT_TOKEN missing; direct API bypass disabled'};
-  if (!apiKey) return { ok: false, status: 'not_configured', error: 'MOONSHOT_API_KEY_CN 未配置' };
-  try {
-    let r;
-    for(let attempt=0;attempt<3;attempt++){
-    r = await fetch('https://ltzzz-kimi-queue.ltzyz2181.workers.dev/generate', { method: 'POST', signal: AbortSignal.timeout(280000),
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.LTZZZ_AGENT_TOKEN}` },
-      body: JSON.stringify({ model: process.env.KIMI_CN_MODEL || 'kimi-k2.6', messages: [{ role: 'user', content: prompt }], thinking: { type: process.env.KIMI_CN_THINKING === 'enabled' ? 'enabled' : 'disabled' }, max_tokens: maxTokens }) });
-    if(r.status!==429)break;
-    const error=await r.clone().json().catch(()=>({}));
-    if(!error.retryable||attempt===2)break;
-    const seconds=Math.min(120,Math.max(21,Number(r.headers.get('Retry-After'))||30));
-    await new Promise(resolve=>setTimeout(resolve,seconds*1000));
-    }
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return { ok: false, status: j.status||'api_error', retryable:Boolean(j.retryable), error: `HTTP ${r.status}: ${j.error?.type||'upstream_error'}` };
-    const output = (j.choices?.[0]?.message?.content || '').trim();
-    if (!output) return { ok: false, status: 'empty_output', error: `finish_reason=${j.choices?.[0]?.finish_reason}（推理模型可能耗尽 max_tokens）`, tokens_used: j.usage?.total_tokens || 0, model: j.model || process.env.KIMI_CN_MODEL || 'kimi-k2.6' };
-    return { ok: true, status: 'success', output, finish_reason: j.choices?.[0]?.finish_reason, model: j.model || process.env.KIMI_CN_MODEL || 'kimi-k2.6', tokens_used: j.usage?.total_tokens || 0 };
-  } catch (e) { return { ok: false, status: 'exception', error: String(e) }; }
+// Domestic Kimi: shared cloud lease, native executor request; no unreserved bypass.
+const gateway='https://ltzzz-kimi-queue.ltzyz2181.workers.dev';
+export async function kimiCN({apiKey,prompt,maxTokens=1500}){return kimiCall({apiKey,prompt,maxTokens:Math.min(6000,Math.max(maxTokens,1500))});}
+export async function kimiCall({apiKey,prompt,maxTokens}){
+ const token=process.env.LTZZZ_AGENT_TOKEN;
+ if(!token||!apiKey)return {ok:false,status:'not_configured',error:'Domestic key or gateway token missing; direct bypass disabled'};
+ let lease=null,outcome='unknown';
+ const payload={model:process.env.KIMI_CN_MODEL||'kimi-k2.6',messages:[{role:'user',content:prompt}],thinking:{type:'disabled'},temperature:0.6,max_tokens:maxTokens};
+ const auth={Authorization:`Bearer ${token}`,'Content-Type':'application/json'};
+ try{
+  let reservation;
+  for(let attempt=0;attempt<3;attempt++){
+   const r=await fetch(gateway+'/reserve',{method:'POST',headers:auth,body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
+   reservation=await r.json().catch(()=>({}));
+   if(r.ok){lease=reservation.lease;break;}
+   if(r.status!==429||!reservation.retryable||attempt===2)return {ok:false,status:reservation.status||'gateway_error',retryable:!!reservation.retryable,error:'Shared Kimi reservation not granted',upstream_attempts:0};
+   const seconds=Math.min(120,Math.max(21,Number(r.headers.get('Retry-After'))||30));await new Promise(resolve=>setTimeout(resolve,seconds*1000));
+  }
+  if(!lease)return {ok:false,status:'gateway_error',error:'Missing reservation lease',upstream_attempts:0};
+  const r=await fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(280000)});
+  const j=await r.json().catch(()=>({}));outcome='response_received';
+  if(!r.ok){const type=j.error?.type||'';outcome=/exceeded_current_quota|insufficient_quota|insufficient_balance/i.test(type)?'quota_exhausted':r.status===429?'rate_limited':'api_error';return {ok:false,status:outcome,http:r.status,retryable:outcome==='rate_limited',upstream_attempts:1,error:`HTTP ${r.status}: ${type||'upstream_error'}`};}
+  const output=String(j.choices?.[0]?.message?.content||'').trim();
+  return {ok:!!output,status:output?'success':'empty_output',http:r.status,output,finish_reason:j.choices?.[0]?.finish_reason,model:j.model||payload.model,tokens_used:j.usage?.total_tokens||0,upstream_attempts:1};
+ }catch{return {ok:false,status:'network_or_timeout',error:'No blind generation retry; unknown lease remains held until expiration'};}
+ finally{if(lease)try{await fetch(gateway+'/release',{method:'POST',headers:auth,body:JSON.stringify({lease,outcome}),signal:AbortSignal.timeout(10000)});}catch{/* lease expires; no unreserved retry */}}
 }
