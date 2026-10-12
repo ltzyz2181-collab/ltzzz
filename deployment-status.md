@@ -807,3 +807,13 @@ External gross Stripe allocation balances are distinct from legacy KV credit and
 4. watchdog 红灯（stale 连续 2 天）：日更任务数据缺口，他会话辖区，移交不擅改。
 
 （本回执不含任何凭证值；地址沿用截断口径；Key.doc 未读；ltzzz-secrets.md 未触碰。）
+
+
+## 2026-10-12 新金库 Aave 签名与迁移派单（覆盖旧B-2缺私钥判断）
+- 已部署：受限 Base 8453 官方 Aave USDC supply/withdraw；运行 38232918737 success，knowledge/results/wep3/aave-38232918737.json HTTP200、链上余额USDC/aUSDC/ETH均0。30项测试通过；修复 Cloudflare native RPC transport 后复验。
+- 新金库：0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d；Worker Secret签名，非owner狐狸头。新资金直接Aave Pool，不进入旧guardian Vault。
+- 已配置：自动投资每6小时；缺币/gas等待，首投1U→退出1U→放大，单笔20U/敞口100U/现金5U且覆盖负债，UTC日60/周300/月500。激活运行结果以随后aave回执为准。
+- 已执行：今日AI真实雇佣38230910613 success，DeepSeek两单、国内Kimi一单、豆包一单，Grok独立审计；2 settled/2 slashed，内部信用结算。未产生本轮链上工资。
+- 已准备未执行：Ethereum Safe转出Builder，链上阈值3/5、nonce6、49.02USDT/0.005ETH；旧Base agent18.995USDC、旧Vault20.015723aUSDC。读取时间2026-10-12T09:54:55Z，余额非永久常量。
+- 正式豆包派单：ops/dispatch/DOUBAO-TREASURY-AAVE-MIGRATION-20261012.md；新接单回执尚未收到。五签转出仍缺实际签名，旧资产迁移仍需guardian授权执行；两者均无新txHash。
+- B首批20U/200U未到账未执行；本金收益自动返还owner接口尚未实现；Ethereum转入同地址不等于Base到账，桥接未实现。
