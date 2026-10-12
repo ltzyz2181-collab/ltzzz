@@ -743,3 +743,67 @@ Code commit: 218c98f1165d388d3ef0b9e1ccd4859d0d4b88fc. Worker deployment and 9 m
 WeChat owner-added 172.70.80.152 is not a stable Worker egress. Token caching helps after one successful token request, but does NOT solve fixed egress by itself. Reliable daily drafts remain blocked until a whitelisted fixed outbound route is available. No freepublish/mass request was made; publication remains with owner.
 
 External gross Stripe allocation balances are distinct from legacy KV credit and from withdrawable settled money. Fees/refunds/disputes need reconciliation before withdrawals. New receipt wages are internal credit; tx_hash=null. No personal-wallet transaction was made.
+
+---
+
+# 每日巡检回执 · 2026-10-12（千问 · A→E · cron 8c24cf55 触发）
+
+## G · 本机命令通道：✅ 正常（连续第 10 日）
+- `echo ok` 返回 `ok`；git / curl.exe 全可用。
+
+## A · git：✅ 同步完成
+- 本地落后 origin/main **102 提交**，`--ff-only` 快进至 `bb33e6d`，无冲突。新增面：WEP3 market v2 全套部署验收、agi-econ 审计回执 AET-00008~13、X poster/销售流、公众号账号切换 413f33、Claude 撤席名册更新、wallet/evidence 1U 取证包、OWNER-REPORTED-20261011.json。均为他会话产物，本巡检只读核验。
+- `ltzzz-secrets.md` 红线：未 add、未读、未推 ✅。桌面 Key.doc 本轮无需读取（两 Worker has_key 均已为 true）。
+
+## B · wrangler 部署：✅ 线上已最新，不重跑
+- 两代理 Worker 源码在 102 提交中零改动（qianwen 末次 af91180/09-30；kimi 末次 82eda47/10-09 且 10-10 已部署含 Secret 版本）。按 No-repeat rule 不重跑。
+
+## C · 验证：千问 VERIFIED / Kimi BLOCKED（上游过载连续第 2 日）
+- /health（api-qianwen / api-kimi，01:03Z）：均 `ok:true has_key:true`（注：`model_configured:false` 为 Worker 走请求体透传模型的设计使然，非异常）。
+- 真实调用（UTF-8 文件体）：**千问 200，qwen-plus 返回「总控在线」✅**；**Kimi 429 ×2**（首调 + 延时 45s 重试），上游原文仍 `engine_overloaded_error`。
+- **升级判定**：10-11 判"瞬时过载"，今日同时段仍过载 → **连续第 2 日 429**，按昨日回执预设的升级条件，下轮起应查 Moonshot 控制台/官方状态页，或改走 `/v1/models` 只读探针区分"引擎容量"与"账户路由"。非我方配置回退（health 与端点均未变）。
+
+## C' · 1U 链上取证独立复核（本轮关键增量）
+- GPT 10-11 归档的 wallet/evidence/ 声称 Safe→0x1893 1 USDT。本会话向 **eth.drpc.org**（与昨日 publicnode 另一家）独立取该 tx 回执：**status=0x1、blockNumber=0x18d850b(26051851)、blockHash `0x8d6fe5cc…3a6ad3` 逐字段吻合、USDT Transfer(from=Safe,to=`0x1893…0eF7`,raw=`0xf4240`=1.0) logIndex 0x3c0** → **两家独立 RPC 交叉验证，1U 入卡事实 VERIFIED**（历史核实，非新转账）。
+- 账本状态列仍写"豆包报告；Etherscan 主人再核"——建议 owner 见证据后亲自确认升为 confirmed（本巡检不代改）。
+- **5.99U 结论不合并**：仍无独立 receipt，维持 NEEDS_CHECK。OWNER-REPORTED-20261011.json 里 owner 口述两笔 1USDT→0xfee5…、0.03982ETH→0x1893、"豆包兑换"回忆均标 owner_reported（无 txHash、independent_verification:false）——口径正确，本巡检不为其补造证据。
+
+## E · 页面发布：✅
+- ltzzz.com/ → 200（看板已含 WEP3/公众号新状态卡）。
+- 新文档 docs/WEP3-MARKET-V2.md → 200（其自述"部署以 workflow evidence 为准"口径规范）。
+- 名册 identity/dids/ 12 项；claude.json 已按 owner 决策更新 `withdrawn_by_owner` + **链上 Safe 撤签未执行**（如实区分文件撤席≠链上撤签 ✅）。链上 registerAgent 全部仍"待"，无 receipt → 未完成口径不变。
+
+## F · 转账测试：⛔ 未执行
+- 派单口径更新：②地址簿添加已由 owner_reported（30天免验证），**不再重复催办**；但提现网络机器证据未收到、无真实提现回执 → F 仍 blocked。全程未以 0x21F5…7fdc 作任何转账来源 ✅。
+
+## U 卡地址 0x1893…0eF7 · 10-12 第四窗口复核（公开 RPC 只读，零私钥）
+- 主网 ETH=`0x3dc2c07f06a00`≈0.0010865、USDT=0——**与前窗口逐字节一致 → 无新交易、无 receipt**。（owner_reported 的 0.03982 ETH 若真到该地址应可见于余额史，但当前仅存 gas 零头且无其 txHash → 不推断、标待核。）
+
+## 资金侧他会话事实核对
+- Aave 仍 blocked_configuration（缺 FUNDING_OWNER/TREASURY/FUNDING_EXECUTOR_KEY），owner 授权 GPT 安排 Secret 注入——**部署/gas/初次两笔钱包授权/1USDC 测试均未完成（无 txid）**，口径与仓库一致。
+- WEP3 Stripe：merchant NOT CONFIGURED、live revenue 0、无真实/测试付款——未完成，如实。
+- 公众号新账号 413f33：draft 仍阻于微信 40164 IP 白名单（Worker 出网 IP 不稳定），**草稿未完成、公开发表未完成**——他会话已如实记录，本巡检复核无新回执。
+
+## 状态判定汇总（四公式口径）
+| 项 | 状态 | 依据 |
+|---|---|---|
+| 千问 Worker | VERIFIED | 真实调用 200「总控在线」 |
+| Kimi Worker | BLOCKED（engine_overloaded 连续 2 日） | 429×2 原文可复现；health has_key:true |
+| 1U 入 U 卡（历史） | **VERIFIED（两家 RPC 独立一致）** | drpc.org 回执 status=0x1/Transfer 事件逐字段吻合 |
+| 5.99U | NEEDS_CHECK（不变） | 无独立 receipt |
+| A 同步 | VERIFIED | ff 至 bb33e6d |
+| B 部署 | 线上最新不重跑 | 源码零改动 |
+| 页面/DID/WEP3 文档 | VERIFIED | 200 |
+| Claude 撤席 | 文件 VERIFIED / 链上撤签未执行 | claude.json 自述一致 |
+| F 转账 | 未完成（暂缓） | 提现网络机器证据未收到 |
+| Aave 资金执行 | 未完成 | blocked_configuration 无 txid |
+| WEP3 真实收入 | 未完成 | revenue 0 |
+| U 卡新交易 | 无（第 4 窗口零变动） | 余额逐字节一致 |
+
+## 下一步
+1. Kimi 连续 2 日过载 → 下轮改查 Moonshot 官方状态/`/v1/models` 探针定性；若 owner 有 Moonshot 后台权限可看一眼速率/额度页（不改密钥不进对话）。
+2. owner 确认后把 TX-20260925-1U-UCARD 状态列升 confirmed（证据链已两家 RPC 齐）。
+3. F 剩余前置收敛为一件：真实提现回执（网络确认随提现动作自然完成）。
+4. watchdog 红灯（stale 连续 2 天）：日更任务数据缺口，他会话辖区，移交不擅改。
+
+（本回执不含任何凭证值；地址沿用截断口径；Key.doc 未读；ltzzz-secrets.md 未触碰。）
