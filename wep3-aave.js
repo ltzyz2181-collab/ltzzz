@@ -23,10 +23,12 @@ export function buildAavePlan(input,ctx){
  if(BigInt(ctx.ausdc_raw)<amount)throw Error('insufficient_aUSDC');
  return {amount_raw:amount.toString(),steps:[{kind:'withdraw',to:AAVE.pool,data:pool.encodeFunctionData('withdraw',[AAVE.usdc,amount,address])}]};
 }
-function provider(){const req=new FetchRequest('https://mainnet.base.org');req.timeout=15000;return new JsonRpcProvider(req,8453,{staticNetwork:true});}
-export async function aaveStatus(m,book){
+export async function nativeRpcFetch(req){const response=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body,signal:AbortSignal.timeout(12000)});return {statusCode:response.status,statusMessage:response.statusText,headers:Object.fromEntries(response.headers),body:new Uint8Array(await response.arrayBuffer())};}
+async function provider(){for(const url of ['https://base-rpc.publicnode.com','https://mainnet.base.org','https://base.drpc.org']){const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;const p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});try{if(BigInt(await p.send('eth_chainId',[]))===8453n)return p;}catch{}p.destroy();}throw Error('base_rpc_unavailable');}
+export async function aaveStatus(m,book){try{return await readAaveStatus(m,book)}catch(e){return {ok:false,error:'base_rpc_read_failed',reason:e.code||e.message?.slice(0,80)||'unknown',signed:false};}}
+async function readAaveStatus(m,book){
  const address=m.env.X402_RECEIVE_ADDRESS;if(!address)return {ok:false,error:'treasury_missing'};
- const p=provider();if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');
+ const p=await provider();if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');
  const u=new Contract(AAVE.usdc,ERC,p),a=new Contract(AAVE.ausdc,AT,p);
  const [usdc,ausdc,eth,allowance,ap,underlying,decimals]=await Promise.all([u.balanceOf(address),a.balanceOf(address),p.getBalance(address),u.allowance(address,AAVE.pool),a.POOL(),a.UNDERLYING_ASSET_ADDRESS(),u.decimals()]);
  if(ap.toLowerCase()!==AAVE.pool.toLowerCase()||underlying.toLowerCase()!==AAVE.usdc.toLowerCase()||Number(decimals)!==6)throw Error('reserve_configuration_mismatch');
@@ -59,14 +61,14 @@ export async function executeAave(m,book,input,{preview=false}={}){
   if(i.action==='supply')for(const k of ['day','week','month'])state.periods[k][keys[k]]=(BigInt(state.periods[k][keys[k]]||0)+BigInt(i.amount_raw)).toString();
   await m.save(book);
  }
- const p=provider();if(BigInt(await p.send('eth_chainId',[]))!==8453n)return {ok:false,error:'wrong_chain'};
+ const p=await provider();if(BigInt(await p.send('eth_chainId',[]))!==8453n)return {ok:false,error:'wrong_chain'};
  const w=new Wallet(m.env.TREASURY_EXECUTOR_KEY,p);if(w.address.toLowerCase()!==i.treasury.toLowerCase())return {ok:false,error:'treasury_signer_mismatch'};
  for(const step of i.steps){
   if(step.status==='confirmed')continue;
   if(!step.raw){
    if(i.action==='supply'&&state.paused)return {ok:false,error:'supply_paused',...publicAaveIntent(i)};
    if(step.kind==='supply'){
-    const fresh=await aaveStatus(m,book),liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
+    const fresh=await aaveStatus(m,book);if(!fresh.ok)return fresh;const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
     const floor=liabilities>5000000n?liabilities:5000000n,amount=BigInt(i.amount_raw);
     if(BigInt(fresh.usdc_raw)-amount<floor||BigInt(fresh.ausdc_raw)+amount>100000000n)return {ok:false,error:'latest_cash_or_exposure_limit',...publicAaveIntent(i)};
     const nowKeys=budgetKeys(Date.now()),limits={day:60000000n,week:300000000n,month:500000000n};
