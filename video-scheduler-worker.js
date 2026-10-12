@@ -55,7 +55,7 @@ export default {
       }
       const auth = request.headers.get('Authorization') || '';
       const webhookSecret = request.headers.get('X-Webhook-Secret') || '';
-      const authorized = auth === `Bearer ${env.LTZZZ_AGENT_TOKEN}` || webhookSecret === env.WEBHOOK_SECRET;
+      const authorized = (!!env.LTZZZ_AGENT_TOKEN && auth === `Bearer ${env.LTZZZ_AGENT_TOKEN}`) || (!!env.WEBHOOK_SECRET && webhookSecret === env.WEBHOOK_SECRET);
       if (!authorized) return json({ ok: false, error: 'unauthorized' }, 401);
 
       if (url.pathname === '/schedule/publish' && request.method === 'POST') {
@@ -115,6 +115,7 @@ export default {
 };
 
 async function publishToYouTube(env, videoKey, title, description) {
+  if (!env.LTZZZ_AGENT_TOKEN) return { ok: false, error: 'upload_auth_not_configured' };
   // 上传 worker 需要公开可拉取的 video_url；R2 key 不是 URL。
   // 若配置了 PUBLIC_VIDEO_BASE（R2 自定义域名或公共访问前缀），则拼 URL；否则报需人工上传。
   const base = env.PUBLIC_VIDEO_BASE || 'https://videos.ltzzz.com/'; // 默认走 r2-public worker 公共域
@@ -128,7 +129,7 @@ async function publishToYouTube(env, videoKey, title, description) {
   try {
     const resp = await fetch(`${env.YOUTUBE_UPLOAD_WORKER_URL}/youtube/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.LTZZZ_AGENT_TOKEN}` },
       body: JSON.stringify({
         video_url,
         title: String(title).slice(0, 100),
@@ -152,11 +153,11 @@ async function handleSchedulePublish(request, env) {
   if (!video_url) return json({ ok: false, error: 'missing_video_url' }, 400);
   const taskId = `pub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const results = {};
-  if (platforms.includes('youtube') && env.YOUTUBE_UPLOAD_WORKER_URL) {
+  if (platforms.includes('youtube') && env.YOUTUBE_UPLOAD_WORKER_URL && env.LTZZZ_AGENT_TOKEN) {
     try {
       const resp = await fetch(`${env.YOUTUBE_UPLOAD_WORKER_URL}/youtube/upload`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.LTZZZ_AGENT_TOKEN}` },
         body: JSON.stringify({ video_url, title, description, privacyStatus: privacyStatus === 'private' ? 'private' : 'public' }),
       });
       const body2 = await resp.json().catch(() => ({}));

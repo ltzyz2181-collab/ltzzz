@@ -65,7 +65,7 @@ if(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url){
     const {CdpClient}=await import('@coinbase/cdp-sdk');return new CdpClient(options);
   });
   fs.mkdirSync('knowledge/results/wallet',{recursive:true});
-  fs.writeFileSync(`knowledge/results/wallet/coinbase-${report.run_id}.json`,JSON.stringify(report,null,2)+'\n');
+  fs.writeFileSync(`knowledge/results/wallet/coinbase-${report.run_id}-attempt-${process.env.GITHUB_RUN_ATTEMPT||'1'}.json`,JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({status:report.status,address:report.address||null,missing:report.missing||[],transactions_submitted:0}));
   if(report.status!=='wallet_control_verified')process.exitCode=1;
 }
