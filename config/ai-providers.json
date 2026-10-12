@@ -37,9 +37,12 @@
       "note": "qianwen-proxy-worker.js consumes env.QWEN_API_KEY; stored in Cloudflare, not assumed in GitHub"
     },
     "kimi_domestic": {
-      "secret": "MOONSHOT_API_KEY",
-      "mode": "blocked_configuration",
-      "note": "Domestic screenshot balance is not proof that this executor has the corresponding key"
+      "secret": "MOONSHOT_API_KEY_CN",
+      "mode": "shared_gateway",
+      "module": "scripts/agi-econ/kimi-cn.mjs",
+      "gateway": "https://ltzzz-kimi-queue.ltzyz2181.workers.dev/generate",
+      "auth_secret": "LTZZZ_AGENT_TOKEN",
+      "note": "Gateway enforces concurrency 1 and minimum 21s start spacing. External/direct API callers must also route here to share the limit. Account tier and balance require actual provider receipts."
     },
     "kimi_global": {
       "secret": "KIMI_API_KEY",
