@@ -1,9 +1,9 @@
 # Kimi 低并发运行
 
-国内入口：https://ltzzz-kimi-queue.ltzyz2181.workers.dev/generate，POST OpenAI 风格 messages/max_tokens，Authorization 使用现有 LTZZZ_AGENT_TOKEN（执行器私密配置，不贴聊天或仓库）。/health 无鉴权，仅返回配置是否存在。
+仓库调用器：scripts/agi-econ/kimi-cn.mjs。先向 https://ltzzz-kimi-queue.ltzyz2181.workers.dev/reserve 申请共享执行租约，再由GitHub执行器使用自己的国内Key请求官方API，收到结果后调用 /release。鉴权用现有 LTZZZ_AGENT_TOKEN，模型Key仅从执行器Secret读取，不从网关导出。不使用已实测400的Worker模型转发。
 
-Durable Object 在入口统一执行并发1、至少21秒启动间隔；锁跨Worker实例共用。忙或RPM限制返回429+Retry-After，调用器最多3次总尝试、每次等待21–120秒，不无限重试。额度不足单独记录 quota_exhausted，打开1小时冷却；401不当过载、不重试；网络不确定结果不盲目重发。
+Durable Object统一并发1、至少21秒启动间隔，锁跨Worker实例共享。忙/RPM返回429+Retry-After，调用器最多3次租约申请、每次等待21–120秒。额度不足开1小时冷却；网络不确定保留330秒租约，不能假装任务成功或盲目重复生成。正常响应也仍需交付审计。
 
-仓库 AGI 子网 Kimi 国内日课已接这个入口，推送只跑测试、不运行付费日课。其他AI/旧代理/直接调用Moonshot的外部客户端尚不受这个入口约束，必须改为调用此地址才能共用锁，不能宣称已锁住所有外部调用。现有旧代理不被重配置。
+实际国内key余额13.516231元；同一请求已验证：thinking disabled时temperature必须0.6，使用1会400；改0.6后GitHub直连生成200且正常stop。境外key余额0不能推断国内赠金Key余额。部署验收完整租约/生成/释放结果见 knowledge/results/kimi/queue-*.json。
 
-不要求为少量串行任务升级Tier1。升级由平台确定，不自动充值、不新增模型定时任务。境外key余额0不能用于推断国内赠金key的额度。部署验收单次实际生成使用国内调用器相同的1500 token上限；遇400额外做一次相同请求的直连对照（实际用量以回执为准），验收以 knowledge/results/kimi/queue-*.json 为准；HTTP200探针不代表生成成功。
+只有接入共享租约的客户端受该锁约束。其他AI、旧代理、直接调用Moonshot的外部客户端必须接入同一协议才能共用限额；不宣称已控制所有外部调用。不重配置已上线旧代理或机器人，不自动充值/升级Tier1，不新增付费定时任务。

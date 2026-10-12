@@ -38,11 +38,11 @@
     },
     "kimi_domestic": {
       "secret": "MOONSHOT_API_KEY_CN",
-      "mode": "shared_gateway",
+      "mode": "shared_lease_native",
       "module": "scripts/agi-econ/kimi-cn.mjs",
-      "gateway": "https://ltzzz-kimi-queue.ltzyz2181.workers.dev/generate",
+      "gateway": "https://ltzzz-kimi-queue.ltzyz2181.workers.dev/reserve",
       "auth_secret": "LTZZZ_AGENT_TOKEN",
-      "note": "Gateway enforces concurrency 1 and minimum 21s start spacing. External/direct API callers must also route here to share the limit. Account tier and balance require actual provider receipts."
+      "note": "Reserve shared concurrency 1 / 21s lease, execute domestic provider in native executor, release matching lease. External direct callers are outside this limiter until integrated."
     },
     "kimi_global": {
       "secret": "KIMI_API_KEY",
