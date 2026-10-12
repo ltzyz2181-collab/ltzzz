@@ -24,7 +24,9 @@ export function verifyActionEvidence(root, task) {
     if (hash(JSON.stringify(unsigned, null, 2)) !== report_sha256 || task.audit.report_sha256 !== report_sha256 || receipt.audit_report_sha256 !== report_sha256) return false;
     const accepted = task.status === 'settled';
     if (audit.accepted !== accepted || task.audit.accepted !== accepted || receipt.accepted !== accepted) return false;
-    if (audit.model_audit && (audit.model_audit.status !== 'success' || audit.model_audit.did !== audit.auditor || audit.model_audit.accepted !== accepted)) return false;
+    // Historical deterministic audits are not proof of an independent model call.
+    if (audit.model_audit?.status !== 'success' || audit.model_audit.did !== audit.auditor || audit.model_audit.accepted !== accepted) return false;
+    if(receipt.auditor_model?.did!==audit.auditor||receipt.auditor_model.model!==audit.model_audit.model||receipt.auditor_model.accepted!==accepted)return false;
     if (accepted && (!audit.checks || !Object.values(audit.checks).every(x => x === true))) return false;
     return true;
   } catch { return false; }
