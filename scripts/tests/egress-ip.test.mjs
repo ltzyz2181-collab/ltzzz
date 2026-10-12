@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {ipv4FromMessage,observeRunnerEgress} from '../egress-ip.mjs';
+test('extracts only valid unique IPv4 from provider rejection, not raw errors',()=>{assert.deepEqual(ipv4FromMessage('Your IP 1.2.3.4 is not allowed; 1.2.3.4; invalid 999.2.3.4'),['1.2.3.4']);});
+test('collects run-scoped public observations and never labels them fixed IP',async()=>{const r=await observeRunnerEgress(async()=>new Response('1.2.3.4\n'));assert.deepEqual(r.ipv4_candidates,['1.2.3.4']);assert.equal(r.static_ip,false);assert.equal(r.observations.length,2);});
+test('network failures and invalid responses never become whitelist addresses',async()=>{assert.deepEqual((await observeRunnerEgress(async()=>{throw Error('offline');})).ipv4_candidates,[]);assert.deepEqual((await observeRunnerEgress(async()=>new Response('garbage'))).ipv4_candidates,[]);});
