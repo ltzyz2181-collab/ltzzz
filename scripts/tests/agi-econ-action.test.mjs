@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {actionProfile} from '../agi-econ/action-policy.mjs';
+test('Verified settlement earns bounded priority',()=>{let p=actionProfile(Array.from({length:30},()=>({status:'settled',audit:{accepted:true},deliverable:{sha256:'hash'}})));assert.equal(p.score,20);assert.equal(p.priority_multiplier,1.2);});
+test('Infrastructure and no-work do not punish inactivity',()=>{assert.equal(actionProfile([{status:'blocked'}]).score,0);assert.equal(actionProfile([]).score,0);});
+test('Quality failure and explicit missed deadline reduce priority',()=>{let p=actionProfile([{status:'slashed'},{status:'awarded',deadline_at:'2020-01-01'}]);assert.equal(p.score,-6);assert.equal(actionProfile([{status:'awarded'}]).score,0);});
+test('Withdrawn seats have no allocation priority; unverified output earns no reward',()=>{assert.equal(actionProfile([],{active:false}).priority_multiplier,0);assert.equal(actionProfile([{status:'settled'}]).score,0);});

@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { actionProfile } from './action-policy.mjs';
 
 export const MEMORY_GATE = [
   'ltzzz-memory/README.md', 'ltzzz-memory/重要事件.md', 'ltzzz-memory/项目历史.md',
@@ -71,8 +72,11 @@ export class Subnet {
   }
   award(taskId) {
     const t = this.state.tasks[taskId]; if (!t || t.status !== 'open') throw new Error('task_not_open'); if (!t.bids.length) throw new Error('no_bids');
-    // score = reputation / ask  (cheap + trusted wins); tie -> earlier bid
-    const win = [...t.bids].sort((a, b) => b.reputation / b.ask_usd - a.reputation / a.ask_usd)[0];
+    // Accepted action history adjusts priority at most ±20%; no funds or reputation rewritten.
+    const profile = did => actionProfile(Object.values(this.state.tasks).filter(x => x.worker === did), {now: Date.parse(this.now()),active:this.state.agents[did]?.status==='active'});
+    const score = bid => bid.reputation * profile(bid.worker).priority_multiplier / bid.ask_usd;
+    const win = [...t.bids].sort((a, b) => score(b) - score(a))[0];
+    t.action_incentive = {worker:win.worker,...profile(win.worker),real_money_penalty:false};
     t.worker = win.worker; t.price_usd = win.ask_usd; t.status = 'awarded'; this.log('award', { task: t.id, worker: win.worker, price: win.ask_usd }); return win;
   }
   deliver(taskId, worker, content) {
