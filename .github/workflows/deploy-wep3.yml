@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['wep3-worker.js', 'wep3-market.js', 'wep3-base-payment.js', 'wep3-x402.js', 'wep3-economy.js', 'wep3-forecast.js', 'wep3-agents.js', 'wep3-anchor.js', 'package.json', 'package-lock.json', 'scripts/tests/wep3-autonomous.test.mjs', 'scripts/tests/wep3-market.test.mjs', 'scripts/fulfill-market-orders.mjs', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs', 'scripts/provision-wep3-treasury.mjs']
+    paths: ['wep3-worker.js', 'wep3-market.js', 'wep3-base-payment.js', 'wep3-x402.js', 'wep3-economy.js', 'wep3-forecast.js', 'wep3-agents.js', 'wep3-anchor.js', 'wep3-aave.js', 'scripts/run-treasury-aave.mjs', 'scripts/tests/wep3-aave.test.mjs', 'package.json', 'package-lock.json', 'scripts/tests/wep3-autonomous.test.mjs', 'scripts/tests/wep3-market.test.mjs', 'scripts/fulfill-market-orders.mjs', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs', 'scripts/provision-wep3-treasury.mjs']
 permissions: {contents: write}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts
-      - run: node --check wep3-worker.js && node --test scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs
+      - run: node --check wep3-worker.js && node --test scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs scripts/tests/wep3-aave.test.mjs
       - run: npm install --no-save wrangler@4
       - name: Deploy and retain service authentication
         env:
@@ -85,6 +85,10 @@ jobs:
           DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
           DOUBAO_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
         run: node scripts/accept-real-hire.mjs
+      - name: Verify Aave balances without signing
+        env:
+          AAVE_ACTION: status
+        run: node scripts/run-treasury-aave.mjs
       - name: Fulfill at most one paid customer order
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
