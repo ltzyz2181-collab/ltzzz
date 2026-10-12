@@ -24,7 +24,9 @@ export async function marketRoute(request,env){
   if(!path.startsWith('/market/')&&path!=='/skill/register')return null;
   if(request.method==='OPTIONS')return reply({ok:true});
   if(!env.MARKET)return reply({ok:false,error:'market_storage_not_deployed'},503);
-  return env.MARKET.get(env.MARKET.idFromName('ltzzz-market-v1')).fetch(request);
+  // Always replace caller context; only this Worker can supply current deployment secrets to its DO.
+  const forwarded=new Headers(request.headers);const context={};for(const key of ['LAB_PIN','WEP3_RUNNER_TOKEN','TREASURY_EXECUTOR_KEY','X402_RECEIVE_ADDRESS','X402_LIVE','BASE_RPC_URL','STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET'])context[key]=env[key]||'';forwarded.set('X-LTZZZ-Worker-Context',JSON.stringify(context));
+  return env.MARKET.get(env.MARKET.idFromName('ltzzz-market-v1')).fetch(new Request(request,{headers:forwarded}));
 }
 export class Market {
   constructor(state,env){this.state=state;this.env=env;this.tail=Promise.resolve();}
@@ -36,6 +38,7 @@ export class Market {
   async quote(book,skill){const tape=book.tape.filter(x=>x.skill===skill.id&&x.live).slice(-21).map(x=>x.price_cents).sort((a,b)=>a-b);let median=tape.length?(tape[Math.floor((tape.length-1)/2)]+tape[Math.ceil((tape.length-1)/2)])/2:skill.price_cents;const reputation=await this.score(skill.agent);const backlog=Object.values(book.orders).filter(o=>o.skill===skill.id&&o.live&&['queued','processing'].includes(o.status)).length;return {skill:skill.id,agent:skill.agent,title:skill.title,reputation,price_cents:demandPrice(median,reputation,backlog),backlog,currency:'usd',price_source:tape.length?'live_trade_median_and_reputation':'registered_price_and_reputation'};}
   publicOrder(order){const {access_hash,lease_token,payment_payload,payment_signature_hash,requirements,...visible}=order;return visible;}
   async handle(request){
+    const context=request.headers.get('X-LTZZZ-Worker-Context');if(context){const current=JSON.parse(context);this.env={...this.env,...current};}
     const u=new URL(request.url),p=u.pathname,book=await this.read();
     if(p==='/market/treasury'&&request.method==='GET')return reply(await treasuryProof(this.env));
     if(p.startsWith('/market/skill/'))return standardX402(this,request,book);

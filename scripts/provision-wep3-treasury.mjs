@@ -14,7 +14,10 @@ try{
   if(!process.env.CLOUDFLARE_API_TOKEN)throw Error('deployment_credentials_missing');
   stage='wallet_generation';const w=Wallet.createRandom();
   stage='secret_write';
-  const cmd=spawnSync('npx',['wrangler','secret','bulk','-c','wrangler.wep3.toml'],{input:JSON.stringify({TREASURY_EXECUTOR_KEY:w.privateKey,X402_RECEIVE_ADDRESS:w.address,X402_LIVE:'1'}),encoding:'utf8',stdio:['pipe','pipe','pipe']});
+  const temporary='/tmp/ltzzz-treasury-'+process.env.GITHUB_RUN_ID+'.json';
+  fs.writeFileSync(temporary,JSON.stringify({TREASURY_EXECUTOR_KEY:w.privateKey,X402_RECEIVE_ADDRESS:w.address,X402_LIVE:'1'}),{mode:0o600});
+  let cmd;try{cmd=spawnSync('npx',['wrangler','secret','bulk',temporary,'-c','wrangler.wep3.toml'],{encoding:'utf8',stdio:['pipe','pipe','pipe']});}finally{fs.unlinkSync(temporary);}
+  report.secrets_reported_created=(cmd.stdout||'').match(/Successfully created secret for key: [A-Z_]+/g)?.map(s=>s.split(': ').at(-1))||[];
   report.secret_command_exit_status=cmd.status;
   if(cmd.status!==0){report.secret_command_error_category=/unknown argument/i.test(cmd.stderr||'')?'cli_argument':/authenticate|permission|unauthorized/i.test(cmd.stderr||'')?'permission':/json|stdin/i.test(cmd.stderr||'')?'input_format':'other';throw Error('treasury_secret_write_failed');}
   stage='ownership_verification';
