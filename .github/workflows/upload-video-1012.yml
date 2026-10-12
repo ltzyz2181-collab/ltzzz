@@ -1,0 +1,28 @@
+name: Upload Video 2026-10-12 to R2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/upload-video-1012.yml'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify assets
+        run: |
+          ls -la videos/2026-10-12-ai-treasury-proof.mp4
+          cat videos/2026-10-12-ai-treasury-proof.meta.json
+      - name: Put mp4 to R2 queue
+        run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-12-ai-treasury-proof.mp4" --file videos/2026-10-12-ai-treasury-proof.mp4 --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Put meta to R2 queue
+        run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-12-ai-treasury-proof.meta.json" --file videos/2026-10-12-ai-treasury-proof.meta.json --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
