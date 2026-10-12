@@ -37,4 +37,4 @@ PayAI当前主网可用，无需Coinbase Business或Wallet Secret。额度与收
 锚定脚本不扫描旧私钥文档、不使用泄露旧钱包；没有Treasury签名Key/没有live回执则只出阻塞回执。退款/交易未知进入可见复议，不把账本credit说成链上工资。资金池额度及API成本存在现实约束，不能保证投资收益维持运营。
 
 ## 验收证据
-22项测试：scripts/tests/wep3-autonomous.test.mjs +既有支付测试；wrangler dry-run通过。实际部署和钱包签名回执由GitHub Actions写knowledge/results/wep3，以实际成功回执为准。
+23项测试：scripts/tests/wep3-autonomous.test.mjs +既有支付测试；wrangler dry-run通过。实际部署和钱包签名回执由GitHub Actions写knowledge/results/wep3，以实际成功回执为准。
