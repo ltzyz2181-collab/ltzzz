@@ -36,6 +36,8 @@ jobs:
           DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: node scripts/fulfill-market-orders.mjs
+      - name: Bounded Aave cycle (wait when USDC or gas missing)
+        run: node scripts/run-treasury-aave.mjs
       - name: Weekly public snapshot anchoring with Worker treasury signer
         run: node scripts/anchor-market-snapshot.mjs
       - name: Save actual receipts

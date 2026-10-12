@@ -1,0 +1,105 @@
+{
+  "created_at": "2026-10-12T09:54:55.081Z",
+  "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+  "executed": false,
+  "tx_hash": null,
+  "notes": [
+    "Unsigned proposals only. No private keys read; no transactions sent.",
+    "Ethereum transfers remain Ethereum assets; bridging is a separate operation."
+  ],
+  "safe": {
+    "chain_id": 1,
+    "address": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+    "owners": [
+      "0xb99C6751f443842F4987bb2017580405572Df905",
+      "0xD834a769b31447daf5a042009CF06fAFCE7e2F51",
+      "0x01B80610D88E96C9888a19e30D73Abbe5E6E7D4C",
+      "0x68B81beAE18433A85a8feD67dE8EDfB717e279a7",
+      "0x394103e5E846f709CE5126c203b1EF38D7cA70a6"
+    ],
+    "threshold": 3,
+    "nonce": "6",
+    "balances": {
+      "ETH": "0.005",
+      "USDT": "49.02",
+      "USDC": "0.0"
+    },
+    "signature_status": "missing",
+    "execution_gas_paid_by_executor": true
+  },
+  "safe_builder": {
+    "version": "1.0",
+    "chainId": "1",
+    "createdAt": 1791798906804,
+    "meta": {
+      "name": "LTZZZ Safe to controlled treasury",
+      "description": "Owner-authorized recovery; re-read nonce and balances before signing.",
+      "txBuilderVersion": "1.18.0",
+      "createdFromSafeAddress": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+      "createdFromOwnerAddress": ""
+    },
+    "transactions": [
+      {
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "value": "0",
+        "data": "0xa9059cbb0000000000000000000000005df57a78e0a13df2ae983bdad69cfcbd3dd7a32d0000000000000000000000000000000000000000000000000000000002ebfc60",
+        "contractMethod": null,
+        "contractInputsValues": null
+      },
+      {
+        "to": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "value": "5000000000000000",
+        "data": "0x",
+        "contractMethod": null,
+        "contractInputsValues": null
+      }
+    ]
+  },
+  "legacy": {
+    "chain_id": 8453,
+    "guardian": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+    "vault": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
+    "balances": {
+      "vault_aUSDC": "20.015723",
+      "vault_USDC": "0.0",
+      "guardian_USDC": "18.995",
+      "guardian_ETH": "0.010280265300552586"
+    },
+    "status": "prepared_not_executed",
+    "sequential_calls": [
+      {
+        "to": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
+        "value": "0",
+        "data": "0xdb81f99bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "requires": "guardian signature; withdraw all; wait status=1 and 3 confirmations"
+      },
+      {
+        "to": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
+        "value": "0",
+        "data": "0x1dd19cb4",
+        "requires": "re-read exposure and Vault balance; skim to fixed old guardian"
+      },
+      {
+        "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "method": "transfer",
+        "args": [
+          "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "RE_READ_GUARDIAN_USDC_BALANCE"
+        ],
+        "requires": "encode actual post-skim balance, never precomputed amount"
+      },
+      {
+        "to": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "value": "2000000000000000",
+        "data": "0x",
+        "requires": "optional 0.002 Base ETH gas; only if guardian has balance plus execution fee"
+      }
+    ],
+    "completion_requires": [
+      "all tx hashes and receipts status=1",
+      "fresh treasury USDC/ETH increases",
+      "old Vault aUSDC/cash checked for dust",
+      "old guardian balance checked; no new funds into old addresses"
+    ]
+  }
+}
