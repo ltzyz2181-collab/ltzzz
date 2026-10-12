@@ -40,6 +40,7 @@ export class Market {
   async handle(request){
     const context=request.headers.get('X-LTZZZ-Worker-Context');if(context){const current=JSON.parse(context);this.env={...this.env,...current};}
     const u=new URL(request.url),p=u.pathname,book=await this.read();
+    if(p==='/market/runner/readiness'&&request.method==='GET')return reply({ok:true,authenticated:this.admin(request),runner_configured:Boolean(this.env.WEP3_RUNNER_TOKEN),runner_type:typeof this.env.WEP3_RUNNER_TOKEN,supplied_length:(request.headers.get('X-Lab-Pin')||'').length,runner_length:String(this.env.WEP3_RUNNER_TOKEN||'').length});
     if(p==='/market/treasury'&&request.method==='GET')return reply(await treasuryProof(this.env));
     if(p.startsWith('/market/skill/'))return standardX402(this,request,book);
     if(p==='/market/agents/apply'&&request.method==='POST'){const result=await agentApplication(this,request,book);return reply(result,result.ok?202:422);}
