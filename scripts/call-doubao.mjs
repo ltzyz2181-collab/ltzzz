@@ -49,7 +49,7 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   }
   const data = await resp.json();
   const output = (data.content?.[0]?.text || "").trim();
-  return { kind: "ok", output, tokens_used: data.usage?.input_tokens || 0 };
+  return { kind: "ok", output, finish_reason: data.stop_reason, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0) };
 }
 
 export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
@@ -58,10 +58,10 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
   const mdl = model || MODEL();
   try {
     const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl, maxTokens);
-    if (r1.kind === "ok") return { ok: true, status: "success", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used };
+    if (r1.kind === "ok") return { ok: true, status: "success", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used, model: mdl };
     if (r1.kind === "unsupported") {
       const r2 = await tryAnthropicCompatible(apiKey, prompt, base, mdl, maxTokens);
-      if (r2.kind === "ok") return { ok: true, status: "success", output: r2.output, tokens_used: r2.tokens_used };
+      if (r2.kind === "ok") return { ok: true, status: "success", output: r2.output, finish_reason:r2.finish_reason, tokens_used: r2.tokens_used, model: mdl };
       return { ok: false, status: "api_error", error: `openai-style 404/405，anthropic-style HTTP ${r2.status}: ${r2.text}` };
     }
     return { ok: false, status: "api_error", error: `HTTP ${r1.status}: ${r1.text}` };

@@ -33,7 +33,7 @@ jobs:
           node-version: '20'
 
       - name: Test execution, delivery, and economic status classification
-        run: node --test scripts/tests/task-outcome.test.mjs
+        run: node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs
 
       - name: Preflight — 当日是否已产出（幂等）
         id: preflight
@@ -70,7 +70,7 @@ jobs:
           git commit -m "daily agent tasks $(TZ=Asia/Shanghai date +%Y-%m-%d)"
           # 防与其他写工作流冲突：先 rebase 再推
           git fetch origin main
-          git rebase origin/main || true
+          git rebase origin/main
           git push origin HEAD:main
 
       - name: Postflight — 产出校验

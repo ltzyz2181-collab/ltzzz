@@ -1,4 +1,5 @@
 export function classifyTaskOutcome({ status, hasOutput = false }) {
+  if(status==='incomplete_output')return {execution_status:'response_received_incomplete',delivery_status:'rejected_incomplete',economic_status:'not_applicable_no_financial_action'};
   if (status === "disabled_by_owner") {
     return {
       execution_status: "not_executed_owner_disabled",

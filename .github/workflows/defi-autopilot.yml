@@ -18,19 +18,18 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm install --no-save ethers@6.17.0
-      - name: Observe daily and run authorized 1 USDC pilot on Tuesday only
+      - name: Observe quarantined legacy Vault (no signing)
         env:
-          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}
         run: |
-          if [ "$(TZ=Asia/Shanghai date +%u)" = '2' ]; then export LTZZZ_AUTOPILOT_EXECUTE=1; fi
           node scripts/defi-autopilot.mjs
+          node scripts/audit-legacy-vault.mjs
       - name: Save all chain observations and transaction status
         if: always()
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/defi/
+          git add knowledge/results/defi/ knowledge/results/security/
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'DeFi automated pilot actual chain data'
           git fetch origin main

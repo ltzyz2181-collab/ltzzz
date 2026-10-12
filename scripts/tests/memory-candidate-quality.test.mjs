@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {substantiveClaim,candidateImpact} from '../../tools/memory-candidate-quality.mjs';
+test('writer and dry-run metadata never qualify as high-impact claims',()=>{for(const s of ['- mode: dry-run / inspect only','- writer: GitHub Actions patrol (T022)','- 执行者：千问（临时总控，did:ltzzz:qianwen）'])assert.equal(substantiveClaim(s),false);assert.equal(candidateImpact('ordinary observation of a template'),'low');});
+test('funding risk statement can qualify but remains only a candidate',()=>assert.equal(substantiveClaim('旧 Vault guardian 对应曾泄露地址，新增资金入口必须隔离并复核余额。'),true));
