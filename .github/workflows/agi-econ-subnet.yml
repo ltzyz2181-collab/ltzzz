@@ -25,13 +25,17 @@ jobs:
         with:
           node-version: 20
       - name: Tests
-        run: node --test scripts/tests/agi-econ.test.mjs scripts/tests/agi-econ-recovery.test.mjs scripts/tests/agi-econ-action.test.mjs
+        run: |
+          mkdir -p work
+          node --test --test-reporter=tap scripts/tests/agi-econ.test.mjs scripts/tests/agi-econ-recovery.test.mjs scripts/tests/agi-econ-action.test.mjs > work/action-tests.tap
+          cat work/action-tests.tap
       - name: Persist owner role withdrawal and code acceptance
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';import {Subnet} from './scripts/agi-econ/subnet.mjs';
           const s=new Subnet(process.cwd());s.save();fs.mkdirSync('results/agi-econ',{recursive:true});
-          fs.writeFileSync('results/agi-econ/code-acceptance-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,tests_passed:17,claude_status:s.state.agents['did:ltzzz:claude']?.status||'not_registered',new_role_seed_allowed:false,push_model_calls:0,real_wage_paid:false,tx_hash:null},null,2));
+          const tap=fs.readFileSync('work/action-tests.tap','utf8');const count=Number(tap.match(/^# pass (\d+)$/m)?.[1]||0);if(!count||!/^# fail 0$/m.test(tap))throw Error('test result missing or failed');
+          fs.writeFileSync('results/agi-econ/code-acceptance-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,tests_passed:count,claude_status:s.state.agents['did:ltzzz:claude']?.status||'not_registered',new_role_seed_allowed:false,push_model_calls:0,real_wage_paid:false,tx_hash:null},null,2));
           JS
       - name: Run cycle (ledger only; real worker models + independent model audit + settlement gate)
         if: github.event_name != 'push'

@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
+      - name: Test post recovery without model calls
+        run: node --test scripts/tests/x-post-recovery.test.mjs
       - name: Refresh X OAuth2 token (rotate into worker; masked)
         env:
           TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
