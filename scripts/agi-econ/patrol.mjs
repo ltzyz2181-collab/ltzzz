@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import {actionProfile} from './action-policy.mjs';
+import {verifyActionEvidence} from './action-evidence.mjs';
 export function patrol(root=process.cwd()){
  const state=JSON.parse(fs.readFileSync(root+'/data/agi-econ/state.json','utf8'));
  const out=[];
@@ -19,7 +21,9 @@ export function patrol(root=process.cwd()){
    verified.push({task:t.id,status:t.status});
   }
   const wins=verified.filter(x=>x.status==='settled').length,fails=verified.filter(x=>x.status==='slashed').length;
-  out.push({did,status:agent.status,reputation:agent.reputation,verified_wins:wins,verified_quality_failures:fails,infrastructure_blocks:blocked,issues,review_required:issues.length>0||fails>=3,credit_limit_recommendation:issues.length>0||fails>=3?'review_before_new_budget':'existing_policy',automatic_penalty_applied:false});
+  const action=actionProfile(tasks,{active:agent.status==='active',verify:t=>verifyActionEvidence(root,t)});
+  const review=issues.length>0||action.status==='review_required'||action.unverified>0;
+  out.push({did,status:agent.status,reputation:agent.reputation,verified_wins:wins,verified_quality_failures:fails,infrastructure_blocks:blocked,action_profile:action,issues,review_required:review,credit_limit_recommendation:review?'review_before_new_budget':'existing_policy',automatic_penalty_applied:false});
  }
  return {at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID||'local',window:'last 20 worker tasks per DID',model_calls:0,real_funds_moved:false,seats:out};
 }

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { actionProfile } from './action-policy.mjs';
+import { verifyActionEvidence } from './action-evidence.mjs';
 
 export const MEMORY_GATE = [
   'ltzzz-memory/README.md', 'ltzzz-memory/重要事件.md', 'ltzzz-memory/项目历史.md',
@@ -68,14 +69,21 @@ export class Subnet {
     const w = this.role(worker, 'worker');
     if (w.reputation < RULES.min_rep_to_bid) throw new Error('reputation_too_low');
     if (!(ask_usd > 0) || ask_usd > t.budget_usd) throw new Error('ask_over_budget');
+    t.bids=t.bids.filter(b=>b.worker!==worker);
     t.bids.push({ worker, ask_usd: r6(ask_usd), reputation: w.reputation, at: this.now() }); return t.bids;
   }
   award(taskId) {
     const t = this.state.tasks[taskId]; if (!t || t.status !== 'open') throw new Error('task_not_open'); if (!t.bids.length) throw new Error('no_bids');
     // Accepted action history adjusts priority at most ±20%; no funds or reputation rewritten.
-    const profile = did => actionProfile(Object.values(this.state.tasks).filter(x => x.worker === did), {now: Date.parse(this.now()),active:this.state.agents[did]?.status==='active'});
+    const profiles=new Map();
+    const profile = did => {
+      if(!profiles.has(did))profiles.set(did,actionProfile(Object.values(this.state.tasks).filter(x=>x.worker===did),{now:Date.parse(this.now()),active:this.state.agents[did]?.status==='active',verify:task=>verifyActionEvidence(this.root,task)}));
+      return profiles.get(did);
+    };
     const score = bid => bid.reputation * profile(bid.worker).priority_multiplier / bid.ask_usd;
-    const win = [...t.bids].sort((a, b) => score(b) - score(a))[0];
+    const eligible=t.bids.filter(b=>this.state.agents[b.worker]?.status==='active'&&profile(b.worker).status==='eligible');
+    if(!eligible.length)throw new Error('no_eligible_bids_review_required');
+    const win = eligible.sort((a, b) => score(b) - score(a))[0];
     t.action_incentive = {worker:win.worker,...profile(win.worker),real_money_penalty:false};
     t.worker = win.worker; t.price_usd = win.ask_usd; t.status = 'awarded'; this.log('award', { task: t.id, worker: win.worker, price: win.ask_usd }); return win;
   }
@@ -85,6 +93,15 @@ export class Subnet {
     fs.mkdirSync(path.dirname(abs), { recursive: true }); fs.writeFileSync(abs, content);
     t.deliverable = { path: rel, sha256: sha256(content), bytes: Buffer.byteLength(content) }; t.status = 'delivered';
     this.log('deliver', { task: t.id, sha256: t.deliverable.sha256 }); return t.deliverable;
+  }
+  acknowledge(taskId, worker, deadline) {
+    const t=this.state.tasks[taskId];this.role(worker,'worker');
+    if(!t||t.status!=='awarded'||t.worker!==worker)throw new Error('not_awarded_worker');
+    if(t.acknowledged_at)throw new Error('already_acknowledged');
+    const at=this.now();
+    if(!Number.isFinite(Date.parse(deadline))||Date.parse(deadline)<=Date.parse(at))throw new Error('invalid_future_deadline');
+    t.acknowledged_at=at;t.acknowledged_by=worker;t.deadline_at=deadline;
+    this.log('acknowledge',{task:taskId,worker,deadline});return t;
   }
   memoryGateDigest() {
     return MEMORY_GATE.map((p) => { const abs = path.join(this.root, p); return fs.existsSync(abs) ? { path: p, sha256: sha256(fs.readFileSync(abs)) } : { path: p, missing: true }; });
