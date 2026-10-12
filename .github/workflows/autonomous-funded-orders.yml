@@ -21,7 +21,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           node - <<'JS'
-          const fs=require('fs'),crypto=require('crypto');const token=crypto.randomBytes(32).toString('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\n');fs.writeFileSync('/tmp/ltzzz-runner-secret.json',JSON.stringify({WEP3_RUNNER_TOKEN:token}),{mode:0o600});
+          const fs=require('fs'),crypto=require('crypto');const token=crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\n');fs.writeFileSync('/tmp/ltzzz-runner-secret.json',JSON.stringify({WEP3_RUNNER_TOKEN:token}),{mode:0o600});
           JS
           npx wrangler@4 secret bulk /tmp/ltzzz-runner-secret.json -c wrangler.wep3.toml
           node -e "require('fs').unlinkSync('/tmp/ltzzz-runner-secret.json')"
