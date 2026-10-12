@@ -13,6 +13,6 @@ export async function kimiCall({ apiKey, prompt, maxTokens }) {
     if (!r.ok) return { ok: false, status: 'api_error', error: `HTTP ${r.status}: ${JSON.stringify(j).slice(0, 200)}` };
     const output = (j.choices?.[0]?.message?.content || '').trim();
     if (!output) return { ok: false, status: 'empty_output', error: `finish_reason=${j.choices?.[0]?.finish_reason}（推理模型可能耗尽 max_tokens）`, tokens_used: j.usage?.total_tokens || 0, model: j.model || process.env.KIMI_CN_MODEL || 'kimi-k2.6' };
-    return { ok: true, status: 'success', output, finish_reason: j.choices?.[0]?.finish_reason, tokens_used: j.usage?.total_tokens || 0 };
+    return { ok: true, status: 'success', output, finish_reason: j.choices?.[0]?.finish_reason, model: j.model || process.env.KIMI_CN_MODEL || 'kimi-k2.6', tokens_used: j.usage?.total_tokens || 0 };
   } catch (e) { return { ok: false, status: 'exception', error: String(e) }; }
 }
