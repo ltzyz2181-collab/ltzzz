@@ -11,7 +11,7 @@ on:
         default: draft
   push:
     branches: [main]
-    paths: ['.github/workflows/deploy-wechat-publishing.yml','scripts/tests/wechat-publishing.test.mjs']
+    paths: ['.github/workflows/deploy-wechat-publishing.yml','scripts/tests/wechat-publishing.test.mjs','ltzzz-wechat-publisher-worker.js']
 permissions: {contents: write}
 concurrency: {group: channel-bots-deploy, cancel-in-progress: false}
 jobs:
@@ -37,11 +37,14 @@ jobs:
           rm /tmp/wechat-admin.json
       - name: Retry draft with account-scoped token reuse
         env:
-          ARTICLE_DATE: ${{ inputs.date || '2026-10-10' }}
+          ARTICLE_DATE: ${{ inputs.date || '' }}
           PUBLISH_MODE: ${{ inputs.mode || 'draft' }}
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
+          const dates=fs.readdirSync('content/daily-articles').filter(x=>/^\d{4}-\d{2}-\d{2}\.md$/.test(x)).sort();
+          process.env.ARTICLE_DATE=process.env.ARTICLE_DATE||dates.at(-1)?.slice(0,10);
+          if(!process.env.ARTICLE_DATE)throw Error('No committed article available');
           const base='https://ltzzz-wechat-publisher.ltzyz2181.workers.dev';
           const health=await(await fetch(base+'/health')).json();
           let response,body;

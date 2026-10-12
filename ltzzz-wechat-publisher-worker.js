@@ -252,7 +252,7 @@ async function getAccessToken(env) {
   const scope=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(env.WECHAT_APP_ID));
   const key='wechat/private/token-'+Array.from(new Uint8Array(scope)).map(x=>x.toString(16).padStart(2,'0')).join('')+'.json';
   try{const cached=await env.MEMORY_BUCKET?.get(key);if(cached){const value=JSON.parse(await cached.text());if(value.access_token&&value.expires_at>Date.now()+120000)return value.access_token;}}catch{}
-  let last;
+  let last;const deniedIps=new Set();
   for(let attempt=0;attempt<3;attempt++){
     const r=await fetch("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid="+encodeURIComponent(env.WECHAT_APP_ID)+"&secret="+encodeURIComponent(env.WECHAT_APP_SECRET),{signal:AbortSignal.timeout(20000)});
     const j=await r.json();
@@ -261,7 +261,9 @@ async function getAccessToken(env) {
       return j.access_token;
     }
     const e=new Error("WeChat token rejected");
-    e.platform={endpoint:"token",http:r.status,errcode:j.errcode??null,whitelist_ip:(String(j.errmsg||"").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)||[])[0]||null,errmsg:String(j.errmsg||"No access_token").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
+    const ip=(String(j.errmsg||"").match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)||[])[0]||null;
+    if(j.errcode===40164&&ip)deniedIps.add(ip);
+    e.platform={endpoint:"token",http:r.status,errcode:j.errcode??null,whitelist_ip:ip,whitelist_ips:[...deniedIps],static_ip:false,errmsg:String(j.errmsg||"No access_token").replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g,"[IP redacted]").slice(0,300)};
     last=e;if(j.errcode!==40164)break;
   }
   throw last;
