@@ -1,6 +1,6 @@
 # 连续任务记录：1U 验证、五签准备、个人 Aave 200U 拨款与运营归还
 
-任务编号：OWNER-CONT-20261011-200U。记录日期：2026-10-11（America/Tijuana）；已查阅回执中部分时间为 2026-10-12 UTC / 北京时间。记录者：GPT/Codex，接续整理、审查和追踪。源码核对基线：`ea53bb9`。
+任务编号：OWNER-CONT-20261011-200U。记录日期：2026-10-11（America/Tijuana）；已查阅回执中部分时间为 2026-10-12 UTC / 北京时间。记录者：GPT/Codex，接续整理、审查和追踪。源码核对基线：`ea53bb9`；提交前补查 `db9b532` 新增回执。
 
 状态：owner 已授权连续安排；具体转账仍待源钱包、网络、资产和对应签署条件。本文是授权与任务登记，不是交易回执。**本轮未提款、未转账、未签名、未下投资订单、未重部署，也未调用付费模型。** 后续无需 owner 重述已经明确的授权；缺少具体交易参数时不能用猜测替代。
 
@@ -29,6 +29,7 @@
 | 豆包恢复 | `data/results/2026-10-12.json`，run `38190434746`，doubao task success，failures 空；owner 本次也报告恢复 | API/文字交付已恢复；不证明个人钱包、Safe 或 Aave 授权完成 |
 | WEP3/运营金库 | `knowledge/results/wep3/treasury-38191829720.json`：复用 `0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d`，`eip155:8453`，controlled true | 已有 Base 受控地址；此回执无资金交易 hash，也没有证明当前余额。工程席优先核对并复用，不再次生成金库或替换 Secret |
 | 服务已运行 | `knowledge/results/wep3/38191829720.json`：health 200、runner authenticated true、标准 x402 402 | 服务可用。测试付款 live=false、real_hire_verified=false、live_revenue_cents=0；不能计真实工资或销售收入 |
+| 提交前新增交付 | `hire-38192665894.json`：Doubao交付、GPT审核 accepted=true、internal_credit_settled，paid=false、tx_hash=null；`treasury-38192665894.json`仍复用同一金库 | 新增内部积分结算进一步证明豆包交付恢复；不是本轮Codex触发，也不是1U真钱试单、200U拨款或链上工资。该部署回执live_revenue_cents仍为0 |
 | 外部交付/快照 | `market-38191972893.json`：model_calls=0、orders=[]；`snapshot-38191972893.json`：no_live_receipts | 该次没有实际付费订单处理或链上快照交易 |
 | 个人 Aave 拨款 | 最新 `knowledge/results/funding/38186408170.json`：blocked_configuration；缺 FUNDING_OWNER/FUNDING_TREASURY/FUNDING_EXECUTOR_KEY，deployed=false，tx_hash=null | 截至该回执，router 未部署、个人首次授权和拨款未完成。受控 WEP3 金库已存在不等于 funding 配置已接上 |
 | 旧 Aave 20USDC 实验 | `knowledge/results/defi/38131446697.json`：verified_read_only，旧钱包 0x21F5…、20USDC 敞口、transactions=[] | 是旧实验只读快照，不是 owner 个人 200U 提款；旧钱包已被项目标记为泄露，不能继续复用其凭据 |
