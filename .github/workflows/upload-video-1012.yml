@@ -16,13 +16,25 @@ jobs:
         run: |
           ls -la videos/2026-10-12-ai-treasury-proof.mp4
           cat videos/2026-10-12-ai-treasury-proof.meta.json
-      - name: Put mp4 to R2 queue
-        run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-12-ai-treasury-proof.mp4" --file videos/2026-10-12-ai-treasury-proof.mp4 --remote
+      - name: Avoid requeueing already published video
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file='videos/2026-10-12-ai-treasury-proof.mp4';
+          const published=fs.readdirSync('results/publishing').filter(n=>n.startsWith('youtube-')&&n.endsWith('.json')).some(n=>{
+            const r=JSON.parse(fs.readFileSync('results/publishing/'+n,'utf8'));
+            return r.file===file&&r.response?.ok===true&&Boolean(r.response?.video_id);
+          });
+          fs.appendFileSync(process.env.GITHUB_ENV,'VIDEO_PREFIX='+(published?'published':'queue')+'\n');
+          console.log(published?'Archiving existing published video; no second publication queued':'Queueing unpublished video');
+          JS
+      - name: Put mp4 to R2
+        run: npx wrangler r2 object put "ltzzz-videos/${VIDEO_PREFIX}/2026-10-12-ai-treasury-proof.mp4" --file videos/2026-10-12-ai-treasury-proof.mp4 --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Put meta to R2 queue
-        run: npx wrangler r2 object put "ltzzz-videos/queue/2026-10-12-ai-treasury-proof.meta.json" --file videos/2026-10-12-ai-treasury-proof.meta.json --remote
+        run: npx wrangler r2 object put "ltzzz-videos/${VIDEO_PREFIX}/2026-10-12-ai-treasury-proof.meta.json" --file videos/2026-10-12-ai-treasury-proof.meta.json --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
