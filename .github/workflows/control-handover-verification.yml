@@ -2,7 +2,7 @@ name: Control handover Meta Kimi and DeFi verification
 on:
   push:
     branches: [main]
-    paths: ['workers/meta-worker/**', 'workers/kimi-domestic/**', 'wrangler.meta-hosted.toml', 'wrangler.kimi-domestic.toml', 'scripts/verify-meta-hosted.mjs', 'scripts/kimi-two-region-diagnostic.mjs', 'scripts/defi-roundtrip.mjs', '.github/workflows/control-handover-verification.yml']
+    paths: ['workers/meta-worker/**', 'workers/kimi-domestic/**', 'wrangler.meta-hosted.toml', 'wrangler.kimi-domestic.toml', 'scripts/verify-meta-hosted.mjs', 'scripts/kimi-two-region-diagnostic.mjs', '.github/workflows/control-handover-verification.yml']
   workflow_dispatch:
 permissions: {contents: write}
 concurrency:
@@ -19,12 +19,14 @@ jobs:
         with: {node-version: '22'}
       - run: npm install --no-save ethers@6.17.0 wrangler@4
       - name: Inspect domestic and international Kimi separately
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         env:
           MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
           KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
         run: node scripts/kimi-two-region-diagnostic.mjs
       - name: Deploy authenticated hosted Meta and separate domestic Kimi
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -53,13 +55,12 @@ jobs:
           fi
           rm -f /tmp/meta-auth.json /tmp/kimi-auth.json
       - name: Verify real Meta inference and unauthorized rejection
-        if: env.META_WORKER_URL != ''
+        if: github.event_name == 'workflow_dispatch' && env.META_WORKER_URL != ''
         continue-on-error: true
         run: node scripts/verify-meta-hosted.mjs
-      - name: Verify balances and execute 1 USDC Vault supply redeem roundtrip
+      - name: Observe quarantined legacy Vault without signing
         continue-on-error: true
         env:
-          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}
         run: node scripts/defi-roundtrip.mjs
       - name: Upload receipts even when a business step is blocked
