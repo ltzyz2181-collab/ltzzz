@@ -3,6 +3,7 @@ name: AGI Econ Subnet Cycle (ledger mode)
 on:
   schedule:
     - cron: "40 3 * * *"
+    - cron: "40 9 * * *" # same-day idempotent fallback
   workflow_dispatch:
   push:
     branches: [main]
@@ -38,12 +39,12 @@ jobs:
           fs.writeFileSync('results/agi-econ/code-acceptance-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,tests_passed:count,claude_status:s.state.agents['did:ltzzz:claude']?.status||'not_registered',new_role_seed_allowed:false,push_model_calls:0,real_wage_paid:false,tx_hash:null},null,2));
           JS
       - name: Run cycle (ledger only; real worker models + independent model audit + settlement gate)
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-ai-hire]')
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
-          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
         run: node scripts/agi-econ/run-cycle.mjs
       - name: Reputation patrol (offline; no model calls)
