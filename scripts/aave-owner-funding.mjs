@@ -12,8 +12,8 @@ const artifact=build.contracts['Funding.sol'].OwnerAaveFunding;
 fs.writeFileSync(`${dir}/contract-artifact.json`,JSON.stringify(artifact,null,2));
 const env=process.env;
 const authorization=(router,executor)=>[
- {purpose:'Approve bounded aUSDC funding grant; revocable',chainId:8453,from:env.FUNDING_OWNER,to:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB',value:'0',data:new Interface(['function approve(address,uint256)']).encodeFunctionData('approve',[router,1000000000n])},
- {purpose:'Activate funding with 1000USDC total grant;100/200 hard caps',chainId:8453,from:env.FUNDING_OWNER,to:router,value:'0',data:new Interface(['function configure(bool,address,uint256)']).encodeFunctionData('configure',[false,executor,1000000000n])}
+ {purpose:'Approve bounded aUSDC funding grant; revocable',chainId:8453,from:env.FUNDING_OWNER,to:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB',value:'0',data:new Interface(['function approve(address,uint256)']).encodeFunctionData('approve',[router,200000000n])},
+ {purpose:'Activate funding with 200USDC total grant;100/200 hard caps (batch 2026-10 directive, not 1000)',chainId:8453,from:env.FUNDING_OWNER,to:router,value:'0',data:new Interface(['function configure(bool,address,uint256)']).encodeFunctionData('configure',[false,executor,200000000n])}
 ];
 const missing=['FUNDING_OWNER','FUNDING_TREASURY','FUNDING_EXECUTOR_KEY'].filter(k=>!env[k]);
 if(missing.length){record({status:'blocked_configuration',missing,compiled:true,deployed:false});process.exit(0);}
