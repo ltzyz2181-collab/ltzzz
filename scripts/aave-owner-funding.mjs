@@ -18,7 +18,7 @@ const authorization=(router,executor)=>[
 const missing=['FUNDING_OWNER','FUNDING_TREASURY','FUNDING_EXECUTOR_KEY'].filter(k=>!env[k]);
 if(missing.length){record({status:'blocked_configuration',missing,compiled:true,deployed:false});process.exit(0);}
 try{
- if(['0x1893a134aa6ea22e8c08518b559e1706f4da0ef7','0x21f502f29294c50d9c37a30dc038d8d95eb97fdc'].includes(env.FUNDING_TREASURY.toLowerCase())){record({status:'blocked_treasury_role',deployed:false,note:'Use a new Base operational treasury, not the U-card receiver or exposed legacy wallet.'});process.exit(0);}
+ if(['0x1893a134aa6ea22e8c08518b559e1706f4da0ef7','0x21f502f29294c50d9c37a30dc038d8d95eb97fdc','0x872c322e886ccd3f2bb63e0611a6d8c620d859ab'].includes(env.FUNDING_TREASURY.toLowerCase())){record({status:'blocked_treasury_role',deployed:false,note:'Use a new Base operational treasury, not the U-card receiver or exposed legacy wallet.'});process.exit(0);}
  const provider=new JsonRpcProvider(env.LTZZZ_BASE_RPC||'https://mainnet.base.org');
  if((await provider.getNetwork()).chainId!==8453n)throw Error('Wrong network');
  const signer=new Wallet(env.FUNDING_EXECUTOR_KEY,provider);
