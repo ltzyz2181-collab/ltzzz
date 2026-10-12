@@ -20,10 +20,10 @@ lines.push(`execution_id   = ${j.execution_id}`);
 lines.push(`core_memory    = ${cm.status} (${cm.loaded_files}/${cm.total_files})`);
 lines.push('seats:');
 for (const t of j.tasks || []) {
-  const mark = t.status === 'success' ? 'OK  ' : t.status === 'skipped' ? 'SKIP' : 'FAIL';
+  const mark = t.status === 'success' ? 'OK  ' : ['skipped','disabled_by_owner'].includes(t.status) ? 'SKIP' : 'FAIL';
   lines.push(`  [${mark}] ${t.agent}: ${t.status}`);
 }
-const fails = j.failures || [];
+const fails = (j.failures || []).filter(x => x.status !== 'disabled_by_owner' && !(j.tasks || []).some(t => t.agent === x.agent && t.status === 'disabled_by_owner'));
 if (fails.length) {
   lines.push('failures:');
   for (const x of fails) lines.push(`  - ${x.agent}: ${String(x.error || '').slice(0, 120)}`);
