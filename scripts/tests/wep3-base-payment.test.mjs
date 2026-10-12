@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {verifyBaseTransfer,liveReady,BASE_USDC} from '../../wep3-base-payment.js';
+const receiver='0x'+'ab'.repeat(20),tx='0x'+'cd'.repeat(32),blockHash='0x'+'ef'.repeat(32),env={X402_LIVE:'1',X402_RECEIVE_ADDRESS:receiver};
+const ch={protocol:'base-usdc-direct-v1',pay_to:receiver,amount_cents:200,created_at:new Date(Date.now()-60000).toISOString(),expires_at:new Date(Date.now()+60000).toISOString()};
+function mocked({amount=2000000n,to=receiver,chain='0x2105',height='0x66',status='0x1'}={}){
+ const receipt={transactionHash:tx,status,blockNumber:'0x64',blockHash,logs:[{address:BASE_USDC,topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef','0x'+'0'.repeat(64),'0x'+to.slice(2).padStart(64,'0')],data:'0x'+amount.toString(16).padStart(64,'0'),logIndex:'0x1'}]};
+ return async(u,o)=>({ok:true,json:async()=>({result:({'eth_chainId':chain,'eth_blockNumber':height,'eth_getTransactionReceipt':receipt,'eth_getBlockByNumber':{hash:blockHash,timestamp:'0x'+Math.floor(Date.now()/1000).toString(16)}})[JSON.parse(o.body).method]})});
+}
+test('live requires exact 1 and rotated receiver',()=>{assert.equal(liveReady({...env,X402_LIVE:'0'}),false);assert.equal(liveReady({...env,X402_RECEIVE_ADDRESS:'0x1893A134aa6eA22E8C08518B559E1706f4Da0eF7'}),false);assert.equal(liveReady(env),true)});
+test('chain, successful receipt, exact USDC receiver and amount verified',async()=>{const original=globalThis.fetch;try{globalThis.fetch=mocked();assert.equal((await verifyBaseTransfer(env,ch,tx)).ok,true);for(const params of [{amount:1n},{to:'0x'+'12'.repeat(20)},{chain:'0x1'},{status:'0x0'},{height:'0x64'}]){globalThis.fetch=mocked(params);assert.equal((await verifyBaseTransfer(env,ch,tx)).ok,false);}}finally{globalThis.fetch=original;}});
+test('RPC error never accepts arbitrary hash',async()=>{const original=globalThis.fetch;try{globalThis.fetch=async()=>{throw Error('offline')};assert.equal((await verifyBaseTransfer(env,ch,tx)).ok,false)}finally{globalThis.fetch=original}});

@@ -1,3 +1,4 @@
+import {liveReady,receiverReady,verifyBaseTransfer} from './wep3-base-payment.js';
 // External orders use one Durable Object and integer USD cents, separate from legacy credit.
 const headers={'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Content-Type,X-Lab-Pin,X-Order-Token,Stripe-Signature,X-Payment,X-X402-Proof','Access-Control-Allow-Methods':'GET,POST,OPTIONS'};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers});
@@ -31,7 +32,7 @@ export class Market {
   publicOrder(order){const {access_hash,lease_token,...visible}=order;return visible;}
   async handle(request){
     const u=new URL(request.url),p=u.pathname,book=await this.read();
-    if(p==='/market/catalog'&&request.method==='GET')return reply({ok:true,version:'2.1',quotes:await Promise.all(book.skills.map(s=>this.quote(book,s))),rails:{stripe:{configured:Boolean(this.env.STRIPE_SECRET_KEY&&this.env.STRIPE_WEBHOOK_SECRET),mode:this.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')?'live':'test'},x402:{configured:true,status:'simulated',network:'base',asset:'USDC',note:'challenge/verify live; real Base USDC settlement next'},base_usdc:{configured:false,status:'pending_x402_bridge'},solana_usdc:{configured:false,status:'not_implemented'},alipay:{configured:false,status:'not_implemented'}},live_revenue_cents:book.live_revenue_cents,test_revenue_cents:book.test_revenue_cents,settlement:'external-backed internal credit; x402 simulated; no on-chain wage claim yet'});
+    if(p==='/market/catalog'&&request.method==='GET')return reply({ok:true,version:'2.1',quotes:await Promise.all(book.skills.map(s=>this.quote(book,s))),rails:{stripe:{configured:Boolean(this.env.STRIPE_SECRET_KEY&&this.env.STRIPE_WEBHOOK_SECRET),mode:this.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')?'live':'test'},x402:{configured:false,status:'standard_facilitator_not_implemented',network:'base',asset:'USDC'},base_usdc:{configured:liveReady(this.env),status:liveReady(this.env)?'direct_transfer_receipt_verification':'simulation_only',receiver_ready:receiverReady(this.env)},solana_usdc:{configured:false,status:'not_implemented'},alipay:{configured:false,status:'not_implemented'}},live_revenue_cents:book.live_revenue_cents,test_revenue_cents:book.test_revenue_cents,settlement:'external-backed internal credit; x402 simulated; no on-chain wage claim yet'});
     // --- x402 simulated endpoints (machine-native micropayment placeholders) ---
     if(p==='/market/x402/challenge'&&request.method==='POST'){
       const b=await request.json().catch(()=>({}));
@@ -42,7 +43,7 @@ export class Market {
       const amountUsdc=(q.price_cents/100).toFixed(6);
       const challenge={
         id:challengeId,
-        protocol:'x402-sim-v0',
+        protocol:liveReady(this.env)?'base-usdc-direct-v1':'x402-sim-v0',
         network:'base',
         asset:'USDC',
         amount_usdc:amountUsdc,
@@ -50,7 +51,7 @@ export class Market {
         skill:skill.id,
         worker:skill.agent,
         brief:b.brief,
-        pay_to:this.env.X402_RECEIVE_ADDRESS||'0xSIMULATED_LTZZZ_TREASURY',
+        pay_to:liveReady(this.env)?this.env.X402_RECEIVE_ADDRESS:'0xSIMULATED_LTZZZ_TREASURY',
         expires_at:new Date(Date.now()+15*60*1000).toISOString(),
         status:'open',
         created_at:new Date().toISOString()
@@ -65,7 +66,7 @@ export class Market {
         challenge_id:challengeId,
         http_status_intended:402,
         payment_required:{
-          protocol:'x402',
+          protocol:challenge.protocol,
           network:'base',
           asset:'USDC',
           amount:amountUsdc,
@@ -76,7 +77,7 @@ export class Market {
         skill:skill.id,
         worker:skill.agent,
         amount_cents:q.price_cents,
-        simulated:true,
+        simulated:!liveReady(this.env),
         next:'POST /market/x402/verify with challenge_id + proof (tx_hash or simulated_token)'
       },402);
     }
@@ -90,10 +91,15 @@ export class Market {
       const validSim=proof.startsWith('sim_')&&proof.length>=12;
       const validHash=/^0x[a-fA-F0-9]{64}$/.test(proof);
       if(!validSim&&!validHash)return reply({ok:false,error:'invalid_proof',hint:'use sim_<token> for simulation or 0x + 64 hex for future real Base USDC tx'},422);
+      if(validSim&&!this.admin(request))return reply({ok:false,error:'simulation_requires_admin'},401);
+      if(validHash&&book.events['base:'+proof.toLowerCase()])return reply({ok:false,error:'payment_already_used'},409);
+      const verified=validHash?await verifyBaseTransfer(this.env,ch,proof):null;
+      if(validHash&&!verified.ok)return reply(verified,422);
       const access=token();
       const orderId='ORDER-'+crypto.randomUUID();
-      const live=validHash&&Boolean(this.env.X402_LIVE);
-      const order={id:orderId,skill:ch.skill,worker:ch.worker,brief:ch.brief,amount_cents:ch.amount_cents,currency:'usd',live,status:'queued',created_at:new Date().toISOString(),paid_at:new Date().toISOString(),access_hash:await hash(access),children:[],parent_id:null,payment_rail:'x402',x402_challenge_id:ch.id,x402_proof:proof,budget_cents:Math.floor(ch.amount_cents*.4),allocated_cents:0};
+      const live=Boolean(verified?.ok);
+      const order={id:orderId,skill:ch.skill,worker:ch.worker,brief:ch.brief,amount_cents:ch.amount_cents,currency:'usd',live,status:'queued',created_at:new Date().toISOString(),paid_at:new Date().toISOString(),access_hash:await hash(access),children:[],parent_id:null,payment_rail:live?'base_usdc_direct':'x402_sim',x402_challenge_id:ch.id,x402_proof:proof,budget_cents:Math.floor(ch.amount_cents*.4),allocated_cents:0};
+      if(live){order.payment_evidence=verified;book.events['base:'+proof.toLowerCase()]=orderId;}
       book.orders[orderId]=order;
       ch.status='paid';ch.order_id=orderId;ch.proof=proof;ch.paid_at=order.paid_at;
       if(live){book.live_revenue_cents+=order.amount_cents;book.pool_available_cents+=order.amount_cents-order.budget_cents;book.pool_reserved_cents+=order.budget_cents;}
