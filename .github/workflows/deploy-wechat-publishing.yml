@@ -57,7 +57,7 @@ jobs:
           const diagnosticResponse=await fetch(base+'/draft-diagnostics?date='+process.env.ARTICLE_DATE+'&expected_app_id=wxdabcfdf41f413f33',{headers:{Authorization:'Bearer '+process.env.BOT_ADMIN_TOKEN},signal:AbortSignal.timeout(30000)});
           const diagnostics=await diagnosticResponse.json();
           const receipt={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:response.status,health,draft:body,diagnostics,read_only:false,model_calls:0};
-          fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-diagnostics-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2));
+          fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-diagnostics-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json',JSON.stringify(receipt,null,2));
           console.log(JSON.stringify({http:response.status,status:body.status,published:body.published,error:body.error}));
           if(!body.ok || body.status==='BLOCKED')process.exitCode=1;
           JS

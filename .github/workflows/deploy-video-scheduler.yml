@@ -1,0 +1,32 @@
+name: Deploy authenticated video scheduler
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['video-scheduler-worker.js', 'wrangler.video-scheduler.toml', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-video-scheduler.yml']
+concurrency: {group: video-scheduler-deploy, cancel-in-progress: false}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/video-scheduler.test.mjs
+      - name: Deploy and reuse upload authentication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          test -n "$LTZZZ_AGENT_TOKEN"
+          npx --yes wrangler@4 deploy -c wrangler.video-scheduler.toml
+          printf '%s' "$LTZZZ_AGENT_TOKEN" | npx --yes wrangler@4 secret put LTZZZ_AGENT_TOKEN -c wrangler.video-scheduler.toml
+      - name: Verify health without triggering upload
+        run: |
+          node --input-type=module <<'JS'
+          const r=await fetch('https://ltzzz-video-scheduler.ltzyz2181.workers.dev/health');
+          const j=await r.json(); console.log(JSON.stringify(j));
+          if(!r.ok||!j.ok||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
+          JS
