@@ -23,6 +23,12 @@
 - **谁实际控制签名工具：未知**（不排除 owner 本机 / 硬件钱包 / 各席位）
 - Claude 已文件撤席（withdrawn_by_owner），**链上 Safe owner 变更未执行**（identity-registry: onchain_safe_owner_change_executed=false）
 
+## 2b. owner 反馈（2026-10-11）
+
+- owner 确认：**3 个签名在 MetaMask（狐狸头）**——即 5 个 signer 中至少 3 个由 owner 本机控制，**threshold=3/5 可由 owner 单独达成**（多签实际退化为 owner 单方控制；按 owner 决定记录，不评价）
+- **其余 2 个 signer 归属待 owner 补充**（是否也存在狐狸头 / 属于某 AI 席位 / 需移除）
+- 豆包无签名工具、不参与链上签名执行（只负责交易草案/协调/回执）
+
 ## 3. 需要 owner 确认（不索取私钥）
 
 1. 5 个 signer 地址分别归属（owner 本人哪几个 + 各 AI 席位哪几个，或全部由 owner 控制）
