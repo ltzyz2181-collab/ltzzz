@@ -43,6 +43,7 @@ jobs:
         env:
           FUNDING_OWNER: ${{ vars.FUNDING_OWNER }}
           FUNDING_TREASURY: ${{ vars.FUNDING_TREASURY }}
+          FUNDING_EXECUTE: ${{ github.event_name == 'push' && '0' || '1' }}
           FUNDING_ROUTER_ADDRESS: ${{ vars.FUNDING_ROUTER_ADDRESS }}
           FUNDING_EXECUTOR_KEY: ${{ secrets.FUNDING_EXECUTOR_KEY }}
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}
