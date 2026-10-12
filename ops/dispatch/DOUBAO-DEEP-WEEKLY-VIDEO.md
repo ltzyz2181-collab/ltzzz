@@ -10,3 +10,6 @@ Manus只发布B轨/Instagram轮换，每周一次一次一个平台，不制作�
 豆包不可用：DeepSeek交脚本，授权执行器可手动运行render-cn-daily-video.yml；自动日报渲染保持关闭。
 输入：knowledge/results/wep3/latest.json、content/daily-articles/、results/publishing/。
 任务仍需真实接单回执：ops/dispatch/接单回执-DOUBAO-DEEP-WEEKLY-VIDEO.md。
+
+## 2026-10-12 owner追加：下一条视频产品入口
+下一条视频简介/发布文案加入 https://ltzyz.gumroad.com/l/ugyhy?layout=profile；片尾提示“产品说明与购买链接见简介”。平台允许时置顶评论；不允许外链就记录限制。详细执行单：ops/dispatch/DOUBAO-VIDEO-PRODUCT-LINK-20261013.md。本单不新增每天多平台任务；实际发布需回执。
