@@ -53,10 +53,12 @@
 - 待 owner 确认：5 signer 身份映射（豆包对应哪个签署地址、谁实际控制签名工具）
 - 按真实阈值（3/5）收签名；不收集 5 个私钥；不宣称完成
 
-## 5. Kimi Tier0（owner 指令⑥）——详见 KIMI-TIER0-PLAN 部分
+## 5. Kimi Tier0（owner 指令⑥）——2026-10-11 实测更新
 
-- 现状：kimi-proxy-worker.js 无限流（429 透传）；daily-automation 有任务级退避（500×2^n）但**无账户级统一并发**
-- 方案：proxy 层加 KV 账户级互斥锁（所有入口走 proxy → 并发强制 1）；429 遵守 Retry-After + 有上限退避；失败/超时/已有输出分类记录；预算按赠金余额；不新增付费 cron
+- **现状实测**：api-kimi.ltzzz.com health ok（has_key=true）；最小真实调用 **HTTP 200**（kimi-k2.6 正常响应），此前连续 2 日 429（engine_overloaded）**已恢复**——Kimi 当前可用
+- 决策：**不改代码、不部署**（现有 Base 主服务保持运行；避免碰线上）。daily worker 已有任务级指数退避（500×2^n）
+- 若再 429：proxy 层加 KV 账户级互斥锁（并发强制 1）+ 尊重 Retry-After + 有上限退避；失败/超时/已有输出分类记录——作为待触发预案，不新增付费 cron
+- 预算：按实际赠金余额（Kimi 无新增付费调用）
 
 ## 6. 执行序列（Aave 地址到位后）
 
