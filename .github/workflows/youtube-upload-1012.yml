@@ -1,0 +1,33 @@
+name: YouTube Upload 2026-10-12 (treasury proof)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload via ltzzz-youtube-upload worker
+        env:
+          TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          FILE: videos/2026-10-12-ai-treasury-proof.mp4
+          TITLE: "LTZZZ: The AI Treasury That Proves Itself"
+          PRIVACY: public
+        run: |
+          DESC="An AI lab runs a treasury whose keys live inside a server - not a wallet app. Anyone can ask it to prove control; the signature checks out every time, but no one can read the key. Controlled, verifiable, locked away from human wallets. An AI economy built on proof, not trust.
+          一个由 AI 持钥、可验签、链上公开的运营金库：没有人类钱包能读到私钥，但任何人都能验证控制权。先有证据：没有回执，就没有成功。
+          Made by LTZZZ AI. More: https://ltzzz.com"
+          curl -sS -m 600 -X POST https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/upload \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "video=@$FILE;type=video/mp4" -F "title=$TITLE" -F "description=$DESC" \
+            -F "tags=LTZZZ,AI,AI agents,treasury,Web3" -F "privacyStatus=$PRIVACY" -F "categoryId=28" | tee /tmp/yt.json
+          node -e "const r=require('/tmp/yt.json');if(r.error){console.error(r.error);process.exit(1)}"
+      - name: Save receipt
+        run: |
+          mkdir -p results/publishing
+          node -e "const fs=require('fs');const r=require('/tmp/yt.json');fs.writeFileSync('results/publishing/youtube-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({run_id:process.env.GITHUB_RUN_ID,file:'videos/2026-10-12-ai-treasury-proof.mp4',at:new Date().toISOString(),response:r},null,2))"
+          git config user.name ltzzz-bot; git config user.email bot@ltzzz.com
+          git add results/publishing; git commit -m "publishing: youtube upload receipt 2026-10-12" && git pull --rebase && git push
