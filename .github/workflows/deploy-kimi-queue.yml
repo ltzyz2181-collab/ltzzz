@@ -1,0 +1,57 @@
+name: Deploy shared Tier0 Kimi limiter
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['workers/kimi-queue/**', 'wrangler.kimi-queue.toml', 'scripts/tests/kimi-queue.test.mjs', '.github/workflows/deploy-kimi-queue.yml']
+permissions: {contents: write}
+concurrency: {group: kimi-queue-deploy, cancel-in-progress: false}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/kimi-queue.test.mjs
+      - name: Deploy using existing domestic key and service token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          node - <<'JS'
+          const fs=require('fs');for(const k of ['MOONSHOT_API_KEY_CN','LTZZZ_AGENT_TOKEN'])if(!process.env[k])throw Error('Missing '+k);
+          fs.writeFileSync('/tmp/kimi-queue-secrets.json',JSON.stringify({MOONSHOT_API_KEY_CN:process.env.MOONSHOT_API_KEY_CN,LTZZZ_AGENT_TOKEN:process.env.LTZZZ_AGENT_TOKEN}));
+          JS
+          npx --yes wrangler@4 deploy -c wrangler.kimi-queue.toml
+          npx --yes wrangler@4 secret bulk /tmp/kimi-queue-secrets.json -c wrangler.kimi-queue.toml
+          rm -f /tmp/kimi-queue-secrets.json
+      - name: Verify health, domestic account and one bounded generation
+        env:
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const base='https://ltzzz-kimi-queue.ltzyz2181.workers.dev';
+          let h;for(let i=0;i<10;i++){h=await(await fetch(base+'/health')).json();if(h.has_key&&h.auth_configured&&h.limiter_configured)break;await new Promise(r=>setTimeout(r,3000));}
+          const b=await fetch('https://api.moonshot.cn/v1/users/me/balance',{headers:{Authorization:'Bearer '+process.env.MOONSHOT_API_KEY_CN},signal:AbortSignal.timeout(20000)});const balance=await b.json().catch(()=>({}));
+          const r=await fetch(base+'/generate',{method:'POST',headers:{Authorization:'Bearer '+process.env.LTZZZ_AGENT_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'Reply OK only.'}],max_tokens:256}),signal:AbortSignal.timeout(290000)});const j=await r.json();
+          const receipt={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,health:h,domestic_balance_http:b.status,domestic_available_balance:balance.available_balance??balance.data?.available_balance??null,generation_http:r.status,nonempty_output:Boolean(j.choices?.[0]?.message?.content?.trim()),finish_reason:j.choices?.[0]?.finish_reason||null,failure_status:j.status||null,model_calls_requested:1,paid_wages:false,tx_hash:null};
+          fs.mkdirSync('knowledge/results/kimi',{recursive:true});fs.writeFileSync('knowledge/results/kimi/queue-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2));console.log(JSON.stringify(receipt));
+          if(!h.has_key||!h.limiter_configured||!r.ok||!receipt.nonempty_output)process.exitCode=1;
+          JS
+      - name: Persist actual deployment and generation result
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/kimi/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Kimi shared limiter actual acceptance receipt'
+          git pull --rebase origin main
+          git push origin HEAD:main
