@@ -23,7 +23,7 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
     }
     const data = await resp.json();
     const output = (data.choices?.[0]?.message?.content || "").trim();
-    return { ok: true, status: "success", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0 };
+    return { ok: true, status: "success", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0, model: model || process.env.DEEPSEEK_MODEL || "deepseek-chat" };
   } catch (e) {
     return { ok: false, status: "exception", error: String(e) };
   }
