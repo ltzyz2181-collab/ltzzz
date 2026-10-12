@@ -20,6 +20,9 @@ export async function verifyBaseTransfer(env,ch,txHash){
   if(ts<Date.parse(ch.created_at)-120000||ts>Date.parse(ch.expires_at))return {ok:false,error:'payment_outside_challenge_window'};
   const to=env.X402_RECEIVE_ADDRESS.toLowerCase(),amount=BigInt(ch.amount_cents)*10000n;
   const log=(r.logs||[]).find(l=>!l.removed&&l.address?.toLowerCase()===BASE_USDC&&l.topics?.length===3&&l.topics[0]?.toLowerCase()===TRANSFER&&l.topics[2]?.toLowerCase()==='0x'+to.slice(2).padStart(64,'0')&&/^0x[a-fA-F0-9]{64}$/.test(l.data||'')&&BigInt(l.data)===amount);
+  if(log?.topics?.[1]?.toLowerCase()==='0x'+to.slice(2).padStart(64,'0'))return {ok:false,error:'self_payment_not_external_revenue'};
+  if(ch.expected_payer&&log?.topics?.[1]?.toLowerCase()!=='0x'+ch.expected_payer.toLowerCase().slice(2).padStart(64,'0'))return {ok:false,error:'payment_sender_mismatch'};
+  if(ch.expected_nonce&&!(r.logs||[]).some(l=>!l.removed&&l.address?.toLowerCase()===BASE_USDC&&l.topics?.[0]?.toLowerCase()==='0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5'&&l.topics?.[1]?.toLowerCase()==='0x'+ch.expected_payer.toLowerCase().slice(2).padStart(64,'0')&&l.topics?.[2]?.toLowerCase()===ch.expected_nonce.toLowerCase()))return {ok:false,error:'authorization_nonce_not_found'};
   if(!log)return {ok:false,error:'matching_usdc_transfer_missing'};
   return {ok:true,chain_id:8453,asset:BASE_USDC,receiver:to,amount_raw:amount.toString(),tx_hash:txHash.toLowerCase(),block_number:r.blockNumber,block_hash:r.blockHash,log_index:log.logIndex,confirmations:Number(height-BigInt(r.blockNumber)+1n)};
  }catch{return {ok:false,error:'rpc_unavailable'};}

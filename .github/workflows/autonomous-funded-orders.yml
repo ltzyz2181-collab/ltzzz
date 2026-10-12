@@ -1,0 +1,50 @@
+name: Autonomous funded LTZZZ orders
+on:
+  schedule:
+    - cron: '20 */6 * * *'
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts
+      - name: Install short-lived runner authentication without manual Secret handling
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),crypto=require('crypto');const token=crypto.randomBytes(32).toString('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\n');fs.writeFileSync('/tmp/ltzzz-runner-secret.json',JSON.stringify({WEP3_RUNNER_TOKEN:token}),{mode:0o600});
+          JS
+          npx wrangler@4 secret bulk /tmp/ltzzz-runner-secret.json -c wrangler.wep3.toml
+          node -e "require('fs').unlinkSync('/tmp/ltzzz-runner-secret.json')"
+      - name: Execute at most one funded order
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: node scripts/fulfill-market-orders.mjs
+      - name: Weekly public snapshot anchoring with Worker treasury signer
+        run: node scripts/anchor-market-snapshot.mjs
+      - name: Save actual receipts
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/wep3/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Autonomous funded-order and snapshot evidence'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
