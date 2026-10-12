@@ -21,6 +21,8 @@
 
 ## 每日真实任务
 
+最新 owner 连续资金任务：[1U验证、五签、个人Aave首期200U、投资与归还](ops/dispatch/OWNER-CONTINUOUS-FUNDING-20261011.md)。先读授权和阻塞；利息按原Aave实际利率补偿。此记录不代表已提款/已签名，不要求重部署现有机器人。
+
 - [每日经济流程](.github/workflows/daily-economy.yml)：DeepSeek 派单 → 豆包交付 + 投资复核；每天最多各一次逻辑模型调用。两次定时是主跑/兜底，同日幂等。
 - [每日回执](knowledge/results/economy/)：全文输出、实际用量、源版本、读入文件哈希、阻塞。
 - [雇佣结果](knowledge/results/hire/) / [投资研究结果](knowledge/results/invest/)：明确未付款/未交易，不以生成提案代替真钱结算。
