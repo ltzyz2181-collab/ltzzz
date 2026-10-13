@@ -2,7 +2,7 @@ import fs from 'node:fs';
 
 const base = 'https://ltzzz-wep3.ltzyz2181.workers.dev';
 const run = process.env.GITHUB_RUN_ID;
-if (!run || !process.env.LAB_PIN) throw new Error('deployment_closeout_requires_run_id_and_existing_LAB_PIN');
+if (!run) throw new Error('deployment_closeout_requires_run_id');
 const reportFile = `knowledge/results/wep3/deploy-closeout-${run}.json`;
 const source = `knowledge/results/wep3/delivery-contract-${new Date().toISOString().slice(0, 10)}.json`;
 const commit = process.env.GITHUB_SHA;
@@ -33,7 +33,10 @@ try {
   const before = await api('/ledger?limit=100');
   report.balances_before = before.agents;
   const existing = before.entries.find(entry => entry.type === 'deposit' && entry.ref === memo);
-  if (!report.deposit?.ok && !existing) {
+  if (!process.env.LAB_PIN && !existing) {
+    report.deposit = { ok: false, skipped: true, reason: 'existing_LAB_PIN_unavailable_in_GitHub_secrets', amount: 0, intended_amount: 0.01 };
+    save();
+  } else if (!report.deposit?.ok && !existing) {
     report.deposit = await api('/deposit', { agent: 'DeepSeek', amount: 0.01, source: memo });
     save();
   } else if (existing) {
