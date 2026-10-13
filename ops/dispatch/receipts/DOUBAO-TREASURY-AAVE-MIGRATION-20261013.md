@@ -1,7 +1,7 @@
 # 接单回执：DOUBAO-TREASURY-AAVE-MIGRATION（2026-10-13）
 
 派单来源：用户 2026-10-13 指令（统一归集至新执行金库 0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d）+ 总控 2026-10-12 迁移派单（ops/dispatch/DOUBAO-TREASURY-AAVE-MIGRATION-20261012.md）+ 总控 2026-10-13 续跑指令（1 USDC pilot 收尾执行）。
-状态：**迁移已完成（verified_migrated，4 tx 全 confirmed）并已推送回执；1 USDC pilot 触发执行但被 worker 侧 market_exception 持续阻塞（跨 2 次 dispatch、6 次尝试，详见阻塞证据文档），资金原封未动、安全**；Safe（第②项）提案就绪、等 owner；Aave（第③项）回执已写、不动手。
+状态：**迁移已完成（verified_migrated）并推送；1 USDC pilot 被 worker 侧 market_exception 阻塞（资金安全，详见阻塞证据）；Safe 提案 A 已由 owner 执行成功（USDT 49.02 → 0xb99C…f905）；Aave 提现已核实网页版可操作、待 owner 发起**。
 
 ## 一、旧 Vault 迁移执行结果（2026-10-13 本地执行，09:57 UTC）
 
@@ -26,8 +26,8 @@
 
 ## 三、Safe（第②项）与个人 Aave（第③项）
 
-- Safe：提案 A（USDT 49.02，nonce 6）/ B（ETH 0.002，nonce 7）就绪（safe-to-owner-builder-20261013.json）；收款方候选 0xb99C6751f443842F4987bb2017580405572Df905 **UNCONFIRMED，等 owner 确认或提供新地址**；3/5 签名与执行需 owner MetaMask，本轮不执行。
-- Aave：回执 knowledge/results/funding/aave-withdrawal-receipt-20261013.md（Aave Account 托管、Base 8453 入金口、USDC≈$1,001.77、提现入口=Aave App）；币安 1.58 AAVE 非 USDC 仓位，仅记录。
+- Safe：**提案 A 已执行成功**（2026-10-13 13:18 UTC，txHash `0xf7a6b07e5d4a5810e3886b8a663c0b8fb177a0857f63172234df02b70c8e064d`，nonce 6，3/5 签名：0xb99C…+0xD834…+0x01B8…，isSuccessful=true）：**USDT 49.02 已转至 0xb99C6751f443842F4987bb2017580405572Df905**（Safe signer#1 = owner MetaMask Account 1）；链上复核 block 26,183,894：Safe USDT=0、ETH=0.005、nonce=7。**提案 B（ETH 0.002，nonce 7）未执行**——需 owner 决定是否继续转出剩余 ETH。USDT→USDC 兑换 + Base 跨链提新金库待 owner 执行（先小额验证再余款，另留回执）。
+- Aave：回执 knowledge/results/funding/aave-withdrawal-receipt-20261013.md（**已修正：Aave Account 为非托管钱包，支持网页版操作**，官方 Zellic 审计报告 2026-05 佐证；USDC≈$1,001.77；转出目标待 owner 确认——建议先小额直转新金库 0x5df5…32d 验证）；币安 1.58 AAVE 非 USDC 仓位，仅记录。
 
 ## 四、产物清单（已推送）
 
