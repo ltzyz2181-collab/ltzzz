@@ -10,7 +10,7 @@
       "capabilities": [],
       "wallets": [],
       "reputation": 100,
-      "credit_usd": 4.74,
+      "credit_usd": 4.71,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
@@ -26,7 +26,7 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 116,
+      "reputation": 117,
       "credit_usd": 0.018,
       "escrow_usd": 0,
       "earned_usd": 0.018,
@@ -153,10 +153,10 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 100,
-      "credit_usd": 0.0384,
+      "reputation": 105,
+      "credit_usd": 0.0651,
       "escrow_usd": 0,
-      "earned_usd": 0.0534,
+      "earned_usd": 0.0801,
       "slashed_usd": 0.015,
       "history": [
         {
@@ -173,6 +173,11 @@
           "task": "AET-00018",
           "status": "settled",
           "at": "2026-10-12T09:43:11.468Z"
+        },
+        {
+          "task": "AET-00026",
+          "status": "settled",
+          "at": "2026-10-13T11:08:54.276Z"
         }
       ],
       "status": "active",
@@ -940,10 +945,59 @@
       "price_usd": 0.03,
       "block_reason": "worker_model_failed",
       "receipt": "data/agi-econ/receipts/AET-00024.json"
+    },
+    "AET-00026": {
+      "id": "AET-00026",
+      "employer": "did:ltzzz:gpt",
+      "title": "video script 2026-10-13 gate",
+      "spec": "把当日文章改成9:16 ≤60秒中文短视频脚本（标题/分镜/字幕/AI生成声明），只用文章事实",
+      "acceptance": [
+        "# 短视频脚本"
+      ],
+      "budget_usd": 0.05,
+      "status": "settled",
+      "bids": [
+        {
+          "worker": "did:ltzzz:doubao",
+          "ask_usd": 0.03,
+          "reputation": 100,
+          "at": "2026-10-13T11:04:37.257Z"
+        }
+      ],
+      "posted_at": "2026-10-13T11:04:37.256Z",
+      "run_id": "38387698773",
+      "attempt": 2,
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:doubao",
+        "score": -2,
+        "priority_multiplier": 0.98,
+        "status": "eligible",
+        "wins": 1,
+        "quality_failures": 1,
+        "overdue": 0,
+        "infrastructure_blocks": 1,
+        "unverified": 1,
+        "duplicates": 0,
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:doubao",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00026.md",
+        "sha256": "667851bc845e686eeb2b23e46fd2792cb549ca991660177ce390e6423c01bc31",
+        "bytes": 3610
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00026.json",
+        "report_sha256": "93ee6f22105a0e8b6c28a112e3a46012d6855b4bed7c6cf94bb7827b22b44c97",
+        "accepted": true
+      },
+      "receipt": "data/agi-econ/receipts/AET-00026.json"
     }
   },
   "capital_pool": {
-    "balance_usd": 0.071,
+    "balance_usd": 0.074,
     "proposals": [
       {
         "id": "CAP-00002",
@@ -1028,10 +1082,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-12T19:21:08.571Z"
+      },
+      {
+        "id": "CAP-00027",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.037,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-13T11:08:54.277Z"
       }
     ]
   },
-  "seq": 25,
+  "seq": 27,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -1724,10 +1790,51 @@
       "type": "capital_proposal",
       "id": "CAP-00025",
       "amount_usd": 0.0355
+    },
+    {
+      "at": "2026-10-13T11:04:37.256Z",
+      "type": "post",
+      "task": "AET-00026",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-13T11:04:37.263Z",
+      "type": "award",
+      "task": "AET-00026",
+      "worker": "did:ltzzz:doubao",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-13T11:07:28.763Z",
+      "type": "deliver",
+      "task": "AET-00026",
+      "sha256": "667851bc845e686eeb2b23e46fd2792cb549ca991660177ce390e6423c01bc31"
+    },
+    {
+      "at": "2026-10-13T11:08:54.276Z",
+      "type": "audit",
+      "task": "AET-00026",
+      "auditor": "did:ltzzz:grok",
+      "accepted": true
+    },
+    {
+      "at": "2026-10-13T11:08:54.276Z",
+      "type": "settle",
+      "task": "AET-00026",
+      "status": "settled",
+      "paid": 0.0267,
+      "slashed": 0
+    },
+    {
+      "at": "2026-10-13T11:08:54.277Z",
+      "type": "capital_proposal",
+      "id": "CAP-00027",
+      "amount_usd": 0.037
     }
   ],
   "transition_fund": {
-    "balance_usd": 0.0024,
+    "balance_usd": 0.0027,
     "note": "怜悯税·转岗基金（ledger only）"
   }
 }
