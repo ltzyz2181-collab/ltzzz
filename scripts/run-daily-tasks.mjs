@@ -209,7 +209,7 @@ async function main() {
     }
   }
 
-  tasks.push({agent: "claude", status: "disabled_by_owner", task: "席位停用", output_preview: "owner 2026-10-09 决定放弃；未调用 Anthropic API"});
+  tasks.push({agent:"claude",status:"external_discussion_only",task:"六文件讨论外部席",output_preview:"owner已重新授权文本讨论；由现有model-memory-discussion工作流处理，本日课不重复购买调用；API余额不足以实际回执为准。"});
 
   for (const task of tasks) {
     Object.assign(task, classifyTaskOutcome({ status: task.status, hasOutput: Boolean(task.output_preview) }));

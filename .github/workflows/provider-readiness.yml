@@ -1,0 +1,34 @@
+name: Provider models and balances (read only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/provider-readiness.mjs','.github/workflows/provider-readiness.yml']
+permissions: {contents: write}
+concurrency: {group: provider-readiness, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check configured account catalogue and balances (no generation)
+        env:
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/provider-readiness.mjs
+      - name: Persist actual account checks
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/providers/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Actual provider balances and model catalogue (no generation)'
+          git pull --rebase origin main
+          git push origin HEAD:main
