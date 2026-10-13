@@ -13,7 +13,15 @@ const receipt = {
 };
 const output = 'results/commerce/miniprogram-upload-latest.json';
 let temporary;
+let uploadTimer;
+async function checkpoint(phase) {
+  receipt.phase = phase;
+  await fs.mkdir(path.dirname(output), { recursive: true });
+  await fs.writeFile(output, JSON.stringify(receipt, null, 2) + '\n');
+  console.log('Mini program phase: ' + phase);
+}
 try {
+  await checkpoint('credential_check');
   if (!/^wx[0-9a-f]{16}$/i.test(receipt.appid)) receipt.missing.push('valid_mini_program_appid');
   const supplied = process.env.MINI_UPLOAD_KEY || '';
   if (!supplied) receipt.missing.push('mini_program_upload_private_key');
@@ -27,10 +35,21 @@ try {
       await fs.writeFile(keyPath, key, { mode: 0o600 });
       const { createRequire } = await import('node:module');
       const require = createRequire(path.resolve(process.env.MINI_CI_PACKAGE_ROOT, 'package.json'));
+      await checkpoint('load_sdk');
       const ci = require('miniprogram-ci');
+      await checkpoint('create_project');
       const project = new ci.Project({ appid: receipt.appid, type: 'miniProgram', projectPath: path.resolve('miniprogram'), privateKeyPath: keyPath, ignores: ['README.md'] });
       receipt.upload_attempted = true;
-      await ci.upload({ project, version: receipt.version, desc: 'LTZZZ four-product display; no payment or automatic fulfillment', setting: { es6: true, minify: true }, onProgressUpdate: () => {} });
+      await checkpoint('upload_request');
+      let progressReported = false;
+      await Promise.race([
+        ci.upload({ project, version: receipt.version, desc: 'LTZZZ four-product display; no payment or automatic fulfillment', setting: { es6: true, minify: true }, onProgressUpdate: () => {
+          if (!progressReported) { console.log('Mini program SDK progress received'); progressReported = true; }
+        } }),
+        new Promise((_, reject) => {
+          uploadTimer = setTimeout(() => reject(new Error('Upload timed out after 180 seconds')), 180000);
+        }),
+      ]);
       receipt.status = 'uploaded_development_version';
       receipt.uploaded = true;
     }
@@ -39,7 +58,7 @@ try {
   receipt.status = receipt.upload_attempted ? 'upload_outcome_unknown' : 'upload_failed_before_request';
   // Do not put SDK errors containing key contents, tokens or request objects in public receipts.
   const errorText = [error?.message, error?.errMsg, error?.msg].filter(value => typeof value === 'string').join(' ');
-  const codes = [error?.errCode, error?.errcode, error?.code].map(Number);
+  const codes = [error?.errCode, error?.errcode, error?.code].filter(value => value !== null && value !== undefined).map(Number);
   receipt.error_code = codes.find(value => Number.isFinite(value)) ?? null;
   receipt.failure_reason = /white.?list|白名单/i.test(errorText) ? 'upload_ip_not_authorized'
     : /invalid.*appid|appid.*invalid/i.test(errorText) ? 'appid_rejected'
@@ -51,8 +70,12 @@ try {
     .filter(ip => ip.split('.').every(part => Number(part) <= 255)).slice(0, 3);
   receipt.error_name = /^[A-Za-z0-9_]{1,60}$/.test(error?.name || '') ? error.name : 'UploadError';
 } finally {
+  clearTimeout(uploadTimer);
   if (temporary) await fs.rm(temporary, { recursive: true, force: true });
   await fs.mkdir(path.dirname(output), { recursive: true });
   await fs.writeFile(output, JSON.stringify(receipt, null, 2) + '\n');
   console.log(JSON.stringify(receipt));
 }
+
+// SDK handles must not keep this CLI alive after its receipt is persisted.
+process.exit(0);

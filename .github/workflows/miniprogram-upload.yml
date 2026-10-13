@@ -20,7 +20,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check script syntax
+        run: node --check scripts/miniprogram-upload.mjs
+      - name: Check public WeChat endpoint connectivity
+        run: |
+          for target in api.weixin.qq.com servicewechat.com; do
+            curl --connect-timeout 10 --max-time 20 --silent --output /dev/null --write-out "$target HTTP %{http_code}\n" "https://$target/" || true
+          done
       - name: Check existing credentials and upload development version
+        timeout-minutes: 4
         env:
           MINI_APPID: ${{ secrets.WECHAT_MINIPROGRAM_APPID || secrets.WX_MINIPROGRAM_APPID || secrets.MINIPROGRAM_APPID }}
           MINI_UPLOAD_KEY: ${{ secrets.WECHAT_MINIPROGRAM_PRIVATE_KEY || secrets.WX_MINIPROGRAM_PRIVATE_KEY || secrets.MINIPROGRAM_PRIVATE_KEY || secrets.WECHAT_UPLOAD_PRIVATE_KEY }}
@@ -30,7 +38,21 @@ jobs:
           fi
           MINI_CI_PACKAGE_ROOT="$RUNNER_TEMP/mini-ci" node scripts/miniprogram-upload.mjs
       - name: Commit factual upload receipt
+        if: always()
         run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file = 'results/commerce/miniprogram-upload-latest.json';
+          let receipt;
+          try { receipt = JSON.parse(fs.readFileSync(file)); } catch {}
+          if (!receipt || receipt.run_id !== process.env.GITHUB_RUN_ID) {
+            receipt = { run_id: process.env.GITHUB_RUN_ID, source_commit: process.env.GITHUB_SHA, status: 'executor_interrupted', upload_attempted: null, uploaded: false, published: false };
+          } else if (['load_sdk', 'create_project', 'upload_request'].includes(receipt.phase) && receipt.status === 'blocked_configuration') {
+            receipt.status = receipt.upload_attempted ? 'upload_outcome_unknown' : 'executor_interrupted_before_upload';
+          }
+          fs.mkdirSync('results/commerce', { recursive: true });
+          fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n');
+          JS
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add results/commerce/miniprogram-upload-latest.json
