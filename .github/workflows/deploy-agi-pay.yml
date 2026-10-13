@@ -14,8 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check agi-pay-worker.js
       - name: Inject LTZZZ_AGENT_TOKEN
-        run: printf '%s' "$LTZZZ_AGENT_TOKEN" | npx wrangler secret put LTZZZ_AGENT_TOKEN --name ltzzz-agi-pay
+        run: |
+          if [ -n "$LTZZZ_AGENT_TOKEN" ]; then
+            printf '%s' "$LTZZZ_AGENT_TOKEN" | npx --yes wrangler@4 secret put LTZZZ_AGENT_TOKEN -c wrangler.agi-pay.toml
+          else
+            echo 'Retaining existing Worker LTZZZ_AGENT_TOKEN'
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -25,3 +33,12 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy -c wrangler.agi-pay.toml
+      - name: Verify deployed health and protected writes
+        run: |
+          node --input-type=module <<'JS'
+          const base='https://ltzzz-agi-pay.ltzyz2181.workers.dev';
+          const healthResponse=await fetch(base+'/health');const health=await healthResponse.json();
+          const denied=await fetch(base+'/intent',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+          console.log(JSON.stringify({health_http:healthResponse.status,service:health.service,dry_run:health.policy?.dry_run,anonymous_write_http:denied.status}));
+          if(!healthResponse.ok||health.service!=='ltzzz-agi-pay'||health.policy?.dry_run!==true||denied.status!==401)process.exit(1);
+          JS
