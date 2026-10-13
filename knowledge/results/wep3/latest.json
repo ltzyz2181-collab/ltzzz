@@ -1,21 +1,113 @@
 {
-  "at": "2026-10-13T03:50:13.469Z",
-  "execution_id": "38343511497",
-  "status": "audit_rejected",
+  "at": "2026-10-13T03:55:03.440Z",
+  "execution_id": "38343907894",
+  "task_kind": "live_readonly_HTTP_contract_artifact",
   "paid": false,
   "tx_hash": null,
+  "status": "settlement_blocked",
   "worker_generation": {
-    "status": "success",
     "model": "doubao-seed-2-1-pro-260915",
-    "tokens_used": 1311,
+    "status": "success",
     "finish_reason": "stop",
-    "error": null
+    "tokens_used": 1351
   },
-  "source": "knowledge/results/wep3/delivery-2026-10-13.json",
-  "worker_tokens": 1311,
-  "audit_tokens": 1018,
+  "live_checks": [
+    {
+      "id": "health",
+      "path": "/health",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "id": "market_treasury",
+      "path": "/market/treasury",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "controlled": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_status",
+      "path": "/market/aave/status",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "chain_id": 8453
+      },
+      "passed": true
+    },
+    {
+      "id": "runner_readiness_public",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": false
+      },
+      "passed": true
+    },
+    {
+      "id": "runner_readiness_valid",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": true
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_preview_public_pin_required",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_preview_wrong_pin_required",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_preview_valid_arbitrary_to_forbidden",
+      "path": "/market/aave/preview",
+      "http": 422,
+      "expected_http": 422,
+      "actual": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      },
+      "passed": true
+    }
+  ],
+  "source": "knowledge/results/wep3/delivery-contract-2026-10-13.json",
+  "worker_tokens": 1351,
   "audit": {
-    "accepted": false,
-    "reason": "Provided content does not contain a concrete reusable public product artifact or engineering checklist."
-  }
+    "accepted": true,
+    "reason": "All tests are defined with real executor checks that have all passed, useful assertions are present for validating responses, and there are no fabricated payment/publication claims or secret disclosures. The tests are executable against an API and cover a range of critical service endpoints, demonstrating functionality and security expectations."
+  },
+  "audit_tokens": 1370,
+  "result": {
+    "ok": false,
+    "error": "deliverable_must_link_product",
+    "refunded": true,
+    "status": 402
+  },
+  "http": 402
 }
