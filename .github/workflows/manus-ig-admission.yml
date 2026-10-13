@@ -1,0 +1,36 @@
+name: Manus Instagram video admission
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['videos/manus-instagram-20261013.mp4','scripts/verify-manus-ig-video.mjs','.github/workflows/manus-ig-admission.yml']
+permissions: {contents: write}
+concurrency: {group: manus-ig-admission, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Ensure media inspection tools when the video exists
+        run: |
+          if [ -f videos/manus-instagram-20261013.mp4 ] && ! command -v ffprobe >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+      - name: Validate committed video, not a status claim
+        run: node scripts/verify-manus-ig-video.mjs
+      - name: Archive actual admission status
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add results/publishing/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Actual Manus Instagram video admission evidence'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1

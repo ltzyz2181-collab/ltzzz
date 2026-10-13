@@ -4,19 +4,28 @@ const ERC=['function balanceOf(address) view returns(uint256)','function allowan
 const AT=['function balanceOf(address) view returns(uint256)','function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)'];
 const POOL=['function supply(address,uint256,address,uint16)','function withdraw(address,uint256,address) returns(uint256)'];
 const erc=new Interface(ERC),pool=new Interface(POOL);
-export function amountRaw(s){if(typeof s!=='string'||!/^\d{1,3}(?:\.\d{1,6})?$/.test(s))throw Error('decimal_amount_string_required');const [a,b='']=s.split('.');const raw=BigInt(a)*1000000n+BigInt(b.padEnd(6,'0'));if(raw<=0n||raw>20000000n)throw Error('single_cap_20_USDC');return raw;}
+export function amountRaw(s){if(typeof s!=='string'||!/^\d{1,12}(?:\.\d{1,6})?$/.test(s))throw Error('decimal_amount_string_required');const [a,b='']=s.split('.');const raw=BigInt(a)*1000000n+BigInt(b.padEnd(6,'0'));if(raw<=0n)throw Error('positive_USDC_amount_required');return raw;}
 export function budgetKeys(now){const d=new Date(now),m=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));m.setUTCDate(m.getUTCDate()-((m.getUTCDay()+6)%7));return {day:d.toISOString().slice(0,10),week:m.toISOString().slice(0,10),month:d.toISOString().slice(0,7)};}
+export function investmentLimits(ctx){
+ if(!ctx.exit_test_confirmed)return {mode:'pilot_until_exit_test',reputation:100,share_bps:0,single:20000000n,exposure:100000000n,day:60000000n,week:300000000n,month:500000000n};
+ const score=Number.isFinite(Number(ctx.capital_reputation))?Math.max(0,Math.min(200,Math.floor(Number(ctx.capital_reputation)))):0;
+ const bps=score<80?0:score<100?2000:score<120?4000:score<140?6000:score<160?7500:8500;
+ const equity=BigInt(ctx.usdc_raw)+BigInt(ctx.ausdc_raw),floor=BigInt(ctx.cash_floor_raw||5000000);
+ const free=equity>floor?equity-floor:0n,exposure=free*BigInt(bps)/10000n,single=exposure/4n;
+ return {mode:'reputation_and_actual_equity',reputation:score,share_bps:bps,single,exposure,day:exposure,week:exposure*3n,month:exposure*5n};
+}
 export function buildAavePlan(input,ctx){
  if(Object.keys(input).some(k=>!['intent_id','action','amount_usdc'].includes(k)))throw Error('arbitrary_transaction_parameters_forbidden');
  if(!/^[A-Za-z0-9_-]{16,100}$/.test(input.intent_id||'')||!['supply','withdraw'].includes(input.action))throw Error('invalid_intent');
- const amount=amountRaw(input.amount_usdc),address=ctx.address;
+ const amount=amountRaw(input.amount_usdc),address=ctx.address,limits=investmentLimits(ctx);
  if(input.action==='supply'){
   if(ctx.paused)throw Error('supply_paused');
   if(!ctx.first_supply_confirmed&&amount!==1000000n)throw Error('first_supply_must_be_1_USDC');
   if(ctx.first_supply_confirmed&&!ctx.exit_test_confirmed&&amount>1000000n)throw Error('first_exit_test_required');
-  if(BigInt(ctx.ausdc_raw)+amount>100000000n)throw Error('exposure_cap_100_USDC');
+  if(amount>limits.single)throw Error('single_reputation_limit');
+  if(BigInt(ctx.ausdc_raw)+amount>limits.exposure)throw Error('exposure_reputation_limit');
   if(BigInt(ctx.usdc_raw)-amount<BigInt(ctx.cash_floor_raw))throw Error('hire_cash_reserve');
-  if(BigInt(ctx.day_raw)+amount>60000000n||BigInt(ctx.week_raw)+amount>300000000n||BigInt(ctx.month_raw)+amount>500000000n)throw Error('period_cap');
+  if(BigInt(ctx.day_raw)+amount>limits.day||BigInt(ctx.week_raw)+amount>limits.week||BigInt(ctx.month_raw)+amount>limits.month)throw Error('period_cap');
   const steps=[];if(BigInt(ctx.allowance_raw)<amount)steps.push({kind:'approve',to:AAVE.usdc,data:erc.encodeFunctionData('approve',[AAVE.pool,amount])});
   steps.push({kind:'supply',to:AAVE.pool,data:pool.encodeFunctionData('supply',[AAVE.usdc,amount,address,0])});return {amount_raw:amount.toString(),steps};
  }
@@ -33,7 +42,10 @@ async function readAaveStatus(m,book){
  const [usdc,ausdc,eth,allowance,ap,underlying,decimals]=await Promise.all([u.balanceOf(address),a.balanceOf(address),p.getBalance(address),u.allowance(address,AAVE.pool),a.POOL(),a.UNDERLYING_ASSET_ADDRESS(),u.decimals()]);
  if(ap.toLowerCase()!==AAVE.pool.toLowerCase()||underlying.toLowerCase()!==AAVE.usdc.toLowerCase()||Number(decimals)!==6)throw Error('reserve_configuration_mismatch');
  const state=book.aave||{},principal=BigInt(state.principal_raw||0);
- return {ok:true,...AAVE,address,usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),eth_raw:eth.toString(),allowance_raw:allowance.toString(),principal_raw:principal.toString(),interest_raw:(!state.first_supply_confirmed&&ausdc>0n)?null:(ausdc>principal?ausdc-principal:0n).toString(),principal_basis:state.first_supply_confirmed?'tracked_supply_receipts':ausdc>0n?'unverified':'no_position',first_supply_confirmed:!!state.first_supply_confirmed,exit_test_confirmed:!!state.exit_test_confirmed,paused:!!state.paused,active_intent:state.active_intent||null,single_cap_usdc:20,exposure_cap_usdc:100,withdraw_receiver:address,owner_return_enabled:false};
+ const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n,floor=liabilities>5000000n?liabilities:5000000n;
+ const reputation=typeof m.score==='function'?await m.score('DeepSeek'):0;
+ const limits=investmentLimits({usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),cash_floor_raw:floor.toString(),exit_test_confirmed:!!state.exit_test_confirmed,capital_reputation:reputation});
+ return {ok:true,...AAVE,address,usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),eth_raw:eth.toString(),allowance_raw:allowance.toString(),principal_raw:principal.toString(),interest_raw:(!state.first_supply_confirmed&&ausdc>0n)?null:(ausdc>principal?ausdc-principal:0n).toString(),principal_basis:state.first_supply_confirmed?'tracked_supply_receipts':ausdc>0n?'unverified':'no_position',first_supply_confirmed:!!state.first_supply_confirmed,exit_test_confirmed:!!state.exit_test_confirmed,paused:!!state.paused,active_intent:state.active_intent||null,limit_policy:limits.mode,capital_agent:'DeepSeek',capital_reputation:limits.reputation,allocation_share_bps:limits.share_bps,single_cap_usdc:Number(formatUnits(limits.single,6)),exposure_cap_usdc:Number(formatUnits(limits.exposure,6)),cash_floor_raw:floor.toString(),withdraw_receiver:address,owner_return_enabled:false};
 }
 export function publicAaveIntent(i){return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),before:i.before||null,after:i.after||null,owner_return_executed:false};}
 export async function executeAave(m,book,input,{preview=false}={}){
@@ -70,9 +82,10 @@ export async function executeAave(m,book,input,{preview=false}={}){
    if(step.kind==='supply'){
     const fresh=await aaveStatus(m,book);if(!fresh.ok)return fresh;const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
     const floor=liabilities>5000000n?liabilities:5000000n,amount=BigInt(i.amount_raw);
-    if(BigInt(fresh.usdc_raw)-amount<floor||BigInt(fresh.ausdc_raw)+amount>100000000n)return {ok:false,error:'latest_cash_or_exposure_limit',...publicAaveIntent(i)};
-    const nowKeys=budgetKeys(Date.now()),limits={day:60000000n,week:300000000n,month:500000000n};
-    for(const k of ['day','week','month'])if(nowKeys[k]!==i.keys[k]&&BigInt(state.periods[k][nowKeys[k]]||0)+amount>limits[k])return {ok:false,error:'execution_period_cap',...publicAaveIntent(i)};
+    const liveLimits=investmentLimits({...fresh,cash_floor_raw:floor.toString()});
+    if(amount>liveLimits.single||BigInt(fresh.usdc_raw)-amount<floor||BigInt(fresh.ausdc_raw)+amount>liveLimits.exposure)return {ok:false,error:'latest_cash_or_exposure_limit',...publicAaveIntent(i)};
+    const nowKeys=budgetKeys(Date.now()),limits={day:liveLimits.day,week:liveLimits.week,month:liveLimits.month};
+    for(const k of ['day','week','month'])if(BigInt(state.periods[k][nowKeys[k]]||0)+(nowKeys[k]===i.keys[k]?0n:amount)>limits[k])return {ok:false,error:'execution_period_cap',...publicAaveIntent(i)};
     for(const k of ['day','week','month'])if(nowKeys[k]!==i.keys[k]){state.periods[k][i.keys[k]]=(BigInt(state.periods[k][i.keys[k]]||0)-amount).toString();state.periods[k][nowKeys[k]]=(BigInt(state.periods[k][nowKeys[k]]||0)+amount).toString();}i.keys=nowKeys;await m.save(book);
    }
    state.tx_times=(state.tx_times||[]).filter(t=>Date.now()-t<3600000);if(state.tx_times.length>=6)return {ok:false,error:'hourly_transaction_cap',...publicAaveIntent(i)};
@@ -104,8 +117,8 @@ export async function autoAave(m,book){
  if(s.first_supply_confirmed&&!s.exit_test_confirmed){action='withdraw';stage='first_exit';if(BigInt(s.ausdc_raw)<amount)amount=BigInt(s.ausdc_raw);if(amount<=0n)return {ok:false,error:'exit_test_position_missing'};}
  else if(s.exit_test_confirmed){
   stage='bounded_supply';const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
-  const floor=liabilities>5000000n?liabilities:5000000n;amount=BigInt(s.usdc_raw)-floor;const room=100000000n-BigInt(s.ausdc_raw);if(amount>room)amount=room;if(amount>20000000n)amount=20000000n;
-  if(amount<1000000n)return {ok:true,status:'reserve_or_exposure_wait',balances:s,signed:false};
+  const floor=liabilities>5000000n?liabilities:5000000n;amount=BigInt(s.usdc_raw)-floor;const limits=investmentLimits({...s,cash_floor_raw:floor.toString()}),room=limits.exposure-BigInt(s.ausdc_raw);if(amount>room)amount=room;if(amount>limits.single)amount=limits.single;
+  if(room<0n){action='withdraw';stage='reputation_rebalance';amount=-room;}else if(amount<1000000n)return {ok:true,status:'reserve_or_exposure_wait',balances:s,signed:false};
  }
  const day=new Date().toISOString().slice(0,10),id='AAVE-AUTO-'+stage+'-'+day;
  if(book.aave?.intents?.[id]?.status==='confirmed')return {ok:true,status:'already_ran_today',intent_id:id,signed:false};

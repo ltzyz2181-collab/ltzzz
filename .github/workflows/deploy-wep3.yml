@@ -78,25 +78,31 @@ jobs:
           if(!h.ok||!health.pin||w.status!==401||!catalogResponse.ok||!catalog.ok||blocked.status!==401||!ch.challenge_id||!verify.ok)process.exitCode=1;
           JS
       - name: Audit actual provider delivery and accept hire once
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-hire-closeout]')
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
-          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
-          DOUBAO_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
         run: node scripts/accept-real-hire.mjs
       - name: Verify Aave balances without signing
         env:
           AAVE_ACTION: status
         run: node scripts/run-treasury-aave.mjs
+      - name: Capital AI actual execution review
+        if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-hire-closeout]')
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/review-aave-investment.mjs
       - name: Fulfill at most one paid customer order
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
-          DOUBAO_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
         run: node scripts/fulfill-market-orders.mjs
       - name: Alert failed deployment
         if: failure()
@@ -106,7 +112,7 @@ jobs:
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/wep3/ || true
+          git add knowledge/results/wep3/ data/model-routing/ || true
           git diff --staged --quiet && exit 0
           git commit -m 'WEP3 actual deployment acceptance'
           for attempt in 1 2 3 4; do
