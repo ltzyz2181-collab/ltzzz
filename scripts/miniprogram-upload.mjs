@@ -38,7 +38,17 @@ try {
 } catch (error) {
   receipt.status = receipt.upload_attempted ? 'upload_outcome_unknown' : 'upload_failed_before_request';
   // Do not put SDK errors containing key contents, tokens or request objects in public receipts.
-  receipt.error_code = typeof error?.code === 'number' ? error.code : null;
+  const errorText = [error?.message, error?.errMsg, error?.msg].filter(value => typeof value === 'string').join(' ');
+  const codes = [error?.errCode, error?.errcode, error?.code].map(Number);
+  receipt.error_code = codes.find(value => Number.isFinite(value)) ?? null;
+  receipt.failure_reason = /white.?list|白名单/i.test(errorText) ? 'upload_ip_not_authorized'
+    : /invalid.*appid|appid.*invalid/i.test(errorText) ? 'appid_rejected'
+    : /signature|private.?key|签名/i.test(errorText) ? 'upload_signature_rejected'
+    : /timeout|timed out|ETIMEDOUT/i.test(errorText) ? 'network_timeout'
+    : 'sdk_error_requires_review';
+  // Only extract bounded IP values, never the raw SDK request/message.
+  receipt.observed_ips = [...new Set(errorText.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || [])]
+    .filter(ip => ip.split('.').every(part => Number(part) <= 255)).slice(0, 3);
   receipt.error_name = /^[A-Za-z0-9_]{1,60}$/.test(error?.name || '') ? error.name : 'UploadError';
 } finally {
   if (temporary) await fs.rm(temporary, { recursive: true, force: true });
