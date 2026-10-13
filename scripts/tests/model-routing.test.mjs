@@ -4,3 +4,5 @@ test('empty model outputs are never successful',async()=>{const original=globalT
 test('Claude joins text blocks and records input plus output usage',async()=>{const original=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({content:[{type:'thinking',thinking:'not logged'},{type:'text',text:'A'},{type:'text',text:'B'}],usage:{input_tokens:7,output_tokens:4},stop_reason:'end_turn',model:'test'}),{status:200});try{const {callAgent}=await import('../call-claude.mjs');const r=await callAgent({apiKey:'test-placeholder',prompt:'test'});assert.equal(r.output,'A\nB');assert.equal(r.tokens_used,11);assert.equal(r.finish_reason,'end_turn');}finally{globalThis.fetch=original;}});
 
 test('recognize account-listed versioned DeepSeek Pro rather than silently selecting Flash',()=>{assert.equal(chooseModel('deepseek',['deepseek-flash','deepseek-v4-pro']),'deepseek-v4-pro');assert.equal(chooseModel('deepseek',['deepseek-v4-flash','deepseek-v4-pro']),'deepseek-v4-pro');});
+
+test('versioned DeepSeek Pro outranks Flash',()=>{assert.equal(chooseModel('deepseek',['deepseek-flash','deepseek-v4-pro']),'deepseek-v4-pro');});
