@@ -1,0 +1,3 @@
+import fs from 'node:fs';
+export function routedModel(seat,fallback){try{return JSON.parse(fs.readFileSync('data/model-routing/latest.json','utf8')).seats?.[seat]?.model||fallback}catch{return fallback}}
+export function chooseModel(seat,ids){const sorted=[...new Set(ids)].sort().reverse();if(seat==='deepseek')return sorted.find(x=>/^deepseek-pro/.test(x))||sorted.find(x=>x==='deepseek-reasoner')||sorted.find(x=>/^deepseek-flash/.test(x))||null;if(seat==='doubao')return sorted.filter(x=>/^doubao-seed-/.test(x)&&/pro/.test(x)&&!/(vision|image|tts|embedding)/i.test(x))[0]||null;if(seat==='claude')return sorted.find(x=>/^claude-sonnet-/.test(x))||null;return null;}
