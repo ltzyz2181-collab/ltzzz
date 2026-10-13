@@ -1,0 +1,16 @@
+<view class="page" wx:if="{{product}}">
+  <view class="tag">{{product.tag}}</view>
+  <view class="heading">{{product.title}}</view>
+  <view class="intro">{{product.summary}}</view>
+  <view class="price">{{product.priceLabel}}</view>
+  <view class="card">
+    <view class="title">产品内容</view>
+    <view class="row" wx:for="{{product.items}}" wx:key="*this">{{index + 1}}. {{item}}</view>
+  </view>
+  <view class="card warning">
+    <view class="title">购买前须知</view>
+    <view class="body">{{product.notice}}</view>
+  </view>
+  <view class="note">商品来源：LTZZZ Gumroad 店铺。本页不提供支付或自动交付。</view>
+</view>
+<view class="page" wx:else><view class="heading">未找到产品</view><view class="intro">请返回产品列表重新选择。</view></view>
