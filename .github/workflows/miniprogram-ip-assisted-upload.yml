@@ -1,0 +1,92 @@
+name: Mini Program IP Assisted Upload
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/miniprogram-ip-assisted-upload.yml]
+permissions:
+  contents: write
+concurrency:
+  group: miniprogram-upload
+  cancel-in-progress: false
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Attempt upload and identify actual WeChat egress
+        timeout-minutes: 4
+        env:
+          MINI_APPID: ${{ secrets.WECHAT_MINIPROGRAM_APPID }}
+          MINI_UPLOAD_KEY: ${{ secrets.WECHAT_MINIPROGRAM_PRIVATE_KEY }}
+        run: |
+          node --check scripts/miniprogram-upload.mjs
+          npm install --prefix "$RUNNER_TEMP/mini-ci" --no-audit --no-fund miniprogram-ci@2.1.31
+          MINI_CI_PACKAGE_ROOT="$RUNNER_TEMP/mini-ci" node scripts/miniprogram-upload.mjs
+      - name: Publish factual receipt before waiting
+        id: receipt
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const r = JSON.parse(fs.readFileSync('results/commerce/miniprogram-upload-latest.json'));
+          if (r.run_id !== process.env.GITHUB_RUN_ID) throw new Error('Missing current-run receipt');
+          const blocked = r.status === 'blocked_upload_ip_whitelist' && r.observed_ips?.length > 0;
+          r.waiting_for_owner_ip_confirmation = blocked;
+          r.approval_deadline_utc = blocked ? new Date(Date.now() + 8 * 60 * 1000).toISOString() : null;
+          fs.writeFileSync('results/commerce/miniprogram-upload-latest.json', JSON.stringify(r, null, 2) + '\n');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'blocked=' + blocked + '\n');
+          JS
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add results/commerce/miniprogram-upload-latest.json
+          git commit -m "Record mini program upload IP gate [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Wait for this run's confirmed upload IP
+        id: gate
+        if: steps.receipt.outputs.blocked == 'true'
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const r = JSON.parse(fs.readFileSync('results/commerce/miniprogram-upload-latest.json'));
+          const until = Date.now() + 8 * 60 * 1000;
+          let confirmed = false;
+          while (Date.now() < until) {
+            try {
+              const response = await fetch('https://raw.githubusercontent.com/' + process.env.GITHUB_REPOSITORY + '/main/results/commerce/miniprogram-upload-ip-approval.json?at=' + Date.now(), { signal: AbortSignal.timeout(10000) });
+              if (response.ok) {
+                const approval = await response.json();
+                if (approval.run_id === process.env.GITHUB_RUN_ID && approval.owner_confirmed === true && r.observed_ips.includes(approval.ip)) { confirmed = true; break; }
+              }
+            } catch {}
+            await new Promise(resolve => setTimeout(resolve, 10000));
+          }
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'confirmed=' + confirmed + '\n');
+          if (!confirmed) {
+            r.waiting_for_owner_ip_confirmation = false;
+            r.owner_confirmation_timed_out = true;
+            fs.writeFileSync('results/commerce/miniprogram-upload-latest.json', JSON.stringify(r, null, 2) + '\n');
+          }
+          JS
+      - name: Retry once on the same runner after owner confirmation
+        if: steps.gate.outputs.confirmed == 'true'
+        timeout-minutes: 4
+        env:
+          MINI_APPID: ${{ secrets.WECHAT_MINIPROGRAM_APPID }}
+          MINI_UPLOAD_KEY: ${{ secrets.WECHAT_MINIPROGRAM_PRIVATE_KEY }}
+        run: MINI_CI_PACKAGE_ROOT="$RUNNER_TEMP/mini-ci" node scripts/miniprogram-upload.mjs
+      - name: Persist final outcome
+        if: always()
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add results/commerce/miniprogram-upload-latest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record same-run mini program upload outcome [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
