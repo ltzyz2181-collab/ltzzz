@@ -1,6 +1,11 @@
 name: Verified models and six-memory discussion
 on:
   workflow_dispatch:
+    inputs:
+      seats:
+        description: Comma-separated seats to verify; avoid repeating already verified models
+        default: deepseek,doubao,kimi_cn,claude
+        type: string
   schedule:
     - cron: '20 11 * * 1-4'
   push:
@@ -21,6 +26,7 @@ jobs:
       - name: Real model execution (explicit push marker; staggered weekly seats)
         if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-memory-review]')
         env:
+          DISCUSSION_SEATS: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[seat:deepseek]') && 'deepseek' || inputs.seats || 'deepseek,doubao,kimi_cn,claude' }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}

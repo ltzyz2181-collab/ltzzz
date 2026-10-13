@@ -11,7 +11,7 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 8192 }) {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: model || process.env.DEEPSEEK_MODEL || routedModel("deepseek","deepseek-reasoner"),
-        ...(/deepseek-(pro|flash)/.test(model || process.env.DEEPSEEK_MODEL || routedModel('deepseek','deepseek-reasoner')) ? {thinking:{type:'enabled'}} : {}),
+        ...(/deepseek-(?:v\d+(?:-\d+)?-)?(pro|flash)/.test(model || process.env.DEEPSEEK_MODEL || routedModel('deepseek','deepseek-reasoner')) ? {thinking:{type:'enabled'}} : {}),
         messages: [
           { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
           { role: "user", content: prompt },
