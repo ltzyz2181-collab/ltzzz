@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const report={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID||'local',model_calls:0,transactions_sent:0,seats:[],owner_reported_topups:{kimi_cny:50,manus_cny:10,status:'reported_not_independently_verified'}};
+for(const [seat,base,key,anthropic] of [['kimi_cn','https://api.moonshot.cn/v1',process.env.MOONSHOT_API_KEY_CN,false],['deepseek','https://api.deepseek.com/v1',process.env.DEEPSEEK_API_KEY,false],['doubao','https://ark.cn-beijing.volces.com/api/v3',process.env.DOUBAO_API_KEY||process.env.ARK_API_KEY,false],['claude','https://api.anthropic.com/v1',process.env.ANTHROPIC_API_KEY,true]]){
+ const row={seat,key_present:!!key};if(!key){row.status='missing_secret';report.seats.push(row);continue;}
+ try{const headers=anthropic?{'x-api-key':key,'anthropic-version':'2023-06-01'}:{Authorization:'Bearer '+key};const r=await fetch(base+'/models',{headers,signal:AbortSignal.timeout(30000)});const j=await r.json().catch(()=>({}));row.models_http=r.status;row.model_ids=(j.data||j.items||[]).map(x=>x.id||x.model).filter(x=>typeof x==='string');row.status=r.ok?'catalogue_verified_no_generation':'catalogue_error';
+ if(seat==='kimi_cn'){const b=await fetch(base+'/users/me/balance',{headers,signal:AbortSignal.timeout(30000)});const q=await b.json().catch(()=>({}));row.balance_http=b.status;if(b.ok)row.balance={available_balance:q.available_balance??q.data?.available_balance??null,cash_balance:q.cash_balance??q.data?.cash_balance??null,voucher_balance:q.voucher_balance??q.data?.voucher_balance??null};}
+ if(seat==='deepseek'){const b=await fetch('https://api.deepseek.com/user/balance',{headers,signal:AbortSignal.timeout(30000)});const q=await b.json().catch(()=>({}));row.balance_http=b.status;if(b.ok)row.balance=(q.balance_infos||[]).map(x=>({currency:x.currency,total_balance:x.total_balance,granted_balance:x.granted_balance,topped_up_balance:x.topped_up_balance}));}
+ }catch{row.status='network_or_timeout';}
+ report.seats.push(row);
+}
+fs.mkdirSync('knowledge/results/providers',{recursive:true});fs.writeFileSync(`knowledge/results/providers/readiness-${report.run_id}.json`,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));

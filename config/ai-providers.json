@@ -13,14 +13,15 @@
       "module": "scripts/call-deepseek.mjs",
       "secret": "DEEPSEEK_API_KEY",
       "model_env": "DEEPSEEK_MODEL",
-      "default_model": "deepseek-chat",
-      "mode": "github_actions"
+      "default_model": "deepseek-flash",
+      "mode": "github_actions",
+      "note": "Verified account-listed model with thinking enabled; select pro only if account catalogue lists it."
     },
     "doubao": {
       "module": "scripts/call-doubao.mjs",
       "secret": "DOUBAO_API_KEY",
       "model_env": "DOUBAO_MODEL",
-      "default_model": "doubao-seed-evolving",
+      "default_model": "doubao-seed-2-1-pro-260915",
       "base_env": "DOUBAO_BASE_URL",
       "mode": "github_actions"
     },
@@ -57,7 +58,11 @@
     },
     "claude": {
       "secret": "ANTHROPIC_API_KEY",
-      "mode": "disabled_by_owner"
+      "mode": "external_memory_discussion",
+      "module": "scripts/call-claude.mjs",
+      "model_env": "ANTHROPIC_MODEL",
+      "generation_blocker": "latest actual receipt: insufficient API credits",
+      "permissions": "text discussion only; no wallet signature or voting"
     },
     "microsoft": {
       "delegate": "gpt",
