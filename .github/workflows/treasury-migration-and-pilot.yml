@@ -23,7 +23,7 @@ jobs:
           LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
         run: node scripts/treasury-migration.mjs || true
-      - name: Aave auto: first 1 USDC supply (resumes pending intent)
+      - name: "Aave auto: first 1 USDC supply (resumes pending intent)"
         env:
           AAVE_ACTION: auto
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -37,7 +37,7 @@ jobs:
             sleep 6
           done
           exit 1
-      - name: Aave auto: exit 1 USDC redeem
+      - name: "Aave auto: exit 1 USDC redeem"
         env:
           AAVE_ACTION: auto
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
