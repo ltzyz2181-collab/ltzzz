@@ -22,7 +22,7 @@ export async function hire(s, { employer = 'did:ltzzz:gpt', worker, workerModel,
   try {
   t.bid_mode = 'program_rule'; // honest: bid set by code, not by the model
   s.bid(t.id, worker, ask); s.award(t.id);
-  const w = await workerCall({ apiKey: workerKey, prompt, maxTokens: 3000 });
+  const w = await workerCall({ apiKey: workerKey, prompt, maxTokens: ['deepseek','doubao'].includes(workerModel) ? 8192 : 3000 });
   const wm = { model: workerModel, executed_by: w.model || workerModel, status: w.status, finish_reason: w.finish_reason ?? null, tokens_used: w.tokens_used || 0 };
   const body = w.ok && w.output ? redact(w.output) : '';
   if (!body) { const r = s.block(t.id, w.ok ? 'worker_output_empty' : 'worker_model_failed', { worker_model: { ...wm, error: String(w.error || '').slice(0, 200) } }); return { task: t.id, worker, status: r.status, reason: r.reason }; }
