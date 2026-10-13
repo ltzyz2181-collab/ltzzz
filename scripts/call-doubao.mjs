@@ -5,13 +5,14 @@
  * 密钥：DOUBAO_API_KEY（兼容旧 ARK_API_KEY），GitHub Secrets 注入
  * 实现：先试 OpenAI 风格 {base}/chat/completions；404/405 时退回 Anthropic 风格 {base}/v1/messages
  */
+import {routedModel} from './model-routing.mjs';
 const BASE = () => process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const MODEL = () => process.env.DOUBAO_MODEL || "doubao-seed-evolving";
+const MODEL = () => process.env.DOUBAO_MODEL || routedModel("doubao","doubao-seed-evolving");
 
 async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens) {
   const resp = await fetch(`${base}/chat/completions`, {
     method: "POST",
-      signal: AbortSignal.timeout(120000),
+      signal: AbortSignal.timeout(240000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
@@ -35,7 +36,7 @@ async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens) {
 async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   const resp = await fetch(`${base}/v1/messages`, {
     method: "POST",
-      signal: AbortSignal.timeout(120000),
+      signal: AbortSignal.timeout(240000),
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
       model,
@@ -52,16 +53,16 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   return { kind: "ok", output, finish_reason: data.stop_reason, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0) };
 }
 
-export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
+export async function callAgent({ apiKey, prompt, model, maxTokens = 8192 }) {
   if (!apiKey) return { ok: false, status: "not_configured", error: "DOUBAO_API_KEY（或 ARK_API_KEY）未配置（请在 GitHub Secrets 添加）" };
   const base = BASE();
   const mdl = model || MODEL();
   try {
     const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl, maxTokens);
-    if (r1.kind === "ok") return { ok: true, status: "success", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used, model: mdl };
+    if (r1.kind === "ok") return { ok: !!r1.output, status: r1.output ? "success" : "empty_output", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used, model: mdl };
     if (r1.kind === "unsupported") {
       const r2 = await tryAnthropicCompatible(apiKey, prompt, base, mdl, maxTokens);
-      if (r2.kind === "ok") return { ok: true, status: "success", output: r2.output, finish_reason:r2.finish_reason, tokens_used: r2.tokens_used, model: mdl };
+      if (r2.kind === "ok") return { ok: !!r2.output, status: r2.output ? "success" : "empty_output", output: r2.output, finish_reason:r2.finish_reason, tokens_used: r2.tokens_used, model: mdl };
       return { ok: false, status: "api_error", error: `openai-style 404/405，anthropic-style HTTP ${r2.status}: ${r2.text}` };
     }
     return { ok: false, status: "api_error", error: `HTTP ${r1.status}: ${r1.text}` };
