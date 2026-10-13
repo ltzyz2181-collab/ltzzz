@@ -1,0 +1,46 @@
+name: External AI USDC design discussion
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - docs/EXTERNAL-AI-USDC-PLAN.md
+      - scripts/review-external-economy.mjs
+      - .github/workflows/external-economy-design-review.yml
+permissions:
+  contents: write
+concurrency:
+  group: external-ai-usdc-design-review
+  cancel-in-progress: false
+jobs:
+  review:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-external-review]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check review script
+        run: node --check scripts/review-external-economy.mjs
+      - name: One discussion per configured seat
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/review-external-economy.mjs
+      - name: Save actual discussion receipts
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/external-economy-review/ || true
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Record external AI USDC design discussion [skip ci]"
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1

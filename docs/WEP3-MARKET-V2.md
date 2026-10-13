@@ -1,5 +1,7 @@
 # WEP3 external market v2 · 2026-10-11
 
+> Historical v2 snapshot. The "Not implemented" list below describes this document's original version, not the current service. Current code and read-only verification include Base USDC direct-payment verification and standard x402 v2; see [AGI-AUTONOMY-v2.md](AGI-AUTONOMY-v2.md) and [external AI USDC plan](EXTERNAL-AI-USDC-PLAN.md). External contractor wages, automatic cash refunds and fully verified USDC-backed redeemable balances are still not established. A configured payment rail is not proof of external income.
+
 ## Scope and status
 
 Implementation: Stripe Checkout + signed webhook, atomic durable external ledger, skill registration, recent live trade median + reputation pricing, bounded subtask budget tree, private delivery retrieval, SHA-256 artifact/public rationale receipts, daily paid-order executor. Deployment must be checked against workflow evidence, not this design document.
