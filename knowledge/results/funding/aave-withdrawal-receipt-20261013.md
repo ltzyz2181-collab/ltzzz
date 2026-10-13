@@ -1,41 +1,37 @@
-# Aave 个人提现回执（2026-10-13，第③项 · 已执行提现准备）
+# Aave 个人提现回执（2026-10-13，第③项 · 已核实网页版可操作）
 
-状态：**用户 2026-10-13 指示「AAVE 提u」；已完成提现前链上验证与操作指引，待 owner 在 Aave App 内执行提现并提供目标地址**。依据 2026-10-11 排查记录（knowledge/results/funding/aave-owner-address-probe-20261011.md）与用户 2026-10-13 附件截图（Aave 手机 App「存入 USDC」页）。
+状态：**用户 2026-10-13 指示「AAVE 提u」；已核实 Aave Account 为非托管钱包且支持网页版操作（官方审计报告佐证），待 owner 在网页版/App 内发起转出并提供目标地址**。
 
-## 一、昨日查明事实（复述，不重新猜地址）
+## 一、产品形态核实（2026-10-13，修正此前"托管"判定）
+
+- 官方 Zellic 安全审计报告（2026-05-26，aave.org/files/aave-account-web-app-audit-report-2026-05.pdf）原文：
+  - "Aave Accounts: **A non-custodial wallet** and account infrastructure that lets end users create, recover, and use a crypto wallet through a familiar email/password experience, while keeping all sensitive key material **client-side encrypted**."
+  - "An Aave Account (fka Family Account) is a cross-platform wallet. **A user can register on web**, log in on iOS, recover on React Native, and export a wallet back to web."
+- **结论：Aave Account（原 Family Account）是非托管钱包，有网页版入口，可在网页端登录并操作（含转出）；此前回执"托管平台、仅 App 提现、平台不支持任意地址转出"的判定有误，予以修正。**
+
+## 二、昨日查明事实（复述，不重新猜地址）
 
 | 项 | 值 |
 |---|---|
-| 平台名称 | **Aave Account（Family 托管账户，非自托管）** |
-| 实际网络 | **Base 8453**（该托管账户的入金/出金口走 Base） |
-| 资产类型 | **USDC 托管余额 ≈ $1,001.77**（在 Aave 托管内；MetaMask 各账户 aUSDC=0，10-11 实测） |
-| 入金/返还地址 | 0x370dd04092b2EcE24372ff93C29b55f5D2c12FD5（= Aave App「存入 USDC」页的 Base 充值地址；附件截图：最低 $2、仅 USDC 走 Base、显示 6.25%） |
-| 提现入口 | **Aave App 自带提现**（托管平台不支持任意地址链上转出）→ 提到 owner 自有钱包 |
+| 平台名称 | Aave Account（原 Family Account，非托管钱包，邮箱/密码登录、密钥客户端加密） |
+| 实际网络 | Base 8453（App「存入 USDC」页显示 Base 充值地址） |
+| 资产类型 | USDC 托管显示余额 ≈ $1,001.77（App 内可见；MetaMask 各账户 aUSDC=0，10-11 实测） |
+| App 内充值地址 | 0x370dd04092b2EcE24372ff93C29b55f5D2c12FD5（10-13 链上实测 USDC/aUSDC/ETH 全 0——账户资金以 Account 钱包/协议仓位体现，非该地址余额） |
+| 提现/转出入口 | **Aave Account 网页版或 App 内转出（客户端签名，可转任意地址）** |
 
-## 二、提现前链上验证（2026-10-13，只读）
+## 三、待 owner 执行（网页版/App 内，凭据不进对话）
 
-- block 52,554,302（mainnet.base.org 直读）：入金地址 0x370d…fd5 的 **USDC=0、aUSDC=0、ETH=0**。
-- 结论：托管余额 $1,001.77 **在 Aave 平台内部账本，不在链上地址**；链上无任何可被直接提取/抢提的资金；提现必须由 owner 在 Aave App 内发起（平台从内部账本出金）。
+1. 登录 Aave Account（网页版或 App）→ 确认当前 USDC 余额。
+2. **确认目标地址（Base，USDC）**——两个方案，建议先小额验证：
+   - 方案 A（推荐，一步归集）：直接转到新金库 `0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d`（Base 8453，USDC 原生币种），先小额（$2–10）到账后再转余额。
+   - 方案 B：先转到 owner 自有钱包（需 owner 提供 Base 地址），再转新金库。
+3. 提交转出并记录平台回执；到账 txHash 交回做链上验证。
 
-## 三、待 owner 执行（Aave App 内操作，凭据不进对话）
+## 四、币安 AAVE 代币（仅记录，不执行）
 
-1. **提供/确认目标地址**（Base）：owner 自有钱包（建议 MetaMask 中确认可控的 Base 地址；到账后可直接转新金库）。未提供前不发起提现。
-2. 打开 Aave App（登录托管账户）→ **Withdraw USDC** → 按平台选项选择 Base 网络 → 填目标地址。
-3. 金额：**建议先小额（如 $10）验证到账，确认后再提余额**（$1,001.77 全部）。
-4. 平台身份验证（短信/2FA/人脸等）后提交；**记录平台回执**（提现单号/到账 txHash）。
-5. 到账后将 txHash 交回做链上验证。
+- 币安内 1.58 AAVE **不是 USDC 仓位**；需 owner 兑换成 USDC 后选 Base 提到新金库（另行回执）。
 
-## 四、到账后归集（owner 操作，先小额再余款）
-
-- 方案：owner 钱包（Base）→ USDC 转新金库 0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d；先小额到账再转余款；留 txHash + 平台到账证据回执。
-- 若 owner 更倾向平台直接出金到新金库地址（若 App 允许任意地址），需另行确认后执行；本回执默认走「先到 owner 钱包」。
-
-## 五、币安 AAVE 代币（仅记录，不执行）
-
-- 币安内 1.58 AAVE **不是 USDC 仓位**，不能直接作为 Base USDC 投资。
-- 需要 owner 将计划投入部分兑换成 USDC，再选 Base 网络提到新金库；兑换与跨链回执另行记录。
-
-## 六、约束
+## 五、约束
 
 - 凭据不进入对话；不在公开仓库/聊天中放置任何私钥、助记词、token。
-- 本回执未发生任何链上资金动作；托管提现由 owner 在 App 内完成。
+- 本回执未发生任何链上资金动作；转出由 owner 在 Aave Account 内发起。
