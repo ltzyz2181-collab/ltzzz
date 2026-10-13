@@ -1,11 +1,11 @@
 {
-  "at": "2026-10-13T03:44:44.369Z",
-  "run_id": "38342656768",
+  "at": "2026-10-13T03:57:05.262Z",
+  "run_id": "38343907894",
   "model": "deepseek-v4-pro",
   "model_status": "success",
   "finish_reason": "stop",
-  "tokens_used": 13257,
-  "snapshot_sha256": "2d2f58fb24207e45ef764558774f8dacc0c2119cc53eac7b368da33039fea892",
+  "tokens_used": 13086,
+  "snapshot_sha256": "1682b17e65c628fd02e00b4292acc9c243fb6f4d2bbe71e0b54698e37c3ab09c",
   "treasury_status": {
     "ok": true,
     "chain_id": 8453,
@@ -26,7 +26,7 @@
     "active_intent": null,
     "limit_policy": "pilot_until_exit_test",
     "capital_agent": "DeepSeek",
-    "capital_reputation": 100,
+    "capital_reputation": 105,
     "allocation_share_bps": 0,
     "single_cap_usdc": 20,
     "exposure_cap_usdc": 100,
@@ -37,6 +37,6 @@
   "execution_status": "blocked_no_USDC",
   "transactions_sent": 0,
   "tx_hash": null,
-  "output": "已核对新金库 `0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d` 的 Base 余额：USDC=0、aUSDC=0、ETH=0、allowance=0，且 `first_supply_confirmed=false`、`exit_test_confirmed=false`。这不是个人 Aave 存款或旧 Vault，当前无任何已确认 Aave 交易。\n\n【可自动执行】\n1. 定时跑 `aaveStatus`，读 `usdc_raw`、`ausdc_raw`、`eth_raw`、`allowance_raw`、`paused`。\n2. 定时跑 `autoAave`：当前因 `usdc_raw=0 < 6 USDC` 且首供未完成，预期返回 `waiting_USDC_deposit`，不会上链。\n\n【缺资金/签名：人工准备】\n3. 向新金库地址转入至少 6 USDC（合约 `0x833589...`），记录入金 txHash。原因：`cash_floor_raw=5 USDC`，需保留 5 USDC 后供应 1 USDC。不要混淆个人/旧 Vault 资金。\n4. 向同一地址转入 Base ETH，记录 txHash。当前 `eth_raw=0`，不能支付 approve+supply gas。\n5. 确认 `TREASURY_EXECUTOR_KEY` 已配置且签名地址等于 `0x5df...`；只核对地址，不索取私钥。\n\n【第一阶段：必须 1 USDC supply/withdraw】\n6. 资金、签名就绪后，调用 `autoAave` 或 `executeAave`，`amount_usdc=1`。因 `allowance_raw=0`，将产生 approve 与 supply 两步。验收：approve txHash 与 supply txHash 均 `receipt.status=1`；状态更新为 `first_supply_confirmed=true`、`principal_raw=1000000`、`ausdc_raw>0`。\n7. 随后 `autoAave` 进入 first_exit，withdraw 1 USDC。验收：withdraw txHash `receipt.status=1`；`exit_test_confirmed=true`、`principal_raw=0`、`active_intent=null`。此步失败不得进入分配。\n\n【通过后分配】\n8. `exit_test_confirmed=true` 后模式切换为 `reputation_and_actual_equity`。当前 `capital_reputation=100` 对应 `share_bps=4000`（仓位上限，不是收益承诺）。若只有 6 USDC，`free=1 USDC`、`exposure=0.4 USDC`，低于 1 USDC，自动返回 `reserve_or_exposure_wait`；需更多实际资产才能分配。\n\n【失败条件及机器状态/接口/迁移】\n- F1 现金储备不足：返回 `hire_cash_reserve` 或 `waiting_USDC_deposit`；读 `usdc_raw`、`cash_floor_raw`；迁移：从可信来源补 USDC，验收入金 txHash。\n- F2 gas 不足：返回 `waiting_Base_ETH_gas` 或 `insufficient_eth_gas`；读 `eth_raw`；迁移：补 Base ETH，验收入金 txHash。\n- F3 签名缺失/不匹配：返回 `treasury_signer_missing` 或 `treasury_signer_mismatch`；核对签名地址与 treasury 地址；迁移：重新配置环境，不要求公开私钥；验收新交易产生 txHash。\n- F4 交易失败/连续失败：`receipt.status=0`，`failures>=3` 会置 `paused=true`；读 `paused`、`failures`、`step.receipt_status`；迁移：诊断后重置状态、重新发起 intent；验收新 txHash `receipt.status=1`。\n- F5 储备配置不匹配：返回 `reserve_configuration_mismatch`；读 `a.POOL()`、`a.UNDERLYING_ASSET_ADDRESS()`、`decimals`；迁移：使用校验过的储备地址。\n- F6 周期/频率限制：返回 `period_cap` 或 `hourly_transaction_cap`；读 `tx_times`、`periods`、`limit_policy`；迁移：等待下周期或增加实际 equity/reputation。\n\n当前未发生任何交易，不虚构收益，不索取私钥。  \n【交付结束】",
+  "output": "审计对象仅限新金库地址 `0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d`；当前 `usdc_raw=0`、`eth_raw=0`、`allowance_raw=0`、`first_supply_confirmed=false`、`exit_test_confirmed=false`，因此现在不能执行任何链上交易，只能做只读核查。不得把个人 Aave 存款、旧 Vault 头寸当作新金库资金；旧 Vault 即使有 `principal`，新金库也必须在本地完成 1 USDC 供给与退出测试后才算受信。\n\n**下一步检查单**\n\n1. **[可自动] 状态复核**  \n   重新读取 `aaveStatus` / `eth_call`：核对 `usdc_raw`、`eth_raw`、`allowance_raw`、`principal_basis`、`first_supply_confirmed`、`exit_test_confirmed`、`paused`、`cash_floor_raw`。当前应仍为全零、无头寸。\n\n2. **[缺资金，不可自动] 注资新金库**  \n   向 `0x5df...` 转入至少 **6 USDC**，即 `usdc_raw >= 6,000,000`；同时转入 Base ETH gas，建议至少 `0.002 ETH`，因为 `eth_raw=0` 会直接触发 `treasury_eth_gas_missing` 或 `waiting_Base_ETH_gas`。只接收该地址转账，不混用个人 Aave 存款或旧 Vault。\n\n3. **[可能缺签名] 检查执行器**  \n   确认 `TREASURY_EXECUTOR_KEY` 已配置，且 `Wallet(KEY).address` 必须等于 `0x5df...`。不可导出或索取私钥；如缺失，`executeAave` 返回 `treasury_signer_missing`，机器保持无 prepared intent。\n\n4. **[可自动，条件满足后] 首次 supply**  \n   执行 `action=\"supply\", amount_usdc=\"1\"`。源码强制首笔必须正好 1 USDC；同时要求 `usdc_raw - 1 USDC >= cash_floor_raw`。现金地板为 `5,000,000 raw (5 USDC)`，所以新金库至少需有 6 USDC 才能通过首供。若余额只有 1 USDC，会返回 `hire_cash_reserve`。\n\n5. **[可自动] 首次 withdraw**  \n   首供确认后，执行 `action=\"withdraw\", amount_usdc=\"1\"`。成功后 `exit_test_confirmed` 才会变为 `true`，否则分配份额 `allocation_share_bps` 保持 0。\n\n6. **[成功后分配]**  \n   `exit_test_confirmed=true` 后，`reputation=105` 对应 `share_bps=4000`，即可投敞口为自由权益的 40%，单笔上限为自由权益的 10%。自由权益 = `usdc_raw + ausdc_raw - cash_floor_raw`。若仍只有 6 USDC，自由权益仅 1 USDC，单笔上限仅 0.1 USDC，`autoAave` 会返回 `reserve_or_exposure_wait`，需继续注资。\n\n**至少 4 个失败条件**\n\n| 失败条件 | 预期机器状态 | 可读接口/字段 | 迁移路径 | 验收 txHash 字段 |\n|---|---|---|---|---|\n| `waiting_USDC_deposit` | `ok:true`，未建 intent | `usdc_raw < 6,000,000`，`first_supply_confirmed=false` | 补足至少 6 USDC | 无需 txHash，等待注资 |\n| `waiting_Base_ETH_gas` / `treasury_eth_gas_missing` | `ok:true` 或 `blocked_configuration` | `eth_raw=0` | 转入 Base ETH | 无需 txHash，等待 gas |\n| `treasury_signer_missing` / `treasury_signer_mismatch` | `executeAave` 返回错误，不创建 intent | 返回 `error` 字段 | 配置匹配 `0x5df...` 的签名器，不暴露私钥 | 无 txHash |\n| `hire_cash_reserve` | `blocked_policy`，`active_intent=null` | `usdc_raw`、`cash_floor_raw` | 补充 USDC 至至少 6 USDC 后再试 | 无 txHash |\n| `first_supply_must_be_1_USDC` | `blocked_policy` | `first_supply_confirmed=false`，`amount_usdc` | 改为正好 1 USDC | 无 txHash |\n| `supply_paused` | `paused=true`，`active_intent=null` | `paused` 字段，`failures` | 人工审计后重置 `paused=false`、`failures=0` | 无新增 txHash |\n\n**验收 txHash 字段**  \n供给成功：`step.tx_hash` 非空，`step.status=\"confirmed\"`，`receipt_status=1`，`block_number` 存在；`aaveStatus.after` 中 `first_supply_confirmed=true`，`principal_raw=\"1000000\"`。  \n退出成功：`step.tx_hash` 非空，`step.status=\"confirmed\"`，`receipt_status=1`；`exit_test_confirmed=true`，`principal_raw=\"0\"`（无收益时），`ausdc_raw` 回到退出前水平。  \n用 Base RPC 调用 `eth_getTransactionReceipt(tx_hash)` 复核 `status=1`；不要声称已交易，当前无任何已签名或广播交易。  \n【交付结束】",
   "error": null
 }

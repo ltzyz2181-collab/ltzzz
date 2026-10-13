@@ -1,0 +1,123 @@
+{
+  "artifact": {
+    "tests": [
+      {
+        "id": "health",
+        "label": "健康检查不可用：若失败，表示基础服务未运行或 /health 契约不可达；此项仅定义待执行测试，不表示已测试。",
+        "method": "GET",
+        "path": "/health",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "ok": true
+        }
+      },
+      {
+        "id": "market_treasury",
+        "label": "国债市场地址契约错误：若失败，表示受控金库地址或 /market/treasury 响应与实装不一致；此项仅定义待执行测试，不表示已测试。",
+        "method": "GET",
+        "path": "/market/treasury",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "ok": true,
+          "controlled": true,
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+        }
+      },
+      {
+        "id": "aave_status",
+        "label": "Aave 市场状态契约错误：若失败，表示链 ID 或 /market/aave/status 公开响应不符合 Base 链实装；此项仅定义待执行测试，不表示已测试。",
+        "method": "GET",
+        "path": "/market/aave/status",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "ok": true,
+          "chain_id": 8453
+        }
+      },
+      {
+        "id": "runner_readiness_public",
+        "label": "Runner 未认证状态处理错误：若失败，表示公开访问 readiness 时未按契约返回 authenticated:false，或错误地返回了 401；此项仅定义待执行测试，不表示已测试。",
+        "method": "GET",
+        "path": "/market/runner/readiness",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "authenticated": false
+        }
+      },
+      {
+        "id": "runner_readiness_valid",
+        "label": "Runner 有效认证状态处理错误：若失败，表示有效凭证未被识别，或响应额外返回了不应存在的 status 字符串；此项仅定义待执行测试，不表示已测试。",
+        "method": "GET",
+        "path": "/market/runner/readiness",
+        "auth": "valid",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "authenticated": true
+        }
+      },
+      {
+        "id": "aave_preview_public_pin_required",
+        "label": "公开预览缺少 PIN 拦截失败：若失败，表示未认证 POST 未返回 pin_required，可能绕过交易前置授权；此项仅定义待执行测试，不表示已测试，也不签署或发送交易。",
+        "method": "POST",
+        "path": "/market/aave/preview",
+        "auth": "public",
+        "body": {
+          "intent_id": "CONTRACT_TEST_INTENT_20261013",
+          "action": "supply",
+          "amount_usdc": "1"
+        },
+        "expected_http": 401,
+        "expected_json": {
+          "error": "pin_required"
+        }
+      },
+      {
+        "id": "aave_preview_wrong_pin_required",
+        "label": "错误凭证 PIN 拦截失败：若失败，表示错误认证未被拒绝或错误码不符合 pin_required；此项仅定义待执行测试，不表示已测试，也不签署或发送交易。",
+        "method": "POST",
+        "path": "/market/aave/preview",
+        "auth": "wrong",
+        "body": {
+          "intent_id": "CONTRACT_TEST_INTENT_20261013",
+          "action": "supply",
+          "amount_usdc": "1"
+        },
+        "expected_http": 401,
+        "expected_json": {
+          "error": "pin_required"
+        }
+      },
+      {
+        "id": "aave_preview_valid_arbitrary_to_forbidden",
+        "label": "任意交易参数禁止规则失效：若失败，表示带 to 的预览请求未被 422 拒绝，存在允许任意目标参数的风险；此项仅定义待执行测试，不表示已测试，也不签署或发送交易。",
+        "method": "POST",
+        "path": "/market/aave/preview",
+        "auth": "valid",
+        "body": {
+          "intent_id": "CONTRACT_TEST_INTENT_20261013",
+          "action": "supply",
+          "amount_usdc": "1",
+          "to": "0x0000000000000000000000000000000000000000"
+        },
+        "expected_http": 422,
+        "expected_json": {
+          "error": "arbitrary_transaction_parameters_forbidden"
+        }
+      }
+    ]
+  },
+  "executor": "doubao",
+  "model": "doubao-seed-2-1-pro-260915",
+  "tokens": 1351,
+  "at": "2026-10-13T03:55:20.189Z",
+  "generation_attempts": 1
+}
