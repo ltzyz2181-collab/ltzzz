@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-13T09:57:48.208Z",
+  "chainId": 8453,
+  "execution_id": "local",
+  "old_guardian": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+  "vault": "0x872C322e886ccd3f2Bb63e0611a6d8c620D859Ab",
+  "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+  "hypothesis": "Migrate legacy Base Aave position and guardian operating USDC to new treasury; never re-invest into old Vault",
+  "exit_plan": "withdraw all aUSDC -> skim to guardian -> transfer all guardian USDC to treasury -> 0.002 ETH gas to treasury",
+  "transactions": [
+    {
+      "step": "t1_withdraw",
+      "name": "withdrawUSDC(max)",
+      "tx_hash": "0x9413666e646f4c2be2f00e0b27ac2aa51d8e2c72a95b05af87187cba6a701fa5",
+      "status": "submitted"
+    },
+    {
+      "step": "t1_withdraw",
+      "name": "withdrawUSDC(max)",
+      "tx_hash": "0x9413666e646f4c2be2f00e0b27ac2aa51d8e2c72a95b05af87187cba6a701fa5",
+      "status": "confirmed",
+      "block": 52548066,
+      "gas_used": "202213"
+    },
+    {
+      "step": "t2_skim",
+      "name": "skim()",
+      "tx_hash": "0x349936292f921d8e3d27e1c0e94f108869e224f04d8a36437ef24e1bf6e98d9b",
+      "status": "submitted"
+    },
+    {
+      "step": "t2_skim",
+      "name": "skim()",
+      "tx_hash": "0x349936292f921d8e3d27e1c0e94f108869e224f04d8a36437ef24e1bf6e98d9b",
+      "status": "confirmed",
+      "block": 52548071,
+      "gas_used": "52234"
+    },
+    {
+      "step": "t3_usdc_to_treasury",
+      "name": "USDC.transfer(TREASURY,39.013125)",
+      "tx_hash": "0x49cda52c029ec89ca6d3b12972bfef0a38457bd0c6e74e1083cbbcd7c4a0eaf2",
+      "status": "submitted"
+    },
+    {
+      "step": "t3_usdc_to_treasury",
+      "name": "USDC.transfer(TREASURY,39.013125)",
+      "tx_hash": "0x49cda52c029ec89ca6d3b12972bfef0a38457bd0c6e74e1083cbbcd7c4a0eaf2",
+      "status": "confirmed",
+      "block": 52548076,
+      "gas_used": "57371"
+    },
+    {
+      "step": "t4_eth_to_treasury",
+      "name": "0.002 ETH gas transfer",
+      "tx_hash": "0x0f36d9c497a3d5293f00d161504519dd73bf802a288ca2b711a46d49adb150d6",
+      "status": "submitted"
+    },
+    {
+      "step": "t4_eth_to_treasury",
+      "name": "0.002 ETH gas transfer",
+      "tx_hash": "0x0f36d9c497a3d5293f00d161504519dd73bf802a288ca2b711a46d49adb150d6",
+      "status": "confirmed",
+      "block": 52548083,
+      "gas_used": "21000"
+    }
+  ],
+  "status": "verified_migrated",
+  "snapshot_before": {
+    "block": 52548062,
+    "vault_ausdc": "20.018125",
+    "vault_usdc": "0.0",
+    "exposure_usdc": "20.0",
+    "guardian_usdc": "18.995",
+    "guardian_eth": "0.010280265300552586",
+    "treasury_usdc": "0.0",
+    "treasury_ausdc": "0.0",
+    "treasury_eth": "0.0"
+  },
+  "step_t1": {
+    "method": "max_uint",
+    "vault_usdc_before": "0.0",
+    "after": {
+      "vault_usdc": "20.018125",
+      "exposure": "0.0",
+      "vault_ausdc": "0.0"
+    }
+  },
+  "step_t2": {
+    "guardian_usdc": "39.013125",
+    "vault_usdc": "0.0"
+  },
+  "step_t3": {
+    "sent_usdc": "39.013125",
+    "guardian_remaining_usdc": "0.0"
+  },
+  "step_t4": {
+    "sent_eth": "0.002",
+    "guardian_remaining_eth": "0.008278262362988452"
+  },
+  "snapshot_after": {
+    "block": 52548087,
+    "vault_ausdc": "0.0",
+    "vault_usdc": "0.0",
+    "exposure_usdc": "0.0",
+    "guardian_usdc": "0.0",
+    "guardian_eth": "0.008278262362988452",
+    "treasury_usdc": "39.013125",
+    "treasury_ausdc": "0.0",
+    "treasury_eth": "0.002"
+  },
+  "final_check": {
+    "treasury_usdc_delta": "39.013125",
+    "treasury_eth_delta": "0.002000",
+    "expected_usdc_delta": "39.013125",
+    "vault_ausdc_dust": "0.0",
+    "vault_usdc_dust": "0.0",
+    "guardian_usdc_dust": "0.0",
+    "exposure_dust": "0.0"
+  },
+  "tx_hashes": {
+    "t1_withdraw": "0x9413666e646f4c2be2f00e0b27ac2aa51d8e2c72a95b05af87187cba6a701fa5",
+    "t2_skim": "0x349936292f921d8e3d27e1c0e94f108869e224f04d8a36437ef24e1bf6e98d9b",
+    "t3_usdc_to_treasury": "0x49cda52c029ec89ca6d3b12972bfef0a38457bd0c6e74e1083cbbcd7c4a0eaf2",
+    "t4_eth_to_treasury": "0x0f36d9c497a3d5293f00d161504519dd73bf802a288ca2b711a46d49adb150d6"
+  }
+}
