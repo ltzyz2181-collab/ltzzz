@@ -12,7 +12,7 @@ concurrency:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,7 +36,7 @@ jobs:
           if (r.run_id !== process.env.GITHUB_RUN_ID) throw new Error('Missing current-run receipt');
           const blocked = r.status === 'blocked_upload_ip_whitelist' && r.observed_ips?.length > 0;
           r.waiting_for_owner_ip_confirmation = blocked;
-          r.approval_deadline_utc = blocked ? new Date(Date.now() + 8 * 60 * 1000).toISOString() : null;
+          r.approval_deadline_utc = blocked ? new Date(Date.now() + 30 * 60 * 1000).toISOString() : null;
           fs.writeFileSync('results/commerce/miniprogram-upload-latest.json', JSON.stringify(r, null, 2) + '\n');
           fs.appendFileSync(process.env.GITHUB_OUTPUT, 'blocked=' + blocked + '\n');
           JS
@@ -53,7 +53,7 @@ jobs:
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const r = JSON.parse(fs.readFileSync('results/commerce/miniprogram-upload-latest.json'));
-          const until = Date.now() + 8 * 60 * 1000;
+          const until = Date.now() + 30 * 60 * 1000;
           let confirmed = false;
           while (Date.now() < until) {
             try {
