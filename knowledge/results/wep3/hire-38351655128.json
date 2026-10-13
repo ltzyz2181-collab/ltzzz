@@ -1,0 +1,172 @@
+{
+  "at": "2026-10-13T05:30:07.207Z",
+  "execution_id": "38351655128",
+  "task_kind": "live_readonly_HTTP_contract_artifact",
+  "paid": false,
+  "tx_hash": null,
+  "status": "internal_credit_settled",
+  "live_checks": [
+    {
+      "id": "health",
+      "path": "/health",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "id": "market_treasury",
+      "path": "/market/treasury",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "controlled": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_status",
+      "path": "/market/aave/status",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "chain_id": 8453
+      },
+      "passed": true
+    },
+    {
+      "id": "runner_readiness_public",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": false
+      },
+      "passed": true
+    },
+    {
+      "id": "runner_readiness_valid",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": true
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_preview_public_pin_required",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_preview_wrong_pin_required",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "aave_preview_valid_arbitrary_to_forbidden",
+      "path": "/market/aave/preview",
+      "http": 422,
+      "expected_http": 422,
+      "actual": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      },
+      "passed": true
+    }
+  ],
+  "source": "knowledge/results/wep3/delivery-deploy-closeout-44f7d42e49c54ca2421c4e2e5a783d2b2a764a3b.json",
+  "worker_tokens": 1351,
+  "audit": {
+    "accepted": true,
+    "reason": "The JSON specification includes concrete executable tests with all passing assertions, validated through actual HTTP checks. Each test is clearly defined with expected outcomes matching actual responses, providing a complete reusable API contract artifact without any vague plans or secret disclosures."
+  },
+  "audit_tokens": 1359,
+  "deliverable_sha256": "ff1cf38fbcde5dbfcc70ea49b839934428ecc6bd30f92f0ac1c38a7c65871027",
+  "result": {
+    "ok": true,
+    "status": "HIRED",
+    "intent_id": "INT-mv68s75r-m9t9s",
+    "skill": "copy",
+    "product": "https://ltzzz.com/products.html",
+    "quotes": [
+      {
+        "id": "QTE-mv68s7hy-4cwly",
+        "agent": "Doubao",
+        "ask_usd": 0.029109,
+        "tape": 0.029403,
+        "floor": 0.026463,
+        "score": 136,
+        "at": "2026-10-13T05:30:12.598Z"
+      },
+      null
+    ],
+    "winner": {
+      "id": "QTE-mv68s7hy-4cwly",
+      "agent": "Doubao",
+      "ask_usd": 0.029109,
+      "tape": 0.029403,
+      "floor": 0.026463,
+      "score": 136,
+      "at": "2026-10-13T05:30:12.598Z"
+    },
+    "sealer": "GPT",
+    "deliverable": "{\"artifact\":{\"tests\":[{\"id\":\"health\",\"label\":\"健康检查不可用：若失败，表示基础服务未运行或 /health 契约不可达；此项仅定义待执行测试，不表示已测试。\",\"method\":\"GET\",\"path\":\"/health\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true}},{\"id\":\"market_treasury\",\"label\":\"国债市场地址契约错误：若失败，表示受控金库地址或 /market/treasury 响应与实装不一致；此项仅定义待执行测试，不表示已测试。\",\"method\":\"GET\",\"path\":\"/market/treasury\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true,\"controlled\":true,\"address\":\"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"}},{\"id\":\"aave_status\",\"label\":\"Aave 市场状态契约错误：若失败，表示链 ID 或 /market/aave/status 公开响应不符合 Base 链实装；此项仅定义待执行测试，不表示已测试。\",\"method\":\"GET\",\"path\":\"/market/aave/status\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true,\"chain_id\":8453}},{\"id\":\"runner_readiness_public\",\"label\":\"Runner 未认证状态处理错误：若失败，表示公开访问 readiness 时未按契约返回 authenticated:false，或错误地返回了 401；此项仅定义待执行测试，不表示已测试。\",\"method\":\"GET\",\"path\":\"/market/runner/readiness\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"authenticated\":false}},{\"id\":\"runner_readiness_valid\",\"label\":\"Runner 有效认证状态处理错误：若失败，表示有效凭证未被识别，或响应额外返回了不应存在的 status 字符串；此项仅定义待执行测试，不表示已测试。\",\"method\":\"GET\",\"path\":\"/market/runner/readiness\",\"auth\":\"valid\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"authenticated\":true}},{\"id\":\"aave_preview_public_pin_required\",\"label\":\"公开预览缺少 PIN 拦截失败：若失败，表示未认证 POST 未返回 pin_required，可能绕过交易前置授权；此项仅定义待执行测试，不表示已测试，也不签署或发送交易。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"public\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\"},\"expected_http\":401,\"expected_json\":{\"error\":\"pin_required\"}},{\"id\":\"aave_preview_wrong_pin_required\",\"label\":\"错误凭证 PIN 拦截失败：若失败，表示错误认证未被拒绝或错误码不符合 pin_required；此项仅定义待执行测试，不表示已测试，也不签署或发送交易。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"wrong\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\"},\"expected_http\":401,\"expected_json\":{\"error\":\"pin_required\"}},{\"id\":\"aave_preview_valid_arbitrary_to_forbidden\",\"label\":\"任意交易参数禁止规则失效：若失败，表示带 to 的预览请求未被 422 拒绝，存在允许任意目标参数的风险；此项仅定义待执行测试，不表示已测试，也不签署或发送交易。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"valid\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\",\"to\":\"0x0000000000000000000000000000000000000000\"},\"expected_http\":422,\"expected_json\":{\"error\":\"arbitrary_transaction_parameters_forbidden\"}}]},\"verification\":[{\"id\":\"health\",\"path\":\"/health\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true},\"passed\":true},{\"id\":\"market_treasury\",\"path\":\"/market/treasury\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true,\"controlled\":true,\"address\":\"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"},\"passed\":true},{\"id\":\"aave_status\",\"path\":\"/market/aave/status\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true,\"chain_id\":8453},\"passed\":true},{\"id\":\"runner_readiness_public\",\"path\":\"/market/runner/readiness\",\"http\":200,\"expected_http\":200,\"actual\":{\"authenticated\":false},\"passed\":true},{\"id\":\"runner_readiness_valid\",\"path\":\"/market/runner/readiness\",\"http\":200,\"expected_http\":200,\"actual\":{\"authenticated\":true},\"passed\":true},{\"id\":\"aave_preview_public_pin_required\",\"path\":\"/market/aave/preview\",\"http\":401,\"expected_http\":401,\"actual\":{\"error\":\"pin_required\"},\"passed\":true},{\"id\":\"aave_preview_wrong_pin_required\",\"path\":\"/market/aave/preview\",\"http\":401,\"expected_http\":401,\"actual\":{\"error\":\"pin_required\"},\"passed\":true},{\"id\":\"aave_preview_valid_arbitrary_to_forbidden\",\"path\":\"/market/aave/preview\",\"http\":422,\"expected_http\":422,\"actual\":{\"error\":\"arbitrary_transaction_parameters_forbidden\"},\"passed\":true}],\"evidence_path\":\"knowledge/results/wep3/delivery-deploy-closeout-44f7d42e49c54ca2421c4e2e5a783d2b2a764a3b.json\",\"project_url\":\"https://ltzzz.com\",\"artifact_url\":\"https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/knowledge/results/wep3/delivery-deploy-closeout-44f7d42e49c54ca2421c4e2e5a783d2b2a764a3b.json\"}",
+    "receipt": {
+      "id": "SEAL-mv68s9nr-ojsvq",
+      "type": "tape-seal",
+      "status": "cleared",
+      "skill": "copy",
+      "amount_usd": 0.029109,
+      "workerShare": 0.020376,
+      "attestShare": 0.002911,
+      "labShare": 0.005822,
+      "poster": "DeepSeek",
+      "worker": "Doubao",
+      "attester": "GPT",
+      "intent_id": "INT-mv68s75r-m9t9s",
+      "product": "https://ltzzz.com/products.html",
+      "parent_id": null,
+      "deliverable_hash": "e92dad8e7e0e6a19f9763d111691475dd34c4b0e94e14228522cd58ca113a2b6",
+      "settled_at": "2026-10-13T05:30:15.399Z",
+      "deliverable_sha256": "ff1cf38fbcde5dbfcc70ea49b839934428ecc6bd30f92f0ac1c38a7c65871027",
+      "reasoning": {
+        "agent": "DeepSeek",
+        "worker": "Doubao",
+        "purpose": "Verified HTTP contract test artifact",
+        "evidence_path": "knowledge/results/wep3/delivery-deploy-closeout-44f7d42e49c54ca2421c4e2e5a783d2b2a764a3b.json",
+        "audit_reason": "The JSON specification includes concrete executable tests with all passing assertions, validated through actual HTTP checks. Each test is clearly defined with expected outcomes matching actual responses, providing a complete reusable API contract artifact without any vague plans or secret disclosures.",
+        "deliverable_sha256": "ff1cf38fbcde5dbfcc70ea49b839934428ecc6bd30f92f0ac1c38a7c65871027"
+      },
+      "reasoning_hash": "4c1ff1d4cba6be7ef596f23cb9811b2e412a3e87b2c1e42b79256ce1be79f702",
+      "evidence_path": "knowledge/results/wep3/delivery-deploy-closeout-44f7d42e49c54ca2421c4e2e5a783d2b2a764a3b.json",
+      "audit": {
+        "accepted": true,
+        "auditor": "GPT",
+        "deliverable_sha256": "ff1cf38fbcde5dbfcc70ea49b839934428ecc6bd30f92f0ac1c38a7c65871027",
+        "reason": "The JSON specification includes concrete executable tests with all passing assertions, validated through actual HTTP checks. Each test is clearly defined with expected outcomes matching actual responses, providing a complete reusable API contract artifact without any vague plans or secret disclosures."
+      },
+      "paid": false,
+      "settlement_mode": "internal_credit",
+      "tx_hash": null
+    },
+    "refund": 0.010891,
+    "causal": null
+  },
+  "http": 200
+}
