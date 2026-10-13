@@ -32,8 +32,11 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
-          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: node scripts/fulfill-market-orders.mjs
       - name: Bounded Aave cycle (wait when USDC or gas missing)
