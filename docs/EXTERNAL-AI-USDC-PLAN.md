@@ -1,6 +1,6 @@
 # LTZZZ 外部接单与外部 AI 真 USDC 雇佣方案
 
-状态：方案评审，尚未部署本方案的真钱出账功能。范围仅 ltzyz2181-collab/ltzzz。
+状态：方案及专项讨论已完成，评审有条件支持 P0，尚未部署本方案的真钱出账功能。范围仅 ltzyz2181-collab/ltzzz。
 
 ## 1. 目标与已核实的起点
 
@@ -37,6 +37,16 @@
 x402 解决 HTTP 付款协议，不自动提供托管、退款或仲裁。预付 x402 API 可能已扣款却交付失败，不能承诺必然退款；这类首期采购须有独立小额损失限额。交付后付款的承包商走独立应付款协议。
 
 不在此方案中杜撰已可用的第三方服务、Marketplace 账号或 API。外部端点未验收前，状态为 external_provider_unverified，不以内部豆包席位替代“外部 AI”。
+
+### 获客与外部供应商发现
+
+- 人类：在 LTZZZ 自有服务页提供报价、样例、钱包付款与私密取件说明；先用一个明确 SKU 获客，不承诺上线即有订单。
+- AI：提供标准 x402、OpenAPI/技能描述和机器可读输入/输出 schema。首期对接 x402 Bazaar 的公开目录用于发现外部供应商；发现不等于通过能力审核。
+- CDP Bazaar 官方文档说明：卖方需完整 discovery metadata、端点验证和通过 CDP Facilitator 的成功已结算调用，才触发该目录索引；查询目录本身不需 CDP API Key。LTZZZ 目前走 PayAI，不能把已有 PayAI 付款轨道当成已收录 CDP Bazaar，也不静默替换 facilitator。
+- 先免费校验 metadata/402；后续若选择 CDP 上架，单列凭据及小额付费验证工单。目录中的实际可检索记录才是“被收录”证据，验证通过或 processing 状态不是最终成功。
+- 当前 POST 必填 brief 和 Idempotency-Key，空请求可能422；discovery 必须声明真实 method/body/header/example。付款后202只是排队受理，客户端还要带私密订单 token 取回最终交付。不能把202宣传成已完成，亦不能假设要求同步200的目录客户端会自动兼容。
+
+官方参考（本轮只读核查，未注册或付款）：[卖方发现指南](https://docs.cdp.coinbase.com/x402/seller/get-discovered)、[买方发现指南](https://docs.cdp.coinbase.com/x402/buyer/discover-services)。上述路由兼容性补充已由独立工程评审复核。
 
 ## 3. 试单与资金守恒
 
@@ -81,6 +91,8 @@ seal v1 绑定 root_intent_id、order_id、parent_receipt_hashes（排序）、d
 
 ## 6. 上线顺序与闸门
 
+**P0前置阻塞（已本地复现，尚未修复）：** 旧直转 challenge 未强制付款人绑定；旧 AGI Pay `demo` 可越过资源回执检查；非数字 tokens 可被记成 null 金额。复现仅用本地虚构 RPC/KV，未攻击线上或广播交易，见 docs/reviews/EXTERNAL-AI-USDC-LOCAL-REPRO.json。应先关闭不安全的旧真实直转入口或补签名付款人/订单绑定，隔离 demo 与付费路由，并让流式输入严格有限正整数且并发记账原子化，再接外部真钱工资。
+
 **P0：首单闭环。** 账本三分层、外部承包商身份与单单权限、签名交付/审核、DAG v1、受限应付款执行器、对账与失败/退款状态。先在影子/测试环境验收，外部出账默认关闭；没有真实已资助订单时零新增模型调用。真实外采试单需有明确订单、端点、金额上限及可用自有资金，不能从这篇设计文档推导任意转账授权。
 
 **P1：有界递归与匹配。** 全树守恒、取消/失败分支处理、冷启动、公平选择、价格冻结。先影子测算，指标合格才扩大已批准任务预算内的自主执行。
@@ -103,5 +115,7 @@ seal v1 绑定 root_intent_id、order_id、parent_receipt_hashes（排序）、d
 ## 8. 评审来源与本轮边界
 
 两名 Codex 独立评审分别从工程和资金/产品角度审阅，意见摘要见 docs/reviews/EXTERNAL-AI-USDC-CODEX-REVIEWS.md。DeepSeek、豆包专项讨论按执行回执记录实际模型、结束原因、完整性与 usage；失败/截断必须保留，不写全体通过。
+
+实际运行 `38485923108`：DeepSeek `deepseek-v4-pro` 与豆包 `doubao-seed-2-1-pro-260915` 各一次调用，均 stop 并完整结束。两者支持分阶段方案，但都反对以当前实现直接开放外部 USDC 出款。它们阅读的是初稿与源码，后补的官方 Bazaar 路由兼容性由 Codex 独立复核。逐项采纳及纠正见 docs/reviews/EXTERNAL-AI-USDC-DISCUSSION-DECISION.md。
 
 不新增模型定时任务，不重配现有机器人，不提交真钱交易，不改变个人钱包和既有资金权限，不把模型文本直接执行为政策。
