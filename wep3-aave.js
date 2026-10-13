@@ -7,7 +7,7 @@ const erc=new Interface(ERC),pool=new Interface(POOL);
 export function amountRaw(s){if(typeof s!=='string'||!/^\d{1,12}(?:\.\d{1,6})?$/.test(s))throw Error('decimal_amount_string_required');const [a,b='']=s.split('.');const raw=BigInt(a)*1000000n+BigInt(b.padEnd(6,'0'));if(raw<=0n)throw Error('positive_USDC_amount_required');return raw;}
 export function budgetKeys(now){const d=new Date(now),m=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));m.setUTCDate(m.getUTCDate()-((m.getUTCDay()+6)%7));return {day:d.toISOString().slice(0,10),week:m.toISOString().slice(0,10),month:d.toISOString().slice(0,7)};}
 export function investmentLimits(ctx){
- if(!ctx.exit_test_confirmed)return {mode:'pilot_until_exit_test',reputation:100,share_bps:0,single:20000000n,exposure:100000000n,day:60000000n,week:300000000n,month:500000000n};
+ if(!ctx.exit_test_confirmed)return {mode:'pilot_until_exit_test',reputation:Number.isFinite(Number(ctx.capital_reputation))?Math.max(0,Math.min(200,Math.floor(Number(ctx.capital_reputation)))):0,share_bps:0,single:20000000n,exposure:100000000n,day:60000000n,week:300000000n,month:500000000n};
  const score=Number.isFinite(Number(ctx.capital_reputation))?Math.max(0,Math.min(200,Math.floor(Number(ctx.capital_reputation)))):0;
  const bps=score<80?0:score<100?2000:score<120?4000:score<140?6000:score<160?7500:8500;
  const equity=BigInt(ctx.usdc_raw)+BigInt(ctx.ausdc_raw),floor=BigInt(ctx.cash_floor_raw||5000000);
@@ -103,7 +103,7 @@ export async function executeAave(m,book,input,{preview=false}={}){
  }
  i.status='confirmed';state.active_intent=null;state.failures=0;
  if(i.action==='supply'){state.principal_raw=(BigInt(state.principal_raw)+BigInt(i.amount_raw)).toString();state.first_supply_confirmed=true;}
- else{state.principal_raw=(BigInt(state.principal_raw)>BigInt(i.amount_raw)?BigInt(state.principal_raw)-BigInt(i.amount_raw):0n).toString();state.exit_test_confirmed=true;}
+ else{state.principal_raw=(BigInt(state.principal_raw)>BigInt(i.amount_raw)?BigInt(state.principal_raw)-BigInt(i.amount_raw):0n).toString();if(state.first_supply_confirmed&&(BigInt(i.amount_raw)>=1000000n||(BigInt(i.before.ausdc_raw)<1000000n&&BigInt(i.amount_raw)===BigInt(i.before.ausdc_raw))))state.exit_test_confirmed=true;}
  i.after=await aaveStatus(m,book);await m.save(book);return {ok:true,confirmed:true,...publicAaveIntent(i)};
 }
 

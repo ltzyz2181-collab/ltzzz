@@ -9,13 +9,14 @@ import {routedModel} from './model-routing.mjs';
 const BASE = () => process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
 const MODEL = () => process.env.DOUBAO_MODEL || routedModel("doubao","doubao-seed-evolving");
 
-async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens) {
+async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens, thinking) {
   const resp = await fetch(`${base}/chat/completions`, {
     method: "POST",
       signal: AbortSignal.timeout(240000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
+      ...(thinking?{thinking:{type:thinking}}:{}),
       messages: [
         { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
         { role: "user", content: prompt },
@@ -53,12 +54,12 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   return { kind: "ok", output, finish_reason: data.stop_reason, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0) };
 }
 
-export async function callAgent({ apiKey, prompt, model, maxTokens = 8192 }) {
+export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, thinking }) {
   if (!apiKey) return { ok: false, status: "not_configured", error: "DOUBAO_API_KEY（或 ARK_API_KEY）未配置（请在 GitHub Secrets 添加）" };
   const base = BASE();
   const mdl = model || MODEL();
   try {
-    const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl, maxTokens);
+    const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl, maxTokens, thinking);
     if (r1.kind === "ok") return { ok: !!r1.output, status: r1.output ? "success" : "empty_output", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used, model: mdl };
     if (r1.kind === "unsupported") {
       const r2 = await tryAnthropicCompatible(apiKey, prompt, base, mdl, maxTokens);
