@@ -1,0 +1,59 @@
+name: Treasury migration and 1 USDC pilot
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ltzzz-treasury-migration
+  cancel-in-progress: false
+jobs:
+  migrate-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm install --no-save ethers@6.17.0
+      - name: Migrate legacy Vault and guardian funds to treasury
+        env:
+          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
+          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
+        run: node scripts/treasury-migration.mjs
+      - name: First 1 USDC supply via restricted interface
+        env:
+          AAVE_ACTION: supply
+          AAVE_AMOUNT: '1'
+          AAVE_INTENT_ID: DOUBAO-AAVE-FIRST-${{ github.run_id }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node scripts/run-treasury-aave.mjs
+          cp "knowledge/results/wep3/aave-${GITHUB_RUN_ID}.json" "knowledge/results/wep3/aave-first-supply-${GITHUB_RUN_ID}.json"
+          node -e "const r=require('./knowledge/results/wep3/aave-'+process.env.GITHUB_RUN_ID+'.json'); if(!r.on_chain_executed){ console.error('FIRST_SUPPLY_NOT_CONFIRMED', JSON.stringify(r)); process.exit(1); }"
+      - name: Exit 1 USDC redeem via restricted interface
+        env:
+          AAVE_ACTION: withdraw
+          AAVE_AMOUNT: '1'
+          AAVE_INTENT_ID: DOUBAO-AAVE-EXIT-${{ github.run_id }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          node scripts/run-treasury-aave.mjs
+          cp "knowledge/results/wep3/aave-${GITHUB_RUN_ID}.json" "knowledge/results/wep3/aave-exit-${GITHUB_RUN_ID}.json"
+          node -e "const r=require('./knowledge/results/wep3/aave-'+process.env.GITHUB_RUN_ID+'.json'); if(!r.on_chain_executed){ console.error('EXIT_REDEEM_NOT_CONFIRMED', JSON.stringify(r)); process.exit(1); }"
+      - name: Final status snapshot
+        env:
+          AAVE_ACTION: status
+        run: node scripts/run-treasury-aave.mjs
+      - name: Commit receipts
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/migrations/ knowledge/results/wep3/
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "Treasury migration + 1 USDC pilot actual chain data"
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1

@@ -1,0 +1,63 @@
+{
+  "txBuilderVersion": "1.18.0",
+  "generatedAt": "2026-10-13T09:29:20.947Z",
+  "network": "Ethereum mainnet",
+  "safe": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+  "signingThreshold": "3 of 5 owners",
+  "currentNonce": 6,
+  "recipientStatus": "UNCONFIRMED_RECIPIENT_PENDING_OWNER_CONFIRMATION",
+  "recipientCandidate": "0xb99C6751f443842F4987bb2017580405572Df905 (Safe signer#1; owner confirmed MetaMask Account 1 on 2026-10-11)",
+  "executionOrder": [
+    "Proposal A (USDT) at nonce 6",
+    "then Proposal B (ETH) at nonce 7"
+  ],
+  "proposals": [
+    {
+      "id": "A_USDT_withdraw",
+      "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "value": "0",
+      "data": "0xa9059cbb000000000000000000000000b99c6751f443842f4987bb2017580405572df9050000000000000000000000000000000000000000000000000000000002ebfc60",
+      "operation": 0,
+      "nonce": 6,
+      "safeTxGas": "0",
+      "baseGas": "0",
+      "gasPrice": "0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "from": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+      "description": "Transfer full on-chain USDT balance 49.02 to recipient (candidate). ERC20 transfer(address,uint256), selector 0xa9059cbb, amount raw=49020000 (6 decimals)."
+    },
+    {
+      "id": "B_ETH_withdraw",
+      "eligible": true,
+      "to": "0xb99C6751f443842F4987bb2017580405572Df905",
+      "value": "2000000000000000",
+      "data": "0x",
+      "operation": 0,
+      "nonce": 7,
+      "safeTxGas": "0",
+      "baseGas": "0",
+      "gasPrice": "0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "from": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+      "description": "Send remaining ETH to recipient. Balance 0.005 ETH minus 0.003 ETH gas reserve = 0.002 ETH. Reserve rationale: one future execTransaction on a plain transfer costs ~60k-90k gas incl. Safe overhead; at 30-50 gwei that is 0.0018-0.0045 ETH, so 0.003 ETH covers a high-fee execution with margin. Executor normally pays gas from their own wallet; the reserve keeps Safe functional for the next tx."
+    }
+  ],
+  "placeholderTemplate": {
+    "id": "A_USDT_withdraw_RECIPIENT_PLACEHOLDER_TEMPLATE",
+    "note": "Use this template if owner supplies a new recipient. Replace to=data accordingly (re-encode transfer(newRecipient, 49020000)).",
+    "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "value": "0",
+    "data": "0xa9059cbb00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000002ebfc60",
+    "operation": 0,
+    "nonce": 6,
+    "safeTxGas": "0",
+    "baseGas": "0",
+    "gasPrice": "0",
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "from": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+    "placeholderRecipient": "0x0000000000000000000000000000000000000001 (NOT a real address; do not execute)"
+  }
+}
