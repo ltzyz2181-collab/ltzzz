@@ -15,3 +15,7 @@ Instagram若不支持caption链接点击，明确此限制，不假装已设置b
 发布后提供media_id/permalink/时间/截图和视频来源hash。未发布就是blocked，无permalink不写success。
 继续遵守Manus每周一次一次一个平台，不重复多平台，不因首帖未通就启动每日计划。
 接单：ops/dispatch/receipts/MANUS-IG-CLOSEOUT-20261013.md。
+
+## 总控已操作回执（2026-10-13 UTC）
+owner已完成Instagram登录，总控实际核实@ltzyz2181拥有3帖/1Reel。旧Reel产品链接评论已实际发布并回读：https://www.instagram.com/p/DeONHxsIdA2/c/18120050759066963/。
+新30秒文件仍未入库；你现在的缺口是提交实际MP4，不再是owner没有授权账号。新视频未发布、每日计划未启用。不得重发旧图代替视频。
