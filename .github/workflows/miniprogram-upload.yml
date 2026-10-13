@@ -25,7 +25,7 @@ jobs:
       - name: Check public WeChat endpoint connectivity
         run: |
           for target in api.weixin.qq.com servicewechat.com; do
-            curl --connect-timeout 10 --max-time 20 --silent --output /dev/null --write-out "$target HTTP %{http_code}\\n" "https://$target/" || true
+            curl --connect-timeout 10 --max-time 20 --silent --output /dev/null --write-out "$target HTTP %{http_code}\n" "https://$target/" || true
           done
       - name: Check existing credentials and upload development version
         timeout-minutes: 4
@@ -51,7 +51,7 @@ jobs:
             receipt.status = receipt.upload_attempted ? 'upload_outcome_unknown' : 'executor_interrupted_before_upload';
           }
           fs.mkdirSync('results/commerce', { recursive: true });
-          fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\\n');
+          fs.writeFileSync(file, JSON.stringify(receipt, null, 2) + '\n');
           JS
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
