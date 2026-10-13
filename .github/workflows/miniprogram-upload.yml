@@ -1,0 +1,41 @@
+name: Mini Program Upload
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/miniprogram-upload.yml
+      - scripts/miniprogram-upload.mjs
+permissions:
+  contents: write
+concurrency:
+  group: miniprogram-upload
+  cancel-in-progress: false
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check existing credentials and upload development version
+        env:
+          MINI_APPID: ${{ secrets.WECHAT_MINIPROGRAM_APPID || secrets.WX_MINIPROGRAM_APPID || secrets.MINIPROGRAM_APPID }}
+          MINI_UPLOAD_KEY: ${{ secrets.WECHAT_MINIPROGRAM_PRIVATE_KEY || secrets.WX_MINIPROGRAM_PRIVATE_KEY || secrets.MINIPROGRAM_PRIVATE_KEY || secrets.WECHAT_UPLOAD_PRIVATE_KEY }}
+        run: |
+          if [ -n "$MINI_UPLOAD_KEY" ]; then
+            npm install --prefix "$RUNNER_TEMP/mini-ci" --no-audit --no-fund miniprogram-ci@2.1.31
+          fi
+          MINI_CI_PACKAGE_ROOT="$RUNNER_TEMP/mini-ci" node scripts/miniprogram-upload.mjs
+      - name: Commit factual upload receipt
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add results/commerce/miniprogram-upload-latest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record mini program upload outcome [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
