@@ -33,7 +33,9 @@ button.p{background:#0a6}pre{background:#02060c;border:1px solid var(--l);paddin
     <section class="card">
       <h3>发布意图并成交</h3>
       <label>Worker 地址</label>
-      <input id="base" value="https://ltzzz-agi-pay.ltzyz2181-collab.workers.dev">
+      <input id="base" value="https://ltzzz-agi-pay.ltzyz2181.workers.dev">
+      <label>授权 Token（仅本页内存使用，不保存；写操作必填）</label>
+      <input id="token" type="password" autocomplete="off" placeholder="LTZZZ_AGENT_TOKEN">
       <label>Agent</label>
       <select id="agent"><option>Grok</option><option>Doubao</option><option>DeepSeek</option><option>Claude</option><option>Qianwen</option></select>
       <label>想买什么</label>
@@ -57,6 +59,12 @@ button.p{background:#0a6}pre{background:#02060c;border:1px solid var(--l);paddin
 const out = document.getElementById('out');
 const base = () => document.getElementById('base').value.replace(/\/$/, '');
 async function call(path, opt) {
+  opt = { ...opt, headers: new Headers(opt?.headers) };
+  if (opt.method === 'POST') {
+    const token = document.getElementById('token').value.trim();
+    if (!token) return { status: 401, json: { error: '请先输入授权 Token；未发送写请求' } };
+    opt.headers.set('Authorization', 'Bearer ' + token);
+  }
   const r = await fetch(base() + path, opt);
   const t = await r.text();
   try { return { status: r.status, json: JSON.parse(t) }; } catch { return { status: r.status, json: t }; }
@@ -70,6 +78,7 @@ document.getElementById('go').onclick = async () => {
     max_usd: Number(document.getElementById('max').value),
     units: 1
   })});
+  if (intent.status >= 400 || !intent.json?.intent?.id) return show({ intent });
   const commit = await call('/commit', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({
     intent_id: intent.json && intent.json.intent && intent.json.intent.id,
     agent: document.getElementById('agent').value,
@@ -82,7 +91,8 @@ document.getElementById('go').onclick = async () => {
 document.getElementById('gate').onclick = async () => {
   const locked = await call('/resource');
   const paid = await call('/commit', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ kind:'api', want:'resource', max_usd:0.001, agent: document.getElementById('agent').value })});
-  const rid = (paid.json && paid.json.receipt && paid.json.receipt.id) || 'demo';
+  if (paid.status >= 400 || !paid.json?.receipt?.id) return show({ locked, paid });
+  const rid = paid.json.receipt.id;
   const unlocked = await call('/resource', { headers: { 'X-PAYMENT': rid } });
   show({ locked, paid, unlocked });
 };
