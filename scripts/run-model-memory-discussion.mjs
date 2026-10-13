@@ -7,11 +7,12 @@ async function list(base,key,anthropic=false){if(!key)return {status:'not_config
 const config={deepseek:{key:process.env.DEEPSEEK_API_KEY,base:'https://api.deepseek.com/v1',fn:deepseek,fallback:'deepseek-reasoner',override:process.env.DEEPSEEK_MODEL_OVERRIDE},doubao:{key:process.env.DOUBAO_API_KEY||process.env.ARK_API_KEY,base:process.env.DOUBAO_BASE_URL||'https://ark.cn-beijing.volces.com/api/v3',fn:doubao,fallback:'doubao-seed-2-0-pro-260215',override:process.env.DOUBAO_MODEL_OVERRIDE},kimi_cn:{key:process.env.MOONSHOT_API_KEY_CN,base:'https://api.moonshot.cn/v1',fn:kimiCN,fallback:'kimi-k2.6'},claude:{key:process.env.ANTHROPIC_API_KEY,base:'https://api.anthropic.com/v1',fn:claude,fallback:'claude-sonnet-5-5',override:process.env.ANTHROPIC_MODEL_OVERRIDE}};
 let routing={seats:{}};try{routing=JSON.parse(fs.readFileSync('data/model-routing/latest.json','utf8'))}catch{}routing.seats||={};
 const receipts={at:new Date().toISOString(),run_id:run,core_memory:docs.map(({content,...x})=>x),full_memory_loaded:true,seats:[],keys_exposed:false,transactions_sent:0,claude_role:'external_memory_discussion_only_no_wallet_vote_or_signing'};
-const selected=(process.env.DISCUSSION_SEATS||'deepseek,doubao,kimi_cn,claude').split(',');
+const selected=(process.env.DISCUSSION_SEATS||'deepseek,doubao,kimi_cn').split(',');
 let earlier='';
 for(const seat of selected){
  const c=config[seat];if(!c)continue;
  const path=dir+'/'+today+'-'+run+'-'+seat+'.md';const entry={seat,status:'not_configured',output_file:path,model:null,model_calls:0};
+ if(seat==='claude'){entry.status='disabled_paid_external_by_owner';entry.error='Free conversation only; no verified free API quota';receipts.seats.push(entry);continue;}
  if(!c.key){entry.error='Secret not configured';receipts.seats.push(entry);continue;}
  const catalogue=seat==='kimi_cn'?{status:'fixed_domestic_model',ids:['kimi-k2.6']}:await list(c.base,c.key,seat==='claude');
  const mdl=c.override||chooseModel(seat,catalogue.ids)||c.fallback;entry.model=mdl;entry.catalogue_status=catalogue.status;entry.catalogue_http=catalogue.http||null;entry.catalogue_model_ids=catalogue.ids;

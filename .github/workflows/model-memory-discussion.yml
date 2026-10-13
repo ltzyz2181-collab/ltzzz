@@ -4,10 +4,10 @@ on:
     inputs:
       seats:
         description: Comma-separated seats to verify; avoid repeating already verified models
-        default: deepseek,doubao,kimi_cn,claude
+        default: deepseek,doubao,kimi_cn
         type: string
   schedule:
-    - cron: '20 11 * * 1-4'
+    - cron: '20 11 * * 1-3'
   push:
     branches: [main]
     paths: ['.github/workflows/model-memory-discussion.yml','scripts/run-model-memory-discussion.mjs','scripts/model-routing.mjs']
@@ -26,14 +26,13 @@ jobs:
       - name: Real model execution (explicit push marker; staggered weekly seats)
         if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-memory-review]')
         env:
-          DISCUSSION_SEATS: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[seat:deepseek]') && 'deepseek' || inputs.seats || 'deepseek,doubao,kimi_cn,claude' }}
+          DISCUSSION_SEATS: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[seat:deepseek]') && 'deepseek' || inputs.seats || 'deepseek,doubao,kimi_cn' }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
           DEEPSEEK_MODEL_OVERRIDE: ${{ vars.DEEPSEEK_MODEL }}
           DOUBAO_MODEL_OVERRIDE: ${{ vars.DOUBAO_MODEL }}
           ANTHROPIC_MODEL_OVERRIDE: ${{ vars.ANTHROPIC_MODEL }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           NODE_OPTIONS: --dns-result-order=ipv4first

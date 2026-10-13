@@ -62,6 +62,9 @@ export default {
         case '/oauth/youtube/callback':
           return await authCallback(env, url);
 
+        case '/youtube/verify':
+          return json(await verifyVideo(env, url));
+
         case '/youtube/status':
           return json(await getStatus(env, url));
 
@@ -331,6 +334,10 @@ async function uploadVideo(env, request, url) {
   const tokens = await refreshIfNeeded(env, raw, uk);
 
   // 解析参数：支持 multipart 表单（含文件）或 JSON（video_url）
+  let publicationKey = request.headers.get('Idempotency-Key');
+  if (publicationKey && !/^[a-zA-Z0-9:_-]{1,100}$/.test(publicationKey)) throw Object.assign(new Error('Invalid publication key'), {status:400});
+  const receiptKey = publicationKey && 'yt:publication:'+uk+':'+publicationKey;
+  if (receiptKey) { const previous=await env.KV.get(receiptKey,'json'); if(previous?.video_id) return {...previous,reused:true}; if(previous) throw Object.assign(new Error('Previous upload uncertain; reconcile before retry'),{status:409}); }
   let title = '', description = '', tags = [], privacyStatus = 'private', publishAt = null, categoryId = '22';
   let videoBuffer = null;
   const contentType = request.headers.get('Content-Type') || '';
@@ -371,6 +378,7 @@ async function uploadVideo(env, request, url) {
   }
   if (!title) title = 'LTZZZ ' + new Date().toISOString().slice(0, 10);
 
+  if(receiptKey) await env.KV.put(receiptKey,JSON.stringify({state:'upload_started',at:new Date().toISOString()}));
   // videos.insert（可恢复上传）
   const statusObj = { privacyStatus };
   if (publishAt && privacyStatus === 'private') {
@@ -423,6 +431,7 @@ async function uploadVideo(env, request, url) {
   const videoId = upData.id;
   if (!videoId) throw Object.assign(new Error('No video id returned'), { status: 502 });
 
+  if(receiptKey) await env.KV.put(receiptKey,JSON.stringify({ok:true,video_id:videoId,privacyStatus:upData.status?.privacyStatus||privacyStatus,url:'https://www.youtube.com/watch?v='+videoId,uploaded_at:new Date().toISOString()}));
   // 更新 KV：记录发布
   await env.KV.put('yt:' + uk, JSON.stringify({
     ...tokens,
@@ -491,4 +500,13 @@ async function safeEqual(a, b) {
   const enc = new TextEncoder();
   const [x, y] = await Promise.all([crypto.subtle.digest('SHA-256', enc.encode(a)), crypto.subtle.digest('SHA-256', enc.encode(b))]);
   const u = new Uint8Array(x), v = new Uint8Array(y); let d = 0; for (let i = 0; i < u.length; i++) d |= u[i] ^ v[i]; return d === 0 && a.length > 0;
+}
+
+async function verifyVideo(env,url){
+ const id=url.searchParams.get('video_id');if(!/^[\w-]{11}$/.test(id||''))throw Object.assign(new Error('Invalid video ID'),{status:400});
+ const raw=await env.KV.get('yt:default','json');if(!raw)throw Object.assign(new Error('Not connected'),{status:401});
+ const t=await refreshIfNeeded(env,raw,'default');
+ const r=await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id='+id,{headers:{Authorization:'Bearer '+t.access_token}});
+ const j=await r.json();if(!r.ok)throw Object.assign(new Error('Video verification failed'),{status:r.status});
+ const v=j.items?.[0];return {ok:!!v,video_id:id,channel_id:v?.snippet?.channelId,privacyStatus:v?.status?.privacyStatus,uploadStatus:v?.status?.uploadStatus,published:!!v&&v.status?.privacyStatus==='public'&&v.status?.uploadStatus==='processed',url:'https://www.youtube.com/watch?v='+id};
 }
