@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const day=new Date().toISOString().slice(0,10),path='results/publishing/youtube-daily-'+day+'.json',base='https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
+const day=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Tijuana',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),path='results/publishing/youtube-daily-'+day+'.json',base='https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
 fs.mkdirSync('results/publishing',{recursive:true});
 let prior;try{prior=JSON.parse(fs.readFileSync(path));}catch{}
 if(prior?.video_id){const v=await fetch(base+'/youtube/verify?video_id='+prior.video_id).then(r=>r.json());if(v.published){console.log('Already public: '+v.url);process.exit(0);}if(prior.uploaded)throw Error('Previous upload needs verification, do not duplicate');}
