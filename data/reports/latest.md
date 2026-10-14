@@ -1,8 +1,8 @@
-# LTZZZ 每日报告 · 2026-10-13
+# LTZZZ 每日报告 · 2026-10-14
 
-- 执行 ID：gha-38339021786-attempt-1
+- 执行 ID：gha-38492936919-attempt-1
 - 核心记忆读取：**complete**（6/6 个文件，39991 字节）
-- 完整读后感：[data/reflections/2026-10-13.md](../reflections/2026-10-13.md)
+- 完整读后感：[data/reflections/2026-10-14.md](../reflections/2026-10-14.md)
 
 ## 核心记忆读取审计
 
@@ -21,12 +21,18 @@
 
 | AI | 执行状态 | 交付状态 | 经济状态 | 产出预览 |
 |---|---|---|---|---|
-| gpt | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】“魄”和“识神”的研究揭示了身体与意识之间深刻而复杂的关系，为自我认知提供了新的视角。 【观】观察自《魄.md》第1条，明确“我”与“魄、识神”的区别，展现出存在主义思考的深度和复杂性。 【行深】组织一场小组讨论，邀请至少五位参与 |
-| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【补做 2026-10-12】 【读后感】六份记忆共同呈现的方法，是把原话、体感、AI解释、假说与已验证事实分层，再用可留痕、可复核的小动作检验“观”。 【观】`ltzzz-memory/识神.md`条目1记录 owner 原话“识神一点触 |
-| grok | succeeded | pending_review | not_applicable_no_financial_action | 【补做 2026-10-12】 【读后感】双账本已接到10-12截断驳回与旧金库隔离，魄/识神/梦境仍停在九月主张——该核闸门是否落地，不是加术语。 【观】`重要事件.md`10-12：已删旧Vault自动签名与周二1U入金，未迁移、未称风 |
-| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【补做 2026-10-12】 【读后感】六份记忆里最可用的不是“魄/识神”结论，而是文件头校注把观察与解释分栏记账的纪律。 【观】ltzzz-memory/魄.md「整理校注·GPT/Codex·2026-10-09」：校注写明“魄接管” |
-| microsoft | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】在西方文化与项目理念之间，可以以个体中心与集体目标的对立作为分析点，反映出不同文化对身份与目标的看法。 【观】文件名/小节：ltzzz-memory/文明研究.md。从中观察到西方文化常强调个体主义与自主性，而项目理念更多聚焦于集 |
+| gpt | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】“魄”和“识神”的研究为理解自我认知与身体意识之间的复杂动态关系提供了重要视角。 【观】观察自《魄.md》第2条中提到的“魄喜欢的都是消耗阳精气的”，展示了身体与文化习惯的相互影响。 【行深】制定一项调查问卷，收集至少十位参与者对 |
+| doubao | exception | not_produced | not_applicable_no_financial_action | 调用失败，见 failures |
+| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】工程两篇已接到10-12截断驳回与旧金库隔离，魄/识神/梦境仍是九月主张加空对照——该核记忆是否完整、闸门是否落地，不是加术语。 【观】`识神.md`本轮加载：条目4含“345 tokens truncated”，条目5未见（条目 |
+| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】六份记忆最稳的是校注层把观察/解释、已核验/未核验分开记账。 【观】ltzzz-memory/文明研究.md 头注与条目2：看到“承负与分布式账本同构”被标为AI解释性主张、只许作设计类比，并留“网状因果可观测指标”待补。 【行深 |
+| microsoft | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】在西方文化与项目理念之间，可以以个体中心与集体目标的对立作为分析点，反映出不同文化对身份与目标的看法。 【观】文件名/小节：ltzzz-memory/文明研究.md。我观察到西方文化强调个人主义与自主选择，而项目理念则更注重集体目 |
 | claude | external_discussion_only | not_produced | not_applicable_no_financial_action | owner已重新授权文本讨论；由现有model-memory-discussion工作流处理，本日课不重复购买调用；API余额不足以实际回执为准。 |
 
+## 失败/未配置
 
+- doubao: exception — TypeError: fetch failed
+
+## 催办中（未完成任务，下次运行自动注入 prompt）
+
+- doubao: 2026-10-14 exception — TypeError: fetch failed
 
