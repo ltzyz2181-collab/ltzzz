@@ -3,11 +3,13 @@
   "key_values": "Never stored here; injected into the executor from GitHub Actions or Cloudflare Secrets",
   "providers": {
     "gpt": {
-      "module": "scripts/call-openai.mjs",
-      "secret": "OPENAI_API_KEY",
-      "model_env": "OPENAI_MODEL",
-      "default_model": "gpt-4o-mini",
-      "mode": "github_actions"
+      "mode": "domestic_delegated",
+      "delegates": [
+        "deepseek",
+        "doubao",
+        "grok"
+      ],
+      "note": "Logical coordinator seat, not an OpenAI model call. Actual executing provider recorded; routine OpenAI API disabled by owner."
     },
     "deepseek": {
       "module": "scripts/call-deepseek.mjs",
@@ -58,15 +60,17 @@
     },
     "claude": {
       "secret": "ANTHROPIC_API_KEY",
-      "mode": "external_memory_discussion",
+      "mode": "free_external_discussion_only",
       "module": "scripts/call-claude.mjs",
       "model_env": "ANTHROPIC_MODEL",
       "generation_blocker": "latest actual receipt: insufficient API credits",
-      "permissions": "text discussion only; no wallet signature or voting"
+      "permissions": "text discussion only; no wallet signature or voting",
+      "note": "No paid API execution; no verified free API quota."
     },
     "microsoft": {
-      "delegate": "gpt",
-      "mode": "delegated"
+      "delegate": "deepseek",
+      "mode": "delegated",
+      "note": "No native Copilot API; daily extra delegated call is paused for budget."
     },
     "manus": {
       "mode": "external_hub_task"

@@ -30,7 +30,6 @@ jobs:
           node -e "require('fs').unlinkSync('/tmp/ltzzz-runner-secret.json')"
       - name: Execute at most one funded order
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
