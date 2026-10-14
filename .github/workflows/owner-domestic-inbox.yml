@@ -1,0 +1,73 @@
+name: Owner domestic AI inbox
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/owner-domestic-inbox.yml', 'scripts/run-owner-inbox.mjs', 'scripts/lib/owner-inbox.mjs', 'scripts/tests/owner-inbox.test.mjs']
+permissions: {contents: read}
+concurrency: {group: owner-domestic-inbox, cancel-in-progress: false}
+jobs:
+  validate:
+    if: github.event_name != 'issues' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ工单]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-owner-inbox.mjs && node --test scripts/tests/owner-inbox.test.mjs
+  deliver:
+    needs: validate
+    if: github.event_name == 'issues' && github.repository == 'ltzyz2181-collab/ltzzz' && github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ工单]')
+    permissions: {contents: write, issues: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Record owner request before any model access
+        id: prepare
+        run: node scripts/run-owner-inbox.mjs prepare
+      - name: Persist claim before spending
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/owner-inbox/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Owner inbox durable claim; no model call yet'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Existing domestic Keys only, no arbitrary tool execution
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/run-owner-inbox.mjs execute
+      - name: Persist actual output or blocker
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/owner-inbox/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Domestic owner task actual output or blocker'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Reply with receipt links
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-owner-inbox.mjs comment
