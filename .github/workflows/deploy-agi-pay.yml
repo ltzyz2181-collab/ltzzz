@@ -40,9 +40,17 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           const base='https://ltzzz-agi-pay.ltzyz2181.workers.dev';
-          const healthResponse=await fetch(base+'/health');const health=await healthResponse.json();
+          let healthResponse,health,demo;
+          // A freshly uploaded Worker may not yet be visible at every public edge.
+          // Require observed behavior, with bounded retries; never count upload as acceptance.
+          for(let attempt=0;attempt<12;attempt++){
+            const probe='?acceptance='+process.env.GITHUB_RUN_ID+'&attempt='+attempt;
+            healthResponse=await fetch(base+'/health'+probe,{headers:{'Cache-Control':'no-cache'}});health=await healthResponse.json();
+            demo=await fetch(base+'/resource'+probe,{headers:{'X-PAYMENT':'demo','Cache-Control':'no-cache'}});
+            if(health.rails?.['stream-usdc']?.mode==='shadow_only'&&demo.status===402)break;
+            await new Promise(resolve=>setTimeout(resolve,3000));
+          }
           const denied=await fetch(base+'/intent',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-          const demo=await fetch(base+'/resource',{headers:{'X-PAYMENT':'demo'}});
           console.log(JSON.stringify({demo_http:demo.status,stream_mode:health.rails?.['stream-usdc']?.mode,health_http:healthResponse.status,service:health.service,dry_run:health.policy?.dry_run,anonymous_write_http:denied.status}));
           if(!healthResponse.ok||health.service!=='ltzzz-agi-pay'||health.policy?.dry_run!==true||denied.status!==401||demo.status!==402||health.rails?.['stream-usdc']?.mode!=='shadow_only')process.exit(1);
           if(process.env.LTZZZ_AGENT_TOKEN){
