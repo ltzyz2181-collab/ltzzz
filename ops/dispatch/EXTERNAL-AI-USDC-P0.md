@@ -1,8 +1,8 @@
 # 外部任务/USDC 雇佣 · P0 实施工单
 
-状态：设计评审后待实施；不是接单、代码上线或付款完成回执。
+状态：外部客户入单子集已实施，部署与线上验收以Actions及external-{run_id}.json为准；完整P0尚未完成。详见 docs/EXTERNAL-ORDERS-LIVE.md。
 
-本轮只提交方案和讨论，不启用生产出账。详见 docs/EXTERNAL-AI-USDC-PLAN.md。不得在 provider 尚未验证、资金未对账、实际金额未冻结时自动支付。
+已实现旧直转关闭、demo绕过修复、影子流DO整数计量、独立买方凭据、异步收单与交付恢复、因果seal；不启用生产出账。详见 docs/EXTERNAL-AI-USDC-PLAN.md。不得在 provider 尚未验证、资金未对账、实际金额未冻结时自动支付。
 
 | 工单 | 实施内容 | 验收证据 |
 |---|---|---|

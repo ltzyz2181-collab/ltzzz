@@ -8,7 +8,7 @@ test('SDK v2 402 header and stable quote; invalid signatures cannot create incom
  const m=fixture({X402_LIVE:'1',X402_RECEIVE_ADDRESS:'0x'+'ab'.repeat(20)});let verifyCalls=0;
  const requirements=[{scheme:'exact',network:'eip155:8453',asset:'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',amount:'2000000',payTo:m.env.X402_RECEIVE_ADDRESS,maxTimeoutSeconds:300,extra:{name:'USD Coin',version:'2'}}];
  m.x402Server={buildPaymentRequirements:async()=>requirements,createPaymentRequiredResponse:async accepts=>({x402Version:2,accepts,resource:{url:'https://test/market/skill/audit'}}),findMatchingRequirements:()=>requirements[0],verifyPayment:async()=>{verifyCalls++;return {isValid:false}}};
- const h={'Idempotency-Key':'request_one_12345678'},body={brief:'A full audit request'};
+ const h={'Idempotency-Key':'request_one_12345678','X-Order-Token':'e'.repeat(64)},body={brief:'A full audit request'};
  const r=await send(m,'/market/skill/audit',body,h);assert.equal(r.status,402);assert.ok(r.headers.get('PAYMENT-REQUIRED'));const again=await send(m,'/market/skill/audit',body,h);assert.equal(again.body.order_id,r.body.order_id);
  const payload={x402Version:2,resource:{url:'https://test/market/skill/audit'},accepted:requirements[0],payload:{authorization:{nonce:'0x'+'1'.repeat(64),from:'0x'+'2'.repeat(40)}}};const sig=btoa(JSON.stringify(payload));
  const failed=await send(m,'/market/skill/audit',body,{...h,'PAYMENT-SIGNATURE':sig});assert.equal(failed.status,402);assert.equal(verifyCalls,1);assert.equal((await m.read()).live_revenue_cents,0);

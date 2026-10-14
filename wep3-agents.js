@@ -10,7 +10,9 @@ export async function agentApplication(m,request,book){
  book.external_agents||={};
  if(Object.keys(book.external_agents).length>=1000&&!book.external_agents[b.did])return {ok:false,error:'application_capacity'};
  const old=book.external_agents[b.did];if(old&&old.wallet!==b.wallet.toLowerCase())return {ok:false,error:'wallet_binding_conflict'};
- book.external_agents[b.did]={did:b.did,wallet:b.wallet.toLowerCase(),skills:b.skills,status:'pending_review',proof_hash:await hash(b.signature),at:new Date().toISOString(),signing_authority:false,audit_authority:false};await m.save(book);return {ok:true,did:b.did,status:'pending_review',automatically_trusted:false};
+ const proofHash=await hash(b.signature);if(old?.proof_hash===proofHash)return {ok:true,did:b.did,status:old.status,automatically_trusted:false,duplicate:true};
+ if(old&&old.status!=='pending_review')return {ok:false,error:'reviewed_application_immutable'};
+ book.external_agents[b.did]={did:b.did,wallet:b.wallet.toLowerCase(),skills:b.skills,status:'pending_review',proof_hash:proofHash,at:new Date().toISOString(),signing_authority:false,audit_authority:false};await m.save(book);return {ok:true,did:b.did,status:'pending_review',automatically_trusted:false};
 }
 
 export async function treasuryProof(env){
