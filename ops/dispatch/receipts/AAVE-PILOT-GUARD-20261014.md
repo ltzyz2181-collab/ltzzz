@@ -22,7 +22,7 @@ AAVE 代币不等于 Aave 借贷协议；Ethereum USDT 不等于 Base 主网原�
 
 此前文档把“未看到余额变化/无回执”写为“从未广播”证据不足：缺失交易记录时不能排除签名或广播过的未知交易。禁止仅凭 active_intent 无对象就清锁并重开 intent。新诊断将提供真实生产结果，部署前不宣称其已经核实。
 
-未完成：旧 active_intent 的生产核实/交易对账、1 USDC 存入与退出的真实确认、200 USDC 投资；本回执不是链上付款回执。部署运行及当前阻塞另附实际验收后更新。
+已完成旧 active_intent 的生产读取与原签名验证；链上未找到原哈希，历史广播情况仍未知。未完成：1 USDC 存入/退出的真实确认、200 USDC 投资；本回执不是链上付款回执。
 
 ## 第一轮线上更正（UTC 09:48–09:49）
 
@@ -39,3 +39,18 @@ Base block 52591011 只读余额：USDC 349.898316、aUSDC 0、ETH 0.002；allow
 原 hash 在官方节点的只读回执为未找到（block 52591183），最新/pending nonce 都是 0；这不是从未广播的证明。run 38545711158 的新版本 v3 验收通过，59 项测试通过。
 
 补强 v4：续跑前校验存储计划及已签名交易的固定资产、池、金额、接收者、chain/from/hash；查回执与确认高度采用整次只读回退；广播失败只允许跨固定 RPC 重播**同一份持久化 raw、同一 txHash/nonce**，不重签、不换交易；签名/费用/链读取异常转为显式 blocked_rpc 并保留 intent，避免再落入通用 market_exception。生产部署验收仍只读，本轮不调用执行接口。
+
+## 最终部署验收（v4）
+
+- 已合并工程 PR：#49、#50、#51、#52；最终运行源码 `9ec194e037022566a6e80f58475939ddde834fa4`。
+- [WEP3 部署 run 38546481235](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38546481235)：success，**61 项云端测试通过**；实际响应 `aave_runtime_revision=aave-guard-v4`。Worker version `3c962b1b-e280-47f8-bf57-738a0780a0a8`。同提交 Pages 38546481260 也成功。
+- 诊断、自动预览、余额读取、原签名只读核查全部 HTTP 200；保存于 `knowledge/results/wep3/aave-{diagnose,auto-preview,reconcile}-38546481235.json` 及 `aave-38546481235.json`。
+- block 52591372 余额：USDC **349.898316**、aUSDC **0**、ETH **0.002**；allowance 0、首投/首退均 false。
+- block 52591373 核查：旧 approve 哈希在本次官方节点未找到；最新/pending nonce 都为 0；`broadcast_history_unknown=true`、`storage_changed=false`。签名的池/资产/金额/接收者/chain/from/hash 校验通过；没有清锁或替换签名。
+- 本轮实际模型调用 **0**，链上签名/广播/转账 **0**，订单完成 **0**。部署验收成功不等于 1U 投资成功。
+
+## 后续保留项
+
+1. 现有每六小时自动执行流程保持原频率；后续按原 intent/原签名字节尝试续跑，不另起替代 intent。需获得实际成功回执及确认数，才可把 1 USDC supply 和 withdraw 标成完成。本轮没有调用生产 auto/execute 接口。
+2. 当前仍是首投/首退试点状态，不放宽额度。试点单次 20 USDC、总敞口 100 USDC 之外，首笔仍严格为 1 USDC；首退完成后才按现有声誉/权益策略算额度。200 USDC 投资未执行。
+3. 币安 1.58 AAVE 暂不转入；Ethereum USDT 换币/跨链也未执行。AAVE 代币、Aave 协议、Base USDC 分开记账。内部积分未写成 USDC 或真钱收入。
