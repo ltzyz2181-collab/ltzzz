@@ -16,3 +16,14 @@ test('skill updates require auth and preserve existing owner',async()=>{const f=
 test('order claims are exclusive and retry cap stops repeated API cost',async()=>{const f=fixture();await seed(f);await event(f.market);const a=await send(f.market,'/market/claim',{order_id:'o'},{'X-Lab-Pin':'pin'});assert.equal(a.status,200);assert.equal(a.body.order.lease_token,undefined);assert.equal((await send(f.market,'/market/claim',{order_id:'o'},{'X-Lab-Pin':'pin'})).status,409);await send(f.market,'/market/fail',{order_id:'o',lease_token:a.body.lease_token},{'X-Lab-Pin':'pin'});const b=await send(f.market,'/market/claim',{order_id:'o'},{'X-Lab-Pin':'pin'});await send(f.market,'/market/fail',{order_id:'o',lease_token:b.body.lease_token},{'X-Lab-Pin':'pin'});assert.equal((await send(f.market,'/market/claim',{order_id:'o'},{'X-Lab-Pin':'pin'})).status,409);assert.equal((await f.market.read()).orders.o.status,'blocked')});
 
 test('x402 arbitrary hash cannot create revenue; simulation requires admin and never joins live queue',async()=>{const f=fixture();let c=await send(f.market,'/market/x402/challenge',{skill:'audit',brief:'A complete audit test brief'});const id=c.body.challenge_id;assert.equal((await send(f.market,'/market/x402/verify',{challenge_id:id,proof:'0x'+'a'.repeat(64)})).status,410);assert.equal((await send(f.market,'/market/x402/verify',{challenge_id:id,proof:'sim_test_123456'})).status,401);let sim=await send(f.market,'/market/x402/verify',{challenge_id:id,proof:'sim_test_123456'},{'X-Lab-Pin':'pin'});assert.equal(sim.status,200);assert.equal(sim.body.live,false);assert.equal((await f.market.read()).live_revenue_cents,0);assert.equal((await f.market.read()).pool_reserved_cents,0);});
+
+test('Aave orphan is a structured 422, authenticated dry-run preserves storage and never resets pointer',async()=>{
+ const f=fixture(),b=await f.market.read();b.aave={active_intent:'DOUBAO-AAVE-FIRST-38380985712',intents:{}};await f.storage.put('book',b);
+ for(const path of ['/market/aave/auto','/market/aave/auto-preview','/market/aave/execute']){
+  assert.equal((await send(f.market,path,{})).status,401);
+  const r=await send(f.market,path,{},{'X-Lab-Pin':'pin'});assert.equal(r.status,422);assert.equal(r.body.error,'orphaned_active_intent_requires_reconciliation');assert.equal(r.body.signed,false);
+  assert.deepEqual(await f.market.read(),b);
+ }
+ assert.equal((await send(f.market,'/market/aave/diagnostics')).status,401);
+ const diagnostic=await send(f.market,'/market/aave/diagnostics',undefined,{'X-Lab-Pin':'pin'});assert.equal(diagnostic.status,503);assert.equal(diagnostic.body.storage.error,'orphaned_active_intent_requires_reconciliation');assert.equal(diagnostic.body.signed,false);
+});

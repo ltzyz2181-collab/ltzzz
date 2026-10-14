@@ -33,25 +33,78 @@ export function buildAavePlan(input,ctx){
  return {amount_raw:amount.toString(),steps:[{kind:'withdraw',to:AAVE.pool,data:pool.encodeFunctionData('withdraw',[AAVE.usdc,amount,address])}]};
 }
 export async function nativeRpcFetch(req){const response=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body,signal:AbortSignal.timeout(12000)});return {statusCode:response.status,statusMessage:response.statusText,headers:Object.fromEntries(response.headers),body:new Uint8Array(await response.arrayBuffer())};}
-async function provider(){for(const url of ['https://base-rpc.publicnode.com','https://mainnet.base.org','https://base.drpc.org']){const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;const p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});try{if(BigInt(await p.send('eth_chainId',[]))===8453n)return p;}catch{}p.destroy();}throw Error('base_rpc_unavailable');}
-export async function aaveStatus(m,book){try{return await readAaveStatus(m,book)}catch(e){return {ok:false,error:'base_rpc_read_failed',reason:e.code||e.message?.slice(0,80)||'unknown',signed:false};}}
+// Official RPC first; retry the complete read, not just eth_chainId.
+export const AAVE_RPC_URLS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com'];
+export async function withAaveReadProvider(read,makeProvider){
+ const attempts=[];
+ for(const url of AAVE_RPC_URLS){
+  let p;
+  try{
+   if(makeProvider)p=makeProvider(url);
+   else{const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});}
+   if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');
+   return {value:await read(p),rpc_url:url,rpc_attempts:[...attempts,{url,ok:true}]};
+  }catch{attempts.push({url,ok:false});}
+  finally{p?.destroy();}
+ }
+ const error=Error('base_rpc_unavailable');error.rpc_attempts=attempts;throw error;
+}
+async function provider(){
+ // Execution is pinned to a chain-checked provider. Never retry a signing callback.
+ for(const url of AAVE_RPC_URLS){const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;const p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});try{if(BigInt(await p.send('eth_chainId',[]))===8453n)return p;}catch{}p.destroy();}
+ throw Error('base_rpc_unavailable');
+}
+const record=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
+function intentIssue(i,id){
+ if(!record(i)||i.id!==id||!/^[A-Za-z0-9_-]{16,100}$/.test(i.id||''))return 'invalid_intent_record';
+ if(!['supply','withdraw'].includes(i.action)||typeof i.amount_raw!=='string'||!/^\d{1,18}$/.test(i.amount_raw)||BigInt(i.amount_raw)<=0n||!/^0x[a-fA-F0-9]{40}$/.test(i.treasury||''))return 'invalid_intent_record';
+ if(!['prepared','pending','pending_confirmations','confirmed','failed'].includes(i.status)||!Array.isArray(i.steps)||!i.steps.length||i.steps.some(s=>!record(s)||!['approve','supply','withdraw'].includes(s.kind)))return 'invalid_intent_record';
+ return null;
+}
+export function aaveStorageStatus(book){
+ const state=book.aave;
+ if(state!==undefined&&!record(state))return {ok:false,error:'invalid_aave_state_requires_reconciliation',status:'blocked_reconciliation',signed:false};
+ const id=state?.active_intent;
+ if(!id)return {ok:true,status:'no_active_intent',active_intent:null,signed:false};
+ const visibleId=typeof id==='string'&&/^[A-Za-z0-9_-]{16,100}$/.test(id)?id:null;
+ const blocked=error=>({ok:false,status:'blocked_reconciliation',error,active_intent:visibleId,prior_transaction_state:'unknown',signed:false});
+ if(!visibleId)return blocked('invalid_active_intent_requires_reconciliation');
+ if(!record(state.intents)||!Object.hasOwn(state.intents,id))return blocked('orphaned_active_intent_requires_reconciliation');
+ const i=state.intents[id];
+ if(intentIssue(i,id))return blocked('malformed_active_intent_requires_reconciliation');
+ if(['confirmed','failed'].includes(i.status))return blocked('terminal_active_intent_requires_reconciliation');
+ return {ok:true,status:'active_intent_pending',active_intent:id,intent_status:i.status,already_signed_steps:i.steps.some(s=>!!s.raw),signed:false};
+}
+export async function aaveStatus(m,book){try{return await readAaveStatus(m,book)}catch(e){return {ok:false,error:'base_rpc_read_failed',reason:'base_rpc_unavailable',rpc_attempts:e.rpc_attempts||[],signed:false};}}
 async function readAaveStatus(m,book){
  const address=m.env.X402_RECEIVE_ADDRESS;if(!address)return {ok:false,error:'treasury_missing'};
- const p=await provider();if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');
- const u=new Contract(AAVE.usdc,ERC,p),a=new Contract(AAVE.ausdc,AT,p);
- const [usdc,ausdc,eth,allowance,ap,underlying,decimals]=await Promise.all([u.balanceOf(address),a.balanceOf(address),p.getBalance(address),u.allowance(address,AAVE.pool),a.POOL(),a.UNDERLYING_ASSET_ADDRESS(),u.decimals()]);
- if(ap.toLowerCase()!==AAVE.pool.toLowerCase()||underlying.toLowerCase()!==AAVE.usdc.toLowerCase()||Number(decimals)!==6)throw Error('reserve_configuration_mismatch');
- const state=book.aave||{},principal=BigInt(state.principal_raw||0);
+ const chain=await withAaveReadProvider(async p=>{
+  // Pin all balances/configuration to one block on the selected RPC.
+  const block=await p.getBlockNumber(),u=new Contract(AAVE.usdc,ERC,p),a=new Contract(AAVE.ausdc,AT,p),opts={blockTag:block};
+  const [usdc,ausdc,eth,allowance,ap,underlying,decimals]=await Promise.all([u.balanceOf(address,opts),a.balanceOf(address,opts),p.getBalance(address,block),u.allowance(address,AAVE.pool,opts),a.POOL(opts),a.UNDERLYING_ASSET_ADDRESS(opts),u.decimals(opts)]);
+  if(ap.toLowerCase()!==AAVE.pool.toLowerCase()||underlying.toLowerCase()!==AAVE.usdc.toLowerCase()||Number(decimals)!==6)throw Error('reserve_configuration_mismatch');
+  return {usdc,ausdc,eth,allowance,block};
+ });
+ const {usdc,ausdc,eth,allowance,block}=chain.value;
+ const state=record(book.aave)?book.aave:{},principal=BigInt(state.principal_raw||0);
  const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n,floor=liabilities>5000000n?liabilities:5000000n;
  const reputation=typeof m.score==='function'?await m.score('DeepSeek'):0;
  const limits=investmentLimits({usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),cash_floor_raw:floor.toString(),exit_test_confirmed:!!state.exit_test_confirmed,capital_reputation:reputation});
- return {ok:true,...AAVE,address,usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),eth_raw:eth.toString(),allowance_raw:allowance.toString(),principal_raw:principal.toString(),interest_raw:(!state.first_supply_confirmed&&ausdc>0n)?null:(ausdc>principal?ausdc-principal:0n).toString(),principal_basis:state.first_supply_confirmed?'tracked_supply_receipts':ausdc>0n?'unverified':'no_position',first_supply_confirmed:!!state.first_supply_confirmed,exit_test_confirmed:!!state.exit_test_confirmed,paused:!!state.paused,active_intent:state.active_intent||null,limit_policy:limits.mode,capital_agent:'DeepSeek',capital_reputation:limits.reputation,allocation_share_bps:limits.share_bps,single_cap_usdc:Number(formatUnits(limits.single,6)),exposure_cap_usdc:Number(formatUnits(limits.exposure,6)),cash_floor_raw:floor.toString(),withdraw_receiver:address,owner_return_enabled:false};
+ return {ok:true,...AAVE,address,block_number:block,rpc_url:chain.rpc_url,rpc_attempts:chain.rpc_attempts,usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),eth_raw:eth.toString(),allowance_raw:allowance.toString(),principal_raw:principal.toString(),interest_raw:(!state.first_supply_confirmed&&ausdc>0n)?null:(ausdc>principal?ausdc-principal:0n).toString(),principal_basis:state.first_supply_confirmed?'tracked_supply_receipts':ausdc>0n?'unverified':'no_position',first_supply_confirmed:!!state.first_supply_confirmed,exit_test_confirmed:!!state.exit_test_confirmed,paused:!!state.paused,active_intent:aaveStorageStatus(book).active_intent||null,storage_status:aaveStorageStatus(book),limit_policy:limits.mode,capital_agent:'DeepSeek',capital_reputation:limits.reputation,allocation_share_bps:limits.share_bps,single_cap_usdc:Number(formatUnits(limits.single,6)),exposure_cap_usdc:Number(formatUnits(limits.exposure,6)),cash_floor_raw:floor.toString(),withdraw_receiver:address,owner_return_enabled:false};
 }
-export function publicAaveIntent(i){return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),before:i.before||null,after:i.after||null,owner_return_executed:false};}
+export async function diagnoseAave(m,book){
+ const storage=aaveStorageStatus(book),balances=await aaveStatus(m,book);
+ return {ok:balances.ok,status:'diagnostic_only',storage,balances,existing_intent_shape_valid:storage.ok&&storage.status==='active_intent_pending',signed:false,on_chain_executed:false};
+}
+export function publicAaveIntent(i){if(intentIssue(i,i?.id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),before:i.before||null,after:i.after||null,owner_return_executed:false};}
 export async function executeAave(m,book,input,{preview=false}={}){
+ const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
+ if(!record(input))return {ok:false,error:'invalid_intent'};
  if(Object.keys(input).some(k=>!['intent_id','action','amount_usdc'].includes(k)))return {ok:false,error:'arbitrary_transaction_parameters_forbidden'};
  book.aave||={principal_raw:'0',intents:{},periods:{day:{},week:{},month:{}},first_supply_confirmed:false,exit_test_confirmed:false,failures:0};
- const state=book.aave;state.intents||={};state.periods||={};for(const k of ['day','week','month'])state.periods[k]||={};state.failures=Number.isInteger(state.failures)?state.failures:0;state.principal_raw||='0';let i=state.intents[input.intent_id];
+ const state=book.aave;state.intents||={};state.periods||={};for(const k of ['day','week','month'])state.periods[k]||={};state.failures=Number.isInteger(state.failures)?state.failures:0;state.principal_raw||='0';let i=Object.hasOwn(state.intents,input.intent_id)?state.intents[input.intent_id]:undefined;
+ if(i&&intentIssue(i,input.intent_id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};
+ if(i&&state.active_intent&&state.active_intent!==input.intent_id)return {ok:false,error:'another_intent_pending',active_intent:state.active_intent,signed:false};
  if(preview&&i)return {ok:true,...publicAaveIntent(i),status:'preview_only',existing_status:i.status,signed:false,already_signed_steps:i.steps.some(s=>!!s.raw)};
  if(i){
   if(i.action!==input.action||i.amount_raw!==amountRaw(input.amount_usdc).toString())return {ok:false,error:'intent_input_mismatch'};
@@ -107,8 +160,9 @@ export async function executeAave(m,book,input,{preview=false}={}){
  i.after=await aaveStatus(m,book);await m.save(book);return {ok:true,confirmed:true,...publicAaveIntent(i)};
 }
 
-export async function autoAave(m,book){
- if(book.aave?.active_intent){const i=book.aave.intents[book.aave.active_intent];return executeAave(m,book,{intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6)});}
+export async function autoAave(m,book,{preview=false}={}){
+ const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
+ if(storage.active_intent){const i=book.aave.intents[storage.active_intent];return executeAave(m,book,{intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6)},{preview});}
  const s=await aaveStatus(m,book);if(!s.ok)return s;
  if(s.paused)return {ok:true,status:'supply_paused',signed:false};
  if(BigInt(s.usdc_raw)<6000000n&&!s.first_supply_confirmed)return {ok:true,status:'waiting_USDC_deposit',balances:s,signed:false};
@@ -122,5 +176,5 @@ export async function autoAave(m,book){
  }
  const day=new Date().toISOString().slice(0,10),id='AAVE-AUTO-'+stage+'-'+day;
  if(book.aave?.intents?.[id]?.status==='confirmed')return {ok:true,status:'already_ran_today',intent_id:id,signed:false};
- return executeAave(m,book,{intent_id:id,action,amount_usdc:formatUnits(amount,6)});
+ return executeAave(m,book,{intent_id:id,action,amount_usdc:formatUnits(amount,6)},{preview});
 }
