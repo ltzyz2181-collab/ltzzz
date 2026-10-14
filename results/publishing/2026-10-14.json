@@ -1,12 +1,14 @@
 {
+  "article_sha256": "f9fdb0151e093d5737243bd4cce051c54bcada5974b03d2ef900f5cc8c779c28",
   "date": "2026-10-14",
-  "generated_at": "2026-10-13T18:20:57.823Z",
+  "generated_at": "2026-10-14T15:51:47.211Z",
   "article": "content/daily-articles/2026-10-14.md",
   "ai_editor": {
     "model": "deepseek",
-    "status": "empty_output",
-    "ok": false,
-    "tokens_used": 9807
+    "status": "success",
+    "ok": true,
+    "finish_reason": "stop",
+    "tokens_used": 14008
   },
   "platforms": {
     "r2_upload": {
@@ -14,25 +16,18 @@
       "via": "Worker reads committed GitHub article; no R2 API upload permission required"
     },
     "wechat_mp": {
-      "status": "ARTICLE_FALLBACK_RAW",
+      "status": "ARTICLE_READY_WORKER_UNVERIFIED",
+      "draft_eligible": true,
       "via": "Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）",
-      "note": "更正：ai_editor=empty_output、ok=false，正文是未经AI编辑的回退摘录；本回执不证明草稿创建或发表。",
-      "draft_eligible": false
+      "note": "已提交文章由 Worker 从 GitHub 读取；这里只生成稿件，草稿和发表状态以微信真实回执为准"
     },
     "douyin": {
-      "status": "BLOCKED",
-      "file": "content/daily-articles/2026-10-14-douyin.md",
-      "missing_secrets": [
-        "DOUYIN_CLIENT_KEY",
-        "DOUYIN_CLIENT_SECRET",
-        "DOUYIN_ACCESS_TOKEN"
-      ],
-      "need": "抖音开放平台(open.douyin.com)已审核移动/网站应用 + video.create 权限 + 账号 OAuth 授权；且需要成片视频文件"
+      "status": "PAUSED_BY_OWNER",
+      "published": false
     },
     "shipinhao": {
-      "status": "BLOCKED",
-      "file": "content/daily-articles/2026-10-14-shipinhao.md",
-      "need": "视频号无通用公开发帖 API；需人工在视频号助手发布，或企业主体申请视频号相关开放能力"
+      "status": "PAUSED_BY_OWNER",
+      "published": false
     },
     "youtube": {
       "status": "SKIPPED",
@@ -42,11 +37,5 @@
       "status": "SKIPPED",
       "owner": "Manus"
     }
-  },
-  "review_correction": {
-    "date": "2026-10-14",
-    "basis": "owner转述Claude审计；核查ai_editor与文章正文",
-    "original_status": "ARTICLE_READY_WORKER_UNVERIFIED",
-    "platform_draft_removed": false
   }
 }
