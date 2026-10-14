@@ -42,3 +42,7 @@ gh workflow run daily-economy.yml --repo ltzyz2181-collab/ltzzz
 ## 离线总控与轮班创新
 
 [运行与轮班说明](ops/AUTONOMOUS-CONTROL-20261009.md) · [创新实验页](innovation.html)。总控每日自动读回执与派下一轮任务；轮班模型不集中同一天，部署/工程派单/否决均留真实记录。
+
+## owner联系与Claude接力
+
+[国内执行席工单入口](https://github.com/ltzyz2181-collab/ltzzz/issues/new?template=owner-dispatch.yml) · [离线联系边界](docs/OWNER-CONTACT-AND-DOMESTIC-INBOX.md) · [Claude回来讨论六文件](ops/dispatch/CLAUDE-RETURN-SIX-MEMORY-20261014.md)。默认登记零模型调用，明确选择执行才使用现有国内Key；不代表国内聊天窗口已经与GPT互通。
