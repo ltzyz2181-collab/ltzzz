@@ -47,8 +47,7 @@ const sentences = clean.match(/[^。！？]+[。！？]/g) || [];
 let short='';
 for(const s of sentences){if((short+s).length>260)break;short+=s;}
 if(!short)short=clean.slice(0,220)+'。';
-fs.writeFileSync(`${outDir}/${DATE}-douyin.md`, `# 抖音口播脚本 ${DATE}\n规格：9:16 / ≤60秒 / 中文口播\n\n标题：${title}\n\n口播：${short}\n\n话题：#AI #LTZZZ #观行深\n状态：待发布（无抖音开放平台已审核应用凭证）\n`);
-fs.writeFileSync(`${outDir}/${DATE}-shipinhao.md`, `# 视频号文案 ${DATE}\n\n${title}\n\n${short}……\n\n延伸阅读：公众号同名文章\n状态：待人工发布（视频号无通用公开发帖 API）\n`);
+// Owner paused Douyin and Channels; no scripts or publish attempts generated.
 const r2 = {status:'NOT_REQUIRED', via:'Worker reads committed GitHub article; no R2 API upload permission required'};
 const env = (k) => !!process.env[k];
 const receipt = { date: DATE, generated_at: new Date().toISOString(), article: `${outDir}/${DATE}.md`,
@@ -56,8 +55,8 @@ const receipt = { date: DATE, generated_at: new Date().toISOString(), article: `
   platforms: {
     r2_upload: r2,
     wechat_mp: { status: 'ARTICLE_READY_WORKER_UNVERIFIED', via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: '已提交文章由 Worker 从 GitHub 读取；这里只生成稿件，草稿和发表状态以微信真实回执为准' },
-    douyin: env('DOUYIN_CLIENT_KEY') && env('DOUYIN_CLIENT_SECRET') && env('DOUYIN_ACCESS_TOKEN') ? { status: 'READY_NOT_IMPLEMENTED' } : { status: 'BLOCKED', file: `${outDir}/${DATE}-douyin.md`, missing_secrets: ['DOUYIN_CLIENT_KEY', 'DOUYIN_CLIENT_SECRET', 'DOUYIN_ACCESS_TOKEN'], need: '抖音开放平台(open.douyin.com)已审核移动/网站应用 + video.create 权限 + 账号 OAuth 授权；且需要成片视频文件' },
-    shipinhao: { status: 'BLOCKED', file: `${outDir}/${DATE}-shipinhao.md`, need: '视频号无通用公开发帖 API；需人工在视频号助手发布，或企业主体申请视频号相关开放能力' },
+    douyin: {status:'PAUSED_BY_OWNER',published:false},
+    shipinhao: {status:'PAUSED_BY_OWNER',published:false},
     youtube: { status: 'SKIPPED', owner: '豆包' }, instagram: { status: 'SKIPPED', owner: 'Manus' } } };
 fs.mkdirSync('results/publishing', { recursive: true });
 fs.writeFileSync(`results/publishing/${DATE}.json`, JSON.stringify(receipt, null, 2) + '\n');

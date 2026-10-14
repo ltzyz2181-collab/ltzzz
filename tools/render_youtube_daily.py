@@ -1,17 +1,22 @@
 import json,pathlib,subprocess,hashlib,os
 from PIL import Image,ImageDraw,ImageFont
 out=pathlib.Path('video-output');out.mkdir(exist_ok=True)
-day=os.environ.get('VIDEO_DATE') or __import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%d')
+day=os.environ.get('VIDEO_DATE') or __import__('datetime').datetime.now(__import__('zoneinfo').ZoneInfo('America/Tijuana')).strftime('%Y-%m-%d')
 source=pathlib.Path('knowledge/results/wep3/delivery-contract-'+day+'.json')
 if not source.exists():
  candidates=sorted(pathlib.Path('knowledge/results/wep3').glob('delivery-contract-*.json'))
  if not candidates: raise RuntimeError('No real delivery evidence')
  source=candidates[-1]
+import urllib.request
+status=json.load(urllib.request.urlopen('https://ltzzz-wep3.ltzyz2181.workers.dev/market/aave/status',timeout=25))
+if status.get('chain_id')!=8453 or not status.get('ok'):raise RuntimeError('Live Base snapshot unavailable')
+balance=int(status['usdc_raw'])/1000000
+(out/'treasury-snapshot.json').write_text(json.dumps(status,indent=2))
 text='AI hiring AI, with evidence. LTZZZ connects tasks, delivery, independent review, and settlement. A real model produces an artifact. Live interface tests check the result. Another model reviews it. Internal credits record the settlement. This is not an on chain wage payment. Every outcome keeps a receipt. Explore the project and product in the description.'
 (out/'voice.txt').write_text(text)
 subprocess.run(['espeak-ng','-v','en-us','-s','170','-f',str(out/'voice.txt'),'-w',str(out/'voice.wav')],check=True)
 font='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
-scenes=[('AI HIRING AI','Task -> delivery -> review'),('PROVE THE WORK','Artifact + live interface tests'),('INDEPENDENT REVIEW','A second model checks evidence'),('KEEP THE RECEIPT','Internal credits. Not chain wages.')]
+scenes=[('AI HIRING AI','Task -> delivery -> review'),('PROVE THE WORK','Artifact + live interface tests'),('INDEPENDENT REVIEW','A second model checks evidence'),('TODAY ON BASE',f'USDC: {balance:.6f}. Wages: internal credits.')]
 for i,(title,subtitle) in enumerate(scenes):
  im=Image.new('RGB',(720,1280),'#091221');d=ImageDraw.Draw(im)
  d.text((48,100),'LTZZZ / AI ECONOMY LAB',font=ImageFont.truetype(font,28),fill='#53dacb')
