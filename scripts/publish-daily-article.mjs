@@ -1,5 +1,6 @@
 // Daily memory → Chinese article → WeChat draft/freepublish; 抖音/视频号 scripts prepared (no official API creds).
 // Secrets only via env. Never writes secrets or wallet addresses into output.
+import {createHash} from 'node:crypto';
 import fs from 'node:fs'; import path from 'node:path'; import { execSync } from 'node:child_process';
 import { callAgent } from './call-deepseek.mjs';
 const DATE = process.env.ARTICLE_DATE || new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10); // CST day
@@ -51,11 +52,11 @@ if(!short)short=clean.slice(0,220)+'。';
 // Owner paused Douyin and Channels; no scripts or publish attempts generated.
 const r2 = {status:'NOT_REQUIRED', via:'Worker reads committed GitHub article; no R2 API upload permission required'};
 const env = (k) => !!process.env[k];
-const receipt = { date: DATE, generated_at: new Date().toISOString(), article: `${outDir}/${DATE}.md`,
-  ai_editor: { model: 'deepseek', status: ai.status, ok: !!ai.ok, tokens_used: ai.tokens_used || 0, error: ai.ok ? undefined : ai.error },
+const receipt = { article_sha256:createHash('sha256').update(article+'\n').digest('hex'), date: DATE, generated_at: new Date().toISOString(), article: `${outDir}/${DATE}.md`,
+  ai_editor: { model: 'deepseek', status: ai.status, ok: !!ai.ok, finish_reason:ai.finish_reason||null, tokens_used: ai.tokens_used || 0, error: ai.ok ? undefined : redact(String(ai.error||'')) },
   platforms: {
     r2_upload: r2,
-    wechat_mp: { status: 'ARTICLE_READY_WORKER_UNVERIFIED', via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: '已提交文章由 Worker 从 GitHub 读取；这里只生成稿件，草稿和发表状态以微信真实回执为准' },
+    wechat_mp: { status: ai.ok?'ARTICLE_READY_WORKER_UNVERIFIED':'ARTICLE_FALLBACK_RAW', draft_eligible:!!ai.ok, via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: '已提交文章由 Worker 从 GitHub 读取；这里只生成稿件，草稿和发表状态以微信真实回执为准' },
     douyin: {status:'PAUSED_BY_OWNER',published:false},
     shipinhao: {status:'PAUSED_BY_OWNER',published:false},
     youtube: { status: 'SKIPPED', owner: '豆包' }, instagram: { status: 'SKIPPED', owner: 'Manus' } } };

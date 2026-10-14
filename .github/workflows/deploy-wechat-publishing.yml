@@ -11,7 +11,7 @@ on:
         default: draft
   push:
     branches: [main]
-    paths: ['.github/workflows/deploy-wechat-publishing.yml','scripts/tests/wechat-publishing.test.mjs','ltzzz-wechat-publisher-worker.js']
+    paths: ['.github/workflows/deploy-wechat-publishing.yml','scripts/tests/wechat-publishing.test.mjs','ltzzz-wechat-publisher-worker.js','wechat-article-eligibility.js']
 permissions: {contents: write}
 concurrency: {group: channel-bots-deploy, cancel-in-progress: false}
 jobs:
@@ -29,13 +29,38 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          node - <<'JS'
-          const fs=require('fs'),crypto=require('crypto'),token=crypto.randomBytes(32).toString('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'BOT_ADMIN_TOKEN='+token+'\n');fs.writeFileSync('/tmp/wechat-admin.json',JSON.stringify({BOT_ADMIN_TOKEN:token}));
-          JS
           npx --yes wrangler@4 deploy -c wrangler.wechat.toml
+      - name: Provision manual-run authentication only
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),crypto=require('crypto'),token=crypto.randomBytes(32).toString('hex');console.log('::add-mask::'+token);fs.appendFileSync(process.env.GITHUB_ENV,'BOT_ADMIN_TOKEN='+token+'\n');fs.writeFileSync('/tmp/wechat-admin.json',JSON.stringify({BOT_ADMIN_TOKEN:token}),{mode:0o600});
+          JS
           npx --yes wrangler@4 secret bulk /tmp/wechat-admin.json -c wrangler.wechat.toml
           rm /tmp/wechat-admin.json
+      - name: Verify public editor gate without creating drafts
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const date=fs.readdirSync('content/daily-articles').filter(n=>/^\d{4}-\d{2}-\d{2}\.md$/.test(n)).sort().at(-1)?.slice(0,10);
+          const base='https://ltzzz-wechat-publisher.ltzyz2181.workers.dev';let r,gate;
+          for(let i=0;i<12;i++){
+            r=await fetch(base+'/article-readiness?date='+date+'&probe='+process.env.GITHUB_RUN_ID+'-'+i,{headers:{'Cache-Control':'no-cache'}});gate=await r.json().catch(()=>({}));
+            if(r.ok&&typeof gate.draft_eligible==='boolean')break;
+            await new Promise(resolve=>setTimeout(resolve,3000));
+          }
+          const denied=await fetch(base+'/publish?mode=draft&date='+date,{method:'POST'});
+          const source=JSON.parse(fs.readFileSync('results/publishing/'+date+'.json'));
+          const fallbackExpected=source.ai_editor?.ok===false;
+          const report={at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,worker_deployed:true,http:r.status,read_only:true,model_calls:0,draft_requests_authorized:0,gate,anonymous_publish_http:denied.status};
+          fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/wechat-editor-gate-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+          if(!r.ok||denied.status!==401||gate.read_only!==true||(fallbackExpected&&(gate.status!=='ARTICLE_FALLBACK_RAW'||gate.draft_eligible!==false)))process.exitCode=1;
+          JS
       - name: Retry draft with account-scoped token reuse
+        if: github.event_name == 'workflow_dispatch'
         env:
           ARTICLE_DATE: ${{ inputs.date || '' }}
           PUBLISH_MODE: ${{ inputs.mode || 'draft' }}

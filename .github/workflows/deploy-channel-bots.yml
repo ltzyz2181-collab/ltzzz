@@ -3,11 +3,13 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['telegram-bot-worker.js','ltzzz-wechat-publisher-worker.js','channels/bot-content.mjs','channels/telegram-content-en.mjs','.github/workflows/deploy-channel-bots.yml']
+    paths: ['telegram-bot-worker.js','channels/bot-content.mjs','channels/telegram-content-en.mjs','.github/workflows/deploy-channel-bots.yml']
 permissions: {contents: write}
 concurrency: {group: channel-bots-deploy, cancel-in-progress: false}
 jobs:
   deploy:
+    # Platform credential/webhook setup is explicit, never a side effect of article fixes.
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[configure-channel-bots]')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
