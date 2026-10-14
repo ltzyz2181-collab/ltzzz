@@ -1,4 +1,5 @@
-import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,keccak256,formatUnits} from 'ethers';
+import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
+export const AAVE_RUNTIME_REVISION='aave-guard-v3';
 export const AAVE={chain_id:8453,pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',ausdc:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'};
 const ERC=['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function decimals() view returns(uint8)'];
 const AT=['function balanceOf(address) view returns(uint256)','function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)'];
@@ -95,6 +96,35 @@ async function readAaveStatus(m,book){
 export async function diagnoseAave(m,book){
  const storage=aaveStorageStatus(book);
  return {ok:true,status:'diagnostic_only',storage,execution_blocked:!storage.ok,existing_intent_shape_valid:storage.ok&&storage.status==='active_intent_pending',signed:false,on_chain_executed:false};
+}
+export async function reconcileAaveTransactions(m,book){
+ const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
+ if(!storage.active_intent)return {ok:true,status:'no_active_intent',signed:false,on_chain_executed:false};
+ const i=book.aave.intents[storage.active_intent],signedSteps=[];
+ for(const step of i.steps){
+  if(!step.raw)continue;
+  try{
+   const tx=Transaction.from(step.raw);
+   const expected=step.kind==='approve'?erc.encodeFunctionData('approve',[AAVE.pool,BigInt(i.amount_raw)]):step.kind==='supply'?pool.encodeFunctionData('supply',[AAVE.usdc,BigInt(i.amount_raw),i.treasury,0]):pool.encodeFunctionData('withdraw',[AAVE.usdc,BigInt(i.amount_raw),i.treasury]);
+   const to=step.kind==='approve'?AAVE.usdc:AAVE.pool;
+   if(tx.hash!==step.tx_hash||tx.chainId!==8453n||tx.from?.toLowerCase()!==i.treasury.toLowerCase()||tx.to?.toLowerCase()!==to.toLowerCase()||tx.data!==expected||tx.value!==0n)throw Error('mismatch');
+   signedSteps.push({kind:step.kind,tx_hash:tx.hash,nonce:tx.nonce});
+  }catch{return {ok:false,status:'blocked_reconciliation',error:'stored_transaction_mismatch',signed:false,on_chain_executed:false};}
+ }
+ try{
+  const read=await withAaveReadProvider(async p=>{
+   const block=await p.getBlockNumber(),latest=await p.send('eth_getTransactionCount',[i.treasury,'latest']),pending=await p.send('eth_getTransactionCount',[i.treasury,'pending']);
+   const transactions=[];
+   for(const step of signedSteps){
+    const receipt=await p.send('eth_getTransactionReceipt',[step.tx_hash]),tx=await p.send('eth_getTransactionByHash',[step.tx_hash]);
+    if(receipt&&receipt.transactionHash?.toLowerCase()!==step.tx_hash.toLowerCase())throw Error('receipt_hash_mismatch');
+    if(tx&&tx.hash?.toLowerCase()!==step.tx_hash.toLowerCase())throw Error('transaction_hash_mismatch');
+    transactions.push({...step,chain_status:receipt?(BigInt(receipt.status)===1n?'confirmed_success':'confirmed_failed'):tx?'pending':'not_found_on_checked_rpc',block_number:receipt?Number(BigInt(receipt.blockNumber)):null,confirmations:receipt?Math.max(0,block-Number(BigInt(receipt.blockNumber))+1):0});
+   }
+   return {block_number:block,latest_nonce:Number(BigInt(latest)),pending_nonce:Number(BigInt(pending)),transactions};
+  });
+  return {ok:true,status:'reconciliation_read_only',intent_id:i.id,...read.value,rpc_url:read.rpc_url,rpc_attempts:read.rpc_attempts,broadcast_history_unknown:read.value.transactions.some(t=>t.chain_status==='not_found_on_checked_rpc'),storage_changed:false,signed:false,on_chain_executed:false};
+ }catch(e){return {ok:false,error:'base_rpc_reconciliation_failed',rpc_attempts:e.rpc_attempts||[],signed:false,on_chain_executed:false};}
 }
 export function publicAaveIntent(i){if(intentIssue(i,i?.id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),before:i.before||null,after:i.after||null,owner_return_executed:false};}
 export async function executeAave(m,book,input,{preview=false}={}){

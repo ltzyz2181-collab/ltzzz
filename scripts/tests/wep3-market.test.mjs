@@ -25,5 +25,5 @@ test('Aave orphan is a structured 422, authenticated dry-run preserves storage a
   assert.deepEqual(await f.market.read(),b);
  }
  assert.equal((await send(f.market,'/market/aave/diagnostics')).status,401);
- const diagnostic=await send(f.market,'/market/aave/diagnostics',undefined,{'X-Lab-Pin':'pin'});assert.equal(diagnostic.status,200);assert.equal(diagnostic.body.storage.error,'orphaned_active_intent_requires_reconciliation');assert.equal(diagnostic.body.signed,false);
+ const diagnostic=await send(f.market,'/market/aave/diagnostics',undefined,{'X-Lab-Pin':'pin'});assert.equal(diagnostic.status,200);assert.equal(diagnostic.body.aave_runtime_revision,'aave-guard-v3');assert.equal(diagnostic.body.balances,undefined);assert.equal(diagnostic.body.storage.error,'orphaned_active_intent_requires_reconciliation');assert.equal(diagnostic.body.signed,false);
 });

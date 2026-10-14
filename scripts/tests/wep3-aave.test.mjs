@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {Interface} from 'ethers';import {amountRaw,buildAavePlan,budgetKeys,AAVE,executeAave,investmentLimits,autoAave,aaveStorageStatus,publicAaveIntent,withAaveReadProvider,AAVE_RPC_URLS} from '../../wep3-aave.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {Interface,Wallet,keccak256} from 'ethers';import {amountRaw,buildAavePlan,budgetKeys,AAVE,executeAave,investmentLimits,autoAave,aaveStorageStatus,publicAaveIntent,withAaveReadProvider,AAVE_RPC_URLS,reconcileAaveTransactions,aaveStatus} from '../../wep3-aave.js';
 const address='0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d',input={intent_id:'AAVE_TEST_INTENT_123',action:'supply',amount_usdc:'1'};
 const ctx={address,usdc_raw:'20000000',ausdc_raw:'0',allowance_raw:'0',cash_floor_raw:'5000000',day_raw:'0',week_raw:'0',month_raw:'0',first_supply_confirmed:false,exit_test_confirmed:false};
 test('decimal integers and transaction injection fail closed',()=>{assert.equal(amountRaw('1.000001'),1000001n);for(const s of ['1e2','0','-1','1.0000001',1])assert.throws(()=>amountRaw(s));assert.throws(()=>buildAavePlan({...input,to:address},ctx));});
@@ -52,7 +52,42 @@ test('runner distinguishes a verified reconciliation block from HTTP failures an
   ['auto',200,{ok:false,error:'another_intent_pending'},1]
  ]){
   const mock=`globalThis.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(result))},{status:${http}});await import(${JSON.stringify('file://'+script)});`;
-  const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:action,GITHUB_RUN_ID:'test',WEP3_RUNNER_TOKEN:'fixture'},encoding:'utf8'});
+  const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:action,AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'test',WEP3_RUNNER_TOKEN:'fixture'},encoding:'utf8'});
   assert.equal(r.status,exit,r.stderr);const report=JSON.parse(r.stdout.trim());assert.equal(report.on_chain_executed,false);assert.equal(report.tx_hash,null);assert.equal(report.service_verified,exit===0);if(exit===0)assert.equal(report.execution_blocked,true);
  }}finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('signed intent reconciliation reads existing hash without signing, clearing, or assuming absent means never broadcast',async()=>{
+ const wallet=Wallet.createRandom(),data=new Interface(['function approve(address,uint256)']).encodeFunctionData('approve',[AAVE.pool,1000000n]);
+ const raw=await wallet.signTransaction({chainId:8453,to:AAVE.usdc,data,nonce:0,gasLimit:60000,maxFeePerGas:1000000n,maxPriorityFeePerGas:1n,value:0n,type:2});
+ const i={...pending(),treasury:wallet.address,steps:[{kind:'approve',raw,tx_hash:keccak256(raw),status:'signed_not_confirmed'}]},b={aave:{active_intent:i.id,intents:{[i.id]:i}}},before=JSON.stringify(b),calls=[];
+ const original=globalThis.fetch;globalThis.fetch=async(url,o)=>{const q=JSON.parse(new TextDecoder().decode(o.body));calls.push(q.method);let result;
+  if(q.method==='eth_chainId')result='0x2105';else if(q.method==='eth_blockNumber')result='0x3212345';else if(q.method==='eth_getTransactionCount')result='0x0';else if(['eth_getTransactionReceipt','eth_getTransactionByHash'].includes(q.method))result=null;else throw Error('unexpected effect '+q.method);
+  return new Response(JSON.stringify({jsonrpc:'2.0',id:q.id,result}),{headers:{'content-type':'application/json'}});
+ };
+ try{const r=await reconcileAaveTransactions(noEffects,b);assert.equal(r.ok,true);assert.equal(r.transactions[0].tx_hash,i.steps[0].tx_hash);assert.equal(r.transactions[0].chain_status,'not_found_on_checked_rpc');assert.equal(r.broadcast_history_unknown,true);assert.equal(r.signed,false);assert.equal(r.on_chain_executed,false);assert.equal(JSON.stringify(r).includes(raw),false);assert.equal(JSON.stringify(b),before);assert.equal(calls.some(x=>/sendRaw|sendTransaction/.test(x)),false);}finally{globalThis.fetch=original;}
+});
+test('mismatched stored signed bytes block reconciliation before RPC',async()=>{
+ const i=pending(),b={aave:{active_intent:i.id,intents:{[i.id]:i}}};const r=await reconcileAaveTransactions(noEffects,b);assert.equal(r.error,'stored_transaction_mismatch');assert.equal(r.signed,false);
+});
+test('full status transport verifies reserve and reads all balances at one block',async()=>{
+ const erc=new Interface(['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function decimals() view returns(uint8)']),at=new Interface(['function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)']);
+ const original=globalThis.fetch,calls=[];globalThis.fetch=async(url,o)=>{const q=JSON.parse(new TextDecoder().decode(o.body));calls.push(q);let result;
+  if(q.method==='eth_chainId')result='0x2105';else if(q.method==='eth_blockNumber')result='0x3212345';else if(q.method==='eth_getBalance')result='0x71afd498d0000';else if(q.method==='eth_call'){
+   const t=q.params[0],sel=t.data.slice(0,10);
+   if(sel===erc.getFunction('balanceOf').selector)result=erc.encodeFunctionResult('balanceOf',[t.to.toLowerCase()===AAVE.usdc.toLowerCase()?50000000n:0n]);
+   else if(sel===erc.getFunction('allowance').selector)result=erc.encodeFunctionResult('allowance',[0n]);
+   else if(sel===erc.getFunction('decimals').selector)result=erc.encodeFunctionResult('decimals',[6]);
+   else if(sel===at.getFunction('POOL').selector)result=at.encodeFunctionResult('POOL',[AAVE.pool]);
+   else if(sel===at.getFunction('UNDERLYING_ASSET_ADDRESS').selector)result=at.encodeFunctionResult('UNDERLYING_ASSET_ADDRESS',[AAVE.usdc]);
+  }
+  if(result===undefined)throw Error('unexpected RPC');return new Response(JSON.stringify({jsonrpc:'2.0',id:q.id,result}),{headers:{'content-type':'application/json'}});
+ };
+ try{const r=await aaveStatus({env:{X402_RECEIVE_ADDRESS:address},score:async()=>100},{});assert.equal(r.ok,true);assert.equal(r.usdc_raw,'50000000');assert.equal(r.block_number,52503365);for(const c of calls.filter(x=>['eth_call','eth_getBalance'].includes(x.method)))assert.equal(c.params[1],'0x3212345');}finally{globalThis.fetch=original;}
+});
+
+test('deployment runner waits for the expected Worker revision rather than accepting a stale successful response',async()=>{
+ const fs=await import('node:fs'),path=await import('node:path'),{spawnSync}=await import('node:child_process');fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/aave-revision-test-')),script=path.resolve('scripts/run-treasury-aave.mjs');
+ try{const mock=`let calls=0;globalThis.setTimeout=fn=>{fn();return 0};globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,status:'diagnostic_only',storage:{ok:false},signed:false,aave_runtime_revision:++calls<3?'old':'aave-guard-v3'}));await import(${JSON.stringify('file://'+script)});`;
+ const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'aave-guard-v3',GITHUB_RUN_ID:'test'},encoding:'utf8'});assert.equal(r.status,0,r.stderr);const report=JSON.parse(r.stdout.trim());assert.equal(report.result.aave_runtime_revision,'aave-guard-v3');assert.equal(report.service_verified,true);assert.equal(report.status,undefined);}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
