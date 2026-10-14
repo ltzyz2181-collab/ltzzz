@@ -78,7 +78,7 @@ test('hire: truncated output and failed audit do not settle', async () => {
   assert.equal(t1.reason, 'worker_output_truncated');
   const t2 = await hire(s, job({ workerCall: async () => okW, auditors: [{ model: 'xai', did: 'did:ltzzz:grok', key: 'k', fn: async () => ({ ok: false, status: 'api_error' }) }] }));
   assert.equal(t2.reason, 'audit_unavailable'); assert.equal(s.state.agents['did:ltzzz:deepseek'].earned_usd, 0);
-  const t3 = await hire(s, job({ workerCall: async () => okW, auditors: [{ model: 'xai', did: 'did:ltzzz:grok', key: 'k', fn: async () => ({ ok: true, output: '{"accepted":true,"score":90}' }) }] }));
+  const t3 = await hire(s, job({ workerCall: async () => okW, auditors: [{ model: 'xai', did: 'did:ltzzz:grok', key: 'k', fn: async () => ({ ok: true, finish_reason:'stop', output: '{"accepted":true,"score":90}' }) }] }));
   assert.equal(t3.status, 'settled'); assert.ok(s.state.agents['did:ltzzz:deepseek'].earned_usd > 0);
 });
 test('award twice is rejected; roles enforced; max_share validated', () => {
