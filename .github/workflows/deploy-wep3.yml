@@ -101,14 +101,14 @@ jobs:
       - name: Verify requested deployment ledger and reputation closeout
         if: github.event_name == 'workflow_dispatch' && inputs.deployment_closeout
         run: node scripts/finalize-deploy-closeout.mjs
-      - name: Verify Aave balances without signing
-        env:
-          AAVE_ACTION: status
-        run: node scripts/run-treasury-aave.mjs
       - name: Diagnose stored Aave intent and retry automatic planning without signing
         run: |
           AAVE_ACTION=diagnose node scripts/run-treasury-aave.mjs
           AAVE_ACTION=auto-preview node scripts/run-treasury-aave.mjs
+      - name: Verify Aave balances without signing
+        env:
+          AAVE_ACTION: status
+        run: node scripts/run-treasury-aave.mjs
       - name: Capital AI actual execution review
         if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-hire-closeout]')
         env:
