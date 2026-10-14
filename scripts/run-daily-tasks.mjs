@@ -75,11 +75,9 @@ function readCoreMemory() {
 
 // 通道 → 调用模块 / 密钥名 / 回退任务；密钥只由 GitHub Secrets 注入
 const CHANNELS = [
-  { agent: "gpt", module: "call-openai.mjs", key: "OPENAI_API_KEY", task: "提出一项可验证的下一步任务和一条记忆候选建议" },
   { agent: "doubao", module: "call-doubao.mjs", key: "DOUBAO_API_KEY", task: "产出一份围绕观/行深主题的中文短视频脚本草稿（≤60 秒、9:16）；不得发布" },
   { agent: "grok", module: "call-grok.mjs", key: "XAI_API_KEY", task: "从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码" },
   { agent: "deepseek", module: "call-deepseek.mjs", key: "DEEPSEEK_API_KEY", task: "比较中华传统文化与项目理念的一项异同，区分出处、观察和推测" },
-  { agent: "microsoft", executed_by: "gpt", module: "call-openai.mjs", key: "OPENAI_API_KEY", task: "比较西方文化与项目理念的一项异同；明确署名 GPT 委托执行，非 Copilot 产出" },
 ];
 
 function ensureDir(p) { if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }); }
@@ -112,6 +110,7 @@ async function main() {
   const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
   pending.reminders ||= {};
   delete pending.reminders.claude;
+  delete pending.reminders.gpt;delete pending.reminders.microsoft;
   const tasks = [];
   const failures = [];
   const userActionRequired = [];
@@ -209,7 +208,8 @@ async function main() {
     }
   }
 
-  tasks.push({agent:"claude",status:"external_discussion_only",task:"六文件讨论外部席",output_preview:"owner已重新授权文本讨论；由现有model-memory-discussion工作流处理，本日课不重复购买调用；API余额不足以实际回执为准。"});
+  for(const agent of ["gpt","microsoft"])tasks.push({agent,status:"disabled_by_owner",output_preview:"OpenAI日常付费调用已停止；使用国内执行席。"});
+  tasks.push({agent:"claude",status:"external_discussion_only",task:"六文件讨论外部席",output_preview:"仅免费外部对话讨论；API付费任务停用，不假设有免费API额度。"});
 
   for (const task of tasks) {
     Object.assign(task, classifyTaskOutcome({ status: task.status, hasOutput: Boolean(task.output_preview) }));

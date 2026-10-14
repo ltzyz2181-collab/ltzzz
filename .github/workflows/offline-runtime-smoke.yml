@@ -1,0 +1,39 @@
+name: Verify unattended domestic model runtime
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/offline-runtime-smoke.yml','scripts/lib/domestic-model-router.mjs','scripts/offline-runtime-smoke.mjs']
+permissions: {contents: write}
+concurrency: {group: offline-runtime-smoke, cancel-in-progress: false}
+jobs:
+  verify:
+    if: github.event_name != 'push' || contains(github.event.head_commit.message, '[verify-domestic-runtime]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/domestic-model-router.test.mjs
+      - name: Two bounded real domestic calls (no OpenAI Secret)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+        run: node scripts/offline-runtime-smoke.mjs
+      - name: Record true verification
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/offline-runtime/ || true
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Unattended domestic API verification receipt'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
