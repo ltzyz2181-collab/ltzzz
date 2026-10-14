@@ -1,6 +1,6 @@
 import {externalEntry} from './wep3-external-entry.js';
 import {sealDelivery} from './wep3-order-contract.js';
-import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave} from './wep3-aave.js';
+import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
 import {anchorSnapshot} from './wep3-anchor.js';
 import {submitForecast,maintainForecasts} from './wep3-forecast.js';
 import {standardX402,resumeMachineOrder} from './wep3-x402.js';
@@ -44,10 +44,11 @@ export class Market {
     const context=request.headers.get('X-LTZZZ-Worker-Context');if(context){const current=JSON.parse(context);this.env={...this.env,...current};}
     const u=new URL(request.url),p=u.pathname,book=await this.read();
     const entry=externalEntry(request);if(entry)return entry;
-    if(p==='/market/aave/status'&&request.method==='GET')return reply(await aaveStatus(this,book));
-    if(p==='/market/aave/diagnostics'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await diagnoseAave(this,book);return reply(r,r.ok?200:503);}
+    if(p==='/market/aave/status'&&request.method==='GET')return reply({...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
+    if(p==='/market/aave/reconcile'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await reconcileAaveTransactions(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:422);}
+    if(p==='/market/aave/diagnostics'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await diagnoseAave(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:503);}
     if(p==='/market/aave/intent'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const i=book.aave?.intents?.[u.searchParams.get('id')];return reply(i?{ok:true,...publicAaveIntent(i)}:{ok:false,error:'intent_missing'},i?200:404);}
-    if(p.startsWith('/market/aave/')&&request.method==='POST'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);if(p==='/market/aave/auto'||p==='/market/aave/auto-preview'){const r=await autoAave(this,book,{preview:p.endsWith('/auto-preview')});return reply(r,r.ok?200:422);}const input=await request.json().catch(()=>({}));if(p.endsWith('/pause')){book.aave||={principal_raw:'0',intents:{},periods:{day:{},week:{},month:{}}};if(typeof input.paused!=='boolean')return reply({ok:false,error:'boolean_paused_required'},422);book.aave.paused=input.paused;await this.save(book);return reply({ok:true,paused:input.paused});}if(p.endsWith('/preview')||p.endsWith('/execute')){const r=await executeAave(this,book,input,{preview:p.endsWith('/preview')});return reply(r,r.ok?200:422);}}
+    if(p.startsWith('/market/aave/')&&request.method==='POST'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);if(p==='/market/aave/auto'||p==='/market/aave/auto-preview'){const r=await autoAave(this,book,{preview:p.endsWith('/auto-preview')});return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:422);}const input=await request.json().catch(()=>({}));if(p.endsWith('/pause')){book.aave||={principal_raw:'0',intents:{},periods:{day:{},week:{},month:{}}};if(typeof input.paused!=='boolean')return reply({ok:false,error:'boolean_paused_required'},422);book.aave.paused=input.paused;await this.save(book);return reply({ok:true,paused:input.paused});}if(p.endsWith('/preview')||p.endsWith('/execute')){const r=await executeAave(this,book,input,{preview:p.endsWith('/preview')});return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:422);}}
     if(p==='/market/runner/readiness'&&request.method==='GET')return reply({ok:true,authenticated:this.admin(request),runner_configured:Boolean(this.env.WEP3_RUNNER_TOKEN),runner_type:typeof this.env.WEP3_RUNNER_TOKEN,supplied_length:(request.headers.get('X-Lab-Pin')||'').length,runner_length:String(this.env.WEP3_RUNNER_TOKEN||'').length});
     if(p==='/market/treasury'&&request.method==='GET')return reply(await treasuryProof(this.env));
     if(p.startsWith('/market/skill/'))return standardX402(this,request,book);
