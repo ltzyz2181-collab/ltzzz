@@ -1,0 +1,26 @@
+name: LTZZZ 国内执行席工单
+description: 无需OpenAI，登记任务或交给DeepSeek与豆包。工单及输出公开，请勿填写任何密钥和隐私。
+title: '[LTZZZ工单] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        仅仓库owner本人提交会被执行。默认只登记、零模型调用；选择执行会使用现有DeepSeek和豆包Key各进行最多一次逻辑调用，不新增定时任务。供应商适配器可能进行兼容探测。不能通过此入口转账、发布或运行模型生成的命令。ChatGPT离线时此入口由云端执行席接续，不会把消息转给离线聊天。
+  - type: dropdown
+    id: mode
+    attributes:
+      label: 执行方式
+      options:
+        - 仅登记：零模型调用
+        - 执行：DeepSeek分析＋豆包交付
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: 任务内容
+      description: 4000字符以内；写清目标、已有证据和期望产物。请勿放Key、私钥、密码、客户隐私。
+      placeholder: 例如：根据仓库最新回执，整理尚未完成的外部接单事项，交付一个验收清单。不转账、不发布。
+    validations:
+      required: true
