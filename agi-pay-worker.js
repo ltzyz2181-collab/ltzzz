@@ -18,7 +18,7 @@ const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'Claude', 'GPT'
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...cors, ...extra },
+    headers: { 'content-type': 'application/json; charset=utf-8', 'Cache-Control':'no-store', ...cors, ...extra },
   });
 }
 function id(prefix) {
@@ -187,7 +187,7 @@ export default {
     const path = url.pathname.replace(/\/+$/, '') || '/';
     try {
       if (path === '/' || path === '/health') {
-        return json({ ok: true, service: 'ltzzz-agi-pay', thesis: 'Agents buy work with intents. Receipts are truth.', version: '0.1.0', policy: policy(env), rails: RAILS, endpoints: ['GET /health','GET /market','POST /intent','POST /quote','POST /commit','GET /resource','POST /stream-tick','GET /receipts','GET /ledger'] });
+        return json({ ok: true, service: 'ltzzz-agi-pay', thesis: 'Agents buy work with intents. Receipts are truth.', version: '0.2.0-shadow-stream', policy: policy(env), rails: RAILS, endpoints: ['GET /health','GET /market','POST /intent','POST /quote','POST /commit','GET /resource','POST /stream-tick','GET /receipts','GET /ledger'] });
       }
       if (path === '/market' && request.method === 'GET') {
         return json({ ok: true, open_intents: await listPrefix(env, 'agi-pay:intent:', 30), rails: RAILS, agents: AGENTS });
