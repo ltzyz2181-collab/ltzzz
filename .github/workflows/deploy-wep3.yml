@@ -16,6 +16,8 @@ concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      AAVE_EXPECTED_REVISION: aave-guard-v3
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -108,6 +110,10 @@ jobs:
       - name: Verify Aave balances without signing
         env:
           AAVE_ACTION: status
+        run: node scripts/run-treasury-aave.mjs
+      - name: Reconcile persisted signed transaction without rebroadcasting
+        env:
+          AAVE_ACTION: reconcile
         run: node scripts/run-treasury-aave.mjs
       - name: Capital AI actual execution review
         if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-hire-closeout]')
