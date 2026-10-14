@@ -1,14 +1,16 @@
-import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
+import {createModelRouter} from './lib/domestic-model-router.mjs';import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
 export const dateCST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export const sha=s=>crypto.createHash('sha256').update(s).digest('hex');
 export const save=(f,v)=>{fs.mkdirSync(path.dirname(f),{recursive:true});fs.writeFileSync(f,JSON.stringify(v,null,2)+'\n');};
 export function memory(){return ['魄','识神','梦境数据库','文明研究','项目历史','重要事件','装备论','README'].map(n=>{const file=`ltzzz-memory/${n}.md`;const text=fs.readFileSync(file,'utf8');if(!text.trim())throw Error('memory_empty');return {file,text,sha256:sha(text)};});}
 export function jsonOutput(s){const text=String(s).trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');return JSON.parse(text);}
-export async function invoke(agent,prompt,maxTokens){
+export async function invoke(agent,prompt,maxTokens,options={}){
  const providers=JSON.parse(fs.readFileSync('config/ai-providers.json')).providers;const p=providers[agent];
  try{
   let res;
-  if(agent==='qianwen_proxy'){
+  if(agent==='gpt'){
+   res=await createModelRouter()('GPT',prompt,{...options,maxTokens:8192});
+  }else if(agent==='qianwen_proxy'){
    const r=await fetch('https://api-qianwen.ltzzz.com/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTokens}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)return {status:'api_error',output:null};const d=await r.json();res={ok:true,output:d.choices?.[0]?.message?.content,finish_reason:d.choices?.[0]?.finish_reason,tokens_used:d.usage?.total_tokens,model:d.model};
   }else{
@@ -16,7 +18,7 @@ export async function invoke(agent,prompt,maxTokens){
    res=await (await import(path.resolve(p.module))).callAgent({apiKey:process.env[p.secret],prompt,maxTokens});
   }
   const output=res.ok?String(res.output||'').trim():'';
-  return {status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};
+  return {executed_by:res.executed_by||({deepseek:'DeepSeek',doubao:'Doubao',grok:'Grok'}[agent]||agent),logical_agent:agent,delegated:agent==='gpt',status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};
  }catch{return {status:'exception',output:null};}
 }
 export function evaluateExperiment(kind){
