@@ -5,12 +5,12 @@
  */
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, PAYMENT-SIGNATURE, X-PAYMENT',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, PAYMENT-SIGNATURE, X-PAYMENT, Idempotency-Key',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 const RAILS = {
   x402: { unit: 'HTTP-402', asset: 'USDC', min: 0.0001, max: 2, latency_ms: 80 },
-  'stream-usdc': { unit: 'per-token', asset: 'USDC', min: 0.000001, max: 0.5, latency_ms: 20 },
+  'stream-usdc': { mode:'shadow_only', live_enabled:false, idempotency_scope:'UTC_day', unit: 'per-token', asset: 'USDC', min: 0.000001, max: 0.5, latency_ms: 20 },
   'erc20-allowance': { unit: 'Safe-module', asset: 'USDT', min: 0.01, max: 100, latency_ms: 12000 },
   'credit-pool': { unit: 'internal-ledger', asset: 'LTZ', min: 0.0001, max: 20, latency_ms: 5 },
 };
@@ -133,21 +133,37 @@ async function gatedResource(request, env) {
     return json({ ok: false, status: 402, protocol: 'x402', pay_to: 'did:ltzzz:lab', asset: 'USDC', amount_usd: 0.001, how: 'POST /commit then retry with X-PAYMENT: receipt_id' }, 402, { 'WWW-Authenticate': 'x402 amount=0.001 asset=USDC payee=did:ltzzz:lab' });
   }
   const receipt = await kvGet(env, 'agi-pay:receipt:' + pay, null);
-  if (!receipt && pay !== 'demo') return json({ ok: false, error: 'invalid_receipt' }, 402);
+  if (!receipt) return json({ ok: false, error: 'invalid_receipt' }, 402);
   return json({ ok: true, resource: 'ltzzz-agi-signal', payload: { line: 'future pay is intent settlement', ts: new Date().toISOString() }, receipt_used: pay });
 }
 async function streamTick(request, env) {
   const body = await request.json().catch(() => ({}));
-  const tokens = Math.max(1, Number(body.tokens || 32));
-  const agent = body.agent || 'Grok';
-  const p = policy(env);
-  const price = Number((tokens * p.stream_tick_usd).toFixed(6));
-  const { day, spent } = await daySpend(env);
-  if (spent + price > p.daily_cap_usd) return json({ ok: false, status: 'CIRCUIT_OPEN', triggers: ['daily_cap'] }, 409);
-  const receipt = { id: id('STR'), type: 'stream-tick', rail: 'stream-usdc', agent, tokens, amount_usd: price, settled_at: new Date().toISOString(), dry_run: p.dry_run };
-  await kvPut(env, 'agi-pay:receipt:' + receipt.id, receipt);
-  await kvPut(env, 'agi-pay:daily:' + day, spent + price);
-  return json({ ok: true, receipt, stream: 'continue' });
+  if(!Number.isSafeInteger(body.tokens)||body.tokens<1||body.tokens>1000000)return json({ok:false,error:'positive_integer_tokens_required'},422);
+  if(!env.STREAM_LEDGER)return json({ok:false,error:'atomic_stream_storage_required'},503);
+  // Streaming is a separate shadow meter, never a real USDC settlement or commit budget.
+  if(!policy(env).dry_run)return json({ok:false,error:'live_stream_settlement_not_enabled'},503);
+  return env.STREAM_LEDGER.get(env.STREAM_LEDGER.idFromName('shadow-stream-'+new Date().toISOString().slice(0,10))).fetch(new Request(request.url,{method:'POST',headers:request.headers,body:JSON.stringify(body)}));
+}
+export class StreamLedger {
+  constructor(state,env){this.state=state;this.env=env;this.tail=Promise.resolve();}
+  fetch(request){const task=this.tail.then(()=>this.tick(request)).catch(()=>json({ok:false,error:'stream_storage_unavailable'},503));this.tail=task.catch(()=>{});return task;}
+  async tick(request){
+    const body=await request.json(),rid=request.headers.get('Idempotency-Key'),p=policy(this.env);
+    if(!p.dry_run||p.breaker_open)return json({ok:false,error:'stream_closed'},503);
+    if(!Number.isSafeInteger(body.tokens)||body.tokens<1||body.tokens>1000000||!AGENTS.includes(body.agent)||!/^[-a-zA-Z0-9_]{16,100}$/.test(rid||''))return json({ok:false,error:'tokens_agent_idempotency_required'},422);
+    const rate=Math.round(p.stream_tick_usd*1000000),cap=Math.round(p.daily_cap_usd*1000000),single=Math.round(p.single_cap_usd*1000000);
+    if(![rate,cap,single].every(n=>Number.isSafeInteger(n)&&n>0))return json({ok:false,error:'invalid_stream_policy'},503);
+    const raw=body.tokens*rate;if(!Number.isSafeInteger(raw))return json({ok:false,error:'stream_amount_overflow'},422);
+    const day=new Date().toISOString().slice(0,10),book=await this.state.storage.get('meter')||{day,used_raw:0,receipts:{}};
+    if(book.day!==day)return json({ok:false,error:'stream_day_changed_retry'},409);
+    const old=book.receipts[rid];
+    if(old){if(old.agent!==body.agent||old.tokens!==body.tokens)return json({ok:false,error:'idempotency_input_mismatch'},409);return json({ok:true,receipt:old,duplicate:true});}
+    if(Object.keys(book.receipts).length>=10000)return json({ok:false,error:'stream_capacity'},429);
+    if(raw>single||book.used_raw+raw>cap)return json({ok:false,error:'shadow_stream_cap'},409);
+    const receipt={id:'STR-'+crypto.randomUUID(),type:'shadow-stream-tick',rail:'internal-shadow',agent:body.agent,tokens:body.tokens,amount_raw:String(raw),amount_usd:raw/1000000,unit:'shadow_USD_micros',meter_scope:'isolated_shadow_stream',dry_run:true,paid:false,tx_hash:null,at:new Date().toISOString()};
+    book.receipts[rid]=receipt;book.used_raw+=raw;await this.state.storage.put('meter',book);
+    return json({ok:true,receipt,used_raw:String(book.used_raw),stream:'continue_shadow_only'});
+  }
 }
 // ─── 鉴权：按 HTTP 方法闸（默认拒绝所有写请求），fail-closed ───
 // 设计：POST 一律需 Bearer LTZZZ_AGENT_TOKEN；未配 Secret → 503（拒绝放行）；

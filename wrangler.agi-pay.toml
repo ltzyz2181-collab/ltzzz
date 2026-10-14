@@ -12,3 +12,11 @@ AGI_PAY_DAILY = "50"
 AGI_PAY_SINGLE = "5"
 AGI_PAY_TICK = "0.0002"
 BREAKER_OPEN = "false"
+
+[[durable_objects.bindings]]
+name = "STREAM_LEDGER"
+class_name = "StreamLedger"
+
+[[migrations]]
+tag = "shadow-stream-v1"
+new_sqlite_classes = ["StreamLedger"]
