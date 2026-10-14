@@ -44,7 +44,7 @@ export async function withAaveReadProvider(read,makeProvider){
    else{const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});}
    if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');
    return {value:await read(p),rpc_url:url,rpc_attempts:[...attempts,{url,ok:true}]};
-  }catch{attempts.push({url,ok:false});}
+  }catch(e){attempts.push({url,ok:false,code:typeof e.code==='string'?e.code.slice(0,40):null,detail:String(e.shortMessage||e.message||'read_failed').slice(0,160)});}
   finally{p?.destroy();}
  }
  const error=Error('base_rpc_unavailable');error.rpc_attempts=attempts;throw error;
@@ -93,8 +93,8 @@ async function readAaveStatus(m,book){
  return {ok:true,...AAVE,address,block_number:block,rpc_url:chain.rpc_url,rpc_attempts:chain.rpc_attempts,usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),eth_raw:eth.toString(),allowance_raw:allowance.toString(),principal_raw:principal.toString(),interest_raw:(!state.first_supply_confirmed&&ausdc>0n)?null:(ausdc>principal?ausdc-principal:0n).toString(),principal_basis:state.first_supply_confirmed?'tracked_supply_receipts':ausdc>0n?'unverified':'no_position',first_supply_confirmed:!!state.first_supply_confirmed,exit_test_confirmed:!!state.exit_test_confirmed,paused:!!state.paused,active_intent:aaveStorageStatus(book).active_intent||null,storage_status:aaveStorageStatus(book),limit_policy:limits.mode,capital_agent:'DeepSeek',capital_reputation:limits.reputation,allocation_share_bps:limits.share_bps,single_cap_usdc:Number(formatUnits(limits.single,6)),exposure_cap_usdc:Number(formatUnits(limits.exposure,6)),cash_floor_raw:floor.toString(),withdraw_receiver:address,owner_return_enabled:false};
 }
 export async function diagnoseAave(m,book){
- const storage=aaveStorageStatus(book),balances=await aaveStatus(m,book);
- return {ok:balances.ok,status:'diagnostic_only',storage,balances,existing_intent_shape_valid:storage.ok&&storage.status==='active_intent_pending',signed:false,on_chain_executed:false};
+ const storage=aaveStorageStatus(book);
+ return {ok:true,status:'diagnostic_only',storage,execution_blocked:!storage.ok,existing_intent_shape_valid:storage.ok&&storage.status==='active_intent_pending',signed:false,on_chain_executed:false};
 }
 export function publicAaveIntent(i){if(intentIssue(i,i?.id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),before:i.before||null,after:i.after||null,owner_return_executed:false};}
 export async function executeAave(m,book,input,{preview=false}={}){
