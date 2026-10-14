@@ -1,3 +1,4 @@
+import {assertCoreMemory} from './lib/core-memory-integrity.mjs';
 import fs from 'node:fs';import path from 'node:path';import {ownerRequest,digest,deliverOwnerTask} from './lib/owner-inbox.mjs';
 const phase=process.argv[2],event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
 const request=ownerRequest(event,{actor:process.env.GITHUB_ACTOR,repository:process.env.GITHUB_REPOSITORY});
@@ -8,6 +9,7 @@ if(phase==='prepare'){
  else{const record={...request,at:new Date().toISOString(),source_commit:process.env.GITHUB_SHA,run_id:process.env.GITHUB_RUN_ID,input_sha256:digest(request.task),status:request.mode==='execute'?'claimed':'recorded_no_model_calls',calls:[],outputs:[],openai_calls:0,financial_execution:false,paid:false,tx_hash:null};save(record);if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+(request.mode==='execute')+'\n');console.log(record.id,record.status);}
 }else if(phase==='execute'){
  const record=JSON.parse(fs.readFileSync(file,'utf8'));if(record.run_id!==process.env.GITHUB_RUN_ID)throw Error('claim_run_mismatch');
+ assertCoreMemory();
  const names=['魄','识神','梦境数据库','文明研究','项目历史','重要事件'];const memory=names.map(name=>{const file='ltzzz-memory/'+name+'.md',text=fs.readFileSync(file,'utf8');return {file,text,sha256:digest(text)};});record.memory=memory.map(({file,sha256})=>({file,sha256}));
  const secrets=[process.env.DEEPSEEK_API_KEY,process.env.DOUBAO_API_KEY].filter(Boolean);
  const call=async(agent,prompt)=>{const module=agent==='DeepSeek'?'./call-deepseek.mjs':'./call-doubao.mjs',apiKey=agent==='DeepSeek'?process.env.DEEPSEEK_API_KEY:process.env.DOUBAO_API_KEY;if(!apiKey)return {ok:false,status:'not_configured'};const {callAgent}=await import(module);const r=await callAgent({apiKey,prompt,maxTokens:3000,...(agent==='Doubao'?{thinking:'disabled'}:{})});if(typeof r.output==='string')for(const key of secrets)r.output=r.output.replaceAll(key,'[REDACTED]');return r;};

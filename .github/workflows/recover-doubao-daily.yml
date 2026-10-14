@@ -1,0 +1,60 @@
+name: Bounded Doubao daily recovery
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Failed task date (Asia/Shanghai); once per date
+        default: '2026-10-14'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/recover-doubao-daily.yml','scripts/recover-doubao-daily.mjs']
+permissions: {contents: write}
+concurrency: {group: doubao-daily-recovery, cancel-in-progress: false}
+jobs:
+  recover:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[recover-doubao-once]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RECOVERY_DATE: ${{ inputs.date || '2026-10-14' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/check-core-memory.mjs && node --test scripts/tests/core-memory-integrity.test.mjs
+      - id: prepare
+        run: node scripts/recover-doubao-daily.mjs prepare
+      - name: Persist claim before spending
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/daily-recovery/
+          git diff --staged --quiet && exit 0
+          git commit -m 'One-off Doubao recovery checkpoint before API call'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: One existing domestic API call; never a paid schedule
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/recover-doubao-daily.mjs execute
+      - name: Preserve real success or failure without rewriting original attempt
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/daily-recovery/ data/results/ data/memory/doubao.json data/tasks/pending-reminders.json
+          git diff --staged --quiet && exit 0
+          git commit -m 'Actual supplemental Doubao daily output or blocker'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
