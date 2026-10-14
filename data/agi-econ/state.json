@@ -83,11 +83,12 @@
       "did": "did:ltzzz:deepseek",
       "roles": [
         "worker",
-        "capital"
+        "capital",
+        "auditor"
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 100,
+      "reputation": 101,
       "credit_usd": 0.1302,
       "escrow_usd": 0,
       "earned_usd": 0.1602,
@@ -159,15 +160,16 @@
     "did:ltzzz:doubao": {
       "did": "did:ltzzz:doubao",
       "roles": [
-        "worker"
+        "worker",
+        "auditor"
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 105,
-      "credit_usd": 0.0651,
+      "reputation": 95,
+      "credit_usd": 0.0501,
       "escrow_usd": 0,
       "earned_usd": 0.0801,
-      "slashed_usd": 0.015,
+      "slashed_usd": 0.03,
       "history": [
         {
           "task": "AET-00007",
@@ -188,6 +190,11 @@
           "task": "AET-00026",
           "status": "settled",
           "at": "2026-10-13T11:08:54.276Z"
+        },
+        {
+          "task": "AET-00034",
+          "status": "slashed",
+          "at": "2026-10-14T09:07:34.696Z"
         }
       ],
       "status": "active",
@@ -1182,10 +1189,99 @@
       "price_usd": 0.03,
       "block_reason": "worker_model_failed",
       "receipt": "data/agi-econ/receipts/AET-00031.json"
+    },
+    "AET-00033": {
+      "id": "AET-00033",
+      "employer": "did:ltzzz:gpt",
+      "title": "repo review 2026-10-14 gate",
+      "spec": "评审过去24h仓库提交（共 60 条），每条事实注明 commit 短哈希，区分已完成/提议，给3条AI雇佣AI建议",
+      "acceptance": [
+        "# AI Repo Review"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:deepseek",
+          "ask_usd": 0.03,
+          "reputation": 100,
+          "at": "2026-10-14T09:01:01.235Z"
+        }
+      ],
+      "posted_at": "2026-10-14T09:01:01.234Z",
+      "run_id": "38539231886",
+      "attempt": 2,
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:deepseek",
+        "score": 2,
+        "priority_multiplier": 1.02,
+        "status": "eligible",
+        "wins": 5,
+        "quality_failures": 2,
+        "overdue": 0,
+        "infrastructure_blocks": 1,
+        "unverified": 2,
+        "duplicates": 0,
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:deepseek",
+      "price_usd": 0.03,
+      "block_reason": "worker_model_failed",
+      "receipt": "data/agi-econ/receipts/AET-00033.json"
+    },
+    "AET-00034": {
+      "id": "AET-00034",
+      "employer": "did:ltzzz:gpt",
+      "title": "video script 2026-10-14 gate",
+      "spec": "把当日文章改成9:16 ≤60秒中文短视频脚本（标题/分镜/字幕/AI生成声明），只用文章事实",
+      "acceptance": [
+        "# 短视频脚本"
+      ],
+      "budget_usd": 0.05,
+      "status": "slashed",
+      "bids": [
+        {
+          "worker": "did:ltzzz:doubao",
+          "ask_usd": 0.03,
+          "reputation": 105,
+          "at": "2026-10-14T09:03:40.412Z"
+        }
+      ],
+      "posted_at": "2026-10-14T09:03:40.412Z",
+      "run_id": "38539231886",
+      "attempt": 2,
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:doubao",
+        "score": 0,
+        "priority_multiplier": 1,
+        "status": "eligible",
+        "wins": 2,
+        "quality_failures": 1,
+        "overdue": 0,
+        "infrastructure_blocks": 2,
+        "unverified": 1,
+        "duplicates": 0,
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:doubao",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00034.md",
+        "sha256": "3ba390701ed9922fb890c074dbe80899fd5ab85b46b10f257e8d569709095b92",
+        "bytes": 3018
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00034.json",
+        "report_sha256": "f6dde101f3bf137c916eaec0f9b16ec1be9ae578a951ee6c0caa3e1f3f1298d8",
+        "accepted": false
+      },
+      "receipt": "data/agi-econ/receipts/AET-00034.json"
     }
   },
   "capital_pool": {
-    "balance_usd": 0.092,
+    "balance_usd": 0.107,
     "proposals": [
       {
         "id": "CAP-00002",
@@ -1294,10 +1390,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-13T17:10:51.754Z"
+      },
+      {
+        "id": "CAP-00035",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.0535,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-14T09:07:34.697Z"
       }
     ]
   },
-  "seq": 32,
+  "seq": 35,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -2147,6 +2255,67 @@
       "type": "capital_proposal",
       "id": "CAP-00032",
       "amount_usd": 0.046
+    },
+    {
+      "at": "2026-10-14T09:01:01.234Z",
+      "type": "post",
+      "task": "AET-00033",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-14T09:01:01.243Z",
+      "type": "award",
+      "task": "AET-00033",
+      "worker": "did:ltzzz:deepseek",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-14T09:03:40.411Z",
+      "type": "block",
+      "task": "AET-00033",
+      "reason": "worker_model_failed"
+    },
+    {
+      "at": "2026-10-14T09:03:40.412Z",
+      "type": "post",
+      "task": "AET-00034",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-14T09:03:40.413Z",
+      "type": "award",
+      "task": "AET-00034",
+      "worker": "did:ltzzz:doubao",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-14T09:06:29.351Z",
+      "type": "deliver",
+      "task": "AET-00034",
+      "sha256": "3ba390701ed9922fb890c074dbe80899fd5ab85b46b10f257e8d569709095b92"
+    },
+    {
+      "at": "2026-10-14T09:07:34.696Z",
+      "type": "audit",
+      "task": "AET-00034",
+      "auditor": "did:ltzzz:deepseek",
+      "accepted": false
+    },
+    {
+      "at": "2026-10-14T09:07:34.696Z",
+      "type": "settle",
+      "task": "AET-00034",
+      "status": "slashed",
+      "paid": 0,
+      "slashed": 0.015
+    },
+    {
+      "at": "2026-10-14T09:07:34.697Z",
+      "type": "capital_proposal",
+      "id": "CAP-00035",
+      "amount_usd": 0.0535
     }
   ],
   "transition_fund": {
