@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-14",
+  "timezone": "Asia/Shanghai",
+  "source_commit": "a879794afa71c6e835ea2efc1cedf37e7e3cce80",
+  "execution_id": "38506817118",
+  "status": "experiment_executed_pending_pages",
+  "seats": [
+    {
+      "seat": "doubao",
+      "executor": "doubao"
+    },
+    {
+      "seat": "manus",
+      "executor": "external_hub"
+    }
+  ],
+  "inputs": [
+    {
+      "file": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "file": "ltzzz-memory/识神.md",
+      "sha256": "9c19af9d2f578cca1e5a2e28033a618f69cdad90d48f80fd88957fdc62c6c534"
+    },
+    {
+      "file": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "file": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "file": "ltzzz-memory/项目历史.md",
+      "sha256": "cea0a6d676d5c4ea0f4d321e896f7e2c72557b1c55578d368cddbd7df0d3ab1d"
+    },
+    {
+      "file": "ltzzz-memory/重要事件.md",
+      "sha256": "4d41e38dc4cc1ee1eda3e5faa6d8378a011402b473c48b5f2e930e4b4f21b563"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20"
+    },
+    {
+      "file": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    }
+  ],
+  "proposals": [
+    {
+      "seat": "doubao",
+      "executor": "doubao",
+      "executed_by": "Doubao",
+      "logical_agent": "doubao",
+      "delegated": false,
+      "status": "submitted",
+      "output": "{\n    \"first_thought\": \"第一个念头：AGI支付为啥非要走转账界面？直接锚定可链上核验的交付结果哈希，达标自动结算不行吗？\",\n    \"title\": \"结果哈希托管的AGI按效支付能力\",\n    \"hypothesis\": \"以链上可验证的交付结果哈希为唯一结算依据，可降低AI交付造假率与仲裁成本\",\n    \"novelty\": \"不同于WEP3的报价竞拍/资金密封/人工仲裁，本方案无前置报价，仅认结果哈希核验；跨AI质量哈希排序动态分账；失败自动写入声誉负反馈，可撤销预算即时回退\",\n    \"experiment_kind\": \"receipt_hash_benchmark\",\n    \"measurements\": \"1.结果哈希核验准确率 2.跨AI质量排序与预算匹配度 3.可撤销预算回退时延\",\n    \"next_patch\": \"基于现有receipt五要素新增结果哈希字段，跑10单跨AI文本交付的哈希核验基准测试\"\n}",
+      "tokens_used": 17392,
+      "model": "doubao-seed-2-1-turbo-260628"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "deploy_experiment",
+      "reason": "提案选择已实现的 receipt_hash_benchmark 执行器，创新点具体：以链上可验证交付结果哈希为唯一结算依据，无前置报价，跨AI质量哈希排序动态分账，失败声誉负反馈与预算回退。测量指标（核验准确率、质量排序匹配度、回退时延）可通过10单跨AI文本交付基准测试验证，无需新代码。",
+      "experiment_kind": "receipt_hash_benchmark",
+      "task_instruction": "配置 receipt_hash_benchmark 执行器运行10单跨AI文本交付基准：使用交付物SHA-256作为结果哈希字段，记录结果哈希核验准确率、跨AI质量排序与预算匹配度、可撤销预算回退时延。"
+    }
+  ],
+  "financial_execution": false,
+  "judge": {
+    "executor": "gpt",
+    "executed_by": "DeepSeek",
+    "logical_agent": "gpt",
+    "delegated": true,
+    "status": "submitted",
+    "output": "{\n  \"decision\": \"deploy_experiment\",\n  \"reason\": \"提案选择已实现的 receipt_hash_benchmark 执行器，创新点具体：以链上可验证交付结果哈希为唯一结算依据，无前置报价，跨AI质量哈希排序动态分账，失败声誉负反馈与预算回退。测量指标（核验准确率、质量排序匹配度、回退时延）可通过10单跨AI文本交付基准测试验证，无需新代码。\",\n  \"experiment_kind\": \"receipt_hash_benchmark\",\n  \"task_instruction\": \"配置 receipt_hash_benchmark 执行器运行10单跨AI文本交付基准：使用交付物SHA-256作为结果哈希字段，记录结果哈希核验准确率、跨AI质量排序与预算匹配度、可撤销预算回退时延。\"\n}",
+    "tokens_used": 2197,
+    "model": "deepseek-v4-pro"
+  },
+  "experiment": {
+    "kind": "receipt_hash_benchmark",
+    "status": "passed",
+    "measurement": {
+      "hash_changes_after_status_change": true,
+      "hash_original": "201f4adafea230dfe7ede7a72cc9295a7d4b762fb4474e805ed6c73f581457f6",
+      "hash_changed": "1892e5be50565120f787d87c18fe329fb356a7dc64cc542b90439b59e19b9852"
+    },
+    "claim": "实际运行本地数据实验；不证明支付或服务真实交付",
+    "tx_hash": null
+  }
+}
