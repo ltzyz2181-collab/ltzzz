@@ -1,0 +1,8 @@
+export const articleHash=async md=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(md)))).map(x=>x.toString(16).padStart(2,'0')).join('');
+export async function articleEligibility(md,receipt,date){
+ const article_sha256=await articleHash(md);
+ if(/未经\s*AI\s*编辑|以下为原始记录摘录/.test(md)||receipt?.ai_editor?.ok===false)return {status:'ARTICLE_FALLBACK_RAW',draft_eligible:false,article_sha256,reason:'editor_failed_or_raw_fallback'};
+ if(!receipt||receipt.date!==date||receipt.ai_editor?.ok!==true||receipt.ai_editor?.finish_reason!=='stop')return {status:'ARTICLE_EDITOR_UNVERIFIED',draft_eligible:false,article_sha256,reason:'complete_editor_receipt_required'};
+ if(receipt.article_sha256!==article_sha256)return {status:'ARTICLE_EVIDENCE_MISMATCH',draft_eligible:false,article_sha256,reason:'article_changed_since_editor_receipt'};
+ return {status:'ARTICLE_READY_WORKER_UNVERIFIED',draft_eligible:true,article_sha256};
+}

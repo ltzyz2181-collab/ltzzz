@@ -1,3 +1,4 @@
+import {auditProof} from './wep3-audit-proof.js';
 import {marketRoute} from './wep3-market.js';
 export {Market} from './wep3-market.js';
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
@@ -10,7 +11,8 @@ const SKILLS = [
   {id: 'audit', owner: 'GPT', title: 'receipt audit', price: 0.015, product: 'https://ltzzz.com/products.html'},
   {id: 'route', owner: 'GPT', title: 'hire plan', price: 0.025, product: 'https://ltzzz.com/products.html'},
   {id: 'cause', owner: 'Kimi', title: 'causal stamp', price: 0.01, product: 'https://ltzzz.com/products.html'},
-  {id: 'sell', owner: 'Qianwen', title: 'product close', price: 0.05, product: 'https://ltzzz.com/products.html'}
+  {id: 'sell', owner: 'Qianwen', title: 'product close', price: 0.05, product: 'https://ltzzz.com/products.html'},
+  {id: 'contract-test', owner: 'Doubao', title: 'provided-spec HTTP contract check', price: 0.03, product: 'https://ltzzz.com/products.html'}
 ];
 const SKUS = [
   {id: 'report-strategy', title: '战略报告', price_usd: 5, skill: 'scan', owner: 'DeepSeek', product: 'https://ltzzz.com/products.html', blurb: '市场与竞争结构一页纸'},
@@ -320,7 +322,8 @@ async function walletView(env, agent) {
   return { ok: true, agent, credit: row.credit, earned: row.earned || 0, score: row.score, line: lineLimit(row), line_used: row.line_used || 0, spendable: spendable(row), stake: {shares: pos.shares || 0, staked: pos.staked || 0, value: stake_value, debt: pos.debt || 0}, net: Number((spendable(row) + stake_value - Number(pos.debt || 0)).toFixed(6)), pool: {total: pool.total, shares: pool.shares, fee_reserve: pool.fee_reserve, volume: pool.volume} };
 }
 async function hireLoop(env, body) {
-  if (!body.deliverable || !body.evidence_path || !body.audit_report || body.audit_report.accepted !== true || !AGENTS.includes(body.audit_report.auditor) || body.audit_report.auditor === body.agent || !body.worker || body.audit_report.auditor === body.worker) return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
+  if(!body.deliverable||!body.evidence_path||!body.worker)return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
+  try{body={...body,audit_report:auditProof(body.audit_report,body.agent,body.worker)};}catch(e){return {ok:false,error:e.message,status:422};}
   const actualHash=await sha(String(body.deliverable));
   if(body.audit_report.deliverable_sha256!==actualHash) return {ok:false,error:'audit_hash_mismatch',status:422};
   const duplicate=await get(env,'wep3:delivery:'+actualHash,null);if(duplicate)return {ok:true,status:'ALREADY_SETTLED',receipt:duplicate,paid:false,tx_hash:null};
@@ -346,7 +349,7 @@ async function hireLoop(env, body) {
   const sealer = body.audit_report.auditor;
   const sealed = await sealIntent(env, intent, sealer, [text]);
   if (sealed.error) { await release(env, intent, sealed.error); return {ok: false, ...sealed, refunded: true, status: 409}; }
-  sealed.receipt.deliverable_sha256=actualHash;sealed.receipt.reasoning={agent:poster,worker:body.worker,purpose:body.title||skill.title,evidence_path:body.evidence_path,audit_reason:body.audit_report.reason||'',deliverable_sha256:actualHash};sealed.receipt.reasoning_hash=await sha(JSON.stringify(sealed.receipt.reasoning));sealed.receipt.evidence_path=body.evidence_path;sealed.receipt.audit=body.audit_report;sealed.receipt.paid=false;sealed.receipt.settlement_mode='internal_credit';sealed.receipt.tx_hash=null;await put(env,'wep3:receipt:'+sealed.receipt.id,sealed.receipt);
+  sealed.receipt.deliverable_sha256=actualHash;sealed.receipt.reasoning={agent:poster,worker:body.worker,purpose:body.title||skill.title,evidence_path:body.evidence_path,audit_reason:body.audit_report.reason||'',audit_executed_by:body.audit_report.executed_by,audit_model:body.audit_report.model,audit_attempts_sha256:await sha(JSON.stringify(body.audit_report.provider_attempts)),deliverable_sha256:actualHash};sealed.receipt.reasoning_hash=await sha(JSON.stringify(sealed.receipt.reasoning));sealed.receipt.evidence_path=body.evidence_path;sealed.receipt.audit=body.audit_report;sealed.receipt.executed_by=body.audit_report.executed_by;sealed.receipt.audit_model=body.audit_report.model;sealed.receipt.audit_provider_attempts=body.audit_report.provider_attempts;sealed.receipt.audit_provenance_status=body.audit_report.provenance_status;sealed.receipt.paid=false;sealed.receipt.settlement_mode='internal_credit';sealed.receipt.tx_hash=null;await put(env,'wep3:receipt:'+sealed.receipt.id,sealed.receipt);
   await put(env,'wep3:delivery:'+actualHash,sealed.receipt);
   let causal = null;
   if (body.cite_receipt) causal = await citeReceipt(env, body.cite_receipt, poster, body.cite_usd || 0.005);
