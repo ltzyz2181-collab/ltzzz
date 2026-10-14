@@ -1,8 +1,9 @@
+import {assertCoreMemory} from './lib/core-memory-integrity.mjs';
 import {createModelRouter} from './lib/domestic-model-router.mjs';import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
 export const dateCST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 export const sha=s=>crypto.createHash('sha256').update(s).digest('hex');
 export const save=(f,v)=>{fs.mkdirSync(path.dirname(f),{recursive:true});fs.writeFileSync(f,JSON.stringify(v,null,2)+'\n');};
-export function memory(){return ['魄','识神','梦境数据库','文明研究','项目历史','重要事件','装备论','README'].map(n=>{const file=`ltzzz-memory/${n}.md`;const text=fs.readFileSync(file,'utf8');if(!text.trim())throw Error('memory_empty');return {file,text,sha256:sha(text)};});}
+export function memory(){assertCoreMemory();return ['魄','识神','梦境数据库','文明研究','项目历史','重要事件','装备论','README'].map(n=>{const file=`ltzzz-memory/${n}.md`;const text=fs.readFileSync(file,'utf8');if(!text.trim())throw Error('memory_empty');return {file,text,sha256:sha(text)};});}
 export function jsonOutput(s){const text=String(s).trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');return JSON.parse(text);}
 export async function invoke(agent,prompt,maxTokens,options={}){
  const providers=JSON.parse(fs.readFileSync('config/ai-providers.json')).providers;const p=providers[agent];
@@ -25,7 +26,7 @@ export function evaluateExperiment(kind){
  if(kind==='receipt_hash_benchmark'){
   const original={task_id:'AGI-TRIAL',executor:'test-agent',time:'fixture',status:'completed',evidence:{artifact:'fixture',paid:false}};
   const changed={...original,status:'failed'};const a=sha(JSON.stringify(original)),b=sha(JSON.stringify(changed));
-  return {kind,status:a!==b?'passed':'failed',measurement:{hash_changes_after_status_change:a!==b,hash_original:a,hash_changed:b},claim:'实际运行本地数据实验；不证明支付或服务真实交付',tx_hash:null};
+  return {kind,status:a!==b?'passed':'failed',validation_scope:'local_hash_change_only',sample_count:1,real_delivery_count:0,quality_validation_performed:false,measurement:{hash_changes_after_status_change:a!==b,hash_original:a,hash_changed:b},claim:'实际运行本地数据实验；不证明支付或服务真实交付',tx_hash:null};
  }
  if(kind==='intent_schema_trial'){
   const validate=v=>typeof v?.deliverable==='string'&&v.deliverable.length>0&&typeof v?.acceptance==='string'&&v.acceptance.length>0&&Number.isFinite(v?.budget_usdc)&&v.budget_usdc>=0;

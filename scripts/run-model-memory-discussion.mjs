@@ -1,5 +1,7 @@
+import {assertCoreMemory} from './lib/core-memory-integrity.mjs';
 import fs from 'node:fs';import crypto from 'node:crypto';
 import {callAgent as deepseek} from './call-deepseek.mjs';import {callAgent as doubao} from './call-doubao.mjs';import {callAgent as claude} from './call-claude.mjs';import {kimiCN} from './agi-econ/kimi-cn.mjs';import {chooseModel} from './model-routing.mjs';
+assertCoreMemory();
 const names=['魄','识神','梦境数据库','文明研究','项目历史','重要事件'],docs=names.map(n=>{const path='ltzzz-memory/'+n+'.md',content=fs.readFileSync(path,'utf8');if(!content.trim())throw Error('empty memory '+path);return {path,content,bytes:Buffer.byteLength(content),sha256:crypto.createHash('sha256').update(content).digest('hex')};});
 const today=new Date().toISOString().slice(0,10),run=process.env.GITHUB_RUN_ID||'local',dir='knowledge/results/model-discussion';fs.mkdirSync(dir,{recursive:true});fs.mkdirSync('data/model-routing',{recursive:true});
 const redact=x=>{let s=String(x||'');for(const k of ['DEEPSEEK_API_KEY','DOUBAO_API_KEY','ANTHROPIC_API_KEY','MOONSHOT_API_KEY_CN','LTZZZ_AGENT_TOKEN'])if(process.env[k])s=s.replaceAll(process.env[k],'[REDACTED]');return s.slice(0,300);};
