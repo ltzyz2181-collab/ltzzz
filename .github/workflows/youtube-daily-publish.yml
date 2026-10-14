@@ -50,7 +50,7 @@ jobs:
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add results/publishing/youtube-daily-*.json
-          if [ -d videos/instagram ]; then git add videos/instagram/; fi
+          if [ -f videos/instagram/latest.json ]; then git add -f videos/instagram/latest.mp4 videos/instagram/latest.json videos/instagram/latest-caption.txt; fi
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'YouTube daily actual upload and public verification receipt'
           for attempt in 1 2 3 4; do
