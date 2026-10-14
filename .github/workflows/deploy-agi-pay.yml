@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'agi-pay-worker.js'
+      - 'scripts/tests/agi-pay-stream.test.mjs'
       - 'wrangler.agi-pay.toml'
       - '.github/workflows/deploy-agi-pay.yml'
 
@@ -16,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check agi-pay-worker.js
+      - run: node --check agi-pay-worker.js && node --test scripts/tests/agi-pay-stream.test.mjs
       - name: Inject LTZZZ_AGENT_TOKEN
         run: |
           if [ -n "$LTZZZ_AGENT_TOKEN" ]; then
@@ -34,11 +35,20 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy -c wrangler.agi-pay.toml
       - name: Verify deployed health and protected writes
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: |
           node --input-type=module <<'JS'
           const base='https://ltzzz-agi-pay.ltzyz2181.workers.dev';
           const healthResponse=await fetch(base+'/health');const health=await healthResponse.json();
           const denied=await fetch(base+'/intent',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-          console.log(JSON.stringify({health_http:healthResponse.status,service:health.service,dry_run:health.policy?.dry_run,anonymous_write_http:denied.status}));
-          if(!healthResponse.ok||health.service!=='ltzzz-agi-pay'||health.policy?.dry_run!==true||denied.status!==401)process.exit(1);
+          const demo=await fetch(base+'/resource',{headers:{'X-PAYMENT':'demo'}});
+          console.log(JSON.stringify({demo_http:demo.status,stream_mode:health.rails?.['stream-usdc']?.mode,health_http:healthResponse.status,service:health.service,dry_run:health.policy?.dry_run,anonymous_write_http:denied.status}));
+          if(!healthResponse.ok||health.service!=='ltzzz-agi-pay'||health.policy?.dry_run!==true||denied.status!==401||demo.status!==402||health.rails?.['stream-usdc']?.mode!=='shadow_only')process.exit(1);
+          if(process.env.LTZZZ_AGENT_TOKEN){
+            const headers={'Content-Type':'application/json',Authorization:'Bearer '+process.env.LTZZZ_AGENT_TOKEN,'Idempotency-Key':'accept-stream-'+process.env.GITHUB_RUN_ID};
+            const tick=async()=>{const r=await fetch(base+'/stream-tick',{method:'POST',headers,body:JSON.stringify({tokens:1,agent:'GPT'})});return {http:r.status,body:await r.json()};};
+            const a=await tick(),b=await tick();console.log(JSON.stringify({shadow_tick_http:a.http,shadow_tick_paid:a.body.receipt?.paid,idempotent:a.body.receipt?.id===b.body.receipt?.id}));
+            if(a.http!==200||b.http!==200||a.body.receipt?.paid!==false||a.body.receipt?.tx_hash!==null||a.body.receipt?.id!==b.body.receipt?.id)process.exit(1);
+          }else console.log('Shadow tick authenticated probe not run: retaining existing Worker token; no GitHub token exported.');
           JS
