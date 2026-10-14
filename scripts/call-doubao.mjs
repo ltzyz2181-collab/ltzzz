@@ -1,3 +1,4 @@
+import {preconnectFetch,networkCode} from './lib/preconnect-fetch.mjs';
 /**
  * call-doubao.mjs — 豆包通道真实调用
  * 端点：默认火山方舟 v3（OpenAI 兼容，已实测该 Key 可用）；可用环境变量切换到 Agent Plan 端点
@@ -10,7 +11,7 @@ const BASE = () => process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces
 const MODEL = () => process.env.DOUBAO_MODEL || routedModel("doubao","doubao-seed-evolving");
 
 async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens, thinking) {
-  const resp = await fetch(`${base}/chat/completions`, {
+  const resp = await preconnectFetch(`${base}/chat/completions`, {
     method: "POST",
       signal: AbortSignal.timeout(240000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -35,7 +36,7 @@ async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens, think
 }
 
 async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
-  const resp = await fetch(`${base}/v1/messages`, {
+  const resp = await preconnectFetch(`${base}/v1/messages`, {
     method: "POST",
       signal: AbortSignal.timeout(240000),
     headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
@@ -68,6 +69,6 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, think
     }
     return { ok: false, status: "api_error", error: `HTTP ${r1.status}: ${r1.text}` };
   } catch (e) {
-    return { ok: false, status: "exception", error: String(e) };
+    return { ok: false, status: "exception", network_error_code:networkCode(e),error: (String(e)+'; network_code='+networkCode(e)).replaceAll(apiKey,'[REDACTED]') };
   }
 }

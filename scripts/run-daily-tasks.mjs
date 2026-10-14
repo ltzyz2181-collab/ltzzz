@@ -14,6 +14,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
+import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery } from "./delivery-integrity.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -50,6 +51,7 @@ function readCoreMemory() {
   const files = CORE_MEMORY_FILES.map((relativePath) => {
     try {
       const content = fs.readFileSync(path.join(ROOT, relativePath), "utf8").trim();
+      const archived=path.join(ROOT,relativePath.replace('.md','-入档.md'));validateCoreDocument(content,{file:relativePath,archive:fs.existsSync(archived)?fs.readFileSync(archived,'utf8'):''});
       if (!content) throw new Error("文件为空");
       const bytes = Buffer.byteLength(content, "utf8");
       const sha256 = crypto.createHash("sha256").update(content, "utf8").digest("hex");
@@ -146,8 +148,8 @@ async function main() {
       urge,
     ].filter(Boolean).join("\n\n");
 
-    if (coreMemory.docs.length === 0) {
-      const error = "六份核心记忆均未成功读取；为避免无依据产出，本轮跳过模型调用。";
+    if (coreMemory.audit.status !== 'complete') {
+      const error = "六份核心记忆缺失或完整性检查未通过；本轮跳过模型调用，先修复输入。";
       failures.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "memory_unavailable", error });
       tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "memory_unavailable", output_preview: error, full_output_file: `data/memory/${ch.agent}.json` });
       reflections.push({ agent: ch.agent, status: "memory_unavailable", output: "", error });

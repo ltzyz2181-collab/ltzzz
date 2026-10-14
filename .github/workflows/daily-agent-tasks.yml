@@ -33,7 +33,7 @@ jobs:
           node-version: '20'
 
       - name: Test execution, delivery, and economic status classification
-        run: node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs
+        run: node scripts/check-core-memory.mjs && node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/core-memory-integrity.test.mjs
 
       - name: Preflight — 当日是否已产出（幂等）
         id: preflight

@@ -1,0 +1,15 @@
+name: Core memory integrity (no model calls)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['ltzzz-memory/*.md','scripts/check-core-memory.mjs','scripts/lib/core-memory-integrity.mjs','scripts/lib/preconnect-fetch.mjs','scripts/lib/experiment-scope.mjs','scripts/tests/core-memory-integrity.test.mjs','.github/workflows/core-memory-integrity.yml']
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/check-core-memory.mjs && node --test scripts/tests/core-memory-integrity.test.mjs scripts/tests/autonomy.test.mjs scripts/tests/memory-candidate-quality.test.mjs
