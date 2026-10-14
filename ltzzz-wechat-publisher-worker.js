@@ -1,3 +1,4 @@
+import {articleEligibility} from './wechat-article-eligibility.js';
 import {reply as channelReply} from './channels/bot-content.mjs';
 /**
  * LTZZZ WeChat Publisher Worker
@@ -48,6 +49,10 @@ export default {
         const draft=await wxCall("draft/get",token,{media_id:receipt.draft_id});
         return json({...result,ok:true,draft_found:true,draft_id:receipt.draft_id,titles:(draft.news_item||[]).map(x=>x.title),source_article_hash:receipt.article_hash||null});
       }catch(e){return json({...result,error:e.platform||{message:"Read-only draft query failed"}},500);}
+    }
+    if(url.pathname==='/article-readiness'&&request.method==='GET'){
+      const date=url.searchParams.get('date')||todayCN();if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return json({ok:false,error:'invalid_date'},422);
+      try{const article=await buildArticle(env,date);return json({ok:true,date,status:article.eligibility?.status||'NO_CONTENT',draft_eligible:article.eligibility?.draft_eligible===true,article_sha256:article.eligibility?.article_sha256||null,publication_checked:false,read_only:true});}catch{return json({ok:false,date,status:"READINESS_UNAVAILABLE",draft_eligible:false,read_only:true},503);}
     }
     if (url.pathname === "/publish" && request.method === "POST") {
       if(!env.BOT_ADMIN_TOKEN || request.headers.get("Authorization")!=="Bearer "+env.BOT_ADMIN_TOKEN)return json({error:"unauthorized"},401);
@@ -196,7 +201,9 @@ async function publish(env, mode, date=todayCN()) {
       }
     }
     receipt.account_hash=accountHash;
+    if(receipt.published)return {...receipt,ok:true,reused:true};
     const article=await buildArticle(env,date);
+    if(article.eligibility?.draft_eligible!==true){receipt={...receipt,ok:false,status:article.eligibility?.status||'ARTICLE_EDITOR_UNVERIFIED',draft_eligible:false,published:false,existing_draft_preserved:!!receipt.draft_id,article_eligibility:article.eligibility};await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt));return receipt;}
     if(!article.content)return {...receipt,ok:false,status:"NO_CONTENT",published:false};
     const hash=[...new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(article.content)))].map(x=>x.toString(16).padStart(2,"0")).join("");
     if(receipt.published)return {...receipt,ok:true,reused:true};
@@ -290,7 +297,9 @@ async function buildArticle(env, date = todayCN()) {
   }
   if (md) {
     const t = (md.match(/^# (.+)$/m) || [])[1];
-    if (md.trim()) return { title: (t || `LTZZZ 每日实验 · ${date}`).slice(0, 64), content: mdToHtml(md), sources: [src] };
+    let metadata=null;try{const r=await fetch('https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/results/publishing/'+date+'.json',{signal:AbortSignal.timeout(15000)});if(r.ok)metadata=await r.json();}catch{}
+    const eligibility=await articleEligibility(md,metadata,date);
+    if (md.trim()) return { eligibility,title: (t || `LTZZZ 每日实验 · ${date}`).slice(0, 64), content: mdToHtml(md), sources: [src] };
   }
   const prefix = "knowledge/daily/";
   const listed = await env.MEMORY_BUCKET.list({ prefix });
@@ -313,7 +322,7 @@ async function buildArticle(env, date = todayCN()) {
     `LTZZZ 数字实验室 — ${date} 各 AI 协作日报\n\n` +
     parts.join("\n\n---\n\n") +
     `\n\n— 由 LTZZZ 多 AI 自动流水线生成 · 数据与产物存于 ltzzz.com`;
-  return { title, content, sources };
+  return { title, content, sources,eligibility:{status:'ARTICLE_FALLBACK_RAW',draft_eligible:false,reason:'raw_record_assembly_not_editor_approved'} };
 }
 
 async function addDraft(env,token,title,content) {
@@ -333,6 +342,6 @@ function todayCN() {
 function json(o, status = 200) {
   return new Response(JSON.stringify(o), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" },
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control":"no-store", "Access-Control-Allow-Origin": "*" },
   });
 }
