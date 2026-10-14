@@ -16,8 +16,8 @@ export async function modelAudit({ auditors, prompt }) {
   let last = null;
   for (const a of auditors) {
     if (!a.key) continue;
-    const out = await a.fn({ apiKey: a.key, prompt, maxTokens: 2000 });
-    if (!out.ok || !out.output) { last = { model: a.model, did: a.did, status: out.status || 'empty_output', error: String(out.error || '').slice(0, 200) }; continue; }
+    const out = await a.fn({ apiKey: a.key, prompt, maxTokens: a.maxTokens || 6000 });
+    if (!out.ok || !out.output || !['stop','end_turn'].includes(out.finish_reason)) { last = { model: a.model, did: a.did, status: out.status || 'empty_output', error: String(out.error || '').slice(0, 200) }; continue; }
     const m = out.output.match(/\{[\s\S]*\}/); let j = null; try { j = JSON.parse(m[0]); } catch {}
     if (!j || typeof j.accepted !== 'boolean') { last = { model: a.model, did: a.did, status: 'unparseable' }; continue; }
     return { model: a.model, did: a.did, executed_by: out.model || a.model, status: 'success', accepted: j.accepted, score: j.score ?? null, issues: j.issues ?? [], tokens_used: out.tokens_used || 0 };

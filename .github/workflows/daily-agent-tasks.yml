@@ -51,7 +51,6 @@ jobs:
       - name: Run daily tasks
         if: steps.preflight.outputs.skip == 'false'
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}

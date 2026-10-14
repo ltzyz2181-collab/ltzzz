@@ -14,12 +14,14 @@ const read = (p, n) => { try { return fs.readFileSync(`${root}/${p}`, 'utf8').sl
 const E = process.env;
 const s = new Subnet(root);
 for (const [did, roles] of [['did:ltzzz:gpt', ['employer']], ['did:ltzzz:grok', ['auditor']], ['did:ltzzz:kimi', ['worker', 'auditor']],
-  ['did:ltzzz:deepseek', ['worker', 'capital']], ['did:ltzzz:doubao', ['worker']]]) {
+  ['did:ltzzz:deepseek', ['worker', 'capital', 'auditor']], ['did:ltzzz:doubao', ['worker', 'auditor']]]) {
   const a = s.register({ did, roles }); for (const r of roles) if (!a.roles.includes(r)) a.roles.push(r);
 }
 const AUD = [
-  { model: 'xai', did: 'did:ltzzz:grok', fn: grok, key: E.XAI_API_KEY },
-  { model: 'kimi-cn', did: 'did:ltzzz:kimi', fn: kimiCN, key: E.MOONSHOT_API_KEY_CN },
+  { model:'deepseek',did:'did:ltzzz:deepseek',fn:deepseek,key:E.DEEPSEEK_API_KEY,maxTokens:8192 },
+  { model:'doubao',did:'did:ltzzz:doubao',fn:doubao,key:E.DOUBAO_API_KEY,maxTokens:8192 },
+  { model: 'kimi-cn', did: 'did:ltzzz:kimi', fn: kimiCN, key: E.MOONSHOT_API_KEY_CN,maxTokens:6000 },
+  { model: 'xai', did: 'did:ltzzz:grok', fn: grok, key: E.XAI_API_KEY,maxTokens:3000 },
 ];
 let log = ''; try { log = execSync('git log --since="24 hours ago" --pretty=format:"- %h %s" | head -60', { cwd: root, encoding: 'utf8' }); } catch {}
 const n = log ? log.split('\n').filter(Boolean).length : 0;
