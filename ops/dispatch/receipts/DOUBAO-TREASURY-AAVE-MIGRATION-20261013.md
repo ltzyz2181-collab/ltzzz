@@ -1,5 +1,7 @@
 # 接单回执：DOUBAO-TREASURY-AAVE-MIGRATION（2026-10-13）
 
+> **2026-10-14 更正（保留原回执）**：生产只读核实旧 intent 存在，含已签名尚未确认的 approve。第二节“对象缺失”的推断被新证据否定，不得按原 A/B 方案清指针。迁移历史不因此改写。当前证据与修复见 [AAVE-PILOT-GUARD-20261014.md](AAVE-PILOT-GUARD-20261014.md)。
+
 派单来源：用户 2026-10-13 指令（统一归集至新执行金库 0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d）+ 总控 2026-10-12 迁移派单（ops/dispatch/DOUBAO-TREASURY-AAVE-MIGRATION-20261012.md）+ 总控 2026-10-13 续跑指令（1 USDC pilot 收尾执行）。
 状态：**迁移已完成（verified_migrated）并推送；1 USDC pilot 被 worker 侧 market_exception 阻塞（资金安全，详见阻塞证据）；Safe 提案 A 已由 owner 执行成功（USDT 49.02 → 0xb99C…f905）；Aave 提现已核实网页版可操作、待 owner 发起**。
 

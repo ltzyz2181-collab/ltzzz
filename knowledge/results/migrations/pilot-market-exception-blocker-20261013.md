@@ -1,5 +1,7 @@
 # 1 USDC Pilot 阻塞证据：market_exception 持续（2026-10-13）
 
+> **2026-10-14 生产核实更正**：run [38545711158](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38545711158) 的认证只读诊断证明旧 intent 实际存在，并含已签名 approve（hash `0x9d7f562445248977541c3de755a34a29bfbd7c7a9139ea93c43fa1939f14dd18`）。下文“缺对象”的高置信根因没有成立；选项 A/B 的清指针操作不再适用。原文保留作历史假设，不可据此清锁、重建交易，亦不可把“无余额变化”当作“从未签名/广播”。新回执见 [AAVE-PILOT-GUARD-20261014](../../../ops/dispatch/receipts/AAVE-PILOT-GUARD-20261014.md)。
+
 ## 结论（如实报告，未伪报成功）
 
 1 USDC supply 尚未执行、链上无任何试点交易；金库资金原封未动且安全。跨 **2 次 dispatch、6 次连续尝试**，worker 受限接口 `/market/aave/auto` 全部返回 `HTTP 500 {ok:false,error:"market_exception"}`，且每次在约 **40ms–1s 内**失败（远快于任何 RPC 往返），指向 worker 端**逻辑即时异常**而非网络超时。
