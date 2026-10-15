@@ -32,6 +32,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Verify Treasury display escaping and progress boundaries
+        run: node --test scripts/tests/treasury-dashboard-render.test.mjs
       - name: Build daily-data
         run: |
           node scripts/build-daily-data.js
