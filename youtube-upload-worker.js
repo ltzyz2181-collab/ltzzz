@@ -263,13 +263,15 @@ async function updateDescription(env, request, url) {
   if (!description) throw Object.assign(new Error('description empty after merge'), { status: 400 });
 
   // videos.update（snippet 需传完整 snippet：title/description/tags/categoryId 等）
+  // title 支持：body.title 存在则替换标题（修乱码用）；否则沿用现有标题
+  const nextTitle = body.title ? String(body.title).trim().slice(0, 100) : (snippet.title || '');
   const updateRes = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet', {
     method: 'PUT',
     headers: { 'Authorization': 'Bearer ' + tokens.access_token, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       id: videoId,
       snippet: {
-        title: snippet.title || '',
+        title: nextTitle,
         description,
         tags: snippet.tags || [],
         categoryId: snippet.categoryId || '22',
@@ -280,7 +282,7 @@ async function updateDescription(env, request, url) {
   if (!updateRes.ok || updateData.error) {
     return { ok: false, http: updateRes.status, error: updateData.error || updateData, note: '可能原因：scope 不含 youtube（需重新 OAuth 授权）' };
   }
-  return { ok: true, video_id: videoId, description, updated_at: new Date().toISOString() };
+  return { ok: true, video_id: videoId, title: nextTitle, description, updated_at: new Date().toISOString() };
 }
 
 // ============ Update Status（private/unlisted → public 自动转公开）============
