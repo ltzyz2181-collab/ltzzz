@@ -19,7 +19,7 @@ export async function invoke(agent,prompt,maxTokens,options={}){
    res=await (await import(path.resolve(p.module))).callAgent({apiKey:process.env[p.secret],prompt,maxTokens});
   }
   const output=res.ok?String(res.output||'').trim():'';
-  return {executed_by:res.executed_by||({deepseek:'DeepSeek',doubao:'Doubao',grok:'Grok'}[agent]||agent),logical_agent:agent,delegated:res.delegated===true||agent==='gpt',status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};
+  return {executed_by:res.executed_by||({deepseek:'DeepSeek',doubao:'Doubao',grok:'Grok',qianwen_proxy:'Qianwen'}[agent]||agent),logical_agent:agent,delegated:res.delegated===true||agent==='gpt',status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};
  }catch{return {status:'exception',output:null};}
 }
 export function evaluateExperiment(kind){
@@ -41,4 +41,4 @@ export function evaluateExperiment(kind){
 }
 
 export function projectScope(text){return !/EMG|肌电|穴位|魄户|生物信号|人体试验|针灸/i.test(String(text));}
-export function taskScope(text){return projectScope(text)&&/Aave|WEP3|receipt|支付|雇佣|订单|USDC|gas|回执|产品|投资/i.test(String(text));}
+export function taskScope(text){return projectScope(text)&&/Aave|WEP3|receipt|ANS|Pulse|稳态|心跳|限流|审计|奖惩|自治|支付|雇佣|订单|USDC|gas|回执|产品|投资/i.test(String(text));}

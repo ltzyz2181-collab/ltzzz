@@ -6,6 +6,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { actionProfile } from './action-policy.mjs';
 import { verifyActionEvidence } from './action-evidence.mjs';
+import {pulseGate} from '../lib/pulse-client.mjs';
 
 export const MEMORY_GATE = [
   'ltzzz-memory/README.md', 'ltzzz-memory/重要事件.md', 'ltzzz-memory/项目历史.md',
@@ -81,7 +82,8 @@ export class Subnet {
       return profiles.get(did);
     };
     const score = bid => bid.reputation * profile(bid.worker).priority_multiplier / bid.ask_usd;
-    const eligible=t.bids.filter(b=>this.state.agents[b.worker]?.status==='active'&&profile(b.worker).status==='eligible');
+    let pulse=null;try{pulse=JSON.parse(fs.readFileSync(path.join(this.root,'knowledge/results/pulse/latest.json'),'utf8'));}catch{}
+    const eligible=t.bids.filter(b=>this.state.agents[b.worker]?.status==='active'&&profile(b.worker).status==='eligible'&&pulseGate(pulse,b.worker,Date.parse(this.now())).allowed);
     if(!eligible.length)throw new Error('no_eligible_bids_review_required');
     const win = eligible.sort((a, b) => score(b) - score(a))[0];
     t.action_incentive = {worker:win.worker,...profile(win.worker),real_money_penalty:false};
