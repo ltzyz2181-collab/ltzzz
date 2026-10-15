@@ -110,6 +110,15 @@ test('deployment runner waits for the expected Worker revision rather than accep
  const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'aave-guard-v4',GITHUB_RUN_ID:'test'},encoding:'utf8'});assert.equal(r.status,0,r.stderr);const report=JSON.parse(r.stdout.trim());assert.equal(report.result.aave_runtime_revision,'aave-guard-v4');assert.equal(report.service_verified,true);assert.equal(report.status,undefined);}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 
+test('read-only runner retains HTTP metadata when an edge HTML page cannot be parsed as JSON',async()=>{
+ const fs=await import('node:fs'),path=await import('node:path'),{spawnSync}=await import('node:child_process');fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/aave-html-test-')),script=path.resolve('scripts/run-treasury-aave.mjs');
+ try{const mock=`globalThis.fetch=async()=>new Response('<!DOCTYPE html>private fixture',{status:503,headers:{'content-type':'text/html'}});await import(${JSON.stringify('file://'+script)});`;
+ const run=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'fixture'},encoding:'utf8'});
+ assert.equal(run.status,1,run.stderr);const report=JSON.parse(run.stdout.trim());assert.equal(report.http,503);assert.equal(report.status,'non_json_service_response');assert.equal(report.content_type,'text/html');assert.equal(report.on_chain_executed,false);assert.equal(run.stdout.includes('private fixture'),false);
+ assert.ok(fs.existsSync(path.join(dir,'knowledge/results/wep3/aave-diagnose-fixture.json')));
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
 test('real resume control flow retries identical stored bytes on another RPC without signing a replacement',async()=>{
  const wallet=Wallet.createRandom(),plan=buildAavePlan(input,{...ctx,address:wallet.address}),raw=await wallet.signTransaction({chainId:8453,to:plan.steps[0].to,data:plan.steps[0].data,nonce:0,gasLimit:60000,maxFeePerGas:1000000n,maxPriorityFeePerGas:1n,value:0n,type:2}),hash=keccak256(raw),keys=budgetKeys(Date.now());
  const i={...pending(),treasury:wallet.address,status:'prepared',keys,steps:plan.steps};Object.assign(i.steps[0],{raw,tx_hash:hash,status:'signed_not_confirmed'});

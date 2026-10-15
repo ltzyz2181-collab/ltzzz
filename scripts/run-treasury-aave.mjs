@@ -10,7 +10,8 @@ try{
  const input=['auto','auto-preview'].includes(action)?{}:{intent_id:id,action:action==='preview'?(process.env.AAVE_PREVIEW_ACTION||'supply'):action,amount_usdc:amount};
  const expected=readOnly?process.env.AAVE_EXPECTED_REVISION:null,tries=readOnly?(expected?12:1):8;
  for(let attempt=0;attempt<tries;attempt++){
-  const response=await fetch(base+path,{method:get?'GET':'POST',headers,body:get?undefined:JSON.stringify(input),signal:AbortSignal.timeout(60000)}),result=await response.json();report.http=response.status;report.result=result;
+  const response=await fetch(base+path,{method:get?'GET':'POST',headers,body:get?undefined:JSON.stringify(input),signal:AbortSignal.timeout(60000)});report.http=response.status;report.content_type=response.headers.get('content-type');
+  let result;try{result=await response.json();}catch{report.status='non_json_service_response';report.service_verified=false;process.exitCode=1;break;}report.result=result;
   if(expected&&result.aave_runtime_revision!==expected){report.service_verified=false;report.status='stale_worker_revision';if(attempt+1<tries){await new Promise(resolve=>setTimeout(resolve,3000));continue;}process.exitCode=1;break;}
   if(report.status==='stale_worker_revision')delete report.status;
   const guardedPreview=action==='auto-preview'&&response.status===422&&result.status==='blocked_reconciliation'&&result.signed===false;
