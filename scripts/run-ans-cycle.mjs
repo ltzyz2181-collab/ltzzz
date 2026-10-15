@@ -8,8 +8,8 @@ const save=r=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSyn
 async function control(body){const token=pulseToken('qianwen');const r=await fetch(PULSE_URL+'/control',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({...body,reason:'Owner priority: close ANS dispatch/execution/feedback loop'}),signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('pulse_operation_'+r.status);return r.json();}
 if(phase==='prepare'){
  const prior=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
- const p=prepareCycle({date,runId,sourceCommit:process.env.GITHUB_SHA||'local',prior,repairKnownTruncation:process.env.ANS_REPAIR_KNOWN_TRUNCATION==='1'});
- if(p.archive)fs.writeFileSync('knowledge/results/ans-cycle/'+date+'-before-nonthinking-repair.json',JSON.stringify(p.archive,null,2)+'\n');
+ const p=prepareCycle({date,runId,sourceCommit:process.env.GITHUB_SHA||'local',prior,repairKnownTruncation:process.env.ANS_REPAIR_KNOWN_TRUNCATION==='1',repairKnownFormat:process.env.ANS_REPAIR_KNOWN_FORMAT==='1'});
+ if(p.archive)fs.writeFileSync('knowledge/results/ans-cycle/'+date+'-'+(p.archive_suffix||'before-nonthinking-repair')+'.json',JSON.stringify(p.archive,null,2)+'\n');
  if(p.execute)save(p.record);
  if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+p.execute+'\n');
  if(process.env.GITHUB_ENV)fs.appendFileSync(process.env.GITHUB_ENV,'ANS_DATE='+date+'\n');console.log(date,p.record.status,'execute='+p.execute);
