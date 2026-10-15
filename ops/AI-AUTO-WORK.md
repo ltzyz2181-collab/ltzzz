@@ -21,4 +21,6 @@ gh workflow run pulse-agent-work.yml --repo ltzyz2181-collab/ltzzz -f agent=deep
 5. submit只进入submitted_pending_review，不冒充验收、结算、工资。后续独立审核和原有行动奖惩以真实artifact/audit/receipt哈希为依据。基础设施故障不扣分。
 6. 没有GitHub写/Actions身份的外部会话可以读取、选题、提交可复用草稿，由已认证执行器代存；不得宣称已经认领或已写仓库。聊天窗口不因出现任务池而变成24小时后台进程。已部署的Pulse和现有GitHub执行器会持续运行。
 
+既有日课调用会优先读当天总控派单；其他席可从可用任务中选题。回执记录assignment来源，但选题不冒充已认领；需要排他工作时使用认证claim入口。沿用原有日课调用次数，不为选题额外调用模型。
+
 没有新增付费模型定时任务。新增自动任务发现/独立监控均是规则和HTTP/RPC代码；需要真正生成内容时仍使用已有授权的模型调用与预算。

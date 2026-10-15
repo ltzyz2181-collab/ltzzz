@@ -22,7 +22,7 @@ export function evolve(previous,observations,config,now=Date.now()){
  const collectorUnknown=observations.heartbeats.length>1&&observations.heartbeats.every(h=>!h.ok&&h.http===null);state.collector_health=collectorUnknown?'common_transport_failure_unconfirmed':'observed';
  const events=[];const emit=(key,type,detail)=>{if(!state.cooldowns[key]||now-state.cooldowns[key]>=config.alert_cooldown_seconds*1000){events.push({id:key+':'+now,type,at:new Date(now).toISOString(),...detail});state.cooldowns[key]=now;}};
  for(const h of observations.heartbeats){
-  const old=state.agents[h.name]||{failures:0,successes:0,offline:false},a={...old,...h};
+  const old=state.agents[h.name]||{failures:0,successes:0,offline:false},a={...old,...h};for(const key of ['error','error_kind','error_detail','transport_code'])if(!(key in h))delete a[key];
   if(collectorUnknown&&old.offline&&old.http===null&&old.observation!=='independent_http'){a.offline=false;a.failures=0;events.push({id:'uncertain-pause-cleared:'+h.name+':'+now,type:'uncertain_pause_cleared',agent:h.name,at:new Date(now).toISOString(),note:'Unconfirmed collector outage is not independent proof of agent failure.'});}
   a.failures=collectorUnknown?a.failures:h.ok?0:old.failures+1;a.successes=collectorUnknown?0:h.ok?old.successes+1:0;a.observation=collectorUnknown?'unknown_collector_transport':'independent_http';
   if(a.failures>=config.failure_threshold){a.offline=true;emit('offline:'+h.name,'agent_offline',{agent:h.name,failures:a.failures});}
