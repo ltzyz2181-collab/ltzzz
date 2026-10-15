@@ -32,8 +32,8 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 3000 }) {
     }
     const data = await resp.json();
     const output = (data.content?.filter(x=>x.type==="text").map(x=>x.text).join("\n") || "").trim();
-    return { ok: !!output, status: output ? "success" : "empty_output", output, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0), finish_reason:data.stop_reason, model:data.model };
+    return { ok: !!output, status: output ? "success" : "empty_output", output, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0), finish_reason:data.stop_reason, model:data.model, usage:{input_tokens:data.usage?.input_tokens||0,output_tokens:data.usage?.output_tokens||0} };
   } catch (e) {
-    return { ok: false, status: "exception", error: String(e) };
+    return { ok: false, status: "exception", error: "anthropic_request_failed_outcome_unknown" };
   }
 }

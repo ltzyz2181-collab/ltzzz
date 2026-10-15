@@ -1,37 +1,24 @@
-# Claude 使用与支付记录模块
+# Claude 按需审稿使用记录
 
-> 状态：规范已定；CLAUDE_API_KEY 待配置（只进 Cloudflare Secret）。
+owner 已澄清：退出五签不等于不能为 LTZZZ 工作。Claude 是外部工程/研究协作者，不恢复资金权限。
 
-## 记录字段
+## 实际通道
 
-| 字段 | 说明 |
-|---|---|
-| 任务ID | 关联任务（LTZZZ-*） |
-| 时间 | UTC ISO |
-| 模型 | claude-*（以官方实际可用模型为准） |
-| 输入/输出 tokens | 用量 |
-| 成本 | 按官方定价估算（USD） |
-| 状态 | ok / failed / quota / timeout |
-| PAY-ID | 如产生费用则关联 |
+GitHub Actions 使用既有 `ANTHROPIC_API_KEY` 调用官方 Anthropic API；不要求 Claude 网页通过云浏览器人机验证，不要求 Claude 自己持有 GitHub 写权限。执行器代存输出并记录实际模型。
 
-## 存储
+历史原生 API 生成曾返回 `insufficient_api_credits`；模型目录 HTTP 200 只能证明认证/目录可访问，不能证明目前有生成额度。聊天订阅、API 余额、GitHub 权限分别核验，不把网页订阅当成免费 API 额度。
 
-- 账本：`finance/ledger/claude-usage.jsonl`（每行一条 JSON，不含 Key）。
-- 汇总：Claude 余额/用量/成本/调用次数（每次调用后更新）。
+## 费用边界
 
-## 预算
+- 默认 inspect：原生 `/v1/models` 目录查询，生成次数 0。
+- owner 显式选择 review：同任务单号至多一次生成请求；输入最多 32000 字符、输出最多 1600 tokens，默认选目录中实际存在的 Haiku，再考虑 Sonnet。没有目录匹配的模型就阻塞，不猜模型名、不自动选 Opus。
+- 先提交持久 claim，再调用；余额拒绝、限流、超时、截断均不自动重试购买。已存在任务必须保留，不能换单号来掩盖未知请求结果。
+- 不自动充值、不新增付费 cron；本入口不改变日常 DeepSeek/豆包路由。
+- 旧文件中的“单笔 1 USDT / 每日 2 USDT”没有在该原生 API 路线实现美元计价拦截，不能当作已生效保障。本入口实装的是次数和输入/输出上限；API 账单金额未独立读取时 `api_cost_usd=null`，不编造价格。
+- API 算力费用、内部积分、链上工资分开。审稿回执始终记录无链上交易、无实际工资付款；生成请求可能消耗现有 API 余额。
 
-- 第一阶段：单笔 ≤ 1 USDT / 日 ≤ 2 USDT（与 Payment Gateway 一致）。
-- 超额自动停止。
+## 记录和密钥
 
-## 安全
+实际目录检查、任务 claim、模型与 token 用量、完整性状态及正文保存在 `knowledge/results/claude-review/`。只读目录检查不是一次真实 Claude 交付。
 
-- 银行卡信息/支付密码不写入任何代码或仓库。
-- CLAUDE_API_KEY 只进服务器 Secret；日志掩码（保留前后 3 位）。
-- 准备的小额测试任务：`LTZZZ 视频选题价值判断`（1 次调用，预计 <0.01 USD）。
-
-## 待办
-
-- [ ] 用户配置 CLAUDE_API_KEY（Cloudflare Secret）
-- [ ] 部署 ltzzz-claude-proxy Worker（沿用现有 proxy 框架）
-- [ ] 执行小额测试任务并记录
+Key 由已有 GitHub Secret 注入，不打印任何 Key 片段，不要求 owner 发密码或验证码，不将旧公开 proxy 当作本入口。工作流不注入钱包、Safe、Cloudflare 部署或其他模型凭证。
