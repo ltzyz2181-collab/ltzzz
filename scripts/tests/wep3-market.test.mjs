@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {Market,hash} from '../../wep3-market.js';
+import test from 'node:test';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {Market,hash} from '../../wep3-market.js';import {AAVE_RUNTIME_REVISION} from '../../wep3-aave.js';
 globalThis.crypto??=crypto.webcrypto;
 const secret='whsec_fixture';
 function fixture(){let saved;const storage={async get(){return structuredClone(saved)},async put(k,v){saved=structuredClone(v)}};const market=new Market({storage},{LAB_PIN:'pin',STRIPE_WEBHOOK_SECRET:secret,PAY_KV:{async get(){return {score:100}}}});return {market,storage};}
@@ -30,5 +30,5 @@ test('Aave orphan: execute stays structured 422; auto clears stale pointer and r
 test('Aave orphan diagnostics stay structured 200 diagnostic without mutation',async()=>{
  const f=fixture(),b=await f.market.read();b.aave={active_intent:'DOUBAO-AAVE-FIRST-38380985712',intents:{}};await f.storage.put('book',b);
  assert.equal((await send(f.market,'/market/aave/diagnostics')).status,401);
- const diagnostic=await send(f.market,'/market/aave/diagnostics',undefined,{'X-Lab-Pin':'pin'});assert.equal(diagnostic.status,200);assert.equal(diagnostic.body.aave_runtime_revision,'aave-guard-v4');assert.equal(diagnostic.body.balances,undefined);assert.equal(diagnostic.body.storage.error,'orphaned_active_intent_requires_reconciliation');assert.equal(diagnostic.body.signed,false);
+ const diagnostic=await send(f.market,'/market/aave/diagnostics',undefined,{'X-Lab-Pin':'pin'});assert.equal(diagnostic.status,200);assert.equal(diagnostic.body.aave_runtime_revision,AAVE_RUNTIME_REVISION);assert.equal(diagnostic.body.balances,undefined);assert.equal(diagnostic.body.storage.error,'orphaned_active_intent_requires_reconciliation');assert.equal(diagnostic.body.signed,false);
 });
