@@ -1,7 +1,9 @@
 # Claude 仓库写权限接手回执
 
 日期：2026-10-14 America/Tijuana；浏览器核查发生于 2026-10-15 UTC。
-状态：owner_relay_waiting_original_audit；owner 已选择总控代入库。审核原件未收到、Claude 直接推送未验证。
+状态：owner_relay_audit_received_code_pending；owner 已选择总控代入库。完整审核文字随后已接收；代码 zip 未接收，Claude 直接推送未验证。
+
+更新：ANS/Pulse 审核全文及新接收回执见 [CLAUDE-ANS-PULSE-IMPORT-20261014.md](CLAUDE-ANS-PULSE-IMPORT-20261014.md)。以下“未收到原文”为首次接手时的历史状态，不代表最新状态。
 
 ## 已核查与已执行
 
