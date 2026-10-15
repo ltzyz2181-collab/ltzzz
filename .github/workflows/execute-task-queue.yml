@@ -23,9 +23,11 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Check claim, incomplete-output and independent review regressions
-        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs
+        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs
       - name: Prepare today's ANS direction and two durable assignments, no models
         id: prepare
+        env:
+          ANS_REPAIR_KNOWN_TRUNCATION: '1'
         run: node scripts/run-ans-cycle.mjs prepare
       - name: Persist daily claim before any paid request
         run: |
