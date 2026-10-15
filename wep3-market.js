@@ -44,6 +44,14 @@ export class Market {
     const context=request.headers.get('X-LTZZZ-Worker-Context');if(context){const current=JSON.parse(context);this.env={...this.env,...current};}
     const u=new URL(request.url),p=u.pathname,book=await this.read();
     const entry=externalEntry(request);if(entry)return entry;
+    if(p==='/market/runtime-state'&&request.method==='GET'){
+      if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
+      return reply({ok:true,market_runtime_revision:'market-runtime-v2',aave_runtime_revision:AAVE_RUNTIME_REVISION,
+        book_sha256:await hash(JSON.stringify(book)),order_count:Object.keys(book.orders||{}).length,ledger_count:(book.ledger||[]).length,
+        live_revenue_cents:book.live_revenue_cents||0,aave_intent_count:Object.keys(book.aave?.intents||{}).length,
+        first_supply_confirmed:!!book.aave?.first_supply_confirmed,exit_test_confirmed:!!book.aave?.exit_test_confirmed,
+        active_intent:book.aave?.active_intent||null,signed:false,on_chain_executed:false});
+    }
     if(p==='/market/aave/status'&&request.method==='GET')return reply({...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
     if(p==='/market/aave/reconcile'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await reconcileAaveTransactions(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:422);}
     if(p==='/market/aave/diagnostics'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await diagnoseAave(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:503);}
