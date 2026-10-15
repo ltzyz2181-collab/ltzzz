@@ -4,7 +4,7 @@
   "run_id": "38700554340",
   "source_commit": "a6a561e1f8fc18aca384ef7aad7a0003adb33160",
   "at": "2026-10-15T07:42:32.954Z",
-  "status": "claimed_before_model_calls",
+  "status": "blocked_invalid_worker_artifact",
   "generation_policy": "ans_short_non_thinking_v1",
   "priority": "ANS autonomous dispatch and feedback",
   "tasks": [
@@ -19,7 +19,17 @@
       "role": "independent_reviewer"
     }
   ],
-  "calls": [],
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-10-15T07:42:36.194Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 10930
+    }
+  ],
   "artifacts": [],
   "openai_calls": 0,
   "financial_execution": false,
@@ -28,5 +38,48 @@
   "repair_of": {
     "run_id": "38699914555",
     "reason": "known_terminal_length_without_visible_artifact; explicitly disable forced thinking"
-  }
+  },
+  "pulse_observed_at": "2026-10-15T07:40:07.603Z",
+  "remote_claims": true,
+  "inputs": [
+    {
+      "file": "workers/pulse-worker/tasks.js",
+      "sha256": "a501865a6dc7ede51d86c81e4edfaee007531ce0be7612072b3c7abb17c8d4d7"
+    },
+    {
+      "file": "scripts/lib/daily-assignment.mjs",
+      "sha256": "73a8fe7126ce1f39ddb38e313a2d8090e263e4e390cb55daab516b9bfa1060d1"
+    },
+    {
+      "file": "scripts/run-autonomous-control.mjs",
+      "sha256": "046b1aa28129cd51132e9143e6f9579f8621400ab01791163d24ec036b3c4172"
+    },
+    {
+      "file": "scripts/run-daily-tasks.mjs",
+      "sha256": "7659db989cb430434547f8e0a2f0083451bfd1ecfa1aa26c3adb1691654bfb0f"
+    },
+    {
+      "file": "docs/ANS-AUTONOMOUS-PULSE.md",
+      "sha256": "6358f8743e42da89fa42d7c9a9c2bf05d8a7dd4217f21785c444e304791880b8"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20"
+    }
+  ],
+  "provider_attempts": [
+    {
+      "requested_agent": "DeepSeek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 10930,
+      "request_id": null,
+      "completion_id": "fe8f1d89-ae91-4a54-adb2-6dabf4c28cf5",
+      "stream_complete": true,
+      "error": null
+    }
+  ]
 }
