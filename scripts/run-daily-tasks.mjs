@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
+import {dailyAssignment} from "./lib/daily-assignment.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery } from "./delivery-integrity.mjs";
@@ -108,6 +109,9 @@ async function main() {
     .filter((file) => file.status !== "read")
     .map((file) => file.path);
 
+  const coordinatorAssignments=readJson(path.join(ROOT,"knowledge/results/control/latest.json"),null);
+  const pulseAssignments=readJson(path.join(ROOT,"knowledge/results/pulse/latest.json"),null);
+  const assignmentRecords={};
   const taskDefs = readJson(path.join(DATA, "tasks", "daily-tasks.json"), { tasks: [] });
   const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
   pending.reminders ||= {};
@@ -121,9 +125,11 @@ async function main() {
   for (const ch of CHANNELS) {
     const memPath = path.join(DATA, "memory", `${ch.agent}.json`);
     const mem = readJson(memPath, { agent: ch.agent, last_updated: null, context_summary: "", entries: [], constraints: [] });
-    const def = taskDefs.tasks?.find((t) => t.agent === ch.agent);
-    const roleTask = def?.task || ch.task;
-    const last3 = mem.entries.slice(-3).map((e) => `[${e.date}] ${e.task}：${String(e.output).slice(0, 200)}`).join("\n");
+    const def = (Array.isArray(taskDefs.tasks)?taskDefs.tasks:[]).find((t) => t?.agent === ch.agent);
+    const assignment=dailyAssignment(ch.agent,today,{control:coordinatorAssignments,pulse:pulseAssignments});
+    const roleTask=assignment?.instruction||def?.task||ch.task;
+    if(assignment)assignmentRecords[ch.agent]={task_id:assignment.id,source:assignment.source,execution:"existing_daily_call_no_additional_purchase",claim_verified:false};
+    const last3 = (Array.isArray(mem.entries)?mem.entries:[]).slice(-3).map((e) => `[${e.date}] ${e.task}：${String(e.output).slice(0, 200)}`).join("\n");
     const rem = pending.reminders?.[ch.agent];
     const urge = rem && rem.status === "pending"
       ? `⚠️ 催办：你在 ${rem.date} 的任务未完成（状态：${rem.status_reason || "未知"}，原因：${rem.reason || "未说明"}）。若本轮能完成，请在产出开头以「【补做 ${rem.date}】」标注；若外部原因仍无法完成，明确说明。`
@@ -135,11 +141,12 @@ async function main() {
       "请按短格式输出：【读后感】一句；【观】注明文件名/小节并说明观察；【行深】给一个可验证的小步骤；【不确定】标出未证实处；【角色产出】完成你的每日角色任务。",
       "总输出控制在约300中文字内，角色产出必须完整；最后单独写【交付结束】。文化比较只能标为AI解释，除非给出文件内具体证据；不得把泛化文化判断写成文件已经证实的观察。",
       "不要直接修改或声称修改 ltzzz-memory/ 长期文件；建议只能作为每日候选。梦境相关只概括记录规则与待验证问题，不逐字复述梦境细节。",
-      "本任务只生成读后感与执行建议；不要输出 SPEND_PROPOSAL、钱包提案或转账/付款操作。",
+      "本任务生成读后感与可复用工程/验收草稿，优先完成总控派单或自主发现的任务；不要输出 SPEND_PROPOSAL、钱包提案或转账/付款操作。",
     ].join("\n");
     const prompt = [
       `今天是 ${today}（UTC+8）。你的角色任务：${roleTask}`,
       reflectionGuidance,
+      assignment?`任务ID/来源：${assignment.id} / ${assignment.source}。可参考的实际Pulse快照（不是模型生成验收）：${JSON.stringify({ran_at:pulseAssignments?.ran_at,agents:Object.fromEntries(Object.entries(pulseAssignments?.agents||{}).map(([name,a])=>[name,{ok:a.ok,http:a.http,paused:a.paused}]))})}`:"",
       "=== 本轮读取的核心记忆文件 ===",
       coreMemoryText || "本轮没有成功读取任何核心记忆文件；不得猜测其内容。",
       missingCoreFiles.length ? `未能读取：${missingCoreFiles.join("、")}` : "读取审计：六份核心记忆均成功读取。",
@@ -214,6 +221,7 @@ async function main() {
   tasks.push({agent:"claude",status:"external_discussion_only",task:"六文件讨论外部席",output_preview:"仅免费外部对话讨论；API付费任务停用，不假设有免费API额度。"});
 
   for (const task of tasks) {
+    if(assignmentRecords[task.agent])task.assignment=assignmentRecords[task.agent];
     Object.assign(task, classifyTaskOutcome({ status: task.status, hasOutput: Boolean(task.output_preview) }));
   }
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';import {createHash} from 'node:crypto';
 import {pulseToken} from './pulse-credentials.mjs';import {pulseSnapshot,PULSE_URL} from './lib/pulse-client.mjs';import {actionProfile} from './agi-econ/action-policy.mjs';import {verifyActionEvidence} from './agi-econ/action-evidence.mjs';
 const token=pulseToken(process.env.PULSE_ROLE||'qianwen');console.log('::add-mask::'+token);
-const report={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,model_calls:0,financial_execution:false,intervention:null};
+const report={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,run_attempt:process.env.GITHUB_RUN_ATTEMPT||'1',model_calls:0,financial_execution:false,intervention:null};
 async function post(endpoint,body){const r=await fetch(PULSE_URL+endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)});const data=await r.json();if(!r.ok)throw Error('pulse_http_'+r.status);return data;}
 try{
  if(process.env.PULSE_ACTION==='control'){const body=JSON.parse(process.env.PULSE_CONTROL_JSON||'{}');body.id||='workflow-'+process.env.GITHUB_RUN_ID;body.reason||='owner-authorized delegated operation';report.command_result=await post('/control',body);report.intervention='authenticated_'+(process.env.PULSE_ROLE||'qianwen')+'_control';}
@@ -18,4 +18,4 @@ try{
  report.incentive_sync=await post('/incentives',incentives);snapshot=await pulseSnapshot();report.status='monitor_fresh';report.snapshot=snapshot;report.incentives=incentives;
  fs.mkdirSync('knowledge/results/pulse',{recursive:true});fs.writeFileSync('knowledge/results/pulse/latest.json',JSON.stringify(snapshot,null,2)+'\n');
 }catch{report.status='blocked_monitor_or_sync';process.exitCode=1;console.error('::error::Pulse independent watcher failed; inspect saved receipt.');}
-fs.mkdirSync('knowledge/results/pulse',{recursive:true});fs.writeFileSync('knowledge/results/pulse/watch-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({status:report.status,intervention:report.intervention,model_calls:0}));
+fs.mkdirSync('knowledge/results/pulse',{recursive:true});const reportText=JSON.stringify(report,null,2)+'\n';fs.writeFileSync('knowledge/results/pulse/watch-'+process.env.GITHUB_RUN_ID+'-attempt-'+report.run_attempt+'.json',reportText);fs.writeFileSync('knowledge/results/pulse/watch-'+process.env.GITHUB_RUN_ID+'.json',reportText);console.log(JSON.stringify({status:report.status,intervention:report.intervention,model_calls:0}));

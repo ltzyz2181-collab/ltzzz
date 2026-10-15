@@ -27,7 +27,7 @@ jobs:
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test workers/pulse-worker/test.mjs scripts/tests/agi-econ-action.test.mjs scripts/tests/pulse-integration.test.mjs scripts/tests/pulse-tasks.test.mjs
+      - run: node --test workers/pulse-worker/test.mjs scripts/tests/agi-econ-action.test.mjs scripts/tests/pulse-integration.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/daily-assignment.test.mjs
       - name: Deploy and bootstrap autonomous monitor, no model generation
         if: github.event_name == 'push' || inputs.action == 'deploy'
         env:
