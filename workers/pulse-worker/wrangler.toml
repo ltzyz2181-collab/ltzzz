@@ -5,7 +5,12 @@ workers_dev = true
 # A Durable Object alarm avoids the account's already-full Cron Trigger quota.
 [[durable_objects.bindings]]
 name = "PULSE"
-class_name = "PulseState"
+class_name = "PulseStateV2"
 [[migrations]]
 tag = "pulse-v1"
 new_sqlite_classes = ["PulseState"]
+
+# Rename preserves the monitoring/task storage and alarms while updating its class.
+[[migrations]]
+tag = "pulse-v2"
+renamed_classes = [{ from = "PulseState", to = "PulseStateV2" }]
