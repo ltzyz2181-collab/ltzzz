@@ -9,7 +9,10 @@
     "qianwen-probe-38688410217",
     "ans-claim-2026-10-15-deepseek",
     "ans-claim-2026-10-15-doubao",
-    "qianwen-probe-38699915072"
+    "qianwen-probe-38699915072",
+    "ans-submit-2026-10-15-worker",
+    "ans-submit-2026-10-15-reviewer",
+    "ans-review-2026-10-15"
   ],
   "manual": {},
   "limits": {
@@ -245,17 +248,38 @@
       "type": "agent_recovered",
       "agent": "grok",
       "at": "2026-10-15T07:40:07.603Z"
+    },
+    {
+      "id": "ans-submit-2026-10-15-worker",
+      "type": "controller_submit_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-15T07:46:45.345Z"
+    },
+    {
+      "id": "ans-submit-2026-10-15-reviewer",
+      "type": "controller_submit_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-15T07:46:45.475Z"
+    },
+    {
+      "id": "ans-review-2026-10-15",
+      "type": "controller_review_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-15T07:46:45.595Z"
     }
   ],
   "agents": {
     "doubao": {
       "failures": 0,
-      "successes": 28,
+      "successes": 30,
       "offline": false,
       "name": "doubao",
       "ok": true,
       "http": 200,
-      "latency_ms": 19,
+      "latency_ms": 52,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -265,12 +289,12 @@
     },
     "deepseek": {
       "failures": 0,
-      "successes": 28,
+      "successes": 30,
       "offline": false,
       "name": "deepseek",
       "ok": true,
       "http": 200,
-      "latency_ms": 19,
+      "latency_ms": 52,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -280,12 +304,12 @@
     },
     "kimi": {
       "failures": 0,
-      "successes": 28,
+      "successes": 30,
       "offline": false,
       "name": "kimi",
       "ok": true,
       "http": 200,
-      "latency_ms": 19,
+      "latency_ms": 51,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -295,12 +319,12 @@
     },
     "grok": {
       "failures": 0,
-      "successes": 2,
+      "successes": 4,
       "offline": false,
       "name": "grok",
       "ok": true,
       "http": 200,
-      "latency_ms": 20,
+      "latency_ms": 17,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -310,12 +334,12 @@
     },
     "qianwen": {
       "failures": 0,
-      "successes": 28,
+      "successes": 30,
       "offline": false,
       "name": "qianwen",
       "ok": true,
       "http": 200,
-      "latency_ms": 19,
+      "latency_ms": 17,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -325,12 +349,12 @@
     },
     "wep3": {
       "failures": 0,
-      "successes": 28,
+      "successes": 30,
       "offline": false,
       "name": "wep3",
       "ok": true,
       "http": 200,
-      "latency_ms": 20,
+      "latency_ms": 52,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -350,14 +374,14 @@
     "balance_usdc": "315.408481",
     "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
     "chain_id": 8453,
-    "rpc": "https://mainnet.base.org",
+    "rpc": "https://base-rpc.publicnode.com",
     "evidence": "eth_chainId_and_eth_call_balanceOf",
     "low": false,
     "sudden_drop": false
   },
   "mode": "parasympathetic",
   "active_controller": "gpt",
-  "ran_at": "2026-10-15T07:40:07.603Z",
+  "ran_at": "2026-10-15T07:50:07.708Z",
   "version": "0.3.5-state-v2",
   "model_calls": 0,
   "financial_execution": false,
@@ -939,6 +963,18 @@
       "mode": "parasympathetic",
       "unhealthy": [],
       "alerts": 1
+    },
+    {
+      "at": "2026-10-15T07:45:07.655Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-15T07:50:07.708Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
     }
   ],
   "collector_health": "observed",
@@ -1028,7 +1064,7 @@
       "id": "ANS-2026-10-15-deepseek",
       "agent": "deepseek",
       "instruction": "ANS/Pulse首要任务：读取最新真实监控与奖惩回执，区分代理健康、原生生成和交付验收；定位一个真实阻塞并交代码补丁或可运行断言，附来源，不执行资金。",
-      "status": "claimed",
+      "status": "completed_draft_review",
       "source": "coordinator_rules_zero_model_baseline",
       "assigned_to": "deepseek",
       "date": "2026-10-15",
@@ -1039,13 +1075,29 @@
       "claimed_by": "deepseek",
       "claim_actor": "qianwen",
       "claimed_at": "2026-10-15T07:36:57.294Z",
-      "claim_kind": "authenticated_executor_declaration_not_native_model_proof"
+      "claim_kind": "authenticated_executor_declaration_not_native_model_proof",
+      "evidence_path": "knowledge/results/ans-cycle/2026-10-15-worker.json",
+      "evidence_sha256": "76c8637688183f26dbf6c59602cea6893d2e5566300133287c05ed4c3e6e5c9a",
+      "submitted_at": "2026-10-15T07:46:45.345Z",
+      "model_execution_verified": false,
+      "review": {
+        "scope": "engineering_draft_only",
+        "accepted": true,
+        "worker_actual_provider": "deepseek",
+        "reviewer_actual_provider": "doubao",
+        "evidence_path": "knowledge/results/ans-cycle/2026-10-15-reviewer.json",
+        "evidence_sha256": "27612751a750d3ce3fe3aed03ecc52dec2c68870bc72b5de8628054bd0a17901",
+        "reviewed_sha256": "76c8637688183f26dbf6c59602cea6893d2e5566300133287c05ed4c3e6e5c9a",
+        "at": "2026-10-15T07:46:45.595Z",
+        "provenance": "authenticated_executor_attestation"
+      },
+      "deployed": false
     },
     {
       "id": "ANS-2026-10-15-doubao",
       "agent": "doubao",
       "instruction": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
-      "status": "claimed",
+      "status": "submitted_pending_review",
       "source": "coordinator_rules_zero_model_baseline",
       "assigned_to": "doubao",
       "date": "2026-10-15",
@@ -1056,7 +1108,11 @@
       "claimed_by": "doubao",
       "claim_actor": "qianwen",
       "claimed_at": "2026-10-15T07:36:57.430Z",
-      "claim_kind": "authenticated_executor_declaration_not_native_model_proof"
+      "claim_kind": "authenticated_executor_declaration_not_native_model_proof",
+      "evidence_path": "knowledge/results/ans-cycle/2026-10-15-reviewer.json",
+      "evidence_sha256": "27612751a750d3ce3fe3aed03ecc52dec2c68870bc72b5de8628054bd0a17901",
+      "submitted_at": "2026-10-15T07:46:45.475Z",
+      "model_execution_verified": false
     },
     {
       "id": "AUTO-2026-10-15-health",
@@ -1103,11 +1159,11 @@
   "daily_dispatch_date": "2026-10-15",
   "last_balance": {
     "units": "315408481",
-    "at": 1792050007603
+    "at": 1792050607708
   },
   "durable_revision": "pulse-state-v2",
   "stale": false,
-  "alarm_at": 1792050307572,
+  "alarm_at": 1792050907708,
   "controllers": [
     "gpt",
     "qianwen"
