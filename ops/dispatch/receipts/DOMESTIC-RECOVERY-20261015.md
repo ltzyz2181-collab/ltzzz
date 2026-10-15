@@ -1,0 +1,37 @@
+# 国内日课、审计与资金试跑复核 · 2026-10-15
+
+执行者：GPT/Codex 总控。仓库仅 ltzyz2181-collab/ltzzz。输入为 owner 转交的豆包、千问、Claude 回执；来稿意见与独立核验分开。核验基线 66865c6；部署结果在本文件后续补充。未调用付费模型、未签名、未广播、未转账。
+
+## 核验结果
+
+豆包确实加了 canonical daily Worker 的 20 秒 fetch 超时及 ai.status/error，新增 DeepSeek 日课执行器和 UTC22:30 定时。60141bb 是日课错误文档提交，不是全部改动的单一代码提交。实际部署是 Memory OS run 38671614481；38671611539 的工作流名称是静态站点部署，不能也列作 daily Worker 部署凭据。
+
+DeepSeek：已有成功回执 38506497337 与后续连接超时可同时成立；Cloudflare、Azure、本机出口不同，不能宣布所有出口永远不通或充值失效。新通道三次超时重试存在重复计费不确定性；“写出失败文档”不等于“真实内容生成成功”。现撤销这条新增付费 cron，保留原有 Daily Agent Tasks 与总控每日基础派单；手动恢复通道复用流式适配器，单次生成、调用前落盘、同日防重、保存可见部分输出及请求 ID，完整结束且交付结束标记齐全才算成功。读取完整六记忆及装备论，逐份记录字节数和哈希；不再只截取五文件片段。
+
+Worker 原定时数量保持不变。超时覆盖响应体读取；正文为空、只有推理过程或 finish_reason=length 都不得通过。DeepSeek 顶层 ok 依据真实交付，不再固定 true。任务异常不重购模型请求；/run 限 POST＋既有执行身份，未配置认证时 503。部署不调用原厂 GPT/Claude，不尝试激活其 Key。
+
+Claude 指出的 Kimi 配置缺陷成立：WEP3 审计步骤漏传 LTZZZ_AGENT_TOKEN，已补齐；共享排队租约仍保留，不能绕过 Tier0 限流。新增零生成的凭证接线回执，只确认两个 Secret 是否存在，不公开其值，也不把配置齐全写成真实推理通过。XAI 原有备用身份照实记录，作者与审计者仍按实际提供商分离。
+
+## 资金 pilot：纠正时间线
+
+GitHub Actions API 核对：
+
+| run | 时间 UTC | 触发方式 | 实际结果 |
+|---|---|---|---|
+| 38666978832 | 10-15 01:41:07 | workflow_dispatch | supply 与 exit 两步骤 success，Final status snapshot failure，Commit receipts skipped |
+| 38668831603 | 10-15 02:01:58 | workflow_dispatch | success |
+| 38669467614 | 10-15 02:09:05 | workflow_dispatch | success；其中只读快照仍失败，被旧代码 `|| true` 忽略 |
+
+该工作流在当前源码及历史版本只有 workflow_dispatch，没有每日 schedule。千问“cron 每天重试同一供给失败点”不符合本次 API 与日志；10-13、10-14 的失败应保留为历史，不据此推断本次仍卡同一步。01:41 的赎回日志包含 `0xcca0d41537b5a7920583149bea7f86e8ed36d841ef72e06d2b1c6f44d4b8ac46`、receipt_status=1、block=52619585。供给 `0xdd783ca6a783c02716bc82d62c7d3f11630e5d40f01a7c40fcbcdb8ba91a49ea` 已由仓库历史回执记录；本轮未重新独立向链上 RPC 取这两笔回执，不将历史记录冒充新重放。
+
+最终快照真实错误：primary RPC timeout，备用 RPC `Too many subrequests by single Worker invocation`。SDK 的 HTTP429 默认最多12次重试会放大此类故障；现限制每 RPC 一次 HTTP 尝试，仍保留完整读取的备用 RPC 切换，未增签、未替换签名、未改变额度。线上仍须验收，不能仅凭本地测试断言网络恢复。
+
+已完成的旧迁移/pilot 工作流停止执行资金动作，改成手动/代码更新触发的只读诊断、快照、已存交易回执复核；不再注入旧钱包私钥或调用 auto。每步失败都继续收集证据，always 上传 artifact、提交回执，最后维持失败状态，不再把快照失败吞成通过。本次不关闭其他独立业务的已有自动化。
+
+## 归属与未完成
+
+Claude 本次来稿已存 knowledge/results/external/2026-10-15-claude.md；原“13项测试”仅能证明 owner 转交过这段文字，不能关联当前 Claude 会话。已追加归属异议，未删改历史正文。
+
+本地验证：45 项针对性测试通过（含失败回执、认证、流式防重、RPC 429 请求上限、提供商独立性、审计出处）；四份工作流 YAML 解析通过。测试执行者为 GPT/Codex，不冒充 Claude 的外部测试。
+
+待验收：本次两服务部署、Kimi 实际生成、DeepSeek 各出口恢复；不为验收新增模型消费。ANS 14天误报观察继续，内部积分不能记为真钱收入。

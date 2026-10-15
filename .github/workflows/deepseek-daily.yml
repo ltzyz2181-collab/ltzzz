@@ -1,9 +1,7 @@
 name: DeepSeek daily (GH Actions)
 
 on:
-  schedule:
-    # UTC 22:30 = CST 06:30（与 CF 侧 deepseek-daily 时段一致；CF→DeepSeek 网络不通，真实调用走此处）
-    - cron: '30 22 * * *'
+  # Additional paid cron retired. Existing Daily Agent Tasks consumes dispatches.
   workflow_dispatch:
 
 permissions:
@@ -29,7 +27,14 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
         run: node scripts/run-deepseek-daily.mjs
+      - name: Retain the receipt even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-daily-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/daily/deepseek/
       - name: Commit and push the daily entry
+        if: always()
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com

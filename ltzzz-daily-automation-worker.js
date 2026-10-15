@@ -81,11 +81,9 @@ function maskSecret(v) {
 async function writeArtifact(path, content, env, ctx) {
   const bytes = new TextEncoder().encode(content).byteLength;
   if (env && env.LTZZZ_ARTIFACTS && typeof env.LTZZZ_ARTIFACTS.put === "function") {
-    if (ctx && typeof ctx.waitUntil === "function") {
-      ctx.waitUntil(env.LTZZZ_ARTIFACTS.put(path, content, { httpMetadata: { contentType: "text/markdown; charset=utf-8" } }));
-    } else {
-      await env.LTZZZ_ARTIFACTS.put(path, content, { httpMetadata: { contentType: "text/markdown; charset=utf-8" } });
-    }
+    // Confirm persistence before reporting a saved artifact. A later storage
+    // failure must not cause the entire generation task to be replayed.
+    await env.LTZZZ_ARTIFACTS.put(path, content, { httpMetadata: { contentType: "text/markdown; charset=utf-8" } });
     logDry("artifact.written", { sink: "r2", path, bytes });
     return { path, bytes, sink: "r2" };
   }
@@ -316,7 +314,7 @@ function checkBudget(channel, env) {
 }
 
 /** 统一“带预算守卫的 AI 调用占位”：无 Key → dry-run；有 Key 但预算满 → waiting_approval */
-async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
+export async function callAI({ channel, env, ctx, taskName, prompt, expect, timeoutMs = 20000 }) {
   const budget = checkBudget(channel, env);
   if (!budget.allowed) {
     logDry("ai.blocked", { taskName, channel, status: budget.status, pct: budget.pct });
@@ -355,9 +353,8 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     apiKey = env.OPENAI_API_KEY;
   } else if (channel === "deepseek") {
     apiUrl = "https://api.deepseek.com/v1/chat/completions";
-    // 2026-10-14 模型升级：deepseek-chat 旧名下线，官方推荐模型 ID 为 deepseek-flash
-    // （服务 DeepSeek-V4.1-Flash：多模态 + Agent 性能提升、按 Flash 价格计费）；
-    // 换更高模型（如 deepseek-v4-pro）只需设 DEEPSEEK_MODEL Secret，不必改代码。
+    // Keep the configured model. Transport timeouts do not establish that a
+    // model was retired; available IDs must come from the provider catalogue.
     model = env.DEEPSEEK_MODEL || "deepseek-flash";
     apiKey = env.DEEPSEEK_API_KEY;
   } else if (channel === "kimi") {
@@ -438,70 +435,31 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
 
     // 2026-10-15 修正：上游 fetch 无超时会导致任务无限挂起（实测方舟/DeepSeek 在
     // 本 Worker 内可达 90s+ 无响应）。加 20s 硬超时，让任务如实报错返回，绝不无限挂起。
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
-    let resp;
-    try {
-      resp = await fetch(apiUrl, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timer);
-    }
+    // The deadline covers both response headers AND the response body.
+    const resp = await fetch(apiUrl, {
+      method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
+    });
 
     if (!resp.ok) {
-      const errText = await resp.text();
-      logDry("ai.error", { taskName, channel, status: resp.status, error: errText.slice(0, 200) });
-      // 2026-10-02 修正（第5处虚报）：API 报错 = 未产生任何真实模型输出，
-      // 原返回 dry_run:false 会让产出顶部显示"已成功"、正文却回退占位文案，两头失真。
-      // 现改为 dry_run:true + status:api_error + 把真实错误写进 placeholder，如实暴露。
-      const brief = errText.slice(0, 160).replace(/\s+/g, " ");
-      return {
-        ok: false,
-        status: "api_error",
-        dry_run: true,
-        budget,
-        error: `API 返回 ${resp.status}: ${brief}`,
-        placeholder: `（本段无真实模型输出。上游返回 HTTP ${resp.status}：${brief}。常见原因：余额不足 / Key 失效 / 模型名已下线。不得据此声称任务完成。）`,
-      };
+      await resp.body?.cancel();
+      return {ok:false,status:"api_error",dry_run:false,budget,error:`HTTP ${resp.status}`,
+        placeholder:`（上游 HTTP ${resp.status}，没有已验收交付。）`};
     }
-
     const data = await resp.json();
-    let output;
-    if (channel === "claude") {
-      output = data.content?.[0]?.text || "";
-    } else {
-      const msg = data.choices?.[0]?.message || {};
-      // 2026-10-02 修正：kimi-k2.6 / doubao-seed 等思考型模型在 max_tokens 偏小时，
-      // content 常为空字符串而正文全在 reasoning_content（实测 kimi out=3000 时 content 为空）。
-      // 原实现 `|| JSON.stringify(data)` 会把整包 JSON 当"成功输出"写进记忆库，属伪成功。
-      output = (typeof msg.content === "string" && msg.content.trim())
-        ? msg.content
-        : (typeof msg.reasoning_content === "string" && msg.reasoning_content.trim()
-            ? `[模型仅返回推理过程，正文为空——疑似 max_tokens 不足]\n${msg.reasoning_content.slice(0, 2000)}`
-            : "");
-    }
-
-    // 空输出不得算成功：如实报 dry_run，避免"跑过了"的假象
-    if (!output || !String(output).trim()) {
-      const fr = data.choices?.[0]?.finish_reason || data.stop_reason || "unknown";
-      logDry("ai.empty_output", { taskName, channel, finish_reason: fr });
-      return {
-        ok: false,
-        status: "empty_output",
-        dry_run: true,
-        budget,
-        error: `上游返回 200 但正文为空（finish_reason=${fr}）。常见原因：max_tokens 被思考过程占满。`,
-        placeholder: `（本段无真实模型输出：上游 200 但 content 为空，finish_reason=${fr}。不得据此声称任务完成。）`,
-      };
+    const output = channel === "claude" ? data.content?.filter(x=>x.type==="text").map(x=>x.text).join("\n") || ""
+      : typeof data.choices?.[0]?.message?.content === "string" ? data.choices[0].message.content : "";
+    const finishReason = data.choices?.[0]?.finish_reason || data.stop_reason || null;
+    // Reasoning-only and token-truncated responses are never accepted as delivery.
+    if (!output.trim() || !["stop","end_turn"].includes(finishReason)) {
+      return {ok:false,status:output.trim()?"incomplete_output":"empty_output",dry_run:false,budget,
+        finish_reason:finishReason,error:output.trim()?"provider_output_incomplete":"provider_body_empty",
+        placeholder:"（本轮没有完整正文，不能据此声称任务完成。）"};
     }
 
     return {
       ok: true,
       status: "live",
+      model: data.model || model, finish_reason: finishReason, tokens_used: data.usage?.total_tokens ?? null,
       dry_run: false,
       budget,
       output: output,
@@ -514,7 +472,7 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
       status: "exception",
       dry_run: false,
       budget,
-      error: String(err),
+      error: "provider_transport_or_timeout",
     };
   }
 }
@@ -796,9 +754,9 @@ async function taskDeepseekDaily(env, ctx) {
       : `${compare.placeholder || compare.output || "（模型返回空）"}\n`);
 
   const path = dailyPath("deepseek", today);
-  await writeArtifact(path, body, env, ctx);
+  const artifact = await writeArtifact(path, body, env, ctx);
   logDry("task.deepseek-daily", { today, path, dry_run: compare.dry_run, budget: compare.budget });
-  return { task: "deepseek-daily", ok: true, path, budget: compare.budget, dry_run: compare.dry_run, ai: { status: compare.status, error: compare.error || null, waiting_credential: compare.waiting_credential || null } };
+  return { task: "deepseek-daily", ok: compare.ok === true && !compare.dry_run && artifact.sink === "r2", artifact_recorded: artifact.sink === "r2", path, budget: compare.budget, dry_run: compare.dry_run, ai: { status: compare.status, error: compare.error || null, waiting_credential: compare.waiting_credential || null } };
 }
 
 /* ---- 任务 6：Microsoft Copilot 每日 ------------------------------
@@ -898,12 +856,13 @@ async function dispatchTask(key, env, ctx) {
     logDry("dispatch.unknown", { key });
     return { ok: false, error: `unknown task: ${key}` };
   }
-  const maxRetry = entry.retry;
+  // A thrown task may already have purchased a model response; never replay it.
+  const maxRetry = 0;
   let lastErr = null;
   for (let attempt = 0; attempt <= maxRetry; attempt++) {
     try {
       const result = await entry.fn(env, ctx);
-      logDry("dispatch.ok", { key, attempt: attempt + 1, mandatory: !!entry.mandatory, dry_run: true, note: entry.mandatory ? "mandatory: 当日 dry-run 记录已产出，不得 skip" : undefined });
+      logDry(result.ok ? "dispatch.ok" : "dispatch.incomplete", { key, attempt: attempt + 1, mandatory: !!entry.mandatory, dry_run: result.dry_run, note: entry.mandatory ? "mandatory: 当日 dry-run 记录已产出，不得 skip" : undefined });
       return result;
     } catch (e) {
       lastErr = e;
@@ -912,7 +871,7 @@ async function dispatchTask(key, env, ctx) {
     }
   }
   logDry("dispatch.failed_waiting_manual", { key, mandatory: !!entry.mandatory, dry_run: true, error: String(lastErr && lastErr.message || lastErr), note: "mandatory: 重试仍失败也必须保留当日 dry-run 占位文件，不得 skip / 留空" });
-  return { ok: false, status: "waiting_manual", mandatory: !!entry.mandatory, dry_run: true, error: String(lastErr && lastErr.message || lastErr) };
+  return { ok: false, status: "task_failed_no_replay", mandatory: !!entry.mandatory, dry_run: false, model_api_cost_unknown: true, error: "task_or_artifact_failed" };
 }
 
 /* ================================================================
@@ -952,7 +911,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/health") {
       return new Response(JSON.stringify({
-        ok: true, service: "ltzzz-daily-automation", dry_run: true,
+        ok: true, service: "ltzzz-daily-automation", revision: "daily-resilience-v1", model_generation_verified: false, dry_run: true,
         tasks: Object.keys(TASK_TABLE),
         budgets: {
           doubao: checkBudget("doubao", env),
@@ -961,7 +920,9 @@ export default {
       }), { headers: { "Content-Type": "application/json; charset=utf-8" } });
     }
     if (url.pathname === "/run") {
-      // 调试模式：/run 无需 token（生产可通过设置 LTZZZ_AGENT_TOKEN 启用保护）
+      if (request.method !== "POST") return new Response(JSON.stringify({ok:false,error:"method_not_allowed"}), {status:405,headers:{Allow:"POST"}});
+      if (!env.LTZZZ_AGENT_TOKEN) return new Response(JSON.stringify({ok:false,error:"auth_not_configured"}), {status:503});
+      // Only the existing execution identity can trigger paid manual generation.
       const token = request.headers.get("Authorization") || "";
       if (env.LTZZZ_AGENT_TOKEN && token !== `Bearer ${env.LTZZZ_AGENT_TOKEN}`) {
         return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), { status: 401 });

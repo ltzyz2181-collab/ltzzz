@@ -29,7 +29,8 @@ Owner 最新授权：优先建设 [ANS/Pulse＋奖惩闭环](docs/ANS-AUTONOMOUS
 
 ## 每日真实任务
 
-- [每日经济流程](.github/workflows/daily-economy.yml)：DeepSeek 派单 → 豆包交付 + 投资复核；每天最多各一次逻辑模型调用。两次定时是主跑/兜底，同日幂等。
+- [每日执行](.github/workflows/daily-agent-tasks.yml)：既有主跑/兜底定时，同日幂等；在原有调用内消费总控基础派单。模型失败也必须如实保存，不能把生成失败写成已交付。
+- [经济流程](.github/workflows/daily-economy.yml)目前仅手动/代码更新触发，不能宣称有每日 cron；[独立 DeepSeek 恢复通道](.github/workflows/deepseek-daily.yml)也仅手动，已撤销新增付费定时。保留原有每日派单和调用，不叠加一条重复购买通道。
 - [每日回执](knowledge/results/economy/)：全文输出、实际用量、源版本、读入文件哈希、阻塞。
 - [雇佣结果](knowledge/results/hire/) / [投资研究结果](knowledge/results/invest/)：明确未付款/未交易，不以生成提案代替真钱结算。
 - [当天任务文件](ltzzz-memory/tasks/)：`economy-YYYY-MM-DD.md`；日期按 Asia/Shanghai，UTC22:35对应北京次日06:35，UTC06:35对应北京14:35，Actions可能延迟。
