@@ -17,3 +17,12 @@
 GPT正式原厂日课停用、Claude未产生正式付费日课都符合现有预算安排；逻辑总控运行另查 `knowledge/results/control/`，不能把岗位名称与原厂模型身份混为一谈。
 
 关键原件：`knowledge/results/security/legacy-vault-38706656285-attempt-1.json`、`knowledge/results/ans-cycle/2026-10-15.json`、`knowledge/results/wep3/latest.json`、`results/publishing/youtube-recovery-2026-10-15.json`、`data/results/2026-10-15.json`。历史回执保留原日期，新处置按实际时间记录。
+
+## 首轮实际验收与持续运行补修
+
+- PR81合并提交 `0d9f582`。Memory Promotion `38742937967` 成功，实际扫描后81项/81个ID，未重建冲突候选；六文件完整性 `38742938177` 成功。
+- 总控 `38742937989` 成功，千问回归单于 `2026-10-15T13:28:14.260Z` 真正签发并入库，状态仍是等待外部回归，模型调用0。证据：`knowledge/results/dispatch/qianwen-return-2026-10-15.json` 与对应ops正式单。
+- 新双RPC只读验收 `38742938089` 成功：同一区块52640777，USDC/aUSDC/exposure均0，guardian仍匹配旧Agent地址；两次提款模拟均明确为 `contract_reverted`，不证明权限安全。回执 `knowledge/results/security/legacy-vault-38742938089-attempt-1.json`；交易0、模型调用0。
+- 同时定位两处真实持续运行故障：后续总控 `38742953830` 的计算步骤成功，但检出旧事件提交后在回写时add/add冲突；Manifest `38742937966` 被另一写入者推进main导致push拒绝。这些是保存阶段失败，不是模型执行失败。
+- 后续补修：总控始终检出最新main，保留原模型回执并记录本次扫描的实际checkout版本；只对Git回写做有限重试、真实冲突不覆盖，失败时保留artifact。Manifest在独立worktree读取最新main、每次重建后提交，push竞争失败时重新构建，而不是推过期hash；不再吞掉rebase错误或取消正在运行的同步。
+- 补修的真实Git并发反例与原有回归合计27项测试通过。新的总控和Manifest线上验收结果将在运行完成后追加；不把首轮历史失败改写为成功。
