@@ -1,5 +1,7 @@
 # 国内日课、审计与资金试跑复核 · 2026-10-15
 
+> 最终验收（07:07 UTC）：canonical 日课部署 38695199291、WEP3 部署 38696556578、只读资金复核 38696556494 均 success。83 项本地测试通过。Kimi 凭证接线齐全；DeepSeek 出口恢复与 Kimi 真实生成未冒充已验收。下面保留各轮真实失败与修正过程。
+
 执行者：GPT/Codex 总控。仓库仅 ltzyz2181-collab/ltzzz。输入为 owner 转交的豆包、千问、Claude 回执；来稿意见与独立核验分开。核验基线 66865c6；部署结果在本文件后续补充。未调用付费模型、未签名、未广播、未转账。
 
 ## 核验结果
@@ -34,7 +36,7 @@ Claude 本次来稿已存 knowledge/results/external/2026-10-15-claude.md；原�
 
 本地验证：45 项针对性测试通过（含失败回执、认证、流式防重、RPC 429 请求上限、提供商独立性、审计出处）；四份工作流 YAML 解析通过。测试执行者为 GPT/Codex，不冒充 Claude 的外部测试。
 
-待验收：本次两服务部署、Kimi 实际生成、DeepSeek 各出口恢复；不为验收新增模型消费。ANS 14天误报观察继续，内部积分不能记为真钱收入。
+首轮待验收（历史状态，最终结论见文末）：本次两服务部署、Kimi 实际生成、DeepSeek 各出口恢复；不为验收新增模型消费。ANS 14天误报观察继续，内部积分不能记为真钱收入。
 
 ## 第一轮真实验收与修正
 
@@ -53,3 +55,16 @@ WEP3 run 38694832761 在部署前 CI 被旧的 aave-guard-v4 固定断言拦住�
 迁移部署 run 38695914949 在首次只读探针收到 HTML 边缘页，旧探针 JSON 解析异常中止，未形成状态摘要。已将探针改为有界等待：逐次记录 HTTP/content-type/版本，HTML 或连接错误也写失败观测，不能再因解析失败丢回执。资金只读 runner 同样保留非 JSON 响应的 HTTP 状态，不保存边缘 HTML 正文。正在重新验收；交易执行通道没有启用。
 
 只读复核 38695199325 attempt 2 在 07:02:22–23 UTC 已实测三项全部成功，aave=v5，供应/退出标志均为 true、无 active_intent；mainnet.base.org 与 base.drpc.org 拒绝后 publicnode 完整读取成功。余额是既有资产快照：315.408481 USDC + 34.490664 aUSDC，本轮未投资或转账，不能记为新增收入。此轮推送因旧 runner 沿用 run-only 文件名，与 main 首次失败回执 add/add 冲突；artifact 已保存。总控从原始 job JSON 日志按 attempt-2 代存三份回执及 inspection-38695199325-2.json，首次失败文件保留。runner 后续按 run+attempt 写入，artifact glob 同步覆盖该格式，避免再次相撞。
+
+## 最终真实验收
+
+- canonical 日课：run [38695199291](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38695199291) 全部 success，revision=daily-resilience-v1，GET /run=405，匿名 POST=401；回执已自动推送。
+- WEP3：run [38696556578](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38696556578) 全部 success，实际 MarketRuntimeV2 / aave-guard-v5。状态摘要有74个订单记录、31条账本记录、3个历史 Aave intent，first_supply_confirmed/exit_test_confirmed 均 true，active_intent=null。订单记录包括报价和测试，不能记成74笔成交。live_revenue_cents=0。
+- Kimi：同轮 readiness 缺项为空，两个凭证实际存在；共享租约未绕过，generation_verified=false。等待原有合法任务产生真实调用，不为验收新增付费调用。
+- 资金只读复核：run [38696556494](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38696556494) 三项真实观测通过、artifact与仓库回执均保存；read_only=true，financial_execution_retired=true。无签交易、无广播、无资金转移。
+- RPC：前两个源仍拒绝/超限，第三个 publicnode 完整读取成功，未再因默认12次 HTTP429 重试耗尽子请求。它是备用源生效，不宣称三个 RPC 全面恢复。
+- 验证消费：最终 WEP3 market 回执 model_calls=0、orders=[]；外部入口验收 transactions=0。本轮没有新现金工资、没有新客户收入。测试、内部积分、既有本金余额与实际收入分开记账。
+
+最终代码经83项本地测试；线上同款 WEP3 CI通过，4份YAML及状态保留 TOML 校验通过。合并 PR #70–73；本页最终证据补充另入 PR。既有总控每日基础派单及 Daily Agent Tasks 保留，没有叠加 DeepSeek 付费 cron。
+
+未完成：DeepSeek 生成网络出口恢复；修复后 Kimi 在真实 WEP3 审计任务中的生成证明；旧“Claude 13项”原会话归属证据。ANS 长期观察继续，本次不把这些项目写成已完成。
