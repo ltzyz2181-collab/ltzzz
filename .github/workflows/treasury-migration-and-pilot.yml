@@ -52,9 +52,11 @@ jobs:
           done
           exit 1
       - name: Final status snapshot
+        # 只读快照，非致命：worker 端 RPC 抖动（Cloudflare 子请求限制/公共 RPC 超时）
+        # 不应阻塞回执提交；pilot 链上证据已由 auto 步骤的已确认回执承载。
         env:
           AAVE_ACTION: status
-        run: node scripts/run-treasury-aave.mjs
+        run: node scripts/run-treasury-aave.mjs || true
       - name: Commit receipts
         run: |
           git config user.name ltzzz-bot

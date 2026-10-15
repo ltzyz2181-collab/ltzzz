@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-15T01:55:00Z",
+  "pilot": "verified",
+  "chain_id": 8453,
+  "first_supply_confirmed": true,
+  "exit_test_confirmed": true,
+  "principal_basis": "tracked_supply_receipts",
+  "transactions": [
+    {
+      "kind": "approve",
+      "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "tx_hash": "0x9d7f562445248977541c3de755a34a29bfbd7c7a9139ea93c43fa1939f14dd18",
+      "block_number": 52594938,
+      "receipt_status": 1,
+      "confirmed_at": "2026-10-14T12:00:50.772Z",
+      "source": "aave-38605320805.json"
+    },
+    {
+      "kind": "supply",
+      "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+      "tx_hash": "0xdd783ca6a783c02716bc82d62c7d3f11630e5d40f01a7c40fcbcdb8ba91a49ea",
+      "block_number": 52604467,
+      "receipt_status": 1,
+      "confirmed_at": "2026-10-14T17:18:33.832Z",
+      "amount_usdc": "1.0",
+      "source": "aave-38605320805.json"
+    },
+    {
+      "kind": "withdraw",
+      "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+      "tx_hash": "0xcca0d41537b5a7920583149bea7f86e8ed36d841ef72e06d2b1c6f44d4b8ac46",
+      "block_number": 52619585,
+      "receipt_status": 1,
+      "confirmed_at": "2026-10-15T01:44:49.624Z",
+      "amount_usdc": "1.0",
+      "source": "pilot run 38666978832 log"
+    }
+  ],
+  "final_balances": {
+    "usdc": "349.898316",
+    "ausdc": "0.00004",
+    "eth": "0.00199732",
+    "block_number": 52619690
+  },
+  "limits_after_exit_test": {
+    "mode": "reputation_and_actual_equity",
+    "capital_agent": "DeepSeek",
+    "capital_reputation": 105,
+    "allocation_share_bps": 4000,
+    "single_cap_usdc": 34.489835,
+    "exposure_cap_usdc": 137.959342,
+    "cash_floor_usdc": 5.0,
+    "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+  },
+  "note": "pilot 通过后协议按 reputation 与实际权益计算限额：exposure=40%×equity≈137.96，单笔 single=34.49；用户目标 200 USDC 需 equity≈500（40% share）或 reputation 提升 share_bps 后才能达到，超出部分受安全上限保护，不在协议外手动突破。",
+  "verification": "worker 端以 tracked_supply_receipts 记账 + eth_getTransactionReceipt 复核；三笔 receipt_status 均=1；final status 由 base-rpc.publicnode.com 读取（mainnet.base.org/base.drpc.org 当日超时，已纳入 rpc_attempts 记录）。"
+}
