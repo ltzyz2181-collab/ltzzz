@@ -1,0 +1,49 @@
+name: Probe TikTok publish worker (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: "public video url"
+        default: "https://ltzzz.com/videos/ltzzz-brand-60s-2026-10-14.mp4"
+      title:
+        description: "title"
+        default: "LTZZZ 60秒：AI视频流水线｜从聊天记录到成片"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: TikTok worker status
+        env:
+          TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          echo "=== status ==="
+          curl -sS -m 60 https://ltzzz-tiktok-post.ltzyz2181.workers.dev/status | tee /tmp/tk-status.json || echo "STATUS_CALL_FAILED"
+          echo ""
+          echo "=== publish (private) ==="
+          curl -sS -m 180 -X POST "https://ltzzz-tiktok-post.ltzyz2181.workers.dev/publish" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "{\"video_url\":\"${{ github.event.inputs.video_url }}\",\"title\":\"${{ github.event.inputs.title }}\",\"privacy\":1}" \
+            | tee /tmp/tk-pub.json || echo "PUBLISH_CALL_FAILED"
+      - name: Save receipt
+        if: always()
+        run: |
+          mkdir -p results/publishing
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          let status='',pub='';
+          try{status=fs.readFileSync('/tmp/tk-status.json','utf8')}catch{}
+          try{pub=fs.readFileSync('/tmp/tk-pub.json','utf8')}catch{}
+          fs.writeFileSync(`results/publishing/tiktok-probe-${process.env.GITHUB_RUN_ID}.json`,JSON.stringify({
+            run_id:process.env.GITHUB_RUN_ID,
+            video_url:process.env.VIDEO_URL,
+            status:status, publish:pub, at:new Date().toISOString()
+          },null,2));
+          JS
+          git config user.name ltzzz-bot; git config user.email bot@ltzzz.com
+          git add results/publishing; git commit -m "publishing: tiktok probe receipt" && git pull --rebase && git push || echo "PUSH_SKIPPED"
+        env:
+          VIDEO_URL: ${{ github.event.inputs.video_url }}
