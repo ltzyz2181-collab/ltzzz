@@ -1,0 +1,34 @@
+name: Pulse independent external watcher
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: pulse-external-watch, cancel-in-progress: false}
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check freshness, recover stopped alarm and synchronize verified scores (zero LLM)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PULSE_ROLE: qianwen
+        run: node scripts/watch-pulse.mjs
+      - name: Save independent evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/pulse/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Pulse independent actual observation and verified incentive snapshot'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
