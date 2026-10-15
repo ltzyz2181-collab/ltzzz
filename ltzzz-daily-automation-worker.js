@@ -355,7 +355,10 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
     apiKey = env.OPENAI_API_KEY;
   } else if (channel === "deepseek") {
     apiUrl = "https://api.deepseek.com/v1/chat/completions";
-    model = "deepseek-chat";
+    // 2026-10-14 模型升级：deepseek-chat 旧名下线，官方推荐模型 ID 为 deepseek-flash
+    // （服务 DeepSeek-V4.1-Flash：多模态 + Agent 性能提升、按 Flash 价格计费）；
+    // 换更高模型（如 deepseek-v4-pro）只需设 DEEPSEEK_MODEL Secret，不必改代码。
+    model = env.DEEPSEEK_MODEL || "deepseek-flash";
     apiKey = env.DEEPSEEK_API_KEY;
   } else if (channel === "kimi") {
     // 直连官方需 MOONSHOT_API_KEY（moonshot-v1 系列已下线，现行 kimi-k2.6 / k3 / k2.7-code）；
