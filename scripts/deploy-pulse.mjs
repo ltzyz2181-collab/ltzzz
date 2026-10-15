@@ -23,6 +23,6 @@ try{
  if(!ready)throw Error('control_routes_not_ready');
  const run=await fetch(PULSE_URL+'/run',{method:'POST',headers:{Authorization:'Bearer '+tokens.PULSE_TOKEN,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(45000)});receipt.run_http=run.status;receipt.status_snapshot=await read(run);
  const status=await fetch(PULSE_URL+'/status',{signal:AbortSignal.timeout(10000)});receipt.public_status_http=status.status;receipt.public_status=await read(status);
- if(!run.ok||!receipt.public_status.ran_at||receipt.public_status.stale||!receipt.public_status.alarm_at||probe.status!==200||blocked.status!==401||getRun.status!==405)throw Error('acceptance_failed');
+ if(!run.ok||!receipt.public_status.ran_at||receipt.public_status.stale||!receipt.public_status.alarm_at||receipt.qianwen_control_http!==200||receipt.anonymous_run_http!==401||receipt.get_run_http!==405)throw Error('acceptance_failed');
  receipt.status='deployed_and_live_observations_recorded';receipt.generation_verified=false;receipt.health_failures=Object.entries(receipt.public_status.agents||{}).filter(([,a])=>!a.ok).map(([name])=>name);
 }catch{receipt.status='blocked_deployment_or_acceptance';process.exitCode=1;}finally{fs.rmSync(dir,{recursive:true,force:true});fs.mkdirSync('knowledge/results/pulse',{recursive:true});fs.writeFileSync('knowledge/results/pulse/deploy-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify({status:receipt.status,run_id:receipt.run_id,model_calls:0}));}

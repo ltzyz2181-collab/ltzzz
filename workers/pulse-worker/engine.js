@@ -5,10 +5,10 @@ export function validateConfig(config){
  if(!/^0x[a-fA-F0-9]{40}$/.test(config.wallet.address)||!/^0x[a-fA-F0-9]{40}$/.test(config.wallet.token)||config.wallet.chain_id!==8453)throw Error('wallet_config_invalid');
  if(config.failure_threshold<1||config.recovery_threshold<1||config.interval_seconds<60)throw Error('threshold_invalid');
 }
-export async function heartbeat(target,{fetcher=fetch}={}){
- const start=Date.now();try{const r=await fetcher(target.url,{redirect:'error',signal:AbortSignal.timeout(7000)}),j=await r.json();return {name:target.name,ok:r.ok&&j.ok!==false&&j.has_key!==false&&j.key_configured!==false,http:r.status,latency_ms:Date.now()-start,evidence:'http_health_only_not_generation'};}catch{return {name:target.name,ok:false,http:null,latency_ms:Date.now()-start,error:'health_unreachable_or_non_json'};}
+export async function heartbeat(target,{fetcher=(...args)=>globalThis.fetch(...args)}={}){
+ const start=Date.now();try{const r=await fetcher(target.url,{redirect:'error',signal:AbortSignal.timeout(7000)}),j=await r.json();return {name:target.name,ok:r.ok&&j.ok!==false&&j.has_key!==false&&j.key_configured!==false,http:r.status,latency_ms:Date.now()-start,evidence:'http_health_only_not_generation'};}catch(error){return {name:target.name,ok:false,http:null,latency_ms:Date.now()-start,error:'health_unreachable_or_non_json',error_kind:error?.name||'Error',transport_code:/illegal invocation/i.test(String(error))?'illegal_invocation':/different request|I\/O context/i.test(String(error))?'request_context':/timeout|abort/i.test(String(error))?'timeout':'transport_or_non_json'};}
 }
-export async function walletBalance(config,{fetcher=fetch}={}){
+export async function walletBalance(config,{fetcher=(...args)=>globalThis.fetch(...args)}={}){
  for(const rpc of config.rpc_urls){try{
   const r=await fetcher(rpc,{method:'POST',redirect:'error',signal:AbortSignal.timeout(7000),headers:{'Content-Type':'application/json'},body:JSON.stringify([{jsonrpc:'2.0',id:1,method:'eth_chainId',params:[]},{jsonrpc:'2.0',id:2,method:'eth_call',params:[{to:config.token,data:'0x70a08231'+config.address.slice(2).toLowerCase().padStart(64,'0')},'latest']}])});
   const j=await r.json();if(!r.ok||!Array.isArray(j))continue;const chain=j.find(x=>x.id===1),balance=j.find(x=>x.id===2);if(chain?.error||balance?.error||BigInt(chain.result)!==BigInt(config.chain_id)||!/^0x[0-9a-fA-F]{1,64}$/.test(balance.result))continue;
@@ -18,15 +18,17 @@ export async function walletBalance(config,{fetcher=fetch}={}){
 }
 export function evolve(previous,observations,config,now=Date.now()){
  const state=structuredClone(previous||{});state.agents||={};state.events||=[];state.cooldowns||={};state.limits||={concurrency:config.baseline_concurrency};state.manual||={};
+ const collectorUnknown=observations.heartbeats.length>1&&observations.heartbeats.every(h=>!h.ok&&h.http===null);state.collector_health=collectorUnknown?'common_transport_failure_unconfirmed':'observed';
  const events=[];const emit=(key,type,detail)=>{if(!state.cooldowns[key]||now-state.cooldowns[key]>=config.alert_cooldown_seconds*1000){events.push({id:key+':'+now,type,at:new Date(now).toISOString(),...detail});state.cooldowns[key]=now;}};
  for(const h of observations.heartbeats){
   const old=state.agents[h.name]||{failures:0,successes:0,offline:false},a={...old,...h};
-  a.failures=h.ok?0:old.failures+1;a.successes=h.ok?old.successes+1:0;
+  a.failures=collectorUnknown?old.failures:h.ok?0:old.failures+1;a.successes=collectorUnknown?0:h.ok?old.successes+1:0;a.observation=collectorUnknown?'unknown_collector_transport':'independent_http';
   if(a.failures>=config.failure_threshold){a.offline=true;emit('offline:'+h.name,'agent_offline',{agent:h.name,failures:a.failures});}
   if(a.offline&&h.ok&&a.successes>=config.recovery_threshold&&config.automatic_recovery){a.offline=false;events.push({id:'recovered:'+h.name+':'+now,type:'agent_recovered',agent:h.name,at:new Date(now).toISOString()});delete state.cooldowns['offline:'+h.name];}
   a.paused=!!state.manual[h.name]||a.offline;a.dispatch_allowed=!state.manual.global&&!a.paused;a.max_concurrency=a.dispatch_allowed?state.limits.concurrency:0;a.priority_multiplier=state.incentives?.profiles?.[h.name]?.priority_multiplier??1;
   state.agents[h.name]=a;
  }
+ if(collectorUnknown)emit('collector_transport','sensor_unavailable',{sensor:'heartbeat_collector',note:'all probes failed without independent HTTP evidence; do not fabricate six agent outages'});
  const w=observations.wallet;state.wallet=w;
  let assetAlert=false;
  if(w.ok){
