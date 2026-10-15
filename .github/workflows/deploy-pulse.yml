@@ -33,7 +33,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: node scripts/deploy-pulse.mjs
+        run: |
+          for deploy_pass in 1 2; do
+            if PULSE_DEPLOY_PASS="$deploy_pass" node scripts/deploy-pulse.mjs; then exit 0; fi
+            if [ "$deploy_pass" = "1" ]; then
+              echo 'Waiting for propagation before one bounded infrastructure retry; no models or payments'
+              node -e 'setTimeout(() => {}, 30000)'
+            fi
+          done
+          exit 1
       - name: Independent observation and verified incentive synchronization
         if: success()
         env:

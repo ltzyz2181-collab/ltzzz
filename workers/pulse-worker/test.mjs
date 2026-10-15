@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
-import worker,{PulseState} from './index.js';import {validateConfig,evolve,control,walletBalance,heartbeat} from './engine.js';
+import worker,{PulseStateV2 as PulseState} from './index.js';import {validateConfig,evolve,control,walletBalance,heartbeat} from './engine.js';
 const config=JSON.parse(fs.readFileSync(new URL('./pulse.json',import.meta.url))),at=Date.parse('2026-10-15T01:00:00Z');
 const observations=(bad=[])=>({heartbeats:config.targets.map(t=>({name:t.name,ok:!bad.includes(t.name),http:200})),wallet:{ok:true,name:'wallet_balance',units:'50000000',balance_usdc:'50.000000'}});
 function tick(state,bad=[],time=at){return evolve(state,observations(bad),config,time).state;}
