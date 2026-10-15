@@ -1,0 +1,40 @@
+name: Upload Video 2026-10-15 to R2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/upload-video-2026-10-15.yml'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify assets
+        run: |
+          ls -la videos/ltzzz-daily-2026-10-15.mp4
+          cat videos/ltzzz-daily-2026-10-15.meta.json
+      - name: Avoid requeueing already published video
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file='videos/ltzzz-daily-2026-10-15.mp4';
+          const published=fs.readdirSync('results/publishing').filter(n=>n.startsWith('youtube-')&&n.endsWith('.json')).some(n=>{
+            const r=JSON.parse(fs.readFileSync('results/publishing/'+n,'utf8'));
+            return r.file===file&&r.response?.ok===true&&Boolean(r.response?.video_id);
+          });
+          fs.appendFileSync(process.env.GITHUB_ENV,'VIDEO_PREFIX='+(published?'published':'queue')+'\n');
+          console.log(published?'Archiving existing published video; no second publication queued':'Queueing unpublished video');
+          JS
+      - name: Put mp4 to R2
+        run: npx wrangler r2 object put "ltzzz-videos/${VIDEO_PREFIX}/ltzzz-daily-2026-10-15.mp4" --file videos/ltzzz-daily-2026-10-15.mp4 --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Put meta to R2 queue
+        run: npx wrangler r2 object put "ltzzz-videos/${VIDEO_PREFIX}/ltzzz-daily-2026-10-15.meta.json" --file videos/ltzzz-daily-2026-10-15.meta.json --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
