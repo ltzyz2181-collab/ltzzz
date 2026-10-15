@@ -33,3 +33,11 @@ Deployment readiness checks upload nothing. They check version/capabilities, ano
 ## Verification boundaries
 
 20 automated tests cover queue authorization, private/processing/wrong-channel rejection, content claims, uncertain responses, cleanup recovery, and client receipt handling. These use mocked network responses and are not real YouTube publication evidence. Actual run receipts and the verified public URL must be recorded separately after the prepared-file workflow runs. TikTok, wallets, funds, and model-provider configuration are not changed by this work.
+
+## Actual deployment and publication acceptance
+
+- PRs #77, #78 and #79 merged. Scheduler deployment `38739890702` and uploader deployment `38739890634` passed. Wrangler 4.151.0; uploader version ID `89a4f2e8-fb2f-4bb8-8ef7-db8cd5bbe983`. Readiness confirmed anonymous receipt lookup 401, authenticated lookup 200, and zero uploads during deployment checks.
+- Prepared-file workflow `38740073156` **succeeded**. Receipt: `results/publishing/video-queue-38740073156-attempt-1.json`, committed as `bf560c7`. It records the original SHA-256 unchanged, `model_calls: 0`, completed R2 queue processing, and actual public verification.
+- Public video: https://www.youtube.com/watch?v=B_F6YC0GeBA . Google-backed verification returned `public`, `processed`, expected channel, and `published: true` at `2026-10-15T13:08:39.462Z`. A separate fresh read and the public watch-page title confirmed the same video. This is a real public publication, not an inference from an upload ID.
+- This file's title describes its earlier failed pipeline test; it is retained from the supplied metadata. The video is now publicly available.
+- The existing daily workflow will also be exercised using this exact already-published asset. That acceptance must return `already_public` and the **same** video ID, without rendering or another YouTube upload. Its result is recorded separately; this paragraph is not a claim that the daily run has already passed.
