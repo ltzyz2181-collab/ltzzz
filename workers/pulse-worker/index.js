@@ -25,7 +25,7 @@ export default {
   return env.PULSE.get(env.PULSE.idFromName('ltzzz-global')).fetch(request);
  }
 };
-export class PulseState{
+export class PulseStateV2{
  constructor(state,env){this.storage=state.storage;this.env=env;this.tail=Promise.resolve();}
  serial(fn){const result=this.tail.then(fn);this.tail=result.catch(()=>{});return result;}
  async run(){
@@ -40,7 +40,7 @@ export class PulseState{
   const path=new URL(request.url).pathname;
   try{
    if(path==='/tasks'){const prior=await this.storage.get('state')||{},state=seedTasks(prior);if(prior.daily_dispatch_date!==state.daily_dispatch_date)await this.storage.put('state',state);return json({date:state.daily_dispatch_date,tasks:state.task_board,model_calls:0,paid:false,notice:'认领由认证执行器声明；提交待独立验收，不代表模型已实际调用或真钱工资。'});}
-   if(path==='/status'){const state=await this.storage.get('state')||{};return json({...state,version:config.version,ran_at:state.ran_at||null,stale:!state.ran_at||Date.now()-Date.parse(state.ran_at)>config.stale_seconds*1000,alarm_at:await this.storage.getAlarm(),controllers:config.controller_roles,model_calls:0,financial_execution:false});}
+   if(path==='/status'){const state=await this.storage.get('state')||{};return json({...state,version:config.version,ran_at:state.ran_at||null,durable_revision:'pulse-state-v2',stale:!state.ran_at||Date.now()-Date.parse(state.ran_at)>config.stale_seconds*1000,alarm_at:await this.storage.getAlarm(),controllers:config.controller_roles,model_calls:0,financial_execution:false});}
    // Keep the autonomous loop armed even if an individual observation fails.
    if(path==='/run'){await this.storage.setAlarm(Date.now()+config.interval_seconds*1000);return json(await this.run());}
    const actor=request.headers.get('X-Pulse-Actor');if(!config.controller_roles.includes(actor))return json({error:'controller_required'},403);
