@@ -1,4 +1,5 @@
 export function classifyTaskOutcome({ status, hasOutput = false }) {
+  if(status==='external_discussion_only'||status==='external_daily_return')return {execution_status:'not_scheduled_external_seat',delivery_status:hasOutput?'not_submitted':'not_produced',economic_status:'not_applicable_no_financial_action'};
   if(status==='incomplete_output')return {execution_status:'response_received_incomplete',delivery_status:'rejected_incomplete',economic_status:'not_applicable_no_financial_action'};
   if (status === "disabled_by_owner") {
     return {

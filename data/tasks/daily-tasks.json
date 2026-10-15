@@ -1,6 +1,6 @@
 {
-  "version": "1.1",
-  "updated_at": "2026-10-09",
+  "version": "1.2",
+  "updated_at": "2026-10-15",
   "trigger": "GitHub Actions daily-agent-tasks.yml：cron UTC 22:00 主跑 + UTC 06:00 兜底（GitHub 可能延迟启动）+ workflow_dispatch 手动触发；scripts/run-daily-tasks.mjs 每次实际读取六份核心记忆，再调用已配置模型；密钥只从 GitHub Secrets 注入，不写入代码、不传给模型。",
   "core_memory": {
     "files": [
@@ -23,51 +23,76 @@
     "核心记忆只作研究材料；区分模板、观察、假设和已验证事实；缺失文件时明确标记。",
     "读后感保存为每日候选，不自动写回六份核心记忆。",
     "本任务只生成读后感和执行建议，不产生 SPEND_PROPOSAL，不执行钱包、转账或付款操作。",
-    "Microsoft逻辑席由GPT委托执行，results标executed_by=gpt；Claude停用，不再催充值。"
+    "OpenAI原厂与Microsoft额外付费日课停用；GPT是逻辑总控岗位，由国内模型执行器接续且记录实际provider。Claude仅外部免费讨论；千问每日回归工单不等于原生接单或模型调用。"
   ],
   "tasks": [
     {
       "agent": "gpt",
       "task": "基于六份核心记忆写简明读后感，提出一项可验证的下一步任务和一条记忆候选建议。",
-      "trigger": "OPENAI_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/gpt.json 当日新增 entry，标注实际读取的核心文件；data/reflections/YYYY-MM-DD.md 有 GPT 读后感；data/results/YYYY-MM-DD.json 有文件读取审计与模型状态。",
-      "status": "deployed"
+      "trigger": "原厂OpenAI付费日课停用；逻辑总控见coordinator配置",
+      "acceptance": "不要求原厂日课；以control回执核对逻辑总控派单，不冒充原厂GPT生成",
+      "status": "disabled_by_owner",
+      "native_generation_enabled": false,
+      "expected_daily_model_delivery": false
     },
     {
       "agent": "doubao",
       "task": "基于六份核心记忆写简明读后感，并产出一份围绕观/行深主题的中文短视频脚本草稿（≤60 秒、9:16）；不得发布。",
       "trigger": "DOUBAO_API_KEY + 定时任务脚本",
       "acceptance": "data/memory/doubao.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感与草稿；results 有完整读取审计。",
-      "status": "deployed"
+      "status": "deployed",
+      "expected_daily_model_delivery": true
     },
     {
       "agent": "grok",
       "task": "基于六份核心记忆写简明读后感，并从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码。",
       "trigger": "XAI_API_KEY + 定时任务脚本",
       "acceptance": "data/memory/grok.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感；results 有完整读取审计。",
-      "status": "deployed"
+      "status": "deployed",
+      "expected_daily_model_delivery": true
     },
     {
       "agent": "claude",
-      "task": "owner决定放弃Claude席位",
-      "trigger": "停用：不调用Anthropic API",
-      "acceptance": "results明确记录disabled_by_owner；保留历史结果",
-      "status": "disabled_by_owner"
+      "task": "Claude外部免费六文件讨论与审稿席，保留署名和来源边界",
+      "trigger": "外部手动回归，不调用Anthropic API，不新增付费定时",
+      "acceptance": "只有实际收到并入库的外部回执才记交付；无交付不标API失败",
+      "status": "external_discussion_only",
+      "native_generation_enabled": false,
+      "expected_daily_model_delivery": false
     },
     {
       "agent": "deepseek",
       "task": "基于六份核心记忆写简明读后感，并比较中华传统文化与项目理念的一项异同，分清出处、观察和推测。",
       "trigger": "DEEPSEEK_API_KEY + 定时任务脚本",
       "acceptance": "data/memory/deepseek.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感与比较；results 有完整读取审计。",
-      "status": "deployed"
+      "status": "deployed",
+      "expected_daily_model_delivery": true
     },
     {
       "agent": "microsoft",
-      "task": "比较西方文化与项目理念的一项异同；署名GPT委托执行，非Copilot产出。",
-      "trigger": "OPENAI_API_KEY；委托GPT执行",
-      "acceptance": "结果agent=microsoft、executed_by=gpt；不得伪称Copilot产出",
-      "status": "delegated",
-      "executed_by": "gpt"
+      "task": "Microsoft额外委托日课按预算决定暂停，保留历史产出",
+      "trigger": "不调用OpenAI或新增国内付费委托",
+      "acceptance": "结果disabled_by_owner，不算失败或缺交",
+      "status": "disabled_by_owner",
+      "expected_daily_model_delivery": false
+    },
+    {
+      "agent": "qianwen",
+      "task": "每日回归运维和独立复核，算力不足可只交零模型检查与阻塞回执",
+      "status": "external_daily_return",
+      "trigger": "既有总控工作流签发每日工单；等待外部千问或授权副总控执行器认领",
+      "acceptance": "任务ID关联真实认领及带证据交付；HTTP心跳不代替千问原生派单",
+      "expected_daily_model_delivery": false,
+      "native_generation_enabled": false
     }
-  ]
+  ],
+  "coordinator": {
+    "logical_role": "gpt",
+    "mode": "domestic_delegated",
+    "workflow": ".github/workflows/autonomous-control.yml",
+    "native_openai_generation": false,
+    "deputy": "qianwen",
+    "deputy_daily_return": "ops/dispatch/DAILY-YYYY-MM-DD-qianwen.md",
+    "paid_calls_added": 0
+  }
 }
