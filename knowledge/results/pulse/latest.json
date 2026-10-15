@@ -5,7 +5,8 @@
     "qianwen-probe-38686572554",
     "qianwen-probe-38687146281",
     "claim-continuity-38687146281",
-    "submit-continuity-38687146281"
+    "submit-continuity-38687146281",
+    "qianwen-probe-38688410217"
   ],
   "manual": {},
   "limits": {
@@ -17,12 +18,7 @@
     "concurrency": 1,
     "investment_hold": false,
     "paused_agents": [
-      "doubao",
-      "deepseek",
-      "kimi",
-      "grok",
-      "qianwen",
-      "wep3"
+      "grok"
     ],
     "all_tasks_independent_review": true
   },
@@ -170,125 +166,147 @@
       "actor": "gpt",
       "reason": "Submit committed operational handover artifact for independent review; do not settle",
       "at": "2026-10-15T05:32:55.520Z"
+    },
+    {
+      "id": "recovered:doubao:1792042675109",
+      "type": "agent_recovered",
+      "agent": "doubao",
+      "at": "2026-10-15T05:37:55.109Z"
+    },
+    {
+      "id": "recovered:deepseek:1792042675109",
+      "type": "agent_recovered",
+      "agent": "deepseek",
+      "at": "2026-10-15T05:37:55.109Z"
+    },
+    {
+      "id": "recovered:kimi:1792042675109",
+      "type": "agent_recovered",
+      "agent": "kimi",
+      "at": "2026-10-15T05:37:55.109Z"
+    },
+    {
+      "id": "offline:grok:1792042675109",
+      "type": "agent_offline",
+      "at": "2026-10-15T05:37:55.109Z",
+      "agent": "grok",
+      "failures": 26
+    },
+    {
+      "id": "recovered:qianwen:1792042675109",
+      "type": "agent_recovered",
+      "agent": "qianwen",
+      "at": "2026-10-15T05:37:55.109Z"
+    },
+    {
+      "id": "recovered:wep3:1792042675109",
+      "type": "agent_recovered",
+      "agent": "wep3",
+      "at": "2026-10-15T05:37:55.109Z"
+    },
+    {
+      "id": "qianwen-probe-38688410217",
+      "type": "controller_probe",
+      "actor": "qianwen",
+      "reason": "Deployment acceptance of deputy operational authority; not a Qianwen model generation",
+      "at": "2026-10-15T05:44:39.761Z"
     }
   ],
   "agents": {
     "doubao": {
       "failures": 0,
-      "successes": 1,
-      "offline": true,
+      "successes": 4,
+      "offline": false,
       "name": "doubao",
       "ok": true,
       "http": 200,
-      "latency_ms": 78,
-      "error": "health_unreachable_or_non_json",
-      "paused": true,
-      "dispatch_allowed": false,
-      "max_concurrency": 0,
+      "latency_ms": 20,
+      "paused": false,
+      "dispatch_allowed": true,
+      "max_concurrency": 1,
       "priority_multiplier": 0.96,
-      "error_kind": "TypeError",
-      "transport_code": "transport_or_non_json",
       "observation": "independent_http",
       "evidence": "http_health_only_not_generation"
     },
     "deepseek": {
       "failures": 0,
-      "successes": 1,
-      "offline": true,
+      "successes": 4,
+      "offline": false,
       "name": "deepseek",
       "ok": true,
       "http": 200,
-      "latency_ms": 79,
-      "error": "health_unreachable_or_non_json",
-      "paused": true,
-      "dispatch_allowed": false,
-      "max_concurrency": 0,
+      "latency_ms": 20,
+      "paused": false,
+      "dispatch_allowed": true,
+      "max_concurrency": 1,
       "priority_multiplier": 1.02,
-      "error_kind": "TypeError",
-      "transport_code": "transport_or_non_json",
       "observation": "independent_http",
       "evidence": "http_health_only_not_generation"
     },
     "kimi": {
       "failures": 0,
-      "successes": 1,
-      "offline": true,
+      "successes": 4,
+      "offline": false,
       "name": "kimi",
       "ok": true,
       "http": 200,
-      "latency_ms": 156,
-      "error": "health_unreachable_or_non_json",
-      "paused": true,
-      "dispatch_allowed": false,
-      "max_concurrency": 0,
+      "latency_ms": 22,
+      "paused": false,
+      "dispatch_allowed": true,
+      "max_concurrency": 1,
       "priority_multiplier": 0.94,
-      "error_kind": "TypeError",
-      "transport_code": "transport_or_non_json",
       "observation": "independent_http",
       "evidence": "http_health_only_not_generation"
     },
     "grok": {
-      "failures": 25,
+      "failures": 28,
       "successes": 0,
       "offline": true,
       "name": "grok",
       "ok": false,
       "http": 404,
-      "latency_ms": 61,
+      "latency_ms": 18,
       "error": "non_json_health_response",
       "paused": true,
       "dispatch_allowed": false,
       "max_concurrency": 0,
       "priority_multiplier": 1,
-      "error_kind": "TypeError",
-      "transport_code": "transport_or_non_json",
       "observation": "independent_http"
     },
     "qianwen": {
       "failures": 0,
-      "successes": 1,
-      "offline": true,
+      "successes": 4,
+      "offline": false,
       "name": "qianwen",
       "ok": true,
       "http": 200,
-      "latency_ms": 56,
-      "error": "health_unreachable_or_non_json",
-      "paused": true,
-      "dispatch_allowed": false,
-      "max_concurrency": 0,
+      "latency_ms": 20,
+      "paused": false,
+      "dispatch_allowed": true,
+      "max_concurrency": 1,
       "priority_multiplier": 1,
-      "error_kind": "TypeError",
-      "transport_code": "transport_or_non_json",
       "observation": "independent_http",
       "evidence": "http_health_only_not_generation"
     },
     "wep3": {
       "failures": 0,
-      "successes": 1,
-      "offline": true,
+      "successes": 4,
+      "offline": false,
       "name": "wep3",
       "ok": true,
       "http": 200,
-      "latency_ms": 113,
-      "error": "health_unreachable_or_non_json",
-      "paused": true,
-      "dispatch_allowed": false,
-      "max_concurrency": 0,
+      "latency_ms": 72,
+      "paused": false,
+      "dispatch_allowed": true,
+      "max_concurrency": 1,
       "priority_multiplier": 1,
-      "error_kind": "TypeError",
-      "transport_code": "transport_or_non_json",
       "observation": "independent_http",
       "evidence": "http_health_only_not_generation"
     }
   },
   "cooldowns": {
     "wallet_unknown": 1792042166324,
-    "offline:doubao": 1792038995128,
-    "offline:deepseek": 1792038995128,
-    "offline:kimi": 1792038995128,
-    "offline:grok": 1792038995128,
-    "offline:qianwen": 1792038995128,
-    "offline:wep3": 1792038995128,
+    "offline:grok": 1792042675109,
     "collector_transport": 1792041866310
   },
   "wallet": {
@@ -304,9 +322,9 @@
     "sudden_drop": false
   },
   "mode": "sympathetic",
-  "active_controller": "unavailable",
-  "ran_at": "2026-10-15T05:32:55.198Z",
-  "version": "0.3.2-daily-autonomy",
+  "active_controller": "gpt",
+  "ran_at": "2026-10-15T05:44:39.946Z",
+  "version": "0.3.4-state-v2",
   "model_calls": 0,
   "financial_execution": false,
   "paid": false,
@@ -675,12 +693,36 @@
         "grok"
       ],
       "alerts": 0
+    },
+    {
+      "at": "2026-10-15T05:37:55.109Z",
+      "mode": "sympathetic",
+      "unhealthy": [
+        "grok"
+      ],
+      "alerts": 6
+    },
+    {
+      "at": "2026-10-15T05:42:55.163Z",
+      "mode": "sympathetic",
+      "unhealthy": [
+        "grok"
+      ],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-15T05:44:39.946Z",
+      "mode": "sympathetic",
+      "unhealthy": [
+        "grok"
+      ],
+      "alerts": 0
     }
   ],
   "collector_health": "observed",
   "incentives": {
-    "at": "2026-10-15T05:32:56.182Z",
-    "source_commit": "a405ddc8b796e25bed41e7f3d21d768a83a75b05",
+    "at": "2026-10-15T05:44:40.513Z",
+    "source_commit": "962e4aba3c790e74a4b0ef0752d4b3b8cb43754f",
     "input_sha256": "84c4b538dc13924818483741017b959065cf7af85d3e0aa0d8681acae98710cf",
     "verification": "recomputed_from_hashed_independent_receipts",
     "profiles": {
@@ -831,10 +873,11 @@
   "daily_dispatch_date": "2026-10-15",
   "last_balance": {
     "units": "315408481",
-    "at": 1792042375198
+    "at": 1792043079946
   },
+  "durable_revision": "pulse-state-v2",
   "stale": false,
-  "alarm_at": 1792042675042,
+  "alarm_at": 1792043379874,
   "controllers": [
     "gpt",
     "qianwen"
