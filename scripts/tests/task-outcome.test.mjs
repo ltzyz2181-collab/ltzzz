@@ -29,3 +29,5 @@ test("owner-disabled seats are not recorded as API failures", () => {
     economic_status: "not_applicable_no_financial_action",
   });
 });
+
+test('external discussion and deputy return are pending external evidence, not failed scheduled APIs',()=>{for(const status of ['external_discussion_only','external_daily_return']){const r=classifyTaskOutcome({status,hasOutput:true});assert.equal(r.execution_status,'not_scheduled_external_seat');assert.equal(r.delivery_status,'not_submitted');assert.equal(r.economic_status,'not_applicable_no_financial_action');}});

@@ -4,7 +4,7 @@ on:
     - cron: '40 3 * * *'
   push:
     branches: [main]
-    paths: ['scripts/defi-autopilot.mjs', '.github/workflows/defi-autopilot.yml']
+    paths: ['scripts/defi-autopilot.mjs', 'scripts/audit-legacy-vault.mjs', 'scripts/lib/legacy-vault-observation.mjs', '.github/workflows/defi-autopilot.yml']
   workflow_dispatch:
 permissions: {contents: write}
 concurrency: {group: ltzzz-defi-autopilot, cancel-in-progress: false}
@@ -18,6 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm install --no-save ethers@6.17.0
+      - run: node --test scripts/tests/legacy-vault-observation.test.mjs
       - name: Observe quarantined legacy Vault (no signing)
         env:
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC }}

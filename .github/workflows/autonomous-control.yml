@@ -4,7 +4,7 @@ on:
     - cron: '20 8 * * *'
   push:
     branches: [main]
-    paths: ['scripts/run-autonomous-control.mjs', '.github/workflows/autonomous-control.yml']
+    paths: ['scripts/run-autonomous-control.mjs', 'scripts/lib/external-return-dispatch.mjs', '.github/workflows/autonomous-control.yml']
   workflow_run:
     workflows: ['Daily DeepSeek Doubao hire and investment data', 'DeFi pilot automated chain data']
     types: [completed]
@@ -21,6 +21,8 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
+      - name: Verify daily policy and external return provenance
+        run: node --test scripts/tests/external-return-dispatch.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/daily-assignment-handover.test.mjs
       - name: Read real receipts and dispatch next daily tasks
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -36,6 +38,10 @@ jobs:
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add knowledge/results/control/ ltzzz-memory/tasks/control/
+          if [ -d knowledge/results/dispatch ]; then git add knowledge/results/dispatch/; fi
+          shopt -s nullglob
+          deputy_files=(ops/dispatch/DAILY-*-qianwen.md)
+          if [ "${#deputy_files[@]}" -gt 0 ]; then git add -- "${deputy_files[@]}"; fi
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'autonomous coordinator daily real receipt review and dispatch'
           git fetch origin main

@@ -6,7 +6,7 @@
  * data/reflections/YYYY-MM-DD.md；执行状态保存至 data/results/YYYY-MM-DD.json。
  * 长期记忆文件只读；模型输出不自动晋升到 ltzzz-memory/。
  *
- * 微软逻辑席由 GPT 委托执行，结果明确标 executed_by；Claude 按 owner 决定停用。
+ * OpenAI与Microsoft付费日课停用；Claude为外部免费讨论席；逻辑总控由国内执行器接续。
  * 用法：node scripts/run-daily-tasks.mjs
  */
 import fs from "node:fs";
@@ -17,6 +17,7 @@ import {dailyAssignment} from "./lib/daily-assignment.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery } from "./delivery-integrity.mjs";
+import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -217,8 +218,7 @@ async function main() {
     }
   }
 
-  for(const agent of ["gpt","microsoft"])tasks.push({agent,status:"disabled_by_owner",output_preview:"OpenAI日常付费调用已停止；使用国内执行席。"});
-  tasks.push({agent:"claude",status:"external_discussion_only",task:"六文件讨论外部席",output_preview:"仅免费外部对话讨论；API付费任务停用，不假设有免费API额度。"});
+  tasks.push(...inactiveDailySeats(taskDefs));
 
   for (const task of tasks) {
     if(assignmentRecords[task.agent])task.assignment=assignmentRecords[task.agent];
