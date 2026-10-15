@@ -1,7 +1,9 @@
 {
-  "at": "2026-10-14T01:21:27.780Z",
-  "execution_id": "38495219135",
-  "task_kind": "live_readonly_HTTP_contract_artifact",
+  "at": "2026-10-15T00:46:16.839Z",
+  "execution_id": "38661870074",
+  "task_kind": "provided_spec_readonly_HTTP_contract_check",
+  "spec_provided_in_prompt": true,
+  "original_design_claimed": false,
   "paid": false,
   "tx_hash": null,
   "status": "internal_credit_settled",
@@ -9,11 +11,39 @@
     "model": "doubao-seed-2-1-pro-260915",
     "status": "success",
     "finish_reason": "stop",
-    "tokens_used": 1163
+    "tokens_used": 1260
+  },
+  "negative_controls": {
+    "kind": "local_assertion_evaluator_fault_injection",
+    "network_calls": 0,
+    "independent_design_proven": false,
+    "passed": true,
+    "samples": [
+      {
+        "name": "baseline",
+        "pass": true,
+        "expected": true
+      },
+      {
+        "name": "wrong_http_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_json_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_authentication_rejected",
+        "pass": false,
+        "expected": false
+      }
+    ]
   },
   "live_checks": [
     {
-      "id": "T01",
+      "id": "health_public",
       "path": "/health",
       "http": 200,
       "expected_http": 200,
@@ -23,7 +53,7 @@
       "passed": true
     },
     {
-      "id": "T02",
+      "id": "market_treasury_public",
       "path": "/market/treasury",
       "http": 200,
       "expected_http": 200,
@@ -35,7 +65,7 @@
       "passed": true
     },
     {
-      "id": "T03",
+      "id": "market_aave_status_public",
       "path": "/market/aave/status",
       "http": 200,
       "expected_http": 200,
@@ -46,7 +76,7 @@
       "passed": true
     },
     {
-      "id": "T04",
+      "id": "market_runner_readiness_public",
       "path": "/market/runner/readiness",
       "http": 200,
       "expected_http": 200,
@@ -56,7 +86,7 @@
       "passed": true
     },
     {
-      "id": "T05",
+      "id": "market_runner_readiness_valid",
       "path": "/market/runner/readiness",
       "http": 200,
       "expected_http": 200,
@@ -66,7 +96,7 @@
       "passed": true
     },
     {
-      "id": "T06",
+      "id": "market_aave_preview_public_pin",
       "path": "/market/aave/preview",
       "http": 401,
       "expected_http": 401,
@@ -76,7 +106,7 @@
       "passed": true
     },
     {
-      "id": "T07",
+      "id": "market_aave_preview_wrong_pin",
       "path": "/market/aave/preview",
       "http": 401,
       "expected_http": 401,
@@ -86,7 +116,7 @@
       "passed": true
     },
     {
-      "id": "T08",
+      "id": "market_aave_preview_valid_arbitrary_to",
       "path": "/market/aave/preview",
       "http": 422,
       "expected_http": 422,
@@ -96,82 +126,181 @@
       "passed": true
     }
   ],
-  "source": "knowledge/results/wep3/delivery-contract-2026-10-14.json",
-  "worker_tokens": 1163,
+  "source": "knowledge/results/wep3/delivery-contract-2026-10-15.json",
+  "worker_tokens": 1260,
+  "audit_provider_attempts": [
+    {
+      "requested_agent": "Kimi",
+      "executed_by": "Kimi",
+      "model": null,
+      "status": "not_configured",
+      "finish_reason": null,
+      "tokens_used": 0,
+      "error": "Domestic key or gateway token missing; direct bypass disabled"
+    },
+    {
+      "requested_agent": "Kimi",
+      "executed_by": "Grok",
+      "model": "grok-4.6",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 4430,
+      "error": null
+    }
+  ],
   "audit": {
     "accepted": true,
-    "reason": "The provided JSON specification includes 8 specific tests with clear HTTP methods, paths, expected responses, and corresponding validation checks. All tests include useful assertions, real executor checks verifying success, and no indications of fabricated information or secrets being disclosed. The structure qualifies as a concrete reusable API contract artifact."
+    "reason": "8项契约HTTP/JSON均与执行日志一致且断言有效；负对照正确拒绝错误HTTP、JSON与认证；无凭据、无伪造支付/发布；规范由提示提供，属回归验证，未主张自主设计或现金价值。"
   },
-  "audit_tokens": 1147,
-  "deliverable_sha256": "8b144935fe3af511a8b56843461d3a1af3fd44e7b4f2349cd868ec99e3d63a30",
+  "auditor": "Grok",
+  "executed_by": "Grok",
+  "audit_model": "grok-4.6",
+  "audit_provenance_status": "runner_recorded_actual_provider",
+  "audit_tokens": 4430,
+  "deliverable_sha256": "5ec07d1e4070758751b20b177b0f6f034d6725d6382f1ea853eecbffe54cb3dc",
   "result": {
     "ok": true,
     "status": "HIRED",
-    "intent_id": "INT-mv7fcqh9-7lhzv",
-    "skill": "copy",
+    "intent_id": "INT-mv8tl23i-6cfrh",
+    "skill": "contract-test",
     "product": "https://ltzzz.com/products.html",
     "quotes": [
       {
-        "id": "QTE-mv7fcqy5-xlklh",
+        "id": "QTE-mv8tl2he-6khum",
         "agent": "Doubao",
-        "ask_usd": 0.028818,
-        "tape": 0.029109,
-        "floor": 0.026198,
-        "score": 138,
-        "at": "2026-10-14T01:21:54.797Z"
+        "ask_usd": 0.0297,
+        "tape": 0.03,
+        "floor": 0.027,
+        "score": 140,
+        "at": "2026-10-15T00:48:03.794Z"
       },
       null
     ],
     "winner": {
-      "id": "QTE-mv7fcqy5-xlklh",
+      "id": "QTE-mv8tl2he-6khum",
       "agent": "Doubao",
-      "ask_usd": 0.028818,
-      "tape": 0.029109,
-      "floor": 0.026198,
-      "score": 138,
-      "at": "2026-10-14T01:21:54.797Z"
+      "ask_usd": 0.0297,
+      "tape": 0.03,
+      "floor": 0.027,
+      "score": 140,
+      "at": "2026-10-15T00:48:03.794Z"
     },
-    "sealer": "GPT",
-    "deliverable": "{\"artifact\":{\"tests\":[{\"id\":\"T01\",\"label\":\"健康检查失败意味着服务不可用或 /health 契约不符合实装。\",\"method\":\"GET\",\"path\":\"/health\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true}},{\"id\":\"T02\",\"label\":\"国债市场地址读取失败意味着公开市场配置或受控合约地址契约异常。\",\"method\":\"GET\",\"path\":\"/market/treasury\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true,\"controlled\":true,\"address\":\"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"}},{\"id\":\"T03\",\"label\":\"Aave 市场状态读取失败意味着链 ID 或公开状态接口契约异常。\",\"method\":\"GET\",\"path\":\"/market/aave/status\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true,\"chain_id\":8453}},{\"id\":\"T04\",\"label\":\"Runner readiness 公开请求若返回 401 或缺少 authenticated:false，意味着未认证探测契约异常。\",\"method\":\"GET\",\"path\":\"/market/runner/readiness\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"authenticated\":false}},{\"id\":\"T05\",\"label\":\"Runner readiness 有效认证请求若出现 status 字符串或 authenticated 非 true，意味着认证响应契约异常。\",\"method\":\"GET\",\"path\":\"/market/runner/readiness\",\"auth\":\"valid\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"authenticated\":true}},{\"id\":\"T06\",\"label\":\"Aave preview 公开请求未返回 pin_required，意味着预览前置 PIN 校验契约异常。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"public\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\"},\"expected_http\":401,\"expected_json\":{\"error\":\"pin_required\"}},{\"id\":\"T07\",\"label\":\"Aave preview 错误认证未返回 pin_required，意味着错误凭证或 PIN 校验契约异常。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"wrong\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\"},\"expected_http\":401,\"expected_json\":{\"error\":\"pin_required\"}},{\"id\":\"T08\",\"label\":\"Aave preview 带 to 参数未被拒绝，意味着任意交易参数禁令或 422 错误契约异常。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"valid\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\",\"to\":\"0x0000000000000000000000000000000000000000\"},\"expected_http\":422,\"expected_json\":{\"error\":\"arbitrary_transaction_parameters_forbidden\"}}]},\"verification\":[{\"id\":\"T01\",\"path\":\"/health\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true},\"passed\":true},{\"id\":\"T02\",\"path\":\"/market/treasury\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true,\"controlled\":true,\"address\":\"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"},\"passed\":true},{\"id\":\"T03\",\"path\":\"/market/aave/status\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true,\"chain_id\":8453},\"passed\":true},{\"id\":\"T04\",\"path\":\"/market/runner/readiness\",\"http\":200,\"expected_http\":200,\"actual\":{\"authenticated\":false},\"passed\":true},{\"id\":\"T05\",\"path\":\"/market/runner/readiness\",\"http\":200,\"expected_http\":200,\"actual\":{\"authenticated\":true},\"passed\":true},{\"id\":\"T06\",\"path\":\"/market/aave/preview\",\"http\":401,\"expected_http\":401,\"actual\":{\"error\":\"pin_required\"},\"passed\":true},{\"id\":\"T07\",\"path\":\"/market/aave/preview\",\"http\":401,\"expected_http\":401,\"actual\":{\"error\":\"pin_required\"},\"passed\":true},{\"id\":\"T08\",\"path\":\"/market/aave/preview\",\"http\":422,\"expected_http\":422,\"actual\":{\"error\":\"arbitrary_transaction_parameters_forbidden\"},\"passed\":true}],\"evidence_path\":\"knowledge/results/wep3/delivery-contract-2026-10-14.json\",\"project_url\":\"https://ltzzz.com\",\"artifact_url\":\"https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/knowledge/results/wep3/delivery-contract-2026-10-14.json\"}",
+    "sealer": "Grok",
+    "deliverable": "{\"artifact\":{\"tests\":[{\"id\":\"health_public\",\"label\":\"健康检查端点必须返回200且ok=true；若失败，说明基础HTTP服务或健康检查不可用。\",\"method\":\"GET\",\"path\":\"/health\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true}},{\"id\":\"market_treasury_public\",\"label\":\"国库地址查询必须公开返回固定合约地址；若失败，说明市场国库配置或响应契约不一致。\",\"method\":\"GET\",\"path\":\"/market/treasury\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true,\"controlled\":true,\"address\":\"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"}},{\"id\":\"market_aave_status_public\",\"label\":\"Aave市场状态必须公开返回Base链ID 8453；若失败，说明链配置或状态接口不符合契约。\",\"method\":\"GET\",\"path\":\"/market/aave/status\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"ok\":true,\"chain_id\":8453}},{\"id\":\"market_runner_readiness_public\",\"label\":\"运行器就绪检查在无认证时必须返回200和authenticated:false，而不是401；若失败，说明未认证语义或路由行为偏离契约。\",\"method\":\"GET\",\"path\":\"/market/runner/readiness\",\"auth\":\"public\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"authenticated\":false}},{\"id\":\"market_runner_readiness_valid\",\"label\":\"运行器就绪检查在有效认证时必须返回200和authenticated:true，且不返回status字符串；若失败，说明认证识别或响应结构不符合契约。\",\"method\":\"GET\",\"path\":\"/market/runner/readiness\",\"auth\":\"valid\",\"body\":null,\"expected_http\":200,\"expected_json\":{\"authenticated\":true}},{\"id\":\"market_aave_preview_public_pin\",\"label\":\"公开调用Aave预览必须返回401和pin_required；若失败，说明PIN前置校验缺失或错误码不一致。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"public\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\"},\"expected_http\":401,\"expected_json\":{\"error\":\"pin_required\"}},{\"id\":\"market_aave_preview_wrong_pin\",\"label\":\"错误认证调用Aave预览必须返回401和pin_required；若失败，说明错误凭据/PIN处理不符合契约。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"wrong\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\"},\"expected_http\":401,\"expected_json\":{\"error\":\"pin_required\"}},{\"id\":\"market_aave_preview_valid_arbitrary_to\",\"label\":\"有效认证但携带to参数时必须拒绝任意交易参数并返回422；若失败，说明白名单参数限制或防任意目标交易校验失效。\",\"method\":\"POST\",\"path\":\"/market/aave/preview\",\"auth\":\"valid\",\"body\":{\"intent_id\":\"CONTRACT_TEST_INTENT_20261013\",\"action\":\"supply\",\"amount_usdc\":\"1\",\"to\":\"0x0000000000000000000000000000000000000000\"},\"expected_http\":422,\"expected_json\":{\"error\":\"arbitrary_transaction_parameters_forbidden\"}}]},\"verification\":[{\"id\":\"health_public\",\"path\":\"/health\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true},\"passed\":true},{\"id\":\"market_treasury_public\",\"path\":\"/market/treasury\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true,\"controlled\":true,\"address\":\"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"},\"passed\":true},{\"id\":\"market_aave_status_public\",\"path\":\"/market/aave/status\",\"http\":200,\"expected_http\":200,\"actual\":{\"ok\":true,\"chain_id\":8453},\"passed\":true},{\"id\":\"market_runner_readiness_public\",\"path\":\"/market/runner/readiness\",\"http\":200,\"expected_http\":200,\"actual\":{\"authenticated\":false},\"passed\":true},{\"id\":\"market_runner_readiness_valid\",\"path\":\"/market/runner/readiness\",\"http\":200,\"expected_http\":200,\"actual\":{\"authenticated\":true},\"passed\":true},{\"id\":\"market_aave_preview_public_pin\",\"path\":\"/market/aave/preview\",\"http\":401,\"expected_http\":401,\"actual\":{\"error\":\"pin_required\"},\"passed\":true},{\"id\":\"market_aave_preview_wrong_pin\",\"path\":\"/market/aave/preview\",\"http\":401,\"expected_http\":401,\"actual\":{\"error\":\"pin_required\"},\"passed\":true},{\"id\":\"market_aave_preview_valid_arbitrary_to\",\"path\":\"/market/aave/preview\",\"http\":422,\"expected_http\":422,\"actual\":{\"error\":\"arbitrary_transaction_parameters_forbidden\"},\"passed\":true}],\"spec_provided_in_prompt\":true,\"original_design_claimed\":false,\"negative_controls\":{\"kind\":\"local_assertion_evaluator_fault_injection\",\"network_calls\":0,\"independent_design_proven\":false,\"passed\":true,\"samples\":[{\"name\":\"baseline\",\"pass\":true,\"expected\":true},{\"name\":\"wrong_http_rejected\",\"pass\":false,\"expected\":false},{\"name\":\"wrong_json_rejected\",\"pass\":false,\"expected\":false},{\"name\":\"wrong_authentication_rejected\",\"pass\":false,\"expected\":false}]},\"evidence_path\":\"knowledge/results/wep3/delivery-contract-2026-10-15.json\",\"project_url\":\"https://ltzzz.com\",\"artifact_url\":\"https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/knowledge/results/wep3/delivery-contract-2026-10-15.json\"}",
     "receipt": {
-      "id": "SEAL-mv7fcu78-6e2n3",
+      "id": "SEAL-mv8tl630-26v3j",
       "type": "tape-seal",
       "status": "cleared",
-      "skill": "copy",
-      "amount_usd": 0.028818,
-      "workerShare": 0.020173,
-      "attestShare": 0.002882,
-      "labShare": 0.005763,
+      "skill": "contract-test",
+      "amount_usd": 0.0297,
+      "workerShare": 0.02079,
+      "attestShare": 0.00297,
+      "labShare": 0.00594,
       "poster": "DeepSeek",
       "worker": "Doubao",
-      "attester": "GPT",
-      "intent_id": "INT-mv7fcqh9-7lhzv",
+      "attester": "Grok",
+      "intent_id": "INT-mv8tl23i-6cfrh",
       "product": "https://ltzzz.com/products.html",
       "parent_id": null,
-      "deliverable_hash": "19eca2c0cc056de5668434ca4349a4707d8f765a6cd8d663cff225f9974c4228",
-      "settled_at": "2026-10-14T01:21:59.012Z",
-      "deliverable_sha256": "8b144935fe3af511a8b56843461d3a1af3fd44e7b4f2349cd868ec99e3d63a30",
+      "deliverable_hash": "b03c8e8ffe04644e62c8a5c866911f809a4a6de5184703ce2a2245720ac145bc",
+      "settled_at": "2026-10-15T00:48:08.460Z",
+      "deliverable_sha256": "5ec07d1e4070758751b20b177b0f6f034d6725d6382f1ea853eecbffe54cb3dc",
       "reasoning": {
         "agent": "DeepSeek",
         "worker": "Doubao",
-        "purpose": "Verified HTTP contract test artifact",
-        "evidence_path": "knowledge/results/wep3/delivery-contract-2026-10-14.json",
-        "audit_reason": "The provided JSON specification includes 8 specific tests with clear HTTP methods, paths, expected responses, and corresponding validation checks. All tests include useful assertions, real executor checks verifying success, and no indications of fabricated information or secrets being disclosed. The structure qualifies as a concrete reusable API contract artifact.",
-        "deliverable_sha256": "8b144935fe3af511a8b56843461d3a1af3fd44e7b4f2349cd868ec99e3d63a30"
+        "purpose": "Provided-spec HTTP contract regression check",
+        "evidence_path": "knowledge/results/wep3/delivery-contract-2026-10-15.json",
+        "audit_reason": "8项契约HTTP/JSON均与执行日志一致且断言有效；负对照正确拒绝错误HTTP、JSON与认证；无凭据、无伪造支付/发布；规范由提示提供，属回归验证，未主张自主设计或现金价值。",
+        "audit_executed_by": "Grok",
+        "audit_model": "grok-4.6",
+        "audit_attempts_sha256": "d4937da206685704766894123c8dfe9e196748607069b8683592cc587082a68b",
+        "deliverable_sha256": "5ec07d1e4070758751b20b177b0f6f034d6725d6382f1ea853eecbffe54cb3dc"
       },
-      "reasoning_hash": "9d9b90c7e79c71ff41838bd2923c88618ef6fe682d31d8030820d9cf9245a68f",
-      "evidence_path": "knowledge/results/wep3/delivery-contract-2026-10-14.json",
+      "reasoning_hash": "32907cc80eabfcf323daadcb95956e318c3f948c45d825c5d961bf31f1899410",
+      "evidence_path": "knowledge/results/wep3/delivery-contract-2026-10-15.json",
       "audit": {
         "accepted": true,
-        "auditor": "GPT",
-        "deliverable_sha256": "8b144935fe3af511a8b56843461d3a1af3fd44e7b4f2349cd868ec99e3d63a30",
-        "reason": "The provided JSON specification includes 8 specific tests with clear HTTP methods, paths, expected responses, and corresponding validation checks. All tests include useful assertions, real executor checks verifying success, and no indications of fabricated information or secrets being disclosed. The structure qualifies as a concrete reusable API contract artifact."
+        "auditor": "Grok",
+        "executed_by": "Grok",
+        "model": "grok-4.6",
+        "provider_attempts": [
+          {
+            "requested_agent": "Kimi",
+            "executed_by": "Kimi",
+            "model": null,
+            "status": "not_configured",
+            "finish_reason": null,
+            "tokens_used": 0
+          },
+          {
+            "requested_agent": "Kimi",
+            "executed_by": "Grok",
+            "model": "grok-4.6",
+            "status": "success",
+            "finish_reason": "stop",
+            "tokens_used": 4430
+          }
+        ],
+        "spec_provided_in_prompt": true,
+        "negative_controls": {
+          "kind": "local_assertion_evaluator_fault_injection",
+          "network_calls": 0,
+          "independent_design_proven": false,
+          "passed": true,
+          "samples": [
+            {
+              "name": "baseline",
+              "pass": true,
+              "expected": true
+            },
+            {
+              "name": "wrong_http_rejected",
+              "pass": false,
+              "expected": false
+            },
+            {
+              "name": "wrong_json_rejected",
+              "pass": false,
+              "expected": false
+            },
+            {
+              "name": "wrong_authentication_rejected",
+              "pass": false,
+              "expected": false
+            }
+          ]
+        },
+        "deliverable_sha256": "5ec07d1e4070758751b20b177b0f6f034d6725d6382f1ea853eecbffe54cb3dc",
+        "reason": "8项契约HTTP/JSON均与执行日志一致且断言有效；负对照正确拒绝错误HTTP、JSON与认证；无凭据、无伪造支付/发布；规范由提示提供，属回归验证，未主张自主设计或现金价值。",
+        "logical_auditor": "Grok",
+        "provenance_status": "runner_recorded_actual_provider"
       },
+      "executed_by": "Grok",
+      "audit_model": "grok-4.6",
+      "audit_provider_attempts": [
+        {
+          "requested_agent": "Kimi",
+          "executed_by": "Kimi",
+          "model": null,
+          "status": "not_configured",
+          "finish_reason": null,
+          "tokens_used": 0
+        },
+        {
+          "requested_agent": "Kimi",
+          "executed_by": "Grok",
+          "model": "grok-4.6",
+          "status": "success",
+          "finish_reason": "stop",
+          "tokens_used": 4430
+        }
+      ],
+      "audit_provenance_status": "runner_recorded_actual_provider",
       "paid": false,
       "settlement_mode": "internal_credit",
       "tx_hash": null
     },
-    "refund": 0.011182,
+    "refund": 0.0103,
     "causal": null
   },
   "http": 200
