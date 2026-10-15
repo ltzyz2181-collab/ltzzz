@@ -17,13 +17,18 @@ test('order claims are exclusive and retry cap stops repeated API cost',async()=
 
 test('x402 arbitrary hash cannot create revenue; simulation requires admin and never joins live queue',async()=>{const f=fixture();let c=await send(f.market,'/market/x402/challenge',{skill:'audit',brief:'A complete audit test brief'});const id=c.body.challenge_id;assert.equal((await send(f.market,'/market/x402/verify',{challenge_id:id,proof:'0x'+'a'.repeat(64)})).status,410);assert.equal((await send(f.market,'/market/x402/verify',{challenge_id:id,proof:'sim_test_123456'})).status,401);let sim=await send(f.market,'/market/x402/verify',{challenge_id:id,proof:'sim_test_123456'},{'X-Lab-Pin':'pin'});assert.equal(sim.status,200);assert.equal(sim.body.live,false);assert.equal((await f.market.read()).live_revenue_cents,0);assert.equal((await f.market.read()).pool_reserved_cents,0);});
 
-test('Aave orphan is a structured 422, authenticated dry-run preserves storage and never resets pointer',async()=>{
+test('Aave orphan: execute stays structured 422; auto clears stale pointer and resumes',async()=>{
  const f=fixture(),b=await f.market.read();b.aave={active_intent:'DOUBAO-AAVE-FIRST-38380985712',intents:{}};await f.storage.put('book',b);
  for(const path of ['/market/aave/auto','/market/aave/auto-preview','/market/aave/execute']){
   assert.equal((await send(f.market,path,{})).status,401);
-  const r=await send(f.market,path,{},{'X-Lab-Pin':'pin'});assert.equal(r.status,422);assert.equal(r.body.error,'orphaned_active_intent_requires_reconciliation');assert.equal(r.body.signed,false);
-  assert.deepEqual(await f.market.read(),b);
  }
+ const ex=await send(f.market,'/market/aave/execute',{},{'X-Lab-Pin':'pin'});assert.equal(ex.status,422);assert.equal(ex.body.error,'orphaned_active_intent_requires_reconciliation');assert.equal(ex.body.signed,false);
+ const auto=await send(f.market,'/market/aave/auto',{},{'X-Lab-Pin':'pin'});assert.equal(auto.status,200);assert.equal(auto.body.status,'cleared_stale_active_intent');assert.equal(auto.body.cleared_intent,'DOUBAO-AAVE-FIRST-38380985712');
+ const after=await f.market.read();assert.equal(after.aave.active_intent,null);assert.deepEqual(after.aave.intents,{});
+ const pre=await send(f.market,'/market/aave/auto-preview',{},{'X-Lab-Pin':'pin'});assert.equal(pre.body.error,'treasury_missing');
+});
+test('Aave orphan diagnostics stay structured 200 diagnostic without mutation',async()=>{
+ const f=fixture(),b=await f.market.read();b.aave={active_intent:'DOUBAO-AAVE-FIRST-38380985712',intents:{}};await f.storage.put('book',b);
  assert.equal((await send(f.market,'/market/aave/diagnostics')).status,401);
  const diagnostic=await send(f.market,'/market/aave/diagnostics',undefined,{'X-Lab-Pin':'pin'});assert.equal(diagnostic.status,200);assert.equal(diagnostic.body.aave_runtime_revision,'aave-guard-v4');assert.equal(diagnostic.body.balances,undefined);assert.equal(diagnostic.body.storage.error,'orphaned_active_intent_requires_reconciliation');assert.equal(diagnostic.body.signed,false);
 });
