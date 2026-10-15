@@ -1,0 +1,11 @@
+name = "ltzzz-pulse"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+# A Durable Object alarm avoids the account's already-full Cron Trigger quota.
+[[durable_objects.bindings]]
+name = "PULSE"
+class_name = "PulseState"
+[[migrations]]
+tag = "pulse-v1"
+new_sqlite_classes = ["PulseState"]

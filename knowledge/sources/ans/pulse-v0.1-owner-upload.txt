@@ -1,0 +1,335 @@
+# LTZZZ System Pulse · v0.1
+# 只保留 3 项检查。其他一律不做。
+version: "0.1"
+interval_minutes: 5
+
+checks:
+  - name: agent_heartbeat
+    description: "检查各 Agent 心跳接口是否存活"
+    targets:
+      - name: doubao
+        url: "https://api-doubao.ltzzz.com/health"
+      - name: kimi
+        url: "https://api-kimi.ltzzz.com/health"
+      - name: grok
+        url: "https://api-grok.ltzzz.com/health"
+    timeout_sec: 10
+    alert_if_consecutive_fail: 3
+
+  - name: wallet_balance
+    description: "检查 agent 钱包余额"
+    address: "0x21F5...7fdc"
+    chain: "base"
+    asset: "USDC"
+    alert_if_below: 10
+    # 注：如果钱包地址变了，改这里。不要写私钥。
+
+  - name: task_failure_rate
+    description: "检查最近 10 条任务失败率"
+    source: "ltzzz-memory/results/latest-10.json"
+    alert_if_ratio_above: 0.5
+    min_samples: 5
+
+alerts:
+  telegram:
+    enabled: false
+    chat_id: ""
+    # bot_token 走 Cloudflare Secret，不写这里
+  fallback:
+    write_to: "ltzzz-memory/pulse/events.jsonl"
+# LTZZZ System Pulse · v0.1
+# 只保留 3 项检查。其他一律不做。
+version: "0.1"
+interval_minutes: 5
+
+checks:
+  - name: agent_heartbeat
+    description: "检查各 Agent 心跳接口是否存活"
+    targets:
+      - name: doubao
+        url: "https://api-doubao.ltzzz.com/health"
+      - name: kimi
+        url: "https://api-kimi.ltzzz.com/health"
+      - name: grok
+        url: "https://api-grok.ltzzz.com/health"
+    timeout_sec: 10
+    alert_if_consecutive_fail: 3
+
+  - name: wallet_balance
+    description: "检查 agent 钱包余额"
+    address: "0x21F5...7fdc"
+    chain: "base"
+    asset: "USDC"
+    alert_if_below: 10
+    # 注：如果钱包地址变了，改这里。不要写私钥。
+
+  - name: task_failure_rate
+    description: "检查最近 10 条任务失败率"
+    source: "ltzzz-memory/results/latest-10.json"
+    alert_if_ratio_above: 0.5
+    min_samples: 5
+
+alerts:
+  telegram:
+    enabled: false
+    chat_id: ""
+    # bot_token 走 Cloudflare Secret，不写这里
+  fallback:
+    write_to: "ltzzz-memory/pulse/events.jsonl"
+// LTZZZ System Pulse · v0.1
+// 只读、只统计、只记录。不写业务数据，不调 LLM。
+
+const YAML_URL = "https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/pulse.yaml";
+
+export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runPulse(env));
+  },
+  async fetch(request, env) {
+    if (request.method === "GET" && new URL(request.url).pathname === "/run") {
+      const result = await runPulse(env);
+      return Response.json(result);
+    }
+    return new Response("LTZZZ System Pulse v0.1 — alive", { status: 200 });
+  },
+};
+
+async function runPulse(env) {
+  const config = await loadConfig();
+  const results = {
+    ran_at: new Date().toISOString(),
+    checks: [],
+    alerts: [],
+  };
+
+  for (const check of config.checks) {
+    try {
+      const r = await runCheck(check, env);
+      results.checks.push(r);
+      if (r.alert) results.alerts.push(r);
+    } catch (e) {
+      results.checks.push({
+        name: check.name,
+        status: "error",
+        error: e.message,
+      });
+    }
+  }
+
+  await writeResults(env, results);
+  if (results.alerts.length > 0) {
+    await sendAlerts(env, config, results.alerts);
+  }
+  return results;
+}
+
+async function loadConfig() {
+  const res = await fetch(YAML_URL);
+  const text = await res.text();
+  return parseSimpleYaml(text);
+}
+
+// 极简 YAML 解析（只支持本文件用到的结构）
+function parseSimpleYaml(text) {
+  // 这里为可读性，实际部署建议用 js-yaml。
+  // 下面是占位实现，Claude 审稿时请重点看这里要不要换库。
+  return JSON.parse(process.env.PULSE_CONFIG_JSON || "{}");
+}
+
+async function runCheck(check, env) {
+  if (check.name === "agent_heartbeat") {
+    return await checkHeartbeat(check);
+  }
+  if (check.name === "wallet_balance") {
+    return await checkWallet(check, env);
+  }
+  if (check.name === "task_failure_rate") {
+    return await checkFailureRate(check);
+  }
+  return { name: check.name, status: "unknown" };
+}
+
+async function checkHeartbeat(check) {
+  const results = [];
+  for (const t of check.targets) {
+    const start = Date.now();
+    let ok = false;
+    try {
+      const res = await fetch(t.url, {
+        signal: AbortSignal.timeout(check.timeout_sec * 1000),
+      });
+      ok = res.ok;
+    } catch (e) {
+      ok = false;
+    }
+    results.push({ name: t.name, ok, latency_ms: Date.now() - start });
+  }
+  const allDown = results.every((r) => !r.ok);
+  return {
+    name: check.name,
+    status: allDown ? "fail" : "ok",
+    detail: results,
+    alert: allDown,
+  };
+}
+
+async function checkWallet(check, env) {
+  // 用 Basescan API 查余额，key 走 Secret
+  const apiKey = env.BASESCAN_API_KEY;
+  if (!apiKey) {
+    return { name: check.name, status: "skip", reason: "no_basescan_key" };
+  }
+  const url = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${check.asset === "USDC" ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" : ""}&address=${check.address}&tag=latest&apikey=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const balance = Number(data.result) / 1e6;
+  return {
+    name: check.name,
+    status: balance < check.alert_if_below ? "fail" : "ok",
+    balance,
+    threshold: check.alert_if_below,
+    alert: balance < check.alert_if_below,
+  };
+}
+
+async function checkFailureRate(check) {
+  // 从 GitHub raw 读最近结果
+  const url = `https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/${check.source}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : data.items || [];
+    if (items.length < check.min_samples) {
+      return { name: check.name, status: "skip", reason: "not_enough_samples" };
+    }
+    const failed = items.filter((i) => i.status === "fail" || i.status === "failed").length;
+    const ratio = failed / items.length;
+    return {
+      name: check.name,
+      status: ratio > check.alert_if_ratio_above ? "fail" : "ok",
+      ratio,
+      threshold: check.alert_if_ratio_above,
+      samples: items.length,
+      alert: ratio > check.alert_if_ratio_above,
+    };
+  } catch (e) {
+    return { name: check.name, status: "error", error: e.message };
+  }
+}
+
+async function writeResults(env, results) {
+  // 写进 Cloudflare R2 或 KV
+  if (env.PULSE_KV) {
+    const date = results.ran_at.slice(0, 10);
+    const key = `pulse/${date}/${results.ran_at}.json`;
+    await env.PULSE_KV.put(key, JSON.stringify(results));
+  }
+  // 同时写一份到 events.jsonl（如果 R2 有绑）
+  if (env.PULSE_R2) {
+    const line = JSON.stringify(results) + "\n";
+    const key = `pulse/events.jsonl`;
+    const existing = await env.PULSE_R2.get(key);
+    const prev = existing ? await existing.text() : "";
+    await env.PULSE_R2.put(key, prev + line);
+  }
+}
+
+async function sendAlerts(env, config, alerts) {
+  const tg = config.alerts?.telegram;
+  if (tg?.enabled && env.TELEGRAM_BOT_TOKEN && tg.chat_id) {
+    const text = "🚨 LTZZZ Pulse Alert\n\n" + alerts
+      .map((a) => `• ${a.name}: ${JSON.stringify(a).slice(0, 200)}`)
+      .join("\n");
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: tg.chat_id, text }),
+    });
+  }
+}
+name = "ltzzz-pulse"
+main = "index.js"
+compatibility_date = "2024-09-01"
+
+[triggers]
+crons = ["*/5 * * * *"]  # 每 5 分钟
+
+[[kv_namespaces]]
+binding = "PULSE_KV"
+id = "填你的 KV namespace id"
+
+# 如果需要 R2
+# [[r2_buckets]]
+# binding = "PULSE_R2"
+# bucket_name = "ltzzz-memory"
+
+# Secrets（不要写值，用 wrangler secret put）：
+# BASESCAN_API_KEY
+# TELEGRAM_BOT_TOKEN
+# 1. 建 Worker 目录
+mkdir -p workers/pulse-worker
+cd workers/pulse-worker
+
+# 2. 创建 KV namespace（只做一次）
+npx wrangler kv:namespace create PULSE_KV
+# 把返回的 id 填进 wrangler.toml
+
+# 3. 配 Secret（不要把值贴到任何对话里）
+npx wrangler secret put BASESCAN_API_KEY
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+
+# 4. 部署
+npx wrangler deploy
+
+# 5. 验证
+curl https://ltzzz-pulse.<你的子域>.workers.dev/run# 1. 建 Worker 目录
+mkdir -p workers/pulse-worker
+cd workers/pulse-worker
+
+# 2. 创建 KV namespace（只做一次）
+npx wrangler kv:namespace create PULSE_KV
+# 把返回的 id 填进 wrangler.toml
+
+# 3. 配 Secret（不要把值贴到任何对话里）
+npx wrangler secret put BASESCAN_API_KEY
+npx wrangler secret put TELEGRAM_BOT_TOKEN
+
+# 4. 部署
+npx wrangler deploy
+
+# 5. 验证
+curl https://ltzzz-pulse.<你的子域>.workers.dev/run
+{
+  "ran_at": "2026-10-14T10:00:00Z",
+  "checks": [
+    { "name": "agent_heartbeat", "status": "ok", "detail": [...] },
+    { "name": "wallet_balance", "status": "ok", "balance": 49.0 },
+    { "name": "task_failure_rate", "status": "skip", "reason": "not_enough_samples" }
+  ],
+  "alerts": []
+}
+如果三项都是 ok 或 skip，就算通过。
+如果有 alert，会同时推 Telegram。
+
+七、给 Claude 审稿的三个问题
+请 Claude 重点看这三点：
+
+parseSimpleYaml 的占位实现（用了 process.env.PULSE_CONFIG_JSON）——这是我在 Worker 里偷懒的写法，实际应该用 js-yaml。请 Claude 判断：
+
+A：换成 js-yaml 直接解析
+
+B：把 YAML 改成 JSON，省掉解析库
+
+C：其他更轻的方案
+
+checkWallet 里 USDC 合约地址是 Base 主网的 0x833589...。请 Claude 核对：
+
+这个地址是不是 Base 主网官方 USDC？
+
+Basescan API 是否免费可用？
+
+告警逻辑是否太激进：
+
+心跳连续失败 3 次就报警，会不会误报？
+
+钱包余额低于 10 USDC 就报警，这个阈值合理吗？
