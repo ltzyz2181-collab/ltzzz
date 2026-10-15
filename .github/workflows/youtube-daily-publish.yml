@@ -1,11 +1,11 @@
-name: Daily YouTube render upload and public verification
+name: Daily YouTube prepared video or render with public verification
 on:
   workflow_dispatch:
   schedule:
     - cron: '17 15 * * *'
   push:
     branches: [main]
-    paths: ['.github/workflows/youtube-daily-publish.yml','tools/render_youtube_daily.py','scripts/publish-youtube-daily.mjs']
+    paths: ['.github/workflows/youtube-daily-publish.yml','tools/render_youtube_daily.py','scripts/publish-youtube-daily.mjs','scripts/lib/video-queue-client.mjs','scripts/prepare-ready-youtube-video.mjs']
 permissions: {contents: write}
 concurrency: {group: ltzzz-youtube-publish, cancel-in-progress: false}
 jobs:
@@ -18,21 +18,22 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - name: Deploy uploader retaining existing OAuth and secrets
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 deploy -c wrangler.youtube-upload.toml
+      - name: Test publication and queue safety
+        run: node --test scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs
       - name: Prepare video tools
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core
           python -m pip install Pillow
-      - name: Render narrated 30 second video from real evidence
+      - name: Prefer existing prepared video
+        id: prepared
+        run: node scripts/prepare-ready-youtube-video.mjs
+      - name: Render only when no prepared video exists
+        if: steps.prepared.outputs.ready != 'true'
         run: python tools/render_youtube_daily.py
         env:
           VIDEO_DATE: ''
-      - name: Upload once and verify actual public state
+      - name: Resume shared queue and verify actual public state
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: node scripts/publish-youtube-daily.mjs
