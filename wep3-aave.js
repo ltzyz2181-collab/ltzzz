@@ -1,5 +1,5 @@
 import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
-export const AAVE_RUNTIME_REVISION='aave-guard-v4';
+export const AAVE_RUNTIME_REVISION='aave-guard-v5';
 export const AAVE={chain_id:8453,pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',ausdc:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'};
 const ERC=['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function decimals() view returns(uint8)'];
 const AT=['function balanceOf(address) view returns(uint256)','function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)'];
@@ -34,6 +34,9 @@ export function buildAavePlan(input,ctx){
  return {amount_raw:amount.toString(),steps:[{kind:'withdraw',to:AAVE.pool,data:pool.encodeFunctionData('withdraw',[AAVE.usdc,amount,address])}]};
 }
 export async function nativeRpcFetch(req){const response=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body,signal:AbortSignal.timeout(12000)});return {statusCode:response.status,statusMessage:response.statusText,headers:Object.fromEntries(response.headers),body:new Uint8Array(await response.arrayBuffer())};}
+// Ethers defaults to 12 HTTP-429 retries per request, exhausting the Worker
+// subrequest budget before fallback. A single HTTP attempt belongs to each RPC.
+function aaveRpcRequest(url){const req=new FetchRequest(url);req.timeout=12000;req.setThrottleParams({maxAttempts:1});req.getUrlFunc=nativeRpcFetch;return req;}
 // Official RPC first; retry the complete read, not just eth_chainId.
 export const AAVE_RPC_URLS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com'];
 export async function withAaveReadProvider(read,makeProvider){
@@ -42,7 +45,7 @@ export async function withAaveReadProvider(read,makeProvider){
   let p;
   try{
    if(makeProvider)p=makeProvider(url);
-   else{const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});}
+   else{const req=aaveRpcRequest(url);p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});}
    if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');
    return {value:await read(p),rpc_url:url,rpc_attempts:[...attempts,{url,ok:true}]};
   }catch(e){attempts.push({url,ok:false,code:typeof e.code==='string'?e.code.slice(0,40):null,detail:String(e.shortMessage||e.message||'read_failed').slice(0,160)});}
@@ -55,7 +58,7 @@ export async function broadcastAaveRaw(raw,hash){
  if(keccak256(raw)!==hash)throw Error('stored_transaction_hash_mismatch');
  const attempts=[];
  for(const url of AAVE_RPC_URLS){
-  const req=new FetchRequest(url);req.timeout=12000;req.getUrlFunc=nativeRpcFetch;const p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});
+  const req=aaveRpcRequest(url);const p=new JsonRpcProvider(req,8453,{staticNetwork:true,batchMaxCount:1});
   try{if(BigInt(await p.send('eth_chainId',[]))!==8453n)throw Error('wrong_chain');const sent=await p.broadcastTransaction(raw);if(sent.hash!==hash)throw Error('broadcast_hash_mismatch');return {submitted:true,attempts:[...attempts,{url,ok:true}]};}
   catch{attempts.push({url,ok:false});}finally{p.destroy();}
  }
