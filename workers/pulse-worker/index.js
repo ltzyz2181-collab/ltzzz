@@ -1,7 +1,7 @@
 import config from './pulse.json' with {type:'json'};
 import {dashboardHTML,dashboardJS} from './dashboard.js';
 import {validateConfig,heartbeat,walletBalance,evolve,control,names} from './engine.js';
-const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
+const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Pulse-Version':config.version}});
 async function same(a,b){if(!a||!b)return false;const enc=new TextEncoder(),hash=async s=>new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(s)));const [x,y]=await Promise.all([hash(a),hash(b)]);let difference=0;for(let i=0;i<x.length;i++)difference|=x[i]^y[i];return difference===0;}
 async function actorFor(request,env){const token=request.headers.get('Authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];if(await same(token,env.PULSE_TOKEN))return 'gpt';if(await same(token,env.PULSE_QIANWEN_TOKEN))return 'qianwen';return null;}
 export default {
@@ -13,7 +13,7 @@ export default {
   if(!env.PULSE)return json({error:'storage_not_configured'},503);
   const publicRead=path==='/status'&&request.method==='GET';
   if(!publicRead){
-   if(!['/run','/control','/incentives'].includes(path))return json({error:'not_found'},404);
+   if(!['/run','/control','/incentives'].includes(path))return json({error:'not_found',request_path:path,scope:'gateway'},404);
    if(request.method!=='POST')return json({error:'POST_required'},405);
    if(!env.PULSE_TOKEN&&!env.PULSE_QIANWEN_TOKEN)return json({error:'auth_not_configured'},503);
    const actor=await actorFor(request,env);if(!actor)return json({error:'unauthorized'},401);
@@ -51,7 +51,7 @@ export class PulseState{
     for(const [name,p]of Object.entries(body.profiles))if(!names(config).includes(name)||!Number.isFinite(p.score)||p.score< -20||p.score>20||!Number.isFinite(p.priority_multiplier)||p.priority_multiplier<.8||p.priority_multiplier>1.2||p.real_money_penalty!==false)return json({error:'profile_invalid'},400);
     prior.incentives={...body,accepted_by:actor};prior.reference_task_failures=body.task_failures||null;await this.storage.put('state',prior);return json({ok:true,profiles:Object.keys(body.profiles),source_commit:body.source_commit});
    }
-   return json({error:'not_found'},404);
+   return json({error:'not_found',request_path:path,scope:'durable-object'},404);
   }catch{return json({error:'pulse_operation_failed'},500);}
  });}
 }
