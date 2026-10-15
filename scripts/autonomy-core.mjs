@@ -9,8 +9,8 @@ export async function invoke(agent,prompt,maxTokens,options={}){
  const providers=JSON.parse(fs.readFileSync('config/ai-providers.json')).providers;const p=providers[agent];
  try{
   let res;
-  if(agent==='gpt'){
-   res=await createModelRouter()('GPT',prompt,{...options,maxTokens:8192});
+  if(agent==='gpt'||agent==='claude'){
+   res=await createModelRouter()(agent==='gpt'?'GPT':'Claude',prompt,{...options,maxTokens:8192});
   }else if(agent==='qianwen_proxy'){
    const r=await fetch('https://api-qianwen.ltzzz.com/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTokens}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)return {status:'api_error',output:null};const d=await r.json();res={ok:true,output:d.choices?.[0]?.message?.content,finish_reason:d.choices?.[0]?.finish_reason,tokens_used:d.usage?.total_tokens,model:d.model};
@@ -19,7 +19,7 @@ export async function invoke(agent,prompt,maxTokens,options={}){
    res=await (await import(path.resolve(p.module))).callAgent({apiKey:process.env[p.secret],prompt,maxTokens});
   }
   const output=res.ok?String(res.output||'').trim():'';
-  return {executed_by:res.executed_by||({deepseek:'DeepSeek',doubao:'Doubao',grok:'Grok'}[agent]||agent),logical_agent:agent,delegated:agent==='gpt',status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};
+  return {executed_by:res.executed_by||({deepseek:'DeepSeek',doubao:'Doubao',grok:'Grok'}[agent]||agent),logical_agent:agent,delegated:res.delegated===true||agent==='gpt',status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};
  }catch{return {status:'exception',output:null};}
 }
 export function evaluateExperiment(kind){
