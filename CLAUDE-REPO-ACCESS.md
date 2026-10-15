@@ -1,12 +1,16 @@
 # Claude · LTZZZ 仓库接入索引（2026-10-04 生成）
 
-> 仓库为 **public**：raw 链接免认证可读。你的网页抓取工具读不了 github.com 页面（JS 渲染），
-> 一律改用下面的 raw.githubusercontent.com 链接（纯文本，直接可读）。
+> 仓库为 **public**：raw 链接免认证可读。页面或连接器读不到正文时，可用 raw.githubusercontent.com。
+> **2026-10-14 更正**：旧版“添加 GitHub 内容后即可写入/开 PR”的保证不准确。读取仓库、安装 App、客户端具备写工具、实际提交成功是四种不同状态。
 
-## 1. 最稳的方式：Claude 官方 GitHub 连接器
-- 在 Claude 对话里点「添加 GitHub 内容」→ 选 ltzyz2181-collab/ltzzz + main → 点「添加仓库」
-- 若提示授权 GitHub，点允许（一次）。之后可读/写/开 PR，提交会直接进仓库
-- 读取优先用连接器；仅当连接器不可用时用下方 raw URL
+## 1. 读取与写入分开验证
+
+- **Claude 聊天中的 GitHub 内容连接器**：可以添加本仓库作为上下文；是否能写，以该客户端实际提供的工具为准。只读会话不会因为换一个模型 API Key 自动变成写入会话。
+- **实际提交代码/审核文件**：需要 Claude Code 或其他具备 git/仓库写入工具的执行环境，并有本仓库的有效授权。通过分支、commit 和 PR 链接验证；不以“App 已安装”代替实际提交。
+- **官方 Claude GitHub App**：<https://github.com/apps/claude/installations/new>，只选择 `ltzyz2181-collab/ltzzz`。官方 App 的权限包还包括 Actions/Workflows 等仓库写权限，安装前要在 GitHub 页面核对；不选择全部仓库。
+- GitHub 要求“Confirm access/确认访问”、邮箱验证或二次验证时，由账号本人在官方页面完成。不要在聊天发送密码、验证码、PAT、API Key。模型服务账户/API Key 不授予 GitHub 仓库写权限。
+- 本轮真实状态与单次验收任务：[Claude 写入验收](ops/dispatch/CLAUDE-GITHUB-WRITE-ACCEPTANCE-20261014.md)、[权限接单回执](ops/dispatch/receipts/CLAUDE-GITHUB-ACCESS-20261014.md)。本轮已在登录的 GitHub 页面选好单仓库范围，但最终安装被邮箱身份验证阻塞；尚未验证 Claude 客户端推送成功。
+- 审核无需下载再转存：有写工具的 Claude 可从本会话的原审核文件直接提交；只读 Claude 可直接在对话输出完整正文，owner 转交有写权限的总控或执行席代存。不能把参考网页链接冒充完整审核文件。
 
 ## 2. raw URL 模板
 - 任意文件：https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/<路径>
