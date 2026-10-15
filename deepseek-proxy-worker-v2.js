@@ -6,7 +6,7 @@
 //
 // Secrets / Variables：
 //   DEEPSEEK_API_KEY   必填 — DeepSeek 官方 API Key（sk- 开头）
-//   DEEPSEEK_MODEL     可选 — 默认 deepseek-chat
+//   DEEPSEEK_MODEL     可选 — 默认 deepseek-flash（DeepSeek-V4.1-Flash；换 deepseek-v4-pro 只改此值）
 //   DEEPSEEK_BASE_URL  可选 — 默认官方 Chat Completions 地址
 //
 // 健康检查：GET /health
@@ -45,7 +45,7 @@ export default {
         return json({ error: 'messages is required', stage: 'request_validation' }, 400);
       }
 
-      const model = body.model || env.DEEPSEEK_MODEL || 'deepseek-chat';
+      const model = body.model || env.DEEPSEEK_MODEL || 'deepseek-flash';
 
       const upstreamUrl =
         env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/chat/completions';

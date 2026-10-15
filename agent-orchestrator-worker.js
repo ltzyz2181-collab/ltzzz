@@ -19,7 +19,7 @@
 
 const DEFAULT_DOUBAO_BASE = 'https://ark.cn-beijing.volces.com/api/plan';
 const DEFAULT_DOUBAO_MODEL = 'doubao-seed-evolving';
-const DEFAULT_DEEPSEEK_MODEL = 'deepseek-chat';
+const DEFAULT_DEEPSEEK_MODEL = 'deepseek-flash';
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-5';
 const DEFAULT_XAI_MODEL = 'grok-3';
