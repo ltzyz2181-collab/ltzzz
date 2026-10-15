@@ -1,3 +1,4 @@
+import {seedTasks} from './tasks.js';
 import config from './pulse.json' with {type:'json'};
 import {dashboardHTML,dashboardJS} from './dashboard.js';
 import {validateConfig,heartbeat,walletBalance,evolve,control,names} from './engine.js';
@@ -9,9 +10,9 @@ export default {
   const path=new URL(request.url).pathname;
   if(request.method==='GET'&&(path==='/'||path==='/dashboard.js'))return new Response(path==='/'?dashboardHTML:dashboardJS,{headers:{'Content-Type':path==='/'?'text/html; charset=utf-8':'text/javascript; charset=utf-8','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"}});
   if(path==='/health'&&request.method==='GET')return json({ok:!!env.PULSE,service:'ltzzz-pulse',version:config.version,storage:!!env.PULSE,auth_configured:!!env.PULSE_TOKEN,qianwen_control_configured:!!env.PULSE_QIANWEN_TOKEN,model_calls:0});
-  if(path==='/schema'&&request.method==='GET')return json({controllers:config.controller_roles,equivalent_operational_authority:true,automatic_recovery:true,authentication:'role-specific Bearer or owner GitHub workflow',actions:['pause','resume','set_concurrency','dispatch','ack_dispatch','probe'],policy_source:'bundled_git_config',private_keys_in_monitor:false,money_execution:'existing signing executors; no payment is performed by a health check'});
+  if(path==='/schema'&&request.method==='GET')return json({controllers:config.controller_roles,equivalent_operational_authority:true,automatic_recovery:true,authentication:'role-specific Bearer or owner GitHub workflow',actions:['pause','resume','set_concurrency','dispatch','ack_dispatch','claim_task','submit_task','probe'],policy_source:'bundled_git_config',private_keys_in_monitor:false,money_execution:'existing signing executors; no payment is performed by a health check'});
   if(!env.PULSE)return json({error:'storage_not_configured'},503);
-  const publicRead=path==='/status'&&request.method==='GET';
+  const publicRead=['/status','/tasks'].includes(path)&&request.method==='GET';
   if(!publicRead){
    if(!['/run','/control','/incentives'].includes(path))return json({error:'not_found',request_path:path,scope:'gateway'},404);
    if(request.method!=='POST')return json({error:'POST_required'},405);
@@ -38,6 +39,7 @@ export class PulseState{
  fetch(request){return this.serial(async()=>{
   const path=new URL(request.url).pathname;
   try{
+   if(path==='/tasks'){const prior=await this.storage.get('state')||{},state=seedTasks(prior);if(prior.daily_dispatch_date!==state.daily_dispatch_date)await this.storage.put('state',state);return json({date:state.daily_dispatch_date,tasks:state.task_board,model_calls:0,paid:false,notice:'认领由认证执行器声明；提交待独立验收，不代表模型已实际调用或真钱工资。'});}
    if(path==='/status'){const state=await this.storage.get('state')||{};return json({...state,version:config.version,ran_at:state.ran_at||null,stale:!state.ran_at||Date.now()-Date.parse(state.ran_at)>config.stale_seconds*1000,alarm_at:await this.storage.getAlarm(),controllers:config.controller_roles,model_calls:0,financial_execution:false});}
    // Keep the autonomous loop armed even if an individual observation fails.
    if(path==='/run'){await this.storage.setAlarm(Date.now()+config.interval_seconds*1000);return json(await this.run());}
