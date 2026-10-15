@@ -1,0 +1,77 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+const html=fs.readFileSync(new URL('../../treasury-dashboard.html',import.meta.url),'utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+assert.ok(script,'Dashboard inline script must be available for regression checks');
+const payload='</h3><img src=x onerror="globalThis.PWNED=1"><svg onload=alert(1)>\'&';
+async function render(dashboard={},health={},regression={},error=null){
+  const elements=Object.fromEntries(['stats','agents','raw'].map(id=>[id,{innerHTML:'',textContent:''}]));
+  const requests=[];
+  const context=vm.createContext({document:{getElementById:id=>elements[id]},fetch:async(url,options)=>{
+    requests.push({url,options});if(error)throw error;
+    const data=url.endsWith('/dashboard')?dashboard:url.endsWith('/health')?health:regression;
+    return {json:async()=>data};
+  }});
+  await new vm.Script(script,{filename:'treasury-dashboard.inline.js'}).runInContext(context);
+  return {context,elements,requests};
+}
+function staticTagsOnly(markup){
+  for(const [tag] of markup.matchAll(/<[^>]*>/g)){
+    assert.match(tag,/^(?:<div(?: class="(?:card|big|muted|bar)")?>|<\/(?:div|h3|b|i)>|<h3>|<b>|<i style="width:\d+%">)$/,'Unexpected generated HTML tag: '+tag);
+  }
+}
+test('inline JavaScript compiles and requests only the three existing read endpoints',async()=>{
+  const {requests}=await render();
+  assert.deepEqual(requests.map(r=>r.url),['dashboard','health','regression'].map(p=>'https://ltzzz-treasury-v11.ltzyz2181.workers.dev/'+p));
+  assert.ok(requests.every(r=>r.options===undefined));
+});
+test('HTML text escaping covers markup, both quotes, ampersands and encoded entities',async()=>{
+  const {context}=await render(),escape=context.escapeHtml;
+  assert.equal(escape('&<>"\''),'&amp;&lt;&gt;&quot;&#39;');
+  assert.equal(escape('&#x3c;img src=x&#x3e;'),'&amp;#x3c;img src=x&amp;#x3e;');
+  assert.equal(escape(null),'');assert.equal(escape(undefined),'');assert.equal(escape(-2.5),'-2.5');
+  assert.equal(escape(JSON.parse('{"toString":"<svg>"}')),'{&quot;toString&quot;:&quot;&lt;svg&gt;&quot;}');
+});
+test('usage accepts numeric API values and clamps negative or excessive usage',async()=>{
+  const {context}=await render(),percent=context.usagePercent;
+  for(const [used,limit,expected] of [[0,20,0],[5,20,25],[1,3,33],['2.5','10',25],[-1,10,0],[10,10,100],[15,10,100]]){
+    assert.equal(percent(used,limit),expected);
+  }
+});
+test('zero, negative, missing, malformed and nonfinite limits cannot produce an invalid width',async()=>{
+  const {context}=await render(),percent=context.usagePercent;
+  for(const limit of [0,-1,undefined,null,'',' ',NaN,Infinity,-Infinity,'Infinity','NaN','invalid',{},[],true]){
+    assert.equal(percent(1,limit),0,'Invalid limit must produce zero progress');
+  }
+  for(const used of [undefined,null,NaN,Infinity,-Infinity,'Infinity','bad',{},[],true])assert.equal(percent(used,10),0);
+});
+test('extreme finite numbers remain within 0–100 without division overflow',async()=>{
+  const {context}=await render(),percent=context.usagePercent;
+  assert.equal(percent(Number.MAX_VALUE,Number.MIN_VALUE),100);
+  assert.equal(percent(Number.MIN_VALUE,Number.MAX_VALUE),0);
+  assert.equal(percent(Number.MAX_VALUE,Number.MAX_VALUE),100);
+});
+test('malicious text in every interpolated dashboard and agent field cannot create active markup',async()=>{
+  const dashboard={today_spend:payload,today_remaining_limit:payload,real_tx_success_count:payload,
+    counts:{pending:payload,success:payload,failed:payload},agents:{[payload]:{used:payload,daily_limit:payload,single_limit:payload,remaining:payload}}};
+  const {elements,context}=await render(dashboard);
+  staticTagsOnly(elements.stats.innerHTML);staticTagsOnly(elements.agents.innerHTML);
+  assert.equal((elements.stats.innerHTML.match(/class="card"/g)||[]).length,6);
+  assert.match(elements.agents.innerHTML,/<i style="width:0%">/);
+  assert.ok(elements.stats.innerHTML.includes('&lt;img'));assert.ok(elements.agents.innerHTML.includes('&lt;svg'));
+  assert.equal(context.PWNED,undefined);
+});
+test('invalid agent caps and missing entries keep their progress attributes numeric',async()=>{
+  const {elements}=await render({agents:{negative:{used:-5,daily_limit:10},zero:{used:5,daily_limit:0},huge:{used:1e300,daily_limit:1e-300},infinite:{used:1,daily_limit:'Infinity'},null:null,object:{used:1,daily_limit:{toString:payload}}}});
+  staticTagsOnly(elements.agents.innerHTML);
+  assert.deepEqual([...elements.agents.innerHTML.matchAll(/style="width:(\d+)%"/g)].map(m=>Number(m[1])),[0,0,100,0,0,0]);
+});
+test('raw API payloads and fetch errors remain in textContent',async()=>{
+  const result=await render({safe:payload,regression_tx:payload},{report:payload},{message:payload});
+  assert.equal(result.elements.raw.innerHTML,'');assert.ok(result.elements.raw.textContent.includes(payload.replaceAll('"','\\"')));
+  const failed=await render({}, {}, {}, new Error(payload));
+  assert.equal(failed.elements.raw.innerHTML,'');assert.equal(failed.elements.raw.textContent,'Error: '+payload);
+});
