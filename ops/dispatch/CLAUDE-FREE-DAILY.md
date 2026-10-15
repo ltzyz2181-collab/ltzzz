@@ -22,3 +22,7 @@ owner转交的三项审计已由总控存入 knowledge/results/external/2026-10-
 ## 工作能力与五签退出分开
 
 owner 澄清退出五签不等于退出 LTZZZ 工作。Claude 可以继续免费外部讨论、工程审稿、研究和六文件评论。本文件仍不触发付费 API。独立的 [按需审稿入口](../../docs/CLAUDE-WORK-WITHOUT-FIVE-SIGN.md) 默认 inspect 只查目录；仅 owner 显式选择 review 时允许一次已有 API 请求，不纳入日课，不恢复钱包、投票或签名角色。原资金子网的撤席记录保留为资金子网范围，不用于否定外部文字工作。
+
+## 国内代执行不是 Claude 本体交付
+
+owner 要求不续费海外模型时，GPT/Claude 岗位可由 DeepSeek/豆包接管，见 docs/DOMESTIC-GPT-CLAUDE-ROLES.md。此类输出放国内执行席回执并标记 delegated，不记成 Claude 本体已经读文件或生成内容；本免费外部席历史与署名不变。

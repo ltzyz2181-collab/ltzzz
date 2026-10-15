@@ -2,7 +2,11 @@
 
 owner 已澄清：退出五签不等于不能为 LTZZZ 工作。Claude 是外部工程/研究协作者，不恢复资金权限。
 
-## 实际通道
+## 默认国内代执行
+
+owner 随后选择使用 DeepSeek/豆包额度接管工作岗位；默认 Claude 登记模块现在是 scripts/call-claude-delegated.mjs。它不使用 ANTHROPIC_API_KEY，实际模型与费用属于国内提供者，不能记成 Anthropic 用量。详见 docs/DOMESTIC-GPT-CLAUDE-ROLES.md。下列原生通道只在另行手动选择时使用。
+
+## 可选原生通道
 
 GitHub Actions 使用既有 `ANTHROPIC_API_KEY` 调用官方 Anthropic API；不要求 Claude 网页通过云浏览器人机验证，不要求 Claude 自己持有 GitHub 写权限。执行器代存输出并记录实际模型。
 

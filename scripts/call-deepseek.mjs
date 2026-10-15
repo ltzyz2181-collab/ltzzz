@@ -25,7 +25,7 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 8192 }) {
     }
     const data = await resp.json();
     const output = (data.choices?.[0]?.message?.content || "").trim();
-    return { ok: !!output, status: output ? "success" : "empty_output", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0, model: model || process.env.DEEPSEEK_MODEL || routedModel("deepseek","deepseek-reasoner") };
+    return { ok: !!output, status: output ? "success" : "empty_output", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0, model: data.model || model || process.env.DEEPSEEK_MODEL || routedModel("deepseek","deepseek-reasoner"), model_source: data.model ? "provider_response" : "requested_model" };
   } catch (e) {
     return { ok: false, status: "exception", error: String(e) };
   }

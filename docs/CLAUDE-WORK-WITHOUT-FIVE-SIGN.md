@@ -4,7 +4,11 @@ Claude 可以继续为 LTZZZ 做代码审查、设计反例、研究、六文件
 
 本次只启用外部审稿接入，不恢复旧资金子网席位。`votingSeat=false`、`walletSigning=false`；工作入口不持有钱包/部署凭证，不能因一篇审稿自动部署、发工资或改变资金策略。原资金子网撤席与历史账本保留。
 
-## 不依赖云浏览器的按需方式
+## 不续费时的默认方式
+
+owner 随后要求使用 DeepSeek/豆包算力：默认 Claude 审稿岗位已改为国内代执行，[实现与自动入库入口](DOMESTIC-GPT-CLAUDE-ROLES.md)。这是逻辑岗位接管，不是恢复原生 Claude Key。下方原生 API 仅为可选入口，不是默认依赖。
+
+## 可选：不依赖云浏览器的原生 API 方式
 
 [Claude 按需审稿工作流](https://github.com/ltzyz2181-collab/ltzzz/actions/workflows/claude-on-demand-review.yml) → Run workflow：
 

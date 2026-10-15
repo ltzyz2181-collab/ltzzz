@@ -32,7 +32,7 @@ async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens, think
   }
   const data = await resp.json();
   const output = (data.choices?.[0]?.message?.content || "").trim();
-  return { kind: "ok", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0 };
+  return { kind: "ok", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0, model:data.model||model, model_source:data.model?"provider_response":"requested_model" };
 }
 
 async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
@@ -52,7 +52,7 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
   }
   const data = await resp.json();
   const output = (data.content?.[0]?.text || "").trim();
-  return { kind: "ok", output, finish_reason: data.stop_reason, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0) };
+  return { kind: "ok", output, finish_reason: data.stop_reason, tokens_used: (data.usage?.input_tokens || 0)+(data.usage?.output_tokens || 0), model:data.model||model, model_source:data.model?"provider_response":"requested_model" };
 }
 
 export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, thinking }) {
@@ -61,10 +61,10 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, think
   const mdl = model || MODEL();
   try {
     const r1 = await tryOpenAICompatible(apiKey, prompt, base, mdl, maxTokens, thinking);
-    if (r1.kind === "ok") return { ok: !!r1.output, status: r1.output ? "success" : "empty_output", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used, model: mdl };
+    if (r1.kind === "ok") return { ok: !!r1.output, status: r1.output ? "success" : "empty_output", output: r1.output, finish_reason: r1.finish_reason, tokens_used: r1.tokens_used, model: r1.model, model_source:r1.model_source };
     if (r1.kind === "unsupported") {
       const r2 = await tryAnthropicCompatible(apiKey, prompt, base, mdl, maxTokens);
-      if (r2.kind === "ok") return { ok: !!r2.output, status: r2.output ? "success" : "empty_output", output: r2.output, finish_reason:r2.finish_reason, tokens_used: r2.tokens_used, model: mdl };
+      if (r2.kind === "ok") return { ok: !!r2.output, status: r2.output ? "success" : "empty_output", output: r2.output, finish_reason:r2.finish_reason, tokens_used: r2.tokens_used, model: r2.model, model_source:r2.model_source };
       return { ok: false, status: "api_error", error: `openai-style 404/405，anthropic-style HTTP ${r2.status}: ${r2.text}` };
     }
     return { ok: false, status: "api_error", error: `HTTP ${r1.status}: ${r1.text}` };

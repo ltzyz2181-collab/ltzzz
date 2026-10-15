@@ -12,7 +12,7 @@
 | 国内Kimi | GitHub MOONSHOT_API_KEY → 国内Worker KIMI_API_KEY | control-handover-verification.yml | 当前国内Key未接通；¥14截图不等于该国际Key余额 |
 | 国际Kimi | Cloudflare kimi-proxy的KIMI_API_KEY | 无Key Hub任务/weekly任务包 | 旧诊断国际余额0；不是国内入口 |
 | Meta托管Llama | Cloudflare AI binding + META_WORKER_TOKEN | wrangler.meta-hosted.toml / control-handover-verification.yml | 已部署；真实推理，不代表官方Meta账户或Instagram发布 |
-| Claude | ANTHROPIC_API_KEY既有配置 | 外部审稿协作者，按需入口；日常不调用 | [按需入口与真实边界](../docs/CLAUDE-WORK-WITHOUT-FIVE-SIGN.md)，默认只读检查，不催充值 |
+| Claude审稿岗位 | DOUBAO_API_KEY / DEEPSEEK_API_KEY | 默认国内代执行；非原生Claude | [国内岗位接管](../docs/DOMESTIC-GPT-CLAUDE-ROLES.md)，回执记录实际模型；原生Anthropic另行手动 |
 | Microsoft / Manus / Workbuddy / Meta外部席 | 分别代执行或外部工具 | ltzzz-memory/tasks/、Issue/PR | 不凭拥有账号或邮箱就宣称能自动调用 |
 
 ## 怎么派现有API任务

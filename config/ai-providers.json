@@ -59,17 +59,25 @@
       "note": "Hosted Llama; not official Meta chat or Instagram API"
     },
     "claude": {
-      "secret": "ANTHROPIC_API_KEY",
-      "mode": "external_reviewer_on_demand",
-      "module": "scripts/call-claude.mjs",
-      "model_env": "ANTHROPIC_MODEL",
-      "generation_blocker": "last known generation: insufficient API credits; catalogue access does not verify current generation balance",
+      "secret": "DOUBAO_API_KEY",
+      "mode": "domestic_delegated_review",
+      "module": "scripts/call-claude-delegated.mjs",
+      "model_env": "DOUBAO_MODEL",
+      "generation_blocker": "Domestic task uses existing domestic credit; native Anthropic credit remains unverified",
       "permissions": "external text/code review; no wallet signing, voting, payment, or automatic deployment",
-      "note": "Routine paid calls remain disabled. New manual workflow defaults to inspect with zero generation; explicit review authorizes at most one request using existing credit. No verified free API quota.",
-      "workflow": ".github/workflows/claude-on-demand-review.yml",
+      "note": "Claude is a logical review role on this default route; actual domestic provider/model is recorded. Does not revive or invoke native Anthropic/OpenAI keys. Native review remains a separate optional manual workflow.",
+      "workflow": ".github/workflows/owner-domestic-inbox.yml",
       "routine_generation_enabled": false,
       "wallet_signing": false,
-      "voting_seat": false
+      "voting_seat": false,
+      "delegates": [
+        "doubao",
+        "deepseek"
+      ],
+      "native_secret": "ANTHROPIC_API_KEY",
+      "native_module": "scripts/call-claude.mjs",
+      "native_model_env": "ANTHROPIC_MODEL",
+      "native_workflow": ".github/workflows/claude-on-demand-review.yml"
     },
     "microsoft": {
       "delegate": "deepseek",
