@@ -1,32 +1,31 @@
-/**
- * call-deepseek.mjs — DeepSeek 通道真实调用（密钥只从环境变量读取）
- */
+/** DeepSeek streaming adapter. Credentials are supplied only by its executor. */
 import {routedModel} from './model-routing.mjs';
-export async function callAgent({ apiKey, prompt, model, maxTokens = 8192 }) {
-  if (!apiKey) return { ok: false, status: "not_configured", error: "DEEPSEEK_API_KEY 未配置（请在 GitHub Secrets 添加）" };
-  try {
-    const resp = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      method: "POST",
-      signal: AbortSignal.timeout(240000),
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: model || process.env.DEEPSEEK_MODEL || routedModel("deepseek","deepseek-reasoner"),
-        ...(/deepseek-(?:v\d+(?:-\d+)?-)?(pro|flash)/.test(model || process.env.DEEPSEEK_MODEL || routedModel('deepseek','deepseek-reasoner')) ? {thinking:{type:'enabled'}} : {}),
-        messages: [
-          { role: "system", content: "你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。" },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: maxTokens,
-      }),
-    });
-    if (!resp.ok) {
-      const t = await resp.text();
-      return { ok: false, status: "api_error", error: `HTTP ${resp.status}: ${t.slice(0, 200)}` };
-    }
-    const data = await resp.json();
-    const output = (data.choices?.[0]?.message?.content || "").trim();
-    return { ok: !!output, status: output ? "success" : "empty_output", output, finish_reason: data.choices?.[0]?.finish_reason, tokens_used: data.usage?.total_tokens || 0, model: data.model || model || process.env.DEEPSEEK_MODEL || routedModel("deepseek","deepseek-reasoner"), model_source: data.model ? "provider_response" : "requested_model" };
-  } catch (e) {
-    return { ok: false, status: "exception", error: String(e) };
+import {readDeepSeekResponse} from './lib/deepseek-stream.mjs';
+export async function callAgent({apiKey,prompt,model,maxTokens=8192,onProgress}){
+ if(!apiKey)return {ok:false,status:'not_configured',error:'DEEPSEEK_API_KEY 未配置'};
+ const requestedModel=model||process.env.DEEPSEEK_MODEL||routedModel('deepseek','deepseek-reasoner');
+ // Redact before returning or checkpointing; do not retain reasoning_content.
+ const redact=value=>{
+  if(typeof value==='string')return value.replaceAll(apiKey,'[REDACTED]');
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,redact(v)]));
+  return value;
+ };
+ try{
+  const response=await fetch('https://api.deepseek.com/v1/chat/completions',{
+   method:'POST',signal:AbortSignal.timeout(240000),
+   headers:{'Content-Type':'application/json',Authorization:`Bearer ${apiKey}`},
+   body:JSON.stringify({model:requestedModel,
+    ...(/deepseek-(?:v\d+(?:-\d+)?-)?(pro|flash)/.test(requestedModel)?{thinking:{type:'enabled'}}:{}),
+    messages:[{role:'system',content:'你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。'},{role:'user',content:prompt}],
+    max_tokens:maxTokens,stream:true,stream_options:{include_usage:true}})
+  });
+  if(!response.ok){
+   // HTTP rejection is known, but do not echo arbitrary upstream response bodies.
+   return {ok:false,status:'api_error',error:`HTTP ${response.status}`,request_id:redact(response.headers.get('x-request-id')||response.headers.get('x-ds-request-id')||null),tokens_used:null};
   }
+  const result=await readDeepSeekResponse(response,{requestedModel,onProgress:onProgress?state=>onProgress(redact(state)):undefined});
+  return redact(result);
+ }catch{
+  return {ok:false,status:'exception',error:'deepseek_transport_failed',tokens_used:null,automatic_retry_allowed:false};
+ }
 }
