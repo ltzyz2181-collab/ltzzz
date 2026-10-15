@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Check claim, incomplete-output and independent review regressions
-        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs
+        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs
       - name: Prepare today's ANS direction and two durable assignments, no models
         id: prepare
         env:
@@ -85,4 +85,3 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
-
