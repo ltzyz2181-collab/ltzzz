@@ -1,31 +1,52 @@
-name: Upload Video 2026-10-15 to R2 (S3 API)
+name: Queue prepared video and verify public YouTube delivery
 
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/upload-video-s3-2026-10-15.yml'
+    paths: ['.github/workflows/upload-video-s3-2026-10-15.yml']
+permissions: {contents: write}
+concurrency: {group: ltzzz-youtube-publish, cancel-in-progress: false}
 
 jobs:
   upload:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Verify assets
-        run: |
-          ls -la videos/ltzzz-daily-2026-10-15.mp4
-          cat videos/ltzzz-daily-2026-10-15.meta.json
-      - name: Put mp4 + meta to R2 queue via S3 API
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Test queue and truthful publication receipts
+        run: node --test scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs
+      - name: Prepare media inspection only
+        run: command -v ffprobe || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - name: Reuse existing MP4, enqueue and verify public state
         env:
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          VIDEO_FILE: videos/ltzzz-daily-2026-10-15.mp4
+          VIDEO_META: videos/ltzzz-daily-2026-10-15.meta.json
+        run: node scripts/enqueue-repo-video.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: video-queue-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: results/publishing/video-queue-*.json
+          retention-days: 14
+      - name: Commit actual receipt on success or failure
+        if: always()
         run: |
-          pip install -q awscli
-          export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
-          export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
-          export AWS_DEFAULT_REGION=auto
-          ENDPOINT="https://${CF_ACCOUNT_ID}.r2.cloudflarestorage.com"
-          aws s3 cp videos/ltzzz-daily-2026-10-15.mp4 "s3://ltzzz-videos/queue/ltzzz-daily-2026-10-15.mp4" --endpoint-url "$ENDPOINT" --content-type video/mp4
-          aws s3 cp videos/ltzzz-daily-2026-10-15.meta.json "s3://ltzzz-videos/queue/ltzzz-daily-2026-10-15.meta.json" --endpoint-url "$ENDPOINT" --content-type application/json
+          shopt -s nullglob
+          receipts=(results/publishing/video-queue-*.json)
+          if [ "${#receipts[@]}" -eq 0 ]; then exit 0; fi
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add -- "${receipts[@]}"
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record prepared video queue and actual YouTube verification'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
