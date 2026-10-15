@@ -4,7 +4,7 @@ import {pulseSnapshot,coordinatorSeat} from './lib/pulse-client.mjs';
 import fs from 'node:fs';import {dateCST,sha,save,memory,invoke,jsonOutput,taskScope} from './autonomy-core.mjs';
 const date=dateCST(),file=`knowledge/results/control/${date}.json`;const existing=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
 const cfg=JSON.parse(fs.readFileSync('config/ai-providers.json')).providers;const docs=memory();
-const roots=['data/results','ops/runs','knowledge/results/economy','knowledge/results/meta','knowledge/results/defi','knowledge/results/wep3','knowledge/results/offline-runtime','innovation'];
+const roots=['data/results','ops/runs','knowledge/results/economy','knowledge/results/meta','knowledge/results/defi','knowledge/results/wep3','knowledge/results/offline-runtime','knowledge/results/ans-cycle','knowledge/results/pulse','innovation'];
 const inputs=[];for(const root of roots){if(!fs.existsSync(root))continue;for(const name of fs.readdirSync(root).filter(n=>n.endsWith('.json'))){const path=`${root}/${name}`;try{const text=fs.readFileSync(path,'utf8'),data=JSON.parse(text);if(data&&typeof data==='object'&&!Array.isArray(data))inputs.push({path,sha256:sha(text),data});}catch{}}}
 const receipts=inputs.filter(r=>r.data.date===date||String(r.data.at||r.data.generated_at||'').startsWith(date)||r.path.startsWith('ops/runs/'));
 const pulse=await pulseSnapshot();

@@ -25,6 +25,16 @@ export function taskCommand(previous,command,actor,allowedAgents,now=Date.now())
   if(t.status==='submitted_pending_review'&&t.evidence_sha256===command.evidence_sha256)return {state,duplicate:true};
   if(t.status!=='claimed')throw Error('task_not_claimed');
   t.status='submitted_pending_review';t.evidence_path=command.evidence_path;t.evidence_sha256=command.evidence_sha256;t.submitted_at=new Date(now).toISOString();t.model_execution_verified=false;t.paid=false;t.tx_hash=null;
+ }else if(command.action==='review_task'){
+  if(!['submitted_pending_review','completed_draft_review','rejected_draft_review'].includes(t.status))throw Error('task_not_submitted');
+  if(typeof command.accepted!=='boolean'||command.reviewed_sha256!==t.evidence_sha256||command.scope!=='engineering_draft_only')throw Error('bound_review_required');
+  if(!allowedAgents.includes(command.worker_actual_provider)||!allowedAgents.includes(command.reviewer_actual_provider)||command.worker_actual_provider===command.reviewer_actual_provider)throw Error('independent_actual_provider_required');
+  if(!/^(knowledge|results|ops)\/[A-Za-z0-9_./\u4e00-\u9fff-]+$/.test(command.review_evidence_path||'')||command.review_evidence_path.split('/').includes('..')||!/^[a-f0-9]{64}$/i.test(command.review_evidence_sha256||''))throw Error('review_evidence_required');
+  const next=command.accepted?'completed_draft_review':'rejected_draft_review';
+  if(t.status===next&&t.review?.evidence_sha256===command.review_evidence_sha256)return {state,duplicate:true};
+  if(t.status!=='submitted_pending_review')throw Error('review_already_final');
+  t.status=next;t.review={scope:command.scope,accepted:command.accepted,worker_actual_provider:command.worker_actual_provider,reviewer_actual_provider:command.reviewer_actual_provider,evidence_path:command.review_evidence_path,evidence_sha256:command.review_evidence_sha256,reviewed_sha256:command.reviewed_sha256,at:new Date(now).toISOString(),provenance:'authenticated_executor_attestation'};t.paid=false;t.tx_hash=null;t.deployed=false;
  }else throw Error('task_action_invalid');
  return {state,duplicate:false};
 }
+

@@ -10,7 +10,7 @@ export default {
   const path=new URL(request.url).pathname;
   if(request.method==='GET'&&(path==='/'||path==='/dashboard.js'))return new Response(path==='/'?dashboardHTML:dashboardJS,{headers:{'Content-Type':path==='/'?'text/html; charset=utf-8':'text/javascript; charset=utf-8','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"}});
   if(path==='/health'&&request.method==='GET')return json({ok:!!env.PULSE,service:'ltzzz-pulse',version:config.version,storage:!!env.PULSE,auth_configured:!!env.PULSE_TOKEN,qianwen_control_configured:!!env.PULSE_QIANWEN_TOKEN,model_calls:0});
-  if(path==='/schema'&&request.method==='GET')return json({controllers:config.controller_roles,equivalent_operational_authority:true,automatic_recovery:true,authentication:'role-specific Bearer or owner GitHub workflow',actions:['pause','resume','set_concurrency','dispatch','ack_dispatch','claim_task','submit_task','probe'],policy_source:'bundled_git_config',private_keys_in_monitor:false,money_execution:'existing signing executors; no payment is performed by a health check'});
+  if(path==='/schema'&&request.method==='GET')return json({controllers:config.controller_roles,equivalent_operational_authority:true,automatic_recovery:true,authentication:'role-specific Bearer or owner GitHub workflow',actions:['pause','resume','set_concurrency','dispatch','ack_dispatch','claim_task','submit_task','review_task','probe'],policy_source:'bundled_git_config',private_keys_in_monitor:false,money_execution:'existing signing executors; no payment is performed by a health check'});
   if(!env.PULSE)return json({error:'storage_not_configured'},503);
   const publicRead=['/status','/tasks'].includes(path)&&request.method==='GET';
   if(!publicRead){
@@ -57,3 +57,4 @@ export class PulseStateV2{
   }catch{return json({error:'pulse_operation_failed'},500);}
  });}
 }
+
