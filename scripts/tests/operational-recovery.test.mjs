@@ -1,8 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
-test('retired pilot has no execution credentials, auto/supply/withdraw calls or cron',()=>{
+test('retired pilot has no wallet signing credentials, auto/supply/withdraw calls or cron',()=>{
   const source=fs.readFileSync('.github/workflows/treasury-migration-and-pilot.yml','utf8');
-  assert.doesNotMatch(source,/schedule:|LTZZZ_WALLET_PRIVATE_KEY|CLOUDFLARE_API_TOKEN|treasury-migration\.mjs|AAVE_ACTION:\s*(auto|supply|withdraw)\b/);
+  assert.doesNotMatch(source,/schedule:|LTZZZ_WALLET_PRIVATE_KEY|treasury-migration\.mjs|AAVE_ACTION:\s*(auto|supply|withdraw)\b/);
+  assert.match(source,/WEP3_RUNNER_TOKEN/);assert.match(source,/AAVE_ACTION: diagnose/);assert.match(source,/AAVE_ACTION: reconcile/);
   assert.match(source,/name: Commit all inspection receipts\n\s+if: always\(\)/);assert.match(source,/actions\/upload-artifact/);
 });
 test('failed snapshot remains visible in a saved inspection receipt, without pretending earlier pilot failed',()=>{

@@ -39,14 +39,15 @@ test('a complete Worker response retains actual model and usage; HTTP rejection 
   }finally{globalThis.fetch=original;}
 });
 test('DeepSeek task records a real generation failure as top-level failure while retaining the error artifact',async()=>{
-  const original=globalThis.fetch;let generation=0,stored=0;
+  const original=globalThis.fetch;let generation=0,stored=0,artifact='';
   globalThis.fetch=async(url)=>{
     if(String(url).startsWith('https://raw.githubusercontent.com/'))return new Response('# 真实读取的文件');
     generation++;return new Response('rejected',{status:429});
   };
   try{
-    const response=await worker.fetch(new Request('https://example.invalid/run?task=deepseek-daily',{method:'POST',headers:{Authorization:'Bearer fixture'}}),{...env,LTZZZ_AGENT_TOKEN:'fixture',LTZZZ_ARTIFACTS:{put:async()=>{stored++;}}});
+    const response=await worker.fetch(new Request('https://example.invalid/run?task=deepseek-daily',{method:'POST',headers:{Authorization:'Bearer fixture'}}),{...env,LTZZZ_AGENT_TOKEN:'fixture',LTZZZ_ARTIFACTS:{put:async(_,content)=>{stored++;artifact=content;}}});
     const result=await response.json();assert.equal(result.ok,false);assert.equal(result.ai.status,'api_error');assert.equal(result.artifact_recorded,true);assert.equal(generation,1);assert.equal(stored,1);
+    assert.match(artifact,/status=api_error/);assert.match(artifact,/HTTP 429/);
   }finally{globalThis.fetch=original;}
 });
 test('artifact storage failure after generation does not replay a paid task',async()=>{

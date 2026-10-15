@@ -744,14 +744,14 @@ async function taskDeepseekDaily(env, ctx) {
 
   const body =
     `# DeepSeek 每日 · ${today}\n\n` +
-    `> dry_run=${compare.dry_run}　预算：DeepSeek 通道 checkBudget 守卫　生成时间(UTC+8)：${new Date().toISOString()}\n\n` +
+    `> status=${compare.status}　交付完整=${compare.ok === true && !compare.dry_run}　dry_run=${compare.dry_run}　预算：DeepSeek 通道 checkBudget 守卫　生成时间(UTC+8)：${new Date().toISOString()}\n\n` +
     renderScanSection(scan) + "\n" +
     `## 中华传统文化 × 装备论（每日 1 条对照）\n\n` +
     // 2026-10-02 修正：原模板硬编码"相同点（占位，待接入 DEEPSEEK_API_KEY）"，
     // 即使真实输出已生成也显示"待接入"，属误导。改为按 dry_run 如实呈现。
-    (compare.dry_run
-      ? `> dry_run：DEEPSEEK_API_KEY 未配置或预算停付，本条无真实模型输出。\n`
-      : `${compare.placeholder || compare.output || "（模型返回空）"}\n`);
+    (compare.ok === true && !compare.dry_run
+      ? `${compare.output}\n`
+      : `> 本日无通过验收的模型交付：${compare.error || compare.status || "unknown"}。不得据此声称任务完成。\n`);
 
   const path = dailyPath("deepseek", today);
   const artifact = await writeArtifact(path, body, env, ctx);
