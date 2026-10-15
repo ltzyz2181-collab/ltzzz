@@ -9,7 +9,7 @@
 - **实际提交代码/审核文件**：需要 Claude Code 或其他具备 git/仓库写入工具的执行环境，并有本仓库的有效授权。通过分支、commit 和 PR 链接验证；不以“App 已安装”代替实际提交。
 - **官方 Claude GitHub App**：<https://github.com/apps/claude/installations/new>，只选择 `ltzyz2181-collab/ltzzz`。官方 App 的权限包还包括 Actions/Workflows 等仓库写权限，安装前要在 GitHub 页面核对；不选择全部仓库。
 - GitHub 要求“Confirm access/确认访问”、邮箱验证或二次验证时，由账号本人在官方页面完成。不要在聊天发送密码、验证码、PAT、API Key。模型服务账户/API Key 不授予 GitHub 仓库写权限。
-- 本轮真实状态与单次验收任务：[Claude 写入验收](ops/dispatch/CLAUDE-GITHUB-WRITE-ACCEPTANCE-20261014.md)、[权限接单回执](ops/dispatch/receipts/CLAUDE-GITHUB-ACCESS-20261014.md)。本轮已在登录的 GitHub 页面选好单仓库范围，但最终安装被邮箱身份验证阻塞；尚未验证 Claude 客户端推送成功。
+- 本轮真实状态与单次验收任务：[Claude 写入验收](ops/dispatch/CLAUDE-GITHUB-WRITE-ACCEPTANCE-20261014.md)、[权限接单回执](ops/dispatch/receipts/CLAUDE-GITHUB-ACCESS-20261014.md)。本轮已在登录的 GitHub 页面选好单仓库范围，但最终安装被邮箱身份验证阻塞；尚未验证 Claude 客户端推送成功。owner 随后选择“先由总控代入库”，本轮不继续安装；总控代存不需要这次验证，当前仅待完整审核原文。
 - 审核无需下载再转存：有写工具的 Claude 可从本会话的原审核文件直接提交；只读 Claude 可直接在对话输出完整正文，owner 转交有写权限的总控或执行席代存。不能把参考网页链接冒充完整审核文件。
 
 ## 2. raw URL 模板
