@@ -51,3 +51,5 @@ WEP3 run 38694832761 在部署前 CI 被旧的 aave-guard-v4 固定断言拦住�
 针对已证实的旧持久对象运行时，新增 Cloudflare 原生 renamed_classes：Market → MarketRuntimeV2，保留原 namespace、idFromName('ltzzz-market-v1')、book key、订单、资金及历史意图，不创建新财务存储。部署增加只读状态摘要：验证实际 runtime=v2/aave=v5、历史意图不为空、原有 supply/exit 标志保留，记录 book 哈希；不公开已签名字节。状态验证失败则不进入订单履约。验收仍不发起模型生成或资金交易。
 
 迁移部署 run 38695914949 在首次只读探针收到 HTML 边缘页，旧探针 JSON 解析异常中止，未形成状态摘要。已将探针改为有界等待：逐次记录 HTTP/content-type/版本，HTML 或连接错误也写失败观测，不能再因解析失败丢回执。资金只读 runner 同样保留非 JSON 响应的 HTTP 状态，不保存边缘 HTML 正文。正在重新验收；交易执行通道没有启用。
+
+只读复核 38695199325 attempt 2 在 07:02:22–23 UTC 已实测三项全部成功，aave=v5，供应/退出标志均为 true、无 active_intent；mainnet.base.org 与 base.drpc.org 拒绝后 publicnode 完整读取成功。余额是既有资产快照：315.408481 USDC + 34.490664 aUSDC，本轮未投资或转账，不能记为新增收入。此轮推送因旧 runner 沿用 run-only 文件名，与 main 首次失败回执 add/add 冲突；artifact 已保存。总控从原始 job JSON 日志按 attempt-2 代存三份回执及 inspection-38695199325-2.json，首次失败文件保留。runner 后续按 run+attempt 写入，artifact glob 同步覆盖该格式，避免再次相撞。

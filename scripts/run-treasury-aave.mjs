@@ -2,7 +2,7 @@ import fs from 'node:fs';import crypto from 'node:crypto';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev',action=process.env.AAVE_ACTION||'auto',amount=process.env.AAVE_AMOUNT||'1',id=process.env.AAVE_INTENT_ID||'AAVE-RUN-'+(process.env.GITHUB_RUN_ID||Date.now());
 const auth=process.env.WEP3_RUNNER_TOKEN||(process.env.CLOUDFLARE_API_TOKEN?crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex'):'');
 const readOnly=['status','diagnose','reconcile','preview','auto-preview'].includes(action);
-const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID||'local',action,read_only:readOnly,on_chain_executed:false,tx_hash:null};
+const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID||'local',run_attempt:process.env.GITHUB_RUN_ATTEMPT||'1',action,read_only:readOnly,on_chain_executed:false,tx_hash:null};
 try{
  if(!['status','diagnose','reconcile','preview','auto-preview','auto','supply','withdraw'].includes(action))throw Error('unsupported_action');
  const get=['status','diagnose','reconcile'].includes(action),headers={'Content-Type':'application/json','X-Lab-Pin':auth};
@@ -26,4 +26,9 @@ try{
  if(!readOnly&&['pending','pending_confirmations'].includes(report.result?.status)){report.status='pending_requires_reconciliation';process.exitCode=1;}
 }catch{report.status='rpc_or_service_unavailable';report.service_verified=false;process.exitCode=1;}
 const suffix=['diagnose','auto-preview','reconcile'].includes(action)?action+'-':'';
-fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/aave-'+suffix+(process.env.GITHUB_RUN_ID||'local')+'.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+fs.mkdirSync('knowledge/results/wep3',{recursive:true});
+const stem='knowledge/results/wep3/aave-'+suffix+(process.env.GITHUB_RUN_ID||'local'),serialized=JSON.stringify(report,null,2);
+fs.writeFileSync(stem+'-attempt-'+report.run_attempt+'.json',serialized);
+// Keep the original first-attempt path for readers; a rerun cannot overwrite it.
+if(report.run_attempt==='1')fs.writeFileSync(stem+'.json',serialized);
+console.log(JSON.stringify(report));

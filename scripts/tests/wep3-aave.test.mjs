@@ -119,6 +119,15 @@ test('read-only runner retains HTTP metadata when an edge HTML page cannot be pa
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 
+test('a read-only rerun writes an attempt-specific receipt without overwriting its failed first attempt',async()=>{
+ const fs=await import('node:fs'),path=await import('node:path'),{spawnSync}=await import('node:child_process');fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/aave-attempt-test-')),script=path.resolve('scripts/run-treasury-aave.mjs');
+ try{const receipts=path.join(dir,'knowledge/results/wep3');fs.mkdirSync(receipts,{recursive:true});const prior=path.join(receipts,'aave-diagnose-fixture.json');fs.writeFileSync(prior,'first failed observation');
+ const mock=`globalThis.fetch=async()=>Response.json({ok:true,status:'diagnostic_only',storage:{ok:true}});await import(${JSON.stringify('file://'+script)});`;
+ const run=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'fixture',GITHUB_RUN_ATTEMPT:'2'},encoding:'utf8'});
+ assert.equal(run.status,0,run.stderr);assert.equal(fs.readFileSync(prior,'utf8'),'first failed observation');const receipt=JSON.parse(fs.readFileSync(path.join(receipts,'aave-diagnose-fixture-attempt-2.json'),'utf8'));assert.equal(receipt.service_verified,true);assert.equal(receipt.run_attempt,'2');assert.equal(receipt.on_chain_executed,false);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
 test('real resume control flow retries identical stored bytes on another RPC without signing a replacement',async()=>{
  const wallet=Wallet.createRandom(),plan=buildAavePlan(input,{...ctx,address:wallet.address}),raw=await wallet.signTransaction({chainId:8453,to:plan.steps[0].to,data:plan.steps[0].data,nonce:0,gasLimit:60000,maxFeePerGas:1000000n,maxPriorityFeePerGas:1n,value:0n,type:2}),hash=keccak256(raw),keys=budgetKeys(Date.now());
  const i={...pending(),treasury:wallet.address,status:'prepared',keys,steps:plan.steps};Object.assign(i.steps[0],{raw,tx_hash:hash,status:'signed_not_confirmed'});
