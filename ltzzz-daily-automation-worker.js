@@ -689,7 +689,7 @@ async function taskDoubaoDaily(env, ctx) {
   const path = dailyPath("doubao", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.doubao-daily", { today, path, contentId, registryPath, polish_count: polish.length, dry_run: true, budget: note.budget });
-  return { task: "doubao-daily", ok: true, path, contentId, registryPath, budget: note.budget, dry_run: note.dry_run };
+  return { task: "doubao-daily", ok: true, path, contentId, registryPath, budget: note.budget, dry_run: note.dry_run, ai: { status: note.status, error: note.error || null, waiting_credential: note.waiting_credential || null } };
 }
 
 /* ---- 任务 3：XAI/Grok 每日 --------------------------------------
@@ -788,7 +788,7 @@ async function taskDeepseekDaily(env, ctx) {
   const path = dailyPath("deepseek", today);
   await writeArtifact(path, body, env, ctx);
   logDry("task.deepseek-daily", { today, path, dry_run: compare.dry_run, budget: compare.budget });
-  return { task: "deepseek-daily", ok: true, path, budget: compare.budget, dry_run: compare.dry_run };
+  return { task: "deepseek-daily", ok: true, path, budget: compare.budget, dry_run: compare.dry_run, ai: { status: compare.status, error: compare.error || null, waiting_credential: compare.waiting_credential || null } };
 }
 
 /* ---- 任务 6：Microsoft Copilot 每日 ------------------------------
