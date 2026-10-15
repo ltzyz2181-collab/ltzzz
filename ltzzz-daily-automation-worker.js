@@ -436,6 +436,22 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
       };
     }
 
+    // 2026-10-15 修正：上游 fetch 无超时会导致任务无限挂起（实测方舟/DeepSeek 在
+    // 本 Worker 内可达 90s+ 无响应）。加 20s 硬超时，让任务如实报错返回，绝不无限挂起。
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    let resp;
+    try {
+      resp = await fetch(apiUrl, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
     const resp = await fetch(apiUrl, {
       method: "POST",
       headers: headers,
