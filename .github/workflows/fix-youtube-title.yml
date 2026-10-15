@@ -1,0 +1,40 @@
+name: Fix YouTube video title (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: "YouTube video id"
+        default: "dmnEObXlHU4"
+      title:
+        description: "correct UTF-8 title"
+        default: "60秒看懂：LTZZZ AI视频流水线｜从聊天记录到成片"
+      description:
+        description: "description"
+        default: "LTZZZ AGI实验室 60 秒 9:16 品牌内容：DeepSeek 清洗、Doubao 脚本/字幕、R2 队列、YouTube/TikTok 发布与数据回写。内部验证交付，不含任何真实用户隐私。 #LTZZZ #AIGC #视频流水线 #DeepSeek #Doubao"
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Call update-description with correct title
+        env:
+          TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          VIDEO_ID: ${{ github.event.inputs.video_id }}
+          TITLE: ${{ github.event.inputs.title }}
+          DESC: ${{ github.event.inputs.description }}
+        run: |
+          curl -sS -m 60 -X POST "https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/update-description?video_id=$VIDEO_ID" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "{\"video_id\":\"$VIDEO_ID\",\"title\":\"$TITLE\",\"description\":\"$DESC\"}" | tee /tmp/fix.json
+          node -e "const r=require('/tmp/fix.json');if(r.error||r.ok===false){console.error(JSON.stringify(r));process.exit(1)}console.log('FIXED',r.video_id,r.title)"
+      - name: Save receipt
+        run: |
+          mkdir -p results/publishing
+          node -e "const fs=require('fs');const r=require('/tmp/fix.json');fs.writeFileSync('results/publishing/youtube-title-fix-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify({run_id:process.env.GITHUB_RUN_ID,video_id:process.env.VIDEO_ID,response:r},null,2))"
+          git config user.name ltzzz-bot; git config user.email bot@ltzzz.com
+          git add results/publishing; git commit -m "publishing: youtube title fix receipt" && git pull --rebase && git push
+        env:
+          VIDEO_ID: ${{ github.event.inputs.video_id }}
