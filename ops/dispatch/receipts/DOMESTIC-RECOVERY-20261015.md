@@ -35,3 +35,11 @@ Claude 本次来稿已存 knowledge/results/external/2026-10-15-claude.md；原�
 本地验证：45 项针对性测试通过（含失败回执、认证、流式防重、RPC 429 请求上限、提供商独立性、审计出处）；四份工作流 YAML 解析通过。测试执行者为 GPT/Codex，不冒充 Claude 的外部测试。
 
 待验收：本次两服务部署、Kimi 实际生成、DeepSeek 各出口恢复；不为验收新增模型消费。ANS 14天误报观察继续，内部积分不能记为真钱收入。
+
+## 第一轮真实验收与修正
+
+日课 Worker run 38694832757：部署与 Secret 更新通过，06:50:56 UTC 验证 revision=daily-resilience-v1、GET /run=405、匿名 POST=401、model_calls=0。artifact 11954171484 已保存；git 推送因安装工具留下的 tracked 改动不能 rebase 而失败。总控从该 job 原始 JSON 日志代存 deploy-38694832757.json，推送步骤改为 rebase --autostash，只提交回执。
+
+WEP3 run 38694832761 在部署前 CI 被旧的 aave-guard-v4 固定断言拦住，未部署 v5。断言现引用实际版本常量；完整线上同款测试加新增恢复测试共77项通过。测试是总控执行，不能归给外部 Claude。
+
+只读复核 run 38694832784 的失败 artifact 和 inspection 回执均已真实保存，保持 inspection_blocked；其中 diagnostics/reconcile=401（执行身份漏传），status 是旧 v4 RPC 失败。补齐既有派生服务身份，只调用只读端点；未加入钱包私钥或 auto/execute。该失败不算资金试跑失败，后续在 v5 部署完成后重新只读验收。
