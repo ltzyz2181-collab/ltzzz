@@ -3,6 +3,18 @@
 日期：2026-10-14 America/Tijuana；任务日期沿用仓库Asia/Shanghai。
 Owner授权：ANS/Pulse配合奖惩为首要工程，总控自主部署，千问代理同等运维总控；新增要求总控每日派单、其他AI自主找任务。
 
+## 最终线上验收
+
+[运行38688410217](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38688410217) 全部成功，版本 `0.3.4-state-v2`、`durable_revision=pulse-state-v2`，网关与状态协议一次等待即一致。类迁移使用 renamed_classes，原5条任务及continuity待审状态、事件、行动分都保留。
+
+- 云端42/42通过，0失败；最终本地46项相关检查通过，早期57项支付订单回归通过。
+- 2026-10-15 05:44:39 UTC实测：豆包、DeepSeek、Kimi、千问、WEP3均HTTP200并已自动恢复派单；Grok HTTP404保持单独暂停。正常席不再挂旧TypeError。
+- /run认证/拒绝检查、千问probe、未来alarm、外部watch、五席奖惩同步均成功；本监控部署模型调用0、转账0。真实原生模型交付仍以独立生成回执为准。
+- 每日2条定向单已保存；任务池另有3条开放单，其中continuity实际交付已待审，其余可认领。现有日课优先消费当天派单/开放选题，不额外调用模型；选题不等于排他认领。
+- [最终部署JSON](../../../knowledge/results/pulse/deploy-38688410217-attempt-1-pass-1.json) · [最终外部watch](../../../knowledge/results/pulse/watch-38688410217-attempt-1.json)。
+
+以下为早期验收记录，保留原时间和状态，不能替代上述最终版本。
+
 ## 已有真实验收
 
 - [PR63](https://github.com/ltzyz2181-collab/ltzzz/pull/63) 首次实装；[PR64](https://github.com/ltzyz2181-collab/ltzzz/pull/64) 修复回执集合类型导致总控在模型前崩溃；[PR65](https://github.com/ltzyz2181-collab/ltzzz/pull/65) 运行兼容及订单流程隔离；[PR66](https://github.com/ltzyz2181-collab/ltzzz/pull/66) 每日派单与任务池。
