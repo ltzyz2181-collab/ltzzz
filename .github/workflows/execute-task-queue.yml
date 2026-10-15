@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Check claim, incomplete-output and independent review regressions
-        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs
+        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-board-sync.test.mjs
       - name: Prepare today's ANS direction and two durable assignments, no models
         id: prepare
         env:
@@ -34,7 +34,7 @@ jobs:
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/ans-cycle/
+          git add knowledge/results/ans-cycle/ knowledge/results/pulse/latest.json
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'ANS daily durable claims before model execution'
           for attempt in 1 2 3 4; do
@@ -59,7 +59,7 @@ jobs:
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/ans-cycle/
+          git add knowledge/results/ans-cycle/ knowledge/results/pulse/latest.json
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'ANS actual model deliverables and independent verdict'
           for attempt in 1 2 3 4; do
@@ -77,7 +77,7 @@ jobs:
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/ans-cycle/
+          git add knowledge/results/ans-cycle/ knowledge/results/pulse/latest.json
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'ANS live board feedback, no cash settlement'
           for attempt in 1 2 3 4; do

@@ -35,5 +35,13 @@ if(phase==='prepare'){
   const worker=record.artifacts.find(a=>a.role==='worker'),audit=record.artifacts.find(a=>a.role==='reviewer');
   try{await control({id:'ans-review-'+date,action:'review_task',task_id:worker.task_id,agent:'doubao',accepted:record.audit.accepted,reviewed_sha256:worker.sha256,scope:'engineering_draft_only',worker_actual_provider:worker.executed_by.toLowerCase(),reviewer_actual_provider:audit.executed_by.toLowerCase(),review_evidence_path:audit.path,review_evidence_sha256:audit.sha256});record.remote_review_status=record.audit.accepted?'completed_draft_review':'rejected_draft_review';}catch{record.remote_review_status='blocked_remote_review';process.exitCode=1;}
  }
+ if(record.remote_review_status&&record.artifacts.length===2){
+  const snapshot=await pulseSnapshot(),worker=record.artifacts.find(a=>a.role==='worker'),audit=record.artifacts.find(a=>a.role==='reviewer');
+  const w=snapshot.task_board?.find(t=>t.id===worker.task_id),a=snapshot.task_board?.find(t=>t.id===audit.task_id);
+  const verified=snapshot.available&&w?.status===record.remote_review_status&&w?.evidence_sha256===worker.sha256&&a?.evidence_sha256===audit.sha256;
+  record.board_verification={at:new Date().toISOString(),verified:!!verified,worker_status:w?.status||null,reviewer_status:a?.status||null};
+  if(snapshot.available){fs.mkdirSync('knowledge/results/pulse',{recursive:true});fs.writeFileSync('knowledge/results/pulse/latest.json',JSON.stringify(snapshot,null,2)+'\n');}
+  if(!verified)process.exitCode=1;
+ }
  save(record);
 }else throw Error('phase_required');
