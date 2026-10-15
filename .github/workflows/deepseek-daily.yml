@@ -1,0 +1,43 @@
+name: DeepSeek daily (GH Actions)
+
+on:
+  schedule:
+    # UTC 22:30 = CST 06:30（与 CF 侧 deepseek-daily 时段一致；CF→DeepSeek 网络不通，真实调用走此处）
+    - cron: '30 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-deepseek-daily
+  cancel-in-progress: false
+
+jobs:
+  deepseek-daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run DeepSeek daily entry
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+        run: node scripts/run-deepseek-daily.mjs
+      - name: Commit and push the daily entry
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/daily/deepseek/
+          git diff --staged --quiet && echo "no changes" && exit 0
+          git commit -m "content: DeepSeek daily entry $(date -u +%F)"
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
