@@ -28,5 +28,5 @@ jobs:
           node --input-type=module <<'JS'
           const r=await fetch('https://ltzzz-video-scheduler.ltzyz2181.workers.dev/health');
           const j=await r.json(); console.log(JSON.stringify(j));
-          if(!r.ok||!j.ok||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
+          if(!r.ok||!j.ok||j.version!=='v3-verified-queue'||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
           JS
