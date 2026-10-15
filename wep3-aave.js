@@ -221,7 +221,17 @@ export async function executeAave(m,book,input,{preview=false}={}){
 }
 
 export async function autoAave(m,book,{preview=false}={}){
- const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
+ let storage=aaveStorageStatus(book);
+ if(!storage.ok){
+  // Fix A: a stale active_intent may reference a missing intent object
+  // (persisted orphan from an earlier failed attempt). Auto-clear and resume.
+  if(book.aave&&book.aave.active_intent&&(!book.aave.intents||!Object.hasOwn(book.aave.intents,book.aave.active_intent))){
+   const cleared=book.aave.active_intent;book.aave.active_intent=null;await m.save(book);
+   const resumed=await autoAave(m,book,{preview});
+   return {ok:true,status:'cleared_stale_active_intent',cleared_intent:cleared,resumed};
+  }
+  return storage;
+ }
  if(storage.active_intent){const i=book.aave.intents[storage.active_intent];return executeAave(m,book,{intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6)},{preview});}
  const s=await aaveStatus(m,book);if(!s.ok)return s;
  if(s.paused)return {ok:true,status:'supply_paused',signed:false};
