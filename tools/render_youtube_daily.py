@@ -3,6 +3,13 @@ from PIL import Image,ImageDraw,ImageFont
 out=pathlib.Path('video-output');out.mkdir(exist_ok=True)
 day=os.environ.get('VIDEO_DATE') or __import__('datetime').datetime.now(__import__('zoneinfo').ZoneInfo('America/Tijuana')).strftime('%Y-%m-%d')
 source=pathlib.Path('knowledge/results/wep3/delivery-contract-'+day+'.json')
+ans_source=pathlib.Path('knowledge/results/ans-cycle/'+day+'.json')
+ans=None
+if ans_source.exists():
+ candidate=json.loads(ans_source.read_text())
+ if candidate.get('status')=='draft_independently_reviewed' and candidate.get('board_verification',{}).get('verified'):
+  ans=candidate
+  source=ans_source
 if not source.exists():
  candidates=sorted(pathlib.Path('knowledge/results/wep3').glob('delivery-contract-*.json'))
  if not candidates: raise RuntimeError('No real delivery evidence')
@@ -17,10 +24,14 @@ except Exception:
  balance_display='unavailable'
 (out/'treasury-snapshot.json').write_text(json.dumps(status,indent=2))
 text='AI hiring AI, with evidence. LTZZZ connects tasks, delivery, independent review, and settlement. A real model produces an artifact. Live interface tests check the result. Another model reviews it. Internal credits record the settlement. This is not an on chain wage payment. Every outcome keeps a receipt. Explore the project and product in the description.'
+if ans:
+ text='An AI team needs more than a chat. It needs a working loop. At LTZZZ, the coordinator assigns a task. DeepSeek produces an engineering draft. Doubao reviews the evidence independently. Both artifacts keep a hash, and the result returns to the task board. Draft review is not production deployment, and internal credits are not cash wages. Follow the work at LTZZZ.'
 (out/'voice.txt').write_text(text)
 subprocess.run(['espeak-ng','-v','en-us','-s','170','-f',str(out/'voice.txt'),'-w',str(out/'voice.wav')],check=True)
 font='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
 scenes=[('AI HIRING AI','Task -> delivery -> review'),('PROVE THE WORK','Artifact + live interface tests'),('INDEPENDENT REVIEW','A second model checks evidence'),('TODAY ON BASE',f'USDC: {balance_display}. Wages: internal credits.')]
+if ans:
+ scenes=[('THE DAILY LOOP','Assign. Deliver. Review. Learn.'),('DEEPSEEK BUILDS','A real engineering draft.'),('DOUBAO REVIEWS','Independent evidence review.'),('FEEDBACK RETURNS','Hashed artifacts. Live task board.')]
 for i,(title,subtitle) in enumerate(scenes):
  im=Image.new('RGB',(720,1280),'#091221');d=ImageDraw.Draw(im)
  d.text((48,100),'LTZZZ / AI ECONOMY LAB',font=ImageFont.truetype(font,28),fill='#53dacb')
@@ -41,3 +52,4 @@ assert (v['codec_name'],v['width'],v['height'],v['r_frame_rate'],a['codec_name']
 assert 29.9<=float(probe['format']['duration'])<=30.2
 subprocess.run(['ffmpeg','-v','error','-i',str(video),'-f','null','-'],check=True)
 (out/'manifest.json').write_text(json.dumps({'day':day,'source_file':str(source),'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'video_sha256':hashlib.sha256(video.read_bytes()).hexdigest(),'source_commit':os.getenv('GITHUB_SHA'),'duration':probe['format']['duration'],'model_calls':0,'paid':False,'tx_hash':None},indent=2))
+

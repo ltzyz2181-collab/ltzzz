@@ -1,0 +1,112 @@
+name: Daily Instagram material and Manus handoff
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '25 14 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/instagram-daily-package.yml','scripts/package-instagram-daily.mjs','scripts/dispatch-manus-instagram.mjs','scripts/lib/manus-handoff.mjs']
+permissions: {contents: write}
+concurrency: {group: ltzzz-instagram-material-and-handoff, cancel-in-progress: false}
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Test immutable material, one-Reel guard and remote handoff
+        run: node --test scripts/tests/manus-handoff.test.mjs
+      - name: Choose today's immutable material without overwriting an in-flight video
+        id: package
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {localDay,admission} from './scripts/lib/manus-handoff.mjs';
+          const day=localDay(),file='videos/instagram/'+day+'/manifest.json';
+          fs.appendFileSync(process.env.GITHUB_ENV,'VIDEO_DATE='+day+'\n');
+          let render=true;
+          if(fs.existsSync(file)){
+            const packet=JSON.parse(fs.readFileSync(file));
+            const caption=fs.readFileSync(packet.caption_file,'utf8'),video=fs.readFileSync(packet.video_file);
+            if(admission({day,packet,caption,video})!=='ready')throw Error('Existing package invalid; do not replace blindly');
+            fs.copyFileSync(packet.video_file,'videos/instagram/latest.mp4');
+            fs.copyFileSync(packet.caption_file,'videos/instagram/latest-caption.txt');
+            fs.copyFileSync(file,'videos/instagram/latest.json');render=false;
+          }
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,'render='+render+'\n');
+          JS
+      - name: Prepare zero-model local media tools
+        if: steps.package.outputs.render == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng fonts-dejavu-core
+          python -m pip install Pillow
+      - name: Render current evidence and validate H264 AAC portrait video
+        if: steps.package.outputs.render == 'true'
+        run: python tools/render_youtube_daily.py
+      - name: Package date-specific MP4, English caption and direct Manus task
+        if: steps.package.outputs.render == 'true'
+        run: node scripts/package-instagram-daily.mjs
+      - name: Commit public download materials before any remote task
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add -f videos/instagram/
+          git add ops/dispatch/MANUS-INSTAGRAM-*.md
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Instagram immutable daily video, English caption and Manus publication task'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Verify actual public downloads and reserve handoff
+        id: handoff
+        env:
+          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+          MANUS_ACCESS_TOKEN: ${{ secrets.MANUS_ACCESS_TOKEN }}
+        run: node scripts/dispatch-manus-instagram.mjs prepare
+      - name: Persist handoff reservation before any Manus request
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add results/publishing/manus-dispatch/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Instagram public download verification and durable handoff reservation'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Send one publication task to Manus using existing credentials
+        if: steps.handoff.outputs.send == 'true'
+        env:
+          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+          MANUS_ACCESS_TOKEN: ${{ secrets.MANUS_ACCESS_TOKEN }}
+        run: node scripts/dispatch-manus-instagram.mjs send
+      - name: Preserve actual delivery or exact blocker
+        if: always()
+        run: |
+          mkdir -p results/publishing/manus-dispatch
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add results/publishing/manus-dispatch/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Manus actual handoff outcome; publication not presumed'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: instagram-material-${{ github.run_id }}
+          path: |
+            video-output/
+            results/publishing/manus-dispatch/
+          retention-days: 7
+
