@@ -1,210 +1,143 @@
-/**
- * LTZZZ 视频自动发布调度器 Worker · v2（真实发布 + 定时扫描）
- * 2026-10-02 由豆包重写：原 v1 仅"模拟 queued"，从不真实上传、无 cron 入口。
- * v2 变更：
- *   - POST /schedule/publish → 立即真实调用 youtube-upload-worker 上传（privacyStatus=public）
- *   - scheduled()（cron 触发）→ 扫描 R2 bucket「ltzzz-videos」queue/ 目录下的待发布视频
- *     （约定：queue/<name>.mp4 + queue/<name>.meta.json {title,description}）→ 逐个真实发布
- *     → 成功后对象移入 published/（copy + delete），日志写 logs/publish-<ts>.json
- *   - 网络声明：YouTube 上传走 googleapis（https），与 Base 主网无关。
- *
- * 需要 Cloudflare Secret：
- *   LTZZZ_AGENT_TOKEN         调度器鉴权令牌（调用 /schedule/publish 与 webhook 用）
- *   WEBHOOK_SECRET            webhook 校验密钥
- *   YOUTUBE_UPLOAD_WORKER_URL = https://ltzzz-youtube-upload.ltzyz2181.workers.dev
- *   TIKTOK_UPLOAD_WORKER_URL  （可选，TikTok 审核通过后再配；未配则跳过 tiktok）
- *
- * R2 绑定：VIDEOS（bucket: ltzzz-videos）
- * 路由：
- *   GET  /health
- *   POST /schedule/publish  { video_url, title, description, privacyStatus? }
- *   GET  /status?task_id=xxx
- *   POST /webhook/video-ready
- */
-
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Webhook-Secret',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+/** Authenticated R2 queue. Uploaded, public and processed are separate states. */
+const VERSION='v3-verified-queue',MAX_BYTES=25*1024*1024;
+const NAME=/^[A-Za-z0-9][A-Za-z0-9_-]{0,100}$/;
+const EXPECTED_CHANNEL='UCnKqseQ7uivSc7FN38ccRUA';
+const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
+const digest=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',value))).map(x=>x.toString(16).padStart(2,'0')).join('');
+const receiptKey=hash=>'receipts/youtube/'+hash+'.json';
+const read=async(env,key)=>{const item=await env.VIDEOS.get(key);return item?item.json():null;};
+const write=async(env,key,value,options={})=>env.VIDEOS.put(key,JSON.stringify(value),{httpMetadata:{contentType:'application/json'},...options});
+function authorized(request,env){return (!!env.LTZZZ_AGENT_TOKEN&&request.headers.get('Authorization')===`Bearer ${env.LTZZZ_AGENT_TOKEN}`)||(!!env.WEBHOOK_SECRET&&request.headers.get('X-Webhook-Secret')===env.WEBHOOK_SECRET);}
+async function youtube(env,path,body,publicationKey){
+ const init={method:body?'POST':'GET',headers:{Authorization:`Bearer ${env.LTZZZ_AGENT_TOKEN}`}};
+ if(body){init.body=body;if(!(body instanceof FormData))init.headers['Content-Type']='application/json';}
+ if(publicationKey)init.headers['Idempotency-Key']=publicationKey;
+ const url='https://youtube-upload.internal'+path;
+ const response=env.YOUTUBE_UPLOADER?await env.YOUTUBE_UPLOADER.fetch(new Request(url,init)):
+  await fetch((env.YOUTUBE_UPLOAD_WORKER_URL||'https://ltzzz-youtube-upload.ltzyz2181.workers.dev')+path,{...init,signal:AbortSignal.timeout(180000)});
+ let data;try{data=await response.json();}catch{return {ok:false,http:response.status,error:'uploader_non_json_response'};}
+ return {...data,http:response.status};
+}
+async function enqueue(request,env,name){
+ if(!env.VIDEOS)return json({ok:false,error:'r2_binding_missing'},503);
+ if(!NAME.test(name))return json({ok:false,error:'invalid_name'},400);
+ const form=await request.formData(),video=form.get('video');let meta;
+ try{meta=JSON.parse(String(form.get('meta')||''));}catch{return json({ok:false,error:'invalid_metadata'},400);}
+ if(!video||typeof video.arrayBuffer!=='function'||!video.size||video.size>MAX_BYTES)return json({ok:false,error:'video_missing_or_exceeds_25MB'},400);
+ if(typeof meta.title!=='string'||!meta.title.trim()||meta.title.length>100||typeof meta.description!=='string'||meta.description.length>4900)return json({ok:false,error:'invalid_title_or_description'},400);
+ const bytes=await video.arrayBuffer(),hash=await digest(bytes),key=receiptKey(hash);
+ if(meta.video_sha256&&meta.video_sha256!==hash)return json({ok:false,error:'video_hash_mismatch'},422);
+ const prior=await read(env,key);
+ if(prior?.state==='published')return json({ok:true,status:'already_public',video_sha256:hash,video_id:prior.video_id,url:prior.url,verification:prior.verification});
+ if(prior)return json({ok:true,status:'reconciliation_required',name:prior.name,video_sha256:hash,video_id:prior.video_id||null});
+ const metaKey=`queue/${name}.meta.json`,existing=await read(env,metaKey);
+ if(existing&&existing.video_sha256!==hash)return json({ok:false,error:'queue_name_conflict'},409);
+ await env.VIDEOS.put(`queue/${name}.mp4`,bytes,{httpMetadata:{contentType:'video/mp4'}});
+ // Publish the pointer only after the complete video write succeeds.
+ await write(env,metaKey,{...meta,title:meta.title.trim(),name,video_sha256:hash,bytes:bytes.byteLength,publication_policy:'public_ready',queued_at:new Date().toISOString()});
+ return json({ok:true,status:'queued',name,video_sha256:hash,bytes:bytes.byteLength});
+}
+async function processVideo(env,name){
+ const metaKey=`queue/${name}.meta.json`,meta=await read(env,metaKey);
+ if(!meta)return {ok:false,status:'metadata_missing',name};
+ if(meta.publication_policy!=='public_ready'||!/^([a-f0-9]{64})$/.test(meta.video_sha256||''))return {ok:false,status:'legacy_metadata_not_validated',name};
+ const key=receiptKey(meta.video_sha256),publicationKey='queue-'+meta.video_sha256;
+ let receipt=await read(env,key);
+ if(!receipt){
+  const claim={state:'upload_started',name,video_sha256:meta.video_sha256,publication_key:publicationKey,at:new Date().toISOString(),published:false};
+  const acquired=await write(env,key,claim,{onlyIf:{etagDoesNotMatch:'*'}});
+  if(!acquired)return {ok:false,status:'another_execution_claimed',name};
+  receipt=claim;
+  try{
+   const object=await env.VIDEOS.get(`queue/${name}.mp4`);
+   if(!object)throw Error('video_missing');
+   const bytes=await object.arrayBuffer();
+   if(bytes.byteLength>MAX_BYTES||await digest(bytes)!==meta.video_sha256)throw Error('video_hash_or_size_changed');
+   const form=new FormData();form.set('video',new Blob([bytes],{type:'video/mp4'}),name+'.mp4');
+   form.set('title',meta.title);form.set('description',meta.description);form.set('privacyStatus','public');form.set('categoryId','28');
+   const uploaded=await youtube(env,'/youtube/upload',form,publicationKey);
+   if(!uploaded.video_id)throw Error('upload_unconfirmed');
+   receipt={...receipt,state:'uploaded_pending_verification',video_id:uploaded.video_id,url:'https://www.youtube.com/watch?v='+uploaded.video_id};
+   await write(env,key,receipt);
+  }catch{
+   // The upstream may already have accepted the video. Never buy a second upload.
+   receipt={...receipt,state:'upload_uncertain',error:'reconcile_publication_before_retry'};await write(env,key,receipt);
+   return {ok:false,status:receipt.state,name,video_sha256:meta.video_sha256};
+  }
+ }
+ if(!receipt.video_id){
+  const prior=await youtube(env,'/youtube/publication?key='+publicationKey);
+  if(!prior.receipt?.video_id)return {ok:false,status:'upload_uncertain',name,video_sha256:meta.video_sha256};
+  receipt={...receipt,state:'uploaded_pending_verification',video_id:prior.receipt.video_id,url:'https://www.youtube.com/watch?v='+prior.receipt.video_id};await write(env,key,receipt);
+ }
+ if(receipt.state!=='published'){
+  let verification=await youtube(env,'/youtube/verify?video_id='+encodeURIComponent(receipt.video_id));
+  if(verification.ok&&verification.channel_id===EXPECTED_CHANNEL&&['private','unlisted'].includes(verification.privacyStatus)&&(!receipt.public_update_attempted_at||Date.now()-Date.parse(receipt.public_update_attempted_at)>3600000)){
+   receipt.public_update_attempted_at=new Date().toISOString();await write(env,key,receipt);
+   await youtube(env,'/youtube/update-status',JSON.stringify({video_id:receipt.video_id,privacyStatus:'public'}));
+   verification=await youtube(env,'/youtube/verify?video_id='+encodeURIComponent(receipt.video_id));
+  }
+  if(!verification.published||verification.channel_id!==EXPECTED_CHANNEL){
+   receipt={...receipt,state:verification.privacyStatus==='public'?'processing':'not_public',published:false,verification};await write(env,key,receipt);
+   return {ok:false,status:receipt.state,name,video_id:receipt.video_id,url:receipt.url,verification};
+  }
+  receipt={...receipt,state:'published',published:true,verification,verified_at:new Date().toISOString()};
+  // Persist confirmation BEFORE archiving, so a cleanup failure cannot reupload.
+  await write(env,key,receipt);
+ }
+ const object=await env.VIDEOS.get(`queue/${name}.mp4`);
+ if(object)await env.VIDEOS.put(`published/${name}.mp4`,object.body,{httpMetadata:{contentType:'video/mp4'}});
+ await write(env,`published/${name}.meta.json`,{...meta,publication:receipt});
+ await env.VIDEOS.delete(`queue/${name}.mp4`);await env.VIDEOS.delete(metaKey);
+ return {ok:true,status:'published',name,video_id:receipt.video_id,url:receipt.url,verification:receipt.verification};
+}
+async function legacyPublish(request,env){
+ const body=await request.json();if(body.privacyStatus&&body.privacyStatus!=='public')return json({ok:false,error:'use_youtube_uploader_for_explicit_private_upload'},400);
+ let source;try{source=new URL(body.video_url);}catch{return json({ok:false,error:'missing_or_invalid_video_url'},400);}
+ if(source.protocol!=='https:'||!['videos.ltzzz.com','raw.githubusercontent.com','ltzyz2181-collab.github.io'].includes(source.hostname))return json({ok:false,error:'video_source_not_allowed'},400);
+ if(source.hostname==='raw.githubusercontent.com'&&!source.pathname.startsWith('/ltzyz2181-collab/ltzzz/'))return json({ok:false,error:'video_source_not_in_project'},400);
+ const response=await fetch(source,{signal:AbortSignal.timeout(30000),redirect:'error'});
+ if(!response.ok)return json({ok:false,error:'video_source_unavailable',http:response.status},502);
+ const data=await response.arrayBuffer();if(data.byteLength>MAX_BYTES)return json({ok:false,error:'video_exceeds_25MB'},413);
+ const name='legacy-'+(await digest(data)).slice(0,24),form=new FormData();form.set('video',new Blob([data],{type:'video/mp4'}),name+'.mp4');form.set('meta',JSON.stringify({title:String(body.title||name).slice(0,100),description:String(body.description||'').slice(0,4900)}));
+ const queued=await (await enqueue(new Request(request.url,{method:'POST',body:form}),env,name)).json();
+ if(!queued.ok)return json(queued,400);
+ const publication=queued.status==='already_public'?{ok:true,status:'published',video_id:queued.video_id,url:queued.url}:await processVideo(env,queued.name||name);
+ return json({ok:publication.ok,task_id:'queue-'+queued.video_sha256,results:{youtube:{...publication,status:publication.ok?'published':publication.status}}});
+}
+async function processQueue(env,selected){
+ if(!env.VIDEOS||!env.LTZZZ_AGENT_TOKEN)return {ok:false,error:'queue_or_upload_auth_missing'};
+ const names=[];
+ if(selected){if(!NAME.test(selected))return {ok:false,error:'invalid_name'};names.push(selected);}
+ else{
+  let cursor;
+  do{const page=await env.VIDEOS.list({prefix:'queue/',limit:100,cursor});names.push(...page.objects.filter(x=>x.key.endsWith('.meta.json')).map(x=>x.key.slice(6,-10)).filter(x=>NAME.test(x)));cursor=page.truncated?page.cursor:undefined;}while(cursor&&names.length<100);
+ }
+ const results=[];
+ // One real upload per invocation; already-started items can reconcile first.
+ for(const name of names.slice(0,20)){
+  try{const result=await processVideo(env,name);results.push(result);if(!['metadata_missing','legacy_metadata_not_validated','another_execution_claimed','upload_uncertain'].includes(result.status))break;}
+  catch{results.push({ok:false,status:'queue_processing_failed',name});break;}
+ }
+ const report={at:new Date().toISOString(),ok:results.every(x=>x.ok),scanned:names.length,results};
+ await write(env,'logs/latest-publish.json',report);return report;
+}
+export default{
+ async fetch(request,env){
+  const url=new URL(request.url);
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true});
+  if(!authorized(request,env))return json({ok:false,error:'unauthorized'},401);
+  try{
+   if(url.pathname.startsWith('/queue/upload/')&&request.method==='POST')return enqueue(request,env,url.pathname.slice('/queue/upload/'.length));
+   if(url.pathname==='/queue/run'&&request.method==='POST'){const input=await request.json().catch(()=>({}));return json(await processQueue(env,input.name));}
+   if(url.pathname==='/queue/status'&&request.method==='GET'){
+    const sha=url.searchParams.get('sha256');if(!/^[a-f0-9]{64}$/.test(sha||''))return json({ok:false,error:'invalid_hash'},400);
+    return json({ok:true,receipt:await read(env,receiptKey(sha))});
+   }
+   if(url.pathname==='/status'&&request.method==='GET')return json({ok:true,latest:await read(env,'logs/latest-publish.json')});
+   if((url.pathname==='/schedule/publish'||url.pathname==='/webhook/video-ready')&&request.method==='POST')return legacyPublish(request,env);
+   return json({ok:false,error:'not_found'},404);
+  }catch{return json({ok:false,error:'queue_request_failed'},500);}
+ },
+ async scheduled(event,env,ctx){return processQueue(env);}
 };
-
-function json(data, status = 200, extra = {}) {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...cors, ...extra }
-  });
-}
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
-    try {
-      if (url.pathname === '/health' && request.method === 'GET') {
-        return json({
-          ok: true,
-          service: 'ltzzz-video-scheduler',
-          version: 'v2-live',
-          cron_configured: !!(env.VIDEOS),
-          platforms: {
-            youtube: !!env.YOUTUBE_UPLOAD_WORKER_URL,
-            tiktok: !!env.TIKTOK_UPLOAD_WORKER_URL,
-          },
-          privacy_default: 'public',
-        });
-      }
-      const auth = request.headers.get('Authorization') || '';
-      const webhookSecret = request.headers.get('X-Webhook-Secret') || '';
-      const authorized = (!!env.LTZZZ_AGENT_TOKEN && auth === `Bearer ${env.LTZZZ_AGENT_TOKEN}`) || (!!env.WEBHOOK_SECRET && webhookSecret === env.WEBHOOK_SECRET);
-      if (!authorized) return json({ ok: false, error: 'unauthorized' }, 401);
-
-      if (url.pathname === '/schedule/publish' && request.method === 'POST') {
-        return await handleSchedulePublish(request, env);
-      }
-      if (url.pathname === '/status' && request.method === 'GET') {
-        return await handleStatus(request, env);
-      }
-      if (url.pathname === '/webhook/video-ready' && request.method === 'POST') {
-        return await handleVideoReadyWebhook(request, env);
-      }
-      return json({ ok: false, error: 'not_found' }, 404);
-    } catch (e) {
-      return json({ ok: false, error: 'internal', detail: String(e.message || e) }, 500);
-    }
-  },
-
-  /** cron 定时触发：扫描 R2 queue/ → 真实发布 */
-  async scheduled(event, env, ctx) {
-    const started = new Date().toISOString();
-    const results = [];
-    try {
-      if (!env.VIDEOS) {
-        return log(env, { started, ok: false, error: 'no VIDEOS binding (R2 not configured)' });
-      }
-      const listed = await env.VIDEOS.list({ prefix: 'queue/', limit: 20 });
-      const metas = listed.objects.filter((o) => o.key.endsWith('.meta.json'));
-      for (const metaObj of metas) {
-        const name = metaObj.key.replace(/^queue\//, '').replace(/\.meta\.json$/, '');
-        const videoKey = `queue/${name}.mp4`;
-        // 视频本体不在 queue 时跳过
-        const videoExists = listed.objects.some((o) => o.key === videoKey);
-        if (!videoExists) continue;
-
-        const meta = await env.VIDEOS.get(metaObj.key);
-        let title = name, description = '';
-        if (meta) {
-          try { const m = await meta.json(); title = m.title || name; description = m.description || ''; }
-          catch (e) { /* meta 解析失败用默认 */ }
-        }
-
-        const r = await publishToYouTube(env, videoKey, title, description);
-        if (r.ok) {
-          // 成功：copy 到 published/ + 删除 queue 源
-          await env.VIDEOS.put(`published/${name}.mp4`, await env.VIDEOS.get(videoKey).then((o) => o.body));
-          await env.VIDEOS.delete(videoKey);
-          await env.VIDEOS.delete(metaObj.key);
-        }
-        results.push({ name, ...r });
-      }
-      await log(env, { started, ok: true, scanned: metas.length, results });
-      return;
-    } catch (e) {
-      await log(env, { started, ok: false, error: String(e.message || e), results });
-    }
-  },
-};
-
-async function publishToYouTube(env, videoKey, title, description) {
-  if (!env.LTZZZ_AGENT_TOKEN) return { ok: false, error: 'upload_auth_not_configured' };
-  // 上传 worker 需要公开可拉取的 video_url；R2 key 不是 URL。
-  // 若配置了 PUBLIC_VIDEO_BASE（R2 自定义域名或公共访问前缀），则拼 URL；否则报需人工上传。
-  const base = env.PUBLIC_VIDEO_BASE || 'https://videos.ltzzz.com/'; // 默认走 r2-public worker 公共域
-  if (!base) {
-    return { ok: false, error: 'PUBLIC_VIDEO_BASE not set — R2 直链未配，无法 worker 拉取上传；请配置 R2 自定义域名后启用自动发' };
-  }
-  // 2026-10-04 修正（豆包实测）：r2-public-worker 按路径原样查 R2（无前缀映射），
-  // 原 `.replace('queue/', '')` 会拼出 https://videos.ltzzz.com/first-ai-lab.mp4 → R2 无此 key → 404 → cron 发布失败。
-  // 正确做法：保留 queue/ 前缀，r2-public 才能命中 queue/<name>.mp4。
-  const video_url = base + encodeURIComponent(videoKey);
-  try {
-    const resp = await fetch(`${env.YOUTUBE_UPLOAD_WORKER_URL}/youtube/upload`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.LTZZZ_AGENT_TOKEN}` },
-      body: JSON.stringify({
-        video_url,
-        title: String(title).slice(0, 100),
-        description: String(description).slice(0, 4900),
-        privacyStatus: 'public', // LTZZZ 自动发布一律公开（owner 拍板）
-      }),
-    });
-    const body = await resp.json().catch(() => ({}));
-    if (resp.ok && body.video_id) {
-      return { ok: true, video_id: body.video_id, url: 'https://www.youtube.com/watch?v=' + body.video_id, privacy: 'public' };
-    }
-    return { ok: false, http: resp.status, error: (body.error && body.error.message) || body.message || 'upload worker 返回失败' };
-  } catch (e) {
-    return { ok: false, error: String(e.message || e) };
-  }
-}
-
-async function handleSchedulePublish(request, env) {
-  const body = await request.json();
-  const { video_url, title = '', description = '', privacyStatus = 'public', platforms = ['youtube'] } = body;
-  if (!video_url) return json({ ok: false, error: 'missing_video_url' }, 400);
-  const taskId = `pub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const results = {};
-  if (platforms.includes('youtube') && env.YOUTUBE_UPLOAD_WORKER_URL && env.LTZZZ_AGENT_TOKEN) {
-    try {
-      const resp = await fetch(`${env.YOUTUBE_UPLOAD_WORKER_URL}/youtube/upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.LTZZZ_AGENT_TOKEN}` },
-        body: JSON.stringify({ video_url, title, description, privacyStatus: privacyStatus === 'private' ? 'private' : 'public' }),
-      });
-      const body2 = await resp.json().catch(() => ({}));
-      results.youtube = resp.ok && body2.video_id
-        ? { status: 'published', video_id: body2.video_id, url: 'https://www.youtube.com/watch?v=' + body2.video_id, privacy: privacyStatus }
-        : { status: 'failed', http: resp.status, error: (body2.error && body2.error.message) || body2.message || 'upload worker failed' };
-    } catch (e) {
-      results.youtube = { status: 'failed', error: String(e.message || e) };
-    }
-  } else {
-    results.youtube = { status: 'skipped', note: 'YOUTUBE_UPLOAD_WORKER_URL 未配置' };
-  }
-  if (platforms.includes('tiktok')) {
-    results.tiktok = env.TIKTOK_UPLOAD_WORKER_URL
-      ? { status: 'queued', note: 'TikTok worker 已配置，走独立发布' }
-      : { status: 'skipped', note: 'TikTok 未配置/审核未过' };
-  }
-  await log(env, { task_id: taskId, kind: 'manual', video_url, title, results });
-  return json({ ok: true, task_id: taskId, video_url, title, results });
-}
-
-async function handleStatus(request, env) {
-  const taskId = new URL(request.url).searchParams.get('task_id');
-  if (!taskId) return json({ ok: false, error: 'missing_task_id' }, 400);
-  return json({ ok: true, task_id: taskId, status: 'see_logs', note: '调度日志见 R2 logs/publish-*.json' });
-}
-
-async function handleVideoReadyWebhook(request, env) {
-  const body = await request.json();
-  const { video_url, title, description, source } = body;
-  const scheduleResult = await handleSchedulePublish(
-    new Request(request.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ video_url, title, description }),
-    }),
-    env
-  );
-  const result = await scheduleResult.json();
-  return json({ ok: true, webhook_received: true, source: source || 'unknown', schedule_result: result });
-}
-
-async function log(env, obj) {
-  try {
-    if (env.VIDEOS) {
-      const key = `logs/publish-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-      await env.VIDEOS.put(key, JSON.stringify(obj, null, 2));
-    }
-  } catch (e) { /* 日志失败不影响主流程 */ }
-}

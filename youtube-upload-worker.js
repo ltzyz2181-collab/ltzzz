@@ -45,7 +45,7 @@ export default {
 
     // 2026-10-10 Grok Bot：写操作鉴权（fail-closed）。OAuth 流程与 /health /youtube/status 不受影响。
     const WRITE = ['/youtube/upload', '/youtube/disconnect', '/youtube/update-description', '/youtube/update-status'];
-    if (WRITE.includes(path) && request.method === 'POST') {
+    if ((WRITE.includes(path) && request.method === 'POST') || path === '/youtube/publication') {
       const want = env.LTZZZ_AGENT_TOKEN || '';
       const got = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
       if (!want || !(await safeEqual(got, want))) return json({ error: 'unauthorized' }, 401);
@@ -54,7 +54,7 @@ export default {
     try {
       switch (path) {
         case '/health':
-          return json({ ok: true, service: 'ltzzz-youtube-upload', version: '1.0.0', time: new Date().toISOString() });
+          return json({ ok: true, service: 'ltzzz-youtube-upload', version: '1.1.0', publication_receipts: true, time: new Date().toISOString() });
 
         case '/auth/youtube':
           return await authStart(env, url);
@@ -64,6 +64,15 @@ export default {
 
         case '/youtube/verify':
           return json(await verifyVideo(env, url));
+
+        case '/youtube/publication': {
+          if(request.method!=='GET')return json({error:'Method not allowed'},405);
+          const key=url.searchParams.get('key');
+          if(!/^[a-zA-Z0-9:_-]{1,100}$/.test(key||''))return json({error:'Invalid publication key'},400);
+          const saved=await env.KV.get('yt:publication:default:'+key,'json');
+          const receipt=saved?{state:saved.state||null,video_id:saved.video_id||null,privacyStatus:saved.privacyStatus||null,url:saved.url||null}:null;
+          return json({ok:true,receipt});
+        }
 
         case '/youtube/status':
           return json(await getStatus(env, url));
@@ -438,15 +447,17 @@ async function uploadVideo(env, request, url) {
   await env.KV.put('yt:' + uk, JSON.stringify({
     ...tokens,
     last_publish: new Date().toISOString(),
-    publish_status: 'published',
-    last_video: { video_id: videoId, title, privacyStatus, published_at: new Date().toISOString(), url: 'https://www.youtube.com/watch?v=' + videoId },
+    publish_status: 'uploaded_pending_verification',
+    last_video: { video_id: videoId, title, privacyStatus: upData.status?.privacyStatus || null, published_at: new Date().toISOString(), url: 'https://www.youtube.com/watch?v=' + videoId },
   }));
 
   return {
     ok: true,
     video_id: videoId,
     title,
-    privacyStatus,
+    privacyStatus: upData.status?.privacyStatus || null,
+    uploaded: true,
+    published: false,
     url: 'https://www.youtube.com/watch?v=' + videoId,
     published_at: new Date().toISOString(),
   };
