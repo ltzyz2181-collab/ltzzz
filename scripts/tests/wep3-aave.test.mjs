@@ -16,10 +16,21 @@ test('failed exit cannot unlock larger pilot and spoofed score field cannot ente
 
 const pending=()=>({id:input.intent_id,action:'supply',amount_raw:'1000000',treasury:address,status:'pending',steps:[{kind:'approve',raw:'signed-private-bytes',tx_hash:'0xabc',status:'submitted'}]});
 const noEffects={env:{},save(){throw Error('must not save')}};
-test('orphaned, malformed and terminal active pointers block auto and direct execution before effects',async()=>{
- const cases=[{active_intent:input.intent_id},{active_intent:input.intent_id,intents:{}},{active_intent:input.intent_id,intents:{[input.intent_id]:null}},{active_intent:input.intent_id,intents:{[input.intent_id]:{...pending(),steps:null}}},{active_intent:input.intent_id,intents:{[input.intent_id]:{...pending(),status:'confirmed'}}},{active_intent:{unexpected:true},intents:{}}];
+test('orphaned string pointer is auto-cleared by auto; malformed/terminal pointers block before effects',async()=>{
  const original=globalThis.fetch;globalThis.fetch=async()=>{throw Error('must not access RPC')};
- try{for(const aave of cases){const b={aave},before=JSON.stringify(b);for(const run of [()=>autoAave(noEffects,b),()=>autoAave(noEffects,b,{preview:true}),()=>executeAave(noEffects,b,input)]){const r=await run();assert.equal(r.ok,false);assert.equal(r.status,'blocked_reconciliation');assert.equal(r.signed,false);assert.equal(JSON.stringify(b),before);}}}finally{globalThis.fetch=original;}
+ const noSaveEffects={env:{},save(){}};
+ try{
+  for(const aave of [{active_intent:input.intent_id},{active_intent:input.intent_id,intents:{}}]){
+   const b={aave},r=await autoAave(noSaveEffects,b);
+   assert.equal(r.ok,true);assert.equal(r.status,'cleared_stale_active_intent');assert.equal(b.aave.active_intent,null);
+  }
+  for(const aave of [{active_intent:input.intent_id,intents:{[input.intent_id]:null}},{active_intent:input.intent_id,intents:{[input.intent_id]:{...pending(),steps:null}}},{active_intent:input.intent_id,intents:{[input.intent_id]:{...pending(),status:'confirmed'}}},{active_intent:{unexpected:true},intents:{}}]){
+   const b={aave},before=JSON.stringify(b);
+   for(const run of [()=>autoAave(noEffects,b),()=>autoAave(noEffects,b,{preview:true}),()=>executeAave(noEffects,b,input)]){
+    const r=await run();assert.equal(r.ok,false);assert.equal(r.status,'blocked_reconciliation');assert.equal(r.signed,false);assert.equal(JSON.stringify(b),before);
+   }
+  }
+ }finally{globalThis.fetch=original;}
 });
 test('auto preview resumes the exact existing intent and redacts signed transaction',async()=>{
  const i=pending(),b={aave:{active_intent:i.id,intents:{[i.id]:i}}};

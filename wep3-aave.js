@@ -223,9 +223,9 @@ export async function executeAave(m,book,input,{preview=false}={}){
 export async function autoAave(m,book,{preview=false}={}){
  let storage=aaveStorageStatus(book);
  if(!storage.ok){
-  // Fix A: a stale active_intent may reference a missing intent object
+  // Fix A: a stale string active_intent may reference a missing intent object
   // (persisted orphan from an earlier failed attempt). Auto-clear and resume.
-  if(book.aave&&book.aave.active_intent&&(!book.aave.intents||!Object.hasOwn(book.aave.intents,book.aave.active_intent))){
+  if(book.aave&&typeof book.aave.active_intent==='string'&&(!book.aave.intents||!Object.hasOwn(book.aave.intents,book.aave.active_intent))){
    const cleared=book.aave.active_intent;book.aave.active_intent=null;await m.save(book);
    const resumed=await autoAave(m,book,{preview});
    return {ok:true,status:'cleared_stale_active_intent',cleared_intent:cleared,resumed};
