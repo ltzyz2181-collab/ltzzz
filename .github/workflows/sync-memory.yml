@@ -12,6 +12,9 @@ on:
       - 'lab/README.md'
       - 'memory/daily/**'
       - 'tools/build-memory-manifest.mjs'
+      - 'tools/sync-memory-manifest.mjs'
+      - 'tools/push-receipt-commit.mjs'
+      - 'scripts/tests/receipt-persistence.test.mjs'
       - '.github/workflows/sync-memory.yml'
   workflow_dispatch:
 
@@ -20,7 +23,7 @@ permissions:
 
 concurrency:
   group: sync-memory
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   manifest:
@@ -31,32 +34,25 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+          ref: main
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Build manifest.json
-        run: |
-          set -euo pipefail
-          test -f tools/build-memory-manifest.mjs
-          node tools/build-memory-manifest.mjs
-          test -f ltzzz-memory/manifest.json
+      - name: Test concurrent receipt and derived manifest writes
+        run: node --test scripts/tests/receipt-persistence.test.mjs
 
       - name: Commit manifest if changed
         run: |
           set -euo pipefail
           git config user.name "ltzzz-memory-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ltzzz-memory/manifest.json
-          if git diff --staged --quiet; then
-            echo "manifest unchanged"
-            exit 0
-          fi
-          git commit -m "chore(memory): refresh ltzzz-memory/manifest.json"
-          git pull --rebase origin main || true
-          git push origin HEAD:main
+          node tools/sync-memory-manifest.mjs
+
+      - name: Use the exact committed snapshot for any optional object sync
+        run: git switch --detach "$MEMORY_SYNC_COMMIT"
 
       - name: Optional R2 sync note
         env:
