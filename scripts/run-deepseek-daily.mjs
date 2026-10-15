@@ -42,48 +42,53 @@ ${readMemory()}`;
 const apiKey = process.env.DEEPSEEK_API_KEY || '';
 const model = process.env.DEEPSEEK_MODEL || 'deepseek-flash';
 
-// 非流式短连接调用（stream:false），避免 runner 出口代理截断长流
+// 非流式短连接调用（stream:false），最多 3 次尝试（Azure 出口对 api.deepseek.com 间歇不稳）
 let ai;
 if (!apiKey) {
   ai = { dry_run: true, ok: false, status: 'not_configured', error: 'DEEPSEEK_API_KEY 未配置', tokens_used: null };
 } else {
-  try {
-    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      signal: AbortSignal.timeout(240000),
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: '你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。' },
-          { role: 'user', content: PROMPT },
-        ],
-        max_tokens: 2400,
-        temperature: 0.4,
-        stream: false,
-      }),
-    });
-    if (!resp.ok) {
-      ai = { dry_run: false, ok: false, status: 'api_error', error: `HTTP ${resp.status}`, tokens_used: null, request_id: resp.headers.get('x-request-id') || resp.headers.get('x-ds-request-id') || null };
-    } else {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        signal: AbortSignal.timeout(120000),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: '你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。' },
+            { role: 'user', content: PROMPT },
+          ],
+          max_tokens: 1600,
+          temperature: 0.4,
+          stream: false,
+        }),
+      });
+      if (!resp.ok) {
+        ai = { dry_run: false, ok: false, status: 'api_error', error: `HTTP ${resp.status}`, tokens_used: null, request_id: resp.headers.get('x-request-id') || resp.headers.get('x-ds-request-id') || null };
+        break;
+      }
       const data = await resp.json();
       if (data.error) {
         ai = { dry_run: false, ok: false, status: 'provider_error', error: data.error.message || 'provider_stream_error', tokens_used: null };
-      } else {
-        const content = typeof data.choices?.[0]?.message?.content === 'string' ? data.choices[0].message.content.trim() : '';
-        ai = {
-          dry_run: false,
-          ok: !!content,
-          status: content ? 'success' : 'empty_output',
-          error: content ? null : 'empty_output',
-          output: content,
-          tokens_used: data.usage?.total_tokens ?? null,
-          request_id: data.id || null,
-        };
+        break;
       }
+      const content = typeof data.choices?.[0]?.message?.content === 'string' ? data.choices[0].message.content.trim() : '';
+      ai = {
+        dry_run: false,
+        ok: !!content,
+        status: content ? 'success' : 'empty_output',
+        error: content ? null : 'empty_output',
+        output: content,
+        tokens_used: data.usage?.total_tokens ?? null,
+        request_id: data.id || null,
+        attempt,
+      };
+      break;
+    } catch (e) {
+      ai = { dry_run: false, ok: false, status: 'exception', error: String(e?.message || e).slice(0, 120), tokens_used: null, attempt };
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 8000));
     }
-  } catch (e) {
-    ai = { dry_run: false, ok: false, status: 'exception', error: String(e?.message || e).slice(0, 120), tokens_used: null };
   }
 }
 
