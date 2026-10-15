@@ -1,0 +1,50 @@
+name: Pulse AI self-service task discovery
+on:
+  workflow_dispatch:
+    inputs:
+      agent:
+        type: choice
+        options: [deepseek, doubao, qianwen, kimi, grok, gpt]
+        default: deepseek
+      action:
+        type: choice
+        options: [discover, claim, submit]
+        default: discover
+      task_id:
+        default: ''
+        description: 'Blank claim selects an available task; submit requires its claimed task ID'
+      evidence_path:
+        default: ''
+        description: 'Existing public artifact path in knowledge/, results/ or ops/; no credentials'
+permissions: {contents: write}
+concurrency: {group: pulse-agent-work, cancel-in-progress: false}
+jobs:
+  task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Discover or claim actual tasks, submit a hashed artifact (no model purchase)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AGENT_NAME: ${{ inputs.agent }}
+          AGENT_ACTION: ${{ inputs.action }}
+          AGENT_TASK_ID: ${{ inputs.task_id }}
+          AGENT_EVIDENCE_PATH: ${{ inputs.evidence_path }}
+        run: node scripts/pulse-agent.mjs
+      - name: Save actual operation result
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/pulse/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'AI self-service task discovery and claim receipt'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
