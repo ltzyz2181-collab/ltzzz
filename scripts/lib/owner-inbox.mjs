@@ -25,8 +25,10 @@ export async function deliverOwnerTask(record,{call,memory=[],onCheckpoint=async
   const complete=r.ok===true&&['stop','end_turn'].includes(r.finish_reason)&&typeof r.output==='string'&&r.output.trim().length>=20;
   const executedBy=r.executed_by||agent;
   const independent=!delegated||(!first||executedBy!==first.executed_by)&&['DeepSeek','Doubao'].includes(executedBy)&&typeof r.model==='string'&&!!r.model.trim()&&(!first||r.model.toLowerCase().replace(/-(?:ga-)?\d{6,8}$/,'')!==first.model?.toLowerCase().replace(/-(?:ga-)?\d{6,8}$/,''));
-  record.calls.push({agent:executedBy,requested_agent:agent,executed_by:executedBy,delegated,model:r.model||null,model_source:r.model_source||null,finish_reason:r.finish_reason||null,tokens_used:r.tokens_used||0,status:!independent?'independent_actual_provider_required':complete?'complete':'failed_or_incomplete'});
-  if(!complete||!independent){record.status=independent?'blocked_provider_or_incomplete':'blocked_independent_actual_provider_required';await onCheckpoint(record);return record;}
+  // A failed request has no identity to audit. Preserve the upstream failure first;
+  // missing response metadata must not masquerade as a self-review violation.
+  record.calls.push({agent:executedBy,requested_agent:agent,executed_by:executedBy,delegated,model:r.model||null,model_source:r.model_source||null,finish_reason:r.finish_reason||null,tokens_used:r.tokens_used??null,provider_status:r.status||null,status:!complete?'failed_or_incomplete':!independent?'independent_actual_provider_required':'complete'});
+  if(!complete||!independent){record.status=!complete?'blocked_provider_or_incomplete':'blocked_independent_actual_provider_required';record.automatic_retry_allowed=false;await onCheckpoint(record);return record;}
   record.outputs.push({agent:executedBy,requested_agent:agent,executed_by:executedBy,model:r.model||null,model_source:r.model_source||null,delegated,text:r.output.trim()});await onCheckpoint(record);
  }
  record.status='submitted_pending_review';record.native_openai_calls=0;record.native_anthropic_calls=0;record.paid=false;record.tx_hash=null;await onCheckpoint(record);return record;
