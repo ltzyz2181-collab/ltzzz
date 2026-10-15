@@ -23,12 +23,23 @@ jobs:
           test -n "$LTZZZ_AGENT_TOKEN"
           npx --yes wrangler@4 deploy -c wrangler.youtube-upload.toml
           printf '%s' "$LTZZZ_AGENT_TOKEN" | npx --yes wrangler@4 secret put LTZZZ_AGENT_TOKEN -c wrangler.youtube-upload.toml
-      - name: Verify the receipt route without uploading
+      - name: Wait for deployed receipt route without uploading
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: |
           node --input-type=module <<'JS'
           const base='https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
-          const r=await fetch(base+'/health'),health=await r.json();
-          const denied=await fetch(base+'/youtube/publication?key=configuration-check');
-          console.log(JSON.stringify({health,anonymous_receipt_http:denied.status,uploads:0}));
-          if(!r.ok||!health.publication_receipts||denied.status!==401)process.exitCode=1;
+          let last;
+          for(let attempt=0;attempt<12;attempt++){
+            try{
+              const r=await fetch(base+'/health',{signal:AbortSignal.timeout(10000)}),health=await r.json();
+              const denied=await fetch(base+'/youtube/publication?key=configuration-check',{signal:AbortSignal.timeout(10000)});
+              const authed=await fetch(base+'/youtube/publication?key=configuration-check',{headers:{Authorization:'Bearer '+process.env.LTZZZ_AGENT_TOKEN},signal:AbortSignal.timeout(10000)});
+              const receipt=await authed.json();
+              last={health,anonymous_receipt_http:denied.status,authenticated_receipt_http:authed.status,uploads:0};
+              if(r.ok&&health.publication_receipts&&denied.status===401&&authed.ok&&receipt.ok){console.log(JSON.stringify(last));process.exit(0);}
+            }catch{last={error:'readiness_not_yet_available',attempt:attempt+1};}
+            await new Promise(resolve=>setTimeout(resolve,5000));
+          }
+          console.log(JSON.stringify(last));throw Error('Deployed receipt route not ready');
           JS
