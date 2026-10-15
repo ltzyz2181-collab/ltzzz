@@ -452,12 +452,6 @@ async function callAI({ channel, env, ctx, taskName, prompt, expect }) {
       clearTimeout(timer);
     }
 
-    const resp = await fetch(apiUrl, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(body),
-    });
-
     if (!resp.ok) {
       const errText = await resp.text();
       logDry("ai.error", { taskName, channel, status: resp.status, error: errText.slice(0, 200) });
