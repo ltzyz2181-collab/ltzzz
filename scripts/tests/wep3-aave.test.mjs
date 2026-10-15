@@ -51,6 +51,13 @@ test('read RPC rejects wrong chains and records total unavailability without lea
  assert.equal(reads,0);assert.deepEqual(destroyed,AAVE_RPC_URLS);
 });
 
+test('HTTP 429 cannot consume twelve hidden retries per RPC and exhaust Worker subrequests',async()=>{
+ const original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async()=>{calls++;return new Response('rate limited',{status:429});};
+ try{await assert.rejects(withAaveReadProvider(async()=>{throw Error('must not read on rejected chain check')}));assert.equal(calls,AAVE_RPC_URLS.length);}
+ finally{globalThis.fetch=original;}
+});
+
 test('runner distinguishes a verified reconciliation block from HTTP failures and never signs in preview',async()=>{
  const fs=await import('node:fs'),path=await import('node:path'),{spawnSync}=await import('node:child_process');
  fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/aave-runner-test-')),script=path.resolve('scripts/run-treasury-aave.mjs');

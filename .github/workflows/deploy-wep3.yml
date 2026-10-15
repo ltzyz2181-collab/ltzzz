@@ -17,7 +17,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AAVE_EXPECTED_REVISION: aave-guard-v4
+      AAVE_EXPECTED_REVISION: aave-guard-v5
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -94,10 +94,22 @@ jobs:
         env:
           LAB_PIN: ${{ secrets.LAB_PIN }}
         run: node scripts/prepare-deploy-closeout.mjs
+      - name: Record shared Kimi credential wiring without a generation request
+        env:
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const missing=['MOONSHOT_API_KEY_CN','LTZZZ_AGENT_TOKEN'].filter(name=>!process.env[name]);
+          const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,status:missing.length?'not_configured':'configured_for_shared_queue',missing,model_calls:0,generation_verified:false};
+          fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/kimi-readiness-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+          JS
       - name: Audit actual provider delivery with domestic or XAI independent provider
         if: github.event_name != 'push' || contains(github.event.head_commit.message, '[run-hire-closeout]')
         env:
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}

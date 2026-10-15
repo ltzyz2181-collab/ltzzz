@@ -1,71 +1,68 @@
 name: Treasury migration and 1 USDC pilot
+# Completed one-off pilot. This channel now performs read-only follow-up only.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/treasury-migration-and-pilot.yml', 'scripts/record-treasury-inspection.mjs']
 permissions:
   contents: write
 concurrency:
   group: ltzzz-treasury-migration
   cancel-in-progress: false
 jobs:
-  migrate-pilot:
+  inspect-pilot:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: npm install --no-save ethers@6.17.0
-      - name: Migrate legacy Vault and guardian funds to treasury
-        # 迁移已于 2026-10-13 本地执行完成（treasury-migration-local.json，verified_migrated，4 tx 已确认）。
-        # 本步为幂等 no-op + 复核；非致命，避免公共 RPC 瞬时抖动阻塞 1 USDC pilot。
+      - name: Inspect persisted intent without signing or broadcasting
+        id: diagnose
+        continue-on-error: true
+        env: {AAVE_ACTION: diagnose}
+        run: node scripts/run-treasury-aave.mjs
+      - name: Read current Aave status
+        id: snapshot
+        continue-on-error: true
+        env: {AAVE_ACTION: status}
+        run: node scripts/run-treasury-aave.mjs
+      - name: Reconcile existing receipts without rebroadcasting
+        id: reconcile
+        continue-on-error: true
+        env: {AAVE_ACTION: reconcile}
+        run: node scripts/run-treasury-aave.mjs
+      - name: Record inspection outcome even when RPC fails
+        if: always()
         env:
-          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
-          LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
-        run: node scripts/treasury-migration.mjs || true
-      - name: "Aave auto: first 1 USDC supply (resumes pending intent)"
-        env:
-          AAVE_ACTION: auto
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          set -e
-          for i in 1 2 3 4 5; do
-            AAVE_ACTION=auto node scripts/run-treasury-aave.mjs || true
-            FIRST=$(AAVE_ACTION=status node scripts/run-treasury-aave.mjs | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const r=JSON.parse(d);process.stdout.write(String(!!(r.result&&r.result.first_supply_confirmed)));}catch(e){process.stdout.write('false');}});")
-            echo "supply attempt $i first_supply_confirmed=$FIRST"
-            if [ "$FIRST" = "true" ]; then exit 0; fi
-            sleep 6
-          done
-          exit 1
-      - name: "Aave auto: exit 1 USDC redeem"
-        env:
-          AAVE_ACTION: auto
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          set -e
-          for i in 1 2 3 4 5; do
-            AAVE_ACTION=auto node scripts/run-treasury-aave.mjs || true
-            EXIT=$(AAVE_ACTION=status node scripts/run-treasury-aave.mjs | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const r=JSON.parse(d);process.stdout.write(String(!!(r.result&&r.result.exit_test_confirmed)));}catch(e){process.stdout.write('false');}});")
-            echo "exit attempt $i exit_test_confirmed=$EXIT"
-            if [ "$EXIT" = "true" ]; then exit 0; fi
-            sleep 6
-          done
-          exit 1
-      - name: Final status snapshot
-        # 只读快照，非致命：worker 端 RPC 抖动（Cloudflare 子请求限制/公共 RPC 超时）
-        # 不应阻塞回执提交；pilot 链上证据已由 auto 步骤的已确认回执承载。
-        env:
-          AAVE_ACTION: status
-        run: node scripts/run-treasury-aave.mjs || true
-      - name: Commit receipts
+          TREASURY_DIAGNOSE_OUTCOME: ${{ steps.diagnose.outcome }}
+          TREASURY_SNAPSHOT_OUTCOME: ${{ steps.snapshot.outcome }}
+          TREASURY_RECONCILE_OUTCOME: ${{ steps.reconcile.outcome }}
+        run: node scripts/record-treasury-inspection.mjs
+      - name: Retain evidence independently of git push
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: treasury-inspection-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            knowledge/results/wep3/aave-*${{ github.run_id }}.json
+            knowledge/results/migrations/inspection-${{ github.run_id }}-*.json
+          if-no-files-found: error
+      - name: Commit all inspection receipts
+        if: always()
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add knowledge/results/migrations/ knowledge/results/wep3/
-          git diff --staged --quiet && echo "no changes" && exit 0
-          git commit -m "Treasury migration + 1 USDC pilot actual chain data"
+          git diff --staged --quiet && exit 0
+          git commit -m "Treasury read-only follow-up; preserve failed RPC observations"
           for attempt in 1 2 3 4; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+      - name: Keep failed inspection visible after saving evidence
+        if: always() && (steps.diagnose.outcome != 'success' || steps.snapshot.outcome != 'success' || steps.reconcile.outcome != 'success')
+        run: exit 1
