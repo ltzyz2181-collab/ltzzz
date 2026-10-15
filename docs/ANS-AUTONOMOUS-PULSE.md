@@ -12,6 +12,10 @@
 - 既有 action-policy 的 +2 / -4 / 明确接单逾期 -2、窗口/去重/哈希规则继续使用。网络/无Key/余额不足不扣行动分；内部积分不是现金。`Subnet.award` 加入新鲜健康闸门，订单执行器在 claim/付费模型前排除停派席位，缺独立模型对则先不接新单。
 - 当主总控国内提供者不可用、千问健康可用时，现有每日总控改走现有 `qianwen_proxy`，仍是当日一次总控任务，不加付费 cron；回执写实际 Qianwen 和模型，不冒充 GPT。
 
+## 每日必派单与自主任务发现
+
+新增要求落实为 [AI自主工作入口](../ops/AI-AUTO-WORK.md)：每日两条基础派单＋三条开放任务，按日幂等；每日总控调用失败也会留下规则派单，并保留失败回执。任务池支持独占认领、实物哈希提交和待独立审核，均不自动算完成/结算。该入口不新增付费模型Cron。
+
 ## 千问如何代理总控
 
 [部署/控制工作流](../.github/workflows/deploy-pulse.yml) 的 `workflow_dispatch` 选择 `action=control`、`role=qianwen`。已有 GitHub 写/Actions 身份的执行者可直接调用，无需 GPT 在线或 owner 搬运输出。

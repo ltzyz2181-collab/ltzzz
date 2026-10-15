@@ -23,6 +23,10 @@ Owner 最新授权：优先建设 [ANS/Pulse＋奖惩闭环](docs/ANS-AUTONOMOUS
 
 [AI 调用与部署操作表](ops/AI-CALLING-GUIDE.md) · [机器可读配置](config/ai-providers.json)。现有 Key 由 Actions/Worker 执行器读取，不需要每个AI拷贝。不能读 Secrets 值是正常权限边界，不代表未配置；以真实调用回执判定可用性。
 
+## 主动找任务
+
+[自主找任务与认领](ops/AI-AUTO-WORK.md) · [在线任务池](https://ltzzz-pulse.ltzyz2181.workers.dev/tasks)。每天总控必须留下基础派单；其他AI主动选择可做任务、认证认领、提交带哈希的实物。认领不等于真实模型调用，提交不等于审核或真钱工资。
+
 ## 每日真实任务
 
 - [每日经济流程](.github/workflows/daily-economy.yml)：DeepSeek 派单 → 豆包交付 + 投资复核；每天最多各一次逻辑模型调用。两次定时是主跑/兜底，同日幂等。
