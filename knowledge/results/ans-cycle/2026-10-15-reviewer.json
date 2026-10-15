@@ -1,0 +1,22 @@
+{
+  "accepted": true,
+  "artifact_sha256": "76c8637688183f26dbf6c59602cea6893d2e5566300133287c05ed4c3e6e5c9a",
+  "reasons": [
+    "对照 scripts/run-daily-tasks.mjs，coordinatorAssignments 读取 knowledge/results/control/latest.json，并作为 { control: coordinatorAssignments } 传入 dailyAssignment；该调用事实成立。",
+    "对照 scripts/lib/daily-assignment.mjs，现有 dailyAssignment 仅在 control.date===date 且 control.dispatches 为数组时按 agent 查找指令；没有按 queued_for_next_daily_economy 状态选择跨日控制派单的逻辑。该源码事实成立。",
+    "对照 scripts/run-autonomous-control.mjs，模型审查成功时 record.dispatches 被替换为 deepseek、doubao 两条指令，均带 status:'queued_for_next_daily_economy'，record.date 是总控运行当日。下一日 run-daily-tasks.mjs 使用新的 today，因 control.date!==date，现有 dailyAssignment 不会消费这些 queued 指令。核心错配可由源码静态复核。",
+    "在上述跨日场景下，dailyAssignment 随后可能命中 pulse.task_board 中 assigned 任务；而 workers/pulse-worker/tasks.js 的 seedTasks 将当日 baselineDispatches 映射为 status:'assigned' 且 assigned_to 为同名 agent。因此执行侧会获得当日 baseline，而不是前一日总控模型审查生成的 next tasks。finding 关于工人每天拿 baseline 的主要判断有源码支撑。",
+    "run-autonomous-control.mjs 的 coordinator 不可用或模型审查 schema 无效路径不会重新赋值 record.dispatches，初始值为 baselineDispatches(date)。当前 workers/pulse-worker/tasks.js 中 baselineDispatches 已包含 status:'queued_for_next_daily_economy'，所以“没有 status 字段”与本次提供源码不一致；但这些 fallback 记录同样受 control.date 精确匹配限制，跨日不会被现有 dailyAssignment 消费，不影响核心缺陷成立。",
+    "minimal_patch 是明确的代码草稿，展示了在 dailyAssignment 中优先识别 status 为 queued_for_next_daily_economy 或 queued 的同名 agent 指令，并保留 control.date===date 的旧匹配路径；具备可复核、可试套的补丁形态。交付没有声称补丁已经执行或上线。",
+    "verification_commands 给出了可复核的 Node 动态检查入口，覆盖 queued 指令选择、dispatch_source 保留以及 seedTasks 基线任务检查；作为验证命令规格可接受。"
+  ],
+  "unverified": [
+    "未实际运行 verification_commands，未确认 Node 进程、模块导入路径及运行时环境中的真实输出。",
+    "未计算或复核交付物本体的 SHA-256；本结果仅按要求严格回传给定 artifact_sha256。",
+    "未审阅全仓库，除列出的四个源码文件及随附文档外，未确认是否存在其他调度器、包装脚本或工作流已经补偿该错配。",
+    "未验证 knowledge/results/control/latest.json 与 knowledge/results/pulse/latest.json 在真实运行目录中的实际内容、日期和状态，因此未证明线上历史上每一天都发生错配，只确认源码路径允许并导致该跨日错配。",
+    "minimal_patch 尚未应用，未验证其语法、测试结果、回归影响，也未验证 queued 任务被消费后是否需要状态迁移、幂等清除或防重复消费机制。",
+    "remaining_blocker 中要求给 run-autonomous-control.mjs fallback baseline 赋值 status 的必要性，与当前提供的 baselineDispatches 源码不完全一致；若实际仓库版本中的 baselineDispatches 不含 status，则仍需运行或完整版本比对确认。",
+    "未验证补丁只接受 queued/queued_for_next_daily_economy 是否覆盖所有合法状态，也未验证恶意或损坏 control 记录的输入校验是否充分。"
+  ]
+}
