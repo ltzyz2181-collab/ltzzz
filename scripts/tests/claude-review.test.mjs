@@ -1,0 +1,61 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {reviewRequest,reviewContext,inspectClaude,selectReviewModel,executeReview,digest} from '../lib/claude-review.mjs';
+const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_ACTOR:'ltzyz2181-collab',GITHUB_EVENT_NAME:'push'};
+const record=()=>({mode:'review',status:'claimed_before_api',model_calls:0,model:'claude-haiku-test',context:{prompt:'Review public data only'}});
+test('inspection is default; review requires explicit owner dispatch and safe task identifiers',()=>{
+ assert.equal(reviewRequest(env).mode,'inspect');
+ for(const patch of [{CLAUDE_REVIEW_MODE:'review'},{CLAUDE_REVIEW_TASK_ID:'../../secrets'},{GITHUB_REPOSITORY:'other/repo'},{CLAUDE_REVIEW_TOPIC:'../../.env'}])assert.throws(()=>reviewRequest({...env,...patch}));
+ assert.equal(reviewRequest({...env,CLAUDE_REVIEW_MODE:'review',GITHUB_EVENT_NAME:'workflow_dispatch'}).mode,'review');
+ assert.throws(()=>reviewRequest({...env,CLAUDE_REVIEW_MODE:'review',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_ACTOR:'stranger'}));
+});
+test('readiness only calls native models GET; never fabricates API credit or generation success',async()=>{
+ let calls=0;const r=await inspectClaude('fixture',{fetcher:async(url,o)=>{calls++;assert.equal(url,'https://api.anthropic.com/v1/models?limit=100');assert.equal(o.method,undefined);assert.equal(o.headers['x-api-key'],'fixture');return Response.json({data:[{id:'claude-haiku-test'},{id:'unsafe?key=foo'}]});}});
+ assert.equal(calls,1);assert.equal(r.model_calls,0);assert.equal(r.generation_verified,false);assert.equal(r.credits_status,'unknown');assert.deepEqual(r.model_ids,['claude-haiku-test']);
+ assert.equal((await inspectClaude('')).status,'missing_secret');
+});
+test('readiness rejects auth and network without exposing credentials or error text',async()=>{
+ const a=await inspectClaude('secret-fixture',{fetcher:async()=>Response.json({error:{message:'secret-fixture'}},{status:401})});assert.equal(a.status,'catalogue_rejected');assert.equal(JSON.stringify(a).includes('secret-fixture'),false);
+ const n=await inspectClaude('secret-fixture',{fetcher:async()=>{throw Error('secret-fixture')}});assert.equal(n.status,'network_or_timeout');assert.equal(JSON.stringify(n).includes('secret-fixture'),false);
+});
+test('select a catalogue-backed lighter Claude; never choose a made-up model or silently pick Opus',()=>{
+ const ids=['claude-opus-test','claude-sonnet-test','claude-haiku-test'];assert.equal(selectReviewModel(ids),'claude-haiku-test');assert.equal(selectReviewModel(ids,'claude-sonnet-test'),'claude-sonnet-test');assert.equal(selectReviewModel(ids,'fake-model'),null);assert.equal(selectReviewModel(ids,'claude-opus-test'),null);
+});
+test('context packs preserve full sources and hashes; missing Pulse code is explicit',()=>{
+ const r=reviewContext(process.cwd(),'ans-pulse');assert.equal(r.files.length,2);assert.ok(r.prompt.includes('源代码zip未收到'));assert.equal(r.prompt_sha256,digest(r.prompt));
+ for(const f of r.files)assert.equal(f.sha256,digest(fs.readFileSync(f.file,'utf8')));
+ const six=reviewContext(process.cwd(),'six-memory');assert.equal(six.files.length,6);assert.ok(six.input_chars<32000);
+});
+test('durable checkpoint happens before a single generation; complete output remains pending review and redacts key',async()=>{
+ const r=record(),states=[];let calls=0;
+ await executeReview(r,{apiKey:'secret-fixture',onCheckpoint:async x=>states.push(x.status),call:async o=>{calls++;assert.deepEqual(states,['calling_api_outcome_unknown']);assert.equal(o.maxTokens,1600);return {ok:true,output:'Evidence and limit: secret-fixture\n【交付结束】',finish_reason:'end_turn',model:'claude-haiku-test',tokens_used:9};}});
+ assert.equal(calls,1);assert.equal(r.status,'submitted_pending_review');assert.equal(r.model_calls,1);assert.equal(r.actual_model,'claude-haiku-test');assert.equal(r.output.includes('secret-fixture'),false);assert.equal(r.output_sha256,digest(r.output));
+ await assert.rejects(executeReview(r,{}),/unused_claim_required/);
+});
+test('credit denial, timeout and truncated outputs stop without fallback or a second generation',async()=>{
+ for(const result of [{ok:false,status:'insufficient_api_credits'},{ok:false,status:'exception'},{ok:true,model:'claude-haiku-test',finish_reason:'max_tokens',output:'unfinished'},{ok:true,model:'claude-haiku-test',finish_reason:'end_turn',output:'missing marker'}]){
+  const r=record();let calls=0;await executeReview(r,{apiKey:'fixture',onCheckpoint:async()=>{},call:async()=>{calls++;return result;}});assert.equal(calls,1);assert.ok(r.status.startsWith('blocked_'));assert.equal(r.output,undefined);if(result.ok){assert.equal(r.status,'blocked_incomplete_output');assert.equal(r.partial_output,result.output);}else assert.equal(r.actual_model,null);await assert.rejects(executeReview(r,{}));
+ }
+});
+test('missing secret or failed checkpoint never sends a request',async()=>{
+ let calls=0;const r=record();await executeReview(r,{onCheckpoint:async()=>{},call:async()=>{calls++;}});assert.equal(calls,0);assert.equal(r.model_calls,0);
+ await assert.rejects(executeReview(record(),{apiKey:'fixture',onCheckpoint:async()=>{throw Error('disk failed')},call:async()=>{calls++;}}));assert.equal(calls,0);
+});
+test('workflow has no timer, default inspect and no wallet secrets; identity allows work without voting',()=>{
+ const w=fs.readFileSync('.github/workflows/claude-on-demand-review.yml','utf8');assert.doesNotMatch(w,/\b(schedule|cron):/);assert.ok(w.includes("inputs.mode == 'review'"));assert.doesNotMatch(w,/TREASURY_EXECUTOR_KEY|LTZZZ_WALLET_PRIVATE_KEY|CLOUDFLARE_API_TOKEN|SAFE_SIGNER/);
+ const p=JSON.parse(fs.readFileSync('identity/dids/claude.json','utf8'))['ltzzz:profile'];assert.equal(p.votingSeat,false);assert.equal(p.workStatus,'available_on_demand');assert.equal(p.walletSigning,false);
+});
+test('existing claims are retained and a repeat prepare cannot authorize another purchase',()=>{
+ fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/claude-review-claim-'));
+ try{
+  const source='knowledge/results/external/2026-10-14-claude-ans-pulse-audit.md',receipt='ops/dispatch/receipts/CLAUDE-ANS-PULSE-IMPORT-20261014.md';for(const f of [source,receipt]){fs.mkdirSync(path.dirname(path.join(dir,f)),{recursive:true});fs.writeFileSync(path.join(dir,f),'Public test source');}
+  const out=path.join(dir,'knowledge/results/claude-review');fs.mkdirSync(out,{recursive:true});const file=path.join(out,'CLAUDE-ANS-PULSE-REVIEW.json');const prior={status:'calling_api_outcome_unknown',model_calls:1,run_id:'prior'};fs.writeFileSync(file,JSON.stringify(prior));
+  const script=path.resolve('scripts/run-claude-review.mjs'),output=path.join(dir,'step-output');
+  const preload=path.join(dir,'mock-fetch.mjs');fs.writeFileSync(preload,"globalThis.fetch=async()=>Response.json({data:[{id:'claude-haiku-test'}]});");
+  const q=spawnSync(process.execPath,['--import',preload,script,'prepare'],{cwd:dir,env:{...process.env,...env,GITHUB_EVENT_NAME:'workflow_dispatch',CLAUDE_REVIEW_MODE:'review',ANTHROPIC_API_KEY:'fixture',GITHUB_OUTPUT:output},encoding:'utf8'});assert.equal(q.status,0,q.stderr);
+  assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),prior);assert.equal(fs.readFileSync(output,'utf8'),'execute=false\n');
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});

@@ -1,0 +1,77 @@
+name: Claude on-demand reviewer (no wallet role)
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: inspect只查目录零生成；review显式授权一次现有API调用，不重试、不充值
+        type: choice
+        options: [inspect, review]
+        default: inspect
+      topic:
+        description: 审稿资料（代码zip未收到时只评ANS/Pulse方案）
+        type: choice
+        options: [ans-pulse, six-memory]
+        default: ans-pulse
+      task_id:
+        description: 8–80位英文数字下划线连字符；同一单号永不重复调用
+        type: string
+        default: CLAUDE-ANS-PULSE-REVIEW
+  push:
+    branches: [main]
+    paths: ['scripts/lib/claude-review.mjs','scripts/run-claude-review.mjs','scripts/tests/claude-review.test.mjs','.github/workflows/claude-on-demand-review.yml']
+permissions: {contents: read}
+concurrency: {group: claude-on-demand-review, cancel-in-progress: false}
+jobs:
+  review:
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && (github.event_name == 'push' || github.actor == 'ltzyz2181-collab')
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLAUDE_REVIEW_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'inspect' }}
+      CLAUDE_REVIEW_TOPIC: ${{ inputs.topic || 'ans-pulse' }}
+      CLAUDE_REVIEW_TASK_ID: ${{ inputs.task_id || 'CLAUDE-ANS-PULSE-REVIEW' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Validate independent work role and one-call limits
+        run: node --test scripts/tests/claude-review.test.mjs scripts/tests/claude-credit-state.test.mjs
+      - name: Prepare public context and inspect native API without generation
+        id: prepare
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+        run: node scripts/run-claude-review.mjs prepare
+      - name: Persist claim before any paid request
+        if: always() && (steps.prepare.outcome == 'success' || steps.prepare.outcome == 'failure')
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/claude-review/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Claude review readiness and durable claim before generation'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: One explicit Claude review only; no wallet or deployment credentials
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'review' && steps.prepare.outputs.execute == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/run-claude-review.mjs execute
+      - name: Save actual output or blocker
+        if: always() && (steps.prepare.outcome == 'success' || steps.prepare.outcome == 'failure')
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/claude-review/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Claude on-demand actual review output or blocker'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
