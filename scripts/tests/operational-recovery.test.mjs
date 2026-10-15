@@ -21,3 +21,8 @@ test('WEP3 auditor receives both Kimi queue credentials; recovery channel adds n
   assert.match(step,/LTZZZ_AGENT_TOKEN: \$\{\{ secrets\.LTZZZ_AGENT_TOKEN \}\}/);
   const daily=fs.readFileSync('.github/workflows/deepseek-daily.yml','utf8');assert.doesNotMatch(daily,/schedule:|cron:/);assert.match(daily,/name: Commit and push the daily entry\n\s+if: always\(\)/);
 });
+test('durable upgrade renames the existing financial namespace and keeps its object identity',()=>{
+  const config=fs.readFileSync('wrangler.wep3.toml','utf8'),source=fs.readFileSync('wep3-market.js','utf8');
+  assert.match(config,/class_name = "MarketRuntimeV2"/);assert.match(config,/renamed_classes = \[\{ from = "Market", to = "MarketRuntimeV2" \}\]/);
+  assert.doesNotMatch(config,/new_sqlite_classes = \["MarketRuntimeV2"\]/);assert.match(source,/idFromName\('ltzzz-market-v1'\)/);
+});

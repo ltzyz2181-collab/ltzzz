@@ -43,3 +43,9 @@ Claude 本次来稿已存 knowledge/results/external/2026-10-15-claude.md；原�
 WEP3 run 38694832761 在部署前 CI 被旧的 aave-guard-v4 固定断言拦住，未部署 v5。断言现引用实际版本常量；完整线上同款测试加新增恢复测试共77项通过。测试是总控执行，不能归给外部 Claude。
 
 只读复核 run 38694832784 的失败 artifact 和 inspection 回执均已真实保存，保持 inspection_blocked；其中 diagnostics/reconcile=401（执行身份漏传），status 是旧 v4 RPC 失败。补齐既有派生服务身份，只调用只读端点；未加入钱包私钥或 auto/execute。该失败不算资金试跑失败，后续在 v5 部署完成后重新只读验收。
+
+## 第二轮部署发现
+
+日课 run 38695199291 完整 success，06:54:17 UTC 的线上验收及回执推送均通过。WEP3 run 38695199212 已部署（CF version 00b34cc0-17c7-4fde-8bb8-a35b56121c53），外部契约通过；Kimi readiness 为 configured_for_shared_queue、missing=[]、model_calls=0。但持久对象诊断连续仍返回 aave-guard-v4，因此标记 stale_worker_revision，完整 workflow 维持 failure，不能宣称 v5 已生效。订单履约观察 model_calls=0、orders=[]。
+
+针对已证实的旧持久对象运行时，新增 Cloudflare 原生 renamed_classes：Market → MarketRuntimeV2，保留原 namespace、idFromName('ltzzz-market-v1')、book key、订单、资金及历史意图，不创建新财务存储。部署增加只读状态摘要：验证实际 runtime=v2/aave=v5、历史意图不为空、原有 supply/exit 标志保留，记录 book 哈希；不公开已签名字节。状态验证失败则不进入订单履约。验收仍不发起模型生成或资金交易。
