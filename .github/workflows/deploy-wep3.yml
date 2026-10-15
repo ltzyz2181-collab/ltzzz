@@ -28,6 +28,7 @@ jobs:
       - run: node --check wep3-worker.js && node --test scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-external-orders.test.mjs scripts/tests/domestic-model-router.test.mjs scripts/tests/audit-provenance.test.mjs
       - run: npm install --no-save wrangler@4
       - name: Deploy and retain service authentication
+        id: core_deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -63,6 +64,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/provision-wep3-treasury.mjs
       - name: Verify public health, x402, and anonymous write rejection
+        id: core_health
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
@@ -85,6 +87,7 @@ jobs:
           if(!h.ok||!health.pin||w.status!==401||!catalogResponse.ok||!catalog.ok||blocked.status!==401||!ch.challenge_id||!verify.ok)process.exitCode=1;
           JS
       - name: Verify external buyer portal, schema and legacy payment isolation
+        id: external_contract
         run: node scripts/accept-external-orders.mjs
       - name: Prepare requested deployment credit and delivery
         if: github.event_name == 'workflow_dispatch' && inputs.deployment_closeout
@@ -122,7 +125,7 @@ jobs:
           NODE_OPTIONS: --dns-result-order=ipv4first
         run: node scripts/review-aave-investment.mjs
       - name: Fulfill at most one paid customer order
-        if: github.event_name != 'workflow_dispatch' || !inputs.deployment_closeout
+        if: always() && steps.core_deploy.outcome == 'success' && steps.core_health.outcome == 'success' && steps.external_contract.outcome == 'success' && (github.event_name != 'workflow_dispatch' || !inputs.deployment_closeout)
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
