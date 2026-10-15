@@ -8,3 +8,8 @@ bucket_name = "ltzzz-videos"
 
 [triggers]
 crons = ["0 14 * * *"]
+
+# Private Worker-to-Worker transport; independent of workers.dev/public R2 URLs.
+[[services]]
+binding = "YOUTUBE_UPLOADER"
+service = "ltzzz-youtube-upload"
