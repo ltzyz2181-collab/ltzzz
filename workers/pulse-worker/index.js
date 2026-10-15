@@ -57,6 +57,3 @@ export class PulseStateV2{
   }catch{return json({error:'pulse_operation_failed'},500);}
  });}
 }
-
-// Node regression fixtures retain their import name; the deployed binding uses V2.
-export {PulseStateV2 as PulseState};
