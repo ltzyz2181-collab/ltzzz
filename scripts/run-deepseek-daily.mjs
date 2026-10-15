@@ -1,13 +1,12 @@
 /**
  * DeepSeek 每日日课 —— GitHub Actions 侧执行器（2026-10-15）
  * 背景：CF 边缘 → api.deepseek.com 网络不通（daily worker 与 deepseek-proxy 均实测挂起/超时），
- * 而 GitHub Actions(Azure) 可达 DeepSeek（既有 autonomous/daily-economy 流程已实证）。
- * 故 deepseek-daily 的真实模型调用迁到 GH Actions cron（UTC 22:30 = CST 06:30），
- * 与 CF 侧其他六通道并存；CF 侧 deepseek-daily 保留为"如实报错"占位，不再无限挂起。
+ * 而 GitHub Actions(Azure) 可达 DeepSeek（本次实证：dry_run=false，连接成功）。
+ * 2026-10-15 首次验证：流式(stream:true)被 runner 出口代理截断（stream_interrupted/response_read_failed），
+ * 故改用非流式(stream:false)短连接（与 deepseek-proxy 同款），更稳。
  * 规则：无 Key/调用失败一律如实落盘 dry_run/error 记录，绝不伪造成功输出。
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { callAgent } from './call-deepseek.mjs';
 
 const TODAY_CST = (() => {
   const now = new Date(Date.now() + 8 * 3600 * 1000);
@@ -43,7 +42,50 @@ ${readMemory()}`;
 const apiKey = process.env.DEEPSEEK_API_KEY || '';
 const model = process.env.DEEPSEEK_MODEL || 'deepseek-flash';
 
-const ai = await callAgent({ apiKey, prompt: PROMPT, model, maxTokens: 2400 });
+// 非流式短连接调用（stream:false），避免 runner 出口代理截断长流
+let ai;
+if (!apiKey) {
+  ai = { dry_run: true, ok: false, status: 'not_configured', error: 'DEEPSEEK_API_KEY 未配置', tokens_used: null };
+} else {
+  try {
+    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      signal: AbortSignal.timeout(240000),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: '你是 LTZZZ 数字实验室的 AI 助手，简洁、直接、有深度。' },
+          { role: 'user', content: PROMPT },
+        ],
+        max_tokens: 2400,
+        temperature: 0.4,
+        stream: false,
+      }),
+    });
+    if (!resp.ok) {
+      ai = { dry_run: false, ok: false, status: 'api_error', error: `HTTP ${resp.status}`, tokens_used: null, request_id: resp.headers.get('x-request-id') || resp.headers.get('x-ds-request-id') || null };
+    } else {
+      const data = await resp.json();
+      if (data.error) {
+        ai = { dry_run: false, ok: false, status: 'provider_error', error: data.error.message || 'provider_stream_error', tokens_used: null };
+      } else {
+        const content = typeof data.choices?.[0]?.message?.content === 'string' ? data.choices[0].message.content.trim() : '';
+        ai = {
+          dry_run: false,
+          ok: !!content,
+          status: content ? 'success' : 'empty_output',
+          error: content ? null : 'empty_output',
+          output: content,
+          tokens_used: data.usage?.total_tokens ?? null,
+          request_id: data.id || null,
+        };
+      }
+    }
+  } catch (e) {
+    ai = { dry_run: false, ok: false, status: 'exception', error: String(e?.message || e).slice(0, 120), tokens_used: null };
+  }
+}
 
 const body =
   `# DeepSeek 每日 · ${TODAY_CST}\n\n` +
@@ -62,5 +104,6 @@ console.log(JSON.stringify({
   status: ai.status || 'live',
   model,
   error: ai.error || null,
+  request_id: ai.request_id ?? null,
   tokens_used: ai.tokens_used ?? null,
 }));
