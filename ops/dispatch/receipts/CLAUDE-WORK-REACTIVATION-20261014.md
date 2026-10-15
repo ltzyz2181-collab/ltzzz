@@ -1,7 +1,7 @@
 # Claude 工作接入与五签退出分离
 
 日期：2026-10-14 America/Tijuana。来源：owner 明确“退出五签，不证明不能为 LTZZZ 工作”。
-状态：代码/身份配置已准备；实际只读目录检查待合并后运行。不是实际生成、不是恢复资金席位。
+状态：**on_demand_entry_verified_no_generation**。PR #57 已合并，原生 API 目录实测 HTTP 200。不是实际生成、不是恢复资金席位。
 
 ## 修正
 
@@ -25,3 +25,12 @@
 - 本轮不恢复旧公开 proxy、不重装机器人、不新增付费日课、不恢复资金投票/签名。
 
 入口与操作：docs/CLAUDE-WORK-WITHOUT-FIVE-SIGN.md。后续实际 Actions 回执单独记录，不把脚本存在当部署验收。
+
+## 实际接入验收
+
+- PR #57 合并源码：f4306880e8acabec24aca529850d29bad9d10e33。
+- [Actions run 38662866522](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38662866522)：success，13 项入口/API 测试通过；付费生成步骤 skipped。
+- [真实只读回执](../../../knowledge/results/claude-review/readiness-38662866522.json)：2026-10-15T00:56:36 UTC（owner 本地 10-14）；既有 Key 存在、官方模型目录 HTTP 200，含 Haiku/Sonnet。`model_generation_calls=0`、`generation_verified=false`、`credits_status=unknown`、`wallet_permissions=false`。
+- 公开 ANS/Pulse 上下文包由执行器自动生成到 knowledge/results/claude-review/context-ans-pulse.md；后续 review 从仓库读取资料并代存结果，不依赖 owner 来回复制或 Claude 自己写仓库。
+- 本轮不调用生成、不购买额度。API 当前是否可生成仍需未来一次明确授权的真实任务才能验证，不能把旧余额故障写成已解除。
+- 浏览器取旧 zip 路线因 Cloudflare 验证阻塞暂停；未继续消耗浏览器额度重试。原生 API 不继承网页历史，旧 zip 仍为未取得。
