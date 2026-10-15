@@ -1,7 +1,7 @@
 # GPT/Claude 工作岗位的国内算力接管
 
 日期：2026-10-14 America/Tijuana。来源：owner 要求在无法给 OpenAI/Anthropic 充值时使用 DeepSeek/豆包继续项目。
-状态：代码已验证，待合并后的真实国内任务验收。
+状态：PR #59 已合并，入口已启用；首次真实模型任务未通过，不宣称接管已验收。
 
 ## 真实边界
 
@@ -19,8 +19,14 @@
 
 35 项相关测试通过；涵盖原资金子网撤席仍生效、未知请求不重购、显式岗位模式、独立真实模型、适配器实际响应型号和默认Claude模块忽略原生Key。六文件和既有原生Claude按需入口仍保持各自边界。
 
-## 验收安排
+## 实际验收与未完成项
 
-合并后仅通过一次明确标识的 owner 工单执行国内交付：GPT逻辑岗位由DeepSeek分析，Claude逻辑岗位由豆包复核。目标是ANS/Pulse方案的可核验边界，不生成或假冒缺失的原代码zip。
+合并后已执行一次 [owner 工单 #60](https://github.com/ltzyz2181-collab/ltzzz/issues/60)，[真实运行 38664038527](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38664038527)：校验通过；2026-10-15 01:09:10 UTC 开始国内模型执行，01:10:11 收到 DeepSeek `TypeError: terminated`，未拿到模型正文、型号或计费量。未购买第二阶段豆包审稿，OpenAI/Anthropic 生成调用均为 0。国内请求可能已处理或计费，`tokens_used:0` 的旧默认值不能证明免费。未盲目重试同一任务。
+
+原始 [issue-60.json](https://github.com/ltzyz2181-collab/ltzzz/blob/main/knowledge/results/owner-inbox/issue-60.json) 保留不改：其顶层 `blocked_independent_actual_provider_required` 是异常缺少型号时优先级错误，真实故障由 `provider_attempts[0]` 的 `exception / TypeError: terminated` 证明。后续修复改为优先记录 `blocked_provider_or_incomplete`、保留上游状态；未收到用量时写 null，未知费用不写成 0。同一任务仍不自动重购。
+
+目前不能确定是链路、上游服务还是响应体读取阶段的问题；没有供应商请求 ID 或账单，不能断言确切根因或费用。后续需在不重购未知请求的前提下调查该异常，再验收两家实际国内模型的完整分析＋独立复核。目标仍是 ANS/Pulse 证据边界，不生成或假冒缺失的原代码 zip。原代码附件仍未取得，Pulse 未部署。
+
+后续修复已运行 owner-inbox / domestic-router / domestic-model-identity / claude-review 共 28 项针对性测试，全部通过；这属于本地逻辑验证，不是模型生成成功的证明。
 
 实际模型调用/用量与全文以 knowledge/results/owner-inbox/ 对应 Issue 回执为准。国内算力仍消耗现有额度，不承诺免费、不编造费用；不把内部岗位/积分当真钱工资。不改五签、Safe、钱包权限、已上线机器人或国内日课频率。

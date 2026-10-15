@@ -14,7 +14,7 @@ export function createModelRouter({env=process.env,record=()=>{},callers={DeepSe
    if(!keys[provider])continue;
    const out=await callers[provider]({apiKey:keys[provider],prompt,maxTokens:maxTokens||(provider==='Grok'?3000:provider==='Kimi'?6000:8192),...(provider==='Doubao'?{thinking:'disabled'}:{})});
    let error=String(out.error||'');for(const key of Object.values(keys).filter(Boolean))error=error.replaceAll(key,'[REDACTED]');
-   record({requested_agent:requested,executed_by:provider,model:out.model||null,model_source:out.model_source||null,status:out.status,finish_reason:out.finish_reason||null,tokens_used:out.tokens_used||0,error:error.slice(0,180)||null});
+   record({requested_agent:requested,executed_by:provider,model:out.model||null,model_source:out.model_source||null,status:out.status,finish_reason:out.finish_reason||null,tokens_used:out.tokens_used??null,error:error.slice(0,180)||null});
    last={...out,error,requested_agent:requested,executed_by:provider,delegated:provider!==requested};
    if(complete(last))return last;
    // Known rejected requests may switch provider; timeout/partial output may already be billed.
