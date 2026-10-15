@@ -2,50 +2,84 @@ name: Execute LTZZZ AI task queue
 on:
   push:
     branches: [main]
-    paths: ['ops/task-queue.json', 'scripts/run-task-queue.mjs', '.github/workflows/execute-task-queue.yml']
+    paths: ['ops/task-queue.json', 'scripts/run-task-queue.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/lib/ans-cycle.mjs', '.github/workflows/execute-task-queue.yml']
   schedule:
     - cron: '15 */6 * * *'
+  workflow_run:
+    workflows: ['Deploy and control LTZZZ Pulse']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
-permissions:
-  contents: write
-  actions: write
-concurrency:
-  group: ltzzz-ai-task-queue
-  cancel-in-progress: true
+permissions: {contents: write}
+concurrency: {group: ltzzz-ai-task-queue, cancel-in-progress: false}
 jobs:
   execute:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
+        with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - name: Stop superseded runs of this queue only
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/execute-task-queue.yml/runs?per_page=100" --jq ".workflow_runs[] | select(.id < $GITHUB_RUN_ID and .status != \"completed\") | .id" |
-          while read -r queue_run_id; do
-            echo "Cancelling superseded queue run $queue_run_id"
-            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$queue_run_id/cancel" || true
-          done
-      - name: Execute real provider calls
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          NODE_OPTIONS: --dns-result-order=ipv4first
-        run: node scripts/run-task-queue.mjs
-      - name: Save execution receipts
-        if: always()
+      - name: Check claim, incomplete-output and independent review regressions
+        run: node --test scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs
+      - name: Prepare today's ANS direction and two durable assignments, no models
+        id: prepare
+        run: node scripts/run-ans-cycle.mjs prepare
+      - name: Persist daily claim before any paid request
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add ops/runs/ ltzzz-memory/discussions/
+          git add knowledge/results/ans-cycle/
           if git diff --staged --quiet; then exit 0; fi
-          git commit -m "task queue real execution receipts"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          git commit -m 'ANS daily durable claims before model execution'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: DeepSeek engineering deliverable and independent Doubao review
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/run-ans-cycle.mjs execute
+      - name: Preserve actual outputs and failures before remote submission
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/ans-cycle/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'ANS actual model deliverables and independent verdict'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+      - name: Submit committed hashes and bound audit to live task board, no models
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/run-ans-cycle.mjs sync
+      - name: Preserve live board completion or blocker
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/ans-cycle/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'ANS live board feedback, no cash settlement'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+

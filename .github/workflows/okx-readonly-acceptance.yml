@@ -1,0 +1,39 @@
+name: OKX current account read-only acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/okx-readonly-acceptance.yml']
+permissions: {contents: write}
+concurrency: {group: okx-readonly-acceptance, cancel-in-progress: false}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify existing key permissions and balance without orders or account creation
+        env:
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          VERIFY_KIMI_MODEL_CALLS: '0'
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/verify-kimi-okx.mjs
+      - name: Preserve current account evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/connectivity/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Current OKX permission and balance read-only evidence'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+
