@@ -60,12 +60,16 @@
     },
     "claude": {
       "secret": "ANTHROPIC_API_KEY",
-      "mode": "free_external_discussion_only",
+      "mode": "external_reviewer_on_demand",
       "module": "scripts/call-claude.mjs",
       "model_env": "ANTHROPIC_MODEL",
-      "generation_blocker": "latest actual receipt: insufficient API credits",
-      "permissions": "text discussion only; no wallet signature or voting",
-      "note": "No paid API execution; no verified free API quota."
+      "generation_blocker": "last known generation: insufficient API credits; catalogue access does not verify current generation balance",
+      "permissions": "external text/code review; no wallet signing, voting, payment, or automatic deployment",
+      "note": "Routine paid calls remain disabled. New manual workflow defaults to inspect with zero generation; explicit review authorizes at most one request using existing credit. No verified free API quota.",
+      "workflow": ".github/workflows/claude-on-demand-review.yml",
+      "routine_generation_enabled": false,
+      "wallet_signing": false,
+      "voting_seat": false
     },
     "microsoft": {
       "delegate": "deepseek",
