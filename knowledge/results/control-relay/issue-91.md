@@ -1,0 +1,46 @@
+# 桌面 / 国内 AI 接力 · issue-91
+
+状态：assigned_waiting_external_acceptance。
+
+执行器：cloud_rules；模型调用 0；没有付款、投资、发布或任意命令执行。
+
+任务原文仅作数据：
+
+执行席：owner 当前已选中 LTZZZ DeepSeek Flash 的 VS Code 本地 Agent；这是工程工单，原生执行者是 DeepSeek，不是 GPT/Claude。唯一仓库 ltzyz2181-collab/ltzzz。现阶段为待桌面接单，不代表已运行。
+
+首要任务：修复日课与 ANS/Pulse 线上任务板的交付断链。基准 df153919fe9171d906b412050dfe0e123426b81a。总控已读当前源码：scripts/run-daily-tasks.mjs 仅调用 dailyAssignment 并记录 claim_verified:false，未真实认领/提交。knowledge/results/ans-cycle/2026-10-16.json 的草稿与豆包审核指出同一缺口，deployed=false；不能原样套用草稿。
+
+先检查 Node、Git 分支/HEAD/改动清单。owner 的 ltzzz-repo 显示 main*，有未提交改动：全部保留，禁止 reset/clean/强推/自动 stash；用独立 worktree 或新目录取得当前 origin/main 的干净基线，并在独立分支修改。不要把原目录改动带入 PR。无 Node 时可安装当前用户级 Node LTS 或使用可验证的已有运行环境，不能把测试未运行记为通过。
+
+只读本单相关源码/回执，避免全仓长上下文。主要文件：scripts/run-daily-tasks.mjs、scripts/lib/daily-assignment.mjs、scripts/lib/pulse-client.mjs、scripts/run-ans-cycle.mjs、workers/pulse-worker/tasks.js、.github/workflows/daily-agent-tasks.yml。可新增独立 daily-task-board helper 和聚焦测试。认证复用现有执行器模式，不索取/读取聊天中的 Key；不得把任何令牌写入日志/文件/Issue。
+
+行为要求：
+1. 对可在真实线上任务板认领的派单，认领确认后才执行该派单；快照/权限/认领不明确时明确 blocked，不伪造 claim_verified，不把本地 taskCommand 或修改 pulse/latest.json 当线上认领。
+2. 完整交付保存为 knowledge/results/ 下本轮不可变工件；包含 task_id、逻辑席位、实际 provider/model、源 commit、finish_reason/完整性与用量（未知写 null）。SHA-256 必须绑定同一路径的实际字节，不能绑定不断追加的 data/memory 文件。
+3. 工件先提交并能回读，再通过既有线上接口 submit_task，回读 task_id/状态/hash 一致才记 submitted_pending_review。保留目前公开证据路径白名单；不要为省事开放 data/ 或任意路径。
+4. 截断、空输出、加载/网络/无 Key 失败不提交为合格交付，不记已审核/部署/工资。失败与状态不明如实持久化；同日重跑不能重复买模型或提交。生成后只补同步时不得再次生成。
+5. 提交后停在待独立审核，不同实际提供商复核后才能进入后续奖惩；本单不新增审核模型调用、不改奖惩分值、不把网络/凭证失败归咎于 Agent。内部积分与 USDC 分开。
+6. 若需改 workflow，仅接入原有日课阶段/凭据与明确工件路径，保留原 cron、模型次数和预算。不新增定时任务、不运行真实日课来冒充单元测试、不修改机器人、长期记忆或钱包。
+
+验收：聚焦 mock 测试覆盖成功认领与哈希提交、认领失败/暂停、空/截断输出、同日重放、哈希/路径不符、提交超时后状态不明、仅同步不重生成、任务仍待审核且 unpaid；回归 daily-assignment、delivery-integrity、pulse-tasks、ans-task-review 相关测试。测试不访问真实模型/钱包；禁止 node --test scripts/run-daily-tasks.mjs 这种会加载真实入口的伪测试。
+
+交付：实际代码 diff＋独立分支 commit＋PR；knowledge/results/desktop/ 下写无密钥回执，列源版本、实际模型、文件清单、真实测试命令/数量/失败与未完成项。不自行宣称独立审核或生产部署。总控收到 PR 后负责复核、测试、合并和部署回执。GitHub 写权限不足就返回补丁/commit 与阻塞，不反复生成大报告。
+
+## 核验材料
+
+```json
+{
+  "ran_at": "2026-10-16T05:15:38.249Z",
+  "active_controller": "gpt",
+  "controls": {
+    "dispatch_paused": false,
+    "automatic_recovery": true,
+    "concurrency": 1,
+    "investment_hold": false,
+    "paused_agents": [],
+    "all_tasks_independent_review": true
+  }
+}
+```
+
+任务指向云端 LTZZZ 执行席，不会唤醒已离线的 ChatGPT 对话。只读交付待独立审核；派单成功不代表千问原生模型接单。
