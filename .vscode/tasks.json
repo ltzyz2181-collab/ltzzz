@@ -27,10 +27,11 @@
     },
     {
       "label": "LTZZZ：读取接力工单回执",
+      "detail": "只读 GitHub REST 查询工单与全部评论；不会派单、调用模型或部署。",
       "type": "process",
       "command": "node",
       "args": ["scripts/ltzzz-relay.mjs", "status", "${input:ltzzzIssueNumber}"],
-      "options": {"cwd": "${workspaceFolder}"},
+      "options": {"cwd": "${workspaceFolder}", "env": {"NO_COLOR": "1"}},
       "problemMatcher": []
     }
   ],

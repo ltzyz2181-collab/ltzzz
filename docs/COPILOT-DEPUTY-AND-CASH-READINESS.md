@@ -19,6 +19,34 @@ node scripts/ltzzz-relay.mjs status 具体工单号
 
 本轮不接管 owner 电脑；没有桌面连接证据就不写“桌面安装完成”。没有新增付费 cron、没有调用 OpenAI/Anthropic/千问原厂 API。
 
+### 接力回执查询：REST 与本机核验
+
+`node scripts/ltzzz-relay.mjs status 88` 使用 `gh api --method GET` 分别读取工单和全部分页评论，不再依赖 `gh issue view --comments` 的 GraphQL POST。工单正文与评论都成功读回才输出；它不发消息、不派单、不调用模型、不部署，也不根据 open/closed 自动宣布任务完成。
+
+如果 REST 同样返回 403/Forbidden，命令会非零退出并明确显示“读取未完成，不等于远端执行失败”。不会匿名绕过权限、删除 Token、扩大权限或自动执行登录。该错误单独不能证明 Token 失效；需区分当前客户端的登录状态、仓库可见性、代理或该环境的网络限制。
+
+在 **Windows 本机 VS Code 的集成终端** 内逐条运行以下只读命令，把不含凭证的结果交给协作方：
+
+```text
+pwd
+git rev-parse --show-toplevel
+git remote get-url origin
+git branch --show-current
+git rev-parse --short HEAD
+git status --short
+node --version
+npm --version
+git --version
+gh --version
+code --version
+gh api user --jq .login
+node scripts/ltzzz-relay.mjs status 88
+```
+
+请记录终端是 PowerShell、cmd、WSL 还是远程会话。`code` 找不到仅说明该终端 PATH 中没有该命令，不证明 Windows 没安装 VS Code。聊天模型需人工查看模型选择器，命令输出不能推断。不要发送 Key、Token、密码、助记词或完整环境变量。
+
+VS Code 菜单“终端 → 运行任务 → LTZZZ：读取接力工单回执”，输入 `88` 即可使用同一 REST 查询。电脑上的仓库须实际包含这版代码；更新前先检查未提交改动，不要由 AI 直接 reset、覆盖文件或切换有改动的分支。云端查询成功不能替代本机核验。
+
 ## 欧易 Web3 钱包怎样配合
 
 欧易交易所 API 的 IP 白名单，与手机欧易 Web3 自托管钱包是两套权限。解除交易所白名单不等于授权钱包签名，API `trade` 也不等于有提现/链上签名能力。公开地址与网络足够做余额、gas、持仓及协议检查；私钥、助记词、验证码不需要交给 AI。
