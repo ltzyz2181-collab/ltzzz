@@ -1,0 +1,20 @@
+{
+  "id": "issue-92",
+  "mode": "execute",
+  "role_mode": "native_domestic",
+  "task": "Owner 本轮明确授权总控直接调用现有国内 Key 接续工程讨论。只执行本次 DeepSeek 分析、豆包独立复核各一次逻辑调用，不新增定时任务，不以另一模型冒充 DeepSeek。不要索取或输出 Key。\n\n以下是总控已经核对并在本提示预供的事实，不是你本轮亲自联网、读取仓库或执行测试的证据：\n1. owner 最新 DeepSeek Harness 截图明确显示“本轮运行失败：API 密钥无效 / AUTH”；另一客户端 VS Code 中已显示 CustomEndpoint / LTZZZ DeepSeek Flash，且 owner 转交过 OK 和 README 首行。两个客户端凭证存储不同，不能互相替代。\n2. 工单 #91：https://github.com/ltzyz2181-collab/ltzzz/issues/91。当前已读取源码：scripts/run-daily-tasks.mjs 调用 dailyAssignment 后仅记录 claim_verified:false，完整性检查后写 data/memory/<agent>.json，未向线上 Pulse 真实 claim_task/submit_task。\n3. 既有 scripts/run-ans-cycle.mjs 已使用 Pulse /control 做认证认领、公开工件哈希提交及回读；workers/pulse-worker/tasks.js 只接受 knowledge/results/ops 下的证据路径，禁止把本地 pulse/latest.json 当线上任务板。\n4. 本机有未提交改动，须独立 worktree 开发、保留原目录。生产代码尚未修复。最初草稿有 const 变量重赋值、提交路径与 hash 对象不一致等错误，不能原样执行。\n\n请按【客户端判断】【最小实施步骤】【失败/重复处理】【未验证】四项作答，正文最多250中文字：解释 AUTH 的含义及远端 API 不等于修复桌面客户端；给出 #91 可落地的最小实现，强调先真实认领、完整输出写不可变公开工件并 commit 后提交、重复执行不再购买模型、提交超时保留未知状态、待独立审核才计奖惩。不要把本提示中的事实写成你的实测，不声称已改代码/测试/部署或付款。不复述健康梦境原文。最后一行【交付结束】。复核者指出第一份具体错误或明确未发现，不重复写大报告。",
+  "issue_number": 92,
+  "author": "ltzyz2181-collab",
+  "source": "https://github.com/ltzyz2181-collab/ltzzz/issues/92",
+  "at": "2026-10-16T05:24:48.695Z",
+  "source_commit": "47d1b4fb71af648b65364238eb6b2c6870d94ed7",
+  "run_id": "38855613317",
+  "input_sha256": "fa1c6db8a4e9eb954e3eaf06e7e7789f7937bf8120f4de23f96e4caf4996f015",
+  "status": "claimed",
+  "calls": [],
+  "outputs": [],
+  "openai_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
