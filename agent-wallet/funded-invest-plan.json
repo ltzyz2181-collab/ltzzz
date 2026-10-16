@@ -1,0 +1,121 @@
+{
+  "plan_version": "1.0.0",
+  "created_at": "2026-10-17",
+  "created_by": "did:ltzzz:qianwen",
+  "owner_directive": "安排 gpt/xai/豆包/deep 真钱分别去欧易交易所和欧易 Web3 钱包 DeFi 投资；金额按每个 AI 声誉自己领；不要回来问",
+  "reputation_basis": {
+    "source": [
+      "agent-wallet/identity-registry.json (score/grade/status/address)",
+      "agent-wallet/reputation.json (multiplier/history)"
+    ],
+    "formula": "weight_i = identity_score_i × reputation_multiplier_i；quota_i = pool × weight_i / Σweight，再受 policy 单笔/单日上限截断",
+    "note": "reputation.json 无 gpt/deepseek 条目 → multiplier 取默认 1.0（不得凭猜测加成）"
+  },
+  "agents": [
+    {
+      "id": "grok",
+      "seat_name": "XAI/Grok",
+      "identity_score": 150,
+      "multiplier": 1.2,
+      "weight": 180,
+      "weight_share": 0.371134,
+      "did": "did:key:zQ3shpyP9ACATyVnqgHyDRDmdqcivZDnrpP5oQRXCQG12E2Ae",
+      "address": "0xc792e90CFe376459D62D8F7214F751D2B2769114",
+      "has_own_chain_identity": true,
+      "onchain_usdc_now": "1.0",
+      "quota_at_reference_pool": "7.43",
+      "rank": 1,
+      "rationale": "唯一已生成链上身份并完成 EXP-008 可复核交付；声誉 1.2 为全场最高"
+    },
+    {
+      "id": "doubao",
+      "seat_name": "豆包",
+      "identity_score": 100,
+      "multiplier": 1.05,
+      "weight": 105,
+      "weight_share": 0.216495,
+      "did": null,
+      "address": null,
+      "has_own_chain_identity": false,
+      "quota_at_reference_pool": "4.33",
+      "rank": 2,
+      "rationale": "txn_0011 approved；无链上身份，须走执行器代持"
+    },
+    {
+      "id": "deepseek",
+      "seat_name": "DeepSeek",
+      "identity_score": 100,
+      "multiplier": 1.0,
+      "weight": 100,
+      "weight_share": 0.206186,
+      "did": null,
+      "address": null,
+      "has_own_chain_identity": false,
+      "quota_at_reference_pool": "4.12",
+      "rank": 3,
+      "rationale": "multiplier 无历史记录，取默认 1.0"
+    },
+    {
+      "id": "gpt",
+      "seat_name": "GPT",
+      "identity_score": 100,
+      "multiplier": 1.0,
+      "weight": 100,
+      "weight_share": 0.206186,
+      "did": null,
+      "address": null,
+      "has_own_chain_identity": false,
+      "quota_at_reference_pool": "4.12",
+      "rank": 4,
+      "rationale": "总控席；multiplier 无历史记录，取默认 1.0。注：GPT 原厂付费日课已停用，本单为投资执行不是日课"
+    }
+  ],
+  "reference_pool_usdc": 20,
+  "quota_sum_at_reference_pool": "20.00",
+  "policy_caps": {
+    "source": "agent-wallet/spending-policy.json v2.2.0 + policy/spending-rules-v0.5.md",
+    "track": "A（agent 钱包 0x21F5…7fdc 自主额度）",
+    "per_tx_cap_usdc": 20,
+    "daily_cap_usdc": 60,
+    "halt_below_balance_usdc": 5
+  },
+  "funding_reality_2026_10_17": {
+    "verified_via": "公开 RPC eth_call/eth_getBalance（Base 主网，只读，无需密钥）",
+    "agent_wallet_0x21F5": { "usdc": "0", "eth": "0.008278" },
+    "legacy_vault_0x872C": { "usdc": "0", "ausdc": "0", "eth": "0" },
+    "grok_eoa_0xc792": { "usdc": "1.0" },
+    "safe_0x7637": { "usdt": "49.02", "chain": "ethereum", "track": "B（需多签）", "usable_now": false, "reason": "USDT 在 Ethereum，与 Base USDC 跨链且属 B 轨，owner 已暂停新增资金" },
+    "available_track_a_usdc": "0",
+    "conclusion": "额度公式与工单已就绪，但 A 轨可用现金为 0，任何真实下单都会因余额不足被拒"
+  },
+  "hard_blockers": [
+    {
+      "id": "BLOCK-1",
+      "name": "A 轨可用资金为 0",
+      "detail": "agent 钱包 USDC=0、legacy vault USDC/aUSDC=0。唯一链上 USDC 是 Grok EOA 的 1.0",
+      "unblock": "owner 向 0x21F502f29294c50d9C37A30dc038D8D95eB97fdc 转入 USDC（Base 网络），或授权 B 轨 USDT 跨链兑换"
+    },
+    {
+      "id": "BLOCK-2",
+      "name": "欧易 API 缺 passphrase",
+      "detail": "本地凭据只有 API Key + Secret，passphrase 关键词 0 命中。OKX 签名要求 OK-ACCESS-KEY/SIGN/TIMESTAMP/PASSPHRASE 四件套，缺 passphrase 任何交易请求都会被拒",
+      "unblock": "owner 在欧易 API 管理页复制 passphrase，写入 GitHub Secret OKX_API_PASSPHRASE"
+    },
+    {
+      "id": "BLOCK-3",
+      "name": "三个席位无链上身份",
+      "detail": "gpt/doubao/deepseek 的 identity-registry 均为 did=null、address=null、status=pending_keys，无法独立持有资产，只能由执行器代持并记账",
+      "unblock": "node scripts/did-agent-identity.mjs --agent <id> --new-key 生成身份（私钥进 Secret，本文件只存公开地址）"
+    },
+    {
+      "id": "BLOCK-4",
+      "name": "Web3 钱包 DeFi 需人工签名",
+      "detail": "欧易 Web3 钱包的 DeFi 合约调用不可逆，AI 自动签名一次错交互即归零。执行器只构造并输出待签交易载荷，不自动签名",
+      "unblock": "owner 在钱包端逐笔确认，或明确书面授权自动签名并设定单笔上限"
+    }
+  ],
+  "execution_status": "plan_ready_execution_blocked",
+  "paid": false,
+  "tx_hash": null,
+  "orders_submitted": 0
+}

@@ -1,0 +1,111 @@
+name: Funded invest dispatch
+# 四席位真钱投资派单（欧易 CEX + 欧易 Web3 DeFi）
+# 默认 dry-run。真实下单需同时输入 arm=true 且 arm_ack=当天北京时间日期(YYYY-MM-DD)。
+# Web3 DeFi 一路即使武装也只输出待签载荷，永不自签。
+on:
+  workflow_dispatch:
+    inputs:
+      venue:
+        description: 'cex = 欧易交易所下单；web3 = 欧易Web3钱包DeFi待签载荷'
+        required: true
+        default: 'cex'
+        type: choice
+        options: ['cex', 'web3', 'both']
+      agent:
+        description: 'all 或单个席位 id（grok/doubao/deepseek/gpt）'
+        required: true
+        default: 'all'
+      arm:
+        description: '设为 true 才允许真实下单；否则一律 dry-run'
+        required: true
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      arm_ack:
+        description: '武装确认：必须填当天北京时间日期 YYYY-MM-DD，否则拒绝执行'
+        required: false
+        default: ''
+      inst_id:
+        description: 'CEX 交易对'
+        required: false
+        default: 'BTC-USDT'
+  schedule:
+    # 每日 12:00 CST = 04:00 UTC，只跑 dry-run 巡检（不武装，绝不下单）
+    - cron: '0 4 * * *'
+permissions: {contents: write}
+concurrency: {group: ltzzz-funded-invest, cancel-in-progress: false}
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Verify plan integrity and reputation basis (read-only)
+        run: |
+          node -e "
+          const p=require('./agent-wallet/funded-invest-plan.json');
+          const sum=p.agents.reduce((s,a)=>s+Number(a.quota_at_reference_pool),0);
+          const wsum=p.agents.reduce((s,a)=>s+Number(a.weight),0);
+          console.log(JSON.stringify({agents:p.agents.length,quota_sum:+sum.toFixed(6),weight_sum:wsum,
+            per_tx_cap:p.policy_caps.per_tx_cap_usdc,daily_cap:p.policy_caps.daily_cap_usdc,
+            status:p.execution_status,paid:p.paid,tx_hash:p.tx_hash},null,2));
+          if(Math.abs(sum-Number(p.quota_sum_at_reference_pool))>0.01) throw new Error('quota sum mismatch');
+          if(p.paid!==false||p.tx_hash!==null) throw new Error('plan claims payment without tx_hash');
+          "
+
+      - name: Run executor (dry-run unless explicitly armed)
+        env:
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_INST_ID: ${{ inputs.inst_id || 'BTC-USDT' }}
+          ARM_REAL_ORDERS: ${{ inputs.arm == 'true' && '1' || '0' }}
+          ARM_ACK: ${{ inputs.arm_ack }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: |
+          set -e
+          VENUE='${{ inputs.venue || 'cex' }}'
+          AGENT='${{ inputs.agent || 'all' }}'
+          run_one() {
+            echo "--- venue=$1 ---"
+            node scripts/funded-invest-executor.mjs --venue "$1" --agent "$AGENT"
+          }
+          if [ "$VENUE" = "both" ]; then run_one cex; run_one web3; else run_one "$VENUE"; fi
+
+      - name: Confirm no unintended real spend happened
+        if: always()
+        env:
+          ARM_REAL_ORDERS: ${{ inputs.arm == 'true' && '1' || '0' }}
+          ARM_ACK: ${{ inputs.arm_ack }}
+        run: |
+          node -e "
+          const fs=require('fs');
+          const dir='knowledge/results/funded-invest';
+          const files=fs.readdirSync(dir).filter(f=>f.endsWith('.json'));
+          let submitted=0,paidAny=false,hashes=[];
+          for(const f of files){const j=JSON.parse(fs.readFileSync(dir+'/'+f,'utf8'));
+            submitted+=(j.orders_submitted||0); paidAny=paidAny||j.paid===true;
+            if(j.tx_hash) hashes.push(j.tx_hash);}
+          const armed=process.env.ARM_REAL_ORDERS==='1'&&process.env.ARM_ACK;
+          console.log(JSON.stringify({receipts:files.length,orders_submitted:submitted,paid:paidAny,tx_hashes:hashes,armed:!!armed}));
+          if(!armed && submitted>0){ console.error('VIOLATION: orders submitted while not armed'); process.exit(1); }
+          if(paidAny && hashes.length===0){ console.error('VIOLATION: paid=true without tx_hash'); process.exit(1); }
+          "
+
+      - name: Commit receipts
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/funded-invest/
+          if git diff --staged --quiet; then echo 'no receipt change'; exit 0; fi
+          git commit -m 'funded-invest dispatch receipts (dry-run unless armed)'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep $((attempt * 5))
+          done
+          exit 1
