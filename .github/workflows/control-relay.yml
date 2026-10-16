@@ -1,0 +1,66 @@
+name: Desktop and domestic AI control relay (no models)
+on:
+  issues:
+    types: [opened]
+  push:
+    branches: [main]
+    paths: ['.github/workflows/control-relay.yml', 'scripts/*control-relay.mjs', 'scripts/ltzzz-relay.mjs', 'scripts/lib/control-relay.mjs', 'scripts/tests/control-relay.test.mjs']
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: ltzzz-control-relay, cancel-in-progress: false}
+jobs:
+  validate:
+    if: github.event_name != 'issues' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ接力]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-control-relay.mjs && node --test scripts/tests/control-relay.test.mjs
+  deliver:
+    needs: validate
+    if: github.event_name == 'issues' && github.repository == 'ltzyz2181-collab/ltzzz' && github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ接力]')
+    permissions: {contents: write, issues: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Claim before any remote action
+        id: prepare
+        run: node scripts/run-control-relay.mjs prepare
+      - name: Persist claim
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/control-relay/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Control relay durable owner claim, no models'
+          node tools/push-receipt-commit.mjs
+      - name: Fixed read-only inspection or durable deputy dispatch
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/run-control-relay.mjs execute
+      - name: Preserve success, failure or uncertain response as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-relay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/control-relay/
+      - name: Save actual results without rerunning remote operations
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/control-relay/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Control relay actual deputy handover evidence'
+          node tools/push-receipt-commit.mjs
+      - name: Return receipt link to desktop or domestic assistant
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-control-relay.mjs comment

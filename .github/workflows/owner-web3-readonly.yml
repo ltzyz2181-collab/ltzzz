@@ -1,0 +1,36 @@
+name: Owner OKX Web3 Base read-only and unsigned preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['config/owner-web3-readonly.json', 'scripts/inspect-owner-web3-wallet.mjs', 'scripts/lib/owner-web3-preview.mjs', 'scripts/tests/owner-web3-preview.test.mjs', '.github/workflows/owner-web3-readonly.yml']
+permissions: {contents: write}
+concurrency: {group: owner-web3-readonly, cancel-in-progress: false}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts
+      - run: node --test scripts/tests/owner-web3-preview.test.mjs
+      - name: Inspect public address; no wallet or exchange secrets supplied
+        run: node scripts/inspect-owner-web3-wallet.mjs
+      - name: Preserve actual chain evidence or blocker
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owner-wallet-preview-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/wallet-preview/
+      - name: Commit evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/wallet-preview/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Owner Base wallet read-only evidence and unsigned candidate, no transaction'
+          node tools/push-receipt-commit.mjs
