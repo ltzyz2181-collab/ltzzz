@@ -6,17 +6,17 @@ on:
   workflow_dispatch:
     inputs:
       venue:
-        description: 'cex = 欧易交易所下单；web3 = 欧易Web3钱包DeFi待签载荷'
+        description: 'web3 = Aave V3 Base / USDC（章程唯一允许）；cex 会被章程拒绝(BLOCK-5)'
         required: true
-        default: 'cex'
+        default: 'web3'
         type: choice
-        options: ['cex', 'web3', 'both']
+        options: ['web3', 'defi', 'cex']
       agent:
         description: 'all 或单个席位 id（grok/doubao/deepseek/gpt）'
         required: true
         default: 'all'
       arm:
-        description: '设为 true 才允许真实下单；否则一律 dry-run'
+        description: '设为 true 才允许真实链上执行；否则一律 dry-run'
         required: true
         default: 'false'
         type: choice
@@ -25,10 +25,6 @@ on:
         description: '武装确认：必须填当天北京时间日期 YYYY-MM-DD，否则拒绝执行'
         required: false
         default: ''
-      inst_id:
-        description: 'CEX 交易对'
-        required: false
-        default: 'BTC-USDT'
   schedule:
     # 每日 12:00 CST = 04:00 UTC，只跑 dry-run 巡检（不武装，绝不下单）
     - cron: '0 4 * * *'
@@ -57,24 +53,33 @@ jobs:
           if(p.paid!==false||p.tx_hash!==null) throw new Error('plan claims payment without tx_hash');
           "
 
+      - name: Derive short-lived runner authentication (same scheme as autonomous-funded-orders)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node - <<'JS'
+          const fs=require('fs'),crypto=require('crypto');
+          if(!process.env.CLOUDFLARE_API_TOKEN){console.log('runner_token=absent (read-only preview still works)');process.exit(0);}
+          const token=crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex');
+          console.log('::add-mask::'+token);
+          fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\n');
+          JS
+
+      # 章程 §1：仅允许 Aave V3 Base / USDC。venue=cex 会被执行器拒绝（BLOCK-5），
+      # 因此这里不再传任何欧易现货交易对，也不注入欧易下单凭据。
       - name: Run executor (dry-run unless explicitly armed)
         env:
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
-          OKX_INST_ID: ${{ inputs.inst_id || 'BTC-USDT' }}
+          WEP3_RUNNER_TOKEN: ${{ env.WEP3_RUNNER_TOKEN }}
           ARM_REAL_ORDERS: ${{ inputs.arm == 'true' && '1' || '0' }}
           ARM_ACK: ${{ inputs.arm_ack }}
           NODE_OPTIONS: --dns-result-order=ipv4first
         run: |
           set -e
-          VENUE='${{ inputs.venue || 'cex' }}'
+          VENUE='${{ inputs.venue || 'web3' }}'
           AGENT='${{ inputs.agent || 'all' }}'
-          run_one() {
-            echo "--- venue=$1 ---"
-            node scripts/funded-invest-executor.mjs --venue "$1" --agent "$AGENT"
-          }
-          if [ "$VENUE" = "both" ]; then run_one cex; run_one web3; else run_one "$VENUE"; fi
+          echo "--- venue=$VENUE agent=$AGENT ---"
+          node scripts/funded-invest-executor.mjs --venue "$VENUE" --agent "$AGENT"
 
       - name: Confirm no unintended real spend happened
         if: always()

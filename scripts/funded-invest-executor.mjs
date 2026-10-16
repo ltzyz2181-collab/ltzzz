@@ -1,23 +1,24 @@
 /**
- * funded-invest-executor.mjs — LTZZZ 真钱投资执行器（按声誉领额度）
+ * funded-invest-executor.mjs v2 — LTZZZ 四席位真钱投资派单执行器
  *
- * 用途：执行 agent-wallet/funded-invest-plan.json 里按声誉算好的额度，
- *      分派给 gpt / xai(grok) / doubao / deepseek 四个席位，去
- *      ① 欧易交易所（CEX，OKX REST API 下单）
- *      ② 欧易 Web3 钱包 DeFi（链上合约调用，仅构造待签载荷）
+ * 治理边界（policy/web3-investment-charter-v0.1.md，owner 一票生效）：
+ *   §1 仅允许 Aave V3 Base 主网 / USDC；非白名单 → 合约 revert
+ *   §2 试点档单笔 ≤20 USDC、敞口 ≤100 USDC；余额 <5 USDC 停止开新仓
+ *   §3 无 receipt 不算投资：hypothesis → exit_plan → tx_hash
+ *   §6 执行席不得自行扩大限额或白名单
  *
- * 安全设计（不可绕过）：
- *   1. 默认 DRY-RUN。任何真实下单/签名都必须显式设置 ARM_REAL_ORDERS=1，
- *      且必须同时提供 ARM_ACK=<当前UTC日期 YYYY-MM-DD>，两者缺一即拒绝执行。
- *   2. Web3 DeFi 永不自签。只输出待签交易载荷 + 校验数据，签名必须由 owner 人工完成。
- *   3. 额度硬上限来自 plan.policy_caps，脚本内二次截断，不信任任何外部输入放大额度。
- *   4. 余额不足即拒绝，绝不部分下单后静默失败；每笔都写回执。
- *   5. 密钥只从环境变量读取，永不打印明文，永不写入回执文件。
+ * v2 相对 v1 的四项更正（自审，详见 plan.self_audit_v1_errors）：
+ *   1. 移除 CEX 下单能力。BTC-USDT 不在章程白名单，执行席无权扩白名单 → venue=cex 一律拒绝。
+ *   2. 移除直连 Aave Pool 的 approve+supply 载荷。那会绕过 LTZZZVault 的
+ *      ForbiddenTarget / 日限 / 暂停 / veto 护栏 → 改为走既有受审计路径。
+ *   3. 额度不再自行决定：真值源是 WEP3 协议的 reputation_and_actual_equity 实时限额，
+ *      本脚本只做派单参考值与二次截断，冲突时服从协议。
+ *   4. 资金池改为当前在用金库 0x5df5…a32d（v1 误查 agent 钱包与 legacy vault 得出「资金为 0」的错误结论）。
  *
- * 用法：
- *   node scripts/funded-invest-executor.mjs --venue cex --agent grok
- *   node scripts/funded-invest-executor.mjs --venue web3 --agent all
- *   ARM_REAL_ORDERS=1 ARM_ACK=2026-10-17 node scripts/funded-invest-executor.mjs --venue cex --agent grok
+ * 安全闸门：
+ *   - 默认只读/dry-run。真实执行需 ARM_REAL_ORDERS=1 且 ARM_ACK=当天北京时间日期。
+ *   - 密钥只从环境变量读取，永不打印明文、永不写入回执。
+ *   - 余额不足即拒，绝不部分执行后静默失败。
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,52 +26,42 @@ import crypto from 'node:crypto';
 
 const PLAN_PATH = 'agent-wallet/funded-invest-plan.json';
 const OUT_DIR = 'knowledge/results/funded-invest';
-const RPCS = ['https://mainnet.base.org', 'https://base-rpc.publicnode.com'];
+const RPCS = ['https://base-rpc.publicnode.com', 'https://mainnet.base.org', 'https://base.drpc.org'];
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const AGENT_WALLET = '0x21F502f29294c50d9C37A30dc038D8D95eB97fdc';
+const AUSDC_BASE = '0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB';
+// 当前在用金库（withdraw_receiver / 签名主体），非 agent 钱包、非 legacy vault
+const TREASURY = '0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d';
+// 既有受审计执行路径：WEP3 Worker（签名与合约护栏都在 Worker/金库内）
+const WEP3_BASE = process.env.WEP3_BASE || 'https://ltzzz-wep3.ltzyz2181.workers.dev';
 
-function arg(name) {
-  const i = process.argv.indexOf('--' + name);
-  return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : null;
-}
-
+const arg = (n) => { const i = process.argv.indexOf('--' + n); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : null; };
 const mask = (v) => (v ? String(v).slice(0, 6) + '****' + String(v).slice(-4) : '(absent)');
 const nowIso = () => new Date().toISOString();
-/**
- * 北京时间（Asia/Shanghai）当日日期。
- * 注意：不能用 toISOString().slice(0,10)——那是 UTC 日期，北京时间 00:00–08:00 之间
- * 会慢一天，导致回执归档到错误日期，且 ARM_ACK 当日校验形同虚设。
- */
-const today = () => new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
-}).format(new Date());
+/** 北京时间当日日期。不可用 toISOString().slice(0,10)：UTC 在北京 00:00–08:00 慢一天，
+ *  会导致回执归档错日期，且 ARM_ACK 当日校验形同虚设。 */
+const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
-/* ---------- 1. 读取计划并按 policy 二次截断额度 ---------- */
 function loadPlan() {
   if (!fs.existsSync(PLAN_PATH)) throw new Error('plan missing: ' + PLAN_PATH);
   const plan = JSON.parse(fs.readFileSync(PLAN_PATH, 'utf8'));
-  const caps = plan.policy_caps || {};
-  const perTx = Number(caps.per_tx_cap_usdc ?? 20);
-  const daily = Number(caps.daily_cap_usdc ?? 60);
-  const pool = Number(plan.reference_pool_usdc ?? 0);
-  let sum = 0;
+  const lim = plan.protocol_limits_2026_10_15 || {};
+  const singleCap = Number(lim.single_cap_usdc ?? 20);
+  const charterCap = 20; // 章程 §2 试点档
+  const hardCap = Math.min(singleCap, charterCap);
   for (const a of plan.agents) {
     const raw = Number(a.quota_at_reference_pool ?? 0);
-    a.quota_usdc = Math.min(raw, perTx);   // 单笔上限截断
-    a.capped_by_policy = a.quota_usdc < raw;
-    sum += a.quota_usdc;
+    a.quota_usdc = Math.min(raw, hardCap);
+    a.capped_by = a.quota_usdc < raw ? 'policy' : null;
   }
-  plan._sum_quota = Number(sum.toFixed(6));
-  plan._daily_cap = daily;
-  plan._pool = pool;
+  plan._hard_cap = hardCap;
+  plan._sum_quota = Number(plan.agents.reduce((s, a) => s + a.quota_usdc, 0).toFixed(6));
   return plan;
 }
 
-/* ---------- 2. 链上只读余额（公开 RPC，无需密钥） ---------- */
+/* ---------- 链上只读（公开 RPC，无需密钥） ---------- */
 async function rpcCall(url, method, params) {
   const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
     signal: AbortSignal.timeout(25000),
   });
@@ -78,170 +69,87 @@ async function rpcCall(url, method, params) {
   if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
   return d.result;
 }
-
 async function withRpc(fn) {
-  let lastErr = null;
-  for (const rpc of RPCS) {
-    try { return await fn(rpc); } catch (e) { lastErr = e; }
-  }
-  throw lastErr || new Error('all rpc failed');
+  let last = null;
+  for (const rpc of RPCS) { try { return { rpc, value: await fn(rpc) }; } catch (e) { last = e; } }
+  throw last || new Error('all rpc failed');
+}
+const balData = (holder) => '0x70a08231' + '0'.repeat(24) + holder.toLowerCase().replace(/^0x/, '');
+async function erc20(token, holder) {
+  const { value } = await withRpc((rpc) => rpcCall(rpc, 'eth_call', [{ to: token, data: balData(holder) }, 'latest']));
+  return Number(BigInt(value)) / 1e6;
+}
+async function ethOf(addr) {
+  const { value } = await withRpc((rpc) => rpcCall(rpc, 'eth_getBalance', [addr, 'latest']));
+  return Number(BigInt(value)) / 1e18;
 }
 
-async function balanceOfErc20(token, holder) {
-  const data = '0x70a08231' + '0'.repeat(24) + holder.toLowerCase().replace(/^0x/, '');
-  const hex = await withRpc((rpc) => rpcCall(rpc, 'eth_call', [{ to: token, data }, 'latest']));
-  return Number(BigInt(hex)) / 1e6;
+/* ---------- WEP3 Worker：既有受审计路径 ---------- */
+function runnerToken() {
+  if (process.env.WEP3_RUNNER_TOKEN) return { token: process.env.WEP3_RUNNER_TOKEN, derived: false };
+  const cf = process.env.CLOUDFLARE_API_TOKEN;
+  if (!cf) return { token: null, derived: false };
+  return { token: crypto.createHmac('sha256', cf).update('ltzzz-runner-v2').digest('hex'), derived: true };
 }
 
-async function ethBalance(addr) {
-  const hex = await withRpc((rpc) => rpcCall(rpc, 'eth_getBalance', [addr, 'latest']));
-  return Number(BigInt(hex)) / 1e18;
-}
-
-/* ---------- 3. OKX CEX：签名 + 只读探测 + 下单（默认 dry-run） ---------- */
-function okxCreds() {
-  const key = process.env.OKX_API_KEY;
-  const secret = process.env.OKX_API_SECRET || process.env.OKX_SECRET_KEY;
-  const pass = process.env.OKX_API_PASSPHRASE || process.env.OKX_PASSPHRASE;
-  return { key, secret, pass, complete: Boolean(key && secret && pass) };
-}
-
-function okxSign(secret, ts, method, requestPath, body) {
-  const pre = ts + method + requestPath + (body || '');
-  return crypto.createHmac('sha256', secret).update(pre).digest('base64');
-}
-
-async function okxRequest(method, requestPath, bodyObj) {
-  const c = okxCreds();
-  if (!c.complete) return { ok: false, status: 'missing_secret_triplet', missing: !c.pass ? ['passphrase'] : (!c.key ? ['key'] : ['secret']) };
-  const ts = new Date().toISOString();
-  const body = bodyObj ? JSON.stringify(bodyObj) : '';
-  const headers = {
-    'OK-ACCESS-KEY': c.key,
-    'OK-ACCESS-SIGN': okxSign(c.secret, ts, method, requestPath, body),
-    'OK-ACCESS-TIMESTAMP': ts,
-    'OK-ACCESS-PASSPHRASE': c.pass,
-    'Content-Type': 'application/json',
-  };
+async function wep3(action, body) {
+  const { token, derived } = runnerToken();
+  const rec = { at: nowIso(), path: action, token_present: Boolean(token), token_derived: derived };
+  if (!token) { rec.status = 'blocked_missing_runner_token'; rec.blocker = 'BLOCK-4'; return rec; }
+  const isRead = ['status', 'diagnose', 'reconcile', 'preview', 'auto-preview'].includes(action);
+  const p = '/market/aave/' + (action === 'auto-preview' ? 'auto-preview' : action === 'auto' ? 'auto' : action === 'reconcile' ? 'reconcile' : action === 'diagnose' ? 'diagnostics' : action === 'preview' ? 'preview' : action === 'status' ? 'status' : 'execute');
   try {
-    const r = await fetch('https://www.okx.com' + requestPath, {
-      method, headers, body: body || undefined, signal: AbortSignal.timeout(25000),
+    const r = await fetch(WEP3_BASE + p, {
+      method: isRead ? 'GET' : 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Lab-Pin': token },
+      body: isRead ? undefined : JSON.stringify(body || {}),
+      signal: AbortSignal.timeout(60000),
     });
-    const d = await r.json().catch(() => ({}));
-    return { ok: r.ok && d.code === '0', http: r.status, code: d.code ?? null, msg: d.msg ?? null, data: d.data ?? null, status: 'requested' };
+    rec.http = r.status;
+    const j = await r.json().catch(() => null);
+    rec.result = j;
+    rec.service_verified = Boolean(r.ok && j && j.ok === true);
+    rec.status = rec.service_verified ? (isRead ? 'read_ok' : 'execute_ok') : 'service_or_execution_failed';
   } catch (e) {
-    return { ok: false, status: 'network_or_timeout', error: String(e.message || e) };
-  }
-}
-
-/** 只读：账户配置权限 + 余额。绝不下单。 */
-async function okxReadOnly() {
-  const out = { at: nowIso(), venue: 'okx_cex', orders_submitted: 0 };
-  const c = okxCreds();
-  out.creds = { key_present: Boolean(c.key), secret_present: Boolean(c.secret), passphrase_present: Boolean(c.pass), complete: c.complete };
-  if (!c.complete) { out.status = 'blocked_missing_credentials'; out.blocker = 'BLOCK-2'; return out; }
-  const cfg = await okxRequest('GET', '/api/v5/account/config');
-  const bal = await okxRequest('GET', '/api/v5/account/balance');
-  out.config = { http: cfg.http, code: cfg.code, permissions: cfg.data?.[0]?.perm ?? null };
-  out.balance = { http: bal.http, code: bal.code };
-  if (bal.ok) {
-    const details = bal.data?.[0]?.details || [];
-    out.balance.nonzero_assets = details.filter((x) => Number(x.eq) > 0).map((x) => ({ ccy: x.ccy, eq: x.eq }));
-    out.balance.usdt_eq = details.find((x) => x.ccy === 'USDT')?.eq ?? '0';
-  }
-  const perms = String(out.config.permissions || '').split(',').map((s) => s.trim());
-  out.trade_permission = perms.includes('trade');
-  out.status = cfg.ok && bal.ok ? 'verified_read_only' : 'api_error';
-  return out;
-}
-
-/** 下单：默认 dry-run；armed 时才真正提交 */
-async function okxPlaceOrder({ agent, instId, side, ordType, sz, armed }) {
-  const rec = {
-    at: nowIso(), venue: 'okx_cex', agent, instId, side, ordType, sz,
-    armed, orders_submitted: 0, tx_hash: null, paid: false,
-  };
-  if (!armed) { rec.status = 'dry_run_not_armed'; rec.reason = 'ARM_REAL_ORDERS=1 且 ARM_ACK=今日 才会真实下单'; return rec; }
-  const ro = await okxReadOnly();
-  if (!ro.trade_permission) { rec.status = 'blocked_no_trade_permission'; rec.permissions = ro.config?.permissions ?? null; return rec; }
-  const body = { instId, tdMode: 'cash', side, ordType, sz };
-  const r = await okxRequest('POST', '/api/v5/trade/order', body);
-  rec.okx_code = r.code; rec.okx_msg = r.msg; rec.okx_data = r.data;
-  if (r.ok && r.data?.[0]?.ordId) {
-    rec.orders_submitted = 1; rec.paid = true; rec.ordId = r.data[0].ordId; rec.status = 'submitted';
-  } else {
-    rec.status = 'order_rejected';
+    rec.status = 'unreachable';
+    rec.blocker = 'BLOCK-6';
+    rec.error = String(e.message || e).slice(0, 200);
   }
   return rec;
 }
 
-/* ---------- 4. Web3 钱包 DeFi：只构造待签载荷，永不自签 ---------- */
-const AAVE_V3_POOL_BASE = '0xA238Dd80C259a72e81d7e4664a9801593F98d1c5'; // Aave V3 Pool (Base)
-const RESERVE_INDEX = 0; // USDC 在 Base Aave V3 的 underlying
-
-function encodeAddressArg(addr) { return '0'.repeat(24) + addr.toLowerCase().replace(/^0x/, ''); }
-/**
- * 编码为 32 字节 uint256。接受 BigInt / number / 数字字符串。
- * 注意：Math.round(BigInt) 会抛 TypeError，所以这里先归一化为 BigInt 再处理。
- */
-function encodeUint256(n) {
-  let v;
-  if (typeof n === 'bigint') v = n;
-  else if (typeof n === 'number') v = BigInt(Math.round(n));
-  else v = BigInt(String(n).trim());
-  if (v < 0n) throw new Error('negative amount not allowed: ' + v);
-  const hex = v.toString(16);
-  if (hex.length > 64) throw new Error('amount overflows uint256: ' + hex);
-  return hex.padStart(64, '0');
+/** 协议实时限额（额度真值源）。只读。 */
+async function protocolLimits() {
+  const st = await wep3('status');
+  const lim = st.result?.limits || st.result?.storage?.limits || null;
+  return { status_probe: st, limits: lim };
 }
 
-/**
- * 构造两笔待签交易：① approve USDC → Pool；② Pool.supply(USDC, amount, onBehalf, referral)
- * 只返回载荷与校验值，不签名、不广播。
- */
-async function web3DeFiPayload({ agent, amountUsdc, onBehalf }) {
-  const rec = {
-    at: nowIso(), venue: 'okx_web3_defi', agent,
-    chain: 'base', amount_usdc: amountUsdc,
-    signing_performed: false, broadcast_performed: false,
-    tx_hash: null, paid: false, status: null,
-  };
-  try {
-    const walletUsdc = await balanceOfErc20(USDC_BASE, AGENT_WALLET);
-    const walletEth = await ethBalance(AGENT_WALLET);
-    rec.wallet = { address: AGENT_WALLET, usdc: Number(walletUsdc.toFixed(6)), eth: Number(walletEth.toFixed(6)) };
-    if (walletUsdc < amountUsdc) {
-      rec.status = 'blocked_insufficient_balance'; rec.blocker = 'BLOCK-1';
-      rec.shortfall = Number((amountUsdc - walletUsdc).toFixed(6));
-      return rec;
-    }
-    if (walletEth < 0.0005) { rec.status = 'blocked_insufficient_gas'; return rec; }
-
-    const amountWei = BigInt(Math.round(amountUsdc * 1e6));
-    rec.pending_txs = [
-      {
-        step: 1, purpose: 'approve USDC → Aave V3 Pool',
-        to: USDC_BASE, value: '0x0',
-        // approve(address spender, uint256 amount)  selector 0x095ea7b3
-        data: '0x095ea7b3' + encodeAddressArg(AAVE_V3_POOL_BASE) + encodeUint256(amountWei),
-      },
-      {
-        step: 2, purpose: 'Pool.supply(USDC, amount, onBehalf, referral=0)',
-        to: AAVE_V3_POOL_BASE, value: '0x0',
-        // supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) selector 0x617ba037
-        data: '0x617ba037' + encodeAddressArg(USDC_BASE) + encodeUint256(amountWei) + encodeAddressArg(onBehalf) + '0000',
-      },
-    ];
-    rec.unsigned_payload_sha256 = crypto.createHash('sha256').update(JSON.stringify(rec.pending_txs)).digest('hex');
-    rec.status = 'payload_ready_awaiting_owner_signature';
-    rec.next_step = 'owner 在欧易 Web3 钱包/任意签名端逐笔确认；本脚本不持有私钥、不自动签名';
-  } catch (e) {
-    rec.status = 'error'; rec.error = String(e.message || e);
-  }
-  return rec;
+/* ---------- 额度分派（派单参考值，服从协议） ---------- */
+function dispatchTable(plan, treasury, protocolLim) {
+  const cap = protocolLim?.single_cap_usdc != null ? Number(protocolLim.single_cap_usdc) : plan._hard_cap;
+  const floor = protocolLim?.cash_floor_usdc != null ? Number(protocolLim.cash_floor_usdc) : 5;
+  const spendable = Math.max(0, Number(treasury.usdc ?? 0) - floor);
+  let remaining = spendable;
+  return plan.agents.map((a) => {
+    const want = Math.min(a.quota_usdc, cap);
+    const granted = Math.min(want, Math.max(0, remaining));
+    remaining = Number((remaining - granted).toFixed(6));
+    return {
+      agent: a.id, seat: a.seat_name, rank: a.rank,
+      identity_score: a.identity_score, multiplier: a.multiplier,
+      weight_share: a.weight_share,
+      quota_reference_usdc: a.quota_usdc,
+      protocol_single_cap_usdc: Number(cap.toFixed(6)),
+      granted_usdc: Number(granted.toFixed(6)),
+      reduced_reason: granted < want ? (granted === 0 ? 'cash_floor_or_pool_exhausted' : 'pool_partial') : null,
+      has_own_chain_identity: a.has_own_chain_identity,
+      custody: a.has_own_chain_identity ? 'own_eoa' : 'treasury_custody',
+      blocker: a.has_own_chain_identity ? null : 'BLOCK-3',
+    };
+  });
 }
 
-/* ---------- 5. 主流程 ---------- */
 function armed() {
   const flag = process.env.ARM_REAL_ORDERS === '1';
   const ack = process.env.ARM_ACK === today();
@@ -249,61 +157,117 @@ function armed() {
 }
 
 async function main() {
-  const venue = arg('venue') || 'cex';
+  const venue = arg('venue') || 'web3';
   const agentSel = arg('agent') || 'all';
-  const { armed: isArmed, flag, ack } = armed();
 
+  // 入参白名单：无效 venue 必须显式失败。
+  // 曾因缺此校验导致 `--venue nosuch` 静默 exit 0 并伪造一份空回执，
+  // 与本项目历史上的 dry_run 谎报同类，绝不允许「跑了不存在的路径却看起来像成功」。
+  const VENUES = ['web3', 'defi', 'okx_web3_defi', 'cex', 'okx', 'okx_cex'];
+  if (!VENUES.includes(venue)) {
+    console.error('INVALID_VENUE venue=' + venue + ' allowed=' + VENUES.join(','));
+    process.exit(2);
+  }
+
+  const { armed: isArmed, flag, ack } = armed();
   const plan = loadPlan();
+
+  // agent 选择校验：拼错席位名不得静默产出「零席位」回执冒充成功
+  const known = plan.agents.map((a) => a.id).concat(plan.agents.map((a) => a.seat_name));
+  if (agentSel !== 'all' && !known.includes(agentSel)) {
+    console.error('INVALID_AGENT agent=' + agentSel + ' allowed=all,' + plan.agents.map((a) => a.id).join(','));
+    process.exit(2);
+  }
+
   const run = {
     plan_version: plan.plan_version,
-    at: nowIso(),
-    run_date: today(),
-    venue,
-    agent_selection: agentSel,
+    at: nowIso(), run_date: today(), venue, agent_selection: agentSel,
     arm: { requested_flag: flag, ack_matches_today: ack, effective: isArmed },
-    execution_status: 'not_started',
-    orders_submitted: 0,
-    paid: false,
-    tx_hash: null,
+    charter: 'policy/web3-investment-charter-v0.1.md',
+    execution_status: 'not_started', orders_submitted: 0, paid: false, tx_hash: null,
     results: [],
   };
 
-  const agents = agentSel === 'all' ? plan.agents : plan.agents.filter((a) => a.id === agentSel || a.seat_name === agentSel);
-  if (!agents.length) { run.execution_status = 'no_matching_agent'; finish(run); return; }
+  // 章程闸门：CEX 一律拒绝（BLOCK-5）。执行席无权扩白名单。
+  if (venue === 'cex' || venue === 'okx' || venue === 'okx_cex') {
+    run.execution_status = 'refused_by_charter';
+    run.blocker = 'BLOCK-5';
+    run.refusal = {
+      reason: '章程 §1 仅允许 Aave V3 Base / USDC；§6 执行席不得自行扩大白名单',
+      requested_venue: venue,
+      note: '如需启用 CEX 现货，须 owner 一票修订章程；在此之前本执行器不具备 CEX 下单能力',
+    };
+    run.results = plan.agents.map((a) => ({ agent: a.id, seat: a.seat_name, venue: 'okx_cex', status: 'refused_by_charter', paid: false, tx_hash: null }));
+    return finish(run);
+  }
 
-  // 资金闸门：A 轨可用现金为 0 时，真实下单必然失败 → 直接标记阻塞，不浪费尝试
-  const walletUsdc = await balanceOfErc20(USDC_BASE, AGENT_WALLET).catch(() => null);
-  run.funding = {
-    agent_wallet_usdc: walletUsdc === null ? 'unreadable' : Number(walletUsdc.toFixed(6)),
-    required_sum: plan._sum_quota,
-    sufficient: walletUsdc !== null && walletUsdc >= plan._sum_quota,
+  // 资金现实：当前在用金库（v1 曾误查 agent 钱包得出「资金为 0」的错误结论）
+  const [usdc, ausdc, eth] = await Promise.all([
+    erc20(USDC_BASE, TREASURY).catch(() => null),
+    erc20(AUSDC_BASE, TREASURY).catch(() => null),
+    ethOf(TREASURY).catch(() => null),
+  ]);
+  const treasury = {
+    address: TREASURY,
+    usdc: usdc === null ? null : Number(usdc.toFixed(6)),
+    ausdc: ausdc === null ? null : Number(ausdc.toFixed(6)),
+    eth: eth === null ? null : Number(eth.toFixed(6)),
+    readable: usdc !== null,
   };
+  run.treasury = treasury;
+  run.agent_wallet_reference_only = { address: '0x21F502f29294c50d9C37A30dc038D8D95eB97fdc', note: 'A 轨钱包，当前 USDC=0，非本单资金池' };
 
-  for (const a of agents) {
-    const base = { agent: a.id, seat: a.seat_name, quota_usdc: a.quota_usdc, capped_by_policy: a.capped_by_policy };
+  if (!treasury.readable) { run.execution_status = 'blocked_treasury_unreadable'; return finish(run); }
+  if (treasury.usdc < 5) { run.execution_status = 'blocked_below_cash_floor'; run.blocker = 'charter_§2'; return finish(run); }
 
-    if (venue === 'cex') {
-      if (!run.funding.sufficient && !isArmed) {
-        run.results.push({ ...base, venue: 'okx_cex', status: 'dry_run_funding_insufficient', blocker: 'BLOCK-1', note: '额度已按声誉算好；A 轨可用 USDC 为 ' + run.funding.agent_wallet_usdc });
-      } else {
-        // CEX 用 USDT 计价；额度是 USDC 名义值，真实下单需先确认账户 USDT 余额
-        const rec = await okxPlaceOrder({
-          agent: a.id, instId: process.env.OKX_INST_ID || 'BTC-USDT',
-          side: 'buy', ordType: 'market', sz: String(a.quota_usdc), armed: isArmed,
-        });
-        run.results.push({ ...base, ...rec });
-        if (rec.orders_submitted) run.orders_submitted += 1;
-      }
-    } else if (venue === 'web3') {
-      const onBehalf = a.address || AGENT_WALLET; // 无链上身份者由执行器代持并记账
-      const rec = await web3DeFiPayload({ agent: a.id, amountUsdc: a.quota_usdc, onBehalf });
-      rec.on_behalf = onBehalf;
-      rec.uses_executor_custody = !a.has_own_chain_identity;
-      if (!a.has_own_chain_identity) rec.blocker = 'BLOCK-3';
-      run.results.push({ ...base, ...rec });
-    } else {
-      run.results.push({ ...base, status: 'unknown_venue', venue });
+  // 协议实时限额 = 额度真值源
+  const pl = await protocolLimits();
+  run.protocol_limits_probe = { status: pl.status_probe.status, http: pl.status_probe.http, blocker: pl.status_probe.blocker ?? null };
+  run.protocol_limits = pl.limits ?? { fallback: 'plan.protocol_limits_2026_10_15', ...plan.protocol_limits_2026_10_15 };
+  if (!pl.limits) run.limits_source = 'plan_fallback_worker_unreachable';
+  else run.limits_source = 'protocol_live';
+
+  const table = dispatchTable(plan, treasury, pl.limits || plan.protocol_limits_2026_10_15);
+  run.dispatch_table = table;
+  run.granted_sum_usdc = Number(table.reduce((s, r) => s + r.granted_usdc, 0).toFixed(6));
+
+  const targets = agentSel === 'all' ? table : table.filter((r) => r.agent === agentSel || r.seat === agentSel);
+  if (!targets.length) { run.execution_status = 'no_matching_agent'; return finish(run); }
+
+  for (const t of targets) {
+    const rec = {
+      agent: t.agent, seat: t.seat, venue: 'okx_web3_defi_via_wep3',
+      granted_usdc: t.granted_usdc, custody: t.custody,
+      on_behalf: t.has_own_chain_identity ? plan.agents.find((a) => a.id === t.agent)?.address : TREASURY,
+      hypothesis: '按声誉额度将 USDC 供应至 Aave V3 Base，验证四席位真钱投资闭环（章程 §3）',
+      exit_plan: 'Aave 无锁定期，随时 withdrawUSDC 全额赎回回金库（章程 §5）',
+      paid: false, tx_hash: null, orders_submitted: 0, signing_performed_by_this_script: false,
+    };
+    if (t.granted_usdc <= 0) { rec.status = 'skipped_no_budget'; rec.blocker = t.blocker; run.results.push(rec); continue; }
+
+    // 一律先做只读预览，拿到协议侧的真实限额与可执行性
+    const prev = await wep3('preview', { intent_id: 'FUNDED-INVEST-' + run.run_date + '-' + t.agent, action: 'supply', amount_usdc: String(t.granted_usdc) });
+    rec.preview = { http: prev.http, status: prev.status, blocker: prev.blocker ?? null, service_verified: prev.service_verified };
+
+    if (!isArmed) {
+      rec.status = prev.status === 'unreachable' ? 'dry_run_worker_unreachable' : 'dry_run_preview_only';
+      rec.note = '未武装：不会发生任何链上执行。武装需 ARM_REAL_ORDERS=1 且 ARM_ACK=' + today();
+      run.results.push(rec); continue;
     }
+    if (prev.status === 'unreachable') { rec.status = 'armed_but_worker_unreachable'; rec.blocker = 'BLOCK-6'; run.results.push(rec); continue; }
+    if (!prev.service_verified) { rec.status = 'armed_but_preview_failed'; run.results.push(rec); continue; }
+
+    const ex = await wep3('execute', { intent_id: 'FUNDED-INVEST-' + run.run_date + '-' + t.agent, action: 'supply', amount_usdc: String(t.granted_usdc) });
+    rec.execute = { http: ex.http, status: ex.status, service_verified: ex.service_verified };
+    const step = Array.isArray(ex.result?.steps) ? ex.result.steps.findLast((s) => s.kind === 'supply') : null;
+    if (ex.service_verified && ex.result?.status === 'confirmed' && step?.tx_hash) {
+      rec.orders_submitted = 1; rec.paid = true; rec.tx_hash = step.tx_hash; rec.status = 'executed_onchain';
+      run.orders_submitted += 1;
+    } else {
+      rec.status = ex.result?.status === 'pending' || ex.result?.status === 'pending_confirmations'
+        ? 'pending_requires_reconciliation' : 'execution_not_confirmed';
+    }
+    run.results.push(rec);
   }
 
   run.paid = run.results.some((r) => r.paid === true);
@@ -311,33 +275,30 @@ async function main() {
   run.execution_status = isArmed
     ? (run.orders_submitted > 0 ? 'executed' : 'armed_but_blocked')
     : 'dry_run_only';
-
   finish(run);
 }
 
 function finish(run) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const file = path.join(OUT_DIR, run.run_date + '-' + run.venue + '-' + (run.arm.effective ? 'armed' : 'dryrun') + '.json');
+  const file = path.join(OUT_DIR, run.run_date + '-' + (run.venue || 'web3') + '-' + (run.arm.effective ? 'armed' : 'dryrun') + '.json');
   fs.writeFileSync(file, JSON.stringify(run, null, 2));
-  const c = okxCreds();
   console.log(JSON.stringify({
-    file,
-    execution_status: run.execution_status,
-    arm_effective: run.arm.effective,
-    orders_submitted: run.orders_submitted,
-    paid: run.paid,
-    tx_hash: run.tx_hash,
-    funding: run.funding,
-    okx_creds_complete: c.complete,
-    key_mask: mask(process.env.OKX_API_KEY),
-    per_agent: run.results.map((r) => ({ agent: r.agent, quota: r.quota_usdc, status: r.status, blocker: r.blocker ?? null })),
+    file, plan_version: run.plan_version, execution_status: run.execution_status,
+    arm_effective: run.arm.effective, orders_submitted: run.orders_submitted,
+    paid: run.paid, tx_hash: run.tx_hash,
+    treasury: run.treasury, granted_sum_usdc: run.granted_sum_usdc,
+    limits_source: run.limits_source ?? null,
+    refusal: run.refusal ?? null,
+    per_agent: (run.dispatch_table || run.results || []).map((r) => ({
+      agent: r.agent ?? r.id, granted: r.granted_usdc ?? r.quota_usdc,
+      status: r.status ?? null, custody: r.custody ?? null, blocker: r.blocker ?? null,
+    })),
   }, null, 2));
 }
 
 main().catch((e) => {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const file = path.join(OUT_DIR, today() + '-error.json');
-  fs.writeFileSync(file, JSON.stringify({ at: nowIso(), error: String(e.stack || e) }, null, 2));
+  fs.writeFileSync(path.join(OUT_DIR, today() + '-error.json'), JSON.stringify({ at: nowIso(), error: String(e.stack || e) }, null, 2));
   console.error('EXECUTOR_ERROR ' + String(e.message || e));
   process.exit(1);
 });
