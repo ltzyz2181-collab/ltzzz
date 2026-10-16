@@ -26,6 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -33,7 +34,7 @@ jobs:
           node-version: '20'
 
       - name: Test execution, delivery, and economic status classification
-        run: node scripts/check-core-memory.mjs && node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/core-memory-integrity.test.mjs scripts/tests/external-return-dispatch.test.mjs scripts/tests/external-report.test.mjs
+        run: node scripts/check-core-memory.mjs && node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/core-memory-integrity.test.mjs scripts/tests/external-return-dispatch.test.mjs scripts/tests/external-report.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/ans-task-review.test.mjs
 
       - name: Preflight — 当日是否已产出（幂等）
         id: preflight
@@ -48,9 +49,32 @@ jobs:
             echo "::notice::data/results/$D.json 缺失，执行日课"
           fi
 
+      - name: Reserve daily calls and verify live task claims
+        if: steps.preflight.outputs.skip == 'false'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DAILY_DATE: ${{ steps.preflight.outputs.today }}
+        run: node scripts/daily-task-board.mjs prepare
+
+      - name: Persist reservations before any paid generation
+        if: steps.preflight.outputs.skip == 'false'
+        run: |
+          git config user.name "ltzzz-bot"
+          git config user.email "bot@ltzzz.com"
+          git add knowledge/results/daily-board/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Reserve daily task calls before generation"
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+
       - name: Run daily tasks
         if: steps.preflight.outputs.skip == 'false'
         env:
+          DAILY_DATE: ${{ steps.preflight.outputs.today }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
@@ -61,20 +85,54 @@ jobs:
         run: node scripts/run-daily-tasks.mjs
 
       - name: Commit results
-        if: steps.preflight.outputs.skip == 'false'
+        if: always() && steps.preflight.outputs.skip == 'false'
         run: |
           git config user.name "ltzzz-bot"
           git config user.email "bot@ltzzz.com"
           git add data/
+          if [ -d knowledge/results/daily-board ]; then git add knowledge/results/daily-board/; fi
           if git diff --staged --quiet; then
             echo "no changes"
             exit 0
           fi
           git commit -m "daily agent tasks $(TZ=Asia/Shanghai date +%Y-%m-%d)"
-          # 防与其他写工作流冲突：先 rebase 再推
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+
+      - name: Reconcile committed deliveries without model calls
+        if: success()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DAILY_DATE: ${{ steps.preflight.outputs.today }}
+        run: node scripts/daily-task-board.mjs sync
+
+      - name: Persist submission verification
+        if: always()
+        run: |
+          if [ ! -d knowledge/results/daily-board ]; then exit 0; fi
+          git config user.name "ltzzz-bot"
+          git config user.email "bot@ltzzz.com"
+          git add knowledge/results/daily-board/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "Daily board delivery verification (pending review, unpaid)"
+          for attempt in 1 2 3 4; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+
+      - name: Preserve recovery artifacts if persistence fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-board-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/daily-board/
+          if-no-files-found: ignore
 
       - name: Postflight — 产出校验
         if: steps.preflight.outputs.skip == 'false'
