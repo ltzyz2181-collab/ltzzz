@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "issue": 91,
+  "repository": "ltzyz2181-collab/ltzzz",
+  "recorded_at": "2026-10-16T07:19:04.339Z",
+  "status": "code_merged_workflow_deployment_verified_production_cycle_pending",
+  "executor": "ChatGPT Codex engineering executor; not the owner's desktop DeepSeek client",
+  "basis": "Existing #91 source and receipts showed assignment prompts without remote claims/submissions. Preserve existing schedules and make evidence durable before spending or submitting.",
+  "source_commit": "0e942e3d94ef428eb3d03595e0a04211e02ac532",
+  "pull_request": 93,
+  "merge_commit": "71f404a160601baa24f34cc1c8fd5bd6f350a650",
+  "files": [
+    ".github/workflows/daily-agent-tasks.yml",
+    "scripts/run-daily-tasks.mjs",
+    "scripts/daily-task-board.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/tests/daily-task-board.test.mjs"
+  ],
+  "validation": {
+    "local_tests_passed": 47,
+    "local_tests_failed": 0,
+    "entrypoint_syntax_checks_passed": true,
+    "core_memory_integrity_passed": true,
+    "github_run_id": 38866335834,
+    "github_job_id": 116859924625,
+    "github_event": "push",
+    "github_conclusion": "success",
+    "github_tests_passed": 47,
+    "github_tests_failed": 0
+  },
+  "deployment": {
+    "target": "Existing Daily Agent Tasks GitHub Actions workflow",
+    "installed_on_main": true,
+    "existing_cron_preserved": [
+      "0 22 * * *",
+      "0 6 * * *"
+    ],
+    "new_paid_schedule": false,
+    "push_verification": "tests only; prepare/generate/sync skipped",
+    "cloudflare_worker_changed": false
+  },
+  "scope": {
+    "authenticated_claim_readback": true,
+    "immutable_artifact_hash_binding": true,
+    "artifact_remote_read_before_submit": true,
+    "submission_state_hash_readback": true,
+    "same_day_generation_reservation": true,
+    "sync_without_regeneration": true,
+    "independent_review_performed": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "actual_operations": {
+    "provider_generation_calls": 0,
+    "live_task_claims": 0,
+    "live_task_submissions": 0,
+    "wallet_operations": 0,
+    "owner_desktop_modified": false
+  },
+  "remaining": [
+    "Next eligible existing scheduled daily cycle must verify real authenticated claim, generation and hash-bound submission; this test-only deployment run does not prove it.",
+    "Existing same-day results are not regenerated. Already-claimed, missing, paused or unavailable assignments remain blocked.",
+    "Automatic GitHub Codex review was still running when checked; do not describe it as approved.",
+    "Issue 91 remains open pending production-cycle acceptance."
+  ],
+  "recovery": "For a saved generated artifact, DAILY_DATE=YYYY-MM-DD node scripts/daily-task-board.mjs sync uses the existing executor credential. Commit artifact bytes first and save the resulting ledger. Never delete the daily reservation to retry unknown generation."
+}
