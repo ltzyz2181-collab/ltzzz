@@ -15,7 +15,9 @@ on:
       - 'scripts/run-daily-tasks.mjs'
       - 'scripts/daily-task-board.mjs'
       - 'scripts/lib/daily-task-board.mjs'
+      - 'scripts/lib/daily-board-lineage.mjs'
       - 'scripts/tests/daily-task-board.test.mjs'
+      - 'scripts/tests/daily-board-lineage.test.mjs'
   schedule:
     - cron: '0 22 * * *'   # UTC 22:00 = 北京 06:00（主跑，提前量）
     - cron: '0 6 * * *'    # UTC 06:00 = 北京 14:00（兜底）
@@ -42,7 +44,7 @@ jobs:
           node-version: '20'
 
       - name: Test execution, delivery, and economic status classification
-        run: node scripts/check-core-memory.mjs && node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/core-memory-integrity.test.mjs scripts/tests/external-return-dispatch.test.mjs scripts/tests/external-report.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/ans-task-review.test.mjs
+        run: node scripts/check-core-memory.mjs && node --test scripts/tests/task-outcome.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/core-memory-integrity.test.mjs scripts/tests/external-return-dispatch.test.mjs scripts/tests/external-report.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-board-lineage.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/ans-task-review.test.mjs
 
       - name: Preflight — 当日是否已产出（幂等）
         id: preflight
@@ -128,6 +130,7 @@ jobs:
           git config user.name "ltzzz-bot"
           git config user.email "bot@ltzzz.com"
           git add knowledge/results/daily-board/
+          if [ -f "data/results/${{ steps.preflight.outputs.today }}.json" ]; then git add "data/results/${{ steps.preflight.outputs.today }}.json"; fi
           if git diff --staged --quiet; then exit 0; fi
           git commit -m "Daily board delivery verification (pending review, unpaid)"
           for attempt in 1 2 3 4; do
