@@ -3,3 +3,13 @@ const task={agent:'deepseek',instruction:'Repair the observed ANS handover with 
 test('a previous-day coordinator assignment reaches the next daily worker instead of silently falling back',()=>{const control={date:'2026-10-14',dispatch_source:'actual_model_review',dispatches:[task]};const r=dailyAssignment('deepseek','2026-10-15',{control});assert.equal(r.instruction,task.instruction);assert.equal(r.source_date,'2026-10-14');assert.equal(r.source,'actual_model_review');});
 test('expired, future, completed and wrong-seat queued instructions never replay forever',()=>{for(const patch of [{date:'2026-10-12'},{date:'2026-10-16'},{date:'invalid'},{dispatches:[{...task,status:'completed_draft_review'}]},{dispatches:[{...task,agent:'doubao'}]}]){const r=dailyAssignment('deepseek','2026-10-15',{control:{date:'2026-10-14',dispatches:[task],...patch}});assert.notEqual(r.instruction,task.instruction);}});
 test('explicit execute_on prevents premature use and permits exactly the intended date',()=>{const control={date:'2026-10-14',dispatches:[{...task,execute_on:'2026-10-15'}]};assert.notEqual(dailyAssignment('deepseek','2026-10-14',{control}).instruction,task.instruction);assert.equal(dailyAssignment('deepseek','2026-10-15',{control}).instruction,task.instruction);assert.notEqual(dailyAssignment('deepseek','2026-10-16',{control}).instruction,task.instruction);});
+
+test('queued ANS instruction carries provenance but binds only the execution-day board identity',()=>{
+ const control={date:'2026-10-15',dispatch_source:'coordinator_rules_zero_model_baseline',dispatches:[{...task,id:'ANS-2026-10-15-deepseek',execute_on:'2026-10-16'}]};
+ const assignment=dailyAssignment('deepseek','2026-10-16',{control});
+ assert.equal(assignment.id,'DAILY-2026-10-16-deepseek');
+ assert.equal(assignment.source_task_id,'ANS-2026-10-15-deepseek');
+ assert.equal(assignment.execution_date,'2026-10-16');
+ assert.equal(assignment.source_date,'2026-10-15');
+ assert.equal(assignment.instruction,task.instruction);
+});
