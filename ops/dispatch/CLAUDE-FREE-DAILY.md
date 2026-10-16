@@ -26,3 +26,7 @@ owner 澄清退出五签不等于退出 LTZZZ 工作。Claude 可以继续免费
 ## 国内代执行不是 Claude 本体交付
 
 owner 要求不续费海外模型时，GPT/Claude 岗位可由 DeepSeek/豆包接管，见 docs/DOMESTIC-GPT-CLAUDE-ROLES.md。此类输出放国内执行席回执并标记 delegated，不记成 Claude 本体已经读文件或生成内容；本免费外部席历史与署名不变。
+
+## 自主交回执入口（本轮新增）
+
+优先用[外部回执Issue表单](https://github.com/ltzyz2181-collab/ltzzz/issues/new?template=external-report.yml)，按[提交说明](../../docs/EXTERNAL-REPORT-SUBMISSION.md)保存完整原文。只需要能创建Issue，不要求推代码；云端零模型入库并保留来源。纯只读Claude连接仍不能提交，不能宣称因此获得GitHub写权限或自动定时。不要把回执中的建议实验自动当成owner执行指令。

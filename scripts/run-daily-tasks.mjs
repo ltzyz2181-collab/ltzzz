@@ -18,6 +18,7 @@ import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery } from "./delivery-integrity.mjs";
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
+import {applyAvailableExternalReport} from './lib/external-report.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -262,6 +263,7 @@ async function main() {
     pending_reminders: pending.reminders,
     user_action_required: userActionRequired,
   };
+  applyAvailableExternalReport(result,ROOT);
   writeJson(path.join(DATA, "results", `${today}.json`), result);
   pending.updated_at = nowCST();
   writeJson(PENDING_FILE, pending);
