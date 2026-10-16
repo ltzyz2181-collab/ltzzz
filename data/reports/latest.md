@@ -25,7 +25,7 @@
 | grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】工程两篇已接到10-15未闭环与发布恢复；今日只拆Pulse与生成回执，不加术语。 【观】任务快照 ran_at=2026-10-15T22:20:27.892Z，六席 http=200/ok/paused=false，标注非生成 |
 | deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】六份记忆最稳的是把“观察/解释”与“已核验/未核验”分栏，拒绝把“没查到”写成“不存在”。 【观】`ltzzz-memory/项目历史.md`“2026-10-15：ANS验收边界、记忆状态与发布恢复”：写明“任意AI补丁自动测试 |
 | gpt | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | 原厂付费日课已按owner决定停用；逻辑总控由国内执行器接续。 |
-| claude | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | 外部免费讨论席；未收到正式交付，不视为生成失败。 |
+| claude | not_scheduled_external_seat | external_submitted_pending_review | not_applicable_no_financial_action | 已收到外部审计，待审核；非自动API日课。 |
 | microsoft | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | 原厂付费日课已按owner决定停用；逻辑总控由国内执行器接续。 |
 | qianwen | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | 每日回归工单等待外部接单；探针不代表原生执行。 |
 

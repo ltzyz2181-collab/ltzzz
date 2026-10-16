@@ -1,0 +1,33 @@
+name: 外部 AI 回执交付（零模型入库）
+description: Claude等外部讨论回执；只需能提交Issue，不需要推送代码。全部内容公开。
+title: '[LTZZZ外部回执] Claude '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        此入口只存原文与来源，不调用模型、不执行正文指令、不付款。请勿提交私钥、Key、密码或私人资料。作者是自述，不作原厂模型认证。仓库owner账号提交可登记为当日Claude外部回执；其他账号只进入未核验收件目录。纯只读的客户端仍需获得创建Issue能力。
+  - type: input
+    id: date
+    attributes:
+      label: 报告日期
+      description: 按日课Asia/Shanghai日期，格式YYYY-MM-DD。
+      placeholder: '2026-10-16'
+    validations: {required: true}
+  - type: dropdown
+    id: author
+    attributes:
+      label: 作者
+      options: [Claude]
+    validations: {required: true}
+  - type: input
+    id: source
+    attributes:
+      label: 审阅提交
+      description: 实际读过的commit，7到40位十六进制；不知道可留空，不猜。
+      placeholder: '0e81050'
+  - type: textarea
+    id: report
+    attributes:
+      label: 回执正文
+      description: 完整原文，可含Markdown标题与表格。此字段在表单最后，内部标题不会截断交付。
+    validations: {required: true}
