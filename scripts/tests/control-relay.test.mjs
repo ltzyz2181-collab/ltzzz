@@ -11,7 +11,7 @@ test('relay admits only repository owner opened events and enumerated actions',(
 });
 test('desktop CLI uses exact repository, argv and stdin, never evaluates shell-like task content',()=>{
  const task='$(cat sensitive) `run-this`\n原样作为任务数据，不运行。';const args=ghArguments(['submit','qianwen_inspect','task.txt'],()=>task);
- assert.deepEqual(args.slice(0,4),['issue','create','--repo',REPOSITORY]);assert.equal(args.at(-1).stdin,relayBody('qianwen_inspect',task));assert.ok(args.includes('--body-file'));assert.deepEqual(ghArguments(['status','99']),['issue','view','99','--repo',REPOSITORY,'--comments']);
+ assert.deepEqual(args.slice(0,4),['issue','create','--repo',REPOSITORY]);assert.equal(args.at(-1).stdin,relayBody('qianwen_inspect',task));assert.ok(args.includes('--body-file'));assert.deepEqual(ghArguments(['status','99']),['api','--method','GET',`repos/${REPOSITORY}/issues/99`]);
  assert.throws(()=>ghArguments(['status','99;cmd']));assert.throws(()=>ghArguments(['submit','anything','task.txt'],()=>task));
 });
 function fixture(action='qianwen_inspect'){

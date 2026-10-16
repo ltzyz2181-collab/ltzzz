@@ -2,12 +2,14 @@ name: Desktop and domestic AI control relay (no models)
 on:
   issues:
     types: [opened]
+  pull_request:
+    paths: ['.github/workflows/control-relay.yml', 'scripts/*control-relay.mjs', 'scripts/ltzzz-relay.mjs', 'scripts/lib/control-relay.mjs', 'scripts/tests/control-relay.test.mjs', 'scripts/tests/relay-status.test.mjs', '.vscode/tasks.json']
   push:
     branches: [main]
-    paths: ['.github/workflows/control-relay.yml', 'scripts/*control-relay.mjs', 'scripts/ltzzz-relay.mjs', 'scripts/lib/control-relay.mjs', 'scripts/tests/control-relay.test.mjs']
+    paths: ['.github/workflows/control-relay.yml', 'scripts/*control-relay.mjs', 'scripts/ltzzz-relay.mjs', 'scripts/lib/control-relay.mjs', 'scripts/tests/control-relay.test.mjs', 'scripts/tests/relay-status.test.mjs', '.vscode/tasks.json']
   workflow_dispatch:
 permissions: {contents: read}
-concurrency: {group: ltzzz-control-relay, cancel-in-progress: false}
+concurrency: {group: "ltzzz-control-relay-${{ github.event.pull_request.number || 'owner' }}", cancel-in-progress: false}
 jobs:
   validate:
     if: github.event_name != 'issues' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ接力]'))
@@ -16,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check scripts/run-control-relay.mjs && node --test scripts/tests/control-relay.test.mjs
+      - run: node --check scripts/run-control-relay.mjs && node --check scripts/ltzzz-relay.mjs && node --test scripts/tests/control-relay.test.mjs scripts/tests/relay-status.test.mjs
   deliver:
     needs: validate
     if: github.event_name == 'issues' && github.repository == 'ltzyz2181-collab/ltzzz' && github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ接力]')
