@@ -73,7 +73,8 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   const complete = result.ok === true && integrity.status === 'structurally_complete' && !/SPEND_PROPOSAL\s*[:：]/i.test(result.output || '');
   const artifact = {
     schema_version:1, date, task_id:seat.assignment?.id || null, logical_seat:agent,
-    actual_provider:agent, actual_model:result.model || null, source_commit:record.source_commit,
+    actual_provider:result.ok ? agent : null, actual_model:result.model_source === 'requested_model' ? null : (result.model || null),
+    reported_model:result.model || null, model_source:result.model_source || null, source_commit:record.source_commit,
     run_key:runKey, output:String(result.output || ''), finish_reason:result.finish_reason || null,
     tokens_used:result.tokens_used ?? null, request_id:result.request_id || null,
     integrity, status:complete?'complete':'incomplete_or_failed', provider_status:result.status || null,
