@@ -1,0 +1,13 @@
+{
+  "finding": "review_task 状态机将已完成/待支付任务重新提交后永久卡死在 submitted_pending_review：submit_task 接受 claimed 状态但 review 完成后没有把任务重置为 completed，导致同一任务可重复提交覆盖审核结果，且没有派生新任务或复位状态的恢复路径。",
+  "evidence_paths": [
+    "workers/pulse-worker/tasks.js",
+    "scripts/lib/daily-assignment.mjs"
+  ],
+  "minimal_patch": "将 review_task 的完成态从单状态改为派生新审核任务：当 command.accepted===true 时，保留原任务为 completed_draft_review 并复制一条新的 available 审核任务（id 加 -recheck），指令强制重新验收上一轮的证据路径与哈希；当 accepted===false 时原任务回到 available 并递增 retry_count。submitted_pending_review 的重复提交不再覆盖已有 review，而是以 review 已存在为由返回 duplicate。",
+  "verification_commands": [
+    "node -e \"import('./workers/pulse-worker/tasks.js').then(m=>{let s=m.seedTasks({},Date.now());let tid=s.task_board[0].id;let c={task_id:tid,agent:'deepseek'};s=m.taskCommand(s,c,'worker',['deepseek']).state;c={task_id:tid,agent:'deepseek',action:'submit_task',evidence_path:'results/x.json',evidence_sha256:'a'.repeat(64)};s=m.taskCommand(s,c,'worker',['deepseek']).state;c={task_id:tid,agent:'doubao',action:'review_task',accepted:true,reviewed_sha256:'a'.repeat(64),scope:'engineering_draft_only',worker_actual_provider:'deepseek',reviewer_actual_provider:'doubao',review_evidence_path:'ops/r1.json',review_evidence_sha256:'b'.repeat(64)};s=m.taskCommand(s,c,'reviewer',['deepseek','doubao']).state;console.assert(s.task_board.some(t=>t.id===tid+'-recheck'&&t.status==='available'),'recheck not derived');console.assert(s.task_board.find(t=>t.id===tid).status==='completed_draft_review','original not completed');console.log('PASS');})\"",
+    "node -e \"import('./scripts/lib/daily-assignment.mjs').then(m=>{let a=m.dailyAssignment('deepseek','2026-10-15',{control:{date:'2026-10-15',dispatches:[{agent:'deepseek',instruction:'test',status:'queued_for_next_daily_economy',id:'ANS-2026-10-15-deepseek'}]}});console.assert(a.id==='DAILY-2026-10-15-deepseek','wrong id');console.log('PASS');})\""
+  ],
+  "remaining_blocker": "派生任务需要被 seedTasks 识别为 available 并保留独立审核生命周期，但当前 seedTasks 只从 baselineDispatches 和 dailyBaselineDispatches 生成任务，不会扫描脉冲任务板中手工派生的 -recheck 任务；dailyAssignment 的 board.find 也只匹配 assigned_to 的 daily 链，导致派生的 recheck 无法被消费。"
+}
