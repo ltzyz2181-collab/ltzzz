@@ -1,0 +1,43 @@
+# 桌面 / 国内 AI 接力 · issue-90
+
+状态：assigned_waiting_external_acceptance。
+
+执行器：cloud_rules；模型调用 0；没有付款、投资、发布或任意命令执行。
+
+任务原文仅作数据：
+
+任务执行席：owner 电脑上刚完成 #88 的 VS Code/Copilot 桌面客户端；本单需在真实 owner 电脑执行，云端派单不代表已安装。owner 已授权部署，不再要求其重复审批例行配置。
+
+已合并准备代码：PR #89，merge 6543354a8f475783b04c6acd77454708df2dd2fc；10 项准备/接力测试通过。先读 docs/VSCODE-DOMESTIC-MODELS.md 与 .github/prompts/ltzzz-domestic-model.prompt.md。
+
+当前只读核查：DeepSeek 账户 LTZZZ 已登录，显示充值余额 CNY 56.04、赠送余额 CNY 1.88；未找到 ltzzz-vscode-local。此余额是本次网页快照，不保证以后不变。不要读取/输出/上传已有 ltzzz 或 DeepSeek Harness 的密钥，不撤销现有生产 Key。浏览器登录保存不代表 VS Code 已有凭据。
+
+执行步骤：
+1. 检查实际客户端、扩展和 VS Code 版本；如实际是 Codex/Claude 扩展，明确差异，不覆盖其认证。只在 ltzyz2181-collab/ltzzz 工作。
+2. 更新 main 并保留所有本地修改，尤其 knowledge/video-scripts/2026-10-16.md；不得 reset/clean/强推或整文件覆盖用户模型设置。
+3. 运行 node scripts/prepare-vscode-domestic.mjs。通过原生模型管理器合并 DeepSeek Pro/Flash 模型条目，保留其他供应商与向导的安全密钥引用。
+4. Key 由 owner 在官方平台生成、直接填入本机 VS Code 安全输入框。可以引导其在本机官方页面创建 ltzzz-vscode-local；不要让其发到聊天、Issue 或文件。不能取回旧 Key 时不重置生产 Key，也不声称已配置。
+5. 日常 Flash、工程 V4 Pro；核对后台 utility 模型的实际计费通道。先按模板非思考模式验收，思考与图片能力另验。
+6. 用 Flash 只做一次 ops/relay-readonly-task.txt 的文件读取工具往返，核对选择器/响应实际模型、工具日志及最终文本，记录 request ID/usage（若可见）。这是小额供应商 API 使用，已经包含在 owner 的接入验收任务中；失败或结果未知不自动重试长任务。
+7. 将无密钥回执提交 knowledge/results/desktop/，引用本单与源 commit，分别记录 prepared、configured、generation_verified、tool_roundtrip_verified，附测试与未完成项。任何步骤未通过就写阻塞，不能以准备测试或云端接力冒充本机验收。
+
+不新增付费模型定时任务、不自动购买订阅、不改机器人或钱包、不安装远程控制服务器。Key未填/没有本机连接/实际执行失败都应明确列为阻塞。
+
+## 核验材料
+
+```json
+{
+  "ran_at": "2026-10-16T02:50:34.234Z",
+  "active_controller": "gpt",
+  "controls": {
+    "dispatch_paused": false,
+    "automatic_recovery": true,
+    "concurrency": 1,
+    "investment_hold": false,
+    "paused_agents": [],
+    "all_tasks_independent_review": true
+  }
+}
+```
+
+任务指向云端 LTZZZ 执行席，不会唤醒已离线的 ChatGPT 对话。只读交付待独立审核；派单成功不代表千问原生模型接单。
