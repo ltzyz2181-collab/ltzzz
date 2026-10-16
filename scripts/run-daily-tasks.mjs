@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import {dailyAssignment} from "./lib/daily-assignment.mjs";
+import {readLedger,runReservedSeat,ledgerPath,digest} from "./lib/daily-task-board.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery } from "./delivery-integrity.mjs";
@@ -34,7 +34,7 @@ function nowCST() {
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}+08:00`;
 }
 
-const today = todayCST();
+const today = process.env.DAILY_DATE || todayCST();
 const executionId = process.env.GITHUB_RUN_ID
   ? `gha-${process.env.GITHUB_RUN_ID}-attempt-${process.env.GITHUB_RUN_ATTEMPT || "1"}`
   : `local-${today}-${Date.now()}`;
@@ -111,8 +111,14 @@ async function main() {
     .filter((file) => file.status !== "read")
     .map((file) => file.path);
 
-  const coordinatorAssignments=readJson(path.join(ROOT,"knowledge/results/control/latest.json"),null);
   const pulseAssignments=readJson(path.join(ROOT,"knowledge/results/pulse/latest.json"),null);
+  const boardLedger=readLedger(ROOT,today);
+  // A successful local prepare is not durable permission to spend. Verify the
+  // exact reservation bytes on main before the first provider request.
+  if (!boardLedger) throw Error('daily_reservation_missing');
+  const reservationResponse=await fetch(`https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/${ledgerPath(today)}`,{signal:AbortSignal.timeout(15000),cache:'no-store'});
+  if (!reservationResponse.ok || digest(Buffer.from(await reservationResponse.arrayBuffer()))!==digest(fs.readFileSync(path.join(ROOT,ledgerPath(today))))) throw Error('daily_reservation_not_durable');
+  const runKey=`${process.env.GITHUB_RUN_ID||"local"}:${process.env.GITHUB_RUN_ATTEMPT||"1"}`;
   const assignmentRecords={};
   const taskDefs = readJson(path.join(DATA, "tasks", "daily-tasks.json"), { tasks: [] });
   const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
@@ -128,9 +134,10 @@ async function main() {
     const memPath = path.join(DATA, "memory", `${ch.agent}.json`);
     const mem = readJson(memPath, { agent: ch.agent, last_updated: null, context_summary: "", entries: [], constraints: [] });
     const def = (Array.isArray(taskDefs.tasks)?taskDefs.tasks:[]).find((t) => t?.agent === ch.agent);
-    const assignment=dailyAssignment(ch.agent,today,{control:coordinatorAssignments,pulse:pulseAssignments});
+    const seat=boardLedger?.seats?.[ch.agent];
+    const assignment=seat?.assignment;
     const roleTask=assignment?.instruction||def?.task||ch.task;
-    if(assignment)assignmentRecords[ch.agent]={task_id:assignment.id,source:assignment.source,execution:"existing_daily_call_no_additional_purchase",claim_verified:false};
+    if(assignment)assignmentRecords[ch.agent]={task_id:assignment.id,source:assignment.source,execution:"existing_daily_call_no_additional_purchase",claim_verified:seat.claim_verified===true};
     const last3 = (Array.isArray(mem.entries)?mem.entries:[]).slice(-3).map((e) => `[${e.date}] ${e.task}：${String(e.output).slice(0, 200)}`).join("\n");
     const rem = pending.reminders?.[ch.agent];
     const urge = rem && rem.status === "pending"
@@ -174,7 +181,7 @@ async function main() {
       continue;
     }
 
-    const res = await mod.callAgent({ apiKey: process.env[ch.key] || "", prompt });
+    const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>mod.callAgent({ apiKey: process.env[ch.key] || "", prompt })});
     if (res.ok) {
       const output = String(res.output || "").trim();
       const integrity = assessDelivery({output,finish_reason:res.finish_reason});
@@ -221,8 +228,11 @@ async function main() {
 
   tasks.push(...inactiveDailySeats(taskDefs));
 
+  const finalBoard=readLedger(ROOT,today);
   for (const task of tasks) {
-    if(assignmentRecords[task.agent])task.assignment=assignmentRecords[task.agent];
+    const seat=finalBoard?.seats?.[task.agent];
+    if(assignmentRecords[task.agent])task.assignment={...assignmentRecords[task.agent],status:seat?.status,evidence_path:seat?.artifact?.path||null,evidence_sha256:seat?.artifact?.sha256||null};
+    if(seat?.artifact)task.full_output_file=seat.artifact.path;
     Object.assign(task, classifyTaskOutcome({ status: task.status, hasOutput: Boolean(task.output_preview) }));
   }
 
