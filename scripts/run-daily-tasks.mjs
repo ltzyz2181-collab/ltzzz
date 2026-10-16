@@ -19,6 +19,7 @@ import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery } from "./delivery-integrity.mjs";
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
+import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -274,7 +275,7 @@ async function main() {
     user_action_required: userActionRequired,
   };
   applyAvailableExternalReport(result,ROOT);
-  writeJson(path.join(DATA, "results", `${today}.json`), result);
+  writeJson(path.join(DATA, "results", `${today}.json`), projectDailyBoard(result, finalBoard));
   pending.updated_at = nowCST();
   writeJson(PENDING_FILE, pending);
 

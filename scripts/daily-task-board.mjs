@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {prepareDailyBoard,syncDailyBoard} from './lib/daily-task-board.mjs';
+import {prepareDailyBoard,syncDailyBoard,hasUnverifiedBoard} from './lib/daily-task-board.mjs';
 import {pulseSnapshot,PULSE_URL} from './lib/pulse-client.mjs';
 import {pulseToken} from './pulse-credentials.mjs';
+import {reconcileDailyResult} from './lib/daily-board-lineage.mjs';
 import {cstDate} from '../workers/pulse-worker/tasks.js';
 const root=process.cwd(),date=process.env.DAILY_DATE||cstDate();
 const runKey=`${process.env.GITHUB_RUN_ID||'local'}:${process.env.GITHUB_RUN_ATTEMPT||'1'}`;
@@ -23,6 +24,8 @@ if(process.argv[2]==='prepare'){
  console.log(JSON.stringify({date,seats:Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status]))}));
 }else if(process.argv[2]==='sync'){
  const record=await syncDailyBoard({root,date,snapshot:pulseSnapshot,command,readRemote});
+ const resultUpdated=reconcileDailyResult(root,date);
  console.log(JSON.stringify({date,seats:record?Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status])):{}}));
- if(Object.values(record?.seats||{}).some(s=>s.status==='sync_unknown'))process.exitCode=1;
+ console.log(JSON.stringify({date,result_updated:resultUpdated,model_calls:0,production_deployment_accepted:false}));
+ if(hasUnverifiedBoard(record))process.exitCode=1;
 }else throw Error('prepare_or_sync_required');
