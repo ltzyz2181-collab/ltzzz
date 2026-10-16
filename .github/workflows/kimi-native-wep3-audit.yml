@@ -1,0 +1,68 @@
+name: Single owner-requested Kimi native WEP3 audit
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    paths: ['scripts/lib/kimi-native-audit.mjs', 'scripts/run-kimi-native-audit.mjs', 'scripts/agi-econ/kimi-cn.mjs', 'scripts/tests/kimi-native-audit.test.mjs', '.github/workflows/kimi-native-wep3-audit.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/lib/kimi-native-audit.mjs', 'scripts/run-kimi-native-audit.mjs', 'scripts/agi-econ/kimi-cn.mjs', 'scripts/tests/kimi-native-audit.test.mjs', '.github/workflows/kimi-native-wep3-audit.yml']
+permissions: {contents: read}
+concurrency: {group: ltzzz-kimi-native-audit, cancel-in-progress: false}
+jobs:
+  validate:
+    if: github.event_name != 'issues' || (github.repository == 'ltzyz2181-collab/ltzzz' && github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ Kimi原生验收]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-kimi-native-audit.mjs && node --test scripts/tests/kimi-native-audit.test.mjs scripts/tests/kimi-queue.test.mjs scripts/tests/domestic-model-router.test.mjs scripts/tests/domestic-model-identity.test.mjs
+  audit:
+    needs: validate
+    if: github.event_name == 'issues' && github.repository == 'ltzyz2181-collab/ltzzz' && github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ Kimi原生验收]')
+    permissions: {contents: write, issues: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Bind owner request and existing WEP3 artifact before spending
+        id: prepare
+        run: node scripts/run-kimi-native-audit.mjs prepare
+      - name: Commit one-use claim and immutable subject
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/wep3/kimi-native/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Reserve one owner-requested native Kimi WEP3 audit'
+          node tools/push-receipt-commit.mjs
+      - name: Official model catalogue then one shared-queue native audit
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/run-kimi-native-audit.mjs execute
+      - name: Preserve actual output without another model call
+        if: always() && steps.prepare.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kimi-native-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/wep3/kimi-native/
+      - name: Commit actual success, rejection or blocker
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/wep3/kimi-native/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Native Kimi WEP3 actual audit receipt, no settlement or funds'
+          node tools/push-receipt-commit.mjs
+      - name: Return receipt to owner
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-kimi-native-audit.mjs comment
