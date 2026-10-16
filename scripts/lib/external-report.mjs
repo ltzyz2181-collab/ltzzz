@@ -53,9 +53,15 @@ export function readCanonicalReport(root,date){
 export function applyExternalReport(result,report){
  if(!report||result.date!==report.date)return false;
  const seat=result.tasks?.find(t=>t.agent==='claude'&&t.status==='external_discussion_only');
- if(!seat||seat.external_delivery?.body_sha256===report.body_sha256)return false;
+ if(!seat)return false;
+ const annotations=Array.isArray(report.independent_notes)?report.independent_notes:[];
+ const annotationsHash=reportHash(JSON.stringify(annotations));
+ if(seat.external_delivery?.body_sha256===report.body_sha256&&seat.external_delivery?.controller_annotations_sha256===annotationsHash)return false;
  seat.delivery_status='external_submitted_pending_review';
  seat.external_delivery={receipt:report.receipt,provenance:report.provenance,body_sha256:report.body_sha256,received_at:report.stored_at,ingestion:report.ingestion,claimed_author:'Claude',authorship_verification:report.authorship_verification,scope:'external_free_discussion_and_audit',native_api_execution:false};
+ seat.external_delivery.controller_annotations=structuredClone(annotations);
+ seat.external_delivery.controller_annotations_sha256=annotationsHash;
+ seat.external_delivery.annotations_scope='controller_corrections_not_words_of_external_author';
  seat.output_preview='已收到Claude外部讨论/审计回执，待审核；非自动原厂API日课。'+report.receipt;return true;
 }
 export function applyAvailableExternalReport(result,root='.'){
