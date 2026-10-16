@@ -1,0 +1,30 @@
+name: Queue video in R2 only (defer publication to cron)
+
+on:
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: ltzzz-video-queue-2026-10-16, cancel-in-progress: false}
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install ffprobe
+        run: command -v ffprobe || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - name: Upload to authenticated R2 queue without processing it
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          VIDEO_FILE: videos/ltzzz-daily-2026-10-16.mp4
+          VIDEO_META: videos/ltzzz-daily-2026-10-16.meta.json
+        run: node scripts/queue-video-only.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: video-queue-only-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: results/publishing/video-queue-upload-ltzzz-daily-2026-10-16.json
+          if-no-files-found: warn
+          retention-days: 14
