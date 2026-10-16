@@ -1,0 +1,62 @@
+{
+  "task_id": "AET-00046",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "41bc6fae9569e998925d6b5af4a7349b3d164af328025f376b4f0bf5185857c8",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": false
+  },
+  "accepted": false,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "858fd3de95df8f1deba32fb6c5d2b7f761b6825ab4f1648968c824f8efaccb6e"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "bd03220ef421972b7e8512ff84c647fed69a065bd47322fdb914c321b2556668"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": false,
+    "score": 75,
+    "issues": [
+      "建议2的预期结果与自定规则不符：按精确 `(by, asset, thesis)`、24小时滑动窗口和阈值 `≤2`，CAP-00014 入库时同组仅2条，CAP-00020 入库时同组也仅2条（CAP-00014已在窗口外），不应标记；已知时间戳中只有 CAP-00025 可确认触发。CAP-00027 的 `at` 仅为 `\"2\"`，无法验证，不能直接列入预期告警。",
+      "“时间间隔缩短”缺乏材料支持：CAP-00004→CAP-00012约6小时11分，CAP-00012→CAP-00014约7小时45分，CAP-00014→CAP-00019约23小时21分，并非缩短；且CAP-00027时间戳截断。",
+      "建议1的处置对象不严谨：首个违反余额约束的是 CAP-00025（累计0.1165 > 0.116），测试应明确拒绝或标记 CAP-00025；若允许其保留，CAP-00027才会在后续继续触发。"
+    ],
+    "tokens_used": 11495
+  },
+  "at": "2026-10-16T08:37:03.106Z",
+  "report_sha256": "51ec040921b17ebab5610a627a8bdb9cb67fccb2af42eda3ae120d67b8d2c461"
+}
