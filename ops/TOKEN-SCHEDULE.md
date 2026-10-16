@@ -11,18 +11,32 @@
 4. **每把 key 的每次调用都应有对应席位。** 无席位的 key 不保留。
 5. **额度变化必须回写本表。** 谁充值、谁耗尽、谁轮换，当天回写，不留"台账滞后于现实"。
 
-## 二、AI 模型 Key 调度表（2026-10-08 更新）
+## 二、AI 模型 Key 调度表（2026-10-09 更新）
 
 | 归属 | 席位 | key 掩码 | 存放位置 | 状态 |
 |---|---|---|---|---|
 | DeepSeek | deepseek | `sk-a****2dfa` | ltzzz-deepseek-proxy | ✅ 可调用 |
 | 千问/百炼 | qianwen | `sk-w****Mr34` | ltzzz-qianwen-proxy | ✅ has_key |
-| Kimi/Moonshot | kimi | `sk-a****9T9S` | ltzzz-kimi-proxy | ⚠️ 模型名已是 kimi-k2.6，限流待观察 |
+| **国内 Kimi** | **kimi(国内)** | `sk-a****9T9S` | Secret `MOONSHOT_API_KEY_CN` | ✅ **2026-10-09 实调通过**（`kimi-k2.6` 返回内容；余额 **¥14.0963**）|
+| **国外 Kimi** | **kimi(国际)** | `sk-T****2as` | Secret `MOONSHOT_API_KEY` | 🔴 **欠费停用**（10-09 实调 429 `account suspended due to insufficient balance`；余额 $0）|
 | GPT/OpenAI | gpt | `sk-p****-NIA` | — | ✅ **10-07 实测在用**（旧"余额耗尽"条目已过时，当日消耗 9038 tokens） |
-| Claude/Anthropic | claude | `sk-a****6gAA` | — | ⛔ credit too low（10-07 实测 api_error；唯一真耗尽席位）|
+| Claude/Anthropic | claude | `sk-a****6gAA` | — | 🔴 **已停用**（owner 10-09 决定退出外部任务；**不再催充值**，保留历史材料）|
 | 火山方舟 | doubao | `ark-****3a78` | doubao-proxy | ✅ 在用（10-07 实测消耗 10061 tokens）|
 | Grok/XAI | grok | `xai-…`（值存 Worker Secret）| ltzzz-xai-proxy | ✅ **10-08 已注入 Worker Secret，模型 grok-4-fast** |
-| Microsoft | microsoft | — | 未部署 | ⏸️ skipped |
+| Microsoft | microsoft | — | 未部署 | ⏸️ **由 GPT 代执行**（署名须注明，**不得记成 Copilot 产出**）|
+
+### ⚠️ Kimi 调用三铁律（2026-10-09 实调得出，各席勿再踩坑）
+
+1. **模型名必须 `kimi-k2.6`** —— 旧的 `moonshot-v1-8k` 已 **404**（`Not found the model ... or Permission denied`）。**这是模型名废弃，不是 key 失效。**
+2. **`max_tokens` 必须 ≥200** —— `kimi-k2.6` 是**推理模型**，token 优先给 reasoning；给 5 会**内容为空**，易误判为"调用失败"（实为成功且已计费）。
+3. **两把 key 不通用** —— 国内 key 打 `.ai` 端点 → **401 Invalid Authentication**；各自绑各自端点。
+
+### 探针修正（2026-10-09）
+
+`key-liveness.yml` 原用 `moonshot-v1-8k` + `max_tokens:5` 探国内 Kimi → **必然误报 key 失效**。
+已修正为 `kimi-k2.6` + `max_tokens:256`，并**拆成两席**（`kimi_cn` / `kimi_intl`）分别探。
+
+> 详见 `ops/KIMI-双Key实测报告-20261009.md`（含完整实调证据与错误原文）。
 
 ## 三、平台凭据调度表
 
@@ -56,4 +70,4 @@
 > 一句话：**key 不是"找到"的，是"调度"的。**
 
 ---
-*立：千问（代总控）· 2026-10-06 · 更新 2026-10-08（CF token 启用 + XAI 部署 + wallet-ops 修复）*
+*立：千问（代总控）· 2026-10-06 · 更新 2026-10-09（Kimi 双 Key 实测定稿 + Claude 停用 + Microsoft 代执行署名规则）*

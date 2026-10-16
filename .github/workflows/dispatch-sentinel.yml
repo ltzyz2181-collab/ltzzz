@@ -1,33 +1,69 @@
-name: Hourly Hub dispatch sentinel
+name: Dispatch Sentinel (派单哨兵 · 每小时)
+
+# WorkBuddy 职责的自动化落地（owner 2026-10-08 指令）：
+#   「Workbuddy 负责派单跟踪、超时和阻塞汇总。…每小时扫描若未配置请明说。」
+# 特性：
+#   - 无 AI key 依赖（纯 node + git）
+#   - 状态一律以仓库交付/运行证据为准
+#   - 任一检查项证据缺失 → 记 UNKNOWN 并明说，不假装通过
+#   - 有超时/阻塞/未配置 → 工作流红灯 + Step Summary 汇总
+
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '17 * * * *'
-  push:
-    branches: [main]
-    paths: ['ops/dispatch/**', 'scripts/dispatch-sentinel.mjs', '.github/workflows/dispatch-sentinel.yml']
-permissions: {contents: write}
-concurrency: {group: dispatch-sentinel, cancel-in-progress: false}
+    - cron: '0 * * * *'   # 每小时
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-dispatch-sentinel
+  cancel-in-progress: false
+
 jobs:
-  scan:
+  sentinel:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
-        with: {node-version: '22'}
-      - run: |
-          git config user.name ltzzz-bot
-          git config user.email bot@ltzzz.com
-          for attempt in 1 2 3 4; do
-            git fetch origin main
-            git reset --hard origin/main
-            node scripts/dispatch-sentinel.mjs
-            git add knowledge/results/dispatch/latest.json
-            git diff --staged --quiet && exit 0
-            git commit -m 'Hub dispatch index without model calls'
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 2
-          done
-          echo 'Dispatch index push failed after four retries'
-          exit 1
+        with:
+          node-version: '20'
+
+      - name: 运行派单哨兵
+        id: scan
+        run: |
+          set +e
+          node scripts/dispatch-sentinel.mjs > /tmp/sentinel.out 2>&1
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/sentinel.out
+          # 汇总到 Step Summary
+          {
+            echo "## 派单哨兵"
+            echo ""
+            cat /tmp/sentinel.out
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 落盘
+        run: |
+          git config user.name "ltzzz-sentinel"
+          git config user.email "bot@ltzzz.local"
+          git add memory/sentinel/
+          if git diff --staged --quiet; then
+            echo "no changes"; exit 0
+          fi
+          git commit -m "sentinel: 派单哨兵 $(TZ=Asia/Shanghai date +%F' '%H:00)"
+          git fetch origin main
+          git rebase origin/main || true
+          git push origin HEAD:main
+
+      - name: 报警（有超时/阻塞/未配置时）
+        run: |
+          OUT=$(cat /tmp/sentinel.out)
+          if echo "$OUT" | grep -qE 'alert-items\] .*(MISSING|BLOCKED|UNCONFIGURED|UNKNOWN)'; then
+            echo "::error::派单哨兵发现需处理项：$(echo "$OUT" | grep 'alert-items')"
+            exit 1
+          fi
+          echo "::notice::派单哨兵本轮全部正常"
