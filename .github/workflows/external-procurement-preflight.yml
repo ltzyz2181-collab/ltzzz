@@ -1,0 +1,35 @@
+name: External AI procurement quote-only preflight
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/external-procurement-preflight.yml', 'scripts/*external-procurement-preflight.mjs', 'scripts/lib/external-procurement-preflight.mjs', 'scripts/tests/external-procurement-preflight.test.mjs']
+permissions: {contents: write}
+concurrency: {group: external-procurement-preflight, cancel-in-progress: false}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/external-procurement-preflight.test.mjs
+      - name: Get one free quote, inspect current market and treasury; no signing keys
+        run: node scripts/run-external-procurement-preflight.mjs
+      - name: Preserve actual quote or blocker
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: procurement-preflight-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/procurement/
+      - name: Commit read-only evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/procurement/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'External AI real quote preflight, no cash purchase'
+          node tools/push-receipt-commit.mjs

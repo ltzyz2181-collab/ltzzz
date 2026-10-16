@@ -55,3 +55,5 @@ gh workflow run daily-economy.yml --repo ltzyz2181-collab/ltzzz
 ## owner联系与Claude接力
 
 [国内执行席工单入口](https://github.com/ltzyz2181-collab/ltzzz/issues/new?template=owner-dispatch.yml) · [离线联系边界](docs/OWNER-CONTACT-AND-DOMESTIC-INBOX.md) · [Claude回来讨论六文件](ops/dispatch/CLAUDE-RETURN-SIX-MEMORY-20261014.md)。默认登记零模型调用，明确选择执行才使用现有国内Key；不代表国内聊天窗口已经与GPT互通。
+
+[VS Code Copilot → 总控 / 千问接力](docs/COPILOT-DEPUTY-AND-CASH-READINESS.md)：仓库已提供 Copilot 提示与 VS Code 任务、owner Issue 接力、千问权限执行器的固定只读核验。自由工程工单仍需实际接单和部署证据；桌面接入不代表唤醒离线 GPT 或绕过网络不可达。

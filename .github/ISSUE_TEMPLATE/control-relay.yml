@@ -1,0 +1,24 @@
+name: LTZZZ 总控 / 千问接力
+description: 桌面 Copilot 或有 GitHub 工具的国内 AI 可代 owner 提交；不调用模型、不操作资金。
+title: '[LTZZZ接力] '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        仅仓库 owner 新建工单会触发执行。联系的是 LTZZZ 云端执行席，不是离线 ChatGPT 对话。千问只读核验由已授权执行器运行，不冒充千问模型生成。自由任务文字不会自动成为 shell 命令或投资指令。
+  - type: dropdown
+    id: action
+    attributes:
+      label: 接力动作
+      options:
+        - 查看总控状态（零模型）
+        - 总控派单给千问：只读核验（零模型）
+        - 总控派单给千问：等待外部接单
+      default: 0
+    validations: {required: true}
+  - type: textarea
+    id: task
+    attributes:
+      label: 任务内容
+      description: 2500 字以内；工单公开，勿放密钥和个人资料。
+    validations: {required: true}

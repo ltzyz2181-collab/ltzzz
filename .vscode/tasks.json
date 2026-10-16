@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "LTZZZ：总控派单给千问只读核验",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/ltzzz-relay.mjs", "submit", "qianwen_inspect", "ops/relay-readonly-task.txt"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "LTZZZ：提交准备好的工程派单",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/ltzzz-relay.mjs", "submit", "dispatch", "work/relay-task.txt"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "LTZZZ：读取接力工单回执",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/ltzzz-relay.mjs", "status", "${input:ltzzzIssueNumber}"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {"id": "ltzzzIssueNumber", "type": "promptString", "description": "LTZZZ 接力工单号（只填数字）"}
+  ]
+}
