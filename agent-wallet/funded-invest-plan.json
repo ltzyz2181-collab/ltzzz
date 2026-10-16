@@ -1,120 +1,162 @@
 {
-  "plan_version": "1.0.0",
+  "plan_version": "2.0.0",
   "created_at": "2026-10-17",
+  "revised_at": "2026-10-17",
+  "revision_reason": "v1.0 有两处硬错误：①资金现实查错钱包（查了 agent 钱包与 legacy vault，漏了当前在用金库 0x5df5，其实际持有 315.41 USDC + 34.50 aUSDC）；②自造额度公式与协议既有的 reputation_and_actual_equity 限额重复且可能冲突；③CEX(BTC-USDT) 那条腿违反章程白名单。v2.0 全部更正。",
   "created_by": "did:ltzzz:qianwen",
   "owner_directive": "安排 gpt/xai/豆包/deep 真钱分别去欧易交易所和欧易 Web3 钱包 DeFi 投资；金额按每个 AI 声誉自己领；不要回来问",
-  "reputation_basis": {
-    "source": [
-      "agent-wallet/identity-registry.json (score/grade/status/address)",
-      "agent-wallet/reputation.json (multiplier/history)"
+
+  "governing_authority": {
+    "charter": "policy/web3-investment-charter-v0.1.md（owner 一票生效 2026-10-04）",
+    "charter_constraints": [
+      "§1 仅允许 Aave V3 Base 主网 / USDC；非白名单 pool/asset → 合约 revert",
+      "§2 试点档单笔 ≤20 USDC，累计敞口 ≤100 USDC；余额 <5 USDC 自动停止开新仓",
+      "§3 无 receipt 不算投资：hypothesis → exit_plan → tx_hash 三件齐",
+      "§4 owner 个人 Aave 仓位 1000U，AI 零接触",
+      "§6 执行席不得自行扩大限额或白名单"
     ],
-    "formula": "weight_i = identity_score_i × reputation_multiplier_i；quota_i = pool × weight_i / Σweight，再受 policy 单笔/单日上限截断",
-    "note": "reputation.json 无 gpt/deepseek 条目 → multiplier 取默认 1.0（不得凭猜测加成）"
+    "allocation_source_of_truth": "WEP3 协议 reputation_and_actual_equity 模式（见 knowledge/results/migrations/treasury-pilot-verified-20261015.json）",
+    "note": "本文件的额度表是【派单参考值】，不是授权上限。真实上限以协议实时返回的 single_cap_usdc / exposure_cap_usdc / cash_floor_usdc 为准，冲突时服从协议。"
   },
+
+  "protocol_limits_2026_10_15": {
+    "source": "knowledge/results/migrations/treasury-pilot-verified-20261015.json → limits_after_exit_test",
+    "mode": "reputation_and_actual_equity",
+    "capital_agent": "DeepSeek",
+    "capital_reputation": 105,
+    "allocation_share_bps": 4000,
+    "single_cap_usdc": "34.489835",
+    "exposure_cap_usdc": "137.959342",
+    "cash_floor_usdc": "5.0",
+    "treasury_address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+  },
+
+  "funding_reality_2026_10_17": {
+    "verified_via": "公开 RPC eth_call/eth_getBalance（Base 主网 8453，只读，无需密钥；base-rpc.publicnode.com）",
+    "current_treasury_0x5df5": {
+      "usdc": "315.408481",
+      "ausdc": "34.496745",
+      "eth": "0.001995",
+      "role": "当前在用金库；WEP3 Worker 的 withdraw_receiver 与签名主体",
+      "usable": true
+    },
+    "agent_wallet_0x21F5": { "usdc": "0", "eth": "0.008278", "role": "A 轨自主钱包，当前无 USDC" },
+    "legacy_vault_0x872C": { "usdc": "0", "ausdc": "0", "eth": "0", "role": "已隔离的旧金库，guardian 仍为旧 agent；禁止新增资金" },
+    "safe_0x7637": { "usdt": "49.02", "chain": "ethereum", "track": "B（需多签）", "usable_now": false, "reason": "跨链且属 B 轨，owner 已暂停新增资金" },
+    "correction_note": "v1.0 声称 available_track_a_usdc=0 属【查错钱包】。实际可用资金在金库 0x5df5，为 315.41 USDC。BLOCK-1 已作废。"
+  },
+
   "agents": [
     {
-      "id": "grok",
-      "seat_name": "XAI/Grok",
-      "identity_score": 150,
-      "multiplier": 1.2,
-      "weight": 180,
-      "weight_share": 0.371134,
+      "id": "grok", "seat_name": "XAI/Grok",
+      "identity_score": 150, "multiplier": 1.2, "weight": 180, "weight_share": 0.371134,
       "did": "did:key:zQ3shpyP9ACATyVnqgHyDRDmdqcivZDnrpP5oQRXCQG12E2Ae",
       "address": "0xc792e90CFe376459D62D8F7214F751D2B2769114",
-      "has_own_chain_identity": true,
-      "onchain_usdc_now": "1.0",
-      "quota_at_reference_pool": "7.43",
-      "rank": 1,
-      "rationale": "唯一已生成链上身份并完成 EXP-008 可复核交付；声誉 1.2 为全场最高"
+      "has_own_chain_identity": true, "onchain_usdc_now": "1.0",
+      "quota_at_reference_pool": "7.43", "rank": 1,
+      "rationale": "唯一已生成链上身份并完成 EXP-008 可复核交付；reputation.json 有 4 笔 approved（txn_0006/0007/0008/0014）支撑 1.2"
     },
     {
-      "id": "doubao",
-      "seat_name": "豆包",
-      "identity_score": 100,
-      "multiplier": 1.05,
-      "weight": 105,
-      "weight_share": 0.216495,
-      "did": null,
-      "address": null,
-      "has_own_chain_identity": false,
-      "quota_at_reference_pool": "4.33",
-      "rank": 2,
-      "rationale": "txn_0011 approved；无链上身份，须走执行器代持"
+      "id": "deepseek", "seat_name": "DeepSeek",
+      "identity_score": 100, "multiplier": 1.0, "weight": 100, "weight_share": 0.206186,
+      "did": null, "address": null, "has_own_chain_identity": false,
+      "quota_at_reference_pool": "4.12", "rank": 2,
+      "note_protocol": "协议侧 capital_agent=DeepSeek，capital_reputation=105，是 2026-10-15 pilot 的出资主体；协议限额即以其声誉计算"
     },
     {
-      "id": "deepseek",
-      "seat_name": "DeepSeek",
-      "identity_score": 100,
-      "multiplier": 1.0,
-      "weight": 100,
-      "weight_share": 0.206186,
-      "did": null,
-      "address": null,
-      "has_own_chain_identity": false,
-      "quota_at_reference_pool": "4.12",
-      "rank": 3,
-      "rationale": "multiplier 无历史记录，取默认 1.0"
+      "id": "doubao", "seat_name": "豆包",
+      "identity_score": 100, "multiplier": 1.05, "weight": 105, "weight_share": 0.216495,
+      "did": null, "address": null, "has_own_chain_identity": false,
+      "quota_at_reference_pool": "4.33", "rank": 3,
+      "rationale": "txn_0011 approved；且是 invest-channel 代码与部署的执行席（TESTING.md 署名）"
     },
     {
-      "id": "gpt",
-      "seat_name": "GPT",
-      "identity_score": 100,
-      "multiplier": 1.0,
-      "weight": 100,
-      "weight_share": 0.206186,
-      "did": null,
-      "address": null,
-      "has_own_chain_identity": false,
-      "quota_at_reference_pool": "4.12",
-      "rank": 4,
-      "rationale": "总控席；multiplier 无历史记录，取默认 1.0。注：GPT 原厂付费日课已停用，本单为投资执行不是日课"
+      "id": "gpt", "seat_name": "GPT",
+      "identity_score": 100, "multiplier": 1.0, "weight": 100, "weight_share": 0.206186,
+      "did": null, "address": null, "has_own_chain_identity": false,
+      "quota_at_reference_pool": "4.12", "rank": 4,
+      "rationale": "总控席；reputation.json 无条目 → multiplier 取默认 1.0，不凭猜测加成"
     }
   ],
   "reference_pool_usdc": 20,
+  "quota_formula": "weight_i = identity_score_i × multiplier_i；quota_i = pool × weight_i / Σweight，再受【协议 single_cap 与章程试点档 20U】双重截断",
   "quota_sum_at_reference_pool": "20.00",
-  "policy_caps": {
-    "source": "agent-wallet/spending-policy.json v2.2.0 + policy/spending-rules-v0.5.md",
-    "track": "A（agent 钱包 0x21F5…7fdc 自主额度）",
-    "per_tx_cap_usdc": 20,
-    "daily_cap_usdc": 60,
-    "halt_below_balance_usdc": 5
+
+  "venues": {
+    "okx_cex": {
+      "allowed": false,
+      "reason": "违反章程 §1（仅允许 Aave V3 Base / USDC）与 §6（执行席不得自行扩大白名单）。v1.0 写的 BTC-USDT 市价买入属越权，已禁用。",
+      "blocker": "BLOCK-5",
+      "unblock": "需 owner 一票修改章程把 CEX 现货纳入白名单，才可启用；在此之前执行器对 venue=cex 一律拒绝"
+    },
+    "okx_web3_defi": {
+      "allowed": true,
+      "path": "必须走 WEP3 Worker /market/aave/* 接口（签名与护栏在 Worker 内），或走 invest-channel LTZZZVault.allocate(strategyId, amount)",
+      "forbidden_path": "禁止直连 Aave Pool 构造 approve+supply——那会绕过合约的 ForbiddenTarget / 日限 / 暂停 / veto 护栏。v1.0 的直连载荷已废弃。",
+      "blocker": "BLOCK-4（人工签名/授权仍需要）"
+    }
   },
-  "funding_reality_2026_10_17": {
-    "verified_via": "公开 RPC eth_call/eth_getBalance（Base 主网，只读，无需密钥）",
-    "agent_wallet_0x21F5": { "usdc": "0", "eth": "0.008278" },
-    "legacy_vault_0x872C": { "usdc": "0", "ausdc": "0", "eth": "0" },
-    "grok_eoa_0xc792": { "usdc": "1.0" },
-    "safe_0x7637": { "usdt": "49.02", "chain": "ethereum", "track": "B（需多签）", "usable_now": false, "reason": "USDT 在 Ethereum，与 Base USDC 跨链且属 B 轨，owner 已暂停新增资金" },
-    "available_track_a_usdc": "0",
-    "conclusion": "额度公式与工单已就绪，但 A 轨可用现金为 0，任何真实下单都会因余额不足被拒"
-  },
+
   "hard_blockers": [
     {
-      "id": "BLOCK-1",
-      "name": "A 轨可用资金为 0",
-      "detail": "agent 钱包 USDC=0、legacy vault USDC/aUSDC=0。唯一链上 USDC 是 Grok EOA 的 1.0",
-      "unblock": "owner 向 0x21F502f29294c50d9C37A30dc038D8D95eB97fdc 转入 USDC（Base 网络），或授权 B 轨 USDT 跨链兑换"
+      "id": "BLOCK-1", "name": "【已作废】A 轨可用资金为 0",
+      "resolution": "v1.0 查错钱包。当前金库 0x5df5 实有 315.41 USDC + 34.50 aUSDC，资金充足。此阻塞撤销。"
     },
     {
-      "id": "BLOCK-2",
-      "name": "欧易 API 缺 passphrase",
-      "detail": "本地凭据只有 API Key + Secret，passphrase 关键词 0 命中。OKX 签名要求 OK-ACCESS-KEY/SIGN/TIMESTAMP/PASSPHRASE 四件套，缺 passphrase 任何交易请求都会被拒",
-      "unblock": "owner 在欧易 API 管理页复制 passphrase，写入 GitHub Secret OKX_API_PASSPHRASE"
+      "id": "BLOCK-2", "name": "欧易 API 缺 passphrase",
+      "detail": "本地凭据只有 Key + Secret，passphrase 关键词 0 命中；OKX 签名需四件套",
+      "current_impact": "因 venue=cex 已被章程禁用（BLOCK-5），此项暂不影响投资主路径；若 owner 改章程启用 CEX 则必须补",
+      "unblock": "欧易 API 管理页复制 passphrase → GitHub Secret OKX_API_PASSPHRASE"
     },
     {
-      "id": "BLOCK-3",
-      "name": "三个席位无链上身份",
-      "detail": "gpt/doubao/deepseek 的 identity-registry 均为 did=null、address=null、status=pending_keys，无法独立持有资产，只能由执行器代持并记账",
-      "unblock": "node scripts/did-agent-identity.mjs --agent <id> --new-key 生成身份（私钥进 Secret，本文件只存公开地址）"
+      "id": "BLOCK-3", "name": "三席位无链上身份",
+      "detail": "gpt/doubao/deepseek 均 did=null、address=null、status=pending_keys",
+      "impact": "无法独立持有资产；走 WEP3 金库路径时由金库代持并在回执标 uses_treasury_custody=true",
+      "unblock": "node scripts/did-agent-identity.mjs --agent <id> --new-key（私钥进 Secret，仓库只存公开地址）"
     },
     {
-      "id": "BLOCK-4",
-      "name": "Web3 钱包 DeFi 需人工签名",
-      "detail": "欧易 Web3 钱包的 DeFi 合约调用不可逆，AI 自动签名一次错交互即归零。执行器只构造并输出待签交易载荷，不自动签名",
-      "unblock": "owner 在钱包端逐笔确认，或明确书面授权自动签名并设定单笔上限"
+      "id": "BLOCK-4", "name": "真实链上执行需武装与授权",
+      "detail": "WEP3 Worker 需 WEP3_RUNNER_TOKEN（由 CLOUDFLARE_API_TOKEN 派生）；且合约调用不可逆",
+      "unblock": "Actions 内自动派生 token 已就绪；真实 supply 需 ARM_REAL_ORDERS=1 + ARM_ACK=当日北京日期"
+    },
+    {
+      "id": "BLOCK-5", "name": "CEX 现货违反投资章程白名单",
+      "detail": "章程 §1 仅允许 Aave V3 Base / USDC；BTC-USDT 不在白名单，合约层会 revert，执行席无权扩白名单",
+      "unblock": "owner 一票修订章程后启用；在此之前 venue=cex 一律拒绝执行"
+    },
+    {
+      "id": "BLOCK-6", "name": "WEP3 Worker 从本机不可达",
+      "detail": "2026-10-17 实测 https://ltzzz-wep3.ltzyz2181.workers.dev/health → 无法连接到远程服务器（workers.dev 在大陆网络被阻，属已知问题）",
+      "impact": "本机无法直连验证服务；GitHub Actions runner 在海外可正常访问，执行路径仍可用",
+      "unblock": "给 Worker 绑 ltzzz.com 子域（与 api-kimi / api-deep 同法），或在 Actions 内执行"
     }
   ],
-  "execution_status": "plan_ready_execution_blocked",
+
+  "self_audit_v1_errors": [
+    {
+      "error": "资金现实查错钱包",
+      "detail": "只查 agent 钱包 0x21F5 与 legacy vault 0x872C，两者确为 0，但当前在用金库是 0x5df5（315.41 USDC）。据此写下的 BLOCK-1 与『任何真实下单都会因余额不足被拒』结论错误。",
+      "root_cause": "未读 treasury-pilot-verified-20261015.json 就下结论；把『我熟悉的两地址』当成『全部资金池』",
+      "fix": "v2.0 以 0x5df5 为准，BLOCK-1 撤销，并在 funding_reality 留更正说明"
+    },
+    {
+      "error": "自造额度公式与协议既有机制重复且可能冲突",
+      "detail": "协议已按 reputation_and_actual_equity 实时算 single_cap/exposure_cap/cash_floor；我用 weight/Σweight×pool 另算一套，两者可能给出不一致额度",
+      "fix": "v2.0 明确 allocation_source_of_truth = 协议；本文件额度表降级为『派单参考值』，冲突时服从协议"
+    },
+    {
+      "error": "CEX 那条腿越权",
+      "detail": "写了 BTC-USDT 市价买入并可被武装执行，违反章程 §1/§6",
+      "fix": "venue=cex 改为一律拒绝（BLOCK-5），执行器不再具备 CEX 下单能力"
+    },
+    {
+      "error": "Web3 那条腿绕过金库护栏",
+      "detail": "构造了直连 Aave Pool 的 approve+supply 待签载荷，绕过 LTZZZVault 的 ForbiddenTarget/日限/暂停/veto",
+      "fix": "改为走 WEP3 Worker /market/aave/* 或 LTZZZVault.allocate，签名与护栏留在既有受审计路径内"
+    }
+  ],
+
+  "execution_status": "plan_v2_corrected_execution_gated",
   "paid": false,
   "tx_hash": null,
   "orders_submitted": 0

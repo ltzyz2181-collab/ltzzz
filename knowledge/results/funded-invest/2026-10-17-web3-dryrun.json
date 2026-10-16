@@ -1,14 +1,15 @@
 {
-  "plan_version": "1.0.0",
-  "at": "2026-10-16T23:14:02.655Z",
+  "plan_version": "2.0.0",
+  "at": "2026-10-16T23:35:18.301Z",
   "run_date": "2026-10-17",
   "venue": "web3",
-  "agent_selection": "grok",
+  "agent_selection": "all",
   "arm": {
     "requested_flag": false,
     "ack_matches_today": false,
     "effective": false
   },
+  "charter": "policy/web3-investment-charter-v0.1.md",
   "execution_status": "dry_run_only",
   "orders_submitted": 0,
   "paid": false,
@@ -17,31 +18,173 @@
     {
       "agent": "grok",
       "seat": "XAI/Grok",
-      "quota_usdc": 7.43,
-      "capped_by_policy": false,
-      "at": "2026-10-16T23:14:03.450Z",
-      "venue": "okx_web3_defi",
-      "chain": "base",
-      "amount_usdc": 7.43,
-      "signing_performed": false,
-      "broadcast_performed": false,
-      "tx_hash": null,
-      "paid": false,
-      "status": "blocked_insufficient_balance",
-      "wallet": {
-        "address": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
-        "usdc": 0,
-        "eth": 0.008278
-      },
-      "blocker": "BLOCK-1",
-      "shortfall": 7.43,
+      "venue": "okx_web3_defi_via_wep3",
+      "granted_usdc": 7.43,
+      "custody": "own_eoa",
       "on_behalf": "0xc792e90CFe376459D62D8F7214F751D2B2769114",
-      "uses_executor_custody": false
+      "hypothesis": "按声誉额度将 USDC 供应至 Aave V3 Base，验证四席位真钱投资闭环（章程 §3）",
+      "exit_plan": "Aave 无锁定期，随时 withdrawUSDC 全额赎回回金库（章程 §5）",
+      "paid": false,
+      "tx_hash": null,
+      "orders_submitted": 0,
+      "signing_performed_by_this_script": false,
+      "preview": {
+        "status": "blocked_missing_runner_token",
+        "blocker": "BLOCK-4"
+      },
+      "status": "dry_run_preview_only",
+      "note": "未武装：不会发生任何链上执行。武装需 ARM_REAL_ORDERS=1 且 ARM_ACK=2026-10-17"
+    },
+    {
+      "agent": "deepseek",
+      "seat": "DeepSeek",
+      "venue": "okx_web3_defi_via_wep3",
+      "granted_usdc": 4.12,
+      "custody": "treasury_custody",
+      "on_behalf": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+      "hypothesis": "按声誉额度将 USDC 供应至 Aave V3 Base，验证四席位真钱投资闭环（章程 §3）",
+      "exit_plan": "Aave 无锁定期，随时 withdrawUSDC 全额赎回回金库（章程 §5）",
+      "paid": false,
+      "tx_hash": null,
+      "orders_submitted": 0,
+      "signing_performed_by_this_script": false,
+      "preview": {
+        "status": "blocked_missing_runner_token",
+        "blocker": "BLOCK-4"
+      },
+      "status": "dry_run_preview_only",
+      "note": "未武装：不会发生任何链上执行。武装需 ARM_REAL_ORDERS=1 且 ARM_ACK=2026-10-17"
+    },
+    {
+      "agent": "doubao",
+      "seat": "豆包",
+      "venue": "okx_web3_defi_via_wep3",
+      "granted_usdc": 4.33,
+      "custody": "treasury_custody",
+      "on_behalf": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+      "hypothesis": "按声誉额度将 USDC 供应至 Aave V3 Base，验证四席位真钱投资闭环（章程 §3）",
+      "exit_plan": "Aave 无锁定期，随时 withdrawUSDC 全额赎回回金库（章程 §5）",
+      "paid": false,
+      "tx_hash": null,
+      "orders_submitted": 0,
+      "signing_performed_by_this_script": false,
+      "preview": {
+        "status": "blocked_missing_runner_token",
+        "blocker": "BLOCK-4"
+      },
+      "status": "dry_run_preview_only",
+      "note": "未武装：不会发生任何链上执行。武装需 ARM_REAL_ORDERS=1 且 ARM_ACK=2026-10-17"
+    },
+    {
+      "agent": "gpt",
+      "seat": "GPT",
+      "venue": "okx_web3_defi_via_wep3",
+      "granted_usdc": 4.12,
+      "custody": "treasury_custody",
+      "on_behalf": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+      "hypothesis": "按声誉额度将 USDC 供应至 Aave V3 Base，验证四席位真钱投资闭环（章程 §3）",
+      "exit_plan": "Aave 无锁定期，随时 withdrawUSDC 全额赎回回金库（章程 §5）",
+      "paid": false,
+      "tx_hash": null,
+      "orders_submitted": 0,
+      "signing_performed_by_this_script": false,
+      "preview": {
+        "status": "blocked_missing_runner_token",
+        "blocker": "BLOCK-4"
+      },
+      "status": "dry_run_preview_only",
+      "note": "未武装：不会发生任何链上执行。武装需 ARM_REAL_ORDERS=1 且 ARM_ACK=2026-10-17"
     }
   ],
-  "funding": {
-    "agent_wallet_usdc": 0,
-    "required_sum": 20,
-    "sufficient": false
-  }
+  "treasury": {
+    "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+    "usdc": 315.408481,
+    "ausdc": 34.496776,
+    "eth": 0.001995,
+    "readable": true
+  },
+  "agent_wallet_reference_only": {
+    "address": "0x21F502f29294c50d9C37A30dc038D8D95eB97fdc",
+    "note": "A 轨钱包，当前 USDC=0，非本单资金池"
+  },
+  "protocol_limits_probe": {
+    "status": "blocked_missing_runner_token",
+    "blocker": "BLOCK-4"
+  },
+  "protocol_limits": {
+    "fallback": "plan.protocol_limits_2026_10_15",
+    "source": "knowledge/results/migrations/treasury-pilot-verified-20261015.json → limits_after_exit_test",
+    "mode": "reputation_and_actual_equity",
+    "capital_agent": "DeepSeek",
+    "capital_reputation": 105,
+    "allocation_share_bps": 4000,
+    "single_cap_usdc": "34.489835",
+    "exposure_cap_usdc": "137.959342",
+    "cash_floor_usdc": "5.0",
+    "treasury_address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+  },
+  "limits_source": "plan_fallback_worker_unreachable",
+  "dispatch_table": [
+    {
+      "agent": "grok",
+      "seat": "XAI/Grok",
+      "rank": 1,
+      "identity_score": 150,
+      "multiplier": 1.2,
+      "weight_share": 0.371134,
+      "quota_reference_usdc": 7.43,
+      "protocol_single_cap_usdc": 34.489835,
+      "granted_usdc": 7.43,
+      "reduced_reason": null,
+      "has_own_chain_identity": true,
+      "custody": "own_eoa",
+      "blocker": null
+    },
+    {
+      "agent": "deepseek",
+      "seat": "DeepSeek",
+      "rank": 2,
+      "identity_score": 100,
+      "multiplier": 1,
+      "weight_share": 0.206186,
+      "quota_reference_usdc": 4.12,
+      "protocol_single_cap_usdc": 34.489835,
+      "granted_usdc": 4.12,
+      "reduced_reason": null,
+      "has_own_chain_identity": false,
+      "custody": "treasury_custody",
+      "blocker": "BLOCK-3"
+    },
+    {
+      "agent": "doubao",
+      "seat": "豆包",
+      "rank": 3,
+      "identity_score": 100,
+      "multiplier": 1.05,
+      "weight_share": 0.216495,
+      "quota_reference_usdc": 4.33,
+      "protocol_single_cap_usdc": 34.489835,
+      "granted_usdc": 4.33,
+      "reduced_reason": null,
+      "has_own_chain_identity": false,
+      "custody": "treasury_custody",
+      "blocker": "BLOCK-3"
+    },
+    {
+      "agent": "gpt",
+      "seat": "GPT",
+      "rank": 4,
+      "identity_score": 100,
+      "multiplier": 1,
+      "weight_share": 0.206186,
+      "quota_reference_usdc": 4.12,
+      "protocol_single_cap_usdc": 34.489835,
+      "granted_usdc": 4.12,
+      "reduced_reason": null,
+      "has_own_chain_identity": false,
+      "custody": "treasury_custody",
+      "blocker": "BLOCK-3"
+    }
+  ],
+  "granted_sum_usdc": 20
 }
