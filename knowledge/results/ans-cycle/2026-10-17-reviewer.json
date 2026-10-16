@@ -1,0 +1,21 @@
+{
+  "accepted": false,
+  "artifact_sha256": "d6c1c37caba2e7ca587220b2e6fbf264558b78662cb09faafaf401d07875145d",
+  "reasons": [
+    "核心finding与源码不符：workers/pulse-worker/tasks.js 的 submit_task 在通过幂等检查后明确要求 if(t.status!=='claimed') throw Error('task_not_claimed')，因此 completed_draft_review 或 rejected_draft_review 状态不能重新 submit_task，也不会被重置为 submitted_pending_review。",
+    "“同一任务可重复提交覆盖审核结果”不成立：review_task 允许进入 completed_draft_review/rejected_draft_review，但随后以 t.status!=='submitted_pending_review' 触发 review_already_final；submit_task 又只接受 claimed，故终态审核结果不会被普通提交流程覆盖。",
+    "“永久卡死在 submitted_pending_review”表述不准确：该状态是设计上的待审核态，review_task 可将其转为 completed_draft_review 或 rejected_draft_review；仅 rejected_draft_review 没有自动回到 available/claimed 的恢复路径，这可以构成 rejected 终态缺少恢复机制的问题，但不是已完成任务重新提交后卡死。",
+    "minimal_patch 不是可直接复核或应用的代码补丁，只是自然语言方案；未给出精确 diff、边界条件、数据迁移、retry_count 字段初始化与兼容策略。",
+    "建议的 accepted===true 派生 -recheck 任务缺少完整状态机设计：新任务的 assigned_to、claimed_by、execution_chain、date、origin、审核人限制及多轮 -recheck 幂等命名均未明确；固定追加 -recheck 在第二次派生时还可能发生 ID 冲突。",
+    "remaining_blocker 中关于 seedTasks 不扫描手工派生任务、dailyAssignment 不消费派生 recheck 的判断与源码基本一致，但这是拟议补丁尚未解决的集成问题，不能替代对当前缺陷是否存在的证明。",
+    "第二条 verification_command 与 finding/补丁目标基本无关，只验证 dailyAssignment 对既有控制派单的 ID 映射；它不能证明 review_task 状态机存在所述卡死或覆盖审核问题。",
+    "未实际运行任何 verification_commands；本次验收仅基于提供源码进行静态对照，不能把命令预期结果当作已验证结果。"
+  ],
+  "unverified": [
+    "artifact_sha256 仅按要求原样回传；未获得交付物原始字节，无法独立计算确认该 SHA-256。",
+    "未执行 Node 验证命令，未确认运行时输出、异常信息或 PASS 结果。",
+    "未检查仓库完整上下文、测试套件、调用方持久化格式及历史任务数据，无法确认 rejected_draft_review 在实际生产流中是否造成不可恢复积压。",
+    "未验证拟议 -recheck 派生方案与现有 UI、调度、支付、审核隔离规则及任务保留策略的兼容性。",
+    "未验证是否存在源码片段之外的其他入口可绕过 taskCommand 直接改写 task_board。"
+  ]
+}
