@@ -8,7 +8,7 @@
   "at": "2026-10-16T01:44:03.224Z",
   "source_commit": "686b3ce3c004e6a7a55125dc18565e1f235d5a00",
   "run_id": "38836676971",
-  "status": "claimed_before_remote_access",
+  "status": "completed_readonly_pending_review",
   "input_sha256": "184a3daac15f644c01e119331aa80b4cc8b789ffa561a6e08fe7c5abc5b77753",
   "model_calls": 0,
   "native_qianwen_calls": 0,
@@ -17,5 +17,80 @@
   "financial_execution": false,
   "paid": false,
   "tx_hash": null,
-  "operations": []
+  "operations": [
+    {
+      "role": "gpt",
+      "id": "desktop-relay-issue-86",
+      "action": "dispatch",
+      "status": "acknowledged",
+      "duplicate": false,
+      "authenticated_actor": "gpt"
+    },
+    {
+      "role": "qianwen",
+      "id": "desktop-relay-issue-86-ack",
+      "action": "ack_dispatch",
+      "status": "acknowledged",
+      "duplicate": false,
+      "authenticated_actor": "qianwen"
+    }
+  ],
+  "observed": {
+    "ran_at": "2026-10-16T01:40:32.455Z",
+    "active_controller": "gpt",
+    "controls": {
+      "dispatch_paused": false,
+      "automatic_recovery": true,
+      "concurrency": 1,
+      "investment_hold": false,
+      "paused_agents": [],
+      "all_tasks_independent_review": true
+    }
+  },
+  "evidence": {
+    "sources": [
+      {
+        "path": "knowledge/results/ans-cycle/2026-10-16.json",
+        "sha256": "3d3afe157bfa79f21a0233ad39537ba120fccf98329b54b1c934fe6308b2ff68",
+        "status": "draft_independently_reviewed",
+        "at": "2026-10-15T16:54:21.506Z",
+        "paid": false,
+        "tx_hash": null
+      },
+      {
+        "path": "knowledge/results/wep3/latest.json",
+        "sha256": "34218b70c6a18e96202cc70195a747f82d6e89fe260cef36d5576052f5e17c42",
+        "status": "internal_credit_settled",
+        "at": "2026-10-15T00:46:16.839Z",
+        "paid": false,
+        "tx_hash": null
+      },
+      {
+        "path": "knowledge/results/recovery/claude-external-delivery-2026-10-16.json",
+        "sha256": "ffd1c874b688f2b03974ae807b71eafbff6e6155458645615a9094cf4b542e5c",
+        "status": "external_report_archived_issue_intake_verified",
+        "at": "2026-10-16T01:20:51.874455+00:00",
+        "paid": null,
+        "tx_hash": null
+      },
+      {
+        "path": "config/autonomy-authority.json",
+        "sha256": "f5154e6a15142854d5749384f614966e0ebaddd06fa3a035a58ef8c0d2ab0814",
+        "status": "autonomous_engineering_and_operations",
+        "at": null,
+        "paid": null,
+        "tx_hash": null
+      }
+    ],
+    "missing": []
+  },
+  "evidence_sha256": "7678e6f57dbbe39d3af25eff70ee6c58efa8c3c36ef452b87e2c0bd0e26c883e",
+  "execution_kind": "qianwen_authorized_rules_executor_not_native_model",
+  "board_verification": {
+    "verified": true,
+    "dispatch_id": "desktop-relay-issue-86",
+    "issuer": "gpt",
+    "assigned_to": "qianwen",
+    "status": "consumed_by_existing_executor"
+  }
 }
