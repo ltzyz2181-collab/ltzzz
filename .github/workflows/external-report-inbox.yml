@@ -1,0 +1,47 @@
+name: External AI receipt inbox (no models)
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/receive-external-report.mjs', 'scripts/lib/external-report.mjs', 'scripts/tests/external-report.test.mjs', '.github/ISSUE_TEMPLATE/external-report.yml', '.github/workflows/external-report-inbox.yml']
+permissions: {contents: read}
+concurrency: {group: external-report-inbox, cancel-in-progress: false}
+jobs:
+  validate:
+    if: github.event_name != 'issues' || startsWith(github.event.issue.title, '[LTZZZ外部回执]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/receive-external-report.mjs && node --test scripts/tests/external-report.test.mjs
+  archive:
+    needs: validate
+    if: github.event_name == 'issues' && github.repository == 'ltzyz2181-collab/ltzzz' && startsWith(github.event.issue.title, '[LTZZZ外部回执]')
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Store original text as data, never execute it
+        run: node scripts/receive-external-report.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: external-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/external/
+          retention-days: 14
+      - name: Commit archival evidence without model access
+        run: |
+          git config user.name ltzzz-receipt-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/external/ data/results/ data/reports/latest.md
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Archive external AI receipt from GitHub Issue'
+          node tools/push-receipt-commit.mjs
