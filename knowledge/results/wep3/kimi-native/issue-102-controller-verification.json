@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "repository": "ltzyz2181-collab/ltzzz",
+  "recorded_at_utc": "2026-10-16T13:41:04Z",
+  "status": "native_kimi_wep3_reaudit_verified_historical_artifact_rejected",
+  "implementation": {
+    "pr": 101,
+    "merge_commit": "eb54599e3f3d8f5c77c74566843a904e27d3a83d",
+    "local_tests_passed": 29,
+    "pr_ci_run_id": "38909376618",
+    "pr_ci_tests_passed": 29,
+    "main_push_run_id": "38909445256",
+    "main_push_generation": "skipped"
+  },
+  "actual_run": {
+    "issue": 102,
+    "run_id": "38909477889",
+    "job_id": "117001525532",
+    "conclusion": "success",
+    "receipt": "knowledge/results/wep3/kimi-native/issue-102.json",
+    "subject": "knowledge/results/wep3/kimi-native/issue-102-subject.json",
+    "source_commit": "3111291053815ba1ae6859e59c6576e02c210058",
+    "execution_source_commit": "a9192deb01b4bbe9cfa5b6b11e326a2a656fe1e4"
+  },
+  "native_provider": {
+    "official_catalogue_http": 200,
+    "available_models": [
+      "kimi-k2.7-code-highspeed",
+      "kimi-k3",
+      "kimi-k2.6",
+      "kimi-k2.7-code"
+    ],
+    "selected_model": "kimi-k2.6",
+    "actual_model": "kimi-k2.6",
+    "model_source": "provider_response",
+    "http": 200,
+    "finish_reason": "stop",
+    "completion_id": "chatcmpl-6ad22914778a1980391dc58c",
+    "request_id": null,
+    "upstream_attempts": 1,
+    "tokens_used": 2409
+  },
+  "independent_controller_checks": {
+    "subject_bytes_sha256_matches_claim": true,
+    "verdict_deliverable_sha256_matches_subject": true,
+    "returned_model_in_official_catalogue": true,
+    "old_wep3_run_38661870074_and_grok_audit_preserved": true
+  },
+  "audit": {
+    "native_generation_verified": true,
+    "artifact_bound_audit_verified": true,
+    "accepted": false,
+    "scope": "historical_WEP3_artifact_reaudit_not_new_live_HTTP_test",
+    "deliverable_sha256": "5ec07d1e4070758751b20b177b0f6f034d6725d6382f1ea853eecbffe54cb3dc",
+    "raw_model_verdict_preserved": true,
+    "all_model_allegations_confirmed": false,
+    "controller_notes": [
+      {
+        "finding": "Missing-field assertion",
+        "assessment": "confirmed_in_current_contract_evaluator",
+        "evidence": "scripts/lib/provided-contract.mjs matchesContract only checks presence/equality of expected_json entries; the valid readiness case expects authenticated:true but does not assert status is absent."
+      },
+      {
+        "finding": "Normal no-to preview positive control",
+        "assessment": "confirmed_coverage_gap_in_this_eight_case_artifact",
+        "evidence": "The stored cases test unauthorized/wrong-auth and forbidden to parameter; no corresponding successful valid-auth preview with no to field is in the eight cases. This does not establish an exploitable production bug."
+      },
+      {
+        "finding": "negative_controls.network_calls=0 contradicts live_checks",
+        "assessment": "model_inference_not_supported",
+        "evidence": "negative_controls explicitly scopes itself to local_assertion_evaluator_fault_injection. scripts/accept-real-hire.mjs separately runs HTTP fetch checks; the zero describes the local negative controls only."
+      },
+      {
+        "finding": "String amount_usdc is inherently a defect",
+        "assessment": "not_established_by_this_reaudit",
+        "evidence": "The stored contract uses a string amount consistently; this model-only review did not execute or prove a parsing failure."
+      }
+    ]
+  },
+  "boundaries": {
+    "new_model_requests": 1,
+    "api_cost_cny": null,
+    "paid_wages": false,
+    "financial_execution": false,
+    "transactions": 0,
+    "new_paid_schedules": 0,
+    "production_default_model_changed": false,
+    "new_live_wep3_http_checks": false,
+    "new_hire_or_settlement": false,
+    "full_new_order_kimi_closeout_verified": false
+  }
+}
