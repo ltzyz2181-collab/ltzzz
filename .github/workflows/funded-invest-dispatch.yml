@@ -1,7 +1,7 @@
 name: Funded invest dispatch
-# 四席位真钱投资派单（欧易 CEX + 欧易 Web3 DeFi）
-# 默认 dry-run。真实下单需同时输入 arm=true 且 arm_ack=当天北京时间日期(YYYY-MM-DD)。
-# Web3 DeFi 一路即使武装也只输出待签载荷，永不自签。
+# 四席位真钱投资派单 v2（Aave V3 Base / USDC，走 WEP3 受审计路径）
+# 默认 dry-run。真实链上执行需同时输入 arm=true 且 arm_ack=当天北京时间日期(YYYY-MM-DD)。
+# venue=cex 会被执行器按章程 §1/§6 拒绝（BLOCK-5）；执行器已无 CEX 下单能力。
 on:
   workflow_dispatch:
     inputs:
@@ -40,17 +40,23 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
 
-      - name: Verify plan integrity and reputation basis (read-only)
+      - name: Verify plan integrity and charter constraints (read-only)
         run: |
           node -e "
           const p=require('./agent-wallet/funded-invest-plan.json');
           const sum=p.agents.reduce((s,a)=>s+Number(a.quota_at_reference_pool),0);
           const wsum=p.agents.reduce((s,a)=>s+Number(a.weight),0);
-          console.log(JSON.stringify({agents:p.agents.length,quota_sum:+sum.toFixed(6),weight_sum:wsum,
-            per_tx_cap:p.policy_caps.per_tx_cap_usdc,daily_cap:p.policy_caps.daily_cap_usdc,
+          const lim=p.protocol_limits_2026_10_15||{};
+          console.log(JSON.stringify({plan_version:p.plan_version,agents:p.agents.length,
+            quota_sum:+sum.toFixed(6),weight_sum:wsum,
+            single_cap:lim.single_cap_usdc,exposure_cap:lim.exposure_cap_usdc,cash_floor:lim.cash_floor_usdc,
+            treasury:lim.treasury_address,
+            cex_allowed:p.venues.okx_cex.allowed,web3_allowed:p.venues.okx_web3_defi.allowed,
             status:p.execution_status,paid:p.paid,tx_hash:p.tx_hash},null,2));
           if(Math.abs(sum-Number(p.quota_sum_at_reference_pool))>0.01) throw new Error('quota sum mismatch');
           if(p.paid!==false||p.tx_hash!==null) throw new Error('plan claims payment without tx_hash');
+          if(p.venues.okx_cex.allowed!==false) throw new Error('CEX must stay disallowed by charter BLOCK-5');
+          if(!lim.single_cap_usdc||!lim.cash_floor_usdc) throw new Error('protocol limits missing: allocation source of truth required');
           "
 
       - name: Derive short-lived runner authentication (same scheme as autonomous-funded-orders)
