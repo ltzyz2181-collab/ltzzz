@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
 import {prepareDailyBoard,syncDailyBoard} from './lib/daily-task-board.mjs';
 import {pulseSnapshot,PULSE_URL} from './lib/pulse-client.mjs';
 import {pulseToken} from './pulse-credentials.mjs';
@@ -18,7 +19,7 @@ async function readRemote(file){
 }
 if(process.argv[2]==='prepare'){
  const control=JSON.parse(fs.readFileSync('knowledge/results/control/latest.json','utf8'));
- const record=await prepareDailyBoard({root,date,runKey,sourceCommit:process.env.GITHUB_SHA||'local',agents:['doubao','grok','deepseek'],control,snapshot:pulseSnapshot,command});
+ const record=await prepareDailyBoard({root,date,runKey,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),agents:['doubao','grok','deepseek'],control,snapshot:pulseSnapshot,command});
  console.log(JSON.stringify({date,seats:Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status]))}));
 }else if(process.argv[2]==='sync'){
  const record=await syncDailyBoard({root,date,snapshot:pulseSnapshot,command,readRemote});
