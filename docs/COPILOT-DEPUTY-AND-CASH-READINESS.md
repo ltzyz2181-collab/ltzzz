@@ -44,3 +44,14 @@ Base USDC 与交易所买到的 AAVE 代币不同。不要把其他链或其他�
 5. 有真实外部客户的收入才单列外部营收；owner 试买和供应商采购本身不算赚钱。优先用已资助订单触发采购，不新增空转付费 cron。
 
 当前缺口不是“给每个 AI 一把真钱钥匙”，而是订单资金占用、受限出款、失败/退款对账及一笔端到端交付验收。这个缺口尚未完成，不能用免费报价验收代替。
+
+## 实际验收 · 2026-10-16 01:44 UTC
+
+- 代码 [PR #85](https://github.com/ltzyz2181-collab/ltzzz/pull/85) 已合并，29 项针对性测试通过。没有新增付费定时任务。
+- [接力工单 #86](https://github.com/ltzyz2181-collab/ltzzz/issues/86)：[运行 38836676971](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38836676971) 成功；总控角色派单、千问角色确认消费、结构化回执和 Issue 自动回复均已验证。状态 `completed_readonly_pending_review`，模型调用 0，不代表独立审核或任意工程任务自动部署。
+- [欧易交易所只读检查](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38836660548)：配置与余额接口均返回 `code=0`，没有 50110；Key 报告 `read_only,trade`，本次查询的交易账户非零资产数为 0。未查资金账户/其他子账户，不推断交易所全部资产为零；无下单、提现或投资。
+- [个人 Base 钱包检查](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38836660361)：三条 RPC 在区块 `52662842` 一致读到原生 USDC `0`、ETH `0.002695025642205276`、Aave USDC allowance `0`。50U 候选因此有余额不足阻塞。已生成未签名 calldata；未估 gas、未模拟、未签名或广播，也未查该地址的其他链和其他资产。
+- [外部 AI 免费报价](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/38836660440)：实际 `402`，Base 原生 USDC、既定收款地址、exact scheme，报价 `3000` 最小单位 = `0.003 USDC`。状态 `quote_verified_not_purchased`，没有模型交付或付款。线上 `cash_payouts=false`；外部真钱闭环仍未完成。
+- 同轮 LTZZZ 金库现有 Worker 的 RPC 状态读到 `315.408481 USDC`、`34.493498 aUSDC`（区块 `52662837`），不是本轮新增交易，不与个人欧易钱包混合计账。已有资金/持仓不代表已支付外部 AI。
+
+完整证据 hash、运行号和未完成项：`knowledge/results/recovery/copilot-deputy-cash-2026-10-16.json`。
