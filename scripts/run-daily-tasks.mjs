@@ -20,6 +20,7 @@ import { assessDelivery } from "./delivery-integrity.mjs";
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
 import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
+import {dailyReviewPrompt,materializeDailyReview} from './lib/daily-independent-review.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -81,9 +82,9 @@ function readCoreMemory() {
 
 // 通道 → 调用模块 / 密钥名 / 回退任务；密钥只由 GitHub Secrets 注入
 const CHANNELS = [
+  { agent: "deepseek", module: "call-deepseek.mjs", key: "DEEPSEEK_API_KEY", task: "比较中华传统文化与项目理念的一项异同，区分出处、观察和推测" },
   { agent: "doubao", module: "call-doubao.mjs", key: "DOUBAO_API_KEY", task: "产出一份围绕观/行深主题的中文短视频脚本草稿（≤60 秒、9:16）；不得发布" },
   { agent: "grok", module: "call-grok.mjs", key: "XAI_API_KEY", task: "从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码" },
-  { agent: "deepseek", module: "call-deepseek.mjs", key: "DEEPSEEK_API_KEY", task: "比较中华传统文化与项目理念的一项异同，区分出处、观察和推测" },
 ];
 
 function ensureDir(p) { if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }); }
@@ -153,6 +154,7 @@ async function main() {
       "不要直接修改或声称修改 ltzzz-memory/ 长期文件；建议只能作为每日候选。梦境相关只概括记录规则与待验证问题，不逐字复述梦境细节。",
       "本任务生成读后感与可复用工程/验收草稿，优先完成总控派单或自主发现的任务；不要输出 SPEND_PROPOSAL、钱包提案或转账/付款操作。",
     ].join("\n");
+    const reviewPrompt=ch.agent==='doubao'?dailyReviewPrompt({root:ROOT,date:today,runKey}):'';
     const prompt = [
       `今天是 ${today}（UTC+8）。你的角色任务：${roleTask}`,
       reflectionGuidance,
@@ -163,6 +165,7 @@ async function main() {
       `长期记忆摘要（context_summary）：${mem.context_summary || "（空）"}`,
       last3 ? `最近产出（续上下文）：\n${last3}` : "",
       urge,
+      reviewPrompt,
     ].filter(Boolean).join("\n\n");
 
     if (coreMemory.audit.status !== 'complete') {
@@ -228,6 +231,8 @@ async function main() {
   }
 
   tasks.push(...inactiveDailySeats(taskDefs));
+
+  materializeDailyReview({root:ROOT,date:today});
 
   const finalBoard=readLedger(ROOT,today);
   for (const task of tasks) {

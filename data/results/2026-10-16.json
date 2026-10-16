@@ -151,7 +151,42 @@
         "claimed_author": "Claude",
         "authorship_verification": "owner_forwarded_self_report_not_native_API_attestation",
         "scope": "external_free_discussion_and_audit",
-        "native_api_execution": false
+        "native_api_execution": false,
+        "controller_annotations": [
+          {
+            "claim": "Six core documents unchanged since 12eff17",
+            "result": "partially_incorrect",
+            "evidence": "git diff --numstat 12eff17..0e81050 -- six core paths",
+            "changes": {
+              "ltzzz-memory/项目历史.md": {
+                "added": 12,
+                "removed": 0
+              },
+              "ltzzz-memory/重要事件.md": {
+                "added": 13,
+                "removed": 0
+              }
+            },
+            "remaining_four_files": "unchanged in this exact comparison"
+          },
+          {
+            "claim": "ANS has no evidence of any actual change",
+            "result": "too_broad",
+            "evidence": [
+              "5697955",
+              "21df939",
+              "knowledge/results/ans-cycle/2026-10-16.json"
+            ],
+            "note": "A concrete next-day assignment defect was implemented and tested by coordinator; monitoring/recovery and board feedback run. Generic arbitrary-patch automatic merge/deploy remains unimplemented. Philosophical equivalence is not established."
+          },
+          {
+            "claim": "WEP3-specific Kimi generation still lacks post-fix success evidence",
+            "result": "supported_by_current_latest_receipt",
+            "evidence": "knowledge/results/wep3/latest.json"
+          }
+        ],
+        "controller_annotations_sha256": "4a6195bb3a7a30f8034ee830c0eda566f7fe4e7d09340d82aad219eea41db0d4",
+        "annotations_scope": "controller_corrections_not_words_of_external_author"
       }
     },
     {
