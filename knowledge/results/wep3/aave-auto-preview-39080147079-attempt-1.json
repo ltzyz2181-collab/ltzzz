@@ -1,0 +1,156 @@
+{
+  "at": "2026-10-17T23:44:41.284Z",
+  "execution_id": "39080147079",
+  "run_attempt": "1",
+  "action": "auto-preview",
+  "read_only": true,
+  "on_chain_executed": false,
+  "tx_hash": null,
+  "http": 200,
+  "content_type": "application/json",
+  "result": {
+    "ok": true,
+    "intent_id": "AAVE-AUTO-bounded_supply-2026-10-17",
+    "action": "supply",
+    "amount_usdc": "32.490456",
+    "status": "preview_only",
+    "chain_id": 8453,
+    "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+    "steps": [
+      {
+        "kind": "approve",
+        "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "tx_hash": "0xa96f5522449c3482d1224cfdee30ccc4f2ba82301b55862d97f5e52d123cf703",
+        "status": "confirmed",
+        "broadcast_attempts": [
+          {
+            "url": "https://mainnet.base.org",
+            "ok": true
+          }
+        ],
+        "block_number": 52722472,
+        "receipt_status": 1,
+        "confirmed_at": "2026-10-17T10:51:36.595Z"
+      },
+      {
+        "kind": "supply",
+        "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+        "tx_hash": "0x3d141f549a744b366934916addf3441c202375146b4696465fa0acd47889dcf3",
+        "status": "failed",
+        "broadcast_attempts": [
+          {
+            "url": "https://mainnet.base.org",
+            "ok": false
+          },
+          {
+            "url": "https://base.drpc.org",
+            "ok": true
+          }
+        ]
+      }
+    ],
+    "execution_diagnostic": {
+      "stage": "receipt_read_transport",
+      "rpc_attempts": [
+        {
+          "url": "https://mainnet.base.org",
+          "ok": false,
+          "code": "SERVER_ERROR",
+          "detail": "exceeded maximum retry limit"
+        },
+        {
+          "url": "https://base.drpc.org",
+          "ok": false,
+          "code": "SERVER_ERROR",
+          "detail": "exceeded maximum retry limit"
+        },
+        {
+          "url": "https://base-rpc.publicnode.com",
+          "ok": false,
+          "code": "SERVER_ERROR",
+          "detail": "server response 403 Forbidden"
+        },
+        {
+          "url": "https://1rpc.io/base",
+          "ok": false,
+          "code": "BAD_DATA",
+          "detail": "missing response for request"
+        },
+        {
+          "url": "https://base.llamarpc.com",
+          "ok": false,
+          "code": null,
+          "detail": "Too many subrequests by single Worker invocation. To configure this limit, refer to https://developers.cloudflare.com/workers/wrangler/configuration/#limits"
+        },
+        {
+          "url": "https://base.gateway.tenderly.co",
+          "ok": false,
+          "code": null,
+          "detail": "Too many subrequests by single Worker invocation. To configure this limit, refer to https://developers.cloudflare.com/workers/wrangler/configuration/#limits"
+        }
+      ],
+      "retry": "identical_persisted_bytes_only"
+    },
+    "before": {
+      "ok": true,
+      "chain_id": 8453,
+      "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+      "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+      "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+      "block_number": 52722468,
+      "rpc_url": "https://base-rpc.publicnode.com",
+      "rpc_attempts": [
+        {
+          "url": "https://mainnet.base.org",
+          "ok": false,
+          "code": "SERVER_ERROR",
+          "detail": "exceeded maximum retry limit"
+        },
+        {
+          "url": "https://base.drpc.org",
+          "ok": false,
+          "code": "SERVER_ERROR",
+          "detail": "exceeded maximum retry limit"
+        },
+        {
+          "url": "https://base-rpc.publicnode.com",
+          "ok": true
+        }
+      ],
+      "usdc_raw": "279902289",
+      "ausdc_raw": "50002273",
+      "eth_raw": "1991082031498289",
+      "allowance_raw": "18987029",
+      "principal_raw": "49993047",
+      "interest_raw": "9226",
+      "principal_basis": "tracked_supply_receipts",
+      "first_supply_confirmed": true,
+      "exit_test_confirmed": true,
+      "paused": false,
+      "active_intent": null,
+      "storage_status": {
+        "ok": true,
+        "status": "no_active_intent",
+        "active_intent": null,
+        "signed": false
+      },
+      "limit_policy": "reputation_and_actual_equity",
+      "capital_agent": "DeepSeek",
+      "capital_reputation": 105,
+      "allocation_share_bps": 4000,
+      "single_cap_usdc": 32.490456,
+      "exposure_cap_usdc": 129.961824,
+      "cash_floor_raw": "5000000",
+      "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+      "owner_return_enabled": false
+    },
+    "after": null,
+    "owner_return_executed": false,
+    "existing_status": "failed",
+    "signed": false,
+    "already_signed_steps": true,
+    "aave_runtime_revision": "aave-guard-v8"
+  },
+  "service_verified": true
+}
