@@ -22,3 +22,9 @@
 这份输出可以保留作为问题说明，不能充当可直接部署的回归测试。其wrong-auth例子使用Authorization而非本服务的X-Lab-Pin，也未证明正确凭证通路；没有把它说成已运行测试。
 
 付款是否真实发生，另以成功USDC Transfer及对应AuthorizationUsed nonce核验；一旦证明扣款，应记录为“已付款、交付拒收”，不能把交付失败改写成未花钱。订单已持久化，不因拒收而再次签发付款授权或重复模型请求。本次原厂OpenAI/Anthropic调用为0，没有增加付费模型定时。
+
+## 后续付款核验（2026-10-17 23:41 UTC 回读）
+
+后续认证只读回执 `knowledge/results/funded-invest/inspection-39079995909-attempt-1.json` 已返回 `payment_proof.verified=true`：同一付款哈希、Base区块52712247、receipt_status=1。Worker已核对USDC Transfer及AuthorizationUsed nonce。订单最终状态是 **paid_delivery_rejected**，实际支出0.003USDC，交付仍未验收；原文的“付款核验未完成”保留为当时状态，不能当成当前未扣款。
+
+本轮恢复只读取该原订单，没有重新购买、重新签发付款或使用新的支付nonce；未取得退款证据。此支出是外部模型服务采购，不是内部积分结算，也不是项目销售收入。
