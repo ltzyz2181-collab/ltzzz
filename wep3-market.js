@@ -1,3 +1,4 @@
+import {externalPurchase} from './wep3-procurement.js';
 import {externalEntry} from './wep3-external-entry.js';
 import {sealDelivery} from './wep3-order-contract.js';
 import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
@@ -52,6 +53,7 @@ export class Market {
         first_supply_confirmed:!!book.aave?.first_supply_confirmed,exit_test_confirmed:!!book.aave?.exit_test_confirmed,
         active_intent:book.aave?.active_intent||null,signed:false,on_chain_executed:false});
     }
+    if(p==='/market/procurement/order'&&['GET','POST'].includes(request.method)){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await externalPurchase(this,book,{execute:request.method==='POST'});return reply(r,r.ok?200:422);}
     if(p==='/market/aave/status'&&request.method==='GET')return reply({...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
     if(p==='/market/aave/reconcile'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await reconcileAaveTransactions(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:422);}
     if(p==='/market/aave/diagnostics'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await diagnoseAave(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:503);}

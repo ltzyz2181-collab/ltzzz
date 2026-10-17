@@ -1,3 +1,4 @@
+import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
 export const AAVE_RUNTIME_REVISION='aave-guard-v5';
 export const AAVE={chain_id:8453,pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',ausdc:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'};
@@ -97,7 +98,7 @@ async function readAaveStatus(m,book){
  });
  const {usdc,ausdc,eth,allowance,block}=chain.value;
  const state=record(book.aave)?book.aave:{},principal=BigInt(state.principal_raw||0);
- const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n,floor=liabilities>5000000n?liabilities:5000000n;
+ const floor=cashFloorRaw(book);
  const reputation=typeof m.score==='function'?await m.score('DeepSeek'):0;
  const limits=investmentLimits({usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),cash_floor_raw:floor.toString(),exit_test_confirmed:!!state.exit_test_confirmed,capital_reputation:reputation});
  return {ok:true,...AAVE,address,block_number:block,rpc_url:chain.rpc_url,rpc_attempts:chain.rpc_attempts,usdc_raw:usdc.toString(),ausdc_raw:ausdc.toString(),eth_raw:eth.toString(),allowance_raw:allowance.toString(),principal_raw:principal.toString(),interest_raw:(!state.first_supply_confirmed&&ausdc>0n)?null:(ausdc>principal?ausdc-principal:0n).toString(),principal_basis:state.first_supply_confirmed?'tracked_supply_receipts':ausdc>0n?'unverified':'no_position',first_supply_confirmed:!!state.first_supply_confirmed,exit_test_confirmed:!!state.exit_test_confirmed,paused:!!state.paused,active_intent:aaveStorageStatus(book).active_intent||null,storage_status:aaveStorageStatus(book),limit_policy:limits.mode,capital_agent:'DeepSeek',capital_reputation:limits.reputation,allocation_share_bps:limits.share_bps,single_cap_usdc:Number(formatUnits(limits.single,6)),exposure_cap_usdc:Number(formatUnits(limits.exposure,6)),cash_floor_raw:floor.toString(),withdraw_receiver:address,owner_return_enabled:false};
@@ -166,8 +167,7 @@ export async function executeAave(m,book,input,{preview=false}={}){
   if(state.active_intent)return {ok:false,error:'another_intent_pending',active_intent:state.active_intent};
   const status=await aaveStatus(m,book);if(!status.ok)return status;
   if(status.principal_basis==='unverified')return {ok:false,error:'untracked_position_requires_reconciliation'};
-  const keys=budgetKeys(Date.now()),liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
-  const floor=liabilities>5000000n?liabilities:5000000n;
+  const keys=budgetKeys(Date.now()),floor=cashFloorRaw(book);
   const ctx={...status,cash_floor_raw:floor.toString(),day_raw:state.periods.day[keys.day]||'0',week_raw:state.periods.week[keys.week]||'0',month_raw:state.periods.month[keys.month]||'0'};
   let plan;try{plan=buildAavePlan(input,ctx)}catch(e){return {ok:false,error:e.message,status:'blocked_policy',balances:status};}
   if(preview)return {ok:true,status:'preview_only',chain_id:8453,treasury:status.address,plan,cash_floor_raw:floor.toString(),balances:status,signed:false};
@@ -243,8 +243,7 @@ export async function autoAave(m,book,{preview=false}={}){
  let action='supply',amount=1000000n,stage='first_supply';
  if(s.first_supply_confirmed&&!s.exit_test_confirmed){action='withdraw';stage='first_exit';if(BigInt(s.ausdc_raw)<amount)amount=BigInt(s.ausdc_raw);if(amount<=0n)return {ok:false,error:'exit_test_position_missing'};}
  else if(s.exit_test_confirmed){
-  stage='bounded_supply';const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
-  const floor=liabilities>5000000n?liabilities:5000000n;amount=BigInt(s.usdc_raw)-floor;const limits=investmentLimits({...s,cash_floor_raw:floor.toString()}),room=limits.exposure-BigInt(s.ausdc_raw);if(amount>room)amount=room;if(amount>limits.single)amount=limits.single;
+  stage='bounded_supply';const floor=cashFloorRaw(book);amount=BigInt(s.usdc_raw)-floor;const limits=investmentLimits({...s,cash_floor_raw:floor.toString()}),room=limits.exposure-BigInt(s.ausdc_raw);if(amount>room)amount=room;if(amount>limits.single)amount=limits.single;
   if(room<0n){action='withdraw';stage='reputation_rebalance';amount=-room;}else if(amount<1000000n)return {ok:true,status:'reserve_or_exposure_wait',balances:s,signed:false};
  }
  const day=new Date().toISOString().slice(0,10),id='AAVE-AUTO-'+stage+'-'+day;

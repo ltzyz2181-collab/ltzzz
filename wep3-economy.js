@@ -17,10 +17,11 @@ export async function maybeGrowthHire(m,book,worker,parent,now=Date.now()){
  book.ledger.push({type:'growth_hire_reserved',order_id:id,employer:worker,amount_cents:q.price_cents,source_order_id:parent,at:new Date(now).toISOString()});return id;
 }
 export function demandPrice(base,reputation,backlog){
- const scarcity=1+Math.min(0.35,Math.max(0,backlog)*.03); // more aggressive scarcity for future AGI demand
- const quality=Math.min(1.3,Math.max(.75,1+(reputation-100)/800));
- const innovationBonus = base > 500 ? 1.05 : 1; // slight premium for complex tasks
- return Math.max(100,Math.min(2500,Math.round(base*quality*scarcity*innovationBonus)));
+ // Retain the published v2 contract: backlog <=25%, reputation +/-20%,
+ // final quote 100..2000 cents. Experimental composition does not amend prices.
+ const scarcity=1+Math.min(0.25,Math.max(0,backlog)*.025);
+ const quality=Math.min(1.2,Math.max(.8,1+(reputation-100)/1000));
+ return Math.max(100,Math.min(2000,Math.round(base*quality*scarcity)));
 }
 
 // Bold innovation: Autonomous Swarm Composition for multi-agent AGI tasks

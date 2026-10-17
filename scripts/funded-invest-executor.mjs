@@ -1,304 +1,71 @@
-/**
- * funded-invest-executor.mjs v2 — LTZZZ 四席位真钱投资派单执行器
- *
- * 治理边界（policy/web3-investment-charter-v0.1.md，owner 一票生效）：
- *   §1 仅允许 Aave V3 Base 主网 / USDC；非白名单 → 合约 revert
- *   §2 试点档单笔 ≤20 USDC、敞口 ≤100 USDC；余额 <5 USDC 停止开新仓
- *   §3 无 receipt 不算投资：hypothesis → exit_plan → tx_hash
- *   §6 执行席不得自行扩大限额或白名单
- *
- * v2 相对 v1 的四项更正（自审，详见 plan.self_audit_v1_errors）：
- *   1. 移除 CEX 下单能力。BTC-USDT 不在章程白名单，执行席无权扩白名单 → venue=cex 一律拒绝。
- *   2. 移除直连 Aave Pool 的 approve+supply 载荷。那会绕过 LTZZZVault 的
- *      ForbiddenTarget / 日限 / 暂停 / veto 护栏 → 改为走既有受审计路径。
- *   3. 额度不再自行决定：真值源是 WEP3 协议的 reputation_and_actual_equity 实时限额，
- *      本脚本只做派单参考值与二次截断，冲突时服从协议。
- *   4. 资金池改为当前在用金库 0x5df5…a32d（v1 误查 agent 钱包与 legacy vault 得出「资金为 0」的错误结论）。
- *
- * 安全闸门：
- *   - 默认只读/dry-run。真实执行需 ARM_REAL_ORDERS=1 且 ARM_ACK=当天北京时间日期。
- *   - 密钥只从环境变量读取，永不打印明文、永不写入回执。
- *   - 余额不足即拒，绝不部分执行后静默失败。
- */
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
-
-const PLAN_PATH = 'agent-wallet/funded-invest-plan.json';
-const OUT_DIR = 'knowledge/results/funded-invest';
-const RPCS = ['https://base-rpc.publicnode.com', 'https://mainnet.base.org', 'https://base.drpc.org'];
-const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
-const AUSDC_BASE = '0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB';
-// 当前在用金库（withdraw_receiver / 签名主体），非 agent 钱包、非 legacy vault
-const TREASURY = '0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d';
-// 既有受审计执行路径：WEP3 Worker（签名与合约护栏都在 Worker/金库内）
-const WEP3_BASE = process.env.WEP3_BASE || 'https://ltzzz-wep3.ltzyz2181.workers.dev';
-
-const arg = (n) => { const i = process.argv.indexOf('--' + n); return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : null; };
-const mask = (v) => (v ? String(v).slice(0, 6) + '****' + String(v).slice(-4) : '(absent)');
-const nowIso = () => new Date().toISOString();
-/** 北京时间当日日期。不可用 toISOString().slice(0,10)：UTC 在北京 00:00–08:00 慢一天，
- *  会导致回执归档错日期，且 ARM_ACK 当日校验形同虚设。 */
-const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-
-function loadPlan() {
-  if (!fs.existsSync(PLAN_PATH)) throw new Error('plan missing: ' + PLAN_PATH);
-  const plan = JSON.parse(fs.readFileSync(PLAN_PATH, 'utf8'));
-  const lim = plan.protocol_limits_2026_10_15 || {};
-  const singleCap = Number(lim.single_cap_usdc ?? 20);
-  const charterCap = 20; // 章程 §2 试点档
-  const hardCap = Math.min(singleCap, charterCap);
-  for (const a of plan.agents) {
-    const raw = Number(a.quota_at_reference_pool ?? 0);
-    a.quota_usdc = Math.min(raw, hardCap);
-    a.capped_by = a.quota_usdc < raw ? 'policy' : null;
+import {parseArgs} from 'node:util';
+import {buildDispatch,runnerToken,wep3Request,intentId,raw,SEATS} from './lib/funded-invest-runtime.mjs';
+import {okxCredentials,okxClient,spotOrder,spotReadiness,executeSpot} from './lib/okx-funded-spot.mjs';
+const {values}=parseArgs({options:{venue:{type:'string',default:'all'},agent:{type:'string',default:'all'},phase:{type:'string',default:'run'}},strict:true});
+const venues={all:'all',web3:'web3',defi:'web3',okx_web3_defi:'web3',cex:'cex',okx:'cex',okx_cex:'cex'};
+if(!venues[values.venue]||!['run','prepare','execute'].includes(values.phase)||(values.agent!=='all'&&!SEATS[values.agent])){console.error('invalid_executor_arguments');process.exit(2);}
+const venue=venues[values.venue],selected=values.agent,day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const armed=process.env.ARM_REAL_ORDERS==='1'&&process.env.ARM_ACK===day;
+const policy=JSON.parse(fs.readFileSync('policy/funded-owner-round-20261017.json','utf8'));
+const root='knowledge/results/funded-invest',roundFile=path.join(root,policy.order_id+'.json');fs.mkdirSync(root,{recursive:true});
+const runId=process.env.GITHUB_RUN_ID||('local-'+Date.now()),attempt=process.env.GITHUB_RUN_ATTEMPT||'1',lease=runId+'-'+attempt;
+const report={at:new Date().toISOString(),run_id:runId,run_attempt:attempt,order_id:policy.order_id,venue,agent:selected,armed,model_calls:0,native_model_calls:0,paid:false,tx_hash:null,orders_submitted:0,results:[],network_context:process.env.GITHUB_ACTIONS?'github_hosted_runner_no_vpn_step':'local_network_not_independently_verified',owner_no_vpn_verified:false};
+const reportFile=path.join(root,'run-'+runId+'-attempt-'+attempt+'.json');
+const write=(file,data)=>{fs.mkdirSync(path.dirname(file),{recursive:true});const temp=file+'.tmp';fs.writeFileSync(temp,JSON.stringify(data,null,2)+'\n');fs.renameSync(temp,file);};
+const save=()=>write(reportFile,report);const token=runnerToken(),api=(p,body)=>wep3Request(p,{body,token});const exchange=okxClient(okxCredentials());
+let round;
+function claimFile(agent){return path.join(root,policy.order_id+'-cex-'+agent+'.json');}
+async function prepare(){
+ if(fs.existsSync(roundFile)){round=JSON.parse(fs.readFileSync(roundFile));report.reused_frozen_dispatch=true;}
+ else{const [status,snapshot]=await Promise.all([api('/market/aave/status'),api('/market/receipts/snapshot')]);round=buildDispatch(policy,status,snapshot);round.source_commit=process.env.GITHUB_SHA||null;}
+ report.dispatch=round;
+ try{report.cex_readiness=await spotReadiness(exchange);}catch{report.cex_readiness={ok:false,status:'okx_credentials_or_read_unavailable',missing_secret_triplet:!Object.values(okxCredentials()).every(Boolean)};}
+ if(!armed){report.execution_status='dry_run_only';save();return;}
+ if(!fs.existsSync(roundFile))write(roundFile,round);
+ if(venue!=='web3'&&report.cex_readiness.ok){
+  if(raw(report.cex_readiness.available_usdt,12)<raw(policy.cex.total_usdt,12)){report.cex_readiness={...report.cex_readiness,ok:false,status:'configured_OKX_account_insufficient_USDT'};save();return;}
+  const [i,t]=await Promise.all([exchange('GET','/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT',undefined,{publicRead:true}),exchange('GET','/api/v5/market/ticker?instId=BTC-USDT',undefined,{publicRead:true})]);
+  if(!i.ok||!t.ok)throw Error('okx_market_read_failed');
+  for(const grant of round.cex.filter(g=>selected==='all'||g.id===selected)){
+   if(fs.existsSync(claimFile(grant.id)))continue;
+   try{const request=spotOrder({orderId:policy.order_id,agent:grant.id,budget:grant.amount,instrument:i.data[0],ticker:t.data[0],policy:policy.cex});write(claimFile(grant.id),{agent:grant.id,budget_usdt:grant.amount,score:grant.score,request,order_round:policy.order_id,state:'submission_authorized',submission_lease:lease,custody:'configured_OKX_account',trade_executed:false,paid:false,tx_hash:null,hypothesis:'Bounded cash BTC spot exposure, no leverage; experiment may lose value',exit_plan:'No lock-up; same-account cash sale can close. No automated stop-loss or profit guarantee is claimed.'});}catch(error){report.results.push({agent:grant.id,venue:'cex',status:'not_prepared',error:error.message});}
   }
-  plan._hard_cap = hardCap;
-  plan._sum_quota = Number(plan.agents.reduce((s, a) => s + a.quota_usdc, 0).toFixed(6));
-  return plan;
+ }
+ report.execution_status='prepared_claims_require_persistence';save();
 }
-
-/* ---------- 链上只读（公开 RPC，无需密钥） ---------- */
-async function rpcCall(url, method, params) {
-  const r = await fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-    signal: AbortSignal.timeout(25000),
-  });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
-  return d.result;
-}
-async function withRpc(fn) {
-  let last = null;
-  for (const rpc of RPCS) { try { return { rpc, value: await fn(rpc) }; } catch (e) { last = e; } }
-  throw last || new Error('all rpc failed');
-}
-const balData = (holder) => '0x70a08231' + '0'.repeat(24) + holder.toLowerCase().replace(/^0x/, '');
-async function erc20(token, holder) {
-  const { value } = await withRpc((rpc) => rpcCall(rpc, 'eth_call', [{ to: token, data: balData(holder) }, 'latest']));
-  return Number(BigInt(value)) / 1e6;
-}
-async function ethOf(addr) {
-  const { value } = await withRpc((rpc) => rpcCall(rpc, 'eth_getBalance', [addr, 'latest']));
-  return Number(BigInt(value)) / 1e18;
-}
-
-/* ---------- WEP3 Worker：既有受审计路径 ---------- */
-function runnerToken() {
-  if (process.env.WEP3_RUNNER_TOKEN) return { token: process.env.WEP3_RUNNER_TOKEN, derived: false };
-  const cf = process.env.CLOUDFLARE_API_TOKEN;
-  if (!cf) return { token: null, derived: false };
-  return { token: crypto.createHmac('sha256', cf).update('ltzzz-runner-v2').digest('hex'), derived: true };
-}
-
-async function wep3(action, body) {
-  const { token, derived } = runnerToken();
-  const rec = { at: nowIso(), path: action, token_present: Boolean(token), token_derived: derived };
-  if (!token) { rec.status = 'blocked_missing_runner_token'; rec.blocker = 'BLOCK-4'; return rec; }
-  const isRead = ['status', 'diagnose', 'reconcile', 'preview', 'auto-preview'].includes(action);
-  const p = '/market/aave/' + (action === 'auto-preview' ? 'auto-preview' : action === 'auto' ? 'auto' : action === 'reconcile' ? 'reconcile' : action === 'diagnose' ? 'diagnostics' : action === 'preview' ? 'preview' : action === 'status' ? 'status' : 'execute');
-  try {
-    const r = await fetch(WEP3_BASE + p, {
-      method: isRead ? 'GET' : 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Lab-Pin': token },
-      body: isRead ? undefined : JSON.stringify(body || {}),
-      signal: AbortSignal.timeout(60000),
-    });
-    rec.http = r.status;
-    const j = await r.json().catch(() => null);
-    rec.result = j;
-    rec.service_verified = Boolean(r.ok && j && j.ok === true);
-    rec.status = rec.service_verified ? (isRead ? 'read_ok' : 'execute_ok') : 'service_or_execution_failed';
-  } catch (e) {
-    rec.status = 'unreachable';
-    rec.blocker = 'BLOCK-6';
-    rec.error = String(e.message || e).slice(0, 200);
+async function execute(){
+ if(!armed)throw Error('not_armed_for_current_policy_day');
+ if(process.env.GITHUB_ACTIONS&&process.env.FUNDED_CLAIMS_PERSISTED!=='1')throw Error('claims_not_committed');
+ round=JSON.parse(fs.readFileSync(roundFile,'utf8'));report.dispatch=round;
+ // Purchase only the single fixed owner-authorized external order; its DO persists
+ // the nonce and authorization before transmission and never buys on a retry.
+ try{report.external_ai=await api('/market/procurement/order',{});for(let p=0;p<3&&['payment_submitted_unknown','delivery_received_payment_pending'].includes(report.external_ai.order?.status);p++){await new Promise(r=>setTimeout(r,3000));report.external_ai=await api('/market/procurement/order');}}catch{report.external_ai={status:'blocked_or_uncertain_query_existing_order_before_retry',paid:false,tx_hash:null};}report.model_calls=report.external_ai?.order?.model_generation_attempts||0;save();
+ if(venue!=='cex')for(const grant of round.web3.filter(g=>selected==='all'||g.id===selected)){
+  if(BigInt(grant.amount_raw)<=0n){report.results.push({agent:grant.id,venue:'web3',status:'no_budget'});continue;}
+  const input={intent_id:intentId(policy.order_id,grant.id),action:'supply',amount_usdc:grant.amount};
+  const result={agent:grant.id,venue:'aave_Base_USDC',intent_id:input.intent_id,amount_usdc:grant.amount,custody:'LTZZZ_treasury',paid:false,tx_hash:null,native_model_call:false,hypothesis:'Supply the reputation-allocated budget to Aave V3 Base without borrowing',exit_plan:'Withdraw through existing guarded executor back to LTZZZ treasury; no personal wallet or Safe involved'};
+  try{
+   const preview=await api('/market/aave/preview',input);result.preview_status=preview.status;
+   let actual=await api('/market/aave/execute',input);
+   for(let p=0;p<4&&['pending','pending_confirmations'].includes(actual.status);p++){await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
+   result.receipt=actual;const supply=actual.steps?.find(s=>s.kind==='supply');
+   if(actual.status==='confirmed'&&supply?.tx_hash&&supply.status==='confirmed'){Object.assign(result,{status:'confirmed',paid:true,on_chain_executed:true,tx_hash:supply.tx_hash,settlement_type:'Aave_supply'});report.orders_submitted++;}
+   else result.status='pending_or_unknown_reconcile_same_intent';
+  }catch(error){result.status='blocked_or_unknown_reconcile_same_intent';result.error=error.message;}
+  report.results.push(result);save();if(result.status!=='confirmed')break;
+ }
+ if(venue!=='web3'){
+  let ready;try{ready=await spotReadiness(exchange);}catch{ready={ok:false,status:'okx_credentials_or_read_unavailable',missing_secret_triplet:!Object.values(okxCredentials()).every(Boolean)};}report.cex_readiness=ready;
+  for(const grant of round.cex.filter(g=>selected==='all'||g.id===selected)){
+   const file=claimFile(grant.id);if(!ready.ok||!fs.existsSync(file)){report.results.push({agent:grant.id,venue:'okx_cash_spot',status:ready.status||'claim_not_prepared',paid:false,tx_hash:null});continue;}
+   let record=JSON.parse(fs.readFileSync(file));try{record=await executeSpot(exchange,record,{freshLease:record.submission_lease===lease&&record.state==='submission_authorized',save:async r=>write(file,r)});}catch(error){record={...record,state:'blocked_or_unknown',error:error.message};write(file,record);}
+   report.results.push({venue:'okx_cash_spot',...record});save();if(record.state.includes('unknown'))break;
   }
-  return rec;
+ }
+ report.paid=report.results.some(r=>r.paid)||report.external_ai?.order?.paid===true;report.tx_hash=report.results.find(r=>r.tx_hash)?.tx_hash||report.external_ai?.order?.tx_hash||null;
+ report.execution_status='completed_with_per_order_states';save();
 }
-
-/** 协议实时限额（额度真值源）。只读。 */
-async function protocolLimits() {
-  const st = await wep3('status');
-  const lim = st.result?.limits || st.result?.storage?.limits || null;
-  return { status_probe: st, limits: lim };
-}
-
-/* ---------- 额度分派（派单参考值，服从协议） ---------- */
-function dispatchTable(plan, treasury, protocolLim) {
-  const cap = protocolLim?.single_cap_usdc != null ? Number(protocolLim.single_cap_usdc) : plan._hard_cap;
-  const floor = protocolLim?.cash_floor_usdc != null ? Number(protocolLim.cash_floor_usdc) : 5;
-  const spendable = Math.max(0, Number(treasury.usdc ?? 0) - floor);
-  let remaining = spendable;
-  return plan.agents.map((a) => {
-    const want = Math.min(a.quota_usdc, cap);
-    const granted = Math.min(want, Math.max(0, remaining));
-    remaining = Number((remaining - granted).toFixed(6));
-    return {
-      agent: a.id, seat: a.seat_name, rank: a.rank,
-      identity_score: a.identity_score, multiplier: a.multiplier,
-      weight_share: a.weight_share,
-      quota_reference_usdc: a.quota_usdc,
-      protocol_single_cap_usdc: Number(cap.toFixed(6)),
-      granted_usdc: Number(granted.toFixed(6)),
-      reduced_reason: granted < want ? (granted === 0 ? 'cash_floor_or_pool_exhausted' : 'pool_partial') : null,
-      has_own_chain_identity: a.has_own_chain_identity,
-      custody: a.has_own_chain_identity ? 'own_eoa' : 'treasury_custody',
-      blocker: a.has_own_chain_identity ? null : 'BLOCK-3',
-    };
-  });
-}
-
-function armed() {
-  const flag = process.env.ARM_REAL_ORDERS === '1';
-  const ack = process.env.ARM_ACK === today();
-  return { armed: flag && ack, flag, ack };
-}
-
-async function main() {
-  const venue = arg('venue') || 'web3';
-  const agentSel = arg('agent') || 'all';
-
-  // 入参白名单：无效 venue 必须显式失败。
-  // 曾因缺此校验导致 `--venue nosuch` 静默 exit 0 并伪造一份空回执，
-  // 与本项目历史上的 dry_run 谎报同类，绝不允许「跑了不存在的路径却看起来像成功」。
-  const VENUES = ['web3', 'defi', 'okx_web3_defi', 'cex', 'okx', 'okx_cex'];
-  if (!VENUES.includes(venue)) {
-    console.error('INVALID_VENUE venue=' + venue + ' allowed=' + VENUES.join(','));
-    process.exit(2);
-  }
-
-  const { armed: isArmed, flag, ack } = armed();
-  const plan = loadPlan();
-
-  // agent 选择校验：拼错席位名不得静默产出「零席位」回执冒充成功
-  const known = plan.agents.map((a) => a.id).concat(plan.agents.map((a) => a.seat_name));
-  if (agentSel !== 'all' && !known.includes(agentSel)) {
-    console.error('INVALID_AGENT agent=' + agentSel + ' allowed=all,' + plan.agents.map((a) => a.id).join(','));
-    process.exit(2);
-  }
-
-  const run = {
-    plan_version: plan.plan_version,
-    at: nowIso(), run_date: today(), venue, agent_selection: agentSel,
-    arm: { requested_flag: flag, ack_matches_today: ack, effective: isArmed },
-    charter: 'policy/web3-investment-charter-v0.1.md',
-    execution_status: 'not_started', orders_submitted: 0, paid: false, tx_hash: null,
-    results: [],
-  };
-
-  // 章程闸门：CEX 一律拒绝（BLOCK-5）。执行席无权扩白名单。
-  if (venue === 'cex' || venue === 'okx' || venue === 'okx_cex') {
-    run.execution_status = 'refused_by_charter';
-    run.blocker = 'BLOCK-5';
-    run.refusal = {
-      reason: '章程 §1 仅允许 Aave V3 Base / USDC；§6 执行席不得自行扩大白名单',
-      requested_venue: venue,
-      note: '如需启用 CEX 现货，须 owner 一票修订章程；在此之前本执行器不具备 CEX 下单能力',
-    };
-    run.results = plan.agents.map((a) => ({ agent: a.id, seat: a.seat_name, venue: 'okx_cex', status: 'refused_by_charter', paid: false, tx_hash: null }));
-    return finish(run);
-  }
-
-  // 资金现实：当前在用金库（v1 曾误查 agent 钱包得出「资金为 0」的错误结论）
-  const [usdc, ausdc, eth] = await Promise.all([
-    erc20(USDC_BASE, TREASURY).catch(() => null),
-    erc20(AUSDC_BASE, TREASURY).catch(() => null),
-    ethOf(TREASURY).catch(() => null),
-  ]);
-  const treasury = {
-    address: TREASURY,
-    usdc: usdc === null ? null : Number(usdc.toFixed(6)),
-    ausdc: ausdc === null ? null : Number(ausdc.toFixed(6)),
-    eth: eth === null ? null : Number(eth.toFixed(6)),
-    readable: usdc !== null,
-  };
-  run.treasury = treasury;
-  run.agent_wallet_reference_only = { address: '0x21F502f29294c50d9C37A30dc038D8D95eB97fdc', note: 'A 轨钱包，当前 USDC=0，非本单资金池' };
-
-  if (!treasury.readable) { run.execution_status = 'blocked_treasury_unreadable'; return finish(run); }
-  if (treasury.usdc < 5) { run.execution_status = 'blocked_below_cash_floor'; run.blocker = 'charter_§2'; return finish(run); }
-
-  // 协议实时限额 = 额度真值源
-  const pl = await protocolLimits();
-  run.protocol_limits_probe = { status: pl.status_probe.status, http: pl.status_probe.http, blocker: pl.status_probe.blocker ?? null };
-  run.protocol_limits = pl.limits ?? { fallback: 'plan.protocol_limits_2026_10_15', ...plan.protocol_limits_2026_10_15 };
-  if (!pl.limits) run.limits_source = 'plan_fallback_worker_unreachable';
-  else run.limits_source = 'protocol_live';
-
-  const table = dispatchTable(plan, treasury, pl.limits || plan.protocol_limits_2026_10_15);
-  run.dispatch_table = table;
-  run.granted_sum_usdc = Number(table.reduce((s, r) => s + r.granted_usdc, 0).toFixed(6));
-
-  const targets = agentSel === 'all' ? table : table.filter((r) => r.agent === agentSel || r.seat === agentSel);
-  if (!targets.length) { run.execution_status = 'no_matching_agent'; return finish(run); }
-
-  for (const t of targets) {
-    const rec = {
-      agent: t.agent, seat: t.seat, venue: 'okx_web3_defi_via_wep3',
-      granted_usdc: t.granted_usdc, custody: t.custody,
-      on_behalf: t.has_own_chain_identity ? plan.agents.find((a) => a.id === t.agent)?.address : TREASURY,
-      hypothesis: '按声誉额度将 USDC 供应至 Aave V3 Base，验证四席位真钱投资闭环（章程 §3）',
-      exit_plan: 'Aave 无锁定期，随时 withdrawUSDC 全额赎回回金库（章程 §5）',
-      paid: false, tx_hash: null, orders_submitted: 0, signing_performed_by_this_script: false,
-    };
-    if (t.granted_usdc <= 0) { rec.status = 'skipped_no_budget'; rec.blocker = t.blocker; run.results.push(rec); continue; }
-
-    // 一律先做只读预览，拿到协议侧的真实限额与可执行性
-    const prev = await wep3('preview', { intent_id: 'FUNDED-INVEST-' + run.run_date + '-' + t.agent, action: 'supply', amount_usdc: String(t.granted_usdc) });
-    rec.preview = { http: prev.http, status: prev.status, blocker: prev.blocker ?? null, service_verified: prev.service_verified };
-
-    if (!isArmed) {
-      rec.status = prev.status === 'unreachable' ? 'dry_run_worker_unreachable' : 'dry_run_preview_only';
-      rec.note = '未武装：不会发生任何链上执行。武装需 ARM_REAL_ORDERS=1 且 ARM_ACK=' + today();
-      run.results.push(rec); continue;
-    }
-    if (prev.status === 'unreachable') { rec.status = 'armed_but_worker_unreachable'; rec.blocker = 'BLOCK-6'; run.results.push(rec); continue; }
-    if (!prev.service_verified) { rec.status = 'armed_but_preview_failed'; run.results.push(rec); continue; }
-
-    const ex = await wep3('execute', { intent_id: 'FUNDED-INVEST-' + run.run_date + '-' + t.agent, action: 'supply', amount_usdc: String(t.granted_usdc) });
-    rec.execute = { http: ex.http, status: ex.status, service_verified: ex.service_verified };
-    const step = Array.isArray(ex.result?.steps) ? ex.result.steps.findLast((s) => s.kind === 'supply') : null;
-    if (ex.service_verified && ex.result?.status === 'confirmed' && step?.tx_hash) {
-      rec.orders_submitted = 1; rec.paid = true; rec.tx_hash = step.tx_hash; rec.status = 'executed_onchain';
-      run.orders_submitted += 1;
-    } else {
-      rec.status = ex.result?.status === 'pending' || ex.result?.status === 'pending_confirmations'
-        ? 'pending_requires_reconciliation' : 'execution_not_confirmed';
-    }
-    run.results.push(rec);
-  }
-
-  run.paid = run.results.some((r) => r.paid === true);
-  run.tx_hash = run.results.find((r) => r.tx_hash)?.tx_hash ?? null;
-  run.execution_status = isArmed
-    ? (run.orders_submitted > 0 ? 'executed' : 'armed_but_blocked')
-    : 'dry_run_only';
-  finish(run);
-}
-
-function finish(run) {
-  fs.mkdirSync(OUT_DIR, { recursive: true });
-  const file = path.join(OUT_DIR, run.run_date + '-' + (run.venue || 'web3') + '-' + (run.arm.effective ? 'armed' : 'dryrun') + '.json');
-  fs.writeFileSync(file, JSON.stringify(run, null, 2));
-  console.log(JSON.stringify({
-    file, plan_version: run.plan_version, execution_status: run.execution_status,
-    arm_effective: run.arm.effective, orders_submitted: run.orders_submitted,
-    paid: run.paid, tx_hash: run.tx_hash,
-    treasury: run.treasury, granted_sum_usdc: run.granted_sum_usdc,
-    limits_source: run.limits_source ?? null,
-    refusal: run.refusal ?? null,
-    per_agent: (run.dispatch_table || run.results || []).map((r) => ({
-      agent: r.agent ?? r.id, granted: r.granted_usdc ?? r.quota_usdc,
-      status: r.status ?? null, custody: r.custody ?? null, blocker: r.blocker ?? null,
-    })),
-  }, null, 2));
-}
-
-main().catch((e) => {
-  fs.mkdirSync(OUT_DIR, { recursive: true });
-  fs.writeFileSync(path.join(OUT_DIR, today() + '-error.json'), JSON.stringify({ at: nowIso(), error: String(e.stack || e) }, null, 2));
-  console.error('EXECUTOR_ERROR ' + String(e.message || e));
-  process.exit(1);
-});
+try{if(!token)throw Error('runner_authentication_missing');if(values.phase!=='execute')await prepare();if(values.phase!=='prepare'&&armed)await execute();console.log(JSON.stringify({file:reportFile,status:report.execution_status,armed,results:report.results.map(r=>({agent:r.agent,venue:r.venue,status:r.status||r.state,paid:r.paid,tx_hash:r.tx_hash,order_id:r.order_id})),external_ai:report.external_ai?.order?.status}));}
+catch(error){report.execution_status='blocked';report.error=/^[a-zA-Z0-9_-]+$/.test(error.message)?error.message:'executor_transport_or_schema_failure';save();console.error(report.error);process.exitCode=1;}

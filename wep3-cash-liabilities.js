@@ -1,0 +1,3 @@
+// Customer credits and pending external payment authorizations remain liquid.
+export function procurementReservedRaw(book){return Object.values(book.procurement||{}).reduce((sum,o)=>sum+(['reserved','payment_submitted_unknown','delivery_received_payment_pending'].includes(o.status)?BigInt(o.amount_raw||0):0n),0n);}
+export function cashFloorRaw(book){const cents=(book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0);const liabilities=BigInt(cents)*10000n+procurementReservedRaw(book);return liabilities>5000000n?liabilities:5000000n;}
