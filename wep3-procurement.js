@@ -3,7 +3,7 @@ import {aaveStatus,withAaveReadProvider,AAVE} from './wep3-aave.js';
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {PROVIDER,inspectQuote} from './scripts/lib/external-procurement-preflight.mjs';
 export const PROCUREMENT_ORDER='EXT-AI-20261017-001';
-export const PROCUREMENT_REVISION='external-purchase-v1';
+export const PROCUREMENT_REVISION='external-purchase-v2';
 const ABI=new Interface(['event Transfer(address indexed from,address indexed to,uint256 value)','event AuthorizationUsed(address indexed authorizer,bytes32 indexed nonce)']);
 const TYPES={TransferWithAuthorization:[{name:'from',type:'address'},{name:'to',type:'address'},{name:'value',type:'uint256'},{name:'validAfter',type:'uint256'},{name:'validBefore',type:'uint256'},{name:'nonce',type:'bytes32'}]};
 const digest=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');
