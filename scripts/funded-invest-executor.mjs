@@ -1,3 +1,5 @@
+import {externalAIRelay} from './lib/external-ai-relay.mjs';
+import {relayPersisted} from './lib/wep3-signed-relay.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
@@ -11,7 +13,7 @@ const armed=process.env.ARM_REAL_ORDERS==='1'&&process.env.ARM_ACK===day;
 const policy=JSON.parse(fs.readFileSync('policy/funded-owner-round-20261017.json','utf8'));
 const root='knowledge/results/funded-invest',roundFile=path.join(root,policy.order_id+'.json');fs.mkdirSync(root,{recursive:true});
 const runId=process.env.GITHUB_RUN_ID||('local-'+Date.now()),attempt=process.env.GITHUB_RUN_ATTEMPT||'1',lease=runId+'-'+attempt;
-const report={at:new Date().toISOString(),run_id:runId,run_attempt:attempt,order_id:policy.order_id,venue,agent:selected,armed,model_calls:0,native_model_calls:0,paid:false,tx_hash:null,orders_submitted:0,results:[],network_context:process.env.GITHUB_ACTIONS?'github_hosted_runner_no_vpn_step':'local_network_not_independently_verified',owner_no_vpn_verified:false};
+const report={at:new Date().toISOString(),run_id:runId,run_attempt:attempt,order_id:policy.order_id,venue,agent:selected,armed,model_calls:0,native_model_calls:0,paid:false,tx_hash:null,confirmed_investment_orders:0,results:[],network_context:process.env.GITHUB_ACTIONS?'github_hosted_runner_no_vpn_step':'local_network_not_independently_verified',owner_no_vpn_verified:false};
 const reportFile=path.join(root,'run-'+runId+'-attempt-'+attempt+'.json');
 const write=(file,data)=>{fs.mkdirSync(path.dirname(file),{recursive:true});const temp=file+'.tmp';fs.writeFileSync(temp,JSON.stringify(data,null,2)+'\n');fs.renameSync(temp,file);};
 const save=()=>write(reportFile,report);const token=runnerToken(),api=(p,body)=>wep3Request(p,{body,token});const exchange=okxClient(okxCredentials());
@@ -25,7 +27,7 @@ async function prepare(){
  if(!armed){report.execution_status='dry_run_only';save();return;}
  if(!fs.existsSync(roundFile))write(roundFile,round);
  if(venue!=='web3'&&report.cex_readiness.ok){
-  if(raw(report.cex_readiness.available_usdt,12)<raw(policy.cex.total_usdt,12)){report.cex_readiness={...report.cex_readiness,ok:false,status:'configured_OKX_account_insufficient_USDT'};save();return;}
+  if(raw(report.cex_readiness.available_usdt,12)<raw(round.cex_funding_budget_usdt||policy.cex.total_usdt,12)){report.cex_readiness={...report.cex_readiness,ok:false,status:'configured_OKX_account_insufficient_USDT'};save();return;}
   const [i,t]=await Promise.all([exchange('GET','/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT',undefined,{publicRead:true}),exchange('GET','/api/v5/market/ticker?instId=BTC-USDT',undefined,{publicRead:true})]);
   if(!i.ok||!t.ok)throw Error('okx_market_read_failed');
   for(const grant of round.cex.filter(g=>selected==='all'||g.id===selected)){
@@ -41,7 +43,7 @@ async function execute(){
  round=JSON.parse(fs.readFileSync(roundFile,'utf8'));report.dispatch=round;
  // Purchase only the single fixed owner-authorized external order; its DO persists
  // the nonce and authorization before transmission and never buys on a retry.
- try{report.external_ai=await api('/market/procurement/order',{});for(let p=0;p<3&&['payment_submitted_unknown','delivery_received_payment_pending'].includes(report.external_ai.order?.status);p++){await new Promise(r=>setTimeout(r,3000));report.external_ai=await api('/market/procurement/order');}}catch(error){report.external_ai={status:'blocked_or_uncertain_query_existing_order_before_retry',error:error.message,paid:false,tx_hash:null};}report.model_calls=report.external_ai?.order?.model_generation_attempts||0;save();
+ try{report.external_ai=await externalAIRelay(token);for(let p=0;p<3&&['payment_submitted_unknown','delivery_received_payment_pending'].includes(report.external_ai.order?.status);p++){await new Promise(r=>setTimeout(r,3000));report.external_ai=await api('/market/procurement/order');}}catch(error){report.external_ai={status:'blocked_or_uncertain_query_existing_order_before_retry',error:error.message,paid:false,tx_hash:null};}report.model_calls=report.external_ai?.order?.model_generation_attempts||0;save();
  if(venue!=='cex')for(const grant of round.web3.filter(g=>selected==='all'||g.id===selected)){
   if(BigInt(grant.amount_raw)<=0n){report.results.push({agent:grant.id,venue:'web3',status:'no_budget'});continue;}
   const input={intent_id:intentId(policy.order_id,grant.id),action:'supply',amount_usdc:grant.amount};
@@ -49,9 +51,9 @@ async function execute(){
   try{
    const preview=await api('/market/aave/preview',input);result.preview_status=preview.status;
    let actual=await api('/market/aave/execute',input);
-   for(let p=0;p<4&&['pending','pending_confirmations'].includes(actual.status);p++){await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
+   for(let p=0;p<6&&['pending','pending_confirmations'].includes(actual.status);p++){result.relay=await relayPersisted({kind:'aave',intent_id:input.intent_id,amount_raw:grant.amount_raw,token});await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
    result.receipt=actual;const supply=actual.steps?.find(s=>s.kind==='supply');
-   if(actual.status==='confirmed'&&supply?.tx_hash&&supply.status==='confirmed'){Object.assign(result,{status:'confirmed',paid:true,on_chain_executed:true,tx_hash:supply.tx_hash,settlement_type:'Aave_supply'});report.orders_submitted++;}
+   if(actual.status==='confirmed'&&supply?.tx_hash&&supply.status==='confirmed'){Object.assign(result,{status:'confirmed',paid:true,on_chain_executed:true,tx_hash:supply.tx_hash,settlement_type:'Aave_supply'});report.confirmed_investment_orders++;}
    else result.status='pending_or_unknown_reconcile_same_intent';
   }catch(error){result.status='blocked_or_unknown_reconcile_same_intent';result.error=error.message;}
   report.results.push(result);save();if(result.status!=='confirmed')break;
@@ -59,7 +61,7 @@ async function execute(){
  if(venue!=='web3'){
   let ready;try{ready=await spotReadiness(exchange);}catch{ready={ok:false,status:'okx_credentials_or_read_unavailable',missing_secret_triplet:!Object.values(okxCredentials()).every(Boolean)};}report.cex_readiness=ready;
   for(const grant of round.cex.filter(g=>selected==='all'||g.id===selected)){
-   const file=claimFile(grant.id);if(!ready.ok||!fs.existsSync(file)){report.results.push({agent:grant.id,venue:'okx_cash_spot',status:!ready.ok?ready.status:raw(ready.available_usdt,12)<raw(policy.cex.total_usdt,12)?'configured_OKX_trading_USDT_insufficient':'claim_not_prepared_or_below_minimum',paid:false,tx_hash:null});continue;}
+   const file=claimFile(grant.id);if(!ready.ok||!fs.existsSync(file)){report.results.push({agent:grant.id,venue:'okx_cash_spot',status:!ready.ok?ready.status:raw(ready.available_usdt,12)<raw(round.cex_funding_budget_usdt||policy.cex.total_usdt,12)?'configured_OKX_trading_USDT_insufficient':'claim_not_prepared_or_below_minimum',paid:false,tx_hash:null});continue;}
    let record=JSON.parse(fs.readFileSync(file));try{record=await executeSpot(exchange,record,{freshLease:record.submission_lease===lease&&record.state==='submission_authorized',save:async r=>write(file,r)});}catch(error){record={...record,state:'blocked_or_unknown',error:error.message};write(file,record);}
    report.results.push({venue:'okx_cash_spot',...record});save();if(record.state.includes('unknown'))break;
   }

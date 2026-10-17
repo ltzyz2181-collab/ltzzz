@@ -1,7 +1,8 @@
-import {externalPurchase,PROCUREMENT_REVISION} from './wep3-procurement.js';
+import {fundOKX,fundingRelay} from './wep3-okx-funding.js';
+import {externalPurchase,completeExternalRelay,PROCUREMENT_REVISION} from './wep3-procurement.js';
 import {externalEntry} from './wep3-external-entry.js';
 import {sealDelivery} from './wep3-order-contract.js';
-import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
+import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,aaveRelay,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
 import {anchorSnapshot} from './wep3-anchor.js';
 import {submitForecast,maintainForecasts} from './wep3-forecast.js';
 import {standardX402,resumeMachineOrder} from './wep3-x402.js';
@@ -52,6 +53,17 @@ export class Market {
         live_revenue_cents:book.live_revenue_cents||0,aave_intent_count:Object.keys(book.aave?.intents||{}).length,
         first_supply_confirmed:!!book.aave?.first_supply_confirmed,exit_test_confirmed:!!book.aave?.exit_test_confirmed,
         active_intent:book.aave?.active_intent||null,signed:false,on_chain_executed:false});
+    }
+    if((p==='/market/aave/relay'||p==='/market/okx/funding-relay')&&request.method==='POST'){
+      if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
+      const input=await request.json().catch(()=>({})),r=p==='/market/aave/relay'?aaveRelay(book,input.intent_id):fundingRelay(book);
+      const response=reply(r,r.ok?200:422);response.headers.set('Cache-Control','no-store');return response;
+    }
+    if(p==='/market/okx/funding'&&['GET','POST'].includes(request.method)){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const input=request.method==='POST'?await request.json().catch(()=>({})):{};const r=await fundOKX(this,book,{execute:request.method==='POST',verifiedDestination:input.verified_destination});return reply(r,r.ok?200:422);}
+    if((p==='/market/procurement/prepare-relay'||p==='/market/procurement/relay-result')&&request.method==='POST'){
+      if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
+      const input=await request.json().catch(()=>({})),r=p.endsWith('/prepare-relay')?await externalPurchase(this,book,{execute:true,providedQuote:input.quote,relayPrepare:true}):await completeExternalRelay(this,book,input);
+      const response=reply(r,r.ok?200:422);response.headers.set('Cache-Control','no-store');return response;
     }
     if(p==='/market/procurement/order'&&['GET','POST'].includes(request.method)){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await externalPurchase(this,book,{execute:request.method==='POST'});return reply(r,r.ok?200:422);}
     if(p==='/market/aave/status'&&request.method==='GET')return reply({...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
