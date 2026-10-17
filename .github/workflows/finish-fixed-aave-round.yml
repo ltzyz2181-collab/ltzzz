@@ -1,0 +1,43 @@
+name: Finish existing fixed Aave allocations
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['ops/dispatch/finish-fixed-aave-20261017.json']
+permissions: {contents: write}
+# Independent of the exchange's deposit-confirmation wait. The Worker serializes
+# signing and rejects a pending treasury nonce; all original intent IDs are reused.
+concurrency: {group: fixed-owner-aave-20261017, cancel-in-progress: false}
+jobs:
+  finish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts
+      - name: Resume the original committed allocations, not a new round
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ARM_REAL_ORDERS: '1'
+          FUNDED_CLAIMS_PERSISTED: '1'
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('knowledge/results/funded-invest/OWNER-FUNDED-20261017-01.json'));
+          if(p.order_id!=='OWNER-FUNDED-20261017-01'||p.web3.reduce((a,r)=>a+BigInt(r.amount_raw),0n)!==20000000n)throw Error('original_committed_round_required');
+          JS
+          export ARM_ACK="$(TZ=Asia/Shanghai date +%F)"
+          node scripts/funded-invest-executor.mjs --phase execute --venue web3 --agent all
+      - name: Preserve original-order outcomes and blockers
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/funded-invest/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Actual completion states for original fixed Aave allocations'
+          node tools/push-receipt-commit.mjs
