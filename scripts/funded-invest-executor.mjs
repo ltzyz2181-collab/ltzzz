@@ -41,7 +41,7 @@ async function execute(){
  round=JSON.parse(fs.readFileSync(roundFile,'utf8'));report.dispatch=round;
  // Purchase only the single fixed owner-authorized external order; its DO persists
  // the nonce and authorization before transmission and never buys on a retry.
- try{report.external_ai=await api('/market/procurement/order',{});for(let p=0;p<3&&['payment_submitted_unknown','delivery_received_payment_pending'].includes(report.external_ai.order?.status);p++){await new Promise(r=>setTimeout(r,3000));report.external_ai=await api('/market/procurement/order');}}catch{report.external_ai={status:'blocked_or_uncertain_query_existing_order_before_retry',paid:false,tx_hash:null};}report.model_calls=report.external_ai?.order?.model_generation_attempts||0;save();
+ try{report.external_ai=await api('/market/procurement/order',{});for(let p=0;p<3&&['payment_submitted_unknown','delivery_received_payment_pending'].includes(report.external_ai.order?.status);p++){await new Promise(r=>setTimeout(r,3000));report.external_ai=await api('/market/procurement/order');}}catch(error){report.external_ai={status:'blocked_or_uncertain_query_existing_order_before_retry',error:error.message,paid:false,tx_hash:null};}report.model_calls=report.external_ai?.order?.model_generation_attempts||0;save();
  if(venue!=='cex')for(const grant of round.web3.filter(g=>selected==='all'||g.id===selected)){
   if(BigInt(grant.amount_raw)<=0n){report.results.push({agent:grant.id,venue:'web3',status:'no_budget'});continue;}
   const input={intent_id:intentId(policy.order_id,grant.id),action:'supply',amount_usdc:grant.amount};
@@ -59,7 +59,7 @@ async function execute(){
  if(venue!=='web3'){
   let ready;try{ready=await spotReadiness(exchange);}catch{ready={ok:false,status:'okx_credentials_or_read_unavailable',missing_secret_triplet:!Object.values(okxCredentials()).every(Boolean)};}report.cex_readiness=ready;
   for(const grant of round.cex.filter(g=>selected==='all'||g.id===selected)){
-   const file=claimFile(grant.id);if(!ready.ok||!fs.existsSync(file)){report.results.push({agent:grant.id,venue:'okx_cash_spot',status:ready.status||'claim_not_prepared',paid:false,tx_hash:null});continue;}
+   const file=claimFile(grant.id);if(!ready.ok||!fs.existsSync(file)){report.results.push({agent:grant.id,venue:'okx_cash_spot',status:!ready.ok?ready.status:raw(ready.available_usdt,12)<raw(policy.cex.total_usdt,12)?'configured_OKX_trading_USDT_insufficient':'claim_not_prepared_or_below_minimum',paid:false,tx_hash:null});continue;}
    let record=JSON.parse(fs.readFileSync(file));try{record=await executeSpot(exchange,record,{freshLease:record.submission_lease===lease&&record.state==='submission_authorized',save:async r=>write(file,r)});}catch(error){record={...record,state:'blocked_or_unknown',error:error.message};write(file,record);}
    report.results.push({venue:'okx_cash_spot',...record});save();if(record.state.includes('unknown'))break;
   }

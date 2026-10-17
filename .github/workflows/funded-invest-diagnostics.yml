@@ -1,0 +1,33 @@
+name: Inspect existing funded round (no signing or purchases)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/inspect-funded-round.mjs','.github/workflows/funded-invest-diagnostics.yml']
+permissions: {contents: write}
+concurrency: {group: inspect-funded-round, cancel-in-progress: false}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Read original intents, external purchase and same-account balances
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+        run: node scripts/inspect-funded-round.mjs
+      - name: Preserve observed states
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/funded-invest/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Inspect existing funded order states without new money execution'
+          node tools/push-receipt-commit.mjs

@@ -150,7 +150,7 @@ export async function reconcileAaveTransactions(m,book){
   return {ok:true,status:'reconciliation_read_only',intent_id:i.id,...read.value,rpc_url:read.rpc_url,rpc_attempts:read.rpc_attempts,broadcast_history_unknown:read.value.transactions.some(t=>t.chain_status==='not_found_on_checked_rpc'),storage_changed:false,signed:false,on_chain_executed:false};
  }catch(e){return {ok:false,error:'base_rpc_reconciliation_failed',rpc_attempts:e.rpc_attempts||[],signed:false,on_chain_executed:false};}
 }
-export function publicAaveIntent(i){if(intentIssue(i,i?.id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),before:i.before||null,after:i.after||null,owner_return_executed:false};}
+export function publicAaveIntent(i){if(intentIssue(i,i?.id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),...(i.last_execution_error?{execution_diagnostic:i.last_execution_error}:{}),before:i.before||null,after:i.after||null,owner_return_executed:false};}
 export async function executeAave(m,book,input,{preview=false}={}){
  const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
  if(!record(input))return {ok:false,error:'invalid_intent'};
@@ -180,7 +180,7 @@ export async function executeAave(m,book,input,{preview=false}={}){
   await m.save(book);
  }
  if(executionIssue(i))return {ok:false,status:'blocked_reconciliation',error:'stored_execution_plan_mismatch',signed:false};
- let signedThisRequest=false;
+ let signedThisRequest=false,executionStage='signer_check';
  if(!m.env.TREASURY_EXECUTOR_KEY)return {ok:false,error:'treasury_signer_missing'};
  try{
  const w=new Wallet(m.env.TREASURY_EXECUTOR_KEY);if(w.address.toLowerCase()!==i.treasury.toLowerCase())return {ok:false,error:'treasury_signer_mismatch'};
@@ -189,8 +189,8 @@ export async function executeAave(m,book,input,{preview=false}={}){
   if(!step.raw){
    if(i.action==='supply'&&state.paused)return {ok:false,error:'supply_paused',...publicAaveIntent(i)};
    if(step.kind==='supply'){
-    const fresh=await aaveStatus(m,book);if(!fresh.ok)return fresh;const liabilities=BigInt((book.pool_available_cents||0)+(book.pool_reserved_cents||0)+Object.values(book.agent_credit_cents||{}).reduce((a,b)=>a+b,0))*10000n;
-    const floor=liabilities>5000000n?liabilities:5000000n,amount=BigInt(i.amount_raw);
+    executionStage='fresh_policy_read';const fresh=await aaveStatus(m,book);if(!fresh.ok)return fresh;
+    const floor=cashFloorRaw(book),amount=BigInt(i.amount_raw);
     const liveLimits=investmentLimits({...fresh,cash_floor_raw:floor.toString()});
     if(amount>liveLimits.single||BigInt(fresh.usdc_raw)-amount<floor||BigInt(fresh.ausdc_raw)+amount>liveLimits.exposure)return {ok:false,error:'latest_cash_or_exposure_limit',...publicAaveIntent(i)};
     const nowKeys=budgetKeys(Date.now()),limits={day:liveLimits.day,week:liveLimits.week,month:liveLimits.month};
@@ -198,7 +198,7 @@ export async function executeAave(m,book,input,{preview=false}={}){
     for(const k of ['day','week','month'])if(nowKeys[k]!==i.keys[k]){state.periods[k][i.keys[k]]=(BigInt(state.periods[k][i.keys[k]]||0)-amount).toString();state.periods[k][nowKeys[k]]=(BigInt(state.periods[k][nowKeys[k]]||0)+amount).toString();}i.keys=nowKeys;await m.save(book);
    }
    state.tx_times=(state.tx_times||[]).filter(t=>Date.now()-t<3600000);if(state.tx_times.length>=6)return {ok:false,error:'hourly_transaction_cap',...publicAaveIntent(i)};
-   const prepared=await withAaveReadProvider(async rpc=>{
+   executionStage='prepare_gas_and_nonce';const prepared=await withAaveReadProvider(async rpc=>{
     const fees=await rpc.getFeeData(),gas=await rpc.estimateGas({from:w.address,to:step.to,data:step.data}),fee=fees.maxFeePerGas||fees.gasPrice;
     if(!fee||gas*fee>20000000000000n)return {error:'gas_cap'};
     if(await rpc.getBalance(w.address)<gas*fee)return {error:'insufficient_eth_gas'};
@@ -207,9 +207,9 @@ export async function executeAave(m,book,input,{preview=false}={}){
    });
    if(prepared.value.error)return {ok:false,error:prepared.value.error,...publicAaveIntent(i)};
    const tx=prepared.value.tx;
-   step.raw=await w.signTransaction(tx);signedThisRequest=true;step.tx_hash=keccak256(step.raw);step.status='signed_not_confirmed';state.tx_times.push(Date.now());await m.save(book);
+   executionStage='sign_and_persist';step.raw=await w.signTransaction(tx);signedThisRequest=true;step.tx_hash=keccak256(step.raw);step.status='signed_not_confirmed';state.tx_times.push(Date.now());await m.save(book);
   }
-  const read=await withAaveReadProvider(async rpc=>{const receipt=await rpc.getTransactionReceipt(step.tx_hash);return {receipt,head:receipt?await rpc.getBlockNumber():null};});
+  executionStage='receipt_read';const read=await withAaveReadProvider(async rpc=>{const receipt=await rpc.getTransactionReceipt(step.tx_hash);return {receipt,head:receipt?await rpc.getBlockNumber():null};});
   const {receipt,head}=read.value;
   if(!receipt){if(i.action==='supply'&&state.paused)return {ok:false,error:'paused_no_rebroadcast',...publicAaveIntent(i)};const sent=await broadcastAaveRaw(step.raw,step.tx_hash);step.status=sent.submitted?'submitted':'broadcast_unknown';step.broadcast_attempts=sent.attempts;i.status='pending';await m.save(book);return {ok:true,confirmed:false,...publicAaveIntent(i)};}
   if(receipt.status!==1){step.status='failed';i.status='failed';state.active_intent=null;state.failures++;if(state.failures>=3)state.paused=true;if(i.action==='supply')for(const k of ['day','week','month'])state.periods[k][i.keys[k]]=(BigInt(state.periods[k][i.keys[k]])-BigInt(i.amount_raw)).toString();await m.save(book);return {ok:false,...publicAaveIntent(i)};}
@@ -220,7 +220,7 @@ export async function executeAave(m,book,input,{preview=false}={}){
  if(i.action==='supply'){state.principal_raw=(BigInt(state.principal_raw)+BigInt(i.amount_raw)).toString();state.first_supply_confirmed=true;}
  else{state.principal_raw=(BigInt(state.principal_raw)>BigInt(i.amount_raw)?BigInt(state.principal_raw)-BigInt(i.amount_raw):0n).toString();if(state.first_supply_confirmed&&(BigInt(i.amount_raw)>=1000000n||(BigInt(i.before.ausdc_raw)<1000000n&&BigInt(i.amount_raw)===BigInt(i.before.ausdc_raw))))state.exit_test_confirmed=true;}
  i.after=await aaveStatus(m,book);await m.save(book);return {ok:true,confirmed:true,...publicAaveIntent(i)};
- }catch{return {...publicAaveIntent(i),ok:false,status:'blocked_rpc',error:'aave_execution_requires_retry_or_reconciliation',signed_this_request:signedThisRequest,transaction_state:'preserved',owner_return_executed:false};}
+ }catch(error){i.last_execution_error={stage:executionStage,code:typeof error.code==='string'?error.code:null,rpc_attempts:error.rpc_attempts||[]};await m.save(book);return {...publicAaveIntent(i),execution_diagnostic:i.last_execution_error,ok:false,status:'blocked_rpc',error:'aave_execution_requires_retry_or_reconciliation',signed_this_request:signedThisRequest,transaction_state:'preserved',owner_return_executed:false};}
 }
 
 export async function autoAave(m,book,{preview=false}={}){
