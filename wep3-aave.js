@@ -1,6 +1,6 @@
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
-export const AAVE_RUNTIME_REVISION='aave-guard-v6';
+export const AAVE_RUNTIME_REVISION='aave-guard-v7';
 export const AAVE={chain_id:8453,pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',ausdc:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'};
 const ERC=['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function decimals() view returns(uint8)'];
 const AT=['function balanceOf(address) view returns(uint256)','function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)'];
@@ -39,7 +39,8 @@ export async function nativeRpcFetch(req){const response=await fetch(req.url,{me
 // subrequest budget before fallback. A single HTTP attempt belongs to each RPC.
 function aaveRpcRequest(url){const req=new FetchRequest(url);req.timeout=12000;req.setThrottleParams({maxAttempts:1});req.getUrlFunc=nativeRpcFetch;return req;}
 // Official RPC first; retry the complete read, not just eth_chainId.
-export const AAVE_RPC_URLS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com','https://1rpc.io/base','https://base.llamarpc.com'];
+// Tenderly Base endpoint source: https://tenderly.co/blog/changelog/tenderly-now-supports-base-mainnet-goerli-testnet/
+export const AAVE_RPC_URLS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com','https://1rpc.io/base','https://base.llamarpc.com','https://base.gateway.tenderly.co'];
 export async function withAaveReadProvider(read,makeProvider){
  const attempts=[];
  for(const url of AAVE_RPC_URLS){
