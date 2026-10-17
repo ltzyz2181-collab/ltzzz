@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-17T00:40:53.746Z",
+  "at": "2026-10-17T00:40:56.104Z",
   "run_id": "38987440255",
   "run_attempt": "1",
   "order_id": "OWNER-FUNDED-20261017-01",
@@ -11,10 +11,53 @@
   "paid": false,
   "tx_hash": null,
   "orders_submitted": 0,
-  "results": [],
+  "results": [
+    {
+      "agent": "gpt",
+      "venue": "aave_Base_USDC",
+      "intent_id": "INV-985360f41d83e919d157092a4a38d9d5b4651bda",
+      "amount_usdc": "4.539615",
+      "custody": "LTZZZ_treasury",
+      "paid": false,
+      "tx_hash": null,
+      "native_model_call": false,
+      "hypothesis": "Supply the reputation-allocated budget to Aave V3 Base without borrowing",
+      "exit_plan": "Withdraw through existing guarded executor back to LTZZZ treasury; no personal wallet or Safe involved",
+      "preview_status": "preview_only",
+      "status": "blocked_or_unknown_reconcile_same_intent",
+      "error": "wep3_http_422_aave_execution_requires_retry_or_reconciliation"
+    },
+    {
+      "agent": "gpt",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    },
+    {
+      "agent": "grok",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    },
+    {
+      "agent": "doubao",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    },
+    {
+      "agent": "deepseek",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    }
+  ],
   "network_context": "github_hosted_runner_no_vpn_step",
   "owner_no_vpn_verified": false,
-  "reused_frozen_dispatch": true,
   "dispatch": {
     "order_id": "OWNER-FUNDED-20261017-01",
     "source": "live_reputation_and_current_treasury",
@@ -168,10 +211,17 @@
     "created_at": "2026-10-17T00:35:43.790Z",
     "source_commit": "cc73d940d8b60808e4c9784625a6eb65d90dd9cf"
   },
+  "external_ai": {
+    "status": "blocked_or_uncertain_query_existing_order_before_retry",
+    "error": "wep3_http_422_treasury_busy_or_paused",
+    "paid": false,
+    "tx_hash": null
+  },
   "cex_readiness": {
-    "ok": false,
-    "status": "configured_OKX_account_insufficient_USDT",
+    "ok": true,
+    "status": "verified_configured_cash_account",
     "available_usdt": "0",
     "account_id_hash": "dc5657b650a7580e"
-  }
+  },
+  "execution_status": "completed_with_per_order_states"
 }
