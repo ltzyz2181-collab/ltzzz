@@ -53,6 +53,8 @@ async function execute(){
    let actual;
    if(confirmedAaveAllocation(prior,grant,input.intent_id)){actual=prior;result.preview_status='existing_confirmed_receipt_no_reexecution';}
    else{
+    const profilePath='config/owner-web3-readonly.json';
+    if(fs.existsSync(profilePath)){const profile=JSON.parse(fs.readFileSync(profilePath));if(profile.existing_round_id===policy.order_id&&profile.address?.toLowerCase()!==round.treasury.address.toLowerCase())throw Error('owner_requested_Web3_child_wallet_requires_its_own_funds_and_signer');}
     const preview=await api('/market/aave/preview',input);result.preview_status=preview.status;
     actual=await api('/market/aave/execute',input);
     for(let p=0;p<6&&['pending','pending_confirmations'].includes(actual.status);p++){result.relay=await relayPersisted({kind:'aave',intent_id:input.intent_id,amount_raw:grant.amount_raw,token});await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
