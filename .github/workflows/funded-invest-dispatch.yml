@@ -15,7 +15,7 @@ on:
         type: boolean
         default: false
   pull_request:
-    paths: ['wep3-worker.js','wep3-market.js','scripts/lib/wep3-runtime-readiness.mjs','scripts/tests/wep3-runtime-readiness.test.mjs','.github/workflows/deploy-wep3.yml','scripts/funded-invest-executor.mjs','scripts/lib/funded-invest-runtime.mjs','scripts/lib/okx-funded-spot.mjs','wep3-procurement.js','wep3-cash-liabilities.js','policy/funded-owner-round-20261017.json','scripts/tests/funded-invest.test.mjs','scripts/tests/wep3-procurement.test.mjs','.github/workflows/funded-invest-dispatch.yml']
+    paths: ['wep3-okx-funding.js','scripts/fund-okx-owner-round.mjs','scripts/lib/okx-capital-funding.mjs','scripts/tests/okx-capital-funding.test.mjs','wep3-worker.js','wep3-market.js','scripts/lib/wep3-runtime-readiness.mjs','scripts/tests/wep3-runtime-readiness.test.mjs','.github/workflows/deploy-wep3.yml','scripts/funded-invest-executor.mjs','scripts/lib/funded-invest-runtime.mjs','scripts/lib/okx-funded-spot.mjs','wep3-procurement.js','wep3-cash-liabilities.js','policy/funded-owner-round-20261017.json','scripts/tests/funded-invest.test.mjs','scripts/tests/wep3-procurement.test.mjs','.github/workflows/funded-invest-dispatch.yml']
   push:
     branches: [main]
     paths: ['policy/funded-owner-round-20261017.json','ops/dispatch/funded-round-resume-20261017.json']
@@ -38,7 +38,7 @@ jobs:
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts
       - run: node --check scripts/funded-invest-executor.mjs && node --check wep3-procurement.js
-      - run: node --test scripts/tests/funded-invest.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/external-procurement-preflight.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs
+      - run: node --test scripts/tests/okx-capital-funding.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/funded-invest.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/external-procurement-preflight.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs
   dispatch:
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -71,9 +71,25 @@ jobs:
           node --input-type=module <<'JS'
           import {wep3Request} from './scripts/lib/funded-invest-runtime.mjs';
           const until=Date.now()+600000;let ready=false;
-          while(Date.now()<until){try{const r=await wep3Request('/market/procurement/order',{token:process.env.WEP3_RUNNER_TOKEN});if(r.revision==='external-purchase-v3'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}
+          while(Date.now()<until){try{const r=await wep3Request('/market/procurement/order',{token:process.env.WEP3_RUNNER_TOKEN});if(r.revision==='external-purchase-v4'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}
           if(!ready)throw Error('restricted_purchase_executor_not_deployed');
           JS
+      - name: Fund only the fixed verified OKX account within the original 20U budget
+        if: env.ARM_REAL_ORDERS == '1'
+        env:
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          node --input-type=module <<'JS'
+          import {wep3Request} from './scripts/lib/funded-invest-runtime.mjs';
+          const until=Date.now()+600000;let ready=false;
+          while(Date.now()<until){try{const r=await wep3Request('/market/okx/funding',{token:process.env.WEP3_RUNNER_TOKEN});if(r.revision==='okx-funding-v1'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}
+          if(!ready)throw Error('restricted_OKX_funding_executor_not_deployed');
+          JS
+          node scripts/fund-okx-owner-round.mjs
       - name: Prepare live reputation allocations and fixed exchange client IDs
         env:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}

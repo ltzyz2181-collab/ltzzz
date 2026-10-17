@@ -1,0 +1,34 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {Wallet,Interface,keccak256} from 'ethers';
+import {fundOKX,publicFunding,fundingTransferProof,OKX_FUNDING as P} from '../../wep3-okx-funding.js';
+import {AAVE,executeAave} from '../../wep3-aave.js';import {cashFloorRaw} from '../../wep3-cash-liabilities.js';
+import {capitalClient,capitalOnce,conversionOrder,TRANSFER_ID,CONVERSION_ID} from '../lib/okx-capital-funding.mjs';
+const w=Wallet.createRandom(),erc=new Interface(['function transfer(address,uint256) returns(bool)','event Transfer(address indexed from,address indexed to,uint256 value)']);
+const verified={account_hash:P.account_hash,chain:P.chain,address:P.address,asset:AAVE.usdc,canDep:true,checked_at:Date.now()};
+const m={env:{X402_RECEIVE_ADDRESS:w.address,TREASURY_EXECUTOR_KEY:w.privateKey},save:async()=>{}};
+const statusReader=async()=>({ok:true,address:w.address,usdc_raw:'100000000'});
+test('funding readiness has no signer, RPC or network side effects',async()=>{const r=await fundOKX({},{});assert.equal(r.revision,'okx-funding-v1');assert.equal(r.order,null);});
+test('unverified recipients, stale evidence, active Aave and cash liabilities stop before signing',async()=>{
+ for(const v of [null,{...verified,address:w.address},{...verified,chain:'USDC-ERC20'},{...verified,checked_at:1},{...verified,account_hash:'wrong'}])assert.equal((await fundOKX(m,{}, {execute:true,verifiedDestination:v,statusReader})).error,'fresh_authenticated_OKX_destination_required');
+ assert.equal((await fundOKX(m,{aave:{active_intent:'pending'}},{execute:true})).error,'aave_intent_pending_before_funding');
+ const r=await fundOKX(m,{}, {execute:true,verifiedDestination:verified,statusReader:async()=>({ok:true,address:w.address,usdc_raw:'24999999'})});assert.equal(r.error,'funding_cash_reserve');
+});
+test('funding raw transaction stays private and replay confirms a fixed transfer without signing or another broadcast',async()=>{
+ const raw=await w.signTransaction({chainId:8453,to:AAVE.usdc,data:erc.encodeFunctionData('transfer',[P.address,20000000n]),nonce:1,gasLimit:60000,maxFeePerGas:1000000n,maxPriorityFeePerGas:1n,value:0n,type:2});
+ const o={id:P.id,amount_raw:P.amount_raw,destination:P.address,treasury:w.address,raw,tx_hash:keccak256(raw),status:'pending'},book={okx_funding:o};const event=erc.encodeEventLog(erc.getEvent('Transfer'),[w.address,P.address,20000000n]),receipt={hash:o.tx_hash,status:1,blockNumber:50,logs:[{address:AAVE.usdc,...event}]};
+ const r=await fundOKX(m,book,{execute:true,readProvider:async()=>({value:{receipt,head:53}}),broadcast:async()=>{throw Error('must not broadcast')}});assert.equal(r.order.status,'confirmed');assert.equal(JSON.stringify(r).includes(raw),false);assert.equal(JSON.stringify(r).includes(w.privateKey),false);assert.equal(book.ledger[0].revenue,false);assert.equal(book.ledger[0].investment_executed,false);
+ await fundOKX({},book,{execute:true});assert.equal(book.ledger.length,1);assert.equal(fundingTransferProof({...receipt,status:0},o),false);assert.equal(fundingTransferProof({...receipt,logs:[]},o),false);
+});
+test('pending funding reserves cash and prevents new Aave nonce use',async()=>{const b={okx_funding:{amount_raw:'20000000',status:'pending'}};assert.equal(cashFloorRaw(b),20000000n);assert.equal((await executeAave({},b,{})).error,'okx_funding_pending_nonce_reserved');assert.deepEqual(publicFunding({raw:'hidden',status:'pending'}),{status:'pending'});});
+test('capital adapter only accepts the fixed same-account transfer and bounded USDC conversion',async()=>{
+ let calls=0;const c=capitalClient({key:'k',secret:'s',pass:'p'},{fetcher:async()=>{calls++;return Response.json({code:'0',data:[]});}}),body={ccy:'USDC',amt:'20',from:'6',to:'18',type:'0',clientId:TRANSFER_ID};
+ for(const [path,b] of [['/api/v5/asset/withdrawal',body],['/api/v5/asset/transfer',{...body,to:'6'}],['/api/v5/asset/transfer',{...body,amt:'21'}],['/api/v5/asset/transfer',{...body,subAcct:'x'}]])await assert.rejects(c('POST',path,b),/forbidden/);
+ await c('POST','/api/v5/asset/transfer',body);assert.equal(calls,1);
+});
+test('conversion enforces cash IOC, integer lots, peg and price floor',()=>{const i={instId:'USDC-USDT',state:'live',tickSz:'0.0001',lotSz:'0.01',minSz:'1'},t={instId:'USDC-USDT',bidPx:'1'};const r=conversionOrder(i,t);assert.equal(r.sz,'20');assert.equal(r.px,'0.995');assert.equal(r.clOrdId,CONVERSION_ID);assert.throws(()=>conversionOrder(i,{...t,bidPx:'0.9'}),/bound/);});
+test('uncertain internal transfer is persisted before POST and retries only look up its client ID',async()=>{
+ const states=[],calls=[],record={state:'submission_authorized',lease:'run1',path:'/api/v5/asset/transfer',request:{}};
+ const client=async(method)=>{calls.push(method);if(method==='POST')throw Error('lost');return {ok:false,code:'unknown',data:[]}};
+ await capitalOnce(client,record,{lease:'run1',persist:async r=>states.push(r.state)});assert.equal(states[0],'submission_started');assert.equal(record.state,'submission_unknown');
+ await capitalOnce(client,record,{lease:'run2',persist:async()=>{}});assert.deepEqual(calls,['POST','GET']);
+});
+test('transfer reconciliation cannot credit another account or another amount',async()=>{const r={state:'submission_unknown',path:'/api/v5/asset/transfer',request:{}};await assert.rejects(capitalOnce(async()=>({ok:true,data:[{clientId:TRANSFER_ID,ccy:'USDC',from:'6',to:'6',amt:'20',state:'success'}]}),r,{lease:'x',persist:async()=>{}}),/identity/);});
