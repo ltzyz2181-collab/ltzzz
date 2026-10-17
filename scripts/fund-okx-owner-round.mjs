@@ -1,0 +1,27 @@
+import {relayPersisted} from './lib/wep3-signed-relay.mjs';
+import fs from 'node:fs';import {execFileSync} from 'node:child_process';
+import {okxCredentials,okxClient} from './lib/okx-funded-spot.mjs';
+import {verifyDestination,capitalClient,capitalOnce,conversionOrder,FUND_ID,TRANSFER_ID} from './lib/okx-capital-funding.mjs';
+import {wep3Request,runnerToken,raw,decimal,allocate} from './lib/funded-invest-runtime.mjs';
+const root='knowledge/results/funded-invest',run=process.env.GITHUB_RUN_ID||'local',lease=run+'-'+(process.env.GITHUB_RUN_ATTEMPT||'1'),file=root+'/okx-funding-'+run+'.json';fs.mkdirSync(root,{recursive:true});
+const report={at:new Date().toISOString(),funding_id:FUND_ID,run_id:run,model_calls:0,exchange_orders:[],status:'inspection_only'};const write=(p,v)=>fs.writeFileSync(p,JSON.stringify(v,null,2)+'\n');
+const read=okxClient(okxCredentials()),client=capitalClient(okxCredentials()),api=(path,body)=>wep3Request(path,{body,token:runnerToken()});
+const pause=()=>new Promise(r=>setTimeout(r,5000));
+async function claim(kind,request,path){const p=root+'/'+FUND_ID+'-'+kind+'.json';if(fs.existsSync(p))return {record:JSON.parse(fs.readFileSync(p)),p};const record={id:FUND_ID,kind,request,path,state:'submission_authorized',lease};write(p,record);persist(p);return {record,p};}
+function persist(p){if(process.env.GITHUB_ACTIONS!=='true')throw Error('capital_claim_requires_GitHub_durable_commit');execFileSync('git',['add','--',p],{stdio:'ignore'});try{execFileSync('git',['diff','--cached','--quiet']);return;}catch{}execFileSync('git',['-c','user.name=ltzzz-bot','-c','user.email=bot@ltzzz.com','commit','-m','Persist fixed OKX capital operation before submission'],{stdio:'ignore'});execFileSync(process.execPath,['tools/push-receipt-commit.mjs'],{stdio:'ignore'});}
+try{
+ const config=await read('GET','/api/v5/account/config'),networks=await read('GET','/api/v5/asset/currencies?ccy=USDC'),addresses=await read('GET','/api/v5/asset/deposit-address?ccy=USDC');const verified=verifyDestination(config,networks,addresses);report.destination=verified;
+ if(process.env.ARM_REAL_ORDERS!=='1'){report.status='verified_destination_no_funds_submitted';}
+ else{
+  const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());if(process.env.ARM_ACK!==day)throw Error('funding_day_ack_missing');
+  let r=await api('/market/okx/funding',{verified_destination:verified});for(let i=0;i<6&&r.order?.status!=='confirmed';i++){report.relay=await relayPersisted({kind:'okx',token:runnerToken()});await pause();r=await api('/market/okx/funding',{});}report.deposit=r.order;report.confirmed_capital_transfers=r.order?.status==='confirmed'?1:0;if(r.order?.status!=='confirmed')throw Error('OKX_treasury_deposit_not_confirmed');
+  let credited;for(let i=0;i<24;i++){const h=await read('GET','/api/v5/asset/deposit-history?ccy=USDC&txId='+r.order.tx_hash);credited=h.ok&&h.data.find(a=>a.txId?.toLowerCase()===r.order.tx_hash.toLowerCase()&&a.to?.toLowerCase()===verified.address&&a.chain==='USDC-Base'&&a.ccy==='USDC'&&raw(a.amt)===20000000n&&a.state==='2');if(credited)break;await pause();}if(!credited)throw Error('OKX_exchange_credit_pending');report.credit={txId:credited.txId,amt:credited.amt,state:credited.state};
+  const transfer=await claim('transfer',{ccy:'USDC',amt:'20',from:'6',to:'18',type:'0',clientId:TRANSFER_ID},'/api/v5/asset/transfer');
+  // Exactly six fields are used by this owner-local transfer; no subaccount or recipient parameter.
+  report.transfer=await capitalOnce(client,transfer.record,{lease,persist:async v=>{write(transfer.p,v);persist(transfer.p);}});if(report.transfer.state!=='confirmed')throw Error('OKX_internal_transfer_pending_or_rejected');
+  const market=await read('GET','/api/v5/public/instruments?instType=SPOT&instId=USDC-USDT',undefined,{publicRead:true}),ticker=await read('GET','/api/v5/market/ticker?instId=USDC-USDT',undefined,{publicRead:true});if(!market.ok||!ticker.ok)throw Error('OKX_conversion_market_unavailable');
+  const c=await claim('conversion',conversionOrder(market.data[0],ticker.data[0]),'/api/v5/trade/order');report.conversion=await capitalOnce(client,c.record,{lease,persist:async v=>{write(c.p,v);persist(c.p);}});if(report.conversion.state!=='confirmed')throw Error('OKX_conversion_pending_or_rejected');
+  const roundFile=root+'/OWNER-FUNDED-20261017-01.json',round=JSON.parse(fs.readFileSync(roundFile));if(!round.cex_funding_budget_usdt){if(round.cex.some(s=>fs.existsSync(root+'/'+round.order_id+'-cex-'+s.id+'.json')))throw Error('OKX_existing_trade_claims_cannot_reallocate');const net=raw(report.conversion.net_usdt,12),budget=(net>20000000000000n?20000000000000n:net)/1000000n;if(budget<=0n)throw Error('OKX_no_conversion_proceeds');round.cex_funding_budget_usdt=decimal(budget);round.cex=allocate(round.scores,budget);write(roundFile,round);persist(roundFile);}report.budget_usdt=round.cex_funding_budget_usdt;report.status='funded_and_ready_for_per_seat_cash_orders';
+ }
+}catch(error){report.status='blocked_or_pending';report.error=/^[A-Za-z0-9_-]+$/.test(error.message)?error.message:'capital_transport_or_persistence_error';}
+write(file,report);console.log(JSON.stringify({file,status:report.status,error:report.error,tx_hash:report.deposit?.tx_hash,transfer_state:report.transfer?.state,conversion_state:report.conversion?.state,budget_usdt:report.budget_usdt}));

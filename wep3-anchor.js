@@ -1,5 +1,6 @@
 import {Wallet,JsonRpcProvider,keccak256} from 'ethers';
 export async function anchorSnapshot(m,book,snapshot){
+ if(book.aave?.active_intent||(book.okx_funding&&!['confirmed','failed'].includes(book.okx_funding.status)))return {ok:true,status:'treasury_nonce_reserved',on_chain:false,tx_hash:null};
  book.anchors||={};const week=Math.floor(Date.now()/(7*86400000));
  if(!snapshot.receipts.length)return {ok:true,status:'no_live_receipts',on_chain:false,tx_hash:null};
  if(!m.env.TREASURY_EXECUTOR_KEY)return {ok:true,status:'treasury_signer_missing',on_chain:false,tx_hash:null};

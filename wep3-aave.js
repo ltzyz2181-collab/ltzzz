@@ -151,7 +151,13 @@ export async function reconcileAaveTransactions(m,book){
  }catch(e){return {ok:false,error:'base_rpc_reconciliation_failed',rpc_attempts:e.rpc_attempts||[],signed:false,on_chain_executed:false};}
 }
 export function publicAaveIntent(i){if(intentIssue(i,i?.id))return {ok:false,error:'malformed_intent_requires_reconciliation',status:'blocked_reconciliation',signed:false};return {intent_id:i.id,action:i.action,amount_usdc:formatUnits(i.amount_raw,6),status:i.status,chain_id:8453,treasury:i.treasury,steps:i.steps.map(({raw,data,...s})=>s),...(i.last_execution_error?{execution_diagnostic:i.last_execution_error}:{}),before:i.before||null,after:i.after||null,owner_return_executed:false};}
+export function aaveRelay(book,id){
+ const state=book.aave,i=state?.intents?.[id];if(!i||state.active_intent!==id||state.paused||i.action!=='supply'||executionIssue(i))return {ok:false,error:'relay_no_valid_pending_supply'};
+ const step=i.steps.find(s=>s.raw&&s.status!=='confirmed');if(!step)return {ok:true,status:'no_pending_signed_transaction'};storedAaveTransaction(step,i);
+ return {ok:true,intent_id:i.id,amount_raw:i.amount_raw,step_kind:step.kind,tx_hash:step.tx_hash,raw:step.raw};
+}
 export async function executeAave(m,book,input,{preview=false}={}){
+ if(book.okx_funding&&!['confirmed','failed'].includes(book.okx_funding.status))return {ok:false,error:'okx_funding_pending_nonce_reserved'};
  const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
  if(!record(input))return {ok:false,error:'invalid_intent'};
  if(Object.keys(input).some(k=>!['intent_id','action','amount_usdc'].includes(k)))return {ok:false,error:'arbitrary_transaction_parameters_forbidden'};
