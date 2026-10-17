@@ -23,3 +23,10 @@ export function intentId(order,agent){return 'INV-'+crypto.createHash('sha256').
 export function clientOrderId(order,agent){return 'lz'+crypto.createHash('sha256').update(order+'|cex|'+agent).digest('hex').slice(0,28);}
 export async function wep3Request(path,{body,token,fetcher=fetch}={}){const response=await fetcher(BASE+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Lab-Pin':token||''},body:body?JSON.stringify(body):undefined,redirect:'error',signal:AbortSignal.timeout(120000)});let data;try{data=await response.json();}catch{throw Error('wep3_non_json_http_'+response.status);}if(!response.ok||!data.ok)throw Error('wep3_http_'+response.status+'_'+String(data.error||data.status||'failed').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,100));return data;}
 export function runnerToken(env=process.env){return env.WEP3_RUNNER_TOKEN||(env.CLOUDFLARE_API_TOKEN?crypto.createHmac('sha256',env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex'):'');}
+
+export function confirmedAaveAllocation(record,grant,expectedIntent){
+ if(record?.status!=='confirmed')return false;
+ const step=record.steps?.find(s=>s.kind==='supply');
+ if(record.intent_id!==expectedIntent||record.action!=='supply'||record.chain_id!==8453||record.treasury?.toLowerCase()!==TREASURY.toLowerCase()||raw(record.amount_usdc)!==BigInt(grant.amount_raw)||step?.status!=='confirmed'||step.receipt_status!==1||!/^0x[0-9a-fA-F]{64}$/.test(step.tx_hash||''))throw Error('confirmed_Aave_allocation_identity_mismatch');
+ return true;
+}

@@ -3,7 +3,7 @@ import {relayPersisted} from './lib/wep3-signed-relay.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
-import {buildDispatch,runnerToken,wep3Request,intentId,raw,SEATS} from './lib/funded-invest-runtime.mjs';
+import {buildDispatch,runnerToken,wep3Request,intentId,raw,SEATS,confirmedAaveAllocation} from './lib/funded-invest-runtime.mjs';
 import {okxCredentials,okxClient,spotOrder,spotReadiness,executeSpot} from './lib/okx-funded-spot.mjs';
 const {values}=parseArgs({options:{venue:{type:'string',default:'all'},agent:{type:'string',default:'all'},phase:{type:'string',default:'run'}},strict:true});
 const venues={all:'all',web3:'web3',defi:'web3',okx_web3_defi:'web3',cex:'cex',okx:'cex',okx_cex:'cex'};
@@ -49,9 +49,14 @@ async function execute(){
   const input={intent_id:intentId(policy.order_id,grant.id),action:'supply',amount_usdc:grant.amount};
   const result={agent:grant.id,venue:'aave_Base_USDC',intent_id:input.intent_id,amount_usdc:grant.amount,custody:'LTZZZ_treasury',paid:false,tx_hash:null,native_model_call:false,hypothesis:'Supply the reputation-allocated budget to Aave V3 Base without borrowing',exit_plan:'Withdraw through existing guarded executor back to LTZZZ treasury; no personal wallet or Safe involved'};
   try{
-   const preview=await api('/market/aave/preview',input);result.preview_status=preview.status;
-   let actual=await api('/market/aave/execute',input);
-   for(let p=0;p<6&&['pending','pending_confirmations'].includes(actual.status);p++){result.relay=await relayPersisted({kind:'aave',intent_id:input.intent_id,amount_raw:grant.amount_raw,token});await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
+   let prior;try{prior=await api('/market/aave/intent?id='+input.intent_id);}catch(error){if(error.message!=='wep3_http_404_intent_missing')throw error;}
+   let actual;
+   if(confirmedAaveAllocation(prior,grant,input.intent_id)){actual=prior;result.preview_status='existing_confirmed_receipt_no_reexecution';}
+   else{
+    const preview=await api('/market/aave/preview',input);result.preview_status=preview.status;
+    actual=await api('/market/aave/execute',input);
+    for(let p=0;p<6&&['pending','pending_confirmations'].includes(actual.status);p++){result.relay=await relayPersisted({kind:'aave',intent_id:input.intent_id,amount_raw:grant.amount_raw,token});await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
+   }
    result.receipt=actual;const supply=actual.steps?.find(s=>s.kind==='supply');
    if(actual.status==='confirmed'&&supply?.tx_hash&&supply.status==='confirmed'){Object.assign(result,{status:'confirmed',paid:true,on_chain_executed:true,tx_hash:supply.tx_hash,settlement_type:'Aave_supply'});report.confirmed_investment_orders++;}
    else result.status='pending_or_unknown_reconcile_same_intent';
