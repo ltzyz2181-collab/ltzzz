@@ -5,8 +5,16 @@ for(const [label,path] of [['runtime_state','/market/runtime-state'],['okx_capit
 }
 const okx=okxClient(okxCredentials());
 try{const r=await okx('GET','/api/v5/asset/transfer-state?clientId=lzfund20261017001&type=0');report.original_internal_transfer_lookup={ok:r.ok,http:r.http,code:r.code,data:r.ok?r.data.map(a=>Object.fromEntries(['clientId','transId','ccy','from','to','amt','state'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]]))):[]};}catch(error){report.original_internal_transfer_lookup={ok:false,error:error.message};}
-for(const [label,path] of [['trading_balances','/api/v5/account/balance?ccy=USDT,USDC'],['funding_balances','/api/v5/asset/balances?ccy=USDT,USDC']]){
+for(const [label,path] of [['trading_balances','/api/v5/account/balance?ccy=USDT,USDC,BTC'],['funding_balances','/api/v5/asset/balances?ccy=USDT,USDC']]){
  try{const r=await okx('GET',path);report[label]={http:r.http,code:r.code,ok:r.ok,balances:r.ok?(label==='trading_balances'?(r.data[0]?.details||[]).map(a=>({currency:a.ccy,available:a.availBal,equity:a.eq})):r.data.map(a=>({currency:a.ccy,available:a.availBal,balance:a.bal}))):[]};}catch(error){report[label]={ok:false,error:error.message};}
+}
+// Independently read each original exchange client ID after submission. A filled
+// order needs no replacement, deposit or model request to be verified again.
+report.original_cash_orders=[];
+for(const seat of Object.keys(SEATS)){
+ const p='knowledge/results/funded-invest/'+policy.order_id+'-cex-'+seat+'.json';if(!fs.existsSync(p))continue;
+ const claim=JSON.parse(fs.readFileSync(p));
+ try{const r=await okx('GET','/api/v5/trade/order?instId=BTC-USDT&clOrdId='+claim.request.clOrdId);report.original_cash_orders.push({seat,client_id:claim.request.clOrdId,ok:r.ok,http:r.http,code:r.code,data:r.ok?r.data.map(a=>Object.fromEntries(['instId','clOrdId','ordId','tdMode','side','ordType','state','sz','px','accFillSz','avgPx','fee','feeCcy'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]]))):[]});}catch(error){report.original_cash_orders.push({seat,ok:false,error:error.message});}
 }
 const deposit=report.inspections.find(x=>x.label==='okx_capital_transfer')?.result?.order;
 if(deposit?.tx_hash){try{const r=await okx('GET','/api/v5/asset/deposit-history?ccy=USDC&txId='+deposit.tx_hash+'&after='+Date.now());report.exchange_deposit_history={ok:r.ok,http:r.http,code:r.code,data:r.ok?r.data.filter(a=>a.txId?.toLowerCase()===deposit.tx_hash.toLowerCase()).map(a=>Object.fromEntries(['ccy','chain','amt','to','txId','state','actualDepBlkConfirm','ts'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]]))):[]};}catch(error){report.exchange_deposit_history={ok:false,error:error.message};}}
