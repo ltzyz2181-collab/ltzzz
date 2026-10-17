@@ -1,6 +1,6 @@
 import {Transaction,Interface,keccak256} from 'ethers';
 import {wep3Request,TREASURY} from './funded-invest-runtime.mjs';
-const RPCS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com','https://1rpc.io/base','https://base.llamarpc.com'];
+const RPCS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com','https://1rpc.io/base','https://base.llamarpc.com','https://base.gateway.tenderly.co'];
 const pool='0xa238dd80c259a72e81d7e4664a9801593f98d1c5',usdc='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
 const abi=new Interface(['function supply(address,uint256,address,uint16)','function approve(address,uint256)','function transfer(address,uint256)']);
 export function validateRelay(r,{kind,intent_id,amount_raw}){
