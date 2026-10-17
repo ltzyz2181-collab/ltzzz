@@ -22,10 +22,15 @@ The external service uses one fixed order `EXT-AI-20261017-001`. The GitHub runn
 
 OKX permission rejection is recorded, not silently converted into success. A future run must reconcile existing IDs. Unknown submissions cannot be replaced. If a request was explicitly rejected, the record remains rejected until a reviewed recovery is provided. Enabling account-transfer permission alone is not evidence that a transfer occurred.
 
-The existing daily cron remains dry-run. This change adds no repeating paid model or investment schedule. GitHub runner execution is not proof of the owner's Windows computer working without VPN.
+The existing daily cron keeps new investment proposals in dry-run. It may resume only the original exchange claims backed by the already-confirmed fixed20USDC capital transfer; it cannot bootstrap another deposit or request paid model generation. This adds no new investment round, capital budget or paid model schedule. GitHub runner execution is not proof of the owner's Windows computer working without VPN.
 
 ## Dual RPC reconciliation sensor
 
 When the Worker cannot read an already-signed Aave receipt but the GitHub runner can, the runner can submit agreeing observations from two different pinned RPC hosts. The dedicated runner identity is required; the generic owner PIN cannot impersonate this sensor. The Worker checks current stored intent/signature, hash/from/to, chain8453, the same block hash/status, freshness and at least three block heights including the receipt block before saving a compact sensor receipt. Existing execution code then consumes that receipt exactly once and performs its existing principal/period closeout. The sensor cannot create an intent, sign a transaction, alter amounts, expand a budget, or choose a destination. Disagreement or missing observations preserves the pending state.
 
 Trust boundary: GitHub Actions is an authorized deterministic observation service and its existing runner credential must remain private. Two RPC JSON responses are provider observations, not a cryptographic state proof. No model-generated result is accepted as a sensor receipt. Signed transaction hashes bind the observations to the original transaction bytes; financial plan/signature checks remain in the Worker.
+
+
+## Existing daily inspection: resume confirmed original exchange capital
+
+A new scheduled investment is not authorized. The existing04:00UTC inspection can continue the already-authorized original exchange claims only when the fixed20USDC treasury deposit is confirmed and its frozen account/destination/hash/chain match. It uses a GET-only confirmed-deposit mode, so it cannot initiate a fresh treasury transfer. It waits for authenticated exchange credit, then completes same-account transfer/conversion and the original cash IOC client IDs within actual net proceeds. All terminal per-seat records stop recovery. Missing, changed or unconfirmed capital stops before execution; unknown or rejected submissions remain blocked rather than issuing replacement orders. The external order is only read/reconciled, never purchased by this scheduled continuation.
