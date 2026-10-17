@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
 import {buildDispatch,runnerToken,wep3Request,intentId,raw,SEATS,confirmedAaveAllocation} from './lib/funded-invest-runtime.mjs';
-import {okxCredentials,okxClient,spotOrder,spotReadiness,executeSpot} from './lib/okx-funded-spot.mjs';
+import {okxCredentials,okxClient,spotOrder,spotReadiness,executeSpot,recoverPriceBandRejection} from './lib/okx-funded-spot.mjs';
 const {values}=parseArgs({options:{venue:{type:'string',default:'all'},agent:{type:'string',default:'all'},phase:{type:'string',default:'run'}},strict:true});
 const venues={all:'all',web3:'web3',defi:'web3',okx_web3_defi:'web3',cex:'cex',okx:'cex',okx_cex:'cex'};
 if(!venues[values.venue]||!['run','prepare','execute'].includes(values.phase)||(values.agent!=='all'&&!SEATS[values.agent])){console.error('invalid_executor_arguments');process.exit(2);}
@@ -28,11 +28,11 @@ async function prepare(){
  if(!fs.existsSync(roundFile))write(roundFile,round);
  if(venue!=='web3'&&report.cex_readiness.ok){
   if(raw(report.cex_readiness.available_usdt,12)<raw(round.cex_funding_budget_usdt||policy.cex.total_usdt,12)){report.cex_readiness={...report.cex_readiness,ok:false,status:'configured_OKX_account_insufficient_USDT'};save();return;}
-  const [i,t]=await Promise.all([exchange('GET','/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT',undefined,{publicRead:true}),exchange('GET','/api/v5/market/ticker?instId=BTC-USDT',undefined,{publicRead:true})]);
-  if(!i.ok||!t.ok)throw Error('okx_market_read_failed');
+  const [i,t,b]=await Promise.all([exchange('GET','/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT',undefined,{publicRead:true}),exchange('GET','/api/v5/market/ticker?instId=BTC-USDT',undefined,{publicRead:true}),exchange('GET','/api/v5/public/price-limit?instId=BTC-USDT',undefined,{publicRead:true})]);
+  if(!i.ok||!t.ok||!b.ok||!b.data[0])throw Error('okx_market_or_price_band_read_failed');report.cex_price_band=b.data[0];
   for(const grant of round.cex.filter(g=>selected==='all'||g.id===selected)){
-   if(fs.existsSync(claimFile(grant.id)))continue;
-   try{const request=spotOrder({orderId:policy.order_id,agent:grant.id,budget:grant.amount,instrument:i.data[0],ticker:t.data[0],policy:policy.cex});write(claimFile(grant.id),{agent:grant.id,budget_usdt:grant.amount,score:grant.score,request,order_round:policy.order_id,state:'submission_authorized',submission_lease:lease,custody:'configured_OKX_account',trade_executed:false,paid:false,tx_hash:null,hypothesis:'Bounded cash BTC spot exposure, no leverage; experiment may lose value',exit_plan:'No lock-up; same-account cash sale can close. No automated stop-loss or profit guarantee is claimed.'});}catch(error){report.results.push({agent:grant.id,venue:'cex',status:'not_prepared',error:error.message});}
+   if(fs.existsSync(claimFile(grant.id))){const record=JSON.parse(fs.readFileSync(claimFile(grant.id)));if(record.state==='rejected'&&record.order_code==='51137'&&process.env.REPRICE_REJECTED_OKX==='owner-fixed-price-band-v1'){const request=spotOrder({orderId:policy.order_id,agent:grant.id,budget:grant.amount,instrument:i.data[0],ticker:t.data[0],priceLimit:b.data[0],policy:policy.cex});await recoverPriceBandRejection(exchange,record,{authorization:process.env.REPRICE_REJECTED_OKX,request,lease,save:async r=>write(claimFile(grant.id),r)});}continue;}
+   try{const request=spotOrder({orderId:policy.order_id,agent:grant.id,budget:grant.amount,instrument:i.data[0],ticker:t.data[0],priceLimit:b.data[0],policy:policy.cex});write(claimFile(grant.id),{agent:grant.id,budget_usdt:grant.amount,score:grant.score,request,order_round:policy.order_id,state:'submission_authorized',submission_lease:lease,custody:'configured_OKX_account',trade_executed:false,paid:false,tx_hash:null,hypothesis:'Bounded cash BTC spot exposure, no leverage; experiment may lose value',exit_plan:'No lock-up; same-account cash sale can close. No automated stop-loss or profit guarantee is claimed.'});}catch(error){report.results.push({agent:grant.id,venue:'cex',status:'not_prepared',error:error.message});}
   }
  }
  report.execution_status='prepared_claims_require_persistence';save();

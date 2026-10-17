@@ -70,6 +70,7 @@ jobs:
             const marker=JSON.parse(fs.readFileSync('ops/dispatch/funded-round-resume-20261017.json'));
             if(marker.venue==='cex'&&marker.order_id==='OWNER-FUNDED-20261017-01'&&marker.new_round_budget==='0')fs.appendFileSync(process.env.GITHUB_ENV,'SELECTED_VENUE=cex\nEXTERNAL_RECONCILE_ONLY=1\n');
             if(marker.permission_recovery==='owner-confirmed-20261017')fs.appendFileSync(process.env.GITHUB_ENV,'OKX_PERMISSION_RECOVERY=owner-confirmed-20261017\n');
+            if(marker.price_band_recovery==='owner-fixed-price-band-v1')fs.appendFileSync(process.env.GITHUB_ENV,'REPRICE_REJECTED_OKX=owner-fixed-price-band-v1\n');
           }
           JS
       - name: Wait for restricted external-purchase executor deployment, no payment
