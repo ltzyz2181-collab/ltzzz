@@ -1,0 +1,66 @@
+name: WorkBuddy video queue recovery (no models or publication)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['video-scheduler-worker.js','scripts/queue-video-only.mjs','scripts/lib/video-queue-only.mjs','scripts/diagnose-video-queue.mjs','scripts/tests/video-queue-only.test.mjs','tools/upload_to_queue.ps1','.github/workflows/workbuddy-video-recovery.yml']
+  push:
+    branches: [main]
+    paths: ['video-scheduler-worker.js','scripts/queue-video-only.mjs','scripts/lib/video-queue-only.mjs','scripts/diagnose-video-queue.mjs','scripts/tests/video-queue-only.test.mjs','tools/upload_to_queue.ps1','.github/workflows/workbuddy-video-recovery.yml']
+permissions: {contents: read}
+concurrency:
+  group: workbuddy-video-recovery-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/queue-video-only.mjs && node --check scripts/diagnose-video-queue.mjs
+      - name: Parse PowerShell entry without executing it
+        shell: pwsh
+        run: |
+          $errors = $null
+          $tokens = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'tools/upload_to_queue.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
+      - run: node --test scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs
+  diagnose:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify existing upload identity and R2 binding without uploading a video
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/diagnose-video-queue.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workbuddy-video-diagnostic-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: results/publishing/workbuddy-queue-diagnostic-*.json
+          retention-days: 14
+      - name: Archive actual diagnostic including failure
+        if: always()
+        run: |
+          shopt -s nullglob
+          receipts=(results/publishing/workbuddy-queue-diagnostic-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json)
+          if [ "${#receipts[@]}" -eq 0 ]; then exit 0; fi
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add -- "${receipts[@]}"
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record WorkBuddy queue diagnostic without model or publication calls'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
