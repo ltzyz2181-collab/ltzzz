@@ -54,7 +54,7 @@ export default {
     try {
       switch (path) {
         case '/health':
-          return json({ ok: true, service: 'ltzzz-youtube-upload', version: '1.1.0', publication_receipts: true, time: new Date().toISOString() });
+          return json({ ok: true, service: 'ltzzz-youtube-upload', version: '1.1.0', publication_receipts: true, auth_readiness: true, time: new Date().toISOString() });
 
         case '/auth/youtube':
           return await authStart(env, url);
@@ -216,15 +216,23 @@ async function getStatus(env, url) {
   }
   // token 可能过期，尝试刷新（静默）
   let tokens = raw;
+  let authError = null;
   try {
     tokens = await refreshIfNeeded(env, raw, uk);
-  } catch {}
+  } catch (error) {
+    const known = ['GOOGLE_OAUTH_INVALID_GRANT', 'GOOGLE_OAUTH_INVALID_CLIENT', 'GOOGLE_OAUTH_REFRESH_TOKEN_MISSING'];
+    authError = known.includes(error.code) ? error.code : 'GOOGLE_OAUTH_REFRESH_UNAVAILABLE';
+  }
   return {
-    connected: true,
+    connected: !authError,
+    credential_present: true,
+    auth_error: authError,
+    reauth_required: ['GOOGLE_OAUTH_INVALID_GRANT', 'GOOGLE_OAUTH_REFRESH_TOKEN_MISSING'].includes(authError),
+    configuration_required: authError === 'GOOGLE_OAUTH_INVALID_CLIENT',
     channel_name: tokens.channel_name || null,
     channel_id: tokens.channel_id || null,
     last_publish: tokens.last_publish || null,
-    publish_status: tokens.publish_status || 'connected',
+    publish_status: authError ? 'authentication_unavailable' : (tokens.publish_status || 'connected'),
     connected_at: tokens.connected_at || null,
     last_video: tokens.last_video || null,
   };
@@ -466,10 +474,10 @@ async function uploadVideo(env, request, url) {
 // ============ helpers ============
 
 async function refreshIfNeeded(env, tokens, uk) {
-  if (!tokens.refresh_token) return tokens;
-  const created = tokens.connected_at ? Date.parse(tokens.connected_at) : Date.now();
+  const created = tokens.connected_at ? Date.parse(tokens.connected_at) : NaN;
   const expiresMs = (tokens.expires_in || 3600) * 1000;
-  if (Date.now() - created < expiresMs - 60000) return tokens;
+  if (tokens.access_token && Number.isFinite(created) && Date.now() - created < expiresMs - 60000) return tokens;
+  if (!tokens.refresh_token) throw Object.assign(new Error('Google OAuth refresh token missing'), { status: 401, code: 'GOOGLE_OAUTH_REFRESH_TOKEN_MISSING' });
   const r = await fetch(OAUTH_TOKEN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -482,7 +490,11 @@ async function refreshIfNeeded(env, tokens, uk) {
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.access_token) {
-    throw Object.assign(new Error('Token refresh failed: ' + r.status), { status: r.status });
+    const code = d.error === 'invalid_grant' ? 'GOOGLE_OAUTH_INVALID_GRANT'
+      : ['invalid_client', 'unauthorized_client'].includes(d.error) ? 'GOOGLE_OAUTH_INVALID_CLIENT'
+      : 'GOOGLE_OAUTH_REFRESH_UNAVAILABLE';
+    // Keep provider descriptions and credentials out of public status/errors.
+    throw Object.assign(new Error('Token refresh failed: ' + r.status), { status: r.status, code });
   }
   tokens.access_token = d.access_token;
   tokens.connected_at = new Date().toISOString();
