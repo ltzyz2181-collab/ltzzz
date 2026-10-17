@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-17T00:47:17.646Z",
+  "at": "2026-10-17T00:47:20.078Z",
   "run_id": "38987929695",
   "run_attempt": "1",
   "order_id": "OWNER-FUNDED-20261017-01",
@@ -8,13 +8,385 @@
   "armed": true,
   "model_calls": 0,
   "native_model_calls": 0,
-  "paid": false,
-  "tx_hash": null,
-  "orders_submitted": 0,
-  "results": [],
+  "paid": true,
+  "tx_hash": "0x88f5eacde198cafd01ef687429927b60bd38fe9a3704c2ec309f5794435c6042",
+  "orders_submitted": 1,
+  "results": [
+    {
+      "agent": "gpt",
+      "venue": "aave_Base_USDC",
+      "intent_id": "INV-985360f41d83e919d157092a4a38d9d5b4651bda",
+      "amount_usdc": "4.539615",
+      "custody": "LTZZZ_treasury",
+      "paid": true,
+      "tx_hash": "0x88f5eacde198cafd01ef687429927b60bd38fe9a3704c2ec309f5794435c6042",
+      "native_model_call": false,
+      "hypothesis": "Supply the reputation-allocated budget to Aave V3 Base without borrowing",
+      "exit_plan": "Withdraw through existing guarded executor back to LTZZZ treasury; no personal wallet or Safe involved",
+      "preview_status": "preview_only",
+      "receipt": {
+        "ok": true,
+        "confirmed": true,
+        "intent_id": "INV-985360f41d83e919d157092a4a38d9d5b4651bda",
+        "action": "supply",
+        "amount_usdc": "4.539615",
+        "status": "confirmed",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "steps": [
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+            "tx_hash": "0x88f5eacde198cafd01ef687429927b60bd38fe9a3704c2ec309f5794435c6042",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": true
+              }
+            ],
+            "block_number": 52704348,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-17T00:47:28.683Z"
+          }
+        ],
+        "execution_diagnostic": {
+          "stage": "receipt_read_transport",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 403 Forbidden"
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false,
+              "code": "BAD_DATA",
+              "detail": "missing response for request"
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 525 <none>"
+            }
+          ],
+          "retry": "identical_persisted_bytes_only"
+        },
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52704000,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "315408481",
+          "ausdc_raw": "34496928",
+          "eth_raw": "1994625062691327",
+          "allowance_raw": "34490241",
+          "principal_raw": "34489835",
+          "interest_raw": "7093",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.49054,
+          "exposure_cap_usdc": 137.962163,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52704350,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "310868866",
+          "ausdc_raw": "39036572",
+          "eth_raw": "1993568556688247",
+          "allowance_raw": "29950626",
+          "principal_raw": "39029450",
+          "interest_raw": "7122",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.490543,
+          "exposure_cap_usdc": 137.962175,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "owner_return_executed": false,
+        "aave_runtime_revision": "aave-guard-v6"
+      },
+      "status": "confirmed",
+      "on_chain_executed": true,
+      "settlement_type": "Aave_supply"
+    },
+    {
+      "agent": "grok",
+      "venue": "aave_Base_USDC",
+      "intent_id": "INV-0b819cd71966b197273bcb0e5c80f0064936475c",
+      "amount_usdc": "4.882227",
+      "custody": "LTZZZ_treasury",
+      "paid": false,
+      "tx_hash": null,
+      "native_model_call": false,
+      "hypothesis": "Supply the reputation-allocated budget to Aave V3 Base without borrowing",
+      "exit_plan": "Withdraw through existing guarded executor back to LTZZZ treasury; no personal wallet or Safe involved",
+      "preview_status": "preview_only",
+      "receipt": {
+        "ok": true,
+        "confirmed": false,
+        "intent_id": "INV-0b819cd71966b197273bcb0e5c80f0064936475c",
+        "action": "supply",
+        "amount_usdc": "4.882227",
+        "status": "pending",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "steps": [
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+            "tx_hash": "0x5e9f7da979b6f192eee5453ff3c643d5765b68c77359331fd59196d3eb65d3eb",
+            "status": "broadcast_unknown",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": false
+              },
+              {
+                "url": "https://1rpc.io/base",
+                "ok": false
+              },
+              {
+                "url": "https://base.llamarpc.com",
+                "ok": false
+              }
+            ]
+          }
+        ],
+        "execution_diagnostic": {
+          "stage": "receipt_read_transport",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 403 Forbidden"
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false,
+              "code": "BAD_DATA",
+              "detail": "missing response for request"
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 525 <none>"
+            }
+          ],
+          "retry": "identical_persisted_bytes_only"
+        },
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52704351,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "310868866",
+          "ausdc_raw": "39036572",
+          "eth_raw": "1993568556688247",
+          "allowance_raw": "29950626",
+          "principal_raw": "39029450",
+          "interest_raw": "7122",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.490543,
+          "exposure_cap_usdc": 137.962175,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": null,
+        "owner_return_executed": false,
+        "aave_runtime_revision": "aave-guard-v6"
+      },
+      "status": "pending_or_unknown_reconcile_same_intent"
+    },
+    {
+      "agent": "gpt",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    },
+    {
+      "agent": "grok",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    },
+    {
+      "agent": "doubao",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    },
+    {
+      "agent": "deepseek",
+      "venue": "okx_cash_spot",
+      "status": "configured_OKX_trading_USDT_insufficient",
+      "paid": false,
+      "tx_hash": null
+    }
+  ],
   "network_context": "github_hosted_runner_no_vpn_step",
   "owner_no_vpn_verified": false,
-  "reused_frozen_dispatch": true,
   "dispatch": {
     "order_id": "OWNER-FUNDED-20261017-01",
     "source": "live_reputation_and_current_treasury",
@@ -168,10 +540,17 @@
     "created_at": "2026-10-17T00:35:43.790Z",
     "source_commit": "cc73d940d8b60808e4c9784625a6eb65d90dd9cf"
   },
+  "external_ai": {
+    "status": "blocked_or_uncertain_query_existing_order_before_retry",
+    "error": "wep3_http_422_external_quote_not_accepted",
+    "paid": false,
+    "tx_hash": null
+  },
   "cex_readiness": {
-    "ok": false,
-    "status": "configured_OKX_account_insufficient_USDT",
+    "ok": true,
+    "status": "verified_configured_cash_account",
     "available_usdt": "0",
     "account_id_hash": "dc5657b650a7580e"
-  }
+  },
+  "execution_status": "completed_with_per_order_states"
 }
