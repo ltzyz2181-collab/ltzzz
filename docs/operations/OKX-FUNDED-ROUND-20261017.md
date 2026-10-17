@@ -34,3 +34,9 @@ Trust boundary: GitHub Actions is an authorized deterministic observation servic
 ## Existing daily inspection: resume confirmed original exchange capital
 
 A new scheduled investment is not authorized. The existing04:00UTC inspection can continue the already-authorized original exchange claims only when the fixed20USDC treasury deposit is confirmed and its frozen account/destination/hash/chain match. It uses a GET-only confirmed-deposit mode, so it cannot initiate a fresh treasury transfer. It waits for authenticated exchange credit, then completes same-account transfer/conversion and the original cash IOC client IDs within actual net proceeds. All terminal per-seat records stop recovery. Missing, changed or unconfirmed capital stops before execution; unknown or rejected submissions remain blocked rather than issuing replacement orders. The external order is only read/reconciled, never purchased by this scheduled continuation.
+
+## State-preserving durable runtime rollover
+
+If a published bundle keeps answering from the old durable class, use Cloudflare's documented safe rename sequence. `ensure-wep3-runtime-alias.mjs` first inspects the deployed MARKET binding; an already-V3 deployment is never downgraded. For V2 it ships the V3 class aliased as V2 while keeping the original binding/migrations, then requires the outer Worker's alias-ready health marker. Only then may the canonical deployment rename V2 to V3. The namespace/book is renamed rather than recreated; the stable object name remains `ltzzz-market-v1`. The old alias stays exported throughout.
+
+Production acceptance requires v8 and at least95 historical orders,41 ledger rows and7 Aave intents plus the original first-supply/exit-test evidence. A fresh/empty financial book fails acceptance. No create/delete migration or namespace reset is used. Source: https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/ .

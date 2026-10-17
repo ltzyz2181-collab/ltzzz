@@ -1,8 +1,11 @@
+import {AAVE_RUNTIME_REVISION} from './wep3-aave.js';
+import {PROCUREMENT_REVISION} from './wep3-procurement.js';
 import {auditProof} from './wep3-audit-proof.js';
 import {marketRoute,Market} from './wep3-market.js';
 export {Market};
 // Cloudflare renamed_classes preserves the existing namespace and stored book.
-export class MarketRuntimeV2 extends Market {}
+export class MarketRuntimeV3 extends Market {}
+export {MarketRuntimeV3 as MarketRuntimeV2};
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft'];
@@ -400,7 +403,7 @@ export default {async fetch(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, {headers: cors});
   const path = clean(new URL(request.url).pathname);
   try {
-    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', financial_execution_revision: 'external-purchase-v3', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', external_orders: 'https://ltzzz-wep3.ltzyz2181.workers.dev/market/start', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
+    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', financial_execution_revision: PROCUREMENT_REVISION, aave_runtime_revision: AAVE_RUNTIME_REVISION, runtime_alias_ready: 'MarketRuntimeV3_aliases_MarketRuntimeV2', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', external_orders: 'https://ltzzz-wep3.ltzyz2181.workers.dev/market/start', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
     if (request.method === 'POST' && !pinOk(request, env)) return json({ok: false, error: 'pin_required'}, 401);
     if (request.method === 'POST' && path !== '/checkout' && !path.startsWith('/pay/')) { const bodyPeek = request.headers.get('x-wep3-intent') || ''; const gated = await writeGate(env, request, bodyPeek || 'anon'); if (gated) return json({ok: false, ...gated}, 429); }
     if(path==='/okx/balance'){if(!pinOk(request,env))return json({error:'pin_required'},401);return json(await okxBalance(env));}

@@ -12,7 +12,7 @@ SINGLE_CAP = "5"
 
 [[durable_objects.bindings]]
 name = "MARKET"
-class_name = "MarketRuntimeV2"
+class_name = "MarketRuntimeV3"
 
 [[migrations]]
 tag = "market-v1"
@@ -22,3 +22,8 @@ new_sqlite_classes = ["Market"]
 [[migrations]]
 tag = "market-v2"
 renamed_classes = [{ from = "Market", to = "MarketRuntimeV2" }]
+
+# Receipt-sensor runtime rollover: rename preserves the same namespace and book.
+[[migrations]]
+tag = "market-v3-receipt-sensor"
+renamed_classes = [{ from = "MarketRuntimeV2", to = "MarketRuntimeV3" }]
