@@ -1,6 +1,6 @@
 import fs from 'node:fs';import {runnerToken,wep3Request,intentId,SEATS} from './lib/funded-invest-runtime.mjs';import {okxClient,okxCredentials} from './lib/okx-funded-spot.mjs';
 const policy=JSON.parse(fs.readFileSync('policy/funded-owner-round-20261017.json')),token=runnerToken(),report={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,model_calls:0,payments_submitted:0,transactions_submitted:0,owner_no_vpn_verified:false,inspections:[]};
-for(const [label,path] of [['external_order','/market/procurement/order'],['aave_status','/market/aave/status'],...Object.keys(SEATS).map(id=>['intent_'+id,'/market/aave/intent?id='+intentId(policy.order_id,id)])]){
+for(const [label,path] of [['okx_capital_transfer','/market/okx/funding'],['external_order','/market/procurement/order'],['aave_status','/market/aave/status'],...Object.keys(SEATS).map(id=>['intent_'+id,'/market/aave/intent?id='+intentId(policy.order_id,id)])]){
  try{report.inspections.push({label,result:await wep3Request(path,{token})});}catch(error){report.inspections.push({label,error:error.message});}
 }
 const okx=okxClient(okxCredentials());
