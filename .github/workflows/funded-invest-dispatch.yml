@@ -1,122 +1,116 @@
 name: Funded invest dispatch
-# 四席位真钱投资派单 v2（Aave V3 Base / USDC，走 WEP3 受审计路径）
-# 默认 dry-run。真实链上执行需同时输入 arm=true 且 arm_ack=当天北京时间日期(YYYY-MM-DD)。
-# venue=cex 会被执行器按章程 §1/§6 拒绝（BLOCK-5）；执行器已无 CEX 下单能力。
 on:
   workflow_dispatch:
     inputs:
       venue:
-        description: 'web3 = Aave V3 Base / USDC（章程唯一允许）；cex 会被章程拒绝(BLOCK-5)'
-        required: true
-        default: 'web3'
+        description: 'all / web3 (Aave Base USDC) / cex (OKX cash BTC-USDT)'
         type: choice
-        options: ['web3', 'defi', 'cex']
+        default: all
+        options: [all, web3, cex]
       agent:
-        description: 'all 或单个席位 id（grok/doubao/deepseek/gpt）'
-        required: true
-        default: 'all'
+        description: 'all or gpt/grok/doubao/deepseek'
+        default: all
       arm:
-        description: '设为 true 才允许真实链上执行；否则一律 dry-run'
-        required: true
-        default: 'false'
-        type: choice
-        options: ['false', 'true']
-      arm_ack:
-        description: '武装确认：必须填当天北京时间日期 YYYY-MM-DD，否则拒绝执行'
-        required: false
-        default: ''
+        description: 'One fixed owner-authorized round; no repeat cash schedule'
+        type: boolean
+        default: false
+  pull_request:
+    paths: ['scripts/funded-invest-executor.mjs','scripts/lib/funded-invest-runtime.mjs','scripts/lib/okx-funded-spot.mjs','wep3-procurement.js','wep3-cash-liabilities.js','policy/funded-owner-round-20261017.json','scripts/tests/funded-invest.test.mjs','scripts/tests/wep3-procurement.test.mjs','.github/workflows/funded-invest-dispatch.yml']
+  push:
+    branches: [main]
+    paths: ['policy/funded-owner-round-20261017.json']
   schedule:
-    # 每日 12:00 CST = 04:00 UTC，只跑 dry-run 巡检（不武装，绝不下单）
+    # Existing daily inspection remains dry-run; no extra model or cash cron.
     - cron: '0 4 * * *'
-permissions: {contents: write}
+permissions: {contents: read}
 concurrency: {group: ltzzz-funded-invest, cancel-in-progress: false}
 jobs:
-  dispatch:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts
+      - run: node --check scripts/funded-invest-executor.mjs && node --check wep3-procurement.js
+      - run: node --test scripts/tests/funded-invest.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/external-procurement-preflight.test.mjs
+  dispatch:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions: {contents: write}
+    env:
+      ARM_REAL_ORDERS: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.arm)) && '1' || '0' }}
+      WEP3_RUNNER_TOKEN: ''
+      SELECTED_VENUE: ${{ inputs.venue || 'all' }}
+      SELECTED_AGENT: ${{ inputs.agent || 'all' }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-
-      - name: Verify plan integrity and charter constraints (read-only)
-        run: |
-          node -e "
-          const p=require('./agent-wallet/funded-invest-plan.json');
-          const sum=p.agents.reduce((s,a)=>s+Number(a.quota_at_reference_pool),0);
-          const wsum=p.agents.reduce((s,a)=>s+Number(a.weight),0);
-          const lim=p.protocol_limits_2026_10_15||{};
-          console.log(JSON.stringify({plan_version:p.plan_version,agents:p.agents.length,
-            quota_sum:+sum.toFixed(6),weight_sum:wsum,
-            single_cap:lim.single_cap_usdc,exposure_cap:lim.exposure_cap_usdc,cash_floor:lim.cash_floor_usdc,
-            treasury:lim.treasury_address,
-            cex_allowed:p.venues.okx_cex.allowed,web3_allowed:p.venues.okx_web3_defi.allowed,
-            status:p.execution_status,paid:p.paid,tx_hash:p.tx_hash},null,2));
-          if(Math.abs(sum-Number(p.quota_sum_at_reference_pool))>0.01) throw new Error('quota sum mismatch');
-          if(p.paid!==false||p.tx_hash!==null) throw new Error('plan claims payment without tx_hash');
-          if(p.venues.okx_cex.allowed!==false) throw new Error('CEX must stay disallowed by charter BLOCK-5');
-          if(!lim.single_cap_usdc||!lim.cash_floor_usdc) throw new Error('protocol limits missing: allocation source of truth required');
-          "
-
-      - name: Derive short-lived runner authentication (same scheme as autonomous-funded-orders)
+      - run: npm ci --ignore-scripts
+      - name: Reuse runner identity without exporting any wallet key
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          node - <<'JS'
-          const fs=require('fs'),crypto=require('crypto');
-          if(!process.env.CLOUDFLARE_API_TOKEN){console.log('runner_token=absent (read-only preview still works)');process.exit(0);}
-          const token=crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex');
-          console.log('::add-mask::'+token);
-          fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\n');
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import {runnerToken} from './scripts/lib/funded-invest-runtime.mjs';
+          const token=runnerToken();if(!token)throw Error('runner_authentication_missing');console.log('::add-mask::'+token);
+          const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+          fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\nARM_ACK='+day+'\n');
           JS
-
-      # 章程 §1：仅允许 Aave V3 Base / USDC。venue=cex 会被执行器拒绝（BLOCK-5），
-      # 因此这里不再传任何欧易现货交易对，也不注入欧易下单凭据。
-      - name: Run executor (dry-run unless explicitly armed)
-        env:
-          WEP3_RUNNER_TOKEN: ${{ env.WEP3_RUNNER_TOKEN }}
-          ARM_REAL_ORDERS: ${{ inputs.arm == 'true' && '1' || '0' }}
-          ARM_ACK: ${{ inputs.arm_ack }}
-          NODE_OPTIONS: --dns-result-order=ipv4first
+      - name: Wait for restricted external-purchase executor deployment, no payment
         run: |
-          set -e
-          VENUE='${{ inputs.venue || 'web3' }}'
-          AGENT='${{ inputs.agent || 'all' }}'
-          echo "--- venue=$VENUE agent=$AGENT ---"
-          node scripts/funded-invest-executor.mjs --venue "$VENUE" --agent "$AGENT"
-
-      - name: Confirm no unintended real spend happened
-        if: always()
+          node --input-type=module <<'JS'
+          import {wep3Request} from './scripts/lib/funded-invest-runtime.mjs';
+          const until=Date.now()+600000;let ready=false;
+          while(Date.now()<until){try{const r=await wep3Request('/market/procurement/order',{token:process.env.WEP3_RUNNER_TOKEN});if(r.revision==='external-purchase-v1'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}
+          if(!ready)throw Error('restricted_purchase_executor_not_deployed');
+          JS
+      - name: Prepare live reputation allocations and fixed exchange client IDs
         env:
-          ARM_REAL_ORDERS: ${{ inputs.arm == 'true' && '1' || '0' }}
-          ARM_ACK: ${{ inputs.arm_ack }}
-        run: |
-          node -e "
-          const fs=require('fs');
-          const dir='knowledge/results/funded-invest';
-          const files=fs.readdirSync(dir).filter(f=>f.endsWith('.json'));
-          let submitted=0,paidAny=false,hashes=[];
-          for(const f of files){const j=JSON.parse(fs.readFileSync(dir+'/'+f,'utf8'));
-            submitted+=(j.orders_submitted||0); paidAny=paidAny||j.paid===true;
-            if(j.tx_hash) hashes.push(j.tx_hash);}
-          const armed=process.env.ARM_REAL_ORDERS==='1'&&process.env.ARM_ACK;
-          console.log(JSON.stringify({receipts:files.length,orders_submitted:submitted,paid:paidAny,tx_hashes:hashes,armed:!!armed}));
-          if(!armed && submitted>0){ console.error('VIOLATION: orders submitted while not armed'); process.exit(1); }
-          if(paidAny && hashes.length===0){ console.error('VIOLATION: paid=true without tx_hash'); process.exit(1); }
-          "
-
-      - name: Commit receipts
-        if: always()
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+        run: node scripts/funded-invest-executor.mjs --phase prepare --venue "$SELECTED_VENUE" --agent "$SELECTED_AGENT"
+      - name: Persist claims before any order submission
+        if: env.ARM_REAL_ORDERS == '1'
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add knowledge/results/funded-invest/
-          if git diff --staged --quiet; then echo 'no receipt change'; exit 0; fi
-          git commit -m 'funded-invest dispatch receipts (dry-run unless armed)'
-          for attempt in 1 2 3 4; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
-            sleep $((attempt * 5))
-          done
-          exit 1
+          if ! git diff --staged --quiet; then
+            git commit -m 'Reserve fixed owner-authorized investment round before submissions'
+            node tools/push-receipt-commit.mjs
+          fi
+          echo 'FUNDED_CLAIMS_PERSISTED=1' >> "$GITHUB_ENV"
+      - name: Execute one external AI purchase and bounded per-seat investment orders
+        if: env.ARM_REAL_ORDERS == '1'
+        env:
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+        run: node scripts/funded-invest-executor.mjs --phase execute --venue "$SELECTED_VENUE" --agent "$SELECTED_AGENT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: funded-invest-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: knowledge/results/funded-invest/
+          retention-days: 30
+      - name: Preserve actual per-order outcomes including blockers
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          mkdir -p knowledge/results/funded-invest
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';const p='knowledge/results/funded-invest/run-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json';
+          if(!fs.existsSync(p))fs.writeFileSync(p,JSON.stringify({at:new Date().toISOString(),status:'workflow_blocked_before_executor_receipt',execution_outcome:'not_observed',paid:false,tx_hash:null,owner_no_vpn_verified:false,run_id:process.env.GITHUB_RUN_ID},null,2)+'\n');
+          JS
+          git add knowledge/results/funded-invest/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Actual funded investment and external AI purchase outcomes'
+          node tools/push-receipt-commit.mjs
