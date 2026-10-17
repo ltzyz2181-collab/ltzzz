@@ -58,14 +58,17 @@ jobs:
           else
             echo 'X402_LIVE not set — 0x proofs stay simulated until enabled'
           fi
+          # A secret update creates another Worker version. Finish with the reviewed
+          # bundle, then verify its new feature revision instead of an old health.
+          npx wrangler deploy -c wrangler.wep3.toml
       - name: Verify current durable runtime and preserved financial history
         id: core_state
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';import {waitMarketRuntime} from './scripts/lib/wep3-runtime-readiness.mjs';
-          const ready=await waitMarketRuntime({base:'https://ltzzz-wep3.ltzyz2181.workers.dev',token:process.env.WEP3_RUNNER_TOKEN,revision:process.env.AAVE_EXPECTED_REVISION}),state=ready.state;
+          const ready=await waitMarketRuntime({base:'https://ltzzz-wep3.ltzyz2181.workers.dev',token:process.env.WEP3_RUNNER_TOKEN,revision:process.env.AAVE_EXPECTED_REVISION,procurementRevision:'external-purchase-v2'}),state=ready.state;
           const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,read_only:true,model_calls:0,transactions:0,state,observations:ready.observations};
-          report.ok=!!(state?.ok&&state.market_runtime_revision==='market-runtime-v2'&&state.aave_runtime_revision===process.env.AAVE_EXPECTED_REVISION&&state.aave_intent_count>0&&state.first_supply_confirmed&&state.exit_test_confirmed);
+          report.ok=!!(state?.ok&&state.market_runtime_revision==='market-runtime-v2'&&state.aave_runtime_revision===process.env.AAVE_EXPECTED_REVISION&&state.procurement_runtime_revision==='external-purchase-v2'&&state.aave_intent_count>0&&state.first_supply_confirmed&&state.exit_test_confirmed);
           fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/durable-state-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));if(!report.ok)process.exitCode=1;
           JS
       - name: Provision once and verify controlled treasury (no funds moved)

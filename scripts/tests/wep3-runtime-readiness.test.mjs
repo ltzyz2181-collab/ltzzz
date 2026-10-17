@@ -10,3 +10,7 @@ test('all transport failures produce a bounded observable failure without echoin
  const r=await waitMarketRuntime({base:'https://example.invalid',token:'fixture-secret',revision:'v5',attempts:2,pause:async()=>{},fetchImpl:async()=>{throw Error('fixture-secret upstream')}});
  assert.equal(r.ready,false);assert.equal(r.observations.length,2);assert.equal(JSON.stringify(r).includes('fixture-secret'),false);assert.equal(r.state.error,'transport_or_body_timeout');
 });
+
+test('old runtime with a healthy legacy revision cannot pass a new procurement deployment',async()=>{
+ let calls=0;const result=await waitMarketRuntime({base:'https://fixed.test',token:'fixture',revision:'aave-guard-v5',procurementRevision:'external-purchase-v1',pause:async()=>{},attempts:2,fetchImpl:async()=>{calls++;return Response.json({ok:true,market_runtime_revision:'market-runtime-v2',aave_runtime_revision:'aave-guard-v5',...(calls===2?{procurement_runtime_revision:'external-purchase-v1'}:{})});}});assert.equal(calls,2);assert.equal(result.ready,true);
+});

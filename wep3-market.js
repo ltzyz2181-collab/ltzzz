@@ -1,4 +1,4 @@
-import {externalPurchase} from './wep3-procurement.js';
+import {externalPurchase,PROCUREMENT_REVISION} from './wep3-procurement.js';
 import {externalEntry} from './wep3-external-entry.js';
 import {sealDelivery} from './wep3-order-contract.js';
 import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
@@ -47,7 +47,7 @@ export class Market {
     const entry=externalEntry(request);if(entry)return entry;
     if(p==='/market/runtime-state'&&request.method==='GET'){
       if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
-      return reply({ok:true,market_runtime_revision:'market-runtime-v2',aave_runtime_revision:AAVE_RUNTIME_REVISION,
+      return reply({ok:true,market_runtime_revision:'market-runtime-v2',aave_runtime_revision:AAVE_RUNTIME_REVISION,procurement_runtime_revision:PROCUREMENT_REVISION,
         book_sha256:await hash(JSON.stringify(book)),order_count:Object.keys(book.orders||{}).length,ledger_count:(book.ledger||[]).length,
         live_revenue_cents:book.live_revenue_cents||0,aave_intent_count:Object.keys(book.aave?.intents||{}).length,
         first_supply_confirmed:!!book.aave?.first_supply_confirmed,exit_test_confirmed:!!book.aave?.exit_test_confirmed,
