@@ -2,7 +2,7 @@ import {fundOKX,fundingRelay} from './wep3-okx-funding.js';
 import {externalPurchase,completeExternalRelay,PROCUREMENT_REVISION} from './wep3-procurement.js';
 import {externalEntry} from './wep3-external-entry.js';
 import {sealDelivery} from './wep3-order-contract.js';
-import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,aaveRelay,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
+import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,attestAaveReceipt,aaveRelay,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
 import {anchorSnapshot} from './wep3-anchor.js';
 import {submitForecast,maintainForecasts} from './wep3-forecast.js';
 import {standardX402,resumeMachineOrder} from './wep3-x402.js';
@@ -53,6 +53,10 @@ export class Market {
         live_revenue_cents:book.live_revenue_cents||0,aave_intent_count:Object.keys(book.aave?.intents||{}).length,
         first_supply_confirmed:!!book.aave?.first_supply_confirmed,exit_test_confirmed:!!book.aave?.exit_test_confirmed,
         active_intent:book.aave?.active_intent||null,signed:false,on_chain_executed:false});
+    }
+    if(p==='/market/aave/attest-receipt'&&request.method==='POST'){
+      if(!this.env.WEP3_RUNNER_TOKEN||request.headers.get('X-Lab-Pin')!==this.env.WEP3_RUNNER_TOKEN)return reply({ok:false,error:'runner_sensor_auth_required'},401);
+      const r=await attestAaveReceipt(this,book,await request.json().catch(()=>({})));return reply(r,r.ok?200:422);
     }
     if((p==='/market/aave/relay'||p==='/market/okx/funding-relay')&&request.method==='POST'){
       if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);

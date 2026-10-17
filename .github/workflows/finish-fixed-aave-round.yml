@@ -27,6 +27,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';import {wep3Request,runnerToken} from './scripts/lib/funded-invest-runtime.mjs';
+          let ready=false;for(let i=0;i<120;i++){try{const state=await wep3Request('/market/runtime-state',{token:runnerToken()});if(state.aave_runtime_revision==='aave-guard-v8'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}if(!ready)throw Error('dual_RPC_sensor_not_deployed');
           const existing=await wep3Request('/market/procurement/order',{token:runnerToken()});if(existing.order?.id!=='EXT-AI-20261017-001')throw Error('existing_procurement_order_required_no_new_purchase');
           const p=JSON.parse(fs.readFileSync('knowledge/results/funded-invest/OWNER-FUNDED-20261017-01.json'));
           if(p.order_id!=='OWNER-FUNDED-20261017-01'||p.web3.reduce((a,r)=>a+BigInt(r.amount_raw),0n)!==20000000n)throw Error('original_committed_round_required');

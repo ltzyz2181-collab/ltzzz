@@ -23,3 +23,9 @@ The external service uses one fixed order `EXT-AI-20261017-001`. The GitHub runn
 OKX permission rejection is recorded, not silently converted into success. A future run must reconcile existing IDs. Unknown submissions cannot be replaced. If a request was explicitly rejected, the record remains rejected until a reviewed recovery is provided. Enabling account-transfer permission alone is not evidence that a transfer occurred.
 
 The existing daily cron remains dry-run. This change adds no repeating paid model or investment schedule. GitHub runner execution is not proof of the owner's Windows computer working without VPN.
+
+## Dual RPC reconciliation sensor
+
+When the Worker cannot read an already-signed Aave receipt but the GitHub runner can, the runner can submit agreeing observations from two different pinned RPC hosts. The dedicated runner identity is required; the generic owner PIN cannot impersonate this sensor. The Worker checks current stored intent/signature, hash/from/to, chain8453, the same block hash/status, freshness and at least three block heights including the receipt block before saving a compact sensor receipt. Existing execution code then consumes that receipt exactly once and performs its existing principal/period closeout. The sensor cannot create an intent, sign a transaction, alter amounts, expand a budget, or choose a destination. Disagreement or missing observations preserves the pending state.
+
+Trust boundary: GitHub Actions is an authorized deterministic observation service and its existing runner credential must remain private. Two RPC JSON responses are provider observations, not a cryptographic state proof. No model-generated result is accepted as a sensor receipt. Signed transaction hashes bind the observations to the original transaction bytes; financial plan/signature checks remain in the Worker.

@@ -1,6 +1,6 @@
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
-export const AAVE_RUNTIME_REVISION='aave-guard-v7';
+export const AAVE_RUNTIME_REVISION='aave-guard-v8';
 export const AAVE={chain_id:8453,pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',ausdc:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'};
 const ERC=['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function decimals() view returns(uint8)'];
 const AT=['function balanceOf(address) view returns(uint256)','function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)'];
@@ -157,6 +157,24 @@ export function aaveRelay(book,id){
  const step=i.steps.find(s=>s.raw&&s.status!=='confirmed');if(!step)return {ok:true,status:'no_pending_signed_transaction'};storedAaveTransaction(step,i);
  return {ok:true,intent_id:i.id,amount_raw:i.amount_raw,step_kind:step.kind,tx_hash:step.tx_hash,raw:step.raw};
 }
+// The GitHub controller is an authenticated, deterministic sensor, not a model.
+// It may reconcile only an existing signed step, using agreeing observations
+// from two distinct pinned Base RPC hosts. It cannot create or change a plan.
+export async function attestAaveReceipt(m,book,input){
+ const i=book.aave?.intents?.[input?.intent_id];
+ if(!i||book.aave.active_intent!==i.id||executionIssue(i))return {ok:false,error:'sensor_no_valid_existing_intent'};
+ const step=i.steps.find(s=>s.tx_hash===input.tx_hash&&s.raw&&s.status!=='confirmed');if(!step)return {ok:false,error:'sensor_no_signed_step'};
+ const proofs=input.observations;if(!Array.isArray(proofs)||proofs.length!==2||new Set(proofs.map(p=>p.provider)).size!==2)return {ok:false,error:'sensor_two_independent_RPCs_required'};
+ const parsed=storedAaveTransaction(step,i);let first;
+ for(const p of proofs){
+  const r=p.receipt;
+  if(!AAVE_RPC_URLS.includes(p.provider)||p.chain_id!==8453||!Number.isFinite(p.observed_at)||Math.abs(Date.now()-p.observed_at)>120000||!Number.isSafeInteger(p.head)||!r||r.transactionHash?.toLowerCase()!==step.tx_hash.toLowerCase()||r.from?.toLowerCase()!==i.treasury.toLowerCase()||r.to?.toLowerCase()!==step.to.toLowerCase()||!/^0x[0-9a-fA-F]{64}$/.test(r.blockHash||'')||!/^0x[0-9a-fA-F]+$/.test(r.blockNumber||'')||!['0x0','0x1'].includes(r.status))return {ok:false,error:'sensor_receipt_identity_invalid'};
+  const block=Number(BigInt(r.blockNumber));if(p.head<block+2)return {ok:false,error:'sensor_confirmations_insufficient'};
+  if(first&&(first.blockHash!==r.blockHash||first.blockNumber!==r.blockNumber||first.status!==r.status))return {ok:false,error:'sensor_RPCs_disagree'};first=r;
+ }
+ step.sensor_receipt={receipt:{hash:step.tx_hash,status:Number(BigInt(first.status)),blockNumber:Number(BigInt(first.blockNumber))},head:Math.min(...proofs.map(p=>p.head)),source:'authenticated_GitHub_dual_RPC_sensor',providers:proofs.map(p=>p.provider),verified_at:new Date().toISOString(),nonce:parsed.nonce,block_hash:first.blockHash};
+ await m.save(book);return {ok:true,status:'existing_signed_step_receipt_recorded',tx_hash:step.tx_hash,signed:false,new_transaction:false};
+}
 export async function executeAave(m,book,input,{preview=false}={}){
  if(book.okx_funding&&!['confirmed','failed'].includes(book.okx_funding.status))return {ok:false,error:'okx_funding_pending_nonce_reserved'};
  const storage=aaveStorageStatus(book);if(!storage.ok)return storage;
@@ -217,7 +235,7 @@ export async function executeAave(m,book,input,{preview=false}={}){
    executionStage='sign_and_persist';step.raw=await w.signTransaction(tx);signedThisRequest=true;step.tx_hash=keccak256(step.raw);step.status='signed_not_confirmed';state.tx_times.push(Date.now());await m.save(book);
   }
   executionStage='receipt_read';let read;
-  try{read=await withAaveReadProvider(async rpc=>{const receipt=await rpc.getTransactionReceipt(step.tx_hash);return {receipt,head:receipt?await rpc.getBlockNumber():null};});}
+  try{read=step.sensor_receipt?{value:step.sensor_receipt}:await withAaveReadProvider(async rpc=>{const receipt=await rpc.getTransactionReceipt(step.tx_hash);return {receipt,head:receipt?await rpc.getBlockNumber():null};});}
   catch(error){
    // Receipt transport failure does not prove an unbroadcast transaction. The
    // ONLY permitted retry is the exact validated signed bytes already stored;
