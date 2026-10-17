@@ -38,7 +38,7 @@ jobs:
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts
       - run: node --check scripts/funded-invest-executor.mjs && node --check wep3-procurement.js
-      - run: node --test scripts/tests/okx-capital-funding.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/funded-invest.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/external-procurement-preflight.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs
+      - run: node --test scripts/tests/aave-receipt-sensor.test.mjs scripts/tests/okx-capital-funding.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/funded-invest.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/external-procurement-preflight.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs
   dispatch:
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
