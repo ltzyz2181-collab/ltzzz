@@ -1,6 +1,6 @@
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
-export const AAVE_RUNTIME_REVISION='aave-guard-v5';
+export const AAVE_RUNTIME_REVISION='aave-guard-v6';
 export const AAVE={chain_id:8453,pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',ausdc:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB'};
 const ERC=['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function decimals() view returns(uint8)'];
 const AT=['function balanceOf(address) view returns(uint256)','function POOL() view returns(address)','function UNDERLYING_ASSET_ADDRESS() view returns(address)'];
@@ -39,7 +39,7 @@ export async function nativeRpcFetch(req){const response=await fetch(req.url,{me
 // subrequest budget before fallback. A single HTTP attempt belongs to each RPC.
 function aaveRpcRequest(url){const req=new FetchRequest(url);req.timeout=12000;req.setThrottleParams({maxAttempts:1});req.getUrlFunc=nativeRpcFetch;return req;}
 // Official RPC first; retry the complete read, not just eth_chainId.
-export const AAVE_RPC_URLS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com'];
+export const AAVE_RPC_URLS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com','https://1rpc.io/base','https://base.llamarpc.com'];
 export async function withAaveReadProvider(read,makeProvider){
  const attempts=[];
  for(const url of AAVE_RPC_URLS){
@@ -209,7 +209,18 @@ export async function executeAave(m,book,input,{preview=false}={}){
    const tx=prepared.value.tx;
    executionStage='sign_and_persist';step.raw=await w.signTransaction(tx);signedThisRequest=true;step.tx_hash=keccak256(step.raw);step.status='signed_not_confirmed';state.tx_times.push(Date.now());await m.save(book);
   }
-  executionStage='receipt_read';const read=await withAaveReadProvider(async rpc=>{const receipt=await rpc.getTransactionReceipt(step.tx_hash);return {receipt,head:receipt?await rpc.getBlockNumber():null};});
+  executionStage='receipt_read';let read;
+  try{read=await withAaveReadProvider(async rpc=>{const receipt=await rpc.getTransactionReceipt(step.tx_hash);return {receipt,head:receipt?await rpc.getBlockNumber():null};});}
+  catch(error){
+   // Receipt transport failure does not prove an unbroadcast transaction. The
+   // ONLY permitted retry is the exact validated signed bytes already stored;
+   // chain nonce/hash make this idempotent even if it was accepted previously.
+   if(i.action==='supply'&&state.paused)return {ok:false,error:'paused_no_rebroadcast',...publicAaveIntent(i)};
+   const sent=await broadcastAaveRaw(step.raw,step.tx_hash);
+   step.status=sent.submitted?'submitted':'broadcast_unknown';step.broadcast_attempts=sent.attempts;
+   i.status='pending';i.last_execution_error={stage:'receipt_read_transport',rpc_attempts:error.rpc_attempts||[],retry:'identical_persisted_bytes_only'};await m.save(book);
+   return {ok:true,confirmed:false,...publicAaveIntent(i)};
+  }
   const {receipt,head}=read.value;
   if(!receipt){if(i.action==='supply'&&state.paused)return {ok:false,error:'paused_no_rebroadcast',...publicAaveIntent(i)};const sent=await broadcastAaveRaw(step.raw,step.tx_hash);step.status=sent.submitted?'submitted':'broadcast_unknown';step.broadcast_attempts=sent.attempts;i.status='pending';await m.save(book);return {ok:true,confirmed:false,...publicAaveIntent(i)};}
   if(receipt.status!==1){step.status='failed';i.status='failed';state.active_intent=null;state.failures++;if(state.failures>=3)state.paused=true;if(i.action==='supply')for(const k of ['day','week','month'])state.periods[k][i.keys[k]]=(BigInt(state.periods[k][i.keys[k]])-BigInt(i.amount_raw)).toString();await m.save(book);return {ok:false,...publicAaveIntent(i)};}

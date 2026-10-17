@@ -47,7 +47,7 @@ test('read RPC fails over a healthy chainId with failed balance reads and destro
 });
 test('read RPC rejects wrong chains and records total unavailability without leaking RPC errors',async()=>{
  let reads=0;const destroyed=[];
- await assert.rejects(withAaveReadProvider(async()=>{reads++;},url=>({async send(){return '0x1'},destroy(){destroyed.push(url)}})),e=>{assert.equal(e.message,'base_rpc_unavailable');assert.equal(e.rpc_attempts.length,3);return true;});
+ await assert.rejects(withAaveReadProvider(async()=>{reads++;},url=>({async send(){return '0x1'},destroy(){destroyed.push(url)}})),e=>{assert.equal(e.message,'base_rpc_unavailable');assert.equal(e.rpc_attempts.length,AAVE_RPC_URLS.length);return true;});
  assert.equal(reads,0);assert.deepEqual(destroyed,AAVE_RPC_URLS);
 });
 
@@ -145,4 +145,12 @@ test('real resume control flow retries identical stored bytes on another RPC wit
 });
 test('malformed persisted execution target blocks before signer, storage or RPC access',async()=>{
  const plan=buildAavePlan(input,ctx),i={...pending(),status:'prepared',steps:plan.steps,keys:budgetKeys(Date.now())};i.steps[0].to=address;const b={aave:{active_intent:i.id,intents:{[i.id]:i}}};const r=await autoAave(noEffects,b);assert.equal(r.error,'stored_execution_plan_mismatch');assert.equal(r.signed,false);
+});
+
+test('blocked receipt RPC can retry only exact persisted bytes and still cannot claim confirmation',async()=>{
+ const wallet=Wallet.createRandom(),plan=buildAavePlan(input,{...ctx,address:wallet.address}),raw=await wallet.signTransaction({chainId:8453,to:plan.steps[0].to,data:plan.steps[0].data,nonce:0,gasLimit:60000,maxFeePerGas:1000000n,maxPriorityFeePerGas:1n,value:0n,type:2}),hash=keccak256(raw),keys=budgetKeys(Date.now());
+ const i={...pending(),treasury:wallet.address,status:'prepared',keys,steps:plan.steps};Object.assign(i.steps[0],{raw,tx_hash:hash,status:'signed_not_confirmed'});const book={aave:{active_intent:i.id,intents:{[i.id]:i},periods:Object.fromEntries(['day','week','month'].map(k=>[k,{[keys[k]]:'1000000'}]))}},sent=[];
+ const original=globalThis.fetch,sign=Wallet.prototype.signTransaction;Wallet.prototype.signTransaction=async()=>{throw Error('no replacement signature')};
+ globalThis.fetch=async(url,o)=>{const q=JSON.parse(new TextDecoder().decode(o.body));if(q.method==='eth_getTransactionReceipt')return new Response('Forbidden',{status:403});if(q.method==='eth_sendRawTransaction')sent.push(q.params[0]);return Response.json({jsonrpc:'2.0',id:q.id,result:q.method==='eth_chainId'?'0x2105':q.method==='eth_blockNumber'?'0x3212345':hash});};
+ try{const r=await executeAave({env:{TREASURY_EXECUTOR_KEY:wallet.privateKey},save:async()=>{}},book,{...input,amount_usdc:'1'});assert.equal(r.ok,true);assert.equal(r.status,'pending');assert.equal(r.confirmed,false);assert.equal(r.steps[0].tx_hash,hash);assert.deepEqual(sent,[raw]);assert.equal(book.aave.active_intent,i.id);assert.equal(Object.keys(book.aave.intents).length,1);}finally{globalThis.fetch=original;Wallet.prototype.signTransaction=sign;}
 });

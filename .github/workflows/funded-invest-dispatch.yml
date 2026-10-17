@@ -71,7 +71,7 @@ jobs:
           node --input-type=module <<'JS'
           import {wep3Request} from './scripts/lib/funded-invest-runtime.mjs';
           const until=Date.now()+600000;let ready=false;
-          while(Date.now()<until){try{const r=await wep3Request('/market/procurement/order',{token:process.env.WEP3_RUNNER_TOKEN});if(r.revision==='external-purchase-v2'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}
+          while(Date.now()<until){try{const r=await wep3Request('/market/procurement/order',{token:process.env.WEP3_RUNNER_TOKEN});if(r.revision==='external-purchase-v3'){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,5000));}
           if(!ready)throw Error('restricted_purchase_executor_not_deployed');
           JS
       - name: Prepare live reputation allocations and fixed exchange client IDs

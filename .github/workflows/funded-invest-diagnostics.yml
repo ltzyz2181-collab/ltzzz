@@ -4,10 +4,15 @@ on:
   push:
     branches: [main]
     paths: ['scripts/inspect-funded-round.mjs','.github/workflows/funded-invest-diagnostics.yml']
+workflow_run:
+    workflows: ['Deploy LTZZZ WEP3']
+    types: [completed]
+    branches: [main]
 permissions: {contents: write}
 concurrency: {group: inspect-funded-round, cancel-in-progress: false}
 jobs:
   inspect:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:

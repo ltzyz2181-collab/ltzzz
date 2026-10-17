@@ -3,7 +3,7 @@ import {aaveStatus,withAaveReadProvider,AAVE} from './wep3-aave.js';
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {PROVIDER,inspectQuote} from './scripts/lib/external-procurement-preflight.mjs';
 export const PROCUREMENT_ORDER='EXT-AI-20261017-001';
-export const PROCUREMENT_REVISION='external-purchase-v2';
+export const PROCUREMENT_REVISION='external-purchase-v3';
 const ABI=new Interface(['event Transfer(address indexed from,address indexed to,uint256 value)','event AuthorizationUsed(address indexed authorizer,bytes32 indexed nonce)']);
 const TYPES={TransferWithAuthorization:[{name:'from',type:'address'},{name:'to',type:'address'},{name:'value',type:'uint256'},{name:'validAfter',type:'uint256'},{name:'validBefore',type:'uint256'},{name:'nonce',type:'bytes32'}]};
 const digest=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -32,13 +32,19 @@ export async function externalPurchase(m,book,{execute=false,fetcher=fetch,statu
  }
  if(!execute)return {ok:true,revision:PROCUREMENT_REVISION,status:'ready_for_one_owner_authorized_purchase',order_id:PROCUREMENT_ORDER,max_usdc:'0.05',endpoint:PROVIDER.url,paid:false,tx_hash:null};
  const status=await statusReader(m,book);if(!status.ok||status.address?.toLowerCase()!==m.env.X402_RECEIVE_ADDRESS?.toLowerCase())return {ok:false,error:'treasury_state_unavailable'};
- if(status.active_intent||status.paused)return {ok:false,error:'treasury_busy_or_paused'};
+ if(status.paused)return {ok:false,error:'treasury_paused'};
+ let pendingInvestment=0n;
+ if(status.active_intent){
+  const active=book.aave?.intents?.[status.active_intent];
+  if(!active||!['supply','withdraw'].includes(active.action)||!/^\d+$/.test(active.amount_raw||''))return {ok:false,error:'pending_investment_liability_unverified'};
+  if(active.action==='supply')pendingInvestment=BigInt(active.amount_raw);
+ }
  let wallet;try{wallet=new Wallet(m.env.TREASURY_EXECUTOR_KEY);if(wallet.address.toLowerCase()!==status.address.toLowerCase())throw Error();}catch{return {ok:false,error:'treasury_signer_not_controlled'};}
  // A free quote is not a model generation. The exact same body is used for payment.
  const body=JSON.stringify({model:'deepseek/deepseek-chat',messages:[{role:'user',content:prompt}],max_tokens:768,stream:false});
  let q,accepted;
  try{const r=await fetcher(PROVIDER.url,{method:'POST',headers:{'Content-Type':'application/json'},body,redirect:'error',signal:AbortSignal.timeout(20000)});const h=r.headers.get('PAYMENT-REQUIRED');if(h&&h.length>60000)throw Error();q=h?JSON.parse(atob(h)):await r.json();accepted=paymentQuote(r.status,q);}catch{return {ok:false,error:'external_quote_not_accepted',paid:false,tx_hash:null};}
- const value=BigInt(accepted.amount);if(BigInt(status.usdc_raw)-value<cashFloorRaw(book))return {ok:false,error:'cash_liabilities_reserve'};
+ const value=BigInt(accepted.amount);if(BigInt(status.usdc_raw)-value-pendingInvestment<cashFloorRaw(book))return {ok:false,error:'cash_liabilities_reserve'};
  const timestamp=Math.floor(now()/1000),nonce='0x'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
  o={id:PROCUREMENT_ORDER,status:'reserved',payer:wallet.address,pay_to:accepted.payTo,amount_raw:accepted.amount,nonce,valid_before:timestamp+Math.min(120,accepted.maxTimeoutSeconds),before_block:status.block_number,paid:false,tx_hash:null,delivery_accepted:false,provider:'agent402.tools',model_requested:'deepseek/deepseek-chat',model_identity_verification:'provider_report_only',spec_provided_in_prompt:true,original_design_claimed:false,request_sha256:await digest(body),at:new Date(now()).toISOString()};
  book.procurement[o.id]=o;book.ledger||=[];book.ledger.push({type:'external_AI_purchase_reserved',order_id:o.id,amount_raw:o.amount_raw,currency:'Base_USDC',paid:false,tx_hash:null,at:o.at});await m.save(book);
