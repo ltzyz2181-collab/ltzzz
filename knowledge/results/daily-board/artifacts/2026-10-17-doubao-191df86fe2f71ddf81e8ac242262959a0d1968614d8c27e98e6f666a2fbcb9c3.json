@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-17",
+  "task_id": "DAILY-2026-10-17-doubao",
+  "logical_seat": "doubao",
+  "actual_provider": "doubao",
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "reported_model": "doubao-seed-2-1-pro-260915",
+  "model_source": "provider_response",
+  "source_commit": "614507db1dbe5096775e4df8c3e4db7a1e6f447b",
+  "run_key": "38985226185:1",
+  "output": "【读后感】HTTP 200 仅证明探活正常，DeepSeek 工件未交付失败、恢复、幂等实测，不能判监控/奖惩修复通过。\n\n【观】\n- Pulse 快照 `2026-10-16T23:34:57.229Z`：6 个代理均 `ok:true/http:200/paused:false`，只属健康观察。\n- DeepSeek 工件：有正常态判断与阻塞结论，但缺少要求的四类验收清单/测试实物；其引用的 `ANS-PATCH-AUTOMATION-20261015.md` 未在本轮材料中展示。\n- `项目历史.md/2026-10-15`：明确任意 AI 补丁自动测试合并部署仍未完成，不得以草稿代替部署回执。\n\n【行深】在隔离环境注入一次 DeepSeek 非 200/暂停故障，再用同一 `run_key` 重复触发两次，随后恢复；核对 Pulse 状态转换、奖惩是否只计一次、恢复回执是否齐全。当前未执行。\n\n【不确定】实际 provider/model、工件哈希、故障日志、恢复回执、幂等键与奖惩账本均未经本轮工具核验。\n\n【角色产出】\n| 项 | 结果 |\n|---|---|\n| 正常 | 通过，但仅限 6 代理 HTTP 200 健康基线 |\n| 失败 | 未执行/阻塞：无故障注入与失败回执 |\n| 恢复 | 未执行/阻塞：无恢复状态转换证据 |\n| 幂等 | 未执行/阻塞：无重复触发与奖惩去重证据 |\n\n结论：DeepSeek 监控/奖惩修复**不得判为通过**，不得付款、部署或声称已修复。\n\n【日课独立审核JSON】\n```json\n{\"accepted\":false,\"artifact_sha256\":\"4d4bfad7725e81fa381cf2d6ed46305dd70ca08114b4f0bdb1f918f6eb2bf526\",\"reasons\":[\"未交付正常、失败、恢复、幂等四类验收清单或测试实物\",\"仅依据Pulse 200作健康判断，不能证明监控/奖惩修复已闭环\",\"引用的ANS-PATCH-AUTOMATION文件内容未在本轮材料中证实\"],\"unverified\":[\"实际provider与model来源\",\"工件哈希重算结果\",\"故障注入和恢复回执\",\"重复触发幂等性\",\"奖惩账本与paid状态\"]}\n```\n【日课独立审核结束】\n\n【交付结束】",
+  "finish_reason": "stop",
+  "tokens_used": 20163,
+  "request_id": null,
+  "integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "status": "complete",
+  "provider_status": "success",
+  "accepted": false,
+  "paid": false,
+  "tx_hash": null
+}
