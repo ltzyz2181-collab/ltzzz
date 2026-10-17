@@ -1,8 +1,8 @@
-# LTZZZ 每日报告 · 2026-10-17
+# LTZZZ 每日报告 · 2026-10-18
 
-- 执行 ID：gha-38985226185-attempt-1
+- 执行 ID：gha-39080498617-attempt-1
 - 核心记忆读取：**complete**（6/6 个文件，49581 字节）
-- 完整读后感：[data/reflections/2026-10-17.md](../reflections/2026-10-17.md)
+- 完整读后感：[data/reflections/2026-10-18.md](../reflections/2026-10-18.md)
 
 ## 核心记忆读取审计
 
@@ -21,13 +21,21 @@
 
 | AI | 执行状态 | 交付状态 | 经济状态 | 产出预览 |
 |---|---|---|---|---|
-| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】六篇最稳的是把观察/解释与已核验/未核验分栏，不把“没查到”写成“不存在”。 【观】`ltzzz-memory/项目历史.md`“2026-10-15”节：写明“任意AI补丁自动测试合并部署仍未完成，不用草稿通过代替部署回执”；P |
-| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】HTTP 200 仅证明探活正常，DeepSeek 工件未交付失败、恢复、幂等实测，不能判监控/奖惩修复通过。 【观】 - Pulse 快照 `2026-10-16T23:34:57.229Z`：6 个代理均 `ok:true/h |
-| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】工程两篇接到10-15未闭环；今日只拆Pulse与生成回执，200≠已生成。 【观】快照`ran_at=2026-10-16T23:34:57.229Z`，六席http=200/ok/paused=false，材料自标非生成验收。 |
+| deepseek | blocked_no_repurchase | not_produced | not_applicable_no_financial_action | 调用失败，见 failures |
+| doubao | blocked_no_repurchase | not_produced | not_applicable_no_financial_action | 调用失败，见 failures |
+| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】工程两篇接到10-15未闭环；今日只拆Pulse与生成回执，200≠已生成。 【观】快照`ran_at=2026-10-17T22:20:32.592Z`，六席http=200/ok/paused=false，材料自标非生成验收。 |
 | gpt | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | 原厂付费日课已按owner决定停用；逻辑总控由国内执行器接续。 |
 | claude | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | 外部免费讨论席；未收到正式交付，不视为生成失败。 |
 | microsoft | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | 原厂付费日课已按owner决定停用；逻辑总控由国内执行器接续。 |
 | qianwen | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | 每日回归工单等待外部接单；探针不代表原生执行。 |
 
+## 失败/未配置
 
+- deepseek: blocked_no_repurchase — No unused verified reservation owned by this run
+- doubao: blocked_no_repurchase — No unused verified reservation owned by this run
+
+## 催办中（未完成任务，下次运行自动注入 prompt）
+
+- deepseek: 2026-10-18 blocked_no_repurchase — No unused verified reservation owned by this run
+- doubao: 2026-10-18 blocked_no_repurchase — No unused verified reservation owned by this run
 
