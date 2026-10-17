@@ -13,16 +13,32 @@ export function okxClient(credentials,{fetcher=fetch,now=()=>new Date().toISOStr
   return {http:response.status,code:result.code,data:result.data||[],ok:response.ok&&result.code==='0'};
  };
 }
-export function spotOrder({orderId,agent,budget,instrument,ticker,policy}){
+export function spotOrder({orderId,agent,budget,instrument,ticker,policy,priceLimit}){
  if(instrument?.instId!=='BTC-USDT'||instrument.state!=='live'||ticker?.instId!=='BTC-USDT')throw Error('okx_instrument_not_live');
  const ask=raw(ticker.askPx,D),tick=raw(instrument.tickSz,D),lot=raw(instrument.lotSz,D),min=raw(instrument.minSz,D);
  if(ask<=0n||tick<=0n||lot<=0n||min<=0n)throw Error('okx_instrument_invalid');
  if(!Number.isInteger(policy.max_slippage_bps)||policy.max_slippage_bps<0||policy.max_slippage_bps>50||!Number.isInteger(policy.fee_reserve_bps)||policy.fee_reserve_bps<50||policy.fee_reserve_bps>100)throw Error('okx_policy_exceeds_bound');
- const max=ask*BigInt(10000+policy.max_slippage_bps)/10000n,px=max/tick*tick;
+ // Keep room below the exchange's moving upper band instead of pricing exactly
+ // at our maximum allowed 50bps. The policy is a ceiling, not a target price.
+ const max=ask*BigInt(10000+Math.min(policy.max_slippage_bps,5))/10000n;
+ let ceiling=max;
+ if(priceLimit){if(priceLimit.instId!=='BTC-USDT'||typeof priceLimit.enabled!=='boolean')throw Error('okx_price_band_invalid');if(priceLimit.enabled){const band=raw(priceLimit.buyLmt,D);if(band<=0n)throw Error('okx_price_band_invalid');if(band<ceiling)ceiling=band;}}
+ const px=ceiling/tick*tick;
+ if(px<ask)throw Error('okx_price_band_below_ask_wait');
  if(px<=0n)throw Error('okx_price_below_tick');
  const usable=raw(budget,D)*BigInt(10000-policy.fee_reserve_bps)/10000n,qty=(usable*S/px)/lot*lot;
  if(qty<min)throw Error('okx_quota_below_minimum');
  return {instId:'BTC-USDT',tdMode:'cash',ordType:'ioc',side:'buy',px:decimal(px,D),sz:decimal(qty,D),clOrdId:clientOrderId(orderId,agent)};
+}
+export async function recoverPriceBandRejection(client,record,{authorization,request,lease,save}){
+ if(authorization!=='owner-fixed-price-band-v1'||record.state!=='rejected'||record.order_code!=='51137'||record.price_band_recovery_count||record.order_id||record.trade_executed||record.paid)return record;
+ if(request.clOrdId!==record.request.clOrdId||request.clOrdId!==clientOrderId(record.order_round,record.agent)||request.instId!=='BTC-USDT'||request.tdMode!=='cash'||request.ordType!=='ioc'||request.side!=='buy')throw Error('okx_reprice_identity_mismatch');
+ if(record.order_round!=='OWNER-FUNDED-20261017-01'||raw(request.sz,D)*raw(request.px,D)/S>raw(record.budget_usdt,D)*9950n/10000n)throw Error('okx_reprice_budget_mismatch');
+ const found=await client('GET','/api/v5/trade/order?instId=BTC-USDT&clOrdId='+request.clOrdId);
+ if(found.ok)throw Error('okx_reprice_existing_order_requires_reconciliation');
+ if(found.code!=='51603')throw Error('okx_reprice_lookup_uncertain');
+ record.price_band_recovery_history=[...(record.price_band_recovery_history||[]),{request:record.request,state:record.state,exchange_code:record.exchange_code,order_code:record.order_code,submission_lease:record.submission_lease,at:new Date().toISOString()}];
+ record.request=request;record.price_band_recovery_count=1;record.state='submission_authorized';record.submission_lease=lease;await save(record);return record;
 }
 export async function spotReadiness(client){
  const config=await client('GET','/api/v5/account/config');if(!config.ok)return {ok:false,status:'okx_config_rejected',code:config.code,http:config.http};
@@ -41,6 +57,7 @@ export async function executeSpot(client,record,{freshLease=false,save=async()=>
   if(!freshLease||record.state!=='submission_authorized')return {...record,state:'submission_unknown_requires_reconciliation'};
   const budget=raw(record.budget_usdt,D),cost=raw(record.request.sz,D)*raw(record.request.px,D)/S;if(budget<=0n||budget>20n*S||cost<=0n||cost>budget*9950n/10000n)throw Error('okx_order_exceeds_reserved_budget');
   const fresh=await client('GET','/api/v5/market/ticker?instId=BTC-USDT',undefined,{publicRead:true});if(!fresh.ok||fresh.data[0]?.instId!=='BTC-USDT'||raw(record.request.px,D)>raw(fresh.data[0].askPx,D)*10050n/10000n)throw Error('okx_quote_stale_or_slippage_exceeded');
+  if(record.price_band_recovery_count){const b=await client('GET','/api/v5/public/price-limit?instId=BTC-USDT',undefined,{publicRead:true});if(!b.ok||b.data[0]?.instId!=='BTC-USDT'||b.data[0]?.enabled!==true||raw(record.request.px,D)>raw(b.data[0].buyLmt,D))throw Error('okx_price_band_changed_before_submission');}
   record.state='submission_started';await save(record);
   let placed;try{placed=await client('POST','/api/v5/trade/order',record.request);}catch{record.state='submission_unknown_requires_reconciliation';await save(record);return record;}
   const row=placed.data[0];
