@@ -123,13 +123,22 @@ async function processQueue(env,selected){
   let cursor;
   do{const page=await env.VIDEOS.list({prefix:'queue/',limit:100,cursor});names.push(...page.objects.filter(x=>x.key.endsWith('.meta.json')).map(x=>x.key.slice(6,-10)).filter(x=>NAME.test(x)));cursor=page.truncated?page.cursor:undefined;}while(cursor&&names.length<100);
  }
- const results=[];
+ const results=[];let newUploadAttempts=0;
  // One real upload per invocation; already-started items can reconcile first.
  for(const name of names.slice(0,20)){
-  try{const result=await processVideo(env,name);results.push(result);if(!['metadata_missing','legacy_metadata_not_validated','another_execution_claimed','upload_uncertain'].includes(result.status))break;}
+  try{
+   const meta=await read(env,`queue/${name}.meta.json`);
+   const previouslyStarted=meta?.video_sha256?await read(env,receiptKey(meta.video_sha256)):null;
+   const result=await processVideo(env,name);results.push(result);
+   if(!previouslyStarted&&!['metadata_missing','legacy_metadata_not_validated','another_execution_claimed'].includes(result.status)){
+    // A lost response is still a real upload attempt; stop after it. Already
+    // started items only reconcile and cannot consume today's new-upload slot.
+    newUploadAttempts++;break;
+   }
+  }
   catch{results.push({ok:false,status:'queue_processing_failed',name});break;}
  }
- const report={at:new Date().toISOString(),ok:results.every(x=>x.ok),scanned:names.length,results};
+ const report={at:new Date().toISOString(),ok:results.every(x=>x.ok),scanned:names.length,new_upload_attempts:newUploadAttempts,results};
  await write(env,'logs/latest-publish.json',report);return report;
 }
 export default{

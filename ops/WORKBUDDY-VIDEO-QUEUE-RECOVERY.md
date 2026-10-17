@@ -31,3 +31,11 @@ node scripts/queue-video-only.mjs --video videos/2026-10-17-no-self-review.mp4 -
 ## 另一个已确认的发布失败
 
 run `38950009783`（`youtube-daily-publish.yml`）失败于 `queue_http_409_queue_name_conflict`。同日先前入队片 SHA-256 为 `9582fd67463128ad4db6d88f94fc3652e81efb8da44efd1d44ab3135801adb83`；后来重渲染片为 `5d8af7541d5cebf5344bc12a17659ff8eebc3278dca889f41a8d62f32d068e54`，名称相同。这是异片保护拦截，不能归因成 R2 403，也不应通过换名绕过。该既有视频的实际 cron/平台结果另外回读，不当成 WorkBuddy 本次成片。
+
+## 已取得的实际证据
+
+PR #103 已合并并部署：run `38984668063`，Worker version `c1c245c3-e017-42db-b834-678438e4d653`，wrangler 4.151.1。真实诊断 run `38984668039` 成功：匿名 401、认证 R2 读取 200、非法上传 400 且未写入。诊断明确显示本次 WorkBuddy 对象的 MP4 和元数据均不存在。
+
+另外只读请求 Google-backed `/youtube/verify?video_id=ywbjj7tNIm0`，确认上一条 10-16 视频已 public/processed/published=true；这是另一个视频，不替本次 MP4 宣布成功。R2 缓存仍为先前 processing，须由后续调度对账。调度器现区分旧上传对账与新上传机会：旧片对账后可继续一条新上传；本轮新上传若丢失响应，同样占用该轮唯一机会，不再上传第二条。该控制在独立回归中验证，不靠触发真实上传来做测试。
+
+总控记录：`results/publishing/workbuddy-recovery-controller-2026-10-16.json`；原始实际诊断：`results/publishing/workbuddy-queue-diagnostic-38984668039-attempt-1.json`。
