@@ -23,7 +23,11 @@ on:
     # Existing daily inspection remains dry-run; no extra model or cash cron.
     - cron: '0 4 * * *'
 permissions: {contents: read}
-concurrency: {group: ltzzz-funded-invest, cancel-in-progress: false}
+concurrency:
+  # PR validation must not wait behind a live execution waiting for its rollout.
+  # All real main-branch executions still share the original serial lock.
+  group: ${{ github.event_name == 'pull_request' && format('ltzzz-funded-invest-pr-{0}', github.event.pull_request.number) || 'ltzzz-funded-invest' }}
+  cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
