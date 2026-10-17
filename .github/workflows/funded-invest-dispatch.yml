@@ -66,6 +66,11 @@ jobs:
           const token=runnerToken();if(!token)throw Error('runner_authentication_missing');console.log('::add-mask::'+token);
           const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
           fs.appendFileSync(process.env.GITHUB_ENV,'WEP3_RUNNER_TOKEN='+token+'\nARM_ACK='+day+'\n');
+          if(process.env.GITHUB_EVENT_NAME==='push'){
+            const marker=JSON.parse(fs.readFileSync('ops/dispatch/funded-round-resume-20261017.json'));
+            if(marker.venue==='cex'&&marker.order_id==='OWNER-FUNDED-20261017-01'&&marker.new_round_budget==='0')fs.appendFileSync(process.env.GITHUB_ENV,'SELECTED_VENUE=cex\nEXTERNAL_RECONCILE_ONLY=1\n');
+            if(marker.permission_recovery==='owner-confirmed-20261017')fs.appendFileSync(process.env.GITHUB_ENV,'OKX_PERMISSION_RECOVERY=owner-confirmed-20261017\n');
+          }
           JS
       - name: Wait for restricted external-purchase executor deployment, no payment
         run: |
@@ -78,6 +83,7 @@ jobs:
       - name: Fund only the fixed verified OKX account within the original 20U budget
         if: env.ARM_REAL_ORDERS == '1' && env.SELECTED_VENUE != 'web3'
         env:
+          RECONCILE_CONFIRMED_DEPOSIT_ONLY: '1'
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
