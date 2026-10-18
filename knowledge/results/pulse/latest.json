@@ -46,7 +46,12 @@
     "ans-review-2026-10-18",
     "desktop-relay-issue-126",
     "daily-claim-2026-10-18-grok-97847f4758f69127",
-    "daily-submit-2026-10-18-grok-97847f4758f69127"
+    "daily-submit-2026-10-18-grok-97847f4758f69127",
+    "ans-claim-2026-10-19-deepseek",
+    "ans-claim-2026-10-19-doubao",
+    "ans-submit-2026-10-19-worker",
+    "ans-submit-2026-10-19-reviewer",
+    "ans-review-2026-10-19"
   ],
   "manual": {},
   "limits": {
@@ -56,7 +61,7 @@
     "dispatch_paused": false,
     "automatic_recovery": true,
     "concurrency": 1,
-    "investment_hold": true,
+    "investment_hold": false,
     "paused_agents": [],
     "all_tasks_independent_review": true
   },
@@ -694,17 +699,58 @@
       "type": "sensor_unavailable",
       "at": "2026-10-18T18:01:05.428Z",
       "sensor": "wallet_balance"
+    },
+    {
+      "id": "wallet_unknown:1792353669380",
+      "type": "sensor_unavailable",
+      "at": "2026-10-18T20:01:09.380Z",
+      "sensor": "wallet_balance"
+    },
+    {
+      "id": "ans-claim-2026-10-19-deepseek",
+      "type": "controller_claim_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-18T20:35:46.543Z"
+    },
+    {
+      "id": "ans-claim-2026-10-19-doubao",
+      "type": "controller_claim_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-18T20:35:46.680Z"
+    },
+    {
+      "id": "ans-submit-2026-10-19-worker",
+      "type": "controller_submit_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-18T20:36:22.892Z"
+    },
+    {
+      "id": "ans-submit-2026-10-19-reviewer",
+      "type": "controller_submit_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-18T20:36:23.046Z"
+    },
+    {
+      "id": "ans-review-2026-10-19",
+      "type": "controller_review_task",
+      "actor": "qianwen",
+      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
+      "at": "2026-10-18T20:36:23.149Z"
     }
   ],
   "agents": {
     "doubao": {
       "failures": 0,
-      "successes": 1017,
+      "successes": 1047,
       "offline": false,
       "name": "doubao",
       "ok": true,
       "http": 200,
-      "latency_ms": 80,
+      "latency_ms": 75,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -714,12 +760,12 @@
     },
     "deepseek": {
       "failures": 0,
-      "successes": 1017,
+      "successes": 1047,
       "offline": false,
       "name": "deepseek",
       "ok": true,
       "http": 200,
-      "latency_ms": 89,
+      "latency_ms": 75,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -729,12 +775,12 @@
     },
     "kimi": {
       "failures": 0,
-      "successes": 1017,
+      "successes": 1047,
       "offline": false,
       "name": "kimi",
       "ok": true,
       "http": 200,
-      "latency_ms": 74,
+      "latency_ms": 75,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -744,12 +790,12 @@
     },
     "grok": {
       "failures": 0,
-      "successes": 991,
+      "successes": 1021,
       "offline": false,
       "name": "grok",
       "ok": true,
       "http": 200,
-      "latency_ms": 45,
+      "latency_ms": 46,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -759,12 +805,12 @@
     },
     "qianwen": {
       "failures": 0,
-      "successes": 1017,
+      "successes": 1047,
       "offline": false,
       "name": "qianwen",
       "ok": true,
       "http": 200,
-      "latency_ms": 51,
+      "latency_ms": 48,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -774,12 +820,12 @@
     },
     "wep3": {
       "failures": 0,
-      "successes": 1017,
+      "successes": 1047,
       "offline": false,
       "name": "wep3",
       "ok": true,
       "http": 200,
-      "latency_ms": 130,
+      "latency_ms": 61,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -789,20 +835,25 @@
     }
   },
   "cooldowns": {
-    "wallet_unknown": 1792346465428,
+    "wallet_unknown": 1792353669380,
     "collector_transport": 1792041866310,
     "wallet_drop": 1792300844920
   },
   "wallet": {
     "name": "wallet_balance",
-    "ok": false,
-    "error": "rpc_unavailable",
+    "ok": true,
+    "units": "242914645",
+    "balance_usdc": "242.914645",
     "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
-    "chain_id": 8453
+    "chain_id": 8453,
+    "rpc": "https://base-rpc.publicnode.com",
+    "evidence": "eth_chainId_and_eth_call_balanceOf",
+    "low": false,
+    "sudden_drop": false
   },
   "mode": "parasympathetic",
   "active_controller": "gpt",
-  "ran_at": "2026-10-18T18:06:05.603Z",
+  "ran_at": "2026-10-18T20:36:10.557Z",
   "version": "0.3.5-state-v2",
   "model_calls": 0,
   "financial_execution": false,
@@ -814,186 +865,6 @@
     "note": "未配置主动消息渠道；告警保存在/status，由外部工作流检查。"
   },
   "history": [
-    {
-      "at": "2026-10-17T18:10:25.773Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:15:25.897Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:20:26.013Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:25:26.120Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:30:26.240Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:35:26.356Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:40:26.463Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:45:26.566Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:50:26.694Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T18:55:26.817Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:00:26.995Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:05:27.120Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:10:27.250Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:15:27.378Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:20:27.496Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:25:27.590Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:30:27.748Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:35:27.865Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:40:27.988Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:45:28.096Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:50:28.202Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T19:55:28.313Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:00:28.470Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:05:28.590Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:10:28.725Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:15:28.845Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:20:29.056Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 1
-    },
-    {
-      "at": "2026-10-17T20:25:29.180Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:30:29.300Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-17T20:35:29.413Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
     {
       "at": "2026-10-17T20:40:29.549Z",
       "mode": "parasympathetic",
@@ -2541,6 +2412,186 @@
       "mode": "parasympathetic",
       "unhealthy": [],
       "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:11:05.761Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:16:05.869Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:21:05.990Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:26:06.105Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:31:06.223Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:36:06.427Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:41:06.609Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:46:06.777Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:51:06.939Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T18:56:07.118Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:01:07.301Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:06:07.467Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:11:07.599Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:16:07.726Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:21:07.908Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:26:08.084Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:31:08.255Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:36:08.520Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:41:08.662Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:46:08.841Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:51:08.959Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T19:56:09.183Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:01:09.380Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 1
+    },
+    {
+      "at": "2026-10-18T20:06:09.545Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:11:09.770Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:16:09.951Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:21:10.129Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:26:10.296Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:31:10.478Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-18T20:36:10.557Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
     }
   ],
   "collector_health": "observed",
@@ -3126,7 +3177,7 @@
       "id": "ANS-2026-10-19-deepseek",
       "agent": "deepseek",
       "instruction": "ANS/Pulse首要任务：读取最新真实监控与奖惩回执，区分代理健康、原生生成和交付验收；定位一个真实阻塞并交代码补丁或可运行断言，附来源，不执行资金。",
-      "status": "assigned",
+      "status": "rejected_draft_review",
       "source": "coordinator_rules_zero_model_baseline",
       "assigned_to": "deepseek",
       "execution_chain": "ans",
@@ -3134,13 +3185,33 @@
       "created_at": "2026-10-18T16:01:01.442Z",
       "origin": "logical_gpt_coordinator_rules_not_native_gpt_call",
       "paid": false,
-      "tx_hash": null
+      "tx_hash": null,
+      "claimed_by": "deepseek",
+      "claim_actor": "qianwen",
+      "claimed_at": "2026-10-18T20:35:46.543Z",
+      "claim_kind": "authenticated_executor_declaration_not_native_model_proof",
+      "evidence_path": "knowledge/results/ans-cycle/2026-10-19-worker.json",
+      "evidence_sha256": "38e768a12396662d50a745c4cc46a89338f416903ba269393d6a6c5ab44b8ca3",
+      "submitted_at": "2026-10-18T20:36:22.892Z",
+      "model_execution_verified": false,
+      "review": {
+        "scope": "engineering_draft_only",
+        "accepted": false,
+        "worker_actual_provider": "deepseek",
+        "reviewer_actual_provider": "doubao",
+        "evidence_path": "knowledge/results/ans-cycle/2026-10-19-reviewer.json",
+        "evidence_sha256": "a5c32904d62f398bcfd7eea2304ee08ad34ada1cad1202dc211175cc1d0b1575",
+        "reviewed_sha256": "38e768a12396662d50a745c4cc46a89338f416903ba269393d6a6c5ab44b8ca3",
+        "at": "2026-10-18T20:36:23.149Z",
+        "provenance": "authenticated_executor_attestation"
+      },
+      "deployed": false
     },
     {
       "id": "ANS-2026-10-19-doubao",
       "agent": "doubao",
       "instruction": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
-      "status": "assigned",
+      "status": "submitted_pending_review",
       "source": "coordinator_rules_zero_model_baseline",
       "assigned_to": "doubao",
       "execution_chain": "ans",
@@ -3148,7 +3219,15 @@
       "created_at": "2026-10-18T16:01:01.442Z",
       "origin": "logical_gpt_coordinator_rules_not_native_gpt_call",
       "paid": false,
-      "tx_hash": null
+      "tx_hash": null,
+      "claimed_by": "doubao",
+      "claim_actor": "qianwen",
+      "claimed_at": "2026-10-18T20:35:46.680Z",
+      "claim_kind": "authenticated_executor_declaration_not_native_model_proof",
+      "evidence_path": "knowledge/results/ans-cycle/2026-10-19-reviewer.json",
+      "evidence_sha256": "a5c32904d62f398bcfd7eea2304ee08ad34ada1cad1202dc211175cc1d0b1575",
+      "submitted_at": "2026-10-18T20:36:23.046Z",
+      "model_execution_verified": false
     },
     {
       "id": "DAILY-2026-10-19-deepseek",
@@ -3215,7 +3294,7 @@
   "daily_dispatch_date": "2026-10-19",
   "last_balance": {
     "units": "242914645",
-    "at": 1792345864897
+    "at": 1792355770557
   },
   "dispatches": [
     {
@@ -3262,7 +3341,7 @@
   "task_board_schema_version": 2,
   "durable_revision": "pulse-state-v2",
   "stale": false,
-  "alarm_at": 1792347065603,
+  "alarm_at": 1792356070557,
   "controllers": [
     "gpt",
     "qianwen"
