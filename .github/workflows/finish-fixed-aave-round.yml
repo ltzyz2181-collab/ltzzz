@@ -35,6 +35,11 @@ jobs:
           JS
           export ARM_ACK="$(TZ=Asia/Shanghai date +%F)"
           node scripts/funded-invest-executor.mjs --phase execute --venue web3 --agent all
+      - name: Independently read the child position, without signing
+        if: always()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/record-owner-child-position.mjs
       - name: Preserve original-order outcomes and blockers
         if: always()
         run: |
