@@ -43,6 +43,13 @@ jobs:
       - name: Preserve original-order outcomes and blockers
         if: always()
         run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const read=async url=>{try{const r=await fetch(url,{signal:AbortSignal.timeout(15000)});return {http:r.status,data:await r.json()};}catch{return {error:'service_read_failed'};}};
+          const [roles,youtube]=await Promise.all([read('https://ltzzz-wep3.ltzyz2181.workers.dev/agents/roles'),read('https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/status')]);
+          const y=youtube.data||{},r=roles.data||{},file='knowledge/results/funded-invest/service-closeout-'+process.env.GITHUB_RUN_ID+'.json';
+          fs.mkdirSync('knowledge/results/funded-invest',{recursive:true});fs.writeFileSync(file,JSON.stringify({at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,model_calls:0,read_only:true,roles:{http:roles.http,error:roles.error,role_registration_only:r.role_registration_only,generation_verified:r.generation_verified,agents:r.agents},youtube:{http:youtube.http,error:youtube.error,connected:y.connected,reauth_required:y.reauth_required,auth_error:y.auth_error,credential_present:y.credential_present},video_uploaded_this_run:false},null,2)+'\n');
+          JS
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add knowledge/results/funded-invest/
