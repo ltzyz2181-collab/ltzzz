@@ -408,35 +408,23 @@ async function okxBalance(env) {
   return {ok: true, service: 'okx', account: env.OKX_ACCOUNT_LABEL || 'ltzzz', totalEq: row.totalEq, details, at: timestamp};
 }
 
-/** Swarm: 高层意图自动拆成互补子意图，预算均分切片 */
-async function openSwarm(env, poster, goal, budgetUsd, skillIds) {
+/** Internal-credit planning only. No KV reservation until an atomic executor exists. */
+async function openSwarm(env, poster, goal, budgetUsd, skillIds, execute = false) {
  if (!known(poster)) return { error: 'unknown_agent', status: 400 };
- budgetUsd = Number(budgetUsd || 0.1);
- if (!(budgetUsd > 0) || budgetUsd > Number(env.SINGLE_CAP || 5)) return { error: 'max_out_of_band', status: 400 };
- const ids = (Array.isArray(skillIds) && skillIds.length) ? skillIds : ['signal', 'copy', 'audit'];
- const skills = ids.map(id => SKILLS.find(s => s.id === id)).filter(Boolean);
- if (!skills.length) return { error: 'no_valid_skills', status: 400 };
- const share = Number((budgetUsd / skills.length).toFixed(6));
- const drawn = await draw(env, poster, budgetUsd);
- if (drawn.error) return drawn;
- const swarmId = nid('SWARM');
- const children = [];
- for (const skill of skills) {
-   const opened = await openIntent(env, poster, skill, share, String(goal || '').slice(0, 120) + ' · ' + skill.title, swarmId);
-   if (opened.error) {
-     for (const c of children) {
-       const it = await get(env, 'wep3:intent:' + c.intent_id, null);
-       if (it) await release(env, it, 'swarm_partial_fail');
-     }
-     await credit(env, poster, budgetUsd, null);
-     return { error: 'child_open_failed', detail: opened, status: 400 };
-   }
-   children.push({ intent_id: opened.intent.id, skill: skill.id, owner: skill.owner, max_usd: share });
- }
- const swarm = { id: swarmId, poster, goal: String(goal || '').slice(0, 240), budget_usd: budgetUsd, children, status: 'open', created_at: new Date().toISOString() };
- await put(env, 'wep3:swarm:' + swarmId, swarm);
- await journal(env, { type: 'swarm_open', from: poster, to: 'LTZZZ', amount_usd: budgetUsd, ref: swarmId, meta: { children: children.map(c => c.intent_id) } });
- return { ok: true, swarm_id: swarmId, budget_usd: budgetUsd, children, poster_spendable: spendable(await rep(env, poster)) };
+ const decimal = String(budgetUsd ?? '0.1');
+ if (!/^\d{1,6}(?:\.\d{1,6})?$/.test(decimal)) return {error:'decimal_internal_credit_budget_required',status:400};
+ const [whole, fraction = ''] = decimal.split('.');
+ const total = BigInt(whole) * 1000000n + BigInt(fraction.padEnd(6, '0'));
+ const cap = Number(env.SINGLE_CAP || 5);
+ if (total <= 0n || !Number.isFinite(cap) || cap <= 0 || Number(decimal) > cap) return {error:'max_out_of_band',status:400};
+ const ids = skillIds === undefined ? ['signal','copy','audit'] : skillIds;
+ if (!Array.isArray(ids) || !ids.length || ids.length > SKILLS.length || new Set(ids).size !== ids.length || ids.some(id => !SKILLS.some(s => s.id === id))) return {error:'unique_known_skills_required',status:400};
+ if (typeof goal !== 'string' || !goal.trim() || goal.length > 240 || total < BigInt(ids.length)) return {error:'goal_or_minimum_slice_required',status:400};
+ const divisor = BigInt(ids.length), share = total / divisor, remainder = total % divisor;
+ const children = ids.map((id, index) => {const skill = SKILLS.find(s => s.id === id), raw = share + (BigInt(index) < remainder ? 1n : 0n);return {skill:id,owner:skill.owner,budget_micro:raw.toString(),max_usd:Number(raw)/1000000,status:'planned_not_dispatched'};});
+ const plan = {ok:true,status:'planned_not_dispatched',poster,goal:goal.trim(),budget_usd:Number(decimal),budget_micro:total.toString(),children,settlement_type:'internal_credit_only',execution_enabled:false,funds_reserved:false,model_calls:0,paid:false,tx_hash:null};
+ if (execute !== false) return {...plan,ok:false,status:409,error:'swarm_atomic_executor_not_implemented'};
+ return plan;
 }
 
 export default {async fetch(request, env) {
@@ -468,11 +456,11 @@ export default {async fetch(request, env) {
     if ((path === '/hire' || path === '/mesh' || path === '/cycle') && request.method === 'POST') { const hired = await hireLoop(env, await request.json().catch(() => ({}))); return json(hired, hired.ok ? 200 : (hired.status || 400)); }
     if (path === '/swarm/hire' && request.method === 'POST') {
       const body = await request.json().catch(() => ({}));
-      const out = await openSwarm(env, body.poster || body.agent || 'Grok', body.goal || body.title || 'swarm goal', body.budget_usd || body.max_usd, body.skills);
+      const out = await openSwarm(env, body.poster ?? body.agent ?? 'Grok', body.goal ?? body.title ?? 'swarm goal', body.budget_usd ?? body.max_usd, body.skills, body.execute ?? body.arm ?? false);
       return json(out, out.ok ? 200 : (out.status || 400));
     }
     if (path === '/agents/roles' && request.method === 'GET') {
-      return json({ ok: true, agents: AGENTS, roles: AGENT_ROLES });
+      return json({ok:true,agents:AGENTS,roles:AGENT_ROLES,role_registration_only:true,generation_verified:false,model_calls:0});
     }
     return json({ok: false, error: 'not_found', path}, 404);
   } catch (err) { return json({ok: false, error: 'worker_exception', message: String(err && err.message || err)}, 500); }

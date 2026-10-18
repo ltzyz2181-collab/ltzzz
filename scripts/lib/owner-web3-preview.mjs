@@ -2,7 +2,7 @@ import {Interface,parseUnits,formatUnits,isAddress} from 'ethers';
 export const BASE={chainId:8453,usdc:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',pool:'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5',rpcs:['https://base-rpc.publicnode.com','https://mainnet.base.org','https://base.drpc.org']};
 const token=new Interface(['function balanceOf(address) view returns (uint256)','function allowance(address,address) view returns (uint256)','function decimals() view returns (uint8)','function approve(address,uint256) returns (bool)']);
 const pool=new Interface(['function supply(address,uint256,address,uint16)']);
-const METHODS=new Set(['eth_chainId','eth_blockNumber','eth_getBalance','eth_call','eth_getCode']);
+const METHODS=new Set(['eth_chainId','eth_blockNumber','eth_getBlockByNumber','eth_getBalance','eth_call','eth_getCode']);
 export async function readRpc(url,method,params,{fetcher=fetch}={}){
  if(!BASE.rpcs.includes(url)||!METHODS.has(method))throw Error('read_only_rpc_required');
  const response=await fetcher(url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000)});
