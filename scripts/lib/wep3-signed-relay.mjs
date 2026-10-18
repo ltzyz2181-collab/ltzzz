@@ -1,5 +1,6 @@
 import {Transaction,Interface,keccak256} from 'ethers';
 import {wep3Request,TREASURY} from './funded-invest-runtime.mjs';
+import {OWNER_CHILD,isOwnerChildId,ownerChildRecipient} from '../../wep3-owner-child-allocation.js';
 const RPCS=['https://mainnet.base.org','https://base.drpc.org','https://base-rpc.publicnode.com','https://1rpc.io/base','https://base.llamarpc.com','https://base.gateway.tenderly.co'];
 const pool='0xa238dd80c259a72e81d7e4664a9801593f98d1c5',usdc='0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
 const abi=new Interface(['function supply(address,uint256,address,uint16)','function approve(address,uint256)','function transfer(address,uint256)']);
@@ -7,7 +8,8 @@ export function validateRelay(r,{kind,intent_id,amount_raw}){
  const tx=Transaction.from(r.raw);if(tx.hash!==r.tx_hash||tx.chainId!==8453n||tx.from?.toLowerCase()!==TREASURY.toLowerCase()||tx.value!==0n||keccak256(r.raw)!==r.tx_hash)throw Error('relay_transaction_identity_mismatch');
  if(kind==='aave'){
   if(r.intent_id!==intent_id||r.amount_raw!==amount_raw)throw Error('relay_intent_mismatch');
-  const data=r.step_kind==='supply'?abi.encodeFunctionData('supply',[usdc,BigInt(amount_raw),TREASURY,0]):r.step_kind==='approve'?abi.encodeFunctionData('approve',[pool,BigInt(amount_raw)]):null;
+  const recipient=isOwnerChildId(intent_id)?ownerChildRecipient({id:intent_id,action:'supply',amount_raw,treasury:TREASURY,beneficiary:OWNER_CHILD.beneficiary,round:OWNER_CHILD.round}):TREASURY;
+  const data=r.step_kind==='supply'?abi.encodeFunctionData('supply',[usdc,BigInt(amount_raw),recipient,0]):r.step_kind==='approve'?abi.encodeFunctionData('approve',[pool,BigInt(amount_raw)]):null;
   if(!data||tx.to?.toLowerCase()!==(r.step_kind==='supply'?pool:usdc)||tx.data!==data)throw Error('relay_Aave_calldata_mismatch');
  }else if(kind==='okx'){
   if(r.id!=='OKX-FUND-20261017-001'||r.amount_raw!=='20000000'||tx.to?.toLowerCase()!==usdc||tx.data!==abi.encodeFunctionData('transfer',['0x217ba12313a5555b3bd6d4cf64893f74e8fba117',20000000n]))throw Error('relay_OKX_calldata_mismatch');

@@ -1,5 +1,6 @@
 import {externalAIRelay} from './lib/external-ai-relay.mjs';
 import {relayPersisted} from './lib/wep3-signed-relay.mjs';
+import {OWNER_CHILD,isOwnerChildId} from '../wep3-owner-child-allocation.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
@@ -54,12 +55,16 @@ async function execute(){
    if(confirmedAaveAllocation(prior,grant,input.intent_id)){actual=prior;result.preview_status='existing_confirmed_receipt_no_reexecution';}
    else{
     const profilePath='config/owner-web3-readonly.json';
-    if(fs.existsSync(profilePath)){const profile=JSON.parse(fs.readFileSync(profilePath));if(profile.existing_round_id===policy.order_id&&profile.address?.toLowerCase()!==round.treasury.address.toLowerCase())throw Error('owner_requested_Web3_child_wallet_requires_its_own_funds_and_signer');}
+    if(fs.existsSync(profilePath)){const profile=JSON.parse(fs.readFileSync(profilePath));if(profile.existing_round_id===policy.order_id&&profile.address?.toLowerCase()!==round.treasury.address.toLowerCase()){
+     if(!isOwnerChildId(input.intent_id)||profile.funding_method!=='treasury_Aave_supply_on_behalf_of'||profile.address!==OWNER_CHILD.beneficiary||grant.amount_raw!==OWNER_CHILD.amount_raw)throw Error('owner_requested_Web3_child_wallet_requires_its_own_funds_and_signer');
+     const runtime=await api('/market/runtime-state');if(runtime.aave_runtime_revision!=='aave-guard-v9')throw Error('fixed_child_supply_executor_not_deployed');
+    }}
     const preview=await api('/market/aave/preview',input);result.preview_status=preview.status;
     actual=await api('/market/aave/execute',input);
     for(let p=0;p<6&&['pending','pending_confirmations'].includes(actual.status);p++){result.relay=await relayPersisted({kind:'aave',intent_id:input.intent_id,amount_raw:grant.amount_raw,token});await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
    }
    result.receipt=actual;const supply=actual.steps?.find(s=>s.kind==='supply');
+   if(isOwnerChildId(input.intent_id)){result.custody='owner_OKX_Web3_child_wallet';result.position_owner=actual.position_owner||OWNER_CHILD.beneficiary;result.funding_treasury=actual.treasury;result.withdrawal_requires_child_wallet_control=true;}
    if(actual.status==='confirmed'&&supply?.tx_hash&&supply.status==='confirmed'){Object.assign(result,{status:'confirmed',paid:true,on_chain_executed:true,tx_hash:supply.tx_hash,settlement_type:'Aave_supply'});report.confirmed_investment_orders++;}
    else result.status='pending_or_unknown_reconcile_same_intent';
   }catch(error){result.status='blocked_or_unknown_reconcile_same_intent';result.error=error.message;}
