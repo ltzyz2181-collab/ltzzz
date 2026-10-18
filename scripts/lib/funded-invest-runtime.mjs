@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import {OWNER_CHILD,isOwnerChildId} from '../../wep3-owner-child-allocation.js';
 export const BASE='https://ltzzz-wep3.ltzyz2181.workers.dev';
 export const TREASURY='0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d';
 export const SEATS={gpt:'GPT',grok:'Grok',doubao:'Doubao',deepseek:'DeepSeek'};
@@ -28,5 +29,6 @@ export function confirmedAaveAllocation(record,grant,expectedIntent){
  if(record?.status!=='confirmed')return false;
  const step=record.steps?.find(s=>s.kind==='supply');
  if(record.intent_id!==expectedIntent||record.action!=='supply'||record.chain_id!==8453||record.treasury?.toLowerCase()!==TREASURY.toLowerCase()||raw(record.amount_usdc)!==BigInt(grant.amount_raw)||step?.status!=='confirmed'||step.receipt_status!==1||!/^0x[0-9a-fA-F]{64}$/.test(step.tx_hash||''))throw Error('confirmed_Aave_allocation_identity_mismatch');
+ if(isOwnerChildId(expectedIntent)&&(record.position_owner!==OWNER_CHILD.beneficiary||record.round!==OWNER_CHILD.round||grant.amount_raw!==OWNER_CHILD.amount_raw||step.child_supply_proof?.verified!==true))throw Error('confirmed_child_allocation_identity_mismatch');
  return true;
 }
