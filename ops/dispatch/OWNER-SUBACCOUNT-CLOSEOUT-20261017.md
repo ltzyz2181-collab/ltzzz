@@ -47,3 +47,14 @@ Owner指定的新Web3子钱包：`0xbc24b9a2d0c61705602257565d8c0064effe253e`。
 已创建[千问接力单126](https://github.com/ltzyz2181-collab/ltzzz/issues/126)，总控认证派单已获Pulse确认，真实回执knowledge/results/control-relay/issue-126.json状态assigned_waiting_external_acceptance；没有把派单写成千问原生接单或完成。任务是核对原交易所订单并实现/验证手机Web3签名接力，使用简明证据，不让他重读全仓。
 
 既有每日检查只可继续这笔已确认原20U资本；四笔均终结后不再分配新轮次。没有新增付费模型定时、充值、交易所外部提币或个人Aave/Safe操作。
+
+
+## 后续实测解除（项目轮次2026-10-18；UTC 05:17）
+
+原轮四笔 Aave 分配共20USDC全部确认。原三笔15.503212USDC未重投；仅原DeepSeek4.496788USDC由金库 supply onBehalfOf子钱包0xbc24b9a2d0c61705602257565d8c0064effe253e，交易0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2。双RPC官方Supply+mint确认，三RPC同块52755665/同blockHash余额4.496787aUSDC、债务0；整数本金4496788仅记一笔，aToken实际余额/铸币值可能因舍入与指数略异。金库本金82483903未加子本金。子钱包自行控制提款，金库无法代提；无需把初始子gas为0继续列为本次供款阻塞。
+
+另行完成先前已预留的AUTO32.490856USDC意图，交易0x1bc13415fd0de4841f724700161ed00945e3d1afbdd23175172846e0a4c9cce4；这是既有自动投资的收尾，不能与原20USDC分配混算成新预算。
+
+执行与只读复核：knowledge/results/funded-invest/run-39100019149-attempt-1.json、owner-child-position-39100019149-attempt-1.json；Actions39100019149成功。本次模型调用0、新外部采购0，历史已付但拒绝交付的外部订单不复购。本文此前的“子钱包未投资/授权失效”段落是旧时点记录，已由本段新证据解除。YouTube当前connected=true、reauth_required=false；未重复上传历史公开视频。
+
+代码PR130–133已合并；资金核心v3/aave-guard-v9，迁移前后账本SHA一致。独立Codex子会话仅按仓库回执验收，未另发交易，确认原三笔不重投、子本金单记、金库不增记、零债务。124项最终相关测试通过。Swarm当前仍是内部积分规划预览，不是已执行的雇佣；Claude/Meya只是岗位登记。
