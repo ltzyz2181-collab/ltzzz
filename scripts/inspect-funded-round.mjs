@@ -3,6 +3,8 @@ const policy=JSON.parse(fs.readFileSync('policy/funded-owner-round-20261017.json
 for(const [label,path] of [['runtime_state','/market/runtime-state'],['okx_capital_transfer','/market/okx/funding'],['external_order','/market/procurement/order'],['aave_status','/market/aave/status'],...Object.keys(SEATS).map(id=>['intent_'+id,'/market/aave/intent?id='+intentId(policy.order_id,id)])]){
  try{report.inspections.push({label,result:await wep3Request(path,{token})});}catch(error){report.inspections.push({label,error:error.message});}
 }
+const active=report.inspections.find(x=>x.label==='aave_status')?.result?.active_intent;
+if(active){try{report.inspections.push({label:'existing_active_intent_read_only',result:await wep3Request('/market/aave/intent?id='+encodeURIComponent(active),{token})});}catch(error){report.inspections.push({label:'existing_active_intent_read_only',error:error.message});}}
 const okx=okxClient(okxCredentials());
 try{const r=await okx('GET','/api/v5/asset/transfer-state?clientId=lzfund20261017001&type=0');report.original_internal_transfer_lookup={ok:r.ok,http:r.http,code:r.code,data:r.ok?r.data.map(a=>Object.fromEntries(['clientId','transId','ccy','from','to','amt','state'].filter(k=>a[k]!==undefined).map(k=>[k,a[k]]))):[]};}catch(error){report.original_internal_transfer_lookup={ok:false,error:error.message};}
 for(const [label,path] of [['trading_balances','/api/v5/account/balance?ccy=USDT,USDC,BTC'],['funding_balances','/api/v5/asset/balances?ccy=USDT,USDC']]){

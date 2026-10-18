@@ -8,7 +8,7 @@ export async function waitMarketRuntime({base,token,revision,procurementRevision
       response=await fetchImpl(base+'/market/runtime-state',{headers:{'X-Lab-Pin':token},signal:AbortSignal.timeout(15000)});
       try{state=await response.json();}catch{state={ok:false,error:'non_json_response'};}
       observations.push({attempt:attempt+1,http:response.status,content_type:response.headers.get('content-type'),market_runtime_revision:state?.market_runtime_revision||null,aave_runtime_revision:state?.aave_runtime_revision||null,error:state?.error||null});
-      if(response.ok&&state?.ok&&state.market_runtime_revision==='market-runtime-v2'&&state.aave_runtime_revision===revision&&(!procurementRevision||state.procurement_runtime_revision===procurementRevision))return {ready:true,state,observations};
+      if(response.ok&&state?.ok&&state.market_runtime_revision==='market-runtime-v3'&&state.aave_runtime_revision===revision&&(!procurementRevision||state.procurement_runtime_revision===procurementRevision))return {ready:true,state,observations};
     }catch{state={ok:false,error:'transport_or_body_timeout'};observations.push({attempt:attempt+1,http:response?.status||null,error:state.error});}
     if(attempt+1<attempts)await pause(3000);
   }

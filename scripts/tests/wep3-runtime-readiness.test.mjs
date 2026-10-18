@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {waitMarketRuntime} from '../lib/wep3-runtime-readiness.mjs';
-const current={ok:true,market_runtime_revision:'market-runtime-v2',aave_runtime_revision:'v5',aave_intent_count:3,first_supply_confirmed:true,exit_test_confirmed:true};
+const current={ok:true,market_runtime_revision:'market-runtime-v3',aave_runtime_revision:'v5',aave_intent_count:3,first_supply_confirmed:true,exit_test_confirmed:true};
 test('HTML propagation and old runtimes are recorded then retried only with authenticated GET',async()=>{
  let calls=0;const replies=[new Response('<!DOCTYPE html>edge',{status:503,headers:{'content-type':'text/html'}}),Response.json({...current,aave_runtime_revision:'v4'}),Response.json(current)];
  const r=await waitMarketRuntime({base:'https://example.invalid',token:'fixture',revision:'v5',pause:async()=>{},fetchImpl:async(url,options)=>{assert.equal(url,'https://example.invalid/market/runtime-state');assert.equal(options.headers['X-Lab-Pin'],'fixture');assert.equal(options.method,undefined);return replies[calls++];}});
@@ -12,5 +12,5 @@ test('all transport failures produce a bounded observable failure without echoin
 });
 
 test('old runtime with a healthy legacy revision cannot pass a new procurement deployment',async()=>{
- let calls=0;const result=await waitMarketRuntime({base:'https://fixed.test',token:'fixture',revision:'aave-guard-v5',procurementRevision:'external-purchase-v1',pause:async()=>{},attempts:2,fetchImpl:async()=>{calls++;return Response.json({ok:true,market_runtime_revision:'market-runtime-v2',aave_runtime_revision:'aave-guard-v5',...(calls===2?{procurement_runtime_revision:'external-purchase-v1'}:{})});}});assert.equal(calls,2);assert.equal(result.ready,true);
+ let calls=0;const result=await waitMarketRuntime({base:'https://fixed.test',token:'fixture',revision:'aave-guard-v5',procurementRevision:'external-purchase-v1',pause:async()=>{},attempts:2,fetchImpl:async()=>{calls++;return Response.json({ok:true,market_runtime_revision:'market-runtime-v3',aave_runtime_revision:'aave-guard-v5',...(calls===2?{procurement_runtime_revision:'external-purchase-v1'}:{})});}});assert.equal(calls,2);assert.equal(result.ready,true);
 });
