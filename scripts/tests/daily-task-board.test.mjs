@@ -175,10 +175,10 @@ test('generation crash without a unique artifact remains an explicit failure and
  assert.equal(f.calls,0);assert.equal(f.posts,1);assert.equal(final.seats[agent].claim_verified,true);
 });
 
-test('CONTROL assignment id absent from pulse board blocks claim (no model call)', async t => {
+test('CONTROL assignment without an eligible DAILY sibling blocks claim (no model call)', async t => {
   const f = fixture(t);
-  // Control carries a CONTROL-* id that does not exist on the pulse board.
-  // Board only has DAILY-* from seedTasks; assignment must not claim a ghost id.
+  // A same-id row owned by another seat is not permission to claim it.
+  f.state.task_board.find(task=>task.id===`DAILY-${date}-${agent}`).assigned_to='doubao';
   f.options.control = {
     date,
     dispatch_source: 'actual_model_review',
@@ -202,6 +202,7 @@ test('CONTROL assignment id absent from pulse board blocks claim (no model call)
 
 test('blocked seat without reserved claim cannot repurchase generation', async t => {
   const f = fixture(t);
+  f.state.task_board.find(task=>task.id===`DAILY-${date}-${agent}`).status='completed_draft_review';
   f.options.control = {
     date,
     dispatches: [{
@@ -220,6 +221,30 @@ test('blocked seat without reserved claim cannot repurchase generation', async t
   const seat = readLedger(f.options.root, date).seats[agent];
   assert.equal(seat.claim_verified, false);
   assert.notEqual(seat.status, 'reserved');
+});
+
+test('CONTROL alias claims the authenticated DAILY identity once without generating', async t => {
+  const f = fixture(t), sourceId=`CONTROL-${date}-${agent}`;
+  f.options.control={date,dispatches:[{agent,id:sourceId,instruction:'Repair handover',status:'queued',execute_on:date}]};
+  await prepareDailyBoard(f.options);
+  const seat=readLedger(f.options.root,date).seats[agent];
+  assert.equal(seat.assignment.id,`DAILY-${date}-${agent}`);
+  assert.equal(seat.assignment.source_task_id,sourceId);
+  assert.equal(seat.claim_receipt.task_id,seat.assignment.id);
+  assert.equal(seat.claim_verified,true);
+  assert.equal(f.posts,1);assert.equal(f.calls,0);
+  await prepareDailyBoard(f.options);
+  assert.equal(f.posts,1);assert.equal(f.calls,0);
+});
+
+test('existing blocked CONTROL reservations are not rewritten or repurchased after alias repair', async t => {
+  const f = fixture(t), sourceId=`CONTROL-${date}-${agent}`;
+  const prior={schema_version:2,date,run_key:'old:1',source_commit:'old-source',seats:{[agent]:{agent,status:'blocked',reason:'claim_or_snapshot_blocked',claim_verified:false,assignment:{id:sourceId,execution_date:date}}},paid:false,tx_hash:null};
+  saveLedger(f.options.root,prior);
+  f.options.control={date,dispatches:[{agent,id:sourceId,instruction:'Repair handover',status:'queued',execute_on:date}]};
+  await prepareDailyBoard(f.options);await f.generate();
+  assert.deepEqual(readLedger(f.options.root,date),prior);
+  assert.equal(f.posts,0);assert.equal(f.calls,0);
 });
 
 test('matching DAILY id on board can still reserve after ANS→DAILY rewrite path', async t => {

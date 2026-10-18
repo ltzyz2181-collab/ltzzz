@@ -1,6 +1,7 @@
 import {dailyBaselineDispatches} from '../../workers/pulse-worker/tasks.js';
 const index=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')?Date.parse(value+'T00:00:00Z')/86400000:NaN;
 export function dailyAssignment(agent,date,{control,pulse}={}){
+ const board=Array.isArray(pulse?.task_board)?pulse.task_board:[];
  const age=index(date)-index(control?.date);
  const eligible=t=>t.agent===agent&&typeof t.instruction==='string'&&t.instruction.trim()&&(!t.status||['queued','queued_for_next_daily_economy','assigned'].includes(t.status));
  const dispatches=Array.isArray(control?.dispatches)?control.dispatches:[];
@@ -10,10 +11,18 @@ export function dailyAssignment(agent,date,{control,pulse}={}){
  if(explicit){
   const issuedId=explicit.id||'CONTROL-'+date+'-'+agent;
   const datedAns=new RegExp('^ANS-\\d{4}-\\d{2}-\\d{2}-'+agent+'$').test(issuedId);
-  const id=datedAns?'DAILY-'+date+'-'+agent:(explicit.board_task_id||issuedId);
+  let id=datedAns?'DAILY-'+date+'-'+agent:(explicit.board_task_id||issuedId);
+  // Coordinator reviews may omit an id or issue CONTROL-* while Pulse seeds
+  // DAILY-*. Resolve only a unique, unclaimed daily assignment for this seat
+  // and execution date; retain the coordinator id as source provenance.
+  const controlAlias=[`CONTROL-${date}-${agent}`,`CONTROL-${control.date}-${agent}`].includes(issuedId);
+  if(!datedAns&&!explicit.board_task_id&&controlAlias&&!board.some(t=>t.id===issuedId)){
+   const candidates=board.filter(t=>t.id===`DAILY-${date}-${agent}`);
+   const target=candidates.length===1?candidates[0]:null;
+   if(target&&target.date===date&&target.agent===agent&&target.assigned_to===agent&&target.execution_chain==='daily'&&target.status==='assigned'&&!target.claimed_by)id=target.id;
+  }
   return {id,instruction:explicit.instruction,source:control.dispatch_source||'coordinator_record',source_date:control.date,execution_date:date,source_task_id:issuedId};
  }
- const board=Array.isArray(pulse?.task_board)?pulse.task_board:[];
  const directed=board.find(t=>t.date===date&&t.assigned_to===agent&&t.status==='assigned'&&t.execution_chain==='daily');
  if(directed)return {id:directed.id,instruction:directed.instruction,source:'pulse_direct_assignment',execution_date:date};
  const baseline=dailyBaselineDispatches(date).find(t=>t.agent===agent);if(baseline)return {id:baseline.id,instruction:baseline.instruction,source:'coordinator_rules_zero_model_baseline',execution_date:date};
