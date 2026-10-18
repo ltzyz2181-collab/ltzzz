@@ -174,3 +174,61 @@ test('generation crash without a unique artifact remains an explicit failure and
  assert.equal(final.seats[agent].status,'generation_unknown_no_repurchase');assert.equal(hasUnverifiedBoard(final),true);
  assert.equal(f.calls,0);assert.equal(f.posts,1);assert.equal(final.seats[agent].claim_verified,true);
 });
+
+test('CONTROL assignment id absent from pulse board blocks claim (no model call)', async t => {
+  const f = fixture(t);
+  // Control carries a CONTROL-* id that does not exist on the pulse board.
+  // Board only has DAILY-* from seedTasks; assignment must not claim a ghost id.
+  f.options.control = {
+    date,
+    dispatch_source: 'actual_model_review',
+    dispatches: [{
+      agent,
+      id: `CONTROL-${date}-${agent}`,
+      instruction: 'Fix claim path without buying models',
+      status: 'queued',
+      execute_on: date,
+    }],
+  };
+  await prepareDailyBoard(f.options);
+  const seat = readLedger(f.options.root, date).seats[agent];
+  assert.equal(seat.assignment?.id, `CONTROL-${date}-${agent}`);
+  assert.equal(seat.claim_verified, false);
+  assert.equal(seat.status, 'blocked');
+  assert.equal(seat.reason, 'claim_or_snapshot_blocked');
+  assert.equal(f.posts, 0);
+  assert.equal(f.calls, 0);
+});
+
+test('blocked seat without reserved claim cannot repurchase generation', async t => {
+  const f = fixture(t);
+  f.options.control = {
+    date,
+    dispatches: [{
+      agent,
+      id: `CONTROL-${date}-${agent}`,
+      instruction: 'Must not spend',
+      status: 'queued',
+      execute_on: date,
+    }],
+  };
+  await prepareDailyBoard(f.options);
+  const out = await f.generate();
+  assert.equal(out.ok, false);
+  assert.equal(out.status, 'blocked_no_repurchase');
+  assert.equal(f.calls, 0);
+  const seat = readLedger(f.options.root, date).seats[agent];
+  assert.equal(seat.claim_verified, false);
+  assert.notEqual(seat.status, 'reserved');
+});
+
+test('matching DAILY id on board can still reserve after ANS→DAILY rewrite path', async t => {
+  // Default fixture uses baseline ANS→DAILY assignment; seedTasks places DAILY on board.
+  const f = fixture(t);
+  await prepareDailyBoard(f.options);
+  const seat = readLedger(f.options.root, date).seats[agent];
+  assert.equal(seat.claim_verified, true);
+  assert.equal(seat.status, 'reserved');
+  assert.equal(seat.assignment.id, `DAILY-${date}-${agent}`);
+  assert.equal(f.posts, 1);
+});
