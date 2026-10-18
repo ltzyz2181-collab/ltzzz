@@ -64,7 +64,7 @@ async function execute(){
     for(let p=0;p<6&&['pending','pending_confirmations'].includes(actual.status);p++){result.relay=await relayPersisted({kind:'aave',intent_id:input.intent_id,amount_raw:grant.amount_raw,token});await new Promise(r=>setTimeout(r,3000));actual=await api('/market/aave/execute',input);}
    }
    result.receipt=actual;const supply=actual.steps?.find(s=>s.kind==='supply');
-   if(isOwnerChildId(input.intent_id)){result.custody='owner_OKX_Web3_child_wallet';result.position_owner=actual.position_owner||OWNER_CHILD.beneficiary;result.funding_treasury=actual.treasury;result.withdrawal_requires_child_wallet_control=true;}
+   if(isOwnerChildId(input.intent_id)){result.custody='owner_OKX_Web3_child_wallet';result.position_owner=actual.position_owner||OWNER_CHILD.beneficiary;result.funding_treasury=actual.treasury;result.withdrawal_requires_child_wallet_control=true;result.exit_plan='Withdraw by the owner-controlled OKX Web3 child wallet, with its own Base gas; treasury has no control over this child aUSDC position.';}
    if(actual.status==='confirmed'&&supply?.tx_hash&&supply.status==='confirmed'){Object.assign(result,{status:'confirmed',paid:true,on_chain_executed:true,tx_hash:supply.tx_hash,settlement_type:'Aave_supply'});report.confirmed_investment_orders++;}
    else result.status='pending_or_unknown_reconcile_same_intent';
   }catch(error){result.status='blocked_or_unknown_reconcile_same_intent';result.error=error.message;}
