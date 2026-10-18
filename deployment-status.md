@@ -817,3 +817,52 @@ External gross Stripe allocation balances are distinct from legacy KV credit and
 - 已准备未执行：Ethereum Safe转出Builder，链上阈值3/5、nonce6、49.02USDT/0.005ETH；旧Base agent18.995USDC、旧Vault20.015723aUSDC。读取时间2026-10-12T09:54:55Z，余额非永久常量。
 - 正式豆包派单：ops/dispatch/DOUBAO-TREASURY-AAVE-MIGRATION-20261012.md；新接单回执尚未收到。五签转出仍缺实际签名，旧资产迁移仍需guardian授权执行；两者均无新txHash。
 - B首批20U/200U未到账未执行；本金收益自动返还owner接口尚未实现；Ethereum转入同地址不等于Base到账，桥接未实现。
+
+---
+
+# 每日巡检回执 · 2026-10-18（千问 · A→E · cron 8c24cf55 · 算力前置规则首轮执行）
+
+## 第0步 · 算力前置（owner 2026-10-16 新增规则，本轮首次生效）
+- **豆包通道 ✅**：ltzzz-doubao-proxy health `ok:true,has_key:true,model_configured:true`；最小真实调用 200（doubao-seed-2-1-lite 返回「可以的」）；巡检判定整合亦由该通道完成（7 项逐条+整体结论，无臆造）。
+- DeepSeek 通道 ✅：api-deep.ltzzz.com health ok（model_configured:false 为设计使然，有 worker 内置默认模型）；最小真实调用 200。
+- **结论：两通道均可用 → 巡检继续**，本轮算力整合通道=豆包。
+
+## G · 本机命令通道：✅ 正常
+`echo ok` 直返；git/curl/wrangler 全可用。
+
+## A · git：✅
+落后 14 提交已 ff 至 64a5cbe（他会话在清仓库垃圾文件 .log/.bak、新增 wep3/aave 系列 result JSON 与 OKX-FUNDED-ROUND 文档）。本地未跟踪面：video-output/（~4MB 视频中间产物）、ops/joblog-*.txt（工作日志）、funded-invest cex-dryrun JSON——均他会话产物，本巡检不代提交（避免替他人决定入库范围）。ltzzz-secrets.md 未碰、Key.doc 本轮无需读（Worker 已 has_key）。
+
+## B · 部署：✅ 不重跑
+qianwen-proxy-worker.js / kimi-proxy-worker.js 源码零新改动（末次仍 af91180 / 82eda47）；health has_key:true → Secret 存续。
+
+## C · 真实调用：双双 VERIFIED，Kimi 恢复！
+- 千问：200，qwen-plus「总控在线」。
+- **Kimi：200，kimi-k2.6「总控在线」→ 10-11/10-12 连续两日 engine_overloaded 已恢复**（本轮一次通过，无需重试）。owner 10-16 判断的 Tier0 限速（并发1/RPM3）与巡检探测节奏吻合；是否已充值升档无后台证据，不下结论。
+- 踩坑实录：内联 JSON 经 PowerShell 5.1 引号丢失致 500（两 Worker 同现）→ 一律 UTF-8 文件体。
+
+## D · 落盘：本回执 + memory/daily/qianwen-patrol-2026-10-18.md + wallet/transactions.md 注记。
+
+## E · 线上：✅
+ltzzz.com 200；新文档 docs/operations/OKX-FUNDED-ROUND-20261017.md 200；identity/dids/ 12 项与 v1.2 口径一致。
+
+## U 卡 0x1893…0eF7 · 第五窗口：**发现新流水（首次零变动窗口被打破）**
+公开只读（publicnode + Blockscout，无私钥）：
+- ETH：0x3dc2c07f06a00→**0x33e606d336800 ≈0.0009130**（gas 消耗，-0.0001735）。
+- USDT(真)：0（不变）。
+- **10-08～10-17 ERC-20 事件（Blockscout）**：入向 0x559432E1… 两笔（10-08/10-14）、出向 fee5 系地址多笔（0xfee5F509aBb5 / 0xfEE5bB4a18ba58 / 0xfee56B7F155e35，前缀同为 fee5 但地址不同），名义"30000000"笔次伴随**代币名含零宽字符的仿冒 USDT 显示名**条目。仓库授权记录中**无任何出向指令对应这批流水**（owner_reported 两笔出向是"2026-10-11 之前、1USDT"量级，与这批 30 单位不匹配）。
+- **判定：NEEDS_CHECK-高优先**。两种可能：① U 卡服务商内部调仓/消费结算（正常但仓库未记录）；② 仿冒代币显示名相关诈骗模式（异常）。**本巡检只呈现证据不下断言**，需 owner 在 U 卡 App / Etherscan 端核对这批 30 单位出向的性质。若确认非本人消费→立即冻结该卡并撤出剩余资产。
+
+## F · 转账测试：⛔ 未执行（前置未满足，无真实提现回执）。全程未经 0x21F5…7fdc ✅。
+
+## 状态判定汇总
+| 项 | 状态 | 依据 |
+|---|---|---|
+| 算力前置（豆包/DeepSeek） | VERIFIED 双通道 | health+最小实调 200 各一次 |
+| 千问 Worker | VERIFIED | 200「总控在线」 |
+| Kimi Worker | **VERIFIED（过载恢复）** | 200 一次通过，200 前连 2 日 429 |
+| A 同步 / B 部署 / E 页面 | VERIFIED | ff 至 64a5cbe；源码零改动不重跑；首页+新文档 200 |
+| U 卡新流水性质 | **NEEDS_CHECK（高优先，含仿冒名代币线索）** | Blockscout 事件与仓库授权记录不匹配 |
+| F 转账 / Aave 执行 / WEP3 收入 | 未完成 | 无 txid/receipt，口径不变 |
+
+（本回执不含任何凭证值；Key.doc 未读；ltzzz-secrets.md 未触碰；链上查询全部公开只读。）
