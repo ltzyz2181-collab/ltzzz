@@ -174,6 +174,17 @@ if (cmd === 'verify') {
   const rc = await rpc('eth_getTransactionReceipt', [txHash]);
   if (!rc) { console.log(JSON.stringify({ status: 'blocked', reason: 'rpc_unreachable', paid: false, tx_hash: txHash })); process.exit(2); }
   const r = rc.result;
+  if (!r) {
+    // 哈希格式合法但链上无此回执：签名尚未发生或哈希错误，如实阻塞，绝不谎报
+    const out = {
+      status: 'blocked', reason: 'tx_not_found_onchain', tx_hash: txHash,
+      note: '链上无此回执：owner 尚未在 OKX 手机钱包签名提交，或哈希有误。如实列阻塞。',
+      paid: false, signatures_created: 0, transactions_submitted: 0,
+    };
+    fs.writeFileSync('knowledge/results/funded-invest/126-mobile-signing-relay-verify.json', JSON.stringify(out, null, 2) + '\n');
+    console.log(JSON.stringify(out, null, 2));
+    process.exit(2);
+  }
   const from = (r.from || '').toLowerCase();
   const to = (r.to || '').toLowerCase();
   const okFrom = from === CFG.childWallet.toLowerCase();
