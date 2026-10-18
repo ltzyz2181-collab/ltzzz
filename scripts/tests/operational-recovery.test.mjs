@@ -23,6 +23,6 @@ test('WEP3 auditor receives both Kimi queue credentials; recovery channel adds n
 });
 test('durable upgrade renames the existing financial namespace and keeps its object identity',()=>{
   const config=fs.readFileSync('wrangler.wep3.toml','utf8'),source=fs.readFileSync('wep3-market.js','utf8');
-  assert.match(config,/class_name = "MarketRuntimeV2"/);assert.match(config,/renamed_classes = \[\{ from = "Market", to = "MarketRuntimeV2" \}\]/);
-  assert.doesNotMatch(config,/new_sqlite_classes = \["MarketRuntimeV2"\]/);assert.match(source,/idFromName\('ltzzz-market-v1'\)/);
+  assert.match(config,/class_name = "MarketRuntimeV3"/);assert.match(config,/renamed_classes = \[\{ from = "Market", to = "MarketRuntimeV2" \}\]/);
+  assert.doesNotMatch(config,/new_sqlite_classes = \["MarketRuntimeV[23]"\]/);assert.match(config,/renamed_classes = \[\{ from = "MarketRuntimeV2", to = "MarketRuntimeV3" \}\]/);assert.match(source,/idFromName\('ltzzz-market-v1'\)/);
 });

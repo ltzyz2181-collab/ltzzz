@@ -3,6 +3,7 @@ import {marketRoute,Market} from './wep3-market.js';
 export {Market};
 // Cloudflare renamed_classes preserves the existing namespace and stored book.
 export class MarketRuntimeV2 extends Market {}
+export class MarketRuntimeV3 extends Market {}
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft', 'Claude', 'Meya'];

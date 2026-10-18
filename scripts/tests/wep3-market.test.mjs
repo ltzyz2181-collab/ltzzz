@@ -1,13 +1,13 @@
-import test from 'node:test';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {Market,hash} from '../../wep3-market.js';import {MarketRuntimeV2} from '../../wep3-worker.js';import {AAVE_RUNTIME_REVISION} from '../../wep3-aave.js';
+import test from 'node:test';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {Market,hash} from '../../wep3-market.js';import {MarketRuntimeV3} from '../../wep3-worker.js';import {AAVE_RUNTIME_REVISION} from '../../wep3-aave.js';
 globalThis.crypto??=crypto.webcrypto;
 const secret='whsec_fixture';
 test('renamed runtime reuses existing book; authenticated state proof hides signed bytes and does not mutate',async()=>{
  const f=fixture(),book=await f.market.read();book.orders.historical={id:'historical',status:'delivered'};
  book.aave={first_supply_confirmed:true,exit_test_confirmed:true,intents:{historical:{steps:[{raw:'private-signed-fixture'}]}}};
- await f.storage.put('book',book);const replacement=new MarketRuntimeV2({storage:f.storage},{LAB_PIN:'pin'});
+ await f.storage.put('book',book);const replacement=new MarketRuntimeV3({storage:f.storage},{LAB_PIN:'pin'});
  assert.equal((await send(replacement,'/market/runtime-state')).status,401);
  const r=await send(replacement,'/market/runtime-state',undefined,{'X-Lab-Pin':'pin'});
- assert.equal(r.status,200);assert.equal(r.body.market_runtime_revision,'market-runtime-v2');assert.equal(r.body.aave_runtime_revision,AAVE_RUNTIME_REVISION);
+ assert.equal(r.status,200);assert.equal(r.body.market_runtime_revision,'market-runtime-v3');assert.equal(r.body.aave_runtime_revision,AAVE_RUNTIME_REVISION);
  assert.equal(r.body.first_supply_confirmed,true);assert.equal(r.body.exit_test_confirmed,true);assert.equal(r.body.aave_intent_count,1);assert.equal(r.body.order_count,1);
  assert.equal(r.body.book_sha256,await hash(JSON.stringify(book)));assert.equal(JSON.stringify(r.body).includes('private-signed-fixture'),false);assert.deepEqual(await f.storage.get('book'),book);
 });
