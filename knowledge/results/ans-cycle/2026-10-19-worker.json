@@ -1,0 +1,16 @@
+{
+  "finding": "daily-assignment.mjs 在控制派单与 Pulse 任务板之间解析任务 ID 时存在真实断点：当 coordinator 在 run-autonomous-control.mjs 中生成 execute_on=明天 的 queued 派单时，dispatches 里没有 agent 字段。dailyAssignment() 的 eligible() 过滤器要求 t.agent===agent，因此明天的 daily 运行永远无法匹配这条显式派单，只能回退到 baseline 派单，形成“总控每日派单已分配，但消费端找不到”的断点。",
+  "evidence_paths": [
+    "scripts/run-autonomous-control.mjs",
+    "scripts/lib/daily-assignment.mjs",
+    "workers/pulse-worker/tasks.js",
+    "docs/ANS-AUTONOMOUS-PULSE.md"
+  ],
+  "minimal_patch": "在 run-autonomous-control.mjs 写入 record.dispatches 时，为每个派单对象补充 agent 字段；同时将 dailyAssignment() 的 eligible() 中的 t.agent===agent 改为允许 undefined（控制派单无 agent 时回退到按 execute_on 匹配），并在返回时补上 agent。\n\n具体修改：\n\n1. scripts/run-autonomous-control.mjs 第 59 行附近 record.dispatches push 对象中，增加 agent 字段：\n   record.dispatches=[\n     {agent:'deepseek',instruction:d.deepseek_task.slice(0,2000),execute_on:executeOn,status:'queued_for_next_daily_economy'},\n     {agent:'doubao',instruction:d.doubao_task.slice(0,2000),execute_on:executeOn,status:'queued_for_next_daily_economy'}\n   ];\n   （当前代码已有 execute_on 但无 agent）\n\n2. scripts/lib/daily-assignment.mjs 的 eligible 函数改为：\n   const eligible=t=>(t.agent===undefined||t.agent===agent)&&typeof t.instruction==='string'&&t.instruction.trim()&&(!t.status||['queued','queued_for_next_daily_economy','assigned'].includes(t.status));\n\n3. 在 dailyAssignment() 返回 explicit 时，确保返回对象中 agent 字段：\n   return {id,agent,instruction:explicit.instruction,source:control.dispatch_source||'coordinator_record',source_date:control.date,execution_date:date,source_task_id:issuedId};",
+  "verification_commands": [
+    "node -e \"import('./scripts/lib/daily-assignment.mjs').then(m=>{const control={date:'2026-10-15',dispatch_source:'coordinator_rules_zero_model_baseline',dispatches:[{agent:'deepseek',instruction:'test',status:'queued_for_next_daily_economy',execute_on:'2026-10-16'}]};console.log(m.dailyAssignment('deepseek','2026-10-16',{control,pulse:{task_board:[]}}));})\"",
+    "node -e \"import('./scripts/run-autonomous-control.mjs').catch(e=>console.error(e.message))\"",
+    "node -e \"import('./workers/pulse-worker/tasks.js').then(m=>{const s=m.seedTasks({});console.log(s.task_board.filter(t=>t.agent==='deepseek'||t.agent==='doubao').map(t=>({id:t.id,assigned_to:t.assigned_to,status:t.status,execution_chain:t.execution_chain})));})\""
+  ],
+  "remaining_blocker": "无；此修正为最小逻辑补丁，可立即生效"
+}
