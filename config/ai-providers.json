@@ -36,12 +36,21 @@
       "note": "Cloudflare XAI proxy key and Actions key may belong to different teams"
     },
     "qianwen": {
-      "secret": "QWEN_API_KEY",
-      "mode": "cloudflare_worker",
-      "note": "qianwen-proxy-worker.js consumes env.QWEN_API_KEY; stored in Cloudflare, not assumed in GitHub",
+      "secret": "DASHSCOPE_API_KEY",
+      "mode": "github_actions_native_daily_and_existing_cloudflare_worker",
+      "note": "Native daily executor uses only dedicated DashScope/Qwen secrets; existing Worker still consumes its own QWEN_API_KEY. Desktop Qianwen membership is separate. Alias qwen-plus is not claimed to be the latest release.",
       "authority": "autonomous_deputy_coordinator",
       "control_workflow": ".github/workflows/deploy-pulse.yml",
-      "same_operational_rights_as": "gpt"
+      "same_operational_rights_as": "gpt",
+      "module": "scripts/call-qwen.mjs",
+      "secret_aliases": [
+        "QWEN_API_KEY"
+      ],
+      "model_env": "DASHSCOPE_MODEL",
+      "base_env": "DASHSCOPE_BASE_URL",
+      "default_model": "qwen-plus",
+      "native_daily_workflow": ".github/workflows/daily-agent-tasks.yml",
+      "monthly_model_check": ".github/workflows/provider-readiness.yml"
     },
     "kimi_domestic": {
       "secret": "MOONSHOT_API_KEY_CN",

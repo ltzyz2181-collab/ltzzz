@@ -1,9 +1,21 @@
 name: Provider models and balances (read only)
 on:
   workflow_dispatch:
+    inputs:
+      qwen_probe:
+        type: boolean
+        default: false
+        description: 'Explicit one-time Qwen generation, at most128 output tokens; no retry'
+      probe_id:
+        type: string
+        default: QWEN-KEY-ACCEPTANCE-20261018
+  schedule:
+    - cron: '17 1 1 * *'  # 每月1日北京09:17；仅目录GET，零生成
   push:
     branches: [main]
-    paths: ['scripts/provider-readiness.mjs','.github/workflows/provider-readiness.yml']
+    paths: ['scripts/provider-readiness.mjs','scripts/lib/model-catalog.mjs','scripts/lib/qwen-config.mjs','scripts/call-qwen.mjs','scripts/qwen-acceptance.mjs','.github/workflows/provider-readiness.yml']
+  pull_request:
+    paths: ['scripts/provider-readiness.mjs','scripts/lib/model-catalog.mjs','scripts/lib/qwen-config.mjs','scripts/call-qwen.mjs','scripts/qwen-acceptance.mjs','.github/workflows/provider-readiness.yml','scripts/tests/qwen-native.test.mjs','scripts/tests/model-catalog.test.mjs']
 permissions: {contents: write}
 concurrency: {group: provider-readiness, cancel-in-progress: false}
 jobs:
@@ -15,20 +27,56 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
+      - name: Qwen credentials, error boundaries and no-generation catalogue tests
+        run: node --test scripts/tests/qwen-native.test.mjs scripts/tests/model-catalog.test.mjs
+      - name: Reserve explicit single Qwen probe
+        id: probe
+        if: github.event_name == 'workflow_dispatch' && inputs.qwen_probe && github.actor == 'ltzyz2181-collab'
+        env:
+          QWEN_PROBE_ID: ${{ inputs.probe_id }}
+        run: node scripts/qwen-acceptance.mjs prepare
+      - name: Persist probe reservation before generation
+        if: steps.probe.outputs.execute == 'true'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/providers/probes/
+          git commit -m 'Reserve owner requested Qwen acceptance before API call'
+          node tools/push-receipt-commit.mjs
+      - name: Exactly one explicit native Qwen response (not scheduled)
+        if: steps.probe.outputs.execute == 'true'
+        env:
+          QWEN_PROBE_ID: ${{ inputs.probe_id }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
+        run: node scripts/qwen-acceptance.mjs execute
       - name: Check configured account catalogue and balances (no generation)
+        if: github.event_name != 'pull_request'
         env:
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
+          KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          XAI_MODEL: ${{ vars.XAI_MODEL }}
         run: node scripts/provider-readiness.mjs
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name != 'pull_request'
+        with:
+          name: provider-readiness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/providers/
       - name: Persist actual account checks
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add knowledge/results/providers/
           git diff --staged --quiet && exit 0
           git commit -m 'Actual provider balances and model catalogue (no generation)'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          node tools/push-receipt-commit.mjs
