@@ -24,7 +24,7 @@
 
 若客户端可以创建 Issue 但不能推送，已有[零模型回执入口](https://github.com/ltzyz2181-collab/ltzzz/issues/new?template=external-report.yml)会保留完整原文及来源，免去下载附件再复制。owner 账号可登记当日原文，其他账号只进入未核验收件目录。只有读取工具时，安装 App 也不保证出现写工具；须换用实际具备写工具的客户端或继续原来的代入库路径。付费客户端会员不等于 Anthropic API 额度。
 
-这次 App 安装曾两次到达 GitHub `Confirm access / Verify via email`，尚未取得 installation ID。owner 已要求继续安装且知道官方 App 有 Actions/Workflows/Contents 等读写权限；只选 ltzzz。固定验证工作流只限定自身执行动作，并不裁剪官方 App 权限。分支保护尚未验证，不把“优先 PR”写成实际强制保护。
+官方 Claude App 已在 GitHub 已安装列表确认，installation ID 为 `172868103`，设置页为 `https://github.com/settings/installations/172868103`；owner 提供的 Claude 连接器页面显示 GitHub 整合已连接。Configure 页面再次要求 GitHub 本人身份验证，因此“仅 ltzzz”仓库范围仍未独立回读，原生 Claude 写文件/PR 工具尚未实测；这两项待验收不推翻 App 已安装的事实。[安装回执](../../knowledge/results/claude-team/github-app-installation-172868103.json)。owner 已要求继续安装且知道官方 App 有 Actions/Workflows/Contents 等读写权限；只选 ltzzz。固定验证工作流只限定自身执行动作，并不裁剪官方 App 权限。分支保护尚未验证，不把“优先 PR”写成实际强制保护。
 
 ## 五签最新澄清
 
