@@ -1,0 +1,33 @@
+name: Verify ANS and external-hire boundaries
+on:
+  pull_request:
+    paths: ['wep3-*.js', 'workers/pulse-worker/**', 'scripts/lib/daily-external-hire.mjs', 'scripts/lib/external-ai-relay.mjs', 'scripts/run-daily-external-hire.mjs', 'scripts/lib/ans-cycle.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/tests/daily-external-hire.test.mjs', 'scripts/tests/pulse-feedback.test.mjs', '.github/workflows/daily-external-hire.yml', '.github/workflows/verify-ans-external-hire.yml']
+permissions: {contents: read}
+concurrency: {group: 'ans-hire-check-${{ github.event.pull_request.number }}', cancel-in-progress: true}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test money, lineage, independent review and reflex recovery without secrets or network payments
+        run: >-
+          node --test scripts/tests/daily-external-hire.test.mjs
+          scripts/tests/wep3-swarm.test.mjs scripts/tests/owner-child-allocation.test.mjs
+          scripts/tests/aave-receipt-sensor.test.mjs scripts/tests/okx-capital-funding.test.mjs
+          scripts/tests/funded-relay.test.mjs scripts/tests/wep3-market.test.mjs
+          scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs
+          scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-external-orders.test.mjs
+          scripts/tests/domestic-model-router.test.mjs scripts/tests/audit-provenance.test.mjs
+          scripts/tests/wep3-runtime-readiness.test.mjs scripts/tests/wep3-procurement.test.mjs
+          workers/pulse-worker/test.mjs scripts/tests/pulse-feedback.test.mjs
+          scripts/tests/agi-econ-action.test.mjs scripts/tests/pulse-integration.test.mjs
+          scripts/tests/pulse-tasks.test.mjs scripts/tests/daily-assignment.test.mjs
+          scripts/tests/ans-task-review.test.mjs scripts/tests/ans-cycle.test.mjs
+          scripts/tests/ans-board-sync.test.mjs scripts/tests/daily-assignment-handover.test.mjs
+          scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/claude-team-verification.test.mjs
+          scripts/tests/safe-observation.test.mjs

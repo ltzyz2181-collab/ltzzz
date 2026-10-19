@@ -1,0 +1,55 @@
+name: Daily external AI hire and independent acceptance
+on:
+  schedule:
+    - cron: '50 8 * * *'
+  workflow_run:
+    workflows: ['Deploy LTZZZ WEP3']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
+jobs:
+  hire:
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --test scripts/tests/daily-external-hire.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/funded-relay.test.mjs
+      - name: Prepare one immutable daily dispatch, zero models
+        run: node scripts/run-daily-external-hire.mjs prepare
+      - name: Persist dispatch before payment or review
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/claude-team/ ops/dispatch/REAL-HIRE-*.md
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Daily external AI hire dispatch before payment'
+          node tools/push-receipt-commit.mjs
+      - name: One bounded external payment and Doubao independent review
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+        run: node scripts/run-daily-external-hire.mjs execute
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-external-hire-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/claude-team/real-hire-*.json
+          retention-days: 30
+      - name: Preserve actual order, independent review or blocker
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/claude-team/ ops/dispatch/REAL-HIRE-*.md
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Actual daily external AI hire payment and acceptance evidence'
+          node tools/push-receipt-commit.mjs

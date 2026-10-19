@@ -16,7 +16,7 @@ if(phase==='prepare'){
 }else if(phase==='execute'){
  const record=JSON.parse(fs.readFileSync(file));if(record.run_id!==runId)throw Error('claim_run_mismatch');
  try{
-  const snapshot=await pulseSnapshot();record.pulse_observed_at=snapshot.ran_at||null;
+  const snapshot=await pulseSnapshot();record.pulse_observed_at=snapshot.ran_at||null;record.actual_autonomic_feedback=snapshot.autonomic_feedback||null;
   for(const t of record.tasks){const gate=pulseGate(snapshot,t.agent);if(!gate.allowed)throw Error('pulse_paused_'+t.agent);await control({id:'ans-claim-'+date+'-'+t.agent,action:'claim_task',agent:t.agent,task_id:t.id});}
   record.remote_claims=true;save(record);
   const inputs=['workers/pulse-worker/tasks.js','scripts/lib/daily-assignment.mjs','scripts/run-autonomous-control.mjs','scripts/run-daily-tasks.mjs','docs/ANS-AUTONOMOUS-PULSE.md','ltzzz-memory/装备论.md'];
