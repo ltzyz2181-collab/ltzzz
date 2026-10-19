@@ -2,6 +2,8 @@
 
 类型：事实／工程验收入口；配置就绪不代替真实调用或正式日课交付。
 
+更新：[PR #143](https://github.com/ltzyz2181-collab/ltzzz/pull/143) 已合并并完成生产验证。147项本地相关测试通过；Pulse实际部署运行39188114435成功，任务板schema3已保存千问独立日课任务。[真实API验收39188198716](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39188198716)成功：`qwen-plus`、正常stop、96tokens，原始回执在 `knowledge/results/providers/probes/QWEN-KEY-ACCEPTANCE-20261018.json`。[收尾证据](../../knowledge/results/providers/qianwen-deployment-closeout-20261018.json)。首个正式日课和50元充值仍待分别验收。
+
 ## 已定位原因
 
 本轮接手时，GitHub 日课只有 DeepSeek、豆包、Grok 三通道，千问配置为外部回归席；`QWEN_API_KEY` 仅登记在现有 Cloudflare Worker，未注入 GitHub 日课。缺少调用模块、环境注入和调用预留，不能简单归因于模型名错误。owner 所贴示例的 `Bearer {apiKey}`、`HTTP {resp.status}` 也缺少模板插值，不能原样部署。整段旧 CHANNELS 会恢复 owner 停用的 OpenAI/Microsoft 调用，本次未采用。
