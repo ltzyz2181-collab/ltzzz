@@ -1,0 +1,8 @@
+{
+  "id": "QWEN-ANS2-SCHEMA-20261019",
+  "agent": "qianwen",
+  "model": "qwen-plus",
+  "max_tokens": 1024,
+  "real_money": false,
+  "prompt": "任务：为 LTZZZ 的 ANS(自主神经系统) 设计“行深闭环”回执字段，只输出 JSON Schema 草案（draft-07）。要求：1) 每条“观”回执新增 action_taken(枚举: none/dispatched/fixed/escalated) 与 follow_up_receipt(字符串或null)；2) 无后续动作则 status 必须为 open；3) 区分 model_proposed、tested_by_model_claim、actually_run 三种测试状态，且 actually_run 必须带 run_id 与 sha256；4) 不得包含 paid/tx_hash 以外的资金字段；5) 末尾单独一行写“【交付结束】”。不要声称已测试、已部署或已验收。"
+}
