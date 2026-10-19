@@ -1,6 +1,6 @@
 # Claude 团队工程接力与验收
 
-类型：事实（代码与验收入口；不代表外部客户端已接单）
+类型：事实（代码与验收入口；Claude 已接规划/独审，其他执行席仍待各自接单）
 
 已部署验证入口：[PR #138](https://github.com/ltzyz2181-collab/ltzzz/pull/138) 合并提交 `eda17fa72490653c16b1cdc8062371edb26b631c`；[main 实际运行 39183352199](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39183352199) 成功，75/75 测试通过，源工作区干净。[完整运行回执](../../knowledge/results/claude-team/deployment-39183352199.json)保留 Actions 产物、输入哈希和链上读数。此成功不代表 Claude App 已安装或外部团队已接单。
 
@@ -20,11 +20,11 @@
 
 ## Claude 如何自己交付
 
-先在实际 Claude 客户端刷新 GitHub 连接，核对是否真的提供创建分支、写文件和创建 PR 工具。若有，沿用 `CONTROL-CLAIM-REPAIR-20261018` 与原拒收单，提交 `ops/dispatch/receipts/CLAUDE-TEAM-ACCEPTED.md`，写真实执行者/客户端、实际源提交、任务 ID、时间和证据，再走分支加 PR。总控不代签 Claude、千问或国际 Kimi 已接单。
+[PR #141](https://github.com/ltzyz2181-collab/ltzzz/pull/141) 已实际创建并由总控合并，远端分支 `claude/team-accepted-20261018` 的提交为 `20fe03a317b3bca9e3bee9bd0501739b555d83d6`。接单文件 `ops/dispatch/receipts/CLAUDE-TEAM-ACCEPTED.md` 保留原文：Claude 仅接规划/独审，三项工作尚未交付。Git 推送与 REST 创建 PR 已走通；客户端报告 `gh pr create` 的 GraphQL 403 属会话接口限制，已有可工作的 REST 路径，继续沿用。浅克隆/钩子误报的具体原因未独立复现，不把其解释写成通用 Git 限制。[验收回执](../../knowledge/results/claude-team/claude-write-acceptance-pr141.json)。
 
 若客户端可以创建 Issue 但不能推送，已有[零模型回执入口](https://github.com/ltzyz2181-collab/ltzzz/issues/new?template=external-report.yml)会保留完整原文及来源，免去下载附件再复制。owner 账号可登记当日原文，其他账号只进入未核验收件目录。只有读取工具时，安装 App 也不保证出现写工具；须换用实际具备写工具的客户端或继续原来的代入库路径。付费客户端会员不等于 Anthropic API 额度。
 
-官方 Claude App 已在 GitHub 已安装列表确认，installation ID 为 `172868103`，设置页为 `https://github.com/settings/installations/172868103`；owner 提供的 Claude 连接器页面显示 GitHub 整合已连接。Configure 页面再次要求 GitHub 本人身份验证，因此“仅 ltzzz”仓库范围仍未独立回读，原生 Claude 写文件/PR 工具尚未实测；这两项待验收不推翻 App 已安装的事实。[安装回执](../../knowledge/results/claude-team/github-app-installation-172868103.json)。owner 已要求继续安装且知道官方 App 有 Actions/Workflows/Contents 等读写权限；只选 ltzzz。固定验证工作流只限定自身执行动作，并不裁剪官方 App 权限。分支保护尚未验证，不把“优先 PR”写成实际强制保护。
+官方 Claude App 已在 GitHub 已安装列表确认，installation ID 为 `172868103`，设置页为 `https://github.com/settings/installations/172868103`；owner 提供的 Claude 连接器页面显示 GitHub 整合已连接。Configure 页面再次要求 GitHub 本人身份验证，因此“仅 ltzzz”仓库范围仍未独立回读，Claude 会话的分支推送和 REST PR 已通过 #141 验收；仓库范围回读仍待验证。[安装回执](../../knowledge/results/claude-team/github-app-installation-172868103.json)。owner 已要求继续安装且知道官方 App 有 Actions/Workflows/Contents 等读写权限；只选 ltzzz。固定验证工作流只限定自身执行动作，并不裁剪官方 App 权限。分支保护尚未验证，不把“优先 PR”写成实际强制保护。
 
 ## 五签最新澄清
 
@@ -33,3 +33,9 @@ Owner 表示目前仅为本人、豆包和 GPT 准备过钱包，Claude 没有�
 本次真实双 RPC 在同一区块 `0x1902260` 一致读到 Ethereum Safe `0x76379a52a9e82c259E5Db417104C65C26f9C58a3` 具有 5 个 owners、threshold=3、nonce=7。地址原文见运行回执；没有 Claude/千问的可靠地址映射，不用席位称呼推断链上控制者。交易提交 0。
 
 `ltzzzwep3ops1` 与 `0x21F5…7fdc` 的绑定仍未验证；团队钱包不启用。历史“疑似暴露”标签不证明私钥泄露，本次不作此断言。
+
+## 当前可直接继续的原单
+
+`AI-HIRE-CLOSEOUT-EXT-AI-20261017-001` 已获 owner 原授权，Claude 现在可直接做规划与独立审计，无需再次询问开始。输出 `knowledge/results/claude-team/hire-closeout-claude-review.md` 并提交一个审核 PR；保留现有 `hire-closeout.json` 和原付款状态，避免覆盖历史实物。
+
+输入为最新 main 的 `wep3-procurement.js`、`knowledge/results/claude-team/hire-closeout.json`、其指向的原单 inspection 及原交付字符串。逐字重算原交付 SHA-256，对照原提示与校验器的 ID 类型约定，分开列出结构拒收和附加示例语义问题；退款/补交条件只引用可访问的真实依据，无法核验就标明。只提交审计与建议；不购买、不支付、不发退款请求、不改生产验收器或原单状态。实际检查和命令结果要留证，不以接单代替完成。Claude 原生客户端未运行时仍是待执行，不称已自动唤醒。
