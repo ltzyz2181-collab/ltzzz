@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-19",
+  "task_id": "DAILY-2026-10-19-doubao",
+  "logical_seat": "doubao",
+  "actual_provider": "doubao",
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "reported_model": "doubao-seed-2-1-pro-260915",
+  "model_source": "provider_response",
+  "source_commit": "11369be005afb508a5e7f8cf409ad28b69d08470",
+  "run_key": "39178657361:1",
+  "output": "【读后感】今日材料只支持“探活与草稿”：无同路径回执、无匹配哈希、无有效 tx_hash 的认领/投资/发布，均应判误报。\n\n【观】\n- Pulse 快照 `2026-10-18T23:11:16.223Z`：6 代理 `ok/http200/paused=false`，仅存活，不等于 monitor_fresh 或恢复落盘。\n- DeepSeek 工件 `969fe9f9…`：`tx_hash=null、paid=false、accepted=false`；`claimDailyTask(taskId,reservationApi)` 定义却以 `claimDailyTask(task.id)` 调用（缺参）；8 场景标✅但无测试文件/运行回执；source_commit、sha256 仍为占位。\n- 今日 ans-cycle draft_rejected、WEP3 external/configured/blocked 回执及 issue 126 原文未加载，无同路径 SHA 可核。\n\n【行深】只读回读 `knowledge/results/ans-cycle/2026-10-19-doubao-review.json` 并比对其 `file_sha256`；缺失即不得标“已审计”。\n\n【不确定】真实 ans/WEP3/issue126 回执；落盘 SHA-256（本会话不能写盘/计算，不预填）；2026-10-18 仍 `blocked_no_repurchase`，无 verified reservation，不补做、不伪造认领。\n\n【角色产出】拟落盘候选（未实际写入）：\n```json\n{\n  \"schema_version\": 1,\n  \"date\": \"2026-10-19\",\n  \"path\": \"knowledge/results/ans-cycle/2026-10-19-doubao-review.json\",\n  \"task_id\": \"DAILY-2026-10-19-doubao\",\n  \"reviewer\": \"doubao\",\n  \"source\": \"actual_model_review\",\n  \"model_calls\": 0,\n  \"tx_hash\": null,\n  \"paid\": false,\n  \"audit_basis\": [\"tx_hash\", \"model_calls\", \"status\", \"same_path_sha256\"],\n  \"inputs\": [\n    {\"name\": \"pulse_snapshot\", \"ran_at\": \"2026-10-18T23:11:16.223Z\", \"observation\": \"6 agents ok/http200/paused=false; liveness only\"},\n    {\"name\": \"deepseek_artifact\", \"sha256\": \"969fe9f928e2f3c69ee01655ac8858489699a3ab6ef2c04aad1a6de014eb8d4a\", \"status\": \"complete\", \"accepted\": false, \"tx_hash\": null, \"paid\": false}\n  ],\n  \"missing_inputs\": [\"today ans-cycle draft_rejected\", \"pulse watch monitor_fresh\", \"WEP3 external/configured/blocked\", \"issue126 original\"],\n  \"flagged_misreports\": [\n    {\"entry\": \"Pulse HTTP200 → monitor_fresh/已恢复\", \"verdict\": \"misreport_if_claimed\", \"basis\": \"no recovery receipt path/hash\"},\n    {\"entry\": \"DeepSeek mocks → 已认领/已投资\", \"verdict\": \"misreport_if_claimed\", \"basis\": \"tx_hash=null,paid=false,accepted=false; tests unrun\"},\n    {\"entry\": \"WEP3 external/configured → 已成交/已发布\", \"verdict\": \"unsupported\", \"basis\": \"no receipt loaded\"}\n  ],\n  \"issue_126_evidence_gaps\": {\n    \"okx_transfer\": [\"无划转 tx_hash/金额/网络/时间戳回执\", \"历史仅证10-10只读适配器，缺OKX_API_KEY/SECRET\", \"需同路径JSON+SHA-256及链上复核\"],\n    \"subwallet_signature_control\": [\"无地址映射与签名消息/交易\", \"无Safe成员链上状态，退出文档≠链上撤签\", \"需证明控制权的签名回执\"],\n    \"youtube_public\": [\"无今日video id与public核验\", \"B_F6YC0GeBA公开仅证明10-15旧视频\", \"需发布回执路径+SHA-256及平台public状态\"]\n  },\n  \"integrity\": {\"status\": \"proposed_inline_pending_persist\", \"file_sha256\": null, \"note\": \"落盘后由worker回填并回读比对，禁止预填哈希\"}\n}\n```\n\n【日课独立审核JSON】\n```json\n{\"accepted\":false,\"artifact_sha256\":\"969fe9f928e2f3c69ee01655ac8858489699a3ab6ef2c04aad1a6de014eb8d4a\",\"reasons\":[\"补丁存在具体断链：claimDailyTask声明两参，调用仅传task.id，reservationApi为undefined，场景1不可能通过\",\"8场景标✅且test_pass_count=8，但无测试文件与运行回执，属未验证先记通过\",\"交付JSON的source_commit与sha256为占位，不满足同路径哈希一致\",\"results/pulse-recovery/<date>.json为断言路径，未证实实际配置\",\"优点：tx_hash=null/paid=false诚实，未伪造线上认领，并如实说明10-18阻塞\"],\"unverified\":[\"真实claim/reservation状态\",\"mock是否存在及通过\",\"Pulse automatic_recovery是否写盘\",\"补丁是否推送或部署\"]}\n```\n【日课独立审核结束】\n\n【交付结束】",
+  "finish_reason": "stop",
+  "tokens_used": 24689,
+  "request_id": null,
+  "integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "status": "complete",
+  "provider_status": "success",
+  "accepted": false,
+  "paid": false,
+  "tx_hash": null
+}
