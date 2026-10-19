@@ -1,0 +1,36 @@
+name: Claude team fixed verification (no models or money)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['config/claude-team.json', 'scripts/verify-claude-team.mjs', 'scripts/lib/claude-team-verification.mjs', 'scripts/lib/safe-observation.mjs', 'scripts/tests/claude-team-verification.test.mjs', 'scripts/tests/safe-observation.test.mjs', '.github/workflows/claude-team-verify.yml']
+  push:
+    branches: [main]
+    paths: ['config/claude-team.json', 'scripts/verify-claude-team.mjs', 'scripts/lib/claude-team-verification.mjs', 'scripts/lib/safe-observation.mjs', 'scripts/tests/claude-team-verification.test.mjs', 'scripts/tests/safe-observation.test.mjs', '.github/workflows/claude-team-verify.yml']
+permissions: {contents: read}
+concurrency: {group: "claude-team-verify-${{ github.event.pull_request.number || 'main' }}", cancel-in-progress: false}
+jobs:
+  verify:
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && (github.event_name != 'workflow_dispatch' || github.actor == 'ltzyz2181-collab' || github.actor == 'claude[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Validate evidence boundaries and fixed RPC reads
+        run: node --test scripts/tests/claude-team-verification.test.mjs scripts/tests/safe-observation.test.mjs scripts/tests/external-report.test.mjs scripts/tests/daily-assignment-control-id.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-board-lineage.test.mjs
+      - name: Inspect checked-in evidence (no remote calls)
+        if: github.event_name == 'pull_request'
+        run: node scripts/verify-claude-team.mjs
+      - name: Inspect evidence and observe Ethereum Safe (read only)
+        if: github.event_name != 'pull_request'
+        run: node scripts/verify-claude-team.mjs --observe-safe
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: claude-team-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: work/claude-team-verification/
+          if-no-files-found: error
+          retention-days: 14
