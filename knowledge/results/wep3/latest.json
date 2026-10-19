@@ -1,17 +1,131 @@
 {
-  "at": "2026-10-18T00:12:51.769Z",
-  "execution_id": "39081892798",
+  "at": "2026-10-19T00:24:41.595Z",
+  "execution_id": "39180594618",
   "task_kind": "provided_spec_readonly_HTTP_contract_check",
   "spec_provided_in_prompt": true,
   "original_design_claimed": false,
   "paid": false,
   "tx_hash": null,
-  "status": "blocked",
+  "status": "live_contract_check_failed",
   "worker_generation": {
     "model": "doubao-seed-2-1-pro-260915",
     "status": "success",
     "finish_reason": "stop",
-    "tokens_used": 1080
+    "tokens_used": 1161
   },
-  "reason": "Expected ',' or '}' after property value in JSON at position 1837 (line 1 column 1838)"
+  "negative_controls": {
+    "kind": "local_assertion_evaluator_fault_injection",
+    "network_calls": 0,
+    "independent_design_proven": false,
+    "passed": true,
+    "samples": [
+      {
+        "name": "baseline",
+        "pass": true,
+        "expected": true
+      },
+      {
+        "name": "wrong_http_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_json_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_authentication_rejected",
+        "pass": false,
+        "expected": false
+      }
+    ]
+  },
+  "live_checks": [
+    {
+      "id": "T01",
+      "path": "/health",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T02",
+      "path": "/market/treasury",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "controlled": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      },
+      "passed": false
+    },
+    {
+      "id": "T03",
+      "path": "/market/aave/status",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "chain_id": 8453
+      },
+      "passed": true
+    },
+    {
+      "id": "T04",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": false
+      },
+      "passed": true
+    },
+    {
+      "id": "T05",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T06",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "T07",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "T08",
+      "path": "/market/aave/preview",
+      "http": 422,
+      "expected_http": 422,
+      "actual": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      },
+      "passed": true
+    }
+  ],
+  "source": "knowledge/results/wep3/delivery-contract-2026-10-19.json",
+  "worker_tokens": 1161
 }
