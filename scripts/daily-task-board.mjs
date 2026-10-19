@@ -6,6 +6,7 @@ import {pulseToken} from './pulse-credentials.mjs';
 import {reconcileDailyResult} from './lib/daily-board-lineage.mjs';
 import {cstDate} from '../workers/pulse-worker/tasks.js';
 import {materializeDailyReview,syncDailyReview,recordDailyReviewReadback} from './lib/daily-independent-review.mjs';
+import {dailyAgents} from './lib/daily-channels.mjs';
 const root=process.cwd(),date=process.env.DAILY_DATE||cstDate();
 const runKey=`${process.env.GITHUB_RUN_ID||'local'}:${process.env.GITHUB_RUN_ATTEMPT||'1'}`;
 async function command(body){
@@ -21,7 +22,7 @@ async function readRemote(file){
 }
 if(process.argv[2]==='prepare'){
  const control=JSON.parse(fs.readFileSync('knowledge/results/control/latest.json','utf8'));
- const record=await prepareDailyBoard({root,date,runKey,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),agents:['doubao','grok','deepseek'],control,snapshot:pulseSnapshot,command});
+ const record=await prepareDailyBoard({root,date,runKey,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),agents:dailyAgents(),control,snapshot:pulseSnapshot,command});
  console.log(JSON.stringify({date,seats:Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status]))}));
 }else if(process.argv[2]==='sync'){
  const options={root,date,snapshot:pulseSnapshot,command,readRemote};
