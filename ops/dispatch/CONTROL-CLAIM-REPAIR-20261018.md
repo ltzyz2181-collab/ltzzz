@@ -1,4 +1,7 @@
 # 总控交班与桌面接力：2026-10-18 北京轮次
+
+> 后续更正：PR #136 已合并 ID 映射修复；`knowledge/results/daily-board/2026-10-19.json` 已记录三席真实认领/提交，DeepSeek 草稿审核被拒仍未部署。原始下文保留为历史诊断，不重新购买模型调用或重做已合并修复。最新核验入口：[团队工程接力](CLAUDE-TEAM-RUNTIME-20261018.md)。这不替代千问/国际 Kimi 原生接单证明。
+
 Owner 本地日期为 America/Tijuana 2026-10-17。本单状态 assigned_waiting_acceptance，不等于桌面或聊天 AI 已接单。
 
 ## 已核实

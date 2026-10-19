@@ -11,6 +11,7 @@
 | #126 人工/外部接力 | [Issue #126 评论](https://github.com/ltzyz2181-collab/ltzzz/issues/126) | 认领主体、范围、具体提交；认领与原厂模型调用分开 |
 | 当日日课认领与交付 | `knowledge/results/daily-board/YYYY-MM-DD.json` | 以当日 run_key、task_id 和交付哈希验证，不用另一天或 ANS 的成功顶替 |
 | 控制席派单 | [control/latest.json](../knowledge/results/control/latest.json) | 指令来源；不单独证明任务已认领或交付 |
+| Claude 团队、App 与未来五签 | [团队配置](../config/claude-team.json)、[工程验收入口](dispatch/CLAUDE-TEAM-RUNTIME-20261018.md) | 角色任命、App 安装、外部实际接单及链上权限分别核验 |
 | WEP3 | [wep3/latest.json](../knowledge/results/wep3/latest.json) | 以 paid、tx_hash、实际执行提供商区分内部积分与现金 |
 | 发布 | [results/publishing/](../results/publishing/) | 同一视频的具体发布回执及公开链接；队列或 OAuth 连通不等于已公开 |
 | 清理审查 | [逐文件清单](../knowledge/results/repository-maintenance/cleanup-review-20261018.json)、[维护工单](dispatch/REPO-MAINTENANCE-REVIEW-20261018.md) | 待批准建议，不表示已经删除或迁移 |
