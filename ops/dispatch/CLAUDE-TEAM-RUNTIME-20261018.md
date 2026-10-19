@@ -2,6 +2,8 @@
 
 类型：事实（代码与验收入口；不代表外部客户端已接单）
 
+已部署验证入口：[PR #138](https://github.com/ltzyz2181-collab/ltzzz/pull/138) 合并提交 `eda17fa72490653c16b1cdc8062371edb26b631c`；[main 实际运行 39183352199](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39183352199) 成功，75/75 测试通过，源工作区干净。[完整运行回执](../../knowledge/results/claude-team/deployment-39183352199.json)保留 Actions 产物、输入哈希和链上读数。此成功不代表 Claude App 已安装或外部团队已接单。
+
 ## 现在可以运行
 
 [固定验证工作流](../../.github/workflows/claude-team-verify.yml)在相关代码 PR、合并到 main 时运行，也允许 owner 或 `claude[bot]` 手动触发。它只有仓库读权限，不注入模型、钱包或 Cloudflare Secret，不设 cron。读取原有账本，验证每日认领/提交与实物哈希、ANS 审核绑定、原拒收订单，main/手动运行另做 Ethereum Safe 双 RPC 只读观察。没有派新的付费单、购买模型、签名或广播交易。
@@ -27,5 +29,7 @@
 ## 五签最新澄清
 
 Owner 表示目前仅为本人、豆包和 GPT 准备过钱包，Claude 没有实际签名钱包。正式五签等自主运行成熟后再配置，千问仅先接团队治理角色。因此本次不索要替换地址、不生成 `swapOwner` 交易、不更改门槛。历史链上 owners 数量与角色钱包登记是两份证据，不能互相推导；只读观察不替任何地址贴上 AI 席位标签。
+
+本次真实双 RPC 在同一区块 `0x1902260` 一致读到 Ethereum Safe `0x76379a52a9e82c259E5Db417104C65C26f9C58a3` 具有 5 个 owners、threshold=3、nonce=7。地址原文见运行回执；没有 Claude/千问的可靠地址映射，不用席位称呼推断链上控制者。交易提交 0。
 
 `ltzzzwep3ops1` 与 `0x21F5…7fdc` 的绑定仍未验证；团队钱包不启用。历史“疑似暴露”标签不证明私钥泄露，本次不作此断言。
