@@ -17,6 +17,9 @@ on:
       - 'scripts/lib/daily-task-board.mjs'
       - 'scripts/lib/daily-board-lineage.mjs'
       - 'scripts/lib/daily-independent-review.mjs'
+      - 'scripts/lib/daily-channels.mjs'
+      - 'scripts/call-qwen.mjs'
+      - 'scripts/lib/qwen-config.mjs'
       - 'scripts/tests/daily-independent-review.test.mjs'
       - 'scripts/tests/daily-task-board.test.mjs'
       - 'scripts/tests/daily-board-lineage.test.mjs'
@@ -97,6 +100,9 @@ jobs:
           NODE_OPTIONS: --dns-result-order=ipv4first
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
         run: node scripts/run-daily-tasks.mjs
 
       - name: Commit results

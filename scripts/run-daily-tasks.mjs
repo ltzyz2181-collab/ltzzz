@@ -21,6 +21,7 @@ import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
 import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
 import {dailyReviewPrompt,materializeDailyReview} from './lib/daily-independent-review.mjs';
+import {DAILY_CHANNELS, qwenReviewContext} from './lib/daily-channels.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -81,11 +82,7 @@ function readCoreMemory() {
 }
 
 // 通道 → 调用模块 / 密钥名 / 回退任务；密钥只由 GitHub Secrets 注入
-const CHANNELS = [
-  { agent: "deepseek", module: "call-deepseek.mjs", key: "DEEPSEEK_API_KEY", task: "比较中华传统文化与项目理念的一项异同，区分出处、观察和推测" },
-  { agent: "doubao", module: "call-doubao.mjs", key: "DOUBAO_API_KEY", task: "产出一份围绕观/行深主题的中文短视频脚本草稿（≤60 秒、9:16）；不得发布" },
-  { agent: "grok", module: "call-grok.mjs", key: "XAI_API_KEY", task: "从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码" },
-];
+const CHANNELS = DAILY_CHANNELS;
 
 function ensureDir(p) { if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }); }
 
@@ -166,6 +163,8 @@ async function main() {
       last3 ? `最近产出（续上下文）：\n${last3}` : "",
       urge,
       reviewPrompt,
+      ch.agent === 'qianwen' ? qwenReviewContext(reflections, readLedger(ROOT,today), today) : '',
+      ch.agent === 'qianwen' ? '月度模型目录参考（GET探针不证明生成能力，不按型号字符串排序判断新旧）：'+JSON.stringify(readJson(path.join(ROOT,'knowledge/results/providers/catalogue-latest.json'),null)?.seats?.map(row=>({seat:row.seat,status:row.status,selected_model:row.selected_model,selected_model_listed:row.selected_model_listed,added_model_ids:row.added_model_ids?.slice(0,5),removed_model_ids:row.removed_model_ids?.slice(0,5)}))||[]) : '',
     ].filter(Boolean).join("\n\n");
 
     if (coreMemory.audit.status !== 'complete') {

@@ -1,9 +1,10 @@
+export const TASK_BOARD_SCHEMA_VERSION=3;
 export const cstDate=(now=Date.now())=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
 export function baselineDispatches(date){return [
  {id:'ANS-'+date+'-deepseek',agent:'deepseek',instruction:'ANS/Pulse首要任务：读取最新真实监控与奖惩回执，区分代理健康、原生生成和交付验收；定位一个真实阻塞并交代码补丁或可运行断言，附来源，不执行资金。',status:'queued_for_next_daily_economy',source:'coordinator_rules_zero_model_baseline'},
  {id:'ANS-'+date+'-doubao',agent:'doubao',instruction:'ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。',status:'queued_for_next_daily_economy',source:'coordinator_rules_zero_model_baseline'}
  ];}
-export function dailyBaselineDispatches(date){return baselineDispatches(date).map(task=>({...task,id:'DAILY-'+date+'-'+task.agent,execution_chain:'daily'}));}
+export function dailyBaselineDispatches(date){return [...baselineDispatches(date),{agent:'qianwen',instruction:'交叉审阅其他席当日产出及证据，识别系统风险或记忆不一致，提出可验证改进；结合月度模型目录检查提出更新建议，未实测不得称已恢复或已部署。'}].map(task=>({...task,id:'DAILY-'+date+'-'+task.agent,execution_chain:'daily'}));}
 export function seedTasks(previous={},now=Date.now()){
  const state=structuredClone(previous),date=cstDate(now);state.task_board||=[];
  const candidates=[...baselineDispatches(date).map(t=>({...t,status:'assigned',assigned_to:t.agent,execution_chain:'ans'})),
@@ -12,7 +13,7 @@ export function seedTasks(previous={},now=Date.now()){
  {id:'AUTO-'+date+'-incentives',instruction:'自主复算一条行动奖惩的交付哈希与独立审计依据，找重复结算/不当处罚，交证据；不改真钱账本。',skill:'audit'},
  {id:'AUTO-'+date+'-continuity',instruction:'自主检查每日派单、认领和执行回执是否连续；找一个卡住的交接并修补，不重复购买未知请求。',skill:'engineering'}];
  for(const task of candidates)if(!state.task_board.some(t=>t.id===task.id))state.task_board.push({...task,date,created_at:new Date(now).toISOString(),status:task.status||'available',origin:'logical_gpt_coordinator_rules_not_native_gpt_call',paid:false,tx_hash:null});
- state.task_board=state.task_board.filter(t=>t.date===date||['claimed','submitted_pending_review'].includes(t.status)||Date.parse(t.created_at)>now-7*86400000).slice(-250);state.daily_dispatch_date=date;state.task_board_schema_version=2;return state;
+ state.task_board=state.task_board.filter(t=>t.date===date||['claimed','submitted_pending_review'].includes(t.status)||Date.parse(t.created_at)>now-7*86400000).slice(-250);state.daily_dispatch_date=date;state.task_board_schema_version=TASK_BOARD_SCHEMA_VERSION;return state;
 }
 export function taskCommand(previous,command,actor,allowedAgents,now=Date.now()){
  const state=seedTasks(previous,now),t=state.task_board.find(t=>t.id===command.task_id);if(!t)throw Error('task_missing');
