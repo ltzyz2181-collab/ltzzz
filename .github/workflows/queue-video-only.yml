@@ -1,30 +1,29 @@
-name: Queue video in R2 only (defer publication to cron)
+name: Owner manual publish one existing rejection video
 
 on:
   workflow_dispatch:
 permissions: {contents: read}
-concurrency: {group: ltzzz-video-queue-2026-10-16, cancel-in-progress: false}
+concurrency: {group: ltzzz-video-rejection-manual-publication, cancel-in-progress: false}
 
 jobs:
   upload:
+    if: github.event_name == 'workflow_dispatch' && github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - name: Install ffprobe
-        run: command -v ffprobe || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
-      - name: Upload to authenticated R2 queue without processing it
+      - name: Verify exact selection and no second upload
+        run: node --test scripts/tests/manual-rejection-publication.test.mjs
+      - name: Process only the existing original queue item and verify public state
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
-          VIDEO_FILE: videos/ltzzz-daily-2026-10-16.mp4
-          VIDEO_META: videos/ltzzz-daily-2026-10-16.meta.json
-        run: node scripts/queue-video-only.mjs
+        run: node scripts/manual-publish-rejection-20261019.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: video-queue-only-${{ github.run_id }}-attempt-${{ github.run_attempt }}
-          path: results/publishing/video-queue-upload-ltzzz-daily-2026-10-16.json
-          if-no-files-found: warn
+          name: manual-rejection-publication-${{ github.run_id }}
+          path: results/publishing/youtube-manual-2026-10-19-rejection-is-evidence.json
+          if-no-files-found: error
           retention-days: 14
