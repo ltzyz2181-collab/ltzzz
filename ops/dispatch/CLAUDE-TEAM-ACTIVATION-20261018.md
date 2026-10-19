@@ -1,5 +1,8 @@
 # Claude 团队启用与首批派单（2026-10-18）
 
+> 更新：Claude 的真实分支及 REST PR #141 已经核验并合并，接单回执为 `accepted_planning_audit_only`。仅 Claude 的规划/独审部分已接；千问、国际 Kimi、WorkBuddy、Meta 仍需各自回执。下一步沿用 `AI-HIRE-CLOSEOUT-EXT-AI-20261017-001` 直接开始规划审计，无需重复向 owner 询问“是否开始”。[写入验收](../../knowledge/results/claude-team/claude-write-acceptance-pr141.json)。
+
+
 > 最新执行入口：[团队工程接力与验收](CLAUDE-TEAM-RUNTIME-20261018.md)。PR #136 已修复 CONTROL→DAILY ID 映射；新一轮认领、提交及哈希证据按该页核验，不复做旧修复。以下为原派单，非各席位接单证明。
 >
 > Owner 本轮澄清：实际只为 owner、豆包、GPT 准备过钱包，Claude 没有已配置的签名地址；正式五签等自主运行成熟后再配置。千问接席仅是团队角色任命，本轮不创建换签或资金交易。
