@@ -1,0 +1,15 @@
+{
+  "finding": "dailyAssignment 只消费 coordinator control 记录或 pulse.task_board；而 run-daily-tasks 的任务消费路径从 data/tasks/daily-tasks.json 与每日账本 reservation 进入，从未调用 taskCommand 的 claim_task。因此 task_board 中由 seedTasks 派发的 assigned 任务不会在每日任务执行侧被真正认领，形成派单悬空。",
+  "evidence_paths": [
+    "scripts/lib/daily-assignment.mjs",
+    "scripts/run-daily-tasks.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "workers/pulse-worker/tasks.js"
+  ],
+  "minimal_patch": "在 scripts/run-daily-tasks.mjs 中，对每个 ch 准备 model call 前：若 boardLedger.seats[ch.agent] 的 assignment 缺失，读 workers/pulse-worker/tasks.js 的 taskCommand(state,{task_id:分配ID,action:'claim_task',agent:ch.agent},'daily_runner',ALLOWED)，把结果保存到 data/tasks/claims-YYYY-MM-DD.json，再执行。失败则 failures.push({agent,status:'claim_blocked'}) 并 continue。注意 ALLOWED 从 boardLedger.seats 键推导。",
+  "verification_commands": [
+    "node -e \"import('./scripts/lib/daily-assignment.mjs').then(m=>console.log(m.dailyAssignment('deepseek','2026-10-14')))\"",
+    "node -e \"import('./workers/pulse-worker/tasks.js').then(m=>{const s=m.seedTasks({},Date.parse('2026-10-14T00:00:00+08:00'));const t=s.task_board.find(x=>x.assigned_to==='deepseek');console.log(JSON.stringify({found:!!t,status:t?.status}))})\""
+  ],
+  "remaining_blocker": "taskCommand 的 claim_task 要求 state.task_board 已存在 target id，但 run-daily-tasks 的 pulse 快照未回传 task_board，两条路径共享状态机制尚未接线。"
+}
