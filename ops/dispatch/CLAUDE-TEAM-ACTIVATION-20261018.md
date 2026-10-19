@@ -1,5 +1,7 @@
 # Claude 团队启用与首批派单（2026-10-18）
 
+> 2026-10-19 更新：Claude 原拒收订单独审已由 PR #146 入库，总控已补齐[固定交付入口](../../knowledge/results/claude-team/hire-closeout-claude-review.md)。该审计部分已交付，不需再次询问开始或重复执行。其他成员接单与 CONTROL/ANS 交付仍按各自真实回执判断。下文为历史派单，不覆盖[本次收尾决定](../../knowledge/results/claude-team/hire-closeout-controller-review-20261019.json)。
+
 > 更新：Claude 的真实分支及 REST PR #141 已经核验并合并，接单回执为 `accepted_planning_audit_only`。仅 Claude 的规划/独审部分已接；千问、国际 Kimi、WorkBuddy、Meta 仍需各自回执。下一步沿用 `AI-HIRE-CLOSEOUT-EXT-AI-20261017-001` 直接开始规划审计，无需重复向 owner 询问“是否开始”。[写入验收](../../knowledge/results/claude-team/claude-write-acceptance-pr141.json)。
 
 

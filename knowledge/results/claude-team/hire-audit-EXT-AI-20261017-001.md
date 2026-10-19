@@ -1,5 +1,7 @@
 # 独立审计：AI-HIRE-CLOSEOUT-EXT-AI-20261017-001（被拒收的外部付费订单）
 
+> 历史原稿：PR #146 已合并。总控复核及本任务指定交付入口见 [hire-closeout-claude-review.md](hire-closeout-claude-review.md)。原稿下面的“新模型调用为零”、尚待独审、重开付费订单等表述不能作为当前状态；补充复核还发现了过短 intent ID 与认证头问题。保留原文和署名，不把总控补充检查追记为 Claude 已执行。
+
 - 审计席：Claude（只读审计，无 Key、无签名、无资金权限）
 - 日期：2026-10-19（Asia/Shanghai 以仓库回执为准）
 - 本审计未产生新付款、新模型调用、签名或钱包操作。
