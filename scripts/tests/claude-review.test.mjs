@@ -65,7 +65,7 @@ test('existing claims are retained and a repeat prepare cannot authorize another
   const out=path.join(dir,'knowledge/results/claude-review');fs.mkdirSync(out,{recursive:true});const file=path.join(out,'CLAUDE-ANS-PULSE-REVIEW.json');const prior={status:'calling_api_outcome_unknown',model_calls:1,run_id:'prior'};fs.writeFileSync(file,JSON.stringify(prior));
   const script=path.resolve('scripts/run-claude-review.mjs'),output=path.join(dir,'step-output');
   const preload=path.join(dir,'mock-fetch.mjs');fs.writeFileSync(preload,"globalThis.fetch=async()=>Response.json({data:[{id:'claude-haiku-test'}]});");
-  const q=spawnSync(process.execPath,['--import',preload,script,'prepare'],{cwd:dir,env:{...process.env,...env,GITHUB_EVENT_NAME:'workflow_dispatch',CLAUDE_REVIEW_MODE:'review',ANTHROPIC_API_KEY:'fixture',GITHUB_OUTPUT:output},encoding:'utf8'});assert.equal(q.status,0,q.stderr);
+  const q=spawnSync(process.execPath,['--import',preload,script,'prepare'],{cwd:dir,env:{...process.env,...env,GITHUB_EVENT_NAME:'workflow_dispatch',CLAUDE_REVIEW_MODE:'review',CLAUDE_REVIEW_TOPIC:'ans-pulse',CLAUDE_REVIEW_TASK_ID:'CLAUDE-ANS-PULSE-REVIEW',ANTHROPIC_API_KEY:'fixture',GITHUB_OUTPUT:output},encoding:'utf8'});assert.equal(q.status,0,q.stderr);
   assert.deepEqual(JSON.parse(fs.readFileSync(file,'utf8')),prior);assert.equal(fs.readFileSync(output,'utf8'),'execute=false\n');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
