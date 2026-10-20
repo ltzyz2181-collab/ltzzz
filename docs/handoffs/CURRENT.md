@@ -37,3 +37,5 @@ Kimi质量配置见`lib/kimi-profile.js`：官方目录确认后优先K3；默�
 - K3指出TREASURY_001的actual/expected一致而passed=false。总控独立重放当前纯校验器得到true，确认历史记录有矛盾；不篡改旧回执，补充未来逐字段比较、响应哈希与代码版本。原因仍不能仅从旧日志推定。
 - 豆包真实交验收清单：1636 token；由总控复核并明确修正api-deep域名缩写和Kimi新增服务Token绑定的表述，验收仅限辅助清单。
 - 当前未完成：api-doubao/api-grok别名未解析、api-claude域名补权、Claude原厂额度、被拒收日课工件的整改；不把元数据健康当全部原厂API恢复。WorkBuddy每小时代码哨兵已运行，客户端常驻仍未验证。
+
+国内Kimi代理统一到已核验Moonshot国内Key与官方CN接口；国际Kimi账号另算。其他模型Key保留。此绑定通过既有GitHub Secret完成，值不进对话或回执，目录GET不算生成。
