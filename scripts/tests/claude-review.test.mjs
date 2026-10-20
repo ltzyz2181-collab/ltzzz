@@ -35,6 +35,16 @@ test('durable checkpoint happens before a single generation; complete output rem
  assert.equal(calls,1);assert.equal(r.status,'submitted_pending_review');assert.equal(r.model_calls,1);assert.equal(r.actual_model,'claude-haiku-test');assert.equal(r.output.includes('secret-fixture'),false);assert.equal(r.output_sha256,digest(r.output));
  await assert.rejects(executeReview(r,{}),/unused_claim_required/);
 });
+test('external-hire context requires all four actual receipts and records each full input hash',()=>{
+ fs.mkdirSync('work',{recursive:true});const root=fs.mkdtempSync(path.resolve('work/claude-hire-context-'));
+ try{
+  assert.throws(()=>reviewContext(root,'external-hire'),/ENOENT/);
+  const dir=root+'/knowledge/results/owner-external';fs.mkdirSync(dir,{recursive:true});
+  for(const kind of ['payment','delivery','review','acceptance-eight'])fs.writeFileSync(dir+'/OWNER-EXT-AI-20261020-01-'+kind+'.json',JSON.stringify({kind,paid:false,status:'fixture'}));
+  const r=reviewContext(root,'external-hire');assert.equal(r.files.length,4);assert.match(r.prompt,/T02/);assert.match(r.prompt,/供应方报告/);for(const f of r.files)assert.equal(f.sha256,digest(fs.readFileSync(root+'/'+f.file,'utf8')));
+  assert.equal(reviewRequest({...env,CLAUDE_REVIEW_TOPIC:'external-hire'}).topic,'external-hire');
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
 test('credit denial, timeout and truncated outputs stop without fallback or a second generation',async()=>{
  for(const result of [{ok:false,status:'insufficient_api_credits'},{ok:false,status:'exception'},{ok:true,model:'claude-haiku-test',finish_reason:'max_tokens',output:'unfinished'},{ok:true,model:'claude-haiku-test',finish_reason:'end_turn',output:'missing marker'}]){
   const r=record();let calls=0;await executeReview(r,{apiKey:'fixture',onCheckpoint:async()=>{},call:async()=>{calls++;return result;}});assert.equal(calls,1);assert.ok(r.status.startsWith('blocked_'));assert.equal(r.output,undefined);if(result.ok){assert.equal(r.status,'blocked_incomplete_output');assert.equal(r.partial_output,result.output);}else assert.equal(r.actual_model,null);await assert.rejects(executeReview(r,{}));
