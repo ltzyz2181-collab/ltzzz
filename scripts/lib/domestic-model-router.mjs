@@ -17,7 +17,7 @@ export function createModelRouter({env=process.env,record=()=>{},callers={DeepSe
     if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,redact(v)]));
     return value;
    };
-   const out=await callers[provider]({apiKey:keys[provider],prompt,maxTokens:maxTokens||(provider==='Grok'?3000:provider==='Kimi'?6000:8192),...(provider==='Doubao'?{thinking:'disabled'}:provider==='DeepSeek'&&thinking?{thinking}:{}),...(onProgress?{onProgress:state=>onProgress({...redact(state),requested_agent:requested,executed_by:provider})}:{})});
+   const out=await callers[provider]({apiKey:keys[provider],prompt,maxTokens:maxTokens||(provider==='Grok'?3000:provider==='Kimi'?16384:8192),...(provider==='Doubao'?{thinking:'disabled'}:provider==='DeepSeek'&&thinking?{thinking}:{}),...(onProgress?{onProgress:state=>onProgress({...redact(state),requested_agent:requested,executed_by:provider})}:{})});
    let error=String(out.error||'');for(const key of Object.values(keys).filter(Boolean))error=error.replaceAll(key,'[REDACTED]');
    record({requested_agent:requested,executed_by:provider,model:out.model||null,model_source:out.model_source||null,status:out.status,finish_reason:out.finish_reason||null,tokens_used:out.tokens_used??null,request_id:out.request_id||null,completion_id:out.completion_id||null,stream_complete:out.stream_complete??null,error:error.slice(0,180)||null});
    last={...out,error,requested_agent:requested,executed_by:provider,delegated:provider!==requested};

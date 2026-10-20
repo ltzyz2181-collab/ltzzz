@@ -1,3 +1,4 @@
+import {selectKimiModel} from '../../lib/kimi-profile.js';
 import {qwenConfig} from './qwen-config.mjs';
 export function catalogProviders(env = process.env) {
   let q; try {q=qwenConfig(env);} catch {q={key:'',model:env.DASHSCOPE_MODEL||'qwen-plus',configuration_error:true};}
@@ -5,7 +6,7 @@ export function catalogProviders(env = process.env) {
     {seat:'qianwen',base:q.base,key:q.key,selected_model:q.model,configuration_error:q.configuration_error},
     {seat:'deepseek',base:'https://api.deepseek.com/v1',key:env.DEEPSEEK_API_KEY,selected_model:env.DEEPSEEK_MODEL||'deepseek-v4-pro'},
     {seat:'doubao',base:'https://ark.cn-beijing.volces.com/api/v3',key:env.DOUBAO_API_KEY||env.ARK_API_KEY,selected_model:env.DOUBAO_MODEL||'doubao-seed-2-1-pro-260915'},
-    {seat:'kimi_cn',base:'https://api.moonshot.cn/v1',key:env.MOONSHOT_API_KEY_CN,selected_model:env.KIMI_CN_MODEL||'kimi-k2.6'},
+    {seat:'kimi_cn',base:'https://api.moonshot.cn/v1',key:env.MOONSHOT_API_KEY_CN,selected_model:'auto'},
     {seat:'kimi_global',base:'https://api.moonshot.ai/v1',key:env.KIMI_API_KEY,selected_model:env.KIMI_MODEL||'kimi-k2.6'},
     {seat:'grok',base:'https://api.x.ai/v1',key:env.XAI_API_KEY,selected_model:env.XAI_MODEL||null}
   ];
@@ -23,7 +24,8 @@ export async function inspectCatalog(provider,{fetchImpl=fetch,previous}={}) {
     if(!Array.isArray(items))return {...row,status:'invalid_catalogue_response'};
     row.model_ids=[...new Set(items.map(x=>x?.id||x?.model).filter(x=>typeof x==='string'&&!x.includes(provider.key)))].sort();
     row.catalogue_complete=!body.has_more&&!body.next&&!body.next_page_token;
-    row.selected_model_listed=provider.selected_model?row.model_ids.includes(provider.selected_model):null;
+    if(provider.seat==='kimi_cn'&&provider.selected_model==='auto'){try{row.selected_model=selectKimiModel(row.model_ids);row.model_selection_policy='highest_verified_available';}catch{row.selection_blocker='no_supported_model_in_official_catalogue';}}
+    row.selected_model_listed=row.selected_model?row.model_ids.includes(row.selected_model):null;
     row.status='catalogue_verified_no_generation';
     row.added_model_ids=previous?.model_ids?row.model_ids.filter(id=>!previous.model_ids.includes(id)):[];
     row.removed_model_ids=row.catalogue_complete&&previous?.catalogue_complete?previous.model_ids.filter(id=>!row.model_ids.includes(id)):[];

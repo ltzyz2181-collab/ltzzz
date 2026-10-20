@@ -1,3 +1,4 @@
+import {beginExecution,finishExecution} from '../../lib/provider-execution.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -92,6 +93,8 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   if (!seat || record.date !== date || record.run_key !== runKey || seat.status !== 'reserved' || (seat.assignment && (!seat.claim_verified || seat.assignment.execution_date !== date || seat.claim_receipt?.task_id !== seat.assignment.id || seat.claim_receipt?.run_key !== runKey))) {
     return {ok:false,status:'blocked_no_repurchase',error:'No unused verified reservation owned by this run'};
   }
+  const execution=beginExecution(agent,null,seat.assignment?.id,'repository_executor_code');
+  seat.execution_started_at=execution.started_at;
   seat.status = 'generation_started';
   saveLedger(root, record);
   let result;
@@ -100,8 +103,9 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   const integrity = assessDelivery({output:result.output, finish_reason:result.finish_reason});
   const complete = result.ok === true && integrity.status === 'structurally_complete' && !/SPEND_PROPOSAL\s*[:：]/i.test(result.output || '');
   const artifact = {
+    execution:finishExecution(execution,{http:result.http??null,transportOk:result.ok===true,data:{model:result.model_source==='provider_response'?(result.returned_model||result.model):null,choices:[{message:{content:result.output},finish_reason:result.finish_reason}],usage:{total_tokens:result.tokens_used}}}),
     schema_version:1, date, task_id:seat.assignment?.id || null, logical_seat:agent,
-    actual_provider:result.ok ? agent : null, actual_model:result.model_source === 'requested_model' ? null : (result.model || null),
+    actual_provider:result.ok ? agent : null, actual_model:result.model_source === 'provider_response' ? (result.returned_model || result.model || null) : null,
     reported_model:result.model || null, model_source:result.model_source || null, source_commit:record.source_commit,
     run_key:runKey, output:String(result.output || ''), finish_reason:result.finish_reason || null,
     tokens_used:result.tokens_used ?? null, request_id:result.request_id || null,
@@ -118,7 +122,7 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   seat.status = complete ? 'generated_pending_sync' : 'generation_failed_no_repurchase';
   seat.integrity = integrity;
   saveLedger(root, record);
-  return result;
+  return {...result,execution:artifact.execution};
 }
 
 export function validateArtifact(root, record, agent, seat) {
