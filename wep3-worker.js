@@ -1,4 +1,5 @@
 import {auditProof} from './wep3-audit-proof.js';
+import seatRegistry from './identity/seat-registry.json' with {type:'json'};
 import {marketRoute,Market} from './wep3-market.js';
 export {Market};
 // Cloudflare renamed_classes preserves the existing namespace and stored book.
@@ -7,7 +8,9 @@ export class MarketRuntimeV3 extends Market {}
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft', 'Claude', 'Meya'];
-// Owner 待确认：Claude / 千问 / Kimi / Meya 身份与职责
+// Keep legacy names for historical balance readback; only active seats may receive new work.
+const SEAT_IDS={GPT:'gpt',Doubao:'doubao',DeepSeek:'deepseek',Grok:'grok',Claude:'claude',Microsoft:'microsoft',Kimi:'kimi',Qianwen:'qianwen'};
+const ACTIVE_AGENTS=AGENTS.filter(name=>!SEAT_IDS[name]||seatRegistry.seats[SEAT_IDS[name]].work_status!=='temporarily_removed');
 const AGENT_ROLES = {
   Grok:     { region: 'global', role: 'signal / research / payment insight', skills: ['signal'] },
   Doubao:   { region: 'cn',     role: 'copy / video script / contract-test', skills: ['copy', 'contract-test'] },
@@ -20,6 +23,7 @@ const AGENT_ROLES = {
   Microsoft:{ region: 'global', role: 'fallback / tooling', skills: [] },
   LTZZZ:    { region: 'lab',    role: 'treasury / lab share', skills: [] }
 };
+for(const [name,id] of Object.entries(SEAT_IDS))Object.assign(AGENT_ROLES[name],{role:seatRegistry.seats[id].role,work_status:seatRegistry.seats[id].work_status,role_source:'identity/seat-registry.json',wallet_source:'wallet/addresses.md'});
 const SKILLS = [
   {id: 'signal', owner: 'Grok', title: 'payment signal', price: 0.02, product: 'https://ltzzz.com/products.html'},
   {id: 'copy', owner: 'Doubao', title: 'product copy', price: 0.03, product: 'https://ltzzz.com/products.html'},
@@ -58,7 +62,7 @@ function pinOk(request, env) {
 }
 async function rep(env, agent) { return await get(env, 'wep3:rep:' + agent, null) || {agent, score: 100, earned: 0, spent: 0, credit: 1, jobs: 0, stamps: 0, held: 0, line_used: 0}; }
 async function saveRep(env, row) { row.updated_at = new Date().toISOString(); await put(env, 'wep3:rep:' + row.agent, row); return row; }
-function other(notThese) { return AGENTS.find(a => !notThese.includes(a)) || 'Microsoft'; }
+function other(notThese) { const found=ACTIVE_AGENTS.find(a=>!notThese.includes(a));if(!found)throw Error('no_active_independent_agent');return found; }
 function split(amount) { const workerShare = Number((amount * 0.7).toFixed(6)); const attestShare = Number((amount * 0.1).toFixed(6)); return {workerShare, attestShare, labShare: Number((amount - workerShare - attestShare).toFixed(6))}; }
 function lineLimit(row) { return Number(Math.min(0.5, Number(row.earned || 0) * 0.5 + Math.max(0, Number(row.score || 100) - 100) * 0.01).toFixed(6)); }
 function spendable(row) { return Number((Number(row.credit || 0) + Math.max(0, lineLimit(row) - Number(row.line_used || 0))).toFixed(6)); }
@@ -103,6 +107,7 @@ async function settle(env, amount, workerName, attesterName) {
 function clean(pathname) { let path = pathname || '/'; while (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1); return path || '/'; }
 async function openIntent(env, poster, skill, max, title, parentId) {
   if (!known(poster)) return {error: 'unknown_agent', status: 400};
+  if(!ACTIVE_AGENTS.includes(poster))return {error:'temporarily_removed_agent',status:403};
   if (!(max > 0) || max > Number(env.SINGLE_CAP || 5)) return {error: 'max_out_of_band', status: 400};
   const drawn = await draw(env, poster, max); if (drawn.error) return drawn;
   const intent = {id: nid('INT'), poster, skill: skill.id, title: String(title || skill.title).slice(0, 160), product: skill.product, max_usd: max, remaining: max, drawn: 0, held: 0, status: 'open', quotes: [], slices: [], prev_hash: 'genesis', matched: null, parent_id: parentId || null, children: [], created_at: new Date().toISOString()};
@@ -121,6 +126,7 @@ async function release(env, intent, reason) {
 }
 async function addQuote(env, intent, agent, ask) {
   if (!known(agent) || agent === intent.poster) return {error: 'bad_quoter'};
+  if (!ACTIVE_AGENTS.includes(agent)) return {error: 'temporarily_removed_agent', status: 403};
   const tape = await tapePrice(env, intent.skill);
   const row = await rep(env, agent);
   const edge = Math.max(0.85, 1 - Math.min(20, Number(row.score || 100) - 100) / 200);
@@ -135,6 +141,7 @@ async function addQuote(env, intent, agent, ask) {
   return {quote, beats_tape: ask <= tape};
 }
 async function bidAtTape(env, intent, agent) {
+  if (!ACTIVE_AGENTS.includes(agent)) return {error: 'temporarily_removed_agent', status: 403};
   const tape = await tapePrice(env, intent.skill);
   const row = await rep(env, agent);
   const edge = Math.max(0.85, 1 - Math.min(20, Number(row.score || 100) - 100) / 200);
@@ -350,7 +357,7 @@ async function hireLoop(env, body) {
   const opened = await openIntent(env, poster, skill, max, body.title || skill.title, body.parent_id || null);
   if (opened.error) return {ok: false, ...opened, status: opened.status || 400};
   const intent = opened.intent;
-  const poolAgents = AGENTS.filter(a => a !== poster);
+  const poolAgents = ACTIVE_AGENTS.filter(a => a !== poster);
   if (!poolAgents.includes(body.worker)) {await release(env,intent,'invalid_worker');return {ok:false,error:'invalid_worker',status:422};}
   const preferred = body.worker;
   const second = poolAgents.find(a => a !== preferred) || poolAgents[0];
@@ -412,6 +419,7 @@ async function okxBalance(env) {
 /** Internal-credit planning only. No KV reservation until an atomic executor exists. */
 async function openSwarm(env, poster, goal, budgetUsd, skillIds, execute = false) {
  if (!known(poster)) return { error: 'unknown_agent', status: 400 };
+ if (!ACTIVE_AGENTS.includes(poster)) return {error:'temporarily_removed_agent',status:403};
  const decimal = String(budgetUsd ?? '0.1');
  if (!/^\d{1,6}(?:\.\d{1,6})?$/.test(decimal)) return {error:'decimal_internal_credit_budget_required',status:400};
  const [whole, fraction = ''] = decimal.split('.');
@@ -461,7 +469,7 @@ export default {async fetch(request, env) {
       return json(out, out.ok ? 200 : (out.status || 400));
     }
     if (path === '/agents/roles' && request.method === 'GET') {
-      return json({ok:true,agents:AGENTS,roles:AGENT_ROLES,role_registration_only:true,generation_verified:false,model_calls:0});
+      return json({ok:true,agents:ACTIVE_AGENTS,temporarily_removed:['Microsoft'],roles:AGENT_ROLES,registry:'identity/seat-registry.json',wallet_source:'wallet/addresses.md',role_registration_only:true,generation_verified:false,model_calls:0});
     }
     return json({ok: false, error: 'not_found', path}, 404);
   } catch (err) { return json({ok: false, error: 'worker_exception', message: String(err && err.message || err)}, 500); }

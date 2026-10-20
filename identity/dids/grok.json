@@ -4,44 +4,80 @@
     "https://w3id.org/security/suites/jws-2020/v1"
   ],
   "id": "did:ltzzz:grok",
-  "alsoKnownAs": ["erc8004:pending-mainnet-mapping"],
-  "controller": "did:ltzzz:owner",
-  "verificationMethod": [
-    {
-      "id": "did:ltzzz:grok#guardian-key-1",
-      "type": "EcdsaSecp256r1VerificationKey2019",
-      "controller": "did:ltzzz:grok",
-      "publicKeyJwk": {
-        "kty": "EC", "crv": "P-256", "x": "PLACEHOLDER_X", "y": "PLACEHOLDER_Y",
-        "note": "占位符。真实密钥由 owner 在安全环境生成，仅公钥入库。"
-      }
-    }
+  "alsoKnownAs": [
+    "erc8004:pending-mainnet-mapping"
   ],
-  "authentication": ["did:ltzzz:grok#guardian-key-1"],
-  "assertionMethod": ["did:ltzzz:grok#guardian-key-1"],
+  "controller": "did:ltzzz:owner",
+  "verificationMethod": [],
+  "authentication": [],
+  "assertionMethod": [],
   "service": [
     {
-      "id": "did:ltzzz:grok#a2a-card",
+      "id": "did:ltzzz:grok#agent-card",
       "type": "agent-card",
-      "serviceEndpoint": "https://ltzzz.com/api/agents/grok/card",
-      "note": "端点状态：尚未建立专属 worker（ltzzz-x-poster-worker.js 仅覆盖发帖）；此条为 planned，部署前不得对外声明可用"
+      "serviceEndpoint": "https://ltzzz.com/api/agents/grok/card.json",
+      "note": "只读JSON名片，不是模型生成或已签名DID证明。"
+    },
+    {
+      "id": "did:ltzzz:grok#health-0",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://api-xai.ltzzz.com/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
+    },
+    {
+      "id": "did:ltzzz:grok#health-1",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://api-grok.ltzzz.com/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
+    },
+    {
+      "id": "did:ltzzz:grok#health-2",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://ltzzz-xai-proxy.ltzyz2181.workers.dev/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
     }
   ],
   "ltzzz:profile": {
-    "role": "海外趋势、海外平台版本、Web3/代码安全、交易策略与执行器打磨（XAI 线）",
+    "role": "海外研究、代码安全与独立挑战",
     "votingSeat": true,
-    "walletTier": "L1 只读",
-    "channels": ["XIA/2026-09-chat-index.md 归档", "ltzzz-x-poster-worker.js"],
-    "credentialNote": "XAI API 凭证状态见 ai/verified-log.json 与 AI Center，本文件不记录任何凭证值"
+    "walletTier": "资金登记与控制以wallet/addresses.md和现有执行器为准；岗位任命不是签名权",
+    "channels": [
+      "XIA/2026-09-chat-index.md 归档",
+      "ltzzz-x-poster-worker.js"
+    ],
+    "credentialNote": "XAI API 凭证状态见 ai/verified-log.json 与 AI Center，本文件不记录任何凭证值",
+    "workStatus": "active",
+    "walletRegistrySource": "wallet/addresses.md",
+    "walletSigning": false,
+    "endpointStatusRef": "identity/endpoint-status.json",
+    "roleSource": "identity/seat-registry.json",
+    "nativeInferenceMode": "native_xAI_API",
+    "authoritySource": "config/autonomy-authority.json"
   },
   "ltzzz:memoryGate": {
     "requiredReads": [
-      "ltzzz-memory/README.md", "ltzzz-memory/重要事件.md", "ltzzz-memory/项目历史.md",
-      "ltzzz-memory/装备论.md", "ltzzz-memory/魄.md", "ltzzz-memory/识神.md",
-      "ltzzz-memory/梦境数据库.md", "ltzzz-memory/文明研究.md", "当日/昨日 Task-Result 摘要"
+      "ltzzz-memory/README.md",
+      "ltzzz-memory/重要事件.md",
+      "ltzzz-memory/项目历史.md",
+      "ltzzz-memory/装备论.md",
+      "ltzzz-memory/魄.md",
+      "ltzzz-memory/识神.md",
+      "ltzzz-memory/梦境数据库.md",
+      "ltzzz-memory/文明研究.md",
+      "当日/昨日 Task-Result 摘要"
     ],
-    "truthContract": ["proposed != applied", "planned != deployed", "API存在 != API已验证", "AI回复 != 实际结果"],
+    "truthContract": [
+      "proposed != applied",
+      "planned != deployed",
+      "API存在 != API已验证",
+      "AI回复 != 实际结果"
+    ],
     "outputSchema": "每条产出必须带 result / evidence / next 字段，缺失视为未过 Gate"
   },
-  "proof": { "type": "PLACEHOLDER", "note": "guardian 2/3 签名字段，X2 阶段完成" }
+  "ltzzz:identityStatus": {
+    "signing_public_key_provisioned": false,
+    "signature_verified": false,
+    "chain_registration_verified": false,
+    "note": "DID签名公钥与模型API Key是不同对象；未生成私钥、未授予链上签名权。"
+  }
 }

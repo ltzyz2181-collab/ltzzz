@@ -56,7 +56,7 @@ test('missing secret or failed checkpoint never sends a request',async()=>{
 });
 test('workflow has no timer, default inspect and no wallet secrets; identity allows work without voting',()=>{
  const w=fs.readFileSync('.github/workflows/claude-on-demand-review.yml','utf8');assert.doesNotMatch(w,/\b(schedule|cron):/);assert.ok(w.includes("inputs.mode == 'review'"));assert.doesNotMatch(w,/TREASURY_EXECUTOR_KEY|LTZZZ_WALLET_PRIVATE_KEY|CLOUDFLARE_API_TOKEN|SAFE_SIGNER/);
- const p=JSON.parse(fs.readFileSync('identity/dids/claude.json','utf8'))['ltzzz:profile'];assert.equal(p.votingSeat,false);assert.equal(p.workStatus,'available_on_demand');assert.equal(p.walletSigning,false);
+ const p=JSON.parse(fs.readFileSync('identity/dids/claude.json','utf8'))['ltzzz:profile'];assert.equal(p.votingSeat,false);assert.equal(p.workStatus,'active_external_audit_and_planning');assert.equal(p.role,'独立审计＋规划');assert.equal(p.walletSigning,false);
 });
 test('existing claims are retained and a repeat prepare cannot authorize another purchase',()=>{
  fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/claude-review-claim-'));

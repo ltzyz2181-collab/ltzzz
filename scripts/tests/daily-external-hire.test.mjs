@@ -79,7 +79,7 @@ test('independent review requires paid delivery, exact hash, Doubao, a complete 
  assert.equal((await dailyHireReview(f.m,f.book,{date,claim_id:'review-1',phase:'claim'})).claimed,true);
  assert.equal((await dailyHireReview(f.m,f.book,{date,claim_id:'review-1',phase:'claim'})).claimed,false);
  for(const patch of [{claim_id:'other'},{artifact_sha256:'bad'},{executed_by:'DeepSeek'},{finish_reason:'length'},{tokens_used:0},{model:'gpt-unknown'},{model_source:'requested_model'},{model_source:undefined},{output:'{}'}])assert.equal((await dailyHireReview(f.m,f.book,{...input,...patch})).ok,false);
- const done=await dailyHireReview(f.m,f.book,input);assert.equal(done.delivery_accepted,true);assert.equal(f.book.procurement[dailyHireId(date)].status,'paid_delivery_accepted');
+ const done=await dailyHireReview(f.m,f.book,input);assert.equal(done.delivery_accepted,true);assert.equal(f.book.procurement[dailyHireId(date)].status,'paid_delivery_accepted_engineering_draft');
  await dailyHireReview(f.m,f.book,input);assert.equal(f.book.ledger.filter(e=>e.type==='external_AI_delivery_review').length,1);
 });
 test('an accepted artifact is not bought again merely because the date changes',async()=>{
@@ -96,7 +96,7 @@ test('replaying a paid and reviewed order never calls the reviewer again',async(
  const f=fixture();await externalPurchase(f.m,f.book,f.options);const order=f.book.procurement[dailyHireId(date)];order.status='paid_delivery_accepted';order.delivery_accepted=true;order.independent_review={status:'accepted_engineering_artifact',executed_by:'Doubao',model:'doubao-test',model_source:'provider_response',output:'review'};
  const record=dailyHireAssignment({mode:'external',date,sourceCommit:context.source_commit,context,runId:'test'});
  await executeDailyHire(record,{reviewerConfigured:true,pulseReady:true,relay:async()=>({order}),api:async path=>path.endsWith('daily-review')?{ok:true,claimed:false}:{ok:true,order},callReviewer:()=>{throw Error('duplicate review');}});
- assert.equal(record.review_generation_attempts_this_run,0);assert.equal(record.new_payments_this_run,0);assert.equal(record.status,'paid_delivery_accepted');assert.equal(record.follow_up_receipt.reviewer_provider,'Doubao');
+ assert.equal(record.review_generation_attempts_this_run,0);assert.equal(record.new_payments_this_run,0);assert.equal(record.status,'paid_delivery_accepted_engineering_draft');assert.equal(record.follow_up_receipt.reviewer_provider,'Doubao');
 });
 test('paid delivery, one real-review adapter response and final readback form an end-to-end acceptance chain',async()=>{
  const f=fixture();let calls=0;
@@ -106,7 +106,7 @@ test('paid delivery, one real-review adapter response and final readback form an
   relay:async()=>({...await externalPurchase(f.m,f.book,f.options),paid_request_attempted_this_run:f.paid===1&&!f.book.procurement[dailyHireId(date)]?.independent_review}),api,
   callReviewer:async()=>{calls++;return {ok:true,model:'doubao-seed-2-1-pro-260915',model_source:'provider_response',finish_reason:'stop',tokens_used:125,output:JSON.stringify({accepted:true,artifact_sha256:f.book.procurement[dailyHireId(date)].deliverable_sha256,reasons:['API method, typed body and PIN controls are statically consistent.'],unverified:['Live HTTP and deployment not executed.'],live_http_verified:false})};}};
  await executeDailyHire(record,dependencies);
- assert.equal(record.status,'paid_delivery_accepted');assert.equal(record.follow_up_receipt.delivery_accepted,true);assert.equal(record.follow_up_receipt.reviewer_provider,'Doubao');assert.equal(record.new_payments_this_run,1);assert.equal(calls,1);
+ assert.equal(record.status,'paid_delivery_accepted_engineering_draft');assert.equal(record.follow_up_receipt.delivery_accepted,true);assert.equal(record.follow_up_receipt.reviewer_provider,'Doubao');assert.equal(record.new_payments_this_run,1);assert.equal(calls,1);
  await executeDailyHire(record,dependencies);assert.equal(calls,1);assert.equal(f.paid,1);assert.equal(record.review_generation_attempts_this_run,0);assert.equal(record.new_payments_this_run,0);
 });
 test('daily scheduler uses persisted dispatch, one shared financial queue and no native paid GPT/Claude calls',()=>{
@@ -157,7 +157,7 @@ test('an interrupted review submission resumes from the saved output with no sec
  };
  const dependencies={reviewerConfigured:true,pulseReady:true,relay:async()=>externalPurchase(f.m,f.book,f.options),api,callReviewer:async()=>{calls++;return {ok:true,model:'doubao-test',model_source:'provider_response',finish_reason:'stop',tokens_used:100,output:JSON.stringify({accepted:true,artifact_sha256:f.book.procurement[dailyHireId(date)].deliverable_sha256,reasons:['Specific contract evidence checked.'],unverified:['Live not run.'],live_http_verified:false})};}};
  await executeDailyHire(record,dependencies);assert.equal(record.status,'blocked_review_submission_no_generation_retry');assert.ok(record.review_response.output);
- await executeDailyHire(record,dependencies);assert.equal(record.status,'paid_delivery_accepted');assert.equal(calls,1);assert.equal(record.review_generation_attempts_this_run,0);assert.equal(f.paid,1);
+ await executeDailyHire(record,dependencies);assert.equal(record.status,'paid_delivery_accepted_engineering_draft');assert.equal(calls,1);assert.equal(record.review_generation_attempts_this_run,0);assert.equal(f.paid,1);
 });
 test('a locally observed order missing on the server is never purchased again',async()=>{
  const r=await externalAIRelay('fixture',{date,context,existingOnly:true,api:async()=>({ok:true}),fetcher:()=>{throw Error('must not request a new quote or payment');}});
