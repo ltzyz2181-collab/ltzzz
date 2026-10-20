@@ -3,6 +3,16 @@ import os from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {git} from './push-receipt-commit.mjs';
+export function newerPulseSnapshot(incoming,prior){
+ const a=incoming?.state_revision,b=prior?.state_revision;
+ if(Number.isSafeInteger(a)&&Number.isSafeInteger(b)&&a!==b)return a>b;
+ const aTime=Date.parse(incoming?.ran_at),bTime=Date.parse(prior?.ran_at);
+ if(!Number.isFinite(aTime))return false;
+ if(!Number.isFinite(bTime)||aTime!==bTime)return !Number.isFinite(bTime)||aTime>bTime;
+ if(Number.isSafeInteger(a)!==Number.isSafeInteger(b))return Number.isSafeInteger(a);
+ const updated=s=>Math.max(0,...[s?.state_updated_at,s?.incentives?.at,...(s?.events||[]).map(e=>e.at)].map(t=>Date.parse(t)).filter(Number.isFinite));
+ return updated(incoming)>updated(prior);
+}
 
 // Only generated Pulse evidence is copied into an isolated checkout. Never
 // rebase, stash or overwrite the caller's files to reconcile a shared snapshot.
@@ -19,7 +29,7 @@ export function persistPulseReceipts({cwd=process.cwd(),runId=process.env.GITHUB
  if(!receipts.length)throw Error('pulse_run_receipt_missing');
  const latestFile=path.join(source,'latest.json');
  const snapshot=fs.existsSync(latestFile)?fs.readFileSync(latestFile,'utf8'):null;
- const snapshotTime=snapshot?Date.parse(JSON.parse(snapshot).ran_at):NaN;
+ const snapshotData=snapshot?JSON.parse(snapshot):null;
  const command=(dir,args)=>{const result=git(dir,args);if(result.status!==0)throw Error('pulse_git_'+args[0]+'_failed');return result.stdout.trim();};
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'pulse-evidence-'));
  try{
@@ -39,8 +49,8 @@ export function persistPulseReceipts({cwd=process.cwd(),runId=process.env.GITHUB
      fs.writeFileSync(dest,receipt.text);
     }
     const dest=path.join(target,'latest.json');
-    const priorTime=fs.existsSync(dest)?Date.parse(JSON.parse(fs.readFileSync(dest,'utf8')).ran_at):NaN;
-    if(Number.isFinite(snapshotTime)&&(!Number.isFinite(priorTime)||snapshotTime>priorTime))fs.writeFileSync(dest,snapshot);
+    const priorSnapshot=fs.existsSync(dest)?JSON.parse(fs.readFileSync(dest,'utf8')):null;
+    if(newerPulseSnapshot(snapshotData,priorSnapshot))fs.writeFileSync(dest,snapshot);
     command(checkout,['add',relative]);
     if(git(checkout,['diff','--cached','--quiet']).status===0)return {ok:true,unchanged:true,attempts:attempt+1};
     command(checkout,['commit','-m','Preserve Pulse run '+runId+' evidence and newest observation']);
