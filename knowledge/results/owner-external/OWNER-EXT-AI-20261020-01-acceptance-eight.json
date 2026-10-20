@@ -1,0 +1,166 @@
+{
+  "at": "2026-10-20T10:07:08.927Z",
+  "kind": "provided_spec_live_HTTP_regression_not_original_design",
+  "transactions": 0,
+  "model_calls": 0,
+  "checks": [
+    {
+      "id": "T01",
+      "method": "GET",
+      "path": "/health",
+      "authentication_case": "public",
+      "expected_http": 200,
+      "expected_json": {
+        "ok": true
+      },
+      "http": 200,
+      "actual": {
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T02",
+      "method": "GET",
+      "path": "/market/treasury",
+      "authentication_case": "public",
+      "expected_http": 200,
+      "expected_json": {
+        "ok": true,
+        "controlled": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      },
+      "http": 200,
+      "actual": {
+        "ok": true,
+        "controlled": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      },
+      "passed": true
+    },
+    {
+      "id": "T03",
+      "method": "GET",
+      "path": "/market/aave/status",
+      "authentication_case": "public",
+      "expected_http": 200,
+      "expected_json": {
+        "ok": true,
+        "chain_id": 8453
+      },
+      "http": 200,
+      "actual": {
+        "ok": true,
+        "chain_id": 8453
+      },
+      "passed": true
+    },
+    {
+      "id": "T04",
+      "method": "GET",
+      "path": "/market/runner/readiness",
+      "authentication_case": "public",
+      "expected_http": 200,
+      "expected_json": {
+        "authenticated": false
+      },
+      "http": 200,
+      "actual": {
+        "authenticated": false
+      },
+      "passed": true
+    },
+    {
+      "id": "T05",
+      "method": "GET",
+      "path": "/market/runner/readiness",
+      "authentication_case": "valid",
+      "expected_http": 200,
+      "expected_json": {
+        "authenticated": true
+      },
+      "http": 200,
+      "actual": {
+        "authenticated": true
+      },
+      "passed": true
+    },
+    {
+      "id": "T06",
+      "method": "POST",
+      "path": "/market/aave/preview",
+      "authentication_case": "public",
+      "expected_http": 401,
+      "expected_json": {
+        "error": "pin_required"
+      },
+      "http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "T07",
+      "method": "POST",
+      "path": "/market/aave/preview",
+      "authentication_case": "wrong",
+      "expected_http": 401,
+      "expected_json": {
+        "error": "pin_required"
+      },
+      "http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true
+    },
+    {
+      "id": "T08",
+      "method": "POST",
+      "path": "/market/aave/preview",
+      "authentication_case": "valid",
+      "expected_http": 422,
+      "expected_json": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      },
+      "http": 422,
+      "actual": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      },
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "negative_controls": {
+    "kind": "local_assertion_evaluator_fault_injection",
+    "network_calls": 0,
+    "independent_design_proven": false,
+    "passed": true,
+    "samples": [
+      {
+        "name": "baseline",
+        "pass": true,
+        "expected": true
+      },
+      {
+        "name": "wrong_http_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_json_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_authentication_rejected",
+        "pass": false,
+        "expected": false
+      }
+    ]
+  },
+  "run_id": "39405560253",
+  "source_commit": "dc3d0e1d5405d97cd79f17e38164f3294b802f86",
+  "canonical_contract_sha256": "11b89e5a707c14df8741e72aa9b5973c005f90134c8f421b46952aac07cf4b9f"
+}
