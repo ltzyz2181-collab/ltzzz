@@ -24,3 +24,22 @@ test('actual deployment receipts stay separate from the generated draft deployme
   const r=gatherArticleSources({root:f.root,date:'2026-10-20'});assert.equal(r.sources.length,2);assert.match(r.text,/"deployed":false/);assert.match(r.text,/actual_component_deployment_not_the_generated_ANS_patch/);assert.match(r.text,/"version":"current"/);assert.doesNotMatch(r.text,/large snapshot|blocked_deployment/);
  }finally{f.close();}
 });
+test('missing same-day data and stale snapshots never become current evidence',()=>{
+ const f=fixture();try{
+  f.write('knowledge/results/ans-cycle/2026-10-20.json',{status:'date absent'});
+  f.write('knowledge/results/pulse/latest.json',{ran_at:'2026-10-18T00:00:00Z'});
+  const r=gatherArticleSources({root:f.root,date:'2026-10-20'});assert.equal(r.sources.length,0);assert.equal(r.text,'');
+ }finally{f.close();}
+});
+test('the source manifest contains only nonempty excerpts actually inside the global prompt limit',()=>{
+ const f=fixture();try{
+  f.write('knowledge/results/claude-team/real-hire-20261020.json',{date:'2026-10-20',action_taken:'a'.repeat(20000)});
+  f.write('knowledge/results/ans-cycle/2026-10-20.json',{date:'2026-10-20',body:'b'.repeat(20000)});
+  f.write('knowledge/results/pulse/latest.json',{ran_at:'2026-10-20T01:00:00Z',body:'c'.repeat(20000)});
+  f.write('data/results/2026-10-20.json',{date:'2026-10-20',body:'d'.repeat(20000)});
+  f.write('memory/daily/summary-2026-10-20.md',{body:'e'.repeat(20000)});
+  for(const prefix of ['youtube-manual-','youtube-daily-','wechat-owner-publication-'])f.write('results/publishing/'+prefix+'2026-10-19.json',{published:true,body:'f'.repeat(20000)});
+  const r=gatherArticleSources({root:f.root,date:'2026-10-20'});assert.ok(r.text.length<=16000);
+  for(const s of r.sources){assert.ok(s.included_chars_before_redaction>0);assert.ok(r.text.includes('## '+s.path+' ['+s.scope+']\n'));}
+ }finally{f.close();}
+});
