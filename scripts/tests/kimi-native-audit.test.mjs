@@ -81,3 +81,10 @@ test('native adapter keeps provider and gateway credentials separate and records
   assert.equal(generation,1);assert.equal(result.returned_model,'kimi-k2.5');assert.equal(result.model_source,'provider_response');assert.equal(result.completion_id,'real-completion');assert.equal(result.request_id,'real-request');
  }finally{if(old===undefined)delete process.env.LTZZZ_AGENT_TOKEN;else process.env.LTZZZ_AGENT_TOKEN=old;}
 });
+test('failed pre-settlement HTTP contract can be audited with a new explicitly scoped subject digest',()=>{
+ const delivery={artifact:{tests:Array.from({length:8},(_,id)=>({id,path:'/health',expected_http:200}))}};
+ const receipt={source:'knowledge/results/wep3/delivery-contract-2026-10-20.json',status:'live_contract_check_failed',execution_id:'failed-run',spec_provided_in_prompt:true,live_checks:delivery.artifact.tests.map(t=>({...t,http:200,passed:true}))};receipt.live_checks[2].passed=false;
+ const r=auditSubject(receipt,JSON.stringify(receipt),delivery,JSON.stringify(delivery));assert.equal(r.digest_kind,'new_audit_subject_digest_not_existing_settlement');assert.match(r.scope,/failed_contract/);assert.equal(r.deliverable.verification[2].passed,false);assert.equal(r.deliverable_sha256,hash(JSON.stringify(r.deliverable)));assert.equal(r.paid,false);assert.equal(r.tx_hash,null);
+ const changed=structuredClone(receipt);changed.live_checks[0].id='wrong';assert.throws(()=>auditSubject(changed,JSON.stringify(changed),delivery,JSON.stringify(delivery)),/stored_failed_check_binding/);
+ assert.throws(()=>auditSubject(receipt,'{}',delivery,JSON.stringify(delivery)),/stored_bytes_object_mismatch/);
+});

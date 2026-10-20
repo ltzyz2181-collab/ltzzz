@@ -15,11 +15,21 @@ export function auditRequest(event,{actor,repository}={}) {
 
 // Input is a fixed, previously stored WEP3 artifact; no arbitrary URLs or tools.
 export function auditSubject(receipt,receiptBytes,delivery,deliveryBytes) {
- const source=receipt.source,text=receipt.result?.deliverable;
- if(!/^knowledge\/results\/wep3\/delivery-contract-\d{4}-\d{2}-\d{2}\.json$/.test(source||'')||typeof text!=='string'||hash(text)!==receipt.deliverable_sha256)throw Error('stored_deliverable_hash_required');
- const deliverable=JSON.parse(text);
+ const source=receipt.source;
+ if(!/^knowledge\/results\/wep3\/delivery-contract-\d{4}-\d{2}-\d{2}\.json$/.test(source||''))throw Error('stored_deliverable_hash_required');
+ if(JSON.stringify(JSON.parse(receiptBytes))!==JSON.stringify(receipt)||JSON.stringify(JSON.parse(deliveryBytes))!==JSON.stringify(delivery))throw Error('stored_bytes_object_mismatch');
+ let text=receipt.result?.deliverable,deliverable,digestKind,scope='stored_WEP3_contract_reaudit_not_new_live_HTTP_test';
+ if(typeof text==='string'){
+  if(hash(text)!==receipt.deliverable_sha256)throw Error('stored_deliverable_hash_required');
+  deliverable=JSON.parse(text);digestKind='existing_settlement_deliverable_sha256';
+ }else{
+  if(receipt.result?.deliverable!=null||receipt.status!=='live_contract_check_failed'||!Array.isArray(receipt.live_checks)||receipt.live_checks.length!==8||!Array.isArray(delivery.artifact?.tests)||delivery.artifact.tests.length!==8)throw Error('stored_deliverable_hash_required');
+  for(let i=0;i<8;i++){const c=receipt.live_checks[i],t=delivery.artifact.tests[i];if(c.id!==t.id||c.path!==t.path||c.expected_http!==t.expected_http||!Number.isInteger(c.http)||typeof c.passed!=='boolean')throw Error('stored_failed_check_binding_required');}
+  deliverable={artifact:delivery.artifact,verification:receipt.live_checks,source_status:receipt.status,spec_provided_in_prompt:receipt.spec_provided_in_prompt===true,negative_controls:receipt.negative_controls,original_design_claimed:false};
+  text=JSON.stringify(deliverable);digestKind='new_audit_subject_digest_not_existing_settlement';scope='stored_WEP3_failed_contract_reaudit_not_new_live_HTTP_test';
+ }
  if(JSON.stringify(deliverable.artifact)!==JSON.stringify(delivery.artifact)||!Array.isArray(deliverable.artifact?.tests)||deliverable.artifact.tests.length!==8||!Array.isArray(deliverable.verification)||deliverable.verification.length!==8)throw Error('stored_contract_binding_required');
- return {scope:'stored_WEP3_contract_reaudit_not_new_live_HTTP_test',source_receipt:'knowledge/results/wep3/latest.json',source_receipt_sha256:hash(receiptBytes),source_run_id:receipt.execution_id,source_delivery_file:source,source_delivery_file_sha256:hash(deliveryBytes),deliverable_sha256:receipt.deliverable_sha256,deliverable,prior_auditor:receipt.auditor||null,paid:false,tx_hash:null};
+ return {scope,source_status:receipt.status||null,source_receipt:'knowledge/results/wep3/latest.json',source_receipt_sha256:hash(receiptBytes),source_run_id:receipt.execution_id,source_delivery_file:source,source_delivery_file_sha256:hash(deliveryBytes),deliverable_sha256:hash(text),digest_kind:digestKind,deliverable,prior_auditor:receipt.auditor||null,paid:false,tx_hash:null};
 }
 
 export const selectModel=selectKimiModel;
