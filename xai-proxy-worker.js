@@ -1,3 +1,4 @@
+import { dispatchResponse } from './workers/lib/dispatch-receipt.mjs';
 // LTZZZ · XAI (Grok) API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:grok（待 owner 提供 XAI_API_KEY 激活）
 // Key 只放 Worker Secret（wrangler secret put XAI_API_KEY），不进代码/对话/回执。
@@ -25,6 +26,7 @@ export default {
         did: 'did:ltzzz:grok',
         has_key: Boolean(env.XAI_API_KEY),
         model_configured: Boolean(env.XAI_MODEL),
+        configured_model: env.XAI_MODEL || 'grok-3',
         time: new Date().toISOString()
       });
     }
@@ -63,14 +65,11 @@ export default {
       });
 
       const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
+      return dispatchResponse(text, upstream.status, {
           ...cors(),
           'Content-Type': 'application/json; charset=utf-8',
           'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      }, {seat: 'grok', model, taskId: body.task_id});
     } catch (e) {
       return json({ error: String(e?.message || e), stage: 'worker_runtime' }, 500);
     }

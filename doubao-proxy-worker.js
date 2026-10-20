@@ -1,3 +1,4 @@
+import { dispatchResponse } from './workers/lib/dispatch-receipt.mjs';
 // LTZZZ · 豆包（火山方舟）API proxy — Cloudflare Worker
 // Key 只放 Worker Secret，浏览器不接触 Key。
 //
@@ -24,6 +25,7 @@ export default {
         service: 'ltzzz-doubao-proxy',
         has_key: Boolean(env.ARK_API_KEY),
         model_configured: Boolean(env.DOUBAO_MODEL),
+        configured_model: env.DOUBAO_MODEL || null,
         base_url_configured: Boolean(env.DOUBAO_BASE_URL),
         time: new Date().toISOString()
       });
@@ -75,14 +77,11 @@ export default {
 
       const text = await upstream.text();
       // 原样透传方舟 HTTP 状态和错误正文，方便定位：Key / 模型 / Endpoint / 参数。
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
+      return dispatchResponse(text, upstream.status, {
           ...cors(),
           'Content-Type': 'application/json; charset=utf-8',
           'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      }, {seat: 'doubao', model, taskId: body.task_id});
     } catch (e) {
       return json({
         error: String(e?.message || e),

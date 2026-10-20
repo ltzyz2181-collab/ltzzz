@@ -1,3 +1,4 @@
+import { dispatchResponse } from './workers/lib/dispatch-receipt.mjs';
 // LTZZZ · Kimi（Moonshot AI）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:kimi（总控挑战者，2026-09-30 起，接替 GPT 席位比拼）
 // Key 只放 Worker Secret（wrangler secret put KIMI_API_KEY），浏览器与仓库都不接触 Key。
@@ -25,6 +26,7 @@ export default {
         did: 'did:ltzzz:kimi',
         has_key: Boolean(env.KIMI_API_KEY),
         model_configured: Boolean(env.KIMI_MODEL),
+        configured_model: env.KIMI_MODEL || 'kimi-k3',
         time: new Date().toISOString()
       });
     }
@@ -52,7 +54,7 @@ export default {
       // 2026-10-01 修正：moonshot-v1 系列与 kimi-k2.5 已于 2026-08-31 下线，
       // 沿用旧默认值会返回 404 "Not found the model or Permission denied"。
       // 现行可用：kimi-k3 / kimi-k2.6 / kimi-k2.7-code（总控实测确认）。
-      const model = body.model || env.KIMI_MODEL || 'kimi-k2.6';
+      const model = body.model || env.KIMI_MODEL || 'kimi-k3';
 
       const upstreamUrl =
         env.KIMI_BASE_URL ||
@@ -72,7 +74,7 @@ export default {
           temperature: /^kimi-(k3|k2\.6|k2\.7)/.test(model)
             ? 1
             : (typeof body.temperature === 'number' ? body.temperature : 1),
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 8192,
+          max_tokens: Number.isInteger(body.max_tokens) && body.max_tokens > 0 ? Math.max(3000, body.max_tokens) : 8192,
           // 2026-10-01 修正（依据 did:ltzzz:kimi 对抗性审查）：k2.6 等思考型模型的
           // reasoning 链会挤占输出预算，默认 2000 时实测 content 为空（out 被思考占满）。
           // 默认提到 8192 以预留"思考+回答"双预算。
@@ -84,14 +86,11 @@ export default {
       });
 
       const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
+      return dispatchResponse(text, upstream.status, {
           ...cors(),
           'Content-Type': 'application/json; charset=utf-8',
           'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      }, {seat: 'kimi', model, taskId: body.task_id});
     } catch (e) {
       return json({ error: String(e?.message || e), stage: 'worker_runtime' }, 500);
     }
