@@ -2,7 +2,7 @@ name: Deploy and control LTZZZ Pulse
 on:
   push:
     branches: [main]
-    paths: ['workers/pulse-worker/**','scripts/deploy-pulse.mjs','scripts/pulse-credentials.mjs','.github/workflows/deploy-pulse.yml']
+    paths: ['workers/pulse-worker/**','scripts/deploy-pulse.mjs','scripts/pulse-credentials.mjs','tools/persist-pulse-receipts.mjs','.github/workflows/deploy-pulse.yml']
   workflow_dispatch:
     inputs:
       action:
@@ -27,7 +27,7 @@ jobs:
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/pulse-feedback.test.mjs workers/pulse-worker/test.mjs scripts/tests/agi-econ-action.test.mjs scripts/tests/pulse-integration.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-task-review.test.mjs
+      - run: node --test scripts/tests/pulse-receipt-persistence.test.mjs scripts/tests/receipt-persistence.test.mjs scripts/tests/pulse-feedback.test.mjs workers/pulse-worker/test.mjs scripts/tests/agi-econ-action.test.mjs scripts/tests/pulse-integration.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-task-review.test.mjs
       - name: Deploy and bootstrap autonomous monitor, no model generation
         if: github.event_name == 'push' || inputs.action == 'deploy'
         env:
@@ -50,16 +50,15 @@ jobs:
           PULSE_ROLE: ${{ inputs.role || 'qianwen' }}
           PULSE_CONTROL_JSON: ${{ inputs.command_json }}
         run: node scripts/watch-pulse.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-deploy-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/pulse/
+          retention-days: 30
       - name: Preserve actual deployment, observations and blockers
         if: always()
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/pulse/
-          if git diff --staged --quiet; then exit 0; fi
-          git commit -m 'Pulse actual autonomous monitor deployment and control receipt'
-          for attempt in 1 2 3 4; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
-          done
-          exit 1
+          node tools/persist-pulse-receipts.mjs

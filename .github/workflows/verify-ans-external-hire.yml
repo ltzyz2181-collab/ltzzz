@@ -1,7 +1,7 @@
 name: Verify ANS and external-hire boundaries
 on:
   pull_request:
-    paths: ['wep3-*.js', 'workers/pulse-worker/**', 'scripts/lib/internal-daily-hire.mjs', 'scripts/lib/daily-hire-files.mjs', 'scripts/tests/internal-daily-hire.test.mjs', 'scripts/lib/daily-external-hire.mjs', 'scripts/lib/external-ai-relay.mjs', 'scripts/run-daily-external-hire.mjs', 'scripts/lib/ans-cycle.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/tests/daily-external-hire.test.mjs', 'scripts/tests/pulse-feedback.test.mjs', '.github/workflows/daily-external-hire.yml', '.github/workflows/verify-ans-external-hire.yml']
+    paths: ['tools/persist-pulse-receipts.mjs', 'scripts/tests/pulse-receipt-persistence.test.mjs', '.github/workflows/deploy-pulse.yml', '.github/workflows/watch-pulse.yml', 'wep3-*.js', 'workers/pulse-worker/**', 'scripts/lib/internal-daily-hire.mjs', 'scripts/lib/daily-hire-files.mjs', 'scripts/tests/internal-daily-hire.test.mjs', 'scripts/lib/daily-external-hire.mjs', 'scripts/lib/external-ai-relay.mjs', 'scripts/run-daily-external-hire.mjs', 'scripts/lib/ans-cycle.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/tests/daily-external-hire.test.mjs', 'scripts/tests/pulse-feedback.test.mjs', '.github/workflows/daily-external-hire.yml', '.github/workflows/verify-ans-external-hire.yml']
 permissions: {contents: read}
 concurrency: {group: 'ans-hire-check-${{ github.event.pull_request.number }}', cancel-in-progress: true}
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test money, lineage, independent review and reflex recovery without secrets or network payments
         run: >-
-          node --test scripts/tests/internal-daily-hire.test.mjs scripts/tests/daily-external-hire.test.mjs
+          node --test scripts/tests/pulse-receipt-persistence.test.mjs scripts/tests/receipt-persistence.test.mjs scripts/tests/internal-daily-hire.test.mjs scripts/tests/daily-external-hire.test.mjs
           scripts/tests/wep3-swarm.test.mjs scripts/tests/owner-child-allocation.test.mjs
           scripts/tests/aave-receipt-sensor.test.mjs scripts/tests/okx-capital-funding.test.mjs
           scripts/tests/funded-relay.test.mjs scripts/tests/wep3-market.test.mjs
