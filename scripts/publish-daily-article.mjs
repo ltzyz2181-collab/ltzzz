@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import fs from 'node:fs'; import path from 'node:path'; import { execSync } from 'node:child_process';
 import { callAgent } from './call-deepseek.mjs';
 import {gatherArticleSources} from './lib/article-sources.mjs';
+import {articleEligibility} from '../wechat-article-eligibility.js';
 const DATE = process.env.ARTICLE_DATE || new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10); // CST day
 const root = process.cwd();
 const read = (p, n = 4000) => { try { return fs.readFileSync(path.join(root, p), 'utf8').slice(0, n); } catch { return ''; } };
@@ -29,6 +30,11 @@ function uploadR2(file) {
 }
 
 if (!/^\d{4}-\d{2}-\d{2}$/.test(DATE)) throw new Error('Invalid ARTICLE_DATE');
+const existingArticle='content/daily-articles/'+DATE+'.md',existingReceipt='results/publishing/'+DATE+'.json';
+if(fs.existsSync(existingArticle)&&fs.existsSync(existingReceipt)){
+ let prior;try{prior=JSON.parse(fs.readFileSync(existingReceipt,'utf8'));}catch{}
+ if(prior){const eligible=await articleEligibility(fs.readFileSync(existingArticle,'utf8'),prior,DATE);if(eligible.draft_eligible){console.log(JSON.stringify({date:DATE,status:'existing_verified_article_preserved',article:existingArticle,article_sha256:eligible.article_sha256,new_model_calls:0,new_publications:0}));process.exit(0);}}
+}
 const gathered=gatherArticleSources({root,date:DATE}),src=redact(gathered.text);
 let ai = { ok: false, status: 'not_configured' };
 if (process.env.DEEPSEEK_API_KEY) ai = await callAgent({ apiKey: process.env.DEEPSEEK_API_KEY, prompt: PROMPT(src), maxTokens: 8192, thinking:'disabled' });
