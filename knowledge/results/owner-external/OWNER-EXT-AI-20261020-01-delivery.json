@@ -1,0 +1,29 @@
+{
+  "task_id": "OWNER-EXT-AI-20261020-01",
+  "external_order_id": "REAL-HIRE-20261020-CLAUDE-01",
+  "provider": "agent402.tools",
+  "model_reported": "deepseek/deepseek-chat",
+  "model_identity_verification": "provider_report_only",
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens": 433,
+    "completion_tokens": 360,
+    "total_tokens": 793,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "deliverable": "```json\n{\n  \"issues\": [\n    {\n      \"id\": \"INCORRECT_LIMITS_LOCATION\",\n      \"method\": \"GET /market/aave/preview\",\n      \"reason\": \"Caller incorrectly reads limits under status.limits instead of top-level single_cap_usdc and exposure_cap_usdc\"\n    },\n    {\n      \"id\": \"WRONG_HTTP_METHOD\",\n      \"method\": \"GET /market/aave/preview\",\n      \"reason\": \"Market interactions should use POST method for transaction previews\"\n    }\n  ],\n  \"tests\": [\n    {\n      \"id\": \"VALID_PREVIEW_REQUEST\",\n      \"expected_http\": 200,\n      \"request\": {\n        \"method\": \"POST\",\n        \"path\": \"/market/aave/preview\",\n        \"headers\": {\n          \"X-Lab-Pin\": \"VALID_PIN_PLACEHOLDER\"\n        },\n        \"body\": {\n          \"intent_id\": \"CONTRACT_TEST_INTENT_20261020\",\n          \"action\": \"supply\",\n          \"amount_usdc\": \"1\"\n        }\n      }\n    },\n    {\n      \"id\": \"INVALID_AUTH_PREVIEW\",\n      \"expected_http\": 401,\n      \"request\": {\n        \"method\": \"POST\",\n        \"path\": \"/market/aave/preview\",\n        \"headers\": {\n          \"X-Lab-Pin\": \"WRONG_PIN_PLACEHOLDER\"\n        },\n        \"body\": {\n          \"intent_id\": \"CONTRACT_TEST_INTENT_20261020\",\n          \"action\": \"supply\",\n          \"amount_usdc\": \"1\"\n        }\n      }\n    }\n  ]\n}\n```",
+  "deliverable_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
+  "local_hash_matches": true,
+  "structural_valid": true,
+  "semantic_valid": true
+}
