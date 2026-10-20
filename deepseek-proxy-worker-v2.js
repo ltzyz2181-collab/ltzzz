@@ -1,14 +1,15 @@
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
-// LTZZZ · DeepSeek API proxy — Cloudflare Worker（v2，补齐健康检查）
-// 槽位：did:ltzzz:deepseek（研究席 · 记忆与内容研究主力）
-// v1→v2 变更：新增 GET /health（部署可验证性，对齐千问/Kimi 槽位规范）；
-//   新增 DEEPSEEK_MODEL / DEEPSEEK_BASE_URL 可配；CORS 允许 GET。
+import {authHealthFields,checkOrigin,checkRateLimit,checkServiceAuth,clampMaxTokens} from './lib/proxy-guard.js';
+// LTZZZ · DeepSeek API proxy — Cloudflare Worker（v2 + P0 guard）
+// 槽位：did:ltzzz:deepseek
 // Key 只放 Worker Secret（wrangler secret put DEEPSEEK_API_KEY），浏览器与仓库都不接触 Key。
 //
 // Secrets / Variables：
-//   DEEPSEEK_API_KEY   必填 — DeepSeek 官方 API Key（sk- 开头）
-//   DEEPSEEK_MODEL     可选 — 默认 deepseek-flash（DeepSeek-V4.1-Flash；换 deepseek-v4-pro 只改此值）
-//   DEEPSEEK_BASE_URL  可选 — 默认官方 Chat Completions 地址
+//   DEEPSEEK_API_KEY   必填
+//   DEEPSEEK_MODEL     可选 — 默认 deepseek-flash
+//   DEEPSEEK_BASE_URL  可选
+//   REQUIRE_TOKEN      可选 — 默认关；true 时 POST 需 Bearer
+//   MAX_TOKENS_HARD_CAP / ALLOWED_ORIGINS / RATE_LIMIT_PER_HOUR — 见 lib/proxy-guard.js
 //
 // 健康检查：GET /health
 // 调用：POST /  { messages, model?, temperature?, max_tokens? }
@@ -31,6 +32,7 @@ export default {
         configured_model: env.DEEPSEEK_MODEL || 'deepseek-flash',
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
+        ...authHealthFields(env, 'DEEPSEEK_WORKER_TOKEN'),
         time: new Date().toISOString()
       });
     }
@@ -38,6 +40,13 @@ export default {
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+
+    const denied =
+      checkOrigin(request, env, { json }) ||
+      checkServiceAuth(request, env, { seatTokenEnvName: 'DEEPSEEK_WORKER_TOKEN', json }) ||
+      (await checkRateLimit(request, env, { json, bucket: 'deepseek' }));
+    if (denied) return denied;
+
     if (!env.DEEPSEEK_API_KEY) {
       return json({ error: 'Missing DEEPSEEK_API_KEY secret', stage: 'worker_config' }, 500);
     }
@@ -50,6 +59,8 @@ export default {
       }
 
       const model = body.model || env.DEEPSEEK_MODEL || 'deepseek-flash';
+      const hardCap = Number.parseInt(String(env.MAX_TOKENS_HARD_CAP || '4096'), 10) || 4096;
+      const max_tokens = clampMaxTokens(body.max_tokens, 1200, hardCap);
 
       const upstreamUrl =
         env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/chat/completions';
@@ -65,7 +76,7 @@ export default {
           model,
           messages,
           temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 1200,
+          max_tokens,
           stream: false
         })
       });
