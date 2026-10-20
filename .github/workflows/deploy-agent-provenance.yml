@@ -1,0 +1,80 @@
+name: Deploy coded agent identity and Kimi quality profile
+on:
+  push:
+    branches: [main]
+    paths: ['lib/provider-execution.js','lib/kimi-profile.js','scripts/deploy-agent-provenance.mjs','qianwen-proxy-worker.js','deepseek-proxy-worker-v2.js','kimi-proxy-worker.js','doubao-proxy-worker.js','xai-proxy-worker.js','ltzzz-gpt-proxy-worker.js','.github/workflows/deploy-agent-provenance.yml']
+  pull_request:
+    paths: ['lib/**','scripts/tests/provider-execution.test.mjs','scripts/tests/kimi-queue.test.mjs','scripts/lib/daily-task-board.mjs','.github/workflows/deploy-agent-provenance.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: coded-agent-identity-deployment, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/provider-execution.test.mjs scripts/tests/kimi-native-audit.test.mjs scripts/tests/kimi-queue.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/dispatch-sentinel.test.mjs
+  deploy:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Preserve existing secrets and variables; public health readback only
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/deploy-agent-provenance.mjs
+      - name: Keep actual deployment or blocker evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/identity/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Coded identity actual deployment and readback, zero generation'
+          node tools/push-receipt-commit.mjs
+  doubao_closeout:
+    needs: deploy
+    if: github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Reserve existing owner-requested Doubao auxiliary task once
+        id: prepare
+        run: node scripts/run-doubao-identity-closeout.mjs prepare
+      - name: Commit delegation before one provider request
+        if: steps.prepare.outputs.execute == 'true'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/dispatch/DOUBAO-IDENTITY-CLOSEOUT-20261021.json
+          git commit -m 'Reserve one Doubao auxiliary deployment checklist'
+          node tools/push-receipt-commit.mjs
+      - name: Doubao produces checklist, not a false deployment claim
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+        run: node scripts/run-doubao-identity-closeout.mjs execute
+      - name: Preserve actual delegated delivery or blocker
+        if: always() && steps.prepare.outputs.execute == 'true'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/dispatch/DOUBAO-IDENTITY-CLOSEOUT-20261021.json
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Doubao auxiliary checklist actual provider receipt'
+          node tools/push-receipt-commit.mjs

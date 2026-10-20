@@ -15,7 +15,25 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 
+export function indexDispatch(root){
+ const dir=path.join(root,'ops/dispatch');if(!fs.existsSync(dir))return {tasks:[]};
+ const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(d,e.name)):e.name.endsWith('.md')?[path.join(d,e.name)]:[]);
+ const files=walk(dir),receipts=files.filter(f=>f.split(path.sep).includes('receipts'));
+ const structuredDir=path.join(root,'knowledge/results/dispatch'),structured=fs.existsSync(structuredDir)?fs.readdirSync(structuredDir).filter(f=>f.endsWith('.json')).flatMap(f=>{try{return [{file:path.join(structuredDir,f),data:JSON.parse(fs.readFileSync(path.join(structuredDir,f),'utf8'))}];}catch{return [];}}):[];
+ const tasks=files.filter(f=>!f.split(path.sep).includes('receipts')).flatMap(file=>{
+  const text=fs.readFileSync(file,'utf8');if(!/^assigned\s*$/m.test(text)&&!/(?:状态|Status)[:：]\s*`?assigned[_a-z]*/i.test(text))return [];
+  const id=text.match(/(?:Task ID|任务ID|单号)[:：]\s*`?([A-Za-z0-9_-]+)/i)?.[1]||path.basename(file,'.md');
+  const matched=receipts.filter(r=>{const t=fs.readFileSync(r,'utf8');return [...t.matchAll(/(?:Task ID|task_id|任务ID|单号)[:：]\s*`?([A-Za-z0-9_-]+)/gi)].some(m=>m[1]===id);});
+  const codeReceipts=structured.filter(r=>r.data.task_id===id),delivery=codeReceipts.some(r=>r.data.execution?.generation_verified===true);
+  const deadline=text.match(/(?:deadline|due_at|截止)[:：]\s*`?([0-9T:.+Z-]+)/i)?.[1]||null,deadline_at=deadline&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(deadline)&&Number.isFinite(Date.parse(deadline))?deadline:null;
+  matched.push(...codeReceipts.map(r=>r.file));
+  return [{deadline_at,deadline_verified:!!deadline_at,overdue:!!deadline_at&&Date.now()>Date.parse(deadline_at)&&!matched.length,id,file:path.relative(root,file).split(path.sep).join('/'),status:delivery?'code_delivery_present_pending_review':matched.length>1?'ack_ambiguous_review_required':matched.length?'ack_present_unverified':'awaiting_agent_ack',receipts:matched.map(r=>path.relative(root,r).split(path.sep).join('/')),claim_verified:false}];
+ });return {tasks};
+}
+
+export function runSentinel(){
 const REPO = process.cwd();
 const args = process.argv.slice(2);
 let dateArg = null;
@@ -110,14 +128,12 @@ const push = (item, state, evidence, note = '') => rows.push({ item, state, evid
     exists(self) ? '哨兵工作流已在库' : '哨兵工作流尚未入库 —— 未配置（明说）');
 }
 
-/* ---------- 6. 派单跟踪：今日应交付的席位 ---------- */
+/* ---------- 6. Today's actual dispatch cards, not one historical path ---------- */
 {
-  const d = `memory/daily/qianwen-dispatch-${DATE}.md`;
-  if (!exists(d)) {
-    push('今日派单原件', 'UNKNOWN', d, '今日派单原件不存在 —— 无可跟踪对象');
-  } else {
-    push('今日派单原件', 'OK', d, '已存在，哨兵据此跟踪交付');
-  }
+ const index=indexDispatch(REPO),today=index.tasks.filter(t=>t.id.includes(DATE)||t.file.includes(DATE));
+ push('今日派单跟踪',today.some(t=>t.overdue)?'BLOCKED':today.length?'OK':'UNKNOWN','ops/dispatch/',today.length?today.map(t=>t.id+':'+t.status).join('；'):'今日未找到正式assigned派单原件');
+ const dir=path.join(REPO,'knowledge/results/dispatch');fs.mkdirSync(dir,{recursive:true});
+ fs.writeFileSync(path.join(dir,'sentinel-latest.json'),JSON.stringify({at:new Date().toISOString(),date:DATE,executed_by:'workbuddy_dispatch_automation',execution_source:'repository_rules_not_WorkBuddy_client',model_calls:0,tasks:today,overdue_count:today.filter(t=>t.overdue).length,deadline_unverified_count:today.filter(t=>!t.deadline_verified).length,claim_verified:false},null,2)+'\n');
 }
 
 /* ---------- 输出 ---------- */
@@ -148,3 +164,6 @@ console.log(`[summary] ${rows.length} checks, ${alert.length} need attention`);
 if (alert.length) {
   console.log('[alert-items] ' + alert.map((r) => `${r.item}=${r.state}`).join(' | '));
 }
+
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href)runSentinel();

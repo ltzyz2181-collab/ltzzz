@@ -1,10 +1,12 @@
+import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {KIMI_PROFILE,kimiTokens,selectKimiModel} from './lib/kimi-profile.js';
 // LTZZZ · Kimi（Moonshot AI）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:kimi（总控挑战者，2026-09-30 起，接替 GPT 席位比拼）
 // Key 只放 Worker Secret（wrangler secret put KIMI_API_KEY），浏览器与仓库都不接触 Key。
 //
 // Secrets / Variables：
 //   KIMI_API_KEY   必填 — Moonshot 开放平台 API Key（sk- 开头）
-//   KIMI_MODEL     可选 — 默认 moonshot-v1-32k；长上下文任务用 moonshot-v1-128k
+//   KIMI_MODEL     可选 — 默认 auto，按官方目录在已支持型号中优先高档
 //   KIMI_BASE_URL  可选 — 默认 OpenAI 兼容 Chat Completions 地址
 //
 // 健康检查：GET /health
@@ -25,6 +27,12 @@ export default {
         did: 'did:ltzzz:kimi',
         has_key: Boolean(env.KIMI_API_KEY),
         model_configured: Boolean(env.KIMI_MODEL),
+        configured_model: 'auto',
+        model_policy: KIMI_PROFILE.model_policy,
+        output_profile: KIMI_PROFILE,
+        identity_receipt_revision: 'ltzzz.provider-execution.v1',
+        generation_verified: false,
+        auth_configured: Boolean(env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN),
         time: new Date().toISOString()
       });
     }
@@ -38,6 +46,9 @@ export default {
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+    const serviceToken=env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN;
+    if(!serviceToken)return json({error:'service_auth_not_configured'},503);
+    if(request.headers.get('Authorization')!==`Bearer ${serviceToken}`)return json({error:'unauthorized'},401);
     if (!env.KIMI_API_KEY) {
       return json({ error: 'Missing KIMI_API_KEY secret', stage: 'worker_config' }, 500);
     }
@@ -52,7 +63,13 @@ export default {
       // 2026-10-01 修正：moonshot-v1 系列与 kimi-k2.5 已于 2026-08-31 下线，
       // 沿用旧默认值会返回 404 "Not found the model or Permission denied"。
       // 现行可用：kimi-k3 / kimi-k2.6 / kimi-k2.7-code（总控实测确认）。
-      const model = body.model || env.KIMI_MODEL || 'kimi-k2.6';
+      let model=body.model || 'auto';
+      if(model==='auto'){
+        const catalog=await fetch('https://api.moonshot.cn/v1/models',{headers:{Authorization:'Bearer '+env.KIMI_API_KEY},signal:AbortSignal.timeout(20000)});
+        if(!catalog.ok)return json({error:'official_model_catalogue_unavailable',http:catalog.status},503);
+        const data=await catalog.json();model=selectKimiModel((data.data||[]).map(x=>x.id));
+      }
+      const execution=beginExecution('kimi',model,body.task_id);
 
       const upstreamUrl =
         env.KIMI_BASE_URL ||
@@ -72,7 +89,7 @@ export default {
           temperature: /^kimi-(k3|k2\.6|k2\.7)/.test(model)
             ? 1
             : (typeof body.temperature === 'number' ? body.temperature : 1),
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 8192,
+          max_tokens: kimiTokens(body.max_tokens),
           // 2026-10-01 修正（依据 did:ltzzz:kimi 对抗性审查）：k2.6 等思考型模型的
           // reasoning 链会挤占输出预算，默认 2000 时实测 content 为空（out 被思考占满）。
           // 默认提到 8192 以预留"思考+回答"双预算。
@@ -83,15 +100,7 @@ export default {
         })
       });
 
-      const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          ...cors(),
-          'Content-Type': 'application/json; charset=utf-8',
-          'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      return executionResponse(upstream,execution,cors());
     } catch (e) {
       return json({ error: String(e?.message || e), stage: 'worker_runtime' }, 500);
     }

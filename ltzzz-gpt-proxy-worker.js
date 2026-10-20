@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import {beginExecution,finishExecution} from './lib/provider-execution.js';
 /**
  * LTZZZ GPT 通道 Worker（框架）
  * 接口：POST /chat、POST /status、GET /health
@@ -26,7 +26,7 @@ export default {
 
     if (request.method === "GET" && path === "/health") {
       const hasKey = !!(env.OPENAI_API_KEY || "");
-      return json({ ok: true, engine: "gpt-proxy", key_configured: hasKey });
+      return json({ ok: true, engine: "gpt-proxy", key_configured: hasKey, identity_receipt_revision:'ltzzz.provider-execution.v1', configured_model:'request_selected', generation_verified:false });
     }
 
     if (request.method !== "POST") return json({ error: "method not allowed" }, 405);
@@ -56,6 +56,7 @@ export default {
       const base = (env.OPENAI_BASE_URL || DEFAULT_BASE).replace(/\/+$/, "");
       const model = body.model || "gpt-4o-mini";
       const messages = Array.isArray(body.messages) ? body.messages : [];
+      const execution=beginExecution('gpt',model,body.task_id);
       try {
         const r = await fetch(`${base}/chat/completions`, {
           method: "POST",
@@ -74,7 +75,9 @@ export default {
         return json({
           ok: true,
           reply: data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "",
-          model,
+          model: data.model || null,
+          requested_model:model,
+          ltzzz_receipt:finishExecution(execution,{http:r.status,data,upstreamRequestId:r.headers.get('x-request-id')}),
           usage,
         });
       } catch (e) {

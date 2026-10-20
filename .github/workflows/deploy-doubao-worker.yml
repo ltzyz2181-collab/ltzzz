@@ -1,58 +1,19 @@
 name: Deploy Doubao Worker
-
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'doubao-proxy-worker.js'
-      - '.github/workflows/deploy-doubao-worker.yml'
   workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: doubao-worker
-  cancel-in-progress: true
-
+permissions: {contents: read}
+concurrency: {group: coded-agent-identity-deployment, cancel-in-progress: false}
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Validate deployment secrets are present
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/provider-execution.test.mjs
+      - name: Preserve the existing Worker key and model instead of replacing them
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
-          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
-        run: |
-          set -euo pipefail
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ARK_API_KEY DOUBAO_MODEL; do
-            if [ -z "${!name:-}" ]; then
-              echo "Missing required GitHub Secret: $name"
-              exit 1
-            fi
-          done
-          echo "All required deployment secrets are present (values are not printed)."
-
-      - name: Deploy Worker and sync secrets
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
-          secrets: |
-            ARK_API_KEY
-            DOUBAO_MODEL
-        env:
-          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
-          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
-
-      - name: Record deployment result
-        run: |
-          echo "T003 deployment command completed successfully."
-          echo "Worker: ltzzz-doubao-proxy"
-          echo "Next verification: GET /health and a real Doubao request."
+          DEPLOY_SEATS: doubao
+        run: node scripts/deploy-agent-provenance.mjs
