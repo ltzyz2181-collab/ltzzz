@@ -27,11 +27,12 @@ jobs:
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - name: Preserve existing secrets and variables; public health readback only
+      - name: Preserve other keys; verify and bind domestic Kimi key; public readback only
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
         run: node scripts/deploy-agent-provenance.mjs
       - name: Keep actual deployment or blocker evidence
         if: always()

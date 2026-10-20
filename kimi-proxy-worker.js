@@ -28,6 +28,8 @@ export default {
         has_key: Boolean(env.KIMI_API_KEY),
         model_configured: Boolean(env.KIMI_MODEL),
         configured_model: 'auto',
+        selected_api_region: 'cn',
+        configured_upstream: 'https://api.moonshot.cn/v1/chat/completions',
         model_policy: KIMI_PROFILE.model_policy,
         output_profile: KIMI_PROFILE,
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
@@ -35,6 +37,17 @@ export default {
         auth_configured: Boolean(env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN),
         time: new Date().toISOString()
       });
+    }
+
+    if(request.method==='GET'&&url.pathname==='/catalogue'){
+      const service=env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN;
+      if(!service)return json({error:'service_auth_not_configured'},503);
+      if(request.headers.get('Authorization')!==`Bearer ${service}`)return json({error:'unauthorized'},401);
+      try{const r=await fetch('https://api.moonshot.cn/v1/models',{headers:{Authorization:'Bearer '+env.KIMI_API_KEY},signal:AbortSignal.timeout(20000)});
+        if(!r.ok)return json({ok:false,catalogue_http:r.status,model_calls:0,generation_verified:false},503);
+        const d=await r.json(),ids=(d.data||[]).map(x=>x.id).filter(x=>typeof x==='string'&&/^kimi-[A-Za-z0-9_.-]+$/.test(x));
+        return json({ok:true,selected_api_region:'cn',catalogue_http:r.status,selected_model:selectKimiModel(ids),model_calls:0,generation_verified:false});
+      }catch{return json({ok:false,error:'domestic_catalogue_unverified',model_calls:0,generation_verified:false},503);}
     }
 
     if (request.method === 'POST' && url.pathname === '/diagnose-regions') {
@@ -71,9 +84,8 @@ export default {
       }
       const execution=beginExecution('kimi',model,body.task_id);
 
-      const upstreamUrl =
-        env.KIMI_BASE_URL ||
-        'https://api.moonshot.cn/v1/chat/completions';
+      // Domestic seat uses the same official region as the verified CN key.
+      const upstreamUrl = 'https://api.moonshot.cn/v1/chat/completions';
 
       const upstream = await fetch(upstreamUrl, {
         method: 'POST',
