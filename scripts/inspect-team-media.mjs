@@ -1,14 +1,15 @@
 import fs from 'node:fs';import {createHash} from 'node:crypto';
+import {completeReadback} from './lib/team-media-readiness.mjs';
 const token=process.env.LTZZZ_AGENT_TOKEN,scheduler='https://ltzzz-video-scheduler.ltzyz2181.workers.dev',uploader='https://ltzzz-youtube-upload.ltzyz2181.workers.dev';
 const report={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,read_only:true,model_calls:0,uploads:0,transactions:0};
 const get=async(url,{auth=false}={})=>{const r=await fetch(url,{headers:auth?{Authorization:'Bearer '+token}:{},signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('http_'+r.status);return r.json();};
 try{
  if(!token)throw Error('upload_identity_not_configured');
  for(let i=0;i<36;i++){
-  report.scheduler=await get(scheduler+'/health');if(report.scheduler.queue_listing)break;
+  report.scheduler=await get(scheduler+'/health');if(report.scheduler.queue_listing_format==='metadata_v2')break;
   if(i<35)await new Promise(r=>setTimeout(r,3000));
  }
- if(!report.scheduler.queue_listing)throw Error('queue_listing_not_deployed');
+ if(report.scheduler.queue_listing_format!=='metadata_v2')throw Error('queue_listing_not_deployed');
  report.youtube=await get(uploader+'/youtube/status');
  report.queue_items=[];let cursor;
  for(let i=0;i<5;i++){
@@ -26,7 +27,10 @@ try{
  report.doubao_previous_video={video_id:prior.video_id,video_sha256:prior.video_sha256,verification:await get(uploader+'/youtube/verify?video_id='+encodeURIComponent(prior.video_id)),new_uploads:0};
  const next=new Date();next.setUTCHours(14,0,0,0);if(next<=new Date())next.setUTCDate(next.getUTCDate()+1);
  report.next_configured_cron_at=next.toISOString();
- report.ready_video_count=report.queue_items.filter(i=>i.new_upload_eligible===true).length;
+ const candidates=report.queue_items.filter(i=>i.new_upload_candidate===true);report.candidate_video_count=candidates.length;
+ // List only metadata; verify one selected video's bytes in its own request.
+ if(candidates.length)report.selected_video=await get(scheduler+'/queue/item?name='+encodeURIComponent(candidates[0].name),{auth:true});
+ report.ready_video_count=report.selected_video?.queued?1:0;
  report.next_publication_ready=report.cloud_cron?.verified===true&&report.cloud_cron.schedules.some(x=>x.cron==='0 14 * * *')&&report.youtube.connected===true&&report.youtube.channel_id==='UCnKqseQ7uivSc7FN38ccRUA'&&report.ready_video_count>0;
  report.status='media_readback_complete_no_publication_attempt';
 }catch(error){report.status='blocked_media_readback';report.error=/^[a-zA-Z0-9_]+$/.test(error.message)?error.message:'transport_or_protocol_error';}
@@ -43,6 +47,7 @@ try{
  report.wallet.two_rpc_agreement=report.wallet.observations[0].eth_wei===report.wallet.observations[1].eth_wei&&report.wallet.observations[0].usdc_raw===report.wallet.observations[1].usdc_raw;
 }catch{report.wallet.two_rpc_agreement=false;report.wallet.error='independent_base_balance_read_incomplete';}
 report.exchange={name:'ltzzzwep3ops1',deposit_address:'0xd4c3258c378d51e22c969e26bd4e27a1c6d4fd91',asset:'USDC',network:'Base',binding:'owner_reported_not_exchange_verified',is_signing_wallet:false};
+Object.assign(report,completeReadback(report));
 report.evidence_sha256=createHash('sha256').update(JSON.stringify(report)).digest('hex');
 fs.mkdirSync('knowledge/results/team-ops',{recursive:true});fs.writeFileSync('knowledge/results/team-ops/media-wallet-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({status:report.status,ready_video_count:report.ready_video_count,next_publication_ready:report.next_publication_ready,wallet_balance_verified:report.wallet.two_rpc_agreement,model_calls:0,uploads:0,transactions:0}));

@@ -7,6 +7,7 @@ function fixture({publicNow=true,processing=false,uncertain=false,archiveFailure
  const VIDEOS={
   async get(key){if(!objects.has(key))return null;const data=objects.get(key);return {body:data,arrayBuffer:async()=>data.slice().buffer,json:async()=>JSON.parse(new TextDecoder().decode(data))};},
   async put(key,value,options={}){if(failArchive&&key.startsWith('published/')){failArchive=false;throw Error('archive failure')};const data=new Uint8Array(await new Response(value).arrayBuffer());if(options.onlyIf&&objects.has(key))return null;objects.set(key,data);return {key};},
+  async head(key){return objects.has(key)?{size:objects.get(key).byteLength}:null;},
   async delete(key){objects.delete(key);},async list({prefix}){return {objects:[...objects.keys()].filter(k=>k.startsWith(prefix)).map(key=>({key})),truncated:false};}
  };
  const YOUTUBE_UPLOADER={async fetch(request){assert.equal(request.headers.get('Authorization'),'Bearer fixture');const u=new URL(request.url);
@@ -26,8 +27,8 @@ test('authenticated enqueue writes the complete video before the metadata pointe
 test('queue discovery is authenticated, verifies real bytes and performs no upload or writes',async()=>{
  const f=fixture();await queue(f);const before=[...f.objects.keys()];
  const denied=await worker.fetch(new Request('https://scheduler/queue/list'),f.env);assert.equal(denied.status,401);
- const listed=await call(f,'/queue/list');assert.equal(listed.read_only,true);assert.equal(listed.items.length,1);assert.equal(listed.items[0].new_upload_eligible,true);assert.equal(listed.items[0].queued,true);assert.equal(f.uploads,0);assert.deepEqual([...f.objects.keys()],before);
- f.objects.set('queue/demo.mp4',new Uint8Array([1,2,3]));const corrupt=await call(f,'/queue/list');assert.equal(corrupt.items[0].queued,false);assert.equal(corrupt.items[0].new_upload_eligible,false);assert.equal(f.uploads,0);
+ const listed=await call(f,'/queue/list');assert.equal(listed.read_only,true);assert.equal(listed.items.length,1);assert.equal(listed.items[0].new_upload_candidate,true);assert.equal(listed.items[0].metadata_candidate,true);assert.equal(listed.items[0].full_content_verified,false);assert.equal(f.uploads,0);assert.deepEqual([...f.objects.keys()],before);
+ f.objects.set('queue/demo.mp4',new Uint8Array([1,2,3]));const corrupt=await call(f,'/queue/list');assert.equal(corrupt.items[0].metadata_candidate,false);assert.equal(corrupt.items[0].new_upload_candidate,false);assert.equal(f.uploads,0);
 });
 test('an existing queue name cannot be replaced with different video content',async()=>{const f=fixture();await queue(f);const form=new FormData();form.set('video',new Blob(['different']),'demo.mp4');form.set('meta',JSON.stringify({title:'changed',description:''}));assert.equal((await call(f,'/queue/upload/demo',form)).http,409);});
 test('a video ID and private upload are not a public success; queue is retained',async()=>{const f=fixture({publicNow:false});await queue(f);const r=await call(f,'/queue/run',{name:'demo'});assert.equal(r.ok,false);assert.equal(r.results[0].status,'not_public');assert.equal(receipt(f).published,false);assert.ok(f.objects.has('queue/demo.mp4'));assert.equal(f.uploads,1);});

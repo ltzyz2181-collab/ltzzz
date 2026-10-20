@@ -32,7 +32,7 @@ async function enqueue(request,env,name){
  if(prior)return json({ok:true,status:'reconciliation_required',name:prior.name,video_sha256:hash,video_id:prior.video_id||null});
  const metaKey=`queue/${name}.meta.json`,existing=await read(env,metaKey);
  if(existing&&existing.video_sha256!==hash)return json({ok:false,error:'queue_name_conflict'},409);
- await env.VIDEOS.put(`queue/${name}.mp4`,bytes,{httpMetadata:{contentType:'video/mp4'}});
+ await env.VIDEOS.put(`queue/${name}.mp4`,bytes,{httpMetadata:{contentType:'video/mp4'},customMetadata:{verified_sha256:hash}});
  // Publish the pointer only after the complete video write succeeds.
  await write(env,metaKey,{...meta,title:meta.title.trim(),name,video_sha256:hash,bytes:bytes.byteLength,publication_policy:'public_ready',queued_at:new Date().toISOString()});
  return json({ok:true,status:'queued',name,video_sha256:hash,bytes:bytes.byteLength});
@@ -52,10 +52,13 @@ async function queueList(env,cursor){
  const page=await env.VIDEOS.list({prefix:'queue/',limit:40,...(cursor?{cursor}:{})}),items=[];
  for(const entry of page.objects.filter(x=>x.key.endsWith('.meta.json'))){
   const name=entry.key.slice(6,-10);if(!NAME.test(name))continue;
-  const response=await queueItem(env,name),item=await response.json();
-  const prior=item.video_sha256?await read(env,receiptKey(item.video_sha256)):null;
-  items.push({...item,publication_state:prior?.state||null,video_id:prior?.video_id||null,
-   new_upload_eligible:item.queued===true&&!prior,read_only:true});
+  const meta=await read(env,entry.key),object=await env.VIDEOS.head(`queue/${name}.mp4`);
+  const candidate=!!object&&meta?.publication_policy==='public_ready'&&/^[a-f0-9]{64}$/.test(meta.video_sha256||'')&&object.size===meta.bytes;
+  const prior=meta?.video_sha256?await read(env,receiptKey(meta.video_sha256)):null;
+  items.push({name,video_exists:!!object,metadata_exists:!!meta,video_sha256:meta?.video_sha256||null,bytes:object?.size||null,
+   title:meta?.title||null,full_content_verified:false,metadata_candidate:candidate,
+   enqueue_hash_matches:!!object?.customMetadata?.verified_sha256&&object.customMetadata.verified_sha256===meta?.video_sha256,
+   publication_state:prior?.state||null,video_id:prior?.video_id||null,new_upload_candidate:candidate&&!prior,read_only:true});
  }
  return json({ok:true,read_only:true,items,truncated:page.truncated===true,cursor:page.truncated?page.cursor:null});
 }
@@ -156,7 +159,7 @@ async function processQueue(env,selected){
 export default{
  async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true});
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2'});
   if(!authorized(request,env))return json({ok:false,error:'unauthorized'},401);
   try{
    if(url.pathname.startsWith('/queue/upload/')&&request.method==='POST')return enqueue(request,env,url.pathname.slice('/queue/upload/'.length));
