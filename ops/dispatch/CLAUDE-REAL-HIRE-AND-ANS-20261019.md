@@ -4,6 +4,9 @@
 
 ## 每日唯一派单与真钱采购
 
+- owner 最新补充：内部、外部雇佣都可以，内部不要求真钱结算，重点是数据；不再每天人工提醒。**默认模式 internal**，由现有 ANS prepare 阶段先创建唯一派单，再复用该轮 DeepSeek/豆包工作与独审调用；模型后自动核对同日任务、真实提供商/结束原因/用量、交付原文哈希、审稿绑定及线上任务板状态。首次上线只关联已经执行的当日原任务，明确不倒填认领时间。
+- 内部模式不新增模型调用、不付USDC、不自动发内部积分；现有模型 API 实际用量照记。每份收据嵌入实际公开证据字节与SHA256，Git rebase或任务板更新不破坏历史复算。数据入口：`knowledge/results/claude-team/daily-hire-latest.md`、`daily-hire-metrics.json` 与当日JSON。重复运行只更新同一单，不累计成多单。
+- 外部模式保留给显式 `workflow_dispatch mode=external` 选择；cron 和父工作流触发一律 internal，不自动花真钱。下列付款限制仅适用于明确选中的外部订单。同一项目日期已有一种模式的派单后，不静默换模式再开第二单。
 - 入口：`.github/workflows/daily-external-hire.yml`，每天 UTC 08:50（当前 America/Tijuana 为01:50），以及 WEP3 成功部署后的幂等接续；仓库订单日期沿用 Asia/Shanghai。GitHub 调度可能延迟。
 - 每日固定 ID：`REAL-HIRE-YYYYMMDD-CLAUDE-01`。先将派单及输入哈希提交，再调用支付执行器；固定模板代表 Claude 规划角色，不是原生 Claude 客户端定时调用。总控/千问授权执行器均可触发，无需给聊天模型持有私钥。
 - 已新增可运行的 `/market/procurement/daily*` 路径，旧 `EXT-AI-20261017-001` 保持原收据和状态，旧采购接口只用于原单复用。不得用旧路径声称创建了新订单。

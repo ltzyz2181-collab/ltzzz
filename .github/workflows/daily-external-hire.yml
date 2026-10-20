@@ -1,12 +1,18 @@
-name: Daily external AI hire and independent acceptance
+name: Daily AI hire dispatch and evidence
 on:
   schedule:
     - cron: '50 8 * * *'
   workflow_run:
-    workflows: ['Deploy LTZZZ WEP3']
+    workflows: ['Deploy LTZZZ WEP3', 'Execute LTZZZ AI task queue']
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Internal reuses existing ANS generation; external is an explicitly selected <=0.05 USDC purchase'
+        type: choice
+        default: internal
+        options: [internal, external]
 permissions: {contents: write}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
@@ -14,13 +20,15 @@ jobs:
     if: github.repository == 'ltzyz2181-collab/ltzzz' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      HIRE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'internal' }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: node --test scripts/tests/daily-external-hire.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/funded-relay.test.mjs
+      - run: node --test scripts/tests/internal-daily-hire.test.mjs scripts/tests/daily-external-hire.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/funded-relay.test.mjs
       - name: Prepare one immutable daily dispatch, zero models
         run: node scripts/run-daily-external-hire.mjs prepare
       - name: Persist dispatch before payment or review
@@ -31,7 +39,11 @@ jobs:
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'Daily external AI hire dispatch before payment'
           node tools/push-receipt-commit.mjs
-      - name: One bounded external payment and Doubao independent review
+      - name: Reconcile internal data without new model calls
+        if: env.HIRE_MODE == 'internal'
+        run: node scripts/run-daily-external-hire.mjs execute
+      - name: Explicitly selected external payment and Doubao independent review
+        if: env.HIRE_MODE == 'external' && github.event_name == 'workflow_dispatch'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
@@ -42,7 +54,7 @@ jobs:
         if: always()
         with:
           name: daily-external-hire-${{ github.run_id }}-${{ github.run_attempt }}
-          path: knowledge/results/claude-team/real-hire-*.json
+          path: knowledge/results/claude-team/
           retention-days: 30
       - name: Preserve actual order, independent review or blocker
         if: always()
