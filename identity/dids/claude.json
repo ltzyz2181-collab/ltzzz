@@ -8,38 +8,33 @@
     "erc8004:pending-mainnet-mapping"
   ],
   "controller": "did:ltzzz:owner",
-  "verificationMethod": [
-    {
-      "id": "did:ltzzz:claude#guardian-key-1",
-      "type": "EcdsaSecp256r1VerificationKey2019",
-      "controller": "did:ltzzz:claude",
-      "publicKeyJwk": {
-        "kty": "EC",
-        "crv": "P-256",
-        "x": "PLACEHOLDER_X",
-        "y": "PLACEHOLDER_Y",
-        "note": "占位符。真实密钥由 owner 在安全环境生成，仅公钥入库。"
-      }
-    }
-  ],
-  "authentication": [
-    "did:ltzzz:claude#guardian-key-1"
-  ],
-  "assertionMethod": [
-    "did:ltzzz:claude#guardian-key-1"
-  ],
+  "verificationMethod": [],
+  "authentication": [],
+  "assertionMethod": [],
   "service": [
     {
-      "id": "did:ltzzz:claude#a2a-card",
+      "id": "did:ltzzz:claude#agent-card",
       "type": "agent-card",
-      "serviceEndpoint": "https://ltzzz.com/api/agents/claude/card",
-      "note": "对应 claude-proxy-worker.js；端点状态：worker 代码存在，路由待部署"
+      "serviceEndpoint": "https://ltzzz.com/api/agents/claude/card.json",
+      "note": "只读JSON名片，不是模型生成或已签名DID证明。"
+    },
+    {
+      "id": "did:ltzzz:claude#health-0",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://api-claude.ltzzz.com/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
+    },
+    {
+      "id": "did:ltzzz:claude#health-1",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://ltzzz-claude-seat.ltzyz2181.workers.dev/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
     }
   ],
   "ltzzz:profile": {
-    "role": "Claude逻辑审稿岗位；默认国内模型代执行，非原生Anthropic模型；已退出五签资金角色",
+    "role": "独立审计＋规划",
     "votingSeat": false,
-    "walletTier": "L1 只读；禁止签名/转账",
+    "walletTier": "资金登记与控制以wallet/addresses.md和现有执行器为准；岗位任命不是签名权",
     "channels": [
       "claude-proxy-worker",
       "claude.html"
@@ -47,17 +42,23 @@
     "plannedTask": "按需ANS/Pulse方案复核或六文件讨论；不代表已实际执行",
     "dispatchStatus": "available_on_demand",
     "fiveSignExit": "owner_confirmed_file_role_withdrawal; on-chain Safe owner change not executed",
-    "workStatus": "available_on_demand",
+    "workStatus": "active_external_audit_and_planning",
     "walletSigning": false,
     "financialAuthority": "withdrawn_by_owner",
-    "workEntry": ".github/workflows/owner-domestic-inbox.yml",
+    "workEntry": "ops/dispatch/CLAUDE-FREE-DAILY.md",
     "workModes": [
-      "domestic_role_delegation",
-      "free_external_chat",
-      "optional_explicit_native_api_review"
+      "external_native_Claude_repository_work",
+      "optional_owner_on_demand_native_API"
     ],
-    "defaultWorkDelegated": true,
-    "nativeAnthropicModelOnDefaultRoute": false
+    "defaultWorkDelegated": false,
+    "nativeAnthropicModelOnDefaultRoute": false,
+    "walletRegistrySource": "wallet/addresses.md",
+    "endpointStatusRef": "identity/endpoint-status.json",
+    "roleSource": "identity/seat-registry.json",
+    "nativeInferenceMode": "external_native_Claude_repository_work; metadata_route_has_no_inference",
+    "nativeApiStatus": "blocked_insufficient_api_credits",
+    "workEvidence": "knowledge/results/claude-team/audit-OWNER-EXT-AI-20261020-01.md",
+    "authoritySource": "config/autonomy-authority.json"
   },
   "ltzzz:memoryGate": {
     "requiredReads": [
@@ -79,8 +80,10 @@
     ],
     "outputSchema": "每条产出必须带 result / evidence / next 字段，缺失视为未过 Gate"
   },
-  "proof": {
-    "type": "PLACEHOLDER",
-    "note": "guardian 2/3 签名字段，X2 阶段完成"
+  "ltzzz:identityStatus": {
+    "signing_public_key_provisioned": false,
+    "signature_verified": false,
+    "chain_registration_verified": false,
+    "note": "DID签名公钥与模型API Key是不同对象；未生成私钥、未授予链上签名权。"
   }
 }

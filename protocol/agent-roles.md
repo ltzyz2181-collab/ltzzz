@@ -1,6 +1,6 @@
 # LTZZZ 多 Agent 分工（任务十一）
 
-> 当前岗位以 owner 2026-10-18 任命及 config/claude-team.json 为准；历史治理表述不等于链上 owners 已变更。
+> 当前岗位以 identity/seat-registry.json 为准；钱包以 wallet/addresses.md 为准；历史治理表述不等于链上 owners 已变更。
 
 | Agent | 职责 | 视频链路角色 |
 |---|---|---|
@@ -8,8 +8,8 @@
 | 豆包 | 中文文案、视频生成、字幕、封面、国内平台执行 | ⑤⑥⑦⑧⑩ 文案/制作/国内发布 |
 | DeepSeek | 研究、资料、代码、长文本处理、聊天记录清洗、批量文案与数据分析 | ③ 清洗 + 分析 |
 | Grok | 海外趋势、海外平台版本 | 海外内容与海外平台 |
-| Claude | 审核、逻辑、代码 Review、复杂工程辅助 | 代码审查 |
-| Microsoft | 观察岗位由 Claude 接替，保留历史记录 | 审计/考察 |
+| Claude | 独立审计＋规划 | 代码审查 |
+| Microsoft | 暂时除名，保留历史记录 | 审计/考察 |
 
 ## 治理
 

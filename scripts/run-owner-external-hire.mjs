@@ -1,3 +1,4 @@
+import {acceptedEngineeringDraft} from '../wep3-procurement-status.js';
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';
 import {dailyHireId} from '../wep3-procurement-contract.js';
 import {dailyHireAssignment,executeDailyHire,digest} from './lib/daily-external-hire.mjs';
@@ -45,5 +46,5 @@ if(phase==='prepare'){
  }catch(error){record.status='blocked_'+String(error.message).replace(/[^a-zA-Z0-9_]/g,'_').slice(0,120);save(record);}
  split(record);save(record);
  console.log(JSON.stringify({task_id:id,status:record.status,eight_passed:record.online_eight_passed,paid:record.paid,tx_hash:record.tx_hash,new_payments_this_run:record.new_payments_this_run}));
- if(record.status!=='paid_delivery_accepted')process.exitCode=1;
+ if(!acceptedEngineeringDraft(record.status))process.exitCode=1;
 }else throw Error('fixed_prepare_or_execute_phase_required');

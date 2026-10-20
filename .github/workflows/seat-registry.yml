@@ -1,0 +1,41 @@
+name: Verify AI seat endpoints and cards (zero model calls)
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Deploy Claude seat metadata (no models)']
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths: ['identity/**','api/agents/**','wallet/addresses.md','scripts/build-seat-registry.mjs','scripts/lib/seat-registry.mjs','scripts/tests/seat-registry.test.mjs','scripts/probe-seat-endpoints.mjs','workers/claude-seat/**','.github/workflows/seat-registry.yml','.github/workflows/deploy-claude-seat.yml']
+permissions: {contents: read}
+concurrency: {group: seat-registry-readback, cancel-in-progress: false}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/seat-registry.test.mjs
+  probe:
+    needs: test
+    if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Observe canonical and alias HTTP DNS without model calls
+        run: node scripts/probe-seat-endpoints.mjs
+      - name: Commit one authoritative endpoint snapshot and generated cards
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add identity/endpoint-status.json identity/SEATS.md api/agents/ knowledge/results/identity/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Current AI seat DNS HTTP and card evidence; no generation'
+          node tools/push-receipt-commit.mjs
