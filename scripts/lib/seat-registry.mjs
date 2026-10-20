@@ -14,6 +14,7 @@ export function buildSeatArtifacts(root=process.cwd()){
   did['ltzzz:identityStatus']={signing_public_key_provisioned:did.verificationMethod.length>0,signature_verified:false,chain_registration_verified:false,note:'DID签名公钥与模型API Key是不同对象；未生成私钥、未授予链上签名权。'};
   did.service=[{id:did.id+'#agent-card',type:'agent-card',serviceEndpoint:s.card_url,note:'只读JSON名片，不是模型生成或已签名DID证明。'},...s.health_urls.map((url,i)=>({id:did.id+'#health-'+i,type:'HealthProbe',serviceEndpoint:url,note:'当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。'}))];
   const p=did['ltzzz:profile']||did['x-ltzzz']||{};Object.assign(p,{role:s.role,workStatus:s.work_status,votingSeat:s.voting_nomination,walletRegistrySource:registry.wallet_source,walletSigning:false,authoritySource:'config/autonomy-authority.json',walletTier:'资金登记与控制以wallet/addresses.md和现有执行器为准；岗位任命不是签名权',endpointStatusRef:s.endpoint_status_ref,roleSource:'identity/seat-registry.json',nativeInferenceMode:s.inference_mode});
+  if(s.generation_evidence)p.generationEvidence=s.generation_evidence;
   if(id==='gpt'){p.status='active_coordinator';p.nativeScheduledGeneration=false;}
   if(id==='claude'){p.nativeAnthropicModelOnDefaultRoute=false;p.defaultWorkDelegated=false;p.workModes=['external_native_Claude_repository_work','optional_owner_on_demand_native_API'];p.workEntry='ops/dispatch/CLAUDE-FREE-DAILY.md';p.nativeApiStatus=s.native_api_status;p.workEvidence=s.work_evidence;}
   if(id==='qianwen'){p.roleDetail=s.role;p.permissionLevel='同总控自主工程/运维执行，以config/autonomy-authority.json为准；不是链上签名权。';}

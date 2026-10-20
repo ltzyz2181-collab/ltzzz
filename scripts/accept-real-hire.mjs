@@ -1,7 +1,9 @@
-import {matchesContract,negativeControls} from './lib/provided-contract.mjs';
+import {execFileSync} from 'node:child_process';
+import {evaluateContract,negativeControls,CONTRACT_PREDICATE_REVISION} from './lib/provided-contract.mjs';
 import fs from 'node:fs';import crypto from 'node:crypto';import {callAgent} from './call-doubao.mjs';import {createModelRouter} from './lib/domestic-model-router.mjs';
 const day=new Date().toISOString().slice(0,10),base='https://ltzzz-wep3.ltzyz2181.workers.dev',file=process.env.WEP3_DELIVERY_FILE||'knowledge/results/wep3/delivery-contract-'+day+'.json',reportFile='knowledge/results/wep3/hire-'+process.env.GITHUB_RUN_ID+'.json';
-const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,task_kind:'provided_spec_readonly_HTTP_contract_check',spec_provided_in_prompt:true,original_design_claimed:false,paid:false,tx_hash:null,status:'started'};
+let executedCommit=null;try{executedCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();}catch{}
+const report={source_commit:executedCommit,trigger_commit:process.env.GITHUB_SHA||null,predicate_revision:CONTRACT_PREDICATE_REVISION,predicate_source_sha256:crypto.createHash('sha256').update(fs.readFileSync(new URL('./lib/provided-contract.mjs',import.meta.url))).digest('hex'),at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID,task_kind:'provided_spec_readonly_HTTP_contract_check',spec_provided_in_prompt:true,original_design_claimed:false,paid:false,tx_hash:null,status:'started'};
 function save(){fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync(reportFile,JSON.stringify(report,null,2));fs.writeFileSync('knowledge/results/wep3/latest.json',JSON.stringify(report,null,2));}
 try{
  const prior=fs.existsSync('knowledge/results/wep3/latest.json')?JSON.parse(fs.readFileSync('knowledge/results/wep3/latest.json')):null;
@@ -15,12 +17,13 @@ try{
  }
  const allowed=new Set(['/health','/market/treasury','/market/aave/status','/market/runner/readiness','/market/aave/preview']);
  if(!Array.isArray(item.artifact?.tests)||item.artifact.tests.length!==8)throw Error('invalid_contract_tests');
+ report.source=file;report.source_delivery_file_sha256=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
  const checks=[];
  for(const t of item.artifact.tests){
  if(!allowed.has(t.path)||!['GET','POST'].includes(t.method)||!['public','wrong','valid'].includes(t.auth)||!Number.isInteger(t.expected_http)||!t.expected_json||Object.keys(t.expected_json).length===0)throw Error('invalid_contract_shape');
  if(t.method==='POST'&&(t.path!=='/market/aave/preview'||t.body?.action!=='supply'||t.body?.amount_usdc!=='1'||Object.keys(t.body).some(k=>!['intent_id','action','amount_usdc','to'].includes(k))))throw Error('not_readonly_preview');
  const headers={'Content-Type':'application/json'};if(t.auth==='wrong')headers['X-Lab-Pin']='incorrect-contract-pin';if(t.auth==='valid'){if(!process.env.WEP3_RUNNER_TOKEN)throw Error('runner_missing');headers['X-Lab-Pin']=process.env.WEP3_RUNNER_TOKEN;}
- const r=await fetch(base+t.path,{method:t.method,headers,body:t.method==='POST'?JSON.stringify(t.body):undefined,signal:AbortSignal.timeout(60000)}),j=await r.json();const actual=Object.fromEntries(Object.keys(t.expected_json).map(k=>[k,j[k]]));checks.push({id:t.id,path:t.path,http:r.status,expected_http:t.expected_http,actual,passed:matchesContract(t,r.status,j)});
+ const r=await fetch(base+t.path,{method:t.method,headers,body:t.method==='POST'?JSON.stringify(t.body):undefined,signal:AbortSignal.timeout(60000)}),raw=await r.text(),j=JSON.parse(raw);const comparison=evaluateContract(t,r.status,j);const actual=Object.fromEntries(Object.keys(t.expected_json).map(k=>[k,j[k]]));checks.push({id:t.id,path:t.path,http:r.status,expected_http:t.expected_http,actual,passed:comparison.passed,comparison,response_sha256:crypto.createHash('sha256').update(raw).digest('hex'),observed_at:new Date().toISOString(),method:t.method,auth_kind:t.auth});
  }
  report.negative_controls=negativeControls();if(!report.negative_controls.passed)throw Error('negative_controls_failed');
  report.live_checks=checks;report.source=file;report.worker_tokens=item.tokens||0;if(checks.some(x=>!x.passed)){report.status='live_contract_check_failed';save();process.exit(0);}
