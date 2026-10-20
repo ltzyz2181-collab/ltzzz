@@ -1,0 +1,41 @@
+name: Deploy cloud hub gateway
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'ltzzz-cloud-hub-worker.js'
+      - 'wrangler.cloud-hub.toml'
+      - 'scripts/tests/cloud-hub.test.mjs'
+      - '.github/workflows/deploy-cloud-hub.yml'
+
+concurrency: { group: cloud-hub-deploy, cancel-in-progress: false }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Test cloud hub gateway
+        run: node --test scripts/tests/cloud-hub.test.mjs
+      - name: Deploy and inject admin key
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          test -n "$LTZZZ_AGENT_TOKEN"
+          npx --yes wrangler@4 deploy -c wrangler.cloud-hub.toml
+          printf '%s' "$LTZZZ_AGENT_TOKEN" | npx --yes wrangler@4 secret put ACCESS_TOKEN -c wrangler.cloud-hub.toml
+      - name: Verify health without triggering upload
+        run: |
+          node --input-type=module <<'JS'
+          const r = await fetch('https://ltzzz-cloud-hub.ltzyz2181.workers.dev/health');
+          const j = await r.json();
+          console.log(JSON.stringify(j));
+          if (!r.ok || !j.ok || j.engine !== 'cloud-hub' || j.platforms.tiktok !== false) process.exitCode = 1;
+          JS

@@ -1,0 +1,12 @@
+name = "ltzzz-cloud-hub"
+main = "ltzzz-cloud-hub-worker.js"
+compatibility_date = "2026-10-20"
+
+# 复用现有 KV 命名空间；cloud-hub 使用 task:/video: 前缀，与 youtube-upload 的 yt: 键不冲突。
+[[kv_namespaces]]
+binding = "KV"
+id = "63c6bb670cfc42b18b4d232605d5bcad"
+
+# 兜底第二排空：调度器 0 14 先排空，cloud-hub 14:30 再兜底触发一次 /queue/run。
+[triggers]
+crons = ["30 14 * * *"]
