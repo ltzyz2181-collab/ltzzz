@@ -1,3 +1,4 @@
+import { dispatchResponse } from './workers/lib/dispatch-receipt.mjs';
 // LTZZZ · 千问（阿里云百炼 DashScope）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:qianwen（临时总控，2026-09-30 起）
 // Key 只放 Worker Secret（wrangler secret put QWEN_API_KEY），浏览器与仓库都不接触 Key。
@@ -25,6 +26,7 @@ export default {
         did: 'did:ltzzz:qianwen',
         has_key: Boolean(env.QWEN_API_KEY),
         model_configured: Boolean(env.QWEN_MODEL),
+        configured_model: env.QWEN_MODEL || 'qwen-plus',
         time: new Date().toISOString()
       });
     }
@@ -65,14 +67,11 @@ export default {
       });
 
       const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
+      return dispatchResponse(text, upstream.status, {
           ...cors(),
           'Content-Type': 'application/json; charset=utf-8',
           'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      }, {seat: 'qianwen', model, taskId: body.task_id});
     } catch (e) {
       return json({ error: String(e?.message || e), stage: 'worker_runtime' }, 500);
     }
