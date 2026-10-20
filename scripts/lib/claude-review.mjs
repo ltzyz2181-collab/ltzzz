@@ -4,7 +4,8 @@ import {assertCoreMemory} from './core-memory-integrity.mjs';
 export const REVIEW_LIMITS={max_input_chars:32000,max_output_tokens:1600,max_generation_calls:1};
 export const digest=s=>crypto.createHash('sha256').update(s).digest('hex');
 export function reviewRequest(env){
- const mode=env.CLAUDE_REVIEW_MODE||'inspect',topic=env.CLAUDE_REVIEW_TOPIC||'ans-pulse',task_id=env.CLAUDE_REVIEW_TASK_ID||'CLAUDE-ANS-PULSE-REVIEW';
+ const mode=env.CLAUDE_REVIEW_MODE||'inspect',topic=env.CLAUDE_REVIEW_TOPIC||'ans-pulse';let task_id=env.CLAUDE_REVIEW_TASK_ID||'CLAUDE-ANS-PULSE-REVIEW';
+ if(topic==='external-hire'&&task_id==='CLAUDE-ANS-PULSE-REVIEW')task_id='CLAUDE-OWNER-EXT-AI-20261020-01';
  if(env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz')throw Error('repository_required');
  if(!['inspect','review'].includes(mode)||!['ans-pulse','six-memory','external-hire'].includes(topic)||!/^[A-Za-z0-9_-]{8,80}$/.test(task_id))throw Error('invalid_review_request');
  if(mode==='review'&&(env.GITHUB_EVENT_NAME!=='workflow_dispatch'||env.GITHUB_ACTOR!=='ltzyz2181-collab'))throw Error('explicit_owner_dispatch_required');

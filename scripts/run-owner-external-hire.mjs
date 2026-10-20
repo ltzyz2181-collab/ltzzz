@@ -5,7 +5,7 @@ import {liveEight,canonicalEight} from './lib/live-wep3-eight.mjs';
 import {BASE,runnerToken,wep3Request} from './lib/funded-invest-runtime.mjs';
 import {externalAIRelay} from './lib/external-ai-relay.mjs';
 import {pulseSnapshot,pulseGate} from './lib/pulse-client.mjs';
-import {OWNER_HIRE,assertOwnerPayment} from './lib/owner-external-hire.mjs';
+import {OWNER_HIRE,assertOwnerPayment,assertOwnerOrderContext} from './lib/owner-external-hire.mjs';
 const {id,date}=OWNER_HIRE,dir='knowledge/results/owner-external',file=dir+'/'+id+'.json',phase=process.argv[2];
 fs.mkdirSync(dir,{recursive:true});
 const save=record=>fs.writeFileSync(file,JSON.stringify(record,null,2)+'\n');
@@ -36,11 +36,11 @@ if(phase==='prepare'){
   fs.writeFileSync(dir+'/'+id+'-acceptance-eight.json',JSON.stringify(acceptance,null,2)+'\n');record.online_eight_passed=acceptance.passed;save(record);
   if(!acceptance.passed)throw Error('live_eight_not_passed_no_purchase');
   const api=(path,body)=>wep3Request(path,{token,...(body?{body}:{})});
-  const existing=await api('/market/procurement/daily?date='+date);if(existing.order){record.order=existing.order;record.paid=existing.order.paid===true;record.tx_hash=existing.order.tx_hash||null;assertOwnerPayment(existing.order);}
+  const existing=await api('/market/procurement/daily?date='+date);if(existing.order){assertOwnerOrderContext(existing.order,record);record.order=existing.order;record.paid=existing.order.paid===true;record.tx_hash=existing.order.tx_hash||null;assertOwnerPayment(existing.order);}
   if(!record.order&&record.inputs.some(input=>digest(fs.readFileSync(input.path))!==input.sha256))throw Error('dispatch_inputs_changed_no_payment');
   const snapshot=await pulseSnapshot(),gate=pulseGate(snapshot,'doubao');const key=process.env.DOUBAO_API_KEY||process.env.ARK_API_KEY;
   const {callAgent}=await import('./call-doubao.mjs');
-  await executeDailyHire(record,{api,relay:()=>externalAIRelay(token,{date,context:record.context,existingOnly:!!record.order}),reviewerConfigured:!!key,pulseReady:snapshot.available&&gate.allowed&&gate.state==='fresh',save,callReviewer:prompt=>callAgent({apiKey:key,prompt,maxTokens:1800,thinking:'disabled'})});
+  await executeDailyHire(record,{api,relay:async()=>{const result=await externalAIRelay(token,{date,context:record.context,existingOnly:!!record.order});if(result.order)assertOwnerOrderContext(result.order,record);return result;},reviewerConfigured:!!key,pulseReady:snapshot.available&&gate.allowed&&gate.state==='fresh',save,callReviewer:prompt=>callAgent({apiKey:key,prompt,maxTokens:1800,thinking:'disabled'})});
   assertOwnerPayment(record.order);
  }catch(error){record.status='blocked_'+String(error.message).replace(/[^a-zA-Z0-9_]/g,'_').slice(0,120);save(record);}
  split(record);save(record);

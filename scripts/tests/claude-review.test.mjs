@@ -42,7 +42,7 @@ test('external-hire context requires all four actual receipts and records each f
   const dir=root+'/knowledge/results/owner-external';fs.mkdirSync(dir,{recursive:true});
   for(const kind of ['payment','delivery','review','acceptance-eight'])fs.writeFileSync(dir+'/OWNER-EXT-AI-20261020-01-'+kind+'.json',JSON.stringify({kind,paid:false,status:'fixture'}));
   const r=reviewContext(root,'external-hire');assert.equal(r.files.length,4);assert.match(r.prompt,/T02/);assert.match(r.prompt,/供应方报告/);for(const f of r.files)assert.equal(f.sha256,digest(fs.readFileSync(root+'/'+f.file,'utf8')));
-  assert.equal(reviewRequest({...env,CLAUDE_REVIEW_TOPIC:'external-hire'}).topic,'external-hire');
+  const request=reviewRequest({...env,CLAUDE_REVIEW_TOPIC:'external-hire'});assert.equal(request.topic,'external-hire');assert.equal(request.task_id,'CLAUDE-OWNER-EXT-AI-20261020-01');assert.notEqual(request.task_id,reviewRequest(env).task_id);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 test('credit denial, timeout and truncated outputs stop without fallback or a second generation',async()=>{

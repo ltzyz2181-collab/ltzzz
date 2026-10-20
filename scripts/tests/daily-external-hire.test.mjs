@@ -23,6 +23,21 @@ test('strict contract rejects the historical semantic failures even after ID nor
  const checked=inspectProcurementDelivery(original.deliverable,{strict:true});
  assert.equal(checked.structural_valid,true);assert.equal(checked.semantic_valid,false);assert.ok(checked.errors.includes('invalid_preview_body'));assert.ok(checked.errors.includes('invalid_test_auth'));assert.ok(checked.warnings.length);
 });
+test('explicit owner recovery permits only one additional review of identical already-paid bytes, never another purchase',async()=>{
+ const f=fixture();await externalPurchase(f.m,f.book,f.options);const o=f.book.procurement[dailyHireId(date)];
+ // This exception is intentionally restricted to the single owner task on 10-20.
+ const targetDate='2026-10-20';delete f.book.procurement[o.id];o.id=dailyHireId(targetDate);f.book.procurement[o.id]=o;
+ const old={status:'blocked_review_generation',claim_id:'first-review',artifact_sha256:o.deliverable_sha256,failure_kind:'incomplete'};o.independent_review=structuredClone(old);
+ const input={date:targetDate,phase:'owner_recover_once',owner_task_id:'OWNER-EXT-AI-20261020-01',claim_id:'bounded-review-recovery',artifact_sha256:o.deliverable_sha256};
+ for(const patch of [{owner_task_id:'other'},{artifact_sha256:'wrong'},{claim_id:'first-review'}])assert.equal((await dailyHireReview(f.m,f.book,{...input,...patch})).ok,false);
+ const first=await dailyHireReview(f.m,f.book,input);assert.equal(first.claimed,true);assert.deepEqual(o.review_history,[old]);assert.equal(o.owner_review_recovery.new_external_purchases_allowed,0);
+ assert.equal((await dailyHireReview(f.m,f.book,input)).claimed,false);assert.equal(o.review_history.length,1);assert.equal(f.paid,1);
+});
+test('unknown or completed independent review can never be revived by the recovery exception',async()=>{
+ const f=fixture();await externalPurchase(f.m,f.book,f.options);const o=f.book.procurement[dailyHireId(date)],targetDate='2026-10-20';delete f.book.procurement[o.id];o.id=dailyHireId(targetDate);f.book.procurement[o.id]=o;
+ for(const status of ['started_completion_unknown','accepted_engineering_artifact','rejected_engineering_artifact']){o.independent_review={status,claim_id:'old'};assert.equal((await dailyHireReview(f.m,f.book,{date:targetDate,phase:'owner_recover_once',owner_task_id:'OWNER-EXT-AI-20261020-01',claim_id:'new',artifact_sha256:o.deliverable_sha256})).ok,false);}
+ assert.equal(f.paid,1);assert.equal(o.owner_review_recovery,undefined);
+});
 test('wrong method, path, short ID, amount, action, duplicate IDs and auth fail the revised contract',()=>{
  for(const mutate of [a=>a.tests[0].request.method='GET',a=>a.tests[0].request.path='/other',a=>a.tests[0].request.body.intent_id='test123',a=>a.tests[0].request.body.action='deposit',a=>a.tests[0].request.body.amount_usdc=1000,a=>a.tests[0].request.body.amount_usdc='0',a=>a.tests[0].request.headers={Authorization:'invalid'},a=>a.tests[0].request.headers['X-Lab-Pin']='real-or-unapproved-pin',a=>a.tests[1].id=a.tests[0].id]){
   const a=artifact();mutate(a);assert.equal(inspectProcurementDelivery(JSON.stringify(a),{strict:true}).semantic_valid,false);

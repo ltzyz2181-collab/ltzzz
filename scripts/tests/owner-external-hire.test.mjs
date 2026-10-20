@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
 import {canonicalEight,liveEight} from '../lib/live-wep3-eight.mjs';
-import {assertOwnerPayment} from '../lib/owner-external-hire.mjs';
+import {assertOwnerPayment,assertOwnerOrderContext} from '../lib/owner-external-hire.mjs';
 import {TREASURY} from '../lib/funded-invest-runtime.mjs';
 import {PROVIDER} from '../lib/external-procurement-preflight.mjs';
 const token='fixture-private-pin',base='https://test.invalid';
@@ -22,6 +22,11 @@ test('paid success requires exact payer/payee, <=0.05 amount, transaction and ch
  const tx='0x'+'a'.repeat(64),o={paid:true,payer:TREASURY,pay_to:PROVIDER.payTo,amount_raw:'3000',tx_hash:tx,payment_proof:{verified:true,tx_hash:tx}};assert.doesNotThrow(()=>assertOwnerPayment(o));assert.doesNotThrow(()=>assertOwnerPayment({...o,amount_raw:'50000'}));
  for(const patch of [{amount_raw:'50001'},{amount_raw:'-1'},{amount_raw:'NaN'},{payer:'0x'+'1'.repeat(40)},{pay_to:'0x'+'2'.repeat(40)},{tx_hash:null},{payment_proof:{verified:false,tx_hash:tx}}])assert.throws(()=>assertOwnerPayment({...o,...patch}));
  assert.doesNotThrow(()=>assertOwnerPayment({paid:false}));
+});
+test('a pre-existing daily external order from another dispatch cannot be attributed to the owner task',()=>{
+ const r={date:'2026-10-20',external_runtime_order_id:'REAL-HIRE-20261020-CLAUDE-01',context:{source_commit:'a'.repeat(40),input_sha256:'b'.repeat(64),ans_status:'one_off_owner_authorized'}},o={id:r.external_runtime_order_id,date:r.date,context:{...r.context}};
+ assert.doesNotThrow(()=>assertOwnerOrderContext(o,r));
+ for(const patch of [{id:'foreign'}, {date:'2026-10-19'}, {context:{...r.context,input_sha256:'c'.repeat(64)}}, {context:{...r.context,source_commit:'d'.repeat(40)}}, {context:{...r.context,ans_status:'daily'}}])assert.throws(()=>assertOwnerOrderContext({...o,...patch},r),/not_bound_to_owner_dispatch/);
 });
 test('prepare is immutable and leaves the already assigned internal daily record byte-for-byte unchanged',()=>{
  fs.mkdirSync('work',{recursive:true});const root=fs.mkdtempSync(path.resolve('work/owner-hire-test-'));
