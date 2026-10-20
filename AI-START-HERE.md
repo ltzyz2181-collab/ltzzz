@@ -6,6 +6,8 @@
 
 Owner 最新授权：优先建设 [ANS/Pulse＋奖惩闭环](docs/ANS-AUTONOMOUS-PULSE.md)。总控与千问拥有同等自主工程/运维权限，常规代码、测试、PR、部署和故障恢复无需反复确认；以 [权限决议](config/autonomy-authority.json) 为准，历史审稿人的限权建议不覆盖 owner 最新决定。真实能力以账户权限和回执验证，不能把角色名称当作链上签名权。
 
+2026-10-19 更新：ANS 为现阶段一级任务，AI 雇佣 AI 为长期一级任务。新增[每日AI雇佣派单与数据](.github/workflows/daily-external-hire.yml)，默认内部协作，复用现有 ANS 实际模型调用，保存认领、交付、用量、异提供商独审和拒收/验收数据，不额外调用模型或结算真钱。外部采购保留显式触发入口，沿用既有金库、每天最多一单且单笔最多0.05 Base USDC；未知付款不重试。原厂 GPT/Claude 付费定时不恢复，规则承接 Claude 规划角色，不伪称客户端每天在线。[当前实施与验收](ops/dispatch/CLAUDE-REAL-HIRE-AND-ANS-20261019.md)区分草稿、部署、模型与资金证据。
+
 ## 一分钟找到六篇（导读不代替正文）
 
 | 文件 | 内容与阅读重点 |

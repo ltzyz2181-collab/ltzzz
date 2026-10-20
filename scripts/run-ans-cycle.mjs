@@ -1,4 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';
+import {prepareDailyHire,reconcileInternalHire} from './lib/daily-hire-files.mjs';
 import {prepareCycle,executeCycle,dayCST,digest} from './lib/ans-cycle.mjs';
 import {pulseSnapshot,PULSE_URL,pulseGate} from './lib/pulse-client.mjs';
 import {pulseToken} from './pulse-credentials.mjs';
@@ -11,12 +12,13 @@ if(phase==='prepare'){
  const p=prepareCycle({date,runId,sourceCommit:process.env.GITHUB_SHA||'local',prior,repairKnownTruncation:process.env.ANS_REPAIR_KNOWN_TRUNCATION==='1',repairKnownFormat:process.env.ANS_REPAIR_KNOWN_FORMAT==='1'});
  if(p.archive)fs.writeFileSync('knowledge/results/ans-cycle/'+date+'-'+(p.archive_suffix||'before-nonthinking-repair')+'.json',JSON.stringify(p.archive,null,2)+'\n');
  if(p.execute)save(p.record);
+ prepareDailyHire({date,mode:'internal',runId,sourceCommit:p.record.source_commit,allowExistingOtherMode:true});
  if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+p.execute+'\n');
  if(process.env.GITHUB_ENV)fs.appendFileSync(process.env.GITHUB_ENV,'ANS_DATE='+date+'\n');console.log(date,p.record.status,'execute='+p.execute);
 }else if(phase==='execute'){
  const record=JSON.parse(fs.readFileSync(file));if(record.run_id!==runId)throw Error('claim_run_mismatch');
  try{
-  const snapshot=await pulseSnapshot();record.pulse_observed_at=snapshot.ran_at||null;
+  const snapshot=await pulseSnapshot();record.pulse_observed_at=snapshot.ran_at||null;record.actual_autonomic_feedback=snapshot.autonomic_feedback||null;
   for(const t of record.tasks){const gate=pulseGate(snapshot,t.agent);if(!gate.allowed)throw Error('pulse_paused_'+t.agent);await control({id:'ans-claim-'+date+'-'+t.agent,action:'claim_task',agent:t.agent,task_id:t.id});}
   record.remote_claims=true;save(record);
   const inputs=['workers/pulse-worker/tasks.js','scripts/lib/daily-assignment.mjs','scripts/run-autonomous-control.mjs','scripts/run-daily-tasks.mjs','docs/ANS-AUTONOMOUS-PULSE.md','ltzzz-memory/装备论.md'];
@@ -44,4 +46,5 @@ if(phase==='prepare'){
   if(!verified)process.exitCode=1;
  }
  save(record);
+ reconcileInternalHire(date);
 }else throw Error('phase_required');

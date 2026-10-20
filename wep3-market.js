@@ -1,5 +1,7 @@
 import {fundOKX,fundingRelay} from './wep3-okx-funding.js';
 import {externalPurchase,completeExternalRelay,PROCUREMENT_REVISION} from './wep3-procurement.js';
+import {dailyHireReview} from './wep3-procurement-review.js';
+import {DAILY_HIRE_REVISION} from './wep3-procurement-contract.js';
 import {externalEntry} from './wep3-external-entry.js';
 import {sealDelivery} from './wep3-order-contract.js';
 import {aaveStatus,executeAave,autoAave,publicAaveIntent,diagnoseAave,reconcileAaveTransactions,attestAaveReceipt,aaveRelay,AAVE_RUNTIME_REVISION} from './wep3-aave.js';
@@ -48,7 +50,7 @@ export class Market {
     const entry=externalEntry(request);if(entry)return entry;
     if(p==='/market/runtime-state'&&request.method==='GET'){
       if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
-      return reply({ok:true,market_runtime_revision:'market-runtime-v3',aave_runtime_revision:AAVE_RUNTIME_REVISION,procurement_runtime_revision:PROCUREMENT_REVISION,
+      return reply({ok:true,market_runtime_revision:'market-runtime-v3',aave_runtime_revision:AAVE_RUNTIME_REVISION,procurement_runtime_revision:PROCUREMENT_REVISION,daily_hire_revision:DAILY_HIRE_REVISION,
         book_sha256:await hash(JSON.stringify(book)),order_count:Object.keys(book.orders||{}).length,ledger_count:(book.ledger||[]).length,
         live_revenue_cents:book.live_revenue_cents||0,aave_intent_count:Object.keys(book.aave?.intents||{}).length,
         first_supply_confirmed:!!book.aave?.first_supply_confirmed,exit_test_confirmed:!!book.aave?.exit_test_confirmed,
@@ -68,6 +70,19 @@ export class Market {
       if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
       const input=await request.json().catch(()=>({})),r=p.endsWith('/prepare-relay')?await externalPurchase(this,book,{execute:true,providedQuote:input.quote,relayPrepare:true}):await completeExternalRelay(this,book,input);
       const response=reply(r,r.ok?200:422);response.headers.set('Cache-Control','no-store');return response;
+    }
+    if(['/market/procurement/daily','/market/procurement/daily-prepare-relay','/market/procurement/daily-relay-result','/market/procurement/daily-review'].includes(p)){
+      if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
+      if(p==='/market/procurement/daily'&&request.method==='GET'){
+        try{const date=u.searchParams.get('date');if(!date)throw Error();const r=await externalPurchase(this,book,{date});return reply({...r,daily_hire_revision:DAILY_HIRE_REVISION},r.ok?200:422);}catch{return reply({ok:false,error:'invalid_hire_date'},422);}
+      }
+      if(request.method!=='POST'||p==='/market/procurement/daily')return reply({ok:false,error:'method_not_allowed'},405);
+      const input=await request.json().catch(()=>({}));let r;
+      try{
+        if(!input.date)throw Error();
+        r=p.endsWith('/daily-prepare-relay')?await externalPurchase(this,book,{date:input.date,context:input.context,execute:true,providedQuote:input.quote,relayPrepare:true}):p.endsWith('/daily-relay-result')?await completeExternalRelay(this,book,input,{date:input.date}):await dailyHireReview(this,book,input);
+      }catch{return reply({ok:false,error:'invalid_daily_hire_request'},422);}
+      return reply({...r,daily_hire_revision:DAILY_HIRE_REVISION},r.ok?200:422);
     }
     if(p==='/market/procurement/order'&&['GET','POST'].includes(request.method)){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await externalPurchase(this,book,{execute:request.method==='POST'});return reply(r,r.ok?200:422);}
     if(p==='/market/aave/status'&&request.method==='GET')return reply({...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
