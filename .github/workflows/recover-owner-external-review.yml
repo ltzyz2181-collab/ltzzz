@@ -2,7 +2,7 @@ name: Recover one failed owner delivery review (no purchase)
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['wep3-procurement-review.js','scripts/lib/daily-external-hire.mjs','scripts/call-doubao.mjs','scripts/recover-owner-external-review.mjs','scripts/tests/daily-external-hire.test.mjs','.github/workflows/recover-owner-external-review.yml']
+    paths: ['wep3-procurement-review.js','scripts/lib/daily-external-hire.mjs','scripts/call-doubao.mjs','scripts/recover-owner-external-review.mjs','scripts/lib/review-recovery-state.mjs','scripts/tests/review-recovery-state.test.mjs','scripts/tests/daily-external-hire.test.mjs','.github/workflows/recover-owner-external-review.yml']
 permissions: {contents: read}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node --check scripts/recover-owner-external-review.mjs
-      - run: node --test scripts/tests/daily-external-hire.test.mjs scripts/tests/owner-external-hire.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/claude-review.test.mjs
+      - run: node --test scripts/tests/review-recovery-state.test.mjs scripts/tests/daily-external-hire.test.mjs scripts/tests/owner-external-hire.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/claude-review.test.mjs
   review:
     if: github.event_name == 'workflow_dispatch' && github.actor == 'ltzyz2181-collab' && github.repository == 'ltzyz2181-collab/ltzzz'
     needs: tests
