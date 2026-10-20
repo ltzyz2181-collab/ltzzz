@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 import {git} from '../../tools/push-receipt-commit.mjs';
-import {persistPulseReceipts} from '../../tools/persist-pulse-receipts.mjs';
+import {persistPulseReceipts,newerPulseSnapshot} from '../../tools/persist-pulse-receipts.mjs';
+import {markStateMutation} from '../../workers/pulse-worker/state-revision.js';
 const relative='knowledge/results/pulse';
 function fixture(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'pulse-race-test-')),remote=path.join(root,'remote.git'),a=path.join(root,'a'),b=path.join(root,'b');
@@ -45,4 +46,18 @@ test('foreign run evidence and invalid run IDs cannot be published',()=>{
   assert.throws(()=>persistPulseReceipts({cwd:f.a,runId:'../123'}),/pulse_run_id_required/);
   f.write(f.a,'deploy-123-attempt-1-pass-1.json',{run_id:'999'});assert.throws(()=>persistPulseReceipts({cwd:f.a,runId:'123'}),/pulse_receipt_run_mismatch/);
  }finally{f.close();}
+});
+test('control and incentive mutations remain newer when the health probe time has not advanced',()=>{
+ const ran_at='2026-10-20T01:02:00Z',state={ran_at,manual:{global:false}};
+ markStateMutation(state,Date.parse(ran_at));const before=structuredClone(state);
+ state.manual.global=true;state.incentives={profiles:{doubao:{score:2}}};markStateMutation(state,Date.parse(ran_at)+1000);
+ assert.equal(state.ran_at,before.ran_at);assert.equal(state.state_revision,2);assert.equal(newerPulseSnapshot(state,before),true);assert.equal(newerPulseSnapshot(before,state),false);
+ const f=fixture();try{
+  f.write(f.b,'latest.json',before);f.commit(f.b);f.command(f.b,['push','origin','main']);f.write(f.a,'latest.json',state);
+  persistPulseReceipts({cwd:f.a,runId:'123'});f.command(f.b,['fetch','origin','main']);assert.equal(f.readRemote('latest.json').manual.global,true);assert.equal(f.readRemote('latest.json').incentives.profiles.doubao.score,2);
+ }finally{f.close();}
+});
+test('legacy snapshots can use real control/incentive timestamps without inventing a new health observation',()=>{
+ const ran_at='2026-10-20T01:00:00Z',before={ran_at,events:[]},after={ran_at,events:[{at:'2026-10-20T01:01:00Z',type:'controller_pause'}]};
+ assert.equal(newerPulseSnapshot(after,before),true);assert.equal(newerPulseSnapshot(before,after),false);assert.equal(newerPulseSnapshot(after,after),false);
 });

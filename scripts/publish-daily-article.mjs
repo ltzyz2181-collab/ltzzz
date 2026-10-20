@@ -30,7 +30,7 @@ function uploadR2(file) {
 if (!/^\d{4}-\d{2}-\d{2}$/.test(DATE)) throw new Error('Invalid ARTICLE_DATE');
 const gathered=gatherArticleSources({root,date:DATE}),src=redact(gathered.text);
 let ai = { ok: false, status: 'not_configured' };
-if (process.env.DEEPSEEK_API_KEY) ai = await callAgent({ apiKey: process.env.DEEPSEEK_API_KEY, prompt: PROMPT(src), maxTokens: 8192 });
+if (process.env.DEEPSEEK_API_KEY) ai = await callAgent({ apiKey: process.env.DEEPSEEK_API_KEY, prompt: PROMPT(src), maxTokens: 8192, thinking:'disabled' });
 if(ai.ok && (ai.finish_reason!=='stop' || !ai.output || ai.output.trim().length<500)){ai={...ai,ok:false,status:'incomplete_editor_output',error:'Output incomplete; not an approved article'};}
 let article = ai.ok ? redact(ai.output) : `# LTZZZ 日记录 ${DATE}（未经 AI 编辑）\n\n【说明】本日 AI 编辑未执行（${ai.status}），以下为原始记录摘录。\n\n${src.slice(0, 3000)}\n\n—— LTZZZ 数字实验室`;
 const title = (article.match(/^# (.+)$/m) || [, `LTZZZ 日记录 ${DATE}`])[1].trim();
