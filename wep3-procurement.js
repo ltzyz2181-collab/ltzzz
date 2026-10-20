@@ -67,7 +67,7 @@ export async function externalPurchase(m,book,{execute=false,fetcher=fetch,statu
  book.procurement[o.id]=o;book.ledger||=[];book.ledger.push({type:'external_AI_purchase_reserved',order_id:o.id,amount_raw:o.amount_raw,currency:'Base_USDC',paid:false,tx_hash:null,at:o.at});await m.save(book);
  const authorization={from:wallet.address,to:accepted.payTo,value:accepted.amount,validAfter:String(timestamp-10),validBefore:String(o.valid_before),nonce};
  const signature=await wallet.signTypedData({name:'USD Coin',version:'2',chainId:8453,verifyingContract:AAVE.usdc},TYPES,authorization);
- o.model_generation_attempts=1;o.acceptance_kind='deterministic_structural_contract_check_not_independent_model_review';o.independent_review_status='pending';
+ o.model_generation_attempts=1;o.acceptance_kind=date?'deterministic_semantic_contract_check_pending_independent_review':'deterministic_structural_contract_check_not_independent_model_review';o.independent_review_status='pending';
  o.payment_payload={x402Version:2,resource:q.resource,accepted,payload:{signature,authorization}};o.status='payment_submitted_unknown';await m.save(book);
  if(relayPrepare){o.relay_handed_off=true;await m.save(book);return {ok:true,revision:PROCUREMENT_REVISION,order:publicPurchase(o),relay:{body,payment_payload:o.payment_payload}};}
  try{
