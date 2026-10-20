@@ -1,0 +1,123 @@
+{
+  "artifact": {
+    "tests": [
+      {
+        "id": "HEALTH_001",
+        "label": "健康检查必须返回服务可用；失败意味着基础HTTP服务或健康路由不可用。",
+        "method": "GET",
+        "path": "/health",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "ok": true
+        }
+      },
+      {
+        "id": "TREASURY_001",
+        "label": "国债市场信息必须公开返回受控金库地址；失败意味着公开市场配置或地址契约不一致。",
+        "method": "GET",
+        "path": "/market/treasury",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "ok": true,
+          "controlled": true,
+          "address": "0x5df5778E0A13df2aE983BDAD69cFCBD3DD7a32d"
+        }
+      },
+      {
+        "id": "AAVE_STATUS_001",
+        "label": "Aave市场状态必须公开返回Base链ID；失败意味着市场状态路由或链标识不符合契约。",
+        "method": "GET",
+        "path": "/market/aave/status",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "ok": true,
+          "chain_id": 8453
+        }
+      },
+      {
+        "id": "RUNNER_READINESS_PUBLIC_001",
+        "label": "未认证访问runner就绪状态必须是200且标记未认证，而不是401；失败意味着公开探测端点被错误拦截或响应结构变更。",
+        "method": "GET",
+        "path": "/market/runner/readiness",
+        "auth": "public",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "authenticated": false
+        }
+      },
+      {
+        "id": "RUNNER_READINESS_VALID_001",
+        "label": "有效认证访问runner就绪状态必须只返回认证布尔值；失败意味着鉴权未生效或响应混入非契约status字段。",
+        "method": "GET",
+        "path": "/market/runner/readiness",
+        "auth": "valid",
+        "body": null,
+        "expected_http": 200,
+        "expected_json": {
+          "authenticated": true
+        }
+      },
+      {
+        "id": "AAVE_PREVIEW_PUBLIC_001",
+        "label": "公开提交Aave预览必须要求PIN；失败意味着未认证请求被放行或错误码契约变更。",
+        "method": "POST",
+        "path": "/market/aave/preview",
+        "auth": "public",
+        "body": {
+          "intent_id": "CONTRACT_TEST_INTENT_20261013",
+          "action": "supply",
+          "amount_usdc": "1"
+        },
+        "expected_http": 401,
+        "expected_json": {
+          "error": "pin_required"
+        }
+      },
+      {
+        "id": "AAVE_PREVIEW_WRONG_001",
+        "label": "错误凭证提交Aave预览必须要求PIN；失败意味着错误凭证未被拒绝或鉴权错误响应不一致。",
+        "method": "POST",
+        "path": "/market/aave/preview",
+        "auth": "wrong",
+        "body": {
+          "intent_id": "CONTRACT_TEST_INTENT_20261013",
+          "action": "supply",
+          "amount_usdc": "1"
+        },
+        "expected_http": 401,
+        "expected_json": {
+          "error": "pin_required"
+        }
+      },
+      {
+        "id": "AAVE_PREVIEW_VALID_ARB_TO_001",
+        "label": "有效凭证但携带to参数必须被拒绝为任意交易参数；失败意味着危险的任意目标交易参数可能通过校验。",
+        "method": "POST",
+        "path": "/market/aave/preview",
+        "auth": "valid",
+        "body": {
+          "intent_id": "CONTRACT_TEST_INTENT_20261013",
+          "action": "supply",
+          "amount_usdc": "1",
+          "to": "0x0000000000000000000000000000000000000000"
+        },
+        "expected_http": 422,
+        "expected_json": {
+          "error": "arbitrary_transaction_parameters_forbidden"
+        }
+      }
+    ]
+  },
+  "executor": "doubao",
+  "model": "doubao-seed-2-1-pro-260915",
+  "tokens": 1242,
+  "at": "2026-10-20T01:11:58.255Z",
+  "generation_attempts": 1
+}
