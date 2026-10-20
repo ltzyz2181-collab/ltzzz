@@ -20,7 +20,7 @@ for (const [did, roles] of [['did:ltzzz:gpt', ['employer']], ['did:ltzzz:grok', 
 const AUD = [
   { model:'deepseek',did:'did:ltzzz:deepseek',fn:deepseek,key:E.DEEPSEEK_API_KEY,maxTokens:8192 },
   { model:'doubao',did:'did:ltzzz:doubao',fn:doubao,key:E.DOUBAO_API_KEY,maxTokens:8192 },
-  { model: 'kimi-cn', did: 'did:ltzzz:kimi', fn: kimiCN, key: E.MOONSHOT_API_KEY_CN,maxTokens:6000 },
+  { model: 'kimi-cn', did: 'did:ltzzz:kimi', fn: kimiCN, key: E.MOONSHOT_API_KEY_CN,maxTokens:16384 },
   { model: 'xai', did: 'did:ltzzz:grok', fn: grok, key: E.XAI_API_KEY,maxTokens:3000 },
 ];
 let log = ''; try { log = execSync('git log --since="24 hours ago" --pretty=format:"- %h %s" | head -60', { cwd: root, encoding: 'utf8' }); } catch {}
