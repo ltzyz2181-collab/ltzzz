@@ -1,9 +1,9 @@
-name: Deploy shared Tier0 Kimi limiter
+name: Deploy authenticated Kimi leases (provider limits only)
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['workers/kimi-queue/**', 'wrangler.kimi-queue.toml', 'scripts/tests/kimi-queue.test.mjs', '.github/workflows/deploy-kimi-queue.yml']
+    paths: ['lib/kimi-profile.js', 'workers/kimi-queue/**', 'wrangler.kimi-queue.toml', 'scripts/tests/kimi-queue.test.mjs', '.github/workflows/deploy-kimi-queue.yml']
 permissions: {contents: write}
 concurrency: {group: kimi-queue-deploy, cancel-in-progress: false}
 jobs:
@@ -30,23 +30,17 @@ jobs:
           npx --yes wrangler@4 deploy -c wrangler.kimi-queue.toml
           npx --yes wrangler@4 secret bulk /tmp/kimi-queue-secrets.json -c wrangler.kimi-queue.toml
           rm -f /tmp/kimi-queue-secrets.json
-      - name: Verify health, domestic account and one bounded generation
-        env:
-          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
-          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+      - name: Verify queue configuration without a generation request
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
-          const base='https://ltzzz-kimi-queue.ltzyz2181.workers.dev';
-          let h;for(let i=0;i<10;i++){const hr=await fetch(base+'/health');h=await hr.json().catch(()=>({health_http:hr.status,health_error:'non_json_response'}));if(h.has_key&&h.auth_configured&&h.limiter_configured&&h.version==='shared-lease-native-executor')break;await new Promise(r=>setTimeout(r,3000));}
-          const b=await fetch('https://api.moonshot.cn/v1/users/me/balance',{headers:{Authorization:'Bearer '+process.env.MOONSHOT_API_KEY_CN},signal:AbortSignal.timeout(20000)});const balance=await b.json().catch(()=>({}));
-          const {kimiCall}=await import('./scripts/agi-econ/kimi-cn.mjs');
-          const result=await kimiCall({apiKey:process.env.MOONSHOT_API_KEY_CN,prompt:'Reply OK only.',maxTokens:1500});
-          const receipt={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,health:h,domestic_balance_http:b.status,domestic_available_balance:balance.available_balance??balance.data?.available_balance??null,generation_http:result.http||null,nonempty_output:Boolean(result.output),finish_reason:result.finish_reason||null,failure_status:result.ok?null:result.status,execution_path:'shared_cloud_reservation_native_domestic_api_release',model_calls_requested:result.upstream_attempts||0,tokens_used:result.tokens_used||0,paid_wages:false,tx_hash:null};
-          fs.mkdirSync('knowledge/results/kimi',{recursive:true});fs.writeFileSync('knowledge/results/kimi/queue-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json',JSON.stringify(receipt,null,2));console.log(JSON.stringify(receipt));
-          if(!h.has_key||!h.limiter_configured||!result.ok||!receipt.nonempty_output)process.exitCode=1;
+          const url='https://ltzzz-kimi-queue.ltzyz2181.workers.dev/health';let h;
+          for(let i=0;i<12;i++){h=await fetch(url).then(r=>r.json());if(h.limiter_mode==='provider_limits_only_no_application_throttle')break;await new Promise(r=>setTimeout(r,3000));}
+          const receipt={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,health:h,model_calls:0,transactions:0,generation_verified:false};
+          fs.mkdirSync('knowledge/results/kimi',{recursive:true});fs.writeFileSync('knowledge/results/kimi/queue-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json',JSON.stringify(receipt,null,2));
+          if(!h.has_key||!h.auth_configured||h.limiter_mode!=='provider_limits_only_no_application_throttle'||h.concurrency!==null||h.min_interval_ms!==0)process.exitCode=1;
           JS
-      - name: Persist actual deployment and generation result
+      - name: Persist actual queue deployment result; no model request
         if: always()
         run: |
           git config user.name ltzzz-bot

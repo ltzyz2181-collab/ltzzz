@@ -1,3 +1,4 @@
+import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · 千问（阿里云百炼 DashScope）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:qianwen（临时总控，2026-09-30 起）
 // Key 只放 Worker Secret（wrangler secret put QWEN_API_KEY），浏览器与仓库都不接触 Key。
@@ -25,6 +26,9 @@ export default {
         did: 'did:ltzzz:qianwen',
         has_key: Boolean(env.QWEN_API_KEY),
         model_configured: Boolean(env.QWEN_MODEL),
+        configured_model: env.QWEN_MODEL || 'qwen-plus',
+        identity_receipt_revision: 'ltzzz.provider-execution.v1',
+        generation_verified: false,
         time: new Date().toISOString()
       });
     }
@@ -49,6 +53,7 @@ export default {
         env.QWEN_BASE_URL ||
         'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
+      const execution=beginExecution('qianwen',model,body.task_id);
       const upstream = await fetch(upstreamUrl, {
         method: 'POST',
         headers: {
@@ -64,15 +69,7 @@ export default {
         })
       });
 
-      const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          ...cors(),
-          'Content-Type': 'application/json; charset=utf-8',
-          'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      return executionResponse(upstream,execution,cors());
     } catch (e) {
       return json({ error: String(e?.message || e), stage: 'worker_runtime' }, 500);
     }

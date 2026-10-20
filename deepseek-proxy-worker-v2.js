@@ -1,3 +1,4 @@
+import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · DeepSeek API proxy — Cloudflare Worker（v2，补齐健康检查）
 // 槽位：did:ltzzz:deepseek（研究席 · 记忆与内容研究主力）
 // v1→v2 变更：新增 GET /health（部署可验证性，对齐千问/Kimi 槽位规范）；
@@ -27,6 +28,9 @@ export default {
         did: 'did:ltzzz:deepseek',
         has_key: Boolean(env.DEEPSEEK_API_KEY),
         model_configured: Boolean(env.DEEPSEEK_MODEL),
+        configured_model: env.DEEPSEEK_MODEL || 'deepseek-flash',
+        identity_receipt_revision: 'ltzzz.provider-execution.v1',
+        generation_verified: false,
         time: new Date().toISOString()
       });
     }
@@ -50,6 +54,7 @@ export default {
       const upstreamUrl =
         env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/chat/completions';
 
+      const execution=beginExecution('deepseek',model,body.task_id);
       const upstream = await fetch(upstreamUrl, {
         method: 'POST',
         headers: {
@@ -65,15 +70,7 @@ export default {
         })
       });
 
-      const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: {
-          ...cors(),
-          'Content-Type': 'application/json; charset=utf-8',
-          'X-LTZZZ-Upstream-Status': String(upstream.status)
-        }
-      });
+      return executionResponse(upstream,execution,cors());
     } catch (e) {
       return json({ error: String(e?.message || e), stage: 'worker_runtime' }, 500);
     }

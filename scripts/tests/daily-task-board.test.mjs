@@ -14,7 +14,7 @@ function fixture(t){
   snapshot:async()=>({available:true,...structuredClone(state)}),
   command:async body=>{posts++;state=pulseControl(state,{...body,id:body.id||'fixture-preclaim',reason:'No-funds test'},'qianwen',{targets:[{name:agent}],baseline_concurrency:1},now).state;},
   readRemote:async file=>{if(!remote.has(file))throw Error('not_committed');return remote.get(file);}};
- const generate=extra=>runReservedSeat({...options,agent,call:async()=>{calls++;return {ok:true,output:'Verified assertion draft【交付结束】',finish_reason:'stop',model:'actual-model',tokens_used:12,...extra};}});
+ const generate=extra=>runReservedSeat({...options,agent,call:async()=>{calls++;return {ok:true,output:'Verified assertion draft【交付结束】',finish_reason:'stop',model:'actual-model',model_source:'provider_response',tokens_used:12,...extra};}});
  const commit=()=>{const a=readLedger(root,date).seats[agent].artifact;remote.set(a.path,fs.readFileSync(path.join(root,a.path)));};
  return {options,generate,commit,get state(){return state},get posts(){return posts},get calls(){return calls},remote};
 }
