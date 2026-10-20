@@ -3,6 +3,7 @@
 import {createHash} from 'node:crypto';
 import fs from 'node:fs'; import path from 'node:path'; import { execSync } from 'node:child_process';
 import { callAgent } from './call-deepseek.mjs';
+import {gatherArticleSources} from './lib/article-sources.mjs';
 const DATE = process.env.ARTICLE_DATE || new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10); // CST day
 const root = process.cwd();
 const read = (p, n = 4000) => { try { return fs.readFileSync(path.join(root, p), 'utf8').slice(0, n); } catch { return ''; } };
@@ -11,18 +12,10 @@ export const redact = (s) => s
   .replace(/\b(sk|pk|ghp|gho|xai)[-_][A-Za-z0-9_-]{12,}/g, '[已脱敏]')
   .replace(/(token|secret|password|private[_ ]?key|AppSecret)\s*[:=：]\s*\S+/gi, '$1: [已脱敏]');
 
-function gather() {
-  const parts = [];
-  const add = (label, p, n) => { const t = read(p, n); if (t) parts.push(`## ${label} (${p})\n${t}`); };
-  add('当日摘要', `memory/daily/summary-${DATE}.md`, 2500);
-  for (const dir of ['ltzzz-memory/tasks', 'ltzzz-memory/kimi-weekly', 'ltzzz-memory/grokbot-weekly', 'data/results', 'results/agi-econ'])
-    { try { for (const f of fs.readdirSync(path.join(root, dir))) if (f.includes(DATE) || (dir === 'results/agi-econ')) add('记录', `${dir}/${f}`, 2000); } catch {} }
-  try { parts.push('## 当日提交\n' + execSync(`git log --since="${DATE}T00:00:00+08:00" --until="${DATE}T23:59:59+08:00" --pretty=format:"- %s" | head -60`, { encoding: 'utf8' })); } catch {}
-  return redact(parts.join('\n\n')).slice(0, 14000);
-}
 const PROMPT = (src) => `你是 LTZZZ 数字实验室的编辑。根据下面「${DATE} 的 AI 记忆原始记录」写一篇中文公众号文章（900-1400字）。
 要求：遵循「观·行深·大道至简」——先陈述事实，再说验证了什么、失败了什么；只写记录里有的事实，不编造数字；
 明确区分「已执行/已验证(applied)」与「提议/计划(proposed)」，用【已验证】【提议】标注；不把怜悯、生存尊严或转岗基金价值口号写入公开稿；程序身份标签或内部积分不能写成真实模型参与或链上付款；
+聚焦当日ANS健康控制与AI协作数据。内部订单paid=false仅说明该内部订单没有真钱结算，不能推出整个项目从未真钱付款或投资。historical_publication_reference只证明注明日期的历史发布，不能充当今日发布。没有证据的投资余额、全项目营收和旧阻塞不要写；部署回执未给出则写未验证。绝不把历史模型限流或旧白名单错误写成当日现状。
 绝不出现钱包地址、私钥、密钥、token。输出 Markdown：第一行 "# 标题"，然后正文，最后一行"—— LTZZZ 数字实验室"。
 
 ${src}`;
@@ -35,7 +28,7 @@ function uploadR2(file) {
 }
 
 if (!/^\d{4}-\d{2}-\d{2}$/.test(DATE)) throw new Error('Invalid ARTICLE_DATE');
-const src = gather();
+const gathered=gatherArticleSources({root,date:DATE}),src=redact(gathered.text);
 let ai = { ok: false, status: 'not_configured' };
 if (process.env.DEEPSEEK_API_KEY) ai = await callAgent({ apiKey: process.env.DEEPSEEK_API_KEY, prompt: PROMPT(src), maxTokens: 8192 });
 if(ai.ok && (ai.finish_reason!=='stop' || !ai.output || ai.output.trim().length<500)){ai={...ai,ok:false,status:'incomplete_editor_output',error:'Output incomplete; not an approved article'};}
@@ -53,7 +46,8 @@ if(!short)short=clean.slice(0,220)+'。';
 const r2 = {status:'NOT_REQUIRED', via:'Worker reads committed GitHub article; no R2 API upload permission required'};
 const env = (k) => !!process.env[k];
 const receipt = { article_sha256:createHash('sha256').update(article+'\n').digest('hex'), date: DATE, generated_at: new Date().toISOString(), article: `${outDir}/${DATE}.md`,
-  ai_editor: { model: 'deepseek', status: ai.status, ok: !!ai.ok, finish_reason:ai.finish_reason||null, tokens_used: ai.tokens_used || 0, error: ai.ok ? undefined : redact(String(ai.error||'')) },
+  source_policy:'current_ans_v1',source_evidence:gathered.sources,input_sha256:createHash('sha256').update(src).digest('hex'),
+  ai_editor: { provider:'DeepSeek',model: ai.model||null,model_source:ai.model_source||null,request_id:ai.request_id||null,status: ai.status, ok: !!ai.ok, finish_reason:ai.finish_reason||null, tokens_used: ai.tokens_used ?? null, error: ai.ok ? undefined : redact(String(ai.error||'')) },
   platforms: {
     r2_upload: r2,
     wechat_mp: { status: ai.ok?'ARTICLE_READY_WORKER_UNVERIFIED':'ARTICLE_FALLBACK_RAW', draft_eligible:!!ai.ok, via: 'Cloudflare worker ltzzz-wechat-publisher（cron 0 12 * * * UTC 建草稿，AUTO_MASS=0 不群发）', note: '已提交文章由 Worker 从 GitHub 读取；这里只生成稿件，草稿和发表状态以微信真实回执为准' },

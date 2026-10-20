@@ -47,6 +47,18 @@ async function queueItem(env,name){
   video_exists:true,metadata_exists:true,video_sha256:hash,bytes:bytes.byteLength,
   metadata:{title:meta.title,description:meta.description,video_sha256:meta.video_sha256,bytes:meta.bytes,publication_policy:meta.publication_policy}});
 }
+async function queueList(env,cursor){
+ if(!env.VIDEOS)return json({ok:false,error:'r2_binding_missing'},503);
+ const page=await env.VIDEOS.list({prefix:'queue/',limit:40,...(cursor?{cursor}:{})}),items=[];
+ for(const entry of page.objects.filter(x=>x.key.endsWith('.meta.json'))){
+  const name=entry.key.slice(6,-10);if(!NAME.test(name))continue;
+  const response=await queueItem(env,name),item=await response.json();
+  const prior=item.video_sha256?await read(env,receiptKey(item.video_sha256)):null;
+  items.push({...item,publication_state:prior?.state||null,video_id:prior?.video_id||null,
+   new_upload_eligible:item.queued===true&&!prior,read_only:true});
+ }
+ return json({ok:true,read_only:true,items,truncated:page.truncated===true,cursor:page.truncated?page.cursor:null});
+}
 async function processVideo(env,name){
  const metaKey=`queue/${name}.meta.json`,meta=await read(env,metaKey);
  if(!meta)return {ok:false,status:'metadata_missing',name};
@@ -144,11 +156,12 @@ async function processQueue(env,selected){
 export default{
  async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true});
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true});
   if(!authorized(request,env))return json({ok:false,error:'unauthorized'},401);
   try{
    if(url.pathname.startsWith('/queue/upload/')&&request.method==='POST')return enqueue(request,env,url.pathname.slice('/queue/upload/'.length));
    if(url.pathname==='/queue/item'&&request.method==='GET')return await queueItem(env,url.searchParams.get('name'));
+   if(url.pathname==='/queue/list'&&request.method==='GET')return await queueList(env,url.searchParams.get('cursor'));
    if(url.pathname==='/queue/run'&&request.method==='POST'){const input=await request.json().catch(()=>({}));return json(await processQueue(env,input.name));}
    if(url.pathname==='/queue/status'&&request.method==='GET'){
     const sha=url.searchParams.get('sha256');if(!/^[a-f0-9]{64}$/.test(sha||''))return json({ok:false,error:'invalid_hash'},400);
