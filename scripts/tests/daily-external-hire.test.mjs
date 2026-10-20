@@ -60,10 +60,10 @@ test('over-budget, wrong date and missing evidence never pay',async()=>{
 });
 test('independent review requires paid delivery, exact hash, Doubao, a complete response and matching claim',async()=>{
  const f=fixture();const r=await externalPurchase(f.m,f.book,f.options),o=r.order;
- const input={date,claim_id:'review-1',phase:'submit',artifact_sha256:o.deliverable_sha256,executed_by:'Doubao',model:'doubao-seed-2-1-pro-260915',finish_reason:'stop',tokens_used:100,output:JSON.stringify({accepted:true,artifact_sha256:o.deliverable_sha256,reasons:['Contract and negative control match.'],unverified:['Live API not executed.']})};
+ const input={date,claim_id:'review-1',phase:'submit',artifact_sha256:o.deliverable_sha256,executed_by:'Doubao',model:'doubao-seed-2-1-pro-260915',model_source:'provider_response',finish_reason:'stop',tokens_used:100,output:JSON.stringify({accepted:true,artifact_sha256:o.deliverable_sha256,reasons:['Contract and negative control match.'],unverified:['Live API not executed.'],live_http_verified:false})};
  assert.equal((await dailyHireReview(f.m,f.book,{date,claim_id:'review-1',phase:'claim'})).claimed,true);
  assert.equal((await dailyHireReview(f.m,f.book,{date,claim_id:'review-1',phase:'claim'})).claimed,false);
- for(const patch of [{claim_id:'other'},{artifact_sha256:'bad'},{executed_by:'DeepSeek'},{finish_reason:'length'},{tokens_used:0},{model:'gpt-unknown'},{output:'{}'}])assert.equal((await dailyHireReview(f.m,f.book,{...input,...patch})).ok,false);
+ for(const patch of [{claim_id:'other'},{artifact_sha256:'bad'},{executed_by:'DeepSeek'},{finish_reason:'length'},{tokens_used:0},{model:'gpt-unknown'},{model_source:'requested_model'},{model_source:undefined},{output:'{}'}])assert.equal((await dailyHireReview(f.m,f.book,{...input,...patch})).ok,false);
  const done=await dailyHireReview(f.m,f.book,input);assert.equal(done.delivery_accepted,true);assert.equal(f.book.procurement[dailyHireId(date)].status,'paid_delivery_accepted');
  await dailyHireReview(f.m,f.book,input);assert.equal(f.book.ledger.filter(e=>e.type==='external_AI_delivery_review').length,1);
 });
@@ -78,7 +78,7 @@ test('missing reviewer configuration or stale health prevents even the external 
  }
 });
 test('replaying a paid and reviewed order never calls the reviewer again',async()=>{
- const f=fixture();await externalPurchase(f.m,f.book,f.options);const order=f.book.procurement[dailyHireId(date)];order.status='paid_delivery_accepted';order.delivery_accepted=true;order.independent_review={status:'accepted_engineering_artifact',executed_by:'Doubao',model:'doubao-test',output:'review'};
+ const f=fixture();await externalPurchase(f.m,f.book,f.options);const order=f.book.procurement[dailyHireId(date)];order.status='paid_delivery_accepted';order.delivery_accepted=true;order.independent_review={status:'accepted_engineering_artifact',executed_by:'Doubao',model:'doubao-test',model_source:'provider_response',output:'review'};
  const record=dailyHireAssignment({mode:'external',date,sourceCommit:context.source_commit,context,runId:'test'});
  await executeDailyHire(record,{reviewerConfigured:true,pulseReady:true,relay:async()=>({order}),api:async path=>path.endsWith('daily-review')?{ok:true,claimed:false}:{ok:true,order},callReviewer:()=>{throw Error('duplicate review');}});
  assert.equal(record.review_generation_attempts_this_run,0);assert.equal(record.new_payments_this_run,0);assert.equal(record.status,'paid_delivery_accepted');assert.equal(record.follow_up_receipt.reviewer_provider,'Doubao');
@@ -89,7 +89,7 @@ test('paid delivery, one real-review adapter response and final readback form an
  const api=async(path,body)=>path.endsWith('daily-review')?dailyHireReview(f.m,f.book,body):externalPurchase(f.m,f.book,{...f.options,execute:false});
  const dependencies={reviewerConfigured:true,pulseReady:true,
   relay:async()=>({...await externalPurchase(f.m,f.book,f.options),paid_request_attempted_this_run:f.paid===1&&!f.book.procurement[dailyHireId(date)]?.independent_review}),api,
-  callReviewer:async()=>{calls++;return {ok:true,model:'doubao-seed-2-1-pro-260915',finish_reason:'stop',tokens_used:125,output:JSON.stringify({accepted:true,artifact_sha256:f.book.procurement[dailyHireId(date)].deliverable_sha256,reasons:['API method, typed body and PIN controls are statically consistent.'],unverified:['Live HTTP and deployment not executed.']})};}};
+  callReviewer:async()=>{calls++;return {ok:true,model:'doubao-seed-2-1-pro-260915',model_source:'provider_response',finish_reason:'stop',tokens_used:125,output:JSON.stringify({accepted:true,artifact_sha256:f.book.procurement[dailyHireId(date)].deliverable_sha256,reasons:['API method, typed body and PIN controls are statically consistent.'],unverified:['Live HTTP and deployment not executed.'],live_http_verified:false})};}};
  await executeDailyHire(record,dependencies);
  assert.equal(record.status,'paid_delivery_accepted');assert.equal(record.follow_up_receipt.delivery_accepted,true);assert.equal(record.follow_up_receipt.reviewer_provider,'Doubao');assert.equal(record.new_payments_this_run,1);assert.equal(calls,1);
  await executeDailyHire(record,dependencies);assert.equal(calls,1);assert.equal(f.paid,1);assert.equal(record.review_generation_attempts_this_run,0);assert.equal(record.new_payments_this_run,0);
@@ -122,9 +122,9 @@ test('a lost paid body or failed result import remains one attempted payment and
 test('model verdict extras cannot overwrite the claimed reviewer, state or object prototype',async()=>{
  const f=fixture();const {order}=await externalPurchase(f.m,f.book,f.options);
  await dailyHireReview(f.m,f.book,{date,claim_id:'fixed-claim',phase:'claim'});
- const verdict={accepted:true,artifact_sha256:order.deliverable_sha256,reasons:['Valid static regression artifact.'],unverified:['Live HTTP not run.'],status:'forged_status',claim_id:'forged-claim',reviewer_provider:'DeepSeek'};
+ const verdict={accepted:true,artifact_sha256:order.deliverable_sha256,reasons:['Valid static regression artifact.'],unverified:['Live HTTP not run.'],live_http_verified:false,status:'forged_status',claim_id:'forged-claim',reviewer_provider:'DeepSeek'};
  Object.defineProperty(verdict,'__proto__',{value:{polluted:true},enumerable:true});
- const r=await dailyHireReview(f.m,f.book,{date,claim_id:'fixed-claim',phase:'submit',artifact_sha256:order.deliverable_sha256,executed_by:'Doubao',model:'doubao-test',finish_reason:'stop',tokens_used:100,output:JSON.stringify(verdict)});
+ const r=await dailyHireReview(f.m,f.book,{date,claim_id:'fixed-claim',phase:'submit',artifact_sha256:order.deliverable_sha256,executed_by:'Doubao',model:'doubao-test',model_source:'provider_response',finish_reason:'stop',tokens_used:100,output:JSON.stringify(verdict)});
  assert.equal(r.review.reviewer_provider,'Doubao');assert.equal(r.review.claim_id,'fixed-claim');assert.equal(r.review.status,'accepted_engineering_artifact');assert.equal(r.review.polluted,undefined);assert.equal(Object.getPrototypeOf(r.review),Object.prototype);
 });
 test('a changed delivery is rejected locally before any paid independent review',async()=>{
@@ -140,11 +140,38 @@ test('an interrupted review submission resumes from the saved output with no sec
   if(path.endsWith('daily-review')){if(body.phase==='submit'&&failSubmit){failSubmit=false;throw Error('submission interrupted');}return dailyHireReview(f.m,f.book,body);}
   return externalPurchase(f.m,f.book,{...f.options,execute:false});
  };
- const dependencies={reviewerConfigured:true,pulseReady:true,relay:async()=>externalPurchase(f.m,f.book,f.options),api,callReviewer:async()=>{calls++;return {ok:true,model:'doubao-test',finish_reason:'stop',tokens_used:100,output:JSON.stringify({accepted:true,artifact_sha256:f.book.procurement[dailyHireId(date)].deliverable_sha256,reasons:['Specific contract evidence checked.'],unverified:['Live not run.']})};}};
+ const dependencies={reviewerConfigured:true,pulseReady:true,relay:async()=>externalPurchase(f.m,f.book,f.options),api,callReviewer:async()=>{calls++;return {ok:true,model:'doubao-test',model_source:'provider_response',finish_reason:'stop',tokens_used:100,output:JSON.stringify({accepted:true,artifact_sha256:f.book.procurement[dailyHireId(date)].deliverable_sha256,reasons:['Specific contract evidence checked.'],unverified:['Live not run.'],live_http_verified:false})};}};
  await executeDailyHire(record,dependencies);assert.equal(record.status,'blocked_review_submission_no_generation_retry');assert.ok(record.review_response.output);
  await executeDailyHire(record,dependencies);assert.equal(record.status,'paid_delivery_accepted');assert.equal(calls,1);assert.equal(record.review_generation_attempts_this_run,0);assert.equal(f.paid,1);
 });
 test('a locally observed order missing on the server is never purchased again',async()=>{
  const r=await externalAIRelay('fixture',{date,context,existingOnly:true,api:async()=>({ok:true}),fetcher:()=>{throw Error('must not request a new quote or payment');}});
  assert.equal(r.status,'blocked_original_order_missing_no_repurchase');assert.equal(r.paid,false);
+});
+test('requested-model fallback cannot become actual independent reviewer identity',async()=>{
+ const f=fixture(),record=dailyHireAssignment({mode:'external',date,sourceCommit:context.source_commit,context,runId:'test'});
+ const api=async(path,body)=>path.endsWith('daily-review')?dailyHireReview(f.m,f.book,body):externalPurchase(f.m,f.book,{...f.options,execute:false});
+ await executeDailyHire(record,{reviewerConfigured:true,pulseReady:true,relay:async()=>externalPurchase(f.m,f.book,f.options),api,callReviewer:async()=>({ok:true,model:'doubao-test',model_source:'requested_model',finish_reason:'stop',tokens_used:100,output:'complete but model identity unverified'})});
+ assert.equal(record.review_response.model_source,'requested_model');assert.equal(record.status,'blocked_review_generation');assert.equal(record.order.delivery_accepted,false);assert.equal(record.order.independent_review.failure_kind,'model_identity_unverified');
+});
+test('error, empty or truncated reviews stay blocked on readback and replay without another model call',async()=>{
+ for(const response of [{ok:false},{ok:true,output:''},{ok:true,output:'partial',finish_reason:'length'}]){
+  const f=fixture(),record=dailyHireAssignment({mode:'external',date,sourceCommit:context.source_commit,context,runId:'test'});let calls=0;
+  const api=async(path,body)=>path.endsWith('daily-review')?dailyHireReview(f.m,f.book,body):externalPurchase(f.m,f.book,{...f.options,execute:false});
+  const deps={reviewerConfigured:true,pulseReady:true,relay:async()=>externalPurchase(f.m,f.book,f.options),api,callReviewer:async()=>{calls++;return {model:'doubao-test',model_source:'provider_response',tokens_used:100,finish_reason:'stop',...response};}};
+  await executeDailyHire(record,deps);assert.equal(record.status,'blocked_review_generation');assert.equal(record.follow_up_receipt.reviewer_status,'blocked_review_generation');
+  await executeDailyHire(record,deps);assert.equal(record.status,'blocked_review_generation');assert.equal(calls,1);assert.equal(f.paid,1);
+ }
+});
+test('static review cannot omit limitations or assert a live HTTP execution',async()=>{
+ const f=fixture(),{order}=await externalPurchase(f.m,f.book,f.options);
+ await dailyHireReview(f.m,f.book,{date,claim_id:'limitations',phase:'claim'});
+ const verdict={accepted:true,artifact_sha256:order.deliverable_sha256,reasons:['Contract checked statically.'],unverified:['Live endpoint not executed.'],live_http_verified:false};
+ const input={date,claim_id:'limitations',phase:'submit',artifact_sha256:order.deliverable_sha256,executed_by:'Doubao',model:'doubao-test',model_source:'provider_response',finish_reason:'stop',tokens_used:100};
+ for(const patch of [{unverified:[]},{unverified:['  ']},{live_http_verified:true},{live_http_verified:undefined}]){
+  assert.equal((await dailyHireReview(f.m,f.book,{...input,output:JSON.stringify({...verdict,...patch})})).ok,false);
+  assert.equal(order.delivery_accepted,false);
+ }
+ const result=await dailyHireReview(f.m,f.book,{...input,output:JSON.stringify(verdict)});
+ assert.equal(result.delivery_accepted,true);assert.equal(result.review.live_http_verified,false);assert.match(result.review.unverified[0],/HTTP 200 未实测/);
 });
