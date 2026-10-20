@@ -3,6 +3,15 @@ export async function dailyHireReview(m,book,input){
  const order=book.procurement?.[dailyHireId(input.date)];
  if(!order?.paid||!order.semantic_valid||order.model_reported!=='deepseek/deepseek-chat')return {ok:false,error:'paid_semantic_delivery_and_reported_author_required'};
  if(!/^[A-Za-z0-9_.:-]{1,120}$/.test(input.claim_id||''))return {ok:false,error:'review_claim_required'};
+ if(input.phase==='owner_recover_once'){
+  const prior=order.independent_review;
+  if(order.owner_review_recovery)return {ok:true,claimed:false,review:prior,recovery:order.owner_review_recovery};
+  if(input.date!=='2026-10-20'||input.owner_task_id!=='OWNER-EXT-AI-20261020-01'||input.artifact_sha256!==order.deliverable_sha256||prior?.status!=='blocked_review_generation'||prior.output||input.claim_id===prior.claim_id)return {ok:false,error:'explicit_one_off_failed_review_recovery_required'};
+  order.review_history=[...(order.review_history||[]),structuredClone(prior)];
+  order.owner_review_recovery={task_id:input.owner_task_id,claim_id:input.claim_id,at:new Date().toISOString(),additional_review_attempts_max:1,new_external_purchases_allowed:0};
+  order.independent_review={status:'started_completion_unknown',claim_id:input.claim_id,artifact_sha256:order.deliverable_sha256,author_provider:'DeepSeek',reviewer_provider:'Doubao',at:order.owner_review_recovery.at};
+  await m.save(book);return {ok:true,claimed:true,review:order.independent_review};
+ }
  if(input.phase==='claim'){
   if(order.independent_review)return {ok:true,claimed:false,review:order.independent_review};
   order.independent_review={status:'started_completion_unknown',claim_id:input.claim_id,artifact_sha256:order.deliverable_sha256,author_provider:'DeepSeek',reviewer_provider:'Doubao',at:new Date().toISOString()};
