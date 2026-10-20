@@ -12,24 +12,57 @@
     "https://ltzzz-claude-seat.ltzyz2181.workers.dev/health"
   ],
   "endpoint_observation": {
-    "status": "not_observed_healthy",
-    "healthy_url": null,
+    "status": "healthy_endpoint_verified",
+    "healthy_url": "https://ltzzz-claude-seat.ltzyz2181.workers.dev/health",
     "observations": [
       {
         "url": "https://api-claude.ltzzz.com/health",
-        "healthy": false,
-        "http": null,
-        "error": "invalid_url",
+        "kind": "health",
+        "observed_at": "2026-10-20T11:12:03.833Z",
+        "generation_verified": false,
         "dns_verified": false,
-        "generation_verified": false
+        "dns_error": "ENOTFOUND",
+        "healthy": false,
+        "status": "dns_not_resolved_from_this_runner",
+        "attempts": [
+          {
+            "at": "2026-10-20T11:12:03.833Z",
+            "http": null,
+            "status": "dns_not_resolved_from_this_runner"
+          }
+        ]
       },
       {
         "url": "https://ltzzz-claude-seat.ltzyz2181.workers.dev/health",
-        "healthy": false,
-        "http": null,
-        "error": "not_probed",
-        "dns_verified": false,
-        "generation_verified": false
+        "kind": "health",
+        "observed_at": "2026-10-20T11:12:03.834Z",
+        "generation_verified": false,
+        "dns_addresses": [
+          "172.67.167.116",
+          "104.21.50.213",
+          "2606:4700:3033::ac43:a774",
+          "2606:4700:3031::6815:32d5"
+        ],
+        "dns_verified": true,
+        "http": 200,
+        "content_type": "application/json; charset=utf-8",
+        "public_health": {
+          "ok": true,
+          "service": "ltzzz-claude-seat",
+          "did": "did:ltzzz:claude",
+          "metadata_only": true,
+          "native_generation_verified": false,
+          "native_api_status": "blocked_insufficient_api_credits"
+        },
+        "healthy": true,
+        "status": "http_json_verified",
+        "attempts": [
+          {
+            "at": "2026-10-20T11:12:03.834Z",
+            "http": 200,
+            "status": "http_json_verified"
+          }
+        ]
       }
     ]
   },
