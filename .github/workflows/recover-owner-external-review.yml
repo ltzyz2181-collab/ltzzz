@@ -1,11 +1,24 @@
 name: Recover one failed owner delivery review (no purchase)
 on:
   workflow_dispatch:
-permissions: {contents: write}
+  pull_request:
+    paths: ['wep3-procurement-review.js','scripts/lib/daily-external-hire.mjs','scripts/call-doubao.mjs','scripts/recover-owner-external-review.mjs','scripts/tests/daily-external-hire.test.mjs','.github/workflows/recover-owner-external-review.yml']
+permissions: {contents: read}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --check scripts/recover-owner-external-review.mjs
+      - run: node --test scripts/tests/daily-external-hire.test.mjs scripts/tests/owner-external-hire.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/wep3-procurement.test.mjs scripts/tests/claude-review.test.mjs
   review:
-    if: github.actor == 'ltzyz2181-collab' && github.repository == 'ltzyz2181-collab/ltzzz'
+    if: github.event_name == 'workflow_dispatch' && github.actor == 'ltzyz2181-collab' && github.repository == 'ltzyz2181-collab/ltzzz'
+    needs: tests
+    permissions: {contents: write}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
