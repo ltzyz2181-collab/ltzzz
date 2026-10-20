@@ -1,0 +1,110 @@
+{
+  "tests": [
+    {
+      "id": "T01",
+      "method": "GET",
+      "path": "/health",
+      "auth": "public",
+      "body": null,
+      "expected_http": 200,
+      "expected_json": {
+        "ok": true
+      }
+    },
+    {
+      "id": "T02",
+      "method": "GET",
+      "path": "/market/treasury",
+      "auth": "public",
+      "body": null,
+      "expected_http": 200,
+      "expected_json": {
+        "ok": true,
+        "controlled": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      }
+    },
+    {
+      "id": "T03",
+      "method": "GET",
+      "path": "/market/aave/status",
+      "auth": "public",
+      "body": null,
+      "expected_http": 200,
+      "expected_json": {
+        "ok": true,
+        "chain_id": 8453
+      }
+    },
+    {
+      "id": "T04",
+      "method": "GET",
+      "path": "/market/runner/readiness",
+      "auth": "public",
+      "body": null,
+      "expected_http": 200,
+      "expected_json": {
+        "authenticated": false
+      }
+    },
+    {
+      "id": "T05",
+      "method": "GET",
+      "path": "/market/runner/readiness",
+      "auth": "valid",
+      "body": null,
+      "expected_http": 200,
+      "expected_json": {
+        "authenticated": true
+      }
+    },
+    {
+      "id": "T06",
+      "method": "POST",
+      "path": "/market/aave/preview",
+      "auth": "public",
+      "body": {
+        "intent_id": "CONTRACT_TEST_INTENT_OWNER_20261020",
+        "action": "supply",
+        "amount_usdc": "1"
+      },
+      "expected_http": 401,
+      "expected_json": {
+        "error": "pin_required"
+      }
+    },
+    {
+      "id": "T07",
+      "method": "POST",
+      "path": "/market/aave/preview",
+      "auth": "wrong",
+      "body": {
+        "intent_id": "CONTRACT_TEST_INTENT_OWNER_20261020",
+        "action": "supply",
+        "amount_usdc": "1"
+      },
+      "expected_http": 401,
+      "expected_json": {
+        "error": "pin_required"
+      }
+    },
+    {
+      "id": "T08",
+      "method": "POST",
+      "path": "/market/aave/preview",
+      "auth": "valid",
+      "body": {
+        "intent_id": "CONTRACT_TEST_INTENT_OWNER_20261020",
+        "action": "supply",
+        "amount_usdc": "1",
+        "to": "0x0000000000000000000000000000000000000000"
+      },
+      "expected_http": 422,
+      "expected_json": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      }
+    }
+  ],
+  "spec_provided_in_prompt": true,
+  "correction": "T02 uses registered verified treasury; original Doubao delivery with malformed 39-hex address remains unchanged"
+}
