@@ -1,0 +1,62 @@
+name: Owner single external AI hire and eight live checks
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['scripts/run-owner-external-hire.mjs','scripts/lib/owner-external-hire.mjs','scripts/lib/live-wep3-eight.mjs','scripts/tests/owner-external-hire.test.mjs','.github/workflows/owner-external-hire.yml']
+permissions: {contents: read}
+concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --check scripts/run-owner-external-hire.mjs
+      - run: node --test scripts/tests/owner-external-hire.test.mjs scripts/tests/daily-external-hire.test.mjs scripts/tests/internal-daily-hire.test.mjs scripts/tests/funded-relay.test.mjs
+  execute:
+    if: github.event_name == 'workflow_dispatch' && github.actor == 'ltzyz2181-collab' && github.repository == 'ltzyz2181-collab/ltzzz'
+    needs: tests
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare separate immutable owner task without changing daily internal order
+        run: node scripts/run-owner-external-hire.mjs prepare
+      - name: Commit task before payment
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/owner-external/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Owner one-off external hire claim before payment'
+          node tools/push-receipt-commit.mjs
+      - name: Eight live checks then at most one external purchase and independent Doubao review
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+        run: node scripts/run-owner-external-hire.mjs execute
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner-external-hire-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/owner-external/
+          retention-days: 30
+      - name: Commit actual payment delivery review and eight-check receipts even if blocked
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/owner-external/
+          if test -f ops/dispatch/CLAUDE-OWNER-EXT-AI-20261020-01-AUDIT.md; then git add ops/dispatch/CLAUDE-OWNER-EXT-AI-20261020-01-AUDIT.md; fi
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Owner external hire actual evidence and Claude audit handoff'
+          node tools/push-receipt-commit.mjs
