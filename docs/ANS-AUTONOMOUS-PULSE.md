@@ -49,3 +49,7 @@ DOC 是 owner 的 ANS 设计材料，上传的 `cdp_api_key.json` 实际是混�
 采用“感知→稳态判断→应激/恢复→反馈”的设计类比；IBM MAPE-K 为方法参考。ZenoWell/MeridianAI/APUS 等外部来源未在本轮独立核查，不当作已验证事实写入六篇。状态稳态不代表 AI 产生愉悦、痛苦或生理意识。
 
 部署回执：`knowledge/results/pulse/deploy-运行号.json`；外部观察：`watch-运行号.json` 和 `latest.json`。观察期从实际部署开始，积累14天数据再讨论误报率；不把未运行天数或本地模拟写成线上成功。未配置主动 Telegram，本轮提醒渠道是 `/status`、仓库回执和 Actions。
+
+2026-10-20 部署复核：WEP3 [39351385585](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39351385585) 已验证 `external-purchase-v5` / `daily-external-hire-v1`，资金账本哈希保持一致。每日数据流程 [39351483006](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39351483006) 自动完成同日内部订单关联，1单工程草稿验收、USDC付款0；复用现有DeepSeek/豆包调用，不倒填接单时间。
+
+Pulse 首轮运行39351385506已部署并通过线上观察，但最终保存回执时与ANS队列争写`latest.json`产生rebase冲突，工作流整体失败；不得把该次工作流写成全部成功。部署与独立观察改为先上传Actions工件，再在隔离checkout保存按运行/尝试编号命名的完整证据。共享`latest.json`只采用`ran_at`较新的快照，推送冲突时重新读取远端重建提交，不重跑模型或资金操作，不改调用者未提交文件。不可变证据内容冲突会明确失败，不自动覆盖。
