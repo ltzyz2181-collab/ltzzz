@@ -39,3 +39,20 @@
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-19.json|jq 校验、SHA256、ffprobe/ffmpeg、语音转写、BaseScan 当前余额与三笔交易时间线|Instagram 未发布；缺 permalink、media_id、发布后截图。`
 - `ro8cDRW4zoF56gRKpYx6bX|ops/dispatch/接单回执-MANUS-INSTAGRAM-DAILY.md|逐项核对 Instagram MCP 工具能力、GitHub 视频清单、SHA256、媒体与链上证据|Instagram 直发工具仍需确认卡；遵循免点击偏好未创建卡。`
+
+
+## 2026-10-20｜未发布：无合格唯一素材
+
+执行时间：计划执行记录 `2026-10-20T17:05:23.249Z`（Tijuana 10:05）。账号复查时间：`2026-10-20T10:18:44-07:00`。Instagram 帖子数仍为 5，最新 Reel 是 <https://www.instagram.com/reel/DegfCDxiIEr/>（10/15），今日无 Reel；滚动 24 小时发布额度为 `0/100`。
+
+检查 `videos/instagram/latest.json` 后发现它仍指向 10/19，而非 10/20 成片。匹配视频 `videos/instagram/2026-10-19/video.mp4`、目录 `manifest.json` 与英文 `caption.txt` 已下载核验：视频 SHA-256 `80a3608fcc70225f7c63b23c5ac9f0ec8547e1f3f05500c76569245900fb5153` 与 latest 和 manifest 一致；caption 与 latest-caption 字节一致。视频为 30 秒、720×1280（9:16）、H.264/AAC、24fps，AAC 平均音量 −22.8 dB；完整解码通过。抽查 3、10、18、26 秒画面，字幕可读、未被视频边缘裁切；固定页脚接近 Reels 底部覆盖区，安全区未作平台叠层级别的完全认证。
+
+该素材已按 SHA 在 YouTube 公开发布，不能跨平台重用：`results/publishing/youtube-daily-2026-10-19.json` 记录视频 ID `YzwjWpdlirc`，URL <https://www.youtube.com/watch?v=YzwjWpdlirc>，状态 published/verified public。扫描远端 `results/publishing/` 下 68 份 JSON 回执及全部 10 个 MP4，未发现既满足 20–45 秒、格式/音轨/文案要求，又未公开或排队、且不违反 owner 不复用指示的回退候选。
+
+候选排除摘要：10/18（SHA `ba7a5063…`）及 10/17（`933b943c…`）已分别公开到 YouTube（`vLF1cBUaQLQ`、`xO8jmKy_120`），且属于 owner 刚明确拒绝的日期/余额文字卡片类型；10/16（`5d8af754…`）虽回执显示未发布、未上传，却是 owner 先前排除的 10/15 同故事板/画面/屏幕文字日期变体；10/15 仓库候选（`1b11309d…`）已被 owner 设置为不再使用。10/14 品牌片 60 秒超时长；10/12 金库片与 10/05 审计片均约 15.07 秒不足 20 秒；另一个 10/15 日更片（`ff7a539e…`）已公开到 YouTube `B_F6YC0GeBA` 且不足 20 秒。详细 SHA、来源 commit、媒体检查及回执路径见 JSON。
+
+结果：`blocked_no_eligible_unique_video`。未上传、未调用发布工具、未重试、未换账号；无 permalink、media_id、发布时间或发布后截图。计划保持原每日 10:00 不变；待仓库出现满足规则的全新唯一 MP4 后，后续计划运行再执行。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-20.json|jq 校验、GitHub main MP4 SHA256、ffprobe/ffmpeg 全片解码、音量检测、抽帧、caption/manifest 对照、68 份发布JSON和10个MP4跨平台去重、Instagram 账号/限额复查|无合格唯一素材，未发布；没有 permalink、media_id、发布时间或截图。`
