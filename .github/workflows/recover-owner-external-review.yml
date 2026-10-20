@@ -1,0 +1,41 @@
+name: Recover one failed owner delivery review (no purchase)
+on:
+  workflow_dispatch:
+permissions: {contents: write}
+concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
+jobs:
+  review:
+    if: github.actor == 'ltzyz2181-collab' && github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/recover-owner-external-review.mjs prepare
+      - name: Commit bounded recovery before calling model
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/owner-external/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'One review-only recovery claim for existing paid delivery'
+          node tools/push-receipt-commit.mjs
+      - name: One native Doubao recovery, no external purchase call
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/recover-owner-external-review.mjs execute
+      - name: Preserve recovery result and original failure
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/owner-external/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Actual independent review recovery without another purchase'
+          node tools/push-receipt-commit.mjs
