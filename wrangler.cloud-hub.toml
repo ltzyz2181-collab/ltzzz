@@ -7,6 +7,5 @@ compatibility_date = "2026-10-20"
 binding = "KV"
 id = "63c6bb670cfc42b18b4d232605d5bcad"
 
-# 兜底第二排空：调度器 0 14 先排空，cloud-hub 14:30 再兜底触发一次 /queue/run。
-[triggers]
-crons = ["30 14 * * *"]
+# Free 账户 cron 触发器已达 5 个上限，本 Worker 不挂 cron；
+# 定时排空由 video-scheduler 自身 cron 负责，本网关提供 /video/submit 与 /video/status。
