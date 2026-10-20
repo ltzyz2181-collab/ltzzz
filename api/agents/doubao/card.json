@@ -12,31 +12,55 @@
     "https://api-doubao.ltzzz.com/health"
   ],
   "endpoint_observation": {
-    "status": "public_health_json_observed",
+    "status": "healthy_endpoint_verified",
     "healthy_url": "https://ltzzz-doubao-proxy.ltzyz2181.workers.dev/health",
     "observations": [
       {
         "url": "https://ltzzz-doubao-proxy.ltzyz2181.workers.dev/health",
-        "healthy": true,
-        "http": null,
-        "observed_at": "2026-10-20T10:49:28.241Z",
+        "kind": "health",
+        "observed_at": "2026-10-20T11:12:03.004Z",
+        "generation_verified": false,
+        "dns_addresses": [
+          "104.21.50.213",
+          "172.67.167.116",
+          "2606:4700:3033::ac43:a774",
+          "2606:4700:3031::6815:32d5"
+        ],
+        "dns_verified": true,
+        "http": 200,
+        "content_type": "application/json; charset=utf-8",
         "public_health": {
           "ok": true,
           "service": "ltzzz-doubao-proxy",
           "has_key": true,
-          "model_configured": true,
-          "base_url_configured": false,
-          "time": "2026-10-20T10:49:28.241Z"
+          "model_configured": true
         },
-        "generation_verified": false
+        "healthy": true,
+        "status": "http_json_verified",
+        "attempts": [
+          {
+            "at": "2026-10-20T11:12:03.004Z",
+            "http": 200,
+            "status": "http_json_verified"
+          }
+        ]
       },
       {
         "url": "https://api-doubao.ltzzz.com/health",
-        "healthy": false,
-        "http": null,
-        "error": "invalid_url",
+        "kind": "health",
+        "observed_at": "2026-10-20T11:12:03.004Z",
+        "generation_verified": false,
         "dns_verified": false,
-        "generation_verified": false
+        "dns_error": "ENOTFOUND",
+        "healthy": false,
+        "status": "dns_not_resolved_from_this_runner",
+        "attempts": [
+          {
+            "at": "2026-10-20T11:12:03.004Z",
+            "http": null,
+            "status": "dns_not_resolved_from_this_runner"
+          }
+        ]
       }
     ]
   },
