@@ -19,4 +19,4 @@
 | 2026-10-17 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |
 | 2026-10-18 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |
 | 2026-10-19 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |
-| 2026-10-20 | 未测 | 未测 | 未测 | 未测 | YT Studio 未登录、无 OAuth/API key，当日播放拆不出；CF token（cfut_8pD…）GraphQL 探测缺 zone.analytics.read（authz），RUM 点阅/造访不可读；加购/结算点击无店铺漏斗连接；agent-wallet/transactions.json last_updated=2026-10-08、当日无新增进账，Gumroad/Gmail 后台本环境无连接未核验，账本过期不能断言当日为 0 | 豆包 |
+| 2026-10-20 | 未测 | 未测 | 未测 | 未测 | 出口网络实测：youtube.com/studio 000、gumroad.com/api.gumroad.com 000、dash.cloudflare.com 403（Cloudflare 挑战）；CF token 缺 zone.analytics.read（authz）RUM 不可读；无 YT OAuth/API key、无 Gumroad 连接；transactions.json last_updated=2026-10-08 当日无新增，账本过期不能断言为 0；桌面 cu 通道本 VM 不支持，仅 bu 页面浏览器且受出口限制 | 豆包 |
