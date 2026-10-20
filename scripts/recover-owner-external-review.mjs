@@ -1,11 +1,11 @@
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';
-import {OWNER_HIRE,assertOwnerPayment} from './lib/owner-external-hire.mjs';
+import {OWNER_HIRE,assertOwnerPayment,assertOwnerOrderContext} from './lib/owner-external-hire.mjs';
 import {digest} from './lib/daily-external-hire.mjs';
 import {runnerToken,wep3Request} from './lib/funded-invest-runtime.mjs';
 import {pulseSnapshot,pulseGate} from './lib/pulse-client.mjs';
 const {id,date}=OWNER_HIRE,dir='knowledge/results/owner-external',original=dir+'/'+id+'.json',file=dir+'/'+id+'-review-recovery.json',phase=process.argv[2];
 const save=r=>fs.writeFileSync(file,JSON.stringify(r,null,2)+'\n');
-const origin=JSON.parse(fs.readFileSync(original));assertOwnerPayment(origin.order);
+const origin=JSON.parse(fs.readFileSync(original));assertOwnerPayment(origin.order);assertOwnerOrderContext(origin.order,origin);
 if(!origin.order?.paid||digest(origin.order.deliverable)!==origin.order.deliverable_sha256)throw Error('existing_paid_hash_verified_delivery_required');
 if(phase==='prepare'){
  if(!fs.existsSync(file))save({task_id:id,date,run_id:process.env.GITHUB_RUN_ID,source_commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),status:'dispatched_one_review_recovery',claim_id:id+'-review-recovery',artifact_sha256:origin.order.deliverable_sha256,original_failed_review:origin.order.independent_review,author:'external_provider_reported_DeepSeek',reviewer:'native_Doubao',new_external_purchases:0,new_transactions:0,model_calls:0,review_attempts_max:1});
@@ -17,7 +17,7 @@ if(phase==='prepare'){
   const committed=JSON.parse(execFileSync('git',['show','HEAD:'+file],{encoding:'utf8'}));if(committed.claim_id!==r.claim_id||committed.artifact_sha256!==r.artifact_sha256)throw Error('committed_recovery_dispatch_required');
   const token=runnerToken();if(!token)throw Error('runner_identity_missing');
   const api=(path,body)=>wep3Request(path,{token,...(body?{body}:{})});
-  const {order}=await api('/market/procurement/daily?date='+date);assertOwnerPayment(order);
+  const {order}=await api('/market/procurement/daily?date='+date);assertOwnerPayment(order);assertOwnerOrderContext(order,origin);
   if(order.deliverable_sha256!==r.artifact_sha256||digest(order.deliverable)!==r.artifact_sha256)throw Error('delivery_changed_no_review');
   const snapshot=await pulseSnapshot(),gate=pulseGate(snapshot,'doubao');if(!snapshot.available||!gate.allowed||gate.state!=='fresh')throw Error('review_health_not_fresh');
   const keys=[['DOUBAO_API_KEY',process.env.DOUBAO_API_KEY],['ARK_API_KEY',process.env.ARK_API_KEY]],seen=new Set();let key;
