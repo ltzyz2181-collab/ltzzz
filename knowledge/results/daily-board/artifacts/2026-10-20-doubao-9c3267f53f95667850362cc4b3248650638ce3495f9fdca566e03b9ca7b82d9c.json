@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "task_id": "DAILY-2026-10-20-doubao",
+  "logical_seat": "doubao",
+  "actual_provider": "doubao",
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "reported_model": "doubao-seed-2-1-pro-260915",
+  "model_source": "provider_response",
+  "source_commit": "fccb695a8121235ebc89777ccf7f2fe9ad9163bd",
+  "run_key": "39350595303:1",
+  "output": "【读后感】工件只证明 DeepSeek 提交了一份“未完成且自拒”的说明，不能证明 ANS/Pulse 修复或测试存在。\n\n【观】\n- `knowledge/results/daily-board/artifacts/2026-10-20-deepseek-54b39613….json`：`accepted:false、paid:false、tx_hash:null`，并自报“未实跑测试、PR 未推送、线上认领未执行、无密钥”。\n- Pulse 快照 `2026-10-20T00:18:55.301Z`：6 代理均 HTTP 200，仅证明存活。\n\n【行深】在干净 worktree 执行：`sha256sum <工件路径> && node --test tests/ans-pulse/*.test.mjs`，核对哈希与测试实物。\n\n【不确定】本会话无仓库/Shell，未能独立重算哈希或实跑命令；claim 门禁、回读、幂等均仅有文字计划。\n\n【角色产出】应交付文件 `knowledge/results/ans-cycle/2026-10-20-doubao-review.json` 内容：\n```json\n{\n  \"schema_version\": 1,\n  \"date\": \"2026-10-20\",\n  \"reviewer_task_id\": \"DAILY-2026-10-20-doubao\",\n  \"reviewee_task_id\": \"DAILY-2026-10-20-deepseek\",\n  \"run_key\": \"39350595303:1\",\n  \"source_commit\": \"fccb695a8121235ebc89777ccf7f2fe9ad9163bd\",\n  \"artifact_sha256\": \"54b3961392f3e25c5af636e3b5ba0d0272c9a24f323dacae15c395e5c8d8db03\",\n  \"verdict\": \"rejected_pending_code_and_tests\",\n  \"merge_or_deploy_announced\": false,\n  \"passed\": [\n    \"工件自报 accepted=false、paid=false、tx_hash=null，仍处于 unpaid、未验收状态\",\n    \"工件明确说明无密钥、线上认领未执行、PR 未推送\",\n    \"提供文本中未发现 claim_verified=true 或等价伪造认领字段\",\n    \"Pulse 快照显示 6 代理 HTTP 200、paused=false，但仅限健康观察\"\n  ],\n  \"blockers\": [\n    \"无 PR、diff 或补丁路径，无法审核真实 claim 确认后才执行的代码\",\n    \"node --test tests/ans-pulse/*.test.mjs 被工件自报为 0 通过/未运行\",\n    \"submit_task 后 task_id/status/hash 回读一致性仅有文字计划，无代码或测试证据\",\n    \"空输出、截断、失败、重放、哈希不符时不提交均无实测\",\n    \"同日重跑不重复生成/提交的幂等性无实测\",\n    \"source_commit 仅写 origin/main@HEAD（未验证），不能确认对应 fccb695a\"\n  ],\n  \"reproduce_commands\": [\n    \"git fetch origin && git cat-file -e fccb695a8121235ebc89777ccf7f2fe9ad9163bd^{commit}\",\n    \"sha256sum knowledge/results/daily-board/artifacts/2026-10-20-deepseek-54b3961392f3e25c5af636e3b5ba0d0272c9a24f323dacae15c395e5c8d8db03.json\",\n    \"ls -l tests/ans-pulse/*.test.mjs\",\n    \"node --test tests/ans-pulse/*.test.mjs\",\n    \"grep -RIn \\\"claim_verified\\\\|submit_task\\\\|task_id\\\\|sha256\\\" run-daily-tasks.mjs daily-assignment scripts tests 2>/dev/null\"\n  ],\n  \"error_logs\": [\n    {\n      \"source\": \"artifact.output\",\n      \"text\": \"node --test tests/ans-pulse/*.test.mjs（0 通过/未运行）\"\n    },\n    {\n      \"source\": \"artifact.output\",\n      \"text\": \"失败=未实跑测试、PR 未推送、线上认领未执行。无密钥。\"\n    }\n  ],\n  \"unverified\": [\n    \"未能在本会话独立重算工件 SHA-256\",\n    \"未能确认 tests/ans-pulse/ 及 mock 测试是否存在\",\n    \"未能实跑认领、提交、回读、重放、幂等测试\",\n    \"未调用真实模型或钱包，亦未执行任何链上操作\"\n  ]\n}\n```\n\n【日课独立审核JSON】\n```json\n{\"accepted\":false,\"artifact_sha256\":\"54b3961392f3e25c5af636e3b5ba0d0272c9a24f323dacae15c395e5c8d8db03\",\"reasons\":[\"无PR或diff可供审核，测试自报0通过/未运行\",\"认领门禁、submit_task回读、异常不提交、哈希不符及同日幂等均无代码或测试实证\",\"source_commit未验证\"],\"unverified\":[\"独立重算哈希\",\"仓库内测试实物\",\"真实claim/submit链路\",\"无模型和钱包调用仅能依据工件自报\"]}\n```\n【日课独立审核结束】\n\n【交付结束】",
+  "finish_reason": "stop",
+  "tokens_used": 21698,
+  "request_id": null,
+  "integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "status": "complete",
+  "provider_status": "success",
+  "accepted": false,
+  "paid": false,
+  "tx_hash": null
+}
