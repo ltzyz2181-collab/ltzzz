@@ -3,18 +3,21 @@ import {aaveStatus,withAaveReadProvider,AAVE} from './wep3-aave.js';
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {DAILY_HIRE_REVISION,hireDate,dailyHireId,dailyHireContext,dailyHireBody,inspectProcurementDelivery} from './wep3-procurement-contract.js';
 import {PROVIDER,inspectQuote} from './scripts/lib/external-procurement-preflight.mjs';
+import {procurementPresentation} from './wep3-procurement-status.js';
+import {NOVELTY_START_DATE,NOVELTY_REVISION,noveltyClaims} from './wep3-procurement-novelty.js';
 export const PROCUREMENT_ORDER='EXT-AI-20261017-001';
 export const PROCUREMENT_REVISION='external-purchase-v5';
 export {DAILY_HIRE_REVISION};
 const ABI=new Interface(['event Transfer(address indexed from,address indexed to,uint256 value)','event AuthorizationUsed(address indexed authorizer,bytes32 indexed nonce)']);
 const TYPES={TransferWithAuthorization:[{name:'from',type:'address'},{name:'to',type:'address'},{name:'value',type:'uint256'},{name:'validAfter',type:'uint256'},{name:'validBefore',type:'uint256'},{name:'nonce',type:'bytes32'}]};
 const digest=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');
-export const publicPurchase=o=>{if(!o)return null;const {payment_payload,...visible}=o;return visible;};
+export const publicPurchase=o=>{if(!o)return null;const {payment_payload,...visible}=o;return procurementPresentation(visible);};
 const paidStatus=o=>!o.deliverable?'paid_delivery_unavailable':(o.semantic_contract?o.semantic_valid:o.delivery_accepted)?'paid_delivery_schema_valid_pending_review':'paid_delivery_rejected';
 function receiveDelivery(o,text,http,choice,result){
  o.deliverable=text.slice(0,16000);o.model_reported=result.model||null;o.usage=result.usage||null;o.finish_reason=choice.finish_reason;
- const checked=inspectProcurementDelivery(text,{strict:!!o.semantic_contract}),complete=http>=200&&http<300&&choice.finish_reason==='stop'&&(!o.semantic_contract||text.length<=16000);
+ const checked=inspectProcurementDelivery(text,{strict:!!o.semantic_contract,novelty:o.novelty_required===true}),complete=http>=200&&http<300&&choice.finish_reason==='stop'&&(!o.semantic_contract||text.length<=16000);
  o.artifact=checked.artifact;
+ if(o.novelty_required)o.novelty=noveltyClaims(checked.artifact);
  if(o.semantic_contract){o.structural_valid=complete&&checked.structural_valid;o.semantic_valid=complete&&checked.semantic_valid;o.validation_warnings=checked.warnings;o.validation_errors=checked.errors;o.delivery_accepted=false;}
  else o.delivery_accepted=complete&&checked.structural_valid;
 }
@@ -64,6 +67,7 @@ export async function externalPurchase(m,book,{execute=false,fetcher=fetch,statu
  const value=BigInt(accepted.amount);if(BigInt(status.usdc_raw)-value-pendingInvestment<cashFloorRaw(book))return {ok:false,error:'cash_liabilities_reserve'};
  const timestamp=Math.floor(now()/1000),nonce='0x'+Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,'0')).join('');
  o={id:orderId,...(date?{date,semantic_contract:DAILY_HIRE_REVISION,context,structural_valid:false,semantic_valid:false}:{}),status:'reserved',payer:wallet.address,pay_to:accepted.payTo,amount_raw:accepted.amount,nonce,valid_before:timestamp+Math.min(120,accepted.maxTimeoutSeconds),before_block:status.block_number,paid:false,tx_hash:null,delivery_accepted:false,provider:'agent402.tools',model_requested:'deepseek/deepseek-chat',model_identity_verification:'provider_report_only',spec_provided_in_prompt:true,original_design_claimed:false,request_sha256:await digest(body),at:new Date(now()).toISOString()};
+ if(date&&date>=NOVELTY_START_DATE)Object.assign(o,{prompt_contract:NOVELTY_REVISION,novelty_required:true,supplied_known_defects:1,novelty:{status:'pending_delivery',independently_verified_new_issues:0}});
  book.procurement[o.id]=o;book.ledger||=[];book.ledger.push({type:'external_AI_purchase_reserved',order_id:o.id,amount_raw:o.amount_raw,currency:'Base_USDC',paid:false,tx_hash:null,at:o.at});await m.save(book);
  const authorization={from:wallet.address,to:accepted.payTo,value:accepted.amount,validAfter:String(timestamp-10),validBefore:String(o.valid_before),nonce};
  const signature=await wallet.signTypedData({name:'USD Coin',version:'2',chainId:8453,verifyingContract:AAVE.usdc},TYPES,authorization);

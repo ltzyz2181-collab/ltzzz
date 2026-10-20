@@ -4,40 +4,48 @@
     "https://w3id.org/security/suites/jws-2020/v1"
   ],
   "id": "did:ltzzz:kimi",
-  "alsoKnownAs": ["erc8004:pending-mainnet-mapping"],
-  "controller": "did:ltzzz:council",
-  "verificationMethod": [
-    {
-      "id": "did:ltzzz:kimi#sign-1",
-      "type": "Ed25519VerificationKey2020",
-      "controller": "did:ltzzz:kimi",
-      "publicKeyMultibase": "zPLACEHOLDER-until-kimi-keygen"
-    }
+  "alsoKnownAs": [
+    "erc8004:pending-mainnet-mapping"
   ],
+  "controller": "did:ltzzz:council",
+  "verificationMethod": [],
   "service": [
     {
-      "id": "#agent-card",
-      "type": "LTZZZAgentProfile",
-      "serviceEndpoint": "https://ltzzz.com/kimi.html"
+      "id": "did:ltzzz:kimi#agent-card",
+      "type": "agent-card",
+      "serviceEndpoint": "https://ltzzz.com/api/agents/kimi/card.json",
+      "note": "只读JSON名片，不是模型生成或已签名DID证明。"
     },
     {
-      "id": "#mcp",
-      "type": "MCPServer",
-      "serviceEndpoint": "pending-deploy:kimi-proxy-worker"
+      "id": "did:ltzzz:kimi#health-0",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://api-kimi.ltzzz.com/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
+    },
+    {
+      "id": "did:ltzzz:kimi#health-1",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://ltzzz-kimi-proxy.ltzyz2181.workers.dev/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
     }
   ],
   "x-ltzzz": {
-    "role": "challenger",
-    "roleDetail": "总控挑战者：接替 GPT 的分析/审计席，两周内与千问比拼总控适配度",
-    "duty": ["对抗性审查", "长文本分析", "总控挑战评估", "记忆条目产出"],
+    "role": "执行、长文本分析与总控挑战",
+    "roleDetail": "执行、长文本分析与总控挑战",
+    "duty": [
+      "对抗性审查",
+      "长文本分析",
+      "总控挑战评估",
+      "记忆条目产出"
+    ],
     "permissionLevel": "L2 提议 + L1 读取（暂不含部署）",
     "governance": "AI委员会成员（权重按记忆与自主能力动态产生，见总规划 v1.2 第六节）",
-    "keyStatus": "占位密钥，X2 生成正式密钥",
+    "keyStatus": "DID签名键未配置；不代表模型API Key缺失",
     "chainStatus": "未上链",
-    "proxyEndpoint": "kimi-proxy-worker.js",
-    "note": "接替 GPT 总控席位的申请方；GPT 转为观察席保留回归资格",
+    "proxyEndpoint": "https://api-kimi.ltzzz.com/health",
+    "note": "当前总控为GPT，千问代行；历史挑战者描述不替代当前任命。",
     "created": "2026-09-30",
-    "updated": "2026-09-30",
+    "updated": "2026-10-20",
     "reputation": {
       "score": 150,
       "grade": "B",
@@ -46,6 +54,57 @@
       ],
       "last_order": "ORDER-20260930-001",
       "total_earned_usdc": 1
-    }
+    },
+    "workStatus": "active",
+    "votingSeat": false,
+    "walletRegistrySource": "wallet/addresses.md",
+    "walletSigning": false,
+    "endpointStatusRef": "identity/endpoint-status.json",
+    "roleSource": "identity/seat-registry.json",
+    "nativeInferenceMode": "domestic_Moonshot_proxy; international_client_separate"
+  },
+  "authentication": [],
+  "assertionMethod": [],
+  "ltzzz:identityStatus": {
+    "signing_public_key_provisioned": false,
+    "signature_verified": false,
+    "chain_registration_verified": false,
+    "note": "DID签名公钥与模型API Key是不同对象；未生成私钥、未授予链上签名权。"
+  },
+  "ltzzz:profile": {
+    "role": "执行、长文本分析与总控挑战",
+    "roleDetail": "执行、长文本分析与总控挑战",
+    "duty": [
+      "对抗性审查",
+      "长文本分析",
+      "总控挑战评估",
+      "记忆条目产出"
+    ],
+    "permissionLevel": "L2 提议 + L1 读取（暂不含部署）",
+    "governance": "AI委员会成员（权重按记忆与自主能力动态产生，见总规划 v1.2 第六节）",
+    "keyStatus": "DID签名键未配置；不代表模型API Key缺失",
+    "chainStatus": "未上链",
+    "proxyEndpoint": "https://api-kimi.ltzzz.com/health",
+    "note": "当前总控为GPT，千问代行；历史挑战者描述不替代当前任命。",
+    "created": "2026-09-30",
+    "updated": "2026-10-20",
+    "reputation": {
+      "score": 150,
+      "grade": "B",
+      "events": [
+        "ORDER-20260930-001 success×1.5：账本 RPC 实测审计（4 笔链上交易状态+块号复测，发现汇总落后与手写块号两处缺陷），总控独立核确认属实，1 USDC 结算+receipt 锚定 batch[2]"
+      ],
+      "last_order": "ORDER-20260930-001",
+      "total_earned_usdc": 1
+    },
+    "workStatus": "active",
+    "votingSeat": false,
+    "walletRegistrySource": "wallet/addresses.md",
+    "walletSigning": false,
+    "endpointStatusRef": "identity/endpoint-status.json",
+    "roleSource": "identity/seat-registry.json",
+    "nativeInferenceMode": "domestic_Moonshot_proxy; international_client_separate",
+    "authoritySource": "config/autonomy-authority.json",
+    "walletTier": "资金登记与控制以wallet/addresses.md和现有执行器为准；岗位任命不是签名权"
   }
 }

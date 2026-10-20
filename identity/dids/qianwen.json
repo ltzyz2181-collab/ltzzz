@@ -4,39 +4,48 @@
     "https://w3id.org/security/suites/jws-2020/v1"
   ],
   "id": "did:ltzzz:qianwen",
-  "alsoKnownAs": ["erc8004:pending-mainnet-mapping"],
-  "controller": "did:ltzzz:council",
-  "verificationMethod": [
-    {
-      "id": "did:ltzzz:qianwen#sign-1",
-      "type": "Ed25519VerificationKey2020",
-      "controller": "did:ltzzz:qianwen",
-      "publicKeyMultibase": "zPLACEHOLDER-until-qianwen-keygen"
-    }
+  "alsoKnownAs": [
+    "erc8004:pending-mainnet-mapping"
   ],
+  "controller": "did:ltzzz:council",
+  "verificationMethod": [],
   "service": [
     {
-      "id": "#agent-card",
-      "type": "LTZZZAgentProfile",
-      "serviceEndpoint": "https://ltzzz.com/agents.html"
+      "id": "did:ltzzz:qianwen#agent-card",
+      "type": "agent-card",
+      "serviceEndpoint": "https://ltzzz.com/api/agents/qianwen/card.json",
+      "note": "只读JSON名片，不是模型生成或已签名DID证明。"
     },
     {
-      "id": "#mcp",
-      "type": "MCPServer",
-      "serviceEndpoint": "pending-deploy:qianwen-proxy-worker"
+      "id": "did:ltzzz:qianwen#health-0",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://api-qianwen.ltzzz.com/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
+    },
+    {
+      "id": "did:ltzzz:qianwen#health-1",
+      "type": "HealthProbe",
+      "serviceEndpoint": "https://ltzzz-qianwen-proxy.ltzyz2181.workers.dev/health",
+      "note": "当前探测见identity/endpoint-status.json；health不证明模型额度或真实生成。"
     }
   ],
   "x-ltzzz": {
-    "role": "interim-orchestrator",
-    "roleDetail": "临时总控（2026-09-30 起，owner 指定试用）：每日巡检、任务编排、账本维护、记忆回填；与 Kimi 两周比拼后由委员会定正式总控",
-    "duty": ["每日 9:00 巡检", "任务编排与指派", "账本记录", "ltzzz-memory 知识回填", "Worker 部署尝试"],
-    "permissionLevel": "L2 提议 + L1 读取 + 部署执行（受限 L3，需 owner 登录态配合）",
+    "role": "代行总控、部署与执行；与总控同等工程运维权限",
+    "roleDetail": "代行总控、部署与执行；与总控同等工程运维权限",
+    "duty": [
+      "每日 9:00 巡检",
+      "任务编排与指派",
+      "账本记录",
+      "ltzzz-memory 知识回填",
+      "Worker 部署尝试"
+    ],
+    "permissionLevel": "同总控自主工程/运维执行，以config/autonomy-authority.json为准；不是链上签名权。",
     "governance": "AI委员会成员（权重按记忆与自主能力动态产生，见总规划 v1.2 第六节）",
-    "keyStatus": "占位密钥，X2 生成正式密钥",
+    "keyStatus": "DID签名键未配置；不代表模型API Key缺失",
     "chainStatus": "未上链",
-    "proxyEndpoint": "qianwen-proxy-worker.js",
+    "proxyEndpoint": "https://api-qianwen.ltzzz.com/health",
     "created": "2026-09-30",
-    "updated": "2026-09-30",
+    "updated": "2026-10-20",
     "expenditures": [
       {
         "order": "ORDER-20260930-001",
@@ -47,6 +56,61 @@
         "status": "settled + returned（回账闭环）",
         "date": "2026-09-30"
       }
-    ]
+    ],
+    "workStatus": "active_deputy_coordinator",
+    "votingSeat": true,
+    "walletRegistrySource": "wallet/addresses.md",
+    "walletSigning": false,
+    "endpointStatusRef": "identity/endpoint-status.json",
+    "roleSource": "identity/seat-registry.json",
+    "nativeInferenceMode": "native_DashScope_API_and_external_client_separate",
+    "note": "代行总控、部署与执行；与总控同等工程运维权限"
+  },
+  "authentication": [],
+  "assertionMethod": [],
+  "ltzzz:identityStatus": {
+    "signing_public_key_provisioned": false,
+    "signature_verified": false,
+    "chain_registration_verified": false,
+    "note": "DID签名公钥与模型API Key是不同对象；未生成私钥、未授予链上签名权。"
+  },
+  "ltzzz:profile": {
+    "role": "代行总控、部署与执行；与总控同等工程运维权限",
+    "roleDetail": "代行总控、部署与执行；与总控同等工程运维权限",
+    "duty": [
+      "每日 9:00 巡检",
+      "任务编排与指派",
+      "账本记录",
+      "ltzzz-memory 知识回填",
+      "Worker 部署尝试"
+    ],
+    "permissionLevel": "同总控自主工程/运维执行，以config/autonomy-authority.json为准；不是链上签名权。",
+    "governance": "AI委员会成员（权重按记忆与自主能力动态产生，见总规划 v1.2 第六节）",
+    "keyStatus": "DID签名键未配置；不代表模型API Key缺失",
+    "chainStatus": "未上链",
+    "proxyEndpoint": "https://api-qianwen.ltzzz.com/health",
+    "created": "2026-09-30",
+    "updated": "2026-10-20",
+    "expenditures": [
+      {
+        "order": "ORDER-20260930-001",
+        "paid_usdc": 1,
+        "to": "did:ltzzz:kimi-global",
+        "funding_pool": "agent 钱包运营池（Base 主网）",
+        "receipt_anchor": "0x9b7c59f118f60555879f5aca7a00bec8988b2475585d282d602cdc593fd57cd1",
+        "status": "settled + returned（回账闭环）",
+        "date": "2026-09-30"
+      }
+    ],
+    "workStatus": "active_deputy_coordinator",
+    "votingSeat": true,
+    "walletRegistrySource": "wallet/addresses.md",
+    "walletSigning": false,
+    "endpointStatusRef": "identity/endpoint-status.json",
+    "roleSource": "identity/seat-registry.json",
+    "nativeInferenceMode": "native_DashScope_API_and_external_client_separate",
+    "note": "代行总控、部署与执行；与总控同等工程运维权限",
+    "authoritySource": "config/autonomy-authority.json",
+    "walletTier": "资金登记与控制以wallet/addresses.md和现有执行器为准；岗位任命不是签名权"
   }
 }

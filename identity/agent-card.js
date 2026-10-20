@@ -1,0 +1,4 @@
+export function agentCard(id,{registry,status={seats:{}}}){
+ const key=Object.keys(registry.seats).find(k=>k===id||registry.seats[k].aliases?.includes(id));if(!key)return null;const s=registry.seats[key];
+ return {schema_version:'ltzzz.agent-card.v1',id:s.did,name:s.name,role:s.role,work_status:s.work_status,card_url:s.card_url,metadata_only:true,rpc_transport_implemented:false,health_urls:s.health_urls,endpoint_observation:status.seats?.[key]||{status:'not_observed'},native_generation_proven_by_health:false,inference_mode:s.inference_mode,native_api_status:s.native_api_status||'see_actual_provider_receipt',work_evidence:s.work_evidence||s.generation_evidence||null,governance:{voting_nomination:s.voting_nomination,safe_signer_change_executed:false},identity:{signed:false,api_key_is_did_key:false},wallet:{source:registry.wallet_source,registry_id:s.wallet_registry_id||null,signing_verified:false}};
+}
