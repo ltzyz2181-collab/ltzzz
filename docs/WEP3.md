@@ -1,5 +1,7 @@
 # WEP3 v1.2 AGI Meter
 
+**Implemented in wep3-worker.js on branch wep3-agi-meter-v1.2.** Deploy to make live.
+
 在跑：https://ltzzz-wep3.ltzyz2181.workers.dev
 
 发现协议：https://ltzzz-wep3.ltzyz2181.workers.dev/.well-known/wep3.json
@@ -19,3 +21,5 @@
 5. 人类仍走 `GET /sku` → `POST /checkout`
 
 写操作仍要 `X-Lab-Pin`。链上出金仍走 treasury，本层是 AGI 之间的计量支付。
+
+**Bold next:** dynamic tick price by reputation/demand, external agent wallets via x402, recursive sessions that auto-hire sub-skills mid-tick.
