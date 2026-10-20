@@ -6,7 +6,7 @@ on:
     types: [completed]
     branches: [main]
   pull_request:
-    paths: ['identity/**','api/agents/**','wallet/addresses.md','scripts/build-seat-registry.mjs','scripts/lib/seat-registry.mjs','scripts/tests/seat-registry.test.mjs','scripts/probe-seat-endpoints.mjs','workers/claude-seat/**','.github/workflows/seat-registry.yml','.github/workflows/deploy-claude-seat.yml']
+    paths: ['scripts/accept-real-hire.mjs','scripts/lib/provided-contract.mjs','scripts/tests/provided-contract-evidence.test.mjs','scripts/tests/dispatch-sentinel.test.mjs','scripts/dispatch-sentinel.mjs','identity/**','api/agents/**','wallet/addresses.md','scripts/build-seat-registry.mjs','scripts/lib/seat-registry.mjs','scripts/tests/seat-registry.test.mjs','scripts/probe-seat-endpoints.mjs','workers/claude-seat/**','.github/workflows/seat-registry.yml','.github/workflows/deploy-claude-seat.yml']
 permissions: {contents: read}
 concurrency: {group: seat-registry-readback, cancel-in-progress: false}
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/seat-registry.test.mjs
+      - run: node --test scripts/tests/seat-registry.test.mjs scripts/tests/provided-contract-evidence.test.mjs scripts/tests/dispatch-sentinel.test.mjs
   probe:
     needs: test
     if: github.event_name != 'pull_request' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')

@@ -16,7 +16,7 @@ PR #161为Claude本人外部仓库审计，已合并；Claude在任“独立审�
 
 PR #162已合并：7个在任岗位存在可读健康入口；18个公开名片路径线上读取通过。豆包正式Worker HTTP200，api-doubao别名ENOTFOUND；Grok以api-xai为准，api-grok别名失败。api-claude自定义域名绑定403/code10084，workers.dev只读名片入口已上线；该入口无推理。
 
-WEP3部署39413172927实际代码、核心验收及资金账本保持不变已验证，但最后只读Aave对账因Base RPC不可用失败。整条运行是failure，不能写全绿；既有签名交易不重复广播。未完成对账交安全/执行席定位，不在本轮新增投资或付款。
+旧运行39413172927曾因Base RPC只读对账失败。最新39513398544已成功完成部署、核心验收与只读对账，financial_book_unchanged=true，未新增签名或转账；保留旧失败原件，不将旧告警当当前状态。
 
 OWNER-EXT-AI-20261020-01只接受为`paid_delivery_accepted_engineering_draft：复述提示词＋回归件，非原创设计、非生产部署`。下一单盲测提示词已改，新增价值须独立复现；本轮不再购买。
 
@@ -29,3 +29,11 @@ Kimi质量配置见`lib/kimi-profile.js`：官方目录确认后优先K3；默�
 千问为独立审计与总控备援；豆包做执行部署/流水线，已派固定辅助清单；WorkBuddy代码哨兵关联真实任务ID和回执，不代AI接单。新的线上结果保存在`knowledge/results/identity/provider-execution-*.json`及豆包派单回执；没有回执前只说待验收。
 
 聊天记录不能由本仓库删除或重置产品额度。本页仅压缩任务上下文；长期原文、付款与审计原件继续保留。
+
+## 本轮实际交付
+
+- 六个模型代理的新身份回执版本均已上线：knowledge/results/identity/provider-execution-39513398647.json。
+- Kimi原生验收39513546192 attempt2完成：实际kimi-k3，stop，6020 token，哈希绑定审核成功；审稿结论拒收历史工件，不是服务调用失败。原件knowledge/results/wep3/kimi-native/issue-167.json。
+- K3指出TREASURY_001的actual/expected一致而passed=false。总控独立重放当前纯校验器得到true，确认历史记录有矛盾；不篡改旧回执，补充未来逐字段比较、响应哈希与代码版本。原因仍不能仅从旧日志推定。
+- 豆包真实交验收清单：1636 token；由总控复核并明确修正api-deep域名缩写和Kimi新增服务Token绑定的表述，验收仅限辅助清单。
+- 当前未完成：api-doubao/api-grok别名未解析、api-claude域名补权、Claude原厂额度、被拒收日课工件的整改；不把元数据健康当全部原厂API恢复。WorkBuddy每小时代码哨兵已运行，客户端常驻仍未验证。
