@@ -65,9 +65,7 @@ jobs:
             echo "no changes"; exit 0
           fi
           git commit -m "sentinel: 派单哨兵 $(TZ=Asia/Shanghai date +%F' '%H:00)"
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          node tools/push-receipt-commit.mjs
 
       - name: 报警（有超时/阻塞/未配置时）
         if: github.event_name != 'pull_request'
