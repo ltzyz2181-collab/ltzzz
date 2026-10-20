@@ -12,6 +12,10 @@
 
 owner本次输入的`0x21F5…97fd`只有39位十六进制，少了末尾`c`。本安排引用既有完整登记地址，不把缺位字符串作为转账目标；本次没有转账或启用新签名。
 
+只读实测：[Actions 39353825996](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39353825996)在Base区块52835260由两条RPC独立读到运营钱包29.293744 USDC及0.008278278362988452 ETH；这是该区块余额快照，不是签名控制或欧易平台账户归属证明。明细见`knowledge/results/team-ops/media-wallet-39353825996.json`。
+
+同次读回：豆包云端新片`2026-10-20-existence-not-acceptance`已存在完整MP4及元数据，哈希`be927e0899d16e5544cadc9c391f6781b38bf32a08db2033d694cf232eb70ae8`一致。Cloudflare实际cron为`0 14 * * *`，下次计划2026-10-20 14:00 UTC，即北京时间22:00／America-Tijuana07:00。频道已连接且新片无历史发布回执，检查本身零上传；尚不能写成明天已发布。10-19《Rejection Is Evidence》重新查询仍为公开且处理完成，本次未重传。
+
 ## 每日分工与验收
 
 1. Actions每天创建一个唯一内部协作订单，复用现有DeepSeek工作、豆包异提供商审核。ANS为当前一级任务，AI雇佣AI为长期一级任务。数据见`knowledge/results/claude-team/daily-hire-latest.md`与同日JSON；内部积分与真钱分别记录。

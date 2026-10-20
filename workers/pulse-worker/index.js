@@ -1,4 +1,5 @@
 import {seedTasks} from './tasks.js';
+import {markStateMutation} from './state-revision.js';
 import config from './pulse.json' with {type:'json'};
 import {dashboardHTML,dashboardJS} from './dashboard.js';
 import {validateConfig,heartbeat,walletBalance,evolve,control,names} from './engine.js';
@@ -33,25 +34,25 @@ export class PulseStateV2{
   const [heartbeats,wallet]=await Promise.all([Promise.all(config.targets.map(t=>heartbeat(t))),walletBalance(config.wallet)]);
   const {state,events}=evolve(prior,{heartbeats,wallet},config);state.notification={active_channel:'status_and_github_actions',telegram:false,note:'未配置主动消息渠道；告警保存在/status，由外部工作流检查。'};
   state.history=[...(prior.history||[]),{at:state.ran_at,mode:state.mode,unhealthy:heartbeats.filter(h=>!h.ok).map(h=>h.name),alerts:events.length}].slice(-288);
-  await this.storage.put('state',state);return state;
+  await this.storage.put('state',markStateMutation(state));return state;
  }
  alarm(){return this.serial(async()=>{try{await this.run();}finally{await this.storage.setAlarm(Date.now()+config.interval_seconds*1000);}});}
  fetch(request){return this.serial(async()=>{
   const path=new URL(request.url).pathname;
   try{
-   if(path==='/tasks'){const prior=await this.storage.get('state')||{},state=seedTasks(prior);if(prior.daily_dispatch_date!==state.daily_dispatch_date||prior.task_board_schema_version!==state.task_board_schema_version)await this.storage.put('state',state);return json({date:state.daily_dispatch_date,tasks:state.task_board,model_calls:0,paid:false,notice:'认领由认证执行器声明；提交待独立验收，不代表模型已实际调用或真钱工资。'});}
+   if(path==='/tasks'){const prior=await this.storage.get('state')||{},state=seedTasks(prior);if(prior.daily_dispatch_date!==state.daily_dispatch_date||prior.task_board_schema_version!==state.task_board_schema_version)await this.storage.put('state',markStateMutation(state));return json({date:state.daily_dispatch_date,tasks:state.task_board,model_calls:0,paid:false,notice:'认领由认证执行器声明；提交待独立验收，不代表模型已实际调用或真钱工资。'});}
    if(path==='/status'){const state=await this.storage.get('state')||{};return json({...state,version:config.version,ran_at:state.ran_at||null,durable_revision:'pulse-state-v2',stale:!state.ran_at||Date.now()-Date.parse(state.ran_at)>config.stale_seconds*1000,alarm_at:await this.storage.getAlarm(),controllers:config.controller_roles,model_calls:0,financial_execution:false});}
    // Keep the autonomous loop armed even if an individual observation fails.
    if(path==='/run'){await this.storage.setAlarm(Date.now()+config.interval_seconds*1000);return json(await this.run());}
    const actor=request.headers.get('X-Pulse-Actor');if(!config.controller_roles.includes(actor))return json({error:'controller_required'},403);
    const body=await request.json();const prior=await this.storage.get('state')||{};
    if(path==='/control'){
-    const result=control(prior,body,actor,config);await this.storage.put('state',result.state);return json({ok:true,actor,duplicate:result.duplicate,controls:result.state.controls});
+    const result=control(prior,body,actor,config);await this.storage.put('state',markStateMutation(result.state));return json({ok:true,actor,duplicate:result.duplicate,controls:result.state.controls});
    }
    if(path==='/incentives'){
     if(!/^[0-9a-f]{40}$/i.test(body.source_commit||'')||!Number.isFinite(Date.parse(body.at))||Math.abs(Date.now()-Date.parse(body.at))>900000||body.verification!=='recomputed_from_hashed_independent_receipts'||!body.profiles||typeof body.profiles!=='object'||Array.isArray(body.profiles))return json({error:'verified_snapshot_required'},400);
     for(const [name,p]of Object.entries(body.profiles))if(!names(config).includes(name)||!Number.isFinite(p.score)||p.score< -20||p.score>20||!Number.isFinite(p.priority_multiplier)||p.priority_multiplier<.8||p.priority_multiplier>1.2||p.real_money_penalty!==false)return json({error:'profile_invalid'},400);
-    prior.incentives={...body,accepted_by:actor};prior.reference_task_failures=body.task_failures||null;await this.storage.put('state',prior);return json({ok:true,profiles:Object.keys(body.profiles),source_commit:body.source_commit});
+    prior.incentives={...body,accepted_by:actor};prior.reference_task_failures=body.task_failures||null;await this.storage.put('state',markStateMutation(prior));return json({ok:true,profiles:Object.keys(body.profiles),source_commit:body.source_commit});
    }
    return json({error:'not_found',request_path:path,scope:'durable-object'},404);
   }catch{return json({error:'pulse_operation_failed'},500);}
