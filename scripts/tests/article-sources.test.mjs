@@ -16,3 +16,11 @@ test('a falsely dated source is excluded and historical publication is explicitl
   const r=gatherArticleSources({root:f.root,date:'2026-10-20'});assert.equal(r.sources.length,1);assert.match(r.sources[0].scope,/historical/);assert.match(r.text,/confirmed/);assert.doesNotMatch(r.text,/old blockage|pending/);
  }finally{f.close();}
 });
+test('actual deployment receipts stay separate from the generated draft deployment flag',()=>{
+ const f=fixture();try{
+  f.write('knowledge/results/claude-team/real-hire-20261020.json',{date:'2026-10-20',deployed:false});
+  f.write('knowledge/results/pulse/deploy-100.json',{run_id:'100',status:'deployed_and_live_observations_recorded',health:{version:'current'},public_status:{unneeded:'large snapshot'}});
+  f.write('knowledge/results/pulse/deploy-101.json',{run_id:'101',status:'blocked_deployment_or_acceptance'});
+  const r=gatherArticleSources({root:f.root,date:'2026-10-20'});assert.equal(r.sources.length,2);assert.match(r.text,/"deployed":false/);assert.match(r.text,/actual_component_deployment_not_the_generated_ANS_patch/);assert.match(r.text,/"version":"current"/);assert.doesNotMatch(r.text,/large snapshot|blocked_deployment/);
+ }finally{f.close();}
+});
