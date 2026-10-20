@@ -67,7 +67,7 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, think
       if (r2.kind === "ok") return { ok: !!r2.output, status: r2.output ? "success" : "empty_output", output: r2.output, finish_reason:r2.finish_reason, tokens_used: r2.tokens_used, model: r2.model, model_source:r2.model_source };
       return { ok: false, status: "api_error", error: `openai-style 404/405，anthropic-style HTTP ${r2.status}: ${r2.text}` };
     }
-    return { ok: false, status: "api_error", error: `HTTP ${r1.status}: ${r1.text}` };
+    return { ok: false, status: "api_error", http:r1.status, error: `HTTP ${r1.status}: ${r1.text}` };
   } catch (e) {
     return { ok: false, status: "exception", network_error_code:networkCode(e),error: (String(e)+'; network_code='+networkCode(e)).replaceAll(apiKey,'[REDACTED]') };
   }
