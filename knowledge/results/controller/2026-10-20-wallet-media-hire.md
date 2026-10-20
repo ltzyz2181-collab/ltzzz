@@ -1,5 +1,7 @@
 # 总控收尾回执：团队钱包、视频、文章、外部真钱雇佣
 
+> 后续更正（2026-10-20）：Claude免费外部审计已由PR #161合并；下文“尚未交付”是当时API欠费后的历史状态，现已被外部仓库审计交付取代。原厂API欠费仍单独成立。订单现行验收口径为`paid_delivery_accepted_engineering_draft：复述提示词＋回归件，非原创设计、非生产部署`。席位以`identity/seat-registry.json`为准，钱包以`wallet/addresses.md`为准。
+
 类型：事实与未完成项。日期：2026-10-20；执行：当前 GPT/Codex 会话，不是定时 OpenAI API 调用。
 
 ## 外部真钱雇佣：已支付并独立接受

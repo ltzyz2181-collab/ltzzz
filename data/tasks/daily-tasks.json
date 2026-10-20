@@ -1,6 +1,6 @@
 {
   "version": "1.3",
-  "updated_at": "2026-10-19",
+  "updated_at": "2026-10-20",
   "trigger": "GitHub Actions daily-agent-tasks.yml：cron UTC 22:00 主跑 + UTC 06:00 兜底（GitHub 可能延迟启动）+ workflow_dispatch 手动触发；scripts/run-daily-tasks.mjs 每次实际读取六份核心记忆，再调用已配置模型；密钥只从 GitHub Secrets 注入，不写入代码、不传给模型。",
   "core_memory": {
     "files": [
@@ -23,7 +23,7 @@
     "核心记忆只作研究材料；区分模板、观察、假设和已验证事实；缺失文件时明确标记。",
     "读后感保存为每日候选，不自动写回六份核心记忆。",
     "本任务只生成读后感和执行建议，不产生 SPEND_PROPOSAL，不执行钱包、转账或付款操作。",
-    "OpenAI原厂与Microsoft额外付费日课停用；GPT是逻辑总控岗位，由国内模型执行器接续且记录实际provider。Claude仅外部免费讨论；千问每日回归工单不等于原生接单或模型调用。"
+    "GPT逻辑总控与Claude独立审计＋规划均在任；GPT原厂付费日课不恢复，Claude原厂API余额不足但免费外部仓库工作有效。Microsoft暂时除名。角色、HTTP健康、真实生成与签名控制分别核验。"
   ],
   "tasks": [
     {
@@ -53,12 +53,14 @@
     },
     {
       "agent": "claude",
-      "task": "Claude外部免费六文件讨论与审稿席，保留署名和来源边界",
-      "trigger": "外部手动回归，不调用Anthropic API，不新增付费定时",
+      "task": "Claude独立审计＋规划；免费外部/Code仓库会话和六文件讨论",
+      "trigger": "外部仓库接力；原厂API余额不足，不新增付费定时",
       "acceptance": "只有实际收到并入库的外部回执才记交付；无交付不标API失败",
       "status": "external_discussion_only",
       "native_generation_enabled": false,
-      "expected_daily_model_delivery": false
+      "expected_daily_model_delivery": false,
+      "role_status": "active_external_audit_and_planning",
+      "work_evidence": "knowledge/results/claude-team/audit-OWNER-EXT-AI-20261020-01.md"
     },
     {
       "agent": "deepseek",
@@ -70,11 +72,12 @@
     },
     {
       "agent": "microsoft",
-      "task": "Microsoft额外委托日课按预算决定暂停，保留历史产出",
-      "trigger": "不调用OpenAI或新增国内付费委托",
+      "task": "Microsoft席位暂时除名，保留历史产出",
+      "trigger": "不派单、不调用OpenAI或新增国内付费委托",
       "acceptance": "结果disabled_by_owner，不算失败或缺交",
       "status": "disabled_by_owner",
-      "expected_daily_model_delivery": false
+      "expected_daily_model_delivery": false,
+      "role_status": "temporarily_removed"
     },
     {
       "agent": "qianwen",

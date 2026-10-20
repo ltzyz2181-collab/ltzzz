@@ -1,0 +1,21 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';
+import {agentCard,loadSeats,loadEndpointStatus,buildSeatArtifacts} from '../lib/seat-registry.mjs';
+import {registeredWallet} from '../lib/wallet-register.mjs';
+import claude from '../../workers/claude-seat/index.js';
+test('roles keep Claude independently auditing and planning while Microsoft is temporarily removed',()=>{
+ const r=loadSeats();assert.equal(Object.keys(r.seats).length,8);assert.equal(Object.values(r.seats).filter(s=>s.work_status!=='temporarily_removed').length,7);assert.equal(r.seats.claude.role,'独立审计＋规划');assert.equal(r.seats.claude.voting_nomination,false);assert.equal(r.seats.microsoft.work_status,'temporarily_removed');assert.equal(r.seats.microsoft.health_urls.length,0);assert.equal(r.seats.gpt.work_status,'active');assert.equal(r.seats.qianwen.voting_nomination,true);assert.equal(r.non_agent_records.length,3);
+});
+test('canonical Doubao and Grok endpoints take priority over failing aliases; health never proves generation',()=>{
+ const registry=loadSeats(),status=loadEndpointStatus();assert.equal(registry.seats.doubao.health_urls[0],'https://ltzzz-doubao-proxy.ltzyz2181.workers.dev/health');assert.equal(registry.seats.grok.health_urls[0],'https://api-xai.ltzzz.com/health');const c=agentCard('doubao',{registry,status});assert.equal(c.native_generation_proven_by_health,false);assert.equal(c.rpc_transport_implemented,false);assert.equal(c.wallet.signing_verified,false);assert.equal(agentCard('copilot',{registry}).work_status,'temporarily_removed');assert.equal(agentCard('../../private',{registry}),null);
+});
+test('Claude public health and card are metadata only, with no paid inference even when called via POST',async()=>{
+ const previous=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw Error('no upstream requests allowed')};
+ try{const h=await claude.fetch(new Request('https://test.invalid/health'));const j=await h.json();assert.equal(h.status,200);assert.equal(j.role,'独立审计＋规划');assert.equal(j.metadata_only,true);assert.equal(j.native_generation_verified,false);assert.equal(j.native_api_status,'blocked_insufficient_api_credits');const card=await claude.fetch(new Request('https://test.invalid/.well-known/agent-card.json'));assert.equal((await card.json()).id,'did:ltzzz:claude');const blocked=await claude.fetch(new Request('https://test.invalid/',{method:'POST',body:'{}'}));assert.equal(blocked.status,405);assert.equal(calls,0);}finally{globalThis.fetch=previous;}
+});
+test('wallet identities are read from the authoritative Markdown, not from guessed addresses or a DID signing placeholder',()=>{
+ assert.equal(registeredWallet('operating_treasury').address,'0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d');assert.equal(registeredWallet('claude_team').address,'0x21F502f29294c50d9C37A30dc038D8D95eB97fdc');assert.equal(registeredWallet('okx_ops1_deposit').source,'wallet/addresses.md');assert.throws(()=>registeredWallet('missing'),/unique_wallet_registry/);
+});
+test('build provides real JSON files for eight seats and legacy aliases without inventing a signer',()=>{
+ fs.mkdirSync('work',{recursive:true});const root=fs.mkdtempSync(path.resolve('work/seat-registry-test-'));
+ try{for(const f of ['identity/seat-registry.json','identity/endpoint-status.json',...Object.keys(loadSeats().seats).map(id=>'identity/dids/'+id+'.json')]){fs.mkdirSync(path.dirname(root+'/'+f),{recursive:true});fs.copyFileSync(f,root+'/'+f);}assert.equal(buildSeatArtifacts(root).cards,8);const file=root+'/identity/dids/claude.json',first=fs.readFileSync(file,'utf8');buildSeatArtifacts(root);assert.equal(fs.readFileSync(file,'utf8'),first);for(const id of [...Object.keys(loadSeats().seats),'copilot']){const a=JSON.parse(fs.readFileSync(root+'/api/agents/'+id+'/card.json'));assert.equal(a.metadata_only,true);assert.deepEqual(a,JSON.parse(fs.readFileSync(root+'/api/agents/'+id+'/card')));}const did=JSON.parse(first);assert.equal(did.verificationMethod.length,0);assert.equal(did['ltzzz:identityStatus'].signature_verified,false);assert.equal(did.proof,undefined);}finally{fs.rmSync(root,{recursive:true,force:true});}
+});

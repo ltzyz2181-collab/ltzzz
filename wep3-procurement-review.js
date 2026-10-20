@@ -1,4 +1,5 @@
 import {dailyHireId} from './wep3-procurement-contract.js';
+import {PAID_DRAFT_STATUS,ENGINEERING_DRAFT_SCOPE} from './wep3-procurement-status.js';
 export async function dailyHireReview(m,book,input){
  const order=book.procurement?.[dailyHireId(input.date)];
  if(!order?.paid||!order.semantic_valid||order.model_reported!=='deepseek/deepseek-chat')return {ok:false,error:'paid_semantic_delivery_and_reported_author_required'};
@@ -30,7 +31,8 @@ export async function dailyHireReview(m,book,input){
  // Copy only verdict data; model-supplied state/identity/prototype fields are ignored.
  Object.assign(prior,{status:verdict.accepted?'accepted_engineering_artifact':'rejected_engineering_artifact',accepted:verdict.accepted,artifact_sha256:verdict.artifact_sha256,reasons:verdict.reasons,unverified:[...new Set(['线上 HTTP 200 未实测；未执行生产部署或资金操作。',...verdict.unverified])],live_http_verified:false,executed_by:input.executed_by,model:input.model,model_source:input.model_source,finish_reason:input.finish_reason,tokens_used:input.tokens_used,output:input.output,provenance:'authenticated_runner_provider_response_not_model_identity_attestation',completed_at:new Date().toISOString()});
  order.independent_review_status=prior.status;order.delivery_accepted=verdict.accepted;
- order.status=verdict.accepted?'paid_delivery_accepted':'paid_delivery_rejected';
+ order.status=verdict.accepted?PAID_DRAFT_STATUS:'paid_delivery_rejected';
+ if(verdict.accepted)order.acceptance_scope=ENGINEERING_DRAFT_SCOPE;
  book.ledger||=[];
  if(!book.ledger.some(e=>e.type==='external_AI_delivery_review'&&e.order_id===order.id))book.ledger.push({type:'external_AI_delivery_review',order_id:order.id,accepted:verdict.accepted,deliverable_sha256:order.deliverable_sha256,author_provider:'DeepSeek',reviewer_provider:'Doubao',paid:false,new_cash_payment:false,at:prior.completed_at});
  await m.save(book);return {ok:true,review:prior,delivery_accepted:order.delivery_accepted};

@@ -1,3 +1,4 @@
+import {acceptedEngineeringDraft} from '../wep3-procurement-status.js';
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';
 import {OWNER_HIRE,assertOwnerPayment,assertOwnerOrderContext} from './lib/owner-external-hire.mjs';
 import {digest} from './lib/daily-external-hire.mjs';
@@ -50,5 +51,5 @@ if(phase==='prepare'){
   fs.writeFileSync(original,JSON.stringify(origin,null,2)+'\n');
   fs.writeFileSync(dir+'/'+id+'-review.json',JSON.stringify({task_id:id,delivery_sha256:r.artifact_sha256,independent_review:r.independent_review,delivery_accepted:r.delivery_accepted,paid:false,new_payment:false,recovery_receipt:file,original_failed_review:r.original_failed_review},null,2)+'\n');
  }catch(error){r.status='blocked_'+String(error.message).replace(/[^a-zA-Z0-9_]/g,'_').slice(0,100);}
- save(r);console.log(JSON.stringify({task_id:id,status:r.status,model_calls:r.model_calls,new_model_calls_this_run:r.new_model_calls_this_run,new_external_purchases:0,new_transactions:0}));if(r.status!=='paid_delivery_accepted')process.exitCode=1;
+ save(r);console.log(JSON.stringify({task_id:id,status:r.status,model_calls:r.model_calls,new_model_calls_this_run:r.new_model_calls_this_run,new_external_purchases:0,new_transactions:0}));if(!acceptedEngineeringDraft(r.status))process.exitCode=1;
 }else throw Error('prepare_or_execute_required');
