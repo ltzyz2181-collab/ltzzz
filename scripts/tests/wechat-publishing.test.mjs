@@ -14,6 +14,8 @@ test('only exact complete editor evidence permits article; unavailable evidence 
 test('new articles require a current evidence manifest before WeChat can create a draft',async()=>{
  const day='2026-10-20',receipt={date:day,article_sha256:await articleHash(md),ai_editor:{ok:true,finish_reason:'stop'}};
  assert.equal((await articleEligibility(md,receipt,day)).status,'ARTICLE_CURRENT_SOURCE_UNVERIFIED');
- Object.assign(receipt,{source_policy:'current_ans_v1',input_sha256:'a'.repeat(64),source_evidence:[{path:'knowledge/results/ans-cycle/'+day+'.json',sha256:'b'.repeat(64)}]});
+ Object.assign(receipt,{source_policy:'current_ans_v1',input_sha256:'a'.repeat(64),source_evidence:[{scope:'same_day',source_date:day,path:'knowledge/results/ans-cycle/'+day+'.json',sha256:'b'.repeat(64)}]});
  assert.equal((await articleEligibility(md,receipt,day)).draft_eligible,true);
+ receipt.source_evidence[0].source_date='2026-10-19';assert.equal((await articleEligibility(md,receipt,day)).draft_eligible,false);
+ receipt.source_evidence[0].source_date=day;receipt.source_evidence.push({scope:'timestamped_snapshot',observed_at:'not-a-time'});assert.equal((await articleEligibility(md,receipt,day)).draft_eligible,false);
 });
