@@ -1,4 +1,5 @@
 import {seedTasks,taskCommand} from './tasks.js';
+import {updateFeedback} from './feedback.js';
 export const names=config=>config.targets.map(t=>t.name);
 export function validateConfig(config){
  if(!Array.isArray(config.targets)||!config.targets.length||new Set(names(config)).size!==config.targets.length)throw Error('targets_invalid');
@@ -43,6 +44,7 @@ export function evolve(previous,observations,config,now=Date.now()){
  state.mode=offline||assetAlert||state.manual.global?'sympathetic':failed?'observing':'parasympathetic';
  state.controls={dispatch_paused:!!state.manual.global,automatic_recovery:config.automatic_recovery,concurrency:state.manual.global?0:state.limits.concurrency,investment_hold:assetAlert||!w.ok,paused_agents:Object.entries(state.agents).filter(([,v])=>v.paused).map(([k])=>k),all_tasks_independent_review:true};
  state.active_controller=state.agents.deepseek?.dispatch_allowed||state.agents.doubao?.dispatch_allowed?'gpt':state.agents.qianwen?.dispatch_allowed?'qianwen':'unavailable';
+ updateFeedback(state,observations,config,now);
  state.events.push(...events);state.events=state.events.slice(-200);state.ran_at=new Date(now).toISOString();state.version=config.version;state.model_calls=0;state.financial_execution=false;state.paid=false;state.tx_hash=null;
  return {state,events};
 }

@@ -28,7 +28,7 @@ export async function executeCycle(record,{call,context,save=async()=>{}}){
  record.worker_raw_output=worker.output;record.worker_raw_sha256=digest(worker.output);await save(record);
  let proposal;try{proposal=object(worker.output);record.worker_format='json_engineering_draft';}catch{proposal={format:'unstructured_engineering_draft',body:worker.output};record.worker_format='unstructured_requires_semantic_audit';}
  if(worker.output.trim().length<80){record.status='blocked_insubstantial_worker_artifact';await save(record);return record;}
- const text=JSON.stringify(proposal,null,2)+'\n',sha=digest(text);record.artifacts.push({role:'worker',task_id:record.tasks[0].id,executed_by:worker.executed_by,model:worker.model,text,sha256:sha});await save(record);
+ const text=JSON.stringify(proposal,null,2)+'\n',sha=digest(text);record.artifacts.push({role:'worker',task_id:record.tasks[0].id,executed_by:worker.executed_by,model:worker.model,text,sha256:sha});record.action_taken={type:'engineering_draft_created_not_deployed',artifact_sha256:sha};record.follow_up_receipt=null;await save(record);
  const audit=await invoke('Doubao',common+'独立审核下面工程交付，对照源码。返回{accepted:布尔值,artifact_sha256:严格回传给定hash,reasons:[具体理由],unverified:[尚未验证事项]}。只验收代码/规格草稿的可复核性；不得声称建议代码已执行或上线。不因它来自另一个AI就通过。\nartifact_sha256='+sha+'\n交付：'+text+'\n源码：'+context,{exclude:[worker.executed_by],maxTokens:4096,thinking:'disabled'});
  if(!audit)return record;
  if(!worker.executed_by||!audit.executed_by||worker.executed_by===audit.executed_by){record.status='blocked_same_actual_provider';await save(record);return record;}
@@ -36,5 +36,6 @@ export async function executeCycle(record,{call,context,save=async()=>{}}){
  let verdict;try{verdict=object(audit.output);if(typeof verdict.accepted!=='boolean'||verdict.artifact_sha256!==sha||!Array.isArray(verdict.reasons)||!verdict.reasons.length||!Array.isArray(verdict.unverified))throw Error('audit_schema');}catch{record.status='blocked_invalid_audit_artifact';await save(record);return record;}
  record.artifacts.push({role:'reviewer',task_id:record.tasks[1].id,executed_by:audit.executed_by,model:audit.model,text:JSON.stringify(verdict,null,2)+'\n',sha256:digest(JSON.stringify(verdict,null,2)+'\n')});
  record.audit={...verdict,executed_by:audit.executed_by,model:audit.model,scope:'engineering_draft_only'};
+ record.follow_up_receipt={artifact_sha256:sha,reviewer_provider:audit.executed_by,reviewer_model:audit.model,accepted:verdict.accepted,scope:'independent_engineering_draft_review_not_production_execution'};
  record.status=verdict.accepted?'draft_independently_reviewed':'draft_rejected';record.deployed=false;record.completed_at=new Date().toISOString();await save(record);return record;
 }
