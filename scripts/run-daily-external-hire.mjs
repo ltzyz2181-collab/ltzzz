@@ -21,7 +21,7 @@ if(phase==='prepare'){
  record.latest_run_id=process.env.GITHUB_RUN_ID||'local';record.latest_attempt_at=new Date().toISOString();
  if(record.mode==='internal'){const result=reconcileInternalHire(date);console.log(JSON.stringify({task_id:id,mode:'internal',status:result.status,paid:false,tx_hash:null,new_model_calls:0}));if(result.status.startsWith('blocked_'))process.exitCode=1;}
  else {
- if(record.inputs.some(input=>digest(fs.readFileSync(input.path))!==input.sha256)){record.status='blocked_dispatch_inputs_changed_no_payment';save(record);process.exitCode=1;}
+ if(!record.order&&record.inputs.some(input=>digest(fs.readFileSync(input.path))!==input.sha256)){record.status='blocked_dispatch_inputs_changed_no_payment';save(record);process.exitCode=1;}
  else {
  const token=runnerToken();if(!token){record.status='blocked_runner_auth';save(record);process.exitCode=1;}
  else{
@@ -30,7 +30,7 @@ if(phase==='prepare'){
   const key=process.env.DOUBAO_API_KEY||process.env.ARK_API_KEY;
   const api=(path,body)=>wep3Request(path,{token,...(body?{body}:{})});
   await executeDailyHire(record,{
-   relay:(date,context)=>externalAIRelay(token,{date,context}),api,
+   relay:(date,context)=>externalAIRelay(token,{date,context,existingOnly:!!record.order}),api,
    reviewerConfigured:!!key,pulseReady:snapshot.available&&gate.allowed&&gate.state==='fresh',save,
    callReviewer:prompt=>callAgent({apiKey:key,prompt,maxTokens:1800,thinking:'disabled'})
   });

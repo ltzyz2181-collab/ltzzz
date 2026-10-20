@@ -144,3 +144,7 @@ test('an interrupted review submission resumes from the saved output with no sec
  await executeDailyHire(record,dependencies);assert.equal(record.status,'blocked_review_submission_no_generation_retry');assert.ok(record.review_response.output);
  await executeDailyHire(record,dependencies);assert.equal(record.status,'paid_delivery_accepted');assert.equal(calls,1);assert.equal(record.review_generation_attempts_this_run,0);assert.equal(f.paid,1);
 });
+test('a locally observed order missing on the server is never purchased again',async()=>{
+ const r=await externalAIRelay('fixture',{date,context,existingOnly:true,api:async()=>({ok:true}),fetcher:()=>{throw Error('must not request a new quote or payment');}});
+ assert.equal(r.status,'blocked_original_order_missing_no_repurchase');assert.equal(r.paid,false);
+});
