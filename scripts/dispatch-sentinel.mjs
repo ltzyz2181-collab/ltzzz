@@ -33,6 +33,11 @@ export function indexDispatch(root){
  });return {tasks};
 }
 
+export function datedReceipts(root,dirs,date){
+ const day=value=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));}catch{return null;}};
+ return dirs.flatMap(dir=>{const full=path.join(root,dir);if(!fs.existsSync(full))return [];return fs.readdirSync(full).filter(n=>n.endsWith('.json')).flatMap(n=>{try{const data=JSON.parse(fs.readFileSync(path.join(full,n),'utf8'));if(n.includes(date)||n.includes(date.replaceAll('-',''))||data.date===date||day(data.at)===date||day(data.latest_reconciled_at)===date)return [{path:dir+'/'+n,status:data.status||'receipt_present_status_unspecified',paid:typeof data.paid==='boolean'?data.paid:null}];}catch{}return [];});});
+}
+
 export function runSentinel(){
 const REPO = process.cwd();
 const args = process.argv.slice(2);
@@ -71,28 +76,10 @@ const push = (item, state, evidence, note = '') => rows.push({ item, state, evid
   }
 }
 
-/* ---------- 2. 雇佣回执（T1） ---------- */
-{
-  const dir = 'knowledge/results/hire';
-  if (!exists(dir)) {
-    push('AI雇AI回执(T1)', 'UNKNOWN', dir, '交付目录不存在 —— 未配置交付位');
-  } else {
-    const today = fs.readdirSync(path.join(REPO, dir)).filter((n) => n.includes(DATE) && n.endsWith('.md'));
-    push('AI雇AI回执(T1)', today.length ? 'OK' : 'NONE', `${dir}/*${DATE}*`,
-      today.length ? `今日 ${today.length} 份：${today.join(', ')}` : '今日无新回执（未交付）');
-  }
-}
-
-/* ---------- 3. 投资回执（T2） ---------- */
-{
-  const dir = 'knowledge/results/invest';
-  if (!exists(dir)) {
-    push('自主投资回执(T2)', 'UNKNOWN', dir, '交付目录不存在 —— 未配置交付位');
-  } else {
-    const today = fs.readdirSync(path.join(REPO, dir)).filter((n) => n.includes(DATE) && n.endsWith('.md'));
-    push('自主投资回执(T2)', today.length ? 'OK' : 'NONE', `${dir}/*${DATE}*`,
-      today.length ? `今日 ${today.length} 份：${today.join(', ')}` : '今日无新回执（未交付）');
-  }
+/* ---------- 2/3. Read the real JSON receipts, not only legacy Markdown ---------- */
+for(const [name,dirs] of [['AI雇AI回执(T1)',['knowledge/results/hire','knowledge/results/claude-team']],['投资观察回执(T2)',['knowledge/results/invest','knowledge/results/funded-invest','knowledge/results/defi']]]){
+ const receipts=datedReceipts(REPO,dirs,DATE),blocked=receipts.some(r=>/blocked|failed|rejected|unknown/i.test(r.status));
+ push(name,blocked?'BLOCKED':receipts.length?'OK':'NONE',dirs.join(' / '),receipts.length?receipts.slice(0,8).map(r=>r.path+':'+r.status+';paid='+String(r.paid)).join('；')+'。只记录回执存在与状态，不据此推断本日新付款/投资。':'今日无相应JSON回执，不据此发起投资或模型调用。');
 }
 
 /* ---------- 4. 派单台账：超时 / 阻塞 ---------- */
