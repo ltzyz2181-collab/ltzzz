@@ -5,7 +5,7 @@
   "task_id": "OWNER-EXT-AI-20261020-01",
   "source_commit": "dc3d0e1d5405d97cd79f17e38164f3294b802f86",
   "run_id": "39405560253",
-  "status": "blocked_review_generation",
+  "status": "paid_delivery_accepted",
   "planner": {
     "role": "claude_planning",
     "execution": "owner_authorized_fixed_rules_not_native_Claude_call"
@@ -36,16 +36,22 @@
     "order_id": "REAL-HIRE-20261020-CLAUDE-01",
     "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
     "author_provider_reported": "deepseek/deepseek-chat",
-    "reviewer_provider": null,
-    "reviewer_model": null,
-    "reviewer_model_source": null,
-    "reviewer_status": "blocked_review_generation",
-    "unverified": [],
+    "reviewer_provider": "Doubao",
+    "reviewer_model": "doubao-seed-2-1-pro-260915",
+    "reviewer_model_source": "provider_response",
+    "reviewer_status": "accepted_engineering_artifact",
+    "unverified": [
+      "线上 HTTP 200 未实测；未执行生产部署或资金操作。",
+      "无法静态证实 intent_id CONTRACT_TEST_INTENT_20261020 已由服务端签发、未过期且可用于该账户。",
+      "无法静态证实 VALID_PIN_PLACEHOLDER 可通过认证，或 WRONG_PIN_PLACEHOLDER 一定返回 401。",
+      "无法静态证实接口实际响应中限额字段位于顶层，或 POST /market/aave/preview 的真实状态码和错误处理。",
+      "未实际验证 withdraw 请求的服务端行为。"
+    ],
     "live_http_verified": false,
-    "review_output_sha256": null,
+    "review_output_sha256": "80e63805972f5f09bde85544f655ac4208169f5edfb88d14295f44384735059e",
     "paid": true,
     "tx_hash": "0x565129ac773b4d652a52fd2975f4847cba2017e8e385f525e305ec356910aa05",
-    "delivery_accepted": false,
+    "delivery_accepted": true,
     "scope": "paid_external_engineering_artifact_not_production_deployment_or_internal_credit_wages"
   },
   "external_runtime_order_id": "REAL-HIRE-20261020-CLAUDE-01",
@@ -82,7 +88,7 @@
     },
     "structural_valid": true,
     "semantic_valid": true,
-    "status": "paid_delivery_schema_valid_pending_review",
+    "status": "paid_delivery_accepted",
     "payer": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
     "pay_to": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
     "amount_raw": "3000",
@@ -91,7 +97,7 @@
     "before_block": 52850741,
     "paid": true,
     "tx_hash": "0x565129ac773b4d652a52fd2975f4847cba2017e8e385f525e305ec356910aa05",
-    "delivery_accepted": false,
+    "delivery_accepted": true,
     "provider": "agent402.tools",
     "model_requested": "deepseek/deepseek-chat",
     "model_identity_verification": "provider_report_only",
@@ -101,7 +107,7 @@
     "at": "2026-10-20T10:07:09.713Z",
     "model_generation_attempts": 1,
     "acceptance_kind": "deterministic_semantic_contract_check_pending_independent_review",
-    "independent_review_status": "pending",
+    "independent_review_status": "accepted_engineering_artifact",
     "relay_handed_off": true,
     "http": 200,
     "response_sha256": "d9e7ed8c07d3d9f4b3d87bd66b9b5adce13bdb761754e132a26aec496b9ef26c",
@@ -183,17 +189,112 @@
       "block_number": 52850746
     },
     "independent_review": {
-      "status": "blocked_review_generation",
-      "claim_id": "OWNER-EXT-AI-20261020-01-review",
+      "status": "accepted_engineering_artifact",
+      "claim_id": "OWNER-EXT-AI-20261020-01-review-recovery",
       "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
       "author_provider": "DeepSeek",
       "reviewer_provider": "Doubao",
-      "at": "2026-10-20T10:07:20.295Z",
-      "failure_kind": "incomplete"
+      "at": "2026-10-20T10:19:37.257Z",
+      "accepted": true,
+      "reasons": [
+        "交付明确指出 GET /market/aave/preview 存在读取嵌套 status.limits 的缺陷，应读取顶层 single_cap_usdc 和 exposure_cap_usdc。",
+        "交付明确指出交易预览错误使用 GET，应使用 POST。",
+        "包含 POST 预览正对照：有效 X-Lab-Pin 占位符、合法 intent_id、supply、正十进制字符串金额 1，预期 200。",
+        "包含 POST 预览负对照：错误 X-Lab-Pin 占位符，预期 401。",
+        "intent_id 为非空字符串形式 CONTRACT_TEST_INTENT_20261020；静态材料未显示其实际注册或授权状态。",
+        "覆盖 supply；action 字段允许 withdraw，但未提供 withdraw 的独立测试用例。",
+        "amount_usdc 使用正十进制字符串 \"1\"。",
+        "X-Lab-Pin 均为占位符，未泄露真实 PIN。"
+      ],
+      "unverified": [
+        "线上 HTTP 200 未实测；未执行生产部署或资金操作。",
+        "无法静态证实 intent_id CONTRACT_TEST_INTENT_20261020 已由服务端签发、未过期且可用于该账户。",
+        "无法静态证实 VALID_PIN_PLACEHOLDER 可通过认证，或 WRONG_PIN_PLACEHOLDER 一定返回 401。",
+        "无法静态证实接口实际响应中限额字段位于顶层，或 POST /market/aave/preview 的真实状态码和错误处理。",
+        "未实际验证 withdraw 请求的服务端行为。"
+      ],
+      "live_http_verified": false,
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 1032,
+      "output": "{\"accepted\":true,\"artifact_sha256\":\"30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff\",\"reasons\":[\"交付明确指出 GET /market/aave/preview 存在读取嵌套 status.limits 的缺陷，应读取顶层 single_cap_usdc 和 exposure_cap_usdc。\",\"交付明确指出交易预览错误使用 GET，应使用 POST。\",\"包含 POST 预览正对照：有效 X-Lab-Pin 占位符、合法 intent_id、supply、正十进制字符串金额 1，预期 200。\",\"包含 POST 预览负对照：错误 X-Lab-Pin 占位符，预期 401。\",\"intent_id 为非空字符串形式 CONTRACT_TEST_INTENT_20261020；静态材料未显示其实际注册或授权状态。\",\"覆盖 supply；action 字段允许 withdraw，但未提供 withdraw 的独立测试用例。\",\"amount_usdc 使用正十进制字符串 \\\"1\\\"。\",\"X-Lab-Pin 均为占位符，未泄露真实 PIN。\"],\"unverified\":[\"无法静态证实 intent_id CONTRACT_TEST_INTENT_20261020 已由服务端签发、未过期且可用于该账户。\",\"无法静态证实 VALID_PIN_PLACEHOLDER 可通过认证，或 WRONG_PIN_PLACEHOLDER 一定返回 401。\",\"无法静态证实接口实际响应中限额字段位于顶层，或 POST /market/aave/preview 的真实状态码和错误处理。\",\"未实际验证 withdraw 请求的服务端行为。\"],\"live_http_verified\":false}",
+      "provenance": "authenticated_runner_provider_response_not_model_identity_attestation",
+      "completed_at": "2026-10-20T10:19:51.591Z"
+    },
+    "review_history": [
+      {
+        "status": "blocked_review_generation",
+        "claim_id": "OWNER-EXT-AI-20261020-01-review",
+        "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
+        "author_provider": "DeepSeek",
+        "reviewer_provider": "Doubao",
+        "at": "2026-10-20T10:07:20.295Z",
+        "failure_kind": "incomplete"
+      }
+    ],
+    "owner_review_recovery": {
+      "task_id": "OWNER-EXT-AI-20261020-01",
+      "claim_id": "OWNER-EXT-AI-20261020-01-review-recovery",
+      "at": "2026-10-20T10:19:37.257Z",
+      "additional_review_attempts_max": 1,
+      "new_external_purchases_allowed": 0
     }
   },
   "order_status": "paid_delivery_schema_valid_pending_review",
   "review_response": {
+    "claim_id": "OWNER-EXT-AI-20261020-01-review-recovery",
+    "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
+    "executed_by": "Doubao",
+    "ok": true,
+    "status": "success",
+    "http": null,
+    "network_error_code": null,
+    "model": "doubao-seed-2-1-pro-260915",
+    "model_source": "provider_response",
+    "finish_reason": "stop",
+    "tokens_used": 1032,
+    "output": "{\"accepted\":true,\"artifact_sha256\":\"30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff\",\"reasons\":[\"交付明确指出 GET /market/aave/preview 存在读取嵌套 status.limits 的缺陷，应读取顶层 single_cap_usdc 和 exposure_cap_usdc。\",\"交付明确指出交易预览错误使用 GET，应使用 POST。\",\"包含 POST 预览正对照：有效 X-Lab-Pin 占位符、合法 intent_id、supply、正十进制字符串金额 1，预期 200。\",\"包含 POST 预览负对照：错误 X-Lab-Pin 占位符，预期 401。\",\"intent_id 为非空字符串形式 CONTRACT_TEST_INTENT_20261020；静态材料未显示其实际注册或授权状态。\",\"覆盖 supply；action 字段允许 withdraw，但未提供 withdraw 的独立测试用例。\",\"amount_usdc 使用正十进制字符串 \\\"1\\\"。\",\"X-Lab-Pin 均为占位符，未泄露真实 PIN。\"],\"unverified\":[\"无法静态证实 intent_id CONTRACT_TEST_INTENT_20261020 已由服务端签发、未过期且可用于该账户。\",\"无法静态证实 VALID_PIN_PLACEHOLDER 可通过认证，或 WRONG_PIN_PLACEHOLDER 一定返回 401。\",\"无法静态证实接口实际响应中限额字段位于顶层，或 POST /market/aave/preview 的真实状态码和错误处理。\",\"未实际验证 withdraw 请求的服务端行为。\"],\"live_http_verified\":false}"
+  },
+  "recovery_receipt": "knowledge/results/owner-external/OWNER-EXT-AI-20261020-01-review-recovery.json",
+  "new_payments_in_recovery": 0,
+  "recovery_review": {
+    "status": "accepted_engineering_artifact",
+    "claim_id": "OWNER-EXT-AI-20261020-01-review-recovery",
+    "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
+    "author_provider": "DeepSeek",
+    "reviewer_provider": "Doubao",
+    "at": "2026-10-20T10:19:37.257Z",
+    "accepted": true,
+    "reasons": [
+      "交付明确指出 GET /market/aave/preview 存在读取嵌套 status.limits 的缺陷，应读取顶层 single_cap_usdc 和 exposure_cap_usdc。",
+      "交付明确指出交易预览错误使用 GET，应使用 POST。",
+      "包含 POST 预览正对照：有效 X-Lab-Pin 占位符、合法 intent_id、supply、正十进制字符串金额 1，预期 200。",
+      "包含 POST 预览负对照：错误 X-Lab-Pin 占位符，预期 401。",
+      "intent_id 为非空字符串形式 CONTRACT_TEST_INTENT_20261020；静态材料未显示其实际注册或授权状态。",
+      "覆盖 supply；action 字段允许 withdraw，但未提供 withdraw 的独立测试用例。",
+      "amount_usdc 使用正十进制字符串 \"1\"。",
+      "X-Lab-Pin 均为占位符，未泄露真实 PIN。"
+    ],
+    "unverified": [
+      "线上 HTTP 200 未实测；未执行生产部署或资金操作。",
+      "无法静态证实 intent_id CONTRACT_TEST_INTENT_20261020 已由服务端签发、未过期且可用于该账户。",
+      "无法静态证实 VALID_PIN_PLACEHOLDER 可通过认证，或 WRONG_PIN_PLACEHOLDER 一定返回 401。",
+      "无法静态证实接口实际响应中限额字段位于顶层，或 POST /market/aave/preview 的真实状态码和错误处理。",
+      "未实际验证 withdraw 请求的服务端行为。"
+    ],
+    "live_http_verified": false,
+    "executed_by": "Doubao",
+    "model": "doubao-seed-2-1-pro-260915",
+    "model_source": "provider_response",
+    "finish_reason": "stop",
+    "tokens_used": 1032,
+    "output": "{\"accepted\":true,\"artifact_sha256\":\"30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff\",\"reasons\":[\"交付明确指出 GET /market/aave/preview 存在读取嵌套 status.limits 的缺陷，应读取顶层 single_cap_usdc 和 exposure_cap_usdc。\",\"交付明确指出交易预览错误使用 GET，应使用 POST。\",\"包含 POST 预览正对照：有效 X-Lab-Pin 占位符、合法 intent_id、supply、正十进制字符串金额 1，预期 200。\",\"包含 POST 预览负对照：错误 X-Lab-Pin 占位符，预期 401。\",\"intent_id 为非空字符串形式 CONTRACT_TEST_INTENT_20261020；静态材料未显示其实际注册或授权状态。\",\"覆盖 supply；action 字段允许 withdraw，但未提供 withdraw 的独立测试用例。\",\"amount_usdc 使用正十进制字符串 \\\"1\\\"。\",\"X-Lab-Pin 均为占位符，未泄露真实 PIN。\"],\"unverified\":[\"无法静态证实 intent_id CONTRACT_TEST_INTENT_20261020 已由服务端签发、未过期且可用于该账户。\",\"无法静态证实 VALID_PIN_PLACEHOLDER 可通过认证，或 WRONG_PIN_PLACEHOLDER 一定返回 401。\",\"无法静态证实接口实际响应中限额字段位于顶层，或 POST /market/aave/preview 的真实状态码和错误处理。\",\"未实际验证 withdraw 请求的服务端行为。\"],\"live_http_verified\":false}",
+    "provenance": "authenticated_runner_provider_response_not_model_identity_attestation",
+    "completed_at": "2026-10-20T10:19:51.591Z"
+  },
+  "review_response_before_recovery": {
     "claim_id": "OWNER-EXT-AI-20261020-01-review",
     "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
     "executed_by": "Doubao",
@@ -203,5 +304,21 @@
     "finish_reason": null,
     "tokens_used": 0,
     "output": null
+  },
+  "follow_up_before_recovery": {
+    "order_id": "REAL-HIRE-20261020-CLAUDE-01",
+    "artifact_sha256": "30a1a1aca06d1ab97b72f106d7349036ce3c04d6190f8b4d2ac8258f30475eff",
+    "author_provider_reported": "deepseek/deepseek-chat",
+    "reviewer_provider": null,
+    "reviewer_model": null,
+    "reviewer_model_source": null,
+    "reviewer_status": "blocked_review_generation",
+    "unverified": [],
+    "live_http_verified": false,
+    "review_output_sha256": null,
+    "paid": true,
+    "tx_hash": "0x565129ac773b4d652a52fd2975f4847cba2017e8e385f525e305ec356910aa05",
+    "delivery_accepted": false,
+    "scope": "paid_external_engineering_artifact_not_production_deployment_or_internal_credit_wages"
   }
 }
