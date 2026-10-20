@@ -1,14 +1,17 @@
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {authHealthFields,checkOrigin,checkRateLimit,checkServiceAuth,clampMaxTokens} from './lib/proxy-guard.js';
 // LTZZZ · XAI (Grok) API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:grok（待 owner 提供 XAI_API_KEY 激活）
 // Key 只放 Worker Secret（wrangler secret put XAI_API_KEY），不进代码/对话/回执。
 //
 // Secrets / Variables：
 //   XAI_API_KEY   必填 — xAI API Key（xai- 开头）
-//   XAI_MODEL     可选 — 默认 grok-3；可用 grok-3-mini 等
+//   XAI_MODEL     可选 — 默认 grok-3
 //   XAI_BASE_URL  可选 — 默认 https://api.x.ai/v1/chat/completions
+//   REQUIRE_TOKEN 可选 — 默认关；true 时 POST 需 Bearer（LTZZZ_AGENT_TOKEN 或 XAI_WORKER_TOKEN）
+//   MAX_TOKENS_HARD_CAP / ALLOWED_ORIGINS / RATE_LIMIT_PER_HOUR — 见 lib/proxy-guard.js
 //
-// 健康检查：GET /health → {ok, service, did, has_key, model_configured}
+// 健康检查：GET /health → {ok, service, did, has_key, model_configured, require_token, ...}
 // 调用：POST /  { messages, model?, temperature?, max_tokens? } → 透传上游，原样带状态码
 
 export default {
@@ -29,6 +32,7 @@ export default {
         configured_model: env.XAI_MODEL || 'grok-3',
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
+        ...authHealthFields(env, 'XAI_WORKER_TOKEN'),
         time: new Date().toISOString()
       });
     }
@@ -36,6 +40,13 @@ export default {
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+
+    const denied =
+      checkOrigin(request, env, { json }) ||
+      checkServiceAuth(request, env, { seatTokenEnvName: 'XAI_WORKER_TOKEN', json }) ||
+      (await checkRateLimit(request, env, { json, bucket: 'xai' }));
+    if (denied) return denied;
+
     if (!env.XAI_API_KEY) {
       return json({ error: 'Missing XAI_API_KEY secret', stage: 'worker_config' }, 500);
     }
@@ -48,6 +59,8 @@ export default {
       }
 
       const model = body.model || env.XAI_MODEL || 'grok-3';
+      const hardCap = Number.parseInt(String(env.MAX_TOKENS_HARD_CAP || '4096'), 10) || 4096;
+      const max_tokens = clampMaxTokens(body.max_tokens, 2000, hardCap);
 
       const upstreamUrl = env.XAI_BASE_URL || 'https://api.x.ai/v1/chat/completions';
 
@@ -62,7 +75,7 @@ export default {
           model,
           messages,
           temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 2000,
+          max_tokens,
           stream: false
         })
       });
