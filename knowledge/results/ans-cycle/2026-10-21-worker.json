@@ -1,0 +1,16 @@
+{
+  "finding": "run-daily-tasks.mjs 中 runReservedSeat 调用失败（如 API 不可用）时，任务状态直接置为 res.status，未给 Pulse 任务板对应的 DAILY-* 任务回写失败/恢复状态；任务板上的任务停留在 claimed 或 assigned 状态，导致次日 dailyAssignment 无法重新认领或产生恢复记录，形成派单-消费-反馈链路断点。",
+  "evidence_paths": [
+    "scripts/run-daily-tasks.mjs",
+    "workers/pulse-worker/tasks.js",
+    "scripts/lib/daily-assignment.mjs",
+    "data/tasks/pending-reminders.json"
+  ],
+  "minimal_patch": "在 scripts/run-daily-tasks.mjs 的失败分支中，增加对 pulse 任务板的同步回写：\n\n```js\n// 在 failures.push 之前，对 assignment 对应的 pulse 任务调用 taskCommand\nif (assignment?.id) {\n  try {\n    const pulseState = pulseAssignments?.task_board || [];\n    const cmd = {\n      task_id: assignment.id,\n      agent: ch.agent,\n      action: 'release_task',\n      reason: res.status\n    };\n    // 如果任务是 claimed 状态，释放回 assigned 便于次日重试\n    const claimed = pulseState.find(t => t.id === assignment.id && t.claimed_by === ch.agent);\n    if (claimed) {\n      claimed.status = 'assigned';\n      claimed.claimed_by = null;\n      claimed.claim_actor = null;\n      claimed.claimed_at = null;\n      claimed.claim_kind = null;\n      claimed.released_at = new Date().toISOString();\n      claimed.release_reason = res.status;\n      claimed.recovery_attempts = (claimed.recovery_attempts || 0) + 1;\n    }\n    fs.writeFileSync(\n      path.join(ROOT, 'knowledge/results/pulse/task-board.json'),\n      JSON.stringify({...pulseAssignments, task_board: pulseState, updated_at: new Date().toISOString()}, null, 2)\n    );\n  } catch (e) {\n    console.warn(`[run-daily-tasks] pulse board update failed for ${ch.agent}:`, e);\n  }\n}\n```\n\n同时保持 pending-reminders 原有逻辑不变，确保下次运行可通过 dailyAssignment 查找到已回退为 assigned 状态的任务。",
+  "verification_commands": [
+    "node -e \"import('./workers/pulse-worker/tasks.js').then(m => { const s = m.seedTasks({}); const t = s.task_board.find(t => t.agent === 'deepseek' && t.status === 'assigned'); t.status = 'claimed'; t.claimed_by = 'deepseek'; m.taskCommand(s, {task_id: t.id, agent: 'deepseek', action: 'submit_task', evidence_path: 'knowledge/results/test.json', evidence_sha256: 'a'.repeat(64)}, 'test', ['deepseek']).catch(e => console.log('expected error:', e.message)); })\"",
+    "grep -n 'released_at' scripts/run-daily-tasks.mjs",
+    "date -u +%Y-%m-%dT%H:%M:%SZ && ls -la knowledge/results/pulse/task-board.json 2>/dev/null || echo 'task board file not found'"
+  ],
+  "remaining_blocker": "如果 pulse-worker 的 task_board 状态不是由本地 JSON 文件持久化，而是由 Cloudflare Durable Object 独立维护，则上述本地写回无法生效；需要确认实际状态存储位置并改为通过既有 pulse-client 接口同步回写。"
+}
