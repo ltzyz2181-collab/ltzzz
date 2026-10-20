@@ -1,12 +1,16 @@
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {authHealthFields,checkOrigin,checkRateLimit,checkServiceAuth,clampMaxTokens} from './lib/proxy-guard.js';
 // LTZZZ · 千问（阿里云百炼 DashScope）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:qianwen（临时总控，2026-09-30 起）
 // Key 只放 Worker Secret（wrangler secret put QWEN_API_KEY），浏览器与仓库都不接触 Key。
 //
 // Secrets / Variables：
-//   QWEN_API_KEY   必填 — 百炼 API Key（sk- 开头）
-//   QWEN_MODEL     可选 — 默认 qwen-plus；总控类任务建议 qwen-max 系
-//   QWEN_BASE_URL  可选 — 默认 OpenAI 兼容 Chat Completions 地址
+//   QWEN_API_KEY     必填 — 百炼 API Key（sk- 开头）
+//   QWEN_MODEL       可选 — 默认 qwen-plus
+//   QWEN_BASE_URL    可选 — 默认 OpenAI 兼容 Chat Completions 地址
+//   REQUIRE_TOKEN    可选 — 默认关；true 时 POST 需 Bearer（LTZZZ_AGENT_TOKEN 或 QWEN_WORKER_TOKEN）
+//   MAX_TOKENS_HARD_CAP 可选 — 默认 4096
+//   ALLOWED_ORIGINS / RATE_LIMIT_PER_HOUR — 见 lib/proxy-guard.js
 //
 // 健康检查：GET /health
 // 调用：POST /  { messages, model?, temperature?, max_tokens? }
@@ -29,6 +33,7 @@ export default {
         configured_model: env.QWEN_MODEL || 'qwen-plus',
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
+        ...authHealthFields(env, 'QWEN_WORKER_TOKEN'),
         time: new Date().toISOString()
       });
     }
@@ -36,6 +41,13 @@ export default {
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+
+    const denied =
+      checkOrigin(request, env, { json }) ||
+      checkServiceAuth(request, env, { seatTokenEnvName: 'QWEN_WORKER_TOKEN', json }) ||
+      (await checkRateLimit(request, env, { json, bucket: 'qianwen' }));
+    if (denied) return denied;
+
     if (!env.QWEN_API_KEY) {
       return json({ error: 'Missing QWEN_API_KEY secret', stage: 'worker_config' }, 500);
     }
@@ -48,6 +60,8 @@ export default {
       }
 
       const model = body.model || env.QWEN_MODEL || 'qwen-plus';
+      const hardCap = Number.parseInt(String(env.MAX_TOKENS_HARD_CAP || '4096'), 10) || 4096;
+      const max_tokens = clampMaxTokens(body.max_tokens, 2000, hardCap);
 
       const upstreamUrl =
         env.QWEN_BASE_URL ||
@@ -64,7 +78,7 @@ export default {
           model,
           messages,
           temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 2000,
+          max_tokens,
           stream: false
         })
       });
