@@ -1,12 +1,14 @@
 import {createHash} from 'node:crypto';import {execFileSync} from 'node:child_process';import fs from 'node:fs';import path from 'node:path';import {assertCoreMemory} from './lib/core-memory-integrity.mjs';import {assessDelivery} from './delivery-integrity.mjs';
 const date=process.env.RECOVERY_DATE||'2026-10-14';if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('invalid_date');
-const proRepair=process.env.RECOVERY_VERIFY_PRO==='true';
+const keyRepair=process.env.RECOVERY_REPAIR_MODEL_KEY==='true';
+const proRepair=keyRepair||process.env.RECOVERY_VERIFY_PRO==='true';
 const previousFile='knowledge/results/daily-recovery/'+date+'-doubao.json';
-const file='knowledge/results/daily-recovery/'+date+'-doubao'+(proRepair?'-pro-repair':'')+'.json',artifact=file.replace(/\.json$/,'.md'),phase=process.argv[2];
+const file='knowledge/results/daily-recovery/'+date+'-doubao'+(keyRepair?'-pro-key-repair':proRepair?'-pro-repair':'')+'.json',artifact=file.replace(/\.json$/,'.md'),phase=process.argv[2];
 const save=r=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(r,null,2)+'\n');};
 if(phase==='prepare'){
+ if(keyRepair){const p=JSON.parse(fs.readFileSync(previousFile.replace('.json','-pro-repair.json'),'utf8'));if(p.status!=='blocked_unexpected_model'||p.http!==404||p.tokens_used!==0||p.output!=='')throw Error('definitive_404_without_generation_required_for_one_key_route_repair');}
  if(proRepair){const previous=JSON.parse(fs.readFileSync(previousFile,'utf8'));if(previous.status!=='supplemental_delivery_pending_review'||previous.route!=='authenticated_doubao_worker'||!previous.model?.includes('lite')||previous.finish_reason!=='stop')throw Error('completed_lite_recovery_required_before_one_pro_repair');}
- const execute=!fs.existsSync(file);if(execute)save({date,agent:'doubao',status:'claimed_before_call',run_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,at:new Date().toISOString(),original_failure:'data/results/'+date+'.json',...(proRepair?{model_repair_of:previousFile,reason:'known_successful_Lite_response_requires_owner_requested_Pro_verification'}:{}),on_time_original_delivery_proven:false,model_calls:0,openai_calls:0,paid:false,tx_hash:null});if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+execute+'\n');
+ const execute=!fs.existsSync(file);if(execute)save({date,agent:'doubao',status:'claimed_before_call',run_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,at:new Date().toISOString(),original_failure:'data/results/'+date+'.json',...(proRepair?{model_repair_of:keyRepair?previousFile.replace('.json','-pro-repair.json'):previousFile,reason:keyRepair?'known_HTTP404_hard_rejection_allows_one_correct_key_and_route_attempt':'known_successful_Lite_response_requires_owner_requested_Pro_verification'}:{}),on_time_original_delivery_proven:false,model_calls:0,openai_calls:0,paid:false,tx_hash:null});if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+execute+'\n');
 }else if(phase==='execute'){
  const r=JSON.parse(fs.readFileSync(file,'utf8'));if(r.status!=='claimed_before_call'||r.run_id!==process.env.GITHUB_RUN_ID||r.model_calls)throw Error('already_attempted_or_claim_mismatch');r.input_commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();r.memory=assertCoreMemory();
  if(!process.env.DOUBAO_API_KEY){r.status='not_configured';save(r);process.exitCode=1;}else{
