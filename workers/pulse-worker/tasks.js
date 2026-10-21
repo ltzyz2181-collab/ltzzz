@@ -1,4 +1,4 @@
-export const TASK_BOARD_SCHEMA_VERSION=3;
+export const TASK_BOARD_SCHEMA_VERSION=4;
 export const cstDate=(now=Date.now())=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
 export function baselineDispatches(date){return [
  {id:'ANS-'+date+'-deepseek',agent:'deepseek',instruction:'ANS/Pulse首要任务：读取最新真实监控与奖惩回执，区分代理健康、原生生成和交付验收；定位一个真实阻塞并交代码补丁或可运行断言，附来源，不执行资金。',status:'queued_for_next_daily_economy',source:'coordinator_rules_zero_model_baseline'},
@@ -28,6 +28,14 @@ export function taskCommand(previous,command,actor,allowedAgents,now=Date.now())
   if(t.status==='submitted_pending_review'&&t.evidence_path===command.evidence_path&&t.evidence_sha256===command.evidence_sha256)return {state,duplicate:true};
   if(t.status!=='claimed')throw Error('task_not_claimed');
   t.status='submitted_pending_review';t.evidence_path=command.evidence_path;t.evidence_sha256=command.evidence_sha256;t.submitted_at=new Date(now).toISOString();t.model_execution_verified=false;t.paid=false;t.tx_hash=null;
+ }else if(command.action==='fail_task'){
+  if(t.claimed_by!==command.agent)throw Error('not_claimed_worker');
+  if(!/^(knowledge|results|ops)\/[A-Za-z0-9_./\u4e00-\u9fff-]+$/.test(command.evidence_path||'')||command.evidence_path.split('/').includes('..')||!/^[a-f0-9]{64}$/i.test(command.evidence_sha256||''))throw Error('artifact_evidence_required');
+  if(command.failure_kind!=='incomplete_or_failed_provider_output')throw Error('failure_kind_invalid');
+  if(t.status==='failed_no_repurchase'&&t.failure?.evidence_sha256===command.evidence_sha256&&t.failure?.evidence_path===command.evidence_path)return {state,duplicate:true};
+  if(t.status!=='claimed')throw Error('task_not_claimed');
+  t.status='failed_no_repurchase';t.failure={kind:command.failure_kind,evidence_path:command.evidence_path,evidence_sha256:command.evidence_sha256,at:new Date(now).toISOString(),actor,provenance:'authenticated_executor_attestation'};
+  t.accepted=false;t.deployed=false;t.paid=false;t.tx_hash=null;
  }else if(command.action==='review_task'){
   if(!['submitted_pending_review','completed_draft_review','rejected_draft_review'].includes(t.status))throw Error('task_not_submitted');
   if(typeof command.accepted!=='boolean'||command.reviewed_sha256!==t.evidence_sha256||command.scope!=='engineering_draft_only')throw Error('bound_review_required');

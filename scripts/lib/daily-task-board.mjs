@@ -156,12 +156,34 @@ export function recoverArtifact(root, record, agent, seat) {
   return true;
 }
 
+// Failed provider attempts are terminal, hash-bound feedback, never released for repurchase.
+async function syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now}) {
+ try {
+  const a=seat.artifact;
+  if(!a||!/^[a-f0-9]{64}$/.test(a.sha256)||a.path!==`knowledge/results/daily-board/artifacts/${record.date}-${agent}-${a.sha256}.json`)throw Error('failure_artifact_required');
+  const bytes=fs.readFileSync(path.join(root,a.path)),body=JSON.parse(bytes);
+  if(digest(bytes)!==a.sha256||digest(await readRemote(a.path))!==a.sha256||body.status!=='incomplete_or_failed'||body.date!==record.date||body.run_key!==record.run_key||body.task_id!==seat.assignment.id||body.logical_seat!==agent||body.source_commit!==record.source_commit)throw Error('failure_binding_invalid');
+  const matches=t=>t?.status==='failed_no_repurchase'&&t.claimed_by===agent&&t.failure?.evidence_path===a.path&&t.failure?.evidence_sha256===a.sha256;
+  let observed=await snapshot();if(!fresh(observed,agent,now))throw Error('snapshot_unavailable');
+  if(!matches(taskFor(observed,seat.assignment.id))){
+   const task=taskFor(observed,seat.assignment.id);if(task?.status!=='claimed'||task.claimed_by!==agent||task.date!==record.date)throw Error('failure_owner_conflict');
+   seat.failure_command_id||=keyed('failure',record,agent);seat.status='failure_sync_unknown';saveLedger(root,record);
+   await command({id:seat.failure_command_id,action:'fail_task',agent,task_id:seat.assignment.id,evidence_path:a.path,evidence_sha256:a.sha256,failure_kind:'incomplete_or_failed_provider_output'});
+   observed=await snapshot();
+  }
+  if(!matches(taskFor(observed,seat.assignment.id)))throw Error('failure_readback_unverified');
+  seat.status='failed_no_repurchase';seat.failure_verified=true;seat.failure_receipt={...taskFor(observed,seat.assignment.id).failure,observed_at:observed.ran_at};seat.accepted=false;
+ }catch{seat.status='failure_sync_unknown';seat.failure_verified=false;}
+ saveLedger(root,record);
+}
+
 export async function syncDailyBoard({root, date, snapshot, command, readRemote, now=Date.now()}) {
   const record = readLedger(root, date);
   if (!record) return null;
   if (record.date !== date) throw Error('reservation_date_mismatch');
   for (const [agent, seat] of Object.entries(record.seats)) {
     recoverArtifact(root,record,agent,seat);
+    if(seat.assignment&&seat.claim_verified&&['generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}
     if (seat.status === 'generation_started') {
       seat.status = 'generation_unknown_no_repurchase';
       seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';
@@ -219,4 +241,4 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
   return record;
 }
 
-export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','sync_unknown','review_unknown'].includes(seat.status));
+export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','failure_sync_unknown','sync_unknown','review_unknown'].includes(seat.status));
