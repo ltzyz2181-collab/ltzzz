@@ -26,3 +26,9 @@ test('later controller corrections update the external view without rewriting au
  assert.equal(result.tasks[0].external_delivery.annotations_scope,'controller_corrections_not_words_of_external_author');
  assert.equal(fs.readFileSync(path.join(root,'knowledge/results/external/'+date+'-claude.md'),'utf8'),report);
 }finally{fs.rmSync(root,{recursive:true,force:true});}});
+test('legacy external metadata and already-ingested views receive unverified attribution without rewriting the author text',()=>{const root=temporary();try{
+ archiveExternalReport(request(),{root});seedDaily(root);registerExternalReport({root,date});
+ const p=path.join(root,'knowledge/results/external/'+date+'-claude.json'),m=JSON.parse(fs.readFileSync(p));for(const k of ['author_provider','reported_author_provider','author_provider_verified','github_identity_proves_provider'])delete m[k];fs.writeFileSync(p,JSON.stringify(m));
+ const d=path.join(root,'data/results/'+date+'.json'),r=JSON.parse(fs.readFileSync(d));delete r.tasks[0].external_delivery.provider_attribution_revision;fs.writeFileSync(d,JSON.stringify(r));
+ assert.equal(readCanonicalReport(root,date).author_provider,null);assert.equal(registerExternalReport({root,date}).changed,true);assert.equal(registerExternalReport({root,date}).changed,false);assert.equal(fs.readFileSync(path.join(root,'knowledge/results/external/'+date+'-claude.md'),'utf8'),report);
+}finally{fs.rmSync(root,{recursive:true,force:true});}});
