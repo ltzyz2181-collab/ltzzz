@@ -2,6 +2,8 @@
 
 类型：事实索引与未完成项；替代重复读取长对话。具体状态只引用原始回执，不在本页复制余额与多份状态。
 
+最新巡检分工：[千问与Actions验收规则](../QIANWEN-ACTIONS-AUDIT-CONTRACT.md)。Actions持凭证并留真实调用证据，千问只审文件与回执，不复制Token。共用GitHub账号不证明模型来源；Claude外部材料与国内代执行分别署名。#170已合并，豆包Pro已补交，不能继续沿用旧“未合并/未修复”清单。
+
 ## 最新纠错：席位和豆包日课
 
 当前分工及五签/观察席区别见 [SEATS-AND-GOVERNANCE-CURRENT.md](../SEATS-AND-GOVERNANCE-CURRENT.md)。GPT总控仍在任，关闭的是原厂付费日课；Claude为观察、独立审计与规划席，仓库写入已验证；Microsoft除名。
@@ -18,7 +20,7 @@
 
 ## 已完成与正在部署的区别
 
-PR #161为Claude本人外部仓库审计，已合并；Claude在任“独立审计＋规划”。原厂API欠费并不取消已交付的外部审计。Microsoft沿用最近任命“暂时除名”，不恢复旧GPT代执行额外日课。
+PR #161登记为Claude外部仓库审计，已合并；GitHub共用账号只证明写入，原生提供商身份仍按归属说明标为外部自报。Claude在任“独立审计＋规划”。原厂API欠费并不取消已收到的外部审计材料。Microsoft沿用最近任命“暂时除名”，不恢复旧GPT代执行额外日课。
 
 PR #162已合并：7个在任岗位存在可读健康入口；18个公开名片路径线上读取通过。豆包正式Worker HTTP200，api-doubao别名ENOTFOUND；Grok以api-xai为准，api-grok别名失败。api-claude自定义域名绑定403/code10084，workers.dev只读名片入口已上线；该入口无推理。
 
