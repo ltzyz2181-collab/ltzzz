@@ -1,3 +1,4 @@
+import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,finishExecution} from './lib/provider-execution.js';
 /**
@@ -27,7 +28,7 @@ export default {
 
     if (request.method === "GET" && path === "/health") {
       const hasKey = !!(env.OPENAI_API_KEY || "");
-      return json({ ok: true, engine: "gpt-proxy", key_configured: hasKey, ...proxyAuthState(env), identity_receipt_revision:'ltzzz.provider-execution.v1', configured_model:'request_selected', generation_verified:false });
+      return json({ ok: true, engine: "gpt-proxy", key_configured: hasKey, ...proxyAuthState(env), identity_receipt_revision:'ltzzz.provider-execution.v1', ...modelConfiguration(null,{source:'request_required'}), model_selection:'request_selected' });
     }
 
     if(request.method==='GET'&&path==='/auth/check')return authCheck(request,env,{legacyToken:env.ACCESS_TOKEN});

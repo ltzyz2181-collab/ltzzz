@@ -1,67 +1,56 @@
 name: Key Liveness Probe (AI seats)
-
+# Reuse existing daily-generation receipts; no paid pings to disabled providers.
+# External Qianwen receives files, never credentials.
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 1 * * *'   # 每日 UTC 01:30 = 北京 09:30
-
-permissions:
-  contents: write
-
+    - cron: '30 1 * * *'
+  push:
+    branches: [main]
+    paths: ['.github/workflows/key-liveness.yml','scripts/run-credentialed-audit.mjs','scripts/lib/credentialed-audit.mjs']
+  pull_request:
+    paths: ['.github/workflows/key-liveness.yml','scripts/run-credentialed-audit.mjs','scripts/lib/credentialed-audit.mjs','scripts/tests/audit-evidence.test.mjs']
+  workflow_run:
+    workflows: ['Daily Agent Tasks','Bounded Doubao daily recovery','Deploy coded agent identity and Kimi quality profile']
+    types: [completed]
+    branches: [main]
+permissions: {contents: read}
+concurrency: {group: ltzzz-credentialed-audit, cancel-in-progress: false}
 jobs:
-  probe:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Probe each AI seat key
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/audit-evidence.test.mjs scripts/tests/external-report.test.mjs
+  audit:
+    needs: test
+    if: github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify committed real generation and credential gates without new model calls
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
-          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
-          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
-          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/run-credentialed-audit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: credentialed-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/credentialed-audit/
+          retention-days: 30
+      - name: Preserve auditable receipts
+        if: always()
         run: |
-          mkdir -p knowledge/results
-          OUT="knowledge/results/key-liveness-$(date -u +%Y-%m-%d).json"
-          echo "[" > "$OUT"
-          probe() {
-            local name="$1"; local url="$2"; local key="$3"; local auth="$4"; local body="$5"
-            local code resp
-            if [ -z "$key" ]; then
-              echo "  {\"seat\":\"$name\",\"status\":\"no_secret\",\"http\":null}," >> "$OUT"
-              echo "$name: NO_SECRET"; return
-            fi
-            resp=$(curl -s -m 30 -w "\n%{http_code}" -X POST "$url" \
-              -H "Content-Type: application/json" \
-              -H "$auth: Bearer $key" \
-              -d "$body" 2>/dev/null)
-            code=$(echo "$resp" | tail -1)
-            echo "  {\"seat\":\"$name\",\"status\":\"http_$code\",\"http\":$code}," >> "$OUT"
-            echo "$name -> HTTP $code"
-          }
-          probe "gpt"       "https://api.openai.com/v1/chat/completions"    "$OPENAI_API_KEY"    "Authorization" '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
-          probe "deepseek"  "https://api.deepseek.com/chat/completions"     "$DEEPSEEK_API_KEY"  "Authorization" '{"model":"deepseek-chat","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
-          probe "grok"      "https://api.x.ai/v1/chat/completions"          "$XAI_API_KEY"       "Authorization" '{"model":"grok-4-fast","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
-          probe "claude"    "https://api.anthropic.com/v1/messages"         "$ANTHROPIC_API_KEY" "x-api-key"     '{"model":"claude-3-5-haiku-20241022","max_tokens":5,"messages":[{"role":"user","content":"ping"}]}'
-          # 国内 Kimi（MOONSHOT_API_KEY_CN）：模型名必须用 kimi-k2.6；max_tokens 必须给足（推理模型，给少了内容为空）
-          # 修正记录 2026-10-09：旧探针用 moonshot-v1-8k + max_tokens:5 → 必然 404/空内容，误报 key 失效
-          probe "kimi_cn"   "https://api.moonshot.cn/v1/chat/completions"   "$MOONSHOT_API_KEY_CN" "Authorization" '{"model":"kimi-k2.6","messages":[{"role":"user","content":"ping"}],"max_tokens":256}'
-          # 国外 Kimi（MOONSHOT_API_KEY）：模型名同样用 kimi-k2.6
-          probe "kimi_intl" "https://api.moonshot.ai/v1/chat/completions"   "$MOONSHOT_API_KEY"    "Authorization" '{"model":"kimi-k2.6","messages":[{"role":"user","content":"ping"}],"max_tokens":256}'
-          echo "  {\"seat\":\"_end\",\"status\":\"done\"}" >> "$OUT"
-          echo "]" >> "$OUT"
-          echo "----- result -----"
-          cat "$OUT"
-
-      - name: Commit probe result
-        run: |
-          git config user.name "ltzzz-xai-bot"
-          git config user.email "bot@ltzzz.local"
-          git add knowledge/results/key-liveness-*.json || true
-          git diff --staged --quiet && echo "no changes" && exit 0
-          git commit -m "chore(probe): AI seat key liveness $(date -u +%Y-%m-%d)"
-          git push
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/credentialed-audit/
+          git diff --staged --quiet && exit 0
+          git commit -m 'Credentialed Actions audit: real generation receipts and zero-generation auth checks'
+          node tools/push-receipt-commit.mjs

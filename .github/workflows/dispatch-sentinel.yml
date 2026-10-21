@@ -11,15 +11,16 @@ name: Dispatch Sentinel (派单哨兵 · 每小时)
 on:
   push:
     branches: [main]
-    paths: ['scripts/dispatch-sentinel.mjs', '.github/workflows/dispatch-sentinel.yml']
+    paths: ['scripts/dispatch-sentinel.mjs','scripts/record-sentinel-coverage.mjs','scripts/lib/sentinel-coverage.mjs','.github/workflows/dispatch-sentinel.yml']
   pull_request:
-    paths: ['scripts/dispatch-sentinel.mjs','scripts/tests/dispatch-sentinel.test.mjs','.github/workflows/dispatch-sentinel.yml']
+    paths: ['scripts/dispatch-sentinel.mjs','scripts/record-sentinel-coverage.mjs','scripts/lib/sentinel-coverage.mjs','scripts/tests/audit-evidence.test.mjs','scripts/tests/dispatch-sentinel.test.mjs','.github/workflows/dispatch-sentinel.yml']
   schedule:
     - cron: '0 * * * *'   # 每小时
   workflow_dispatch:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ltzzz-dispatch-sentinel
@@ -38,15 +39,13 @@ jobs:
           node-version: '20'
 
       - name: Verify exact task and nested receipt matching
-        run: node --test scripts/tests/dispatch-sentinel.test.mjs
+        run: node --test scripts/tests/dispatch-sentinel.test.mjs scripts/tests/audit-evidence.test.mjs
 
       - name: 运行派单哨兵
         if: github.event_name != 'pull_request'
         id: scan
         run: |
-          set +e
           node scripts/dispatch-sentinel.mjs > /tmp/sentinel.out 2>&1
-          echo "exit=$?" >> "$GITHUB_OUTPUT"
           cat /tmp/sentinel.out
           # 汇总到 Step Summary
           {
@@ -55,12 +54,18 @@ jobs:
             cat /tmp/sentinel.out
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Read observed Actions runs and persistence steps, no model calls
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/record-sentinel-coverage.mjs
+
       - name: 落盘
         if: github.event_name != 'pull_request'
         run: |
           git config user.name "ltzzz-sentinel"
           git config user.email "bot@ltzzz.local"
-          git add memory/sentinel/ knowledge/results/dispatch/sentinel-latest.json
+          git add memory/sentinel/ knowledge/results/dispatch/sentinel-latest.json knowledge/results/dispatch/sentinel-runs/ knowledge/results/dispatch/sentinel-coverage/
           if git diff --staged --quiet; then
             echo "no changes"; exit 0
           fi
@@ -72,7 +77,16 @@ jobs:
         run: |
           OUT=$(cat /tmp/sentinel.out)
           if echo "$OUT" | grep -qE 'alert-items\] .*(MISSING|BLOCKED|UNCONFIGURED|UNKNOWN)'; then
-            echo "::error::派单哨兵发现需处理项：$(echo "$OUT" | grep 'alert-items')"
-            exit 1
+            echo "::warning::扫描及落盘已完成，业务待处理项：$(echo "$OUT" | grep 'alert-items')"
+            exit 0
           fi
           echo "::notice::派单哨兵本轮全部正常"
+
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name != 'pull_request'
+        with:
+          name: sentinel-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            knowledge/results/dispatch/sentinel-runs/
+            knowledge/results/dispatch/sentinel-coverage/
+          retention-days: 30

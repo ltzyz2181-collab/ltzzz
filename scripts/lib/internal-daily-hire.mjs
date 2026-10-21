@@ -1,7 +1,7 @@
 import {digest} from './daily-external-hire.mjs';
 export function internalHireEvidence(record,{ans,read,sourcePath}){
  if(record.mode!=='internal')throw Error('internal_mode_required');
- const result={...record,paid:false,tx_hash:null,new_payments_this_run:0,new_model_calls_this_run:0,
+ const result={...record,author_provider:null,reviewer_provider:null,author_provider_verified:false,paid:false,tx_hash:null,new_payments_this_run:0,new_model_calls_this_run:0,
   money:{kind:'internal_non_cash_collaboration',paid:false,amount_raw:'0',tx_hash:null,internal_credit_settlement:'not_performed'},
   original_task_ids:ans?.tasks?.map(t=>t.id)||[],upstream_model_usage:[],evidence:[],action_taken:null,follow_up_receipt:null,rejection_reasons:[],delivery_accepted:false,deployed:false,
   model_execution_source_commit:ans?.source_commit||null};
@@ -29,6 +29,7 @@ export function internalHireEvidence(record,{ans,read,sourcePath}){
   result.status=!boardVerified?'internal_reviewed_pending_board_verification':verdict.accepted?'internal_engineering_artifact_accepted':'internal_delivery_rejected';
   result.delivery_accepted=boardVerified&&verdict.accepted;
   result.action_taken={type:'existing_ANS_worker_and_independent_review',source_run_id:ans.run_id,source_tasks:result.original_task_ids,reused_existing_model_calls:true};
+  result.author_provider=worker.executed_by;result.reviewer_provider=reviewer.executed_by;result.author_provider_verified=true;
   result.follow_up_receipt={artifact_sha256:worker.sha256,review_artifact_sha256:reviewer.sha256,author_provider:worker.executed_by,reviewer_provider:reviewer.executed_by,accepted:verdict.accepted,board_verified:boardVerified,scope:'engineering_draft_only_not_deployment_or_USDC_wages'};
   result.rejection_reasons=verdict.accepted?[]:verdict.reasons;
  }catch(error){result.status='blocked_internal_evidence';result.evidence_error=error.message;}

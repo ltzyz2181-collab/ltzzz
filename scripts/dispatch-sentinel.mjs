@@ -63,6 +63,7 @@ const readJson = (p) => {
 };
 
 const rows = [];
+let dispatchReport;
 const push = (item, state, evidence, note = '') => rows.push({ item, state, evidence, note });
 
 /* ---------- 1. 日课产出 ---------- */
@@ -122,7 +123,7 @@ for(const [name,dirs] of [['AI雇AI回执(T1)',['knowledge/results/hire','knowle
  const index=indexDispatch(REPO),today=tasksForDate(index.tasks,DATE);
  push('今日派单跟踪',today.some(t=>t.overdue)?'BLOCKED':today.length?'OK':'UNKNOWN','ops/dispatch/',today.length?today.map(t=>t.id+':'+t.status).join('；'):'今日未找到正式assigned派单原件');
  const dir=path.join(REPO,'knowledge/results/dispatch');fs.mkdirSync(dir,{recursive:true});
- fs.writeFileSync(path.join(dir,'sentinel-latest.json'),JSON.stringify({at:new Date().toISOString(),date:DATE,executed_by:'workbuddy_dispatch_automation',execution_source:'repository_rules_not_WorkBuddy_client',model_calls:0,tasks:today,overdue_count:today.filter(t=>t.overdue).length,deadline_unverified_count:today.filter(t=>!t.deadline_verified).length,claim_verified:false},null,2)+'\n');
+ dispatchReport={at:new Date().toISOString(),date:DATE,executed_by:'workbuddy_dispatch_automation',execution_source:'repository_rules_not_WorkBuddy_client',model_calls:0,tasks:today,overdue_count:today.filter(t=>t.overdue).length,deadline_unverified_count:today.filter(t=>!t.deadline_verified).length,claim_verified:false};
 }
 
 /* ---------- 输出 ---------- */
@@ -139,9 +140,15 @@ if (!alert.length) md += `无 —— 本轮全部正常。\n`;
 else for (const r of alert) md += `- ${icon[r.state] || ''} **${r.item}**：${r.note}\n`;
 
 md += `\n## 明说事项\n\n`;
-md += `- 本哨兵**只读仓库文件**，读不到 GitHub Actions 的运行日志——若工作流失败但与文件无关，哨兵看不见。\n`;
+md += `- 扫描器只读仓库；Actions执行器用限本工作流的内置Token读取运行/步骤状态，另存于 knowledge/results/dispatch/sentinel-coverage/latest.json。未读到的日志不推定成功。\n`;
+md += `- 业务告警与扫描/提交故障分开：有阻塞项仍可成功扫描并落盘，不用历史小时文件数除以理论定时次数推算落盘率。\n`;
 md += `- 若某检查项证据文件不存在，状态记 \`UNKNOWN\`，**不假装通过**。\n`;
 
+const run=process.env.GITHUB_RUN_ID||'local',attempt=process.env.GITHUB_RUN_ATTEMPT||'1';
+if(!/^(?:[0-9]+|local)$/.test(run)||!/^\d+$/.test(attempt))throw Error('invalid_sentinel_run_identity');
+const runDir=path.join(REPO,'knowledge/results/dispatch/sentinel-runs');fs.mkdirSync(runDir,{recursive:true});
+Object.assign(dispatchReport,{run_id:run,run_attempt:attempt,scan_status:alert.length?'completed_with_business_alerts':'completed',checks:rows,business_alerts:alert.map(r=>({item:r.item,state:r.state})),unique_receipt:'knowledge/results/dispatch/sentinel-runs/'+run+'-'+attempt+'.json',repository_persistence:'verify_by_committed_receipt_path'});
+for(const file of [path.join(runDir,run+'-'+attempt+'.json'),path.join(REPO,'knowledge/results/dispatch/sentinel-latest.json')])fs.writeFileSync(file,JSON.stringify(dispatchReport,null,2)+'\n');
 const outDir = path.join(REPO, 'memory/sentinel');
 fs.mkdirSync(outDir, { recursive: true });
 const outFile = path.join(outDir, `${DATE}-${HH}.md`);

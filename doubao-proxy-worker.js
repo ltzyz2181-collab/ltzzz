@@ -1,3 +1,4 @@
+import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 import {doubaoRoute} from './lib/doubao-route.js';
@@ -29,8 +30,7 @@ export default {
         daily_recovery_revision: 'doubao-proxy-daily-v3',
         has_key: Boolean(env.DOUBAO_API_KEY||env.ARK_API_KEY),
         model_key_source: env.DOUBAO_API_KEY?'DOUBAO_API_KEY':'ARK_API_KEY',
-        model_configured: Boolean(env.DOUBAO_MODEL),
-        configured_model: env.DOUBAO_MODEL || null,
+        ...modelConfiguration(env.DOUBAO_MODEL,{source:env.DOUBAO_MODEL?'environment_override':'required_model_missing',override:Boolean(env.DOUBAO_MODEL)}),
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
         base_url_configured: Boolean(env.DOUBAO_BASE_URL),
