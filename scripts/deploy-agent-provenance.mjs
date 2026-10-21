@@ -1,4 +1,5 @@
 import {selectKimiModel} from '../lib/kimi-profile.js';
+import {routedModel} from './model-routing.mjs';
 import fs from 'node:fs';import path from 'node:path';import {execFileSync} from 'node:child_process';
 const account=process.env.CLOUDFLARE_ACCOUNT_ID,token=process.env.CLOUDFLARE_API_TOKEN,run=process.env.GITHUB_RUN_ID||'local';
 if(!account||!token||!process.env.LTZZZ_AGENT_TOKEN)throw Error('existing_deployment_credentials_and_service_token_required');
@@ -26,6 +27,11 @@ for(const [seat,fallback,main,host] of targets){
  fs.writeFileSync(cfg,`name = "${service}"\nmain = "${path.resolve(main)}"\ncompatibility_date = "2026-10-01"\n[vars]\nREQUIRE_TOKEN = "true"\n\n`);
  if(seat==='kimi'&&!process.env.LTZZZ_AGENT_TOKEN){row.status='blocked_existing_service_auth_secret_missing';continue;}
  try{wrangler(['secret','put','LTZZZ_AGENT_TOKEN','-c',cfg],process.env.LTZZZ_AGENT_TOKEN);row.service_token_injected=true;
+ if(seat==='doubao'){
+  row.expected_configured_model=routedModel('doubao','doubao-seed-2-1-pro-260915');
+  if(!/^doubao-seed-[A-Za-z0-9-]*pro[A-Za-z0-9-]*$/.test(row.expected_configured_model))throw Error('verified_pro_model_required');
+  wrangler(['secret','put','DOUBAO_MODEL','-c',cfg],row.expected_configured_model);row.model_configuration_applied=true;
+ }
  if(seat==='kimi'){
    const key=process.env.MOONSHOT_API_KEY_CN;if(!key){row.status='blocked_domestic_key_secret_missing';continue;}
    const c=await fetch('https://api.moonshot.cn/v1/models',{headers:{Authorization:'Bearer '+key},signal:AbortSignal.timeout(20000)});row.domestic_key_catalogue_http=c.status;
@@ -37,7 +43,7 @@ for(const [seat,fallback,main,host] of targets){
  catch{row.status='deployment_failed';continue;}
  const urls=[...(host?['https://'+host+'/health']:[]),'https://'+service+'.ltzyz2181.workers.dev/health'];row.observations=[];
  for(let attempt=0;attempt<12;attempt++){
-  for(const url of urls){try{const r=await fetch(url,{signal:AbortSignal.timeout(12000)}),d=await r.json();const good=r.ok&&d.identity_receipt_revision==='ltzzz.provider-execution.v1'&&d.proxy_auth_revision==='proxy-auth-v1'&&d.auth_required===true&&d.auth_configured===true&&(seat!=='doubao'||d.daily_recovery_revision==='doubao-proxy-daily-v2')&&(seat!=='kimi'||d.selected_api_region==='cn'&&d.configured_upstream==='https://api.moonshot.cn/v1/chat/completions'&&d.auth_configured===true);row.observations.push({url,http:r.status,revision:d.identity_receipt_revision||null,daily_recovery_revision:d.daily_recovery_revision||null,configured_model:d.configured_model||null,generation_verified:false,at:new Date().toISOString()});if(good){row.status='deployed_health_revision_verified';row.verified_url=url;break;}}catch{/* explicitly unverified, no claimed success */}}
+  for(const url of urls){try{const r=await fetch(url,{signal:AbortSignal.timeout(12000)}),d=await r.json();const good=r.ok&&d.identity_receipt_revision==='ltzzz.provider-execution.v1'&&d.proxy_auth_revision==='proxy-auth-v1'&&d.auth_required===true&&d.auth_configured===true&&(seat!=='doubao'||d.daily_recovery_revision==='doubao-proxy-daily-v2'&&d.configured_model===row.expected_configured_model)&&(seat!=='kimi'||d.selected_api_region==='cn'&&d.configured_upstream==='https://api.moonshot.cn/v1/chat/completions'&&d.auth_configured===true);row.observations.push({url,http:r.status,revision:d.identity_receipt_revision||null,daily_recovery_revision:d.daily_recovery_revision||null,configured_model:d.configured_model||null,generation_verified:false,at:new Date().toISOString()});if(good){row.status='deployed_health_revision_verified';row.verified_url=url;break;}}catch{/* explicitly unverified, no claimed success */}}
   if(row.verified_url)break;await new Promise(r=>setTimeout(r,2000));
  }
  if(row.verified_url){
