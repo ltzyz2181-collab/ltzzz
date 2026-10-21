@@ -12,15 +12,20 @@ on:
   push:
     branches: [main]
     paths: ['.github/workflows/recover-doubao-daily.yml','scripts/recover-doubao-daily.mjs']
+  workflow_run:
+    workflows: ['Deploy coded agent identity and Kimi quality profile']
+    types: [completed]
+    branches: [main]
 permissions: {contents: write}
 concurrency: {group: doubao-daily-recovery, cancel-in-progress: false}
 jobs:
   recover:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[recover-doubao-once]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[recover-doubao-once]') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      RECOVERY_DATE: ${{ inputs.date || '2026-10-14' }}
+      RECOVERY_DATE: ${{ github.event_name == 'workflow_run' && '2026-10-21' || inputs.date || '2026-10-14' }}
+      RECOVERY_REPAIR_MODEL_KEY: ${{ github.event_name == 'workflow_run' }}
       RECOVERY_VERIFY_PRO: ${{ inputs.verify_pro || 'false' }}
     steps:
       - uses: actions/checkout@v4
