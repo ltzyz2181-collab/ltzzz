@@ -10,7 +10,7 @@ const path = require('path');
 async function get(p) {
   const r = await fetch(BASE + p);
   const j = await r.json();
-  if (!r.ok && j.ok === false) throw new Error(p + ' ' + JSON.stringify(j));
+  if (!r.ok || j.ok === false) throw new Error(p + ' ' + JSON.stringify(j));
   return j;
 }
 
