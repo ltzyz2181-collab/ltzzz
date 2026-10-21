@@ -45,7 +45,7 @@ export function tallyVotes(votes,proposal){
  for(const v of votes){const r=validateVote(v,proposal);if(!r.ok){invalid.push(r.error);continue;}if(byProvider.has(r.vote.provider))duplicate=true;else byProvider.set(r.vote.provider,r.vote);}
  const unique=[...byProvider.values()],passes=unique.filter(v=>v.vote==='pass'),rejects=unique.filter(v=>v.vote==='reject');
  const split=passes.length>0&&rejects.length>0;
- return {ok:invalid.length===0&&!duplicate&&unique.length===3&&passes.length>=2&&!split,pass_count:passes.length,reject_count:rejects.length,providers_pass:passes.map(v=>v.provider),funds_related_split:split,invalid_votes:invalid,duplicate_provider_votes:duplicate,votes:unique,provider_execution_verified:false,scope:'shadow_vote_claims_only_not_authenticated_provider_votes'};
+ return {ok:invalid.length===0&&!duplicate&&unique.length===3&&passes.length>=2,pass_count:passes.length,reject_count:rejects.length,providers_pass:passes.map(v=>v.provider),funds_related_split:split,invalid_votes:invalid,duplicate_provider_votes:duplicate,votes:unique,provider_execution_verified:false,scope:'shadow_vote_claims_only_not_authenticated_provider_votes',supervisory_warnings:split?['minority_dissent_preserved']:[]};
 }
 export function regulate(rawProposal,votes,ctx={}){
  const base={mode:'shadow',applies:false,spending_authorized:false,independent_provider_execution_verified:false,at:new Date(ctx.now??Date.now()).toISOString()};

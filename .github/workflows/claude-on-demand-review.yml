@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: inspect只查目录零生成；review显式授权一次现有API调用，不重试、不充值
+        description: inspect只查目录零生成；review由有Actions权限的执行席显式触发一次现有API调用，无需owner逐次点击，不重试、不充值
         type: choice
         options: [inspect, review]
         default: inspect
@@ -23,7 +23,7 @@ permissions: {contents: read}
 concurrency: {group: claude-on-demand-review, cancel-in-progress: false}
 jobs:
   review:
-    if: github.repository == 'ltzyz2181-collab/ltzzz' && (github.event_name == 'push' || github.actor == 'ltzyz2181-collab')
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main'
     permissions: {contents: write}
     runs-on: ubuntu-latest
     timeout-minutes: 10

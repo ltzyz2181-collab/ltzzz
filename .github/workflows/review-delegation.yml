@@ -1,0 +1,48 @@
+name: Verify delegated supervisory review
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['config/review-delegation.json','config/autonomy-authority.json','scripts/lib/review-approval.mjs','scripts/lib/pending-supervision.mjs','scripts/lib/ans-cycle.mjs','scripts/lib/claude-review.mjs','scripts/run-ans-cycle.mjs','scripts/scan-muse-assets.js','scripts/panel/**','tools/reviewed-memory.mjs','tools/promote-memory.mjs','scripts/tests/review-delegation.test.mjs','scripts/verify-review-delegation.mjs','.github/workflows/review-delegation.yml']
+  pull_request:
+    paths: ['config/review-delegation.json','config/autonomy-authority.json','scripts/lib/review-approval.mjs','scripts/lib/pending-supervision.mjs','scripts/lib/ans-cycle.mjs','scripts/lib/claude-review.mjs','scripts/run-ans-cycle.mjs','scripts/scan-muse-assets.js','scripts/panel/**','tools/reviewed-memory.mjs','tools/promote-memory.mjs','scripts/tests/review-delegation.test.mjs','scripts/verify-review-delegation.mjs','.github/workflows/review-delegation.yml']
+permissions: {contents: read}
+concurrency: {group: 'review-delegation-${{ github.ref }}', cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify code and recorded-proof regressions, no credentials or paid requests
+        run: node scripts/verify-review-delegation.mjs --report knowledge/results/review-delegation/run-${{ github.run_id }}-${{ github.run_attempt }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: review-delegation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/review-delegation/run-${{ github.run_id }}-${{ github.run_attempt }}.json
+  persist:
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: review-delegation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/review-delegation/
+      - name: Persist actual main validation; never pay or publish
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/review-delegation/run-${{ github.run_id }}-${{ github.run_attempt }}.json
+          git diff --staged --quiet && exit 0
+          git commit -m 'Record supervisory review code validation, zero extra model calls'
+          node tools/push-receipt-commit.mjs
