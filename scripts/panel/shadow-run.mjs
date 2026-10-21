@@ -11,6 +11,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import {regulate} from './regulator.mjs';
 import {evaluateBreaker} from './circuit-breaker.mjs';
 import {PANEL_LIMITS} from './limits.mjs';
@@ -33,7 +34,6 @@ function demoBundle() {
   fs.mkdirSync(path.dirname(receiptPath), {recursive: true});
   const evidenceBody = {demo: true, at: new Date().toISOString(), note: 'shadow-only fixture'};
   fs.writeFileSync(receiptPath, JSON.stringify(evidenceBody, null, 2) + '\n');
-  const crypto = await import('node:crypto');
   const hash = crypto.createHash('sha256').update(fs.readFileSync(receiptPath)).digest('hex');
   const proposal = {
     id: 'PROP-shadow-demo-' + Date.now().toString(36),
@@ -52,12 +52,11 @@ function demoBundle() {
   return {proposal, votes, evidenceIndex: {}};
 }
 
-// top-level await not in all contexts — use async main
-async function main() {
+function main() {
   const args = parseArgs(process.argv);
   let proposal, votes, evidenceIndex = {};
   if (args.demo) {
-    const d = await demoBundle();
+    const d = demoBundle();
     proposal = d.proposal;
     votes = d.votes;
   } else {
@@ -102,7 +101,9 @@ async function main() {
   console.log(JSON.stringify({ok: true, outFile, decision_ok: decision.ok, breaker_tripped: breaker.tripped}, null, 2));
 }
 
-main().catch((e) => {
+try {
+  main();
+} catch (e) {
   console.error(e);
   process.exit(1);
-});
+}
