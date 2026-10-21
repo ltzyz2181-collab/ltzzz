@@ -58,7 +58,7 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
 
 export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, thinking }) {
   // Select the route before dispatch; never replay an uncertain native request via the proxy.
-  if(process.env.DOUBAO_USE_PROXY==='true')return callDoubaoProxy({prompt,model,maxTokens,thinking});
+  if(process.env.DOUBAO_USE_PROXY==='true')return callDoubaoProxy({prompt,model:model||MODEL(),maxTokens,thinking});
   if (!apiKey) return { ok: false, status: "not_configured", error: "DOUBAO_API_KEY（或 ARK_API_KEY）未配置（请在 GitHub Secrets 添加）" };
   const base = BASE();
   const mdl = model || MODEL();
