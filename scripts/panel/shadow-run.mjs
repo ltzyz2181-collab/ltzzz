@@ -13,18 +13,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {regulate} from './regulator.mjs';
+import {validateProposal,proposalHash} from './schema.mjs';
 import {evaluateBreaker} from './circuit-breaker.mjs';
 import {PANEL_LIMITS} from './limits.mjs';
 
 function parseArgs(argv) {
-  const out = {demo: false, proposal: null, votes: null, evidenceIndex: null, outDir: 'knowledge/results/panel'};
+  const out = {demo: false, proposal: null, votes: null, evidenceIndex: null, spendState: null, outDir: 'knowledge/results/panel'};
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--demo') out.demo = true;
     else if (a === '--proposal') out.proposal = argv[++i];
     else if (a === '--votes') out.votes = argv[++i];
     else if (a === '--evidence-index') out.evidenceIndex = argv[++i];
+    else if (a === '--spend-state') out.spendState=argv[++i];
     else if (a === '--out') out.outDir = argv[++i];
+    else throw Error('unknown_shadow_option');
   }
   return out;
 }
@@ -44,10 +47,12 @@ function demoBundle() {
     evidence: [{receipt_id: 'demo-evidence', path: receiptPath, hash}],
     created_at: new Date().toISOString()
   };
+  const bound=validateProposal(proposal).proposal;
+  const binding={proposal_id:bound.id,proposal_sha256:proposalHash(bound),at:new Date().toISOString()};
   const votes = [
-    {provider: 'deepseek', vote: 'pass', reason_code: 'within_pilot_cap'},
-    {provider: 'doubao', vote: 'pass', reason_code: 'evidence_ok'},
-    {provider: 'qianwen', vote: 'reject', reason_code: 'want_more_data'}
+    {...binding,provider: 'deepseek', vote: 'pass', reason_code: 'within_pilot_cap'},
+    {...binding,provider: 'doubao', vote: 'pass', reason_code: 'evidence_ok'},
+    {...binding,provider: 'qianwen', vote: 'reject', reason_code: 'want_more_data'}
   ];
   return {proposal, votes, evidenceIndex: {}};
 }
@@ -76,17 +81,23 @@ function main() {
     rootDir: process.cwd(),
     evidenceIndex,
     currentLimitUsd: 5,
-    recentStepUps: []
+    recentStepUps: [],
+    spendState:args.demo?{pilot_total_usd:0,daily_external_usd:0,daily_outbound_usd:0}:args.spendState?JSON.parse(fs.readFileSync(args.spendState,'utf8')):undefined
   });
 
   const breaker = evaluateBreaker({
-    funds_related_split_2_1: decision.tally?.funds_related_split === true
+    funds_related_split_2_1: decision.tally?.funds_related_split === true,
+    evidence_missing:decision.stage==='evidence',
+    over_daily_external_cap:decision.step?.failures?.some(f=>['over_daily_external','over_daily_outbound','over_rah_pilot_total'].includes(f.code))===true
   });
 
   const report = {
     at: new Date().toISOString(),
     mode: 'shadow',
     applies: false,
+    spending_authorized:false,
+    provider_execution_verified:false,
+    model_calls:0,
     limits_snapshot: PANEL_LIMITS,
     decision,
     breaker,
@@ -96,9 +107,9 @@ function main() {
   };
 
   fs.mkdirSync(args.outDir, {recursive: true});
-  const outFile = path.join(args.outDir, `shadow-${Date.now()}.json`);
-  fs.writeFileSync(outFile, JSON.stringify(report, null, 2) + '\n');
-  console.log(JSON.stringify({ok: true, outFile, decision_ok: decision.ok, breaker_tripped: breaker.tripped}, null, 2));
+  const outFile = path.join(args.outDir, `shadow-${Date.now()}-${crypto.randomUUID()}.json`);
+  fs.writeFileSync(outFile, JSON.stringify(report, null, 2) + '\n',{flag:'wx'});
+  console.log(JSON.stringify({execution_ok: true, outFile, decision_ok: decision.ok, breaker_tripped: breaker.tripped}, null, 2));
 }
 
 try {
