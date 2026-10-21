@@ -1,3 +1,5 @@
+> 2026-10-21更正：Claude规划/独审在任，已验证Claude Code仓库写入及PR路径（#141、#161）；下方“无写权限”是只读客户端的兜底方案，不是全席当前状态。正式六文件日课与外部PR审稿分别记交付，不能互相冒充。
+
 # Claude 免费记忆讨论与独立审计
 状态：assigned_waiting_external_acceptance。2026-10-14，Asia/Shanghai。
 Claude是LTZZZ早期参与建设者；本次恢复免费外部讨论和独立审计，不恢复付费API、外部执行任务或链上签名权。
