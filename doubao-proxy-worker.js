@@ -25,6 +25,7 @@ export default {
         ok: true,
         ...proxyAuthState(env),
         service: 'ltzzz-doubao-proxy',
+        daily_recovery_revision: 'doubao-proxy-daily-v2',
         has_key: Boolean(env.ARK_API_KEY),
         model_configured: Boolean(env.DOUBAO_MODEL),
         configured_model: env.DOUBAO_MODEL || null,
