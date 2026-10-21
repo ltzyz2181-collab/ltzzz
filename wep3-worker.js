@@ -368,6 +368,9 @@ async function walletView(env, agent) {
 async function hireLoop(env, body) {
   if(!body.deliverable||!body.evidence_path||!body.worker)return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
   try{body={...body,audit_report:auditProof(body.audit_report,body.agent,body.worker)};}catch(e){return {ok:false,error:e.message,status:422};}
+  const poster = body.agent;
+  const skill = SKILLS.find(s => s.id === body.skill);
+  if (!known(poster) || !skill || !AGENTS.includes(body.worker) || body.worker === poster) return {ok:false,error:'invalid_hire_parties_or_skill',status:422};
   const actualHash=await sha(String(body.deliverable));
   if(body.audit_report.deliverable_sha256!==actualHash) return {ok:false,error:'audit_hash_mismatch',status:422};
   const duplicate=await get(env,'wep3:delivery:'+actualHash,null);
