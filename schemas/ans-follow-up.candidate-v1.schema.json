@@ -1,0 +1,221 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "action_taken": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "none",
+        "dispatched",
+        "fixed",
+        "escalated"
+      ]
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "open",
+        "closed",
+        "pending_review"
+      ]
+    },
+    "follow_up_receipt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "test_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model_proposed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tested_by_model_claim": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "actually_run": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "model_proposed",
+        "tested_by_model_claim",
+        "actually_run",
+        "run_id",
+        "sha256"
+      ]
+    },
+    "paid": {
+      "type": "boolean"
+    },
+    "tx_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "action_taken",
+    "status",
+    "test_status",
+    "paid",
+    "tx_hash",
+    "follow_up_receipt"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action_taken": {
+            "const": "none"
+          }
+        },
+        "required": [
+          "action_taken"
+        ]
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "open"
+          },
+          "follow_up_receipt": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_taken": {
+            "enum": [
+              "dispatched",
+              "fixed",
+              "escalated"
+            ]
+          }
+        },
+        "required": [
+          "action_taken"
+        ]
+      },
+      "then": {
+        "properties": {
+          "follow_up_receipt": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "actually_run": {
+                "const": true
+              }
+            },
+            "required": [
+              "actually_run"
+            ]
+          }
+        },
+        "required": [
+          "test_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "run_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "run_id",
+              "sha256"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "actually_run": {
+                "not": {
+                  "const": true
+                }
+              }
+            },
+            "required": [
+              "actually_run"
+            ]
+          }
+        },
+        "required": [
+          "test_status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "run_id": {
+                "type": "null"
+              },
+              "sha256": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$id": "urn:ltzzz:ans-follow-up:candidate-v1",
+  "title": "Controller-corrected ANS follow-up candidate; not production-integrated"
+}

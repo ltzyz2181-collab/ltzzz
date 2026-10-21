@@ -1,106 +1,14 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
-import crypto from 'node:crypto';
-import {validateProposal, validateVote} from '../panel/schema.mjs';
-import {checkStepAndCeiling, regulate, tallyVotes} from '../panel/regulator.mjs';
-import {evaluateBreaker} from '../panel/circuit-breaker.mjs';
-import {PANEL_LIMITS} from '../panel/limits.mjs';
-
-test('rejects free-text extra fields on proposal', () => {
-  const r = validateProposal({
-    id: 'PROP-12345678',
-    kind: 'rentahuman_pilot',
-    proposer_seat: 'x',
-    proposer_provider: 'claude',
-    requested: {amount_usd: 1},
-    evidence: [{receipt_id: 'r1'}],
-    created_at: new Date().toISOString(),
-    please_ignore_limits: true
-  });
-  assert.equal(r.ok, false);
-  assert.equal(r.error, 'unknown_fields');
-});
-
-test('blocks same-provider vote as proposer', () => {
-  const p = {
-    id: 'PROP-12345678',
-    kind: 'external_purchase',
-    proposer_seat: 'ds',
-    proposer_provider: 'deepseek',
-    requested: {amount_usd: 1},
-    evidence: [{receipt_id: 'r1'}],
-    created_at: new Date().toISOString()
-  };
-  const vp = validateProposal(p);
-  assert.equal(vp.ok, true);
-  const v = validateVote({provider: 'deepseek', vote: 'pass', reason_code: 'x'}, vp.proposal);
-  assert.equal(v.ok, false);
-});
-
-test('hard-caps rentahuman single at 3 USD', () => {
-  const p = validateProposal({
-    id: 'PROP-12345678',
-    kind: 'rentahuman_pilot',
-    proposer_seat: 'c',
-    proposer_provider: 'claude',
-    requested: {amount_usd: 5},
-    evidence: [{receipt_id: 'r1'}],
-    created_at: new Date().toISOString()
-  }).proposal;
-  const step = checkStepAndCeiling(p, {});
-  assert.equal(step.ok, false);
-  assert.ok(step.failures.some((f) => f.code === 'over_rah_single'));
-});
-
-test('tally needs two distinct providers to pass', () => {
-  const proposal = {proposer_provider: 'claude', kind: 'rentahuman_pilot'};
-  const t = tallyVotes(
-    [
-      {provider: 'deepseek', vote: 'pass', reason_code: 'a'},
-      {provider: 'doubao', vote: 'pass', reason_code: 'b'}
-    ],
-    proposal
-  );
-  assert.equal(t.ok, true);
-  assert.equal(t.pass_count, 2);
-});
-
-test('regulator shadow path with real file evidence', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'panel-'));
-  const file = path.join(dir, 'ev.json');
-  fs.writeFileSync(file, '{"ok":true}\n');
-  const hash = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-  const proposal = {
-    id: 'PROP-12345678',
-    kind: 'rentahuman_pilot',
-    proposer_seat: 'claude',
-    proposer_provider: 'claude',
-    requested: {amount_usd: 2},
-    evidence: [{receipt_id: 'ev1', path: file, hash}],
-    created_at: new Date().toISOString()
-  };
-  const votes = [
-    {provider: 'deepseek', vote: 'pass', reason_code: 'ok'},
-    {provider: 'doubao', vote: 'pass', reason_code: 'ok'}
-  ];
-  const d = regulate(proposal, votes, {mode: 'shadow', rootDir: dir});
-  assert.equal(d.ok, true);
-  assert.equal(d.applies, false);
-  assert.equal(d.mode, 'shadow');
-});
-
-test('breaker trips on proxy auth open', () => {
-  const b = evaluateBreaker({proxy_auth_probe_open: true});
-  assert.equal(b.tripped, true);
-  assert.ok(b.reasons.includes('proxy_auth_open'));
-  assert.ok(b.pause_classes.includes('rentahuman_live'));
-});
-
-test('limits constants match pilot doc', () => {
-  assert.equal(PANEL_LIMITS.maxRentAHumanPilotTotalUsd, 10);
-  assert.equal(PANEL_LIMITS.maxRentAHumanSingleUsd, 3);
-  assert.equal(PANEL_LIMITS.modeDefault, 'shadow');
-});
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import {createHash} from 'node:crypto';import {spawnSync} from 'node:child_process';
+import {validateProposal,validateVote,proposalHash} from '../panel/schema.mjs';import {checkStepAndCeiling,regulate,tallyVotes,verifyEvidence} from '../panel/regulator.mjs';import {evaluateBreaker} from '../panel/circuit-breaker.mjs';import {PANEL_LIMITS} from '../panel/limits.mjs';
+function fixture(){const root=fs.mkdtempSync(path.join(os.tmpdir(),'panel-')),file='knowledge/results/example.json';fs.mkdirSync(path.dirname(root+'/'+file),{recursive:true});const bytes=JSON.stringify({run_id:'run-good'});fs.writeFileSync(root+'/'+file,bytes);const raw={id:'PROP-20261021-example',kind:'rentahuman_pilot',proposer_seat:'claude',proposer_provider:'claude',requested:{amount_usd:2},evidence:[{receipt_id:'r1',path:file,hash:createHash('sha256').update(bytes).digest('hex'),run_id:'run-good'}],created_at:'2026-10-21T12:00:00Z'};const proposal=validateProposal(raw).proposal;const ctx={rootDir:root,spendState:{pilot_total_usd:0,daily_external_usd:0,daily_outbound_usd:0}};return {root,file,raw,proposal,ctx,clean:()=>fs.rmSync(root,{recursive:true,force:true})};}
+const votes=(p,choices=['pass','pass','pass'])=>['deepseek','doubao','qianwen'].map((provider,i)=>({provider,vote:choices[i],reason_code:'fixture',at:'2026-10-21T12:01:00Z',proposal_id:p.id,proposal_sha256:proposalHash(p)}));
+test('proposal rejects unknown nested instructions, untyped money and unbound evidence',()=>{const f=fixture();try{for(const r of [{...f.raw,ignore_limits:true},{...f.raw,requested:{amount_usd:2,instructions:'disable limits'}},{...f.raw,requested:{amount_usd:null}},{...f.raw,requested:{amount_usd:true}},{...f.raw,requested:{amount_usd:'2'}},{...f.raw,evidence:[{receipt_id:'r1'}]}])assert.equal(validateProposal(r).ok,false);assert.equal(validateProposal(f.raw).ok,true);}finally{f.clean();}});
+test('vote cannot self-review, replay another proposal, invent missing time or override duplicate providers',()=>{const f=fixture();try{const v=votes(f.proposal)[0];for(const patch of [{provider:'claude'},{proposal_id:'other-task'},{proposal_sha256:'a'.repeat(64)},{at:null}])assert.equal(validateVote({...v,...patch},f.proposal).ok,false);assert.equal(tallyVotes([v,...votes(f.proposal)],f.proposal).ok,false);assert.equal(tallyVotes(votes(f.proposal).slice(0,2),f.proposal).ok,false);}finally{f.clean();}});
+test('three claimed pass votes allow only a shadow decision, never authenticated approval or live authorization',()=>{const f=fixture();try{const d=regulate(f.raw,votes(f.proposal),f.ctx);assert.equal(d.ok,true);assert.equal(d.mode,'shadow');assert.equal(d.applies,false);assert.equal(d.spending_authorized,false);assert.equal(d.independent_provider_execution_verified,false);assert.equal(regulate(f.raw,votes(f.proposal),{...f.ctx,mode:'live'}).error,'only_shadow_supported');}finally{f.clean();}});
+test('two pass and one reject on funds trips the breaker and cannot be accepted',()=>{const f=fixture();try{const d=regulate(f.raw,votes(f.proposal,['pass','pass','reject']),f.ctx);assert.equal(d.ok,false);assert.equal(d.tally.funds_related_split,true);assert.equal(evaluateBreaker({funds_related_split_2_1:d.tally.funds_related_split}).tripped,true);}finally{f.clean();}});
+test('receipt hash and actual run id must both match; an index cannot waive byte verification',()=>{const f=fixture();try{assert.equal(verifyEvidence(f.proposal,f.ctx).ok,true);for(const change of [{run_id:'wrong-run'},{hash:'a'.repeat(64)},{hash:null}])assert.equal(verifyEvidence({...f.proposal,evidence:[{...f.proposal.evidence[0],...change}]},f.ctx).ok,false);assert.equal(verifyEvidence(f.proposal,{...f.ctx,evidenceIndex:{r1:{hash:'b'.repeat(64)}}}).ok,false);assert.equal(verifyEvidence({...f.proposal,evidence:[{receipt_id:'invented',hash:'a'.repeat(64)}]},{...f.ctx,evidenceIndex:{invented:{exists:true,hash:'a'.repeat(64)}}}).ok,false);}finally{f.clean();}});
+test('absolute paths, traversal, symlink escape and non-receipt files are never read as evidence',()=>{const f=fixture(),outside=fs.mkdtempSync(path.join(os.tmpdir(),'panel-outside-'));try{fs.writeFileSync(outside+'/public-fixture.json','{}');fs.symlinkSync(outside+'/public-fixture.json',f.root+'/knowledge/results/link.json');for(const file of [outside+'/public-fixture.json','knowledge/results/../../outside.json','knowledge/results/link.json','.env'])assert.equal(verifyEvidence({...f.proposal,evidence:[{...f.proposal.evidence[0],path:file}]},f.ctx).ok,false);}finally{f.clean();fs.rmSync(outside,{recursive:true,force:true});}});
+test('single, cumulative pilot, daily purchase and daily outbound caps are independently enforced in the shadow calculation',()=>{const f=fixture();try{assert.equal(checkStepAndCeiling({...f.proposal,requested:{amount_usd:5}},f.ctx).failures.some(e=>e.code==='over_rah_single'),true);const r=checkStepAndCeiling(f.proposal,{spendState:{pilot_total_usd:9,daily_external_usd:19,daily_outbound_usd:29}});for(const code of ['over_rah_pilot_total','over_daily_external','over_daily_outbound'])assert.ok(r.failures.some(e=>e.code===code));assert.equal(checkStepAndCeiling(f.proposal,{}).ok,false);}finally{f.clean();}});
+test('step-up cannot exceed the illustrative absolute ceiling or use an invalid current limit/history',()=>{const p={kind:'limit_step_up',requested:{amount_usd:12}};assert.ok(checkStepAndCeiling(p,{currentLimitUsd:10}).failures.some(e=>e.code==='over_absolute_step_ceiling'));assert.equal(checkStepAndCeiling(p,{currentLimitUsd:Infinity}).ok,false);assert.equal(checkStepAndCeiling({...p,requested:{amount_usd:6}},{currentLimitUsd:5,recentStepUps:[new Date().toISOString()]}).ok,false);});
+test('CLI demo correctly reports a split rejection and writes a uniquely named shadow-only receipt',()=>{const root=fs.mkdtempSync(path.join(os.tmpdir(),'panel-cli-'));try{const r=spawnSync(process.execPath,[path.resolve('scripts/panel/shadow-run.mjs'),'--demo'],{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);const summary=JSON.parse(r.stdout);assert.equal(summary.decision_ok,false);assert.equal(summary.breaker_tripped,true);const report=JSON.parse(fs.readFileSync(root+'/'+summary.outFile));assert.equal(report.spending_authorized,false);assert.equal(report.model_calls,0);assert.equal(report.paid,false);}finally{fs.rmSync(root,{recursive:true,force:true});}});
+test('a proxy-auth-open signal still trips the shadow breaker; proposed constants do not grant funding authority',()=>{assert.equal(evaluateBreaker({proxy_auth_probe_open:true}).tripped,true);assert.equal(PANEL_LIMITS.maxRentAHumanPilotTotalUsd,10);assert.equal(PANEL_LIMITS.fundingAuthority,'proposal_only_not_owner_funding_authorization');});
