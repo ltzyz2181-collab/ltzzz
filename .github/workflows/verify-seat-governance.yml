@@ -1,0 +1,39 @@
+name: Verify seat meanings and Safe owners (read only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/verify-seat-governance.mjs','scripts/lib/safe-governance-read.mjs','.github/workflows/verify-seat-governance.yml']
+  pull_request:
+    paths: ['scripts/lib/daily-seat-policy.mjs','scripts/verify-seat-governance.mjs','scripts/lib/safe-governance-read.mjs','scripts/tests/seat-state-scope.test.mjs','.github/workflows/verify-seat-governance.yml']
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/seat-state-scope.test.mjs scripts/tests/external-return-dispatch.test.mjs
+  observe:
+    needs: test
+    if: github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Read fixed Safe owner/threshold/nonce views without credentials or signing
+        run: node scripts/verify-seat-governance.mjs
+      - name: Preserve real evidence and explicit unverified mappings
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/identity/safe-governance-*.json
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Readonly Safe owners and threshold; no model or signature'
+          node tools/push-receipt-commit.mjs
