@@ -12,7 +12,8 @@ export async function invoke(agent,prompt,maxTokens,options={}){
   if(agent==='gpt'||agent==='claude'){
    res=await createModelRouter()(agent==='gpt'?'GPT':'Claude',prompt,{...options,maxTokens:8192});
   }else if(agent==='qianwen_proxy'){
-   const r=await fetch('https://api-qianwen.ltzzz.com/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTokens}),signal:AbortSignal.timeout(120000)});
+   if(!process.env.LTZZZ_AGENT_TOKEN)return {status:'service_auth_not_configured',output:null};
+   const r=await fetch('https://api-qianwen.ltzzz.com/',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+process.env.LTZZZ_AGENT_TOKEN},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTokens}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)return {status:'api_error',output:null};const d=await r.json();res={ok:d.ltzzz_receipt?d.ltzzz_receipt.generation_verified===true:true,status:d.ltzzz_receipt?.status,output:d.choices?.[0]?.message?.content,finish_reason:d.choices?.[0]?.finish_reason,tokens_used:d.usage?.total_tokens,model:d.model,model_source:d.ltzzz_receipt?.model_source||(d.model?'provider_response':null),execution:d.ltzzz_receipt||null};
   }else{
    if(!p?.module||!process.env[p.secret])return {status:'not_configured',output:null};

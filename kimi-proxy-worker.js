@@ -1,4 +1,5 @@
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {authCheck,proxyAuthState} from './lib/proxy-auth.js';
 import {KIMI_PROFILE,kimiTokens,selectKimiModel} from './lib/kimi-profile.js';
 // LTZZZ · Kimi（Moonshot AI）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:kimi（总控挑战者，2026-09-30 起，接替 GPT 席位比拼）
@@ -24,6 +25,7 @@ export default {
       return json({
         ok: true,
         service: 'ltzzz-kimi-proxy',
+        ...proxyAuthState({...env,REQUIRE_TOKEN:'true'}),
         did: 'did:ltzzz:kimi',
         has_key: Boolean(env.KIMI_API_KEY),
         model_configured: Boolean(env.KIMI_MODEL),
@@ -39,6 +41,7 @@ export default {
       });
     }
 
+    if(request.method==='GET'&&url.pathname==='/auth/check')return authCheck(request,env,{legacyToken:env.KIMI_WORKER_TOKEN});
     if(request.method==='GET'&&url.pathname==='/catalogue'){
       const service=env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN;
       if(!service)return json({error:'service_auth_not_configured'},503);
