@@ -72,3 +72,18 @@ Instagram 写入工具返回发布成功。账号回读 `@ltzyz2181` 帖子数�
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-20.json|jq、SHA256、ffprobe/ffmpeg 全片解码与音量、英文旁白转写及抽帧、Base Sepolia 来源记录、Instagram get_post_list/account_info、公开 permalink 和截图|发布已完成；素材只有英文旁白与短英文画面文字，没有逐字完整旁白字幕，已记录且不重发。`
 - `ro8cDRW4zoF56gRKpYx6bX|ops/dispatch/接单回执-MANUS-INSTAGRAM-DAILY.md|核对上述 JSON、Instagram 帖子回读和公开页面截图|本次发布已完成；无其他待发布平台。`
+
+
+## 2026-10-21 10:00 PDT｜blocked_no_eligible_unique_video
+
+今日计划执行记录为 2026-10-21 10:03:24 PDT；计划仍为 active/full_auto，每日 10:00（US/Pacific），未修改。账号 `@ltzyz2181` 共 6 条帖子，今日 0 条；最近一条是 10/20 19:03:11 Tijuana 的 Reel，滚动额度显示 1/100。
+
+最新入口 `videos/instagram/latest.json` 指向 `videos/instagram/2026-10-20/video.mp4`，SHA-256 `267b9f4c06434e12c3b08520ac71b60c923445e39c24d3977227cf90503cdd2c`，源码提交 `11f75d13f24b23676b79e13a13c6edad93b3dba3`。下载字节与入口及同目录 manifest 的 SHA 一致；规格为 30 秒、720×1280（9:16）、H.264/AAC，完整解码通过，音轨非静音，英文 caption/manifest 均存在。抽检 3/10/18/26 秒画面，主要英文文字可读；页脚文字贴近画面底部，另记为 Instagram UI 安全区风险。
+
+该视频不能发布：`results/publishing/youtube-daily-2026-10-20.json` 以相同 SHA 确认已在 YouTube 公开，视频 ID `o-0DsEr_f84`，链接 <https://www.youtube.com/watch?v=o-0DsEr_f84>，验证状态 public/processed。`latest.json` 的 `published:false` 与平台回执不一致，以公开发布回执为准。10/16 是最近的未上传版本，但它是 owner 此前搁置素材的日期/故事板变体，caption/story 与已公开的 10/20 视频相同，故按同内容去重规则排除。其余仓库 MP4 已发布、被 owner 排除，或不满足 20–45 秒规格；完整 SHA 与原因见今日 JSON。
+
+本次没有调用上传/发布工具、没有重试、没有换账号。结果写为 `blocked_no_eligible_unique_video`；无 Instagram permalink、media_id、发布时间或发布截图。待有新的合格唯一仓库 MP4 后再由原每日计划运行。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-21.json|jq、GitHub main 精确 SHA 与 72 份发布 JSON 去重、11 个 MP4 清单、ffprobe/ffmpeg 全片解码与音量、四帧文字/安全区抽检、Instagram get_post_list/get_account_info、YouTube 公开回执核验|今日没有合格唯一素材；未发布，因此无 permalink、media_id、发布时间或截图。`
