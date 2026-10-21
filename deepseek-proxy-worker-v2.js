@@ -1,3 +1,4 @@
+import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · DeepSeek API proxy — Cloudflare Worker（v2，补齐健康检查）
@@ -29,8 +30,7 @@ export default {
         service: 'ltzzz-deepseek-proxy',
         did: 'did:ltzzz:deepseek',
         has_key: Boolean(env.DEEPSEEK_API_KEY),
-        model_configured: Boolean(env.DEEPSEEK_MODEL),
-        configured_model: env.DEEPSEEK_MODEL || 'deepseek-flash',
+        ...modelConfiguration(env.DEEPSEEK_MODEL || 'deepseek-flash',{source:env.DEEPSEEK_MODEL?'environment_override':'worker_default',override:Boolean(env.DEEPSEEK_MODEL)}),
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
         time: new Date().toISOString()

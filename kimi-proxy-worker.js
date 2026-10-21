@@ -1,3 +1,4 @@
+import {modelConfiguration} from './lib/model-configuration.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 import {authCheck,proxyAuthState,proxyAuth} from './lib/proxy-auth.js';
 import {KIMI_PROFILE,kimiTokens,selectKimiModel} from './lib/kimi-profile.js';
@@ -28,8 +29,7 @@ export default {
         ...proxyAuthState({...env,REQUIRE_TOKEN:'true'}),
         did: 'did:ltzzz:kimi',
         has_key: Boolean(env.KIMI_API_KEY),
-        model_configured: Boolean(env.KIMI_MODEL),
-        configured_model: 'auto',
+        ...modelConfiguration('auto',{source:'official_catalogue_at_request'}),
         selected_api_region: 'cn',
         configured_upstream: 'https://api.moonshot.cn/v1/chat/completions',
         model_policy: KIMI_PROFILE.model_policy,

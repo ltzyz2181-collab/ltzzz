@@ -1,0 +1,10 @@
+import fs from 'node:fs';import {auditGenerationSources,auditProxyGates} from './lib/credentialed-audit.mjs';
+const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),run=process.env.GITHUB_RUN_ID||'local',attempt=process.env.GITHUB_RUN_ATTEMPT||'1';
+const report={schema:'ltzzz.credentialed-audit.v1',at:new Date().toISOString(),business_date:date,timezone:'Asia/Shanghai',run_id:run,run_attempt:attempt,source_commit:process.env.GITHUB_SHA||null,executor:'GitHub_Actions',auditor_role:'qianwen_files_and_receipts_only',secrets_distributed_to_external_auditors:false,model_calls_this_audit:0,new_paid_schedules_added:false,paid:false,tx_hash:null,generation:auditGenerationSources(process.cwd(),{date}),proxy_gates:await auditProxyGates({token:process.env.LTZZZ_AGENT_TOKEN})};
+report.status=report.proxy_gates.every(x=>x.status==='health_and_credential_gate_verified_no_generation')?'audit_recorded':'audit_recorded_with_gate_blockers';
+report.note='Actual generation comes from existing paid daily tasks, preserved by hash; this collector performs zero generation. No stale, absent or disabled provider is declared restored. A shared GitHub login does not verify the model provider.';
+fs.mkdirSync('knowledge/results/credentialed-audit',{recursive:true});
+const file='knowledge/results/credentialed-audit/'+run+'-'+attempt+'.json';
+if(fs.existsSync(file))throw Error('audit_receipt_already_exists');
+fs.writeFileSync(file,JSON.stringify(report,null,2)+'\n');fs.writeFileSync('knowledge/results/credentialed-audit/latest.json',JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify({file,status:report.status,generation:Object.fromEntries(Object.entries(report.generation).map(([k,v])=>[k,v.status])),model_calls_this_audit:0}));
