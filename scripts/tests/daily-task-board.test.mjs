@@ -19,6 +19,17 @@ function fixture(t){
  return {options,generate,commit,get state(){return state},get posts(){return posts},get calls(){return calls},remote};
 }
 const verdictFor=(seat,patch={})=>({accepted:true,artifact_sha256:seat.artifact.sha256,task_id:seat.assignment.id,date,run_key:'run:1',source_commit:'source-sha',actual_provider:'doubao',...patch});
+test('failed provider attempt is hash-bound terminal board feedback; lost response reconciles and cannot buy again',async t=>{
+ const f=fixture(t);await prepareDailyBoard(f.options);await f.generate({ok:false,status:'provider_transport_unknown',output:'',finish_reason:null});f.commit();
+ await syncDailyBoard({...f.options,command:async body=>{await f.options.command(body);throw Error('lost response');}});
+ assert.equal(readLedger(f.options.root,date).seats[agent].status,'failure_sync_unknown');
+ await syncDailyBoard(f.options);const seat=readLedger(f.options.root,date).seats[agent];assert.equal(seat.status,'failed_no_repurchase');assert.equal(seat.failure_verified,true);
+ assert.equal(f.state.task_board.find(task=>task.id===seat.assignment.id).failure.evidence_sha256,seat.artifact.sha256);assert.equal(seat.accepted,false);await f.generate();assert.equal(f.calls,1);assert.equal(f.posts,2);
+});
+test('uncommitted failed output cannot finalize the live task, and tomorrow has a distinct task',async t=>{
+ const f=fixture(t);await prepareDailyBoard(f.options);await f.generate({finish_reason:'length'});await syncDailyBoard(f.options);assert.equal(f.posts,1);assert.equal(readLedger(f.options.root,date).seats[agent].status,'failure_sync_unknown');
+ f.commit();await syncDailyBoard(f.options);const next=seedTasks(f.state,now+86400000);assert.equal(next.task_board.find(task=>task.id==='DAILY-2026-10-17-deepseek').status,'assigned');assert.equal(next.task_board.find(task=>task.id==='DAILY-2026-10-16-deepseek').status,'failed_no_repurchase');
+});
 test('claim, immutable full output, commit/readback, submit and pending/unpaid verification',async t=>{
  const f=fixture(t);await prepareDailyBoard(f.options);assert.equal(readLedger(f.options.root,date).seats[agent].claim_verified,true);
  await f.generate();f.commit();await syncDailyBoard(f.options);
@@ -44,7 +55,7 @@ test('already claimed by this logical seat is not adopted by another executor',a
 });
 test('empty, truncated, unknown finish and out-of-scope output persist but are not submitted',async t=>{
  for(const extra of [{output:''},{finish_reason:'length'},{finish_reason:null},{output:'SPEND_PROPOSAL: pay【交付结束】'},{ok:false,status:'not_configured'}]){
-  const f=fixture(t);await prepareDailyBoard(f.options);await f.generate(extra);f.commit();await syncDailyBoard(f.options);assert.equal(f.posts,1);assert.equal(readLedger(f.options.root,date).seats[agent].status,'generation_failed_no_repurchase');await f.generate();assert.equal(f.calls,1);
+  const f=fixture(t);await prepareDailyBoard(f.options);await f.generate(extra);f.commit();await syncDailyBoard(f.options);assert.equal(f.posts,2);assert.equal(readLedger(f.options.root,date).seats[agent].status,'failed_no_repurchase');assert.equal(readLedger(f.options.root,date).seats[agent].failure_verified,true);await f.generate();assert.equal(f.calls,1);
  }
 });
 test('same-day replay, different attempt and ambiguous generation cannot spend twice',async t=>{

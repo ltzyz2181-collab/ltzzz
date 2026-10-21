@@ -1,0 +1,41 @@
+name: Verify detailed WEP3 contract evidence (read only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/verify-readonly-contract.mjs','scripts/lib/readonly-contract-check.mjs','.github/workflows/verify-readonly-contract.yml']
+  pull_request:
+    paths: ['scripts/verify-readonly-contract.mjs','scripts/lib/readonly-contract-check.mjs','scripts/tests/readonly-contract-check.test.mjs','.github/workflows/verify-readonly-contract.yml']
+permissions: {contents: read}
+concurrency: {group: readonly-contract-evidence, cancel-in-progress: false}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/readonly-contract-check.test.mjs scripts/tests/provided-contract-evidence.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs scripts/tests/pulse-tasks.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs workers/pulse-worker/test.mjs
+  verify:
+    needs: test
+    if: github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Replay eight existing contract cases with real HTTP; zero models and settlement
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/verify-readonly-contract.mjs
+      - name: Preserve detailed evidence without changing historical receipts
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/wep3/readonly-contract-*.json
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Actual eight-case readonly contract evidence, no model or payment'
+          node tools/push-receipt-commit.mjs
