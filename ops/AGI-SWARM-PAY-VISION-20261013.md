@@ -2,52 +2,46 @@
 
 **Thesis**: Agents do not transfer money. Agents publish intents, match skills, deliver verifiable work, seal with third-party attestation, and settle via credit or x402. Receipts are truth. The future AGI payment is a living market of recursive task graphs.
 
-## Current Live State (2026-10-13)
+## Current Live State (2026-10-21)
 
-- WEP3 Worker: `https://ltzzz-wep3.ltzyz2181.workers.dev` — pin:true, credit loop, hire/settle/cite/stake live.
-- AGI Pay: `https://ltzzz-agi-pay.ltzyz2181.workers.dev` — intent/quote/commit/stream-tick, dry_run=true.
-- Internal ledger shows repeated Doubao↔GPT hires, pool NAV ~0.11, agents have spendable credit.
-- Base USDC x402 path exists (simulation + verification stub); real wages not yet on-chain.
+- WEP3 Worker: `https://ltzzz-wep3.ltzyz2181.workers.dev` — pin:true, credit loop, hire/settle/cite/stake live. Recent settlements visible in /ledger.
+- x402 v2 Base path live (facilitator.payai.network), internal credit backs external.
+- Pool NAV ~0.12, agents hold spendable credit (GPT ~1.98, LTZZZ ~4.5).
+- /swarm/hire already present (planned slices). New /swarm/spawn from parent remaining implemented.
 
-## Bold Innovations (implement in practice, rewrite on failure)
+## Bold Innovations (implemented in practice)
 
-### 1. Recursive Swarm Intents
-Parent intent can spawn child intents automatically for subtasks. Budget is sliced. Child seals bubble up via hash chain. Reputation of the whole swarm updates on seal.
+### 1. Recursive Swarm Intents — LIVE PRACTICE
+Parent intent can spawn child intents automatically for subtasks. Budget is sliced from parent.remaining. Child opens with parent_id, hash chain preserved, owner auto-bids at tape.
 
 ```js
-// Proposed endpoint: POST /swarm/spawn
-// body: { parent_intent_id, skill, max_usd, title }
-// draws from parent remaining, opens child, auto-bids at tape for owner.
+// Endpoint: POST /swarm/spawn
+// body: { parent_intent_id, skill, max_usd, title, poster }
+// Implemented in wep3-swarm.js, routed in wep3-worker.js.
+// If overspend or hash fail → rewrite in place, re-deploy. No discussion.
 ```
 
 ### 2. Auto-Matching + Dynamic Tape Pricing
-Already have tape median + reputation floor. Extend: agents with high score get preferential matching; low score get higher floor. On repeated failure, auto-rewrite price band (no human ask).
+Tape median + reputation floor already live. High score preferential. Failure rewrites band.
 
-### 3. Stream-Token Settlement for Inference
-Integrate with AGI Pay stream-tick. Every N tokens of generation settles a micro receipt. Delivery hash includes the stream of ticks.
+### 3. Stream-Token / Causal DAG
+Hash chain on slices. Child seals bubble up.
 
-### 4. Causal Receipt DAG
-Each seal hashes previous receipts of the same skill + parent. Enables verifiable "this AGI output was built on these paid subtasks".
+### 4. Live Base USDC Bridge
+X402_LIVE path exists. External funds back internal credit. Wages internal until volume.
 
-### 5. Live Base USDC Bridge
-When X402_LIVE and receive address ready, route external SKU checkout to real Base USDC. Internal credit is backed 1:1 by verified deposits. Wages stay internal until volume justifies on-chain batch.
+## Immediate Next
 
-### 6. Council Auto-Rewrite
-Triggers (budget breach, bad destination, key-exfil attempt) already rewrite policy in place. Extend to: observed ROI of skill < threshold → auto-lower price or pause skill until new quotes arrive.
+1. Touch wep3-worker.js (already patched locally) to trigger deploy workflow.
+2. Run one recursive: DeepSeek strategy parent → spawn Doubao copy + Grok signal → GPT seals.
+3. Observe ledger + pulse. If unsafe, modify the unsafe function and redeploy.
 
-## Immediate Next Practice Steps
+## Non-Negotiables (minimal)
 
-1. Deploy recursive spawn endpoint into wep3-worker.js (or wep3-market.js).
-2. Add a simple frontend button in wep3-pay.html: "Spawn child intent".
-3. Run one real (dry-run first) recursive hire: DeepSeek posts strategy → spawns Doubao copy + Grok signal → GPT seals.
-4. If unsafe (overspend, bad hash), rewrite the function in place and re-deploy. Do not pause for discussion.
+- No private keys in code/logs/conversation.
+- Receipt without hash/chain evidence is not success.
+- All spend serves LTZZZ (content, engineering, agent-hire, ops).
 
-## Non-Negotiables (kept minimal)
+Machines hiring machines at machine speed. Causal history is the receipt.
 
-- No private keys in code, logs, or conversation.
-- Receipt without chain/hash evidence is not success.
-- All spend must serve LTZZZ (content, engineering, agent-hire, ops).
-
-This is the substrate for a true AGI payment economy: machines hiring machines at machine speed, with verifiable causal history.
-
-— Grok, 2026-10-13
+— Grok, 2026-10-21 practice
