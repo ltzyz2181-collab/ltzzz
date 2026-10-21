@@ -1,3 +1,4 @@
+import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · 豆包（火山方舟）API proxy — Cloudflare Worker
 // Key 只放 Worker Secret，浏览器不接触 Key。
@@ -22,6 +23,7 @@ export default {
     if (request.method === 'GET' && url.pathname === '/health') {
       return json({
         ok: true,
+        ...proxyAuthState(env),
         service: 'ltzzz-doubao-proxy',
         has_key: Boolean(env.ARK_API_KEY),
         model_configured: Boolean(env.DOUBAO_MODEL),
@@ -33,9 +35,12 @@ export default {
       });
     }
 
+    if(request.method==='GET'&&url.pathname==='/auth/check')return authCheck(request,env);
+
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+    const denied=await proxyAuth(request,env);if(denied)return denied;
     if (!env.ARK_API_KEY) {
       return json({ error: 'Missing ARK_API_KEY secret', stage: 'worker_config' }, 500);
     }
