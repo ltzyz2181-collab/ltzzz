@@ -20,7 +20,8 @@ export const PANEL_LIMITS = Object.freeze({
   externalPurchaseRejectStreak: 2,
   fundsRelatedSplitRejectsBreaker: true,
 
-  modeDefault: 'shadow'
+  modeDefault: 'shadow',
+  fundingAuthority: 'proposal_only_not_owner_funding_authorization'
 });
 
 export const ALLOWED_PROPOSAL_KINDS = Object.freeze([

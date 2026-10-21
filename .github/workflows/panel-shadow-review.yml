@@ -1,0 +1,57 @@
+name: Verify review panel and human-hire shadow boundaries
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/panel/**','scripts/rentahuman/**','scripts/tests/panel-shadow.test.mjs','scripts/tests/rentahuman-stage1.test.mjs','scripts/audit-ans-follow-up-schema.py','schemas/ans-follow-up.candidate-v1.schema.json','.github/workflows/panel-shadow-review.yml']
+  pull_request:
+    paths: ['scripts/panel/**','scripts/rentahuman/**','scripts/tests/panel-shadow.test.mjs','scripts/tests/rentahuman-stage1.test.mjs','scripts/audit-ans-follow-up-schema.py','schemas/ans-follow-up.candidate-v1.schema.json','.github/workflows/panel-shadow-review.yml']
+permissions: {contents: read}
+concurrency: {group: panel-human-hire-shadow-verification, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.event_name == ''pull_request'' && github.sha || ''main'' }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install --disable-pip-version-check --no-input jsonschema==4.25.1
+      - name: Independent shadow boundary regressions; no API credentials or external requests
+        run: node --test scripts/tests/panel-shadow.test.mjs scripts/tests/rentahuman-stage1.test.mjs
+      - name: Validate positive and negative ANS schema fixtures using draft-07
+        env:
+          PANEL_NODE_TESTS_VERIFIED: 'true'
+        run: python scripts/audit-ans-follow-up-schema.py --write-report knowledge/results/claude-team/panel-rah-validation-${{ github.run_id }}-${{ github.run_attempt }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: panel-human-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/claude-team/panel-rah-validation-${{ github.run_id }}-${{ github.run_attempt }}.json
+          retention-days: 30
+  persist:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: panel-human-shadow-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/claude-team/
+      - name: Persist actual main-branch verification; never book or pay
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/claude-team/panel-rah-validation-${{ github.run_id }}-${{ github.run_attempt }}.json
+          git diff --staged --quiet && exit 0
+          git commit -m 'Verified panel and human-hire shadow boundaries, no live booking or payment'
+          node tools/push-receipt-commit.mjs
