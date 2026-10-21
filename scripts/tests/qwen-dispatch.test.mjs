@@ -39,13 +39,23 @@ test('invalid cards rejected without model call (real_money, wrong agent, id mis
   assert.ok(validateCard({id: 'QWEN-TEST-0001', agent: 'qianwen', prompt: 'x'.repeat(30)}, 'OTHER.json').includes('filename_must_equal_id'));
 });
 
-test('kimi card below profile floor is rejected before provider call', () => {
-  const low = validateCard({id: 'QWEN-KIMI-0001', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k2', max_tokens: 1024}, 'QWEN-KIMI-0001.json');
-  assert.ok(low.includes('kimi_max_tokens_below_profile_floor_3000'), low.join(','));
-  // above the floor: no token-budget error
-  const ok = validateCard({id: 'QWEN-KIMI-0002', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k2', max_tokens: 4000}, 'QWEN-KIMI-0002.json');
-  assert.ok(!ok.some(e => e.startsWith('kimi_max_tokens_')), ok.join(','));
-  assert.ok(!ok.some(e => e.startsWith('max_tokens_')), ok.join(','));
-  // qwen card still bounded to the qwen ceiling
-  assert.ok(validateCard({id: 'QWEN-Q-0001', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'qwen-plus', max_tokens: 99999}, 'QWEN-Q-0001.json').includes('max_tokens_64_to_16384'));
+test('per-model token tiers: qwen capped 2048, kimi owns 3000-16384 separately', () => {
+  // qwen ceiling restored: 2048 passes, 2049 rejected
+  assert.deepEqual(validateCard({id: 'QWEN-T-0001', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'qwen-plus', max_tokens: 2048}, 'QWEN-T-0001.json').filter(e=>e.startsWith('max_tokens_')||e.startsWith('kimi_')), []);
+  assert.ok(validateCard({id: 'QWEN-T-0002', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'qwen-plus', max_tokens: 2049}, 'QWEN-T-0002.json').includes('max_tokens_qwen_ceiling_2048'));
+  // kimi: below floor rejected, above its own ceiling rejected, in range passes
+  assert.ok(validateCard({id: 'QWEN-K-0001', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k3', max_tokens: 1024}, 'QWEN-K-0001.json').some(e => e.startsWith('kimi_max_tokens_')));
+  assert.ok(validateCard({id: 'QWEN-K-0002', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k3', max_tokens: 99999}, 'QWEN-K-0002.json').some(e => e.startsWith('kimi_max_tokens_')));
+  assert.deepEqual(validateCard({id: 'QWEN-K-0003', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k3', max_tokens: 4000}, 'QWEN-K-0003.json').filter(e=>e.startsWith('max_tokens_')||e.startsWith('kimi_')), []);
+  // unknown model defaults to the qwen ceiling
+  assert.ok(validateCard({id: 'QWEN-T-0003', agent: 'qianwen', prompt: 'x'.repeat(30), max_tokens: 99999}, 'QWEN-T-0003.json').includes('max_tokens_qwen_ceiling_2048'));
+});
+
+test('receipt separates queue dispatcher from actual generating model', async () => {
+  const p = mk(); card(p.queueDir, {model: 'kimi-k3', max_tokens: 4000});
+  await runOnce({...p, call: async () => ({ok: true, status: 'success', output: '回执', model: 'kimi-k3', finish_reason: 'stop', tokens_used: 9})});
+  const rec = JSON.parse(fs.readFileSync(path.join(p.receiptDir, 'QWEN-TEST-0001.json')));
+  assert.equal(rec.queue_dispatcher, 'qianwen');
+  assert.equal(rec.generated_by_model, 'kimi-k3');
+  assert.ok(rec.attribution_note && /kimi/i.test(rec.attribution_note) && /qianwen/i.test(rec.attribution_note), rec.attribution_note);
 });
