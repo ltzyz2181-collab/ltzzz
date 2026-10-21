@@ -76,6 +76,7 @@ export default {
         },
         body: JSON.stringify({
           model,
+          ...(body.thinking?.type==='disabled'?{thinking:{type:'disabled'}}:{}),
           messages,
           temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
           max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 1200,
