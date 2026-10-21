@@ -1,3 +1,5 @@
+> 当前先处理席位纠错与只读五签核验：[岗位、治理和观察席](docs/SEATS-AND-GOVERNANCE-CURRENT.md)。GPT总控在任；停用的是原厂付费日课，Claude规划/独审在任，微软除名。
+
 > 精简接力：[docs/handoffs/CURRENT.md](docs/handoffs/CURRENT.md)。先看当前索引与最新回执，不必重复读取长对话。
 
 # LTZZZ · 所有 AI 从这里开始

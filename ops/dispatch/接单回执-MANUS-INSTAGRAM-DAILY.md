@@ -41,7 +41,7 @@
 - `ro8cDRW4zoF56gRKpYx6bX|ops/dispatch/接单回执-MANUS-INSTAGRAM-DAILY.md|逐项核对 Instagram MCP 工具能力、GitHub 视频清单、SHA256、媒体与链上证据|Instagram 直发工具仍需确认卡；遵循免点击偏好未创建卡。`
 
 
-## 2026-10-20｜未发布：无合格唯一素材
+## 2026-10-20 10:05 PDT｜例行扫描初始结果：无合格唯一素材
 
 执行时间：计划执行记录 `2026-10-20T17:05:23.249Z`（Tijuana 10:05）。账号复查时间：`2026-10-20T10:18:44-07:00`。Instagram 帖子数仍为 5，最新 Reel 是 <https://www.instagram.com/reel/DegfCDxiIEr/>（10/15），今日无 Reel；滚动 24 小时发布额度为 `0/100`。
 
@@ -51,8 +51,24 @@
 
 候选排除摘要：10/18（SHA `ba7a5063…`）及 10/17（`933b943c…`）已分别公开到 YouTube（`vLF1cBUaQLQ`、`xO8jmKy_120`），且属于 owner 刚明确拒绝的日期/余额文字卡片类型；10/16（`5d8af754…`）虽回执显示未发布、未上传，却是 owner 先前排除的 10/15 同故事板/画面/屏幕文字日期变体；10/15 仓库候选（`1b11309d…`）已被 owner 设置为不再使用。10/14 品牌片 60 秒超时长；10/12 金库片与 10/05 审计片均约 15.07 秒不足 20 秒；另一个 10/15 日更片（`ff7a539e…`）已公开到 YouTube `B_F6YC0GeBA` 且不足 20 秒。详细 SHA、来源 commit、媒体检查及回执路径见 JSON。
 
-结果：`blocked_no_eligible_unique_video`。未上传、未调用发布工具、未重试、未换账号；无 permalink、media_id、发布时间或发布后截图。计划保持原每日 10:00 不变；待仓库出现满足规则的全新唯一 MP4 后，后续计划运行再执行。
+初始 10:05 扫描结果：`blocked_no_eligible_unique_video`。当时未上传、未调用发布工具、未重试、未换账号；当时无 permalink、media_id、发布时间或发布后截图。此为例行扫描阶段状态，已由下节 19:03 owner 指定素材发布记录更新；每日 10:00 计划保持不变。
 
 回执（任务ID|文件路径|验证方法|未完成项）：
 
-- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-20.json|jq 校验、GitHub main MP4 SHA256、ffprobe/ffmpeg 全片解码、音量检测、抽帧、caption/manifest 对照、68 份发布JSON和10个MP4跨平台去重、Instagram 账号/限额复查|无合格唯一素材，未发布；没有 permalink、media_id、发布时间或截图。`
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-20.json|jq 校验、GitHub main MP4 SHA256、ffprobe/ffmpeg 全片解码、音量检测、抽帧、caption/manifest 对照、68 份发布JSON和10个MP4跨平台去重、Instagram 账号/限额复查|仅记录 10:05 初始扫描为 blocked；最终发布结果见本文件下一节。`
+
+
+## 2026-10-20 19:03 PDT｜owner 指定的 10/05 豆包视频已发布
+
+10:05 的每日扫描最初因没有合格唯一素材而记为 `blocked_no_eligible_unique_video`。之后 owner 明确选择仓库中标注豆包制作的 `videos/2026-10-05-audit-transparency.mp4`，并明确豁免 20–45 秒及 H.264 两项要求。owner 先前要求将 YouTube 视频改发 Instagram，现由 owner 指定该支素材作为本次 Instagram 一次性跨发；其 SHA 已在 YouTube 于 10/10 公开，视频 ID `nTZ44tD_Izw`，<https://www.youtube.com/watch?v=nTZ44tD_Izw>。此例外仅用于本次，不改变每日 10:00 计划或扩展到其他平台。
+
+发布素材 SHA-256：`b8b21435953b05c0dbb418b60488738454b908d7359f312d5809060ac98cd2c0`；源码提交：`dc17966c90c1398b9f545e2451f1f7147d19a354`。复核结果：15.071995 秒，720×1280（9:16），HEVC 视频与 AAC 音轨，完整解码通过，音轨平均音量 −15.9 dB、峰值 −1.2 dB。英语旁白转写通过；抽帧可见 “AI AUDIT”“Right token matters”“Evidence first. No receipt, no success.” 等英文画面字样。画面不是逐字完整旁白字幕；这项没有被 owner 豁免，作为本次已发布素材的限制如实记录。未制作或剪辑视频。
+
+事实核验：同日脚本 `knowledge/video-scripts/2026-10-05-audit-transparency.md` 与 `knowledge/results/EXP-005-invest-vault-testnet.md` 说明所述水龙头事件发生于 Base Sepolia 测试网，到账 2 枚测试 USDC，合约 `0x036CbD53842c5426634e7929541eC2318f3dCF7e` 与 Aave Sepolia 储备 `0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f` 不同，T6 因币种合约不匹配而阻塞。发布文案明确标注 Base Sepolia 测试网演练，不把它表述为主网投资、AI 管理主网资金或收益证明。
+
+Instagram 写入工具返回发布成功。账号回读 `@ltzyz2181` 帖子数由 5 增至 6，最新帖子与本次媒体 ID、caption、链接及时间匹配。发布时间为 2026-10-20 19:03:11 America/Tijuana（`2026-10-21T02:03:11Z`），媒体 ID `17998465452042546`，Reel permalink：<https://www.instagram.com/reel/Deu5GykCZDF/>。公开页面截图：`results/publishing/screenshots/instagram-2026-10-20.webp`。今日不再上传或重试。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-20.json|jq、SHA256、ffprobe/ffmpeg 全片解码与音量、英文旁白转写及抽帧、Base Sepolia 来源记录、Instagram get_post_list/account_info、公开 permalink 和截图|发布已完成；素材只有英文旁白与短英文画面文字，没有逐字完整旁白字幕，已记录且不重发。`
+- `ro8cDRW4zoF56gRKpYx6bX|ops/dispatch/接单回执-MANUS-INSTAGRAM-DAILY.md|核对上述 JSON、Instagram 帖子回读和公开页面截图|本次发布已完成；无其他待发布平台。`

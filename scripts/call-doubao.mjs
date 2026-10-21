@@ -1,4 +1,5 @@
 import {preconnectFetch,networkCode} from './lib/preconnect-fetch.mjs';
+import {callDoubaoProxy} from './lib/doubao-proxy-call.mjs';
 /**
  * call-doubao.mjs — 豆包通道真实调用
  * 端点：默认火山方舟 v3（OpenAI 兼容，已实测该 Key 可用）；可用环境变量切换到 Agent Plan 端点
@@ -56,6 +57,8 @@ async function tryAnthropicCompatible(apiKey, prompt, base, model, maxTokens) {
 }
 
 export async function callAgent({ apiKey, prompt, model, maxTokens = 8192, thinking }) {
+  // Select the route before dispatch; never replay an uncertain native request via the proxy.
+  if(process.env.DOUBAO_USE_PROXY==='true')return callDoubaoProxy({prompt,model:model||MODEL(),maxTokens,thinking});
   if (!apiKey) return { ok: false, status: "not_configured", error: "DOUBAO_API_KEY（或 ARK_API_KEY）未配置（请在 GitHub Secrets 添加）" };
   const base = BASE();
   const mdl = model || MODEL();
