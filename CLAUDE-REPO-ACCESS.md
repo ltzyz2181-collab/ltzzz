@@ -1,3 +1,5 @@
+> **当前更正（2026-10-21）**：Claude Code已完成分支推送及REST开PR（#141），后续#161审计已合并，#170/#171均有实际仓库提交。不能继续声称Claude一律无写权限。能力只对已验收客户端/授权会话成立，不替其他只读连接器担保；App仅ltzzz范围和分支保护另验。下文10-14“本轮被阻塞/总控代入库”是历史。当前分工看[席位与治理](docs/SEATS-AND-GOVERNANCE-CURRENT.md)。
+
 # Claude · LTZZZ 仓库接入索引（2026-10-04 生成）
 
 > 仓库为 **public**：raw 链接免认证可读。页面或连接器读不到正文时，可用 raw.githubusercontent.com。
