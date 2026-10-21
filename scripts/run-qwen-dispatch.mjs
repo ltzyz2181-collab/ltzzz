@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {callAgent} from './call-qwen.mjs';
+import {KIMI_PROFILE} from '../lib/kimi-profile.js';
 
 /**
  * Qwen dispatch consumer. Cards: ops/dispatch/queue/*.json (agent "qianwen").
@@ -19,8 +20,13 @@ export function validateCard(card, file) {
   if (path.basename(file, '.json') !== card.id) errors.push('filename_must_equal_id');
   if (card.agent !== 'qianwen') errors.push('agent_must_be_qianwen');
   if (typeof card.prompt !== 'string' || card.prompt.trim().length < 20 || card.prompt.length > 6000) errors.push('prompt_20_to_6000_chars');
-  if (!Number.isSafeInteger(card.max_tokens ?? 1024) || (card.max_tokens ?? 1024) < 64 || (card.max_tokens ?? 1024) > 2048) errors.push('max_tokens_64_to_2048');
-  if (card.model !== undefined && !/^qwen[a-zA-Z0-9_.-]*$/.test(card.model)) errors.push('invalid_model');
+  // Per-model token budget: qwen ceiling stays 2048; kimi must respect the
+  // profile floor (3000) — sending kimi below the floor returns empty content
+  // and looks like a false success. Reject explicitly before any provider call.
+  const mt = card.max_tokens ?? 1024;
+  if (!Number.isSafeInteger(mt) || mt < 64 || mt > 16384) errors.push('max_tokens_64_to_16384');
+  if (/^kimi/i.test(card.model ?? '') && mt < KIMI_PROFILE.minimum_output_tokens) errors.push(`kimi_max_tokens_below_profile_floor_${KIMI_PROFILE.minimum_output_tokens}`);
+  if (card.model !== undefined && !/^(qwen|kimi)[a-zA-Z0-9_.-]*$/i.test(card.model)) errors.push('invalid_model');
   if (card.real_money === true) errors.push('real_money_not_allowed_in_qwen_dispatch');
   return errors;
 }
