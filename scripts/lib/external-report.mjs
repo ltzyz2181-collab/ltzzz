@@ -48,7 +48,7 @@ export function readCanonicalReport(root,date){
  if(!fs.existsSync(path.join(root,file))||!fs.existsSync(path.join(root,meta)))return null;
  const record=JSON.parse(fs.readFileSync(path.join(root,meta),'utf8'));
  if(record.schema!=='ltzzz.external-report.v1'||record.date!==date||record.claimed_author!=='Claude'||record.receipt!==file||record.body_sha256!==reportHash(fs.readFileSync(path.join(root,file),'utf8')))throw Error('canonical_report_integrity_failed');
- return {...record,provenance:meta};
+ return {...record,author_provider:null,reported_author_provider:'Anthropic',author_provider_verified:false,github_identity_proves_provider:false,provenance:meta};
 }
 export function applyExternalReport(result,report){
  if(!report||result.date!==report.date)return false;
@@ -56,9 +56,9 @@ export function applyExternalReport(result,report){
  if(!seat)return false;
  const annotations=Array.isArray(report.independent_notes)?report.independent_notes:[];
  const annotationsHash=reportHash(JSON.stringify(annotations));
- if(seat.external_delivery?.body_sha256===report.body_sha256&&seat.external_delivery?.controller_annotations_sha256===annotationsHash)return false;
+ if(seat.external_delivery?.body_sha256===report.body_sha256&&seat.external_delivery?.controller_annotations_sha256===annotationsHash&&seat.external_delivery?.provider_attribution_revision==='external-provider-v1')return false;
  seat.delivery_status='external_submitted_pending_review';
- seat.external_delivery={receipt:report.receipt,provenance:report.provenance,body_sha256:report.body_sha256,received_at:report.stored_at,ingestion:report.ingestion,claimed_author:'Claude',author_provider:null,reported_author_provider:report.reported_author_provider||'Anthropic',author_provider_verified:false,github_identity_proves_provider:false,authorship_verification:report.authorship_verification,scope:'external_free_discussion_and_audit',native_api_execution:false};
+ seat.external_delivery={provider_attribution_revision:'external-provider-v1',receipt:report.receipt,provenance:report.provenance,body_sha256:report.body_sha256,received_at:report.stored_at,ingestion:report.ingestion,claimed_author:'Claude',author_provider:null,reported_author_provider:report.reported_author_provider||'Anthropic',author_provider_verified:false,github_identity_proves_provider:false,authorship_verification:report.authorship_verification,scope:'external_free_discussion_and_audit',native_api_execution:false};
  seat.external_delivery.controller_annotations=structuredClone(annotations);
  seat.external_delivery.controller_annotations_sha256=annotationsHash;
  seat.external_delivery.annotations_scope='controller_corrections_not_words_of_external_author';
