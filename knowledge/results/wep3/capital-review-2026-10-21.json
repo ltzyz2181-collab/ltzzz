@@ -1,11 +1,11 @@
 {
-  "at": "2026-10-21T14:12:43.480Z",
-  "run_id": "39614396499",
+  "at": "2026-10-21T14:19:51.618Z",
+  "run_id": "39615333630",
   "model": "deepseek-v4-pro",
   "model_status": "success",
   "finish_reason": "stop",
-  "tokens_used": 17809,
-  "snapshot_sha256": "2ef4f702ccdb56c46acdce137d75bc6054d14aa3f01d1e443dc22a13c6b6dcd0",
+  "tokens_used": 19333,
+  "snapshot_sha256": "999924937f83fce0dc9b7bf730573de1d21b27738f1c7ed898e00432a12fd46a",
   "treasury_status": {
     "ok": true,
     "chain_id": 8453,
@@ -30,8 +30,8 @@
         "treasury_can_withdraw": false
       }
     },
-    "block_number": 52901257,
-    "rpc_url": "https://base.drpc.org",
+    "block_number": 52901457,
+    "rpc_url": "https://base-rpc.publicnode.com",
     "rpc_attempts": [
       {
         "url": "https://mainnet.base.org",
@@ -41,15 +41,21 @@
       },
       {
         "url": "https://base.drpc.org",
+        "ok": false,
+        "code": "SERVER_ERROR",
+        "detail": "exceeded maximum retry limit"
+      },
+      {
+        "url": "https://base-rpc.publicnode.com",
         "ok": true
       }
     ],
     "usdc_raw": "210869201",
-    "ausdc_raw": "114577582",
+    "ausdc_raw": "114577637",
     "eth_raw": "1985282821867975",
     "allowance_raw": "9115782",
     "principal_raw": "114526347",
-    "interest_raw": "51235",
+    "interest_raw": "51290",
     "principal_basis": "tracked_supply_receipts",
     "first_supply_confirmed": true,
     "exit_test_confirmed": true,
@@ -67,8 +73,8 @@
     "capital_agent": "DeepSeek",
     "capital_reputation": 105,
     "allocation_share_bps": 4000,
-    "single_cap_usdc": 32.044678,
-    "exposure_cap_usdc": 128.178713,
+    "single_cap_usdc": 32.044683,
+    "exposure_cap_usdc": 128.178735,
     "cash_floor_raw": "5000000",
     "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
     "owner_return_enabled": false,
@@ -77,6 +83,6 @@
   "execution_status": "ready_for_bounded_auto",
   "transactions_sent": 0,
   "tx_hash": null,
-  "output": "**范围区分**  \n新金库地址 `0x5df...32d`：`principal_raw=114.526347 USDC`，`first_supply_confirmed=true`、`exit_test_confirmed=true`，已过 1 USDC pilot，可进入声誉限额分配。`beneficiary_principal_raw=4.496788` 属 owner-child 受益仓，不计入主金库 `principal_raw`，但 exposure 校验会合并；`treasury_can_withdraw=false`、`owner_return_enabled=false`，不得当作可自由提取资金。外部个人 Aave 存款、旧 Vault 不得混入本地址限额。\n\n**下一步检查单**  \n1. [自动，无需资金/签名] 读取 `book.aave.intents[\"AAVE-AUTO-bounded_supply-2026-10-20\"].steps[*].{tx_hash,status,raw}`，核对 `active_intent` 为 pending_confirmations。  \n2. [自动，只读] 运行 `reconcileAaveTransactions`，对每个 step 调 `eth_getTransactionReceipt` / `eth_getTransactionByHash`，检查 `receipt.status`、确认数是否 ≥2、tx_hash 与存储一致。当前 `intent_status=pending_confirmations` 多为确认数不足或 child proof 未完成。  \n3. [自动] 重读 `aaveStatus`：`usdc_raw=210.869201`，`ausdc_raw=114.577582`，`beneficiary_principal_raw=4.496788`，已用 exposure `119.074370`；`exposure_cap=128.178713`，剩余 room `9.104343 USDC`。校验 active_intent 的 amount_raw ≤ `9.104343 USDC`，否则触发 `blocked_policy`。  \n4. [自动] 检查 gas：`eth_raw≈0.001985 ETH`；调用 `estimateGas` + `getFeeData` 确认足够发当前已签名 step。若不满足，只读推进不会发生。  \n5. [缺签名/资金判断] 若确认阶段需推进，执行环境必须存在 `TREASURY_EXECUTOR_KEY`；当前 `already_signed_steps=true`，不再需要新签名，但若 key 缺失则只能读不能改状态。  \n6. [人工核对] 若 step 属于 owner-child supply，须 dual RPC authenticated sensor 验证 child Supply + aUSDC mint；否则等待确认数即可。\n\n**至少 4 个失败条件**  \n| 失败条件 | 预期机器状态 | 可读取接口/字段 | 迁移路径 | 验收 txHash 字段 |\n|---|---|---|---|---|\n| receipt.status=0 或链上 failed | `intent.status='failed'`，`active_intent=null`，failures+1；failures≥3 时 paused=true，period caps 回滚 | `book.aave.intents[id].status`、`steps[].status`、`state.failures`、`state.paused` | 作废该 intent，校正 periods，重建需新签名 | 必须沿用原 `steps[].tx_hash`，不得更换 |\n| 确认数不足 `head < blockNumber+2` 或 child proof 未过 | `intent.status='pending_confirmations'`，`active_intent` 保留 | `eth_getTransactionReceipt`、`eth_blockNumber`、`reconcileAaveTransactions.confirmations` | 等待 ≥2 区块或补 dual RPC 观测 | 同一 tx_hash 最终 `step.status='confirmed'` 且 `receipt_status=1` |\n| gas 不足 / nonce 不一致 | `blocked_rpc` 或 `blocked_configuration`，`last_execution_error.stage` 为 gas/nonce 阶段 | `eth_getBalance`、`eth_getTransactionCount(pending/latest)`、`estimateGas` | 补 Base ETH 或清 pending nonce；不签新交易 | 无新 tx_hash |\n| 限额或现金储备不足 | `status='blocked_policy'`，无新签名 | `usdc_raw`、`ausdc_raw`、`beneficiary_principal_raw`、`cash_floor_raw`、`single_cap`、`exposure_cap` | 降低 amount 或等 exposure 降低 | 无新 tx_hash |\n| RPC 读失败导致广播未知 | `step.status='broadcast_unknown'` 或 `'submitted'`，`intent.status='pending'`，retry 标记 `identical_persisted_bytes_only` | `steps[].broadcast_attempts`、`last_execution_error` | 调 `broadcastAaveRaw(step.raw, step.tx_hash)` 重放同一字节 | tx_hash 必须严格等于存储 hash |\n\n**成功验收**  \nsupply 成功后：`active_intent=null`，`intent.status='confirmed'`，`step.status='confirmed'`，`receipt_status=1`，`principal_raw` 增加，记录 tx_hash 且与存储一致。  \n【交付结束】",
+  "output": "审查结论：地址 `0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d` 已通过 pilot：`first_supply_confirmed=true`、`exit_test_confirmed=true`，不是新金库，不应再执行 1 USDC 首次 supply/withdraw。当前 `active_intent=AAVE-AUTO-bounded_supply-2026-10-20` 为 `pending_confirmations`，已有签名步骤，下一步是恢复该 intent，而不是新建交易。以下为可执行检查单。\n\n一、可自动执行步骤  \n1. [自动只读] 运行 `aaveStorageStatus(book)` 与 `aaveStatus(m,book)`，核对 `active_intent`、`intent_status`、`already_signed_steps`、`rpc_attempts`。当前 `publicnode` 可用，`mainnet.base.org`/`drpc.org` 失败可忽略，但后续应优先以 publicnode 为观察 RPC。  \n2. [自动执行] 运行 `autoAave(m,book)` 或对现有 intent 调用 `executeAave`。因已有 signed step，读取 receipt 或重发原 raw 不需要新签名，除非仍有未签名步骤。`broadcastAaveRaw` 只能重发 `keccak256(raw)==step.tx_hash` 的持久化字节，不得重签。  \n3. [缺签名] 若日志显示存在未签名 `step.raw` 缺项，`executeAave` 会返回 `treasury_signer_missing`。当前 `already_signed_steps=true`，暂不判定阻塞，但需确认所有步骤均有 raw。  \n4. [缺资金] `eth_raw=1985282821867975 wei`，非零但偏少；`prepare_gas_and_nonce` 仍可能触发 `gas_cap` 或 `insufficient_eth_gas`。USDC 充足，允许的 bounded supply 上限约 `9.10431 USDC`（room = `exposure_cap_usdc - ausdc_raw - beneficiary_principal_raw`），不构成资金缺口。\n\n二、不要混淆  \n当前金库可用余额以 `0x5df5...` 的 `usdc_raw`、`ausdc_raw` 为准，`principal_basis=tracked_supply_receipts`。`beneficiary_positions` 中 `0xbc24b9...` 的 `principal_raw=4496788` 是 owner-child 分配，`treasury_can_withdraw=false`，不能当作 treasury 可动用 USDC，也不要把个人 Aave 存款或旧 Vault 余额并入。\n\n三、失败条件与机器状态  \nF1 链上 revert：`receipt.status=0x0`。机器状态：`intent.status=failed`，`active_intent=null`，`failures` 增加；若 `failures>=3` 则 `paused=true`。读取 `eth_getTransactionReceipt(tx_hash).status`。迁移路径：运行 `reconcileAaveTransactions`，检查 `tx_hash` 与 receipt，不重复广播；确认后另起 intent。验收：`aUSDC_raw` 不增加。  \nF2 未上链或 RPC 失败：receipt 缺失/传输失败。机器状态：`step.status=submitted/broadcast_unknown`，`intent.status=pending`，`last_execution_error.stage='receipt_read_transport'`。读取 `step.raw`、`step.tx_hash`、`rpc_attempts`。迁移路径：等待 publicnode 恢复后运行 `reconcileAaveTransactions`；若 `not_found_on_checked_rpc`，可重发同一 raw，除非 `paused`。验收：`receipt.transactionHash` 小写等于 `step.tx_hash`。  \nF3 确认数不足或 child proof 缺失：`head < receipt.blockNumber+2`，或 owner-child supply 未通过 `ownerChildSupplyProof(receipt)`。机器状态：`intent_status=pending_confirmations`。读取 `eth_getBlockNumber` 与 receipt。迁移路径：等待两个以上区块后重跑 `executeAave`；child 场景用 `attestAaveReceipt` 提交两个独立 RPC observation。验收：`head >= blockNumber+2`，child supply 同时记录 `Supply` 与 aUSDC mint 证明。  \nF4 gas/nonce 异常：`gas_cap`、`insufficient_eth_gas`、`untracked_pending_treasury_nonce`。机器状态：`blocked_rpc`，`last_execution_error` 记录 stage。读取 `eth_getBalance`、`eth_getFeeData`、`eth_getTransactionCount(latest/pending)`。迁移路径：补 ETH 或等待 pending nonce 清空，不重签篡改 raw。验收：nonce 稳定且 gas 估算通过后，广播 hash 仍等于持久化 `step.tx_hash`。  \nF5 存储孤立或格式错误：`aaveStorageStatus` 返回 `blocked_reconciliation`。迁移路径：若 active_intent 指向缺失对象，`autoAave` 会自动清除 stale active_intent 并恢复；否则需人工 reconciliation。验收：`storage_status.ok=true`。\n\n四、验收 txHash 字段  \n必须同时满足：`keccak256(step.raw)==step.tx_hash`；`receipt.transactionHash` 小写等于该值；`tx.chainId=8453`、`tx.value=0`、`tx.from=0x5df5...`、`tx.to` 等于源码期望地址（supply 为 Aave Pool `0xA238...`）；`tx.data` 与 `pool.encodeFunctionData('supply',[usdc,amount,beneficiary,0])` 一致。成功后 `active_intent` 清空，`intent.status=confirmed`，`step.status=confirmed`，`ausdc_raw` 增加、`usdc_raw` 减少对应 amount。当前未视为已成交，须 receipt.status=0x1 且至少 2 确认后方可确认。\n\n【交付结束】",
   "error": null
 }
