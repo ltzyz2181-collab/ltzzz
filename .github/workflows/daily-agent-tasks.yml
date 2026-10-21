@@ -94,6 +94,8 @@ jobs:
         env:
           DAILY_DATE: ${{ steps.preflight.outputs.today }}
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_USE_PROXY: 'true'
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
