@@ -14,7 +14,7 @@ export function projectDailyBoard(result,record) {
     const seat = record.seats?.[task.agent];
     if (!seat?.assignment || task.assignment?.task_id !== seat.assignment.id) continue;
     const claim = seat.claim_verified === true && seat.claim_receipt?.task_id === seat.assignment.id && seat.claim_receipt?.run_key === record.run_key && seat.claim_receipt?.task_date === record.date;
-    const generated = Boolean(seat.artifact) && !['generation_started','generation_failed_no_repurchase'].includes(seat.status);
+    const generated = Boolean(seat.artifact) && !['generation_started','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status);
     const submitted = seat.submission_verified === true && seat.submission_receipt?.task_id === seat.assignment.id && seat.submission_receipt?.evidence_path === seat.artifact?.path && seat.submission_receipt?.evidence_sha256 === seat.artifact?.sha256;
     const reviewed = seat.review_verified === true && seat.review_receipt?.task_id === seat.assignment.id && seat.review_receipt?.reviewed_sha256 === seat.artifact?.sha256 && seat.review_receipt?.scope === 'engineering_draft_only';
     task.board_lifecycle = {
@@ -22,6 +22,7 @@ export function projectDailyBoard(result,record) {
       run_key:record.run_key,source_commit:record.source_commit,board_status:seat.status,
       claim_verified:claim,claim_receipt:seat.claim_receipt || null,
       artifact:seat.artifact || null,submission_verified:submitted,submission_receipt:seat.submission_receipt || null,
+      failure_feedback_verified:seat.failure_verified===true,failure_receipt:seat.failure_receipt||null,
       independent_review_verified:reviewed,review_receipt:seat.review_receipt || null,
       lifecycle_complete:claim && generated && submitted && reviewed,
       draft_accepted:reviewed && seat.accepted === true,
