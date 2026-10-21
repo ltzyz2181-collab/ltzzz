@@ -1,0 +1,18 @@
+{
+  "finding": "run-daily-tasks.mjs 失败路径存在真实断点：当 runReservedSeat 返回 res.ok=false（如 generation_failed_no_repurchase）时，run-daily-tasks.mjs 仅写本地 pending.reminders 与 tasks，从不调用 syncDailyBoard 或 taskCommand('fail_task')，导致 Pulse task_board 中该 DAILY-* 任务永久停留在 claimed 状态；而 dailyAssignment 次日只匹配 status==='assigned'，因此该席位次日无单可派。",
+  "evidence_paths": [
+    "scripts/run-daily-tasks.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/lib/daily-assignment.mjs",
+    "workers/pulse-worker/tasks.js",
+    "knowledge/results/ans-cycle/2026-10-21-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/run-daily-tasks.mjs 的 main() 内，每个 CHANNELS 循环处理 res.ok===false 的分支中，在写 pending.reminders 之前插入：\nif (res.status === 'generation_failed_no_repurchase' && seat?.artifact?.path) {\n  await syncDailyBoard({root: ROOT, date: today, snapshot: pulseSnapshot, command: pulseCommand, readRemote});\n}\n并在文件顶部新增：\nimport { syncDailyBoard } from './lib/daily-task-board.mjs';\nimport { pulseSnapshot } from './lib/pulse-client.mjs';\nimport { pulseToken } from './pulse-credentials.mjs';\nasync function pulseCommand(body) {\n  const token = pulseToken('qianwen');\n  const r = await fetch('https://ltzzz-pulse.ltzyz2181.workers.dev/control', {method:'POST', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'}, body:JSON.stringify({...body, reason:'Daily failure sync; no settlement'}), signal:AbortSignal.timeout(20000)});\n  if(!r.ok) throw Error('pulse_operation_failed');\n  return r.json();\n}\nreadRemote 实现同 scripts/daily-task-board.mjs 中的 raw.githubusercontent.com fetch。",
+  "verification_commands": [
+    "grep -n \"generation_failed_no_repurchase\" scripts/lib/daily-task-board.mjs scripts/run-daily-tasks.mjs",
+    "grep -n \"fail_task\" workers/pulse-worker/tasks.js | head -5",
+    "node -e \"import('./scripts/lib/daily-assignment.mjs').then(m=>{const b=[{id:'DAILY-2026-10-21-deepseek',date:'2026-10-21',agent:'deepseek',assigned_to:'deepseek',status:'claimed',claimed_by:'deepseek',execution_chain:'daily'}];console.log(m.dailyAssignment('deepseek','2026-10-22',{control:{date:'2026-10-21'},pulse:{task_board:b}}))})\"",
+    "node --check scripts/run-daily-tasks.mjs"
+  ],
+  "remaining_blocker": "syncDailyBoard 与 run-daily-tasks 的调用方共享同一 runKey 但 run-daily-tasks 不持有 readRemote；需确认 scripts/daily-task-board.mjs 暴露的 readRemote 可复用或重建，且 DAILY_DATE 环境变量在 sync 时与 run-daily-tasks 传入一致。"
+}
