@@ -1,0 +1,8 @@
+{
+  "id": "QWEN-ANS2-SCHEMA-V2-20261021",
+  "agent": "qianwen",
+  "model": "qwen-plus",
+  "max_tokens": 1800,
+  "real_money": false,
+  "prompt": "任务：重做 ANS“行深闭环”回执的 JSON Schema（draft-07）。上一版的缺陷：A) action_taken=none 时 status 必须为 open、follow_up_receipt 必须为 null，这条只写在了描述里，没有条件约束；B) test_status.actually_run=true 时 run_id 与 sha256 虽然必填，类型却仍允许 null；C) 输出末尾带了非 JSON 的结束标记。要求：1) 只输出一个合法 JSON 对象（Schema 本身），不要代码围栏，不要任何解释文字，不要结束标记；2) 用 allOf + if/then/else 真正强制：action_taken=none → status 为 open 且 follow_up_receipt 为 null；action_taken 为 dispatched/fixed/escalated → follow_up_receipt 必须是非空字符串；3) test_status 三态 model_proposed / tested_by_model_claim / actually_run；actually_run 为真时 run_id、sha256 必须是非空字符串（该分支里 type 不得包含 null；sha256 须匹配 ^[a-f0-9]{64}$）；非真时 run_id、sha256 必须为 null；4) 付款相关字段只允许 paid(boolean) 与 tx_hash(string 或 null)，additionalProperties 为 false；5) 不要声称已测试、已部署或已验收。"
+}
