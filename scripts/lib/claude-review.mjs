@@ -8,7 +8,7 @@ export function reviewRequest(env){
  if(topic==='external-hire'&&task_id==='CLAUDE-ANS-PULSE-REVIEW')task_id='CLAUDE-OWNER-EXT-AI-20261020-01';
  if(env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz')throw Error('repository_required');
  if(!['inspect','review'].includes(mode)||!['ans-pulse','six-memory','external-hire'].includes(topic)||!/^[A-Za-z0-9_-]{8,80}$/.test(task_id))throw Error('invalid_review_request');
- if(mode==='review'&&(env.GITHUB_EVENT_NAME!=='workflow_dispatch'||env.GITHUB_ACTOR!=='ltzyz2181-collab'))throw Error('explicit_owner_dispatch_required');
+ if(mode==='review'&&(env.GITHUB_EVENT_NAME!=='workflow_dispatch'||env.GITHUB_REF!=='refs/heads/main'))throw Error('authenticated_main_workflow_dispatch_required');
  return {mode,topic,task_id};
 }
 export function reviewContext(root,topic){

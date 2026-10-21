@@ -1,3 +1,5 @@
+> 最新审批规则：[评审接管内部人工审批](docs/REVIEW-DELEGATION-CURRENT.md)。评审监督与提醒，不削减总控权限；内部审批无需逐次找owner。本人验证、平台地区校验和真实多签仍按外部接口要求如实记状态。
+
 > 当前先处理席位纠错与只读五签核验：[岗位、治理和观察席](docs/SEATS-AND-GOVERNANCE-CURRENT.md)。GPT总控在任；停用的是原厂付费日课，Claude规划/独审在任，微软除名。
 
 > 精简接力：[docs/handoffs/CURRENT.md](docs/handoffs/CURRENT.md)。先看当前索引与最新回执，不必重复读取长对话。

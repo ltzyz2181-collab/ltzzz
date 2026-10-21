@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-/** Scan memory/daily → append new candidate stubs. Never writes ltzzz-memory long-term. */
+/** Scan memory/daily → append new candidate stubs. Approved candidates are applied to derived memory/long-term; six originals remain unchanged. */
 import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import {attachSupervision} from '../scripts/lib/pending-supervision.mjs';
+import {applyReviewedMemory} from './reviewed-memory.mjs';
 import {substantiveClaim,candidateImpact} from './memory-candidate-quality.mjs';
 import {reconcilePromotionQueue,assertPromotionQueue,recordHash} from './promotion-queue.mjs';
 
@@ -39,6 +41,9 @@ if (!process.argv.includes('--reconcile-only') && existsSync(dailyDir)) {
       deduped: true,
       conflicts: [],
       human_confirm: false,
+      human_confirmation_required: false,
+      review_status: 'pending_review',
+      source_sha256: createHash('sha256').update(text).digest('hex'),
       snapshot_hash: hash,
     });
     seen.add(key);
@@ -46,9 +51,13 @@ if (!process.argv.includes('--reconcile-only') && existsSync(dailyDir)) {
     claimsSeen.add(claim.replace(/\s+/g,''));
   }
 }
+const reconcileOnly = process.argv.includes('--reconcile-only');
+if (!reconcileOnly) attachSupervision(queue);
+const reviewResult = reconcileOnly ? {applied: []} : applyReviewedMemory(queue);
+queue.approval_policy = 'config/review-delegation.json';
 queue.updated_at = new Date().toISOString();
 queue.rule = 'proposed != applied';
 queue.applied=queue.items.filter(item=>item.status==='applied').map(item=>item.id);
 assertPromotionQueue(queue);
 writeFileSync(queuePath, JSON.stringify(queue, null, 2));
-console.log(JSON.stringify({records:queue.items.length,unique_ids:idsSeen.size,candidates:queue.items.filter(i=>i.status==='candidate').length,historical_applied:queue.applied.length,reconciled_ids:changes.map(c=>c.id)}));
+console.log(JSON.stringify({records:queue.items.length,unique_ids:idsSeen.size,candidates:queue.items.filter(i=>i.status==='candidate').length,historical_applied:queue.applied.length,reconciled_ids:changes.map(c=>c.id),review_applied_ids:reviewResult.applied}));

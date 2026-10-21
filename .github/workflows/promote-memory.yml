@@ -3,9 +3,13 @@ name: Promote Memory Candidates
 on:
   push:
     branches: [main]
-    paths: ['tools/promote-memory.mjs', 'tools/promotion-queue.mjs', 'tools/memory-candidate-quality.mjs', 'scripts/tests/promotion-queue.test.mjs', '.github/workflows/promote-memory.yml']
+    paths: ['tools/promote-memory.mjs', 'tools/reviewed-memory.mjs', 'scripts/lib/review-approval.mjs', 'scripts/lib/pending-supervision.mjs', 'tools/promotion-queue.mjs', 'tools/memory-candidate-quality.mjs', 'scripts/tests/promotion-queue.test.mjs', '.github/workflows/promote-memory.yml']
   schedule:
     - cron: "20 0 * * *"
+  workflow_run:
+    workflows: ['Execute LTZZZ AI task queue']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -15,21 +19,24 @@ concurrency: {group: ltzzz-promotion-queue, cancel-in-progress: false}
 
 jobs:
   promote:
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test scripts/tests/promotion-queue.test.mjs scripts/tests/memory-candidate-quality.test.mjs
+      - run: node --test scripts/tests/promotion-queue.test.mjs scripts/tests/memory-candidate-quality.test.mjs scripts/tests/review-delegation.test.mjs
+      - run: mkdir -p memory/long-term
       - run: node tools/promote-memory.mjs
       - name: Commit queue
         run: |
           git config user.name "ltzzz-promote"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add memory/promote
+          git add memory/promote memory/long-term
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "chore(memory): refresh promotion candidates"
           for attempt in 1 2 3 4; do

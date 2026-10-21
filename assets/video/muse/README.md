@@ -44,9 +44,9 @@ assets/video/muse/YYYY-MM-DD-<id>.meta.json      # 元数据（必须与成片�
 | status | 含义 | 可否发布 |
 |---|---|---|
 | `drafted` | 刚入库，未审核 | 否 |
-| `reviewed` | 人工确认通过（`human_confirm: true`） | 是（private 首传） |
+| `reviewed` | 异提供商回执通过（`review_reference`，不要求人工布尔值） | 是（private 首传） |
 | `published` | 已发布 | — |
-| `rejected` | 人工否决 | 否 |
+| `rejected` | 评审拒收，转修订 | 否 |
 
 ## 接入路线
 
@@ -55,7 +55,9 @@ assets/video/muse/YYYY-MM-DD-<id>.meta.json      # 元数据（必须与成片�
 
 ## 发布前必检
 
-1. `human_confirm: true` 且 `status: reviewed`，缺一不可
+1. `status: reviewed`，填写成片 SHA-256、目标公开范围与 `review_reference:{path,sha256}`；回执按 `scripts/lib/review-approval.mjs` 核验
 2. `youtube_video_id` / `tiktok_publish_id` 为空（未重复发布）
-3. 发布默认 **private**，人工确认后才转公开
+3. 目标公开范围 `target_privacy` 属于评审对象；评审通过后由现有执行器处理，不再等人工确认。外链成片下载后的实际字节哈希仍须由上传器核对
 4. 发布成功后在 meta.json 回写平台 ID，并回写 Memory
+
+回执格式、可信执行器边界和首次线上验收状态见[当前审批规则](../../../docs/REVIEW-DELEGATION-CURRENT.md)。`human_confirm` 如保留，仅记录历史事实，不自动置true。扫描清单不是自动上传器，也不证明发布成功。

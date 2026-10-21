@@ -35,13 +35,15 @@ export function evaluateBreaker(observations = {}) {
   return {
     tripped: tripped.length > 0,
     reasons: tripped,
+    supervisor_warnings: observations.funds_related_split_2_1 === true ? ['minority_dissent_requires_recorded_response_not_permission_revocation'] : [],
+    controller_permissions_changed: false,
     pause_classes: tripped.length
       ? ['auto_external_spend', 'limit_step_up', 'rentahuman_live']
       : [],
     resume_requires: {
       panel_pass_ratio: '2/3',
       cooldown_hours: PANEL_LIMITS.cooldownHoursAfterPass,
-      note: 'code_cannot_self_resume'
+      note: 'controller_or_deputy_rechecks_evidence_and_records_repair_no_owner_wait'
     },
     at: new Date().toISOString()
   };
