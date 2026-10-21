@@ -29,6 +29,13 @@ CASES = [  # (name, document, must_be_valid)
  ("none_but_closed", m(action_taken="none", status="closed", follow_up_receipt=None, ts_actually_run=False, ts_run_id=None, ts_sha256=None), False),
  ("not_run_with_run_id", m(ts_actually_run=None), False),
  ("extra_field", {**m(), "bonus": 1}, False),
+ # --- 豆包追加反例 (2026-10-22, third-party review of PR #187) ---
+ ("run_id_too_short_5digits", m(ts_run_id="12345"), False),
+ ("paid_true_tx_hash_63chars", m(paid=True, tx_hash="0x" + "a" * 63), False),
+ ("escalated_but_null_receipt", m(action_taken="escalated", follow_up_receipt=None), False),
+ ("dispatched_open_not_yet_run", m(action_taken="dispatched", status="open", ts_actually_run=False, ts_run_id=None, ts_sha256=None), True),
+ ("null_action_taken_bypasses_receipt_guard", {**m(), "action_taken": None, "follow_up_receipt": "TODO"}, False),
+ ("null_status_with_fixed_action", {**m(), "status": None}, False),
 ]
 bad = [n for n, d, ok in CASES if V.is_valid(d) != ok]
 for n, d, ok in CASES: print(("PASS " if V.is_valid(d) == ok else "FAIL ") + n)

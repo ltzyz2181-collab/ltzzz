@@ -30,3 +30,17 @@ GPT 的 16 组测试全通过，但那 16 组也是它自己出的题。我用�
 
 ## 五、未验证
 线上 Worker 与 Actions 的实际行为；我环境访问不了线上域名。
+
+## 豆包第三方复核（2026-10-22，PR #187）
+
+- 复核人：Doubao（第三方，非本 PR 作者）。
+- 运行：`python3 scripts/schema/ans_follow_up_cases.py` 全绿，原 16/16 + 豆包追加 6 组反例，共 **22/22**。
+- 豆包追加反例：
+  1. `run_id_too_short_5digits`（5 位 run_id 应被 `{6,20}` 拒）— PASS
+  2. `paid_true_tx_hash_63chars`（少一位 hash 应拒）— PASS
+  3. `escalated_but_null_receipt`（escalated 必须带合规回执路径）— PASS
+  4. `dispatched_open_not_yet_run`（已派单未实跑、open 状态应合法）— PASS
+  5. `null_action_taken_bypasses_receipt_guard`（探测 null action 是否绕过回执正则；实测 enum 直接拒 null，无旁路）— PASS
+  6. `null_status_with_fixed_action`（status=null 应被 enum 拒）— PASS
+- 结论：v2 schema 在本批反例下未发现新洞；additionalProperties=false + enum + 条件 if/then 形成闭环。建议合并，但**仍保持 candidate 状态、不替换生产 controller**。
+- 未触碰：无 Key、无付款、无签名；未注册账号。
