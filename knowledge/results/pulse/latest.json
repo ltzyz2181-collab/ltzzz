@@ -92,7 +92,10 @@
     "daily-claim-2026-10-21-qianwen-decb4d5cbe9e4fad",
     "daily-submit-2026-10-21-deepseek-decb4d5cbe9e4fad",
     "daily-submit-2026-10-21-grok-decb4d5cbe9e4fad",
-    "daily-submit-2026-10-21-qianwen-decb4d5cbe9e4fad"
+    "daily-submit-2026-10-21-qianwen-decb4d5cbe9e4fad",
+    "qianwen-probe-39520444480",
+    "claim-continuity-39520444480",
+    "submit-continuity-39520444480"
   ],
   "manual": {},
   "limits": {
@@ -1093,17 +1096,38 @@
       "actor": "qianwen",
       "reason": "Daily task claim and immutable delivery; no settlement",
       "at": "2026-10-21T00:10:54.613Z"
+    },
+    {
+      "id": "qianwen-probe-39520444480",
+      "type": "controller_probe",
+      "actor": "qianwen",
+      "reason": "Deployment acceptance of deputy operational authority; not a Qianwen model generation",
+      "at": "2026-10-21T00:18:09.089Z"
+    },
+    {
+      "id": "claim-continuity-39520444480",
+      "type": "controller_claim_task",
+      "actor": "gpt",
+      "reason": "Controller implemented the owner-requested daily dispatch and self-service protocol; claim actual continuity work",
+      "at": "2026-10-21T00:18:09.625Z"
+    },
+    {
+      "id": "submit-continuity-39520444480",
+      "type": "controller_submit_task",
+      "actor": "gpt",
+      "reason": "Submit committed operational handover artifact for independent review; do not settle",
+      "at": "2026-10-21T00:18:09.733Z"
     }
   ],
   "agents": {
     "doubao": {
       "failures": 0,
-      "successes": 1668,
+      "successes": 1669,
       "offline": false,
       "name": "doubao",
       "ok": true,
       "http": 200,
-      "latency_ms": 27,
+      "latency_ms": 59,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1113,12 +1137,12 @@
     },
     "deepseek": {
       "failures": 0,
-      "successes": 1668,
+      "successes": 1669,
       "offline": false,
       "name": "deepseek",
       "ok": true,
       "http": 200,
-      "latency_ms": 28,
+      "latency_ms": 48,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1128,12 +1152,12 @@
     },
     "kimi": {
       "failures": 0,
-      "successes": 1668,
+      "successes": 1669,
       "offline": false,
       "name": "kimi",
       "ok": true,
       "http": 200,
-      "latency_ms": 11,
+      "latency_ms": 28,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1143,12 +1167,12 @@
     },
     "grok": {
       "failures": 0,
-      "successes": 1642,
+      "successes": 1643,
       "offline": false,
       "name": "grok",
       "ok": true,
       "http": 200,
-      "latency_ms": 27,
+      "latency_ms": 43,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1158,12 +1182,12 @@
     },
     "qianwen": {
       "failures": 0,
-      "successes": 1668,
+      "successes": 1669,
       "offline": false,
       "name": "qianwen",
       "ok": true,
       "http": 200,
-      "latency_ms": 28,
+      "latency_ms": 58,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1173,12 +1197,12 @@
     },
     "wep3": {
       "failures": 0,
-      "successes": 1668,
+      "successes": 1669,
       "offline": false,
       "name": "wep3",
       "ok": true,
       "http": 200,
-      "latency_ms": 27,
+      "latency_ms": 37,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1206,7 +1230,7 @@
   },
   "mode": "parasympathetic",
   "active_controller": "gpt",
-  "ran_at": "2026-10-21T00:14:42.159Z",
+  "ran_at": "2026-10-21T00:18:09.275Z",
   "version": "0.3.7-state-revision",
   "model_calls": 0,
   "financial_execution": false,
@@ -1218,12 +1242,6 @@
     "note": "未配置主动消息渠道；告警保存在/status，由外部工作流检查。"
   },
   "history": [
-    {
-      "at": "2026-10-20T00:23:55.445Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
     {
       "at": "2026-10-20T00:28:55.590Z",
       "mode": "parasympathetic",
@@ -2945,12 +2963,18 @@
       "mode": "parasympathetic",
       "unhealthy": [],
       "alerts": 0
+    },
+    {
+      "at": "2026-10-21T00:18:09.275Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
     }
   ],
   "collector_health": "observed",
   "incentives": {
-    "at": "2026-10-20T23:54:15.502Z",
-    "source_commit": "789a42ead72ffc5f32a1672aa8c3f88d6340b13a",
+    "at": "2026-10-21T00:18:10.717Z",
+    "source_commit": "075f854ae3c36b2c61f10c76c296f59944887d58",
     "input_sha256": "4c2981059247acb575ec8785c0549dc78cd665539c11122aa6aedf2540ae0d36",
     "verification": "recomputed_from_hashed_independent_receipts",
     "profiles": {
@@ -4035,16 +4059,24 @@
       "skill": "engineering",
       "date": "2026-10-21",
       "created_at": "2026-10-20T16:04:24.129Z",
-      "status": "available",
+      "status": "submitted_pending_review",
       "origin": "logical_gpt_coordinator_rules_not_native_gpt_call",
       "paid": false,
-      "tx_hash": null
+      "tx_hash": null,
+      "claimed_by": "gpt",
+      "claim_actor": "gpt",
+      "claimed_at": "2026-10-21T00:18:09.625Z",
+      "claim_kind": "authenticated_executor_declaration_not_native_model_proof",
+      "evidence_path": "ops/AI-AUTO-WORK.md",
+      "evidence_sha256": "fa44e0627b68d32f2f3bd66a6974bf16f852b1274bc40ff5749fdd6e2501f1e1",
+      "submitted_at": "2026-10-21T00:18:09.733Z",
+      "model_execution_verified": false
     }
   ],
   "daily_dispatch_date": "2026-10-21",
   "last_balance": {
     "units": "210869201",
-    "at": 1792541682159
+    "at": 1792541889275
   },
   "dispatches": [
     {
@@ -4088,10 +4120,10 @@
       "status": "queued"
     }
   ],
-  "task_board_schema_version": 3,
+  "task_board_schema_version": 4,
   "autonomic_feedback": {
     "version": 1,
-    "observed_at": "2026-10-21T00:14:42.159Z",
+    "observed_at": "2026-10-21T00:18:09.275Z",
     "cases": [],
     "open_cases": 0,
     "action_taken": {
@@ -4100,20 +4132,20 @@
       "dispatch_paused": false
     },
     "follow_up_receipt": {
-      "previous_observation_at": "2026-10-21T00:09:42.051Z",
-      "current_observation_at": "2026-10-21T00:14:42.159Z",
-      "next_probe_due_at": "2026-10-21T00:19:42.159Z"
+      "previous_observation_at": "2026-10-21T00:14:42.159Z",
+      "current_observation_at": "2026-10-21T00:18:09.275Z",
+      "next_probe_due_at": "2026-10-21T00:23:09.275Z"
     },
     "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
     "financial_execution": false,
     "model_generation_proven": false,
     "real_money_penalty": false
   },
-  "state_revision": 297,
-  "state_updated_at": "2026-10-21T00:17:54.597Z",
+  "state_revision": 303,
+  "state_updated_at": "2026-10-21T00:18:10.803Z",
   "durable_revision": "pulse-state-v2",
   "stale": false,
-  "alarm_at": 1792541982159,
+  "alarm_at": 1792542189200,
   "controllers": [
     "gpt",
     "qianwen"
