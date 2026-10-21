@@ -1,0 +1,101 @@
+{
+  "at": "2026-10-21T07:27:11.327Z",
+  "date": "2026-10-21",
+  "executed_by": "workbuddy_dispatch_automation",
+  "execution_source": "repository_rules_not_WorkBuddy_client",
+  "model_calls": 0,
+  "tasks": [
+    {
+      "deadline_at": null,
+      "deadline_verified": false,
+      "overdue": false,
+      "id": "CLAUDE-REVIEW-QWEN-HANDOFF-20261021",
+      "file": "ops/dispatch/CLAUDE-REVIEW-QWEN-HANDOFF-20261021.md",
+      "status": "awaiting_agent_ack",
+      "receipts": [],
+      "claim_verified": false
+    },
+    {
+      "deadline_at": null,
+      "deadline_verified": false,
+      "overdue": false,
+      "id": "QIANWEN-RETURN-2026-10-21",
+      "file": "ops/dispatch/DAILY-2026-10-21-qianwen.md",
+      "status": "ack_present_unverified",
+      "receipts": [
+        "knowledge/results/dispatch/qianwen-return-2026-10-21.json"
+      ],
+      "claim_verified": false
+    },
+    {
+      "deadline_at": null,
+      "deadline_verified": false,
+      "overdue": false,
+      "id": "DOUBAO-IDENTITY-CLOSEOUT-20261021",
+      "file": "ops/dispatch/DOUBAO-IDENTITY-CLOSEOUT-20261021.md",
+      "status": "controller_reviewed_checklist_only",
+      "receipts": [
+        "knowledge/results/dispatch/DOUBAO-IDENTITY-CLOSEOUT-20261021.json"
+      ],
+      "claim_verified": false
+    }
+  ],
+  "overdue_count": 0,
+  "deadline_unverified_count": 3,
+  "claim_verified": false,
+  "run_id": "39562046434",
+  "run_attempt": "1",
+  "scan_status": "completed_with_business_alerts",
+  "checks": [
+    {
+      "item": "日课产出",
+      "state": "OK",
+      "evidence": "data/results/2026-10-21.json",
+      "note": "记忆 6/6；deepseek=success, doubao=exception, grok=success, qianwen=success, gpt=disabled_by_owner, claude=external_discussion_only, microsoft=disabled_by_owner"
+    },
+    {
+      "item": "AI雇AI回执(T1)",
+      "state": "BLOCKED",
+      "evidence": "knowledge/results/hire / knowledge/results/claude-team",
+      "note": "knowledge/results/claude-team/real-hire-20261021.json:internal_delivery_rejected;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
+    },
+    {
+      "item": "投资观察回执(T2)",
+      "state": "OK",
+      "evidence": "knowledge/results/invest / knowledge/results/funded-invest / knowledge/results/defi",
+      "note": "knowledge/results/funded-invest/inspection-39513504739-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/inspection-39516445128-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/inspection-39523742486-attempt-1.json:receipt_present_status_unspecified;paid=null。只记录回执存在与状态，不据此推断本日新付款/投资。"
+    },
+    {
+      "item": "历史派单台账·执行中（参考）",
+      "state": "REFERENCE",
+      "evidence": "ops/派单台账.md",
+      "note": "6 项：交接单-0930（首张） → 已验收（D3 因缺 key 判未完成，如实）；交接单-0930第三张 → 执行中；交接单-0930第七张 → 执行中；交接单-1001第九张 → 执行中；Manus M-001/002/003 → M-001 已验收加分；M-002 有条件通过（4处日期待改）；M-003 返工中；Meta P2-M1 → 执行中"
+    },
+    {
+      "item": "历史派单台账·阻塞（参考）",
+      "state": "REFERENCE",
+      "evidence": "ops/派单台账.md",
+      "note": "4 项：R1 Web3 投资通道（did:ltzzz:doubao）LTZZZVault + AaveAdapter；R2 Meta 三平台 bot（did:ltzzz:doubao）FB/WA/IG bot + 凭据动作卡；T6 真实 USDC supply（did:ltzzz:doubao）Sepolia 真实 USDC supply；主网试点 supply（did:ltzzz:doubao）主网 ≤20 USDC 投 Aave V3"
+    },
+    {
+      "item": "每小时扫描配置",
+      "state": "CONFIGURED",
+      "evidence": ".github/workflows/dispatch-sentinel.yml",
+      "note": "哨兵工作流已在库"
+    },
+    {
+      "item": "今日派单跟踪",
+      "state": "OK",
+      "evidence": "ops/dispatch/",
+      "note": "CLAUDE-REVIEW-QWEN-HANDOFF-20261021:awaiting_agent_ack；QIANWEN-RETURN-2026-10-21:ack_present_unverified；DOUBAO-IDENTITY-CLOSEOUT-20261021:controller_reviewed_checklist_only"
+    }
+  ],
+  "business_alerts": [
+    {
+      "item": "AI雇AI回执(T1)",
+      "state": "BLOCKED"
+    }
+  ],
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39562046434-1.json",
+  "repository_persistence": "verify_by_committed_receipt_path"
+}
