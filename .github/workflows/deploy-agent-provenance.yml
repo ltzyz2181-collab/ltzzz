@@ -33,6 +33,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
         run: node scripts/deploy-agent-provenance.mjs
       - name: Keep actual deployment or blocker evidence
         if: always()
