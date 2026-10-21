@@ -75,6 +75,6 @@ window.I18N_DICT = {
 </script>
 <script src="i18n.js"></script>
 <script>
-const endpoint=document.getElementById('endpoint'),msg=document.getElementById('msg'),out=document.getElementById('out');document.getElementById('send').onclick=async()=>{const url=endpoint.value.trim(),text=msg.value.trim();if(!url||!text){out.textContent='请填写 Worker 地址和问题。';return}out.textContent='请求中…';try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'system',content:'你是 LTZZZ 数字实验室的研究助手。回答要具体、可验证、少空话。'}, {role:'user',content:text}]})});const d=await r.json();out.textContent=d.choices?.[0]?.message?.content||d.error||JSON.stringify(d,null,2)}catch(e){out.textContent='连接失败：'+e.message+'\n请检查 Worker 地址、部署状态和跨域设置。'}};</script>
+const endpoint=document.getElementById('endpoint'),msg=document.getElementById('msg'),out=document.getElementById('out');document.getElementById('send').onclick=()=>{out.textContent='付费推理仅向认证执行器开放，请通过 LTZZZ 派单入口提交任务。';};</script>
 </body>
 </html>

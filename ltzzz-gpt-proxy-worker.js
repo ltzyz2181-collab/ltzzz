@@ -1,3 +1,4 @@
+import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,finishExecution} from './lib/provider-execution.js';
 /**
  * LTZZZ GPT 通道 Worker（框架）
@@ -26,26 +27,22 @@ export default {
 
     if (request.method === "GET" && path === "/health") {
       const hasKey = !!(env.OPENAI_API_KEY || "");
-      return json({ ok: true, engine: "gpt-proxy", key_configured: hasKey, identity_receipt_revision:'ltzzz.provider-execution.v1', configured_model:'request_selected', generation_verified:false });
+      return json({ ok: true, engine: "gpt-proxy", key_configured: hasKey, ...proxyAuthState(env), identity_receipt_revision:'ltzzz.provider-execution.v1', configured_model:'request_selected', generation_verified:false });
     }
 
+    if(request.method==='GET'&&path==='/auth/check')return authCheck(request,env,{legacyToken:env.ACCESS_TOKEN});
+
+    const denied=await proxyAuth(request,env,{legacyToken:env.ACCESS_TOKEN});if(denied)return denied;
     if (request.method !== "POST") return json({ error: "method not allowed" }, 405);
 
     let body = {};
     try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
-
-    // 统一鉴权（Bearer）
-    const auth = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-    if (env.ACCESS_TOKEN && auth !== env.ACCESS_TOKEN) {
-      return json({ error: "unauthorized" }, 401);
-    }
 
     if (path === "/status") {
       return json({
         ok: true,
         key_configured: !!(env.OPENAI_API_KEY || ""),
         base_url: env.OPENAI_BASE_URL || DEFAULT_BASE,
-        key_preview: maskKey(env.OPENAI_API_KEY || ""),
         note: "ChatGPT网页订阅≠API，需独立API Key",
       });
     }

@@ -328,7 +328,7 @@ export async function callAI({ channel, env, ctx, taskName, prompt, expect, time
   else if (channel === "kimi") keyName = "MOONSHOT_API_KEY";
   else keyName = `${channel.toUpperCase()}_API_KEY`;
   // kimi 通道支持走 LTZZZ Kimi proxy（内置 Key），无需本地 MOONSHOT_API_KEY
-  const needsLocalKey = channel !== "kimi";
+  const needsLocalKey = channel !== "kimi" && !(channel === "xia" && !env.XAI_BASE_URL);
   const hasKey = needsLocalKey ? !!(env && env[keyName]) : true;
   if (!hasKey) {
     // 【等待人工凭证】：不伪造 Key，直接占位
@@ -366,7 +366,8 @@ export async function callAI({ channel, env, ctx, taskName, prompt, expect, time
       apiKey = env.MOONSHOT_API_KEY;
     } else {
       apiUrl = "https://api-kimi.ltzzz.com/";
-      apiKey = "ltzzz-kimi-proxy";
+      model = "auto";
+      apiKey = env.LTZZZ_AGENT_TOKEN;
     }
   } else if (channel === "claude") {
     apiUrl = "https://api.anthropic.com/v1/messages";
@@ -396,7 +397,7 @@ export async function callAI({ channel, env, ctx, taskName, prompt, expect, time
       apiKey = env.XAI_API_KEY;
     } else {
       apiUrl = "https://api-xai.ltzzz.com/";
-      apiKey = "ltzzz-xai-proxy"; // proxy 内置真实 key；此值仅为占位标识，不含凭证
+      apiKey = env.LTZZZ_AGENT_TOKEN; // proxy 内置真实 key；此值仅为占位标识，不含凭证
     }
   } else {
     // 2026-10-02 修正（总控自查）：live-skeleton 是占位骨架、未发生任何上游调用，
@@ -405,6 +406,7 @@ export async function callAI({ channel, env, ctx, taskName, prompt, expect, time
     return { ok: true, status: "skeleton", dry_run: true, budget, placeholder: `[skeleton] ${channel} 通道未配置上游，未发生真实调用` };
   }
 
+  if (!apiKey) return {ok:false,status:"service_auth_not_configured",dry_run:true,budget};
   try {
     const headers = {
       "Content-Type": "application/json",
@@ -911,7 +913,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/health") {
       return new Response(JSON.stringify({
-        ok: true, service: "ltzzz-daily-automation", revision: "daily-resilience-v1", model_generation_verified: false, dry_run: true,
+        ok: true, service: "ltzzz-daily-automation", revision: "daily-resilience-v1", proxy_caller_auth_revision: "proxy-auth-v1", model_generation_verified: false, dry_run: true,
         tasks: Object.keys(TASK_TABLE),
         budgets: {
           doubao: checkBudget("doubao", env),
