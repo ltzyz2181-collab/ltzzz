@@ -1,0 +1,19 @@
+{
+  "finding": "06",
+  "at": "2026-10-21T14:00:00Z",
+  "executor": "doubao",
+  "subject": "daily-board claim timing case A/B written confirmation + invariant",
+  "evidence": {
+    "daily_board": "knowledge/results/daily-board/2026-10-21.json",
+    "deepseek_claim": {
+      "observed_at": "2026-10-21T00:09:42.051Z",
+      "claimed_at": "2026-10-21T00:09:49.121Z"
+    }
+  },
+  "case": "A",
+  "reasoning": "observed_at(42.051) < claimed_at(49.121)：系统先观察到队列卡、后记录席认领，时间线正确，非倒填。",
+  "invariant": "claim_receipt.observed_at <= claim_receipt.claimed_at；违反即触发时序异常，拒绝 claim_verified=true。",
+  "qianwen_return_semantics": "qianwen-return 仅作回执来源标签，不代表生成模型；实际模型以 receipt.actual_model 为准，禁止按 executor 栏混算成本/功劳。",
+  "status": "completed_written",
+  "receipt": true
+}
