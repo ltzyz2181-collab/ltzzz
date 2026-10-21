@@ -38,3 +38,14 @@ test('invalid cards rejected without model call (real_money, wrong agent, id mis
   }
   assert.ok(validateCard({id: 'QWEN-TEST-0001', agent: 'qianwen', prompt: 'x'.repeat(30)}, 'OTHER.json').includes('filename_must_equal_id'));
 });
+
+test('kimi card below profile floor is rejected before provider call', () => {
+  const low = validateCard({id: 'QWEN-KIMI-0001', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k2', max_tokens: 1024}, 'QWEN-KIMI-0001.json');
+  assert.ok(low.includes('kimi_max_tokens_below_profile_floor_3000'), low.join(','));
+  // above the floor: no token-budget error
+  const ok = validateCard({id: 'QWEN-KIMI-0002', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'kimi-k2', max_tokens: 4000}, 'QWEN-KIMI-0002.json');
+  assert.ok(!ok.some(e => e.startsWith('kimi_max_tokens_')), ok.join(','));
+  assert.ok(!ok.some(e => e.startsWith('max_tokens_')), ok.join(','));
+  // qwen card still bounded to the qwen ceiling
+  assert.ok(validateCard({id: 'QWEN-Q-0001', agent: 'qianwen', prompt: 'x'.repeat(30), model: 'qwen-plus', max_tokens: 99999}, 'QWEN-Q-0001.json').includes('max_tokens_64_to_16384'));
+});

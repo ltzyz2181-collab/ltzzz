@@ -32,6 +32,10 @@ export function internalHireEvidence(record,{ans,read,sourcePath}){
   result.author_provider=worker.executed_by;result.reviewer_provider=reviewer.executed_by;result.author_provider_verified=true;
   result.follow_up_receipt={artifact_sha256:worker.sha256,review_artifact_sha256:reviewer.sha256,author_provider:worker.executed_by,reviewer_provider:reviewer.executed_by,accepted:verdict.accepted,board_verified:boardVerified,scope:'engineering_draft_only_not_deployment_or_USDC_wages'};
   result.rejection_reasons=verdict.accepted?[]:verdict.reasons;
+  // Top-level one-line rejection_reason: required on every rejected receipt so a
+  // human never has to reopen Actions logs to know why delivery was refused.
+  result.rejection_reason=verdict.accepted?null:(verdict.reasons||[]).join(' | ');
+  if(!verdict.accepted && !result.rejection_reason) throw Error('rejection_reason_required');
  }catch(error){result.status='blocked_internal_evidence';result.evidence_error=error.message;}
  return result;
 }

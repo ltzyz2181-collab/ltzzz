@@ -133,5 +133,6 @@
     "logical_planning_role": "claude",
     "native_anthropic_calls": 0,
     "scope": "append-only controller clarification; embedded evidence and rejection verdict unchanged"
-  }
+  },
+  "rejection_reason": "复审拒收（reviewer=Doubao，accepted=false）：补丁构造 action:'release_task' 但 taskCommand 只实现 claim/submit/review，不存在该 action；补丁硬编码写 knowledge/results/pulse/task-board.json，而 run-daily-tasks.mjs 实际读 latest.json；released_at/release_reason/recovery_attempts 不在状态机 schema；'次日 dailyAssignment 无法重新认领'结论过强（新日期会重新 seed DAILY-* 基线任务）；verification_commands 调用的是 submit_task 而非失败释放，无法证明恢复行为；daily-task-board.mjs/持久层/测试夹具未提供，多项无法复核。详见 rejection_reasons[9]。"
 }
