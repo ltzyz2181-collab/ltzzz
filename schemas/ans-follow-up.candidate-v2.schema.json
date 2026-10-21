@@ -1,0 +1,261 @@
+{
+ "$schema": "https://json-schema.org/draft-07/schema#",
+ "type": "object",
+ "additionalProperties": false,
+ "properties": {
+  "action_taken": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "enum": [
+    "none",
+    "dispatched",
+    "fixed",
+    "escalated"
+   ]
+  },
+  "status": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "enum": [
+    "open",
+    "closed",
+    "pending_review"
+   ]
+  },
+  "follow_up_receipt": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "test_status": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "model_proposed": {
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "tested_by_model_claim": {
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "actually_run": {
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "run_id": {
+     "type": [
+      "string",
+      "null"
+     ],
+     "pattern": "^[0-9]{6,20}$"
+    },
+    "sha256": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "model_proposed",
+    "tested_by_model_claim",
+    "actually_run",
+    "run_id",
+    "sha256"
+   ]
+  },
+  "paid": {
+   "type": "boolean"
+  },
+  "tx_hash": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "pattern": "^0x[a-fA-F0-9]{64}$"
+  }
+ },
+ "required": [
+  "action_taken",
+  "status",
+  "test_status",
+  "paid",
+  "tx_hash",
+  "follow_up_receipt"
+ ],
+ "allOf": [
+  {
+   "if": {
+    "properties": {
+     "action_taken": {
+      "const": "none"
+     }
+    },
+    "required": [
+     "action_taken"
+    ]
+   },
+   "then": {
+    "properties": {
+     "status": {
+      "const": "open"
+     },
+     "follow_up_receipt": {
+      "type": "null"
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "action_taken": {
+      "enum": [
+       "dispatched",
+       "fixed",
+       "escalated"
+      ]
+     }
+    },
+    "required": [
+     "action_taken"
+    ]
+   },
+   "then": {
+    "properties": {
+     "follow_up_receipt": {
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.)(knowledge|results|memory|ops)/[A-Za-z0-9_./-]+\\.(json|md)$"
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "test_status": {
+      "properties": {
+       "actually_run": {
+        "const": true
+       }
+      },
+      "required": [
+       "actually_run"
+      ]
+     }
+    },
+    "required": [
+     "test_status"
+    ]
+   },
+   "then": {
+    "properties": {
+     "test_status": {
+      "properties": {
+       "run_id": {
+        "type": "string",
+        "pattern": "^[0-9]{6,20}$"
+       },
+       "sha256": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
+       }
+      },
+      "required": [
+       "run_id",
+       "sha256"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "test_status": {
+      "properties": {
+       "actually_run": {
+        "not": {
+         "const": true
+        }
+       }
+      },
+      "required": [
+       "actually_run"
+      ]
+     }
+    },
+    "required": [
+     "test_status"
+    ]
+   },
+   "then": {
+    "properties": {
+     "test_status": {
+      "properties": {
+       "run_id": {
+        "type": "null"
+       },
+       "sha256": {
+        "type": "null"
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "paid": {
+      "const": true
+     }
+    },
+    "required": [
+     "paid"
+    ]
+   },
+   "then": {
+    "properties": {
+     "tx_hash": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{64}$"
+     }
+    }
+   }
+  },
+  {
+   "if": {
+    "properties": {
+     "paid": {
+      "const": false
+     }
+    },
+    "required": [
+     "paid"
+    ]
+   },
+   "then": {
+    "properties": {
+     "tx_hash": {
+      "type": "null"
+     }
+    }
+   }
+  }
+ ],
+ "$id": "urn:ltzzz:ans-follow-up:candidate-v2",
+ "title": "ANS follow-up candidate v2 (Claude red-team fixes of controller candidate-v1); not production-integrated"
+}
