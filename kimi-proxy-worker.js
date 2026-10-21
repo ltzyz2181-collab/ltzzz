@@ -1,5 +1,5 @@
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
-import {authCheck,proxyAuthState} from './lib/proxy-auth.js';
+import {authCheck,proxyAuthState,proxyAuth} from './lib/proxy-auth.js';
 import {KIMI_PROFILE,kimiTokens,selectKimiModel} from './lib/kimi-profile.js';
 // LTZZZ · Kimi（Moonshot AI）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:kimi（总控挑战者，2026-09-30 起，接替 GPT 席位比拼）
@@ -43,9 +43,7 @@ export default {
 
     if(request.method==='GET'&&url.pathname==='/auth/check')return authCheck(request,env,{legacyToken:env.KIMI_WORKER_TOKEN});
     if(request.method==='GET'&&url.pathname==='/catalogue'){
-      const service=env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN;
-      if(!service)return json({error:'service_auth_not_configured'},503);
-      if(request.headers.get('Authorization')!==`Bearer ${service}`)return json({error:'unauthorized'},401);
+      const denied=await proxyAuth(request,env,{required:true,legacyToken:env.KIMI_WORKER_TOKEN});if(denied)return denied;
       try{const r=await fetch('https://api.moonshot.cn/v1/models',{headers:{Authorization:'Bearer '+env.KIMI_API_KEY},signal:AbortSignal.timeout(20000)});
         if(!r.ok)return json({ok:false,catalogue_http:r.status,model_calls:0,generation_verified:false},503);
         const d=await r.json(),ids=(d.data||[]).map(x=>x.id).filter(x=>typeof x==='string'&&/^kimi-[A-Za-z0-9_.-]+$/.test(x));
@@ -62,9 +60,7 @@ export default {
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
-    const serviceToken=env.KIMI_WORKER_TOKEN||env.LTZZZ_AGENT_TOKEN;
-    if(!serviceToken)return json({error:'service_auth_not_configured'},503);
-    if(request.headers.get('Authorization')!==`Bearer ${serviceToken}`)return json({error:'unauthorized'},401);
+    const denied=await proxyAuth(request,env,{required:true,legacyToken:env.KIMI_WORKER_TOKEN});if(denied)return denied;
     if (!env.KIMI_API_KEY) {
       return json({ error: 'Missing KIMI_API_KEY secret', stage: 'worker_config' }, 500);
     }
