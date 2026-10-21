@@ -1,3 +1,4 @@
+import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · XAI (Grok) API proxy — Cloudflare Worker
@@ -27,8 +28,7 @@ export default {
         service: 'xai-proxy',
         did: 'did:ltzzz:grok',
         has_key: Boolean(env.XAI_API_KEY),
-        model_configured: Boolean(env.XAI_MODEL),
-        configured_model: env.XAI_MODEL || 'grok-3',
+        ...modelConfiguration(env.XAI_MODEL || 'grok-3',{source:env.XAI_MODEL?'environment_override':'worker_default',override:Boolean(env.XAI_MODEL)}),
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
         time: new Date().toISOString()

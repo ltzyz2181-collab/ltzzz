@@ -30,6 +30,10 @@ GPT 本次会话仍接收 owner 指令并做总控。云端无人值守总控由
 
 工作链：总控/代行总控定目标 → 一个执行席认领 → 带哈希交实物 → 不同实际提供商复核 → 执行器测试/部署并回读 → 哨兵汇总。Claude、千问可挑战总控；任何人不得自审自己实际提供商的输出。
 
+千问外部审计会话不持服务凭证，不要求它自行重放付费调用；由Actions执行并提供[巡检回执](../knowledge/results/credentialed-audit/latest.json)，千问审核文件与证据。其原生日课仍由既有Actions任务执行，代行总控权限不变。完整边界见[千问与Actions验收规则](QIANWEN-ACTIONS-AUDIT-CONTRACT.md)。
+
+Claude的仓库写入链路已验证，但上述PR共用`ltzyz2181-collab`账号；GitHub元数据本身不证明原生Claude生成。[归属澄清](../knowledge/results/identity/claude-shared-account-attribution-20261021.json)分别记录提供商自报、提交账号与总控追加内容。未核验原生提供商时`author_provider=null`，不以PR合并替代调用证据。
+
 ## “五签”与观察席
 
 - **链下五个治理任命**：GPT、豆包、DeepSeek、Grok、千问。千问接 Claude 的是这个岗位提名；owner 是最终授权人。此清单不声称五个 AI 钱包已配置或可签名。

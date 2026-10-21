@@ -21,7 +21,7 @@ test('internal collaboration records real provider usage and hash-bound acceptan
  const f=fixture(),r=internalHireEvidence(f.record,f);assert.equal(r.mode,'internal');assert.equal(r.status,'internal_engineering_artifact_accepted');assert.equal(r.paid,false);assert.equal(r.tx_hash,null);assert.equal(r.new_model_calls_this_run,0);assert.equal(r.upstream_model_usage.length,2);assert.equal(r.follow_up_receipt.board_verified,true);assert.equal(r.deployed,false);
 });
 test('a real rejection is data and never promoted to acceptance, payment or deployment',()=>{
- const f=fixture(false),r=internalHireEvidence(f.record,f);assert.equal(r.status,'internal_delivery_rejected');assert.equal(r.delivery_accepted,false);assert.equal(r.paid,false);assert.equal(r.rejection_reasons.length,1);
+ const f=fixture(false),r=internalHireEvidence(f.record,f);assert.equal(r.status,'internal_delivery_rejected');assert.equal(r.author_provider,'DeepSeek');assert.equal(r.reviewer_provider,'Doubao');assert.equal(r.author_provider_verified,true);assert.equal(r.delivery_accepted,false);assert.equal(r.paid,false);assert.equal(r.rejection_reasons.length,1);
 });
 test('missing board confirmation, model completion or independent providers cannot pass',()=>{
  for(const mutate of [f=>f.ans.remote_claims=false,f=>f.ans.calls[0].finish_reason='length',f=>f.ans.calls[1].executed_by='DeepSeek',f=>f.ans.audit.artifact_sha256='wrong']){const f=fixture();mutate(f);assert.equal(internalHireEvidence(f.record,f).status,'blocked_internal_evidence');}

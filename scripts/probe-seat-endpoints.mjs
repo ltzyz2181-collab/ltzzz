@@ -6,7 +6,7 @@ async function inspectOnce(url,{kind,id}){
  catch(e){result.dns_verified=false;result.dns_error=String(e.code||'DNS_ERROR').slice(0,50);return {...result,healthy:false,status:'dns_not_resolved_from_this_runner'};}
  try{
   const r=await fetch(url,{redirect:'follow',signal:AbortSignal.timeout(12000)});result.http=r.status;result.content_type=r.headers.get('Content-Type');const d=await r.json();
-  if(kind==='health'){result.public_health=Object.fromEntries(['ok','service','engine','did','has_key','key_configured','model_configured','metadata_only','native_generation_verified','native_api_status'].filter(k=>k in d).map(k=>[k,d[k]]));result.healthy=r.ok&&d.ok===true&&(!d.did||d.did==='did:ltzzz:'+id);}
+  if(kind==='health'){result.public_health=Object.fromEntries(['ok','service','engine','did','has_key','key_configured','model_configured','configured_model','model_config_source','model_configuration_revision','model_override_configured','auth_required','auth_configured','generation_verified','metadata_only','native_generation_verified','native_api_status'].filter(k=>k in d).map(k=>[k,d[k]]));result.healthy=r.ok&&d.ok===true&&(!d.did||d.did==='did:ltzzz:'+id);}
   else{result.did=d.id;result.work_status=d.work_status;result.healthy=r.ok&&d.id==='did:ltzzz:'+id&&d.metadata_only===true;}
   result.status=result.healthy?'http_json_verified':'http_or_identity_not_verified';
  }catch(e){result.healthy=false;result.status='fetch_failed_from_this_runner';result.error_code=String(e.cause?.code||e.name||'FETCH_ERROR').replace(/[^A-Za-z0-9_]/g,'').slice(0,50);}

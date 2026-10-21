@@ -1,3 +1,4 @@
+import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · 千问（阿里云百炼 DashScope）API proxy — Cloudflare Worker
@@ -27,8 +28,7 @@ export default {
         service: 'ltzzz-qianwen-proxy',
         did: 'did:ltzzz:qianwen',
         has_key: Boolean(env.QWEN_API_KEY),
-        model_configured: Boolean(env.QWEN_MODEL),
-        configured_model: env.QWEN_MODEL || 'qwen-plus',
+        ...modelConfiguration(env.QWEN_MODEL || 'qwen-plus',{source:env.QWEN_MODEL?'environment_override':'worker_default',override:Boolean(env.QWEN_MODEL)}),
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
         time: new Date().toISOString()
