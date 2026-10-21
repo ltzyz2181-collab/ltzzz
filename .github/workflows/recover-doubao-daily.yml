@@ -5,6 +5,10 @@ on:
       date:
         description: Failed task date (Asia/Shanghai); once per date
         default: '2026-10-14'
+      verify_pro:
+        description: 'One Pro-model repair after a completed Lite recovery; preserves both receipts'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ['.github/workflows/recover-doubao-daily.yml','scripts/recover-doubao-daily.mjs']
@@ -17,6 +21,7 @@ jobs:
     timeout-minutes: 10
     env:
       RECOVERY_DATE: ${{ inputs.date || '2026-10-14' }}
+      RECOVERY_VERIFY_PRO: ${{ inputs.verify_pro || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
