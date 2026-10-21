@@ -1,11 +1,11 @@
 {
-  "at": "2026-10-21T00:50:27.839Z",
-  "run_id": "39523551595",
+  "at": "2026-10-21T14:12:43.480Z",
+  "run_id": "39614396499",
   "model": "deepseek-v4-pro",
   "model_status": "success",
   "finish_reason": "stop",
-  "tokens_used": 18580,
-  "snapshot_sha256": "2f99e8fb693713345265b43114dc903dfe2021d56e2627d838ae97e37152614e",
+  "tokens_used": 17809,
+  "snapshot_sha256": "2ef4f702ccdb56c46acdce137d75bc6054d14aa3f01d1e443dc22a13c6b6dcd0",
   "treasury_status": {
     "ok": true,
     "chain_id": 8453,
@@ -30,8 +30,8 @@
         "treasury_can_withdraw": false
       }
     },
-    "block_number": 52877207,
-    "rpc_url": "https://base-rpc.publicnode.com",
+    "block_number": 52901257,
+    "rpc_url": "https://base.drpc.org",
     "rpc_attempts": [
       {
         "url": "https://mainnet.base.org",
@@ -41,21 +41,15 @@
       },
       {
         "url": "https://base.drpc.org",
-        "ok": false,
-        "code": "SERVER_ERROR",
-        "detail": "exceeded maximum retry limit"
-      },
-      {
-        "url": "https://base-rpc.publicnode.com",
         "ok": true
       }
     ],
     "usdc_raw": "210869201",
-    "ausdc_raw": "114570941",
+    "ausdc_raw": "114577582",
     "eth_raw": "1985282821867975",
     "allowance_raw": "9115782",
     "principal_raw": "114526347",
-    "interest_raw": "44594",
+    "interest_raw": "51235",
     "principal_basis": "tracked_supply_receipts",
     "first_supply_confirmed": true,
     "exit_test_confirmed": true,
@@ -73,8 +67,8 @@
     "capital_agent": "DeepSeek",
     "capital_reputation": 105,
     "allocation_share_bps": 4000,
-    "single_cap_usdc": 32.044014,
-    "exposure_cap_usdc": 128.176056,
+    "single_cap_usdc": 32.044678,
+    "exposure_cap_usdc": 128.178713,
     "cash_floor_raw": "5000000",
     "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
     "owner_return_enabled": false,
@@ -83,6 +77,6 @@
   "execution_status": "ready_for_bounded_auto",
   "transactions_sent": 0,
   "tx_hash": null,
-  "output": "【检查单：Aave v9 未确认意图】  \n当前状态：active_intent=AAVE-AUTO-bounded_supply-2026-10-20，pending_confirmations，already_signed_steps=true；不得宣称已成交。0x5df...为金库；0xbc24...的beneficiary_principal_raw=4.496788不并入金库可用余额。个人Aave存款、旧Vault、新金库必须按各自book.aave状态分离核对。\n\n一、可自动执行（只读，无需签名）  \n1）调 reconcileAaveTransactions(m,book)，读 transactions[].chain_status、confirmations、block_number、tx_hash。  \n2）调 aaveStatus 核对：usdc_raw=210869201，ausdc_raw=114570941，allowance_raw=9115782，cash_floor=5000000。政策余量≈128.176056-114.570941-4.496788=9.108327 USDC；active_intent.amount_raw 必须≤该余量，否则触发限额/现金垫失败。\n\n二、需签名/资金步骤  \n3）若 receipt 为 confirmed_success 且 confirmations≥2：可调 executeAave 落账，但代码要求存在 TREASURY_EXECUTOR_KEY；没有该签名器则不能清 pending、不能更新 principal。  \n4）若 receipt 为 not_found/broadcast_unknown：只允许重播原 raw，不得重签；需要 Base ETH（当前约0.001985 ETH）和 TREASURY_EXECUTOR_KEY。  \n5）新金库：新地址需先持有≥6 USDC和ETH，执行1 USDC supply，成功后再1 USDC withdraw；验收 first_supply_confirmed=true、exit_test_confirmed=true。当前地址已完成首存退出，不要重做。\n\n三、失败条件  \n1）链上 revert：receipt.status≠0x1；预期 i.status=failed、active_intent=null、failures+1，failures≥3 时 paused=true。迁移：排查后清除 terminal active_intent，重开 intent。验收：原 tx_hash 有 receipt 但 status≠0x1，不可验收。  \n2）RPC丢失/未上链：预期 step.status=submitted 或 broadcast_unknown，pending；last_execution_error.stage=receipt_read_transport。迁移：多RPC查同一 tx_hash，仍无则原 raw 重播。验收：receipt.transactionHash==tx_hash 且 status=0x1。  \n3）限额/现金垫：single/exposure/cash_floor/period_cap 任一触发；预期 blocked_policy，无新 tx。迁移：补USDC或等 equity/声誉提高。验收：无新 txHash。  \n4）缺签名/ETH：预期 treasury_signer_missing 或 treasury_eth_gas_missing 或 gas_cap；active_intent 保持 pending。迁移：向0x5df...转ETH，受控注入签名器，不公布私钥。验收：签后产生 tx_hash=keccak256(raw)，链上 receipt 匹配。\n\n统一验收字段：step.tx_hash、receipt.transactionHash、receipt.status=0x1、confirmations≥2；若为 OwnerChild supply，还需 child_supply_proof.verified=true。  \n【交付结束】",
+  "output": "**范围区分**  \n新金库地址 `0x5df...32d`：`principal_raw=114.526347 USDC`，`first_supply_confirmed=true`、`exit_test_confirmed=true`，已过 1 USDC pilot，可进入声誉限额分配。`beneficiary_principal_raw=4.496788` 属 owner-child 受益仓，不计入主金库 `principal_raw`，但 exposure 校验会合并；`treasury_can_withdraw=false`、`owner_return_enabled=false`，不得当作可自由提取资金。外部个人 Aave 存款、旧 Vault 不得混入本地址限额。\n\n**下一步检查单**  \n1. [自动，无需资金/签名] 读取 `book.aave.intents[\"AAVE-AUTO-bounded_supply-2026-10-20\"].steps[*].{tx_hash,status,raw}`，核对 `active_intent` 为 pending_confirmations。  \n2. [自动，只读] 运行 `reconcileAaveTransactions`，对每个 step 调 `eth_getTransactionReceipt` / `eth_getTransactionByHash`，检查 `receipt.status`、确认数是否 ≥2、tx_hash 与存储一致。当前 `intent_status=pending_confirmations` 多为确认数不足或 child proof 未完成。  \n3. [自动] 重读 `aaveStatus`：`usdc_raw=210.869201`，`ausdc_raw=114.577582`，`beneficiary_principal_raw=4.496788`，已用 exposure `119.074370`；`exposure_cap=128.178713`，剩余 room `9.104343 USDC`。校验 active_intent 的 amount_raw ≤ `9.104343 USDC`，否则触发 `blocked_policy`。  \n4. [自动] 检查 gas：`eth_raw≈0.001985 ETH`；调用 `estimateGas` + `getFeeData` 确认足够发当前已签名 step。若不满足，只读推进不会发生。  \n5. [缺签名/资金判断] 若确认阶段需推进，执行环境必须存在 `TREASURY_EXECUTOR_KEY`；当前 `already_signed_steps=true`，不再需要新签名，但若 key 缺失则只能读不能改状态。  \n6. [人工核对] 若 step 属于 owner-child supply，须 dual RPC authenticated sensor 验证 child Supply + aUSDC mint；否则等待确认数即可。\n\n**至少 4 个失败条件**  \n| 失败条件 | 预期机器状态 | 可读取接口/字段 | 迁移路径 | 验收 txHash 字段 |\n|---|---|---|---|---|\n| receipt.status=0 或链上 failed | `intent.status='failed'`，`active_intent=null`，failures+1；failures≥3 时 paused=true，period caps 回滚 | `book.aave.intents[id].status`、`steps[].status`、`state.failures`、`state.paused` | 作废该 intent，校正 periods，重建需新签名 | 必须沿用原 `steps[].tx_hash`，不得更换 |\n| 确认数不足 `head < blockNumber+2` 或 child proof 未过 | `intent.status='pending_confirmations'`，`active_intent` 保留 | `eth_getTransactionReceipt`、`eth_blockNumber`、`reconcileAaveTransactions.confirmations` | 等待 ≥2 区块或补 dual RPC 观测 | 同一 tx_hash 最终 `step.status='confirmed'` 且 `receipt_status=1` |\n| gas 不足 / nonce 不一致 | `blocked_rpc` 或 `blocked_configuration`，`last_execution_error.stage` 为 gas/nonce 阶段 | `eth_getBalance`、`eth_getTransactionCount(pending/latest)`、`estimateGas` | 补 Base ETH 或清 pending nonce；不签新交易 | 无新 tx_hash |\n| 限额或现金储备不足 | `status='blocked_policy'`，无新签名 | `usdc_raw`、`ausdc_raw`、`beneficiary_principal_raw`、`cash_floor_raw`、`single_cap`、`exposure_cap` | 降低 amount 或等 exposure 降低 | 无新 tx_hash |\n| RPC 读失败导致广播未知 | `step.status='broadcast_unknown'` 或 `'submitted'`，`intent.status='pending'`，retry 标记 `identical_persisted_bytes_only` | `steps[].broadcast_attempts`、`last_execution_error` | 调 `broadcastAaveRaw(step.raw, step.tx_hash)` 重放同一字节 | tx_hash 必须严格等于存储 hash |\n\n**成功验收**  \nsupply 成功后：`active_intent=null`，`intent.status='confirmed'`，`step.status='confirmed'`，`receipt_status=1`，`principal_raw` 增加，记录 tx_hash 且与存储一致。  \n【交付结束】",
   "error": null
 }
