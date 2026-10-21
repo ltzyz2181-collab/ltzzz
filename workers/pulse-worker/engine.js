@@ -54,7 +54,7 @@ export function control(previous,command,actor,config,now=Date.now()){
  state.command_ids||=[];if(state.command_ids.includes(command.id))return {state,duplicate:true};state.manual||={};state.limits||={concurrency:config.baseline_concurrency};
  let taskDuplicate=false;
  switch(command.action){
-  case 'claim_task':case 'submit_task':case 'review_task':{const r=taskCommand(state,command,actor,['gpt',...names(config)],now);state=r.state;taskDuplicate=r.duplicate;break;}
+  case 'claim_task':case 'submit_task':case 'fail_task':case 'review_task':{const r=taskCommand(state,command,actor,['gpt',...names(config)],now);state=r.state;taskDuplicate=r.duplicate;break;}
   case 'pause':case 'resume':if(!['global',...names(config)].includes(command.target))throw Error('unknown_target');state.manual[command.target]=command.action==='pause';break;
   case 'set_concurrency':if(!Number.isSafeInteger(command.value)||command.value<1||command.value>64)throw Error('concurrency_invalid');state.limits.concurrency=command.value;break;
   case 'dispatch':if(!names(config).includes(command.target)||typeof command.instruction!=='string'||!command.instruction.trim()||command.instruction.length>3000)throw Error('dispatch_invalid');state.dispatches||=[];state.dispatches.push({id:command.id,agent:command.target,instruction:command.instruction,actor,at:new Date(now).toISOString(),status:'queued'});state.dispatches=state.dispatches.slice(-30);break;
