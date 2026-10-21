@@ -4,13 +4,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {reviewRequest,reviewContext,inspectClaude,selectReviewModel,executeReview,digest} from '../lib/claude-review.mjs';
-const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_ACTOR:'ltzyz2181-collab',GITHUB_EVENT_NAME:'push'};
+const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_ACTOR:'ltzyz2181-collab',GITHUB_EVENT_NAME:'push',GITHUB_REF:'refs/heads/main'};
 const record=()=>({mode:'review',status:'claimed_before_api',model_calls:0,model:'claude-haiku-test',context:{prompt:'Review public data only'}});
-test('inspection is default; review requires explicit owner dispatch and safe task identifiers',()=>{
+test('inspection is default; review allows authenticated main-branch executor dispatch and safe task identifiers',()=>{
  assert.equal(reviewRequest(env).mode,'inspect');
  for(const patch of [{CLAUDE_REVIEW_MODE:'review'},{CLAUDE_REVIEW_TASK_ID:'../../secrets'},{GITHUB_REPOSITORY:'other/repo'},{CLAUDE_REVIEW_TOPIC:'../../.env'}])assert.throws(()=>reviewRequest({...env,...patch}));
  assert.equal(reviewRequest({...env,CLAUDE_REVIEW_MODE:'review',GITHUB_EVENT_NAME:'workflow_dispatch'}).mode,'review');
- assert.throws(()=>reviewRequest({...env,CLAUDE_REVIEW_MODE:'review',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_ACTOR:'stranger'}));
+ assert.equal(reviewRequest({...env,CLAUDE_REVIEW_MODE:'review',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_ACTOR:'github-actions[bot]'}).mode,'review');
+ assert.throws(()=>reviewRequest({...env,CLAUDE_REVIEW_MODE:'review',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/other'}));
 });
 test('readiness only calls native models GET; never fabricates API credit or generation success',async()=>{
  let calls=0;const r=await inspectClaude('fixture',{fetcher:async(url,o)=>{calls++;assert.equal(url,'https://api.anthropic.com/v1/models?limit=100');assert.equal(o.method,undefined);assert.equal(o.headers['x-api-key'],'fixture');return Response.json({data:[{id:'claude-haiku-test'},{id:'unsafe?key=foo'}]});}});

@@ -1,3 +1,5 @@
+> 当前审批规则已更新：[评审接管](../docs/REVIEW-DELEGATION-CURRENT.md)。本旧稿中的“等待人工确认/凭证”仅为历史实现描述；现有执行器可自行配置与部署，实际缺少凭证或平台本人验证时分别记录，不伪造已完成。
+
 # LTZZZ 每日长期记忆审查协议（ltzzz-memory-review）
 
 > 版本：v0.1（dry-run 占位版）

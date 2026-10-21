@@ -1,4 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';
+import {nextSupervision,persistSupervision} from './lib/pending-supervision.mjs';
 import {prepareDailyHire,reconcileInternalHire} from './lib/daily-hire-files.mjs';
 import {prepareCycle,executeCycle,dayCST,digest} from './lib/ans-cycle.mjs';
 import {pulseSnapshot,PULSE_URL,pulseGate} from './lib/pulse-client.mjs';
@@ -11,7 +12,7 @@ if(phase==='prepare'){
  const prior=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
  const p=prepareCycle({date,runId,sourceCommit:process.env.GITHUB_SHA||'local',prior,repairKnownTruncation:process.env.ANS_REPAIR_KNOWN_TRUNCATION==='1',repairKnownFormat:process.env.ANS_REPAIR_KNOWN_FORMAT==='1'});
  if(p.archive)fs.writeFileSync('knowledge/results/ans-cycle/'+date+'-'+(p.archive_suffix||'before-nonthinking-repair')+'.json',JSON.stringify(p.archive,null,2)+'\n');
- if(p.execute)save(p.record);
+ if(p.execute){p.record.supervisory_subject||=nextSupervision();save(p.record);}
  prepareDailyHire({date,mode:'internal',runId,sourceCommit:p.record.source_commit,allowExistingOtherMode:true});
  if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+p.execute+'\n');
  if(process.env.GITHUB_ENV)fs.appendFileSync(process.env.GITHUB_ENV,'ANS_DATE='+date+'\n');console.log(date,p.record.status,'execute='+p.execute);
@@ -29,6 +30,7 @@ record.inputs=docs.map(d=>({file:d.file,sha256:digest(d.text)}));
   const {createModelRouter}=await import('./lib/domestic-model-router.mjs');const call=createModelRouter({record:attempt=>{record.provider_attempts||=[];record.provider_attempts.push(attempt);save(record);}});
   await executeCycle(record,{call,context:docs.map(d=>'## '+d.file+'\n'+d.text).join('\n'),save});
  }catch{record.status='blocked_execution_or_claim';save(record);}
+ const supervision=persistSupervision(record);if(supervision)record.supervisory_review_reference=supervision;
  for(const a of record.artifacts){a.path='knowledge/results/ans-cycle/'+date+'-'+a.role+'.json';fs.writeFileSync(a.path,a.text);delete a.text;}save(record);
  if(!['draft_independently_reviewed','draft_rejected'].includes(record.status))process.exitCode=1;
  console.log(date,record.status,'OpenAI calls=0; transactions=0');
