@@ -12,15 +12,15 @@
   "platform_scope": [
     "Instagram"
   ],
-  "status": "blocked_no_eligible_unique_video",
-  "published": false,
-  "post_created": false,
-  "upload_attempted": false,
+  "status": "published_after_owner_override",
+  "published": true,
+  "post_created": true,
+  "upload_attempted": true,
   "retry_attempted": false,
-  "permalink": null,
-  "media_id": null,
-  "published_at": null,
-  "screenshot_path": null,
+  "permalink": "https://www.instagram.com/reel/Deu5GykCZDF/",
+  "media_id": "17998465452042546",
+  "published_at": "2026-10-21T02:03:11Z",
+  "screenshot_path": "results/publishing/screenshots/instagram-2026-10-20.webp",
   "schedule": {
     "status": "active",
     "run_mode": "full_auto",
@@ -30,17 +30,18 @@
     "evidence": "manus-config schedule status at 2026-10-20T10:18:23-07:00"
   },
   "instagram_account_check": {
-    "checked_at": "2026-10-20T10:18:44-07:00",
+    "checked_at": "2026-10-20T19:03:44-07:00",
     "username_verified": "@ltzyz2181",
-    "posts_count": 5,
-    "latest_post_id": "18166995589478101",
-    "latest_post_url": "https://www.instagram.com/reel/DegfCDxiIEr/",
-    "latest_posted_at": "2026-10-15T08:04:04Z",
-    "reel_posted_today": false,
-    "publishing_limit_usage": "0/100",
+    "posts_count": 6,
+    "latest_post_id": "17998465452042546",
+    "latest_post_url": "https://www.instagram.com/reel/Deu5GykCZDF/",
+    "latest_posted_at": "2026-10-21T02:03:11Z",
+    "reel_posted_today": true,
+    "publishing_limit_usage_reported_after_post": "0/100",
     "verification_tools": [
+      "instagram/get_post_list",
       "instagram/get_account_info",
-      "instagram/get_post_list"
+      "manus-tools/browser_navigate"
     ]
   },
   "latest_package": {
@@ -151,7 +152,11 @@
     {
       "path": "videos/2026-10-05-audit-transparency.mp4",
       "sha256": "b8b21435953b05c0dbb418b60488738454b908d7359f312d5809060ac98cd2c0",
-      "reason": "15.07 seconds, below the minimum 20 seconds; source describes a Base Sepolia testnet exercise rather than the spoken real-money framing."
+      "reason": "Initially excluded by the scheduled rules (15.07 seconds and testnet framing); later explicitly selected by owner for this one-time Reel, with duration and H.264 exceptions, then posted with a testnet disclosure.",
+      "initial_scheduled_exclusion": "15.07 seconds, below the minimum 20 seconds; source describes a Base Sepolia testnet exercise rather than the spoken real-money framing.",
+      "owner_override_applied": true,
+      "published_permalink": "https://www.instagram.com/reel/Deu5GykCZDF/",
+      "published_media_id": "17998465452042546"
     },
     {
       "path": "videos/ltzzz-daily-2026-10-15.mp4",
@@ -160,18 +165,107 @@
     }
   ],
   "publication_tooling": {
-    "direct_no_click_tool_available": false,
+    "direct_no_click_tool_available": true,
     "available_write_tool": "instagram/create_instagram",
-    "tool_description_requires_confirmation_card": true,
-    "tool_invoked_today": false,
-    "reason_not_invoked": "No candidate survived owner rules and media requirements; therefore no upload or retry was made."
+    "tool_description_requires_confirmation_card": false,
+    "tool_invoked_today": true,
+    "tool_result": "Published successfully; verified by post list and public permalink.",
+    "publication_completed_at": "2026-10-20T19:03:11-07:00",
+    "direct_no_click_verified_this_run": true,
+    "direct_no_click_evidence": "instagram/create_instagram returned a live permalink and media_id; no separate user click was required in this execution.",
+    "initial_scheduled_reason_not_invoked": "The scheduled 10:05 scan found no eligible unique asset; later owner explicitly selected 10/05 material and the same write tool published it."
   },
-  "next_step": "No eligible unique existing MP4 is available in the current repository inventory. Keep the existing 10:00 America/Tijuana daily plan unchanged; a future run may publish only when a new unique, fully qualified repository MP4 exists.",
+  "next_step": "Stop for today; do not upload or retry again. Keep the existing daily 10:00 America/Tijuana schedule unchanged.",
   "verification": {
     "json_validation": "jq empty",
     "sha256_method": "sha256sum downloaded remote bytes",
     "media_validation": "ffprobe + ffmpeg full decode + volumedetect + sampled frame inspection",
     "dedup_validation": "68 results/publishing JSON receipts and all 10 remote MP4 bytes scanned against exact SHA, publication URLs, flags, and queue statuses",
-    "line_count": 177
-  }
+    "line_count": 271,
+    "instagram_public_post_validation": "instagram/get_post_list and public permalink; media ID, caption, posted timestamp, account @ltzyz2181 match.",
+    "screenshot_validation": "results/publishing/screenshots/instagram-2026-10-20.webp",
+    "source_asset_sha256": "b8b21435953b05c0dbb418b60488738454b908d7359f312d5809060ac98cd2c0",
+    "source_commit": "dc17966c90c1398b9f545e2451f1f7147d19a354",
+    "english_subtitle_limitation": "Video includes English voiceover and short English scene text; full word-for-word subtitles were not observed in sampled frames."
+  },
+  "published_at_local": "2026-10-20T19:03:11-07:00",
+  "manual_publish_completed_at": "2026-10-20T19:03:44-07:00",
+  "source_sha256": "b8b21435953b05c0dbb418b60488738454b908d7359f312d5809060ac98cd2c0",
+  "source_commit": "dc17966c90c1398b9f545e2451f1f7147d19a354",
+  "caption_text": "AI audit, evidence first. This video documents a Base Sepolia testnet drill: a faucet sent 2 test USDC using a token contract different from the Aave Sepolia pool reserve. It is not proof of mainnet investment, AI management of mainnet funds, or returns. No receipt, no success. AI-generated video. #LTZZZ #AI #Web3",
+  "initial_scheduled_result": {
+    "status": "blocked_no_eligible_unique_video",
+    "scheduled_time_local": "2026-10-20T10:05:23-07:00",
+    "published": false,
+    "upload_attempted": false,
+    "superseded_by": "owner-directed one-time publication of the 10/05 Doubao video"
+  },
+  "owner_override": {
+    "selected_by_owner": true,
+    "user_instruction": "Publish the 10/05 video explicitly marked as Doubao-made; waive the 20–45 second and H.264 requirements.",
+    "authorized_exceptions": [
+      "20–45 second duration requirement",
+      "H.264 video codec requirement"
+    ],
+    "cross_platform_repost": true,
+    "cross_platform_repost_basis": "The owner first asked to repost a YouTube video to Instagram, then selected this exact 10/05 Doubao-made asset for Instagram.",
+    "no_video_editing": true,
+    "no_other_platforms": true
+  },
+  "manual_selected_asset": {
+    "path": "videos/2026-10-05-audit-transparency.mp4",
+    "sha256": "b8b21435953b05c0dbb418b60488738454b908d7359f312d5809060ac98cd2c0",
+    "source_commit": "dc17966c90c1398b9f545e2451f1f7147d19a354",
+    "duration_seconds": 15.071995,
+    "resolution": "720x1280",
+    "aspect_ratio": "9:16",
+    "video_codec": "HEVC",
+    "audio_codec": "AAC",
+    "file_size_bytes": 2636707,
+    "audio_mean_volume_db": -15.9,
+    "audio_max_volume_db": -1.2,
+    "full_decode_passed": true,
+    "english_voiceover_transcribed": true,
+    "sampled_english_screen_text": [
+      "AI AUDIT",
+      "Right token matters",
+      "Evidence first. No receipt, no success."
+    ],
+    "subtitle_limitation": "Sampled frames show short English scene text, not word-for-word subtitles for the entire narration; no subtitle exception was requested.",
+    "cross_platform_match": {
+      "platform": "YouTube",
+      "same_sha256": true,
+      "video_id": "nTZ44tD_Izw",
+      "url": "https://www.youtube.com/watch?v=nTZ44tD_Izw",
+      "published_at": "2026-10-10T20:46:23.229Z",
+      "privacy_status": "public"
+    },
+    "fact_check": {
+      "source_script": "knowledge/video-scripts/2026-10-05-audit-transparency.md",
+      "supporting_record": "knowledge/results/EXP-005-invest-vault-testnet.md",
+      "network": "Base Sepolia testnet",
+      "faucet_amount": "2 test USDC",
+      "faucet_token_contract": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "aave_sepolia_reserve_contract": "0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f",
+      "t6_status": "blocked due to token-contract mismatch",
+      "caption_discloses_testnet_and_no_mainnet_investment_or_returns": true
+    }
+  },
+  "publication": {
+    "status": "published_verified",
+    "account": "@ltzyz2181",
+    "type": "Instagram Reel",
+    "share_to_feed": true,
+    "media_id": "17998465452042546",
+    "permalink": "https://www.instagram.com/reel/Deu5GykCZDF/",
+    "published_at_utc": "2026-10-21T02:03:11Z",
+    "published_at_local": "2026-10-20T19:03:11-07:00",
+    "caption": "AI audit, evidence first. This video documents a Base Sepolia testnet drill: a faucet sent 2 test USDC using a token contract different from the Aave Sepolia pool reserve. It is not proof of mainnet investment, AI management of mainnet funds, or returns. No receipt, no success. AI-generated video. #LTZZZ #AI #Web3",
+    "confirmation_source": "instagram/create_instagram success response; instagram/get_post_list returned matching post; public permalink opened in sandbox browser",
+    "account_posts_before": 5,
+    "account_posts_after": 6,
+    "screenshot_path": "results/publishing/screenshots/instagram-2026-10-20.webp",
+    "screenshot_sha256": "ab6426c6474818e5e27120ced16fbaabb28219d05cd82eab1707c1bdb230ed5f"
+  },
+  "repo_head_at_manual_publish": "83e346f968051c3640017befe43697ac82a761af"
 }

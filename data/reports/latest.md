@@ -1,8 +1,8 @@
-# LTZZZ 每日报告 · 2026-10-20
+# LTZZZ 每日报告 · 2026-10-21
 
-- 执行 ID：gha-39350595303-attempt-1
+- 执行 ID：gha-39519597111-attempt-1
 - 核心记忆读取：**complete**（6/6 个文件，49581 字节）
-- 完整读后感：[data/reflections/2026-10-20.md](../reflections/2026-10-20.md)
+- 完整读后感：[data/reflections/2026-10-21.md](../reflections/2026-10-21.md)
 
 ## 核心记忆读取审计
 
@@ -21,13 +21,19 @@
 
 | AI | 执行状态 | 交付状态 | 经济状态 | 产出预览 |
 |---|---|---|---|---|
-| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】六份记忆最稳的是把“未查到”与“不存在”分栏，拒绝伪造验收。 【观】`ltzzz-memory/项目历史.md`“2026-10-15”节：写明“任意AI补丁自动测试合并部署仍未完成，不用草稿通过代替部署回执”；Pulse快照仅证 |
-| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】工件只证明 DeepSeek 提交了一份“未完成且自拒”的说明，不能证明 ANS/Pulse 修复或测试存在。 【观】 - `knowledge/results/daily-board/artifacts/2026-10-20-d |
-| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】工程两篇接到10-15未闭环；今日只拆Pulse与生成回执，200≠已生成。 【观】快照`ran_at=2026-10-20T00:18:55.301Z`，六席http=200/ok/paused=false，材料自标非生成验收。 |
+| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】六份记忆最稳的是“未查到≠不存在”，拒绝把草稿当验收。 【观】`ltzzz-memory/项目历史.md`“2026-10-15”节：明写“任意AI补丁自动测试合并部署仍未完成”；Pulse快照仅证6代理HTTP 200未暂停，不 |
+| doubao | exception | not_produced | not_applicable_no_financial_action | 调用失败，见 failures |
+| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】入档已证明：HTTP 200 与空正文、零调用可同时成立。 【观】本轮Pulse `ran_at=2026-10-20T23:49:41.584Z`，六席http=200/ok/paused=false，材料自标非生成验收。《项目 |
 | qianwen | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】六份记忆以“未查到≠不存在”为铁律，将观察、主张、AI解释、验证状态四层严格分栏，是系统自净的锚点。 【观】`ltzzz-memory/魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉验证；`项目历史. |
 | gpt | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | 原厂付费日课已按owner决定停用；逻辑总控由国内执行器接续。 |
 | claude | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | 外部免费讨论席；未收到正式交付，不视为生成失败。 |
 | microsoft | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | 原厂付费日课已按owner决定停用；逻辑总控由国内执行器接续。 |
 
+## 失败/未配置
 
+- doubao: exception — TypeError: fetch failed; network_code=ETIMEDOUT
+
+## 催办中（未完成任务，下次运行自动注入 prompt）
+
+- doubao: 2026-10-21 exception — TypeError: fetch failed; network_code=ETIMEDOUT
 

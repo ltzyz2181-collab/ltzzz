@@ -5,6 +5,10 @@ on:
       date:
         description: Failed task date (Asia/Shanghai); once per date
         default: '2026-10-14'
+      verify_pro:
+        description: 'One Pro-model repair after a completed Lite recovery; preserves both receipts'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths: ['.github/workflows/recover-doubao-daily.yml','scripts/recover-doubao-daily.mjs']
@@ -17,6 +21,7 @@ jobs:
     timeout-minutes: 10
     env:
       RECOVERY_DATE: ${{ inputs.date || '2026-10-14' }}
+      RECOVERY_VERIFY_PRO: ${{ inputs.verify_pro || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
@@ -41,6 +46,8 @@ jobs:
         if: steps.prepare.outputs.execute == 'true'
         env:
           DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_USE_PROXY: 'true'
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
           NODE_OPTIONS: --dns-result-order=ipv4first

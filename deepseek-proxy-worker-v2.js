@@ -1,3 +1,4 @@
+import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · DeepSeek API proxy — Cloudflare Worker（v2，补齐健康检查）
 // 槽位：did:ltzzz:deepseek（研究席 · 记忆与内容研究主力）
@@ -24,6 +25,7 @@ export default {
     if (request.method === 'GET' && url.pathname === '/health') {
       return json({
         ok: true,
+        ...proxyAuthState(env),
         service: 'ltzzz-deepseek-proxy',
         did: 'did:ltzzz:deepseek',
         has_key: Boolean(env.DEEPSEEK_API_KEY),
@@ -35,9 +37,12 @@ export default {
       });
     }
 
+    if(request.method==='GET'&&url.pathname==='/auth/check')return authCheck(request,env);
+
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+    const denied=await proxyAuth(request,env);if(denied)return denied;
     if (!env.DEEPSEEK_API_KEY) {
       return json({ error: 'Missing DEEPSEEK_API_KEY secret', stage: 'worker_config' }, 500);
     }

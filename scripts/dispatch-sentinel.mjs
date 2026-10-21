@@ -29,9 +29,11 @@ export function indexDispatch(root){
   const codeReceipts=structured.filter(r=>r.data.task_id===id),delivery=codeReceipts.some(r=>r.data.execution?.generation_verified===true);
   const deadline=text.match(/(?:deadline|due_at|截止)[:：]\s*`?([0-9T:.+Z-]+)/i)?.[1]||null,deadline_at=deadline&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(deadline)&&Number.isFinite(Date.parse(deadline))?deadline:null;
   matched.push(...codeReceipts.map(r=>r.file));
-  return [{deadline_at,deadline_verified:!!deadline_at,overdue:!!deadline_at&&Date.now()>Date.parse(deadline_at)&&!matched.length,id,file:path.relative(root,file).split(path.sep).join('/'),status:delivery?'code_delivery_present_pending_review':matched.length>1?'ack_ambiguous_review_required':matched.length?'ack_present_unverified':'awaiting_agent_ack',receipts:matched.map(r=>path.relative(root,r).split(path.sep).join('/')),claim_verified:false}];
+  return [{deadline_at,deadline_verified:!!deadline_at,overdue:!!deadline_at&&Date.now()>Date.parse(deadline_at)&&!matched.length,id,file:path.relative(root,file).split(path.sep).join('/'),status:codeReceipts.some(r=>r.data.controller_review?.status==='accepted_with_explicit_corrections')?'controller_reviewed_checklist_only':delivery?'code_delivery_present_pending_review':matched.length>1?'ack_ambiguous_review_required':matched.length?'ack_present_unverified':'awaiting_agent_ack',receipts:matched.map(r=>path.relative(root,r).split(path.sep).join('/')),claim_verified:false}];
  });return {tasks};
 }
+
+export const tasksForDate=(tasks,date)=>tasks.filter(t=>[date,date.replaceAll('-','')].some(d=>t.id.includes(d)||t.file.includes(d)));
 
 export function datedReceipts(root,dirs,date){
  const day=value=>{try{return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));}catch{return null;}};
@@ -72,7 +74,7 @@ const push = (item, state, evidence, note = '') => rows.push({ item, state, evid
     const seats = (j?.tasks || []).map((t) => `${t.agent}=${t.status}`).join(', ');
     push('日课产出', 'OK', f, `记忆 ${cm.loaded_files}/${cm.total_files}；${seats || '无席位记录'}`);
   } else {
-    push('日课产出', 'MISSING', f, '今日结果文件不存在 —— 日课未产出（超时/失败）');
+    push('日课产出', 'MISSING', f, '尚未观察到当日文件；是否超时需按明确截止时间和运行回执判定，不能据此断定模型宕机。');
   }
 }
 
@@ -101,9 +103,9 @@ for(const [name,dirs] of [['AI雇AI回执(T1)',['knowledge/results/hire','knowle
       else if (status.includes('执行中') || status.includes('未完成') || status.includes('返工'))
         open.push(`${no} → ${status}`);
     }
-    push('派单台账·执行中', open.length ? 'OPEN' : 'OK', ledger,
+    push('历史派单台账·执行中（参考）', 'REFERENCE', ledger,
       open.length ? `${open.length} 项：${open.slice(0, 6).join('；')}${open.length > 6 ? ' …' : ''}` : '无');
-    push('派单台账·阻塞', blocked.length ? 'BLOCKED' : 'OK', ledger,
+    push('历史派单台账·阻塞（参考）', 'REFERENCE', ledger,
       blocked.length ? `${blocked.length} 项：${blocked.join('；')}` : '无');
   }
 }
@@ -117,14 +119,14 @@ for(const [name,dirs] of [['AI雇AI回执(T1)',['knowledge/results/hire','knowle
 
 /* ---------- 6. Today's actual dispatch cards, not one historical path ---------- */
 {
- const index=indexDispatch(REPO),today=index.tasks.filter(t=>t.id.includes(DATE)||t.file.includes(DATE));
+ const index=indexDispatch(REPO),today=tasksForDate(index.tasks,DATE);
  push('今日派单跟踪',today.some(t=>t.overdue)?'BLOCKED':today.length?'OK':'UNKNOWN','ops/dispatch/',today.length?today.map(t=>t.id+':'+t.status).join('；'):'今日未找到正式assigned派单原件');
  const dir=path.join(REPO,'knowledge/results/dispatch');fs.mkdirSync(dir,{recursive:true});
  fs.writeFileSync(path.join(dir,'sentinel-latest.json'),JSON.stringify({at:new Date().toISOString(),date:DATE,executed_by:'workbuddy_dispatch_automation',execution_source:'repository_rules_not_WorkBuddy_client',model_calls:0,tasks:today,overdue_count:today.filter(t=>t.overdue).length,deadline_unverified_count:today.filter(t=>!t.deadline_verified).length,claim_verified:false},null,2)+'\n');
 }
 
 /* ---------- 输出 ---------- */
-const icon = { OK: '✅', NONE: '⬜', MISSING: '❌', BLOCKED: '🔴', OPEN: '🟡', UNKNOWN: '❓', CONFIGURED: '✅', UNCONFIGURED: '❌' };
+const icon = { REFERENCE: 'ℹ️', OK: '✅', NONE: '⬜', MISSING: '❌', BLOCKED: '🔴', OPEN: '🟡', UNKNOWN: '❓', CONFIGURED: '✅', UNCONFIGURED: '❌' };
 const alert = rows.filter((r) => ['MISSING', 'BLOCKED', 'UNKNOWN', 'UNCONFIGURED', 'NONE'].includes(r.state));
 
 let md = `# 派单哨兵回执 · ${DATE} ${HH}:00 (CST)\n\n`;

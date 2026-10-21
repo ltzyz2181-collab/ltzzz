@@ -1,3 +1,4 @@
+import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
 // LTZZZ · XAI (Grok) API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:grok（待 owner 提供 XAI_API_KEY 激活）
@@ -22,6 +23,7 @@ export default {
     if (request.method === 'GET' && url.pathname === '/health') {
       return json({
         ok: true,
+        ...proxyAuthState(env),
         service: 'xai-proxy',
         did: 'did:ltzzz:grok',
         has_key: Boolean(env.XAI_API_KEY),
@@ -33,9 +35,12 @@ export default {
       });
     }
 
+    if(request.method==='GET'&&url.pathname==='/auth/check')return authCheck(request,env);
+
     if (request.method !== 'POST') {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
+    const denied=await proxyAuth(request,env);if(denied)return denied;
     if (!env.XAI_API_KEY) {
       return json({ error: 'Missing XAI_API_KEY secret', stage: 'worker_config' }, 500);
     }
