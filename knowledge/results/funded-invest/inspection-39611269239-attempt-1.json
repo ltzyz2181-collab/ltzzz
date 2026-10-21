@@ -1,0 +1,2114 @@
+{
+  "at": "2026-10-21T13:48:59.530Z",
+  "run_id": "39611269239",
+  "model_calls": 0,
+  "payments_submitted": 0,
+  "transactions_submitted": 0,
+  "owner_no_vpn_verified": false,
+  "inspections": [
+    {
+      "label": "runtime_state",
+      "result": {
+        "ok": true,
+        "market_runtime_revision": "market-runtime-v3",
+        "aave_runtime_revision": "aave-guard-v9",
+        "procurement_runtime_revision": "external-purchase-v5",
+        "daily_hire_revision": "daily-external-hire-v1",
+        "book_sha256": "3ee1f9b94035d846430350615d7d6b327fcd7eaa12c7bce369b26305f4634aa5",
+        "order_count": 140,
+        "ledger_count": 59,
+        "live_revenue_cents": 0,
+        "aave_intent_count": 12,
+        "first_supply_confirmed": true,
+        "exit_test_confirmed": true,
+        "active_intent": "AAVE-AUTO-bounded_supply-2026-10-20",
+        "signed": false,
+        "on_chain_executed": false
+      }
+    },
+    {
+      "label": "okx_capital_transfer",
+      "result": {
+        "ok": true,
+        "revision": "okx-funding-v1",
+        "policy": {
+          "id": "OKX-FUND-20261017-001",
+          "revision": "okx-funding-v1",
+          "chain": "USDC-Base",
+          "chain_id": 8453,
+          "account_hash": "dc5657b650a7580e",
+          "address": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+          "amount_raw": "20000000",
+          "destination_evidence": "knowledge/results/funded-invest/inspection-39004684738-attempt-1.json"
+        },
+        "order": {
+          "id": "OKX-FUND-20261017-001",
+          "amount_raw": "20000000",
+          "destination": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+          "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "chain_id": 8453,
+          "status": "confirmed",
+          "tx_hash": "0x6592bd13df14c7698d6c8569f577fb427a376404edfec5a9afacb203d85599d8",
+          "at": "2026-10-17T05:07:59.782Z",
+          "destination_verified_at": "2026-10-17T05:07:59.425Z",
+          "settlement_type": "same_owner_exchange_capital_transfer",
+          "investment_executed": false,
+          "broadcast_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false
+            }
+          ],
+          "block_number": 52712168,
+          "receipt_status": 1,
+          "exchange_credit_verified": false
+        },
+        "paid": false,
+        "tx_hash": "0x6592bd13df14c7698d6c8569f577fb427a376404edfec5a9afacb203d85599d8"
+      }
+    },
+    {
+      "label": "external_order",
+      "result": {
+        "ok": true,
+        "revision": "external-purchase-v5",
+        "order": {
+          "id": "EXT-AI-20261017-001",
+          "status": "paid_delivery_rejected",
+          "payer": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "pay_to": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "amount_raw": "3000",
+          "nonce": "0xa6216f4f062ffcf3d8dbf91cbc0fca6d899543689acbcff78bcffdd6cbb589c5",
+          "valid_before": 1792213950,
+          "before_block": 52712241,
+          "paid": true,
+          "tx_hash": "0x91e3941245fef223be3e1c2d726de6ef4fb730458861e0210cdbfed7b507d925",
+          "delivery_accepted": false,
+          "provider": "agent402.tools",
+          "model_requested": "deepseek/deepseek-chat",
+          "model_identity_verification": "provider_report_only",
+          "spec_provided_in_prompt": true,
+          "original_design_claimed": false,
+          "request_sha256": "84c1c281bb84e20aa75a8374060522dac9771988d60601940fbac7b5f636bf3a",
+          "at": "2026-10-17T05:10:30.344Z",
+          "model_generation_attempts": 1,
+          "acceptance_kind": "deterministic_structural_contract_check_not_independent_model_review",
+          "independent_review_status": "pending",
+          "relay_handed_off": true,
+          "http": 200,
+          "response_sha256": "344d91018601b1cd6d6324621374752d49be29fa2f73c8d44da5f7cf6ee9d31b",
+          "deliverable": "```json\n{\n  \"issues\": [\n    {\n      \"id\": 1,\n      \"method\": \"GET\",\n      \"reason\": \"Caller incorrectly uses GET /market/aave/preview with no body, but the API only supports POST with a JSON body for this endpoint.\"\n    },\n    {\n      \"id\": 2,\n      \"method\": \"status parsing\",\n      \"reason\": \"Caller incorrectly reads status.limits (non-existent field) instead of directly accessing single_cap_usdc and exposure_cap_usdc at the top level of GET /market/aave/status.\"\n    }\n  ],\n  \"tests\": [\n    {\n      \"id\": \"preview_ok\",\n      \"expected_http\": 200,\n      \"request\": {\n        \"method\": \"POST\",\n        \"path\": \"/market/aave/preview\",\n        \"body\": {\n          \"intent_id\": \"test123\",\n          \"action\": \"deposit\",\n          \"amount_usdc\": 1000\n        }\n      }\n    },\n    {\n      \"id\": \"wrong_auth\",\n      \"expected_http\": 401,\n      \"request\": {\n        \"method\": \"POST\",\n        \"path\": \"/market/aave/preview\",\n        \"body\": {\n          \"intent_id\": \"test123\",\n          \"action\": \"deposit\",\n          \"amount_usdc\": 1000\n        },\n        \"headers\": {\n          \"Authorization\": \"invalid_token\"\n        }\n      }\n    }\n  ]\n}\n```",
+          "deliverable_sha256": "bd118fc23371a9d8842fd1bba729b5609eeafacb99a40b18421e1bb8ff775b7c",
+          "model_reported": "deepseek/deepseek-chat",
+          "usage": {
+            "prompt_tokens": 174,
+            "completion_tokens": 319,
+            "total_tokens": 493,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "cache_write_tokens": 0,
+              "audio_tokens": 0,
+              "video_tokens": 0
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "image_tokens": 0,
+              "audio_tokens": 0
+            }
+          },
+          "finish_reason": "stop",
+          "artifact": {
+            "issues": [
+              {
+                "id": 1,
+                "method": "GET",
+                "reason": "Caller incorrectly uses GET /market/aave/preview with no body, but the API only supports POST with a JSON body for this endpoint."
+              },
+              {
+                "id": 2,
+                "method": "status parsing",
+                "reason": "Caller incorrectly reads status.limits (non-existent field) instead of directly accessing single_cap_usdc and exposure_cap_usdc at the top level of GET /market/aave/status."
+              }
+            ],
+            "tests": [
+              {
+                "id": "preview_ok",
+                "expected_http": 200,
+                "request": {
+                  "method": "POST",
+                  "path": "/market/aave/preview",
+                  "body": {
+                    "intent_id": "test123",
+                    "action": "deposit",
+                    "amount_usdc": 1000
+                  }
+                }
+              },
+              {
+                "id": "wrong_auth",
+                "expected_http": 401,
+                "request": {
+                  "method": "POST",
+                  "path": "/market/aave/preview",
+                  "body": {
+                    "intent_id": "test123",
+                    "action": "deposit",
+                    "amount_usdc": 1000
+                  },
+                  "headers": {
+                    "Authorization": "invalid_token"
+                  }
+                }
+              }
+            ]
+          },
+          "relay_result_received": true,
+          "payment_proof": {
+            "verified": true,
+            "tx_hash": "0x91e3941245fef223be3e1c2d726de6ef4fb730458861e0210cdbfed7b507d925",
+            "receipt_status": 1,
+            "block_number": 52712247
+          },
+          "completed_at": "2026-10-17T05:13:44.226Z"
+        },
+        "reused": true
+      }
+    },
+    {
+      "label": "aave_status",
+      "result": {
+        "ok": true,
+        "chain_id": 8453,
+        "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+        "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "beneficiary_principal_raw": "4496788",
+        "beneficiary_positions": {
+          "0xbc24b9a2d0c61705602257565d8c0064effe253e": {
+            "principal_raw": "4496788",
+            "allocations": {
+              "INV-fe28aa6c968aaa540cba74b1b4f158e4f436d9e3": {
+                "round": "OWNER-FUNDED-20261017-01",
+                "amount_raw": "4496788",
+                "tx_hash": "0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2",
+                "funding_treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+                "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+                "gas_payer": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+              }
+            },
+            "treasury_can_withdraw": false
+          }
+        },
+        "block_number": 52900596,
+        "rpc_url": "https://base.drpc.org",
+        "rpc_attempts": [
+          {
+            "url": "https://mainnet.base.org",
+            "ok": false,
+            "code": "SERVER_ERROR",
+            "detail": "exceeded maximum retry limit"
+          },
+          {
+            "url": "https://base.drpc.org",
+            "ok": true
+          }
+        ],
+        "usdc_raw": "210869201",
+        "ausdc_raw": "114577400",
+        "eth_raw": "1985282821867975",
+        "allowance_raw": "9115782",
+        "principal_raw": "114526347",
+        "interest_raw": "51053",
+        "principal_basis": "tracked_supply_receipts",
+        "first_supply_confirmed": true,
+        "exit_test_confirmed": true,
+        "paused": false,
+        "active_intent": "AAVE-AUTO-bounded_supply-2026-10-20",
+        "storage_status": {
+          "ok": true,
+          "status": "active_intent_pending",
+          "active_intent": "AAVE-AUTO-bounded_supply-2026-10-20",
+          "intent_status": "pending_confirmations",
+          "already_signed_steps": true,
+          "signed": false
+        },
+        "limit_policy": "reputation_and_actual_equity",
+        "capital_agent": "DeepSeek",
+        "capital_reputation": 105,
+        "allocation_share_bps": 4000,
+        "single_cap_usdc": 32.04466,
+        "exposure_cap_usdc": 128.17864,
+        "cash_floor_raw": "5000000",
+        "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "owner_return_enabled": false,
+        "aave_runtime_revision": "aave-guard-v9"
+      }
+    },
+    {
+      "label": "intent_gpt",
+      "result": {
+        "ok": true,
+        "intent_id": "INV-985360f41d83e919d157092a4a38d9d5b4651bda",
+        "action": "supply",
+        "amount_usdc": "4.539615",
+        "status": "confirmed",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "position_owner": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "steps": [
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+            "tx_hash": "0x88f5eacde198cafd01ef687429927b60bd38fe9a3704c2ec309f5794435c6042",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": true
+              }
+            ],
+            "block_number": 52704348,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-17T00:47:28.683Z"
+          }
+        ],
+        "execution_diagnostic": {
+          "stage": "receipt_read_transport",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 403 Forbidden"
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false,
+              "code": "BAD_DATA",
+              "detail": "missing response for request"
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 525 <none>"
+            }
+          ],
+          "retry": "identical_persisted_bytes_only"
+        },
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52704000,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "315408481",
+          "ausdc_raw": "34496928",
+          "eth_raw": "1994625062691327",
+          "allowance_raw": "34490241",
+          "principal_raw": "34489835",
+          "interest_raw": "7093",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.49054,
+          "exposure_cap_usdc": 137.962163,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52704350,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "310868866",
+          "ausdc_raw": "39036572",
+          "eth_raw": "1993568556688247",
+          "allowance_raw": "29950626",
+          "principal_raw": "39029450",
+          "interest_raw": "7122",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.490543,
+          "exposure_cap_usdc": 137.962175,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "owner_return_executed": false
+      }
+    },
+    {
+      "label": "intent_grok",
+      "result": {
+        "ok": true,
+        "intent_id": "INV-0b819cd71966b197273bcb0e5c80f0064936475c",
+        "action": "supply",
+        "amount_usdc": "4.882227",
+        "status": "confirmed",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "position_owner": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "steps": [
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+            "tx_hash": "0x5e9f7da979b6f192eee5453ff3c643d5765b68c77359331fd59196d3eb65d3eb",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": false
+              },
+              {
+                "url": "https://1rpc.io/base",
+                "ok": false
+              },
+              {
+                "url": "https://base.llamarpc.com",
+                "ok": false
+              }
+            ],
+            "block_number": 52704353,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-17T04:35:17.653Z"
+          }
+        ],
+        "execution_diagnostic": {
+          "stage": "receipt_read_transport",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 403 Forbidden"
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false,
+              "code": "BAD_DATA",
+              "detail": "missing response for request"
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 525 <none>"
+            }
+          ],
+          "retry": "identical_persisted_bytes_only"
+        },
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52704351,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "310868866",
+          "ausdc_raw": "39036572",
+          "eth_raw": "1993568556688247",
+          "allowance_raw": "29950626",
+          "principal_raw": "39029450",
+          "interest_raw": "7122",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.490543,
+          "exposure_cap_usdc": 137.962175,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52711185,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "305986639",
+          "ausdc_raw": "43919522",
+          "eth_raw": "1992512050685167",
+          "allowance_raw": "25068399",
+          "principal_raw": "43911677",
+          "interest_raw": "7845",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 34.490616,
+          "exposure_cap_usdc": 137.962464,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "owner_return_executed": false
+      }
+    },
+    {
+      "label": "intent_doubao",
+      "result": {
+        "ok": true,
+        "intent_id": "INV-51bbfff39eb96a28ce40aabb2b7f1548818dbecb",
+        "action": "supply",
+        "amount_usdc": "6.08137",
+        "status": "confirmed",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "position_owner": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "steps": [
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+            "tx_hash": "0xbe0e1a8c555432bbc5475f2c481fcd23b3e83a6a834aa7d3ec32eb129aca4cd1",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": false
+              },
+              {
+                "url": "https://1rpc.io/base",
+                "ok": false
+              },
+              {
+                "url": "https://base.llamarpc.com",
+                "ok": false
+              },
+              {
+                "url": "https://base.gateway.tenderly.co",
+                "ok": false
+              }
+            ],
+            "block_number": 52712391,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-17T05:31:13.639Z"
+          }
+        ],
+        "execution_diagnostic": {
+          "stage": "receipt_read_transport",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 403 Forbidden"
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false,
+              "code": "BAD_DATA",
+              "detail": "missing response for request"
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 525 <none>"
+            },
+            {
+              "url": "https://base.gateway.tenderly.co",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            }
+          ],
+          "retry": "identical_persisted_bytes_only"
+        },
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52712389,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "285983639",
+          "ausdc_raw": "43919651",
+          "eth_raw": "1992138497619739",
+          "allowance_raw": "25068399",
+          "principal_raw": "43911677",
+          "interest_raw": "7974",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 32.490329,
+          "exposure_cap_usdc": 129.961316,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "block_number": 52712863,
+          "rpc_url": "https://base.gateway.tenderly.co",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://1rpc.io/base",
+              "ok": false,
+              "code": "BAD_DATA",
+              "detail": "missing response for request"
+            },
+            {
+              "url": "https://base.llamarpc.com",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "server response 525 <none>"
+            },
+            {
+              "url": "https://base.gateway.tenderly.co",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "279902289",
+          "ausdc_raw": "50001079",
+          "eth_raw": "1991082031498289",
+          "allowance_raw": "18987029",
+          "principal_raw": "49993047",
+          "interest_raw": "8032",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 32.490336,
+          "exposure_cap_usdc": 129.961347,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "owner_return_executed": false
+      }
+    },
+    {
+      "label": "intent_deepseek",
+      "result": {
+        "ok": true,
+        "intent_id": "INV-fe28aa6c968aaa540cba74b1b4f158e4f436d9e3",
+        "action": "supply",
+        "amount_usdc": "4.496788",
+        "status": "confirmed",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+        "round": "OWNER-FUNDED-20261017-01",
+        "steps": [
+          {
+            "kind": "approve",
+            "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "tx_hash": "0x032a1bcac9e650840a0a8c9cd21e52ef46558c48143246d17c94eed8cec4c7b7",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": true
+              }
+            ],
+            "block_number": 52755653,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-18T05:17:42.396Z"
+          },
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+            "tx_hash": "0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": false
+              },
+              {
+                "url": "https://base-rpc.publicnode.com",
+                "ok": true
+              }
+            ],
+            "sensor_receipt": {
+              "receipt": {
+                "hash": "0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2",
+                "status": 1,
+                "blockNumber": 52755659,
+                "child_supply_proof": {
+                  "verified": true,
+                  "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+                  "funding_treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+                  "amount_raw": "4496788",
+                  "mint_event_value_raw": "4496786"
+                }
+              },
+              "head": 52755663,
+              "source": "authenticated_GitHub_dual_RPC_sensor",
+              "providers": [
+                "https://mainnet.base.org",
+                "https://base.drpc.org"
+              ],
+              "verified_at": "2026-10-18T05:17:54.220Z",
+              "nonce": 16,
+              "block_hash": "0x5ab49cf07edf2bdaeb5257a880d91ce1e6ff67462b3fee9b89d7f72676e95d11"
+            },
+            "child_supply_proof": {
+              "verified": true,
+              "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+              "funding_treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+              "amount_raw": "4496788",
+              "mint_event_value_raw": "4496786"
+            },
+            "block_number": 52755659,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-18T05:17:57.306Z"
+          }
+        ],
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "beneficiary_principal_raw": "0",
+          "beneficiary_positions": {},
+          "block_number": 52755651,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "247411433",
+          "ausdc_raw": "82497275",
+          "eth_raw": "1988591627353384",
+          "allowance_raw": "0",
+          "principal_raw": "82483903",
+          "interest_raw": "13372",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 32.49087,
+          "exposure_cap_usdc": 129.963483,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "beneficiary_principal_raw": "4496788",
+          "beneficiary_positions": {
+            "0xbc24b9a2d0c61705602257565d8c0064effe253e": {
+              "principal_raw": "4496788",
+              "allocations": {
+                "INV-fe28aa6c968aaa540cba74b1b4f158e4f436d9e3": {
+                  "round": "OWNER-FUNDED-20261017-01",
+                  "amount_raw": "4496788",
+                  "tx_hash": "0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2",
+                  "funding_treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+                  "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+                  "gas_payer": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+                }
+              },
+              "treasury_can_withdraw": false
+            }
+          },
+          "block_number": 52755665,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "242914645",
+          "ausdc_raw": "82497278",
+          "eth_raw": "1986979902085102",
+          "allowance_raw": "0",
+          "principal_raw": "82483903",
+          "interest_raw": "13375",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 32.041192,
+          "exposure_cap_usdc": 128.164769,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "owner_return_executed": false
+      }
+    },
+    {
+      "label": "existing_active_intent_read_only",
+      "result": {
+        "ok": true,
+        "intent_id": "AAVE-AUTO-bounded_supply-2026-10-20",
+        "action": "supply",
+        "amount_usdc": "9.115782",
+        "status": "pending_confirmations",
+        "chain_id": 8453,
+        "treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "position_owner": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "steps": [
+          {
+            "kind": "approve",
+            "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "tx_hash": "0x3c19388d7112d0458578c5bdc23774fdc6293f0d3eb78bbcc3cb6133c8723493",
+            "status": "confirmed",
+            "broadcast_attempts": [
+              {
+                "url": "https://mainnet.base.org",
+                "ok": false
+              },
+              {
+                "url": "https://base.drpc.org",
+                "ok": true
+              }
+            ],
+            "block_number": 52841445,
+            "receipt_status": 1,
+            "confirmed_at": "2026-10-20T04:57:23.932Z"
+          },
+          {
+            "kind": "supply",
+            "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"
+          }
+        ],
+        "before": {
+          "ok": true,
+          "chain_id": 8453,
+          "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+          "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+          "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "beneficiary_principal_raw": "4496788",
+          "beneficiary_positions": {
+            "0xbc24b9a2d0c61705602257565d8c0064effe253e": {
+              "principal_raw": "4496788",
+              "allocations": {
+                "INV-fe28aa6c968aaa540cba74b1b4f158e4f436d9e3": {
+                  "round": "OWNER-FUNDED-20261017-01",
+                  "amount_raw": "4496788",
+                  "tx_hash": "0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2",
+                  "funding_treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+                  "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+                  "gas_payer": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+                }
+              },
+              "treasury_can_withdraw": false
+            }
+          },
+          "block_number": 52841444,
+          "rpc_url": "https://base-rpc.publicnode.com",
+          "rpc_attempts": [
+            {
+              "url": "https://mainnet.base.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base.drpc.org",
+              "ok": false,
+              "code": "SERVER_ERROR",
+              "detail": "exceeded maximum retry limit"
+            },
+            {
+              "url": "https://base-rpc.publicnode.com",
+              "ok": true
+            }
+          ],
+          "usdc_raw": "210872201",
+          "ausdc_raw": "114560517",
+          "eth_raw": "1985616328482853",
+          "allowance_raw": "0",
+          "principal_raw": "114526347",
+          "interest_raw": "34170",
+          "principal_basis": "tracked_supply_receipts",
+          "first_supply_confirmed": true,
+          "exit_test_confirmed": true,
+          "paused": false,
+          "active_intent": null,
+          "storage_status": {
+            "ok": true,
+            "status": "no_active_intent",
+            "active_intent": null,
+            "signed": false
+          },
+          "limit_policy": "reputation_and_actual_equity",
+          "capital_agent": "DeepSeek",
+          "capital_reputation": 105,
+          "allocation_share_bps": 4000,
+          "single_cap_usdc": 32.043271,
+          "exposure_cap_usdc": 128.173087,
+          "cash_floor_raw": "5000000",
+          "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+          "owner_return_enabled": false
+        },
+        "after": null,
+        "owner_return_executed": false
+      }
+    }
+  ],
+  "original_internal_transfer_lookup": {
+    "ok": true,
+    "http": 200,
+    "code": "0",
+    "data": [
+      {
+        "clientId": "lzfund20261017001",
+        "transId": "3206326046",
+        "ccy": "USDC",
+        "from": "6",
+        "to": "18",
+        "amt": "20",
+        "state": "success"
+      }
+    ]
+  },
+  "trading_balances": {
+    "http": 200,
+    "code": "0",
+    "ok": true,
+    "balances": [
+      {
+        "currency": "BTC",
+        "available": "0.00024416559",
+        "equity": "0.00024416559"
+      },
+      {
+        "currency": "USDT",
+        "available": "0.134192146",
+        "equity": "0.134192146"
+      }
+    ]
+  },
+  "funding_balances": {
+    "http": 200,
+    "code": "0",
+    "ok": true,
+    "balances": [
+      {
+        "currency": "USDT",
+        "available": "0",
+        "balance": "0"
+      },
+      {
+        "currency": "USDC",
+        "available": "0",
+        "balance": "0"
+      }
+    ]
+  },
+  "original_cash_orders": [
+    {
+      "seat": "gpt",
+      "client_id": "lz177b433c9d6d7c889fee153b47ee",
+      "ok": true,
+      "http": 200,
+      "code": "0",
+      "data": [
+        {
+          "instId": "BTC-USDT",
+          "clOrdId": "lz177b433c9d6d7c889fee153b47ee",
+          "ordId": "4019101158148018176",
+          "tdMode": "cash",
+          "side": "buy",
+          "ordType": "ioc",
+          "state": "filled",
+          "sz": "0.00005548",
+          "px": "81411.5",
+          "accFillSz": "0.00005548",
+          "avgPx": "81370.9",
+          "fee": "-0.00000005548",
+          "feeCcy": "BTC"
+        }
+      ]
+    },
+    {
+      "seat": "grok",
+      "client_id": "lz8385ccc69fb49e4d9dade294360a",
+      "ok": true,
+      "http": 200,
+      "code": "0",
+      "data": [
+        {
+          "instId": "BTC-USDT",
+          "clOrdId": "lz8385ccc69fb49e4d9dade294360a",
+          "ordId": "4019101189018095616",
+          "tdMode": "cash",
+          "side": "buy",
+          "ordType": "ioc",
+          "state": "filled",
+          "sz": "0.00005966",
+          "px": "81411.5",
+          "accFillSz": "0.00005966",
+          "avgPx": "81370.9",
+          "fee": "-0.00000005966",
+          "feeCcy": "BTC"
+        }
+      ]
+    },
+    {
+      "seat": "doubao",
+      "client_id": "lzd494cd7ea1fd7d21b5c75e539c0f",
+      "ok": true,
+      "http": 200,
+      "code": "0",
+      "data": [
+        {
+          "instId": "BTC-USDT",
+          "clOrdId": "lzd494cd7ea1fd7d21b5c75e539c0f",
+          "ordId": "4019101220223717376",
+          "tdMode": "cash",
+          "side": "buy",
+          "ordType": "ioc",
+          "state": "filled",
+          "sz": "0.00007432",
+          "px": "81411.5",
+          "accFillSz": "0.00007432",
+          "avgPx": "81370.9",
+          "fee": "-0.00000007432",
+          "feeCcy": "BTC"
+        }
+      ]
+    },
+    {
+      "seat": "deepseek",
+      "client_id": "lz83a59e9941aabe86c464868e4736",
+      "ok": true,
+      "http": 200,
+      "code": "0",
+      "data": [
+        {
+          "instId": "BTC-USDT",
+          "clOrdId": "lz83a59e9941aabe86c464868e4736",
+          "ordId": "4019101252872179712",
+          "tdMode": "cash",
+          "side": "buy",
+          "ordType": "ioc",
+          "state": "filled",
+          "sz": "0.00005495",
+          "px": "81411.5",
+          "accFillSz": "0.00005495",
+          "avgPx": "81377.2",
+          "fee": "-0.00000005495",
+          "feeCcy": "BTC"
+        }
+      ]
+    }
+  ],
+  "exchange_deposit_history": {
+    "ok": true,
+    "http": 200,
+    "code": "0",
+    "data": [
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Base",
+        "amt": "20",
+        "to": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "txId": "0x6592bd13df14c7698d6c8569f577fb427a376404edfec5a9afacb203d85599d8",
+        "state": "2",
+        "actualDepBlkConfirm": "133",
+        "ts": "1792213684000"
+      }
+    ]
+  },
+  "okx_account": {
+    "ok": true,
+    "http": 200,
+    "code": "0",
+    "data": [
+      {
+        "perm": "read_only,trade",
+        "type": "1"
+      }
+    ]
+  },
+  "usdc_networks": {
+    "ok": true,
+    "http": 200,
+    "code": "0",
+    "data": [
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Arc",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "",
+        "minDepArrivalConfirm": "60",
+        "minWdUnlockConfirm": "120"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Monad",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+        "minDepArrivalConfirm": "60",
+        "minWdUnlockConfirm": "120"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-X Layer (Bridged)",
+        "canDep": true,
+        "canWd": false,
+        "minDep": "0.01",
+        "ctAddr": "0x74b7f16337b8972027f6196a17a631ac6de26d22",
+        "minDepArrivalConfirm": "20",
+        "minWdUnlockConfirm": "40"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-X Layer",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0xb6ceceab302e2e4948951ee7843fc24e92933061",
+        "minDepArrivalConfirm": "20",
+        "minWdUnlockConfirm": "40"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Optimism",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
+        "minDepArrivalConfirm": "450",
+        "minWdUnlockConfirm": "450"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Avalanche C-Chain",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+        "minDepArrivalConfirm": "30",
+        "minWdUnlockConfirm": "120"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Arbitrum One",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "minDepArrivalConfirm": "1850",
+        "minWdUnlockConfirm": "1850"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-SUI",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC",
+        "minDepArrivalConfirm": "30",
+        "minWdUnlockConfirm": "120"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Polygon",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+        "minDepArrivalConfirm": "60",
+        "minWdUnlockConfirm": "300"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Polygon (USDC.e)",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+        "minDepArrivalConfirm": "60",
+        "minWdUnlockConfirm": "300"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-OKTC",
+        "canDep": true,
+        "canWd": false,
+        "minDep": "0.01",
+        "ctAddr": "0xc946daf81b08146b1c7a8da2a851ddf2b3eaaf85",
+        "minDepArrivalConfirm": "2",
+        "minWdUnlockConfirm": "4"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Aptos",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+        "minDepArrivalConfirm": "1",
+        "minWdUnlockConfirm": "1"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Base",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "minDepArrivalConfirm": "30",
+        "minWdUnlockConfirm": "121"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-ERC20",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "minDepArrivalConfirm": "32",
+        "minWdUnlockConfirm": "96"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Solana",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "minDepArrivalConfirm": "32",
+        "minWdUnlockConfirm": "32"
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-UNICHAIN",
+        "canDep": true,
+        "canWd": true,
+        "minDep": "0.01",
+        "ctAddr": "0x078d782b760474a361dda0af3839290b0ef57ad6",
+        "minDepArrivalConfirm": "450",
+        "minWdUnlockConfirm": "450"
+      }
+    ]
+  },
+  "usdc_deposit_addresses": {
+    "ok": true,
+    "http": 200,
+    "code": "0",
+    "data": [
+      {
+        "ccy": "USDC",
+        "chain": "USDC-X Layer",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-X Layer (Bridged)",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-ERC20",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Aptos",
+        "addr": "0xa2c26aab0f633cffe2dedb0e21a160564436cb4b4c0258242b1eeec30525fd8b",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Arbitrum One",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Arc",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Avalanche C-Chain",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Base",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Monad",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Optimism",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Polygon",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Polygon (USDC.e)",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-Solana",
+        "addr": "Cv9YXoaFEoSUccuqy2Q47SfEAZadSuMoi97hS5uZECFC",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-SUI",
+        "addr": "0xe7e09c8891a6b218c95e1bd6eb32d6bae8a0904449fae8217ab9bd132f51f53a",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-UNICHAIN",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      },
+      {
+        "ccy": "USDC",
+        "chain": "USDC-OKTC",
+        "addr": "0x217ba12313a5555b3bd6d4cf64893f74e8fba117",
+        "to": "6",
+        "selected": true
+      }
+    ]
+  },
+  "external_unpaid_quote": {
+    "http": 402,
+    "header_present": true,
+    "body": {
+      "x402Version": 2,
+      "error": "Payment required",
+      "resource": {
+        "url": "https://agent402.tools/v1/nano/chat/completions",
+        "description": "OpenAI-compatible chat completions, nano tier: gpt-6-luna (the default), gpt-5.6-luna, gpt-5-nano, gemini flash-lite, small llama/ministral/qwen, deepseek-chat - $0.003 per call in USDC over x402, priced for high-frequency agent loops. Same wire format as /v1/chat/completions with loop-sized caps (12k chars in, 768 tokens out). Streaming supported (stream: true). No API key, no signup.",
+        "mimeType": "application/json",
+        "serviceName": "Chat completions - nano tier",
+        "tags": [
+          "llm",
+          "ai",
+          "inference",
+          "chat",
+          "gateway"
+        ],
+        "iconUrl": "https://agent402.tools/favicon.ico"
+      },
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "eip155:8453",
+          "amount": "3000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USD Coin",
+            "version": "2"
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "object": {
+                "type": "string"
+              },
+              "created": {
+                "type": "integer"
+              },
+              "model": {
+                "type": "string"
+              },
+              "choices": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "usage": {
+                "type": "object",
+                "properties": {
+                  "prompt_tokens": {
+                    "type": "integer"
+                  },
+                  "completion_tokens": {
+                    "type": "integer"
+                  },
+                  "total_tokens": {
+                    "type": "integer"
+                  }
+                }
+              }
+            },
+            "required": [
+              "id",
+              "object",
+              "created",
+              "model",
+              "choices",
+              "usage"
+            ]
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:137",
+          "amount": "3000",
+          "asset": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USD Coin",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:42161",
+          "amount": "3000",
+          "asset": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USD Coin",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:143",
+          "amount": "3000",
+          "asset": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USDC",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:43114",
+          "amount": "3000",
+          "asset": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USD Coin",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:1329",
+          "amount": "3000",
+          "asset": "0xe15fC38F6D8c56aF07bbCBe3BAf5708A2Bf42392",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USDC",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:10",
+          "amount": "4000",
+          "asset": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USD Coin",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:4663",
+          "amount": "3000",
+          "asset": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "Global Dollar",
+            "version": "1"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:42220",
+          "amount": "3000",
+          "asset": "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USDC",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "eip155:5042",
+          "amount": "3000",
+          "asset": "0x3600000000000000000000000000000000000000",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USDC",
+            "version": "2"
+          }
+        },
+        {
+          "scheme": "upto",
+          "network": "eip155:8453",
+          "amount": "3000",
+          "asset": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "payTo": "0xaBF4FAbd7c416fB67202E5f9002389Fc75e2a9D0",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "name": "USD Coin",
+            "version": "2",
+            "assetTransferMethod": "permit2",
+            "facilitatorAddress": "0x14fDa13953Fc30428938E6BF950d036e77214e52"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+          "amount": "3000",
+          "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "payTo": "J7aN3PLJnTCF5qpEnvJHJsnCjcGuqC2rYtEM8Gv3xwg",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "feePayer": "BENrLoUbndxoNMUS5JXApGMtNykLjFXXixMtpDwDR9SP"
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "stellar:pubnet",
+          "amount": "30000",
+          "asset": "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75",
+          "payTo": "GDNJXCKW7ZM7GEEVP674TWPU26YJNBQ2FI4ZIPRKTPTNUEJMDHFJWWRL",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "areFeesSponsored": true
+          }
+        },
+        {
+          "scheme": "exact",
+          "network": "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+          "amount": "3000",
+          "asset": "31566704",
+          "payTo": "C7IIHG7SPLPZ5H7ZT6HW3UV2OQMQQE6Y2HBNGZXSLRJULE42BEE2OY2XIE",
+          "maxTimeoutSeconds": 300,
+          "extra": {
+            "tag": "x402-global-challenge",
+            "feePayer": "ZMFK2OI7ZBD2U27ISERZC4S6LKM6WMFJPZQ4MYNJDZ2VNBNMBA67RA22AA"
+          }
+        }
+      ],
+      "extensions": {
+        "bazaar": {
+          "info": {
+            "input": {
+              "type": "http",
+              "bodyType": "json",
+              "body": {
+                "model": "openai/gpt-5.6-luna",
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "Reply with exactly: OK"
+                  }
+                ],
+                "max_tokens": 5
+              },
+              "method": "POST"
+            },
+            "output": {
+              "type": "json",
+              "example": {
+                "id": "gen-…",
+                "object": "chat.completion",
+                "created": 1750000000,
+                "model": "openai/gpt-5.6-luna",
+                "choices": [
+                  {
+                    "index": 0,
+                    "message": {
+                      "role": "assistant",
+                      "content": "OK"
+                    },
+                    "finish_reason": "stop"
+                  }
+                ],
+                "usage": {
+                  "prompt_tokens": 12,
+                  "completion_tokens": 1,
+                  "total_tokens": 13
+                }
+              }
+            }
+          },
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "input": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "http"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "POST"
+                    ]
+                  },
+                  "bodyType": {
+                    "type": "string",
+                    "enum": [
+                      "json",
+                      "form-data",
+                      "text"
+                    ]
+                  },
+                  "body": {
+                    "properties": {
+                      "model": {
+                        "type": "string"
+                      },
+                      "messages": {
+                        "type": "array"
+                      },
+                      "max_tokens": {
+                        "type": "number"
+                      },
+                      "zdr": {
+                        "type": "boolean"
+                      },
+                      "model_fallback": {
+                        "type": "boolean"
+                      },
+                      "cache_control": {},
+                      "reasoning": {
+                        "type": "object"
+                      },
+                      "max_completion_tokens": {
+                        "type": "integer"
+                      },
+                      "tools": {
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "messages"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "method",
+                  "bodyType",
+                  "body"
+                ],
+                "additionalProperties": false
+              },
+              "output": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "example": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "object": {
+                        "type": "string"
+                      },
+                      "created": {
+                        "type": "integer"
+                      },
+                      "model": {
+                        "type": "string"
+                      },
+                      "choices": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "integer"
+                          },
+                          "completion_tokens": {
+                            "type": "integer"
+                          },
+                          "total_tokens": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "object",
+                      "created",
+                      "model",
+                      "choices",
+                      "usage"
+                    ]
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          }
+        },
+        "builder-code": {
+          "info": {
+            "a": "bc_b4aw4uzd"
+          },
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "a": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]{1,32}$",
+                "description": "App builder code"
+              },
+              "w": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]{1,32}$",
+                "description": "Wallet builder code"
+              },
+              "s": {
+                "type": "array",
+                "maxItems": 11,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_]{1,32}$"
+                },
+                "description": "Service builder codes"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "payment-identifier": {
+          "info": {
+            "required": false
+          },
+          "schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "type": "object",
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 16,
+                "maxLength": 128,
+                "pattern": "^[a-zA-Z0-9_-]+$"
+              }
+            },
+            "required": [
+              "required"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
