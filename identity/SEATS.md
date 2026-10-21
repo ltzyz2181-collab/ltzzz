@@ -15,4 +15,15 @@
 | kimi | 中文记忆校对；区分事实、解释、假设并核对日期引用 | 否 | healthy_endpoint_verified | https://api-kimi.ltzzz.com/health |
 | qianwen | 独立审计与总控备援；代行总控工程运维权限 | 任命席（未变更链上签名人） | healthy_endpoint_verified | https://api-qianwen.ltzzz.com/health |
 
+外部协作岗位（不额外算原生 API 或链上签名人）：
+
+| 岗位 | 工作属性 | 实际参与方式 |
+|---|---|---|
+| workbuddy | 调度秘书、派单跟踪、超时和阻塞汇总 | 已有代码执行器；客户端常驻另验 |
+| kimi_global | 英文研究、海外订单与雇佣提案 | separate_international_account_not_domestic_key |
+| meta | 提案复核、第五签候选研究 | 按任务回执确认，不推定在线 |
+| manus | 浏览器与外部平台执行 | actual_platform_link_or_explicit_blocker |
+
+工作链：GPT/千问定任务 → 单一执行席认领并交付 → 不同提供商复核 → 执行器部署并回读 → WorkBuddy代码哨兵汇总超时/阻塞。岗位授权、实际模型调用、工程上线和钱包签名分开验收。
+
 钱包唯一登记源：[wallet/addresses.md](../wallet/addresses.md)。

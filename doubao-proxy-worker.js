@@ -25,6 +25,7 @@ export default {
         ok: true,
         ...proxyAuthState(env),
         service: 'ltzzz-doubao-proxy',
+        daily_recovery_revision: 'doubao-proxy-daily-v2',
         has_key: Boolean(env.ARK_API_KEY),
         model_configured: Boolean(env.DOUBAO_MODEL),
         configured_model: env.DOUBAO_MODEL || null,
@@ -76,6 +77,7 @@ export default {
         },
         body: JSON.stringify({
           model,
+          ...(body.thinking?.type==='disabled'?{thinking:{type:'disabled'}}:{}),
           messages,
           temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
           max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 1200,
