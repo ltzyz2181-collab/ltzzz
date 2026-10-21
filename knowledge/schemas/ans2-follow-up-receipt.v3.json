@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ltzzz.com/schemas/ans2-follow-up-receipt.v3.json",
+  "title": "ANS2 follow-up receipt V3",
+  "description": "V3 fixes V2 gap: action_taken in dispatched|fixed|escalated must require follow_up_receipt (not only constrain it when present). Supersedes knowledge/results/qwen-dispatch/QWEN-ANS2-SCHEMA-V2-20261021.json output schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "action_taken": {
+      "type": ["string", "null"],
+      "enum": ["none", "dispatched", "fixed", "escalated"]
+    },
+    "status": {
+      "type": ["string", "null"],
+      "enum": ["open", "closed", "pending_review"]
+    },
+    "follow_up_receipt": {
+      "type": ["string", "null"]
+    },
+    "test_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model_proposed": { "type": ["boolean", "null"] },
+        "tested_by_model_claim": { "type": ["boolean", "null"] },
+        "actually_run": { "type": ["boolean", "null"] },
+        "run_id": { "type": ["string", "null"] },
+        "sha256": { "type": ["string", "null"] }
+      },
+      "required": ["model_proposed", "tested_by_model_claim", "actually_run"]
+    },
+    "paid": { "type": ["boolean", "null"] },
+    "tx_hash": { "type": ["string", "null"] }
+  },
+  "required": ["action_taken", "status", "test_status", "paid", "tx_hash"],
+  "allOf": [
+    {
+      "if": {
+        "properties": { "action_taken": { "const": "none" } },
+        "required": ["action_taken"]
+      },
+      "then": {
+        "properties": {
+          "status": { "const": "open" },
+          "follow_up_receipt": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_taken": { "enum": ["dispatched", "fixed", "escalated"] }
+        },
+        "required": ["action_taken"]
+      },
+      "then": {
+        "properties": {
+          "follow_up_receipt": { "type": "string", "minLength": 1 }
+        },
+        "required": ["follow_up_receipt"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "test_status": {
+            "properties": { "actually_run": { "const": true } },
+            "required": ["actually_run"]
+          }
+        },
+        "required": ["test_status"]
+      },
+      "then": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "run_id": { "type": "string", "minLength": 1 },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": ["run_id", "sha256"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "actually_run": { "not": { "const": true } }
+            },
+            "required": ["actually_run"]
+          }
+        },
+        "required": ["test_status"]
+      },
+      "then": {
+        "properties": {
+          "test_status": {
+            "properties": {
+              "run_id": { "type": "null" },
+              "sha256": { "type": "null" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
