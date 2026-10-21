@@ -1,5 +1,6 @@
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {doubaoRoute} from './lib/doubao-route.js';
 // LTZZZ · 豆包（火山方舟）API proxy — Cloudflare Worker
 // Key 只放 Worker Secret，浏览器不接触 Key。
 //
@@ -25,8 +26,9 @@ export default {
         ok: true,
         ...proxyAuthState(env),
         service: 'ltzzz-doubao-proxy',
-        daily_recovery_revision: 'doubao-proxy-daily-v2',
-        has_key: Boolean(env.ARK_API_KEY),
+        daily_recovery_revision: 'doubao-proxy-daily-v3',
+        has_key: Boolean(env.DOUBAO_API_KEY||env.ARK_API_KEY),
+        model_key_source: env.DOUBAO_API_KEY?'DOUBAO_API_KEY':'ARK_API_KEY',
         model_configured: Boolean(env.DOUBAO_MODEL),
         configured_model: env.DOUBAO_MODEL || null,
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
@@ -42,7 +44,7 @@ export default {
       return json({ error: 'POST only', hint: 'Use GET /health to test deployment.' }, 405);
     }
     const denied=await proxyAuth(request,env);if(denied)return denied;
-    if (!env.ARK_API_KEY) {
+    if (!(env.DOUBAO_API_KEY||env.ARK_API_KEY)) {
       return json({ error: 'Missing ARK_API_KEY secret', stage: 'worker_config' }, 500);
     }
 
@@ -64,15 +66,13 @@ export default {
         }, 500);
       }
 
-      const upstreamUrl =
-        env.DOUBAO_BASE_URL ||
-        'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+      const route=doubaoRoute(env),upstreamUrl=route.url;
 
       const execution=beginExecution('doubao',model,body.task_id);
       const upstream = await fetch(upstreamUrl, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${env.ARK_API_KEY}`,
+          Authorization: `Bearer ${route.key}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({

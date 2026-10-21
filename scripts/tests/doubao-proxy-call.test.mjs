@@ -1,6 +1,14 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {callDoubaoProxy} from '../lib/doubao-proxy-call.mjs';
 import {callAgent} from '../call-doubao.mjs';
+import worker from '../../doubao-proxy-worker.js';
+import {doubaoRoute} from '../../lib/doubao-route.js';
+test('Pro keeps its funded key and coding-plan route together; credentials cannot be redirected off the official host',async()=>{
+ assert.equal(doubaoRoute({DOUBAO_BASE_URL:'https://ark.cn-beijing.volces.com/api/coding/v3'}).url,'https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions');
+ assert.throws(()=>doubaoRoute({DOUBAO_BASE_URL:'https://attacker.invalid/api/v3'}));
+ const old=globalThis.fetch;globalThis.fetch=async(url,o)=>{assert.equal(url,'https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions');assert.equal(o.headers.Authorization,'Bearer funded-pro-key');return Response.json({model:'doubao-seed-2-1-pro-260915',choices:[{message:{content:'complete'},finish_reason:'stop'}]});};
+ try{const r=await worker.fetch(new Request('https://fixture/',{method:'POST',headers:{Authorization:'Bearer service'},body:JSON.stringify({messages:[{role:'user',content:'fixture'}]})}),{LTZZZ_AGENT_TOKEN:'service',DOUBAO_API_KEY:'funded-pro-key',ARK_API_KEY:'old-lite-key',DOUBAO_BASE_URL:'https://ark.cn-beijing.volces.com/api/coding/v3',DOUBAO_MODEL:'doubao-seed-2-1-pro-260915'});assert.equal(r.status,200);}finally{globalThis.fetch=old;}
+});
 test('switching transport preserves the configured high model instead of falling through to a stale Worker Lite endpoint',async()=>{
  const names=['DOUBAO_USE_PROXY','LTZZZ_AGENT_TOKEN','DOUBAO_MODEL'],saved=names.map(n=>process.env[n]),old=globalThis.fetch;
  process.env.DOUBAO_USE_PROXY='true';process.env.LTZZZ_AGENT_TOKEN='service';process.env.DOUBAO_MODEL='doubao-seed-2-1-pro-260915';
