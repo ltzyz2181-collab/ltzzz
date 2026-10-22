@@ -31,3 +31,7 @@ DeepSeek、豆包、千问、国内 Kimi、xAI 各自产出原生评审；缺 Ke
 当前启用配置绑定精确核心和两家实际提供商的完整评审，保留原revise及未采纳意见；不是全票同意。日课、总控自治、ANS作者/复核与千问队列均随已有调用附短契约，并写Skill哈希。仓库三个自动发现目录字节相同；用户桌面更新并实际读取前不宣称已加载。
 
 第一次上线以 `LTZZZ-SKILL-SMOKE-20261022` 单次千问队列只读演练核查真实提示词消费；这不是完整业务订单验收，不改平台/钱包，不增加日课重复运行。
+
+1.0上线证据：[部署与真实调用验收](../knowledge/results/skill-review/c80745f46cfec5f0/deployment.json)。千问原生调用已验证短契约与prompt哈希、stop结束和三类场景判断；其他流程不为验收重购，等正常下一轮消费。此证据不代表所有桌面已拉取/加载。
+
+给新AI的最短用法：`先读 skills/ltzzz-task-execution/SKILL.md，再按原Task ID执行；实物、哈希、测试、独立复核、上线分别留证据。需要增补按references/contribution-template.md提PR。` 没有仓库工具时先交具体草稿和接力路径，不虚构提交。
