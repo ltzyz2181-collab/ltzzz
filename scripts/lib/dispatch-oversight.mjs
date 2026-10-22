@@ -48,7 +48,11 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
       const id=dispatch.board_task_id||dispatch.id||`CONTROL-${executeOn}-${dispatch.agent}`;
       add({id,date:executeOn,issuer:'gpt',assigned_to:dispatch.agent,phase:'claim_missing',due_at:deadline(executeOn,'22:00'),evidence:[controlFile],instruction:dispatch.instruction});
     }
-    const claudeId=`DAILY-${d}-claude`, card=`ops/dispatch/${claudeId}.md`, delivery=`knowledge/results/external/${d}-claude.md`;
+    const claudeId=`DAILY-${d}-claude`, originalCard=`ops/dispatch/${claudeId}.md`, supplement=`ops/dispatch/oversight/${claudeId}-dispatch_missing.md`, delivery=`knowledge/results/external/${d}-claude.md`;
+    // A real same-ID supplemental card is a dispatch. Do not keep saying "never
+    // assigned" after the rules executor has actually repaired that omission.
+    const repaired=fs.existsSync(path.join(root,supplement)) && fs.readFileSync(path.join(root,supplement),'utf8').includes(`Task ID: \`${claudeId}\``);
+    const card=fs.existsSync(path.join(root,originalCard))?originalCard:repaired?supplement:originalCard;
     const claimPaths=[`ops/dispatch/接单回执-${claudeId}.md`,`ops/dispatch/receipts/${claudeId}.md`];
     const claim=claimPaths.find(p=>fs.existsSync(path.join(root,p)) && fs.readFileSync(path.join(root,p),'utf8').includes(claudeId));
     const receipt=read(root,`knowledge/results/dispatch/external-daily-${d}.json`);
