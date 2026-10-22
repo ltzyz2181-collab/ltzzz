@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {qianwenOversightContext} from './lib/dispatch-oversight.mjs';
 /**
  * run-daily-tasks.mjs — LTZZZ 核心记忆读后感与每日任务编排
  * -----------------------------------------------------------------
@@ -163,6 +164,7 @@ async function main() {
       last3 ? `最近产出（续上下文）：\n${last3}` : "",
       urge,
       reviewPrompt,
+      ch.agent === 'qianwen' ? qianwenOversightContext({root:ROOT}) : '',
       ch.agent === 'qianwen' ? qwenReviewContext(reflections, readLedger(ROOT,today), today) : '',
       ch.agent === 'qianwen' ? '月度模型目录参考（GET探针不证明生成能力，不按型号字符串排序判断新旧）：'+JSON.stringify(readJson(path.join(ROOT,'knowledge/results/providers/catalogue-latest.json'),null)?.seats?.map(row=>({seat:row.seat,status:row.status,selected_model:row.selected_model,selected_model_listed:row.selected_model_listed,added_model_ids:row.added_model_ids?.slice(0,5),removed_model_ids:row.removed_model_ids?.slice(0,5)}))||[]) : '',
     ].filter(Boolean).join("\n\n");

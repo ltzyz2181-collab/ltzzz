@@ -81,7 +81,7 @@
     },
     {
       "agent": "qianwen",
-      "task": "阅读六份核心记忆并交叉审阅其他席当日真实产出，识别一项风险或记忆不一致，提出可验证改进；月度目录仅作参考，不替代生成与工程验收",
+      "task": "每天检查GPT总控与Claude派单的认领、交付、独立审核及部署证据；遗漏提醒并按原Task ID补派，跨日反复遗漏警告。复用现有一次日课，不重复采购付款，不削减总控权限。交叉审阅当日产出，区分事实、草稿、测试与上线。",
       "status": "configured_for_native_daily",
       "trigger": "原有daily-agent-tasks工作流，DASHSCOPE_API_KEY（兼容QWEN_API_KEY）；认证认领及调用预留先落库",
       "acceptance": "当日data/memory/qianwen.json和data/results有实物，daily-board认领/提交/文件SHA-256一致；HTTP200或目录GET不单独算原生交付",
@@ -108,5 +108,13 @@
     "new_daily_crons": 0,
     "automatic_provider_fallback": false,
     "desktop_subscription_is_api_credit": false
+  },
+  "dispatch_oversight": {
+    "supervisor": "qianwen",
+    "rule_executor": "scripts/dispatch-sentinel.mjs",
+    "receipt": "knowledge/results/dispatch/oversight/latest.json",
+    "warnings": "knowledge/results/dispatch/oversight/warnings.json",
+    "paid_calls_added": 0,
+    "controller_permissions_reduced": false
   }
 }
