@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {callWithSkill} from './lib/ltzzz-skill.mjs';
 import {qianwenOversightContext} from './lib/dispatch-oversight.mjs';
 /**
  * run-daily-tasks.mjs — LTZZZ 核心记忆读后感与每日任务编排
@@ -186,7 +187,7 @@ async function main() {
       continue;
     }
 
-    const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>mod.callAgent({ apiKey: process.env[ch.key] || "", prompt })});
+    const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>callWithSkill({root:ROOT,scope:"daily:"+ch.agent,prompt},input=>mod.callAgent({apiKey:process.env[ch.key]||"",prompt:input}))});
     if (res.ok) {
       const output = String(res.output || "").trim();
       const integrity = assessDelivery({output,finish_reason:res.finish_reason});
@@ -206,6 +207,7 @@ async function main() {
         tokens_used: res.tokens_used || 0,
         finish_reason: res.finish_reason || null,
         model: res.model || null,
+        skill: res.skill || null,
         delivery_integrity: integrity,
         core_memory_files: coreMemory.audit.files.filter((file) => file.status === "read").map((file) => file.path),
       });
@@ -214,7 +216,7 @@ async function main() {
       writeJson(memPath, mem);
       if(status==='success')delete pending.reminders[ch.agent];
       else {pending.reminders[ch.agent]={date:today,status:'pending',status_reason:status,reason:integrity.reason};failures.push({agent:ch.agent,status,error:integrity.reason});}
-      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status, finish_reason:res.finish_reason||null, delivery_integrity:integrity, output_preview: output.slice(0, 200), full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, skill:res.skill||null, status, finish_reason:res.finish_reason||null, delivery_integrity:integrity, output_preview: output.slice(0, 200), full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
       reflections.push({ agent: ch.agent, status, output });
       console.log(`[run-daily-tasks] ${ch.agent}: ${status}`);
     } else {
@@ -225,7 +227,7 @@ async function main() {
         status_reason: res.status,
         reason: String(res.error || "").slice(0, 200),
       };
-      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: res.status, output_preview: res.status === "not_configured" ? "无 API Key，未调用（dry-run）" : "调用失败，见 failures", full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, skill:res.skill||null, status: res.status, output_preview: res.status === "not_configured" ? "无 API Key，未调用（dry-run）" : "调用失败，见 failures", full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
       reflections.push({ agent: ch.agent, status: res.status, output: "", error: String(res.error || "").slice(0, 400) });
       console.log(`[run-daily-tasks] ${ch.agent}: ${res.status}`);
     }

@@ -103,6 +103,7 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   const integrity = assessDelivery({output:result.output, finish_reason:result.finish_reason});
   const complete = result.ok === true && integrity.status === 'structurally_complete' && !/SPEND_PROPOSAL\s*[:：]/i.test(result.output || '');
   const artifact = {
+    ...(result.skill?{skill:result.skill}:{}),
     execution:finishExecution(execution,{http:result.http??null,transportOk:result.ok===true,data:{model:result.model_source==='provider_response'?(result.returned_model||result.model):null,choices:[{message:{content:result.output},finish_reason:result.finish_reason}],usage:{total_tokens:result.tokens_used}}}),
     schema_version:1, date, task_id:seat.assignment?.id || null, logical_seat:agent,
     actual_provider:result.ok ? agent : null, actual_model:result.model_source === 'provider_response' ? (result.returned_model || result.model || null) : null,
