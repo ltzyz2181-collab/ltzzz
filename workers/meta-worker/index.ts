@@ -12,11 +12,12 @@ export default {
   let body;try{body=JSON.parse(raw);}catch{return json({error:'invalid_json'},400);}
   if(typeof body.prompt!=='string'||!body.prompt.trim()||body.prompt.length>6000)return json({error:'prompt_invalid'},400);
   const task=String(body.task_id||'').slice(0,100);if(!task)return json({error:'task_id_required'},400);
-  const kind=body.kind||'analysis';if(!['analysis','hire','invest'].includes(kind))return json({error:'kind_invalid'},400);
+  const kind=body.kind||'analysis';if(!['analysis','hire','invest','channel_probe'].includes(kind))return json({error:'kind_invalid'},400);
+  if(kind==='channel_probe'&&!/^[a-f0-9]{32}$/.test(body.nonce||''))return json({error:'probe_nonce_invalid'},400);
   try{
-   const result=await env.AI.run(env.META_MODEL,{messages:[{role:'system',content:'You are the LTZZZ hosted Llama execution seat. Return concise proposals only. Never claim a payment, trade, deployment, DID registration or social publication occurred. No private keys.'},{role:'user',content:body.prompt}],max_tokens:512});
+   const result=await env.AI.run(env.META_MODEL,kind==='channel_probe'?{messages:[{role:'system',content:'Echo the user text exactly. No commentary, no explanation, no additional words.'},{role:'user',content:body.nonce}],max_tokens:80,temperature:0}:{messages:[{role:'system',content:'You are the LTZZZ hosted Llama execution seat. Return concise proposals only. Never claim a payment, trade, deployment, DID registration or social publication occurred. No private keys.'},{role:'user',content:body.prompt}],max_tokens:512});
    const output=String(result.response||'').trim();if(!output)return json({error:'empty_model_output'},502);
-   return json({task_id:task,executor:'did:ltzzz:meta',provider:'cloudflare-workers-ai',model:env.META_MODEL,at:new Date().toISOString(),kind,status:'proposal_completed',output,evidence:{type:'real_model_inference',financial_execution:false,tx_hash:null,published_id:null}});
+   return json({task_id:task,request_nonce:kind==='channel_probe'?body.nonce:null,executor:'did:ltzzz:meta',provider:'cloudflare-workers-ai',model:env.META_MODEL,at:new Date().toISOString(),kind,status:'proposal_completed',output,evidence:{type:'real_model_inference',financial_execution:false,tx_hash:null,published_id:null}});
   }catch{return json({error:'upstream_inference_failed'},502);}
  }
 };

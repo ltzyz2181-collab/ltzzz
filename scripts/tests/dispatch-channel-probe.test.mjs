@@ -43,3 +43,12 @@ test('Meta auth readiness never calls inference and rejects anonymous or incorre
  const req=token=>new Request('https://meta.test/auth-check',{method:'POST',headers:{...(token?{Authorization:'Bearer '+token}:{})},body:'{}'});
  assert.equal((await worker.fetch(req(),env)).status,401);assert.equal((await worker.fetch(req('wrong'),env)).status,401);const response=await worker.fetch(req('fixture-token'),env);assert.equal(response.status,200);assert.equal((await response.json()).model_calls,0);assert.equal(calls,0);
 });
+test('explicit Meta-only followup calls no Qwen and creates no other seat dispatch',async()=>{
+ const f=fixture();f.record.targets=['meta'];f.options.callQwen=undefined;const r=await probeDispatchChannels(f.record,f.options);assert.equal(f.calls,0);assert.deepEqual(r.channels.map(c=>c.target),['meta']);assert.equal(r.model_calls,1);assert.equal(r.channels[0].consumer_verified,true);
+});
+test('Meta channel probe uses a strict English echo context and returns server-bound request nonce',async()=>{
+ const worker=(await import('data:text/javascript,'+encodeURIComponent(fs.readFileSync('workers/meta-worker/index.ts','utf8')))).default,nonce='a'.repeat(32);let calls=0;
+ const env={META_WORKER_TOKEN:'fixture',META_MODEL:'fixture-llama',AI:{run:async(model,options)=>{calls++;assert.equal(options.messages[1].content,nonce);assert.equal(options.temperature,0);assert.equal(options.max_tokens,80);return {response:nonce};}}};
+ const req=nonce=>new Request('https://meta.test/task',{method:'POST',headers:{Authorization:'Bearer fixture'},body:JSON.stringify({task_id:'probe',kind:'channel_probe',nonce,prompt:'Echo supplied nonce.'})});
+ assert.equal((await worker.fetch(req('bad'),env)).status,400);assert.equal(calls,0);const result=await(await worker.fetch(req(nonce),env)).json();assert.equal(result.request_nonce,nonce);assert.equal(result.output,nonce);assert.equal(calls,1);
+});
