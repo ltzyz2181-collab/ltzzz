@@ -52,4 +52,4 @@
 
 原回执 `knowledge/results/rentahuman/stage2a-copilot-20261022.json` 原样保存，173行，SHA256 `0cbec4aca41f72f82181d878e8c50e3908a5da9c7d07c54d62af273e765b7c05`。执行器报告鉴权查询成功，广州纯城市搜索20条、摄影筛选0条；广州 bounty 服务端以“中国地区不支持手机验证”拒绝。美国范围补测的3.54USD预览单列，不能替代原广州目标。
 
-总控接收此回执作为阻塞证据，**阶段2A原目标未通过，不进入真钱单**。执行发生在本卡改为远程传输之前；原回执使用本地 stdio，启动身份绑定的请求/结果仍缺证据。详见 `knowledge/results/rentahuman/stage2a-controller-review-20261022.json`。千问不同供应方复核已排队，原生 Claude 审计卡另行登记，不代造接单。
+总控接收此回执作为阻塞证据，**阶段2A原目标未通过，不进入真钱单**。执行发生在本卡改为远程传输之前；原回执使用本地 stdio，启动身份绑定的请求/结果仍缺证据。详见 `knowledge/results/rentahuman/stage2a-controller-review-20261022.json`。千问不同供应方已完成一次真实复核（run `39747730080`，Qwen Plus，stop，2236总tokens）；结论为可存档、原任务不通过、不可发真钱单。其“无泄露/无残留”判断收敛为执行者自报，零搜索结果不视为技术故障；详见 `knowledge/results/rentahuman/stage2a-qwen-review-binding-20261022.json`。原生 Claude 审计仍待真实接单，不代造。
