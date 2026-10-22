@@ -100,3 +100,12 @@ Instagram 写入工具返回发布成功。账号回读 `@ltzyz2181` 帖子数�
 回执（任务ID|文件路径|验证方法|未完成项）：
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-22.json|jq、SHA-256、ffprobe/ffmpeg、四帧画面检查、全仓 76 份发布 JSON/12 个 MP4 去重、Instagram 账号与帖子列表、YouTube public 回执|无合格唯一素材；今日未发布，无 permalink/media_id/截图。`
+
+
+## 2026-10-22 13:15 PDT｜owner 更换素材后的复核
+
+Owner 于 13:13 明确允许将 10/21 视频作为一次性跨平台例外；Instagram `create_instagram` 调用于 13:13:50 中断，未收到完成回执。Owner 随后要求“换一个素材的视频”。13:14:35 的 `get_post_list` 与 13:14:37 的 `get_account_info` 均显示帖子总数仍为 6、今日 0 条；因此确认没有新 Reel，也没有重试原视频。
+
+更换素材后，GitHub main 已新增 10/22 视频 `videos/instagram/2026-10-22/video.mp4`。下载 SHA-256 `1d07067ef6b4f4f2070c8d9e535a85e59a5181cf6b484431718aa0bcde3b0693` 与 latest/manifest 一致；规格 30 秒、720×1280（9:16）、H.264/AAC，完整解码通过，音轨非静音，caption 和 manifest 齐全。但 `results/publishing/youtube-daily-2026-10-22.json` 以相同 SHA 验证 YouTube 已公开，视频 ID `bR7nD0rUn2w`，链接 <https://www.youtube.com/watch?v=bR7nD0rUn2w>。因此该替代素材仍按跨平台去重规则排除。复核时仓库共有 13 个 MP4 路径、12 个唯一 SHA 和 79 份 `results/publishing/` JSON 回执；此前已检查的其他素材排除理由不变。
+
+最终状态仍为 `blocked_no_eligible_unique_video`。未发布任何新 Instagram 内容；没有 permalink、media_id 或截图。没有重试被中断的旧素材，不更改每天最多一条及 10:00 计划。详情见 `results/publishing/instagram-2026-10-22.json` 补充字段。

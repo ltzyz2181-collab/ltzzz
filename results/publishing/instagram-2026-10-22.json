@@ -8,7 +8,7 @@
   "executor": "Manus",
   "status": "blocked_no_eligible_unique_video",
   "published": false,
-  "upload_attempted": false,
+  "upload_attempted": true,
   "retry_attempted": false,
   "account": "@ltzyz2181",
   "platform": "Instagram",
@@ -31,10 +31,10 @@
   "repository": {
     "repository": "ltzyz2181-collab/ltzzz",
     "main_commit_checked": "5886b2ceb86bbb362319fb167318fb1b2eeda63b",
-    "main_commit_reconfirmed": "5886b2ceb86bbb362319fb167318fb1b2eeda63b",
-    "publishing_json_receipts_scanned": 76,
-    "mp4_assets_scanned": 12,
-    "unique_mp4_sha256_count": 11,
+    "main_commit_reconfirmed": "e86d369de4b68ecdc13d9632529ef4064d517fe9",
+    "publishing_json_receipts_scanned": 79,
+    "mp4_assets_scanned": 13,
+    "unique_mp4_sha256_count": 12,
     "scan_method": "SHA256 of GitHub main MP4 blobs compared against all results/publishing JSON receipt files, including success/public URLs, publication queue keys and failed/blocked dispatch records; each MP4 inspected with ffprobe metadata."
   },
   "latest_package": {
@@ -145,18 +145,73 @@
   ],
   "publication": {
     "published": false,
-    "upload_attempted": false,
+    "upload_attempted": true,
     "permalink": null,
     "media_id": null,
     "published_at_local": null,
-    "screenshot_path": null
+    "screenshot_path": null,
+    "call_interrupted": true,
+    "post_creation_confirmed": false
   },
-  "next_step": "Stop for 2026-10-22. Do not upload or retry. Wait for a new eligible unique repository MP4 and keep the existing daily 10:00 schedule unchanged.",
+  "next_step": "No eligible unique alternate exists in the current repository. Do not retry the interrupted 10/21 selection or cross-post the 10/22 YouTube-public video. Wait for a new, unpublished, eligible repository MP4; keep the 10:00 plan unchanged.",
   "verification": {
     "json_validation": "jq empty",
     "latest_validation": "Downloaded video, caption and manifest; SHA256, ffprobe, ffmpeg full decode, volumedetect, and visual inspection of four sampled frames.",
-    "dedup_validation": "All 76 results/publishing JSON receipts and 12 MP4 files scanned for exact SHA at 5886b2c; confirmed videos/instagram and results/publishing unchanged through 5886b2ceb86bbb362319fb167318fb1b2eeda63b. Prior same-content/owner exclusions reviewed; 10/21 YouTube public receipt verified.",
+    "dedup_validation": "Initial audit at 5886b2c scanned 76 publishing receipts/12 MP4s; follow-up at e86d369de4b68ecdc13d9632529ef4064d517fe9 scanned 79 publishing JSON receipts/13 MP4 paths (12 unique SHA values). The new 10/22 MP4 exact SHA is public on YouTube. Older candidates remain excluded per recorded prior audit.",
     "instagram_validation": "get_account_info and get_post_list; six total posts, no post dated 10/22, correct account, rolling usage 0/100.",
-    "line_count": 162
-  }
+    "line_count": 217
+  },
+  "post_interruption_followup": {
+    "tool_call": "instagram.create_instagram",
+    "tool_call_started_at_local": "2026-10-22T13:13:50-07:00",
+    "tool_call_outcome": "interrupted_before_completion_receipt",
+    "account_rechecked_at_local": "2026-10-22T13:14:37-07:00",
+    "post_list_rechecked_at_local": "2026-10-22T13:14:35-07:00",
+    "posts_total_after_interruption": 6,
+    "posts_today_after_interruption": 0,
+    "new_post_created": false,
+    "retry_attempted": false,
+    "owner_changed_selection_at_local": "2026-10-22T13:14:15-07:00",
+    "owner_instruction": "换一个素材的视频",
+    "interpretation": "Do not retry or publish the prior 10/21 selection; only consider a different eligible source."
+  },
+  "alternative_latest_package_check": {
+    "checked_at_local": "2026-10-22T13:14:54-07:00",
+    "entry_day": "2026-10-22",
+    "video_path": "videos/instagram/2026-10-22/video.mp4",
+    "latest_alias_path": "videos/instagram/latest.mp4",
+    "source_commit": "90da82dde50a8216bdf1f4ffdadebdc48acbd505",
+    "sha256": "1d07067ef6b4f4f2070c8d9e535a85e59a5181cf6b484431718aa0bcde3b0693",
+    "downloaded_sha256_matches_manifest": true,
+    "duration_seconds": 30.0,
+    "resolution": "720x1280",
+    "aspect_ratio": "9:16",
+    "video_codec": "H.264",
+    "audio_codec": "AAC",
+    "audio_mean_volume_db": -22.8,
+    "audio_max_volume_db": -1.3,
+    "full_decode_passed": true,
+    "caption_and_manifest_present": true,
+    "youtube_public_duplicate": {
+      "receipt_path": "results/publishing/youtube-daily-2026-10-22.json",
+      "same_sha256": true,
+      "published": true,
+      "privacy_status": "public",
+      "video_id": "bR7nD0rUn2w",
+      "url": "https://www.youtube.com/watch?v=bR7nD0rUn2w"
+    },
+    "eligibility": "excluded_same_sha256_public_on_another_platform"
+  },
+  "followup_candidate_exclusions": [
+    {
+      "path": "videos/instagram/2026-10-22/video.mp4",
+      "sha256": "1d07067ef6b4f4f2070c8d9e535a85e59a5181cf6b484431718aa0bcde3b0693",
+      "reason": "Exact SHA is verified public on YouTube as bR7nD0rUn2w; excluded despite the owner's request for a different asset."
+    },
+    {
+      "path": "videos/instagram/latest.mp4",
+      "sha256": "1d07067ef6b4f4f2070c8d9e535a85e59a5181cf6b484431718aa0bcde3b0693",
+      "reason": "Current latest alias is byte-identical to the 10/22 package, already public on YouTube."
+    }
+  ]
 }
