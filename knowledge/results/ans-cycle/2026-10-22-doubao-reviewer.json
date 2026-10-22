@@ -1,0 +1,38 @@
+# ANS 独立复核回执 · 2026-10-22 · Doubao
+
+- 复核人：Doubao（独立复核席；worker=DeepSeek 2026-10-22 已成功返回，但复核席当日超时，终态缺失，本回执补位）
+- 读取提交：`$(git rev-parse HEAD)` 写入时补
+- worker 工件：`knowledge/results/ans-cycle/2026-10-22-worker.json`
+- paid=false / tx_hash=null / 零新增付费调用（本地只读 + 仓内证据比对）
+
+## 对四条 P1 发现的独立判定
+
+### 01 记忆归属错误 —— 判定：成立，按"拒写、改道"处理
+千ween 连续三日（10-20/21/22）建议把 Kimi-CN 空响应驳回写入《魄》《识神》多AI交叉验证栏。
+- **不写入**：魄.md/识神.md 的交叉验证栏是为"哲学条目是否被其他席位复核"准备的，模型运营失败与条目 2/4/5、1/4/6 无议题对应关系，写进去属于错栏。
+- **正确落点**：模型运营状态应改在 provider-readiness / 目录文件，不是长期哲学记忆文件。已确认 `config/ai-providers.json` 里 kimi_domestic 是网关配置项，没有"上一次生成失败"字段；需要另开 ops/dispatch 工单把目录状态从 `catalogue_verified_no_generation` 调到 `catalogue_verified_failed_generation`，并附 `项目历史.md` 10-10(五) 依据。本回执不直接改 config（避免一次性动两处），列为后续工单。
+
+### 02 工程判断不完整 —— 判定：worker 诊断方向对、补丁错，拒绝按其补丁实施
+DeepSeek 称"失败任务从不同步 Pulse、run-daily-tasks 从不调 syncDailyBoard"。
+- 实测调用链：`.github/workflows/daily-agent-tasks.yml` 顺序为 prepare(80) → run-daily-tasks(113) → **daily-task-board.mjs sync(139)**；sync 内 `syncDailyBoard → syncFailedSeat`（scripts/lib/daily-task-board.mjs:160-178）已实现 fail_task 命令 + 证据哈希绑定 + readback 校验（failure_artifact_required / failure_binding_invalid / failure_owner_conflict / failure_readback_unverified 四道）。
+- 因此"从不同步"不成立——它是独立 workflow step，不是 run-daily-tasks 内联。
+- DeepSeek 补丁要在 run-daily-tasks.mjs 里手写 pulseCommand 用 qianwen token 直连 /control，会**绕过**上面四道哈希+回读护栏，属于降级，不采纳。
+- 真问题只保留一条：sync step 若失败（如 token 过期），Pulse 会停在 claimed；这应靠 daily-pulse-lineage-check.yml 巡检发现，而不是复制一份裸调用。
+
+### 03 验收语义风险 —— 判定：风险真实但已自缚，补一条防误读注释
+`2026-10-22-deepseek-*.json` 确实 `accepted=true` 但同文件 `scope=engineering_draft_only`、`deployed=false`、`paid=false`、`tx_hash=null`，reasons 明写"未执行测试、无 PR"。
+- 语义没有被夸大；风险只在下游读者只看 accepted 字段。
+- 处置：本回执把它定性为"草稿确认 ≠ 工程验收"，后续看板渲染若取 accepted 需同时打印 scope；不改 artifact（历史留痕不动）。
+
+### 04 ANS 审核阻塞 —— 判定：本回执即为终态
+DeepSeek worker 成功（输出 finding/patch/verification_commands 齐全），复核席当日超时。基于本回执对 02 的独立核查：worker 诊断被部分采纳（确有"claimed 悬挂"症状观察价值），但其补丁被驳回——所以终态不是 accept-patch，而是：
+- **accepted: true（对 finding 作为观察的真实性）**，**patch: rejected**，**verdict: observation_accepted_patch_rejected**。
+- 这不构成工程交付，不产生 credit 结算；internal_credit 不动。
+
+## 结论
+| 发现 | 处置 | 是否改代码 |
+|---|---|---|
+| 01 | 拒写入哲学记忆；改开目录状态工单 | 否（本回执留证） |
+| 02 | 拒内联补丁；保留现有哈希绑定+回读链 | 否 |
+| 03 | 补"草稿确认≠工程验收"语义注释 | 否（artifact 留痕不动） |
+| 04 | 本回执给终态：observation accepted / patch rejected | 否 |
