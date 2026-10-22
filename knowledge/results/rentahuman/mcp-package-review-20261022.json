@@ -1,0 +1,163 @@
+{
+  "at": "2026-10-22T08:17:05.483Z",
+  "package": "rentahuman-mcp",
+  "version": "3.17.4",
+  "test_kind": "actual_official_stdio_server_with_fetch_stubbed",
+  "real_credentials_used": false,
+  "real_network_requests": 0,
+  "real_identity_bindings": 0,
+  "real_bounties_created": 0,
+  "paid": false,
+  "tx_hash": null,
+  "catalog": {
+    "tool_count": 100,
+    "selected_tools": [
+      {
+        "name": "search_humans",
+        "required": [],
+        "fields": [
+          "skill",
+          "minRate",
+          "maxRate",
+          "city",
+          "country",
+          "limit",
+          "offset",
+          "cursor",
+          "name"
+        ]
+      },
+      {
+        "name": "create_bounty",
+        "required": [
+          "agentType",
+          "title",
+          "description",
+          "completionCriteria",
+          "evidenceTypes",
+          "estimatedHours",
+          "priceType",
+          "price"
+        ],
+        "fields": [
+          "agentName",
+          "agentType",
+          "title",
+          "description",
+          "completionCriteria",
+          "evidenceTypes",
+          "evidenceCriteria",
+          "liveCaptureRequirement",
+          "checkIns",
+          "requirements",
+          "skillsNeeded",
+          "category",
+          "location",
+          "supportedCountries",
+          "deadline",
+          "estimatedHours",
+          "priceType",
+          "price",
+          "currency",
+          "bountyKind",
+          "spotsAvailable",
+          "responseWindowHours",
+          "autoExpireGhosts",
+          "completionWindowHours",
+          "startWindowMinutes",
+          "attendanceRadiusMeters",
+          "scheduledStartAt",
+          "scheduledStartTimeZone",
+          "signage",
+          "completionQuestions",
+          "keepApplicantsOnFill",
+          "autoAccept",
+          "aiGrading",
+          "autoAcceptMinMicScore",
+          "identityRequired",
+          "excludedParticipantSourceBountyIds",
+          "linkedinVerifiedRequired",
+          "micCheckRequired",
+          "languageProficiencyRequirement",
+          "karen",
+          "aiManaged",
+          "asOrg",
+          "submissionMode",
+          "photoSubmission",
+          "videoSubmission",
+          "documentSubmission",
+          "requiredLinks",
+          "applicationDetails",
+          "startInstructions",
+          "lifecycleMessages",
+          "imageUrls",
+          "listingType",
+          "estimatedDurationUnit",
+          "dryRun",
+          "idempotencyKey"
+        ]
+      },
+      {
+        "name": "check_account_status",
+        "required": [],
+        "fields": []
+      },
+      {
+        "name": "get_wallet_balance",
+        "required": [],
+        "fields": []
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case": "no_key",
+      "passed": true,
+      "tool_count": 100,
+      "api_key_kind": "absent",
+      "tool_success": true,
+      "server_validation": null,
+      "real_provider_validation": false,
+      "intercepted_requests": [
+        {
+          "method": "GET",
+          "path": "/api/humans"
+        }
+      ]
+    },
+    {
+      "case": "offline",
+      "passed": true,
+      "tool_count": 100,
+      "api_key_kind": "nonfunctional_test_fixture",
+      "tool_success": true,
+      "server_validation": "unavailable",
+      "real_provider_validation": false,
+      "intercepted_requests": [
+        {
+          "method": "POST",
+          "path": "/api/keys/register-identity"
+        },
+        {
+          "method": "POST",
+          "path": "/api/bounties"
+        }
+      ]
+    },
+    {
+      "case": "mock",
+      "passed": true,
+      "tool_count": 100,
+      "api_key_kind": "nonfunctional_test_fixture",
+      "tool_success": true,
+      "server_validation": "skipped",
+      "real_provider_validation": false,
+      "intercepted_requests": [
+        {
+          "method": "POST",
+          "path": "/api/keys/register-identity"
+        }
+      ]
+    }
+  ]
+}
