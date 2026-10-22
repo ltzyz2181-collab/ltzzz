@@ -1,5 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';import {execFileSync} from 'node:child_process';
-import {readSkill} from './lib/ltzzz-skill.mjs';import {prepareSkillReview,executeSkillReviews} from './lib/ltzzz-skill-review.mjs';
+import {readSkill} from './lib/ltzzz-skill.mjs';import {prepareSkillReview,executeSkillReviews,reviewSelectionFromBody} from './lib/ltzzz-skill-review.mjs';
 import {callAgent as deepseek} from './call-deepseek.mjs';import {callAgent as doubao} from './call-doubao.mjs';import {callAgent as qianwen} from './call-qwen.mjs';import {callAgent as grok} from './call-grok.mjs';import {kimiCN} from './agi-econ/kimi-cn.mjs';import {metaExecutorToken} from './lib/meta-executor-auth.mjs';
 const phase=process.argv[2],pack=readSkill(),directory='knowledge/results/skill-review/'+pack.core_sha256.slice(0,16),file=directory+'/review.json';
 const save=r=>{fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(file,JSON.stringify(r,null,2)+'\n');};
@@ -7,10 +7,12 @@ if(phase==='prepare'){
  const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
  if(process.env.GITHUB_ACTOR!=='ltzyz2181-collab'||event.issue?.user?.login!=='ltzyz2181-collab'||!event.issue.title.startsWith('[LTZZZ技能评审]'))throw Error('owner_skill_review_issue_required');
  const prior=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):null;
- const selection=event.issue.body?.match(/^native-review-seats: ([a-z_,]+)$/m)?.[1]?.split(',');
- const state=prepareSkillReview({selectedSeats:selection,core:pack.core_sha256,runId:process.env.GITHUB_RUN_ID,attempt:process.env.GITHUB_RUN_ATTEMPT||'1',issue:event.issue.number,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),prior});
- if(state.execute){state.record.sources=pack.sources.map(({text,...s})=>s);save(state.record);
-  for(const seat of ['claude','workbuddy','manus','kimi_global','meta']){
+ const selection=reviewSelectionFromBody(event.issue.body||'');
+ const state=prepareSkillReview({...selection,core:pack.core_sha256,runId:process.env.GITHUB_RUN_ID,attempt:process.env.GITHUB_RUN_ATTEMPT||'1',issue:event.issue.number,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),prior});
+ if(state.execute){
+  if(state.archive)fs.writeFileSync(directory+'/before-supplement-'+state.archive.run_id+'.json',JSON.stringify(state.archive,null,2)+'\n',{flag:'wx'});
+  state.record.sources=pack.sources.map(({text,...s})=>s);save(state.record);
+  if(!state.archive)for(const seat of ['claude','workbuddy','manus','kimi_global','meta']){
    const target=`ops/dispatch/inbox/${seat}/${state.record.task_id}.md`;fs.mkdirSync(path.dirname(target),{recursive:true});
    fs.writeFileSync(target,`# ${seat}：LTZZZ Skill 评审与补充\n\n- Task ID: ${state.record.task_id}-${seat}\n- 状态：assigned_waiting_actual_client；未代接单。\n- 签发者：GPT/Codex总控规则；实际UTC：${state.record.at_utc}\n- core SHA256：${pack.core_sha256}\n- 输入：skills/ltzzz-task-execution/SKILL.md 及其 references/；读取提交 ${state.record.source_commit}。\n- 固定版本入口：https://github.com/ltzyz2181-collab/ltzzz/blob/${state.record.source_commit}/skills/ltzzz-task-execution/SKILL.md\n- 目标：审核一处会让你误领、漏交、误判完成的条款，提出1—3条具体修改或同意理由。不要仅ACK，不部署，不调用付款/签名，不索要凭证。\n- 输出：knowledge/results/skill-review/${pack.core_sha256.slice(0,16)}/external-${seat}.md，分支+PR；记录原Task ID、读取哈希、实际客户端/provider/model来源和局限。无写权限可在已授权会话返回正文，由总控代入库并注明转交。\n- 资金：无USDC付款；不启用原厂OpenAI/Anthropic付费API；外部客户端是否消耗其积分照实记。\n`,{flag:'wx'});
   }
