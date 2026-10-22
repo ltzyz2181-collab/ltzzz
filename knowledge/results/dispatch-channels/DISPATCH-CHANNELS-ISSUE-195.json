@@ -4,7 +4,7 @@
   "issued_at": "2026-10-22T04:23:21.024Z",
   "source_commit": "716f2de1d92949bc9a665d66c95a054b5e0c67d6",
   "run_id": "39722067955",
-  "status": "reserved_before_remote_access",
+  "status": "dispatch_verified_external_client_acceptance_pending",
   "targets": [
     "meta"
   ],
@@ -16,8 +16,108 @@
   "issuer": "owner",
   "dispatcher_role": "qianwen",
   "native_plan": null,
-  "model_calls": 0,
+  "model_calls": 1,
   "paid": false,
   "tx_hash": null,
-  "financial_execution": false
+  "financial_execution": false,
+  "operations": [
+    {
+      "id": "DISPATCH-CHANNELS-ISSUE-195-meta",
+      "action": "dispatch",
+      "target": "meta",
+      "status": "acknowledged",
+      "http": 200,
+      "authenticated_actor": "qianwen"
+    },
+    {
+      "id": "DISPATCH-CHANNELS-ISSUE-195-meta",
+      "action": "dispatch",
+      "target": "meta",
+      "status": "acknowledged",
+      "http": 200,
+      "authenticated_actor": "qianwen"
+    },
+    {
+      "id": "DISPATCH-CHANNELS-ISSUE-195-meta-ack",
+      "action": "ack_dispatch",
+      "target": "meta",
+      "status": "acknowledged",
+      "http": 200,
+      "authenticated_actor": "qianwen"
+    }
+  ],
+  "channels": [
+    {
+      "target": "meta",
+      "dispatch_id": "DISPATCH-CHANNELS-ISSUE-195-meta",
+      "dispatcher_role": "qianwen",
+      "native_qwen_plan_verified": false,
+      "status": "executor_consumed_probe_not_native_client",
+      "dispatch_verified": true,
+      "consumer_verified": true,
+      "native_client_verified": false,
+      "dispatch_http": 200,
+      "readback": {
+        "id": "DISPATCH-CHANNELS-ISSUE-195-meta",
+        "actor": "qianwen",
+        "target": "meta",
+        "status": "probe_waiting_consumer",
+        "instruction_sha256": "67a75ae6946c8196b458783568475712741bdf66a0171163b741d0b7ba170a83"
+      },
+      "idempotency_verified": true,
+      "consumer": {
+        "provider": "cloudflare-workers-ai",
+        "model_calls": 1,
+        "native_Meta_client": false,
+        "health_http": 200,
+        "health_service": "ltzzz-meta-hosted",
+        "model": "@cf/meta/llama-3.1-8b-instruct-fp8",
+        "generation_verified": true,
+        "auth_check_http": 200,
+        "http": 200,
+        "task_id": "DISPATCH-CHANNELS-ISSUE-195-meta",
+        "request_nonce": "9c9e7633e138cd34041a8fe474453a2c",
+        "model_source": "worker_runtime_AI_binding",
+        "finish_reason": null,
+        "finish_reason_observed": false,
+        "output": "9c9e7633e138cd34041a8fe474453a2c",
+        "output_sha256": "e5dbed0ccb9245bedd8f214cbd6a5d95460a6d581a49f9a629623773bb58d34d",
+        "status": "hosted_Llama_nonce_generation_verified"
+      }
+    }
+  ],
+  "schema": {
+    "dispatch_targets": [
+      "gpt",
+      "doubao",
+      "deepseek",
+      "kimi",
+      "grok",
+      "qianwen",
+      "claude",
+      "meta",
+      "workbuddy",
+      "manus",
+      "kimi_global",
+      "wep3"
+    ],
+    "health_targets": [
+      "doubao",
+      "deepseek",
+      "kimi",
+      "grok",
+      "qianwen",
+      "wep3"
+    ],
+    "at": "2026-10-22T04:23:22.570Z"
+  },
+  "meta_auth_install": {
+    "status": "configured",
+    "credential_source": "isolated_HMAC_from_existing_managed_credential"
+  },
+  "native_anthropic_calls": 0,
+  "native_openai_calls": 0,
+  "native_workbuddy_calls": 0,
+  "model_api_cost_is_separate_from_USDC": true,
+  "finished_at": "2026-10-22T04:23:39.198Z"
 }
