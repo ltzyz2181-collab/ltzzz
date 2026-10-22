@@ -97,6 +97,44 @@ test('a length-truncated empty body blocks as truncation, not as a generic model
   });
 });
 
+test('a bid-stage deadlock spends no retry budget, so the title stays in the market', async () => {
+  const old = process.env.GITHUB_RUN_ID;
+  const s = setup();
+  try {
+    s.register({ did: 'did:ltzzz:rejected', roles: ['auditor'] });
+    for (const run of ['dead1', 'dead2', 'dead3']) {
+      process.env.GITHUB_RUN_ID = run;
+      const r = await hire(s, { ...job, worker: 'did:ltzzz:rejected', workerCall: async () => { throw new Error('must not be called'); } });
+      assert.equal(r.status, 'blocked_refunded', run);
+      assert.equal(r.stage, 'bid', run);
+      assert.equal(s.state.tasks[r.task].worker_never_ran, true, run);
+    }
+    assert.equal(s.state.agents['did:ltzzz:gpt'].credit_usd, 1);
+    assert.equal(s.state.agents['did:ltzzz:gpt'].escrow_usd, 0);
+  } finally { if (old === undefined) delete process.env.GITHUB_RUN_ID; else process.env.GITHUB_RUN_ID = old; }
+});
+
+test('a legacy award deadlock receipt is not charged to the retry budget either', async () => {
+  const old = process.env.GITHUB_RUN_ID;
+  const s = setup();
+  try {
+    process.env.GITHUB_RUN_ID = 'legacy1';
+    s.award = () => { throw new Error('no_eligible_bids_review_required'); };
+    const first = await hire(s, { ...job, workerCall: async () => ({ ok: true, output: '# M real', status: 'success', finish_reason: 'stop' }) });
+    assert.equal(first.stage, 'award');
+    // Simulate a pre-`worker_never_ran` task: only the refunded receipt records the cause.
+    delete s.state.tasks[first.task].worker_never_ran;
+    s.save();
+    const s2 = new Subnet(s.root);
+    s2.award = () => { throw new Error('no_eligible_bids_review_required'); };
+    process.env.GITHUB_RUN_ID = 'legacy2';
+    const second = await hire(s2, { ...job, workerCall: async () => ({ ok: true, output: '# M real', status: 'success', finish_reason: 'stop' }) });
+    assert.notEqual(second.status, 'retry_budget_exhausted');
+    assert.equal(second.stage, 'award');
+    assert.equal(s2.state.agents['did:ltzzz:gpt'].credit_usd, 1);
+  } finally { if (old === undefined) delete process.env.GITHUB_RUN_ID; else process.env.GITHUB_RUN_ID = old; }
+});
+
 test('a truncation block is retryable in a later run so the larger budget can be used', async () => {
   const old = process.env.GITHUB_RUN_ID;
   const s = setup();

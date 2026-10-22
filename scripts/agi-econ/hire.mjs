@@ -9,6 +9,14 @@ const WORKER_TOKENS = { deepseek: 16384, doubao: 16384, default: 3000 };
 // A blocked call is still refunded, but a flaky runner should not burn a whole retry budget.
 const NET_FAULT = /fetch failed|ETIMEDOUT|ECONNRESET|EAI_AGAIN|ENOTFOUND|socket hang up|network_code|TimeoutError|aborted due to timeout/i;
 const netFault = (w) => !!w && w.status === 'exception' && !Number(w.tokens_used) && NET_FAULT.test(String(w.error || ''));
+// A task that died before any worker ran consumed no model call and no retry budget.
+// Counting it would let a bid/award-side deadlock lock the title out of the market forever.
+const NO_WORKER_STAGES = new Set(['bid', 'award']);
+const AWARD_DEADLOCK = /^no_eligible_bids_review_required$/;
+const readReceipt = (root, t) => {
+  if (!t.receipt) return null;
+  try { return JSON.parse(fs.readFileSync(`${root}/${t.receipt}`, 'utf8')); } catch { return null; }
+};
 export async function hire(s, { employer = 'did:ltzzz:gpt', worker, workerModel, workerCall, workerKey, title, spec, mark, prompt, source, auditors, budget = 0.05, ask = 0.03 }) {
   const previous = Object.values(s.state.tasks).filter((t) => t.title === title);
   if (previous.some((t) => ['settled', 'slashed'].includes(t.status))) return { title, status: 'already_ran' };
@@ -20,12 +28,19 @@ export async function hire(s, { employer = 'did:ltzzz:gpt', worker, workerModel,
   const runId = process.env.GITHUB_RUN_ID || 'local';
   const transient = new Set(['worker_model_failed', 'worker_output_truncated', 'audit_unavailable', 'interrupted_attempt', 'execution_exception']);
   if (previous.some((t) => t.status === 'blocked' && !transient.has(t.block_reason))) return { title, status: 'blocked_not_retryable' };
-  if (previous.length >= 2 || previous.some((t) => t.run_id === runId)) return { title, status: 'retry_budget_exhausted' };
+  // Historical tasks predate `worker_never_ran`, so fall back to the refunded receipt error.
+  const spentAttempt = (t) => {
+    if (t.worker_never_ran) return false;
+    if (t.status !== 'blocked' || t.block_reason !== 'execution_exception') return true;
+    return !AWARD_DEADLOCK.test(String(readReceipt(s.root, t)?.error || ''));
+  };
+  const attempts = previous.filter(spentAttempt);
+  if (attempts.length >= 2 || previous.some((t) => t.run_id === runId)) return { title, status: 'retry_budget_exhausted' };
   if (!workerKey) return { title, worker, status: 'skipped_no_worker_key' };
   const emp = s.state.agents[employer];
   if (emp.credit_usd < budget) s.simFund(employer, 5, 'ledger simulation top-up (not real capital)');
   const t = s.postTask({ employer, title, spec, budget_usd: budget, acceptance: [mark] });
-  t.run_id = runId; t.attempt = previous.length + 1; s.save();
+  t.run_id = runId; t.attempt = attempts.length + 1; s.save();
   let stage = 'bid';
   try {
   t.bid_mode = 'program_rule'; // honest: bid set by code, not by the model
@@ -60,6 +75,7 @@ export async function hire(s, { employer = 'did:ltzzz:gpt', worker, workerModel,
     if (!['settled', 'slashed', 'blocked'].includes(t.status)) {
       s.block(t.id, 'execution_exception', { error, stage, retryable: true, award_diagnostics: stage === 'award' && Array.isArray(e?.diagnostics) ? e.diagnostics : null });
     }
+    if (NO_WORKER_STAGES.has(stage)) t.worker_never_ran = true;
     return { task: t.id, worker, status: t.status === 'blocked' ? 'blocked_refunded' : t.status, reason: 'execution_exception', stage, error };
   } finally { s.save(); }
 }
