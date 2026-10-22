@@ -1,0 +1,80 @@
+{
+  "id": "RAH-S2A-20261022-CONTROLLER-REVIEW",
+  "at_utc": "2026-10-22T08:24:45.379261Z",
+  "reviewer": "GPT/Codex coordinator",
+  "author_reported": "VS Code Copilot Chat shell + DeepSeek",
+  "author_model_verification": "self_report_only_in_original_receipt",
+  "source_commit": "52c125b6ffc3150e38de0cea692a164dfc2d68af",
+  "source_path": "knowledge/results/rentahuman/stage2a-copilot-20261022.json",
+  "source_sha256": "0cbec4aca41f72f82181d878e8c50e3908a5da9c7d07c54d62af273e765b7c05",
+  "original_receipt_modified": false,
+  "artifact_checks": {
+    "lines": 173,
+    "bytes": 7822,
+    "json_valid": true,
+    "utf8_bom": false
+  },
+  "status": "evidence_received_original_target_blocked",
+  "accepted_as_historical_evidence": true,
+  "stage2a_target_passed": false,
+  "ready_for_live": false,
+  "facts_from_executor_report": {
+    "authenticated_keys_read_reported": true,
+    "auth_independently_replayed_by_controller": false,
+    "guangzhou_city_search_returned": 20,
+    "photography_search_returned": 0,
+    "guangzhou_server_preview_passed": false,
+    "guangzhou_http_status": 400,
+    "guangzhou_refusal": "Bounties cannot target China — phone verification is not available there.",
+    "supplementary_preview_location": {
+      "country": "US",
+      "isRemoteAllowed": true
+    },
+    "supplementary_server_validation_reported": "passed",
+    "supplementary_funding_total_usd": 3.54,
+    "paid": false,
+    "tx_hash": null
+  },
+  "findings": [
+    {
+      "id": "original_target_refused",
+      "severity": "blocker_for_stage2a_target",
+      "detail": "Guangzhou-targeted bounty was refused. A US remote preview is a separate supplementary experiment, and does not authorize work in Guangzhou or validate it."
+    },
+    {
+      "id": "identity_startup_side_effect",
+      "severity": "evidence_gap",
+      "detail": "The executor used local stdio 3.17.4 with a real runtime Key, before the controller transport revision was merged. This package attempts POST /keys/register-identity during startup. The original report omits whether that request occurred/succeeded. Do not assert no real identity binding; outcome unverified. No assertion of financial loss follows from this."
+    },
+    {
+      "id": "auth_read_evidence",
+      "severity": "scope_note",
+      "detail": "The reported activeKeys=1 and capabilities.bounties=true match the official check_account_status GET /keys success branch. This is executor-reported authenticated-read evidence, not an independent controller replay; no claim that the Key is invalid."
+    },
+    {
+      "id": "cost_and_scope",
+      "severity": "scope_note",
+      "detail": "No paid model API calls / billable_worker_calls=0 describes the MCP worker test; it does not independently establish that the Copilot DeepSeek session or browser tools were free. Top-level 3.54 funding_total_usd belongs only to the US supplementary preview."
+    }
+  ],
+  "cross_provider_review": {
+    "status": "queued_not_yet_received",
+    "agent": "qianwen",
+    "native_provider_required": "aliyun_dashscope",
+    "card": "ops/dispatch/queue/QWEN-RAH-S2A-REVIEW-20261022.json",
+    "expected_receipt": "knowledge/results/qwen-dispatch/QWEN-RAH-S2A-REVIEW-20261022.json"
+  },
+  "claude_audit": {
+    "status": "assigned_waiting_native_claude_acceptance",
+    "card": "ops/dispatch/CLAUDE-RAH-S2A-AUDIT-20261022.md"
+  },
+  "live_order": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "Controller did not replay credentialed RentAHuman calls or inspect the owner desktop.",
+    "Temporary credential cleanup is executor-reported, not independently verified.",
+    "This review accepts preservation of the blocked receipt, not the original stage2A target or live spending."
+  ]
+}
