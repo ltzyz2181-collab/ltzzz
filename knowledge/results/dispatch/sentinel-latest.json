@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-22T18:17:14.434Z",
+  "at": "2026-10-22T22:05:20.740Z",
   "date": "2026-10-23",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -97,8 +97,8 @@
       ],
       "instruction": "核对现有 ANS 失败/未知审核请求、错误码与已有输出；修复后交测试和部署回执。不得因补派自动重购未知请求或重复付款。",
       "issue": "blocked_reconcile_existing_attempt",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/ans-cycle/2026-10-23.json",
       "claim_verified": false
     },
@@ -120,10 +120,10 @@
       "claim_verified": false
     }
   ],
-  "overdue_count": 0,
+  "overdue_count": 1,
   "deadline_unverified_count": 7,
   "claim_verified": false,
-  "run_id": "39829958253",
+  "run_id": "39862294889",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -167,13 +167,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "43 个原任务/43 条警告；验证认领 19、提交 18、独立审核 4、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "44 个原任务/44 条警告；验证认领 19、提交 18、独立审核 4、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
-      "state": "OK",
+      "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "DAILY-2026-10-23-qianwen:awaiting_agent_ack；CONTROL-2026-10-23-deepseek:not_due；CONTROL-2026-10-23-doubao:not_due；CONTROL-REVIEW-2026-10-23:not_due；DAILY-2026-10-23-claude:not_due；ANS-2026-10-23-doubao:not_due；REAL-HIRE-20261023-CLAUDE-01:not_due"
+      "note": "DAILY-2026-10-23-qianwen:awaiting_agent_ack；CONTROL-2026-10-23-deepseek:not_due；CONTROL-2026-10-23-doubao:not_due；CONTROL-REVIEW-2026-10-23:not_due；DAILY-2026-10-23-claude:not_due；ANS-2026-10-23-doubao:warning_required；REAL-HIRE-20261023-CLAUDE-01:not_due"
     }
   ],
   "business_alerts": [
@@ -192,8 +192,12 @@
     {
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED"
+    },
+    {
+      "item": "今日派单跟踪",
+      "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39829958253-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39862294889-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
