@@ -2,10 +2,12 @@ import fs from 'node:fs';import path from 'node:path';import {createHash} from '
 export const SKILL_DIR='skills/ltzzz-task-execution';
 export const CORE_FILES=['SKILL.md','references/runtime-contract.md','references/task-card.md','references/receipt-template.json','references/contribution-template.md'];
 export const skillHash=value=>createHash('sha256').update(value).digest('hex');
+// Hash plain LF text so a CRLF working-tree checkout (core.autocrlf) cannot break the recorded bindings.
+const readText=file=>fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n');
 export function readSkill(root='.'){
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'config/ltzzz-skill.json'),'utf8'));
  if(manifest.name!=='ltzzz-task-execution'||manifest.directory!==SKILL_DIR||JSON.stringify(manifest.reviewed_core_files)!==JSON.stringify(CORE_FILES))throw Error('skill_manifest_invalid');
- const sources=CORE_FILES.map(name=>{const relative=SKILL_DIR+'/'+name,text=fs.readFileSync(path.join(root,relative),'utf8');if(!text.trim())throw Error('skill_source_empty');return {path:relative,text,sha256:skillHash(text)};});
+ const sources=CORE_FILES.map(name=>{const relative=SKILL_DIR+'/'+name,text=readText(path.join(root,relative));if(!text.trim())throw Error('skill_source_empty');return {path:relative,text,sha256:skillHash(text)};});
  if(!/^---\nname: ltzzz-task-execution\ndescription: .+\n---\n/.test(sources[0].text))throw Error('skill_frontmatter_invalid');
  JSON.parse(sources.find(s=>s.path.endsWith('receipt-template.json')).text);
  return {manifest,sources,core_sha256:skillHash(JSON.stringify(sources.map(({path,sha256})=>({path,sha256}))))};
@@ -24,11 +26,11 @@ export function skillContext({root='.',scope='task'}={}){
   if(m.enabled!==true)return {text:'',proof:{applied:false,status:'draft_not_active',scope,version:m.version,core_sha256:pack.core_sha256}};
   const ref=m.activation_review;
   if(!/^knowledge\/results\/skill-review\/[a-f0-9]{16}\/activation\.json$/.test(ref?.path||''))throw Error('skill_activation_reference_invalid');
-  const bytes=fs.readFileSync(path.join(root,ref.path));if(skillHash(bytes)!==ref.sha256)throw Error('skill_activation_changed');const activation=JSON.parse(bytes);
+  const activationText=readText(path.join(root,ref.path));if(skillHash(activationText)!==ref.sha256)throw Error('skill_activation_changed');const activation=JSON.parse(activationText);
   if(activation.core_sha256!==pack.core_sha256||activation.decision!=='activate_with_recorded_resolutions'||!activation.resolutions?.length)throw Error('skill_activation_unbound');
   if(!/^knowledge\/results\/skill-review\/[a-f0-9]{16}\/review\.json$/.test(activation.review?.path||''))throw Error('skill_review_path_invalid');
-  const raw=fs.readFileSync(path.join(root,activation.review.path));if(skillHash(raw)!==activation.review.sha256)throw Error('skill_review_changed');
-  const review=JSON.parse(raw);
+  const reviewText=readText(path.join(root,activation.review.path));if(skillHash(reviewText)!==activation.review.sha256)throw Error('skill_review_changed');
+  const review=JSON.parse(reviewText);
   for(const item of activation.resolutions){
    const row=review.seats?.[item.seat],entries=item.kind==='risk'?row?.review?.risks:item.kind==='addition'?row?.review?.additions:null;
    if(!row?.review||(item.kind==='verdict'&&item.index!==null)||item.output_sha256!==row.output_sha256||!['retain','adopt','reject','defer'].includes(item.decision)||typeof item.reason!=='string'||!item.reason.trim()||(item.kind!=='verdict'&&(!Array.isArray(entries)||!Number.isSafeInteger(item.index)||item.index<0||!entries[item.index])))throw Error('skill_resolution_unbound');
@@ -50,9 +52,9 @@ export function syncSkillAdapters({root='.',check=false}={}){
  const files=[...CORE_FILES,'references/contributions.md'];
  const targets=['.github/skills/ltzzz-task-execution','.claude/skills/ltzzz-task-execution','.agents/skills/ltzzz-task-execution'];
  if(JSON.stringify(pack.manifest.adapters)!==JSON.stringify(targets))throw Error('skill_adapter_targets_invalid');
- for(const target of targets)for(const file of files){const bytes=fs.readFileSync(path.join(root,SKILL_DIR,file)),full=path.join(root,target,file);
-  if(check){if(!fs.existsSync(full)||!fs.readFileSync(full).equals(bytes))throw Error('skill_adapter_out_of_sync');}
-  else{fs.mkdirSync(path.dirname(full),{recursive:true});fs.writeFileSync(full,bytes);}
+ for(const target of targets)for(const file of files){const source=path.join(root,SKILL_DIR,file),full=path.join(root,target,file);
+  if(check){if(!fs.existsSync(full)||readText(full)!==readText(source))throw Error('skill_adapter_out_of_sync');}
+  else{fs.mkdirSync(path.dirname(full),{recursive:true});fs.writeFileSync(full,fs.readFileSync(source));}
  }
  return {status:check?'all_adapters_match':'repository_adapters_generated_not_client_load_proof',paths:targets,core_sha256:pack.core_sha256};
 }
