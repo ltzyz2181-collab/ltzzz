@@ -1,6 +1,6 @@
 # LTZZZ 桌面接力
 
-只操作 `ltzyz2181-collab/ltzzz`。先读 `AI-START-HERE.md`，现状简报见 `ops/dispatch/QIANWEN-REJOIN-BRIEF-20261016.md`，无需为了发工单购买额外模型调用。
+只操作 `ltzyz2181-collab/ltzzz`。先读 `AI-START-HERE.md`，读取 `skills/ltzzz-task-execution/SKILL.md` 的接单契约，启用状态以 `config/ltzzz-skill.json` 为准；现状按 `identity/seat-registry.json`、`config/autonomy-authority.json` 和 `docs/handoffs/CURRENT.md`，无需为了发工单购买额外模型调用。
 
 用户要求联系总控或让千问代执行时，用已登录 owner GitHub 的本地 `gh` 提交云端接力，不索取 PAT/API Key：
 
@@ -12,6 +12,6 @@
 
 此入口连接 LTZZZ 云端岗位，无法唤醒已经离线的 ChatGPT 会话。Copilot、豆包和千问不是同一会话，只有具备 GitHub 工具或本地终端的客户端能代提交。GitHub Desktop 自身没有 Copilot Agent 终端执行能力。用户电脑未安装/未登录时，诚实说明本机尚未接入，云端部署不能冒充桌面已安装。
 
-投资仅做资料比较、公开余额核验和未签名交易预览；由用户决定及钱包签名。此接力不注入钱包私钥或交易所交易权限。内部积分、服务采购费用、投资收益分别记账，不能冒充真钱工资或外部获客。
+上面的 `qianwen_inspect` 是只读接力通道，不代表总控/千问所有工程任务均为只读；其他工程、部署和资金执行沿用当前授权及已配置执行器。此桌面只读接力不注入钱包私钥或交易所交易权限，Skill不授予签名能力。内部积分、服务采购费用、投资收益分别记账，不能冒充真钱工资或外部获客。
 
 Owner 要求桌面国内算力接入时，读 `docs/VSCODE-DOMESTIC-MODELS.md`，可用 `/ltzzz-domestic-model`。Key 在供应商官方页生成，仅由用户填 VS Code 密钥输入框；当前先用 DeepSeek。模板与生成器只是准备，不代表本机配置或真实工具调用通过。主聊天和后台 utility 模型分别核对，不新建桌面每日付费任务。

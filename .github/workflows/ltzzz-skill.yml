@@ -3,10 +3,10 @@ on:
   issues:
     types: [opened]
   pull_request:
-    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml']
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
   push:
     branches: [main]
-    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml']
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
 permissions: {contents: read}
 concurrency: {group: ltzzz-skill-review, cancel-in-progress: false}
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/ltzzz-skill.test.mjs
+      - run: node --test scripts/tests/ltzzz-skill.test.mjs scripts/tests/qwen-dispatch.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/autonomy.test.mjs
       - run: node scripts/ltzzz-skill.mjs check
   review:
     needs: verify
