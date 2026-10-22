@@ -3,9 +3,10 @@ export default {
  async fetch(request,env){
   const route=new URL(request.url).pathname;
   if(request.method==='GET'&&route==='/health')return json({service:'ltzzz-meta-hosted',provider:'cloudflare-workers-ai',model:env.META_MODEL,did:'did:ltzzz:meta',auth_configured:Boolean(env.META_WORKER_TOKEN),ai_binding:Boolean(env.AI),onchain_registered:false});
-  if(request.method!=='POST'||!['/','/task'].includes(route))return json({error:'not_found'},404);
+  if(request.method!=='POST'||!['/','/task','/auth-check'].includes(route))return json({error:'not_found'},404);
   if(!env.META_WORKER_TOKEN)return json({error:'auth_not_configured'},503);
   if(request.headers.get('Authorization')!==`Bearer ${env.META_WORKER_TOKEN}`)return json({error:'unauthorized'},401);
+  if(route==='/auth-check')return json({ok:true,service:'ltzzz-meta-hosted',authorized:true,model_calls:0});
   if(!env.AI)return json({error:'ai_binding_missing'},503);
   const raw=await request.text();if(raw.length>12000)return json({error:'body_too_large'},413);
   let body;try{body=JSON.parse(raw);}catch{return json({error:'invalid_json'},400);}

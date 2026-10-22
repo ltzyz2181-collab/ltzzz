@@ -2,7 +2,7 @@ import {seedTasks} from './tasks.js';
 import {markStateMutation} from './state-revision.js';
 import config from './pulse.json' with {type:'json'};
 import {dashboardHTML,dashboardJS} from './dashboard.js';
-import {validateConfig,heartbeat,walletBalance,evolve,control,names} from './engine.js';
+import {validateConfig,heartbeat,walletBalance,evolve,control,names,dispatchNames} from './engine.js';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Pulse-Version':config.version}});
 async function same(a,b){if(!a||!b)return false;const enc=new TextEncoder(),hash=async s=>new Uint8Array(await crypto.subtle.digest('SHA-256',enc.encode(s)));const [x,y]=await Promise.all([hash(a),hash(b)]);let difference=0;for(let i=0;i<x.length;i++)difference|=x[i]^y[i];return difference===0;}
 async function actorFor(request,env){const token=request.headers.get('Authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];if(await same(token,env.PULSE_TOKEN))return 'gpt';if(await same(token,env.PULSE_QIANWEN_TOKEN))return 'qianwen';return null;}
@@ -11,7 +11,7 @@ export default {
   const path=new URL(request.url).pathname;
   if(request.method==='GET'&&(path==='/'||path==='/dashboard.js'))return new Response(path==='/'?dashboardHTML:dashboardJS,{headers:{'Content-Type':path==='/'?'text/html; charset=utf-8':'text/javascript; charset=utf-8','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"}});
   if(path==='/health'&&request.method==='GET')return json({ok:!!env.PULSE,service:'ltzzz-pulse',version:config.version,storage:!!env.PULSE,auth_configured:!!env.PULSE_TOKEN,qianwen_control_configured:!!env.PULSE_QIANWEN_TOKEN,model_calls:0});
-  if(path==='/schema'&&request.method==='GET')return json({controllers:config.controller_roles,equivalent_operational_authority:true,automatic_recovery:true,authentication:'role-specific Bearer or owner GitHub workflow',actions:['pause','resume','set_concurrency','dispatch','ack_dispatch','claim_task','submit_task','fail_task','review_task','probe'],policy_source:'bundled_git_config',private_keys_in_monitor:false,money_execution:'existing signing executors; no payment is performed by a health check'});
+  if(path==='/schema'&&request.method==='GET')return json({controllers:config.controller_roles,dispatch_targets:dispatchNames(config),health_targets:names(config),equivalent_operational_authority:true,automatic_recovery:true,authentication:'role-specific Bearer or owner GitHub workflow',actions:['pause','resume','set_concurrency','dispatch','ack_dispatch','claim_task','submit_task','fail_task','review_task','probe'],policy_source:'bundled_git_config',private_keys_in_monitor:false,money_execution:'existing signing executors; no payment is performed by a health check'});
   if(!env.PULSE)return json({error:'storage_not_configured'},503);
   const publicRead=['/status','/tasks'].includes(path)&&request.method==='GET';
   if(!publicRead){

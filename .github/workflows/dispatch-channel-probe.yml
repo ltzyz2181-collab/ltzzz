@@ -1,0 +1,64 @@
+name: Qianwen cross-seat dispatch live acceptance
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    paths: ['workers/pulse-worker/**','scripts/lib/dispatch-channel-probe.mjs','scripts/lib/meta-executor-auth.mjs','scripts/run-dispatch-channel-probe.mjs','scripts/tests/dispatch-channel-probe.test.mjs','.github/workflows/dispatch-channel-probe.yml']
+permissions: {contents: read}
+concurrency: {group: ltzzz-dispatch-channel-probe, cancel-in-progress: false}
+jobs:
+  verify:
+    if: github.event_name == 'pull_request' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ派单验收]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-dispatch-channel-probe.mjs && node --test scripts/tests/dispatch-channel-probe.test.mjs workers/pulse-worker/test.mjs
+  live:
+    needs: verify
+    if: github.event_name == 'issues'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - id: prepare
+        run: node scripts/run-dispatch-channel-probe.mjs prepare
+      - name: Persist reservation before requests
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/dispatch-channels/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Reserve owner-requested dispatch channel acceptance'
+          node tools/push-receipt-commit.mjs
+      - name: Real Qianwen plan, authenticated dispatch and focused consumers
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          META_WORKER_TOKEN: ${{ secrets.META_WORKER_TOKEN }}
+        run: node scripts/run-dispatch-channel-probe.mjs execute
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dispatch-channels-${{ github.run_id }}
+          path: |
+            knowledge/results/dispatch-channels/
+            ops/dispatch/inbox/
+      - name: Persist actual evidence and explicit blockers without replay
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/dispatch-channels/
+          if [ -d ops/dispatch/inbox ]; then git add ops/dispatch/inbox/; fi
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record actual cross-seat Qianwen dispatch and consumer evidence'
+          node tools/push-receipt-commit.mjs
