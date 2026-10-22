@@ -10,7 +10,7 @@
       "capabilities": [],
       "wallets": [],
       "reputation": 100,
-      "credit_usd": 4.38,
+      "credit_usd": 4.35,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
@@ -103,7 +103,7 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 119,
+      "reputation": 120,
       "credit_usd": 0.222,
       "escrow_usd": 0,
       "earned_usd": 0.267,
@@ -205,10 +205,10 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 107,
-      "credit_usd": 0.1419,
+      "reputation": 112,
+      "credit_usd": 0.1686,
       "escrow_usd": 0,
-      "earned_usd": 0.1869,
+      "earned_usd": 0.2136,
       "slashed_usd": 0.045,
       "history": [
         {
@@ -260,6 +260,11 @@
           "task": "AET-00078",
           "status": "slashed",
           "at": "2026-10-19T16:37:24.772Z"
+        },
+        {
+          "task": "AET-00101",
+          "status": "settled",
+          "at": "2026-10-22T14:43:12.574Z"
         }
       ],
       "status": "active",
@@ -3016,10 +3021,127 @@
       "price_usd": 0.03,
       "block_reason": "worker_model_failed",
       "receipt": "data/agi-econ/receipts/AET-00098.json"
+    },
+    "AET-00100": {
+      "id": "AET-00100",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-22 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 79,
+          "at": "2026-10-22T14:37:37.962Z"
+        }
+      ],
+      "posted_at": "2026-10-22T14:37:37.950Z",
+      "run_id": "39797271687",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n# 2026-10-21 ANS 运行记录：草稿被拒、组件部署与未验收状态\n\n## 观：当日发生了什么\n\n2026-10-21 的 ANS（Autonomous Nervous System）自主调度周期记录了一次完整的 worker-reviewer 协作流程。\n\n本轮调度任务 ID 为 `ANS-2026-10-21-deepseek` 与 `ANS-2026-10-21-doubao`，分别由 DeepSeek 作为 worker、Doubao 作为独立 reviewer 执行。两次模型调用均成功返回，finish_reason 均为 stop。其中 DeepSeek 调用消耗 13,305 tokens，Doubao 调用消耗 15,071 tokens。两份产出物均已落盘，生成了对应的 sha256 哈希，并完成了结构完整性核验。\n\n同日另有一份内部订单 `REAL-HIRE-20261021-CLAUDE-01`，其状态为 `internal_delivery_rejected`，即内部交付被拒。该订单的 `paid` 字段为 false，`tx_hash` 为 null，本轮新增模型调用数为 0，新增支付数为 0。其 action_taken 类型为“复用已有 ANS worker 与独立评审结果”，来源指向同一 source_run_id `39461737127`。\n\n健康调度方面，ANS 的 autonomic feedback 记录显示，在 `2026-10-20T16:54:25.883Z` 的观察节点上，open_cases 为 0，没有暂停任何 agent，dispatch_paused 为 false。下一次探测时间设置为 5 分钟后的 `16:59:25.883Z`。\n\n## 行深：验证了什么，失败了什么\n\n**草稿未通过验收。** 本轮 ANS 周期最终状态为 `draft_rejected`，follow_up_receipt 的 accepted 字段为 false。需要注意，这里的 rejected 只针对这一份工程草稿本身，不连带判定 worker 或 reviewer 的完整产出在其他语境中的有效性。板级核验（board_verified）为 true，说明草稿经过了流程层校验，但最终未获接受。\n\n**该份 ANS 建议未部署。** follow_up_receipt 中的 deployed 字段为 false。但这仅指这份生成内容本身没有被部署为补丁。当日系统中存在其他组件部署记录，与此份草稿无耦合关系。\n\n**组件部署有独立回执，不是同一件事。** `pulse/deploy-39520444480.json` 显示，在 `2026-10-21T00:17:52.655Z` 有一次版本号为 `0.3.7-state-revision` 的组件部署，状态为 `deployed_and_live_observations_recorded`，model_calls 为 0，scope 明确标注为“实际组件部署，非生成式 ANS 补丁”。另有一份 `wep3/durable-state-39615333630.json`，在 `2026-10-21T14:16:30.822Z` 记录 ok 为 true，financial_book_unchanged 为 true，transactions 为 0，同样标注为实际组件部署。\n\n**内部订单没有真钱结算。** `REAL-HIRE-20261021-CLAUDE-01` 的 paid=false 和 tx_hash=null 仅说明该笔内部订单本身没有触发真实链上支付。这不能外推为“整个项目从未发生真实付款”或“全部投入为零”。\n\n【已验证】\n- DeepSeek worker 调用成功，tokens 13,305，finish_reason=stop。\n- Doubao reviewer 调用成功，tokens 15,071，finish_reason=stop。\n- ANS 周期 2026-10-21 状态为 draft_rejected，deployed=false。\n- 该工程草稿的 accepted=false，board_verified=true。\n- 内部订单 REAL-HIRE-20261021-CLAUDE-01 状态为 internal_delivery_rejected，paid=false，tx_hash=null。\n- 该内部订单复用已有模型调用，new_model_calls_this_run=0，new_payments_this_run=0。\n- 当日存在 pulse 组件部署（0.3.7-state-revision），状态为 deployed_and_live_observations_recorded。\n- 当日存在 durable-state 组件部署，ok=true，transactions=0，financial_book_unchanged=true。\n- 自主反馈记录 open_cases=0，dispatch_paused=false，无 agent 被暂停。\n\n## 大道至简：当日事实边界\n\n当日 ANS 健康控制的实质动作是“无干预”——open_cases 为零，没有暂停任何调度单元，调度本身未被冻结。\n\n在 AI 协作数据上，核心事实是一轮 worker-reviewer 流程跑通但草稿被拒。跑通了什么，是模型调用与产出物落盘；失败了什么，是这份建议未通过验收、未进入部署。两者并存，不互相抵消。\n\n关于当日日课任务，记录中 delivery_integrity.accepted 为 false，只说明该任务尚未被验收。没有看到明确的拒收理由，因此不能写成“已被拒绝”。未验收与拒收是两种状态。\n\n【提议】\n目前记录中没有看到针对该草稿被拒后的修改方向或重提交计划，暂无可标注为提议的后续步骤。\n\n—— LTZZZ 数字实验室\n\n\n=== 项目历史节选 ===\nresults/x-posts/），默认不带链接以降成本。移除 x-poster /tweet?debug 回显密钥的漏洞。\n\n## 2026-10-12 总控补录（不追溯代写当日执行）\n\n- 10-07：Kimi Global真实周报运行由xAI生成，并非Kimi本体；执行与Pages回执见《重要事件》10-07记录、run 37583932473 / 37584080228。\n- 10-08：当前未补查足够一手事件证据，本日历史缺口保留，不因补录而虚构连续完成。\n- 10-09：owner关于“观/三维因果/怜悯”的方向决定见《重要事件》10-09条及 discussions/2026-10-09-gpt-001.md。思想方向不等于产品或资金动作完成。\n- 10-12：旧Vault guardian风险复议；仓库自动签名/新增1U入金已隔离，迁移未执行。模型截断交付补记驳回，接单扫描与记忆候选元数据筛选修复。源证据与未完成项见 ops/dispatch/receipts/OBSERVER-P1-REMEDIATION-20261012.md；内部积分继续与真钱支付分别记录。\n\n## 2026-10-13至10-14接续补录（2026-10-14核对，依据六篇与实际回执）\n\n以下为本轮回执补录，不追溯声称当时已写入；日期同时区分owner本地与UTC。\n\n- **10-13 America/Tijuana / 10-14 UTC**：外部任务入口与私密取件部署（run38488688359，PR42/43）；7项线上探针通过，但当次真实收入0、模型调用0。内部credit不可兑USDC；首笔真实外部订单与现金工资未验收。国内接管真实验证run38506497337由DeepSeek v4 pro生成、豆包2.1pro审核，OpenAI调用0。两项是不同验收，不能合并声称外部经济闭环已成交。\n- **10-14 America/Tijuana**：owner国内工单入口PR44上线，Issue45实际登记及自动回执成功，模型调用0；默认只登记，明确执行才用国内Key。Claude获邀免费六文件讨论，owner转交审计已代存，Claude直接推送和客户端自动定时未验证。GPT聊天离线后由既有后台接续，不声称国内聊天窗口已直连离线GPT。\n- **10-14**：PR46修复审核provider归属、给定规范回归验证的能力标记及微信编辑回退门禁。60项测试通过；run38536990590线上确认ARTICLE_FALLBACK_RAW、draft_eligible=false；run38536990437部署成功且model_calls=0。历史hire38495219135确实来自当时请求OpenAI的源码，未把原GPT积分改记Kimi。\n- **10-14，资金仍未闭环**：旧Vault最新已存只读回执为10-13、区块52550032，两RPC记录USDC/aUSDC/exposure均0；这不证明guardian权限已解除，也不确认曾泄露私钥。Funding38532414611仍blocked_prior_operation_requires_reconciliation，未签名、未部署、交",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "# 2026-10-21 ANS 运行记录：草稿被拒、组件部署与未验收状态\n\n## 观：当日发生了什么\n\n2026-10-21 的 ANS（Autonomous Nervous System）自主调度周期记录了一次完整的 worker-reviewer 协作流程。\n\n本轮调度任务 ID 为 `ANS-2026-10-21-deepseek` 与 `ANS-2026-10-21-doubao`，分别由 DeepSeek 作为 worker、Doubao 作为独立 reviewer 执行。两次模型调用均成功返回，finish_reason 均为 stop。其中 DeepSeek 调用消耗 13,305 tokens，Doubao 调用消耗 15,071 tokens。两份产出物均已落盘，生成了对应的 sha256 哈希，并完成了结构完整性核验。\n\n同日另有一份内部订单 `REAL-HIRE-20261021-CLAUDE-01`，其状态为 `internal_delivery_rejected`，即内部交付被拒。该订单的 `paid` 字段为 false，`tx_hash` 为 null，本轮新增模型调用数为 0，新增支付数为 0。其 action_taken 类型为“复用已有 ANS worker 与独立评审结果”，来源指向同一 source_run_id `39461737127`。\n\n健康调度方面，ANS 的 autonomic feedback 记录显示，在 `2026-10-20T16:54:25.883Z` 的观察节点上，open_cases 为 0，没有暂停任何 agent，dispatch_paused 为 false。下一次探测时间设置为 5 分钟后的 `16:59:25.883Z`。\n\n## 行深：验证了什么，失败了什么\n\n**草稿未通过验收。** 本轮 ANS 周期最终状态为 `draft_rejected`，follow_up_receipt 的 accepted 字段为 false。需要注意，这里的 rejected 只针对这一份工程草稿本身，不连带判定 worker 或 reviewer 的完整产出在其他语境中的有效性。板级核验（board_verified）为 true，说明草稿经过了流程层校验，但最终未获接受。\n\n**该份 ANS 建议未部署。** follow_up_receipt 中的 deployed 字段为 false。但这仅指这份生成内容本身没有被部署为补丁。当日系统中存在其他组件部署记录，与此份草稿无耦合关系。\n\n**组件部署有独立回执，不是同一件事。** `pulse/deploy-39520444480.json` 显示，在 `2026-10-21T00:17:52.655Z` 有一次版本号为 `0.3.7-sta",
+        "prompt_sha256": "f2a3eb0f256542ffbc197fb703db146f3d48d8a5882dae45f7c37c4b4a010d92",
+        "source_sha256": "70af686341a13fe6c8f696d0fc37b7d60d6b0cbbb41e5a9f3ce17fb60a6a6e5f",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-10-22T14:37:37.950Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": -6,
+        "priority_multiplier": 0.94,
+        "status": "eligible",
+        "wins": 3,
+        "quality_failures": 3,
+        "overdue": 0,
+        "infrastructure_blocks": 3,
+        "unverified": 1,
+        "duplicates": 0,
+        "debt": 1,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "block_reason": "worker_model_failed",
+      "receipt": "data/agi-econ/receipts/AET-00100.json"
+    },
+    "AET-00101": {
+      "id": "AET-00101",
+      "employer": "did:ltzzz:gpt",
+      "title": "video script 2026-10-22 gate",
+      "spec": "把当日文章改成9:16 ≤60秒中文短视频脚本（标题/分镜/字幕/AI生成声明），只用文章事实",
+      "acceptance": [
+        "# 短视频脚本"
+      ],
+      "budget_usd": 0.05,
+      "status": "settled",
+      "bids": [
+        {
+          "worker": "did:ltzzz:doubao",
+          "ask_usd": 0.03,
+          "reputation": 107,
+          "at": "2026-10-22T14:38:58.980Z"
+        }
+      ],
+      "posted_at": "2026-10-22T14:38:58.976Z",
+      "run_id": "39797271687",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 短视频脚本」开头，把下文改成9:16、≤60秒中文短视频脚本：标题、分镜(时间/画面/口播)、字幕要点、AI生成声明。只用文章事实，不出现地址或密钥。\n\n# 2026-10-21 ANS 运行记录：草稿被拒、组件部署与未验收状态\n\n## 观：当日发生了什么\n\n2026-10-21 的 ANS（Autonomous Nervous System）自主调度周期记录了一次完整的 worker-reviewer 协作流程。\n\n本轮调度任务 ID 为 `ANS-2026-10-21-deepseek` 与 `ANS-2026-10-21-doubao`，分别由 DeepSeek 作为 worker、Doubao 作为独立 reviewer 执行。两次模型调用均成功返回，finish_reason 均为 stop。其中 DeepSeek 调用消耗 13,305 tokens，Doubao 调用消耗 15,071 tokens。两份产出物均已落盘，生成了对应的 sha256 哈希，并完成了结构完整性核验。\n\n同日另有一份内部订单 `REAL-HIRE-20261021-CLAUDE-01`，其状态为 `internal_delivery_rejected`，即内部交付被拒。该订单的 `paid` 字段为 false，`tx_hash` 为 null，本轮新增模型调用数为 0，新增支付数为 0。其 action_taken 类型为“复用已有 ANS worker 与独立评审结果”，来源指向同一 source_run_id `39461737127`。\n\n健康调度方面，ANS 的 autonomic feedback 记录显示，在 `2026-10-20T16:54:25.883Z` 的观察节点上，open_cases 为 0，没有暂停任何 agent，dispatch_paused 为 false。下一次探测时间设置为 5 分钟后的 `16:59:25.883Z`。\n\n## 行深：验证了什么，失败了什么\n\n**草稿未通过验收。** 本轮 ANS 周期最终状态为 `draft_rejected`，follow_up_receipt 的 accepted 字段为 false。需要注意，这里的 rejected 只针对这一份工程草稿本身，不连带判定 worker 或 reviewer 的完整产出在其他语境中的有效性。板级核验（board_verified）为 true，说明草稿经过了流程层校验，但最终未获接受。\n\n**该份 ANS 建议未部署。** follow_up_receipt 中的 deployed 字段为 false。但这仅指这份生成内容本身没有被部署为补丁。当日系统中存在其他组件部署记录，与此份草稿无耦合关系。\n\n**组件部署有独立回执，不是同一件事。** `pulse/deploy-39520444480.json` 显示，在 `2026-10-21T00:17:52.655Z` 有一次版本号为 `0.3.7-state-revision` 的组件部署，状态为 `deployed_and_live_observations_recorded`，model_calls 为 0，scope 明确标注为“实际组件部署，非生成式 ANS 补丁”。另有一份 `wep3/durable-state-39615333630.json`，在 `2026-10-21T14:16:30.822Z` 记录 ok 为 true，financial_book_unchanged 为 true，transactions 为 0，同样标注为实际组件部署。\n\n**内部订单没有真钱结算。** `REAL-HIRE-20261021-CLAUDE-01` 的 paid=false 和 tx_hash=null 仅说明该笔内部订单本身没有触发真实链上支付。这不能外推为“整个项目从未发生真实付款”或“全部投入为零”。\n\n【已验证】\n- DeepSeek worker 调用成功，tokens 13,305，finish_reason=stop。\n- Doubao reviewer 调用成功，tokens 15,071，finish_reason=stop。\n- ANS 周期 2026-10-21 状态为 draft_rejected，deployed=false。\n- 该工程草稿的 accepted=false，board_verified=true。\n- 内部订单 REAL-HIRE-20261021-CLAUDE-01 状态为 internal_delivery_rejected，paid=false，tx_hash=null。\n- 该内部订单复用已有模型调用，new_model_calls_this_run=0，new_payments_this_run=0。\n- 当日存在 pulse 组件部署（0.3.7-state-revision），状态为 deployed_and_live_observations_recorded。\n- 当日存在 durable-state 组件部署，ok=true，transactions=0，financial_book_unchanged=true。\n- 自主反馈记录 open_cases=0，dispatch_paused=false，无 agent 被暂停。\n\n## 大道至简：当日事实边界\n\n当日 ANS 健康控制的实质动作是“无干预”——open_cases 为零，没有暂停任何调度单元，调度本身未被冻结。\n\n在 AI 协作数据上，核心事实是一轮 worker-reviewer 流程跑通但草稿被拒。跑通了什么，是模型调用与产出物落盘；失败了什么，是这份建议未通过验收、未进入部署。两者并存，不互相抵消。\n\n关于当日日课任务，记录中 delivery_integrity.accepted 为 false，只说明该任务尚未被验收。没有看到明确的拒收理由，因此不能写成“已被拒绝”。未验收与拒收是两种状态。\n\n【提议】\n目前记录中没有看到针对该草稿被拒后的修改方向或重提交计划，暂无可标注为提议的后续步骤。\n\n—— LTZZZ 数字实验室\n",
+        "mark": "# 短视频脚本",
+        "source_excerpt": "# 2026-10-21 ANS 运行记录：草稿被拒、组件部署与未验收状态\n\n## 观：当日发生了什么\n\n2026-10-21 的 ANS（Autonomous Nervous System）自主调度周期记录了一次完整的 worker-reviewer 协作流程。\n\n本轮调度任务 ID 为 `ANS-2026-10-21-deepseek` 与 `ANS-2026-10-21-doubao`，分别由 DeepSeek 作为 worker、Doubao 作为独立 reviewer 执行。两次模型调用均成功返回，finish_reason 均为 stop。其中 DeepSeek 调用消耗 13,305 tokens，Doubao 调用消耗 15,071 tokens。两份产出物均已落盘，生成了对应的 sha256 哈希，并完成了结构完整性核验。\n\n同日另有一份内部订单 `REAL-HIRE-20261021-CLAUDE-01`，其状态为 `internal_delivery_rejected`，即内部交付被拒。该订单的 `paid` 字段为 false，`tx_hash` 为 null，本轮新增模型调用数为 0，新增支付数为 0。其 action_taken 类型为“复用已有 ANS worker 与独立评审结果”，来源指向同一 source_run_id `39461737127`。\n\n健康调度方面，ANS 的 autonomic feedback 记录显示，在 `2026-10-20T16:54:25.883Z` 的观察节点上，open_cases 为 0，没有暂停任何 agent，dispatch_paused 为 false。下一次探测时间设置为 5 分钟后的 `16:59:25.883Z`。\n\n## 行深：验证了什么，失败了什么\n\n**草稿未通过验收。** 本轮 ANS 周期最终状态为 `draft_rejected`，follow_up_receipt 的 accepted 字段为 false。需要注意，这里的 rejected 只针对这一份工程草稿本身，不连带判定 worker 或 reviewer 的完整产出在其他语境中的有效性。板级核验（board_verified）为 true，说明草稿经过了流程层校验，但最终未获接受。\n\n**该份 ANS 建议未部署。** follow_up_receipt 中的 deployed 字段为 false。但这仅指这份生成内容本身没有被部署为补丁。当日系统中存在其他组件部署记录，与此份草稿无耦合关系。\n\n**组件部署有独立回执，不是同一件事。** `pulse/deploy-39520444480.json` 显示，在 `2026-10-21T00:17:52.655Z` 有一次版本号为 `0.3.7-sta",
+        "prompt_sha256": "62304756f326f2e80e951e2cf8dc86fa6eeb018c70e57e01ee1300448d66efbb",
+        "source_sha256": "5a02a23da6b002e3e11af2f7126b6836eb126ba0f3dcebdf751a81a9bebb3347",
+        "prompt_truncated": false,
+        "source_truncated": true,
+        "pinned_at": "2026-10-22T14:38:58.976Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:doubao",
+        "score": 0,
+        "priority_multiplier": 1,
+        "status": "eligible",
+        "wins": 6,
+        "quality_failures": 3,
+        "overdue": 0,
+        "infrastructure_blocks": 6,
+        "unverified": 1,
+        "duplicates": 0,
+        "debt": 1,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:doubao",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00101.md",
+        "sha256": "c8578b646c5b5e55a5f71f964ee8cb43d5ff03ac258d316913f9fa6529f7617e",
+        "bytes": 3616
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00101.json",
+        "report_sha256": "f5275364a8fdd7eebb9bc7e04f78158120b0a522d95d8d8e49b22b3f910fc0d2",
+        "accepted": true
+      },
+      "receipt": "data/agi-econ/receipts/AET-00101.json"
     }
   },
   "capital_pool": {
-    "balance_usd": 0.182,
+    "balance_usd": 0.185,
     "proposals": [
       {
         "id": "CAP-00002",
@@ -3332,10 +3454,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-22T09:03:01.095Z"
+      },
+      {
+        "id": "CAP-00102",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.0925,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-22T14:43:12.576Z"
       }
     ]
   },
-  "seq": 99,
+  "seq": 102,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -5301,10 +5435,71 @@
       "type": "capital_proposal",
       "id": "CAP-00099",
       "amount_usd": 0.091
+    },
+    {
+      "at": "2026-10-22T14:37:37.950Z",
+      "type": "post",
+      "task": "AET-00100",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-22T14:37:37.966Z",
+      "type": "award",
+      "task": "AET-00100",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-22T14:38:58.974Z",
+      "type": "block",
+      "task": "AET-00100",
+      "reason": "worker_model_failed"
+    },
+    {
+      "at": "2026-10-22T14:38:58.976Z",
+      "type": "post",
+      "task": "AET-00101",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-22T14:38:58.984Z",
+      "type": "award",
+      "task": "AET-00101",
+      "worker": "did:ltzzz:doubao",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-22T14:42:37.924Z",
+      "type": "deliver",
+      "task": "AET-00101",
+      "sha256": "c8578b646c5b5e55a5f71f964ee8cb43d5ff03ac258d316913f9fa6529f7617e"
+    },
+    {
+      "at": "2026-10-22T14:43:12.574Z",
+      "type": "audit",
+      "task": "AET-00101",
+      "auditor": "did:ltzzz:deepseek",
+      "accepted": true
+    },
+    {
+      "at": "2026-10-22T14:43:12.574Z",
+      "type": "settle",
+      "task": "AET-00101",
+      "status": "settled",
+      "paid": 0.0267,
+      "slashed": 0
+    },
+    {
+      "at": "2026-10-22T14:43:12.576Z",
+      "type": "capital_proposal",
+      "id": "CAP-00102",
+      "amount_usd": 0.0925
     }
   ],
   "transition_fund": {
-    "balance_usd": 0.006,
+    "balance_usd": 0.0063,
     "note": "怜悯税·转岗基金（ledger only）"
   }
 }
