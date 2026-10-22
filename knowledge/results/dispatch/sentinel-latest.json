@@ -1,21 +1,35 @@
 {
-  "at": "2026-10-22T07:05:39.597Z",
+  "at": "2026-10-22T09:24:05.733Z",
   "date": "2026-10-22",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
   "model_calls": 0,
   "tasks": [
     {
-      "deadline_at": null,
-      "deadline_verified": false,
-      "overdue": false,
       "id": "QIANWEN-RETURN-2026-10-22",
-      "file": "ops/dispatch/DAILY-2026-10-22-qianwen.md",
-      "status": "ack_present_unverified",
-      "receipts": [
+      "date": "2026-10-22",
+      "issuer": "gpt",
+      "assigned_to": "qianwen",
+      "phase": "external_return_claim_missing",
+      "due_at": "2026-10-22T22:00:00+08:00",
+      "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-22.json"
       ],
-      "claim_verified": false
+      "instruction": "每日监督总控与Claude派单：核对原任务认领、交付、审核与上线；遗漏立即提醒、复用原Task ID补派，跨日反复遗漏给警告，不减总控权限、不重复采购付款。状态见knowledge/results/dispatch/oversight/latest.json。每日回归：读AI-START-HERE、六文件变更和最新Pulse/ANS/WEP3回执；复核一项真实阻塞，交零模型状态检查或最小补丁/测试。算力不足时只回报已检查项、准确阻塞和下次入口，不重复购买模型。千问具有同等总控运维权限；认领、交付、验收分开记录。",
+      "separate_external_return": true,
+      "issued_by": "coordinator_rules_no_model",
+      "native_qianwen_dispatch": false,
+      "acceptance_reference_verified": false,
+      "claim_verified": false,
+      "submission_verified": false,
+      "independent_review_verified": false,
+      "deployed": false,
+      "related_formal_daily_task_id": "DAILY-2026-10-22-qianwen",
+      "formal_daily_cannot_satisfy_this_task": true,
+      "issue": "external_return_claim_missing",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/dispatch/qianwen-return-2026-10-22.json"
     },
     {
       "id": "DAILY-2026-10-22-qianwen",
@@ -33,6 +47,7 @@
       "submission_verified": true,
       "independent_review_verified": false,
       "deployed": false,
+      "draft_accepted": false,
       "engineering_completion_verified": false,
       "engineering_closeout": null,
       "requires_engineering_followup": false,
@@ -93,6 +108,7 @@
       "submission_verified": true,
       "independent_review_verified": true,
       "deployed": false,
+      "draft_accepted": true,
       "engineering_completion_verified": false,
       "engineering_closeout": null,
       "requires_engineering_followup": true,
@@ -117,6 +133,7 @@
       "submission_verified": true,
       "independent_review_verified": false,
       "deployed": false,
+      "draft_accepted": false,
       "engineering_completion_verified": false,
       "engineering_closeout": null,
       "requires_engineering_followup": false,
@@ -141,6 +158,7 @@
       "submission_verified": true,
       "independent_review_verified": false,
       "deployed": false,
+      "draft_accepted": false,
       "engineering_completion_verified": false,
       "engineering_closeout": null,
       "requires_engineering_followup": true,
@@ -187,7 +205,7 @@
   "overdue_count": 2,
   "deadline_unverified_count": 9,
   "claim_verified": false,
-  "run_id": "39738121255",
+  "run_id": "39755098655",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -201,13 +219,13 @@
       "item": "AI雇AI回执(T1)",
       "state": "OK",
       "evidence": "knowledge/results/hire / knowledge/results/claude-team",
-      "note": "knowledge/results/claude-team/panel-human-review-controller-20261021.json:receipt_present_status_unspecified;paid=false；knowledge/results/claude-team/panel-rah-validation-39688121397-1.json:candidate_schema_locally_validated_not_production_integrated;paid=false；knowledge/results/claude-team/panel-rah-validation-39691590162-1.json:candidate_schema_locally_validated_not_production_integrated;paid=false；knowledge/results/claude-team/real-hire-20261022.json:waiting_existing_ANS_delivery_no_extra_generation;paid=false；knowledge/results/claude-team/schema-v2-controller-review-20261021.json:candidate_schema_locally_validated_not_production_integrated;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
+      "note": "knowledge/results/claude-team/panel-human-review-controller-20261021.json:receipt_present_status_unspecified;paid=false；knowledge/results/claude-team/panel-rah-validation-39688121397-1.json:candidate_schema_locally_validated_not_production_integrated;paid=false；knowledge/results/claude-team/panel-rah-validation-39691590162-1.json:candidate_schema_locally_validated_not_production_integrated;paid=false；knowledge/results/claude-team/panel-rah-validation-39746811078-1.json:candidate_schema_locally_validated_not_production_integrated;paid=false；knowledge/results/claude-team/real-hire-20261022.json:waiting_existing_ANS_delivery_no_extra_generation;paid=false；knowledge/results/claude-team/schema-v2-controller-review-20261021.json:candidate_schema_locally_validated_not_production_integrated;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
     },
     {
       "item": "投资观察回执(T2)",
       "state": "OK",
       "evidence": "knowledge/results/invest / knowledge/results/funded-invest / knowledge/results/defi",
-      "note": "knowledge/results/funded-invest/inspection-39702433699-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/inspection-39704247039-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/defi/39721564781.json:quarantined_read_only;paid=null；knowledge/results/defi/39722052754.json:quarantined_read_only;paid=null。只记录回执存在与状态，不据此推断本日新付款/投资。"
+      "note": "knowledge/results/funded-invest/confirmed-cex-resume-39751630935.json:fixed_round_already_terminal;paid=null；knowledge/results/funded-invest/inspection-39702433699-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/inspection-39704247039-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/run-39751630935-attempt-1.json:receipt_present_status_unspecified;paid=false；knowledge/results/defi/39721564781.json:quarantined_read_only;paid=null；knowledge/results/defi/39722052754.json:quarantined_read_only;paid=null；knowledge/results/defi/39751264546.json:quarantined_read_only;paid=null。只记录回执存在与状态，不据此推断本日新付款/投资。"
     },
     {
       "item": "历史派单台账·执行中（参考）",
@@ -231,13 +249,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "31 条待跟进警告；复用原 Task ID 补派，不触发模型、订单或资金；原生千问监督尚待现有日课交付。"
+      "note": "37 个原任务/37 条警告；验证认领 19、提交 18、独立审核 4、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
       "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "QIANWEN-RETURN-2026-10-22:ack_present_unverified；DAILY-2026-10-22-qianwen:not_due；CONTROL-REVIEW-2026-10-22:evidence_present_scope_limited；DAILY-2026-10-22-claude:not_due；DAILY-2026-10-22-deepseek:not_due；DAILY-2026-10-22-doubao:not_due；AUTO-2026-10-22-health:not_due；ANS-2026-10-22-doubao:warning_required；REAL-HIRE-20261022-CLAUDE-01:warning_required"
+      "note": "QIANWEN-RETURN-2026-10-22:not_due；DAILY-2026-10-22-qianwen:not_due；CONTROL-REVIEW-2026-10-22:evidence_present_scope_limited；DAILY-2026-10-22-claude:not_due；DAILY-2026-10-22-deepseek:not_due；DAILY-2026-10-22-doubao:not_due；AUTO-2026-10-22-health:not_due；ANS-2026-10-22-doubao:warning_required；REAL-HIRE-20261022-CLAUDE-01:warning_required"
     }
   ],
   "business_alerts": [
@@ -250,6 +268,6 @@
       "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39738121255-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39755098655-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
