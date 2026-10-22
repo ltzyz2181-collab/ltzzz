@@ -1,0 +1,15 @@
+{
+  "finding": "runReservedSeat 在调用 beginExecution 后、写 artifact 前没有恢复窗口：若进程在 call() 返回后崩溃，ledger 停留在 generation_started，syncDailyBoard 只会置 generation_unknown_no_repurchase 并停止；不可变的模型调用已发生，但实物证据无法被恢复或复核。这违反了 ANS 的“独立验收→反馈→自动恢复”闭环，因为无法证明这次调用产生过什么。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-10-22-doubao-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 的 runReservedSeat 中：1) 在 call() 前，先把 result 的原始 provider response 写到一个不可变文件 knowledge/results/daily-board/artifacts/{date}-{agent}-{digest(raw_provider_response)}.raw.json；2) 在写 artifact 前，若 raw 文件已存在则校验其哈希，确保可恢复；3) 在 ledger 中记录 raw_path 和 raw_sha256。具体代码：",
+  "verification_commands": [
+    "node scripts/daily-task-board.mjs prepare",
+    "node scripts/run-daily-tasks.mjs",
+    "node scripts/daily-task-board.mjs sync"
+  ],
+  "remaining_blocker": "raw response 文件本身不构成交付实物；仍需对 raw 内容做完整性评估后才能晋升为 artifact。"
+}

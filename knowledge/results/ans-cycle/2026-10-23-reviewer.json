@@ -1,0 +1,24 @@
+{
+  "accepted": false,
+  "artifact_sha256": "ac9ee38cbceaf31e02321fef5d2e0dfab02b016da81ec4468636c5eb1864bcff",
+  "reasons": [
+    "源码确认 runReservedSeat 在 beginExecution 后先保存 ledger 为 generation_started，随后执行 await call()；若在 call 返回后、构造并写入 artifact 前进程终止，ledger 会停留在 generation_started。",
+    "syncDailyBoard 对 generation_started 的处理仅在无 seat.artifact 时改为 generation_unknown_no_repurchase，并写入 no_unique_complete_artifact_outcome_unknown；recoverArtifact 只能从 artifacts 目录恢复已经落盘且通过 validateArtifact 的完整 JSON artifact，不能恢复仅已发生但未落盘的 provider response。因此 finding 所指恢复窗口在给定源码中可复核成立。",
+    "minimal_patch 只是文字方案，未给出其声称的“具体代码”；当前材料中没有可审阅的 diff、完整函数实现或测试，故不能作为已可复核的工程补丁接受。",
+    "建议的 raw response 落盘位置为 knowledge/results/daily-board/artifacts/ 且 digest 基于 raw_provider_response；若仍以 .json 放在同一目录，可能与 recoverArtifact 扫描 `${date}-${agent}-*.json` 的候选文件相互干扰。交付未证明 raw 文件命名、扩展名、恢复扫描排除规则或 validateArtifact 兼容性，方案存在实现歧义。",
+    "补丁要求“在 call() 前写 raw response”，但调用前无法得到 provider response；可在调用前创建 intent/request ledger 或响应接收后立即原子追加/写入 raw，却不能在调用前写入响应本体。该表述存在时序错误。",
+    "交付未定义 call() 流式返回、写入中途崩溃、进程被 kill、fsync/目录持久化、原子 rename、raw JSON 序列化字节规范以及部分写入检测；仅凭普通 writeFile 不能保证所谓不可变性和崩溃可恢复性。",
+    "raw_path/raw_sha256 加入 ledger 的具体 schema、重复执行时的状态机、raw 与最终 artifact 的绑定校验、失败 raw 如何反馈以及不得重放模型调用的恢复流程均未规格化。",
+    "verification_commands 只是候选命令；没有命令输出、测试结果、仓库 diff 或执行哈希，不能证明补丁有效，也不能据此声称已执行、上线或恢复。"
+  ],
+  "unverified": [
+    "artifact_sha256 仅按要求回传；未收到交付物原始字节，无法独立重算该 SHA-256。",
+    "scripts/lib/provider-execution.js 的 beginExecution/finishExecution 实现未提供，execution 元数据和模型调用记录的完整性未验证。",
+    "scripts/delivery-integrity.mjs 的 assessDelivery 规则未提供，无法完整验证 artifact 完整性判定。",
+    "scripts/lib/daily-independent-review.mjs、daily-board-lineage.mjs、daily-channels.mjs 等 sync 依赖未提供，端到端恢复和独立审核链路未验证。",
+    "实际 GitHub Actions 工作流、执行顺序、环境变量和失败退出行为未在本次材料中完整核验。",
+    "raw provider response 是否包含敏感信息、是否允许持久化、是否需要脱敏及脱敏后如何保持哈希绑定，尚未验证。",
+    "建议的 raw 持久化在崩溃、断电、部分写入、并发同席执行、文件系统缓存和远端同步条件下的恢复正确性尚未验证。",
+    "三条 verification_commands 未运行，测试是否通过未知；不得视为已部署或已上线。"
+  ]
+}
