@@ -1,11 +1,11 @@
 {
-  "at": "2026-10-22T00:53:32.362Z",
-  "run_id": "39702100838",
+  "at": "2026-10-22T01:11:29.550Z",
+  "run_id": "39704033785",
   "model": "deepseek-v4-pro",
-  "model_status": "success",
-  "finish_reason": "stop",
-  "tokens_used": 17087,
-  "snapshot_sha256": "91114874d0bdf356fa75f519166a2c6fe5580920c469122361e690c413923180",
+  "model_status": "incomplete_output",
+  "finish_reason": "length",
+  "tokens_used": 19394,
+  "snapshot_sha256": "3b417f1173d10bdc21087abe4e2998a3e06e29613431faffa258e0293d48d568",
   "treasury_status": {
     "ok": true,
     "chain_id": 8453,
@@ -30,7 +30,7 @@
         "treasury_can_withdraw": false
       }
     },
-    "block_number": 52920506,
+    "block_number": 52921028,
     "rpc_url": "https://base-rpc.publicnode.com",
     "rpc_attempts": [
       {
@@ -51,11 +51,11 @@
       }
     ],
     "usdc_raw": "210869201",
-    "ausdc_raw": "114582894",
+    "ausdc_raw": "114583037",
     "eth_raw": "1985282821867975",
     "allowance_raw": "9115782",
     "principal_raw": "114526347",
-    "interest_raw": "56547",
+    "interest_raw": "56690",
     "principal_basis": "tracked_supply_receipts",
     "first_supply_confirmed": true,
     "exit_test_confirmed": true,
@@ -73,8 +73,8 @@
     "capital_agent": "DeepSeek",
     "capital_reputation": 105,
     "allocation_share_bps": 4000,
-    "single_cap_usdc": 32.045209,
-    "exposure_cap_usdc": 128.180838,
+    "single_cap_usdc": 32.045223,
+    "exposure_cap_usdc": 128.180895,
     "cash_floor_raw": "5000000",
     "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
     "owner_return_enabled": false,
@@ -83,6 +83,5 @@
   "execution_status": "ready_for_bounded_auto",
   "transactions_sent": 0,
   "tx_hash": null,
-  "output": "当前状态分类：  \n- 新金库=0x5df...：USDC=210.869201，aUSDC=114.582894，tracked principal=114.526347，interest=0.056547；首次1 USDC supply/withdraw均已确认。  \n- 旧Vault/子仓=0xbc24...：principal=4.496788，treasury_can_withdraw=false，只计风险敞口，不可当新金库可提余额。  \n- 个人Aave存款未包含在本JSON中，不得合并。  \n- active_intent=AAVE-AUTO-bounded_supply-2026-10-20，status=pending_confirmations，已有签名步骤，当前无需私钥签名。\n\n下一步检查单：  \n1. 自动只读核验：调用`reconcileAaveTransactions`读取该intent每个step的`tx_hash`、nonce、receipt状态、confirmations数。无需资金/签名。  \n2. 自动限额复核：计算可用额≈exposure_cap−aUSDC−beneficiary_principal=9.101156 USDC；确认intent amount_raw≤9.101156且USDC−amount≥5 USDC。  \n3. 自动ETH gas检查：`eth_raw`≈0.001985 ETH，需结合`estimateGas`/`getFeeData`；不足则缺资金，不签新交易。  \n4. 重播/确认：若已有raw但receipt缺失，只允许`broadcastAaveRaw`重播完全一致的已存raw；若pending_confirmations，等待≥2确认，不得新建intent。  \n5. 验收字段：成功后必须核对`step.tx_hash`、`receipt.transactionHash`、`receipt.status=0x1`、`blockNumber`；随后更新principal_raw。\n\n至少4个失败条件及状态：  \n- F1 RPC不可用：`base_rpc_unavailable`；查`rpc_attempts`；自动重试只读或相同raw。  \n- F2 存证交易不匹配：`blocked_reconciliation`；查`aaveStorageStatus`、`tx_hash`；迁移：人工比对raw与expected data，不可新造raw。  \n- F3 ETH gas不足：`insufficient_eth_gas`/`treasury_eth_gas_missing`；查`eth_raw`、feeData；需转入Base ETH后重试。  \n- F4 现金/敞口超限：`latest_cash_or_exposure_limit`；查`usdc_raw`、`ausdc_raw`、`beneficiary_principal_raw`、`cash_floor_raw`、`single_cap_usdc`、`exposure_cap_usdc`；补USDC或先缩减旧Vault敞口。  \n- F5 新金库1 USDC测试未确认：`first_supply_must_be_1_USDC`/`first_exit_test_required`；需先取得1 USDC supply/withdraw confirmed txHash。\n\n以上只读检查不声称已新交易、不要求公布私钥、不虚构收益。  \n【交付结束】",
-  "error": null
+  "output": null
 }
