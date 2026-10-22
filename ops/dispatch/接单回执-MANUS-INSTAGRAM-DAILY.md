@@ -87,3 +87,16 @@ Instagram 写入工具返回发布成功。账号回读 `@ltzyz2181` 帖子数�
 回执（任务ID|文件路径|验证方法|未完成项）：
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-21.json|jq、GitHub main 精确 SHA 与 72 份发布 JSON 去重、11 个 MP4 清单、ffprobe/ffmpeg 全片解码与音量、四帧文字/安全区抽检、Instagram get_post_list/get_account_info、YouTube 公开回执核验|今日没有合格唯一素材；未发布，因此无 permalink、media_id、发布时间或截图。`
+## 2026-10-22 10:00 PDT｜blocked_no_eligible_unique_video
+
+今日计划在 10:00 PDT 执行，状态为 active/full_auto；原计划未修改。账号 `@ltzyz2181` 于 10:02:49 查询时共 6 条帖子，今日 0 条；滚动额度 0/100。
+
+`videos/instagram/latest.json` 指向 10/21 素材 `videos/instagram/2026-10-21/video.mp4`，SHA-256 `d77ffc0c8412d3a70864cb5459746e2672ca33e31a84dab6d47635c9515f1709`，来源提交 `38e226a55b46181ee7a0b05159e4cf888122b288`。下载的 MP4 与入口/manifest SHA 一致；视频 30 秒、720×1280（9:16）、H.264/AAC，完整解码通过，音轨平均 −22.8 dB、峰值 −1.3 dB。caption 与 manifest 齐全。3/10/18/26 秒抽帧的主要英文文字可读并处于主体安全区；小页脚接近底边，可能被 Reel UI 覆盖。
+
+该素材按跨平台规则排除：`results/publishing/youtube-daily-2026-10-21.json` 以相同 SHA 确认已由 YouTube 公开，视频 ID `29chvZro7oA`，链接 <https://www.youtube.com/watch?v=29chvZro7oA>，`privacyStatus=public`。`latest.json` 中 `published:false` 与已验证的平台回执不一致，以 YouTube 成功公开凭证为准。全仓 12 个 MP4 和 76 份发布 JSON 已按 SHA 扫描；其余候选为已在 YouTube/Instagram 发布、被 owner 明确搁置、与既有内容相同，或超出时长范围。逐项 SHA 与原因见 `results/publishing/instagram-2026-10-22.json`。
+
+未调用上传或发布工具，未重试、未换账号。结果为 `blocked_no_eligible_unique_video`，没有 permalink、media_id、发布时间或发布截图。等待新的合格唯一仓库 MP4；每日 10:00 计划保持原样。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-22.json|jq、SHA-256、ffprobe/ffmpeg、四帧画面检查、全仓 76 份发布 JSON/12 个 MP4 去重、Instagram 账号与帖子列表、YouTube public 回执|无合格唯一素材；今日未发布，无 permalink/media_id/截图。`
