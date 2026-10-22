@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { actionProfile } from './action-policy.mjs';
+import { actionProfile, PROBATION } from './action-policy.mjs';
 import { verifyActionEvidence } from './action-evidence.mjs';
 import {pulseGate} from '../lib/pulse-client.mjs';
 
@@ -70,8 +70,17 @@ export class Subnet {
     const w = this.role(worker, 'worker');
     if (w.reputation < RULES.min_rep_to_bid) throw new Error('reputation_too_low');
     if (!(ask_usd > 0) || ask_usd > t.budget_usd) throw new Error('ask_over_budget');
+    // Probation seats (reputation debt) may still bid, but only at a capped ask so a
+    // recovery attempt is small and supervised. Marked bids are the only ones award() honors.
+    const p = actionProfile(Object.values(this.state.tasks).filter(x => x.worker === worker), { now: Date.parse(this.now()), active: w.status === 'active', verify: task => verifyActionEvidence(this.root, task) });
     t.bids=t.bids.filter(b=>b.worker!==worker);
-    t.bids.push({ worker, ask_usd: r6(ask_usd), reputation: w.reputation, at: this.now() }); return t.bids;
+    const entry = { worker, ask_usd: r6(ask_usd), reputation: w.reputation, at: this.now() };
+    if (p.probation) {
+      const cap = r6(t.budget_usd * PROBATION.budget_share);
+      if (cap > 0) entry.ask_usd = Math.min(r6(ask_usd), cap);
+      entry.probation_debt = p.debt; entry.probation_cap_usd = cap;
+    }
+    t.bids.push(entry); return t.bids;
   }
   award(taskId) {
     const t = this.state.tasks[taskId]; if (!t || t.status !== 'open') throw new Error('task_not_open'); if (!t.bids.length) throw new Error('no_bids');
@@ -83,11 +92,25 @@ export class Subnet {
     };
     const score = bid => bid.reputation * profile(bid.worker).priority_multiplier / bid.ask_usd;
     let pulse=null;try{pulse=JSON.parse(fs.readFileSync(path.join(this.root,'knowledge/results/pulse/latest.json'),'utf8'));}catch{}
-    const eligible=t.bids.filter(b=>this.state.agents[b.worker]?.status==='active'&&profile(b.worker).status==='eligible'&&pulseGate(pulse,b.worker,Date.parse(this.now())).allowed);
-    if(!eligible.length)throw new Error('no_eligible_bids_review_required');
+    // Two tiers: healthy seats compete first; probation seats (reputation debt) are only a
+    // fallback, so a discounted ask can never outrank an unindebted seat.
+    const live = b => this.state.agents[b.worker]?.status === 'active' && pulseGate(pulse, b.worker, Date.parse(this.now())).allowed;
+    const healthy = t.bids.filter(b => live(b) && profile(b.worker).status === 'eligible');
+    const eligible = healthy.length ? healthy : t.bids.filter(b => live(b) && profile(b.worker).probation === true && b.probation_cap_usd !== undefined);
+    if(!eligible.length){
+      // An optionless award is the single most common terminal block; carry the per-bid
+      // reason with the error so the receipt can explain it instead of repeating one string.
+      const diagnostics = t.bids.map(b => {
+        const p = profile(b.worker);
+        return { worker: b.worker, agent_status: this.state.agents[b.worker]?.status ?? null, action_status: p.status, debt: p.debt, probation: p.probation === true, probation_cap_usd: b.probation_cap_usd ?? null, pulse_allowed: pulseGate(pulse, b.worker, Date.parse(this.now())).allowed };
+      });
+      throw Object.assign(new Error('no_eligible_bids_review_required'), { diagnostics });
+    }
     const win = eligible.sort((a, b) => score(b) - score(a))[0];
-    t.action_incentive = {worker:win.worker,...profile(win.worker),real_money_penalty:false};
-    t.worker = win.worker; t.price_usd = win.ask_usd; t.status = 'awarded'; this.log('award', { task: t.id, worker: win.worker, price: win.ask_usd }); return win;
+    t.action_incentive = {worker:win.worker,...profile(win.worker),tier:healthy.length?'healthy':'probation',real_money_penalty:false};
+    t.worker = win.worker; t.price_usd = win.ask_usd; t.status = 'awarded';
+    if (win.probation_cap_usd !== undefined) t.probation = { debt_at_bid: win.probation_debt, cap_usd: win.probation_cap_usd };
+    this.log('award', { task: t.id, worker: win.worker, price: win.ask_usd, ...(win.probation_cap_usd !== undefined ? { probation_debt: win.probation_debt } : {}) }); return win;
   }
   deliver(taskId, worker, content) {
     const t = this.state.tasks[taskId]; if (t.status !== 'awarded' || t.worker !== worker) throw new Error('not_awarded_worker');

@@ -39,7 +39,7 @@ export async function hire(s, { employer = 'did:ltzzz:gpt', worker, workerModel,
   } catch (e) {
     const error = redact(String(e?.message || e)).slice(0, 200);
     if (!['settled', 'slashed', 'blocked'].includes(t.status)) {
-      s.block(t.id, 'execution_exception', { error, retryable: true });
+      s.block(t.id, 'execution_exception', { error, retryable: true, award_diagnostics: Array.isArray(e?.diagnostics) ? e.diagnostics : null });
     }
     return { task: t.id, worker, status: t.status === 'blocked' ? 'blocked_refunded' : t.status, reason: 'execution_exception', error };
   } finally { s.save(); }
