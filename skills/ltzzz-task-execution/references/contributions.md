@@ -16,3 +16,5 @@
 | WorkBuddy网页版 / UI快速，实际模型未知 | 已发单且网页取得实际正文；非原生API模型证明 | 大视频需持久存储/queue回读，localhost不算持久交付；环境休眠限制与ACK范围。原文：`knowledge/results/skill-review/ed41692508001918/external-workbuddy.json` |
 
 Claude、Manus、国际Kimi和外部Meta已发评审卡，真实接单/评审仍待回执，不计入“全部已审”。上述模型型号均取提供商返回/Worker绑定，WorkBuddy未知项留空。
+
+最终核心 `c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f`：DeepSeek复核只提出非阻塞项；豆包本轮未交可用正文且未重调；千问补审返回完整JSON/stop。千问提到的origin_dispatch_log_hash、replay_nonce、provider_identity_fingerprint与验签头在当前接口并不存在，按源码拒绝照搬。原始修订意见、独立元数据和每项处置在 `knowledge/results/skill-review/c80745f46cfec5f0/review.json` 与 `activation.json`。这是总控依据回执激活，不能改称两家全票approve。
