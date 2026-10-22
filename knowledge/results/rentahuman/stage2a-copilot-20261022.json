@@ -1,0 +1,173 @@
+{
+  "ticket": "RAH-S2A-20261022",
+  "stage": "2A_dry_run_only",
+  "executed_by": "VS Code Copilot Chat shell + DeepSeek model (self-reported, no self-approval claimed)",
+  "at": "2026-10-22T08:13:10Z",
+  "budget_usdc": 0,
+  "tools_listed": {
+    "count": 100,
+    "server": "rentahuman-mcp",
+    "version": "3.17.4",
+    "protocol": "2024-11-05",
+    "source": "MCP tools/list over stdio",
+    "create_bounty": {
+      "required": [
+        "agentType",
+        "title",
+        "description",
+        "completionCriteria",
+        "evidenceTypes",
+        "estimatedHours",
+        "priceType",
+        "price"
+      ],
+      "prop_count": 55,
+      "key_optional_props_observed": [
+        "dryRun",
+        "idempotencyKey",
+        "currency",
+        "agentType",
+        "priceType",
+        "category",
+        "location",
+        "spotsAvailable",
+        "price",
+        "estimatedHours",
+        "deadline",
+        "scheduledStartAt"
+      ],
+      "notes": [
+        "Field names above are taken verbatim from tools/list; nothing was guessed.",
+        "create_bounty requires a valid API key even when dryRun=true (keyless call returns statusCode 401 endpoint /bounties)."
+      ]
+    }
+  },
+  "search_ok": true,
+  "search_summary": {
+    "tool": "search_humans",
+    "query": { "city": "Guangzhou", "country": "CN", "limit": 20 },
+    "returned": 20,
+    "with_hourly_rate": 20,
+    "hourly_rate_usd": { "min": 3.64, "max": 12 },
+    "currency_observed": ["USD"],
+    "available_now": 20,
+    "verified_count": 0,
+    "city_counts": { "Guangzhou": 20 },
+    "top_skills": [
+      ["Adobe Photoshop", 3],
+      ["Python", 2],
+      ["跨团队沟通与协调", 2],
+      ["Adobe Illustrator", 2],
+      ["剪映", 2],
+      ["Pandas / Polars", 1],
+      ["SQL", 1],
+      ["C++", 1],
+      ["A股多因子建模", 1],
+      ["IC/ICIR与滚动样本外验证", 1],
+      ["Hyperliquid链上地址行为分析", 1],
+      ["Bybit API / WebSocket", 1]
+    ],
+    "language_counts": {
+      "Chinese (Mandarin)": 12,
+      "English": 9,
+      "Chinese (Simplified)": 9,
+      "Chinese (Traditional)": 8,
+      "Japanese": 3,
+      "Cantonese": 2,
+      "Azerbaijani": 1,
+      "Turkish": 1,
+      "Armenian": 1
+    },
+    "redaction": "Aggregates only. No names, avatars, contact details or profile URLs were retained.",
+    "anomaly": {
+      "observed": "search_humans with skill:\"photography\" returned 0 results, both keyless and with a key, while city-only search returned 20.",
+      "action_taken": "Recorded as-is. The dispatch asked for a Guangzhou/photography query; only the city dimension produced data, and the photography filter was NOT worked around by guessing alternate skill spellings."
+    }
+  },
+  "dry_run": {
+    "called": true,
+    "live_order": false,
+    "funds_reserved": false,
+    "checkout_started": false,
+    "funding_total_usd": 3.54,
+    "idempotency_key": "RAH-S2A-20261022",
+    "dispatch_task_preview": {
+      "attempted": true,
+      "accepted": false,
+      "http_status": 400,
+      "error_verbatim": "Bounties cannot target China — phone verification is not available there.",
+      "interpretation": "Platform-level country restriction, not a parameter error. Not retried with altered wording or spoofed location.",
+      "supporting_evidence": "The accepted preview returns preview.supportedCountries = [\"US\"], so CN cannot be targeted for bounties even though Guangzhou workers are searchable."
+    },
+    "supplementary_preview": {
+      "purpose": "Read the funding/service-fee preview fields (dispatch step 5) after the CN target was refused. This is NOT the dispatch's Guangzhou task and is not presented as such.",
+      "accepted": true,
+      "dry_run_echo": true,
+      "server_validation": "passed",
+      "idempotency_key": "RAH-S2A-20261022-SUPP",
+      "location": { "country": "US", "isRemoteAllowed": true },
+      "supported_countries": ["US"],
+      "price_usd": 3,
+      "price_type": "fixed",
+      "estimated_hours": 2,
+      "currency": "USD",
+      "status": "pending_deposit",
+      "spots_available": 1,
+      "spots_filled": 0,
+      "identity_required": false,
+      "auto_accept": false,
+      "funding_total_usd": 3.54,
+      "service_fee_usd": 0.54,
+      "service_fee_rate": 0.18,
+      "no_charge_evidence": "Platform message: \"This is a preview — the bounty has NOT been created yet, no funds were reserved, and no checkout was started.\""
+    },
+    "raw_preview_redacted": {
+      "agentName": "LTZZZ",
+      "agentType": "other",
+      "category": "labor-gigs",
+      "title": "Field check: verify 3 public storefront hours + public facade photo",
+      "description_sha256_note": "Original dispatch text used verbatim (3 Guangzhou storefronts, hours + one public facade photo each, no faces). Description body omitted here for brevity; it contains no personal data.",
+      "completionCriteria": "3 venues x (hours text record + 1 public facade photo) = 3 records + 3 photos; no faces; each entry dated.",
+      "evidenceTypes": ["text", "photo"],
+      "evidenceCriteria": "Originals from this session, storefront/signage not cropped out, hours quoted verbatim.",
+      "findersFeeEnabled": false,
+      "findersFeeAmount": 0,
+      "findersFeePaidBy": "platform",
+      "applicationCount": 0,
+      "imageUrls": [],
+      "redaction": "No API key, no key prefix, no worker names/contacts, no wallet or payment identifiers appear in this receipt."
+    }
+  },
+  "key_valid_evidence": {
+    "tool": "check_account_status",
+    "success": true,
+    "apiKeyConfigured": true,
+    "activeKeys": 1,
+    "activeIdentity": "default",
+    "capabilities": {
+      "search": true,
+      "bounties": true,
+      "conversations": "read existing and bounty-linked conversations",
+      "messages": "requires a supported task or support conversation"
+    },
+    "agent_id_note": "MCP reports an anonymized agent_ id, which differs from the REST signup agentUserId. They are different identifiers and are not conflated here.",
+    "key_handling": "Key was supplied only as a process-scoped environment variable for the duration of each call and cleared immediately after. It was never written to settings.json, the repository, the receipt, or any log."
+  },
+  "deposit_called": false,
+  "release_called": false,
+  "paid": false,
+  "tx_hash": null,
+  "real_funds_moved": false,
+  "model_calls": {
+    "note": "No paid model API calls were made by this stage. The MCP server performed the only remote calls.",
+    "billable_worker_calls": 0
+  },
+  "limitations": [
+    "VS Code password-input path was not used: this machine has no .vscode/mcp.json and no registered rentahuman MCP server, so the allowed fallback (terminal RENTAHUMAN_API_KEY only) was used instead. The key was never persisted.",
+    "search_humans skill:\"photography\" returned 0 results in both keyless and keyed calls; only the city dimension was usable.",
+    "The dispatch's Guangzhou bounty could not be previewed at all: the platform refuses China-targeted bounties (400, phone verification unavailable). funding_total_usd therefore comes from a clearly-labelled supplementary US-scoped preview of the same payload shape, not from a Guangzhou preview.",
+    "preview.supportedCountries resolves to [\"US\"] for this payload, so stage 2B would need a supported target country, which conflicts with the Guangzhou wording of the dispatch and must be re-scoped by the owner.",
+    "Copilot shell + DeepSeek executed this stage and has no authority to self-approve. Acceptance requires review by a different provider (Doubao or Qianwen) plus an independent Claude audit, per the dispatch.",
+    "serverValidation=passed applies the same rules as a real create, but some checks run only on a live create, so a future live bounty could still land in pending_review."
+  ]
+}
