@@ -1,6 +1,13 @@
 import {skillHash} from './ltzzz-skill.mjs';
 export const SKILL_REVIEW_SEATS=['deepseek','doubao','qianwen','kimi_cn','grok','meta_hosted'];
 export const REVIEW_FOCUS={deepseek:'工程步骤与无工具时的接力；找漏项',doubao:'执行部署、视频与实物验收；建议一个可操作补充',qianwen:'派单来源、Memory事实边界与历史欠项',kimi_cn:'中文歧义、日期引用与角色区别',grok:'鉴权、幂等、支付与owner自主权',meta_hosted:'跨客户端可读性、任务拆分与可验收结果'};
+export function reviewSelectionFromBody(body=''){
+ const lines=String(body).split(/\r?\n/).filter(line=>/^\s*(native-review-seats|supplement-review-seats)/.test(line));
+ if(!lines.length)return {selectedSeats:undefined,supplement:false};
+ const match=lines.length===1&&lines[0].match(/^(native-review-seats|supplement-review-seats): ([a-z_]+(?:,[a-z_]+)*)$/);
+ if(!match)throw Error('invalid_explicit_review_selection');
+ return {selectedSeats:match[2].split(','),supplement:match[1]==='supplement-review-seats'};
+}
 export function prepareSkillReview({core,runId,attempt='1',issue,sourceCommit,prior=null,selectedSeats=SKILL_REVIEW_SEATS,supplement=false,now=new Date().toISOString()}){
  if(prior&&!supplement)return {execute:false,record:prior};
  if(!Array.isArray(selectedSeats)||selectedSeats.length<(supplement?1:2)||new Set(selectedSeats).size!==selectedSeats.length||selectedSeats.some(s=>!SKILL_REVIEW_SEATS.includes(s)))throw Error('invalid_skill_review_seats');
