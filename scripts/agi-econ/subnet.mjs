@@ -94,7 +94,9 @@ export class Subnet {
     let pulse=null;try{pulse=JSON.parse(fs.readFileSync(path.join(this.root,'knowledge/results/pulse/latest.json'),'utf8'));}catch{}
     // Two tiers: healthy seats compete first; probation seats (reputation debt) are only a
     // fallback, so a discounted ask can never outrank an unindebted seat.
-    const live = b => this.state.agents[b.worker]?.status === 'active' && pulseGate(pulse, b.worker, Date.parse(this.now())).allowed;
+    // The floor is re-checked here, not just at bid time: a seat can bid while solvent and be
+    // slashed below the floor before the award lands, and escrow should not follow it down.
+    const live = b => { const a = this.state.agents[b.worker]; return a?.status === 'active' && a.reputation >= RULES.min_rep_to_bid && pulseGate(pulse, b.worker, Date.parse(this.now())).allowed; };
     const healthy = t.bids.filter(b => live(b) && profile(b.worker).status === 'eligible');
     const eligible = healthy.length ? healthy : t.bids.filter(b => live(b) && profile(b.worker).probation === true && b.probation_cap_usd !== undefined);
     if(!eligible.length){
