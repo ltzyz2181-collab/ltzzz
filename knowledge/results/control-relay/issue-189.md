@@ -1,0 +1,46 @@
+# 桌面 / 国内 AI 接力 · issue-189
+
+状态：assigned_waiting_external_acceptance。
+
+执行器：cloud_rules；模型调用 0；没有付款、投资、发布或任意命令执行。
+
+任务原文仅作数据：
+
+内部 AI 雇佣 AI：由总控向千问执行席派发一项可验收的内部雇佣子任务，并保留认领、交付、审核与回执。
+
+背景：owner 要求在本仓库内部发起一次 AI 雇佣 AI 的任务，留下真实回执。这不是外部真钱采购。
+
+任务目标（只读核验，零新增付费模型调用）：
+1. 在既有内部雇佣链路（daily-external-hire 的 internal 模式）中，为下列子任务建立认领记录：雇佣方=总控席，受雇方=千问执行席。
+2. 子任务范围：核对 knowledge/results/claude-team/ 与 knowledge/results/hire/ 最近一次记录，逐项列出：日期、认领状态、交付物路径与哈希、是否有异提供商独审、验收还是拒收、是否标注 internal_credit 且 paid=false。
+3. 交付物：一段可直接粘贴的结构化汇总，附源文件 sha256；写明读取的是哪个提交版本。
+
+约束：
+- 只操作 ltzyz2181-collab/ltzzz。
+- 不新建每日付费定时任务；不恢复原厂 GPT/Claude 付费日课。
+- 不付款、不签名、不注入钱包或交易所权限。
+- 内部积分、采购费用、投资收益分别记账，不冒充真钱工资或外部获客。
+- 无回执不得宣称成功；遇阻塞保留原始错误，不自动重试。
+
+验收标准：本 issue 出现认领回执与交付回执，或明确写出阻塞原因与所缺权限。
+
+阶段性结论必须区分：已派单、已接单、已交付、已审核通过、已结算，五者不得互相替代。
+
+## 核验材料
+
+```json
+{
+  "ran_at": "2026-10-22T01:28:54.888Z",
+  "active_controller": "gpt",
+  "controls": {
+    "dispatch_paused": false,
+    "automatic_recovery": true,
+    "concurrency": 1,
+    "investment_hold": false,
+    "paused_agents": [],
+    "all_tasks_independent_review": true
+  }
+}
+```
+
+任务指向云端 LTZZZ 执行席，不会唤醒已离线的 ChatGPT 对话。只读交付待独立审核；派单成功不代表千问原生模型接单。
