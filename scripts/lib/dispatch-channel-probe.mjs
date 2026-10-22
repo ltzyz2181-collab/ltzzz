@@ -13,6 +13,8 @@ function fresh(status,now){const at=Date.parse(status?.ran_at);return status?.st
 // A probe has a separate queue state and never enters normal paid daily work.
 export async function probeDispatchChannels(record,{schema,status,control,save,callQwen,runMeta,inspectClaude,workbuddyInspect,now=()=>Date.now()}){
  if(record.status!=='reserved_before_remote_access'||record.operations?.length)throw Error('fresh_committed_reservation_required');
+ const targets=record.targets||CHANNEL_TARGETS;
+ if(!Array.isArray(targets)||targets.length===0||new Set(targets).size!==targets.length||targets.some(t=>!CHANNEL_TARGETS.includes(t)))throw Error('fixed_registered_targets_required');
  record.operations=[];record.channels=[];
  const persist=async()=>save(record);
  try{
@@ -28,7 +30,7 @@ export async function probeDispatchChannels(record,{schema,status,control,save,c
    const op={id:body.id,action:body.action,target:body.target||body.consumer_agent||null,status:'request_started'};record.operations.push(op);await persist();
    const response=await control(body);op.http=response.http;op.authenticated_actor=response.data?.actor||null;op.status=response.http===200&&response.data?.ok===true&&response.data.actor==='qianwen'?'acknowledged':'rejected_or_uncertain';await persist();return response;
   }
-  for(const target of CHANNEL_TARGETS){
+  for(const target of targets){
    const id=`${record.task_id}-${target}`,instruction=`派单通道只读验收 ${id} / nonce ${record.nonce}。返回原编号与核查回执；这是 probe_only，不执行常规日课、付费模型、部署、采购、投资、付款或发布。`;
    const row={target,dispatch_id:id,dispatcher_role:'qianwen',native_qwen_plan_verified:record.native_plan?.verified===true,status:'not_attempted',dispatch_verified:false,consumer_verified:false,native_client_verified:false};record.channels.push(row);await persist();
    if(!shape.dispatch_targets?.includes(target)){row.status='blocked_target_not_registered';await persist();continue;}
