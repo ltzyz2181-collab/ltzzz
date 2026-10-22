@@ -9,7 +9,7 @@
   "selected_seats": [
     "qianwen"
   ],
-  "status": "reserved_before_generation",
+  "status": "native_reviews_finished",
   "seats": {
     "deepseek": {
       "logical_seat": "deepseek",
@@ -93,8 +93,65 @@
     },
     "qianwen": {
       "logical_seat": "qianwen",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "complete",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T10:05:00.407Z",
+      "actual_provider": "aliyun_dashscope",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "provider_status": "success",
+      "http": null,
+      "error": null,
+      "tokens_used": 3679,
+      "request_id": "96389c50-b9fc-9666-99ea-fcf9bf727ace",
+      "output": "{\"verdict\":\"revise\",\"risks\":[{\"section\":\"1. 从原单开始\",\"problem\":\"声称'QIANWEN-RETURN-*'与'DAILY-*-qianwen'是不同任务，但未提供权威出处或历史欠项对账证据，属未经验证的假设；且未说明如何识别二者是否实际同源（如共享nonce、task_id前缀或dispatch log）\",\"blocking\":true},{\"section\":\"2. 只读当前唯一来源\",\"problem\":\"将六份Memory文件列为只读路径，但未说明其与`knowledge/results/dispatch/oversight/latest.json`中‘历史欠项’的优先级关系；若二者冲突，无明确裁决机制\",\"blocking\":false},{\"section\":\"4. 按阶段交实物\",\"problem\":\"要求‘不同实际提供商复核’，但未定义‘实际提供商’的可验证判据（如ASN、证书链、API响应签名），仅依赖域名或席位名易被网关伪造，违反实测原则\",\"blocking\":true}],\"additions\":[{\"section\":\"1. 从原单开始\",\"text\":\"在‘QIANWEN-RETURN-*’与‘DAILY-*-qianwen’不可互抵条款后，增补：‘须比对`knowledge/results/dispatch/oversight/latest.json`中对应ID的`origin_dispatch_log_hash`与`replay_nonce`字段，任一缺失则标为待对账’\",\"why\":\"锚定实测依据，阻断主观判定\"},{\"section\":\"2. 只读当前唯一来源\",\"text\":\"在Memory文件列表后增加：‘当`knowledge/results/dispatch/oversight/latest.json`中`overdue_items`非空时，其`task_id`及`last_verified_at_utc`字段优先级高于所有Memory候选条目’\",\"why\":\"确立历史欠项的事实优先性，防止Memory覆盖未闭环问题\"},{\"section\":\"4. 按阶段交实物\",\"text\":\"在‘actual_provider指实际上游模型提供方’句后插入：‘验证方式：提取HTTP响应头`x-provider-signature`或TLS证书SAN字段，匹配`identity/seat-registry.json`中`provider_identity_fingerprint`；不匹配则记为null’\",\"why\":\"将‘实际提供商’从观察升级为可证伪的实测字段\"}],\"review_end\":true}",
+      "output_sha256": "a3f11d94860ba142de1125491ad5300ed2ec321642993db8bc70343b65404963",
+      "finished_at_utc": "2026-10-22T10:05:13.316Z",
+      "review": {
+        "verdict": "revise",
+        "risks": [
+          {
+            "section": "1. 从原单开始",
+            "problem": "声称'QIANWEN-RETURN-*'与'DAILY-*-qianwen'是不同任务，但未提供权威出处或历史欠项对账证据，属未经验证的假设；且未说明如何识别二者是否实际同源（如共享nonce、task_id前缀或dispatch log）",
+            "blocking": true
+          },
+          {
+            "section": "2. 只读当前唯一来源",
+            "problem": "将六份Memory文件列为只读路径，但未说明其与`knowledge/results/dispatch/oversight/latest.json`中‘历史欠项’的优先级关系；若二者冲突，无明确裁决机制",
+            "blocking": false
+          },
+          {
+            "section": "4. 按阶段交实物",
+            "problem": "要求‘不同实际提供商复核’，但未定义‘实际提供商’的可验证判据（如ASN、证书链、API响应签名），仅依赖域名或席位名易被网关伪造，违反实测原则",
+            "blocking": true
+          }
+        ],
+        "additions": [
+          {
+            "section": "1. 从原单开始",
+            "text": "在‘QIANWEN-RETURN-*’与‘DAILY-*-qianwen’不可互抵条款后，增补：‘须比对`knowledge/results/dispatch/oversight/latest.json`中对应ID的`origin_dispatch_log_hash`与`replay_nonce`字段，任一缺失则标为待对账’",
+            "why": "锚定实测依据，阻断主观判定"
+          },
+          {
+            "section": "2. 只读当前唯一来源",
+            "text": "在Memory文件列表后增加：‘当`knowledge/results/dispatch/oversight/latest.json`中`overdue_items`非空时，其`task_id`及`last_verified_at_utc`字段优先级高于所有Memory候选条目’",
+            "why": "确立历史欠项的事实优先性，防止Memory覆盖未闭环问题"
+          },
+          {
+            "section": "4. 按阶段交实物",
+            "text": "在‘actual_provider指实际上游模型提供方’句后插入：‘验证方式：提取HTTP响应头`x-provider-signature`或TLS证书SAN字段，匹配`identity/seat-registry.json`中`provider_identity_fingerprint`；不匹配则记为null’",
+            "why": "将‘实际提供商’从观察升级为可证伪的实测字段"
+          }
+        ],
+        "review_end": true
+      }
     },
     "kimi_cn": {
       "logical_seat": "kimi_cn",
@@ -140,8 +197,8 @@
       "sha256": "9241c0a604d6cda70535fc7cbdc5be221aff8479490546b2054873f5defe248d"
     }
   ],
-  "finished_at_utc": "2026-10-22T10:00:30.417Z",
-  "model_calls": 2,
+  "finished_at_utc": "2026-10-22T10:05:13.317Z",
+  "model_calls": 3,
   "round_history": [
     {
       "run_id": "39759727107",
