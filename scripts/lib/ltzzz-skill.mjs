@@ -28,7 +28,18 @@ export function skillContext({root='.',scope='task'}={}){
   if(activation.core_sha256!==pack.core_sha256||activation.decision!=='activate_with_recorded_resolutions'||!activation.resolutions?.length)throw Error('skill_activation_unbound');
   if(!/^knowledge\/results\/skill-review\/[a-f0-9]{16}\/review\.json$/.test(activation.review?.path||''))throw Error('skill_review_path_invalid');
   const raw=fs.readFileSync(path.join(root,activation.review.path));if(skillHash(raw)!==activation.review.sha256)throw Error('skill_review_changed');
-  const rows=nativeReviewEvidence(JSON.parse(raw),pack.core_sha256);if(new Set(rows.map(r=>r.actual_provider)).size<2)throw Error('skill_independent_reviews_missing');
+  const review=JSON.parse(raw);
+  for(const item of activation.resolutions){
+   const row=review.seats?.[item.seat],entries=item.kind==='risk'?row?.review?.risks:item.kind==='addition'?row?.review?.additions:null;
+   if(!row?.review||(item.kind==='verdict'&&item.index!==null)||item.output_sha256!==row.output_sha256||!['retain','adopt','reject','defer'].includes(item.decision)||typeof item.reason!=='string'||!item.reason.trim()||(item.kind!=='verdict'&&(!Array.isArray(entries)||!Number.isSafeInteger(item.index)||item.index<0||!entries[item.index])))throw Error('skill_resolution_unbound');
+  }
+  for(const [seat,row] of Object.entries(review.seats||{})){
+   if(row.status!=='complete'||!row.review)continue;
+   for(const kind of ['verdict','risk','addition'])for(const index of kind==='verdict'?[null]:(row.review[kind==='risk'?'risks':'additions']||[]).map((_,i)=>i)){
+    if(!activation.resolutions.some(r=>r.seat===seat&&r.kind===kind&&r.index===index))throw Error('skill_review_finding_unaddressed');
+   }
+  }
+  const rows=nativeReviewEvidence(review,pack.core_sha256);if(new Set(rows.map(r=>r.actual_provider)).size<2)throw Error('skill_independent_reviews_missing');
   const runtime=pack.sources.find(s=>s.path.endsWith('runtime-contract.md'));
   return {text:`【LTZZZ Skill ${m.version}；core=${pack.core_sha256}；scope=${scope}】\n${runtime.text}`,proof:{applied:true,status:'active_context_injected',version:m.version,core_sha256:pack.core_sha256,runtime_sha256:runtime.sha256,activation_path:ref.path,scope}};
  }catch{return {text:'',proof:{applied:false,status:'skill_unavailable_or_integrity_error',scope}};}
@@ -44,4 +55,12 @@ export function syncSkillAdapters({root='.',check=false}={}){
   else{fs.mkdirSync(path.dirname(full),{recursive:true});fs.writeFileSync(full,bytes);}
  }
  return {status:check?'all_adapters_match':'repository_adapters_generated_not_client_load_proof',paths:targets,core_sha256:pack.core_sha256};
+}
+
+// Attach the compact contract to an existing reserved call, never purchase a new call.
+export async function callWithSkill({root='.',scope='task',prompt},call){
+ const context=skillContext({root,scope});
+ const input=context.text?context.text+'\n\n'+prompt:prompt;
+ const result=await call(input);
+ return {...result,skill:{...context.proof,prompt_sha256:skillHash(input)}};
 }

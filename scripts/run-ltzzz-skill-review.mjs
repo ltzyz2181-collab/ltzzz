@@ -7,7 +7,8 @@ if(phase==='prepare'){
  const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
  if(process.env.GITHUB_ACTOR!=='ltzyz2181-collab'||event.issue?.user?.login!=='ltzyz2181-collab'||!event.issue.title.startsWith('[LTZZZ技能评审]'))throw Error('owner_skill_review_issue_required');
  const prior=fs.existsSync(file)?JSON.parse(fs.readFileSync(file)):null;
- const state=prepareSkillReview({core:pack.core_sha256,runId:process.env.GITHUB_RUN_ID,attempt:process.env.GITHUB_RUN_ATTEMPT||'1',issue:event.issue.number,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),prior});
+ const selection=event.issue.body?.match(/^native-review-seats: ([a-z_,]+)$/m)?.[1]?.split(',');
+ const state=prepareSkillReview({selectedSeats:selection,core:pack.core_sha256,runId:process.env.GITHUB_RUN_ID,attempt:process.env.GITHUB_RUN_ATTEMPT||'1',issue:event.issue.number,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),prior});
  if(state.execute){state.record.sources=pack.sources.map(({text,...s})=>s);save(state.record);
   for(const seat of ['claude','workbuddy','manus','kimi_global','meta']){
    const target=`ops/dispatch/inbox/${seat}/${state.record.task_id}.md`;fs.mkdirSync(path.dirname(target),{recursive:true});
