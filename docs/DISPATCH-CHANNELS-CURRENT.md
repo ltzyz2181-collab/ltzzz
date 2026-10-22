@@ -22,6 +22,14 @@ Owner 创建标题以 `[LTZZZ派单验收]` 开头的本仓 Issue，触发固定
 
 探针状态为 `probe_waiting_consumer`，不能被普通日课当新付费任务消费。普通 `ack_dispatch` 不得把探针算成真正接单；有实际规则/Llama实物才记 `probe_consumed_by_verified_executor`，并明确 `native_client_verified=false`。历史业务派单不能为了挤进测试而被静默丢弃，容量满时明确拒绝并要求核对。
 
+## #193 实测与 Meta 一次定向复验
+
+主分支 run `39721641073`：原生 Qwen Plus 262 tokens、11 席认证派单及回读全部通过；WorkBuddy 职责规则执行器核对两份真实文件并确认消费。Claude canonical 元数据 HTTP200，但没有原生客户端接单回执；自定义别名未读通。Meta 鉴权和推理 HTTP200，实际只回“没有任何操作。”，没有回传 nonce，因此原验收仍未通过，不能改写原记录。
+
+Meta 原请求已完整返回，可由 owner 标题 `[LTZZZ派单验收] [meta-only:193]` 单独签发一次不同任务复验：仅 Meta、不再调用千问，不重复其他十席。代码核对父请求有完成时间、HTTP200 和非空已知不合格输出；每个父请求只允许一份已提交的 followup 预留。未知请求不适用此路径。
+
+Meta 通讯测试改为专用 `channel_probe` 类型、英文 echo 系统上下文、temperature=0、80 输出 tokens；模型原文仍必须实际含 nonce。`request_nonce` 由 Worker 注入，仅作请求绑定，不能冒充模型已正确复述。
+
 ## 外部席接力
 
 各席读取 `ops/dispatch/inbox/<seat>/DISPATCH-CHANNELS-ISSUE-*.json`。回执按卡内 `expected_return` 路径写入，引用原 task_id、nonce、实际执行环境和模型元数据来源。没有实际工具记录就写未验证。派到仓库、模型生成、客户端接单、业务验收、部署、付款仍为不同状态。
