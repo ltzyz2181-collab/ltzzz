@@ -41,3 +41,7 @@ Owner 最新明确：界面是 Microsoft VS Code / GitHub Copilot，所配模型
 ## WorkBuddy 接入界面更正
 
 Owner 最新说明仅使用 WorkBuddy 网页版，没有 WorkBuddy 桌面接入。本仓记录以此为准。#193 的 WorkBuddy 回执来自仓库规则执行器，不代表网页版登录或原生接单。官网有在线入口；历史 `a0ce321fe33425e4a.app.workbuddy.host` 已实读为“LTZZZ 落库包下载”页面，不能当成 WorkBuddy 聊天/派单后台。网页工作台与具体账号需实际登录后才能测，不能用公开首页 HTTP200 代替。
+
+## WorkBuddy 网页真实回包（本轮新增）
+
+Owner 提供具体会话并保存登录后，TinyFish run `3b9dae5c-b53e-49d1-8647-5c2a87da10df` 在该网页实际发送一条 `WB-WEB-20261022-01` 通讯任务，页面实际回复 `ACK WB-WEB-20261022-01`，逐字匹配；界面模型选项为“快速”，具体提供商/model 未显示。实证见 [网页回执](../knowledge/results/dispatch-channels/WORKBUDDY-WEB-20261022.json)。这补上网页登录和单次发收验证；不证明工具任务交付、定时常驻或无人值守接单。原 #193 仓库规则执行器证据继续单独保留。
