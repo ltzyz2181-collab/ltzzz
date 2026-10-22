@@ -1,0 +1,146 @@
+{
+  "task_id": "LTZZZ-SKILL-REVIEW-c80745f46cfec5f0",
+  "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+  "run_id": "39759727107",
+  "run_attempt": "1",
+  "issue": 204,
+  "source_commit": "f7dfb220a3a178ecd7a9a2ce0a1a71f0bff487cb",
+  "at_utc": "2026-10-22T10:00:20.547Z",
+  "selected_seats": [
+    "deepseek",
+    "doubao"
+  ],
+  "status": "native_reviews_finished",
+  "seats": {
+    "deepseek": {
+      "logical_seat": "deepseek",
+      "status": "complete",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T10:00:22.393Z",
+      "actual_provider": "deepseek",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 3455,
+      "request_id": null,
+      "output": "{\n  \"verdict\": \"revise\",\n  \"risks\": [\n    {\n      \"section\": \"1\",\n      \"problem\": \"无工具环境缺少明确的最低可交付物定义，可能导致只写口头摘要而无接力所需的具体文件路径、哈希与阻塞项。\",\n      \"blocking\": false\n    },\n    {\n      \"section\": \"4\",\n      \"problem\": \"缺少无独立复核人时的最长等待或升级触发条件，待审可能无限悬挂。\",\n      \"blocking\": false\n    },\n    {\n      \"section\": \"5\",\n      \"problem\": \"对账超时和状态未知只有原则要求，没有可执行的超时阈值、二次查询步骤或冻结条件。\",\n      \"blocking\": false\n    }\n  ],\n  \"additions\": [\n    {\n      \"section\": \"2\",\n      \"text\": \"读取只读来源时将每个文件的相对路径、读取时间、commit/响应哈希和关键状态写入任务卡。\",\n      \"why\": \"加强无工具环境下的可接力性，防止旧缓存冒充。\"\n    },\n    {\n      \"section\": \"4\",\n      \"text\": \"独立复核暂缺时，在规定时间内标记待审并写明触发升级的条件，超过后接力现有审核席。\",\n      \"why\": \"明确悬挂处理，防止无限等待。\"\n    },\n    {\n      \"section\": \"5\",\n      \"text\": \"超时或状态未知的资金任务先标记 pending_reconciliation，不受理重购或双付，依据原单时间与当前状态入口推进。\",\n      \"why\": \"补齐对账的可操作步骤，减少超时即默认重试的风险。\"\n    }\n  ],\n  \"review_end\": true\n}",
+      "output_sha256": "321795fa0ce9caecd413b4ba341888f498c39e9622661b089b64be4ee264dad4",
+      "finished_at_utc": "2026-10-22T10:00:30.385Z",
+      "review": {
+        "verdict": "revise",
+        "risks": [
+          {
+            "section": "1",
+            "problem": "无工具环境缺少明确的最低可交付物定义，可能导致只写口头摘要而无接力所需的具体文件路径、哈希与阻塞项。",
+            "blocking": false
+          },
+          {
+            "section": "4",
+            "problem": "缺少无独立复核人时的最长等待或升级触发条件，待审可能无限悬挂。",
+            "blocking": false
+          },
+          {
+            "section": "5",
+            "problem": "对账超时和状态未知只有原则要求，没有可执行的超时阈值、二次查询步骤或冻结条件。",
+            "blocking": false
+          }
+        ],
+        "additions": [
+          {
+            "section": "2",
+            "text": "读取只读来源时将每个文件的相对路径、读取时间、commit/响应哈希和关键状态写入任务卡。",
+            "why": "加强无工具环境下的可接力性，防止旧缓存冒充。"
+          },
+          {
+            "section": "4",
+            "text": "独立复核暂缺时，在规定时间内标记待审并写明触发升级的条件，超过后接力现有审核席。",
+            "why": "明确悬挂处理，防止无限等待。"
+          },
+          {
+            "section": "5",
+            "text": "超时或状态未知的资金任务先标记 pending_reconciliation，不受理重购或双付，依据原单时间与当前状态入口推进。",
+            "why": "补齐对账的可操作步骤，减少超时即默认重试的风险。"
+          }
+        ],
+        "review_end": true
+      }
+    },
+    "doubao": {
+      "logical_seat": "doubao",
+      "status": "incomplete_or_unstructured_review",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T10:00:22.430Z",
+      "actual_provider": "doubao",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": false,
+      "provider_response_verified": false,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": null,
+      "model_source": null,
+      "finish_reason": null,
+      "tokens_used": null,
+      "request_id": null,
+      "output": "",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "finished_at_utc": "2026-10-22T10:00:22.758Z"
+    },
+    "qianwen": {
+      "logical_seat": "qianwen",
+      "status": "not_requested_this_revision",
+      "model_calls": 0
+    },
+    "kimi_cn": {
+      "logical_seat": "kimi_cn",
+      "status": "not_requested_this_revision",
+      "model_calls": 0
+    },
+    "grok": {
+      "logical_seat": "grok",
+      "status": "not_requested_this_revision",
+      "model_calls": 0
+    },
+    "meta_hosted": {
+      "logical_seat": "meta_hosted",
+      "status": "not_requested_this_revision",
+      "model_calls": 0
+    }
+  },
+  "model_calls_definition": "logical_native_adapter_invocations_not_HTTP_attempts_or_billing_proof",
+  "native_openai_calls": 0,
+  "native_anthropic_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "sources": [
+    {
+      "path": "skills/ltzzz-task-execution/SKILL.md",
+      "sha256": "38cbfec8bd49f5c3e5606dfce1820d83230f63e84f585ccb4470137a1a83b8d0"
+    },
+    {
+      "path": "skills/ltzzz-task-execution/references/runtime-contract.md",
+      "sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb"
+    },
+    {
+      "path": "skills/ltzzz-task-execution/references/task-card.md",
+      "sha256": "41f71c99552b6516312a70c6ee6837f5ebfe4d31dfd0502b0c4f6e47cc74c0c8"
+    },
+    {
+      "path": "skills/ltzzz-task-execution/references/receipt-template.json",
+      "sha256": "a4edacc8ff4f49386e74cee7b415256ee37045800d1bc353513ce7b75cb24429"
+    },
+    {
+      "path": "skills/ltzzz-task-execution/references/contribution-template.md",
+      "sha256": "9241c0a604d6cda70535fc7cbdc5be221aff8479490546b2054873f5defe248d"
+    }
+  ],
+  "finished_at_utc": "2026-10-22T10:00:30.417Z",
+  "model_calls": 2
+}
