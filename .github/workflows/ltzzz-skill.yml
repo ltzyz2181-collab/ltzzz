@@ -1,0 +1,73 @@
+name: LTZZZ Skill review and integration
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml']
+  push:
+    branches: [main]
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml']
+permissions: {contents: read}
+concurrency: {group: ltzzz-skill-review, cancel-in-progress: false}
+jobs:
+  verify:
+    if: github.event_name != 'issues' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ技能评审]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/ltzzz-skill.test.mjs
+      - run: node scripts/ltzzz-skill.mjs check
+  review:
+    needs: verify
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - id: prepare
+        run: node scripts/run-ltzzz-skill-review.mjs prepare
+      - name: Persist one reservation before any model request
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/skill-review/ ops/dispatch/inbox/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Reserve owner-requested LTZZZ Skill review; external seats pending'
+          node tools/push-receipt-commit.mjs
+      - name: One adapter invocation per configured provider; no cross-provider fallback or runner retry
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          DOUBAO_MODEL_OVERRIDE: ${{ vars.DOUBAO_MODEL }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          META_WORKER_TOKEN: ${{ secrets.META_WORKER_TOKEN }}
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node scripts/run-ltzzz-skill-review.mjs execute
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ltzzz-skill-${{ github.run_id }}
+          path: knowledge/results/skill-review/
+          retention-days: 30
+      - name: Persist exact outputs and blockers without replay
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/skill-review/ ops/dispatch/inbox/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record real LTZZZ Skill reviews, not activation or payment'
+          node tools/push-receipt-commit.mjs
