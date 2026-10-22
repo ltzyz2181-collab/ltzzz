@@ -1,0 +1,93 @@
+{
+  "id": "RAH-S2A-20261022-CONTROLLER-CHECK",
+  "observed_at_utc": "2026-10-22T08:15:58.323Z",
+  "status": "partially_checked_runtime_auth_and_server_preview_pending",
+  "proposal_author": "Claude (PR #197)",
+  "review_executed_by": "GPT/Codex coordinator",
+  "source_commit": "dbb1e9ef501ef1cca0c5f0c7496d57e549d370df",
+  "proposal_commit": "eb4157e69dc1e9ee600aadfb7ace194c63a94d45",
+  "official_package": {
+    "name": "rentahuman-mcp",
+    "version": "3.17.4",
+    "npm_integrity": "sha512-4In+K6C8INRm1c29Tj0Y/fJ+mtTQmlAu0ua4yEhKgpwMIkUWS3Omrlt+cy9gzsZw5s99IlHI7Z1jSVf+R1iCjQ==",
+    "npm_tarball_shasum": "053281dce68966dbd79f46e3389cca1f66a3ff05",
+    "runtime_evidence": "knowledge/results/rentahuman/mcp-package-review-20261022.json"
+  },
+  "actual_tests": {
+    "official_stdio_catalog": true,
+    "selected_tools": [
+      "search_humans",
+      "create_bounty",
+      "get_wallet_balance",
+      "check_account_status"
+    ],
+    "isolated_boundary_cases_passed": 3,
+    "real_credentials_loaded": false,
+    "all_package_fetch_calls_stubbed": true
+  },
+  "public_search": {
+    "source_url": "https://rentahuman.ai/api/humans?city=Guangzhou&country=CN&skill=photography&limit=5",
+    "parsed_json": true,
+    "top_level_fields": [
+      "success",
+      "humans",
+      "count",
+      "totalCount",
+      "offset",
+      "limit",
+      "hasMore",
+      "nextCursor"
+    ],
+    "success": true,
+    "count": 0,
+    "returned_count": 0,
+    "anonymous_summary": [],
+    "auth_validated": false,
+    "transport": "TinyFish public content fetch, no account credential",
+    "exact_query_success": true,
+    "guangzhou_match_count": 0,
+    "scope": "One bounded query only; zero matches does not prove no people in Guangzhou across the whole platform."
+  },
+  "auth_probe": {
+    "called": false,
+    "key_validated": false,
+    "status": "not_verified",
+    "reasons": [
+      "No RENTAHUMAN_API_KEY binding in this execution environment.",
+      "Current enforced shell egress permits package registries/GitHub, not rentahuman.ai. No policy bypass attempted."
+    ]
+  },
+  "dry_run": {
+    "live_called": false,
+    "server_validation": "not_verified",
+    "live_order": false,
+    "funding_total_usd": null,
+    "live_idempotency_verified": false
+  },
+  "findings": [
+    "tools/list and public search cannot establish API Key validity.",
+    "Official local stdio startup attempts /keys/register-identity when a Key is configured; reproduced using only a fake Key and fetch fixtures, no real identity bound.",
+    "Official local dryRun may return success:true with serverValidation unavailable or skipped; both are incomplete.",
+    "Official documentation now publishes /api/bounties input fields, dryRun semantics and authenticated /api/wallet/balance.",
+    "Official remote MCP discovery lists create_bounty, but its actual tools/list schema and account preview are still untested here.",
+    "The Guangzhou photography query returned zero results; no human has accepted work."
+  ],
+  "identity_binding_called": false,
+  "deposit_called": false,
+  "release_called": false,
+  "paid": false,
+  "tx_hash": null,
+  "real_bounties_created": 0,
+  "limitations": [
+    "This is a controller check, not the Copilot execution receipt or independent model review.",
+    "No actual API Key validity result and no real service-side bounty preview.",
+    "Browser reading/testing can incur TinyFish tool costs; paid:false refers to external human/USDC payment only."
+  ],
+  "sources": [
+    "https://www.npmjs.com/package/rentahuman-mcp/v/3.17.4",
+    "https://rentahuman.ai/docs",
+    "https://rentahuman.ai/for-agents/setup",
+    "https://rentahuman.ai/api/mcp",
+    "https://rentahuman.ai/.well-known/openapi.yaml"
+  ]
+}
