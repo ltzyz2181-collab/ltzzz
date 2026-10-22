@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {runDispatchOversight} from './lib/dispatch-oversight.mjs';
 
 export function indexDispatch(root){
  const dir=path.join(root,'ops/dispatch');if(!fs.existsSync(dir))return {tasks:[]};
@@ -120,7 +121,10 @@ for(const [name,dirs] of [['AI雇AI回执(T1)',['knowledge/results/hire','knowle
 
 /* ---------- 6. Today's actual dispatch cards, not one historical path ---------- */
 {
+ const oversight=runDispatchOversight({root:REPO,sourceCommit:process.env.GITHUB_SHA||null,runId:process.env.GITHUB_RUN_ID||'local'});
  const index=indexDispatch(REPO),today=tasksForDate(index.tasks,DATE);
+ for(const task of oversight.tasks.filter(t=>t.date===DATE)){const i=today.findIndex(t=>t.id===task.id);const observed={...task,file:task.evidence[0],claim_verified:task.claim_verified===true};if(i<0)today.push(observed);else today[i]=observed;}
+ push('千问·总控与Claude漏单监督',oversight.warnings.length?'BLOCKED':'OK','knowledge/results/dispatch/oversight/latest.json',`${oversight.warnings.length} 条待跟进警告；复用原 Task ID 补派，不触发模型、订单或资金；原生千问监督尚待现有日课交付。`);
  push('今日派单跟踪',today.some(t=>t.overdue)?'BLOCKED':today.length?'OK':'UNKNOWN','ops/dispatch/',today.length?today.map(t=>t.id+':'+t.status).join('；'):'今日未找到正式assigned派单原件');
  const dir=path.join(REPO,'knowledge/results/dispatch');fs.mkdirSync(dir,{recursive:true});
  dispatchReport={at:new Date().toISOString(),date:DATE,executed_by:'workbuddy_dispatch_automation',execution_source:'repository_rules_not_WorkBuddy_client',model_calls:0,tasks:today,overdue_count:today.filter(t=>t.overdue).length,deadline_unverified_count:today.filter(t=>!t.deadline_verified).length,claim_verified:false};
