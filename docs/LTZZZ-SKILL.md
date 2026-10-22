@@ -22,6 +22,6 @@
 
 DeepSeek、豆包、千问、国内 Kimi、xAI 各自产出原生评审；缺 Key、超时、空正文、截断均保留原状态。托管 Meta/Llama 缺结束原因时仅记建议，不算完整审核。Claude、WorkBuddy、Manus、国际 Kimi、外部 Meta 通过独立评审卡补充；派单不冒充接单。
 
-激活需要至少两个不同实际提供商的完整原始评审、与核心及原始输出绑定的哈希、逐条处置和测试。拒绝意见保留，不能写成全票同意。核心文件改动后旧评审不能激活新内容；第二轮可由 owner Issue 的独立一行 `native-review-seats: deepseek,doubao` 只选本次需要复核的提供商，未选席不调用。`references/contributions.md` 只记录建议和处置，不能暗中扩展权限。
+激活需要至少两个不同实际提供商的完整原始评审、与核心及原始输出绑定的哈希、逐条处置和测试。拒绝意见保留，不能写成全票同意。核心文件改动后旧评审不能激活新内容；第二轮可由 owner Issue 的独立一行 `native-review-seats: deepseek,doubao` 只选本次需要复核的提供商，未选席不调用。若已审核席失败，owner可用 `supplement-review-seats: qianwen` 补充此前明确未被请求的席位；旧记录单独存档，已开始/失败/完成席一律不重调。`references/contributions.md` 只记录建议和处置，不能暗中扩展权限。
 
 本流程无新增付费 cron、不调用原厂 OpenAI/Anthropic API、不发 USDC 工资、不动钱包或六文件原文；本次评审可能消耗既有 API 余额，真实用量写入回执。

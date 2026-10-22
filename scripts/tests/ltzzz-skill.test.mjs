@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {CORE_FILES,SKILL_DIR,readSkill,skillContext,skillHash,syncSkillAdapters,nativeReviewEvidence,callWithSkill} from '../lib/ltzzz-skill.mjs';
-import {SKILL_REVIEW_SEATS,prepareSkillReview,executeSkillReviews} from '../lib/ltzzz-skill-review.mjs';
+import {SKILL_REVIEW_SEATS,prepareSkillReview,executeSkillReviews,reviewSelectionFromBody} from '../lib/ltzzz-skill-review.mjs';
 
 const adapters=['.github/skills/ltzzz-task-execution','.claude/skills/ltzzz-task-execution','.agents/skills/ltzzz-task-execution'];
 const verdict=(extra={})=>({verdict:'approve',risks:[],additions:[],review_end:true,...extra});
@@ -183,3 +183,24 @@ test('activation addresses every risk and addition with exact output hash, known
  ];
  for(const {label,change} of invalid){const activation=structuredClone(base);change(activation);persist(activation);assert.equal(skillContext({root}).proof.applied,false,label);}
 }));
+
+
+test('supplement preserves archived outcomes and invokes only an unrequested provider once',()=>fixture(async root=>{
+ const pack=readSkill(root),first=prepareSkillReview({core:pack.core_sha256,runId:'11111111',issue:204,sourceCommit:'a'.repeat(40),selectedSeats:['deepseek','doubao']}).record;
+ first.status='native_reviews_finished';Object.assign(first.seats.deepseek,nativeRow('deepseek'));first.seats.doubao.status='incomplete_or_failed';first.seats.doubao.model_calls=1;
+ const before=structuredClone(first),next=prepareSkillReview({core:pack.core_sha256,runId:'22222222',issue:205,sourceCommit:'b'.repeat(40),selectedSeats:['qianwen'],supplement:true,prior:first});
+ assert.equal(next.archive,first);assert.deepEqual(first,before);assert.deepEqual(next.record.seats.deepseek,first.seats.deepseek);assert.deepEqual(next.record.seats.doubao,first.seats.doubao);
+ assert.equal(next.record.round_history[0].record_sha256,skillHash(JSON.stringify(before,null,2)+'\n'));
+ const counts={};await executeSkillReviews(next.record,{pack,candidates:Object.fromEntries(SKILL_REVIEW_SEATS.map(seat=>[seat,{configured:true,provider:seat==='qianwen'?'aliyun_dashscope':seat,call:async()=>{counts[seat]=(counts[seat]||0)+1;return {ok:true,status:'success',model:'fixture',finish_reason:'stop',output:JSON.stringify(verdict())};}}]))});
+ assert.deepEqual(counts,{qianwen:1});assert.equal(nativeReviewEvidence(next.record,pack.core_sha256).length,2);
+ for(const seat of ['deepseek','doubao','qianwen'])assert.throws(()=>prepareSkillReview({core:pack.core_sha256,runId:'33333333',issue:206,sourceCommit:'c'.repeat(40),selectedSeats:[seat],supplement:true,prior:next.record}),/supplement_only_previously_unrequested_seats/);
+ assert.throws(()=>prepareSkillReview({core:'0'.repeat(64),runId:'33333333',issue:206,selectedSeats:['grok'],supplement:true,prior:next.record}),/supplement_only_previously_unrequested_seats/);
+}));
+
+
+test('malformed explicit review selection fails closed instead of defaulting to all paid adapters',()=>{
+ assert.deepEqual(reviewSelectionFromBody('ordinary owner review'),{selectedSeats:undefined,supplement:false});
+ assert.deepEqual(reviewSelectionFromBody('native-review-seats: deepseek,doubao\ncontext'),{selectedSeats:['deepseek','doubao'],supplement:false});
+ assert.deepEqual(reviewSelectionFromBody('supplement-review-seats: qianwen'),{selectedSeats:['qianwen'],supplement:true});
+ for(const body of ['native-review-seats: doubao, qianwen','native-review-seats: deepseek-doubao','supplement-review-seats: ','native-review-seats: deepseek,doubao\nsupplement-review-seats: qianwen',' native-review-seats: deepseek,doubao'])assert.throws(()=>reviewSelectionFromBody(body),/invalid_explicit_review_selection/);
+});
