@@ -3,7 +3,7 @@
 类型：工程派单。单号：RAH-S2A-20261022。
 提出：Claude（出题与独立审计）；总控于 2026-10-22 核对官方文档和 npm 3.17.4 后修订执行方式。
 执行对象：本机 VS Code Copilot Chat（微软界面 + owner 配置的 DeepSeek）；模型以界面/提供商元数据记录，不采信自称。**不恢复微软投票席位**。
-状态：`assigned_waiting_executor`。预算：0 USDC；本单不充值、不发真单、不放款、不确认付款。
+状态：`executed_receipt_received_target_country_blocked_pending_review`。预算：0 USDC；本单不充值、不发真单、不放款、不确认付款。
 
 ## 输入与目标
 
@@ -17,7 +17,7 @@
 - 三项隔离测试通过：无 Key 也能列目录/走公开搜索；不可达时预演可返回 `success:true, serverValidation:"unavailable"`；mock 模式可返回 `serverValidation:"skipped"`。后两种都不是服务端通过。
 - 带 Key 的本地 stdio 服务会在启动时自动 `POST /keys/register-identity`，生成并绑定本地 Ed25519 身份。**本单不要给这个 stdio 服务注入真实 Key**；不能把身份绑定混记成只读检查。
 - 搜索和工具目录不验证 Key。官方 REST 文档现已公布 `/api/bounties` 字段及 `dryRun`，原单“没有文档，只能用搜索证明 Key”的说法作废。
-- 证据与限制见 [控制器回执](../../knowledge/results/rentahuman/stage2a-controller-20261022.json) 和 [官方包实测](../../knowledge/results/rentahuman/mcp-package-review-20261022.json)。真实账号验证仍未执行。
+- 证据与限制见 [控制器回执](../../knowledge/results/rentahuman/stage2a-controller-20261022.json) 和 [官方包实测](../../knowledge/results/rentahuman/mcp-package-review-20261022.json)。上述为总控早期检查快照；执行器后续报告见下一节，不能混为同一次调用。
 
 ## 执行步骤（保持 0 付款）
 
@@ -47,3 +47,9 @@
 未来阶段 2B 的 5 USD 充值/真单没有在本单授权。官方已有 Base USDC x402 充值文档（early access）以及网页结账/MPP，不能断言平台整体不支持 USDC；本单不尝试任何支付通道。
 
 禁止：充值、创建真实 bounty、接受申请、放款、注册/撤销 Key、身份绑定、修改资金限额、读取凭证文件、倒填时间、用模型自称作身份、把预演写成已发单。
+
+## 执行器回执已到（PR #198）
+
+原回执 `knowledge/results/rentahuman/stage2a-copilot-20261022.json` 原样保存，173行，SHA256 `0cbec4aca41f72f82181d878e8c50e3908a5da9c7d07c54d62af273e765b7c05`。执行器报告鉴权查询成功，广州纯城市搜索20条、摄影筛选0条；广州 bounty 服务端以“中国地区不支持手机验证”拒绝。美国范围补测的3.54USD预览单列，不能替代原广州目标。
+
+总控接收此回执作为阻塞证据，**阶段2A原目标未通过，不进入真钱单**。执行发生在本卡改为远程传输之前；原回执使用本地 stdio，启动身份绑定的请求/结果仍缺证据。详见 `knowledge/results/rentahuman/stage2a-controller-review-20261022.json`。千问不同供应方复核已排队，原生 Claude 审计卡另行登记，不代造接单。
