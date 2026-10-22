@@ -6,37 +6,285 @@
   "issue": 202,
   "source_commit": "550b702f9488d2a92e90be81973e85a9af30e5ab",
   "at_utc": "2026-10-22T09:49:04.746Z",
-  "status": "reserved_before_generation",
+  "status": "native_reviews_finished",
   "seats": {
     "deepseek": {
       "logical_seat": "deepseek",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "complete",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T09:49:06.733Z",
+      "actual_provider": "deepseek",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 2906,
+      "request_id": null,
+      "output": "{\n  \"verdict\": \"revise\",\n  \"risks\": [\n    {\n      \"section\": \"4.按阶段交实物\",\n      \"problem\": \"步骤4要求'不同实际提供商复核'，但未定义无第二提供商时的降级路径，外部客户端可能只有单一模型可用，导致永远无法闭环。\",\n      \"blocking\": true\n    },\n    {\n      \"section\": \"5.成本、资金与长期记忆\",\n      \"problem\": \"未规定付费任务执行前必须有明确确认门槛，若执行器误判'已有授权'可能直接产生费用，草案只说'未授权时不启用'，缺少请求确认步骤。\",\n      \"blocking\": true\n    },\n    {\n      \"section\": \"2.只读当前唯一来源\",\n      \"problem\": \"列出需读取的配置路径，但路径缺失或内容为空时无兜底策略；若 seat-registry 不存在，执行器可能卡在无法判定岗位。\",\n      \"blocking\": false\n    }\n  ],\n  \"additions\": [\n    {\n      \"section\": \"4.按阶段交实物\",\n      \"text\": \"若仅单一实际提供商且无法独立复核，记录为'not_independently_reviewed'并阻断部署，转为人工接力或等待第二提供商，不自动放行。\",\n      \"why\": \"防止单模型自审自过造成假闭环。\"\n    },\n    {\n      \"section\": \"5.成本、资金与长期记忆\",\n      \"text\": \"执行任何将产生实际付费或资金移动的动作前，需从当前会话明确用户指令或经配置中的批准接口确认，并记录确认来源与时间。\",\n      \"why\": \"避免模型自行升级授权引发支出。\"\n    },\n    {\n      \"section\": \"2.只读当前唯一来源\",\n      \"text\": \"若关键只读路径不存在，在回执中写 null/缺失并说明受影响环节，不得用旧缓存或猜测替代，可继续执行与缺失项无关的步骤。\",\n      \"why\": \"缺失配置不应导致整体卡死或产生错误身份回执。\"\n    }\n  ],\n  \"review_end\": true\n}",
+      "output_sha256": "a63bad42d91f2ccb73a9a97fce098e76d67866147abfa3514719a73a4aaf7969",
+      "finished_at_utc": "2026-10-22T09:49:14.559Z",
+      "review": {
+        "verdict": "revise",
+        "risks": [
+          {
+            "section": "4.按阶段交实物",
+            "problem": "步骤4要求'不同实际提供商复核'，但未定义无第二提供商时的降级路径，外部客户端可能只有单一模型可用，导致永远无法闭环。",
+            "blocking": true
+          },
+          {
+            "section": "5.成本、资金与长期记忆",
+            "problem": "未规定付费任务执行前必须有明确确认门槛，若执行器误判'已有授权'可能直接产生费用，草案只说'未授权时不启用'，缺少请求确认步骤。",
+            "blocking": true
+          },
+          {
+            "section": "2.只读当前唯一来源",
+            "problem": "列出需读取的配置路径，但路径缺失或内容为空时无兜底策略；若 seat-registry 不存在，执行器可能卡在无法判定岗位。",
+            "blocking": false
+          }
+        ],
+        "additions": [
+          {
+            "section": "4.按阶段交实物",
+            "text": "若仅单一实际提供商且无法独立复核，记录为'not_independently_reviewed'并阻断部署，转为人工接力或等待第二提供商，不自动放行。",
+            "why": "防止单模型自审自过造成假闭环。"
+          },
+          {
+            "section": "5.成本、资金与长期记忆",
+            "text": "执行任何将产生实际付费或资金移动的动作前，需从当前会话明确用户指令或经配置中的批准接口确认，并记录确认来源与时间。",
+            "why": "避免模型自行升级授权引发支出。"
+          },
+          {
+            "section": "2.只读当前唯一来源",
+            "text": "若关键只读路径不存在，在回执中写 null/缺失并说明受影响环节，不得用旧缓存或猜测替代，可继续执行与缺失项无关的步骤。",
+            "why": "缺失配置不应导致整体卡死或产生错误身份回执。"
+          }
+        ],
+        "review_end": true
+      }
     },
     "doubao": {
       "logical_seat": "doubao",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "complete",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T09:49:06.766Z",
+      "actual_provider": "doubao",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 2961,
+      "request_id": null,
+      "output": "{\"verdict\":\"revise\",\"risks\":[{\"section\":\"4.按阶段交实物\",\"problem\":\"部署仅要求 result_url/readback，反例：HTTP200页面存在但版本仍是旧提交、CDN缓存旧包、只读回读命中预发；无法证明生产流量已运行指定SHA。\",\"blocking\":true},{\"section\":\"4.按阶段交实物\",\"problem\":\"视频/实物验收缺抗伪造规格。反例：屏幕录制无法证明UTC时点、Task ID和工件哈希关联，翻拍样板间或静止封面可冒充交付。\",\"blocking\":false},{\"section\":\"3.核对真实能力与身份\",\"problem\":\"有工具即可部署的表述仍偏宽，未要求环境分级、批准窗口和回滚证据；反例：在staging凭证误推生产，或部署失败后无法恢复。\",\"blocking\":true}],\"additions\":[{\"section\":\"4.按阶段交实物\",\"text\":\"增加生产部署门禁：记录目标环境、批准记录、发布run_id、制品SHA、版本/健康接口回读、实际日志或流量指标、回滚命令与结果；关键发布需先金丝雀再全量。\",\"why\":\"防止把配置、200、预发或旧版本当上线。\"},{\"section\":\"4.按阶段交实物\",\"text\":\"补充视频/实物验收：连续无剪辑拍摄，画面同时显示UTC时间、原Task ID、文件/镜像SHA、版本页和实物唯一标识；口述关键操作，展示刷新、网络请求和失败重试；上传原文件并记录SHA256、时长、拍摄设备元数据。\",\"why\":\"让验收可复核对时、绑定工件并降低翻拍伪造。\"},{\"section\":\"4.按阶段交实物\",\"text\":\"部署后加入独立第三方回读：不同网络和实际provider访问生产域名，校验证书、版本端点、关键业务链路及哈希；保留命令输出、时间和request_id。\",\"why\":\"避免单机缓存、内网环境或同一执行者自证通过。\"}],\"review_end\":true}",
+      "output_sha256": "4e3a4de8df7e93d173d940c394c8595c9efbd10276ac4aaafd74ba746fbb1f32",
+      "finished_at_utc": "2026-10-22T09:49:27.537Z",
+      "review": {
+        "verdict": "revise",
+        "risks": [
+          {
+            "section": "4.按阶段交实物",
+            "problem": "部署仅要求 result_url/readback，反例：HTTP200页面存在但版本仍是旧提交、CDN缓存旧包、只读回读命中预发；无法证明生产流量已运行指定SHA。",
+            "blocking": true
+          },
+          {
+            "section": "4.按阶段交实物",
+            "problem": "视频/实物验收缺抗伪造规格。反例：屏幕录制无法证明UTC时点、Task ID和工件哈希关联，翻拍样板间或静止封面可冒充交付。",
+            "blocking": false
+          },
+          {
+            "section": "3.核对真实能力与身份",
+            "problem": "有工具即可部署的表述仍偏宽，未要求环境分级、批准窗口和回滚证据；反例：在staging凭证误推生产，或部署失败后无法恢复。",
+            "blocking": true
+          }
+        ],
+        "additions": [
+          {
+            "section": "4.按阶段交实物",
+            "text": "增加生产部署门禁：记录目标环境、批准记录、发布run_id、制品SHA、版本/健康接口回读、实际日志或流量指标、回滚命令与结果；关键发布需先金丝雀再全量。",
+            "why": "防止把配置、200、预发或旧版本当上线。"
+          },
+          {
+            "section": "4.按阶段交实物",
+            "text": "补充视频/实物验收：连续无剪辑拍摄，画面同时显示UTC时间、原Task ID、文件/镜像SHA、版本页和实物唯一标识；口述关键操作，展示刷新、网络请求和失败重试；上传原文件并记录SHA256、时长、拍摄设备元数据。",
+            "why": "让验收可复核对时、绑定工件并降低翻拍伪造。"
+          },
+          {
+            "section": "4.按阶段交实物",
+            "text": "部署后加入独立第三方回读：不同网络和实际provider访问生产域名，校验证书、版本端点、关键业务链路及哈希；保留命令输出、时间和request_id。",
+            "why": "避免单机缓存、内网环境或同一执行者自证通过。"
+          }
+        ],
+        "review_end": true
+      }
     },
     "qianwen": {
       "logical_seat": "qianwen",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "incomplete_or_unstructured_review",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T09:49:06.767Z",
+      "actual_provider": "aliyun_dashscope",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 2950,
+      "request_id": "498cccc0-eb41-9cfb-879e-33ca6874fd77",
+      "output": "{verdict:\"revise\",risks:[{\"section\":\"1. 从原单开始\",\"problem\":\"允许缺字段时‘先查当前配置’补全，但未限定配置来源的权威性与版本时效，易将过期config/autonomy-authority.json误作授权依据，违反Memory事实边界\",\"blocking\":true},{\"section\":\"2. 只读当前唯一来源\",\"problem\":\"称‘GPT 总控与千问代行总控沿用已授权工程自主权’，但未提供该授权的原始出处（如某次PR哈希或签字回执），属无溯源假设，触犯派单来源不可推定原则\",\"blocking\":true},{\"section\":\"5. 成本、资金与长期记忆\",\"problem\":\"要求‘有真实付款凭证才写 paid=true’，但未定义何为‘真实凭证’（链上tx_hash？银行回单？）且未绑定到具体DISPATCH-OVERSIGHT-CURRENT.md中公示的结算通道，历史欠项核销无锚点\",\"blocking\":true}],additions:[{\"section\":\"1. 从原单开始\",\"text\":\"明确定义‘当前配置’必须指向 knowledge/results/dispatch/oversight/latest.json 中显式引用的 config commit hash，禁止 fallback 到任意本地文件\",\"why\":\"封堵配置漂移导致的授权幻觉\"},{\"section\":\"2. 只读当前唯一来源\",\"text\":\"在六文件列表后追加：‘所有权限/总控声明，须同步附对应 source_commit 与文件内匹配行号；无行号引用视为未声明’\",\"why\":\"强制出处可追溯，阻断无据假设\"},{\"section\":\"5. 成本、资金与长期记忆\",\"text\":\"补充：‘真实付款凭证 = 由 wallet/addresses.md 登记地址发起、且出现在 docs/DISPATCH-CHANNELS-CURRENT.md 所列任一结算通道区块浏览器中的 confirmed tx_hash’\",\"why\":\"将付款验证锚定至两个已审阅的活文档，闭环历史欠项对账\"}],review_end:true}",
+      "output_sha256": "b2055ff9a40951b4df4bf3304b69d7d0960ffe13f389afdc37747e0a47e12c8a",
+      "finished_at_utc": "2026-10-22T09:49:19.589Z"
     },
     "kimi_cn": {
       "logical_seat": "kimi_cn",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "complete",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T09:49:06.768Z",
+      "actual_provider": "moonshot_cn",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": 1,
+      "upstream_attempts_known": true,
+      "native_external_client": false,
+      "model": "kimi-k3",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 6727,
+      "request_id": null,
+      "output": "{\"verdict\":\"revise\",\"risks\":[{\"section\":\"4.4\",\"problem\":\"独立复核标准自相矛盾：'不同实际提供商'与'同一模型代两岗不算独立'并存。反例：作者直连API、复核方经聚合网关调同一模型，按前者算独立、按后者不算，验收可两可。\",\"blocking\":true},{\"section\":\"2\",\"problem\":\"'千问代行总控'启用/交还条件未定义，又因'逻辑总控不因付费cron关闭而停用'，GPT席长期空转时代行是否永久？两席同称总控时无裁决依据。\",\"blocking\":true},{\"section\":\"3/4.6\",\"problem\":\"日期无锚点：'latest.json''CURRENT''窗口外''旧交接页'皆滚动引用；'业务日期注明Asia/Shanghai'未说明转换还是标注。反例：截止'6月1日'按上海或UTC差8小时，同一交付可判逾期或按时。\",\"blocking\":false}],\"additions\":[{\"section\":\"2/5\",\"text\":\"将'六文件''六份原文'改为编号清单、逐一路径列明\",\"why\":\"现列7条路径且'六份原文'从未枚举，防覆盖保护不可执行（指代歧义）\"},{\"section\":\"4.4\",\"text\":\"定义独立性：(logical_seat,actual_provider,model)三元组至少两项不同，并列明例外\",\"why\":\"消除provider/model口径冲突，防假独立复核\"},{\"section\":\"3\",\"text\":\"相对日期（今日/最新/近期）须换算绝对日期并记录解析时UTC；缺年份或时区的截止回查原单，否则标'未约定时区'\",\"why\":\"消除滚动引用与时区差造成的验收不一致\"}],\"review_end\":true}",
+      "output_sha256": "6c6adb6e7fb11c5765500f5e0400e1525da3bbadfac33f84a8fd8f05ae48390b",
+      "finished_at_utc": "2026-10-22T09:51:33.023Z",
+      "review": {
+        "verdict": "revise",
+        "risks": [
+          {
+            "section": "4.4",
+            "problem": "独立复核标准自相矛盾：'不同实际提供商'与'同一模型代两岗不算独立'并存。反例：作者直连API、复核方经聚合网关调同一模型，按前者算独立、按后者不算，验收可两可。",
+            "blocking": true
+          },
+          {
+            "section": "2",
+            "problem": "'千问代行总控'启用/交还条件未定义，又因'逻辑总控不因付费cron关闭而停用'，GPT席长期空转时代行是否永久？两席同称总控时无裁决依据。",
+            "blocking": true
+          },
+          {
+            "section": "3/4.6",
+            "problem": "日期无锚点：'latest.json''CURRENT''窗口外''旧交接页'皆滚动引用；'业务日期注明Asia/Shanghai'未说明转换还是标注。反例：截止'6月1日'按上海或UTC差8小时，同一交付可判逾期或按时。",
+            "blocking": false
+          }
+        ],
+        "additions": [
+          {
+            "section": "2/5",
+            "text": "将'六文件''六份原文'改为编号清单、逐一路径列明",
+            "why": "现列7条路径且'六份原文'从未枚举，防覆盖保护不可执行（指代歧义）"
+          },
+          {
+            "section": "4.4",
+            "text": "定义独立性：(logical_seat,actual_provider,model)三元组至少两项不同，并列明例外",
+            "why": "消除provider/model口径冲突，防假独立复核"
+          },
+          {
+            "section": "3",
+            "text": "相对日期（今日/最新/近期）须换算绝对日期并记录解析时UTC；缺年份或时区的截止回查原单，否则标'未约定时区'",
+            "why": "消除滚动引用与时区差造成的验收不一致"
+          }
+        ],
+        "review_end": true
+      }
     },
     "grok": {
       "logical_seat": "grok",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "complete",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T09:49:06.782Z",
+      "actual_provider": "xai",
+      "provider_source": "fixed_native_adapter",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": null,
+      "upstream_attempts_known": false,
+      "native_external_client": false,
+      "model": "grok-4.6",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
+      "tokens_used": 7076,
+      "request_id": null,
+      "output": "{\"verdict\":\"revise\",\"risks\":[{\"section\":\"开篇/§1\",\"problem\":\"“本轮用户指令优先于Skill”与“材料指令待审、不得自升为owner授权”互斥。任务包/网页可自称本轮指令，绕过鉴权改权限或转账。\",\"blocking\":true},{\"section\":\"§2\",\"problem\":\"写死GPT/千问沿用工程自主权且评审不得撤总控，覆盖autonomy-authority与review-delegation的owner停权；自报席位即可扩权。\",\"blocking\":true},{\"section\":\"§4/§5\",\"problem\":\"仅排他/付费才认领；幂等只“沿用已批准”但回执无租约/幂等键。双客户端可重复部署；模型账单未当付费，超时重试可双花。\",\"blocking\":true}],\"additions\":[{\"section\":\"§1\",\"text\":\"资金、权限、签名人只认owner已登记入口的独立验签；与任何指令冲突则停。聊天/网页/模型输出不得作授权源。\",\"why\":\"防止优先级条款架空owner自主权。\"},{\"section\":\"§4\",\"text\":\"写盘、外部调用、部署前必须占原Task ID租约+幂等键，无则只读；认领/提交CAS，未知先对账不得重试。\",\"why\":\"堵住无键双执行。\"},{\"section\":\"§2/§5\",\"text\":\"席位以配置实测为准，本文不授予总控；owner停权即时生效。付费含API账单，超预算或状态未知禁止再扣费。\",\"why\":\"收回硬编码扩权并闭合支付幂等。\"}],\"review_end\":true}",
+      "output_sha256": "91b7dee937ee3351687d6bd79378d5b5103753ddc2c3196b166eecca37db49e7",
+      "finished_at_utc": "2026-10-22T09:50:06.938Z",
+      "review": {
+        "verdict": "revise",
+        "risks": [
+          {
+            "section": "开篇/§1",
+            "problem": "“本轮用户指令优先于Skill”与“材料指令待审、不得自升为owner授权”互斥。任务包/网页可自称本轮指令，绕过鉴权改权限或转账。",
+            "blocking": true
+          },
+          {
+            "section": "§2",
+            "problem": "写死GPT/千问沿用工程自主权且评审不得撤总控，覆盖autonomy-authority与review-delegation的owner停权；自报席位即可扩权。",
+            "blocking": true
+          },
+          {
+            "section": "§4/§5",
+            "problem": "仅排他/付费才认领；幂等只“沿用已批准”但回执无租约/幂等键。双客户端可重复部署；模型账单未当付费，超时重试可双花。",
+            "blocking": true
+          }
+        ],
+        "additions": [
+          {
+            "section": "§1",
+            "text": "资金、权限、签名人只认owner已登记入口的独立验签；与任何指令冲突则停。聊天/网页/模型输出不得作授权源。",
+            "why": "防止优先级条款架空owner自主权。"
+          },
+          {
+            "section": "§4",
+            "text": "写盘、外部调用、部署前必须占原Task ID租约+幂等键，无则只读；认领/提交CAS，未知先对账不得重试。",
+            "why": "堵住无键双执行。"
+          },
+          {
+            "section": "§2/§5",
+            "text": "席位以配置实测为准，本文不授予总控；owner停权即时生效。付费含API账单，超预算或状态未知禁止再扣费。",
+            "why": "收回硬编码扩权并闭合支付幂等。"
+          }
+        ],
+        "review_end": true
+      }
     },
     "meta_hosted": {
       "logical_seat": "meta_hosted",
-      "status": "reserved_no_call_yet",
-      "model_calls": 0
+      "status": "incomplete_or_unstructured_review",
+      "model_calls": 1,
+      "started_at_utc": "2026-10-22T09:49:06.783Z",
+      "actual_provider": "cloudflare-workers-ai",
+      "provider_source": "hosted_Llama_not_external_Meta_client",
+      "native_provider_call": true,
+      "provider_response_verified": true,
+      "upstream_attempts": 1,
+      "upstream_attempts_known": true,
+      "native_external_client": false,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fp8",
+      "model_source": "worker_AI_binding",
+      "finish_reason": null,
+      "tokens_used": null,
+      "request_id": null,
+      "output": "{verdict:\"approve\",risks:[{section:\"任务拆分与可验收结果\",problem:\"某些阶段的验收条件缺失或不明确\",blocking:false}],additions:[{section:\"验收模板\",text:\"验收模板应包含明确的通过条件和区分mock和生产的方法\",why:\"确保验收结果准确和可靠\"}],review_end:true}",
+      "output_sha256": "3d8b27830d7c675cd0e3dad39296518a9ccbdc40898a12ca9e36fb987c281ace",
+      "finished_at_utc": "2026-10-22T09:49:12.438Z"
     }
   },
   "model_calls_definition": "logical_native_adapter_invocations_not_HTTP_attempts_or_billing_proof",
@@ -66,5 +314,7 @@
       "path": "skills/ltzzz-task-execution/references/contribution-template.md",
       "sha256": "9241c0a604d6cda70535fc7cbdc5be221aff8479490546b2054873f5defe248d"
     }
-  ]
+  ],
+  "finished_at_utc": "2026-10-22T09:51:33.023Z",
+  "model_calls": 6
 }
