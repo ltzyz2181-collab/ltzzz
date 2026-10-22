@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import {actionProfile} from './action-policy.mjs';
 import {RULES} from './subnet.mjs';
 import {verifyActionEvidence} from './action-evidence.mjs';
+import {replayAward} from './award-replay.mjs';
 const r6=n=>Number(Number(n).toFixed(6));
 export function patrol(root=process.cwd()){
  const state=JSON.parse(fs.readFileSync(root+'/data/agi-econ/state.json','utf8'));
@@ -52,10 +53,21 @@ function market(state,out,root){
  const probation=awardable.filter(([did])=>by.get(did)?.action_profile?.probation===true);
  return {open_tasks:open.length,open_budget_usd:r6(open.reduce((n,t)=>n+t.budget_usd,0)),blocked_tasks:blocked.length,blocked_by_reason:blockedByReason,blocked_by_stage:blockedByStage,
   worker_seats:workerSeats.length,awardable_seats:awardable.map(([did])=>did),probation_seats:probation.map(([did])=>did),
-  starvation:open.length>0&&awardable.length===0,award_gate:'reputation>=min_rep_to_bid and action-policy not inactive; probation seats bid at capped ask'};
+  starvation:open.length>0&&awardable.length===0,award_gate:'reputation>=min_rep_to_bid and action-policy not inactive; probation seats bid at capped ask',
+  award_replay:replaySummary(root)};
+}
+// Blocked tasks keep their bids, so the award gate can be re-decided offline: if the current
+// policy would award them, the ledger is recoverable and nothing is waiting on a human review.
+function replaySummary(root){
+ try{
+  const r=replayAward({root});
+  if(!r.ok)return {ok:false,error:r.error};
+  return {ok:true,readonly:r.readonly,blocked_with_bids:r.blocked_with_bids,replayed:r.replayed,awardable:r.awardable,
+   still_rejected:r.still_rejected,awardable_by_tier:r.awardable_by_tier,model_calls:0,real_funds_moved:false};
+ }catch(e){return {ok:false,error:String(e.message||e).slice(0,120)};}
 }
 if(process.argv[1]&&path.basename(process.argv[1])==='patrol.mjs'){
  const r=patrol();fs.mkdirSync('results/agi-econ',{recursive:true});
  fs.writeFileSync('results/agi-econ/patrol-'+r.run_id+'.json',JSON.stringify(r,null,2)+'\n');
- console.log(JSON.stringify({seats:r.seats.length,review_seats:r.seats.filter(x=>x.review_required).map(x=>({did:x.did,flags:x.review_flags})),open_tasks:r.market.open_tasks,awardable_seats:r.market.awardable_seats,probation_seats:r.market.probation_seats,blocked_by_stage:r.market.blocked_by_stage,starvation:r.market.starvation,model_calls:0}));
+ console.log(JSON.stringify({seats:r.seats.length,review_seats:r.seats.filter(x=>x.review_required).map(x=>({did:x.did,flags:x.review_flags})),open_tasks:r.market.open_tasks,awardable_seats:r.market.awardable_seats,probation_seats:r.market.probation_seats,blocked_by_stage:r.market.blocked_by_stage,award_replay:r.market.award_replay,starvation:r.market.starvation,model_calls:0}));
 }
