@@ -1,3 +1,4 @@
+import {callWithSkill} from './lib/ltzzz-skill.mjs';
 import {assertCoreMemory} from './lib/core-memory-integrity.mjs';
 import {createModelRouter} from './lib/domestic-model-router.mjs';import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
 export const dateCST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -6,6 +7,9 @@ export const save=(f,v)=>{fs.mkdirSync(path.dirname(f),{recursive:true});fs.writ
 export function memory(){assertCoreMemory();return ['魄','识神','梦境数据库','文明研究','项目历史','重要事件','装备论','README'].map(n=>{const file=`ltzzz-memory/${n}.md`;const text=fs.readFileSync(file,'utf8');if(!text.trim())throw Error('memory_empty');return {file,text,sha256:sha(text)};});}
 export function jsonOutput(s){const text=String(s).trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'');return JSON.parse(text);}
 export async function invoke(agent,prompt,maxTokens,options={}){
+ return callWithSkill({scope:'autonomy:'+agent,prompt},input=>invokeProvider(agent,input,maxTokens,options));
+}
+async function invokeProvider(agent,prompt,maxTokens,options={}){
  const providers=JSON.parse(fs.readFileSync('config/ai-providers.json')).providers;const p=providers[agent];
  try{
   let res;

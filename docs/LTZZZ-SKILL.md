@@ -8,7 +8,7 @@
 
 激活后 `node scripts/ltzzz-skill.mjs sync` 将同一份内容同步到 `.github/skills/`、`.claude/skills/`、`.agents/skills/`，`check` 校验字节一致。三个目录分别兼容当前 VS Code/Copilot、Claude Code、Codex 的项目技能发现方式；目录存在不等于某个客户端已经加载，应在实际会话读取验证。客户端不支持 Skill 时直接读唯一正文和所需 references。
 
-API 执行器只注入 `references/runtime-contract.md` 简约，记录 Skill 版本、core SHA256、简约哈希和适用流程。完整正文仍是执行/审核入口；简约不增加模型调用，不修改原有任务输出格式。
+日课、总控自治调用、ANS作者/复核、千问队列的 API 执行器只注入 `references/runtime-contract.md` 简约，记录 Skill 版本、core SHA256、简约哈希和适用流程。完整正文仍是执行/审核入口；简约不增加模型调用，不修改原有任务输出格式。
 
 官方目录说明：
 
@@ -22,6 +22,6 @@ API 执行器只注入 `references/runtime-contract.md` 简约，记录 Skill �
 
 DeepSeek、豆包、千问、国内 Kimi、xAI 各自产出原生评审；缺 Key、超时、空正文、截断均保留原状态。托管 Meta/Llama 缺结束原因时仅记建议，不算完整审核。Claude、WorkBuddy、Manus、国际 Kimi、外部 Meta 通过独立评审卡补充；派单不冒充接单。
 
-激活需要至少两个不同实际提供商的完整原始评审、与核心及原始输出绑定的哈希、逐条处置和测试。拒绝意见保留，不能写成全票同意。核心文件改动后旧评审不能激活新内容。`references/contributions.md` 只记录建议和处置，不能暗中扩展权限。
+激活需要至少两个不同实际提供商的完整原始评审、与核心及原始输出绑定的哈希、逐条处置和测试。拒绝意见保留，不能写成全票同意。核心文件改动后旧评审不能激活新内容；第二轮可由 owner Issue 的独立一行 `native-review-seats: deepseek,doubao` 只选本次需要复核的提供商，未选席不调用。`references/contributions.md` 只记录建议和处置，不能暗中扩展权限。
 
 本流程无新增付费 cron、不调用原厂 OpenAI/Anthropic API、不发 USDC 工资、不动钱包或六文件原文；本次评审可能消耗既有 API 余额，真实用量写入回执。

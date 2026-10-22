@@ -1,3 +1,4 @@
+import {callWithSkill} from './lib/ltzzz-skill.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -52,7 +53,7 @@ export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'kn
   const base = {task_id: card?.id || path.basename(f, '.json'), card_sha256: sha(bytes), run_id: runId, executor: 'qianwen', queue_dispatcher: 'qianwen', at: now(), paid: false, tx_hash: null, financial_execution: false};
   if (errors.length) { fs.writeFileSync(out, JSON.stringify({...base, status: 'rejected_invalid_card', errors, model_calls: 0}, null, 2) + '\n'); return {executed: false, reason: 'invalid_card', errors, model_calls: 0}; }
   fs.writeFileSync(out, JSON.stringify({...base, status: 'reserved_before_provider_call', model_calls: 0}, null, 2) + '\n');
-  const result = await call({prompt: card.prompt, maxTokens: card.max_tokens ?? 1024, model: card.model});
+  const result = await callWithSkill({scope:'qianwen-queue:'+card.id,prompt:card.prompt},input=>call({prompt:input,maxTokens:card.max_tokens??1024,model:card.model}));
   const attempted = !['not_configured', 'configuration_error'].includes(result.status);
   // Provenance split: who queued the card (queue_dispatcher=qianwen) vs which model
   // actually generated the output. kimi cards ride the qianwen queue but the output
@@ -63,7 +64,7 @@ export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'kn
     : generatedBy
       ? `generation by ${generatedBy} via qianwen queue`
       : null;
-  const receipt = {...base, status: result.ok ? 'draft_delivered_pending_independent_review' : result.status, model_calls: attempted ? 1 : 0,
+  const receipt = {...base, skill:result.skill, model_source:result.model_source||null, status: result.ok ? 'draft_delivered_pending_independent_review' : result.status, model_calls: attempted ? 1 : 0,
     model_calls_definition: 'generation_requests_attempted_not_billing_proof', native_qwen_call: result.native_qwen_call === true,
     model: result.model || null, generated_by_model: generatedBy, attribution_note: attributionNote,
     finish_reason: result.finish_reason || null, tokens_used: result.tokens_used || 0, request_id: result.request_id || null,

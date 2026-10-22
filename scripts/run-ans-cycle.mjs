@@ -1,3 +1,4 @@
+import {skillContext} from './lib/ltzzz-skill.mjs';
 import fs from 'node:fs';import path from 'node:path';
 import {nextSupervision,persistSupervision} from './lib/pending-supervision.mjs';
 import {prepareDailyHire,reconcileInternalHire} from './lib/daily-hire-files.mjs';
@@ -28,7 +29,8 @@ if(phase==='prepare'){
   for(const name of historicalReviews){const file='knowledge/results/ans-cycle/'+name;docs.push({file,text:fs.readFileSync(file,'utf8')});}
 record.inputs=docs.map(d=>({file:d.file,sha256:digest(d.text)}));
   const {createModelRouter}=await import('./lib/domestic-model-router.mjs');const call=createModelRouter({record:attempt=>{record.provider_attempts||=[];record.provider_attempts.push(attempt);save(record);}});
-  await executeCycle(record,{call,context:docs.map(d=>'## '+d.file+'\n'+d.text).join('\n'),save});
+  const skill=skillContext({scope:'ans-worker-and-independent-review'});record.skill=skill.proof;save(record);
+  await executeCycle(record,{call,context:skill.text+'\n'+docs.map(d=>'## '+d.file+'\n'+d.text).join('\n'),save});
  }catch{record.status='blocked_execution_or_claim';save(record);}
  const supervision=persistSupervision(record);if(supervision)record.supervisory_review_reference=supervision;
  for(const a of record.artifacts){a.path='knowledge/results/ans-cycle/'+date+'-'+a.role+'.json';fs.writeFileSync(a.path,a.text);delete a.text;}save(record);
