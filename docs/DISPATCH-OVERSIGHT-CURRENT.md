@@ -36,3 +36,9 @@ Owner 要求：总控持续统筹 ANS、AI 雇佣 AI、自主投资；千问每�
 | 投资 | 已有 Aave 持仓/历史供应及退出凭据，既有流程持续只读核对 | 10-21 funded-invest 本轮 0 笔；10-22 funding 为 `blocked_prior_operation_requires_reconciliation`，没有新增交易 |
 
 本次部署回读以 Actions 主分支运行及监督 JSON 为准；本页不提前声称原生千问已交新监督日课。
+
+## 10月22日遗漏与积压口径修订
+
+监督器额外读取 `dispatch/qianwen-return-日期.json`：`QIANWEN-RETURN-*` 是规则总控签发的外部回归单，`DAILY-*-qianwen` 是正式日课。正式日课已生成/提交不能抵扣前者的认领、交付；resolver 的 source_task_id 也不能自动合并这两种单。外部回归认领引用必须带原 Task ID、文件 SHA256 和实际时间，引用存在仍不证明原生生成或交付。此回归单新增监督截止约定为项目日22:00，之前记未到期，不补造旧承诺。
+
+`latest.json` 新增 `stage_counts` 和 `backlog`：派单记录、验证认领、提交、独立审核、工程实物和部署各自计数；零表示本扫描未获得该阶段证明，不代表项目从未做过。积压按原 Task ID 去重，保留窗口外未复查问题，按原任务日期列最早欠项和责任席。千问现有日课上下文改为优先列历史欠项，不额外调用或重做已预留订单。新增派单和催办数量不记成闭环成果。

@@ -1,0 +1,72 @@
+{
+  "at_utc": "2026-10-22T09:22:02.144Z",
+  "scope": "local_code_and_data_validation_not_production_receipt",
+  "source_commit": "adf8b617c95fb87a48d7e9c24fbcd7b257c2a126",
+  "findings_fixed": [
+    "agent_json_was_not_a_promotion_source",
+    "external_qwen_return_was_missing_from_oversight",
+    "dispatch_count_must_not_represent_completed_work",
+    "daily_context_prioritized_new_over_historical_overdue_work"
+  ],
+  "promotion": {
+    "previous_records": 87,
+    "current_records": 91,
+    "new_candidate_ids": [
+      "CAND-20261022-deepseek-172a15ad",
+      "CAND-20261022-doubao-9efd8a0e",
+      "CAND-20261022-grok-3a2aa538",
+      "CAND-20261022-qianwen-e074a954"
+    ],
+    "covered_agents": [
+      "deepseek",
+      "doubao",
+      "grok",
+      "qianwen"
+    ],
+    "replay_added_candidates": 0,
+    "status": "candidate_pending_independent_review",
+    "new_promotions": 0,
+    "historical_applied_unchanged": true,
+    "core_six_files_unchanged": true,
+    "source_hashes_verified": true
+  },
+  "oversight": {
+    "observed_tasks": 53,
+    "overdue_tasks": 37,
+    "qwen_return": {
+      "id": "QIANWEN-RETURN-2026-10-22",
+      "date": "2026-10-22",
+      "issuer": "gpt",
+      "assigned_to": "qianwen",
+      "phase": "external_return_claim_missing",
+      "due_at": "2026-10-22T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/dispatch/qianwen-return-2026-10-22.json"
+      ],
+      "instruction": "每日监督总控与Claude派单：核对原任务认领、交付、审核与上线；遗漏立即提醒、复用原Task ID补派，跨日反复遗漏给警告，不减总控权限、不重复采购付款。状态见knowledge/results/dispatch/oversight/latest.json。每日回归：读AI-START-HERE、六文件变更和最新Pulse/ANS/WEP3回执；复核一项真实阻塞，交零模型状态检查或最小补丁/测试。算力不足时只回报已检查项、准确阻塞和下次入口，不重复购买模型。千问具有同等总控运维权限；认领、交付、验收分开记录。",
+      "separate_external_return": true,
+      "issued_by": "coordinator_rules_no_model",
+      "native_qianwen_dispatch": false,
+      "acceptance_reference_verified": false,
+      "claim_verified": false,
+      "submission_verified": false,
+      "independent_review_verified": false,
+      "deployed": false,
+      "related_formal_daily_task_id": "DAILY-2026-10-22-qianwen",
+      "formal_daily_cannot_satisfy_this_task": true,
+      "issue": "external_return_claim_missing",
+      "overdue": false,
+      "status": "not_due"
+    },
+    "scope": "read_repository_evidence_not_task_execution_or_deployment"
+  },
+  "tests": {
+    "passed": 52,
+    "failed": 0,
+    "kind": "local_regressions_with_fixtures_no_external_requests"
+  },
+  "model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
