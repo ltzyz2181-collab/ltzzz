@@ -191,6 +191,40 @@ export class Subnet {
     fs.writeFileSync(path.join(this.root, rel), JSON.stringify(receipt, null, 2) + '\n'); t.receipt = rel;
     this.log('block', { task: t.id, reason }); return receipt;
   }
+  // A blocked task lost its escrow back to the employer, so reopening must re-charge it before
+  // the market reopens; otherwise a resume would mint money. Fail-closed: no context, no resume.
+  reopen(taskId, { reason = 'resume_blocked' } = {}) {
+    const t = this.state.tasks[taskId]; if (!t) throw new Error('unknown_task:' + taskId);
+    if (t.status !== 'blocked') throw new Error('task_final:' + t.status);
+    const c = t.context; if (!c || !c.prompt) throw new Error('resume_without_context');
+    const e = this.state.agents[t.employer]; if (!e) throw new Error('unknown_agent:' + t.employer);
+    if (e.status !== 'active') throw new Error('agent_inactive:' + t.employer);
+    const budget = r6(t.budget_usd);
+    if (e.credit_usd < budget) {
+      const err = new Error('employer_credit_insufficient');
+      err.diagnostics = { employer: t.employer, credit_usd: e.credit_usd, budget_usd: budget };
+      throw err;
+    }
+    if (t.receipt) {
+      const src = path.join(this.root, t.receipt);
+      if (fs.existsSync(src)) {
+        // keep the failed attempt's evidence: a resume must never overwrite why it was blocked
+        const rel = `data/agi-econ/receipts/history/${t.id}-attempt${t.attempt || 1}.json`;
+        fs.mkdirSync(path.join(this.root, path.dirname(rel)), { recursive: true });
+        fs.copyFileSync(src, path.join(this.root, rel));
+        t.receipt_history = [...(t.receipt_history || []), { path: rel, attempt: t.attempt || 1, block_reason: t.block_reason ?? null }];
+      }
+      delete t.receipt;
+    }
+    e.credit_usd = r6(e.credit_usd - budget); e.escrow_usd = r6(e.escrow_usd + budget);
+    delete t.block_reason; delete t.worker; delete t.price_usd; delete t.probation;
+    delete t.deliverable; delete t.audit; delete t.acknowledged_at; delete t.deadline_at;
+    t.bids = []; t.status = 'open';
+    t.resume_count = (t.resume_count || 0) + 1;
+    t.resumes = [...(t.resumes || []), { at: this.now(), reason, attempt: t.attempt || 1, budget_usd: budget,
+      settlement_mode: 'internal_credit', real_funds: false, paid: false, tx_hash: null }];
+    this.log('reopen', { task: t.id, reason, budget_usd: budget }); return t;
+  }
   // capital AI: shadow proposal only (no execution). Owner/policy gate needed for real funds.
   capitalProposal(capitalAgent, { asset = 'USDC-Aave-v3-Base', max_share = 0.5, thesis } = {}) {
     this.role(capitalAgent, 'capital'); if (!Number.isFinite(max_share) || max_share <= 0 || max_share > 1) throw new Error('max_share_range');
