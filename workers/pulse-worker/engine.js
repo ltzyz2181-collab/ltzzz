@@ -1,11 +1,13 @@
 import {seedTasks,taskCommand} from './tasks.js';
 import {updateFeedback} from './feedback.js';
 export const names=config=>config.targets.map(t=>t.name);
+export const dispatchNames=config=>config.dispatch_targets||['gpt',...names(config)];
 export function validateConfig(config){
  if(!Array.isArray(config.targets)||!config.targets.length||new Set(names(config)).size!==config.targets.length)throw Error('targets_invalid');
  for(const t of config.targets){const u=new URL(t.url);if(u.protocol!=='https:'||u.username||u.password||u.port||!(/^[a-z0-9-]+\.ltzyz2181\.workers\.dev$/.test(u.hostname)||u.hostname.endsWith('.ltzzz.com')))throw Error('target_not_allowed');}
  if(!/^0x[a-fA-F0-9]{40}$/.test(config.wallet.address)||!/^0x[a-fA-F0-9]{40}$/.test(config.wallet.token)||config.wallet.chain_id!==8453)throw Error('wallet_config_invalid');
  if(config.failure_threshold<1||config.recovery_threshold<1||config.interval_seconds<60)throw Error('threshold_invalid');
+ if(!Array.isArray(dispatchNames(config))||new Set(dispatchNames(config)).size!==dispatchNames(config).length||dispatchNames(config).some(name=>!/^[a-z][a-z0-9_]{1,40}$/.test(name)||name==='microsoft'))throw Error('dispatch_targets_invalid');
 }
 export async function heartbeat(target,{fetcher=(...args)=>globalThis.fetch(...args)}={}){
  const start=Date.now();try{const r=await fetcher(target.url,{redirect:'manual',signal:AbortSignal.timeout(7000)});let j;try{j=await r.json();}catch{return {name:target.name,ok:false,http:r.status,latency_ms:Date.now()-start,error:'non_json_health_response'};}return {name:target.name,ok:r.ok&&j.ok!==false&&j.has_key!==false&&j.key_configured!==false,http:r.status,latency_ms:Date.now()-start,evidence:'http_health_only_not_generation'};}catch(error){return {name:target.name,ok:false,http:null,latency_ms:Date.now()-start,error:'health_unreachable_or_non_json',error_kind:error?.name||'Error',error_detail:String(error?.message||'').slice(0,140),transport_code:/illegal invocation/i.test(String(error))?'illegal_invocation':/different request|I\/O context/i.test(String(error))?'request_context':/timeout|abort/i.test(String(error))?'timeout':'transport_or_non_json'};}
@@ -57,8 +59,8 @@ export function control(previous,command,actor,config,now=Date.now()){
   case 'claim_task':case 'submit_task':case 'fail_task':case 'review_task':{const r=taskCommand(state,command,actor,['gpt',...names(config)],now);state=r.state;taskDuplicate=r.duplicate;break;}
   case 'pause':case 'resume':if(!['global',...names(config)].includes(command.target))throw Error('unknown_target');state.manual[command.target]=command.action==='pause';break;
   case 'set_concurrency':if(!Number.isSafeInteger(command.value)||command.value<1||command.value>64)throw Error('concurrency_invalid');state.limits.concurrency=command.value;break;
-  case 'dispatch':if(!names(config).includes(command.target)||typeof command.instruction!=='string'||!command.instruction.trim()||command.instruction.length>3000)throw Error('dispatch_invalid');state.dispatches||=[];state.dispatches.push({id:command.id,agent:command.target,instruction:command.instruction,actor,at:new Date(now).toISOString(),status:'queued'});state.dispatches=state.dispatches.slice(-30);break;
-  case 'ack_dispatch':if(!Array.isArray(command.ids)||command.ids.some(id=>typeof id!=='string'))throw Error('ack_invalid');for(const d of state.dispatches||[])if(command.ids.includes(d.id)&&d.status==='queued')d.status='consumed_by_existing_executor';break;
+  case 'dispatch':if(!dispatchNames(config).includes(command.target)||typeof command.instruction!=='string'||!command.instruction.trim()||command.instruction.length>3000)throw Error('dispatch_invalid');state.dispatches||=[];if(state.dispatches.some(d=>d.id===command.id))return {state,duplicate:true};if(state.dispatches.length>=250)throw Error('dispatch_capacity_requires_reconciliation');state.dispatches.push({id:command.id,agent:command.target,instruction:command.instruction,actor,at:new Date(now).toISOString(),status:command.probe_only===true?'probe_waiting_consumer':'queued',...(command.probe_only===true?{probe_only:true,native_consumer_verified:false}:{})});break;
+  case 'ack_dispatch':if(!Array.isArray(command.ids)||command.ids.some(id=>typeof id!=='string'))throw Error('ack_invalid');for(const d of state.dispatches||[])if(command.ids.includes(d.id)){if(d.probe_only===true&&command.probe_only===true&&d.status==='probe_waiting_consumer'&&['workbuddy_rules','meta_hosted'].includes(command.consumer_kind)&&command.consumer_agent===d.agent&&/^[a-f0-9]{64}$/.test(command.evidence_sha256||'')){d.status='probe_consumed_by_verified_executor';d.consumption={actor,agent:d.agent,kind:command.consumer_kind,evidence_sha256:command.evidence_sha256,native_client_verified:false};}else if(!d.probe_only&&d.status==='queued')d.status='consumed_by_existing_executor';}break;
   case 'probe':break;
   default:throw Error('unsupported_action');
  }
