@@ -108,3 +108,39 @@ test('a resume refuses to run without a worker call or a recorded seat', async (
   await assert.rejects(() => resumeTask(s, id, { workerCall: goodCall, workerKey: 'mock' }), /resume_without_worker/);
   noBids.bids = w;
 });
+
+// ---- backfill: owner-attested context intake for legacy blocked tasks (red-first) ----
+import { backfillContext } from '../agi-econ/resume.mjs';
+
+test('backfill attaches an owner-attested context and makes the legacy task resumable', async () => {
+  const { s, id } = await blocked();
+  delete s.state.tasks[id].context;
+  const beforeReason = s.state.tasks[id].block_reason;
+  const beforeCredit = s.state.agents['did:ltzzz:gpt'].credit_usd;
+  const r = backfillContext(s, id, { prompt: 'original task prompt', source_excerpt: '# src', actor: 'owner-copilot', note: 'reconstructed from handoff' });
+  assert.equal(r.sha256?.length, 64);
+  assert.equal(s.state.tasks[id].context.prompt, 'original task prompt');
+  assert.equal(s.state.tasks[id].context.backfilled, true);
+  assert.equal(s.state.tasks[id].context.backfilled_by, 'owner-copilot');
+  assert.equal(s.state.tasks[id].status, 'blocked');            // status untouched
+  assert.equal(s.state.tasks[id].block_reason, beforeReason);   // block evidence untouched
+  assert.equal(s.state.agents['did:ltzzz:gpt'].credit_usd, beforeCredit); // no escrow moves
+  assert.equal(scanResumable(s.state)[0].resumable, true);
+});
+
+test('backfill fails closed on unknown / non-blocked / missing prompt / existing context', async () => {
+  const { s, id } = await blocked();
+  delete s.state.tasks[id].context;
+  assert.throws(() => backfillContext(s, 'nope', { prompt: 'x', actor: 'a' }), /unknown_task/);
+  assert.throws(() => backfillContext(s, id, { prompt: '  ', actor: 'a' }), /empty_prompt/);
+  // existing context must not be overwritten
+  backfillContext(s, id, { prompt: 'first', actor: 'a' });
+  const sha1 = s.state.tasks[id].context.sha256;
+  assert.throws(() => backfillContext(s, id, { prompt: 'second-attempt', actor: 'a' }), /already_has_context/);
+  assert.equal(s.state.tasks[id].context.prompt, 'first');
+  assert.equal(s.state.tasks[id].context.sha256, sha1);
+  // settle a task, then backfill must be rejected
+  const settled = await blocked();
+  await resumeTask(settled.s, settled.id, { workerCall: goodCall, workerKey: 'mock', workerModel: 'deepseek', auditors: goodAuditor });
+  assert.throws(() => backfillContext(settled.s, settled.id, { prompt: 'x', actor: 'a' }), /task_final:settled/);
+});

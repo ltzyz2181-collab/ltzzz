@@ -3,6 +3,8 @@
 // run the exact same worker -> deliver -> audit -> settle gate. Without a context it cannot be
 // replayed at all, and this script says so instead of pretending to fix it.
 import path from 'node:path';
+import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { Subnet } from './subnet.mjs';
 import { driveTask } from './hire.mjs';
 import { callAgent as deepseek } from '../call-deepseek.mjs';
@@ -85,6 +87,34 @@ export function summary(rows) {
   };
 }
 
+/**
+ * Owner-attested context intake for legacy blocked tasks that were created before
+ * postTask snapshots existed. This is a privileged write: it only ATTACHES evidence,
+ * it never changes status, block_reason, bids, escrow or credit. Fail-closed:
+ * unknown task / non-blocked task / blank prompt / already-has-context all reject.
+ * The original blocked receipt on disk is never overwritten.
+ */
+export function backfillContext(s, id, { prompt, source_excerpt = '', actor, note = '' } = {}) {
+  const t = s.state.tasks[id];
+  if (!t) throw new Error('unknown_task:' + id);
+  if (t.status !== 'blocked') throw new Error('task_final:' + t.status);
+  const p = typeof prompt === 'string' ? prompt.trim() : '';
+  if (!p) throw new Error('empty_prompt');
+  if (!actor) throw new Error('actor_required');
+  if (t.context && t.context.prompt) throw new Error('already_has_context:' + id);
+  const payload = JSON.stringify({ prompt: p, source_excerpt: source_excerpt || '' });
+  const sha = crypto.createHash('sha256').update(payload).digest('hex');
+  t.context = {
+    prompt: p, source_excerpt: source_excerpt || '', mark: null,
+    sha256: sha, backfilled: true, backfilled_at: s.now(),
+    backfilled_by: actor, backfill_note: note,
+  };
+  t.context_backfill_log = [...(t.context_backfill_log || []),
+    { at: t.context.backfilled_at, actor, note, sha256: sha }];
+  s.save();
+  return { task: id, sha256: sha, status: t.status, model_calls: 0, paid: false, tx_hash: null, real_funds_moved: false };
+}
+
 if (path.basename(process.argv[1] || '') === 'resume.mjs') {
   const root = E.LTZZZ_ROOT || process.cwd();
   const argv = process.argv.slice(2);
@@ -92,6 +122,25 @@ if (path.basename(process.argv[1] || '') === 'resume.mjs') {
   const idIdx = argv.indexOf('--id');
   const id = idIdx >= 0 ? argv[idIdx + 1] : null;
   const s = new Subnet(root);
+  if (argv.includes('--backfill')) {
+    // Privileged owner intake: attach missing context to a legacy blocked task.
+    // Dry-run by default; --apply --id <AET-id> --context-file <json> --actor <name> writes.
+    const cfIdx = argv.indexOf('--context-file');
+    const actorIdx = argv.indexOf('--actor');
+    const noteIdx = argv.indexOf('--note');
+    const cf = cfIdx >= 0 ? argv[cfIdx + 1] : null;
+    const actor = actorIdx >= 0 ? argv[actorIdx + 1] : null;
+    const note = noteIdx >= 0 ? argv[noteIdx + 1] : '';
+    if (!apply) {
+      const rows = scanResumable(s.state);
+      console.log(JSON.stringify({ at: new Date().toISOString(), readonly: true, backfill_planned: { id, context_file: cf, actor }, ...summary(rows) }, null, 1));
+    } else {
+      if (!id || !cf || !actor) { console.error('backfill: --apply requires --id, --context-file and --actor'); process.exit(2); }
+      const doc = JSON.parse(fs.readFileSync(path.join(root, cf), 'utf8'));
+      const r = backfillContext(s, id, { prompt: doc.prompt, source_excerpt: doc.source_excerpt || '', actor, note });
+      console.log(JSON.stringify({ ...r, readonly: false }, null, 1));
+    }
+  } else {
   const rows = scanResumable(s.state);
   const out = { at: new Date().toISOString(), readonly: !apply, ...summary(rows), tasks: rows };
   if (!apply) {
@@ -105,5 +154,6 @@ if (path.basename(process.argv[1] || '') === 'resume.mjs') {
     if (!seat?.key) { console.error(`resume: no worker key for ${id} (${t.worker || 'unknown'})`); process.exit(2); }
     const r = await resumeTask(s, id, { workerCall: seat.fn, workerKey: seat.key, workerModel: seat.model, auditors: audits });
     console.log(JSON.stringify({ ...r, readonly: false }, null, 1));
+  }
   }
 }
