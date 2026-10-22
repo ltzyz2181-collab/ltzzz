@@ -6,6 +6,7 @@ import {attachSupervision} from '../scripts/lib/pending-supervision.mjs';
 import {applyReviewedMemory} from './reviewed-memory.mjs';
 import {substantiveClaim,candidateImpact} from './memory-candidate-quality.mjs';
 import {reconcilePromotionQueue,assertPromotionQueue,recordHash} from './promotion-queue.mjs';
+import {collectAgentMemory,projectDay} from './agent-memory-candidates.mjs';
 
 mkdirSync('memory/promote', { recursive: true });
 const queuePath = 'memory/promote/queue.json';
@@ -19,6 +20,19 @@ const seen = new Set((queue.items || []).map((i) => i.source + '|' + (i.claim ||
 const claimsSeen=new Set((queue.items||[]).filter(i=>['candidate','applied','reconciliation_required'].includes(i.status)).flatMap(i=>[i.claim,i.source_claim].filter(Boolean).map(s=>s.replace(/\s+/g,''))));
 const idsSeen=new Set((queue.items||[]).map(i=>i.id));
 for(const item of queue.items||[])if(item.status==='candidate'&&!substantiveClaim(item.claim||'')){item.status='rejected_metadata';item.impact='low';item.review_reason='Operational metadata is not a durable factual claim';}
+
+const dateIndex=process.argv.indexOf('--date');
+if(dateIndex>=0&&!process.argv[dateIndex+1])throw Error('missing_collection_date');
+const collection=!process.argv.includes('--reconcile-only')?collectAgentMemory({date:dateIndex>=0?process.argv[dateIndex+1]:projectDay(at),now:at}):null;
+let agentAdded=0;
+for(const item of collection?.items||[]){
+ if(!idsSeen.has(item.id)){queue.items.push(item);idsSeen.add(item.id);agentAdded++;}
+ seen.add(item.source+'|'+item.claim.slice(0,80));claimsSeen.add(item.claim.replace(/\s+/g,''));
+}
+if(collection){
+ const report={...collection,items:undefined,added_candidates:agentAdded,covered_entries:collection.coverage.filter(r=>r.candidate_id).length,scope:'source_collection_not_promotion_or_independent_verification',model_calls:0,paid:false,tx_hash:null};
+ mkdirSync('memory/promote/agent-coverage',{recursive:true});writeFileSync('memory/promote/agent-coverage/'+collection.date+'.json',JSON.stringify(report,null,2)+'\n');
+}
 
 const dailyDir = 'memory/daily';
 if (!process.argv.includes('--reconcile-only') && existsSync(dailyDir)) {
@@ -52,12 +66,13 @@ if (!process.argv.includes('--reconcile-only') && existsSync(dailyDir)) {
   }
 }
 const reconcileOnly = process.argv.includes('--reconcile-only');
-if (!reconcileOnly) attachSupervision(queue);
-const reviewResult = reconcileOnly ? {applied: []} : applyReviewedMemory(queue);
+const collectOnly=process.argv.includes('--collect-only');
+if (!reconcileOnly&&!collectOnly) attachSupervision(queue);
+const reviewResult = reconcileOnly||collectOnly ? {applied: []} : applyReviewedMemory(queue);
 queue.approval_policy = 'config/review-delegation.json';
 queue.updated_at = new Date().toISOString();
 queue.rule = 'proposed != applied';
 queue.applied=queue.items.filter(item=>item.status==='applied').map(item=>item.id);
 assertPromotionQueue(queue);
 writeFileSync(queuePath, JSON.stringify(queue, null, 2));
-console.log(JSON.stringify({records:queue.items.length,unique_ids:idsSeen.size,candidates:queue.items.filter(i=>i.status==='candidate').length,historical_applied:queue.applied.length,reconciled_ids:changes.map(c=>c.id),review_applied_ids:reviewResult.applied}));
+console.log(JSON.stringify({records:queue.items.length,unique_ids:idsSeen.size,candidates:queue.items.filter(i=>i.status==='candidate').length,historical_applied:queue.applied.length,reconciled_ids:changes.map(c=>c.id),agent_entries_covered:collection?.coverage.filter(r=>r.candidate_id).length||0,agent_candidates_added:agentAdded,review_applied_ids:reviewResult.applied}));

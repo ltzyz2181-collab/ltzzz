@@ -68,3 +68,26 @@ test('malformed task identities cannot write reminder files outside repository',
  write(root,'config/claude-team.json',{role_acceptances:{claude:{status:'accepted_planning_audit_only',tasks:['../../bad']}}});runDispatchOversight({root,now,lookback:1});assert.equal(fs.existsSync(path.join(root,'ops/bad.md')),false);
  assert.throws(()=>runDispatchOversight({root,now,runId:'../oops'}),/invalid_oversight_run/);
 }));
+
+test('formal Qwen success or a resolver alias cannot acknowledge the distinct rules return assignment',()=>fixture(root=>{
+ const id='QIANWEN-RETURN-2026-10-22';write(root,'knowledge/results/dispatch/qianwen-return-2026-10-22.json',{task_id:id,date:'2026-10-22',issued_at:'2026-10-22T02:13:55Z',issued_by:'coordinator_rules_no_model',acceptance_receipt:null,instruction:'Return regression inspection'});
+ write(root,'data/results/2026-10-22.json',{tasks:[{agent:'qianwen',status:'success'}]});board(root,{sourceId:id});
+ const report=inspectDispatches({root,now,lookback:1});const task=report.tasks.find(t=>t.id===id);assert.ok(task);assert.equal(task.phase,'external_return_claim_missing');assert.equal(task.formal_daily_cannot_satisfy_this_task,true);assert.equal(task.native_qianwen_dispatch,false);assert.equal(task.claim_verified,false);assert.equal(task.overdue,true);
+}));
+test('return acceptance requires exact original task and hash; an acknowledgement still cannot prove delivery',()=>fixture(root=>{
+ const id='QIANWEN-RETURN-2026-10-22',p='ops/dispatch/receipts/qwen-return.json';
+ const record={task_id:id,date:'2026-10-22',issued_at:'2026-10-22T02:13:55Z',acceptance_receipt:{path:p,sha256:''}};
+ const set=task_id=>{const b=JSON.stringify({task_id,claimed_by:'qianwen',accepted_at:'2026-10-22T03:00:00Z'});write(root,p,b);record.acceptance_receipt.sha256=sha(b);write(root,'knowledge/results/dispatch/qianwen-return-2026-10-22.json',record);};
+ set('DAILY-2026-10-22-qianwen');assert.equal(inspectDispatches({root,now,lookback:1}).tasks.find(t=>t.id===id).acceptance_reference_verified,false);
+ set(id);const t=inspectDispatches({root,now,lookback:1}).tasks.find(t=>t.id===id);assert.equal(t.phase,'external_return_delivery_missing');assert.equal(t.submission_verified,false);assert.equal(t.claim_verified,false);
+ fs.appendFileSync(path.join(root,p),' ');assert.equal(inspectDispatches({root,now,lookback:1}).tasks.find(t=>t.id===id).acceptance_reference_verified,false);
+}));
+test('dispatch records and submitted drafts never inflate completion counts; old warnings remain in the backlog',()=>fixture(root=>{
+ write(root,'knowledge/results/control/2026-10-22.json',{date:'2026-10-22',dispatches:[{agent:'deepseek',execute_on:'2026-10-22',instruction:'交付报告'}]});board(root);
+ const r=runDispatchOversight({root,now,lookback:1});assert.ok(r.stage_counts.dispatch_records>0);assert.equal(r.stage_counts.submissions_verified,1);assert.equal(r.stage_counts.independent_reviews_verified,0);assert.equal(r.stage_counts.engineering_deliveries_verified,0);assert.equal(r.stage_counts.production_deployments_verified,0);assert.equal(r.backlog.unique_original_tasks,new Set(r.warnings.map(x=>x.task_id)).size);
+ const later=runDispatchOversight({root,now:'2026-11-01T15:00:00Z',lookback:1});assert.ok(later.backlog.not_rechecked_in_current_window>0);assert.ok(later.warnings.some(w=>w.task_id==='DAILY-2026-10-22-deepseek'));
+}));
+test('existing Qwen daily context addresses oldest overdue originals before newer assignments',()=>fixture(root=>{
+ write(root,'knowledge/results/control/2026-10-16.json',{date:'2026-10-16',dispatches:[{id:'CONTROL-OLDER-FIX',agent:'deepseek',execute_on:'2026-10-16',instruction:'Older fix'}]});
+ const text=qianwenOversightContext({root,now});const j=JSON.parse(text.slice(text.indexOf('\n')+1));assert.ok(j.overdue.some(t=>t.id==='CONTROL-OLDER-FIX'));assert.equal(j.overdue[0].id,'CONTROL-OLDER-FIX');
+}));
