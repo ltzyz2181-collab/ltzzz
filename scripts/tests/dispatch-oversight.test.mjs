@@ -24,8 +24,9 @@ test('missing dispatch issues one same-ID card; hourly repeats do not multiply w
  const a=runDispatchOversight({root,now,lookback:1}),w=a.warnings.find(w=>w.task_id==='DAILY-2026-10-22-claude');
  assert.ok(w);assert.equal(w.warning_days,1);assert.equal(a.model_calls,0);assert.equal(a.controller_permissions_reduced,false);assert.equal(a.paid,false);
  const bytes=fs.readFileSync(path.join(root,w.repair_file),'utf8');assert.ok(bytes.includes('Task ID: `DAILY-2026-10-22-claude`'));
- const b=runDispatchOversight({root,now:'2026-10-22T15:30:00Z',lookback:1});assert.equal(b.warnings.find(x=>x.case_id===w.case_id).warning_days,1);assert.equal(fs.readFileSync(path.join(root,w.repair_file),'utf8'),bytes);
- const c=runDispatchOversight({root,now:'2026-10-23T15:00:00Z',lookback:2});assert.equal(c.warnings.find(x=>x.case_id===w.case_id).severity,'repeated_warning');assert.equal(c.warnings.find(x=>x.case_id===w.case_id).warning_days,2);
+ const b=runDispatchOversight({root,now:'2026-10-22T15:30:00Z',lookback:1});const missingClaim=b.warnings.find(x=>x.task_id===w.task_id&&x.issue==='claim_missing');assert.ok(missingClaim);assert.equal(b.warnings.some(x=>x.case_id===w.case_id),false);assert.equal(fs.readFileSync(path.join(root,w.repair_file),'utf8'),bytes);
+ const b2=runDispatchOversight({root,now:'2026-10-22T15:45:00Z',lookback:1});assert.equal(b2.warnings.find(x=>x.case_id===missingClaim.case_id).warning_days,1);
+ const c=runDispatchOversight({root,now:'2026-10-23T15:00:00Z',lookback:2});assert.equal(c.warnings.find(x=>x.case_id===missingClaim.case_id).severity,'repeated_warning');assert.equal(c.warnings.find(x=>x.case_id===missingClaim.case_id).warning_days,2);
 }));
 test('JSON board is seen with no Markdown; verified submission is not independent review',()=>fixture(root=>{
  board(root);const t=inspectDispatches({root,now,lookback:1}).tasks.find(t=>t.id==='DAILY-2026-10-22-deepseek');assert.equal(t.phase,'review_missing');assert.equal(t.submission_verified,true);assert.equal(t.overdue,true);
