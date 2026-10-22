@@ -15,7 +15,7 @@ Owner 创建标题以 `[LTZZZ派单验收]` 开头的本仓 Issue，触发固定
 1. 千问原生 API 最多一次、512 输出 tokens，返回固定 nonce 和路由清单；这是通讯复述，不是原创业务设计。记录提供商实际 model、finish_reason、request_id、用量，不能用模型自报身份。
 2. 以千问独立认证角色向各席发 `probe_only` 派单，逐单回读 id、目标、issuer、原文哈希；重点三席重复同一幂等键只产生一条。
 3. 托管 Meta 只生成一次 nonce 短回复。实际供应方是 Cloudflare Workers AI / Llama，不是外部 Meta 客户端。旧部署随机 token 只留临时文件；现在可从既有受管凭证派生专用执行 token（或使用已配 Secret），只进 Worker Secret，不进仓库。
-4. WorkBuddy 职责自动化执行一次真实仓库文件核对及 SHA-256，随后由认证执行器回读确认；不能标成原生 WorkBuddy 桌面模型。
+4. WorkBuddy 职责自动化执行一次真实仓库文件核对及 SHA-256，随后由认证执行器回读确认；不能标成 WorkBuddy 网页版已登录、自动接单或原生模型执行。
 5. Claude 仅检查公开元数据并签发真实收件卡；免费客户端没有经过验证的自动唤醒接口，不尝试付费 Anthropic API，也不代造 Claude 接单。
 
 没有新增 cron、USDC 付款、投资、签名或发布。模型 API 用量与 USDC 结算分别计数。超时不自动重发、不重购；已有预留的 Issue 重跑不会再次调用模型。
@@ -37,3 +37,7 @@ Meta 通讯测试改为专用 `channel_probe` 类型、英文 echo 系统上下�
 ## 桌面身份纠正
 
 Owner 最新明确：界面是 Microsoft VS Code / GitHub Copilot，所配模型是 DeepSeek。记录见 `identity/desktop-client-routing.json`；Microsoft 不能因提供界面而获得 DeepSeek 的产出署名。每次真实执行仍以工具/提供商元数据核验，不采信模型自称。
+
+## WorkBuddy 接入界面更正
+
+Owner 最新说明仅使用 WorkBuddy 网页版，没有 WorkBuddy 桌面接入。本仓记录以此为准。#193 的 WorkBuddy 回执来自仓库规则执行器，不代表网页版登录或原生接单。官网有在线入口；历史 `a0ce321fe33425e4a.app.workbuddy.host` 已实读为“LTZZZ 落库包下载”页面，不能当成 WorkBuddy 聊天/派单后台。网页工作台与具体账号需实际登录后才能测，不能用公开首页 HTTP200 代替。
