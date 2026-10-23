@@ -5,27 +5,28 @@ import os from 'node:os';
 import path from 'node:path';
 import {generateKeyPairSync, sign} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {TASK, canonical, sha256, classify, scanDiff, evaluate, subjectFor, verifyDeployment, reserveAction, finishAction} from '../lib/patchgate.mjs';
+import {TASK, canonical, sha256, classify, scanDiff, evaluate, subjectFor, verifyDeployment, reserveAction, finishAction, validateTrust} from '../lib/patchgate.mjs';
 import {collectSnapshot, loadBaseConfig} from '../patchgate.mjs';
 
 const policy = JSON.parse(fs.readFileSync(new URL('../../config/patch-policy.json',import.meta.url)));
 const now = Date.parse('2026-10-23T10:00:00Z');
 const A = 'a'.repeat(40), B = 'b'.repeat(40), C = 'c'.repeat(40);
 const pairs = ['openai','anthropic','aliyun_dashscope','volcengine_ark'].map((provider,i) => ({provider,id:'executor-'+i,...generateKeyPairSync('ed25519')}));
-const trust = {schema_version:1,enabled:true,keys:pairs.map(k => ({id:k.id,provider:k.provider,executor:'test-executor',enabled:true,roles:['author','review','checks','deployment','notification','supervision'],
+const trust = {schema_version:1,enabled:true,keys:pairs.map(k => ({id:k.id,provider:k.provider,executor:'test-executor-'+k.id,enabled:true,roles:['author','review','checks','deployment','notification','supervision','receipt_write'],
   not_before:'2026-10-22T00:00:00Z',not_after:'2026-10-24T00:00:00Z',public_key_pem:k.publicKey.export({type:'spki',format:'pem'})}))};
 const file = name => ({path:name,mode:'100644',old_mode:'100644',diff:'diff --git a/'+name+' b/'+name+'\n--- a/'+name+'\n+++ b/'+name+'\n@@ -1 +1 @@\n-old\n+new\n'});
-function fixture(name='scripts/example.mjs') {
-  const snapshot = {repository:policy.repository,task_id:TASK,base_sha:A,head_sha:B,policy_sha256:sha256(canonical(policy)),trust_sha256:sha256(canonical(trust)),files:[file(name)]};
+function fixture(name='tests/example.test.mjs',configuration={}) {
+  const p=configuration.policy||policy,t=configuration.trust||trust;
+  const snapshot = {repository:p.repository,task_id:TASK,base_sha:A,head_sha:B,policy_sha256:sha256(canonical(p)),trust_sha256:sha256(canonical(t)),files:[file(name)]};
   const subject = subjectFor(snapshot);
   const attestation = (index,role,extra={}) => {
     const payload = {subject,role,at_utc:new Date(now).toISOString(),...extra};
     return {key_id:pairs[index].id,payload,signature:sign(null,Buffer.from(canonical(payload)),pairs[index].privateKey).toString('base64')};
   };
   const author = attestation(0,'author');
-  const checks = attestation(0,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)});
+  const checks = attestation(3,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)});
   const review = i => attestation(i,'review',{verdict:'approve',generation_verified:true,model:'model-from-provider',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'});
-  const run = (attestations=[author,checks,review(1)], overrides={}) => evaluate({policy,trust,snapshot,attestations,now,...overrides});
+  const run = (attestations=[author,checks,review(1)], overrides={}) => evaluate({policy:p,trust:t,snapshot,attestations,now,...overrides});
   return {snapshot,subject,attestation,author,checks,review,run};
 }
 function deployment(subject) {
@@ -36,9 +37,28 @@ function deployment(subject) {
 }
 
 test('four risk levels and fail-closed unknown paths',() => {
-  for (const [name,expected] of [['docs/example.md','L0'],['memory/agent.json','L0'],['memory/promote/queue.json','L3'],['memory/promote/notes.md','L3'],['docs/credentials.md','L3'],['ops/派单台账.md','L0'],['scripts/example.mjs','L1'],['tests/example.test.mjs','L1'],['workers/test/index.js','L2'],['wep3-worker.js','L2'],['wrangler.test.toml','L2'],['wallet/addresses.md','L3'],['config/review-delegation.json','L3'],['identity/dids/grok.json','L3'],['contracts/Escrow.sol','L3'],['.github/workflows/test.yml','L3'],['package.json','L3'],['unmapped/file','L3']]) assert.equal(classify(policy,[file(name)]).level,expected,name);
+  for (const [name,expected] of [['docs/example.md','L0'],['memory/agent.json','L3'],['memory/promote/queue.json','L3'],['memory/promote/notes.md','L3'],['docs/credentials.md','L3'],['ops/派单台账.md','L3'],['scripts/example.mjs','L3'],['tests/example.test.mjs','L1'],['workers/test/index.js','L2'],['wep3-worker.js','L2'],['wrangler.test.toml','L2'],['wallet/addresses.md','L3'],['config/review-delegation.json','L3'],['identity/dids/grok.json','L3'],['contracts/Escrow.sol','L3'],['.github/workflows/test.yml','L3'],['package.json','L3'],['unmapped/file','L3']]) assert.equal(classify(policy,[file(name)]).level,expected,name);
   assert.equal(classify(policy,[file('docs/active.js')]).level,'L3');
   assert.equal(classify(policy,[file('docs/a.md'),file('config/authority.json')]).level,'L3');
+});
+test('H1 financial, signing, auth and unknown runtime scripts are all L3',() => {
+  for(const name of ['scripts/funded-invest-executor.mjs','scripts/provision-funding-executor.mjs','scripts/prepare-treasury-migration.mjs','scripts/provision-wep3-treasury.mjs','scripts/execute-agent-payment.mjs','scripts/generate-wallet-key.mjs','scripts/lib/proxy-auth.mjs','lib/proxy-auth.js','scripts/new-innocent-name.mjs','scripts/package.json']) assert.equal(classify(policy,[file(name)]).level,'L3',name);
+  assert.equal(classify(policy,[file('scripts/tests/funded-invest.test.mjs')]).level,'L1');
+});
+test('H2 receipts, ledgers and every core-memory original are L3; only markdown docs may be L0',() => {
+  for(const name of ['knowledge/results/dispatch/oversight/latest.json','knowledge/results/fake.md','results/settlement.json','data/results/daily.json','ops/派单台账.md',...['魄','识神','梦境数据库','文明研究','项目历史','重要事件'].map(n=>'ltzzz-memory/'+n+'.md')]) assert.equal(classify(policy,[file(name)]).level,'L3',name);
+  assert.equal(classify(policy,[file('docs/fake-receipt.json')]).level,'L3');
+  assert.equal(classify(policy,[file('docs/ordinary.md')]).level,'L0');
+});
+test('H2 a hand-authored accepted/paid receipt needs a BASE-authorized signed writer',() => {
+  const name='knowledge/results/accepted.json',f=fixture(name);
+  const notify=x=>x.attestation(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/223'});
+  assert.ok(f.run([f.author,f.checks,f.review(1),f.review(2),notify(f),f.attestation(3,'receipt_write',{paths:[name],accepted:true,paid:true})]).reasons.includes('authenticated_receipt_writer_required'));
+  const p={...policy,receipt_writer_rules:policy.receipt_writer_rules.map(r=>({...r,executors:[trust.keys[3].executor]}))},g=fixture(name,{policy:p});
+  const base=[g.author,g.checks,g.review(1),g.review(2),notify(g)];
+  assert.equal(g.run(base).validation_passed,false);
+  assert.equal(g.run([...base,g.attestation(3,'receipt_write',{paths:['knowledge/results/other.json']})]).validation_passed,false);
+  assert.equal(g.run([...base,g.attestation(3,'receipt_write',{paths:[name]})]).validation_passed,true);
 });
 for (const name of ['config/patch-policy.json','config/patchgate-trust.json','scripts/lib/patchgate.mjs','scripts/tests/patchgate.test.mjs','.github/workflows/patchgate.yml','scripts/patchgate.mjs']) {
   test('same patch cannot alter own constraint: '+name,() => {
@@ -78,6 +98,22 @@ test('new head, base, policy, or diff invalidates existing proofs',() => {
 test('checks must be bound to trusted base, not tests modified by the candidate',() => {
   const f=fixture(),checks=f.attestation(0,'checks',{passed:true,checker_base_sha:B,checks_sha256:'1'.repeat(64)});
   assert.ok(f.run([f.author,checks,f.review(1)]).reasons.includes('trusted_base_checks_required'));
+});
+test('H3 valid checks signed by the author executor are rejected even with the checks role',() => {
+  const f=fixture(),self=f.attestation(0,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)});
+  assert.ok(f.run([f.author,self,f.review(1)]).reasons.includes('trusted_base_checks_required'));
+  assert.equal(f.run().checks_executors[0],trust.keys[3].executor);
+});
+test('H4 one executor cannot be relabeled as two providers using two different keys',() => {
+  const modified={...trust,keys:trust.keys.map((k,i)=>i===1?{...k,executor:trust.keys[0].executor}:k)};
+  assert.equal(validateTrust(modified),false);
+  const f=fixture(undefined,{trust:modified});
+  assert.ok(f.run().reasons.includes('executor_provider_registry_invalid'));
+});
+test('H4 key rotation keeps executor/provider binding; aliases cannot bypass H3',() => {
+  const {publicKey}=generateKeyPairSync('ed25519');
+  assert.equal(validateTrust({...trust,keys:[...trust.keys,{...trust.keys[0],id:'rotation',public_key_pem:publicKey.export({type:'spki',format:'pem'})}]}),true);
+  assert.equal(validateTrust({...trust,keys:[...trust.keys,{...trust.keys[0],id:'clone',executor:'pretend-independent-executor'}]}),false);
 });
 test('missing, revoked, expired or forged executor key cannot authorize',() => {
   const f=fixture();
@@ -129,6 +165,16 @@ test('added code beginning with ++ cannot hide eval, credentials or new hosts be
 });
 test('deleted suspect line is not incorrectly treated as newly introduced',() => {
   assert.equal(scanDiff(policy,[{...file('scripts/test.mjs'),diff:'@@ -1 +1 @@\n- eval("old")\n+ safe()'}]).length,0);
+});
+test('M2 common bypasses are flagged, normal words are not credentials, no-findings is not safety',() => {
+  for(const line of ["new WebSocket('wss://evil.example/x')","Function('return process')()","spawn('sh',['-c','id'])","fetch('//evil.example/x')"]) assert.ok(scanDiff(policy,[{...file('scripts/a.mjs'),diff:'@@ -0,0 +1 @@\n+'+line}]).length,line);
+  for(const line of ['task-queue-runner-config-notes','risk-adjusted-return-calculation-method']) assert.equal(scanDiff(policy,[{...file('docs/a.md'),diff:'@@ -0,0 +1 @@\n+'+line}]).some(f=>f.code==='secret_pattern'),false,line);
+  assert.equal(fixture().run().scan_safety_conclusion,false);
+});
+test('GitHub URLs are restricted to this repository, not any github.com destination',() => {
+  const scan=url=>scanDiff(policy,[{...file('docs/a.md'),diff:'@@ -0,0 +1 @@\n+ '+url}]);
+  assert.equal(scan('https://github.com/ltzyz2181-collab/ltzzz/pull/223').length,0);
+  assert.ok(scan('https://github.com/attacker/collect').some(f=>f.code==='unapproved_external_host'));
 });
 test('path traversal, symlinks, gitlinks and binary data cannot pass',() => {
   const f=fixture();
@@ -198,14 +244,20 @@ test('L2 canary must be signed and target must be in BASE allowlist',() => {
   const g=fixture('workers/a.js');g.snapshot.policy_sha256=sha256(canonical(p));
   const subject=subjectFor(g.snapshot);
   const attest=(i,role,extra={})=>{const payload={subject,role,at_utc:new Date(now).toISOString(),...extra};return {key_id:pairs[i].id,payload,signature:sign(null,Buffer.from(canonical(payload)),pairs[i].privateKey).toString('base64')};};
-  const r=evaluate({policy:p,trust,snapshot:g.snapshot,now,attestations:[attest(0,'author'),attest(0,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)}),attest(1,'review',{verdict:'approve',generation_verified:true,model:'real',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'}),attest(0,'deployment',{evidence:deployment(subject)})]});
+  const r=evaluate({policy:p,trust,snapshot:g.snapshot,now,attestations:[attest(0,'author'),attest(3,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)}),attest(1,'review',{verdict:'approve',generation_verified:true,model:'real',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'}),attest(3,'deployment',{evidence:deployment(subject)})]});
   assert.equal(r.validation_passed,true);
   assert.equal(r.deployment_verification.status,'reverified_deterministic');
+});
+test('H3 canary verification signed by the author is rejected, another executor passes',() => {
+  const p={...policy,canary_targets:[{url:'https://ltzzz-patchgate-test.example.workers.dev'}]},f=fixture('workers/a.js',{policy:p});
+  const evidence=deployment(f.subject),base=[f.author,f.checks,f.review(1)];
+  assert.ok(f.run([...base,f.attestation(0,'deployment',{evidence})]).reasons.includes('signed_allowlisted_canary_verification_required'));
+  assert.equal(f.run([...base,f.attestation(3,'deployment',{evidence})]).deployment_verification.status,'reverified_deterministic');
 });
 test('adding L3 to a Worker patch never removes the L2 canary prerequisite',() => {
   const original=fixture('workers/a.js'),snapshot={...original.snapshot,files:[file('workers/a.js'),file('config/example.json')]};
   const subject=subjectFor(snapshot),attest=(i,role,extra={})=>{const payload={subject,role,at_utc:new Date(now).toISOString(),...extra};return {key_id:pairs[i].id,payload,signature:sign(null,Buffer.from(canonical(payload)),pairs[i].privateKey).toString('base64')};};
-  const attestations=[attest(0,'author'),attest(0,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)}),...[1,2].map(i=>attest(i,'review',{verdict:'approve',generation_verified:true,model:'real',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'})),attest(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/1'})];
+  const attestations=[attest(0,'author'),attest(3,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)}),...[1,2].map(i=>attest(i,'review',{verdict:'approve',generation_verified:true,model:'real',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'})),attest(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/1'})];
   const r=evaluate({policy,trust,snapshot,attestations,now});
   assert.equal(r.risk_class,'L3');assert.equal(r.requires_canary,true);assert.equal(r.validation_passed,false);
   assert.ok(r.reasons.includes('signed_allowlisted_canary_verification_required'));

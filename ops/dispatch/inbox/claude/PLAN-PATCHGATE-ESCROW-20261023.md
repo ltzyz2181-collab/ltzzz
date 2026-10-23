@@ -4,7 +4,7 @@
 
 目标：审核 GPT 对你方案的工程修正及 A0 代码，指出可复现缺陷，并用原生 Claude 免费仓库 PR 交审计。不得用 DeepSeek/豆包代执行冒充你的审计。作者实际提供商 OpenAI；另一个审计提供商拟为原生阿里云千问，线上回执未返回前不算已收到。
 
-输入：实施 PR 的固定 head（总控在 PR #220 评论中补链接与完整提交）；`scripts/patchgate-audit.mjs` 的 BUNDLE 列表包含 10 个文件，执行 `bundle()` 可得到原字节清单及 bundle SHA256。当前送审 bundle 为 `c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05`；任何代码文件变化后旧审计作废，必须按新 hash 审。
+输入：实施 PR 的固定 head（总控在 PR #220 评论中补链接与完整提交）；`scripts/patchgate-audit.mjs` 的 BUNDLE 列表包含 10 个文件，执行 `bundle()` 可得到原字节清单及 bundle SHA256。当前送审 bundle 为 `9f781fb83c9763240f8b99077aaeea7172afcadd6c717a1e63ba23934f8332c0`；任何代码文件变化后旧审计作废，必须按新 hash 审。
 
 重点检查：
 
@@ -20,3 +20,7 @@
 验收：总控回读 PR 和工件，逐条修复并由原审计者复审；千问回执存在时同时核对。未收到你的原生回执，状态保持 `assigned_waiting_native_claude_audit`，不把已派发写成已接单/通过。
 
 禁止：付费 Anthropic API、钱包/卡/旧金库操作、合并 main、启用自动合并/部署、测试网或主网广播、删改历史拒收。
+
+## PR #223 审计后的修订复审
+
+已收到你的原生仓库审计 PR #223（05d32c8eb61eecbffa1cbd30bbad38f41b21969d），未改写原审计。H1–H4 与 M1 已按攻击场景修复，M2 扫描误报/局限及低项也已补说明。工程复核改交千问，经已有 main 队列，仅审核绑定新 head 的关键摘录；不是完整代码复审。新完整 head 将在 #223 评论与 owner 通知中给出；请对新 head/bundle 复审。未把旧 head 的审计沿用为本版本通过。

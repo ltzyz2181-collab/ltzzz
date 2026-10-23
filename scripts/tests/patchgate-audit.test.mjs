@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {BUNDLE, bundle, prepare, execute} from '../patchgate-audit.mjs';
+import {execFileSync} from 'node:child_process';
+import {BUNDLE, bundle, prepare, execute, trustedMainContext} from '../patchgate-audit.mjs';
 import {sha256} from '../lib/patchgate.mjs';
 
 function fixture() {
@@ -67,4 +68,35 @@ test('only a real first-attempt run can reserve an audit', () => {
     assert.throws(()=>prepare({root:f.root,sourceCommit:'a'.repeat(40),runId:'local',attempt:'1'}));
     assert.throws(()=>prepare({root:f.root,sourceCommit:'a'.repeat(40),runId:'12345',attempt:'2'}));
   } finally { f.cleanup(); }
+});
+test('M1 credentialed entrypoint requires main workflow_dispatch and its exact checked-out SHA',()=>{
+  const sha='a'.repeat(40),args={ref:'refs/heads/main',event:'workflow_dispatch',sha,checkout:sha};
+  assert.equal(trustedMainContext(args),sha);
+  for(const change of [{ref:'refs/heads/codex/patchgate-a0-20261023'},{event:'push'},{event:'pull_request_target'},{checkout:'b'.repeat(40)}]) assert.throws(()=>trustedMainContext({...args,...change}),/trusted_main/);
+});
+test('M1 candidate code is read from immutable Git blobs, never imported or taken from checkout',()=>{
+  const f=fixture(),git=args=>execFileSync('git',args,{cwd:f.root,encoding:'utf8'}).trim();
+  try {
+    git(['init','--quiet']);git(['config','user.name','patchgate-test']);git(['config','user.email','patchgate-test@example.invalid']);
+    const marker=path.join(f.root,'candidate-executed'),candidate='import fs from "node:fs";fs.writeFileSync('+JSON.stringify(marker)+',"executed");throw Error("must never run");\n';
+    fs.writeFileSync(path.join(f.root,'scripts/patchgate-audit.mjs'),candidate);
+    git(['add','.']);git(['commit','--quiet','-m','candidate data']);const sha=git(['rev-parse','HEAD']);
+    fs.writeFileSync(path.join(f.root,'scripts/patchgate-audit.mjs'),'changed checkout does not control snapshot');
+    const b=bundle(f.root,{sourceCommit:sha});
+    assert.equal(b.files.find(x=>x.path==='scripts/patchgate-audit.mjs').bytes,candidate);
+    assert.equal(fs.existsSync(marker),false);
+    assert.throws(()=>bundle(f.root,{sourceCommit:'main;echo untrusted'}),/full_candidate/);
+    fs.unlinkSync(path.join(f.root,'scripts/patchgate-audit.mjs'));
+    fs.symlinkSync('call-qwen.mjs',path.join(f.root,'scripts/patchgate-audit.mjs'));
+    git(['add','.']);git(['commit','--quiet','-m','candidate symlink']);
+    assert.throws(()=>bundle(f.root,{sourceCommit:git(['rev-parse','HEAD'])}),/candidate_regular_git_blob/);
+  } finally { f.cleanup(); }
+});
+test('M1 native audit job has no push/PR secret route and pins trusted main code',()=>{
+  const text=fs.readFileSync(new URL('../../.github/workflows/patchgate-a0.yml',import.meta.url),'utf8');
+  const job=text.slice(text.indexOf('  independent_qwen_audit:'));
+  assert.ok(job.includes("github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'"));
+  assert.ok(job.includes("ref: '${{ github.sha }}'"));
+  assert.equal(job.includes('[patchgate-a0-audit]'),false);
+  assert.equal(job.includes('ref: ${{ inputs.candidate_head }}'),false);
 });

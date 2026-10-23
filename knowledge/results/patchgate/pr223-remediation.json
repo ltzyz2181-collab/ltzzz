@@ -1,0 +1,45 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "at_utc": "2026-10-23T23:08:17.389Z",
+  "source_audit": {
+    "pr": 223,
+    "head": "05d32c8eb61eecbffa1cbd30bbad38f41b21969d",
+    "report": "knowledge/results/patchgate/claude-a0-audit.md",
+    "report_sha256": "fe745b4ce9ff216e3eefe5d16642169a8cea6500a620b4d7aa93105fba178133",
+    "probe": "knowledge/results/patchgate/claude-a0-probe.mjs",
+    "probe_sha256": "0770dff52f7c1b497ea93494acf183320e079e7732712f592c0f70db0ae7bd3a"
+  },
+  "revised_bundle_sha256": "9f781fb83c9763240f8b99077aaeea7172afcadd6c717a1e63ba23934f8332c0",
+  "status": "H1_H4_M1_fixed_submitted_for_Qwen_engineering_review_and_Claude_new_head_rereview",
+  "fixes": {
+    "H1": "Runtime scripts default L3, tests-only L1 prefix; finance/auth cannot evade by renaming.",
+    "H2": "Receipts/ledger/memory originals L3; signed receipt_write proof must match BASE executor/path mapping, empty allowlists block writes.",
+    "H3": "checks and deployment require a registered executor distinct from the author; reviews require executor and provider independence.",
+    "H4": "Whole trust root enforces one executor/provider across rotated and disabled keys; same public key cannot impersonate different executors.",
+    "M1": "Only main workflow_dispatch credentialed job, immutable main SHA runner; candidate regular Git blobs only, no checkout/import; absent main runner blocks.",
+    "M2": "No-findings is never a safety verdict; word boundary and common Function/spawn/WebSocket/protocol-relative patterns covered.",
+    "L1": "GitHub URLs restricted to this repository paths.",
+    "L2_L3": "Reconciliation and current-base-tip obligations explicitly deferred to A1/A2; no false claim of live implementation."
+  },
+  "tests": {
+    "scope": "local_unit_and_real_Git_fixtures_no_live_platform_credentials",
+    "command": "node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs",
+    "passed": 48,
+    "failed": 0,
+    "claude_original_probe_after": "knowledge/results/patchgate/claude-a0-probe-after-hfix.txt"
+  },
+  "engineering_review": {
+    "seat": "qianwen",
+    "channel": "existing_main_queue_consumer",
+    "scope": "H1-H4/M1_source_excerpts_not_full_repository",
+    "status": "not_yet_dispatched_until_immutable_head_exists"
+  },
+  "claude_rereview": "requested_after_new_head_not_received",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "escrow": "not_entered",
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
