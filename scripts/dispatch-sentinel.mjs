@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {deliveryPolicy,externalTaskDelivery,externalDeliveryRequired} from './lib/seat-delivery.mjs';
 import {runDispatchOversight} from './lib/dispatch-oversight.mjs';
 
 export function indexDispatch(root){
@@ -30,7 +31,11 @@ export function indexDispatch(root){
   const codeReceipts=structured.filter(r=>r.data.task_id===id),delivery=codeReceipts.some(r=>r.data.execution?.generation_verified===true);
   const deadline=text.match(/(?:deadline|due_at|截止)[:：]\s*`?([0-9T:.+Z-]+)/i)?.[1]||null,deadline_at=deadline&&/T.*(?:Z|[+-]\d\d:\d\d)$/.test(deadline)&&Number.isFinite(Date.parse(deadline))?deadline:null;
   matched.push(...codeReceipts.map(r=>r.file));
-  return [{deadline_at,deadline_verified:!!deadline_at,overdue:!!deadline_at&&Date.now()>Date.parse(deadline_at)&&!matched.length,id,file:path.relative(root,file).split(path.sep).join('/'),status:codeReceipts.some(r=>r.data.controller_review?.status==='accepted_with_explicit_corrections')?'controller_reviewed_checklist_only':delivery?'code_delivery_present_pending_review':matched.length>1?'ack_ambiguous_review_required':matched.length?'ack_present_unverified':'awaiting_agent_ack',receipts:matched.map(r=>path.relative(root,r).split(path.sep).join('/')),claim_verified:false}];
+  const externalSeat=/^DAILY-\d{4}-\d{2}-\d{2}-claude$/.test(id)?'claude':null;
+  const channel=externalSeat?deliveryPolicy(root,externalSeat):null,linked=externalSeat?externalTaskDelivery(root,id,externalSeat):null;
+  const referenceOnly=channel?.channel==='repo_pr_only'&&!channel.expected_native_daily&&linked?.status==='not_linked'&&!matched.length&&!externalDeliveryRequired(root,id);
+  const channelStatus=channel?.channel==='disabled'?'external_role_disabled':linked?.status==='invalid'?'external_delivery_evidence_invalid':linked?.status==='repo_pr_unreviewed'?'pr_unreviewed':linked?.status==='repo_pr_delivery_recorded'?'external_pr_delivery_recorded':linked?.status==='delegated_delivery_pending_review'?'delegated_delivery_pending_review':referenceOnly?'external_pr_route_reference_only':channel?.channel==='repo_pr_only'?'pr_delivery_link_missing':null;
+  return [{deadline_at,deadline_verified:!!deadline_at,overdue:!referenceOnly&&channelStatus!=='external_role_disabled'&&channelStatus!=='external_pr_delivery_recorded'&&!!deadline_at&&Date.now()>Date.parse(deadline_at)&&!matched.length,id,file:path.relative(root,file).split(path.sep).join('/'),delivery_channel:channel?.channel||null,role_status:channel?.work_status||null,delegated:linked?.delegated===true,actual_provider:linked?.actual_provider||null,status:channelStatus|| (codeReceipts.some(r=>r.data.controller_review?.status==='accepted_with_explicit_corrections')?'controller_reviewed_checklist_only':delivery?'code_delivery_present_pending_review':matched.length>1?'ack_ambiguous_review_required':matched.length?'ack_present_unverified':'awaiting_agent_ack'),receipts:matched.map(r=>path.relative(root,r).split(path.sep).join('/')),claim_verified:false}];
  });return {tasks};
 }
 
