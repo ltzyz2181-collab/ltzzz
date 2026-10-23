@@ -1,0 +1,25 @@
+name: Edge isolated deployment test
+on:
+  push:
+    branches: [test/edge-write-deploy-20261023]
+    paths: ['.github/workflows/edge-isolated-test-20261023.yml']
+permissions:
+  contents: read
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deploy isolated Worker only
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          date -u +%FT%TZ
+          echo "SOURCE_COMMIT=$GITHUB_SHA"
+          npx --yes wrangler@4 deploy -c tests/edge-deploy-20261023/wrangler.toml --var SOURCE_COMMIT:$GITHUB_SHA
+          date -u +%FT%TZ
