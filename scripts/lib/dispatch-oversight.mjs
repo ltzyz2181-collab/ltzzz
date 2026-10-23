@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {deliveryPolicy,externalTaskDelivery,externalDeliveryRequired} from './seat-delivery.mjs';
 import {validateArtifact} from './daily-task-board.mjs';
 
 export const OVERSIGHT_ROOT = 'knowledge/results/dispatch/oversight';
@@ -37,6 +38,7 @@ function reviewProof(root, ledger, seat, review) {
 export function inspectDispatches({root='.', now=new Date().toISOString(), lookback=7}) {
   if (!Number.isFinite(Date.parse(now)) || !Number.isInteger(lookback) || lookback<1 || lookback>31) throw Error('invalid_oversight_window');
   const date=day(now), tasks=new Map(), observations=[];
+  const claudePolicy=deliveryPolicy(root,'claude');
   const add = task => { if (safeId(task.id)) tasks.set(task.id,task); };
   for(let n=lookback-1;n>=0;n--) {
     const d=shift(date,-n), controlFile=`knowledge/results/control/${d}.json`, control=read(root,controlFile);
@@ -48,9 +50,10 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
       const id=dispatch.board_task_id||dispatch.id||`CONTROL-${executeOn}-${dispatch.agent}`;
       add({id,date:executeOn,issuer:'gpt',assigned_to:dispatch.agent,phase:'claim_missing',due_at:deadline(executeOn,'22:00'),evidence:[controlFile],instruction:dispatch.instruction});
     }
-    const claudeId=`DAILY-${d}-claude`, originalCard=`ops/dispatch/${claudeId}.md`, supplement=`ops/dispatch/oversight/${claudeId}-dispatch_missing.md`, delivery=`knowledge/results/external/${d}-claude.md`;
+    const claudeId=`DAILY-${d}-claude`, originalCard=`ops/dispatch/${claudeId}.md`, oldSupplement=`ops/dispatch/oversight/${claudeId}-dispatch_missing.md`, canonicalSupplement=`ops/dispatch/oversight/${claudeId}.md`, delivery=`knowledge/results/external/${d}-claude.md`;
     // A real same-ID supplemental card is a dispatch. Do not keep saying "never
     // assigned" after the rules executor has actually repaired that omission.
+    const supplement=[oldSupplement,canonicalSupplement].find(p=>fs.existsSync(path.join(root,p)))||oldSupplement;
     const repaired=fs.existsSync(path.join(root,supplement)) && fs.readFileSync(path.join(root,supplement),'utf8').includes(`Task ID: \`${claudeId}\``);
     const card=fs.existsSync(path.join(root,originalCard))?originalCard:repaired?supplement:originalCard;
     const claimPaths=[`ops/dispatch/接单回执-${claudeId}.md`,`ops/dispatch/receipts/${claudeId}.md`];
@@ -58,9 +61,15 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
     const receipt=read(root,`knowledge/results/dispatch/external-daily-${d}.json`);
     const cardRecord=receipt?.tasks?.find(t=>t.id===claudeId);
     const delivered=fs.existsSync(path.join(root,delivery));
-    add({id:claudeId,date:d,issuer:'gpt',assigned_to:'claude',phase:!fs.existsSync(path.join(root,card))?'dispatch_missing':delivered?'external_report_present_unverified':claim?'delivery_missing':'claim_missing',
-      due_at:deadline(d,fs.existsSync(path.join(root,card))?'22:00':'09:00'),evidence:[card,...(claim?[claim]:[]),...(delivered?[delivery]:[])],instruction:'免费外部 Claude 规划与独立审计；返回实际检查范围、遗漏项及补派建议。原生客户端未自动唤醒；无通道就报告 blocked，不能把国内代执行写成原生 Claude。',
-      native_generation_verified:false,repair_origin:cardRecord?.repair_origin||null});
+    const linked=externalTaskDelivery(root,claudeId,'claude');
+    const referenceOnly=claudePolicy.channel==='repo_pr_only'&&!claudePolicy.expected_native_daily&&linked.status==='not_linked'&&!delivered&&!claim&&!externalDeliveryRequired(root,claudeId)&&cardRecord?.expected_delivery!==true;
+    const externalPhase=linked.status==='invalid'?'external_delivery_evidence_invalid':linked.status==='delegated_delivery_pending_review'?'delegated_review_missing':linked.status==='repo_pr_unreviewed'?'pr_unreviewed':linked.status==='repo_pr_delivery_recorded'?'external_pr_delivery_recorded':null;
+    const phase=claudePolicy.channel==='disabled'?'external_role_disabled':externalPhase|| (delivered?'external_report_present_unverified':referenceOnly?'external_pr_route_reference_only':claudePolicy.channel==='repo_pr_only'?'pr_delivery_link_missing':!fs.existsSync(path.join(root,card))?'dispatch_missing':claim?'delivery_missing':'claim_missing');
+    add({id:claudeId,date:d,issuer:'gpt',assigned_to:'claude',phase,
+      due_at:deadline(d,fs.existsSync(path.join(root,card))?'22:00':'09:00'),evidence:[card,...(claim?[claim]:[]),...(delivered?[delivery]:[]),...linked.evidence],instruction:'Claude在任的外部规划与独立审计席；按原Task ID查PR/回执。没有原生自动接单通道不等于停用；国内代执行须同任务证据，不得从别单推断。',
+      native_generation_verified:false,delivery_channel:claudePolicy.channel,role_status:claudePolicy.work_status,native_api_status:claudePolicy.native_api_status,native_claim_required:claudePolicy.channel==='native_receipt',
+      reference_only:referenceOnly||phase==='external_role_disabled',delegated:linked.delegated===true,actual_provider:linked.actual_provider||null,model:linked.model||null,submission_verified:linked.submission_verified===true,independent_review_verified:false,pr_url:linked.pr_url||null,
+      automatic_reexecution:false,delivery_evidence_status:linked.status,repair_origin:cardRecord?.repair_origin||null});
     const returnFile=`knowledge/results/dispatch/qianwen-return-${d}.json`,returned=read(root,returnFile);
     if(returned?.task_id===`QIANWEN-RETURN-${d}` && returned.date===d){
       const ref=returned.acceptance_receipt;
@@ -94,14 +103,28 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
   const team=read(root,'config/claude-team.json'), acceptance=team?.role_acceptances?.claude;
   if(acceptance?.status==='accepted_planning_audit_only') for(const id of acceptance.tasks||[]) {
     const delivery=acceptance.task_deliveries?.[id], present=delivery&&fs.existsSync(path.join(root,delivery));
-    add({id,date:'2026-10-18',issuer:'claude',assigned_to:'claude',phase:present?'controller_review_record_present':'delivery_link_missing',due_at:deadline('2026-10-20','22:00'),evidence:['config/claude-team.json',acceptance.receipt,...(present?[delivery]:[])].filter(Boolean),instruction:'核对 Claude 已接三项规划/审计任务与真实 PR/交付的关联；登记缺链接不等于任务没做，先查现有成果，复用原 Task ID 补齐链接或说明阻塞，不重做订单/付款。'});
+    const linked=externalTaskDelivery(root,id,'claude'),phase=linked.status==='invalid'?'external_delivery_evidence_invalid':linked.status==='repo_pr_unreviewed'?'pr_unreviewed':linked.status==='repo_pr_delivery_recorded'?'external_pr_delivery_recorded':linked.status==='delegated_delivery_pending_review'?'delegated_review_missing':present?'controller_review_record_present':'delivery_link_missing';
+    add({id,date:'2026-10-18',issuer:'claude',assigned_to:'claude',phase,delivery_channel:claudePolicy.channel,role_status:claudePolicy.work_status,delegated:linked.delegated===true,actual_provider:linked.actual_provider||null,native_generation_verified:false,submission_verified:linked.submission_verified===true,independent_review_verified:false,pr_url:linked.pr_url||null,due_at:deadline('2026-10-20','22:00'),evidence:['config/claude-team.json',acceptance.receipt,...(present?[delivery]:[]),...linked.evidence].filter(Boolean),instruction:'核对 Claude 已接三项规划/审计任务与真实 PR/交付的关联；登记缺链接不等于任务没做，先查现有成果，复用原 Task ID 补齐链接或说明阻塞，不重做订单/付款。'});
   }
   for(const task of tasks.values()) {
-    const closed=['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
+    const closed=['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
     const issue=task.phase==='draft_reviewed_not_deployed'?'engineering_completion_unverified':task.phase;
-    observations.push({...task,issue,overdue:!closed && Date.parse(now)>=Date.parse(task.due_at),status:closed?'evidence_present_scope_limited':Date.parse(now)<Date.parse(task.due_at)?'not_due':'warning_required'});
+    observations.push({...task,issue,overdue:!task.reference_only&&!closed && Date.parse(now)>=Date.parse(task.due_at),status:task.reference_only?'delivery_channel_reference_not_completion':closed?'evidence_present_scope_limited':Date.parse(now)<Date.parse(task.due_at)?'not_due':'warning_required'});
   }
   return {date,at:now,timezone:'Asia/Shanghai',tasks:observations};
+}
+
+export function nativeQianwenOversight(root,date){
+ const ledgerPath=`knowledge/results/daily-board/${date}.json`,ledger=read(root,ledgerPath),seat=ledger?.seats?.qianwen;
+ const result={date,status:'no_verified_native_supervision_delivery',generation_verified:false,independent_review_verified:false,evidence:[ledgerPath]};
+ if(!seat||ledger.date!==date||seat.assignment?.id!==`DAILY-${date}-qianwen`)return result;
+ try{validateArtifact(root,ledger,'qianwen',seat);}catch{return result;}
+ const body=read(root,seat.artifact.path),claim=seat.claim_verified===true&&seat.claim_receipt?.task_id===seat.assignment.id&&seat.claim_receipt?.run_key===ledger.run_key;
+ if(!claim||seat.submission_verified!==true||!['qianwen','aliyundashscope'].includes(normalized(body.actual_provider))||body.model_source!=='provider_response'||typeof body.actual_model!=='string'||!body.actual_model||!body.output?.includes('【派单监督】'))return result;
+ Object.assign(result,{status:'native_supervision_draft_pending_independent_review',generation_verified:true,actual_provider:body.actual_provider,model:body.actual_model,artifact:seat.artifact,evidence:[ledgerPath,seat.artifact.path]});
+ const review=seat.review_receipt;
+ if(seat.review_verified===true&&review?.task_id===seat.assignment.id&&review.reviewed_sha256===seat.artifact.sha256&&review.accepted===true&&reviewProof(root,ledger,seat,review)&&normalized(review.worker_actual_provider)===normalized(body.actual_provider)&&normalized(review.worker_actual_provider)!==normalized(review.reviewer_actual_provider))Object.assign(result,{status:'native_supervision_independently_reviewed',independent_review_verified:true,evidence:[...result.evidence,review.evidence_path]});
+ return result;
 }
 
 export function runDispatchOversight({root='.', now=new Date().toISOString(), sourceCommit=null, runId='local', lookback=7}={}) {
@@ -110,23 +133,25 @@ export function runDispatchOversight({root='.', now=new Date().toISOString(), so
   const seen=new Set();
   for(const task of report.tasks) {
     const key=hash(task.id+'\0'+task.issue).slice(0,24); seen.add(key);
-    if(!task.overdue) { if(cases[key]) { cases[key].state='resolved_by_repository_evidence'; cases[key].resolved_at=now; } continue; }
+    if(!task.overdue) { if(cases[key]) { cases[key].state=task.reference_only?'reclassified_delivery_channel_not_completed':'resolved_by_repository_evidence'; cases[key].resolved_at=now; } continue; }
     const row=cases[key]||{case_id:key,task_id:task.id,issue:task.issue,issuer:task.issuer,assigned_to:task.assigned_to,first_observed_at:now,warning_dates:[]};
     if(!row.warning_dates.includes(report.date)) row.warning_dates.push(report.date);
     Object.assign(row,{state:'open',last_observed_at:now,evidence:task.evidence,original_task_date:task.date,warning_days:row.warning_dates.length,severity:row.warning_dates.length>=2?'repeated_warning':'warning'});
-    row.repair_file=`ops/dispatch/oversight/${task.id}-${task.issue}.md`;
+    row.idempotency_key='oversight:'+task.id;
+    const priorReminder=Object.values(cases).find(c=>c.task_id===task.id&&new RegExp('^ops/dispatch/oversight/'+task.id+'(?:-[A-Za-z0-9_-]+)?\\.md$').test(c.repair_file||'')&&fs.existsSync(path.join(root,c.repair_file)));
+    row.repair_file=priorReminder?.repair_file||`ops/dispatch/oversight/${task.id}.md`;
     if(!fs.existsSync(path.join(root,row.repair_file))) {
       fs.mkdirSync(path.dirname(path.join(root,row.repair_file)),{recursive:true});
-      fs.writeFileSync(path.join(root,row.repair_file),`# 千问监督补派 / 原任务 ${task.id}\n\n- Task ID: \`${task.id}\`\n- 补派时间：${now}\n- 补派来源：千问监督规则执行器；不是千问模型本人接单，也不是 Claude 原生派单。\n- 原派单责任：${task.issuer}；执行席：${task.assigned_to}；监督：qianwen。\n- 状态：reminder_assigned_waiting_acceptance；问题：${task.issue}\n- 原截止时间：${task.due_at}\n- 输入：${task.evidence.join('、')}\n- 目标：${task.instruction}\n- 输出：认领/阻塞说明及引用本 Task ID 的实物回执；代码任务必须有 commit/测试/PR，部署另附运行回执。\n- 验收：证据能回读、哈希与任务一致、作者与审计实际供应方不同；草稿不算生产完成。\n- 禁止：创建第二个业务订单、重购未知模型请求、重复转账或投资、补造认领；本提醒不授权资金执行。\n- 监督只警告、提醒、补派，不撤销总控权限，不扣真钱或声誉分。\n\n状态唯一来源：\`${OVERSIGHT_ROOT}/latest.json\`；此卡只补派，不写已执行。\n`,{flag:'wx'});
+      fs.writeFileSync(path.join(root,row.repair_file),`# 千问监督补派 / 原任务 ${task.id}\n\n- Task ID: \`${task.id}\`\n- Idempotency-Key: ${row.idempotency_key}\n- 补派时间：${now}\n- 补派来源：千问监督规则执行器；不是千问模型本人接单，也不是 Claude 原生派单。\n- 原派单责任：${task.issuer}；执行席：${task.assigned_to}；监督：qianwen。\n- 状态：reminder_assigned_waiting_acceptance；问题：${task.issue}\n- 原截止时间：${task.due_at}\n- 输入：${task.evidence.join('、')}\n- 目标：${task.instruction}\n- 输出：认领/阻塞说明及引用本 Task ID 的实物回执；代码任务必须有 commit/测试/PR，部署另附运行回执。\n- 验收：证据能回读、哈希与任务一致、作者与审计实际供应方不同；草稿不算生产完成。\n- 禁止：创建第二个业务订单、重购未知模型请求、重复转账或投资、补造认领；本提醒不授权资金执行。\n- 监督只警告、提醒、补派，不撤销总控权限，不扣真钱或声誉分。\n\n状态唯一来源：\`${OVERSIGHT_ROOT}/latest.json\`；此卡只补派，不写已执行。\n`,{flag:'wx'});
     }
     cases[key]=row;
   }
   // A changed phase resolves the prior warning only when the same task was read
   // again. Disappearance from the bounded window is never proof of completion.
-  for(const [key,row] of Object.entries(cases)) if(!seen.has(key) && report.tasks.some(t=>t.id===row.task_id)) {row.state='superseded_by_current_phase';row.updated_at=now;}
+  for(const [key,row] of Object.entries(cases)) if(!seen.has(key) && report.tasks.some(t=>t.id===row.task_id)) {const current=report.tasks.find(t=>t.id===row.task_id);row.state=current.reference_only?'reclassified_delivery_channel_not_completed':'superseded_by_current_phase';row.reclassification_reason=current.reference_only?'Active external PR route; native claim not scheduled, no work completion inferred':null;row.current_phase=current.phase;row.updated_at=now;}
   const warnings=Object.values(cases).filter(row=>row.state==='open');
   Object.assign(report,{schema:'ltzzz.dispatch-oversight.v1',supervisor:'qianwen',executed_by:'repository_rules',native_qianwen_call:false,source_commit:sourceCommit,run_id:runId,model_calls:0,new_paid_schedules:0,paid:false,tx_hash:null,controller_permissions_reduced:false,automatic_financial_replay:false,warnings,
-    qianwen_daily_task_id:`DAILY-${report.date}-qianwen`,native_qianwen_review_verified:false,scope:'repository_evidence_and_reminder_dispatch_not_execution_or_independent_native_audit'});
+    qianwen_daily_task_id:`DAILY-${report.date}-qianwen`,native_qianwen_review_verified:nativeQianwenOversight(root,report.date).independent_review_verified,native_qianwen_supervision:nativeQianwenOversight(root,report.date),scope:'repository_evidence_and_reminder_dispatch_not_execution_or_independent_native_audit'});
   const count=predicate=>report.tasks.filter(predicate).length;
   report.stage_counts={scope:'verified_in_scanned_sources_not_total_project_completion',tasks_observed:report.tasks.length,
     dispatch_records:count(t=>t.phase!=='dispatch_missing'),claims_verified:count(t=>t.claim_verified===true),submissions_verified:count(t=>t.submission_verified===true),
