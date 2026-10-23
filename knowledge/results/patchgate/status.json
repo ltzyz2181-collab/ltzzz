@@ -2,7 +2,7 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "phase": "A0",
   "status": "submitted_waiting_independent_review",
-  "implementation_bundle_sha256": "10f619c8216fac2123ea8e3a7acde4a7de5147fcf01a332c700c976f46d33cf5",
+  "implementation_bundle_sha256": "c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05",
   "source_plan_pr": 220,
   "logical_seat": "gpt",
   "actual_provider": "openai",
@@ -11,14 +11,14 @@
   "tests": {
     "scope": "local_unit_and_real_git_fixture_no_production_integration",
     "command": "node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs",
-    "passed": 33,
+    "passed": 36,
     "failed": 0,
     "online_run": null,
-    "previous_online_run": "39935220581"
+    "previous_online_run": "39935828922"
   },
   "independent_review": {
     "claude": "assigned_waiting_native_claude_audit",
-    "qianwen": "first_native_review_revise_preserved_findings_resolved_pending_revision_review",
+    "qianwen": "v1_v2_native_revise_preserved_resolutions_submitted_for_final_code_review",
     "accepted": false,
     "first_qianwen": {
       "receipt": "knowledge/results/patchgate/329b0ced2ca38435/qianwen.result.json",
@@ -29,6 +29,16 @@
       "model": "qwen-plus",
       "finish_reason": "stop",
       "tokens_used": 20394
+    },
+    "second_qianwen": {
+      "receipt": "knowledge/results/patchgate/10f619c8216fac21/qianwen.result.json",
+      "run_id": "39935828922",
+      "source_commit": "e6384de913afab06a1fe9cb075dbd7377e433a97",
+      "verdict": "revise",
+      "provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "finish_reason": "stop",
+      "tokens_used": 21029
     }
   },
   "stages": {
@@ -60,5 +70,5 @@
     "Empty executor key registry blocks live attestations; shared CAS and mutation adapters are later audited stages.",
     "A passing test fixture does not prove production observations, signer-provider isolation or chain transactions."
   ],
-  "at_utc": "2026-10-23T09:59:12.479Z"
+  "at_utc": "2026-10-23T10:06:16.948Z"
 }

