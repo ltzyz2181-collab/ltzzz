@@ -100,14 +100,14 @@ export function authenticate(record, {trust, subject, role, now, maxAge}) {
   } catch { return null; }
 }
 
-export function verifyDeployment({subject, evidence, freshnessSeconds = 300, now = Date.now()}) {
+export function verifyDeployment({subject, evidence, allowedTargets = [], freshnessSeconds = 300, now = Date.now()}) {
   const checks = {subject:false, transport:false, commit:false, fresh:false, current_version:false};
   try {
     const {observation:o, platform:p} = evidence;
     const start = Date.parse(o.started_at_utc), end = Date.parse(o.finished_at_utc), date = Date.parse(o.http_date), observed = Date.parse(p.observed_at_utc);
     const url = new URL(o.url), body = Buffer.from(o.body_base64, 'base64');
     checks.subject = evidence.head_sha === subject.head_sha && evidence.base_sha === subject.base_sha && evidence.target_environment === 'canary';
-    checks.transport = url.protocol === 'https:' && url.hostname.endsWith('.workers.dev') && !url.username && !url.password && !url.port
+    checks.transport = allowedTargets.some(t => t.url === o.url) && url.protocol === 'https:' && url.hostname.endsWith('.workers.dev') && !url.username && !url.password && !url.port
       && o.http_status === 200 && o.redirected === false && body.length > 0 && sha256(body) === o.body_sha256;
     checks.commit = o.header_source_commit === subject.head_sha && body.toString('utf8').includes('SOURCE_COMMIT=' + subject.head_sha);
     checks.fresh = [start,end,date,observed].every(Number.isFinite) && start <= end && end - start <= freshnessSeconds * 1000
@@ -158,7 +158,7 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   let deployment = null;
   if (risk.level === 'L2') {
     const proofs = auth('deployment').filter(a => policy.canary_targets.some(t => t.url === a.payload.evidence?.observation?.url));
-    deployment = proofs.map(a => verifyDeployment({subject,evidence:a.payload.evidence,freshnessSeconds:policy.freshness_seconds,now})).find(x => x.passed) || null;
+    deployment = proofs.map(a => verifyDeployment({subject,evidence:a.payload.evidence,allowedTargets:policy.canary_targets,freshnessSeconds:policy.freshness_seconds,now})).find(x => x.passed) || null;
     if (!deployment) reasons.push('signed_allowlisted_canary_verification_required');
   }
   const unique = [...new Set(reasons)];
