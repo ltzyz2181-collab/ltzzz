@@ -36,7 +36,7 @@ function deployment(subject) {
 }
 
 test('four risk levels and fail-closed unknown paths',() => {
-  for (const [name,expected] of [['docs/example.md','L0'],['memory/agent.json','L0'],['ops/派单台账.md','L0'],['scripts/example.mjs','L1'],['tests/example.test.mjs','L1'],['workers/test/index.js','L2'],['wep3-worker.js','L2'],['wrangler.test.toml','L2'],['wallet/addresses.md','L3'],['config/review-delegation.json','L3'],['identity/dids/grok.json','L3'],['contracts/Escrow.sol','L3'],['.github/workflows/test.yml','L3'],['package.json','L3'],['unmapped/file','L3']]) assert.equal(classify(policy,[file(name)]).level,expected,name);
+  for (const [name,expected] of [['docs/example.md','L0'],['memory/agent.json','L0'],['memory/promote/queue.json','L3'],['memory/promote/notes.md','L3'],['docs/credentials.md','L3'],['ops/派单台账.md','L0'],['scripts/example.mjs','L1'],['tests/example.test.mjs','L1'],['workers/test/index.js','L2'],['wep3-worker.js','L2'],['wrangler.test.toml','L2'],['wallet/addresses.md','L3'],['config/review-delegation.json','L3'],['identity/dids/grok.json','L3'],['contracts/Escrow.sol','L3'],['.github/workflows/test.yml','L3'],['package.json','L3'],['unmapped/file','L3']]) assert.equal(classify(policy,[file(name)]).level,expected,name);
   assert.equal(classify(policy,[file('docs/active.js')]).level,'L3');
   assert.equal(classify(policy,[file('docs/a.md'),file('config/authority.json')]).level,'L3');
 });
@@ -84,6 +84,16 @@ test('missing, revoked, expired or forged executor key cannot authorize',() => {
   for (const modified of [{...trust,enabled:false},{...trust,keys:[]},{...trust,keys:trust.keys.map(k=>({...k,enabled:false}))},{...trust,keys:trust.keys.map(k=>({...k,not_after:'2026-10-23T09:00:00Z'}))}]) assert.equal(f.run(undefined,{trust:modified}).validation_passed,false);
   assert.equal(f.run(undefined,{now:now+86401000}).validation_passed,false);
   assert.equal(f.run(undefined,{now:now-1000}).validation_passed,false);
+});
+test('the same public key cannot impersonate different providers or duplicate key IDs',() => {
+  const f=fixture();
+  const reused={...trust,keys:trust.keys.map((k,i)=>i===1?{...k,public_key_pem:trust.keys[0].public_key_pem}:k)};
+  const snapshot={...f.snapshot,trust_sha256:sha256(canonical(reused))},subject=subjectFor(snapshot);
+  const payload={subject,role:'author',at_utc:new Date(now).toISOString()};
+  const author={key_id:pairs[0].id,payload,signature:sign(null,Buffer.from(canonical(payload)),pairs[0].privateKey).toString('base64')};
+  assert.ok(evaluate({policy,trust:reused,snapshot,now,attestations:[author]}).reasons.includes('one_authenticated_author_required'));
+  const duplicate={...trust,keys:[...trust.keys,trust.keys[0]]};
+  assert.equal(f.run(undefined,{trust:duplicate}).validation_passed,false);
 });
 test('incomplete model output cannot serve as an independent review',() => {
   const f=fixture();
@@ -152,14 +162,16 @@ test('same key is reserved only once; unknown outcome never retries automaticall
 });
 test('freshness and Cloudflare CURRENT version are deterministic requirements, not log self-reports',() => {
   const f=fixture('workers/a.js'),e=deployment(f.subject);
-  const result=verifyDeployment({subject:f.subject,evidence:e,now});
+  const allowedTargets=[{url:e.observation.url}],result=verifyDeployment({subject:f.subject,evidence:e,allowedTargets,now});
   assert.equal(result.status,'reverified_deterministic');
   assert.equal(result.model_verdict_required,false);
   assert.equal(result.rollback_verified,false);
   const cases=[x=>x.observation.header_source_commit=A,x=>x.observation.http_date='Fri, 23 Oct 2026 09:00:00 GMT',x=>x.observation.header_version_id='old',x=>x.platform.versions[0].id='different',x=>x.platform.versions[0].percentage=50,x=>x.platform.source='deploy_job_log',x=>x.observation.redirected=true,x=>x.observation.body_sha256='0'.repeat(64),x=>x.observation.url='http://ltzzz-patchgate-test.example.workers.dev',x=>x.target_environment='production'];
-  for (const mutate of cases) { const changed=structuredClone(e);mutate(changed);assert.equal(verifyDeployment({subject:f.subject,evidence:changed,now}).passed,false); }
-  assert.equal(verifyDeployment({subject:f.subject,evidence:e,now:now+301000}).passed,false,'old observation cannot be freshly re-attested');
-  assert.equal(verifyDeployment({subject:f.subject,evidence:e,now:now-10000}).passed,false,'future observation is invalid');
+  for (const mutate of cases) { const changed=structuredClone(e);mutate(changed);assert.equal(verifyDeployment({subject:f.subject,evidence:changed,allowedTargets,now}).passed,false); }
+  assert.equal(verifyDeployment({subject:f.subject,evidence:e,allowedTargets,now:now+301000}).passed,false,'old observation cannot be freshly re-attested');
+  assert.equal(verifyDeployment({subject:f.subject,evidence:e,allowedTargets,now:now-10000}).passed,false,'future observation is invalid');
+  assert.equal(verifyDeployment({subject:f.subject,evidence:e,now}).passed,false,'standalone verifier also requires the base allowlist');
+  assert.equal(verifyDeployment({subject:f.subject,evidence:e,allowedTargets:[{url:'https://other.example.workers.dev'}],now}).passed,false);
 });
 test('L2 canary must be signed and target must be in BASE allowlist',() => {
   const f=fixture('workers/a.js'),e=deployment(f.subject),proof=f.attestation(0,'deployment',{evidence:e});

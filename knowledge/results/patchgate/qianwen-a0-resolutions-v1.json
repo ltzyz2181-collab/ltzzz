@@ -1,0 +1,47 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "reviewed_source_commit": "030fea52846f7cd2aa9fc3c77fa9dd564ee64fa7",
+  "review_receipt": "knowledge/results/patchgate/329b0ced2ca38435/qianwen.result.json",
+  "review_output_sha256": "a7c75414646dfe65e363e8593f1f96dd55cb083aa7e14645de5aace0f9e6f070",
+  "review_original_verdict": "revise",
+  "revised_bundle_sha256": "10f619c8216fac2123ea8e3a7acde4a7de5147fcf01a332c700c976f46d33cf5",
+  "status": "controller_resolutions_submitted_for_rereview_not_independent_approval",
+  "resolutions": [
+    {
+      "finding": 0,
+      "decision": "adopt_defense_in_depth",
+      "reason": "The L2 outer evaluator already filters signed proofs against base canary_targets; no demonstrated exploit in evaluate. Also require an explicit allowlist inside the standalone verifier so it cannot report success without that context.",
+      "evidence": "standalone missing/wrong allowlist and L2 wrong target tests"
+    },
+    {
+      "finding": 1,
+      "decision": "retain_conservative_L3",
+      "reason": "docs/credentials.md is deliberately sensitive-name L3; allowing documentation suffixes to suppress sensitive path classification weakens protection. Tests now lock this precedence."
+    },
+    {
+      "finding": 2,
+      "decision": "retain_existing_L3_add_counterexamples",
+      "reason": "classify applies the L3 prefix override after L0. memory/promote/queue.json and notes.md both evaluate to L3; the alleged L0 fallback is not present."
+    }
+  ],
+  "limitations": [
+    {
+      "item": "real_Cloudflare_capture",
+      "resolution": "not_connected_in_A0_A3_requires_real_capture_and_audit"
+    },
+    {
+      "item": "same_key_different_provider",
+      "resolution": "added cryptographically signed counterexample with reused public key and duplicate key ID"
+    },
+    {
+      "item": "stale_observation",
+      "resolution": "current code already checks now minus observation.end against freshness_seconds; retained stale/future counterexample tests"
+    }
+  ],
+  "claude_audit_received": false,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "paid": false,
+  "tx_hash": null
+}

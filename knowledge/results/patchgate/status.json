@@ -2,7 +2,7 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "phase": "A0",
   "status": "submitted_waiting_independent_review",
-  "implementation_bundle_sha256": "329b0ced2ca3843530f15caf3b675d962b2b5860835f9a84e839344dab254178",
+  "implementation_bundle_sha256": "10f619c8216fac2123ea8e3a7acde4a7de5147fcf01a332c700c976f46d33cf5",
   "source_plan_pr": 220,
   "logical_seat": "gpt",
   "actual_provider": "openai",
@@ -11,14 +11,25 @@
   "tests": {
     "scope": "local_unit_and_real_git_fixture_no_production_integration",
     "command": "node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs",
-    "passed": 32,
+    "passed": 33,
     "failed": 0,
-    "online_run": null
+    "online_run": null,
+    "previous_online_run": "39935220581"
   },
   "independent_review": {
     "claude": "assigned_waiting_native_claude_audit",
-    "qianwen": "scheduled_explicit_once_per_code_bundle_not_yet_returned",
-    "accepted": false
+    "qianwen": "first_native_review_revise_preserved_findings_resolved_pending_revision_review",
+    "accepted": false,
+    "first_qianwen": {
+      "receipt": "knowledge/results/patchgate/329b0ced2ca38435/qianwen.result.json",
+      "run_id": "39935220581",
+      "source_commit": "030fea52846f7cd2aa9fc3c77fa9dd564ee64fa7",
+      "verdict": "revise",
+      "provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "finish_reason": "stop",
+      "tokens_used": 20394
+    }
   },
   "stages": {
     "draft_created": true,
@@ -30,7 +41,12 @@
     "business_delivered": false
   },
   "next_phase": "A1_blocked_until_A0_double_audit_and_finding_resolution",
-  "escrow": {"phase": "not_entered", "status": "blocked_by_A", "maximum_authorized_environment": "public_testnet_fake_tokens", "transactions": []},
+  "escrow": {
+    "phase": "not_entered",
+    "status": "blocked_by_A",
+    "maximum_authorized_environment": "public_testnet_fake_tokens",
+    "transactions": []
+  },
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -43,5 +59,6 @@
     "A0 is a submitted implementation, not deployment completion.",
     "Empty executor key registry blocks live attestations; shared CAS and mutation adapters are later audited stages.",
     "A passing test fixture does not prove production observations, signer-provider isolation or chain transactions."
-  ]
+  ],
+  "at_utc": "2026-10-23T09:59:12.479Z"
 }
