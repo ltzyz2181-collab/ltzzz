@@ -1,0 +1,15 @@
+{
+  "finding": "runReservedSeat 在 beginExecution 后、调用 call() 前将 ledger 置为 generation_started；若 call() 返回后进程在 artifact 落盘前崩溃，ledger 永久停留 generation_started。syncDailyBoard 将该状态转为 generation_unknown_no_repurchase 后丢弃该次 provider 响应，recoverArtifact 又仅能恢复已落盘的完整 JSON artifact，导致已真实消耗的 provider 调用结果不可恢复，违反‘先查已有预留和回执’与‘不重复采购’原则。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "workers/pulse-worker/engine.js",
+    "workers/pulse-worker/tasks.js"
+  ],
+  "minimal_patch": "在 runReservedSeat 中，于 await call() 返回且 assessDelivery 判定 incomplete_or_failed 或 SPEND_PROPOSAL 输出时，若最终 artifact 写入或 ledger 保存前发生异常，先将 provider 原始返回落盘为不可变文件：knowledge/results/daily-board/artifacts/<date>-<agent>-<digest(raw)>.provider.json，并将 path/sha256/落盘时间写入 seat.raw_provider；随后再尝试写最终 artifact 与 ledger。syncDailyBoard 检测 seat.status==='generation_started' 且 seat.raw_provider 存在且校验 sha256 通过时，不得将该次响应标记为 generation_unknown_no_repurchase 或触发 repurchase；应先尝试从 raw_provider 重建完整 artifact 并进入 generated_pending_sync。若 raw_provider 不存在，则维持现有 generation_unknown_no_repurchase 语义。",
+  "verification_commands": [
+    "node --test scripts/lib/daily-task-board.test.mjs",
+    "node scripts/daily-task-board.mjs prepare && node scripts/daily-task-board.mjs sync",
+    "sha256sum knowledge/results/daily-board/artifacts/*.provider.json"
+  ],
+  "remaining_blocker": "未见 scripts/lib/provider-execution.js 与 scripts/delivery-integrity.mjs 实现，无法验证 beginExecution/finishExecution 元数据与 assessDelivery 规则对 raw_provider 恢复路径的兼容性。"
+}
