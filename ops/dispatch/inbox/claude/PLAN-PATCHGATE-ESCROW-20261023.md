@@ -4,7 +4,7 @@
 
 目标：审核 GPT 对你方案的工程修正及 A0 代码，指出可复现缺陷，并用原生 Claude 免费仓库 PR 交审计。不得用 DeepSeek/豆包代执行冒充你的审计。作者实际提供商 OpenAI；另一个审计提供商拟为原生阿里云千问，线上回执未返回前不算已收到。
 
-输入：实施 PR 的固定 head（总控在 PR #220 评论中补链接与完整提交）；`scripts/patchgate-audit.mjs` 的 BUNDLE 列表包含 10 个文件，执行 `bundle()` 可得到原字节清单及 bundle SHA256。当前送审 bundle 为 `10f619c8216fac2123ea8e3a7acde4a7de5147fcf01a332c700c976f46d33cf5`；任何代码文件变化后旧审计作废，必须按新 hash 审。
+输入：实施 PR 的固定 head（总控在 PR #220 评论中补链接与完整提交）；`scripts/patchgate-audit.mjs` 的 BUNDLE 列表包含 10 个文件，执行 `bundle()` 可得到原字节清单及 bundle SHA256。当前送审 bundle 为 `c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05`；任何代码文件变化后旧审计作废，必须按新 hash 审。
 
 重点检查：
 

@@ -1,0 +1,117 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "purpose": "native_qianwen_independent_audit",
+  "source_commit": "e6384de913afab06a1fe9cb075dbd7377e433a97",
+  "run_id": "39935828922",
+  "run_attempt": "1",
+  "at_utc": "2026-10-23T09:59:59.490Z",
+  "bundle_sha256": "10f619c8216fac2123ea8e3a7acde4a7de5147fcf01a332c700c976f46d33cf5",
+  "files": [
+    {
+      "path": "config/patch-policy.json",
+      "sha256": "60c74da430f96bfff9b76a9e5d42e38ea39eb638170d886eee3ca309b72dc211"
+    },
+    {
+      "path": "config/patchgate-trust.json",
+      "sha256": "cc0075bc01f0a3406b7d4060afa175bbde1b990ae1a1a5eefb78bcf372a93103"
+    },
+    {
+      "path": "scripts/lib/patchgate.mjs",
+      "sha256": "8379b25da9ea38575cba6594a62e34ec7536bda0450649ce6ad6730b746d27b2"
+    },
+    {
+      "path": "scripts/patchgate.mjs",
+      "sha256": "1862140d64914d8389af67949db946f6efca7933a9f3cf619ae7c23d00748299"
+    },
+    {
+      "path": "scripts/patchgate-audit.mjs",
+      "sha256": "97b9867a17ce61ba7e77c5de7e0cd73f0cbfa310ffc3a054e4074af9c54ff641"
+    },
+    {
+      "path": "scripts/tests/patchgate.test.mjs",
+      "sha256": "a0fa8a7b67ef77b87baf513dc098c701e8d5dc981e984a9b87041be0bcf57830"
+    },
+    {
+      "path": "scripts/tests/patchgate-audit.test.mjs",
+      "sha256": "957db35a3c06fe185460c378eec73339cebcf6def2197c4166782db18b484014"
+    },
+    {
+      "path": ".github/workflows/patchgate-a0.yml",
+      "sha256": "ac5bdfb95f86b89eedeff4057e2259db80940a2cecf55d3561926536f06b319e"
+    },
+    {
+      "path": "docs/PATCHGATE-ESCROW-STAGES.md",
+      "sha256": "4d96894589d1f87b6aacd8a1e5feed721053862038e11b9038fb8e1e223eb7e2"
+    },
+    {
+      "path": "ops/dispatch/PLAN-PATCHGATE-AND-ESCROW-20261023.md",
+      "sha256": "a0ef0c5c4822ed259f6f5758160809416a079ac44dd68ff5f1d320880614e064"
+    }
+  ],
+  "author_provider": "openai",
+  "reviewer_provider": "aliyun_dashscope",
+  "status": "native_audit_returned_pending_controller_resolution",
+  "paid": false,
+  "tx_hash": null,
+  "actual_provider": "aliyun_dashscope",
+  "model": "qwen-plus",
+  "model_source": "provider_response",
+  "metadata_source": "native_adapter_and_provider_response",
+  "request_id": "e8ee54ae-f82a-9ee4-b8e5-20af577bc599",
+  "finish_reason": "stop",
+  "tokens_used": 21029,
+  "native_qwen_call": true,
+  "provider_adapter_invocations": 1,
+  "http_request_count_verified": false,
+  "provider_status": "success",
+  "output": "{\n  \"verdict\": \"revise\",\n  \"findings\": [\n    {\n      \"severity\": \"P0\",\n      \"path\": \"scripts/lib/patchgate.mjs\",\n      \"issue\": \"verifyDeployment() 函数中 checks.commit 逻辑存在确定性绕过：仅校验 body.toString('utf8').includes('SOURCE_COMMIT=' + subject.head_sha)，但未要求该字符串出现在固定位置或上下文，攻击者可在注释、字符串字面量或无关字段中注入匹配子串（如 'SOURCE_COMMIT=abc123' 在 Markdown 表格或 JSON 注释中），导致虚假通过。\",\n      \"fix\": \"将 checks.commit 改为严格结构化校验：解析 body 为 UTF-8 字符串后，必须存在且唯一匹配正则 /^SOURCE_COMMIT=[a-f0-9]{40}(?:\\\\r?\\\\n|$)/m，并确保其位于响应体起始附近（如前 2KB）且非注释/字符串内；或改用带签名的结构化 header（如 X-SOURCE-COMMIT-SIGNATURE）替代明文标记。\"\n    },\n    {\n      \"severity\": \"P1\",\n      \"path\": \"scripts/lib/patchgate.mjs\",\n      \"issue\": \"classify() 函数中 L2 分级逻辑存在路径绕过：/^wrangler[^/]*\\\\.toml$/ 和 /^[^/]+\\\\.(?:js|mjs|cjs|html)$/ 两条正则可被构造文件名触发（如 'x.wrangler.toml' 或 'x.html'），但未限定路径层级或上下文，导致任意 docs/ 或 memory/ 下的 .toml/.html 文件被误升为 L2，破坏 L0/L1 的自动合并语义。\",\n      \"fix\": \"将 L2 正则强化为路径语义感知：wrangler 匹配仅限于根目录或 workers/ 子目录下（e.g., /^(?:workers\\\\/)?wrangler(?:\\\\.[^/]+)?\\\\.toml$/），HTML/JS 匹配仅限于 scripts/、workers/、api/ 或明确声明为执行入口的路径前缀（需与 l2_prefixes 交集），禁止在 docs/、memory/ 等 L0/L1 区域触发。\"\n    },\n    {\n      \"severity\": \"P1\",\n      \"path\": \"config/patch-policy.json\",\n      \"issue\": \"l3_prefixes 包含 'lib/'，但 scripts/lib/patchgate.mjs 自身位于该路径下；当补丁修改此文件时，classify() 将其归为 L3，但 evaluate() 中 risk.modifies_own_checks 检查仅针对 protected_prefixes（不含 'lib/'），导致 PatchGate 自身约束代码可被 L3 补丁直接修改而无 'cannot_modify_own_constraints_requires_separate_trust_rollout' 阻断。\",\n      \"fix\": \"将 'scripts/lib/patchgate.mjs' 显式加入 protected_prefixes；或统一将所有约束执行器源码路径（scripts/lib/, scripts/patchgate.mjs, scripts/patchgate-audit.mjs）纳入 protected_prefixes，确保任何对其的修改均触发自约束拦截。\"\n    }\n  ],\n  \"limitations\": [\n    \"verifyDeployment() 的 Cloudflare platform API 版本一致性校验（p.versions[0].id === o.header_version_id）依赖外部平台响应格式稳定性，未实测不同 CF API 版本返回差异及降级行为。\",\n    \"freshness_seconds=300 的时间窗口在跨时区/高延迟观测场景下的边界行为（如 NTP 偏移、CF Workers clock skew）未实测。\",\n    \"scanDiff() 对 secret_pattern 的正则未覆盖所有常见密钥变体（如 AWS_ACCESS_KEY_ID=... 形式、GCP service account JSON 内嵌 private_key），且未隔离多行密钥片段（如 PEM 跨行）。\"\n  ],\n  \"review_end\": true\n}",
+  "output_sha256": "c751c3b675b0e795b74f4ae6d77544af871533012b2727b274c2a728ba4961b1",
+  "review": {
+    "verdict": "revise",
+    "findings": [
+      {
+        "severity": "P0",
+        "path": "scripts/lib/patchgate.mjs",
+        "issue": "verifyDeployment() 函数中 checks.commit 逻辑存在确定性绕过：仅校验 body.toString('utf8').includes('SOURCE_COMMIT=' + subject.head_sha)，但未要求该字符串出现在固定位置或上下文，攻击者可在注释、字符串字面量或无关字段中注入匹配子串（如 'SOURCE_COMMIT=abc123' 在 Markdown 表格或 JSON 注释中），导致虚假通过。",
+        "fix": "将 checks.commit 改为严格结构化校验：解析 body 为 UTF-8 字符串后，必须存在且唯一匹配正则 /^SOURCE_COMMIT=[a-f0-9]{40}(?:\\r?\\n|$)/m，并确保其位于响应体起始附近（如前 2KB）且非注释/字符串内；或改用带签名的结构化 header（如 X-SOURCE-COMMIT-SIGNATURE）替代明文标记。"
+      },
+      {
+        "severity": "P1",
+        "path": "scripts/lib/patchgate.mjs",
+        "issue": "classify() 函数中 L2 分级逻辑存在路径绕过：/^wrangler[^/]*\\.toml$/ 和 /^[^/]+\\.(?:js|mjs|cjs|html)$/ 两条正则可被构造文件名触发（如 'x.wrangler.toml' 或 'x.html'），但未限定路径层级或上下文，导致任意 docs/ 或 memory/ 下的 .toml/.html 文件被误升为 L2，破坏 L0/L1 的自动合并语义。",
+        "fix": "将 L2 正则强化为路径语义感知：wrangler 匹配仅限于根目录或 workers/ 子目录下（e.g., /^(?:workers\\/)?wrangler(?:\\.[^/]+)?\\.toml$/），HTML/JS 匹配仅限于 scripts/、workers/、api/ 或明确声明为执行入口的路径前缀（需与 l2_prefixes 交集），禁止在 docs/、memory/ 等 L0/L1 区域触发。"
+      },
+      {
+        "severity": "P1",
+        "path": "config/patch-policy.json",
+        "issue": "l3_prefixes 包含 'lib/'，但 scripts/lib/patchgate.mjs 自身位于该路径下；当补丁修改此文件时，classify() 将其归为 L3，但 evaluate() 中 risk.modifies_own_checks 检查仅针对 protected_prefixes（不含 'lib/'），导致 PatchGate 自身约束代码可被 L3 补丁直接修改而无 'cannot_modify_own_constraints_requires_separate_trust_rollout' 阻断。",
+        "fix": "将 'scripts/lib/patchgate.mjs' 显式加入 protected_prefixes；或统一将所有约束执行器源码路径（scripts/lib/, scripts/patchgate.mjs, scripts/patchgate-audit.mjs）纳入 protected_prefixes，确保任何对其的修改均触发自约束拦截。"
+      }
+    ],
+    "limitations": [
+      "verifyDeployment() 的 Cloudflare platform API 版本一致性校验（p.versions[0].id === o.header_version_id）依赖外部平台响应格式稳定性，未实测不同 CF API 版本返回差异及降级行为。",
+      "freshness_seconds=300 的时间窗口在跨时区/高延迟观测场景下的边界行为（如 NTP 偏移、CF Workers clock skew）未实测。",
+      "scanDiff() 对 secret_pattern 的正则未覆盖所有常见密钥变体（如 AWS_ACCESS_KEY_ID=... 形式、GCP service account JSON 内嵌 private_key），且未隔离多行密钥片段（如 PEM 跨行）。"
+    ],
+    "review_end": true
+  },
+  "error": null,
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "PLAN-PATCHGATE-ESCROW-20261023:A0:independent_audit",
+    "prompt_sha256": "d28afde5479dc6e4daf3568eafb78daf40ec539f0b9329179f3f252e5a530efb"
+  },
+  "native_openai_calls": 0,
+  "native_anthropic_calls": 0,
+  "api_cost": null,
+  "financial_execution": false,
+  "claude_audit_received": false,
+  "automatic_merge": false,
+  "automatic_deploy": false
+}

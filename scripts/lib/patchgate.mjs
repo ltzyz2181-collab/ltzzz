@@ -31,7 +31,7 @@ export function validatePolicy(p) {
 }
 
 export function classify(p, files) {
-  let level = 0;
+  let level = 0, requiresCanary = false;
   const controls = [], reasons = [];
   for (const f of files) {
     if (!validPath(f.path) || !['100644', '100755'].includes(f.mode) || (f.old_mode && !['100644', '100755'].includes(f.old_mode))) {
@@ -43,19 +43,27 @@ export function classify(p, files) {
     if (p.l0_files.includes(name) || (p.l0_prefixes.some(x => name.startsWith(x)) && p.documentation_extensions.includes(path.posix.extname(name)))) n = 0;
     if (p.l1_prefixes.some(x => name.startsWith(x))) n = 1;
     if (p.l2_prefixes.some(x => name.startsWith(x)) || /^wrangler[^/]*\.toml$/.test(name) || /^[^/]+\.(?:js|mjs|cjs|html)$/.test(name)) n = 2;
+    if (n === 2) requiresCanary = true; // L3 files cannot cancel a Worker's L2 prerequisite.
     if (p.l3_prefixes.some(x => name.startsWith(x)) || p.l3_files.includes(name) || isSensitiveName(name) || name.endsWith('/AGENTS.md')) n = 3;
     level = Math.max(level, n);
   }
-  return {level: 'L' + level, modifies_own_checks: controls.length > 0, controls, reasons};
+  return {level: 'L' + level, requires_canary:requiresCanary, modifies_own_checks: controls.length > 0, controls, reasons};
 }
 
 export function scanDiff(p, files) {
   const findings = [];
   for (const file of files) {
     if (file.binary || typeof file.diff !== 'string') { findings.push({path:file.path, code:'binary_or_missing_diff'}); continue; }
-    const added = file.diff.split('\n').filter(s => s.startsWith('+') && !s.startsWith('+++')).map(s => s.slice(1)).join('\n');
+    let hunk = false;
+    const lines = [];
+    for (const line of file.diff.split('\n')) {
+      if (line.startsWith('diff --git ')) hunk = false;
+      else if (line.startsWith('@@ ')) hunk = true;
+      else if (hunk && line.startsWith('+')) lines.push(line.slice(1));
+    }
+    const added = lines.join('\n'); // +++ inside a hunk is source text, not a file header.
     // Never copy a suspected credential or its line into reports/model prompts.
-    if (/(?:sk-|cfut_)[A-Za-z0-9_-]{16,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:api[_-]?key|password|authorization)\s*[:=]\s*["'][A-Za-z0-9_+\/-]{20,}["']/i.test(added)) findings.push({path:file.path, code:'secret_pattern'});
+    if (/(?:sk-|cfut_)[A-Za-z0-9_-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:api[_-]?key|client[_-]?secret|password|authorization)\s*[:=]\s*["'][A-Za-z0-9_+\/-]{20,}["']/i.test(added)) findings.push({path:file.path, code:'secret_pattern'});
     if (/\beval\s*\(|\b(?:new\s+Function|atob)\s*\(|(?:Buffer\.from\([^\n]*['"]base64['"])|(?:node:)?child_process|\b(?:execSync|spawnSync)\s*\(/.test(added)) findings.push({path:file.path, code:'new_dynamic_execution_requires_review'});
     const hosts = new Set();
     for (const m of added.matchAll(/https?:\/\/[^\s"'`<>\)]+/g)) {
@@ -109,10 +117,14 @@ export function verifyDeployment({subject, evidence, allowedTargets = [], freshn
     checks.subject = evidence.head_sha === subject.head_sha && evidence.base_sha === subject.base_sha && evidence.target_environment === 'canary';
     checks.transport = allowedTargets.some(t => t.url === o.url) && url.protocol === 'https:' && url.hostname.endsWith('.workers.dev') && !url.username && !url.password && !url.port
       && o.http_status === 200 && o.redirected === false && body.length > 0 && sha256(body) === o.body_sha256;
-    checks.commit = o.header_source_commit === subject.head_sha && body.toString('utf8').includes('SOURCE_COMMIT=' + subject.head_sha);
+    // A dedicated metadata response, not a substring buried in HTML/comments/JSON prose.
+    let metadata;try { metadata=JSON.parse(body.toString('utf8')); } catch { metadata=null; }
+    checks.commit = o.header_source_commit === subject.head_sha && metadata?.schema === 'ltzzz.patchgate.canary.v1'
+      && metadata.source_commit === subject.head_sha && Object.keys(metadata).sort().join(',') === 'schema,source_commit'
+      && body.toString('utf8') === canonical({schema:'ltzzz.patchgate.canary.v1',source_commit:subject.head_sha})+'\n';
     checks.fresh = [start,end,date,observed].every(Number.isFinite) && start <= end && end - start <= freshnessSeconds * 1000
-      && date >= start - freshnessSeconds * 1000 && date <= end + freshnessSeconds * 1000
-      && observed >= start && observed <= end && Number.isFinite(now) && end <= now + 1000 && now - end <= freshnessSeconds * 1000;
+      && date >= start - 5000 && date <= end + 5000 && observed >= start - 5000 && observed <= end + 5000
+      && Number.isFinite(now) && [date,observed,end].every(t => t <= now + 5000 && now - t <= freshnessSeconds * 1000);
     checks.current_version = p.http_status === 200 && p.service_name === url.hostname.split('.')[0]
       && p.source === 'cloudflare_current_deployment_api' && p.versions?.length === 1
       && p.versions[0].percentage === 100 && typeof p.versions[0].id === 'string' && !!p.versions[0].id
@@ -156,14 +168,14 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   if (new Set(reviews.map(a => a.provider)).size < minimum) reasons.push('distinct_provider_reviews_required');
   if (risk.level === 'L3' && !auth('notification').some(a => a.payload.owner_notified === true && typeof a.payload.reference === 'string' && a.payload.reference.startsWith('https://github.com/ltzyz2181-collab/ltzzz/'))) reasons.push('owner_notification_evidence_required');
   let deployment = null;
-  if (risk.level === 'L2') {
+  if (risk.requires_canary) {
     const proofs = auth('deployment').filter(a => policy.canary_targets.some(t => t.url === a.payload.evidence?.observation?.url));
     deployment = proofs.map(a => verifyDeployment({subject,evidence:a.payload.evidence,allowedTargets:policy.canary_targets,freshnessSeconds:policy.freshness_seconds,now})).find(x => x.passed) || null;
     if (!deployment) reasons.push('signed_allowlisted_canary_verification_required');
   }
   const unique = [...new Set(reasons)];
   return {task_id:subject.task_id, subject, subject_sha256:sha256(canonical(subject)), idempotency_key:subject.task_id + ':' + subject.head_sha,
-    risk_class:risk.level, author_provider:author?.provider || null, reviewer_providers:[...new Set(reviews.map(a => a.provider))],
+    risk_class:risk.level, requires_canary:risk.requires_canary, author_provider:author?.provider || null, reviewer_providers:[...new Set(reviews.map(a => a.provider))],
     required_independent_reviews:minimum, additional_review_due_to_failures:extra, scan_findings:findings, reasons:unique,
     validation_passed:unique.length === 0, status:unique.length ? 'validation_blocked' : 'validated_not_activated',
     phase:policy.phase, automatic_merge:false, automatic_deploy:false, automatic_rollback:false,
