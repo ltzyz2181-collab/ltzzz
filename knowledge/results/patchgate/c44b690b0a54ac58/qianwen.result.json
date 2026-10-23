@@ -1,0 +1,123 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "purpose": "native_qianwen_independent_audit",
+  "source_commit": "da8cc52b0ad47649ed781bdc945360ae89b25f53",
+  "run_id": "39936706809",
+  "run_attempt": "1",
+  "at_utc": "2026-10-23T10:07:09.769Z",
+  "bundle_sha256": "c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05",
+  "files": [
+    {
+      "path": "config/patch-policy.json",
+      "sha256": "60c74da430f96bfff9b76a9e5d42e38ea39eb638170d886eee3ca309b72dc211"
+    },
+    {
+      "path": "config/patchgate-trust.json",
+      "sha256": "cc0075bc01f0a3406b7d4060afa175bbde1b990ae1a1a5eefb78bcf372a93103"
+    },
+    {
+      "path": "scripts/lib/patchgate.mjs",
+      "sha256": "40a09df2f5c1eeae42c62a26ed35ba3b21418ca19f6027bb39dbedc7f8cf3fee"
+    },
+    {
+      "path": "scripts/patchgate.mjs",
+      "sha256": "1862140d64914d8389af67949db946f6efca7933a9f3cf619ae7c23d00748299"
+    },
+    {
+      "path": "scripts/patchgate-audit.mjs",
+      "sha256": "97b9867a17ce61ba7e77c5de7e0cd73f0cbfa310ffc3a054e4074af9c54ff641"
+    },
+    {
+      "path": "scripts/tests/patchgate.test.mjs",
+      "sha256": "7d9796036a9adf0d6fe8a589592e5c5bcbeff593e85eda9fce2c7e0918886730"
+    },
+    {
+      "path": "scripts/tests/patchgate-audit.test.mjs",
+      "sha256": "957db35a3c06fe185460c378eec73339cebcf6def2197c4166782db18b484014"
+    },
+    {
+      "path": ".github/workflows/patchgate-a0.yml",
+      "sha256": "ac5bdfb95f86b89eedeff4057e2259db80940a2cecf55d3561926536f06b319e"
+    },
+    {
+      "path": "docs/PATCHGATE-ESCROW-STAGES.md",
+      "sha256": "04de46adb7b2575b5c969ff260e8f51f870a01dac85ba77ea5ec92237adf7f58"
+    },
+    {
+      "path": "ops/dispatch/PLAN-PATCHGATE-AND-ESCROW-20261023.md",
+      "sha256": "a0ef0c5c4822ed259f6f5758160809416a079ac44dd68ff5f1d320880614e064"
+    }
+  ],
+  "author_provider": "openai",
+  "reviewer_provider": "aliyun_dashscope",
+  "status": "native_audit_returned_pending_controller_resolution",
+  "paid": false,
+  "tx_hash": null,
+  "actual_provider": "aliyun_dashscope",
+  "model": "qwen-plus",
+  "model_source": "provider_response",
+  "metadata_source": "native_adapter_and_provider_response",
+  "request_id": "a7a183a7-fe54-97f1-a4ce-be9276217865",
+  "finish_reason": "stop",
+  "tokens_used": 22511,
+  "native_qwen_call": true,
+  "provider_adapter_invocations": 1,
+  "http_request_count_verified": false,
+  "provider_status": "success",
+  "output": "{\n  \"verdict\": \"revise\",\n  \"findings\": [\n    {\n      \"severity\": \"P0\",\n      \"path\": \"scripts/lib/patchgate.mjs\",\n      \"issue\": \"verifyDeployment() 允许 'header_version_id' 与 'evidence.expected_version_id' 不一致时仍通过检查：代码中 checks.current_version 依赖 p.versions[0].id === o.header_version_id && p.versions[0].id === evidence.expected_version_id，但 evidence.expected_version_id 来自未签名的输入 payload（attestation.payload.evidence），而 o.header_version_id 来自 HTTP 响应头；攻击者可在 deployment attestation 中伪造 expected_version_id 以绕过版本一致性校验。\",\n      \"fix\": \"将 expected_version_id 移出用户可控的 attestation.payload.evidence，改为由 verifyDeployment() 从 observation.header_version_id 或 platform.versions[0].id 派生，并在 checks.current_version 中仅比对 observation.header_version_id === platform.versions[0].id === (derived_expected_id)，且 derived_expected_id 必须为非空字符串、符合 Cloudflare Worker ID 格式（如 /^[a-z0-9-]{1,63}$/）\"\n    },\n    {\n      \"severity\": \"P0\",\n      \"path\": \"scripts/lib/patchgate.mjs\",\n      \"issue\": \"subjectFor() 和 evaluate() 对 snapshot.files 的路径合法性校验缺失对 '..' 的绝对路径规避检测：validPath() 仅检查 part !== '..'，但未阻止 'foo/../config/patch-policy.json' 等路径经 Git 解析后实际访问受保护文件；Git diff --raw 输出的路径未经 normalize，攻击者可提交含 '..' 的路径绕过 protected_prefixes 检查。\",\n      \"fix\": \"在 subjectFor() 中对每个 f.path 调用 path.posix.normalize() 后，检查 normalized path 是否仍以 '.' 开头或包含 '/..' 或 '../'；若存在则抛出 'invalid_patch_paths' 错误\"\n    },\n    {\n      \"severity\": \"P1\",\n      \"path\": \"config/patch-policy.json\",\n      \"issue\": \"l3_prefixes 包含 '.github/'，但 .github/workflows/patchgate.yml 实际被列为 protected_prefixes；policy 中 l3_prefixes 与 protected_prefixes 存在重叠且语义冲突：protected_prefixes 触发 modifies_own_checks 阻断，而 l3_prefixes 仅提升风险等级；当修改 .github/workflows/patchgate.yml 时 classify() 返回 L3 但 modifies_own_checks = false（因未匹配 protected_prefixes），导致绕过 A0 强制阻断。\",\n      \"fix\": \"从 l3_prefixes 中移除 '.github/'；确保所有 protected_prefixes 均不重复出现在 l3_prefixes/l2_prefixes/l1_prefixes/l0_prefixes 中，并在 validatePolicy() 中添加交叉校验：throw Error('overlapping_prefixes') if any protected_prefix matches any other level's prefixes\"\n    },\n    {\n      \"severity\": \"P1\",\n      \"path\": \"scripts/lib/patchgate.mjs\",\n      \"issue\": \"authenticate() 使用 createPublicKey(k.public_key_pem) 后导出 DER 并比较字节相等性，但 Ed25519 SPKI PEM 可能含不同空白/换行/注释，导致相同密钥的 DER 导出不等；攻击者可注册同一公钥的多个 PEM 变体（如带不同注释）以绕过 'same key ≠ multiple providers' 检查。\",\n      \"fix\": \"在 authenticate() 中，对 k.public_key_pem 执行 pem.strip()（移除 PEM 头尾及内部空白）后再调用 createPublicKey；或改用 crypto.createPublicKey({key:k.public_key_pem,format:'pem',type:'spki'}) 并统一导出 DER 进行比较\"\n    }\n  ],\n  \"limitations\": [\n    \"未实测 verifyDeployment() 在真实 Cloudflare Workers 环境下的五项确定性复验（尤其是 Date 窗口累积容差、HTTP Date 与 observed_at_utc 的跨服务时钟漂移）\",\n    \"未实测 classify() 对 Unicode 路径（如 'docs/新文档.md'）和混合编码路径的归一化处理是否与 Git 内部解析一致\",\n    \"未实测 reserveAction() 在分布式 CI runner 上的文件系统级原子性（当前仅声明 'Atomic on ONE durable filesystem only'，但 GitHub Actions runner 不保证跨 job 文件系统持久性）\"\n  ],\n  \"review_end\": true\n}",
+  "output_sha256": "ef886ecf6805d0c7e6b666fefd5fcb5fd0f1d17231dd7e7a4c236b1c9b6b0ab7",
+  "review": {
+    "verdict": "revise",
+    "findings": [
+      {
+        "severity": "P0",
+        "path": "scripts/lib/patchgate.mjs",
+        "issue": "verifyDeployment() 允许 'header_version_id' 与 'evidence.expected_version_id' 不一致时仍通过检查：代码中 checks.current_version 依赖 p.versions[0].id === o.header_version_id && p.versions[0].id === evidence.expected_version_id，但 evidence.expected_version_id 来自未签名的输入 payload（attestation.payload.evidence），而 o.header_version_id 来自 HTTP 响应头；攻击者可在 deployment attestation 中伪造 expected_version_id 以绕过版本一致性校验。",
+        "fix": "将 expected_version_id 移出用户可控的 attestation.payload.evidence，改为由 verifyDeployment() 从 observation.header_version_id 或 platform.versions[0].id 派生，并在 checks.current_version 中仅比对 observation.header_version_id === platform.versions[0].id === (derived_expected_id)，且 derived_expected_id 必须为非空字符串、符合 Cloudflare Worker ID 格式（如 /^[a-z0-9-]{1,63}$/）"
+      },
+      {
+        "severity": "P0",
+        "path": "scripts/lib/patchgate.mjs",
+        "issue": "subjectFor() 和 evaluate() 对 snapshot.files 的路径合法性校验缺失对 '..' 的绝对路径规避检测：validPath() 仅检查 part !== '..'，但未阻止 'foo/../config/patch-policy.json' 等路径经 Git 解析后实际访问受保护文件；Git diff --raw 输出的路径未经 normalize，攻击者可提交含 '..' 的路径绕过 protected_prefixes 检查。",
+        "fix": "在 subjectFor() 中对每个 f.path 调用 path.posix.normalize() 后，检查 normalized path 是否仍以 '.' 开头或包含 '/..' 或 '../'；若存在则抛出 'invalid_patch_paths' 错误"
+      },
+      {
+        "severity": "P1",
+        "path": "config/patch-policy.json",
+        "issue": "l3_prefixes 包含 '.github/'，但 .github/workflows/patchgate.yml 实际被列为 protected_prefixes；policy 中 l3_prefixes 与 protected_prefixes 存在重叠且语义冲突：protected_prefixes 触发 modifies_own_checks 阻断，而 l3_prefixes 仅提升风险等级；当修改 .github/workflows/patchgate.yml 时 classify() 返回 L3 但 modifies_own_checks = false（因未匹配 protected_prefixes），导致绕过 A0 强制阻断。",
+        "fix": "从 l3_prefixes 中移除 '.github/'；确保所有 protected_prefixes 均不重复出现在 l3_prefixes/l2_prefixes/l1_prefixes/l0_prefixes 中，并在 validatePolicy() 中添加交叉校验：throw Error('overlapping_prefixes') if any protected_prefix matches any other level's prefixes"
+      },
+      {
+        "severity": "P1",
+        "path": "scripts/lib/patchgate.mjs",
+        "issue": "authenticate() 使用 createPublicKey(k.public_key_pem) 后导出 DER 并比较字节相等性，但 Ed25519 SPKI PEM 可能含不同空白/换行/注释，导致相同密钥的 DER 导出不等；攻击者可注册同一公钥的多个 PEM 变体（如带不同注释）以绕过 'same key ≠ multiple providers' 检查。",
+        "fix": "在 authenticate() 中，对 k.public_key_pem 执行 pem.strip()（移除 PEM 头尾及内部空白）后再调用 createPublicKey；或改用 crypto.createPublicKey({key:k.public_key_pem,format:'pem',type:'spki'}) 并统一导出 DER 进行比较"
+      }
+    ],
+    "limitations": [
+      "未实测 verifyDeployment() 在真实 Cloudflare Workers 环境下的五项确定性复验（尤其是 Date 窗口累积容差、HTTP Date 与 observed_at_utc 的跨服务时钟漂移）",
+      "未实测 classify() 对 Unicode 路径（如 'docs/新文档.md'）和混合编码路径的归一化处理是否与 Git 内部解析一致",
+      "未实测 reserveAction() 在分布式 CI runner 上的文件系统级原子性（当前仅声明 'Atomic on ONE durable filesystem only'，但 GitHub Actions runner 不保证跨 job 文件系统持久性）"
+    ],
+    "review_end": true
+  },
+  "error": null,
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "PLAN-PATCHGATE-ESCROW-20261023:A0:independent_audit",
+    "prompt_sha256": "228add46f2664c179ff3fbc91b0da7f176d06184d7edb44590a01155d26ba380"
+  },
+  "native_openai_calls": 0,
+  "native_anthropic_calls": 0,
+  "api_cost": null,
+  "financial_execution": false,
+  "claude_audit_received": false,
+  "automatic_merge": false,
+  "automatic_deploy": false
+}
