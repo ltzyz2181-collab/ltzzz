@@ -39,3 +39,15 @@ Cloudflare 官方 API：https://developers.cloudflare.com/api/resources/workers/
 千问 qwen-plus 原生调用一次，stop、1802 total tokens，审查原文件 SHA256 为 `b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec`。它确认页面/提交/日志匹配，但误以为整份文件的外置摘要必须出现在文件内部，故拒收。原审意见和当时 `deployment_review_rejected` 索引仍可由证据分支历史回读，不覆盖、不再次付费调用。v2 将确定性结果与这条历史模型意见分开，不能把历史拒收悄悄改成模型同意。
 
 本轮本地 106 项回归通过。v2 真实线上观测及当前版本是否匹配，必须以随后 Actions 回执为准，不能用本地 mock 推断成功。
+
+## v2 实际线上验收（2026-10-23 UTC）
+
+- 代码：`e217fac1fb6e9a251291f3549ca219d025bb6f4b`；独立运行 `39906731890`，verify / observe 均 success；PR 只读检查与 Sentinel PR 检查也均 success。
+- 回执：https://github.com/ltzyz2181-collab/ltzzz/blob/99397fe820b9193a7fc3db90567fc37b1eba55f9/knowledge/results/deployment-verification/DEPLOY-39887469785-1.v2.json
+- 页面：https://ltzzz-edge-test-20261023.ltzyz2181.workers.dev
+- 本次运行日志：https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39906731890/job/120260348486
+- 实际页面请求 UTC `05:37:12.541–05:37:12.647`，Date 为 `05:37:12 GMT`；时间窗检查通过。
+- Cloudflare 页面前后均返回 deployment `9e74d5c1-6a1c-46a9-a5e0-4bf6be2ff2fc`、version `3298029a-0640-4b21-a475-e25b7583acce`、100% 流量；版本与原部署日志一致。
+- v2 SHA256：`52d0dacfe975bc76f3832520fc3580e47a58b42c55eb9520b0297d07588ea2ab`。外置 index 的状态是 `reverified_deterministic`。原观测仍为 `b6e8179b…beec`，原模型回包仍为 `e37c63a5…216bb`，原拒收状态另列 `original_index_status: deployment_review_rejected`。
+- 由 git 原字节再次复算三份文件哈希，与 index 全部一致；证据分支本轮仅新增 v2 和更新 index。只读导入后监督器重算同一 Task ID 为确定性通过，历史意见仍 rejected，`production_deployed=false`。
+- 本轮新增模型调用 0、资金动作 0、Worker 部署 0；没有把 Actions 云端复验写成当前会话操作过本机 Edge。回滚仍未验证，main 仍未合并/启用。
