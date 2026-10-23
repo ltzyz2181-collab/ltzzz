@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "evidence_branch": "audit/postdeploy-observations",
+  "automatic_rollback": false,
+  "workflows": [
+    {
+      "name": "Deploy LTZZZ Agent Pay / Treasury entry",
+      "path": ".github/workflows/deploy-agent-pay.yml"
+    },
+    {
+      "name": "Deploy coded agent identity and Kimi quality profile",
+      "path": ".github/workflows/deploy-agent-provenance.yml"
+    },
+    {
+      "name": "Deploy LTZZZ AGI Pay",
+      "path": ".github/workflows/deploy-agi-pay.yml"
+    },
+    {
+      "name": "Deploy professional LTZZZ channel bots",
+      "path": ".github/workflows/deploy-channel-bots.yml"
+    },
+    {
+      "name": "Deploy Claude seat metadata (no models)",
+      "path": ".github/workflows/deploy-claude-seat.yml"
+    },
+    {
+      "name": "Deploy cloud hub gateway",
+      "path": ".github/workflows/deploy-cloud-hub.yml"
+    },
+    {
+      "name": "Deploy Doubao Worker",
+      "path": ".github/workflows/deploy-doubao-worker.yml"
+    },
+    {
+      "name": "Deploy LTZZZ Economy",
+      "path": ".github/workflows/deploy-economy.yml"
+    },
+    {
+      "name": "Deploy authenticated Kimi leases (provider limits only)",
+      "path": ".github/workflows/deploy-kimi-queue.yml"
+    },
+    {
+      "name": "Deploy KV-reuse settlement + assets",
+      "path": ".github/workflows/deploy-kv-reuse.yml"
+    },
+    {
+      "name": "Deploy ledger KV worker",
+      "path": ".github/workflows/deploy-ledger.yml"
+    },
+    {
+      "name": "Deploy Memory OS (R2 + Daily cron + Engine)",
+      "path": ".github/workflows/deploy-memory-os.yml"
+    },
+    {
+      "name": "Deploy YouTube + TikTok workers",
+      "path": ".github/workflows/deploy-publish-workers.yml"
+    },
+    {
+      "name": "Deploy and control LTZZZ Pulse",
+      "path": ".github/workflows/deploy-pulse.yml"
+    },
+    {
+      "name": "Deploy LTZZZ Sell Order",
+      "path": ".github/workflows/deploy-sell.yml"
+    },
+    {
+      "name": "Deploy LTZZZ Telegram Publisher",
+      "path": ".github/workflows/deploy-telegram-publisher.yml"
+    },
+    {
+      "name": "Deploy LTZZZ Treasury v1.1",
+      "path": ".github/workflows/deploy-treasury-v11.yml"
+    },
+    {
+      "name": "Deploy LTZZZ Treasury",
+      "path": ".github/workflows/deploy-treasury.yml"
+    },
+    {
+      "name": "Deploy authenticated video scheduler",
+      "path": ".github/workflows/deploy-video-scheduler.yml"
+    },
+    {
+      "name": "Deploy webhooks",
+      "path": ".github/workflows/deploy-webhooks.yml"
+    },
+    {
+      "name": "Deploy and verify WeChat article publishing",
+      "path": ".github/workflows/deploy-wechat-publishing.yml"
+    },
+    {
+      "name": "Deploy LTZZZ WEP3",
+      "path": ".github/workflows/deploy-wep3.yml"
+    },
+    {
+      "name": "Deploy LTZZZ X Poster (+ diagnose)",
+      "path": ".github/workflows/deploy-x-poster.yml"
+    },
+    {
+      "name": "Deploy LTZZZ X Publisher",
+      "path": ".github/workflows/deploy-x-publisher.yml"
+    },
+    {
+      "name": "Deploy YouTube uploader retaining OAuth",
+      "path": ".github/workflows/deploy-youtube-uploader.yml"
+    },
+    {
+      "name": "Deploy static site to GitHub Pages",
+      "path": ".github/workflows/pages.yml"
+    },
+    {
+      "name": "Webhook Deploy",
+      "path": ".github/workflows/webhook-deploy.yml"
+    },
+    {
+      "name": "Edge isolated deployment test",
+      "path": ".github/workflows/edge-isolated-test-20261023.yml"
+    }
+  ],
+  "targets": [
+    {
+      "id": "edge-isolated-20261023",
+      "workflow_path": ".github/workflows/edge-isolated-test-20261023.yml",
+      "branches": [
+        "test/edge-write-deploy-20261023"
+      ],
+      "job_name": "deploy-test",
+      "url": "https://ltzzz-edge-test-20261023.ltzyz2181.workers.dev",
+      "marker": "EDGE-WRITE-DEPLOY-20261023-V1",
+      "rollback_entry": "https://dash.cloudflare.com/",
+      "scope": "isolated_test"
+    }
+  ],
+  "scope_note": "Mapped target gets live marker/source/log verification. Unmapped deployment workflows produce an explicit missing-contract warning; no blanket claim of production coverage. Native review is one explicitly owner-requested branch demonstration only; future reviews reuse existing daily calls or external PR audit."
+}

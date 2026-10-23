@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {deliveryPolicy,externalTaskDelivery,externalDeliveryRequired} from './seat-delivery.mjs';
+import {deploymentOversightTasks} from './postdeploy-verification.mjs';
 import {validateArtifact} from './daily-task-board.mjs';
 
 export const OVERSIGHT_ROOT = 'knowledge/results/dispatch/oversight';
@@ -106,8 +107,9 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
     const linked=externalTaskDelivery(root,id,'claude'),phase=linked.status==='invalid'?'external_delivery_evidence_invalid':linked.status==='repo_pr_unreviewed'?'pr_unreviewed':linked.status==='repo_pr_delivery_recorded'?'external_pr_delivery_recorded':linked.status==='delegated_delivery_pending_review'?'delegated_review_missing':present?'controller_review_record_present':'delivery_link_missing';
     add({id,date:'2026-10-18',issuer:'claude',assigned_to:'claude',phase,delivery_channel:claudePolicy.channel,role_status:claudePolicy.work_status,delegated:linked.delegated===true,actual_provider:linked.actual_provider||null,native_generation_verified:false,submission_verified:linked.submission_verified===true,independent_review_verified:false,pr_url:linked.pr_url||null,due_at:deadline('2026-10-20','22:00'),evidence:['config/claude-team.json',acceptance.receipt,...(present?[delivery]:[]),...linked.evidence].filter(Boolean),instruction:'核对 Claude 已接三项规划/审计任务与真实 PR/交付的关联；登记缺链接不等于任务没做，先查现有成果，复用原 Task ID 补齐链接或说明阻塞，不重做订单/付款。'});
   }
+  for(const task of deploymentOversightTasks(root,now))add(task);
   for(const task of tasks.values()) {
-    const closed=['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
+    const closed=['deployment_reverified','recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
     const issue=task.phase==='draft_reviewed_not_deployed'?'engineering_completion_unverified':task.phase;
     observations.push({...task,issue,overdue:!task.reference_only&&!closed && Date.parse(now)>=Date.parse(task.due_at),status:task.reference_only?'delivery_channel_reference_not_completion':closed?'evidence_present_scope_limited':Date.parse(now)<Date.parse(task.due_at)?'not_due':'warning_required'});
   }
@@ -155,7 +157,7 @@ export function runDispatchOversight({root='.', now=new Date().toISOString(), so
   const count=predicate=>report.tasks.filter(predicate).length;
   report.stage_counts={scope:'verified_in_scanned_sources_not_total_project_completion',tasks_observed:report.tasks.length,
     dispatch_records:count(t=>t.phase!=='dispatch_missing'),claims_verified:count(t=>t.claim_verified===true),submissions_verified:count(t=>t.submission_verified===true),
-    independent_reviews_verified:count(t=>t.independent_review_verified===true),drafts_accepted:count(t=>t.draft_accepted===true),engineering_deliveries_verified:count(t=>t.engineering_completion_verified===true),production_deployments_verified:count(t=>t.deployed===true),
+    independent_reviews_verified:count(t=>t.independent_review_verified===true),drafts_accepted:count(t=>t.draft_accepted===true),engineering_deliveries_verified:count(t=>t.engineering_completion_verified===true),production_deployments_verified:count(t=>t.deployed===true),isolated_deployment_checks_verified:count(t=>t.deployment_reverified===true&&t.deployment_scope==='isolated_test'),
     scope_limited_evidence_records:count(t=>t.status==='evidence_present_scope_limited'),not_due:count(t=>t.status==='not_due')};
   const unique=new Map();
   for(const warning of [...warnings].sort((a,b)=>String(a.original_task_date||a.first_observed_at).localeCompare(String(b.original_task_date||b.first_observed_at))))if(!unique.has(warning.task_id))unique.set(warning.task_id,warning);

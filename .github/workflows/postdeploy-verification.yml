@@ -1,0 +1,113 @@
+name: Independent deployment evidence verification
+'on':
+  workflow_run:
+    workflows:
+    - Deploy LTZZZ Agent Pay / Treasury entry
+    - Deploy coded agent identity and Kimi quality profile
+    - Deploy LTZZZ AGI Pay
+    - Deploy professional LTZZZ channel bots
+    - Deploy Claude seat metadata (no models)
+    - Deploy cloud hub gateway
+    - Deploy Doubao Worker
+    - Deploy LTZZZ Economy
+    - Deploy authenticated Kimi leases (provider limits only)
+    - Deploy KV-reuse settlement + assets
+    - Deploy ledger KV worker
+    - Deploy Memory OS (R2 + Daily cron + Engine)
+    - Deploy YouTube + TikTok workers
+    - Deploy and control LTZZZ Pulse
+    - Deploy LTZZZ Sell Order
+    - Deploy LTZZZ Telegram Publisher
+    - Deploy LTZZZ Treasury v1.1
+    - Deploy LTZZZ Treasury
+    - Deploy authenticated video scheduler
+    - Deploy webhooks
+    - Deploy and verify WeChat article publishing
+    - Deploy LTZZZ WEP3
+    - Deploy LTZZZ X Poster (+ diagnose)
+    - Deploy LTZZZ X Publisher
+    - Deploy YouTube uploader retaining OAuth
+    - Deploy static site to GitHub Pages
+    - Webhook Deploy
+    - Edge isolated deployment test
+    types:
+    - completed
+  push:
+    branches:
+    - codex/postdeploy-evidence-20261023
+    paths:
+    - config/postdeploy-verification.json
+    - scripts/lib/postdeploy-verification.mjs
+    - scripts/lib/postdeploy-persistence.mjs
+    - scripts/run-postdeploy-verification.mjs
+    - scripts/tests/postdeploy-verification.test.mjs
+    - .github/workflows/postdeploy-verification.yml
+  pull_request:
+    paths:
+    - config/postdeploy-verification.json
+    - scripts/lib/postdeploy-verification.mjs
+    - scripts/lib/postdeploy-persistence.mjs
+    - scripts/run-postdeploy-verification.mjs
+    - scripts/tests/postdeploy-verification.test.mjs
+    - scripts/lib/dispatch-oversight.mjs
+    - .github/workflows/postdeploy-verification.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ltzzz-postdeploy-evidence
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - run: node --test scripts/tests/postdeploy-verification.test.mjs scripts/tests/dispatch-oversight.test.mjs scripts/tests/dispatch-sentinel.test.mjs scripts/tests/seat-delivery.test.mjs
+  observe:
+    needs: verify
+    if: github.event_name == 'push' || (github.event_name == 'workflow_run' && github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name
+      == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - name: Observe actual source deployment and fresh page from independent workflow
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: node scripts/run-postdeploy-verification.mjs observe
+    - id: prepare
+      name: Commit one explicit branch-demo Qwen review reservation
+      if: github.event_name == 'push'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: node scripts/run-postdeploy-verification.mjs reserve-demo-review
+    - name: One native Qwen second-seat review of the exact observation, no fallback
+      if: steps.prepare.outputs.execute == 'true'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+        DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+        DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
+      run: node scripts/run-postdeploy-verification.mjs review-demo
+    - name: Warn only, never roll back or redeploy
+      if: always()
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: node scripts/run-postdeploy-verification.mjs summary
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: postdeploy-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/ltzzz-postdeploy-state-${{ github.run_id }}/knowledge/results/deployment-verification/
+        retention-days: 30
