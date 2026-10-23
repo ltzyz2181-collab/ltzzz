@@ -1,7 +1,7 @@
 {
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "phase": "A0",
-  "status": "submitted_waiting_independent_review",
+  "status": "A0_tested_native_qwen_audited_disagreement_preserved_waiting_native_claude",
   "implementation_bundle_sha256": "c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05",
   "source_plan_pr": 220,
   "logical_seat": "gpt",
@@ -9,16 +9,21 @@
   "model": null,
   "metadata_source": "current_Codex_session_provider_model_exact_id_unavailable",
   "tests": {
-    "scope": "local_unit_and_real_git_fixture_no_production_integration",
+    "scope": "online_Node22_CI_and_local_adversarial_tests_no_production_integration",
     "command": "node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs",
     "passed": 36,
     "failed": 0,
-    "online_run": null,
-    "previous_online_run": "39935828922"
+    "online_run": "39936706809",
+    "online_pr_run": "39936714317",
+    "local_counterexamples": {
+      "path": "knowledge/results/patchgate/c44b690b0a54ac58/qianwen-v3-counterexamples.json",
+      "passed": 8,
+      "scope": "local_only"
+    }
   },
   "independent_review": {
-    "claude": "assigned_waiting_native_claude_audit",
-    "qianwen": "v1_v2_native_revise_preserved_resolutions_submitted_for_final_code_review",
+    "claude": "assigned_in_PR220_and_PR221_no_native_audit_artifact_received",
+    "qianwen": "native_review_completed_original_revise_preserved_counterexamples_submitted_for_Claude_adjudication",
     "accepted": false,
     "first_qianwen": {
       "receipt": "knowledge/results/patchgate/329b0ced2ca38435/qianwen.result.json",
@@ -39,12 +44,24 @@
       "model": "qwen-plus",
       "finish_reason": "stop",
       "tokens_used": 21029
+    },
+    "latest_qianwen": {
+      "receipt": "knowledge/results/patchgate/c44b690b0a54ac58/qianwen.result.json",
+      "receipt_sha256": "d2c161882ae3e4f537e6241d906abb4a7c1bb6320a6d9e60fdad0385bcbacbbb",
+      "source_commit": "da8cc52b0ad47649ed781bdc945360ae89b25f53",
+      "bundle_sha256": "c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05",
+      "model": "qwen-plus",
+      "actual_provider": "aliyun_dashscope",
+      "finish_reason": "stop",
+      "request_id": "a7a183a7-fe54-97f1-a4ce-be9276217865",
+      "tokens_used": 22511,
+      "verdict": "revise"
     }
   },
   "stages": {
     "draft_created": true,
     "tested_locally": true,
-    "tested_online": false,
+    "tested_online": true,
     "independently_reviewed": false,
     "merged": false,
     "deployed": false,
@@ -70,5 +87,17 @@
     "Empty executor key registry blocks live attestations; shared CAS and mutation adapters are later audited stages.",
     "A passing test fixture does not prove production observations, signer-provider isolation or chain transactions."
   ],
-  "at_utc": "2026-10-23T10:06:16.948Z"
+  "at_utc": "2026-10-23T10:11:43.048Z",
+  "implementation_source_commit": "da8cc52b0ad47649ed781bdc945360ae89b25f53",
+  "native_model_usage": {
+    "provider": "aliyun_dashscope",
+    "logical_invocations": 3,
+    "distinct_code_bundles": 3,
+    "total_reported_tokens": 63934,
+    "api_cost": null,
+    "billing_verified": false,
+    "native_openai_calls": 0,
+    "native_anthropic_calls": 0
+  },
+  "authoritative_status_location": "this_file_on_separate_audit_state_branch_candidate_branch_status_is_submission_snapshot"
 }

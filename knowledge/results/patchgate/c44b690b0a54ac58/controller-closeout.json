@@ -1,0 +1,70 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "at_utc": "2026-10-23T10:11:43.048Z",
+  "status": "A0_tested_native_qwen_audited_disagreement_preserved_waiting_native_claude",
+  "author_provider": "openai",
+  "review_source": {
+    "receipt": "knowledge/results/patchgate/c44b690b0a54ac58/qianwen.result.json",
+    "receipt_sha256": "d2c161882ae3e4f537e6241d906abb4a7c1bb6320a6d9e60fdad0385bcbacbbb",
+    "source_commit": "da8cc52b0ad47649ed781bdc945360ae89b25f53",
+    "bundle_sha256": "c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05",
+    "model": "qwen-plus",
+    "actual_provider": "aliyun_dashscope",
+    "finish_reason": "stop",
+    "request_id": "a7a183a7-fe54-97f1-a4ce-be9276217865",
+    "tokens_used": 22511,
+    "verdict": "revise"
+  },
+  "original_reviewer_verdict": "revise",
+  "original_reviewer_record_modified": false,
+  "resolutions": [
+    {
+      "finding": 0,
+      "decision": "disagree_do_not_weaken_expected_version_check",
+      "reason": "Version inequality already fails. evidence is inside the signed deployment payload: tampering invalidates signature. Deriving expected version from the observed version would remove the independent expected-version comparison.",
+      "counterexamples": [
+        "expected_version_mismatch_fails",
+        "altering_expected_version_invalidates_signature"
+      ]
+    },
+    {
+      "finding": 1,
+      "decision": "disagree_with_reproduced_rejection",
+      "reason": "validPath splits every path component and rejects any .. component, including foo/../config/patch-policy.json before classification.",
+      "counterexamples": [
+        "foo_dotdot_config_path_is_rejected"
+      ]
+    },
+    {
+      "finding": 2,
+      "decision": "disagree_keep_protected_prefixes_overlapping_risk_classes",
+      "reason": "Protection and risk classification are cumulative. .github/workflows/patchgate prefix matches the reported path and modifies_own_checks is true; overlapping L3 is intentional, not a conflict.",
+      "counterexamples": [
+        "own_workflow_prefix_is_blocked"
+      ]
+    },
+    {
+      "finding": 3,
+      "decision": "disagree_PEM_already_normalized_to_DER",
+      "reason": "createPublicKey already parses PEM and export(spki,der) returns canonical key bytes; CRLF variant equality and reuse rejection both demonstrated.",
+      "counterexamples": [
+        "pem_whitespace_normalizes_to_same_DER",
+        "reused_public_key_provider_labels_are_rejected"
+      ]
+    }
+  ],
+  "limitations": [
+    "No production Cloudflare capture, shared CAS, executor key provisioning or mutation adapter has been verified.",
+    "Qwen model opinions are preserved, and deterministic counterexamples are controller evidence, not a forged Qwen approval.",
+    "Native Claude stage audit has not been received; owner explicitly requires it before advancing."
+  ],
+  "next_phase": "A1_not_entered",
+  "escrow": "not_entered_before_A_stable_testnet_only_maximum_authorization",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "real_funds_moved": false,
+  "paid": false,
+  "tx_hash": null
+}
