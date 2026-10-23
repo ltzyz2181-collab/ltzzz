@@ -14,15 +14,22 @@
   ],
   "l3_prefixes": [
     "config/", "identity/", "wallet/", "agent-wallet/", "contracts/", "policy/", "protocol/", "memory/promote/",
-    ".github/", ".claude/", ".agents/", "skills/", "tools/", "lib/"
+    ".github/", ".claude/", ".agents/", "skills/", "tools/", "lib/", "ltzzz-memory/", "memory/",
+    "knowledge/results/", "results/", "data/results/", "data/memory/", "ops/"
   ],
   "l2_prefixes": ["workers/", "cloud-agent-worker/", "backend-node/", "backend-python/", "api/"],
-  "l1_prefixes": ["scripts/", "tests/"],
-  "l0_prefixes": ["docs/", "memory/", "ltzzz-memory/", "knowledge/", "results/"],
+  "l1_prefixes": ["scripts/tests/", "tests/"],
+  "l0_prefixes": ["docs/"],
   "l3_files": ["package.json", "package-lock.json", ".gitmodules", ".gitattributes", "AGENTS.md"],
-  "l0_files": ["README.md", "ops/派单台账.md"],
-  "documentation_extensions": [".md", ".txt", ".json"],
+  "l0_files": ["README.md"],
+  "documentation_extensions": [".md"],
   "allowed_external_hosts": ["github.com", "raw.githubusercontent.com", "ltzzz.com"],
+  "allowed_external_url_prefixes": ["https://github.com/ltzyz2181-collab/ltzzz/", "https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/", "https://ltzzz.com/"],
+  "receipt_writer_rules": [
+    {"prefix": "knowledge/results/", "executors": []},
+    {"prefix": "results/", "executors": []},
+    {"prefix": "data/results/", "executors": []}
+  ],
   "max_files": 100,
   "max_diff_bytes": 524288,
   "max_review_age_seconds": 86400,
@@ -36,6 +43,8 @@
   "limitations": [
     "A0 is offline/CI validation, not automatic merge or deployment.",
     "No signing keys are provisioned by this change. Provider names in unsigned JSON are not evidence.",
+    "Runtime scripts default to L3 until individually reviewed into a non-financial allowlist. Only tests retain the general L1 prefix.",
+    "Receipt writer executor allowlists are empty: new evidence cannot authorize itself via a hand-authored accepted/paid field.",
     "Control-plane updates require a separate reviewed trust-root rollout; PatchGate never authorizes a patch that changes its own checks.",
     "Existing unrelated workflows are not intercepted or secured merely by adding this evaluator."
   ]

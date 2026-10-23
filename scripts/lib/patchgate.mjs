@@ -23,10 +23,11 @@ export function validatePolicy(p) {
   if (p?.schema_version !== 1 || p.task_id !== TASK || p.repository !== 'ltzyz2181-collab/ltzzz'
     || p.phase !== 'A0' || p.mode !== 'validation_only'
     || [p.automatic_merge, p.automatic_deploy, p.automatic_rollback, p.real_funds_enabled].some(x => x !== false)) throw Error('A0_validation_only_policy_required');
-  for (const k of ['protected_prefixes', 'l3_prefixes', 'l2_prefixes', 'l1_prefixes', 'l0_prefixes', 'l3_files', 'l0_files', 'documentation_extensions', 'allowed_external_hosts'])
+  for (const k of ['protected_prefixes', 'l3_prefixes', 'l2_prefixes', 'l1_prefixes', 'l0_prefixes', 'l3_files', 'l0_files', 'documentation_extensions', 'allowed_external_hosts', 'allowed_external_url_prefixes'])
     if (!Array.isArray(p[k]) || !p[k].length || p[k].some(x => typeof x !== 'string' || !x)) throw Error('invalid_policy_list');
   for (const k of ['max_files', 'max_diff_bytes', 'max_review_age_seconds', 'freshness_seconds', 'extra_review_failure_count', 'extra_review_window_seconds'])
     if (!Number.isSafeInteger(p[k]) || p[k] <= 0) throw Error('invalid_policy_limit');
+  if (!Array.isArray(p.receipt_writer_rules) || !p.receipt_writer_rules.length || p.receipt_writer_rules.some(r => !validPath(r.prefix?.replace(/\/$/,'')) || !r.prefix.endsWith('/') || !Array.isArray(r.executors) || r.executors.some(e => typeof e !== 'string' || !e))) throw Error('invalid_receipt_writer_rules');
   return p;
 }
 
@@ -63,16 +64,36 @@ export function scanDiff(p, files) {
     }
     const added = lines.join('\n'); // +++ inside a hunk is source text, not a file header.
     // Never copy a suspected credential or its line into reports/model prompts.
-    if (/(?:sk-|cfut_)[A-Za-z0-9_-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:api[_-]?key|client[_-]?secret|password|authorization)\s*[:=]\s*["'][A-Za-z0-9_+\/-]{20,}["']/i.test(added)) findings.push({path:file.path, code:'secret_pattern'});
-    if (/\beval\s*\(|\b(?:new\s+Function|atob)\s*\(|(?:Buffer\.from\([^\n]*['"]base64['"])|(?:node:)?child_process|\b(?:execSync|spawnSync)\s*\(/.test(added)) findings.push({path:file.path, code:'new_dynamic_execution_requires_review'});
+    if (/(?:^|[^A-Za-z0-9_-])(?:sk-|cfut_)[A-Za-z0-9_-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:api[_-]?key|client[_-]?secret|password|authorization)\s*[:=]\s*["'][A-Za-z0-9_+\/-]{20,}["']/i.test(added)) findings.push({path:file.path, code:'secret_pattern'});
+    if (/\b(?:eval|Function|atob)\s*\(|(?:Buffer\.from\([^\n]*['"]base64['"])|(?:node:)?child_process|\b(?:exec|execSync|execFile|spawn|spawnSync)\s*\(/.test(added)) findings.push({path:file.path, code:'new_dynamic_execution_requires_review'});
     const hosts = new Set();
-    for (const m of added.matchAll(/https?:\/\/[^\s"'`<>\)]+/g)) {
-      try { const url = new URL(m[0]); if (!p.allowed_external_hosts.includes(url.hostname) || url.protocol !== 'https:' || url.username || url.password) hosts.add(url.hostname); }
+    for (const m of added.matchAll(/(?:https?|wss?):\/\/[^\s"'`<>\)]+|(?<=["'`])\/\/[^\s"'`<>\)]+/g)) {
+      try { const url = new URL(m[0].startsWith('//')?'https:'+m[0]:m[0]); if (!p.allowed_external_hosts.includes(url.hostname) || url.protocol !== 'https:' || url.username || url.password || url.port || !p.allowed_external_url_prefixes.some(prefix => url.href.startsWith(prefix))) hosts.add(url.hostname); }
       catch { hosts.add('invalid_url'); }
     }
     if (hosts.size) findings.push({path:file.path, code:'unapproved_external_host', hosts:[...hosts].sort()});
   }
   return findings;
+}
+
+// Validate the whole BASE registry, including disabled historical keys. Key rotation cannot relabel an executor/provider.
+export function validateTrust(trust) {
+  if (trust?.schema_version !== 1 || trust.enabled !== true || !Array.isArray(trust.keys) || !trust.keys.length) return false;
+  const ids=new Set(), executors=new Map(), publicKeys=new Map();
+  try {
+    for (const k of trust.keys) {
+      if (typeof k.id !== 'string' || !k.id || ids.has(k.id) || !PROVIDERS.has(k.provider) || typeof k.executor !== 'string' || !k.executor.trim() || !Array.isArray(k.roles)) return false;
+      ids.add(k.id);
+      if (executors.has(k.executor) && executors.get(k.executor)!==k.provider) return false;
+      executors.set(k.executor,k.provider);
+      const key=createPublicKey(k.public_key_pem);
+      if (key.asymmetricKeyType!=='ed25519') return false;
+      const der=key.export({type:'spki',format:'der'}).toString('hex'),binding=canonical({executor:k.executor,provider:k.provider});
+      if (publicKeys.has(der) && publicKeys.get(der)!==binding) return false;
+      publicKeys.set(der,binding);
+    }
+    return true;
+  } catch { return false; }
 }
 
 export function subjectFor(snapshot) {
@@ -88,8 +109,7 @@ export function subjectFor(snapshot) {
 
 // Roles/provider identities come from BASE public-key configuration, never from payload prose.
 export function authenticate(record, {trust, subject, role, now, maxAge}) {
-  if (trust?.schema_version !== 1 || trust.enabled !== true || !Array.isArray(trust.keys)) return null;
-  if (new Set(trust.keys.map(k => k.id)).size !== trust.keys.length) return null;
+  if (!validateTrust(trust)) return null;
   const k = trust.keys.find(k => k.id === record?.key_id);
   const v = record?.payload;
   if (!k || k.enabled !== true || !PROVIDERS.has(k.provider) || !k.roles?.includes(role) || !v || v.role !== role
@@ -99,10 +119,6 @@ export function authenticate(record, {trust, subject, role, now, maxAge}) {
     || typeof record.signature !== 'string' || !/^[A-Za-z0-9+/]{86}==$/.test(record.signature)) return null;
   try {
     const key = createPublicKey(k.public_key_pem);
-    // Two labels on the same signing key are still one executor, not two providers.
-    const bytes = key.export({type:'spki',format:'der'});
-    if (trust.keys.some(other => other.id !== k.id && other.provider !== k.provider
-      && bytes.equals(createPublicKey(other.public_key_pem).export({type:'spki',format:'der'})))) return null;
     if (key.asymmetricKeyType !== 'ed25519' || !verify(null, Buffer.from(canonical(v)), key, Buffer.from(record.signature, 'base64'))) return null;
     return {provider:k.provider, executor:k.executor, key_id:k.id, payload:v};
   } catch { return null; }
@@ -146,10 +162,12 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   const auth = role => attestations.map(a => authenticate(a,{trust,subject,role,now,maxAge:policy.max_review_age_seconds})).filter(Boolean);
   const authors = auth('author'), authorProviders = new Set(authors.map(a => a.provider));
   if (authors.length !== 1) reasons.push('one_authenticated_author_required');
+  if (trust.enabled === true && !validateTrust(trust)) reasons.push('executor_provider_registry_invalid');
   const author = authors[0];
-  const checks = auth('checks').filter(a => a.payload.passed === true && a.payload.checker_base_sha === subject.base_sha && HASH.test(a.payload.checks_sha256 || ''));
+  const independent = a => !!author && a.executor !== author.executor;
+  const checks = auth('checks').filter(a => independent(a) && a.payload.passed === true && a.payload.checker_base_sha === subject.base_sha && HASH.test(a.payload.checks_sha256 || ''));
   if (!checks.length) reasons.push('trusted_base_checks_required');
-  const reviews = auth('review').filter(a => !authorProviders.has(a.provider) && a.payload.verdict === 'approve'
+  const reviews = auth('review').filter(a => independent(a) && !authorProviders.has(a.provider) && a.payload.verdict === 'approve'
     && a.payload.generation_verified === true && typeof a.payload.model === 'string' && a.payload.model
     && HASH.test(a.payload.output_sha256 || '') && a.payload.metadata_source === 'provider_response'
     && ['stop','end_turn'].includes(a.payload.finish_reason));
@@ -167,19 +185,26 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   const minimum = (risk.level === 'L0' ? 0 : risk.level === 'L3' ? 2 : 1) + extra;
   if (new Set(reviews.map(a => a.provider)).size < minimum) reasons.push('distinct_provider_reviews_required');
   if (risk.level === 'L3' && !auth('notification').some(a => a.payload.owner_notified === true && typeof a.payload.reference === 'string' && a.payload.reference.startsWith('https://github.com/ltzyz2181-collab/ltzzz/'))) reasons.push('owner_notification_evidence_required');
+  const receiptPaths=snapshot.files.map(f=>f.path).filter(name=>policy.receipt_writer_rules.some(r=>name.startsWith(r.prefix)));
+  const writers=auth('receipt_write');
+  for (const name of receiptPaths) {
+    const rules=policy.receipt_writer_rules.filter(r=>name.startsWith(r.prefix));
+    if (!writers.some(w=>rules.every(r=>r.executors.includes(w.executor)) && Array.isArray(w.payload.paths) && w.payload.paths.includes(name))) reasons.push('authenticated_receipt_writer_required');
+  }
   let deployment = null;
   if (risk.requires_canary) {
-    const proofs = auth('deployment').filter(a => policy.canary_targets.some(t => t.url === a.payload.evidence?.observation?.url));
+    const proofs = auth('deployment').filter(a => independent(a) && policy.canary_targets.some(t => t.url === a.payload.evidence?.observation?.url));
     deployment = proofs.map(a => verifyDeployment({subject,evidence:a.payload.evidence,allowedTargets:policy.canary_targets,freshnessSeconds:policy.freshness_seconds,now})).find(x => x.passed) || null;
     if (!deployment) reasons.push('signed_allowlisted_canary_verification_required');
   }
   const unique = [...new Set(reasons)];
   return {task_id:subject.task_id, subject, subject_sha256:sha256(canonical(subject)), idempotency_key:subject.task_id + ':' + subject.head_sha,
-    risk_class:risk.level, requires_canary:risk.requires_canary, author_provider:author?.provider || null, reviewer_providers:[...new Set(reviews.map(a => a.provider))],
+    risk_class:risk.level, requires_canary:risk.requires_canary, author_provider:author?.provider || null, author_executor:author?.executor||null,
+    checks_executors:[...new Set(checks.map(a=>a.executor))], reviewer_providers:[...new Set(reviews.map(a => a.provider))], reviewer_executors:[...new Set(reviews.map(a=>a.executor))],
     required_independent_reviews:minimum, additional_review_due_to_failures:extra, scan_findings:findings, reasons:unique,
     validation_passed:unique.length === 0, status:unique.length ? 'validation_blocked' : 'validated_not_activated',
     phase:policy.phase, automatic_merge:false, automatic_deploy:false, automatic_rollback:false,
-    deployment_verification:deployment, paid:false, tx_hash:null};
+    deployment_verification:deployment, scan_safety_conclusion:false, paid:false, tx_hash:null};
 }
 
 // Atomic on ONE durable filesystem only. A1 must supply a shared CAS backend before distributed execution.

