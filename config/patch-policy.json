@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "mode": "validation_only",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "real_funds_enabled": false,
+  "repository": "ltzyz2181-collab/ltzzz",
+  "protected_prefixes": [
+    "config/patch", "scripts/patchgate", "scripts/lib/patchgate", "scripts/tests/patchgate",
+    ".github/workflows/patchgate", ".github/actions/patchgate"
+  ],
+  "l3_prefixes": [
+    "config/", "identity/", "wallet/", "agent-wallet/", "contracts/", "policy/", "protocol/", "memory/promote/",
+    ".github/", ".claude/", ".agents/", "skills/", "tools/", "lib/"
+  ],
+  "l2_prefixes": ["workers/", "cloud-agent-worker/", "backend-node/", "backend-python/", "api/"],
+  "l1_prefixes": ["scripts/", "tests/"],
+  "l0_prefixes": ["docs/", "memory/", "ltzzz-memory/", "knowledge/", "results/"],
+  "l3_files": ["package.json", "package-lock.json", ".gitmodules", ".gitattributes", "AGENTS.md"],
+  "l0_files": ["README.md", "ops/派单台账.md"],
+  "documentation_extensions": [".md", ".txt", ".json"],
+  "allowed_external_hosts": ["github.com", "raw.githubusercontent.com", "ltzzz.com"],
+  "max_files": 100,
+  "max_diff_bytes": 524288,
+  "max_review_age_seconds": 86400,
+  "freshness_seconds": 300,
+  "extra_review_failure_count": 3,
+  "extra_review_window_seconds": 86400,
+  "stage_auditors": ["anthropic", "different_provider"],
+  "workflow_classification": "all_L3_until_permission_parser_and_workflow_adapters_are_reviewed",
+  "canary_targets": [],
+  "production_adapters": [],
+  "limitations": [
+    "A0 is offline/CI validation, not automatic merge or deployment.",
+    "No signing keys are provisioned by this change. Provider names in unsigned JSON are not evidence.",
+    "Control-plane updates require a separate reviewed trust-root rollout; PatchGate never authorizes a patch that changes its own checks.",
+    "Existing unrelated workflows are not intercepted or secured merely by adding this evaluator."
+  ]
+}
