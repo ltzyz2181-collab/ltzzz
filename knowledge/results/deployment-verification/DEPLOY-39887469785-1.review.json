@@ -1,0 +1,35 @@
+{
+  "task_id": "DEPLOY-39887469785-1",
+  "reviewed_sha256": "b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec",
+  "status": "native_review_complete",
+  "run_id": "39899988884",
+  "run_attempt": "1",
+  "source_commit": "4c699cd20152a0a75826ba88c3ac38c0104ef457",
+  "actual_provider": "aliyun_dashscope",
+  "model_calls": 1,
+  "paid": false,
+  "tx_hash": null,
+  "native_qwen_call": true,
+  "model": "qwen-plus",
+  "model_source": "provider_response",
+  "finish_reason": "stop",
+  "request_id": "d61c6fa5-4dd1-9894-8c22-c5b08606a78f",
+  "tokens_used": 1802,
+  "output": "{\n  \"reviewed_sha256\": \"b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec\",\n  \"accepted\": false,\n  \"reasons\": [\n    \"页面响应头中 source_header='054896eca108adfdc4ed31e0cef03a916b2820fc' 与部署元数据 deployment.source_commit 一致，符合 body_source_commit 和 header_source_commit 检查项\",\n    \"部署日志 evidence（log_evidence.sha256='fb2ba3da7040272112661a9cb4008bd108a618fa07727a689c20e4bc73d58c75'）中明确提取到 SOURCE_COMMIT=054896eca108adfdc4ed31e0cef03a916b2820fc，与 source_header 及 deployment.source_commit 三方一致\",\n    \"但被审 SHA256（b6e8179...beec）未在任何字段中出现：既不等于 log_evidence.sha256（fb2ba3d...8c75），也不等于 page.body_sha256（1d9d8a8...711b），亦不等于 deployment.source_commit（054896e...20fc）或 source_commit（4c699cd...f457）\",\n    \"schema 为 ltzzz.postdeploy-observation.v1，要求被审哈希必须绑定本次观测所依据的原始证据载体（如日志快照、页面快照或响应头快照之一），而 b6e8179...beec 在整个观测 JSON 中无出处、无引用、无计算来源，无法锚定至任一可验证实体\",\n    \"HTTP 200 单独不构成绑定依据；'fresh_http_200': true 仅表明请求成功，不参与哈希绑定校验\",\n    \"rollback 入口（Cloudflare dash）和原 Edge 定时任务历史未提供可观测数据，按规则另列提醒，但不影响本项核对结论\",\n    \"未执行浏览器操作，未伪造接单/验收/付款，所有判断仅基于字段交叉比对\"\n  ],\n  \"review_end\": true\n}",
+  "at_utc": "2026-10-23T04:23:25.467Z",
+  "output_sha256": "0557805c9c514f022ab1a71bcedd32fba0594b3f734ec345f46cb1b7535630f0",
+  "verdict": {
+    "reviewed_sha256": "b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec",
+    "accepted": false,
+    "reasons": [
+      "页面响应头中 source_header='054896eca108adfdc4ed31e0cef03a916b2820fc' 与部署元数据 deployment.source_commit 一致，符合 body_source_commit 和 header_source_commit 检查项",
+      "部署日志 evidence（log_evidence.sha256='fb2ba3da7040272112661a9cb4008bd108a618fa07727a689c20e4bc73d58c75'）中明确提取到 SOURCE_COMMIT=054896eca108adfdc4ed31e0cef03a916b2820fc，与 source_header 及 deployment.source_commit 三方一致",
+      "但被审 SHA256（b6e8179...beec）未在任何字段中出现：既不等于 log_evidence.sha256（fb2ba3d...8c75），也不等于 page.body_sha256（1d9d8a8...711b），亦不等于 deployment.source_commit（054896e...20fc）或 source_commit（4c699cd...f457）",
+      "schema 为 ltzzz.postdeploy-observation.v1，要求被审哈希必须绑定本次观测所依据的原始证据载体（如日志快照、页面快照或响应头快照之一），而 b6e8179...beec 在整个观测 JSON 中无出处、无引用、无计算来源，无法锚定至任一可验证实体",
+      "HTTP 200 单独不构成绑定依据；'fresh_http_200': true 仅表明请求成功，不参与哈希绑定校验",
+      "rollback 入口（Cloudflare dash）和原 Edge 定时任务历史未提供可观测数据，按规则另列提醒，但不影响本项核对结论",
+      "未执行浏览器操作，未伪造接单/验收/付款，所有判断仅基于字段交叉比对"
+    ],
+    "review_end": true
+  }
+}
