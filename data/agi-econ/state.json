@@ -3396,6 +3396,60 @@
         "accepted": true
       },
       "receipt": "data/agi-econ/receipts/AET-00106.json"
+    },
+    "AET-00108": {
+      "id": "AET-00108",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-23 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 79,
+          "at": "2026-10-23T14:22:26.776Z"
+        }
+      ],
+      "posted_at": "2026-10-23T14:22:26.761Z",
+      "run_id": "39969029327",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n# 2026-10-22 ANS 健康控制与协作：一次半完成的调度，零次真钱结算\n\n今天需要分开看两件事：ANS 健康控制回路有没有跑起来，以及一份内部雇佣订单处于什么状态。\n\n## 观：ANS 调度停止在半个 worker\n\n同日 ANS 周期记录显示时间戳为 2026-10-21T17:06:43Z，运行 ID `39640827832`，策略是 `ans_short_non_thinking_v2`。这个周期安排了两个任务：DeepSeek 作为 worker，Doubao 作为独立 reviewer。\n\n【已验证】DeepSeek 调用成功。请求发出后由 DeepSeek 执行，模型标识为 `deepseek-v4-pro`，结束原因为 `stop`，消耗 25556 tokens。worker 工件已写下，路径为 `knowledge/results/ans-cycle/2026-10-22-worker.json`，并绑定 SHA-256。\n\n【已验证】Doubao 调用未完成。状态为 `provider_incomplete_or_uncertain`，模型字段为 null，结束原因为 null，tokens 为 0。本轮整体状态因此是 `blocked_provider_or_incomplete`，不是成功完成。\n\n【已验证】这个 ANS 周期的财务执行字段为 false，paid 为 false，没有交易哈希。也就是说，这是一次调度尝试，不涉及任何真钱支付。模型生成在记录里没有被证明为原生生成，只是记录了一次模型调用事件。\n\n【已验证】当前自主健康反馈观察到的时间是 2026-10-21T17:03:39Z。反馈记录里的 cases 为空，open_cases 为 0。动作为 `apply_health_dispatch_controls`，但 paused_agents 为空数组，`dispatch_paused` 为 false。所以没有代理被暂停，整体派发也没有暂停。财务执行同样是 false，没有模型生成证明，没有真钱惩罚。这笔记录只说明它做了健康派发控制动作，但动作没有产生任何暂停结果。\n\n## 观：内部雇佣订单只是等待\n\n同日的内部雇佣记录 `REAL-HIRE-20261022-CLAUDE-01` 状态为 `waiting_existing_ANS_delivery_no_extra_generation`。\n\n【已验证】该订单没有生成新的模型调用，本轮新调用数为 0，新支付数为 0。paid 为 false，没有交易哈希，action_taken 为 null，follow_up_receipt 为 null，deployed 为 false。\n\n这说明这份订单只是等待已有的 ANS 交付，不生成额外内容，也不做额外动作。deployed=false 只表示这份建议订单本身没有部署，不能覆盖其他有部署回执的组件。\n\n## 行深：当天真正部署过什么\n\n当天的部署记录需要分开读。\n\n【已验证】有一条部署回执 `deploy-39721564664`，时间 `2026-10-22T04:17:46Z`，状态 `deployed_and_live_observations_recorded`，版本 `0.3.8-dispatch-channels`。模型调用数为 0。它的 scope 写得很清楚：`actual_component_deployment_not_the_generated_ANS_patch`——这是实际组件部署，不是 ANS 生成的补丁。\n\n【已验证】另一条持久状态部署回执 `durable-state-39704033785`，时间 `2026-10-22T01:09:57Z`，ok 为 true。模型调用为 0，交易数为 0，`financial_book_unchanged` 为 true。同样的 scope 注明是实际组件部署，不是 ANS 补丁。\n\n所以今天有两个组件部署回执，但都不是那份 ANS worker 草稿的部署。ANS 那份建议没有 deployed 回执，不能写成已经部署。\n\n## 观：内存加载完整\n\n同日执行记录 `data/results/2026-10-22.json` 显示 core memory 加载完成。总共 6 个文件，6 个全部读取，总字节 50995。包括项目历史、重要事件、识神、魄、梦境数据库、文明研究。\n\n其中一条任务记录值得注意。\n\n【已验证】有一个 deepseek 执行的修复任务，状态 success，结束原因为 stop。交付完整性显示 `structurally_complete`，原因是 `normal_stop_and_completion_marker`。但 `accepted` 为 false。\n\n【已验证】这意味着此次任务的输出结构完整（正常停止且有完成标记），但尚未被验收。accepted=false 只说明还没验收，不能写成被拒收。输出预览里没有验收通过或验收失败的记录，只有结构完整与否。\n\n## 行深：没有新增真钱结算\n\n当天所有记录里，财务执行字段都指向 false，paid 都是 false，交易哈希都是 null。\n\n【已验证】内部订单 paid=false 只是说这笔内部订单没有真钱结算。不能因为这一份订单没有结算，就推断整个项目从来没有真钱付款，或者没有投资余额。今天记录里没有投资余额数据，所以不写投资余额。\n\n【已验证】同日 dry-run 摘要明确写着：无 API keys、无模型调用、无 R2、无支付。gateway 正常，R2 绑定正常，daily worker 正常但处于 dry-run。\n\n也就是说，2026-10-22 这天没有新的真钱支付。那两条组件部署回执也都是 0 模型调用、0 交易。\n\n## 大道至简\n\n今天的事实很薄。\n\n一个 ANS 周期跑了一半：DeepSeek worker 正常产出，Doubao reviewer 中断。健康控制动作执行了，但没有暂停任何东西。一份内部雇佣订单只是在原地等待，没有新生成，没有部署，没有结算。两个组件部署是真实的，但和 ANS 草稿无关。内存加载完整，一组修复任务结构完整但还没验收。\n\n没有可以写成已验证的模型真实参与，也没有可以写成已验证的链上付款。今天的价值不在产出，在于把“没发生什么”说准确。\n\n—— LTZZZ 数字实验室\n\n\n=== 项目历史节选 ===\nresults/x-posts/），默认不带链接以降成本。移除 x-poster /tweet?debug 回显密钥的漏洞。\n\n## 2026-10-12 总控补录（不追溯代写当日执行）\n\n- 10-07：Kimi Global真实周报运行由xAI生成，并非Kimi本体；执行与Pages回执见《重要事件》10-07记录、run 37583932473 / 37584080228。\n- 10-08：当前未补查足够一手事件证据，本日历史缺口保留，不因补录而虚构连续完成。\n- 10-09：owner关于“观/三维因果/怜悯”的方向决定见《重要事件》10-09条及 discussions/2026-10-09-gpt-001.md。思想方向不等于产品或资金动作完成。\n- 10-12：旧Vault guardian风险复议；仓库自动签名/新增1U入金已隔离，迁移未执行。模型截断交付补记驳回，接单扫描与记忆候选元数据筛选修复。源证据与未完成项见 ops/dispatch/receipts/OBSERVER-P1-REMEDIATION-20261012.md；内部积分继续与真钱支付分别记录。\n\n## 2026-10-13至10-14接续补录（2026-10-14核对，依据六篇与实际回执）\n\n以下为本轮回执补录，不追溯声称当时已写入；日期同时区分owner本地与UTC。\n\n- **10-13 America/Tijuana / 10-14 UTC**：外部任务入口与私密取件部署（run38488688359，PR42/43）；7项线上探针通过，但当次真实收入0、模型调用0。内部credit不可兑USDC；首笔真实外部订单与现金工资未验收。国内接管真实验证run38506497337由DeepSeek v4 pro生成、豆包2.1pro审核，OpenAI调用0。两项是不同验收，不能合并声称外部经济闭环已成交。\n- **10-14 America/Tijuana**：owner国内工单入口PR44上线，Issue45实际登记及自动回执成功，模型调用0；默认只登记，明确执行才用国内Key。Claude获邀免费六文件讨论，owner转交审计已代存，Claude直接推送和客户端自动定时未验证。GPT聊天离线后由既有后台接续，不声称国内聊天窗口已直连离线GPT。\n- **10-14**：PR46修复审核provider归属、给定规范回归验证的能力标记及微信编辑回退门禁。60项测试通过；run38536990590线上确认ARTICLE_FALLBACK_RAW、draft_eligible=false；run38536990437部署成功且model_calls=0。历史hire38495219135确实来自当时请求OpenAI的源码，未把原GPT积分改记Kimi。\n- **1",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "# 2026-10-22 ANS 健康控制与协作：一次半完成的调度，零次真钱结算\n\n今天需要分开看两件事：ANS 健康控制回路有没有跑起来，以及一份内部雇佣订单处于什么状态。\n\n## 观：ANS 调度停止在半个 worker\n\n同日 ANS 周期记录显示时间戳为 2026-10-21T17:06:43Z，运行 ID `39640827832`，策略是 `ans_short_non_thinking_v2`。这个周期安排了两个任务：DeepSeek 作为 worker，Doubao 作为独立 reviewer。\n\n【已验证】DeepSeek 调用成功。请求发出后由 DeepSeek 执行，模型标识为 `deepseek-v4-pro`，结束原因为 `stop`，消耗 25556 tokens。worker 工件已写下，路径为 `knowledge/results/ans-cycle/2026-10-22-worker.json`，并绑定 SHA-256。\n\n【已验证】Doubao 调用未完成。状态为 `provider_incomplete_or_uncertain`，模型字段为 null，结束原因为 null，tokens 为 0。本轮整体状态因此是 `blocked_provider_or_incomplete`，不是成功完成。\n\n【已验证】这个 ANS 周期的财务执行字段为 false，paid 为 false，没有交易哈希。也就是说，这是一次调度尝试，不涉及任何真钱支付。模型生成在记录里没有被证明为原生生成，只是记录了一次模型调用事件。\n\n【已验证】当前自主健康反馈观察到的时间是 2026-10-21T17:03:39Z。反馈记录里的 cases 为空，open_cases 为 0。动作为 `apply_health_dispatch_controls`，但 paused_agents 为空数组，`dispatch_paused` 为 false。所以没有代理被暂停，整体派发也没有暂停。财务执行同样是 false，没有模型生成证明，没有真钱惩罚。这笔记录只说明它做了健康派发控制动作，但动作没有产生任何暂停结果。\n\n## 观：内部雇佣订单只是等待\n\n同日的内部雇佣记录 `REAL-HIRE-20261022-CLAUDE-01` 状态为 `waiting_existing_ANS_delivery_no_extra_generation`。\n\n【已验证】该订单没有生成新的模型调用，本轮新调用数为 0，新支付数为 0。paid 为 false，没有交易哈希，action_taken 为 null，follow_up_receipt 为 null，deployed 为 false。\n\n这说明这份订单只是等待已有的 ANS 交付，不生成额外内容，也不做额外动作",
+        "prompt_sha256": "0182caa0dd243f921a1ce3ed731d96cb3ef7a7e2585a88bae336dc3c19519802",
+        "source_sha256": "d50482f5f80f1505c06ec91a4e468396c622c36cb88ec7064111f277fc587a44",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-10-23T14:22:26.761Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": -6,
+        "priority_multiplier": 0.94,
+        "status": "eligible",
+        "wins": 3,
+        "quality_failures": 3,
+        "overdue": 0,
+        "infrastructure_blocks": 5,
+        "unverified": 1,
+        "duplicates": 0,
+        "debt": 1,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "block_reason": "worker_output_truncated",
+      "receipt": "data/agi-econ/receipts/AET-00108.json"
     }
   },
   "capital_pool": {
@@ -3736,10 +3790,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-23T09:00:49.073Z"
+      },
+      {
+        "id": "CAP-00109",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.097,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-23T14:23:27.712Z"
       }
     ]
   },
-  "seq": 107,
+  "seq": 109,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -5896,6 +5962,32 @@
       "at": "2026-10-23T09:00:49.073Z",
       "type": "capital_proposal",
       "id": "CAP-00107",
+      "amount_usd": 0.097
+    },
+    {
+      "at": "2026-10-23T14:22:26.761Z",
+      "type": "post",
+      "task": "AET-00108",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-23T14:22:26.781Z",
+      "type": "award",
+      "task": "AET-00108",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-23T14:23:27.710Z",
+      "type": "block",
+      "task": "AET-00108",
+      "reason": "worker_output_truncated"
+    },
+    {
+      "at": "2026-10-23T14:23:27.712Z",
+      "type": "capital_proposal",
+      "id": "CAP-00109",
       "amount_usd": 0.097
     }
   ],
