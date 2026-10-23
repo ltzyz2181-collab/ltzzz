@@ -204,3 +204,26 @@ test('malformed explicit review selection fails closed instead of defaulting to 
  assert.deepEqual(reviewSelectionFromBody('supplement-review-seats: qianwen'),{selectedSeats:['qianwen'],supplement:true});
  for(const body of ['native-review-seats: doubao, qianwen','native-review-seats: deepseek-doubao','supplement-review-seats: ','native-review-seats: deepseek,doubao\nsupplement-review-seats: qianwen',' native-review-seats: deepseek,doubao'])assert.throws(()=>reviewSelectionFromBody(body),/invalid_explicit_review_selection/);
 });
+
+test('a CRLF checkout keeps recorded hash bindings and adapter checks valid through line-ending normalization',()=>fixture(root=>{
+ const pack=readSkill(root),refs=activate(root,pack);
+ syncSkillAdapters({root});
+ const toCrlf=full=>fs.writeFileSync(full,fs.readFileSync(full,'utf8').replace(/\r\n/g,'\n').replace(/\n/g,'\r\n'));
+ const toLf=full=>fs.writeFileSync(full,fs.readFileSync(full,'utf8').replace(/\r\n/g,'\n'));
+ const skillFiles=[...CORE_FILES,'references/contributions.md'];
+ for(const file of skillFiles)toCrlf(path.join(root,SKILL_DIR,file));
+ for(const target of adapters)for(const file of skillFiles)toCrlf(path.join(root,target,file));
+ for(const file of [refs.activationPath,refs.reviewPath,'config/ltzzz-skill.json'])toCrlf(path.join(root,file));
+ for(const file of [refs.activationPath,refs.reviewPath,SKILL_DIR+'/SKILL.md'])assert.ok(fs.readFileSync(path.join(root,file),'utf8').includes('\r\n'));
+ assert.equal(readSkill(root).core_sha256,pack.core_sha256);
+ const context=skillContext({root});
+ assert.equal(context.proof.applied,true);
+ assert.equal(context.proof.core_sha256,pack.core_sha256);
+ assert.equal(syncSkillAdapters({root,check:true}).status,'all_adapters_match');
+ for(const file of skillFiles)toLf(path.join(root,SKILL_DIR,file));
+ assert.equal(syncSkillAdapters({root,check:true}).status,'all_adapters_match');
+ fs.appendFileSync(path.join(root,adapters[0],'SKILL.md'),'Unreviewed drift.\r\n');
+ assert.throws(()=>syncSkillAdapters({root,check:true}),/skill_adapter_out_of_sync/);
+ fs.appendFileSync(path.join(root,SKILL_DIR,'SKILL.md'),'Unreviewed instruction.\r\n');
+ assert.equal(skillContext({root}).proof.applied,false);
+}));
