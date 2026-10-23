@@ -5,6 +5,9 @@ name: Liveness Watchdog (日课活性告警)
 # 依据：owner 2026-10-08「你监督ai雇佣ai ai自主投资 跑起来啊」——监督必须自动化。
 
 on:
+  push:
+    branches: [main]
+    paths: ['scripts/watchdog-summary.mjs','identity/seat-registry.json','.github/workflows/liveness-watchdog.yml']
   schedule:
     - cron: '0 5 * * *'    # UTC 05:00 = 北京 13:00（日课主跑北京 06:00 后 7h，足够容错）
     - cron: '0 14 * * *'   # UTC 14:00 = 北京 22:00（当日终检）
@@ -24,6 +27,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
 
       - name: 检查当日日课产出
         id: check
@@ -80,9 +86,7 @@ jobs:
               echo "- 判定：**日课链路断裂 ❌ 需总控介入**"
             fi
             echo ""
-            echo '```'
             node scripts/watchdog-summary.mjs "$F"
-            echo '```'
             echo ""
             echo "> 本文件由 watchdog 自动写入。看见 missing/stale 即代表监督系统在报警。"
           } > "$OUT"
@@ -97,9 +101,7 @@ jobs:
             echo "no changes"; exit 0
           fi
           git commit -m "watchdog: 活性守夜 $(TZ=Asia/Shanghai date +%Y-%m-%d)"
-          git fetch origin main
-          git rebase origin/main || true
-          git push origin HEAD:main
+          node tools/push-receipt-commit.mjs
 
       - name: 报警（missing 时红灯）
         if: steps.check.outputs.status == 'missing'
