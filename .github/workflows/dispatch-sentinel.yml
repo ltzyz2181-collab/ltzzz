@@ -11,9 +11,9 @@ name: Dispatch Sentinel (派单哨兵 · 每小时)
 on:
   push:
     branches: [main]
-    paths: ['scripts/dispatch-sentinel.mjs','scripts/lib/dispatch-oversight.mjs','scripts/record-sentinel-coverage.mjs','scripts/lib/sentinel-coverage.mjs','.github/workflows/dispatch-sentinel.yml']
+    paths: ['scripts/dispatch-sentinel.mjs','scripts/lib/dispatch-oversight.mjs','scripts/lib/seat-delivery.mjs','scripts/watchdog-summary.mjs','identity/seat-registry.json','scripts/record-sentinel-coverage.mjs','scripts/lib/sentinel-coverage.mjs','.github/workflows/dispatch-sentinel.yml']
   pull_request:
-    paths: ['scripts/dispatch-sentinel.mjs','scripts/lib/dispatch-oversight.mjs','scripts/record-sentinel-coverage.mjs','scripts/lib/sentinel-coverage.mjs','scripts/tests/audit-evidence.test.mjs','scripts/tests/dispatch-sentinel.test.mjs','scripts/tests/dispatch-oversight.test.mjs','.github/workflows/dispatch-sentinel.yml']
+    paths: ['scripts/dispatch-sentinel.mjs','scripts/lib/dispatch-oversight.mjs','scripts/lib/seat-delivery.mjs','scripts/watchdog-summary.mjs','identity/seat-registry.json','scripts/record-sentinel-coverage.mjs','scripts/lib/sentinel-coverage.mjs','scripts/tests/audit-evidence.test.mjs','scripts/tests/dispatch-sentinel.test.mjs','scripts/tests/dispatch-oversight.test.mjs','scripts/tests/seat-delivery.test.mjs','.github/workflows/dispatch-sentinel.yml']
   schedule:
     - cron: '0 * * * *'   # 每小时
   workflow_dispatch:
@@ -39,7 +39,7 @@ jobs:
           node-version: '20'
 
       - name: Verify exact task and nested receipt matching
-        run: node --test scripts/tests/dispatch-sentinel.test.mjs scripts/tests/audit-evidence.test.mjs scripts/tests/dispatch-oversight.test.mjs
+        run: node --test scripts/tests/dispatch-sentinel.test.mjs scripts/tests/audit-evidence.test.mjs scripts/tests/dispatch-oversight.test.mjs scripts/tests/seat-delivery.test.mjs
 
       - name: 运行派单哨兵
         if: github.event_name != 'pull_request'

@@ -18,7 +18,7 @@ Owner 要求：总控持续统筹 ANS、AI 雇佣 AI、自主投资；千问每�
 
 沿用已签发 Task ID；CONTROL → DAILY 仅采用现有 resolver 写入的 `source_task_id`，不按相似名字猜。每项问题仅创建一张催办卡，不覆盖已有卡或认领。规则催办进入现有总控和千问流程，不直接重启模型、订单、投资或付款。
 
-新监督 SLA：总控每日审查/派单 17:00（现有 cron 16:20 后留余量）；Claude 卡 09:00、认领/交付 22:00；日课提交和独立审核 22:00；ANS 阻塞跟进 03:00；内部雇佣已有交付 12:00。到期前记 `not_due`。这些时间是本次监督约定，不冒称历史任务原来就有这个截止时间。
+新监督 SLA：总控每日审查/派单 17:00（现有 cron 16:20 后留余量）；Claude旧原生卡时限不用于当前未排班的PR渠道；已明确接单任务按原截止监督PR/交付；日课提交和独立审核 22:00；ANS 阻塞跟进 03:00；内部雇佣已有交付 12:00。到期前记 `not_due`。这些时间是本次监督约定，不冒称历史任务原来就有这个截止时间。
 
 同一任务/问题每个实际观察日最多一次警告；跨两个观察日未闭环为 `repeated_warning`。记录首次发现时间，不补造前几天的警告。不扣真钱、声誉，不暂停或撤销总控权限。超出窗口但没有复查的旧问题继续保留，不因“没再看见”自动关闭。
 
@@ -42,3 +42,13 @@ Owner 要求：总控持续统筹 ANS、AI 雇佣 AI、自主投资；千问每�
 监督器额外读取 `dispatch/qianwen-return-日期.json`：`QIANWEN-RETURN-*` 是规则总控签发的外部回归单，`DAILY-*-qianwen` 是正式日课。正式日课已生成/提交不能抵扣前者的认领、交付；resolver 的 source_task_id 也不能自动合并这两种单。外部回归认领引用必须带原 Task ID、文件 SHA256 和实际时间，引用存在仍不证明原生生成或交付。此回归单新增监督截止约定为项目日22:00，之前记未到期，不补造旧承诺。
 
 `latest.json` 新增 `stage_counts` 和 `backlog`：派单记录、验证认领、提交、独立审核、工程实物和部署各自计数；零表示本扫描未获得该阶段证明，不代表项目从未做过。积压按原 Task ID 去重，保留窗口外未复查问题，按原任务日期列最早欠项和责任席。千问现有日课上下文改为优先列历史欠项，不额外调用或重做已预留订单。新增派单和催办数量不记成闭环成果。
+
+## 2026-10-23：按交付通道监督Claude
+
+Claude的role仍为active_external_audit_and_planning；native_api_status记录blocked_insufficient_api_credits；delivery_channel=repo_pr_only。external_discussion_only来自data/tasks/daily-tasks.json的日课模式，经inactiveDailySeats写入data/results再由watchdog展示，不代表owner停权。10-14 control里的同名模式只是历史记录。watchdog现在显示EXT并单列role/native_api/channel。
+
+旧自动DAILY清单没有原生定时预留，也没有原生自动接单通道，记external_pr_route_reference_only而非claim_missing；不把它记成任务已完成。有明确接单无PR时仍告警pr_delivery_link_missing；PR未审核报pr_unreviewed；已合并PR只证明对应交付存在。真正代执行必须原Task ID、执行器来源和工件SHA均匹配，保留真实DeepSeek/豆包署名，不将其他REAL-HIRE/ANS产出填到Claude日单。
+
+更正保留旧警告、首次观察时间及reclassified_delivery_channel_not_completed状态，不删除历史。当前PR/代执行证据格式见[Claude交付通道](CLAUDE-DELIVERY-CHANNEL.md)。跨阶段补派仍用原Task ID并共用oversight:<原ID>幂等键，复用已有提醒卡；提醒不触发模型或资金重试。
+
+千问原生监督另查同日DAILY-qianwen的不可变工件、【派单监督】正文、认领提交及不同提供商对同SHA的接受审核。新队列中的设计稿不抵扣日课，也不自动变成已验收。规则扫描仍明确native_qianwen_call=false。
