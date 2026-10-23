@@ -120,7 +120,7 @@ export function nativeQianwenOversight(root,date){
  if(!seat||ledger.date!==date||seat.assignment?.id!==`DAILY-${date}-qianwen`)return result;
  try{validateArtifact(root,ledger,'qianwen',seat);}catch{return result;}
  const body=read(root,seat.artifact.path),claim=seat.claim_verified===true&&seat.claim_receipt?.task_id===seat.assignment.id&&seat.claim_receipt?.run_key===ledger.run_key;
- if(!claim||seat.submission_verified!==true||!['qianwen','aliyundashscope'].includes(normalized(body.actual_provider))||body.model_source!=='provider_response'||typeof body.actual_model!=='string'||!body.actual_model||!body.output?.includes('【派单监督】'))return result;
+ if(!claim||seat.submission_verified!==true||!['qianwen','aliyundashscope'].includes(normalized(body.actual_provider))||body.model_source!=='provider_response'||typeof body.actual_model!=='string'||!body.actual_model||typeof body.output!=='string'||!body.output.includes('【派单监督】'))return result;
  Object.assign(result,{status:'native_supervision_draft_pending_independent_review',generation_verified:true,actual_provider:body.actual_provider,model:body.actual_model,artifact:seat.artifact,evidence:[ledgerPath,seat.artifact.path]});
  const review=seat.review_receipt;
  if(seat.review_verified===true&&review?.task_id===seat.assignment.id&&review.reviewed_sha256===seat.artifact.sha256&&review.accepted===true&&reviewProof(root,ledger,seat,review)&&normalized(review.worker_actual_provider)===normalized(body.actual_provider)&&normalized(review.worker_actual_provider)!==normalized(review.reviewer_actual_provider))Object.assign(result,{status:'native_supervision_independently_reviewed',independent_review_verified:true,evidence:[...result.evidence,review.evidence_path]});

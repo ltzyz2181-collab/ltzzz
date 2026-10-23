@@ -9,7 +9,7 @@ export function deliveryPolicy(root,seat){
  const channel=removed?'disabled':r?.delivery_channel||'native_receipt';
  return {channel,work_status:r?.work_status||'not_registered',native_api_status:r?.native_api_status||null,expected_native_daily:r?.expected_native_daily!==false,source:'identity/seat-registry.json'};
 }
-export function externalDeliveryRequired(root,id){return (read(root,DELIVERY_INDEX)?.required_tasks||[]).includes(id);}
+export function externalDeliveryRequired(root,id){const tasks=read(root,DELIVERY_INDEX)?.required_tasks;return Array.isArray(tasks)&&tasks.includes(id);}
 export function verifiedFile(root,ref){
  if(!/^(knowledge|results|ops)\/[A-Za-z0-9_./\u4e00-\u9fff-]+\.(json|md)$/.test(ref?.path||'')||ref.path.split('/').includes('..')||!/^[a-f0-9]{64}$/.test(ref.sha256||''))return null;
  try{const full=path.join(root,ref.path);if(!fs.realpathSync(full).startsWith(fs.realpathSync(root)+path.sep))return null;const bytes=fs.readFileSync(full);return hash(bytes)===ref.sha256?bytes:null;}catch{return null;}
@@ -17,7 +17,10 @@ export function verifiedFile(root,ref){
 // A PR by the shared GitHub account proves submission, not a native model identity.
 // Cross-seat substitution requires an exact original task ID and executor evidence.
 export function externalTaskDelivery(root,id,seat){
- const rows=read(root,DELIVERY_INDEX)?.deliveries||[],matching=rows.filter(r=>r.task_id===id);
+ const index=read(root,DELIVERY_INDEX);
+ if(index===null&&!fs.existsSync(path.join(root,DELIVERY_INDEX)))return {status:'not_linked',evidence:[]};
+ if(!index||!Array.isArray(index.deliveries)||index.required_tasks!==undefined&&!Array.isArray(index.required_tasks))return {status:'invalid',evidence:[DELIVERY_INDEX]};
+ const matching=index.deliveries.filter(r=>r?.task_id===id);
  if(!matching.length)return {status:'not_linked',evidence:[]};
  if(matching.length!==1)return {status:'invalid',evidence:[DELIVERY_INDEX]};
  const entry=matching[0],raw=verifiedFile(root,entry.receipt);let r;try{r=JSON.parse(raw);}catch{return {status:'invalid',evidence:[DELIVERY_INDEX]};}
