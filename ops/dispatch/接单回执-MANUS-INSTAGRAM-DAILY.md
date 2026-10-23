@@ -109,3 +109,20 @@ Owner 于 13:13 明确允许将 10/21 视频作为一次性跨平台例外；Ins
 更换素材后，GitHub main 已新增 10/22 视频 `videos/instagram/2026-10-22/video.mp4`。下载 SHA-256 `1d07067ef6b4f4f2070c8d9e535a85e59a5181cf6b484431718aa0bcde3b0693` 与 latest/manifest 一致；规格 30 秒、720×1280（9:16）、H.264/AAC，完整解码通过，音轨非静音，caption 和 manifest 齐全。但 `results/publishing/youtube-daily-2026-10-22.json` 以相同 SHA 验证 YouTube 已公开，视频 ID `bR7nD0rUn2w`，链接 <https://www.youtube.com/watch?v=bR7nD0rUn2w>。因此该替代素材仍按跨平台去重规则排除。复核时仓库共有 13 个 MP4 路径、12 个唯一 SHA 和 79 份 `results/publishing/` JSON 回执；此前已检查的其他素材排除理由不变。
 
 最终状态仍为 `blocked_no_eligible_unique_video`。未发布任何新 Instagram 内容；没有 permalink、media_id 或截图。没有重试被中断的旧素材，不更改每天最多一条及 10:00 计划。详情见 `results/publishing/instagram-2026-10-22.json` 补充字段。
+
+
+## 2026-10-23 10:00 PDT｜blocked_no_eligible_unique_video
+
+每日计划于 10:06 PDT 执行；计划仍为 active/full_auto，每日 10:00（US/Pacific），未修改。账号 `@ltzyz2181` 于 10:07 PDT 查询时共 6 条帖子，10/23 当日 0 条；滚动额度 0/100。
+
+最新入口 `videos/instagram/latest.json` 指向 `videos/instagram/2026-10-22/video.mp4`，SHA-256 `1d07067ef6b4f4f2070c8d9e535a85e59a5181cf6b484431718aa0bcde3b0693`，源码提交 `90da82dde50a8216bdf1f4ffdadebdc48acbd505`。本次新下载视频与入口及 manifest 哈希一致；规格为 30 秒、720×1280（9:16）、H.264/AAC，完整解码通过，音轨非静音，英文 caption/manifest 齐全。抽查 3/10/18/26 秒主要文字可读，页脚接近画面底部，可能有 Instagram UI 覆盖风险。画面含 `210.869201 USDC` 字样；因相同 SHA 已被 YouTube 回执确认为公开，本次没有为 Instagram 重发，也未将该数额作为本次独立核验的链上事实。
+
+该素材按跨平台去重规则排除：`results/publishing/youtube-daily-2026-10-22.json` 确认相同 SHA 已在 YouTube 公开，视频 ID `bR7nD0rUn2w`，链接 <https://www.youtube.com/watch?v=bR7nD0rUn2w>。latest 中的 `published:false` 与平台成功回执不一致，以 YouTube public 回执为准。
+
+最新回退候选 `videos/ltzzz-daily-2026-10-23.mp4` 的 SHA-256 为 `90feacbd7cf323c4c845cdd745c6cc2f3d9914d2a069323119b0a7e497a8cea0`，仅 15.072 秒且编码 HEVC；仓库中未找到相匹配的英文 caption 或 manifest。它不满足 20–45 秒、H.264 及配套元数据要求，排除。全仓 80 份 publishing JSON 与 14 个 MP4 路径（13 个唯一 SHA）扫描结果及各 SHA 的排除理由见 `results/publishing/instagram-2026-10-23.json`；其他旧素材延续前日已记录的公开视频、owner 搁置或时长不合格结论。
+
+本次没有调用上传工具、没有发布或重试、没有换账号。结果为 `blocked_no_eligible_unique_video`；无 Instagram permalink、media_id、发布时间或截图。每日 10:00 计划保持不变，等待新的、符合规格且尚未公开/排队的仓库 MP4。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-23.json|jq、SHA-256、ffprobe/ffmpeg 全片解码与音量、四帧画面检查、全仓 80 份 publishing JSON/14 个 MP4 去重、Instagram get_post_list/get_account_info、YouTube public 回执核验|没有合格唯一素材；未发布，无 permalink/media_id/截图。`
