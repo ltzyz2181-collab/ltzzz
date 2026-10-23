@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-22T22:05:20.740Z",
+  "at": "2026-10-23T00:07:17.480Z",
   "date": "2026-10-23",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -11,6 +11,10 @@
       "overdue": false,
       "id": "DAILY-2026-10-23-qianwen",
       "file": "ops/dispatch/oversight/QIANWEN-OVERSIGHT-2026-10-23.md",
+      "delivery_channel": null,
+      "role_status": null,
+      "delegated": false,
+      "actual_provider": null,
       "status": "awaiting_agent_ack",
       "receipts": [],
       "claim_verified": false
@@ -71,17 +75,30 @@
       "date": "2026-10-23",
       "issuer": "gpt",
       "assigned_to": "claude",
-      "phase": "dispatch_missing",
-      "due_at": "2026-10-23T09:00:00+08:00",
+      "phase": "external_pr_route_reference_only",
+      "due_at": "2026-10-23T22:00:00+08:00",
       "evidence": [
         "ops/dispatch/DAILY-2026-10-23-claude.md"
       ],
-      "instruction": "免费外部 Claude 规划与独立审计；返回实际检查范围、遗漏项及补派建议。原生客户端未自动唤醒；无通道就报告 blocked，不能把国内代执行写成原生 Claude。",
+      "instruction": "Claude在任的外部规划与独立审计席；按原Task ID查PR/回执。没有原生自动接单通道不等于停用；国内代执行须同任务证据，不得从别单推断。",
       "native_generation_verified": false,
+      "delivery_channel": "repo_pr_only",
+      "role_status": "active_external_audit_and_planning",
+      "native_api_status": "blocked_insufficient_api_credits",
+      "native_claim_required": false,
+      "reference_only": true,
+      "delegated": false,
+      "actual_provider": null,
+      "model": null,
+      "submission_verified": false,
+      "independent_review_verified": false,
+      "pr_url": null,
+      "automatic_reexecution": false,
+      "delivery_evidence_status": "not_linked",
       "repair_origin": null,
-      "issue": "dispatch_missing",
+      "issue": "external_pr_route_reference_only",
       "overdue": false,
-      "status": "not_due",
+      "status": "delivery_channel_reference_not_completion",
       "file": "ops/dispatch/DAILY-2026-10-23-claude.md",
       "claim_verified": false
     },
@@ -123,7 +140,7 @@
   "overdue_count": 1,
   "deadline_unverified_count": 7,
   "claim_verified": false,
-  "run_id": "39862294889",
+  "run_id": "39876142114",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -167,13 +184,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "44 个原任务/44 条警告；验证认领 19、提交 18、独立审核 4、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "38 个原任务/38 条警告；验证认领 19、提交 18、独立审核 4、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
       "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "DAILY-2026-10-23-qianwen:awaiting_agent_ack；CONTROL-2026-10-23-deepseek:not_due；CONTROL-2026-10-23-doubao:not_due；CONTROL-REVIEW-2026-10-23:not_due；DAILY-2026-10-23-claude:not_due；ANS-2026-10-23-doubao:warning_required；REAL-HIRE-20261023-CLAUDE-01:not_due"
+      "note": "DAILY-2026-10-23-qianwen:awaiting_agent_ack；CONTROL-2026-10-23-deepseek:not_due；CONTROL-2026-10-23-doubao:not_due；CONTROL-REVIEW-2026-10-23:not_due；DAILY-2026-10-23-claude:delivery_channel_reference_not_completion；ANS-2026-10-23-doubao:warning_required；REAL-HIRE-20261023-CLAUDE-01:not_due"
     }
   ],
   "business_alerts": [
@@ -198,6 +215,6 @@
       "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39862294889-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/39876142114-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
