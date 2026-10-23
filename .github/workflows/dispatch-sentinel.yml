@@ -2,6 +2,7 @@ name: Dispatch Sentinel (派单哨兵 · 每小时)
 
 # WorkBuddy 职责的自动化落地（owner 2026-10-08 指令）：
 #   「Workbuddy 负责派单跟踪、超时和阻塞汇总。…每小时扫描若未配置请明说。」
+# 唯一监督状态写入者；外部派单器只生成卡片，避免并发改写同一latest/warnings。
 # 特性：
 #   - 无 AI key 依赖（纯 node + git）
 #   - 状态一律以仓库交付/运行证据为准

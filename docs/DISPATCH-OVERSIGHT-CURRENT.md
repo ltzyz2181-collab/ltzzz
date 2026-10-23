@@ -52,3 +52,5 @@ Claude的role仍为active_external_audit_and_planning；native_api_status记录b
 更正保留旧警告、首次观察时间及reclassified_delivery_channel_not_completed状态，不删除历史。当前PR/代执行证据格式见[Claude交付通道](CLAUDE-DELIVERY-CHANNEL.md)。跨阶段补派仍用原Task ID并共用oversight:<原ID>幂等键，复用已有提醒卡；提醒不触发模型或资金重试。
 
 千问原生监督另查同日DAILY-qianwen的不可变工件、【派单监督】正文、认领提交及不同提供商对同SHA的接受审核。新队列中的设计稿不抵扣日课，也不自动变成已验收。规则扫描仍明确native_qianwen_call=false。
+
+监督状态由Dispatch Sentinel单独写入；外部每日派单器只产卡，不再重复跑扫描器抢写latest/warnings。watchdog在角色/格式器配置更新时额外做一次零模型回读，仍沿用原cron；使用现有并发安全提交器，不吞rebase错误。

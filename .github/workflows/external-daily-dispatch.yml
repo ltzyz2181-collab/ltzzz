@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node scripts/generate-external-daily.mjs
-      - run: node scripts/dispatch-sentinel.mjs
+      # Dispatch Sentinel is the sole writer of oversight state; this job only emits cards.
       - run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
