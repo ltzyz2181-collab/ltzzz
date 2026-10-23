@@ -1,0 +1,3 @@
+export default { async fetch(request, env) {
+  return new Response('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>LTZZZ Edge deployment test</title><h1>LTZZZ 独立部署实测</h1><p id="marker">EDGE-WRITE-DEPLOY-20261023-V1</p><p>Source commit: '+env.SOURCE_COMMIT+'</p></html>', {headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-source-commit':env.SOURCE_COMMIT}});
+}};
