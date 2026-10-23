@@ -94,3 +94,14 @@ test('evidence branch persistence is idempotent and cannot modify main or commit
  git(work,['checkout','--detach']);fs.mkdirSync(path.join(work,EVIDENCE_DIR),{recursive:true});fs.writeFileSync(path.join(work,EVIDENCE_DIR,'DEPLOY-101-1.json'),'{}\n');const first=persistDeploymentEvidence(work);assert.equal(first.changed,true);assert.equal(persistDeploymentEvidence(work).changed,false);assert.equal(git(root,['--git-dir='+remote,'rev-parse','main']),main);assert.equal(git(root,['--git-dir='+remote,'rev-parse',EVIDENCE_BRANCH]),first.commit);
  fs.writeFileSync(path.join(work,'other.txt'),'must not commit');git(work,['add','other.txt']);assert.throws(()=>persistDeploymentEvidence(work),/non_evidence_staged_change_refused/);assert.equal(git(root,['--git-dir='+remote,'rev-parse','main']),main);
 }));
+
+test('a native completed rejection is reported as rejected, never missing review or silently accepted',async()=>{
+ const o=await observeDeployment(fixture().options),reservation=reservationForReview({observation:o,runId:'902',sourceCommit:verifier}).record;
+ const output=JSON.stringify({reviewed_sha256:reservation.reviewed_sha256,accepted:false,reasons:['reviewer objects to external digest'],review_end:true});
+ const r=await reviewed(o,{output}),a=deploymentIndexAssessment(o,r);
+ assert.equal(a.independent_native_review_completed,true);assert.equal(a.independent_native_review_verified,false);assert.equal(a.status,'deployment_review_rejected');assert.equal(a.missing_stage,'independent_review_rejected');assert.equal(a.label,'已部署未复验');
+});
+test('a file digest binds actual serialized bytes externally and need not appear in the file being hashed',async()=>{
+ const o=await observeDeployment(fixture().options),bytes=jsonBytes(o),digest=sha256(bytes);assert.equal(bytes.includes(digest),false);
+ const r=await reviewed(o);assert.equal(r.reviewed_sha256,digest);assert.equal(deploymentIndexAssessment(o,r).status,'deployment_reverified');
+});

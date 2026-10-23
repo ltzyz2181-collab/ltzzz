@@ -42,3 +42,11 @@
 - 分支演示由 `codex/postdeploy-evidence-20261023` 的代码 push 自动触发，仅复验既有 run 39887469785，不重新部署。
 - 若未来批准合并：GitHub 的 `workflow_run: completed` 激活常态证据巡检。配置表未覆盖的实际部署工作流仍需单独登记，不能声称仓库所有 workflow 都已覆盖。
 - 所有机器回执只 push 到证据分支，源码只 push 本 PR 分支；无强推，回执已存在就复用。独立 CI 运行不依赖 owner 电脑保持开启，但原 Edge 客户端离线控制能力不在本验收范围内。
+
+## 分支实测回执
+
+独立 Actions run `39899988884` 无需 owner 继续点击完成，真实页面读取时间为 UTC 2026-10-23T04:23:06.928Z（America/Tijuana 10月22日 21:23:06）。五项页面/源码/日志检查全部通过。证据分支提交 `4d02c6b8456c5eb7b35876bb2cbbaf83064c6778` 保存完整观测及原生千问回包。
+
+千问 `qwen-plus` 真调用一次，stop、1802 total tokens，审的 observation SHA256 为 `b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec`。它确认页面/提交/日志匹配，却因为整份文件的外置哈希没有出现在文件内部而拒收；这不是实际 schema 要求。独立重算文件原字节，结果与 index、预留和模型回传审查对象完全一致。详情见 `knowledge/results/deployment-verification/edge-independent-review-counterexample-20261023.json`。
+
+原始拒收不改、不补造通过、不再调用一次付费模型。监督状态修正为 `deployment_review_rejected`（已部署未复验、已复核但拒收，待 Claude 外部审计裁决），区别于漏审。100 项本地回归通过。当前 PR 仍不合并，常态自动触发尚未在 main 启用。回滚实际权限仍未证明，只留下人工入口及无前序成功版本的警告。

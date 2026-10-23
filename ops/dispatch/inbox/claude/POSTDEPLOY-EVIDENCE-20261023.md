@@ -8,3 +8,11 @@
 - 输出：沿原 Task ID 在独立分支+PR 交审核意见和明确反例，关联确切审查 commit 与 receipt SHA256。无新的 Anthropic API 购买。
 - 验收：main 未变更；isolated_test 不算生产上线；没有隐式部署/回滚/资金请求；没有第二席真实回执则保持已部署未复验；每次 source run/attempt 只有一份原始观测；检查意见保留。
 - 禁止：修改原 Edge 回执、重复采购或付款、自动回滚、代替部署者自称独立审核通过。
+
+## 本轮已有实物，沿原单补充
+
+- 工程 PR：#218，未合并 main。
+- 新无人值守 CI：https://github.com/ltzyz2181-collab/ltzzz/actions/runs/39899988884
+- 新证据提交：https://github.com/ltzyz2181-collab/ltzzz/commit/4d02c6b8456c5eb7b35876bb2cbbaf83064c6778
+- 页面：https://ltzzz-edge-test-20261023.ltzyz2181.workers.dev
+- 待裁决：原生千问已实际审完且拒收，不得写“漏审”。它把整份工件的外置 SHA256 混成必须在文件内出现的字段；请按 counterexample 原字节复算，确认该反例及保留/驳回意见。保留原拒收，不重购本单。

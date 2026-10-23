@@ -57,7 +57,7 @@ function exportValue(key,value){if(process.env.GITHUB_OUTPUT)fs.appendFileSync(p
 if(phase==='observe'){
  const id=targetRunId(),run=await api('/actions/runs/'+id),key=deploymentKey(run);exportValue('key',key);
  const prior=read(`${EVIDENCE_DIR}/${key}.json`);
- if(prior){console.log(JSON.stringify({task_id:key,status:'existing_observation_no_duplicate_write'}));}
+ if(prior){indexUpdate(key);persist();console.log(JSON.stringify({task_id:key,status:'existing_observation_no_duplicate_write'}));}
  else{
   let r;try{r=await observeDeployment({config,run,verifierRunId:runId,verifierSourceCommit:source,api,readPage:page});}
   catch{r={schema:'ltzzz.postdeploy-observation.v1',task_id:key,source_commit:source,observed_at_utc:new Date().toISOString(),deployment:{run_id:String(id),source_commit:run.head_sha,run_url:run.html_url},checks:{},blocker:'transport_or_metadata_unverified_no_retry',rollback:{automatic:false,availability:'not_verified'},financial_execution:false,model_calls:0,paid:false,tx_hash:null};}
