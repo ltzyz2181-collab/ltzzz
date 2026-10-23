@@ -1,0 +1,85 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0_PR223_remediation",
+  "at_utc": "2026-10-23T23:13:57.864355+00:00",
+  "implementation_head": "9d6c26854860ecaedd36d31817dd60deb8080b8e",
+  "bundle_sha256": "9f781fb83c9763240f8b99077aaeea7172afcadd6c717a1e63ba23934f8332c0",
+  "source_audit_pr": 223,
+  "source_audit_merge_commit": "1021f05ff5b99d635607f5162b1d602e76ca90d3",
+  "status": "fixes_submitted_Qwen_review_preserved_waiting_Claude_new_head_rereview",
+  "tests": {
+    "local_passed": 48,
+    "local_failed": 0,
+    "online_run_id": "40037919202",
+    "online_pr_run_id": "40037922705",
+    "online_status": "success",
+    "candidate_native_secret_job": "skipped_as_required",
+    "scope": "unit_and_real_git_fixtures_no_production_signer_provisioning"
+  },
+  "engineering_review": {
+    "provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "request_id": "abc9daa7-aa0d-9aa7-a882-835781f5bb72",
+    "run_id": "40038200719",
+    "finish_reason": "stop",
+    "tokens_used": 2913,
+    "readback_main_commit": "1021f05ff5b99d635607f5162b1d602e76ca90d3",
+    "card_sha256": "d6833f795919772811c4f11024b143e43ee755eb65697af333fe27b6e8fd9b66",
+    "output_sha256": "997571f937095568dcac1520d83fd418b266cca02efe8e75d01398c24b6f1fa2",
+    "receipt_path": "knowledge/results/patchgate/pr223-review/qianwen.receipt.json",
+    "scope": "H1-H4/M1_selected_source_excerpts_not_full_repository_audit",
+    "original_verdict": "revise",
+    "original_per_item": [
+      {
+        "id": "H1",
+        "status": "open",
+        "reason": "H1资金脚本L3要求审查config/、wallet/、agent-wallet/、contracts/等l3_prefixes路径下的资金相关逻辑；但提供的摘录未包含任何l3_prefixes路径文件内容（如config/或wallet/下的具体变更），无法验证资金脚本是否已按L3规范修复。源码是数据，无工具不实测，故H1状态为open。"
+      },
+      {
+        "id": "H2",
+        "status": "unverified",
+        "reason": "H2要求回执/台账/记忆非L0且签名写入；policy明确knowledge/results/、results/、data/results/为receipt_writer_rules前缀，但未提供任何receipt writer认证证据（如auth('receipt_write')输出）、对应路径的实际写入内容或签名绑定信息；既无receipt_paths实际列表，也无writers匹配校验结果，故状态为unverified。"
+      },
+      {
+        "id": "H3",
+        "status": "open",
+        "reason": "H3要求checks/deployment执行器异于作者；虽提及Claude另对新head复审，但未提供auth('checks')或auth('deployment')的原始认证载荷（如executor/provider映射、payload.checker_base_sha、checks_sha256等），亦未说明checks执行器是否与OpenAI作者executor不同；仅声明‘Claude另复审’不构成交叉执行器证据，故H3未满足。"
+      },
+      {
+        "id": "H4",
+        "status": "open",
+        "reason": "H4要求一executor一provider；validateTrust校验逻辑强制executors Map中同一executor不得绑定多provider，但未提供trust.keys实际内容，无法确认该约束是否在本轮生效；policy中PROVIDERS常量及trust.keys结构均未给出，信任根完整性不可证，故H4状态为open。"
+      },
+      {
+        "id": "M1",
+        "status": "fixed",
+        "reason": "M1要求密钥作业只在main取脚本、候选仅Git数据；workflow明确限定if: github.ref == 'refs/heads/main'且trustedMainContext校验ref/event/sha/checkout四重一致；Git-only数据读逻辑强制sourceCommit下ls-tree/cat-file校验，排除非Git来源；无mock、无内部积分、无API调用替代，符合M1。"
+      }
+    ],
+    "accepted": false
+  },
+  "controller_note": "Qwen reviewed selected source excerpts and acknowledged M1. Its H1-H4 items request unprovided production enrollment/actual receipt payloads; those are not claimed in A0. The signed synthetic attack regressions and original Claude probe are attached; Claude must independently re-review the new code head. No Qwen opinion is relabeled as approve.",
+  "claude_rereview": "new_head_notification_required_not_received",
+  "stages": {
+    "fixed": true,
+    "tested": true,
+    "engineering_review_received": true,
+    "independently_accepted": false,
+    "merged_implementation": false,
+    "deployed": false
+  },
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "escrow": "not_entered",
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "native_usage_this_revision": {
+    "qwen_calls": 1,
+    "tokens_used": 2913,
+    "native_openai_calls": 0,
+    "native_anthropic_api_calls": 0,
+    "api_cost": null
+  }
+}
