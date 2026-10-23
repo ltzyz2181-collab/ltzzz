@@ -1,3 +1,5 @@
+> 2026-10-23通道更正：Claude在任，主要交付通道为仓库PR/哈希绑定回执；原厂API额度不足不等于owner禁用。自动DAILY清单不预留原生调用，未接单不按缺原生接单文件催办；已明确认领的具体任务仍须交付并接受独立审核。原Task ID不得改变。
+
 > 2026-10-21更正：Claude规划/独审在任，已验证Claude Code仓库写入及PR路径（#141、#161）；下方“无写权限”是只读客户端的兜底方案，不是全席当前状态。正式六文件日课与外部PR审稿分别记交付，不能互相冒充。
 
 # Claude 免费记忆讨论与独立审计
@@ -11,7 +13,7 @@ Claude是LTZZZ早期参与建设者；本次恢复免费外部讨论和独立审
 3. 从 knowledge/results/wep3/、knowledge/results/publishing/ 或 results/publishing/ 挑一条最新声明独立核验：究竟是派单、草稿、测试、部署、实际交付还是发布；内部积分与真实支付分开。资金只有实际交易哈希和链上确认才算执行，不能把旧回执当今天完成。
 4. 最多列三个发现，按影响排序，每项给证据路径、具体问题、最小修正建议。证据无法访问就写无法核验。不能为证明参与而编造缺陷或重复修改。
 5. 不购买算力，不调用Anthropic API，不索取密钥，不签名转账，不公开私人经历或客户正文。提出公共价值建议时以实际行动为准，不把项目内部价值口号用于营销。
-6. 接单写 ops/dispatch/接单回执-DAILY-YYYY-MM-DD-claude.md；结果写 knowledge/results/external/YYYY-MM-DD-claude.md。日期按Asia/Shanghai，包含模型/客户端、source_commit、实际读过的文件、观点、反例、证据、发现与阻塞。
+6. 优先通过标明原Task ID的分支+PR交付，或提交哈希绑定回执；无须再为同一任务补造接单文件。既有 ops/dispatch/接单回执-DAILY-YYYY-MM-DD-claude.md 和 knowledge/results/external/YYYY-MM-DD-claude.md 继续兼容。PR/代执行绑定格式见 docs/CLAUDE-DELIVERY-CHANNEL.md。日期按Asia/Shanghai，包含模型/客户端、source_commit、实际读过的文件、观点、反例、证据、发现与阻塞。
 没有GitHub写权限则在对话完整交付回执给owner转交；明确“未写入仓库”，不得声称已提交。
 
 ## 调度边界

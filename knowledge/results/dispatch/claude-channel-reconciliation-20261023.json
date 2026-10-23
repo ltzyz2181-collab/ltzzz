@@ -1,0 +1,193 @@
+{
+  "at_utc": "2026-10-22T23:59:43.572977+00:00",
+  "source_commit": "85aba46c55e3ddde109af2c509512801289b942a",
+  "old_report": {
+    "path": "knowledge/results/dispatch/oversight/latest.json",
+    "sha256": "97c1e8a5626969ded8d0d2c9ba3fc3ea598a4e8582689b05cf3d13919b15ff87",
+    "date": "2026-10-23",
+    "open_warnings": 44,
+    "warnings_10_17_to_10_21": 34
+  },
+  "source_trace": [
+    {
+      "file": "data/tasks/daily-tasks.json",
+      "field": "tasks[agent=claude].status",
+      "value": "external_discussion_only",
+      "meaning": "Native daily scheduling mode, not owner disablement"
+    },
+    {
+      "file": "scripts/lib/daily-seat-policy.mjs",
+      "field": "inactiveDailySeats(config) -> result.tasks[]",
+      "meaning": "Copies daily status and separately annotates registry role"
+    },
+    {
+      "file": "data/results/2026-10-22.json",
+      "field": "tasks[agent=claude].status",
+      "value": "external_discussion_only"
+    },
+    {
+      "file": "scripts/watchdog-summary.mjs",
+      "field": "old status formatter",
+      "meaning": "Previously rendered all statuses except success/skipped/disabled_by_owner as FAIL; corrected external mode to EXT"
+    },
+    {
+      "file": "knowledge/results/control/2026-10-14.json",
+      "field": "seats[seat=claude].mode",
+      "value": "free_external_discussion_only",
+      "meaning": "Historical audit mode; not the current seat-status source"
+    },
+    {
+      "file": "identity/seat-registry.json",
+      "field": "seats.claude.work_status",
+      "value": "active_external_audit_and_planning"
+    },
+    {
+      "file": "identity/seat-registry.json",
+      "field": "seats.claude.native_api_status",
+      "value": "blocked_insufficient_api_credits"
+    }
+  ],
+  "daily_17_to_21": [
+    {
+      "task_id": "DAILY-2026-10-17-claude",
+      "old_warning": {
+        "case_id": "02becefba0509b8e5848a903",
+        "task_id": "DAILY-2026-10-17-claude",
+        "issue": "claim_missing",
+        "issuer": "gpt",
+        "assigned_to": "claude",
+        "first_observed_at": "2026-10-22T02:13:57.698Z",
+        "warning_dates": [
+          "2026-10-22",
+          "2026-10-23"
+        ],
+        "state": "open",
+        "last_observed_at": "2026-10-22T22:05:20.695Z",
+        "evidence": [
+          "ops/dispatch/DAILY-2026-10-17-claude.md"
+        ],
+        "warning_days": 2,
+        "severity": "repeated_warning",
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-17-claude-claim_missing.md",
+        "original_task_date": "2026-10-17"
+      },
+      "old_result_status": "external_discussion_only",
+      "exact_task_delegation_verified": false,
+      "action": "reclassify_native_claim_not_applicable_active_PR_role_no_execution_or_completion_inferred"
+    },
+    {
+      "task_id": "DAILY-2026-10-18-claude",
+      "old_warning": {
+        "case_id": "99d062222f5e536d7df91445",
+        "task_id": "DAILY-2026-10-18-claude",
+        "issue": "claim_missing",
+        "issuer": "gpt",
+        "assigned_to": "claude",
+        "first_observed_at": "2026-10-22T02:13:57.698Z",
+        "warning_dates": [
+          "2026-10-22",
+          "2026-10-23"
+        ],
+        "state": "open",
+        "last_observed_at": "2026-10-22T22:05:20.695Z",
+        "evidence": [
+          "ops/dispatch/DAILY-2026-10-18-claude.md"
+        ],
+        "warning_days": 2,
+        "severity": "repeated_warning",
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-18-claude-claim_missing.md",
+        "original_task_date": "2026-10-18"
+      },
+      "old_result_status": "external_discussion_only",
+      "exact_task_delegation_verified": false,
+      "action": "reclassify_native_claim_not_applicable_active_PR_role_no_execution_or_completion_inferred"
+    },
+    {
+      "task_id": "DAILY-2026-10-19-claude",
+      "old_warning": {
+        "case_id": "460ed3f35f11000c24418d11",
+        "task_id": "DAILY-2026-10-19-claude",
+        "issue": "claim_missing",
+        "issuer": "gpt",
+        "assigned_to": "claude",
+        "first_observed_at": "2026-10-22T02:13:57.698Z",
+        "warning_dates": [
+          "2026-10-22",
+          "2026-10-23"
+        ],
+        "state": "open",
+        "last_observed_at": "2026-10-22T22:05:20.695Z",
+        "evidence": [
+          "ops/dispatch/DAILY-2026-10-19-claude.md"
+        ],
+        "warning_days": 2,
+        "severity": "repeated_warning",
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-19-claude-claim_missing.md",
+        "original_task_date": "2026-10-19"
+      },
+      "old_result_status": "external_discussion_only",
+      "exact_task_delegation_verified": false,
+      "action": "reclassify_native_claim_not_applicable_active_PR_role_no_execution_or_completion_inferred"
+    },
+    {
+      "task_id": "DAILY-2026-10-20-claude",
+      "old_warning": {
+        "case_id": "65928740640dab996ed73f69",
+        "task_id": "DAILY-2026-10-20-claude",
+        "issue": "claim_missing",
+        "issuer": "gpt",
+        "assigned_to": "claude",
+        "first_observed_at": "2026-10-22T02:13:57.698Z",
+        "warning_dates": [
+          "2026-10-22",
+          "2026-10-23"
+        ],
+        "state": "open",
+        "last_observed_at": "2026-10-22T22:05:20.695Z",
+        "evidence": [
+          "ops/dispatch/DAILY-2026-10-20-claude.md"
+        ],
+        "warning_days": 2,
+        "severity": "repeated_warning",
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-20-claude-claim_missing.md",
+        "original_task_date": "2026-10-20"
+      },
+      "old_result_status": "external_discussion_only",
+      "exact_task_delegation_verified": false,
+      "action": "reclassify_native_claim_not_applicable_active_PR_role_no_execution_or_completion_inferred"
+    },
+    {
+      "task_id": "DAILY-2026-10-21-claude",
+      "old_warning": {
+        "case_id": "64d16b68be7b59095bbf2120",
+        "task_id": "DAILY-2026-10-21-claude",
+        "issue": "claim_missing",
+        "issuer": "gpt",
+        "assigned_to": "claude",
+        "first_observed_at": "2026-10-22T02:13:57.698Z",
+        "warning_dates": [
+          "2026-10-22",
+          "2026-10-23"
+        ],
+        "state": "open",
+        "last_observed_at": "2026-10-22T22:05:20.695Z",
+        "evidence": [
+          "ops/dispatch/DAILY-2026-10-21-claude.md"
+        ],
+        "warning_days": 2,
+        "severity": "repeated_warning",
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-21-claude-claim_missing.md",
+        "original_task_date": "2026-10-21"
+      },
+      "old_result_status": "external_discussion_only",
+      "exact_task_delegation_verified": false,
+      "action": "reclassify_native_claim_not_applicable_active_PR_role_no_execution_or_completion_inferred"
+    }
+  ],
+  "different_task_warning": "No hash-bound delivery for the five original DAILY IDs was found. Separate REAL-HIRE/ANS/model outputs cannot prove these daily tasks were delegated. Treat active PR-only unscheduled native daily references as channel records, not owner-disabled or completed.",
+  "native_qianwen_supervision_accepted": false,
+  "native_qwen_design_cards_are_not_daily_supervision_acceptance": true,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
