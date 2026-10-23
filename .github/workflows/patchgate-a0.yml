@@ -1,0 +1,77 @@
+name: PatchGate A0 validation and explicit native audit (no deployment)
+on:
+  push:
+    branches: [codex/patchgate-a0-20261023]
+    paths: ['config/patch*.json','scripts/patchgate*.mjs','scripts/lib/patchgate*.mjs','scripts/tests/patchgate*.test.mjs','docs/PATCHGATE-ESCROW-STAGES.md','ops/dispatch/PLAN-PATCHGATE-AND-ESCROW-20261023.md','.github/workflows/patchgate-a0.yml']
+  pull_request:
+    paths: ['config/patch*.json','scripts/patchgate*.mjs','scripts/lib/patchgate*.mjs','scripts/tests/patchgate*.test.mjs','docs/PATCHGATE-ESCROW-STAGES.md','ops/dispatch/PLAN-PATCHGATE-AND-ESCROW-20261023.md','.github/workflows/patchgate-a0.yml']
+permissions: {contents: read}
+concurrency: {group: 'patchgate-a0-${{ github.event.pull_request.number || github.ref }}', cancel-in-progress: false}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Check syntax and adversarial logic without Secrets or mutation permissions
+        run: |
+          node --check scripts/lib/patchgate.mjs
+          node --check scripts/patchgate.mjs
+          node --check scripts/patchgate-audit.mjs
+          node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs > /tmp/patchgate-tests.txt 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-a0-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/patchgate-tests.txt
+          retention-days: 30
+  independent_qwen_audit:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/patchgate-a0-20261023' && contains(github.event.head_commit.message, '[patchgate-a0-audit]') && github.run_attempt == 1
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Reserve the exact public code bundle before accessing the provider
+        id: prepare
+        run: node scripts/patchgate-audit.mjs prepare
+      - name: Persist claim to a separate state branch; a competing reservation must fail
+        env:
+          STATE_BRANCH: ${{ steps.prepare.outputs.state_branch }}
+          AUDIT_FOLDER: ${{ steps.prepare.outputs.folder }}
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add "$AUDIT_FOLDER/qianwen.reserved.json"
+          git commit -m 'PatchGate A0 audit reservation only; no candidate branch mutation'
+          git push origin "HEAD:refs/heads/$STATE_BRANCH"
+      - name: One native Qwen audit of the reserved code, no deployment or funds
+        env:
+          PATCHGATE_AUDIT_FOLDER: ${{ steps.prepare.outputs.folder }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
+        run: node scripts/patchgate-audit.mjs execute
+      - name: Persist actual native result or blocker only to the separate audit branch
+        if: always() && steps.prepare.outcome == 'success'
+        env:
+          STATE_BRANCH: ${{ steps.prepare.outputs.state_branch }}
+          AUDIT_FOLDER: ${{ steps.prepare.outputs.folder }}
+        run: |
+          git add "$AUDIT_FOLDER"
+          git diff --staged --quiet && exit 0
+          git commit -m 'PatchGate A0 actual Qwen review result; Claude audit still required'
+          git push origin "HEAD:refs/heads/$STATE_BRANCH"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.prepare.outcome == 'success'
+        with:
+          name: patchgate-a0-native-audit-${{ github.run_id }}
+          path: ${{ steps.prepare.outputs.folder }}
+          retention-days: 30

@@ -1,0 +1,47 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "status": "submitted_waiting_independent_review",
+  "implementation_bundle_sha256": "329b0ced2ca3843530f15caf3b675d962b2b5860835f9a84e839344dab254178",
+  "source_plan_pr": 220,
+  "logical_seat": "gpt",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "current_Codex_session_provider_model_exact_id_unavailable",
+  "tests": {
+    "scope": "local_unit_and_real_git_fixture_no_production_integration",
+    "command": "node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs",
+    "passed": 32,
+    "failed": 0,
+    "online_run": null
+  },
+  "independent_review": {
+    "claude": "assigned_waiting_native_claude_audit",
+    "qianwen": "scheduled_explicit_once_per_code_bundle_not_yet_returned",
+    "accepted": false
+  },
+  "stages": {
+    "draft_created": true,
+    "tested_locally": true,
+    "tested_online": false,
+    "independently_reviewed": false,
+    "merged": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+  "next_phase": "A1_blocked_until_A0_double_audit_and_finding_resolution",
+  "escrow": {"phase": "not_entered", "status": "blocked_by_A", "maximum_authorized_environment": "public_testnet_fake_tokens", "transactions": []},
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "real_funds_enabled": false,
+  "native_openai_calls": 0,
+  "native_anthropic_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "A0 is a submitted implementation, not deployment completion.",
+    "Empty executor key registry blocks live attestations; shared CAS and mutation adapters are later audited stages.",
+    "A passing test fixture does not prove production observations, signer-provider isolation or chain transactions."
+  ]
+}
