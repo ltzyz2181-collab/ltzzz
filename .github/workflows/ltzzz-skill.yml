@@ -3,25 +3,27 @@ on:
   issues:
     types: [opened]
   pull_request:
-    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','config/ltzzz-skill-release.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/run-ltzzz-skill-distribution.mjs','scripts/tests/ltzzz-skill.test.mjs','scripts/tests/ltzzz-skill-distribution.test.mjs','docs/LTZZZ-SKILL-DISTRIBUTION-20261022.md','ops/dispatch/inbox/**/LTZZZ-SKILL-DISTRIBUTION-*.md','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
   push:
     branches: [main]
-    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/tests/ltzzz-skill.test.mjs','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','config/ltzzz-skill-release.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/run-ltzzz-skill-distribution.mjs','scripts/tests/ltzzz-skill.test.mjs','scripts/tests/ltzzz-skill-distribution.test.mjs','docs/LTZZZ-SKILL-DISTRIBUTION-20261022.md','ops/dispatch/inbox/**/LTZZZ-SKILL-DISTRIBUTION-*.md','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
 permissions: {contents: read}
 concurrency: {group: ltzzz-skill-review, cancel-in-progress: false}
 jobs:
   verify:
-    if: github.event_name != 'issues' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && startsWith(github.event.issue.title, '[LTZZZ技能评审]'))
+    if: github.event_name != 'issues' || (github.actor == 'ltzyz2181-collab' && github.event.issue.user.login == 'ltzyz2181-collab' && (startsWith(github.event.issue.title, '[LTZZZ技能评审]') || startsWith(github.event.issue.title, '[LTZZZ技能分发]')))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/ltzzz-skill.test.mjs scripts/tests/qwen-dispatch.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/autonomy.test.mjs
+      - run: node --test scripts/tests/ltzzz-skill.test.mjs scripts/tests/ltzzz-skill-distribution.test.mjs scripts/tests/qwen-dispatch.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/autonomy.test.mjs
       - run: node scripts/ltzzz-skill.mjs check
+      - run: node scripts/run-ltzzz-skill-distribution.mjs check
   review:
     needs: verify
-    if: github.event_name == 'issues'
+    if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[LTZZZ技能评审]')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions: {contents: write}
@@ -70,4 +72,47 @@ jobs:
           git add knowledge/results/skill-review/ ops/dispatch/inbox/
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'Record real LTZZZ Skill reviews, not activation or payment'
+          node tools/push-receipt-commit.mjs
+
+  distribution:
+    needs: verify
+    if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[LTZZZ技能分发]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - id: prepare
+        run: node scripts/run-ltzzz-skill-distribution.mjs prepare
+      - name: Persist release-scoped reservation before one hosted Meta call
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/skill-distribution/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Reserve fixed Skill release consumption, not a business order'
+          node tools/push-receipt-commit.mjs
+      - name: Consume inline Skill once; no provider fallback or automatic retry
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          META_WORKER_TOKEN: ${{ secrets.META_WORKER_TOKEN }}
+        run: node scripts/run-ltzzz-skill-distribution.mjs execute
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ltzzz-skill-distribution-${{ github.run_id }}
+          path: knowledge/results/skill-distribution/
+          retention-days: 30
+      - name: Preserve real response and blockers without replay
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/skill-distribution/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record hosted Meta inline Skill response and exact output hash'
           node tools/push-receipt-commit.mjs
