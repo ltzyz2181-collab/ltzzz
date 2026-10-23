@@ -105,7 +105,15 @@ PR #209 已合入；本轮对合并后版本重新运行 check/status。换行�
 `node scripts/run-ltzzz-skill-distribution.mjs check` 检查固定 git blob、清单和 11 张卡；`build` 仅重建仓内材料，不访问客户端。
 Owner Issue 标题 `[LTZZZ技能分发]` 触发既有 Skill Actions 的定向分发验收，只调用托管 Meta 一次，预留先提交，同发布版本重触发不重购。结果保存在 `knowledge/results/skill-distribution/1e18c7064e339c8f2cc5ca12502a58bf38c229b5/meta-inline.json`。它是规则消费测试，不是任意业务验收或完整能力证明。
 
-## 七、边界
+## 七、本轮实际验收
+
+PR #215 已合并；main 验证 run `39884263876` 成功。六条固定链接重新实读均 HTTP200，字节 SHA256 全匹配。
+
+定向 run `39884310991` 实际调用托管 Meta 一次，模型由 Worker AI binding 给出：`@cf/meta/llama-3.1-8b-instruct-fp8`。SKILL.md 全文、prompt、request body 和模型 output 均有执行器哈希绑定。实际答复把第一例写作“草稿”，其余为 DeepSeek、paid=false、tx_hash=null，语义正确。
+
+原检查只接受英文 `draft`，所以原 run 为 failure，原回执仍保留 `scenarios_verified=false`。本轮补充接受明确等价的 `草稿` / `draft_created`，对已保存的同一原文做零调用复核；不重购、不改原回执。补充裁决与精确回执 SHA256 见 [本轮验收](../knowledge/results/skill-distribution/1e18c7064e339c8f2cc5ca12502a58bf38c229b5/deployment-20261023.json)。这项验收仅证明一次托管输入消费及三个案例答复，不证明所有客户端安装、任意业务交付或 provider 未暴露的 finish_reason。
+
+## 八、边界
 
 - 0 USDC，不充值、不发真单、不放款、不签名；`settlement_kind` 保持 `none`。
 - 不新增每日付费 cron。
