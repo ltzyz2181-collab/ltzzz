@@ -4,7 +4,7 @@ import os from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {persistDeploymentEvidence} from './lib/postdeploy-persistence.mjs';
 import {callAgent as qwen} from './call-qwen.mjs';
-import {REPOSITORY,EVIDENCE_BRANCH,EVIDENCE_DIR,sha256,jsonBytes,validateDeploymentConfig,deploymentKey,observeDeployment,deploymentIndexAssessment,reservationForReview,reviewDeployment} from './lib/postdeploy-verification.mjs';
+import {REPOSITORY,EVIDENCE_BRANCH,EVIDENCE_DIR,sha256,jsonBytes,validEvidenceReference,readCloudflareDeployment,validateDeploymentConfig,deploymentKey,observeDeployment,deploymentIndexAssessment,reservationForReview,reviewDeployment} from './lib/postdeploy-verification.mjs';
 const phase=process.argv[2],root=process.cwd(),config=validateDeploymentConfig(JSON.parse(fs.readFileSync('config/postdeploy-verification.json','utf8')));
 const git=(args,cwd=root)=>execFileSync('git',args,{cwd,encoding:'utf8',stdio:['pipe','pipe','pipe']}).trim();
 const source=git(['rev-parse','HEAD']),runId=process.env.GITHUB_RUN_ID,token=process.env.GITHUB_TOKEN;
@@ -21,9 +21,11 @@ function read(file){const full=path.join(state(),file);return fs.existsSync(full
 function write(file,value){const full=path.join(state(),file);fs.mkdirSync(path.dirname(full),{recursive:true});fs.writeFileSync(full,jsonBytes(value),{flag:'wx'});}
 function indexUpdate(key){
  const index=read(indexPath)||{schema:'ltzzz.postdeploy-index.v1',deployments:{}};
- const observation=read(`${EVIDENCE_DIR}/${key}.json`),review=read(`${EVIDENCE_DIR}/${key}.review.json`);
+ const original=`${EVIDENCE_DIR}/${key}.json`,revision=`${EVIDENCE_DIR}/${key}.v2.json`;
+ const current=read(revision)?revision:original,observation=read(current),previous=current!==original&&read(original),review=read(`${EVIDENCE_DIR}/${key}.review.json`);
  const ref=file=>({path:file,sha256:sha256(fs.readFileSync(path.join(state(),file)))});
- const row={observation:ref(`${EVIDENCE_DIR}/${key}.json`),review:review?ref(`${EVIDENCE_DIR}/${key}.review.json`):null,...deploymentIndexAssessment(observation,review)};
+ const row={observation:ref(current),previous_observation:previous?ref(original):null,review:review?ref(`${EVIDENCE_DIR}/${key}.review.json`):null,...deploymentIndexAssessment(observation,review),
+  historical_model_review:previous?{...deploymentIndexAssessment(previous,review),original_index_status:index.deployments[key]?.historical_model_review?.original_index_status||index.deployments[key]?.status||null,original_rejection_preserved:review?.verdict?.accepted===false}:null};
  if(JSON.stringify(index.deployments[key])===JSON.stringify(row))return;
  index.deployments[key]=row;index.updated_at=new Date().toISOString();fs.writeFileSync(path.join(state(),indexPath),jsonBytes(index));
 }
@@ -42,7 +44,7 @@ async function api(suffix,logs=false){
 async function page(url){
  const r=await fetch(url,{redirect:'error',headers:{'Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)});
  const body=await r.text();if(body.length>1000000)throw Error('page_exceeds_evidence_limit');
- return {status:r.status,body,source_commit:r.headers.get('x-source-commit'),date:r.headers.get('date')};
+ return {status:r.status,body,source_commit:r.headers.get('x-source-commit'),date:r.headers.get('date'),age:r.headers.get('age')};
 }
 function targetRunId(){
  if(process.env.GITHUB_EVENT_NAME==='workflow_run'){
@@ -56,12 +58,14 @@ function targetRunId(){
 function exportValue(key,value){if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,key+'='+value+'\n');}
 if(phase==='observe'){
  const id=targetRunId(),run=await api('/actions/runs/'+id),key=deploymentKey(run);exportValue('key',key);
- const prior=read(`${EVIDENCE_DIR}/${key}.json`);
+ const original=`${EVIDENCE_DIR}/${key}.json`,revised=`${EVIDENCE_DIR}/${key}.v2.json`,prior=read(revised);
  if(prior){indexUpdate(key);persist();console.log(JSON.stringify({task_id:key,status:'existing_observation_no_duplicate_write'}));}
  else{
-  let r;try{r=await observeDeployment({config,run,verifierRunId:runId,verifierSourceCommit:source,api,readPage:page});}
-  catch{r={schema:'ltzzz.postdeploy-observation.v1',task_id:key,source_commit:source,observed_at_utc:new Date().toISOString(),deployment:{run_id:String(id),source_commit:run.head_sha,run_url:run.html_url},checks:{},blocker:'transport_or_metadata_unverified_no_retry',rollback:{automatic:false,availability:'not_verified'},financial_execution:false,model_calls:0,paid:false,tx_hash:null};}
-  write(`${EVIDENCE_DIR}/${key}.json`,r);indexUpdate(key);persist();
+  let r;try{r=await observeDeployment({config,run,verifierRunId:runId,verifierSourceCommit:source,api,readPage:page,
+   readVersion:script=>readCloudflareDeployment({script,token:process.env.CLOUDFLARE_API_TOKEN,accountId:process.env.CLOUDFLARE_ACCOUNT_ID})});}
+  catch{r={schema:'ltzzz.postdeploy-observation.v2',observation_revision:2,task_id:key,source_commit:source,observed_at_utc:new Date().toISOString(),deployment:{run_id:String(id),source_commit:run.head_sha,run_url:run.html_url},checks:{},blocker:'transport_or_metadata_unverified_no_retry',rollback:{automatic:false,availability:'not_verified'},financial_execution:false,model_calls:0,paid:false,tx_hash:null};}
+  if(read(original))r.previous_observation={path:original,sha256:sha256(fs.readFileSync(path.join(state(),original)))};
+  write(revised,r);indexUpdate(key);persist();
   console.log(JSON.stringify({task_id:key,...deploymentIndexAssessment(r,null)}));
  }
 }else if(phase==='reserve-demo-review'){
@@ -88,8 +92,8 @@ if(phase==='observe'){
  else{
   git(['fetch','origin',EVIDENCE_BRANCH]);const index=JSON.parse(git(['show','FETCH_HEAD:'+indexPath])),base=path.join(root,'.cache/postdeploy');fs.mkdirSync(base,{recursive:true});
   // Copy only strict receipt paths, never scripts or executable artifacts from the evidence branch.
-  for(const row of Object.values(index.deployments||{}))for(const ref of [row.observation,row.review].filter(Boolean)){
-   if(!/^knowledge\/results\/deployment-verification\/DEPLOY-\d+-\d+(?:\.review)?\.json$/.test(ref.path))throw Error('unsafe_postdeploy_cache_reference');
+  for(const row of Object.values(index.deployments||{}))for(const ref of [row.observation,row.review,row.previous_observation].filter(Boolean)){
+   if(!validEvidenceReference(ref.path))throw Error('unsafe_postdeploy_cache_reference');
    const bytes=execFileSync('git',['show','FETCH_HEAD:'+ref.path],{cwd:root});if(sha256(bytes)!==ref.sha256)throw Error('postdeploy_cache_hash_mismatch');
    const file=path.join(base,ref.path);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,bytes);
   }
@@ -97,8 +101,10 @@ if(phase==='observe'){
  }
 }else if(phase==='summary'){
  const index=read(indexPath);for(const [id,row] of Object.entries(index?.deployments||{})){
-  const line=`${id}: ${row.label}; checks=${row.checks_verified}; independent_review=${row.independent_native_review_verified}`;
-  console.log((row.status==='deployment_reverified'?'::notice::':'::warning::')+line+'; rollback=manual_only');
+  const line=`${id}: ${row.label}; checks=${row.checks_verified}; model_review=${row.model_review_status}; historical_model_review=${row.historical_model_review?.model_review_status||'none'}`;
+  console.log((row.status==='reverified_deterministic'?'::notice::':'::warning::')+line+'; rollback=unverified_manual_only');
+  if(row.historical_model_review?.model_review_status==='rejected')console.log('::warning::Historical model rejection retained on its original observation; not applied to the new deterministic result.');
+  console.log('::warning::Rollback permission and execution remain unverified; no automatic rollback.');
   if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,line+'\n\n');
  }
 }else throw Error('Use fixed observe/reserve-demo-review/review-demo/import/summary phase');

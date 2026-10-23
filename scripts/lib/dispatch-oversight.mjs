@@ -109,7 +109,7 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
   }
   for(const task of deploymentOversightTasks(root,now))add(task);
   for(const task of tasks.values()) {
-    const closed=['deployment_reverified','recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
+    const closed=['reverified_deterministic','deployment_reverified','recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
     const issue=task.phase==='draft_reviewed_not_deployed'?'engineering_completion_unverified':task.phase;
     observations.push({...task,issue,overdue:!task.reference_only&&!closed && Date.parse(now)>=Date.parse(task.due_at),status:task.reference_only?'delivery_channel_reference_not_completion':closed?'evidence_present_scope_limited':Date.parse(now)<Date.parse(task.due_at)?'not_due':'warning_required'});
   }
