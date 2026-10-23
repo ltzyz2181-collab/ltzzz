@@ -56,6 +56,17 @@ export function prepareMetaConsumption({release,runId,attempt='1',issue,sourceCo
  return {execute:true,record:{task_id:DISTRIBUTION_TASK+'-meta',status:'reserved_before_generation',source_commit:sourceCommit,skill_source_commit:RELEASE_COMMIT,skill_core_sha256:release.manifest.core_sha256,skill_md_sha256:release.files.find(f=>f.path===SKILL_DIR+'/SKILL.md').sha256,prompt,prompt_sha256:skillHash(prompt),request_body_sha256:skillHash(body),run_id:runId,run_attempt:attempt,issue,at_utc:now,metadata_source:'executor_fixed_release_bytes_and_worker_response',model_calls:0,native_openai_calls:0,native_anthropic_calls:0,settlement_kind:'none',paid:false,tx_hash:null,actual_client_load_verified:false,limitations:['Hosted Llama input-consumption test, not external Meta client installation or business acceptance.','Worker does not expose finish_reason or token usage; neither is invented.','Provider API inference may have a cost; paid=false refers only to USDC settlement.']}};
 }
 
+// Model wording may differ by language; use only explicit, equivalent draft labels.
+// This does not weaken the deployment, attribution or settlement criteria.
+export function assessMetaScenarios(output){
+ try{
+  const parsed=JSON.parse(String(output).trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,''));
+  const stage=typeof parsed.case1_stage==='string'?parsed.case1_stage.trim().toLowerCase():null;
+  const accepted=['draft','draft_created','草稿'].includes(stage)&&String(parsed.case2_actual_provider).trim().toLowerCase()==='deepseek'&&parsed.case3_paid===false&&parsed.case3_tx_hash===null&&parsed.end==='SKILL_DONE';
+  return {accepted,parsed,canonical_case1_stage:['draft','draft_created','草稿'].includes(stage)?'draft':null};
+ }catch{return {accepted:false,parsed:null,canonical_case1_stage:null};}
+}
+
 export async function consumeMetaInline(record,{call,save=()=>{}}){
  if(record.status!=='reserved_before_generation'||record.model_calls!==0||record.prompt_sha256!==skillHash(record.prompt))throw Error('fresh_meta_consumption_reservation_required');
  record.status='started_completion_unknown';record.model_calls=1;record.started_at_utc=new Date().toISOString();save(record);
@@ -64,12 +75,9 @@ export async function consumeMetaInline(record,{call,save=()=>{}}){
  record.actual_provider=verified?result.provider:null;record.model=verified?result.model:null;record.model_source=verified?'worker_AI_binding':null;
  record.http=result.http??null;record.provider_status=result.status||null;record.finish_reason=null;record.tokens_used=null;
  record.output=typeof result.output==='string'?result.output:'';record.output_sha256=skillHash(record.output);record.generation_verified=verified;
- record.scenarios_verified=false;
- if(verified)try{
-  const parsed=JSON.parse(record.output.trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,''));
-  record.scenario_result=parsed;
-  record.scenarios_verified=parsed.case1_stage==='draft'&&String(parsed.case2_actual_provider).toLowerCase()==='deepseek'&&parsed.case3_paid===false&&parsed.case3_tx_hash===null&&parsed.end==='SKILL_DONE';
- }catch{}
+ const assessment=assessMetaScenarios(record.output);
+ record.scenarios_verified=verified&&assessment.accepted;
+ if(assessment.parsed)record.scenario_result=assessment.parsed;
  record.status=record.scenarios_verified?'inline_skill_consumed_scenarios_passed_not_business_acceptance':'inline_skill_consumption_unverified_no_retry';
  record.finished_at_utc=new Date().toISOString();save(record);return record;
 }

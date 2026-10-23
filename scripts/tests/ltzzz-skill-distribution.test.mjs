@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {pinnedRelease,distributionArtifacts,metaInlinePrompt,prepareMetaConsumption,consumeMetaInline,RELEASE_COMMIT,DISTRIBUTION_TASK} from '../lib/ltzzz-skill-distribution.mjs';
+import {pinnedRelease,distributionArtifacts,metaInlinePrompt,prepareMetaConsumption,consumeMetaInline,assessMetaScenarios,RELEASE_COMMIT,DISTRIBUTION_TASK} from '../lib/ltzzz-skill-distribution.mjs';
 import {skillHash} from '../lib/ltzzz-skill.mjs';
 const release=pinnedRelease();
 const prepared=()=>prepareMetaConsumption({release,runId:'123456789',issue:215,sourceCommit:'a'.repeat(40)}).record;
@@ -48,4 +48,11 @@ test('HTTP 200 empty, wrong task/provider, echo-only and semantically wrong repl
 test('timeout is recorded once, an altered prompt fails before invocation',async()=>{
  const r=prepared();let calls=0;await consumeMetaInline(r,{call:async()=>{calls++;throw Error('timeout');}});assert.equal(calls,1);assert.equal(r.scenarios_verified,false);assert.equal(r.provider_status,'transport_outcome_unknown_no_retry');
  const tampered=prepared();tampered.prompt+='different';await assert.rejects(()=>consumeMetaInline(tampered,{call:async()=>{calls++;}}),/fresh_meta_consumption_reservation_required/);assert.equal(calls,1);
+});
+
+test('equivalent Chinese draft wording passes without another model call, ambiguous or deployed labels fail',()=>{
+ for(const stage of ['draft','草稿','draft_created'])assert.equal(assessMetaScenarios(JSON.stringify({case1_stage:stage,case2_actual_provider:'DeepSeek',case3_paid:false,case3_tx_hash:null,end:'SKILL_DONE'})).accepted,true);
+ for(const stage of ['deployed','已部署','draft_and_deployed','草稿已上线',''])assert.equal(assessMetaScenarios(JSON.stringify({case1_stage:stage,case2_actual_provider:'DeepSeek',case3_paid:false,case3_tx_hash:null,end:'SKILL_DONE'})).accepted,false);
+ const file='knowledge/results/skill-distribution/1e18c7064e339c8f2cc5ca12502a58bf38c229b5/meta-inline.json';
+ if(fs.existsSync(file)){const raw=JSON.parse(fs.readFileSync(file,'utf8'));assert.equal(skillHash(raw.output),raw.output_sha256);assert.equal(assessMetaScenarios(raw.output).accepted,true);}
 });
