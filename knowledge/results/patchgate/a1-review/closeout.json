@@ -1,0 +1,122 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1",
+  "at_utc": "2026-10-24T09:18:28.092688+00:00",
+  "status": "candidate_tested_engineering_reviewed_waiting_native_Claude_stage_audit",
+  "implementation_pr": 227,
+  "implementation_head": "bf18c9fa2b3a8245db7b3b393cf7fafb8794fd59",
+  "source_main_readback": "91abae7d84899006c8d2b4afff8ef016ab38a0ee",
+  "A0": {
+    "status": "merged_validation_kernel_deployed",
+    "merge": "f624bd61aedccd8f5724dcd0ad1a2ee47c195ef0",
+    "main_run": "40079490532",
+    "claude_audit_pr": 224,
+    "qwen_condition_run": "40079402295",
+    "main_tests": 54
+  },
+  "tests": {
+    "passed": 63,
+    "failed": 0,
+    "scope": "local_and_GitHub_Node22_unit_Git_and_API_fixtures_not_live_GitHub_CAS_acceptance",
+    "run_id": "40080888060",
+    "pr_run_id": "40080890725"
+  },
+  "native_engineering_reviews": [
+    {
+      "component": "BOUNDARY",
+      "source_head": "aa08020386f84575de9369057d8c82ddc3517d2a",
+      "scope": "A1_BOUNDARY_component_engineering_review",
+      "actual_provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "run_id": "40080552107",
+      "request_id": "498e5e1b-6ae8-9104-9bbf-83bb055008f7",
+      "finish_reason": "stop",
+      "tokens_used": 3170,
+      "original_verdict": "revise",
+      "receipt": "knowledge/results/patchgate/a1-review/boundary.receipt.json",
+      "output_sha256": "de2309773afc25669b287890be01101d9055eba9648c95a515200aeb5725bec8"
+    },
+    {
+      "component": "FLOW",
+      "source_head": "aa08020386f84575de9369057d8c82ddc3517d2a",
+      "scope": "A1_FLOW_component_engineering_review",
+      "actual_provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "run_id": "40080673417",
+      "request_id": "26dc5ddb-881b-96df-8b4b-1a8d54588559",
+      "finish_reason": "stop",
+      "tokens_used": 2678,
+      "original_verdict": "approve",
+      "receipt": "knowledge/results/patchgate/a1-review/flow.receipt.json",
+      "output_sha256": "7cb74ed9f3da1a70a852c54c365ecbeab0465a4278ed5cc6448827c69fefd2c5"
+    },
+    {
+      "component": "REPAIRCHECK",
+      "source_head": "bf18c9fa2b3a8245db7b3b393cf7fafb8794fd59",
+      "scope": "A1_publisher_schema_and_per_PR_concurrency_repair_only",
+      "actual_provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "run_id": "40080993845",
+      "request_id": "400d11da-ba68-910a-b01f-ad0dfb4c416b",
+      "finish_reason": "stop",
+      "tokens_used": 2111,
+      "original_verdict": "approve",
+      "receipt": "knowledge/results/patchgate/a1-review/repaircheck.receipt.json",
+      "output_sha256": "4643fd2bb97560d3e530ebf17f883e8c05bb92474347ea3e75e85227a1ed17ab"
+    }
+  ],
+  "model_opinions_are_not_independent_runtime_facts": true,
+  "resolutions": [
+    {
+      "component": "BOUNDARY",
+      "issue": "runner_sha_spoof",
+      "decision": "disagree",
+      "reason": "Entrypoint checks actual git HEAD against platform GITHUB_SHA on main. GitHub create-ref itself rejects nonexistent object; caller is not a candidate-controlled endpoint."
+    },
+    {
+      "component": "BOUNDARY",
+      "issue": "base.ref full ref",
+      "decision": "retain_main_only",
+      "reason": "GitHub REST base.ref is main; full refs/heads/main is conservatively rejected. Rejection is not a privilege bypass."
+    },
+    {
+      "component": "BOUNDARY",
+      "issue": "publication schema",
+      "decision": "adopt_existing_field_schema",
+      "reason": "Require actual run/time/commit/policy/trust fields and exact evaluation subject; legitimate no-diff permits null evaluation only with empty changed_files."
+    },
+    {
+      "component": "BOUNDARY",
+      "issue": "global_pending_queue",
+      "decision": "adopt_per_PR_group",
+      "reason": "GitHub retains one pending run per group even when running cancellation is false; new grouping prevents cross-PR pending replacement."
+    }
+  ],
+  "claude_stage_review": {
+    "requested_on_pr": 224,
+    "task_card": "ops/dispatch/inbox/claude/PLAN-PATCHGATE-ESCROW-20261023-A1.md",
+    "status": "not_received",
+    "A0_audit_is_not_reused_as_A1_approval": true
+  },
+  "production_activated": false,
+  "merged": false,
+  "live_shared_CAS_verified": false,
+  "live_signer_enrollment_verified": false,
+  "next_required_evidence": "native_Claude_audit_of_current_A1_head_then_main_activation_and_live_runner_idempotence_readback",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "native_usage_this_A1": {
+    "qwen_calls": 3,
+    "total_reported_tokens": 7959,
+    "api_cost": null,
+    "native_openai_api_calls": 0,
+    "native_anthropic_api_calls": 0
+  },
+  "B": "not_entered",
+  "paid": false,
+  "tx_hash": null
+}
