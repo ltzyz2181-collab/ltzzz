@@ -4,7 +4,12 @@
 - 审计席：Claude Sonnet 5.5（Claude Code 云端会话，经仓库 PR 交付；无原生 API、无 Key、无钱包、无签名）；author_provider=openai（沿用声明，未独立验证）。
 - 读取的完整提交：`87f270d08195c3bd2be5892ab6800921c5140a03`（与上一审计 head `bf18c9fa` 比较，变更 7 个文件）。
 - 原字节 SHA256：
-
+  - `.github/workflows/patchgate-a1.yml` 5dd667bc23ff48dc65ffd40513a3149c7862fc833b1b47e06820c4f1f7e5cbc8
+  - `scripts/patchgate-observe.mjs` bff14b0635e25a67f27f0ae1436a5da793fefce04fe36dbbd8861cc0a879a035
+  - `scripts/patchgate-a1-acceptance.mjs` 56c489e766d41e633652a90e04c5e5d8dadf6d4d09922632bcd7765da7a82d53
+  - `scripts/patchgate.mjs` 942d93ab1e0314c41719e3ed00e2d0d18e28fd5d46777f6a4d81e38c574a027c
+  - `scripts/tests/patchgate-a1.test.mjs` 147d22dcb186b6c65e2613960e5ed289954b56691884491bc3bdc50ca37779b3
+  - `docs/PATCHGATE-A1-OBSERVATION.md` ca89eb5989d2abdda40154d3c39549f2b7cbf792fde8ecc67cf62dc90a7c3177
 
 ## 证据等级
 - **单元测试**：我本地复跑 `node --test scripts/tests/patchgate*.test.mjs`：**69/69 通过**。
