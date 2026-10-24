@@ -1,6 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {collectSnapshot} from '../patchgate.mjs';
 import {observerContext,candidateIdentity,reserveObservation,publishObservation,observe,githubApi} from '../patchgate-observe.mjs';
 import {sha256} from '../lib/patchgate.mjs';
 const A='a'.repeat(40),B='b'.repeat(40),REPO='ltzyz2181-collab/ltzzz';
@@ -50,4 +54,18 @@ test('GitHub transport is repository bounded and refuses redirects',async()=>{
  let sent;const api=githubApi({token:'test-only',fetchImpl:async(url,options)=>{sent={url,options};return {status:200,text:async()=>'{}'};}});
  await api('GET','/repos/'+REPO+'/pulls/225');assert.equal(sent.options.redirect,'error');
  await assert.rejects(api('GET','/repos/attacker/repo/pulls/1'),/fixed_repository/);
+});
+test('main-only updates are not mislabeled as candidate deletions; policy still comes from trusted main',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'patchgate-a1-git-')),before=process.cwd();
+ const git=args=>execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
+ try {
+  git(['init','--quiet']);git(['config','user.name','test']);git(['config','user.email','test@example.invalid']);
+  fs.mkdirSync(path.join(root,'config'));fs.mkdirSync(path.join(root,'docs'));
+  for(const name of ['patch-policy.json','patchgate-trust.json'])fs.copyFileSync(new URL('../../config/'+name,import.meta.url),path.join(root,'config',name));
+  fs.writeFileSync(path.join(root,'docs/a.md'),'base\n');git(['add','.']);git(['commit','--quiet','-m','base']);const base=git(['rev-parse','HEAD']);
+  fs.writeFileSync(path.join(root,'docs/a.md'),'candidate\n');git(['add','.']);git(['commit','--quiet','-m','candidate']);const head=git(['rev-parse','HEAD']);
+  git(['checkout','--detach',base]);fs.writeFileSync(path.join(root,'docs/main-only.md'),'main\n');git(['add','.']);git(['commit','--quiet','-m','main update']);const main=git(['rev-parse','HEAD']);
+  process.chdir(root);const s=collectSnapshot({base:main,head,taskId:identity.task_id,diffBase:base});
+  assert.deepEqual(s.snapshot.files.map(f=>f.path),['docs/a.md']);assert.equal(s.snapshot.base_sha,main);assert.equal(s.snapshot.diff_base_sha,base);
+ } finally {process.chdir(before);fs.rmSync(root,{recursive:true,force:true});}
 });
