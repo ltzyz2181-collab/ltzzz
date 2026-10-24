@@ -6,7 +6,7 @@ import {TASK, canonical, sha256} from './lib/patchgate.mjs';
 import {callAgent} from './call-qwen.mjs';
 import {callWithSkill} from './lib/ltzzz-skill.mjs';
 
-export const BUNDLE = ['config/patch-policy.json','config/patchgate-trust.json','scripts/lib/patchgate.mjs','scripts/patchgate.mjs',
+export const BUNDLE = ['config/patch-policy.json','config/patchgate-trust.json','config/patchgate-executors.json','scripts/lib/patchgate.mjs','scripts/patchgate.mjs',
   'scripts/patchgate-audit.mjs','scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-audit.test.mjs','.github/workflows/patchgate-a0.yml',
   'docs/PATCHGATE-ESCROW-STAGES.md','ops/dispatch/PLAN-PATCHGATE-AND-ESCROW-20261023.md'];
 const DIR = 'knowledge/results/patchgate';

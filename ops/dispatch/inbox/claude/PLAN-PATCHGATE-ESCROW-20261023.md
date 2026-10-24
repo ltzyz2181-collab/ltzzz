@@ -4,7 +4,7 @@
 
 目标：审核 GPT 对你方案的工程修正及 A0 代码，指出可复现缺陷，并用原生 Claude 免费仓库 PR 交审计。不得用 DeepSeek/豆包代执行冒充你的审计。作者实际提供商 OpenAI；另一个审计提供商拟为原生阿里云千问，线上回执未返回前不算已收到。
 
-输入：实施 PR 的固定 head（总控在 PR #220 评论中补链接与完整提交）；`scripts/patchgate-audit.mjs` 的 BUNDLE 列表包含 10 个文件，执行 `bundle()` 可得到原字节清单及 bundle SHA256。当前送审 bundle 为 `9f781fb83c9763240f8b99077aaeea7172afcadd6c717a1e63ba23934f8332c0`；任何代码文件变化后旧审计作废，必须按新 hash 审。
+输入：实施 PR 的固定 head（总控在 PR #220 评论中补链接与完整提交）；`scripts/patchgate-audit.mjs` 的 BUNDLE 列表包含 11 个文件，执行 `bundle()` 可得到原字节清单及 bundle SHA256。当前送审 bundle 为 `9299a3bfcde9a2f1ac36ef39deca2a1811a86724a28cdeef66f081a6b49627c6`；任何代码文件变化后旧审计作废，必须按新 hash 审。
 
 重点检查：
 
@@ -15,7 +15,7 @@
 5. A0 只有本地/CI 验证与单机原子预留，未接共享 CAS、CI 签发器、真实采集器或自动合并/部署。不得把测试通过当上线，也不能因未来适配器尚未写完误报本期已启用的漏洞。
 6. 分期严格：你的审计与另一提供商审计都完成后才进入 A1；A 稳定后才 B0/B1，B 本次最多测试网假币。原方案的旧 Aave“从未广播”表述已删，未据旧记录执行任何投资。
 
-输出：`knowledge/results/patchgate/claude-a0-audit.md`，新分支+PR。必须记录实际 `author_provider`、客户端、读取完整 commit、10 文件原字节清单/bundle hash、approve/revise、每条问题的文件/复现/严重度及未验证范围；不能仅留参考链接或自报已部署。
+输出：`knowledge/results/patchgate/claude-a0-audit.md`，新分支+PR。必须记录实际 `author_provider`、客户端、读取完整 commit、11 文件原字节清单/bundle hash、approve/revise、每条问题的文件/复现/严重度及未验证范围；不能仅留参考链接或自报已部署。
 
 验收：总控回读 PR 和工件，逐条修复并由原审计者复审；千问回执存在时同时核对。未收到你的原生回执，状态保持 `assigned_waiting_native_claude_audit`，不把已派发写成已接单/通过。
 

@@ -2,7 +2,7 @@
 
 类型：工程规范。原任务 `PLAN-PATCHGATE-ESCROW-20261023`，来源 PR #220。
 
-本期是 **A0 验证实现与待审交付**，不是自动合并/部署上线。`config/patch-policy.json` 是模式唯一源；A0 强制所有副作用开关为 false，公钥登记为空且未启用。没有注册可信签名执行器时必须报告证据缺失；不能先相信 JSON 中的 provider 字段。
+本期是 **A0 验证实现与条件收尾**，不是自动合并/部署上线。`config/patch-policy.json` 是模式唯一源；A0 强制所有副作用开关为 false，公钥登记为空且未启用。真实收据传输通道已登记于 `config/patchgate-executors.json`，但传输可用不等于密码学签名准入。没有已配签名密钥时仍报告证据缺失，不相信 JSON 自报 provider。
 
 | 期次 | 实物与范围 | 进入下一期前的门槛 |
 |---|---|---|
@@ -20,13 +20,23 @@
 
 H1：取消 `scripts/` 整体 L1。运行脚本默认 L3，资金、钱包、签名、国库、鉴权脚本改名也不能落入普通脚本白名单；目前只有测试目录保留通用 L1。未来若开放普通脚本，须单独审核并明确列出路径，不能重新放开整个前缀。
 
-H2：L0 只涵盖普通 `docs/**/*.md` 与 README。回执目录、结果、台账、Memory 及六份原文均 L3。回执额外要求由 base 的 `receipt_writer_rules` 映射授权 executor，并持有 base 公钥的 `receipt_write` 角色，签名绑定完整 subject 与实际写入路径。未登记写入者时拒绝；手写 accepted/paid、双模型口头同意都不能代替证据写入认证。当前映射为空，未启用任何真实写入者。
+H2：L0 只涵盖普通 `docs/**/*.md` 与 README。回执目录、结果、台账、Memory 及六份原文均 L3。回执额外要求由 base 的 `receipt_writer_rules` 最长匹配前缀授权 executor，并持有 base 公钥的 `receipt_write` 角色，签名绑定完整 subject 与实际写入路径。手写 accepted/paid、双模型口头同意不能代替认证。当前已登记实际传输者，签名 keys 仍为空，未开启签名准入；不能把登记名字说成签名已配置。
 
 H3/H4：整个 base 信任根中，一个 executor 只能映射到一个 provider，含已停用历史密钥；允许同 executor/provider 下轮换不同密钥，不允许一个公钥挂在不同 executor 身份上。checks 与 deployment 的签名 executor 必须不同于作者，且有明确登记角色；review 同时要求 executor 与 provider 均不同于作者。登记身份须核对真实执行入口，不能由模型自选两个名称证明独立。
 
 M1：特权审计不再由候选分支 push 或 PR 触发，只接受 main 上显式 workflow_dispatch，并把 runner 固定为该 main 事件的完整 SHA。候选只用 Git ls-tree/cat-file 读取固定清单中的普通 blob；不 checkout/import/运行候选模块，不跟随候选 symlink，不将候选代码路径用作审计器路径。提供商适配器与 Skill 取 main 的可信检出。main 无此审计器时如实阻塞，不能给候选脚本注入 Key。本轮按 owner 指示，千问工程复核通过已有 main 队列消费者执行，输入为绑定新 head 的源码摘录，范围如实记录。
 
 此修正约束本审计工作流，不宣称改变了 GitHub 全仓 Secret 的分发策略或管理员权限；平台级环境隔离须另有实际配置回读。
+
+## PR #224 条件收尾
+
+N1：通知必须由不同于作者的 base 登记执行器签名，reference 只接受本仓确切 `#issuecomment-ID`。签名绑定评论原字节 SHA256、评论 actor 和 subject 哈希；可信采集器从固定 GitHub REST 评论端点独立回读，拒绝重定向/404/引用不符，正文必须唯一包含原 Task ID、完整 head、subject 哈希及 owner mention。评论编辑、head 改动、actor 改动、超过 freshness 的读回会作废。回读事实由受信采集器单独传入，不从 PR 的“已通知”字段或签名者自报的布尔值获得。通知是投递证据，不代表 owner 阅读或批准。
+
+N2：`ops/dispatch/inbox/` 与 `ops/dispatch/queue/` 下普通 `.md/.json` 派单卡降为 L1；`.mjs`、AGENTS、密钥样式路径、台账、授权文件、`ops/dispatch/receipts/` 仍为 L3。登记现有 GPT GitHub 中转、主线千问 consumer、主线派单哨兵，附账号或实际 workflow/run/head 证据；回执路径使用最具体的 writer 规则，千问 writer 不因此获得其他资金回执目录权限。A1 可以只读观察这些通道；A2 签名准入不得在 keys 为空时开启。
+
+千问配置证据保留真实文件内容、原字节哈希和旧 revise 原文。真实现状是 `trust.enabled=false / keys=[]`，并非“已经有生产签名人”；测试中的短期密钥和签名载荷明确是夹具。提供这些证据用于关闭 A0 材料缺口，不把未部署的生产签名能力写为通过。
+
+N3 扫描噪音作为低项保留；A1 只观察、提示，不因启发式误报撤销席位或阻塞现有主线流程。A2 自动放行前另审扫描分级，当前不称“扫描无发现=安全”。
 
 ## 可信执行与身份
 
