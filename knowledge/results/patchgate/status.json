@@ -1,0 +1,71 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "status": "A0_PR224_conditions_implemented_configuration_evidence_supplied",
+  "implementation_bundle_sha256": "9299a3bfcde9a2f1ac36ef39deca2a1811a86724a28cdeef66f081a6b49627c6",
+  "source_plan_pr": 220,
+  "logical_seat": "gpt",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "current_Codex_session_provider_model_exact_id_unavailable",
+  "tests": {
+    "scope": "local_unit_and_real_git_fixtures",
+    "passed": 54,
+    "failed": 0,
+    "command": "node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs"
+  },
+  "independent_review": {
+    "claude": {
+      "audit_pr": 223,
+      "verdict": "revise",
+      "source_head": "da8cc52b0ad47649ed781bdc945360ae89b25f53",
+      "rereview": "required_for_new_head"
+    },
+    "qianwen": "engineering_review_pending_new_head",
+    "accepted": false
+  },
+  "stages": {
+    "draft_created": true,
+    "tested_locally": true,
+    "tested_online": false,
+    "independently_reviewed": false,
+    "merged": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+  "next_phase": "A1_blocked_until_A0_double_audit_and_finding_resolution",
+  "escrow": {
+    "phase": "not_entered",
+    "status": "blocked_by_A",
+    "maximum_authorized_environment": "public_testnet_fake_tokens",
+    "transactions": []
+  },
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "real_funds_enabled": false,
+  "native_openai_calls": 0,
+  "native_anthropic_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "A0 is a submitted implementation, not deployment completion.",
+    "Empty executor key registry blocks live attestations; shared CAS and mutation adapters are later audited stages.",
+    "A passing test fixture does not prove production observations, signer-provider isolation or chain transactions."
+  ],
+  "at_utc": "2026-10-24T08:45:33.084Z",
+  "claude_conditional_rereview": {
+    "pr": 224,
+    "source_commit": "9d6c26854860ecaedd36d31817dd60deb8080b8e",
+    "verdict": "approve_with_conditions",
+    "conditions": [
+      "N1 notification independence and readback",
+      "N2 dispatch flow plan and real transport registry",
+      "actual configuration evidence and original Qwen verdict preservation"
+    ],
+    "rereview_file": "knowledge/results/patchgate/claude-a0-rereview-9d6c2685.md"
+  },
+  "configuration_evidence": "knowledge/results/patchgate/pr224-evidence/actual-configuration.json",
+  "signing_keys_ready": false,
+  "A1": "not_yet_entered"
+}
