@@ -1,0 +1,14 @@
+{
+  "finding": "runReservedSeat 在模型调用返回后、artifact 落盘前存在崩溃恢复断点：ledger 已写为 generation_started，syncDailyBoard 将其转为 generation_unknown_no_repurchase 后不可再恢复，也没有持久化原始 provider response 或请求意图，导致已付费/已发生的模型输出在进程中断后永久丢失并阻塞该席位。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-10-23-reviewer.json"
+  ],
+  "minimal_patch": "在 runReservedSeat 中，call() 返回后、构造最终 artifact 前，先将原始 provider response 原子写入独立响应文件，并在 ledger 中记录响应文件路径与 SHA-256。具体修改：1) 在 scripts/lib/daily-task-board.mjs 的 runReservedSeat 内，将 const result 改为 let result 并保留 try/catch；2) 在 result 赋值后立即调用新增函数 persistRawResponse(root, record, agent, date, result)，文件名为 knowledge/results/daily-board/raw-responses/${date}-${agent}-${digest(JSON.stringify({run_key: runKey, output: String(result.output||''), finish_reason: result.finish_reason||null})）}.json，扩展名保持 .json 但位于独立 raw-responses 子目录，避免与 artifacts 扫描冲突；内容为 {date, run_key, agent, task_id: seat.assignment?.id||null, provider_result: result}。写入使用临时文件 + fs.renameSync 原子替换，并在 rename 前对临时文件执行 fs.fsyncSync。3) 写入成功后设置 seat.raw_response = {path: rawRelative, sha256: digest(rawBytes)}，seat.status 保持 generation_started，然后 saveLedger。4) 扩展 recoverArtifact：当 seat.status 为 generation_started 或 generation_unknown_no_repurchase 且无 seat.artifact 但有 seat.raw_response 时，仅读该 raw-response 文件并校验 SHA-256，然后从缓存 result 重建 artifact 并继续原提交流程，禁止再次调用 provider。5) 若 raw-response 文件不存在或校验失败，保持现有 generation_unknown_no_repurchase，不触发新模型调用。",
+  "verification_commands": [
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>console.log(typeof m.persistRawResponse, typeof m.recoverArtifact))\"",
+    "node scripts/daily-task-board.mjs sync",
+    "node -e \"const fs=require('fs'); const p='knowledge/results/daily-board/raw-responses'; console.log(fs.existsSync(p)?fs.readdirSync(p).length:0)\""
+  ],
+  "remaining_blocker": "patch 本身尚未实装到仓库；raw response 持久化的敏感信息脱敏策略未定义，且未经过实际 kill -9 崩溃注入测试证明恢复路径可用。"
+}
