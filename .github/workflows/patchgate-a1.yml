@@ -1,0 +1,50 @@
+name: PatchGate A1 shadow observer (no automatic merge or deployment)
+on:
+  push:
+    branches: [codex/patchgate-a1-readonly-20261024]
+    paths: ['scripts/patchgate-observe.mjs','scripts/patchgate.mjs','scripts/tests/patchgate-a1.test.mjs','.github/workflows/patchgate-a1.yml']
+  pull_request:
+    paths: ['scripts/patchgate-observe.mjs','scripts/patchgate.mjs','scripts/tests/patchgate-a1.test.mjs','.github/workflows/patchgate-a1.yml']
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR to observe; no candidate code is executed
+        required: true
+        type: string
+permissions: {contents: read}
+concurrency: {group: patchgate-a1-shadow-observer, cancel-in-progress: false}
+jobs:
+  tests:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs scripts/tests/patchgate-a1.test.mjs
+  observe:
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch')
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Validate trusted runtime before observing candidates
+        run: node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs scripts/tests/patchgate-a1.test.mjs
+      - name: Observe PR data and atomically reserve only the observation branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/patchgate-observe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-a1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: work/patchgate-a1/
+          retention-days: 30

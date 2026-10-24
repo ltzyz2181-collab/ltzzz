@@ -13,19 +13,19 @@ export function loadBaseConfig({base, read = p => git(['show',ref(base)+':'+p])}
   return {policy,trust,policy_sha256:sha256(canonical(policy)),trust_sha256:sha256(canonical(trust))};
 }
 
-export function collectSnapshot({base,head,taskId}) {
-  ref(base); ref(head);
+export function collectSnapshot({base,head,taskId,diffBase=base}) {
+  ref(base); ref(head);ref(diffBase);
   const configs = loadBaseConfig({base});
-  const raw = git(['diff','--raw','-z','--no-renames',base,head,'--']).split('\0');
+  const raw = git(['diff','--raw','-z','--no-renames',diffBase,head,'--']).split('\0');
   const files = [];
   for (let i=0;i<raw.length && raw[i];i+=2) {
     const bits = raw[i].split(' '), name = raw[i+1];
     if (files.length >= configs.policy.max_files) throw Error('file_limit_exceeded');
-    const diff = git(['--literal-pathspecs','diff','--no-ext-diff','--no-textconv','--no-renames','--no-color','--unified=3',base,head,'--',name]);
+    const diff = git(['--literal-pathspecs','diff','--no-ext-diff','--no-textconv','--no-renames','--no-color','--unified=3',diffBase,head,'--',name]);
     files.push({path:name,mode:bits[1]==='000000'?bits[0].slice(1):bits[1],old_mode:bits[0].slice(1)==='000000'?null:bits[0].slice(1),
       binary:diff.includes('Binary files ') || diff.includes('GIT binary patch'),diff});
   }
-  return {...configs,snapshot:{repository:configs.policy.repository,task_id:taskId,base_sha:base,head_sha:head,
+  return {...configs,snapshot:{repository:configs.policy.repository,task_id:taskId,base_sha:base,head_sha:head,diff_base_sha:diffBase,
     policy_sha256:configs.policy_sha256,trust_sha256:configs.trust_sha256,files}};
 }
 
