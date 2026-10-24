@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_merged_disabled_real_runner_3of3_passed_waiting_Claude_receipt_review_and_controls_adjudication",
-  "at_utc": "2026-10-24T14:27:11.575Z",
+  "status": "A1_Claude_PR233_verified_controls_adjudicated_ready_to_enable_observation",
+  "at_utc": "2026-10-24T21:34:29.526Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -38,7 +38,7 @@
     "closeout": "knowledge/results/patchgate/a0-closeout-20261024.json"
   },
   "A1": {
-    "status": "merged_disabled_runner_acceptance_passed_review_pending",
+    "status": "approved_for_observation_activation_switch_not_yet_changed",
     "implementation_pr": 227,
     "implementation_head": "87f270d08195c3bd2be5892ab6800921c5140a03",
     "tests": {
@@ -74,7 +74,7 @@
         }
       ],
       "B3_B4": "blocking_demands_lifted_in_latest_scoped_review_originals_preserved",
-      "controls": "REJECT_preserved_counterprobe_attached_pending_Claude_adjudication"
+      "controls": "original_REJECT_preserved_Claude_PR233_adjudicated_nonblocking_L8_low_hardening"
     },
     "claude": {
       "audit_pr": 229,
@@ -83,10 +83,12 @@
       "verdict": "approve_with_conditions_for_disabled_merge",
       "H5_H6_M3_M4": "closed_in_PR229",
       "runner_receipt_review_pr": 232,
-      "runner_receipt_review": "not_received",
-      "controls_adjudication": "pending"
+      "runner_receipt_review": "approved_with_explicit_readback_scope_in_PR233",
+      "controls_adjudication": "CRITICAL_downgraded_L8_low_nonblocking_others_not_adopted_original_REJECT_preserved",
+      "receipt_adjudication_pr": 233,
+      "receipt_adjudication_head": "391d910e6389f4c6c1cf7f77ff7aff00d6672617"
     },
-    "evidence_commit": "7bc3832fd0e2a5233cc04ffe36694e5b65c02271",
+    "evidence_commit": "78492a6af60013495305f960b14fc81a792e457c",
     "evidence_path": "knowledge/results/patchgate/a1-acceptance-20261024/receipt.json",
     "merged": true,
     "production_activated": false,
@@ -97,7 +99,8 @@
       "source": "browser_UI_and_actual_runner_log",
       "browser_run": "cba2110c-a15f-4e4b-992d-5102a2691899",
       "runner_run": "40101318501",
-      "changed_to_true": false
+      "changed_to_true": false,
+      "change_to_true": "authorized_after_recorded_PR233_adjudication_not_yet_executed"
     },
     "live_runner_acceptance": {
       "run_id": "40101318501",
@@ -124,7 +127,14 @@
     "live_shared_CAS_scope": "real_GitHub_create_ref_duplicate_422_and_ref_readback_in_one_runner_not_two_concurrent_jobs",
     "cross_runner_concurrency_verified": false,
     "fork_reachability_verified": false,
-    "evidence_pr": 232
+    "evidence_pr": 232,
+    "followups": {
+      "L8": "isolatedRecord_task_id_regex_low_defense_in_depth_separate_reviewed_PR_before_A2",
+      "L4": "trusted_notice_actor_admission_before_A2",
+      "L5": "fork_reachability_not_tested",
+      "concurrent_runners": "not_tested"
+    },
+    "watch_plan": "knowledge/results/patchgate/a1-acceptance-20261024/watch-plan.md"
   },
   "A2": {
     "status": "not_entered",
@@ -138,7 +148,7 @@
     "maximum_authorized_environment": "public_testnet_fake_tokens",
     "transactions": []
   },
-  "next_phase": "Claude_verify_PR232_live_receipt_and_adjudicate_controls_then_enable_only_if_approved",
+  "next_phase": "enable_A1_shadow_observation_and_watch_real_PRs_disable_on_any_anomaly_A2_B_remain_off",
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -219,15 +229,57 @@
       },
       "evidence_commit": "f9baf5028bb3cd8232963a5800592718493d575a",
       "evidence_path": "knowledge/results/patchgate/pr228-review/closeout.json"
+    },
+    {
+      "phase": "A1_before_PR233_adjudication",
+      "status": "A1_merged_disabled_real_runner_3of3_passed_waiting_Claude_receipt_review_and_controls_adjudication",
+      "claude": {
+        "audit_pr": 229,
+        "archive_merge": "f1d68c80c91967e9635f382b87150b2c18dc22ec",
+        "audited_head": "87f270d08195c3bd2be5892ab6800921c5140a03",
+        "verdict": "approve_with_conditions_for_disabled_merge",
+        "H5_H6_M3_M4": "closed_in_PR229",
+        "runner_receipt_review_pr": 232,
+        "runner_receipt_review": "not_received",
+        "controls_adjudication": "pending"
+      },
+      "qwen": {
+        "model": "qwen-plus",
+        "actual_provider": "aliyun_dashscope",
+        "model_source": "provider_response",
+        "calls": 3,
+        "total_reported_tokens": 10058,
+        "api_cost": null,
+        "reviews": [
+          {
+            "run_id": "40101258231",
+            "scope": "B3_B4_new_head_initial",
+            "verdict": "revise"
+          },
+          {
+            "run_id": "40101747530",
+            "scope": "B3_B4_with_current_schema_official_inputs_and_live_evidence",
+            "verdict": "approve"
+          },
+          {
+            "run_id": "40102096611",
+            "scope": "H5_H6_M3_controls",
+            "verdict": "REJECT"
+          }
+        ],
+        "B3_B4": "blocking_demands_lifted_in_latest_scoped_review_originals_preserved",
+        "controls": "original_REJECT_preserved_Claude_PR233_adjudicated_nonblocking_L8_low_hardening"
+      },
+      "evidence_commit": "7bc3832fd0e2a5233cc04ffe36694e5b65c02271"
     }
   ],
   "limitations": [
-    "A1 is merged and the three requested live runner scenarios passed; normal observation is still disabled.",
-    "Latest native Qwen B3/B4 scoped opinion is approve, while the supplementary controls opinion is REJECT; originals, counterprobe and the real internal format-hardening proposal are preserved for Claude adjudication.",
-    "Claude approved disabled merge in PR229; Claude's review of actual runner receipt PR232 has not yet been received.",
-    "PUT/POST counts are backed by executed fixed code and passed assertions, independently cross-checked with one-commit branches; ZIP bytes were not read through the executor.",
-    "Single-runner GitHub CAS/idempotence and deliberate collect failure were verified; simultaneous runners and fork reachability were not.",
-    "A2 signing remains disabled/empty-key, B not entered; no wallet settlement. Native API/browser metering is separate."
+    "Claude PR233 independently confirmed the recorded refs/commits/blobs/files and adjudicated controls objections; its inability to independently read Actions logs/variable/ZIP/request totals remains explicit.",
+    "A1 only is approved to enable; variable has not yet been changed at this status write.",
+    "The internal task_id repeat-check is L8 low defense in depth and will be a separate reviewed PR; no production code change was made to bypass its current audit.",
+    "Open PR author census currently contains only OWNER; external-author live blocking remains unverified.",
+    "Observation refs are also idempotency locks and will not be deleted before a reviewed durable tombstone/archival mechanism exists.",
+    "A2, signing, automatic merge/business deployment, B and fund execution remain disabled."
   ],
   "related_PR225": {
     "merged": true,
