@@ -2,17 +2,26 @@ name: PatchGate A1 shadow observer (no automatic merge or deployment)
 on:
   push:
     branches: [codex/patchgate-a1-readonly-20261024]
-    paths: ['scripts/patchgate-observe.mjs','scripts/patchgate.mjs','scripts/tests/patchgate-a1.test.mjs','.github/workflows/patchgate-a1.yml']
+    paths: ['scripts/patchgate-observe.mjs','scripts/patchgate-a1-acceptance.mjs','scripts/patchgate.mjs','scripts/tests/patchgate-a1.test.mjs','.github/workflows/patchgate-a1.yml']
   pull_request:
-    paths: ['scripts/patchgate-observe.mjs','scripts/patchgate.mjs','scripts/tests/patchgate-a1.test.mjs','.github/workflows/patchgate-a1.yml']
+    paths: ['scripts/patchgate-observe.mjs','scripts/patchgate-a1-acceptance.mjs','scripts/patchgate.mjs','scripts/tests/patchgate-a1.test.mjs','.github/workflows/patchgate-a1.yml']
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
     inputs:
+      mode:
+        description: Normal observation requires the switch; acceptance runs only while disabled
+        type: choice
+        options: [observe, acceptance]
+        default: observe
       pr_number:
         description: PR to observe; no candidate code is executed
         required: true
+        type: string
+      failure_pr_number:
+        description: Second docs-only test PR with a distinct head; acceptance mode only
+        required: false
         type: string
 permissions: {contents: read}
 concurrency: {group: 'patchgate-a1-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}', cancel-in-progress: false}
@@ -27,7 +36,12 @@ jobs:
         with: {node-version: '22'}
       - run: node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs scripts/tests/patchgate-a1.test.mjs
   observe:
-    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch')
+    if: >-
+      github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' &&
+      vars.PATCHGATE_A1_ENABLED == 'true' &&
+      ((github.event_name == 'pull_request_target' &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)) ||
+      (github.event_name == 'workflow_dispatch' && inputs.mode == 'observe'))
     permissions: {contents: write}
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -41,10 +55,36 @@ jobs:
       - name: Observe PR data and atomically reserve only the observation branch
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PATCHGATE_A1_ENABLED: ${{ vars.PATCHGATE_A1_ENABLED }}
         run: node scripts/patchgate-observe.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: patchgate-a1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: work/patchgate-a1/
+          retention-days: 30
+  acceptance:
+    if: >-
+      github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' && inputs.mode == 'acceptance' &&
+      vars.PATCHGATE_A1_ENABLED != 'true'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate.test.mjs scripts/tests/patchgate-audit.test.mjs scripts/tests/patchgate-a1.test.mjs
+      - name: Manual docs-only runner acceptance while production switch is closed
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PATCHGATE_A1_ENABLED: ${{ vars.PATCHGATE_A1_ENABLED }}
+        run: node scripts/patchgate-a1-acceptance.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-a1-acceptance-${{ github.run_id }}-${{ github.run_attempt }}
           path: work/patchgate-a1/
           retention-days: 30
