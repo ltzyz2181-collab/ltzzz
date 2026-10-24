@@ -1,0 +1,59 @@
+{
+  "task_id": "POSTDEPLOY-EVIDENCE-20261023",
+  "type": "engineering_counterexample_not_an_override_of_native_review",
+  "at_utc": "2026-10-23T04:27:12.950966+00:00",
+  "source_commit": "4c699cd20152a0a75826ba88c3ac38c0104ef457",
+  "evidence_branch": "audit/postdeploy-observations",
+  "evidence_snapshot_commit": "4d02c6b8456c5eb7b35876bb2cbbaf83064c6778",
+  "observation": {
+    "path": "knowledge/results/deployment-verification/DEPLOY-39887469785-1.json",
+    "raw_sha256": "b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec",
+    "all_five_deployment_checks": {
+      "deployment_logs": true,
+      "fresh_http_200": true,
+      "marker": true,
+      "body_source_commit": true,
+      "header_source_commit": true
+    },
+    "independent_workflow_run": "39899988884",
+    "page_observed_at_utc": "2026-10-23T04:23:06.928Z"
+  },
+  "review": {
+    "path": "knowledge/results/deployment-verification/DEPLOY-39887469785-1.review.json",
+    "raw_sha256": "e37c63a5bb1a68df30b54b78293dd0bf09ffdbe09a7f7725682bdac197b216bb",
+    "provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "finish_reason": "stop",
+    "tokens_used": 1802,
+    "accepted": false,
+    "original_preserved": true
+  },
+  "counterexample": {
+    "recomputed_entire_observation_sha256": "b6e8179be196277f4eebacdf93ba1ab2c21ebde328532cf807daa2bcd10ebeec",
+    "matches_native_review_subject": true,
+    "matches_external_index": true,
+    "digest_appears_inside_observation": false,
+    "explanation": "The reviewed artifact SHA256 is computed over the complete immutable JSON bytes and lives in its external index and review reservation. It is distinct from the page body hash, log hash and git commit SHA. No schema requires a file digest to appear inside the same file. The native rejection invents that requirement. Raw native rejection remains unchanged and is not silently overridden."
+  },
+  "status": "fresh_checks_verified_native_review_completed_but_rejected_pending_external_adjudication",
+  "future_prompt_correction": "Explain external whole-file artifact digest vs page/log/source hashes; no paid repeat of this native request.",
+  "claude_review_card": "ops/dispatch/inbox/claude/POSTDEPLOY-EVIDENCE-20261023.md",
+  "local_checks": {
+    "passed": 100,
+    "failed": 0,
+    "live_cache_import": "passed",
+    "existing_oversight_phase": "deployment_review_rejected",
+    "isolated_test_not_production": true
+  },
+  "model_usage": {
+    "native_qwen_calls": 1,
+    "native_openai_calls": 0,
+    "native_anthropic_calls": 0,
+    "retry_calls": 0,
+    "api_cost": null
+  },
+  "paid": false,
+  "tx_hash": null,
+  "main_modified_by_this_task": false
+}
