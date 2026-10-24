@@ -9,26 +9,120 @@
   "real_funds_enabled": false,
   "repository": "ltzyz2181-collab/ltzzz",
   "protected_prefixes": [
-    "config/patch", "scripts/patchgate", "scripts/lib/patchgate", "scripts/tests/patchgate",
-    ".github/workflows/patchgate", ".github/actions/patchgate"
+    "config/patch",
+    "scripts/patchgate",
+    "scripts/lib/patchgate",
+    "scripts/tests/patchgate",
+    ".github/workflows/patchgate",
+    ".github/actions/patchgate"
   ],
   "l3_prefixes": [
-    "config/", "identity/", "wallet/", "agent-wallet/", "contracts/", "policy/", "protocol/", "memory/promote/",
-    ".github/", ".claude/", ".agents/", "skills/", "tools/", "lib/", "ltzzz-memory/", "memory/",
-    "knowledge/results/", "results/", "data/results/", "data/memory/", "ops/"
+    "config/",
+    "identity/",
+    "wallet/",
+    "agent-wallet/",
+    "contracts/",
+    "policy/",
+    "protocol/",
+    "memory/promote/",
+    ".github/",
+    ".claude/",
+    ".agents/",
+    "skills/",
+    "tools/",
+    "lib/",
+    "ltzzz-memory/",
+    "memory/",
+    "knowledge/results/",
+    "results/",
+    "data/results/",
+    "data/memory/",
+    "ops/"
   ],
-  "l2_prefixes": ["workers/", "cloud-agent-worker/", "backend-node/", "backend-python/", "api/"],
-  "l1_prefixes": ["scripts/tests/", "tests/"],
-  "l0_prefixes": ["docs/"],
-  "l3_files": ["package.json", "package-lock.json", ".gitmodules", ".gitattributes", "AGENTS.md"],
-  "l0_files": ["README.md"],
-  "documentation_extensions": [".md"],
-  "allowed_external_hosts": ["github.com", "raw.githubusercontent.com", "ltzzz.com"],
-  "allowed_external_url_prefixes": ["https://github.com/ltzyz2181-collab/ltzzz/", "https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/", "https://ltzzz.com/"],
+  "l2_prefixes": [
+    "workers/",
+    "cloud-agent-worker/",
+    "backend-node/",
+    "backend-python/",
+    "api/"
+  ],
+  "l1_prefixes": [
+    "scripts/tests/",
+    "tests/"
+  ],
+  "dispatch_card_prefixes": [
+    "ops/dispatch/inbox/",
+    "ops/dispatch/queue/"
+  ],
+  "dispatch_card_extensions": [
+    ".md",
+    ".json"
+  ],
+  "l0_prefixes": [
+    "docs/"
+  ],
+  "l3_files": [
+    "package.json",
+    "package-lock.json",
+    ".gitmodules",
+    ".gitattributes",
+    "AGENTS.md"
+  ],
+  "l0_files": [
+    "README.md"
+  ],
+  "documentation_extensions": [
+    ".md"
+  ],
+  "allowed_external_hosts": [
+    "github.com",
+    "raw.githubusercontent.com",
+    "ltzzz.com"
+  ],
+  "allowed_external_url_prefixes": [
+    "https://github.com/ltzyz2181-collab/ltzzz/",
+    "https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/",
+    "https://ltzzz.com/"
+  ],
   "receipt_writer_rules": [
-    {"prefix": "knowledge/results/", "executors": []},
-    {"prefix": "results/", "executors": []},
-    {"prefix": "data/results/", "executors": []}
+    {
+      "prefix": "knowledge/results/qwen-dispatch/",
+      "executors": [
+        "qwen-main-receipt-bot",
+        "gpt-github-relay"
+      ]
+    },
+    {
+      "prefix": "knowledge/results/dispatch/",
+      "executors": [
+        "sentinel-main-bot",
+        "gpt-github-relay"
+      ]
+    },
+    {
+      "prefix": "knowledge/results/",
+      "executors": [
+        "gpt-github-relay"
+      ]
+    },
+    {
+      "prefix": "results/",
+      "executors": [
+        "gpt-github-relay"
+      ]
+    },
+    {
+      "prefix": "data/results/",
+      "executors": [
+        "gpt-github-relay"
+      ]
+    },
+    {
+      "prefix": "ops/dispatch/receipts/",
+      "executors": [
+        "gpt-github-relay"
+      ]
+    }
   ],
   "max_files": 100,
   "max_diff_bytes": 524288,
@@ -36,7 +130,10 @@
   "freshness_seconds": 300,
   "extra_review_failure_count": 3,
   "extra_review_window_seconds": 86400,
-  "stage_auditors": ["anthropic", "different_provider"],
+  "stage_auditors": [
+    "anthropic",
+    "different_provider"
+  ],
   "workflow_classification": "all_L3_until_permission_parser_and_workflow_adapters_are_reviewed",
   "canary_targets": [],
   "production_adapters": [],
@@ -44,7 +141,7 @@
     "A0 is offline/CI validation, not automatic merge or deployment.",
     "No signing keys are provisioned by this change. Provider names in unsigned JSON are not evidence.",
     "Runtime scripts default to L3 until individually reviewed into a non-financial allowlist. Only tests retain the general L1 prefix.",
-    "Receipt writer executor allowlists are empty: new evidence cannot authorize itself via a hand-authored accepted/paid field.",
+    "Receipt transport executors are registered, but signing keys remain empty/disabled; transport availability is not cryptographic writer admission.",
     "Control-plane updates require a separate reviewed trust-root rollout; PatchGate never authorizes a patch that changes its own checks.",
     "Existing unrelated workflows are not intercepted or secured merely by adding this evaluator."
   ]

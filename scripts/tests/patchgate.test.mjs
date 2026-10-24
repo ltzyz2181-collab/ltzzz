@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {generateKeyPairSync, sign} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {TASK, canonical, sha256, classify, scanDiff, evaluate, subjectFor, verifyDeployment, reserveAction, finishAction, validateTrust} from '../lib/patchgate.mjs';
+import {TASK, canonical, sha256, classify, scanDiff, evaluate, subjectFor, verifyDeployment, reserveAction, finishAction, validateTrust, notificationReference, fetchNotificationReadback} from '../lib/patchgate.mjs';
 import {collectSnapshot, loadBaseConfig} from '../patchgate.mjs';
 
 const policy = JSON.parse(fs.readFileSync(new URL('../../config/patch-policy.json',import.meta.url)));
@@ -15,6 +15,13 @@ const pairs = ['openai','anthropic','aliyun_dashscope','volcengine_ark'].map((pr
 const trust = {schema_version:1,enabled:true,keys:pairs.map(k => ({id:k.id,provider:k.provider,executor:'test-executor-'+k.id,enabled:true,roles:['author','review','checks','deployment','notification','supervision','receipt_write'],
   not_before:'2026-10-22T00:00:00Z',not_after:'2026-10-24T00:00:00Z',public_key_pem:k.publicKey.export({type:'spki',format:'pem'})}))};
 const file = name => ({path:name,mode:'100644',old_mode:'100644',diff:'diff --git a/'+name+' b/'+name+'\n--- a/'+name+'\n+++ b/'+name+'\n@@ -1 +1 @@\n-old\n+new\n'});
+function noticeFor(subject,attestation,index=3) {
+  const body='OWNER=@ltzyz2181-collab\nTASK_ID='+subject.task_id+'\nHEAD_SHA='+subject.head_sha+'\nSUBJECT_SHA256='+sha256(canonical(subject))+'\n';
+  const reference='https://github.com/ltzyz2181-collab/ltzzz/pull/224#issuecomment-1';
+  const ref=notificationReference(reference),readback={...ref,source:'github_rest_issue_comment',http_status:200,body,body_sha256:sha256(body),actor_login:'test-notifier-bot',actor_id:'42',fetched_at_utc:new Date(now).toISOString()};
+  const proof=attestation(index,'notification',{owner_notified:true,reference,comment_sha256:sha256(body),subject_sha256:sha256(canonical(subject)),actor_login:readback.actor_login,actor_id:readback.actor_id});
+  return {proof,readback};
+}
 function fixture(name='tests/example.test.mjs',configuration={}) {
   const p=configuration.policy||policy,t=configuration.trust||trust;
   const snapshot = {repository:p.repository,task_id:TASK,base_sha:A,head_sha:B,policy_sha256:sha256(canonical(p)),trust_sha256:sha256(canonical(t)),files:[file(name)]};
@@ -26,8 +33,9 @@ function fixture(name='tests/example.test.mjs',configuration={}) {
   const author = attestation(0,'author');
   const checks = attestation(3,'checks',{passed:true,checker_base_sha:A,checks_sha256:'1'.repeat(64)});
   const review = i => attestation(i,'review',{verdict:'approve',generation_verified:true,model:'model-from-provider',output_sha256:'2'.repeat(64),metadata_source:'provider_response',finish_reason:'stop'});
-  const run = (attestations=[author,checks,review(1)], overrides={}) => evaluate({policy:p,trust:t,snapshot,attestations,now,...overrides});
-  return {snapshot,subject,attestation,author,checks,review,run};
+  const notification=noticeFor(subject,attestation);
+  const run = (attestations=[author,checks,review(1)], overrides={}) => evaluate({policy:p,trust:t,snapshot,attestations,notificationReadbacks:[notification.readback],now,...overrides});
+  return {snapshot,subject,attestation,author,checks,review,run,notification};
 }
 function deployment(subject) {
   const bytes = Buffer.from(JSON.stringify({schema:'ltzzz.patchgate.canary.v1',source_commit:subject.head_sha})+'\n');
@@ -41,6 +49,22 @@ test('four risk levels and fail-closed unknown paths',() => {
   assert.equal(classify(policy,[file('docs/active.js')]).level,'L3');
   assert.equal(classify(policy,[file('docs/a.md'),file('config/authority.json')]).level,'L3');
 });
+test('N2 only plain inbox/queue task cards are L1, not ledger, authority, receipts or code',()=>{
+  for(const name of ['ops/dispatch/inbox/claude/TASK.md','ops/dispatch/queue/TASK.json'])assert.equal(classify(policy,[file(name)]).level,'L1',name);
+  for(const name of ['ops/派单台账.md','ops/dispatch/receipts/TASK.json','ops/authority.json','ops/dispatch/inbox/gpt/task.mjs','ops/dispatch/inbox/gpt/secrets.json','ops/dispatch/inbox/gpt/AGENTS.md'])assert.equal(classify(policy,[file(name)]).level,'L3',name);
+});
+test('N2 every configured receipt transport is registered, without claiming signing keys exist',()=>{
+  const registry=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-executors.json',import.meta.url))),root=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-trust.json',import.meta.url)));
+  const ids=new Set(registry.executors.map(e=>e.id));assert.equal(ids.size,registry.executors.length);
+  for(const rule of policy.receipt_writer_rules)for(const id of rule.executors)assert.ok(ids.has(id),id);
+  assert.equal(registry.executors.every(e=>e.signing_enabled===false && e.signing_key_ids.length===0),true);
+  assert.equal(root.enabled,false);assert.equal(root.keys.length,0);
+});
+test('deterministic transports cannot masquerade as native author/review providers',()=>{
+  const bot={...trust.keys[3],provider:'github_actions',roles:['notification','receipt_write']};
+  assert.equal(validateTrust({...trust,keys:[bot]}),true);
+  assert.equal(validateTrust({...trust,keys:[{...bot,roles:['review']}]}),false);
+});
 test('H1 financial, signing, auth and unknown runtime scripts are all L3',() => {
   for(const name of ['scripts/funded-invest-executor.mjs','scripts/provision-funding-executor.mjs','scripts/prepare-treasury-migration.mjs','scripts/provision-wep3-treasury.mjs','scripts/execute-agent-payment.mjs','scripts/generate-wallet-key.mjs','scripts/lib/proxy-auth.mjs','lib/proxy-auth.js','scripts/new-innocent-name.mjs','scripts/package.json']) assert.equal(classify(policy,[file(name)]).level,'L3',name);
   assert.equal(classify(policy,[file('scripts/tests/funded-invest.test.mjs')]).level,'L1');
@@ -52,7 +76,7 @@ test('H2 receipts, ledgers and every core-memory original are L3; only markdown 
 });
 test('H2 a hand-authored accepted/paid receipt needs a BASE-authorized signed writer',() => {
   const name='knowledge/results/accepted.json',f=fixture(name);
-  const notify=x=>x.attestation(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/223'});
+  const notify=x=>x.notification.proof;
   assert.ok(f.run([f.author,f.checks,f.review(1),f.review(2),notify(f),f.attestation(3,'receipt_write',{paths:[name],accepted:true,paid:true})]).reasons.includes('authenticated_receipt_writer_required'));
   const p={...policy,receipt_writer_rules:policy.receipt_writer_rules.map(r=>({...r,executors:[trust.keys[3].executor]}))},g=fixture(name,{policy:p});
   const base=[g.author,g.checks,g.review(1),g.review(2),notify(g)];
@@ -62,7 +86,7 @@ test('H2 a hand-authored accepted/paid receipt needs a BASE-authorized signed wr
 });
 for (const name of ['config/patch-policy.json','config/patchgate-trust.json','scripts/lib/patchgate.mjs','scripts/tests/patchgate.test.mjs','.github/workflows/patchgate.yml','scripts/patchgate.mjs']) {
   test('same patch cannot alter own constraint: '+name,() => {
-    const f=fixture(name),r=f.run([f.author,f.checks,f.review(1),f.review(2),f.attestation(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/1'})]);
+    const f=fixture(name),r=f.run([f.author,f.checks,f.review(1),f.review(2),f.notification.proof]);
     assert.ok(r.reasons.includes('cannot_modify_own_constraints_requires_separate_trust_rollout'));
     assert.equal(r.automatic_merge,false);
   });
@@ -143,9 +167,29 @@ test('L3 requires two different review providers and owner notification, no new 
   assert.equal(f.run().validation_passed,false);
   assert.equal(f.run([f.author,f.checks,f.review(1),f.review(1)]).validation_passed,false);
   assert.equal(f.run([f.author,f.checks,f.review(1),f.review(2)]).validation_passed,false);
-  const r=f.run([f.author,f.checks,f.review(1),f.review(2),f.attestation(0,'notification',{owner_notified:true,reference:'https://github.com/ltzyz2181-collab/ltzzz/issues/1'})]);
+  const r=f.run([f.author,f.checks,f.review(1),f.review(2),f.notification.proof]);
   assert.equal(r.validation_passed,true);
   assert.equal(r.automatic_merge,false);
+});
+test('N1 author cannot sign their own notice, even when readback is genuine',()=>{
+  const f=fixture('config/example.json'),self=noticeFor(f.subject,f.attestation,0);
+  assert.ok(f.run([f.author,f.checks,f.review(1),f.review(2),self.proof]).reasons.includes('owner_notification_evidence_required'));
+  const r=f.run([f.author,f.checks,f.review(1),f.review(2),f.notification.proof]);
+  assert.equal(r.validation_passed,true);assert.equal(r.notification_readback_verified,true);assert.deepEqual(r.notification_executors,[trust.keys[3].executor]);
+});
+test('N1 notice needs exact live readback: wrong head, edit, actor, stale/deleted/wrong comment all fail',()=>{
+  const f=fixture('config/example.json'),proof=f.notification.proof,base=[f.author,f.checks,f.review(1),f.review(2),proof];
+  assert.equal(f.run(base,{notificationReadbacks:[]}).validation_passed,false);
+  for(const change of [{http_status:404},{actor_login:'other'},{body:f.notification.readback.body.replace(B,C)},{body:f.notification.readback.body+'HEAD_SHA='+C+'\n'},{body_sha256:'0'.repeat(64)},{comment_id:'2'},{fetched_at_utc:new Date(now-301000).toISOString()}]) {
+    const rb={...f.notification.readback,...change};assert.equal(f.run(base,{notificationReadbacks:[rb]}).validation_passed,false,JSON.stringify(change));
+  }
+});
+test('N1 network collector restricts GitHub comment endpoint and actually returns fetched bytes',async()=>{
+  const f=fixture(),n=f.notification;let called=null;
+  const got=await fetchNotificationReadback(n.readback.reference,{now:()=>new Date(now).toISOString(),fetchImpl:async(url,options)=>{called={url,options};return {status:200,text:async()=>JSON.stringify({id:1,html_url:n.readback.reference,body:n.readback.body,user:{id:42,login:'test-notifier-bot'}})};}});
+  assert.equal(got.body_sha256,n.readback.body_sha256);assert.equal(called.url,n.readback.api_url);assert.equal(called.options.redirect,'error');
+  await assert.rejects(fetchNotificationReadback('https://github.com/attacker/repo/issues/1#issuecomment-1',{fetchImpl:async()=>{throw Error('must not call');}}),/exact_repository/);
+  await assert.rejects(fetchNotificationReadback(n.readback.reference,{fetchImpl:async()=>({status:404})}),/not_readable/);
 });
 test('secret scan redacts findings; dynamic execution and new domains require resolution',() => {
   const changes=[['sk-'+'X'.repeat(24),'secret_pattern'],['eval("untrusted")','new_dynamic_execution_requires_review'],['import c from "node:child_process"','new_dynamic_execution_requires_review'],['https://attacker.invalid/collect','unapproved_external_host']];

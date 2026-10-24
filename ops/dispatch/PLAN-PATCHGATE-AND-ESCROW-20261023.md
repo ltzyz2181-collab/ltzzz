@@ -17,11 +17,13 @@ GPT/千问执行与部署；评审监督、提醒，不撤销权限（沿用 con
 
 ### A2 风险分级（路径规则放代码配置 config/patch-policy.json）
 - L0：仅普通 Markdown 文档（docs 与 README）；回执、台账、原始记忆不属于 L0。
-- L1：普通测试 → 可信基线 CI + 不同提供商复核（绑定 head sha）。运行脚本默认 L3，含资金/签名/鉴权执行器；以后普通脚本须经逐项审核加入明确允许清单，不能恢复 scripts/ 整体 L1。A0 暂把所有 workflow 升至 L3。
+- L1：普通测试、ops/dispatch/inbox 与 queue 下普通 md/json 派单卡 → 可信基线 CI + 不同提供商复核（绑定 head sha）。运行脚本默认 L3，含资金/签名/鉴权执行器；以后普通脚本须经逐项审核加入明确允许清单，不能恢复 scripts/ 整体 L1。A0 暂把所有 workflow 升至 L3。
 - L2：Worker 代码、鉴权、部署 workflow → L1 + 先部署隔离/金丝雀目标并复验，通过才进正式目标。
 - L3：密钥、钱包/托管配置、额度上限、身份与授权配置、workflow permissions、PatchGate 自身 → 两家不同提供商复核 + 合并前通知 owner（通知，不是审批）；**同一 PR 不得修改约束它自己的检查**（防自批）。
 - 资金、签名、鉴权脚本、记忆原文、台账及回执路径均 L3；回执还必须有 base 路径写入者映射授权的 receipt_write 签名，作者手填 accepted/paid 不能当证据。
 - 信任根固定一个 executor 对应一个 provider，多把轮换密钥也不得改标签；checks/deployment 的签名 executor 必须不同于作者，复核者同时与作者的 executor/provider 不同。
+- 通知证据由非作者执行器签，绑定确切评论、actor、原始正文哈希和提交 subject；可信采集器回读唯一 Task ID/head/subject 标记及 owner mention。作者自签、错引/改写/删除/过期评论不得通过。
+- 实际收据传输执行器见 config/patchgate-executors.json；writer 规则取最具体路径。登记现有通道不代表签名密钥已配，当前仍 trust.enabled=false / keys=[]，不得在 A2 中放行无签名回执。
 - 策略、检查器、检查器依赖与公钥从可信 base SHA 读取；PatchGate 自身更新不走它正在约束的自动放行通道，另做经过双审的可信更新。初次 bootstrap 不能自证上线。
 
 ### A3 关卡顺序（任一失败：只告警，保留原因，不静默放行）

@@ -6,7 +6,7 @@ export const TASK = 'PLAN-PATCHGATE-ESCROW-20261023';
 const SHA = /^[a-f0-9]{40}$/;
 const HASH = /^[a-f0-9]{64}$/;
 const ID = /^[A-Z0-9][A-Z0-9_-]{6,80}$/;
-const PROVIDERS = new Set(['openai', 'anthropic', 'aliyun_dashscope', 'volcengine_ark', 'deepseek', 'xai', 'moonshot']);
+const PROVIDERS = new Set(['openai', 'anthropic', 'aliyun_dashscope', 'volcengine_ark', 'deepseek', 'xai', 'moonshot', 'github_actions', 'github_connector']);
 export const sha256 = value => createHash('sha256').update(value).digest('hex');
 export const canonical = value => JSON.stringify(order(value));
 function order(value) {
@@ -23,7 +23,7 @@ export function validatePolicy(p) {
   if (p?.schema_version !== 1 || p.task_id !== TASK || p.repository !== 'ltzyz2181-collab/ltzzz'
     || p.phase !== 'A0' || p.mode !== 'validation_only'
     || [p.automatic_merge, p.automatic_deploy, p.automatic_rollback, p.real_funds_enabled].some(x => x !== false)) throw Error('A0_validation_only_policy_required');
-  for (const k of ['protected_prefixes', 'l3_prefixes', 'l2_prefixes', 'l1_prefixes', 'l0_prefixes', 'l3_files', 'l0_files', 'documentation_extensions', 'allowed_external_hosts', 'allowed_external_url_prefixes'])
+  for (const k of ['protected_prefixes', 'l3_prefixes', 'l2_prefixes', 'l1_prefixes', 'l0_prefixes', 'l3_files', 'l0_files', 'documentation_extensions', 'allowed_external_hosts', 'allowed_external_url_prefixes', 'dispatch_card_prefixes', 'dispatch_card_extensions'])
     if (!Array.isArray(p[k]) || !p[k].length || p[k].some(x => typeof x !== 'string' || !x)) throw Error('invalid_policy_list');
   for (const k of ['max_files', 'max_diff_bytes', 'max_review_age_seconds', 'freshness_seconds', 'extra_review_failure_count', 'extra_review_window_seconds'])
     if (!Number.isSafeInteger(p[k]) || p[k] <= 0) throw Error('invalid_policy_limit');
@@ -46,9 +46,48 @@ export function classify(p, files) {
     if (p.l2_prefixes.some(x => name.startsWith(x)) || /^wrangler[^/]*\.toml$/.test(name) || /^[^/]+\.(?:js|mjs|cjs|html)$/.test(name)) n = 2;
     if (n === 2) requiresCanary = true; // L3 files cannot cancel a Worker's L2 prerequisite.
     if (p.l3_prefixes.some(x => name.startsWith(x)) || p.l3_files.includes(name) || isSensitiveName(name) || name.endsWith('/AGENTS.md')) n = 3;
+    // A task proposal is not an authoritative receipt, ledger row, identity or executable.
+    if (p.dispatch_card_prefixes.some(x=>name.startsWith(x)) && p.dispatch_card_extensions.includes(path.posix.extname(name))
+      && !isSensitiveName(name) && !name.endsWith('/AGENTS.md') && !controls.includes(name)) n = 1;
     level = Math.max(level, n);
   }
   return {level: 'L' + level, requires_canary:requiresCanary, modifies_own_checks: controls.length > 0, controls, reasons};
+}
+
+export function notificationReference(reference) {
+  const m=/^https:\/\/github\.com\/ltzyz2181-collab\/ltzzz\/(?:pull|issues)\/[1-9]\d*#issuecomment-([1-9]\d*)$/.exec(reference||'');
+  if (!m) throw Error('exact_repository_comment_reference_required');
+  return {reference,api_url:'https://api.github.com/repos/ltzyz2181-collab/ltzzz/issues/comments/'+m[1],comment_id:m[1]};
+}
+
+// Collector-owned network facts, supplied separately from PR content and signed payloads.
+export async function fetchNotificationReadback(reference,{fetchImpl=fetch,token,now=()=>new Date().toISOString()}={}) {
+  const ref=notificationReference(reference);
+  const headers={Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+  if(token)headers.Authorization='Bearer '+token;
+  const r=await fetchImpl(ref.api_url,{headers,redirect:'error',signal:AbortSignal.timeout(15000)});
+  if(r.status!==200)throw Error('notification_comment_not_readable');
+  const body=await r.text();if(body.length>100000)throw Error('notification_comment_too_large');
+  const c=JSON.parse(body);
+  if(String(c.id)!==ref.comment_id || c.html_url!==reference || typeof c.body!=='string' || !c.user?.login || !c.user?.id)throw Error('notification_comment_identity_mismatch');
+  return {...ref,source:'github_rest_issue_comment',http_status:200,body:c.body,body_sha256:sha256(c.body),
+    actor_login:c.user.login,actor_id:String(c.user.id),fetched_at_utc:now()};
+}
+
+export function notificationMatches({proof,subject,readbacks,now,maxAge}) {
+  const p=proof.payload;
+  try {
+    const ref=notificationReference(p.reference),r=readbacks.find(x=>x.reference===p.reference);
+    const marker=(body,key,value)=>{const lines=body.split(/\r?\n/).filter(s=>s.startsWith(key+'='));return lines.length===1 && lines[0]===key+'='+value;};
+    return p.owner_notified===true && HASH.test(p.comment_sha256||'') && p.subject_sha256===sha256(canonical(subject))
+      && r?.source==='github_rest_issue_comment' && r.http_status===200 && r.api_url===ref.api_url && r.comment_id===ref.comment_id
+      && typeof r.actor_login==='string' && !!r.actor_login && /^\d+$/.test(r.actor_id||'')
+      && p.actor_login===r.actor_login && p.actor_id===r.actor_id
+      && typeof r.body==='string' && sha256(r.body)===p.comment_sha256 && r.body_sha256===p.comment_sha256
+      && validTime(r.fetched_at_utc) && Date.parse(r.fetched_at_utc)<=now && now-Date.parse(r.fetched_at_utc)<=maxAge*1000
+      && marker(r.body,'TASK_ID',subject.task_id) && marker(r.body,'HEAD_SHA',subject.head_sha)
+      && marker(r.body,'SUBJECT_SHA256',p.subject_sha256) && r.body.split(/\r?\n/).includes('OWNER=@ltzyz2181-collab');
+  }catch{return false;}
 }
 
 export function scanDiff(p, files) {
@@ -83,6 +122,7 @@ export function validateTrust(trust) {
   try {
     for (const k of trust.keys) {
       if (typeof k.id !== 'string' || !k.id || ids.has(k.id) || !PROVIDERS.has(k.provider) || typeof k.executor !== 'string' || !k.executor.trim() || !Array.isArray(k.roles)) return false;
+      if (['github_actions','github_connector'].includes(k.provider) && k.roles.some(role=>['author','review'].includes(role))) return false;
       ids.add(k.id);
       if (executors.has(k.executor) && executors.get(k.executor)!==k.provider) return false;
       executors.set(k.executor,k.provider);
@@ -151,7 +191,7 @@ export function verifyDeployment({subject, evidence, allowedTargets = [], freshn
     model_verdict_required:false, rollback_verified:false};
 }
 
-export function evaluate({policy, trust, snapshot, attestations = [], failures = [], now = Date.now()}) {
+export function evaluate({policy, trust, snapshot, attestations = [], failures = [], notificationReadbacks = [], now = Date.now()}) {
   validatePolicy(policy);
   const subject = subjectFor(snapshot), risk = classify(policy, snapshot.files), findings = scanDiff(policy, snapshot.files), reasons = [...risk.reasons];
   if (!Number.isFinite(now)) throw Error('executor_time_required');
@@ -184,12 +224,13 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   const extra = failureKeys.size >= policy.extra_review_failure_count ? 1 : 0;
   const minimum = (risk.level === 'L0' ? 0 : risk.level === 'L3' ? 2 : 1) + extra;
   if (new Set(reviews.map(a => a.provider)).size < minimum) reasons.push('distinct_provider_reviews_required');
-  if (risk.level === 'L3' && !auth('notification').some(a => a.payload.owner_notified === true && typeof a.payload.reference === 'string' && a.payload.reference.startsWith('https://github.com/ltzyz2181-collab/ltzzz/'))) reasons.push('owner_notification_evidence_required');
+  const notificationProofs=auth('notification').filter(a=>independent(a) && notificationMatches({proof:a,subject,readbacks:notificationReadbacks,now,maxAge:policy.freshness_seconds}));
+  if (risk.level === 'L3' && !notificationProofs.length) reasons.push('owner_notification_evidence_required');
   const receiptPaths=snapshot.files.map(f=>f.path).filter(name=>policy.receipt_writer_rules.some(r=>name.startsWith(r.prefix)));
   const writers=auth('receipt_write');
   for (const name of receiptPaths) {
-    const rules=policy.receipt_writer_rules.filter(r=>name.startsWith(r.prefix));
-    if (!writers.some(w=>rules.every(r=>r.executors.includes(w.executor)) && Array.isArray(w.payload.paths) && w.payload.paths.includes(name))) reasons.push('authenticated_receipt_writer_required');
+    const rule=policy.receipt_writer_rules.filter(r=>name.startsWith(r.prefix)).sort((a,b)=>b.prefix.length-a.prefix.length)[0];
+    if (!writers.some(w=>rule.executors.includes(w.executor) && Array.isArray(w.payload.paths) && w.payload.paths.includes(name))) reasons.push('authenticated_receipt_writer_required');
   }
   let deployment = null;
   if (risk.requires_canary) {
@@ -201,6 +242,7 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   return {task_id:subject.task_id, subject, subject_sha256:sha256(canonical(subject)), idempotency_key:subject.task_id + ':' + subject.head_sha,
     risk_class:risk.level, requires_canary:risk.requires_canary, author_provider:author?.provider || null, author_executor:author?.executor||null,
     checks_executors:[...new Set(checks.map(a=>a.executor))], reviewer_providers:[...new Set(reviews.map(a => a.provider))], reviewer_executors:[...new Set(reviews.map(a=>a.executor))],
+    notification_executors:[...new Set(notificationProofs.map(a=>a.executor))],notification_readback_verified:notificationProofs.length>0,
     required_independent_reviews:minimum, additional_review_due_to_failures:extra, scan_findings:findings, reasons:unique,
     validation_passed:unique.length === 0, status:unique.length ? 'validation_blocked' : 'validated_not_activated',
     phase:policy.phase, automatic_merge:false, automatic_deploy:false, automatic_rollback:false,
