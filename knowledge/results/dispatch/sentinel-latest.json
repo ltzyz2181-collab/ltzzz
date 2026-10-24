@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-24T20:13:51.552Z",
+  "at": "2026-10-24T22:53:20.501Z",
   "date": "2026-10-25",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -101,12 +101,46 @@
       "status": "delivery_channel_reference_not_completion",
       "file": "ops/dispatch/DAILY-2026-10-25-claude.md",
       "claim_verified": false
+    },
+    {
+      "id": "ANS-2026-10-25-doubao",
+      "date": "2026-10-25",
+      "issuer": "gpt",
+      "assigned_to": "doubao",
+      "phase": "blocked_reconcile_existing_attempt",
+      "due_at": "2026-10-25T03:00:00+08:00",
+      "evidence": [
+        "knowledge/results/ans-cycle/2026-10-25.json"
+      ],
+      "instruction": "核对现有 ANS 失败/未知审核请求、错误码与已有输出；修复后交测试和部署回执。不得因补派自动重购未知请求或重复付款。",
+      "issue": "blocked_reconcile_existing_attempt",
+      "overdue": true,
+      "status": "warning_required",
+      "file": "knowledge/results/ans-cycle/2026-10-25.json",
+      "claim_verified": false
+    },
+    {
+      "id": "REAL-HIRE-20261025-CLAUDE-01",
+      "date": "2026-10-25",
+      "issuer": "claude",
+      "assigned_to": "gpt",
+      "phase": "blocked_reconcile_existing_attempt",
+      "due_at": "2026-10-25T12:00:00+08:00",
+      "evidence": [
+        "knowledge/results/claude-team/real-hire-20261025.json"
+      ],
+      "instruction": "跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。",
+      "issue": "blocked_reconcile_existing_attempt",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/claude-team/real-hire-20261025.json",
+      "claim_verified": false
     }
   ],
-  "overdue_count": 0,
-  "deadline_unverified_count": 5,
+  "overdue_count": 1,
+  "deadline_unverified_count": 7,
   "claim_verified": false,
-  "run_id": "40128829484",
+  "run_id": "40140439374",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -118,9 +152,9 @@
     },
     {
       "item": "AI雇AI回执(T1)",
-      "state": "NONE",
+      "state": "OK",
       "evidence": "knowledge/results/hire / knowledge/results/claude-team",
-      "note": "今日无相应JSON回执，不据此发起投资或模型调用。"
+      "note": "knowledge/results/claude-team/real-hire-20261025.json:waiting_existing_ANS_delivery_no_extra_generation;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
     },
     {
       "item": "投资观察回执(T2)",
@@ -150,13 +184,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "51 个原任务/51 条警告；验证认领 23、提交 22、独立审核 5、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "52 个原任务/52 条警告；验证认领 23、提交 22、独立审核 5、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
-      "state": "OK",
+      "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "DAILY-2026-10-25-qianwen:awaiting_agent_ack；CONTROL-2026-10-25-deepseek:not_due；CONTROL-2026-10-25-doubao:not_due；CONTROL-REVIEW-2026-10-25:not_due；DAILY-2026-10-25-claude:delivery_channel_reference_not_completion"
+      "note": "DAILY-2026-10-25-qianwen:awaiting_agent_ack；CONTROL-2026-10-25-deepseek:not_due；CONTROL-2026-10-25-doubao:not_due；CONTROL-REVIEW-2026-10-25:not_due；DAILY-2026-10-25-claude:delivery_channel_reference_not_completion；ANS-2026-10-25-doubao:warning_required；REAL-HIRE-20261025-CLAUDE-01:not_due"
     }
   ],
   "business_alerts": [
@@ -165,18 +199,18 @@
       "state": "MISSING"
     },
     {
-      "item": "AI雇AI回执(T1)",
-      "state": "NONE"
-    },
-    {
       "item": "投资观察回执(T2)",
       "state": "NONE"
     },
     {
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED"
+    },
+    {
+      "item": "今日派单跟踪",
+      "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/40128829484-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/40140439374-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
