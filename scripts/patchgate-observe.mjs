@@ -45,6 +45,18 @@ export async function publishObservation({api,claim,record}) {
   if(!/^[a-f0-9]{64}$/.test(claim.key||'')||claim.branch!=='patchgate-a1-observations/'+claim.key
     ||claim.key!==sha256(record.task_id+':'+record.head_sha)||record.phase!=='A1_shadow_readonly'
     ||[record.automatic_merge,record.automatic_deploy,record.financial_execution].some(v=>v!==false))throw Error('isolated_observation_branch_required');
+  const hash=v=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v);
+  if(!/^\d+$/.test(record.run_id||'')||!SHA.test(record.source_main_sha||'')||!SHA.test(record.diff_base_sha||'')
+    ||!Number.isFinite(Date.parse(record.at_utc))||!hash(record.policy_sha256)||!hash(record.trust_sha256)
+    ||!Array.isArray(record.changed_files)||record.native_model_calls!==0||record.signing_admission!==false
+    ||record.automatic_rollback!==false||record.paid!==false||record.tx_hash!==null)throw Error('complete_shadow_observation_required');
+  if(record.status==='no_new_diff_no_authorization'){
+    if(record.changed_files.length!==0||record.evaluation!==null)throw Error('invalid_no_diff_observation');
+  }else if(record.status==='observation_complete_no_authorization'){
+    const s=record.evaluation?.subject;
+    if(!record.changed_files.length||s?.base_sha!==record.source_main_sha||s.head_sha!==record.head_sha||s.task_id!==record.task_id
+      ||s.policy_sha256!==record.policy_sha256||s.trust_sha256!==record.trust_sha256||record.evaluation.automatic_merge!==false||record.evaluation.automatic_deploy!==false)throw Error('evaluation_subject_mismatch');
+  }else throw Error('shadow_observation_status_required');
   const name='knowledge/results/patchgate/a1/'+claim.key+'.json';
   const result=await api('PUT','/repos/'+REPO+'/contents/'+name,{branch:claim.branch,message:'A1 shadow observation only; no code/merge/deploy authority',content:Buffer.from(JSON.stringify(record,null,2)+'\n').toString('base64')});
   if(result.status!==201)throw Error('observation_write_http_'+result.status);

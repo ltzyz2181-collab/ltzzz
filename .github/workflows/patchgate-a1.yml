@@ -15,7 +15,7 @@ on:
         required: true
         type: string
 permissions: {contents: read}
-concurrency: {group: patchgate-a1-shadow-observer, cancel-in-progress: false}
+concurrency: {group: 'patchgate-a1-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}', cancel-in-progress: false}
 jobs:
   tests:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
