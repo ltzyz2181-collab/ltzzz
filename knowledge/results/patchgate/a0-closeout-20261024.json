@@ -1,0 +1,58 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "status": "merged_validation_kernel_deployed_conditions_resolved",
+  "at_utc": "2026-10-24T09:01:50.915Z",
+  "implementation_pr": 221,
+  "implementation_head": "57b878fe8c925e55ce555d72bae080fb4c7357fd",
+  "merge_commit": "f624bd61aedccd8f5724dcd0ad1a2ee47c195ef0",
+  "main_validation_run": "40079490532",
+  "tests": {
+    "passed": 54,
+    "failed": 0,
+    "online_run": "40079294208"
+  },
+  "claude_audit": {
+    "pr": 224,
+    "merge_commit": "2d993d5565cb83d84d557d7926f843928e805071",
+    "original_verdict": "approve_with_conditions",
+    "conditions": [
+      "N1",
+      "N2",
+      "actual_configuration_and_original_Qwen_verdict"
+    ],
+    "closure": "code_regressions_public_configuration_and_new_native_Qwen_condition_review"
+  },
+  "qwen_review": {
+    "actual_provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "request_id": "6269ebf5-d4a9-9e21-a6ca-f18543182d19",
+    "run_id": "40079402295",
+    "finish_reason": "stop",
+    "tokens": 2394,
+    "receipt_path": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-PR224-CONFIG.json",
+    "original_output": "{\n  \"verdict\": \"approve\",\n  \"conditions\": {\n    \"N1\": \"pass\",\n    \"N2\": \"pass\",\n    \"configuration\": \"pass\"\n  },\n  \"remaining\": [\n    \"A2 still blocked: no executor has provisioned signing keys (all 'signing_enabled': false, 'signing_key_ids': []); 'trust.signing_status' = 'not_provisioned_A1_may_observe_A2_must_not_admit_unsigned_writers'; A2 requires Ed25519 key binding per executor+provider+roles, verified and admitted — not yet satisfied.\"\n  ],\n  \"limitations\": [\n    \"This review is scoped strictly to PR224 conditions N1/N2/configuration per the given evidence; no full audit, no runtime behavior validation, no wallet signature trust evaluation, and no inference beyond provided materials.\",\n    \"N1 verification relies on correct implementation of notificationMatches — assumed correct per spec; no execution or mocking performed.\",\n    \"All SHA256s and commit/run IDs are taken as provided and cross-checked against listed files/registered executors; no re-computation performed.\",\n    \"No assertion made about GitHub REST collector's fidelity — readbacks are accepted as given input per instruction ('readbacks由独立GitHub REST采集器传入，不取PR自报').\",\n    \"Configuration 'enabled=false/keys=[]' is confirmed consistent with A0 non-authorization; no expectation of active signing at this stage.\"\n  ],\n  \"review_end\": true\n}",
+    "scope": "A0_PR224_conditions_and_actual_public_configuration",
+    "previous_revise_preserved": "knowledge/results/patchgate/pr224-evidence/qianwen-original-revise.json"
+  },
+  "bootstrap": {
+    "authorization": "owner_explicit_PR224_closeout_then_merge_request",
+    "self_approved_by_PatchGate": false,
+    "automatic_gate_approval": false
+  },
+  "executor_registry": "config/patchgate-executors.json",
+  "actual_signing_configuration": {
+    "enabled": false,
+    "keys": [],
+    "transport_registration_is_not_signing_admission": true
+  },
+  "A1": "entered_preparing_separate_readonly_observer_stage_audits_required_before_activation",
+  "A2": "blocked_signing_keys_and_adapters_not_ready",
+  "B": "not_entered_testnet_only_maximum_authorization",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
