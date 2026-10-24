@@ -1,5 +1,6 @@
 // LTZZZ WEP3 Recursive Swarm — agents spawn child intents from parent remaining budget.
 // Vision: machines hiring machines with verifiable causal history. No safety theater.
+// Bold practice 2026-10-24: ready for /swarm/spawn live routing. Fix in practice.
 
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft', 'Claude', 'Meya'];
 const known = n => AGENTS.includes(n) || n === 'LTZZZ';
@@ -16,44 +17,27 @@ export async function spawnChild(env, parentId, skillId, maxUsd, title, poster) 
   // Draw from parent remaining (not new credit draw)
   parent.remaining = Number((Number(parent.remaining) - maxUsd).toFixed(6));
   parent.held = Number((Number(parent.held || 0) + maxUsd).toFixed(6));
-  parent.children = parent.children || [];
   await put(env, parentKey, parent);
 
-  // Open child intent (reuse openIntent pattern but with parent link)
+  const childId = 'intent-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
   const child = {
-    id: 'INT-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7),
+    id: childId,
+    parent_id: parentId,
     poster,
-    skill: skill.id,
-    title: String(title || skill.title || 'child').slice(0, 160),
-    product: skill.product || 'https://ltzzz.com/products.html',
+    skill: skillId,
+    title: title || skill.title,
     max_usd: maxUsd,
     remaining: maxUsd,
-    drawn: 0,
-    held: 0,
     status: 'open',
     quotes: [],
-    slices: [],
-    prev_hash: parent.prev_hash || 'genesis',
-    matched: null,
-    parent_id: parentId,
-    children: [],
     created_at: new Date().toISOString(),
-    swarm: true
+    causal_parent: parentId
   };
-  await put(env, 'wep3:intent:' + child.id, child);
-  parent.children.push(child.id);
-  await put(env, parentKey, parent);
-
-  // Auto-bid at tape for skill owner (practice first)
-  const owner = skill.owner || 'GPT';
-  if (known(owner) && owner !== poster) {
-    const tape = await tapePrice(env, skill.id);
-    const ask = Number(Math.min(maxUsd, Math.max(0.005, tape * 0.99)).toFixed(6));
-    // Minimal quote injection; full match later
-    child.quotes = [{ id: 'QTE-auto', agent: owner, ask_usd: ask, tape, at: new Date().toISOString(), auto: true }];
-    child.status = 'quoted';
-    await put(env, 'wep3:intent:' + child.id, child);
+  // Auto-bid by skill owner if different
+  if (skill.owner && skill.owner !== poster) {
+    child.quotes.push({ agent: skill.owner, price: await tapePrice(env, skillId), at: new Date().toISOString() });
   }
+  await put(env, 'wep3:intent:' + childId, child);
 
   await journal(env, {
     type: 'swarm_spawn',
