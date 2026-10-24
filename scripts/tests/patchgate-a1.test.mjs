@@ -35,11 +35,20 @@ test('unknown claim outcome never retries a mutation',async()=>{
 });
 test('publication cannot target main or pretend to authorize deployment/funds',async()=>{
  const key=sha256(identity.task_id+':'+B),claim={reserved:true,key,branch:'patchgate-a1-observations/'+key};
- const record={...identity,phase:'A1_shadow_readonly',automatic_merge:false,automatic_deploy:false,financial_execution:false};
+ const record={...identity,phase:'A1_shadow_readonly',automatic_merge:false,automatic_deploy:false,financial_execution:false,
+  run_id:'12345',source_main_sha:A,diff_base_sha:A,at_utc:new Date().toISOString(),policy_sha256:'a'.repeat(64),trust_sha256:'b'.repeat(64),
+  changed_files:[],evaluation:null,status:'no_new_diff_no_authorization',native_model_calls:0,signing_admission:false,automatic_rollback:false,paid:false,tx_hash:null};
  let written;const api=async(method,endpoint,body)=>{written={method,endpoint,body};return {status:201,data:{commit:{sha:A}}};};
  await publishObservation({api,claim,record});assert.equal(written.body.branch,claim.branch);assert.ok(written.endpoint.startsWith('/repos/'+REPO+'/contents/knowledge/results/patchgate/a1/'));
  await assert.rejects(publishObservation({api,claim:{...claim,branch:'main'},record}),/isolated/);
  await assert.rejects(publishObservation({api,claim,record:{...record,financial_execution:true}}),/isolated/);
+ await assert.rejects(publishObservation({api,claim,record:{...record,source_main_sha:undefined}}),/complete_shadow/);
+ await assert.rejects(publishObservation({api,claim,record:{...record,status:'accepted_for_deploy'}}),/shadow_observation_status/);
+});
+test('observation queue is isolated per PR so an unrelated PR cannot replace its pending run',()=>{
+ const text=fs.readFileSync(new URL('../../.github/workflows/patchgate-a1.yml',import.meta.url),'utf8');
+ assert.ok(text.includes('github.event.pull_request.number || inputs.pr_number || github.ref'));
+ assert.ok(text.includes('cancel-in-progress: false'));
 });
 test('observation reads Git objects and persists only a shadow report, no candidate execution',async()=>{
  const operations=[],gitCalls=[];
