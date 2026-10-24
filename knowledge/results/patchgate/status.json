@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "candidate_tested_qwen_reviewed_waiting_native_Claude_stage_audit",
-  "at_utc": "2026-10-24T09:22:33.918Z",
+  "status": "PR228_repaired_tested_switch_disabled_waiting_new_head_Claude_rereview_and_Qwen_adjudication",
+  "at_utc": "2026-10-24T10:00:51.788Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -38,37 +38,63 @@
     "closeout": "knowledge/results/patchgate/a0-closeout-20261024.json"
   },
   "A1": {
-    "status": "candidate_not_activated",
+    "status": "repaired_candidate_not_merged_or_activated",
     "implementation_pr": 227,
-    "implementation_head": "bf18c9fa2b3a8245db7b3b393cf7fafb8794fd59",
+    "implementation_head": "87f270d08195c3bd2be5892ab6800921c5140a03",
     "tests": {
-      "passed": 63,
+      "passed": 69,
       "failed": 0,
-      "scope": "local_and_GitHub_Node22_Git_and_API_fixtures_not_live_shared_CAS_acceptance",
-      "run_id": "40080888060",
-      "pr_run_id": "40080890725"
+      "scope": "local_Node24_and_GitHub_Node22_unit_Git_API_fixtures_not_live_runner_acceptance",
+      "push_run": "40083472444",
+      "pr_run": "40083475240",
+      "A0_regression_run": "40083475137"
     },
     "qwen": {
-      "status": "component_reviews_completed_with_original_verdicts_preserved",
+      "status": "four_component_revise_opinions_preserved_with_controller_counterevidence_pending_Claude_adjudication",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "finish_reason": "stop",
       "runs": [
-        "40080552107",
-        "40080673417",
-        "40080993845"
+        "40083553999",
+        "40083616110",
+        "40083692796",
+        "40083763195"
       ],
-      "calls": 3,
-      "total_reported_tokens": 7959,
+      "calls": 4,
+      "total_reported_tokens": 10587,
+      "original_verdicts": [
+        "revise",
+        "revise",
+        "revise",
+        "revise"
+      ],
       "api_cost": null
     },
     "claude": {
-      "status": "not_received",
+      "audit_pr": 228,
+      "audited_head": "bf18c9fa2b3a8245db7b3b393cf7fafb8794fd59",
+      "original_verdict": "revise",
+      "new_head_rereview": "not_received",
       "task_card": "ops/dispatch/inbox/claude/PLAN-PATCHGATE-ESCROW-20261023-A1.md",
-      "A0_approval_not_reused": true
+      "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/228#issuecomment-6382774387"
     },
-    "evidence_commit": "2b07ba692eb779a9cb443f5591ed0a6adb5d562a",
-    "evidence_path": "knowledge/results/patchgate/a1-review/closeout.json",
+    "evidence_commit": "f9baf502",
+    "evidence_path": "knowledge/results/patchgate/pr228-review/closeout.json",
     "merged": false,
     "production_activated": false,
-    "live_shared_CAS_verified": false
+    "live_shared_CAS_verified": false,
+    "production_switch": {
+      "name": "PATCHGATE_A1_ENABLED",
+      "observed_value": "false",
+      "source": "TinyFish_browser_UI_save_and_list_readback",
+      "run_id": "309bb597-3dfc-46db-b806-1946a9d2cef2",
+      "independent_API_readback": false
+    },
+    "live_runner_acceptance": {
+      "first_creation": "not_run",
+      "duplicate_no_new_write": "not_run",
+      "failure_record_readback": "not_run"
+    }
   },
   "A2": {
     "status": "not_entered",
@@ -82,7 +108,7 @@
     "maximum_authorized_environment": "public_testnet_fake_tokens",
     "transactions": []
   },
-  "next_phase": "A1_native_Claude_stage_audit_then_merge_and_live_runner_acceptance",
+  "next_phase": "new_head_Claude_rereview_and_engineering_disagreement_adjudication_then_merge_disabled_then_three_real_runner_checks_then_enable",
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -103,13 +129,45 @@
       "verdict": "approve_with_conditions",
       "source_head": "9d6c26854860ecaedd36d31817dd60deb8080b8e",
       "report": "knowledge/results/patchgate/claude-a0-rereview-9d6c2685.md"
+    },
+    {
+      "phase": "A1",
+      "implementation_head": "bf18c9fa2b3a8245db7b3b393cf7fafb8794fd59",
+      "tests": {
+        "passed": 63,
+        "failed": 0,
+        "scope": "local_and_GitHub_Node22_Git_and_API_fixtures_not_live_shared_CAS_acceptance",
+        "run_id": "40080888060",
+        "pr_run_id": "40080890725"
+      },
+      "qwen": {
+        "status": "component_reviews_completed_with_original_verdicts_preserved",
+        "runs": [
+          "40080552107",
+          "40080673417",
+          "40080993845"
+        ],
+        "calls": 3,
+        "total_reported_tokens": 7959,
+        "api_cost": null
+      },
+      "evidence_commit": "2b07ba692eb779a9cb443f5591ed0a6adb5d562a",
+      "evidence_path": "knowledge/results/patchgate/a1-review/closeout.json"
     }
   ],
   "limitations": [
-    "A0 deployment means main CI validation kernel only, not autonomous production mutation.",
-    "A1 is an unmerged candidate; current-stage native Claude audit has not been received.",
-    "Signing trust remains disabled with an empty key registry; no live signature admission has been demonstrated.",
-    "Fixtures and model opinions do not prove live CAS, signer isolation, production business delivery or fund movement.",
-    "Native Qwen API usage is recorded separately; paid=false/tx_hash=null denotes no wallet settlement, not free model calls."
-  ]
+    "A1 remains an unmerged implementation candidate; #228's original revise is preserved, not relabeled.",
+    "All four new Qwen component opinions are revise; exact raw opinions and deterministic counterevidence await independent Claude adjudication.",
+    "69 passing local/CI tests are not the three live runner acceptance scenarios.",
+    "The production switch was created as false and read back through the saved GitHub browser; no independent variables API readback was performed.",
+    "A2 signing stays disabled/empty-key and B has not been entered; paid=false/tx_hash=null denotes no wallet settlement, not free API/browser execution."
+  ],
+  "related_PR225": {
+    "merged": true,
+    "merge_commit": "e3f6ae8f906be5c2c5d8f8af5db8bbc0c21c2ace",
+    "inline_script_test_cases": 10,
+    "pages_run": "40082968414",
+    "pages_run_conclusion": "success",
+    "public_page_content_readback": false
+  }
 }
