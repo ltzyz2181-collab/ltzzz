@@ -3,7 +3,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {canonical, evaluate, sha256} from './lib/patchgate.mjs';
 
-const git = args => execFileSync('git',args,{encoding:'utf8',maxBuffer:2*1024*1024,env:{...process.env,GIT_NO_REPLACE_OBJECTS:'1'}});
+const git = (args,maxBuffer=2*1024*1024) => execFileSync('git',args,{encoding:'utf8',maxBuffer,env:{...process.env,GIT_NO_REPLACE_OBJECTS:'1'}});
 const ref = s => { if (!/^[a-f0-9]{40}$/.test(s || '')) throw Error('full_commit_sha_required'); return s; };
 
 export function loadBaseConfig({base, read = p => git(['show',ref(base)+':'+p])}) {
@@ -13,19 +13,23 @@ export function loadBaseConfig({base, read = p => git(['show',ref(base)+':'+p])}
   return {policy,trust,policy_sha256:sha256(canonical(policy)),trust_sha256:sha256(canonical(trust))};
 }
 
-export function collectSnapshot({base,head,taskId}) {
-  ref(base); ref(head);
+export function collectSnapshot({base,head,taskId,diffBase=base}) {
+  ref(base); ref(head);ref(diffBase);
   const configs = loadBaseConfig({base});
-  const raw = git(['diff','--raw','-z','--no-renames',base,head,'--']).split('\0');
+  const raw = git(['diff','--raw','-z','--no-renames',diffBase,head,'--']).split('\0');
   const files = [];
+  let diffBytes=0;
   for (let i=0;i<raw.length && raw[i];i+=2) {
     const bits = raw[i].split(' '), name = raw[i+1];
     if (files.length >= configs.policy.max_files) throw Error('file_limit_exceeded');
-    const diff = git(['--literal-pathspecs','diff','--no-ext-diff','--no-textconv','--no-renames','--no-color','--unified=3',base,head,'--',name]);
+    let diff;
+    try {diff=git(['--literal-pathspecs','diff','--no-ext-diff','--no-textconv','--no-renames','--no-color','--unified=3',diffBase,head,'--',name],configs.policy.max_diff_bytes-diffBytes+1);}
+    catch(error){if(error.code==='ENOBUFS')throw Error('diff_limit_exceeded');throw error;}
+    diffBytes+=Buffer.byteLength(diff);if(diffBytes>configs.policy.max_diff_bytes)throw Error('diff_limit_exceeded');
     files.push({path:name,mode:bits[1]==='000000'?bits[0].slice(1):bits[1],old_mode:bits[0].slice(1)==='000000'?null:bits[0].slice(1),
       binary:diff.includes('Binary files ') || diff.includes('GIT binary patch'),diff});
   }
-  return {...configs,snapshot:{repository:configs.policy.repository,task_id:taskId,base_sha:base,head_sha:head,
+  return {...configs,snapshot:{repository:configs.policy.repository,task_id:taskId,base_sha:base,head_sha:head,diff_base_sha:diffBase,
     policy_sha256:configs.policy_sha256,trust_sha256:configs.trust_sha256,files}};
 }
 
