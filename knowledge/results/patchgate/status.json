@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_Claude_PR233_verified_controls_adjudicated_ready_to_enable_observation",
-  "at_utc": "2026-10-24T21:34:29.526Z",
+  "status": "A1_approved_enable_attempt_not_confirmed_readback_false_browser_capability_blocked",
+  "at_utc": "2026-10-24T21:41:46.745Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -38,7 +38,7 @@
     "closeout": "knowledge/results/patchgate/a0-closeout-20261024.json"
   },
   "A1": {
-    "status": "approved_for_observation_activation_switch_not_yet_changed",
+    "status": "approved_not_activated_UI_save_not_confirmed",
     "implementation_pr": 227,
     "implementation_head": "87f270d08195c3bd2be5892ab6800921c5140a03",
     "tests": {
@@ -95,12 +95,12 @@
     "live_shared_CAS_verified": true,
     "production_switch": {
       "name": "PATCHGATE_A1_ENABLED",
+      "requested_value": "true",
       "observed_value": "false",
-      "source": "browser_UI_and_actual_runner_log",
-      "browser_run": "cba2110c-a15f-4e4b-992d-5102a2691899",
-      "runner_run": "40101318501",
-      "changed_to_true": false,
-      "change_to_true": "authorized_after_recorded_PR233_adjudication_not_yet_executed"
+      "source": "TinyFish_UI_readback_plus_two_real_PR_observe_jobs_skipped",
+      "browser_run": "56fa1648-9fb5-445b-bf0b-427f4b109fd0",
+      "change_to_true": "attempted_not_verified",
+      "browser_capability_blocker": "metered_credit_exhausted"
     },
     "live_runner_acceptance": {
       "run_id": "40101318501",
@@ -129,12 +129,41 @@
     "fork_reachability_verified": false,
     "evidence_pr": 232,
     "followups": {
-      "L8": "isolatedRecord_task_id_regex_low_defense_in_depth_separate_reviewed_PR_before_A2",
+      "L8": "draft_PR234_type_and_regex_hardening_70tests_passed_not_merged",
       "L4": "trusted_notice_actor_admission_before_A2",
       "L5": "fork_reachability_not_tested",
       "concurrent_runners": "not_tested"
     },
-    "watch_plan": "knowledge/results/patchgate/a1-acceptance-20261024/watch-plan.md"
+    "watch_plan": "knowledge/results/patchgate/a1-acceptance-20261024/watch-plan.md",
+    "activation_receipt": "knowledge/results/patchgate/a1-activation-20261024.json",
+    "first_real_PR_watch": {
+      "state": "not_active_production_watch_jobs_skipped",
+      "pulls": [
+        {
+          "pr": 234,
+          "head": "16b43ab13b4e70bff57994cfd592bb3d452dfe16",
+          "association": "OWNER",
+          "target_run": "40135168960",
+          "observe_job": "120995144954",
+          "observe": "skipped"
+        },
+        {
+          "pr": 235,
+          "head": "ce9c1eef996a460c99eaebc0fdd1709d5e5e08f5",
+          "association": "OWNER",
+          "target_run": "40135173721",
+          "observe_job": "120995091097",
+          "observe": "skipped"
+        }
+      ],
+      "baseline_observation_ref_count": 2,
+      "after_ref_count": 2,
+      "new_observation_refs": 0,
+      "external_author_samples": 0,
+      "external_live_rejection_verified": false
+    },
+    "L8_pr": 234,
+    "research_reference_pr": 235
   },
   "A2": {
     "status": "not_entered",
@@ -148,7 +177,7 @@
     "maximum_authorized_environment": "public_testnet_fake_tokens",
     "transactions": []
   },
-  "next_phase": "enable_A1_shadow_observation_and_watch_real_PRs_disable_on_any_anomaly_A2_B_remain_off",
+  "next_phase": "complete_persisted_true_then_retrigger_ready_for_review_on_real_PRs_and_verify_observation_A2_B_remain_off",
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -274,12 +303,12 @@
     }
   ],
   "limitations": [
-    "Claude PR233 independently confirmed the recorded refs/commits/blobs/files and adjudicated controls objections; its inability to independently read Actions logs/variable/ZIP/request totals remains explicit.",
-    "A1 only is approved to enable; variable has not yet been changed at this status write.",
-    "The internal task_id repeat-check is L8 low defense in depth and will be a separate reviewed PR; no production code change was made to bypass its current audit.",
-    "Open PR author census currently contains only OWNER; external-author live blocking remains unverified.",
-    "Observation refs are also idempotency locks and will not be deleted before a reviewed durable tombstone/archival mechanism exists.",
-    "A2, signing, automatic merge/business deployment, B and fund execution remain disabled."
+    "Claude PR233 approved the scoped acceptance and adjudicated Qwen controls objections; original opinions remain preserved.",
+    "Enabling was attempted but UI readback remained false; both real PR observe jobs skipped and no new observation refs were created. A1 activation has not completed.",
+    "TinyFish credit is exhausted; the available GitHub connector has no repository-variable write capability. Pending user input concerns this missing execution capability, not renewed authorization.",
+    "L8 code and 70 passing local/CI tests are submitted in draft PR234, not deployed. RSI/Flint research is draft PR235, with no model install or new inference.",
+    "All observed open PR authors are OWNER, so external-author live rejection is unverified. Existing observation refs are idempotency locks and remain intact.",
+    "A2, B, signing admission, automatic merge/business deployment and financial execution stay off."
   ],
   "related_PR225": {
     "merged": true,
