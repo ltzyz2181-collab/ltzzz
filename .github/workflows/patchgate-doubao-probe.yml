@@ -1,0 +1,101 @@
+name: PatchGate A2 Doubao probe (no admission)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['ops/dispatch/probes/patchgate-a2-doubao.json']
+  pull_request:
+    paths: ['scripts/lib/patchgate-doubao-probe.mjs', 'scripts/run-patchgate-doubao-probe.mjs', 'scripts/patchgate-a2-probe-candidate.mjs', 'scripts/tests/patchgate-doubao-probe.test.mjs', '.github/workflows/patchgate-doubao-probe.yml']
+permissions: {contents: read}
+concurrency: {group: patchgate-a2-doubao-probe, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-patchgate-doubao-probe.mjs && node --check scripts/patchgate-a2-probe-candidate.mjs && node --test scripts/tests/patchgate-doubao-probe.test.mjs
+  prepare:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      candidate_head: ${{ steps.control.outputs.candidate_head }}
+      run_live_cas: ${{ steps.control.outputs.run_live_cas }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - id: control
+        run: node scripts/run-patchgate-doubao-probe.mjs prepare
+      - uses: actions/upload-artifact@v4
+        with: {name: a2-probe-control, path: probe-out/, retention-days: 30}
+  candidate:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {contents: read}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ needs.prepare.outputs.candidate_head }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/download-artifact@v4
+        with: {name: a2-probe-control, path: '${{ runner.temp }}/a2-probe-control'}
+      - name: Fixed trusted-main harness against candidate with no model or repository-write credentials
+        env:
+          A2_PROBE_CONTROL: ${{ runner.temp }}/a2-probe-control/control.json
+          A2_PROBE_OUTPUT: ${{ runner.temp }}/a2-probe-candidate/result.json
+        run: node "$RUNNER_TEMP/a2-probe-control/candidate-harness.mjs"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: a2-probe-candidate, path: '${{ runner.temp }}/a2-probe-candidate/', retention-days: 30}
+  cas:
+    needs: prepare
+    if: needs.prepare.outputs.run_live_cas == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {contents: write}
+    strategy:
+      fail-fast: false
+      matrix: {lane: [a, b]}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Trusted main only, isolated-ref CAS; never executes candidate code
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          A2_PROBE_LANE: ${{ matrix.lane }}
+        run: node scripts/run-patchgate-doubao-probe.mjs race
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'a2-probe-race-${{ matrix.lane }}', path: probe-out/result.json, retention-days: 30}
+  doubao_assessment:
+    needs: [prepare, candidate, cas]
+    if: always() && needs.prepare.result == 'success' && needs.candidate.result == 'success' && (needs.cas.result == 'success' || needs.cas.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/download-artifact@v4
+        with: {pattern: 'a2-probe-*', path: '${{ runner.temp }}/a2-probe-reports'}
+      - name: Durable reservation then exactly one native Doubao assessment, no candidate execution
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          A2_PROBE_REPORTS: ${{ runner.temp }}/a2-probe-reports
+          DOUBAO_USE_PROXY: 'true'
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+        run: node scripts/run-patchgate-doubao-probe.mjs assess
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'a2-doubao-assessment-${{ github.run_id }}', path: probe-out/doubao-result.json, retention-days: 30}
