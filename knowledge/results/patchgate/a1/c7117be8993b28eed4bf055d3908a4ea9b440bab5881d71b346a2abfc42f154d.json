@@ -1,0 +1,96 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "head_sha": "16b43ab13b4e70bff57994cfd592bb3d452dfe16",
+  "pr_number": 234,
+  "source_main_sha": "a14528f90d3129557b4d874a9d71cc0469b8eb0f",
+  "run_id": "40165759457",
+  "at_utc": "2026-10-25T05:30:18.715Z",
+  "idempotency_key": "PLAN-PATCHGATE-ESCROW-20261023:16b43ab13b4e70bff57994cfd592bb3d452dfe16",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "41e3ef14b3209da983ee5dc77c8de3d506d8a726",
+  "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+  "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+  "changed_files": [
+    {
+      "path": "scripts/patchgate-observe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-a1.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+      "base_sha": "a14528f90d3129557b4d874a9d71cc0469b8eb0f",
+      "head_sha": "16b43ab13b4e70bff57994cfd592bb3d452dfe16",
+      "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+      "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+      "files_sha256": "fce48d547ae735eb646039350581e46dd5041035e25f172a2ef0cbcc1ea4dcf2"
+    },
+    "subject_sha256": "26cfd34d456a53d8f42663dc31ec113baa3e208e614bf96db176def1a5742152",
+    "idempotency_key": "PLAN-PATCHGATE-ESCROW-20261023:16b43ab13b4e70bff57994cfd592bb3d452dfe16",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/patchgate-observe.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-a1.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      }
+    ],
+    "reasons": [
+      "cannot_modify_own_constraints_requires_separate_trust_rollout",
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
