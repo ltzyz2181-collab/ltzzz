@@ -209,9 +209,9 @@ test('B1 changed bytes, Git blob, stale readback, path escape and unsafe clock f
   const f=fixture();
   for(const changes of [{body_base64:Buffer.from('tampered').toString('base64')},{artifact:{...f.readback.artifact,blob_sha:A}},{fetched_at_utc:'2026-10-20T00:00:00.000Z'},{fetched_at_utc:'2026-10-26T00:00:00.000Z'},{artifact:{...f.readback.artifact,path:'knowledge/results/patchgate/../other.md'}},{file_http_status:404}])
     assert.equal(rolloutApproved(externalCase(f,{readback:changes})),false);
-  const proof={provider:'github_actions',payload:f.externalProof.payload};
-  assert.equal(externalAuditProofMatches({proof,readbacks:[f.readback],subject:f.rolloutSubject,now:NaN}),false);
-  assert.equal(externalAuditProofMatches({proof,readbacks:[f.readback],subject:f.rolloutSubject,now,maxAge:-1}),false);
+  const proof={record:f.externalProof,trust:f.args.trust,readbacks:[f.readback],subject:f.rolloutSubject};
+  assert.equal(externalAuditProofMatches({...proof,now:NaN}),false);
+  assert.equal(externalAuditProofMatches({...proof,now,maxAge:-1}),false);
 });
 test('B1 only evidence arrays are excluded from bundle; signing route remains protected',async()=>{
   const {bundleDigest}=await import('../patchgate-a2-preflight.mjs'),read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
@@ -220,4 +220,18 @@ test('B1 only evidence arrays are excluded from bundle; signing route remains pr
   assert.equal(original.sha256,evidence.sha256);
   const changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:false}}):read(name)});
   assert.notEqual(original.sha256,changed.sha256);
+});
+test('B1 helper authenticates its own raw record; unsigned provider prose and corrupted signatures fail',()=>{
+  const f=fixture(),inputs={record:f.externalProof,trust:f.args.trust,readbacks:[f.readback],subject:f.rolloutSubject,now};
+  assert.equal(externalAuditProofMatches(inputs),true);
+  const forgeries=[{provider:'github_actions',payload:f.externalProof.payload},{...f.externalProof,signature:'A'.repeat(86)+'=='},{...f.externalProof,key_id:'unregistered'},{...f.externalProof,payload:{...f.externalProof.payload,verdict:'reject'}}];
+  for(const record of forgeries){assert.equal(externalAuditProofMatches({...inputs,record}),false);assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[record]}}),false);}
+});
+test('B1 schema checks are deterministic and noncanonical base64 or unsafe artifact paths are rejected',()=>{
+  const f=fixture();
+  assert.equal(rolloutApproved(externalCase(f,{metadata:{schema:'ltzzz.external-stage-audit.v0.9'}})),false);
+  for(const path of ['knowledge/results/patchgate/evil\0.md','knowledge/results/patchgate/evil\\name.md','knowledge/results/patchgate/evil／name.md','knowledge/results/patchgate/../evil.md'])
+    assert.equal(rolloutApproved(externalCase(f,{readback:{artifact:{...f.readback.artifact,path}}})),false);
+  for(const body_base64 of [f.readback.body_base64+'\n','!'+f.readback.body_base64])
+    assert.equal(rolloutApproved(externalCase(f,{readback:{body_base64}})),false);
 });
