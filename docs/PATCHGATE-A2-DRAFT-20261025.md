@@ -8,7 +8,7 @@
 
 - 整个执行器登记与已有信任根一同校验：一个执行器只能绑定一个实际提供商，历史停用密钥也不能换标签；公钥必须属于登记执行器。内存签发器核对私钥对应公钥、角色和有效期，不生成/落盘/发现任何生产私钥。
 - A2 初次只允许普通 L0 Markdown；敏感路径仍由原分类器升 L3。候选不能修改约束它自己的检查。逻辑席位不证明提供商身份。
-- 生产开启还需 Claude/Anthropic 和千问/Aliyun DashScope 两个不同提供商的签名 stage_review；普通文档候选也暂要求这两家独立复核，保守覆盖 owner 指定的第一次真实合并。
+- 经 PR #244 B1 修订，密码准入使用千问/Aliyun DashScope 与豆包/Volcengine Ark 两个实际提供商的执行器签名；Claude 仍经 PR 作阶段审计，由基础设施签回读证明但不冒充 Anthropic、不计入模型签名数量。三项缺一均阻断，详见 `docs/PATCHGATE-A2-B1-CHANNEL-20261025.md`。
 - 检查结果必须全部 completed/success、精确绑定候选 head、覆盖指定检查名，且与非作者 checks 签名里的原始检查数组摘要相同。
 - GitHub API 包装器只接受本仓固定 PR/main/ref 读取、隔离分支 CAS、create-only 回执和携带确切 head SHA 的 merge 请求。不允许任意端点、改 main ref、强推、覆盖文件或重定向。
 - 预留以 `task_id:head_sha:merge` 摘要建立共享 GitHub ref。两个同时 runner 只有一个能取得预留；未知提交或未知合并结果不删锁、不重试；预留后失败会尽力写独立结果。正式 runner 还须保存 Actions 工件作为 GitHub 写入故障时的证据。
@@ -18,8 +18,8 @@
 ## 仍明确阻止生产启用的条件
 
 1. 当前 `config/patchgate-trust.json` 仍 `enabled=false / keys=[]`，现有三个真实传输执行器均 `signing_enabled=false`。不是缺一个布尔值：必须建立隔离的签名执行器密钥与真实提供商调用路径，并审计签发流程；共享 GitHub 登录不等于 Claude 原生身份。
-2. Claude 和千问尚未审本稿的确切 head；`stage_audits=[]`、`runtime_bundle_sha256=null`。运行器必须从可信 main 固定文件清单复算 bundle（含约束代码、策略、执行器/公钥登记、有效 A2 配置；排除 bundle 摘要和 stage_audits 自身），不能信任 PR 提供的摘要。stage_review 绑定该 bundle，另存 reviewed_source_commit，避免把签名放进它自己承诺的字节而产生自引用。
-3. **GitHub 普通 merge API 只有 expected-head，没有原子 expected-base 参数。** 此库复核前后读取 base，但最后一次读到 PUT merge 之间仍有竞争窗口。生产适配器必须先接 merge queue/强制严格基线检查，或另一个经过审计的原子基线机制；本稿不宣称已解决这个窗口，不能据当前 23 项 A2 夹具测试开启自动合并。
+2. Claude #244 对旧 head 给 REVISE；本次 B1 新 head 尚待 Claude 复审，千问/豆包的真实签名同样未配。`stage_audits=[]`、`external_stage_audits=[]`、`runtime_bundle_sha256=null`。运行器必须从可信 main 固定文件清单复算 bundle（含约束代码、策略、执行器/公钥登记、有效 A2 配置；排除 bundle 摘要、stage_audits 和 external_stage_audits 自身），不能信任 PR 提供的摘要。stage_review 绑定该 bundle，另存 reviewed_source_commit，避免把签名放进它自己承诺的字节而产生自引用。
+3. **GitHub 普通 merge API 只有 expected-head，没有原子 expected-base 参数。** 此库复核前后读取 base，但最后一次读到 PUT merge 之间仍有竞争窗口。生产适配器必须先接 merge queue/强制严格基线检查，或另一个经过审计的原子基线机制；本稿不宣称已解决这个窗口，不能据当前 A2 夹具测试开启自动合并。
 4. 可信主线调用器、真实 token 作用域、GitHub CI check-run 采集及其 app 身份白名单、真实并发 runner 验收和持久回执回读仍未接通。检查数组只允许可信采集器提供，不能使用 PR JSON 自填结果。
 5. 通知白名单当前为空，A2 之外风险级别一律不放行。后续 A3 隔离目标/线上版本、B 测试网三类交易回执未开始；不因合并库存在而提前宣称部署、自动回滚或放款。
 
@@ -27,11 +27,11 @@
 
 命令：`node --test scripts/tests/patchgate-a2.test.mjs scripts/tests/patchgate.test.mjs scripts/tests/patchgate-a1.test.mjs`
 
-本地合并原 A0/A1 回归共 85/85 通过；新增 A2 为 23/23。此数量不是线上验收。
+最初版本本地 A0/A1/A2 为 85/85（A2 23/23）；B1 修订后为 91/91（A2 29/29）。此数量不是生产签名、自动合并或线上部署验收。
 
 其中新 A2 回归涵盖签名注册、独立双审、精确检查摘要、API 白名单、同键并发、预留超时、合并响应丢失、追加提交、base 前移与真实 API 传输选项。这里的成功只代表本地测试，非 GitHub runner 验收。
 
-下一步：固定此稿 head → Claude 经 PR 审计及千问原生审计 → 修复/复审 → 可信签发器和原子基线补齐 → 仍关闭开关做真实 runner acceptance → 一张普通 docs PR 自动合并并回读 → 才申请进入 A3。需要 Claude 时发送完整 PR/head 与测试工件，不用国内代执行冒充原生 Claude。
+下一步：固定此稿 head → Claude 经 PR 复审及千问/豆包实际提供商审计 → 修复/复审 → 可信签发器和原子基线补齐 → 仍关闭开关做真实 runner acceptance → 一张普通 docs PR 自动合并并回读 → 才申请进入 A3。需要 Claude 时发送完整 PR/head 与测试工件，不用国内代执行冒充原生 Claude。
 
 ## 可运行预检与签发接线
 

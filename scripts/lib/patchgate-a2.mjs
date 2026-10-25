@@ -1,5 +1,5 @@
 // A2 draft. This module is loaded only from an audited main commit, never PR code.
-import {createPrivateKey, createPublicKey, sign} from 'node:crypto';
+import {createPrivateKey, createPublicKey, createHash, sign} from 'node:crypto';
 import {authenticate, canonical, evaluate, sha256, subjectFor, TASK, validateTrust} from './patchgate.mjs';
 
 export const REPOSITORY='ltzyz2181-collab/ltzzz';
@@ -7,6 +7,40 @@ const ROOT='/repos/'+REPOSITORY, SHA=/^[a-f0-9]{40}$/, HASH=/^[a-f0-9]{64}$/;
 const ID=/^[A-Z0-9][A-Z0-9_-]{6,80}$/, BRANCH='patchgate-a2-actions/';
 const only=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
 const actor=a=>a&&typeof a.login==='string'&&!!a.login&&/^\d+$/.test(String(a.id||''));
+export const A2_MODEL_SIGNERS=Object.freeze(['aliyun_dashscope','volcengine_ark']);
+const CLAUDE_CHANNEL=Object.freeze({kind:'repository_pr_readback',required_before_rollout:true,signing_provider:'github_actions',proof_role:'external_audit_readback',native_authorship_verified:false,counts_toward_model_quorum:false});
+
+// An infrastructure signature proves a hash-bound PR/file readback, not that
+// Anthropic generated the report. It never replaces either native model signer.
+export function externalAuditProofMatches({proof,readbacks,subject,now,maxAge=86400}) {
+  try {
+    if(!Number.isFinite(now)||!Number.isSafeInteger(maxAge)||maxAge<1||!Array.isArray(readbacks)
+      ||proof?.provider!=='github_actions'||proof.payload?.role!=='external_audit_readback')return false;
+    const p=proof.payload,r=readbacks.find(r=>sha256(canonical(r))===p.readback_sha256);
+    if(!r||r.schema!=='ltzzz.external-audit-pr-readback.v1'||r.source!=='github_rest_immutable_pr_file'
+      ||r.repository!==REPOSITORY||r.pr_http_status!==200||r.file_http_status!==200
+      ||!Number.isSafeInteger(r.pr_number)||r.pr_number<1||!SHA.test(r.pr_head_sha||'')
+      ||r.pr_url!=='https://github.com/'+REPOSITORY+'/pull/'+r.pr_number
+      ||!actor({login:r.submitter_login,id:r.submitter_id})
+      ||!/^knowledge\/results\/patchgate\/[A-Za-z0-9_/-]+\.md$/.test(r.artifact?.path||'')||r.artifact.path.split('/').includes('..')
+      ||!SHA.test(r.artifact.blob_sha||'')||!HASH.test(r.artifact.sha256||'')
+      ||typeof r.body_base64!=='string'||r.body_base64.length>140000||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(r.fetched_at_utc||''))return false;
+    const bytes=Buffer.from(r.body_base64,'base64'),text=bytes.toString('utf8'),observed=Date.parse(r.fetched_at_utc);
+    const blobSHA=createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
+    if(bytes.toString('base64')!==r.body_base64||!bytes.length||bytes.length>100000||!Buffer.from(text).equals(bytes)
+      ||sha256(bytes)!==r.artifact.sha256||blobSHA!==r.artifact.blob_sha||!Number.isFinite(observed)||observed>now||now-observed>maxAge*1000)return false;
+    const metadata=/^```json\r?\n([\s\S]*?)\r?\n```/.exec(text);
+    const audit=JSON.parse(metadata?.[1]||'null');
+    return audit?.schema==='ltzzz.external-stage-audit.v1'&&audit.task_id===subject.task_id&&audit.phase==='A2'&&audit.seat==='claude'
+      &&audit.verdict==='approve'&&SHA.test(audit.reviewed_source_commit||'')&&audit.runtime_bundle_sha256===subject.runtime_bundle_sha256
+      &&r.reviewed_bundle_sha256===subject.runtime_bundle_sha256&&r.reviewed_source_commit===audit.reviewed_source_commit
+      &&r.reviewed_bundle_verification==='trusted_base_fixed_manifest'&&r.native_authorship_verified===false
+      &&p.seat==='claude'&&p.channel==='repository_pr_readback'&&p.verdict==='approve'
+      &&p.reviewed_source_commit===audit.reviewed_source_commit&&p.artifact_sha256===r.artifact.sha256
+      &&p.audit_pr_number===r.pr_number&&p.audit_pr_head_sha===r.pr_head_sha
+      &&p.native_authorship_verified===false&&p.counts_toward_model_quorum===false;
+  }catch{return false;}
+}
 
 // Disabled historical keys also retain their original provider; rotation is not relabeling.
 export function validateExecutorRegistry({registry,trust}) {
@@ -48,8 +82,9 @@ export function notificationActorAllowed({readback,proof,allowlist,authorExecuto
 export function validateA2Config(config) {
   if(config?.schema_version!==1||config.task_id!==TASK||config.phase!=='A2'||config.repository!==REPOSITORY||typeof config.enabled!=='boolean'
     ||config.scope!=='ordinary_markdown_only'||canonical(config.allowed_risk_classes)!==canonical(['L0'])||config.merge_method!=='merge'
-    ||canonical(config.required_stage_auditors)!==canonical(['anthropic','aliyun_dashscope'])
-    ||canonical(config.required_candidate_review_providers)!==canonical(['anthropic','aliyun_dashscope'])
+    ||canonical(config.required_stage_auditors)!==canonical(A2_MODEL_SIGNERS)
+    ||canonical(config.required_candidate_review_providers)!==canonical(A2_MODEL_SIGNERS)
+    ||canonical(config.claude_audit_channel)!==canonical(CLAUDE_CHANNEL)||!Array.isArray(config.external_stage_audits)
     ||!Array.isArray(config.notification_actors)||config.notification_actors.some(a=>!actor(a)||typeof a.executor!=='string'||!a.executor)
     ||typeof config.base_compare_and_swap_verified!=='boolean'||!Array.isArray(config.stage_audits)||!Array.isArray(config.required_check_names)||!config.required_check_names.length
     ||config.required_check_names.some(x=>typeof x!=='string'||!x)||config.require_all_completed_checks!==true
@@ -57,7 +92,7 @@ export function validateA2Config(config) {
   return config;
 }
 
-export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now=Date.now()}) {
+export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,externalAuditReadbacks=[],now=Date.now()}) {
   validateA2Config(config);
   if(config.enabled!==true||config.base_compare_and_swap_verified!==true||config.production_signing_keys_provisioned!==true||!validateExecutorRegistry({registry,trust})
     ||!SHA.test(runnerSha||'')||!HASH.test(runtimeBundleSha256||'')||config.runtime_bundle_sha256!==runtimeBundleSha256)return false;
@@ -65,7 +100,9 @@ export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSh
   // is metadata, not a self-referential commit containing its own signature.
   const subject={task_id:TASK,phase:'A2',runtime_bundle_sha256:runtimeBundleSha256};
   const proofs=config.stage_audits.map(a=>authenticate(a,{trust,subject,role:'stage_review',now,maxAge:86400})).filter(a=>a?.payload.verdict==='approve'&&SHA.test(a.payload.reviewed_source_commit||'')&&HASH.test(a.payload.artifact_sha256||''));
-  return config.required_stage_auditors.every(provider=>proofs.some(p=>p.provider===provider))&&new Set(proofs.map(p=>p.executor)).size>=2;
+  const external=config.external_stage_audits.map(a=>authenticate(a,{trust,subject,role:'external_audit_readback',now,maxAge:86400})).filter(Boolean);
+  return config.required_stage_auditors.every(provider=>proofs.some(p=>p.provider===provider))&&new Set(proofs.map(p=>p.executor)).size>=2
+    &&external.some(proof=>externalAuditProofMatches({proof,readbacks:externalAuditReadbacks,subject,now}));
 }
 
 export function checksSatisfied({checkRuns,config,headSha}) {
@@ -130,11 +167,11 @@ async function currentPR(api,context){
   if(main.status!==200||main.data?.ref!=='refs/heads/main'||main.data.object?.sha!==context.runnerSha)throw Error('A2_base_moved_requalify');
 }
 
-export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations,checkRuns,runnerSha,runtimeBundleSha256,prNumber,runId,now=Date.now()}) {
+export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations,checkRuns,runnerSha,runtimeBundleSha256,externalAuditReadbacks=[],prNumber,runId,now=Date.now()}) {
   // All arguments except PR identity/diff are collected by trusted main code.
   if(!Number.isSafeInteger(prNumber)||prNumber<1||!/^\d+$/.test(runId||''))throw Error('A2_executor_context_required');
   const subject=subjectFor(snapshot),context={number:prNumber,headSha:subject.head_sha,runnerSha};
-  if(subject.base_sha!==runnerSha||!rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now}))return {status:'A2_disabled_or_missing_audited_signers',automatic_merge:false};
+  if(subject.base_sha!==runnerSha||!rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,externalAuditReadbacks,now}))return {status:'A2_disabled_or_missing_audited_signers',automatic_merge:false};
   const evaluation=evaluate({policy,trust,snapshot,attestations,now});
   const proofs=attestations.map(a=>authenticate(a,{trust,subject,role:'review',now,maxAge:policy.max_review_age_seconds})).filter(a=>!!a&&a.executor!==evaluation.author_executor&&a.provider!==evaluation.author_provider&&a.payload.verdict==='approve'&&a.payload.generation_verified===true&&a.payload.metadata_source==='provider_response'&&typeof a.payload.model==='string'&&!!a.payload.model&&['stop','end_turn'].includes(a.payload.finish_reason)&&HASH.test(a.payload.output_sha256||''));
   const boundChecks=attestations.map(a=>authenticate(a,{trust,subject,role:'checks',now,maxAge:policy.max_review_age_seconds})).some(a=>!!a&&a.executor!==evaluation.author_executor&&a.payload.passed===true&&a.payload.checker_base_sha===runnerSha&&a.payload.checks_sha256===sha256(canonical(checkRuns)));

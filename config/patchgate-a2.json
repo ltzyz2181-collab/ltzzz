@@ -10,12 +10,12 @@
   ],
   "merge_method": "merge",
   "required_stage_auditors": [
-    "anthropic",
-    "aliyun_dashscope"
+    "aliyun_dashscope",
+    "volcengine_ark"
   ],
   "required_candidate_review_providers": [
-    "anthropic",
-    "aliyun_dashscope"
+    "aliyun_dashscope",
+    "volcengine_ark"
   ],
   "notification_actors": [],
   "runtime_bundle_sha256": null,
@@ -33,7 +33,19 @@
     "A0-A3 labels contain L0-L3 risk levels; owner L4 notice means future highest-risk rollout, not a new permissive grade.",
     "No signatures, Claude PR review, or runner live merge acceptance is claimed by configuration.",
     "notificationActorAllowed is an unconsumed future high-risk helper; no L3/A4 notification admission is implemented or activated.",
-    "No production caller CLI/workflow is connected to mergeDocsOnce; preflight is read-only."
+    "No production caller CLI/workflow is connected to mergeDocsOnce; preflight is read-only.",
+    "B1 selects Qwen and Doubao executor attestations, never an Anthropic key held by GPT or a model. Real key enrollment remains B4 and is not completed.",
+    "Claude PR audit is still required. An infrastructure readback signature proves an immutable GitHub artifact, not native Anthropic authorship; it cannot count toward the two model signers.",
+    "A trusted live PR/file and reviewed-code bundle collector for external_audit_readback is not connected. Caller-provided prose or an unsigned readback cannot enable A2."
   ],
-  "base_compare_and_swap_verified": false
+  "base_compare_and_swap_verified": false,
+  "claude_audit_channel": {
+    "kind": "repository_pr_readback",
+    "required_before_rollout": true,
+    "signing_provider": "github_actions",
+    "proof_role": "external_audit_readback",
+    "native_authorship_verified": false,
+    "counts_toward_model_quorum": false
+  },
+  "external_stage_audits": []
 }

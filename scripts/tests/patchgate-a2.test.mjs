@@ -1,17 +1,17 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {generateKeyPairSync} from 'node:crypto';
+import {generateKeyPairSync,createHash} from 'node:crypto';
 import {canonical, sha256, subjectFor, TASK} from '../lib/patchgate.mjs';
-import {validateExecutorRegistry,signExecutorAttestation,notificationActorAllowed,validateA2Config,rolloutApproved,checksSatisfied,validateA2Request,a2GithubApi,mergeDocsOnce} from '../lib/patchgate-a2.mjs';
+import {validateExecutorRegistry,signExecutorAttestation,notificationActorAllowed,validateA2Config,rolloutApproved,checksSatisfied,validateA2Request,a2GithubApi,mergeDocsOnce,externalAuditProofMatches} from '../lib/patchgate-a2.mjs';
 const policy=JSON.parse(fs.readFileSync(new URL('../../config/patch-policy.json',import.meta.url)));
 const defaults=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-a2.json',import.meta.url)));
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),H='1'.repeat(64),REPO='ltzyz2181-collab/ltzzz',ROOT='/repos/'+REPO;
 const now=Date.parse('2026-10-25T08:00:00Z');
 // Test-only, process-local ephemeral keys. Never exported to production config.
-const pairs=['openai','anthropic','aliyun_dashscope','github_actions'].map((provider,i)=>({...generateKeyPairSync('ed25519'),provider,id:'fixture-key-'+i,executor:'fixture-executor-'+i}));
+const pairs=['openai','volcengine_ark','aliyun_dashscope','github_actions'].map((provider,i)=>({...generateKeyPairSync('ed25519'),provider,id:'fixture-key-'+i,executor:'fixture-executor-'+i}));
 function fixture(){
-  const trust={schema_version:1,enabled:true,keys:pairs.map(p=>({id:p.id,executor:p.executor,provider:p.provider,enabled:true,roles:p.provider==='github_actions'?['checks']:['author','review','stage_review'],public_key_pem:p.publicKey.export({format:'pem',type:'spki'}),not_before:'2026-10-24T00:00:00Z',not_after:'2026-10-26T00:00:00Z'}))};
+  const trust={schema_version:1,enabled:true,keys:pairs.map(p=>({id:p.id,executor:p.executor,provider:p.provider,enabled:true,roles:p.provider==='github_actions'?['checks','external_audit_readback']:['author','review','stage_review'],public_key_pem:p.publicKey.export({format:'pem',type:'spki'}),not_before:'2026-10-24T00:00:00Z',not_after:'2026-10-26T00:00:00Z'}))};
   const registry={schema_version:1,repository:REPO,executors:trust.keys.map(k=>({id:k.executor,provider:k.provider,signing_key_ids:[k.id],roles:k.roles,signing_enabled:true}))};
   const sign=(i,payload)=>signExecutorAttestation({registry,trust,executorId:pairs[i].executor,keyId:pairs[i].id,privateKey:pairs[i].privateKey.export({format:'pem',type:'pkcs8'}),payload:{at_utc:new Date(now).toISOString(),...payload}});
   const snapshot={repository:REPO,task_id:TASK,base_sha:A,head_sha:B,policy_sha256:sha256(canonical(policy)),trust_sha256:sha256(canonical(trust)),files:[{path:'docs/a2-acceptance.md',mode:'100644',old_mode:null,diff:'@@ -0,0 +1 @@\n+ordinary documentation only\n',binary:false}]};
@@ -20,6 +20,12 @@ function fixture(){
   const review=i=>sign(i,{subject,role:'review',verdict:'approve',generation_verified:true,metadata_source:'provider_response',model:'fixture-native-'+i,finish_reason:'stop',output_sha256:H});
   const rolloutSubject={task_id:TASK,phase:'A2',runtime_bundle_sha256:H};
   const config={...defaults,enabled:true,base_compare_and_swap_verified:true,production_signing_keys_provisioned:true,runtime_bundle_sha256:H,stage_audits:[1,2].map(i=>sign(i,{subject:rolloutSubject,role:'stage_review',verdict:'approve',artifact_sha256:H,reviewed_source_commit:A}))};
+  const auditMetadata={schema:'ltzzz.external-stage-audit.v1',task_id:TASK,phase:'A2',seat:'claude',verdict:'approve',reviewed_source_commit:A,runtime_bundle_sha256:H};
+  const auditBytes=Buffer.from('```json\n'+JSON.stringify(auditMetadata)+'\n```\nFixture external report, not a native provider attestation.\n');
+  const readback={schema:'ltzzz.external-audit-pr-readback.v1',source:'github_rest_immutable_pr_file',repository:REPO,pr_http_status:200,file_http_status:200,pr_number:244,pr_head_sha:C,pr_url:'https://github.com/'+REPO+'/pull/244',submitter_login:'fixture-audit-submitter',submitter_id:'42',artifact:{path:'knowledge/results/patchgate/a2-fixture-audit.md',blob_sha:C,sha256:sha256(auditBytes)},body_base64:auditBytes.toString('base64'),fetched_at_utc:new Date(now).toISOString(),reviewed_source_commit:A,reviewed_bundle_sha256:H,reviewed_bundle_verification:'trusted_base_fixed_manifest',native_authorship_verified:false};
+  readback.artifact.blob_sha=createHash('sha1').update(Buffer.from('blob '+auditBytes.length+'\0')).update(auditBytes).digest('hex');
+  const externalProof=sign(3,{subject:rolloutSubject,role:'external_audit_readback',seat:'claude',channel:'repository_pr_readback',verdict:'approve',reviewed_source_commit:A,artifact_sha256:readback.artifact.sha256,audit_pr_number:244,audit_pr_head_sha:C,readback_sha256:sha256(canonical(readback)),native_authorship_verified:false,counts_toward_model_quorum:false});
+  config.external_stage_audits=[externalProof];
   const pr={number:250,state:'open',draft:false,merged:false,base:{ref:'main',sha:A,repo:{full_name:REPO}},head:{sha:B,repo:{full_name:REPO}},author_association:'OWNER',mergeable:true,mergeable_state:'clean'};
   const state={refs:new Map(),merges:0,receipts:[],pr,main:A};
   const api=async(method,url,body)=>{
@@ -38,8 +44,8 @@ function fixture(){
     if(method==='PUT'&&url.includes('/contents/knowledge/results/patchgate/a2/')){state.receipts.push(JSON.parse(Buffer.from(body.content,'base64').toString()));return {status:201};}
     throw Error('fixture_unhandled');
   };
-  const args={api,config,registry,policy,trust,snapshot,attestations:[author,checks,review(1),review(2)],checkRuns,runnerSha:A,runtimeBundleSha256:H,prNumber:250,runId:'12345',now};
-  return {args,state,sign,subject,author,checks,review};
+  const args={api,config,registry,policy,trust,snapshot,attestations:[author,checks,review(1),review(2)],checkRuns,runnerSha:A,runtimeBundleSha256:H,externalAuditReadbacks:[readback],prNumber:250,runId:'12345',now};
+  return {args,state,sign,subject,author,checks,review,readback,externalProof,rolloutSubject};
 }
 
 test('production configuration remains disabled, unsigned and no side effects',()=>{
@@ -65,7 +71,7 @@ test('signer checks private/public correspondence and refuses unregistered roles
   const f=fixture();assert.throws(()=>signExecutorAttestation({...f.args,executorId:pairs[0].executor,keyId:pairs[0].id,privateKey:pairs[1].privateKey.export({type:'pkcs8',format:'pem'}),payload:{role:'author',subject:f.subject,at_utc:new Date(now).toISOString()}}),/mismatch/);
   assert.throws(()=>f.sign(0,{subject:f.subject,role:'checks'}),/role_not_allowed/);
 });
-test('two exact rollout signers required; missing Claude or changed runtime blocks',()=>{
+test('two native model signers plus separate Claude PR readback required',()=>{
   const f=fixture();assert.equal(rolloutApproved({...f.args}),true);
   assert.equal(rolloutApproved({...f.args,config:{...f.args.config,stage_audits:f.args.config.stage_audits.slice(1)}}),false);
   assert.equal(rolloutApproved({...f.args,runnerSha:'bad'}),false);assert.equal(rolloutApproved({...f.args,runtimeBundleSha256:'2'.repeat(64)}),false);
@@ -161,4 +167,57 @@ test('receipt transport rejects malformed/extra/funds fields before any HTTP req
 test('base read wrapper only accepts one exact main ref route',()=>{
   validateA2Request('GET',ROOT+'/git/ref/heads/main');
   for(const route of ['/git/ref/heads/main?ref=evil','/git/ref/heads/main/../evil','/git/ref/heads/main/','/git/ref/heads/main%0a','/git/ref/heads/other'])assert.throws(()=>validateA2Request('GET',ROOT+route));
+});
+
+function externalCase(f,{metadata={},readback={},payload={}}={}){
+  const r=structuredClone(f.readback),text=Buffer.from(r.body_base64,'base64').toString('utf8');
+  const original=JSON.parse(/^```json\n([\s\S]*?)\n```/.exec(text)[1]);
+  const bytes=Buffer.from('```json\n'+JSON.stringify({...original,...metadata})+'\n```\nExternal fixture report.\n');
+  r.body_base64=bytes.toString('base64');r.artifact.sha256=sha256(bytes);
+  r.artifact.blob_sha=createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
+  Object.assign(r,readback);
+  const proof=f.sign(3,{...f.externalProof.payload,readback_sha256:sha256(canonical(r)),artifact_sha256:r.artifact.sha256,...payload});
+  return {...f.args,config:{...f.args.config,external_stage_audits:[proof]},externalAuditReadbacks:[r]};
+}
+test('B1 actual model signers are Qwen and Doubao; Claude has no delegated Anthropic key',()=>{
+  assert.deepEqual(defaults.required_stage_auditors,['aliyun_dashscope','volcengine_ark']);
+  assert.deepEqual(defaults.required_candidate_review_providers,['aliyun_dashscope','volcengine_ark']);
+  assert.equal(defaults.claude_audit_channel.native_authorship_verified,false);
+  assert.equal(defaults.claude_audit_channel.counts_toward_model_quorum,false);
+  assert.equal(defaults.claude_audit_channel.required_before_rollout,true);
+  assert.throws(()=>validateA2Config({...defaults,required_stage_auditors:['anthropic','aliyun_dashscope']}));
+  assert.throws(()=>validateA2Config({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:false}}));
+});
+test('B1 two model signatures without Claude immutable PR readback still block rollout',()=>{
+  const f=fixture();assert.equal(rolloutApproved({...f.args,externalAuditReadbacks:[]}),false);
+  assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[]}}),false);
+  assert.equal(rolloutApproved(externalCase(f)),true);
+});
+test('B1 infrastructure Claude readback cannot replace either native model signature',()=>{
+  const f=fixture();assert.equal(rolloutApproved({...f.args,config:{...f.args.config,stage_audits:[f.args.config.stage_audits[0],f.externalProof]}}),false);
+  assert.equal(rolloutApproved(externalCase(f,{payload:{native_authorship_verified:true}})),false);
+  assert.equal(rolloutApproved(externalCase(f,{payload:{counts_toward_model_quorum:true}})),false);
+  const proof=f.sign(1,{...f.externalProof.payload,role:'stage_review'});
+  assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[proof]}}),false);
+});
+test('B1 old REVISE, forged subject, wrong report head and unchecked bundle never approve',()=>{
+  const f=fixture();
+  for(const changes of [{metadata:{verdict:'revise'}},{metadata:{verdict:'reject'}},{metadata:{runtime_bundle_sha256:'0'.repeat(64)}},{metadata:{task_id:'ANOTHER-TASK'}},{metadata:{seat:'gpt'}},{metadata:{reviewed_source_commit:C}},{readback:{reviewed_bundle_verification:'model_self_report'}},{payload:{audit_pr_head_sha:A}}])
+    assert.equal(rolloutApproved(externalCase(f,changes)),false);
+});
+test('B1 changed bytes, Git blob, stale readback, path escape and unsafe clock fail closed',()=>{
+  const f=fixture();
+  for(const changes of [{body_base64:Buffer.from('tampered').toString('base64')},{artifact:{...f.readback.artifact,blob_sha:A}},{fetched_at_utc:'2026-10-20T00:00:00.000Z'},{fetched_at_utc:'2026-10-26T00:00:00.000Z'},{artifact:{...f.readback.artifact,path:'knowledge/results/patchgate/../other.md'}},{file_http_status:404}])
+    assert.equal(rolloutApproved(externalCase(f,{readback:changes})),false);
+  const proof={provider:'github_actions',payload:f.externalProof.payload};
+  assert.equal(externalAuditProofMatches({proof,readbacks:[f.readback],subject:f.rolloutSubject,now:NaN}),false);
+  assert.equal(externalAuditProofMatches({proof,readbacks:[f.readback],subject:f.rolloutSubject,now,maxAge:-1}),false);
+});
+test('B1 only evidence arrays are excluded from bundle; signing route remains protected',async()=>{
+  const {bundleDigest}=await import('../patchgate-a2-preflight.mjs'),read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
+  const original=bundleDigest({read});
+  const evidence=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,external_stage_audits:[{untrusted:true}]}):read(name)});
+  assert.equal(original.sha256,evidence.sha256);
+  const changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:false}}):read(name)});
+  assert.notEqual(original.sha256,changed.sha256);
 });
