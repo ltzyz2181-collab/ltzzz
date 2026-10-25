@@ -104,3 +104,8 @@ test('receipt wrapper rejects authority escalation and card/key mismatch before 
  }
  assert.equal(sent,0);
 });
+test('retained overlong model text is explicitly truncated and cannot count as complete generation',async()=>{
+ const f=transport();let calls=0;
+ const r=await assessProbeOnce({api:f.api,card,sourceCommit:A,runId:'123',evidence:{},model:'fixture',call:async()=>{calls++;return {ok:true,model:'fixture',model_source:'provider_response',finish_reason:'stop',output:'x'.repeat(20001)};}});
+ assert.equal(calls,1);assert.equal(r.output_truncated,true);assert.equal(r.output.length,20000);assert.equal(r.native_doubao_generation_verified,false);assert.equal(r.status,'model_incomplete_or_uncertain_no_retry');assert.equal(r.accepted,false);assert.equal(r.receipt_persisted,true);
+});
