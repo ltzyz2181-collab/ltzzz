@@ -1,0 +1,113 @@
+{
+  "schema": "ltzzz.deferred-plan.v1",
+  "recorded_at_utc": "2026-10-25T06:18:43.770Z",
+  "owner_instruction": "先登记；先完成积压；暂不部署这三项；owner每天查看审计报告",
+  "scope": "planning_only_no_execution_or_deployment",
+  "third_item_assumption": "Pi Agent/Ollama本地Skill审计；若owner所指第三项不同须更正，不能用本登记推导部署授权",
+  "current_baseline": {
+    "source_commit": "ae97c338490c89e6c4bfaff15bcae3d48eada0f7",
+    "open_warning_cases": 51,
+    "oversight_source": "knowledge/results/dispatch/oversight/latest.json",
+    "oversight_run": "40167734468",
+    "A1": "enabled_isolated_observer_only",
+    "A2": "not_enabled",
+    "B": "not_enabled"
+  },
+  "items": [
+    {
+      "key": "PR235",
+      "existing_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+      "pr": 235,
+      "head": "ce9c1eef996a460c99eaebc0fdd1709d5e5e08f5",
+      "goal": "借鉴研究循环；以L8为第一例量化修复率/回归/耗时/用量，固定评测与独立复核",
+      "choice": "reuse_existing_models_no_Flint_install_or_GPU_rental",
+      "status": "deferred_until_backlog_closeout",
+      "execution_claimed": false,
+      "rough_engineering_estimate": "1–2有效工程工作日；起算于积压关闭及实现/审核执行器就绪，非自动完成承诺"
+    },
+    {
+      "key": "PR226",
+      "existing_task_id": "PLAN-EXTERNAL-MARKETS-20261024",
+      "pr": 226,
+      "head": "ddcff4fbb6829e4324930a601cfcf9aad7fa0836",
+      "goal": "先M0官方事实评分表，再决定M1免费任务；不启动付费/押金/签名",
+      "status": "deferred_until_backlog_closeout",
+      "execution_claimed": false,
+      "rough_engineering_estimate": "M0约0.5–1有效工程工作日；外部注册/接单/验收与M1/M2无可承诺完成日期",
+      "pre_execution_corrections": [
+        "reasoningHash不是Skill回执通用必填项，按实际回执模板",
+        "历史地区限制/钱包未核验等陈述重新查官方资料及wallet/addresses.md，不当当前已核实事实"
+      ]
+    },
+    {
+      "key": "PI-SKILL-AUDIT",
+      "existing_task_id": null,
+      "proposal_id": "PI-SKILL-AUDIT",
+      "goal": "Pi接本地Ollama开源千问做只读Skill审计，云端API作为单独计费路由",
+      "status": "registered_idea_deferred_not_dispatched",
+      "execution_claimed": false,
+      "rough_engineering_estimate": "硬件/运行时可用后约1–2有效工程工作日；不包含下载/兼容性排障或持续运行机器准备",
+      "constraints": [
+        "本地开源权重可免云端API费；Ollama cloud/:cloud不等于本地免费",
+        "豆包服务不能靠Ollama配置变为免费本地模型，须核实具体模型权重/许可证",
+        "实际模型、权重digest、Pi/Ollama版本和工件hash由执行器记录",
+        "同一实际模型换逻辑席位不能互相独立审计",
+        "初期只读审计；不得写自身约束、自动合并、部署、付款或下载执行外部Skill脚本"
+      ]
+    }
+  ],
+  "activation_gate": {
+    "state": "blocked_pending_backlog_closeout",
+    "requirements": [
+      "按原任务号逐项关闭积压；外部阻塞须有证据、责任席和独立处置结论，不能删警告冒充完成",
+      "需要实际可执行的任务消费者与唯一认领/租约，避免总控与备援重复执行",
+      "各项按既有阶段获得独立复核；#235运行接入保留A2之后的顺序",
+      "owner本轮只授权登记，没有启动本地安装/模型下载/GPU租赁/新定时/付费外部订单"
+    ]
+  },
+  "automation": {
+    "existing_rules_supervision": "existing hourly GitHub Actions sentinel; persistence and scan do not equal task execution",
+    "claude": {
+      "work_status": "active_external_audit_and_planning",
+      "delivery_channel": "repo_pr_only",
+      "automatic_free_client_wakeup_verified": false,
+      "native_api_status": "blocked_insufficient_api_credits",
+      "accepted_three_items": false,
+      "notes": "登记或评论不等于Claude接单；没有后台自动完成日期。不得把国内代执行署名为Claude。"
+    },
+    "new_schedules": 0,
+    "can_promise_automatic_completion_date": false
+  },
+  "owner_actions": {
+    "now": [
+      "查看已有审计报告；不需安装Pi、租GPU、充值或重复手工派单"
+    ],
+    "conditional_later": [
+      "Pi本机阶段核对非敏感硬件/系统信息并允许本机操作，确认运行机器能保持在线",
+      "平台强制本人登录、实名、验证码或钱包签名时由本人完成",
+      "若要求Claude原生无人值守审计，先接通并实测其调用/唤醒通道；当前未接通"
+    ]
+  },
+  "sources": [
+    {
+      "url": "https://pi.dev/",
+      "kind": "official_agent_harness_overview"
+    },
+    {
+      "url": "https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md",
+      "blob_sha": "e076ac1399826679bc5a1bfef46049d124db2261",
+      "kind": "official_Pi_model_configuration"
+    },
+    {
+      "url": "https://docs.ollama.com/integrations/pi",
+      "kind": "official_Pi_Ollama_integration"
+    }
+  ],
+  "installed": false,
+  "deployed": false,
+  "model_calls": 0,
+  "new_paid_schedules": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
