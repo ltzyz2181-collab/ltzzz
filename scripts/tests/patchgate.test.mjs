@@ -14,6 +14,7 @@ const A = 'a'.repeat(40), B = 'b'.repeat(40), C = 'c'.repeat(40);
 const pairs = ['openai','anthropic','aliyun_dashscope','volcengine_ark'].map((provider,i) => ({provider,id:'executor-'+i,...generateKeyPairSync('ed25519')}));
 const trust = {schema_version:1,enabled:true,keys:pairs.map(k => ({id:k.id,provider:k.provider,executor:'test-executor-'+k.id,enabled:true,roles:['author','review','checks','deployment','notification','supervision','receipt_write'],
   not_before:'2026-10-22T00:00:00Z',not_after:'2026-10-24T00:00:00Z',public_key_pem:k.publicKey.export({type:'spki',format:'pem'})}))};
+const fixturePolicy = {...policy,notification_actor_allowlist:[{login:'test-notifier-bot',id:42,executor:trust.keys[3].executor}]};
 const file = name => ({path:name,mode:'100644',old_mode:'100644',diff:'diff --git a/'+name+' b/'+name+'\n--- a/'+name+'\n+++ b/'+name+'\n@@ -1 +1 @@\n-old\n+new\n'});
 function noticeFor(subject,attestation,index=3) {
   const body='OWNER=@ltzyz2181-collab\nTASK_ID='+subject.task_id+'\nHEAD_SHA='+subject.head_sha+'\nSUBJECT_SHA256='+sha256(canonical(subject))+'\n';
@@ -23,7 +24,7 @@ function noticeFor(subject,attestation,index=3) {
   return {proof,readback};
 }
 function fixture(name='tests/example.test.mjs',configuration={}) {
-  const p=configuration.policy||policy,t=configuration.trust||trust;
+  const p=configuration.policy||fixturePolicy,t=configuration.trust||trust;
   const snapshot = {repository:p.repository,task_id:TASK,base_sha:A,head_sha:B,policy_sha256:sha256(canonical(p)),trust_sha256:sha256(canonical(t)),files:[file(name)]};
   const subject = subjectFor(snapshot);
   const attestation = (index,role,extra={}) => {
@@ -78,7 +79,7 @@ test('H2 a hand-authored accepted/paid receipt needs a BASE-authorized signed wr
   const name='knowledge/results/accepted.json',f=fixture(name);
   const notify=x=>x.notification.proof;
   assert.ok(f.run([f.author,f.checks,f.review(1),f.review(2),notify(f),f.attestation(3,'receipt_write',{paths:[name],accepted:true,paid:true})]).reasons.includes('authenticated_receipt_writer_required'));
-  const p={...policy,receipt_writer_rules:policy.receipt_writer_rules.map(r=>({...r,executors:[trust.keys[3].executor]}))},g=fixture(name,{policy:p});
+  const p={...fixturePolicy,receipt_writer_rules:policy.receipt_writer_rules.map(r=>({...r,executors:[trust.keys[3].executor]}))},g=fixture(name,{policy:p});
   const base=[g.author,g.checks,g.review(1),g.review(2),notify(g)];
   assert.equal(g.run(base).validation_passed,false);
   assert.equal(g.run([...base,g.attestation(3,'receipt_write',{paths:['knowledge/results/other.json']})]).validation_passed,false);
@@ -176,6 +177,23 @@ test('N1 author cannot sign their own notice, even when readback is genuine',()=
   assert.ok(f.run([f.author,f.checks,f.review(1),f.review(2),self.proof]).reasons.includes('owner_notification_evidence_required'));
   const r=f.run([f.author,f.checks,f.review(1),f.review(2),f.notification.proof]);
   assert.equal(r.validation_passed,true);assert.equal(r.notification_readback_verified,true);assert.deepEqual(r.notification_executors,[trust.keys[3].executor]);
+});
+test('L3 trusted notification actor allowlist rejects unapproved actor, ID or executor',()=>{
+  const allowed={login:'test-notifier-bot',id:42,executor:trust.keys[3].executor};
+  for(const list of [[],[{...allowed,id:43}],[{...allowed,login:'other'}],[{...allowed,executor:'unregistered-notifier'}]]){
+    const f=fixture('config/example.json',{policy:{...policy,notification_actor_allowlist:list}});
+    const r=f.run([f.author,f.checks,f.review(1),f.review(2),f.notification.proof]);
+    assert.equal(r.validation_passed,false);assert.ok(r.reasons.includes('owner_notification_evidence_required'));
+    assert.equal(r.notification_readback_verified,false);
+  }
+  const f=fixture('config/example.json');
+  assert.equal(f.run([f.author,f.checks,f.review(1),f.review(2),f.notification.proof]).validation_passed,true);
+});
+test('notification allowlist schema rejects malformed identity entries',()=>{
+  for(const bad of [[{login:'bot',id:'42',executor:'x'}],[{login:'bot',id:42,executor:''}],[{login:'bot',id:42,executor:'x',extra:true}],[{login:'bot',id:0,executor:'x'}]]){
+    const f=fixture('docs/example.md',{policy:{...policy,notification_actor_allowlist:bad}});
+    assert.throws(()=>f.run(),/invalid_notification_actor_allowlist/);
+  }
 });
 test('N1 notice needs exact live readback: wrong head, edit, actor, stale/deleted/wrong comment all fail',()=>{
   const f=fixture('config/example.json'),proof=f.notification.proof,base=[f.author,f.checks,f.review(1),f.review(2),proof];
