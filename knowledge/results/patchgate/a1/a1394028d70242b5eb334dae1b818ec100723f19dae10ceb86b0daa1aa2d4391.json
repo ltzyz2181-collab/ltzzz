@@ -1,0 +1,135 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "head_sha": "85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+  "pr_number": 240,
+  "source_main_sha": "82000880fb8e364e706ae2f7f5fc13d9dac11505",
+  "run_id": "40190757514",
+  "at_utc": "2026-10-25T11:53:43.360Z",
+  "idempotency_key": "PLAN-PATCHGATE-ESCROW-20261023:85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "bed71debba38a082eb357a71e3d7170b10d748f6",
+  "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+  "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+  "changed_files": [
+    {
+      "path": ".github/workflows/patchgate-a2-verify.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/patchgate-a2.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/PATCHGATE-A2-DRAFT-20261025.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/patchgate-a2.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/patchgate-a2-preflight.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-a2.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+      "base_sha": "82000880fb8e364e706ae2f7f5fc13d9dac11505",
+      "head_sha": "85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+      "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+      "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+      "files_sha256": "7f82ad0d878e9572a31464e9fa2bb00e7db56475e2167e6d91359bf7fc57de9c"
+    },
+    "subject_sha256": "b01f41329328009d781cf9e28030c8198dae58d1a9f0153743152423a85fa801",
+    "idempotency_key": "PLAN-PATCHGATE-ESCROW-20261023:85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/lib/patchgate-a2.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/lib/patchgate-a2.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.github.com"
+        ]
+      },
+      {
+        "path": "scripts/patchgate-a2-preflight.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-a2.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-a2.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.github.com",
+          "evil.invalid"
+        ]
+      }
+    ],
+    "reasons": [
+      "cannot_modify_own_constraints_requires_separate_trust_rollout",
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
