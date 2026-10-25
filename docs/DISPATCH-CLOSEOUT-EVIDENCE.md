@@ -22,3 +22,13 @@
 3. `review={path,sha256}` 指向新的 `ltzzz.task-artifact-review.v1`；绑定新工程实物和源提交，由另一实际提供商复核，`accepted=true`。旧草稿拒收不能作为新实现的通过证明。
 
 满足时只记 `engineering_delivery_verified_not_deployed`；旧草稿 `draft_accepted=false` 和拒绝原文保留。测试回执、PR 或独立复核任一缺失，仍为 `engineering_completion_unverified`。本消费者不触发模型、合并、部署、支付或链上签名。
+
+## 原生复核来源：不能用自写 JSON 标签代替
+
+`actual_provider/metadata_source/model/model_calls` 只是声明；即使写上 `provider_response`，也不构成独立复核证明。上述复核还必须同时满足：
+
+1. `native_receipt={path,sha256}` 绑定实际原生回执。本期只支持主线 Qwen consumer 的规范路径 `knowledge/results/qwen-dispatch/<ID>.json`，并通过 `native_card` 绑定 `ops/dispatch/queue/<同ID>.json` 的原字节与 `card_sha256`。卡片 `original_task_id` 保留原单，`review_subject={task_id,source_commit,artifact[,delivery_receipt]}` 必须与实际 prompt 中的同一 JSON 相符。
+2. 原件须有 `native_qwen_call=true`、`model_source="provider_response"`、真实 `request_id/run_id`、`finish_reason="stop"`、一次调用、模型一致性、完整 `output_sha256` 与无资金动作标记。模型原输出自身必须绑定同一任务/提交/工件/接受结论，非空理由不可由侧车补写。外层回执的 `accepted=false` 仍表示模型输出草稿，不改成平台接受。
+3. 受信运行器通过代码参数 `nativeReceiptVerifier` 独立核验原生回执实际来源；校验输入包括原件/卡片哈希、run/request/output SHA、提供商与模型。这个核验器不能从候选文件、模型输出或回执的 `verified=true` 读取。现有 sentinel **尚未接入实际来源采集器**，默认缺失即不承认原生复核；即使伪造一整套本地 JSON，也不能据此消除 ANS 工程告警。测试中传入的核验器只是明确的夹具，不是生产能力。
+
+缺少实际原件或可信来源核验时，千问回归交付只记 `external_return_native_review_unverified`、`independent_review_verified=false`，ANS 工程交付继续未核验。其他模型供应方的来源适配器本期未实现，不能只换 provider 标签通行。`volcengine_ark` 与 Doubao/Ark/Volcengine 归为同一实际提供商，不能互相自审。所有生产开关和原始回执保持不变。
