@@ -103,6 +103,21 @@ test('H6 transport refuses arbitrary writes and malformed or mismatched observat
  await api('GET',path+'?ref='+branch);
  assert.equal(sent,3);
 });
+test('L8 task IDs must be bounded strings at both candidate and transport boundaries before any request',async()=>{
+ let sent=0;const api=githubApi({fetchImpl:async()=>{sent++;return {status:201,text:async()=>'{}'};}});
+ const make=task_id=>{
+  const key=sha256(task_id+':'+B),record={task_id,head_sha:B,pr_number:225,source_main_sha:A,phase:'A1_shadow_readonly',run_id:'1',at_utc:new Date().toISOString(),status:'no_new_diff_no_authorization',
+   native_model_calls:0,signing_admission:false,automatic_merge:false,automatic_deploy:false,automatic_rollback:false,financial_execution:false,paid:false,tx_hash:null};
+  return ['/repos/'+REPO+'/contents/knowledge/results/patchgate/a1/'+key+'.json',{branch:'patchgate-a1-observations/'+key,message:'A1 shadow observation only; no code/merge/deploy authority',content:Buffer.from(JSON.stringify(record)).toString('base64')}];
+ };
+ for(const id of [1234567,'../../not-a-task','TASK\u0000ID','x','A'.repeat(82),null,{}]){
+  assert.equal(candidateIdentity({...pr,body:'```json\n'+JSON.stringify({task_id:id})+'\n```'}).task_id,'PATCHGATE-PR-225');
+  await assert.rejects(api('PUT',...make(id)),/invalid_transport_observation/);
+ }
+ assert.equal(sent,0);
+ await api('PUT',...make('PLAN-PATCHGATE-ESCROW-20261023'));
+ assert.equal(sent,1);
+});
 test('M4 collection failure persists a sanitized failure record on the retained claim; duplicates never recollect',async()=>{
  const refs=new Set(),writes=[];let collections=0;
  const api=async(m,e,b)=>{
