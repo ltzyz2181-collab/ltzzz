@@ -42,3 +42,11 @@ PR #244 的 B2 原子基线、B3 真实检查收集器、B4 真实签名执行�
 - base64 在解码后已有 `bytes.toString('base64') === r.body_base64` 的规范性往返核对；换行/无效字符不能绕过。GitHub API 的折行 base64 应由未来可信采集器解码后统一编码进内部记录，不把未实现采集器说成已可用。
 - path 为 ASCII 白名单且另拒绝 `..`；新增 NUL、反斜杠、Unicode 斜杠、父目录反例均拒绝。GitHub 返回小写 40 位 SHA，拒绝非规范大写是保守拒绝，不是安全绕过。
 - 真实 PR/head 与 bundle 来源的采集与签发仍属于 B3/B4 实际接线缺项，保持阻断。不能用通过这些本地反例代替 Claude 新 head 复审或真实 signer。
+
+## 真实探针回读
+
+run `40244733201` 已完成，固定被测代码 head `2cf243d22a4d882c2dcdadd1cdbc58f97ac29a1b`。4/4 对抗用例通过；两个独立 runner 对同一隔离 ref 分别 created / already_reserved_no_model_replay，ref 已独立回读为触发主线提交。原生豆包 `doubao-seed-2-1-pro-260915`、provider_response、stop、1 次调用、908 tokens，给探针证据 approve；模型未自行执行 shell。实际 API 账单金额未核验。完整原回执及 job 链接见 `knowledge/results/patchgate/pr244-evidence/closeout.json`。
+
+该成功仅为探针，不等于 B2 的 main 基线原子门禁或 B4 真实签名执行器。A2/B 保持关闭，Claude 对新交付 head 的复审仍未返回。交付提交只补证据和文档，被测运行器 bundle 保持不变。
+
+千问对补强代码的 R2 仍为 REJECT（run `40244782240`），原件同目录 `qwen-b1-code-r2-original.json`。它将摘录未附的 import/常量当成实际未定义、认为 ASCII 字符类允许全角斜线/反斜杠、把空回读返回 false 当成接受等结论不采纳；完整源码及 93 项 runner/实际探针保留供 Claude 裁定。重复路径分隔符的规范化可在 B3 真实采集器接线时单列加固，不能因此把未配置的真实采集器写成已验。
