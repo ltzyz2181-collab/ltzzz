@@ -1,0 +1,145 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-245",
+  "head_sha": "f203af1cf11b0870912ee69503084b499c0ae4e1",
+  "pr_number": 245,
+  "source_main_sha": "bba721eccbf9dff991bd124815ce2109fd4ae43b",
+  "run_id": "40244584506",
+  "at_utc": "2026-10-25T23:24:09.403Z",
+  "idempotency_key": "PATCHGATE-PR-245:f203af1cf11b0870912ee69503084b499c0ae4e1",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "021d878f15c007b654f3a06db8309425b6363528",
+  "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+  "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+  "changed_files": [
+    {
+      "path": ".github/workflows/patchgate-doubao-probe.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/PATCHGATE-DOUBAO-PROBE.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/patchgate-doubao-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/patchgate-a2-probe-candidate.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/run-patchgate-doubao-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-doubao-probe.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-245",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-245",
+      "base_sha": "bba721eccbf9dff991bd124815ce2109fd4ae43b",
+      "head_sha": "f203af1cf11b0870912ee69503084b499c0ae4e1",
+      "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+      "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+      "files_sha256": "a04cdb86ee6b0605f8c48d824195ac0f2949ee5258711639dd1bedb17ece642e"
+    },
+    "subject_sha256": "4791baf74f332d7dde2458097102ac3ff7a79ae3e0960442ec47e6279088f69f",
+    "idempotency_key": "PATCHGATE-PR-245:f203af1cf11b0870912ee69503084b499c0ae4e1",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/lib/patchgate-doubao-probe.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/lib/patchgate-doubao-probe.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.github.com"
+        ]
+      },
+      {
+        "path": "scripts/patchgate-a2-probe-candidate.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/patchgate-a2-probe-candidate.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "github.com"
+        ]
+      },
+      {
+        "path": "scripts/run-patchgate-doubao-probe.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-doubao-probe.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-doubao-probe.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "evil.invalid"
+        ]
+      }
+    ],
+    "reasons": [
+      "cannot_modify_own_constraints_requires_separate_trust_rollout",
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
