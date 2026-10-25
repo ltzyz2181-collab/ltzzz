@@ -18,7 +18,7 @@ export function bundleDigest({read}){
       const config=JSON.parse(bytes.toString('utf8'));
       // Exclude only the evidence that authenticates this bundle. All authority
       // bits, identities, policy and source files are inside the commitment.
-      delete config.runtime_bundle_sha256;delete config.stage_audits;
+      delete config.runtime_bundle_sha256;delete config.stage_audits;delete config.external_stage_audits;
       bytes=Buffer.from(canonical(config));
     }
     return {path:name,sha256:sha256(bytes)};
@@ -34,7 +34,7 @@ export function preflightA2({read,sourceCommit,now=Date.now()}){
   if(config.production_signing_keys_provisioned!==true)blockers.push('production_signing_transport_not_verified');
   if(config.base_compare_and_swap_verified!==true)blockers.push('atomic_base_fence_not_implemented_or_verified');
   if(config.runtime_bundle_sha256!==bundle.sha256)blockers.push('exact_runtime_bundle_not_approved');
-  if(!rolloutApproved({config,registry,trust,runnerSha:sourceCommit,runtimeBundleSha256:bundle.sha256,now}))blockers.push('native_Claude_and_Qwen_stage_attestations_missing_or_invalid');
+  if(!rolloutApproved({config,registry,trust,runnerSha:sourceCommit,runtimeBundleSha256:bundle.sha256,now}))blockers.push('Qwen_Doubao_signatures_or_Claude_PR_readback_missing_or_invalid');
   return {task_id:TASK,phase:'A2_preflight_only',status:blockers.length?'blocked_not_activated':'configuration_preflight_only_live_acceptance_still_required',source_commit:sourceCommit||null,
     runtime_bundle:bundle,signing_executor_ids:registry.executors.filter(e=>e.signing_enabled===true).map(e=>e.id),blockers,
     native_model_calls:0,automatic_merge:false,automatic_deploy:false,financial_execution:false,paid:false,tx_hash:null};
