@@ -3,6 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {deliveryPolicy,externalTaskDelivery,externalDeliveryRequired} from './seat-delivery.mjs';
 import {validateArtifact} from './daily-task-board.mjs';
+import {cycleClosure} from './ans-review-recovery.mjs';
 
 export const OVERSIGHT_ROOT = 'knowledge/results/dispatch/oversight';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -96,18 +97,22 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
         draft_accepted:independent && review.accepted===true,engineering_completion_verified:!!completion,engineering_closeout:completion||null,requires_engineering_followup:/commit|\bPR\b|补丁|修复/.test(assignment.instruction||'')});
     }
     const ansFile=`knowledge/results/ans-cycle/${d}.json`,ans=read(root,ansFile);
-    if(ans?.date===d && /blocked|rejected|incomplete/.test(ans.status||'')) add({id:`ANS-${d}-doubao`,date:d,issuer:'gpt',assigned_to:'doubao',phase:'blocked_reconcile_existing_attempt',due_at:deadline(d,'03:00'),evidence:[ansFile],instruction:'核对现有 ANS 失败/未知审核请求、错误码与已有输出；修复后交测试和部署回执。不得因补派自动重购未知请求或重复付款。'});
+    if(ans?.date===d && cycleClosure(ans,{root})){
+      add({id:`ANS-${d}-doubao`,date:d,issuer:'gpt',assigned_to:'doubao',phase:'independent_draft_review_completed',due_at:deadline(d,'03:00'),evidence:[ansFile,...ans.artifacts.map(a=>a.path)],independent_review_verified:true,draft_accepted:ans.audit.accepted,deployed:false,actual_provider:ans.audit.executed_by,instruction:'独立草稿审核及远端回读已完成；拒绝不等于生产完成，作者修复仍按原工作单跟进。'});
+      if(!ans.audit.accepted)add({id:`ANS-${d}-deepseek`,date:d,issuer:'gpt',assigned_to:'deepseek',phase:'engineering_completion_unverified',due_at:deadline(d,'03:00'),evidence:[ansFile,...ans.artifacts.map(a=>a.path)],independent_review_verified:true,draft_accepted:false,deployed:false,instruction:'原草稿已被独立拒绝；复用原作者任务补可审核代码、测试与PR，不重复购买旧作者请求，不将审核完成写成工程完成。'});
+    }else if(ans?.date===d && /blocked|rejected|incomplete/.test(ans.status||'')) add({id:`ANS-${d}-doubao`,date:d,issuer:'gpt',assigned_to:'doubao',phase:'blocked_reconcile_existing_attempt',due_at:deadline(d,'03:00'),evidence:[ansFile],instruction:'核对现有 ANS 失败/未知审核请求、错误码与已有输出；修复后交测试和部署回执。不得因补派自动重购未知请求或重复付款。'});
     const hireFile=`knowledge/results/claude-team/real-hire-${d.replaceAll('-','')}.json`,hire=read(root,hireFile);
     if(hire?.date===d && safeId(hire.task_id)) add({id:hire.task_id,date:d,issuer:'claude',assigned_to:'gpt',phase:/waiting|blocked|rejected/.test(hire.status||'')?'blocked_reconcile_existing_attempt':'hire_receipt_present_scope_limited',due_at:deadline(d,'12:00'),evidence:[hireFile],instruction:'跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。'});
   }
   const team=read(root,'config/claude-team.json'), acceptance=team?.role_acceptances?.claude;
   if(acceptance?.status==='accepted_planning_audit_only') for(const id of acceptance.tasks||[]) {
-    const delivery=acceptance.task_deliveries?.[id], present=delivery&&fs.existsSync(path.join(root,delivery));
+    const delivery=acceptance.task_deliveries?.[id],proof=acceptance.task_delivery_proofs?.[id],body=proof&&read(root,delivery);
+    const present=delivery&&(proof?proof.path===delivery&&fileProof(root,delivery,proof.sha256)&&(body?.task_id===id||body?.subtask===id):fs.existsSync(path.join(root,delivery)));
     const linked=externalTaskDelivery(root,id,'claude'),phase=linked.status==='invalid'?'external_delivery_evidence_invalid':linked.status==='repo_pr_unreviewed'?'pr_unreviewed':linked.status==='repo_pr_delivery_recorded'?'external_pr_delivery_recorded':linked.status==='delegated_delivery_pending_review'?'delegated_review_missing':present?'controller_review_record_present':'delivery_link_missing';
     add({id,date:'2026-10-18',issuer:'claude',assigned_to:'claude',phase,delivery_channel:claudePolicy.channel,role_status:claudePolicy.work_status,delegated:linked.delegated===true,actual_provider:linked.actual_provider||null,native_generation_verified:false,submission_verified:linked.submission_verified===true,independent_review_verified:false,pr_url:linked.pr_url||null,due_at:deadline('2026-10-20','22:00'),evidence:['config/claude-team.json',acceptance.receipt,...(present?[delivery]:[]),...linked.evidence].filter(Boolean),instruction:'核对 Claude 已接三项规划/审计任务与真实 PR/交付的关联；登记缺链接不等于任务没做，先查现有成果，复用原 Task ID 补齐链接或说明阻塞，不重做订单/付款。'});
   }
   for(const task of tasks.values()) {
-    const closed=['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
+    const closed=['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded','independent_draft_review_completed'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
     const issue=task.phase==='draft_reviewed_not_deployed'?'engineering_completion_unverified':task.phase;
     observations.push({...task,issue,overdue:!task.reference_only&&!closed && Date.parse(now)>=Date.parse(task.due_at),status:task.reference_only?'delivery_channel_reference_not_completion':closed?'evidence_present_scope_limited':Date.parse(now)<Date.parse(task.due_at)?'not_due':'warning_required'});
   }

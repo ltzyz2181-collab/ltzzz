@@ -91,3 +91,15 @@ test('existing Qwen daily context addresses oldest overdue originals before newe
  write(root,'knowledge/results/control/2026-10-16.json',{date:'2026-10-16',dispatches:[{id:'CONTROL-OLDER-FIX',agent:'deepseek',execute_on:'2026-10-16',instruction:'Older fix'}]});
  const text=qianwenOversightContext({root,now});const j=JSON.parse(text.slice(text.indexOf('\n')+1));assert.ok(j.overdue.some(t=>t.id==='CONTROL-OLDER-FIX'));assert.equal(j.overdue[0].id,'CONTROL-OLDER-FIX');
 }));
+test('a hash-bound historical link closes only the named handoff, without native Claude attribution',()=>fixture(root=>{
+ const id='CONTROL-CLAIM-REPAIR-20261018',p='knowledge/results/claude-team/ans-closeout.json',b=JSON.stringify({task_id:id,subtask:'ANS-CLAIM-CLOSEOUT',executor:'fixed_rules_verifier',production_deployment_verified:false});write(root,p,b);
+ const a={status:'accepted_planning_audit_only',tasks:[id],task_deliveries:{[id]:p},task_delivery_proofs:{[id]:{path:p,sha256:sha(b)}}};write(root,'config/claude-team.json',{role_acceptances:{claude:a}});
+ let t=inspectDispatches({root,now,lookback:1}).tasks.find(t=>t.id===id);assert.equal(t.phase,'controller_review_record_present');assert.equal(t.overdue,false);assert.equal(t.native_generation_verified,false);assert.equal(t.independent_review_verified,false);
+ fs.appendFileSync(path.join(root,p),' ');t=inspectDispatches({root,now,lookback:1}).tasks.find(t=>t.id===id);assert.equal(t.phase,'delivery_link_missing');assert.equal(t.overdue,true);
+}));
+test('completed rejected ANS review closes the reviewer stage but retains original author engineering followup',()=>fixture(root=>{
+ const d='2026-10-22',wp=`knowledge/results/ans-cycle/${d}-worker.json`,rp=`knowledge/results/ans-cycle/${d}-reviewer.json`,wb=JSON.stringify({finding:'unimplemented proposal'}),wh=sha(wb),rb=JSON.stringify({accepted:false,artifact_sha256:wh,reasons:['no patch']});write(root,wp,wb);write(root,rp,rb);
+ const r={date:d,status:'draft_rejected',audit:{accepted:false,artifact_sha256:wh,executed_by:'Qianwen'},artifacts:[{role:'worker',task_id:`ANS-${d}-deepseek`,path:wp,sha256:wh,executed_by:'DeepSeek'},{role:'reviewer',task_id:`ANS-${d}-doubao`,path:rp,sha256:sha(rb),executed_by:'Qianwen'}],remote_review_status:'rejected_draft_review',sync_status:'hashed_artifacts_submitted',board_verification:{verified:true,worker_status:'rejected_draft_review'}};write(root,`knowledge/results/ans-cycle/${d}.json`,r);
+ let ts=inspectDispatches({root,now,lookback:1}).tasks;assert.equal(ts.find(t=>t.id===`ANS-${d}-doubao`).overdue,false);assert.equal(ts.find(t=>t.id===`ANS-${d}-doubao`).actual_provider,'Qianwen');assert.equal(ts.find(t=>t.id===`ANS-${d}-deepseek`).overdue,true);assert.equal(ts.find(t=>t.id===`ANS-${d}-deepseek`).deployed,false);
+ r.board_verification.verified=false;write(root,`knowledge/results/ans-cycle/${d}.json`,r);ts=inspectDispatches({root,now,lookback:1}).tasks;assert.equal(ts.find(t=>t.id===`ANS-${d}-doubao`).phase,'blocked_reconcile_existing_attempt');
+}));
