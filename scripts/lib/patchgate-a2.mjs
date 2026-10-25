@@ -12,10 +12,11 @@ const CLAUDE_CHANNEL=Object.freeze({kind:'repository_pr_readback',required_befor
 
 // An infrastructure signature proves a hash-bound PR/file readback, not that
 // Anthropic generated the report. It never replaces either native model signer.
-export function externalAuditProofMatches({proof,readbacks,subject,now,maxAge=86400}) {
+export function externalAuditProofMatches({record,trust,readbacks,subject,now,maxAge=86400}) {
   try {
-    if(!Number.isFinite(now)||!Number.isSafeInteger(maxAge)||maxAge<1||!Array.isArray(readbacks)
-      ||proof?.provider!=='github_actions'||proof.payload?.role!=='external_audit_readback')return false;
+    if(!Number.isFinite(now)||!Number.isSafeInteger(maxAge)||maxAge<1||!Array.isArray(readbacks))return false;
+    const proof=authenticate(record,{trust,subject,role:'external_audit_readback',now,maxAge});
+    if(proof?.provider!=='github_actions')return false;
     const p=proof.payload,r=readbacks.find(r=>sha256(canonical(r))===p.readback_sha256);
     if(!r||r.schema!=='ltzzz.external-audit-pr-readback.v1'||r.source!=='github_rest_immutable_pr_file'
       ||r.repository!==REPOSITORY||r.pr_http_status!==200||r.file_http_status!==200
@@ -100,9 +101,8 @@ export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSh
   // is metadata, not a self-referential commit containing its own signature.
   const subject={task_id:TASK,phase:'A2',runtime_bundle_sha256:runtimeBundleSha256};
   const proofs=config.stage_audits.map(a=>authenticate(a,{trust,subject,role:'stage_review',now,maxAge:86400})).filter(a=>a?.payload.verdict==='approve'&&SHA.test(a.payload.reviewed_source_commit||'')&&HASH.test(a.payload.artifact_sha256||''));
-  const external=config.external_stage_audits.map(a=>authenticate(a,{trust,subject,role:'external_audit_readback',now,maxAge:86400})).filter(Boolean);
   return config.required_stage_auditors.every(provider=>proofs.some(p=>p.provider===provider))&&new Set(proofs.map(p=>p.executor)).size>=2
-    &&external.some(proof=>externalAuditProofMatches({proof,readbacks:externalAuditReadbacks,subject,now}));
+    &&config.external_stage_audits.some(record=>externalAuditProofMatches({record,trust,readbacks:externalAuditReadbacks,subject,now}));
 }
 
 export function checksSatisfied({checkRuns,config,headSha}) {

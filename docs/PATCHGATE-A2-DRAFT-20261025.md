@@ -27,7 +27,7 @@
 
 命令：`node --test scripts/tests/patchgate-a2.test.mjs scripts/tests/patchgate.test.mjs scripts/tests/patchgate-a1.test.mjs`
 
-最初版本本地 A0/A1/A2 为 85/85（A2 23/23）；B1 修订后为 91/91（A2 29/29）。此数量不是生产签名、自动合并或线上部署验收。
+最初版本本地 A0/A1/A2 为 85/85（A2 23/23）；B1 修订后为 93/93（A2 31/31）。此数量不是生产签名、自动合并或线上部署验收。
 
 其中新 A2 回归涵盖签名注册、独立双审、精确检查摘要、API 白名单、同键并发、预留超时、合并响应丢失、追加提交、base 前移与真实 API 传输选项。这里的成功只代表本地测试，非 GitHub runner 验收。
 

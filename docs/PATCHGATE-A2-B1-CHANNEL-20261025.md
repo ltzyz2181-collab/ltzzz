@@ -31,4 +31,14 @@ PR #244 的 B2 原子基线、B3 真实检查收集器、B4 真实签名执行�
 
 豆包探针沿原任务：无凭证 Actions 执行固定候选版本的对抗测试，原生豆包只审实际输出；shell 执行者和模型提供商分别署名。候选代码不进入持钥任务。探针覆盖伪造 head、同键并发、回执注入、422 无 ref 等，生产私钥与真实业务合并均不在探针范围。真实跨 runner 的隔离 ref CAS 如有结果单独列出，不能拿单进程 Promise.all 测试冒充。探针和原生反馈未返回前只记已派，不记已通过。
 
-本轮已有 A0/A1/A2 本地 91/91，通过的是受控夹具；仍须拿到豆包真实 probe 回执，再给 Claude 新 head 复审。
+本轮已有 A0/A1/A2 本地 93/93，通过的是受控夹具；仍须拿到豆包真实 probe 回执，再给 Claude 新 head 复审。
+
+## 千问代码意见的处置（原文保留）
+
+代码摘录审查 run `40243934719` 的原始 REJECT 位于 `knowledge/results/patchgate/pr244-evidence/qwen-b1-code-original.json`，设计 REVISE 同目录 `qwen-b1-channel-original.json`。不改成通过，不伪造原生复审。
+
+- 对“helper 应自己验签”作纵深加固：原调用链先 `authenticate(...).filter(Boolean)`，无签名本已不可达；现在 helper 自己接收原始签名记录并验角色/subject/key/provider/时间，避免未来调用者误用。新增无签名 provider 字符串、坏签名、未知 key、修改 payload 的反例均拒绝。
+- metadata 的 schema 在 JSON.parse 后精确匹配，错误版本明确返回 false；不是绕过。报告正文在 JSON fence 后允许正常审计文本，原始字节/Git blob/整体摘要绑定，不因允许 LF/CRLF 而混用摘要。
+- base64 在解码后已有 `bytes.toString('base64') === r.body_base64` 的规范性往返核对；换行/无效字符不能绕过。GitHub API 的折行 base64 应由未来可信采集器解码后统一编码进内部记录，不把未实现采集器说成已可用。
+- path 为 ASCII 白名单且另拒绝 `..`；新增 NUL、反斜杠、Unicode 斜杠、父目录反例均拒绝。GitHub 返回小写 40 位 SHA，拒绝非规范大写是保守拒绝，不是安全绕过。
+- 真实 PR/head 与 bundle 来源的采集与签发仍属于 B3/B4 实际接线缺项，保持阻断。不能用通过这些本地反例代替 Claude 新 head 复审或真实 signer。
