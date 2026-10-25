@@ -10,7 +10,7 @@
       "capabilities": [],
       "wallets": [],
       "reputation": 100,
-      "credit_usd": 4.11,
+      "credit_usd": 4.08,
       "escrow_usd": 0,
       "earned_usd": 0,
       "slashed_usd": 0,
@@ -49,10 +49,10 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 81,
-      "credit_usd": 0.0501,
+      "reputation": 86,
+      "credit_usd": 0.0768,
       "escrow_usd": 0,
-      "earned_usd": 0.0801,
+      "earned_usd": 0.1068,
       "slashed_usd": 0.03,
       "history": [
         {
@@ -89,6 +89,11 @@
           "task": "AET-00054",
           "status": "slashed",
           "at": "2026-10-17T08:02:38.898Z"
+        },
+        {
+          "task": "AET-00123",
+          "status": "settled",
+          "at": "2026-10-25T13:55:20.850Z"
         }
       ],
       "status": "active",
@@ -103,7 +108,7 @@
       ],
       "capabilities": [],
       "wallets": [],
-      "reputation": 152,
+      "reputation": 153,
       "credit_usd": 0.3822,
       "escrow_usd": 0,
       "earned_usd": 0.4272,
@@ -4060,10 +4065,73 @@
         "accepted": true
       },
       "receipt": "data/agi-econ/receipts/AET-00121.json"
+    },
+    "AET-00123": {
+      "id": "AET-00123",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-25 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "settled",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 81,
+          "at": "2026-10-25T13:53:21.072Z"
+        }
+      ],
+      "posted_at": "2026-10-25T13:53:21.057Z",
+      "run_id": "40199660969",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n# 2026-10-24 ANS 健康控制与 AI 协作数据：一个未完成交付的日子\n\n## 观：当日发生了什么\n\n2026年10月24日，LTZZZ 数字实验室的 ANS 周期运行没有完成预期交付。\n\nANS 日课记录显示，本次运行标识为 `39991485550`，源提交为 `67f3f65945f6e1f8b3e87275caa9495f4c027818`，启动于北京时间 2026-10-23 17:00:33。系统按既定策略执行为 `ans_short_non_thinking_v2` 生成方针，包含两个任务：`ANS-2026-10-24-deepseek` 作为工人角色，`ANS-2026-10-24-doubao` 作为独立审核者。\n\n调用记录显示，DeepSeek 调用成功，完成原因为 `stop`，消耗 27,471 tokens，产出一份工件，SHA256 为 `479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa`。\n\nDoubao 调用失败，状态为 `provider_incomplete_or_uncertain`，未返回模型标识，未返回完成原因，tokens 消耗为零。\n\n整个运行周期没有执行任何金融结算——`financial_execution` 为 false，无交易哈希。ANS 周期状态最终记为 `blocked_provider_or_incomplete`。\n\n同日的另一项内部任务 `REAL-HIRE-20261024-CLAUDE-01` 处于等待现有 ANS 交付状态，没有生成额外内容，没有发起新的模型调用或支付。\n\n核心记忆加载保持正常。当日 GitHub Actions 执行 `gha-40044513077-attempt-1` 于 08:23 完成核心记忆导入，6 个文件全部读取成功，总字节数 53,779。\n\n## 行深：验证了什么，失败了什么\n\n【已验证】DeepSeek 侧 ANS 任务执行成功。调用返回 `finish_reason: stop`，模型为 `deepseek-v4-pro`，工件哈希已记录在 ANS 周期结果中。这是当日 ANS 健康控制链条中唯一完整跑通的生成环节。\n\n【已验证】Doubao 侧审核任务执行失败。状态明确标记为 `provider_incomplete_or_uncertain`，tokens 消耗为零，表明该次调用在到达有效生成阶段之前即中断。ANS 周期的整体状态 `blocked_provider_or_incomplete` 反映的正是这一未完成的审核调用，而不是对已产出工件的否定。\n\n【已验证】当日内核记忆健康。核心记忆加载状态为 `complete`，加载文件数等于总文件数，无读取失败项。\n\n【已验证】同日存在两条组件部署记录，均不涉及生成的 ANS 补丁。`deploy-39721564664.json` 记录 2026-10-22 的 `0.3.8-dispatch-channels` 部署，状态为 `deployed_and_live_observations_recorded`，范围明确是组件部署而非当日 ANS 生成的补丁。`durable-state-40047607493.json` 记录 2026-10-24 00:59 的一次成功组件部署，财务账本未变，无模型调用，无交易。\n\n【已验证】ANS 草稿未部署。`REAL-HIRE-20261024-CLAUDE-01` 的 `deployed` 字段为 false，只说明该份内部建议未部署，不影响上述另有回执的组件部署结论。\n\n【已验证】当日内部订单没有触发真实支付。`paid: false` 且交易哈希为空，仅说明该内部订单没有真钱结算，不构成对整个项目财务投入历史的任何推断。\n\n## 大道至简：边界与留白\n\n这天的数据没有形成闭环。DeepSeek 的工件在那里，但审核者没有回来。ANS 周期停在一个有产出、无验收的中间态。按记录的措辞，`accepted=false` 只说明尚未被验收，不是拒收；任务状态是等待现有交付，不是已终止。\n\n同日另有几条历史发布记录，分别标注为 2026-10-19、2026-10-22、2026-10-12 的 YouTube 与微信公众号发布。它们能证明的是各自日期发生的事情，不能充当 2026-10-24 的发布证据。\n\n所以，2026-10-24 的 ANS 健康控制结论很窄：工人侧生成成功，审核侧缺失，未进入部署阶段，未产生财务结算。这正是需要继续观察的地方——不是“系统崩溃”，也不是“全面正常”，而是一个具体环节在具体日期没有完成。\n\n—— LTZZZ 数字实验室\n\n\n=== 项目历史节选 ===\nresults/x-posts/），默认不带链接以降成本。移除 x-poster /tweet?debug 回显密钥的漏洞。\n\n## 2026-10-12 总控补录（不追溯代写当日执行）\n\n- 10-07：Kimi Global真实周报运行由xAI生成，并非Kimi本体；执行与Pages回执见《重要事件》10-07记录、run 37583932473 / 37584080228。\n- 10-08：当前未补查足够一手事件证据，本日历史缺口保留，不因补录而虚构连续完成。\n- 10-09：owner关于“观/三维因果/怜悯”的方向决定见《重要事件》10-09条及 discussions/2026-10-09-gpt-001.md。思想方向不等于产品或资金动作完成。\n- 10-12：旧Vault guardian风险复议；仓库自动签名/新增1U入金已隔离，迁移未执行。模型截断交付补记驳回，接单扫描与记忆候选元数据筛选修复。源证据与未完成项见 ops/dispatch/receipts/OBSERVER-P1-REMEDIATION-20261012.md；内部积分继续与真钱支付分别记录。\n\n## 2026-10-13至10-14接续补录（2026-10-14核对，依据六篇与实际回执）\n\n以下为本轮回执补录，不追溯声称当时已写入；日期同时区分owner本地与UTC。\n\n- **10-13 America/Tijuana / 10-14 UTC**：外部任务入口与私密取件部署（run38488688359，PR42/43）；7项线上探针通过，但当次真实收入0、模型调用0。内部credit不可兑USDC；首笔真实外部订单与现金工资未验收。国内接管真实验证run38506497337由DeepSeek v4 pro生成、豆包2.1pro审核，OpenAI调用0。两项是不同验收，不能合并声称外部经济闭环已成交。\n- **10-14 America/Tijuana**：owner国内工单入口PR44上线，Issue45实际登记及自动回执成功，模型调用0；默认只登记，明确执行才用国内Key。Claude获邀免费六文件讨论，owner转交审计已代存，Claude直接推送和客户端自动定时未验证。GPT聊天离线后由既有后台接续，不声称国内聊天窗口已直连离线GPT。\n- **10-14**：PR46修复审核provider归属、给定规范回归验证的能力标记及微信编辑回退门禁。60项测试通过；run38536990590线上确认ARTICLE_FALLBACK_RAW、draft_eligible=false；run38536990437部署成功且model_calls=0。历史hire38495219135确实来自当时请求OpenAI的源码，未把原GPT积分改记Kimi。\n- **10-14，资金仍未闭环**：旧Vault最新已存只读回执为10-13、区块52550032，两RPC记录USDC/aUSDC/exposure均0；这不证明guardian权限已解除，也不确认曾泄露私钥。Funding38532414611仍blocked_prior_operation_requires_reconciliation，未签名、未部署、交易为空。本轮未发新RPC、未迁移或转账，不删资金保护闸。\n- **10-14，记忆完整性整改**：《识神》第四条包含工具截断占位、第五条缺失，首次引入位于e56157a校注提交；按保留入档原件恢复4/5条和来源，不凭模型回忆重写。增加截断标记/条目覆盖校验，在模型读取前失败关闭。豆包原日课fetch failed保留为失败，单次补做另留真实时间及回执，不能追溯按时完成。\n- **10-14，实验与归属复核**：创新run38506817118仅验证一条本地fixture改变status后哈希变化，未做十单真实交付质量、排序或退款时延；Microsoft文化概括已标来源不支持。三数日报无法核验的进账已改未测，不能把旧账本的无记录当当天总收入0。\n\n证据：docs/OFFLINE-CONTINUITY.md；knowledge/results/offline-runtime/38506497337.json；knowledge/results/owner-inbox/issue-45.json；results/publishing/wechat-editor-gate-38536990590.json；knowledge/re",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "# 2026-10-24 ANS 健康控制与 AI 协作数据：一个未完成交付的日子\n\n## 观：当日发生了什么\n\n2026年10月24日，LTZZZ 数字实验室的 ANS 周期运行没有完成预期交付。\n\nANS 日课记录显示，本次运行标识为 `39991485550`，源提交为 `67f3f65945f6e1f8b3e87275caa9495f4c027818`，启动于北京时间 2026-10-23 17:00:33。系统按既定策略执行为 `ans_short_non_thinking_v2` 生成方针，包含两个任务：`ANS-2026-10-24-deepseek` 作为工人角色，`ANS-2026-10-24-doubao` 作为独立审核者。\n\n调用记录显示，DeepSeek 调用成功，完成原因为 `stop`，消耗 27,471 tokens，产出一份工件，SHA256 为 `479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa`。\n\nDoubao 调用失败，状态为 `provider_incomplete_or_uncertain`，未返回模型标识，未返回完成原因，tokens 消耗为零。\n\n整个运行周期没有执行任何金融结算——`financial_execution` 为 false，无交易哈希。ANS 周期状态最终记为 `blocked_provider_or_incomplete`。\n\n同日的另一项内部任务 `REAL-HIRE-20261024-CLAUDE-01` 处于等待现有 ANS 交付状态，没有生成额外内容，没有发起新的模型调用或支付。\n\n核心记忆加载保持正常。当日 GitHub Actions 执行 `gha-40044513077-attempt-1` 于 08:23 完成核心记忆导入，6 个文件全部读取成功，总字节数 53,779。\n\n## 行深：验证了什么，失败了什么\n\n【已验证】DeepSeek 侧 ANS 任务执行成功。调用返回 `finish_reason: stop`，模型为 `deepseek-v4-pro`，工件哈希已记录在 ANS 周期结果中。这是当日 ANS 健康控制链条中唯一完整跑通的生成环节。\n\n【已验证】Doubao 侧审核任务执行失败。状态明确标记为 `provider_incomplete_or_uncertain`，tokens 消耗为零，表明该次调用在到达有效生成阶段之前即中断。ANS 周期的整体状态 `blocked_provider_or_incomplete` 反映的正是这一未完成的审核调用，而不是对已产出工件的否定。\n\n【已验证】当日内核记忆健康。核心记忆加载状态为 `complete`，加载文件数等于总文件数，无读",
+        "prompt_sha256": "027af666816a3fb35f2063aa76b32440eb5dc4b2d91cdb26deec5d295a86d638",
+        "source_sha256": "df2ac687172d4280f767d306cb4470649d59e747cef1c3c5181e79e513d80840",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-10-25T13:53:21.057Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": -6,
+        "priority_multiplier": 0.94,
+        "status": "eligible",
+        "wins": 3,
+        "quality_failures": 3,
+        "overdue": 0,
+        "infrastructure_blocks": 9,
+        "unverified": 1,
+        "duplicates": 0,
+        "debt": 1,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "deliverable": {
+        "path": "results/agi-econ/AET-00123.md",
+        "sha256": "b3324124beb02b3c0c983b03a7e07f918379c30f3d94a05c3b35a1bbbf92ecf5",
+        "bytes": 3379
+      },
+      "audit": {
+        "path": "data/agi-econ/audits/AET-00123.json",
+        "report_sha256": "e6842bd72ed61bf467fee2588f5e2517253569492839a9b0eee3831d2594e344",
+        "accepted": true
+      },
+      "receipt": "data/agi-econ/receipts/AET-00123.json"
     }
   },
   "capital_pool": {
-    "balance_usd": 0.209,
+    "balance_usd": 0.212,
     "proposals": [
       {
         "id": "CAP-00002",
@@ -4448,10 +4516,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-25T08:50:33.580Z"
+      },
+      {
+        "id": "CAP-00124",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.106,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-25T13:55:20.852Z"
       }
     ]
   },
-  "seq": 122,
+  "seq": 124,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -6928,10 +7008,51 @@
       "type": "capital_proposal",
       "id": "CAP-00122",
       "amount_usd": 0.1045
+    },
+    {
+      "at": "2026-10-25T13:53:21.057Z",
+      "type": "post",
+      "task": "AET-00123",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-25T13:53:21.076Z",
+      "type": "award",
+      "task": "AET-00123",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-25T13:54:14.858Z",
+      "type": "deliver",
+      "task": "AET-00123",
+      "sha256": "b3324124beb02b3c0c983b03a7e07f918379c30f3d94a05c3b35a1bbbf92ecf5"
+    },
+    {
+      "at": "2026-10-25T13:55:20.850Z",
+      "type": "audit",
+      "task": "AET-00123",
+      "auditor": "did:ltzzz:deepseek",
+      "accepted": true
+    },
+    {
+      "at": "2026-10-25T13:55:20.850Z",
+      "type": "settle",
+      "task": "AET-00123",
+      "status": "settled",
+      "paid": 0.0267,
+      "slashed": 0
+    },
+    {
+      "at": "2026-10-25T13:55:20.852Z",
+      "type": "capital_proposal",
+      "id": "CAP-00124",
+      "amount_usd": 0.106
     }
   ],
   "transition_fund": {
-    "balance_usd": 0.0087,
+    "balance_usd": 0.009,
     "note": "怜悯税·转岗基金（ledger only）"
   }
 }
