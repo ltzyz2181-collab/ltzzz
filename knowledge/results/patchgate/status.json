@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_approved_enable_attempt_not_confirmed_readback_false_browser_capability_blocked",
-  "at_utc": "2026-10-24T21:41:46.745Z",
+  "status": "A1_enabled_two_real_PR_observations_readback_verified_L8_merged",
+  "at_utc": "2026-10-25T05:55:45.064Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -38,7 +38,7 @@
     "closeout": "knowledge/results/patchgate/a0-closeout-20261024.json"
   },
   "A1": {
-    "status": "approved_not_activated_UI_save_not_confirmed",
+    "status": "active_isolated_observer_only",
     "implementation_pr": 227,
     "implementation_head": "87f270d08195c3bd2be5892ab6800921c5140a03",
     "tests": {
@@ -91,16 +91,13 @@
     "evidence_commit": "78492a6af60013495305f960b14fc81a792e457c",
     "evidence_path": "knowledge/results/patchgate/a1-acceptance-20261024/receipt.json",
     "merged": true,
-    "production_activated": false,
+    "production_activated": true,
     "live_shared_CAS_verified": true,
     "production_switch": {
       "name": "PATCHGATE_A1_ENABLED",
-      "requested_value": "true",
-      "observed_value": "false",
-      "source": "TinyFish_UI_readback_plus_two_real_PR_observe_jobs_skipped",
-      "browser_run": "56fa1648-9fb5-445b-bf0b-427f4b109fd0",
-      "change_to_true": "attempted_not_verified",
-      "browser_capability_blocker": "metered_credit_exhausted"
+      "observed_value": "true",
+      "source": "actual observe jobs 121086351582 and 121086349815 log environment, not fresh variables API read",
+      "observed_at_utc": "2026-10-25T05:30:21Z"
     },
     "live_runner_acceptance": {
       "run_id": "40101318501",
@@ -129,41 +126,44 @@
     "fork_reachability_verified": false,
     "evidence_pr": 232,
     "followups": {
-      "L8": "draft_PR234_type_and_regex_hardening_70tests_passed_not_merged",
+      "L8": "merged_PR234_after_Claude_and_native_Qwen_approval",
       "L4": "trusted_notice_actor_admission_before_A2",
       "L5": "fork_reachability_not_tested",
       "concurrent_runners": "not_tested"
     },
     "watch_plan": "knowledge/results/patchgate/a1-acceptance-20261024/watch-plan.md",
-    "activation_receipt": "knowledge/results/patchgate/a1-activation-20261024.json",
+    "activation_receipt": "knowledge/results/patchgate/a1-live-activation-20261025.json",
     "first_real_PR_watch": {
-      "state": "not_active_production_watch_jobs_skipped",
+      "state": "two_real_trusted_PR_observations_completed_and_read_back",
       "pulls": [
         {
           "pr": 234,
           "head": "16b43ab13b4e70bff57994cfd592bb3d452dfe16",
-          "association": "OWNER",
-          "target_run": "40135168960",
-          "observe_job": "120995144954",
-          "observe": "skipped"
+          "run_id": "40165759457",
+          "job_id": "121086351582",
+          "observation_commit": "2955a94248ce08ab8af3500c696bb8f0a4e4df56",
+          "blob_sha": "669b0826be7bb15358e4c5fc8e74d3f3bf037b3b",
+          "path": "knowledge/results/patchgate/a1/c7117be8993b28eed4bf055d3908a4ea9b440bab5881d71b346a2abfc42f154d.json"
         },
         {
           "pr": 235,
           "head": "ce9c1eef996a460c99eaebc0fdd1709d5e5e08f5",
-          "association": "OWNER",
-          "target_run": "40135173721",
-          "observe_job": "120995091097",
-          "observe": "skipped"
+          "run_id": "40165758665",
+          "job_id": "121086349815",
+          "observation_commit": "7b21f7cb2b6c7077a4e0e6c589bf5f8b6412168d",
+          "blob_sha": "30c33d585cb32f497957dc68dfcc71cc344bb2bd",
+          "path": "knowledge/results/patchgate/a1/13be1ae9120de7c08c1581429e1ad8c8c398a368c1025144e861d999daf801db.json"
         }
       ],
       "baseline_observation_ref_count": 2,
-      "after_ref_count": 2,
-      "new_observation_refs": 0,
+      "after_ref_count": 4,
+      "new_observation_refs": 2,
       "external_author_samples": 0,
       "external_live_rejection_verified": false
     },
     "L8_pr": 234,
-    "research_reference_pr": 235
+    "research_reference_pr": 235,
+    "L8_merge": "e1dc4549c4c540028fa6c3ceaa9efc50f849c0ee"
   },
   "A2": {
     "status": "not_entered",
@@ -177,7 +177,7 @@
     "maximum_authorized_environment": "public_testnet_fake_tokens",
     "transactions": []
   },
-  "next_phase": "complete_persisted_true_then_retrigger_ready_for_review_on_real_PRs_and_verify_observation_A2_B_remain_off",
+  "next_phase": "close_existing_ANS_and_dispatch_backlog_then_design_A2_separately_no_automatic_merge_authority_yet",
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -300,15 +300,54 @@
         "controls": "original_REJECT_preserved_Claude_PR233_adjudicated_nonblocking_L8_low_hardening"
       },
       "evidence_commit": "7bc3832fd0e2a5233cc04ffe36694e5b65c02271"
+    },
+    {
+      "phase": "A1_before_Copilot_activation_readback",
+      "at_utc": "2026-10-24T21:41:46.745Z",
+      "status": "A1_approved_enable_attempt_not_confirmed_readback_false_browser_capability_blocked",
+      "production_switch": {
+        "name": "PATCHGATE_A1_ENABLED",
+        "requested_value": "true",
+        "observed_value": "false",
+        "source": "TinyFish_UI_readback_plus_two_real_PR_observe_jobs_skipped",
+        "browser_run": "56fa1648-9fb5-445b-bf0b-427f4b109fd0",
+        "change_to_true": "attempted_not_verified",
+        "browser_capability_blocker": "metered_credit_exhausted"
+      },
+      "first_real_PR_watch": {
+        "state": "not_active_production_watch_jobs_skipped",
+        "pulls": [
+          {
+            "pr": 234,
+            "head": "16b43ab13b4e70bff57994cfd592bb3d452dfe16",
+            "association": "OWNER",
+            "target_run": "40135168960",
+            "observe_job": "120995144954",
+            "observe": "skipped"
+          },
+          {
+            "pr": 235,
+            "head": "ce9c1eef996a460c99eaebc0fdd1709d5e5e08f5",
+            "association": "OWNER",
+            "target_run": "40135173721",
+            "observe_job": "120995091097",
+            "observe": "skipped"
+          }
+        ],
+        "baseline_observation_ref_count": 2,
+        "after_ref_count": 2,
+        "new_observation_refs": 0,
+        "external_author_samples": 0,
+        "external_live_rejection_verified": false
+      }
     }
   ],
   "limitations": [
-    "Claude PR233 approved the scoped acceptance and adjudicated Qwen controls objections; original opinions remain preserved.",
-    "Enabling was attempted but UI readback remained false; both real PR observe jobs skipped and no new observation refs were created. A1 activation has not completed.",
-    "TinyFish credit is exhausted; the available GitHub connector has no repository-variable write capability. Pending user input concerns this missing execution capability, not renewed authorization.",
-    "L8 code and 70 passing local/CI tests are submitted in draft PR234, not deployed. RSI/Flint research is draft PR235, with no model install or new inference.",
-    "All observed open PR authors are OWNER, so external-author live rejection is unverified. Existing observation refs are idempotency locks and remain intact.",
-    "A2, B, signing admission, automatic merge/business deployment and financial execution stay off."
+    "A1 activation is established by actual enabled observe jobs and isolated record readbacks; the earlier failed UI attempt remains preserved in a1-activation-20261024.json.",
+    "Only isolated observation is enabled. validation_blocked is expected when candidate authorization evidence is missing; it is not observer failure.",
+    "L8 merged after Claude approval and exact-head native Qwen approval, run40166799203; no automatic merge or candidate execution was enabled.",
+    "No real external-author sample, cross-runner concurrency, production deployment or rollback was established by this activation.",
+    "A2, B, signing admission, automatic business merge/deployment/rollback and financial execution remain off."
   ],
   "related_PR225": {
     "merged": true,
