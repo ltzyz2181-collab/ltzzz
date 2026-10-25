@@ -1,0 +1,67 @@
+{
+  "status": "awaiting_owner_signature",
+  "executed_by": "did:ltzzz:qianwen",
+  "round": "OWNER-FUNDED-20261017-01",
+  "amount_usdc": "4.496788",
+  "amount_raw": "4496788",
+  "chain_id": 8453,
+  "recipient": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+  "on_behalf": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+  "checks": [
+    {
+      "name": "chain_is_base_8453",
+      "ok": true,
+      "detail": "got=8453"
+    },
+    {
+      "name": "asset_is_base_native_usdc",
+      "ok": true,
+      "detail": "got=USDC"
+    },
+    {
+      "name": "recipient_is_aave_v3_base_pool",
+      "ok": true,
+      "detail": "got=0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"
+    },
+    {
+      "name": "onbehalf_is_child_wallet",
+      "ok": true,
+      "detail": "got=0xbc24b9a2d0c61705602257565d8c0064effe253e"
+    },
+    {
+      "name": "amount_is_exact_remaining_not_20",
+      "ok": true,
+      "detail": "got=4.496788 expected=4.496788（不重复投20）"
+    }
+  ],
+  "unsigned_transactions": [
+    {
+      "purpose": "exact_amount_approval",
+      "chainId": 8453,
+      "from": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+      "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "value": "0x0",
+      "data": "0x095ea7b3000000000000000000000000A238Dd80C259a72e81d7e4664a9801593F98d1c50x0000000000000000000000000000000000000000000000000000000000449d94"
+    },
+    {
+      "purpose": "aave_v3_base_supply_exact",
+      "chainId": 8453,
+      "from": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+      "to": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+      "value": "0x0",
+      "data": "0x617ba037000000000000000000000000833589fCD6eDb6E08f4c7C32D4f71b54bdA029130x0000000000000000000000000000000000000000000000000000000000449d94000000000000000000000000bc24b9a2d0c61705602257565d8c0064effe253e0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "blockers": [
+    "insufficient_Base_USDC_for_candidate",
+    "no_Base_ETH_for_wallet_gas",
+    "signature_required_from=owner_in_OKX_Web3_wallet"
+  ],
+  "model_calls": 0,
+  "signatures_created": 0,
+  "transactions_submitted": 0,
+  "paid": false,
+  "tx_hash": null,
+  "private_key_touched": false,
+  "next_step": "owner 在 OKX 手机钱包对两笔待签交易签名并提交；回传 tx_hash 后运行 verify"
+}
