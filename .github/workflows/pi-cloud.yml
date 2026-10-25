@@ -22,14 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     permissions: {contents: write}
-    env:
-      PI_RUNTIME_ROOT: '${{ runner.temp }}/ltzzz-pi-runtime-${{ github.run_id }}-${{ github.run_attempt }}'
-      PI_RECEIPT_ROOT: '${{ github.workspace }}'
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ github.sha }}', fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
+      - name: Set runtime paths from runner environment, not job-level runner context
+        run: |
+          printf 'PI_RUNTIME_ROOT=%s/ltzzz-pi-runtime-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          printf 'PI_RECEIPT_ROOT=%s\n' "$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
       - name: Freeze exact reviewed runtime before any receipt transport rebase
         run: node scripts/pi-cloud.mjs stage
       - run: npm ci --prefix "$PI_RUNTIME_ROOT/config/pi-cloud-runtime" --ignore-scripts --no-audit --no-fund

@@ -30,6 +30,7 @@ test('smoke cannot enable unsafe capabilities, read arbitrary paths, or use same
   for (const name of ['paid_schedule', 'automatic_merge', 'automatic_deploy', 'financial_execution', 'native_claude_call']) assert.throws(() => validateConfig({...config, [name]: true}), /not_accepted/);
   assert.throws(() => validateConfig({...config, tools: ['bash']}), /untrusted_input_or_tools/);
   assert.throws(() => validateConfig({...config, input_paths: ['.env']}), /untrusted_input_or_tools/);
+  assert.throws(() => validateConfig({...config, input_paths: [...config.input_paths].reverse()}), /untrusted_input_or_tools/);
   assert.throws(() => validateConfig({...config, reviewer_provider: 'deepseek'}), /distinct_official_providers/);
 });
 
@@ -154,6 +155,18 @@ test('any exact-byte executable or dependency drift blocks model calls', async t
     assert.equal(calls, 0);
     fs.writeFileSync(path.join(root, file), original);
   }
+});
+
+test('missing required runtime file fails closed before SDK load or model requests', async t => {
+  const root = fixture(t);
+  await main({phase: 'prepare', root, receiptRoot: root, env: {GITHUB_RUN_ID: '123', GITHUB_SHA: source}});
+  fs.unlinkSync(path.join(root, 'data/model-routing/latest.json'));
+  let sdkLoads = 0;
+  await assert.rejects(main({phase: 'execute', root, receiptRoot: root, env: {GITHUB_RUN_ID: '123', GITHUB_SHA: source}, sdkLoader: async () => { sdkLoads++; }}), {code: 'ENOENT'});
+  assert.equal(sdkLoads, 0);
+  const stored = fs.readdirSync(path.join(root, 'knowledge/results/pi-cloud')).map(file => JSON.parse(fs.readFileSync(path.join(root, 'knowledge/results/pi-cloud', file), 'utf8')));
+  assert.equal(stored.length, 1); assert.equal(stored[0].calls_attempted, 0);
+  assert.equal(stored[0].status, 'reserved_before_provider_calls');
 });
 
 test('a genuine git rebase of receipt transport cannot change frozen verified runtime', async t => {
