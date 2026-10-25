@@ -8,6 +8,7 @@ const REPO='ltzyz2181-collab/ltzzz',SHA=/^[a-f0-9]{40}$/;
 const ROOT='/repos/'+REPO,BRANCH='patchgate-a1-observations/',HASH='[a-f0-9]{64}';
 const TRUSTED_AUTHORS=new Set(['OWNER','MEMBER','COLLABORATOR']);
 const SAFE_FAILURES=new Set(['diff_limit_exceeded','file_limit_exceeded','diff_base_required','acceptance_injected_failure']);
+const validTaskID=value=>typeof value==='string'&&/^[A-Z0-9][A-Z0-9_-]{6,80}$/.test(value);
 const git=args=>execFileSync('git',args,{encoding:'utf8',maxBuffer:2*1024*1024,env:{...process.env,GIT_NO_REPLACE_OBJECTS:'1'}}).trim();
 export function observerContext({ref,event,runnerSha,checkout,repository}) {
   if(repository!==REPO || ref!=='refs/heads/main' || !['pull_request_target','workflow_dispatch'].includes(event) || !SHA.test(runnerSha||'') || checkout!==runnerSha)throw Error('trusted_main_observer_required');
@@ -17,7 +18,7 @@ export function candidateIdentity(pr) {
   if(!Number.isSafeInteger(pr?.number)||pr.number<=0||pr.base?.ref!=='main'||pr.base?.repo?.full_name!==REPO||!SHA.test(pr.head?.sha||''))throw Error('invalid_observation_target');
   if(!TRUSTED_AUTHORS.has(pr.author_association))throw Error('trusted_pr_author_required');
   let task='PATCHGATE-PR-'+pr.number;
-  try {const text=/^```json\s*\n([\s\S]*?)\n```/.exec(pr.body||'');const id=JSON.parse(text?.[1]||'{}').task_id;if(/^[A-Z0-9][A-Z0-9_-]{6,80}$/.test(id||''))task=id;}catch{}
+  try {const text=/^```json\s*\n([\s\S]*?)\n```/.exec(pr.body||'');const id=JSON.parse(text?.[1]||'{}').task_id;if(validTaskID(id))task=id;}catch{}
   return {task_id:task,head_sha:pr.head.sha,pr_number:pr.number};
 }
 export function observerMode({event,enabled,inputs={},association}) {
@@ -26,7 +27,7 @@ export function observerMode({event,enabled,inputs={},association}) {
   throw Error('observer_disabled_or_untrusted_event');
 }
 function isolatedRecord(record,key) {
-  if(!record||key!==sha256(record.task_id+':'+record.head_sha)||!SHA.test(record.head_sha||'')||!SHA.test(record.source_main_sha||'')
+  if(!record||!validTaskID(record.task_id)||key!==sha256(record.task_id+':'+record.head_sha)||!SHA.test(record.head_sha||'')||!SHA.test(record.source_main_sha||'')
     ||record.phase!=='A1_shadow_readonly'||!Number.isSafeInteger(record.pr_number)||record.pr_number<1||!/^\d+$/.test(record.run_id||'')
     ||!Number.isFinite(Date.parse(record.at_utc))||record.native_model_calls!==0||record.signing_admission!==false
     ||[record.automatic_merge,record.automatic_deploy,record.automatic_rollback,record.financial_execution,record.paid].some(v=>v!==false)||record.tx_hash!==null)throw Error('invalid_transport_observation');
