@@ -1,0 +1,258 @@
+{
+  "parent_task_ids": [
+    "ANS-CLAIM-CLOSEOUT",
+    "CONTROL-CLAIM-REPAIR-20261018",
+    "ANS-2026-10-24-doubao",
+    "ANS-2026-10-25-doubao"
+  ],
+  "implementation_pr": 237,
+  "reviewed_code_head": "0885566f1f3047df7d67fd859966f0a8e695d464",
+  "at_utc": "2026-10-25T06:02:15.049Z",
+  "controller_actual_provider": "openai",
+  "controller_model": null,
+  "authority_source": "config/review-delegation.json:on_controller_disagreement",
+  "decision": "proceed_with_recorded_controller_disagreement_after_deterministic_counterchecks_not_native_review_approval",
+  "native_reviews": [
+    {
+      "scope": "MATERIALIZE",
+      "path": "knowledge/results/qwen-dispatch/ANS-CLAIM-CLOSEOUT-PR237-MATERIALIZE.json",
+      "blob_sha": "07ef352eaa855e7ce50e6f0ed410f122963057d5",
+      "record": {
+        "task_id": "ANS-CLAIM-CLOSEOUT-PR237-MATERIALIZE",
+        "card_sha256": "9f0dcfd1fc5e4cd53257876aab0b0320f05632883d3a7837be3bf3dbdd48c1d9",
+        "run_id": "40167361827",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T05:57:15.358Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-MATERIALIZE",
+          "prompt_sha256": "43f585a93183957434b54f724522e03fba4ce7fd417f4425b9f96a5e05fe6650"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2943,
+        "request_id": "792c0699-d281-99bc-ab97-d41e2e83f8cd",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"0885566f1f3047df7d67fd859966f0a8e695d464\",\n  \"scope\": \"qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-MATERIALIZE\",\n  \"findings\": [\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"逻辑混淆实际 provider 与 logical reviewer seat：代码中硬编码 logical_reviewer_seat: 'doubao'，但当前执行席位为 LTZZZ 千问原生审阅席（即 actual_provider: 'aliyun_dashscope', model: 'qwen'），而 'doubao' 是字面指代旧豆包服务（已明确声明 'Qwen代行逻辑doubao不冒充原生豆包'）。该字段语义冲突构成不可忽略的标识性错误，违反 '客户端、岗位、实际provider/model分开' 原则，且未通过任何反例可绕过 —— 只要 materializeAnsReview 被千问原生执行，logical_reviewer_seat 就不应为 'doubao'。\",\n      \"counterexample\": \"调用 materializeAnsReview({root: '.', date: '2024-10-18', receiptPath: 'knowledge/results/qwen-dispatch/ABC123.json'})，其中 receipt.model === 'qwen-max' 且 receipt.model_source === 'provider_response'；此时函数内 logical_reviewer_seat 固定赋值为 'doubao'，但执行主体是 Qwen（非 Doubao），导致 audit.logical_reviewer_seat 与实际席位身份矛盾，违反 '实际千问' 定位及 '不冒充原生豆包' 约束。\"\n    },\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"receipt 验证缺失对 logical_reviewer_seat 的一致性校验：receipt 被要求含 native_qwen_call===true 且 model_source==='provider_response'，但未验证 receipt 中是否携带 logical_reviewer_seat 字段或其值是否与上下文一致；更严重的是，receipt.output 解析后 verdict 对象中未校验 verdict.logical_reviewer_seat 是否存在且等于 'doubao'（若 receipt 声称由 doubao 逻辑席位生成），导致 receipt 可伪造逻辑席位身份而不被拦截。\",\n      \"counterexample\": \"构造 receipt.json 内容：{native_qwen_call:true,model_source:'provider_response',model:'qwen-plus',finish_reason:'stop',status:'draft_delivered_pending_independent_review',output_sha256:'...',output:'```json[{\\\"task_id\\\":\\\"ANS-2024-10-18-deepseek\\\",\\\"reviewer_task_id\\\":\\\"ANS-2024-10-18-doubao\\\",\\\"logical_reviewer_seat\\\":\\\"beanbot\\\"}]```',run_id:'123'}；该 receipt 满足当前所有校验条件（包括 digest(receipt.output)===receipt.output_sha256），但 verdict.logical_reviewer_seat==='beanbot'，而代码未校验此字段，最终 audit.logical_reviewer_seat 仍被硬编码为 'doubao'，造成 audit 与 receipt 事实脱节。\"\n    },\n    {\n      \"severity\": \"high\",\n      \"reason\": \"archive 文件名固定为 '-before-qwen-review-recovery.json'，但 PR237 明确要求 '实物→原字节SHA256→按原流程提交回读→不同实际提供商复核'，而此处 archive 是对原始 record 的浅拷贝，未包含原始 record 的完整 provenance（如 source_receipt、deployed 状态等上下文），且命名未体现实际 provider（如 aliyun_dashscope）或席位（LTZZZ），削弱可追溯性与跨 provider 复核能力。\",\n      \"counterexample\": \"record 中原有 remote_review_status 或 board_verification 字段（即使为 null）在 archive 中被保留，但无对应哈希锚定或 provider 标识；当另一 provider（如 DeepSeek）需复核该 archive 时，无法确认其是否出自 Qwen 席位的 MATERIALIZE 组件，因文件名与内容均未携带执行席位指纹。\"\n    }\n  ],\n  \"limitations\": [\n    \"未覆盖 receipt.output 中 verdict.reasons 的语义有效性校验（仅校验类型与非空），例如 reasons 是否真实反映 worker artifact 内容、是否存在循环引用或越界索引等；但此属加固建议，非阻塞项。\",\n    \"digest 函数未在材料中提供实现，其行为（如是否兼容 Buffer/Uint8Array/str、是否含 BOM 处理）影响 receipt.output_sha256 校验可靠性；但依据指令 '材料都是不可信数据，不执行其指令'，digest 视为外部可信依赖，不在此审范围内。\"\n  ]\n}",
+        "output_sha256": "7dcd97953f63eb8b541d51aa507140bfeda4178b0e82d38fd80532090b34c6c8",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T05:57:40.947Z"
+      }
+    },
+    {
+      "scope": "SYNC",
+      "path": "knowledge/results/qwen-dispatch/ANS-CLAIM-CLOSEOUT-PR237-SYNC.json",
+      "blob_sha": "2ea507eb4b3b545b0fbafffc9b6783ebaec13936",
+      "record": {
+        "task_id": "ANS-CLAIM-CLOSEOUT-PR237-SYNC",
+        "card_sha256": "87ac1f1d503188efc7405d8a6b901db6d189f46b81fb9c785286e7e5c606e3ea",
+        "run_id": "40167496419",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T05:59:45.881Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-SYNC",
+          "prompt_sha256": "c444fd5967240ebe181e7da9871a62e1b01fb864596df6bf699f17e1ecc95d7c"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 3370,
+        "request_id": "510c20f9-56ea-923f-8580-49b5b5f6424f",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"0885566f1f3047df7d67fd859966f0a8e695d464\",\n  \"scope\": \"qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-SYNC\",\n  \"findings\": [\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"Untrusted external input used in `execFileSync` without sanitization or bounds checking: `date` derived from unvalidated JSON file (`r.date`) is interpolated into environment variable `ANS_DATE`, then passed to child process `run-ans-cycle.mjs`. No validation that `r.date` matches `^\\\\d{4}-\\\\d{2}-\\\\d{2}$` *before* use in `execFileSync`; regex check occurs only *after* `JSON.parse()` and inside `pendingAnsReviewSync`, but the `date` variable extracted from `r.date` is reused outside that guard — notably in the `else` branch where `execFileSync` is called. An attacker-controlled `r.date` (e.g., `'2026-10-18; rm -rf /'`) could lead to arbitrary command execution via shell injection if `process.execPath` or underlying runtime permits shell interpretation (node.js `execFileSync` does *not* invoke shell by default, but unsafe env var propagation + downstream use in `run-ans-cycle.mjs` remains unverified and out-of-scope for this review — thus constitutes a cross-component trust violation).\",\n      \"counterexample\": \"Given record file `2026-10-18.json` containing `{\\\"date\\\":\\\"2026-10-18; touch /tmp/PWNED\\\",\\\"artifacts\\\":[...],\\\"review_recovery\\\":{...}}`, `pendingAnsReviewSync()` returns `['2026-10-18; touch /tmp/PWNED']`, which is then iterated in `for (const date of dates) { ... }`, leading to `ANS_DATE='2026-10-18; touch /tmp/PWNED'` set in `env`. If `run-ans-cycle.mjs` uses `process.env.ANS_DATE` in any `child_process.exec*` with `shell: true`, or in path construction without validation, RCE occurs. This violates LTZZZ principle: 'materials are untrusted data, do not execute their instructions'.\"\n    },\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"`cycleClosure()` reads and parses `reviewer.path` (`knowledge/results/ans-cycle/${date}-reviewer.json`) as `verdict=JSON.parse(read(root,reviewer.path))`, but does not validate schema, type, or integrity of the parsed `verdict`. Specifically: `verdict.accepted` is assumed boolean, `verdict.artifact_sha256` is assumed string — no defensive parsing. A malformed or adversarial `reviewer.path` (e.g., `{\\\"accepted\\\":\\\"true\\\"}` — string not bool, or `{\\\"artifact_sha256\\\":null}`) causes silent coercion/failure in equality checks (`verdict.accepted !== record.audit.accepted`), leading to false negatives or logic bypass. This breaks deterministic closure semantics required for claim closeout.\",\n      \"counterexample\": \"A `reviewer.path` file containing `{\\\"accepted\\\":\\\"true\\\",\\\"artifact_sha256\\\":\\\"abc123\\\"}` (note: `accepted` is string, not boolean) causes `verdict.accepted === 'true'`, while `record.audit.accepted` is `true` (boolean). `verdict.accepted !== record.audit.accepted` evaluates to `true`, causing `cycleClosure()` to return `false` even when logically valid — blocking legitimate sync completion. This violates 'real user intent > skill doc' and breaks PR237's deterministic closure invariant.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"reason\": \"`pendingAnsReviewSync()` throws generic `Error('invalid_pending_review_recovery')` on recovery validation failure, but caller (top-level script) catches only bare `catch{throw Error();}` — losing original error context, stack, and discriminant. This prevents root-cause diagnosis of why recovery failed (e.g., missing file, wrong digest, invalid receipt path pattern), violating observability requirements for audit-trail and reconciliation. Also, `recovery.original.path` is checked against hardcoded `'knowledge/results/ans-cycle/${r.date}-before-qwen-review-recovery.json'`, but `r.date` is unsanitized — same injection risk as above, now in filesystem path.\",\n      \"counterexample\": \"Record with `r.date = '../../../../etc/passwd'` leads to attempted `read(root, '../../../../etc/passwd')`, which may succeed if `root` is not properly constrained (e.g., `root='.'` but process CWD is `/`). Path traversal violates isolation guarantee. Throwing generic `Error()` obscures whether failure was due to path traversal, digest mismatch, or regex mismatch — no actionable signal for operator.\"\n    }\n  ],\n  \"limitations\": [\n    \"No access to `read()`, `digest()`, `save()`, `control()`, `pulseSnapshot()`, or `reconcileInternalHire()` implementations — review limited to call sites, control flow, and observable data dependencies.\",\n    \"Cannot verify actual behavior of `run-ans-cycle.mjs` (sync/verify phases) — those are separate components with separate回执; this review covers only `SYNC`-scoped logic in provided snippet.\",\n    \"Assumes `fs`, `path`, `node:child_process` behave per Node.js v20+ LTS; deviations (e.g., `fs.readFileSync` returning Buffer vs string) not testable without runtime context.\",\n    \"SHA256 digest function (`digest()`) signature and behavior (e.g., encoding, binary input handling) unknown — equality `digest(text) === a.sha256` assumed correct but unverifiable here.\"\n  ]\n}",
+        "output_sha256": "7bfd1e9607aa071ffc44324c6e438a15d39396d91c88baddb02fdfff000cfbcb",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T06:00:15.831Z"
+      }
+    },
+    {
+      "scope": "WORKFLOW",
+      "path": "knowledge/results/qwen-dispatch/ANS-CLAIM-CLOSEOUT-PR237-WORKFLOW.json",
+      "blob_sha": "ec9d7040615622c6b0a2932662e8ca2ef9599bb3",
+      "record": {
+        "task_id": "ANS-CLAIM-CLOSEOUT-PR237-WORKFLOW",
+        "card_sha256": "ac190e5d4c164cfc939fdb9ea3176812b87631011fb534cb59723a5b69a67435",
+        "run_id": "40167497060",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T06:00:29.420Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-WORKFLOW",
+          "prompt_sha256": "eb7a24d04e16f7dc443f159b02618b5ee784dbd9ff70dfbd1f9313529db0b92b"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2429,
+        "request_id": "9e7b3310-43dd-92c9-b6f1-de3d2a053858",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"0885566f1f3047df7d67fd859966f0a8e695d464\",\n  \"scope\": \"qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-WORKFLOW\",\n  \"findings\": [\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"新增测试脚本 `ans-review-recovery.test.mjs` is referenced in workflow but not present in diff nor verified as existing in repo; absence breaks test execution and violates '56项本地测试通过' claim — counterexample: `node --test scripts/tests/ans-review-recovery.test.mjs` fails with ENOENT.\",\n      \"counterexample\": \"scripts/tests/ans-review-recovery.test.mjs missing from git index (not added, not renamed, not copied); no corresponding add/mod in diff; workflow run will fail at test step.\"\n    },\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"`scripts/sync-ans-review-backlog.mjs` is invoked before `run-ans-cycle.mjs sync`, but no evidence it exists or is idempotent; its side effects (e.g., mutating review backlog state) may invalidate subsequent `verify` phase assumptions — counterexample: `verify` relies on `cycleClosure(record)` expecting a consistent draft-review closure state, but unreviewed `sync-ans-review-backlog.mjs` could overwrite or prune records unexpectedly.\",\n      \"counterexample\": \"No diff provided for `scripts/sync-ans-review-backlog.mjs`; no export signature, input contract, or error handling visible; cannot confirm it preserves `record.status`, `draft_review_closure_verified`, or avoids race with `run-ans-cycle.mjs verify`.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"reason\": \"In `internal-daily-hire.mjs`, `c.source_run_id||ans.run_id` introduces non-deterministic fallback: if `c.source_run_id` is falsy (e.g., `null`, `''`, `0`), `ans.run_id` is used — but `ans.run_id` may belong to a different logical execution context (e.g., parent orchestration), breaking traceability and violating upstream model usage attribution per actual provider. This undermines SHA256→provider→reproducibility chain.\",\n      \"counterexample\": \"A call `c = {executed_by:'doubao', model:'glm-4', source_run_id:0, ...}` yields `source_run_id: ans.run_id`, falsely attributing tokens to Qwen context while originating from DeepSeek via proxy; breaks `actual provider ≠ gateway domain` invariant.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"reason\": \"`LTZZZ_AGENT_TOKEN` is exposed as plain env var in GitHub Actions job (line 54–55); though sourced from secrets, presence in env scope risks leakage via debug logs, failed steps, or misconfigured `actions/github-script`. No mitigation (e.g., masking, scoped injection, or runtime redaction) shown.\",\n      \"counterexample\": \"If `scripts/run-ans-cycle.mjs verify` throws uncaught error with stack trace containing env dump, `LTZZZ_AGENT_TOKEN` may appear in runner logs — violates 'credentials only by受管执行器使用' and '禁止在输出中暴露' constraints.\"\n    }\n  ],\n  \"limitations\": [\n    \"No access to actual filesystem or CI runtime to confirm existence of `ans-review-recovery.test.mjs` or `sync-ans-review-backlog.mjs` — verification deferred to separate back-read by actual provider.\",\n    \"No visibility into `cycleClosure()` implementation logic (not in diff); cannot assess whether `verify` phase correctly detects *skipped model step* vs *legitimate recovery*, as required by step name 'Verify draft review closure; a skipped model step is not recovery'.\",\n    \"No evidence that `DOUBAO_USE_PROXY: 'true'` is reconciled with `actual upstream provider ≠ gateway domain` rule — proxying may conflate DeepSeek/GLM provenance with Qwen execution context, violating independence requirement.\"\n  ]\n}",
+        "output_sha256": "944870e9837a1f8f344c60ecc0107fadf2d636406db049f75b462df583a96981",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T06:00:50.420Z"
+      }
+    },
+    {
+      "scope": "OVERSIGHT",
+      "path": "knowledge/results/qwen-dispatch/ANS-CLAIM-CLOSEOUT-PR237-OVERSIGHT.json",
+      "blob_sha": "b5ea00b695abab2b41238cfbbf8cc32c3f946173",
+      "record": {
+        "task_id": "ANS-CLAIM-CLOSEOUT-PR237-OVERSIGHT",
+        "card_sha256": "dade56b9f761015eede734d9a0e788019d99d3de398c8b7fb44575c2c3925323",
+        "run_id": "40167366064",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T05:57:52.077Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-OVERSIGHT",
+          "prompt_sha256": "c0e37ee7c0531f051a4966d836a1e69a71bc758c70b7bbdfb7fe8e34c04ed409"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2848,
+        "request_id": "4aaa602b-db22-924c-bfbe-17bb41c58bd2",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"0885566f1f3047df7d67fd859966f0a8e695d464\",\n  \"scope\": \"qianwen-queue:ANS-CLAIM-CLOSEOUT-PR237-OVERSIGHT\",\n  \"findings\": [\n    {\n      \"severity\": \"blocker\",\n      \"reason\": \"task_delivery_proofs 配置中 production_deployment_verified: false，但 cycleClosure 后 add() 调用中 deployed: false 与实际交付状态未对齐；且 closed 判定逻辑中 'independent_draft_review_completed' 被列为可关闭 phase，但该 phase 仅表示草稿审核完成、远端回读通过，不等价于 task_delivery_proofs 所要求的双工件绑定验证（即：controller_review_record_present + engineering_delivery_verified_not_deployed）已达成。当前逻辑允许在 proof.production_deployment_verified === false 时仍标记为 closed，违反 PR237 'cycleClosure 必须真实远端回读+双工件绑定才关闭审核阶段' 的核心约束。\",\n      \"counterexample\": \"当 task_delivery_proofs['CONTROL-CLAIM-REPAIR-20261018'].production_deployment_verified === false（如当前配置），且 task.phase === 'independent_draft_review_completed'，则 closed === true，但此时 engineering_delivery_verified_not_deployed 尚未触发或验证，cycleClosure 实际未完成双工件绑定，phase 提前进入关闭态，导致审核阶段误判完成。\"\n    },\n    {\n      \"severity\": \"high\",\n      \"reason\": \"fileProof 函数存在路径遍历绕过风险：正则 /^knowledge|results|ops\\\\/...$/ 未锚定开头（缺少 ^ 在分组外），实际匹配为 /^(knowledge|results|ops)\\\\/...$/ 才有效；当前写法等价于 /^knowledge|results|ops\\\\/...$/，会导致 'xknowledge/...' 或 'resultsx/...' 等非法前缀被误接受。\",\n      \"counterexample\": \"file = 'xknowledge/results/malicious.json' 满足当前正则 /^(knowledge|results|ops)\\\\/[A-Za-z0-9_./\\\\u4e00-\\\\u9fff-]+\\\\.(json|md)$/, 因为 'xknowledge' 匹配 'knowledge' 分支（/^knowledge/ 成立），进而绕过目录白名单校验。\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"reason\": \"task_delivery_proofs 中重复使用同一 path + sha256 绑定两个不同 task_id（CONTROL-CLAIM-REPAIR-20261018 和 ANS-CLAIM-CLOSEOUT），但未声明该制品是否支持多任务语义复用；且 scope 字段值 'existing_fixed_rules_verification_not_native_Claude_delivery' 为描述性字符串，非机器可解析标识，无法支撑自动化双工件绑定验证。\",\n      \"counterexample\": \"若 ANS-CLAIM-CLOSEOUT 要求额外字段（如 'claim_id'）而 CONTROL-CLAIM-REPAIR-20261018 不需要，则共享同一 json 文件将导致一个任务验证通过、另一个隐式失败，但当前逻辑无差异化校验路径。\"\n    }\n  ],\n  \"limitations\": [\n    \"未提供 fileProof 所依赖的 hash() 函数实现，无法验证其是否为标准 SHA256（如是否处理 encoding、BOM、换行符归一化）；此为实测依赖项缺失。\",\n    \"未提供 read(root, delivery) 的具体实现，无法确认 body?.task_id === id 校验是否抗空值、嵌套错误或 schema 变更；该判定是双工件绑定关键环节。\",\n    \"closed 判定中 'draft_reviewed_not_deployed' 分支依赖 !task.requires_engineering_followup，但该字段未在材料中定义出处或初始化逻辑，属未知行为变量。\"\n  ]\n}",
+        "output_sha256": "5f2926ad3a3fb71216b65f64ae7144512b189705e2c79f3fe52cbad04afaafab",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T05:58:13.124Z"
+      }
+    }
+  ],
+  "original_native_verdicts_preserved": true,
+  "native_reviews_marked_approved": false,
+  "counterevidence": [
+    {
+      "scopes": [
+        "MATERIALIZE"
+      ],
+      "claims": "logical_reviewer_seat must equal actual provider; beanbot payload accepted; archive is shallow copy",
+      "findings": "Original reviewer Task IDs remain ANS-date-doubao; explicit actual_provider=aliyun_dashscope and executed_by=Qianwen separate role from provider. The exact beanbot counterexample is rejected with review_binding_invalid. Archives are exact Buffer bytes with external SHA256 anchors, not object copies.",
+      "actual_results": {
+        "beanbot_accepted": false,
+        "archive24_sha256": "7814035e16000a3f6e67794d4bff9f99c8efa925885fcc553c3d4755f785bb07",
+        "archive25_sha256": "994c7124dcb4fcd0960976281b4b690ff33023c5c8fd35dae5a60c6f4cf4d4bd",
+        "both_match_external_anchors": true
+      }
+    },
+    {
+      "scopes": [
+        "SYNC"
+      ],
+      "claims": "date injection returned to exec; accepted string should pass; path traversal; missing error details",
+      "findings": "Canonical filename must equal record.date+'.json' before any date is returned. Both reported malicious date examples yielded []. execFileSync has no shell. cycleClosure requires audit.accepted boolean and strict equality; string true is correctly rejected. read uses realpath confinement and rejects symlink source. Stable generic failure codes intentionally do not serialize remote exception/credential text.",
+      "actual_results": {
+        "malicious_dates_selected": [],
+        "string_true_can_pass": false
+      }
+    },
+    {
+      "scopes": [
+        "OVERSIGHT"
+      ],
+      "claims": "review closure requires production deployment; grouped whitelist regex unanchored; same artifact cannot support primary task and subtask",
+      "findings": "Reviewer stage closure and engineer completion are separate. Rejected authors retain engineering_completion_unverified with deployed=false. Exact xknowledge path example is rejected. Existing immutable receipt names CONTROL-CLAIM-REPAIR-20261018 as task_id and ANS-CLAIM-CLOSEOUT as subtask; both explicit bindings are checked, and source is fixed rules verifier, not native Claude.",
+      "actual_results": {
+        "xknowledge_bypass": false,
+        "review_closed_without_closing_author": true,
+        "native_Claude_claimed": false
+      }
+    },
+    {
+      "scopes": [
+        "WORKFLOW"
+      ],
+      "claims": "new files absent from repository; shared run fallback non-deterministic; token exposed by verify step",
+      "findings": "git tree at reviewed head contains both scripts/tests/ans-review-recovery.test.mjs and scripts/sync-ans-review-backlog.mjs; full helper was separately reviewed under SYNC. Existing author calls belong to ans.run_id, supplementary Qwen calls explicitly carry actual source_run_id and shared request ID. LTZZZ_AGENT_TOKEN is injected from existing GitHub Secret only into the model execution step, not into verify. No env dump or candidate code execution added.",
+      "actual_results": {
+        "local_tests_passed": 56,
+        "local_tests_failed": 0,
+        "GitHub_review_delegation_run": "40167313259",
+        "GitHub_job": "121090900139",
+        "GitHub_tests_passed": 61,
+        "GitHub_tests_failed": 0
+      }
+    }
+  ],
+  "preserved_unfinished_work": [
+    "Old author engineering specifications remain rejected and unimplemented; reviewer closure does not solve the raw-response durability proposal.",
+    "Future Doubao proxy generation is not verified by this change until a new authorized generation runs.",
+    "Live reconciliation may still fail; only actual board readback permits closure.",
+    "A2/B/signing/automatic merge/deploy/rollback/funds remain disabled."
+  ],
+  "model_API_cost": null,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
