@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Check claim, incomplete-output and independent review regressions
-        run: node --test scripts/tests/pulse-feedback.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-board-sync.test.mjs
+        run: node --test scripts/tests/pulse-feedback.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/ans-review-recovery.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-board-sync.test.mjs
       - name: Prepare today's ANS direction and two durable assignments, no models
         id: prepare
         env:
@@ -51,6 +51,8 @@ jobs:
           DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
           DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+          DOUBAO_USE_PROXY: 'true'
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           NODE_OPTIONS: --dns-result-order=ipv4first
         run: node scripts/run-ans-cycle.mjs execute
@@ -71,7 +73,9 @@ jobs:
         if: always() && steps.prepare.outcome == 'success'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: node scripts/run-ans-cycle.mjs sync
+        run: |
+          node scripts/sync-ans-review-backlog.mjs
+          node scripts/run-ans-cycle.mjs sync
       - name: Preserve live board completion or blocker
         if: always() && steps.prepare.outcome == 'success'
         run: |
@@ -85,3 +89,6 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+      - name: Verify draft review closure; a skipped model step is not recovery
+        if: always() && steps.prepare.outcome == 'success'
+        run: node scripts/run-ans-cycle.mjs verify

@@ -5,6 +5,7 @@ import {prepareDailyHire,reconcileInternalHire} from './lib/daily-hire-files.mjs
 import {prepareCycle,executeCycle,dayCST,digest} from './lib/ans-cycle.mjs';
 import {pulseSnapshot,PULSE_URL,pulseGate} from './lib/pulse-client.mjs';
 import {pulseToken} from './pulse-credentials.mjs';
+import {cycleClosure} from './lib/ans-review-recovery.mjs';
 const phase=process.argv[2],date=process.env.ANS_DATE||dayCST(),runId=process.env.GITHUB_RUN_ID||'local';
 const file='knowledge/results/ans-cycle/'+date+'.json';
 const save=r=>{fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(r,null,2)+'\n');};
@@ -54,4 +55,8 @@ record.inputs=docs.map(d=>({file:d.file,sha256:digest(d.text)}));
  }
  save(record);
  reconcileInternalHire(date);
+}else if(phase==='verify'){
+ const record=JSON.parse(fs.readFileSync(file)),verified=cycleClosure(record);
+ console.log(JSON.stringify({date,status:record.status,draft_review_closure_verified:verified,deployed:false,model_calls:0,financial_execution:false}));
+ if(!verified)process.exitCode=1;
 }else throw Error('phase_required');

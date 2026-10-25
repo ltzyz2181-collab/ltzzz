@@ -25,7 +25,7 @@ export function internalHireEvidence(record,{ans,read,sourcePath}){
   // Retain exact public evidence bytes: a receipt rebase or later board sync must
   // not make this audit depend on mutable main paths.
   result.evidence=paths.map((path,i)=>({path,sha256:hashes[i],utf8:bytes[i].toString('utf8')}));
-  result.upstream_model_usage=calls.map(c=>({executed_by:c.executed_by,model:c.model,finish_reason:c.finish_reason,tokens_used:c.tokens_used,source_run_id:ans.run_id}));
+  result.upstream_model_usage=calls.map(c=>({executed_by:c.executed_by,model:c.model,finish_reason:c.finish_reason,tokens_used:c.tokens_used,source_run_id:c.source_run_id||ans.run_id,...(c.shared_request_id?{shared_request_id:c.shared_request_id,usage_scope:c.usage_scope}:{} )}));
   result.status=!boardVerified?'internal_reviewed_pending_board_verification':verdict.accepted?'internal_engineering_artifact_accepted':'internal_delivery_rejected';
   result.delivery_accepted=boardVerified&&verdict.accepted;
   result.action_taken={type:'existing_ANS_worker_and_independent_review',source_run_id:ans.run_id,source_tasks:result.original_task_ids,reused_existing_model_calls:true};

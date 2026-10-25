@@ -4,7 +4,7 @@
   "run_id": "39991485550",
   "source_commit": "67f3f65945f6e1f8b3e87275caa9495f4c027818",
   "at": "2026-10-23T17:00:33.507Z",
-  "status": "blocked_provider_or_incomplete",
+  "status": "draft_rejected",
   "generation_policy": "ans_short_non_thinking_v2",
   "priority": "ANS autonomous dispatch and feedback",
   "tasks": [
@@ -37,6 +37,19 @@
       "model": null,
       "finish_reason": null,
       "tokens_used": 0
+    },
+    {
+      "requested_agent": "Doubao",
+      "executed_by": "Qianwen",
+      "model": "qwen-plus",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 3036,
+      "at": "2026-10-25T05:50:40.086Z",
+      "source_run_id": "40166980943",
+      "shared_request_id": "675a7929-d4ee-9ea7-addc-bcd58a17d121",
+      "usage_scope": "shared_two_subject_review_request_not_additive_across_dates",
+      "source_receipt": "knowledge/results/qwen-dispatch/ANS-REVIEW-RECOVERY-20261024-20261025.json"
     }
   ],
   "artifacts": [
@@ -47,6 +60,14 @@
       "model": "deepseek-v4-pro",
       "sha256": "479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa",
       "path": "knowledge/results/ans-cycle/2026-10-24-worker.json"
+    },
+    {
+      "role": "reviewer",
+      "task_id": "ANS-2026-10-24-doubao",
+      "executed_by": "Qianwen",
+      "model": "qwen-plus",
+      "path": "knowledge/results/ans-cycle/2026-10-24-reviewer.json",
+      "sha256": "ab3da5f38a72ccd034220ebada8d0c12664e7938e0d6481b353a9c708f51ac4d"
     }
   ],
   "openai_calls": 0,
@@ -180,7 +201,13 @@
     "type": "engineering_draft_created_not_deployed",
     "artifact_sha256": "479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa"
   },
-  "follow_up_receipt": null,
+  "follow_up_receipt": {
+    "artifact_sha256": "479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa",
+    "reviewer_provider": "Qianwen",
+    "reviewer_model": "qwen-plus",
+    "accepted": false,
+    "scope": "independent_engineering_draft_review_not_production_execution"
+  },
   "submissions": [
     {
       "task_id": "ANS-2026-10-24-deepseek",
@@ -189,5 +216,49 @@
       "sha256": "479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa"
     }
   ],
-  "sync_status": "hashed_artifacts_submitted"
+  "sync_status": "hashed_artifacts_submitted",
+  "audit": {
+    "task_id": "ANS-2026-10-24-deepseek",
+    "reviewer_task_id": "ANS-2026-10-24-doubao",
+    "artifact_sha256": "479e3c5c0c66a3ff8206df52bd95fa8d4c9bf89b9375412847390ebcf52f47aa",
+    "accepted": false,
+    "reasons": [
+      "finding 描述的崩溃窗口（call() 返回后、artifact 落盘前）与现行运行器事实矛盾：执行器明确先 saveLedger（含 status=generation_started），再 await call()，之后才 writeFileSync(flag:wx) 并保存 seat.artifact；故 ledger 置为 generation_started 发生在 call() 前，非 finding 所述‘call() 返回后’。",
+      "minimal_patch 要求 persist raw provider response 于 call() 返回后，但现行流程中 call() 是 await 的异步调用，其返回值 result 在 await 后才可用；patch 未说明如何在 await call() 完成后、writeFileSync 前安全捕获并落盘原始响应，缺乏时序锚点。",
+      "remaining_blocker 明确指出 scripts/lib/provider-execution.js 与 delivery-integrity.mjs 未实现，且无对应源码附于工件，关键恢复路径依赖模块缺失 → unverified"
+    ],
+    "unverified": [
+      "scripts/lib/provider-execution.js",
+      "scripts/delivery-integrity.mjs"
+    ],
+    "executed_by": "Qianwen",
+    "model": "qwen-plus",
+    "scope": "engineering_draft_only",
+    "logical_reviewer_seat": "doubao",
+    "actual_provider": "aliyun_dashscope",
+    "source_receipt": "knowledge/results/qwen-dispatch/ANS-REVIEW-RECOVERY-20261024-20261025.json",
+    "source_receipt_sha256": "b3404b8be8b143fe22656b04c9b0f1db2003730ba22be96f727617d039fbc11e"
+  },
+  "deployed": false,
+  "review_recovery": {
+    "original": {
+      "path": "knowledge/results/ans-cycle/2026-10-24-before-qwen-review-recovery.json",
+      "sha256": "7814035e16000a3f6e67794d4bff9f99c8efa925885fcc553c3d4755f785bb07"
+    },
+    "receipt": {
+      "path": "knowledge/results/qwen-dispatch/ANS-REVIEW-RECOVERY-20261024-20261025.json",
+      "sha256": "b3404b8be8b143fe22656b04c9b0f1db2003730ba22be96f727617d039fbc11e"
+    },
+    "source_run_id": "40166980943",
+    "at_utc": "2026-10-25T05:53:55.526Z",
+    "actual_provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "logical_reviewer_seat": "doubao",
+    "original_uncertain_attempt_preserved": true,
+    "author_model_replays": 0,
+    "controller_qualification": "Qwen拒绝原文保留。其首条理由把call前写generation_started与call后、工件落盘前的崩溃窗口混为一谈，不采纳此项时序判断；缺少可审阅实现/测试的拒绝结论仍保留，不据此声称发现已修复。"
+  },
+  "completed_at": "2026-10-25T05:53:55.526Z",
+  "remote_review_status": null,
+  "board_verification": null
 }
