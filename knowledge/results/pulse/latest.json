@@ -181,18 +181,11 @@
     "dispatch_paused": false,
     "automatic_recovery": true,
     "concurrency": 1,
-    "investment_hold": false,
+    "investment_hold": true,
     "paused_agents": [],
     "all_tasks_independent_review": true
   },
   "events": [
-    {
-      "id": "claim-continuity-38885878525",
-      "type": "controller_claim_task",
-      "actor": "gpt",
-      "reason": "Controller implemented the owner-requested daily dispatch and self-service protocol; claim actual continuity work",
-      "at": "2026-10-16T10:14:34.672Z"
-    },
     {
       "id": "submit-continuity-38885878525",
       "type": "controller_submit_task",
@@ -1536,17 +1529,23 @@
       "type": "sensor_unavailable",
       "at": "2026-10-25T09:04:37.566Z",
       "sensor": "wallet_balance"
+    },
+    {
+      "id": "wallet_unknown:1792927184227",
+      "type": "sensor_unavailable",
+      "at": "2026-10-25T11:19:44.227Z",
+      "sensor": "wallet_balance"
     }
   ],
   "agents": {
     "doubao": {
       "failures": 0,
-      "successes": 2951,
+      "successes": 2954,
       "offline": false,
       "name": "doubao",
       "ok": true,
       "http": 200,
-      "latency_ms": 68,
+      "latency_ms": 55,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1556,12 +1555,12 @@
     },
     "deepseek": {
       "failures": 0,
-      "successes": 2951,
+      "successes": 2954,
       "offline": false,
       "name": "deepseek",
       "ok": true,
       "http": 200,
-      "latency_ms": 67,
+      "latency_ms": 65,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1571,7 +1570,7 @@
     },
     "kimi": {
       "failures": 0,
-      "successes": 2951,
+      "successes": 2954,
       "offline": false,
       "name": "kimi",
       "ok": true,
@@ -1586,12 +1585,12 @@
     },
     "grok": {
       "failures": 0,
-      "successes": 2925,
+      "successes": 2928,
       "offline": false,
       "name": "grok",
       "ok": true,
       "http": 200,
-      "latency_ms": 32,
+      "latency_ms": 35,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1601,12 +1600,12 @@
     },
     "qianwen": {
       "failures": 0,
-      "successes": 2951,
+      "successes": 2954,
       "offline": false,
       "name": "qianwen",
       "ok": true,
       "http": 200,
-      "latency_ms": 38,
+      "latency_ms": 37,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1616,12 +1615,12 @@
     },
     "wep3": {
       "failures": 0,
-      "successes": 2951,
+      "successes": 2954,
       "offline": false,
       "name": "wep3",
       "ok": true,
       "http": 200,
-      "latency_ms": 118,
+      "latency_ms": 110,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1631,25 +1630,20 @@
     }
   },
   "cooldowns": {
-    "wallet_unknown": 1792919077566,
+    "wallet_unknown": 1792927184227,
     "collector_transport": 1792041866310,
     "wallet_drop": 1792416520100
   },
   "wallet": {
     "name": "wallet_balance",
-    "ok": true,
-    "units": "210869201",
-    "balance_usdc": "210.869201",
+    "ok": false,
+    "error": "rpc_unavailable",
     "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
-    "chain_id": 8453,
-    "rpc": "https://mainnet.base.org",
-    "evidence": "eth_chainId_and_eth_call_balanceOf",
-    "low": false,
-    "sudden_drop": false
+    "chain_id": 8453
   },
   "mode": "parasympathetic",
   "active_controller": "gpt",
-  "ran_at": "2026-10-25T11:14:43.686Z",
+  "ran_at": "2026-10-25T11:29:44.844Z",
   "version": "0.3.8-dispatch-channels",
   "model_calls": 0,
   "financial_execution": false,
@@ -1661,24 +1655,6 @@
     "note": "未配置主动消息渠道；告警保存在/status，由外部工作流检查。"
   },
   "history": [
-    {
-      "at": "2026-10-24T11:18:41.902Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-24T11:23:42.031Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-10-24T11:28:42.220Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 1
-    },
     {
       "at": "2026-10-24T11:33:42.327Z",
       "mode": "parasympathetic",
@@ -3388,24 +3364,42 @@
       "mode": "parasympathetic",
       "unhealthy": [],
       "alerts": 0
+    },
+    {
+      "at": "2026-10-25T11:19:44.227Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 1
+    },
+    {
+      "at": "2026-10-25T11:24:44.542Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-10-25T11:29:44.844Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
     }
   ],
   "collector_health": "observed",
   "incentives": {
-    "at": "2026-10-25T06:10:04.035Z",
-    "source_commit": "1dd7b0ce04c25c1308c45f533bd2400836ff68c6",
-    "input_sha256": "a34d33da8ef7fe3a64d5222b4852cd77375423e939ef318120ad069613e2b54d",
+    "at": "2026-10-25T11:34:00.993Z",
+    "source_commit": "f517e29355fbfcc273ebc0fc8d475f2f844edba0",
+    "input_sha256": "76668f1765cabf582cf2aac99fbb0ee2fea88f38226994d33ac7fd46da0c9f15",
     "verification": "recomputed_from_hashed_independent_receipts",
     "profiles": {
       "doubao": {
-        "score": 4,
-        "priority_multiplier": 1.04,
+        "score": 6,
+        "priority_multiplier": 1.06,
         "status": "eligible",
-        "wins": 8,
+        "wins": 9,
         "quality_failures": 3,
         "overdue": 0,
         "infrastructure_blocks": 8,
-        "unverified": 1,
+        "unverified": 0,
         "duplicates": 0,
         "debt": 0,
         "probation": false,
@@ -3434,7 +3428,7 @@
         "wins": 3,
         "quality_failures": 3,
         "overdue": 0,
-        "infrastructure_blocks": 8,
+        "infrastructure_blocks": 9,
         "unverified": 1,
         "duplicates": 0,
         "debt": 1,
@@ -4896,7 +4890,7 @@
   "daily_dispatch_date": "2026-10-25",
   "last_balance": {
     "units": "210869201",
-    "at": 1792926883686
+    "at": 1792927484542
   },
   "dispatches": [
     {
@@ -5101,7 +5095,7 @@
   "task_board_schema_version": 4,
   "autonomic_feedback": {
     "version": 1,
-    "observed_at": "2026-10-25T11:14:43.686Z",
+    "observed_at": "2026-10-25T11:29:44.844Z",
     "cases": [],
     "open_cases": 0,
     "action_taken": {
@@ -5110,20 +5104,20 @@
       "dispatch_paused": false
     },
     "follow_up_receipt": {
-      "previous_observation_at": "2026-10-25T11:09:43.366Z",
-      "current_observation_at": "2026-10-25T11:14:43.686Z",
-      "next_probe_due_at": "2026-10-25T11:19:43.686Z"
+      "previous_observation_at": "2026-10-25T11:24:44.542Z",
+      "current_observation_at": "2026-10-25T11:29:44.844Z",
+      "next_probe_due_at": "2026-10-25T11:34:44.844Z"
     },
     "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
     "financial_execution": false,
     "model_generation_proven": false,
     "real_money_penalty": false
   },
-  "state_revision": 1697,
-  "state_updated_at": "2026-10-25T11:17:38.960Z",
+  "state_revision": 1701,
+  "state_updated_at": "2026-10-25T11:34:01.065Z",
   "durable_revision": "pulse-state-v2",
   "stale": false,
-  "alarm_at": 1792927183686,
+  "alarm_at": 1792928084844,
   "controllers": [
     "gpt",
     "qianwen"
