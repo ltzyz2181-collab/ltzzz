@@ -31,3 +31,5 @@
 回执由 create-only 写入 `knowledge/results/patchgate/a2-doubao/<hash>.json`，位于隔离占位分支；main 不自动追加回执。Actions 同时保留工件，写入失败或进程中断后仍有占位，不能自动重调。模型密钥只由现有 Secret 注入，未索取/生成/公开任何私钥；`paid=false` 表示没有现金结算，API 用量仍按提供商计费，账单金额未核验。
 
 待 root 完成：基础设施跨提供商复核与合并 → B1 修订的新候选 head → 新增固定卡触发 → 回读真实 run / 两个 CAS job / 模型原始回执 → 把证据和新 head 交 Claude 复审。不得把本地测试当成豆包原生调用或线上验收。
+
+回执里的 evidence_sha256 绑定结构化探针证据，output_sha256 绑定实际保留的脱敏模型文本，二者用途不同，不要求相等。超长正文截断会明确标 output_truncated=true，并且不得记原生完整生成成功；缺模型配置时仍可写零调用blocked回执，不代表任何业务准入。
