@@ -111,12 +111,16 @@ export async function openPiSession({sdk, root, selected, maxTokens = 4096, time
   const diagnostics = {credential_store_modify_calls: 0};
   const store = {read: async () => undefined, list: async () => [], modify: async () => { diagnostics.credential_store_modify_calls++; throw Error('pi_credential_disk_write_disabled'); }, delete: async () => {}};
   const runtime = await sdk.ModelRuntime.create({credentials: store, modelsPath: null, allowModelNetwork: false, refreshOnCreate: false});
+  // Pi 1.4.0 emits provider-specific off switches only for a reasoning-capable model.
+  // Marking the model reasoning:false suppresses thinking.type/enable_thinking entirely;
+  // DeepSeek V4 then uses its default reasoning mode and can consume the entire answer budget.
+  const thinkingFormat = selected.provider === 'deepseek' ? 'deepseek' : selected.provider === 'aliyun_dashscope' ? 'qwen' : null;
   runtime.registerProvider(selected.route_id, {
     baseUrl: selected.base, api: 'openai-completions', authHeader: true,
-    models: [{id: selected.model, name: selected.model, api: 'openai-completions', reasoning: false,
+    models: [{id: selected.model, name: selected.model, api: 'openai-completions', reasoning: thinkingFormat !== null,
       input: ['text'], cost: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, contextWindow: 64000, maxTokens,
       compat: {supportsStore: false, supportsDeveloperRole: false, supportsReasoningEffort: false,
-        supportsUsageInStreaming: true, maxTokensField: 'max_tokens'}}]
+        ...(thinkingFormat ? {thinkingFormat} : {}), supportsUsageInStreaming: true, maxTokensField: 'max_tokens'}}]
   });
   await runtime.setRuntimeApiKey(selected.route_id, selected.key);
   const model = runtime.getModel(selected.route_id, selected.model);
