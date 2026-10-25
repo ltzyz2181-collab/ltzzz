@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_active_A2_candidate_not_activated_Pi_cloud_generation_verified",
-  "at_utc": "2026-10-25T12:05:10Z",
+  "status": "A1_active_A2_B1_revised_real_Doubao_probes_passed_waiting_Claude_rereview",
+  "at_utc": "2026-10-25T23:35:53Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -166,39 +166,82 @@
     "L8_merge": "e1dc4549c4c540028fa6c3ceaa9efc50f849c0ee"
   },
   "A2": {
-    "status": "draft_candidate_runner_tests_passed_not_activated",
+    "status": "B1_channel_revised_candidate_unmerged_disabled_pending_Claude_rereview",
     "candidate_pr": 240,
-    "candidate_head": "85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+    "candidate_head": "eca85d53d00658badc6eb39faa10e4d781a3413c",
     "merged": false,
     "enabled": false,
     "signing_enabled": false,
     "signing_keys_ready": false,
     "tests": {
-      "passed": 85,
+      "passed": 93,
       "failed": 0,
-      "scope": "real_GitHub_runner_adversarial_fixtures_not_live_merge",
-      "run_id": "40190758991",
-      "job_id": "121161065099"
+      "scope": "real_GitHub_runner_fixture_regressions_not_live_signer_or_auto_merge",
+      "run_id": "40245170033",
+      "job_id": "121325094940"
     },
     "claude": {
-      "status": "not_received",
-      "requested_exact_head": "85a938dd5cd001e5d3580e729f613b8eb4402d5f"
+      "original_audit_pr": 244,
+      "original_verdict": "REVISE",
+      "audited_head": "f64175f3557890c0af55741d83c01e8f8233b731",
+      "original_preserved": true,
+      "rereview_status": "not_received",
+      "requested_exact_head": "eca85d53d00658badc6eb39faa10e4d781a3413c",
+      "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/244#issuecomment-6404938312"
     },
     "qwen": {
-      "status": "partial_component_revise_not_stage_approval",
-      "run_id": "40190549790",
-      "receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-A2-PR240.json",
-      "reviewed_runtime_head": "f64175f3557890c0af55741d83c01e8f8233b731",
-      "runtime_bytes_unchanged_new_head_adds_verify_workflow": true
+      "status": "B1_opinions_preserved_not_stage_approval",
+      "channel_run": "40243232634",
+      "initial_code_run": "40243934719",
+      "repaired_code_run": "40244782240",
+      "latest_verdict": "REJECT",
+      "controller_counterexamples_recorded": true,
+      "originals_path": "knowledge/results/patchgate/pr244-evidence/",
+      "originals_ref": "eca85d53d00658badc6eb39faa10e4d781a3413c"
     },
     "blockers": [
-      "real_provider_bound_signing_executors_not_provisioned",
-      "native_full_stage_reviews_not_received",
-      "trusted_current_main_collection_and_CI_app_allowlist_not_connected",
-      "atomic_base_admission_not_verified",
-      "highest_risk_notice_allowlist_helper_not_in_current_gate",
-      "real_concurrent_runner_acceptance_and_first_docs_automatic_merge_not_executed"
-    ]
+      "B2_atomic_expected_base_merge_fence_not_verified",
+      "B3_trusted_live_checks_and_external_audit_bundle_collectors_not_connected",
+      "B4_real_provider_signing_keys_not_provisioned_or_live_verified",
+      "B5_highest_risk_notice_allowlist_not_in_current_gate",
+      "B6_first_harmless_docs_actual_automatic_merge_not_executed",
+      "new_head_Claude_rereview_not_received"
+    ],
+    "tested_code_head": "2cf243d22a4d882c2dcdadd1cdbc58f97ac29a1b",
+    "runtime_bytes_equal": true,
+    "runtime_bundle_sha256": "4d0666b8355aba395c69184f19ffbf288ae7a57563d5be768d45ad34974f7eae",
+    "B1": {
+      "choice": "Qwen_and_Doubao_executor_signatures_plus_separate_Claude_PR_readback",
+      "candidate_required_model_providers": [
+        "aliyun_dashscope",
+        "volcengine_ark"
+      ],
+      "Claude_kept_required_external_auditor": true,
+      "Anthropic_key_impersonation": false,
+      "infrastructure_readback_counts_as_model_signature": false,
+      "production_provisioning_verified": false
+    },
+    "doubao_probe": {
+      "infrastructure_pr": 245,
+      "run_id": "40244733201",
+      "candidate_tests": {
+        "passed": 4,
+        "failed": 0
+      },
+      "cross_runner_claim_CAS_verified": true,
+      "cas_job_ids": [
+        "121323885006",
+        "121323884983"
+      ],
+      "native_model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "native_model_calls": 1,
+      "tokens_used": 908,
+      "model_verdict": "approve",
+      "scope": "probe_evidence_only_not_stage_or_signer_admission",
+      "closeout_path": "knowledge/results/patchgate/pr244-evidence/closeout.json",
+      "closeout_ref": "eca85d53d00658badc6eb39faa10e4d781a3413c"
+    }
   },
   "configuration_evidence": "knowledge/results/patchgate/pr224-evidence/actual-configuration.json",
   "escrow": {
@@ -207,7 +250,7 @@
     "maximum_authorized_environment": "public_testnet_fake_tokens",
     "transactions": []
   },
-  "next_phase": "finish_original_backlog_and_A2_missing_infrastructure_audits; first_live_docs_merge_before_A3; B_testnet_after_A_stable",
+  "next_phase": "Claude_rereview_PR240_new_head_then_address_remaining_B2_B6_before_A2_activation; A3_and_B_remain_off",
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -381,6 +424,46 @@
         "signing_keys_ready": false
       },
       "next_phase": "close_existing_ANS_and_dispatch_backlog_then_design_A2_separately_no_automatic_merge_authority_yet"
+    },
+    {
+      "phase": "A2_before_PR244_B1_repair",
+      "at_utc": "2026-10-25T12:05:10Z",
+      "status": "A1_active_A2_candidate_not_activated_Pi_cloud_generation_verified",
+      "A2": {
+        "status": "draft_candidate_runner_tests_passed_not_activated",
+        "candidate_pr": 240,
+        "candidate_head": "85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+        "merged": false,
+        "enabled": false,
+        "signing_enabled": false,
+        "signing_keys_ready": false,
+        "tests": {
+          "passed": 85,
+          "failed": 0,
+          "scope": "real_GitHub_runner_adversarial_fixtures_not_live_merge",
+          "run_id": "40190758991",
+          "job_id": "121161065099"
+        },
+        "claude": {
+          "status": "not_received",
+          "requested_exact_head": "85a938dd5cd001e5d3580e729f613b8eb4402d5f"
+        },
+        "qwen": {
+          "status": "partial_component_revise_not_stage_approval",
+          "run_id": "40190549790",
+          "receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-A2-PR240.json",
+          "reviewed_runtime_head": "f64175f3557890c0af55741d83c01e8f8233b731",
+          "runtime_bytes_unchanged_new_head_adds_verify_workflow": true
+        },
+        "blockers": [
+          "real_provider_bound_signing_executors_not_provisioned",
+          "native_full_stage_reviews_not_received",
+          "trusted_current_main_collection_and_CI_app_allowlist_not_connected",
+          "atomic_base_admission_not_verified",
+          "highest_risk_notice_allowlist_helper_not_in_current_gate",
+          "real_concurrent_runner_acceptance_and_first_docs_automatic_merge_not_executed"
+        ]
+      }
     }
   ],
   "limitations": [
