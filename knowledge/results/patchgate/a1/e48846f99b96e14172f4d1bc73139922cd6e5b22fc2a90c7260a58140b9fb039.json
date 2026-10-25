@@ -1,0 +1,161 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PI-SKILL-AUDIT",
+  "head_sha": "50c710f97b997d8b3cfd28810bf3cfde46a72e76",
+  "pr_number": 239,
+  "source_main_sha": "c52d0dd6ce4505f4ed859ea2d7e04311dd207067",
+  "run_id": "40190157443",
+  "at_utc": "2026-10-25T11:45:05.941Z",
+  "idempotency_key": "PI-SKILL-AUDIT:50c710f97b997d8b3cfd28810bf3cfde46a72e76",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "bed71debba38a082eb357a71e3d7170b10d748f6",
+  "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+  "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+  "changed_files": [
+    {
+      "path": ".github/workflows/pi-cloud.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/pi-cloud-runtime/package-lock.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/pi-cloud-runtime/package.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/pi-cloud.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/PI-CLOUD-EXECUTION-CURRENT.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/pi-cloud.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/pi-cloud-sdk-check.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/pi-cloud.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/pi-cloud.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PI-SKILL-AUDIT",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PI-SKILL-AUDIT",
+      "base_sha": "c52d0dd6ce4505f4ed859ea2d7e04311dd207067",
+      "head_sha": "50c710f97b997d8b3cfd28810bf3cfde46a72e76",
+      "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+      "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+      "files_sha256": "2e2fb8619b98956b0c21698b261a0db4ee86b59f3317b7d1c382cafd69f24a84"
+    },
+    "subject_sha256": "bf25976d1c0a48def4109f83c19bbc4a76e7095c924f52c0c159c9c4479fe92a",
+    "idempotency_key": "PI-SKILL-AUDIT:50c710f97b997d8b3cfd28810bf3cfde46a72e76",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "config/pi-cloud-runtime/package-lock.json",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "feross.org",
+          "github.com",
+          "opencollective.com",
+          "paypal.me",
+          "registry.npmjs.org",
+          "www.patreon.com"
+        ]
+      },
+      {
+        "path": "scripts/lib/pi-cloud.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.deepseek.com"
+        ]
+      },
+      {
+        "path": "scripts/pi-cloud-sdk-check.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.deepseek.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/pi-cloud.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/pi-cloud.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.deepseek.com",
+          "dashscope.aliyuncs.com",
+          "example.com"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
