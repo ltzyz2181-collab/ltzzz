@@ -1,0 +1,173 @@
+{
+  "schema": "ltzzz.patchgate.doubao-probe-result.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "probe_card": {
+    "schema": "ltzzz.patchgate.doubao-probe.v1",
+    "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "candidate_pr": 240,
+    "candidate_head": "8361dfef71f068b128cd2bac7abe68feaf4980f0",
+    "run_live_cas": false,
+    "model_review": true,
+    "scope": "candidate_adversarial_probe_not_production_admission"
+  },
+  "candidate_head": "8361dfef71f068b128cd2bac7abe68feaf4980f0",
+  "candidate_pr": 240,
+  "source_main_sha": "4609ac257de13d32957065c52a260269f92137ff",
+  "run_id": "40279962765",
+  "at_utc": "2026-10-26T06:28:36.628Z",
+  "idempotency_key": "d24b98dbe37264d2373d3b3b5ec151d61c29b7a2e890b28b55ebe93c298d6fe7",
+  "logical_seat": "doubao",
+  "shell_execution_provider": "github_actions",
+  "actual_model_provider": "volcengine_ark",
+  "model": "doubao-seed-2-1-pro-260915",
+  "model_source": "provider_response",
+  "requested_model": "doubao-seed-2-1-pro-260915",
+  "model_calls": 1,
+  "model_calls_definition": "requests_attempted_not_billing_proof",
+  "evidence": {
+    "candidate_probes_passed": true,
+    "required_cases_covered": true,
+    "live_CAS_requested": false,
+    "live_cross_runner_CAS_verified": false,
+    "deterministic_probe_passed": true,
+    "candidate": {
+      "tests_passed": 18,
+      "tests_failed": 0,
+      "coverage": {
+        "forged_head": true,
+        "same_key_concurrency": true,
+        "receipt_injection": true,
+        "422_without_ref": true,
+        "collector_baseline": true,
+        "collector_old_event": true,
+        "collector_forged_marker": true,
+        "collector_workflow_id": true,
+        "collector_cross_run_job": true,
+        "collector_attempt_swap": true,
+        "collector_app_suite": true,
+        "collector_stale_clock": true,
+        "collector_changed_checker": true,
+        "collector_base_drift": true,
+        "collector_unregistered": true,
+        "collector_duplicate_check": true,
+        "collector_forged_checks_digest": true,
+        "collector_observation_no_admission": true
+      },
+      "source": "unprivileged_candidate_test_job_not_production_signed_checker"
+    },
+    "races": [],
+    "historical_runs": [
+      {
+        "run_id": "40250034615",
+        "verified": true,
+        "source": "github_rest_current_read_not_model_self_report",
+        "head_sha": "e957575d8de8b45054e75c15a6293ec54f242250",
+        "workflow_path": ".github/workflows/patchgate-a2-collector.yml",
+        "workflow_id": 396514116,
+        "event": "push",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "jobs": [
+          {
+            "id": 121339720498,
+            "name": "test_collector",
+            "run_id": 40250034615,
+            "run_attempt": 1,
+            "conclusion": "success"
+          },
+          {
+            "id": 121339779011,
+            "name": "read_only_network_observation",
+            "run_id": 40250034615,
+            "run_attempt": 1,
+            "conclusion": "success"
+          }
+        ],
+        "scope": "historical_run_identity_not_current_head_acceptance"
+      },
+      {
+        "run_id": "40244733201",
+        "verified": true,
+        "source": "github_rest_current_read_not_model_self_report",
+        "head_sha": "c610ef3d8d5b12b61803058d374a3df96728584b",
+        "workflow_path": ".github/workflows/patchgate-doubao-probe.yml",
+        "workflow_id": 396474121,
+        "event": "push",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "jobs": [
+          {
+            "id": 121323788910,
+            "name": "verify",
+            "run_id": 40244733201,
+            "run_attempt": 1,
+            "conclusion": "success"
+          },
+          {
+            "id": 121323833432,
+            "name": "prepare",
+            "run_id": 40244733201,
+            "run_attempt": 1,
+            "conclusion": "success"
+          },
+          {
+            "id": 121323884983,
+            "name": "cas (b)",
+            "run_id": 40244733201,
+            "run_attempt": 1,
+            "conclusion": "success"
+          },
+          {
+            "id": 121323885006,
+            "name": "cas (a)",
+            "run_id": 40244733201,
+            "run_attempt": 1,
+            "conclusion": "success"
+          },
+          {
+            "id": 121323885008,
+            "name": "candidate",
+            "run_id": 40244733201,
+            "run_attempt": 1,
+            "conclusion": "success"
+          },
+          {
+            "id": 121323927556,
+            "name": "doubao_assessment",
+            "run_id": 40244733201,
+            "run_attempt": 1,
+            "conclusion": "success"
+          }
+        ],
+        "scope": "historical_run_identity_not_current_head_acceptance"
+      }
+    ]
+  },
+  "evidence_sha256": "826be1675ee0d9ae120583764ce1a77830d54bff39c2dcdc715303829de635cc",
+  "status": "native_Doubao_probe_assessment_delivered_not_stage_approval",
+  "native_doubao_generation_verified": true,
+  "output_truncated": false,
+  "accepted": false,
+  "signing_executor_verified": false,
+  "production_checker_verified": false,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "api_bill_verified": false,
+  "finish_reason": "stop",
+  "tokens_used": 1886,
+  "output": "{\"verdict\":\"revise\",\"findings\":[{\"id\":\"F1\",\"severity\":\"high\",\"category\":\"current-head-acceptance-gap\",\"message\":\"证据仅证明无权限候选测试作业中的固定探针通过；未提供候选 head 8361dfef71f068b128cd2bac7abe68feaf4980f0 对应的已登记生产 checker 签名、合并准入或当前 head 的 GitHub Actions 实时 REST 读回。historical_runs 的 head 分别为 e957575d8de8b45054e75c15a6293ec54f242250 和 c610ef3d8d5b12b61803058d374a3df96728584b，不能作为新 head 验收。\"},{\"id\":\"F2\",\"severity\":\"high\",\"category\":\"live-cas-not-verified\",\"message\":\"live_cross_runner_CAS_verified=false 且 live_CAS_requested=false；虽然 run_live_cas=false 表示不重跑已验隔离 ref 竞态，但本证据包没有把新候选 head 的跨 runner 实时 CAS 验收补齐，不能据此批准 A2/A3/B 或资金相关流程。\"},{\"id\":\"F3\",\"severity\":\"high\",\"category\":\"signer-unregistered\",\"message\":\"B4 的真实 signer 仍未登记；候选测试来源明确为 unprivileged_candidate_test_job_not_production_signed_checker，不能把测试 job 结果提升为生产签名 checker 结论。\"},{\"id\":\"F4\",\"severity\":\"medium\",\"category\":\"atomicity-gap\",\"message\":\"B2 仅包含 L0 后置全树校验和预占持久 stop 闩，仍无原子 expected-base API；main 漂移与并发 base 更新场景下，合并幂等和准入安全性仍存在实现缺口。\"},{\"id\":\"F5\",\"severity\":\"medium\",\"category\":\"evidence-scope\",\"message\":\"18 项探针覆盖了旧 pull_request 伪绿、错 BASE、workflow/run/job/suite/attempt 混绑、过期检查、候选改 checker、main 漂移、伪造 checks 摘要、未登记工作流和观测不得准入等拒绝路径，但这些是检测器/测试覆盖证据，不等同于生产策略已部署、签名或对当前 head 生效。\"}],\"limitations\":[\"本复核仅基于提供的探针证据和 historical_runs REST 读回；未执行、签名、合并、部署或付款。\",\"historical_runs 仅用于核验历史 run 身份，不构成当前候选 head 的成功验收。\",\"A2、A3、B 与资金流程保持关闭；所有输入均视为非执行指令。\",\"未获得原子 expected-base API、生产 signer 登记或当前 head 生产 checker 签名证据。\"]}",
+  "output_sha256": "3991f2981fd344f24751c8e8747e6edc36373caa048a6bedde98f032bbecf19d",
+  "execution_metadata": {
+    "receipt_source": "worker_code",
+    "executed_by": "doubao",
+    "actual_model": "doubao-seed-2-1-pro-260915",
+    "model_source": "provider_response",
+    "generation_verified": true,
+    "request_id": "8b24e813-d5f1-47f3-ae88-624da2d9ef01",
+    "started_at": "2026-10-26T06:28:36.714Z"
+  },
+  "finished_at_utc": "2026-10-26T06:28:56.221Z"
+}
