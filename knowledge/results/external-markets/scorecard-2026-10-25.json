@@ -1,0 +1,853 @@
+{
+  "schema_version": 1,
+  "task_id": "PLAN-EXTERNAL-MARKETS-20261024",
+  "phase": "M0_read_only_official_reconnaissance",
+  "at_utc": "2026-10-25T11:36:23.203Z",
+  "source_commit": "bed71debba38a082eb357a71e3d7170b10d748f6",
+  "source_commit_scope": "Repository baseline provided to research subtask, not a claimed code deployment or current-main readback",
+  "logical_seat": "gpt",
+  "client": "ChatGPT cloud research subagent",
+  "actual_provider": "OpenAI",
+  "model": null,
+  "metadata_source": "executor context; exact model identifier unavailable",
+  "status": "draft_submitted_waiting_Claude_and_Qianwen_independent_review",
+  "scope": {
+    "read_public_official_pages": true,
+    "registered_accounts": 0,
+    "orders_created": 0,
+    "live_orders": false,
+    "signatures": 0,
+    "funds_moved_usd": "0",
+    "model_api_calls": 0,
+    "paid": false,
+    "tx_hash": null,
+    "independently_reviewed": false,
+    "deployed": false,
+    "can_enter_M1": false
+  },
+  "receipt_schema_note": "reasoningHash is not a mandatory LTZZZ Skill receipt field; artifact.sha256 binds files. Payment-layer reasoning anchors are a separately named extension.",
+  "method": {
+    "official_sources_first": true,
+    "remote_instructions_executed": false,
+    "downloaded_skill_scripts_executed": false,
+    "observed_fees_are_quotes_not_LTZZZ_spending_authority": true,
+    "public_site_claims_not_independent_transaction_verification": true,
+    "unknown_is_null": true,
+    "no_score_for_unverified_revenue": true
+  },
+  "markets": [
+    {
+      "id": "clawtasks",
+      "official_url": "https://clawtasks.com/",
+      "market_type": "agent_to_agent_bounty_board",
+      "operation": {
+        "status": "official_currently_free_task_only",
+        "source_ids": [
+          "S01",
+          "S02"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "current_platform_percent": null,
+        "historical_documented_percent": "5",
+        "historical_worker_stake_percent": "10",
+        "notes": "Current free-task-only banner supersedes old paid descriptions still present lower on the same page and in docs; do not infer current paid rewards or deposit requirements from them.",
+        "source_ids": [
+          "S01"
+        ]
+      },
+      "deposits": {
+        "current_worker_required": null,
+        "current_buyer_required": null,
+        "historical_paid_wind_down": "Poster may need an on-chain cancel to release existing paid bounties; LTZZZ performed no cancellation or funds action.",
+        "source_ids": [
+          "S01"
+        ]
+      },
+      "eligibility": {
+        "mainland_china_allowed": null,
+        "kyc_required": null,
+        "terms": "AI Magic, LLC beta experiment; operator must supervise agent and comply with applicable laws.",
+        "source_ids": [
+          "S02"
+        ]
+      },
+      "payment_networks": {
+        "current_paid_networks": null,
+        "historical_token": "USDC",
+        "historical_chain": "Base L2",
+        "source_ids": [
+          "S02"
+        ]
+      },
+      "escrow_and_disputes": {
+        "current_free_task_money_flow": null,
+        "historical_escrow_claim": "USDC escrow; old docs show rejection/stake loss and 48h auto-approval, not established current paid operation",
+        "source_ids": [
+          "S01",
+          "S02"
+        ]
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": null,
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "Public bounty page extracted only Loading; no transaction or third-party acceptance verified."
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "free-path API documentation and current zero-deposit eligibility verification only after audit",
+        "m1_authorized": false,
+        "blockers": [
+          "Current free-mode account/claim flow not executed",
+          "Terms/region eligibility not verified",
+          "No current paid earning proof"
+        ]
+      }
+    },
+    {
+      "id": "execution_market",
+      "official_url": "https://execution.market/",
+      "market_type": "human_agent_real_world_task_marketplace",
+      "operation": {
+        "status": "official_public_service_and_docs_available",
+        "source_ids": [
+          "S03",
+          "S04"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "platform_percent": "13",
+        "minimum_usd": "0.01",
+        "deduction": "from gross bounty; worker ordinarily receives 87%",
+        "additional_protocol_fee": "Docs say separate x402r protocol fee may apply and is read dynamically; do not assume static total.",
+        "source_ids": [
+          "S03"
+        ]
+      },
+      "deposits": {
+        "worker_stake_required": null,
+        "buyer_funding": "Depends on payment mode; Fase1 advisory balance/no escrow at creation, Fase2 locks at assignment, Fase5 on-chain fee split.",
+        "source_ids": [
+          "S04"
+        ]
+      },
+      "eligibility": {
+        "mainland_china_allowed": null,
+        "kyc_required": null,
+        "terms": null,
+        "notes": "Public /faq and /task-policy extraction returned generic root content, so detailed legal/region rules remain unverified."
+      },
+      "payment_networks": {
+        "documented": [
+          "Base",
+          "Ethereum",
+          "Polygon",
+          "Arbitrum",
+          "Avalanche",
+          "Optimism",
+          "Celo",
+          "Monad",
+          "Arc",
+          "Solana"
+        ],
+        "documented_tokens": [
+          "USDC",
+          "EURC",
+          "PYUSD",
+          "AUSD",
+          "USDT"
+        ],
+        "live_enabled_networks_verified": false,
+        "notes": "Docs list multiple modes/networks; Arc requires live config activation, Solana uses a different direct-transfer path. Do not treat every documented escrow rail as currently active.",
+        "source_ids": [
+          "S04"
+        ]
+      },
+      "escrow_and_disputes": {
+        "documented_modes": [
+          "direct settlements at approval",
+          "AuthCaptureEscrow lock at assignment",
+          "gasless atomic release split"
+        ],
+        "refund": "auth expiry, escrow cancellation or manual stuck-settlement recovery depending on mode",
+        "dispute_rule": null,
+        "source_ids": [
+          "S04"
+        ]
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": null,
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "No task acceptance or chain release independently read."
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "study deposit/release/refund design and documented public task discovery",
+        "m1_authorized": false,
+        "blockers": [
+          "No exact live payment-mode readback",
+          "No geography/legal eligibility determination",
+          "Physical-world tasks require actual executor and evidence"
+        ]
+      }
+    },
+    {
+      "id": "opentask",
+      "official_url": "https://opentask.ai/",
+      "market_type": "human_and_agent_tasks_services_competitions",
+      "operation": {
+        "status": "official_public_service_and_docs_available",
+        "source_ids": [
+          "S05",
+          "S06"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "platform_percent": "4.5",
+        "payer": "buyer pays fee on top of agreed worker amount; worker receives agreed amount",
+        "network_fee": "may also apply",
+        "account_post_respond_fee": "free as documented",
+        "source_ids": [
+          "S05"
+        ]
+      },
+      "deposits": {
+        "worker_stake_required": null,
+        "buyer_predeposit_required": false,
+        "buyer_predeposit_evidence_scope": "Official current wallet-to-wallet non-custodial router flow; not proof that every feature has no verification gate",
+        "source_ids": [
+          "S05",
+          "S06"
+        ]
+      },
+      "eligibility": {
+        "minimum_age": 18,
+        "email_verification_may_be_required": true,
+        "additional_risk_or_identity_checks_may_be_required": true,
+        "mainland_china_allowed": null,
+        "kyc_required": null,
+        "operator": "Compatably, LLC",
+        "source_ids": [
+          "S06"
+        ]
+      },
+      "payment_networks": {
+        "documented_token": "USDC",
+        "documented_chain": "Base per official protocol page",
+        "live_network_set_verified": false,
+        "source_ids": [
+          "S05"
+        ],
+        "notes": "Protocol secondary page was read; current root says supported wallet/token/network are displayed before confirmation. No payment attempted."
+      },
+      "escrow_and_disputes": {
+        "escrow": false,
+        "custody": "Platform explicitly says no balance custody or escrow; wallet-to-wallet payment after delivery review.",
+        "dispute": "Participant dispute/refund workflow cannot reverse confirmed direct blockchain settlement or force external wallet refunds.",
+        "source_ids": [
+          "S05",
+          "S06"
+        ]
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": "https://opentask.ai/tasks/cmsj9v2ac001sjj0490zrxmns",
+        "official_claim": "Homepage says MOLT competition winner received 20 USDC.",
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "Task extraction had loading sections and no independently matched payment tx. Treat amount as platform claim, not verified sales."
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "free public contract/quality workflow evaluation; current model better documented than old escrow assertion",
+        "m1_authorized": false,
+        "blockers": [
+          "Region/account eligibility not verified",
+          "No native account/API/actual acceptance tested",
+          "No independent payment proof"
+        ]
+      }
+    },
+    {
+      "id": "ugig",
+      "official_url": "https://ugig.net/",
+      "market_type": "human_and_agent_freelance_marketplace",
+      "operation": {
+        "status": "official_public_service_and_docs_available",
+        "source_ids": [
+          "S07",
+          "S08"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "free_tier_monthly_usd": "0",
+        "free_tier_seller_percent": "5",
+        "pro_monthly_usd": "9",
+        "pro_seller_percent": "2",
+        "notes": "Pro optional; do not buy membership or fund the advertised lifetime offer. Third-party CoinPay fees may be separate; actual job total not verified.",
+        "source_ids": [
+          "S07"
+        ]
+      },
+      "deposits": {
+        "worker_stake_required": null,
+        "buyer_required": null,
+        "notes": "No mandatory worker deposit verified; pricing says free join/apply, which alone does not prove all escrow/dispute paths have no funding requirement."
+      },
+      "eligibility": {
+        "mainland_china_allowed": null,
+        "kyc_required": null,
+        "terms": "Accurate account info, no false/misleading content; third-party payment provider handles processing and discloses fees.",
+        "source_ids": [
+          "S08"
+        ]
+      },
+      "payment_networks": {
+        "exact_live_networks": null,
+        "official_supported_payment_claim": "USDC/USDT on several chains; BTC/ETH/SOL and more, crypto/PayPal/card via CoinPay for membership.",
+        "notes": "Do not confuse membership checkout assets with every freelance payout rail.",
+        "source_ids": [
+          "S07"
+        ]
+      },
+      "escrow_and_disputes": {
+        "provider": "CoinPay advertised elsewhere on official ugig site",
+        "exact_job_terms": null,
+        "notes": "CoinPay official page claims payments temporarily sit in a provider-controlled address and escrow may use 2-of-3; it is not proof ugig always uses a specific escrow mode or combines fees in a particular way."
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": null,
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "Public listings and advertised provider counters are not independently verified completed sales."
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "public gigs and free agent profile API documentation",
+        "m1_authorized": false,
+        "blockers": [
+          "Confirm exact gig payment/escrow fee schedule",
+          "Region and KYC unverified",
+          "No actual arm-length order proof"
+        ]
+      }
+    },
+    {
+      "id": "basedagents",
+      "official_url": "https://basedagents.ai/",
+      "market_type": "AI_agent_task_marketplace_with_signed_receipts",
+      "operation": {
+        "status": "official_public_service_and_docs_available",
+        "source_ids": [
+          "S09",
+          "S10",
+          "S11"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "platform_percent": null,
+        "account_registration_fee": null,
+        "notes": "Sources read do not establish a current platform fee percentage; do not copy third-party fee claims."
+      },
+      "deposits": {
+        "worker_stake_required": null,
+        "buyer_funding": "Optional bounty funded to registry escrow wallet through x402; no-bounty tasks also documented.",
+        "source_ids": [
+          "S09",
+          "S11"
+        ]
+      },
+      "eligibility": {
+        "mainland_china_allowed": null,
+        "kyc_required": null,
+        "agent_identity": "Ed25519 key + proof-of-work; durable public registry; no impersonation, mass registration or reputation manipulation.",
+        "source_ids": [
+          "S10",
+          "S11"
+        ]
+      },
+      "payment_networks": {
+        "headline_documented": [
+          "Base",
+          "Polygon",
+          "Arc"
+        ],
+        "docs_documented": [
+          "Base mainnet",
+          "Base Sepolia test"
+        ],
+        "live_accepted_networks": null,
+        "notes": "Official pages disagree on network scope. Discovery endpoint is authoritative candidate for future read-only check, not executed here.",
+        "source_ids": [
+          "S09",
+          "S11"
+        ]
+      },
+      "escrow_and_disputes": {
+        "custody_claim": "Registry receives deposit and releases bounty; signed delivery receipt is Ed25519 registry identity, not independent proof of upstream model provider.",
+        "auto_accept_days": 7,
+        "revisions": "up to three rounds",
+        "dispute": "buyer may dispute; full arbitration and refund rules not verified",
+        "source_ids": [
+          "S09",
+          "S11"
+        ]
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": null,
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "Recently paid heading is not matched to tx. A first-party blog initially described a no-bounty outside task/no money moved, but a fresh fetch of that URL returned generic homepage content; preserve this extraction inconsistency and do not count it as durable evidence.",
+        "source_ids": [
+          "S12"
+        ]
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "read-only public task/receipt discovery and identity design study",
+        "m1_authorized": false,
+        "blockers": [
+          "Fee and live network scope unresolved",
+          "Legal/region and actual upstream provider attribution not verified",
+          "Public demand/payment not independently proven"
+        ]
+      }
+    },
+    {
+      "id": "circle_agent_marketplace",
+      "official_url": "https://developers.circle.com/agent-stack/agent-marketplace",
+      "market_type": "curated_paid_API_directory_not_general_freelance_bounty_board",
+      "operation": {
+        "status": "official_public_catalog_documentation_available",
+        "source_ids": [
+          "S13",
+          "S14"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "listing_fee": null,
+        "marketplace_percent": null,
+        "request_price": "set per service; buyer pays declared USDC price",
+        "source_ids": [
+          "S13"
+        ]
+      },
+      "deposits": {
+        "worker_stake_required": null,
+        "buyer_predeposit_required": null,
+        "notes": "Buyer discovery needs no account/key; actual purchase still needs USDC and a valid signed payment. This is not a free job acceptance channel.",
+        "source_ids": [
+          "S13"
+        ]
+      },
+      "eligibility": {
+        "mainland_china_allowed": null,
+        "kyc_required": null,
+        "seller_screening": "Manual service review plus payout wallet sanctions screening; continuous health checks.",
+        "source_ids": [
+          "S14"
+        ]
+      },
+      "payment_networks": {
+        "token": "USDC",
+        "network_selection": "CAIP-2 per service/payment option; docs claim 15+ networks but live catalog counts not independently verified.",
+        "live_network_set_verified": false,
+        "source_ids": [
+          "S13"
+        ]
+      },
+      "escrow_and_disputes": {
+        "transaction_model": "x402 pay-per-request; not a deliverable-review task escrow",
+        "refund_or_dispute_terms": null,
+        "source_ids": [
+          "S13"
+        ]
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": null,
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "Official catalog size and health-screen claims are marketing/product claims, not LTZZZ revenue or completed-order proof."
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "API monetization design reference and public discovery",
+        "m1_authorized": false,
+        "blockers": [
+          "No LTZZZ product endpoint submitted/approved",
+          "Listing fees and region not determined",
+          "Seller uptime and payment verification require separate controlled test"
+        ]
+      }
+    },
+    {
+      "id": "near_ai_agent_market",
+      "official_url": "https://market.near.ai",
+      "market_type": "hosted_market_for_independently_hosted_AI_agents_per_job",
+      "operation": {
+        "status": "current_official_docs_available",
+        "source_ids": [
+          "S15",
+          "S16",
+          "S17"
+        ],
+        "earning_now_verified": false
+      },
+      "fees": {
+        "platform_percent": "5",
+        "payer": "deducted from builder price; buyer pays job price",
+        "refund_fee": "none as documented",
+        "source_ids": [
+          "S16"
+        ]
+      },
+      "deposits": {
+        "buyer_funding": "Job price held from buyer balance at award/hire",
+        "worker_stake_before_job": null,
+        "dispute_deposit": {
+          "percent": "5",
+          "minimum_in_job_currency": "0.01",
+          "condition": "Required to open dispute after delivery, before acceptance; returned except full loss"
+        },
+        "source_ids": [
+          "S16"
+        ]
+      },
+      "eligibility": {
+        "mainland_china_allowed": null,
+        "email_verification_required": true,
+        "usd_withdrawal_identity_check": "Stripe Connect identity and bank verification",
+        "usdc_withdrawal_identity_check": "Official market docs say no identity check before USDC withdrawal; valid wallet/balance still required",
+        "source_ids": [
+          "S16",
+          "S17"
+        ]
+      },
+      "payment_networks": {
+        "current_currencies": [
+          "USD",
+          "USDC"
+        ],
+        "usdc_withdrawal_chain": null,
+        "legacy_note": "February introduction described payment in NEAR. Current October article/docs describe USD or USDC; never substitute the old NEAR token statement for current product details.",
+        "source_ids": [
+          "S15",
+          "S16"
+        ]
+      },
+      "escrow_and_disputes": {
+        "custody": "Marketplace holds payment in ledger; do not infer this is LTZZZ-style independent on-chain escrow contract.",
+        "auto_accept_days_min": 3,
+        "auto_accept_days_max": 7,
+        "refund": "Cancellation before start, delivery timeout or dispute against worker returns held funds to payer balance.",
+        "dispute": "Automated resolver roughly every 12 hours; manual escalation when uncertain, either side may request human review.",
+        "source_ids": [
+          "S16"
+        ]
+      },
+      "trade_evidence": {
+        "official_public_completion_reference": null,
+        "chain_transaction_independently_verified": false,
+        "recent_arm_length_paid_demand_verified": null,
+        "notes": "Official GEO $1-per-call example and catalog/job ads are not independently verified current accepted sales."
+      },
+      "m0_assessment": {
+        "next_eligible_scope": "Study actual builder polling/payment-hold/dispute protocol; explicit dispute bond conflicts with current no-deposit experiment objective.",
+        "m1_authorized": false,
+        "blockers": [
+          "Dispute deposit can require outgoing funds",
+          "USDC chain and Mainland eligibility not verified",
+          "No registration/payment/actual third-party acceptance tested"
+        ]
+      }
+    }
+  ],
+  "cross_market_findings": [
+    {
+      "code": "CURRENT_RULES_OVER_OLD_PROPOSAL",
+      "finding": "Public pages changed since PR226 draft; do not use the proposal as a facts database."
+    },
+    {
+      "code": "OPENTASK_NOT_ESCROW",
+      "finding": "Current official OpenTask terms explicitly deny custody/escrow; fee 4.5% extra paid by buyer."
+    },
+    {
+      "code": "NEAR_CURRENT_USD_USDC_AND_DISPUTE_BOND",
+      "finding": "Current NEAR market docs show USD/USDC and 5% dispute bond, unlike February NEAR-token announcement; no chain verified."
+    },
+    {
+      "code": "CLAWTASKS_FREE_ONLY",
+      "finding": "ClawTasks current free-task-only banner coexists with old 10% stake/5% paid docs; no current paid earning proof."
+    },
+    {
+      "code": "EXECUTION_MODE_DIFFERS",
+      "finding": "Execution docs describe direct-payment default and alternative escrow modes; generic trustless-escrow marketing does not prove actual current live mode."
+    },
+    {
+      "code": "PROVIDER_IDENTITY_NOT_AGENT_KEY",
+      "finding": "Agent cryptographic registry signatures prove key possession, not actual model provider; LTZZZ still needs executor-injected provider metadata."
+    },
+    {
+      "code": "NO_REAL_REVENUE_VERIFIED",
+      "finding": "No platform has independently verified arm-length paid acceptance/settlement in this M0 sample; do not convert listing counts or examples into money earned."
+    }
+  ],
+  "recommended_order": {
+    "for_future_zero_fund_protocol_review": [
+      "clawtasks",
+      "opentask",
+      "basedagents",
+      "ugig"
+    ],
+    "for_architecture_reference": [
+      "execution_market",
+      "circle_agent_marketplace",
+      "near_ai_agent_market"
+    ],
+    "note": "Editorial recommendations only, not reputation scores or permission to register/run jobs. M1 and monetary stages remain closed."
+  },
+  "independent_review": {
+    "Claude": {
+      "status": "not_requested_by_this_subagent",
+      "native_call": false
+    },
+    "Qianwen": {
+      "status": "not_requested_by_this_subagent",
+      "native_call": false
+    }
+  },
+  "limitations": [
+    "No account, auth API, MCP connection or key validity test performed.",
+    "No model generation calls made by this subtask; research-tool service fees not audited.",
+    "No chain reads, signature checks, task acceptance or contract security audit performed.",
+    "Mainland China access and platform eligibility remain unverified for all seven platforms; no blanket permission inferred from missing restrictions.",
+    "Fetched text is an extraction, not captured raw HTTP bytes; source hashes bind the saved evidence excerpts only.",
+    "Some fetches return generic app shell/fallback content; HTTP/extraction success does not prove the requested route's content was loaded.",
+    "Current #226 authorization is M0 only even though broader engineering authority exists; no M1/paid/escrow execution is implied.",
+    "Evidence excerpts are intentionally brief; revisit linked official pages before any later-stage execution. A hash binds only the stored excerpt, not full live page bytes."
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "url": "https://clawtasks.com/",
+      "final_url": "https://clawtasks.com/",
+      "title": "ClawTasks - Agent-to-Agent Bounty Marketplace",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 1536,
+      "evidence_excerpt": "Product update: ClawTasks is currently free-task only.\nPaid bounty wind-down notice: open paid bounties may require an on-chain cancel from the poster wallet to release refunds.Open dashboard\nClawTasks is currently free-task only.\nClaim bounties, stake 10%, complete the task. Get paid 95% of bounty plus your stake back.",
+      "evidence_excerpt_sha256": "e27448af500321f1e161d00e183b16ff72bf65ad7703495aad4ace8eeb6e0207"
+    },
+    {
+      "id": "S02",
+      "url": "https://clawtasks.com/terms",
+      "final_url": "https://clawtasks.com/terms",
+      "title": "ClawTasks - Agent-to-Agent Bounty Marketplace",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 4348,
+      "evidence_excerpt": "Product update: ClawTasks is currently free-task only.\n\nWe are simplifying to free tasks while we harden reliability, review flow, and worker quality.\n\nIf you previously posted paid bounties, use your dashboard to complete any cancel/refund steps.Open dashboard\n\n# Terms of Use\n\nLast updated: February 2026\n\nClawTasks is operated by AI Magic, LLC\n\n## 1. Experimental Software\n\nClawTasks is experimental, beta software provided for research and educational purposes. The platform enables AI agents to transact with each other using real cryptocurrency (USDC on Base L2). Features may change, break, or be discontinued without notice.\n\n## 2. Your Responsibility\n\nBy using ClawTasks, you acknowledge and agree that:\n\n* You are solely responsible for your AI agent's actions, transactions, and decisions\n",
+      "evidence_excerpt_sha256": "1f1d40c6a69ef2225dadcf001ab35574771a4ff50b53742c10dcf1758e2a1b3c"
+    },
+    {
+      "id": "S03",
+      "url": "https://docs.execution.market/payments/fees",
+      "final_url": "https://docs.execution.market/payments/fees",
+      "title": "Execution Market Docs",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 2720,
+      "evidence_excerpt": "Execution Market charges a **13% platform fee** on every completed task. The fee is deducted on-chain automatically by the `StaticFeeCalculator` contract — no manual collection, no platform wallet intermediary.\n### Minimum Fee\nThe minimum fee is **$0.01** — applied when 13% of the bounty rounds to less than $0.01.\n## x402r Protocol Fee (Automatic)\nBackTrack (the x402r team) can charge a separate protocol fee via `ProtocolFeeConfig`:\n* Hard cap: 5%",
+      "evidence_excerpt_sha256": "e8ced52d9ac6d703359bb945cef3dd34da6f06d82db0d8953460dd5b7f96917f"
+    },
+    {
+      "id": "S04",
+      "url": "https://docs.execution.market/payments/overview",
+      "final_url": "https://docs.execution.market/payments/overview",
+      "title": "Execution Market Docs",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 5665,
+      "evidence_excerpt": "### Fase 1 (Default — Production)\n* No escrow at task creation\n### Fase 2 (On-Chain Escrow)\n* Funds locked in `AuthCaptureEscrow` at worker assignment\n### Fase 5 (Trustless, Credit Card Model)\n* Like Fase 2, but fee model changed\nMetering on **Solana** is a separate rail with its own page: a pay.sh payment channel funds the task while the work happens, and each accepted unit of work raises a voucher. See Solana Channels.\n## Supported Networks\n| Solana | N/A (SVM) | Native USDC | No (SPL direct) | None |\nArc takes payments once `terraform apply` puts `arc` in the live `EM_ENABLED_NETWORKS`; the signal is that `GET /api/v1/h2a/payment-config` lists it.\nSee Supported Networks for full token addresses.",
+      "evidence_excerpt_sha256": "700b367a18846dbd026f99cd151898773f97fb3d90d56bf2165d1565779f62d3"
+    },
+    {
+      "id": "S05",
+      "url": "https://opentask.ai/",
+      "final_url": "https://opentask.ai/",
+      "title": "Your Next Hire Might Be an Agent",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 3886,
+      "evidence_excerpt": "The winning entry received 20 USDC. The public result records the winner and verified prize payment.\nOpenTask does not hold your balance. Payments go wallet to wallet, with confirmation linked to the work.\nWhat does OpenTask cost?\nCreating an account, posting a task, and responding are free. The task owner pays a 4.5% platform fee on top of the worker’s agreed amount. The worker receives that agreed amount. Network fees may also apply. Check the itemised total before confirming payment.\nHow do payments work?",
+      "evidence_excerpt_sha256": "dbf3514edf5bcc2eaf4eb0962c9105d8ca0218e2c49db72d38e351191adf53d4"
+    },
+    {
+      "id": "S06",
+      "url": "https://opentask.ai/terms",
+      "final_url": "https://opentask.ai/terms",
+      "title": "Terms of Service",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 14771,
+      "evidence_excerpt": "* You must be at least 18 years old and legally able to enter into a binding contract.\n* You must provide accurate account information and keep it current.\n* OpenTask may require email verification, additional verification, risk review, payment-readiness checks, policy acceptance, or other safeguards before enabling some features.\nOpenTask's router payment flow is non-custodial. OpenTask may create signed payment payloads, verify matching blockchain events, maintain payment artifacts, and calculate platform fees, but OpenTask does not custody funds, hold escrow, control private keys, or sign wallet transactions for you.\n* Refund requests are participant workflows. Unless a supported product flow or separate written agreement says otherwise, OpenTask cannot automatically reverse direct router settlement or force an external wallet refund.",
+      "evidence_excerpt_sha256": "fb537c8aa5e4d09cbc9bc59046ed2b728ce71f72ff715b810277e7833a0723e5"
+    },
+    {
+      "id": "S07",
+      "url": "https://ugig.net/pricing",
+      "final_url": "https://ugig.net/pricing",
+      "title": "ugig.net pricing",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 1418,
+      "evidence_excerpt": "Free to join, free to apply. Upgrade for unlimited gig posts and a lower marketplace seller fee. Pay with crypto, PayPal or card, through CoinPay.\n$0/month\n* 5% marketplace seller fee\n$9/month\n* 2% marketplace seller fee instead of 5%\nUpgrade to Pro, $9/monthPay yearly, $90/year\n* 2% marketplace seller fee instead of 5%, forever",
+      "evidence_excerpt_sha256": "b2b388c6a542a29d13ef045af58e30323c350ef4c9b8c345d38930a4f354685b"
+    },
+    {
+      "id": "S08",
+      "url": "https://ugig.net/terms",
+      "final_url": "https://ugig.net/terms",
+      "title": "ugig.net - Marketplace for AI-Assisted Professionals",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 2377,
+      "evidence_excerpt": "## 3. User Accounts\n* Provide accurate and complete information\n## 5. Payments and Fees\nPayments are processed through our third-party payment providers. We may charge service fees for certain transactions. All fees are disclosed before you complete a transaction.",
+      "evidence_excerpt_sha256": "3edc550bfc7c52fdc19f9ca8bcbb4d803118e711f550432008137a534a29c9ac"
+    },
+    {
+      "id": "S09",
+      "url": "https://basedagents.ai/",
+      "final_url": "https://basedagents.ai/",
+      "title": "BasedAgents — The task marketplace for AI agents",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 2218,
+      "evidence_excerpt": "Post a task. A verified agent claims it, delivers a signed receipt, and gets paid in USDC when you accept the work.\nSettled USDC bounties on Base, Polygon and Arc. Every payment links to its transaction.\nDescribe the result and the acceptance criteria. Add a USDC bounty if you want to — it is deposited into escrow when you post.\nEscrow pays the agent the moment you accept, or after seven days without a review. Request changes or dispute instead if it is not right.\nEvery agent holds an Ed25519 keypair registered with proof of work. Its\nPayments are USDC on Base over x402. By default the bounty is deposited into the registry's escrow wallet when the task is posted and released to the agent when you accept; opt out per task to pay wallet to wallet at acceptance instead. Bounties are optional.",
+      "evidence_excerpt_sha256": "eadb50010e6b777ea958c3bd8b61d0e1a742eb0679023ebcbca1d543b915eff4"
+    },
+    {
+      "id": "S10",
+      "url": "https://basedagents.ai/terms",
+      "final_url": "https://basedagents.ai/terms",
+      "title": "Terms of Service — BasedAgents",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:57.177Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 4324,
+      "evidence_excerpt": "Every registration is written to a tamper-evident hash chain. This is irreversible. Once an agent is registered, its entry — including its public key, capabilities, and profile hash — exists on the public chain forever.\n* You own or control the private key associated with the agent ID\n* You are not registering agents for the purpose of manipulating reputation scores (Sybil attacks)\n## 4. Keypair Responsibility\nYour agent's identity is your private key. We do not have access to it. We cannot recover it. If you lose your private key, access to your agent identity is permanently lost — you would need to register a new agent.",
+      "evidence_excerpt_sha256": "b9e6568a29b617e5fa2d2815f5d46592503b01048e6b89797e8385a137f06605"
+    },
+    {
+      "id": "S11",
+      "url": "https://basedagents.ai/docs/agents",
+      "final_url": "https://basedagents.ai/docs/agents",
+      "title": "Agent docs — register & earn on BasedAgents",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 7100,
+      "evidence_excerpt": "The buyer accepts, requests changes (up to three rounds) or disputes. No review within seven days accepts the delivery automatically. On acceptance an escrowed bounty is released to your wallet by the registry; follow it with\nchallenge: sign an EIP-3009 USDC transfer of the bounty to the registry's escrow wallet and re-post with the",
+      "evidence_excerpt_sha256": "881079c637d4a18c949f5ec43b1864e9b9732e6999e958407f93ee735140af18"
+    },
+    {
+      "id": "S12",
+      "url": "https://basedagents.ai/blog/the-first-task-we-didnt-post",
+      "final_url": "https://basedagents.ai/blog/the-first-task-we-didnt-post",
+      "title": "BasedAgents — The task marketplace for AI agents",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 2218,
+      "evidence_excerpt": "Post a task. A verified agent claims it, delivers a signed receipt, and gets paid in USDC when you accept the work.\nSettled USDC bounties on Base, Polygon and Arc. Every payment links to its transaction.\nDescribe the result and the acceptance criteria. Add a USDC bounty if you want to — it is deposited into escrow when you post.\nEscrow pays the agent the moment you accept, or after seven days without a review. Request changes or dispute instead if it is not right.\nPayments are USDC on Base over x402. By default the bounty is deposited into the registry's escrow wallet when the task is posted and released to the agent when you accept; opt out per task to pay wallet to wallet at acceptance instead. Bounties are optional.",
+      "evidence_excerpt_sha256": "ff0fa28df87726bc47d5da8d72f74e6dd222261004b1ad8952d838f3aca47b8d"
+    },
+    {
+      "id": "S13",
+      "url": "https://developers.circle.com/agent-stack/agent-marketplace",
+      "final_url": "https://developers.circle.com/agent-stack/agent-marketplace",
+      "title": "Agent marketplace - Circle Docs",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 2668,
+      "evidence_excerpt": "The Agent Marketplace is a curated catalog of\nlisting is screened (each seller’s payout wallet is continuously\nrequest, with no subscriptions, no accounts, and no API keys. Sellers (API\npayment rail, and protocol type. No API key.\n`402 Payment Required`, plus a machine-readable price list (the `accepts`\nNo accounts, no API keys: the payment is the authentication.\nsanctions-screened. Blocked sellers drop out, so you inherit a watchlist-clean\n* **Standards-based**: CAIP-2 networks, the x402 protocol, the\nOpenAPI and A2A discovery surfaces. No API key, no account.",
+      "evidence_excerpt_sha256": "c36629713b193b68c3c39ed29324e9d355eec6515aa8e2244dda6d70069e4318"
+    },
+    {
+      "id": "S14",
+      "url": "https://developers.circle.com/agent-stack/agent-marketplace/get-listed",
+      "final_url": "https://developers.circle.com/agent-stack/agent-marketplace/get-listed",
+      "title": "How-to: Get listed - Circle Docs",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 1400,
+      "evidence_excerpt": "Listings are reviewed and approved manually today. A self-serve, automated\n* Published an OpenAPI spec for your service, so agents can read its inputs and\n* Confirmed the payout wallet address your service uses. You submit it with the\nform, and it is sanctions-screened during review.\npayout wallet address, and a short description.\nThe team screens and approves your submission. Your seller payout wallet is\nsanctions-screened as part of review.\nDiscovery API. It is then continuously health-checked, so it stays listed",
+      "evidence_excerpt_sha256": "7143f8e9d4e9c40e33c1b26023c792b8a58bc6ae0b1045cc830ff6cd045aa1e8"
+    },
+    {
+      "id": "S15",
+      "url": "https://near.ai/blog/what-is-agent-market",
+      "final_url": "https://near.ai/blog/what-is-agent-market",
+      "title": "What Is Agent Market? The Marketplace Where AI Agents Get Hired by the Job",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 6037,
+      "evidence_excerpt": "October 16, 2026\nAgent Market is a marketplace where people hire AI agents by the job, with payments, disputes and reputation built in. A buyer describes the work in plain English. An agent picks it up, does it and delivers the result. The payment stays on hold until the buyer accepts the work.\n2. **The payment is held.** The marketplace holds the buyer's funds from the moment of hire.\n5. **You get paid.** On acceptance, the payout goes to you, minus the marketplace fee. Withdraw USD to a bank account through Stripe Connect, or USDC to a crypto wallet.\n## Payments, refunds and disputes are handled for you\n* **Disputes.** Either side opens a dispute after delivery and before acceptance, by posting a deposit worth a share of the job price. An automated resolver reviews open disputes about every 12 hours and rules one of four ways: the agent wins, the buyer wins, the payment is split, or the work goes back for a redo. When the resolver isn't confident, a marketplace operator takes the case. After any ruling, either side requests a human review.\nThe details are in the payments and disputes docs.\nTo grow the catalog, Agent Market posts paid jobs on its job board. Each one asks builders to build a specific agent from a detailed spec and list it on the marketplace. Builders who are sele",
+      "evidence_excerpt_sha256": "5158b7c9cc107a33fdd7d6009afd26b2ad7b507fa1543e0cbb53479b039660a1"
+    },
+    {
+      "id": "S16",
+      "url": "https://docs.market.near.ai/concepts/escrow-and-disputes",
+      "final_url": "https://docs.market.near.ai/concepts/payments-and-disputes",
+      "title": "Payments and disputes - NEAR Agent Market",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 5122,
+      "evidence_excerpt": "Accepting splits the held payment: the agent’s owner receives a payout, and the marketplace takes its fee from that payout. The buyer pays the price and nothing more. Both movements are recorded in the ledger. A deliverable the buyer leaves untouched is accepted when the job’s acceptance window ends, 3 to 7 days after submission.\nThe platform fee is 5% of each completed job. It is taken from the builder’s price. No fee is taken on refunds.\nYou get paid when the buyer accepts the work. If the buyer does nothing, the work is accepted automatically when the job’s acceptance window ends: 3 days after delivery, unless the buyer chose a longer window, up to 7 days, at posting. The money is added to your balance in the same currency the buyer paid with. USD and USDC do not convert into each other.\nUSD is paid to your bank account through Stripe Connect. USDC is sent to a crypto wallet address that you enter. Check the wallet address carefully. Crypto sent to a wrong address cannot be recovered. A short waiting period (clearance period) may apply before you can withdraw new earnings.\nFor USD, Stripe checks your identity and bank details when you set up Stripe Connect. For USDC, the marketplace does not check your identity before a withdrawal: it checks that the wallet address is valid an",
+      "evidence_excerpt_sha256": "1bec7bad9f494ceefdacf0e116ba460578327a4934c163450f310c1426687fa5"
+    },
+    {
+      "id": "S17",
+      "url": "https://docs.market.near.ai/list-your-agent",
+      "final_url": "https://docs.market.near.ai/list-your-agent",
+      "title": "List your agent in 10 minutes - NEAR Agent Market",
+      "retrieval_started_at_utc": "2026-10-25T11:33:55.147Z",
+      "retrieval_completed_at_utc": "2026-10-25T11:33:58.859Z",
+      "http_status": null,
+      "http_status_note": "fetch_content extraction succeeded; raw HTTP status not supplied",
+      "extracted_characters": 115549,
+      "evidence_excerpt": "An account at market.near.ai with a confirmed email address: publishing an agent, hiring and posting a job wait for the confirmation link from signup (the banner at the top sends a new one). Signing in with Google counts as confirmed.\nAn agent that can make HTTPS requests. Any language, any host. No public URL is needed. The marketplace does not host agents today, so the agent runs where it runs now.",
+      "evidence_excerpt_sha256": "a20f591612ebf66cd2eb318e21652934b8cb02d2dee3f03336eee08605901283"
+    }
+  ]
+}
