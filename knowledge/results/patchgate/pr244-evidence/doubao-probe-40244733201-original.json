@@ -1,0 +1,88 @@
+{
+  "schema": "ltzzz.patchgate.doubao-probe-result.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "probe_card": {
+    "schema": "ltzzz.patchgate.doubao-probe.v1",
+    "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "candidate_pr": 240,
+    "candidate_head": "2cf243d22a4d882c2dcdadd1cdbc58f97ac29a1b",
+    "run_live_cas": true,
+    "model_review": true,
+    "scope": "candidate_adversarial_probe_not_production_admission"
+  },
+  "candidate_head": "2cf243d22a4d882c2dcdadd1cdbc58f97ac29a1b",
+  "candidate_pr": 240,
+  "source_main_sha": "c610ef3d8d5b12b61803058d374a3df96728584b",
+  "run_id": "40244733201",
+  "at_utc": "2026-10-25T23:26:42.862Z",
+  "idempotency_key": "ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+  "logical_seat": "doubao",
+  "shell_execution_provider": "github_actions",
+  "actual_model_provider": "volcengine_ark",
+  "model": "doubao-seed-2-1-pro-260915",
+  "model_source": "provider_response",
+  "requested_model": "doubao-seed-2-1-pro-260915",
+  "model_calls": 1,
+  "model_calls_definition": "requests_attempted_not_billing_proof",
+  "evidence": {
+    "candidate_probes_passed": true,
+    "required_cases_covered": true,
+    "live_CAS_requested": true,
+    "live_cross_runner_CAS_verified": true,
+    "deterministic_probe_passed": true,
+    "candidate": {
+      "tests_passed": 4,
+      "tests_failed": 0,
+      "coverage": {
+        "forged_head": true,
+        "same_key_concurrency": true,
+        "receipt_injection": true,
+        "422_without_ref": true
+      },
+      "source": "unprivileged_candidate_test_job_not_production_signed_checker"
+    },
+    "races": [
+      {
+        "lane": "a",
+        "status": "already_reserved_no_model_replay",
+        "owned": false,
+        "key": "ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+        "branch": "patchgate-a2-probe-races/ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733"
+      },
+      {
+        "lane": "b",
+        "status": "created",
+        "owned": true,
+        "key": "ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+        "branch": "patchgate-a2-probe-races/ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733"
+      }
+    ]
+  },
+  "evidence_sha256": "dfc7dda7340f6247185c587e97920cf6677fb5e99a7aeeffc958f82e0e3afe08",
+  "status": "native_Doubao_probe_assessment_delivered_not_stage_approval",
+  "native_doubao_generation_verified": true,
+  "output_truncated": false,
+  "accepted": false,
+  "signing_executor_verified": false,
+  "production_checker_verified": false,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "api_bill_verified": false,
+  "finish_reason": "stop",
+  "tokens_used": 908,
+  "output": "{\"verdict\":\"approve\",\"findings\":[\"候选 head 2cf243d22a4d882c2dcdadd1cdbc58f97ac29a1b 的结构化证据显示候选探针通过，4/4 测试通过且 0 失败。\",\"必需用例均已覆盖：伪造 head、同键并发、回执注入、无 ref 的 422。\",\"证据显示已请求实时 CAS，并完成跨两个真实 runner 的 CAS 验证；确定性探针通过。\",\"同键并发隔离结果满足抢占断言：lane a 为 already_reserved_no_model_replay 且 owned=false，lane b 为 created 且 owned=true；两者使用相同 key 和分支，表明仅一个 runner 成功占用隔离 ref。\",\"证据来源明确为非特权候选测试任务，不构成生产签名检查器结果；未发现回执注入成功或伪造 head 被接受的证据。\"],\"limitations\":[\"A2 仍处于关闭状态。\",\"本次探针不代替 B1/B2/B3/B4 验证。\",\"本次探针不代替 Claude 复审。\",\"结论仅基于提供的 GitHub Actions 结构化证据；未由当前审阅者独立执行 shell、签名、合并、部署、付款或生产验收。\"]}",
+  "output_sha256": "89b226f3961b1a12b532d08b947fdd7231d546010b0ed5b1a32a57368af3e6c1",
+  "execution_metadata": {
+    "receipt_source": "worker_code",
+    "executed_by": "doubao",
+    "actual_model": "doubao-seed-2-1-pro-260915",
+    "model_source": "provider_response",
+    "generation_verified": true,
+    "request_id": "b061e461-d087-443a-8367-aff526c1efce",
+    "started_at": "2026-10-25T23:26:43.084Z"
+  },
+  "finished_at_utc": "2026-10-25T23:26:51.991Z"
+}

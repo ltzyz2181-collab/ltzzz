@@ -1,0 +1,227 @@
+{
+  "schema": "ltzzz.patchgate.pr247-repair-closeout.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "status": "C1a_C2_C3_implemented_waiting_Claude_rereview_A2_disabled",
+  "source_audit": {
+    "pr": 247,
+    "head": "b1b05f43edfe5aa5d035259202af6d1d967a996a",
+    "blob": "8a843bbe6fcc5d2dddf44727abbf25dddcd7a931",
+    "verdict": "revise",
+    "raw_path": "claude-rereview-original.md",
+    "original_preserved": true
+  },
+  "tested_runtime_head": "4d95f22b3e740c9ad085f736be6e7cbdaf35b0b7",
+  "runtime_bundle": {
+    "sha256": "320c55a805a438bd3ac1e4882d55cb840974d97715949e26464d1b6d542fb33f",
+    "files": [
+      {
+        "path": "config/patch-policy.json",
+        "sha256": "c006de6a371aa45c294010dbeba7d747c33fb162ba553b2168dd8b4aab5e2456"
+      },
+      {
+        "path": "config/patchgate-trust.json",
+        "sha256": "8fd7a704bc80db4a01f07dfc20bc021818003901a6b16f7b333911be9e36028e"
+      },
+      {
+        "path": "config/patchgate-executors.json",
+        "sha256": "b2190d29e48949e79d180895adfe8cd60018ae62bae9a2e121701178f3ceb58a"
+      },
+      {
+        "path": "config/patchgate-a2.json",
+        "sha256": "ed2230a8225210b26c8df5666c0a78a1a975bc3cf8273f7380e9481548bb5def"
+      },
+      {
+        "path": "scripts/patchgate.mjs",
+        "sha256": "942d93ab1e0314c41719e3ed00e2d0d18e28fd5d46777f6a4d81e38c574a027c"
+      },
+      {
+        "path": "scripts/lib/patchgate.mjs",
+        "sha256": "ecf23e26d1729b1c2aabf9ebd88968c88c9d6bdf9defd0edda17d16840003b1e"
+      },
+      {
+        "path": "scripts/lib/patchgate-a2.mjs",
+        "sha256": "af10af5f8517519f3f163c0ae8f12d46dce1eb06f5802946530c070fbc5d980a"
+      },
+      {
+        "path": "scripts/patchgate-a2-preflight.mjs",
+        "sha256": "4dfaa321f5117d1b906c352c64f97cb2c3344ad86e99e2405a03b4bcb97bc698"
+      },
+      {
+        "path": "scripts/tests/patchgate.test.mjs",
+        "sha256": "5efcfb40f073b9cd9ffceaaab723f9b4d099678c630f6b551e437d933f7f21bf"
+      },
+      {
+        "path": "scripts/tests/patchgate-a1.test.mjs",
+        "sha256": "f058d7c5367fecc35e744c7c12c9b0429d754e535dc7867425becf117e9b795f"
+      },
+      {
+        "path": "scripts/tests/patchgate-a2.test.mjs",
+        "sha256": "05addd0bf9ee6fdeef3dc74e59cb472021088fb122901ecc2b8cec33ef1558db"
+      },
+      {
+        "path": "scripts/lib/patchgate-a2-collector.mjs",
+        "sha256": "eccc715b22ff1e2a6d70711c15ea4e41e570685e9798408b513ddcf634f004ef"
+      },
+      {
+        "path": "scripts/patchgate-a2-collect.mjs",
+        "sha256": "f2cd844877fe4b05ff25abf021bd3341efaaf15c704adecf52f80116a60b91fc"
+      },
+      {
+        "path": "scripts/tests/patchgate-a2-collector.test.mjs",
+        "sha256": "04e3af0b08404a624222f782011e13a2c7c6cef02601e5bd7b9600454834c046"
+      },
+      {
+        "path": "config/patchgate-a2-collector.json",
+        "sha256": "d7f234abafa1cbd2c2046e028f3ea1eb00ff2b6ec7117586fe34ee6899e7955d"
+      },
+      {
+        "path": ".github/workflows/patchgate-a2-base-checks.yml",
+        "sha256": "a2c3de6a67caf646e75923ba920683aeb37cf5d92c781932937b0d33e07b6bea"
+      },
+      {
+        "path": ".github/workflows/patchgate-a2-collector.yml",
+        "sha256": "1945bdc5322753621eb1adbd3f7e97aec5ecd6c2a91d313c4f30772948a90698"
+      },
+      {
+        "path": ".github/workflows/patchgate-a2-verify.yml",
+        "sha256": "8fc0dad6a94a75ad787474375e3b77862de1be7c2d159167bd6552f875547207"
+      }
+    ]
+  },
+  "changes": {
+    "C1": {
+      "choice": "Claude_provided_option_a_advisory_not_cryptographic_admission",
+      "independent_owner_identity_registered": false,
+      "owner_confirmation_comments_created": 0,
+      "reason": "All AIs share the same GitHub credentials; a comment by GPT cannot prove the owner personally confirmed. User requested executor work without further manual operations.",
+      "two_native_provider_signatures_still_required": true
+    },
+    "C2": {
+      "workflow_event": "pull_request_target",
+      "runtime_checkout": "github.sha_trusted_default_main",
+      "candidate_execution": false,
+      "collector_requires_event_base_head_pr_marker": true,
+      "old_PR_green_check_rejected_by_tests": true,
+      "live_new_target_checker_verified": false
+    },
+    "C3": {
+      "verify_workflow_in_fixed_bundle": true
+    },
+    "C4": {
+      "ego_is_documentation_only": true,
+      "ego_not_an_admission_signal": true
+    }
+  },
+  "tests": {
+    "command": "node --test scripts/tests/patchgate*.test.mjs",
+    "passed": 125,
+    "failed": 0,
+    "run_id": "40252891751",
+    "job_id": "121348407379",
+    "scope": "actual_GitHub_runner_regression_fixtures_not_live_target_deployment",
+    "actionlint": "1.7.7_passed"
+  },
+  "live_readonly": {
+    "run_id": "40252891751",
+    "job_id": "121348464987",
+    "summary_from_actual_runner_log": true,
+    "source_main_sha": "ce2dff37cf3d5bb4aa58c953c0cd15e6f4c960a8",
+    "collector_source_commit": "4d95f22b3e740c9ad085f736be6e7cbdaf35b0b7",
+    "trusted_main_execution": false,
+    "checks": null,
+    "base_protection": {
+      "strategy": "strict_protected_branch_no_admin_bypass",
+      "http_status": 403,
+      "conditions": {
+        "readable": false,
+        "strict": false,
+        "admins_enforced": false,
+        "forced_push_disabled": false,
+        "deletion_disabled": false,
+        "expected_app_check": false
+      },
+      "configuration_observed": false,
+      "atomic_base_race_verified": false,
+      "status": "blocked_unreadable_or_missing_protection",
+      "expected_base_merge_api_supported": false
+    },
+    "errors": [
+      {
+        "component": "checks",
+        "code": "collector_PR_base_stale_requalify"
+      }
+    ],
+    "claude_artifact": {
+      "pr": 247,
+      "head": "b1b05f43edfe5aa5d035259202af6d1d967a996a",
+      "artifact": {
+        "path": "knowledge/results/patchgate/a2-claude-rereview-674c73c.md",
+        "blob_sha": "8a843bbe6fcc5d2dddf44727abbf25dddcd7a931",
+        "sha256": "bf5b7d3120ae2441b3ceaf158492031963297f96d7b00fe3843fe873958fded2"
+      },
+      "verdict": "revise",
+      "bundle_verification": "unverified_missing_metadata_or_bundle_mismatch",
+      "native_authorship_verified": false
+    },
+    "signed": false,
+    "automatic_merge": false,
+    "native_model_calls": 0
+  },
+  "qwen": {
+    "native_calls": 1,
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "run_id": "40252735553",
+    "tokens_used": 1544,
+    "actual_bill": null,
+    "finish_reason": "stop",
+    "verdict": "reject",
+    "raw_path": "qwen-original-reject.json",
+    "stage_approval": false,
+    "controller_adjudication": "Reject preserved. Official GitHub target event docs say GITHUB_SHA is default branch tip, not candidate HEAD. CLI and collector four-way binding already exists and has negative tests. Full source and official reference passed to Claude for adjudication; no repurchase to chase approval.",
+    "reference": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target"
+  },
+  "branch_protection": {
+    "api_http_status": 403,
+    "changed": false,
+    "configured_verified": false,
+    "atomic_base_race_verified": false,
+    "existing_main_direct_receipt_writer_migration_unverified": true,
+    "client_relay": "ops/dispatch/relay/PATCHGATE-A2-PROTECTION-CLIENT.md",
+    "client_browser_control_available_in_current_session": false
+  },
+  "remaining": [
+    "Claude_exact_head_rereview",
+    "real_provider_signer_provisioning_and_restart_challenge",
+    "trusted_main_checker_deployment_registration_and_signed_collection",
+    "branch_protection_admin_capability_and_real_stale_base_rejection",
+    "PR243_high_risk_notice_gate_review",
+    "PR246_first_automatic_docs_merge"
+  ],
+  "related": {
+    "PR226": {
+      "state": "open",
+      "head": "94c6e9f10986568fa78736dda43306e77fe08fbb",
+      "scope": "M0_only"
+    },
+    "PR239": {
+      "state": "merged",
+      "merge": "3327b7f72dcd5dca80263bcaf36124beb1702782",
+      "scope": "Pi_transport_merged_not_general_execution_tools"
+    }
+  },
+  "deployment": {
+    "merged": false,
+    "A2_enabled": false,
+    "A3_enabled": false,
+    "B_enabled": false,
+    "production_keys_registered": 0,
+    "automatic_merge": false,
+    "financial_execution": false
+  },
+  "native_model_calls": 1,
+  "native_anthropic_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "real_funds_moved": false
+}
