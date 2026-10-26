@@ -1,6 +1,7 @@
 // A2 draft. This module is loaded only from an audited main commit, never PR code.
 import {createPrivateKey, createPublicKey, createHash, sign} from 'node:crypto';
 import {authenticate, canonical, evaluate, sha256, subjectFor, TASK, validateTrust} from './patchgate.mjs';
+import {DOCS_BASE_STRATEGY,A2_STOP_REF,prepareDocsReadback,verifyDocsMerge,validDocsReadback} from './patchgate-a2-readback.mjs';
 
 export const REPOSITORY='ltzyz2181-collab/ltzzz';
 const ROOT='/repos/'+REPOSITORY, SHA=/^[a-f0-9]{40}$/, HASH=/^[a-f0-9]{64}$/;
@@ -88,6 +89,7 @@ export function validateA2Config(config) {
     ||canonical(config.claude_audit_channel)!==canonical(CLAUDE_CHANNEL)||!Array.isArray(config.external_stage_audits)
     ||!Array.isArray(config.notification_actors)||config.notification_actors.some(a=>!actor(a)||typeof a.executor!=='string'||!a.executor)
     ||typeof config.base_compare_and_swap_verified!=='boolean'||!Array.isArray(config.stage_audits)||!Array.isArray(config.required_check_names)||!config.required_check_names.length
+    ||config.base_fence_strategy!==DOCS_BASE_STRATEGY||config.postmerge_readback_enforced!==true
     ||config.required_check_names.some(x=>typeof x!=='string'||!x)||config.require_all_completed_checks!==true
     ||[config.automatic_deploy,config.automatic_rollback,config.financial_execution].some(v=>v!==false))throw Error('invalid_A2_docs_only_config');
   return config;
@@ -95,7 +97,7 @@ export function validateA2Config(config) {
 
 export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now=Date.now()}) {
   validateA2Config(config);
-  if(config.enabled!==true||config.base_compare_and_swap_verified!==true||config.production_signing_keys_provisioned!==true||!validateExecutorRegistry({registry,trust})
+  if(config.enabled!==true||config.production_signing_keys_provisioned!==true||!validateExecutorRegistry({registry,trust})
     ||!SHA.test(runnerSha||'')||!HASH.test(runtimeBundleSha256||'')||config.runtime_bundle_sha256!==runtimeBundleSha256)return false;
   // Audit signatures live outside the bundle they authenticate. A source commit
   // is metadata, not a self-referential commit containing its own signature.
@@ -121,23 +123,31 @@ export function checksSatisfied({checkRuns,config,headSha}) {
 export function validateA2Request(method,endpoint,body) {
   if(typeof endpoint!=='string'||!endpoint.startsWith(ROOT+'/'))throw Error('A2_fixed_repository_required');
   const route=endpoint.slice(ROOT.length),num='[1-9]\\d{0,8}';
+  if(method==='GET'&&body===undefined&&(route==='/git/ref/heads/'+A2_STOP_REF||/^\/git\/commits\/[a-f0-9]{40}$/.test(route)||/^\/git\/trees\/[a-f0-9]{40}\?recursive=1$/.test(route)||/^\/compare\/[a-f0-9]{40}\.\.\.[a-f0-9]{40}$/.test(route)))return;
+  if(method==='DELETE'&&route==='/git/refs/heads/'+A2_STOP_REF&&body===undefined)return;
   if(method==='GET'&&body===undefined&&(new RegExp('^/pulls/'+num+'$').test(route)||route==='/git/ref/heads/main'||new RegExp('^/git/ref/heads/'+BRANCH+'[a-f0-9]{64}$').test(route)))return;
-  if(method==='POST'&&route==='/git/refs'&&only(body,['ref','sha'])&&new RegExp('^refs/heads/'+BRANCH+'[a-f0-9]{64}$').test(body.ref||'')&&SHA.test(body.sha||''))return;
+  if(method==='POST'&&route==='/git/refs'&&only(body,['ref','sha'])&&(new RegExp('^refs/heads/'+BRANCH+'[a-f0-9]{64}$').test(body.ref||'')||body.ref==='refs/heads/'+A2_STOP_REF)&&SHA.test(body.sha||''))return;
   if(method==='PUT'&&new RegExp('^/pulls/'+num+'/merge$').test(route)&&only(body,['sha','merge_method'])&&SHA.test(body.sha||'')&&body.merge_method==='merge')return;
   const m=/^\/contents\/knowledge\/results\/patchgate\/a2\/([a-f0-9]{64})\.json$/.exec(route);
   if(method==='PUT'&&m&&only(body,['branch','message','content'])&&body.branch===BRANCH+m[1]&&body.message==='A2 action outcome; reconcile before retry'
     &&typeof body.content==='string'&&body.content.length<200000&&/^[A-Za-z0-9+/]*={0,2}$/.test(body.content)){
     const bytes=Buffer.from(body.content,'base64');if(bytes.toString('base64')!==body.content)throw Error('A2_api_request_not_allowed');
     let r;try{r=JSON.parse(bytes.toString('utf8'));}catch{throw Error('A2_api_request_not_allowed');}
-    const keys=['schema_version','task_id','head_sha','source_main_sha','phase','pr_number','run_id','at_utc','subject_sha256','status','automatic_merge','automatic_deploy','automatic_rollback','financial_execution','native_model_calls','paid','tx_hash','reservation_retained'];
-    if(r.status==='merged_readback_verified')keys.push('merge_commit_sha');
+    const keys=['schema_version','task_id','head_sha','source_main_sha','phase','pr_number','run_id','at_utc','subject_sha256','status','automatic_merge','automatic_deploy','automatic_rollback','financial_execution','native_model_calls','paid','tx_hash','reservation_retained','merge_operation_confirmed','execution_stop_ref','postmerge_verification','error_code'];
+    if(r.merge_operation_confirmed===true)keys.push('merge_commit_sha');
     if(only(r,keys)&&r.schema_version===1&&ID.test(r.task_id||'')&&SHA.test(r.head_sha||'')&&SHA.test(r.source_main_sha||'')&&r.head_sha!==r.source_main_sha
       &&m[1]===sha256(r.task_id+':'+r.head_sha+':merge')&&r.phase==='A2_docs_only'
       &&Number.isSafeInteger(r.pr_number)&&r.pr_number>0&&r.pr_number<=999999999&&typeof r.run_id==='string'&&/^\d{1,20}$/.test(r.run_id)
       &&typeof r.at_utc==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(r.at_utc)&&Number.isFinite(Date.parse(r.at_utc))
       &&HASH.test(r.subject_sha256||'')&&r.reservation_retained===true
-      &&['merged_readback_verified','merge_failed','outcome_unknown_reconcile_no_retry'].includes(r.status)
-      &&r.automatic_merge===(r.status==='merged_readback_verified')&&(r.status!=='merged_readback_verified'||SHA.test(r.merge_commit_sha||''))
+      &&['merged_readback_verified','merge_failed','outcome_unknown_reconcile_no_retry','post_merge_validation_failed_stopped'].includes(r.status)
+      &&typeof r.merge_operation_confirmed==='boolean'&&r.execution_stop_ref==='refs/heads/'+A2_STOP_REF
+      &&(r.error_code===null||/^[A-Za-z0-9_]{1,100}$/.test(r.error_code||''))
+      &&r.automatic_merge===(r.status==='merged_readback_verified')&&(!r.merge_operation_confirmed||SHA.test(r.merge_commit_sha||''))
+      &&(r.status!=='merged_readback_verified'||(r.merge_operation_confirmed&&r.error_code===null&&validDocsReadback(r.postmerge_verification,{headSha:r.head_sha,baseSha:r.source_main_sha,mergeSha:r.merge_commit_sha})))
+      &&(r.status==='merged_readback_verified'||r.postmerge_verification===null)
+      &&(r.status!=='post_merge_validation_failed_stopped'||r.merge_operation_confirmed===true)
+      &&(r.status!=='merge_failed'||r.merge_operation_confirmed===false)
       &&r.automatic_deploy===false&&r.automatic_rollback===false&&r.financial_execution===false&&r.native_model_calls===0&&r.paid===false&&r.tx_hash===null)return;
   }
   throw Error('A2_api_request_not_allowed');
@@ -167,6 +177,13 @@ async function currentPR(api,context){
   const main=await api('GET',ROOT+'/git/ref/heads/main');
   if(main.status!==200||main.data?.ref!=='refs/heads/main'||main.data.object?.sha!==context.runnerSha)throw Error('A2_base_moved_requalify');
 }
+async function releaseStop(api,headSha){
+  try{
+    const r=await api('GET',ROOT+'/git/ref/heads/'+A2_STOP_REF);
+    if(r.status!==200||r.data?.ref!=='refs/heads/'+A2_STOP_REF||r.data.object?.sha!==headSha)return false;
+    return (await api('DELETE',ROOT+'/git/refs/heads/'+A2_STOP_REF)).status===204;
+  }catch{return false;}
+}
 
 export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations,checkRuns,runnerSha,runtimeBundleSha256,prNumber,runId,now=Date.now()}) {
   // All arguments except PR identity/diff are collected by trusted main code.
@@ -179,17 +196,30 @@ export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,a
   if(!boundChecks||!evaluation.validation_passed||evaluation.risk_class!=='L0'||snapshot.files.some(f=>f.mode!=='100644'||!f.path.endsWith('.md'))
     ||!config.required_candidate_review_providers.every(p=>proofs.some(a=>a.provider===p))||!checksSatisfied({checkRuns,config,headSha:subject.head_sha}))return {status:'A2_admission_blocked',automatic_merge:false,evaluation};
   await currentPR(api,context);
+  const approved=await prepareDocsReadback({api,snapshot,policy});
+  // Reserve the global stop latch BEFORE any merge. A crashed runner, unknown
+  // response, bad post-merge tree or failed receipt cannot leave execution open.
+  let stop;
+  try{stop=await api('POST',ROOT+'/git/refs',{ref:'refs/heads/'+A2_STOP_REF,sha:subject.head_sha});}
+  catch{return {status:'claim_outcome_unknown_reconcile_no_retry',automatic_merge:false,execution_stopped:true};}
+  if(stop.status===422){
+    const r=await api('GET',ROOT+'/git/ref/heads/'+A2_STOP_REF);
+    if(r.status!==200||r.data?.ref!=='refs/heads/'+A2_STOP_REF||!SHA.test(r.data.object?.sha||''))throw Error('A2_stop_422_without_existing_ref');
+    return {status:'A2_execution_stopped_reconcile_required',automatic_merge:false,execution_stopped:true};
+  }
+  if(stop.status!==201||stop.data?.ref!=='refs/heads/'+A2_STOP_REF||stop.data.object?.sha!==subject.head_sha)return {status:'A2_stop_latch_unverified_no_merge',automatic_merge:false,execution_stopped:true};
   const key=sha256(subject.task_id+':'+subject.head_sha+':merge'),branch=BRANCH+key;
   let claim;
-  try{claim=await api('POST',ROOT+'/git/refs',{ref:'refs/heads/'+branch,sha:runnerSha});}catch{return {status:'claim_outcome_unknown_reconcile_no_retry',automatic_merge:false};}
+  try{claim=await api('POST',ROOT+'/git/refs',{ref:'refs/heads/'+branch,sha:runnerSha});}catch{return {status:'claim_outcome_unknown_reconcile_no_retry',automatic_merge:false,execution_stopped:true};}
   if(claim.status===422){
     const existing=await api('GET',ROOT+'/git/ref/heads/'+branch);
     if(existing.status!==200||existing.data?.ref!=='refs/heads/'+branch||!SHA.test(existing.data.object?.sha||''))throw Error('A2_claim_422_without_existing_ref');
-    return {status:'existing_claim_reconcile_no_repeat',automatic_merge:false,branch};
+    return {status:'existing_claim_reconcile_no_repeat',automatic_merge:false,branch,stop_latch_released:await releaseStop(api,subject.head_sha)};
   }
   if(claim.status!==201)throw Error('A2_claim_failed');
   const record={schema_version:1,task_id:subject.task_id,head_sha:subject.head_sha,source_main_sha:runnerSha,phase:'A2_docs_only',pr_number:prNumber,run_id:runId,at_utc:new Date(now).toISOString(),
-    subject_sha256:sha256(canonical(subject)),status:'outcome_unknown_reconcile_no_retry',automatic_merge:false,automatic_deploy:false,automatic_rollback:false,financial_execution:false,native_model_calls:0,paid:false,tx_hash:null,reservation_retained:true};
+    subject_sha256:sha256(canonical(subject)),status:'outcome_unknown_reconcile_no_retry',automatic_merge:false,automatic_deploy:false,automatic_rollback:false,financial_execution:false,native_model_calls:0,paid:false,tx_hash:null,reservation_retained:true,
+    merge_operation_confirmed:false,execution_stop_ref:'refs/heads/'+A2_STOP_REF,postmerge_verification:null,error_code:null};
   let attempted=false;
   try{
     // Re-read after the shared atomic claim. expected-head SHA also protects the
@@ -198,13 +228,16 @@ export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,a
     await currentPR(api,context);attempted=true;
     const merged=await api('PUT',ROOT+'/pulls/'+prNumber+'/merge',{sha:subject.head_sha,merge_method:'merge'});
     if(merged.status!==200||merged.data?.merged!==true||!SHA.test(merged.data.sha||''))throw Error('A2_merge_not_confirmed');
+    Object.assign(record,{merge_operation_confirmed:true,merge_commit_sha:merged.data.sha});
     const read=await api('GET',ROOT+'/pulls/'+prNumber);
     if(read.status!==200||read.data?.number!==prNumber||read.data.merged!==true||read.data.head?.sha!==subject.head_sha||read.data.merge_commit_sha!==merged.data.sha)throw Error('A2_merge_readback_failed');
-    Object.assign(record,{status:'merged_readback_verified',automatic_merge:true,merge_commit_sha:merged.data.sha});
-  }catch{record.status=attempted?'outcome_unknown_reconcile_no_retry':'merge_failed';}
+    const proof=await verifyDocsMerge({api,approved,policy,mergeSha:merged.data.sha});
+    Object.assign(record,{status:'merged_readback_verified',automatic_merge:true,postmerge_verification:proof});
+  }catch(error){record.status=record.merge_operation_confirmed?'post_merge_validation_failed_stopped':attempted?'outcome_unknown_reconcile_no_retry':'merge_failed';record.error_code=/^[A-Za-z0-9_]{1,100}$/.test(error.message)?error.message:'merge_or_readback_failed';}
   try{
     const saved=await api('PUT',ROOT+'/contents/knowledge/results/patchgate/a2/'+key+'.json',{branch,message:'A2 action outcome; reconcile before retry',content:Buffer.from(JSON.stringify(record,null,2)+'\n').toString('base64')});
     record.receipt_persisted=saved.status===201;
   }catch{record.receipt_persisted=false;}
-  return {...record,branch,automatic_retry:false};
+  const released=record.status==='merged_readback_verified'&&record.receipt_persisted===true?await releaseStop(api,subject.head_sha):false;
+  return {...record,branch,automatic_retry:false,stop_latch_released:released,execution_stopped:!released};
 }
