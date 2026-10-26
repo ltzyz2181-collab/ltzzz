@@ -9,7 +9,9 @@ import {validateA2Config,validateExecutorRegistry,rolloutApproved} from './lib/p
 export const A2_BUNDLE_FILES=Object.freeze([
   'config/patch-policy.json','config/patchgate-trust.json','config/patchgate-executors.json','config/patchgate-a2.json',
   'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/patchgate-a2-preflight.mjs',
-  'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs'
+  'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
+  'scripts/lib/patchgate-a2-collector.mjs','scripts/patchgate-a2-collect.mjs','scripts/tests/patchgate-a2-collector.test.mjs','config/patchgate-a2-collector.json',
+  '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml'
 ]);
 export function bundleDigest({read}){
   const entries=A2_BUNDLE_FILES.map(name=>{

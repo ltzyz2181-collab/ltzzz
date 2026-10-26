@@ -1,0 +1,25 @@
+name: PatchGate A2 trusted base checks (no merge)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions: {contents: read}
+concurrency: {group: 'patchgate-a2-base-${{ github.event.pull_request.number }}', cancel-in-progress: false}
+jobs:
+  patchgate-a2-base-checks:
+    if: github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        # The entire executable/import/config tree is BASE, never PR checkout.
+        with: {ref: '${{ github.event.pull_request.base.sha }}', persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Base interpreter checks a regular Markdown-only diff without running it
+        run: node scripts/patchgate-a2-collect.mjs base-check "$RUNNER_TEMP/a2-base-check.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a2-base-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/a2-base-check.json
+          retention-days: 30
