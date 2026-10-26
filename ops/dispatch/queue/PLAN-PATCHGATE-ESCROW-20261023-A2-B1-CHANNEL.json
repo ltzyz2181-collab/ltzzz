@@ -1,0 +1,11 @@
+{
+  "id": "PLAN-PATCHGATE-ESCROW-20261023-A2-B1-CHANNEL",
+  "parent_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "agent": "qianwen",
+  "model": "qwen-plus",
+  "max_tokens": 2048,
+  "real_money": false,
+  "source_commit": "85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+  "scope": "B1_channel_decision_independent_assessment_not_key_or_live_signature_test",
+  "prompt": "请独立评估PR244对A2 PR240的B1签名通道决定（代码head85a938dd5cd001e5d3580e729f613b8eb4402d5f）。原作者OpenAI；Claude原生只经repo PR交审计，没有Ed25519私钥，当前required_stage_auditors=['anthropic','aliyun_dashscope']使其无法签。原审计REVISE保留；A2/B不启用。\n原审计允许总控/千问二选一：1独立GitHub账号评论读回作Claude证据；2必需密码签名方换实际能接签名执行器的两家，Claude外部补充意见。已知GitHub PR全用共享owner账号，因此不选1，不能把共享账号当原生Anthropic证明。\n总控拟选2：密码准入明确使用aliyun_dashscope(千问)+volcengine_ark(豆包)，执行器保管各自Ed25519密钥，一执行器一实际provider，模型不接触私钥；缺任何真实签名/公钥登记仍block，不把现有API Key当签名Key。候选作者不得与任一复核provider相同。Claude继续必须做阶段外部规划/独立审计，经PR交稿。其审计由github_actions采集器按真实PR/file原字节/head/bundle回读并用基础设施key签external_audit_readback，provider只能github_actions而非anthropic；这份签名只证明GitHub工件回读，不证明原生Claude身份，不计入两家模型密码quorum。仍要求Claude新head复审approve，旧PR244 REVISE不能满足新门槛。\n配置/测试将强制两个原生provider签名与另一个external_audit_readback证据均齐全；生产signer、base原子门禁、真实CI采集、首次docs合并依然待补。探针由无凭证Actions执行脚本，豆包原生API只读其实际输出，署名分开，不自称模型跑shell。允许对抗probe但不运行候选代码持钥、不付款。\n请给JSON {verdict:approve|revise|reject,findings:[{severity,code,reason}],limitations:[]}，找具体绕过/错误；不要把设计中明确未部署的项目误写已完成，也不要把需要签名解释为模型本人持钥。此为通道设计评估，未提供代码，不声称已审运行器或跑测试。"
+}

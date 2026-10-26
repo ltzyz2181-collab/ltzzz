@@ -1,0 +1,259 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "at_utc": "2026-10-24T08:36:32.549596+00:00",
+  "source_main_commit": "9c4196d49bd5d8cb5d4f0c6df366dd40dc655956",
+  "kind": "actual_candidate_public_config_bytes_not_mock_configuration",
+  "files": [
+    {
+      "path": "config/patch-policy.json",
+      "sha256": "c006de6a371aa45c294010dbeba7d747c33fb162ba553b2168dd8b4aab5e2456",
+      "content": {
+        "schema_version": 1,
+        "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+        "phase": "A0",
+        "mode": "validation_only",
+        "automatic_merge": false,
+        "automatic_deploy": false,
+        "automatic_rollback": false,
+        "real_funds_enabled": false,
+        "repository": "ltzyz2181-collab/ltzzz",
+        "protected_prefixes": [
+          "config/patch",
+          "scripts/patchgate",
+          "scripts/lib/patchgate",
+          "scripts/tests/patchgate",
+          ".github/workflows/patchgate",
+          ".github/actions/patchgate"
+        ],
+        "l3_prefixes": [
+          "config/",
+          "identity/",
+          "wallet/",
+          "agent-wallet/",
+          "contracts/",
+          "policy/",
+          "protocol/",
+          "memory/promote/",
+          ".github/",
+          ".claude/",
+          ".agents/",
+          "skills/",
+          "tools/",
+          "lib/",
+          "ltzzz-memory/",
+          "memory/",
+          "knowledge/results/",
+          "results/",
+          "data/results/",
+          "data/memory/",
+          "ops/"
+        ],
+        "l2_prefixes": [
+          "workers/",
+          "cloud-agent-worker/",
+          "backend-node/",
+          "backend-python/",
+          "api/"
+        ],
+        "l1_prefixes": [
+          "scripts/tests/",
+          "tests/"
+        ],
+        "dispatch_card_prefixes": [
+          "ops/dispatch/inbox/",
+          "ops/dispatch/queue/"
+        ],
+        "dispatch_card_extensions": [
+          ".md",
+          ".json"
+        ],
+        "l0_prefixes": [
+          "docs/"
+        ],
+        "l3_files": [
+          "package.json",
+          "package-lock.json",
+          ".gitmodules",
+          ".gitattributes",
+          "AGENTS.md"
+        ],
+        "l0_files": [
+          "README.md"
+        ],
+        "documentation_extensions": [
+          ".md"
+        ],
+        "allowed_external_hosts": [
+          "github.com",
+          "raw.githubusercontent.com",
+          "ltzzz.com"
+        ],
+        "allowed_external_url_prefixes": [
+          "https://github.com/ltzyz2181-collab/ltzzz/",
+          "https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/",
+          "https://ltzzz.com/"
+        ],
+        "receipt_writer_rules": [
+          {
+            "prefix": "knowledge/results/qwen-dispatch/",
+            "executors": [
+              "qwen-main-receipt-bot",
+              "gpt-github-relay"
+            ]
+          },
+          {
+            "prefix": "knowledge/results/dispatch/",
+            "executors": [
+              "sentinel-main-bot",
+              "gpt-github-relay"
+            ]
+          },
+          {
+            "prefix": "knowledge/results/",
+            "executors": [
+              "gpt-github-relay"
+            ]
+          },
+          {
+            "prefix": "results/",
+            "executors": [
+              "gpt-github-relay"
+            ]
+          },
+          {
+            "prefix": "data/results/",
+            "executors": [
+              "gpt-github-relay"
+            ]
+          },
+          {
+            "prefix": "ops/dispatch/receipts/",
+            "executors": [
+              "gpt-github-relay"
+            ]
+          }
+        ],
+        "max_files": 100,
+        "max_diff_bytes": 524288,
+        "max_review_age_seconds": 86400,
+        "freshness_seconds": 300,
+        "extra_review_failure_count": 3,
+        "extra_review_window_seconds": 86400,
+        "stage_auditors": [
+          "anthropic",
+          "different_provider"
+        ],
+        "workflow_classification": "all_L3_until_permission_parser_and_workflow_adapters_are_reviewed",
+        "canary_targets": [],
+        "production_adapters": [],
+        "limitations": [
+          "A0 is offline/CI validation, not automatic merge or deployment.",
+          "No signing keys are provisioned by this change. Provider names in unsigned JSON are not evidence.",
+          "Runtime scripts default to L3 until individually reviewed into a non-financial allowlist. Only tests retain the general L1 prefix.",
+          "Receipt transport executors are registered, but signing keys remain empty/disabled; transport availability is not cryptographic writer admission.",
+          "Control-plane updates require a separate reviewed trust-root rollout; PatchGate never authorizes a patch that changes its own checks.",
+          "Existing unrelated workflows are not intercepted or secured merely by adding this evaluator."
+        ]
+      }
+    },
+    {
+      "path": "config/patchgate-trust.json",
+      "sha256": "8fd7a704bc80db4a01f07dfc20bc021818003901a6b16f7b333911be9e36028e",
+      "content": {
+        "schema_version": 1,
+        "purpose": "executor_attestations_only_not_wallet_signatures",
+        "enabled": false,
+        "executor_provider_binding": "one_executor_one_provider_for_all_registered_keys",
+        "verification_executor_independent_of_author": true,
+        "keys": [],
+        "provisioning": "Later reviewed rollout must bind each Ed25519 public key to the authenticated executor, upstream provider and allowed roles; no model-generated or PR-supplied key is trusted.",
+        "claude_channel": "repo_pr_only_pending_hash_bound_audit",
+        "github_shared_login_is_provider_proof": false,
+        "executor_registry": "config/patchgate-executors.json",
+        "signing_status": "not_provisioned_A1_may_observe_A2_must_not_admit_unsigned_writers"
+      }
+    },
+    {
+      "path": "config/patchgate-executors.json",
+      "sha256": "b2190d29e48949e79d180895adfe8cd60018ae62bae9a2e121701178f3ceb58a",
+      "content": {
+        "schema_version": 1,
+        "repository": "ltzyz2181-collab/ltzzz",
+        "source_main_commit": "9c4196d49bd5d8cb5d4f0c6df366dd40dc655956",
+        "enrollment_kind": "verified_existing_receipt_transport_not_signing_key_provisioning",
+        "executors": [
+          {
+            "id": "gpt-github-relay",
+            "logical_seat": "gpt",
+            "provider": "openai",
+            "transport": "managed_github_connector",
+            "github_login": "ltzyz2181-collab",
+            "github_user_id": 261544579,
+            "roles": [
+              "receipt_write"
+            ],
+            "verification": {
+              "kind": "current_authenticated_connector_profile_and_actual_queue_commit",
+              "commit": "b85bcab7113ef53f56616d581942db21dd6c257d",
+              "model_provider_scope": "current_Codex_session_not_inferred_from_shared_GitHub_login"
+            },
+            "signing_enabled": false,
+            "signing_key_ids": []
+          },
+          {
+            "id": "qwen-main-receipt-bot",
+            "logical_seat": "qianwen",
+            "provider": "aliyun_dashscope",
+            "transport": "github_actions_main",
+            "workflow": ".github/workflows/qwen-dispatch.yml",
+            "workflow_id": 390027612,
+            "job": "consume",
+            "roles": [
+              "receipt_write"
+            ],
+            "verification": {
+              "run_id": "40038200719",
+              "head_sha": "b85bcab7113ef53f56616d581942db21dd6c257d",
+              "conclusion": "success",
+              "native_model": "qwen-plus",
+              "model_source": "provider_response",
+              "receipt": "knowledge/results/patchgate/pr224-evidence/qianwen-original-revise.json"
+            },
+            "signing_enabled": false,
+            "signing_key_ids": []
+          },
+          {
+            "id": "sentinel-main-bot",
+            "logical_seat": "workbuddy_automation",
+            "provider": "github_actions",
+            "transport": "github_actions_main",
+            "workflow": ".github/workflows/dispatch-sentinel.yml",
+            "workflow_id": 380187027,
+            "job": "sentinel",
+            "roles": [
+              "receipt_write"
+            ],
+            "verification": {
+              "run_id": "40057709916",
+              "head_sha": "f1150f2abd2e4792dc317654f588af6db7748c9e",
+              "conclusion": "success",
+              "native_model_calls": 0,
+              "receipt": "knowledge/results/patchgate/pr224-evidence/sentinel-observation.json"
+            },
+            "signing_enabled": false,
+            "signing_key_ids": []
+          }
+        ],
+        "limitations": [
+          "Registered executor identities are real existing transports. No Ed25519 private key has been supplied or provisioned.",
+          "A1 is read-only observation; A2 cryptographic admission remains blocked while trust.enabled=false and keys are empty.",
+          "The shared GitHub login alone does not establish native author model identity."
+        ]
+      }
+    }
+  ],
+  "private_key_read": false,
+  "signing_keys_configured": false,
+  "raw_Qwen_verdict": "revise_preserved",
+  "candidate_bundle_sha256": "9299a3bfcde9a2f1ac36ef39deca2a1811a86724a28cdeef66f081a6b49627c6"
+}

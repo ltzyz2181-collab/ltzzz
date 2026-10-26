@@ -126,3 +126,21 @@ Owner 于 13:13 明确允许将 10/21 视频作为一次性跨平台例外；Ins
 回执（任务ID|文件路径|验证方法|未完成项）：
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-23.json|jq、SHA-256、ffprobe/ffmpeg 全片解码与音量、四帧画面检查、全仓 80 份 publishing JSON/14 个 MP4 去重、Instagram get_post_list/get_account_info、YouTube public 回执核验|没有合格唯一素材；未发布，无 permalink/media_id/截图。`
+
+
+
+## 2026-10-24 10:00 PDT｜blocked_no_eligible_unique_video
+
+每日计划于 10:06 PDT 执行，配置仍为 active/full_auto，每日 10:00（US/Pacific），未修改。账号 `@ltzyz2181` 于 10:07 PDT 查询时共 6 条帖子，10/24 当日 0 条；滚动额度 0/100。
+
+最新入口 `videos/instagram/latest.json` 指向 10/23 视频，SHA-256 `5aad1e77f63818a616abe996688bb15069fe0cb139ef001a079a89f22b21dbed`，manifest 源提交 `10f1e5a2f565dce982cc582a8a7910aceb311a92`。已重新下载全片、caption 和 manifest，SHA 一致；规格为 30 秒、720×1280（9:16）、H.264/AAC，完整解码通过、音轨非静音。四处抽帧中的英文主体文字可读；页脚靠近画面底部，可能受 Reel UI 遮挡。
+
+虽然该 MP4 字节 SHA 不同于 10/22 视频，但实测为同一内容：caption 字节完全一致；两段音轨解码成 PCM 后 SHA-256 均为 `f9b5af00acc8e18eaf9ba8a0d8467de25d00fe4a34a581fd78a74ebefa017cc2`；对 3、10、18、26 秒画面剔除顶部日期区域后，RMS 差异分别仅 1.54787、0.40612、0.11838、0.62337，构图、叙述与余额卡片基本一致，主要差别仅为日期。比较对象是 YouTube 已公开视频 ID `bR7nD0rUn2w`：<https://www.youtube.com/watch?v=bR7nD0rUn2w>，回执为 `results/publishing/youtube-daily-2026-10-22.json`。故按“同一内容已公开”规则排除，未上传。
+
+最新回退素材 `videos/ltzzz-daily-2026-10-23.mp4`，SHA-256 `90feacbd7cf323c4c845cdd745c6cc2f3d9914d2a069323119b0a7e497a8cea0`，时长 15.072 秒、HEVC，且缺匹配 caption/manifest，不合格。全仓 83 份 `results/publishing` JSON 及 15 条 MP4 路径（14 个唯一 SHA）已比对；其余候选按公开视频、owner 此前搁置或规格不符排除，逐项记录见 `results/publishing/instagram-2026-10-24.json`。
+
+本次没有调用上传工具、没有发布或重试、没有换账号。结果为 `blocked_no_eligible_unique_video`；无 Instagram permalink、media_id、发布时间或截图。每日 10:00 计划保持不变。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-24.json|JSON 校验、SHA-256、ffprobe/ffmpeg 全片解码与音量、4 帧画面检查、83 份发布回执/15 个 MP4 去重、caption/音轨 PCM/抽帧同内容比对、Instagram 账号检查、YouTube public 回执核验|没有合格唯一素材；未发布，无 permalink/media_id/截图。`

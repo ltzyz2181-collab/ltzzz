@@ -48,11 +48,16 @@ function usagePercent(used, limit) {
   if (amount >= cap) return 100;
   return Math.min(100, Math.max(0, Math.round((amount / cap) * 100)));
 }
+async function getJson(path) {
+  const response = await fetch(API + path);
+  if (!response.ok) throw Error(path + ' HTTP ' + response.status);
+  return response.json();
+}
 async function load() {
   const [d, h, reg] = await Promise.all([
-    fetch(API + '/dashboard').then(r => r.json()),
-    fetch(API + '/health').then(r => r.json()),
-    fetch(API + '/regression').then(r => r.json()),
+    getJson('/dashboard'),
+    getJson('/health'),
+    getJson('/regression'),
   ]);
   const c = d.counts || {};
   document.getElementById('stats').innerHTML = [

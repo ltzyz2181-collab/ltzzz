@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "repository": "ltzyz2181-collab/ltzzz",
+  "source_main_commit": "9c4196d49bd5d8cb5d4f0c6df366dd40dc655956",
+  "enrollment_kind": "verified_existing_receipt_transport_not_signing_key_provisioning",
+  "executors": [
+    {
+      "id": "gpt-github-relay",
+      "logical_seat": "gpt",
+      "provider": "openai",
+      "transport": "managed_github_connector",
+      "github_login": "ltzyz2181-collab",
+      "github_user_id": 261544579,
+      "roles": [
+        "receipt_write"
+      ],
+      "verification": {
+        "kind": "current_authenticated_connector_profile_and_actual_queue_commit",
+        "commit": "b85bcab7113ef53f56616d581942db21dd6c257d",
+        "model_provider_scope": "current_Codex_session_not_inferred_from_shared_GitHub_login"
+      },
+      "signing_enabled": false,
+      "signing_key_ids": []
+    },
+    {
+      "id": "qwen-main-receipt-bot",
+      "logical_seat": "qianwen",
+      "provider": "aliyun_dashscope",
+      "transport": "github_actions_main",
+      "workflow": ".github/workflows/qwen-dispatch.yml",
+      "workflow_id": 390027612,
+      "job": "consume",
+      "roles": [
+        "receipt_write"
+      ],
+      "verification": {
+        "run_id": "40038200719",
+        "head_sha": "b85bcab7113ef53f56616d581942db21dd6c257d",
+        "conclusion": "success",
+        "native_model": "qwen-plus",
+        "model_source": "provider_response",
+        "receipt": "knowledge/results/patchgate/pr224-evidence/qianwen-original-revise.json"
+      },
+      "signing_enabled": false,
+      "signing_key_ids": []
+    },
+    {
+      "id": "sentinel-main-bot",
+      "logical_seat": "workbuddy_automation",
+      "provider": "github_actions",
+      "transport": "github_actions_main",
+      "workflow": ".github/workflows/dispatch-sentinel.yml",
+      "workflow_id": 380187027,
+      "job": "sentinel",
+      "roles": [
+        "receipt_write"
+      ],
+      "verification": {
+        "run_id": "40057709916",
+        "head_sha": "f1150f2abd2e4792dc317654f588af6db7748c9e",
+        "conclusion": "success",
+        "native_model_calls": 0,
+        "receipt": "knowledge/results/patchgate/pr224-evidence/sentinel-observation.json"
+      },
+      "signing_enabled": false,
+      "signing_key_ids": []
+    }
+  ],
+  "limitations": [
+    "Registered executor identities are real existing transports. No Ed25519 private key has been supplied or provisioned.",
+    "A1 is read-only observation; A2 cryptographic admission remains blocked while trust.enabled=false and keys are empty.",
+    "The shared GitHub login alone does not establish native author model identity."
+  ]
+}
