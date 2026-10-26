@@ -1,0 +1,49 @@
+name: PatchGate A2 stop-latch reconciliation (no merge)
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [PatchGate A2 docs executor]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
+    paths: [ops/dispatch/probes/patchgate-a2-reconcile.json]
+  pull_request:
+    paths: [scripts/lib/patchgate-a2-reconcile.mjs,scripts/patchgate-a2-reconcile.mjs,config/patchgate-a2-reconcile.json,scripts/tests/patchgate-a2-reconcile.test.mjs,.github/workflows/patchgate-a2-reconcile.yml]
+permissions: {contents: read}
+concurrency: {group: patchgate-a2-stop-reconciliation, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate-a2-reconcile.test.mjs
+  reconcile:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions: {contents: write, actions: read}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Observe or reconcile original durable latch; never execute candidate code
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/patchgate-a2-reconcile.mjs
+      - name: Persist actual reconciliation before later work
+        if: always()
+        run: |
+          file="knowledge/results/patchgate/reconciliations/${{ github.run_id }}.json"
+          test -f "$file" || exit 0
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add -- "$file"
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record original-task stop-latch reconciliation, no merge or funds'
+          node tools/push-receipt-commit.mjs

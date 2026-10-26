@@ -1,0 +1,127 @@
+{
+  "schema": "ltzzz.pi-cloud-status.v1",
+  "task_id": "PI-SKILL-AUDIT",
+  "at_utc": "2026-10-25T12:02:04Z",
+  "status": "cloud_two_provider_generation_verified_business_drafts_pending_review",
+  "runtime": {
+    "sdk": "@earendil-works/pi-coding-agent",
+    "version": "1.4.0",
+    "runtime_commit": "50d0a346afe17490d955b68888093f52858e8477",
+    "merged_prs": [
+      239,
+      242
+    ],
+    "workflow": ".github/workflows/pi-cloud.yml"
+  },
+  "generation_verified": true,
+  "actual_provider_receipt": {
+    "path": "knowledge/results/pi-cloud/485ae6c8ee86c1e73d9f5885b92def1a4f064059541675cd4b57e5f4395604b2.json",
+    "blob_sha": "9599b7fe96685d6997e5f8a5479082e265960834",
+    "run_id": "40191134441",
+    "job_id": "121162258274",
+    "status": "two_provider_drafts_delivered_pending_independent_acceptance"
+  },
+  "executions": [
+    {
+      "logical_seat": "gpt",
+      "actual_provider": "deepseek",
+      "configured_model": "deepseek-v4-pro",
+      "model_source": "executor_configured_route_not_raw_provider_response",
+      "finish_reason": "stop",
+      "content_nonempty": true,
+      "usage": {
+        "input": 2737,
+        "output": 640,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 3377
+      },
+      "native_claude_call": false
+    },
+    {
+      "logical_seat": "claude",
+      "actual_provider": "aliyun_dashscope",
+      "configured_model": "qwen-plus",
+      "model_source": "executor_configured_route_not_raw_provider_response",
+      "finish_reason": "stop",
+      "content_nonempty": true,
+      "usage": {
+        "input": 3550,
+        "output": 188,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 3738
+      },
+      "reviewed_output_sha256": "0624a491a282724d5312548e07d57e18f66b2331fb7843cd74ea84c688271c9e",
+      "native_claude_call": false
+    }
+  ],
+  "content_review": {
+    "verdict": "revise",
+    "accepted": false,
+    "business_delivered": false,
+    "note": "Pi call transport and cross-provider review succeeded; generated audit draft is not accepted and no Skill change was applied."
+  },
+  "previous_failure": {
+    "path": "knowledge/results/pi-cloud/c799358ebbdbb82225c4616d5e8eb0b04ea45960ea8e17483fb8aeaec88aea1d.json",
+    "run_id": "40190493085",
+    "status": "author_incomplete_no_review_no_retry",
+    "reason": "DeepSeek V4 thinking-off parameter omitted; 4096 reasoning tokens consumed output with empty body",
+    "tokens_used": 6912,
+    "immutable": true
+  },
+  "fix_verification": {
+    "pr": 242,
+    "head": "bff44ee433e1b44a48e5719d80eca9bcdbaf4dd7",
+    "native_qwen_verdict": "approve",
+    "qwen_run": "40190995730",
+    "local_and_runner_regressions": 17
+  },
+  "continuous_work": {
+    "automation_id": "6aaccafa09308191be2975d0e5014abe",
+    "title": "LTZZZ工程推进与审计",
+    "enabled": true,
+    "cadence": "daily",
+    "first_scheduled_completion_verified": false,
+    "no_second_duplicate_automation": true
+  },
+  "pending_phases": {
+    "A2": {
+      "pr": 240,
+      "head": "85a938dd5cd001e5d3580e729f613b8eb4402d5f",
+      "status": "draft_disabled_waiting_full_Claude_and_Qwen_stage_audits_signing_and_atomic_base",
+      "runner_tests": 85
+    },
+    "A3": "not_connected_no_isolated_deployment_acceptance",
+    "B": "blocked_by_A_testnet_only_no_contract_or_three_transactions",
+    "market": {
+      "pr": 226,
+      "scope": "M0_only",
+      "head": "94c6e9f10986568fa78736dda43306e77fe08fbb",
+      "status": "scorecard_submitted_Qwen_revise_Claude_pending"
+    }
+  },
+  "model_usage": {
+    "successful_smoke_calls": 2,
+    "successful_smoke_reported_total_tokens": 7115,
+    "previous_failed_smoke_calls": 1,
+    "previous_failed_smoke_tokens": 6912,
+    "bill_amount": null,
+    "bill_verified": false,
+    "not_free": true
+  },
+  "tools": [],
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "No request IDs or raw returned model name exposed by this SDK receipt; model_source correctly states executor configured route, never model self-report.",
+    "Domestic logical Claude review does not replace required Claude stage audit.",
+    "No wallet signer or money adapter installed; user code-enforced funding limits unchanged.",
+    "51 historical persistent warnings were not hidden or closed without proof."
+  ]
+}

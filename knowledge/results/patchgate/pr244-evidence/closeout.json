@@ -1,0 +1,234 @@
+{
+  "schema": "ltzzz.patchgate.pr244-repair-closeout.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "at_utc": "2026-10-25T23:31:33Z",
+  "actual_controller_provider": "openai",
+  "controller_model": null,
+  "metadata_source": "current_Codex_session_exact_model_ID_unavailable",
+  "candidate_pr": 240,
+  "tested_code_head": "2cf243d22a4d882c2dcdadd1cdbc58f97ac29a1b",
+  "runtime_bundle": {
+    "sha256": "4d0666b8355aba395c69184f19ffbf288ae7a57563d5be768d45ad34974f7eae",
+    "files": [
+      {
+        "path": "config/patch-policy.json",
+        "sha256": "c006de6a371aa45c294010dbeba7d747c33fb162ba553b2168dd8b4aab5e2456"
+      },
+      {
+        "path": "config/patchgate-trust.json",
+        "sha256": "8fd7a704bc80db4a01f07dfc20bc021818003901a6b16f7b333911be9e36028e"
+      },
+      {
+        "path": "config/patchgate-executors.json",
+        "sha256": "b2190d29e48949e79d180895adfe8cd60018ae62bae9a2e121701178f3ceb58a"
+      },
+      {
+        "path": "config/patchgate-a2.json",
+        "sha256": "f6d3735f2670ad846f9037970a9f27a7586970f0d1df0ec19088f07ce76193f5"
+      },
+      {
+        "path": "scripts/patchgate.mjs",
+        "sha256": "942d93ab1e0314c41719e3ed00e2d0d18e28fd5d46777f6a4d81e38c574a027c"
+      },
+      {
+        "path": "scripts/lib/patchgate.mjs",
+        "sha256": "ecf23e26d1729b1c2aabf9ebd88968c88c9d6bdf9defd0edda17d16840003b1e"
+      },
+      {
+        "path": "scripts/lib/patchgate-a2.mjs",
+        "sha256": "0c91989d9e05f6fe796488a0f8485e952949c36fa9745fc4bf8046e4865535b5"
+      },
+      {
+        "path": "scripts/patchgate-a2-preflight.mjs",
+        "sha256": "fd226b2496a3ad3594a38fa7f724eba9da28ce1c3276d017cf60b5960c865f5b"
+      },
+      {
+        "path": "scripts/tests/patchgate.test.mjs",
+        "sha256": "5efcfb40f073b9cd9ffceaaab723f9b4d099678c630f6b551e437d933f7f21bf"
+      },
+      {
+        "path": "scripts/tests/patchgate-a1.test.mjs",
+        "sha256": "f058d7c5367fecc35e744c7c12c9b0429d754e535dc7867425becf117e9b795f"
+      },
+      {
+        "path": "scripts/tests/patchgate-a2.test.mjs",
+        "sha256": "8b07ed9cc86bfeff176cb26c499d0263fdca691212be3e0329464fd865126d9c"
+      }
+    ]
+  },
+  "B1": {
+    "chosen_channel": "aliyun_dashscope_and_volcengine_ark_executor_signatures_plus_separate_required_Claude_PR_readback",
+    "native_anthropic_signature_required": false,
+    "native_claude_authorship_proven_by_GitHub_login": false,
+    "infrastructure_readback_provider": "github_actions",
+    "infrastructure_proof_counts_as_model_signature": false,
+    "real_signers_provisioned": false,
+    "status": "code_and_channel_revised_production_provisioning_still_pending"
+  },
+  "original_audit": {
+    "pr": 244,
+    "head": "662bc65105def376658c820e5dada0eedb0c070e",
+    "audited_head": "f64175f3557890c0af55741d83c01e8f8233b731",
+    "verdict": "REVISE",
+    "blob_sha": "17f05003021ebc8a6afafea843d9df307f8cd1b7",
+    "path": "knowledge/results/patchgate/pr244-evidence/claude-a2-audit-f64175f-original.md",
+    "unchanged": true
+  },
+  "probe": {
+    "infrastructure_pr": 245,
+    "infrastructure_merge": "2d509985c42597b361d186e88efa2ee7e7d495bf",
+    "infrastructure_head": "f203af1cf11b0870912ee69503084b499c0ae4e1",
+    "trigger_commit": "c610ef3d8d5b12b61803058d374a3df96728584b",
+    "run_id": "40244733201",
+    "jobs": {
+      "verify": "121323788910",
+      "prepare": "121323833432",
+      "candidate": "121323885008",
+      "cas_a": "121323885006",
+      "cas_b": "121323884983",
+      "native_doubao_assessment": "121323927556"
+    },
+    "key": "ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+    "shell_execution_provider": "github_actions",
+    "actual_model_provider": "volcengine_ark",
+    "actual_model": "doubao-seed-2-1-pro-260915",
+    "model_source": "provider_response",
+    "request_id": "b061e461-d087-443a-8367-aff526c1efce",
+    "model_calls": 1,
+    "tokens_used": 908,
+    "finish_reason": "stop",
+    "native_doubao_generation_verified": true,
+    "output_truncated": false,
+    "model_verdict": "approve",
+    "evidence": {
+      "candidate_probes_passed": true,
+      "required_cases_covered": true,
+      "live_CAS_requested": true,
+      "live_cross_runner_CAS_verified": true,
+      "deterministic_probe_passed": true,
+      "candidate": {
+        "tests_passed": 4,
+        "tests_failed": 0,
+        "coverage": {
+          "forged_head": true,
+          "same_key_concurrency": true,
+          "receipt_injection": true,
+          "422_without_ref": true
+        },
+        "source": "unprivileged_candidate_test_job_not_production_signed_checker"
+      },
+      "races": [
+        {
+          "lane": "a",
+          "status": "already_reserved_no_model_replay",
+          "owned": false,
+          "key": "ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+          "branch": "patchgate-a2-probe-races/ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733"
+        },
+        {
+          "lane": "b",
+          "status": "created",
+          "owned": true,
+          "key": "ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+          "branch": "patchgate-a2-probe-races/ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733"
+        }
+      ]
+    },
+    "receipt": {
+      "branch": "patchgate-a2-doubao-probes/ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+      "commit": "c960fa8a94e15d89787c8d484be3ff545834be70",
+      "blob_sha": "39c00a4d8f816ddb2a5c430b4c99b8e4abf0d98d",
+      "path": "knowledge/results/patchgate/pr244-evidence/doubao-probe-40244733201-original.json"
+    },
+    "live_race_ref": {
+      "branch": "patchgate-a2-probe-races/ef4ed8017eecf7f0955e83411c15665eedd1c3b5a7bd593c28d08be0703de733",
+      "sha": "c610ef3d8d5b12b61803058d374a3df96728584b",
+      "independently_read_back": true
+    },
+    "stage_admission_approved": false
+  },
+  "tests": {
+    "a0_a1_a2": {
+      "passed": 93,
+      "failed": 0,
+      "run_id": "40244290335",
+      "job_id": "121322482096"
+    },
+    "probe_infrastructure": {
+      "passed": 18,
+      "failed": 0,
+      "run_id": "40244587009",
+      "job_id": "121323356066"
+    },
+    "real_candidate_harness": {
+      "passed": 4,
+      "failed": 0,
+      "coverage": {
+        "forged_head": true,
+        "same_key_concurrency": true,
+        "receipt_injection": true,
+        "422_without_ref": true
+      },
+      "run_id": "40244733201"
+    }
+  },
+  "qwen_opinions": {
+    "channel": {
+      "run": "40243232634",
+      "verdict": "revise",
+      "path": "knowledge/results/patchgate/pr244-evidence/qwen-b1-channel-original.json"
+    },
+    "original_code": {
+      "run": "40243934719",
+      "verdict": "REJECT",
+      "path": "knowledge/results/patchgate/pr244-evidence/qwen-b1-code-original.json"
+    },
+    "hardened_code": {
+      "run": "40244782240",
+      "verdict": "REJECT",
+      "path": "knowledge/results/patchgate/pr244-evidence/qwen-b1-code-r2-original.json"
+    },
+    "probe_workflow": {
+      "run": "40244175061",
+      "verdict": "SAFE_WITH_LIMITATIONS"
+    },
+    "probe_claim": {
+      "run": "40244407951",
+      "verdict": "revise"
+    },
+    "originals_preserved": true,
+    "never_relabeled_as_pass": true
+  },
+  "remaining": {
+    "B2": "atomic_base_admission_not_verified_isolated_claim_CAS_does_not_satisfy_this",
+    "B3": "trusted_live_checks_and_external_audit_bundle_collectors_not_connected",
+    "B4": "production_keys_unprovisioned_no_live_signer_acceptance",
+    "B5": "highest_risk_notice_allowlist_not_connected",
+    "B6": "first_harmless_L0_actual_automatic_merge_not_executed",
+    "Claude_rereview": "pending_new_delivery_head"
+  },
+  "model_usage": {
+    "native_qwen_calls": 5,
+    "qwen_reported_tokens": 13579,
+    "native_doubao_calls": 1,
+    "doubao_reported_tokens": 908,
+    "api_bill_amount": null,
+    "api_bill_verified": false,
+    "native_anthropic_calls": 0
+  },
+  "status": "B1_repaired_real_Doubao_probes_passed_waiting_Claude_rereview_A2_disabled",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "financial_execution": false,
+  "transactions_sent": 0,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "Evidence commit adds only audit/receipt/doc material; runtime files must be compared with tested_code_head after push.",
+    "No new Claude acceptance has been received. Original PR244 REVISE and Qwen rejects remain historical evidence.",
+    "Probe-only shared-ref CAS is not an atomic expected-base merge fence, production signer proof, signed production checker, or real business merge.",
+    "Single native Doubao opinion approves the supplied probe evidence only; it does not approve the complete A2 runtime or authorize production activation.",
+    "Daily control task and unrelated publishing/investment behavior were not changed in this repair."
+  ]
+}

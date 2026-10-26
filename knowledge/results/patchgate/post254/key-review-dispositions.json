@@ -1,0 +1,98 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "scope": "PR255_isolated_key_persistence_only_not_A2_role_admission",
+  "candidate_pr": 255,
+  "candidate_head": "324dd77313921d55bb49388bb838e2bae15bf35e",
+  "status": "controller_dispositions_waiting_Claude_independent_review",
+  "controller_provider": "openai",
+  "native_model_provider": "aliyun_dashscope",
+  "paid": false,
+  "tx_hash": null,
+  "automatic_merge": false,
+  "A2_enabled": false,
+  "real_keys_provisioned": false,
+  "original_reviews": [
+    {
+      "path": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-KEY-WORKER.json",
+      "run_id": "40287380203",
+      "verdict": "FAIL",
+      "tokens_used": 2708,
+      "preserved": true
+    },
+    {
+      "path": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-KEY-PROVISION.json",
+      "run_id": "40287872504",
+      "verdict": "FAIL",
+      "tokens_used": 3008,
+      "preserved": true
+    }
+  ],
+  "execution_environments": {
+    "worker": "patchgate-key-challenge-worker.js, deployed only after approved main enrollment; Web Crypto only, no Node imports",
+    "provisioner": "scripts/provision-patchgate-challenge-keys.mjs, Node22 on Actions; imports fs and node:crypto explicitly; it uploads the separate worker module, never itself"
+  },
+  "evidence": {
+    "CI_run_id": "40287383468",
+    "CI_job_id": "121454154936",
+    "tests_passed": 6,
+    "tests_failed": 0,
+    "real_crypto_used_in_fixtures": true,
+    "fixture_transport_not_actual_CF": true,
+    "production_enroll_job": "skipped",
+    "source_scope": "unmodified_five_file_candidate_at_exact_head"
+  },
+  "dispositions": [
+    {
+      "id": "W1_W2_P6",
+      "decision": "not_adopted_runtime_environment_confusion",
+      "evidence": "verifyChallenge/createPublicKey/verify/key.export and fs execute in Node22 on Actions with explicit node:crypto/fs imports. The uploaded Worker only uses crypto.subtle. Both native review outputs mixed these distinct executables; worker and provisioner are exercised together by CI."
+    },
+    {
+      "id": "W3",
+      "decision": "not_adopted_unreachable_input_in_fixed_schema",
+      "evidence": "The caller of canonicalChallenge constructs every signed payload from fixed fields and a 64-hex nonce. /challenge rejects any additional field, subject, role, non-JSON input or invalid nonce. The public arbitrary-payload helper capability suggested in the finding does not exist."
+    },
+    {
+      "id": "W4",
+      "decision": "not_adopted_no_authentication_normalization",
+      "evidence": "Exact secret comparison is intentional. Stripping arbitrary BOM/whitespace would accept altered credentials. Invalid authentication returns401; malformed provisioning/secret errors produce a bounded sanitized blocker. No silent success is recorded."
+    },
+    {
+      "id": "W5",
+      "decision": "retained_as_nonblocking_availability_hardening_not_signing_bypass",
+      "evidence": "Public identity is not sufficient for enrollment: the provisioner imports DER-SPKI and verifies a fresh actual signature, exact public key and all bindings. Malformed public configuration returns a blocked report and cannot enable A2."
+    },
+    {
+      "id": "P1",
+      "decision": "not_adopted_as_leak_private_memory_and_provider_Secret_are_the_authorized_storage_boundary",
+      "evidence": "Ed25519 key generation requires private key memory. Private PKCS8 is sent over HTTPS only to fixed CF Secrets API; fixture assertion verifies no secret in report. Secrets deliberately survive redeployment to test persistence; rotating them would defeat the test. JavaScript provides no guaranteed memory zeroization; this residual is disclosed, not certified against a claimed NIST standard."
+    },
+    {
+      "id": "P2",
+      "decision": "not_adopted_separate_keys_are_required",
+      "evidence": "Separate targets intentionally generate independent pairs. Worker fixes id/provider correspondence and verifier checks provider, executor, public key and signed payload. The opposite-provider and other-public-key fixture tests fail."
+    },
+    {
+      "id": "P3",
+      "decision": "not_adopted_as_demonstrated_defect_of_fixed_source",
+      "evidence": "No arbitrary source input is accepted. Upload uses the fixed repository worker source and fixed public key, preserves secrets, then repeats a nonce proof with the same public key. Source hash is a configured upload binding, not independent remote code attestation. A malicious later source change would be a new reviewed deployment, not authorized here."
+    },
+    {
+      "id": "P4",
+      "decision": "not_adopted_fresh_random_nonce_and_signed_time_already_bound",
+      "evidence": "Caller generates a cryptographic fresh nonce and requires that exact nonce in the signed payload. verifyChallenge checks signed at_utc against current time within120s and rejects altered nonce/provider/key/source. A caller timestamp header adds no proof."
+    },
+    {
+      "id": "P5",
+      "decision": "retained_residual_before_production_role_admission",
+      "evidence": "Existing LTZZZ_AGENT_TOKEN authenticates only nonce-challenge route here, which cannot attest A2 roles, call a model or move funds. Sharing that service credential is a management boundary, not equivalent to private-key leakage. Before production role signing, use scoped independently managed auth and audit actual model-to-role binding. No TLS interception evidence was observed; HTTPS redirects are denied."
+    }
+  ],
+  "limitations": [
+    "This disposition is by the author/controller, not a replacement for Claude independent review.",
+    "All original FAIL text and native receipts are preserved; no repeated model call was made to obtain approve.",
+    "No actual CF API enrollment or signing-key restart proof has occurred, and no key/role enters trust automatically.",
+    "No A2 /attest endpoint, wallet signing, payment, arbitrary payload signing or native model generation is provided by these candidate services.",
+    "Current tested route proves only key correspondence/persistence with a fake transport until live main enrollment is separately run."
+  ]
+}

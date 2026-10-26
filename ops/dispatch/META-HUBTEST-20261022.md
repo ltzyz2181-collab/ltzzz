@@ -1,3 +1,5 @@
+> 当前修订入口：`ops/dispatch/META-HUBTEST-20261022-REPAIR.md`。原全量稿已入库，GPT/千问本轮审查未通过；保留以下原派单，不重复催推、不记已验收。
+
 ---
 单号: META-HUBTEST-20261022
 对象DID: did:ltzzz:meta（悬空：identity/dids/ 下无 meta.json，名册未注册；暂按外部席处理，不授予任何资金/签名/Key 权限）

@@ -1,0 +1,134 @@
+{
+  "schema": "ltzzz.pi-cloud-receipt.v1",
+  "task_id": "PI-SKILL-AUDIT",
+  "idempotency_key": "485ae6c8ee86c1e73d9f5885b92def1a4f064059541675cd4b57e5f4395604b2",
+  "run_id": "40191134441",
+  "source_commit": "50d0a346afe17490d955b68888093f52858e8477",
+  "at_utc": "2026-10-25T11:59:34.436Z",
+  "config_sha256": "e474d85dcc9207c4bd9465f148a5c7b319454971cddd94dffcb43d0c0eca9a6a",
+  "inputs": [
+    {
+      "path": "skills/ltzzz-task-execution/SKILL.md",
+      "sha256": "38cbfec8bd49f5c3e5606dfce1820d83230f63e84f585ccb4470137a1a83b8d0",
+      "bytes": 7479
+    },
+    {
+      "path": "skills/ltzzz-task-execution/references/receipt-template.json",
+      "sha256": "a4edacc8ff4f49386e74cee7b415256ee37045800d1bc353513ce7b75cb24429",
+      "bytes": 1575
+    }
+  ],
+  "runtime_manifest": [
+    {
+      "path": "config/pi-cloud.json",
+      "sha256": "20007ea08d9272bf094438b37abfa5c48de38a59b393395f592f0133fc5a4010"
+    },
+    {
+      "path": "config/pi-cloud-runtime/package.json",
+      "sha256": "40103fb899a91142241dc1697870b5ceb6b6687ca02d520b7d94dafc48274dc8"
+    },
+    {
+      "path": "config/pi-cloud-runtime/package-lock.json",
+      "sha256": "42b4e17069d04272184a9b3cb3415f43678fcdb96392332115a6e2ff07e91146"
+    },
+    {
+      "path": "scripts/pi-cloud.mjs",
+      "sha256": "a66fee7c8dd555eef42bd93e0b273d2e0ad64af760fd7bb5215fece4615e30ca"
+    },
+    {
+      "path": "scripts/pi-cloud-sdk-check.mjs",
+      "sha256": "7ada7f36875580b64796f9bb3af8f7b285b2cca6550105a4ca3d000a55a16d10"
+    },
+    {
+      "path": "scripts/lib/pi-cloud.mjs",
+      "sha256": "70ba207210fda983a227ac9b2dcab1f43e4c5a996de40597da90a838395a8ff0"
+    },
+    {
+      "path": "scripts/lib/qwen-config.mjs",
+      "sha256": "e6875ae142680f3dba0e86e486f3442aba3befd13b109095e3b3b58cfa3f3718"
+    },
+    {
+      "path": "data/model-routing/latest.json",
+      "sha256": "ed0dd701138ccb399671764739f8780f8bc93c0166f49e4c3ebaf925554f124f"
+    },
+    {
+      "path": "skills/ltzzz-task-execution/SKILL.md",
+      "sha256": "38cbfec8bd49f5c3e5606dfce1820d83230f63e84f585ccb4470137a1a83b8d0"
+    },
+    {
+      "path": "skills/ltzzz-task-execution/references/receipt-template.json",
+      "sha256": "a4edacc8ff4f49386e74cee7b415256ee37045800d1bc353513ce7b75cb24429"
+    }
+  ],
+  "runtime_manifest_sha256": "3cb8c3cc3caf634514c6053748a3170bc4f98b092e9809603ff5878f4a4d7202",
+  "sdk": {
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "1.4.0"
+  },
+  "status": "two_provider_drafts_delivered_pending_independent_acceptance",
+  "calls_attempted": 2,
+  "executions": [
+    {
+      "logical_seat": "gpt",
+      "actual_provider": "deepseek",
+      "requested_model": "deepseek-v4-pro",
+      "native_claude_call": false,
+      "ok": true,
+      "output": "```json\n{\n  \"findings\": [\n    {\n      \"id\": \"F1\",\n      \"type\": \"ambiguity\",\n      \"evidence_paths\": [\n        \"skills/ltzzz-task-execution/SKILL.md\",\n        \"skills/ltzzz-task-execution/references/receipt-template.json\"\n      ],\n      \"fact\": \"The SKILL requires separating logical_seat, client, actual_provider, model, and metadata_source, and prohibits trusting model self-reported names. However, the receipt template also includes a claim.actual_provider is not a claim field; contradiction is not present: template does not contain claim.actual_provider.\",\n      \"hypothesis\": \"The ambiguous area is that the receipt template defines `claim`, `authorization`, and `stages.claimed`, but does not define how `claim.receipt_path`, `claim.lease_id`, and `claim.idempotency_key` relate to the \\\"existing claim/lease\\\" mentioned in the SKILL. The SKILL says to reuse existing claims, but the template fields are nullable and lack a required/optional marker, so an executor can mark `stages.claimed` as true while leaving all claim fields null.\",\n      \"impact\": \"A receipt could assert a claim occurred without any verifiable claim identifier, weakening the audit trail for exclusive or paid work.\",\n      \"regression_criterion\": \"A validator should flag any receipt where `stages.claimed` is true but `claim.lease_id` and `claim.idempotency_key` are both null AND no original Task ID claim receipt can be located. After clarification, add a rule requiring claim identifiers to be populated before claiming completion.\"\n    },\n    {\n      \"id\": \"F2\",\n      \"type\": \"missing_check\",\n      \"evidence_paths\": [\n        \"skills/ltzzz-task-execution/SKILL.md\"\n      ],\n      \"fact\": \"SKILL.md says external files should be delivered via repository PR and that the PR must note scope. It does not specify any check that the PR's changed files or hashes correspond to the receipt's `artifact.path` and `artifact.sha256`. The receipt template also has no PR-specific field such as PR URL, branch, or merge status.\",\n      \"hypothesis\": \"An executor could submit a PR but omit linking it to the exact artifact/hash in the receipt, or submit a PR with different content while the receipt still references the intended artifact. This creates a verification gap for pure external-file tasks.\",\n      \"impact\": \"Auditors cannot verify that the submitted PR contains the exact artifact/hash recorded in the receipt.\",\n      \"regression_criterion\": \"For any task marked as delivered via PR, a validator should require at least one of: a PR URL in the receipt, a branch/commit, or a match between PR head hash and receipt `artifact.sha256`. After a format update, flag receipts with `business_delivered=true` and `deployment.result_url`/`artifact.path` not traceable to a PR.\"\n    }\n  ]\n}\n```",
+      "finish_reason": "stop",
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "model_source": "executor_configured_route_not_raw_provider_response",
+      "metadata_source": "executor_and_sdk_response",
+      "usage": {
+        "input": 2737,
+        "output": 640,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 3377
+      },
+      "usage_cost_is_verified": false,
+      "cost_note": "SDK custom-route tariff is unspecified (zero placeholders); not evidence of free API usage or the real bill.",
+      "assistant_messages": 1,
+      "tool_events": [],
+      "at_utc": "2026-10-25T11:59:46.278Z"
+    },
+    {
+      "logical_seat": "claude",
+      "actual_provider": "aliyun_dashscope",
+      "delegation": "Qwen delegated logical Claude review; not native Claude and not a replacement for required native Claude stage audit",
+      "native_claude_call": false,
+      "reviewed_output_sha256": "0624a491a282724d5312548e07d57e18f66b2331fb7843cd74ea84c688271c9e",
+      "ok": true,
+      "output": "{\n  \"verdict\": \"revise\",\n  \"evidence\": [\n    \"F1: SKILL.md §4.1 requires '认领并保留租约/幂等键' and mandates using 'existing claim/lease' to avoid duplication, but receipt-template.json defines nullable claim fields (lease_id, idempotency_key) with no constraint linking `stages.claimed=true` to non-null identifiers — enabling unverifiable claim assertions.\",\n    \"F2: SKILL.md §4.3 states 'pure external file tasks use repository PR delivery and注明范围', yet neither SKILL.md nor receipt-template.json requires PR linkage (e.g., PR URL, merged commit hash) or cross-checks between `artifact.sha256` and PR content — breaking traceability per §4.4's 'different actual providers复核确切工件与哈希' requirement.\"\n  ]\n}",
+      "finish_reason": "stop",
+      "provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "model_source": "executor_configured_route_not_raw_provider_response",
+      "metadata_source": "executor_and_sdk_response",
+      "usage": {
+        "input": 3550,
+        "output": 188,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 3738
+      },
+      "usage_cost_is_verified": false,
+      "cost_note": "SDK custom-route tariff is unspecified (zero placeholders); not evidence of free API usage or the real bill.",
+      "assistant_messages": 1,
+      "tool_events": [],
+      "at_utc": "2026-10-25T11:59:51.914Z"
+    }
+  ],
+  "paid": false,
+  "tx_hash": null,
+  "api_bill_verified": false,
+  "financial_execution": false,
+  "native_claude_call": false,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "accepted": false,
+  "finished_at_utc": "2026-10-25T11:59:51.914Z"
+}

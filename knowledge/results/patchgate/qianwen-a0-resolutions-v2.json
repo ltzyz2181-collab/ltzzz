@@ -1,0 +1,49 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A0",
+  "reviewed_source_commit": "e6384de913afab06a1fe9cb075dbd7377e433a97",
+  "review_receipt": "knowledge/results/patchgate/10f619c8216fac21/qianwen.result.json",
+  "review_original_verdict": "revise",
+  "revised_bundle_sha256": "c44b690b0a54ac584363a3002cd8c84b634b0db8e04daff8389dc2ff459b5f05",
+  "status": "resolutions_submitted_not_independent_approval",
+  "resolutions": [
+    {
+      "finding": 0,
+      "decision": "adopt_structured_canonical_metadata",
+      "reason": "Require exact two-field canonical JSON plus LF, source_commit equals full head and header; comments, substrings, extra fields and duplicate keys are rejected."
+    },
+    {
+      "finding": 1,
+      "decision": "retain_anchored_root_path_rules",
+      "reason": "The supplied regexes contain ^ and [^/], so docs/ and memory/ cannot match root entrypoint rules. Root HTML is actual site code and remains L2; unknown paths stay L3."
+    },
+    {
+      "finding": 2,
+      "decision": "retain_existing_protected_prefix",
+      "reason": "protected_prefixes already contains scripts/lib/patchgate. Six existing same-patch constraint tests exercise the explicit paths; the report confused lib/ with scripts/lib/."
+    }
+  ],
+  "additional_same_provider_code_review_fixes": [
+    {
+      "finding": "mixed_L2_L3",
+      "resolution": "requires_canary is tracked independently of the aggregate maximum risk class; explicit signed mixed-patch test cannot pass without canary."
+    },
+    {
+      "finding": "plus_plus_hunk_evasion",
+      "resolution": "Parse hunk state rather than discard all +++ lines; eval, a synthetic credential and external host on ++counter source line all produce findings."
+    },
+    {
+      "finding": "cumulative_freshness_allowance",
+      "resolution": "Each of HTTP Date, platform observation and request end must individually be fresh against executor time; separate clock skew max 5 seconds. Retained the nearly-15-minute counterexample."
+    }
+  ],
+  "limitations": [
+    "Code review by OpenAI/Codex is useful QA but not a different-provider or Claude native audit.",
+    "No live Cloudflare, distributed CAS or onchain transaction is claimed."
+  ],
+  "claude_audit_received": false,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "paid": false,
+  "tx_hash": null
+}

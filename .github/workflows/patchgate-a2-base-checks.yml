@@ -1,0 +1,46 @@
+name: PatchGate A2 trusted base checks (no merge)
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions: {contents: read}
+concurrency: {group: 'patchgate-a2-base-${{ github.event.pull_request.number }}', cancel-in-progress: false}
+jobs:
+  bootstrap:
+    if: github.event_name == 'pull_request_target' && github.ref == 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.policy.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - id: policy
+        name: Read only the reviewed BASE observation policy
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const p=JSON.parse(fs.readFileSync('config/patchgate-a2-collector.json'));
+          if(p.mode!=='observation_only'||p.signing_enabled!==false||p.automatic_merge!==false||p.financial_execution!==false)throw Error('readonly_checker_policy_required');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,'enabled='+(p.readonly_checks_enabled===true)+'\n');
+          JS
+  patchgate-a2-base-checks:
+    needs: bootstrap
+    # Repo-reviewed readonly bootstrap avoids requiring an owner settings action.
+    # It enables checks only; A2 signing and merging are separate disabled gates.
+    if: needs.bootstrap.outputs.enabled == 'true' && github.event_name == 'pull_request_target' && github.ref == 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        # The entire executable/import/config tree is BASE, never PR checkout.
+        with: {ref: '${{ github.sha }}', persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: 'EVENT=pull_request_target BASE=${{ github.sha }} HEAD=${{ github.event.pull_request.head.sha }} PR=${{ github.event.pull_request.number }}'
+        run: node scripts/patchgate-a2-collect.mjs base-check "$RUNNER_TEMP/a2-base-check.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a2-base-check-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/a2-base-check.json
+          retention-days: 30
