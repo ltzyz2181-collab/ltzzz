@@ -7,13 +7,14 @@ const html=fs.readFileSync(new URL('../../treasury-dashboard.html',import.meta.u
 const script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script,'Dashboard inline script must be available for regression checks');
 const payload='</h3><img src=x onerror="globalThis.PWNED=1"><svg onload=alert(1)>\'&';
-async function render(dashboard={},health={},regression={},error=null){
+async function render(dashboard={},health={},regression={},error=null,statusByPath={}){
   const elements=Object.fromEntries(['stats','agents','raw'].map(id=>[id,{innerHTML:'',textContent:''}]));
   const requests=[];
   const context=vm.createContext({document:{getElementById:id=>elements[id]},fetch:async(url,options)=>{
-    requests.push({url,options});if(error)throw error;
+    const record={url,options,json_reads:0};requests.push(record);if(error)throw error;
     const data=url.endsWith('/dashboard')?dashboard:url.endsWith('/health')?health:regression;
-    return {json:async()=>data};
+    const status=statusByPath[new URL(url).pathname]??200;
+    return {ok:status>=200&&status<300,status,json:async()=>{record.json_reads++;return data;}};
   }});
   await new vm.Script(script,{filename:'treasury-dashboard.inline.js'}).runInContext(context);
   return {context,elements,requests};
@@ -74,4 +75,12 @@ test('raw API payloads and fetch errors remain in textContent',async()=>{
   assert.equal(result.elements.raw.innerHTML,'');assert.ok(result.elements.raw.textContent.includes(payload.replaceAll('"','\\"')));
   const failed=await render({}, {}, {}, new Error(payload));
   assert.equal(failed.elements.raw.innerHTML,'');assert.equal(failed.elements.raw.textContent,'Error: '+payload);
+});
+test('HTTP error responses never render false zero balances or parse their JSON body',async()=>{
+  for(const [path,status] of [['/dashboard',503],['/dashboard',404],['/health',502],['/regression',429]]){
+    const {elements,requests}=await render({}, {}, {}, null,{[path]:status});
+    assert.equal(elements.stats.innerHTML,'');assert.equal(elements.agents.innerHTML,'');
+    assert.equal(elements.raw.textContent,'Error: '+path+' HTTP '+status);
+    assert.equal(requests.find(r=>new URL(r.url).pathname===path).json_reads,0);
+  }
 });
