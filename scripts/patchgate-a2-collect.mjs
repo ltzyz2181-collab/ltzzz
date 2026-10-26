@@ -7,6 +7,14 @@ import {collectorGithubApi,collectA2Readiness,validateCollectionRequest} from '.
 
 const sha=s=>{if(!/^[a-f0-9]{40}$/.test(s||''))throw Error('full_commit_required');return s;};
 const git=args=>execFileSync('git',args,{encoding:'utf8',maxBuffer:2000000,env:{...process.env,GIT_NO_REPLACE_OBJECTS:'1'}}).trim();
+export function baseCheckContext({env,p,source}){
+  sha(source);
+  if(env.GITHUB_EVENT_NAME!=='pull_request_target'||env.GITHUB_REF!=='refs/heads/main'||env.GITHUB_SHA!==source
+    ||!p||p.base?.repo?.full_name!=='ltzyz2181-collab/ltzzz'||p.head?.repo?.full_name!==p.base.repo.full_name
+    ||!['OWNER','MEMBER','COLLABORATOR'].includes(p.author_association)||p.base.ref!=='main'||sha(p.base.sha)!==source
+    ||!Number.isSafeInteger(p.number)||p.number<1)throw Error('trusted_same_repository_base_required');
+  return {base:source,head:sha(p.head.sha),pr_number:p.number};
+}
 export async function main(args){
   const [mode,output]=args;
   if(args.length!==2||!['readiness','base-check'].includes(mode)||!output?.endsWith('.json'))throw Error('usage_collect_readiness_or_base_check_output_json');
@@ -29,10 +37,7 @@ export async function main(args){
     result.trusted_main_execution=process.env.GITHUB_REF==='refs/heads/main'&&process.env.GITHUB_SHA===source&&source===base;
   }else{
     const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')),p=event.pull_request;
-    if(process.env.GITHUB_EVENT_NAME!=='pull_request_target'||process.env.GITHUB_REF!=='refs/heads/main'||process.env.GITHUB_SHA!==source
-      ||!p||p.base?.repo?.full_name!=='ltzyz2181-collab/ltzzz'||p.head?.repo?.full_name!==p.base.repo.full_name
-      ||!['OWNER','MEMBER','COLLABORATOR'].includes(p.author_association)||p.base.ref!=='main'||sha(p.base.sha)!==source)throw Error('trusted_same_repository_base_required');
-    const head=sha(p.head.sha);
+    const {head}=baseCheckContext({env:process.env,p,source});
     git(['fetch','--no-tags','origin',head]);
     git(['merge-base','--is-ancestor',source,head]); // stale bases are not qualified
     const {policy,snapshot}=collectSnapshot({base:source,head,taskId:TASK});

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {canonical,sha256,TASK} from '../lib/patchgate.mjs';
 import {A2_BUNDLE_FILES,bundleDigest} from '../patchgate-a2-preflight.mjs';
+import {baseCheckContext} from '../patchgate-a2-collect.mjs';
 import {validateCollectionRequest,validateCollectorEndpoint,collectorGithubApi,collectClaudeAudit,assessBaseProtection,collectTrustedChecks,collectA2Readiness,signCollectedChecks,BASE_CHECK_WORKFLOW} from '../lib/patchgate-a2-collector.mjs';
 
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),ROOT='/repos/ltzyz2181-collab/ltzzz',REPO='ltzyz2181-collab/ltzzz';
@@ -146,4 +147,11 @@ test('C2 genuine target check must bind the exact event and PR marker as well as
     const f=fixture();f.state.job.steps[0].name=marker;
     await assert.rejects(collectTrustedChecks({api:f.api,request,baseSha:A,authority,now}),/identity/);
   }
+});
+test('C2 target execution GITHUB_SHA must be the trusted checkout BASE, never the candidate HEAD',()=>{
+  const f=fixture(),env={GITHUB_EVENT_NAME:'pull_request_target',GITHUB_REF:'refs/heads/main',GITHUB_SHA:A};
+  assert.deepEqual(baseCheckContext({env,p:f.state.pr,source:A}),{base:A,head:B,pr_number:250});
+  for(const changed of [{GITHUB_EVENT_NAME:'pull_request'},{GITHUB_REF:'refs/pull/250/merge'},{GITHUB_SHA:B}])
+    assert.throws(()=>baseCheckContext({env:{...env,...changed},p:f.state.pr,source:A}),/trusted_same_repository_base/);
+  assert.throws(()=>baseCheckContext({env,p:f.state.pr,source:B}),/trusted_same_repository_base/);
 });
