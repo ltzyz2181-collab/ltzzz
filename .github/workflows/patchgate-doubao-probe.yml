@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths: ['ops/dispatch/probes/patchgate-a2-doubao.json']
   pull_request:
-    paths: ['scripts/lib/patchgate-doubao-probe.mjs', 'scripts/run-patchgate-doubao-probe.mjs', 'scripts/patchgate-a2-probe-candidate.mjs', 'scripts/tests/patchgate-doubao-probe.test.mjs', '.github/workflows/patchgate-doubao-probe.yml']
+    paths: ['scripts/lib/patchgate-doubao-probe.mjs', 'scripts/run-patchgate-doubao-probe.mjs', 'scripts/patchgate-a2-probe-candidate.mjs', 'scripts/patchgate-a2-collector-probe-candidate.mjs', 'scripts/tests/patchgate-doubao-probe.test.mjs', '.github/workflows/patchgate-doubao-probe.yml']
 permissions: {contents: read}
 concurrency: {group: patchgate-a2-doubao-probe, cancel-in-progress: false}
 jobs:
@@ -16,7 +16,7 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check scripts/run-patchgate-doubao-probe.mjs && node --check scripts/patchgate-a2-probe-candidate.mjs && node --test scripts/tests/patchgate-doubao-probe.test.mjs
+      - run: node --check scripts/run-patchgate-doubao-probe.mjs && node --check scripts/patchgate-a2-probe-candidate.mjs && node --check scripts/patchgate-a2-collector-probe-candidate.mjs && node --test scripts/tests/patchgate-doubao-probe.test.mjs
   prepare:
     needs: verify
     if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -80,7 +80,7 @@ jobs:
     if: always() && needs.prepare.result == 'success' && needs.candidate.result == 'success' && (needs.cas.result == 'success' || needs.cas.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 8
-    permissions: {contents: write}
+    permissions: {contents: write, actions: read}
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ github.sha }}', persist-credentials: false}

@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {COLLECTOR_PROBE_CASES} from '../patchgate-a2-collector-probe-candidate.mjs';
+import {HISTORICAL_PROBE_RUNS,verifyHistoricalRuns} from '../lib/patchgate-doubao-probe.mjs';
 import {PROBE_TASK,PROBE_REPO,validateProbeCard,probeContext,probeKey,checkProbePR,validateProbeRequest,probeGithubApi,createProbeClaim,liveRaceProbe,summarizeProbeEvidence,assessProbeOnce} from '../lib/patchgate-doubao-probe.mjs';
 const A='a'.repeat(40),B='b'.repeat(40),ROOT='/repos/'+PROBE_REPO;
 const card={schema:'ltzzz.patchgate.doubao-probe.v1',task_id:PROBE_TASK,candidate_pr:240,candidate_head:B,run_live_cas:true,model_review:true,scope:'candidate_adversarial_probe_not_production_admission'};
@@ -13,7 +15,21 @@ function transport(){
   throw Error('unexpected test request');
  };return {api,refs,writes};
 }
-const candidate={schema:'ltzzz.patchgate.candidate-probes.v1',task_id:PROBE_TASK,candidate_head:B,source_main_sha:A,run_id:'123',shell_execution_provider:'github_actions',coverage:{forged_head:true,same_key_concurrency:true,receipt_injection:true,'422_without_ref':true},tests_passed:4,tests_failed:0,passed:true,paid:false,tx_hash:null};
+const candidate={schema:'ltzzz.patchgate.candidate-probes.v1',task_id:PROBE_TASK,candidate_head:B,source_main_sha:A,run_id:'123',shell_execution_provider:'github_actions',coverage:{forged_head:true,same_key_concurrency:true,receipt_injection:true,'422_without_ref':true,...Object.fromEntries(COLLECTOR_PROBE_CASES.map(k=>[k,true]))},tests_passed:4+COLLECTOR_PROBE_CASES.length,tests_failed:0,passed:true,paid:false,tx_hash:null};
+test('every collector case is required; old four-case evidence cannot pass the new collector scope',()=>{
+ for(const name of COLLECTOR_PROBE_CASES){const c=structuredClone(candidate);delete c.coverage[name];assert.equal(summarizeProbeEvidence({card:{...card,run_live_cas:false},sourceCommit:A,runId:'123',candidate:c}).deterministic_probe_passed,false);}
+});
+test('historical Actions identity requires exact repository, workflow, source and associated jobs',async()=>{
+ const api=async(m,u)=>{const e=HISTORICAL_PROBE_RUNS.find(e=>u.includes('/runs/'+e.id));validateProbeRequest(m,u);
+  if(u.includes('/jobs?'))return {status:200,data:{jobs:e.jobs.map((name,i)=>({id:i+1,name,run_id:e.id,run_attempt:1,status:'completed',conclusion:'success'}))}};
+  return {status:200,data:{id:e.id,repository:{full_name:PROBE_REPO},head_sha:e.sha,path:e.path,workflow_id:e.workflow_id,event:'push',status:'completed',conclusion:'success',run_attempt:1}};};
+ assert.equal((await verifyHistoricalRuns({api})).every(r=>r.verified),true);
+ const wrong=async(m,u)=>{const r=await api(m,u);if(!u.includes('/jobs?'))r.data.head_sha=A;return r;};
+ assert.equal((await verifyHistoricalRuns({api:wrong})).some(r=>r.verified),false);
+ const swapped=async(m,u)=>{const r=await api(m,u);if(u.includes('/jobs?'))r.data.jobs[0].run_id++;return r;};
+ assert.equal((await verifyHistoricalRuns({api:swapped})).some(r=>r.verified),false);
+ assert.throws(()=>validateProbeRequest('GET',ROOT+'/actions/runs/1'));assert.throws(()=>validateProbeRequest('GET',ROOT+'/actions/runs/'+HISTORICAL_PROBE_RUNS[0].id+'/jobs?filter=all&per_page=100'));
+});
 test('probe card is exact, original task only, fixed full candidate and zero business authority',()=>{
  assert.equal(validateProbeCard(card),card);
  for(const x of [{...card,candidate_head:null},{...card,task_id:'NEW-ORDER'},{...card,candidate_pr:'240'},{...card,model_review:false},{...card,automatic_merge:true}])assert.throws(()=>validateProbeCard(x));
