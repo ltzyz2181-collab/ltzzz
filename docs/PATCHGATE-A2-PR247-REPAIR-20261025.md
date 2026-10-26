@@ -22,7 +22,7 @@ GitHub `GITHUB_SHA` 描述执行上下文，不等于 REST run/check 的 candida
 
 ## C3、C4
 
-`patchgate-a2-verify.yml` 作为候选回归测试也纳入 A2_BUNDLE_FILES；修改它会使 runtime bundle 变化。verify/collector CI 都改为跑 `scripts/tests/patchgate*.test.mjs`，当前本地全套 **124/124**。C4 的 Ego 介绍保留在说明文档，不在固定 runtime bundle，也没有任何 Ego 信号参与准入。
+`patchgate-a2-verify.yml` 作为候选回归测试也纳入 A2_BUNDLE_FILES；修改它会使 runtime bundle 变化。verify/collector CI 都改为跑 `scripts/tests/patchgate*.test.mjs`，当前全套 **125/125**（真实 runner run40252891751 / job121348407379）。C4 的 Ego 介绍保留在说明文档，不在固定 runtime bundle，也没有任何 Ego 信号参与准入。
 
 ## 部署接力及真实阻塞
 
