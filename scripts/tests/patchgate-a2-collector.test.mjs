@@ -8,7 +8,7 @@ import {validateCollectionRequest,validateCollectorEndpoint,collectorGithubApi,c
 
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),ROOT='/repos/ltzyz2181-collab/ltzzz',REPO='ltzyz2181-collab/ltzzz';
 const now=Date.parse('2026-10-26T00:00:00Z'),at=new Date(now).toISOString(),PATH='knowledge/results/patchgate/claude-test.md';
-const authority={workflow_path:BASE_CHECK_WORKFLOW,workflow_id:100,app_id:15368,job_name:'patchgate-a2-base-checks'};
+const authority={workflow_path:BASE_CHECK_WORKFLOW,workflow_id:100,app_id:15368,job_name:'patchgate-a2-base-checks',workflow_sha256:sha256(fs.readFileSync(new URL('../../'+BASE_CHECK_WORKFLOW,import.meta.url)))};
 const request={schema:'ltzzz.patchgate.a2-collection-request.v1',task_id:TASK,candidate_pr:250,candidate_head:B,audit_pr:244,audit_path:PATH};
 const read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
 function contents(path,bytes){return {status:200,data:{path,type:'file',size:bytes.length,encoding:'base64',content:bytes.toString('base64')+'\n',sha:createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex')}};}
@@ -98,6 +98,9 @@ test('workflow/job association and rerun attempt cannot be swapped',async()=>{
 test('PR cannot modify its own check definition or race main after collection',async()=>{
   const f=fixture();f.state.changedWorkflow=true;await assert.rejects(collectTrustedChecks({api:f.api,request,baseSha:A,authority,now}),/own_check/);
   const g=fixture();g.state.main=C;await assert.rejects(collectTrustedChecks({api:g.api,request,baseSha:A,authority,now}),/base_moved/);
+});
+test('registered workflow digest rejects a changed trusted-main check even if candidate bytes agree',async()=>{
+  const f=fixture();await assert.rejects(collectTrustedChecks({api:f.api,request,baseSha:A,authority:{...authority,workflow_sha256:'0'.repeat(64)},now}),/digest_changed/);
 });
 test('a newer PR base cannot rewrite the completed job actual BASE marker',async()=>{
   const f=fixture();f.state.job.steps[0].name='BASE='+C+' HEAD='+B;

@@ -14,7 +14,7 @@ owner 已在本会话授权设置和补齐通道。如 Claude 另做可选的审
 - Claude 文件必须是指定同仓受信 PR 的变更文件；按不可变 PR head 读取，重算 Git blob SHA1 与原始 SHA256，再读 PR head 排除采集中改头。共享 GitHub 登录不冒充原生模型身份。
 - 报告第一段 JSON fence 使用 `ltzzz.external-stage-audit.v1`，带 task_id / phase=A2 / seat=claude / verdict / reviewed_source_commit / runtime_bundle_sha256。收集器用 BASE 固定清单计算被审提交的 bundle，不导入或执行被审提交的代码。
 - 旧报告无此格式时仍保存全文字节和哈希，记未解析/未验证；不从自然语言推断 approve，不要求文件包含自身整体哈希。
-- 必需检查只能由 BASE 配置 `check_authority` 登记。固定 job / workflow path / workflow_id / GitHub App 15368、check suite、run、job、rerun attempt、PR head 和 base 全部绑定；重复同名、未完成、skipped、过期、改过自身 workflow 都拒绝。
+- 必需检查只能由 BASE 配置 `check_authority` 登记。固定 job / workflow path / workflow_id / GitHub App 15368、登记的 workflow 原字节 SHA256、check suite、run、job、rerun attempt、PR head 和 base 全部绑定；重复同名、未完成、skipped、过期、改过自身 workflow 都拒绝。实际执行 base/head 还须与 GitHub 保存的展开后 job step marker 一致，避免读取运行记录时 PR base 已更新却误用旧 green check。
 - `.github/workflows/patchgate-a2-base-checks.yml` 的执行代码和配置全部从事件 BASE 检出。只用 Git 读取候选 diff，绝不执行候选脚本。只允许普通 Markdown L0；候选必须包含当前 base。标准仓库只读 GITHUB_TOKEN，不提供模型或资金凭证。
 - `signCollectedChecks` 提供登记完成后的基础设施签名适配；没有验证过的 key/角色/提供商就报错。无签名的收集 JSON 仅是观测，不能进入密码准入。
 
