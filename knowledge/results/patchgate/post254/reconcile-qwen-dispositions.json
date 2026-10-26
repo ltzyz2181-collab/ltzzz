@@ -1,0 +1,53 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "reviewed_pr": 256,
+  "reviewed_head": "6b19df7e3c886d256c9068ec92f2130aa38a927e",
+  "original_review": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-RECONCILE-POST254.json",
+  "run_id": "40288411064",
+  "original_verdict": "revise",
+  "original_preserved": true,
+  "controller": "openai_current_session",
+  "status": "controller_dispositions_pending_Claude_independent_review",
+  "stage_approval": false,
+  "A2_enabled": false,
+  "automatic_release_enabled": false,
+  "findings": [
+    {
+      "id": "R1",
+      "disposition": "accepted_low_risk_hardening",
+      "evidence": "All stop and claim readbacks now explicitly require object.type=commit; a new adversarial test rejects non-commit refs before readSource or any mutation. Existing downstream commit/tree checks already held the stop on malformed data."
+    },
+    {
+      "id": "R2",
+      "disposition": "not_adopted_helper_already_enforces_exact_schema",
+      "evidence": "originalRecord calls validateA2Request before use; scripts/lib/patchgate-a2.mjs rejects missing/extra receipt fields and inconsistent statuses. Missing merge_commit_sha cannot bypass schema validation."
+    },
+    {
+      "id": "R3",
+      "disposition": "not_adopted_invented_statuses_and_unsafe_release_request",
+      "evidence": "The strict receipt enum does not include merge_pending/premerge_validation_failed/postmerge_verification_in_progress. Unrecognized or transient outcomes must retain the stop; they are not proven pre-merge aborts."
+    },
+    {
+      "id": "R4",
+      "disposition": "not_adopted_rechecks_deliberately_fail_closed",
+      "evidence": "A rerun can resume after an earlier completed read; revalidation before deletion prevents releasing a latch while that original run is active. Existing resumed-run test proves zero DELETE."
+    },
+    {
+      "id": "R5",
+      "disposition": "not_adopted_contract_and_actual_main_readback_already_durable",
+      "evidence": "CLI persistIntent pushes the intent via pushReceiptCommit, fetches origin/main, reads the exact path from that ref and validates bindings. Library rejects verified=false or non-full commit. As additional hardening, remote readback now also requires identical postmerge_verification and release_intent_not_release status."
+    }
+  ],
+  "tests": {
+    "local_passed": 167,
+    "failed": 0,
+    "scope": "deterministic_fixtures_not_real_stop_release"
+  },
+  "limitations": [
+    "Qwen saw the complete primary function and explicit helper contracts, not all helper bytes; its review is component-scoped, not full bundle or activation approval.",
+    "The original revise and all findings remain unchanged in the native receipt.",
+    "Final candidate head is pinned in the PR notification, not inferred from this file."
+  ],
+  "paid": false,
+  "tx_hash": null
+}

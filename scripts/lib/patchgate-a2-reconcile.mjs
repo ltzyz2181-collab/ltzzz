@@ -5,6 +5,7 @@ import {validateA2Request} from './patchgate-a2.mjs';
 import {A2_STOP_REF,prepareDocsReadback,verifyDocsMerge} from './patchgate-a2-readback.mjs';
 const REPO='ltzyz2181-collab/ltzzz',ROOT='/repos/'+REPO,SHA=/^[a-f0-9]{40}$/;
 const STOP=ROOT+'/git/ref/heads/'+A2_STOP_REF;
+const commitRef=r=>r?.status===200&&r.data?.object?.type==='commit'&&SHA.test(r.data.object.sha||'');
 export function validateReconcileEndpoint(method,url,body){
   if(method==='GET'&&body===undefined&&typeof url==='string'&&url.startsWith(ROOT+'/')){
     const p=url.slice(ROOT.length);
@@ -42,11 +43,11 @@ export async function reconcileStop({api,readSource,authority=null,persistIntent
   try{
     const stop=await api('GET',STOP);
     if(stop.status===404)return {...out,status:'no_stop_latch'};
-    if(stop.status!==200||stop.data?.ref!=='refs/heads/'+A2_STOP_REF||!SHA.test(stop.data.object?.sha||''))throw Error('stop_identity_unreadable');
+    if(!commitRef(stop)||stop.data?.ref!=='refs/heads/'+A2_STOP_REF)throw Error('stop_identity_unreadable');
     const head=stop.data.object.sha,key=sha256(TASK+':'+head+':merge'),claimURL=ROOT+'/git/ref/heads/patchgate-a2-actions/'+key;
     out.head_sha=head;out.action_key=key;
     const claim=await api('GET',claimURL);
-    if(claim.status!==200||claim.data?.ref!=='refs/heads/patchgate-a2-actions/'+key||!SHA.test(claim.data.object?.sha||''))throw Error('original_claim_unknown_keep_stop');
+    if(!commitRef(claim)||claim.data?.ref!=='refs/heads/patchgate-a2-actions/'+key)throw Error('original_claim_unknown_keep_stop');
     const receiptRef=claim.data.object.sha,path='knowledge/results/patchgate/a2/'+key+'.json';
     const original=originalRecord(await api('GET',ROOT+'/contents/'+path+'?ref='+receiptRef),path,key),r=original.record;
     if(r.head_sha!==head)throw Error('stop_receipt_head_mismatch');
@@ -71,7 +72,7 @@ export async function reconcileStop({api,readSource,authority=null,persistIntent
     }else throw Error('unknown_or_invalid_merge_outcome_keep_stop');
     const again=await api('GET',STOP),againClaim=await api('GET',claimURL),againPR=await api('GET',prURL);
     trustedCompletedRun(await api('GET',runURL),r,authority);
-    if(again.status!==200||again.data?.object?.sha!==head||againClaim.status!==200||againClaim.data?.object?.sha!==receiptRef||!validPR(againPR)
+    if(!commitRef(again)||again.data?.object?.sha!==head||!commitRef(againClaim)||againClaim.data?.object?.sha!==receiptRef||!validPR(againPR)
       ||againPR.data.merged!==pr.data.merged||againPR.data.merge_commit_sha!==pr.data.merge_commit_sha||againPR.data.head.sha!==pr.data.head.sha)throw Error('reconciliation_identity_changed_keep_stop');
     out.status='release_verified_dry_run';
     if(!apply)return out;
@@ -79,10 +80,10 @@ export async function reconcileStop({api,readSource,authority=null,persistIntent
     out.intent=await persistIntent({...out,status:'release_intent_not_release',released:false});
     if(out.intent?.verified!==true||!SHA.test(out.intent.commit_sha||''))throw Error('reconciliation_intent_not_durable_keep_stop');
     const finalStop=await api('GET',STOP);trustedCompletedRun(await api('GET',runURL),r,authority);
-    if(finalStop.status!==200||finalStop.data?.object?.sha!==head)throw Error('stop_changed_after_intent_keep_current_owner');
+    if(!commitRef(finalStop)||finalStop.data?.object?.sha!==head)throw Error('stop_changed_after_intent_keep_current_owner');
     // No replay if DELETE times out. A later invocation must re-read everything.
     const deleted=await api('DELETE',ROOT+'/git/refs/heads/'+A2_STOP_REF),after=await api('GET',STOP);
-    if(deleted.status===204&&(after.status===404||(after.status===200&&SHA.test(after.data?.object?.sha||'')&&after.data.object.sha!==head))){out.status='released_after_full_reconciliation';out.released=true;}
+    if(deleted.status===204&&(after.status===404||(commitRef(after)&&after.data.object.sha!==head))){out.status='released_after_full_reconciliation';out.released=true;}
     else out.status='delete_unconfirmed_reconcile_no_retry';
   }catch(e){out.status='held_for_reconciliation';out.reason=/^[A-Za-z0-9_]+$/.test(e.message)?e.message:'reconciliation_failed_keep_stop';}
   return out;

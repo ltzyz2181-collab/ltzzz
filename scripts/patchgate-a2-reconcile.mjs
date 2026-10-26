@@ -19,7 +19,7 @@ const persistIntent=async intent=>{
     fs.writeFileSync(file,JSON.stringify(intent,null,2)+'\n',{flag:'wx'});git(['config','user.name','ltzzz-bot']);git(['config','user.email','bot@ltzzz.com']);git(['add','--',file]);git(['commit','-m','Reserve original-task latch reconciliation intent before release']);pushReceiptCommit();
   }
   git(['fetch','origin','main']);const durable=JSON.parse(git(['show','origin/main:'+file]));
-  if(durable.head_sha!==intent.head_sha||durable.original_receipt.sha256!==intent.original_receipt.sha256||durable.release_basis!==intent.release_basis)throw Error('intent_main_readback_failed');
+  if(durable.head_sha!==intent.head_sha||durable.original_receipt.sha256!==intent.original_receipt.sha256||durable.release_basis!==intent.release_basis||canonical(durable.postmerge_verification||null)!==canonical(intent.postmerge_verification||null)||durable.status!=='release_intent_not_release')throw Error('intent_main_readback_failed');
   return {verified:true,commit_sha:git(['rev-parse','origin/main']),path:file};
 };
 const report=await reconcileStop({api:reconcileGithubApi({token:process.env.GITHUB_TOKEN}),authority:policy.execution_authority,apply:policy.automatic_release_enabled,persistIntent,readSource:async({base,head})=>{
