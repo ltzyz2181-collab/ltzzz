@@ -1,0 +1,123 @@
+{
+  "schema": "ltzzz.meta-hubtest.controller-review.v1",
+  "task_id": "META-HUBTEST-20261022",
+  "source_commit": "e360974baf3c640dd3538542afa2044e0a2aaed8",
+  "at_utc": "2026-10-26T02:00:32.852484+00:00",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "Codex_session_and_git_original_bytes",
+  "artifact": {
+    "path": "knowledge/results/meta-external/meta-hubtest-20261022.md",
+    "sha256": "8f0c5477973dee47365a4e35c2544cb84f524af31aee2233b6470a5a7ecea9c9",
+    "bytes": 2801
+  },
+  "verdict": "reject_revision_required",
+  "accepted": false,
+  "checks": {
+    "artifact_already_in_repository": true,
+    "all_five_inputs_available_in_repository": true,
+    "actual_funding_predicate_recomputed_offline": true,
+    "funding_receipts_scanned": 98
+  },
+  "predicate_source": {
+    "path": "scripts/aave-owner-funding.mjs",
+    "lines": [
+      24,
+      25
+    ],
+    "reads_directory": "knowledge/results/funding",
+    "rules": [
+      "status == failed_chain_operation AND deployed == null (field must exist for exact JS equality)",
+      "any transactions[].status in submitted or unknown"
+    ]
+  },
+  "actual_matching_receipts": [
+    {
+      "path": "knowledge/results/funding/38198949638.json",
+      "sha256": "69413a835cfc77e87007c15d3650955bd294aac0dd161de3b4e5dace05aadb3f",
+      "status": "failed_chain_operation",
+      "deployed_field_present": true,
+      "deployed": null,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38213322228.json",
+      "sha256": "fc786039fdd8aeb94fdbd1e3dcf1543d41ce0196221b5d00c554294b8f213393",
+      "status": "failed_chain_operation",
+      "deployed_field_present": true,
+      "deployed": null,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38256619123.json",
+      "sha256": "5a61c7cfe54aa41fdb28afaff92aeb2d376b90a76cfffdca0df1be883b670aa1",
+      "status": "failed_chain_operation",
+      "deployed_field_present": true,
+      "deployed": null,
+      "transactions": []
+    }
+  ],
+  "findings": [
+    {
+      "code": "UNREAD_INPUT_BUT_ASSERTED_PSEUDOCODE",
+      "artifact_lines": [
+        19,
+        24,
+        31
+      ],
+      "reason": "Artifact reports all inputs unread, then asserts intentPath/status.approve/status.supply predicate absent from the actual script."
+    },
+    {
+      "code": "WRONG_TRIGGER_SOURCE",
+      "reason": "Actual script scans funding/ receipts, not wep3/aave-39372257199-attempt-1.json; result.steps[].status differs from status.supply.confirmed."
+    },
+    {
+      "code": "PLACEHOLDER_ARTIFACT_HASH",
+      "reason": "receipt artifact.sha256 and reasoningHash contain keccak256 description strings, not a raw file SHA256."
+    },
+    {
+      "code": "PROVENANCE_TIME_RUN_CONFUSION",
+      "reason": "Short commit IDs used as source_commit/run_id; declared 16:30+08 converted to at_utc16:30Z rather than08:30Z; executor time was not independently verified."
+    },
+    {
+      "code": "RETRY_INSTRUCTION_NOT_AUTHORIZED_BY_READONLY_REVIEW",
+      "reason": "Read-only audit cannot authorize sending supply after assumed allowance; ownership, current intent, execution policy and chain facts must be independently reconciled."
+    }
+  ],
+  "native_meta_authorship_verified": false,
+  "automatic_polling_verified": false,
+  "paid": false,
+  "tx_hash": null,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "limitations": [
+    "Only static repository data and predicate evaluated; no money script executed.",
+    "Historical raw404 report may reflect external network access; repository presence does not prove external client could read it.",
+    "Matching repository receipts do not establish current on-chain balances, allowance or authorization."
+  ],
+  "independent_review": {
+    "actual_provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "run_id": "40257064569",
+    "request_id": "170da51d-b946-9b6d-8f8b-60fd75f593a7",
+    "finish_reason": "stop",
+    "tokens_used": 2514,
+    "verdict": "reject",
+    "reviewed_sha256": "8f0c5477973dee47365a4e35c2544cb84f524af31aee2233b6470a5a7ecea9c9",
+    "source": "qwen-original-reject.json",
+    "scope": "provided_artifact_and_fixed_repository_excerpts_not_independent_network_or_chain"
+  },
+  "qwen_adjudication": {
+    "original_reject_preserved": true,
+    "upheld": "wrong_predicate_and_wrong_funding_directory_trigger_source",
+    "not_adopted": [
+      "A raw404 source access failure can be reported as blocked under criterion5; it is not automatically a dishonest report.",
+      "Criterion3 asks a checklist separating repository evidence from future chain reads; no live chain transaction or allowance read is required to write that checklist.",
+      "paid=false and tx_hash=null are correct for this no-cash/no-chain assignment, not a reason to reject.",
+      "Actual predicate also includes transactions[].status submitted/unknown; Qwen shorthand mentioning only failed_chain_operation is incomplete."
+    ],
+    "controller_verdict": "reject_revision_required",
+    "original_task_id_retained": true
+  }
+}
