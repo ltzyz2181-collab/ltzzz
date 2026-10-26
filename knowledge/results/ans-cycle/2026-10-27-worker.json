@@ -1,0 +1,17 @@
+{
+  "finding": "daily-task-board.mjs 中 runReservedSeat 的崩溃恢复存在真实断点：artifact 已用 {flag:'wx'} 原子写盘但 ledger 未更新时，recoverArtifact 只能恢复 status 为 'generation_started' 或 'generation_unknown_no_repurchase' 的席位；若崩溃恰好发生在 writeFileSync 之后、seat.status 仍为 'generation_started' 时，syncDailyBoard 会先把该席位标记为 'generation_unknown_no_repurchase' 并保存，随后 recoverArtifact 在同一轮循环开始时已执行过（在状态变更前），因此该轮不会重试恢复。下一轮 sync 时 recoverArtifact 才可能匹配到 artifact，但期间席位长期停留在 'generation_unknown_no_repurchase'，且 syncDailyBoard 对该状态没有任何后续动作，导致已写盘的不可变 artifact 永远不会被同步提交，任务卡死。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/daily-task-board.mjs",
+    "workers/pulse-worker/tasks.js",
+    "knowledge/results/ans-cycle/2026-10-26-reviewer.json"
+  ],
+  "minimal_patch": "在 syncDailyBoard 循环中，将 recoverArtifact 调用移至 'generation_started' 状态处理之后，或对 'generation_unknown_no_repurchase' 状态在 recoverArtifact 之后增加一次状态归一化。具体修改：\n\n1. 将现有循环开头的 recoverArtifact(root,record,agent,seat) 删除；\n2. 在 if (seat.status === 'generation_started') 分支之前，先执行 recoverArtifact；\n3. 若 recoverArtifact 返回 true，则 continue 跳过 generation_started 的模糊处理；\n4. 若 recoverArtifact 返回 false 且 status 为 'generation_started'，才降级为 'generation_unknown_no_repurchase'；\n5. 对 'generation_unknown_no_repurchase' 状态，在降级前先尝试 recoverArtifact，成功则恢复为 'generated_pending_sync' 并进入同步流程。\n\n补丁片段：\n```javascript\n// 替换 syncDailyBoard 循环体开头的 recoverArtifact 调用\nfor (const [agent, seat] of Object.entries(record.seats)) {\n  if (seat.status === 'generation_started') {\n    if (recoverArtifact(root,record,agent,seat)) continue;\n    seat.status = 'generation_unknown_no_repurchase';\n    seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\n    saveLedger(root,record);\n    continue;\n  }\n  if (seat.status === 'generation_unknown_no_repurchase' && recoverArtifact(root,record,agent,seat)) {\n    // 恢复后落入下方正常 artifact 同步逻辑\n  }\n  recoverArtifact(root,record,agent,seat);\n  // ... 其余原有逻辑\n}\n```",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "grep -n 'recoverArtifact' scripts/lib/daily-task-board.mjs | head -20",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m => console.log('loaded'))\"",
+    "git diff scripts/lib/daily-task-board.mjs | head -80"
+  ],
+  "remaining_blocker": "补丁尚未写入仓库；需要在真实崩溃场景（writeFileSync 后、saveLedger 前 kill -9）下做故障注入测试，验证 recoverArtifact 能在同一轮或下一轮 sync 中将席位从 generation_unknown_no_repurchase 恢复为 generated_pending_sync 并继续提交，否则该状态将永久卡死。"
+}
