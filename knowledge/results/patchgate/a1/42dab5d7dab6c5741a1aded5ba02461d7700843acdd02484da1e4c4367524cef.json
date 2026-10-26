@@ -1,0 +1,171 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-255",
+  "head_sha": "98a970d096ce0f1476062a05eb25c339a9657f0f",
+  "pr_number": 255,
+  "source_main_sha": "460cb873cbed7fedb7c593d9e86c0777c0d72011",
+  "run_id": "40420192439",
+  "at_utc": "2026-10-26T23:30:24.303Z",
+  "idempotency_key": "PATCHGATE-PR-255:98a970d096ce0f1476062a05eb25c339a9657f0f",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "460cb873cbed7fedb7c593d9e86c0777c0d72011",
+  "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+  "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+  "changed_files": [
+    {
+      "path": ".github/workflows/patchgate-key-enrollment.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/PATCHGATE-KEY-ENROLLMENT-BOUNDARY-20261025.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "patchgate-key-challenge-worker.js",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "patchgate-oidc.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/provision-patchgate-challenge-keys.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/fixtures/patchgate-oidc-fixture.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-key-challenge.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-oidc.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-255",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-255",
+      "base_sha": "460cb873cbed7fedb7c593d9e86c0777c0d72011",
+      "head_sha": "98a970d096ce0f1476062a05eb25c339a9657f0f",
+      "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+      "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+      "files_sha256": "2bca6ae4c36ff9ad4a798841110b16214693b4ab5493b4c53955a8cdcb8580ab"
+    },
+    "subject_sha256": "43053e3d0adf38466c730b3dbb951c4cd8176e1e72316fc1c078ae910539845c",
+    "idempotency_key": "PATCHGATE-PR-255:98a970d096ce0f1476062a05eb25c339a9657f0f",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "patchgate-key-challenge-worker.js",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "patchgate-oidc.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "patchgate-oidc.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "token.actions.githubusercontent.com"
+        ]
+      },
+      {
+        "path": "scripts/provision-patchgate-challenge-keys.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/provision-patchgate-challenge-keys.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.cloudflare.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/fixtures/patchgate-oidc-fixture.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "oidc.actions.githubusercontent.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/patchgate-key-challenge.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-key-challenge.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "isolated-key"
+        ]
+      },
+      {
+        "path": "scripts/tests/patchgate-oidc.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "evil.invalid",
+          "oidc.actions.githubusercontent.com"
+        ]
+      }
+    ],
+    "reasons": [
+      "cannot_modify_own_constraints_requires_separate_trust_rollout",
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
