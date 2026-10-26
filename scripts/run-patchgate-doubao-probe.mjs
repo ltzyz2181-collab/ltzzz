@@ -3,7 +3,7 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {callAgent} from './call-doubao.mjs';
-import {PROBE_CARD,validateProbeCard,probeContext,probeKey,checkProbePR,probeGithubApi,liveRaceProbe,summarizeProbeEvidence,assessProbeOnce,digest} from './lib/patchgate-doubao-probe.mjs';
+import {PROBE_CARD,validateProbeCard,probeContext,probeKey,checkProbePR,probeGithubApi,liveRaceProbe,summarizeProbeEvidence,assessProbeOnce,digest,verifyHistoricalRuns} from './lib/patchgate-doubao-probe.mjs';
 
 export async function main({phase=process.argv[2],env=process.env,root=process.cwd(),call=callAgent}={}){
  const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -15,6 +15,7 @@ export async function main({phase=process.argv[2],env=process.env,root=process.c
   const control={card,...context,card_sha256:digest(fs.readFileSync(path.join(root,PROBE_CARD)))};
   fs.writeFileSync(path.join(dir,'control.json'),JSON.stringify(control,null,2)+'\n');
   fs.copyFileSync(path.join(root,'scripts/patchgate-a2-probe-candidate.mjs'),path.join(dir,'candidate-harness.mjs'));
+  fs.copyFileSync(path.join(root,'scripts/patchgate-a2-collector-probe-candidate.mjs'),path.join(dir,'patchgate-a2-collector-probe-candidate.mjs'));
   if(env.GITHUB_OUTPUT)fs.appendFileSync(env.GITHUB_OUTPUT,`candidate_head=${card.candidate_head}\nrun_live_cas=${card.run_live_cas}\nkey=${probeKey(card,context.source_commit)}\n`);
   return {status:'prepared_no_model_call',...context,candidate_head:card.candidate_head};
  }
@@ -29,6 +30,7 @@ export async function main({phase=process.argv[2],env=process.env,root=process.c
  const candidate=read(path.join(reports,'a2-probe-candidate/result.json'));
  const races=card.run_live_cas?['a','b'].map(lane=>read(path.join(reports,'a2-probe-race-'+lane+'/result.json'))):[];
  const evidence=summarizeProbeEvidence({card,sourceCommit:source,runId:context.run_id,candidate,races});
+ evidence.historical_runs=await verifyHistoricalRuns({api});
  let model;try{model=read(path.join(root,'data/model-routing/latest.json')).seats?.doubao?.model;}catch{}
  model=env.DOUBAO_MODEL||model||'doubao-seed-2-1-pro-260915';
  const configured=env.DOUBAO_USE_PROXY==='true'?!!env.LTZZZ_AGENT_TOKEN:!!(env.DOUBAO_API_KEY||env.ARK_API_KEY);
