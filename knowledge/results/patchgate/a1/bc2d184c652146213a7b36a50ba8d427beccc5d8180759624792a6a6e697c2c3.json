@@ -1,0 +1,115 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-252",
+  "head_sha": "9cd4238246b43aa07869fa1134a6f44010d1ab3e",
+  "pr_number": 252,
+  "source_main_sha": "10fb6a5d1126345b909a4ab4d52577f4216fb417",
+  "run_id": "40279841394",
+  "at_utc": "2026-10-26T06:26:48.594Z",
+  "idempotency_key": "PATCHGATE-PR-252:9cd4238246b43aa07869fa1134a6f44010d1ab3e",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "275e254c9c60fbedd631a44e8a17df204d1e1f07",
+  "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+  "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+  "changed_files": [
+    {
+      "path": ".github/workflows/patchgate-doubao-probe.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/patchgate-doubao-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/patchgate-a2-collector-probe-candidate.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/patchgate-a2-probe-candidate.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/run-patchgate-doubao-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-doubao-probe.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-252",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-252",
+      "base_sha": "10fb6a5d1126345b909a4ab4d52577f4216fb417",
+      "head_sha": "9cd4238246b43aa07869fa1134a6f44010d1ab3e",
+      "policy_sha256": "6be9c95f780174d8d081797ee4aa3375b2586f3e00ffd5f1c867dcd7a5249171",
+      "trust_sha256": "29b33aef4ea8d46d3af7041f654f325e6e461f5894185950dbfee2d65addaaa4",
+      "files_sha256": "df411e226dd1dd88abe84c449f3bac846b89afb02e95c97b11ca30225519dc1e"
+    },
+    "subject_sha256": "ebdf93793456a09da885911228d9ca388528353ba0428500c584f189d4a551e6",
+    "idempotency_key": "PATCHGATE-PR-252:9cd4238246b43aa07869fa1134a6f44010d1ab3e",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/patchgate-a2-collector-probe-candidate.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "github.com"
+        ]
+      }
+    ],
+    "reasons": [
+      "cannot_modify_own_constraints_requires_separate_trust_rollout",
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
