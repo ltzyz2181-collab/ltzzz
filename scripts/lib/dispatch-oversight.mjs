@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {deliveryPolicy,externalTaskDelivery,externalDeliveryRequired} from './seat-delivery.mjs';
 import {validateArtifact} from './daily-task-board.mjs';
 import {cycleClosure} from './ans-review-recovery.mjs';
+import {externalReturnEvidence,ansCloseoutReview} from './oversight-closeout.mjs';
 
 export const OVERSIGHT_ROOT = 'knowledge/results/dispatch/oversight';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -36,7 +37,7 @@ function reviewProof(root, ledger, seat, review) {
 // Read canonical JSON first. A historical Pulse snapshot must not overwrite a
 // newer committed daily-board ledger. Claims, generation, review and deployment
 // remain separate; a draft acceptance is never an engineering completion.
-export function inspectDispatches({root='.', now=new Date().toISOString(), lookback=7}) {
+export function inspectDispatches({root='.', now=new Date().toISOString(), lookback=7,nativeReceiptVerifier}) {
   if (!Number.isFinite(Date.parse(now)) || !Number.isInteger(lookback) || lookback<1 || lookback>31) throw Error('invalid_oversight_window');
   const date=day(now), tasks=new Map(), observations=[];
   const claudePolicy=deliveryPolicy(root,'claude');
@@ -73,11 +74,9 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
       automatic_reexecution:false,delivery_evidence_status:linked.status,repair_origin:cardRecord?.repair_origin||null});
     const returnFile=`knowledge/results/dispatch/qianwen-return-${d}.json`,returned=read(root,returnFile);
     if(returned?.task_id===`QIANWEN-RETURN-${d}` && returned.date===d){
-      const ref=returned.acceptance_receipt;
-      const receipt=fileProof(root,ref?.path,ref?.sha256)?read(root,ref.path):null;
-      const acknowledged=receipt?.task_id===returned.task_id && receipt.claimed_by==='qianwen' && Number.isFinite(Date.parse(receipt.accepted_at)) && Date.parse(receipt.accepted_at)>=Date.parse(returned.issued_at);
-      add({id:returned.task_id,date:d,issuer:'gpt',assigned_to:'qianwen',phase:acknowledged?'external_return_delivery_missing':'external_return_claim_missing',due_at:deadline(d,'22:00'),evidence:[returnFile,...(acknowledged?[ref.path]:[])],instruction:returned.instruction,
-        separate_external_return:true,issued_by:returned.issued_by,native_qianwen_dispatch:false,acceptance_reference_verified:acknowledged,claim_verified:false,submission_verified:false,independent_review_verified:false,deployed:false,
+      const proof=externalReturnEvidence({root,dispatch:returned,now,nativeReceiptVerifier});
+      add({id:returned.task_id,date:d,issuer:'gpt',assigned_to:'qianwen',...proof,due_at:deadline(d,'22:00'),evidence:[returnFile,...proof.evidence],instruction:returned.instruction,
+        separate_external_return:true,issued_by:returned.issued_by,native_qianwen_dispatch:false,deployed:false,
         related_formal_daily_task_id:`DAILY-${d}-qianwen`,formal_daily_cannot_satisfy_this_task:true});
     }
     const ledgerFile=`knowledge/results/daily-board/${d}.json`, ledger=read(root,ledgerFile);
@@ -99,7 +98,11 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
     const ansFile=`knowledge/results/ans-cycle/${d}.json`,ans=read(root,ansFile);
     if(ans?.date===d && cycleClosure(ans,{root})){
       add({id:`ANS-${d}-doubao`,date:d,issuer:'gpt',assigned_to:'doubao',phase:'independent_draft_review_completed',due_at:deadline(d,'03:00'),evidence:[ansFile,...ans.artifacts.map(a=>a.path)],independent_review_verified:true,draft_accepted:ans.audit.accepted,deployed:false,actual_provider:ans.audit.executed_by,instruction:'独立草稿审核及远端回读已完成；拒绝不等于生产完成，作者修复仍按原工作单跟进。'});
-      if(!ans.audit.accepted)add({id:`ANS-${d}-deepseek`,date:d,issuer:'gpt',assigned_to:'deepseek',phase:'engineering_completion_unverified',due_at:deadline(d,'03:00'),evidence:[ansFile,...ans.artifacts.map(a=>a.path)],independent_review_verified:true,draft_accepted:false,deployed:false,instruction:'原草稿已被独立拒绝；复用原作者任务补可审核代码、测试与PR，不重复购买旧作者请求，不将审核完成写成工程完成。'});
+      if(!ans.audit.accepted){
+        const id=`ANS-${d}-deepseek`,completion=engineeringCloseout(root,id),closeout=completion&&read(root,completion.file),worker=ans.artifacts.find(a=>a.role==='worker');
+        const reviewed=completion&&ansCloseoutReview({root,closeout,taskId:id,originalArtifact:worker,now,nativeReceiptVerifier});
+        add({id,date:d,issuer:'gpt',assigned_to:'deepseek',phase:reviewed?'engineering_delivery_verified_not_deployed':'engineering_completion_unverified',due_at:deadline(d,'03:00'),evidence:[ansFile,...ans.artifacts.map(a=>a.path),...(reviewed?[completion.file,closeout.artifact.path,closeout.tests.path,reviewed.review.path]:[])],independent_review_verified:true,draft_accepted:false,deployed:false,engineering_completion_verified:!!reviewed,engineering_closeout:reviewed?{...completion,...reviewed}:null,instruction:'原草稿拒收保留；仅以绑定原工件的新工程实物、测试、PR及不同提供商复核关闭工程交付，不重复购买旧作者请求，不将审核完成写成生产完成。'});
+      }
     }else if(ans?.date===d && /blocked|rejected|incomplete/.test(ans.status||'')) add({id:`ANS-${d}-doubao`,date:d,issuer:'gpt',assigned_to:'doubao',phase:'blocked_reconcile_existing_attempt',due_at:deadline(d,'03:00'),evidence:[ansFile],instruction:'核对现有 ANS 失败/未知审核请求、错误码与已有输出；修复后交测试和部署回执。不得因补派自动重购未知请求或重复付款。'});
     const hireFile=`knowledge/results/claude-team/real-hire-${d.replaceAll('-','')}.json`,hire=read(root,hireFile);
     if(hire?.date===d && safeId(hire.task_id)) add({id:hire.task_id,date:d,issuer:'claude',assigned_to:'gpt',phase:/waiting|blocked|rejected/.test(hire.status||'')?'blocked_reconcile_existing_attempt':'hire_receipt_present_scope_limited',due_at:deadline(d,'12:00'),evidence:[hireFile],instruction:'跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。'});
@@ -132,9 +135,9 @@ export function nativeQianwenOversight(root,date){
  return result;
 }
 
-export function runDispatchOversight({root='.', now=new Date().toISOString(), sourceCommit=null, runId='local', lookback=7}={}) {
+export function runDispatchOversight({root='.', now=new Date().toISOString(), sourceCommit=null, runId='local', lookback=7,nativeReceiptVerifier}={}) {
   if(!/^(local|\d+)$/.test(runId)) throw Error('invalid_oversight_run');
-  const report=inspectDispatches({root,now,lookback}), previous=read(root,`${OVERSIGHT_ROOT}/warnings.json`)||{cases:{}}, cases=previous.cases||{};
+  const report=inspectDispatches({root,now,lookback,nativeReceiptVerifier}), previous=read(root,`${OVERSIGHT_ROOT}/warnings.json`)||{cases:{}}, cases=previous.cases||{};
   const seen=new Set();
   for(const task of report.tasks) {
     const key=hash(task.id+'\0'+task.issue).slice(0,24); seen.add(key);

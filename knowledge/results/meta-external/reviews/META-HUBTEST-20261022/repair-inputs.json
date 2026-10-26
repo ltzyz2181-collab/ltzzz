@@ -1,0 +1,828 @@
+{
+  "schema": "ltzzz.meta-hubtest.repair-inputs.v1",
+  "task_id": "META-HUBTEST-20261022",
+  "source_commit": "e360974baf3c640dd3538542afa2044e0a2aaed8",
+  "scope": "public_repository_inputs_only_never_execute_money_script",
+  "inputs": [
+    {
+      "path": "scripts/aave-owner-funding.mjs",
+      "sha256": "1e3db23737d56dc6d4c64a39ff94ecd7919800f87d435da32ac36e7fc9e3380d",
+      "bytes": 7551,
+      "body": "import {fundingAmount} from './funding-plan.mjs';\nimport fs from 'node:fs';\nimport solc from 'solc';\nimport {Contract,ContractFactory,JsonRpcProvider,Wallet,id,parseUnits,Interface} from 'ethers';\nconst dir='knowledge/results/funding';fs.mkdirSync(dir,{recursive:true});\nconst stamp=process.env.GITHUB_RUN_ID||String(Date.now());\nconst evidence={owner:process.env.FUNDING_OWNER||null,treasury:process.env.FUNDING_TREASURY||null,phase:'compile',transactions:[],deployed:false};\nconst record=(r)=>{fs.writeFileSync(`${dir}/${stamp}.json`,JSON.stringify({at:new Date().toISOString(),chainId:8453,...evidence,...r},null,2)+'\\n');console.log(r.status);};\nconst source=fs.readFileSync('invest-channel/contracts/OwnerAaveFunding.sol','utf8');\nconst build=JSON.parse(solc.compile(JSON.stringify({language:'Solidity',sources:{'Funding.sol':{content:source}},settings:{evmVersion:'shanghai',optimizer:{enabled:true,runs:200},outputSelection:{'*':{'*':['abi','evm.bytecode.object']}}}})));\nif(build.errors?.some(e=>e.severity==='error'))throw Error('Solidity compile failed');\nconst artifact=build.contracts['Funding.sol'].OwnerAaveFunding;\nfs.writeFileSync(`${dir}/contract-artifact.json`,JSON.stringify(artifact,null,2));\nconst env=process.env;\nif(env.FUNDING_EXECUTE!=='1'){record({status:'compiled_read_only',signed:false,tx_hash:null});process.exit(0);}\nconst authorization=(router,executor)=>[\n {purpose:'Approve bounded aUSDC funding grant; revocable',chainId:8453,from:env.FUNDING_OWNER,to:'0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB',value:'0',data:new Interface(['function approve(address,uint256)']).encodeFunctionData('approve',[router,200000000n])},\n {purpose:'Activate funding with 200USDC total grant;100/200 hard caps (batch 2026-10 directive, not 1000)',chainId:8453,from:env.FUNDING_OWNER,to:router,value:'0',data:new Interface(['function configure(bool,address,uint256)']).encodeFunctionData('configure',[false,executor,200000000n])}\n];\nconst missing=['FUNDING_OWNER','FUNDING_TREASURY','FUNDING_EXECUTOR_KEY'].filter(k=>!env[k]);\nif(missing.length){record({status:'blocked_configuration',missing,compiled:true,deployed:false});process.exit(0);}\ntry{\n if(['0x1893a134aa6ea22e8c08518b559e1706f4da0ef7','0x21f502f29294c50d9c37a30dc038d8d95eb97fdc','0x872c322e886ccd3f2bb63e0611a6d8c620d859ab'].includes(env.FUNDING_TREASURY.toLowerCase())){record({status:'blocked_treasury_role',deployed:false,note:'Use a new Base operational treasury, not the U-card receiver or exposed legacy wallet.'});process.exit(0);}\n const prior=fs.readdirSync(dir).filter(f=>f.endsWith('.json')&&f!=='contract-artifact.json'&&f!==stamp+'.json').map(f=>JSON.parse(fs.readFileSync(`${dir}/${f}`)));\n if(prior.some(r=>r.status==='failed_chain_operation'&&r.deployed===null||r.transactions?.some(t=>['submitted','unknown'].includes(t.status)))){record({status:'blocked_prior_operation_requires_reconciliation',signed:false,tx_hash:null});process.exit(0);}\n evidence.phase='read_network';\n const provider=new JsonRpcProvider(env.LTZZZ_BASE_RPC||'https://mainnet.base.org');\n if((await provider.getNetwork()).chainId!==8453n)throw Error('Wrong network');\n const signer=new Wallet(env.FUNDING_EXECUTOR_KEY,provider);\n let address=env.FUNDING_ROUTER_ADDRESS;\n if(!address){\n  // Do not redeploy after a receipt has committed, even if variables are not yet updated.\n  const files=fs.readdirSync(dir).filter(f=>f.endsWith('.json')&&f!=='contract-artifact.json');\n  for(const file of files){const r=JSON.parse(fs.readFileSync(`${dir}/${file}`));if(r.status==='deployed_paused'&&r.owner.toLowerCase()===env.FUNDING_OWNER.toLowerCase()&&r.treasury.toLowerCase()===env.FUNDING_TREASURY.toLowerCase())address=r.router;}\n }\n if(!address){\n  evidence.phase='deploy';\n  const deployed=await new ContractFactory(artifact.abi,artifact.evm.bytecode.object,signer).deploy(env.FUNDING_OWNER,env.FUNDING_TREASURY,'0xA238Dd80C259a72e81d7e4664a9801593F98d1c5','0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913','0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB',signer.address);\n  const deploymentTx=deployed.deploymentTransaction();evidence.router=await deployed.getAddress();evidence.transactions.push({kind:'deploy',tx_hash:deploymentTx.hash,status:'submitted'});record({status:'deployment_submitted',tx_hash:deploymentTx.hash});\n  const receipt=await deploymentTx.wait();evidence.transactions.at(-1).status=receipt.status===1?'confirmed':'reverted';evidence.deployed=receipt.status===1;if(receipt.status!==1)throw Error('Deployment reverted');\n  record({status:'deployed_paused',owner:env.FUNDING_OWNER,treasury:env.FUNDING_TREASURY,router:await deployed.getAddress(),tx_hash:receipt.hash,block:receipt.blockNumber,deployed:true,owner_authorization:authorization(await deployed.getAddress(),signer.address),next:'Owner approve aUSDC and configure(false,executor,grant).'});process.exit(0);\n }\n evidence.router=address;evidence.deployed=true;evidence.phase='read_router';\n const router=new Contract(address,artifact.abi,signer);\n if((await router.owner()).toLowerCase()!==env.FUNDING_OWNER.toLowerCase()||(await router.treasury()).toLowerCase()!==env.FUNDING_TREASURY.toLowerCase()||(await router.executor()).toLowerCase()!==signer.address.toLowerCase())throw Error('Identity mismatch');\n if(await router.paused()){record({status:'blocked_owner_activation',router:address,deployed:true,owner_authorization:authorization(address,signer.address)});process.exit(0);}\n const token=new Contract(await router.usdc(),['function balanceOf(address) view returns(uint256)'],provider);\n const balance=await token.balanceOf(env.FUNDING_TREASURY);\n const target=parseUnits('100',6); // Refill only a verified shortage, never blindly withdraw daily.\n if(balance>=target){record({status:'no_refill_needed',router:address,treasury_usdc_raw:String(balance)});process.exit(0);}\n const day=BigInt(Math.floor(Date.now()/86400000));\n const dailyPulled=await router.dailyPulled(day);\n const plan=fundingAmount({balance,target,dailyPulled,grantRemaining:await router.grantRemaining(),lifetimePulled:await router.principalOutstanding()+await router.principalReturned()+await router.lossesAccepted()});\n if(plan.amount===0n){record({status:plan.status,router:address,deployed:true});process.exit(0);}\n const amount=plan.amount;\n const intent=id(`ltzzz-funding-v1:${address}:${day}:${await router.dailyPulled(day)}`);\n if(await router.usedIntent(intent)){record({status:'intent_already_executed',router:address,intent});process.exit(0);}\n await router.pull.staticCall(amount,intent);\n evidence.phase='pull';const tx=await router.pull(amount,intent);evidence.transactions.push({kind:'pull',tx_hash:tx.hash,status:'submitted'});record({status:'funding_submitted',tx_hash:tx.hash,intent});const receipt=await tx.wait();evidence.transactions.at(-1).status=receipt.status===1?'confirmed':'reverted';\n if(receipt.status!==1)throw Error('Funding reverted');\n const after=await token.balanceOf(env.FUNDING_TREASURY);\n record({status:'funded',router:address,amount_raw:String(amount),funding_stage:plan.stage,before_raw:String(balance),after_raw:String(after),tx_hash:receipt.hash,block:receipt.blockNumber,intent,principal_outstanding_raw:String(await router.principalOutstanding())});\n}catch{record({status:evidence.transactions.some(t=>t.status==='submitted')?'pending_reconciliation':'failed_before_confirmed_operation',tx_hash:evidence.transactions.at(-1)?.tx_hash||null,note:'Phase and transaction evidence retained; no raw provider error or credential printed. No automatic resend of uncertain transactions.'});process.exitCode=1;}\n"
+    },
+    {
+      "path": "knowledge/results/wep3/aave-39372257199-attempt-1.json",
+      "sha256": "1c5a1de816a2b87a9ca53c8c9cecb9de213ca43c4c60118e434b62e15c77ff83",
+      "bytes": 4013,
+      "body": "{\n  \"at\": \"2026-10-20T04:57:14.603Z\",\n  \"execution_id\": \"39372257199\",\n  \"run_attempt\": \"1\",\n  \"action\": \"auto\",\n  \"read_only\": false,\n  \"on_chain_executed\": false,\n  \"tx_hash\": null,\n  \"http\": 422,\n  \"content_type\": \"application/json\",\n  \"result\": {\n    \"ok\": false,\n    \"error\": \"latest_cash_or_exposure_limit\",\n    \"intent_id\": \"AAVE-AUTO-bounded_supply-2026-10-20\",\n    \"action\": \"supply\",\n    \"amount_usdc\": \"9.115782\",\n    \"status\": \"pending_confirmations\",\n    \"chain_id\": 8453,\n    \"treasury\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n    \"position_owner\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n    \"steps\": [\n      {\n        \"kind\": \"approve\",\n        \"to\": \"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\n        \"tx_hash\": \"0x3c19388d7112d0458578c5bdc23774fdc6293f0d3eb78bbcc3cb6133c8723493\",\n        \"status\": \"confirmed\",\n        \"broadcast_attempts\": [\n          {\n            \"url\": \"https://mainnet.base.org\",\n            \"ok\": false\n          },\n          {\n            \"url\": \"https://base.drpc.org\",\n            \"ok\": true\n          }\n        ],\n        \"block_number\": 52841445,\n        \"receipt_status\": 1,\n        \"confirmed_at\": \"2026-10-20T04:57:23.932Z\"\n      },\n      {\n        \"kind\": \"supply\",\n        \"to\": \"0xA238Dd80C259a72e81d7e4664a9801593F98d1c5\"\n      }\n    ],\n    \"before\": {\n      \"ok\": true,\n      \"chain_id\": 8453,\n      \"pool\": \"0xA238Dd80C259a72e81d7e4664a9801593F98d1c5\",\n      \"usdc\": \"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913\",\n      \"ausdc\": \"0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB\",\n      \"address\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n      \"beneficiary_principal_raw\": \"4496788\",\n      \"beneficiary_positions\": {\n        \"0xbc24b9a2d0c61705602257565d8c0064effe253e\": {\n          \"principal_raw\": \"4496788\",\n          \"allocations\": {\n            \"INV-fe28aa6c968aaa540cba74b1b4f158e4f436d9e3\": {\n              \"round\": \"OWNER-FUNDED-20261017-01\",\n              \"amount_raw\": \"4496788\",\n              \"tx_hash\": \"0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2\",\n              \"funding_treasury\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n              \"position_owner\": \"0xbc24b9a2d0c61705602257565d8c0064effe253e\",\n              \"gas_payer\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\"\n            }\n          },\n          \"treasury_can_withdraw\": false\n        }\n      },\n      \"block_number\": 52841444,\n      \"rpc_url\": \"https://base-rpc.publicnode.com\",\n      \"rpc_attempts\": [\n        {\n          \"url\": \"https://mainnet.base.org\",\n          \"ok\": false,\n          \"code\": \"SERVER_ERROR\",\n          \"detail\": \"exceeded maximum retry limit\"\n        },\n        {\n          \"url\": \"https://base.drpc.org\",\n          \"ok\": false,\n          \"code\": \"SERVER_ERROR\",\n          \"detail\": \"exceeded maximum retry limit\"\n        },\n        {\n          \"url\": \"https://base-rpc.publicnode.com\",\n          \"ok\": true\n        }\n      ],\n      \"usdc_raw\": \"210872201\",\n      \"ausdc_raw\": \"114560517\",\n      \"eth_raw\": \"1985616328482853\",\n      \"allowance_raw\": \"0\",\n      \"principal_raw\": \"114526347\",\n      \"interest_raw\": \"34170\",\n      \"principal_basis\": \"tracked_supply_receipts\",\n      \"first_supply_confirmed\": true,\n      \"exit_test_confirmed\": true,\n      \"paused\": false,\n      \"active_intent\": null,\n      \"storage_status\": {\n        \"ok\": true,\n        \"status\": \"no_active_intent\",\n        \"active_intent\": null,\n        \"signed\": false\n      },\n      \"limit_policy\": \"reputation_and_actual_equity\",\n      \"capital_agent\": \"DeepSeek\",\n      \"capital_reputation\": 105,\n      \"allocation_share_bps\": 4000,\n      \"single_cap_usdc\": 32.043271,\n      \"exposure_cap_usdc\": 128.173087,\n      \"cash_floor_raw\": \"5000000\",\n      \"withdraw_receiver\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n      \"owner_return_enabled\": false\n    },\n    \"after\": null,\n    \"owner_return_executed\": false,\n    \"aave_runtime_revision\": \"aave-guard-v9\"\n  },\n  \"service_verified\": false,\n  \"status\": \"pending_requires_reconciliation\"\n}"
+    },
+    {
+      "path": "knowledge/results/funding/39421088746.json",
+      "sha256": "ad5e7cb2fb00397343ad0d603f625bfc43a960b3c521f66e468f6712a1fe44dd",
+      "bytes": 341,
+      "body": "{\n  \"at\": \"2026-10-20T12:17:35.111Z\",\n  \"chainId\": 8453,\n  \"owner\": \"0x370dd04092b2EcE24372ff93C29b55f5D2c12FD5\",\n  \"treasury\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n  \"phase\": \"compile\",\n  \"transactions\": [],\n  \"deployed\": false,\n  \"status\": \"blocked_prior_operation_requires_reconciliation\",\n  \"signed\": false,\n  \"tx_hash\": null\n}\n"
+    },
+    {
+      "path": "knowledge/results/funding/39467175979.json",
+      "sha256": "0e572294e8a306e18c1099ffa32b4c041f9ff96a43ff31655535ff6cf6af686c",
+      "bytes": 341,
+      "body": "{\n  \"at\": \"2026-10-20T17:34:20.187Z\",\n  \"chainId\": 8453,\n  \"owner\": \"0x370dd04092b2EcE24372ff93C29b55f5D2c12FD5\",\n  \"treasury\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n  \"phase\": \"compile\",\n  \"transactions\": [],\n  \"deployed\": false,\n  \"status\": \"blocked_prior_operation_requires_reconciliation\",\n  \"signed\": false,\n  \"tx_hash\": null\n}\n"
+    },
+    {
+      "path": "knowledge/results/funding/39495969140.json",
+      "sha256": "0d2a74c0cdd1bdbb6c9f2ee7f13bf428e4bb50665f955901774fd067e5f7e85b",
+      "bytes": 341,
+      "body": "{\n  \"at\": \"2026-10-20T20:54:52.828Z\",\n  \"chainId\": 8453,\n  \"owner\": \"0x370dd04092b2EcE24372ff93C29b55f5D2c12FD5\",\n  \"treasury\": \"0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d\",\n  \"phase\": \"compile\",\n  \"transactions\": [],\n  \"deployed\": false,\n  \"status\": \"blocked_prior_operation_requires_reconciliation\",\n  \"signed\": false,\n  \"tx_hash\": null\n}\n"
+    }
+  ],
+  "funding_receipt_projection": [
+    {
+      "path": "knowledge/results/funding/37875443839.json",
+      "sha256": "d4c7adfa3d37baac22b72c31aaee5114a197c8c03347799a5ee2bd289be6b1ed",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/37912718110.json",
+      "sha256": "f475f6b693bd25da1d4d04ba6479f65accaf1556c6e9c5e900fafb5905fd76aa",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/37960496136.json",
+      "sha256": "4d397edc7f47f19a33cdb42ced450c7c73865a3b5b5a01bfcac88cd498993cea",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/37992815832.json",
+      "sha256": "ed78494d9da3813bb98acbfb023098dd26cfb935978df0cd3ca1d1f07c653062",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38012653164.json",
+      "sha256": "8ee7f37998ee203a7e17cab515aca8749eacefc256dab8ed10b445f00eca9133",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38035541152.json",
+      "sha256": "d8a51ba5449a909772b717c18d813fd75ee58328d3647b1b8585dd6336e3bd30",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38061001855.json",
+      "sha256": "8096b6c1d76bd571865baaecd149521c151ee4e620d1402713d7180be085b8be",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38080276196.json",
+      "sha256": "4f9ca74a4705e726a7ac3c7653caf0213fceb404661998d7e55ff98a33ebd24f",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38093361403.json",
+      "sha256": "16edaaf704b179f5df1890717363277d4b60293cde2c956557202b260287aa45",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38104472336.json",
+      "sha256": "770eb3287cd138e7308f47dad62eddc76780ebe0dcf28d1723054a8b736e8363",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38109671320.json",
+      "sha256": "de6fd276da39174b0961cd994bedc9c6771fa9b51de8af544132d595a2c06a80",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38127961042.json",
+      "sha256": "0144dbccf7b3f7b7f4319ca79976990483ca84539148c3ac8a53fd73ee63a159",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38153503363.json",
+      "sha256": "bf80489b1fe3b5101d5826b16740f4a4b1e778c6bd713bbacac9a8c1b097a013",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38172967644.json",
+      "sha256": "ca112ccc57f6e75d4d5a9262c93ae125d69dc4271768cbf2c81fc16e216411b7",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38186408170.json",
+      "sha256": "e825de3281df99153881f73305dddbd0a77b47766893bac6befb235541fbc2ea",
+      "status": "blocked_configuration",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38198949638.json",
+      "sha256": "69413a835cfc77e87007c15d3650955bd294aac0dd161de3b4e5dace05aadb3f",
+      "status": "failed_chain_operation",
+      "deployed_field_present": true,
+      "deployed": null,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38213322228.json",
+      "sha256": "fc786039fdd8aeb94fdbd1e3dcf1543d41ce0196221b5d00c554294b8f213393",
+      "status": "failed_chain_operation",
+      "deployed_field_present": true,
+      "deployed": null,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38256619123.json",
+      "sha256": "5a61c7cfe54aa41fdb28afaff92aeb2d376b90a76cfffdca0df1be883b670aa1",
+      "status": "failed_chain_operation",
+      "deployed_field_present": true,
+      "deployed": null,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38257126533.json",
+      "sha256": "0a1a4347c5287eda57b1a47a104fe8aab9f500bdc26438ac175164cf2fa17a8d",
+      "status": "compiled_read_only",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38275512311.json",
+      "sha256": "24a1b135c31e0d91b927b4966cc65b39e0fdccc51e981a38857419b160d6adcf",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38321142607.json",
+      "sha256": "28fcd989989724ab3429156dffdae398a3845450eb0fa7aadcef1b626a82226b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38343958703.json",
+      "sha256": "0c8d61187349cb79dce09c08ae32f885d29e8b6a86d6f8fdd512d330494bf464",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38395655496.json",
+      "sha256": "605e06a8fda04cec5857c2aa315e0802cf779e1b087c21d39ed90e05a6c1b4ae",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38455853599.json",
+      "sha256": "cb4075b0f6703f2969f7ac0d4993d9c9baf59717d814a880bffb964f616df4de",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38484307271.json",
+      "sha256": "a53c325cfe8f1a9fd10d75aa67678ae102c5361e55ffde21f439e3ba6121fe64",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38499678067.json",
+      "sha256": "f2e47404415770dadd543b3c474934f44074a792bdef7729b996002706aaa7ef",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38532414611.json",
+      "sha256": "8d493da6399d3fad1b40dc46d72b072a73ebb94ff36a2e1fa16cdb6aa28a3274",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38577299915.json",
+      "sha256": "b2862e24e487b32297ecef9d41a057bc2da701c4b96e3242e573187443481ba4",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38619606249.json",
+      "sha256": "4182ac0d1d5b974ee86227abd3a25365f212de211d22f53cdc38feaa529f077b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38649299356.json",
+      "sha256": "959f704eafa8d78d7ced0e0686908ec50e58eb3a91393ad7717103e72f3ae9c3",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38662959808.json",
+      "sha256": "ecb90a291508c58622e676e062930dc7965d2f39507b22a2c8b0c288e706b98b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38692829102.json",
+      "sha256": "4af8114efafa6d1dc761f8a8cee7299a384ce8d0006141381fcc88bdf40ff867",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38732580018.json",
+      "sha256": "631c944efe965117444d8d9672145856d35b8051443f4cd2df1d9c17049661a3",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38776969070.json",
+      "sha256": "ca4694b0b06c50162951afd6085d53a992b7b9a18c6c8ab222fe5ff535dfd70b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38802907274.json",
+      "sha256": "935bac869f19806ad5ac130e6fb8ab935045ab3e30ca050f219782909b1411d3",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38822908474.json",
+      "sha256": "aa0b27093b5edb52fc9fa865d74e424a8894f9257e84eb23dfb98fa9061b6514",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38836493669.json",
+      "sha256": "d957930a110c28636e493683f1e74e46679890a18911adc36ee4a4073d4c189d",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38861249464.json",
+      "sha256": "83cd32131d6ef474bca3ad145eb70d3ba7b4fa3aaa562b509b446020416ad59c",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38897064057.json",
+      "sha256": "85d9a8cb7366eba9870627306a4d6e8747a46a1b394c40c88fa925ab36f18032",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38936233976.json",
+      "sha256": "9bdc085d52f81ea079ec5efb2284cfe9480a08da37c318a1c228fec2d0191fdc",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38959819635.json",
+      "sha256": "3fa04a592b43d49e67e03ef35e1dda92fe37c81fff836f63925fff02d77564e9",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38979249609.json",
+      "sha256": "28a6520cbde4dec3810b32c9ff7f0627f2f3da31fa79e5dceb4f360e907d011d",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/38991476263.json",
+      "sha256": "0cfcea6c194a997a789ea3512ee49cad59f5a16358720524af31f15ee0aeebd9",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39009233148.json",
+      "sha256": "850f0df2d6da896ff4c4bed0266cea2d148d9cea69fef32d6e1222d07f38e401",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39027783812.json",
+      "sha256": "8e8bfb80592628f22e6b407a5aeb20fc7d3a085fe7f51d63aa75e6c284f6df81",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39040826783.json",
+      "sha256": "5be8ddb2c5a1fef43c4447dea7ae672341a36460f13aeee576b3c8b3f23f7609",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39054261980.json",
+      "sha256": "28bfffa94900f4e532757c167c279011e84ad8734ea3e1edad8ca68891e69de9",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39063699185.json",
+      "sha256": "a3684cdc8228672fce0df93d42f57de15c4e3fb04adf4d6bfeb91f83edcf2b7b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39072366323.json",
+      "sha256": "e53e8c7af8c48ef9732555f8f64845403360db3fba62ec79c436f8a6bff94833",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39082694206.json",
+      "sha256": "d5b4da3efa1e920f5055789bb22e6588ef1b61d9e44161713a29a61946275f23",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39099693203.json",
+      "sha256": "f93e68af7756d07ab43dfa716f93e2d00eb2c5dc7c8fa3db092d2b8d9fa35390",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39117218423.json",
+      "sha256": "1aa701b4a05d5a25585bd4889e30ee808e06fdd131bdc6c5f700b0fadacfa819",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39134757698.json",
+      "sha256": "cb8cb821a523fbc6816711672f3f4a9f85aa2b114522a2e2ee784517ec0a7abd",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39150189236.json",
+      "sha256": "8aef5a6a395fa75098aa04250781d0c1e52e53397a6f4f3051c09186f98b3e60",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39159953367.json",
+      "sha256": "9abad4c7282cb937fcccc6ccd90de9ab49c80fc925a7f22e4a82f53c170fd9f8",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39169990977.json",
+      "sha256": "ac0018e5dfe955153ad3c3c5ca870b90ce05eefb3f171153242c8dc2779aa8f9",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39181228888.json",
+      "sha256": "96b1376cfe4ae866bafb60a587abc6a25c8701823e49492d56a011c437cd3e33",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39204252989.json",
+      "sha256": "f4da2d77e98145abf97c46927c08027868df6b1041b0307b8c999431f709fdd0",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39243649105.json",
+      "sha256": "87f217cc9c280de4bc3e5e21509df50d914025e31dd6c511396328494032a6ab",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39297110471.json",
+      "sha256": "cff7541586f181500e1facfcb14169dab56962187d706ddb355ef90fe11bb409",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39336438741.json",
+      "sha256": "6b1f6201c38a1d67c35bcb089854ce7bf0b928b95dee04a3374062982e528da8",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39352680076.json",
+      "sha256": "e692c23ced73bc6da28780c736e23557324fc2d82166f0e8f5d2a276f718aacc",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39381775937.json",
+      "sha256": "7f183ddbcf5ecef12412168c5ab47c9ae3113eb45c48c9099cd10d634faad62b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39421088746.json",
+      "sha256": "ad5e7cb2fb00397343ad0d603f625bfc43a960b3c521f66e468f6712a1fe44dd",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39467175979.json",
+      "sha256": "0e572294e8a306e18c1099ffa32b4c041f9ff96a43ff31655535ff6cf6af686c",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39495969140.json",
+      "sha256": "0d2a74c0cdd1bdbb6c9f2ee7f13bf428e4bb50665f955901774fd067e5f7e85b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39519638591.json",
+      "sha256": "ad37a4b9c86670dc1f4643cb742478cae881f50be71bf06fdaf89c03272dc66c",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39549104304.json",
+      "sha256": "282652ac1fa3031cd78de143591f5f05dc106325532a8a6a2891aeb0d50e562a",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39585919686.json",
+      "sha256": "9e4e0a432903472a14e239b824c8a4b461881e3a364a8005a3fd75c53ce9d418",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39627607769.json",
+      "sha256": "0523fb9ddd61a9610822513dc53b8b1ac55ca3d04b6bcb5fcde81d296f09b1bb",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39663673151.json",
+      "sha256": "ecf78d30c612ca15adb7a5774bd5fddf3a655ca425879efa7ee18b0382801c64",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39689088354.json",
+      "sha256": "732ac3a28dfa7b9c53c724b45c32e09bb74b083fa0215226f4750dd7fa889a82",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39708496716.json",
+      "sha256": "cd07acf3bfaa5d53e4c191b45b5fce98c32107f3d8b717d9db016766ac1e4734",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39744359601.json",
+      "sha256": "cba5f65dcd7a5aad1c8368c5369500bf0150da5d3feca3151145748240a9a461",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39793008447.json",
+      "sha256": "44969d023560ca2f45f8b2b930fcbb049a4a1cf494073fed0e700279436a046b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39835217795.json",
+      "sha256": "34275a384a9e32d654bb53837936497e6b40880ff4e796392dd1c33617970e16",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39867403922.json",
+      "sha256": "4802f8abf41312a9c7b1adcc0bd804b42563c9955c2ccc57055f1887f6a83c06",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39887164990.json",
+      "sha256": "06723b781ce3b9d7e53243f5d9890fd836c1bcb7d982120eaf29df1ead5117bb",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39921258172.json",
+      "sha256": "fdc37aa6f5c9914fd0527db7055610249694faca15fa421fd9927e55b79c023a",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/39964590871.json",
+      "sha256": "2619abb5e9c5e800c599af0191785b6bdbc60a3ee428fb71e99dd0461478e403",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40005846595.json",
+      "sha256": "5b613001a1d396bdc35e67b8ad96d7f7a05cbb9f616515dcaebff1cca9a1f5d7",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40028851480.json",
+      "sha256": "70cafbd317ba2610f89ecfd3246ec16294890534d95bf12035bb6179dd1f3304",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40043159986.json",
+      "sha256": "2af55ce3a3624919f3723e32e9a7cfb7a4fd9eee2db47cd4b949560fc459b24c",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40064875271.json",
+      "sha256": "c1b92f445433a989cd70be8d015641d7c91e08ca36dff7c5a10da0ccc4aee0c8",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40083450233.json",
+      "sha256": "33b43e63376a83f2014e97d5f5c068b9720f6ade351b47cc1542780f5db609cd",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40101116665.json",
+      "sha256": "7494586338f8bfe6478375ff61d105c8cf558731f8c457bec1178c678fd048fa",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40117003369.json",
+      "sha256": "0ff29d0a010fb490af734196bd65374c96ed2f80abaa68157537e695e1063516",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40127124796.json",
+      "sha256": "9b25ee6bf95c7fcf0f8efb50ec40defb80a12a675679fad41b1967886806fb8e",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40139852165.json",
+      "sha256": "7b334e2e63e69dbf39d2902ccc90e87581fda758809af0aa361f5c8f8015bb81",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40147307101.json",
+      "sha256": "d7a3606b23a3094cc50ded002ad296b76891542ab71af932caeba7552d87fa76",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40165303347.json",
+      "sha256": "ef7dc5bc99a971f36a13fe9fbabfbf66776580689f7aa0046a5e0e092c7bc2f0",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40183714660.json",
+      "sha256": "62480b30cd05b4cd99cf1476c0f37566099cf15618fd8788549720fe785247e2",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40202940746.json",
+      "sha256": "9f5b126ea65a47702da5740aa82348ac8fef0298f0b49fdb79deec6bde6f792e",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40218604381.json",
+      "sha256": "b586f0d919d6c89544fca5776a57f39b76b0edf9ca7c8bf1872bf1296c1f23b1",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40234649174.json",
+      "sha256": "bb26b776b9e5917127cd78bc932dc2b624932e81320c375bdd9dd639856c40f7",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40245477187.json",
+      "sha256": "42d5ee76169c7f52c507d463bac2c6104c1a83257c1385ee5f6c5423ae19642b",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/40255926365.json",
+      "sha256": "c181767b898d606a0251d541d8ac4db8d37fb59ae8af174d76d77b89d0e4cd2e",
+      "status": "blocked_prior_operation_requires_reconciliation",
+      "deployed_field_present": true,
+      "deployed": false,
+      "transactions": []
+    },
+    {
+      "path": "knowledge/results/funding/provision-public.json",
+      "sha256": "6ece652f05469a7992903f2d356ac2c47729bc8418df982bd8346ebe9459d414",
+      "status": null,
+      "deployed_field_present": false,
+      "deployed": null,
+      "transactions": []
+    }
+  ],
+  "projection_definition": "Exact path and raw SHA256 plus all fields needed by the real predicate; missing deployed distinguished from explicit null.",
+  "native_model_calls": 0,
+  "paid": false,
+  "tx_hash": null
+}
