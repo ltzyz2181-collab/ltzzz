@@ -43,6 +43,11 @@ export async function main(args){
     if(!passed)process.exitCode=1;
   }
   fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
+  if(mode==='readiness')console.log(JSON.stringify({collection_observation:{source_main_sha:result.source_main_sha,collector_source_commit:source,
+    trusted_main_execution:result.trusted_main_execution,checks:result.checks,base_protection:result.base_protection,errors:result.errors,
+    claude_artifact:result.claude_audit?{pr:result.claude_audit.pr_number,head:result.claude_audit.pr_head_sha,artifact:result.claude_audit.artifact,
+      verdict:result.claude_audit.machine_readable_verdict,bundle_verification:result.claude_audit.reviewed_bundle_verification,native_authorship_verified:false}:null,
+    signed:false,automatic_merge:false,native_model_calls:0}}));
   console.log(JSON.stringify({status:result.status||'base_check_completed',passed:result.passed??false,output,signed:false,automatic_merge:false}));
 }
 if(import.meta.url===`file://${process.argv[1]}`)main(process.argv.slice(2)).catch(error=>{console.error(/^[A-Za-z0-9_]+$/.test(error.message)?error.message:'collector_failed_no_authorization');process.exitCode=1;});

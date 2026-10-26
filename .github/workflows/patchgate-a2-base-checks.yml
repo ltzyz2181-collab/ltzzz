@@ -15,7 +15,7 @@ jobs:
         with: {ref: '${{ github.event.pull_request.base.sha }}', persist-credentials: false, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - name: Base interpreter checks a regular Markdown-only diff without running it
+      - name: 'BASE=${{ github.event.pull_request.base.sha }} HEAD=${{ github.event.pull_request.head.sha }}'
         run: node scripts/patchgate-a2-collect.mjs base-check "$RUNNER_TEMP/a2-base-check.json"
       - uses: actions/upload-artifact@v4
         if: always()

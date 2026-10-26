@@ -135,12 +135,15 @@ export async function collectTrustedChecks({api,request,baseSha,authority,now=Da
     ||!safeTime(c.completed_at)||Date.parse(c.completed_at)>now||now-Date.parse(c.completed_at)>maxAge*1000)throw Error('untrusted_incomplete_or_stale_check');
   const r=await api(ROOT+'/actions/runs/'+m[1]),j=await api(ROOT+'/actions/jobs/'+m[2]);
   const run=r.data,job=j.data,boundPR=run?.pull_requests?.filter(x=>x.number===request.candidate_pr&&x.head?.sha===p.head.sha&&x.base?.sha===baseSha);
+  // pull_requests metadata may describe a newer base after the run. The immutable
+  // expanded job step records the BASE actually used by the reviewed workflow.
+  const boundSteps=job?.steps?.filter(s=>s.name==='BASE='+baseSha+' HEAD='+p.head.sha&&s.status==='completed'&&s.conclusion==='success');
   if(r.status!==200||j.status!==200||String(run?.id)!==m[1]||String(job?.id)!==m[2]||String(job.run_id)!==m[1]
     ||run.workflow_id!==authority.workflow_id||run.path!==BASE_CHECK_WORKFLOW||run.event!=='pull_request'||run.repository?.full_name!==REPOSITORY
     ||run.head_repository?.full_name!==REPOSITORY||run.head_sha!==p.head.sha||run.check_suite_id!==c.check_suite?.id
     ||run.status!=='completed'||run.conclusion!=='success'||!Number.isSafeInteger(run.run_attempt)||run.run_attempt<1
     ||job.run_attempt!==run.run_attempt||job.head_sha!==p.head.sha||job.name!==authority.job_name||job.status!=='completed'||job.conclusion!=='success'
-    ||boundPR?.length!==1)throw Error('check_workflow_job_or_base_identity_mismatch');
+    ||boundPR?.length!==1||boundSteps?.length!==1)throw Error('check_workflow_job_or_base_identity_mismatch');
   const mainFile=immutableFile(await api(ROOT+'/contents/'+BASE_CHECK_WORKFLOW+'?ref='+baseSha),BASE_CHECK_WORKFLOW);
   const candidateFile=immutableFile(await api(ROOT+'/contents/'+BASE_CHECK_WORKFLOW+'?ref='+p.head.sha),BASE_CHECK_WORKFLOW);
   if(mainFile.sha!==candidateFile.sha)throw Error('candidate_changed_its_own_check_workflow');
