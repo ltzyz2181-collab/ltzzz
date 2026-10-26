@@ -8,7 +8,7 @@ import {validateA2Config,validateExecutorRegistry,rolloutApproved} from './lib/p
 
 export const A2_BUNDLE_FILES=Object.freeze([
   'config/patch-policy.json','config/patchgate-trust.json','config/patchgate-executors.json','config/patchgate-a2.json',
-  'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/patchgate-a2-preflight.mjs',
+  'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/lib/patchgate-a2-readback.mjs','scripts/patchgate-a2-preflight.mjs',
   'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
   'scripts/lib/patchgate-a2-collector.mjs','scripts/patchgate-a2-collect.mjs','scripts/tests/patchgate-a2-collector.test.mjs','config/patchgate-a2-collector.json',
   '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml','.github/workflows/patchgate-a2-verify.yml'
@@ -34,7 +34,9 @@ export function preflightA2({read,sourceCommit,now=Date.now()}){
   if(config.enabled!==true)blockers.push('A2_switch_disabled');
   if(!validateExecutorRegistry({registry,trust}))blockers.push('registered_real_signers_not_provisioned');
   if(config.production_signing_keys_provisioned!==true)blockers.push('production_signing_transport_not_verified');
-  if(config.base_compare_and_swap_verified!==true)blockers.push('atomic_base_fence_not_implemented_or_verified');
+  // B2/PR248: only L0 docs use mandatory post-merge tree verification plus a
+  // persistent pre-merge stop latch. No atomic expected-base API is claimed.
+  if(config.postmerge_readback_enforced!==true)blockers.push('L0_postmerge_controls_missing');
   if(config.runtime_bundle_sha256!==bundle.sha256)blockers.push('exact_runtime_bundle_not_approved');
   if(!rolloutApproved({config,registry,trust,runnerSha:sourceCommit,runtimeBundleSha256:bundle.sha256,now}))blockers.push('Qwen_Doubao_stage_signatures_missing_or_invalid');
   return {task_id:TASK,phase:'A2_preflight_only',status:blockers.length?'blocked_not_activated':'configuration_preflight_only_live_acceptance_still_required',source_commit:sourceCommit||null,

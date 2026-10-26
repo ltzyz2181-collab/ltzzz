@@ -37,7 +37,9 @@
     "B1 selects Qwen and Doubao executor attestations, never an Anthropic key held by GPT or a model. Real key enrollment remains B4 and is not completed.",
     "C1 PR247: shared-login Claude reports are preserved advisory artifacts, not authenticated Claude/owner signatures and not a rollout requirement. Operational independent audit and original dissent remain visible.",
     "No independent owner account is registered; a comment by the shared GitHub account is never treated as owner-only confirmation.",
-    "C2 PR247: base checks require pull_request_target, trusted-main workflow and actual event/base/head/PR marker. No live activation is claimed."
+    "C2 PR247: base checks require pull_request_target, trusted-main workflow and actual event/base/head/PR marker. No live activation is claimed.",
+    "B2 PR248: L0 Markdown only; no atomic expected-base claim. Verify actual merge parents, full before/after tree delta, blob identities and modes. Concurrent non-L0 base changes stop execution.",
+    "A fixed global stop latch is acquired before merging and released only after verified post-merge readback and receipt persistence. Unknown/failure outcomes retain it across runners. A3/L1+ still require protection and separate approval."
   ],
   "base_compare_and_swap_verified": false,
   "claude_audit_channel": {
@@ -49,5 +51,7 @@
     "counts_toward_model_quorum": false,
     "admission_authority": "none_shared_github_login"
   },
-  "external_stage_audits": []
+  "external_stage_audits": [],
+  "base_fence_strategy": "L0_postmerge_readback_persistent_stop_latch",
+  "postmerge_readback_enforced": true
 }

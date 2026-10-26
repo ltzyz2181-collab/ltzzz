@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {generateKeyPairSync,createHash} from 'node:crypto';
 import {canonical, sha256, subjectFor, TASK} from '../lib/patchgate.mjs';
 import {validateExecutorRegistry,signExecutorAttestation,notificationActorAllowed,validateA2Config,rolloutApproved,checksSatisfied,validateA2Request,a2GithubApi,mergeDocsOnce,externalAuditProofMatches} from '../lib/patchgate-a2.mjs';
+import {A2_STOP_REF,prepareDocsReadback,verifyDocsMerge} from '../lib/patchgate-a2-readback.mjs';
 const policy=JSON.parse(fs.readFileSync(new URL('../../config/patch-policy.json',import.meta.url)));
 const defaults=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-a2.json',import.meta.url)));
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),H='1'.repeat(64),REPO='ltzyz2181-collab/ltzzz',ROOT='/repos/'+REPO;
@@ -27,19 +28,27 @@ function fixture(){
   const externalProof=sign(3,{subject:rolloutSubject,role:'external_audit_readback',seat:'claude',channel:'repository_pr_readback',verdict:'approve',reviewed_source_commit:A,artifact_sha256:readback.artifact.sha256,audit_pr_number:244,audit_pr_head_sha:C,readback_sha256:sha256(canonical(readback)),native_authorship_verified:false,counts_toward_model_quorum:false});
   config.external_stage_audits=[externalProof];
   const pr={number:250,state:'open',draft:false,merged:false,base:{ref:'main',sha:A,repo:{full_name:REPO}},head:{sha:B,repo:{full_name:REPO}},author_association:'OWNER',mergeable:true,mergeable_state:'clean'};
-  const state={refs:new Map(),merges:0,receipts:[],pr,main:A};
+  const T='1'.repeat(40),U='2'.repeat(40),V='3'.repeat(40),D='d'.repeat(40);
+  const state={refs:new Map(),merges:0,receipts:[],pr,main:A,
+    commits:{[A]:{sha:A,tree:{sha:T},parents:[]},[B]:{sha:B,tree:{sha:U},parents:[{sha:A}]},[C]:{sha:C,tree:{sha:V},parents:[{sha:A},{sha:B}]}},
+    trees:{[T]:[],[U]:[{path:snapshot.files[0].path,mode:'100644',type:'blob',sha:D}],[V]:[{path:snapshot.files[0].path,mode:'100644',type:'blob',sha:D}]}};
   const api=async(method,url,body)=>{
     validateA2Request(method,url,body);
     if(method==='GET'&&url===ROOT+'/pulls/250')return {status:200,data:structuredClone(state.pr)};
     if(method==='GET'&&url===ROOT+'/git/ref/heads/main')return {status:200,data:{ref:'refs/heads/main',object:{sha:state.main}}};
+    if(method==='GET'&&url.startsWith(ROOT+'/git/commits/'))return {status:200,data:structuredClone(state.commits[url.split('/').at(-1)])};
+    if(method==='GET'&&url.startsWith(ROOT+'/git/trees/')){const sha=url.split('/').at(-1).split('?')[0];return {status:200,data:{sha,truncated:false,tree:structuredClone(state.trees[sha])}};}
+    if(method==='GET'&&url.startsWith(ROOT+'/compare/'))return {status:200,data:{base_commit:{sha:A},merge_base_commit:{sha:A},status:'ahead'}};
+    if(method==='GET'&&url===ROOT+'/git/ref/heads/'+A2_STOP_REF){const ref='refs/heads/'+A2_STOP_REF;return state.refs.has(ref)?{status:200,data:{ref,object:{sha:state.refs.get(ref)}}}:{status:404};}
+    if(method==='DELETE'&&url===ROOT+'/git/refs/heads/'+A2_STOP_REF){state.refs.delete('refs/heads/'+A2_STOP_REF);return {status:204};}
     if(method==='POST'&&url===ROOT+'/git/refs'){
-      if(state.refs.has(body.ref))return {status:422};state.refs.set(body.ref,body.sha);return {status:201};
+      if(state.refs.has(body.ref))return {status:422};state.refs.set(body.ref,body.sha);return {status:201,data:{ref:body.ref,object:{sha:body.sha}}};
     }
     if(method==='GET'&&url.startsWith(ROOT+'/git/ref/heads/patchgate-a2-actions/')){
       const ref='refs/heads/'+url.split('/git/ref/heads/')[1];return state.refs.has(ref)?{status:200,data:{ref,object:{sha:state.refs.get(ref)}}}:{status:404};
     }
     if(method==='PUT'&&url===ROOT+'/pulls/250/merge'){
-      state.merges++;if(body.sha!==state.pr.head.sha)return {status:409};state.pr.merged=true;state.pr.state='closed';state.pr.merge_commit_sha=C;return {status:200,data:{merged:true,sha:C}};
+      state.merges++;if(body.sha!==state.pr.head.sha)return {status:409};state.pr.merged=true;state.pr.state='closed';state.pr.merge_commit_sha=C;state.main=C;return {status:200,data:{merged:true,sha:C}};
     }
     if(method==='PUT'&&url.includes('/contents/knowledge/results/patchgate/a2/')){state.receipts.push(JSON.parse(Buffer.from(body.content,'base64').toString()));return {status:201};}
     throw Error('fixture_unhandled');
@@ -93,7 +102,7 @@ test('first fully signed fixture merges once and reads back exact merge SHA',asy
 });
 test('simultaneous runners share atomic ref claim; loser never merges',async()=>{
   const f=fixture(),results=await Promise.all([mergeDocsOnce(f.args),mergeDocsOnce(f.args)]);
-  assert.equal(f.state.merges,1);assert.equal(results.filter(r=>r.status==='merged_readback_verified').length,1);assert.equal(results.filter(r=>r.status==='existing_claim_reconcile_no_repeat').length,1);
+  assert.equal(f.state.merges,1);assert.equal(results.filter(r=>r.status==='merged_readback_verified').length,1);assert.equal(results.filter(r=>['existing_claim_reconcile_no_repeat','A2_execution_stopped_reconcile_required'].includes(r.status)).length,1);
 });
 test('an existing durable claim survives restart and prevents a second merge',async()=>{
   const f=fixture(),key=sha256(TASK+':'+B+':merge');f.state.refs.set('refs/heads/patchgate-a2-actions/'+key,A);
@@ -113,7 +122,7 @@ test('base moved after reservation invalidates old audits and checks',async()=>{
 });
 test('unknown merge outcome retains claim, records uncertainty, never retries',async()=>{
   const f=fixture(),api=async(m,u,b)=>{if(u.endsWith('/merge')){await f.args.api(m,u,b);throw Error('response lost');}return f.args.api(m,u,b);};
-  const r=await mergeDocsOnce({...f.args,api});assert.equal(r.status,'outcome_unknown_reconcile_no_retry');assert.equal(r.automatic_retry,false);assert.equal(f.state.merges,1);assert.equal(f.state.refs.size,1);
+  const r=await mergeDocsOnce({...f.args,api});assert.equal(r.status,'outcome_unknown_reconcile_no_retry');assert.equal(r.automatic_retry,false);assert.equal(f.state.merges,1);assert.equal(f.state.refs.size,2);assert.equal(f.state.refs.has('refs/heads/'+A2_STOP_REF),true);
 });
 test('cross-provider candidate review and exact signed check digest cannot be skipped',async()=>{
   const f=fixture();let calls=0;const api=async()=>{calls++;throw Error('no network');};
@@ -136,14 +145,14 @@ test('API transport uses fixed host, no redirects and never exposes key in recor
   await api('GET',ROOT+'/pulls/250');assert.equal(request.u,'https://api.github.com'+ROOT+'/pulls/250');assert.equal(request.o.redirect,'error');assert.equal(request.o.headers.Authorization,'Bearer fixture-only');
 });
 
-test('base atomicity remains a mandatory activation prerequisite',()=>{const f=fixture();assert.equal(rolloutApproved({...f.args,config:{...f.args.config,base_compare_and_swap_verified:false}}),false);});
+test('B2 PR248 requires post-merge controls for L0 and makes no atomic expected-base claim',()=>{const f=fixture();assert.equal(rolloutApproved({...f.args,config:{...f.args.config,base_compare_and_swap_verified:false}}),true);assert.throws(()=>validateA2Config({...defaults,postmerge_readback_enforced:false}));assert.throws(()=>validateA2Config({...defaults,allowed_risk_classes:['L1']}));});
 
 test('readonly preflight reports real blockers; bundle changes invalidate approved audits',async()=>{
   const {bundleDigest,preflightA2}=await import('../patchgate-a2-preflight.mjs');
   const read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
   const out=preflightA2({read,sourceCommit:A,now});
   assert.ok(out.blockers.includes('registered_real_signers_not_provisioned'));
-  assert.ok(out.blockers.includes('atomic_base_fence_not_implemented_or_verified'));
+  assert.ok(out.blockers.includes('A2_switch_disabled'));assert.equal(out.blockers.includes('atomic_base_fence_not_implemented_or_verified'),false);
   assert.equal(out.native_model_calls,0);assert.equal(out.financial_execution,false);
   const original=bundleDigest({read}),changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,enabled:true}):read(name)});
   assert.notEqual(original.sha256,changed.sha256);
@@ -248,4 +257,74 @@ test('C3 changing the candidate-test workflow invalidates the registered runtime
   const original=bundleDigest({read});
   const changed=bundleDigest({read:name=>name==='.github/workflows/patchgate-a2-verify.yml'?Buffer.concat([read(name),Buffer.from('\n# altered checker\n')]):read(name)});
   assert.notEqual(original.sha256,changed.sha256);
+});
+
+test('B2 verified merge records exact parents and content manifest before releasing global stop',async()=>{
+  const f=fixture(),r=await mergeDocsOnce(f.args);
+  assert.equal(r.postmerge_verification.verified,true);assert.equal(r.postmerge_verification.actual_base_sha,A);
+  assert.equal(r.postmerge_verification.approved_head_sha,B);assert.equal(r.postmerge_verification.merge_commit_sha,C);
+  assert.equal(r.postmerge_verification.candidate_manifest_sha256,r.postmerge_verification.actual_manifest_sha256);
+  assert.equal(r.stop_latch_released,true);assert.equal(f.state.refs.has('refs/heads/'+A2_STOP_REF),false);
+});
+test('B2 identical filenames with altered bytes, extra files or executable modes halt subsequent invocations',async()=>{
+  for(const mutate of [s=>s.trees['3'.repeat(40)][0].sha='e'.repeat(40),s=>s.trees['3'.repeat(40)].push({path:'docs/unreviewed.md',mode:'100644',type:'blob',sha:A}),s=>s.trees['3'.repeat(40)][0].mode='100755',s=>s.trees['3'.repeat(40)][0].mode='120000']){
+    const f=fixture();mutate(f.state);const r=await mergeDocsOnce(f.args);
+    assert.equal(r.status,'post_merge_validation_failed_stopped');assert.equal(r.merge_operation_confirmed,true);
+    assert.equal(r.automatic_merge,false);assert.equal(r.execution_stopped,true);assert.equal(f.state.receipts.length,1);
+    const fresh=fixture();fresh.state.refs=f.state.refs;
+    assert.equal((await mergeDocsOnce(fresh.args)).status,'A2_execution_stopped_reconcile_required');assert.equal(fresh.state.merges,0);
+  }
+});
+test('B2 actual merge must have exactly two parents and the approved HEAD as second parent',async()=>{
+  for(const parents of [[{sha:A}],[{sha:B},{sha:A}],[{sha:A},{sha:B},{sha:C}]]){
+    const f=fixture();f.state.commits[C].parents=parents;
+    const r=await mergeDocsOnce(f.args);assert.equal(r.status,'post_merge_validation_failed_stopped');assert.equal(r.error_code,'readback_merge_parents_mismatch');
+  }
+});
+test('B2 premerge head tree must match approved paths and regular Markdown modes',async()=>{
+  for(const mutate of [s=>s.trees['2'.repeat(40)][0].mode='120000',s=>s.trees['2'.repeat(40)].push({path:'scripts/hidden.mjs',mode:'100644',type:'blob',sha:A})]){
+    const f=fixture();mutate(f.state);await assert.rejects(mergeDocsOnce(f.args),/manifest_mismatch/);assert.equal(f.state.refs.size,0);assert.equal(f.state.merges,0);
+  }
+});
+test('B2 truncated or unreadable postmerge trees cannot be accepted and retain stop',async()=>{
+  for(const change of [r=>r.data.truncated=true,r=>r.status=503,r=>r.data.tree.push({...r.data.tree[0]})]){
+    const f=fixture(),base=f.args.api,api=async(m,u,b)=>{const r=await base(m,u,b);if(u.includes('/git/trees/'+'3'.repeat(40)))change(r);return r;};
+    const r=await mergeDocsOnce({...f.args,api});assert.equal(r.status,'post_merge_validation_failed_stopped');assert.equal(r.execution_stopped,true);
+  }
+});
+function concurrentBase(f,path='docs/unrelated.md'){
+  const P='e'.repeat(40),W='4'.repeat(40),entry={path,mode:'100644',type:'blob',sha:'f'.repeat(40)};
+  f.state.commits[C].parents[0].sha=P;f.state.commits[P]={sha:P,tree:{sha:W},parents:[{sha:A}]};
+  f.state.trees[W]=[entry];f.state.trees['3'.repeat(40)].push(entry);return P;
+}
+test('B2 concurrent ordinary Markdown remains outside our delta and exact candidate bytes survive',async()=>{
+  const f=fixture(),P=concurrentBase(f),r=await mergeDocsOnce(f.args);
+  assert.equal(r.status,'merged_readback_verified');assert.equal(r.postmerge_verification.base_moved,true);assert.equal(r.postmerge_verification.actual_base_sha,P);assert.equal(r.postmerge_verification.changed_file_count,1);
+});
+test('B2 concurrent executable or policy base changes invalidate old audits even if merge delta is docs',async()=>{
+  for(const path of ['scripts/changed.mjs','config/patch-policy.json','memory/promote/queue.json']){
+    const f=fixture();concurrentBase(f,path);const r=await mergeDocsOnce(f.args);
+    assert.equal(r.status,'post_merge_validation_failed_stopped');assert.equal(r.error_code,'readback_concurrent_base_not_L0_docs');
+  }
+});
+test('B2 concurrent changes to an approved path cannot be silently merged into different bytes',async()=>{
+  const f=fixture();concurrentBase(f,'docs/a2-acceptance.md');
+  const r=await mergeDocsOnce(f.args);assert.equal(r.status,'post_merge_validation_failed_stopped');assert.equal(r.execution_stopped,true);
+});
+test('B2 receipt persistence or latch-release uncertainty never resumes execution',async()=>{
+  for(const phase of ['receipt','release']){
+    const f=fixture(),base=f.args.api,api=async(m,u,b)=>{if((phase==='receipt'&&u.includes('/contents/'))||(phase==='release'&&m==='DELETE'))throw Error('response_lost');return base(m,u,b);};
+    const r=await mergeDocsOnce({...f.args,api});assert.equal(r.status,'merged_readback_verified');assert.equal(r.stop_latch_released,false);assert.equal(r.execution_stopped,true);assert.equal(f.state.refs.has('refs/heads/'+A2_STOP_REF),true);
+  }
+});
+test('B2 new REST reads and deletion are exact whitelist routes; arbitrary ref deletion remains forbidden',async()=>{
+  validateA2Request('DELETE',ROOT+'/git/refs/heads/'+A2_STOP_REF);
+  let calls=0;const api=a2GithubApi({fetchImpl:async()=>{calls++;throw Error('forbidden');}});
+  for(const endpoint of ['/git/refs/heads/main','/git/refs/heads/'+A2_STOP_REF+'?force=1','/git/refs/heads/another','/git/refs/heads/'+A2_STOP_REF+'/../main'])await assert.rejects(api('DELETE',ROOT+endpoint));
+  for(const endpoint of ['/git/trees/'+A+'?recursive=1&x=1','/git/commits/main','/compare/main...'+B])await assert.rejects(api('GET',ROOT+endpoint));
+  assert.equal(calls,0);
+});
+test('B2 postmerge verifier implementation is inside the reviewed runtime bundle',async()=>{
+  const {bundleDigest}=await import('../patchgate-a2-preflight.mjs'),read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
+  assert.notEqual(bundleDigest({read}).sha256,bundleDigest({read:name=>name==='scripts/lib/patchgate-a2-readback.mjs'?Buffer.concat([read(name),Buffer.from('\n// changed\n')]):read(name)}).sha256);
 });
