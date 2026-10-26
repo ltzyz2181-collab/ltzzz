@@ -14,7 +14,7 @@ test('challenge accepts nonce only and refuses arbitrary A2 signing payloads',as
 test('a fresh nonce binds actual private/public correspondence and static provider',async()=>{const nonce=randomBytes(32).toString('hex'),data=await (await worker.fetch(req('challenge',{nonce}),env)).json();assert.equal(verifyChallenge({data,nonce,target,publicKey:pair.publicKey,sourceHash:env.SOURCE_SHA256}),true);for(const p of [{nonce:'f'.repeat(64)},{target:{...target,provider:'volcengine_ark'}},{sourceHash:'b'.repeat(64)},{publicKey:generateKeyPairSync('ed25519').publicKey}])assert.throws(()=>verifyChallenge({data,nonce,target,publicKey:pair.publicKey,sourceHash:env.SOURCE_SHA256,...p}));});
 test('opposite provider assignment and missing key fail closed',async()=>{assert.equal((await worker.fetch(req('identity'),{...env,PROVIDER_BINDING:'volcengine_ark'})).status,503);assert.equal((await worker.fetch(req('challenge',{nonce:'a'.repeat(64)}),{...env,SIGNING_PKCS8:''})).status,503);});
 test('provision keeps keys in provider Secrets and verifies persistence across deployment without admission',async()=>{
-  const states=new Map();let uploads=0,secretWrites=0;const auth='fixture-service-credential',token='fixture-cloudflare-credential';
+  const states=new Map();let uploads=0,secretWrites=0;const forbiddenSharedAuth='fixture-shared-token-must-not-be-used',token='fixture-cloudflare-credential';
   const fake=async(input,options={})=>{
     const u=new URL(input);
     if(u.hostname==='api.cloudflare.com'){
@@ -31,9 +31,15 @@ test('provision keeps keys in provider Secrets and verifies persistence across d
   };
   const log=console.log;console.log=()=>{};
   try{
-    const report=await provision({env:{CLOUDFLARE_ACCOUNT_ID:'fixture',CLOUDFLARE_API_TOKEN:token,LTZZZ_AGENT_TOKEN:auth,GITHUB_RUN_ID:'fixture-test'},fetchImpl:fake});
+    const report=await provision({env:{CLOUDFLARE_ACCOUNT_ID:'fixture',CLOUDFLARE_API_TOKEN:token,LTZZZ_AGENT_TOKEN:forbiddenSharedAuth,GITHUB_RUN_ID:'fixture-test'},fetchImpl:fake});
     assert.equal(report.status,'two_persistent_keys_verified_not_admitted');assert.equal(uploads,4);assert.equal(secretWrites,4);
     assert.equal(report.workers.every(w=>w.persistence_verified&&w.signing_roles_enabled===false),true);
-    const text=JSON.stringify(report);assert.ok(!text.includes(auth));assert.ok(!text.includes(token));for(const s of states.values())assert.ok(!text.includes(s.SIGNING_PKCS8));
+    const text=JSON.stringify(report);assert.ok(!text.includes(forbiddenSharedAuth));assert.ok(!text.includes(token));
+    const saved=[...states.values()];assert.equal(new Set(saved.map(s=>s.CHALLENGE_AUTH)).size,2);
+    for(const s of saved){assert.match(s.CHALLENGE_AUTH,/^[A-Za-z0-9_-]{43}$/);assert.notEqual(s.CHALLENGE_AUTH,forbiddenSharedAuth);assert.ok(!text.includes(s.SIGNING_PKCS8));assert.ok(!text.includes(s.CHALLENGE_AUTH));}
+    assert.equal((await worker.fetch(req('challenge',{nonce:'a'.repeat(64)},saved[0].CHALLENGE_AUTH),saved[1])).status,401);
+    const before=JSON.stringify(saved),second=await provision({env:{CLOUDFLARE_ACCOUNT_ID:'fixture',CLOUDFLARE_API_TOKEN:token,GITHUB_RUN_ID:'fixture-test'},fetchImpl:fake});
+    assert.equal(second.status,'blocked_or_partial_enrollment');assert.ok(second.workers.every(w=>w.error==='existing_executor_auth_not_exported_no_rotation'));
+    assert.equal(uploads,4);assert.equal(secretWrites,4);assert.equal(JSON.stringify([...states.values()]),before);
   }finally{console.log=log;fs.rmSync('knowledge/results/patchgate/key-enrollment/fixture-test.json',{force:true});}
 });

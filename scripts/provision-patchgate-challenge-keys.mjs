@@ -17,7 +17,7 @@ export function verifyChallenge({data,nonce,target,publicKey,sourceHash}){
 }
 export async function provision({env=process.env,fetchImpl=fetch}={}){
   const report={task_id:'PLAN-PATCHGATE-ESCROW-20261023',scope:'isolated_persistent_challenge_keys_not_A2_admission',at_utc:new Date().toISOString(),run_id:env.GITHUB_RUN_ID||null,source_commit:env.GITHUB_SHA||null,model_calls:0,paid:false,tx_hash:null,A2_enabled:false,production_signing_roles_enabled:false,workers:[]};
-  const account=env.CLOUDFLARE_ACCOUNT_ID,token=env.CLOUDFLARE_API_TOKEN,auth=env.LTZZZ_AGENT_TOKEN;
+  const account=env.CLOUDFLARE_ACCOUNT_ID,token=env.CLOUDFLARE_API_TOKEN;
   const source=fs.readFileSync('patchgate-key-challenge-worker.js','utf8'),sourceHash=hash(source);
   const cf=async(route,{method='GET',body}={})=>{
     const headers={Authorization:'Bearer '+token};if(body&&!(body instanceof FormData))headers['Content-Type']='application/json';
@@ -25,13 +25,13 @@ export async function provision({env=process.env,fetchImpl=fetch}={}){
     const data=await r.json().catch(()=>null);if(!r.ok||data?.success!==true)throw Error('cloudflare_'+method.toLowerCase()+'_http_'+r.status);return data.result;
   };
   try{
-    if(!account||!token||!auth)throw Error('managed_cloudflare_and_service_credentials_missing');
+    if(!account||!token)throw Error('managed_cloudflare_credentials_missing');
     const sub=await cf('/workers/subdomain');if(!/^[a-z0-9-]+$/.test(sub.subdomain||''))throw Error('workers_subdomain_unverified');
     const listed=await cf('/workers/scripts');if(!Array.isArray(listed))throw Error('worker_inventory_unavailable');
     for(const target of targets){
       const row={executor_id:target.id,provider_binding:target.provider,execution_provider:'cloudflare_workers',worker:target.name,source_sha256:sourceHash,key_values_exported:false,signing_roles_enabled:false};report.workers.push(row);
       try{
-        const base='https://'+target.name+'.'+sub.subdomain+'.workers.dev';let spki;
+        const base='https://'+target.name+'.'+sub.subdomain+'.workers.dev';let spki,auth;
         const upload=async publicDER=>{
           const bindings=[['EXECUTOR_ID',target.id],['PROVIDER_BINDING',target.provider],['PUBLIC_KEY_SPKI',publicDER],['SOURCE_SHA256',sourceHash]].map(([name,text])=>({type:'plain_text',name,text}));
           const f=new FormData();f.set('metadata',JSON.stringify({main_module:'signer.mjs',compatibility_date:'2026-10-01',bindings,keep_bindings:['secret_text']}));f.set('signer.mjs',new Blob([source],{type:'application/javascript+module'}),'signer.mjs');
@@ -40,13 +40,18 @@ export async function provision({env=process.env,fetchImpl=fetch}={}){
         if(listed.some(w=>w.id===target.name)){
           const r=await fetchImpl(base+'/identity',{redirect:'error',signal:AbortSignal.timeout(15000)}),d=await r.json();
           if(!r.ok||d.executor_id!==target.id||d.provider_binding!==target.provider||d.source_sha256!==sourceHash||d.key_configured!==true)throw Error('existing_executor_mismatch_no_rotation');
-          spki=d.public_key_spki;row.reused_existing_key=true;
+          // Secret values cannot be exported from CF. Never rotate an existing
+          // executor's auth or signing key just to repeat a provisioning test.
+          row.reused_existing_key=true;
+          throw Error('existing_executor_auth_not_exported_no_rotation');
         }else{
+          auth=randomBytes(32).toString('base64url');
           const pair=generateKeyPairSync('ed25519');spki=pair.publicKey.export({format:'der',type:'spki'}).toString('base64');
           await upload(spki);
           for(const[name,text]of [['SIGNING_PKCS8',pair.privateKey.export({format:'der',type:'pkcs8'}).toString('base64')],['CHALLENGE_AUTH',auth]])await cf('/workers/scripts/'+target.name+'/secrets',{method:'PUT',body:{name,text,type:'secret_text'}});
           await cf('/workers/scripts/'+target.name+'/subdomain',{method:'POST',body:{enabled:true,previews_enabled:false}});
           row.reused_existing_key=false;
+          row.auth_isolation='independent_random_per_executor_provider_secret_only';
         }
         const publicKey=createPublicKey({key:Buffer.from(spki,'base64'),format:'der',type:'spki'});
         const challenge=async()=>{

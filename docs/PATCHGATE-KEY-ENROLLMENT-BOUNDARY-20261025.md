@@ -4,7 +4,14 @@ Original task: PLAN-PATCHGATE-ESCROW-20261023, B4 preparation after PR254.
 Two isolated Cloudflare services bind one executor to one configured provider.
 The runner generates Ed25519 keys in memory, writes private material only to
 Cloudflare Secrets, then verifies independent nonces before and after redeployment.
-Existing keys are reused and never silently rotated. Only public keys, nonce
+Each executor gets its own 256-bit random authentication token, generated only
+in memory and written only to that executor's CHALLENGE_AUTH Cloudflare Secret.
+No shared LTZZZ_AGENT_TOKEN is read, reused, exported or accepted as fallback.
+Existing keys and authentication are never silently rotated. A later enrollment
+attempt cannot export those Secrets, so it records
+existing_executor_auth_not_exported_no_rotation and performs no update; any
+future native attestation transport requires a separately reviewed auth channel.
+Only public keys, nonce
 payloads, signatures and exact blockers are archived. There is no wallet key.
 
 These services intentionally sign only the domain-separated
