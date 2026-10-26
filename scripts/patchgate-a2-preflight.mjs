@@ -12,7 +12,8 @@ export const A2_BUNDLE_FILES=Object.freeze([
   'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
   'scripts/lib/patchgate-a2-collector.mjs','scripts/patchgate-a2-collect.mjs','scripts/tests/patchgate-a2-collector.test.mjs','config/patchgate-a2-collector.json',
   '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml','.github/workflows/patchgate-a2-verify.yml',
-  'scripts/lib/patchgate-a2-reconcile.mjs','scripts/patchgate-a2-reconcile.mjs','config/patchgate-a2-reconcile.json','scripts/tests/patchgate-a2-reconcile.test.mjs','.github/workflows/patchgate-a2-reconcile.yml'
+  'scripts/lib/patchgate-a2-reconcile.mjs','scripts/patchgate-a2-reconcile.mjs','config/patchgate-a2-reconcile.json','scripts/tests/patchgate-a2-reconcile.test.mjs','.github/workflows/patchgate-a2-reconcile.yml',
+  'scripts/lib/patchgate-a2-executor.mjs','scripts/patchgate-a2-execute.mjs','scripts/tests/patchgate-a2-executor.test.mjs','.github/workflows/patchgate-a2-execute.yml'
 ]);
 export function bundleDigest({read}){
   const entries=A2_BUNDLE_FILES.map(name=>{
