@@ -1,0 +1,72 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "candidate_pr": 259,
+  "reviewed_head": "bab71e4974f427a0ca32dacfb1b111cad7de522b",
+  "current_head": "034bbe21f1f8095daa4378bf62201308b82eb771",
+  "native_review_path": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-EXECUTOR-WORKFLOW.json",
+  "native_run_id": "40315612452",
+  "model": "qwen-plus",
+  "finish_reason": "stop",
+  "reported_tokens": 2600,
+  "original_verdict": "revise",
+  "original_preserved": true,
+  "scope": "complete_workflow_only_with_helper_contracts_not_all_Node_implementation",
+  "controller_provider": "openai",
+  "status": "controller_dispositions_pending_Claude_separate_review",
+  "paid": false,
+  "tx_hash": null,
+  "A2_enabled": false,
+  "stage_approval": false,
+  "findings": [
+    {
+      "id": "F1",
+      "decision": "not_adopted_immutable_main_source_is_intentional",
+      "evidence": "workflow gate/run jobs require workflow_dispatch/main and checkout github.sha. CLI requires HEAD==GITHUB_SHA, fixed repository/workflow_ref, and git-show reads exact commit bytes; a rolling current main is not trusted in place of that source. Final merger re-reads main and rejects changed BASE."
+    },
+    {
+      "id": "F2",
+      "decision": "not_adopted_unshown_helper_is_implemented",
+      "evidence": "verifyExecutionRun reads actual GitHub REST run and binds id/attempt/workflow_id/path/event/repositories/main/source/status before and again after collection. Native candidate signatures still require cryptographic quorum. No new OIDC/CA requirement is claimed or needed to replace that existing design."
+    },
+    {
+      "id": "F3",
+      "decision": "not_adopted_main_execution_is_deliberately_serial",
+      "evidence": "All main workflow_dispatch executions share one queue and the existing global stop. PR verification has a different event/ref queue; adding request IDs to production concurrency would weaken serialization. The workflow explicitly rejects non-main dispatch."
+    },
+    {
+      "id": "F4",
+      "decision": "not_adopted_env_input_is_not_shell_interpolation",
+      "evidence": "request is passed only as env data. CLI JSON.parse uses validateCollectionRequest exact six-field schema; no eval/exec or user filename interpolation exists. Git input is bounded40hex, and modes/paths/API surfaces are fixed."
+    },
+    {
+      "id": "F5",
+      "decision": "not_adopted_signatures_are_read_via_fixed_immutable_GitHub_API",
+      "evidence": "readCandidateAdmission resolves fixed evidence ref then verifies immutable content at commit SHA with base64/size/git-blob SHA1 and subject/check binding. A local fetch or git-commit signature is not a substitute for the required role Ed25519 signatures."
+    },
+    {
+      "id": "F6",
+      "decision": "partly_adopted_observability_and_retained_archive_limitation",
+      "evidence": "Gate report now includes source, candidate, input digest, run and attempt; execution already includes run/attempt. Artifact names bind run+attempt with v4 create behavior. Docs retain30-day availability limitation. Authoritative action receipts stay on isolated claim refs, and artifacts are not signer identity or stage votes."
+    },
+    {
+      "id": "F7",
+      "decision": "adopted_clear_blocked_job_summary_not_failure_of_successful_observation",
+      "evidence": "Final CLI writes an explicit GITHUB_STEP_SUMMARY status, blockers and no-verified-automatic-merge warning. Disabled gate exits successfully as a valid observation; the write job remains skipped. No CI success is counted as actual merge."
+    }
+  ],
+  "verification": {
+    "local_full_tests": 184,
+    "final_candidate_CI_run": "40315925593",
+    "CLI_gate_fixture": "default_blocked_zero_API_and_mutation_not_actual_main_run",
+    "runtime_bundle": "be38ac16312d0d736109d376f6209b6932d176e1d485e227076a9426ad44e621",
+    "runtime_files": 28,
+    "real_merge": false,
+    "real_signing_roles": false
+  },
+  "limitations": [
+    "Controller dispositions are not independent acceptance or activation approval.",
+    "Claude must read complete new executor/CLI/workflow at current exact head.",
+    "No native attestation producer is implemented; nonce challenge keys cannot count as model generation.",
+    "The separate trusted L0 BASE check is not green on this candidate; do not describe all checks as passing."
+  ]
+}
