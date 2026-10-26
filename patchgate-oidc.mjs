@@ -21,7 +21,7 @@ export async function verifyActionsOidc(token,{audience,workflowRef=ENROLL_WORKF
   const r=await fetchImpl(ISSUER+'/.well-known/jwks',{redirect:'error',signal:AbortSignal.timeout(15000)});
   if(!r.ok)throw Error('oidc_jwks_unavailable');
   const text=await r.text();if(text.length>100000)throw Error('oidc_jwks_size');
-  const set=JSON.parse(text),keys=set.keys?.filter(k=>k.kid===h.kid&&k.kty==='RSA'&&k.use==='sig'&&k.alg==='RS256');
+  const set=JSON.parse(text),keys=set.keys?.filter(k=>k.kid===h.kid&&k.kty==='RSA'&&(!k.use||k.use==='sig')&&(!k.alg||k.alg==='RS256'));
   if(keys?.length!==1)throw Error('oidc_key_unknown');
   const key=await crypto.subtle.importKey('jwk',keys[0],{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
   if(!await crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,bytes(p[2]),new TextEncoder().encode(p[0]+'.'+p[1])))throw Error('oidc_signature');
