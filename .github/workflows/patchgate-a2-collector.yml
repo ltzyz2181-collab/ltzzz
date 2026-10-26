@@ -1,0 +1,43 @@
+name: PatchGate A2 collection observation only
+on:
+  workflow_dispatch:
+    inputs:
+      request:
+        type: string
+        required: true
+        description: Fixed-schema public PR identity; no secrets or signing fields
+  push:
+    branches: [codex/a2-collector-20261025, codex/a2-pr247-repair-20261025]
+    paths: ['scripts/lib/patchgate*.mjs','scripts/patchgate*.mjs','scripts/tests/patchgate*.test.mjs','config/patch*.json','.github/workflows/patchgate-a2-*.yml']
+permissions: {contents: read, actions: read, checks: read, pull-requests: read}
+concurrency: {group: 'patchgate-a2-collector-${{ github.ref }}', cancel-in-progress: false}
+jobs:
+  test_collector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate*.test.mjs
+  read_only_network_observation:
+    needs: test_collector
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Observe public evidence; prototype branch is explicitly not trusted admission
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PATCHGATE_COLLECTION_REQUEST: '${{ inputs.request || ''{"schema":"ltzzz.patchgate.a2-collection-request.v1","task_id":"PLAN-PATCHGATE-ESCROW-20261023","candidate_pr":240,"candidate_head":"674c73c1f356ac3bdce776fb0b9425366b7df68d","audit_pr":247,"audit_path":"knowledge/results/patchgate/a2-claude-rereview-674c73c.md"}'' }}'
+        run: node scripts/patchgate-a2-collect.mjs readiness "$RUNNER_TEMP/a2-collection.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a2-collection-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/a2-collection.json
+          retention-days: 30
