@@ -129,3 +129,10 @@ test('upstream error bodies and secrets never appear in component failure receip
 test('unbound or non-infrastructure signer cannot produce check attestations',()=>{
   for(const input of [{collection:{passed:false}},{collection:{passed:true,checker_base_sha:A,check_runs:[],checks_sha256:'fake'},subject:{base_sha:A}},{collection:{passed:true,checker_base_sha:A,check_runs:[{head_sha:B}],checks_sha256:sha256(canonical([{head_sha:B}]))},subject:{base_sha:A,head_sha:B},registry:{executors:[{id:'model',provider:'deepseek'}]},executorId:'model'}])assert.throws(()=>signCollectedChecks(input));
 });
+test('checker bootstrap stays off and executes BASE code without persistent credentials or model secrets',()=>{
+  const text=read(BASE_CHECK_WORKFLOW).toString();
+  assert.ok(text.includes("vars.PATCHGATE_A2_BASE_CHECKS_ENABLED == 'true'"));
+  assert.ok(text.includes("ref: '${{ github.event.pull_request.base.sha }}'"));
+  assert.ok(text.includes('persist-credentials: false'));assert.ok(!text.includes('secrets.'));
+  assert.ok(!text.includes('contents: write'));assert.ok(!text.includes('pull-requests: write'));
+});
