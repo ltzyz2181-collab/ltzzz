@@ -8,4 +8,4 @@
 - 首次 Ed25519 私钥仅在进程内生成并送往固定 Worker Secret。后续使用 Cloudflare settings 中的公开 SPKI 和 secret **名称**恢复非密钥部署/子域步骤，保留原私钥。读不到 secret 值；缺失私钥时阻断，不静默生成新 key。
 - 已有 CHALLENGE_AUTH 即使保留，也不再用于认证。无通用签名、/attest、模型请求、资金操作或生产信任根登记；nonce challenge 不计入模型 quorum。真正模型响应绑定适配器是下一份独立审查。
 
-验证：OIDC/挑战15项（含过期/伪造/错仓/错 audience/错 workflow/旧部署/重启/部分恢复/缺 key），均使用本地 RSA/JWKS 和 Cloudflare transport fixture，不是真实 GitHub JWT、CF Secret 或部署证明。独立审查通过之前不合并此候选、不触发 enrollment。A2、A3/B、资金保持关闭。
+验证：OIDC/挑战16项（含过期/伪造/错仓/错 audience/错 workflow/旧部署/重启/部分恢复/缺 key），均使用本地 RSA/JWKS 和 Cloudflare transport fixture，不是真实 GitHub JWT、CF Secret 或部署证明。独立审查通过之前不合并此候选、不触发 enrollment。A2、A3/B、资金保持关闭。
