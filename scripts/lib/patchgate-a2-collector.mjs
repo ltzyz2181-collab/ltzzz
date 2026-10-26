@@ -60,7 +60,8 @@ function validatePR(response,{number,head,base,open=false}){
   const p=response?.data;
   if(response?.status!==200||p?.number!==number||p.head?.repo?.full_name!==REPOSITORY||p.base?.repo?.full_name!==REPOSITORY||p.base.ref!=='main'
     ||!SHA.test(p.head.sha||'')||!SHA.test(p.base.sha||'')||!['OWNER','MEMBER','COLLABORATOR'].includes(p.author_association)
-    ||(head&&p.head.sha!==head)||(base&&p.base.sha!==base)||(open&&(p.state!=='open'||p.merged===true)))throw Error('collector_PR_identity_changed_or_untrusted');
+    ||(head&&p.head.sha!==head)||(open&&(p.state!=='open'||p.merged===true)))throw Error('collector_PR_identity_changed_or_untrusted');
+  if(base&&p.base.sha!==base)throw Error('collector_PR_base_stale_requalify');
   return p;
 }
 async function stablePR(api,number,head){return validatePR(await api(ROOT+'/pulls/'+number),{number,head});}
@@ -125,7 +126,8 @@ export async function collectTrustedChecks({api,request,baseSha,authority,now=Da
   validateCollectionRequest(request);
   if(!SHA.test(baseSha||'')||!Number.isFinite(now)||!Number.isSafeInteger(maxAge)||maxAge<1)throw Error('invalid_checks_context');
   const p=validatePR(await api(ROOT+'/pulls/'+request.candidate_pr),{number:request.candidate_pr,head:request.candidate_head,base:baseSha,open:true});
-  if(!authority||authority.workflow_path!==BASE_CHECK_WORKFLOW||!integer(authority.workflow_id)||authority.app_id!==15368||authority.job_name!=='patchgate-a2-base-checks')
+  if(!authority||authority.workflow_path!==BASE_CHECK_WORKFLOW||!integer(authority.workflow_id)||authority.app_id!==15368||authority.job_name!=='patchgate-a2-base-checks'
+    ||!/^[a-f0-9]{64}$/.test(authority.workflow_sha256||''))
     return {passed:false,status:'trusted_base_check_workflow_not_registered',check_runs:[],diagnostic_only:true};
   const rows=await pages(api,ROOT+'/commits/'+request.candidate_head+'/check-runs?filter=latest&per_page=100&page=','check_runs');
   const selected=rows.filter(c=>c.name===authority.job_name);
@@ -146,6 +148,7 @@ export async function collectTrustedChecks({api,request,baseSha,authority,now=Da
     ||boundPR?.length!==1||boundSteps?.length!==1)throw Error('check_workflow_job_or_base_identity_mismatch');
   const mainFile=immutableFile(await api(ROOT+'/contents/'+BASE_CHECK_WORKFLOW+'?ref='+baseSha),BASE_CHECK_WORKFLOW);
   const candidateFile=immutableFile(await api(ROOT+'/contents/'+BASE_CHECK_WORKFLOW+'?ref='+p.head.sha),BASE_CHECK_WORKFLOW);
+  if(sha256(mainFile.bytes)!==authority.workflow_sha256)throw Error('registered_check_workflow_digest_changed');
   if(mainFile.sha!==candidateFile.sha)throw Error('candidate_changed_its_own_check_workflow');
   const final=validatePR(await api(ROOT+'/pulls/'+request.candidate_pr),{number:request.candidate_pr,head:p.head.sha,base:baseSha,open:true});
   const main=await api(ROOT+'/git/ref/heads/main');
