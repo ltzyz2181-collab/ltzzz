@@ -1,0 +1,16 @@
+name = "ltzzz-a2-doubao-review"
+main = "patchgate-model-attestation-worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+[vars]
+NATIVE_ATTESTATION_ENABLED = "false"
+PROVIDER_BINDING = "volcengine_ark"
+EXECUTOR_ID = "a2-doubao-model-review-executor"
+KEY_ID = "a2-doubao-model-review-key-v1"
+MODEL = "doubao-seed-2-1-pro-260915"
+[[durable_objects.bindings]]
+name = "ATTESTATION_STATE"
+class_name = "ModelAttestationState"
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ModelAttestationState"]

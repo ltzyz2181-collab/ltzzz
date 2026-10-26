@@ -6,15 +6,8 @@ import {execFileSync} from 'node:child_process';
 import {canonical,sha256,TASK} from './lib/patchgate.mjs';
 import {validateA2Config,validateExecutorRegistry,rolloutApproved} from './lib/patchgate-a2.mjs';
 
-export const A2_BUNDLE_FILES=Object.freeze([
-  'config/patch-policy.json','config/patchgate-trust.json','config/patchgate-executors.json','config/patchgate-a2.json',
-  'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/lib/patchgate-a2-readback.mjs','scripts/patchgate-a2-preflight.mjs',
-  'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
-  'scripts/lib/patchgate-a2-collector.mjs','scripts/patchgate-a2-collect.mjs','scripts/tests/patchgate-a2-collector.test.mjs','config/patchgate-a2-collector.json',
-  '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml','.github/workflows/patchgate-a2-verify.yml',
-  'scripts/lib/patchgate-a2-reconcile.mjs','scripts/patchgate-a2-reconcile.mjs','config/patchgate-a2-reconcile.json','scripts/tests/patchgate-a2-reconcile.test.mjs','.github/workflows/patchgate-a2-reconcile.yml',
-  'scripts/lib/patchgate-a2-executor.mjs','scripts/patchgate-a2-execute.mjs','scripts/tests/patchgate-a2-executor.test.mjs','.github/workflows/patchgate-a2-execute.yml'
-]);
+import {A2_REVIEW_FILES} from '../patchgate-a2-manifest.mjs';
+export const A2_BUNDLE_FILES=A2_REVIEW_FILES;
 export function bundleDigest({read}){
   const entries=A2_BUNDLE_FILES.map(name=>{
     let bytes=Buffer.from(read(name));
