@@ -31,3 +31,10 @@ GitHub `GITHUB_SHA` 描述执行上下文，不等于 REST run/check 的 candida
 可直接交给本机 VS Code 助手的执行单：`ops/dispatch/relay/PATCHGATE-A2-PROTECTION-CLIENT.md`。它有固定仓库、检查名、App id、保留现有规则的要求、审计/main部署依赖与前后回读证据格式。需要现成 admin 权限的执行器；不要求 owner 自行找设置菜单，不读 Token，不为补权另开付费服务。
 
 B2/B3/B4/B5/B6 尚未关闭，A2/A3/B/自动合并/业务部署/资金依然禁用。#246 继续作为首次自动合并候选，不得手工合并充当验收。#226 只做 M0，#239 的 Pi 传输与草稿 revise 记录仍有效，本轮不扩到新采购或部署。
+
+## 千问原结论及总控裁定
+
+原生千问 `qwen-plus` / provider_response / stop，run `40252735553`、1 次调用 1544 tokens，对 43453cf7 的组件摘录给 **reject**；原文保存在 `pr247-evidence/qwen-original-reject.json`，不改为通过。它认为 target 事件的 `github.sha` 是 PR HEAD，建议换 base.sha；这与 GitHub 官方事件表冲突。官方当前明确 target 的 GITHUB_SHA 是 default branch 的最后提交，且 workflow 在 base repository default branch 上下文运行：
+https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target 。本 workflow 又限定 main，故固定 github.sha 是可信 main 执行上下文，不是候选 head；CLI 同时核该值等于 checkout 和事件 base。
+
+其“没有四元组校验”也与已交代码冲突：CLI 核 target/ref/BASE/HEAD/PR，collector 核精确 EVENT/BASE/HEAD/PR marker；反例测试拒绝 event=PR、PR号错、BASE错、GITHUB_SHA=候选HEAD。总控按 `config/review-delegation.json` 保留权限并逐项说明不采纳，不能记成千问批准；请 Claude 据完整新 head 裁定。不为获取一个 approve 而重复购买同一审阅。
