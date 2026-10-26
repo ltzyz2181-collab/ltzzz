@@ -1,0 +1,177 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "at_utc": "2026-10-26T06:33:05.672Z",
+  "client": "codex_managed_cloud",
+  "logical_seat": "gpt",
+  "actual_provider": "openai",
+  "model": null,
+  "implementation_head": "8361dfef71f068b128cd2bac7abe68feaf4980f0",
+  "runtime_bundle_sha256": "ffe95b96a57e51a2f80b62fd52513b6be461da81744ffb6513cf2d855482674a",
+  "runtime_file_count": 19,
+  "source_audit_pr": 248,
+  "source_audit_head": "653a9ca490404a9cb329851cc304d88924540443",
+  "changes": {
+    "C1": "shared_account_Claude_readback_advisory_not_cryptographic_quorum",
+    "C2": "pull_request_target_BASE_only_no_checker_bootstrap_enable",
+    "B2": "L0_only_full_tree_parent_blob_mode_readback_global_stop_latch_no_expected_base_claim"
+  },
+  "runner": {
+    "run_id": "40279375186",
+    "job_id": "121429031750",
+    "head_sha": "8361dfef71f068b128cd2bac7abe68feaf4980f0",
+    "tests_passed": 136,
+    "tests_failed": 0,
+    "scope": "real_runner_fixtures_not_production_auto_merge"
+  },
+  "qwen": {
+    "run_id": "40279474313",
+    "source_blob": "4e3541162912a961a982fac99ae53b420224218e",
+    "original": "knowledge/results/patchgate/pr248-evidence/qwen-tree-original.json",
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "finish_reason": "stop",
+    "tokens_used": 2300,
+    "output_sha256": "9648e86f3977bcfc05ec0d315092977c0388020268e4b67511aa691362d4d75f",
+    "verdict": "approve",
+    "scope": "complete_readback_module_only_latch_caller_not_shown_not_stage_approval",
+    "original_preserved": true,
+    "actual_bill": null
+  },
+  "doubao": {
+    "run_id": "40279962765",
+    "source_main_sha": "4609ac257de13d32957065c52a260269f92137ff",
+    "source_blob": "ab8531307188e2787bd857c07e37e0bc35407610",
+    "source_branch": "patchgate-a2-doubao-probes/d24b98dbe37264d2373d3b3b5ec151d61c29b7a2e890b28b55ebe93c298d6fe7",
+    "original": "knowledge/results/patchgate/pr248-evidence/doubao-probes-original.json",
+    "model": "doubao-seed-2-1-pro-260915",
+    "model_source": "provider_response",
+    "finish_reason": "stop",
+    "tokens_used": 1886,
+    "output_sha256": "3991f2981fd344f24751c8e8747e6edc36373caa048a6bedde98f032bbecf19d",
+    "verdict": "revise",
+    "tests_passed": 18,
+    "tests_failed": 0,
+    "scope": "native_evidence_review_of_unprivileged_runner_probes_not_code_authorship_or_stage_approval",
+    "original_preserved": true,
+    "actual_bill": null
+  },
+  "historical_run_verification": [
+    {
+      "run_id": "40250034615",
+      "repository": "ltzyz2181-collab/ltzzz",
+      "head_sha": "e957575d8de8b45054e75c15a6293ec54f242250",
+      "workflow_id": 396514116,
+      "workflow_path": ".github/workflows/patchgate-a2-collector.yml",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "created_at": "2026-10-26T00:34:43Z",
+      "jobs": [
+        {
+          "id": 121339720498,
+          "name": "test_collector",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 121339779011,
+          "name": "read_only_network_observation",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "scope": "historical_run_authenticity_only_not_new_head_acceptance"
+    },
+    {
+      "run_id": "40244733201",
+      "repository": "ltzyz2181-collab/ltzzz",
+      "head_sha": "c610ef3d8d5b12b61803058d374a3df96728584b",
+      "workflow_id": 396474121,
+      "workflow_path": ".github/workflows/patchgate-doubao-probe.yml",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "created_at": "2026-10-25T23:25:56Z",
+      "jobs": [
+        {
+          "id": 121323788910,
+          "name": "verify",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 121323833432,
+          "name": "prepare",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 121323884983,
+          "name": "cas (b)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 121323885006,
+          "name": "cas (a)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 121323885008,
+          "name": "candidate",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "id": 121323927556,
+          "name": "doubao_assessment",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "scope": "historical_run_authenticity_only_not_new_head_acceptance"
+    }
+  ],
+  "controller_adjudication": [
+    {
+      "finding": "Doubao F1 F3 F5",
+      "decision": "accepted_scope_and_live_readiness_limitations",
+      "reason": "Production checker registration/signers and first real automatic merge are still absent. A2 remains disabled; fixture evidence is not promoted."
+    },
+    {
+      "finding": "Doubao F2",
+      "decision": "retain_limitation_not_a_failed_new_CAS_claim",
+      "reason": "This card explicitly set run_live_cas=false; old CAS evidence is preserved and authenticated separately. Current tests do not claim a new live CAS or first business merge."
+    },
+    {
+      "finding": "Doubao F4",
+      "decision": "refer_to_Claude_no_reproducible_bypass_supplied",
+      "reason": "PR248 explicitly selected L0 post-merge compensation instead of an atomic expected-base API. New code binds actual parents/full before-after tree deltas/old-new blobs/modes and holds a durable stop latch. No transactional atomicity is claimed; final independent judgment remains pending."
+    },
+    {
+      "finding": "Qwen limitation about deprecated compare metadata",
+      "decision": "unverified_documentation_assertion_not_adopted_as_fact",
+      "reason": "The original comment is retained. It reports no reproducible L0 delta defect; correctness is evaluated against the explicit returned ancestry fields and actual bound tests, not unsupported deprecation wording."
+    }
+  ],
+  "native_review_usage": {
+    "calls": 2,
+    "reported_tokens": 4186,
+    "actual_bill": null,
+    "extra_retry_to_seek_approval": false
+  },
+  "candidate_merged": false,
+  "A2_enabled": false,
+  "A3_enabled": false,
+  "B_enabled": false,
+  "production_signing_keys_registered": 0,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "next": "Notify Claude to independently review final evidence-only head and identical 19-file bundle; do not enable or merge PR240 before final review and remaining live prerequisites."
+}
