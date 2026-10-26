@@ -6,7 +6,8 @@ permissions: {contents: read}
 concurrency: {group: 'patchgate-a2-base-${{ github.event.pull_request.number }}', cancel-in-progress: false}
 jobs:
   patchgate-a2-base-checks:
-    if: github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    # Bootstrap stays off until the BASE interpreter has been reviewed and merged.
+    if: vars.PATCHGATE_A2_BASE_CHECKS_ENABLED == 'true' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

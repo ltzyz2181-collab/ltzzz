@@ -16,6 +16,7 @@ owner 已在本会话授权设置和补齐通道。如 Claude 另做可选的审
 - 旧报告无此格式时仍保存全文字节和哈希，记未解析/未验证；不从自然语言推断 approve，不要求文件包含自身整体哈希。
 - 必需检查只能由 BASE 配置 `check_authority` 登记。固定 job / workflow path / workflow_id / GitHub App 15368、登记的 workflow 原字节 SHA256、check suite、run、job、rerun attempt、PR head 和 base 全部绑定；重复同名、未完成、skipped、过期、改过自身 workflow 都拒绝。实际执行 base/head 还须与 GitHub 保存的展开后 job step marker 一致，避免读取运行记录时 PR base 已更新却误用旧 green check。
 - `.github/workflows/patchgate-a2-base-checks.yml` 的执行代码和配置全部从事件 BASE 检出。只用 Git 读取候选 diff，绝不执行候选脚本。只允许普通 Markdown L0；候选必须包含当前 base。标准仓库只读 GITHUB_TOKEN，不提供模型或资金凭证。
+- 初次引入 workflow 时，BASE 上还没有收集器代码，所以 `PATCHGATE_A2_BASE_CHECKS_ENABLED` 默认不启用；审计合并代码后才能打开只读检查开关、读回真实 workflow ID 与 hash 并登记。该开关和 A2 自动合并开关独立，skipped 一律不能作准入检查成功。
 - `signCollectedChecks` 提供登记完成后的基础设施签名适配；没有验证过的 key/角色/提供商就报错。无签名的收集 JSON 仅是观测，不能进入密码准入。
 
 候选测试分支上的 `read_only_network_observation` 是真实网络读取、未认证生产解释器的原型验收。只有审计合并到 main、登记 GitHub 实际 workflow_id、完成签名执行器活体验收后，才能关闭 B3/B4；当前不作关闭声明。
@@ -31,6 +32,8 @@ owner 已在本会话授权设置和补齐通道。如 Claude 另做可选的审
 ## B6 首次无害候选
 
 总控指定单独 PR，仅新增 `docs/patchgate-a2-first-merge-acceptance.md`，原任务号不变，不混入测试/配置/回执。该 PR 保持 draft 和未合并；待新 head 由 Claude 与千问复审、真实签名/B2/B3 验收后，才 ready 并让通用 A2 执行一次。不得先手工合并，再把结果当自动合并验收。
+
+实际已建 **PR #246**，候选 head `08bf32ce5340a1e08c656ba254a646477a5bbd5c`，只新增上述 7 行文档。未合并，不代表 B6 完成。
 
 ## Ego 的实际边界
 
