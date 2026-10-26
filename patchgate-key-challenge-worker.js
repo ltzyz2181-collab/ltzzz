@@ -17,9 +17,12 @@ async function authenticated(req,env){
 export default {async fetch(req,env){
   const path=new URL(req.url).pathname;
   const binding=env.PROVIDER_BINDING,id=env.EXECUTOR_ID;
+  // This public deployment marker changes on every upload. A stale edge cannot
+  // prove that a newly uploaded instance can still read the retained Secrets.
+  if(!/^[a-f0-9]{64}$/.test(env.DEPLOYMENT_MARKER||''))return json({error:'deployment_marker_unverified'},503);
   if(!['aliyun_dashscope','volcengine_ark'].includes(binding)||!/^a2-(qwen|doubao)-challenge-executor$/.test(id||''))return json({error:'invalid_fixed_executor_config'},503);
   if((binding==='aliyun_dashscope')!==(id==='a2-qwen-challenge-executor'))return json({error:'provider_executor_mismatch'},503);
-  const identity={schema,executor_id:id,execution_provider:'cloudflare_workers',provider_binding:binding,public_key_spki:env.PUBLIC_KEY_SPKI||null,source_sha256:env.SOURCE_SHA256||null,purpose:'key_persistence_challenge_only',A2_admission:false,model_calls:0,financial_execution:false};
+  const identity={schema,executor_id:id,execution_provider:'cloudflare_workers',provider_binding:binding,public_key_spki:env.PUBLIC_KEY_SPKI||null,source_sha256:env.SOURCE_SHA256||null,deployment_marker:env.DEPLOYMENT_MARKER,purpose:'key_persistence_challenge_only',A2_admission:false,model_calls:0,financial_execution:false};
   if(path==='/identity'&&req.method==='GET')return json({...identity,key_configured:!!env.SIGNING_PKCS8&&!!env.CHALLENGE_AUTH});
   if(path!=='/challenge'||req.method!=='POST')return json({error:'challenge_only_no_attestation_routes'},404);
   if(!await authenticated(req,env))return json({error:'unauthorized'},401);
@@ -28,7 +31,7 @@ export default {async fetch(req,env){
   if(!env.SIGNING_PKCS8||!env.PUBLIC_KEY_SPKI)return json({error:'key_not_provisioned'},503);
   try{
     const key=await crypto.subtle.importKey('pkcs8',decode(env.SIGNING_PKCS8),{name:'Ed25519'},false,['sign']);
-    const payload={schema,purpose:'key_persistence_challenge_only',task_id:'PLAN-PATCHGATE-ESCROW-20261023',executor_id:id,execution_provider:'cloudflare_workers',provider_binding:binding,nonce:body.nonce,at_utc:new Date().toISOString()};
+    const payload={schema,purpose:'key_persistence_challenge_only',task_id:'PLAN-PATCHGATE-ESCROW-20261023',executor_id:id,execution_provider:'cloudflare_workers',provider_binding:binding,deployment_marker:env.DEPLOYMENT_MARKER,nonce:body.nonce,at_utc:new Date().toISOString()};
     const signature=await crypto.subtle.sign('Ed25519',key,new TextEncoder().encode(canonicalChallenge(payload)));
     return json({...identity,payload,signature:b64(signature)});
   }catch{return json({error:'challenge_signing_unavailable'},503);}
