@@ -28,6 +28,10 @@ export function validatePolicy(p) {
   for (const k of ['max_files', 'max_diff_bytes', 'max_review_age_seconds', 'freshness_seconds', 'extra_review_failure_count', 'extra_review_window_seconds'])
     if (!Number.isSafeInteger(p[k]) || p[k] <= 0) throw Error('invalid_policy_limit');
   if (!Array.isArray(p.receipt_writer_rules) || !p.receipt_writer_rules.length || p.receipt_writer_rules.some(r => !validPath(r.prefix?.replace(/\/$/,'')) || !r.prefix.endsWith('/') || !Array.isArray(r.executors) || r.executors.some(e => typeof e !== 'string' || !e))) throw Error('invalid_receipt_writer_rules');
+  if (!Array.isArray(p.notification_actor_allowlist) || p.notification_actor_allowlist.some(a => !a || typeof a !== 'object' || Array.isArray(a)
+    || Object.keys(a).sort().join(',') !== 'executor,id,login'
+    || typeof a.login !== 'string' || !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37})$/.test(a.login)
+    || !Number.isSafeInteger(a.id) || a.id <= 0 || typeof a.executor !== 'string' || !a.executor)) throw Error('invalid_notification_actor_allowlist');
   return p;
 }
 
@@ -74,12 +78,18 @@ export async function fetchNotificationReadback(reference,{fetchImpl=fetch,token
     actor_login:c.user.login,actor_id:String(c.user.id),fetched_at_utc:now()};
 }
 
-export function notificationMatches({proof,subject,readbacks,now,maxAge}) {
+// A signed notification alone is insufficient: GitHub's actual comment author
+// must be admitted by trusted BASE policy for the independent signing executor.
+export function notificationActorAllowed({proof,readback,allowlist}) {
+  return Array.isArray(allowlist) && allowlist.some(a => a.login === readback?.actor_login
+    && String(a.id) === readback?.actor_id && a.executor === proof?.executor);
+}
+export function notificationMatches({proof,subject,readbacks,now,maxAge,allowlist=[]}) {
   const p=proof.payload;
   try {
     const ref=notificationReference(p.reference),r=readbacks.find(x=>x.reference===p.reference);
     const marker=(body,key,value)=>{const lines=body.split(/\r?\n/).filter(s=>s.startsWith(key+'='));return lines.length===1 && lines[0]===key+'='+value;};
-    return p.owner_notified===true && HASH.test(p.comment_sha256||'') && p.subject_sha256===sha256(canonical(subject))
+    return notificationActorAllowed({proof,readback:r,allowlist}) && p.owner_notified===true && HASH.test(p.comment_sha256||'') && p.subject_sha256===sha256(canonical(subject))
       && r?.source==='github_rest_issue_comment' && r.http_status===200 && r.api_url===ref.api_url && r.comment_id===ref.comment_id
       && typeof r.actor_login==='string' && !!r.actor_login && /^\d+$/.test(r.actor_id||'')
       && p.actor_login===r.actor_login && p.actor_id===r.actor_id
@@ -224,7 +234,7 @@ export function evaluate({policy, trust, snapshot, attestations = [], failures =
   const extra = failureKeys.size >= policy.extra_review_failure_count ? 1 : 0;
   const minimum = (risk.level === 'L0' ? 0 : risk.level === 'L3' ? 2 : 1) + extra;
   if (new Set(reviews.map(a => a.provider)).size < minimum) reasons.push('distinct_provider_reviews_required');
-  const notificationProofs=auth('notification').filter(a=>independent(a) && notificationMatches({proof:a,subject,readbacks:notificationReadbacks,now,maxAge:policy.freshness_seconds}));
+  const notificationProofs=auth('notification').filter(a=>independent(a) && notificationMatches({proof:a,subject,readbacks:notificationReadbacks,now,maxAge:policy.freshness_seconds,allowlist:policy.notification_actor_allowlist}));
   if (risk.level === 'L3' && !notificationProofs.length) reasons.push('owner_notification_evidence_required');
   const receiptPaths=snapshot.files.map(f=>f.path).filter(name=>policy.receipt_writer_rules.some(r=>name.startsWith(r.prefix)));
   const writers=auth('receipt_write');
