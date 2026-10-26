@@ -1,0 +1,69 @@
+{
+  "task_id": "YOUTUBE-AUTOMATION-20261013",
+  "at_utc": "2026-10-26T02:38:19.429Z",
+  "status": "blocked_external_google_reauthorization",
+  "current_evidence": "results/publishing/youtube-auth-observation-20261026.json",
+  "expected_channel": {
+    "id": "UCnKqseQ7uivSc7FN38ccRUA",
+    "name": "LTZZZ"
+  },
+  "authentication": {
+    "connected": false,
+    "credential_present": true,
+    "auth_error": "GOOGLE_OAUTH_INVALID_GRANT",
+    "reauth_required": true,
+    "configuration_required": false,
+    "reauth_verified": false
+  },
+  "official_authorization_url": "https://ltzzz-youtube-upload.ltzyz2181.workers.dev/auth/youtube",
+  "stages": {
+    "diagnosed": true,
+    "reconnected": false,
+    "post_repair_public_link_verified": false,
+    "post_repair_scheduled_publication_verified": false
+  },
+  "latest_daily_failure": {
+    "run_id": "40221002584",
+    "event": "schedule",
+    "source_commit": "af8f14620a201cc4fa9bb5fc7359f050d163cbb8",
+    "day": "2026-10-25",
+    "video_sha256": "4bff3663503201ddeb95aea79c5f3cd0c69db85471a3ebe92e28741b6bc5aea5",
+    "uploaded": false,
+    "published": false,
+    "error": "expected_LTZZZ_channel_not_connected"
+  },
+  "last_known_publication": {
+    "day": "2026-10-24",
+    "video_id": "tCWBgftB3Bs",
+    "url": "https://www.youtube.com/watch?v=tCWBgftB3Bs",
+    "evidence": "results/publishing/youtube-daily-2026-10-24.json",
+    "historical_not_post_repair_acceptance": true
+  },
+  "existing_schedule": {
+    "workflow": ".github/workflows/youtube-daily-publish.yml",
+    "cron_utc": "17 15 * * *",
+    "workflow_state_current_api_verified": false,
+    "code_schedule_present": true,
+    "additional_publishing_schedule_enabled": false
+  },
+  "next_steps": [
+    "Owner completes official Google login and selects LTZZZ channel; never send passwords or verification codes to chat.",
+    "Read current /youtube/status; require connected true and exact expected channel. Do not delete existing OAuth or publication receipts.",
+    "Reconcile current publication by existing day, queue name and video hash. Then use existing workflow and queue lease/idempotency mechanism for a single authorized acceptance; no direct upload fallback.",
+    "Require a fresh Google-backed verification with matching video/channel, privacyStatus public and uploadStatus processed; preserve run, attempt and source commit.",
+    "Observe one later run whose event is schedule and whose receipt is for that scheduled business day. A manual retry cannot satisfy scheduled acceptance.",
+    "Only after both stages pass, review any proposed additional workflow and avoid duplicate publishing schedules."
+  ],
+  "forwarded_proposal": {
+    "workflow": "daily-video-auto.yml",
+    "on_main": false,
+    "files_from_other_sandbox_available_here": false,
+    "local_url": "http://localhost:8093/2026-10-17-no-self-review.mp4",
+    "local_url_is_durable_asset": false,
+    "not_triggered": true
+  },
+  "uploads_this_diagnosis": 0,
+  "new_paid_model_schedules": 0,
+  "paid": false,
+  "tx_hash": null
+}
