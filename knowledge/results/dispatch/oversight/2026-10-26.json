@@ -1,6 +1,6 @@
 {
   "date": "2026-10-26",
-  "at": "2026-10-26T03:13:44.034Z",
+  "at": "2026-10-26T09:42:06.646Z",
   "timezone": "Asia/Shanghai",
   "tasks": [
     {
@@ -1362,15 +1362,15 @@
       "date": "2026-10-26",
       "issuer": "gpt",
       "assigned_to": "gpt",
-      "phase": "dispatch_missing",
+      "phase": "recorded_dispatches",
       "due_at": "2026-10-26T17:00:00+08:00",
       "evidence": [
         "knowledge/results/control/2026-10-26.json"
       ],
       "instruction": "读取真实回执，签发下一轮任务；先查已有派单，不重复调用已预留模型或重新采购。",
-      "issue": "dispatch_missing",
+      "issue": "recorded_dispatches",
       "overdue": false,
-      "status": "not_due"
+      "status": "evidence_present_scope_limited"
     },
     {
       "id": "DAILY-2026-10-26-claude",
@@ -1378,7 +1378,7 @@
       "issuer": "gpt",
       "assigned_to": "claude",
       "phase": "external_pr_route_reference_only",
-      "due_at": "2026-10-26T09:00:00+08:00",
+      "due_at": "2026-10-26T22:00:00+08:00",
       "evidence": [
         "ops/dispatch/DAILY-2026-10-26-claude.md"
       ],
@@ -1401,6 +1401,41 @@
       "issue": "external_pr_route_reference_only",
       "overdue": false,
       "status": "delivery_channel_reference_not_completion"
+    },
+    {
+      "id": "QIANWEN-RETURN-2026-10-26",
+      "date": "2026-10-26",
+      "issuer": "gpt",
+      "assigned_to": "qianwen",
+      "phase": "external_return_claim_missing",
+      "acceptance_reference_verified": false,
+      "submission_verified": false,
+      "independent_review_verified": false,
+      "accepted": false,
+      "evidence": [
+        "knowledge/results/dispatch/qianwen-return-2026-10-26.json"
+      ],
+      "actual_provider": null,
+      "model": null,
+      "claim_verified": false,
+      "claim_status": "authenticated_claim_unverified",
+      "missing_stages": [
+        "authenticated_claim"
+      ],
+      "delivery_status": "not_verified",
+      "native_generation_verified": false,
+      "scope": "repository_evidence_attestation_not_native_claim_or_production_deployment",
+      "due_at": "2026-10-26T22:00:00+08:00",
+      "instruction": "每日监督总控与Claude派单：核对原任务认领、交付、审核与上线；遗漏立即提醒、复用原Task ID补派，跨日反复遗漏给警告，不减总控权限、不重复采购付款。状态见knowledge/results/dispatch/oversight/latest.json。每日回归：读AI-START-HERE、六文件变更和最新Pulse/ANS/WEP3回执；复核一项真实阻塞，交零模型状态检查或最小补丁/测试。算力不足时只回报已检查项、准确阻塞和下次入口，不重复购买模型。千问具有同等总控运维权限；认领、交付、验收分开记录。",
+      "separate_external_return": true,
+      "issued_by": "coordinator_rules_no_model",
+      "native_qianwen_dispatch": false,
+      "deployed": false,
+      "related_formal_daily_task_id": "DAILY-2026-10-26-qianwen",
+      "formal_daily_cannot_satisfy_this_task": true,
+      "issue": "external_return_claim_missing",
+      "overdue": false,
+      "status": "not_due"
     },
     {
       "id": "DAILY-2026-10-26-deepseek",
@@ -1553,8 +1588,8 @@
       ],
       "instruction": "跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。",
       "issue": "blocked_reconcile_existing_attempt",
-      "overdue": false,
-      "status": "not_due"
+      "overdue": true,
+      "status": "warning_required"
     },
     {
       "id": "CONTROL-CLAIM-REPAIR-20261018",
@@ -1636,8 +1671,8 @@
   "supervisor": "qianwen",
   "executed_by": "repository_rules",
   "native_qianwen_call": false,
-  "source_commit": "af983d66a13372220fb18521e061eab47dbd6105",
-  "run_id": "40263006793",
+  "source_commit": "306d714e8d3468fa79d347b4e7c4ba5b277af0a6",
+  "run_id": "40301551621",
   "model_calls": 0,
   "new_paid_schedules": 0,
   "paid": false,
@@ -1919,7 +1954,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-20.json",
         "knowledge/results/daily-board/artifacts/2026-10-20-deepseek-54b3961392f3e25c5af636e3b5ba0d0272c9a24f323dacae15c395e5c8d8db03.json"
@@ -1945,7 +1980,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-20.json",
         "knowledge/results/daily-board/artifacts/2026-10-20-doubao-9c3267f53f95667850362cc4b3248650638ce3495f9fdca566e03b9ca7b82d9c.json"
@@ -1971,7 +2006,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-20.json",
         "knowledge/results/daily-board/artifacts/2026-10-20-grok-dd4fd8359f38e9e79973b1739e7f3d5888680eab845386bbe070f89854ba14a9.json"
@@ -1997,7 +2032,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-20.json",
         "knowledge/results/daily-board/artifacts/2026-10-20-qianwen-e2029b915bf8dacbeb7bd5723220787e4fb5110384ca5b7694300c17ef588e62.json"
@@ -2023,7 +2058,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-21.json",
         "knowledge/results/daily-board/artifacts/2026-10-21-deepseek-d6741fd773450e759bc1744911292ca6f1c5de0a8f8a3d8f9b3a01b120e28fef.json"
@@ -2049,7 +2084,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-21.json",
         "knowledge/results/daily-board/artifacts/2026-10-21-doubao-e4972e4373d04c1312d1d6a8b689ba696e638f2288b405b70763935c542c035e.json"
@@ -2075,7 +2110,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-21.json",
         "knowledge/results/daily-board/artifacts/2026-10-21-grok-a959cedbd2364bd3794db7e75d71c72384d000fabf031481379fed7cc8e06530.json"
@@ -2101,7 +2136,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-21.json",
         "knowledge/results/daily-board/artifacts/2026-10-21-qianwen-6924efc539d28470df8d25577ff0630ba8dc6f451195ac2ae8eb34b2788e29ed.json"
@@ -2127,7 +2162,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261021.json"
       ],
@@ -2152,7 +2187,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-10-22.json"
       ],
@@ -2177,7 +2212,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261022.json"
       ],
@@ -2291,7 +2326,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-20.json"
       ],
@@ -2316,7 +2351,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-21.json"
       ],
@@ -2340,7 +2375,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-22.json"
       ],
@@ -2364,7 +2399,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-22.json",
         "knowledge/results/daily-board/artifacts/2026-10-22-deepseek-ac6565455117fe93ea49d1889b3d8f759debd0a44e4b7e17b5e4bbfb74bb9272.json"
@@ -2389,7 +2424,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-22.json",
         "knowledge/results/daily-board/artifacts/2026-10-22-doubao-c3e0c49765a3610a7611d3ef23460d907ffb466125a27b91f504b29fb09cf07f.json"
@@ -2414,7 +2449,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-22.json",
         "knowledge/results/daily-board/artifacts/2026-10-22-grok-adfb35753a961f2148c5028de7a0d498ae8469752c3ee9d9f52890cb2aeb1029.json"
@@ -2439,7 +2474,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-22.json",
         "knowledge/results/daily-board/artifacts/2026-10-22-qianwen-e0acfe23acbc58cdce8ebb13c80321831fa528a948b13f2ad64c4ee874147744.json"
@@ -2464,7 +2499,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261023.json"
       ],
@@ -2487,7 +2522,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-23.json"
       ],
@@ -2510,7 +2545,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-23.json",
         "knowledge/results/daily-board/artifacts/2026-10-23-deepseek-20f707fd9e0b7cd2123d5009ca8e0445c2a1b91ca00975d48bfd6926344e1ebd.json"
@@ -2534,7 +2569,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-23.json",
         "knowledge/results/daily-board/artifacts/2026-10-23-doubao-eae7d1dccd0f6aea84c6dab15b6667286f74e42b941a96e6bdc6d7c924af70cc.json"
@@ -2558,7 +2593,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-23.json",
         "knowledge/results/daily-board/artifacts/2026-10-23-grok-6361c7bc8f47c929f81404b6705c30445c8fe536af64b336c85bb27baff4e9ac.json"
@@ -2582,7 +2617,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-23.json",
         "knowledge/results/daily-board/artifacts/2026-10-23-qianwen-ad602492822635603cc84d6a122572a9e0f672a06295d56296b9b9f4dca8f4df.json"
@@ -2606,7 +2641,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261024.json"
       ],
@@ -2628,7 +2663,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-24.json"
       ],
@@ -2650,7 +2685,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-24.json",
         "knowledge/results/daily-board/artifacts/2026-10-24-deepseek-8dee47fe9f876ea40799078f8d55768c08063ba4a00d53021e5b7c1797a36083.json"
@@ -2673,7 +2708,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-24.json",
         "knowledge/results/daily-board/artifacts/2026-10-24-doubao-14e1e95a1650d5fb9a649a29d3e3ae2370ef3719653a08c374d6a70f92fc8e50.json"
@@ -2696,7 +2731,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-24.json",
         "knowledge/results/daily-board/artifacts/2026-10-24-grok-10ce47ba8fe17c7d9214f7aa5490696b4029359fbf7e047f125164504871bf53.json"
@@ -2719,7 +2754,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-24.json",
         "knowledge/results/daily-board/artifacts/2026-10-24-qianwen-ac11de0f3e158ae66884d3895cf14d7ee6c18ad63ce5571ad3d16dcbf7b4bdcd.json"
@@ -2742,7 +2777,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261025.json"
       ],
@@ -2787,7 +2822,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-10-21.json",
         "knowledge/results/ans-cycle/2026-10-21-worker.json",
@@ -2811,7 +2846,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-10-23.json",
         "knowledge/results/ans-cycle/2026-10-23-worker.json",
@@ -2835,7 +2870,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-10-24.json",
         "knowledge/results/ans-cycle/2026-10-24-worker.json",
@@ -2859,7 +2894,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-10-25.json",
         "knowledge/results/ans-cycle/2026-10-25-worker.json",
@@ -2883,7 +2918,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-10-25.json"
       ],
@@ -2905,7 +2940,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-25.json",
         "knowledge/results/daily-board/artifacts/2026-10-25-deepseek-55b65f222c9ce517352fa2e2ec68e7f767122305f7d11d664ea16c02a57f5a2d.json"
@@ -2928,7 +2963,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-25.json",
         "knowledge/results/daily-board/artifacts/2026-10-25-doubao-b69e80b574b021f2db606e59d104425906e967b15c64b4fb98ab0824feb5447d.json"
@@ -2951,7 +2986,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-25.json",
         "knowledge/results/daily-board/artifacts/2026-10-25-grok-b387d584cae07d5f2455c9a04b0cc9cb3e3f96dbfe5c18fb42b14658024792a8.json"
@@ -2974,7 +3009,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/daily-board/2026-10-25.json",
         "knowledge/results/daily-board/artifacts/2026-10-25-qianwen-c84d2545855c6f6bef7d369d7b86b9fff08e099ad2a8fa6c76ef7bef844dbae1.json"
@@ -2996,7 +3031,7 @@
         "2026-10-26"
       ],
       "state": "open",
-      "last_observed_at": "2026-10-26T03:13:44.034Z",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-10-26.json",
         "knowledge/results/ans-cycle/2026-10-26-worker.json",
@@ -3007,6 +3042,27 @@
       "severity": "warning",
       "idempotency_key": "oversight:ANS-2026-10-26-deepseek",
       "repair_file": "ops/dispatch/oversight/ANS-2026-10-26-deepseek.md"
+    },
+    {
+      "case_id": "88971d2da3ee6aa85d3bfe14",
+      "task_id": "REAL-HIRE-20261026-CLAUDE-01",
+      "issue": "blocked_reconcile_existing_attempt",
+      "issuer": "claude",
+      "assigned_to": "gpt",
+      "first_observed_at": "2026-10-26T09:42:06.646Z",
+      "warning_dates": [
+        "2026-10-26"
+      ],
+      "state": "open",
+      "last_observed_at": "2026-10-26T09:42:06.646Z",
+      "evidence": [
+        "knowledge/results/claude-team/real-hire-20261026.json"
+      ],
+      "original_task_date": "2026-10-26",
+      "warning_days": 1,
+      "severity": "warning",
+      "idempotency_key": "oversight:REAL-HIRE-20261026-CLAUDE-01",
+      "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261026-CLAUDE-01.md"
     }
   ],
   "qianwen_daily_task_id": "DAILY-2026-10-26-qianwen",
@@ -3023,27 +3079,27 @@
   "scope": "repository_evidence_and_reminder_dispatch_not_execution_or_independent_native_audit",
   "stage_counts": {
     "scope": "verified_in_scanned_sources_not_total_project_completion",
-    "tasks_observed": 70,
-    "dispatch_records": 69,
+    "tasks_observed": 71,
+    "dispatch_records": 71,
     "claims_verified": 28,
     "submissions_verified": 27,
     "independent_reviews_verified": 17,
     "drafts_accepted": 6,
     "engineering_deliveries_verified": 0,
     "production_deployments_verified": 0,
-    "scope_limited_evidence_records": 17,
-    "not_due": 5
+    "scope_limited_evidence_records": 18,
+    "not_due": 4
   },
   "backlog": {
-    "open_warning_cases": 57,
-    "unique_original_tasks": 57,
+    "open_warning_cases": 58,
+    "unique_original_tasks": 58,
     "not_rechecked_in_current_window": 16,
     "by_responsible_seat": {
       "qianwen": 16,
       "doubao": 12,
       "grok": 9,
       "deepseek": 15,
-      "gpt": 5
+      "gpt": 6
     },
     "oldest_first": [
       {
