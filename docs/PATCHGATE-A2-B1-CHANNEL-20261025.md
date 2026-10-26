@@ -6,7 +6,7 @@
 
 采用 #244 B1 的第二条路径：密码准入由千问执行器（`aliyun_dashscope`）与豆包执行器（`volcengine_ark`）分别签名。不是让模型本人持钥；各受信执行器只使用自己隔离的 Secret、私钥与登记公钥，一执行器只对应一个实际提供商。原有“必须取得 Anthropic Ed25519 签名”的不可实现配置移除，不由 GPT 或 Pi 伪造 Anthropic 签名。
 
-Claude 仍必须对阶段新版本交 PR 审计。其通道是仓库 PR/file 的不可变回读，另由 `github_actions` 基础设施执行器签 `external_audit_readback`。这份基础设施证明只证明读到了哪个 PR、head、原始文件、审计结论及代码 bundle；**不证明原生 Anthropic 身份，也不计入两家模型签名数量**。共享 GitHub 账号不能证明原生提供商，因此本次不采用“独立账号已配好”的假设。
+Claude 继续接受阶段新版本 PR 审计派单。经 #247 C1(a) 修订，仓库 PR/file 不可变回读只是一份咨询材料；`github_actions` 的 `external_audit_readback` 只证明读到了哪个 PR、head、原始文件、审计结论及代码 bundle；**不证明 Claude、Anthropic 或 owner 本人身份，也不计入两家模型签名数量，不作为密码准入必需项**。共享 GitHub 账号同样不能充当独立 owner 评论身份，不能由 GPT 代发这种确认。
 
 代码强制三个条件并存：两家原生提供商执行器 stage_review、另一个 Claude PR 回读证明、完整既有 A2 条件。缺任何一项即阻断。候选作者的实际提供商仍不得与任一候选复核者相同；Git commit 邮箱或模型自报不是身份依据。
 

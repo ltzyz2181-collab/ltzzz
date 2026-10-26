@@ -29,7 +29,8 @@ export async function main(args){
     result.trusted_main_execution=process.env.GITHUB_REF==='refs/heads/main'&&process.env.GITHUB_SHA===source&&source===base;
   }else{
     const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')),p=event.pull_request;
-    if(!p||p.base?.repo?.full_name!=='ltzyz2181-collab/ltzzz'||p.head?.repo?.full_name!==p.base.repo.full_name
+    if(process.env.GITHUB_EVENT_NAME!=='pull_request_target'||process.env.GITHUB_REF!=='refs/heads/main'||process.env.GITHUB_SHA!==source
+      ||!p||p.base?.repo?.full_name!=='ltzyz2181-collab/ltzzz'||p.head?.repo?.full_name!==p.base.repo.full_name
       ||!['OWNER','MEMBER','COLLABORATOR'].includes(p.author_association)||p.base.ref!=='main'||sha(p.base.sha)!==source)throw Error('trusted_same_repository_base_required');
     const head=sha(p.head.sha);
     git(['fetch','--no-tags','origin',head]);

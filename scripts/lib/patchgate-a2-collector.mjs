@@ -139,9 +139,9 @@ export async function collectTrustedChecks({api,request,baseSha,authority,now=Da
   const run=r.data,job=j.data,boundPR=run?.pull_requests?.filter(x=>x.number===request.candidate_pr&&x.head?.sha===p.head.sha&&x.base?.sha===baseSha);
   // pull_requests metadata may describe a newer base after the run. The immutable
   // expanded job step records the BASE actually used by the reviewed workflow.
-  const boundSteps=job?.steps?.filter(s=>s.name==='BASE='+baseSha+' HEAD='+p.head.sha&&s.status==='completed'&&s.conclusion==='success');
+  const boundSteps=job?.steps?.filter(s=>s.name==='EVENT=pull_request_target BASE='+baseSha+' HEAD='+p.head.sha+' PR='+request.candidate_pr&&s.status==='completed'&&s.conclusion==='success');
   if(r.status!==200||j.status!==200||String(run?.id)!==m[1]||String(job?.id)!==m[2]||String(job.run_id)!==m[1]
-    ||run.workflow_id!==authority.workflow_id||run.path!==BASE_CHECK_WORKFLOW||run.event!=='pull_request'||run.repository?.full_name!==REPOSITORY
+    ||run.workflow_id!==authority.workflow_id||run.path!==BASE_CHECK_WORKFLOW||run.event!=='pull_request_target'||run.repository?.full_name!==REPOSITORY
     ||run.head_repository?.full_name!==REPOSITORY||run.head_sha!==p.head.sha||run.check_suite_id!==c.check_suite?.id
     ||run.status!=='completed'||run.conclusion!=='success'||!Number.isSafeInteger(run.run_attempt)||run.run_attempt<1
     ||job.run_attempt!==run.run_attempt||job.head_sha!==p.head.sha||job.name!==authority.job_name||job.status!=='completed'||job.conclusion!=='success'

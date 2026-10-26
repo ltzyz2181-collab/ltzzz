@@ -8,10 +8,10 @@ const ID=/^[A-Z0-9][A-Z0-9_-]{6,80}$/, BRANCH='patchgate-a2-actions/';
 const only=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
 const actor=a=>a&&typeof a.login==='string'&&!!a.login&&/^\d+$/.test(String(a.id||''));
 export const A2_MODEL_SIGNERS=Object.freeze(['aliyun_dashscope','volcengine_ark']);
-const CLAUDE_CHANNEL=Object.freeze({kind:'repository_pr_readback',required_before_rollout:true,signing_provider:'github_actions',proof_role:'external_audit_readback',native_authorship_verified:false,counts_toward_model_quorum:false});
+const CLAUDE_CHANNEL=Object.freeze({kind:'repository_pr_advisory',required_before_rollout:false,signing_provider:'github_actions',proof_role:'external_audit_readback',native_authorship_verified:false,counts_toward_model_quorum:false,admission_authority:'none_shared_github_login'});
 
-// An infrastructure signature proves a hash-bound PR/file readback, not that
-// Anthropic generated the report. It never replaces either native model signer.
+// Advisory integrity helper only. An infrastructure signature proves a hash-bound
+// PR/file readback, not that Anthropic or owner authored it. C1: no admission use.
 export function externalAuditProofMatches({record,trust,readbacks,subject,now,maxAge=86400}) {
   try {
     if(!Number.isFinite(now)||!Number.isSafeInteger(maxAge)||maxAge<1||!Array.isArray(readbacks))return false;
@@ -93,7 +93,7 @@ export function validateA2Config(config) {
   return config;
 }
 
-export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,externalAuditReadbacks=[],now=Date.now()}) {
+export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now=Date.now()}) {
   validateA2Config(config);
   if(config.enabled!==true||config.base_compare_and_swap_verified!==true||config.production_signing_keys_provisioned!==true||!validateExecutorRegistry({registry,trust})
     ||!SHA.test(runnerSha||'')||!HASH.test(runtimeBundleSha256||'')||config.runtime_bundle_sha256!==runtimeBundleSha256)return false;
@@ -101,8 +101,9 @@ export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSh
   // is metadata, not a self-referential commit containing its own signature.
   const subject={task_id:TASK,phase:'A2',runtime_bundle_sha256:runtimeBundleSha256};
   const proofs=config.stage_audits.map(a=>authenticate(a,{trust,subject,role:'stage_review',now,maxAge:86400})).filter(a=>a?.payload.verdict==='approve'&&SHA.test(a.payload.reviewed_source_commit||'')&&HASH.test(a.payload.artifact_sha256||''));
-  return config.required_stage_auditors.every(provider=>proofs.some(p=>p.provider===provider))&&new Set(proofs.map(p=>p.executor)).size>=2
-    &&config.external_stage_audits.some(record=>externalAuditProofMatches({record,trust,readbacks:externalAuditReadbacks,subject,now}));
+  // Shared-account Claude PRs remain preserved advisory artifacts. Self-labels,
+  // owner-looking comments or infrastructure signatures cannot add model votes.
+  return config.required_stage_auditors.every(provider=>proofs.some(p=>p.provider===provider))&&new Set(proofs.map(p=>p.executor)).size>=2;
 }
 
 export function checksSatisfied({checkRuns,config,headSha}) {
@@ -167,11 +168,11 @@ async function currentPR(api,context){
   if(main.status!==200||main.data?.ref!=='refs/heads/main'||main.data.object?.sha!==context.runnerSha)throw Error('A2_base_moved_requalify');
 }
 
-export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations,checkRuns,runnerSha,runtimeBundleSha256,externalAuditReadbacks=[],prNumber,runId,now=Date.now()}) {
+export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations,checkRuns,runnerSha,runtimeBundleSha256,prNumber,runId,now=Date.now()}) {
   // All arguments except PR identity/diff are collected by trusted main code.
   if(!Number.isSafeInteger(prNumber)||prNumber<1||!/^\d+$/.test(runId||''))throw Error('A2_executor_context_required');
   const subject=subjectFor(snapshot),context={number:prNumber,headSha:subject.head_sha,runnerSha};
-  if(subject.base_sha!==runnerSha||!rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,externalAuditReadbacks,now}))return {status:'A2_disabled_or_missing_audited_signers',automatic_merge:false};
+  if(subject.base_sha!==runnerSha||!rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now}))return {status:'A2_disabled_or_missing_audited_signers',automatic_merge:false};
   const evaluation=evaluate({policy,trust,snapshot,attestations,now});
   const proofs=attestations.map(a=>authenticate(a,{trust,subject,role:'review',now,maxAge:policy.max_review_age_seconds})).filter(a=>!!a&&a.executor!==evaluation.author_executor&&a.provider!==evaluation.author_provider&&a.payload.verdict==='approve'&&a.payload.generation_verified===true&&a.payload.metadata_source==='provider_response'&&typeof a.payload.model==='string'&&!!a.payload.model&&['stop','end_turn'].includes(a.payload.finish_reason)&&HASH.test(a.payload.output_sha256||''));
   const boundChecks=attestations.map(a=>authenticate(a,{trust,subject,role:'checks',now,maxAge:policy.max_review_age_seconds})).some(a=>!!a&&a.executor!==evaluation.author_executor&&a.payload.passed===true&&a.payload.checker_base_sha===runnerSha&&a.payload.checks_sha256===sha256(canonical(checkRuns)));

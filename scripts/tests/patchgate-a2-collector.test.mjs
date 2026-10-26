@@ -18,8 +18,8 @@ function fixture(){
   const bytes=Buffer.from('```json\n'+JSON.stringify(metadata)+'\n```\nFixture audit.\n');
   const pr=(number,head)=>({number,state:'open',merged:false,head:{sha:head,repo:{full_name:REPO}},base:{ref:'main',sha:A,repo:{full_name:REPO}},author_association:'OWNER',user:{login:'shared-owner',id:42}});
   const state={requests:[],pr:pr(250,B),audit:pr(244,C),file:contents(PATH,bytes),files:null,check:{id:11,name:authority.job_name,head_sha:B,status:'completed',conclusion:'success',completed_at:at,app:{id:15368},details_url:'https://github.com/'+REPO+'/actions/runs/10/job/11',check_suite:{id:22}},
-    run:{id:10,workflow_id:100,path:BASE_CHECK_WORKFLOW,event:'pull_request',repository:{full_name:REPO},head_repository:{full_name:REPO},head_sha:B,check_suite_id:22,status:'completed',conclusion:'success',run_attempt:1,pull_requests:[{number:250,head:{sha:B},base:{sha:A}}]},
-    job:{id:11,run_id:10,run_attempt:1,head_sha:B,name:authority.job_name,status:'completed',conclusion:'success',steps:[{name:'BASE='+A+' HEAD='+B,status:'completed',conclusion:'success'}]},main:A,
+    run:{id:10,workflow_id:100,path:BASE_CHECK_WORKFLOW,event:'pull_request_target',repository:{full_name:REPO},head_repository:{full_name:REPO},head_sha:B,check_suite_id:22,status:'completed',conclusion:'success',run_attempt:1,pull_requests:[{number:250,head:{sha:B},base:{sha:A}}]},
+    job:{id:11,run_id:10,run_attempt:1,head_sha:B,name:authority.job_name,status:'completed',conclusion:'success',steps:[{name:'EVENT=pull_request_target BASE='+A+' HEAD='+B+' PR=250',status:'completed',conclusion:'success'}]},main:A,
     protection:{status:200,data:{required_status_checks:{strict:true,checks:[{context:authority.job_name,app_id:15368}]},enforce_admins:{enabled:true},allow_force_pushes:{enabled:false},allow_deletions:{enabled:false}}}};
   const api=async endpoint=>{
     validateCollectorEndpoint(endpoint);state.requests.push(endpoint);
@@ -132,7 +132,18 @@ test('unbound or non-infrastructure signer cannot produce check attestations',()
 test('checker bootstrap stays off and executes BASE code without persistent credentials or model secrets',()=>{
   const text=read(BASE_CHECK_WORKFLOW).toString();
   assert.ok(text.includes("vars.PATCHGATE_A2_BASE_CHECKS_ENABLED == 'true'"));
-  assert.ok(text.includes("ref: '${{ github.event.pull_request.base.sha }}'"));
+  assert.ok(text.includes("ref: '${{ github.sha }}'"));
+  assert.ok(text.includes('  pull_request_target:'));assert.ok(!text.includes('  pull_request:'));
   assert.ok(text.includes('persist-credentials: false'));assert.ok(!text.includes('secrets.'));
   assert.ok(!text.includes('contents: write'));assert.ok(!text.includes('pull-requests: write'));
+});
+test('C2 a forged green pull_request check never qualifies, even with matching name, app and workflow bytes',async()=>{
+  const f=fixture();f.state.run.event='pull_request';
+  await assert.rejects(collectTrustedChecks({api:f.api,request,baseSha:A,authority,now}),/identity/);
+});
+test('C2 genuine target check must bind the exact event and PR marker as well as head and base',async()=>{
+  for(const marker of ['EVENT=pull_request BASE='+A+' HEAD='+B+' PR=250','EVENT=pull_request_target BASE='+A+' HEAD='+B+' PR=251']){
+    const f=fixture();f.state.job.steps[0].name=marker;
+    await assert.rejects(collectTrustedChecks({api:f.api,request,baseSha:A,authority,now}),/identity/);
+  }
 });

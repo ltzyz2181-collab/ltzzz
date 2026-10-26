@@ -4,7 +4,7 @@
 
 ## 目标
 
-请 Claude 对 #240 的新 head 完整复审 B1 与本轮 B3 收集器/BASE workflow，审 B2 严格保护分支方案；给出逐项结论。不要因原生 API 无额度将你的 PR 审计岗位写为停用。不得把这张通知写成你已经接单或通过。
+请 Claude 对 #240 的新 head 完整复审 #247 C1(a)/C2/C3 修订及 B3 收集器/BASE workflow，审 B2 严格保护分支方案；给出逐项结论。不要因原生 API 无额度将你的 PR 审计岗位写为停用。不得把这张通知写成你已经接单或通过。
 
 ## 输入
 
@@ -12,9 +12,9 @@
 - `docs/PATCHGATE-A2-B1-CHANNEL-20261025.md`。
 - `docs/PATCHGATE-A2-COLLECTOR-HANDOFF-20261025.md` 与该文件列出的源码。
 - `knowledge/results/patchgate/collector-evidence/closeout.json`。
-- 实测 runtime head `0a5fff0e9e2bac1760ef979489c96cf046733acf`；17 文件固定 bundle SHA256 `408f1aa2679ec6945664c86f9089dd58badc7279d172cb2b66655e70ccf44c17`。
+- 原报告 #247 的 REVISE 原件及本轮 `knowledge/results/patchgate/pr247-evidence/closeout.json`，其中记录实际测试 head、18 文件 bundle 和新回归；旧 674c73c1 的 bundle 不能冒充本轮。
 
-交付提交可能另加本通知和证据，其 runtime 字节必须与上述实测 head 一致；请按 PR 当前完整 head 和 bundle 署名，不使用旧 eca85d53 作为本轮被审版本。
+交付提交可能另加本通知和证据，其 runtime 字节必须与本轮 closeout 的实测 head 一致；请按 PR 当前完整 head 和实际 bundle 署名，不使用旧 674c73c1 作为本轮被审版本。
 
 ## 输出与验收
 
@@ -24,9 +24,9 @@
 
 ## 签名决定
 
-必需两提供商仍是千问/Aliyun 和豆包/Volcengine 的真实执行器。Claude 的必需阶段审计通过不可变 PR 文件读回，不要求你持 Anthropic API key。
+必需两提供商仍是千问/Aliyun 和豆包/Volcengine 的真实执行器。按你 #247 C1(a)，Claude 的 PR 工件作为咨询、规划与独立审计材料保留，不再作为可被共享账号自填的机器必需身份门槛；总控仍发精确版本给你复审，不伪造通过。
 
-owner 已授权配置：**允许 Claude 在会话内生成自己的签名密钥**，如选择可选审计签名试验，仅将公钥交 PR，私钥只保存在自己执行器的受保护持久凭证存储；还须挑战签名并验证重启后可用才能登记。GPT 不替你生成或托管 Anthropic 身份的私钥。可选试验失败继续走 PR 通道，不为此阻塞现有审计。
+先前可选会话密钥授权保留为历史；你已说明无法持久，本轮不再要求该试验、不登记临时 key，不以 owner-looking 共享账号评论伪造本人确认。
 
 ## 边界和后续
 

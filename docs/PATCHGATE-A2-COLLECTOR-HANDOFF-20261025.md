@@ -4,9 +4,9 @@
 
 ## B1 与 Claude
 
-采用已交 #240 的 B1 第二通道：模型准入固定千问 / Aliyun DashScope 与豆包 / Volcengine Ark 的两个真实执行器签名；Claude 独立规划和审计，继续用 PR 交报告，由基础设施另签 `external_audit_readback`。基础设施证明不等于原生 Anthropic 身份，不计入两个模型提供商的 quorum。当前没有生产私钥、没有新的已登记公钥。
+当前按 #247 C1(a)：模型准入固定千问 / Aliyun DashScope 与豆包 / Volcengine Ark 的两个真实执行器签名；Claude 独立规划和审计，继续用 PR 交报告，基础设施可签 `external_audit_readback` 记录工件。共享账号不证明 Claude 或 owner 本人身份，该工件不作为密码准入必需项，不计两个模型提供商 quorum。当前没有生产私钥、没有新的已登记公钥。
 
-owner 已在本会话授权设置和补齐通道。如 Claude 另做可选的审计签名试验：**允许 Claude 在自己的会话执行环境内生成自己的 Ed25519 审计签名密钥，只提交公钥 PR**；私钥须由其实际执行器受保护保存并完成重启后的挑战签名验证。短暂沙箱内生成再丢弃私钥不能登记为持久执行器。GPT 不代生成或持有标为 Anthropic 的私钥。该可选密钥不替代已定的千问、豆包必需签名，也不是当前 B1 的阻塞条件。
+先前 owner 已授权可选会话签名试验，该授权作为历史保留；Claude 在 #247 明确没有持久私钥，因此本轮不再要求生成会话密钥、不将其登记为执行器，也不让 GPT 代持 Anthropic 私钥。真实千问、豆包执行器仍需分别完成持久秘密存储和重启后挑战签名。
 
 ## B3 实装范围
 
@@ -15,7 +15,8 @@ owner 已在本会话授权设置和补齐通道。如 Claude 另做可选的审
 - 报告第一段 JSON fence 使用 `ltzzz.external-stage-audit.v1`，带 task_id / phase=A2 / seat=claude / verdict / reviewed_source_commit / runtime_bundle_sha256。收集器用 BASE 固定清单计算被审提交的 bundle，不导入或执行被审提交的代码。
 - 旧报告无此格式时仍保存全文字节和哈希，记未解析/未验证；不从自然语言推断 approve，不要求文件包含自身整体哈希。
 - 必需检查只能由 BASE 配置 `check_authority` 登记。固定 job / workflow path / workflow_id / GitHub App 15368、登记的 workflow 原字节 SHA256、check suite、run、job、rerun attempt、PR head 和 base 全部绑定；重复同名、未完成、skipped、过期、改过自身 workflow 都拒绝。实际执行 base/head 还须与 GitHub 保存的展开后 job step marker 一致，避免读取运行记录时 PR base 已更新却误用旧 green check。
-- `.github/workflows/patchgate-a2-base-checks.yml` 的执行代码和配置全部从事件 BASE 检出。只用 Git 读取候选 diff，绝不执行候选脚本。只允许普通 Markdown L0；候选必须包含当前 base。标准仓库只读 GITHUB_TOKEN，不提供模型或资金凭证。
+- `.github/workflows/patchgate-a2-base-checks.yml` 改用 `pull_request_target`，workflow 取自目标分支，执行代码和配置从固定 `github.sha` BASE 检出。只用 Git 读取候选 diff，绝不执行候选脚本。只允许普通 Markdown L0；候选必须包含当前 base。标准仓库只读 GITHUB_TOKEN，不提供模型或资金凭证。收集器拒绝 `pull_request` 绿色检查，并核 EVENT/BASE/HEAD/PR 展开 marker。
+- 分支保护本身只识别检查名和 App；真正准入仍由收集器核 workflow ID/hash/event/run/job/subject，再由独立检查执行器签名。不能把绿色名称视为不可伪造身份。`patchgate-a2-verify.yml` 也已纳入固定 bundle，改它会使阶段审核失效。
 - 初次引入 workflow 时，BASE 上还没有收集器代码，所以 `PATCHGATE_A2_BASE_CHECKS_ENABLED` 默认不启用；审计合并代码后才能打开只读检查开关、读回真实 workflow ID 与 hash 并登记。该开关和 A2 自动合并开关独立，skipped 一律不能作准入检查成功。
 - `signCollectedChecks` 提供登记完成后的基础设施签名适配；没有验证过的 key/角色/提供商就报错。无签名的收集 JSON 仅是观测，不能进入密码准入。
 
