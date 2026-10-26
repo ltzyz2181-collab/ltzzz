@@ -6,10 +6,11 @@ import {canonicalChallenge} from '../patchgate-key-challenge-worker.js';
 const targets=[{name:'ltzzz-a2-qwen-key',id:'a2-qwen-challenge-executor',provider:'aliyun_dashscope'},{name:'ltzzz-a2-doubao-key',id:'a2-doubao-challenge-executor',provider:'volcengine_ark'}];
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-export function verifyChallenge({data,nonce,target,publicKey,sourceHash}){
+export function verifyChallenge({data,nonce,target,publicKey,sourceHash,deploymentMarker}){
   const key=publicKey?.type==='public'?publicKey:createPublicKey(publicKey);
   if(data?.schema!=='ltzzz.executor.key-challenge.v1'||data.purpose!=='key_persistence_challenge_only'||data.A2_admission!==false||data.model_calls!==0||data.financial_execution!==false
-    ||data.executor_id!==target.id||data.provider_binding!==target.provider||data.source_sha256!==sourceHash||!data.payload||data.payload.nonce!==nonce||data.payload.executor_id!==target.id
+    ||data.executor_id!==target.id||data.provider_binding!==target.provider||data.source_sha256!==sourceHash
+    ||!/^[a-f0-9]{64}$/.test(deploymentMarker||'')||data.deployment_marker!==deploymentMarker||!data.payload||data.payload.deployment_marker!==deploymentMarker||data.payload.nonce!==nonce||data.payload.executor_id!==target.id
     ||data.payload.provider_binding!==target.provider||data.payload.execution_provider!=='cloudflare_workers'||data.payload.schema!==data.schema||data.payload.purpose!==data.purpose
     ||data.payload.task_id!=='PLAN-PATCHGATE-ESCROW-20261023'||!Number.isFinite(Date.parse(data.payload.at_utc))||Math.abs(Date.now()-Date.parse(data.payload.at_utc))>120000
     ||typeof data.signature!=='string'||!data.public_key_spki||data.public_key_spki!==key.export({format:'der',type:'spki'}).toString('base64'))throw Error('bound_challenge_required');
@@ -31,9 +32,10 @@ export async function provision({env=process.env,fetchImpl=fetch}={}){
     for(const target of targets){
       const row={executor_id:target.id,provider_binding:target.provider,execution_provider:'cloudflare_workers',worker:target.name,source_sha256:sourceHash,key_values_exported:false,signing_roles_enabled:false};report.workers.push(row);
       try{
-        const base='https://'+target.name+'.'+sub.subdomain+'.workers.dev';let spki,auth;
-        const upload=async publicDER=>{
-          const bindings=[['EXECUTOR_ID',target.id],['PROVIDER_BINDING',target.provider],['PUBLIC_KEY_SPKI',publicDER],['SOURCE_SHA256',sourceHash]].map(([name,text])=>({type:'plain_text',name,text}));
+        const base='https://'+target.name+'.'+sub.subdomain+'.workers.dev';let spki,auth,firstMarker;
+        const upload=async(publicDER,deploymentMarker)=>{
+          if(!/^[a-f0-9]{64}$/.test(deploymentMarker||''))throw Error('deployment_marker_required');
+          const bindings=[['EXECUTOR_ID',target.id],['PROVIDER_BINDING',target.provider],['PUBLIC_KEY_SPKI',publicDER],['SOURCE_SHA256',sourceHash],['DEPLOYMENT_MARKER',deploymentMarker]].map(([name,text])=>({type:'plain_text',name,text}));
           const f=new FormData();f.set('metadata',JSON.stringify({main_module:'signer.mjs',compatibility_date:'2026-10-01',bindings,keep_bindings:['secret_text']}));f.set('signer.mjs',new Blob([source],{type:'application/javascript+module'}),'signer.mjs');
           await cf('/workers/scripts/'+target.name,{method:'PUT',body:f});
         };
@@ -47,22 +49,26 @@ export async function provision({env=process.env,fetchImpl=fetch}={}){
         }else{
           auth=randomBytes(32).toString('base64url');
           const pair=generateKeyPairSync('ed25519');spki=pair.publicKey.export({format:'der',type:'spki'}).toString('base64');
-          await upload(spki);
+          firstMarker=randomBytes(32).toString('hex');
+          await upload(spki,firstMarker);
           for(const[name,text]of [['SIGNING_PKCS8',pair.privateKey.export({format:'der',type:'pkcs8'}).toString('base64')],['CHALLENGE_AUTH',auth]])await cf('/workers/scripts/'+target.name+'/secrets',{method:'PUT',body:{name,text,type:'secret_text'}});
           await cf('/workers/scripts/'+target.name+'/subdomain',{method:'POST',body:{enabled:true,previews_enabled:false}});
           row.reused_existing_key=false;
           row.auth_isolation='independent_random_per_executor_provider_secret_only';
         }
         const publicKey=createPublicKey({key:Buffer.from(spki,'base64'),format:'der',type:'spki'});
-        const challenge=async()=>{
+        const challenge=async deploymentMarker=>{
           const nonce=randomBytes(32).toString('hex');let last;
           for(let i=0;i<8;i++){
-            try{const r=await fetchImpl(base+'/challenge',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth},body:JSON.stringify({nonce}),redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('challenge_http_'+r.status);const d=await r.json();verifyChallenge({data:d,nonce,target,publicKey,sourceHash});return {payload:d.payload,signature:d.signature};}catch(e){last=e;if(i<7)await sleep(1000);}
+            try{const r=await fetchImpl(base+'/challenge',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth},body:JSON.stringify({nonce}),redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('challenge_http_'+r.status);const d=await r.json();verifyChallenge({data:d,nonce,target,publicKey,sourceHash,deploymentMarker});return {payload:d.payload,signature:d.signature};}catch(e){last=e;if(i<7)await sleep(1000);}
           }throw last;
         };
-        row.first_challenge=await challenge();
-        await upload(spki); // New deployment, existing Secrets deliberately retained.
-        row.after_redeployment_challenge=await challenge();
+        row.first_challenge=await challenge(firstMarker);
+        const nextMarker=randomBytes(32).toString('hex');
+        await upload(spki,nextMarker); // New deployment, existing Secrets deliberately retained.
+        row.after_redeployment_challenge=await challenge(nextMarker);
+        row.initial_deployment_marker=firstMarker;
+        row.redeployment_marker=nextMarker;
         row.public_key_pem=publicKey.export({format:'pem',type:'spki'});row.public_key_sha256=hash(Buffer.from(spki,'base64'));row.url=base;
         row.persistence_verified=true;row.status='persistent_challenge_key_verified_not_admitted';
       }catch(e){row.status='blocked_no_rotation_no_admission';row.error=/^[A-Za-z0-9_]+$/.test(e.message)?e.message:'provision_or_challenge_unavailable';}
