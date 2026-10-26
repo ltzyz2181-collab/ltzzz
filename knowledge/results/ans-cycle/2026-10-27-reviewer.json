@@ -1,0 +1,26 @@
+{
+  "accepted": true,
+  "artifact_sha256": "d2143d2bfb69a5c6d4ec0d903901b5dfd68e4403a15e8d8c85074648a5a37db2",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，runReservedSeat 先保存 seat.status='generation_started'，再执行 call、构造 artifact，并以 fs.writeFileSync(file, bytes, {flag:'wx'}) 写入不可变 artifact；之后才设置 seat.artifact、seat.status 并 saveLedger。artifact 写盘成功但 ledger 更新前崩溃的窗口真实存在。",
+    "syncDailyBoard 的每个席位循环开始即无条件调用 recoverArtifact(root,record,agent,seat)，但忽略返回值；随后若状态仍为 generation_started，就直接改为 generation_unknown_no_repurchase、写入 sync_reason 并 saveLedger。",
+    "若崩溃后 ledger 仍为 generation_started，而磁盘上已有唯一且通过 validateArtifact 的完整 artifact，循环开头的 recoverArtifact 理论上可立即恢复；但若当次恢复条件暂不满足或未识别，随后代码会把状态降级为 generation_unknown_no_repurchase，并且同一轮不再针对该新状态重试恢复。",
+    "源码确认 recoverArtifact 支持 generation_started 和 generation_unknown_no_repurchase 两种状态；因此下一轮 syncDailyBoard 开头通常可以恢复该席位。交付中“永远不会被同步提交/永久卡死”的表述过强，准确风险是至少延迟到下一轮 sync，并且在没有后续 sync 触发时持续滞留。",
+    "syncDailyBoard 对 generation_unknown_no_repurchase 没有专门的同步或恢复后继续处理分支；该状态不进入 failed seat 处理，也不进入 generated_pending_sync 等正常 artifact 同步条件。只能依赖下一次循环开头的 recoverArtifact。",
+    "scripts/daily-task-board.mjs 的 sync CLI 在一次执行中会调用 syncDailyBoard、syncDailyReview、再次 syncDailyBoard；这可能使实际脚本在下半轮获得恢复机会，但不改变库函数 syncDailyBoard 单次调用存在状态降级后当轮不重试的问题，也不能保证所有直接调用方都有第二次调用。",
+    "minimal_patch 属于修复思路和代码片段草稿，不是已写入仓库的完整补丁；其核心方向“在 generation_started 降级前检查 recoverArtifact，并让 generation_unknown_no_repurchase 也能恢复后落入同步流程”与所给源码问题相符。",
+    "补丁片段仍有工程缺口：片段末尾保留了一次额外 recoverArtifact(root,record,agent,seat)，可能造成重复调用和流程歧义；没有提供完整 diff、测试、边界状态表或说明 recoverArtifact 成功后如何确保同轮继续执行提交逻辑。",
+    "verification_commands 只能做语法、定位、模块加载和 diff 查看，不能证明故障恢复语义；remaining_blocker 也明确承认补丁尚未写入仓库且需要 kill -9 故障注入测试，因此本次只能接受其为可复核的问题分析与修复草稿，不能接受为已修复交付。"
+  ],
+  "unverified": [
+    "给定 artifact_sha256 对应交付原字节的哈希未在当前审核环境重算，仅按要求严格回传。",
+    "补丁尚未写入所审源码仓库，未核验完整 diff、语法、回归测试或调用方兼容性。",
+    "未执行 node --check、模块加载或任何测试命令；当前结论仅来自静态对照源码。",
+    "writeFileSync 成功后、saveLedger 前 kill -9/断电等真实故障场景未做故障注入验证。",
+    "唯一 artifact、多个候选 artifact、损坏 artifact、文件已存在、磁盘满、目录项持久化等边界场景的实际恢复行为未验证。",
+    "下一轮 syncDailyBoard 是否必然被调度、何时触发，以及在生产 GitHub Actions 中的时序和重试行为未验证。",
+    "scripts/daily-task-board.mjs 中第二次 syncDailyBoard 是否稳定掩盖该库函数问题，未通过运行日志验证。",
+    "本地 artifact 已存在但尚未提交或远端 raw 不可用时，恢复后的 readRemote、submit_task 和评审闭环行为未验证。",
+    "任何模型调用、API 费用、资金交易、部署、生产版本或线上回读均未验证；本审核仅覆盖代码/规格草稿的可复核性。"
+  ]
+}
