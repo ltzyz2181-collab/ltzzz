@@ -1,0 +1,68 @@
+name: PatchGate A2 docs executor
+on:
+  workflow_dispatch:
+    inputs:
+      request:
+        description: Public collection identity JSON only; no tokens, policy, signatures or overrides
+        required: true
+        type: string
+  pull_request:
+    paths: [scripts/lib/patchgate-a2-executor.mjs,scripts/patchgate-a2-execute.mjs,scripts/tests/patchgate-a2-executor.test.mjs,.github/workflows/patchgate-a2-execute.yml]
+permissions: {contents: read}
+concurrency: {group: patchgate-a2-controlled-execution, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate*.test.mjs
+  gate:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      execute: ${{ steps.gate.outputs.execute }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - id: gate
+        name: Read only fixed main policy, stage audit and actual executor registration
+        env:
+          PATCHGATE_A2_REQUEST: ${{ inputs.request }}
+        run: node scripts/patchgate-a2-execute.mjs gate "$RUNNER_TEMP/patchgate-a2-gate.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-a2-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/patchgate-a2-gate.json
+          retention-days: 30
+  execute:
+    needs: gate
+    if: needs.gate.outputs.execute == 'true' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    permissions: {contents: write, pull-requests: write, actions: read, checks: read}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        # Entire executable tree is the triggering main commit. No PR checkout.
+        with: {ref: '${{ github.sha }}', persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Execute only bound L0 evidence through the audited guarded merger
+        env:
+          PATCHGATE_A2_REQUEST: ${{ inputs.request }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/patchgate-a2-execute.mjs run "$RUNNER_TEMP/patchgate-a2-execution.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-a2-execution-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/patchgate-a2-execution.json
+          retention-days: 30
+          # The guarded merger persists action outcomes on its isolated claim
+          # branch. Never push main metadata before a source-bound merge.
