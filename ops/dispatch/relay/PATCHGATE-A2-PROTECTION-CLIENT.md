@@ -2,6 +2,16 @@
 
 类型：派单；原任务 `PLAN-PATCHGATE-ESCROW-20261023`。接收者：已登录 GitHub 的 VS Code/Codex/Copilot 本机执行器；实际模型由客户端元数据填写，不默认认作微软、Claude 或 GPT。接力不等于已认领/部署。
 
+## 总控接管决定（本轮已核实）
+
+owner 已回复“没看明白你做好吧”。总控选择现成内置 GitHub MCP 写通道，不需要 owner 在浏览器执行 gh auth login，也不再把三个选项交还给 owner。当前 get_profile 账号 ltzyz2181-collab / 261544579，协作权限查询 admin；上次提交 73728f25d8c9c446e030b3512ff7f62d73b36de2 已读回，authenticated repository write 成立。这只证明共享账号执行器身份，不证明 owner 本人或 Claude 作者身份。
+
+分支保护 GET 仍为403 Resource not accessible by integration，因此“只差已认证写通道”的判断不准确：repo write 已通，Administration 能力、Claude 新 head 复审和写 main 的流水线迁移另需完成。不得以 owner 授权或账号 admin 字段冒充 API Administration scope，也不得选择“只读结项”把本任务关闭。
+
+使用你会话已有且实际可调用的 GitHub MCP；只在它具备真实管理能力、并满足本卡前提后执行第5–6步。不要再次要求 owner 选择写通道、发送Token/Key或自行找菜单。没有管理能力就将该阶段保持外部权限受阻，继续无依赖的原任务修复，保留回执。
+
+当前受审 #240 head 52ad8a9e7b2e21bb998a4ac0f8363327626d2f77 /125项真实runner通过，Claude复审已发出但未收到。原任务迁移候选的静态清单见 knowledge/results/patchgate/protection-client/main-writer-inventory-20261025.json；该清单不是迁移完成证明。A2继续关闭。
+
 ## 目标和固定输入
 
 仓库只允许 `ltzyz2181-collab/ltzzz`，目标 `main`。当前云端集成缺 Administration，GET branch protection=403；owner 已授权你完成工程设置，不要把设置步骤再交给 owner 操作。已有改动不得 reset/clean/强推；在独立 worktree 操作。

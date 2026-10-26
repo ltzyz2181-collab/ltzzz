@@ -1,0 +1,75 @@
+name: Pi cloud two-provider Skill audit smoke
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['config/pi-cloud*', 'config/pi-cloud-runtime/**', 'scripts/pi-cloud*.mjs', 'scripts/lib/pi-cloud.mjs', 'scripts/tests/pi-cloud*.test.mjs', '.github/workflows/pi-cloud.yml']
+  push:
+    branches: [main]
+    paths: ['config/pi-cloud.json', 'config/pi-cloud-runtime/**', 'scripts/pi-cloud*.mjs', 'scripts/lib/pi-cloud.mjs', 'scripts/tests/pi-cloud*.test.mjs', '.github/workflows/pi-cloud.yml']
+permissions: {contents: read}
+concurrency: {group: pi-cloud-skill-audit, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - run: npm ci --prefix config/pi-cloud-runtime --ignore-scripts --no-audit --no-fund
+      - name: Unit boundaries and actual pinned SDK loopback HTTP bodies, no paid model requests
+        env: {PI_OFFLINE: '1'}
+        run: node --test scripts/tests/pi-cloud.test.mjs scripts/tests/pi-cloud-http.test.mjs
+  smoke:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Set runtime paths from runner environment, not job-level runner context
+        run: |
+          printf 'PI_RUNTIME_ROOT=%s/ltzzz-pi-runtime-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          printf 'PI_RECEIPT_ROOT=%s\n' "$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+      - name: Freeze exact reviewed runtime before any receipt transport rebase
+        run: node scripts/pi-cloud.mjs stage
+      - run: npm ci --prefix "$PI_RUNTIME_ROOT/config/pi-cloud-runtime" --ignore-scripts --no-audit --no-fund
+      - name: Verify actual pinned SDK and zero-request session initialization
+        env: {PI_OFFLINE: '1'}
+        run: node "$PI_RUNTIME_ROOT/scripts/pi-cloud-sdk-check.mjs"
+      - id: prepare
+        run: node "$PI_RUNTIME_ROOT/scripts/pi-cloud.mjs" prepare
+      - name: Persist one reservation before any model request
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/pi-cloud/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Reserve Pi Skill audit once, no funds'
+          node tools/push-receipt-commit.mjs
+      - name: Two distinct domestic providers via pinned Pi SDK, no retries or tools
+        if: steps.prepare.outputs.execute == 'true'
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+          DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-plus' }}
+          DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
+          PI_OFFLINE: '1'
+          NODE_OPTIONS: --dns-result-order=ipv4first
+        run: node "$PI_RUNTIME_ROOT/scripts/pi-cloud.mjs" execute
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: 'pi-cloud-${{ github.run_id }}', path: knowledge/results/pi-cloud/, retention-days: 30}
+      - name: Preserve output or uncertain status without replay
+        if: always() && steps.prepare.outcome == 'success'
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/pi-cloud/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record real Pi SDK model outputs, not deployment or cash settlement'
+          node tools/push-receipt-commit.mjs

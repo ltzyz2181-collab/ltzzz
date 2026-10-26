@@ -1,0 +1,351 @@
+{
+  "schema": "ltzzz.pi-review-adjudication.v1",
+  "task_id": "PI-SKILL-AUDIT",
+  "pr": 239,
+  "code_head": "50c710f97b997d8b3cfd28810bf3cfde46a72e76",
+  "at_utc": "2026-10-25 11:49:37 UTC",
+  "author": {
+    "provider": "openai",
+    "client": "current_Codex_session",
+    "model": null
+  },
+  "review_provider": "aliyun_dashscope",
+  "native_model": "qwen-plus",
+  "review_scope": "five bounded component extracts; not claimed full-repository native review",
+  "original_reviews": [
+    {
+      "component": "RUNTIME",
+      "path": "knowledge/results/qwen-dispatch/PI-SKILL-AUDIT-PR239-RUNTIME.json",
+      "blob_sha": "84b134e878e853a9024f2d0c58e9e2f36c33aaa2",
+      "receipt": {
+        "task_id": "PI-SKILL-AUDIT-PR239-RUNTIME",
+        "card_sha256": "e53bf4c54e322b3c975881e5742238ad8f30cc89a1f4f155fd23dfdfbf26bfc1",
+        "run_id": "40189927809",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T11:41:43.380Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:PI-SKILL-AUDIT-PR239-RUNTIME",
+          "prompt_sha256": "37a7f919de7d79aaf637a584ddf2998b0b919da59e7ae48a5732b72856f9940b"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2694,
+        "request_id": "6ca2822b-8eb4-9052-95af-cae7114d340e",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"28283bb3b4bbb7f5f3303c629fd44769331908f4\",\n  \"findings\": [\n    {\n      \"severity\": \"high\",\n      \"code\": \"PI_SMOKEROUTE_PROVIDER_MISMATCH\",\n      \"reason\": \"route() function accepts 'deepseek' and 'qianwen' as provider strings, but validateConfig() enforces config.author_provider === 'deepseek' AND config.reviewer_provider === 'qianwen'. However, route('qianwen') returns {provider: 'aliyun_dashscope'}, breaking the invariant that config.reviewer_provider must match the actual routed provider identifier. The reviewer's logical seat is 'claude', but Qwen is *substituting* for Claude per instruction ('逻辑Claude由Qwen代审须明示'), yet route() does not encode this substitution in its output — it returns 'aliyun_dashscope', not 'qianwen' or 'claude-proxy'. This violates traceability: downstream telemetry, audit logs, and receipt binding cannot distinguish 'Qwen acting as Claude' from 'Qwen acting natively', undermining Pi's provider-separation guarantee.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"PI_RUNTIME_MANIFEST_INCOMPLETE\",\n      \"reason\": \"RUNTIME_PATHS includes 'data/model-routing/latest.json' but this file is not verified to exist at runtimeManifest() call time; no fs.existsSync() guard precedes runtimeFile(root, file). If missing, runtimeManifest() throws uncaught ENOENT — violating 'no tools/automatic deploy' constraint by causing uncontrolled failure instead of deterministic rejection with pi_missing_runtime_file error. Also, INPUTS are hardcoded but readInputs() does not validate their presence before fs.readFileSync(), risking same ENOENT.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"PI_CONFIG_INPUT_PATHS_STRICTNESS\",\n      \"reason\": \"validateConfig() compares JSON.stringify(config.input_paths) === JSON.stringify(INPUTS), but INPUTS is a const array defined in this module. This couples config validation to internal implementation — if INPUTS changes (e.g., adding receipt-template.json variant), validation fails silently for configs that semantically match but differ in ordering or whitespace. Should use deepEqual or canonicalized set comparison (e.g., new Set(config.input_paths).size === INPUTS.length && INPUTS.every(p => config.input_paths.includes(p))).\"\n    }\n  ],\n  \"limitations\": [\n    \"No review of qwen-config.mjs contents — out of component scope per instruction.\",\n    \"No verification of PI SDK1.4.0 local test pass — stated as '12/12 passed' but not observed or reproduced here.\",\n    \"Cloud call validation status ('云调用仍未验') confirmed as unverified — outside execution scope.\",\n    \"SHA256 of runtime files computed on raw bytes, but no check for UTF-8 validity or BOM normalization — may cause non-determinism across platforms if inputs contain mixed encodings.\",\n    \"redact() function lacks recursion depth limit or circular reference guard — unsafe for arbitrary config objects.\"\n  ]\n}",
+        "output_sha256": "a9014864e623c79f2ce9c370b7dd595dd2dbea4c3706d65086c8e9ea266becdc",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T11:41:59.604Z"
+      }
+    },
+    {
+      "component": "SDK",
+      "path": "knowledge/results/qwen-dispatch/PI-SKILL-AUDIT-PR239-SDK.json",
+      "blob_sha": "7ed4d68630a134d06681110b81855a5bc7b8f8cd",
+      "receipt": {
+        "task_id": "PI-SKILL-AUDIT-PR239-SDK",
+        "card_sha256": "eec2407038cefce1ebf4bb90fac86a66e38398306be0a777ae129c1144ca3a9c",
+        "run_id": "40190048873",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T11:43:24.508Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:PI-SKILL-AUDIT-PR239-SDK",
+          "prompt_sha256": "ca4d9b6245b2f719ee115599c8b78ffe441f2db79e33b7a78ac004a275740b06"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2585,
+        "request_id": "8d676bff-26da-9a38-8f6d-6d985fcc8c3f",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"28283bb3b4bbb7f5f3303c629fd44769331908f4\",\n  \"findings\": [\n    {\n      \"severity\": \"high\",\n      \"code\": \"PI-SDK-NO-CREDENTIAL-LEAK-ON-ERROR\",\n      \"reason\": \"In `callPi`, `selected.key` is passed to `redact([...], [selected.key])`, but `selected.key` originates from untrusted caller context (not validated, not scoped to runtime config), and `redact` is undefined in the provided code — no evidence it exists, is imported, or correctly implements constant-time or full redaction. This constitutes a potential credential leak on error path (e.g., if `session.prompt()` throws and partial `selected` object is logged/returned). No fallback sanitization or defensive cloning applied.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"PI-SDK-UNVERIFIED-PROVIDER-ROUTE-ID-TRUST\",\n      \"code\": \"PI-SDK-ROUTE-ID-VALIDATION-MISSING\",\n      \"reason\": \"In `openPiSession`, `selected.route_id` is used directly as registry key for `runtime.registerProvider(...)` and `runtime.setRuntimeApiKey(...)`. No validation that `route_id` conforms to SDK’s internal route ID schema (e.g., alphanumeric + hyphen, length ≤32, no injection chars) — risk of provider namespace collision or runtime corruption if malicious/invalid `route_id` supplied. SDK does not enforce immutability or canonicalization before registration.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"PI-SDK-NO-INPUT-SANITIZATION-FOR-PROMPT\",\n      \"reason\": \"In `callPi`, raw `prompt` argument is passed unmodified to `session.prompt(prompt)`. No validation that `prompt` is string/array-of-message-objects per SDK contract; no truncation, depth limit, or role-safety check (e.g., disallowing `role: 'system'` injection). Risk of malformed session state or unintended model behavior under adversarial input.\"\n    },\n    {\n      \"severity\": \"low\",\n      \"code\": \"PI-SDK-UNUSED-DIAGNOSTICS-KEY\",\n      \"reason\": \"In `openPiSession`, `diagnostics.credential_store_modify_calls` is incremented but never read or returned — dead instrumentation. Violates 'no unused side effects' constraint in LTZZZ Skill 1.0.0; implies incomplete diagnostics integration or misleading observability surface.\"\n    }\n  ],\n  \"limitations\": [\n    \"Review limited to listed functions only (`resourceLoader`, `loadPiSdk`, `openPiSession`, `callPi`); no analysis of `sdk` internals, `@earendil-works/pi-coding-agent` dist bundle, or transitive dependencies.\",\n    \"No verification of `PI_VERSION` definition, `path`, `fs`, or `sdk.SettingsManager.inMemory` — assumed available per SDK1.4.0 contract but not observed in evidence.\",\n    \"Assumed `redact` is user-defined utility; no implementation provided → cannot verify correctness, completeness, or constant-time behavior.\",\n    \"Cloud call verification status ('cloud调用仍未验') confirmed as unverified per task statement — no production API response evidence observed.\",\n    \"Qwen-based Claude substitution logic is declared but not implemented in provided code; no `sdk`-level routing or LLM-audit delegation visible.\"\n  ]\n}",
+        "output_sha256": "b446b103cdcf2184236387f553e1130b72ae4bdb46dc5c22f17e5c5ff15156af",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T11:43:42.562Z"
+      }
+    },
+    {
+      "component": "EXECUTION",
+      "path": "knowledge/results/qwen-dispatch/PI-SKILL-AUDIT-PR239-EXECUTION.json",
+      "blob_sha": "fd6645b0f45768debd0a646a5769d27755167698",
+      "receipt": {
+        "task_id": "PI-SKILL-AUDIT-PR239-EXECUTION",
+        "card_sha256": "f5b2999629658990ff45888378c79b31c3ccc419509906b4e81e2b4de4fe40be",
+        "run_id": "40190156896",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T11:45:01.941Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:PI-SKILL-AUDIT-PR239-EXECUTION",
+          "prompt_sha256": "5210e87036da9678db1f1f6d68dfbdbc2a4a87d427ce04acc4b1235382faa9fa"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2383,
+        "request_id": "7a5029ae-aec8-92e9-83be-f5c82dddf5bb",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"28283bb3b4bbb7f5f3303c629fd44769331908f4\",\n  \"findings\": [\n    {\n      \"severity\": \"high\",\n      \"code\": \"missing_native_claude_call_enforcement\",\n      \"reason\": \"The executeReservation function explicitly states 'You are Qwen delegated to the logical Claude review role, not native Anthropic' and sets native_claude_call: false in both executions. However, the PR scope requires 'Claude by Qwen代审须明示' — which it does — but critically fails the *independent provider requirement* for actual Claude: the routing logic permits reviewer.provider === 'qwen' even when config.reviewer_provider === 'claude', violating the contract that 'logical Claude review' must be *delegated from a non-Claude provider* (i.e., Qwen acting *as proxy*, not *as substitute*). The code contains no validation that config.reviewer_provider === 'claude' triggers mandatory delegation *from an upstream non-Claude provider*, nor enforces that the actual_provider used for review is *not* the same as the logical seat’s nominal provider in a way that preserves independence. This creates a silent bypass of Pi’s provider independence invariant.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"unverified_runtime_manifest_integrity\",\n      \"reason\": \"runtimeManifest(root) is called in reservation() and its stringified value is hashed into idempotency_key and runtime_manifest_sha256. However, no validation confirms that runtimeManifest(root) returns deterministic, immutable, or versioned output — e.g., it may include timestamps, process IDs, or filesystem mtimes. The manifest is later compared via JSON.stringify(receipt.runtime_manifest) === JSON.stringify(expected.runtime_manifest), but this comparison is brittle: ordering of object keys, floating-point serialization, or non-deterministic fields (e.g., 'generated_at') would cause binding failure despite identical logical runtime. No evidence path (e.g., ./data/runtime-manifest/schema.json or ./test/manifest-determinism.test.js) is referenced or enforced; the manifest SHA256 is therefore not a verifiable integrity anchor.\"\n    }\n  ],\n  \"limitations\": [\n    \"This review covers only the two exported functions reservation() and executeReservation() per scope. It does not assess readInputs(), validateConfig(), route(), callPi(), redact(), sha256(), or fs/path dependencies — those are assumed correct per LTZZZ Skill 1.0.0 constraints.\",\n    \"No local test execution was performed; cloud call verification status ('云调用仍未验') remains unconfirmed and outside this component’s scope.\",\n    \"The SDK1.4.0 zero-request initialization claim is accepted as stated but unverified here; this review does not reproduce or assert its correctness.\"\n  ]\n}",
+        "output_sha256": "83ba6847b9eda8d6eed986d8335047eba89747bc942a8a7a4f49c3bfda284d5a",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T11:45:17.935Z"
+      }
+    },
+    {
+      "component": "WORKFLOW",
+      "path": "knowledge/results/qwen-dispatch/PI-SKILL-AUDIT-PR239-WORKFLOW.json",
+      "blob_sha": "f9fcc16c17487550235e36f447a36b3be1f34ab5",
+      "receipt": {
+        "task_id": "PI-SKILL-AUDIT-PR239-WORKFLOW",
+        "card_sha256": "2294267665c5639fef017922e733e51b5f779d210577c2a4c075e84ac5df4730",
+        "run_id": "40190218413",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T11:45:54.429Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:PI-SKILL-AUDIT-PR239-WORKFLOW",
+          "prompt_sha256": "a5acd16499855c7fd5ab293fce736a2cb6d8286c8f1809d79fd7bcbc7bbd8fb7"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2332,
+        "request_id": "ca8a1ab5-2298-9d14-8197-31e6069afc5a",
+        "output": "{\n  \"verdict\": \"revise\",\n  \"head_sha\": \"50c710f97b997d8b3cfd28810bf3cfde46a72e76\",\n  \"findings\": [\n    {\n      \"severity\": \"high\",\n      \"code\": \"PI-CLOUD-EXECUTE-ENV-LEAK\",\n      \"reason\": \"The `execute` step sets `PI_OFFLINE: '1'` in its `env`, which *disables actual cloud model calls* — contradicting the explicit task goal of '国内DeepSeek/Qwen各1调用' and '云调用待验'. This flag forces SDK into offline mock mode (per `pi-cloud-sdk-check.mjs` convention), making the `execute` step produce synthetic outputs, not real provider invocations. No evidence of runtime override or conditional unsetting; thus, zero actual API calls occur.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"PI-CLOUD-PROVIDER-AMBIGUITY\",\n      \"reason\": \"Environment mapping conflates DashScope and Qwen: `DASHSCOPE_API_KEY` falls back to `QWEN_API_KEY`, and `DASHSCOPE_MODEL`/`BASE_URL` fall back to Qwen vars — but the task requires *two distinct domestic providers*, not a single logical 'DashScope/Qwen' endpoint. No guard ensures both `DEEPSEEK_API_KEY` *and* a *non-fallback-resolved* Qwen credential (e.g., `QWEN_API_KEY` explicitly set, not inherited via `DASHSCOPE_API_KEY`) are present and used separately. Current logic risks using only DeepSeek + DashScope (if configured) or only DeepSeek + mocked Qwen.\"\n    },\n    {\n      \"severity\": \"medium\",\n      \"code\": \"PI-CLOUD-RECEIPT-PERSISTENCE-SEMANTICS\",\n      \"reason\": \"Two `git commit` + `push-receipt-commit.mjs` steps (under 'Persist one reservation' and 'Preserve output...') both target `knowledge/results/pi-cloud/`. The first is labeled 'Reserve Pi Skill audit once, no funds'; the second 'Record real Pi SDK model outputs...'. But if `execute` runs in `PI_OFFLINE=1`, the second commit records mock data — misrepresenting 'real model outputs'. No validation (e.g., presence of non-mock response headers, provider trace IDs, or SHA256 of raw byte payloads) confirms authenticity before persistence.\"\n    }\n  ],\n  \"limitations\": [\n    \"No access to `scripts/pi-cloud.mjs`, `pi-cloud-sdk-check.mjs`, or `tools/push-receipt-commit.mjs` — review limited to workflow structure, env usage, and declared intent.\",\n    \"Cannot verify whether `steps.prepare.outputs.execute == 'true'` is correctly derived from non-offline readiness (e.g., secret presence, model availability, network reachability).\",\n    \"No visibility into `knowledge/results/pi-cloud/` schema or how `execute` populates it — cannot confirm dual-provider separation or raw byte integrity (SHA256) per task requirement.\"\n  ]\n}",
+        "output_sha256": "a81a05721a4d01c6f3a96a8734d5470b07437390d3ac3fdd29c019255784f108",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T11:46:11.219Z"
+      }
+    },
+    {
+      "component": "CLI",
+      "path": "knowledge/results/qwen-dispatch/PI-SKILL-AUDIT-PR239-CLI.json",
+      "blob_sha": "b1f7939f3b8d80d9b268ee54adc53c5deef218f7",
+      "receipt": {
+        "task_id": "PI-SKILL-AUDIT-PR239-CLI",
+        "card_sha256": "eaeda6ca9295189dfff63a5597cf6c24ddd5ba445861af1b7f16e88aa207c81b",
+        "run_id": "40190270247",
+        "executor": "qianwen",
+        "queue_dispatcher": "qianwen",
+        "at": "2026-10-25T11:46:38.572Z",
+        "paid": false,
+        "tx_hash": null,
+        "financial_execution": false,
+        "skill": {
+          "applied": true,
+          "status": "active_context_injected",
+          "version": "1.0.0",
+          "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+          "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+          "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+          "scope": "qianwen-queue:PI-SKILL-AUDIT-PR239-CLI",
+          "prompt_sha256": "af32bd53bafa7fcc2165366e9f14ca446fc666f4f649bc6732edc8fa55e90cb3"
+        },
+        "model_source": "provider_response",
+        "status": "draft_delivered_pending_independent_review",
+        "model_calls": 1,
+        "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+        "native_qwen_call": true,
+        "model": "qwen-plus",
+        "generated_by_model": "qwen-plus",
+        "attribution_note": "generation by qwen-plus via qianwen queue",
+        "finish_reason": "stop",
+        "tokens_used": 2071,
+        "request_id": "3de409e1-b344-92d9-bde4-4efceebd2541",
+        "output": "{\n  \"verdict\": \"approve\",\n  \"head_sha\": \"28283bb3b4bbb7f5f3303c629fd44769331908f4\",\n  \"findings\": [],\n  \"limitations\": [\n    \"CLI component only — no SDK, runtime, or provider integration logic reviewed per scope; those are explicitly deferred to separate audits.\",\n    \"Cloud invocation (DeepSeek/Qwen API calls) remains unverified: 'cloud调用待验' confirmed; no actual network traffic, auth, or response parsing observed or asserted.\",\n    \"Idempotency enforcement relies on filesystem presence + `fs.writeFileSync(..., {flag: 'wx'})`, which is atomic *only on POSIX-compliant systems* and may fail silently or race under NFS/cloud volumes — not validated for production durability.\",\n    \"No evidence of runtime isolation (e.g., sandboxed process, containerized execution, or model-process separation) is present in this CLI layer; isolation claims depend on external orchestration (e.g., GitHub Actions runner config), outside scope.\",\n    \"The `sdkLoader` default (`loadPiSdk`) and `executeReservation` implementation are imported but not included in provided files — their behavior (e.g., credential handling, model routing, retry semantics) is assumed correct and out-of-band verified.\"\n  ]\n}",
+        "output_sha256": "1c7ecbae0ebab6c132adf1f51386bc8246b7961c38342b57de6b1071305ef05c",
+        "error": null,
+        "accepted": false,
+        "deployed": false,
+        "independent_review": "pending_other_provider",
+        "finished_at": "2026-10-25T11:46:46.445Z"
+      }
+    }
+  ],
+  "original_verdicts_preserved": true,
+  "controller_decision": "proceed_authorized_readonly_cloud_smoke_after_CI; never relabel native revise as approve",
+  "authority": "config/review-delegation.json on_controller_disagreement; owner explicit Pi domestic cloud integration",
+  "runtime_byte_equivalence": {
+    "from": "28283bb3b4bbb7f5f3303c629fd44769331908f4",
+    "to": "50c710f97b997d8b3cfd28810bf3cfde46a72e76",
+    "path": "scripts/lib/pi-cloud.mjs",
+    "sha256": "7c4bd651e7a6a57ca3e0d7d0e57f2e181fbcdfc246dcbf1f8ed28837e1699ccc",
+    "other_runtime_config_sdk_package_lock_unchanged": true,
+    "changed_only": [
+      ".github/workflows/pi-cloud.yml",
+      "scripts/tests/pi-cloud.test.mjs"
+    ]
+  },
+  "adjudications": [
+    {
+      "component": "RUNTIME",
+      "codes": [
+        "PI_SMOKEROUTE_PROVIDER_MISMATCH"
+      ],
+      "disposition": "not_adopted",
+      "reason": "qianwen is route selector; actual_provider is accurately aliyun_dashscope. executeReservation also records logical_seat claude, explicit delegation and native_claude_call=false. Never relabel actual provider as a seat.",
+      "evidence": "scripts/tests/pi-cloud.test.mjs distinct provider/delegation regression"
+    },
+    {
+      "component": "RUNTIME",
+      "codes": [
+        "PI_RUNTIME_MANIFEST_INCOMPLETE",
+        "PI_CONFIG_INPUT_PATHS_STRICTNESS"
+      ],
+      "disposition": "not_adopted_as_blocking",
+      "reason": "Missing input fails before SDK or any model call with sanitized outer CLI exit1; regression added. Exact ordered input list is intentional. JSON parsing removes source whitespace; broadening to arbitrary set is unnecessary."
+    },
+    {
+      "component": "SDK",
+      "codes": [
+        "PI-SDK-NO-CREDENTIAL-LEAK-ON-ERROR",
+        "PI-SDK-ROUTE-ID-VALIDATION-MISSING",
+        "PI-SDK-NO-INPUT-SANITIZATION-FOR-PROMPT",
+        "PI-SDK-UNUSED-DIAGNOSTICS-KEY"
+      ],
+      "disposition": "not_adopted_as_blocking",
+      "reason": "redact and route are defined in companion component: caller supplies validated fixed routes and generated string prompt, never candidate selected objects. catch returns stable error without key or exception text; persisted outputs redact both known API keys. diagnostics is consumed by actual SDK check. Component omission is not proof of absent function. Constant-time redaction and a no-unused-side-effects rule are not requirements of the Skill."
+    },
+    {
+      "component": "EXECUTION",
+      "codes": [
+        "missing_native_claude_call_enforcement",
+        "unverified_runtime_manifest_integrity"
+      ],
+      "disposition": "not_adopted",
+      "reason": "Config requires reviewer_provider=qianwen, logical_reviewer_seat=claude, not reviewer_provider=claude. Native Claude stage audit is explicitly not replaced. Manifest is fixed ordered path/SHA256 array; no PID, time, mtime or floats. Raw-byte hash and altered-byte regression are deterministic."
+    },
+    {
+      "component": "WORKFLOW",
+      "codes": [
+        "PI-CLOUD-EXECUTE-ENV-LEAK",
+        "PI-CLOUD-PROVIDER-AMBIGUITY",
+        "PI-CLOUD-RECEIPT-PERSISTENCE-SEMANTICS"
+      ],
+      "disposition": "not_adopted",
+      "reason": "Pinned SDK official docs say PI_OFFLINE disables startup network/model catalog refreshes, not model requests. Actual SDK loopback HTTP test with PI_OFFLINE=1 made one request and received stop/content. DeepSeek official endpoint and DashScope official endpoint are distinct providers; aliases for Qwen env keys do not turn them into one provider. No source code fabricates a cloud response. Production cloud results remain unverified until actual runner."
+    },
+    {
+      "component": "WORKFLOW",
+      "codes": [
+        "github_job_env_runner_context"
+      ],
+      "disposition": "fixed",
+      "reason": "Actual failed workflow run40189768381 exposed invalid job-level runner.temp context. Moved paths into trusted step writing GITHUB_ENV; Actionlint1.7.7 and new CI verify pass."
+    }
+  ],
+  "tests": {
+    "local_count": 13,
+    "local_failures": 0,
+    "actual_sdk_initialization": {
+      "version": "1.4.0",
+      "session_created": true,
+      "tools": 0,
+      "credential_store_writes": 0,
+      "model_requests": 0
+    },
+    "ci": {
+      "run": 40190159906,
+      "job": 121159250429,
+      "verify": "success",
+      "cloud_smoke": "skipped_on_PR_as_designed"
+    },
+    "offline_counterexample": {
+      "scope": "actual pinned SDK and loopback HTTP fixture; not real provider generation",
+      "pi_offline": "1",
+      "http_requests": 1,
+      "response_verified": true,
+      "real_provider_calls": 0
+    }
+  },
+  "cloud_generation_verified": false,
+  "accepted": false,
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "model_usage": {
+    "requests": 5,
+    "tokens_reported": 12065,
+    "actual_bill_verified": false
+  },
+  "limitations": [
+    "Four original native component reviews remain revise; only CLI approve. Controller counterexamples do not rewrite original verdicts.",
+    "Runtime/signer/A2/A3/B not accepted by this read-only Pi smoke.",
+    "Claude original stage audit remains required for PatchGate A2.",
+    "Cloud call, timeout, request identities and actual provider billing must be measured after merge."
+  ]
+}
