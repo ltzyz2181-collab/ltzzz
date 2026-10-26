@@ -179,36 +179,44 @@ function externalCase(f,{metadata={},readback={},payload={}}={}){
   const proof=f.sign(3,{...f.externalProof.payload,readback_sha256:sha256(canonical(r)),artifact_sha256:r.artifact.sha256,...payload});
   return {...f.args,config:{...f.args.config,external_stage_audits:[proof]},externalAuditReadbacks:[r]};
 }
+function advisoryMatches(args){
+  return externalAuditProofMatches({record:args.config.external_stage_audits[0],trust:args.trust,readbacks:args.externalAuditReadbacks,
+    subject:{task_id:TASK,phase:'A2',runtime_bundle_sha256:H},now});
+}
 test('B1 actual model signers are Qwen and Doubao; Claude has no delegated Anthropic key',()=>{
   assert.deepEqual(defaults.required_stage_auditors,['aliyun_dashscope','volcengine_ark']);
   assert.deepEqual(defaults.required_candidate_review_providers,['aliyun_dashscope','volcengine_ark']);
   assert.equal(defaults.claude_audit_channel.native_authorship_verified,false);
   assert.equal(defaults.claude_audit_channel.counts_toward_model_quorum,false);
-  assert.equal(defaults.claude_audit_channel.required_before_rollout,true);
+  assert.equal(defaults.claude_audit_channel.required_before_rollout,false);
+  assert.equal(defaults.claude_audit_channel.admission_authority,'none_shared_github_login');
   assert.throws(()=>validateA2Config({...defaults,required_stage_auditors:['anthropic','aliyun_dashscope']}));
-  assert.throws(()=>validateA2Config({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:false}}));
+  assert.throws(()=>validateA2Config({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:true}}));
 });
-test('B1 two model signatures without Claude immutable PR readback still block rollout',()=>{
-  const f=fixture();assert.equal(rolloutApproved({...f.args,externalAuditReadbacks:[]}),false);
-  assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[]}}),false);
+test('C1 shared-login Claude readback is advisory; exact two-provider quorum remains mandatory',()=>{
+  const f=fixture();assert.equal(rolloutApproved({...f.args,externalAuditReadbacks:[]}),true);
+  assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[]}}),true);
   assert.equal(rolloutApproved(externalCase(f)),true);
+  const forged=externalCase(f,{payload:{native_authorship_verified:true,counts_toward_model_quorum:true}});
+  for(const stage_audits of [[],[f.args.config.stage_audits[0]],[f.externalProof]])
+    assert.equal(rolloutApproved({...forged,config:{...forged.config,stage_audits}}),false);
 });
 test('B1 infrastructure Claude readback cannot replace either native model signature',()=>{
   const f=fixture();assert.equal(rolloutApproved({...f.args,config:{...f.args.config,stage_audits:[f.args.config.stage_audits[0],f.externalProof]}}),false);
-  assert.equal(rolloutApproved(externalCase(f,{payload:{native_authorship_verified:true}})),false);
-  assert.equal(rolloutApproved(externalCase(f,{payload:{counts_toward_model_quorum:true}})),false);
+  assert.equal(advisoryMatches(externalCase(f,{payload:{native_authorship_verified:true}})),false);
+  assert.equal(advisoryMatches(externalCase(f,{payload:{counts_toward_model_quorum:true}})),false);
   const proof=f.sign(1,{...f.externalProof.payload,role:'stage_review'});
-  assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[proof]}}),false);
+  assert.equal(rolloutApproved({...f.args,config:{...f.args.config,stage_audits:[proof],external_stage_audits:[proof]}}),false);
 });
-test('B1 old REVISE, forged subject, wrong report head and unchecked bundle never approve',()=>{
+test('advisory helper does not relabel old REVISE, forged subject, wrong report head or unchecked bundle as approve',()=>{
   const f=fixture();
   for(const changes of [{metadata:{verdict:'revise'}},{metadata:{verdict:'reject'}},{metadata:{runtime_bundle_sha256:'0'.repeat(64)}},{metadata:{task_id:'ANOTHER-TASK'}},{metadata:{seat:'gpt'}},{metadata:{reviewed_source_commit:C}},{readback:{reviewed_bundle_verification:'model_self_report'}},{payload:{audit_pr_head_sha:A}}])
-    assert.equal(rolloutApproved(externalCase(f,changes)),false);
+    assert.equal(advisoryMatches(externalCase(f,changes)),false);
 });
 test('B1 changed bytes, Git blob, stale readback, path escape and unsafe clock fail closed',()=>{
   const f=fixture();
   for(const changes of [{body_base64:Buffer.from('tampered').toString('base64')},{artifact:{...f.readback.artifact,blob_sha:A}},{fetched_at_utc:'2026-10-20T00:00:00.000Z'},{fetched_at_utc:'2026-10-26T00:00:00.000Z'},{artifact:{...f.readback.artifact,path:'knowledge/results/patchgate/../other.md'}},{file_http_status:404}])
-    assert.equal(rolloutApproved(externalCase(f,{readback:changes})),false);
+    assert.equal(advisoryMatches(externalCase(f,{readback:changes})),false);
   const proof={record:f.externalProof,trust:f.args.trust,readbacks:[f.readback],subject:f.rolloutSubject};
   assert.equal(externalAuditProofMatches({...proof,now:NaN}),false);
   assert.equal(externalAuditProofMatches({...proof,now,maxAge:-1}),false);
@@ -218,20 +226,26 @@ test('B1 only evidence arrays are excluded from bundle; signing route remains pr
   const original=bundleDigest({read});
   const evidence=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,external_stage_audits:[{untrusted:true}]}):read(name)});
   assert.equal(original.sha256,evidence.sha256);
-  const changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:false}}):read(name)});
+  const changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,claude_audit_channel:{...defaults.claude_audit_channel,required_before_rollout:true}}):read(name)});
   assert.notEqual(original.sha256,changed.sha256);
 });
 test('B1 helper authenticates its own raw record; unsigned provider prose and corrupted signatures fail',()=>{
   const f=fixture(),inputs={record:f.externalProof,trust:f.args.trust,readbacks:[f.readback],subject:f.rolloutSubject,now};
   assert.equal(externalAuditProofMatches(inputs),true);
   const forgeries=[{provider:'github_actions',payload:f.externalProof.payload},{...f.externalProof,signature:'A'.repeat(86)+'=='},{...f.externalProof,key_id:'unregistered'},{...f.externalProof,payload:{...f.externalProof.payload,verdict:'reject'}}];
-  for(const record of forgeries){assert.equal(externalAuditProofMatches({...inputs,record}),false);assert.equal(rolloutApproved({...f.args,config:{...f.args.config,external_stage_audits:[record]}}),false);}
+  for(const record of forgeries){assert.equal(externalAuditProofMatches({...inputs,record}),false);assert.equal(rolloutApproved({...f.args,config:{...f.args.config,stage_audits:[],external_stage_audits:[record]}}),false);}
 });
 test('B1 schema checks are deterministic and noncanonical base64 or unsafe artifact paths are rejected',()=>{
   const f=fixture();
-  assert.equal(rolloutApproved(externalCase(f,{metadata:{schema:'ltzzz.external-stage-audit.v0.9'}})),false);
+  assert.equal(advisoryMatches(externalCase(f,{metadata:{schema:'ltzzz.external-stage-audit.v0.9'}})),false);
   for(const path of ['knowledge/results/patchgate/evil\0.md','knowledge/results/patchgate/evil\\name.md','knowledge/results/patchgate/evil／name.md','knowledge/results/patchgate/../evil.md'])
-    assert.equal(rolloutApproved(externalCase(f,{readback:{artifact:{...f.readback.artifact,path}}})),false);
+    assert.equal(advisoryMatches(externalCase(f,{readback:{artifact:{...f.readback.artifact,path}}})),false);
   for(const body_base64 of [f.readback.body_base64+'\n','!'+f.readback.body_base64])
-    assert.equal(rolloutApproved(externalCase(f,{readback:{body_base64}})),false);
+    assert.equal(advisoryMatches(externalCase(f,{readback:{body_base64}})),false);
+});
+test('C3 changing the candidate-test workflow invalidates the registered runtime bundle',async()=>{
+  const {bundleDigest}=await import('../patchgate-a2-preflight.mjs'),read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
+  const original=bundleDigest({read});
+  const changed=bundleDigest({read:name=>name==='.github/workflows/patchgate-a2-verify.yml'?Buffer.concat([read(name),Buffer.from('\n# altered checker\n')]):read(name)});
+  assert.notEqual(original.sha256,changed.sha256);
 });

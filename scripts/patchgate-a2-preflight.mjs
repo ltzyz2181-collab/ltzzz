@@ -11,7 +11,7 @@ export const A2_BUNDLE_FILES=Object.freeze([
   'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/patchgate-a2-preflight.mjs',
   'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
   'scripts/lib/patchgate-a2-collector.mjs','scripts/patchgate-a2-collect.mjs','scripts/tests/patchgate-a2-collector.test.mjs','config/patchgate-a2-collector.json',
-  '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml'
+  '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml','.github/workflows/patchgate-a2-verify.yml'
 ]);
 export function bundleDigest({read}){
   const entries=A2_BUNDLE_FILES.map(name=>{
@@ -36,7 +36,7 @@ export function preflightA2({read,sourceCommit,now=Date.now()}){
   if(config.production_signing_keys_provisioned!==true)blockers.push('production_signing_transport_not_verified');
   if(config.base_compare_and_swap_verified!==true)blockers.push('atomic_base_fence_not_implemented_or_verified');
   if(config.runtime_bundle_sha256!==bundle.sha256)blockers.push('exact_runtime_bundle_not_approved');
-  if(!rolloutApproved({config,registry,trust,runnerSha:sourceCommit,runtimeBundleSha256:bundle.sha256,now}))blockers.push('Qwen_Doubao_signatures_or_Claude_PR_readback_missing_or_invalid');
+  if(!rolloutApproved({config,registry,trust,runnerSha:sourceCommit,runtimeBundleSha256:bundle.sha256,now}))blockers.push('Qwen_Doubao_stage_signatures_missing_or_invalid');
   return {task_id:TASK,phase:'A2_preflight_only',status:blockers.length?'blocked_not_activated':'configuration_preflight_only_live_acceptance_still_required',source_commit:sourceCommit||null,
     runtime_bundle:bundle,signing_executor_ids:registry.executors.filter(e=>e.signing_enabled===true).map(e=>e.id),blockers,
     native_model_calls:0,automatic_merge:false,automatic_deploy:false,financial_execution:false,paid:false,tx_hash:null};
