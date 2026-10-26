@@ -16,7 +16,7 @@ export function verifyChallenge({data,nonce,target,publicKey,sourceHash,deployme
     ||typeof data.signature!=='string'||!data.public_key_spki||data.public_key_spki!==key.export({format:'der',type:'spki'}).toString('base64'))throw Error('bound_challenge_required');
   if(!verify(null,Buffer.from(canonicalChallenge(data.payload)),publicKey,Buffer.from(data.signature,'base64')))throw Error('challenge_signature_invalid');return true;
 }
-export async function provision({env=process.env,fetchImpl=fetch}={}){
+export async function provision({env=process.env,fetchImpl=fetch,sleepImpl=sleep}={}){
   const report={task_id:'PLAN-PATCHGATE-ESCROW-20261023',scope:'isolated_persistent_challenge_keys_not_A2_admission',at_utc:new Date().toISOString(),run_id:env.GITHUB_RUN_ID||null,source_commit:env.GITHUB_SHA||null,model_calls:0,paid:false,tx_hash:null,A2_enabled:false,production_signing_roles_enabled:false,workers:[]};
   const account=env.CLOUDFLARE_ACCOUNT_ID,token=env.CLOUDFLARE_API_TOKEN;
   const source=fs.readFileSync('patchgate-key-challenge-worker.js','utf8'),sourceHash=hash(source);
@@ -60,7 +60,7 @@ export async function provision({env=process.env,fetchImpl=fetch}={}){
         const challenge=async deploymentMarker=>{
           const nonce=randomBytes(32).toString('hex');let last;
           for(let i=0;i<8;i++){
-            try{const r=await fetchImpl(base+'/challenge',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth},body:JSON.stringify({nonce}),redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('challenge_http_'+r.status);const d=await r.json();verifyChallenge({data:d,nonce,target,publicKey,sourceHash,deploymentMarker});return {payload:d.payload,signature:d.signature};}catch(e){last=e;if(i<7)await sleep(1000);}
+            try{const r=await fetchImpl(base+'/challenge',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth},body:JSON.stringify({nonce}),redirect:'error',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('challenge_http_'+r.status);const d=await r.json();verifyChallenge({data:d,nonce,target,publicKey,sourceHash,deploymentMarker});return {payload:d.payload,signature:d.signature};}catch(e){last=e;if(i<7)await sleepImpl(1000);}
           }throw last;
         };
         row.first_challenge=await challenge(firstMarker);
