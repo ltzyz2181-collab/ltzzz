@@ -5,6 +5,7 @@ import {A2_BUNDLE_FILES} from './patchgate-a2-preflight.mjs';
 import {collectSnapshot} from './patchgate.mjs';
 import {collectorGithubApi,collectTrustedChecks} from './lib/patchgate-a2-collector.mjs';
 import {a2GithubApi} from './lib/patchgate-a2.mjs';
+import {canonical,sha256} from './lib/patchgate.mjs';
 import {executionContext,executionRequest,executionGate,executionReadApi,executeA2} from './lib/patchgate-a2-executor.mjs';
 const gitRaw=args=>execFileSync('git',args,{encoding:'utf8',maxBuffer:3000000,stdio:['ignore','pipe','pipe'],env:{...process.env,GIT_NO_REPLACE_OBJECTS:'1'}});
 const git=args=>gitRaw(args).trim();
@@ -16,7 +17,8 @@ const read=name=>{if(!A2_BUNDLE_FILES.includes(name))throw Error('fixed_executio
 let report;
 if(mode==='gate'){
   const g=executionGate({context,request,read});
-  report={task_id:request.task_id,status:g.enabled?'execution_prerequisites_present_not_executed':'A2_disabled_or_unprovisioned',source_commit:context.source,run_id:context.run_id,blockers:g.blockers,runtime_bundle_sha256:g.runtime_bundle.sha256,automatic_merge:false,financial_execution:false};
+  report={task_id:request.task_id,status:g.enabled?'execution_prerequisites_present_not_executed':'A2_disabled_or_unprovisioned',source_commit:context.source,run_id:context.run_id,run_attempt:context.run_attempt,
+    candidate_pr:request.candidate_pr,candidate_head:request.candidate_head,request_sha256:sha256(canonical(request)),blockers:g.blockers,runtime_bundle_sha256:g.runtime_bundle.sha256,automatic_merge:false,financial_execution:false};
   fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+g.enabled+'\n');
 }else{
   if(!process.env.GITHUB_TOKEN)throw Error('managed_GitHub_execution_credential_missing');
@@ -28,6 +30,12 @@ if(mode==='gate'){
   }});
 }
 fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
+if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+  '### A2 '+mode+': '+report.status+'\n\n'+
+  'Candidate PR #'+request.candidate_pr+' at `'+request.candidate_head+'`; source `'+context.source+'`; run '+context.run_id+' / attempt '+context.run_attempt+'.\n\n'+
+  (report.automatic_merge?'Guarded merge reports verified success.':'**No verified automatic merge is claimed by this report.**')+'\n\n'+
+  (report.blockers?.length?'Blockers: '+report.blockers.map(x=>'`'+x+'`').join(', ')+'\n':'')+
+  (report.error?'Error: `'+report.error+'`\n':''));
 console.log(JSON.stringify({status:report.status,automatic_merge:report.automatic_merge,source_commit:context.source,run_id:context.run_id,blockers:report.blockers,error:report.error}));
 if(mode==='run'&&report.status!=='merged_readback_verified')process.exitCode=1;
 }
