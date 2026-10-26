@@ -55,7 +55,7 @@ test('stale edge cannot claim persistent keys for a deployment not serving yet',
     if(u.hostname==='api.cloudflare.com'){
       if(u.pathname.endsWith('/workers/subdomain'))return Response.json({success:true,result:{subdomain:'fixture'}});
       if(u.pathname.endsWith('/workers/scripts'))return Response.json({success:true,result:[...states.keys()].map(id=>({id}))});
-      const m=/\\/workers\\/scripts\\/([^/]+)(.*)$/.exec(u.pathname);assert.ok(m);
+      const m=new RegExp('/workers/scripts/([^/]+)(.*)$').exec(u.pathname);assert.ok(m);
       const [,name,suffix]=m;
       if(!suffix){
         const count=(uploadCounts.get(name)||0)+1;uploadCounts.set(name,count);
