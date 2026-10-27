@@ -1,0 +1,23 @@
+name: Payment SQLite durable store (offline, no funds)
+on:
+  pull_request:
+    paths: ['scripts/lib/small-payment-*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/small-payment-durable-store.test.mjs', 'scripts/tests/fixtures/small-payment-durable-worker.mjs', '.github/workflows/small-payment-durable-store.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/lib/small-payment-*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/small-payment-durable-store.test.mjs', 'scripts/tests/fixtures/small-payment-durable-worker.mjs', '.github/workflows/small-payment-durable-store.yml']
+permissions: {contents: read}
+jobs:
+  sqlite-and-alarms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install isolated pinned workerd harness without project lifecycle scripts
+        run: npm install --prefix "$RUNNER_TEMP/ltzzz-payment-do-tests" --ignore-scripts --no-audit --no-fund miniflare@4.20251008.0
+      - name: Real local SQLite transactions, automatic alarms and restart; no cloud deployment
+        env:
+          LTZZZ_MINIFLARE_MODULE: ${{ runner.temp }}/ltzzz-payment-do-tests/node_modules/miniflare/dist/src/index.js
+        run: node --test --test-reporter=tap scripts/tests/small-payment-durable-store.test.mjs
