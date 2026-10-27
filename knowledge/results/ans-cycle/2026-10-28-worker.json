@@ -1,0 +1,16 @@
+{
+  "finding": "syncDailyBoard 在 recoverArtifact 调用后忽略返回值，导致 generation_started 状态可直接降级为 generation_unknown_no_repurchase，即使磁盘上已存在唯一完整 artifact；同一轮循环不再对该新状态重试恢复，造成可恢复崩溃被推迟到下一轮或永久滞留。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-10-27-reviewer.json"
+  ],
+  "minimal_patch": "在 syncDailyBoard 的循环内，将无条件 recoverArtifact(root,record,agent,seat) 改为：\n\nconst recovered = seat.assignment && seat.claim_verified && !seat.artifact && ['generation_started','generation_unknown_no_repurchase'].includes(seat.status)\n  ? recoverArtifact(root,record,agent,seat)\n  : false;\n\n// recovery 成功后立即落入正常同步分支，不再先降级为 generation_unknown_no_repurchase\nif (seat.assignment && seat.claim_verified && ['generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)) {\n  await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});\n  continue;\n}\nif (recovered) {\n  // 已恢复为 generated_pending_sync，继续走下方 artifact 同步逻辑\n} else if (seat.status === 'generation_started') {\n  seat.status = 'generation_unknown_no_repurchase';\n  seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\n  saveLedger(root,record);\n  continue;\n}\nif (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;\n\n// 后续保持原有 validateArtifact / readRemote / snapshot / submit_task / review 逻辑不变",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>console.log(typeof m.syncDailyBoard, typeof m.recoverArtifact))\"",
+    "git diff -- scripts/lib/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "补丁尚未写入仓库，未做故障注入（kill -9 于 writeFileSync 后、saveLedger 前）验证恢复路径；且当前 sync CLI 单次执行中第二次 syncDailyBoard 是否掩盖该库函数缺陷未通过运行日志确认。"
+}
