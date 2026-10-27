@@ -4,7 +4,7 @@
   "run_id": "40555200485",
   "source_commit": "e45f363146132415f1af6350ccb77c3137ab284e",
   "at": "2026-10-27T17:56:17.548Z",
-  "status": "claimed_before_model_calls",
+  "status": "draft_independently_reviewed",
   "generation_policy": "ans_short_non_thinking_v2",
   "priority": "ANS autonomous dispatch and feedback",
   "tasks": [
@@ -19,8 +19,44 @@
       "role": "independent_reviewer"
     }
   ],
-  "calls": [],
-  "artifacts": [],
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-10-27T17:56:20.464Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 27785
+    },
+    {
+      "requested_agent": "Doubao",
+      "status": "success",
+      "at": "2026-10-27T17:56:26.484Z",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "finish_reason": "stop",
+      "tokens_used": 28165
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "worker",
+      "task_id": "ANS-2026-10-28-deepseek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "sha256": "667ca90e7026e056187cd8b534aef5058e40ba310ca259b471d7c2371e43d882",
+      "path": "knowledge/results/ans-cycle/2026-10-28-worker.json"
+    },
+    {
+      "role": "reviewer",
+      "task_id": "ANS-2026-10-28-doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "sha256": "f340ed4f7fa93d6538d95c399f52659302bf566db836a53024f4676685083823",
+      "path": "knowledge/results/ans-cycle/2026-10-28-reviewer.json"
+    }
+  ],
   "openai_calls": 0,
   "financial_execution": false,
   "paid": false,
@@ -35,5 +71,162 @@
     },
     "subject_sha256": "ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8",
     "source_text": "# LTZZZ 每日整理 · 2026-09-21\n\n## 主题\n装备论：把人、身体、感知、习气、环境、软件与 AI 视为可长期观察和迭代的“装备系统”。\n\n## 一、今日结构化整理\n\n### 1. 核心定义\n- 装备论不是把身体机械化，而是提供一个可观察、可记录、可验证的系统框架。\n- 装备既包括肉身，也包括认知、记忆、环境、软件、AI 与社会工具。\n- 研究目标不是证明预设结论，而是记录观察、证据、反例与可验证结果。\n\n### 2. 今日主线：装备系统的“输入—解释—动作”链\n- 输入：身体感受、情绪、梦境、环境刺激、信息流。\n- 解释：识神对输入进行命名、归因、预测与判断。\n- 动作：魄与习气推动即时反应，识神再为反应寻找理由。\n- 迭代：通过“观”把输入、解释、动作拆开，记录反例，再调整习惯和工具。\n\n### 3. 与魄、识神的关系\n- 魄：作为底层身体感受、本能反应和行为惯性的观察对象；不能把观察材料直接当作客观证明。\n- 识神：作为概念、记忆、判断和叙事的处理层；它能帮助整理，也可能把暂时反应误认为“真正的我”。\n- 装备升级：不是压制魄，也不是让识神消失，而是让两者从自动主导变成可观察、可调度的模块。\n\n### 4. 可验证假设\n- 假设 A：当输入、解释、动作被分开记录时，重复性习气更容易被识别。\n- 假设 B：把 AI、代码和日志纳入装备系统后，长期复盘会比依赖即时记忆更稳定。\n- 假设 C：只有同时记录证据、反例和下一步，装备论才不会退化为抽象口号。\n\n### 5. 今日反例与边界\n- 不能把“感觉到”“梦到”“AI 解释”直接当作事实证明。\n- 不能把 AI 生成内容直接标为已验证结果。\n- 不能把“代码存在”当作“已经上线”，也不能把“接口存在”当作“调用已成功”。\n\n### 6. 今日下一步\n- 给每日整理增加“来源文件、假设、反例、验证状态、下一步”字段。\n- 将短视频脚本与内容台账关联，形成脚本 → 视频草稿 → 发布记录 → 结果验证链。\n- 后续把 Memory Gateway 的“文件清单”继续升级为真实内容读取和统一状态快照。\n\n## 二、短视频脚本\n\n### 标题\n装备论：你不是坏了，而是默认权限开太大\n\n### 3 秒钩子\n你以为自己在思考，其实可能只是旧习气在自动执行。\n\n### 主体第 1 段：什么是装备论\n把身体、情绪、记忆、环境、软件和 AI 都看成一套装备系统。装备不是好坏标签，而是输入、处理和输出的组合。先看清系统怎么运行，才知道哪里需要升级。\n\n### 主体第 2 段：识神与魄怎么分工\n魄更接近本能、紧张和即时反应；识神更接近命名、判断和解释。很多时候，魄先启动，识神再补上一套“我为什么这样做”的故事。看见这条链，才有机会把自动反应变成可选择动作。\n\n### 主体第 3 段：怎么开始练\n每天选一个真实场景，记录三件事：身体先发生了什么、脑中出现了什么解释、最后做了什么动作。连续记录几天，你会看到重复出现的旧程序，这就是装备论的第一个可验证入口。\n\n### 结尾行动号召\n今天就记录一次你的“输入—解释—动作”，把它写下来，明天再看你是否真的在重复同一个程序。\n\n### 画面建议\n- 0—3 秒：快速切换“身体、手机、代码、AI 对话”画面，字幕突出“默认权限开太大”。\n- 主体第 1 段：用三层卡片展示“输入—解释—动作”。\n- 主体第 2 段：用两条不同颜色的线分别表示“魄的即时反应”和“识神的解释”。\n- 主体第 3 段：展示手写或电子日志模板，依次填入三行记录。\n- 结尾：画面停在一张简洁的每日记录卡片上。\n\n### 字幕\n- 你以为自己在思考，其实可能只是旧习气在自动执行\n- 装备论：身体、情绪、记忆、环境、软件、AI\n- 魄先反应，识神再解释\n- 记录：身体发生了什么 / 我怎么解释 / 我做了什么\n- 看见重复程序，才有机会升级装备\n- 今天就记录一次\n\n## 三、视频草稿状态\n- 本地 FFmpeg 视频链路：仓库 README 记录为“已真实验证”，但运行地址是本机 `127.0.0.1:8788`，本次自动任务无法直接调用本机服务。\n- 外部视频服务：未调用。\n- OAuth 与发布：未执行公开发布。\n\n## 四、状态报告\n\n### 已上线\n- 今日装备论结构化整理：已写入本文件。\n- 今日短视频脚本：已写入本文件，包含标题、3 秒钩子、主体 3 段、结尾行动号召、画面建议和字幕。\n\n### 等人工凭证\n- 按脚本生成当天视频草稿：现有 FFmpeg 引擎虽有历史验证记录，但本次自动任务无法访问本机服务；如要改为云端自动生成，需要可用的外部视频服务或部署凭证。\n- 视频平台 OAuth 与自动发布：仍需对应平台授权后才能进入发布链路。\n\n> 本次未输出或索取任何密钥。\n"
-  }
+  },
+  "pulse_observed_at": "2026-10-27T17:52:10.158Z",
+  "actual_autonomic_feedback": {
+    "version": 1,
+    "observed_at": "2026-10-27T17:52:10.158Z",
+    "cases": [],
+    "open_cases": 0,
+    "action_taken": {
+      "type": "apply_health_dispatch_controls",
+      "paused_agents": [],
+      "dispatch_paused": false
+    },
+    "follow_up_receipt": {
+      "previous_observation_at": "2026-10-27T17:47:10.009Z",
+      "current_observation_at": "2026-10-27T17:52:10.158Z",
+      "next_probe_due_at": "2026-10-27T17:57:10.158Z"
+    },
+    "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
+    "financial_execution": false,
+    "model_generation_proven": false,
+    "real_money_penalty": false
+  },
+  "remote_claims": true,
+  "inputs": [
+    {
+      "file": "scripts/lib/daily-task-board.mjs",
+      "sha256": "a342a0c80acf67aabb14d9606b0dd4f7475999dd52c3f254441250e85264de02"
+    },
+    {
+      "file": "scripts/daily-task-board.mjs",
+      "sha256": "703790c5b25c91c216ebb05d3a0c5a6908772fa1f0a0516142713f23140e2d01"
+    },
+    {
+      "file": "scripts/lib/pulse-client.mjs",
+      "sha256": "74678862d82f618f87abc0111319903100ea69a61857b6e87f4adde87906b4a7"
+    },
+    {
+      "file": "workers/pulse-worker/index.js",
+      "sha256": "3b3bceabedbeb3c4b19f7d011d51a4a2d9ef02b2ded84a00c34f24f334106e1f"
+    },
+    {
+      "file": "workers/pulse-worker/engine.js",
+      "sha256": "b46053c7f73001ef110a3260930ce2a642b136444b7856a77b8fef1a85872d0e"
+    },
+    {
+      "file": "workers/pulse-worker/tasks.js",
+      "sha256": "9577bcec2bd2716dc276fe7c5b9ebd5f19392dd5979ba621190c4895f3fb54cf"
+    },
+    {
+      "file": "scripts/lib/daily-assignment.mjs",
+      "sha256": "149bf53f6daa890ba86ce45c515a5dc158fe3be6ad1f7252a5e77c5bf2f48813"
+    },
+    {
+      "file": "scripts/run-autonomous-control.mjs",
+      "sha256": "944d60d024a0a51388c020fa43e7f9d3cb6a85f3cdeaee00d0d770594d87b7ba"
+    },
+    {
+      "file": "scripts/run-daily-tasks.mjs",
+      "sha256": "388f6600691e262e0a12062b488a6dd2434e684b85911898e420ecbc209d1217"
+    },
+    {
+      "file": "docs/ANS-AUTONOMOUS-PULSE.md",
+      "sha256": "7c8e34b2186faa1da46936c60f9c9002ab1fd93ba324d532e5c11dc46f4b5722"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20"
+    },
+    {
+      "file": "knowledge/results/ans-cycle/2026-10-27-reviewer.json",
+      "sha256": "06eb1f4337ff86cd52a7ab2a2f6722f499ee0ee718cb3534a1d4c624e2a206c4"
+    }
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "ans-worker-and-independent-review"
+  },
+  "provider_attempts": [
+    {
+      "requested_agent": "DeepSeek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 27785,
+      "request_id": null,
+      "completion_id": "6b75bf8e-2fe4-40fa-9546-6e1c747c11a3",
+      "stream_complete": true,
+      "error": null
+    },
+    {
+      "requested_agent": "Doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 28165,
+      "request_id": null,
+      "completion_id": null,
+      "stream_complete": null,
+      "error": null
+    }
+  ],
+  "worker_raw_output": "```json\n{\n  \"finding\": \"syncDailyBoard 在 recoverArtifact 调用后忽略返回值，导致 generation_started 状态可直接降级为 generation_unknown_no_repurchase，即使磁盘上已存在唯一完整 artifact；同一轮循环不再对该新状态重试恢复，造成可恢复崩溃被推迟到下一轮或永久滞留。\",\n  \"evidence_paths\": [\n    \"scripts/lib/daily-task-board.mjs\",\n    \"scripts/daily-task-board.mjs\",\n    \"knowledge/results/ans-cycle/2026-10-27-reviewer.json\"\n  ],\n  \"minimal_patch\": \"在 syncDailyBoard 的循环内，将无条件 recoverArtifact(root,record,agent,seat) 改为：\\n\\nconst recovered = seat.assignment && seat.claim_verified && !seat.artifact && ['generation_started','generation_unknown_no_repurchase'].includes(seat.status)\\n  ? recoverArtifact(root,record,agent,seat)\\n  : false;\\n\\n// recovery 成功后立即落入正常同步分支，不再先降级为 generation_unknown_no_repurchase\\nif (seat.assignment && seat.claim_verified && ['generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)) {\\n  await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});\\n  continue;\\n}\\nif (recovered) {\\n  // 已恢复为 generated_pending_sync，继续走下方 artifact 同步逻辑\\n} else if (seat.status === 'generation_started') {\\n  seat.status = 'generation_unknown_no_repurchase';\\n  seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\\n  saveLedger(root,record);\\n  continue;\\n}\\nif (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;\\n\\n// 后续保持原有 validateArtifact / readRemote / snapshot / submit_task / review 逻辑不变\",\n  \"verification_commands\": [\n    \"node --check scripts/lib/daily-task-board.mjs\",\n    \"node --check scripts/daily-task-board.mjs\",\n    \"node -e \\\"import('./scripts/lib/daily-task-board.mjs').then(m=>console.log(typeof m.syncDailyBoard, typeof m.recoverArtifact))\\\"\",\n    \"git diff -- scripts/lib/daily-task-board.mjs\"\n  ],\n  \"remaining_blocker\": \"补丁尚未写入仓库，未做故障注入（kill -9 于 writeFileSync 后、saveLedger 前）验证恢复路径；且当前 sync CLI 单次执行中第二次 syncDailyBoard 是否掩盖该库函数缺陷未通过运行日志确认。\"\n}\n```",
+  "worker_raw_sha256": "1bd09c68c0a5e48a03fb738c7840df7ed19f421bae1bafbb5809d8ccf07c99b3",
+  "worker_format": "json_engineering_draft",
+  "action_taken": {
+    "type": "engineering_draft_created_not_deployed",
+    "artifact_sha256": "667ca90e7026e056187cd8b534aef5058e40ba310ca259b471d7c2371e43d882"
+  },
+  "follow_up_receipt": {
+    "artifact_sha256": "667ca90e7026e056187cd8b534aef5058e40ba310ca259b471d7c2371e43d882",
+    "reviewer_provider": "Doubao",
+    "reviewer_model": "doubao-seed-2-1-pro-260915",
+    "accepted": true,
+    "scope": "independent_engineering_draft_review_not_production_execution"
+  },
+  "audit_raw_output": "{\"accepted\":true,\"artifact_sha256\":\"667ca90e7026e056187cd8b534aef5058e40ba310ca259b471d7c2371e43d882\",\"reasons\":[\"对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 在席位循环开头调用 recoverArtifact(root,record,agent,seat)，但未接收或判断其布尔返回值。\",\"源码显示 recoverArtifact 成功时会设置 seat.artifact、将 seat.status 改为 generated_pending_sync、保存 recovery 并返回 true；失败时返回 false。syncDailyBoard 忽略返回值本身不直接撤销成功恢复，因为状态已被函数突变，但无法依据返回值区分恢复成功、无 artifact 和歧义 artifact。\",\"当席位初始为 generation_started 且磁盘上已有唯一完整 artifact 时，若 recoverArtifact 当次成功，seat.status 已变为 generated_pending_sync，后续不会再进入 generation_started 降级分支，而会继续执行 validateArtifact、readRemote、submit_task 和 review 逻辑。因此 finding 中“recoverArtifact 调用后忽略返回值，导致已存在唯一完整 artifact 的 generation_started 状态可直接降级”的因果表述不够精确；真正问题是恢复失败或暂未识别时无返回值驱动的同轮重试。\",\"若 recoverArtifact 对 generation_started 返回 false，syncDailyBoard 随后无条件把状态改为 generation_unknown_no_repurchase，写入 sync_reason 并保存；同一轮循环不会再次调用 recoverArtifact，也不会进入正常 artifact 同步分支。该缺陷可由源码静态确认。\",\"recoverArtifact 明确支持 generation_started 和 generation_unknown_no_repurchase，所以下一次 syncDailyBoard 调用在唯一有效 artifact 已可识别时通常可以恢复。finding 所称“永久滞留”过重；准确影响是推迟到下一次 syncDailyBoard，若没有后续调用或识别条件持续不满足，则持续滞留。\",\"scripts/daily-task-board.mjs 的 sync CLI 在一次执行中先调用 syncDailyBoard，再执行 materializeDailyReview 和 syncDailyReview，之后第二次调用 syncDailyBoard。这可能在同一 CLI 执行中给该席位第二次恢复机会，但不能消除 syncDailyBoard 作为库函数单次调用的缺陷，也不能覆盖其他直接调用方。\",\"minimal_patch 的核心方向与源码问题相符：先保存 recoverArtifact 的结果，避免恢复成功后落入降级逻辑，并在恢复成功时继续执行下方 artifact 同步流程。\",\"所给补丁加入了 seat.assignment、seat.claim_verified、seat.artifact 和状态条件，条件与 recoverArtifact 自身入口条件基本一致；恢复成功后不 continue，可使 generated_pending_sync 进入后续正常同步分支。\",\"补丁仍是片段而非已写入仓库的完整 diff；未提供自动化测试或故障注入。交付的 remaining_blocker 已明确说明尚未写盘、未验证故障恢复路径，因此本次只能验收为可复核的问题分析和修复草稿，不能验收为已修复或已上线。\",\"verification_commands 中的 node --check、模块导入和 git diff 只能检查语法、导出与差异，不能证明崩溃恢复语义；这一限制在交付中已如实披露。\"],\"unverified\":[\"给定 artifact_sha256 对应交付原字节的 SHA-256 未在当前审核环境重算，仅按要求严格回传。\",\"补丁尚未证明已写入仓库；完整 diff、行级上下文、格式、语法和所有调用方兼容性未验证。\",\"未实际执行 node --check、模块导入、git diff、单元测试或集成测试。\",\"未在 fs.writeFileSync 成功后、seat.artifact 和 seat.status 持久化前通过 kill -9、断电或模拟崩溃做故障注入。\",\"唯一完整 artifact、无 artifact、多个候选 artifact、损坏 artifact、哈希不匹配、绑定字段不一致、文件已存在和目录项持久化等边界场景未通过测试验证。\",\"recoverArtifact 第一次失败后同一轮重试是否会因文件系统状态、时序或外部提交流程而成功，未通过运行验证。\",\"scripts/daily-task-board.mjs 中第二次 syncDailyBoard 是否在实际 GitHub Actions 日志中稳定掩盖该库函数缺陷，未验证。\",\"恢复成功后 readRemote、远端 raw 持久化、submit_task、独立 review 和异常重试的端到端行为未验证。\",\"后续 syncDailyBoard 是否必然被调度、何时触发以及生产环境重试时序未验证。\",\"任何模型调用、API 费用、资金交易、部署、生产版本或线上回读均未验证；本结论仅覆盖代码/规格草稿的可复核性。\"]}",
+  "audit": {
+    "accepted": true,
+    "artifact_sha256": "667ca90e7026e056187cd8b534aef5058e40ba310ca259b471d7c2371e43d882",
+    "reasons": [
+      "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 在席位循环开头调用 recoverArtifact(root,record,agent,seat)，但未接收或判断其布尔返回值。",
+      "源码显示 recoverArtifact 成功时会设置 seat.artifact、将 seat.status 改为 generated_pending_sync、保存 recovery 并返回 true；失败时返回 false。syncDailyBoard 忽略返回值本身不直接撤销成功恢复，因为状态已被函数突变，但无法依据返回值区分恢复成功、无 artifact 和歧义 artifact。",
+      "当席位初始为 generation_started 且磁盘上已有唯一完整 artifact 时，若 recoverArtifact 当次成功，seat.status 已变为 generated_pending_sync，后续不会再进入 generation_started 降级分支，而会继续执行 validateArtifact、readRemote、submit_task 和 review 逻辑。因此 finding 中“recoverArtifact 调用后忽略返回值，导致已存在唯一完整 artifact 的 generation_started 状态可直接降级”的因果表述不够精确；真正问题是恢复失败或暂未识别时无返回值驱动的同轮重试。",
+      "若 recoverArtifact 对 generation_started 返回 false，syncDailyBoard 随后无条件把状态改为 generation_unknown_no_repurchase，写入 sync_reason 并保存；同一轮循环不会再次调用 recoverArtifact，也不会进入正常 artifact 同步分支。该缺陷可由源码静态确认。",
+      "recoverArtifact 明确支持 generation_started 和 generation_unknown_no_repurchase，所以下一次 syncDailyBoard 调用在唯一有效 artifact 已可识别时通常可以恢复。finding 所称“永久滞留”过重；准确影响是推迟到下一次 syncDailyBoard，若没有后续调用或识别条件持续不满足，则持续滞留。",
+      "scripts/daily-task-board.mjs 的 sync CLI 在一次执行中先调用 syncDailyBoard，再执行 materializeDailyReview 和 syncDailyReview，之后第二次调用 syncDailyBoard。这可能在同一 CLI 执行中给该席位第二次恢复机会，但不能消除 syncDailyBoard 作为库函数单次调用的缺陷，也不能覆盖其他直接调用方。",
+      "minimal_patch 的核心方向与源码问题相符：先保存 recoverArtifact 的结果，避免恢复成功后落入降级逻辑，并在恢复成功时继续执行下方 artifact 同步流程。",
+      "所给补丁加入了 seat.assignment、seat.claim_verified、seat.artifact 和状态条件，条件与 recoverArtifact 自身入口条件基本一致；恢复成功后不 continue，可使 generated_pending_sync 进入后续正常同步分支。",
+      "补丁仍是片段而非已写入仓库的完整 diff；未提供自动化测试或故障注入。交付的 remaining_blocker 已明确说明尚未写盘、未验证故障恢复路径，因此本次只能验收为可复核的问题分析和修复草稿，不能验收为已修复或已上线。",
+      "verification_commands 中的 node --check、模块导入和 git diff 只能检查语法、导出与差异，不能证明崩溃恢复语义；这一限制在交付中已如实披露。"
+    ],
+    "unverified": [
+      "给定 artifact_sha256 对应交付原字节的 SHA-256 未在当前审核环境重算，仅按要求严格回传。",
+      "补丁尚未证明已写入仓库；完整 diff、行级上下文、格式、语法和所有调用方兼容性未验证。",
+      "未实际执行 node --check、模块导入、git diff、单元测试或集成测试。",
+      "未在 fs.writeFileSync 成功后、seat.artifact 和 seat.status 持久化前通过 kill -9、断电或模拟崩溃做故障注入。",
+      "唯一完整 artifact、无 artifact、多个候选 artifact、损坏 artifact、哈希不匹配、绑定字段不一致、文件已存在和目录项持久化等边界场景未通过测试验证。",
+      "recoverArtifact 第一次失败后同一轮重试是否会因文件系统状态、时序或外部提交流程而成功，未通过运行验证。",
+      "scripts/daily-task-board.mjs 中第二次 syncDailyBoard 是否在实际 GitHub Actions 日志中稳定掩盖该库函数缺陷，未验证。",
+      "恢复成功后 readRemote、远端 raw 持久化、submit_task、独立 review 和异常重试的端到端行为未验证。",
+      "后续 syncDailyBoard 是否必然被调度、何时触发以及生产环境重试时序未验证。",
+      "任何模型调用、API 费用、资金交易、部署、生产版本或线上回读均未验证；本结论仅覆盖代码/规格草稿的可复核性。"
+    ],
+    "executed_by": "Doubao",
+    "model": "doubao-seed-2-1-pro-260915",
+    "scope": "engineering_draft_only"
+  },
+  "deployed": false,
+  "completed_at": "2026-10-27T17:56:54.161Z"
 }
