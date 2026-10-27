@@ -1,0 +1,22 @@
+name: External market M1 zero-outflow offline verification
+on:
+  pull_request:
+    paths: ['scripts/lib/external-market-m1.mjs','scripts/tests/external-market-m1.test.mjs','config/external-market-m1.json','.github/workflows/external-market-m1.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/lib/external-market-m1.mjs','scripts/tests/external-market-m1.test.mjs','config/external-market-m1.json','.github/workflows/external-market-m1.yml']
+permissions: {contents: read}
+concurrency: {group: 'external-market-m1-offline-${{ github.event.pull_request.number || github.ref }}', cancel-in-progress: false}
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: No credentials, network enrollment or funding
+        run: |
+          node --check scripts/lib/external-market-m1.mjs
+          node --test scripts/tests/external-market-m1.test.mjs
