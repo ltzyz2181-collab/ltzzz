@@ -35,7 +35,7 @@ export class PaymentAlarmProbe {
             ordinal: Object.keys(state.operations).length + 1,
             activation_sha256: 'a'.repeat(64), request: {payment_id: id}, history: {payment_id: id},
             receipt_due_at: input.receipt_due_at, audit_due_at: input.audit_due_at,
-            receipt: null, audit: null, status: 'synthetic_reserved_no_execution', execution_attempted: false
+            receipt: null, audit: null, status: 'reserved_before_execution', execution_attempted: false
           };
         } else if (path === '/receipt') state.operations[input.id].receipt = {synthetic: true};
         else if (path === '/audit') state.operations[input.id].audit = {synthetic: true};

@@ -82,7 +82,8 @@ export function createDurablePaymentAdapters(storage) {
         const state = ledger(await storage.get(PAYMENT_STATE_KEY));
         const op = typeof payment_id === 'string' && Object.hasOwn(state.operations, payment_id)
           ? state.operations[payment_id] : null;
-        if (!op || op.request?.payment_id !== payment_id || op.receipt_due_at !== receipt_due_at ||
+        if (!op || op.status !== 'reserved_before_execution' || op.execution_attempted !== false ||
+            op.receipt || op.audit || op.request?.payment_id !== payment_id || op.receipt_due_at !== receipt_due_at ||
             op.audit_due_at !== audit_due_at || state.frozen)
           throw Error('exact_durable_payment_reservation_required');
         const alarm_at = await rearm(state);

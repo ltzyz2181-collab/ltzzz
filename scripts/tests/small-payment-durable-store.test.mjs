@@ -97,6 +97,9 @@ test('real workerd SQLite DO transactions, alarms and restart (synthetic ledger,
       const input = deadlines('settlement'); await call('settlement', '/append', input);
       await call('settlement', '/receipt', {id: input.id});
       assert.equal((await call('settlement', '/state')).body.alarm, Date.parse(input.audit_due_at));
+      assert.equal((await call('settlement', '/schedule', {payment_id: input.id,
+        receipt_due_at: input.receipt_due_at, audit_due_at: input.audit_due_at})).status, 422);
+      assert.equal((await call('settlement', '/state')).body.alarm, Date.parse(input.audit_due_at));
       await call('settlement', '/audit', {id: input.id});
       const {body} = await call('settlement', '/state'); assert.equal(body.alarm, null);
       assert.equal(body.state.operations.settlement.execution_attempted, false);
