@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_active_A2_28_file_executor_merged_disabled_OIDC_PR255_and_native_signer_PR263_waiting_Claude_review",
-  "at_utc": "2026-10-26T23:42:38Z",
+  "status": "A1_active_A2_disabled_PR255_merged_PR263_source_cloud_author_checks_revision_waiting_Claude",
+  "at_utc": "2026-10-27T00:47:11Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -211,7 +211,11 @@
       "new_executor_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/262#issuecomment-6429981633",
       "executor_audit_pr": 262,
       "executor_audit_head": "263ad26e178182d3f842ee5df11f98a8edab75ba",
-      "executor_audit_merge": "460cb873cbed7fedb7c593d9e86c0777c0d72011"
+      "executor_audit_merge": "460cb873cbed7fedb7c593d9e86c0777c0d72011",
+      "native_adapter_audit_pr": 264,
+      "native_adapter_verdict": "REVISE_original_preserved",
+      "native_adapter_rereview_requested_head": "c16da83734199755407c3b1fb4787db0aa347a10",
+      "native_adapter_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/263#issuecomment-6430880018"
     },
     "qwen": {
       "status": "B1_opinions_preserved_not_stage_approval",
@@ -224,14 +228,16 @@
       "originals_ref": "eca85d53d00658badc6eb39faa10e4d781a3413c"
     },
     "blockers": [
-      "PR255_OIDC_new_head_waiting_Claude_then_actual_enrollment_acceptance",
-      "PR263_review_stage_review_adapter_waiting_separate_Claude_audit_and_actual_CF_DO_native_provider_acceptance",
-      "author_and_deterministic_checks_signature_producers_not_connected",
+      "PR263_new_head_waiting_Claude_independent_review_before_merge",
+      "real_provider_cloud_deployment_access_IAM_and_Ed25519_service_compatibility_unverified",
+      "actual_cloud_public_keys_and_control_plane_deployment_proofs_not_registered",
+      "native_author_generation_publisher_and_infrastructure_checks_signer_runtime_not_connected",
+      "source_bound_native_model_signature_live_acceptance_not_executed",
       "qualified_L0_BASE_check_and_signed_checks_not_live_verified",
-      "39_file_candidate_bundle_not_stage_approved_or_activated",
       "actual_execution_authority_not_registered",
-      "PR243_high_risk_notice_gate_still_pending_audit",
-      "first_harmless_docs_automatic_merge_not_executed"
+      "45_file_candidate_bundle_not_stage_approved_or_activated",
+      "first_harmless_docs_automatic_merge_not_executed",
+      "PR243_high_risk_notice_gate_still_pending_audit"
     ],
     "tested_code_head": "034bbe21f1f8095daa4378bf62201308b82eb771",
     "runtime_bytes_equal": true,
@@ -441,7 +447,7 @@
       "key_persistence": {
         "pr": 255,
         "head": "58cef023fff5b79a5591e628a2138dfb652310fb",
-        "status": "PR262_K3_OIDC_revision_CI_passed_waiting_Claude_not_merged_or_enrolled",
+        "status": "PR264_approve_PR255_merged_code_only_no_live_enrollment",
         "CI": {
           "run_id": "40421197800",
           "job_id": "121915781159",
@@ -500,7 +506,12 @@
         },
         "stale_edge": "new_deployment_marker_checked_inside_signed_challenge_fixture_passed",
         "partial_recovery": "provider_settings_public_key_and_secret_names_only_non_key_setup_resumed_existing_private_key_preserved",
-        "superseded_stacked_pr": 260
+        "superseded_stacked_pr": 260,
+        "merge_commit": "e19bf2b218a2442607da8b9bb660d1c51aa946d0",
+        "independent_audit_pr": 264,
+        "independent_audit_head": "44616a2da1e14434028c97cd7b1263c8aeb5d131",
+        "legacy_runner_enrollment_retirement_candidate_pr": 263,
+        "legacy_enrollment_executed_this_followup": false
       },
       "checker_and_reconciliation": {
         "pr": 256,
@@ -618,10 +629,10 @@
     },
     "native_attestation_candidate": {
       "pr": 263,
-      "head": "818cd8e962f462a6defd4668e5af92b84d733fae",
-      "base_pr": 255,
-      "base_head": "58cef023fff5b79a5591e628a2138dfb652310fb",
-      "status": "review_stage_review_code_submitted_waiting_separate_Claude_audit_not_deployed_or_admitted",
+      "head": "c16da83734199755407c3b1fb4787db0aa347a10",
+      "base_pr": null,
+      "base_head": "43477d536c89b8b7657632e3b5897a5559549fed",
+      "status": "PR264_PR265_source_cloud_revision_CI_passed_waiting_Claude_not_merged_or_deployed",
       "roles": [
         "review",
         "stage_review"
@@ -629,14 +640,15 @@
       "author_producer_ready": false,
       "checks_producer_ready": false,
       "workflow_path": ".github/workflows/patchgate-model-attest.yml",
-      "runtime_file_count": 39,
-      "runtime_bundle_sha256": "db16afee4eb5634ee1f679ff16cc91d5032fd294be9a9ffa23866b3c169fbb7a",
+      "runtime_file_count": 45,
+      "runtime_bundle_sha256": "4be9e7b9688b7299d1741b587f4730e797cb88d762ee69d201a2de236477c9a0",
       "CI": {
-        "run_id": "40421355692",
-        "job_id": "121916304816",
+        "run_id": "40428220208",
+        "job_id": "121939279121",
         "run_attempt": 1,
-        "passed": 219,
+        "passed": 243,
         "failed": 0,
+        "skipped_tests": 0,
         "attest": "skipped"
       },
       "configuration_enabled": false,
@@ -644,8 +656,48 @@
       "signing_keys_registered": false,
       "real_deployment_verified": false,
       "native_model_calls": 0,
-      "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/263#issuecomment-6429971585",
-      "provider_signatures_generated_in_tests_only": true
+      "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/263#issuecomment-6430880018",
+      "provider_signatures_generated_in_tests_only": true,
+      "base_branch": "main",
+      "signer_source_file_count": 21,
+      "signer_source_sha256": "53847961dffa521181407028b60b7a26b842d8c20d16b69c42f1f44f962b5217",
+      "author_producer_implemented": true,
+      "checks_producer_implemented": true,
+      "source_deployment_verified": false,
+      "real_public_keys_registered": 0,
+      "full_candidate_CI": {
+        "run_id": "40428220198",
+        "job_id": "121939300688",
+        "run_attempt": 1,
+        "passed": 243,
+        "failed": 0
+      },
+      "L0_BASE_check": {
+        "run_id": "40428218309",
+        "conclusion": "failure",
+        "production_admission": false
+      },
+      "M1": "source_and_cloud_evidence_binding_implemented_candidate_fingerprints_registered_real_cloud_proofs_not_registered",
+      "M2": "cloud_separation_plan_only_independent_IAM_and_runtime_integrity_not_verified",
+      "M3": "A2_L0_docs_only_stage_opinion_not_L1_A3_or_funds_audit",
+      "M4": "constant_REST_tree_cache_raw_commit_blobs_SHA1_checked_bounded_8MB_tree_shared_public_quota_still_possible",
+      "author_provider_topology": "third_native_provider_preferred_DeepSeek_Qwen_and_Doubao_remain_two_required_independent_reviewers"
+    },
+    "split_signer_infrastructure": {
+      "plan_pr": 265,
+      "plan_head": "da112ae5dc8d5c8c0dfe2b5b634dee9385345886",
+      "plan_merge": "43477d536c89b8b7657632e3b5897a5559549fed",
+      "gpt_card": "engineering_implementation_submitted_waiting_independent_review_no_production_private_key_access",
+      "qianwen_card": "published_not_acceptance_or_cloud_deployment",
+      "doubao_card": "published_not_acceptance_or_cloud_deployment",
+      "current_environment_provider_deployment_identity_verified": false,
+      "aliyun_Ed25519_service_compatibility_verified": false,
+      "volcengine_Ed25519_service_compatibility_verified": false,
+      "real_provider_cloud_deployments": 0,
+      "source_hash_self_report_is_runtime_integrity_proof": false,
+      "cloud_vendor_separation_alone_is_IAM_independence": false,
+      "engineering_handoff": "docs/SPLIT-SIGNER-INFRA-EXECUTION-20261027.md",
+      "readiness_receipt": "knowledge/results/patchgate/split-signers/gpt-infra-readiness-20261027.json"
     }
   },
   "configuration_evidence": "knowledge/results/patchgate/pr224-evidence/actual-configuration.json",
@@ -1182,5 +1234,26 @@
     "A3_enabled": false,
     "B_enabled": false,
     "execution_authority": null
+  },
+  "post265_followup": {
+    "at_utc": "2026-10-27T00:47:11Z",
+    "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "author_provider": "openai",
+    "model": null,
+    "model_source": "current_Codex_session_exact_id_unavailable",
+    "production_private_key_access": false,
+    "production_private_keys_generated": 0,
+    "real_cloud_deployments": 0,
+    "native_model_calls": 0,
+    "real_signatures_generated": 0,
+    "tests_use_ephemeral_offline_fixtures": true,
+    "A2_enabled": false,
+    "execution_authority": null,
+    "automatic_release": false,
+    "A3_enabled": false,
+    "B_enabled": false,
+    "financial_execution": false,
+    "paid": false,
+    "tx_hash": null
   }
 }
