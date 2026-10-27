@@ -3,7 +3,7 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "subtask_id": "PR266-REVIEW",
   "source_commit": "9f12c598d110612bc30e66a519425edd74ed1d1a",
-  "at_utc": "2026-10-27T04:18:08.644968+00:00",
+  "at_utc": "2026-10-27T04:23:07.228431+00:00",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -11,7 +11,7 @@
   "status": "engineering_candidate_waiting_independent_review",
   "artifact": {
     "path": "knowledge/results/patchgate/post266/artifact-manifest.json",
-    "sha256": "ffd399c44a65f1797a8d9f69100a64e2ce175df43b47e57519a3b84a43bc7fed"
+    "sha256": "ac56ef579e7a8e926122710e768cfd261ec2d7388856fad22c226c2986dced86"
   },
   "stages": {
     "claimed": true,
@@ -26,7 +26,7 @@
     "scope": "local_synthetic_offline_only",
     "node": "v24.19.0",
     "new_policy_runtime": {
-      "passed": 121,
+      "passed": 124,
       "failed": 0,
       "command": "node --test scripts/tests/small-payment-policy.test.mjs scripts/tests/small-payment-runtime.test.mjs"
     },
@@ -70,5 +70,15 @@
     "The wallet live entry now blocks old callers without a runtime permit; original explicit dry-run workflow and other treasury/Aave/x402 paths were not run or migrated.",
     "Cloud GitHub credentials/checks hosting are designs only, with unknown App/IAM/Ed25519 support and no claimed deployment.",
     "Manifest digest is external to artifact bytes; do not reject a file because its own overall digest is absent inside it."
-  ]
+  ],
+  "prior_candidate_CI": {
+    "head": "dd2cecfc8de57b8e2ac7529913feaa542bd4761b",
+    "run_id": "40449075819",
+    "job_id": "122007249333",
+    "run_attempt": 1,
+    "conclusion": "success",
+    "test_stdout_readback": false,
+    "artifact_zip_byte_readback": "unverified_network_proxy_403",
+    "scope": "superseded_121_test_candidate_not_current_124_test_head"
+  }
 }

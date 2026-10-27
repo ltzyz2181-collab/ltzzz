@@ -35,6 +35,8 @@
 
 未决预留跨天/跨周继续占预算；只有独立核实的 cancelled/rejected/failed 才可解除。当前运行时没有自动释放或人工解冻接口，不能靠重启清账。
 
+确认延迟时，已付历史按确认观测时刻进入新窗口，不能沿用过期预留时间释放预算。提交后即使结算查询失败仍保存公开 submitted_tx_hash 供对账，但不据此标 paid；同一结算交易哈希不能登记为两个 payment_id。
+
 确认付款必须有显式 `paid=true` 和真实交易哈希；当前链上适配契约还要求 `provider_receipt_id=null`。缺字段、失败、模拟哈希、不同地址/金额都冻结，不能补造 `paid=false,tx_hash=null` 来掩盖未知结果。顶层工程回执的 paid=false 仅指本轮工程没有付款。
 
 数据库故障无法落盘冻结时，返回 `freeze_persisted=false` 和 `durable_state_unavailable_reconcile_only`，当前进程停止继续提交；不谎称冻结已持久化。恢复必须独立核对未决操作和持久开关，不能自动重新初始化 state。已经广播的交易无法被之后的冻结撤回。

@@ -104,10 +104,20 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
     if(!ready)return blocked('payment_switch_changed_before_execution');
     permit=mintPermit(request,reserved.payee,clock());invoked=true;
     const result=await execute({request:structuredClone(request),recipient:reserved.payee.address,operation_id:paymentId,permit});
+    // Preserve the public submission hash even if independent settlement fails.
+    // This is not a paid/confirmed claim and must never enable automatic retry.
+    const submittedHash=result?.hash??result?.tx_hash;
+    if(TX.test(submittedHash||''))await store.transaction(async tx=>{
+     const s=await get(tx);s.operations[paymentId].submitted_tx_hash=submittedHash;await tx.put(KEY,s);
+    });
     const receipt=await verifySettlement({request:structuredClone(op.request),execution_result:result,expected_recipient_key:op.history.recipient_key});
     normalizedReceipt(receipt,op);
     await store.transaction(async tx=>{
-     const s=await get(tx),o=s.operations[paymentId];o.receipt=structuredClone(receipt);o.status='paid_pending_independent_audit';o.history.status='paid';await tx.put(KEY,s);
+     const s=await get(tx),o=s.operations[paymentId];
+     if(Object.values(s.operations).some(other=>other.request.payment_id!==paymentId&&other.receipt?.tx_hash?.toLowerCase()===receipt.tx_hash.toLowerCase()))throw Error('settlement_transaction_already_claimed');
+     o.receipt=structuredClone(receipt);o.status='paid_pending_independent_audit';o.history.status='paid';
+     // Late confirmations cannot inherit an expired reservation's old window.
+     o.history.at_utc=new Date(clock()).toISOString();await tx.put(KEY,s);
     });
     return {status:'paid_pending_independent_audit',payment_id:paymentId,paid:receipt.paid,tx_hash:receipt.tx_hash,execution_attempted:true,automatic_retry:false};
    }catch(e){
