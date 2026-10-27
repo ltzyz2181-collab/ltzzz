@@ -6,6 +6,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { consumeSmallPaymentPermit } from './lib/small-payment-runtime.mjs';
+import { parseUsdc6 } from './lib/small-payment-policy.mjs';
 
 export const REPO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const WALLET_DIR = path.join(REPO_DIR, "agent-wallet");
@@ -128,8 +130,20 @@ export async function localWallet(prov) {
   return { provider, wallet, usdc };
 }
 
-export async function executeTransfer({ recipient, amountUsdc, purpose }) {
-  const prov = providerMode();
+export async function executeTransfer({ recipient, amountUsdc, purpose, smallPaymentPermit, paymentPurposeId }) {
+  // Live transfer is only reachable through the registered runtime reservation.
+  // Check capability BEFORE loading the wallet credential or importing ethers.
+  const explicitDryRun = process.env.LTZZZ_WALLET_DRY_RUN === "true";
+  let liveAmount;
+  if (!explicitDryRun) {
+    if (!smallPaymentPermit) throw new Error('small_payment_runtime_permit_required');
+    liveAmount = parseUsdc6(amountUsdc); // exact decimal string, never Math.round
+    consumeSmallPaymentPermit(smallPaymentPermit, {
+      recipient, amount_raw: liveAmount, purpose_id: paymentPurposeId, rail: 'base_usdc'
+    });
+  }
+  const prov = explicitDryRun ? { mode: 'dry-run' } : providerMode();
+  if (!explicitDryRun && prov.mode !== 'local') throw new Error('live_wallet_executor_not_configured');
   if (prov.mode === "dry-run") {
     const w = loadWallet();
     const sim = Number(w.simulated_balance_usdc ?? 0);
@@ -139,7 +153,7 @@ export async function executeTransfer({ recipient, amountUsdc, purpose }) {
     return { mode: "dry-run", hash: `0xDRYRUN-${Date.now().toString(16)}`, status: "dry_run", simulated_balance_after: w.simulated_balance_usdc };
   }
   const { usdc, wallet } = await localWallet(prov);
-  const amount = BigInt(usdcInt(amountUsdc));
+  const amount = BigInt(liveAmount);
   const tx = await usdc.transfer(recipient, amount);
   const rcpt = await tx.wait();
   const w = loadWallet();
@@ -147,7 +161,8 @@ export async function executeTransfer({ recipient, amountUsdc, purpose }) {
   w.wallet_id = "LOCAL-SELF-HOSTED";
   w.status = "initialized_local";
   saveWallet(w);
-  return { mode: "local", hash: tx.hash, status: rcpt ? "confirmed" : "submitted" };
+  // This is a submission result, not independently verified settlement.
+  return { mode: "local", hash: tx.hash, status: rcpt?.status === 1 ? "confirmed" : "submitted" };
 }
 
 // —— 记账 ——

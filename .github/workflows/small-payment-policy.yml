@@ -1,0 +1,32 @@
+name: Small payment policy offline validation (no payment)
+on:
+  pull_request:
+    paths: ['scripts/lib/small-payment-*.mjs','scripts/tests/small-payment-*.mjs','scripts/wallet-lib.mjs','config/small-payment-autonomy.json','.github/workflows/small-payment-policy.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/lib/small-payment-*.mjs','scripts/tests/small-payment-*.mjs','scripts/wallet-lib.mjs','config/small-payment-autonomy.json','.github/workflows/small-payment-policy.yml']
+permissions: {contents: read}
+concurrency:
+  group: small-payment-offline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax and deterministic synthetic adversarial tests (no credentials)
+        run: |
+          node --check scripts/lib/small-payment-policy.mjs
+          node --check scripts/lib/small-payment-runtime.mjs
+          node --check scripts/wallet-lib.mjs
+          node --test scripts/tests/small-payment-policy.test.mjs scripts/tests/small-payment-runtime.test.mjs > /tmp/small-payment-tests.txt 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: small-payment-offline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/small-payment-tests.txt
+          retention-days: 30

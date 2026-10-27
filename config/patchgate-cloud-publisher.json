@@ -1,0 +1,192 @@
+{
+  "schema": "ltzzz.patchgate.cloud-publisher-checker-design.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "source_review_pr": 266,
+  "source_review_scope": "default_off_source_code_merge_only_not_deployment_or_admission",
+  "source_main_commit": "9f12c598d110612bc30e66a519425edd74ed1d1a",
+  "status": "design_only_cloud_services_not_connected",
+  "enabled": false,
+  "repository": "ltzyz2181-collab/ltzzz",
+  "native_author": {
+    "preferred_provider": "deepseek",
+    "required_third_provider": true,
+    "forbidden_author_providers": [
+      "aliyun_dashscope",
+      "volcengine_ark"
+    ],
+    "required_review_providers": [
+      "aliyun_dashscope",
+      "volcengine_ark"
+    ],
+    "generation_service_connected": false,
+    "publisher_connected": false,
+    "ledger_origin": "server_owned_native_generation_and_same_service_publication",
+    "caller_supplied_native_response_allowed": false,
+    "existing_GPT_artifact_relabeling_allowed": false
+  },
+  "publisher": {
+    "enabled": false,
+    "service_url": null,
+    "cloud_host": null,
+    "cloud_account_binding": null,
+    "deployment_principal": null,
+    "runtime_principal": null,
+    "source_sha256": null,
+    "deployment_evidence_sha256": null,
+    "github_app": {
+      "dedicated_app_required": true,
+      "app_id": null,
+      "installation_id": null,
+      "installation_repository_scope_verified": false,
+      "requested_repository_permissions": {
+        "contents": "write",
+        "pull_requests": "write",
+        "metadata": "read"
+      },
+      "native_candidate_ref_only_token_supported": false,
+      "raw_token_permissions_broader_than_broker_RPC": true,
+      "private_key_custody": "dedicated_cloud_credential_broker_only",
+      "installation_token_custody": "short_lived_in_cloud_broker_only",
+      "raw_credential_export_to_GPT_or_runner": false,
+      "raw_credential_request_RPC_allowed": false,
+      "raw_credential_delivery_to_author_runtime": false,
+      "permissions_verified": false,
+      "bot_login": null,
+      "bot_user_id": null,
+      "trusted_PR_author_admission_verified": false,
+      "existing_owner_only_or_association_gates_migrated": false,
+      "App_and_bot_identity_migration_requires_separate_review": true
+    },
+    "broker": {
+      "connected": false,
+      "public_RPC": "POST /publish-candidate",
+      "public_input_fields": [
+        "schema",
+        "task_id",
+        "generation_id"
+      ],
+      "fixed_repository_only": true,
+      "candidate_ref_prefix": "refs/heads/patchgate-candidates/",
+      "candidate_ref_key": "sha256(task_id + ':' + generation_id + ':' + source_main_sha + ':' + artifact_sha256)",
+      "candidate_ref_create_only": true,
+      "parent_commit": "exact_generation_source_main_sha",
+      "allowed_file_scope": "reviewed_L0_regular_docs_markdown_or_README_only",
+      "allowed_internal_write_operations": [
+        "create_bound_git_blob",
+        "create_bound_git_tree",
+        "create_bound_git_commit",
+        "create_deterministic_candidate_ref",
+        "create_one_bound_candidate_PR"
+      ],
+      "forbidden_operations": [
+        "write_main",
+        "update_or_delete_ref",
+        "force_push",
+        "merge_PR",
+        "approve_PR",
+        "dispatch_or_rerun_actions",
+        "modify_other_PR",
+        "read_or_write_secrets",
+        "change_IAM",
+        "change_branch_protection",
+        "export_app_key_or_token",
+        "arbitrary_GitHub_proxy"
+      ],
+      "publication_ledger_server_owned": true,
+      "native_output_HEAD_bytes_equal_required": true,
+      "same_generation_deduplicated": true,
+      "unknown_publication_outcome": "reconcile_original_branch_and_PR_no_retry_no_overwrite"
+    },
+    "main_protection": {
+      "required": true,
+      "latest_controller_observed_protected": false,
+      "observation_source": "controller_supplied_GitHub_branch_metadata_not_requeried_by_this_design",
+      "effective_rules_verified": false,
+      "publisher_bypass_allowed": false,
+      "enablement_blocker": "main_protection_and_rejection_acceptance_not_verified"
+    }
+  },
+  "checks_signer": {
+    "enabled": false,
+    "provider": "github_actions",
+    "provider_label_semantics": "deterministic_evidence_source_not_key_hosting_cloud",
+    "executor_id": "a2-cloud-checks-executor",
+    "roles": [
+      "checks"
+    ],
+    "key_hosting_cloud": null,
+    "cloud_account_binding": null,
+    "region": null,
+    "service_url": null,
+    "deployment_principal": null,
+    "runtime_principal": null,
+    "signing_key_id": null,
+    "public_key_spki": null,
+    "signer_source_sha256": null,
+    "deployment_evidence_sha256": null,
+    "source_deployment_verified": false,
+    "separate_from_author_deployment_principal_required": true,
+    "GPT_CI_raw_sign_access_allowed": false,
+    "author_or_publisher_raw_sign_access_allowed": false,
+    "github_access": "cloud_kept_readonly_contents_pull_requests_actions_checks_metadata_only",
+    "collector": "scripts/lib/patchgate-a2-collector.mjs:collectTrustedChecks",
+    "caller_supplied_passed_collection_allowed": false,
+    "evidence_binding": [
+      "task_id",
+      "subject",
+      "source_main_sha",
+      "candidate_head",
+      "checker_base_sha",
+      "workflow_source_hash",
+      "workflow_id",
+      "check_app_id",
+      "run_id",
+      "run_attempt",
+      "job_id",
+      "checks_sha256",
+      "at_utc",
+      "signer_source_sha256",
+      "deployment_evidence_sha256"
+    ],
+    "merger_recollection_required": true,
+    "cloud_signer_connected": false
+  },
+  "key_policy": {
+    "required_current_algorithm": "ed25519",
+    "aliyun_or_volcengine_KMS_ed25519_support_verified": false,
+    "KMS_Sign_drop_in_compatibility_claimed": false,
+    "provider_side_generation_required": true,
+    "GPT_or_generic_runner_private_key_generation_allowed": false,
+    "private_key_export_allowed": false,
+    "algorithm_migration_requires_separate_review": true,
+    "cloud_IAM_and_release_independence_verified": false,
+    "self_reported_source_hash_is_remote_attestation": false
+  },
+  "acceptance": {
+    "app_installation_and_permissions_verified": false,
+    "main_rules_and_no_bypass_rejection_verified": false,
+    "native_generation_publication_ledger_verified": false,
+    "unique_candidate_branch_PR_verified": false,
+    "cloud_checks_signature_verified": false,
+    "restart_challenge_verified": false,
+    "independent_review_complete": false,
+    "first_A2_automatic_docs_merge_verified": false,
+    "publisher_App_PR_bootstrap_collector_merger_admission_verified": false
+  },
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "A2_enabled": false,
+  "A3_enabled": false,
+  "B_enabled": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "This file is a design and default-off placeholder, not a runtime authorization or proof of cloud deployment.",
+    "GitHub standard installation tokens are not natively restricted to candidate refs; broker allowlists and actual protected-main rules are separate requirements.",
+    "Cloud host, actual App installation, credentials, public keys, deployed source evidence and IAM separation are unverified.",
+    "Existing source-code-only producer libraries have not been connected to cloud generation, publisher or checker services.",
+    "Qwen and Doubao remain two mandatory reviewers; the native author must be a distinct third provider.",
+    "Existing owner-only and author_association gates may reject App bot PRs; real App/bot/installation registration and reviewed BASE gate migration are required, never blanket bot trust."
+  ]
+}
