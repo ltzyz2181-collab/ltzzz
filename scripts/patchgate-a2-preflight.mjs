@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {canonical,sha256,TASK} from './lib/patchgate.mjs';
-import {validateA2Config,validateExecutorRegistry,rolloutApproved} from './lib/patchgate-a2.mjs';
+import {validateA2Config,validateExecutorRegistry,rolloutApproved,sourceBindingsVerified} from './lib/patchgate-a2.mjs';
 
 import {A2_REVIEW_FILES} from '../patchgate-a2-manifest.mjs';
 export const A2_BUNDLE_FILES=A2_REVIEW_FILES;
@@ -27,6 +27,7 @@ export function preflightA2({read,sourceCommit,now=Date.now()}){
   validateA2Config(config);
   const bundle=bundleDigest({read}),blockers=[];
   if(config.enabled!==true)blockers.push('A2_switch_disabled');
+  if(!sourceBindingsVerified({registry,trust}))blockers.push('signer_source_deployment_bindings_not_verified');
   if(!validateExecutorRegistry({registry,trust}))blockers.push('registered_real_signers_not_provisioned');
   if(config.production_signing_keys_provisioned!==true)blockers.push('production_signing_transport_not_verified');
   // B2/PR248: only L0 docs use mandatory post-merge tree verification plus a

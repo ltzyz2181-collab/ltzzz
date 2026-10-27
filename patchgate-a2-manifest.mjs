@@ -9,5 +9,5 @@ export const A2_REVIEW_FILES=Object.freeze([
   'scripts/lib/patchgate-a2-executor.mjs','scripts/patchgate-a2-execute.mjs','scripts/tests/patchgate-a2-executor.test.mjs','.github/workflows/patchgate-a2-execute.yml'
 ,
 'patchgate-oidc.mjs','patchgate-a2-manifest.mjs','patchgate-attestation-evidence.mjs','patchgate-model-attestation-worker.js','scripts/request-patchgate-model-attestation.mjs','config/patchgate-model-attestation.json','.github/workflows/patchgate-model-attest.yml','scripts/tests/patchgate-model-attestation.test.mjs','scripts/tests/patchgate-attestation-evidence.test.mjs',
-'wrangler.patchgate-qwen-review.toml','wrangler.patchgate-doubao-review.toml'
+'patchgate-secret-scan.mjs','patchgate-signer-source.mjs','scripts/lib/patchgate-native-response.mjs','scripts/build-patchgate-signer-release.mjs','scripts/lib/patchgate-author-checks-producer.mjs','config/patchgate-author-checks.json','scripts/tests/patchgate-author-checks-producer.test.mjs','scripts/tests/patchgate-signer-source.test.mjs'
 ]);

@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_active_A2_24_file_code_merged_disabled_K1_repaired_executor_PR259_waiting_separate_Claude_audit",
-  "at_utc": "2026-10-26T11:38:40.049Z",
+  "status": "A1_active_A2_28_file_executor_merged_disabled_OIDC_PR255_and_native_signer_PR263_waiting_Claude_review",
+  "at_utc": "2026-10-26T23:42:38Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -166,7 +166,7 @@
     "L8_merge": "e1dc4549c4c540028fa6c3ceaa9efc50f849c0ee"
   },
   "A2": {
-    "status": "PR256_merged_PR257_approved_disabled_scope_only",
+    "status": "PR259_merged_per_Claude_PR262_disabled_only",
     "candidate_pr": 240,
     "candidate_head": "b1352dd1e1a7b1187b2eeb21f8045eb8a6c56e1f",
     "merged": true,
@@ -174,10 +174,10 @@
     "signing_enabled": false,
     "signing_keys_ready": false,
     "tests": {
-      "passed": 167,
+      "passed": 184,
       "failed": 0,
-      "run_id": "40288747694",
-      "scope": "actual_candidate_runner_not_live_signing_or_merge"
+      "run_id": "40315925593",
+      "scope": "reviewed_PR259_candidate_runner_bytes_equal_merged_main_not_live_merge"
     },
     "claude": {
       "original_audit_pr": 244,
@@ -207,8 +207,11 @@
       "incremental_audit_head": "6f7dc2d277907b643a0534fc00fe57a78735e8aa",
       "incremental_audit_file": "knowledge/results/patchgate/claude-post254-review-20261026.md",
       "incremental_audit_merge": "57450cb25ce78de8d1efe20b8145f1046f0475b5",
-      "new_executor_audit_status": "requested_PR259_separate_not_received",
-      "new_executor_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/259#issuecomment-6415037340"
+      "new_executor_audit_status": "PR262_approve_merge_only_A2_disabled",
+      "new_executor_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/262#issuecomment-6429981633",
+      "executor_audit_pr": 262,
+      "executor_audit_head": "263ad26e178182d3f842ee5df11f98a8edab75ba",
+      "executor_audit_merge": "460cb873cbed7fedb7c593d9e86c0777c0d72011"
     },
     "qwen": {
       "status": "B1_opinions_preserved_not_stage_approval",
@@ -221,17 +224,18 @@
       "originals_ref": "eca85d53d00658badc6eb39faa10e4d781a3413c"
     },
     "blockers": [
-      "PR255_K1_new_head_waiting_independent_rereview_then_actual_enrollment",
-      "native_provider_response_bound_role_signing_adapters_not_implemented_or_admitted",
-      "PR259_actual_executor_waiting_separate_Claude_audit_before_authority_registration",
+      "PR255_OIDC_new_head_waiting_Claude_then_actual_enrollment_acceptance",
+      "PR263_review_stage_review_adapter_waiting_separate_Claude_audit_and_actual_CF_DO_native_provider_acceptance",
+      "author_and_deterministic_checks_signature_producers_not_connected",
       "qualified_L0_BASE_check_and_signed_checks_not_live_verified",
-      "new_28_file_bundle_not_stage_approved_or_activated",
+      "39_file_candidate_bundle_not_stage_approved_or_activated",
+      "actual_execution_authority_not_registered",
       "PR243_high_risk_notice_gate_still_pending_audit",
       "first_harmless_docs_automatic_merge_not_executed"
     ],
-    "tested_code_head": "9aa7c56b04b973b5bb0781caeb4968116ed6a3d0",
+    "tested_code_head": "034bbe21f1f8095daa4378bf62201308b82eb771",
     "runtime_bytes_equal": true,
-    "runtime_bundle_sha256": "6124dbe2d07732c537ef5da29786032c44cebdf496b5190880e80a6fc9105099",
+    "runtime_bundle_sha256": "be38ac16312d0d736109d376f6209b6932d176e1d485e227076a9426ad44e621",
     "B1": {
       "choice": "Qwen_and_Doubao_executor_signatures_plus_separate_Claude_PR_readback",
       "candidate_required_model_providers": [
@@ -381,7 +385,7 @@
       "native_generation_calls": 0,
       "production_changed": false
     },
-    "runtime_file_count": 24,
+    "runtime_file_count": 28,
     "evidence_ref": "072d77b0707b065c030e6fe7860642597f9d3ee0",
     "PR248_repairs": {
       "C1": "advisory_shared_login_never_proves_Claude_or_owner",
@@ -421,8 +425,14 @@
         ],
         "runtime_commit": "50d0a346afe17490d955b68888093f52858e8477",
         "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/239#issuecomment-6414942852",
-        "status": "not_audited_per_Claude_PR257_specific_request_reposted",
-        "notification_reposted": "https://github.com/ltzyz2181-collab/ltzzz/pull/254#issuecomment-6410884755"
+        "status": "Claude_PR261_approve_limited_low_risk_smoke_with_two_recommendations",
+        "notification_reposted": "https://github.com/ltzyz2181-collab/ltzzz/pull/254#issuecomment-6410884755",
+        "audit_pr": 261,
+        "audit_head": "264e3b11c70d2508d382b27d6e53129f832dae43",
+        "audit_merged": false,
+        "lock_integrity_verified_packages": 119,
+        "per_key_provider_budget_verified": false,
+        "job_write_scope_hardening_done": false
       }
     },
     "implementation_merge": "5250344c93240731563061ec7f8f53599e3e7502",
@@ -430,12 +440,13 @@
     "followup_after_PR254": {
       "key_persistence": {
         "pr": 255,
-        "head": "519959c1c25bdf3030347e3845d476e152c9278a",
-        "status": "K1_independent_auth_repaired_CI_passed_waiting_Claude_rereview_not_merged_or_enrolled",
+        "head": "58cef023fff5b79a5591e628a2138dfb652310fb",
+        "status": "PR262_K3_OIDC_revision_CI_passed_waiting_Claude_not_merged_or_enrolled",
         "CI": {
-          "run_id": "40313693331",
-          "job_id": "121540867525",
-          "passed": 6,
+          "run_id": "40421197800",
+          "job_id": "121915781159",
+          "run_attempt": 1,
+          "passed": 16,
           "failed": 0,
           "enroll": "skipped"
         },
@@ -459,12 +470,37 @@
         ],
         "controller_adjudication": "knowledge/results/patchgate/post254/key-review-dispositions.json",
         "adjudication_ref": "6de7647c050a79f0a1faec437781def5e8a1e71f",
-        "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/255#issuecomment-6414705765",
-        "K1": "per_executor_256bit_random_auth_generated_in_memory_only_written_to_own_CF_Secret_shared_token_removed",
+        "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/255#issuecomment-6429945836",
+        "K1": "static_shared_and_per_executor_CHALLENGE_AUTH_removed_from_authentication",
         "cross_auth_rejected": true,
         "re_enrollment_no_silent_rotation": true,
-        "existing_auth_unavailable_status": "existing_executor_auth_not_exported_no_rotation",
-        "native_model_role_attestation_not_implemented": true
+        "native_model_role_attestation_not_implemented": true,
+        "historical_random_auth_revision": {
+          "head": "519959c1c25bdf3030347e3845d476e152c9278a",
+          "status": "K1_independent_auth_repaired_CI_passed_waiting_Claude_rereview_not_merged_or_enrolled",
+          "CI": {
+            "run_id": "40313693331",
+            "job_id": "121540867525",
+            "passed": 6,
+            "failed": 0,
+            "enroll": "skipped"
+          },
+          "K1": "per_executor_256bit_random_auth_generated_in_memory_only_written_to_own_CF_Secret_shared_token_removed",
+          "existing_auth_unavailable_status": "existing_executor_auth_not_exported_no_rotation"
+        },
+        "rebased_main": "460cb873cbed7fedb7c593d9e86c0777c0d72011",
+        "prior_head_archive_ref": "archive/pr255-pre-oidc-519959c1",
+        "authentication": "GitHub_Actions_OIDC_fixed_issuer_JWKS_claims_and_per_executor_audience",
+        "K3": "renewable_OIDC_replaces_lost_in_memory_auth_waiting_independent_review",
+        "full_candidate_CI": {
+          "run_id": "40421197745",
+          "job_id": "121915781526",
+          "passed": 200,
+          "failed": 0
+        },
+        "stale_edge": "new_deployment_marker_checked_inside_signed_challenge_fixture_passed",
+        "partial_recovery": "provider_settings_public_key_and_secret_names_only_non_key_setup_resumed_existing_private_key_preserved",
+        "superseded_stacked_pr": 260
       },
       "checker_and_reconciliation": {
         "pr": 256,
@@ -525,12 +561,12 @@
       "repeated_calls_to_obtain_approve": 0,
       "paid_USDC": false
     },
-    "current_runtime_code_pr": 256,
-    "current_runtime_merge": "c97562ad8bf818c05c2c3e6028d4041145fc3956",
+    "current_runtime_code_pr": 259,
+    "current_runtime_merge": "d6ce5e2ab749084f2c0ee4372d22d89d4c9c03a1",
     "executor_candidate": {
       "pr": 259,
       "head": "034bbe21f1f8095daa4378bf62201308b82eb771",
-      "status": "code_submitted_CI_passed_waiting_separate_Claude_audit",
+      "status": "merged_per_Claude_PR262_disabled_only",
       "runtime_file_count": 28,
       "runtime_bundle_sha256": "be38ac16312d0d736109d376f6209b6932d176e1d485e227076a9426ad44e621",
       "workflow_path": ".github/workflows/patchgate-a2-execute.yml",
@@ -569,7 +605,47 @@
       },
       "claude_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/259#issuecomment-6415037340",
       "native_attestation_producer_implemented": false,
-      "real_merge": false
+      "real_merge": false,
+      "merged": true,
+      "merge_commit": "d6ce5e2ab749084f2c0ee4372d22d89d4c9c03a1",
+      "independent_audit_pr": 262
+    },
+    "previous_24_file_tests": {
+      "passed": 167,
+      "failed": 0,
+      "run_id": "40288747694",
+      "scope": "actual_candidate_runner_not_live_signing_or_merge"
+    },
+    "native_attestation_candidate": {
+      "pr": 263,
+      "head": "818cd8e962f462a6defd4668e5af92b84d733fae",
+      "base_pr": 255,
+      "base_head": "58cef023fff5b79a5591e628a2138dfb652310fb",
+      "status": "review_stage_review_code_submitted_waiting_separate_Claude_audit_not_deployed_or_admitted",
+      "roles": [
+        "review",
+        "stage_review"
+      ],
+      "author_producer_ready": false,
+      "checks_producer_ready": false,
+      "workflow_path": ".github/workflows/patchgate-model-attest.yml",
+      "runtime_file_count": 39,
+      "runtime_bundle_sha256": "db16afee4eb5634ee1f679ff16cc91d5032fd294be9a9ffa23866b3c169fbb7a",
+      "CI": {
+        "run_id": "40421355692",
+        "job_id": "121916304816",
+        "run_attempt": 1,
+        "passed": 219,
+        "failed": 0,
+        "attest": "skipped"
+      },
+      "configuration_enabled": false,
+      "worker_configuration_enabled": false,
+      "signing_keys_registered": false,
+      "real_deployment_verified": false,
+      "native_model_calls": 0,
+      "notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/263#issuecomment-6429971585",
+      "provider_signatures_generated_in_tests_only": true
     }
   },
   "configuration_evidence": "knowledge/results/patchgate/pr224-evidence/actual-configuration.json",
@@ -1088,5 +1164,23 @@
     "scope": "Treasury_fixture_and_A2_workflow_only_not_entire_task_history",
     "actual_API_bill": null,
     "real_funds_moved": false
+  },
+  "post262_followup": {
+    "at_utc": "2026-10-26T23:42:38Z",
+    "author_provider": "openai",
+    "model": null,
+    "scope": "current_Codex_session_exact_model_id_unavailable",
+    "claude_audit_archived": 262,
+    "executor_merged": 259,
+    "OIDC_candidate": 255,
+    "native_signer_candidate": 263,
+    "model_API_calls": 0,
+    "financial_execution": false,
+    "paid": false,
+    "tx_hash": null,
+    "A2_enabled": false,
+    "A3_enabled": false,
+    "B_enabled": false,
+    "execution_authority": null
   }
 }

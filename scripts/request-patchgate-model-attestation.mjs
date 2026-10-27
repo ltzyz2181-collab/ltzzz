@@ -2,6 +2,9 @@
 import fs from 'node:fs';import {execFileSync} from 'node:child_process';
 import {actionsOidcToken,REPO} from '../patchgate-oidc.mjs';
 import {MODEL_WORKFLOW,modelAudience} from '../patchgate-model-attestation-worker.js';
+import {enrolledEndpoint,verifyNativeResponse} from './lib/patchgate-native-response.mjs';
+import {subjectFor} from './lib/patchgate.mjs';
+import {bundleDigest} from './patchgate-a2-preflight.mjs';
 import {collectSnapshot} from './patchgate.mjs';
 import {validateModelRequest} from '../patchgate-attestation-evidence.mjs';
 const env=process.env,out=process.argv[2];
@@ -15,8 +18,8 @@ try{
   if(env.GITHUB_REPOSITORY!==REPO||env.GITHUB_REF!=='refs/heads/main'||env.GITHUB_EVENT_NAME!=='workflow_dispatch'||env.GITHUB_WORKFLOW_REF!==MODEL_WORKFLOW||env.GITHUB_SHA!==head)throw Error('trusted_main_client_required');
   const endpoint=policy.endpoints.find(e=>e.provider===env.ATTESTATION_PROVIDER);
   if(!endpoint||!['aliyun_dashscope','volcengine_ark'].includes(endpoint.provider))throw Error('fixed_provider_required');
-  const prefix=endpoint.provider==='aliyun_dashscope'?'ltzzz-a2-qwen-review':'ltzzz-a2-doubao-review';
-  const url=new URL(endpoint.url);if(url.protocol!=='https:'||url.username||url.password||url.port||url.search||url.hash||url.pathname!=='/attest'||!new RegExp('^'+prefix+'\\.[a-z0-9-]+\\.workers\\.dev$').test(url.hostname))throw Error('fixed_worker_endpoint_required');
+  if(policy.source_bindings_registered!==true)throw Error('source_bindings_not_registered');
+  const url=enrolledEndpoint(endpoint);
   const r={schema:'ltzzz.patchgate.model-request.v1',task_id:report.task_id,role:env.ATTESTATION_ROLE,source_main_sha:head};
   if(r.role==='review'){
    if(!/^[a-f0-9]{40}$/.test(env.CANDIDATE_HEAD||'')||!/^\d{1,9}$/.test(env.CANDIDATE_PR||''))throw Error('candidate_identity');
@@ -30,7 +33,8 @@ try{
   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},body:JSON.stringify(r),redirect:'error',signal:AbortSignal.timeout(240000)});
   if(!response.ok)throw Error('native_attestation_http_'+response.status);
   const result=await response.json();
-  if(result.schema!=='ltzzz.patchgate.native-model-attestation.v1'||result.executor_id!==endpoint.executor_id||result.upstream_provider!==endpoint.provider||result.source_commit!==head)throw Error('native_attestation_identity');
+  const subject=r.role==='review'?subjectFor(r.snapshot):{task_id:r.task_id,phase:'A2',runtime_bundle_sha256:bundleDigest({read:p=>fs.readFileSync(p)}).sha256};
+  verifyNativeResponse({result,endpoint,subject,role:r.role,sourceCommit:head});
   report.status='native_attestation_received_not_admitted';report.model_calls=result.model_calls_this_request;report.result=result;
  }
 }catch(e){report.status='failed_or_uncertain_no_retry';report.error=/^[A-Za-z0-9_]+$/.test(e.message)?e.message:'native_attestation_unavailable';process.exitCode=1;}

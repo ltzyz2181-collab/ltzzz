@@ -56,6 +56,7 @@ export function validateExecutorRegistry({registry,trust}) {
     const e=map.get(k.executor);
     if(!e||e.provider!==k.provider||!e.signing_key_ids.includes(k.id)||k.roles.some(r=>!e.roles.includes(r)))return false;
     if(k.enabled===true&&e.signing_enabled!==true)return false;
+    if(trust.source_binding_required===true&&k.enabled===true&&(e.source_deployment_verified!==true||!Array.isArray(e.allowed_signer_source_sha256)||k.allowed_signer_source_sha256.some(h=>!e.allowed_signer_source_sha256.includes(h))||e.cloud_account_binding!==k.cloud_account_binding||e.deployment_evidence_sha256!==k.deployment_evidence_sha256))return false;
   }
   for(const e of map.values())if(e.signing_key_ids.some(id=>!trust.keys.some(k=>k.id===id&&k.executor===e.id&&k.provider===e.provider)))return false;
   return true;
@@ -81,8 +82,11 @@ export function notificationActorAllowed({readback,proof,allowlist,authorExecuto
     &&allowlist.some(a=>actor(a)&&a.login===readback.actor_login&&String(a.id)===readback.actor_id&&a.executor===proof.executor);
 }
 
+export function sourceBindingsVerified({registry,trust}){return trust?.source_binding_required===true&&validateExecutorRegistry({registry,trust})&&trust.keys.some(k=>k.enabled===true);}
+
 export function validateA2Config(config) {
   if(config?.schema_version!==1||config.task_id!==TASK||config.phase!=='A2'||config.repository!==REPOSITORY||typeof config.enabled!=='boolean'
+    ||config.signer_source_binding_required!==true||config.stage_review_scope!=='A2_L0_docs_only'
     ||config.scope!=='ordinary_markdown_only'||canonical(config.allowed_risk_classes)!==canonical(['L0'])||config.merge_method!=='merge'
     ||canonical(config.required_stage_auditors)!==canonical(A2_MODEL_SIGNERS)
     ||canonical(config.required_candidate_review_providers)!==canonical(A2_MODEL_SIGNERS)
@@ -97,7 +101,7 @@ export function validateA2Config(config) {
 
 export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now=Date.now()}) {
   validateA2Config(config);
-  if(config.enabled!==true||config.production_signing_keys_provisioned!==true||!validateExecutorRegistry({registry,trust})
+  if(config.enabled!==true||config.production_signing_keys_provisioned!==true||!sourceBindingsVerified({registry,trust})
     ||!SHA.test(runnerSha||'')||!HASH.test(runtimeBundleSha256||'')||config.runtime_bundle_sha256!==runtimeBundleSha256)return false;
   // Audit signatures live outside the bundle they authenticate. A source commit
   // is metadata, not a self-referential commit containing its own signature.

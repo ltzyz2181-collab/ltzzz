@@ -13,7 +13,7 @@ on:
         type: string
         default: ''
   pull_request:
-    paths: [wrangler.patchgate-qwen-review.toml,wrangler.patchgate-doubao-review.toml,scripts/tests/fixtures/patchgate-model-evidence.mjs,patchgate-oidc.mjs,patchgate-a2-manifest.mjs,patchgate-attestation-evidence.mjs,patchgate-model-attestation-worker.js,scripts/request-patchgate-model-attestation.mjs,config/patchgate-model-attestation.json,scripts/tests/patchgate-model-attestation.test.mjs,scripts/tests/patchgate-attestation-evidence.test.mjs,.github/workflows/patchgate-model-attest.yml]
+    paths: ['patchgate-*.mjs','patchgate-*.js','scripts/patchgate*.mjs','scripts/request-patchgate-model-attestation.mjs','scripts/build-patchgate-signer-release.mjs','scripts/lib/patchgate*.mjs','config/patchgate*.json','scripts/tests/patchgate*.test.mjs','scripts/tests/fixtures/patchgate*.mjs','.github/workflows/patchgate-model-attest.yml']
 permissions: {contents: read}
 concurrency: {group: 'patchgate-model-attest-${{ github.event_name }}-${{ github.ref }}', cancel-in-progress: false}
 jobs:
