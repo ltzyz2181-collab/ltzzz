@@ -23,13 +23,14 @@ jobs:
         run: |
           node --check scripts/lib/small-payment-authorization.mjs
           node --check scripts/lib/small-payment-lifecycle.mjs
-          node scripts/verify-small-payment-manifest.mjs
+          node scripts/verify-small-payment-manifest.mjs post272-s1
           node --check lib/financial-exit-guard.js
           node --check scripts/lib/financial-exit-inventory.mjs
           node --check scripts/lib/small-payment-policy.mjs
           node --check scripts/lib/small-payment-runtime.mjs
           node --check scripts/wallet-lib.mjs
-          if node --test scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
+          node --check scripts/coinbase-readiness.mjs
+          if node --test scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs scripts/tests/coinbase*.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
             tail -n 10 /tmp/small-payment-tests.txt
           else
             cat /tmp/small-payment-tests.txt

@@ -3,10 +3,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {sha256, canonical} from './lib/patchgate.mjs';
-export function verifyPaymentManifest(root) {
-  const base = fs.realpathSync(root), file = 'knowledge/results/patchgate/post271/artifact-manifest.json';
+const MANIFEST_VERSIONS=Object.freeze({
+  post271:{path:'knowledge/results/patchgate/post271/artifact-manifest.json',schema:'ltzzz.post271.artifact-manifest.v1'},
+  'post272-s1':{path:'knowledge/results/patchgate/post272-s1/artifact-manifest.json',schema:'ltzzz.post272-s1.artifact-manifest.v1'}
+});
+export function verifyPaymentManifest(root,version='post271') {
+  if(!Object.hasOwn(MANIFEST_VERSIONS,version))throw Error('fixed_manifest_version_required');
+  const selected=MANIFEST_VERSIONS[version],base = fs.realpathSync(root), file = selected.path;
   const manifest = JSON.parse(fs.readFileSync(path.join(base, file), 'utf8'));
-  if (manifest.schema !== 'ltzzz.post271.artifact-manifest.v1' || manifest.task_id !== 'PLAN-PATCHGATE-ESCROW-20261023') throw Error('manifest_identity_invalid');
+  if (manifest.schema !== selected.schema || manifest.task_id !== 'PLAN-PATCHGATE-ESCROW-20261023') throw Error('manifest_identity_invalid');
   const paths = new Set();
   for (const row of [...manifest.files, ...manifest.small_payment_release.files]) {
     if (typeof row.path !== 'string' || !/^[A-Za-z0-9_./-]+$/.test(row.path) || row.path.split('/').some(p => !p || p === '..' || p === '.' || p === '.git' || p.startsWith('.env'))
@@ -22,5 +27,6 @@ export function verifyPaymentManifest(root) {
   return {status: 'manifest_verified_not_payment_authorization', source_files: paths.size, release_sha256: manifest.small_payment_release.sha256};
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  console.log(JSON.stringify(verifyPaymentManifest(process.cwd())));
+  if(process.argv.length>3)throw Error('fixed_manifest_version_required');
+  console.log(JSON.stringify(verifyPaymentManifest(process.cwd(),process.argv[2]||'post271')));
 }
