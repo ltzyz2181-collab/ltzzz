@@ -1,0 +1,55 @@
+name: PatchGate native model attestation candidate
+on:
+  workflow_dispatch:
+    inputs:
+      role:
+        type: choice
+        options: [review, stage_review]
+        default: review
+      candidate_pr:
+        type: string
+        default: ''
+      candidate_head:
+        type: string
+        default: ''
+  pull_request:
+    paths: ['patchgate-*.mjs','patchgate-*.js','scripts/patchgate*.mjs','scripts/request-patchgate-model-attestation.mjs','scripts/build-patchgate-signer-release.mjs','scripts/lib/patchgate*.mjs','config/patchgate*.json','scripts/tests/patchgate*.test.mjs','scripts/tests/fixtures/patchgate*.mjs','.github/workflows/patchgate-model-attest.yml']
+permissions: {contents: read}
+concurrency: {group: 'patchgate-model-attest-${{ github.event_name }}-${{ github.ref }}', cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate*.test.mjs
+  attest:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    permissions: {contents: read, id-token: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [aliyun_dashscope, volcengine_ark]
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Fixed-source OIDC request, default off, no model or wallet key on runner
+        env:
+          ATTESTATION_PROVIDER: ${{ matrix.provider }}
+          ATTESTATION_ROLE: ${{ inputs.role }}
+          CANDIDATE_PR: ${{ inputs.candidate_pr }}
+          CANDIDATE_HEAD: ${{ inputs.candidate_head }}
+        run: node scripts/request-patchgate-model-attestation.mjs "$RUNNER_TEMP/native-attestation.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-attestation-${{ matrix.provider }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-attestation.json
+          retention-days: 30

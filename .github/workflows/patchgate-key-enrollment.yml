@@ -19,7 +19,9 @@ jobs:
       - run: node --test scripts/tests/patchgate-key-challenge.test.mjs scripts/tests/patchgate-oidc.test.mjs
   enroll:
     needs: verify
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Historical runner-held challenge provisioning is retired by PR265.
+    # Provider-cloud services must hold all future production private keys.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions: {contents: write, id-token: write}

@@ -4,17 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {canonical,sha256,TASK} from './lib/patchgate.mjs';
-import {validateA2Config,validateExecutorRegistry,rolloutApproved} from './lib/patchgate-a2.mjs';
+import {validateA2Config,validateExecutorRegistry,rolloutApproved,sourceBindingsVerified} from './lib/patchgate-a2.mjs';
 
-export const A2_BUNDLE_FILES=Object.freeze([
-  'config/patch-policy.json','config/patchgate-trust.json','config/patchgate-executors.json','config/patchgate-a2.json',
-  'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/lib/patchgate-a2-readback.mjs','scripts/patchgate-a2-preflight.mjs',
-  'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
-  'scripts/lib/patchgate-a2-collector.mjs','scripts/patchgate-a2-collect.mjs','scripts/tests/patchgate-a2-collector.test.mjs','config/patchgate-a2-collector.json',
-  '.github/workflows/patchgate-a2-base-checks.yml','.github/workflows/patchgate-a2-collector.yml','.github/workflows/patchgate-a2-verify.yml',
-  'scripts/lib/patchgate-a2-reconcile.mjs','scripts/patchgate-a2-reconcile.mjs','config/patchgate-a2-reconcile.json','scripts/tests/patchgate-a2-reconcile.test.mjs','.github/workflows/patchgate-a2-reconcile.yml',
-  'scripts/lib/patchgate-a2-executor.mjs','scripts/patchgate-a2-execute.mjs','scripts/tests/patchgate-a2-executor.test.mjs','.github/workflows/patchgate-a2-execute.yml'
-]);
+import {A2_REVIEW_FILES} from '../patchgate-a2-manifest.mjs';
+export const A2_BUNDLE_FILES=A2_REVIEW_FILES;
 export function bundleDigest({read}){
   const entries=A2_BUNDLE_FILES.map(name=>{
     let bytes=Buffer.from(read(name));
@@ -34,6 +27,7 @@ export function preflightA2({read,sourceCommit,now=Date.now()}){
   validateA2Config(config);
   const bundle=bundleDigest({read}),blockers=[];
   if(config.enabled!==true)blockers.push('A2_switch_disabled');
+  if(!sourceBindingsVerified({registry,trust}))blockers.push('signer_source_deployment_bindings_not_verified');
   if(!validateExecutorRegistry({registry,trust}))blockers.push('registered_real_signers_not_provisioned');
   if(config.production_signing_keys_provisioned!==true)blockers.push('production_signing_transport_not_verified');
   // B2/PR248: only L0 docs use mandatory post-merge tree verification plus a
