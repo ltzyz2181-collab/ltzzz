@@ -1,9 +1,11 @@
+import {assertReadOnlyExchange} from '../../lib/financial-exit-guard.js';
 import crypto from 'node:crypto';
 import {raw,decimal,clientOrderId} from './funded-invest-runtime.mjs';
 const ORIGIN='https://www.okx.com',D=12,S=10n**12n;
 export function okxCredentials(env=process.env){return {key:env.OKX_API_KEY,secret:env.OKX_API_SECRET||env.OKX_SECRET_KEY,pass:env.OKX_API_PASSPHRASE||env.OKX_PASSPHRASE};}
 export function okxClient(credentials,{fetcher=fetch,now=()=>new Date().toISOString()}={}){
  return async(method,path,body,{publicRead=false}={})=>{
+ assertReadOnlyExchange(method);
   if(!path.startsWith('/api/v5/')||(!['GET','POST'].includes(method))||(method==='POST'&&path!=='/api/v5/trade/order'))throw Error('okx_endpoint_not_allowed');
   if(method==='POST'&&(body?.instId!=='BTC-USDT'||body?.tdMode!=='cash'||body?.ordType!=='ioc'||body?.side!=='buy'||Object.keys(body).some(k=>!['instId','tdMode','ordType','side','px','sz','clOrdId'].includes(k))))throw Error('okx_order_shape_forbidden');
   const serialized=body?JSON.stringify(body):'',timestamp=now(),headers={'Content-Type':'application/json'};

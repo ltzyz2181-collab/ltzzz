@@ -26,22 +26,20 @@ jobs:
         run: node scripts/collect-spend-proposals.mjs || true
       - name: Check balance
         env:
-          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
-          LTZZZ_WALLET_DRY_RUN: ${{ vars.LTZZZ_WALLET_DRY_RUN || 'true' }}
+          LTZZZ_WALLET_DRY_RUN: 'true'
         run: node scripts/check-balance.mjs || true
       - name: Execute agent spending proposals
         env:
-          LTZZZ_WALLET_PRIVATE_KEY: ${{ secrets.LTZZZ_WALLET_PRIVATE_KEY }}
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
-          LTZZZ_WALLET_DRY_RUN: ${{ vars.LTZZZ_WALLET_DRY_RUN || 'true' }}
+          LTZZZ_WALLET_DRY_RUN: 'true'
         run: |
           for agent in gpt doubao deepseek grok claude microsoft; do
             node scripts/run-agent-spending.mjs --agent "$agent" --limit 5 || true
           done
       - name: Treasury refill (auto, once daily)
         env:
-          LTZZZ_WALLET_DRY_RUN: ${{ vars.LTZZZ_WALLET_DRY_RUN || 'true' }}
+          LTZZZ_WALLET_DRY_RUN: 'true'
         run: node scripts/treasury-refill.mjs || true
       - name: Cross audit
         run: node scripts/audit-spending.mjs || true

@@ -1,3 +1,4 @@
+import {assertReadOnlyRpc} from '../../lib/financial-exit-guard.js';
 import {Transaction,Interface,keccak256} from 'ethers';
 import {wep3Request,TREASURY} from './funded-invest-runtime.mjs';
 import {OWNER_CHILD,isOwnerChildId,ownerChildRecipient} from '../../wep3-owner-child-allocation.js';
@@ -24,7 +25,7 @@ export async function relayPersisted({kind,intent_id,amount_raw,token,api=wep3Re
  if(!r.raw)return {status:'no_pending_signed_transaction',signed:false};
  const hash=validateRelay(r,{kind,intent_id,amount_raw}),attempts=[],observations=[];
  for(const url of RPCS){
-  const rpc=async(method,params)=>{const response=await fetcher(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),redirect:'error',signal:AbortSignal.timeout(10000)});const q=await response.json();if(!response.ok||q.error)throw Error('relay_rpc_failed');return q.result;};
+  const rpc=async(method,params)=>{assertReadOnlyRpc(method);const response=await fetcher(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),redirect:'error',signal:AbortSignal.timeout(10000)});const q=await response.json();if(!response.ok||q.error)throw Error('relay_rpc_failed');return q.result;};
   try{if(BigInt(await rpc('eth_chainId',[]))!==8453n)throw Error();let receipt;try{receipt=await rpc('eth_getTransactionReceipt',[hash]);}catch{};if(receipt?.transactionHash?.toLowerCase()===hash.toLowerCase()){const head=Number(BigInt(await rpc('eth_blockNumber',[])));attempts.push({url,receipt_observed:true,receipt_status:Number(BigInt(receipt.status)),block_number:Number(BigInt(receipt.blockNumber))});if(kind==='aave'){observations.push({provider:url,chain_id:8453,head,observed_at:Date.now(),receipt});if(observations.length===2){const accepted=await api('/market/aave/attest-receipt',{token,body:{intent_id,tx_hash:hash,observations}});return {status:accepted.status,tx_hash:hash,attempts,signed:false};}continue;}return {status:'receipt_observed_reconcile_on_worker',tx_hash:hash,attempts,signed:false};}const sent=await rpc('eth_sendRawTransaction',[r.raw]);if(sent?.toLowerCase()!==hash.toLowerCase())throw Error();attempts.push({url,submitted:true});if(kind!=='aave')return {status:'same_persisted_transaction_relayed',tx_hash:hash,attempts,signed:false};}catch{attempts.push({url,ok:false});}
  }
  return {status:'relay_transport_unknown_reconcile_same_hash',tx_hash:hash,attempts,signed:false};

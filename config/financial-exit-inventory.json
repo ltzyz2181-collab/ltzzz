@@ -1,0 +1,524 @@
+{
+  "schema": "ltzzz.financial-exits.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "source_audit_pr": 268,
+  "status": "candidate_source_inventory_not_live_deployment",
+  "exits": [
+    {
+      "path": "agi-console.html",
+      "sha256": "b3aedac693758f9f19d67162e3e91482fe8f26f1280ce8a53b725dccfac1d700",
+      "disposition": "display_only_code_example",
+      "guards": [
+        {
+          "path": "agi-console.html",
+          "required": "content:`"
+        },
+        {
+          "path": "agi-console.html",
+          "required": "anchorToEigenLayer"
+        }
+      ],
+      "scope": "Historical React displayed code strings, not a deployed backend signer; not treated as an operational service."
+    },
+    {
+      "path": "invest-channel/adapters/AaveAdapter.mjs",
+      "sha256": "88e8773327594e914f4c4d120a467d83dea6a4187284aa0feceb76008a5901af",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "invest-channel/adapters/AaveAdapter.mjs",
+          "required": "denyLegacyFinancialExecution('invest-channel/adapters/AaveAdapter.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "invest-channel/contracts/LTZZZVault.sol",
+      "sha256": "d7145de2d3e678a8122eba4f2627babbc4b337ca9734ae341f5a4cf316bd6366",
+      "disposition": "external_contract_authority",
+      "guards": [
+        {
+          "path": "invest-channel/contracts/LTZZZVault.sol",
+          "required": "only"
+        },
+        {
+          "path": "invest-channel/scripts/deploy-vault.mjs",
+          "required": "denyLegacyFinancialExecution("
+        },
+        {
+          "path": "scripts/aave-owner-funding.mjs",
+          "required": "denyLegacyFinancialExecution("
+        }
+      ],
+      "scope": "Solidity authority is independently on chain, not controlled by this JS runtime. New repo deployment entrypoints retired; no claim that existing deployed contracts or owner wallets were paused."
+    },
+    {
+      "path": "invest-channel/contracts/OwnerAaveFunding.sol",
+      "sha256": "4bc787c6542164a670246cc68567ed03e3d977d724521f7d9fdeab85a282e33c",
+      "disposition": "external_contract_authority",
+      "guards": [
+        {
+          "path": "invest-channel/contracts/OwnerAaveFunding.sol",
+          "required": "only"
+        },
+        {
+          "path": "invest-channel/scripts/deploy-vault.mjs",
+          "required": "denyLegacyFinancialExecution("
+        },
+        {
+          "path": "scripts/aave-owner-funding.mjs",
+          "required": "denyLegacyFinancialExecution("
+        }
+      ],
+      "scope": "Solidity authority is independently on chain, not controlled by this JS runtime. New repo deployment entrypoints retired; no claim that existing deployed contracts or owner wallets were paused."
+    },
+    {
+      "path": "invest-channel/scripts/deploy-vault.mjs",
+      "sha256": "1cec10df65d3b8bb9085b05f5553beaedc30121883d1c354b7c2e39c439ae00d",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "invest-channel/scripts/deploy-vault.mjs",
+          "required": "denyLegacyFinancialExecution('invest-channel/scripts/deploy-vault.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "lib/financial-exit-guard.js",
+      "sha256": "ff0d646913967775c131e1b3933d580cec911d45dc840eca4b139e72dd9bb00a",
+      "disposition": "readonly_IO_guard",
+      "guards": [
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "throw Error('legacy_financial_exit_disabled:"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "if(method!=='GET')"
+        }
+      ],
+      "scope": "Deny-only IO/credential separation helper; no unlock, environment bypass or request override."
+    },
+    {
+      "path": "scripts/aave-owner-funding.mjs",
+      "sha256": "d3457e15ff9d2c65aa8b1d554028f7bf9e8935de20dbb99262e8c8bd948829b0",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/aave-owner-funding.mjs",
+          "required": "denyLegacyFinancialExecution('scripts/aave-owner-funding.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "scripts/anchor-onchain.mjs",
+      "sha256": "4af61725cbed57fbb034fefb6c7ec0d37ca50cce5f7c1546ef22b8b96a822b93",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/anchor-onchain.mjs",
+          "required": "denyLegacyFinancialExecution('scripts/anchor-onchain.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "scripts/check-balance.mjs",
+      "sha256": "261afaf2be856870ce50d2a6c9b6d0400a219a2265186f7b47720e9bc10e0eaf",
+      "disposition": "readonly_observer",
+      "guards": [
+        {
+          "path": "scripts/check-balance.mjs",
+          "required": "prov.mode === \"dry-run\""
+        },
+        {
+          "path": "scripts/wallet-lib.mjs",
+          "required": "signerCapabilities.has(capability)"
+        }
+      ],
+      "scope": "No outgoing funding; legacy live balance helper now fails before signer creation, scheduled path remains explicit simulation."
+    },
+    {
+      "path": "scripts/deploy-registry.mjs",
+      "sha256": "693655c6380ef3b8c3b029f3e86b63e5a6e3d099a2fdfea48b5531541ec79c3b",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/deploy-registry.mjs",
+          "required": "denyLegacyFinancialExecution('scripts/deploy-registry.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "scripts/execute-agent-payment.mjs",
+      "sha256": "4b65f925a626967c061cb9d77bc30b5ff478f5ffc3beddd32d3787f90350942b",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/execute-agent-payment.mjs",
+          "required": "if(process.env.LTZZZ_WALLET_DRY_RUN!==\"true\")denyLegacyFinancialExecution"
+        },
+        {
+          "path": ".github/workflows/ltzzz-wallet-ops.yml",
+          "required": "LTZZZ_WALLET_DRY_RUN: 'true'"
+        }
+      ],
+      "scope": "Only explicit simulation retained; live CLI disabled before credential/ledger loading."
+    },
+    {
+      "path": "scripts/fund-okx-owner-round.mjs",
+      "sha256": "9a2e9117dfe2555812cb02f94e745e5789c6cbeb6b0f021fe7eef1fe446697ae",
+      "disposition": "upstream_guarded_client",
+      "guards": [
+        {
+          "path": "scripts/lib/okx-capital-funding.mjs",
+          "required": "assertReadOnlyExchange(method)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        }
+      ],
+      "scope": "All actual exchange POST and remote treasury signing are guarded; funding history/reconciliation separate."
+    },
+    {
+      "path": "scripts/init-ltzzz-wallet.mjs",
+      "sha256": "e88d3ad5cba5bd0d4127233783c885f7abe12118a3ca4aff07f285bd6772dbc1",
+      "disposition": "identity_only",
+      "guards": [
+        {
+          "path": "scripts/init-ltzzz-wallet.mjs",
+          "required": "address: wallet.address"
+        },
+        {
+          "path": "scripts/init-ltzzz-wallet.mjs",
+          "required": "new Wallet(prov.privateKey)"
+        }
+      ],
+      "scope": "Address derivation only, no signing/broadcast/transfer; source hash must be re-reviewed on any edit."
+    },
+    {
+      "path": "scripts/inspect-funded-round.mjs",
+      "sha256": "d32475256fdfaf1d4720a280fe5defb96fead0e0be91afca2ef57aef43382186",
+      "disposition": "readonly_observer",
+      "guards": [
+        {
+          "path": "scripts/inspect-funded-round.mjs",
+          "required": "'GET'"
+        },
+        {
+          "path": "scripts/wallet-lib.mjs",
+          "required": "signerCapabilities.has(capability)"
+        }
+      ],
+      "scope": "No outgoing funding; legacy live balance helper now fails before signer creation, scheduled path remains explicit simulation."
+    },
+    {
+      "path": "scripts/lib/external-ai-relay.mjs",
+      "sha256": "74839f0f883d2de88065ac245851c7e4f7dd434a61f083a99ef79871037dd663",
+      "disposition": "readonly_IO_guard",
+      "guards": [
+        {
+          "path": "scripts/lib/external-ai-relay.mjs",
+          "required": "if(fetcher===legacyRelayReadFetch)return {ok:false,status:'legacy_paid_relay_disabled'"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "has('PAYMENT-SIGNATURE')"
+        }
+      ],
+      "scope": "Default live client disabled, no false paid-attempt claim. Explicit injected mock clients are offline test dependencies, not requester-controlled production API input."
+    },
+    {
+      "path": "scripts/lib/okx-capital-funding.mjs",
+      "sha256": "d1500d09dd92d0a82b6fc8af15de0484a6722946dd7ee89273b17cb932f46596",
+      "disposition": "readonly_IO_guard",
+      "guards": [
+        {
+          "path": "scripts/lib/okx-capital-funding.mjs",
+          "required": "assertReadOnlyExchange(method)"
+        }
+      ],
+      "scope": "Actual exchange client denies writes before reading credentials/HMAC/fetch. Pure business logic may still be exercised with explicit offline mock clients."
+    },
+    {
+      "path": "scripts/lib/okx-funded-spot.mjs",
+      "sha256": "d5143785c8d75216677c1b1dda7123d5ba51e34141bf9db8fc26330319bda21f",
+      "disposition": "readonly_IO_guard",
+      "guards": [
+        {
+          "path": "scripts/lib/okx-funded-spot.mjs",
+          "required": "assertReadOnlyExchange(method)"
+        }
+      ],
+      "scope": "Actual exchange client denies writes before reading credentials/HMAC/fetch. Pure business logic may still be exercised with explicit offline mock clients."
+    },
+    {
+      "path": "scripts/lib/wep3-signed-relay.mjs",
+      "sha256": "51b49c4adafacd7e3ea647dac88f40cf139fc66c3c543d6bcb629e198a4370c9",
+      "disposition": "readonly_IO_guard",
+      "guards": [
+        {
+          "path": "scripts/lib/wep3-signed-relay.mjs",
+          "required": "assertReadOnlyRpc(method)"
+        }
+      ],
+      "scope": "Queries/reconciliation retained; raw transaction broadcast is unconditionally rejected."
+    },
+    {
+      "path": "scripts/run-agent-spending.mjs",
+      "sha256": "26f9f1be86b0c6fbc1ca880407caea2f05f7192bc69a20c8262b69adb08a9bcb",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/run-agent-spending.mjs",
+          "required": "if(process.env.LTZZZ_WALLET_DRY_RUN!==\"true\")denyLegacyFinancialExecution"
+        },
+        {
+          "path": ".github/workflows/ltzzz-wallet-ops.yml",
+          "required": "LTZZZ_WALLET_DRY_RUN: 'true'"
+        }
+      ],
+      "scope": "Only explicit simulation retained; live CLI disabled before credential/ledger loading."
+    },
+    {
+      "path": "scripts/settle-agent-payment.mjs",
+      "sha256": "6745e0ba75c4bcd88dbc0fe9565a901d96b3d1ad2c1801ec9b1adf4f9ce16362",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/settle-agent-payment.mjs",
+          "required": "denyLegacyFinancialExecution('scripts/settle-agent-payment.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "scripts/settle-order-j1.mjs",
+      "sha256": "1b7d444e65e11b60fd0dc90d637cbe59eba0616295b65e4bb96ae9b5e884a14a",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/settle-order-j1.mjs",
+          "required": "denyLegacyFinancialExecution('scripts/settle-order-j1.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "scripts/treasury-migration.mjs",
+      "sha256": "e0c5ef3b9350480cd64cf4bfa92834eee8c75154ee18647b114e405299e60cf9",
+      "disposition": "retired_entry",
+      "guards": [
+        {
+          "path": "scripts/treasury-migration.mjs",
+          "required": "denyLegacyFinancialExecution('scripts/treasury-migration.mjs')"
+        }
+      ],
+      "scope": "Historical credential discovery/signing CLI replaced by an unconditional no-IO failure stub; no remote secret deletion claimed."
+    },
+    {
+      "path": "scripts/wallet-lib.mjs",
+      "sha256": "88e36686754aca5ca7635fe53602e1f8518fe274741b6211c31e23b204e369da",
+      "disposition": "guarded_small_payment",
+      "guards": [
+        {
+          "path": "scripts/wallet-lib.mjs",
+          "required": "consumeSmallPaymentPermit(smallPaymentPermit"
+        },
+        {
+          "path": "scripts/wallet-lib.mjs",
+          "required": "signerCapabilities.has(capability)"
+        }
+      ],
+      "scope": "Only live transfer entry and signer factory require process-local unforgeable runtime capabilities before loading ethers or keys."
+    },
+    {
+      "path": "wallet-lab.html",
+      "sha256": "a610268fba778f6e8e8d37800f80993694fde2b55c7c0a931dbdc9397ebc79fe",
+      "disposition": "external_customer_wallet",
+      "guards": [
+        {
+          "path": "wallet-lab.html",
+          "required": "provider.request({method:'eth_sendTransaction'"
+        }
+      ],
+      "scope": "Visitor-owned wallet popup/customer inbound payment, not autonomous project treasury control; no blanket <20 exemption."
+    },
+    {
+      "path": "wep3-aave.js",
+      "sha256": "3b74d3595e2ec0934d7762d09111a4d83be1e9f646d2e172681eb1fad51a8efb",
+      "disposition": "credential_separated_worker",
+      "guards": [
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        },
+        {
+          "path": "wep3-aave.js",
+          "required": "assertReadOnlyRpcBody(req.body)"
+        }
+      ],
+      "scope": "Production Market and forwarded context do not receive treasury keys; provider RPC only allows readonly methods. Historical injected library mocks are not production authorization."
+    },
+    {
+      "path": "wep3-agents.js",
+      "sha256": "05dbd0b64e580b6e7ecc2599fbac198203ea82efbcec578e41fa5405c3d2e38e",
+      "disposition": "identity_only",
+      "guards": [
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        },
+        {
+          "path": "wep3-agents.js",
+          "required": "const message='LTZZZ controlled treasury v1"
+        }
+      ],
+      "scope": "Fixed identity challenge, no payment signature; production financial key stripped."
+    },
+    {
+      "path": "wep3-anchor.js",
+      "sha256": "5728b9f1cab4d90e9ec2cf97a258f0b9ad2e1b2367454832fc6d7104e97821ff",
+      "disposition": "credential_separated_worker",
+      "guards": [
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        },
+        {
+          "path": "wep3-aave.js",
+          "required": "assertReadOnlyRpcBody(req.body)"
+        }
+      ],
+      "scope": "Production Market and forwarded context do not receive treasury keys; provider RPC only allows readonly methods. Historical injected library mocks are not production authorization."
+    },
+    {
+      "path": "wep3-external-entry.js",
+      "sha256": "f77574fffbcf46a1d275c6a917803f304854bc974ae93b18f2dd8d3ef9a1800d",
+      "disposition": "external_customer_wallet",
+      "guards": [
+        {
+          "path": "wep3-external-entry.js",
+          "required": "eth_requestAccounts"
+        }
+      ],
+      "scope": "Visitor-owned wallet popup/customer inbound payment, not autonomous project treasury control; no blanket <20 exemption."
+    },
+    {
+      "path": "wep3-market.js",
+      "sha256": "2def68bce9ec9b21bca069ddc7cada8597aca1d6e85d30617c6a1da953c88120",
+      "disposition": "credential_separated_worker",
+      "guards": [
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        },
+        {
+          "path": "wep3-aave.js",
+          "required": "assertReadOnlyRpcBody(req.body)"
+        }
+      ],
+      "scope": "Production Market and forwarded context do not receive treasury keys; provider RPC only allows readonly methods. Historical injected library mocks are not production authorization."
+    },
+    {
+      "path": "wep3-okx-funding.js",
+      "sha256": "4f81e653d3e56299e89332c49ed64d14464484eb914e2bda47094c692a27009a",
+      "disposition": "credential_separated_worker",
+      "guards": [
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        },
+        {
+          "path": "wep3-aave.js",
+          "required": "assertReadOnlyRpcBody(req.body)"
+        }
+      ],
+      "scope": "Production Market and forwarded context do not receive treasury keys; provider RPC only allows readonly methods. Historical injected library mocks are not production authorization."
+    },
+    {
+      "path": "wep3-procurement.js",
+      "sha256": "544361ef9b04cac70d98236bfc6a10a528e031b73872aa0d1cad3e756a46df77",
+      "disposition": "credential_separated_worker",
+      "guards": [
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials(env)"
+        },
+        {
+          "path": "wep3-market.js",
+          "required": "this.env=withoutFinancialCredentials({...this.env,...current})"
+        },
+        {
+          "path": "lib/financial-exit-guard.js",
+          "required": "'TREASURY_EXECUTOR_KEY'"
+        },
+        {
+          "path": "wep3-aave.js",
+          "required": "assertReadOnlyRpcBody(req.body)"
+        }
+      ],
+      "scope": "Production Market and forwarded context do not receive treasury keys; provider RPC only allows readonly methods. Historical injected library mocks are not production authorization."
+    }
+  ],
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "Static detection of financial primitives is a review/change detector, not an arbitrary-code sandbox.",
+    "Existing on-chain contracts, external owner/customer wallets and unobserved external machines are outside this runtime; no chain pause or global credential revocation claimed.",
+    "Remote Secrets were not read or deleted. Candidate changes stop legacy credential consumption/write/broadcast, while actual production deployment remains pending review."
+  ]
+}

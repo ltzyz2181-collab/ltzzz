@@ -1,3 +1,4 @@
+import {withoutFinancialCredentials} from './lib/financial-exit-guard.js';
 import {fundOKX,fundingRelay} from './wep3-okx-funding.js';
 import {externalPurchase,completeExternalRelay,PROCUREMENT_REVISION} from './wep3-procurement.js';
 import {dailyHireReview} from './wep3-procurement-review.js';
@@ -32,11 +33,11 @@ export async function marketRoute(request,env){
   if(request.method==='OPTIONS')return reply({ok:true});
   if(!env.MARKET)return reply({ok:false,error:'market_storage_not_deployed'},503);
   // Always replace caller context; only this Worker can supply current deployment secrets to its DO.
-  const forwarded=new Headers(request.headers);const context={};for(const key of ['LAB_PIN','WEP3_RUNNER_TOKEN','TREASURY_EXECUTOR_KEY','X402_RECEIVE_ADDRESS','X402_LIVE','BASE_RPC_URL','STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET'])context[key]=env[key]||'';forwarded.set('X-LTZZZ-Worker-Context',JSON.stringify(context));
+  const forwarded=new Headers(request.headers);const context={};for(const key of ['LAB_PIN','WEP3_RUNNER_TOKEN','X402_RECEIVE_ADDRESS','X402_LIVE','BASE_RPC_URL','STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET'])context[key]=env[key]||'';forwarded.set('X-LTZZZ-Worker-Context',JSON.stringify(context));
   return env.MARKET.get(env.MARKET.idFromName('ltzzz-market-v1')).fetch(new Request(request,{headers:forwarded}));
 }
 export class Market {
-  constructor(state,env){this.state=state;this.env=env;this.tail=Promise.resolve();}
+  constructor(state,env){this.state=state;this.env=withoutFinancialCredentials(env);this.tail=Promise.resolve();}
   fetch(request){const task=this.tail.then(()=>this.handle(request)).catch(()=>reply({ok:false,error:'market_exception'},500));this.tail=task.then(()=>{});return task;}
   admin(request){const supplied=request.headers.get('X-Lab-Pin');return Boolean(supplied&&((this.env.LAB_PIN&&supplied===this.env.LAB_PIN)||(this.env.WEP3_RUNNER_TOKEN&&supplied===this.env.WEP3_RUNNER_TOKEN)));}
   async read(){return await this.state.storage.get('book')||{skills:defaults,tape:[],orders:{},events:{},live_revenue_cents:0,test_revenue_cents:0,pool_available_cents:0,pool_reserved_cents:0,agent_credit_cents:{},ledger:[],x402_challenges:{}};}
@@ -45,7 +46,7 @@ export class Market {
   async quote(book,skill){const tape=book.tape.filter(x=>x.skill===skill.id&&x.live).slice(-21).map(x=>x.price_cents).sort((a,b)=>a-b);let median=tape.length?(tape[Math.floor((tape.length-1)/2)]+tape[Math.ceil((tape.length-1)/2)])/2:skill.price_cents;const reputation=await this.score(skill.agent);const backlog=Object.values(book.orders).filter(o=>o.skill===skill.id&&o.live&&['queued','processing'].includes(o.status)).length;return {skill:skill.id,agent:skill.agent,title:skill.title,reputation,price_cents:demandPrice(median,reputation,backlog),backlog,currency:'usd',price_source:tape.length?'live_trade_median_and_reputation':'registered_price_and_reputation'};}
   publicOrder(order){const {access_hash,lease_token,payment_payload,payment_signature_hash,requirements,...visible}=order;return visible;}
   async handle(request){
-    const context=request.headers.get('X-LTZZZ-Worker-Context');if(context){const current=JSON.parse(context);this.env={...this.env,...current};}
+    const context=request.headers.get('X-LTZZZ-Worker-Context');if(context){const current=JSON.parse(context);this.env=withoutFinancialCredentials({...this.env,...current});}
     const u=new URL(request.url),p=u.pathname,book=await this.read();
     const entry=externalEntry(request);if(entry)return entry;
     if(p==='/market/runtime-state'&&request.method==='GET'){

@@ -1,11 +1,9 @@
-类型：派单（不等于原生调用或验收）
+类型：独立复核接力（未收到原生接单/签名）。原任务 PLAN-PATCHGATE-ESCROW-20261023 / PR266-REVIEW，接 #268。
 
-原任务：PLAN-PATCHGATE-ESCROW-20261023；子项：PR266-REVIEW。目标：按 #266 五条要求独立查小额付款的确定性策略/状态机，检查总控完成声明，不替代 Claude 审计。
+目标：独立检查 #267 新head的R1–R4修订；读取post268/artifact-manifest.json及准确原字节。重点：新资金出口/守卫负例、调度故障时预留即冻结、配置verified布尔值不能授权、千问与豆包不同受信公钥/role/source签名、owner作用域确认、旧脚本真实dry-run证据。
 
-输入：本卡所在 PR 的准确 head、knowledge/results/patchgate/post266/artifact-manifest.json 全部代码/测试、docs/SMALL-PAYMENT-AUTONOMY-20261027.md 和云设计/配置。总控评论固定实际 head；自行回读/计算摘要，不要求文档包含自己的整体哈希。云 API 若不能自主读取，必须由持凭证的 Actions 执行器将完整受审字节注入；只发链接的盲审不验收，不给你传密钥。
+Claude是咨询审计；若实际提供商是DeepSeek代执行须如实署名，不算千问原生签名。只有经独立注册云执行器真实调用千问且对本次policy/release/authority正确签名，才能满足未来机器准入；目前该资金角色/真实公钥/owner确认未配置。没有通道不要在模型里造signature，不要本机生成生产私钥，不回传Key；可先交带准确身份的咨询审计PR并记机器签名blocked_not_provisioned。
 
-输出：knowledge/results/patchgate/post266/ 下独立回执及审计 PR。署名来自真实客户端/提供商响应：actual_provider/model/metadata_source、source_commit、输出工件 SHA256、run/attempt/request_id（存在才填）、完成状态、每条结论/反例、paid=false、tx_hash=null（指审计本轮无资金动作）。不能用模型自报身份或 OpenAI 工程帮手充作千问原生审核。
+输出：同原任务下独立PR/回执，固定source_commit、原件SHA256、实际provider/model/metadata_source、run/attempt/request_id（实际有才填）、原结论/逐条反例及限制。paid=false、tx_hash=null仅指本轮无资金动作。13项旧失败须与baseline对照，不用删测试制造绿灯。
 
-验收：复算 raw精度和时窗；单笔/别名滚动24h <20、共同日周预算、并发预留、未知结果跨期保留；验证真钱字段不能从 false/null 默认补造、真实冻结而非报告；审查旧钱包live入口迁移影响、可信回调/云调度尚未实现、默认配置和两审均未登记。逐项裁定，不写笼统 approve。
-
-禁止：付费定时/真实付款/签名、打开资金或A2/A3/B、扩大绝对预算、让自己生成所审代码后自审、把本卡记成已接单。收到准确回执前仍 assigned_waiting_acceptance；无需为本卡重跑日课。
+禁止：资金开关/A2/A3/B、真实交易或充值、新付费cron、替其他提供商签名、把本卡记成已接。当前 assigned_waiting_acceptance；所有变更仍待Claude复审。

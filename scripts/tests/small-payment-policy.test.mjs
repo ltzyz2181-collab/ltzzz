@@ -3,9 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {evaluateSmallPayment as evaluate,parseUsdc6,formatUsdc6,normalizeRecipientKey} from '../lib/small-payment-policy.mjs';
 import {fixture,history,NOW,ADDRESS_A} from './small-payment-fixtures.mjs';
-const run=f=>evaluate({...f,context:{...f.context,budgetProof:f.budgetProof}});
+import {signatureFixture} from './small-payment-signature-fixture.mjs';
+import {verifySmallPaymentActivation} from '../lib/small-payment-authorization.mjs';
+import {RELEASE} from './small-payment-fixtures.mjs';
+const run=f=>{
+ const now=typeof f.context.now==='number'?f.context.now:Date.parse(f.context.now);
+ const sig=signatureFixture({policy:f.policy,release_sha256:RELEASE,now});
+ const activationProof=Object.hasOwn(f,'activationProof')?f.activationProof:verifySmallPaymentActivation({policy:f.policy,release_sha256:RELEASE,authority:sig.authority,evidence:sig.makeEvidence(),now});
+ return evaluate({...f,context:{...f.context,budgetProof:f.budgetProof,activationProof,release_sha256:RELEASE}});
+};
 function denied(f,reason){const r=run(f);assert.equal(r.allow,false);if(reason)assert.ok(r.reasons.includes(reason),JSON.stringify(r.reasons));return r;}
-test('repository configuration is off and grants no budget, payee or review',()=>{const p=JSON.parse(fs.readFileSync(new URL('../../config/small-payment-autonomy.json',import.meta.url)));assert.equal(p.enabled,false);for(const k of ['controllers','payees','purposes','registered_budget_ids'])assert.deepEqual(p[k],[]);assert.deepEqual(p.independent_reviews.approved,[]);});
+test('repository configuration is off and grants no budget, payee or review',()=>{const p=JSON.parse(fs.readFileSync(new URL('../../config/small-payment-autonomy.json',import.meta.url)));assert.equal(p.enabled,false);for(const k of ['controllers','payees','purposes','registered_budget_ids'])assert.deepEqual(p[k],[]);assert.deepEqual(p.independent_reviews.required_providers,['aliyun_dashscope','volcengine_ark']);assert.equal(p.independent_reviews.claude_channel,'repository_pr_advisory_not_cryptographic_quorum');});
 test('valid synthetic budget permits evaluation only, never execution',()=>{const r=run(fixture());assert.equal(r.allow,true);assert.equal(r.financial_execution,false);assert.equal(r.decision,'eligible_for_controller_approval_not_payment');});
 for(const [amount,allow] of [['0',false],['1',true],['19999999',true],['20000000',false],['20000001',false],['-1',false],['01',false],['1.1',false],['1e6',false],[1,false],['1'+'0'.repeat(78),false]])test('exact raw amount boundary '+String(amount),()=>{const f=fixture();f.request.amount_raw=amount;assert.equal(run(f).allow,allow);});
 for(const key of ['controller_id','payee_id','purpose_id','payment_id'])test('reject non-string '+key,()=>{const f=fixture();f.request[key]={toString:()=> 'gpt'};denied(f,'invalid_request_identity');});
@@ -15,8 +23,7 @@ test('decimal conversion does not round, coerce or exceed uint256',()=>{assert.e
 test('address case is canonical; zero or non-EVM address denied',()=>{assert.equal(normalizeRecipientKey({rail:'base_usdc',address:ADDRESS_A}), 'base_usdc:'+ADDRESS_A);assert.throws(()=>normalizeRecipientKey({rail:'base_usdc',address:'0x'+'0'.repeat(40)}));});
 test('unsupported rail cannot create a second aggregation bucket',()=>{const f=fixture();f.request.rail='base-mainnet-usdc';denied(f,'unsupported_rail');});
 for(const p of ['enabled','currency','decimals','timezone'])test('invalid policy '+p+' is blocked',()=>{const f=fixture();f.policy[p]=null;denied(f);});
-test('Claude and a real different provider both required',()=>{const f=fixture();f.policy.independent_reviews.required_providers=['aliyun_dashscope','volcengine_ark'];denied(f,'independent_reviews_not_verified');f.policy.independent_reviews.required_providers=['anthropic','anthropic'];denied(f,'independent_reviews_not_verified');});
-for(const key of ['verified','verdict','artifact_sha256'])test('missing independent review evidence '+key,()=>{const f=fixture();delete f.policy.independent_reviews.approved[0][key];denied(f,'independent_reviews_not_verified');});
+test('fixed Qwen and Doubao required; Claude prose not a signature',()=>{const f=fixture();f.policy.independent_reviews.required_providers=['anthropic','aliyun_dashscope'];denied(f,'independent_native_reviews_and_owner_confirmation_required');});
 for(const key of ['verified_single_raw','limits_daily_raw','owner_absolute_weekly_raw'])test('missing numeric budget dimension '+key+' fails closed',()=>{const f=fixture();delete f.budgetProof[key];denied(f,'complete_registered_verified_owner_limits_required');});
 for(const patch of [{status:'not_registered'},{verification_kind:'wallet_balance'},{budget_id:'unregistered'},{purpose_groups:[]},{evidence_sha256:null},{verified_at:'2026-10-28T00:00:00Z'},{valid_until:'2026-10-27T03:00:00Z'},{valid_until:'not-date'}])test('budget proof cannot be replaced by stale/unregistered evidence '+JSON.stringify(patch),()=>{const f=fixture();Object.assign(f.budgetProof,patch);denied(f);});
 test('2x independently verified ceiling is an extra ceiling, never authorization',()=>{const f=fixture();f.budgetProof.verified_single_raw='4000000';f.request.amount_raw='8000001';denied(f,'registered_single_cap_exceeded');f.request.amount_raw='8000000';assert.equal(run(f).allow,true);f.budgetProof.limits_single_raw='7000000';denied(f,'registered_single_cap_exceeded');f.budgetProof.limits_single_raw='9000000';f.budgetProof.owner_absolute_single_raw='6000000';denied(f,'registered_single_cap_exceeded');});
@@ -32,3 +39,4 @@ for(const patch of [{amount_raw:'NaN'},{at_utc:'2026-10-28T00:00:00Z'},{status:'
 test('duplicate history and repeated payment IDs rejected',()=>{const f=fixture();f.context.history=[history(),history()];denied(f,'history_invalid_or_ambiguous');f.context.history=[history({payment_id:f.request.payment_id})];denied(f,'payment_id_already_exists');});
 test('only independently reconciled closure releases reservation',()=>{const f=fixture();f.context.history=[history({status:'failed',closure_verified:true,amount_raw:'19999999'})];assert.equal(run(f).allow,true);});
 test('business day and Monday week use Asia/Shanghai',()=>{const f=fixture();f.context.now=Date.parse('2026-10-25T16:00:00Z');f.budgetProof.verified_at='2026-10-25T00:00:00Z';const r=run(f);assert.equal(r.windows.day_start_utc,'2026-10-25T16:00:00.000Z');assert.equal(r.windows.week_start_utc,'2026-10-25T16:00:00.000Z');});
+test('R3 config approved booleans alone have no authority without opaque verified signatures',()=>{const f=fixture();f.policy.independent_reviews.approved=[{provider:'aliyun_dashscope',verified:true},{provider:'volcengine_ark',verified:true}];f.activationProof={verified:true};denied(f,'independent_native_reviews_and_owner_confirmation_required');});

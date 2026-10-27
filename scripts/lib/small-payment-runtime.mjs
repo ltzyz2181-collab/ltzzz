@@ -1,6 +1,7 @@
 // Trusted cloud executor library. No HTTP routes, credentials, keys or live defaults.
 import {createHash} from 'node:crypto';
 import {evaluateSmallPayment} from './small-payment-policy.mjs';
+import {verifySmallPaymentActivation} from './small-payment-authorization.mjs';
 const KEY='ltzzz.small-payment-state.v1', HASH=/^[a-f0-9]{64}$/, TX=/^0x[a-fA-F0-9]{64}$/;
 const PROVIDERS=new Set(['anthropic','aliyun_dashscope','volcengine_ark','deepseek','xai','openai','moonshot']);
 const canonical=x=>x===null||typeof x!=='object'?JSON.stringify(x):Array.isArray(x)?'['+x.map(canonical).join(',')+']':'{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';
@@ -24,8 +25,8 @@ const blocked=reason=>({status:'blocked_no_execution',reason,execution_attempted
 
 // All callbacks are deployment-owned capabilities, never requester-supplied functions.
 // store.transaction must be serializable across workers and durable before returning.
-export function createSmallPaymentService({policy,release_sha256,store,loadBudgetEvidence,authenticateController,authenticateAuditor,verifyPolicyActivation,execute,verifySettlement,verifyAudit,scheduleAudit,clock=Date.now}={}){
- policy=structuredClone(policy);
+export function createSmallPaymentService({policy,release_sha256,store,loadBudgetEvidence,authenticateController,authenticateAuditor,activationAuthority,loadActivationEvidence,execute,verifySettlement,verifyAudit,scheduleAudit,clock=Date.now}={}){
+ policy=structuredClone(policy);activationAuthority=structuredClone(activationAuthority);
  let locallyHalted=false;
  const get=async tx=>{
   const s=await tx.get(KEY);
@@ -44,10 +45,15 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
    await tx.put(KEY,s);return {status:'payment_switch_disabled',reason,freeze_persisted:true};
   });
  }
+ function freezeOverdue(s,now,trigger){
+  const overdue=Object.values(s.operations).filter(o=>(!o.receipt&&Date.parse(o.receipt_due_at)<=now)||(!o.audit&&Date.parse(o.audit_due_at)<=now));
+  if(!overdue.length)return false;
+  locallyHalted=true;s.switch_enabled=false;s.frozen=true;s.freeze_reason=overdue.some(o=>!o.receipt)?'receipt_deadline_missed':'post_payment_audit_deadline_missed';
+  s.events.push({kind:'automatic_freeze',trigger,reason:s.freeze_reason,payment_ids:overdue.map(o=>o.request.payment_id),at_utc:new Date(now).toISOString()});return true;
+ }
  async function active(context){
-  if(locallyHalted||policy?.enabled!==true||!HASH.test(release_sha256||'')||typeof verifyPolicyActivation!=='function')return false;
-  const a=await verifyPolicyActivation({policy:structuredClone(policy),release_sha256,context});
-  return a?.verified===true&&a.policy_sha256===smallPaymentDigest(policy)&&a.release_sha256===release_sha256&&Array.isArray(a.review_providers)&&a.review_providers.every(p=>PROVIDERS.has(p))&&a.review_providers.includes('anthropic')&&new Set(a.review_providers).size>=2;
+  if(locallyHalted||policy?.enabled!==true||!HASH.test(release_sha256||'')||typeof loadActivationEvidence!=='function')return null;
+  try{return verifySmallPaymentActivation({policy,release_sha256,authority:activationAuthority,evidence:await loadActivationEvidence(context),now:clock()});}catch{return null;}
  }
  function normalizedReceipt(receipt,op){
   if(!receipt||typeof receipt!=='object'||!Object.hasOwn(receipt,'paid')||typeof receipt.paid!=='boolean'||!Object.hasOwn(receipt,'tx_hash')||!Object.hasOwn(receipt,'provider_receipt_id')||receipt.payment_id!==op.request.payment_id||receipt.amount_raw!==op.request.amount_raw||receipt.currency!=='USDC'||receipt.recipient_key!==op.history.recipient_key||receipt.purpose_id!==op.request.purpose_id||!HASH.test(receipt.evidence_sha256||''))throw Error('payment_receipt_identity_or_explicit_fields_missing');
@@ -59,17 +65,19 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
    let op,paymentId,permit,invoked=false;
    try{
     request=structuredClone(request); // freeze caller intent before the first await
-    if(!await active(context))return blocked('payment_policy_disabled_or_two_independent_reviews_missing');
+    const activationProof=await active(context);
+    if(!activationProof)return blocked('payment_policy_disabled_or_native_signatures_owner_confirmation_missing');
     if(!store||typeof store.transaction!=='function'||typeof authenticateController!=='function'||typeof loadBudgetEvidence!=='function'||typeof execute!=='function'||typeof verifySettlement!=='function'||typeof scheduleAudit!=='function')return blocked('required_authenticated_executor_capability_missing');
     const actor=await authenticateController(context);
     if(actor?.verified!==true||actor.controller_id!==request?.controller_id)return blocked('authenticated_controller_identity_required');
     const budgetProof=await loadBudgetEvidence({controller_id:actor.controller_id,rail:request?.rail,purpose_id:request?.purpose_id});
     // Strict schema validation occurs before indexing the durable operation map.
-    const preflight=evaluateSmallPayment({request,policy,context:{now:clock(),budgetProof,history:[]}});
+    const preflight=evaluateSmallPayment({request,policy,context:{now:clock(),budgetProof,history:[],activationProof,release_sha256}});
     if(!preflight.allow)return {status:'policy_rejected',decision:preflight,execution_attempted:false};
     paymentId=request.payment_id;
     const reserved=await store.transaction(async tx=>{
      const s=await get(tx);
+     if(freezeOverdue(s,clock(),'reservation')){await tx.put(KEY,s);return {blocked:s.freeze_reason};}
      if(s.frozen||!s.switch_enabled)return {blocked:'payment_switch_disabled'};
      const old=Object.hasOwn(s.operations,paymentId)?s.operations[paymentId]:null;
      if(old){
@@ -80,7 +88,7 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
       }
       return {existing:old};
      }
-     const now=clock(),decision=evaluateSmallPayment({request,policy,context:{now,budgetProof,history:history(s)}});
+     const now=clock(),decision=evaluateSmallPayment({request,policy,context:{now,budgetProof,history:history(s),activationProof,release_sha256}});
      if(!decision.allow)return {decision};
      const payee=policy.payees.find(p=>p.id===request.payee_id);
      const row={payment_id:paymentId,controller_id:request.controller_id,payee_id:request.payee_id,recipient_key:decision.recipient_key,purpose_group:decision.purpose_group,amount_raw:request.amount_raw,rail:request.rail,budget_id:budgetProof.budget_id,status:'reserved',at_utc:new Date(now).toISOString()};
@@ -96,8 +104,9 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
     if(alarm?.durable!==true||alarm.payment_id!==paymentId||alarm.receipt_due_at!==op.receipt_due_at||alarm.audit_due_at!==op.audit_due_at)throw Error('durable_audit_alarm_not_acknowledged');
     const ready=await store.transaction(async tx=>{
      const s=await get(tx),o=s.operations[paymentId];
+     if(freezeOverdue(s,clock(),'before_dispatch')){await tx.put(KEY,s);return false;}
      if(s.frozen||!s.switch_enabled||o.status!=='reserved_before_execution')return false;
-     const decision=evaluateSmallPayment({request,policy,context:{now:clock(),budgetProof,history:history(s).filter(r=>r.payment_id!==paymentId)}});
+     const decision=evaluateSmallPayment({request,policy,context:{now:clock(),budgetProof,history:history(s).filter(r=>r.payment_id!==paymentId),activationProof,release_sha256}});
      if(!decision.allow)throw Error('policy_changed_or_budget_proof_expired_before_execution');
      o.status='dispatched_outcome_unknown';o.history.status='submitted';o.execution_attempted=true;await tx.put(KEY,s);return true;
     });
@@ -167,11 +176,7 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
    const now=clock();
    return store.transaction(async tx=>{
     const s=await get(tx);
-    const overdue=Object.values(s.operations).filter(o=>(!o.receipt&&Date.parse(o.receipt_due_at)<=now)||(!o.audit&&Date.parse(o.audit_due_at)<=now));
-    if(overdue.length){
-     locallyHalted=true;s.switch_enabled=false;s.frozen=true;s.freeze_reason=overdue.some(o=>!o.receipt)?'receipt_deadline_missed':'post_payment_audit_deadline_missed';
-     s.events.push({kind:'automatic_freeze',reason:s.freeze_reason,payment_ids:overdue.map(o=>o.request.payment_id),at_utc:new Date(now).toISOString()});await tx.put(KEY,s);
-    }
+    if(freezeOverdue(s,now,'alarm'))await tx.put(KEY,s);
     return {status:s.frozen?'payment_switch_disabled':'no_overdue_receipt_or_audit',frozen:s.frozen};
    });
   },
