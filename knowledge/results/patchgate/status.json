@@ -2,8 +2,8 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
   "phase": "A1",
-  "status": "A1_active_A2_disabled_PR263_merged_PR267_payment_rules_and_cloud_design_waiting_independent_audit",
-  "at_utc": "2026-10-27T04:26:39Z",
+  "status": "A1_active_A2_disabled_PR267_PR268_R1_R4_repaired_waiting_Claude_rereview",
+  "at_utc": "2026-10-27T05:25:51Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -220,10 +220,12 @@
       "native_adapter_rereview_head": "6defb5efffcab2a78d5245f4ea313f7553c2b873",
       "native_adapter_rereview_verdict": "approve_default_off_code_merge_only_not_cloud_or_payment_activation",
       "new_candidate_review_pr": 267,
-      "new_candidate_requested_head": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
-      "new_candidate_review_status": "assigned_waiting_acceptance",
-      "new_candidate_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/266#issuecomment-6433724445",
-      "new_candidate_notification_readback_verified": true
+      "new_candidate_requested_head": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+      "new_candidate_review_status": "PR268_R1_R4_repaired_rereview_requested_no_new_approval",
+      "new_candidate_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/268#issuecomment-6434489316",
+      "new_candidate_notification_readback_verified": true,
+      "new_candidate_audit_pr": 268,
+      "new_candidate_original_verdict": "REVISE_preserved"
     },
     "qwen": {
       "status": "B1_opinions_preserved_not_stage_approval",
@@ -236,7 +238,7 @@
       "originals_ref": "eca85d53d00658badc6eb39faa10e4d781a3413c"
     },
     "blockers": [
-      "PR267_five_payment_rules_and_cloud_design_waiting_Claude_and_real_second_provider_review",
+      "PR267_new_head_after_PR268_R1_R4_waiting_Claude_rereview_real_native_funds_role_signatures_and_owner_root_not_provisioned",
       "real_provider_cloud_deployment_access_IAM_and_Ed25519_service_compatibility_unverified",
       "actual_cloud_public_keys_and_control_plane_deployment_proofs_not_registered",
       "native_author_generation_publisher_and_infrastructure_checks_signer_runtime_not_connected",
@@ -728,7 +730,7 @@
     "maximum_authorized_environment": "public_testnet_fake_tokens",
     "transactions": []
   },
-  "next_phase": "PR267_exact_head_independent_review_no_payment_or_A2_A3_B_activation",
+  "next_phase": "Claude_rereview_exact_PR267_head_before_any_merge_or_activation_R6_cloud_and_trust_provisioning_still_unverified",
   "automatic_merge": false,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -1201,6 +1203,18 @@
       "new_candidate_pr": 267,
       "new_candidate_head": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
       "activation_authorized": false
+    },
+    {
+      "phase": "PR268_R1_R4_revision_submitted",
+      "at_utc": "2026-10-27T05:25:51Z",
+      "prior_status": "A1_active_A2_disabled_PR263_merged_PR267_payment_rules_and_cloud_design_waiting_independent_audit",
+      "prior_status_blob": "0a64eea75956e048af92de991774db489b8d8994",
+      "audit_pr": 268,
+      "audit_head": "8224eec50bb111ea8c2718c5777714eee606bb69",
+      "original_verdict": "REVISE_preserved",
+      "old_code_head": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
+      "new_code_head": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+      "activation_authorized": false
     }
   ],
   "limitations": [
@@ -1211,7 +1225,9 @@
     "PR240 code and PR254 final audit are merged, while A2 remains disabled. PR255/256 candidates and CI do not prove real signer enrollment, stop release, checker green or PR246 automatic merge.",
     "PR256 and PR257 are merged only in disabled scope. PR259 verifier CI success and candidate workflow ID do not establish actual main execution, signing quorum, successful L0 check or PR246 merge.",
     "PR263 and audit PR266 are now merged in default-off code-only scope. PR267 five-rule payment runtime and cloud publisher/checker designs are pending Claude and another actual provider review; real storage, alarm, identities, budget proofs, wallet/settlement/audit services and live freeze are unverified.",
-    "PR267 candidate CI 124 policy/runtime and 243 PatchGate tests passed on actual runner; L0 BASE admission remains failed (L3/control modification and retained RegExp.exec scanner finding). This is not all-green CI, a native audit, production deployment or financial activation."
+    "PR267 candidate CI 124 policy/runtime and 243 PatchGate tests passed on actual runner; L0 BASE admission remains failed (L3/control modification and retained RegExp.exec scanner finding). This is not all-green CI, a native audit, production deployment or financial activation.",
+    "PR268 original REVISE is preserved. PR267 now implements R1-R4 at 48f03b92 with real runner 190/190 and PatchGate243/243; Claude rereview, real Qwen/Doubao funds-role signatures, independent owner root and R6 production adapters are still missing.",
+    "Wider regression retains 13 original-head failures. ANS and funded-dispatch runners still fail on old wep3-worker undefined path; their success is not inferred from payment component CI. No business deploy, signed attestation, dispatch, wallet transfer, on-chain pause or remote credential deletion occurred."
   ],
   "related_PR225": {
     "merged": true,
@@ -1297,8 +1313,8 @@
     "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
     "source_review_pr": 266,
     "candidate_pr": 267,
-    "candidate_head": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
-    "status": "code_and_design_submitted_waiting_independent_review_not_live",
+    "candidate_head": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+    "status": "PR268_R1_R4_code_repairs_and_CI_complete_waiting_independent_rereview_not_live",
     "merged": false,
     "production_deployed": false,
     "candidate_policy_enabled": false,
@@ -1306,64 +1322,54 @@
     "old_20_60_budgets_revived": false,
     "scope": "new_Base_USDC_exemption_only_not_all_existing_treasury_Aave_x402_paths",
     "manifest": {
-      "ref": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
-      "path": "knowledge/results/patchgate/post266/artifact-manifest.json",
-      "sha256": "ac56ef579e7a8e926122710e768cfd261ec2d7388856fad22c226c2986dced86",
-      "files": 13,
+      "ref": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+      "path": "knowledge/results/patchgate/post268/artifact-manifest.json",
+      "sha256": "a54c03c5db534ffd6a4489dc076865b91ef5ce20268403cd4c5bca2ca60fc735",
+      "files": 43,
+      "all_artifact_and_dependency_files_verified": 47,
       "externally_hashed_not_self_embedded": true
     },
-    "release_sha256": "7f4577a936d42bf8decb23931cd92a693231d1220fdcc2924323ee845d55d30b",
+    "release_sha256": "cc24db8995ac01a94c47adb485ab40f03a01862d0d46532d7faf476bc0a80851",
     "new_tests": {
-      "passed": 124,
+      "passed": 190,
       "failed": 0,
       "skipped": 0,
-      "run_id": "40449475033",
-      "job_id": "122008557228",
+      "run_id": "40454797467",
+      "job_id": "122025505291",
       "run_attempt": 1,
       "event": "pull_request",
-      "head": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
-      "actual_checkout": "82b0a04c644db203995b85cca63850a408c787e4",
-      "checkout_tree_equals_candidate": true,
+      "head": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+      "actual_checkout": "3da21b1964f1fc091d098ddea6cfc07a9678b962",
+      "actual_base": "77c9bff8da91e213e9c9c5430615542f7094b3f7",
+      "artifact_dependency_bytes_equal": true,
+      "verified_files": 47,
       "node": "v22.23.3",
       "log_counts_readback_verified": true,
-      "scope": "real_GitHub_runner_synthetic_policy_and_state_machine_not_real_money"
+      "scope": "real_GitHub_runner_offline_synthetic_policy_crypto_and_guard_tests_not_real_payment"
     },
     "patchgate_regression": {
       "passed": 243,
       "failed": 0,
-      "run_id": "40449475067",
-      "job_id": "122008557460",
+      "run_id": "40454797490",
+      "job_id": "122025505309",
       "log_counts_readback_verified": true
     },
     "L0_BASE_check": {
-      "run_id": "40449470984",
-      "job_id": "122008601861",
+      "run_id": "40454794662",
+      "job_id": "122025542362",
       "conclusion": "failure",
       "all_CI_green": false,
-      "expected_admission_scope": "L0_docs_only_this_is_L3",
-      "local_reproduction": {
-        "risk": "L3",
-        "modifies_own_checks": true,
-        "controls": [
-          "config/patchgate-cloud-publisher.json"
-        ],
-        "findings": [
-          {
-            "path": "scripts/lib/small-payment-policy.mjs",
-            "code": "new_dynamic_execution_requires_review",
-            "controller_disposition": "RegExp.exec_in_historyRecipient_flagged_by_generic_exec_regex_original_retained_for_auditors"
-          }
-        ]
-      },
+      "expected_admission_scope": "L0_docs_only_financial_patch_is_L3",
       "runner_artifact_JSON_bytes_readback": false
     },
     "reviews": {
-      "claude": "assigned_waiting_acceptance",
-      "qianwen": "assigned_waiting_acceptance",
+      "claude": "rereview_requested_no_new_approval",
+      "qianwen": "assigned_native_funds_role_not_provisioned",
+      "doubao": "assigned_native_funds_role_not_provisioned",
       "native_new_reviews_received": 0,
-      "claude_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/266#issuecomment-6433724445",
-      "qianwen_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/267#issuecomment-6433727670",
-      "notifications_readback_verified": true,
+      "claude_notification": "https://github.com/ltzyz2181-collab/ltzzz/pull/268#issuecomment-6434489316",
+      "notification_readback_verified": true,
+      "claude_not_Anthropic_signature": true,
       "engineering_helpers_are_independent_provider_audits": false
     },
     "online_acceptance": {
@@ -1375,7 +1381,7 @@
       "independent_audit_callback": false,
       "actual_freeze_probe": false
     },
-    "old_wallet_live_entry": "candidate_requires_opaque_runtime_permit_before_key_access_old_live_CLIs_not_migrated",
+    "old_wallet_live_entry": "candidate_live_launchers_retired_before_key_or_ledger_access_only_explicit_simulation_preserved",
     "cloud_design": {
       "status": "design_only_no_App_or_IAM_or_Ed25519_or_runtime_proof",
       "publisher_raw_GitHub_token_kept_in_cloud": true,
@@ -1387,7 +1393,107 @@
     "payment_environment_variables_changed": false,
     "financial_execution": false,
     "paid": false,
-    "tx_hash": null
+    "tx_hash": null,
+    "latest_audit_pr": 268,
+    "original_audit_verdict": "REVISE_preserved",
+    "repair_dispositions": {
+      "ref": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+      "path": "knowledge/results/patchgate/post268/audit-dispositions.json"
+    },
+    "R1": {
+      "registered_source_files": 31,
+      "retired_legacy_CLI_files": 8,
+      "production_Market_key_consumption": "candidate_disabled_not_deployed",
+      "real_RPC_exchange_and_default_paid_relay": "candidate_closed_readonly_preserved",
+      "wallet_signer_factory": "opaque_internal_capability_required",
+      "static_guard": "source_digest_and_new_primitive_detection_not_arbitrary_code_sandbox",
+      "existing_external_contracts_paused": false,
+      "remote_secrets_read_or_deleted": false
+    },
+    "R2": {
+      "alarm_and_reservation_and_pre_dispatch_deadline_check": true,
+      "persistent_freeze_negative_tests_without_alarm": "passed_offline_not_real_cloud_failure_probe"
+    },
+    "R3": {
+      "required_native_providers": [
+        "aliyun_dashscope",
+        "volcengine_ark"
+      ],
+      "required_role": "payment_policy_review",
+      "verification": "public_Ed25519_and_opaque_internal_proof_bound_to_policy_release_authority_output_and_registered_cloud_source",
+      "claude": "advisory_PR_not_cryptographic_model_identity",
+      "owner_confirmation": "separate_fixed_registered_owner_key_for_version_scope_not_each_small_payment",
+      "real_funds_role_keys_registered": 0,
+      "real_native_signatures_received": 0,
+      "real_owner_confirmation_received": false,
+      "authority_candidate_enabled": false,
+      "fixtures_are_real_production_signatures": false,
+      "actual_IAM_owner_root_independence_verified": false
+    },
+    "R4": {
+      "observed_run": "40446747355",
+      "job_id": "121999738510",
+      "run_attempt": 1,
+      "event": "schedule",
+      "source_commit": "31ca14fd22d63a61626a7003c060f689aa42afe4",
+      "observed_mode": "dry-run",
+      "observed_all_seats": "no_pending_proposals",
+      "automatic_entry": ".github/workflows/ltzzz-wallet-ops.yml -> scripts/run-agent-spending.mjs",
+      "manual_CLI": "scripts/execute-agent-payment.mjs_no_repository_workflow_caller_found_outside_environment_unverified",
+      "candidate_change": "explicit_simulation_only_no_wallet_Secret_passed_live_launchers_rejected_before_credential_or_ledger_access",
+      "production_workflow_changed": false,
+      "replacement_service_deployed": false
+    },
+    "changed_legacy_behavior_tests": {
+      "passed": 47,
+      "failed": 0,
+      "scope": "local_offline_related_tests_new_closed_behavior"
+    },
+    "prior_runner_failure": {
+      "head": "20eec72187073568856916361a3f37d3c7452d1d",
+      "run_id": "40454513554",
+      "job_id": "122024602003",
+      "passed": 189,
+      "failed": 1,
+      "reason": "missing_ethers_transitive_test_dependency",
+      "repair": "install_existing_locked_dependencies_without_lifecycle_scripts",
+      "original_preserved": true
+    },
+    "wider_regression": {
+      "baseline_ref": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
+      "baseline": {
+        "tests": 163,
+        "passed": 150,
+        "failed": 13
+      },
+      "current": {
+        "tests": 163,
+        "passed": 150,
+        "failed": 13
+      },
+      "failure_names_equal": true,
+      "comparison": {
+        "ref": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+        "path": "knowledge/results/patchgate/post268/baseline-comparison.json"
+      },
+      "ANS_runner": {
+        "run_id": "40454797400",
+        "job_id": "122025505335",
+        "tests": 245,
+        "passed": 237,
+        "failed": 8
+      },
+      "funded_dispatch_runner": {
+        "run_id": "40454797364",
+        "job_id": "122025505138",
+        "tests": 126,
+        "passed": 119,
+        "failed": 7,
+        "dispatch": "skipped"
+      },
+      "known_old_root_error": "wep3-worker.js:138 path is not defined; source unchanged by PR268 repairs",
+      "all_CI_green": false
+    }
   },
   "post266_followup": {
     "at_utc": "2026-10-27T04:26:39Z",
@@ -1406,6 +1512,30 @@
     "real_cloud_deployments": 0,
     "native_model_calls": 0,
     "real_signatures_generated": 0,
+    "A2_enabled": false,
+    "A3_enabled": false,
+    "B_enabled": false,
+    "financial_execution": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "post268_followup": {
+    "at_utc": "2026-10-27T05:25:51Z",
+    "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "audit_pr": 268,
+    "code_pr": 267,
+    "head": "48f03b92d3f3e61c7948d705a3901e54bd34227f",
+    "actual_provider": "openai",
+    "model": null,
+    "metadata_source": "current_Codex_session_exact_id_unavailable",
+    "code_repair_completed": true,
+    "independently_reapproved": false,
+    "merged": false,
+    "production_deployed": false,
+    "production_private_key_access": false,
+    "production_private_keys_generated": 0,
+    "native_model_API_calls": 0,
+    "actual_funds_role_signatures": 0,
     "A2_enabled": false,
     "A3_enabled": false,
     "B_enabled": false,
