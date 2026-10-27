@@ -1,5 +1,6 @@
 // Deterministic USDC policy only: no IO, signatures, balances, models or transfers.
 import {createHash} from 'node:crypto';
+import {PAYMENT_REVIEW_PROVIDERS,paymentActivationMatches} from './small-payment-authorization.mjs';
 export const SINGLE_EXCLUSIVE_RAW=20_000_000n;
 const MAX_RAW=(1n<<256n)-1n,DAY=86_400_000,OFFSET=8*3_600_000;
 const ID=/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/,GROUP=/^[a-z0-9][a-z0-9._-]{0,79}$/,HASH=/^[a-f0-9]{64}$/;
@@ -23,10 +24,6 @@ export function normalizeRecipientKey({rail,address}={}){
 }
 function historyRecipient(key){const m=/^([a-z0-9][a-z0-9_-]{0,39}):(0x[0-9a-fA-F]{40})$/.exec(key||'');if(!m)throw Error('invalid_history_recipient');return normalizeRecipientKey({rail:m[1],address:m[2]});}
 function windows(now){const dayStart=Math.floor((now+OFFSET)/DAY)*DAY-OFFSET,weekday=(new Date(dayStart+OFFSET).getUTCDay()+6)%7;return {day_start_ms:dayStart,week_start_ms:dayStart-weekday*DAY,rolling_start_ms:now-DAY};}
-function reviewsValid(r){
- if(!r||!unique(r.required_providers)||r.required_providers.length<2||!r.required_providers.includes('anthropic')||r.required_providers.some(p=>!PROVIDERS.has(p))||!Array.isArray(r.approved))return false;
- return r.required_providers.every(provider=>{const rows=r.approved.filter(a=>a?.provider===provider);return rows.length===1&&rows[0].verified===true&&rows[0].verdict==='approve'&&HASH.test(rows[0].artifact_sha256||'');});
-}
 // context is supplied by the authenticated runtime/store. Caller request contains
 // no proof, review, limit, address, settlement or paid flag. Returned allow is not
 // a signature, transfer or activation decision.
@@ -36,8 +33,9 @@ export function evaluateSmallPayment({request,policy,context}={}){
  try{
   if(policy?.schema!=='ltzzz.small-payment.policy.v1'||policy.currency!=='USDC'||policy.decimals!==6||policy.timezone!=='Asia/Shanghai')add('fixed_USDC_policy_required');
   if(policy?.enabled!==true)add('policy_disabled');
-  if(!reviewsValid(policy?.independent_reviews))add('independent_reviews_not_verified');
   const now=typeof context?.now==='number'&&Number.isSafeInteger(context.now)&&context.now>=0?context.now:at(context?.now);
+  const required=policy?.independent_reviews?.required_providers;
+  if(!unique(required)||required.length!==2||!PAYMENT_REVIEW_PROVIDERS.every(p=>required.includes(p))||!paymentActivationMatches(context?.activationProof,{policy,release_sha256:context?.release_sha256,now}))add('independent_native_reviews_and_owner_confirmation_required');
   const w=windows(now);out.windows={timezone:'Asia/Shanghai',day_start_utc:new Date(w.day_start_ms).toISOString(),week_start_utc:new Date(w.week_start_ms).toISOString(),rolling_start_utc:new Date(w.rolling_start_ms).toISOString(),observed_at_utc:new Date(now).toISOString()};
   if(!exact(request,['payment_id','controller_id','payee_id','purpose_id','amount_raw','rail'])){add('unexpected_or_missing_request_fields');return out;}
   if(['payment_id','controller_id','payee_id','purpose_id'].some(k=>!validId(request[k]))){add('invalid_request_identity');return out;}

@@ -1,3 +1,4 @@
+import {assertReadOnlyRpcBody} from './lib/financial-exit-guard.js';
 import {cashFloorRaw} from './wep3-cash-liabilities.js';
 import {OWNER_CHILD,isOwnerChildId,ownerChildRecipient,verifyOwnerChildBasis,ownerChildSupplyProof,recordOwnerChildPosition} from './wep3-owner-child-allocation.js';
 import {Wallet,JsonRpcProvider,FetchRequest,Contract,Interface,Transaction,keccak256,formatUnits} from 'ethers';
@@ -36,7 +37,7 @@ export function buildAavePlan(input,ctx){
  if(BigInt(ctx.ausdc_raw)<amount)throw Error('insufficient_aUSDC');
  return {amount_raw:amount.toString(),steps:[{kind:'withdraw',to:AAVE.pool,data:pool.encodeFunctionData('withdraw',[AAVE.usdc,amount,address])}]};
 }
-export async function nativeRpcFetch(req){const response=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body,signal:AbortSignal.timeout(12000)});return {statusCode:response.status,statusMessage:response.statusText,headers:Object.fromEntries(response.headers),body:new Uint8Array(await response.arrayBuffer())};}
+export async function nativeRpcFetch(req){assertReadOnlyRpcBody(req.body);const response=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body,signal:AbortSignal.timeout(12000)});return {statusCode:response.status,statusMessage:response.statusText,headers:Object.fromEntries(response.headers),body:new Uint8Array(await response.arrayBuffer())};}
 // Ethers defaults to 12 HTTP-429 retries per request, exhausting the Worker
 // subrequest budget before fallback. A single HTTP attempt belongs to each RPC.
 function aaveRpcRequest(url){const req=new FetchRequest(url);req.timeout=12000;req.setThrottleParams({maxAttempts:1});req.getUrlFunc=nativeRpcFetch;return req;}

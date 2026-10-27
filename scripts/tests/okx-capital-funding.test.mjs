@@ -19,10 +19,10 @@ test('funding raw transaction stays private and replay confirms a fixed transfer
  await fundOKX({},book,{execute:true});assert.equal(book.ledger.length,1);assert.equal(fundingTransferProof({...receipt,status:0},o),false);assert.equal(fundingTransferProof({...receipt,logs:[]},o),false);
 });
 test('pending funding reserves cash and prevents new Aave nonce use',async()=>{const b={okx_funding:{amount_raw:'20000000',status:'pending'}};assert.equal(cashFloorRaw(b),20000000n);assert.equal((await executeAave({},b,{})).error,'okx_funding_pending_nonce_reserved');assert.deepEqual(publicFunding({raw:'hidden',status:'pending'}),{status:'pending'});});
-test('capital adapter only accepts the fixed same-account transfer and bounded USDC conversion',async()=>{
+test('capital adapter denies all writes before HMAC or IO while readonly calls remain available',async()=>{
  let calls=0;const c=capitalClient({key:'k',secret:'s',pass:'p'},{fetcher:async()=>{calls++;return Response.json({code:'0',data:[]});}}),body={ccy:'USDC',amt:'20',from:'6',to:'18',type:'0',clientId:TRANSFER_ID};
- for(const [path,b] of [['/api/v5/asset/withdrawal',body],['/api/v5/asset/transfer',{...body,to:'6'}],['/api/v5/asset/transfer',{...body,amt:'21'}],['/api/v5/asset/transfer',{...body,subAcct:'x'}]])await assert.rejects(c('POST',path,b),/forbidden/);
- await c('POST','/api/v5/asset/transfer',body);assert.equal(calls,1);
+ for(const [path,b] of [['/api/v5/asset/withdrawal',body],['/api/v5/asset/transfer',{...body,to:'6'}],['/api/v5/asset/transfer',{...body,amt:'21'}],['/api/v5/asset/transfer',{...body,subAcct:'x'}]])await assert.rejects(c('POST',path,b),/legacy_financial_exit_disabled/);
+ await assert.rejects(c('POST','/api/v5/asset/transfer',body),/legacy_financial_exit_disabled/);assert.equal(calls,0);await c('GET','/api/v5/asset/balances');assert.equal(calls,1);
 });
 test('conversion enforces cash IOC, integer lots, peg and price floor',()=>{const i={instId:'USDC-USDT',state:'live',tickSz:'0.0001',lotSz:'0.01',minSz:'1'},t={instId:'USDC-USDT',bidPx:'1'};const r=conversionOrder(i,t);assert.equal(r.sz,'20');assert.equal(r.px,'0.995');assert.equal(r.clOrdId,CONVERSION_ID);assert.throws(()=>conversionOrder(i,{...t,bidPx:'0.9'}),/bound/);});
 test('uncertain internal transfer is persisted before POST and retries only look up its client ID',async()=>{

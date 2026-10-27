@@ -1,13 +1,12 @@
-类型：派单（不等于接单/审计通过）
+类型：修订复审派单；沿用原任务 PLAN-PATCHGATE-ESCROW-20261023 / PR266-REVIEW，不等于接单或批准。
 
-原任务：PLAN-PATCHGATE-ESCROW-20261023；子项：PR266-REVIEW。沿用原任务，不新增购买或日课。
+#268 对 #267 的 REVISE 原文、旧 head 90b0c06b 与旧哈希保留。请复审 #267 的更新 head（准确40位由总控写回 #268 评论）。输入优先 `knowledge/results/patchgate/post268/artifact-manifest.json`、工程回执与R1–R4 dispositions；post266旧清单只适用于旧head，不用于新字节。
 
-目标：复审 #266 后续的小额付款实现与两份云 publisher/checks 设计。#263 已依据 #266 在默认关闭范围合并，不能重复要求批准旧 head 或把这次审计记成 A2/付款启用。
+R1：31个文件的完整资金出口登记、旧CLI退役、Market隔离资金钥匙、真实RPC/CEX/已付中继关闭、直接signer factory能力守卫。核对清单摘要与CI新增未知出口反例，不把它当任意代码沙箱或链上pause证明。
+R2：alarm与预留事务/dispatch前共用到期冻结；未调用alarm的反例必须阻断新付款并持久关开关。
+R3：千问＋豆包真实原生响应的受信执行器公钥签名必需，owner对准确policy/release/authority签确认；Claude PR作为咨询，不冒充Anthropic签名。测试全是合成离线钥匙，真实公钥/云角色/两签/owner确认均未登记；新根不能由AI请求自换，真实IAM/控制面隔离仍待实装。
+R4：读到实际定时run40446747355/job121999738510，模式dry-run且六席无提案。手动CLI未发现自动入口；仓外调用未验证。候选固定模拟且不再传钱包私钥，live入口明确关闭，未来服务未上线。
 
-输入：本卡所在 PR 的准确 HEAD（由总控在 PR #266 评论中给出）、knowledge/results/patchgate/post266/artifact-manifest.json、docs/SMALL-PAYMENT-AUTONOMY-20261027.md、docs/PATCHGATE-CLOUD-PUBLISHER-AND-CHECKER-20261027.md 及清单中的代码/测试/配置。自行读取完整字节，不仅看总控结论。
+额外保留：R5登记变更需双审、新地址独立登记；R6真实链上结算/独立审计/持久存储/alarm适配仍未接通。扩大回归的13个旧失败在原head隔离worktree同样复现，不能称全仓绿灯或WEP3已恢复。
 
-输出：在原任务下新审计文件＋分支 PR。列 audited_head、逐文件 SHA256、实际 author_provider/client/model 来源、每条五规则裁定、阻断项与验证边界；保留旧意见。测试或 GitHub shared login 不冒充 Claude 原生审计。
-
-验收：核对单笔/日/周及2×证据、防拆单/别名/并发、经济独立性、持久冻结、自动 alarm 契约、回执真实语义、默认关闭；检查 callback 是否把核心验真外包且部署尚缺，不能把库测试当作线上完成。区分已实现逻辑和未连接能力，给出可否默认关闭合并；付款激活仍须另一提供商真实审计。
-
-禁止：付款/签名/充值、读私钥或配置凭证、改上限/开关、替自己填写另一家批准、把工程帮手当独立供应商审核。没有实际接单/读取证据，状态保持 assigned_waiting_acceptance。
+请输出逐项裁定、audited_head/工件摘要、实际author_provider/client/model来源与未验范围，以独立分支PR交付。只审“是否可默认关闭合并”，不启用资金/A2/A3/B、不发付款/签名、不碰钥匙；不把新的待审卡当已审。工程帮助不计入千问/豆包原生签名。

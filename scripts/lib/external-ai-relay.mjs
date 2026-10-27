@@ -1,11 +1,13 @@
+import {legacyRelayReadFetch} from '../../lib/financial-exit-guard.js';
 import {dailyHireId,dailyHireBody} from '../../wep3-procurement-contract.js';
 import {PROVIDER} from './external-procurement-preflight.mjs';
 import {procurementBody,paymentQuote} from '../../wep3-procurement.js';
 import {wep3Request} from './funded-invest-runtime.mjs';
-export async function externalAIRelay(token,{api=wep3Request,fetcher=fetch,date,context,existingOnly=false}={}){
+export async function externalAIRelay(token,{api=wep3Request,fetcher=legacyRelayReadFetch,date,context,existingOnly=false}={}){
  const id=date?dailyHireId(date):'EXT-AI-20261017-001',readPath=date?'/market/procurement/daily?date='+date:'/market/procurement/order';
  const existing=await api(readPath,{token});if(existing.order)return existing;
  if(existingOnly)return {...existing,status:'blocked_original_order_missing_no_repurchase',paid:false,tx_hash:null};
+ if(fetcher===legacyRelayReadFetch)return {ok:false,status:'legacy_paid_relay_disabled',paid_request_attempted_this_run:false};
  const body=date?dailyHireBody(date,context):procurementBody();
  const free=await fetcher(PROVIDER.url,{method:'POST',headers:{'Content-Type':'application/json'},body,redirect:'error',signal:AbortSignal.timeout(20000)}),header=free.headers.get('PAYMENT-REQUIRED');if(!header||header.length>60000)throw Error('external_quote_header_invalid');const q=JSON.parse(Buffer.from(header,'base64').toString('utf8'));paymentQuote(free.status,q);
  const prepared=await api(date?'/market/procurement/daily-prepare-relay':'/market/procurement/prepare-relay',{token,body:{quote:q,...(date?{date,context}:{})}});if(!prepared.relay)return prepared;

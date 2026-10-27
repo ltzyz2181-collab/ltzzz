@@ -1,10 +1,9 @@
 name: Small payment policy offline validation (no payment)
 on:
-  pull_request:
-    paths: ['scripts/lib/small-payment-*.mjs','scripts/tests/small-payment-*.mjs','scripts/wallet-lib.mjs','config/small-payment-autonomy.json','.github/workflows/small-payment-policy.yml']
+  pull_request: {}
   push:
     branches: [main]
-    paths: ['scripts/lib/small-payment-*.mjs','scripts/tests/small-payment-*.mjs','scripts/wallet-lib.mjs','config/small-payment-autonomy.json','.github/workflows/small-payment-policy.yml']
+    paths: ['**.js','**.mjs','**.cjs','**.ts','**.tsx','**.sol','**.py','**.sh','**.ps1','**.bat','**.html','config/small-payment*.json','config/financial-exit-inventory.json','.github/workflows/small-payment-policy.yml','.github/workflows/ltzzz-wallet-ops.yml']
 permissions: {contents: read}
 concurrency:
   group: small-payment-offline-${{ github.event.pull_request.number || github.ref }}
@@ -20,10 +19,13 @@ jobs:
         with: {node-version: '22'}
       - name: Syntax and deterministic synthetic adversarial tests (no credentials)
         run: |
+          node --check scripts/lib/small-payment-authorization.mjs
+          node --check lib/financial-exit-guard.js
+          node --check scripts/lib/financial-exit-inventory.mjs
           node --check scripts/lib/small-payment-policy.mjs
           node --check scripts/lib/small-payment-runtime.mjs
           node --check scripts/wallet-lib.mjs
-          if node --test scripts/tests/small-payment-policy.test.mjs scripts/tests/small-payment-runtime.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
+          if node --test scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
             tail -n 10 /tmp/small-payment-tests.txt
           else
             cat /tmp/small-payment-tests.txt

@@ -1,56 +1,38 @@
-# 事实与方案：小额付款自主权的默认关闭实现
+# 事实与方案：小额付款默认关闭实现（#268修订）
 
-原任务 `PLAN-PATCHGATE-ESCROW-20261023`，承接 Claude PR #266。这里只实现“已登记用途、单笔严格小于 20 USDC”的新豁免路径，不扩大已有外部雇佣 0.05 USDC/日一单、Aave 试点、白名单或绝对上限。代码不是付款授权，测试不是生产验收。A2/A3/B 不开启，现有支付环境变量不变。
+原任务 `PLAN-PATCHGATE-ESCROW-20261023`。单笔及收款人＋用途组滚动24h合计严格 <20 Base USDC；采用6位精度整数。日/周共享已登记预算，取登记限额、owner绝对上限、2×独立已核额度的最小值，缺失/过期即拒绝。2×只是额外天花板，不作新增授权，不复活旧20/60预算，不扩大已有0.05U雇佣或投资授权。
 
-## 五条规则如何强制
+控制/经济主体、用途与地址须核实登记；同一operator、controller控制收款方、别名掩盖控制关系不得走豁免。新地址、新用途、额度和控制字段变化会改变policy摘要，旧批准立即失效；登记变更要双独立审计，新增收款地址沿独立登记权限处理（#268 R5）。这些事实本身仍需真实证据核验，不能仅填control_verified=true。
 
-| #266 要求 | 执行位置与拒绝条件 |
-|---|---|
-| 单笔 <20U、日周预算、2×已验证上限 | `small-payment-policy.mjs` 使用 USDC 6 位精度 BigInt；每个维度取已登记限额、owner 绝对上限、2×独立核验额度的最小值。缺任何一项、未登记、过期、将来时间均阻断。2× 只是额外天花板，不是新增授权。旧 20/60 日预算没有复制回来。 |
-| 防拆单、已登记地址/用途 | 新通道固定 `base_usdc`；按真实地址小写＋已登记 purpose group＋滚动24小时累计，包含不同 controller、收款别名和用途别名，合计也必须 <20U。日/周共享 budget_id。未决保留直到独立对账，不按日期自动释放。 |
-| 禁止自付和同一经济主体 | controller/payee 都须登记已核实 operator/control；相同 operator、controller 控制的 payee、同地址别名隐藏控制关系均不走豁免。未知经济关系不自动认证。 |
-| 异常/缺回执自动冻结 | `small-payment-runtime.mjs` 先事务预留、再确认持久 alarm、再执行一次。独立结算回读不合格、超时/结果未知、独立审计异常或到期缺审，实际写 `switch_enabled=false,frozen=true`。不是只生成告警。 |
-| 生效前 Claude＋另一提供商审 | 配置 `enabled=false`，注册/预算/approval 为空；运行时要求独立激活验真能力绑定实际 policy SHA256、release SHA256 及 Claude/不同提供商审计。没有真实登记/复核不能启动。测试的 approve 全是明确标识的合成夹具。 |
+## R3：谁能批准与开关确认
 
-20U 只针对本服务支持的 Base USDC 总扣款；请求 `amount_raw` 必须包含全部 USDC 扣款，不允许执行器另扣 USDC 手续费。ETH gas 是独立费用，当前没有实现自动补 gas 或新增 gas 预算授权。其他链、币种、银行卡/API 账单、投资和 Safe 托管不能套用这个豁免。
+`small-payment-authorization.mjs` 只做公钥验签，不生成生产密钥、不调用模型、不登记信任根、不写支付开关。必须同时收到：
 
-## 可信输入与部署接口
+1. 千问 `aliyun_dashscope` 与豆包 `volcengine_ark` 两个不同受信执行器，对**当前policy、release、完整authority摘要**的Ed25519签名。要求原生响应元数据、非空结构化approve、实际模型/request ID、finish_reason=stop、output SHA256、已登记源码与独立云部署绑定。公钥从部署端已审的固定登记取得，禁止请求者临时给一把公钥。已有A2的L0意见/角色不能复用成payment_policy_review。
+2. 独立owner公钥对同一个subject、enabled=true和有效期的确认签名；owner钥不得与模型执行器共用。这里确认的是当前版本/政策启用范围，不是每笔<20U付款都再问owner。有效期由owner签下并受登记key寿命约束，不让AI自动延长。owner/latest要求仍是保持关闭，本轮没有此真实确认或登记。
 
-请求严格只有 `payment_id/controller_id/payee_id/purpose_id/amount_raw/rail` 六个字段。地址、额度、paid、审批、模型身份、预算证据、权限变更都不能塞进请求。`createSmallPaymentService` 只能由受审云执行器构建；没有公开 HTTP 路由。它的认证、存储、结算、审计与调度回调是部署者注入的可信能力，不能由请求者提供。
+千问/豆包的“原生响应签名”实际指：已登记云执行器在自己真实调用提供商并取得完整响应后签名。不是声称阿里/火山模型API自行提供密码学签名，也不是让模型生成签名字符串。现有云执行器尚未部署/注册此资金审核角色，所以本轮只是验签实现与合成测试，不能称真实两签到位。
 
-部署适配器尚未实现/配置，必须逐项验收：
+Claude 共用GitHub账号的PR回读是**咨询审计**，不证明原生Anthropic身份、不计入密码学法定人数；配置approved[].verified或callback返回verified=true不能启动。验签后只产生同进程、不可序列化/伪造的opaque proof，确定性策略也校验该proof。没有真实登记、两签、owner确认就拒绝。
 
-- `authenticateController` 与 `authenticateAuditor` 验证真实工作负载/签名身份；模型自称、共享 GitHub 作者或请求布尔值不是认证。未认证的审计请求无权冻结服务。
-- `loadBudgetEvidence` 从受控登记与认证原件取回 `authenticated_budget_limits`：预算 ID、controller/rail/purpose_groups、USDC精度、单/日/周 limits、verified 和 owner_absolute、来源、摘要、verified_at/valid_until。余额或旧交易不能代替预算。空登记保持拒绝，不让总控自行抬绝对上限。
-- `verifyPolicyActivation` 独立核实真实 Claude＋另一提供商对**当前 release 和当前 policy**的批准。运行时比较两者摘要；配置内 `approved` 只是登记字段，不是密码学证明，也不能用 fixtures 注册。外部激活证据独立保存，不要求文件包含自身哈希。
-- `store.transaction` 必须跨 worker 串行、原子、持久，覆盖整个豁免预算域；每台机器自己的 JSON 文件或最终一致 KV 不够。初始 state 的付款开关也为 false，本库不提供启用/解冻 RPC。
-- `scheduleAudit` 必须在转账之前持久保存并确认同一 payment_id 的 receipt_due_at（60秒）/audit_due_at（1小时），由云 alarm 或受管调度器自动调用 `alarm()`，重启后仍有效。当前没有新增 cron，也没有把本地测试 scheduler 当成云调度。
-- `execute` 只接受服务内发的一次性、不透明、30秒有效、不可序列化 permit；绑定收款地址、raw金额、用途、rail。外部签名服务需另审等价的绑定/防重放传输，不能把 `{}` 或 payment_id 当 permit。执行器有钱包控制能力，属于可信计算基；本库不能约束被攻陷宿主绕过代码直接签名。
-- `verifySettlement` 从独立 RPC/平台原件核对 Base chain、USDC 合约、转出钱包、收款人、真实 raw 扣款、成功状态、确认性及 payment_id 绑定，再给显式 `paid:true/false`、tx_hash、provider_receipt_id、证据摘要。交易提交自报不是确认。这个回读适配器当前未接通。
-- `verifyAudit` 验真实不同提供商/执行器、经济独立性、当前 receipt SHA256 和来源原件。缺审不是自己写 approve；真实审计到期才由 alarm 冻结。
+`config/small-payment-activation-authority.json` 为空且关闭；owner公钥、模型公钥、云部署/IAM证据未登记。部署宿主必须把authority锚定到已审主线和独立控制面，不允许AI通过同一请求换根、自签或改云IAM。代码签名验证不等于已证明管理员独立；真实密钥控制、信任根治理和部署验收仍属阻塞项。
 
-## 预留、重试与真实结果
+## R2：状态机与故障闭环
 
-预留在外部调用之前持久化。同一 ID 同意图只回读原单；换意图立即冻结。并发不同 ID 在同一事务中累计预留，因此不能共同穿透额度。执行后结果未知保留 `unknown_reconcile_no_retry`，没有自动再付款。
+先在跨worker串行事务持久预留、取得持久alarm确认，再给一次性30秒permit执行。相同ID同意图只对账；换意图冻结；不同ID的并发预留累计预算；未知结果跨天/周占额，不自动重付或按时间释放。
 
-未决预留跨天/跨周继续占预算；只有独立核实的 cancelled/rejected/failed 才可解除。当前运行时没有自动释放或人工解冻接口，不能靠重启清账。
+alarm和**每次预留事务**共用到期检查：已有receipt/audit超时立即持久写switch_enabled=false/frozen=true，不创建新预留。调度等待到期也在dispatch前再次检查。故定时器故障不能允许下一笔继续。存储无法落盘时准确返回freeze_persisted=false并本进程停付，不谎称已持久冻结。
 
-确认延迟时，已付历史按确认观测时刻进入新窗口，不能沿用过期预留时间释放预算。提交后即使结算查询失败仍保存公开 submitted_tx_hash 供对账，但不据此标 paid；同一结算交易哈希不能登记为两个 payment_id。
+实际提交哈希保留作对账，不等于paid。确认回执必须显式paid/status/金额/收款/用途/真实tx_hash与独立证据；不从false/null默认补造付款结果。同一交易不能认领两笔。延迟确认按新观测时窗占预算；后到的正常审计不能自行解冻。已广播交易不能被事后冻结撤回。
 
-确认付款必须有显式 `paid=true` 和真实交易哈希；当前链上适配契约还要求 `provider_receipt_id=null`。缺字段、失败、模拟哈希、不同地址/金额都冻结，不能补造 `paid=false,tx_hash=null` 来掩盖未知结果。顶层工程回执的 paid=false 仅指本轮工程没有付款。
+## R1/R4：资金出口范围
 
-数据库故障无法落盘冻结时，返回 `freeze_persisted=false` 和 `durable_state_unavailable_reconcile_only`，当前进程停止继续提交；不谎称冻结已持久化。恢复必须独立核对未决操作和持久开关，不能自动重新初始化 state。已经广播的交易无法被之后的冻结撤回。
+完整路径/守卫与两个旧脚本的实际生产证据见 `FINANCIAL-EXITS-20261027.md` 与唯一 `config/financial-exit-inventory.json`。旧凭据发现/付款/部署脚本退役，生产Market不消费资金私钥，旧广播、交易所POST和默认已付中继关闭，只读/对账保留。wallet-lib真实转账与signer factory均要求内部运行时能力。旧调度固定模拟，不下发钱包私钥。
 
-## 旧钱包入口的迁移边界
+外部客户自持钱包和已部署合约受外部/链上权限约束，本轮不声称它们被JS守卫全局冻结，也不称唯一出口。源码清单是变更检测器，不是任意程序沙箱。候选修改尚未部署到远端，未删除任何真实Secret。
 
-`scripts/wallet-lib.mjs:executeTransfer` 的真实路径现在先检查/消费运行时 permit，再读取环境中的钱包凭据和加载 ethers；不能由旧 CLI 直接传地址/金额跳过五条规则。live 金额使用精确十进制字符串；交易 receipt.status=1 才记提交侧 confirmed，仍须独立结算回读。
+## 保留的R6与上线阻塞
 
-原来的 `run-agent-spending.mjs`、`execute-agent-payment.mjs` 未接 permit 服务，所以在真实模式会明确拒绝，不能声称迁移完成。`LTZZZ_WALLET_DRY_RUN=true` 的原模拟路径保留；未明确选择模拟的本地调用现在也要 permit，而不是凭存在私钥就执行。现有 Actions 默认明确 dry-run，本轮未运行/改动其定时或设置。
+真实`verifySettlement`必须独立读Base链、USDC合约、转出/入地址、raw金额、成功和确认性；verifyAudit必须读独立提供商/执行器及精确receipt摘要；loadBudgetEvidence读受控原件；存储跨worker原子且重启持久；scheduleAudit需要持久云alarm回读。当前均是部署方接口，尚未接通/实装线上验收，不把布尔值自报当证明。原始密钥不能进GPT会话或通用runner。
 
-本改动不覆盖直接使用其他 treasury/Aave/x402 脚本的付款，不声称全项目所有资金已由新服务约束；这些路径继续受原有更窄授权和预算。后续接入要单独列执行入口、审计和测试，不能拿本库代替整个资金系统验收。
-
-## 真实验收前的状态
-
-本地合成测试只证明确定性策略和状态机，包含双实例并发、回执缺失、持久冻结、重启、时窗边界和旧入口拒绝。新只读 PR CI 不用凭证、不花款、不调用模型；它是候选离线测试，**不是受信主线 checks 签名或生产准入**。
-
-尚未完成：当前 release 的 Claude/另一真实提供商独立复核、真实预算/经济关系登记、持久存储和自动 alarm 云适配、真实钱包/结算/审计通道及线上冻结探针。以上补齐之前不启用，不执行 20U 测款。云 GitHub 发布器与独立 checks signer 见 `PATCHGATE-CLOUD-PUBLISHER-AND-CHECKER-20261027.md`，也只是待审设计。
+owner/模型真实公钥、独立IAM、持久存储/alarm、钱包/结算/审计服务、线上故障探针及两家实际原生签名尚缺；Claude仍须复审。新policy和authority、支付开关及A2/A3/B保持关闭，没有真实付款、生产签名或新增付费cron。合成测试、PR CI、HTTP200均不等于生产支付验收。云publisher/checks设计另见 `PATCHGATE-CLOUD-PUBLISHER-AND-CHECKER-20261027.md`。

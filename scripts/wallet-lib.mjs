@@ -122,7 +122,10 @@ export function providerMode() {
   return { mode: "dry-run", reason: "未配置 LTZZZ_WALLET_PRIVATE_KEY，安全降级为 dry-run" };
 }
 
-export async function localWallet(prov) {
+const signerCapabilities = new WeakSet();
+export async function localWallet(prov, capability) {
+  if (!capability || !signerCapabilities.has(capability)) throw new Error('wallet_signer_runtime_capability_required');
+  signerCapabilities.delete(capability);
   const { Wallet, JsonRpcProvider, Contract } = await import("ethers");
   const provider = new JsonRpcProvider(prov.rpc);
   const wallet = new Wallet(prov.privateKey, provider);
@@ -152,7 +155,9 @@ export async function executeTransfer({ recipient, amountUsdc, purpose, smallPay
     saveWallet(w);
     return { mode: "dry-run", hash: `0xDRYRUN-${Date.now().toString(16)}`, status: "dry_run", simulated_balance_after: w.simulated_balance_usdc };
   }
-  const { usdc, wallet } = await localWallet(prov);
+  const signerCapability = Object.freeze({});
+  signerCapabilities.add(signerCapability);
+  const { usdc, wallet } = await localWallet(prov, signerCapability);
   const amount = BigInt(liveAmount);
   const tx = await usdc.transfer(recipient, amount);
   const rcpt = await tx.wait();
