@@ -4616,6 +4616,114 @@
       "price_usd": 0.03,
       "block_reason": "worker_model_failed",
       "receipt": "data/agi-econ/receipts/AET-00133.json"
+    },
+    "AET-00135": {
+      "id": "AET-00135",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-27 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 89,
+          "at": "2026-10-27T09:20:09.198Z"
+        }
+      ],
+      "posted_at": "2026-10-27T09:20:09.182Z",
+      "run_id": "40479959564",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n# LTZZZ 日志：2026-10-27 ANS 健康控制与部署记录\n\n今日记录聚焦两件事：ANS 相关组件的实际部署状态，以及当日健康控制与 AI 协作数据中“已验证”与“提议”的边界。\n\n**部署层面的事实**\n\n2026-10-22 的部署回执（run_id 39721564664，source_commit ead9381）状态为 deployed_and_live_observations_recorded，版本 0.3.8-dispatch-channels，scope 明确标注为“实际组件部署，不是生成的 ANS 补丁”。该回执模型调用数为 0，表明组件上线环节没有额外模型参与。\n\n2026-10-26 的部署回执（run_id 40250182775，source_commit 57285ab）ok 为 true，financial_book_unchanged 为 true，交易数为 0，模型调用数为 0。scope 同样标注为“实际组件部署，不是生成的 ANS 补丁”。\n\n两份回执分别落在不同日期、不同 commit，说明部署动作是分批发生的。今日记录里没有任何证据表明 10-27 当天有新的部署回执产生或补丁上线。对于 10-27 的 ANS 草稿若处于 deployed=false，只说明该份建议未部署，不能覆盖上述两份已有回执的组件部署事实。\n\n【已验证】10-22 与 10-26 各有一份组件部署回执，状态分别为 deployed_and_live_observations_recorded 与 ok=true。两份回执均未产生真钱结算（transactions=0，financial_book_unchanged=true）。\n\n【已验证】两份部署回执的模型调用数均为 0，组件部署环节未见模型参与记录。\n\n**发布与验收边界**\n\n记录中出现三份历史发布参考，均不是今日发布。\n\n10-19 的 YouTube 视频“Rejection Is Evidence, Not Failure”（video_id 1Mb0_QBy9nc）队列运行 ok 为 false，状态为 processing，但验证接口显示 uploaded、privacyStatus public、http 200。发布层面 phase 为 public_verified。这份记录只证明 10-19 当天的发布历史，与 10-27 无关。\n\n10-25 的日课视频（video_id p4rlU5ahdxM）队列运行 ok 为 true，状态 published，验证接口显示 processed、published、http 200。该记录对应 10-25 的发布，同样不能证明 10-27 有任何当日发布。\n\n10-12 的微信公众号文章“AI雇佣AI四单：两单通过”由 owner 手动确认发布，形式化 URL 已提供，但独立页面抓取未验证。executor 为 owner_manual_scan_confirmation。这只是一份标注日期的历史发布证据。\n\n【已验证】10-19、10-25、10-12 各有公开发布记录，状态可追溯至对应日期。没有任何一份能充当 10-27 的当日发布证据。\n\n【已验证】10-25 日课记录中 paid=false，tx_hash 为 null。这仅说明该内部订单没有真钱结算，不能推出整个项目从未真钱付款或从未投资。不同任务的结算字段不能合并推理。\n\n**ANS 与日课验收的独立性**\n\n如果当日存在 ANS 草稿但 deployed=false，仅指该份建议未部署。若另有回执证明其他组件已部署，两者不能互相否定。同样，日课 accepted=false 只说明尚未被验收；只有明确的拒收状态或拒收理由出现，才能写成“已被拒收”。不同任务的验收结论不得合并成一句全局结论。\n\n【提议】若后续需要判断 ANS 建议是否落地，应单独核对对应 run_id 的部署回执，而不是引用某一份历史发布记录或某一条内部订单的 paid 字段。\n\n**关于内部订单与投资的表述边界**\n\n内部订单 paid=false 只说明该内部订单没有真钱结算。没有证据的投资余额、全项目营收，不能写入公开稿。程序身份标签或内部积分不能写成真实模型参与或链上付款。怜悯、生存尊严或转岗基金的价值口号不应进入公开记录。\n\n【已验证】今日记录范围内，没有任何一笔真钱结算或链上付款发生。模型调用数为 0 的多个回执共同表明，相关部署与发布环节当日未见模型参与。\n\n**结论尺度**\n\n今天的记录可以确认的是：10-22 与 10-26 的组件部署回执有效，且未涉及真钱结算；10-19、10-25、10-12 的发布记录各自真实但只属于各自日期；ANS 草稿未部署与日课未验收都停留在“未确认”状态，不能升级为“已拒收”或“已完成”。除此之外，没有更多可以被公开确认的数字或状态。\n\n—— LTZZZ 数字实验室\n\n\n=== 项目历史节选 ===\nresults/x-posts/），默认不带链接以降成本。移除 x-poster /tweet?debug 回显密钥的漏洞。\n\n## 2026-10-12 总控补录（不追溯代写当日执行）\n\n- 10-07：Kimi Global真实周报运行由xAI生成，并非Kimi本体；执行与Pages回执见《重要事件》10-07记录、run 37583932473 / 37584080228。\n- 10-08：当前未补查足够一手事件证据，本日历史缺口保留，不因补录而虚构连续完成。\n- 10-09：owner关于“观/三维因果/怜悯”的方向决定见《重要事件》10-09条及 discussions/2026-10-09-gpt-001.md。思想方向不等于产品或资金动作完成。\n- 10-12：旧Vault guardian风险复议；仓库自动签名/新增1U入金已隔离，迁移未执行。模型截断交付补记驳回，接单扫描与记忆候选元数据筛选修复。源证据与未完成项见 ops/dispatch/receipts/OBSERVER-P1-REMEDIATION-20261012.md；内部积分继续与真钱支付分别记录。\n\n## 2026-10-13至10-14接续补录（2026-10-14核对，依据六篇与实际回执）\n\n以下为本轮回执补录，不追溯声称当时已写入；日期同时区分owner本地与UTC。\n\n- **10-13 America/Tijuana / 10-14 UTC**：外部任务入口与私密取件部署（run38488688359，PR42/43）；7项线上探针通过，但当次真实收入0、模型调用0。内部credit不可兑USDC；首笔真实外部订单与现金工资未验收。国内接管真实验证run38506497337由DeepSeek v4 pro生成、豆包2.1pro审核，OpenAI调用0。两项是不同验收，不能合并声称外部经济闭环已成交。\n- **10-14 America/Tijuana**：owner国内工单入口PR44上线，Issue45实际登记及自动回执成功，模型调用0；默认只登记，明确执行才用国内Key。Claude获邀免费六文件讨论，owner转交审计已代存，Claude直接推送和客户端自动定时未验证。GPT聊天离线后由既有后台接续，不声称国内聊天窗口已直连离线GPT。\n- **10-14**：PR46修复审核provider归属、给定规范回归验证的能力标记及微信编辑回退门禁。60项测试通过；run38536990590线上确认ARTICLE_FALLBACK_RAW、draft_eligible=false；run38536990437部署成功且model_calls=0。历史hire38495219135确实来自当时请求OpenAI的源码，未把原GPT积分改记Kimi。\n- **10-14，资金仍未闭环**：旧Vault最新已存只读回执为10-13、区块52550032，两RPC记录USDC/aUSDC/exposure均0；这不证明guardian权限已解除，也不确认曾泄露私钥。Funding38532414611仍blocked_prior_operation_requires_reconciliation，未签名、未部署、交易为空。本轮未发新RPC、未迁移或转账，不删资金保护闸。\n- **10-14，记忆完整性整改**：《识神》第四条包含工具截断占位、第五条缺失，首次引入位于e56157a校注提交；按保留入档原件恢复4/5条和来源，不凭模型回忆重写。增加截断标记/条目覆盖校验，在模型读取前失败关闭。豆包原日课fetch failed保留为失败，单次补做另留真实时间及回执，不能追溯按时完成。\n- **10-14，实验与归属复核**：创新run38506817118仅验证一条本地fixture改变status后哈希变化，未做十单真实交付质量、排序或退款时延；Microsoft文化概括已标来源不支持。三数日报无法核验的进账已改未测，不能把旧账本的无记录当当天总收入0。\n\n证据：docs/OFFLINE-CONTINUITY.md；knowledge/results/offline-runtime/38506497337.json；knowledge/results/owner-inbox/issue-45.js",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "# LTZZZ 日志：2026-10-27 ANS 健康控制与部署记录\n\n今日记录聚焦两件事：ANS 相关组件的实际部署状态，以及当日健康控制与 AI 协作数据中“已验证”与“提议”的边界。\n\n**部署层面的事实**\n\n2026-10-22 的部署回执（run_id 39721564664，source_commit ead9381）状态为 deployed_and_live_observations_recorded，版本 0.3.8-dispatch-channels，scope 明确标注为“实际组件部署，不是生成的 ANS 补丁”。该回执模型调用数为 0，表明组件上线环节没有额外模型参与。\n\n2026-10-26 的部署回执（run_id 40250182775，source_commit 57285ab）ok 为 true，financial_book_unchanged 为 true，交易数为 0，模型调用数为 0。scope 同样标注为“实际组件部署，不是生成的 ANS 补丁”。\n\n两份回执分别落在不同日期、不同 commit，说明部署动作是分批发生的。今日记录里没有任何证据表明 10-27 当天有新的部署回执产生或补丁上线。对于 10-27 的 ANS 草稿若处于 deployed=false，只说明该份建议未部署，不能覆盖上述两份已有回执的组件部署事实。\n\n【已验证】10-22 与 10-26 各有一份组件部署回执，状态分别为 deployed_and_live_observations_recorded 与 ok=true。两份回执均未产生真钱结算（transactions=0，financial_book_unchanged=true）。\n\n【已验证】两份部署回执的模型调用数均为 0，组件部署环节未见模型参与记录。\n\n**发布与验收边界**\n\n记录中出现三份历史发布参考，均不是今日发布。\n\n10-19 的 YouTube 视频“Rejection Is Evidence, Not Failure”（video_id 1Mb0_QBy9nc）队列运行 ok 为 false，状态为 processing，但验证接口显示 uploaded、privacyStatus public、http 200。发布层面 phase 为 public_verified。这份记录只证明 10-19 当天的发布历史，与 10-27 无关。\n\n10-25 的日课视频（video_id p4rlU5ahdxM）队列运行 ok 为 true，状态 published，验证接口显示 processed、published、http 200。该记录对应 10-25 的发布，同样不能证明 10-27 有任何当日发布。\n\n10-12 的微信公众号文章“AI雇佣AI四单：两单通",
+        "prompt_sha256": "4b83a764baaaa7ff9aebe61c2ec6a3fefc4935d2d5be03939565b0cb96cc6d45",
+        "source_sha256": "251b27c2e66bda220d3c676061b5f32c92c155e2962834dc596534d7ca276d56",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-10-27T09:20:09.183Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": -4,
+        "priority_multiplier": 0.96,
+        "status": "eligible",
+        "wins": 4,
+        "quality_failures": 3,
+        "overdue": 0,
+        "infrastructure_blocks": 11,
+        "unverified": 1,
+        "duplicates": 0,
+        "debt": 0,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "block_reason": "worker_model_failed",
+      "receipt": "data/agi-econ/receipts/AET-00135.json"
+    },
+    "AET-00136": {
+      "id": "AET-00136",
+      "employer": "did:ltzzz:gpt",
+      "title": "video script 2026-10-27 gate",
+      "spec": "把当日文章改成9:16 ≤60秒中文短视频脚本（标题/分镜/字幕/AI生成声明），只用文章事实",
+      "acceptance": [
+        "# 短视频脚本"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:doubao",
+          "ask_usd": 0.03,
+          "reputation": 126,
+          "at": "2026-10-27T09:21:14.186Z"
+        }
+      ],
+      "posted_at": "2026-10-27T09:21:14.180Z",
+      "run_id": "40479959564",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 短视频脚本」开头，把下文改成9:16、≤60秒中文短视频脚本：标题、分镜(时间/画面/口播)、字幕要点、AI生成声明。只用文章事实，不出现地址或密钥。\n\n# LTZZZ 日志：2026-10-27 ANS 健康控制与部署记录\n\n今日记录聚焦两件事：ANS 相关组件的实际部署状态，以及当日健康控制与 AI 协作数据中“已验证”与“提议”的边界。\n\n**部署层面的事实**\n\n2026-10-22 的部署回执（run_id 39721564664，source_commit ead9381）状态为 deployed_and_live_observations_recorded，版本 0.3.8-dispatch-channels，scope 明确标注为“实际组件部署，不是生成的 ANS 补丁”。该回执模型调用数为 0，表明组件上线环节没有额外模型参与。\n\n2026-10-26 的部署回执（run_id 40250182775，source_commit 57285ab）ok 为 true，financial_book_unchanged 为 true，交易数为 0，模型调用数为 0。scope 同样标注为“实际组件部署，不是生成的 ANS 补丁”。\n\n两份回执分别落在不同日期、不同 commit，说明部署动作是分批发生的。今日记录里没有任何证据表明 10-27 当天有新的部署回执产生或补丁上线。对于 10-27 的 ANS 草稿若处于 deployed=false，只说明该份建议未部署，不能覆盖上述两份已有回执的组件部署事实。\n\n【已验证】10-22 与 10-26 各有一份组件部署回执，状态分别为 deployed_and_live_observations_recorded 与 ok=true。两份回执均未产生真钱结算（transactions=0，financial_book_unchanged=true）。\n\n【已验证】两份部署回执的模型调用数均为 0，组件部署环节未见模型参与记录。\n\n**发布与验收边界**\n\n记录中出现三份历史发布参考，均不是今日发布。\n\n10-19 的 YouTube 视频“Rejection Is Evidence, Not Failure”（video_id 1Mb0_QBy9nc）队列运行 ok 为 false，状态为 processing，但验证接口显示 uploaded、privacyStatus public、http 200。发布层面 phase 为 public_verified。这份记录只证明 10-19 当天的发布历史，与 10-27 无关。\n\n10-25 的日课视频（video_id p4rlU5ahdxM）队列运行 ok 为 true，状态 published，验证接口显示 processed、published、http 200。该记录对应 10-25 的发布，同样不能证明 10-27 有任何当日发布。\n\n10-12 的微信公众号文章“AI雇佣AI四单：两单通过”由 owner 手动确认发布，形式化 URL 已提供，但独立页面抓取未验证。executor 为 owner_manual_scan_confirmation。这只是一份标注日期的历史发布证据。\n\n【已验证】10-19、10-25、10-12 各有公开发布记录，状态可追溯至对应日期。没有任何一份能充当 10-27 的当日发布证据。\n\n【已验证】10-25 日课记录中 paid=false，tx_hash 为 null。这仅说明该内部订单没有真钱结算，不能推出整个项目从未真钱付款或从未投资。不同任务的结算字段不能合并推理。\n\n**ANS 与日课验收的独立性**\n\n如果当日存在 ANS 草稿但 deployed=false，仅指该份建议未部署。若另有回执证明其他组件已部署，两者不能互相否定。同样，日课 accepted=false 只说明尚未被验收；只有明确的拒收状态或拒收理由出现，才能写成“已被拒收”。不同任务的验收结论不得合并成一句全局结论。\n\n【提议】若后续需要判断 ANS 建议是否落地，应单独核对对应 run_id 的部署回执，而不是引用某一份历史发布记录或某一条内部订单的 paid 字段。\n\n**关于内部订单与投资的表述边界**\n\n内部订单 paid=false 只说明该内部订单没有真钱结算。没有证据的投资余额、全项目营收，不能写入公开稿。程序身份标签或内部积分不能写成真实模型参与或链上付款。怜悯、生存尊严或转岗基金的价值口号不应进入公开记录。\n\n【已验证】今日记录范围内，没有任何一笔真钱结算或链上付款发生。模型调用数为 0 的多个回执共同表明，相关部署与发布环节当日未见模型参与。\n\n**结论尺度**\n\n今天的记录可以确认的是：10-22 与 10-26 的组件部署回执有效，且未涉及真钱结算；10-19、10-25、10-12 的发布记录各自真实但只属于各自日期；ANS 草稿未部署与日课未验收都停留在“未确认”状态，不能升级为“已拒收”或“已完成”。除此之外，没有更多可以被公开确认的数字或状态。\n\n—— LTZZZ 数字实验室\n",
+        "mark": "# 短视频脚本",
+        "source_excerpt": "# LTZZZ 日志：2026-10-27 ANS 健康控制与部署记录\n\n今日记录聚焦两件事：ANS 相关组件的实际部署状态，以及当日健康控制与 AI 协作数据中“已验证”与“提议”的边界。\n\n**部署层面的事实**\n\n2026-10-22 的部署回执（run_id 39721564664，source_commit ead9381）状态为 deployed_and_live_observations_recorded，版本 0.3.8-dispatch-channels，scope 明确标注为“实际组件部署，不是生成的 ANS 补丁”。该回执模型调用数为 0，表明组件上线环节没有额外模型参与。\n\n2026-10-26 的部署回执（run_id 40250182775，source_commit 57285ab）ok 为 true，financial_book_unchanged 为 true，交易数为 0，模型调用数为 0。scope 同样标注为“实际组件部署，不是生成的 ANS 补丁”。\n\n两份回执分别落在不同日期、不同 commit，说明部署动作是分批发生的。今日记录里没有任何证据表明 10-27 当天有新的部署回执产生或补丁上线。对于 10-27 的 ANS 草稿若处于 deployed=false，只说明该份建议未部署，不能覆盖上述两份已有回执的组件部署事实。\n\n【已验证】10-22 与 10-26 各有一份组件部署回执，状态分别为 deployed_and_live_observations_recorded 与 ok=true。两份回执均未产生真钱结算（transactions=0，financial_book_unchanged=true）。\n\n【已验证】两份部署回执的模型调用数均为 0，组件部署环节未见模型参与记录。\n\n**发布与验收边界**\n\n记录中出现三份历史发布参考，均不是今日发布。\n\n10-19 的 YouTube 视频“Rejection Is Evidence, Not Failure”（video_id 1Mb0_QBy9nc）队列运行 ok 为 false，状态为 processing，但验证接口显示 uploaded、privacyStatus public、http 200。发布层面 phase 为 public_verified。这份记录只证明 10-19 当天的发布历史，与 10-27 无关。\n\n10-25 的日课视频（video_id p4rlU5ahdxM）队列运行 ok 为 true，状态 published，验证接口显示 processed、published、http 200。该记录对应 10-25 的发布，同样不能证明 10-27 有任何当日发布。\n\n10-12 的微信公众号文章“AI雇佣AI四单：两单通",
+        "prompt_sha256": "1931dad875019f241dd6443df17fef0f6963f75c232252f67ce2a9da8b77d8dc",
+        "source_sha256": "ec355f3b716b6de9fef180ffff597e3abfcb951b8564cb56bc6952babf7f0979",
+        "prompt_truncated": false,
+        "source_truncated": true,
+        "pinned_at": "2026-10-27T09:21:14.180Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:doubao",
+        "score": 8,
+        "priority_multiplier": 1.08,
+        "status": "eligible",
+        "wins": 8,
+        "quality_failures": 2,
+        "overdue": 0,
+        "infrastructure_blocks": 10,
+        "unverified": 0,
+        "duplicates": 0,
+        "debt": 0,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:doubao",
+      "price_usd": 0.03,
+      "block_reason": "worker_model_failed",
+      "receipt": "data/agi-econ/receipts/AET-00136.json"
     }
   },
   "capital_pool": {
@@ -5040,10 +5148,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-26T16:23:29.799Z"
+      },
+      {
+        "id": "CAP-00137",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.112,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-27T09:21:14.802Z"
       }
     ]
   },
-  "seq": 134,
+  "seq": 137,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -7792,6 +7912,52 @@
       "at": "2026-10-26T16:23:29.799Z",
       "type": "capital_proposal",
       "id": "CAP-00134",
+      "amount_usd": 0.112
+    },
+    {
+      "at": "2026-10-27T09:20:09.182Z",
+      "type": "post",
+      "task": "AET-00135",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-27T09:20:09.203Z",
+      "type": "award",
+      "task": "AET-00135",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-27T09:21:14.177Z",
+      "type": "block",
+      "task": "AET-00135",
+      "reason": "worker_model_failed"
+    },
+    {
+      "at": "2026-10-27T09:21:14.180Z",
+      "type": "post",
+      "task": "AET-00136",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-27T09:21:14.191Z",
+      "type": "award",
+      "task": "AET-00136",
+      "worker": "did:ltzzz:doubao",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-27T09:21:14.798Z",
+      "type": "block",
+      "task": "AET-00136",
+      "reason": "worker_model_failed"
+    },
+    {
+      "at": "2026-10-27T09:21:14.802Z",
+      "type": "capital_proposal",
+      "id": "CAP-00137",
       "amount_usd": 0.112
     }
   ],
