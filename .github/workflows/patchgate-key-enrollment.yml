@@ -1,0 +1,59 @@
+name: PatchGate isolated key persistence enrollment (no admission)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [ops/dispatch/probes/patchgate-key-enrollment.json]
+  pull_request:
+    paths: [scripts/tests/fixtures/patchgate-oidc-fixture.mjs,patchgate-key-challenge-worker.js,patchgate-oidc.mjs,scripts/provision-patchgate-challenge-keys.mjs,scripts/tests/patchgate-key-challenge.test.mjs,scripts/tests/patchgate-oidc.test.mjs,.github/workflows/patchgate-key-enrollment.yml]
+permissions: {contents: read}
+concurrency: {group: patchgate-key-enrollment, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/patchgate-key-challenge.test.mjs scripts/tests/patchgate-oidc.test.mjs
+  enroll:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {contents: write, id-token: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Require original-task challenge-only dispatch
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const c=JSON.parse(fs.readFileSync('ops/dispatch/probes/patchgate-key-enrollment.json'));
+          if(c.task_id!=='PLAN-PATCHGATE-ESCROW-20261023'||c.mode!=='persistent_challenge_keys_only'||Object.keys(c).sort().join(',')!=='mode,task_id')throw Error('fixed_challenge_only_dispatch_required');
+          JS
+      - name: Persist isolated executor keys, never write private material to disk
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/provision-patchgate-challenge-keys.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-key-public-receipt-${{ github.run_id }}
+          path: knowledge/results/patchgate/key-enrollment/*.json
+          retention-days: 30
+      - name: Archive public challenges or exact blocker
+        if: always()
+        run: |
+          file="knowledge/results/patchgate/key-enrollment/${{ github.run_id }}.json"
+          test -f "$file" || exit 0
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add -- "$file"
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record isolated public key persistence challenges, no A2 admission'
+          node tools/push-receipt-commit.mjs
