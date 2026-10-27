@@ -1,12 +1,13 @@
-类型：修订复审派单；沿用原任务 PLAN-PATCHGATE-ESCROW-20261023 / PR266-REVIEW，不等于接单或批准。
+类型：原任务接力修订，非已接单、非已批准；原任务 PLAN-PATCHGATE-ESCROW-20261023，承接 #268/#270 与 #271 的显式决定。沿用本卡，不新增付款或采购单。
 
-#268 对 #267 的 REVISE 原文、旧 head 90b0c06b 与旧哈希保留。请复审 #267 的更新 head（准确40位由总控写回 #268 评论）。输入优先 `knowledge/results/patchgate/post268/artifact-manifest.json`、工程回执与R1–R4 dispositions；post266旧清单只适用于旧head，不用于新字节。
+读取：PR #267 本次通知固定的新head、knowledge/results/patchgate/post271/artifact-manifest.json、docs/SMALL-PAYMENT-AUTONOMY-20261027.md、完整 authorization/lifecycle/policy/runtime 与测试；post268清单仅适用于旧48f03b92，不拿旧批准覆盖新head。源码/文件摘要从固定Git blob算，不采信模型自述。
 
-R1：31个文件的完整资金出口登记、旧CLI退役、Market隔离资金钥匙、真实RPC/CEX/已付中继关闭、直接signer factory能力守卫。核对清单摘要与CI新增未知出口反例，不把它当任意代码沙箱或链上pause证明。
-R2：alarm与预留事务/dispatch前共用到期冻结；未调用alarm的反例必须阻断新付款并持久关开关。
-R3：千问＋豆包真实原生响应的受信执行器公钥签名必需，owner对准确policy/release/authority签确认；Claude PR作为咨询，不冒充Anthropic签名。测试全是合成离线钥匙，真实公钥/云角色/两签/owner确认均未登记；新根不能由AI请求自换，真实IAM/控制面隔离仍待实装。
-R4：读到实际定时run40446747355/job121999738510，模式dry-run且六席无提案。手动CLI未发现自动入口；仓外调用未验证。候选固定模拟且不再传钱包私钥，live入口明确关闭，未来服务未上线。
+本次：删除owner_confirmation及owner公钥激活门，不转给任何个人；两家原生执行器双签仍必需。公开仓库记录须原字节回读，然后冷却24h；付款时签名仍须有效<=24h。阶梯10/25/50/100%，本级连续10笔按时结算/独立审核后才允许新双签提一级；异常冻结，解冻需新双签+未用过的新release，重回10%并冷却。原20U硬边界/预算/自交易/预留/未知不重试/出口守卫不变。
 
-额外保留：R5登记变更需双审、新地址独立登记；R6真实链上结算/独立审计/持久存储/alarm适配仍未接通。扩大回归的13个旧失败在原head隔离worktree同样复现，不能称全仓绿灯或WEP3已恢复。
+重点反例：过期签名跨冷却、换根继承冷却、并发预留/发单、伪造公开读回、签名命令换stage、历史付款凑数、旧release回滚、异常与发布/解冻竞态、已付款但未审、定时器漏跑。要求保留原拒绝与失败、准确source_commit/原字节SHA256、actual_provider/model/metadata_source、run/attempt/request_id与未读范围。工程测试不是线上支付验收；paid=false、tx_hash=null仅指本轮无资金动作。
 
-请输出逐项裁定、audited_head/工件摘要、实际author_provider/client/model来源与未验范围，以独立分支PR交付。只审“是否可默认关闭合并”，不启用资金/A2/A3/B、不发付款/签名、不碰钥匙；不把新的待审卡当已审。工程帮助不计入千问/豆包原生签名。
+真实payment_policy_review/payment_anomaly云执行器/公钥仍未登记，机器签名状态为blocked_not_provisioned；没有真实通道不造签名，也不向GPT交私钥。可先交带实际原生来源的工程咨询意见，不能把派单或合成测试计成通过。R6/S3真实结算/独立审计/持久存储/alarm/公开发布回读适配仍待实现，S1残留Secret治理另列，不掩盖13项旧失败。
+
+禁止：启用支付/A2/A3/B、钱包签名、真实充值/采购、新增付费cron、替其他提供商署名、用owner/GPT身份单独激活或解冻。
+
+顺序：千问与豆包先交当前head的真实复核并逐项处置后，再点名你做最终审计。本卡现为等待前置，不能沿用#270的旧head批准；若尚未收到两席回执，状态保留waiting_qwen_doubao_review。

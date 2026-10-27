@@ -1,6 +1,6 @@
 // Deterministic USDC policy only: no IO, signatures, balances, models or transfers.
 import {createHash} from 'node:crypto';
-import {PAYMENT_REVIEW_PROVIDERS,paymentActivationMatches} from './small-payment-authorization.mjs';
+import {PAYMENT_REVIEW_PROVIDERS,paymentActivationMatches,paymentStagePercent} from './small-payment-authorization.mjs';
 export const SINGLE_EXCLUSIVE_RAW=20_000_000n;
 const MAX_RAW=(1n<<256n)-1n,DAY=86_400_000,OFFSET=8*3_600_000;
 const ID=/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/,GROUP=/^[a-z0-9][a-z0-9._-]{0,79}$/,HASH=/^[a-f0-9]{64}$/;
@@ -35,7 +35,7 @@ export function evaluateSmallPayment({request,policy,context}={}){
   if(policy?.enabled!==true)add('policy_disabled');
   const now=typeof context?.now==='number'&&Number.isSafeInteger(context.now)&&context.now>=0?context.now:at(context?.now);
   const required=policy?.independent_reviews?.required_providers;
-  if(!unique(required)||required.length!==2||!PAYMENT_REVIEW_PROVIDERS.every(p=>required.includes(p))||!paymentActivationMatches(context?.activationProof,{policy,release_sha256:context?.release_sha256,now}))add('independent_native_reviews_and_owner_confirmation_required');
+  if(!unique(required)||required.length!==2||!PAYMENT_REVIEW_PROVIDERS.every(p=>required.includes(p))||!paymentActivationMatches(context?.activationProof,{policy,release_sha256:context?.release_sha256,command:context?.activationCommand??null,now}))add('independent_native_reviews_required');
   const w=windows(now);out.windows={timezone:'Asia/Shanghai',day_start_utc:new Date(w.day_start_ms).toISOString(),week_start_utc:new Date(w.week_start_ms).toISOString(),rolling_start_utc:new Date(w.rolling_start_ms).toISOString(),observed_at_utc:new Date(now).toISOString()};
   if(!exact(request,['payment_id','controller_id','payee_id','purpose_id','amount_raw','rail'])){add('unexpected_or_missing_request_fields');return out;}
   if(['payment_id','controller_id','payee_id','purpose_id'].some(k=>!validId(request[k]))){add('invalid_request_identity');return out;}
@@ -64,8 +64,8 @@ export function evaluateSmallPayment({request,policy,context}={}){
   try{if(at(b?.verified_at)>now||at(b?.valid_until)<=now||at(b?.valid_until)<=at(b?.verified_at))add('budget_proof_expired_or_future');}catch{add('budget_proof_expired_or_future');}
   const caps={};
   try{
-   for(const dimension of ['single','daily','weekly']){const registered=raw(b['limits_'+dimension+'_raw']),verified=raw(b['verified_'+dimension+'_raw']),absolute=raw(b['owner_absolute_'+dimension+'_raw']);caps[dimension]=[registered,absolute,verified*2n].reduce((x,y)=>x<y?x:y);}
-   out.computed_caps={single_raw:caps.single.toString(),daily_raw:caps.daily.toString(),weekly_raw:caps.weekly.toString(),single_exclusive_rule_raw:SINGLE_EXCLUSIVE_RAW.toString(),authority:'min_registered_owner_absolute_two_times_verified_not_new_authorization'};
+   for(const dimension of ['single','daily','weekly']){const registered=raw(b['limits_'+dimension+'_raw']),verified=raw(b['verified_'+dimension+'_raw']),absolute=raw(b['owner_absolute_'+dimension+'_raw']);caps[dimension]=[registered,absolute,verified*2n].reduce((x,y)=>x<y?x:y)*BigInt(paymentStagePercent(context.activationProof))/100n;}
+   out.computed_caps={single_raw:caps.single.toString(),daily_raw:caps.daily.toString(),weekly_raw:caps.weekly.toString(),single_exclusive_rule_raw:SINGLE_EXCLUSIVE_RAW.toString(),stage_percent:paymentStagePercent(context.activationProof),authority:'stage_scaled_min_registered_owner_absolute_two_times_verified_not_new_authorization'};
   }catch{add('complete_registered_verified_owner_limits_required');}
   out.normalized_request={payment_id:request.payment_id,controller_id:c.id,payee_id:p.id,purpose_id:u.id,purpose_group:u.group,recipient_key:recipient,amount_raw:amount.toString(),amount_usdc:formatUsdc6(amount),rail:request.rail,currency:'USDC',budget_id:b?.budget_id||null};
   if(!Array.isArray(context?.history)){add('trusted_payment_history_required');return out;}

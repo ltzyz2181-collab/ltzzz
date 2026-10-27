@@ -22,6 +22,8 @@ jobs:
       - name: Syntax and deterministic synthetic adversarial tests (no credentials)
         run: |
           node --check scripts/lib/small-payment-authorization.mjs
+          node --check scripts/lib/small-payment-lifecycle.mjs
+          node scripts/verify-small-payment-manifest.mjs
           node --check lib/financial-exit-guard.js
           node --check scripts/lib/financial-exit-inventory.mjs
           node --check scripts/lib/small-payment-policy.mjs

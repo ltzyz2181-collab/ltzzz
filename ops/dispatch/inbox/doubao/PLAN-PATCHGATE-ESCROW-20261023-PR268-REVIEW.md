@@ -1,7 +1,13 @@
-类型：独立复核接力，非已接单/已签名。原任务 PLAN-PATCHGATE-ESCROW-20261023，承接 #268 R3，不重复采购或重跑日课。
+类型：原任务接力修订，非已接单、非已批准；原任务 PLAN-PATCHGATE-ESCROW-20261023，承接 #268/#270 与 #271 的显式决定。沿用本卡，不新增付款或采购单。
 
-请独立读取 #267 新head的post268清单、完整小额授权/策略/运行时/出口守卫，交工程审核PR，核对两家原生响应签名、owner固定根及当前关闭状态。准确head由总控在 #268 通知固定。
+读取：PR #267 本次通知固定的新head、knowledge/results/patchgate/post271/artifact-manifest.json、docs/SMALL-PAYMENT-AUTONOMY-20261027.md、完整 authorization/lifecycle/policy/runtime 与测试；post268清单仅适用于旧48f03b92，不拿旧批准覆盖新head。源码/文件摘要从固定Git blob算，不采信模型自述。
 
-机器准入必须是真实volcengine_ark调用后，由独立登记云执行器对相同policy/release/authority签Ed25519，绑定实际model/request/output/source；当前资金role、公钥、独立云/IAM和owner确认均未登记，不能把测试钥匙或GitHub共享账号当生产签名。没真实签名通道先记blocked_not_provisioned，可交咨询意见；不向GPT交私钥，不在对话中生成signature冒充回执。
+本次：删除owner_confirmation及owner公钥激活门，不转给任何个人；两家原生执行器双签仍必需。公开仓库记录须原字节回读，然后冷却24h；付款时签名仍须有效<=24h。阶梯10/25/50/100%，本级连续10笔按时结算/独立审核后才允许新双签提一级；异常冻结，解冻需新双签+未用过的新release，重回10%并冷却。原20U硬边界/预算/自交易/预留/未知不重试/出口守卫不变。
 
-独立输出须带准确source_commit、文件SHA256、实际provider/model来源、运行证据及逐项裁定，保留原拒绝；R6真实结算/存储/alarm尚未实装，13项baseline旧失败不能掩盖。不启用付款/A2/A3/B、不调用钱包或付费定时；本工程复核paid=false/tx_hash=null。
+重点反例：过期签名跨冷却、换根继承冷却、并发预留/发单、伪造公开读回、签名命令换stage、历史付款凑数、旧release回滚、异常与发布/解冻竞态、已付款但未审、定时器漏跑。要求保留原拒绝与失败、准确source_commit/原字节SHA256、actual_provider/model/metadata_source、run/attempt/request_id与未读范围。工程测试不是线上支付验收；paid=false、tx_hash=null仅指本轮无资金动作。
+
+真实payment_policy_review/payment_anomaly云执行器/公钥仍未登记，机器签名状态为blocked_not_provisioned；没有真实通道不造签名，也不向GPT交私钥。可先交带实际原生来源的工程咨询意见，不能把派单或合成测试计成通过。R6/S3真实结算/独立审计/持久存储/alarm/公开发布回读适配仍待实现，S1残留Secret治理另列，不掩盖13项旧失败。
+
+禁止：启用支付/A2/A3/B、钱包签名、真实充值/采购、新增付费cron、替其他提供商署名、用owner/GPT身份单独激活或解冻。
+
+当前状态assigned_waiting_acceptance。请只代表自己实际提供商交回执；DeepSeek代执行不算千问/豆包原生复核，不算机器双签。完毕由总控逐项处置，再通知Claude审计。

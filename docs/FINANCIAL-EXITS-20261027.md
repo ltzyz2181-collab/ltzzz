@@ -31,8 +31,10 @@
 - `run-agent-spending.mjs`：仓内唯一自动入口是 `.github/workflows/ltzzz-wallet-ops.yml` 的每六小时调用。候选已固定 `LTZZZ_WALLET_DRY_RUN: 'true'` 并移除该工作流的 wallet private-key Secret 传递，不能仅改仓库变量就恢复真付款；脚本本身真实模式也提前拒绝，不写失败账本冒充花款。
 - `execute-agent-payment.mjs`：全工作流检索没有调用；是手动CLI，仓外电脑/终端的历史调用未验证，不能称从未用过。候选真实模式提前拒绝；明确模拟才沿原路径模拟。
 
-最近工作流成功不能证明发生付款，更不能证明两条脚本曾承担过“AI API充值/云续费”。未来替代路径是登记预算/收款与用途、千问豆包原生签名、owner作用域确认、串行持久预留的 `createSmallPaymentService`，接真实结算/审计/alarm适配后另审；它目前没有上线，不能把旧CLI换个名字就宣称替代可用。
+最近工作流成功不能证明发生付款，更不能证明两条脚本曾承担过“AI API充值/云续费”。未来替代路径是登记预算/收款与用途、千问豆包原生双签、公开24h冷却、阶梯额度、串行持久预留的 `createSmallPaymentService`，接真实结算/审计/alarm适配后另审；它目前没有上线，不能把旧CLI换个名字就宣称替代可用。
 
 ## 原基线回归问题（保留）
 
 扩大回归在未修改 head `90b0c06b…` 的隔离 worktree 复现：`wep3-worker.js:138` 使用未定义 `path`，影响swarm和Kimi署名路由；另有旧 `wep3-runner` 用例与当前关停行为不一致。此源文件不是本修订改动，未顺手重写 Worker 路由。完整 baseline/current 结果在 `knowledge/results/patchgate/post268/`。这些问题不能算本修订修复，也不能称WEP3全量CI绿灯；资金开关继续关闭。
+
+#271决定的本次修订已删除owner密钥激活确认；详见SMALL-PAYMENT-AUTONOMY-20261027.md。旧post268清单与#268/#270审计只适用于48f03b92，不能据此称新head通过。
