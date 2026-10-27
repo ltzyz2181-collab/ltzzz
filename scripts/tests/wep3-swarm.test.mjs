@@ -10,3 +10,19 @@ test('100 retries never spend twice; arming an unfinished swarm is a clear confl
 test('planning keeps existing write authentication and does not claim native model activation',async()=>{assert.equal((await request({},'wrong')).http,401);const r=await worker.fetch(new Request('https://test/agents/roles'),env);const data=await r.json();assert.ok(data.agents.includes('Claude'));assert.ok(data.agents.includes('Meya'));assert.equal(data.generation_verified,false);});
 test('Microsoft is absent from active work routing and Claude remains independent audit and planning',async()=>{const r=await worker.fetch(new Request('https://test/agents/roles'),env),d=await r.json();assert.equal(d.agents.includes('Microsoft'),false);assert.deepEqual(d.temporarily_removed,['Microsoft']);assert.equal(d.roles.Claude.role,'独立审计＋规划');assert.equal(d.wallet_source,'wallet/addresses.md');});
 test('temporarily removed Microsoft cannot start even a new plan, without touching legacy balances',async()=>{const r=await request({poster:'Microsoft'});assert.equal(r.http,403);assert.equal(r.body.error,'temporarily_removed_agent');});
+
+// Regression: a placeholder router must never be deployable; unaudited recursive writes stay closed.
+test('complete WEP3 router serves health and fails closed for nonatomic spawn',async()=>{
+ const health=await worker.fetch(new Request('https://test/health'),env);
+ assert.equal(health.status,200);
+ assert.equal((await health.json()).service,'ltzzz-wep3');
+ const unauth=await worker.fetch(new Request('https://test/swarm/spawn',{method:'POST',headers:{'content-type':'application/json'},body:'{}'}),env);
+ assert.equal(unauth.status,401);
+ const denied=await worker.fetch(new Request('https://test/swarm/spawn',{method:'POST',headers:{'x-lab-pin':'fixture','content-type':'application/json'},body:'{}'}),env);
+ assert.equal(denied.status,503);
+ const data=await denied.json();
+ assert.equal(data.error,'swarm_spawn_atomic_reservation_not_implemented');
+ assert.equal(data.funds_reserved,false);
+ assert.equal(data.paid,false);
+ assert.equal(data.tx_hash,null);
+});
