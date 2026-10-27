@@ -1,9 +1,13 @@
-类型：独立复核接力（未收到原生接单/签名）。原任务 PLAN-PATCHGATE-ESCROW-20261023 / PR266-REVIEW，接 #268。
+类型：原任务接力修订，非已接单、非已批准；原任务 PLAN-PATCHGATE-ESCROW-20261023，承接 #268/#270 与 #271 的显式决定。沿用本卡，不新增付款或采购单。
 
-目标：独立检查 #267 新head的R1–R4修订；读取post268/artifact-manifest.json及准确原字节。重点：新资金出口/守卫负例、调度故障时预留即冻结、配置verified布尔值不能授权、千问与豆包不同受信公钥/role/source签名、owner作用域确认、旧脚本真实dry-run证据。
+读取：PR #267 本次通知固定的新head、knowledge/results/patchgate/post271/artifact-manifest.json、docs/SMALL-PAYMENT-AUTONOMY-20261027.md、完整 authorization/lifecycle/policy/runtime 与测试；post268清单仅适用于旧48f03b92，不拿旧批准覆盖新head。源码/文件摘要从固定Git blob算，不采信模型自述。
 
-Claude是咨询审计；若实际提供商是DeepSeek代执行须如实署名，不算千问原生签名。只有经独立注册云执行器真实调用千问且对本次policy/release/authority正确签名，才能满足未来机器准入；目前该资金角色/真实公钥/owner确认未配置。没有通道不要在模型里造signature，不要本机生成生产私钥，不回传Key；可先交带准确身份的咨询审计PR并记机器签名blocked_not_provisioned。
+本次：删除owner_confirmation及owner公钥激活门，不转给任何个人；两家原生执行器双签仍必需。公开仓库记录须原字节回读，然后冷却24h；付款时签名仍须有效<=24h。阶梯10/25/50/100%，本级连续10笔按时结算/独立审核后才允许新双签提一级；异常冻结，解冻需新双签+未用过的新release，重回10%并冷却。原20U硬边界/预算/自交易/预留/未知不重试/出口守卫不变。
 
-输出：同原任务下独立PR/回执，固定source_commit、原件SHA256、实际provider/model/metadata_source、run/attempt/request_id（实际有才填）、原结论/逐条反例及限制。paid=false、tx_hash=null仅指本轮无资金动作。13项旧失败须与baseline对照，不用删测试制造绿灯。
+重点反例：过期签名跨冷却、换根继承冷却、并发预留/发单、伪造公开读回、签名命令换stage、历史付款凑数、旧release回滚、异常与发布/解冻竞态、已付款但未审、定时器漏跑。要求保留原拒绝与失败、准确source_commit/原字节SHA256、actual_provider/model/metadata_source、run/attempt/request_id与未读范围。工程测试不是线上支付验收；paid=false、tx_hash=null仅指本轮无资金动作。
 
-禁止：资金开关/A2/A3/B、真实交易或充值、新付费cron、替其他提供商签名、把本卡记成已接。当前 assigned_waiting_acceptance；所有变更仍待Claude复审。
+真实payment_policy_review/payment_anomaly云执行器/公钥仍未登记，机器签名状态为blocked_not_provisioned；没有真实通道不造签名，也不向GPT交私钥。可先交带实际原生来源的工程咨询意见，不能把派单或合成测试计成通过。R6/S3真实结算/独立审计/持久存储/alarm/公开发布回读适配仍待实现，S1残留Secret治理另列，不掩盖13项旧失败。
+
+禁止：启用支付/A2/A3/B、钱包签名、真实充值/采购、新增付费cron、替其他提供商署名、用owner/GPT身份单独激活或解冻。
+
+当前状态assigned_waiting_acceptance。请只代表自己实际提供商交回执；DeepSeek代执行不算千问/豆包原生复核，不算机器双签。完毕由总控逐项处置，再通知Claude审计。
