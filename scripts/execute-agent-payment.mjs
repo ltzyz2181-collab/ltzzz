@@ -1,3 +1,4 @@
+import {denyLegacyFinancialExecution} from '../lib/financial-exit-guard.js';
 // 执行一笔 AI 实验支出：策略检查 → 熔断检查 → 预算检查 → 转账 → 记账
 // 用法: node execute-agent-payment.mjs --agent gpt --amount 1 --recipient 0x... --purpose "..." --hypothesis "..." --success-criteria "..." --experiment-id exp_x
 import {
@@ -13,6 +14,7 @@ function argv(name) {
 }
 
 async function main() {
+  if(process.env.LTZZZ_WALLET_DRY_RUN!=="true")denyLegacyFinancialExecution("scripts/execute-agent-payment.mjs");
   const agent = argv("--agent"), recipient = argv("--recipient");
   const amount = Number(argv("--amount") || 0);
   if (!agent || !recipient || !(amount > 0)) {
@@ -20,7 +22,7 @@ async function main() {
     process.exit(2);
   }
 
-  const prov = providerMode();
+  const prov = {mode: "dry-run"};
   const policy = loadPolicy();
   const ledger = loadLedger();
   const reputation = loadReputation();

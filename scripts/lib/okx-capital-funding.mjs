@@ -1,3 +1,4 @@
+import {assertReadOnlyExchange} from '../../lib/financial-exit-guard.js';
 import crypto from 'node:crypto';
 import {raw,decimal} from './funded-invest-runtime.mjs';
 export const FUND_ID='OKX-FUND-20261017-001',TRANSFER_ID='lzfund20261017001',CONVERSION_ID='lzconvert20261017001';
@@ -10,6 +11,7 @@ export function verifyDestination(config,networks,addresses,now=Date.now()){
  return {account_hash:hash,chain:'USDC-Base',address:DEST,asset:USDC,canDep:true,checked_at:now};
 }
 export function capitalClient(credentials,{fetcher=fetch,now=()=>new Date().toISOString()}={}){return async(method,path,body)=>{
+ assertReadOnlyExchange(method);
  if(method==='POST'){
   const transfer=path==='/api/v5/asset/transfer'&&body?.ccy==='USDC'&&body.amt==='20'&&body.from==='6'&&body.to==='18'&&body.type==='0'&&body.clientId===TRANSFER_ID&&Object.keys(body).length===6;
   const convert=path==='/api/v5/trade/order'&&body?.instId==='USDC-USDT'&&body.tdMode==='cash'&&body.ordType==='ioc'&&body.side==='sell'&&body.clOrdId===CONVERSION_ID&&raw(body.sz,12)<=20000000000000n&&raw(body.sz,12)>0n&&raw(body.px,12)>=990000000000n&&Object.keys(body).length===7;

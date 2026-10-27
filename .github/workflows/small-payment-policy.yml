@@ -1,0 +1,43 @@
+name: Small payment policy offline validation (no payment)
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+    paths: ['**.js','**.mjs','**.cjs','**.ts','**.tsx','**.sol','**.py','**.sh','**.ps1','**.bat','**.html','config/small-payment*.json','config/financial-exit-inventory.json','.github/workflows/small-payment-policy.yml','.github/workflows/ltzzz-wallet-ops.yml']
+permissions: {contents: read}
+concurrency:
+  group: small-payment-offline-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install locked test dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Syntax and deterministic synthetic adversarial tests (no credentials)
+        run: |
+          node --check scripts/lib/small-payment-authorization.mjs
+          node --check scripts/lib/small-payment-lifecycle.mjs
+          node scripts/verify-small-payment-manifest.mjs
+          node --check lib/financial-exit-guard.js
+          node --check scripts/lib/financial-exit-inventory.mjs
+          node --check scripts/lib/small-payment-policy.mjs
+          node --check scripts/lib/small-payment-runtime.mjs
+          node --check scripts/wallet-lib.mjs
+          if node --test scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
+            tail -n 10 /tmp/small-payment-tests.txt
+          else
+            cat /tmp/small-payment-tests.txt
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: small-payment-offline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/small-payment-tests.txt
+          retention-days: 30

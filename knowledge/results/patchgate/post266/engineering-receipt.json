@@ -1,0 +1,84 @@
+{
+  "schema": "ltzzz.post266.engineering-receipt.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "subtask_id": "PR266-REVIEW",
+  "source_commit": "9f12c598d110612bc30e66a519425edd74ed1d1a",
+  "at_utc": "2026-10-27T04:23:07.228431+00:00",
+  "logical_seat": "gpt",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "current_Codex_session_exact_model_id_unavailable",
+  "status": "engineering_candidate_waiting_independent_review",
+  "artifact": {
+    "path": "knowledge/results/patchgate/post266/artifact-manifest.json",
+    "sha256": "ac56ef579e7a8e926122710e768cfd261ec2d7388856fad22c226c2986dced86"
+  },
+  "stages": {
+    "claimed": true,
+    "draft_created": true,
+    "submitted": true,
+    "tested": true,
+    "independently_reviewed": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+  "tests": {
+    "scope": "local_synthetic_offline_only",
+    "node": "v24.19.0",
+    "new_policy_runtime": {
+      "passed": 124,
+      "failed": 0,
+      "command": "node --test scripts/tests/small-payment-policy.test.mjs scripts/tests/small-payment-runtime.test.mjs"
+    },
+    "patchgate_regression": {
+      "passed": 243,
+      "failed": 0,
+      "command": "node --test scripts/tests/patchgate*.test.mjs"
+    },
+    "wallet_guard": "old_live_entry_requires_nonforgeable_runtime_permit_before_key_loading",
+    "secrets_read": false,
+    "network_transfers": 0
+  },
+  "review": {
+    "claude": "assigned_waiting_acceptance",
+    "qianwen": "assigned_waiting_acceptance",
+    "actual_new_native_provider_reviews": 0,
+    "helper_agents_are_independent_provider_reviews": false
+  },
+  "deployment": {
+    "pr263_merged": true,
+    "pr263_merge_commit": "8094f98bbe3e2ce98ac378ee9fb69b65ce7d86d0",
+    "pr266_audit_merged": true,
+    "pr266_merge_commit": "9f12c598d110612bc30e66a519425edd74ed1d1a",
+    "new_service_deployed": false,
+    "cloud_services_connected": false,
+    "real_keys_registered": 0
+  },
+  "small_payment_policy_enabled": false,
+  "payment_environment_variables_changed": false,
+  "A2_enabled": false,
+  "A3_enabled": false,
+  "B_enabled": false,
+  "settlement_kind": "none",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "limitations": [
+    "The two code test suites do not constitute native independent audit, live wallet control, durable cloud alarm acceptance or production financial authorization.",
+    "All approval/budget/receipt/transaction fixtures are synthetic; no keys, secrets, balances or financial API were used.",
+    "No numeric budgets were revived from obsolete policies; actual registered numeric ceilings remain absent.",
+    "The wallet live entry now blocks old callers without a runtime permit; original explicit dry-run workflow and other treasury/Aave/x402 paths were not run or migrated.",
+    "Cloud GitHub credentials/checks hosting are designs only, with unknown App/IAM/Ed25519 support and no claimed deployment.",
+    "Manifest digest is external to artifact bytes; do not reject a file because its own overall digest is absent inside it."
+  ],
+  "prior_candidate_CI": {
+    "head": "dd2cecfc8de57b8e2ac7529913feaa542bd4761b",
+    "run_id": "40449075819",
+    "job_id": "122007249333",
+    "run_attempt": 1,
+    "conclusion": "success",
+    "test_stdout_readback": false,
+    "artifact_zip_byte_readback": "unverified_network_proxy_403",
+    "scope": "superseded_121_test_candidate_not_current_124_test_head"
+  }
+}
