@@ -1,0 +1,144 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-274",
+  "head_sha": "d089763d23e2674dd829f8e57394cd178b77f55d",
+  "pr_number": 274,
+  "source_main_sha": "fc29325b253cfb20052f825d7297e682448121ec",
+  "run_id": "40491816232",
+  "at_utc": "2026-10-27T10:52:27.814Z",
+  "idempotency_key": "PATCHGATE-PR-274:d089763d23e2674dd829f8e57394cd178b77f55d",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "fc29325b253cfb20052f825d7297e682448121ec",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/aave-owner-funding.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/small-payment-policy.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/verify-kimi-okx.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/SMALL-PAYMENT-S1-S3-READINESS-20261027.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "knowledge/results/patchgate/post272-s1/artifact-manifest.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/coinbase-readiness.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/financial-exit-inventory.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/coinbase-readiness.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/financial-exit-guard.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/small-payment-manifest.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/verify-small-payment-manifest.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-274",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-274",
+      "base_sha": "fc29325b253cfb20052f825d7297e682448121ec",
+      "head_sha": "d089763d23e2674dd829f8e57394cd178b77f55d",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "5816b7261030df81c18188a1ea14f50da53860ffbf5cfb35bdadf1b0ea261122"
+    },
+    "subject_sha256": "64b1ee1d221a302686f40508efb96c68fce991d20d9cc7b17808a89e1556824d",
+    "idempotency_key": "PATCHGATE-PR-274:d089763d23e2674dd829f8e57394cd178b77f55d",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/tests/financial-exit-guard.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/small-payment-manifest.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "example.invalid"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "authenticated_receipt_writer_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
