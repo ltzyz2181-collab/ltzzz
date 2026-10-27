@@ -123,6 +123,7 @@ export function validateTrust(trust) {
     for (const k of trust.keys) {
       if (typeof k.id !== 'string' || !k.id || ids.has(k.id) || !PROVIDERS.has(k.provider) || typeof k.executor !== 'string' || !k.executor.trim() || !Array.isArray(k.roles)) return false;
       if (['github_actions','github_connector'].includes(k.provider) && k.roles.some(role=>['author','review'].includes(role))) return false;
+      if(trust.source_binding_required===true&&(!Array.isArray(k.allowed_signer_source_sha256)||!k.allowed_signer_source_sha256.length||k.allowed_signer_source_sha256.some(h=>!HASH.test(h))||k.source_deployment_verified!==true||typeof k.cloud_account_binding!=='string'||!k.cloud_account_binding||!HASH.test(k.deployment_evidence_sha256||'')))return false;
       ids.add(k.id);
       if (executors.has(k.executor) && executors.get(k.executor)!==k.provider) return false;
       executors.set(k.executor,k.provider);
@@ -157,6 +158,7 @@ export function authenticate(record, {trust, subject, role, now, maxAge}) {
     || now - Date.parse(v.at_utc) < 0 || now - Date.parse(v.at_utc) > maxAge * 1000
     || !validTime(k.not_before) || !validTime(k.not_after) || Date.parse(v.at_utc) < Date.parse(k.not_before) || now > Date.parse(k.not_after)
     || typeof record.signature !== 'string' || !/^[A-Za-z0-9+/]{86}==$/.test(record.signature)) return null;
+  if(trust.source_binding_required===true&&(!k.allowed_signer_source_sha256.includes(v.signer_source_sha256)||v.signer_deployment_evidence_sha256!==k.deployment_evidence_sha256||v.signer_cloud_account_binding!==k.cloud_account_binding))return null;
   try {
     const key = createPublicKey(k.public_key_pem);
     if (key.asymmetricKeyType !== 'ed25519' || !verify(null, Buffer.from(canonical(v)), key, Buffer.from(record.signature, 'base64'))) return null;

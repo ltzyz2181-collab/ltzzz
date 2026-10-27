@@ -1,0 +1,147 @@
+{
+  "schema": "ltzzz.patchgate.split-signer-readiness.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "subtask_id": "SPLIT-SIGNER-INFRA-20261026",
+  "at_utc": "2026-10-27T00:27:11Z",
+  "logical_seat": "gpt",
+  "client": "Codex cloud engineering collaborator",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "current_session_provider_exact_model_unavailable",
+  "source_commit": "818cd8e962f462a6defd4668e5af92b84d733fae",
+  "local_tree_equivalent_commit": "29453d3409076415bea55672e76de98673023789",
+  "dispatch_source": {
+    "pr": 265,
+    "head": "da112ae5dc8d5c8c0dfe2b5b634dee9385345886",
+    "read_from": "GitHub fetched immutable ref",
+    "accepted_by_doubao": false,
+    "accepted_by_qianwen": false,
+    "plan": {
+      "path": "ops/dispatch/PLAN-SPLIT-SIGNER-INFRA-20261026.md",
+      "blob_sha1": "d8908d8e5980a5cef43d5bf7a6b5614acc5ceefe"
+    },
+    "cards": [
+      {
+        "seat": "doubao",
+        "path": "ops/dispatch/inbox/doubao/SPLIT-SIGNER-INFRA-20261026-doubao.md",
+        "blob_sha1": "f1e79704f7b8a4a28bd8ef0ab54a133838abed59",
+        "status": "repository_card_read_actual_cloud_acceptance_unverified"
+      },
+      {
+        "seat": "qianwen",
+        "path": "ops/dispatch/inbox/qianwen/SPLIT-SIGNER-INFRA-20261026-qianwen.md",
+        "blob_sha1": "8590a7bc06bcce2c09f3f21fae75319a4cedfe8d",
+        "status": "repository_card_read_actual_cloud_acceptance_unverified"
+      },
+      {
+        "seat": "gpt",
+        "path": "ops/dispatch/inbox/gpt/SPLIT-SIGNER-INFRA-20261026-gpt.md",
+        "blob_sha1": "cf409f18c202fb9e42b59be0ec77bcb356fd669d",
+        "status": "engineering_readiness_review_only"
+      }
+    ]
+  },
+  "status": "blocked_missing_provider_runtime_access",
+  "decision": {
+    "split_cloud_direction": "accepted_with_IAM_release_and_key_isolation_conditions",
+    "self_reported_source_hash_is_remote_attestation": false,
+    "different_clouds_are_independent_operators": false,
+    "model_API_proves_cloud_deploy_permission": false
+  },
+  "environment_observation": {
+    "at_utc": "2026-10-27T00:27:11Z",
+    "observations_current": true,
+    "network_policy_state": "enforced",
+    "configured_capabilities": [],
+    "configured_secret_bindings": [],
+    "configured_outbound_identities": [],
+    "configured_runtime_variables": [],
+    "scope": "current_managed_session_only_not_all_external_clients"
+  },
+  "existing_repo_surfaces": [
+    {
+      "path": ".github/workflows/deploy-doubao-worker.yml",
+      "actual_target": "Cloudflare Worker",
+      "proves_volcengine_function_deployment": false
+    },
+    {
+      "path": "scripts/call-doubao.mjs",
+      "actual_target": "Volcengine Ark model API",
+      "proves_cloud_resource_administration": false
+    },
+    {
+      "path": ".github/workflows/patchgate-key-enrollment.yml",
+      "actual_target": "historical_Cloudflare_nonce_challenge_key_enrollment",
+      "triggered_this_task": false,
+      "not_a_substitute_for_split_provider_cloud_keys": true
+    }
+  ],
+  "provider_deployment": [
+    {
+      "provider": "aliyun_dashscope",
+      "cloud_account_id": null,
+      "region": null,
+      "service_url": null,
+      "actual_cloud_executor_identity_verified": false,
+      "kms_ed25519_compatibility_verified": false,
+      "deployment_verified": false,
+      "public_key_spki": null,
+      "registered_source_sha256": null,
+      "restart_challenge_verified": false,
+      "native_model_signature_verified": false
+    },
+    {
+      "provider": "volcengine_ark",
+      "cloud_account_id": null,
+      "region": null,
+      "service_url": null,
+      "actual_cloud_executor_identity_verified": false,
+      "kms_ed25519_compatibility_verified": false,
+      "deployment_verified": false,
+      "public_key_spki": null,
+      "registered_source_sha256": null,
+      "restart_challenge_verified": false,
+      "native_model_signature_verified": false
+    }
+  ],
+  "required_key_boundary": {
+    "GPT_generates_or_handles_production_private_keys": false,
+    "shared_GitHub_runner_private_keys_allowed": false,
+    "provider_side_generation_required": true,
+    "existing_verifier_algorithm": "ed25519",
+    "KMS_Sign_drop_in_compatibility_claimed": false,
+    "algorithm_migration_requires_separate_review": true
+  },
+  "artifact": {
+    "path": "docs/SPLIT-SIGNER-INFRA-EXECUTION-20261027.md",
+    "sha256": "dcb48e00c5524e04a9ef3dadb3f00f02b2cf8694b88f40787f346a491455baa1"
+  },
+  "model_usage": {
+    "calls_attempted": 0,
+    "paid_model_requests": 0
+  },
+  "real_cloud_API_requests": 0,
+  "real_key_generation": 0,
+  "real_deployments": 0,
+  "real_signature_requests": 0,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "stages": {
+    "dispatch_source_read": true,
+    "draft_created": true,
+    "tested": false,
+    "independently_reviewed": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+  "limitations": [
+    "No native Doubao or Qianwen acceptance was observed.",
+    "Cloud metadata only covers this managed session; other clients may have unverified cloud permissions.",
+    "The existing verifier only accepts Ed25519; actual Ali/Volc KMS support is unverified, and no successful KMS.Sign command is claimed.",
+    "Source hash in a signed payload is binding metadata, not by itself independent runtime-code attestation.",
+    "No provider control-plane IAM, service version or code-digest evidence was available.",
+    "No runtime/API tests were run; this is documentation and readiness review only."
+  ]
+}
