@@ -1,14 +1,14 @@
 import {auditProof} from './wep3-audit-proof.js';
 import seatRegistry from './identity/seat-registry.json' with {type:'json'};
 import {marketRoute,Market} from './wep3-market.js';
-import {spawnChild} from "./wep3-swarm.js";
+import {spawnChild, spawnTree} from "./wep3-swarm.js";
 export {Market};
 // Cloudflare renamed_classes preserves the existing namespace and stored book.
 export class MarketRuntimeV2 extends Market {}
 export class MarketRuntimeV3 extends Market {}
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
 const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
-const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft', 'Claude', 'Meya'];
+export const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft', 'Claude', 'Meya'];
 // Keep legacy names for historical balance readback; only active seats may receive new work.
 const SEAT_IDS={GPT:'gpt',Doubao:'doubao',DeepSeek:'deepseek',Grok:'grok',Claude:'claude',Microsoft:'microsoft',Kimi:'kimi',Qianwen:'qianwen'};
 const ACTIVE_AGENTS=AGENTS.filter(name=>!SEAT_IDS[name]||seatRegistry.seats[SEAT_IDS[name]].work_status!=='temporarily_removed');
@@ -25,7 +25,7 @@ const AGENT_ROLES = {
   LTZZZ:    { region: 'lab',    role: 'treasury / lab share', skills: [] }
 };
 for(const [name,id] of Object.entries(SEAT_IDS))Object.assign(AGENT_ROLES[name],{role:seatRegistry.seats[id].role,work_status:seatRegistry.seats[id].work_status,role_source:'identity/seat-registry.json',wallet_source:'wallet/addresses.md'});
-const SKILLS = [
+export const SKILLS = [
   {id: 'signal', owner: 'Grok', title: 'payment signal', price: 0.02, product: 'https://ltzzz.com/products.html'},
   {id: 'copy', owner: 'Doubao', title: 'product copy', price: 0.03, product: 'https://ltzzz.com/products.html'},
   {id: 'scan', owner: 'DeepSeek', title: 'market scan', price: 0.04, product: 'https://ltzzz.com/products.html'},
@@ -59,10 +59,6 @@ async function list(env, prefix, lim) {
   return items.sort((a, b) => String(b.at || b.created_at || b.settled_at || '').localeCompare(String(a.at || a.created_at || a.settled_at || ''))).slice(0, lim || 80);
 }
 async function sha(text) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); }
-// 2026-10-09 总控修复（P0 安全）：原实现 `!env.LAB_PIN || ...` 属 fail-open——
-// LAB_PIN 未配置时恒返回 true，任何匿名请求都能调 /deposit /withdraw /transfer /hire
-// 篡改任意 AI 余额（线上 health 实测 pin:false，即处于无鉴权状态）。
-// 改为 fail-closed：未配置 PIN 一律拒绝写操作。宁可功能暂不可用，不可资金账本裸奔。
 function pinOk(request, env) {
   if(new URL(request.url).pathname==='/hire' && env.WEP3_RUNNER_TOKEN && request.headers.get('x-lab-pin')===env.WEP3_RUNNER_TOKEN)return true;
   if (!env.LAB_PIN) return false;
@@ -129,17 +125,3 @@ async function openIntent(env, poster, skill, max, title, parentId) {
   await put(env, 'wep3:intent:' + intent.id, intent);
   return {intent, poster_credit: drawn.wallet.credit, line_used: drawn.wallet.line_used, spendable: spendable(drawn.wallet)};
 }
-// ... (rest of the original functions remain the same, including the new route at the end)
-// For brevity in this recovery, the full original logic is assumed restored; the key addition is the import and the /swarm/spawn route.
-// In practice the full file content was intended.
-export default {
-  async fetch(request, env) {
-    // ... existing routing ...
-    if (path === '/swarm/spawn' && request.method === 'POST') { 
-      const body = await request.json().catch(() => ({})); 
-      const out = await spawnChild(env, body.parent_intent_id, body.skill, body.max_usd, body.title, body.poster || body.agent); 
-      return json(out, out.ok ? 200 : (out.status || 400)); 
-    }
-    return json({ok: false, error: 'not_found', path}, 404);
-  }
-};
