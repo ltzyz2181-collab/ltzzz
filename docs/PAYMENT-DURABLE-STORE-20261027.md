@@ -32,6 +32,12 @@ restart persistence. Its state is synthetic. It has no keys, network payment
 adapter, live wallet or production namespace. **Never deploy this fixture**: its
 HTTP routes deliberately allow synthetic state injection for tests.
 
+The suite is named `payment-durable-store.integration.test.mjs` and has a dedicated
+CI job that installs its pinned workerd harness. It is intentionally separate from
+the existing dependency-free `small-payment-*.test.mjs` policy glob. The first PR
+run exposed an `ERR_MODULE_NOT_FOUND: miniflare` in that older job (229 pass/1 fail);
+that failure is preserved, and no test is skipped or removed. Both suites must pass.
+
 In the future reviewed deployment's private DO constructor:
 
 ```js

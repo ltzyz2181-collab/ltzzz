@@ -26,7 +26,20 @@
   },
   "independent_review": {
     "claude": "not_received",
-    "qianwen": "not_called_yet",
+    "qianwen": {
+      "status": "native_component_static_review_PASS_not_cryptographic_admission",
+      "provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "run_id": "40601681128",
+      "request_id": "eaae2cda-b983-9f42-a181-821c69d56891",
+      "reviewed_head": "7247c71fb5ba039efcc15b452ed42fb1a112ef98",
+      "reviewed_helper_sha256": "39fc31d77ce5fc18b20e87b99a34d21f753a3c28bcc33dadef284ba8cb2cac05",
+      "output_sha256": "e78818abda9da3fdea7434ecea2b9341b2e430f37b10d8314dbaf66deab48a07",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-DO-STORE-REVIEW.json",
+      "scope": "full storage helper only; no independent test execution or deployment by the model",
+      "helper_bytes_unchanged_in_followup": true
+    },
     "same_provider_tests_are_independent_model_audit": false
   },
   "deployment": {
@@ -34,7 +47,7 @@
     "production_config_changed": false,
     "funding_keys_or_wallet_used": false
   },
-  "model_api_calls": 0,
+  "model_api_calls": 1,
   "financial_execution": false,
   "paid": false,
   "tx_hash": null,
@@ -46,7 +59,7 @@
       "bytes": 4663
     },
     {
-      "path": "scripts/tests/small-payment-durable-store.test.mjs",
+      "path": "scripts/tests/payment-durable-store.integration.test.mjs",
       "sha256": "942128fe22ed483cfa9127a10df543bd9e036261fd03b49514dd0f5bd98fd4e2",
       "bytes": 9618
     },
@@ -57,13 +70,13 @@
     },
     {
       "path": ".github/workflows/small-payment-durable-store.yml",
-      "sha256": "423e7f9f2e37d85e768489733becb9a0fff42ac71d9c7e12aa721da98453fd66",
-      "bytes": 1399
+      "sha256": "c1205261950bf3c88eb8ced872f05b84364a5635c64bc29ed907e6fba7ab7972",
+      "bytes": 1417
     },
     {
       "path": "docs/PAYMENT-DURABLE-STORE-20261027.md",
-      "sha256": "1694cbd354bfa7445cd4605102306b7ef9f376052951f9b83ef2deaf04cd65de",
-      "bytes": 3709
+      "sha256": "bf47044594d925ac464e9c8d906bc6820c03123f3249e8ec76b0ed35e8aade78",
+      "bytes": 4130
     },
     {
       "path": "docs/LTZZZ-MODEL-BILLING-FEASIBILITY-20261027.md",
@@ -77,5 +90,22 @@
     "No testnet escrow deposit/release/refund transactions.",
     "No A2/A3/B or payment activation; only disabled code candidate.",
     "CI and model reviews are not yet received for this new candidate."
-  ]
+  ],
+  "prior_ci_failure": {
+    "run_id": 40601431611,
+    "job_id": 122530242742,
+    "pass": 229,
+    "fail": 1,
+    "error": "ERR_MODULE_NOT_FOUND: miniflare in older lightweight policy glob",
+    "repair": "same integration suite moved to explicit dedicated workflow with pinned harness; no skipped or removed tests",
+    "original_preserved": true
+  },
+  "local_policy_regression": {
+    "node": "v22.23.4",
+    "tests": 225,
+    "passed": 225,
+    "failed": 0,
+    "skipped": 0
+  },
+  "model_api_calls_scope": "One existing Qwen queue native call; no paid GPT/Claude API call; no billing amount inferred."
 }

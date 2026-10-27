@@ -1,10 +1,10 @@
 name: Payment SQLite durable store (offline, no funds)
 on:
   pull_request:
-    paths: ['scripts/lib/small-payment-*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/small-payment-durable-store.test.mjs', 'scripts/tests/fixtures/small-payment-durable-worker.mjs', '.github/workflows/small-payment-durable-store.yml']
+    paths: ['scripts/lib/small-payment-*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/payment-durable-store.integration.test.mjs', 'scripts/tests/fixtures/small-payment-durable-worker.mjs', '.github/workflows/small-payment-durable-store.yml']
   push:
     branches: [main]
-    paths: ['scripts/lib/small-payment-*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/small-payment-durable-store.test.mjs', 'scripts/tests/fixtures/small-payment-durable-worker.mjs', '.github/workflows/small-payment-durable-store.yml']
+    paths: ['scripts/lib/small-payment-*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/payment-durable-store.integration.test.mjs', 'scripts/tests/fixtures/small-payment-durable-worker.mjs', '.github/workflows/small-payment-durable-store.yml']
 permissions: {contents: read}
 jobs:
   sqlite-and-alarms:
@@ -20,4 +20,4 @@ jobs:
       - name: Real local SQLite transactions, automatic alarms and restart; no cloud deployment
         env:
           LTZZZ_MINIFLARE_MODULE: ${{ runner.temp }}/ltzzz-payment-do-tests/node_modules/miniflare/dist/src/index.js
-        run: node --test --test-reporter=tap scripts/tests/small-payment-durable-store.test.mjs
+        run: node --test --test-reporter=tap scripts/tests/payment-durable-store.integration.test.mjs
