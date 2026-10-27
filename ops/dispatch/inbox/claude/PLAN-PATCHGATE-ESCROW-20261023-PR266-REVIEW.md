@@ -11,8 +11,3 @@
 禁止：启用支付/A2/A3/B、钱包签名、真实充值/采购、新增付费cron、替其他提供商署名、用owner/GPT身份单独激活或解冻。
 
 顺序：千问与豆包先交当前head的真实复核并逐项处置后，再点名你做最终审计。本卡现为等待前置，不能沿用#270的旧head批准；若尚未收到两席回执，状态保留waiting_qwen_doubao_review。
-
-本次固定执行基准：41f87856b97cc5b95cc88c040e164456c826877a
-主入口：https://github.com/ltzyz2181-collab/ltzzz/blob/41f87856b97cc5b95cc88c040e164456c826877a/knowledge/results/patchgate/post271/artifact-manifest.json
-清单原字节SHA256：28c5eaf2a9273e913258bc5c250cb2a84f542fcb0a87914540d1d389f3bd3fd6
-实际runner付款225/225（run40487043101）与PatchGate243/243（run40487043373）；原生签名/千问审计/豆包收尾作业均skipped，不冒充本席已复核。主线本卡只是接力元数据，业务代码仍在未合并PR #267。 两席复核未到齐前，不要求你给最终放行。
