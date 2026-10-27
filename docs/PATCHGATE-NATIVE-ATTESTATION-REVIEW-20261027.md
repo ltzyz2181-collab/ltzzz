@@ -1,22 +1,35 @@
-# 事实：原生模型响应签名适配器候选（未部署、未准入）
+# 事实：PR264/265 修订后的云端签名候选，尚未部署准入
 
-任务 PLAN-PATCHGATE-ESCROW-20261023。依赖 #255 的 GitHub OIDC 修订，独立承接 Claude #262 N2/#257 K2；不继承 #259 的合并批准，不开启 A2。
+原任务 PLAN-PATCHGATE-ESCROW-20261023；#255 已由 #264 批准并合并。#263 原审计 REVISE 原文保留，本文件不覆盖旧拒收或声称新批准。
 
-## 真实实现的边界
+## 对 Claude 分离方案的裁定
 
-- `patchgate-model-attestation-worker.js` 的 `/attest` 只接受经过 GitHub OIDC 认证的本仓 main `patchgate-model-attest.yml`；按执行器设置不同 audience，一执行器只对应一个提供商。default-off：客户端配置 false、服务端 NATIVE_ATTESTATION_ENABLED 未 true 都不调用模型。
-- Worker 自己读取固定 GitHub 仓库的不可变 BASE/HEAD、策略、信任根、完整比较/树与工件；原始文件重算 git blob SHA1。候选只允许已登记账号 ltzyz2181-collab/261544579 的同仓普通 docs/README Markdown，最多10文件。拒绝重定向、符号链接、非祖先 BASE、缺文件/重复路径、过期 main、额外指令字段。候选正文只作数据，不执行。
-- 候选请求的 snapshot.diff 用于复算与真实 merger 一致的 subject 摘要；**模型提示只用独立回读的全部 BASE/HEAD 原字节，不采信请求提供的 diff 文案**。未来 merger 必须仍以真实 Git snapshot 的 subject 比对签名；本组件不取代 merger 的差异验证。
-- 阶段审核使用同一固定 BASE manifest；抽出 `patchgate-a2-manifest.mjs`，加入新适配器/脚本/测试。审批 bundle 随代码变更失效；自引用审核字段的排除规则与既有 preflight 相同。
-- 千问只访问官方 DashScope、豆包只访问官方 Ark；提供商 Secret 与 Ed25519 私钥在 Worker 内。runner 只持短期 OIDC，不持模型 Key/私钥。无工具执行、钱包、资金或通用URL。
-- Durable Object 在付费 HTTP 前原子保存 operation 预留与每日预算（每提供商最多2次、max_tokens=4096）。同 subject/工件/角色不因 run 或 attempt 改变而重复调用。成功缓存同一原签名；异常/空正文/截断/格式不符/身份缺失写失败或不确定状态，不重试、不自动清除。付费请求没有 fallback。
-- 只在实际原生响应非空、finish_reason=stop、提供商 model/id 存在、JSON verdict/analysis 合格且重新回读 HEAD/BASE 未变时，签 Ed25519。签名包含 subject、实际 model、response ID、输出/工件/输入哈希、请求run/attempt/source、时间与原始 verdict。拒绝意见原样保留；API成本未知写 null，paid=false 仅指无链上/订单结算。
+接受千问/阿里云、豆包/火山云分开运维，GPT 不生成、不持有、不接触生产私钥。修正两处：不同云本身不能证明权限独立；把自报源码哈希签进载荷不能抵御有部署和签名权的管理员。还须提供独立云控制面源码读回、IAM/服务身份、密钥访问证据。现有验证器只支持 Ed25519，供应商 KMS 支持性未验证，不能编造 KMS.Sign 已可用。具体接力见 SPLIT-SIGNER-INFRA-EXECUTION-20261027.md。
 
-## 尚未完成，不能用配置代替验收
+## M1 与 M2
 
-1. 仅实现 `review` 和 `stage_review`。**不会为已有 GPT 补丁伪造千问/豆包作者身份；author/checks 签名生产端尚未接齐。** 本工作流只把公开回执保存为 artifact，不编造完整 admission envelope，也不向 main 写签名或改信任根。
-2. 没有实际 Worker/DO 部署、提供商 Secret 绑定、真实 OIDC/原生模型/密钥持久化在线验收。服务的两把真实 key 必须分别登记 executor/provider/roles，不能把 #255 nonce challenge 公钥直接当模型角色准入。
-3. execution_authority 仍 null，生产 key 未登记；#246 尚未自动合并；A2、自动释放、A3/B/资金仍关闭。
-4. 测试用真实本地 RSA/Ed25519 与替代 GitHub/provider/DO transport；不等于云端实调。无模型调用/资金动作。审核后还需检查 Durable Object 在实际 Workers 的并发和持久性。
+- review/stage_review 载荷签入 signer_source_sha256、signer_cloud_account_binding、signer_deployment_evidence_sha256。
+- BASE 信任根启用 source_binding_required；每把 key 与 executor 的源码白名单/云账号/部署证据必须一致。authenticate 拒绝哈希不符的有效签名；A2 preflight/rollout 还强制已验证来源登记，不接受去掉约束字段后启用。
+- patchgate-signer-source.mjs 固定源码清单，build-patchgate-signer-release.mjs 只读取确切 git commit 的原字节并生成公开源码清单，不生成或导出 key。登记中的候选源码指纹不等于真实部署证据；source_deployment_verified 仍 false、keys 仍空、A2 仍 false。
+- 默认服务已删除 PKCS8 导入/私钥签名，改用云服务内部注入 descriptor()/sign() capability，签后只用 BASE 公钥验签。NativeModelAttestationService 与持久存储接口可由相应供应商云运行时挂载，不宣称已存在原生 FC/火山 SDK 适配器、真实 KMS 或部署成功。
+- 删除两份 Cloudflare 模型签名部署配置。历史 ModelAttestationState 类名仅为隔离夹具兼容，不是批准的生产部署。旧 runner 持钥 challenge enrollment 作业已停用，只保留测试；不再用它代办新分云任务。
+- 相同管理员仍可能控制多个云账号；源码字段也不是硬件远程证明。真实独立运营方资格未验收，不能据此宣称 M2 全面解决。
 
-请 Claude 单独审：OIDC 的 caller/source/受信作者边界，immutable raw read/subject 对齐，provider 响应真实性与 Secret 限域，DO 幂等/预算/未知结果，角色与阶段授权、bundle失效和下一步真实生产端缺口。不要沿用 #262 对 #259 的旧 APPROVE，也不要把当前19项局部 fixture 结果当实际签名准入。
+## M4 与两个 Codex 反例
+
+- 文件从固定 raw.githubusercontent.com/<repo>/<40位commit>/<固定path> 只读获取；用该不可变提交的完整 Git tree 条目重算 git blob SHA1。每个 tree 在一次证据读取内缓存。阶段读取从几十次 REST 改成2次；普通审查7次，签前状态复验另计。
+- 完整树 JSON 有独立 8MB 上限和20000条限制，仍拒绝 truncated；新增 >1MB 仓库树回归。没有取消大小限制，也没有用 HTTP200代替完整性。
+- 未认证 GitHub 的共享配额仍存在：限流/不可达准确阻断，不回放模型。模型前证据读取失败尚未消费模型预算；模型后复验失败已消费请求并留未知/失败预留，不重放。
+- 凭证扫描对原始回读字节做，早于 JSON 转义与外发，覆盖 BASE 扫描器的短 sk-/cfut_、AKIA/ASIA、引号凭证赋值与私钥标记；新用例保证这些内容没有进入模型。
+
+## M3、作者与检查
+
+stage_review 明确仅 A2_L0_docs_only 模型意见；不能替代 Claude 对高风险阶段的独立审计，A3/资金未开放。模型 response 的实际 provider/model/id/stop/原始 verdict 和输出哈希继续如实记录。
+
+createAuthorChecksProducer 是云端生产端库，默认关闭。作者取同服务受管原生生成和发布 ledger，必须与候选 HEAD 原字节吻合；检查内部调用 collectTrustedChecks，不接受 passed:true 自报。都走云端 capability，不传私钥。详见 PATCHGATE-AUTHOR-CHECKS-REVIEW-20261027.md。
+
+发现并修正拓扑死锁：千问与豆包是两家必需复核方，作者必须是第三个真实提供商（优先现有 DeepSeek）。不削弱双复核、不伪造已有 GPT 补丁的国内作者票。真实 generation/publisher、独立检查 signer 及其云运行时仍未连通；这不等于自动合并已完成。
+
+## 当前验收边界
+
+测试只使用进程内隔离 fixture keys 与替代 GitHub/provider/云签名接口；本轮无生产私钥、真实模型调用、云部署或资金动作。实际两家云部署权限、服务地址、公开 key、重启挑战、原生签名与完整 admission envelope 仍未验收，A2/authority/release/A3/B/资金保持关闭。请 Claude 对最终确切 head 做单独复审，不沿用 #264 对旧 head 的批准。
