@@ -1,0 +1,131 @@
+{
+  "schema": "ltzzz.post268.engineering-receipt.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "source_audit_pr": 268,
+  "source_head": "90b0c06b2f3fde30ebab932bdbd97cdf9f5dfe9c",
+  "trusted_main_read": "a3a195a7afab20f3866c2b4965a35603b7ec58c5",
+  "at_utc": "2026-10-27T05:20:23.897363+00:00",
+  "logical_seat": "gpt",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "current_Codex_session_exact_model_id_unavailable",
+  "status": "R1_R4_repairs_submitted_waiting_Claude",
+  "stages": {
+    "draft_created": true,
+    "submitted": true,
+    "tested": true,
+    "independently_reviewed": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+  "tests": {
+    "scope": "local_offline_synthetic_only",
+    "node": "v24.19.0",
+    "payment_signature_guard": {
+      "tests": 190,
+      "pass": 190,
+      "fail": 0,
+      "skipped": 0
+    },
+    "changed_legacy_behavior": {
+      "tests": 47,
+      "pass": 47,
+      "fail": 0,
+      "skipped": 0
+    },
+    "patchgate": {
+      "tests": 243,
+      "pass": 243,
+      "fail": 0,
+      "skipped": 0
+    },
+    "wider_baseline": {
+      "tests": 163,
+      "pass": 150,
+      "fail": 13,
+      "skipped": 0
+    },
+    "wider_current": {
+      "tests": 163,
+      "pass": 150,
+      "fail": 13,
+      "skipped": 0
+    },
+    "wider_failures_equal_original": true,
+    "all_repository_CI_green": false,
+    "synthetic_private_keys_in_memory_only": true,
+    "real_provider_calls": 0,
+    "real_wallet_calls": 0
+  },
+  "R3": {
+    "required_native_providers": [
+      "aliyun_dashscope",
+      "volcengine_ark"
+    ],
+    "claude": "advisory_PR_not_native_signature",
+    "real_payment_role_keys_registered": 0,
+    "real_native_signatures_received": 0,
+    "owner_confirmation_received": false,
+    "authority_enabled": false,
+    "owner_key_generated": false,
+    "public_verification_implemented": true
+  },
+  "runtime_adapters": {
+    "real_settlement": "not_connected",
+    "real_independent_audit": "not_connected",
+    "durable_cloud_store": "not_connected",
+    "durable_cloud_alarm": "not_connected",
+    "independent_IAM_and_owner_root": "not_verified"
+  },
+  "deployment": {
+    "candidate_only": true,
+    "production_changed": false,
+    "remote_credentials_read_or_deleted": false,
+    "cloud_services_deployed": 0,
+    "existing_on_chain_contracts_paused": false
+  },
+  "payment_enabled": false,
+  "A2_enabled": false,
+  "A3_enabled": false,
+  "B_enabled": false,
+  "settlement_kind": "none",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "limitations": [
+    "R1 source inventory and guard tests are not an arbitrary-code sandbox or a proof of stopping already deployed contracts/external customer wallets.",
+    "Full activation is impossible with the default disabled policy and unprovisioned independent model/owner public-key roots; test signatures are not real model reviews.",
+    "The 13 wider failures were reproduced on the original head; this is not full WEP3 CI or production recovery.",
+    "New authorization role and actual cloud/executor services still require independent provisioning, deployment proof and separate review (R6).",
+    "The old post266 manifest is immutable evidence for head90b0c06b only; use post268 manifest for new bytes."
+  ],
+  "artifact": {
+    "path": "knowledge/results/patchgate/post268/artifact-manifest.json",
+    "sha256": "a54c03c5db534ffd6a4489dc076865b91ef5ce20268403cd4c5bca2ca60fc735"
+  },
+  "prior_candidate_CI": {
+    "head": "20eec72187073568856916361a3f37d3c7452d1d",
+    "small_payment_run_id": "40454513554",
+    "job_id": "122024602003",
+    "run_attempt": 1,
+    "tests": 190,
+    "passed": 189,
+    "failed": 1,
+    "failure_reason": "ethers_missing_for_actual_exchange_client_import_in_offline_job",
+    "repair": "install_existing_locked_dependencies_without_lifecycle_scripts",
+    "ANS_boundary_run": "40454513543",
+    "ANS_boundary_counts": {
+      "tests": 245,
+      "pass": 237,
+      "fail": 8
+    },
+    "funded_dispatch_run": "40454513645",
+    "funded_dispatch_counts": {
+      "tests": 126,
+      "pass": 119,
+      "fail": 7
+    },
+    "baseline_path_undefined_failures_retained": true,
+    "deployment_or_dispatch": "skipped_no_funds"
+  }
+}

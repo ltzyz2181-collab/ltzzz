@@ -1,3 +1,4 @@
+import {denyLegacyFinancialExecution} from '../lib/financial-exit-guard.js';
 // AI 提案自动执行：读 agent-wallet/proposals/<agent>.json 中 status=pending 的提案，逐个过策略并执行
 import { parseArgs } from "node:util";
 import {
@@ -8,11 +9,12 @@ import {
 import { reasoningHash } from "./anchor-reasoning.mjs";
 
 async function main() {
+  if(process.env.LTZZZ_WALLET_DRY_RUN!=="true")denyLegacyFinancialExecution("scripts/run-agent-spending.mjs");
   const { values } = parseArgs({ options: { agent: { type: "string" }, limit: { type: "string" } } });
   const agent = values.agent;
   if (!agent) { console.error("用法: node run-agent-spending.mjs --agent <id> [--limit n]"); process.exit(2); }
 
-  const prov = providerMode();
+  const prov = {mode: "dry-run"};
   const policy = loadPolicy();
   const ledger = loadLedger();
   const reputation = loadReputation();

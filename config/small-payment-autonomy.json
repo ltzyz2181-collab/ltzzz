@@ -1,0 +1,31 @@
+{
+  "schema": "ltzzz.small-payment.policy.v1",
+  "enabled": false,
+  "currency": "USDC",
+  "decimals": 6,
+  "timezone": "Asia/Shanghai",
+  "controllers": [],
+  "payees": [],
+  "purposes": [],
+  "registered_budget_ids": [],
+  "independent_reviews": {
+    "required_providers": [
+      "aliyun_dashscope",
+      "volcengine_ark"
+    ],
+    "activation_authority_ref": "config/small-payment-activation-authority.json",
+    "claude_channel": "repository_pr_advisory_not_cryptographic_quorum"
+  },
+  "rollout": {
+    "cooldown_seconds": 86400,
+    "stage_percent": [
+      10,
+      25,
+      50,
+      100
+    ],
+    "consecutive_audited_payments_per_promotion": 10,
+    "promotion_requires_native_dual_signatures": true,
+    "unfreeze_requires_new_release": true
+  }
+}
