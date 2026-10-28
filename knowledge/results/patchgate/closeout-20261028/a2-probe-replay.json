@@ -1,0 +1,284 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "DOUBAO-A2-PROBE-CLOSEOUT-20261028",
+  "at_utc": "2026-10-28T10:21:33.592934+00:00",
+  "logical_seat": "gpt",
+  "client": "Codex Node sandbox",
+  "actual_provider": null,
+  "model": null,
+  "source_commit": "0a26116a06bd381b4c5ce91094af84bbd2bf5a9e",
+  "script": "scripts/tests/probe-a2-adversarial-20261028.mjs",
+  "script_sha256": "b85eb4210dcb14d22b053637e8d1bcda50fdcad9ef6beda044e28211b9e1cc73",
+  "script_reported_timestamp_is_historical": true,
+  "original_report": {
+    "at": "2026-10-28T09:30:00Z",
+    "seat": "doubao",
+    "identity": "did:ltzzz:doubao",
+    "paid": false,
+    "tx_hash": null,
+    "model_calls": 0,
+    "network_calls": 0,
+    "cases": [
+      {
+        "name": "collection_request_valid_baseline",
+        "ok": true,
+        "detail": "accepted"
+      },
+      {
+        "name": "collection_request_reject_extra_field",
+        "ok": true,
+        "detail": "unexpected_collection_request_fields"
+      },
+      {
+        "name": "collection_request_reject_wrong_schema",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_wrong_task",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_candidate_pr_zero",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_candidate_pr_huge",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_head_not_sha",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_audit_pr_zero",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_audit_path_traversal",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_audit_path_no_ext",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_audit_path_workflow",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collection_request_reject_missing_task",
+        "ok": true,
+        "detail": "invalid_A2_collection_request"
+      },
+      {
+        "name": "collector_endpoint_reject_traversal",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_reject_outside_root",
+        "ok": true,
+        "detail": "collector_fixed_repository_required"
+      },
+      {
+        "name": "collector_endpoint_reject_contents_any",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_reject_contents_secrets",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_reject_branches_protection",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_reject_actions_arbitrary",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_reject_refs_branch",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_reject_pulls_redirect",
+        "ok": true,
+        "detail": "collector_endpoint_not_allowed"
+      },
+      {
+        "name": "collector_endpoint_allow_baseline",
+        "ok": true,
+        "detail": "/repos/ltzyz2181-collab/ltzzz/pulls/278"
+      },
+      {
+        "name": "collector_endpoint_allow_baseline",
+        "ok": true,
+        "detail": "/repos/ltzyz2181-collab/ltzzz/git/ref/heads/main"
+      },
+      {
+        "name": "execution_context_valid_baseline",
+        "ok": true,
+        "detail": "accepted"
+      },
+      {
+        "name": "execution_context_reject_wrong_ref",
+        "ok": true,
+        "detail": "trusted_main_execution_context_required"
+      },
+      {
+        "name": "execution_context_reject_wrong_event",
+        "ok": true,
+        "detail": "trusted_main_execution_context_required"
+      },
+      {
+        "name": "execution_context_reject_workflow_ref_forged",
+        "ok": true,
+        "detail": "trusted_main_execution_context_required"
+      },
+      {
+        "name": "execution_context_reject_sha_mismatch",
+        "ok": true,
+        "detail": "trusted_main_execution_context_required"
+      },
+      {
+        "name": "execution_context_reject_run_attempt_zero",
+        "ok": true,
+        "detail": "trusted_main_execution_context_required"
+      },
+      {
+        "name": "execution_context_reject_checkout_missing",
+        "ok": true,
+        "detail": "trusted_main_execution_context_required"
+      },
+      {
+        "name": "execution_gate_prod_held_baseline",
+        "ok": true,
+        "detail": "{\"enabled\":false,\"blockers\":[\"actual_execution_workflow_not_registered\"],\"authority\":null}"
+      },
+      {
+        "name": "execution_gate_registered_authority_observation",
+        "ok": true,
+        "detail": "registered authority -> enabled true (observation, not a hole)"
+      },
+      {
+        "name": "execution_gate_reject_financial_true",
+        "ok": true,
+        "detail": "fixed_reconciliation_policy_required"
+      },
+      {
+        "name": "execution_gate_block_wrong_workflow",
+        "ok": true,
+        "detail": "[\"actual_execution_workflow_not_registered\"]"
+      },
+      {
+        "name": "execution_gate_block_zero_workflow_id",
+        "ok": true,
+        "detail": "[\"actual_execution_workflow_not_registered\"]"
+      },
+      {
+        "name": "execution_gate_reject_wrong_schema",
+        "ok": true,
+        "detail": "fixed_reconciliation_policy_required"
+      },
+      {
+        "name": "execution_gate_release_flag_observation",
+        "ok": true,
+        "detail": "automatic_release_enabled=true does NOT latch at gate itself (release control lives in rollout path) - observation"
+      },
+      {
+        "name": "sign_baseline_valid",
+        "ok": true,
+        "detail": "signature verifies with public key"
+      },
+      {
+        "name": "sign_reject_unregistered_executor",
+        "ok": true,
+        "detail": "executor_role_not_allowed"
+      },
+      {
+        "name": "sign_reject_key_mismatch",
+        "ok": true,
+        "detail": "executor_private_public_key_mismatch"
+      },
+      {
+        "name": "sign_reject_role_not_allowed",
+        "ok": true,
+        "detail": "executor_role_not_allowed"
+      },
+      {
+        "name": "sign_reject_outside_window",
+        "ok": true,
+        "detail": "valid_attestation_time_subject_required"
+      },
+      {
+        "name": "sign_reject_bad_time",
+        "ok": true,
+        "detail": "valid_attestation_time_subject_required"
+      },
+      {
+        "name": "execution_read_allow_runs",
+        "ok": true,
+        "detail": "/repos/ltzyz2181-collab/ltzzz/actions/runs/1"
+      },
+      {
+        "name": "execution_read_allow_refs_attest",
+        "ok": true,
+        "detail": "/repos/ltzyz2181-collab/ltzzz/git/ref/heads/patchgate-a2-attestations/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "name": "execution_read_allow_admission",
+        "ok": true,
+        "detail": "/repos/ltzyz2181-collab/ltzzz/contents/knowledge/results/patchgate/admission/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.json?ref=aaaaaaaaa"
+      },
+      {
+        "name": "execution_read_reject_env",
+        "ok": true,
+        "detail": "execution_read_endpoint_not_allowed"
+      },
+      {
+        "name": "execution_read_reject_tree",
+        "ok": true,
+        "detail": "execution_read_endpoint_not_allowed"
+      },
+      {
+        "name": "execution_read_reject_refs_other",
+        "ok": true,
+        "detail": "execution_read_endpoint_not_allowed"
+      },
+      {
+        "name": "execution_read_oversize_or_disallowed",
+        "ok": true,
+        "detail": "execution_read_endpoint_not_allowed"
+      }
+    ],
+    "summary": {
+      "cases": 49,
+      "failed": 0,
+      "failed_names": []
+    }
+  },
+  "cases": 49,
+  "failed": 0,
+  "network_calls": 0,
+  "native_model_calls": 0,
+  "fixture_key_scope": "ephemeral process-local synthetic Ed25519 test keys only; not production/enrollment",
+  "private_production_keys_generated": 0,
+  "automatic_merge": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}

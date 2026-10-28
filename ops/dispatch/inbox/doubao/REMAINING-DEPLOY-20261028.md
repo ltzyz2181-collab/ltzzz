@@ -1,0 +1,22 @@
+# 豆包剩余执行项：总控收尾修订
+
+原任务 PLAN-PATCHGATE-ESCROW-20261023，步骤 SPLIT-SIGNER-INFRA-20261026；Claude PR282 原文保留在 d50f5b2dc430f2f44dbb26876f480061e051a48d。以下为 GPT 按 owner 指令修订，不冒充豆包原生执行。
+
+## 已有证据，不重做
+
+- A2 检查/签名的49个沙盒探针已由总控本轮重放，全部符合预期。探针使用进程内临时测试 key，不是生产签名人；原豆包报告保留，新回执在 knowledge/results/patchgate/closeout-20261028/a2-probe-replay.json。
+- PR278 原候选确实漏掉传递别名链。总控先保留失败测试，再修订 tests 目录的沙盒候选：八例覆盖由7升8；生产扫描器仍漏7例，尚未修复。结果放回原PR，不与PR279的不同源码混称同一候选。
+
+## 需要有真实火山部署通道的执行端接力
+
+逻辑席位或 Ark 模型 Key 不证明云资源部署权限，不再声称“只有豆包能做”或“豆包已有权限”。本会话没有该云身份。若你的当前执行环境具备火山资源部署身份，沿用原任务认领并执行；没有则回报具体缺项，不能让模型编造云部署。
+
+1. 回读实际账号、区域、产品和部署角色的公开标识。使用现有官方控制台/已配置身份，不把 AccessKey、私钥或模型 Key 发到对话或仓库。
+2. 固定已审主线，按 scripts/build-patchgate-signer-release.mjs 生成源码清单；当前摘要 53847961dffa521181407028b60b7a26b842d8c20d16b69c42f1f44f962b5217。此清单不是可直接部署的完整火山包。
+3. 接好真实持久化事务和 CLOUD_SIGNER 适配器；确认目标产品是否支持现行 Ed25519。不能把其它算法的 KMS 当成可直接替换。私钥只在火山侧生成/保管，禁止 GPT runner 代生。软件 API 不返回私钥不等于 HSM 不可导出，要如实记录管理员/发布者/存储读取权限。
+4. 默认关闭服务部署，回执给出公钥/SPKI、源码摘要、service/version/URL、云账号绑定、独立控制面代码摘要/IAM 读回。相同 key 重启后用 fresh nonce 签挑战并验证公钥不变；不得用进程内 mock 代替重启。
+5. 同服务完成一次原生豆包响应和签名、公钥验签；先持久预留、未知不重放、沿用现有日上限/OIDC。保留实际 provider/model/request ID、原 verdict 和用量；回执只含公开证据。交 GPT 登记候选并交千问/Claude复核，不自行打开A2、A3、支付或正式五签。
+
+外部实练仅真实平台任务、零押金/零支出、同时≤3。2hives没有包就等待；UUMit已有owner注册/一个WorkBuddy绑定的报告，不重复注册、不抢邀请、不填钱包或ID，仅观察。无新结果不写重复回执。
+
+补充已核实的技术条件：官方 AsymmetricSign 参数表目前未列 Ed25519（https://docs.volcengine.com/docs/key-management-system/asymmetric-sign-asymmetrickeysignature?lang=zh）。不能仅补一个云凭据就宣称现有验签能接 KMS；兼容产品或独立算法适配需先实现并审核。实际账号/区域尚未调用验证。本轮不改变算法或信任根。
