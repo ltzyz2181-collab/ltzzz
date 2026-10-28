@@ -1,0 +1,85 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "P1-01-WEP3-SOURCE-INTEGRITY-20261028",
+  "at_utc": "2026-10-28T08:57:59.576Z",
+  "candidate_pr": 276,
+  "candidate_head": "ea71a7428727f0593652cd17243ebc61c21a50aa",
+  "status": "candidate_tested_component_review_received_waiting_Claude_full_audit_main_incident_open",
+  "CI": {
+    "run_id": 40659661802,
+    "run_attempt": 1,
+    "job_id": 122719215444,
+    "conclusion": "success",
+    "event": "pull_request",
+    "head": "ea71a7428727f0593652cd17243ebc61c21a50aa",
+    "checkout_sha": "3704aca000474957975fb67351453615021fca5f",
+    "tests": 184,
+    "passed": 184,
+    "failed": 0,
+    "skipped": 0,
+    "counts_log_readback_verified": true,
+    "deploy_job": 122719366537,
+    "deploy_conclusion": "skipped",
+    "candidate_tree": "2537dd06b005ae907ad25e9718b24b9e0fee1a4c",
+    "tested_tree": "7ee3a2bf4b477b08328ef30bc3f44414d9f4c7c3",
+    "all_nine_candidate_files_equal": true,
+    "whole_tree_equal": false,
+    "only_other_differences": [
+      "innovation/2026-10-28.json",
+      "innovation/index.json",
+      "ltzzz-memory/tasks/innovation/2026-10-28-doubao.md",
+      "ltzzz-memory/tasks/innovation/2026-10-28-manus.md"
+    ],
+    "all_CI_green": false,
+    "A2_failure_run": 40659660330
+  },
+  "qianwen": {
+    "actual_provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "metadata_source": "provider_response",
+    "native_call": true,
+    "calls": 1,
+    "run_id": "40660083254",
+    "request_id": "1ad50fd3-e148-902b-99f6-d1bedcf413c5",
+    "finish_reason": "stop",
+    "tokens_used": 2768,
+    "api_cost": null,
+    "output_sha256": "9d19780b64be60f00c73bcc7a51e18669e0e490f5ff6fcad57446e7935642697",
+    "receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-WEP3-INTEGRITY-20261028.json",
+    "verdict": "approve_component",
+    "scope": "component_exact_source_excerpt_only_not_full_legacy_body_or_stage_approval",
+    "findings": [],
+    "original_opinion_preserved": true
+  },
+  "adjudications": [
+    {
+      "id": "QW-unverified-1",
+      "disposition": "not_adopted",
+      "reason": "Strict string '1' is an intentional closed-by-default cutover switch. Undefined/null/boolean/array/whitespace must not enable writes. The workflow does not inject '1'; wrangler retains '0'. String-coercion/trim suggestion would widen activation and is not a verified defect."
+    },
+    {
+      "id": "QW-unverified-2",
+      "disposition": "scope_limit_retained",
+      "reason": "The full historical handleRequest body and ledger were not supplied to the model. Component approval cannot stand in for Claude's full-source review. Actual exported handler and offline integration were executed by Node/Actions, not by the model."
+    },
+    {
+      "id": "QW-unverified-3",
+      "disposition": "not_adopted_as_defect_no_relaxation",
+      "reason": "The model did not receive the health line and conflated financial-path 503 with /health. Actual health returns atomic_ledger_ready boolean; existing gate already rejects health.atomic_ledger_ready !== true, including missing field. False/true health and missing-binding cases passed. No gate softened."
+    }
+  ],
+  "claude": {
+    "status": "requested_new_head_not_received",
+    "notification_comment": 6464765118,
+    "notification_readback_verified": true,
+    "inbox": "ops/dispatch/inbox/claude/PLAN-PATCHGATE-ESCROW-20261023-POST272-REVIEWS.md",
+    "full_review_received": false
+  },
+  "merged": false,
+  "deployed": false,
+  "source_incident_closed": false,
+  "LEGACY_KV_FROZEN": "0_unchanged",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false
+}

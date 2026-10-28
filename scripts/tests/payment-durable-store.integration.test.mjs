@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {initialSmallPaymentState} from '../lib/small-payment-runtime.mjs';
+import {runtimeFixture, RELEASE} from './small-payment-fixtures.mjs';
 import {PAYMENT_STATE_KEY, nextPaymentAlarmAt, createDurablePaymentAdapters} from '../lib/small-payment-durable-store.mjs';
 
 const iso = ms => new Date(ms).toISOString();
@@ -106,7 +107,7 @@ test('real workerd SQLite DO transactions, alarms and restart (synthetic ledger,
     });
     await t.test('actual automatic alarm invokes runtime and durably freezes overdue receipt', async () => {
       await call('automatic', '/append', deadlines('overdue', Date.now() + 200));
-      const until = Date.now() + 8000;
+      const until = Date.now() + 15000;
       let snapshot;
       do {
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -126,11 +127,95 @@ test('real workerd SQLite DO transactions, alarms and restart (synthetic ledger,
       assert.equal((await call('automatic', '/initialize', {})).body.initialized, false);
       assert.deepEqual((await call('automatic', '/state')).body, frozen);
     });
+    await t.test('consumed early alarm is rearmed even when runtime makes no ledger write', async () => {
+      const input = deadlines('not-due'); await call('early-alarm', '/append', input);
+      const before = (await call('early-alarm', '/state')).body;
+      const response = await call('early-alarm', '/fire-early-alarm', {});
+      assert.equal(response.status, 200);
+      const after = (await call('early-alarm', '/state')).body;
+      assert.deepEqual(after.state, before.state); assert.equal(after.alarm, Date.parse(input.receipt_due_at));
+    });
+    await t.test('alarm handler finally rearms when runtime handler throws', async () => {
+      const input = deadlines('still-due'); await call('throwing-alarm', '/append', input);
+      const response = await call('throwing-alarm', '/fire-throwing-alarm', {});
+      assert.equal(response.status, 422); assert.match(response.body.error, /synthetic_handler_failure/);
+      assert.equal((await call('throwing-alarm', '/state')).body.alarm, Date.parse(input.receipt_due_at));
+    });
+    await t.test('reconcile restores an accidentally deleted earliest alarm and leaves frozen alarm empty', async () => {
+      const input = deadlines('restore'); await call('reconcile-live', '/append', input);
+      await call('reconcile-live', '/delete-alarm', {});
+      assert.equal((await call('reconcile-live', '/state')).body.alarm, null);
+      assert.equal((await call('reconcile-live', '/initialize-only', {})).body.initialized, false);
+      assert.equal((await call('reconcile-live', '/state')).body.alarm, null);
+      assert.equal((await call('reconcile-live', '/reconcile', {})).body.alarm_at, Date.parse(input.receipt_due_at));
+      assert.equal((await call('reconcile-live', '/state')).body.alarm, Date.parse(input.receipt_due_at));
+      assert.equal((await call('automatic', '/reconcile', {})).body.alarm_at, null);
+      assert.equal((await call('automatic', '/state')).body.state.frozen, true);
+    });
+    await t.test('constructor reconstructs missing alarm from an existing ledger after restart', async () => {
+      const input = deadlines('resume'); await call('rearm-restart', '/append', input);
+      const before = (await call('rearm-restart', '/state')).body;
+      await call('rearm-restart', '/delete-alarm', {});
+      assert.equal((await call('rearm-restart', '/state')).body.alarm, null);
+      await mf.dispose(); mf = new Miniflare(options);
+      const after = (await call('rearm-restart', '/state')).body;
+      assert.deepEqual(after.state, before.state); assert.equal(after.alarm, before.alarm);
+    });
+    const configureSyntheticRuntime = async (name, execute_mode = 'confirm') => {
+      // Private keys remain in ephemeral host test fixtures. Only synthetic public
+      // policy, activation and signatures enter this never-deployable workerd fixture.
+      const f = runtimeFixture(), state = f.store.read();
+      const config = {synthetic: true, policy: f.policy, release_sha256: RELEASE,
+        state, authority: f.signatures.authority, budget: f.budgetProof,
+        activation_evidence: f.signatures.makeEvidence(Date.now(), state.activation.command), execute_mode};
+      const configured = await call(name, '/configure-runtime', config);
+      assert.equal(configured.status, 200); return f.request;
+    };
+    await t.test('runtime submit commits reservation and real durable audit scheduling before fake execution', async () => {
+      const request = await configureSyntheticRuntime('submit-confirm');
+      const response = await call('submit-confirm', '/submit', {request});
+      assert.equal(response.body.status, 'paid_pending_independent_audit');
+      const snapshot = (await call('submit-confirm', '/state')).body;
+      const operation = snapshot.state.operations[request.payment_id];
+      assert.equal(operation.execution_attempted, true); assert.equal(operation.receipt.paid, true);
+      assert.equal(snapshot.fake_executions, 1); assert.equal(snapshot.schedule_ack_verified_before_execute, true);
+      assert.equal(snapshot.alarm, Date.parse(operation.audit_due_at));
+      assert.equal((await call('submit-confirm', '/submit', {request})).body.status, 'existing_operation_reconcile_only');
+      assert.equal((await call('submit-confirm', '/state')).body.fake_executions, 1);
+    });
+    await t.test('duplicate settlement hash freezes durable runtime and no retry executes after restart', async () => {
+      const request = await configureSyntheticRuntime('duplicate-settlement');
+      assert.equal((await call('duplicate-settlement', '/submit', {request})).body.status, 'paid_pending_independent_audit');
+      const second = {...request, payment_id: 'PAY-TEST-2'};
+      const response = await call('duplicate-settlement', '/submit', {request: second});
+      assert.equal(response.body.status, 'frozen_unknown_reconcile_no_retry');
+      assert.equal(response.body.reason, 'settlement_transaction_already_claimed');
+      const before = (await call('duplicate-settlement', '/state')).body;
+      assert.equal(before.fake_executions, 2); assert.equal(before.state.frozen, true); assert.equal(before.alarm, null);
+      assert.equal(before.state.operations[second.payment_id].status, 'unknown_reconcile_no_retry');
+      await mf.dispose(); mf = new Miniflare(options);
+      const after = (await call('duplicate-settlement', '/state')).body;
+      assert.deepEqual(after, before);
+      assert.equal((await call('duplicate-settlement', '/submit', {request: second})).body.execution_attempted, false);
+      assert.equal((await call('duplicate-settlement', '/state')).body.fake_executions, 2);
+    });
+    await t.test('unknown fake execute persists freeze and clears alarm across restart without replay', async () => {
+      const request = await configureSyntheticRuntime('unknown-execution', 'throw_unknown');
+      const response = await call('unknown-execution', '/submit', {request});
+      assert.equal(response.body.status, 'frozen_unknown_reconcile_no_retry');
+      const before = (await call('unknown-execution', '/state')).body;
+      assert.equal(before.fake_executions, 1); assert.equal(before.state.frozen, true); assert.equal(before.alarm, null);
+      assert.equal(before.state.operations[request.payment_id].status, 'unknown_reconcile_no_retry');
+      await mf.dispose(); mf = new Miniflare(options);
+      assert.deepEqual((await call('unknown-execution', '/state')).body, before);
+      assert.equal((await call('unknown-execution', '/submit', {request})).body.execution_attempted, false);
+      assert.equal((await call('unknown-execution', '/state')).body.fake_executions, 1);
+    });
     await t.test('confirmed receipt does not suppress the later independent-audit deadline', async () => {
       const now = Date.now(), input = {id: 'unaudited', receipt_due_at: iso(now + 600), audit_due_at: iso(now + 1200)};
       await call('audit-overdue', '/append', input);
       await call('audit-overdue', '/receipt', {id: input.id});
-      const until = Date.now() + 8000;
+      const until = Date.now() + 15000;
       let snapshot;
       do {
         await new Promise(resolve => setTimeout(resolve, 50));

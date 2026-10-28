@@ -42,10 +42,20 @@ In the future reviewed deployment's private DO constructor:
 
 ```js
 const durable = createDurablePaymentAdapters(ctx.storage);
-ctx.blockConcurrencyWhile(() => durable.initialize());
+this.ready = ctx.blockConcurrencyWhile(async () => {
+  await durable.initialize();
+  await durable.reconcileAlarm();
+});
 // Supply durable.store and durable.scheduleAudit as deployment-owned callbacks
 // to createSmallPaymentService, alongside independently reviewed capabilities.
-// The actual DO alarm() must call service.alarm(). No public initialization route.
+// In the actual DO alarm handler:
+await this.ready;
+try {
+  await service.alarm();
+} finally {
+  await durable.reconcileAlarm();
+}
+// No public initialization, synthetic configuration or recovery routes.
 ```
 
 No production Worker/router, registry, signing source hash, policy, trust root,
@@ -66,3 +76,48 @@ not cover this code. Keeping `policy.enabled=false` is intentional.
 
 Local tests or PR CI are not cloud deployment, native model audits, true escrow
 transactions or payment activation. `paid=false`, `tx_hash=null`; no funds move.
+
+## Claude PR #291 follow-up (GPT implementation)
+
+C1/C2: a DO alarm is consumed before its handler runs. A handler that observes a
+not-yet-overdue deadline can perform no ledger write; it must still reconcile the
+alarm. Initialization validates an existing ledger without resetting or rearming
+it, so the constructor must call `reconcileAlarm()` after `initialize()`. The
+handler calls reconciliation in `finally`, including when runtime processing
+throws. A storage outage can still prevent rearming; this is not a guarantee
+against provider-wide outages or infinite alarm retry exhaustion.
+
+The expanded workerd suite verifies an explicitly consumed early alarm, handler
+exception, deleted-alarm reconciliation, a frozen ledger returning no alarm, and
+constructor recovery after a persisted ledger is reopened. Early consumption and
+the exception are deliberately injected through test-only routes; the existing
+receipt/audit overdue tests still exercise actual automatic workerd alarms.
+
+C3: the never-deployable fixture can now load host-generated **synthetic** public
+activation evidence and run the actual runtime `submit()` through the SQLite
+adapter and actual `scheduleAudit`. The fake executor checks the committed
+reservation, dispatch status and exact scheduled alarm before it increments its
+persistent test counter. The test consumes the real in-process permit but performs
+no chain/RPC call. Settlement `paid:true` and a repeated fixed transaction hash are
+synthetic test values only. Duplicate settlement claims and an executor throwing
+with unknown outcome both persist `unknown_reconcile_no_retry`, freeze the
+service and clear the alarm. Reopening workerd preserves those records and does
+not invoke the fake executor again. No production signing key is generated or
+exported; private keys exist only in ephemeral host test fixtures.
+
+C4: recovery deliberately fails closed. This runtime has no reconciliation,
+receipt-replacement or raw unlock API. Re-enabling an overdue, unreconciled ledger
+would immediately freeze it again; an unknown transfer must never be retried or
+silently marked confirmed merely to restore liveness. A future recovery path
+would need source/transaction reconciliation bound to the original operation,
+independent review evidence and the existing dual-signature/new-release lifecycle.
+It is not implemented or enabled by this PR. Until that path is separately
+reviewed and proven, an affected runtime remains held. This is an unresolved
+production-liveness limit, not a new owner approval requirement.
+
+The optional audit suggestions N1–N4 remain distinct: this patch does not add
+cross-component monotonic ledger enforcement, a transitive-dependency lockfile,
+provider-wide alarm timing guarantees, or a production deployment-manifest guard
+against fixture inclusion. Current fixture paths remain test-only and must never
+be added to a production Worker main/release. No production deployment or payment
+acceptance is claimed by these local tests.

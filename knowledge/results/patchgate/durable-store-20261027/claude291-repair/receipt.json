@@ -1,0 +1,131 @@
+{
+  "schema": "ltzzz.payment-durable-store.audit-repair.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "S3-DURABLE-STATE-CLAUDE291-REPAIR-20261028",
+  "at_utc": "2026-10-28T21:57:03.387289Z",
+  "logical_seat": "gpt",
+  "client": "Codex engineering assistant",
+  "actual_provider": "OpenAI",
+  "model": null,
+  "metadata_source": "execution context; exact model ID not exposed",
+  "candidate_pr": 277,
+  "audit_pr": 291,
+  "audit_head": "9dc17f786cf3bd956c6eb87f6d2d9125b9bd952c",
+  "source_commit": "5fae353f87475159f925bf69ecf99f281bcad3f7",
+  "source_commit_kind": "clean local merged checkout actually tested; final remote PR head assigned by publisher, changed source bytes bound below",
+  "status": "repairs_offline_verified_waiting_Claude_exact_head_rereview_not_production_acceptance",
+  "changes": [
+    {
+      "finding": "C1",
+      "resolution": "test-only constructor initializes then reconciles; alarm handler reconciles in finally on early/no-op and exception paths; documented production-integration example updated"
+    },
+    {
+      "finding": "C2",
+      "resolution": "real SQLite DO cases prove initialize-existing does not rearm itself, explicit reconcile restores missing alarm, frozen reconcile remains null and restarted constructor rearms persisted ledger"
+    },
+    {
+      "finding": "C3",
+      "resolution": "real runtime submit with durable store and real scheduleAudit; fake execution validates persisted ordering and consumes the ephemeral runtime permit; duplicate settlement tx hash and unknown execute persist freeze/alarm clear across workerd restart with no retry"
+    },
+    {
+      "finding": "C4",
+      "resolution": "explicit intentional fail-closed production-liveness limit documented; no recovery/receipt-replacement/unlock API added; unknown operations cannot be retried or marked confirmed to restore liveness"
+    }
+  ],
+  "files": [
+    {
+      "path": "scripts/tests/fixtures/small-payment-durable-worker.mjs",
+      "bytes": 7367,
+      "sha256": "264b2582ee0ee5ac0b86ed66c98c6e287d5641506d8396d0afe5034928b746d3"
+    },
+    {
+      "path": "scripts/tests/payment-durable-store.integration.test.mjs",
+      "bytes": 16323,
+      "sha256": "7cab89731f718c65f46ebec4db8cd3793b44754e6ab9d8cb38cf2c91d5d2da11"
+    },
+    {
+      "path": "docs/PAYMENT-DURABLE-STORE-20261027.md",
+      "bytes": 7315,
+      "sha256": "e71d10466c50aa2fe13ccf1c2883f3150144f355c923b5c4847eb7ec5354bac6"
+    }
+  ],
+  "tests": {
+    "runtime": "Node22.23.4",
+    "miniflare": "4.20251008.0",
+    "environment": "actual local workerd SQLite Durable Objects, synthetic ledger and fake settlement only",
+    "red": {
+      "command": "node --test --test-reporter=tap scripts/tests/payment-durable-store.integration.test.mjs",
+      "exit_code": 1,
+      "tests": 21,
+      "passed": 13,
+      "failed": 8,
+      "skipped": 0,
+      "failed_subtests": 7,
+      "parent_failure_included": true,
+      "raw_sha256": "17d1e1f9b7d7f3fe7ebc3ace16dcb53a648aef8827fc54b2292c95e1a383bbc4",
+      "raw_bytes": 13117,
+      "raw_local_capture": "/tmp/pr277-audit-red.tap",
+      "review_artifact": "knowledge/results/patchgate/durable-store-20261027/claude291-repair/red-normalized.tap",
+      "review_artifact_sha256": "8f68905cf06638691228a08c91fa9a45d706a8443743f2648a07af04af32a894",
+      "normalization": "only trailing spaces/tabs in TAP diagnostic lines stripped; original raw capture retained in local workspace; no test status or error text changed"
+    },
+    "green": {
+      "command": "LTZZZ_MINIFLARE_MODULE=<cached pinned Miniflare> node --test --test-reporter=tap scripts/tests/payment-durable-store.integration.test.mjs",
+      "exit_code": 0,
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "artifact": "knowledge/results/patchgate/durable-store-20261027/claude291-repair/green.tap",
+      "artifact_sha256": "1eb27035309d0b0a6877296192e0b1ec436f0886e22b874e0256901401d29eb1",
+      "source_context": "post normal merge of current main ae35b97f; clean tested checkout 5fae353f87475159f925bf69ecf99f281bcad3f7"
+    },
+    "policy_regression": {
+      "command": "node --test --test-reporter=tap scripts/tests/small-payment-*.test.mjs",
+      "exit_code": 0,
+      "tests": 192,
+      "passed": 192,
+      "failed": 0,
+      "skipped": 0,
+      "raw_sha256": "79f21be67f7398d94d51197c89514d3ad1973061324c054a5969747fd1467eb8",
+      "raw_bytes": 38843,
+      "capture_scope": "local tool capture; full policy TAP not duplicated in public repository",
+      "source_context": "post normal merge of current main ae35b97f"
+    },
+    "fixture_ordering": "committed reserved/dispatch row plus exact per-payment durable scheduler acknowledgement and earliest alarm exist before fake execute",
+    "early_alarm_scope": "consumed-early and throwing handler deliberately injected in real DO; automatic overdue receipt/audit paths also exercised through actual workerd alarms",
+    "pre_main_merge_integration": {
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "artifact_sha256": "d5ee687a415667d89986a731167cea11710f90d558c41def62b86a89eaf4e324",
+      "capture_scope": "pre-merge local execution; replaced canonical green artifact below is the post-merge run"
+    }
+  },
+  "production_helper_sha256": "39fc31d77ce5fc18b20e87b99a34d21f753a3c28bcc33dadef284ba8cb2cac05",
+  "production_helper_unchanged": true,
+  "model_generation_calls": 0,
+  "provider_or_chain_network_calls": 0,
+  "cloud_deployments": 0,
+  "production_signing_key_read_or_generated": false,
+  "ephemeral_host_test_keys": "synthetic Ed25519 fixtures only; only public activation data/signatures enter workerd",
+  "paid": false,
+  "tx_hash": null,
+  "real_funds_moved": false,
+  "A2_A3_B_payment_enabled": false,
+  "independent_native_review_received_for_this_revision": false,
+  "Claude_rereview_received": false,
+  "limitations": [
+    "Not Cloudflare online acceptance, native provider review, signed admission or release activation.",
+    "Production recovery for overdue/unknown operations remains unimplemented and held; documented deliberately instead of adding an unaudited unfreeze path.",
+    "Optional N1 cross-component monotonic-ledger enforcement, N2 transitive dependency lock and N4 production fixture-manifest rejection are not implemented by this repair.",
+    "Automatic alarm observation polling now waits at most15s for slow local runners; it is not a provider latency guarantee or retry-exhaustion proof."
+  ],
+  "tested_git_tree": "e1e5aee60f5b437ceec1186afcb2fb9e8be9e030",
+  "audited_original_head": "45ad0a82787fd70ca3f0f87bbf734ea309b5932b",
+  "merged_main_commit": "ae35b97f98e0d33bedab1541bc3b33fcb163231d",
+  "main_merge_conflicts": [],
+  "merged_main_context_preserved": true,
+  "production_runtime_policy_trust_budget_unchanged_by_this_repair": true,
+  "candidate_changes_scope": "documentation, test-only fixture, offline integration tests and new repair evidence; original helper and original historical receipt retained"
+}

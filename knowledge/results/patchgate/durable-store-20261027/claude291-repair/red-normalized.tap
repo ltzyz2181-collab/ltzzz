@@ -1,0 +1,281 @@
+TAP version 13
+# Subtest: alarm chooses earliest outstanding obligation across all payments
+ok 1 - alarm chooses earliest outstanding obligation across all payments
+  ---
+  duration_ms: 3.418878
+  type: 'test'
+  ...
+# Subtest: already frozen state has no recurring hot alarm; deadlines stay in the ledger
+ok 2 - already frozen state has no recurring hot alarm; deadlines stay in the ledger
+  ---
+  duration_ms: 0.466556
+  type: 'test'
+  ...
+# Subtest: malformed identity, dates and ledger cannot silently delete a deadline
+ok 3 - malformed identity, dates and ledger cannot silently delete a deadline
+  ---
+  duration_ms: 1.540467
+  type: 'test'
+  ...
+# Subtest: in-memory and KV substitutes are refused; key matches the runtime state schema
+ok 4 - in-memory and KV substitutes are refused; key matches the runtime state schema
+  ---
+  duration_ms: 0.964234
+  type: 'test'
+  ...
+# Subtest: real workerd SQLite DO transactions, alarms and restart (synthetic ledger, no transfers)
+    # Subtest: new ledger starts disabled and without a scheduled alarm
+    ok 1 - new ledger starts disabled and without a scheduled alarm
+      ---
+      duration_ms: 400.225555
+      type: 'test'
+      ...
+    # Subtest: parallel writes serialize and later obligations cannot postpone earlier ones
+    ok 2 - parallel writes serialize and later obligations cannot postpone earlier ones
+      ---
+      duration_ms: 137.589597
+      type: 'test'
+      ...
+    # Subtest: transaction exception rolls back both ledger and alarm
+    ok 3 - transaction exception rolls back both ledger and alarm
+      ---
+      duration_ms: 37.977866
+      type: 'test'
+      ...
+    # Subtest: alarm-write failure rolls back the reservation before it can be used
+    ok 4 - alarm-write failure rolls back the reservation before it can be used
+      ---
+      duration_ms: 24.119407
+      type: 'test'
+      ...
+    # Subtest: scheduler acknowledges only the exact committed reservation
+    ok 5 - scheduler acknowledges only the exact committed reservation
+      ---
+      duration_ms: 36.458359
+      type: 'test'
+      ...
+    # Subtest: receipt advances alarm to audit; full review clears it without losing state
+    ok 6 - receipt advances alarm to audit; full review clears it without losing state
+      ---
+      duration_ms: 38.722049
+      type: 'test'
+      ...
+    # Subtest: actual automatic alarm invokes runtime and durably freezes overdue receipt
+    ok 7 - actual automatic alarm invokes runtime and durably freezes overdue receipt
+      ---
+      duration_ms: 235.559063
+      type: 'test'
+      ...
+    # Subtest: restart preserves frozen history and does not reset a live reservation
+    ok 8 - restart preserves frozen history and does not reset a live reservation
+      ---
+      duration_ms: 5179.170775
+      type: 'test'
+      ...
+    # Subtest: consumed early alarm is rearmed even when runtime makes no ledger write
+    not ok 9 - consumed early alarm is rearmed even when runtime makes no ledger write
+      ---
+      duration_ms: 16.02773
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:130:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+
+        422 !== 200
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 200
+      actual: 422
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:134:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:130:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: alarm handler finally rearms when runtime handler throws
+    not ok 10 - alarm handler finally rearms when runtime handler throws
+      ---
+      duration_ms: 10.516597
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:138:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /synthetic_handler_failure/. Input:
+
+        'unknown_test_route'
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: 'unknown_test_route'
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:141:50)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:138:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: reconcile restores an accidentally deleted earliest alarm and leaves frozen alarm empty
+    not ok 11 - reconcile restores an accidentally deleted earliest alarm and leaves frozen alarm empty
+      ---
+      duration_ms: 15.730369
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:144:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+
+        + 1793224210648
+        - null
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: ~
+      actual: 1793224210648
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:147:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:144:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: constructor reconstructs missing alarm from an existing ledger after restart
+    not ok 12 - constructor reconstructs missing alarm from an existing ledger after restart
+      ---
+      duration_ms: 22.212188
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:153:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        + actual - expected
+
+        + 1793224210664
+        - null
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: ~
+      actual: 1793224210664
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:157:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:153:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: runtime submit commits reservation and real durable audit scheduling before fake execution
+    not ok 13 - runtime submit commits reservation and real durable audit scheduling before fake execution
+      ---
+      duration_ms: 12.996623
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:172:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+
+        422 !== 200
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 200
+      actual: 422
+      operator: 'strictEqual'
+      stack: |-
+        configureSyntheticRuntime (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:170:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:173:23)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:172:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: duplicate settlement hash freezes durable runtime and no retry executes after restart
+    not ok 14 - duplicate settlement hash freezes durable runtime and no retry executes after restart
+      ---
+      duration_ms: 10.530835
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:184:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+
+        422 !== 200
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 200
+      actual: 422
+      operator: 'strictEqual'
+      stack: |-
+        configureSyntheticRuntime (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:170:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:185:23)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:184:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: unknown fake execute persists freeze and clears alarm across restart without replay
+    not ok 15 - unknown fake execute persists freeze and clears alarm across restart without replay
+      ---
+      duration_ms: 11.901439
+      type: 'test'
+      location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:200:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+
+        422 !== 200
+
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 200
+      actual: 422
+      operator: 'strictEqual'
+      stack: |-
+        configureSyntheticRuntime (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:170:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:201:23)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:200:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: confirmed receipt does not suppress the later independent-audit deadline
+    ok 16 - confirmed receipt does not suppress the later independent-audit deadline
+      ---
+      duration_ms: 1212.484753
+      type: 'test'
+      ...
+    1..16
+not ok 5 - real workerd SQLite DO transactions, alarms and restart (synthetic ledger, no transfers)
+  ---
+  duration_ms: 8023.596751
+  type: 'test'
+  location: '/workspace/work/ltzzz-pr277-audit-repair-20261028/scripts/tests/payment-durable-store.integration.test.mjs:44:1'
+  failureType: 'subtestsFailed'
+  error: '7 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..5
+# tests 21
+# suites 0
+# pass 13
+# fail 8
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8160.606275

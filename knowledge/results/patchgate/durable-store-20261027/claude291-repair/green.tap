@@ -1,0 +1,137 @@
+TAP version 13
+# Subtest: alarm chooses earliest outstanding obligation across all payments
+ok 1 - alarm chooses earliest outstanding obligation across all payments
+  ---
+  duration_ms: 1.507713
+  type: 'test'
+  ...
+# Subtest: already frozen state has no recurring hot alarm; deadlines stay in the ledger
+ok 2 - already frozen state has no recurring hot alarm; deadlines stay in the ledger
+  ---
+  duration_ms: 0.681304
+  type: 'test'
+  ...
+# Subtest: malformed identity, dates and ledger cannot silently delete a deadline
+ok 3 - malformed identity, dates and ledger cannot silently delete a deadline
+  ---
+  duration_ms: 1.651985
+  type: 'test'
+  ...
+# Subtest: in-memory and KV substitutes are refused; key matches the runtime state schema
+ok 4 - in-memory and KV substitutes are refused; key matches the runtime state schema
+  ---
+  duration_ms: 0.23244
+  type: 'test'
+  ...
+# Subtest: real workerd SQLite DO transactions, alarms and restart (synthetic ledger, no transfers)
+    # Subtest: new ledger starts disabled and without a scheduled alarm
+    ok 1 - new ledger starts disabled and without a scheduled alarm
+      ---
+      duration_ms: 434.406452
+      type: 'test'
+      ...
+    # Subtest: parallel writes serialize and later obligations cannot postpone earlier ones
+    ok 2 - parallel writes serialize and later obligations cannot postpone earlier ones
+      ---
+      duration_ms: 150.006007
+      type: 'test'
+      ...
+    # Subtest: transaction exception rolls back both ledger and alarm
+    ok 3 - transaction exception rolls back both ledger and alarm
+      ---
+      duration_ms: 71.358282
+      type: 'test'
+      ...
+    # Subtest: alarm-write failure rolls back the reservation before it can be used
+    ok 4 - alarm-write failure rolls back the reservation before it can be used
+      ---
+      duration_ms: 19.858302
+      type: 'test'
+      ...
+    # Subtest: scheduler acknowledges only the exact committed reservation
+    ok 5 - scheduler acknowledges only the exact committed reservation
+      ---
+      duration_ms: 36.300978
+      type: 'test'
+      ...
+    # Subtest: receipt advances alarm to audit; full review clears it without losing state
+    ok 6 - receipt advances alarm to audit; full review clears it without losing state
+      ---
+      duration_ms: 49.793755
+      type: 'test'
+      ...
+    # Subtest: actual automatic alarm invokes runtime and durably freezes overdue receipt
+    ok 7 - actual automatic alarm invokes runtime and durably freezes overdue receipt
+      ---
+      duration_ms: 234.569707
+      type: 'test'
+      ...
+    # Subtest: restart preserves frozen history and does not reset a live reservation
+    ok 8 - restart preserves frozen history and does not reset a live reservation
+      ---
+      duration_ms: 5284.53261
+      type: 'test'
+      ...
+    # Subtest: consumed early alarm is rearmed even when runtime makes no ledger write
+    ok 9 - consumed early alarm is rearmed even when runtime makes no ledger write
+      ---
+      duration_ms: 40.085416
+      type: 'test'
+      ...
+    # Subtest: alarm handler finally rearms when runtime handler throws
+    ok 10 - alarm handler finally rearms when runtime handler throws
+      ---
+      duration_ms: 26.597456
+      type: 'test'
+      ...
+    # Subtest: reconcile restores an accidentally deleted earliest alarm and leaves frozen alarm empty
+    ok 11 - reconcile restores an accidentally deleted earliest alarm and leaves frozen alarm empty
+      ---
+      duration_ms: 59.604478
+      type: 'test'
+      ...
+    # Subtest: constructor reconstructs missing alarm from an existing ledger after restart
+    ok 12 - constructor reconstructs missing alarm from an existing ledger after restart
+      ---
+      duration_ms: 330.377423
+      type: 'test'
+      ...
+    # Subtest: runtime submit commits reservation and real durable audit scheduling before fake execution
+    ok 13 - runtime submit commits reservation and real durable audit scheduling before fake execution
+      ---
+      duration_ms: 64.997723
+      type: 'test'
+      ...
+    # Subtest: duplicate settlement hash freezes durable runtime and no retry executes after restart
+    ok 14 - duplicate settlement hash freezes durable runtime and no retry executes after restart
+      ---
+      duration_ms: 5341.206329
+      type: 'test'
+      ...
+    # Subtest: unknown fake execute persists freeze and clears alarm across restart without replay
+    ok 15 - unknown fake execute persists freeze and clears alarm across restart without replay
+      ---
+      duration_ms: 243.489256
+      type: 'test'
+      ...
+    # Subtest: confirmed receipt does not suppress the later independent-audit deadline
+    ok 16 - confirmed receipt does not suppress the later independent-audit deadline
+      ---
+      duration_ms: 1242.050945
+      type: 'test'
+      ...
+    1..16
+ok 5 - real workerd SQLite DO transactions, alarms and restart (synthetic ledger, no transfers)
+  ---
+  duration_ms: 14238.450175
+  type: 'test'
+  ...
+1..5
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14358.666223

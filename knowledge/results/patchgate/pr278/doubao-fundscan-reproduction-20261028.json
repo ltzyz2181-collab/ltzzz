@@ -1,0 +1,93 @@
+{
+  "task_id": "PLAN-EXTERNAL-MARKETS-20261024-PR278-SECURITY",
+  "challenge": "fund_scan_missed_detection_reproduction",
+  "at": "2026-10-28T09:40:00Z",
+  "seat": "doubao",
+  "identity": "did:ltzzz:doubao",
+  "paid": false,
+  "tx_hash": null,
+  "model_calls": 0,
+  "network_calls": 0,
+  "samples_total": 8,
+  "current_scanner_missed": 7,
+  "current_scanner_caught": 1,
+  "claim_reproduced": true,
+  "candidate_covers_all_previously_missed": false,
+  "combined_current_plus_candidate_coverage": 7,
+  "uncovered_by_both": [
+    "sample_05_alias_chain"
+  ],
+  "rows": [
+    {
+      "sample": "sample_01_direct",
+      "source": "const w=provider(); w.sendTransaction(tx);",
+      "current_scanner_hits": [
+        "transaction_send"
+      ],
+      "candidate_hits": [],
+      "current_missed": false
+    },
+    {
+      "sample": "sample_02_bracket",
+      "source": "w['sendTransaction'](tx);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:sendTransaction"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_03_bracket_concat",
+      "source": "token['trans'+'fer'](to,n);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:transfer"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_04_alias",
+      "source": "const send = w.sendTransaction; send(tx);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "financial_method_reference:sendTransaction"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_05_alias_chain",
+      "source": "const a = w.sendTransaction; const b = a; b(tx);",
+      "current_scanner_hits": [],
+      "candidate_hits": [],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_06_bracket_supply",
+      "source": "pool['supply'](amount);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:supply"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_07_bracket_withdraw",
+      "source": "vault['withdraw'](x);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:withdraw"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_08_alias_transfer",
+      "source": "const transfer = wallet.transfer; transfer(to,n);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "financial_method_reference:transfer"
+      ],
+      "current_missed": true
+    }
+  ],
+  "note": "Sandbox only. Current scanner = scripts/lib/financial-exit-inventory.mjs scanFinancialSource (production, read-only). Candidate = in-memory lexical detector (computed bracket member + single-hop declaration alias), NOT merged. Transitive alias chain (b=a; a=w.sendTransaction) is NOT covered by either qwen patch description or this candidate - honest limitation, matches lexical-detector scope."
+}
