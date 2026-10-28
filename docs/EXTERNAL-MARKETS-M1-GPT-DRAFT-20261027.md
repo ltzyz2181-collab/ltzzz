@@ -1,6 +1,6 @@
 # GPT 内部工程草稿：M1 零押金、零转出练手
 
-类型：方案草稿，非 Claude 的任务清单或批准。原任务 `PLAN-EXTERNAL-MARKETS-20261024`；Claude 的正式规划入口仍为 `ops/dispatch/PLAN-EXTERNAL-MARKETS-20261024-M1.md`，等待其经 PR 交付，本文不占用该路径。最新 owner 已授权 M1 零资金练手，旧 M0-only 文字不是新的个人审批门。
+类型：方案草稿，非 Claude 的任务清单或批准。原任务 `PLAN-EXTERNAL-MARKETS-20261024`；Claude 的正式规划已由主线 PR #275 采用，入口为 `ops/dispatch/PLAN-EXTERNAL-MARKETS-20261024-M1.md`；本文仍只记录 GPT 的适配器设计，不占用该路径或冒充 Claude 复审。最新 owner 已授权 M1 零资金练手，旧 M0-only 文字不是新的个人审批门。
 
 ## 已核实的外部练手入口
 
@@ -39,11 +39,13 @@
 
 `config/external-market-m1.json` 默认关闭。`scripts/lib/external-market-m1.mjs` 没有钱包、付款、押金、付费订单、签名或任意 POST 方法：
 
-1. `registerTeam` 只允许固定官方邮箱和固定报名主题。现有已认证项目邮箱必须从连接元数据核验；先查原 Sent 邮件，再在持久串行事务预留一次。并发、超时或未知状态不自动重发，不换邮箱/handle 规避去重。
-2. `existingApplicationFromReadback` 把当前主线原报名回执与**真实 Gmail Sent 回读**映射到键 `PLAN-EXTERNAL-MARKETS-20261024:2hives:team-application:v1`，防止此后部署制造第二封报名。仓库内 `verified:true` 字样不能代替真实 readback。
-3. `prepareFreeTrialDelivery` 只准备回复，不发送。必须有真实分配、明确零费用/零押金/无转出/无签名、未过截止日期、正文与主题均匹配私密 reference、精确工件哈希、另一个实际提供商的绑定复核以及材料处理许可。准备好不等于提交或接受。
-4. `inspectM1PublicReadiness` 只有三个固定 GET，不自动跟随重定向，不接收任意远程指令。`isClawTaskExplicitlyFree` 不会用全局 free-only 标志覆盖矛盾的 stake=10 字段；缺失费用字段不会默认为零。
+1. `registerTeam` **不再发送任何申请**。原任务已存在邮件 `1a17cf44f3bdf73e`，部署端必须传入主线原报名回执，且 message/thread ID、原 Task ID、平台/收件人/主题均固定。初始化在同一个持久键预置“已知申请、待回读”；邮箱搜索延迟、not_found、换 handle、重复运行或重启都不能变成再次报名的理由。服务不持有 sendMail 能力。联系人邮箱仅用于校验原意图/形成草稿，持久状态只保存邮箱哈希，不对外另发。
+2. `reconcileApplication` 是显式只读对账入口：只读取上述已知 message/thread，核对当前已认证邮箱、Sent 标签、收件人、主题并重算邮件正文摘要；再原子更新同一键。历史 `reserved_before_application_send` 没有 message ID 的行会显式标为 `send_unknown`，回读成功后可补同一封原邮件。失败只留待对账，不发送、不换账号、不重试付款。
+3. 旧 `prepareFreeTrialDelivery` 的调用方事实对象入口已拒绝。新 `createM1DeliveryPreparer` 在部署时一次性注入受信读取器，公开调用只接 4 个 opaque ID；不能传包正文、认证标志、许可布尔、提供商、自报哈希或 now。部署端从真实已认证邮件/私有执行器记录读取：原始任务包字节及提取字段、逐供应商许可原文与包绑定、原生作者响应记录、另一实际供应商的复核记录。所有字节摘要在本库重算，输入快照在跨 await 前复制，截止时间在所有读取结束后用部署时钟再检查。准备结果只在内存返回官方回信内容与证据摘要，不发送、不代表平台接受，也不写私密材料到文件。
+4. 受信读取器是**部署端能力契约**，不是一组可由 HTTP/模型请求者自填的回调。其真实 Gmail 认证结果提取、包字段解析、私有执行器日志来源与删除策略尚未部署/验收，本补丁不把 JSON 的 `metadata_source` 字符串包装成密码学身份。本库通过固定读入链减少调用方自述；上线仍须对实际适配器和读回证据独立复核。现有 76 项本地结果全部是合成夹具。
+5. 申请草稿只接受固定能力词表、LTZZZ 自有 GitHub 样本 URL，摘要拒绝额外 URL/邮箱、密钥特征与不实“已接受/收入”类断言；原业务要求的 operator 邮箱是明确的对外联系方式，仅在原申请通道使用，不能当作公开回执字段。模式检测无法识别任意无特征秘密，不声称完整 DLP。
+6. `inspectM1PublicReadiness` 仍只有三个固定 GET，不自动跟随重定向；读取原始响应流时限制为 32768 字节并取消超限流，不再调用无界 `response.text()`，摘要与字节数按原始响应字节计算而非有损 UTF-8 重编码。`isClawTaskExplicitlyFree` 不会用全局 free-only 标志覆盖矛盾的 stake=10 字段；缺费用字段不会默认为零。
 
-持久存储、已连接邮箱/Sent 回读和发送是部署端能力，不是给模型/HTTP 请求者提供的回调。代码本身尚未接入云端无人值守邮件运行时；本次 45 项验证全是离线合成测试，不声称真实自动接单或云部署。无 API Key 需要另建；未来若 HTTP API 正式开放，token 必须进现有受管 Secret，不写本仓库/聊天/日志；先存 token 再只提交其摘要，未知报名结果只对账。
+本次没有连接真实邮箱或提供商，没有平台试题、许可、交付、接受、收入或云部署。API Key 不需要为本补丁另建；没有任何 Secret 值被读取。工作流只运行离线测试、contents:read、无 Secret，checkout/setup-node 固定到官方 v4.2.2/v4.4.0 标签当前对应的完整提交；文档/回执和新增审计回归文件也纳入触发范围。
 
-Claude 正式 M1 规划与工程复核通过后，再登记实际运行入口、受管凭据作用域和运行回执。付款开关、托管放款和 M2 不受此免费练手任务启用。
+Claude 正式 M1 规划已采用；本修订仍待 Claude 对新 head 复审。工程复核通过后，再登记实际运行入口、受管凭据作用域和运行回执。付款开关、托管放款和 M2 不受此免费练手任务启用。

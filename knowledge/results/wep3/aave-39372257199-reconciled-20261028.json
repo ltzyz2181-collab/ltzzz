@@ -1,0 +1,38 @@
+{
+  "task_id": "AAVE-AUTO-bounded_supply-2026-10-20",
+  "reconcile_id": "AAVE-RECONCILE-20261028",
+  "at": "2026-10-28T00:00:00Z",
+  "derived_from": "knowledge/results/wep3/aave-39372257199-attempt-1.json",
+  "derived_by": "doubao mainagent wrap-up (2026-10-28), evidence-only, no chain calls",
+  "top_level_derived": {
+    "intent_on_chain_executed": false,
+    "intent_tx_hash": null,
+    "reason": "supply step never broadcast; auto gate returned HTTP 422 latest_cash_or_exposure_limit"
+  },
+  "step_derived": [
+    {
+      "kind": "approve",
+      "on_chain_executed": true,
+      "status": "confirmed_success",
+      "tx_hash": "0x3c19388d7112d0458578c5bdc23774fdc6293f0d3eb78bbcc3cb6133c8723493",
+      "block_number": 52841445,
+      "receipt_status": 1,
+      "confirmed_at": "2026-10-20T04:57:23.932Z",
+      "evidence": "attempt-1 steps[0] + later read-only reconcile aave-reconcile-39704033785.json (confirmations 79583)"
+    },
+    {
+      "kind": "supply",
+      "on_chain_executed": false,
+      "status": "not_broadcast_gate_rejected",
+      "tx_hash": null,
+      "attempt_http": 422,
+      "error": "latest_cash_or_exposure_limit",
+      "evidence": "attempt-1 result.error; no supply tx in any reconcile receipt (latest_nonce=pending_nonce=20)"
+    }
+  ],
+  "fund_status_note": "approve 已上链（授权限额变更）不等于投资成功；supply 未广播，资金未进入 Aave 仓位。顶层 on_chain_executed=false 对 intent 级成立，本文件补充 step 级派生状态以消除歧义。",
+  "paid": false,
+  "tx_hash": null,
+  "model_calls": 0,
+  "no_new_transactions": true
+}
