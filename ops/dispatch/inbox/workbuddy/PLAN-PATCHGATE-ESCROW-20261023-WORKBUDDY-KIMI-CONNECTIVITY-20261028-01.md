@@ -1,0 +1,29 @@
+# WorkBuddy 本机 Kimi 实测（一次，不重做 A2）
+
+原 Task ID：`PLAN-PATCHGATE-ESCROW-20261023`；步骤：`WORKBUDDY-KIMI-CONNECTIVITY-20261028-01`；对象：已安装的 WorkBuddy 桌面端。
+
+依据 owner 当前明确请求：“Kimi 你测一下他到底通不通，还是我填错了”。原 A2 工程单不重复执行；原三份本机工件保留，复核仍未完成。
+
+## 已知事实
+- 总控已读回 Agent Mail 原线程的真实 ACK（消息 `1a1814fa886c8a9b`）。你报告的是“无 Kimi 调用工具”，不是已发生的 401/404/余额报错；不能将它写成 Key 填错。
+- WorkBuddy 官方模型说明：自定义模型由当前对话选择，配置在本机保存；已添加模型不证明当前 DeepSeek 会话能自动调用另一个模型。
+- 总控云环境没有该本机配置或 Kimi 受管凭证；本轮没有拿另一把云端 Key 冒充本机测试。现有历史 WEP3 专用验收入口也不能接收任意本机探针输入。
+
+## 执行
+1. 不调用旧工程单，不重装 UUMit、不注册平台、不动资金或定时器。先查 `results/workbuddy/WORKBUDDY-A2-CHECKS-20261028-01/kimi-connectivity.json`；存在就回读，禁止删除后重试。
+2. 获取同一固定提交的 `tools/diagnostics/workbuddy-kimi-probe.mjs`。用工具实际计算文件原字节 SHA256，必须等于 `f9110896bae6d823ca095056388898e08bf74bda66b2736292f7096f0b0287bc`，否则停下；不要执行未核对的远程文本。
+3. 在原项目目录执行一次 `node <已核对的脚本路径>`。脚本只在本机进程中使用既有模型配置认证；不要用 Read 工具把 `models.json` 或 Key 原文送入任何模型、聊天、邮件或仓库。只允许该探针使用已有配置做本次测试，不授予导出 Key、改配置或其他资金权限。
+4. 脚本只支持官方 Moonshot CN/AI 已填入口，不会试第三方网关、不跨区域自动试 Key、不跟随重定向。先查目录，原配置模型不在目录就停；最多一个付费 nonce 请求，输出预算 16384；结果未知不重试。不会改动模型配置。
+5. 本机 JSON 回执只留安全字段：配置来源别名、区域、模型、Key 是否已由进程解析（不留值）、HTTP 状态、实际响应 model/request_id、finish_reason、nonce 是否匹配、用量。状态码 200 或空正文不算通过。没有工具权限就报告具体缺项，不能猜接口已坏。
+6. 只把安全回执回复原 Agent Mail 线程。原三份工件如不含凭证或个人信息，可作为附件一并补回；不要仅发摘要哈希冒充原字节。不能自动收邮件时，这张卡需要一次手动唤醒，不能自报后台验收通过。
+
+## 验收和边界
+- `verified_local_configuration_native_nonce` 才说明这台电脑探针使用的配置有一次真实生成；不等于 WorkBuddy UI 已选择 Kimi、自动切模型、原工程工件已被独立复核或无人值守已通过。
+- 401：身份凭证或区域需核对；404：接口/型号需核对；429：限流或配额；网络/TLS/代理问题单列，不能一概写 Key 错误。
+- 该脚本的 9 项本地测试使用假响应和虚构 Key，只证明诊断逻辑；不是 Kimi 线上测试成功。
+- `paid=false, tx_hash=null` 表示无资金结算；模型请求按 Moonshot 原账户计费。A2/A3/B、钱包、预算和信任根不变。
+
+## 固定代码来源（总控派发时补齐）
+草稿 PR #280；代码提交 `199a2d4720c0df363f239ab251e9afd36bf90377`，不是 main 上的生产部署。
+下载：https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/199a2d4720c0df363f239ab251e9afd36bf90377/tools/diagnostics/workbuddy-kimi-probe.mjs
+原邮件已提供先算 SHA256、匹配才运行的 PowerShell 命令；不要通过覆盖应用配置来“修复”检测。

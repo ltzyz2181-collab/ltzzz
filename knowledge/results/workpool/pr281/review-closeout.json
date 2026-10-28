@@ -1,0 +1,339 @@
+{
+  "task_id": "PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028",
+  "reviewed_head": "47ad8e6557320c756dde84d31258f18333f8708e",
+  "reviews": [
+    {
+      "step": "POLICY",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-POLICY.json",
+      "run_id": "40667797770",
+      "request_id": "f4235be6-d611-94bc-8202-82484e0ed5a0",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 3517,
+      "output_sha256": "2599cb30d3a34a6a79c148452e937bd37fc345a37023836a4874e7fc18367b8d",
+      "original_verdict": "REJECT_WITH_FINDINGS",
+      "original_findings": [
+        {
+          "severity": "CRITICAL",
+          "location": "validatePreflight → 'new_personal_or_five_signature_gate_not_authorized'",
+          "reason": "The validation explicitly rejects any approval_kind not in the allowed list, including 'personal' or 'five_signature' — but the core policy (§2, §5) states: '五签正式治理本轮仍未启用, 不登记或更换签名人, 不冒充已具备签名能力' and '拒绝其中新增的个人审批门'. However, the error message string 'new_personal_or_five_signature_gate_not_authorized' falsely implies these gates are *prohibited by authorization*, whereas per owner instruction they are *not yet enabled* — a factual mischaracterization. This conflates 'not active' with 'not authorized', violating §2 (instruction归属) and §5 (五签未启用), and risks downstream systems treating this as a policy violation rather than a feature gate status.",
+          "fix": "Replace error string with 'five_signature_or_personal_approval_gate_inactive' and update validation to allow 'five_signature' and 'personal' as valid enum values (per schema), while retaining enforcement that they trigger no-op/no-escalation behavior. The rejection logic must reflect status ('inactive'), not authority ('unauthorized')."
+        },
+        {
+          "severity": "HIGH",
+          "location": "routeTask → 'external_task_uses_its_existing_admission_policy'",
+          "reason": "The guard `if (task.source_kind !== 'internal') return controller('external_task_uses_its_existing_admission_policy');` assumes all non-internal tasks defer to 'existing admission policy', but the core观 §3 and §6 require explicit platform-level verification for external identity/model/time/version. This branch bypasses all subsequent validations (e.g., safePath, seat check, deadline), failing §3's '真实闭环' requirement to record *each stage* and §6's '平台强制验证如实列为外部条件'. No evidence of external platform verification is collected or asserted here.",
+          "fix": "Refactor to preserve routing intent but require at minimum: (1) presence of `record.external_verification` object containing `platform`, `verified_at`, and `proof_hash` (SHA256 of signed attestation); (2) validation that `proof_hash` matches expected digest; (3) retain `owner_confirmation_required: true` for all non-internal routes until verified. Do not short-circuit preflight checks."
+        },
+        {
+          "severity": "MEDIUM",
+          "location": "taskDigest function",
+          "reason": "`taskDigest` sorts keys and stringifies — but JSON.stringify() of objects with undefined/null/NaN/Date/Function values yields inconsistent or lossy output (e.g., Date → string, undefined → excluded, NaN → 'null'). This violates §3's '身份、模型、时间、版本与哈希以实际执行器证据为准' and breaks reproducible hashing for tasks containing `deadline_at` (Date string), `budget_usdc` (numeric string), or optional fields. SHA256 must be computed over deterministic, normalized byte representation — not fragile JSON.stringify().",
+          "fix": "Replace `JSON.stringify(Object.fromEntries(...))` with a deterministic canonicalization: use `structuredClone` (Node 17+) or strict JSON-safe serialization (e.g., omit non-serializable keys, coerce numbers to strings, enforce ISO date strings, reject unsupported types). Add runtime assertion that all task values are JSON-serializable primitives before hashing."
+        },
+        {
+          "severity": "MEDIUM",
+          "location": "safePath regex → `/^[/.]|[\\\\\\u0000-\\u001f%?#]/`",
+          "reason": "The regex incorrectly forbids paths starting with `/` (absolute paths), but Git repository paths are always relative (e.g., 'src/index.ts'), and `safePath` is documented to validate 'repository paths'. Also, `\\u0000-\\u001f` includes space (`\\u0020`) — but spaces are permitted in GitHub paths (e.g., 'docs/user guide.md') and `safePath`'s own doc says 'value.split('/').every(v => v && v !== '.' && v !== '..' && v !== '.git')', implying space is allowed in segment names. The current regex bans valid paths containing spaces or starting with dot (e.g., '.github/workflows/ci.yml' is rejected despite `.github` being legitimate).",
+          "fix": "Revise regex to: `/^[.][^/]*$|^[^/.\\u0000-\\u001f%?#]+(?:\\/[^/.\\u0000-\\u001f%?#]+)*$/` — allowing dot-prefixed segments (`.git`, `.github`) but rejecting root `.`/`..`, null/control chars, and unsafe URL chars. Explicitly permit space, underscore, hyphen, and alphanumerics within segments."
+        },
+        {
+          "severity": "LOW",
+          "location": "parseTask → `matches[0][1].length > 16000`",
+          "reason": "Hardcoded 16KB limit lacks justification in core观 or scope. §3 requires '未知写 null', yet this throws opaque `Error('one_bounded_task_JSON_required')` without indicating whether bound is policy-mandated, memory-constrained, or arbitrary. Violates §7's '决策前写公开的目标、依据、快捷路径风险、未知项及验证方式'.",
+          "fix": "Replace magic number with named constant `MAX_TASK_JSON_BYTES = 16384` and add comment citing source: e.g., 'aligned with GitHub PR comment size limit and Node.js V8 string heap safety margin'. Preserve throw but enrich message with `max_bytes:${MAX_TASK_JSON_BYTES}`."
+        }
+      ]
+    },
+    {
+      "step": "LEASE",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-LEASE.json",
+      "run_id": "40667970952",
+      "request_id": "c3a4c668-3e87-9b6b-a1ec-8218c73acaaf",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 2397,
+      "output_sha256": "0f255abbcd434f62bd7a869ca8d5b2e1782ca3231936f9b879dc94f6e47c3630",
+      "original_verdict": "REVIEW_PENDING",
+      "original_findings": [
+        {
+          "severity": "CRITICAL",
+          "location": "leaseStatus: line 8",
+          "reason": "Uncontrolled fallback to 'available_expired' when effect_state !== 'started_unknown' — but 'available_expired' is *not* a valid terminal state for lease reconciliation logic; it bypasses required independent review and business acceptance per decision_record.unverified. This contradicts the explicit policy: 'Independent review and business acceptance remain pending'.",
+          "fix": "Replace 'available_expired' with 'reconciliation_required' in the final return clause, or introduce a new guarded state (e.g., 'expired_pending_review') that preserves the reconciliation requirement and aligns with decision_record.unverified and independent_check semantics."
+        },
+        {
+          "severity": "HIGH",
+          "location": "acquireLease: line 24",
+          "reason": "expires_at computed as Math.min(now + policy.lease_seconds * 1000, Date.parse(task.deadline_at)) — but Date.parse(task.deadline_at) may be NaN (unvalidated), causing expires to become NaN → then new Date(NaN).toISOString() yields 'Invalid Date', violating ISO 8601 contract and breaking downstream parsing (e.g., leaseStatus relies on Date.parse(expires_at)). No validation of task.deadline_at before use.",
+          "fix": "Add pre-check: if (!Number.isFinite(Date.parse(task.deadline_at))) throw Error('invalid_task_deadline'); before computing expires."
+        },
+        {
+          "severity": "MEDIUM",
+          "location": "acquireLease: line 27",
+          "reason": "state.decision_record contains duplicate core_view_sha256 and source_commit fields (also present top-level). Redundant embedding violates single-source-of-truth principle and risks inconsistency during serialization/deserialization or audit replay. Not prohibited, but undermines CAS integrity guarantees implied by Git ref and coreHash binding.",
+          "fix": "Remove core_view_sha256 and source_commit from decision_record; rely solely on top-level state fields for canonical values. Document that decision_record is an *audit rationale*, not a data container."
+        },
+        {
+          "severity": "MEDIUM",
+          "location": "updateLease: line 17",
+          "reason": "lateResult condition includes Date.parse(old.expires_at) <= now — but Date.parse may return NaN, making comparison always false (coerced to false), silently suppressing late submission handling. Missing NaN guard breaks late-result detection logic.",
+          "fix": "Refactor lateResult to first validate expiry: const expiry = Date.parse(old.expires_at); if (!Number.isFinite(expiry)) return {updated:false,status:'invalid_lease_expiry'}; then use expiry <= now."
+        },
+        {
+          "severity": "LOW",
+          "location": "updateLease: line 23",
+          "reason": "safePath(artifact?.path) and HASH.test(artifact?.sha256) are used without prior null/undefined checks on artifact — if artifact is null/undefined, safePath(null) and HASH.test(undefined) may throw or return unexpected truthiness, masking root cause. Not crash-guaranteed, but reduces debuggability.",
+          "fix": "Add early guard: if (!artifact || typeof artifact !== 'object') return {updated:false,status:'missing_artifact'};"
+        }
+      ]
+    },
+    {
+      "step": "TRANSPORT",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-TRANSPORT.json",
+      "run_id": "40668137794",
+      "request_id": "638fd574-01a1-93f9-bd79-f43e38f6ee0d",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 3113,
+      "output_sha256": "bb6b119f7e3823b3de15f2dabe54d117db63f08820befe83a2dabb4ae680fa03",
+      "original_verdict": "REJECT",
+      "original_findings": [
+        {
+          "severity": "CRITICAL",
+          "location": "WorkpoolGitHubStore.compareAndSwap → artifact validation logic",
+          "reason": "Artifact path validation `artifact.path !== expected` is **syntactically unreachable** due to prior strict equality check on `artifact.path` — but more critically: the code **does not verify that `expected` path is safe against directory traversal** (e.g., `key='..%2F..%2Fsecret'` could yield `knowledge/results/workpool/artifacts/../../secret.json`). Though `key` is validated as hex64 in `names()`, `state.lease_id` is only regex-validated (`/^[a-f0-9-]{36}$/`) and *not* sanitized for filesystem/Git path safety; combined with unescaped interpolation into `path`, this enables arbitrary path injection in `artifact.path`. GitHub API `contents/` endpoints are path-traversal resistant *if* paths are canonical, but `git/trees` POST accepts arbitrary `path` strings — allowing write to unintended locations (e.g., `.github/workflows/pwn.yml`).",
+          "fix": "Reject any `state.lease_id` containing `..`, `/`, `\\`, or null bytes *before* interpolation; normalize and validate full `expected` path against allowlist pattern (e.g., `^knowledge/results/workpool/artifacts/[a-f0-9]{64}/[a-f0-9-]{36}\\.json$`). Use `path.posix.join()` + `path.posix.relative()` guard if constructing paths from untrusted inputs."
+        },
+        {
+          "severity": "HIGH",
+          "location": "WorkpoolGitHubStore.constructor",
+          "reason": "Hardcoded repository `'ltzyz2181-collab/ltzzz'` violates principle of least privilege and prevents reuse across tenants or forks. This contradicts `scope=qianwen-queue:PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-TRANSPORT`, which requires provider independence and upstream-provider-determined isolation. Also, `baseCommit`/`baseTree` validation uses loose regex (`/^[a-f0-9]{40}$/`) but does not confirm they exist *in the target repo* — enabling TOCTOU via race between constructor and later `api()` calls.",
+          "fix": "Remove hardcoded repo; require `repository` as non-optional param and validate existence via `api('')` (repo metadata) at construction time. Add `await this.api(`commits/${baseCommit}`)` and `await this.api(`git/trees/${baseTree}`)` during init to confirm immutability and presence."
+        },
+        {
+          "severity": "MEDIUM",
+          "location": "WorkpoolGitHubStore.read → base64 decoding",
+          "reason": "Buffer.from(..., 'base64') throws on invalid input, but error message `'invalid_lease_encoding'` obscures root cause (e.g., padding error, illegal chars). No defensive `try/catch` or encoding normalization (e.g., stripping whitespace, handling URL-safe base64 variants), risking DoS or inconsistent lease rejection under malformed content.",
+          "fix": "Wrap `Buffer.from(file.data.content,'base64')` in try/catch; normalize input by trimming whitespace and replacing `-`/`_` with `+`/`/` before decode if needed; rethrow with original error context."
+        },
+        {
+          "severity": "MEDIUM",
+          "location": "WorkpoolGitHubStore.compareAndSwap → CAS nonce generation",
+          "reason": "`randomUUID()` is cryptographically secure *in Node.js ≥19*, but `cas_nonce` is embedded in persisted state without integrity protection (e.g., signed hash over `{state, cas_nonce}`). An attacker who can observe or manipulate lease state (e.g., via compromised fetcher or MITM) could replay stale `previous.tree`/`previous.head` with forged `cas_nonce`, bypassing atomicity guarantees.",
+          "fix": "Derive `cas_nonce` deterministically from `state` + secret key (e.g., HMAC-SHA256(key, JSON.stringify(state))) to bind it cryptographically to lease contents — or move to server-side CAS enforcement via GitHub’s conditional `If-Match` headers on ref updates (requires ETag tracking)."
+        },
+        {
+          "severity": "LOW",
+          "location": "Workflow YAML → claim job permissions",
+          "reason": "Claim job grants `contents: write` globally, but only needs write access to `refs/heads/workpool/leases/*` and `contents/knowledge/results/workpool/`. Over-permissioned tokens increase blast radius if script misbehaves or is hijacked.",
+          "fix": "Use fine-grained token with scoped permissions (e.g., `contents: write` limited to `knowledge/results/workpool/**` and `refs/heads/workpool/leases/**`) — or switch to GitHub Apps with granular repository permissions."
+        }
+      ]
+    },
+    {
+      "step": "RUNNER",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-RUNNER.json",
+      "run_id": "40668335951",
+      "request_id": "a2e8d007-ec93-94e5-b110-d76e0ac92256",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 3306,
+      "output_sha256": "0e6d6aafcc005a9ffae97e145a7d84532ae188d17c9aae9058b3f74001a35965",
+      "original_verdict": "REJECTED",
+      "original_findings": [
+        {
+          "type": "source_of_truth_violation",
+          "severity": "CRITICAL",
+          "location": "line 26-29",
+          "excerpt": "if (coreHash!==policy.core_view_sha256 || policy.requires_owner_confirmation!==false || policy.formal_five_signature_enabled!==false) throw Error('trusted_workpool_policy_mismatch');",
+          "observation": "Enforces strict core-view SHA256 and policy flags — but does NOT verify that `policy.core_view_sha256` itself originates from a trusted, five-signed source. The hash is loaded from local `config/workpool.json`, which is unattested and mutable. No signature chain, no detached sig verification, no provenance check against `CORE-VIEW.md`'s canonical signed commit.",
+          "evidence": "CORE-VIEW.md is read and hashed (line 25), yet the policy file's integrity is assumed — not cryptographically anchored to any signature or ledger. This breaks the 'five-sign' trust model: policy enforcement depends on an unverified local JSON."
+        },
+        {
+          "type": "lease_acquisition_logic_flaw",
+          "severity": "HIGH",
+          "location": "line 67-78",
+          "excerpt": "if (mode!=='observe' && task.kind==='repo_readonly') { const claim=await acquireLease(...); ... if (claim.acquired && task.kind==='repo_readonly') { ... } }",
+          "observation": "Lease acquisition (`acquireLease`) is performed *before* validating whether the task is authorized for execution under current mode and policy — yet `acquireLease` may mutate state (e.g., write lease record). A malformed or unauthorized `repo_readonly` task could trigger premature lease reservation without full policy gate checks (e.g., seat eligibility, provider constraints, or `task_id` scope alignment).",
+          "evidence": "`acquireLease` is called unconditionally inside the `mode !== 'observe'` branch, but subsequent logic (e.g., `updateLease`, artifact submission) assumes success *and* correctness — with no rollback or preflight authorization guard beyond `task.kind` string match."
+        },
+        {
+          "type": "artifact_content_integrity_gap",
+          "severity": "MEDIUM",
+          "location": "line 81-87",
+          "excerpt": "const content=JSON.stringify(record,null,2)+'\\n'; const artifact={path:...,sha256:sha256(content),content};",
+          "observation": "Artifact SHA256 is computed over *formatted* JSON (`null,2`) + trailing newline — but downstream consumers (e.g., independent reviewers, deployers) are not guaranteed to use identical serialization (whitespace, key order, line endings). This violates byte-for-byte reproducibility required for deterministic verification.",
+          "evidence": "No canonicalization (e.g., RFC 8785 CWT/JSONC, or sorted deterministic JSON) is applied. `JSON.stringify(record)` is non-canonical by spec; whitespace and ordering are implementation-dependent. SHA256 must bind to stable bytes — not aesthetic output."
+        },
+        {
+          "type": "execution_provider_ambiguity",
+          "severity": "MEDIUM",
+          "location": "line 83",
+          "excerpt": "execution_provider:'github_actions'",
+          "observation": "`execution_provider` is hardcoded as `'github_actions'`, but the actual runtime environment is not verified: no check for `GITHUB_ACTIONS === 'true'`, no validation of runner identity (e.g., `GITHUB_RUNNER_NAME`, `GITHUB_WORKFLOW`), and no attestation of isolation or provenance. This label is asserted, not derived.",
+          "evidence": "The field appears in `record` (line 83) as a static string. Per LTZZZ scope definition: 'client,岗位, actual provider分开，实际上游提供商而非网关域名决定独立性'. Hardcoding bypasses actual provider identification — contradicts requirement to distinguish *actual* upstream provider."
+        },
+        {
+          "type": "financial_execution_false_negative",
+          "severity": "LOW",
+          "location": "line 97-98",
+          "excerpt": "financial_execution:false,paid:false,tx_hash:null",
+          "observation": "All executions unconditionally set `financial_execution:false` and `paid:false`, even when `task.kind === 'repo_readonly'` and artifact submission occurs. While no payment logic is present, the output schema declares these fields — and per LTZZZ directive: '配置、心跳200、mock和内部积分不能代替生产交付或真钱'. This is *correctly conservative*, but the absence of conditional financial flagging (e.g., for future billable readonly reads) risks schema misalignment if billing is later introduced without revision.",
+          "evidence": "No dynamic assignment based on task economics or provider contract terms. Not a defect *yet*, but violates forward-compatibility hygiene: financial state must be *derived*, not defaulted, where economic intent exists (e.g., `task.billing_tier`, `task.provider_rate`)."
+        },
+        {
+          "type": "unhandled_lease_state_transition",
+          "severity": "MEDIUM",
+          "location": "line 64-65",
+          "excerpt": "const current=await store.read(unitKey(task));observed.lease_status=leaseStatus(current?.state);",
+          "observation": "`leaseStatus()` is called on potentially `null`/undefined `current.state`, but `leaseStatus` implementation is not provided. If `leaseStatus` throws or returns undefined on invalid input, `observed.lease_status` becomes unstable — breaking downstream status aggregation and auditability.",
+          "evidence": "No defensive null/undefined handling around `current?.state`. Per LTZZZ: 'Memory候选保留出处/不确定性，未评审不晋升'. Unchecked state access introduces untracked uncertainty into observation output."
+        }
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "step": "POLICY",
+      "item": 1,
+      "decision": "not_adopted",
+      "reason": "Owner explicitly rejects newly forwarded personal gates and defers formal five-sign activation. Rejecting both in this workpool is authorized; admitting them as valid would contradict current scope. Original CRITICAL retained, not relabeled PASS."
+    },
+    {
+      "step": "POLICY",
+      "item": 2,
+      "decision": "rejected_owner_gate",
+      "reason": "route=controller does not execute or accept an external task. Existing platform admission still runs downstream. Adding owner_confirmation_required:true to every external task conflicts with direct owner instruction; not adopted."
+    },
+    {
+      "step": "POLICY",
+      "item": 3,
+      "decision": "not_reproduced",
+      "reason": "Entry is JSON.parse only; validated task fields are scalar strings/zero or arrays of strings. Function/undefined/NaN inputs fail parsing; changed payload digest must reconcile. No hash reserialization is used to verify stored artifacts."
+    },
+    {
+      "step": "POLICY",
+      "item": 4,
+      "decision": "not_reproduced",
+      "reason": "U+0020 is outside U+0000..001f. Spaces pass. Absolute/traversal paths are correctly rejected; dot-root paths deliberately route controller instead of being granted to low-risk pool. Negative and space tests added."
+    },
+    {
+      "step": "POLICY",
+      "item": 5,
+      "decision": "partial_hardening",
+      "reason": "Named MAX_TASK_JSON_CHARS=16000 documents resource bound, not coordinator quota or invented GitHub byte limit."
+    },
+    {
+      "step": "LEASE",
+      "item": 1,
+      "decision": "partial_hardening",
+      "reason": "Unstarted expired work may be reclaimed; submitted work never repeats and started_unknown requires reconciliation. Added unknown/malformed effect-state guard, including inconsistent released records. Did not force every harmless unstarted expiry to wait for a person."
+    },
+    {
+      "step": "LEASE",
+      "item": 2,
+      "decision": "not_reproduced_excerpt_scope",
+      "reason": "Full routeTask checks explicit-zone deadline and finite Date.parse before acquire; acquire also checks Number.isFinite(expires). Original excerpt omitted routeTask body. Invalid-deadline no-write test passes."
+    },
+    {
+      "step": "LEASE",
+      "item": 3,
+      "decision": "not_adopted",
+      "reason": "Preflight record independently binds same trusted core/base on construction. Deliberate provenance duplication is not a conflicting source; computed from same arguments, no user override."
+    },
+    {
+      "step": "LEASE",
+      "item": 4,
+      "decision": "not_reproduced",
+      "reason": "Existing lateResult already includes Number.isFinite(Date.parse(old.expires_at)); malformed expiry reconciles and is never re-leased."
+    },
+    {
+      "step": "LEASE",
+      "item": 5,
+      "decision": "not_reproduced_and_bytes_hardened",
+      "reason": "Optional chaining and safePath short-circuit safely reject missing artifact. Added missing/null tests and now require real artifact bytes before submitted status."
+    },
+    {
+      "step": "TRANSPORT",
+      "item": 1,
+      "decision": "false_traversal_claim_with_format_hardening",
+      "reason": "Key is hex64; UUID whitelist does not permit dots/slashes/backslash/percent. Tightened UUID to canonical 8-4-4-4-12 and tested injection produces no Git write. Original CRITICAL retained."
+    },
+    {
+      "step": "TRANSPORT",
+      "item": 2,
+      "decision": "not_adopted",
+      "reason": "Fixed repository is an intentional allowlist, not cross-tenant service. Git SHAs are immutable and API rejects absent objects. Replacing allowlist with arbitrary repositories expands authority."
+    },
+    {
+      "step": "TRANSPORT",
+      "item": 3,
+      "decision": "not_adopted",
+      "reason": "GitHub contents encoding must be base64; JSON parse failure halts with no lease overwrite. Buffer.from is permissive rather than guaranteed to throw; broad normalization and raw-error propagation are not needed."
+    },
+    {
+      "step": "TRANSPORT",
+      "item": 4,
+      "decision": "not_adopted",
+      "reason": "Git non-forced ref movement enforces ancestry; random nonce prevents identical sibling commits being counted twice. Deterministic HMAC nonce could recreate identical-state race. No claim of independent cryptographic model signature or MITM protection is made."
+    },
+    {
+      "step": "TRANSPORT",
+      "item": 5,
+      "decision": "residual_scope_documented",
+      "reason": "GitHub token permissions are repository-wide contents:write, not path-scoped. No such path-scoped token feature claimed. Trusted-main-only job, fixed API origin and isolated-ref store restrict this implementation; no candidate/issue code is evaluated."
+    },
+    {
+      "step": "RUNNER",
+      "item": 1,
+      "decision": "rejected_unauthorized_five_sign_requirement",
+      "reason": "Formal five-sign is explicitly deferred by owner. Trusted main policy/core bytes are remotely compared to local checkout. Adding five signatures for readonly observation contradicts current instruction."
+    },
+    {
+      "step": "RUNNER",
+      "item": 2,
+      "decision": "not_reproduced_excerpt_scope",
+      "reason": "Outer routeTask must be pool, then acquireLease independently reruns routeTask before any store mutation. Original excerpt does not include callee; no bypass demonstrated."
+    },
+    {
+      "step": "RUNNER",
+      "item": 3,
+      "decision": "not_adopted",
+      "reason": "Artifact binds actual UTF-8 bytes including newlines. Verification rereads those bytes, never reconstructs JSON. A hash need not be embedded in its own file and no canonical-reserialization claim is made."
+    },
+    {
+      "step": "RUNNER",
+      "item": 4,
+      "decision": "fixed",
+      "reason": "execution_provider now derives GitHub Actions versus authenticated GitHub client from execution environment; actual_provider/model remain null for rule-only execution. Mock test verifies local-client attribution."
+    },
+    {
+      "step": "RUNNER",
+      "item": 5,
+      "decision": "not_current_defect",
+      "reason": "Current runner has no payment or model calls and budget-zero routing. Future billing would require separate implementation and actual evidence, not speculative flag changes now."
+    },
+    {
+      "step": "RUNNER",
+      "item": 6,
+      "decision": "not_reproduced_excerpt_scope",
+      "reason": "leaseStatus(null) explicitly returns available; unknown state reconciles. Existing and new regression tests cover null and malformed states."
+    }
+  ],
+  "original_rejections_preserved": true,
+  "original_rejections_relabelled_pass": false,
+  "coordinator_adjudication": "GPT rejects new personal/five-sign gates and factual false positives, implements specific hardening; revision review pending",
+  "signature_or_deployment_admission": false,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}

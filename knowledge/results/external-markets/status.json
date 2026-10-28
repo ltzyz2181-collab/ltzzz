@@ -1,6 +1,6 @@
 {
   "task_id": "PLAN-EXTERNAL-MARKETS-20261024",
-  "at_utc": "2026-10-27T19:08:32Z",
+  "at_utc": "2026-10-28T05:53:33Z",
   "status": "M1_Claude_plan_adopted_waiting_official_reply_and_permitted_trial",
   "phase": "M1",
   "pr": 226,
@@ -172,6 +172,127 @@
       "comment_id": 6446109823,
       "status": "Claude_separate_review_requested_not_received",
       "scope": "review_request_only_no_payment_or_switch_change"
+    }
+  },
+  "M1_security_supplement": {
+    "task_id": "PLAN-EXTERNAL-MARKETS-20261024",
+    "plan": {
+      "pr": 278,
+      "head": "cf9de843516aa1abd59acf43dceadc26fa15b160",
+      "owner_instruction": "execute list, sandbox challenges and native Qwen review",
+      "merged": false
+    },
+    "execution": {
+      "pr": 279,
+      "head": "86b8c8f2a9b20282ae20bfc8d00bb21cf330b8f1",
+      "base_commit": "974d75327b3679850bd8d5ea79b987c59554ef3b",
+      "status": "sandbox_and_backlog_reviews_received_pending_Claude_boundary_review",
+      "report": "knowledge/results/external-markets/m1/pr278/REPORT.md",
+      "closeout": "knowledge/results/external-markets/m1/pr278/review-closeout.json",
+      "candidate_scope": "test_fixture_only_production_scanner_and_release_manifest_unchanged",
+      "merged": false,
+      "deployed": false
+    },
+    "sandbox": {
+      "known_samples": 8,
+      "baseline_static_missed": 7,
+      "fixture_candidate_static_missed": 0,
+      "samples_executed_as_transactions": false,
+      "production_targets_probed": 0,
+      "local_tests": {
+        "total": 138,
+        "passed": 138,
+        "failed": 0,
+        "skipped": 0
+      },
+      "production_fix_deployed": false,
+      "all_financial_exits_verified": false
+    },
+    "backlog": {
+      "path": "knowledge/results/external-markets/m1/pr278/backlog-proposal.json",
+      "sha256": "3c89727a1f25c7624af93729be3d13f30f1d4c6df6d61a918c24bc42a6599b3b",
+      "historical_cases": 81,
+      "open_cases": 67,
+      "already_non_open_cases": 14,
+      "queue_tasks": 11,
+      "unique_original_task_ids": 91,
+      "eligible_for_archive": 0,
+      "actual_closed": 0,
+      "actual_archived": 0,
+      "deleted_files": 0
+    },
+    "native_qwen_reviews": [
+      {
+        "step": "SECURITY",
+        "run_id": 40639535482,
+        "model": "qwen-plus",
+        "model_source": "provider_response",
+        "request_id": "a84169d2-d7e8-9155-80be-c5fcb23bf290",
+        "tokens_used": 2337,
+        "native_qwen_call": true,
+        "receipt": "knowledge/results/qwen-dispatch/PLAN-EXTERNAL-MARKETS-20261024-PR278-SECURITY.json",
+        "output_sha256": "517a05490e472da1e61525bf945ea152740610aa7acaeeb4aec6b8730494aea4",
+        "scope": "static excerpt, local executor summary, and one real untrusted-document challenge; no production probe or model-run tests",
+        "verdict": "PASS_with_GPT_narrative_corrections",
+        "signature_or_activation_admission": false
+      },
+      {
+        "step": "BACKLOG",
+        "run_id": 40639658516,
+        "model": "qwen-plus",
+        "model_source": "provider_response",
+        "request_id": "c31fa7d6-a99f-920a-8130-4deb141e251c",
+        "tokens_used": 3984,
+        "native_qwen_call": true,
+        "receipt": "knowledge/results/qwen-dispatch/PLAN-EXTERNAL-MARKETS-20261024-PR278-BACKLOG.json",
+        "output_sha256": "a981c15a2dbc771a6720b9edaa18c4a1f3073237b844072dc7bf15b0a04fd243",
+        "scope": "compact record of all 91 original Task IDs; no full-file/dependency/timestamp verification",
+        "verdict": "retention_logic_PASS_with_GPT_count_narrative_correction",
+        "archive_authorized": false
+      }
+    ],
+    "ci": {
+      "evaluated_head": "86b8c8f2a9b20282ae20bfc8d00bb21cf330b8f1",
+      "small_payment_offline": {
+        "run_id": 40640184837,
+        "job_id": 122656266784,
+        "conclusion": "success",
+        "passed": 225,
+        "failed": 0,
+        "skipped": 0,
+        "manifest_verified": true,
+        "source_files": 51
+      },
+      "A1_observer": {
+        "run_id": 40640184982,
+        "conclusion": "success",
+        "scope": "isolated_observation_not_acceptance_or_authorization"
+      },
+      "A2_base_checks": {
+        "run_id": 40640185026,
+        "job_id": 122656319022,
+        "conclusion": "failure",
+        "failure_details_verified": false,
+        "no_authorization_granted": true
+      },
+      "initial_failure_preserved": {
+        "run_id": 40639370277,
+        "reason": "manifest_source_bytes_changed:scripts/lib/financial-exit-inventory.mjs",
+        "production_manifest_check_not_weakened": true,
+        "production_source_change_not_admitted": true
+      }
+    },
+    "scope_limits": {
+      "external_registration": 0,
+      "platform_trial": 0,
+      "platform_submission": 0,
+      "paid_model_schedules_added": 0,
+      "OpenAI_Anthropic_API_calls": 0,
+      "paid": false,
+      "tx_hash": null,
+      "income": 0,
+      "payment_A2_A3_B_budget_trust_unchanged": true,
+      "does_not_expand_existing_2hives_mailwatch": true
     }
   }
 }

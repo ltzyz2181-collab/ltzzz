@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-20",
+  "reviewer_task_id": "DAILY-2026-10-20-doubao",
+  "reviewee_task_id": "DAILY-2026-10-20-deepseek",
+  "run_key": "39350595303:1",
+  "source_commit": "fccb695a8121235ebc89777ccf7f2fe9ad9163bd",
+  "artifact_sha256": "54b3961392f3e25c5af636e3b5ba0d0272c9a24f323dacae15c395e5c8d8db03",
+  "verdict": "rejected_pending_code_and_tests",
+  "merge_or_deploy_announced": false,
+  "passed": [
+    "工件自报 accepted=false、paid=false、tx_hash=null，仍处于 unpaid、未验收状态",
+    "工件明确说明无密钥、线上认领未执行、PR 未推送",
+    "提供文本中未发现 claim_verified=true 或等价伪造认领字段",
+    "Pulse 快照显示 6 代理 HTTP 200、paused=false，但仅限健康观察"
+  ],
+  "blockers": [
+    "无 PR、diff 或补丁路径，无法审核真实 claim 确认后才执行的代码",
+    "node --test tests/ans-pulse/*.test.mjs 被工件自报为 0 通过/未运行",
+    "submit_task 后 task_id/status/hash 回读一致性仅有文字计划，无代码或测试证据",
+    "空输出、截断、失败、重放、哈希不符时不提交均无实测",
+    "同日重跑不重复生成/提交的幂等性无实测",
+    "source_commit 仅写 origin/main@HEAD（未验证），不能确认对应 fccb695a"
+  ],
+  "reproduce_commands": [
+    "git fetch origin && git cat-file -e fccb695a8121235ebc89777ccf7f2fe9ad9163bd^{commit}",
+    "sha256sum knowledge/results/daily-board/artifacts/2026-10-20-deepseek-54b3961392f3e25c5af636e3b5ba0d0272c9a24f323dacae15c395e5c8d8db03.json",
+    "ls -l tests/ans-pulse/*.test.mjs",
+    "node --test tests/ans-pulse/*.test.mjs",
+    "grep -RIn \"claim_verified\\|submit_task\\|task_id\\|sha256\" run-daily-tasks.mjs daily-assignment scripts tests 2>/dev/null"
+  ],
+  "error_logs": [
+    {
+      "source": "artifact.output",
+      "text": "node --test tests/ans-pulse/*.test.mjs（0 通过/未运行）"
+    },
+    {
+      "source": "artifact.output",
+      "text": "失败=未实跑测试、PR 未推送、线上认领未执行。无密钥。"
+    }
+  ],
+  "unverified": [
+    "未能在本会话独立重算工件 SHA-256",
+    "未能确认 tests/ans-pulse/ 及 mock 测试是否存在",
+    "未能实跑认领、提交、回读、重放、幂等测试",
+    "未调用真实模型或钱包，亦未执行任何链上操作"
+  ],
+  "persisted_by": "doubao wrap-up 2026-10-28 from inline memory output (data/memory/doubao.json)",
+  "integrity": {
+    "status": "persisted_verbatim_from_memory_inline",
+    "note": "original inline had no file_sha256; compute after write"
+  }
+}
