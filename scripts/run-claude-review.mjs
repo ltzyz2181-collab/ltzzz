@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {reviewRequest,reviewContext,inspectClaude,selectReviewModel,executeReview,REVIEW_LIMITS} from './lib/claude-review.mjs';
+import {reviewRequest,reviewClaimId,reviewContext,inspectClaude,selectReviewModel,executeReview,REVIEW_LIMITS} from './lib/claude-review.mjs';
 const phase=process.argv[2],request=reviewRequest(process.env),run=process.env.GITHUB_RUN_ID||'local',root=process.cwd(),dir='knowledge/results/claude-review';
 fs.mkdirSync(dir,{recursive:true});
 let sourceCommit=null;try{sourceCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{}
-const claimId=request.task_id+(request.part>1?'-PART-'+request.part:'');
+const claimId=reviewClaimId(request);
 const file=dir+'/'+claimId+'.json';
 const save=r=>{const {context,...visible}=r;fs.writeFileSync(file,JSON.stringify({...visible,context_part:context?.part_index||null,context_parts:context?.part_count||null,full_topic_input_supplied_in_this_call:context?.complete_source_in_this_part===true,context:{...context,prompt:undefined}},null,2)+'\n');};
 const output=v=>{if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+v+'\n');};

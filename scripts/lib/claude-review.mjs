@@ -13,6 +13,12 @@ export function reviewRequest(env){
  if(!Number.isSafeInteger(part)||part<1||part>100000)throw Error('invalid_context_part');
  return {mode,topic,task_id,part};
 }
+export function reviewClaimId({task_id,part=1}){
+ if(!/^[A-Za-z0-9_-]{8,80}$/.test(task_id||'')||!Number.isSafeInteger(part)||part<1||part>100000)throw Error('invalid_review_claim_identity');
+ // A dot cannot occur in an original task ID. Keep legacy part 1 filenames,
+ // while preventing task X / part 2 colliding with task X-PART-2 / part 1.
+ return task_id+(part>1?'.part-'+part:'');
+}
 export function reviewContextParts(root,topic){
  const six=['魄','识神','梦境数据库','文明研究','项目历史','重要事件'].map(n=>'ltzzz-memory/'+n+'.md');
  if(topic==='six-memory')assertCoreMemory(root);
