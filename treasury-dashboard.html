@@ -61,12 +61,12 @@ async function load() {
   ]);
   const c = d.counts || {};
   document.getElementById('stats').innerHTML = [
-    ['今日支出', (d.today_spend ?? 0) + ' U'],
-    ['今日剩余额度', (d.today_remaining_limit ?? 0) + ' U'],
-    ['待执行', c.pending ?? 0],
-    ['成功', c.success ?? 0],
-    ['失败', c.failed ?? 0],
-    ['真实成功笔数', d.real_tx_success_count ?? 0],
+    ['今日支出', d.today_spend == null ? '未知' : d.today_spend + ' U'],
+    ['今日剩余额度', d.today_remaining_limit == null ? '未知' : d.today_remaining_limit + ' U'],
+    ['待执行', c.pending ?? '未知'],
+    ['成功', c.success ?? '未知'],
+    ['失败', c.failed ?? '未知'],
+    ['真实成功笔数', d.real_tx_success_count ?? '未知'],
   ].map(([t,v]) => '<div class="card"><h3>'+escapeHtml(t)+'</h3><div class="big">'+escapeHtml(v)+'</div></div>').join('');
 
   const g = document.getElementById('agents');
