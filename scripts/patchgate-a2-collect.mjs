@@ -11,16 +11,43 @@ export function baseCheckContext({env,p,source}){
   sha(source);
   if(env.GITHUB_EVENT_NAME!=='pull_request_target'||env.GITHUB_REF!=='refs/heads/main'||env.GITHUB_SHA!==source
     ||!p||p.base?.repo?.full_name!=='ltzyz2181-collab/ltzzz'||p.head?.repo?.full_name!==p.base.repo.full_name
-    ||!['OWNER','MEMBER','COLLABORATOR'].includes(p.author_association)||p.base.ref!=='main'||sha(p.base.sha)!==source
+    ||!['OWNER','MEMBER','COLLABORATOR'].includes(p.author_association)||p.base.ref!=='main'
     ||!Number.isSafeInteger(p.number)||p.number<1)throw Error('trusted_same_repository_base_required');
+  if(sha(p.base.sha)!==source)throw Error('stale_event_base_requalify_required');
   return {base:source,head:sha(p.head.sha),pr_number:p.number};
+}
+export function baseCheckEligibility({env,p,source,files,policy,ancestor=true}){
+  try{baseCheckContext({env,p,source});}catch(e){
+    if(e.message!=='stale_event_base_requalify_required')throw e;
+    return {eligible:false,status:'stale_event_base_requalify_required',base_sha:source,event_base_sha:p.base.sha,passed:false};
+  }
+  if(!ancestor)return {eligible:false,status:'stale_candidate_rebase_required',base_sha:source,passed:false};
+  const risk=classify(policy,files),findings=scanDiff(policy,files);
+  const eligible=files.length>0&&risk.level==='L0'&&!risk.modifies_own_checks&&findings.length===0
+    &&files.every(f=>f.mode==='100644'&&f.path.endsWith('.md')&&!f.binary);
+  return {eligible,status:eligible?'eligible_for_qualification_not_yet_passed':'outside_A2_L0_markdown_scope',base_sha:source,risk,findings,passed:false};
 }
 export async function main(args){
   const [mode,output]=args;
-  if(args.length!==2||!['readiness','base-check'].includes(mode)||!output?.endsWith('.json'))throw Error('usage_collect_readiness_or_base_check_output_json');
+  if(args.length!==2||!['readiness','base-check','bootstrap'].includes(mode)||!output?.endsWith('.json'))throw Error('usage_collect_readiness_or_base_check_output_json');
   const source=sha(git(['rev-parse','HEAD']));
   let result;
-  if(mode==='readiness'){
+  if(mode==='bootstrap'){
+    const p=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).pull_request;
+    const policy=JSON.parse(fs.readFileSync('config/patchgate-a2-collector.json'));
+    if(policy.mode!=='observation_only'||policy.signing_enabled!==false||policy.automatic_merge!==false||policy.financial_execution!==false)throw Error('readonly_checker_policy_required');
+    let identity;
+    try{identity=baseCheckContext({env:process.env,p,source});}catch(e){if(e.message!=='stale_event_base_requalify_required')throw e;}
+    let snapshot={files:[]},patchPolicy={};let ancestor=false;
+    if(identity){
+      git(['fetch','--no-tags','origin',identity.head]);
+      try{git(['merge-base','--is-ancestor',source,identity.head]);ancestor=true;}catch{}
+      if(ancestor){const collected=collectSnapshot({base:source,head:identity.head,taskId:TASK});snapshot=collected.snapshot;patchPolicy=collected.policy;}
+    }
+    const assessment=baseCheckEligibility({env:process.env,p,source,files:snapshot.files,policy:patchPolicy,ancestor});
+    result={schema:'ltzzz.patchgate.a2-base-bootstrap.v1',task_id:TASK,checker_base_sha:source,head_sha:sha(p.head.sha),pr_number:p.number,...assessment,readonly_checks_enabled:policy.readonly_checks_enabled===true,signed:false,automatic_merge:false,financial_execution:false,paid:false,tx_hash:null};
+    if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,`enabled=${policy.readonly_checks_enabled===true}\neligible=${policy.readonly_checks_enabled===true&&assessment.eligible}\n`);
+  }else if(mode==='readiness'){
     const request=validateCollectionRequest(JSON.parse(process.env.PATCHGATE_COLLECTION_REQUEST||'null'));
     const api=collectorGithubApi({token:process.env.GITHUB_TOKEN});
     const current=await api('/repos/ltzyz2181-collab/ltzzz/git/ref/heads/main');

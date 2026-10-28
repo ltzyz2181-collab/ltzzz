@@ -12,6 +12,10 @@ on:
         type: choice
         options: [ans-pulse, six-memory, external-hire]
         default: ans-pulse
+      part:
+        description: 完整资料的批次号；每次仅一批一次调用，不自动增加费用
+        type: number
+        default: 1
       task_id:
         description: 8–80位英文数字下划线连字符；同一单号永不重复调用
         type: string
@@ -29,6 +33,7 @@ jobs:
     timeout-minutes: 10
     env:
       CLAUDE_REVIEW_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'inspect' }}
+      CLAUDE_REVIEW_PART: ${{ inputs.part || 1 }}
       CLAUDE_REVIEW_TOPIC: ${{ inputs.topic || 'ans-pulse' }}
       CLAUDE_REVIEW_TASK_ID: ${{ inputs.task_id || 'CLAUDE-ANS-PULSE-REVIEW' }}
     steps:

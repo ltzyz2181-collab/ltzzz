@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import {spawnSync} from 'node:child_process';
-import {reviewRequest,reviewContext,inspectClaude,selectReviewModel,executeReview,digest} from '../lib/claude-review.mjs';
+import {reviewRequest,reviewContext,reviewContextParts,inspectClaude,selectReviewModel,executeReview,digest,REVIEW_LIMITS} from '../lib/claude-review.mjs';
 const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_ACTOR:'ltzyz2181-collab',GITHUB_EVENT_NAME:'push',GITHUB_REF:'refs/heads/main'};
 const record=()=>({mode:'review',status:'claimed_before_api',model_calls:0,model:'claude-haiku-test',context:{prompt:'Review public data only'}});
 test('inspection is default; review allows authenticated main-branch executor dispatch and safe task identifiers',()=>{
@@ -28,7 +29,22 @@ test('select a catalogue-backed lighter Claude; never choose a made-up model or 
 test('context packs preserve full sources and hashes; missing Pulse code is explicit',()=>{
  const r=reviewContext(process.cwd(),'ans-pulse');assert.equal(r.files.length,2);assert.ok(r.prompt.includes('源代码zip未收到'));assert.equal(r.prompt_sha256,digest(r.prompt));
  for(const f of r.files)assert.equal(f.sha256,digest(fs.readFileSync(f.file,'utf8')));
- const six=reviewContext(process.cwd(),'six-memory');assert.equal(six.files.length,6);assert.ok(six.input_chars<32000);
+ const parts=reviewContextParts(process.cwd(),'six-memory');
+ for(const p of parts){assert.equal(p.files.length,6);assert.ok(p.input_chars<=32000);assert.equal(p.prompt_sha256,digest(p.prompt));assert.equal(p.complete_source_in_this_part,parts.length===1);}
+ for(const file of parts[0].files){let end=0;const text=fs.readFileSync(file.file,'utf8');for(const p of parts)for(const c of p.chunks.filter(c=>c.file===file.file)){assert.equal(c.start_char,end);const slice=text.slice(c.start_char,c.end_char);assert.equal(c.chunk_sha256,digest(slice));assert(p.prompt.includes(slice));end=c.end_char;}assert.equal(end,text.length);assert.equal(file.sha256,digest(text));}
+});
+test('large Unicode source is losslessly split without raising limits or auto-calling a provider',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'claude-parts-'));fs.mkdirSync(path.join(root,'ltzzz-memory'));
+ const names=['魄','识神','梦境数据库','文明研究','项目历史','重要事件'];
+ try{for(const n of names)fs.writeFileSync(path.join(root,'ltzzz-memory',n+'.md'),'甲😀\r\n'.repeat(9000));
+ const parts=reviewContextParts(root,'six-memory');assert(parts.length>6);assert.equal(REVIEW_LIMITS.max_input_chars,32000);assert.equal(REVIEW_LIMITS.max_generation_calls,1);
+ for(const f of parts[0].files){const original=fs.readFileSync(path.join(root,f.file),'utf8');const slices=parts.flatMap(p=>p.chunks.filter(c=>c.file===f.file).map(c=>original.slice(c.start_char,c.end_char)));assert.equal(Buffer.compare(Buffer.from(slices.join('')),Buffer.from(original)),0);for(const s of slices){assert(!/^[\uDC00-\uDFFF]|[\uD800-\uDBFF]$/.test(s));}}
+ assert.equal(reviewContext(root,'six-memory',{part:2}).part_index,2);assert.throws(()=>reviewContext(root,'six-memory',{part:parts.length+1}),/out_of_range/);
+ }finally{fs.rmSync(root,{recursive:true});}
+});
+test('batch selection is authenticated request data, not permission to run all batches',()=>{
+ assert.equal(reviewRequest({...env,CLAUDE_REVIEW_PART:'2'}).part,2);
+ for(const value of ['0','-1','NaN','1.5','100001'])assert.throws(()=>reviewRequest({...env,CLAUDE_REVIEW_PART:value}),/invalid_context_part/);
 });
 test('durable checkpoint happens before a single generation; complete output remains pending review and redacts key',async()=>{
  const r=record(),states=[];let calls=0;

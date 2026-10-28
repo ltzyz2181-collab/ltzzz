@@ -11,23 +11,30 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.policy.outputs.enabled }}
+      eligible: ${{ steps.policy.outputs.eligible }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ github.sha }}', persist-credentials: false}
       - id: policy
-        name: Read only the reviewed BASE observation policy
+        name: Read trusted BASE and classify qualification scope without executing candidate
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const p=JSON.parse(fs.readFileSync('config/patchgate-a2-collector.json'));
           if(p.mode!=='observation_only'||p.signing_enabled!==false||p.automatic_merge!==false||p.financial_execution!==false)throw Error('readonly_checker_policy_required');
-          fs.appendFileSync(process.env.GITHUB_OUTPUT,'enabled='+(p.readonly_checks_enabled===true)+'\n');
           JS
+          node scripts/patchgate-a2-collect.mjs bootstrap "$RUNNER_TEMP/a2-base-bootstrap.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a2-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/a2-base-bootstrap.json
+          retention-days: 30
   patchgate-a2-base-checks:
     needs: bootstrap
     # Repo-reviewed readonly bootstrap avoids requiring an owner settings action.
     # It enables checks only; A2 signing and merging are separate disabled gates.
-    if: needs.bootstrap.outputs.enabled == 'true' && github.event_name == 'pull_request_target' && github.ref == 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    if: needs.bootstrap.outputs.enabled == 'true' && needs.bootstrap.outputs.eligible == 'true' && github.event_name == 'pull_request_target' && github.ref == 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
