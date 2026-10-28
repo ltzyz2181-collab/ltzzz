@@ -28,13 +28,14 @@ export class WorkpoolGitHubStore {
   }
   async compareAndSwap(key,previous,state,{artifact}={}) {
     const n=this.names(key);
+    if (state.status==='submitted_waiting_independent_review' && typeof artifact?.content!=='string') throw Error('submitted_artifact_bytes_required');
     // Distinct commits even for simultaneous identical transitions; otherwise a
     // same-second identical Git object could make two writers both report success.
     const saved={...state,cas_nonce:randomUUID()};
     const entries=[{path:n.file,mode:'100644',type:'blob',content:JSON.stringify(saved,null,2)+'\n'}];
     if (artifact?.content !== undefined) {
       const expected=`knowledge/results/workpool/artifacts/${key}/${state.lease_id}.json`;
-      if (!/^[a-f0-9-]{36}$/.test(state.lease_id) || artifact.path!==expected || typeof artifact.content!=='string' || sha256(artifact.content)!==artifact.sha256 || state.artifact?.sha256!==artifact.sha256) throw Error('artifact_not_bound_to_lease');
+      if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(state.lease_id) || artifact.path!==expected || typeof artifact.content!=='string' || sha256(artifact.content)!==artifact.sha256 || state.artifact?.sha256!==artifact.sha256) throw Error('artifact_not_bound_to_lease');
       entries.push({path:expected,mode:'100644',type:'blob',content:artifact.content});
     }
     const tree=await this.api('git/trees',{method:'POST',body:{base_tree:previous?.tree||this.baseTree,tree:entries}});

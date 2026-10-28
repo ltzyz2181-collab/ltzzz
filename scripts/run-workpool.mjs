@@ -52,7 +52,7 @@ export async function runWorkpool({root=process.cwd(),env=process.env,fetcher=fe
             if (result.type!=='file' || result.encoding!=='base64') throw Error('tracked_public_file_required');
             const bytes=Buffer.from(result.content,'base64');rows.push({path:file,bytes:bytes.length,sha256:sha256(bytes)});
           }
-          const record={task_id:task.task_id,step_id:task.step_id,logical_seat:task.requested_seat,actual_provider:null,model:null,execution_provider:'github_actions',metadata_source:'repository_rules_no_model',source_commit:main,core_view_sha256:coreHash,run_id:env.GITHUB_RUN_ID||null,files:rows,preflight:claim.lease.decision_record,model_calls:0,accepted:false,paid:false,tx_hash:null,status:'deterministic_output_waiting_independent_review'};
+          const record={task_id:task.task_id,step_id:task.step_id,logical_seat:task.requested_seat,actual_provider:null,model:null,execution_provider:env.GITHUB_ACTIONS==='true'?'github_actions':'authenticated_github_client',metadata_source:'repository_rules_no_model',source_commit:main,core_view_sha256:coreHash,run_id:env.GITHUB_RUN_ID||null,files:rows,preflight:claim.lease.decision_record,model_calls:0,accepted:false,paid:false,tx_hash:null,status:'deterministic_output_waiting_independent_review'};
           const content=JSON.stringify(record,null,2)+'\n';
           const artifact={path:`knowledge/results/workpool/artifacts/${unitKey(task)}/${claim.lease.lease_id}.json`,sha256:sha256(content),content};
           const submitted=await updateLease({key:unitKey(task),leaseId:claim.lease.lease_id,executorId:EXECUTOR.id,action:'submit',artifact,store});
