@@ -1,3 +1,18 @@
+# PR #288 审计修订（GPT/OpenAI，未部署）
+
+本页以下旧回执保留为原 head `86b8c8f2a9b20282ae20bfc8d00bb21cf330b8f1` 的历史结果；不是对新修订的验收。新工件见 [audit-repair-20261028.json](audit-repair-20261028.json)、[closure-paths-20261028.json](closure-paths-20261028.json) 与 [claude-variants-repair-20261028.json](claude-variants-repair-20261028.json)。旧外置清单原字节另存 `manifest-original-86b8c8f2.json`；旧 closeout、拒绝、测试日志与八样本结果不改写。
+
+- **F1**：沙盒新增七例（可选调用/SDK可选调用、call/apply、跨行方括号、解构/别名解构），七例均被检测；反射、数组 join、变量键、字符码、模板表达式、ABI lookup、Python raw transaction 的七个示例仍未覆盖，逐例保留结果。样本只作字符串扫描，不执行；不得把固定样本通过当成全部资金出口覆盖。生产检查器与旧 release manifest 未改。
+- **F2**：积压清单明确保留发布时的千问/Claude等待状态，同时引用已收到的两轮原生千问与 Claude #288 对原 head 的建议审计。它们不覆盖本次新 head，也不是签名或归档授权。
+- **F3**：91 个原 Task ID、92 个 case/queue 动作都有原证据输入、回执目标及下一步核验路径；29 个 `review_missing`、6 个 `claim_missing` 等分别给出补审、真实执行/代执行对账路径。没有新增业务单、自动补执行或关闭原警告。独立提供商复核与边界抽查是证据步骤，不增加 owner 拍板或单模型否决权。当前关闭/归档/删除仍为 0。
+- **F4**：本次实际读取两份 GitHub job 日志。初版 run40639370182/job122653718272 在 BASE77ac9663 报通用 `collector_failed_no_authorization`；run40640185026/job122656319022 在 BASEce9401a8 报 `trusted_same_repository_base_required`。缺历史 event payload，不能声称已复原具体 predicate 或认定由此 PR 引入。后续主线 #284 的正/负资格验收属于不同来源，不能反推历史根因或给本 head 准入。
+
+修订先本地提交，再正常合并 main `ae35b97f98e0d33bedab1541bc3b33fcb163231d`（无冲突）；在合并提交 `2132ef4a1aac7aaeafddbe1a901bdc5245da8eb5` 重跑相关 147 项，147/147，旧 post271 清单 51 源文件复核通过。生产扫描器与旧清单同时与原基准和本次 main 原字节一致。主线 PR278 的另一沙盒 helper 与本 PR279 fixture 分开保留，不混称同一候选。
+
+当前准确测试数字以新修订回执为准。新增 CI 仅运行惯性字符串/保留路径/清单一致性测试，无 Secret、无写权限、无资金或模型 API。以下历史原文的“16/138”与“Claude 尚未收到”只描述当时版本。
+
+---
+
 # PR #278：沙盒挑战与积压清单执行回执
 
 类型：事实。父任务 `PLAN-EXTERNAL-MARKETS-20261024`。方案 PR #278 head `cf9de843516aa1abd59acf43dceadc26fa15b160`；固定 main 基准 `974d75327b3679850bd8d5ea79b987c59554ef3b`。执行候选 PR #279，未合并、未部署。

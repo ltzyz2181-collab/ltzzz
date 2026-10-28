@@ -1,0 +1,246 @@
+{
+  "task_id": "PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028",
+  "status": "merged_event_driven_readonly_execution_and_idempotency_reverified_deterministic",
+  "original_proposal_pr": 281,
+  "original_proposal_commit": "c49dc51d65a3262b7c2dfe2ac64bdd01b128cda1",
+  "merged_head": "397dd67d77f30ec88a3bf1a5eda050c97ce512f7",
+  "merge_commit": "634483f3b70f5b63622cd8d139470af5698c3905",
+  "core_view": {
+    "finalized_by": "GPT coordinator under direct owner instruction 2026-10-28",
+    "path": "CORE-VIEW.md",
+    "sha256": "9b7f12b51656ee10c337a780374a188c60b266563e2394c33986e8da993471c0",
+    "git_blob": "b31546645a14225238944ab2ed43ce020a6e9392",
+    "owner_confirmation_pending": false
+  },
+  "authority": {
+    "forwarded_text_is_proposal_not_owner_authorization": true,
+    "reject_new_personal_approvals_and_controller_restrictions": true,
+    "existing_machine_budgets_signatures_and_external_requirements_preserved": true,
+    "formal_five_signature_governance_enabled": false
+  },
+  "native_qwen_reviews": [
+    {
+      "step": "POLICY",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-POLICY.json",
+      "run_id": "40667797770",
+      "request_id": "f4235be6-d611-94bc-8202-82484e0ed5a0",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 3517,
+      "output_sha256": "2599cb30d3a34a6a79c148452e937bd37fc345a37023836a4874e7fc18367b8d",
+      "original_verdict": "REJECT_WITH_FINDINGS"
+    },
+    {
+      "step": "LEASE",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-LEASE.json",
+      "run_id": "40667970952",
+      "request_id": "c3a4c668-3e87-9b6b-a1ec-8218c73acaaf",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 2397,
+      "output_sha256": "0f255abbcd434f62bd7a869ca8d5b2e1782ca3231936f9b879dc94f6e47c3630",
+      "original_verdict": "REVIEW_PENDING"
+    },
+    {
+      "step": "TRANSPORT",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-TRANSPORT.json",
+      "run_id": "40668137794",
+      "request_id": "638fd574-01a1-93f9-bd79-f43e38f6ee0d",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 3113,
+      "output_sha256": "bb6b119f7e3823b3de15f2dabe54d117db63f08820befe83a2dabb4ae680fa03",
+      "original_verdict": "REJECT"
+    },
+    {
+      "step": "RUNNER",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-RUNNER.json",
+      "run_id": "40668335951",
+      "request_id": "a2e8d007-ec93-94e5-b110-d76e0ac92256",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "finish_reason": "stop",
+      "tokens_used": 3306,
+      "output_sha256": "0e6d6aafcc005a9ffae97e145a7d84532ae188d17c9aae9058b3f74001a35965",
+      "original_verdict": "REJECTED"
+    },
+    {
+      "step": "REVISION",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-SELF-ORGANIZING-MARKET-AND-MEMORY-20261028-PR281-REVISION.json",
+      "run_id": "40668980784",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "request_id": "cf268324-7a55-9549-ad51-74ada64f8ecb",
+      "finish_reason": "stop",
+      "tokens_used": 2926,
+      "output_sha256": "9758386c4b05a175181312fe241fe0e4b49a2c7a8c540fd534bb24854240d6e9",
+      "original_verdict": "no_verifiable_error",
+      "scope": "incremental diff and declared caller contracts only, not whole repository/signature/activation admission"
+    }
+  ],
+  "review_dispositions": {
+    "path": "knowledge/results/workpool/pr281/review-closeout.json",
+    "original_rejections_preserved": true,
+    "original_rejections_relabelled_pass": false,
+    "revision_statement_correction": "Regex checks UUID grouping, not RFC4122 version4. randomUUID generates version4. Review wording not adopted as implementation claim."
+  },
+  "tests": {
+    "node22": {
+      "passed": 90,
+      "failed": 0
+    },
+    "node24": {
+      "passed": 90,
+      "failed": 0
+    },
+    "workpool_tests": 22,
+    "sentinel_regressions": 68
+  },
+  "actual_ci": {
+    "candidate_workpool": {
+      "run_id": 40668915385,
+      "job_id": 122750415756,
+      "passed": 22,
+      "failed": 0
+    },
+    "postmerge_sentinel": {
+      "run_id": 40669391827,
+      "job_id": 122752028637,
+      "passed": 68,
+      "failed": 0,
+      "event": "push"
+    },
+    "baseline_review_failure": {
+      "run_id": 40668915367,
+      "prior_confirmed_run": 40667627566,
+      "reason": "six memory sources exceed unchanged 32000 char input budget",
+      "related_sources_changed_by_this_PR": false,
+      "local_failure_reproduced": true,
+      "not_reported_green": true
+    },
+    "A2_docs_only_qualification": {
+      "run_id": 40668911741,
+      "conclusion": "failure",
+      "automatic_merge_authorized": false
+    }
+  },
+  "acceptance": {
+    "issue": 283,
+    "step_id": "WORKPOOL-READONLY-ACCEPTANCE-01",
+    "first_execution_run": 40669391827,
+    "first_execution_event": "push",
+    "run_attempt": 1,
+    "first_source_commit": "634483f3b70f5b63622cd8d139470af5698c3905",
+    "main_receipt_commit": "fec53d6c28ede949b01bb4ab67f3c006bb4a2f2e",
+    "second_run": 40669484108,
+    "second_job": 122752331207,
+    "second_event": "issues",
+    "second_source_commit": "fec53d6c28ede949b01bb4ab67f3c006bb4a2f2e",
+    "second_status": "submitted_do_not_repeat",
+    "duplicate_execution_prevented": true,
+    "isolation_ref": "refs/heads/workpool/leases/c37534530c8ebe2301c510c70ccf44bfe8b96514c9e750cd87c086ba88a21401",
+    "isolation_head": "af1ce9046a5ff0ca41c87b8fe73370fc773ca8ae",
+    "lease_attempt": 1,
+    "artifact": {
+      "path": "knowledge/results/workpool/artifacts/c37534530c8ebe2301c510c70ccf44bfe8b96514c9e750cd87c086ba88a21401/51bb996b-068c-4017-88e1-38d7d364befe.json",
+      "sha256": "256dc97a54e0b83c212b85ae4d27dd02cc15379fd2b855840ef80d22cd2a6dbf",
+      "git_blob": "47190e5d4a3c219142c627c59a8caa3704c51067",
+      "bytes": 1704
+    },
+    "readback_hashes": {
+      "artifact": {
+        "sha256": "256dc97a54e0b83c212b85ae4d27dd02cc15379fd2b855840ef80d22cd2a6dbf",
+        "git_blob": "47190e5d4a3c219142c627c59a8caa3704c51067",
+        "bytes": 1704,
+        "declared_git_blob": "47190e5d4a3c219142c627c59a8caa3704c51067"
+      },
+      "lease": {
+        "sha256": "d7f2cadeed0fd761178b9782d52e0da845bdcd978cad85280747a0f7b8532961",
+        "git_blob": "c883d9ab08b9f4eb9096026e6079f4293590ab70",
+        "bytes": 2056,
+        "declared_git_blob": "c883d9ab08b9f4eb9096026e6079f4293590ab70"
+      },
+      "core": {
+        "sha256": "9b7f12b51656ee10c337a780374a188c60b266563e2394c33986e8da993471c0",
+        "git_blob": "b31546645a14225238944ab2ed43ce020a6e9392",
+        "bytes": 1997,
+        "declared_git_blob": "b31546645a14225238944ab2ed43ce020a6e9392"
+      },
+      "policy": {
+        "sha256": "edf78c5f29a8930104d49e2671bf8256b08ebc8da022fab3b47fc229ccd2a9c5",
+        "git_blob": "6f5f1c5d1e803492c20650e637fa4e5ede53029b",
+        "bytes": 794,
+        "declared_git_blob": "6f5f1c5d1e803492c20650e637fa4e5ede53029b"
+      }
+    },
+    "status": "reverified_deterministic",
+    "business_acceptance": false
+  },
+  "deployment_scope": {
+    "workflow_code_on_main": true,
+    "event_driven_readonly_execution_verified": true,
+    "artifact_and_lease_readback_verified": true,
+    "first_natural_schedule_verified": true,
+    "existing_hourly_sentinel_schedule_reused": true,
+    "new_paid_cron": false,
+    "other_AI_clients_automatically_awakened": false,
+    "general_patch_merge_deploy_pay_chain_live": false,
+    "UUMit_readonly_only": true,
+    "UUMit_re_registered": false
+  },
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "income": 0,
+  "native_review_generation_calls": 5,
+  "review_API_billing_verified": false,
+  "native_GPT_Claude_API_calls": 0,
+  "gates": {
+    "formal_five_signature": false,
+    "A2_unchanged": true,
+    "A3_unchanged": true,
+    "B_unchanged": true,
+    "payment_unchanged": true,
+    "budgets_unchanged": true,
+    "trust_root_unchanged": true
+  },
+  "natural_schedule": {
+    "run_id": 40672526502,
+    "run_attempt": 1,
+    "event": "schedule",
+    "source_commit": "02238047d7ea3998c41dd8ce9d4feb8c998cf6c8",
+    "created_at_utc": "2026-10-28T10:29:27Z",
+    "job_id": 122762651518,
+    "conclusion": "success",
+    "workpool_step_conclusion": "success",
+    "scan_at_utc": "2026-10-28T10:29:53.823Z",
+    "observations": [],
+    "model_calls": 0,
+    "scope": "natural scheduled readonly scan, no available task claimed and no native-client wakeup in this run",
+    "verified_by": "coordinator GitHub REST run/jobs and actual step-log readback"
+  },
+  "native_api_inbox_delivery": {
+    "receipt": "knowledge/results/automation-foundation/20261028/runtime-acceptance.json",
+    "run_id": 40692084364,
+    "run_attempt": 1,
+    "trigger": "push_of_two_fixed_public_cards",
+    "providers": [
+      "aliyun_dashscope",
+      "volcengine_ark"
+    ],
+    "task_read_and_plan_verified": true,
+    "duplicate_run_id": 40692362152,
+    "duplicate_model_calls": 0,
+    "desktop_clients_awakened": false,
+    "cloud_deployment_executed": false,
+    "business_accepted": false
+  }
+}

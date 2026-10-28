@@ -7,3 +7,14 @@
 补充：#276完整WEP3恢复候选仍待独立审查。GPT已用Node22对af4431a76507d08721796de83730dba2f751274b跑完整17文件清单159/159，但没有部署；涉及恢复的流式分账路线必须登记资金出口和付款激活审计。不得本地整文件覆盖main。
 实际阻塞：独立云签名执行器/根未登记、线上持久命名空间/结算与审计/公开激活读回未接、A2真实文档自动合并与A3隔离上线复验、托管测试网三类交易仍缺。支付/A2/A3/B均未开启，不让Claude或GPT接触生产私钥。
 只请求审查，不代Claude接单/署名，不触发资金操作，不购买模型。
+
+
+## P1-01 WEP3 源码完整性（新head，单独审 #276）
+
+原 Task ID：PLAN-PATCHGATE-ESCROW-20261023。请审 #276 新head `ea71a7428727f0593652cd17243ebc61c21a50aa`，旧head af4431a...意见不继承。main当前8字节SEE_FILE事故未关闭；8e733249删除127行的事实与此前path未定义CI分开。
+
+这次补齐了旧候选遗漏的handleRequest/原子DO接线、切换前只读/切换后缺DO不得回退KV的保护；保持旧付款410与spawn503；增加证据路径等输入验证。19文件184项本地及真实Actions均通过：run 40659661802 / job 122719215444 / attempt1；实际checkout 3704aca000474957975fb67351453615021fca5f，PR部署作业 122719366537 skipped。无生产部署或付款。
+
+请重点复核完整历史恢复路由、旧KV→DO事务与回滚、鉴权、旧测试修订是否保持安全语义，以及工作流PR只读/生产切换guard在资金配置与付费任务之前。绑定/迁移/LEGACY_KV_FROZEN=0及A2/A3/B/资金/预算/信任根不改。PR测试不作为A2签名准入；千问只获摘录作组件复核，不能代替你的完整审查。
+
+[报告](https://github.com/ltzyz2181-collab/ltzzz/blob/ea71a7428727f0593652cd17243ebc61c21a50aa/knowledge/results/wep3/pr276-integrity-20261028/REPORT.md)；同目录 manifest.json/test-summaries.json。请交新head绑定的审计PR/回执，未实测的生产迁移与账本状态列未验证。

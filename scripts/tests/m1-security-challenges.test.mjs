@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {generateKeyPairSync} from 'node:crypto';
+import {generateKeyPairSync,createHash} from 'node:crypto';
 import {scanFinancialSource,checkFinancialInventory} from './fixtures/pr278/financial-exit-inventory.mjs';
 import {authenticate,canonical,evaluate,sha256,subjectFor,validateTrust} from '../lib/patchgate.mjs';
 import {rolloutApproved} from '../lib/patchgate-a2.mjs';
@@ -25,6 +25,18 @@ const probes=[
 ];
 for(const [id,code] of probes)test('sandbox financial inventory rejects unregistered '+id,()=>{
  const r=inventoryCheck(code);assert.equal(r.passed,false);assert.ok(r.errors.includes('unregistered_financial_primitive:scripts/isolated-fixture.mjs'));
+});
+const reviewVariants=[
+ ['optional_call','w?.sendTransaction?.(tx)'],
+ ['optional_write','client.writeContract?.(args)'],
+ ['method_call','w.sendTransaction.call(w,tx)'],
+ ['method_apply','w.sendTransaction.apply(w,args)'],
+ ['multiline_bracket',"w[\n'sendTransaction'\n](tx)"],
+ ['destructured_alias','const {transfer:t}=token; t(a,b)'],
+ ['destructured_shorthand','const {sendTransaction}=w; sendTransaction(tx)']
+];
+for(const [id,code] of reviewVariants)test('Claude F1 inert variant '+id+' is detected',()=>{
+ assert.equal(inventoryCheck(code).passed,false);
 });
 test('sandbox ordinary data does not become a financial exit',()=>{
  assert.equal(inventoryCheck('const label = data["name"]; const n = 2 + 3;').passed,true);
@@ -69,4 +81,30 @@ test('sandbox fake Claude advisory cannot activate A2',()=>{
  const config=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-a2.json',import.meta.url))),registry=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-executors.json',import.meta.url)));
  config.external_stage_audits=[{seat:'claude',verdict:'approve',accepted:true}];
  assert.equal(rolloutApproved({config,registry,trust,runnerSha:'a'.repeat(40),runtimeBundleSha256:'c'.repeat(64),now}),false);
+});
+
+
+test('backlog closure paths retain every original task and do not fabricate closures or dispatches',()=>{
+ const base=new URL('../../knowledge/results/external-markets/m1/pr278/',import.meta.url);
+ const original=JSON.parse(fs.readFileSync(new URL('backlog-proposal.json',base)));
+ const plan=JSON.parse(fs.readFileSync(new URL('closure-paths-20261028.json',base)));
+ assert.equal(plan.rows.length,91);
+ assert.deepEqual(plan.rows.map(r=>r.task_id).sort(),original.rows.map(r=>r.task_id).sort());
+ assert.equal(new Set(plan.rows.map(r=>r.task_id)).size,91);
+ assert.equal(plan.actual_closed,0);assert.equal(plan.actual_archived,0);assert.equal(plan.new_business_task_ids,0);
+ for(const row of plan.rows){
+  assert.equal(row.current_runtime_dependencies_verified,false);assert.equal(row.current_authenticated_executor,null);
+  assert.equal(row.actual_closed,false);assert.equal(row.actual_archived,false);assert.equal(row.new_business_task_created,false);
+  for(const action of row.actions){assert.equal(action.automatic_reexecution,false);assert.equal(action.actual_closed,false);assert.equal(typeof action.evidence_return_target,'string');assert(action.next_action.length>20);}
+ }
+ assert.equal(original.qianwen_review.does_not_review_this_new_revision,true);
+ assert.equal(original.claude_boundary_spot_check.rereview_of_new_revision,'pending');
+});
+test('current external manifest binds raw file bytes without a self digest or production release change',()=>{
+ const root=new URL('../../',import.meta.url),manifest=JSON.parse(fs.readFileSync(new URL('knowledge/results/external-markets/m1/pr278/manifest.json',root)));
+ assert.equal(manifest.self_hash_included,false);assert.equal(manifest.accepted,false);assert.equal(manifest.deployed,false);
+ for(const file of [...manifest.candidate_files,...manifest.artifacts,...manifest.production_unchanged_proof]){
+  const bytes=fs.readFileSync(new URL(file.path,root));assert.equal(bytes.length,file.bytes,file.path);assert.equal(createHash('sha256').update(bytes).digest('hex'),file.sha256,file.path);
+ }
+ assert.equal(manifest.production_unchanged_proof.every(x=>x.unchanged_from_baseline===true),true);
 });

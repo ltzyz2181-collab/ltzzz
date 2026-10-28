@@ -1,0 +1,158 @@
+{
+  "schema": "ltzzz.m1.claude-variant-probe.v1",
+  "task_id": "PLAN-EXTERNAL-MARKETS-20261024",
+  "step_id": "M1-PR278-SANDBOX-AND-BACKLOG",
+  "original_head": "86b8c8f2a9b20282ae20bfc8d00bb21cf330b8f1",
+  "advisory_audit_PR": 288,
+  "at_utc": "2026-10-28T21:54:12.483Z",
+  "runtime": "v22.23.4",
+  "candidate_source_sha256": "cc91c48b9a5fb96427a20f4763672d396cc4103fdecd6eb609cbd68cb636a177",
+  "repaired": [
+    {
+      "id": "optional_call",
+      "source": "w?.sendTransaction?.(tx)",
+      "source_sha256": "70cb3138532f110ca56750ccb2a1b96f0d50430d7f69634bae302c0765d312b5",
+      "matches": [
+        {
+          "kind": "transaction_send",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    },
+    {
+      "id": "optional_sdk_call",
+      "source": "client.writeContract?.(args)",
+      "source_sha256": "0273ef1a2ed10146cb46e9fa4361dc34ef1cf33828ec6fd97e16064207919855",
+      "matches": [
+        {
+          "kind": "other_signing_sdk",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    },
+    {
+      "id": "method_call",
+      "source": "w.sendTransaction.call(w,tx)",
+      "source_sha256": "393c8ebf3cb92dab0fa851cfd3c08fbf48bbd4ec60cb50c5c728772e059b8f09",
+      "matches": [
+        {
+          "kind": "financial_method_invocation",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    },
+    {
+      "id": "method_apply",
+      "source": "w.sendTransaction.apply(w,args)",
+      "source_sha256": "4235ab8cf056844089f7222a60485ae4b4e8194d6a8e00cdc8e0bee2af5d418c",
+      "matches": [
+        {
+          "kind": "financial_method_invocation",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    },
+    {
+      "id": "multiline_bracket",
+      "source": "w[\n'sendTransaction'\n](tx)",
+      "source_sha256": "9733b3e4c5aae0ebb337e6e4a957a64fb0c631f89e27f6ce6580bab3564ddd81",
+      "matches": [
+        {
+          "kind": "computed_financial_member",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    },
+    {
+      "id": "destructured_alias",
+      "source": "const {transfer:t}=token; t(a,b)",
+      "source_sha256": "f25964e345d1575230354582109a9b7e1b5cab42c8fe50b94630e4db8c4a34af",
+      "matches": [
+        {
+          "kind": "destructured_financial_method_reference",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    },
+    {
+      "id": "destructured_shorthand",
+      "source": "const {sendTransaction}=w; sendTransaction(tx)",
+      "source_sha256": "5f15a12a49160f4077b035507074318dea1b35892fb88d5d59814f1ae6a9115d",
+      "matches": [
+        {
+          "kind": "destructured_financial_method_reference",
+          "line": 1
+        }
+      ],
+      "sample_executed": false
+    }
+  ],
+  "unresolved": [
+    {
+      "id": "reflection",
+      "source": "Reflect.get(w,'transfer')(a,b)",
+      "source_sha256": "2160229507e16ca60e4e7450338a59aa51e4b354e7ee9994474cf62f938d1573",
+      "matches": [],
+      "sample_executed": false
+    },
+    {
+      "id": "array_join",
+      "source": "w[['send','Transaction'].join('')](tx)",
+      "source_sha256": "cce8b61f4abaec5f2a08d9473edb67eca963a7fcffd1e781873e6e2168238758",
+      "matches": [],
+      "sample_executed": false
+    },
+    {
+      "id": "variable_key",
+      "source": "token[k](a,b)",
+      "source_sha256": "eb3f3cec100ef19f64baec21c4ae7c15530f9f1b09b899d764a7338ef9432acd",
+      "matches": [],
+      "sample_executed": false
+    },
+    {
+      "id": "character_codes",
+      "source": "w[String.fromCharCode(116,114,97,110,115,102,101,114)](a,b)",
+      "source_sha256": "d208610da22391c04cb4bdebdd81783be904e51de5354ece0169fcbca991969d",
+      "matches": [],
+      "sample_executed": false
+    },
+    {
+      "id": "template_expression",
+      "source": "token[`${n}`](a,b)",
+      "source_sha256": "caf1c8acf4159cd55c5aeffd9ab3c91d9f039066da40144b97a93fcb61c1ceb7",
+      "matches": [],
+      "sample_executed": false
+    },
+    {
+      "id": "abi_lookup",
+      "source": "contract.getFunction('transfer')(a,b)",
+      "source_sha256": "151de3994cef518b95ea44e30c6f055a5b28e39b892cd55febfb15277665856f",
+      "matches": [],
+      "sample_executed": false
+    },
+    {
+      "id": "python_raw_transaction",
+      "source": "client.eth.send_raw_transaction(raw)",
+      "source_sha256": "088cafdf0f272a0e6d60ad1807a8c0f86217b7f14946b91884dcefcb173ab3bf",
+      "matches": [],
+      "sample_executed": false
+    }
+  ],
+  "repaired_detected": 7,
+  "unresolved_still_missed": 7,
+  "full_semantic_coverage_verified": false,
+  "production_scanner_modified": false,
+  "production_deployed": false,
+  "native_provider_review_of_this_revision": false,
+  "model_calls": 0,
+  "network_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "income": 0
+}

@@ -4,13 +4,13 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 const PATTERNS=[
- ['wallet_constructor',/\bWallet\s*\(/g],
- ['transaction_send',/\.\s*(?:sendTransaction|signTransaction|signTypedData|broadcastTransaction|transfer|transferFrom|safeTransfer|supply|withdraw)\s*\(/g],
+ ['wallet_constructor',/\bWallet\s*(?:\?\.)?\s*\(/g],
+ ['transaction_send',/\.\s*(?:sendTransaction|signTransaction|signTypedData|broadcastTransaction|transfer|transferFrom|safeTransfer|supply|withdraw)\s*(?:\?\.)?\s*\(/g],
  ['rpc_or_browser_sign',/['"](?:eth_sendRawTransaction|eth_sendTransaction|eth_signTypedData_v4|personal_sendTransaction)['"]/g],
- ['contract_deployment',/\bContractFactory\s*\(/g],
+ ['contract_deployment',/\bContractFactory\s*(?:\?\.)?\s*\(/g],
  ['exchange_write_endpoint',/\/api\/v5\/(?:asset\/(?:transfer|withdrawal)|trade\/order)/g],
  ['paid_relay_header',/['"]PAYMENT-SIGNATURE['"]\s*:/gi],
- ['other_signing_sdk',/\b(?:send_transaction|writeContract|sendUserOperation|sendSponsoredUserOperation)\s*\(/g]
+ ['other_signing_sdk',/\b(?:send_transaction|writeContract|sendUserOperation|sendSponsoredUserOperation)\s*(?:\?\.)?\s*\(/g]
 ];
 const EXT=/\.(?:js|mjs|cjs|ts|tsx|sol|py|sh|ps1|bat|html)$/;
 const FINANCIAL_MEMBERS=new Set(['sendTransaction','signTransaction','signTypedData','broadcastTransaction','transfer','transferFrom','safeTransfer','supply','withdraw','writeContract','sendUserOperation','sendSponsoredUserOperation']);
@@ -19,7 +19,13 @@ const FINANCIAL_MEMBERS=new Set(['sendTransaction','signTransaction','signTypedD
 // that arbitrary computed names/aliases cannot hide a financial operation.
 function indirectFinancialReferences(source){
  const matches=[];
- for(const m of source.matchAll(/\[([^\]\r\n]{1,512})\]/g)){
+ const names=[...FINANCIAL_MEMBERS].join('|');
+ const literalCall=new RegExp('\\.\\s*(?:'+names+')\\s*\\.\\s*(?:call|apply|bind)\\s*\\(','g');
+ for(const m of source.matchAll(literalCall))matches.push({kind:'financial_method_invocation',line:source.slice(0,m.index).split('\n').length});
+ for(const m of source.matchAll(/\b(?:const|let|var)\s*\{([^}]{1,512})\}\s*=/g)){
+  if(m[1].split(',').some(x=>FINANCIAL_MEMBERS.has(x.trim().split(':')[0].trim())))matches.push({kind:'destructured_financial_method_reference',line:source.slice(0,m.index).split('\n').length});
+ }
+ for(const m of source.matchAll(/\[([^\]]{1,512})\]/g)){
   const parts=m[1].split('+').map(s=>s.trim());
   if(!parts.every(s=>/^(?:"[A-Za-z_$][A-Za-z0-9_$]*"|'[A-Za-z_$][A-Za-z0-9_$]*'|`[A-Za-z_$][A-Za-z0-9_$]*`)$/.test(s)))continue;
   if(FINANCIAL_MEMBERS.has(parts.map(s=>s.slice(1,-1)).join('')))matches.push({kind:'computed_financial_member',line:source.slice(0,m.index).split('\n').length});
