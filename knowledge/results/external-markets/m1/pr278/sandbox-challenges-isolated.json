@@ -1,0 +1,195 @@
+{
+  "schema": "ltzzz.m1.sandbox-challenges.v1",
+  "task_id": "PLAN-EXTERNAL-MARKETS-20261024",
+  "step_id": "M1-PR278-SANDBOX-01",
+  "baseline_commit": "974d75327b3679850bd8d5ea79b987c59554ef3b",
+  "baseline_module_sha256": "c643e76a047782e2f6757a39a282f859ad800dcb4297b42353e2d817caf4cc68",
+  "candidate_module_sha256": "713c87751eb58797e20606343ff6c0cec979033105a1d4aa860cafad4b3f59d7",
+  "at_utc": "2026-10-28T05:45:17.770Z",
+  "node": "v22.23.4",
+  "findings": [
+    {
+      "id": "direct",
+      "source": "await w.sendTransaction(tx);",
+      "source_sha256": "167da633f25c8f123989113d5c6ad7e5d4d8644667af5ae72cafc3300c8980e2",
+      "baseline": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "computed",
+      "source": "await w[\"sendTransaction\"](tx);",
+      "source_sha256": "1a08588c68429c85335eb64e522d6f79d789a8b88be5c189c2dd1b77df7bcc23",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "constant_join",
+      "source": "await token['trans'+'fer'](recipient, amount);",
+      "source_sha256": "c1e089db7c10b0cdcca107513367824705cfa9f12a6d2c5eae0ee659b00f6b54",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "alias",
+      "source": "const send = w.sendTransaction; await send(tx);",
+      "source_sha256": "150802548b511541d64c3fbc414d3b5308355d2df2871c3214a9b25435844ae7",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "backtick",
+      "source": "await token[`transfer`](recipient, amount);",
+      "source_sha256": "dfeec15ee5e4ac70754e5dc524edad53423c0a537d66d863fcae9977c773fddb",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "mixed_quotes",
+      "source": "await token['trans'+\"fer\"](recipient, amount);",
+      "source_sha256": "0ec44c6aa65c9e94a90a2857aea6c79afe2b48b5f8db2ed453d10dee51430b56",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "computed_alias",
+      "source": "const send = w['send'+'Transaction']; await send(tx);",
+      "source_sha256": "6660fa2b8b3d7def1b89ccd73de155043d0701ecd13860ef58b9d73647f24ec6",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    },
+    {
+      "id": "viem_alias",
+      "source": "const write = client.writeContract; await write(args);",
+      "source_sha256": "39b9d62120ce510c6cbd4cee15497fd7a1e36bee29912fe3da563ee5ac63b59b",
+      "baseline": {
+        "passed": true,
+        "errors": [],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "candidate": {
+        "passed": false,
+        "errors": [
+          "unregistered_financial_primitive:scripts/isolated-fixture.mjs"
+        ],
+        "registered_exits": 0,
+        "scanned_files": 1
+      },
+      "sample_executed": false,
+      "network_calls": 0
+    }
+  ],
+  "baseline_missed_samples": 7,
+  "candidate_missed_samples": 0,
+  "scope": "local_static_inventory_predicate_not_runtime_payment_or_production_exploit",
+  "limitations": [
+    "Lexical matching is not a complete JavaScript/Python semantic analyzer. Unknown dynamically computed names may still evade static matching.",
+    "Original source and ledger bytes are not altered; baseline verdicts remain visible.",
+    "No real external platform task or delivery, cryptographic signer enrollment or business acceptance."
+  ],
+  "model_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "income": 0,
+  "production_deployed": false
+}

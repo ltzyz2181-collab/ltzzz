@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {generateKeyPairSync} from 'node:crypto';
-import {scanFinancialSource,checkFinancialInventory} from '../lib/financial-exit-inventory.mjs';
+import {scanFinancialSource,checkFinancialInventory} from './fixtures/pr278/financial-exit-inventory.mjs';
 import {authenticate,canonical,evaluate,sha256,subjectFor,validateTrust} from '../lib/patchgate.mjs';
 import {rolloutApproved} from '../lib/patchgate-a2.mjs';
 import {denyLegacyFinancialExecution,assertReadOnlyRpcBody,legacyRelayReadFetch} from '../../lib/financial-exit-guard.js';

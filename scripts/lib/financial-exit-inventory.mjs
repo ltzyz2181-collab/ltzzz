@@ -13,22 +13,8 @@ const PATTERNS=[
  ['other_signing_sdk',/\b(?:send_transaction|writeContract|sendUserOperation|sendSponsoredUserOperation)\s*\(/g]
 ];
 const EXT=/\.(?:js|mjs|cjs|ts|tsx|sol|py|sh|ps1|bat|html)$/;
-const FINANCIAL_MEMBERS=new Set(['sendTransaction','signTransaction','signTypedData','broadcastTransaction','transfer','transferFrom','safeTransfer','supply','withdraw','writeContract','sendUserOperation','sendSponsoredUserOperation']);
-// Review constant bracket access and extracted methods as well as direct calls.
-// This is deliberately a lexical detector, not JavaScript evaluation or a proof
-// that arbitrary computed names/aliases cannot hide a financial operation.
-function indirectFinancialReferences(source){
- const matches=[];
- for(const m of source.matchAll(/\[([^\]\r\n]{1,512})\]/g)){
-  const parts=m[1].split('+').map(s=>s.trim());
-  if(!parts.every(s=>/^(?:"[A-Za-z_$][A-Za-z0-9_$]*"|'[A-Za-z_$][A-Za-z0-9_$]*'|`[A-Za-z_$][A-Za-z0-9_$]*`)$/.test(s)))continue;
-  if(FINANCIAL_MEMBERS.has(parts.map(s=>s.slice(1,-1)).join('')))matches.push({kind:'computed_financial_member',line:source.slice(0,m.index).split('\n').length});
- }
- for(const m of source.matchAll(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*?\s*\.\s*(?:sendTransaction|signTransaction|signTypedData|broadcastTransaction|transfer|transferFrom|safeTransfer|supply|withdraw|writeContract|sendUserOperation|sendSponsoredUserOperation)\b(?!\s*\()/g))matches.push({kind:'financial_method_reference',line:source.slice(0,m.index).split('\n').length});
- return matches;
-}
 export function scanFinancialSource(source){
- const matches=indirectFinancialReferences(source);for(const [kind,re] of PATTERNS){re.lastIndex=0;for(const m of source.matchAll(re))matches.push({kind,line:source.slice(0,m.index).split('\n').length});}
+ const matches=[];for(const [kind,re] of PATTERNS){re.lastIndex=0;for(const m of source.matchAll(re))matches.push({kind,line:source.slice(0,m.index).split('\n').length});}
  return matches.sort((a,b)=>a.line-b.line||a.kind.localeCompare(b.kind));
 }
 export function financialSourcePaths(root){
