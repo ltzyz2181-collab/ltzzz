@@ -32,7 +32,7 @@ export function reviewContextParts(root,topic){
    let end=Math.min(file.text.length,start+payloadLimit-512);
    if(end<file.text.length&&/[\uD800-\uDBFF]/.test(file.text[end-1])&&/[\uDC00-\uDFFF]/.test(file.text[end]))end--;
    if(end<=start)throw Error('context_chunk_budget_too_small');
-   const content=file.text.slice(start,end),chunk={file:file.file,source_sha256:file.sha256,start_char:start,end_char:end,chunk_sha256:digest(content)};
+   const content=file.text.slice(start,end),chunk={file:file.file,source_sha256:file.sha256,offset_unit:'utf16_code_units',start_char:start,end_char:end,chunk_sha256:digest(content)};
    const block='=== '+JSON.stringify(chunk)+' ===\n'+content+'\n';
    if(body.length+block.length>payloadLimit)flush();
    if(block.length>payloadLimit)throw Error('context_chunk_over_budget');
