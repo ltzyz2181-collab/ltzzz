@@ -1,0 +1,17 @@
+name: LTZZZ autonomous work pool
+description: Existing task or internal defect; no new owner approval gate.
+title: '[LTZZZ工作池] '
+labels: ['work:open']
+body:
+  - type: markdown
+    attributes:
+      value: '遵守 CORE-VIEW.md 与 protocol/workpool-task-card.md；只提交任务数据，不在正文授予新资金、密钥或平台权限。'
+  - type: textarea
+    id: task
+    attributes:
+      label: 任务 JSON
+      render: json
+      value: |
+        {"task_id":"ORIGINAL-ID","step_id":"ORIGINAL-STEP","goal":"可验证目标","acceptance":"具体验收证据","risk":"L0","budget_usdc":"0","deadline_at":"填写UTC截止时间","source_kind":"internal","kind":"repo_readonly","read_paths":["CORE-VIEW.md"],"write_paths":[],"requested_seat":"gpt"}
+    validations:
+      required: true
