@@ -1,0 +1,27 @@
+name: M1 security sandbox and retained backlog evidence (no deployment)
+on:
+  pull_request:
+    paths: ['scripts/tests/m1-security-challenges.test.mjs','scripts/tests/fixtures/pr278/**','scripts/tests/fixtures/m1-security-probe.mjs','knowledge/results/external-markets/m1/pr278/**','.github/workflows/m1-security-sandbox.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/tests/m1-security-challenges.test.mjs','scripts/tests/fixtures/pr278/**','knowledge/results/external-markets/m1/pr278/**','.github/workflows/m1-security-sandbox.yml']
+permissions: {contents: read}
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '22'}
+      - name: Test public inert samples, original-ID retention and external manifest
+        run: node --test --test-reporter=tap scripts/tests/m1-security-challenges.test.mjs
+      - name: Report repaired and still-unresolved lexical examples without executing samples
+        run: node scripts/tests/fixtures/pr278/claude-variants-probe.mjs > /tmp/claude-variants.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: m1-sandbox-variants-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/claude-variants.json
+          retention-days: 30
