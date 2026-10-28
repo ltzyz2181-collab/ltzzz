@@ -1,0 +1,104 @@
+{
+  "task_id": "PLAN-EXTERNAL-MARKETS-20261024-PR278-SECURITY",
+  "challenge": "fund_scan_missed_detection_reproduction",
+  "at": "2026-10-28T10:24:04.805Z",
+  "logical_seat": "gpt",
+  "client": "Codex sandbox Node.js",
+  "actual_provider": null,
+  "model": null,
+  "execution_provider": "nodejs_local",
+  "run_id": null,
+  "source_commit": "0a26116a06bd381b4c5ce91094af84bbd2bf5a9e",
+  "source_commit_kind": "checkout_base_not_assertion_of_clean_candidate",
+  "source_tree_clean": false,
+  "candidate_source_sha256": "24d0b7c59ef1a2c05adb8926de3ff7587689e831792a88649b71e6ef30054de0",
+  "production_scanner_sha256": "c643e76a047782e2f6757a39a282f859ad800dcb4297b42353e2d817caf4cc68",
+  "original_reported_author": "doubao",
+  "original_candidate_commit": "e74be4adcd3d8236f0ce2425565d7cc3c788c707",
+  "paid": false,
+  "tx_hash": null,
+  "model_calls": 0,
+  "network_calls": 0,
+  "samples_total": 8,
+  "current_scanner_missed": 7,
+  "current_scanner_caught": 1,
+  "claim_reproduced": true,
+  "candidate_covers_all_previously_missed": true,
+  "combined_current_plus_candidate_coverage": 8,
+  "uncovered_by_both": [],
+  "rows": [
+    {
+      "sample": "sample_01_direct",
+      "source": "const w=provider(); w.sendTransaction(tx);",
+      "current_scanner_hits": [
+        "transaction_send"
+      ],
+      "candidate_hits": [],
+      "current_missed": false
+    },
+    {
+      "sample": "sample_02_bracket",
+      "source": "w['sendTransaction'](tx);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:sendTransaction"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_03_bracket_concat",
+      "source": "token['trans'+'fer'](to,n);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:transfer"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_04_alias",
+      "source": "const send = w.sendTransaction; send(tx);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "financial_method_reference:sendTransaction"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_05_alias_chain",
+      "source": "const a = w.sendTransaction; const b = a; b(tx);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "financial_method_reference:sendTransaction"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_06_bracket_supply",
+      "source": "pool['supply'](amount);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:supply"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_07_bracket_withdraw",
+      "source": "vault['withdraw'](x);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "computed_financial_member:withdraw"
+      ],
+      "current_missed": true
+    },
+    {
+      "sample": "sample_08_alias_transfer",
+      "source": "const transfer = wallet.transfer; transfer(to,n);",
+      "current_scanner_hits": [],
+      "candidate_hits": [
+        "financial_method_reference:transfer"
+      ],
+      "current_missed": true
+    }
+  ],
+  "note": "Sandbox only. Current scanner = scripts/lib/financial-exit-inventory.mjs scanFinancialSource (production, read-only). Candidate = in-memory lexical detector (computed bracket member + single-hop declaration alias), NOT merged. GPT amendment adds finite declaration-alias closure for the reproduced chain; this is sandbox lexical coverage of eight samples, not production scanner coverage or full JS scope/dataflow analysis. Original Doubao report is retained unchanged."
+}

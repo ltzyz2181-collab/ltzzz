@@ -1,0 +1,26 @@
+name: PR278 fundscan sandbox reproduction
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/tests/repro-fundscan-miss-20261028.mjs','scripts/tests/pr278-fundscan-chain.test.mjs','.github/workflows/pr278-sandbox.yml']
+  pull_request:
+    paths: ['scripts/tests/repro-fundscan-miss-20261028.mjs','scripts/tests/pr278-fundscan-chain.test.mjs','.github/workflows/pr278-sandbox.yml']
+permissions: {contents: read}
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/pr278-fundscan-chain.test.mjs
+      - name: Reproduce only inert source strings; no model, wallet or network
+        run: node scripts/tests/repro-fundscan-miss-20261028.mjs > "$RUNNER_TEMP/pr278-replay.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr278-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr278-replay.json
+          if-no-files-found: ignore

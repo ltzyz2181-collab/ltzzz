@@ -1,0 +1,102 @@
+{
+  "schema": "ltzzz.wep3.source_integrity_incident.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "P1-01-WEP3-SOURCE-INTEGRITY-20261028",
+  "at_utc": "2026-10-28T08:57:59.576Z",
+  "severity": "P1",
+  "status": "candidate_tested_component_review_received_waiting_Claude_full_audit_main_incident_open",
+  "current_main": {
+    "commit": "2799a53d0515963fd779e1ca47efd3d8a80076aa",
+    "blob": "ae5f666d715046a664ca862ec469bffabfd60f2f",
+    "bytes": 8,
+    "content": "SEE_FILE"
+  },
+  "corrupting_commit": "8e733249c08971c86b7b8b9ea7e3c0a5c7a91f47",
+  "old_failure": {
+    "run": 40489828813,
+    "job": 122140667167,
+    "passed": 150,
+    "failed": 8,
+    "reason": "path is not defined",
+    "different_source_than_current_placeholder": true
+  },
+  "candidate": {
+    "pr": 276,
+    "head": "ea71a7428727f0593652cd17243ebc61c21a50aa",
+    "source_blob": "1d3eb85f765b94933f7f7546096c438fea475970",
+    "source_sha256": "ee7f64b75e682a35e5217abd88e3a7bbaa3b120fb78bd1bf2fb89c2d34b4e43f",
+    "merged": false,
+    "deployed": false,
+    "actual_CI": {
+      "run_id": 40659661802,
+      "run_attempt": 1,
+      "job_id": 122719215444,
+      "conclusion": "success",
+      "event": "pull_request",
+      "head": "ea71a7428727f0593652cd17243ebc61c21a50aa",
+      "checkout_sha": "3704aca000474957975fb67351453615021fca5f",
+      "tests": 184,
+      "passed": 184,
+      "failed": 0,
+      "skipped": 0,
+      "counts_log_readback_verified": true,
+      "deploy_job": 122719366537,
+      "deploy_conclusion": "skipped",
+      "candidate_tree": "2537dd06b005ae907ad25e9718b24b9e0fee1a4c",
+      "tested_tree": "7ee3a2bf4b477b08328ef30bc3f44414d9f4c7c3",
+      "all_nine_candidate_files_equal": true,
+      "whole_tree_equal": false,
+      "only_other_differences": [
+        "innovation/2026-10-28.json",
+        "innovation/index.json",
+        "ltzzz-memory/tasks/innovation/2026-10-28-doubao.md",
+        "ltzzz-memory/tasks/innovation/2026-10-28-manus.md"
+      ],
+      "all_CI_green": false,
+      "A2_failure_run": 40659660330
+    }
+  },
+  "reviews": {
+    "qianwen": {
+      "actual_provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "metadata_source": "provider_response",
+      "native_call": true,
+      "calls": 1,
+      "run_id": "40660083254",
+      "request_id": "1ad50fd3-e148-902b-99f6-d1bedcf413c5",
+      "finish_reason": "stop",
+      "tokens_used": 2768,
+      "api_cost": null,
+      "output_sha256": "9d19780b64be60f00c73bcc7a51e18669e0e490f5ff6fcad57446e7935642697",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-WEP3-INTEGRITY-20261028.json",
+      "verdict": "approve_component",
+      "scope": "component_exact_source_excerpt_only_not_full_legacy_body_or_stage_approval",
+      "findings": [],
+      "original_opinion_preserved": true,
+      "status": "component_approve_not_stage_admission",
+      "adjudication_path": "knowledge/results/wep3/pr276-review-closeout-20261028.json"
+    },
+    "claude": {
+      "status": "requested_new_head_not_received",
+      "inbox": "ops/dispatch/inbox/claude/PLAN-PATCHGATE-ESCROW-20261023-POST272-REVIEWS.md",
+      "notification_comment": 6464765118
+    }
+  },
+  "live_read": {
+    "endpoint": "https://ltzzz-wep3.ltzyz2181.workers.dev/health",
+    "tool_retrieved_ok_body": true,
+    "reported_version": "1.1.0",
+    "source_commit_verified": false,
+    "actual_http_status": null,
+    "health_does_not_prove_candidate_deployment": true
+  },
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "limitations": [
+    "Main source is still corrupt until an audited merge; this record does not close the incident.",
+    "PR CI deploy job was skipped; no production or ledger migration acceptance performed.",
+    "Standalone PR validation is not PatchGate trusted signature admission."
+  ]
+}
