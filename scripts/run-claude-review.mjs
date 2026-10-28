@@ -6,7 +6,7 @@ fs.mkdirSync(dir,{recursive:true});
 let sourceCommit=null;try{sourceCommit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{}
 const claimId=request.task_id+(request.part>1?'-PART-'+request.part:'');
 const file=dir+'/'+claimId+'.json';
-const save=r=>{const {context,...visible}=r;fs.writeFileSync(file,JSON.stringify({...visible,context:{...context,prompt:undefined}},null,2)+'\n');};
+const save=r=>{const {context,...visible}=r;fs.writeFileSync(file,JSON.stringify({...visible,context_part:context?.part_index||null,context_parts:context?.part_count||null,full_topic_input_supplied_in_this_call:context?.complete_source_in_this_part===true,context:{...context,prompt:undefined}},null,2)+'\n');};
 const output=v=>{if(process.env.GITHUB_OUTPUT)fs.appendFileSync(process.env.GITHUB_OUTPUT,'execute='+v+'\n');};
 if(phase==='prepare'){
  const readiness=await inspectClaude(process.env.ANTHROPIC_API_KEY);

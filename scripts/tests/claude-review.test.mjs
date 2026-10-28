@@ -31,7 +31,7 @@ test('context packs preserve full sources and hashes; missing Pulse code is expl
  for(const f of r.files)assert.equal(f.sha256,digest(fs.readFileSync(f.file,'utf8')));
  const parts=reviewContextParts(process.cwd(),'six-memory');
  for(const p of parts){assert.equal(p.files.length,6);assert.ok(p.input_chars<=32000);assert.equal(p.prompt_sha256,digest(p.prompt));assert.equal(p.complete_source_in_this_part,parts.length===1);}
- for(const file of parts[0].files){let end=0;const text=fs.readFileSync(file.file,'utf8');for(const p of parts)for(const c of p.chunks.filter(c=>c.file===file.file)){assert.equal(c.start_char,end);const slice=text.slice(c.start_char,c.end_char);assert.equal(c.chunk_sha256,digest(slice));assert(p.prompt.includes(slice));end=c.end_char;}assert.equal(end,text.length);assert.equal(file.sha256,digest(text));}
+ for(const file of parts[0].files){let end=0;const text=fs.readFileSync(file.file,'utf8');for(const p of parts)for(const c of p.chunks.filter(c=>c.file===file.file)){assert.equal(c.offset_unit,'utf16_code_units');assert.equal(c.start_char,end);const slice=text.slice(c.start_char,c.end_char);assert.equal(c.chunk_sha256,digest(slice));assert(p.prompt.includes(slice));end=c.end_char;}assert.equal(end,text.length);assert.equal(file.sha256,digest(text));}
 });
 test('large Unicode source is losslessly split without raising limits or auto-calling a provider',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'claude-parts-'));fs.mkdirSync(path.join(root,'ltzzz-memory'));
