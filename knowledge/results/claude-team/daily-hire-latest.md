@@ -1,6 +1,6 @@
 # 每日AI雇佣数据 · 2026-10-29
 
-任务：REAL-HIRE-20261029-CLAUDE-01；模式：internal；状态：dispatched。
+任务：REAL-HIRE-20261029-CLAUDE-01；模式：internal；状态：waiting_same_day_ANS_assignment。
 
 来源调用：见订单回执，未补造调用。
 
