@@ -17,8 +17,9 @@ export function indirectFinancialReferences(source){
   const reBracket=/\b(\w+)\[\s*('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")(?:\s*\+\s*('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"))*\s*\]\s*\(/g;
   for(const m of source.matchAll(reBracket)){
     const name=m[0].split('[')[1].split(']')[0];
-    const joined=name.replace(/["'\s]/g,'').replace(/\+/g,'');
-    if(FINANCIAL_MEMBERS.has(joined))found.push({kind:'computed_financial_member',line:source.slice(0,m.index).split('\n').length,member:joined});
+    if(name.includes('\\'))continue; // Escaped literals are outside this small sandbox detector.
+    const joined=[...name.matchAll(/(['"])(.*?)\1/g)].map(x=>x[2]).join('');
+    if(FINANCIAL_MEMBERS.has(joined))found.push({kind:'computed_financial_member',line:source.slice(0,m.index).split(/\r\n|\r|\n/).length,member:joined});
   }
   // declaration alias: const send = w.sendTransaction; send(tx)
   const reAliasDecl=/const\s+([A-Za-z_$][\w$]*)\s*=\s*[^;\n]*?\.([A-Za-z_$][\w$]*)\s*;?/g;
@@ -36,8 +37,9 @@ export function indirectFinancialReferences(source){
     if(!changed)break;
   }
   for(const [alias,member] of aliases){
-    const reCall=new RegExp('\\b'+alias+'\\s*\\(','g');
-    for(const m of source.matchAll(reCall))found.push({kind:'financial_method_reference',line:source.slice(0,m.index).split('\n').length,member,alias});
+    const escaped=alias.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const reCall=new RegExp('(?<![\\w$])'+escaped+'\\s*\\(','g');
+    for(const m of source.matchAll(reCall))found.push({kind:'financial_method_reference',line:source.slice(0,m.index).split(/\r\n|\r|\n/).length,member,alias});
   }
   return found.sort((a,b)=>a.line-b.line||a.kind.localeCompare(b.kind));
 }
