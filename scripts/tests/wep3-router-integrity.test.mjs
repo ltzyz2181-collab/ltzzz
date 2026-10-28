@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import worker, {handleRequest, Wep3Ledger} from '../../wep3-worker.js';
 
@@ -62,4 +63,18 @@ test('planning remains storage-free and legacy payment confirmation remains disa
   assert.equal((await f.request('/pay/confirm',{})).status,410);
   assert.equal((await f.request('/pay/credit',{})).status,410);
   assert.equal((await f.request('/transfer',{amount:0.1},'wrong')).status,401);
+});
+
+// Static workflow regression only; does not exercise Cloudflare credentials or production.
+test('WEP3 production upload requires exact reviewed main and a pre-upload atomic cutover check', () => {
+  const yaml = readFileSync(new URL('../../.github/workflows/deploy-wep3.yml', import.meta.url), 'utf8');
+  const deploy = yaml.split(/\\n  deploy:\\n/)[1];
+  assert.ok(deploy, 'deploy job must exist');
+  assert.match(deploy, /github\\.event_name == 'workflow_dispatch'/);
+  assert.match(deploy, /github\\.ref == 'refs\\/heads\\/main'/);
+  assert.match(deploy, /vars\\.WEP3_REVIEWED_SOURCE_SHA == github\\.sha/);
+  const preflight = deploy.indexOf('- name: Require remote atomic cutover before any production upload');
+  const firstUpload = deploy.indexOf('npx wrangler deploy');
+  assert.ok(preflight >= 0 && firstUpload > preflight, 'atomic check must precede first Worker upload');
+  assert.match(deploy.slice(preflight, firstUpload), /health\\.atomic_ledger_ready !== true/);
 });
