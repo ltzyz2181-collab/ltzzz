@@ -6,6 +6,7 @@ const taskDigest = task => sha256(JSON.stringify(Object.fromEntries(Object.keys(
 const ID = /^[A-Z0-9][A-Z0-9_-]{5,120}$/;
 const HASH = /^[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
+export const MAX_TASK_JSON_CHARS = 16000; // Bounded JSON input to this lane; not a controller quota.
 const text = value => typeof value === 'string' && value.trim().length > 0;
 export function safePath(value) {
   return text(value) && !/^[/.]|[\\\u0000-\u001f%?#]/.test(value) && value.split('/').every(v => v && v !== '.' && v !== '..' && v !== '.git');
@@ -25,7 +26,7 @@ export function validatePreflight(record, {coreHash, sourceCommit}) {
 
 export function parseTask(body) {
   const matches = [...String(body || '').matchAll(/```json\s*([\s\S]*?)```/g)];
-  if (matches.length !== 1 || matches[0][1].length > 16000) throw Error('one_bounded_task_JSON_required');
+  if (matches.length !== 1 || matches[0][1].length > MAX_TASK_JSON_CHARS) throw Error('one_bounded_task_JSON_required');
   return JSON.parse(matches[0][1]);
 }
 export function routeTask(task, issue, policy, now = Date.now()) {
@@ -50,8 +51,8 @@ export function routeTask(task, issue, policy, now = Date.now()) {
 export function leaseStatus(state, now = Date.now()) {
   if (!state) return 'available';
   if (state.status === 'submitted_waiting_independent_review') return 'submitted_do_not_repeat';
-  if (state.status === 'released') return 'available';
-  if (state.status !== 'leased') return 'reconciliation_required';
+  if (state.status === 'released') return state.effect_state === 'not_started' ? 'available' : 'reconciliation_required';
+  if (state.status !== 'leased' || !['not_started','started_unknown'].includes(state.effect_state)) return 'reconciliation_required';
   if (!Number.isFinite(Date.parse(state.expires_at))) return 'reconciliation_required';
   if (Date.parse(state.expires_at) > now) return 'leased';
   return state.effect_state === 'started_unknown' ? 'reconciliation_required' : 'available_expired';
@@ -80,7 +81,7 @@ export async function updateLease({key,leaseId,executorId,action,artifact,store,
   let next = {...old,updated_at_utc:new Date(now).toISOString()};
   if (action === 'begin_effects' && old.effect_state === 'not_started') next.effect_state='started_unknown';
   else if (action === 'release' && old.effect_state === 'not_started') next.status='released';
-  else if (action === 'submit' && safePath(artifact?.path) && HASH.test(artifact?.sha256) && (artifact.content===undefined || sha256(artifact.content)===artifact.sha256)) next={...next,status:'submitted_waiting_independent_review',effect_state:'output_recorded',artifact:{path:artifact.path,sha256:artifact.sha256},late_submission:lateResult,accepted:false};
+  else if (action === 'submit' && safePath(artifact?.path) && HASH.test(artifact?.sha256) && typeof artifact.content==='string' && sha256(artifact.content)===artifact.sha256) next={...next,status:'submitted_waiting_independent_review',effect_state:'output_recorded',artifact:{path:artifact.path,sha256:artifact.sha256},late_submission:lateResult,accepted:false};
   else return {updated:false,status:'invalid_transition'};
   const updated=await store.compareAndSwap(key,snapshot,next,{artifact:action==='submit'?artifact:null});
   return {updated,status:updated?next.status:'lease_update_conflict',owner_confirmation_required:false};
