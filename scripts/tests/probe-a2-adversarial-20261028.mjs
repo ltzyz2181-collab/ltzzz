@@ -4,7 +4,7 @@
 import {generateKeyPairSync,createPublicKey,verify} from 'node:crypto';
 const cpub=createPublicKey,vfy=verify;
 
-const results={at:'2026-10-28T09:30:00Z',seat:'doubao',identity:'did:ltzzz:doubao',paid:false,tx_hash:null,model_calls:0,network_calls:0,cases:[]};
+const results={at:new Date().toISOString(),original_reported_at:'2026-10-28T09:30:00Z',original_reported_seat:'doubao',logical_seat:'gpt',actual_provider:null,model:null,execution_provider:process.env.GITHUB_ACTIONS==='true'?'github_actions':'nodejs_local',fixture_only_keys:true,paid:false,tx_hash:null,model_calls:0,network_calls:0,cases:[]};
 const push=(name,ok,detail)=>{results.cases.push({name,ok,detail:String(detail).slice(0,160)});};
 
 try{
@@ -56,12 +56,12 @@ try{
 
  // --- 4. executionGate policy forgery (baseline uses REAL production config) ---
  const ctx={source:SHA_HEX};
- const realPolicyText=await (await import('node:fs/promises')).readFile('config/patchgate-a2-reconcile.json','utf8');
- const read=p=>p==='config/patchgate-a2-reconcile.json'?realPolicyText:'';
+ const awaitFs=await import('node:fs');
  const preflight=()=>({blockers:[],runtime_bundle:{}});
  try{
-  const r=exec.executionGate({context:ctx,request:good,read,preflight});
-  push('execution_gate_prod_held_baseline',r.enabled===false&&r.blockers.includes('actual_execution_workflow_not_registered')?true:false,JSON.stringify({enabled:r.enabled,blockers:r.blockers,authority:r.authority}));
+  const actualRead=p=>(awaitFs.readFileSync(p,'utf8'));
+  const r=exec.executionGate({context:ctx,request:good,read:actualRead});
+  push('execution_gate_prod_held_baseline',r.enabled===false&&r.blockers.includes('A2_switch_disabled')?true:false,JSON.stringify({enabled:r.enabled,blockers:r.blockers,authority:r.authority}));
  }catch(e){push('execution_gate_prod_held_baseline',false,e.message);}
  const goodPolicy={schema:'ltzzz.patchgate.a2-reconcile-policy.v1',task_id:TASK,financial_execution:false,automatic_release_enabled:false,execution_authority:{workflow_path:'.github/workflows/patchgate-a2-execute.yml',workflow_id:123}};
  let policy=goodPolicy;
