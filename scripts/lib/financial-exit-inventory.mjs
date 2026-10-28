@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {scanWorkflowSecretReferences} from './workflow-secret-references.mjs';
+import {workflowCredentialPurpose} from './workflow-credential-policy.mjs';
+export {scanWorkflowSecretReferences};
 const PATTERNS=[
  ['wallet_constructor',/\bWallet\s*\(/g],
  ['transaction_send',/\.\s*(?:sendTransaction|signTransaction|signTypedData|broadcastTransaction|transfer|transferFrom|safeTransfer|supply|withdraw)\s*\(/g],
@@ -26,21 +29,6 @@ export function scanFinancialSource(source){
  return matches.sort((a,b)=>a.line-b.line||a.kind.localeCompare(b.kind));
 }
 // Inspect only public workflow text and Secret identifiers; never Secret values.
-export function scanWorkflowSecretReferences(source){
- const refs=[];
- for(const expression of source.matchAll(/\$\{\{([\s\S]*?)\}\}/g)){
-  const body=expression[1],at=expression.index;
-  const reference=/\bsecrets\s*(?:\.\s*([A-Za-z_][A-Za-z0-9_]*)|\[\s*(['"])([A-Za-z_][A-Za-z0-9_]*)\2\s*\])/gi;
-  let remainder=body;
-  for(const m of body.matchAll(reference)){
-   const name=(m[1]||m[3]).toUpperCase();
-   refs.push({kind:SENSITIVE_SIGNING_NAME.test(name)?'signing_private_key_reference':'nonfinancial_credential_reference',name,line:source.slice(0,at+m.index).split('\n').length});
-  }
-  remainder=remainder.replace(reference,' ');
-  if(/\bsecrets\b/i.test(remainder))refs.push({kind:'unresolved_secret_reference',name:null,line:source.slice(0,at).split('\n').length});
- }
- return refs;
-}
 export function financialSourcePaths(root){
  return [...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard'],{cwd:root,encoding:'utf8',maxBuffer:8000000}).split('\0').filter(Boolean))].filter(p=>(EXT.test(p)||WORKFLOW.test(p))&&!/(^|\/)(node_modules|vendor|dist|\.git|tests|fixtures)\//.test(p)&&!p.startsWith('scripts/tests/')&&!/\.test\.[^/]+$/.test(p)&&p!=='test-orchestrator.mjs');
 }
@@ -59,7 +47,8 @@ export function checkFinancialInventory({sources,inventory,read}){
   const entry=byPath.get(s.path);
   if(s.workflow){
    for(const ref of s.secret_references||[]){
-    if(ref.kind==='unresolved_secret_reference')errors.push('workflow_secret_collection_or_dynamic_reference_forbidden:'+s.path);
+    if(['unresolved_secret_reference','secret_inheritance_forbidden','external_reusable_workflow_forbidden'].includes(ref.kind))errors.push('workflow_secret_collection_or_dynamic_reference_forbidden:'+s.path);
+    if(ref.kind==='named_credential_reference'&&!workflowCredentialPurpose(ref.name,s.path))errors.push('workflow_unregistered_credential_purpose:'+s.path+':'+ref.name);
     if(ref.kind==='signing_private_key_reference'&&!NON_FINANCIAL_WORKFLOW_KEYS.some(e=>e.path===s.path&&e.sha256===s.sha256&&e.names.includes(ref.name)))errors.push('workflow_financial_or_unreviewed_signing_secret_reference:'+s.path+':'+ref.name);
    }
   }

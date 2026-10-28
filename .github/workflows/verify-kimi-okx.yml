@@ -39,9 +39,9 @@ jobs:
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
           MOONSHOT_API_KEY_INTL: ${{ secrets.MOONSHOT_API_KEY_INTL }}
           MOONSHOT_API_KEY_: ${{ secrets.MOONSHOT_API_KEY_ }}
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
           VERIFY_KIMI_MODEL_CALLS: ${{ inputs.include_kimi_generation && '1' || '0' }}
       - name: Save actual receipts
         if: always()

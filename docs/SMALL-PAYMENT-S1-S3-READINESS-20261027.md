@@ -29,3 +29,15 @@
 | 链上托管放款 | 当前 `invest-channel/contracts/LTZZZVault.sol` / `OwnerAaveFunding.sol` 为旧投资/供款合约 | 未找到本轮新 escrow 合约部署/交付审批放款/超时退款的三类交易验收。旧 Aave supply/withdraw、普通转账或内部积分均不能替代此证据。先测试网，未验收不启真钱 |
 
 以上为只读源码核对，不是实际云部署验收。现有 `config/small-payment-autonomy.json`、activation authority 与模型 policy 都继续默认关闭，资金上限、双签与冷却不变；外部市场 M1 的零押金/零转出任务不应被 S3 等待阻塞。
+
+## PR #290 修订（2026-10-28，待新 head 独立复审）
+
+原 `post272-s1` 文档与 manifest 保留为历史，本修订 CI 改验固定版本 `post290-s1`，不把旧审计结论延伸到新字节。
+
+- R1：表达式读取器识别字符串及双单引号转义，字符串中的 `}}` 不再截断后续 Secret 引用；字符串本身的文字不当成真实读取。
+- R2：拒绝 `secrets: inherit`、带引号/锚点/别名的继承写法和仓外可复用 workflow。原一次性视频 workflow 改为显式传递 `LTZZZ_AGENT_TOKEN`；去掉其 callee 的源码 push 触发，避免本补丁触发旧视频上传。没有上传或重跑任何视频。
+- R3：已登记的名称和用途才准入；未知名称一律失败。CDP API-only 名称限既有只读探针路径，微信 RSA 例外仍固定路径与字节。实际 OKX API 权限尚无核验证据，因此四个旧 workflow 停止注入 OKX 凭据；这不等于远端 Secret 已删除或吊销，也不证明其他允许名字的真实 IAM 范围。
+- R4：新增基于 `pull_request_target` 的检查，checkout BASE，候选 Git blob 只当数据检查，不执行候选脚本、不注入 Secret、不安装候选依赖。全部 workflow 变化纳入 push 检查。候选可改写自身检测器的对抗用例已测试。该新检查要合并到 main 后才可能真实运行；分支保护必需检查的配置仍未验证，本 PR 的普通 CI 不是可信签名或付款准入。
+- R5：注释中的 Secret 表达式仍保守拒绝；静态词法扫描不是任意恶意代码隔离沙盒，不宣称完整防御 YAML/运行时所有变体。
+
+新 manifest 用源码字节绑定这次实现，回执单独保存测试结果与摘要。A2/A3/B、付款和正式签名准入继续关闭；没有读取 Secret 值、变更远端凭据或执行云部署/真实资金动作。火山模型 Key 的工作流引用不等于火山云资源部署身份。

@@ -5,7 +5,8 @@ import {fileURLToPath} from 'node:url';
 import {sha256, canonical} from './lib/patchgate.mjs';
 const MANIFEST_VERSIONS=Object.freeze({
   post271:{path:'knowledge/results/patchgate/post271/artifact-manifest.json',schema:'ltzzz.post271.artifact-manifest.v1'},
-  'post272-s1':{path:'knowledge/results/patchgate/post272-s1/artifact-manifest.json',schema:'ltzzz.post272-s1.artifact-manifest.v1'}
+  'post272-s1':{path:'knowledge/results/patchgate/post272-s1/artifact-manifest.json',schema:'ltzzz.post272-s1.artifact-manifest.v1'},
+  'post290-s1':{path:'knowledge/results/patchgate/post290-s1/artifact-manifest.json',schema:'ltzzz.post290-s1.artifact-manifest.v1'}
 });
 export function verifyPaymentManifest(root,version='post271') {
   if(!Object.hasOwn(MANIFEST_VERSIONS,version))throw Error('fixed_manifest_version_required');

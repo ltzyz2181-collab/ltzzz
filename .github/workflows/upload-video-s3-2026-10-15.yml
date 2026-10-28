@@ -3,9 +3,9 @@ name: Queue prepared video and verify public YouTube delivery
 on:
   workflow_dispatch:
   workflow_call:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/upload-video-s3-2026-10-15.yml']
+    secrets:
+      LTZZZ_AGENT_TOKEN:
+        required: true
 permissions: {contents: write}
 concurrency: {group: ltzzz-youtube-publish, cancel-in-progress: false}
 

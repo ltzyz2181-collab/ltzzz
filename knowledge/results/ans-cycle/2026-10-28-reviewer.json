@@ -1,0 +1,28 @@
+{
+  "accepted": true,
+  "artifact_sha256": "667ca90e7026e056187cd8b534aef5058e40ba310ca259b471d7c2371e43d882",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 在席位循环开头调用 recoverArtifact(root,record,agent,seat)，但未接收或判断其布尔返回值。",
+    "源码显示 recoverArtifact 成功时会设置 seat.artifact、将 seat.status 改为 generated_pending_sync、保存 recovery 并返回 true；失败时返回 false。syncDailyBoard 忽略返回值本身不直接撤销成功恢复，因为状态已被函数突变，但无法依据返回值区分恢复成功、无 artifact 和歧义 artifact。",
+    "当席位初始为 generation_started 且磁盘上已有唯一完整 artifact 时，若 recoverArtifact 当次成功，seat.status 已变为 generated_pending_sync，后续不会再进入 generation_started 降级分支，而会继续执行 validateArtifact、readRemote、submit_task 和 review 逻辑。因此 finding 中“recoverArtifact 调用后忽略返回值，导致已存在唯一完整 artifact 的 generation_started 状态可直接降级”的因果表述不够精确；真正问题是恢复失败或暂未识别时无返回值驱动的同轮重试。",
+    "若 recoverArtifact 对 generation_started 返回 false，syncDailyBoard 随后无条件把状态改为 generation_unknown_no_repurchase，写入 sync_reason 并保存；同一轮循环不会再次调用 recoverArtifact，也不会进入正常 artifact 同步分支。该缺陷可由源码静态确认。",
+    "recoverArtifact 明确支持 generation_started 和 generation_unknown_no_repurchase，所以下一次 syncDailyBoard 调用在唯一有效 artifact 已可识别时通常可以恢复。finding 所称“永久滞留”过重；准确影响是推迟到下一次 syncDailyBoard，若没有后续调用或识别条件持续不满足，则持续滞留。",
+    "scripts/daily-task-board.mjs 的 sync CLI 在一次执行中先调用 syncDailyBoard，再执行 materializeDailyReview 和 syncDailyReview，之后第二次调用 syncDailyBoard。这可能在同一 CLI 执行中给该席位第二次恢复机会，但不能消除 syncDailyBoard 作为库函数单次调用的缺陷，也不能覆盖其他直接调用方。",
+    "minimal_patch 的核心方向与源码问题相符：先保存 recoverArtifact 的结果，避免恢复成功后落入降级逻辑，并在恢复成功时继续执行下方 artifact 同步流程。",
+    "所给补丁加入了 seat.assignment、seat.claim_verified、seat.artifact 和状态条件，条件与 recoverArtifact 自身入口条件基本一致；恢复成功后不 continue，可使 generated_pending_sync 进入后续正常同步分支。",
+    "补丁仍是片段而非已写入仓库的完整 diff；未提供自动化测试或故障注入。交付的 remaining_blocker 已明确说明尚未写盘、未验证故障恢复路径，因此本次只能验收为可复核的问题分析和修复草稿，不能验收为已修复或已上线。",
+    "verification_commands 中的 node --check、模块导入和 git diff 只能检查语法、导出与差异，不能证明崩溃恢复语义；这一限制在交付中已如实披露。"
+  ],
+  "unverified": [
+    "给定 artifact_sha256 对应交付原字节的 SHA-256 未在当前审核环境重算，仅按要求严格回传。",
+    "补丁尚未证明已写入仓库；完整 diff、行级上下文、格式、语法和所有调用方兼容性未验证。",
+    "未实际执行 node --check、模块导入、git diff、单元测试或集成测试。",
+    "未在 fs.writeFileSync 成功后、seat.artifact 和 seat.status 持久化前通过 kill -9、断电或模拟崩溃做故障注入。",
+    "唯一完整 artifact、无 artifact、多个候选 artifact、损坏 artifact、哈希不匹配、绑定字段不一致、文件已存在和目录项持久化等边界场景未通过测试验证。",
+    "recoverArtifact 第一次失败后同一轮重试是否会因文件系统状态、时序或外部提交流程而成功，未通过运行验证。",
+    "scripts/daily-task-board.mjs 中第二次 syncDailyBoard 是否在实际 GitHub Actions 日志中稳定掩盖该库函数缺陷，未验证。",
+    "恢复成功后 readRemote、远端 raw 持久化、submit_task、独立 review 和异常重试的端到端行为未验证。",
+    "后续 syncDailyBoard 是否必然被调度、何时触发以及生产环境重试时序未验证。",
+    "任何模型调用、API 费用、资金交易、部署、生产版本或线上回读均未验证；本结论仅覆盖代码/规格草稿的可复核性。"
+  ]
+}

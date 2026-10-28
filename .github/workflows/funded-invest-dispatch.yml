@@ -85,9 +85,9 @@ jobs:
         if: env.ARM_REAL_ORDERS == '1' && env.SELECTED_VENUE != 'web3'
         env:
           RECONCILE_CONFIRMED_DEPOSIT_ONLY: '1'
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
@@ -100,16 +100,16 @@ jobs:
           node scripts/fund-okx-owner-round.mjs
       - name: Prepare live reputation allocations and fixed exchange client IDs
         env:
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
         run: node scripts/funded-invest-executor.mjs --phase prepare --venue "$SELECTED_VENUE" --agent "$SELECTED_AGENT"
       - name: Resume only already-confirmed original capital after credit or permission recovers
         if: github.event_name == 'schedule'
         env:
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
         run: node scripts/resume-confirmed-cex-round.mjs
       - name: Persist claims before any order submission
         if: env.ARM_REAL_ORDERS == '1'
@@ -125,9 +125,9 @@ jobs:
       - name: Execute one external AI purchase and bounded per-seat investment orders
         if: env.ARM_REAL_ORDERS == '1'
         env:
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
         run: node scripts/funded-invest-executor.mjs --phase execute --venue "$SELECTED_VENUE" --agent "$SELECTED_AGENT"
       - uses: actions/upload-artifact@v4
         if: always()

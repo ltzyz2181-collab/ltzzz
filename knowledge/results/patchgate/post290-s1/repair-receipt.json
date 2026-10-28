@@ -1,0 +1,70 @@
+{
+  "schema": "ltzzz.claude290.s1-repair.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "at_utc": "2026-10-28T22:09:34.327409+00:00",
+  "original_pr": 274,
+  "original_head": "d089763d23e2674dd829f8e57394cd178b77f55d",
+  "audit_pr": 290,
+  "audit_head": "06c786b340c9ac9023a7982e0c3316438cc3eb30",
+  "actual_provider": "OpenAI",
+  "actual_model": null,
+  "model_metadata": "Exact model ID unavailable; Codex engineering execution, not native Claude/Qwen/Doubao audit",
+  "verified_local_source_commit": "ab0d32998a33188af19507d722c6161cec8969d8",
+  "integrated_main": "ae35b97f98e0d33bedab1541bc3b33fcb163231d",
+  "findings": {
+    "R1": "Replaced expression boundary regex with quoted-string-aware reader; regression covers quoted }} and doubled single quotes, literal text and following real credential reads.",
+    "R2": "Reject inheritance/aliases/quoted YAML keys and external reusable workflows. Removed real inherit usage; limited old video callable token explicitly, removed callee source-push trigger to avoid replaying old upload.",
+    "R3": "Reviewed Secret name/purpose allowlist. Unknown names reject; CDP API-only constrained to original probe path. Four workflows no longer inject unverified OKX API credentials. Remote IAM scope and Secret deletion/revocation remain unverified.",
+    "R4": "Added BASE-only pull_request_target read-only candidate blob checker, workflow-wide push path, symlink/path/size/UTF8 bounds and malicious candidate checker nonexecution test. Actual trusted main job and required-check protection need postmerge runtime verification.",
+    "R5": "Conservative expression references in comments still scanned; static scanner does not claim arbitrary malicious-code isolation."
+  },
+  "validation": {
+    "runtime": "Node 22.23.4",
+    "tests": 285,
+    "passed": 285,
+    "failed": 0,
+    "skipped": 0,
+    "command": "node --test --test-reporter=tap scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs scripts/tests/coinbase*.test.mjs scripts/tests/workflow-credential-trust.test.mjs",
+    "local_tap_sha256": "a9d356eb69353bbe416500968eaf9a10153685378623b95667a5a5db612e375a",
+    "local_tap_is_not_runner_proof": true,
+    "git_workflow_tree": {
+      "status": "trusted_source_workflow_inventory_not_authorization",
+      "revision": "ab0d32998a33188af19507d722c6161cec8969d8",
+      "passed": true,
+      "errors": [],
+      "registered_exits": 0,
+      "scanned_files": 128,
+      "model_calls": 0,
+      "financial_execution": false
+    },
+    "source_manifest_verified": true,
+    "manifest_unique_source_files": 68,
+    "release_sha256": "1a701aaac5a0e389a8b156c248e42691109fb8a0f5b588692e5cf6f65916c07c",
+    "initial_regressions": {
+      "passed": 0,
+      "failed": 20,
+      "local_tap_sha256": "db28bf4e5b1bcbbd55a7aa98f53ec4424b5e1a52f3254572213564748160121f"
+    }
+  },
+  "manifest_path": "knowledge/results/patchgate/post290-s1/artifact-manifest.json",
+  "manifest_sha256": "4aabb01a270bc539646df8df0d95be381ee293f00155af927d05b75512ed78b5",
+  "historical_manifests_preserved": [
+    "post271",
+    "post272-s1"
+  ],
+  "status": "revised_candidate_pending_exact_head_independent_rereview",
+  "credentials_read": false,
+  "remote_secrets_changed": false,
+  "model_calls": 0,
+  "mail_or_video_sent": 0,
+  "production_deployed": false,
+  "paid": false,
+  "tx_hash": null,
+  "A2_A3_B_payment_and_trust_unchanged": true,
+  "remaining": [
+    "Claude exact remote head rereview pending; this receipt is engineering evidence only.",
+    "New trusted BASE checker not yet on main or runtime accepted; branch-protection administration unavailable.",
+    "Current GPT environment reports no bound cloud identity or Volc deployment network; repo Ark model Secret references do not prove Volc control-plane access.",
+    "No real payment/signature enrollment/cloud deployment/remote credential cleanup has occurred."
+  ]
+}
