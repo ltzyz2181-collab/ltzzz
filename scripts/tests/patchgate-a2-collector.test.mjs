@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {canonical,sha256,TASK} from '../lib/patchgate.mjs';
 import {A2_BUNDLE_FILES,bundleDigest} from '../patchgate-a2-preflight.mjs';
-import {baseCheckContext} from '../patchgate-a2-collect.mjs';
+import {baseCheckContext,baseCheckEligibility} from '../patchgate-a2-collect.mjs';
 import {validateCollectionRequest,validateCollectorEndpoint,collectorGithubApi,collectClaudeAudit,assessBaseProtection,collectTrustedChecks,collectA2Readiness,signCollectedChecks,BASE_CHECK_WORKFLOW} from '../lib/patchgate-a2-collector.mjs';
 
 const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),ROOT='/repos/ltzyz2181-collab/ltzzz',REPO='ltzyz2181-collab/ltzzz';
@@ -156,4 +156,17 @@ test('C2 target execution GITHUB_SHA must be the trusted checkout BASE, never th
   for(const changed of [{GITHUB_EVENT_NAME:'pull_request'},{GITHUB_REF:'refs/pull/250/merge'},{GITHUB_SHA:B}])
     assert.throws(()=>baseCheckContext({env:{...env,...changed},p:f.state.pr,source:A}),/trusted_same_repository_base/);
   assert.throws(()=>baseCheckContext({env,p:f.state.pr,source:B}),/trusted_same_repository_base/);
+});
+
+test('scope bootstrap never qualifies non-L0 code or stale bases as a successful A2 check',()=>{
+ const f=fixture(),env={GITHUB_EVENT_NAME:'pull_request_target',GITHUB_REF:'refs/heads/main',GITHUB_SHA:A};
+ const policy=JSON.parse(fs.readFileSync('config/patch-policy.json','utf8'));
+ const doc={path:'docs/qualification-test.md',mode:'100644',binary:false,diff:'@@ -0,0 +1 @@\n+qualification test\n'};
+ const args={env,p:f.state.pr,source:A,policy,files:[doc]};
+ const good=baseCheckEligibility(args);assert.equal(good.eligible,true);assert.equal(good.passed,false);
+ for(const file of [{...doc,path:'scripts/patchgate-a2-collect.mjs'},{...doc,path:'docs/a.json'},{...doc,binary:true},{...doc,mode:'120000'}]){const r=baseCheckEligibility({...args,files:[file]});assert.equal(r.eligible,false);assert.equal(r.passed,false);}
+ const stale=baseCheckEligibility({...args,p:{...f.state.pr,base:{...f.state.pr.base,sha:C}}});assert.equal(stale.status,'stale_event_base_requalify_required');assert.equal(stale.eligible,false);
+ assert.equal(baseCheckEligibility({...args,ancestor:false}).status,'stale_candidate_rebase_required');
+ assert.throws(()=>baseCheckEligibility({...args,p:{...f.state.pr,head:{sha:B,repo:{full_name:'attacker/repo'}}}}),/trusted_same_repository/);
+ const workflow=fs.readFileSync(BASE_CHECK_WORKFLOW,'utf8');assert(workflow.includes("needs.bootstrap.outputs.eligible == 'true'"));assert(!workflow.includes('pull_request.head.ref'));
 });

@@ -107,7 +107,7 @@ export function summarizeProbeEvidence({card,sourceCommit,runId,candidate,races=
  validateProbeCard(card);
  if(candidate?.schema!=='ltzzz.patchgate.candidate-probes.v1'||candidate.task_id!==PROBE_TASK||candidate.candidate_head!==card.candidate_head||candidate.source_main_sha!==sourceCommit||candidate.run_id!==runId||candidate.shell_execution_provider!=='github_actions'||candidate.paid!==false||candidate.tx_hash!==null
   ||!Number.isInteger(candidate.tests_passed)||!Number.isInteger(candidate.tests_failed)||candidate.tests_passed<0||candidate.tests_failed<0||!plain(candidate.coverage)||typeof candidate.passed!=='boolean')throw Error('invalid_candidate_probe_artifact');
- const required=['forged_head','same_key_concurrency','receipt_injection','422_without_ref',...COLLECTOR_PROBE_CASES];
+ const required=['valid_policy_baseline','forged_head','same_key_concurrency','receipt_injection','422_without_ref',...COLLECTOR_PROBE_CASES];
  const covered=required.every(k=>candidate.coverage[k]===true),candidatePassed=candidate.passed===true&&candidate.tests_failed===0&&candidate.tests_passed>0&&covered;
  let raceVerified=false;
  if(card.run_live_cas){

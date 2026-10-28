@@ -15,7 +15,7 @@ function transport(){
   throw Error('unexpected test request');
  };return {api,refs,writes};
 }
-const candidate={schema:'ltzzz.patchgate.candidate-probes.v1',task_id:PROBE_TASK,candidate_head:B,source_main_sha:A,run_id:'123',shell_execution_provider:'github_actions',coverage:{forged_head:true,same_key_concurrency:true,receipt_injection:true,'422_without_ref':true,...Object.fromEntries(COLLECTOR_PROBE_CASES.map(k=>[k,true]))},tests_passed:4+COLLECTOR_PROBE_CASES.length,tests_failed:0,passed:true,paid:false,tx_hash:null};
+const candidate={schema:'ltzzz.patchgate.candidate-probes.v1',task_id:PROBE_TASK,candidate_head:B,source_main_sha:A,run_id:'123',shell_execution_provider:'github_actions',coverage:{valid_policy_baseline:true,forged_head:true,same_key_concurrency:true,receipt_injection:true,'422_without_ref':true,...Object.fromEntries(COLLECTOR_PROBE_CASES.map(k=>[k,true]))},tests_passed:5+COLLECTOR_PROBE_CASES.length,tests_failed:0,passed:true,paid:false,tx_hash:null};
 test('every collector case is required; old four-case evidence cannot pass the new collector scope',()=>{
  for(const name of COLLECTOR_PROBE_CASES){const c=structuredClone(candidate);delete c.coverage[name];assert.equal(summarizeProbeEvidence({card:{...card,run_live_cas:false},sourceCommit:A,runId:'123',candidate:c}).deterministic_probe_passed,false);}
 });
@@ -125,3 +125,5 @@ test('retained overlong model text is explicitly truncated and cannot count as c
  const r=await assessProbeOnce({api:f.api,card,sourceCommit:A,runId:'123',evidence:{},model:'fixture',call:async()=>{calls++;return {ok:true,model:'fixture',model_source:'provider_response',finish_reason:'stop',output:'x'.repeat(20001)};}});
  assert.equal(calls,1);assert.equal(r.output_truncated,true);assert.equal(r.output.length,20000);assert.equal(r.native_doubao_generation_verified,false);assert.equal(r.status,'model_incomplete_or_uncertain_no_retry');assert.equal(r.accepted,false);assert.equal(r.receipt_persisted,true);
 });
+
+test('negative probe results cannot hide a missing positive baseline',()=>{const c=structuredClone(candidate);delete c.coverage.valid_policy_baseline;assert.equal(summarizeProbeEvidence({card:{...card,run_live_cas:false},sourceCommit:A,runId:'123',candidate:c}).deterministic_probe_passed,false);});
