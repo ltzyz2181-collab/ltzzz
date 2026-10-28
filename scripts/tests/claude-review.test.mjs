@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import {spawnSync} from 'node:child_process';
-import {reviewRequest,reviewContext,reviewContextParts,inspectClaude,selectReviewModel,executeReview,digest,REVIEW_LIMITS} from '../lib/claude-review.mjs';
+import {reviewRequest,reviewClaimId,reviewContext,reviewContextParts,inspectClaude,selectReviewModel,executeReview,digest,REVIEW_LIMITS} from '../lib/claude-review.mjs';
 const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_ACTOR:'ltzyz2181-collab',GITHUB_EVENT_NAME:'push',GITHUB_REF:'refs/heads/main'};
 const record=()=>({mode:'review',status:'claimed_before_api',model_calls:0,model:'claude-haiku-test',context:{prompt:'Review public data only'}});
 test('inspection is default; review allows authenticated main-branch executor dispatch and safe task identifiers',()=>{
@@ -45,6 +45,12 @@ test('large Unicode source is losslessly split without raising limits or auto-ca
 test('batch selection is authenticated request data, not permission to run all batches',()=>{
  assert.equal(reviewRequest({...env,CLAUDE_REVIEW_PART:'2'}).part,2);
  for(const value of ['0','-1','NaN','1.5','100001'])assert.throws(()=>reviewRequest({...env,CLAUDE_REVIEW_PART:value}),/invalid_context_part/);
+});
+test('different original task IDs cannot collide with part suffixes or bypass legacy claims',()=>{
+ assert.equal(reviewClaimId({task_id:'CLAUDE-TEST',part:1}),'CLAUDE-TEST');
+ assert.notEqual(reviewClaimId({task_id:'CLAUDE-TEST',part:2}),reviewClaimId({task_id:'CLAUDE-TEST-PART-2',part:1}));
+ assert.equal(reviewClaimId({task_id:'CLAUDE-TEST',part:2}),'CLAUDE-TEST.part-2');
+ assert.throws(()=>reviewClaimId({task_id:'CLAUDE-TEST.part-2',part:1}));
 });
 test('durable checkpoint happens before a single generation; complete output remains pending review and redacts key',async()=>{
  const r=record(),states=[];let calls=0;
