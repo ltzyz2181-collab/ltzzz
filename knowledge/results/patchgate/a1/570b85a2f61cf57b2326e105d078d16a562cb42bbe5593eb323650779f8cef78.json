@@ -1,0 +1,187 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-284",
+  "head_sha": "176e528729564bfa40102a940305904ef605cea5",
+  "pr_number": 284,
+  "source_main_sha": "7527d2820ae7cff5cc2dab0284405aeb5607d7ef",
+  "run_id": "40688314453",
+  "at_utc": "2026-10-28T12:30:19.667Z",
+  "idempotency_key": "PATCHGATE-PR-284:176e528729564bfa40102a940305904ef605cea5",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "7527d2820ae7cff5cc2dab0284405aeb5607d7ef",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/claude-on-demand-review.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/native-inbox.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/patchgate-a2-base-checks.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/patchgate-doubao-probe.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "knowledge/results/automation-foundation/20261028/REPORT.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "knowledge/results/automation-foundation/20261028/claude-review-requests.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "knowledge/results/automation-foundation/20261028/source-manifest.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/native-inbox.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/claude-review.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/patchgate-doubao-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/native-inbox.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/patchgate-a2-collect.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/patchgate-a2-probe-candidate.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/run-claude-review.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/claude-review.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/native-inbox.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-a2-collector.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-doubao-probe.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/patchgate-probe-baseline.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/probe-a2-adversarial-20261028.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-284",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-284",
+      "base_sha": "7527d2820ae7cff5cc2dab0284405aeb5607d7ef",
+      "head_sha": "176e528729564bfa40102a940305904ef605cea5",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "11f50c12566be0ef3f00c41e32a43c47560fc25e34d0c1e32b056d684f8b6476"
+    },
+    "subject_sha256": "592d3aeb6944c54cb81e4d67d8490735a415a87dbb4ad8df00040b16e25668fc",
+    "idempotency_key": "PATCHGATE-PR-284:176e528729564bfa40102a940305904ef605cea5",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/native-inbox.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/tests/patchgate-probe-baseline.test.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      }
+    ],
+    "reasons": [
+      "cannot_modify_own_constraints_requires_separate_trust_rollout",
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "authenticated_receipt_writer_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
