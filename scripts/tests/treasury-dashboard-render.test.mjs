@@ -84,3 +84,24 @@ test('HTTP error responses never render false zero balances or parse their JSON 
     assert.equal(requests.find(r=>new URL(r.url).pathname===path).json_reads,0);
   }
 });
+
+test('missing Treasury metrics are unknown, never synthetic zero',async()=>{
+  const {elements}=await render({});
+  assert.equal((elements.stats.innerHTML.match(/<div class="big">未知<\/div>/g)||[]).length,6);
+  assert.doesNotMatch(elements.stats.innerHTML,/>0 U</);
+});
+test('explicit zero Treasury metrics remain zero, not unknown',async()=>{
+  const {elements}=await render({
+    today_spend:0,today_remaining_limit:0,real_tx_success_count:0,
+    counts:{pending:0,success:0,failed:0}
+  });
+  assert.equal((elements.stats.innerHTML.match(/<div class="big">0 U<\/div>/g)||[]).length,2);
+  assert.equal((elements.stats.innerHTML.match(/<div class="big">0<\/div>/g)||[]).length,4);
+  assert.doesNotMatch(elements.stats.innerHTML,/>未知</);
+});
+test('partial Treasury metrics preserve known values and expose missing values',async()=>{
+  const {elements}=await render({today_spend:5,counts:{success:3},today_remaining_limit:null});
+  assert.match(elements.stats.innerHTML,/<div class="big">5 U<\/div>/);
+  assert.match(elements.stats.innerHTML,/<div class="big">3<\/div>/);
+  assert.equal((elements.stats.innerHTML.match(/<div class="big">未知<\/div>/g)||[]).length,4);
+});
