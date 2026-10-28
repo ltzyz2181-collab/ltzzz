@@ -1,0 +1,15 @@
+{
+  "finding": "syncDailyBoard 忽略 recoverArtifact 返回值，导致 generation_started 状态在已有唯一完整 artifact 时若首次恢复失败，同轮被无条件降级为 generation_unknown_no_repurchase，失去同轮继续同步的机会。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-10-28-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 的 syncDailyBoard 循环内，将 recoverArtifact(root,record,agent,seat); 改为：const recovered = recoverArtifact(root,record,agent,seat); if (recovered) { /* 状态已改为 generated_pending_sync，继续执行下方 artifact 同步分支 */ } else if (seat.status === 'generation_started') { seat.status = 'generation_unknown_no_repurchase'; seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown'; saveLedger(root,record); continue; }",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>console.log(typeof m.syncDailyBoard))\"",
+    "git diff -- scripts/lib/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "补丁尚未写入仓库，未执行故障注入、单元测试或集成测试；需在真实崩溃场景中验证 recoverArtifact 首次失败后同轮重试语义。"
+}
