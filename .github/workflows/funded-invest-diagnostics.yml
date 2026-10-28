@@ -25,9 +25,9 @@ jobs:
       - name: Read original intents, external purchase and same-account balances
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
         run: node scripts/inspect-funded-round.mjs
       - name: Preserve observed states
         if: always()

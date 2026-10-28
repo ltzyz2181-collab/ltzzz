@@ -15,7 +15,9 @@ export async function probeEthereumAave(address, provider) {
 export async function coinbaseReadiness(env, makeClient, probe=probeEthereumAave) {
   const apiKeyId=env.CDP_API_KEY_ID||env.CDP_API_KEY_NAME||env.COINBASE_API_KEY_ID;
   const apiKeySecret=env.CDP_API_KEY_SECRET||env.COINBASE_API_KEY_SECRET;
-  const walletSecret=env.CDP_WALLET_SECRET||env.COINBASE_WALLET_SECRET;
+  const readOnly=env.CDP_READ_ONLY==='1';
+  // API-only readiness must not even read a wallet-secret getter.
+  const walletSecret=readOnly?undefined:(env.CDP_WALLET_SECRET||env.COINBASE_WALLET_SECRET);
   const report={at:new Date().toISOString(),provider:'coinbase_cdp_server_wallet',status:'started',
     source_commit:env.GITHUB_SHA||null,run_id:env.GITHUB_RUN_ID||'local',
     credential_presence:{api_key_id:Boolean(apiKeyId),api_key_secret:Boolean(apiKeySecret),wallet_secret:Boolean(walletSecret)},
@@ -27,6 +29,8 @@ export async function coinbaseReadiness(env, makeClient, probe=probeEthereumAave
     const client=await makeClient({apiKeyId,apiKeySecret,walletSecret});
     await client.evm.listAccounts({pageSize:1});
     report.api_authenticated=true;
+    if(readOnly)return {...report,status:'api_read_only_verified',read_only:true,control_verified:false,creation_allowed:false,
+      wallet_signing_attempted:false,limitations:['API authentication only; wallet control and signing not verified']};
     if(!walletSecret)return {...report,status:'api_verified_wallet_secret_missing',missing:['CDP_WALLET_SECRET']};
     const name=env.CDP_EVM_ACCOUNT_NAME||'ltzzz-ops-v1';
     if(!/^[a-zA-Z0-9-]{1,36}$/.test(name))return {...report,status:'invalid_account_name'};
@@ -67,5 +71,5 @@ if(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url){
   fs.mkdirSync('knowledge/results/wallet',{recursive:true});
   fs.writeFileSync(`knowledge/results/wallet/coinbase-${report.run_id}-attempt-${process.env.GITHUB_RUN_ATTEMPT||'1'}.json`,JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({status:report.status,address:report.address||null,missing:report.missing||[],transactions_submitted:0}));
-  if(report.status!=='wallet_control_verified')process.exitCode=1;
+  if(!['wallet_control_verified','api_read_only_verified'].includes(report.status))process.exitCode=1;
 }

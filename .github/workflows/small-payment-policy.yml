@@ -1,15 +1,20 @@
 name: Small payment policy offline validation (no payment)
 on:
   pull_request: {}
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-    paths: ['**.js','**.mjs','**.cjs','**.ts','**.tsx','**.sol','**.py','**.sh','**.ps1','**.bat','**.html','config/small-payment*.json','config/financial-exit-inventory.json','.github/workflows/small-payment-policy.yml','.github/workflows/ltzzz-wallet-ops.yml']
+    paths: ['**.js','**.mjs','**.cjs','**.ts','**.tsx','**.sol','**.py','**.sh','**.ps1','**.bat','**.html','config/small-payment*.json','config/financial-exit-inventory.json','.github/workflows/**']
 permissions: {contents: read}
 concurrency:
   group: small-payment-offline-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 jobs:
   offline:
+    # Unprivileged candidate tests are not trusted admission evidence.
+    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -23,13 +28,14 @@ jobs:
         run: |
           node --check scripts/lib/small-payment-authorization.mjs
           node --check scripts/lib/small-payment-lifecycle.mjs
-          node scripts/verify-small-payment-manifest.mjs
+          node scripts/verify-small-payment-manifest.mjs post290-s1
           node --check lib/financial-exit-guard.js
           node --check scripts/lib/financial-exit-inventory.mjs
           node --check scripts/lib/small-payment-policy.mjs
           node --check scripts/lib/small-payment-runtime.mjs
           node --check scripts/wallet-lib.mjs
-          if node --test scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
+          node --check scripts/coinbase-readiness.mjs
+          if node --test scripts/tests/small-payment*.test.mjs scripts/tests/financial-exit-guard.test.mjs scripts/tests/coinbase*.test.mjs scripts/tests/workflow-credential-trust.test.mjs > /tmp/small-payment-tests.txt 2>&1; then
             tail -n 10 /tmp/small-payment-tests.txt
           else
             cat /tmp/small-payment-tests.txt
@@ -41,3 +47,20 @@ jobs:
           name: small-payment-offline-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/small-payment-tests.txt
           retention-days: 30
+
+  trusted_workflow_credentials:
+    if: github.event_name == 'pull_request_target' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Inspect candidate Git blobs with trusted BASE guard, never candidate code
+        env:
+          WORKFLOW_GUARD_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          [[ "$WORKFLOW_GUARD_HEAD" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch --no-tags origin "$WORKFLOW_GUARD_HEAD"
+          node scripts/verify-workflow-credentials.mjs "$WORKFLOW_GUARD_HEAD"

@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {scanWorkflowSecretReferences} from './workflow-secret-references.mjs';
+import {workflowCredentialPurpose} from './workflow-credential-policy.mjs';
+export {scanWorkflowSecretReferences};
 const PATTERNS=[
  ['wallet_constructor',/\bWallet\s*\(/g],
  ['transaction_send',/\.\s*(?:sendTransaction|signTransaction|signTypedData|broadcastTransaction|transfer|transferFrom|safeTransfer|supply|withdraw)\s*\(/g],
@@ -12,19 +15,28 @@ const PATTERNS=[
  ['paid_relay_header',/['"]PAYMENT-SIGNATURE['"]\s*:/gi],
  ['other_signing_sdk',/\b(?:send_transaction|writeContract|sendUserOperation|sendSponsoredUserOperation)\s*\(/g]
 ];
+const WORKFLOW=/^\.github\/workflows\/[^/]+\.ya?ml$/;
+// Fixed nonfinancial signing exceptions. Changing an exception's path, names or
+// original bytes requires review of this protected guard source, not a PR-supplied flag.
+const NON_FINANCIAL_WORKFLOW_KEYS=Object.freeze([
+ {path:'.github/workflows/miniprogram-ip-assisted-upload.yml',sha256:'d225747da1e8aebd9e3af86d4673955595a3a142d716758ad7393b73ef73ba76',purpose:'WeChat application upload signing, no wallet or payment authority',names:['WECHAT_MINIPROGRAM_PRIVATE_KEY']},
+ {path:'.github/workflows/miniprogram-upload.yml',sha256:'908b6dd482a843b9a10fe88de2db1fa1ea69e81aca28d0dcf69834b8fcef1def',purpose:'WeChat application upload signing, no wallet or payment authority',names:['WECHAT_MINIPROGRAM_PRIVATE_KEY','WX_MINIPROGRAM_PRIVATE_KEY','MINIPROGRAM_PRIVATE_KEY','WECHAT_UPLOAD_PRIVATE_KEY']}
+]);
+const SENSITIVE_SIGNING_NAME=/(?:PRIVATE[_-]?KEY|(?:^|_)PK$|(?:FUNDING|TREASURY|OWNER|DEPLOYER|EXECUTOR)_KEY|WALLET_(?:SECRET|KEY))/i;
 const EXT=/\.(?:js|mjs|cjs|ts|tsx|sol|py|sh|ps1|bat|html)$/;
 export function scanFinancialSource(source){
  const matches=[];for(const [kind,re] of PATTERNS){re.lastIndex=0;for(const m of source.matchAll(re))matches.push({kind,line:source.slice(0,m.index).split('\n').length});}
  return matches.sort((a,b)=>a.line-b.line||a.kind.localeCompare(b.kind));
 }
+// Inspect only public workflow text and Secret identifiers; never Secret values.
 export function financialSourcePaths(root){
- return [...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard'],{cwd:root,encoding:'utf8',maxBuffer:8000000}).split('\0').filter(Boolean))].filter(p=>EXT.test(p)&&!/(^|\/)(node_modules|vendor|dist|\.git|tests|fixtures)\//.test(p)&&!p.startsWith('scripts/tests/')&&!/\.test\.[^/]+$/.test(p)&&p!=='test-orchestrator.mjs');
+ return [...new Set(execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard'],{cwd:root,encoding:'utf8',maxBuffer:8000000}).split('\0').filter(Boolean))].filter(p=>(EXT.test(p)||WORKFLOW.test(p))&&!/(^|\/)(node_modules|vendor|dist|\.git|tests|fixtures)\//.test(p)&&!p.startsWith('scripts/tests/')&&!/\.test\.[^/]+$/.test(p)&&p!=='test-orchestrator.mjs');
 }
 export function inspectFinancialSources(root){
  return financialSourcePaths(root).map(p=>{
   if(/(^|\/)(?:\.env(?:\.|$)|(?:secrets?|credentials?|private[-_]?keys?)\.(?:js|mjs|cjs|ts|tsx)$)/i.test(p))return {path:p,sensitive_name_not_read:true,matches:[]};
   const full=path.join(root,p),st=fs.lstatSync(full);if(!st.isFile()||st.size>8000000)return {path:p,unreadable_or_unsafe:true,matches:[]};
-  const bytes=fs.readFileSync(full);return {path:p,sha256:createHash('sha256').update(bytes).digest('hex'),matches:scanFinancialSource(bytes.toString('utf8'))};
+  const bytes=fs.readFileSync(full),text=bytes.toString('utf8'),workflow=WORKFLOW.test(p);return {path:p,sha256:createHash('sha256').update(bytes).digest('hex'),matches:workflow?[]:scanFinancialSource(text),...(workflow?{workflow:true,secret_references:scanWorkflowSecretReferences(text)}:{})};
  });
 }
 export function checkFinancialInventory({sources,inventory,read}){
@@ -33,6 +45,13 @@ export function checkFinancialInventory({sources,inventory,read}){
  const byPath=new Map();for(const r of rows){if(byPath.has(r.path))errors.push('duplicate_inventory:'+r.path);byPath.set(r.path,r);}
  for(const s of sources){
   const entry=byPath.get(s.path);
+  if(s.workflow){
+   for(const ref of s.secret_references||[]){
+    if(['unresolved_secret_reference','secret_inheritance_forbidden','external_reusable_workflow_forbidden'].includes(ref.kind))errors.push('workflow_secret_collection_or_dynamic_reference_forbidden:'+s.path);
+    if(ref.kind==='named_credential_reference'&&!workflowCredentialPurpose(ref.name,s.path))errors.push('workflow_unregistered_credential_purpose:'+s.path+':'+ref.name);
+    if(ref.kind==='signing_private_key_reference'&&!NON_FINANCIAL_WORKFLOW_KEYS.some(e=>e.path===s.path&&e.sha256===s.sha256&&e.names.includes(ref.name)))errors.push('workflow_financial_or_unreviewed_signing_secret_reference:'+s.path+':'+ref.name);
+   }
+  }
   if(s.sensitive_name_not_read){errors.push('sensitive_executable_source_not_read_or_admitted:'+s.path);continue;}
   if(s.matches.length&&!entry)errors.push('unregistered_financial_primitive:'+s.path);
   if(!entry)continue;

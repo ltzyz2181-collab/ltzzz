@@ -1,4 +1,4 @@
-name: CDP wallet control, Kimi regions and OKX read-only verification
+name: CDP API-only, Kimi regions and OKX read-only verification
 on:
   workflow_dispatch:
     inputs:
@@ -22,14 +22,14 @@ jobs:
         with: {node-version: '22'}
       - run: npm ci
       - run: node --test scripts/tests/coinbase*.test.mjs
-      - name: Verify CDP account and bounded control proof (no transfers)
+      - name: Verify CDP API account only (no wallet secret, creation or signing)
         env:
           CDP_API_KEY_ID: ${{ secrets.CDP_API_KEY_ID || secrets.CDP_API_KEY_NAME || secrets.COINBASE_API_KEY_ID }}
           CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET || secrets.COINBASE_API_KEY_SECRET }}
-          CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET || secrets.COINBASE_WALLET_SECRET }}
           CDP_EVM_ACCOUNT_NAME: ${{ vars.CDP_EVM_ACCOUNT_NAME || 'ltzzz-ops-v1' }}
-          CDP_CREATE_ACCOUNT: '1'
-          CDP_VERIFY_ETHEREUM_AAVE: '1'
+          CDP_READ_ONLY: '1'
+          CDP_CREATE_ACCOUNT: '0'
+          CDP_VERIFY_ETHEREUM_AAVE: '0'
           DISABLE_CDP_ERROR_REPORTING: 'true'
           DISABLE_CDP_USAGE_TRACKING: 'true'
         run: node scripts/coinbase-readiness.mjs
@@ -39,9 +39,9 @@ jobs:
           MOONSHOT_API_KEY_CN: ${{ secrets.MOONSHOT_API_KEY_CN }}
           MOONSHOT_API_KEY_INTL: ${{ secrets.MOONSHOT_API_KEY_INTL }}
           MOONSHOT_API_KEY_: ${{ secrets.MOONSHOT_API_KEY_ }}
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
           VERIFY_KIMI_MODEL_CALLS: ${{ inputs.include_kimi_generation && '1' || '0' }}
       - name: Save actual receipts
         if: always()

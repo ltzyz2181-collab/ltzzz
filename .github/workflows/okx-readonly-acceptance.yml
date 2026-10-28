@@ -17,9 +17,9 @@ jobs:
         with: {node-version: '22'}
       - name: Verify existing key permissions and balance without orders or account creation
         env:
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET || secrets.OKX_SECRET_KEY }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE || secrets.OKX_PASSPHRASE }}
+          OKX_API_KEY: '' # exchange API permissions unverified; no credential injected
+          OKX_API_SECRET: '' # exchange API permissions unverified; no credential injected
+          OKX_API_PASSPHRASE: '' # exchange API permissions unverified; no credential injected
           VERIFY_KIMI_MODEL_CALLS: '0'
           NODE_OPTIONS: --dns-result-order=ipv4first
         run: node scripts/verify-kimi-okx.mjs
