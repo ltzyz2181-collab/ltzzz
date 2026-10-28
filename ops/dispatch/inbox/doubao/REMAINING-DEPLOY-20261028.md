@@ -18,3 +18,5 @@
 5. 同服务完成一次原生豆包响应和签名、公钥验签；先持久预留、未知不重放、沿用现有日上限/OIDC。保留实际 provider/model/request ID、原 verdict 和用量；回执只含公开证据。交 GPT 登记候选并交千问/Claude复核，不自行打开A2、A3、支付或正式五签。
 
 外部实练仅真实平台任务、零押金/零支出、同时≤3。2hives没有包就等待；UUMit已有owner注册/一个WorkBuddy绑定的报告，不重复注册、不抢邀请、不填钱包或ID，仅观察。无新结果不写重复回执。
+
+补充已核实的技术条件：官方 AsymmetricSign 参数表目前未列 Ed25519（https://docs.volcengine.com/docs/key-management-system/asymmetric-sign-asymmetrickeysignature?lang=zh）。不能仅补一个云凭据就宣称现有验签能接 KMS；兼容产品或独立算法适配需先实现并审核。实际账号/区域尚未调用验证。本轮不改变算法或信任根。
