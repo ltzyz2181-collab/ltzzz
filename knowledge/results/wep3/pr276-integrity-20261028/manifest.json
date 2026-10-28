@@ -1,0 +1,102 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "P1-01-WEP3-SOURCE-INTEGRITY-20261028",
+  "at_utc": "2026-10-28T08:46:11.716089+00:00",
+  "actual_provider": "openai",
+  "model": null,
+  "metadata_source": "current_Codex_session_exact_model_ID_unavailable",
+  "base_main": "9a26a8600a68ba94f4778ec63abf503039df3c3d",
+  "previous_PR276_head": "af4431a76507d08721796de83730dba2f751274b",
+  "corruption": {
+    "commit": "8e733249c08971c86b7b8b9ea7e3c0a5c7a91f47",
+    "at_utc": "2026-10-27T21:54:06Z",
+    "blob": "ae5f666d715046a664ca862ec469bffabfd60f2f",
+    "bytes": 8,
+    "content": "SEE_FILE",
+    "removed_lines": 127,
+    "added_lines": 1
+  },
+  "old_CI": {
+    "run_id": 40489828813,
+    "job_id": 122140667167,
+    "passed": 150,
+    "failed": 8,
+    "error": "path is not defined",
+    "different_prior_source": true
+  },
+  "negative_control": {
+    "main_8_bytes_syntax_check_exit": 0,
+    "isolated_execution_exit": 1,
+    "exception": "ReferenceError: SEE_FILE is not defined"
+  },
+  "previous_candidate_additional_tests": {
+    "original_deploy_files": 17,
+    "original_deploy_tests_passed": 159,
+    "previously_omitted_core_tests": 18,
+    "core_passed": 8,
+    "core_failed": 10,
+    "not_a_single_root_cause": true
+  },
+  "final_local_tests": {
+    "node": "v22.23.4",
+    "files": 19,
+    "tests": 184,
+    "passed": 184,
+    "failed": 0,
+    "skipped": 0,
+    "paid_model_calls": 0,
+    "actual_GitHub_runner": false
+  },
+  "safety": {
+    "LEGACY_KV_FROZEN": "0_unchanged",
+    "market_DO_and_Wep3Ledger_source_unchanged": true,
+    "wrangler_bindings_and_migrations_unchanged": true,
+    "legacy_credit_and_external_payment_endpoints_still_410": true,
+    "recursive_spawn_still_503": true,
+    "PR_validation_has_no_Secret_env_or_write_token": true,
+    "PR_deploy_disabled": true,
+    "cutover_guard_before_provisioning_and_paid_jobs": true,
+    "PatchGate_A2_A3_B_payment_budget_trust_unchanged": true
+  },
+  "files": [
+    {
+      "path": "wep3-worker.js",
+      "bytes": 50799,
+      "sha256": "ee7f64b75e682a35e5217abd88e3a7bbaa3b120fb78bd1bf2fb89c2d34b4e43f"
+    },
+    {
+      "path": "scripts/tests/wep3-swarm.test.mjs",
+      "bytes": 4063,
+      "sha256": "153bb1d86cfffb77f4463a30261ceb055ab6440239fb3be3d7da3e10664d8734"
+    },
+    {
+      "path": "scripts/tests/wep3-router-integrity.test.mjs",
+      "bytes": 4450,
+      "sha256": "bdf0eee16a6f5fa33aeb3f85ad41b53bcbdfdb6cc0fdcc2d60c9303fbf11342d"
+    },
+    {
+      "path": "scripts/tests/wep3.test.mjs",
+      "bytes": 12748,
+      "sha256": "98536bd4302a392cab573fbcce445fc96ffb748f14eb90f5ea904c5772b1ce9e"
+    },
+    {
+      "path": "scripts/tests/audit-provenance.test.mjs",
+      "bytes": 4145,
+      "sha256": "d942bbb5ec66a2b999b728f4d7608864f7b889b394687d959b46219c5738b713"
+    },
+    {
+      "path": ".github/workflows/deploy-wep3.yml",
+      "bytes": 17328,
+      "sha256": "a32f7b49f05509b42f1b704c515eeb1fb283381b264a3df10094295b1320a1dc"
+    }
+  ],
+  "reviews": {
+    "qianwen": "not_received_new_head",
+    "Claude": "not_received_new_head"
+  },
+  "merged": false,
+  "deployed": false,
+  "production_version_bound_to_candidate": false,
+  "paid": false,
+  "tx_hash": null
+}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-27T21:55:00Z",
+  "actor": "Grok",
+  "action": "bold_practice_swarm_tree",
+  "status": "partial",
+  "done": [
+    "wep3-swarm.js: spawnChild with depth + causal_chain + spawnTree pushed to main",
+    "Attempted full wep3-worker.js restore with /swarm/spawn and /swarm/tree routes"
+  ],
+  "blocker": "wep3-worker.js on main is truncated (historical placeholder). Full ~48k restore hits tool argument size limits. Live Cloudflare Worker remains healthy from prior durable deploy and must not be redeployed from truncated main yet.",
+  "live": "https://ltzzz-wep3.ltzyz2181.workers.dev/health pin:true",
+  "next": [
+    "Restore wep3-worker.js from Oct 21 base (0beadafa) + import {spawnChild, spawnTree} + routes /swarm/spawn and /swarm/tree + export SKILLS",
+    "Then workflow_dispatch deploy-wep3.yml",
+    "POST /swarm/tree with real parent intent for recursive AGI hire"
+  ],
+  "swarm_api": {
+    "POST /swarm/spawn": "{ parent_intent_id, skill, max_usd, title, poster, depth? }",
+    "POST /swarm/tree": "{ parent_intent_id, plan: [{skill, max_usd, title, depth?}], poster }"
+  }
+}
