@@ -1,0 +1,48 @@
+name: Native inbox event delivery (read and plan only)
+on:
+  push:
+    branches: [main]
+    paths: ['ops/dispatch/native-inbox.json','ops/dispatch/inbox/gpt/REMAINING-DEPLOY-20261028.md','ops/dispatch/inbox/doubao/REMAINING-DEPLOY-20261028.md']
+  pull_request:
+    paths: ['scripts/native-inbox.mjs','scripts/tests/native-inbox.test.mjs','.github/workflows/native-inbox.yml']
+permissions: {contents: read}
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/native-inbox.test.mjs scripts/tests/workpool.test.mjs
+  deliver:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix: {seat: [qianwen, doubao]}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - if: matrix.seat == 'qianwen'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
+        run: node scripts/native-inbox.mjs qianwen
+      - if: matrix.seat == 'doubao'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DOUBAO_USE_PROXY: 'true'
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/native-inbox.mjs doubao
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-inbox-${{ matrix.seat }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/native-inbox/
+          if-no-files-found: ignore
