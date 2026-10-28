@@ -8,13 +8,30 @@ on:
         description: 'Run one 0.01 internal-credit deposit and independently audited hire (no cash or chain transfer)'
         type: boolean
         default: false
+  pull_request:
+    paths: ['wep3-worker.js', 'wep3-ledger.js', 'scripts/tests/wep3.test.mjs', 'scripts/tests/wep3-swarm.test.mjs', 'scripts/tests/wep3-router-integrity.test.mjs', 'scripts/tests/audit-provenance.test.mjs', '.github/workflows/deploy-wep3.yml']
   push:
     branches: [main]
-    paths: ['identity/seat-registry.json','scripts/tests/procurement-scope-novelty.test.mjs','wep3-procurement-status.js','wep3-procurement-novelty.js','wep3-procurement-contract.js','wep3-procurement-review.js','scripts/tests/daily-external-hire.test.mjs','scripts/tests/wep3-swarm.test.mjs','wep3-owner-child-allocation.js','scripts/tests/owner-child-allocation.test.mjs','wep3-okx-funding.js','scripts/tests/okx-capital-funding.test.mjs','wep3-procurement.js', 'wep3-cash-liabilities.js', 'scripts/tests/wep3-procurement.test.mjs', 'scripts/lib/wep3-runtime-readiness.mjs', 'scripts/tests/wep3-runtime-readiness.test.mjs', 'wep3-worker.js', 'wep3-audit-proof.js', 'scripts/lib/provided-contract.mjs', 'scripts/tests/audit-provenance.test.mjs', 'wep3-market.js', 'wep3-base-payment.js', 'wep3-x402.js', 'wep3-external-entry.js', 'wep3-order-contract.js', 'scripts/lib/market-fulfillment.mjs', 'scripts/tests/wep3-external-orders.test.mjs', 'scripts/accept-external-orders.mjs', 'wep3-economy.js', 'wep3-forecast.js', 'wep3-agents.js', 'wep3-anchor.js', 'wep3-aave.js', 'scripts/run-treasury-aave.mjs', 'scripts/tests/wep3-aave.test.mjs', 'package.json', 'package-lock.json', 'scripts/tests/wep3-autonomous.test.mjs', 'scripts/tests/wep3-market.test.mjs', 'scripts/fulfill-market-orders.mjs', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs', 'scripts/provision-wep3-treasury.mjs']
-permissions: {contents: write}
-concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
+    paths: ['scripts/tests/wep3.test.mjs','scripts/tests/wep3-router-integrity.test.mjs','identity/seat-registry.json','scripts/tests/procurement-scope-novelty.test.mjs','wep3-procurement-status.js','wep3-procurement-novelty.js','wep3-procurement-contract.js','wep3-procurement-review.js','scripts/tests/daily-external-hire.test.mjs','scripts/tests/wep3-swarm.test.mjs','wep3-owner-child-allocation.js','scripts/tests/owner-child-allocation.test.mjs','wep3-okx-funding.js','scripts/tests/okx-capital-funding.test.mjs','wep3-procurement.js', 'wep3-cash-liabilities.js', 'scripts/tests/wep3-procurement.test.mjs', 'scripts/lib/wep3-runtime-readiness.mjs', 'scripts/tests/wep3-runtime-readiness.test.mjs', 'wep3-worker.js', 'wep3-audit-proof.js', 'scripts/lib/provided-contract.mjs', 'scripts/tests/audit-provenance.test.mjs', 'wep3-market.js', 'wep3-base-payment.js', 'wep3-x402.js', 'wep3-external-entry.js', 'wep3-order-contract.js', 'scripts/lib/market-fulfillment.mjs', 'scripts/tests/wep3-external-orders.test.mjs', 'scripts/accept-external-orders.mjs', 'wep3-economy.js', 'wep3-forecast.js', 'wep3-agents.js', 'wep3-anchor.js', 'wep3-aave.js', 'scripts/run-treasury-aave.mjs', 'scripts/tests/wep3-aave.test.mjs', 'package.json', 'package-lock.json', 'scripts/tests/wep3-autonomous.test.mjs', 'scripts/tests/wep3-market.test.mjs', 'scripts/fulfill-market-orders.mjs', 'wrangler.wep3.toml', '.github/workflows/deploy-wep3.yml', 'scripts/accept-real-hire.mjs', 'scripts/provision-wep3-treasury.mjs']
+permissions: {contents: read}
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('wep3-validate-pr-{0}', github.event.pull_request.number) || 'wep3-deploy-and-accept' }}
+  cancel-in-progress: false
 jobs:
+  validate:
+    permissions: {contents: read}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts
+      - run: node --check wep3-worker.js && node --test scripts/tests/wep3.test.mjs scripts/tests/procurement-scope-novelty.test.mjs scripts/tests/seat-registry.test.mjs scripts/tests/daily-external-hire.test.mjs scripts/tests/wep3-swarm.test.mjs scripts/tests/wep3-router-integrity.test.mjs scripts/tests/owner-child-allocation.test.mjs scripts/tests/aave-receipt-sensor.test.mjs scripts/tests/okx-capital-funding.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-external-orders.test.mjs scripts/tests/domestic-model-router.test.mjs scripts/tests/audit-provenance.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs scripts/tests/wep3-procurement.test.mjs
   deploy:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    permissions: {contents: write}
     runs-on: ubuntu-latest
     env:
       AAVE_EXPECTED_REVISION: aave-guard-v9
@@ -25,7 +42,6 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts
-      - run: node --check wep3-worker.js && node --test scripts/tests/procurement-scope-novelty.test.mjs scripts/tests/seat-registry.test.mjs scripts/tests/daily-external-hire.test.mjs scripts/tests/wep3-swarm.test.mjs scripts/tests/owner-child-allocation.test.mjs scripts/tests/aave-receipt-sensor.test.mjs scripts/tests/okx-capital-funding.test.mjs scripts/tests/funded-relay.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-external-orders.test.mjs scripts/tests/domestic-model-router.test.mjs scripts/tests/audit-provenance.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs scripts/tests/wep3-procurement.test.mjs
       - run: npm install --no-save wrangler@4
       - name: Snapshot current durable book before preserving its storage
         env:
@@ -83,6 +99,15 @@ jobs:
           report.pre_migration=before;report.financial_book_unchanged=state?.book_sha256===before.book_sha256;
           report.ok=!!(state?.ok&&state.market_runtime_revision==='market-runtime-v3'&&state.aave_runtime_revision===process.env.AAVE_EXPECTED_REVISION&&state.procurement_runtime_revision==='external-purchase-v5'&&state.daily_hire_revision==='daily-external-hire-v1'&&state.aave_intent_count>=before.aave_intent_count&&state.first_supply_confirmed&&state.exit_test_confirmed&&report.financial_book_unchanged);
           fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/durable-state-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));if(!report.ok)process.exitCode=1;
+          JS
+      - name: Require atomic cutover before provisioning or paid jobs
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const r=await fetch('https://ltzzz-wep3.ltzyz2181.workers.dev/health',{signal:AbortSignal.timeout(20000)}),health=await r.json();
+          const report={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,source_commit:process.env.GITHUB_SHA,atomic_ledger_ready:health.atomic_ledger_ready===true,model_calls:0,financial_execution:false,paid:false,tx_hash:null};
+          fs.mkdirSync('knowledge/results/wep3',{recursive:true});fs.writeFileSync('knowledge/results/wep3/atomic-cutover-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(report,null,2)+'\n');
+          if(!r.ok||health.ok!==true||health.atomic_ledger_ready!==true)throw Error('legacy_cutover_not_confirmed_no_provisioning_or_paid_jobs');
           JS
       - name: Provision once and verify controlled treasury (no funds moved)
         env:

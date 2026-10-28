@@ -55,7 +55,9 @@ test('audited hire conserves credit, releases escrow and reports no real payment
   assert.equal(poster.held,0);assert.equal(poster.spent,receipt.amount_usd);
   assert.equal(poster.credit,Number((1-receipt.amount_usd).toFixed(6)));
   const l=(await f.request('/ledger')).body;
-  assert.ok(Math.abs(l.credit_sum+l.pool_nav-9)<0.000001);
+  // Nine historical agent records (including Meya and retired Microsoft) + LTZZZ.
+  assert.equal(Object.keys(l.agents).length,10);
+  assert.ok(Math.abs(l.credit_sum+l.pool_nav-10)<0.000001);
   assert.equal(l.entries.filter(e=>e.type==='hire_settle').length,1);
   assert.equal(l.entries.find(e=>e.type==='hire_settle').ref,r.body.intent_id);
 });
@@ -73,7 +75,7 @@ test('20 concurrent submissions settle once and retries after restart preserve d
 });
 
 test('invalid parties, self-audit, wrong hash and bad evidence do not debit',async()=>{
-  for(const p of [payload({agent:undefined}),payload({worker:'DeepSeek'}),payload({skill:'unknown'}),payload({max_usd:0}),payload({max_usd:'Infinity'}),payload({evidence_path:'knowledge/results/../bad.json'}),payload({deliverable:{text:delivery}}),payload({audit_report:{accepted:true,auditor:'Doubao',reason:'x',deliverable_sha256:hash(delivery)}}),payload({audit_report:{accepted:true,auditor:'GPT',reason:'x',deliverable_sha256:'bad'}})]){
+  for(const p of [payload({agent:undefined}),payload({worker:'DeepSeek'}),payload({skill:'unknown'}),payload({max_usd:0}),payload({max_usd:'Infinity'}),payload({evidence_path:'knowledge/results/../bad.json'}),payload({evidence_path:'knowledge/results/%2e%2e/bad.json'}),payload({audit_report:{accepted:true,auditor:'GPT',reason:'',deliverable_sha256:hash(delivery)}}),null,[],payload({deliverable:{text:delivery}}),payload({audit_report:{accepted:true,auditor:'Doubao',reason:'x',deliverable_sha256:hash(delivery)}}),payload({audit_report:{accepted:true,auditor:'GPT',reason:'x',deliverable_sha256:'bad'}})]){
     const f=fixture();const r=await f.request('/hire',p);
     assert.ok(r.status>=400);assert.equal(rows(f,'wep3:rep:').length,0);assert.equal(rows(f,'wep3:receipt:').length,0);
   }
@@ -127,16 +129,16 @@ test('legacy settled delivery remains deduplicated without creating new rewards'
   assert.equal(rows(f,'wep3:ledger:').length,0);
 });
 
-test('credit invoice payment is idempotent and leaves fulfillment pending',async()=>{
+test('retired legacy credit invoice payment never debits or fabricates fulfillment on retries',async()=>{
   const f=fixture({'wep3:rep:DeepSeek':{agent:'DeepSeek',credit:5,score:100,earned:0,spent:0,held:0}});
   const invoice=(await f.request('/checkout',{sku:'script-video'})).body.invoice;
   const results=await Promise.all([f.request('/pay/credit',{invoice_id:invoice.id,payer:'DeepSeek'}),f.request('/pay/credit',{invoice_id:invoice.id,payer:'DeepSeek'})]);
-  assert.equal(results.filter(r=>r.body.status==='CREDIT_PAID').length,1);
-  const paid=results.find(r=>r.body.status==='CREDIT_PAID').body;
-  assert.equal(paid.paid,false);assert.equal(paid.invoice.fulfillment_status,'pending_delivery_and_audit');assert.equal(paid.hire,null);
+  for(const r of results){assert.equal(r.status,410);assert.equal(r.body.error,'legacy_sku_credit_payment_disabled');}
+  assert.equal((await f.request('/invoice/'+invoice.id)).body.invoice.status,'open');
   assert.equal(rows(f,'wep3:receipt:').length,0);
   assert.equal(rows(f,'wep3:rep:').find(r=>r.agent==='DeepSeek').held,0);
-  assert.equal(rows(f,'wep3:ledger:').filter(r=>r.type==='credit_pay').length,1);
+  assert.equal(rows(f,'wep3:rep:').find(r=>r.agent==='DeepSeek').credit,5);
+  assert.equal(rows(f,'wep3:ledger:').filter(r=>r.type==='credit_pay').length,0);
 });
 
 test('unverified external proof cannot mint credit or mark invoice paid',async()=>{
@@ -144,7 +146,7 @@ test('unverified external proof cannot mint credit or mark invoice paid',async()
   const invoice=(await f.request('/checkout',{sku:'script-video'})).body.invoice;
   const r=await f.request('/pay/confirm',{invoice_id:invoice.id,provider:'usdc',proof:'invented',secret:'webhook'});
   // Object receives env at construction by reference.
-  assert.equal(r.status,503);assert.equal(r.body.error,'real_payment_verification_not_implemented');
+  assert.equal(r.status,410);assert.equal(r.body.error,'legacy_external_confirmation_disabled');
   assert.equal((await f.request('/invoice/'+invoice.id)).body.invoice.status,'open');
   assert.equal(rows(f,'wep3:rep:').length,0);
 });
