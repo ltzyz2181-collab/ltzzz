@@ -15,21 +15,18 @@
     "sha256": "043bdb341c2ed965ce3b3aca5a4249c89370cf211786f0d8150c343e641d57ac"
   },
   "green": {
-    "tests": 3,
-    "passed": 3,
+    "tests": 6,
+    "passed": 6,
     "failed": 0,
     "artifact": "knowledge/results/patchgate/pr278/gpt-alias-chain-green.tap",
-    "sha256": "2aed34bd04fe1e5ac099b0cea422ee5e73e5ade037081793210d03f8467d3752"
+    "sha256": "7372cd9a62e1481bf0d5cddd8949741b49a0349b6922cb624cbcbb13957fd9c2"
   },
   "combined_regression": {
-    "tests": 139,
-    "passed": 139,
+    "tests": 142,
+    "passed": 142,
     "failed": 0,
-    "runtime": "Node24 local",
-    "runtimes": [
-      "Node24.19.0",
-      "Node22.23.4"
-    ]
+    "runtime": "Node22.23.4",
+    "scope": "current sandbox plus A2/source/model regression suite"
   },
   "coverage": {
     "known_samples": 8,
@@ -45,5 +42,24 @@
   "paid": false,
   "tx_hash": null,
   "income": 0,
-  "candidate_source_sha256": "24d0b7c59ef1a2c05adb8926de3ff7587689e831792a88649b71e6ef30054de0"
+  "candidate_source_sha256": "520d644b0488201ee9c3975bbde82d7802f00239f6c11eade95233a6e9261274",
+  "revision_after_native_review": {
+    "original_Qwen_verdict": "FAIL",
+    "original_Qwen_preserved": "knowledge/results/patchgate/pr278/native-qwen-original.json",
+    "counterexamples": [
+      "nonfinancial readBalance chain returns no matches",
+      "cycles with no financial origin return no matches",
+      "transferFromSafe is not a financial member"
+    ],
+    "adopted": [
+      "Preserve spaces inside literal members to remove a sandbox false positive",
+      "Normalize CRLF/CR line counting",
+      "Escape dollar identifiers in alias call regex"
+    ],
+    "not_claimed": "Full JS parser or production scanner repair; no activation admission"
+  },
+  "sandbox_Node24": {
+    "passed": 6,
+    "failed": 0
+  }
 }
