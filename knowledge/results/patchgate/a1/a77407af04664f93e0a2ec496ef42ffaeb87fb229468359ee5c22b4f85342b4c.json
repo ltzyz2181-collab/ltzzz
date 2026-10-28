@@ -1,0 +1,108 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-280",
+  "head_sha": "199a2d4720c0df363f239ab251e9afd36bf90377",
+  "pr_number": 280,
+  "source_main_sha": "ddacc7df213049c76a211ac06eb3c41a167f81cc",
+  "run_id": "40649052631",
+  "at_utc": "2026-10-28T07:17:04.759Z",
+  "idempotency_key": "PATCHGATE-PR-280:199a2d4720c0df363f239ab251e9afd36bf90377",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "ddacc7df213049c76a211ac06eb3c41a167f81cc",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": "knowledge/results/patchgate/workbuddy/WORKBUDDY-KIMI-CONNECTIVITY-20261028-01/probe-manifest.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/workbuddy/PLAN-PATCHGATE-ESCROW-20261023-WORKBUDDY-KIMI-CONNECTIVITY-20261028-01.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "tools/diagnostics/workbuddy-kimi-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "tools/diagnostics/workbuddy-kimi-probe.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-280",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-280",
+      "base_sha": "ddacc7df213049c76a211ac06eb3c41a167f81cc",
+      "head_sha": "199a2d4720c0df363f239ab251e9afd36bf90377",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "81ce3d570ab9c4782c2ddcd08398b6e56628d4bf9768fa16ab97e4e579eca839"
+    },
+    "subject_sha256": "b48f88bc7d48cb87a9d1673aecc71b4480bb042b950a615517d53754eea682a7",
+    "idempotency_key": "PATCHGATE-PR-280:199a2d4720c0df363f239ab251e9afd36bf90377",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "tools/diagnostics/workbuddy-kimi-probe.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.moonshot.ai",
+          "api.moonshot.cn",
+          "api.moonshot.cn.evil.test",
+          "evil.test"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "authenticated_receipt_writer_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
