@@ -1,0 +1,134 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-297",
+  "head_sha": "5f1f8b6b294cd6b0e7cd88b81d217264668c273c",
+  "pr_number": 297,
+  "source_main_sha": "680675134f8316fbe40be5b4794ccf14c3b9319a",
+  "run_id": "40814767479",
+  "at_utc": "2026-10-29T03:54:52.249Z",
+  "idempotency_key": "PATCHGATE-PR-297:5f1f8b6b294cd6b0e7cd88b81d217264668c273c",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "680675134f8316fbe40be5b4794ccf14c3b9319a",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/deploy-video-scheduler.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/workbuddy/YOUTUBE-AUTOMATION-20261013-NEW-VIDEO-HANDOFF.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/admit-existing-workbuddy-video.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/workbuddy-existing-queue.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "video-scheduler-worker.js",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workbuddy-existing-queue.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-297",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-297",
+      "base_sha": "680675134f8316fbe40be5b4794ccf14c3b9319a",
+      "head_sha": "5f1f8b6b294cd6b0e7cd88b81d217264668c273c",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "4186c2f982f2920186f4b203f685d3221b91fe3066f40344d848a5dc42b2dc13"
+    },
+    "subject_sha256": "822d02f4119b9b13ccd6e4e9594c84514e9ddbff346ac03ca8d683bdddbc80b5",
+    "idempotency_key": "PATCHGATE-PR-297:5f1f8b6b294cd6b0e7cd88b81d217264668c273c",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": ".github/workflows/deploy-video-scheduler.yml",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-video-scheduler.ltzyz2181.workers.dev"
+        ]
+      },
+      {
+        "path": "scripts/admit-existing-workbuddy-video.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/admit-existing-workbuddy-video.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-video-scheduler.ltzyz2181.workers.dev",
+          "ltzzz-youtube-upload.ltzyz2181.workers.dev"
+        ]
+      },
+      {
+        "path": "scripts/tests/workbuddy-existing-queue.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "scheduler"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
