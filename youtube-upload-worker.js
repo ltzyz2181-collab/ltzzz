@@ -1,3 +1,4 @@
+import {OWNER_REMOVAL,removedVideoHash,removeOwnerVideo} from './youtube-owner-removal.mjs';
 /**
  * LTZZZ YouTube 视频自动上传 Worker
  * 本地/服务器 MP4 → Google OAuth 2.0 → YouTube Data API v3 videos.insert → Video ID
@@ -45,7 +46,7 @@ export default {
 
     // 2026-10-10 Grok Bot：写操作鉴权（fail-closed）。OAuth 流程与 /health /youtube/status 不受影响。
     const WRITE = ['/youtube/upload', '/youtube/disconnect', '/youtube/update-description', '/youtube/update-status'];
-    if ((WRITE.includes(path) && request.method === 'POST') || path === '/youtube/publication') {
+    if ((WRITE.includes(path) && request.method === 'POST') || path === '/youtube/publication' || path === '/youtube/delete') {
       const want = env.LTZZZ_AGENT_TOKEN || '';
       const got = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
       if (!want || !(await safeEqual(got, want))) return json({ error: 'unauthorized' }, 401);
@@ -54,7 +55,7 @@ export default {
     try {
       switch (path) {
         case '/health':
-          return json({ ok: true, service: 'ltzzz-youtube-upload', version: '1.1.0', publication_receipts: true, auth_readiness: true, time: new Date().toISOString() });
+          return json({ ok: true, service: 'ltzzz-youtube-upload', version: '1.1.0', publication_receipts: true, auth_readiness: true, owner_removal: true, time: new Date().toISOString() });
 
         case '/auth/youtube':
           return await authStart(env, url);
@@ -77,7 +78,12 @@ export default {
         case '/youtube/status':
           return json(await getStatus(env, url));
 
+        case '/youtube/delete':
+          if(request.method!=='POST')return json({error:'Method not allowed'},405);
+          return await removeOwnerVideo(env,request,{refresh:refreshIfNeeded});
+
         case '/youtube/upload':
+          if(request.headers.get('Idempotency-Key')==='queue-'+OWNER_REMOVAL.video_sha256)return json({error:'owner_removed_video_content'},410);
           if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
           return json(await uploadVideo(env, request, url));
 
@@ -395,6 +401,8 @@ async function uploadVideo(env, request, url) {
   if (!videoBuffer || videoBuffer.byteLength === 0) {
     throw Object.assign(new Error('Empty video file'), { status: 400 });
   }
+  const contentHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',videoBuffer))).map(x=>x.toString(16).padStart(2,'0')).join('');
+  if(removedVideoHash(contentHash))throw Object.assign(new Error('owner_removed_video_content'),{status:410});
   if (!title) title = 'LTZZZ ' + new Date().toISOString().slice(0, 10);
 
   if(receiptKey) await env.KV.put(receiptKey,JSON.stringify({state:'upload_started',at:new Date().toISOString()}));
