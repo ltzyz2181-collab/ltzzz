@@ -1,0 +1,122 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-307",
+  "head_sha": "ad1333216f2f0bc4f6c96430137a737d05369e4e",
+  "pr_number": 307,
+  "source_main_sha": "53a546bbf86869ad9b64867f942cef85bc22ac2c",
+  "run_id": "40863670934",
+  "at_utc": "2026-10-29T11:13:22.165Z",
+  "idempotency_key": "PATCHGATE-PR-307:ad1333216f2f0bc4f6c96430137a737d05369e4e",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "53a546bbf86869ad9b64867f942cef85bc22ac2c",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": "knowledge/results/patchgate/split-signers/volc-closeout-20261029/pr304-response.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/volc-openapi.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/signer-volc-deploy.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/volc-signer-closeout.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-307",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-307",
+      "base_sha": "53a546bbf86869ad9b64867f942cef85bc22ac2c",
+      "head_sha": "ad1333216f2f0bc4f6c96430137a737d05369e4e",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "08328991874487b4d00f6b5f4dda8c6afcacc89d8eb9654bddd41d9594686a47"
+    },
+    "subject_sha256": "374b9a8a43b50792438f0de4329a79adde5bdb0433cdeaa88b541451d1524075",
+    "idempotency_key": "PATCHGATE-PR-307:ad1333216f2f0bc4f6c96430137a737d05369e4e",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "knowledge/results/patchgate/split-signers/volc-closeout-20261029/pr304-response.json",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "docs.volcengine.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/volc-signer-closeout.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "${host}",
+          "${host}.attacker.invalid",
+          "127.0.0.1",
+          "[::1]",
+          "apigateway-cn-beijing.volceapi.com",
+          "attacker.invalid",
+          "invalid_url",
+          "signer.apigateway-cn-beijing.voiceapi.com",
+          "signer.apigateway-cn-beijing.volceapi.com",
+          "signer.apigateway-cn-shanghai.volceapi.com",
+          "signer.evilapigateway-cn-beijing.volceapi.com"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "authenticated_receipt_writer_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
