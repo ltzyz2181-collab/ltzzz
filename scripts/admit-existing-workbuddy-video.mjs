@@ -6,7 +6,20 @@ const receipt={task_id:'YOUTUBE-AUTOMATION-20261013',step_id:'WORKBUDDY-EXISTING
 try{
  if(!process.env.LTZZZ_AGENT_TOKEN)throw Error('LTZZZ_AGENT_TOKEN_missing');const headers={Authorization:'Bearer '+process.env.LTZZZ_AGENT_TOKEN};
  const priorHttp=await fetch(base+'/queue/status?sha256='+expected,{headers,redirect:'error',signal:AbortSignal.timeout(30000)});const prior=await priorHttp.json();if(!priorHttp.ok||!prior.ok)throw Error('existing_publication_status_unavailable');
- if(prior.receipt?.state==='source_normalized_not_for_publication'){const q=await fetch(base+'/queue/item?name='+name,{headers,redirect:'error',signal:AbortSignal.timeout(30000)}).then(r=>r.json());receipt.video_sha256=prior.receipt.normalized_sha256;receipt.queued=q.queued===true&&q.video_sha256===receipt.video_sha256;receipt.status=receipt.queued?'normalized_video_already_ready':'normalization_existing_reconcile_only';if(!receipt.queued)throw Error('normalization_requires_reconciliation');throw Object.assign(new Error('normalization_already_started'),{reconciled:true});}
+ if(prior.receipt?.state==='source_normalized_not_for_publication'){
+  receipt.video_sha256=prior.receipt.normalized_sha256;
+  const normalizedHttp=await fetch(base+'/queue/status?sha256='+receipt.video_sha256,{headers,redirect:'error',signal:AbortSignal.timeout(30000)}),normalized=await normalizedHttp.json();
+  if(!normalizedHttp.ok||!normalized.ok)throw Error('normalized_publication_status_unavailable');
+  if(normalized.receipt){
+   receipt.publication_state=normalized.receipt.state||null;receipt.video_id=normalized.receipt.video_id||null;
+   if(receipt.video_id){const checked=await fetch('https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/verify?video_id='+encodeURIComponent(receipt.video_id),{redirect:'error',signal:AbortSignal.timeout(30000)}),v=await checked.json();receipt.published=checked.ok&&v.video_id===receipt.video_id&&v.published===true&&v.channel_id==='UCnKqseQ7uivSc7FN38ccRUA'&&v.privacyStatus==='public'&&v.uploadStatus==='processed';}
+   receipt.status=receipt.published?'normalized_video_already_public_verified':'normalized_publication_started_reconcile_only';
+   throw Object.assign(new Error('normalized_publication_already_started'),{reconciled:true});
+  }
+  const checked=await fetch(base+'/queue/item?name='+name,{headers,redirect:'error',signal:AbortSignal.timeout(30000)}),q=await checked.json();receipt.queued=checked.ok&&q.ok&&q.queued===true&&q.video_sha256===receipt.video_sha256;
+  receipt.status=receipt.queued?'normalized_video_already_ready':'normalization_existing_reconcile_only';if(!receipt.queued)throw Error('normalization_requires_reconciliation');throw Object.assign(new Error('normalization_already_started'),{reconciled:true});
+ }
+
  if(prior.receipt){receipt.status='existing_publication_reconcile_only_no_metadata_write';receipt.publication_state=prior.receipt.state||null;receipt.video_id=prior.receipt.video_id||null;if(receipt.video_id){const v=await fetch('https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/verify?video_id='+encodeURIComponent(receipt.video_id),{redirect:'error',signal:AbortSignal.timeout(30000)}).then(r=>r.json());receipt.published=v.published===true&&v.channel_id==='UCnKqseQ7uivSc7FN38ccRUA'&&v.privacyStatus==='public'&&v.uploadStatus==='processed';}throw Object.assign(new Error('publication_already_started_do_not_repeat'),{reconciled:true});}
  const media=await fetch(base+'/queue/asset?name='+name,{headers,redirect:'error',signal:AbortSignal.timeout(30000)});if(!media.ok)throw Error('existing_media_http_'+media.status);
  const parts=[];let size=0;for await(const part of media.body){size+=part.length;if(size>25*1024*1024)throw Error('existing_media_size');parts.push(part);}let bytes=Buffer.concat(parts),hash=createHash('sha256').update(bytes).digest('hex');receipt.video_sha256=hash;receipt.bytes=bytes.length;if(hash!==expected)throw Error('original_media_hash_changed');
