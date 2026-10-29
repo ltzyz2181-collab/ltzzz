@@ -4,3 +4,32 @@ test('metadata-only admission fills missing fields while preserving original vid
 test('contradictory metadata and mismatched actual bytes are never overwritten',async()=>{for(const patch of [{video_sha256:'0'.repeat(64)},{bytes:999},{publication_policy:'private'}]){const f=fixture(patch);assert.equal((await f.call()).http,409);assert.equal(f.writes,0);}const f=fixture();assert.equal((await f.call('f'.repeat(64))).http,409);assert.equal(f.writes,0);});
 test('started or completed publication is reconciled instead of preparing another upload',async()=>{const f=fixture();f.prior=true;assert.equal((await f.call()).http,409);assert.equal(f.writes,0);});
 test('new media reads and repairs require existing authenticated queue identity',async()=>{for(const path of ['/queue/asset?name='+name,'/queue/prepare-existing']){const r=await worker.fetch(new Request('https://scheduler'+path,{method:path.includes('prepare')?'POST':'GET',body:path.includes('prepare')?'{}':undefined}),{});assert.equal(r.status,401);}});
+
+import {commitNormalizedQueueItem,normalizeExistingWorkBuddy} from '../../workbuddy-existing-queue.mjs';
+import {execFileSync} from 'node:child_process';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
+function normalizationFixture({prior=false,changed=null}={}){
+ const sourceHash='a'.repeat(64),normalizedHash='b'.repeat(64),original=new TextEncoder().encode('original'),normalized=new TextEncoder().encode('normalized');
+ const meta={title:'Actual WorkBuddy video',description:'Preserve audio and the AI disclosure'},rawMeta=JSON.stringify(meta),objects=new Map(),writes=[];
+ const env={VIDEOS:{async put(key,value,opts={}){writes.push(key);if(opts.onlyIf?.etagDoesNotMatch&&prior)return null;if(opts.onlyIf?.etagMatches&&changed===key)return null;objects.set(key,value);return {etag:'written'};}}};
+ return{env,objects,writes,input:{name,sourceHash,normalizedHash,original,normalized,rawMeta,meta,sourceETag:'source-version',metaETag:'meta-version'},call:async()=>{const r=await commitNormalizedQueueItem(env,{name,sourceHash,normalizedHash,original,normalized,rawMeta,meta,sourceETag:'source-version',metaETag:'meta-version'});return {http:r.status,...await r.json()};}};
+}
+test('normalization holds the original hash and archives exact source bytes before publishing a new pointer',async()=>{
+ const f=normalizationFixture(),r=await f.call();assert.equal(r.ready_for_existing_schedule,true);assert.equal(r.upload_triggered,false);assert.equal(r.original_preserved,true);
+ assert.deepEqual(f.writes,['receipts/youtube/'+f.input.sourceHash+'.json','sources/workbuddy/'+f.input.sourceHash+'.mp4','sources/workbuddy/'+f.input.sourceHash+'.meta.json','queue/'+name+'.mp4','queue/'+name+'.meta.json']);
+ assert.deepEqual(f.objects.get(f.writes[1]),f.input.original);assert.equal(f.objects.get(f.writes[2]),f.input.rawMeta);
+ const meta=JSON.parse(f.objects.get(f.writes[4]));assert.equal(meta.video_sha256,f.input.normalizedHash);assert.equal(meta.original_video_sha256,f.input.sourceHash);assert.equal(meta.title,f.input.meta.title);
+});
+test('an existing publication claim prevents normalization from changing any source object',async()=>{const f=normalizationFixture({prior:true});assert.equal((await f.call()).http,409);assert.equal(f.writes.length,1);assert.equal(f.objects.size,0);});
+test('concurrent source or metadata changes keep normalization blocked instead of claiming readiness',async()=>{for(const changed of ['queue/'+name+'.mp4','queue/'+name+'.meta.json']){const f=normalizationFixture({changed});const r=await f.call();assert.equal(r.http,409);assert.equal(r.ready_for_existing_schedule,undefined);assert.equal(JSON.parse(f.objects.get(f.writes[0])).state,'source_normalized_not_for_publication');}});
+test('normalization HTTP entry cannot choose an unrelated source or bypass authentication',async()=>{
+ for(const auth of [false,true]){const form=new FormData();form.set('name',name);form.set('source_sha256','0'.repeat(64));form.set('video',new Blob(['fake']),'video.mp4');let reads=0;const r=await worker.fetch(new Request('https://scheduler/queue/normalize-existing',{method:'POST',headers:auth?{Authorization:'Bearer fixture'}:{},body:form}),{LTZZZ_AGENT_TOKEN:'fixture',VIDEOS:{get:async()=>{reads++;throw Error('must not read');}}});assert.equal(r.status,auth?400:401);assert.equal(reads,0);}
+});
+test('real FFmpeg pads portrait media to 720x1280 and copies the audio stream byte for byte',()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ltzzz-portrait-'));
+ try{const input=path.join(dir,'source.mp4'),out=path.join(dir,'out.mp4');const run=args=>execFileSync('ffmpeg',['-v','error',...args],{timeout:30000,stdio:['ignore','pipe','pipe']});
+ run(['-f','lavfi','-i','color=c=blue:size=768x1344:rate=4','-f','lavfi','-i','sine=frequency=440:sample_rate=8000','-t','1','-c:v','libx264','-preset','ultrafast','-c:a','aac',input]);
+ run(['-i',input,'-vf','scale=720:1280:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1','-c:v','libx264','-preset','veryfast','-crf','18','-pix_fmt','yuv420p','-c:a','copy',out]);
+ const p=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-of','json',out],{encoding:'utf8'}));const v=p.streams.find(x=>x.codec_type==='video');assert.equal(v.width,720);assert.equal(v.height,1280);assert.equal(p.streams.find(x=>x.codec_type==='audio').codec_name,'aac');
+ assert.deepEqual(run(['-i',input,'-map','0:a:0','-c','copy','-f','adts','pipe:1']),run(['-i',out,'-map','0:a:0','-c','copy','-f','adts','pipe:1']));
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
