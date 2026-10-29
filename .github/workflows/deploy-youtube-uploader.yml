@@ -2,10 +2,10 @@ name: Deploy YouTube uploader retaining OAuth
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['youtube-upload-worker.js', 'youtube-owner-removal.mjs', 'scripts/remove-owner-youtube-video.mjs', 'ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json', 'scripts/tests/youtube-owner-removal.test.mjs', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
+    paths: ['youtube-upload-worker.js', 'youtube-owner-removal.mjs', 'scripts/remove-owner-youtube-video.mjs', 'ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json', 'scripts/tests/youtube-owner-removal.test.mjs', 'scripts/tests/youtube-removal-edge.test.mjs', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
   push:
     branches: [main]
-    paths: ['youtube-upload-worker.js', 'youtube-owner-removal.mjs', 'scripts/remove-owner-youtube-video.mjs', 'ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json', 'scripts/tests/youtube-owner-removal.test.mjs', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
+    paths: ['youtube-upload-worker.js', 'youtube-owner-removal.mjs', 'scripts/remove-owner-youtube-video.mjs', 'ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json', 'scripts/tests/youtube-owner-removal.test.mjs', 'scripts/tests/youtube-removal-edge.test.mjs', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
 permissions: {contents: read}
 concurrency: {group: youtube-uploader-deploy, cancel-in-progress: false}
 jobs:
@@ -18,6 +18,12 @@ jobs:
         with: {node-version: '22'}
       - run: node --check youtube-upload-worker.js
       - run: node --test scripts/tests/youtube-auth-status.test.mjs scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs scripts/tests/youtube-owner-removal.test.mjs scripts/tests/prepared-video-policy.test.mjs
+      - name: Install pinned isolated Worker runtime harness without project lifecycle scripts
+        run: npm install --prefix /tmp/ltzzz-youtube-edge --ignore-scripts --no-audit --no-fund miniflare@4.20251008.0
+      - name: Exercise removal through actual workerd with synthetic Google responses
+        env:
+          MINIFLARE_MODULE: /tmp/ltzzz-youtube-edge/node_modules/miniflare/dist/src/index.js
+        run: node --test scripts/tests/youtube-removal-edge.test.mjs
   deploy:
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
