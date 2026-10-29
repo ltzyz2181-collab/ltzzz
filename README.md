@@ -4,6 +4,8 @@
 
 所有 AI 先读 [AI-START-HERE.md](AI-START-HERE.md)：六篇导读、完整正文、凭证位置、调用部署与每日数据任务。
 
+文件太多时从 [仓库分类导航](docs/REPOSITORY-LAYOUT.md) 进入：运行代码、当前派单、验收证据、正式素材和历史归档分别列出。
+
 # LTZZZ 数字实验室
 
 **海韵天城 · LTZZZ Digital Lab**
