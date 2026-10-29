@@ -1,0 +1,317 @@
+{
+  "receipt_kind": "branch_protection_relay",
+  "template_only": false,
+  "original_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "relay_card": {
+    "path": "ops/dispatch/relay/PATCHGATE-A2-PROTECTION-CLIENT.md",
+    "source_commit": "52ad8a9e7b2e21bb998a4ac0f8363327626d2f77",
+    "blob_sha1": "df7f272d6231099732769384f1601c37a2175330",
+    "content_sha256_lf_normalized": "56ec1fe2d93169d855fea967f9dcc6fe83151c924d99841023cf8f9030208a14",
+    "read_via": "git fetch origin refs/pull/240/head:refs/remotes/pr240head + git cat-file blob (no API auth required)"
+  },
+  "logical_seat": "desktop-vscode-executor",
+  "client": "VS Code Copilot (Copilot SDK desktop client)",
+  "actual_provider": "unknown_not_native_gpt_or_claude",
+  "model": "unspecified_client_metadata",
+  "metadata_source": "client_self_report_no_native_identity_claim",
+  "native_model_calls": 0,
+  "at_utc": "2026-10-26T01:25:30Z",
+  "source_commit": "52ad8a9e7b2e21bb998a4ac0f8363327626d2f77",
+  "observed_main": "73728f25d8c9c446e030b3512ff7f62d73b36de2",
+  "local_head_untouched": "ce985e86135b7a11a4f433b07727d47b6d573b0f",
+  "worktree_preserved": true,
+  "worktree_actions": {
+    "reset": false,
+    "clean": false,
+    "stash": false,
+    "force_push": false,
+    "merge_or_rebase": false,
+    "tracked_files_modified": 0,
+    "added_untracked_paths": [
+      "work/relay/PATCHGATE-A2-PROTECTION-CLIENT.head.md",
+      "work/relay/card-from-git.md",
+      "work/relay/card-blob.bin",
+      "knowledge/results/patchgate/protection-client/receipt.json",
+      "knowledge/results/patchgate/protection-client/RECEIPT.md"
+    ]
+  },
+
+  "execution_result": "not_modified_blocked",
+  "a2_enabled": false,
+  "branch_protection_changed": false,
+  "direct_push_bypass_used": false,
+  "pr_created": false,
+  "pr_url": null,
+  "merged": false,
+  "modified_repo_state": false,
+
+  "stages": {
+    "claimed": false,
+    "draft_created": false,
+    "submitted": false,
+    "tested": false,
+    "independently_reviewed": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+
+  "step_results": {
+    "step1_environment_and_identity": {
+      "status": "partial",
+      "evidence": [
+        "git rev-parse HEAD = ce985e86135b7a11a4f433b07727d47b6d573b0f on branch main",
+        "git status --porcelain shows untracked files only; 0 modified tracked files, preserved as-is",
+        "gh auth status -> exit code 4 'not logged into any GitHub hosts'",
+        "no hosts.yml under %APPDATA%\\GitHub CLI or ~/.config/gh; GH_TOKEN/GITHUB_TOKEN unset",
+        "no credential file, token, cookie or key was read"
+      ],
+      "gh_api_user_verified": false,
+      "protection_get_before": "not_obtained",
+      "admin_true_bypass_used": false
+    },
+    "step2_workflow_facts": {
+      "status": "blocked",
+      "main_has_patchgate_a2_workflows": false,
+      "missing_on_main": [
+        ".github/workflows/patchgate-a2-base-checks.yml",
+        ".github/workflows/patchgate-a2-collector.yml",
+        ".github/workflows/patchgate-a2-verify.yml"
+      ],
+      "present_on_main_patchgate": [
+        ".github/workflows/patchgate-a0.yml",
+        ".github/workflows/patchgate-a1.yml",
+        ".github/workflows/patchgate-doubao-probe.yml",
+        "scripts/patchgate-a2-probe-candidate.mjs",
+        "config/patchgate-executors.json",
+        "config/patchgate-trust.json",
+        "knowledge/results/patchgate/status.json"
+      ],
+      "conclusion": "no patchgate-a2-base-checks workflow exists on main; a required status check with context patchgate-a2-base-checks cannot be satisfied, so it must not be configured as required"
+    },
+    "step3_a2_switches": {
+      "status": "verified_still_disabled",
+      "PATCHGATE_A2_BASE_CHECKS_ENABLED": "false_not_present_on_main_workflows",
+      "status_json_A2_enabled": false,
+      "status_json_A2_signing_enabled": false,
+      "trust_json_enabled": false,
+      "executors_signing_key_ids_empty": true,
+      "a2_auto_merge_enabled": false,
+      "a3_and_b_untouched": true,
+      "real_target_checker_run": null,
+      "workflow_id": null,
+      "run_id": null,
+      "job_id": null,
+      "app_id": null,
+      "check_name": null,
+      "event": null,
+      "base": null,
+      "head": null,
+      "pr_marker": null,
+      "reason_not_run": "no deployed checker on main; fabricating a look-alike run id is prohibited by the card"
+    },
+    "step4_writer_migration": {
+      "status": "not_ready",
+      "scanned_commit": "73728f25d8c9c446e030b3512ff7f62d73b36de2",
+      "workflows_total": 117,
+      "workflows_direct_push_to_main": 48,
+      "workflows_with_contents_write": 89,
+      "migration_started": false,
+      "migration_tested": false,
+      "bypass_solution_used": false,
+      "method": "git grep -l -E 'git push.*(HEAD:main|origin main|\\-\\-force)' origin/main -- '.github/workflows' ; git grep -l 'contents: write' origin/main -- '.github/workflows'",
+      "affected_writers": [
+        "aave-owner-funding", "agi-econ-subnet", "autonomous-funded-orders", "claude-on-demand-review",
+        "control-handover-verification", "daily-agent-tasks", "daily-economy", "deepseek-daily",
+        "defi-autopilot", "deploy-channel-bots", "deploy-kimi-queue", "deploy-memory-os",
+        "deploy-wechat-publishing", "deploy-wep3", "deploy-youtube-uploader", "diagnose-kimi-proxy",
+        "doubao-ark-dispatch", "execute-task-queue", "external-daily-dispatch", "external-economy-design-review",
+        "ig-daily-card", "innovation-rota", "instagram-daily-package", "kimi-global-weekly",
+        "kimi-worker-regional-probe", "ltzzz-min-automation", "ltzzz-wallet-ops", "manus-ig-admission",
+        "memory-os-state", "miniprogram-ip-assisted-upload", "miniprogram-upload", "model-memory-discussion",
+        "offline-runtime-smoke", "owner-domestic-inbox", "patrol-memory", "promote-memory",
+        "provision-wechat-account", "pulse-agent-work", "recover-doubao-daily", "render-cn-daily-video",
+        "treasury-migration-and-pilot", "update-capabilities", "upload-video-s3-2026-10-15",
+        "verify-kimi-okx", "webhook-deploy", "workbuddy-video-recovery", "x-promo-outreach",
+        "youtube-daily-publish"
+      ],
+      "conclusion": "enabling enforce_admins/required checks now would break 48 receipt-writing workflows that commit straight to main; card forbids solving this by bypass, so protection change stays unapplied"
+    },
+    "step5_merge_style_protection_update": {
+      "status": "not_attempted",
+      "protection_json_before": null,
+      "protection_json_after": null,
+      "reason": "no readable protection snapshot (HTTP 401 anonymous / 403 reported by upstream); blind PUT would overwrite unknown existing stricter settings"
+    },
+    "step6_official_api_readback": {
+      "status": "not_obtained",
+      "http_status_observed": 401,
+      "http_status_reported_by_upstream_authenticated_run": 403,
+      "missing_capability": "repository Administration (branch protection read/write) plus any authenticated write identity",
+      "browser_control_available": false,
+      "retried_after_403": false,
+      "searched_for_credentials": false,
+      "readback_verified": false
+    },
+    "step7_b2_stale_base_probe": {
+      "status": "not_run",
+      "reason": "no protection applied, no deployed checker; manual merge of #246 not used"
+    }
+  },
+
+  "writer_migration_evidence": {
+    "direct_push_workflow_count": 48,
+    "contents_write_workflow_count": 89,
+    "list_source_commit": "73728f25d8c9c446e030b3512ff7f62d73b36de2"
+  },
+
+  "upstream_audit_preconditions": {
+    "claude_exact_head_rereview": "missing",
+    "claude_artifact": {
+      "pr": 247,
+      "state": "open_unmerged",
+      "head": "b1b05f43",
+      "blob": "8a843bbe",
+      "verdict": "revise",
+      "reviewed_target_head": "674c73c1",
+      "bundle_verification": "unverified_missing_metadata_or_bundle_mismatch",
+      "native_authorship_verified": false,
+      "reviews_on_pr240_head_52ad8a9e": 0
+    },
+    "second_provider_review": "not_received_exact_runtime_stage",
+    "qwen_gate": {
+      "native_calls": 1,
+      "model": "qwen-plus",
+      "run_id": "40252735553",
+      "verdict": "reject",
+      "stage_approval": false,
+      "controller_adjudication": "reject_preserved_no_repurchase_to_chase_approval"
+    },
+    "main_status_json": {
+      "path": "knowledge/results/patchgate/status.json",
+      "status": "A1_active_A2_PR247_C1a_C2_C3_repaired_125_runner_tests_waiting_Claude",
+      "A2_status": "PR247_repairs_submitted_not_merged_or_activated",
+      "A2_enabled": false,
+      "A2_signing_enabled": false,
+      "A2_claude_status": "PR247_REVISE_preserved_new_head_rereview_requested_not_received",
+      "A2_claude_note": "status.json also records Claude_and_actual_second_provider_exact_runtime_stage_review_not_received",
+      "next_phase": "Claude_rereview_PR240_new_head_then_address_remaining_B2_B6_before_A2_activation; A3_and_B_remain_off"
+    },
+    "trust_config": {
+      "path": "config/patchgate-trust.json",
+      "enabled": false,
+      "signing_status": "not_provisioned_A2_must_not_admit_unsigned_writers"
+    },
+    "executors_registry_limitation": "A2 cryptographic admission remains blocked while trust.enabled=false and keys are empty",
+    "closeout_self_report": {
+      "path": "knowledge/results/patchgate/pr247-evidence/closeout.json",
+      "status": "C1a_C2_C3_implemented_waiting_Claude_rereview_A2_disabled",
+      "tested_runtime_head": "4d95f22b3e740c9ad085f736be6e7cbdaf35b0b7",
+      "error": "collector_PR_base_stale_requalify",
+      "branch_protection": {
+        "api_http_status": 403,
+        "changed": false,
+        "configured_verified": false,
+        "existing_main_direct_receipt_writer_migration_unverified": true,
+        "client_browser_control_available_in_current_session": false
+      },
+      "signed": false,
+      "automatic_merge": false,
+      "remaining": [
+        "Claude_exact_head_rereview",
+        "real_provider_signer_provisioning_and_restart_challenge",
+        "trusted_main_checker_deployment_registration_and_signed_collection",
+        "branch_protection_admin_capability_and_real_stale_base_rejection",
+        "PR243_high_risk_notice_gate_review",
+        "PR246_first_automatic_docs_merge"
+      ]
+    }
+  },
+
+  "unverified": [
+    "gh api user identity (no authenticated gh session)",
+    "GET /repos/{owner}/{repo}/branches/main/protection (HTTP 401 anonymous, 403 upstream authenticated)",
+    "GET /branches/main/protection/required_status_checks (HTTP 401)",
+    "official protection PUT and readback (no Administration capability)",
+    "real target checker invocation (patchgate-a2-base-checks absent from main)",
+    "workflow_id / run_id / job_id / check name / App id / EVENT / BASE / HEAD / PR marker (not produced; must not be hand-filled)",
+    "existing receipt-writer migration (48 direct-push workflows untouched)",
+    "B2 stale-base rejection probe (B2 not applicable while protection unapplied)",
+    "Claude review of exact head 52ad8a9e (0 reviews; #247 REVISE targets 674c73c1)",
+    "receipt PR creation and submission to coordinator/Claude (no push capability)"
+  ],
+
+  "tests": {
+    "commands": [
+      "git status --porcelain",
+      "gh auth status",
+      "git fetch origin main",
+      "git fetch origin refs/pull/240/head:refs/remotes/pr240head",
+      "git grep -l -E 'git push.*(HEAD:main|origin main|\\-\\-force)' origin/main -- '.github/workflows'",
+      "Invoke-RestMethod https://api.github.com/repos/ltzyz2181-collab/ltzzz/branches/main/protection"
+    ],
+    "passed": null,
+    "failed": null,
+    "scope": "read_only_inspection_no_product_test_run"
+  },
+
+  "review": {
+    "actual_provider": null,
+    "reviewed_sha256": null,
+    "accepted": null,
+    "rejection_reasons": [
+      "Claude PR #247 verdict=revise for head 674c73c1, unmerged",
+      "closeout bundle_verification=unverified_missing_metadata_or_bundle_mismatch",
+      "native_authorship_verified=false",
+      "Qwen native run 40252735553 verdict=reject preserved by controller"
+    ]
+  },
+
+  "deployment": {
+    "run_id": null,
+    "result_url": null,
+    "readback_verified": false,
+    "target_environment": "github_branch_protection_main",
+    "artifact_sha256": null,
+    "observed_version": null,
+    "rollback_reference": null
+  },
+
+  "model_usage": {
+    "calls_attempted": 0,
+    "tokens_used": null,
+    "note": "no external model provider was called by this execution seat"
+  },
+  "settlement_kind": "none",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "real_funds_enabled": false,
+
+  "status": "not_executed_by_design",
+  "status_reason": "Every card precondition for applying branch protection is unmet: exact-head Claude rereview absent, second-provider stage review absent, Qwen reject preserved, trusted checker not deployed on main, 48 direct-push writers unmigrated, and this seat holds no authenticated GitHub write or Administration capability.",
+  "limitations": [
+    "No branch protection was read, written, or verified. protection_json_before/after are null by fact, not omission.",
+    "No GitHub write of any kind was attempted after the 401/403 evidence; no credential file, token, cookie or key was inspected.",
+    "This receipt exists only in the local untracked worktree; it has not been pushed and no PR was opened.",
+    "A2, A3 and B remain off; nothing here authorizes activation later without the six remaining upstream dependencies.",
+    "Card step 7 (B2 probe) is inapplicable while protection is unapplied; it must not be claimed as passed."
+  ],
+  "claim": {
+    "receipt_path": "knowledge/results/patchgate/protection-client/receipt.json",
+    "lease_id": null,
+    "idempotency_key": "PLAN-PATCHGATE-ESCROW-20261023/protection-client/52ad8a9e/20261026T012530Z"
+  },
+  "authorization": {
+    "source": "owner_relay_card_PATCHGATE-A2-PROTECTION-CLIENT",
+    "at_utc": "2026-10-26T01:25:30Z",
+    "scope": "branch protection engineering setup on ltzyz2181-collab/ltzzz main only; conditional, prerequisites unmet"
+  },
+  "environment_persistence": {
+    "kind": "local_untracked_file",
+    "durable_artifact_path": "knowledge/results/patchgate/protection-client/",
+    "readback_verified": true,
+    "limitations": [
+      "not pushed to GitHub; disappears if the local worktree is cleaned"
+    ]
+  }
+}

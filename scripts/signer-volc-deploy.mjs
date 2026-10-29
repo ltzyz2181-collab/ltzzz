@@ -1,112 +1,31 @@
 #!/usr/bin/env node
-// 火山签名服务部署 CLI（凭据只从 env 读取，不回显）
+// Read-only access reconciliation; never logs credentials, resource envs or source URLs.
 import fs from 'node:fs';
-import { volcRequest } from './lib/volc-openapi.mjs';
-
-const REGION = 'cn-beijing';
-const SERVICE = 'vefaas';
-const VERSION = '2024-06-06';
-const FUNC_NAME = 'ltzzz-signer-volc-attest';
-
-function log(label, obj) { console.log(`[${label}]`, JSON.stringify(obj, null, 2).slice(0, 1500)); }
-
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-async function ensureReleased() {
-  const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-  const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
-  if (!item?.Id) throw Error(`function not found: ${FUNC_NAME}`);
-  const id = item.Id;
-  const rel = await volcRequest({
-    action: 'Release', version: VERSION, region: REGION, service: SERVICE,
-    body: { FunctionId: id, RevisionNumber: 0, TargetTrafficWeight: 100, RollingStep: 100, MaxInstance: 2, Description: 'LTZZZ signer full release (restart challenge)' },
-  });
-  for (let i = 0; i < 36; i++) {
-    const s = await volcRequest({ action: 'GetReleaseStatus', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: id } });
-    const status = s?.Result?.Status;
-    if (status === 'done') return { id, already: false, status: 'done', rel };
-    if (status === 'failed') throw Error(`release failed: ${JSON.stringify(s?.Result)}`);
-    await sleep(5000);
-  }
-  throw Error('release timeout');
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {volcRequest} from './lib/volc-openapi.mjs';
+const NAME='ltzzz-signer-volc-attest';
+const base={schema:'ltzzz.volc-signer.preflight.v1',task_id:'PLAN-PATCHGATE-ESCROW-20261023',step_id:'SPLIT-SIGNER-INFRA-20261026',region:'cn-beijing',credential_values_logged:false,model_calls:0,production_deployed:false,signer_ready:false,financial_execution:false,paid:false,tx_hash:null};
+function requestMetadata(r){return{request_id:typeof r.ResponseMetadata?.RequestId==='string'&&/^[a-zA-Z0-9_-]{1,120}$/.test(r.ResponseMetadata.RequestId)?r.ResponseMetadata.RequestId:null};}
+export async function inspectVolcSigner({command='list',functionId,request=volcRequest}={}){
+ if(!['list','get','challenge'].includes(command))throw Error('signer_runtime_incomplete_no_deployment');
+ if(command==='list'){
+  const r=await request({action:'ListFunctions',body:{PageNumber:1,PageSize:50}});
+  if(!Array.isArray(r.Result?.Items)||!Number.isSafeInteger(r.Result.Total)||r.Result.Total<0)throw Error('volc_function_list_schema');
+  return {...base,...requestMetadata(r),status:'vefaas_list_permission_verified_only',list_permission_verified:true,listed_count:r.Result.Items.length,total:r.Result.Total,more_pages:r.Result.Total>r.Result.Items.length,target_ids:r.Result.Items.filter(x=>x.Name===NAME&&/^[a-zA-Z0-9_-]{1,120}$/.test(x.Id)).map(x=>x.Id),account_binding_verified:false};
+ }
+ if(typeof functionId!=='string'||!/^[a-zA-Z0-9_-]{1,120}$/.test(functionId))throw Error('actual_function_id_required');
+ const r=await request({action:'GetFunction',body:{Id:functionId}}),f=r.Result;
+ if(f.Id!==functionId||f.Name!==NAME)throw Error('volc_function_identity_mismatch');
+ const account=typeof f.Owner==='string'&&/^[a-zA-Z0-9_-]{1,120}$/.test(f.Owner)?f.Owner:null;
+ return {...base,...requestMetadata(r),status:'function_metadata_read_only_not_restart_challenge',function_id:f.Id,function_name:f.Name,cloud_account_id:account,account_binding_verified:account!==null,runtime:typeof f.Runtime==='string'?f.Runtime:null,revision_time:typeof f.LastUpdateTime==='string'?f.LastUpdateTime:null,nas_mount_declared:f.NasStorage?.EnableNas===true,restart_challenge_verified:false,legacy_challenge_command_is_metadata_only:command==='challenge'};
 }
-
-async function main() {
-  const [cmd, ...args] = process.argv.slice(2);
-  if (!cmd) throw Error('usage: signer-volc-deploy.mjs <list|deploy|update|get|delete>');
-  switch (cmd) {
-    case 'list': {
-      const ak = process.env.VOLC_ACCESS_KEY || '';
-      const sk = process.env.VOLC_SECRET_KEY || '';
-      console.log(JSON.stringify({ ak_prefix: ak.slice(0, 4), ak_len: ak.length, sk_len: sk.length }));
-      let vefaas = null, iamProbe = null;
-      try {
-        const r = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-        vefaas = { ok: true, items: (r?.Result?.Items || []).map((i) => ({ id: i.Id, name: i.Name, runtime: i.Runtime, status: i.Status, update: i.UpdateTime })) };
-      } catch (e) { vefaas = { ok: false, error: e.message }; }
-      // 分诊：同一凭据走 IAM 专用域名网关，区分「密钥问题」与「统一网关签名差异」
-      try {
-        const r2 = await volcRequest({ action: 'ListUsers', version: '2018-01-01', service: 'iam', host: 'iam.volcengineapi.com', body: null });
-        iamProbe = { ok: true, users: (r2 && r2.Result && r2.Result.User && r2.Result.User.length) || 0 };
-      } catch (e) { iamProbe = { ok: false, error: e.message }; }
-      console.log(JSON.stringify({ vefaas, iamProbe }, null, 2));
-      if (!vefaas.ok || !iamProbe.ok) throw Error('probe_failed');
-      return;
-    }
-    case 'get': {
-      const rel = await ensureReleased();
-      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: rel.id } });
-      log('get', { release: { already: rel.already, status: rel.status }, id: rel.id, function: r?.Result ? { id: r.Result.Id, name: r.Result.Name, status: r.Result.Status, update: r.Result.UpdateTime } : r });
-      return;
-    }
-    case 'deploy': {
-      const zipPath = args[0] || 'cloud/signer-volc-attest/function.zip';
-      if (!fs.existsSync(zipPath)) throw Error(`zip missing: ${zipPath}`);
-      const zipB64 = fs.readFileSync(zipPath).toString('base64');
-      const envs = [];
-      const passthrough = ['ARK_API_KEY','SIGNER_EXECUTOR_ID','SIGNER_SOURCE_SHA256','SIGNER_EVIDENCE_SHA256','SIGNER_CLOUD_ACCOUNT_BINDING','SIGNER_DEFAULT_MODEL','SIGNER_DAILY_LIMIT','SIGNER_STORE_DIR'];
-      for (const k of passthrough) if (process.env[k]) envs.push({ Key: k, Value: process.env[k] });
-      const body = {
-        Name: FUNC_NAME,
-        Description: 'LTZZZ A2 model attestation signer (volcengine_ark). Private key generated and held on Volcano side only.',
-        Runtime: 'node20/v1',
-        ExclusiveMode: false,
-        RequestTimeout: 30,
-        MaxConcurrency: 20,
-        MemoryMB: 1024,
-        SourceType: 'zip',
-        Source: zipB64,
-        Envs: envs,
-        VpcConfig: { EnableVpc: false, EnableSharedInternetAccess: true },
-        CpuStrategy: 'request',
-        ProjectName: 'default',
-      };
-      let r;
-      try {
-        const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-        const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
-        r = item
-          ? await volcRequest({ action: 'UpdateFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: item.Id, SourceType: 'zip', Source: zipB64, Envs: envs } })
-          : await volcRequest({ action: 'CreateFunction', version: VERSION, region: REGION, service: SERVICE, body });
-      } catch (e) {
-        // fallback: treat as create if update-style error (e.g. function not found mid-flight)
-        r = await volcRequest({ action: 'CreateFunction', version: VERSION, region: REGION, service: SERVICE, body }).catch(() => { throw e; });
-      }
-      log('create', { id: r?.Id, name: r?.Name, codeSize: r?.CodeSize, raw: r?.Result ? { id: r.Result.Id, name: r.Result.Name } : undefined });
-      return;
-    }
-    case 'update': {
-      const zipPath = args[0] || 'cloud/signer-volc-attest/function.zip';
-      if (!fs.existsSync(zipPath)) throw Error(`zip missing: ${zipPath}`);
-      const zipB64 = fs.readFileSync(zipPath).toString('base64');
-      const body = { Name: FUNC_NAME, SourceType: 'zip', Source: zipB64 };
-      const r = await volcRequest({ action: 'UpdateFunction', version: VERSION, region: REGION, service: SERVICE, body });
-      log('update', r);
-      return;
-    }
-    default:
-      throw Error(`unknown cmd ${cmd}`);
-  }
+export async function cli({args=process.argv.slice(2),env=process.env,write=console.log}={}){
+ const command=args[0]||'list';let receipt;
+ const metadata={at_utc:new Date().toISOString(),source_commit:/^[a-f0-9]{40}$/.test(env.GITHUB_SHA||'')?env.GITHUB_SHA:null,run_id:/^\d+$/.test(env.GITHUB_RUN_ID||'')?env.GITHUB_RUN_ID:null,run_attempt:/^\d+$/.test(env.GITHUB_RUN_ATTEMPT||'')?Number(env.GITHUB_RUN_ATTEMPT):null};
+ try{receipt={...await inspectVolcSigner({command,functionId:args[1]||env.SIGNER_FUNCTION_ID}),...metadata};}
+ catch(e){const error=/^(?:iam_[a-z_]+|volc_[a-z_]+|fixed_vefaas_request_required|actual_function_id_required|signer_runtime_incomplete_no_deployment)$/.test(e.message)?e.message:'volc_preflight_failed';receipt={...base,...metadata,status:'blocked',error,provider_error_code:e.code??null,request_id:e.request_id??null};process.exitCode=1;}
+ if(env.GITHUB_ACTIONS==='true'){fs.mkdirSync('results/volc-signer',{recursive:true});fs.writeFileSync('results/volc-signer/preflight.json',JSON.stringify(receipt,null,2)+'\n');}
+ write(JSON.stringify(receipt));return receipt;
 }
-
-main().catch((e) => { console.error('FAIL:', e.message); process.exitCode = 1; });
+if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1]))await cli();
