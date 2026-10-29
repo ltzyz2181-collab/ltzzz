@@ -21,7 +21,7 @@ async function main() {
       let vefaas = null, iamProbe = null;
       try {
         const r = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-        vefaas = { ok: true, functions: (r && r.Result && r.Result.Items && r.Result.Items.length) || 0 };
+        vefaas = { ok: true, items: (r?.Result?.Items || []).map((i) => ({ id: i.Id, name: i.Name, runtime: i.Runtime, status: i.Status, update: i.UpdateTime })) };
       } catch (e) { vefaas = { ok: false, error: e.message }; }
       // 分诊：同一凭据走 IAM 专用域名网关，区分「密钥问题」与「统一网关签名差异」
       try {
@@ -33,7 +33,10 @@ async function main() {
       return;
     }
     case 'get': {
-      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { Name: FUNC_NAME } });
+      const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
+      const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
+      if (!item?.Id) throw Error(`function not found: ${FUNC_NAME}`);
+      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: item.Id } });
       log('get', r);
       return;
     }
