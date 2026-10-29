@@ -46,12 +46,13 @@ test('uploader reports provider privacy and pending verification instead of decl
 });
 test('a held original source cannot be uploaded by the normal queue cron',async()=>{const f=fixture();await queue(f);const h=await crypto.subtle.digest('SHA-256',bytes),hash=Buffer.from(h).toString('hex');f.objects.set('receipts/youtube/'+hash+'.json',new TextEncoder().encode(JSON.stringify({state:'source_normalized_not_for_publication',normalized_sha256:'b'.repeat(64)})));const r=await call(f,'/queue/run',{name:'demo'});assert.equal(r.results[0].status,'original_preserved_normalized_replacement_queued');assert.equal(f.uploads,0);assert.ok(f.objects.has('queue/demo.mp4'));});
 
-test('historical media cleanup requires authentication, exact hash and fresh same-video public proof',async()=>{
+test('historical cleanup requires authentication and exact published-byte proof; current availability is recorded separately',async()=>{
  const f=fixture();await queue(f);await call(f,'/queue/run',{name:'demo'});f.objects.set('published/demo.mp4',bytes);
  assert.equal((await worker.fetch(new Request('https://scheduler/queue/prune-published',{method:'POST',body:'{}'}),f.env)).status,401);
  const old=f.env.YOUTUBE_UPLOADER,prior=f.uploads;
  f.env.YOUTUBE_UPLOADER={fetch:async()=>Response.json({ok:true,published:true,channel_id:CHANNEL,video_id:'wrongID1234',privacyStatus:'public',uploadStatus:'processed'})};
- assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'fresh_public_verification_failed');assert.ok(f.objects.has('published/demo.mp4'));
+ const gone=await call(f,'/queue/prune-published',{});assert.equal(gone.results[0].status,'removed');assert.equal(gone.results[0].currently_public,false);assert.ok(!f.objects.has('published/demo.mp4'));
+ f.objects.set('published/demo.mp4',bytes);
  f.env.YOUTUBE_UPLOADER=old;f.objects.set('published/demo.mp4',new Uint8Array([1,2,3]));
  assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'asset_hash_mismatch');assert.ok(f.objects.has('published/demo.mp4'));
  f.objects.set('published/demo.mp4',bytes);assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'removed');
@@ -63,4 +64,11 @@ test('public=true with a different ID or unprocessed status cannot remove queued
   const f=fixture(),old=f.env.YOUTUBE_UPLOADER;f.env.YOUTUBE_UPLOADER={fetch:async r=>{const x=await old.fetch(r);return new URL(r.url).pathname==='/youtube/verify'?Response.json({...await x.json(),...patch}):x;}};
   await queue(f);assert.equal((await call(f,'/queue/run',{name:'demo'})).ok,false);assert.ok(f.objects.has('queue/demo.mp4'));
  }
+});
+
+test('an unverified historical receipt cannot delete an archive even when current video exists',async()=>{
+ const f=fixture();await queue(f);await call(f,'/queue/run',{name:'demo'});f.objects.set('published/demo.mp4',bytes);
+ const key=[...f.objects.keys()].find(k=>k.startsWith('receipts/')),r=JSON.parse(new TextDecoder().decode(f.objects.get(key)));
+ r.verification.uploadStatus='uploaded';f.objects.set(key,new TextEncoder().encode(JSON.stringify(r)));
+ assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'publication_proof_missing');assert.ok(f.objects.has('published/demo.mp4'));
 });

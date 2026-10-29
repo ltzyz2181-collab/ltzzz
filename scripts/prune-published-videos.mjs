@@ -36,7 +36,7 @@ export function prunePublishedVideos({root = '.', tracked, sourceCommit = null, 
 if(process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
  const report = prunePublishedVideos({sourceCommit:process.env.GITHUB_SHA || execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),runId:process.env.GITHUB_RUN_ID || null,runAttempt:process.env.GITHUB_RUN_ATTEMPT ? Number(process.env.GITHUB_RUN_ATTEMPT) : null});
  if(report.removed.length) {
-  const file = `results/publishing/video-retention-${process.env.GITHUB_RUN_ID || 'local'}-${process.env.GITHUB_RUN_ATTEMPT || '1'}.json`;
+  const file = `results/publishing/video-retention-${process.env.GITHUB_RUN_ID || 'local-'+Date.now()}-${process.env.GITHUB_RUN_ATTEMPT || '1'}.json`;
   fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(report,null,2)+'\n');
  }
  console.log(JSON.stringify({removed:report.removed.length,bytes_removed:report.bytes_removed}));
