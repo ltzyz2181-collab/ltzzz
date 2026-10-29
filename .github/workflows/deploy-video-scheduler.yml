@@ -2,10 +2,10 @@ name: Deploy authenticated video scheduler
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['video-scheduler-worker.js','workbuddy-existing-queue.mjs','scripts/admit-existing-workbuddy-video.mjs','wrangler.video-scheduler.toml','scripts/tests/video-scheduler.test.mjs','scripts/tests/workbuddy-existing-queue.test.mjs','.github/workflows/deploy-video-scheduler.yml']
+    paths: ['video-scheduler-worker.js','scripts/prune-published-cloud-media.mjs','scripts/tests/published-video-retention.test.mjs','scripts/prune-published-videos.mjs','workbuddy-existing-queue.mjs','scripts/admit-existing-workbuddy-video.mjs','wrangler.video-scheduler.toml','scripts/tests/video-scheduler.test.mjs','scripts/tests/workbuddy-existing-queue.test.mjs','.github/workflows/deploy-video-scheduler.yml']
   push:
     branches: [main]
-    paths: ['video-scheduler-worker.js','workbuddy-existing-queue.mjs','scripts/admit-existing-workbuddy-video.mjs','wrangler.video-scheduler.toml','scripts/tests/video-scheduler.test.mjs','scripts/tests/workbuddy-existing-queue.test.mjs','.github/workflows/deploy-video-scheduler.yml']
+    paths: ['video-scheduler-worker.js','scripts/prune-published-cloud-media.mjs','scripts/tests/published-video-retention.test.mjs','scripts/prune-published-videos.mjs','workbuddy-existing-queue.mjs','scripts/admit-existing-workbuddy-video.mjs','wrangler.video-scheduler.toml','scripts/tests/video-scheduler.test.mjs','scripts/tests/workbuddy-existing-queue.test.mjs','.github/workflows/deploy-video-scheduler.yml']
 permissions: {contents: read}
 concurrency: {group: video-scheduler-deploy, cancel-in-progress: false}
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: (command -v ffprobe && command -v ffmpeg) || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
-      - run: node --test scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs scripts/tests/workbuddy-existing-queue.test.mjs
+      - run: node --test scripts/tests/published-video-retention.test.mjs scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs scripts/tests/workbuddy-existing-queue.test.mjs
   deploy:
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -45,12 +45,16 @@ jobs:
           let j,r;
           for(let n=0;n<20;n++){
             r=await fetch('https://ltzzz-video-scheduler.ltzyz2181.workers.dev/health');j=await r.json();
-            if(j.existing_workbuddy_admission&&j.workbuddy_portrait_normalization)break;
+            if(j.existing_workbuddy_admission&&j.workbuddy_portrait_normalization&&j.published_media_retention==='receipt_only')break;
             await new Promise(resolve=>setTimeout(resolve,2000));
           }
           console.log(JSON.stringify(j));
-          if(!r.ok||!j.ok||!j.existing_workbuddy_admission||!j.workbuddy_portrait_normalization||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
+          if(j.published_media_retention!=='receipt_only'||!r.ok||!j.ok||!j.existing_workbuddy_admission||!j.workbuddy_portrait_normalization||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
           JS
+      - name: Retain publication evidence and remove verified historical R2 media without uploading
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/prune-published-cloud-media.mjs
       - name: Prepare deterministic media inspection and format tools
         run: (command -v ffprobe && command -v ffmpeg) || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
       - name: Inspect and normalize existing WorkBuddy media without AI rendering or publication
@@ -61,16 +65,20 @@ jobs:
         if: always()
         with:
           name: workbuddy-existing-admission-${{ github.run_id }}-${{ github.run_attempt }}
-          path: results/publishing/workbuddy-existing-admission-*.json
+          path: |
+            results/publishing/workbuddy-existing-admission-*.json
+            results/publishing/video-retention-cloud-*.json
           retention-days: 14
       - name: Preserve actual queue admission or precise blocker
         if: always()
         run: |
           file="results/publishing/workbuddy-existing-admission-${{ github.run_id }}-${{ github.run_attempt }}.json"
-          test -f "$file" || exit 0
+          cloud="results/publishing/video-retention-cloud-${{ github.run_id }}-${{ github.run_attempt }}.json"
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add -- "$file"
+          for receipt in "$file" "$cloud"; do
+            if test -f "$receipt"; then git add -- "$receipt"; fi
+          done
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'Record actual WorkBuddy media probe and existing queue readiness; no publication presumed'
           for attempt in 1 2 3 4; do
