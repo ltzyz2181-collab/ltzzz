@@ -1,0 +1,262 @@
+{
+  "at": "2026-10-29T08:01:21.605Z",
+  "date": "2026-10-29",
+  "executed_by": "workbuddy_dispatch_automation",
+  "execution_source": "repository_rules_not_WorkBuddy_client",
+  "model_calls": 0,
+  "tasks": [
+    {
+      "id": "DAILY-2026-10-29-qianwen",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "qianwen",
+      "phase": "review_missing",
+      "due_at": "2026-10-29T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/daily-board/2026-10-29.json",
+        "knowledge/results/daily-board/artifacts/2026-10-29-qianwen-47875f9ec5bf09ba37b4729d1ae21f88ebf3cf81058af8a0859a151a0a035c46.json"
+      ],
+      "instruction": "交叉审阅其他席当日产出及证据，识别系统风险或记忆不一致，提出可验证改进；结合月度模型目录检查提出更新建议，未实测不得称已恢复或已部署。",
+      "claim_verified": true,
+      "submission_verified": true,
+      "independent_review_verified": false,
+      "deployed": false,
+      "draft_accepted": false,
+      "engineering_completion_verified": false,
+      "engineering_closeout": null,
+      "requires_engineering_followup": false,
+      "issue": "review_missing",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/daily-board/2026-10-29.json"
+    },
+    {
+      "id": "CONTROL-REVIEW-2026-10-29",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "gpt",
+      "phase": "dispatch_missing",
+      "due_at": "2026-10-29T17:00:00+08:00",
+      "evidence": [
+        "knowledge/results/control/2026-10-29.json"
+      ],
+      "instruction": "读取真实回执，签发下一轮任务；先查已有派单，不重复调用已预留模型或重新采购。",
+      "issue": "dispatch_missing",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/control/2026-10-29.json",
+      "claim_verified": false
+    },
+    {
+      "id": "DAILY-2026-10-29-claude",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "claude",
+      "phase": "external_pr_route_reference_only",
+      "due_at": "2026-10-29T22:00:00+08:00",
+      "evidence": [
+        "ops/dispatch/DAILY-2026-10-29-claude.md"
+      ],
+      "instruction": "Claude在任的外部规划与独立审计席；按原Task ID查PR/回执。没有原生自动接单通道不等于停用；国内代执行须同任务证据，不得从别单推断。",
+      "native_generation_verified": false,
+      "delivery_channel": "repo_pr_only",
+      "role_status": "active_external_audit_and_planning",
+      "native_api_status": "blocked_insufficient_api_credits",
+      "native_claim_required": false,
+      "reference_only": true,
+      "delegated": false,
+      "actual_provider": null,
+      "model": null,
+      "submission_verified": false,
+      "independent_review_verified": false,
+      "pr_url": null,
+      "automatic_reexecution": false,
+      "delivery_evidence_status": "not_linked",
+      "repair_origin": null,
+      "issue": "external_pr_route_reference_only",
+      "overdue": false,
+      "status": "delivery_channel_reference_not_completion",
+      "file": "ops/dispatch/DAILY-2026-10-29-claude.md",
+      "claim_verified": false
+    },
+    {
+      "id": "DAILY-2026-10-29-deepseek",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "deepseek",
+      "phase": "draft_reviewed_not_deployed",
+      "due_at": "2026-10-29T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/daily-board/2026-10-29.json",
+        "knowledge/results/daily-board/artifacts/2026-10-29-deepseek-d7b717481c906b2bbb982ce2f1cca3749a499413f0d903746f300c62fa8146bd.json"
+      ],
+      "instruction": "复用原 Task ID ANS-2026-10-27-deepseek，处理 engineering_completion_unverified。读取 ops/dispatch/oversight/ANS-2026-10-27-deepseek.md、当日 ans-cycle 回执；核对源码、实际 executed_by、测试命令与结果、部署证据。产出 knowledge/results/dispatch/oversight/ANS-2026-10-27-deepseek-recheck.json。量测：必须含 source_commit、tests_run>=1、tests_passed、deployment_evidence（未部署填 null）、blocked 项；未满足即标 blocked，不写已部署。不新增付费模型调用。",
+      "claim_verified": true,
+      "submission_verified": true,
+      "independent_review_verified": true,
+      "deployed": false,
+      "draft_accepted": true,
+      "engineering_completion_verified": false,
+      "engineering_closeout": null,
+      "requires_engineering_followup": true,
+      "issue": "engineering_completion_unverified",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/daily-board/2026-10-29.json"
+    },
+    {
+      "id": "DAILY-2026-10-29-doubao",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "doubao",
+      "phase": "review_missing",
+      "due_at": "2026-10-29T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/daily-board/2026-10-29.json",
+        "knowledge/results/daily-board/artifacts/2026-10-29-doubao-90f54bcdaa016a3d3f0ad5788418fd4304fbbb908965fac98d1bec5c2edb29be.json"
+      ],
+      "instruction": "复用原 Task ID AUTO-2026-10-27-health，修 review_missing。读取 ops/dispatch/oversight/AUTO-2026-10-27-health.md 与最新健康回执，核对心跳 200、automatic_recovery、concurrency、investment_hold 是否真实留痕。产出 ops/dispatch/oversight/AUTO-2026-10-27-health-review.md。量测：至少引用 2 条可核对路径或时间戳/状态字段，给出 accepted/rejected/blocked 结论；配置存在不等于实测通过，不新增付费调用。",
+      "claim_verified": true,
+      "submission_verified": true,
+      "independent_review_verified": false,
+      "deployed": false,
+      "draft_accepted": false,
+      "engineering_completion_verified": false,
+      "engineering_closeout": null,
+      "requires_engineering_followup": false,
+      "issue": "review_missing",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/daily-board/2026-10-29.json"
+    },
+    {
+      "id": "AUTO-2026-10-29-health",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "grok",
+      "phase": "review_missing",
+      "due_at": "2026-10-29T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/daily-board/2026-10-29.json",
+        "knowledge/results/daily-board/artifacts/2026-10-29-grok-09907229be5fa6cb8571a60061734f94fb3dc404eb292ddfe70169e87bcae3a1.json"
+      ],
+      "instruction": "自主检查最新Pulse心跳与实际生成回执是否混淆，交可核验证据或修复，不能凭健康200宣布模型已生成。",
+      "claim_verified": true,
+      "submission_verified": true,
+      "independent_review_verified": false,
+      "deployed": false,
+      "draft_accepted": false,
+      "engineering_completion_verified": false,
+      "engineering_closeout": null,
+      "requires_engineering_followup": true,
+      "issue": "review_missing",
+      "overdue": false,
+      "status": "not_due",
+      "file": "knowledge/results/daily-board/2026-10-29.json"
+    },
+    {
+      "id": "ANS-2026-10-29-doubao",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "doubao",
+      "phase": "independent_draft_review_completed",
+      "due_at": "2026-10-29T03:00:00+08:00",
+      "evidence": [
+        "knowledge/results/ans-cycle/2026-10-29.json",
+        "knowledge/results/ans-cycle/2026-10-29-worker.json",
+        "knowledge/results/ans-cycle/2026-10-29-reviewer.json"
+      ],
+      "independent_review_verified": true,
+      "draft_accepted": true,
+      "deployed": false,
+      "actual_provider": "Doubao",
+      "instruction": "独立草稿审核及远端回读已完成；拒绝不等于生产完成，作者修复仍按原工作单跟进。",
+      "issue": "independent_draft_review_completed",
+      "overdue": false,
+      "status": "evidence_present_scope_limited",
+      "file": "knowledge/results/ans-cycle/2026-10-29.json",
+      "claim_verified": false
+    },
+    {
+      "id": "REAL-HIRE-20261029-CLAUDE-01",
+      "date": "2026-10-29",
+      "issuer": "claude",
+      "assigned_to": "gpt",
+      "phase": "hire_receipt_present_scope_limited",
+      "due_at": "2026-10-29T12:00:00+08:00",
+      "evidence": [
+        "knowledge/results/claude-team/real-hire-20261029.json"
+      ],
+      "instruction": "跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。",
+      "issue": "hire_receipt_present_scope_limited",
+      "overdue": false,
+      "status": "evidence_present_scope_limited",
+      "file": "knowledge/results/claude-team/real-hire-20261029.json",
+      "claim_verified": false
+    }
+  ],
+  "overdue_count": 0,
+  "deadline_unverified_count": 8,
+  "claim_verified": false,
+  "run_id": "40839173839",
+  "run_attempt": "1",
+  "scan_status": "completed_with_business_alerts",
+  "checks": [
+    {
+      "item": "日课产出",
+      "state": "OK",
+      "evidence": "data/results/2026-10-29.json",
+      "note": "记忆 6/6；deepseek=success, doubao=success, grok=success, qianwen=success, gpt=disabled_by_owner, claude=external_discussion_only, microsoft=disabled_by_owner"
+    },
+    {
+      "item": "AI雇AI回执(T1)",
+      "state": "OK",
+      "evidence": "knowledge/results/hire / knowledge/results/claude-team",
+      "note": "knowledge/results/claude-team/real-hire-20261029.json:internal_engineering_artifact_accepted;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
+    },
+    {
+      "item": "投资观察回执(T2)",
+      "state": "OK",
+      "evidence": "knowledge/results/invest / knowledge/results/funded-invest / knowledge/results/defi",
+      "note": "knowledge/results/funded-invest/inspection-40770496185-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/inspection-40770897260-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/inspection-40803552757-attempt-1.json:receipt_present_status_unspecified;paid=null。只记录回执存在与状态，不据此推断本日新付款/投资。"
+    },
+    {
+      "item": "历史派单台账·执行中（参考）",
+      "state": "REFERENCE",
+      "evidence": "ops/派单台账.md",
+      "note": "9 项：交接单-0930（首张） → 已验收（D3 因缺 key 判未完成，如实）；交接单-0930第三张 → 执行中；交接单-0930第七张 → 执行中；交接单-1001第九张 → 执行中；Manus M-001/002/003 → M-001 已验收加分；M-002 有条件通过（4处日期待改）；M-003 返工中；Meta P2-M1 → 执行中 …"
+    },
+    {
+      "item": "历史派单台账·阻塞（参考）",
+      "state": "REFERENCE",
+      "evidence": "ops/派单台账.md",
+      "note": "5 项：R1 Web3 投资通道（did:ltzzz:doubao）LTZZZVault + AaveAdapter；R2 Meta 三平台 bot（did:ltzzz:doubao）FB/WA/IG bot + 凭据动作卡；T6 真实 USDC supply（did:ltzzz:doubao）Sepolia 真实 USDC supply；主网试点 supply（did:ltzzz:doubao）主网 ≤20 USDC 投 Aave V3；REMAINING-DEPLOY-20261028（PR #282 inbox/doubao）（豆包（本云 VM 执行席））Claude 剩余部署清单 5 项：火山签名服务"
+    },
+    {
+      "item": "每小时扫描配置",
+      "state": "CONFIGURED",
+      "evidence": ".github/workflows/dispatch-sentinel.yml",
+      "note": "哨兵工作流已在库"
+    },
+    {
+      "item": "千问·总控与Claude漏单监督",
+      "state": "BLOCKED",
+      "evidence": "knowledge/results/dispatch/oversight/latest.json",
+      "note": "72 个原任务/72 条警告；验证认领 28、提交 27、独立审核 18、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+    },
+    {
+      "item": "今日派单跟踪",
+      "state": "OK",
+      "evidence": "ops/dispatch/",
+      "note": "DAILY-2026-10-29-qianwen:not_due；CONTROL-REVIEW-2026-10-29:not_due；DAILY-2026-10-29-claude:delivery_channel_reference_not_completion；DAILY-2026-10-29-deepseek:not_due；DAILY-2026-10-29-doubao:not_due；AUTO-2026-10-29-health:not_due；ANS-2026-10-29-doubao:evidence_present_scope_limited；REAL-HIRE-20261029-CLAUDE-01:evidence_present_scope_limited"
+    }
+  ],
+  "business_alerts": [
+    {
+      "item": "千问·总控与Claude漏单监督",
+      "state": "BLOCKED"
+    }
+  ],
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/40839173839-1.json",
+  "repository_persistence": "verify_by_committed_receipt_path"
+}
