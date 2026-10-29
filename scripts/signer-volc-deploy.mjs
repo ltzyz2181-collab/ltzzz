@@ -36,7 +36,7 @@ async function main() {
       const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
       const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
       if (!item?.Id) throw Error(`function not found: ${FUNC_NAME}`);
-      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: item.Id } });
+      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: item.Id } });
       log('get', r);
       return;
     }
