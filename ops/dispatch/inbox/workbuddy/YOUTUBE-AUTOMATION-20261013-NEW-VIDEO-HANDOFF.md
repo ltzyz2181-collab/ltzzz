@@ -15,3 +15,5 @@ node scripts/queue-video-only.mjs --video videos/ltzzz-daily-2026-10-29.mp4 --me
 日期标签不替代 America/Tijuana 的实际发布时间。保留 AI 生成角标。实际 provider/model/run/复核元数据若工具取不到则 null，不靠模型显示名冒充已独立复核。已有队列调度负责后续发布；只在 Google 回读 video ID、LTZZZ channel、公有且 processed 后记 published=true。
 
 owner 指定删除的旧视频 `6FZYG2_TLzE` 及其原哈希不得再次入队。不要删其他视频，不改资金、A2/A3/B 或信任根，不另启 Manus/WorkBuddy 付费发布定时。
+
+最新服务器对账：run `40813717899` 已找到同名 MP4/meta，原视频字节 SHA256 为 `a61a0f1113e4c4bb0a18c8020f0004cbf4a7d702fa555feffaabb73e0c9842a5`、1,793,103字节，但 queued=false。无需重传或渲染；GPT 正通过受管队列读取原片做 ffprobe，并只补缺失的入队字段。若原 meta 的哈希/长度/隐私策略明确矛盾则拒绝覆盖，交原执行端核对。所有发布/未知预留先对账，队列准备完成不算已公开。
