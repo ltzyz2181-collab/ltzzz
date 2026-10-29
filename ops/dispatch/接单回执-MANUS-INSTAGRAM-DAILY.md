@@ -172,3 +172,17 @@ Owner 指定发布 <https://youtube.com/shorts/PFDhS-Ld3sY?si=prYz_fr-lhlWMHfl> 
 回执（任务ID|文件路径|验证方法|未完成项）：
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-29.json|YouTube 页面标题/转写对照仓库脚本与队列元数据；R2 原始 MP4 SHA-256/字节数、ffprobe、ffmpeg 全片解码、音量与四帧检查；Instagram get_account_info/get_post_list；检查 create_instagram 工具行为及 Sandbox 登录跳转|源素材已核实但没有免确认的直发路径；未上传、未发布、未创建确认卡；无 permalink/media_id/发布时间/发布截图。`
+
+## 2026-10-29 11:13 PDT｜owner 指定短片已发布；明日计划复核与通道加固
+
+按 owner 11:07 指令，使用项目公开队列中的既有 MP4 `https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.mp4`，发布为一条 Reel 并同步主页照片墙。该文件 SHA-256 为 `b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b`，源队列记录位于 `knowledge/results/team-ops/media-wallet-40859953566.json`，记录提交 `6ac531d2a27ebaeb3b491afdc6f762fb8140cb9d`。本次 owner 对其 YouTube 链接明确豁免跨平台去重，仅限这一条，不改变未来日常去重规则。
+
+第一次 Instagram 创建调用返回容器 `IN_PROGRESS`，账号复查确认帖子数仍为 6、今日额度未消耗。等待后只重试一次，Instagram 返回成功。随后 `get_post_list` 读取到新 Reel：media_id `17998761231042372`，permalink <https://www.instagram.com/reel/DfFn4KakRn1/>，发布时间 `2026-10-29 18:12:52 UTC`（`2026-10-29 11:12:52 PDT`）。发布后账号帖子数为 7，滚动额度 `1/100`。公开页面显示 @ltzyz2181、Reel 及匹配文案；截图保存在 `results/publishing/screenshots/instagram-2026-10-29-PFDhS-Ld3sY.webp`。
+
+明日计划无需新建：检查到原有计划 `每日视频发布任务Manus发布任务` 状态 active，cron `0 0 10 * * *`，时区 `US/Pacific`，并已绑定 Instagram、GitHub 和浏览器连接器。只在原计划详情末尾增加容器短暂 `IN_PROGRESS` 的限次处理：等待、检查当天帖子，仍未发布才最多重试一次；二次失败停止并记录。计划时间、账号、每日最多一条、视频规格、跨平台去重与未发布/未排队要求均未改变。明日实际无人值守运行尚未发生，不能冒称已验收；若无符合现有规则的全新唯一素材，计划应写 blocked 而不是重复发布。今天的单条 YouTube 跨发豁免不自动延续至明日。
+
+官方 Meta 文档确认 Instagram Content Publishing API 采用“创建媒体容器→发布容器”的流程，账号需为专业账号，媒体 URL 需公网可访问，并要求相应的 app-user access token 与 content-publishing 权限。当前已连接 Instagram 工具今日完成实际发布；本次未读取、记录或修改任何凭证。参考：<https://developers.facebook.com/documentation/instagram-platform/content-publishing>。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-29.json；ops/dispatch/接单回执-MANUS-INSTAGRAM-DAILY.md；results/publishing/screenshots/instagram-2026-10-29-PFDhS-Ld3sY.webp|Instagram get_post_list/permalink、media_id、UTC 发布时间；get_account_info 帖子数及额度；公开页面截图；源 SHA-256；ScheduleTask status/config|明日 10:00 的无人值守实际执行尚未发生；未来仍需当日存在符合规则的唯一素材。`
