@@ -17,11 +17,9 @@ async function ensureReleased() {
   const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
   if (!item?.Id) throw Error(`function not found: ${FUNC_NAME}`);
   const id = item.Id;
-  const st = await volcRequest({ action: 'GetReleaseStatus', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: id } });
-  if (st?.Result?.Status === 'done') return { id, already: true, status: 'done' };
   const rel = await volcRequest({
     action: 'Release', version: VERSION, region: REGION, service: SERVICE,
-    body: { FunctionId: id, RevisionNumber: 0, TargetTrafficWeight: 100, RollingStep: 100, MaxInstance: 2, Description: 'LTZZZ signer initial full release' },
+    body: { FunctionId: id, RevisionNumber: 0, TargetTrafficWeight: 100, RollingStep: 100, MaxInstance: 2, Description: 'LTZZZ signer full release (restart challenge)' },
   });
   for (let i = 0; i < 36; i++) {
     const s = await volcRequest({ action: 'GetReleaseStatus', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: id } });
@@ -88,7 +86,7 @@ async function main() {
         const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
         const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
         r = item
-          ? await volcRequest({ action: 'UpdateFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: item.Id, SourceType: 'zip', Source: zipB64 } })
+          ? await volcRequest({ action: 'UpdateFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: item.Id, SourceType: 'zip', Source: zipB64, Envs: envs } })
           : await volcRequest({ action: 'CreateFunction', version: VERSION, region: REGION, service: SERVICE, body });
       } catch (e) {
         // fallback: treat as create if update-style error (e.g. function not found mid-flight)
