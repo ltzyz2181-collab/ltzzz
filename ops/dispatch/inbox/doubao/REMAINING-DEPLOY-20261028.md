@@ -38,3 +38,18 @@
 owner 已明确身份位置为 LTZZZ **GitHub Actions**；`VOLC_ACCESS_KEY` / `VOLC_SECRET_KEY` **未更新**。不要再问身份在哪，不把 Ark 模型 Key 当控制面 AK/SK。真实失败为 run `40798605209` / attempt 1 / source `bf52ada784b7e25689ed428dab2e8f28433b576e` / job `123201006002`，`InvalidAuthorization`，部署未执行。
 
 GPT 正在原步骤修订格式检查、去掉无关 ListUsers 权限依赖、移除不完整匿名签名入口，复用主线 OIDC/证据/原生响应核心并补共享 NAS 持久适配与闭包打包。详情 `docs/VOLC-SIGNER-CLOSEOUT-20261029.md`。新 head 通过实际 CI 后交 Claude/其他提供商审计；不改登记或激活开关，不宣称已部署。请沿用此接手卡，避免并行向 main 覆盖同一部署入口。
+
+
+## 2026-10-29 18:48 UTC：真实 Actions 只读核验，更新旧凭据与资源状态
+
+原 Task ID/步骤不变；本节为 GPT/Codex 实测与接力，不冒充豆包接单。#303 文档和 #307 已审探针已合并；#308 的通过仅限四文件，不代表部署或公钥登记。
+
+- 真实 run **40934245588 / attempt 1**，source **fd0dec310070b22ea406f774e05c2394b1e7921d**，readback job **123660539517** 已成功。采用 #308 已审两个模块的固定 SHA256，现有 GitHub Actions IAM 身份调用真实 VeFaaS；旧“Secret 未更新/只有无效凭据”的表述只保留为历史，不再拿它当当前阻塞。
+- 实际函数 **jt247vfx / ltzzz-signer-volc-attest**，账号 **2131926778**，北京；GetFunction request ID **20261030024841974D7B7C901DAE647C31**。这是目标资源 owner 绑定，不是已查清调用 IAM 主体和 NAS 读者。
+- **nas_mount_declared=false**；官方 GetFunction 的 NasStorage.EnableNas 表示 NAS 挂载开关，未读到启用声明不能算实际共享挂载完成。**CodeSize=3122**，实际已部署源码字节仍未核验，不能靠环境变量摘要或仅凭大小说它已经是已审闭包。
+- 真实触发器 1 个，但探针未取得可允许的网址（url=null）；不能从 null 推断一定是域名拼写错误，也不能把历史 voiceapi.com 改写后拿来调用。首次非标准路径会被省略，不公开潜在路径令牌。
+- 固定真实回执：knowledge/results/patchgate/split-signers/volc-closeout-20261029/live-readback-40934245588-1.json；当前阶段入口：knowledge/results/patchgate/split-signers/volc-closeout-20261029/runtime-verification-current.json。
+
+请具有原火山控制台/部署身份的执行端沿原单继续：先核对工单 **T-2026102917230001** 的实际回复、现有 NAS/VPC/挂载配置是否保存并发布生效；回读原 NAS、实例 IAM Role、UID/GID 与实际可挂载/读取/改代码主体，不能把未知清单写成“无其它读者”。不要删 NAS/账本/密钥或另建重复资源，不把 /tmp 当持久存储。当前已审包不得作为已部署事实；确认存储与已审源码真正就位后，才有条件做不同 instance_boot_id 的 fresh nonce 重启同钥验签及一次原生豆包签名。仍未提供部署验收/公钥登记/激活准入，不放开 A2/A3/B、付款或正式五签。
+
+本轮没有云写入、重启、模型调用、私钥读取或公钥登记；这些真实验证继续记未完成。请求与回执均已存在，不重跑旧版未脱敏 detail workflow、不重复索要 Key。若当前执行端仍无可用控制台会话，记录具体通道阻塞，不声称已自动被唤醒。
