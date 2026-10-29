@@ -1,0 +1,13 @@
+{
+  "finding": "syncDailyBoard 在状态为 generation_started 时调用 recoverArtifact 忽略返回值，recoverArtifact 成功或失败均继续执行后续无条件降级逻辑，导致 ledger 已存在匹配完整 artifact 时同轮被覆盖为 generation_unknown_no_repurchase，丢失已恢复路径。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs"
+  ],
+  "minimal_patch": "--- a/scripts/lib/daily-task-board.mjs\n+++ b/scripts/lib/daily-task-board.mjs\n@@ syncDailyBoard\n-    recoverArtifact(root,record,agent,seat);\n+    const recovered = recoverArtifact(root,record,agent,seat);\n+    if (recovered && seat.status === 'generated_pending_sync') {\n+      saveLedger(root, record);\n+      continue;\n+    }\n     if(seat.assignment&&seat.claim_verified&&['generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n     if (seat.status === 'generation_started') {\n       seat.status = 'generation_unknown_no_repurchase';\n       seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\n       saveLedger(root,record);\n+      continue;\n     }\n-    if (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;\n+    if (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "git diff -- scripts/lib/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "补丁未写入仓库；未执行故障注入验证 recoverArtifact 首次失败后同轮文件系统状态变为可识别时 continue 路径的幂等性与端到端同步。"
+}
