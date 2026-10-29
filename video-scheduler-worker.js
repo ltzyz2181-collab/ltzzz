@@ -1,4 +1,4 @@
-import {existingWorkBuddyAsset,prepareExistingWorkBuddy} from './workbuddy-existing-queue.mjs';
+import {existingWorkBuddyAsset,prepareExistingWorkBuddy,normalizeExistingWorkBuddy} from './workbuddy-existing-queue.mjs';
 /** Authenticated R2 queue. Uploaded, public and processed are separate states. */
 const VERSION='v3-verified-queue',MAX_BYTES=25*1024*1024;
 const NAME=/^[A-Za-z0-9][A-Za-z0-9_-]{0,100}$/;
@@ -69,6 +69,7 @@ async function processVideo(env,name){
  if(meta.publication_policy!=='public_ready'||!/^([a-f0-9]{64})$/.test(meta.video_sha256||''))return {ok:false,status:'legacy_metadata_not_validated',name};
  const key=receiptKey(meta.video_sha256),publicationKey='queue-'+meta.video_sha256;
  let receipt=await read(env,key);
+ if(receipt?.state==='source_normalized_not_for_publication')return {ok:true,status:'original_preserved_normalized_replacement_queued',name,normalized_sha256:receipt.normalized_sha256};
  if(!receipt){
   const claim={state:'upload_started',name,video_sha256:meta.video_sha256,publication_key:publicationKey,at:new Date().toISOString(),published:false};
   const acquired=await write(env,key,claim,{onlyIf:{etagDoesNotMatch:'*'}});
@@ -160,10 +161,11 @@ async function processQueue(env,selected){
 export default{
  async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2',existing_workbuddy_admission:true});
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2',existing_workbuddy_admission:true,workbuddy_portrait_normalization:true});
   if(!authorized(request,env))return json({ok:false,error:'unauthorized'},401);
   try{
    if(url.pathname==='/queue/asset'&&request.method==='GET')return await existingWorkBuddyAsset(env,url.searchParams.get('name'));
+   if(url.pathname==='/queue/normalize-existing'&&request.method==='POST')return await normalizeExistingWorkBuddy(env,request);
    if(url.pathname==='/queue/prepare-existing'&&request.method==='POST')return await prepareExistingWorkBuddy(env,request);
    if(url.pathname.startsWith('/queue/upload/')&&request.method==='POST')return enqueue(request,env,url.pathname.slice('/queue/upload/'.length));
    if(url.pathname==='/queue/item'&&request.method==='GET')return await queueItem(env,url.searchParams.get('name'));
