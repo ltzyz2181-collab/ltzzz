@@ -144,3 +144,17 @@ Owner 于 13:13 明确允许将 10/21 视频作为一次性跨平台例外；Ins
 回执（任务ID|文件路径|验证方法|未完成项）：
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-24.json|JSON 校验、SHA-256、ffprobe/ffmpeg 全片解码与音量、4 帧画面检查、83 份发布回执/15 个 MP4 去重、caption/音轨 PCM/抽帧同内容比对、Instagram 账号检查、YouTube public 回执核验|没有合格唯一素材；未发布，无 permalink/media_id/截图。`
+
+## 2026-10-29 10:00 PDT｜blocked_no_eligible_unique_video
+
+计划按时执行：ScheduleTask 状态 active/full_auto，每日 10:00（US/Pacific），最近执行时间 10:00:54 PDT；计划未修改。`@ltzyz2181` 于 10:02 PDT 查询为 6 条帖子、10/29 当日 0 条，滚动额度 0/100。
+
+`videos/instagram/latest.json` 仍指向 10/28 包，声明 MP4 SHA-256 `88e20925fb0e8b494422f3fefc7606b1046986b16c314a69ea06b5ae31fd1e24`、来源提交 `9f62b52c71660d68ee219ce5788ec80f71f4334a`。caption 与 manifest 文件存在；manifest 声称 30 秒、720×1280、H.264/AAC，声明 SHA 与 latest 一致。但 MP4 已不在当前 main，原始下载 URL 返回 404，因此无法下载全片、独立重算该视频 SHA、解码、检测音轨或检查画面。该 SHA 在 `results/publishing/youtube-daily-2026-10-28.json` 中由 `published:true`、`verification.ok:true` 和 public URL `https://www.youtube.com/watch?v=6FZYG2_TLzE` 明确证实已公开；文件于 main 提交 `531761a4788fe2cef322c3ca7e9ed4d2148067b1`（“Retain YouTube publication evidence and remove verified published media copies”）中被删除。故 latest 已因跨平台完全相同 SHA 公开而排除，且 MP4 不可用。
+
+最新 main 现存 MP4 共 5 个、130 份 `results/publishing` JSON 已按 SHA 扫描；没有合格回退项。10/15 候选 SHA 已由 owner 此前搁置并要求换用不同素材；其主题接近既有 Instagram AI-hiring-AI Reel `https://www.instagram.com/reel/DegfCDxiIEr/`，但本回执不宣称这两个不同 SHA 是同一文件；10/16 版本是 owner 此前搁置的同故事板/文案系列；10/23 视频与 10/22 已公开 YouTube 视频 `bR7nD0rUn2w` 属同一内容（PCM 音轨相同、画面近似，证据见 10/24 报告）；10/14 品牌片时长 60 秒超限；10/23 日更片仅 15.072 秒、HEVC 且无配套 caption/manifest。SHA 及原因逐项见 `results/publishing/instagram-2026-10-29.json`。
+
+本次未调用上传工具、未发布、未重试、未换账号。状态 `blocked_no_eligible_unique_video`；无 permalink、media_id、发布时间或截图。保持每日 10:00 计划不变。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-29.json|ScheduleTask/账号帖子查询、SHA 与 130 份 publishing JSON 匹配、5 个当前 MP4 的 ffprobe/回执排查、latest caption/manifest SHA 核验、YouTube public 回执确认、MP4 当前路径及 raw URL 404 核验|latest 精确 SHA 已公开于 YouTube 且源 MP4 已删除；五个现存候选皆不合格；未发布，无 permalink/media_id/截图。`
