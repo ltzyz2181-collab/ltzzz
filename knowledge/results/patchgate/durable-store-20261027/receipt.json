@@ -1,0 +1,111 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step": "S3-durable-state-and-earliest-alarm",
+  "status": "tested_candidate_waiting_independent_review_not_deployed",
+  "recorded_at_utc": "2026-10-27T23:17:21Z",
+  "logical_seat": "gpt",
+  "client": "Codex managed cloud executor",
+  "actual_provider": "OpenAI",
+  "model": null,
+  "metadata_source": "executor context; exact model identifier unavailable",
+  "source_commit": "51e7d53352b81e3ca3a2256b0167272c93e31244",
+  "source_commit_scope": "baseline; candidate file byte hashes below, not a claim baseline contains the new code",
+  "local_tests": {
+    "node": "v22.23.4",
+    "miniflare": "4.20251008.0",
+    "tests": 14,
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0,
+    "workerd_sqlite_real_local_execution": true,
+    "synthetic_payment_state": true,
+    "automatic_alarm_executed": true,
+    "restart_persistence_verified": true,
+    "cloud_deployment": false,
+    "fresh_reservation_only_scheduler_verified": true
+  },
+  "independent_review": {
+    "claude": "not_received",
+    "qianwen": {
+      "status": "native_component_static_review_PASS_not_cryptographic_admission",
+      "provider": "aliyun_dashscope",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "run_id": "40601681128",
+      "request_id": "eaae2cda-b983-9f42-a181-821c69d56891",
+      "reviewed_head": "7247c71fb5ba039efcc15b452ed42fb1a112ef98",
+      "reviewed_helper_sha256": "39fc31d77ce5fc18b20e87b99a34d21f753a3c28bcc33dadef284ba8cb2cac05",
+      "output_sha256": "e78818abda9da3fdea7434ecea2b9341b2e430f37b10d8314dbaf66deab48a07",
+      "receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-DO-STORE-REVIEW.json",
+      "scope": "full storage helper only; no independent test execution or deployment by the model",
+      "helper_bytes_unchanged_in_followup": true
+    },
+    "same_provider_tests_are_independent_model_audit": false
+  },
+  "deployment": {
+    "performed": false,
+    "production_config_changed": false,
+    "funding_keys_or_wallet_used": false
+  },
+  "model_api_calls": 1,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "income": "0",
+  "artifacts": [
+    {
+      "path": "scripts/lib/small-payment-durable-store.mjs",
+      "sha256": "39fc31d77ce5fc18b20e87b99a34d21f753a3c28bcc33dadef284ba8cb2cac05",
+      "bytes": 4663
+    },
+    {
+      "path": "scripts/tests/payment-durable-store.integration.test.mjs",
+      "sha256": "942128fe22ed483cfa9127a10df543bd9e036261fd03b49514dd0f5bd98fd4e2",
+      "bytes": 9618
+    },
+    {
+      "path": "scripts/tests/fixtures/small-payment-durable-worker.mjs",
+      "sha256": "ce70f2b210bc3908cd33b8e3f103a9f042298361921ecaeb25739d11b1aa0f3b",
+      "bytes": 3015
+    },
+    {
+      "path": ".github/workflows/small-payment-durable-store.yml",
+      "sha256": "c1205261950bf3c88eb8ced872f05b84364a5635c64bc29ed907e6fba7ab7972",
+      "bytes": 1417
+    },
+    {
+      "path": "docs/PAYMENT-DURABLE-STORE-20261027.md",
+      "sha256": "bf47044594d925ac464e9c8d906bc6820c03123f3249e8ec76b0ed35e8aade78",
+      "bytes": 4130
+    },
+    {
+      "path": "docs/LTZZZ-MODEL-BILLING-FEASIBILITY-20261027.md",
+      "sha256": "1bfc01d2f4c27de327b8a2a6da639303cd5c32a59b3614b26a87d9aa5daddc5f",
+      "bytes": 4290
+    }
+  ],
+  "limitations": [
+    "No production DO namespace or online alarm proof.",
+    "No signer roots, budget proof, real settlement, independent audit or immutable publication adapter deployed.",
+    "No testnet escrow deposit/release/refund transactions.",
+    "No A2/A3/B or payment activation; only disabled code candidate.",
+    "CI and model reviews are not yet received for this new candidate."
+  ],
+  "prior_ci_failure": {
+    "run_id": 40601431611,
+    "job_id": 122530242742,
+    "pass": 229,
+    "fail": 1,
+    "error": "ERR_MODULE_NOT_FOUND: miniflare in older lightweight policy glob",
+    "repair": "same integration suite moved to explicit dedicated workflow with pinned harness; no skipped or removed tests",
+    "original_preserved": true
+  },
+  "local_policy_regression": {
+    "node": "v22.23.4",
+    "tests": 225,
+    "passed": 225,
+    "failed": 0,
+    "skipped": 0
+  },
+  "model_api_calls_scope": "One existing Qwen queue native call; no paid GPT/Claude API call; no billing amount inferred."
+}
