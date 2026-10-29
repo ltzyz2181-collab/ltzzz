@@ -7,6 +7,19 @@ import {volcRequest} from './lib/volc-openapi.mjs';
 const NAME='ltzzz-signer-volc-attest';
 const base={schema:'ltzzz.volc-signer.preflight.v1',task_id:'PLAN-PATCHGATE-ESCROW-20261023',step_id:'SPLIT-SIGNER-INFRA-20261026',region:'cn-beijing',credential_values_logged:false,model_calls:0,production_deployed:false,signer_ready:false,financial_execution:false,paid:false,tx_hash:null};
 function requestMetadata(r){return{request_id:typeof r.ResponseMetadata?.RequestId==='string'&&/^[a-zA-Z0-9_-]{1,120}$/.test(r.ResponseMetadata.RequestId)?r.ResponseMetadata.RequestId:null};}
+function publicTriggerUrl(value){
+ // Parse the complete candidate, then project safe components. Never truncate a
+ // signed raw URL into an artifact, and never echo rejected input or URL errors.
+ if(typeof value!=='string'||value.length>8192)return null;
+ const match=value.match(/\bhttps?:\/\/[^\s"'<>\\]+/i);if(!match)return null;
+ try{
+  const url=new URL(match[0]);
+  if(!['http:','https:'].includes(url.protocol)||url.port)return null;
+  if(!/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+apigateway-cn-beijing\.volceapi\.com$/.test(url.hostname))return null;
+  const projected=`${url.protocol}//${url.hostname}${url.pathname}`;
+  return projected.length<=300?projected:null;
+ }catch{return null;}
+}
 export async function inspectVolcSigner({command='list',functionId,request=volcRequest}={}){
  if(!['list','get','challenge','detail'].includes(command))throw Error('signer_runtime_incomplete_no_deployment');
  if(command==='list'){
@@ -24,8 +37,7 @@ export async function inspectVolcSigner({command='list',functionId,request=volcR
  const rev=await request({action:'ListRevisions',body:{FunctionId:functionId,PageNumber:1,PageSize:50}});
  const trg=await request({action:'ListTriggers',body:{FunctionId:functionId}});
  const revisions=(Array.isArray(rev.Result?.Items)?rev.Result.Items:[]).map(x=>({revision_number:Number.isSafeInteger(x.RevisionNumber)?x.RevisionNumber:null,id:idOf(x.Id)}));
- const urlOf=(v)=>{if(typeof v!=='string')return null;const m=v.match(/https?:\/\/[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%\-]{1,300}/);return m?m[0].slice(0,300):null;};
- const triggers=(Array.isArray(trg.Result?.Items)?trg.Result.Items:[]).map(t=>({id:idOf(t.Id),name:typeof t.Name==='string'?t.Name.slice(0,100):null,type:typeof t.Type==='string'?t.Type:null,enabled:typeof t.Enabled==='boolean'?t.Enabled:null,creation_time:typeof t.CreationTime==='string'?t.CreationTime.slice(0,64):null,url:urlOf(t.DetailedConfig)}));
+ const triggers=(Array.isArray(trg.Result?.Items)?trg.Result.Items:[]).map(t=>({id:idOf(t.Id),name:typeof t.Name==='string'?t.Name.slice(0,100):null,type:typeof t.Type==='string'?t.Type:null,enabled:typeof t.Enabled==='boolean'?t.Enabled:null,creation_time:typeof t.CreationTime==='string'?t.CreationTime.slice(0,64):null,url:publicTriggerUrl(t.DetailedConfig)}));
  const spec=typeof f.ResourceSpec==='object'&&f.ResourceSpec!==null?{cpu:typeof f.ResourceSpec.CPU==='number'?f.ResourceSpec.CPU:null,memory_mb:typeof f.ResourceSpec.Mem==='number'?f.ResourceSpec.Mem:(typeof f.ResourceSpec.Memory==='number'?f.ResourceSpec.Memory:null)}:null;
  return {...readOnly,status:'function_detail_read_only_not_restart_challenge',revision_count:revisions.length,revisions,trigger_count:triggers.length,triggers,resource_spec:spec,handler:typeof f.Handler==='string'?f.Handler.slice(0,200):null,timeout_sec:Number.isSafeInteger(f.Timeout)?f.Timeout:null,code_size_bytes:Number.isSafeInteger(f.CodeSize)?f.CodeSize:null};
 }

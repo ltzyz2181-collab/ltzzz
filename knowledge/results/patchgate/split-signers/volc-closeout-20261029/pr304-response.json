@@ -1,0 +1,118 @@
+{
+  "schema": "ltzzz.patchgate.volc-audit-response.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "SPLIT-SIGNER-INFRA-20261026",
+  "audit_pr": 304,
+  "approved_documentation_pr": 303,
+  "approved_documentation_head": "26a05e2f74bb10335e57c5536837347074d85eea",
+  "base_commit": "53a546bbf86869ad9b64867f942cef85bc22ac2c",
+  "status": "candidate_fixed_pending_Claude_review",
+  "N1": {
+    "status": "implemented_offline_verified",
+    "projection": "protocol + hostname + pathname",
+    "userinfo_retained": false,
+    "query_retained": false,
+    "fragment_retained": false,
+    "allowed_protocols": [
+      "http:",
+      "https:"
+    ],
+    "allowed_hostname_rule": "DNS-valid subdomains of apigateway-cn-beijing.volceapi.com only",
+    "custom_ports_allowed": false,
+    "max_config_chars": 8192,
+    "max_projected_url_chars": 300,
+    "invalid_or_unapproved_url": null,
+    "official_domain_source": "https://docs.volcengine.com/docs/apig/GetGatewayService?lang=zh",
+    "domain_evidence_note": "Historical voiceapi.com spelling is unverified; omitted, never silently rewritten or used for a live request."
+  },
+  "N2": {
+    "status": "implemented_offline_verified",
+    "allowed_actions": [
+      "ListFunctions",
+      "GetFunction",
+      "ListRevisions",
+      "ListTriggers"
+    ],
+    "removed_actions": [
+      "CreateFunction",
+      "UpdateFunction"
+    ],
+    "invalid_scope_rejected_before": "credential access, signing and network"
+  },
+  "verification": {
+    "runtime": "v24.19.0",
+    "red": {
+      "scope": "volc-signer-closeout.test.mjs with new regression cases before production fix",
+      "tests": 22,
+      "passed": 19,
+      "failed": 3,
+      "tap_sha256": "4a94d9a85259cafc1da04cec4ed40502c5c299fda6c23258f0213124e502efb7"
+    },
+    "green": {
+      "files": [
+        "scripts/tests/volc-signer-closeout.test.mjs",
+        "scripts/tests/patchgate-model-attestation.test.mjs",
+        "scripts/tests/patchgate-oidc.test.mjs",
+        "scripts/tests/patchgate-signer-source.test.mjs",
+        "scripts/tests/patchgate-attestation-evidence.test.mjs"
+      ],
+      "tests": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0,
+      "tap_sha256": "519a3d617a3337c288a61cbce17b5ad8d1b97cb94be8fe3c513092c878ea64a5"
+    },
+    "synthetic_only": true,
+    "original_runtime_files": [
+      {
+        "path": "cloud/signer-volc-attest/runtime.mjs",
+        "sha256": "99fadcbb381c781afe9e559526966d02f3de16c0fed612d7bfca6744f3a19e4c",
+        "unchanged_from_audited_head": true
+      },
+      {
+        "path": "cloud/signer-volc-attest/storage.cjs",
+        "sha256": "dcd59938ab5d1708a089b13cba6dec5731b85275885a7ebd0792b7cf09761e55",
+        "unchanged_from_audited_head": true
+      },
+      {
+        "path": "cloud/signer-volc-attest/index.js",
+        "sha256": "7c43e704b9bd612aa3eae92547c9251d3f2c42d102799bbbe16ddfea639f7e4c",
+        "unchanged_from_audited_head": true
+      },
+      {
+        "path": "scripts/build-volc-signer-release.mjs",
+        "sha256": "0452aa2eb5c064c2a58abe692c35e600204b24cf88c6fe6adcf97e0812aa323a",
+        "unchanged_from_audited_head": true
+      }
+    ]
+  },
+  "unchanged_boundaries": {
+    "production_deployed": false,
+    "public_key_registered": false,
+    "cloud_credentials_read": false,
+    "model_calls": 0,
+    "A2_or_A3_or_B_changed": false,
+    "payment_changed": false,
+    "trust_root_changed": false
+  },
+  "remaining_unverified": [
+    "real NAS reader permissions and IAM principal inventory",
+    "real process/instance restart retaining the same public key",
+    "one real Doubao provider call and attestation",
+    "R4, R5 and R6 from earlier signer audit",
+    "whether earlier public artifacts contain sensitive URLs; this code change does not purge historical artifacts"
+  ],
+  "cleanup_review_note": {
+    "pr": 302,
+    "outside_this_fix": true,
+    "existing_review_receipt": "knowledge/results/qwen-dispatch/PLAN-PATCHGATE-ESCROW-20261023-PR301-HYGIENE-REVIEW.json",
+    "review_scope": "native Qwen review of supplied bounded summary and excerpts; not a new independent remote recovery test",
+    "no_Claude_approval_claimed": true
+  },
+  "actual_provider": "OpenAI",
+  "client": "Codex",
+  "model": null,
+  "model_metadata_source": "not_exposed_by_execution_runtime",
+  "paid": false,
+  "tx_hash": null
+}
