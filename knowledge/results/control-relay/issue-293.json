@@ -1,0 +1,21 @@
+{
+  "id": "issue-293",
+  "issue_number": 293,
+  "action": "dispatch",
+  "task": "Continue the existing signer task; do not create a replacement task ID.\r\n\r\nOriginal: PLAN-PATCHGATE-ESCROW-20261023\r\nPlan: ops/dispatch/PLAN-SPLIT-SIGNER-INFRA-20261026.md\r\nHandoff: ops/dispatch/SIGNER-DEPLOY-HANDOFF-20261028.md\r\nReceipt: knowledge/results/dispatch/oversight/signer-deploy-20261028.md\r\nLedger: ops/派单台账.md\r\nTarget: desktop OctopusCat, or a credentialed execution seat.\r\n\r\nComplete and report the handoff's five checks separately:\r\n1. Generate Ed25519 signer private key inside Volcengine; it must be non-exportable and distinct from deployment AK/SK.\r\n2. Deploy POST /attest with the documented request/response contract.\r\n3. Compute SHA-256 of exact deployed signer source.\r\n4. Register fields required by scripts/lib/patchgate-native-response.mjs: provider=volcengine_ark, source_deployment_verified=true, nonempty 64-hex allowed_signer_source_sha256, cloud_account_binding, deployment_evidence_sha256, public_key_spki.\r\n5. After restart, verify a challenge signature; then make one real provider review call and verify its signature via A2. Keep A2/A3/B, automatic merge/deploy, signing admission beyond this test, and financial execution disabled.\r\n\r\nCredential rule: Check only presence of VOLC_ACCESS_KEY and VOLC_SECRET_KEY in the OctopusCat local process environment; never display or persist values. If present locally, use only in that local executor. If credentials are only GitHub Actions secrets, execute via a trusted reviewed workflow on the GitHub runner; local processes/chat cannot read them. In this Copilot environment neither exact local variable is present; repository-scoped secret-name listing did not include either (organization/environment scopes not checked). Do not substitute ARK_API_KEY.\r\n\r\nTell OctopusCat: “如果你的两个 VOLC key 配在桌面本机环境变量里，你可在本机执行端直接使用（只检查变量是否存在，绝不回显值）；如果它们只在 GitHub Actions secrets，则必须经受信 workflow runner 读取执行，本机和聊天都看不到。”\r\n\r\nNever request, reveal, log, or commit secrets. Do not invent service URL, public key, account binding, deployment hash, challenge result, provider signature, or audit. If no approved runner route or local credentials exist, record blocker and stop.\r\n\r\nWrite the receipt with actual execution identity, calls, exact source SHA-256, endpoint, public_key_spki, cloud_account_binding, deployment_evidence_sha256, challenge and provider/A2 readback results; include paid=false and tx_hash=null. Update the existing ledger row only as evidence warrants. A relay ACK is not deployment completion.",
+  "author": "ltzyz2181-collab",
+  "source": "https://github.com/ltzyz2181-collab/ltzzz/issues/293",
+  "at": "2026-10-29T00:12:26.940Z",
+  "source_commit": "54e531a9516bc9d9ccbc8530983f681c131fd54d",
+  "run_id": "40792466741",
+  "status": "claimed_before_remote_access",
+  "input_sha256": "966e0ef161cab671c38ec6be8c36a214831476532775c807d5b15bfaef10e3d5",
+  "model_calls": 0,
+  "native_qianwen_calls": 0,
+  "native_openai_calls": 0,
+  "native_anthropic_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "operations": []
+}
