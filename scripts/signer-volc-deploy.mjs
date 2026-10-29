@@ -56,7 +56,7 @@ async function main() {
         Source: zipB64,
         Envs: envs,
         VpcConfig: { EnableVpc: false, EnableSharedInternetAccess: true },
-        CpuStrategy: 'always',
+        CpuStrategy: 'request',
         ProjectName: 'default',
       };
       const r = await volcRequest({ action: 'CreateFunction', version: VERSION, region: REGION, service: SERVICE, body });
