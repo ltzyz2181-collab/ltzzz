@@ -7,10 +7,10 @@
   "checked_at_local": "2026-10-29T10:05:51-07:00",
   "completed_at_local": "2026-10-29T10:06:13-07:00",
   "executor": "Manus",
-  "status": "blocked_direct_publish_unavailable",
-  "published": false,
-  "upload_attempted": false,
-  "retry_attempted": false,
+  "status": "published_manual",
+  "published": true,
+  "upload_attempted": true,
+  "retry_attempted": true,
   "account": "@ltzyz2181",
   "platform": "Instagram",
   "schedule": {
@@ -113,26 +113,30 @@
     }
   ],
   "publication": {
-    "published": false,
-    "upload_attempted": false,
-    "permalink": null,
-    "media_id": null,
-    "published_at_local": null,
-    "screenshot_path": null,
+    "published": true,
+    "upload_attempted": true,
+    "retry_attempted": true,
+    "status": "published",
     "target_account": "@ltzyz2181",
-    "selected_video_id": "PFDhS-Ld3sY",
+    "type": "reels",
+    "share_to_feed": true,
+    "permalink": "https://www.instagram.com/reel/DfFn4KakRn1/",
+    "media_id": "17998761231042372",
+    "published_at_utc": "2026-10-29T18:12:52+0000",
+    "published_at_local": "2026-10-29T11:12:52-07:00",
     "source_sha256": "b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b",
-    "status": "blocked_direct_publish_unavailable",
-    "confirmation_card_created": false
+    "source_commit": "6ac531d2a27ebaeb3b491afdc6f762fb8140cb9d",
+    "screenshot_path": "results/publishing/screenshots/instagram-2026-10-29-PFDhS-Ld3sY.webp",
+    "caption_sha256": "d9112ad328fc1430db607334001311f057f7244b3b09a97478980c0257c00f30"
   },
-  "next_step": "The requested source file and exact bytes have been verified, but this session has no direct no-confirmation Instagram write path. Do not retry or switch accounts. A direct-publish-capable authorized connector would be needed; the current Instagram create tool requires a confirmation card, which was not created per owner preference.",
+  "next_step": "The requested Reel is published and verified. The existing daily plan remains active for 2026-10-30 10:00 US/Pacific with Instagram bound. Tomorrow’s actual no-click run remains to be observed; it will continue to block duplicate/public/queued content and publish only a qualifying unique asset. No credentials were accessed or changed.",
   "verification": {
     "json_validation": "jq empty",
     "latest_validation": "Read latest.json, caption and manifest; caption/manifest exist and expected SHA matches the YouTube receipt, but current MP4 path is absent and raw URL returned 404, so no download, independent full-file hash, codec/audio decode or visual check was possible.",
     "dedup_validation": "Scanned 130 results/publishing JSON files and all 5 current main MP4 files; exact latest SHA is verified public on YouTube. All five extant MP4s have specific exclusion reasons above.",
     "instagram_validation": "get_post_list and get_account_info at 10:02 PDT: six total posts, none on 10/29, correct username, rolling usage 0/100.",
-    "line_count": 192,
-    "owner_follow_up": "YouTube page title/transcript, repository script and queue record matched; downloaded public R2 source SHA and 2,336,889-byte size exactly matched repository queue readback. ffprobe/ffmpeg full decode and four visual samples passed. Instagram API showed no post today. No Instagram write call or confirmation card was created because the available create tool requires manual confirmation; Sandbox Instagram web redirected to login."
+    "line_count": 247,
+    "owner_follow_up": "The first create call returned IN_PROGRESS; after reading the account/post list and waiting, one retry published successfully. The newest account post is media_id 17998761231042372 at https://www.instagram.com/reel/DfFn4KakRn1/, posted 2026-10-29T18:12:52+0000. Account rose 6→7 posts and publishing limit 0/100→1/100. Public permalink and matching caption confirmed. Screenshot stored at results/publishing/screenshots/instagram-2026-10-29-PFDhS-Ld3sY.webp. Existing ScheduleTask status is active at 10:00 US/Pacific and bound to Instagram; its description received a bounded IN_PROGRESS wait/check/one-retry rule without changing schedule time, eligibility or dedup. Tomorrow’s unattended firing is not yet verified."
   },
   "initial_scheduled_scan": {
     "status": "blocked_no_eligible_unique_video",
@@ -181,12 +185,63 @@
     "instagram_target": "@ltzyz2181",
     "instagram_today_check": "At 2026-10-29 10:55 PDT, account info showed 6 posts and usage 0/100; post list latest post was Oct 21, with no Oct 29 post.",
     "publish_path_check": {
-      "instagram_mcp_create_tool": "Only available Instagram write tool; its definition says it creates media container(s) and shows a UI confirmation card before publishing.",
-      "instagram_sandbox_browser": "Navigating to https://www.instagram.com/ltzyz2181/ redirected to Instagram login; browser has no logged-in session.",
-      "direct_no_click_publish_available": false,
-      "confirmation_card_created": false,
-      "publish_tool_called": false,
-      "blocked_reason": "No confirmed direct-publish endpoint without user confirmation; browser session is logged out. To honor the explicit no-click preference, no confirmation card was created and no upload/publication was attempted."
+      "instagram_connector_bound_to_schedule": true,
+      "manual_direct_publish_succeeded": true,
+      "first_attempt_transient_container_state": "IN_PROGRESS",
+      "resolved_after_one_retry": true,
+      "scheduled_no_click_run_exercised_today": false,
+      "note": "The manual post succeeded through the connected Instagram tool. The scheduled task is active and bound to Instagram; its no-click scheduled firing is next due 2026-10-30 10:00 US/Pacific, so tomorrow execution is not yet observed."
     }
+  },
+  "manual_publish": {
+    "request_received_at_local": "2026-10-29T11:07:14-07:00",
+    "target_account": "@ltzyz2181",
+    "youtube_source_url": "https://youtube.com/shorts/PFDhS-Ld3sY?si=prYz_fr-lhlWMHfl",
+    "youtube_video_id": "PFDhS-Ld3sY",
+    "one_time_cross_platform_dedup_override": true,
+    "same_video_not_authorized_for_future_reuse_by_this_one_time_exception": true,
+    "first_attempt": {
+      "result": "failed_before_publication",
+      "error": "Container status IN_PROGRESS: IN_PROGRESS",
+      "at_local": "2026-10-29T11:11:35-07:00"
+    },
+    "retry": {
+      "result": "published_successfully",
+      "at_local": "2026-10-29T11:13:00-07:00",
+      "retry_count": 1
+    },
+    "caption": "LTZZZ AI-hires-AI ledger, 2026-10-29: the task marketplace surfaced exactly one open job — account registration, 100 UT bounty. We applied to zero. Our rules forbid registration, the wallet's 55 UT are entirely non-withdrawable, and the platform's auto-bid stayed off. Income counted: 0. Executor: DeepSeek (deepseek-v4-pro). Independent reviewer: Kimi (kimi-k3). paid=false, tx_hash=null.",
+    "caption_sha256": "d9112ad328fc1430db607334001311f057f7244b3b09a97478980c0257c00f30",
+    "share_to_feed": true,
+    "media_id": "17998761231042372",
+    "permalink": "https://www.instagram.com/reel/DfFn4KakRn1/",
+    "published_at_utc": "2026-10-29T18:12:52+0000",
+    "published_at_local": "2026-10-29T11:12:52-07:00",
+    "source_asset_url": "https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.mp4",
+    "source_sha256": "b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b",
+    "source_bytes": 2336889,
+    "source_commit": "6ac531d2a27ebaeb3b491afdc6f762fb8140cb9d",
+    "source_queue_record": "knowledge/results/team-ops/media-wallet-40859953566.json",
+    "source_metadata_url": "https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.meta.json",
+    "screenshot_path": "results/publishing/screenshots/instagram-2026-10-29-PFDhS-Ld3sY.webp",
+    "verification": "Instagram get_post_list returned this permalink, media_id and posted timestamp as the newest post; get_account_info rose from 6 to 7 posts and limit usage from 0/100 to 1/100; public permalink renders the matching caption and Reel."
+  },
+  "schedule_status": {
+    "status": "active",
+    "cron": "0 0 10 * * *",
+    "timezone": "US/Pacific",
+    "next_run_local": "2026-10-30T10:00:00-07:00",
+    "connected_services": [
+      "Instagram",
+      "GitHub",
+      "My Browser"
+    ],
+    "instruction_updated_at_local": "2026-10-29T11:17:58-07:00",
+    "instruction_change": "Appended bounded handling for an Instagram media container returning IN_PROGRESS: wait, check today posts, retry at most once, then stop; existing time, account, eligibility, deduplication, connector bindings and daily limit preserved.",
+    "future_posting_condition": "Tomorrow the existing run may publish only if a distinct, eligible, previously unpublished/unqueued video is available under the existing rules. Today’s one-time cross-platform exception does not carry forward."
+  },
+  "meta_api_reference": {
+    "url": "https://developers.facebook.com/documentation/instagram-platform/content-publishing",
+    "verified_requirements": "Official Meta guide describes publishing through a media container and media_publish endpoint; it requires an Instagram professional account, an app-user access token with the relevant content-publishing permission, and a publicly accessible media URL. No token or credential was read or modified in this task."
   }
 }
