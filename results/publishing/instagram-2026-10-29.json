@@ -7,7 +7,7 @@
   "checked_at_local": "2026-10-29T10:05:51-07:00",
   "completed_at_local": "2026-10-29T10:06:13-07:00",
   "executor": "Manus",
-  "status": "blocked_no_eligible_unique_video",
+  "status": "blocked_direct_publish_unavailable",
   "published": false,
   "upload_attempted": false,
   "retry_attempted": false,
@@ -118,14 +118,75 @@
     "permalink": null,
     "media_id": null,
     "published_at_local": null,
-    "screenshot_path": null
+    "screenshot_path": null,
+    "target_account": "@ltzyz2181",
+    "selected_video_id": "PFDhS-Ld3sY",
+    "source_sha256": "b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b",
+    "status": "blocked_direct_publish_unavailable",
+    "confirmation_card_created": false
   },
-  "next_step": "Do not upload or retry today. Wait for a current, available MP4 that is technically verifiable, has a matching English caption and manifest, and is materially unique/unpublished. Keep the existing 10:00 plan unchanged.",
+  "next_step": "The requested source file and exact bytes have been verified, but this session has no direct no-confirmation Instagram write path. Do not retry or switch accounts. A direct-publish-capable authorized connector would be needed; the current Instagram create tool requires a confirmation card, which was not created per owner preference.",
   "verification": {
     "json_validation": "jq empty",
     "latest_validation": "Read latest.json, caption and manifest; caption/manifest exist and expected SHA matches the YouTube receipt, but current MP4 path is absent and raw URL returned 404, so no download, independent full-file hash, codec/audio decode or visual check was possible.",
     "dedup_validation": "Scanned 130 results/publishing JSON files and all 5 current main MP4 files; exact latest SHA is verified public on YouTube. All five extant MP4s have specific exclusion reasons above.",
     "instagram_validation": "get_post_list and get_account_info at 10:02 PDT: six total posts, none on 10/29, correct username, rolling usage 0/100.",
-    "line_count": 131
+    "line_count": 192,
+    "owner_follow_up": "YouTube page title/transcript, repository script and queue record matched; downloaded public R2 source SHA and 2,336,889-byte size exactly matched repository queue readback. ffprobe/ffmpeg full decode and four visual samples passed. Instagram API showed no post today. No Instagram write call or confirmation card was created because the available create tool requires manual confirmation; Sandbox Instagram web redirected to login."
+  },
+  "initial_scheduled_scan": {
+    "status": "blocked_no_eligible_unique_video",
+    "checked_at_local": "2026-10-29T10:05:51-07:00",
+    "summary": "At the 10:00 scheduled run, Git main had removed the Oct 28 MP4 and the latest SHA was already public on YouTube; only current Git-tree MPs were scanned as fallback. The later owner-selected Oct 29 item was retained in the public R2 queue and was not part of that initial fallback scan."
+  },
+  "owner_follow_up": {
+    "request_received_at_local": "2026-10-29T10:54:45-07:00",
+    "requested_action": "Publish the repository-generated video linked as a YouTube Short directly to the Instagram photo wall without asking.",
+    "youtube_url": "https://youtube.com/shorts/PFDhS-Ld3sY?si=prYz_fr-lhlWMHfl",
+    "youtube_video_id": "PFDhS-Ld3sY",
+    "youtube_page_title": "A Hundred UT Bounty, Zero Jobs Taken — A Bounty You Can't Cash Is Not Income",
+    "youtube_page_transcript_excerpt": "One open job, 100 UT bounty. We took zero. It was an account registration task. Our rules forbid it. The wallet 55 UT withdrawable zero. Auto bid sat right there. We left it off. A bounty you can't cash is not income.",
+    "repository_content_match": true,
+    "match_basis": "YouTube title/transcript match knowledge/video-scripts/2026-10-29.md and the selected_video metadata/title in knowledge/results/team-ops/media-wallet-40859953566.json. The exact YouTube video ID itself was not present in current main publishing receipts at audit time.",
+    "repository_queue_record": "knowledge/results/team-ops/media-wallet-40859953566.json",
+    "repository_queue_record_source_commit": "6ac531d2a27ebaeb3b491afdc6f762fb8140cb9d",
+    "queue_item_name": "ltzzz-daily-2026-10-29",
+    "source_media_url": "https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.mp4",
+    "source_metadata_url": "https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.meta.json",
+    "source_sha256": "b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b",
+    "source_bytes": 2336889,
+    "source_metadata_sha256": "9e5bdafdbacf4800c69550eee3b619c96759cbbdd7bc49bf632ef6dbb6456c70",
+    "source_caption": "LTZZZ AI-hires-AI ledger, 2026-10-29: the task marketplace surfaced exactly one open job — account registration, 100 UT bounty. We applied to zero. Our rules forbid registration, the wallet's 55 UT are entirely non-withdrawable, and the platform's auto-bid stayed off. Income counted: 0. Executor: DeepSeek (deepseek-v4-pro). Independent reviewer: Kimi (kimi-k3). paid=false, tx_hash=null.",
+    "media_validation": {
+      "duration_seconds": 15.083333,
+      "resolution": "720x1280",
+      "aspect_ratio": "9:16",
+      "video_codec": "H.264",
+      "audio_codec": "AAC",
+      "audio_sample_rate_hz": 32000,
+      "audio_channels": 2,
+      "audio_mean_volume_db": -13.4,
+      "audio_max_volume_db": 0.0,
+      "full_decode_passed": true,
+      "sha256_matches_repository_queue_record": true,
+      "visual_review_timestamps_seconds": [
+        2,
+        7,
+        11,
+        14
+      ],
+      "visual_review": "Key English statements and figures (100 UT, applied 0; 55 UT, withdrawable 0; auto-bid off; income 0) are visible and legible in inspected frames. The selected video is 15.083 seconds; user requested this exact video despite the prior generic 20–45 second daily filter."
+    },
+    "one_time_scope": "Only the specifically linked video and this Instagram post; does not change the daily schedule or future cross-platform deduplication rules.",
+    "instagram_target": "@ltzyz2181",
+    "instagram_today_check": "At 2026-10-29 10:55 PDT, account info showed 6 posts and usage 0/100; post list latest post was Oct 21, with no Oct 29 post.",
+    "publish_path_check": {
+      "instagram_mcp_create_tool": "Only available Instagram write tool; its definition says it creates media container(s) and shows a UI confirmation card before publishing.",
+      "instagram_sandbox_browser": "Navigating to https://www.instagram.com/ltzyz2181/ redirected to Instagram login; browser has no logged-in session.",
+      "direct_no_click_publish_available": false,
+      "confirmation_card_created": false,
+      "publish_tool_called": false,
+      "blocked_reason": "No confirmed direct-publish endpoint without user confirmation; browser session is logged out. To honor the explicit no-click preference, no confirmation card was created and no upload/publication was attempted."
+    }
   }
 }

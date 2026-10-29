@@ -158,3 +158,17 @@ Owner 于 13:13 明确允许将 10/21 视频作为一次性跨平台例外；Ins
 回执（任务ID|文件路径|验证方法|未完成项）：
 
 - `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-29.json|ScheduleTask/账号帖子查询、SHA 与 130 份 publishing JSON 匹配、5 个当前 MP4 的 ffprobe/回执排查、latest caption/manifest SHA 核验、YouTube public 回执确认、MP4 当前路径及 raw URL 404 核验|latest 精确 SHA 已公开于 YouTube 且源 MP4 已删除；五个现存候选皆不合格；未发布，无 permalink/media_id/截图。`
+
+## 2026-10-29 10:54 PDT｜owner 指定 YouTube Shorts 跨发请求：已核验素材，直发受工具限制
+
+Owner 指定发布 <https://youtube.com/shorts/PFDhS-Ld3sY?si=prYz_fr-lhlWMHfl> 到 `@ltzyz2181`，要求不再询问。Instagram 账号复核于 10:55 PDT 显示 6 条帖子、发布额度 `0/100`；帖子列表最近记录为 10/21，10/29 无 Reel。
+
+已将 Shorts 页面公开标题和转写与仓库 `knowledge/video-scripts/2026-10-29.md`、`knowledge/results/team-ops/media-wallet-40859953566.json` 对照：主题、标题及口播一致，队列项为 `ltzzz-daily-2026-10-29`。仓库队列记录保存源 SHA-256 `b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b`、2,336,889 字节，记录提交 `6ac531d2a27ebaeb3b491afdc6f762fb8140cb9d`。从项目只读公共 R2 源地址 `https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.mp4` 下载后，字节数和 SHA 均与队列回执精确相同。旁车元数据地址为 `https://videos.ltzzz.com/queue/ltzzz-daily-2026-10-29.meta.json`。
+
+源 MP4 复核为 15.083 秒、720×1280（9:16）、H.264/AAC、32 kHz 双声道，平均音量 −13.4 dB，峰值 0.0 dB；ffmpeg 全片解码通过。抽看 2、7、11、14 秒画面，主要英语数据点可读。虽然时长短于每日通用 20–45 秒筛选标准，owner 本次已明确指定该条具体视频，故按一次性指令处理；不据此更改后续规则。YouTube 页面 ID `PFDhS-Ld3sY` 当前尚未出现在 main 的发布回执中，因此这里只记录页面内容与仓库队列稿件匹配，不声称仓库回执已把该 ID 与 SHA 绑定。
+
+未发布的原因是环境没有免确认的 Instagram 直发通道：唯一 Instagram 写入工具 `create_instagram` 会创建媒体容器并要求用户通过 UI 确认卡完成发布；本次未调用该工具，也未创建确认卡。Sandbox 浏览器访问账号页被重定向至 Instagram 登录页，当前没有已登录 Web 会话。为遵守 owner 的免点击要求，没有尝试登录、绕过确认或换账号；未向 Instagram 上传、未发布、未重试。原 10:00 日常计划未更改。后续报告已把 10:00 首轮无候选状态保留在 `initial_scheduled_scan`，本次最终状态更新为 `blocked_direct_publish_unavailable`。
+
+回执（任务ID|文件路径|验证方法|未完成项）：
+
+- `ro8cDRW4zoF56gRKpYx6bX|results/publishing/instagram-2026-10-29.json|YouTube 页面标题/转写对照仓库脚本与队列元数据；R2 原始 MP4 SHA-256/字节数、ffprobe、ffmpeg 全片解码、音量与四帧检查；Instagram get_account_info/get_post_list；检查 create_instagram 工具行为及 Sandbox 登录跳转|源素材已核实但没有免确认的直发路径；未上传、未发布、未创建确认卡；无 permalink/media_id/发布时间/发布截图。`
