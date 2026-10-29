@@ -15,6 +15,9 @@ async function main() {
   if (!cmd) throw Error('usage: signer-volc-deploy.mjs <list|deploy|update|get|delete>');
   switch (cmd) {
     case 'list': {
+      const ak = process.env.VOLC_ACCESS_KEY || '';
+      const sk = process.env.VOLC_SECRET_KEY || '';
+      console.log(JSON.stringify({ ak_prefix: ak.slice(0, 4), ak_len: ak.length, sk_len: sk.length }));
       let vefaas = null, iamProbe = null;
       try {
         const r = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
