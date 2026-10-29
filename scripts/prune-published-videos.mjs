@@ -6,7 +6,7 @@ import {pathToFileURL} from 'node:url';
 import {isPublic} from './lib/video-queue-client.mjs';
 
 export const publishedProof = r => r?.published === true && /^[a-f0-9]{64}$/.test(r.video_sha256 || '') &&
- /^[A-Za-z0-9_-]{11}$/.test(r.video_id || '') && r.verification?.video_id === r.video_id && isPublic(r.verification);
+ /^[A-Za-z0-9_-]{11}$/.test(r.video_id || '') && r.verification?.ok === true && r.verification.video_id === r.video_id && isPublic(r.verification);
 
 // Only tracked video files whose actual bytes match a successful YouTube receipt.
 // Never remove receipts, manifests, untracked files or unpublished media.
