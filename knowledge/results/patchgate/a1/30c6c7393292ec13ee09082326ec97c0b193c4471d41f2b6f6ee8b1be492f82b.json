@@ -1,0 +1,165 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-295",
+  "head_sha": "38d13837b1dd1524a93f9ef527fb18a98341b388",
+  "pr_number": 295,
+  "source_main_sha": "3091a1450c4d80c65423846721b1d31410424666",
+  "run_id": "40812841922",
+  "at_utc": "2026-10-29T03:34:06.824Z",
+  "idempotency_key": "PATCHGATE-PR-295:38d13837b1dd1524a93f9ef527fb18a98341b388",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "3091a1450c4d80c65423846721b1d31410424666",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/deploy-youtube-uploader.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/youtube-daily-publish.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/YOUTUBE-AUTOMATION-20261013.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/workbuddy/YOUTUBE-AUTOMATION-20261013-NEW-VIDEO-HANDOFF.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/prepared-video-policy.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/prepare-ready-youtube-video.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/remove-owner-youtube-video.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/prepared-video-policy.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/youtube-owner-removal.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "youtube-owner-removal.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "youtube-upload-worker.js",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-295",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-295",
+      "base_sha": "3091a1450c4d80c65423846721b1d31410424666",
+      "head_sha": "38d13837b1dd1524a93f9ef527fb18a98341b388",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "4332b3b8682a64c48c61ccd90b33e5130cbd9382b9897ef2365c353f51d4927d"
+    },
+    "subject_sha256": "4b0fe040176509fd1b30b9b57781adc7c6070db7e2c1493527dd6b24e7ba0c76",
+    "idempotency_key": "PATCHGATE-PR-295:38d13837b1dd1524a93f9ef527fb18a98341b388",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/remove-owner-youtube-video.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-video-scheduler.ltzyz2181.workers.dev",
+          "ltzzz-youtube-upload.ltzyz2181.workers.dev"
+        ]
+      },
+      {
+        "path": "scripts/tests/youtube-owner-removal.test.mjs",
+        "code": "secret_pattern"
+      },
+      {
+        "path": "scripts/tests/youtube-owner-removal.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "upload",
+          "www.googleapis.com"
+        ]
+      },
+      {
+        "path": "youtube-owner-removal.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "www.googleapis.com"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
