@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Test publication and queue safety
-        run: node --test scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs
+        run: node --test scripts/tests/published-video-retention.test.mjs scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs
       - name: Prepare media inspection
         run: command -v ffprobe || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
       - name: Prefer existing prepared video
@@ -30,13 +30,16 @@ jobs:
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: node scripts/publish-youtube-daily.mjs
+      - name: Remove repository media already confirmed public and processed
+        if: always()
+        run: node scripts/prune-published-videos.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: youtube-video-${{ github.run_id }}
           path: |
-            video-output/
             results/publishing/youtube-daily-*.json
+            results/publishing/video-retention-*.json
           retention-days: 7
       - name: Archive receipt including failure
         if: always()
@@ -44,6 +47,10 @@ jobs:
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add results/publishing/youtube-daily-*.json
+          git add -u -- videos/
+          for receipt in results/publishing/video-retention-*.json; do
+            if test -f "$receipt"; then git add -- "$receipt"; fi
+          done
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'YouTube daily actual upload and public verification receipt'
           for attempt in 1 2 3 4; do
