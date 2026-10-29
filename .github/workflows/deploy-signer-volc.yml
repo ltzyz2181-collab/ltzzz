@@ -5,13 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       stage:
-        description: 'Read-only list permission or function metadata; neither deploys nor proves a restart challenge'
+        description: 'Read-only list/function/detail probe; neither deploys nor proves a restart challenge'
         type: choice
         required: true
         default: list
-        options: [list, get]
+        options: [list, get, detail]
       function_id:
-        description: 'Actual VeFaaS Id returned by list (required for get)'
+        description: 'Actual VeFaaS Id returned by list (required for get/detail)'
         type: string
         required: false
 permissions: {contents: read}
