@@ -40,9 +40,12 @@ function loadKey() {
     const b64 = fs.readFileSync(file, 'utf8').trim();
     if (b64) priv = Buffer.from(b64, 'base64');
   } catch (e) { /* not present yet */ }
-  if (priv && priv.length === 64) { // raw 64-byte ed25519 seed, generated on first boot
-    keyCache = { priv, dir };
-    return keyCache;
+  if (priv && priv.length) {
+    try {
+      crypto.createPrivateKey({ key: priv, type: 'pkcs8', format: 'der' }); // pkcs8 DER persisted on first boot
+      keyCache = { priv, dir };
+      return keyCache;
+    } catch (e) { /* corrupt or foreign key, regenerate below */ }
   }
   // generate on Volcano side only
   const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
