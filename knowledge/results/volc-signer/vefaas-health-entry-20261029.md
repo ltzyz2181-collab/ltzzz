@@ -81,6 +81,7 @@ https://sfvi0b8oule5k2u0shhcs.apigateway-cn-beijing.voiceapi.com
 - 点保存报错：**`account is not allowed to enable NAS storage`**（logid 20261029170436785A9E1E9C4B6C49D6EE，service: vefaas）。
 - 判定：**账号级白名单限制**（非配置错误、非角色缺失）；已确认 ServiceRoleForVeFaaS 服务角色授权完成（用户确认，无需重复授权）；NAS 实例/VPC/挂载点配置正确（同地域、VPC 一致、极速型受支持——函数服务发布记录 2025-11-13 支持 NAS 极速型）。
 - **阻塞：需提火山工单/客服开通"函数服务 NAS 挂载"功能**（自助无法开通）。开通前无法保存存储配置，已审版 storage.cjs 启动断言（/proc/self/mountinfo 存在 nfs 挂载于 /mnt/nas/ 下）无法满足，故暂不部署已审版代码（部署即启动失败）。
+- **开通申请已提交（2026-10-29 02:23 UTC-7）**：火山工单 **T-2026102917230001**，状态「处理中」，已分派工程师（预计 5-120 分钟同步进展）；归属产品「函数服务-事件函数」，问题类型「问题排查」，问题描述：vefaas 挂载 NAS 报错 account is not allowed to enable NAS storage，申请开通 NAS 挂载功能。火山助手诊断确认：账号侧未开通 veFaaS NAS 挂载能力（前提条件均已满足：veFaaS 已开通、NAS 文件系统/挂载点/VPC 已创建且 VPC 一致）。
 
 **费用提示：** NAS 按量计费 ¥0.25/时（约 ¥6/天）随开随停。当前 0MiB/100GiB 无数据。若开通等待超 1-2 天，建议先删除 NAS 止损、开通后再重建（删除动作需 owner 确认）。
 
