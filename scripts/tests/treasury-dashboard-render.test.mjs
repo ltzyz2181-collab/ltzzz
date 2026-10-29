@@ -36,18 +36,18 @@ test('HTML text escaping covers markup, both quotes, ampersands and encoded enti
   assert.equal(escape(null),'');assert.equal(escape(undefined),'');assert.equal(escape(-2.5),'-2.5');
   assert.equal(escape(JSON.parse('{"toString":"<svg>"}')),'{&quot;toString&quot;:&quot;&lt;svg&gt;&quot;}');
 });
-test('usage accepts numeric API values and clamps negative or excessive usage',async()=>{
+test('usage accepts numeric API values and marks negative usage unknown',async()=>{
   const {context}=await render(),percent=context.usagePercent;
-  for(const [used,limit,expected] of [[0,20,0],[5,20,25],[1,3,33],['2.5','10',25],[-1,10,0],[10,10,100],[15,10,100]]){
+  for(const [used,limit,expected] of [[0,20,0],[5,20,25],[1,3,33],['2.5','10',25],[-1,10,null],[10,10,100],[15,10,100]]){
     assert.equal(percent(used,limit),expected);
   }
 });
-test('zero, negative, missing, malformed and nonfinite limits cannot produce an invalid width',async()=>{
+test('invalid or missing usage limits are unknown rather than a false zero',async()=>{
   const {context}=await render(),percent=context.usagePercent;
   for(const limit of [0,-1,undefined,null,'',' ',NaN,Infinity,-Infinity,'Infinity','NaN','invalid',{},[],true]){
-    assert.equal(percent(1,limit),0,'Invalid limit must produce zero progress');
+    assert.equal(percent(1,limit),null,'Invalid limit must be unknown');
   }
-  for(const used of [undefined,null,NaN,Infinity,-Infinity,'Infinity','bad',{},[],true])assert.equal(percent(used,10),0);
+  for(const used of [undefined,null,NaN,Infinity,-Infinity,'Infinity','bad',{},[],true])assert.equal(percent(used,10),null);
 });
 test('extreme finite numbers remain within 0–100 without division overflow',async()=>{
   const {context}=await render(),percent=context.usagePercent;
@@ -61,14 +61,15 @@ test('malicious text in every interpolated dashboard and agent field cannot crea
   const {elements,context}=await render(dashboard);
   staticTagsOnly(elements.stats.innerHTML);staticTagsOnly(elements.agents.innerHTML);
   assert.equal((elements.stats.innerHTML.match(/class="card"/g)||[]).length,6);
-  assert.match(elements.agents.innerHTML,/<i style="width:0%">/);
+  assert.match(elements.agents.innerHTML,/用量比例未知/);
   assert.ok(elements.stats.innerHTML.includes('&lt;img'));assert.ok(elements.agents.innerHTML.includes('&lt;svg'));
   assert.equal(context.PWNED,undefined);
 });
-test('invalid agent caps and missing entries keep their progress attributes numeric',async()=>{
+test('invalid agent caps and missing entries show unknown while valid bars stay numeric',async()=>{
   const {elements}=await render({agents:{negative:{used:-5,daily_limit:10},zero:{used:5,daily_limit:0},huge:{used:1e300,daily_limit:1e-300},infinite:{used:1,daily_limit:'Infinity'},null:null,object:{used:1,daily_limit:{toString:payload}}}});
   staticTagsOnly(elements.agents.innerHTML);
-  assert.deepEqual([...elements.agents.innerHTML.matchAll(/style="width:(\d+)%"/g)].map(m=>Number(m[1])),[0,0,100,0,0,0]);
+  assert.deepEqual([...elements.agents.innerHTML.matchAll(/style="width:(\d+)%"/g)].map(m=>Number(m[1])),[100]);
+  assert.equal((elements.agents.innerHTML.match(/用量比例未知/g)||[]).length,5);
 });
 test('raw API payloads and fetch errors remain in textContent',async()=>{
   const result=await render({safe:payload,regression_tx:payload},{report:payload},{message:payload});
@@ -104,4 +105,13 @@ test('partial Treasury metrics preserve known values and expose missing values',
   assert.match(elements.stats.innerHTML,/<div class="big">5 U<\/div>/);
   assert.match(elements.stats.innerHTML,/<div class="big">3<\/div>/);
   assert.equal((elements.stats.innerHTML.match(/<div class="big">未知<\/div>/g)||[]).length,4);
+});
+
+test('missing per-agent amounts and limits are unknown, real zero remains zero',async()=>{
+  const {elements}=await render({agents:{missing:{},zero:{used:0,daily_limit:10,single_limit:0,remaining:10},partial:{used:2}}});
+  assert.match(elements.agents.innerHTML,/已用 <b>未知<\/b> \/ 未知/);
+  assert.match(elements.agents.innerHTML,/单笔≤未知 · 剩 未知/);
+  assert.match(elements.agents.innerHTML,/已用 <b>0<\/b> \/ 10/);
+  assert.match(elements.agents.innerHTML,/style="width:0%"/);
+  assert.equal((elements.agents.innerHTML.match(/用量比例未知/g)||[]).length,2);
 });
