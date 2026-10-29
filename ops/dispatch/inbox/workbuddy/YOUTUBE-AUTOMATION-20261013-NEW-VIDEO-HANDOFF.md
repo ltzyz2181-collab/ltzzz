@@ -19,3 +19,5 @@ owner 指定删除的旧视频 `6FZYG2_TLzE` 及其原哈希不得再次入队�
 最新服务器对账：run `40813717899` 已找到同名 MP4/meta，原视频字节 SHA256 为 `a61a0f1113e4c4bb0a18c8020f0004cbf4a7d702fa555feffaabb73e0c9842a5`、1,793,103字节，但 queued=false。无需重传或渲染；GPT 正通过受管队列读取原片做 ffprobe，并只补缺失的入队字段。若原 meta 的哈希/长度/隐私策略明确矛盾则拒绝覆盖，交原执行端核对。所有发布/未知预留先对账，队列准备完成不算已公开。
 
 后续实测：run `40814866842` 在哈希匹配后测得 768×1344、15.083333 秒、H.264/AAC，因宽高比不符拒绝入队；此失败原样保留。总控继续用确定性 FFmpeg 缩放并补边至 720×1280，保留原片、完整画面、角标与音频；不需要客户端重传或重新生成。原哈希先预留，原件另存 R2，替换使用 ETag 校验。转换代码和离线测试通过不算入队成功；以后续真实 Actions 回执和队列读回为准，公开发布仍单独验收。
+
+已完成服务器实际入队：run `40816131578` / attempt 1（source `e3ccc01c1f0efd3fdae1a47df7c01ed98e7c7694`）部署成功，原件已备份，新片 720×1280、15.083333 秒、H.264/AAC，SHA256 `b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b`，2,336,889 字节。R2 哈希、长度、public_ready 已读回一致，queued=true，published=false，uploads=0。回执 `results/publishing/workbuddy-existing-admission-40816131578-1.json`。本席无需重传/改名/重渲染；等既有 `0 14 * * *` UTC 自然调度后，按实际 Google 频道、公有和 processed 回读验收，不能把本条视为已公开或客户端自动唤醒。
