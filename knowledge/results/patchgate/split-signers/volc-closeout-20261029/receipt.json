@@ -1,0 +1,230 @@
+{
+  "schema": "ltzzz.volc-signer.closeout.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "SPLIT-SIGNER-INFRA-20261026",
+  "at_utc": "2026-10-29T01:36:32.921955+00:00",
+  "logical_seat": "gpt",
+  "client": "Codex",
+  "actual_provider": "OpenAI",
+  "model": null,
+  "metadata_source": "Actual Codex execution context; exact model ID unavailable. Not native Claude/Doubao/Qwen review.",
+  "original_main": "bf52ada784b7e25689ed428dab2e8f28433b576e",
+  "integrated_main": "3a69a8985ddf766b60afd9e5ced38df70980c7d0",
+  "verified_local_source_commit": "661fa502d6a4a16c37d19991aaa72de6b7855493",
+  "owner_reports": {
+    "cloud_identity_location": "LTZZZ GitHub Actions",
+    "IAM_secret_pair_updated": false,
+    "credential_values_requested": false
+  },
+  "observed_cloud_attempt": {
+    "run_id": 40798605209,
+    "run_attempt": 1,
+    "source_commit": "bf52ada784b7e25689ed428dab2e8f28433b576e",
+    "job_id": 123201006002,
+    "event": "workflow_dispatch",
+    "conclusion": "failure",
+    "stage": "list",
+    "provider_code": "InvalidAuthorization",
+    "request_id": "2026102909090461F09FCBC56A0017FE5F",
+    "deployment_steps": "skipped",
+    "diagnostic_is_not_proof_of_Ark_key_type": true
+  },
+  "fixed": [
+    "Wrong IAM format fails before network without prefix/length/value output.",
+    "VeFaaS access does not require IAM ListUsers. HTTP200 provider errors fail safely; fixed HTTPS API request scope, no redirects/retries, bounded response.",
+    "GetFunction uses Id; no response Envs/source URLs echoed; no fake restart challenge.",
+    "Provider-cloud wrapper reuses existing OIDC/evidence/native-response core, fixed executor/key IDs, same-service call/signing and two-call durable budget.",
+    "Shared-NFS adapter, atomic reservation/ledger and key persistence; no /tmp/TOS fallback, no corrupt-key regeneration or budget reset.",
+    "PKCS8 actual Ed25519 parsing, createPublicKey SPKI export, only authenticated caller fresh-nonce challenge.",
+    "Fixed 28-file source closure and bootstrap runtime readback; bundle is not deployment."
+  ],
+  "verification": {
+    "runtime": "Node 22.23.4",
+    "tests": 56,
+    "pass": 56,
+    "fail": 0,
+    "skip": 0,
+    "command": "node --test --test-reporter=tap scripts/tests/volc-signer-closeout.test.mjs scripts/tests/patchgate-model-attestation.test.mjs scripts/tests/patchgate-oidc.test.mjs scripts/tests/patchgate-signer-source.test.mjs scripts/tests/patchgate-attestation-evidence.test.mjs",
+    "raw_local_tap_sha256": "5b570063377bb8cad1df50b22461326b86c626982fec0c3e2f555df16c16d8e1",
+    "normalized_public_tap_sha256": "5b570063377bb8cad1df50b22461326b86c626982fec0c3e2f555df16c16d8e1",
+    "normalization": "trailing line whitespace only",
+    "red_initial": {
+      "tests": 5,
+      "pass": 0,
+      "fail": 5,
+      "raw_local_sha256": "6292e7b313f934c0d21901aa1c8818b639d20c74ad1d5a47e930510b38db693f"
+    },
+    "local_process_restart_and_signatures_are_synthetic_only": true,
+    "shared_NAS_cloud_semantics_verified": false,
+    "real_provider_call": false,
+    "HMAC_signature_with_real_IAM_verified": false
+  },
+  "public_source_bundle": {
+    "schema": "ltzzz.volc-signer.source.v1",
+    "source_commit": "661fa502d6a4a16c37d19991aaa72de6b7855493",
+    "source_sha256": "fa671aeca066e3ffb4eee6be9edf2eb3f6aab85cd4f957ab9f020244e8a64b6e",
+    "files": [
+      {
+        "path": "bootstrap/index.js",
+        "sha256": "d98da567ee312c552af0f5fc512c96787e78ae9bc8788227fe2576f6d08700b5",
+        "bytes": 94
+      },
+      {
+        "path": "bootstrap/package.json",
+        "sha256": "8b5c3bbb57c6b887ece5ffbde77a457e539b4b64ec5ee3dae4684ad48657bd27",
+        "bytes": 110
+      },
+      {
+        "path": "cloud/signer-volc-attest/index.js",
+        "sha256": "7c43e704b9bd612aa3eae92547c9251d3f2c42d102799bbbe16ddfea639f7e4c",
+        "bytes": 319
+      },
+      {
+        "path": "cloud/signer-volc-attest/package.json",
+        "sha256": "438247611253de72c1cebd641e77839ff5e5f594457faeca92dd73b78dfd161e",
+        "bytes": 223
+      },
+      {
+        "path": "cloud/signer-volc-attest/runtime.mjs",
+        "sha256": "99fadcbb381c781afe9e559526966d02f3de16c0fed612d7bfca6744f3a19e4c",
+        "bytes": 6141
+      },
+      {
+        "path": "cloud/signer-volc-attest/storage.cjs",
+        "sha256": "dcd59938ab5d1708a089b13cba6dec5731b85275885a7ebd0792b7cf09761e55",
+        "bytes": 4218
+      },
+      {
+        "path": "package.json",
+        "sha256": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae",
+        "bytes": 18
+      },
+      {
+        "path": "patchgate-a2-manifest.mjs",
+        "sha256": "ebd6038a16ba8ade5c6d035b4cb53e0f5158f16d1a8d77b223e7d8d3719f1534",
+        "bytes": 1915
+      },
+      {
+        "path": "patchgate-attestation-evidence.mjs",
+        "sha256": "79fa06dc9f7f057bfd77b022c42de75c6fe985ed276e3a3992dcd0a5d988cbbf",
+        "bytes": 7680
+      },
+      {
+        "path": "patchgate-model-attestation-worker.js",
+        "sha256": "10d16416365539989b56f9e69d24a70e455a632093a15ed849814bedd9facc81",
+        "bytes": 8460
+      },
+      {
+        "path": "patchgate-oidc.mjs",
+        "sha256": "08e7d2f2d9a8e0aa2c76388de0478af81c1d80fc907520568f98e92b1d9ed18f",
+        "bytes": 3456
+      },
+      {
+        "path": "patchgate-secret-scan.mjs",
+        "sha256": "66ceed1b475ec83ebc5d5429d166c72f1cd5f4070135b8eb2712c95d6238cecb",
+        "bytes": 409
+      },
+      {
+        "path": "patchgate-signer-source.mjs",
+        "sha256": "c7cd906b13696e91e8a525873131b0b8eab150102e5f8d15f1757a0ffdb7f976",
+        "bytes": 1521
+      },
+      {
+        "path": "scripts/build-patchgate-signer-release.mjs",
+        "sha256": "1517d248a9bc084350b9b6387af1dba754966c141ab59756a222d052a7167fec",
+        "bytes": 1328
+      },
+      {
+        "path": "scripts/lib/patchgate-a2-collector.mjs",
+        "sha256": "eccc715b22ff1e2a6d70711c15ea4e41e570685e9798408b513ddcf634f004ef",
+        "bytes": 15252
+      },
+      {
+        "path": "scripts/lib/patchgate-a2-executor.mjs",
+        "sha256": "88fe5819c13a68baaa0bf3b95b32974a7edcb16db2fd57ce757122c5f56384a4",
+        "bytes": 10001
+      },
+      {
+        "path": "scripts/lib/patchgate-a2-readback.mjs",
+        "sha256": "1fdf149fa4135e564c2bb0ec353bfd8310eec57d7631526ff72d7e490d3c205c",
+        "bytes": 5062
+      },
+      {
+        "path": "scripts/lib/patchgate-a2-reconcile.mjs",
+        "sha256": "7da63befca30f07b2ef6d1770497c8da09bcab7372f57b883f81af3663919368",
+        "bytes": 8584
+      },
+      {
+        "path": "scripts/lib/patchgate-a2.mjs",
+        "sha256": "c658187d50fe336064d332a1a2ea3a5a89e6a9cc59c9adc259a75082d6db2bd5",
+        "bytes": 22481
+      },
+      {
+        "path": "scripts/lib/patchgate-author-checks-producer.mjs",
+        "sha256": "83576ab57b08d35b44489b0784edb760ae273c74b0f20a553e46671954c21ca6",
+        "bytes": 9911
+      },
+      {
+        "path": "scripts/lib/patchgate-native-response.mjs",
+        "sha256": "a249e3ca402cfe6d819bb7b015e315ece6e48cf0f5e3b30b5c8bc638a8db564e",
+        "bytes": 2523
+      },
+      {
+        "path": "scripts/lib/patchgate.mjs",
+        "sha256": "3a70c3726815259c30759ae61120ca1b0900d713cfb828cc88a133601608d344",
+        "bytes": 22225
+      },
+      {
+        "path": "scripts/patchgate-a2-collect.mjs",
+        "sha256": "93c001e559696a06a75143544e9a27969721317bed5da619297365430086217c",
+        "bytes": 7354
+      },
+      {
+        "path": "scripts/patchgate-a2-execute.mjs",
+        "sha256": "0d149cffa2b94ec1aeea576c5f92de582f6051b3a6fbb6b8bb4f151e4c6dac95",
+        "bytes": 3654
+      },
+      {
+        "path": "scripts/patchgate-a2-preflight.mjs",
+        "sha256": "44132d1b5759df500bd26245e88ad01f4d76d748fc6b9086e198e5deb90d6a48",
+        "bytes": 3617
+      },
+      {
+        "path": "scripts/patchgate-a2-reconcile.mjs",
+        "sha256": "8e307dba7ddf54d58b33861c6dd1b123412b6ccec90a6a6ad4a8bf94c52b1007",
+        "bytes": 3288
+      },
+      {
+        "path": "scripts/patchgate.mjs",
+        "sha256": "942d93ab1e0314c41719e3ed00e2d0d18e28fd5d46777f6a4d81e38c574a027c",
+        "bytes": 3052
+      },
+      {
+        "path": "scripts/request-patchgate-model-attestation.mjs",
+        "sha256": "84e8a4f2b3e95f984c034804f7ae12dd8b765f5dd9fbbdc5b0f497b4fa8bb3ed",
+        "bytes": 3661
+      }
+    ],
+    "private_key_generated": false,
+    "status": "source_inventory_only_not_deployment"
+  },
+  "status": "candidate_repaired_waiting_IAM_update_actual_cloud_resources_and_independent_review",
+  "actual_cloud_account_id": null,
+  "service_url": null,
+  "production_public_key_spki": null,
+  "real_restart_challenge_verified": false,
+  "independent_native_reviews_completed": false,
+  "production_deployed": false,
+  "model_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "A2_A3_B_payments_trust_and_formal_five_signature_unchanged": true,
+  "remaining": [
+    "Valid IAM credentials must be updated by the signed-in owner in existing GitHub Secrets; no connected Volc login session is available to this executor.",
+    "Read back real VeFaaS account/function/NAS metadata and evaluate actual deployment IAM separation.",
+    "Official Create/Update/Release/HTTP trigger deployment adapter must use actual resource configuration and audited source; current write commands deliberately reject incomplete deployment.",
+    "Real function deployment/version/source URL, cloud-only key generation and same-key restart nonce proof.",
+    "One genuine Ark response/signature through same service, independent exact-head review and public BASE registration while feature remains default off."
+  ]
+}

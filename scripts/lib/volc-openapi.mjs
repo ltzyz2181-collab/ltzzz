@@ -69,23 +69,41 @@ export function signRequest({ accessKey, secretKey, service, region, method = 'P
   return { headers: { ...h, Authorization: authorization }, canonicalRequest, xDate, bodyHash, bodyStr };
 }
 
-export async function volcRequest({ action, version = '2024-06-06', body = null, region = 'cn-beijing', service = 'vefaas', host = 'open.volcengineapi.com', expectJson = true }) {
-  const ak = process.env.VOLC_ACCESS_KEY;
-  const sk = process.env.VOLC_SECRET_KEY;
-  if (!ak || !sk) throw Error('VOLC_ACCESS_KEY/VOLC_SECRET_KEY required in env');
-  const params = { Action: action, Version: version };
-  const { headers: sigHeaders, bodyStr } = signRequest({ accessKey: ak, secretKey: sk, service, region, params, body, headers: { 'Content-Type': 'application/json' } });
-  const canonicalQuery = Object.keys(params).sort().map((k) => `${uriEscape(k)}=${uriEscape(params[k])}`).join('&');
-  const url = `https://${host}/?${canonicalQuery}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: sigHeaders,
-    body: bodyStr || undefined,
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw Error(`volc ${action} HTTP ${res.status}: ${text.slice(0, 500)}`);
+export function validateIamCredentials(env=process.env) {
+  const ak=env.VOLC_ACCESS_KEY,sk=env.VOLC_SECRET_KEY;
+  if(typeof ak!=='string'||!/^AKLT[a-zA-Z0-9_-]+$/.test(ak)||ak.length>=256)throw Error('iam_access_key_format_invalid');
+  if(typeof sk!=='string'||!sk||sk.length>1024||/\s/.test(sk))throw Error('iam_secret_key_format_invalid');
+  return {accessKey:ak,secretKey:sk};
+}
+export class VolcApiError extends Error {
+  constructor({action,status,code,requestId}) {
+    super('volc_api_failed:'+action+':'+status+':'+code);
+    this.code=code;this.request_id=requestId;this.http_status=status;
   }
-  if (!expectJson) return text;
-  try { return JSON.parse(text); } catch { return text; }
+}
+async function readBoundedJson(response) {
+  const reader=response.body?.getReader();if(!reader)throw Error('volc_response_body_missing');
+  const chunks=[];let size=0;
+  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1000000)throw Error('volc_response_size_bound');chunks.push(value);}}
+  catch(e){await reader.cancel().catch(()=>{});throw e;}
+  finally{reader.releaseLock();}
+  const bytes=Buffer.concat(chunks.map(x=>Buffer.from(x)));
+  try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw Error('volc_response_invalid_json');}
+}
+export async function volcRequest({action,version='2024-06-06',body=null,region='cn-beijing',service='vefaas',host='open.volcengineapi.com',fetchImpl=fetch,env=process.env}={}) {
+  const {accessKey,secretKey}=validateIamCredentials(env);
+  if(service!=='vefaas'||host!=='open.volcengineapi.com'||region!=='cn-beijing'||version!=='2024-06-06'||!['ListFunctions','GetFunction','CreateFunction','UpdateFunction'].includes(action))throw Error('fixed_vefaas_request_required');
+  const params={Action:action,Version:version};
+  const {headers,bodyStr}=signRequest({accessKey,secretKey,service,region,params,body,headers:{Host:host,'Content-Type':'application/json'}});
+  const query=Object.keys(params).sort().map(k=>uriEscape(k)+'='+uriEscape(params[k])).join('&');
+  let response;
+  try{response=await fetchImpl('https://'+host+'/?'+query,{method:'POST',headers,body:bodyStr||undefined,redirect:'error',signal:AbortSignal.timeout(15000)});}catch{throw Error('volc_transport_failed_no_retry');}
+  const result=await readBoundedJson(response);
+  const metadata=result?.ResponseMetadata;
+  if(!response.ok||metadata?.Error){
+    const safe=(v,pattern,fallback)=>typeof v==='string'&&pattern.test(v)&&!v.includes(accessKey)&&!v.includes(secretKey)?v:fallback;
+    throw new VolcApiError({action,status:response.status,code:safe(metadata?.Error?.Code,/^[A-Za-z][A-Za-z0-9_.-]{0,79}$/,'provider_error'),requestId:safe(metadata?.RequestId,/^[a-zA-Z0-9_-]{1,120}$/,null)});
+  }
+  if(!result||typeof result!=='object'||Array.isArray(result)||!result.Result||typeof result.Result!=='object')throw Error('volc_response_result_missing');
+  return result;
 }

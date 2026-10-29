@@ -32,3 +32,9 @@
 本次还缺的非敏感信息是“身份配置在哪个执行端/已有连接名称”，不是新增 owner 审批。已通过现有异步问题一次性询问位置，等待回复；没有位置不瞎填账号、区域或服务地址。定位后沿用本卡原 Task ID/步骤与已有认领机制，再推进默认关闭的部署和原有独立审计。
 
 公开核查回执：`knowledge/results/patchgate/split-signers/volc-access-followup-20261028.json`。原生 API 阅读/计划的旧 ACK 不是具备工具的云执行端接单；不为更新卡片重新购买模型 ACK，不改既有 step_id。A2/A3/B、付款、预算、信任根和正式五签保持原状态。
+
+## 2026-10-29 GPT 接手收尾
+
+owner 已明确身份位置为 LTZZZ **GitHub Actions**；`VOLC_ACCESS_KEY` / `VOLC_SECRET_KEY` **未更新**。不要再问身份在哪，不把 Ark 模型 Key 当控制面 AK/SK。真实失败为 run `40798605209` / attempt 1 / source `bf52ada784b7e25689ed428dab2e8f28433b576e` / job `123201006002`，`InvalidAuthorization`，部署未执行。
+
+GPT 正在原步骤修订格式检查、去掉无关 ListUsers 权限依赖、移除不完整匿名签名入口，复用主线 OIDC/证据/原生响应核心并补共享 NAS 持久适配与闭包打包。详情 `docs/VOLC-SIGNER-CLOSEOUT-20261029.md`。新 head 通过实际 CI 后交 Claude/其他提供商审计；不改登记或激活开关，不宣称已部署。请沿用此接手卡，避免并行向 main 覆盖同一部署入口。
