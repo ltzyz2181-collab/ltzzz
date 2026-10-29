@@ -1,0 +1,119 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-296",
+  "head_sha": "b8f404d56a12f6e0ea4cf5c2afca72b86c761806",
+  "pr_number": 296,
+  "source_main_sha": "039c270f647329cce00708475f510c54dd4d44d4",
+  "run_id": "40813598792",
+  "at_utc": "2026-10-29T03:42:04.043Z",
+  "idempotency_key": "PATCHGATE-PR-296:b8f404d56a12f6e0ea4cf5c2afca72b86c761806",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "039c270f647329cce00708475f510c54dd4d44d4",
+  "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/deploy-youtube-uploader.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "results/publishing/youtube-removal-edge-compatibility.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/youtube-owner-removal.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/youtube-removal-edge.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "youtube-owner-removal.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-296",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-296",
+      "base_sha": "039c270f647329cce00708475f510c54dd4d44d4",
+      "head_sha": "b8f404d56a12f6e0ea4cf5c2afca72b86c761806",
+      "policy_sha256": "f7a9df6233bbf4822a7c4adc896d8424c71b3f15598e871b97c8ebfc37613eaa",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "ab7c572adfcb7ef0f31fa8babe035a56c7d5281e3f4a5fe8bc29ca90e2bff17c"
+    },
+    "subject_sha256": "674871befb98c658cabb5030980067f26c2b29e1b68245bc69f727beb68aa661",
+    "idempotency_key": "PATCHGATE-PR-296:b8f404d56a12f6e0ea4cf5c2afca72b86c761806",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/tests/youtube-owner-removal.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "www.googleapis.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/youtube-removal-edge.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "worker.invalid",
+          "www.googleapis.com"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "authenticated_receipt_writer_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
