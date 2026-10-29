@@ -42,11 +42,14 @@ function escapeHtml(value) {
 }
 function usagePercent(used, limit) {
   const numeric = value => typeof value === 'number' || (typeof value === 'string' && value.trim() !== '');
-  if (!numeric(used) || !numeric(limit)) return 0;
+  if (!numeric(used) || !numeric(limit)) return null;
   const amount = Number(used), cap = Number(limit);
-  if (!Number.isFinite(amount) || !Number.isFinite(cap) || amount <= 0 || cap <= 0) return 0;
+  if (!Number.isFinite(amount) || !Number.isFinite(cap) || amount < 0 || cap <= 0) return null;
   if (amount >= cap) return 100;
   return Math.min(100, Math.max(0, Math.round((amount / cap) * 100)));
+}
+function displayValue(value) {
+  return value == null || (typeof value === 'string' && value.trim() === '') ? '未知' : value;
 }
 async function getJson(path) {
   const response = await fetch(API + path);
@@ -73,9 +76,10 @@ async function load() {
   g.innerHTML = Object.entries(d.agents || {}).map(([name, u]) => {
     u = u ?? {};
     const pct = usagePercent(u.used, u.daily_limit);
-    return '<div class="card"><h3>'+escapeHtml(name)+'</h3><div>已用 <b>'+escapeHtml(u.used)+'</b> / '+escapeHtml(u.daily_limit)+
-      '</div><div class="muted">单笔≤'+escapeHtml(u.single_limit)+' · 剩 '+escapeHtml(u.remaining)+
-      '</div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+    const bar = pct == null ? '<div class="muted">用量比例未知</div>' : '<div class="bar"><i style="width:'+pct+'%"></i></div>';
+    return '<div class="card"><h3>'+escapeHtml(name)+'</h3><div>已用 <b>'+escapeHtml(displayValue(u.used))+'</b> / '+escapeHtml(displayValue(u.daily_limit))+
+      '</div><div class="muted">单笔≤'+escapeHtml(displayValue(u.single_limit))+' · 剩 '+escapeHtml(displayValue(u.remaining))+
+      '</div>'+bar+'</div>';
   }).join('');
 
   document.getElementById('raw').textContent = JSON.stringify({
