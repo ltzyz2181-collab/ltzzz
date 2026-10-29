@@ -1,0 +1,118 @@
+{
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "step_id": "SPLIT-SIGNER-INFRA-20261026-PR301-RESPONSE",
+  "audit_pr": 301,
+  "audited_head": "f115af017e021b34dab8d7ffa10e70929f5498cc",
+  "base_commit": "23fc3aa09d60be43bb9bf4ecae9043e5158db91e",
+  "scope": "documentation_only_followup_no_new_runtime_or_workflow_changes",
+  "R1": {
+    "change": "explicit_exportable_software_key_custody_and_direct_indirect_reader_inventory",
+    "actual_reader_inventory_verified": false,
+    "actual_reader_principal_ids": null,
+    "candidate_key_custody": {
+      "key_kind": "software_ed25519_pkcs8_file",
+      "hardware_backed": false,
+      "non_exportable": false,
+      "directory_permissions": "0700_intended_actual_not_verified",
+      "key_file_permissions": "0600_intended_actual_not_verified",
+      "path_template": "SIGNER_STORE_DIR/ed25519.pkcs8",
+      "private_key_generated_by_this_followup": false,
+      "reader_inventory_reference": "docs/VOLC-SIGNER-OPERATIONS.md#1-\u5bc6\u94a5\u6027\u8d28\u4e0e\u5b9e\u9645\u8bbf\u95ee\u8005"
+    }
+  },
+  "R2": {
+    "change": "named_cloud_maintenance_executor_quiesce_reconcile_then_rmdir_empty_lock_with_receipts",
+    "actual_maintenance_principal_verified": false,
+    "lock_recovery_performed": false,
+    "owner_per_action_approval_added": false
+  },
+  "R3": {
+    "change": "clean_documentation_PR_on_current_main_separate_from_repository_hygiene",
+    "hygiene_pr": 302,
+    "original_PR_history_preserved": true,
+    "no_unrelated_binary_log_receipt_additions": true
+  },
+  "inherited_changes_requiring_review": [
+    "scripts/signer-volc-deploy.mjs: read-only detail query",
+    "scripts/lib/volc-openapi.mjs: list revision/trigger read-only whitelist",
+    "workflow input: detail stage",
+    "closeout test: detail metadata projection"
+  ],
+  "open_followups": {
+    "R4_internal_error_diagnostics": "not_changed",
+    "R5_real_NFS_concurrency": "not_verified",
+    "R6_sensitive_secret_reference_classification": "not_verified"
+  },
+  "local_tests": {
+    "count": 57,
+    "passed": 57,
+    "failed": 0,
+    "skipped": 0,
+    "native_cloud_or_model_calls": false
+  },
+  "source_files": [
+    {
+      "path": "cloud/signer-volc-attest/index.js",
+      "sha256": "7c43e704b9bd612aa3eae92547c9251d3f2c42d102799bbbe16ddfea639f7e4c",
+      "audited_sha256": "7c43e704b9bd612aa3eae92547c9251d3f2c42d102799bbbe16ddfea639f7e4c",
+      "unchanged_from_audited_head": true,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": "cloud/signer-volc-attest/runtime.mjs",
+      "sha256": "99fadcbb381c781afe9e559526966d02f3de16c0fed612d7bfca6744f3a19e4c",
+      "audited_sha256": "99fadcbb381c781afe9e559526966d02f3de16c0fed612d7bfca6744f3a19e4c",
+      "unchanged_from_audited_head": true,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": "cloud/signer-volc-attest/storage.cjs",
+      "sha256": "dcd59938ab5d1708a089b13cba6dec5731b85275885a7ebd0792b7cf09761e55",
+      "audited_sha256": "dcd59938ab5d1708a089b13cba6dec5731b85275885a7ebd0792b7cf09761e55",
+      "unchanged_from_audited_head": true,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": "scripts/signer-volc-deploy.mjs",
+      "sha256": "f01d435eb70ce54442960f2ef5a01ca1b831429e8bee10e31e777637dad08878",
+      "audited_sha256": "e520089d84c67aecdd20d13c0bed797fd104d9db48d9ce8e62a97499c9b5aa07",
+      "unchanged_from_audited_head": false,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": "scripts/lib/volc-openapi.mjs",
+      "sha256": "2f23dbf8491095028bd11c35440b8bf95dfb82edefb60f17f74a3b8e6a841911",
+      "audited_sha256": "7e2eb242c3a94cccd2b751be6eb3ac710065b14113a6642ac1c7246bfb9dda88",
+      "unchanged_from_audited_head": false,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": "scripts/build-volc-signer-release.mjs",
+      "sha256": "0452aa2eb5c064c2a58abe692c35e600204b24cf88c6fe6adcf97e0812aa323a",
+      "audited_sha256": "0452aa2eb5c064c2a58abe692c35e600204b24cf88c6fe6adcf97e0812aa323a",
+      "unchanged_from_audited_head": true,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": ".github/workflows/deploy-signer-volc.yml",
+      "sha256": "e6b6fc2c9130b353a78b2223dfcb2615daee1de5d60ceff6d5547fd5c2a9c246",
+      "audited_sha256": "38c45db7464bbd6b7a8a7a2037c1cb4f47f8f3b8c70ed6813eed4aca5da5ee76",
+      "unchanged_from_audited_head": false,
+      "changed_in_this_PR": false
+    },
+    {
+      "path": "scripts/tests/volc-signer-closeout.test.mjs",
+      "sha256": "443b3f46c71ecfe8ebb38a979f6e9330fbb31a7ee087d3f02ecad17a61c4d8b2",
+      "audited_sha256": "d3c3a608c6c1f547699e862508fe67c51da1955f5bbccb00f8fd5a26ecd99bb3",
+      "unchanged_from_audited_head": false,
+      "changed_in_this_PR": false
+    }
+  ],
+  "production_deployed": false,
+  "public_key_registered": false,
+  "A2_A3_B_finance_budget_trust_changed": false,
+  "model_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "source_worktree_base_commit": "544751fd16957b8da3afe4a5314dba984c0f9889"
+}

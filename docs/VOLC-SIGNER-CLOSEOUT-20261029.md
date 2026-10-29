@@ -32,3 +32,13 @@ owner 本轮明确：身份配置位置是 **LTZZZ GitHub Actions**，两项 Sec
 - Node handler：https://docs.volcengine.com/docs/vefaas/node-js-runtime-development-methods?lang=zh
 - GetFunction 的 Id：https://docs.volcengine.com/docs/vefaas/getfunction?lang=en
 - ListFunctions：https://docs.volcengine.com/docs/vefaas/ListFunctions?lang=zh
+
+## PR #301 后续：口径与运维修订（候选仍关闭）
+
+密钥应登记为 **NAS 文件中的 Ed25519 软件密钥，非 HSM/KMS，非不可导出能力**。可读 NAS、取得同 UID/root 或控制函数发布/调试的主体均须盘点；当前实际权限清单未验证，不能写成“无读者”或“GPT/CI 绝不可能读取”。详见 [读取权限与遗留锁运行手册](VOLC-SIGNER-OPERATIONS.md)。
+
+遗留锁不靠时间抢占。由已登记且权限已核验的火山云维护执行器排他认领，冻结入口/排空全部执行，保留账本、锁与公钥证据，逐项对账未知请求后仅清空锁目录；全程留痕，不能删账本、换钥或重置预算。实际维护主体未绑定时保留阻塞，不新增 owner 逐次审批。
+
+上文“IAM 密钥未更新”是当时用户报告和失败记录，历史保持。后续 run 40811349065 attempt2 / job123263401020 在2026-10-29T04:28:46.694Z 已以受管凭据回读正确账号/函数；这证明该次查询认证成功，不证明何时更新、全权限或部署验收。桌面侧后续入口/NAS工单报告已入库，属于报告来源，不冒充原生模型签名或 GPT 云端复测。
+
+原 #294 已合并且含无关文件，不能改写其历史。此次签名文档修订以当前 main 为父提交，仅包含本说明、独立运维手册和 #301 回复回执；逐项列出相对 Claude 已审基准的原字节哈希：运行时三文件与构建器相同；只读 detail 探针、OpenAPI 白名单、工作流输入和测试已由后续主线改动更新，需在新 head 复审，不能沿用旧 head 的通过结论。本轮实际复跑为57项通过。缓存/日志/退休流程清理由独立 PR #302 处理，不混入此签名复审 head。没有本次部署、公钥登记、清锁、NAS开通、原生调用或 A2/资金启用。
