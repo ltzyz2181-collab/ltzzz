@@ -1,65 +1,57 @@
-name: Deploy LTZZZ Signer (Volcengine)
-
+name: Volc signer readiness (default off, no deployment)
 on:
+  pull_request:
+    paths: ['cloud/signer-volc-attest/**','scripts/lib/volc-openapi.mjs','scripts/signer-volc-deploy.mjs','scripts/build-volc-signer-release.mjs','scripts/tests/volc-signer-closeout.test.mjs','.github/workflows/deploy-signer-volc.yml']
   workflow_dispatch:
     inputs:
       stage:
-        description: 'list | deploy | challenge'
+        description: 'Read-only list permission or function metadata; neither deploys nor proves a restart challenge'
+        type: choice
         required: true
-        default: 'list'
-
-permissions:
-  contents: read
-
+        default: list
+        options: [list, get]
+      function_id:
+        description: 'Actual VeFaaS Id returned by list (required for get)'
+        type: string
+        required: false
+permissions: {contents: read}
+concurrency:
+  group: volc-signer-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 jobs:
-  signer:
+  offline:
     runs-on: ubuntu-latest
-    env:
-      VOLC_ACCESS_KEY: ${{ secrets.VOLC_ACCESS_KEY }}
-      VOLC_SECRET_KEY: ${{ secrets.VOLC_SECRET_KEY }}
-      ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
-      SIGNER_EXECUTOR_ID: doubao-vefaas
-      SIGNER_CLOUD_ACCOUNT_BINDING: volcengine:ltzyz2181-collab
-      SIGNER_DEFAULT_MODEL: doubao-seed-1-6-250615
-      SIGNER_DAILY_LIMIT: '20'
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '22'}
+      - name: Synthetic tests only, no provider/model credentials
+        run: node --test scripts/tests/volc-signer-closeout.test.mjs scripts/tests/patchgate-model-attestation.test.mjs scripts/tests/patchgate-oidc.test.mjs scripts/tests/patchgate-signer-source.test.mjs scripts/tests/patchgate-attestation-evidence.test.mjs
+      - name: Build fixed Git source closure without generating a private key
+        run: node scripts/build-volc-signer-release.mjs /tmp/ltzzz-volc-candidate
+  credential_readback:
+    needs: offline
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false, ref: '${{ github.sha }}'}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '22'}
+      - name: Read-only VeFaaS probe; no IAM user enumeration or credential output
+        env:
+          VOLC_ACCESS_KEY: ${{ secrets.VOLC_ACCESS_KEY }}
+          VOLC_SECRET_KEY: ${{ secrets.VOLC_SECRET_KEY }}
+          PROBE_STAGE: ${{ inputs.stage }}
+          SIGNER_FUNCTION_ID: ${{ inputs.function_id }}
+        run: node scripts/signer-volc-deploy.mjs "$PROBE_STAGE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
-          node-version: 20
-
-      - name: Validate credentials (ListFunctions)
-        if: ${{ inputs.stage == 'list' }}
-        run: node scripts/signer-volc-deploy.mjs list
-
-      - name: Deploy signer function
-        if: ${{ inputs.stage == 'deploy' }}
-        run: |
-          set -euo pipefail
-          cd cloud/signer-volc-attest
-          python3 - <<'PY'
-          import glob, hashlib, json, zipfile
-          files = sorted(f for f in glob.glob('*') if f != 'function.zip')
-          with zipfile.ZipFile('function.zip', 'w', zipfile.ZIP_DEFLATED) as z:
-              for f in files:
-                  z.write(f)
-          parts = [{'path': f, 'sha256': hashlib.sha256(open(f, 'rb').read()).hexdigest()} for f in files]
-          src_sha = hashlib.sha256(json.dumps(parts, sort_keys=True).encode()).hexdigest()
-          ev = {'function': 'ltzzz-signer-volc-attest', 'source_sha256': src_sha,
-                'deployed_at_utc': __import__('datetime').datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'cloud_account_binding': 'volcengine:ltzyz2181-collab'}
-          ev_sha = hashlib.sha256(json.dumps(ev, sort_keys=True).encode()).hexdigest()
-          with open('env.json', 'w') as f:
-              json.dump({'SOURCE_SHA': src_sha, 'EVIDENCE_SHA': ev_sha}, f)
-          print('SOURCE_SHA256=' + src_sha)
-          print('EVIDENCE_SHA256=' + ev_sha)
-          PY
-          cd ../..
-          export SIGNER_SOURCE_SHA256=$(python3 -c "import json;print(json.load(open('cloud/signer-volc-attest/env.json'))['SOURCE_SHA'])")
-          export SIGNER_EVIDENCE_SHA256=$(python3 -c "import json;print(json.load(open('cloud/signer-volc-attest/env.json'))['EVIDENCE_SHA'])")
-          node scripts/signer-volc-deploy.mjs deploy cloud/signer-volc-attest/function.zip
-
-      - name: Get deployed function
-        if: ${{ inputs.stage == 'challenge' }}
-        run: node scripts/signer-volc-deploy.mjs get
+          name: volc-readiness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: results/volc-signer/preflight.json
+          if-no-files-found: error
+          retention-days: 30
