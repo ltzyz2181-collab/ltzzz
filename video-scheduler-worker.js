@@ -3,6 +3,7 @@ import {existingWorkBuddyAsset,prepareExistingWorkBuddy,normalizeExistingWorkBud
 const VERSION='v3-verified-queue',MAX_BYTES=25*1024*1024;
 const NAME=/^[A-Za-z0-9][A-Za-z0-9_-]{0,100}$/;
 const EXPECTED_CHANNEL='UCnKqseQ7uivSc7FN38ccRUA';
+const verifiedPublic=(v,id)=>v?.ok===true&&v?.published===true&&v.video_id===id&&v.channel_id===EXPECTED_CHANNEL&&v.privacyStatus==='public'&&v.uploadStatus==='processed';
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 const digest=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',value))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const receiptKey=hash=>'receipts/youtube/'+hash+'.json';
@@ -104,19 +105,46 @@ async function processVideo(env,name){
    await youtube(env,'/youtube/update-status',JSON.stringify({video_id:receipt.video_id,privacyStatus:'public'}));
    verification=await youtube(env,'/youtube/verify?video_id='+encodeURIComponent(receipt.video_id));
   }
-  if(!verification.published||verification.channel_id!==EXPECTED_CHANNEL){
+  if(!verifiedPublic(verification,receipt.video_id)){
    receipt={...receipt,state:verification.privacyStatus==='public'?'processing':'not_public',published:false,verification};await write(env,key,receipt);
    return {ok:false,status:receipt.state,name,video_id:receipt.video_id,url:receipt.url,verification};
   }
   receipt={...receipt,state:'published',published:true,verification,verified_at:new Date().toISOString()};
-  // Persist confirmation BEFORE archiving, so a cleanup failure cannot reupload.
+  // Persist confirmation BEFORE deleting media, so a cleanup failure cannot reupload.
   await write(env,key,receipt);
  }
- const object=await env.VIDEOS.get(`queue/${name}.mp4`);
- if(object)await env.VIDEOS.put(`published/${name}.mp4`,object.body,{httpMetadata:{contentType:'video/mp4'}});
- await write(env,`published/${name}.meta.json`,{...meta,publication:receipt});
+ if(!verifiedPublic(receipt.verification,receipt.video_id))return {ok:false,status:'publication_proof_invalid',name};
+ const archived=await read(env,`published/${name}.meta.json`);
+ if(archived&&archived.video_sha256!==meta.video_sha256)return {ok:false,status:'published_name_conflict',name};
+ await write(env,`published/${name}.meta.json`,{...meta,publication:receipt,asset_retention:'receipt_only'});
+ await env.VIDEOS.delete(`published/${name}.mp4`);
  await env.VIDEOS.delete(`queue/${name}.mp4`);await env.VIDEOS.delete(metaKey);
  return {ok:true,status:'published',name,video_id:receipt.video_id,url:receipt.url,verification:receipt.verification};
+}
+async function prunePublished(env,cursor){
+ const page=await env.VIDEOS.list({prefix:'published/',limit:20,...(cursor?{cursor}:{})}),results=[];
+ for(const entry of page.objects.filter(x=>x.key.endsWith('.meta.json'))){
+  const name=entry.key.slice(10,-10);if(!NAME.test(name))continue;
+  const meta=await read(env,entry.key),hash=meta?.video_sha256;
+  if(!/^[a-f0-9]{64}$/.test(hash||'')){results.push({name,status:'invalid_metadata'});continue;}
+  const receipt=await read(env,receiptKey(hash));
+  if(receipt?.state!=='published'||receipt.video_sha256!==hash||!verifiedPublic(receipt.verification,receipt.video_id)){
+   results.push({name,status:'publication_proof_missing'});continue;
+  }
+  const object=await env.VIDEOS.get(`published/${name}.mp4`);
+  if(!object){results.push({name,status:'already_removed',video_sha256:hash});continue;}
+  if(object.size>MAX_BYTES){results.push({name,status:'asset_exceeds_limit'});continue;}
+  const bytes=await object.arrayBuffer();
+  if(bytes.byteLength>MAX_BYTES||await digest(bytes)!==hash){results.push({name,status:'asset_hash_mismatch'});continue;}
+  const verification=await youtube(env,'/youtube/verify?video_id='+encodeURIComponent(receipt.video_id));
+  if(!verifiedPublic(verification,receipt.video_id)){results.push({name,status:'fresh_public_verification_failed'});continue;}
+  // Persist the exact proof and hashes before the one allowed binary deletion.
+  await write(env,entry.key,{...meta,publication:receipt,asset_retention:'receipt_only',retention_verification:verification,retention_verified_at:new Date().toISOString()});
+  await env.VIDEOS.delete(`published/${name}.mp4`);
+  if(await env.VIDEOS.head(`published/${name}.mp4`)){results.push({name,status:'deletion_not_confirmed'});continue;}
+  results.push({name,status:'removed',absence_verified:true,bytes_removed:bytes.byteLength,video_sha256:hash,video_id:receipt.video_id,url:receipt.url});
+ }
+ return {ok:true,results,truncated:page.truncated===true,cursor:page.truncated?page.cursor:null,uploads:0,model_calls:0};
 }
 async function legacyPublish(request,env){
  const body=await request.json();if(body.privacyStatus&&body.privacyStatus!=='public')return json({ok:false,error:'use_youtube_uploader_for_explicit_private_upload'},400);
@@ -161,7 +189,7 @@ async function processQueue(env,selected){
 export default{
  async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2',existing_workbuddy_admission:true,workbuddy_portrait_normalization:true});
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2',existing_workbuddy_admission:true,workbuddy_portrait_normalization:true,published_media_retention:'receipt_only'});
   if(!authorized(request,env))return json({ok:false,error:'unauthorized'},401);
   try{
    if(url.pathname==='/queue/asset'&&request.method==='GET')return await existingWorkBuddyAsset(env,url.searchParams.get('name'));
@@ -170,6 +198,7 @@ export default{
    if(url.pathname.startsWith('/queue/upload/')&&request.method==='POST')return enqueue(request,env,url.pathname.slice('/queue/upload/'.length));
    if(url.pathname==='/queue/item'&&request.method==='GET')return await queueItem(env,url.searchParams.get('name'));
    if(url.pathname==='/queue/list'&&request.method==='GET')return await queueList(env,url.searchParams.get('cursor'));
+   if(url.pathname==='/queue/prune-published'&&request.method==='POST'){const input=await request.json();return json(await prunePublished(env,input.cursor));}
    if(url.pathname==='/queue/run'&&request.method==='POST'){const input=await request.json().catch(()=>({}));return json(await processQueue(env,input.name));}
    if(url.pathname==='/queue/status'&&request.method==='GET'){
     const sha=url.searchParams.get('sha256');if(!/^[a-f0-9]{64}$/.test(sha||''))return json({ok:false,error:'invalid_hash'},400);

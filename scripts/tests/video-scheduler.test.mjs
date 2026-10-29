@@ -32,7 +32,7 @@ test('queue discovery is authenticated, verifies real bytes and performs no uplo
 });
 test('an existing queue name cannot be replaced with different video content',async()=>{const f=fixture();await queue(f);const form=new FormData();form.set('video',new Blob(['different']),'demo.mp4');form.set('meta',JSON.stringify({title:'changed',description:''}));assert.equal((await call(f,'/queue/upload/demo',form)).http,409);});
 test('a video ID and private upload are not a public success; queue is retained',async()=>{const f=fixture({publicNow:false});await queue(f);const r=await call(f,'/queue/run',{name:'demo'});assert.equal(r.ok,false);assert.equal(r.results[0].status,'not_public');assert.equal(receipt(f).published,false);assert.ok(f.objects.has('queue/demo.mp4'));assert.equal(f.uploads,1);});
-test('only verified public processed video archives both assets and records confirmation',async()=>{const f=fixture();await queue(f);const r=await call(f,'/queue/run',{name:'demo'});assert.equal(r.ok,true);assert.equal(r.results[0].status,'published');assert.equal(receipt(f).verification.channel_id,CHANNEL);assert.ok(f.objects.has('published/demo.mp4'));assert.ok(f.objects.has('published/demo.meta.json'));assert.ok(!f.objects.has('queue/demo.mp4'));assert.ok(!f.objects.has('queue/demo.meta.json'));});
+test('only verified public processed video removes media and retains publication proof',async()=>{const f=fixture();await queue(f);const r=await call(f,'/queue/run',{name:'demo'});assert.equal(r.ok,true);assert.equal(r.results[0].status,'published');assert.equal(receipt(f).verification.channel_id,CHANNEL);assert.ok(!f.objects.has('published/demo.mp4'));assert.ok(f.objects.has('published/demo.meta.json'));assert.ok(!f.objects.has('queue/demo.mp4'));assert.ok(!f.objects.has('queue/demo.meta.json'));});
 test('processing video resumes verification without buying another upload',async()=>{const f=fixture({processing:true});await queue(f);assert.equal((await call(f,'/queue/run',{name:'demo'})).results[0].status,'processing');assert.equal((await call(f,'/queue/run',{name:'demo'})).results[0].status,'published');assert.equal(f.uploads,1);});
 test('same content cannot be enqueued again after confirmed publication',async()=>{const f=fixture();await queue(f);await call(f,'/queue/run',{name:'demo'});assert.equal((await queue(f,'another-name')).status,'already_public');assert.equal(f.uploads,1);assert.ok(!f.objects.has('queue/another-name.mp4'));});
 test('concurrent executions claim content once',async()=>{const f=fixture();await queue(f);await Promise.all([call(f,'/queue/run',{name:'demo'}),call(f,'/queue/run',{name:'demo'})]);assert.equal(f.uploads,1);});
@@ -45,3 +45,22 @@ test('uploader reports provider privacy and pending verification instead of decl
  try{const form=new FormData();form.set('video',new Blob([bytes]),'demo.mp4');form.set('privacyStatus','public');const r=await uploader.fetch(new Request('https://u/youtube/upload',{method:'POST',headers:{Authorization:'Bearer fixture','Idempotency-Key':'fixture-key'},body:form}),{LTZZZ_AGENT_TOKEN:'fixture',GOOGLE_CLIENT_ID:'fixture',GOOGLE_CLIENT_SECRET:'fixture',KV:{get:async k=>saved.get(k),put:async(k,v)=>saved.set(k,JSON.parse(v))}});const data=await r.json();assert.equal(data.privacyStatus,'private');assert.equal(data.published,false);assert.equal(saved.get('yt:default').publish_status,'uploaded_pending_verification');}finally{globalThis.fetch=original;}
 });
 test('a held original source cannot be uploaded by the normal queue cron',async()=>{const f=fixture();await queue(f);const h=await crypto.subtle.digest('SHA-256',bytes),hash=Buffer.from(h).toString('hex');f.objects.set('receipts/youtube/'+hash+'.json',new TextEncoder().encode(JSON.stringify({state:'source_normalized_not_for_publication',normalized_sha256:'b'.repeat(64)})));const r=await call(f,'/queue/run',{name:'demo'});assert.equal(r.results[0].status,'original_preserved_normalized_replacement_queued');assert.equal(f.uploads,0);assert.ok(f.objects.has('queue/demo.mp4'));});
+
+test('historical media cleanup requires authentication, exact hash and fresh same-video public proof',async()=>{
+ const f=fixture();await queue(f);await call(f,'/queue/run',{name:'demo'});f.objects.set('published/demo.mp4',bytes);
+ assert.equal((await worker.fetch(new Request('https://scheduler/queue/prune-published',{method:'POST',body:'{}'}),f.env)).status,401);
+ const old=f.env.YOUTUBE_UPLOADER,prior=f.uploads;
+ f.env.YOUTUBE_UPLOADER={fetch:async()=>Response.json({ok:true,published:true,channel_id:CHANNEL,video_id:'wrongID1234',privacyStatus:'public',uploadStatus:'processed'})};
+ assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'fresh_public_verification_failed');assert.ok(f.objects.has('published/demo.mp4'));
+ f.env.YOUTUBE_UPLOADER=old;f.objects.set('published/demo.mp4',new Uint8Array([1,2,3]));
+ assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'asset_hash_mismatch');assert.ok(f.objects.has('published/demo.mp4'));
+ f.objects.set('published/demo.mp4',bytes);assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'removed');
+ assert.ok(!f.objects.has('published/demo.mp4'));assert.ok(f.objects.has('published/demo.meta.json'));assert.equal(receipt(f).state,'published');assert.equal(f.uploads,prior);
+ assert.equal((await call(f,'/queue/prune-published',{})).results[0].status,'already_removed');
+});
+test('public=true with a different ID or unprocessed status cannot remove queued media',async()=>{
+ for(const patch of [{video_id:'wrongID1234'},{uploadStatus:'uploaded'}]){
+  const f=fixture(),old=f.env.YOUTUBE_UPLOADER;f.env.YOUTUBE_UPLOADER={fetch:async r=>{const x=await old.fetch(r);return new URL(r.url).pathname==='/youtube/verify'?Response.json({...await x.json(),...patch}):x;}};
+  await queue(f);assert.equal((await call(f,'/queue/run',{name:'demo'})).ok,false);assert.ok(f.objects.has('queue/demo.mp4'));
+ }
+});
