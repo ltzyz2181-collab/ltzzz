@@ -15,8 +15,18 @@ async function main() {
   if (!cmd) throw Error('usage: signer-volc-deploy.mjs <list|deploy|update|get|delete>');
   switch (cmd) {
     case 'list': {
-      const r = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-      log('list', r);
+      let vefaas = null, iamProbe = null;
+      try {
+        const r = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
+        vefaas = { ok: true, functions: (r && r.Result && r.Result.Items && r.Result.Items.length) || 0 };
+      } catch (e) { vefaas = { ok: false, error: e.message }; }
+      // 分诊：同一凭据走 IAM 专用域名网关，区分「密钥问题」与「统一网关签名差异」
+      try {
+        const r2 = await volcRequest({ action: 'ListUsers', version: '2018-01-01', service: 'iam', host: 'iam.volcengineapi.com', body: null });
+        iamProbe = { ok: true, users: (r2 && r2.Result && r2.Result.User && r2.Result.User.length) || 0 };
+      } catch (e) { iamProbe = { ok: false, error: e.message }; }
+      console.log(JSON.stringify({ vefaas, iamProbe }, null, 2));
+      if (!vefaas.ok || !iamProbe.ok) throw Error('probe_failed');
       return;
     }
     case 'get': {
