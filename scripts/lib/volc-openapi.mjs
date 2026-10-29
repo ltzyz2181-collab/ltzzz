@@ -1,9 +1,11 @@
 // 火山引擎 OpenAPI V4 签名 + 请求封装（vefaas）
 // 凭据只从环境变量读取，永不回显明文。
+// 签名实现与官方多语言示例一致：HMAC 链 key 用原始字节；headers 按字母序
+// 签 content-type;host;x-content-sha256;x-date。
 import crypto from 'node:crypto';
 
-function hmacHex(keyUtf8, data) {
-  return crypto.createHmac('sha256', Buffer.from(keyUtf8, 'utf8')).update(data, 'utf8').digest('hex');
+function hmacBytes(key, data) {
+  return crypto.createHmac('sha256', key).update(data, 'utf8').digest();
 }
 
 function sha256Hex(data) {
@@ -14,24 +16,28 @@ function enc(s) {
   return encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
 }
 
-// 严格按火山签名文档：HMAC 链的 key 为上一步的 hex 字符串（UTF-8 字节）
 export function volcSign({ ak, sk, method = 'POST', host = 'open.volcengineapi.com', path = '/', query = {}, body = null, region = 'cn-beijing', service = 'vefaas', date = new Date() }) {
   if (!ak || !sk) throw Error('VOLC_ACCESS_KEY/VOLC_SECRET_KEY required in env');
-  const xDate = date.toISOString().replace(/[-:]|\.\d{3}/g, '').replace('T', 'T').slice(0, 15) + 'Z'; // yyyyMMddTHHmmssZ
+  const xDate = date.toISOString().replace(/[-:]|\.\d{3}/g, ''); // yyyyMMddTHHmmssZ (UTC)
   const shortDate = xDate.slice(0, 8);
+  const contentType = 'application/json';
   const payload = body == null ? '' : (typeof body === 'string' ? body : JSON.stringify(body));
   const contentSha = sha256Hex(payload);
   const canonicalQuery = Object.keys(query).sort().map((k) => `${enc(k)}=${enc(String(query[k]))}`).join('&');
-  const signedHeaders = 'host;x-date;x-content-sha256';
-  const canonicalHeaders = `host:${host}\nx-date:${xDate}\nx-content-sha256:${contentSha}\n`;
-  const canonicalRequest = [method, path, canonicalQuery, canonicalHeaders, signedHeaders, contentSha].join('\n');
+  const signedHeaderKeys = ['content-type', 'host', 'x-content-sha256', 'x-date'];
+  const canonicalHeaders = signedHeaderKeys.map((k) => {
+    const v = k === 'content-type' ? contentType : k === 'host' ? host : k === 'x-content-sha256' ? contentSha : xDate;
+    return `${k}:${v}`;
+  }).join('\n');
+  const signedHeaders = signedHeaderKeys.join(';');
+  const canonicalRequest = [method, path, canonicalQuery, `${canonicalHeaders}\n`, signedHeaders, contentSha].join('\n');
   const credentialScope = `${shortDate}/${region}/${service}/request`;
   const stringToSign = ['HMAC-SHA256', xDate, credentialScope, sha256Hex(canonicalRequest)].join('\n');
-  const kDate = hmacHex(sk, shortDate);
-  const kRegion = hmacHex(kDate, region);
-  const kService = hmacHex(kRegion, service);
-  const kSigning = hmacHex(kService, 'request');
-  const signature = hmacHex(kSigning, stringToSign);
+  const kDate = hmacBytes(Buffer.from(sk, 'utf8'), shortDate);
+  const kRegion = hmacBytes(kDate, region);
+  const kService = hmacBytes(kRegion, service);
+  const kSigning = hmacBytes(kService, 'request');
+  const signature = hmacBytes(kSigning, stringToSign).toString('hex');
   const authorization = `HMAC-SHA256 Credential=${ak}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
   return { authorization, xDate, contentSha, canonicalRequest, stringToSign };
 }
