@@ -45,11 +45,11 @@ jobs:
           let j,r;
           for(let n=0;n<20;n++){
             r=await fetch('https://ltzzz-video-scheduler.ltzyz2181.workers.dev/health');j=await r.json();
-            if(j.existing_workbuddy_admission&&j.workbuddy_portrait_normalization&&j.published_media_retention==='receipt_only')break;
+            if(j.existing_workbuddy_admission&&j.workbuddy_portrait_normalization&&j.published_media_retention==='receipt_only'&&j.published_media_retention_proof==='verified_historical_publication')break;
             await new Promise(resolve=>setTimeout(resolve,2000));
           }
           console.log(JSON.stringify(j));
-          if(j.published_media_retention!=='receipt_only'||!r.ok||!j.ok||!j.existing_workbuddy_admission||!j.workbuddy_portrait_normalization||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
+          if(j.published_media_retention_proof!=='verified_historical_publication'||j.published_media_retention!=='receipt_only'||!r.ok||!j.ok||!j.existing_workbuddy_admission||!j.workbuddy_portrait_normalization||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
           JS
       - name: Retain publication evidence and remove verified historical R2 media without uploading
         env:

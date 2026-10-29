@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {createHash} from 'node:crypto';
+import {selectPublishedReference} from '../lib/published-reference.mjs';
 import {prunePublishedVideos,publishedProof} from '../prune-published-videos.mjs';
 const bytes = Buffer.from('published media'), hash = createHash('sha256').update(bytes).digest('hex');
 const proof = {published:true,video_sha256:hash,video_id:'abcDEF12345',run_id:'123',url:'https://www.youtube.com/watch?v=abcDEF12345',verification:{ok:true,published:true,channel_id:'UCnKqseQ7uivSc7FN38ccRUA',video_id:'abcDEF12345',privacyStatus:'public',uploadStatus:'processed'}};
@@ -30,4 +31,15 @@ test('symlinks, traversal and paths outside videos are not deleted',()=>{
   const r=prunePublishedVideos({root,tracked:['external.mp4','videos/../external.mp4','videos/link.mp4','videos/alias/external.mp4']});
   assert.equal(r.removed.length,0);assert.ok(fs.existsSync(path.join(root,'external.mp4')));
  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('publication diagnosis uses receipts without requiring a retained local video',()=>{
+ const selected=selectPublishedReference([{file:'youtube-unknown-local-file.json',data:{...proof,verified_at:'2026-10-29T10:00:00Z'}}]);
+ assert.equal(selected.data.video_id,proof.video_id);
+});
+test('owner-removed videos are excluded and most recently verified remaining receipt is selected',()=>{
+ const newer={...proof,video_id:'freshID1234',verification:{...proof.verification,video_id:'freshID1234'},verified_at:'2026-10-29T10:00:00Z'};
+ const entries=[{file:'youtube-old.json',data:{...proof,verified_at:'2026-10-20T10:00:00Z'}},{file:'youtube-new.json',data:newer}];
+ assert.equal(selectPublishedReference(entries).data.video_id,'freshID1234');
+ assert.equal(selectPublishedReference([...entries,{file:'youtube-removal.json',data:{video_id:'freshID1234',deleted:true,absence_verified:true}}]).data.video_id,proof.video_id);
 });
