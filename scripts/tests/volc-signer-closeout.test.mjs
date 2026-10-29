@@ -57,6 +57,18 @@ test('unsupported deployment and malformed list result stop without extra API ca
  let calls=0;await assert.rejects(inspectVolcSigner({command:'deploy',request:async()=>{calls++}}),/runtime_incomplete/);assert.equal(calls,0);
  await assert.rejects(inspectVolcSigner({request:async()=>({Result:{}})}),/function_list_schema/);
 });
+test('detail read returns revisions, triggers and resource spec without echoing gateway secrets',async()=>{
+ const r=await inspectVolcSigner({command:'detail',functionId:'actual-func-1',request:async x=>{
+  if(x.action==='GetFunction')return{Result:{Id:'actual-func-1',Name:'ltzzz-signer-volc-attest',Owner:'1234',Runtime:'node20/v1',LastUpdateTime:'2026-10-29 02:48:09 +0000 UTC',ResourceSpec:{CPU:0.25,Mem:512},Timeout:60,Handler:'index.handler',CodeSize:2048},ResponseMetadata:{RequestId:'read-detail-01'}};
+  if(x.action==='ListRevisions')return{Result:{Items:[{RevisionNumber:1,Id:'rev-1'}]},ResponseMetadata:{RequestId:'read-detail-02'}};
+  if(x.action==='ListTriggers')return{Result:{Items:[{Id:'trg-1',Name:'signer-public',Type:'apig',Enabled:true,CreationTime:'2026-10-29 00:00:00 +0000 UTC',DetailedConfig:'{"GatewayId":"g-secret","UpstreamId":"u-1","Url":"https://signer.example.apigateway.volceapi.com/health"}'}]},ResponseMetadata:{RequestId:'read-detail-03'}};
+  throw Error('unexpected '+x.action);
+ }});
+ assert.equal(r.function_id,'actual-func-1');assert.equal(r.revision_count,1);assert.equal(r.revisions[0].revision_number,1);
+ assert.equal(r.trigger_count,1);assert.equal(r.triggers[0].type,'apig');assert.equal(r.triggers[0].url,'https://signer.example.apigateway.volceapi.com/health');
+ assert.deepEqual(r.resource_spec,{cpu:0.25,memory_mb:512});
+ const s=JSON.stringify(r);assert(!s.includes('g-secret'));assert(!s.includes('u-1'));
+});
 test('local writable directory cannot stand in for a real shared NAS mount',()=>assert.throws(()=>assertSharedMount('/tmp/synthetic-fixture'),/shared_nas_path_required/));
 test('synthetic cloud key reloads PKCS8 correctly across real process restart and exports only SPKI',async()=>{
  const f=storageFixture();try{

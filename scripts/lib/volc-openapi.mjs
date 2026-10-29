@@ -92,7 +92,7 @@ async function readBoundedJson(response) {
 }
 export async function volcRequest({action,version='2024-06-06',body=null,region='cn-beijing',service='vefaas',host='open.volcengineapi.com',fetchImpl=fetch,env=process.env}={}) {
   const {accessKey,secretKey}=validateIamCredentials(env);
-  if(service!=='vefaas'||host!=='open.volcengineapi.com'||region!=='cn-beijing'||version!=='2024-06-06'||!['ListFunctions','GetFunction','CreateFunction','UpdateFunction'].includes(action))throw Error('fixed_vefaas_request_required');
+  if(service!=='vefaas'||host!=='open.volcengineapi.com'||region!=='cn-beijing'||version!=='2024-06-06'||!['ListFunctions','GetFunction','CreateFunction','UpdateFunction','ListRevisions','ListTriggers'].includes(action))throw Error('fixed_vefaas_request_required');
   const params={Action:action,Version:version};
   const {headers,bodyStr}=signRequest({accessKey,secretKey,service,region,params,body,headers:{Host:host,'Content-Type':'application/json'}});
   const query=Object.keys(params).sort().map(k=>uriEscape(k)+'='+uriEscape(params[k])).join('&');
