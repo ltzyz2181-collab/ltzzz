@@ -1,6 +1,6 @@
 import {existingWorkBuddyAsset,prepareExistingWorkBuddy,normalizeExistingWorkBuddy} from './workbuddy-existing-queue.mjs';
 /** Authenticated R2 queue. Uploaded, public and processed are separate states. */
-const VERSION='v3-verified-queue',MAX_BYTES=25*1024*1024;
+const VERSION='v4-receipt-only-retention',MAX_BYTES=25*1024*1024;
 const NAME=/^[A-Za-z0-9][A-Za-z0-9_-]{0,100}$/;
 const EXPECTED_CHANNEL='UCnKqseQ7uivSc7FN38ccRUA';
 const verifiedPublic=(v,id)=>v?.ok===true&&v?.published===true&&v.video_id===id&&v.channel_id===EXPECTED_CHANNEL&&v.privacyStatus==='public'&&v.uploadStatus==='processed';
@@ -136,13 +136,16 @@ async function prunePublished(env,cursor){
   if(object.size>MAX_BYTES){results.push({name,status:'asset_exceeds_limit'});continue;}
   const bytes=await object.arrayBuffer();
   if(bytes.byteLength>MAX_BYTES||await digest(bytes)!==hash){results.push({name,status:'asset_hash_mismatch'});continue;}
-  const verification=await youtube(env,'/youtube/verify?video_id='+encodeURIComponent(receipt.video_id));
-  if(!verifiedPublic(verification,receipt.video_id)){results.push({name,status:'fresh_public_verification_failed'});continue;}
+  // The owner requested deletion of previously published media, including
+  // videos later removed from YouTube. Current availability is an observation,
+  // never a reason to keep a proven published backup indefinitely.
+  let verification;try{verification=await youtube(env,'/youtube/verify?video_id='+encodeURIComponent(receipt.video_id));}catch{verification={ok:false,error:'current_verification_unavailable'};}
+  const currentPublic=verifiedPublic(verification,receipt.video_id);
   // Persist the exact proof and hashes before the one allowed binary deletion.
-  await write(env,entry.key,{...meta,publication:receipt,asset_retention:'receipt_only',retention_verification:verification,retention_verified_at:new Date().toISOString()});
+  await write(env,entry.key,{...meta,publication:receipt,asset_retention:'receipt_only',retention_verification:verification,retention_observed_at:new Date().toISOString(),retention_basis:'hash_matched_historical_publication',currently_public:currentPublic});
   await env.VIDEOS.delete(`published/${name}.mp4`);
   if(await env.VIDEOS.head(`published/${name}.mp4`)){results.push({name,status:'deletion_not_confirmed'});continue;}
-  results.push({name,status:'removed',absence_verified:true,bytes_removed:bytes.byteLength,video_sha256:hash,video_id:receipt.video_id,url:receipt.url});
+  results.push({name,status:'removed',absence_verified:true,currently_public:currentPublic,retention_basis:'hash_matched_historical_publication',bytes_removed:bytes.byteLength,video_sha256:hash,video_id:receipt.video_id,url:receipt.url});
  }
  return {ok:true,results,truncated:page.truncated===true,cursor:page.truncated?page.cursor:null,uploads:0,model_calls:0};
 }
@@ -189,7 +192,7 @@ async function processQueue(env,selected){
 export default{
  async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2',existing_workbuddy_admission:true,workbuddy_portrait_normalization:true,published_media_retention:'receipt_only'});
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'ltzzz-video-scheduler',version:VERSION,cron_configured:!!env.VIDEOS,platforms:{youtube:!!(env.YOUTUBE_UPLOADER||env.YOUTUBE_UPLOAD_WORKER_URL),tiktok:false},privacy_default:'public',public_requires_verification:true,queue_upload_authenticated:true,queue_readback:true,queue_listing:true,queue_listing_format:'metadata_v2',existing_workbuddy_admission:true,workbuddy_portrait_normalization:true,published_media_retention:'receipt_only',published_media_retention_proof:'verified_historical_publication'});
   if(!authorized(request,env))return json({ok:false,error:'unauthorized'},401);
   try{
    if(url.pathname==='/queue/asset'&&request.method==='GET')return await existingWorkBuddyAsset(env,url.searchParams.get('name'));
