@@ -10,6 +10,29 @@ const FUNC_NAME = 'ltzzz-signer-volc-attest';
 
 function log(label, obj) { console.log(`[${label}]`, JSON.stringify(obj, null, 2).slice(0, 1500)); }
 
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+async function ensureReleased() {
+  const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
+  const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
+  if (!item?.Id) throw Error(`function not found: ${FUNC_NAME}`);
+  const id = item.Id;
+  const st = await volcRequest({ action: 'GetReleaseStatus', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: id } });
+  if (st?.Result?.Status === 'done') return { id, already: true, status: 'done' };
+  const rel = await volcRequest({
+    action: 'Release', version: VERSION, region: REGION, service: SERVICE,
+    body: { FunctionId: id, RevisionNumber: 0, TargetTrafficWeight: 100, RollingStep: 100, MaxInstance: 2, Description: 'LTZZZ signer initial full release' },
+  });
+  for (let i = 0; i < 36; i++) {
+    const s = await volcRequest({ action: 'GetReleaseStatus', version: VERSION, region: REGION, service: SERVICE, body: { FunctionId: id } });
+    const status = s?.Result?.Status;
+    if (status === 'done') return { id, already: false, status: 'done', rel };
+    if (status === 'failed') throw Error(`release failed: ${JSON.stringify(s?.Result)}`);
+    await sleep(5000);
+  }
+  throw Error('release timeout');
+}
+
 async function main() {
   const [cmd, ...args] = process.argv.slice(2);
   if (!cmd) throw Error('usage: signer-volc-deploy.mjs <list|deploy|update|get|delete>');
@@ -33,11 +56,9 @@ async function main() {
       return;
     }
     case 'get': {
-      const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-      const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
-      if (!item?.Id) throw Error(`function not found: ${FUNC_NAME}`);
-      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: item.Id } });
-      log('get', r);
+      const rel = await ensureReleased();
+      const r = await volcRequest({ action: 'GetFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: rel.id } });
+      log('get', { release: { already: rel.already, status: rel.status }, id: rel.id, function: r?.Result ? { id: r.Result.Id, name: r.Result.Name, status: r.Result.Status, update: r.Result.UpdateTime } : r });
       return;
     }
     case 'deploy': {
