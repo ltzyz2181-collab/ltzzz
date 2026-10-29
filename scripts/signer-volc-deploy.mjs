@@ -86,9 +86,9 @@ async function main() {
       let r;
       try {
         const list = await volcRequest({ action: 'ListFunctions', version: VERSION, region: REGION, service: SERVICE, body: { Limit: 50, PageNumber: 1 } });
-        const exists = (list?.Result?.Items || []).some((i) => i.Name === FUNC_NAME);
-        r = exists
-          ? await volcRequest({ action: 'UpdateFunction', version: VERSION, region: REGION, service: SERVICE, body: { Name: FUNC_NAME, SourceType: 'zip', Source: zipB64 } })
+        const item = (list?.Result?.Items || []).find((i) => i.Name === FUNC_NAME);
+        r = item
+          ? await volcRequest({ action: 'UpdateFunction', version: VERSION, region: REGION, service: SERVICE, body: { Id: item.Id, SourceType: 'zip', Source: zipB64 } })
           : await volcRequest({ action: 'CreateFunction', version: VERSION, region: REGION, service: SERVICE, body });
       } catch (e) {
         // fallback: treat as create if update-style error (e.g. function not found mid-flight)
