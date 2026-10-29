@@ -33,3 +33,11 @@ test('real FFmpeg pads portrait media to 720x1280 and copies the audio stream by
  assert.deepEqual(run(['-i',input,'-map','0:a:0','-c','copy','-f','adts','pipe:1']),run(['-i',out,'-map','0:a:0','-c','copy','-f','adts','pipe:1']));
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('admission reruns reconcile the normalized public receipt after queue archival without another upload',async()=>{
+ const oldFetch=globalThis.fetch,oldCwd=process.cwd(),savedExit=process.exitCode,savedEnv={GITHUB_RUN_ID:process.env.GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT:process.env.GITHUB_RUN_ATTEMPT,LTZZZ_AGENT_TOKEN:process.env.LTZZZ_AGENT_TOKEN};const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ltzzz-admission-'));
+ try{process.chdir(dir);Object.assign(process.env,{GITHUB_RUN_ID:'123',GITHUB_RUN_ATTEMPT:'1',LTZZZ_AGENT_TOKEN:'synthetic-fixture'});
+ for(const channel of ['UCnKqseQ7uivSc7FN38ccRUA','different-channel']){let n=0;globalThis.fetch=async(url,init={})=>{assert.equal(init.method||'GET','GET');n++;if(n===1)return Response.json({ok:true,receipt:{state:'source_normalized_not_for_publication',normalized_sha256:'b'.repeat(64)}});if(n===2){assert.ok(String(url).endsWith('b'.repeat(64)));return Response.json({ok:true,receipt:{state:'published',video_id:'fixture1234'}});}assert.equal(n,3);assert.ok(String(url).includes('/youtube/verify?video_id=fixture1234'));return Response.json({video_id:'fixture1234',published:true,channel_id:channel,privacyStatus:'public',uploadStatus:'processed'});};
+ await import(new URL('../admit-existing-workbuddy-video.mjs?reconcile='+channel,import.meta.url));const receipt=JSON.parse(fs.readFileSync('results/publishing/workbuddy-existing-admission-123-1.json'));assert.equal(receipt.published,channel==='UCnKqseQ7uivSc7FN38ccRUA');assert.equal(receipt.queued,false);assert.equal(receipt.uploads,0);assert.equal(n,3);assert.equal(receipt.error,undefined);
+ }
+ }finally{globalThis.fetch=oldFetch;process.chdir(oldCwd);process.exitCode=savedExit;for(const[k,v]of Object.entries(savedEnv))v===undefined?delete process.env[k]:process.env[k]=v;fs.rmSync(dir,{recursive:true,force:true});}
+});
