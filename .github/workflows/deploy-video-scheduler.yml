@@ -17,6 +17,7 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
+      - run: (command -v ffprobe && command -v ffmpeg) || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
       - run: node --test scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs scripts/tests/workbuddy-existing-queue.test.mjs
   deploy:
     needs: validate
@@ -44,15 +45,15 @@ jobs:
           let j,r;
           for(let n=0;n<20;n++){
             r=await fetch('https://ltzzz-video-scheduler.ltzyz2181.workers.dev/health');j=await r.json();
-            if(j.existing_workbuddy_admission)break;
+            if(j.existing_workbuddy_admission&&j.workbuddy_portrait_normalization)break;
             await new Promise(resolve=>setTimeout(resolve,2000));
           }
           console.log(JSON.stringify(j));
-          if(!r.ok||!j.ok||!j.existing_workbuddy_admission||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
+          if(!r.ok||!j.ok||!j.existing_workbuddy_admission||!j.workbuddy_portrait_normalization||!j.public_requires_verification||!j.cron_configured||!j.platforms?.youtube)process.exitCode=1;
           JS
-      - name: Prepare media inspection without rendering
-        run: command -v ffprobe || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
-      - name: Inspect the actual existing WorkBuddy MP4 and repair only missing queue metadata
+      - name: Prepare deterministic media inspection and format tools
+        run: (command -v ffprobe && command -v ffmpeg) || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - name: Inspect and normalize existing WorkBuddy media without AI rendering or publication
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: node scripts/admit-existing-workbuddy-video.mjs
