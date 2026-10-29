@@ -61,13 +61,66 @@ test('detail read returns revisions, triggers and resource spec without echoing 
  const r=await inspectVolcSigner({command:'detail',functionId:'actual-func-1',request:async x=>{
   if(x.action==='GetFunction')return{Result:{Id:'actual-func-1',Name:'ltzzz-signer-volc-attest',Owner:'1234',Runtime:'node20/v1',LastUpdateTime:'2026-10-29 02:48:09 +0000 UTC',ResourceSpec:{CPU:0.25,Mem:512},Timeout:60,Handler:'index.handler',CodeSize:2048},ResponseMetadata:{RequestId:'read-detail-01'}};
   if(x.action==='ListRevisions')return{Result:{Items:[{RevisionNumber:1,Id:'rev-1'}]},ResponseMetadata:{RequestId:'read-detail-02'}};
-  if(x.action==='ListTriggers')return{Result:{Items:[{Id:'trg-1',Name:'signer-public',Type:'apig',Enabled:true,CreationTime:'2026-10-29 00:00:00 +0000 UTC',DetailedConfig:'{"GatewayId":"g-secret","UpstreamId":"u-1","Url":"https://signer.example.apigateway.volceapi.com/health"}'}]},ResponseMetadata:{RequestId:'read-detail-03'}};
+  if(x.action==='ListTriggers')return{Result:{Items:[{Id:'trg-1',Name:'signer-public',Type:'apig',Enabled:true,CreationTime:'2026-10-29 00:00:00 +0000 UTC',DetailedConfig:'{"GatewayId":"g-secret","UpstreamId":"u-1","Url":"https://signer.apigateway-cn-beijing.volceapi.com/health"}'}]},ResponseMetadata:{RequestId:'read-detail-03'}};
   throw Error('unexpected '+x.action);
  }});
  assert.equal(r.function_id,'actual-func-1');assert.equal(r.revision_count,1);assert.equal(r.revisions[0].revision_number,1);
- assert.equal(r.trigger_count,1);assert.equal(r.triggers[0].type,'apig');assert.equal(r.triggers[0].url,'https://signer.example.apigateway.volceapi.com/health');
+ assert.equal(r.trigger_count,1);assert.equal(r.triggers[0].type,'apig');assert.equal(r.triggers[0].url,'https://signer.apigateway-cn-beijing.volceapi.com/health');
  assert.deepEqual(r.resource_spec,{cpu:0.25,memory_mb:512});
  const s=JSON.stringify(r);assert(!s.includes('g-secret'));assert(!s.includes('u-1'));
+});
+async function triggerReceipt(config){
+ return inspectVolcSigner({command:'detail',functionId:'actual-func-1',request:async x=>{
+  if(x.action==='GetFunction')return{Result:{Id:'actual-func-1',Name:'ltzzz-signer-volc-attest'}};
+  if(x.action==='ListRevisions')return{Result:{Items:[]}};
+  if(x.action==='ListTriggers')return{Result:{Items:[{Id:'trigger-1',DetailedConfig:config}]}};
+  throw Error('unexpected_read_action');
+ }});
+}
+test('public detail receipt strips URL credentials, signed query and fragment before serialization',async()=>{
+ const r=await triggerReceipt(JSON.stringify({Url:'https://synthetic-user:synthetic-password@signer.apigateway-cn-beijing.volceapi.com/health?X-Signature=synthetic-query#synthetic-fragment',PrivateValue:'synthetic-private-config'}));
+ assert.equal(r.triggers[0].url,'https://signer.apigateway-cn-beijing.volceapi.com/health');
+ const encoded=JSON.stringify(r);
+ for(const forbidden of ['synthetic-user','synthetic-password','X-Signature','synthetic-query','synthetic-fragment','synthetic-private-config'])assert(!encoded.includes(forbidden));
+});
+test('trigger URL projection permits only complete HTTP(S) Beijing gateway hosts and bounded canonical paths',async()=>{
+ const host='signer.apigateway-cn-beijing.volceapi.com';
+ const cases=[
+  [`HTTPS://${host.toUpperCase()}/challenge?token=synthetic#fragment`,`https://${host}/challenge`],
+  [`http://${host}:80/health?token=synthetic`,`http://${host}/health`],
+  [`https://user%40example.com:pass%3Aword@${host}:443/a%20b?token=synthetic`,`https://${host}/a%20b`],
+  [`https://${host}/health?token=${'x'.repeat(500)}`,`https://${host}/health`],
+  [`https://${host}`,`https://${host}/`],
+  [`https://${host}.attacker.invalid/health`,null],
+  ['https://signer.evilapigateway-cn-beijing.volceapi.com/health',null],
+  ['https://signer.apigateway-cn-shanghai.volceapi.com/health',null],
+  ['https://signer.apigateway-cn-beijing.voiceapi.com/health',null],
+  [`https://${host}@attacker.invalid/health`,null],
+  [`https://attacker.invalid/?next=https://${host}/health`,null],
+  [`https://${host}:8443/health`,null],
+  ['https://127.0.0.1/health',null],['https://[::1]/health',null],
+  ['https://apigateway-cn-beijing.volceapi.com/health',null],
+  [`ftp://${host}/health`,null],['https://[invalid]/health',null],
+  [`https://${host}/${'a'.repeat(400)}`,null],
+  ['x'.repeat(9000),null],[null,null]
+ ];
+ for(const [input,expected] of cases){const r=await triggerReceipt(input);assert.equal(r.triggers[0].url,expected);}
+});
+test('unused write actions and unexpected control-plane targets are rejected before credential access or network',async()=>{
+ let reads=0,calls=0;const env=new Proxy({},{get(){reads++;throw Error('credentials_must_not_be_read');}});
+ const invalid=[...['CreateFunction','UpdateFunction','DeleteFunction','ReleaseFunction','CreateTrigger','UpdateTrigger'].map(action=>({action})),
+  {action:'ListFunctions',host:'attacker.invalid'},{action:'ListFunctions',service:'iam'},{action:'ListFunctions',region:'cn-shanghai'}];
+ for(const options of invalid)await assert.rejects(volcRequest({...options,env,fetchImpl:async()=>{calls++;}}),/fixed_vefaas_request_required/);
+ assert.equal(reads,0);assert.equal(calls,0);
+});
+test('the four current read-only actions still use the fixed signed VeFaaS transport',async()=>{
+ const seen=[];
+ for(const action of ['ListFunctions','GetFunction','ListRevisions','ListTriggers']){
+  const result=await volcRequest({action,body:{Id:'synthetic-id'},env:{VOLC_ACCESS_KEY:'AKLTsynthetic_fixture',VOLC_SECRET_KEY:'synthetic-fixture-secret'},fetchImpl:async(url,options)=>{
+   seen.push(new URL(url).searchParams.get('Action'));assert.equal(new URL(url).hostname,'open.volcengineapi.com');assert.equal(options.method,'POST');assert.equal(options.redirect,'error');return Response.json({Result:{}});
+  }});assert.deepEqual(result.Result,{});
+ }
+ assert.deepEqual(seen,['ListFunctions','GetFunction','ListRevisions','ListTriggers']);
 });
 test('local writable directory cannot stand in for a real shared NAS mount',()=>assert.throws(()=>assertSharedMount('/tmp/synthetic-fixture'),/shared_nas_path_required/));
 test('synthetic cloud key reloads PKCS8 correctly across real process restart and exports only SPKI',async()=>{
