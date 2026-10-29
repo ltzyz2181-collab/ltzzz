@@ -1,0 +1,43 @@
+name: Volc signer one-time live readback (read only)
+on:
+  pull_request:
+    paths: ['scripts/run-volc-live-readback.mjs','scripts/tests/volc-live-readback.test.mjs','.github/workflows/volc-signer-live-readback.yml']
+  push:
+    branches: [main]
+    paths: ['ops/dispatch/runtime-requests/volc-signer-readback.json']
+permissions: {contents: read}
+concurrency: {group: volc-signer-live-readback, cancel-in-progress: false}
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/volc-live-readback.test.mjs scripts/tests/volc-signer-closeout.test.mjs
+  readback:
+    needs: offline
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: {persist-credentials: false, ref: '${{ github.sha }}'}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: {node-version: '22'}
+      - name: Validate one-hour request and exact Claude-approved source before credentials
+        run: node scripts/run-volc-live-readback.mjs validate
+      - name: Read fixed existing function without deployment, key access or model calls
+        env:
+          VOLC_ACCESS_KEY: ${{ secrets.VOLC_ACCESS_KEY }}
+          VOLC_SECRET_KEY: ${{ secrets.VOLC_SECRET_KEY }}
+        run: node scripts/run-volc-live-readback.mjs run
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: volc-live-readback-${{ github.run_id }}-${{ github.run_attempt }}
+          path: results/volc-signer/live-readback.json
+          if-no-files-found: error
+          retention-days: 30
