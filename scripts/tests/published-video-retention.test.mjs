@@ -2,10 +2,10 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {createHash} from 'node:crypto';
 import {prunePublishedVideos,publishedProof} from '../prune-published-videos.mjs';
 const bytes = Buffer.from('published media'), hash = createHash('sha256').update(bytes).digest('hex');
-const proof = {published:true,video_sha256:hash,video_id:'abcDEF12345',run_id:'123',url:'https://www.youtube.com/watch?v=abcDEF12345',verification:{published:true,channel_id:'UCnKqseQ7uivSc7FN38ccRUA',video_id:'abcDEF12345',privacyStatus:'public',uploadStatus:'processed'}};
+const proof = {published:true,video_sha256:hash,video_id:'abcDEF12345',run_id:'123',url:'https://www.youtube.com/watch?v=abcDEF12345',verification:{ok:true,published:true,channel_id:'UCnKqseQ7uivSc7FN38ccRUA',video_id:'abcDEF12345',privacyStatus:'public',uploadStatus:'processed'}};
 test('only matching ID, channel, public, processed and hash qualify as publication proof',()=>{
  assert.equal(publishedProof(proof),true);
- for(const patch of [{published:false},{video_sha256:'bad'},{video_id:'otherID1234'},{verification:{...proof.verification,published:false}},{verification:{...proof.verification,channel_id:'other'}},{verification:{...proof.verification,privacyStatus:'private'}},{verification:{...proof.verification,uploadStatus:'uploaded'}}]) assert.equal(publishedProof({...proof,...patch}),false);
+ for(const patch of [{verification:{...proof.verification,ok:false}},{published:false},{video_sha256:'bad'},{video_id:'otherID1234'},{verification:{...proof.verification,published:false}},{verification:{...proof.verification,channel_id:'other'}},{verification:{...proof.verification,privacyStatus:'private'}},{verification:{...proof.verification,uploadStatus:'uploaded'}}]) assert.equal(publishedProof({...proof,...patch}),false);
 });
 test('remove both matching tracked copies; preserve receipts, manifests, unpublished and untracked media; retry is empty',()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'video-retention-'));
