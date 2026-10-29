@@ -1,0 +1,12 @@
+{
+  "id": "PLAN-PATCHGATE-ESCROW-20261023-PR301-HYGIENE-REVIEW",
+  "parent_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "agent": "qianwen",
+  "prompt": "请独立审查 LTZZZ 仓库整理候选，返回 PASS/REVISE/REJECT、理由和待补项。原任务 PLAN-PATCHGATE-ESCROW-20261023，步骤 PR301-REPOSITORY-HYGIENE；不是签名器部署审计，不授予资金或启用权限。\n精确候选 PR #302 head 26e3e5e0a42a23bd7aaf94e1b7d3520edb71e180；base 544751fd16957b8da3afe4a5314dba984c0f9889。你本次收到的是执行器提供的范围、验证摘要和文本摘录，未配工具直接读取仓库；请明确这一限制，不自称独立复跑或已读取全部源文件。\n\n改动：移出 Git 跟踪 video-output/ 31 个渲染输出（帧图、片段、音频、SRT、concat 与品牌 MP4）以及 work/ 的4个本机输入/接力拷贝，共35文件4,182,796字节。tools/render_brand_video.py 会从源代码生成这些中间产物；正式 videos/ltzzz-brand-60s-2026-10-14.mp4 与删除的 final MP4 原字节和 Git blob 相同，仍保留。现行队列/日更代码引用的是运行时生成的 video-output/youtube-daily.mp4 和 manifest.json，本轮未删除这两个运行时输出、未改生成器/读取器。work/relay-task.txt 仍是本机调用约定，文档明确由客户端先创建再提交，路径未改，原接力卡和保护回执保留。\n归档按原字节移动四个 ops/joblog-*.txt 到 knowledge/archive/runner-logs/2026-10/；退休三个固定日期手动上传 workflow（upload-video-1005.yml, upload-video-1012.yml, youtube-upload-1012.yml）到 .github/workflow-archive/2026-10/，不再由 Actions 识别。其中直接上传入口无现行 shared-queue 幂等校验；当前 queue-video-only、youtube-daily-publish、upload-video-s3-2026-10-15 及其 wrapper 均保留，未改原 cron；没有 workflow_call 指向三个退休入口。\n.gitignore 新增 /video-output/、/work/、/ops/joblog-*.txt。README 加分类导航 docs/REPOSITORY-LAYOUT.md；导航区分代码/配置/任务/回执/正式素材/历史日志/退休流程/临时输入。未批量挪运行代码或 latest.json；14.5MB 的同内容 Pulse 回执别名因读取兼容未删除。没有将积压任务改成完成。\n逐项恢复清单 knowledge/results/repository-maintenance/cleanup-20261029.json 固定源提交、原路径、Git blob、SHA256、长度、归档目的地；取历史文件使用 git show 到独立临时目录，不覆盖用户工作区；不重写 Git 历史、不强推。旧验收/失败/审计回执原字节全部保留，未动资金/签名器/A2/A3/B/预算/信任根。\n\n执行器验证（不是你复跑）：42条清理项逐项与 base Git 原字节核对；7个归档同blob；原最终视频相同；ignore规则三类均生效；视频队列/真实转码/Manus包装49项测试通过。GitData公布后54个tree entry（包括rename的旧新两项）全部回读与本机一致。处理后5351文件100066645字节，对应固定base 5383文件104231422字节；不宣称 Git 历史磁盘缩小。\n恢复清单 SHA256: 68da307f2622a193619656f2066c56d433a128567d689277c1563974fd103af5。\n请重点判断：是否误删业务证据/活跃依赖、归档路径是否仍会执行、隐藏本机输入的使用约定是否充分、统计与本轮未关闭任务是否准确；如只凭摘要不能验证某项，明确未验证。无需建议新增 owner 逐步审批。",
+  "max_tokens": 2048,
+  "real_money": false,
+  "review_target_pr": 302,
+  "review_target_head": "26e3e5e0a42a23bd7aaf94e1b7d3520edb71e180",
+  "review_scope": "supplied_bounded_change_summary_and_excerpts_not_remote_repository_readback",
+  "new_paid_cron": false
+}
