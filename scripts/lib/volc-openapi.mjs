@@ -1,64 +1,86 @@
-// 火山引擎 OpenAPI V4 签名 + 请求封装（vefaas）
-// 凭据只从环境变量读取，永不回显明文。
-// 签名实现与官方多语言示例一致：HMAC 链 key 用原始字节；headers 按字母序
-// 签 content-type;host;x-content-sha256;x-date。
+// 火山引擎 OpenAPI 请求封装（vefaas）
+// 签名算法精确复刻官方 @volcengine/vcloud-core Signer（crypto-js hmac/sha256 语义，
+// 用 node:crypto 等价实现），零第三方依赖。凭据只从环境变量读取，永不回显明文。
 import crypto from 'node:crypto';
+
+const unsignableHeaders = ['authorization', 'content-type', 'content-length', 'user-agent', 'presigned-expires', 'expect'];
 
 function hmacBytes(key, data) {
   return crypto.createHmac('sha256', key).update(data, 'utf8').digest();
 }
-
 function sha256Hex(data) {
   return crypto.createHash('sha256').update(data, 'utf8').digest('hex');
 }
-
-function enc(s) {
-  return encodeURIComponent(s).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+function uriEscape(str) {
+  return encodeURIComponent(String(str))
+    .replace(/[^A-Za-z0-9_.~\-%]+/g, (ch) => `%${ch.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/\*/g, '%2A');
 }
-
-export function volcSign({ ak, sk, method = 'POST', host = 'open.volcengineapi.com', path = '/', query = {}, body = null, region = 'cn-beijing', service = 'vefaas', date = new Date() }) {
-  if (!ak || !sk) throw Error('VOLC_ACCESS_KEY/VOLC_SECRET_KEY required in env');
-  const xDate = date.toISOString().replace(/[-:]|\.\d{3}/g, ''); // yyyyMMddTHHmmssZ (UTC)
-  const shortDate = xDate.slice(0, 8);
-  const contentType = 'application/json';
-  const payload = body == null ? '' : (typeof body === 'string' ? body : JSON.stringify(body));
-  const contentSha = sha256Hex(payload);
-  const canonicalQuery = Object.keys(query).sort().map((k) => `${enc(k)}=${enc(String(query[k]))}`).join('&');
-  const signedHeaderKeys = ['content-type', 'host', 'x-content-sha256', 'x-date'];
-  const canonicalHeaders = signedHeaderKeys.map((k) => {
-    const v = k === 'content-type' ? contentType : k === 'host' ? host : k === 'x-content-sha256' ? contentSha : xDate;
-    return `${k}:${v}`;
-  }).join('\n');
-  const signedHeaders = signedHeaderKeys.join(';');
-  const canonicalRequest = [method, path, canonicalQuery, `${canonicalHeaders}\n`, signedHeaders, contentSha].join('\n');
-  const credentialScope = `${shortDate}/${region}/${service}/request`;
-  const stringToSign = ['HMAC-SHA256', xDate, credentialScope, sha256Hex(canonicalRequest)].join('\n');
-  const kDate = hmacBytes(Buffer.from(sk, 'utf8'), shortDate);
+function queryParamsToString(params) {
+  return Object.keys(params)
+    .map((key) => {
+      const val = params[key];
+      if (typeof val === 'undefined' || val === null) return '';
+      const escapedKey = uriEscape(key);
+      if (Array.isArray(val)) return `${escapedKey}=${val.map(uriEscape).sort().join(`&${escapedKey}=`)}`;
+      return `${escapedKey}=${uriEscape(val)}`;
+    })
+    .filter((v) => v)
+    .join('&');
+}
+function canonicalHeaderValues(v) {
+  return String(v).replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+}
+function getSigningKey(secretKey, date, region, service) {
+  const kDate = hmacBytes(Buffer.from(secretKey, 'utf8'), date);
   const kRegion = hmacBytes(kDate, region);
   const kService = hmacBytes(kRegion, service);
-  const kSigning = hmacBytes(kService, 'request');
-  const signature = hmacBytes(kSigning, stringToSign).toString('hex');
-  const authorization = `HMAC-SHA256 Credential=${ak}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-  return { authorization, xDate, contentSha, canonicalRequest, stringToSign };
+  return hmacBytes(kService, 'request');
+}
+
+export function signRequest({ accessKey, secretKey, service, region, method = 'POST', pathname = '/', params = {}, body = null, headers = {}, date = new Date() }) {
+  const xDate = date.toISOString().replace(/[-:]|\.\d{3}/g, ''); // yyyyMMddTHHmmssZ
+  const h = { ...headers };
+  h['X-Date'] = xDate;
+  let bodyStr = '';
+  if (body) {
+    if (typeof body !== 'string') bodyStr = JSON.stringify(body);
+    else bodyStr = body;
+    h['X-Content-Sha256'] = sha256Hex(bodyStr);
+  }
+  const sortedParams = Object.fromEntries(Object.keys(params).sort().map((k) => [k, params[k]]));
+  const canonicalHeaders = Object.keys(h)
+    .sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : 1))
+    .filter((k) => !unsignableHeaders.includes(k.toLowerCase()))
+    .map((k) => `${k.toLowerCase()}:${canonicalHeaderValues(h[k])}`)
+    .join('\n');
+  const signedHeaders = Object.keys(h)
+    .map((k) => k.toLowerCase())
+    .filter((k) => !unsignableHeaders.includes(k))
+    .sort()
+    .join(';');
+  const bodyHash = h['X-Content-Sha256'] || sha256Hex(body ? queryParamsToString(body) : '');
+  const canonicalRequest = [method.toUpperCase(), pathname, queryParamsToString(sortedParams), `${canonicalHeaders}\n`, signedHeaders, bodyHash].join('\n');
+  const credentialScope = [xDate.slice(0, 8), region, service, 'request'].join('/');
+  const stringToSign = ['HMAC-SHA256', xDate, credentialScope, sha256Hex(canonicalRequest)].join('\n');
+  const signingKey = getSigningKey(secretKey, xDate.slice(0, 8), region, service);
+  const signature = hmacBytes(signingKey, stringToSign).toString('hex');
+  const authorization = `HMAC-SHA256 Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  return { headers: { ...h, Authorization: authorization }, canonicalRequest, xDate, bodyHash, bodyStr };
 }
 
 export async function volcRequest({ action, version = '2024-06-06', body = null, region = 'cn-beijing', service = 'vefaas', host = 'open.volcengineapi.com', expectJson = true }) {
   const ak = process.env.VOLC_ACCESS_KEY;
   const sk = process.env.VOLC_SECRET_KEY;
   if (!ak || !sk) throw Error('VOLC_ACCESS_KEY/VOLC_SECRET_KEY required in env');
-  const query = { Action: action, Version: version };
-  const sig = volcSign({ ak, sk, host, query, body, region, service });
-  const url = `https://${host}/?` + Object.keys(query).map((k) => `${enc(k)}=${enc(String(query[k]))}`).join('&');
+  const params = { Action: action, Version: version };
+  const { headers: sigHeaders, bodyStr } = signRequest({ accessKey: ak, secretKey: sk, service, region, params, body, headers: { 'Content-Type': 'application/json' } });
+  const canonicalQuery = Object.keys(params).sort().map((k) => `${uriEscape(k)}=${uriEscape(params[k])}`).join('&');
+  const url = `https://${host}/?${canonicalQuery}`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Host': host,
-      'X-Date': sig.xDate,
-      'X-Content-Sha256': sig.contentSha,
-      'Authorization': sig.authorization,
-    },
-    body: body == null ? undefined : (typeof body === 'string' ? body : JSON.stringify(body)),
+    headers: sigHeaders,
+    body: bodyStr || undefined,
   });
   const text = await res.text();
   if (!res.ok) {
