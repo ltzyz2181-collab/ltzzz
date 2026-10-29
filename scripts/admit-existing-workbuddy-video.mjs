@@ -1,0 +1,39 @@
+// Real asset readback/probe and deterministic format admission. Never calls queue/run.
+import fs from 'node:fs';import {createHash} from 'node:crypto';import {execFileSync} from 'node:child_process';
+const name='ltzzz-daily-2026-10-29',expected='a61a0f1113e4c4bb0a18c8020f0004cbf4a7d702fa555feffaabb73e0c9842a5',base='https://ltzzz-video-scheduler.ltzyz2181.workers.dev';
+const run=process.env.GITHUB_RUN_ID,attempt=process.env.GITHUB_RUN_ATTEMPT||'1';if(!/^\d+$/.test(run||'')||!/^\d+$/.test(attempt))throw Error('actions_identity_required');
+const receipt={task_id:'YOUTUBE-AUTOMATION-20261013',step_id:'WORKBUDDY-EXISTING-VIDEO-ADMISSION',at_utc:new Date().toISOString(),name,expected_sha256:expected,run_id:run,run_attempt:Number(attempt),source_commit:process.env.GITHUB_SHA,queued:false,published:false,uploads:0,model_calls:0,paid:false,tx_hash:null};
+try{
+ if(!process.env.LTZZZ_AGENT_TOKEN)throw Error('LTZZZ_AGENT_TOKEN_missing');const headers={Authorization:'Bearer '+process.env.LTZZZ_AGENT_TOKEN};
+ const priorHttp=await fetch(base+'/queue/status?sha256='+expected,{headers,redirect:'error',signal:AbortSignal.timeout(30000)});const prior=await priorHttp.json();if(!priorHttp.ok||!prior.ok)throw Error('existing_publication_status_unavailable');
+ if(prior.receipt?.state==='source_normalized_not_for_publication'){
+  receipt.video_sha256=prior.receipt.normalized_sha256;
+  const normalizedHttp=await fetch(base+'/queue/status?sha256='+receipt.video_sha256,{headers,redirect:'error',signal:AbortSignal.timeout(30000)}),normalized=await normalizedHttp.json();
+  if(!normalizedHttp.ok||!normalized.ok)throw Error('normalized_publication_status_unavailable');
+  if(normalized.receipt){
+   receipt.publication_state=normalized.receipt.state||null;receipt.video_id=normalized.receipt.video_id||null;
+   if(receipt.video_id){const checked=await fetch('https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/verify?video_id='+encodeURIComponent(receipt.video_id),{redirect:'error',signal:AbortSignal.timeout(30000)}),v=await checked.json();receipt.published=checked.ok&&v.video_id===receipt.video_id&&v.published===true&&v.channel_id==='UCnKqseQ7uivSc7FN38ccRUA'&&v.privacyStatus==='public'&&v.uploadStatus==='processed';}
+   receipt.status=receipt.published?'normalized_video_already_public_verified':'normalized_publication_started_reconcile_only';
+   throw Object.assign(new Error('normalized_publication_already_started'),{reconciled:true});
+  }
+  const checked=await fetch(base+'/queue/item?name='+name,{headers,redirect:'error',signal:AbortSignal.timeout(30000)}),q=await checked.json();receipt.queued=checked.ok&&q.ok&&q.queued===true&&q.video_sha256===receipt.video_sha256;
+  receipt.status=receipt.queued?'normalized_video_already_ready':'normalization_existing_reconcile_only';if(!receipt.queued)throw Error('normalization_requires_reconciliation');throw Object.assign(new Error('normalization_already_started'),{reconciled:true});
+ }
+
+ if(prior.receipt){receipt.status='existing_publication_reconcile_only_no_metadata_write';receipt.publication_state=prior.receipt.state||null;receipt.video_id=prior.receipt.video_id||null;if(receipt.video_id){const v=await fetch('https://ltzzz-youtube-upload.ltzyz2181.workers.dev/youtube/verify?video_id='+encodeURIComponent(receipt.video_id),{redirect:'error',signal:AbortSignal.timeout(30000)}).then(r=>r.json());receipt.published=v.published===true&&v.channel_id==='UCnKqseQ7uivSc7FN38ccRUA'&&v.privacyStatus==='public'&&v.uploadStatus==='processed';}throw Object.assign(new Error('publication_already_started_do_not_repeat'),{reconciled:true});}
+ const media=await fetch(base+'/queue/asset?name='+name,{headers,redirect:'error',signal:AbortSignal.timeout(30000)});if(!media.ok)throw Error('existing_media_http_'+media.status);
+ const parts=[];let size=0;for await(const part of media.body){size+=part.length;if(size>25*1024*1024)throw Error('existing_media_size');parts.push(part);}let bytes=Buffer.concat(parts),hash=createHash('sha256').update(bytes).digest('hex');receipt.video_sha256=hash;receipt.bytes=bytes.length;if(hash!==expected)throw Error('original_media_hash_changed');
+ const file='/tmp/ltzzz-workbuddy-prepared.mp4';fs.writeFileSync(file,bytes,{mode:0o600});
+ let probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-show_format','-of','json',file],{encoding:'utf8',timeout:30000,stdio:['ignore','pipe','pipe']}));let video=probe.streams?.find(x=>x.codec_type==='video'),audio=probe.streams?.find(x=>x.codec_type==='audio'),duration=Number(probe.format?.duration);
+ receipt.media={width:video?.width,height:video?.height,video_codec:video?.codec_name,audio_codec:audio?.codec_name,duration_seconds:duration};
+ if(!video||!audio||!Number.isFinite(duration)||duration<15||duration>30.5)throw Error('actual_workbuddy_media_specs_invalid');
+ let prepared;
+ if(video.width*16!==video.height*9){
+  const out='/tmp/ltzzz-workbuddy-normalized.mp4';execFileSync('ffmpeg',['-v','error','-y','-i',file,'-map','0:v:0','-map','0:a:0','-vf','scale=720:1280:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1','-c:v','libx264','-preset','veryfast','-crf','18','-pix_fmt','yuv420p','-c:a','copy','-movflags','+faststart',out],{timeout:120000,stdio:['ignore','pipe','pipe']});
+  bytes=fs.readFileSync(out);hash=createHash('sha256').update(bytes).digest('hex');receipt.original_media=receipt.media;receipt.original_sha256=expected;probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_streams','-show_format','-of','json',out],{encoding:'utf8',timeout:30000,stdio:['ignore','pipe','pipe']}));const v=probe.streams.find(x=>x.codec_type==='video'),a=probe.streams.find(x=>x.codec_type==='audio');if(v?.width!==720||v?.height!==1280||a?.codec_name!==audio.codec_name||Math.abs(Number(probe.format.duration)-duration)>0.1)throw Error('normalized_media_specs_invalid');receipt.video_sha256=hash;receipt.bytes=bytes.length;receipt.media={width:v.width,height:v.height,video_codec:v.codec_name,audio_codec:a.codec_name,duration_seconds:Number(probe.format.duration)};receipt.normalization='deterministic_scale_and_pad_no_crop_original_preserved';
+  const form=new FormData();form.set('name',name);form.set('source_sha256',expected);form.set('video',new Blob([bytes],{type:'video/mp4'}),name+'.mp4');prepared=await fetch(base+'/queue/normalize-existing',{method:'POST',headers,body:form,redirect:'error',signal:AbortSignal.timeout(60000)});
+ }else prepared=await fetch(base+'/queue/prepare-existing',{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({name,expected_sha256:hash}),redirect:'error',signal:AbortSignal.timeout(30000)});receipt.prepare_http=prepared.status;const result=await prepared.json();receipt.prepare=result;if(!prepared.ok||!result.ok)throw Error('existing_queue_metadata_not_admitted');
+ const checked=await fetch(base+'/queue/item?name='+name,{headers,redirect:'error',signal:AbortSignal.timeout(30000)});const item=await checked.json();receipt.queue_readback_http=checked.status;receipt.queued=checked.ok&&item.queued===true&&item.video_sha256===hash&&item.bytes===bytes.length;receipt.metadata_checks={video_hash_matches:item.metadata?.video_sha256===hash,bytes_match:item.metadata?.bytes===bytes.length,policy:item.metadata?.publication_policy||null};
+ if(!receipt.queued)throw Error('repaired_queue_readback_failed');receipt.status='ready_for_existing_queue_cron_publication_not_yet_verified';receipt.existing_cron_utc='0 14 * * *';
+}catch(e){if(!e.reconciled){receipt.error=/^[a-zA-Z0-9_]+$/.test(e.message)?e.message:'workbuddy_admission_failed';process.exitCode=1;}}
+finally{fs.mkdirSync('results/publishing',{recursive:true});fs.writeFileSync('results/publishing/workbuddy-existing-admission-'+run+'-'+attempt+'.json',JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt));}

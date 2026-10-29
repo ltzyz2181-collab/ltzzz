@@ -1,8 +1,6 @@
 # YouTube automatic publication — 2026-10-13
 
-> Current recovery: [youtube-recovery-current.json](../../results/publishing/youtube-recovery-current.json). The original task remains open. On 2026-10-26 UTC, a fresh public status read returned `GOOGLE_OAUTH_INVALID_GRANT`, `connected=false`, `reauth_required=true` for the expected LTZZZ channel. This is Google reauthorization required, not successful reconnection or publication.
->
-> Owner action: open https://ltzzz-youtube-upload.ltzyz2181.workers.dev/auth/youtube and complete Google authorization for LTZZZ. No passwords, verification codes, tokens or private account material belong in chat or receipts.
+> Current readback: expected LTZZZ channel OAuth is connected. Owner-requested deletion of `6FZYG2_TLzE` succeeded in Actions run `40813717899`, attempt 1, source `f220c07df626f2d5ee93c4b615b35c12d64f7a4e`: Google DELETE 204 plus a fresh absent readback. Proof: `results/publishing/youtube-removal-40813717899-1.json`. The earlier OAuth and edge-runtime failures remain in their original receipts; they are not the current deletion state.
 >
 > Controller sequence: confirm current channel/authentication, reconcile existing day/hash receipts, run one existing workflow acceptance with a fresh public/processed/channel-matched verification, then observe one later `event=schedule` run. Preserve the original failure. Do not enable a second publishing cron or treat a manual rerun as scheduled acceptance. `localhost:8093` in another sandbox is not a persistent video source.
 >
@@ -13,3 +11,19 @@ Owner: GPT integration; Doubao supplies future polished video artifacts; DeepSee
 Claude: all paid external execution stopped. Free-only discussion via Hub manual conversation; do not use paid Anthropic API or restore signing seat.
 
 Wallet: new Base treasury exists and is controlled by Worker signer, but last verified funds zero. Safe withdrawal needs actual threshold signatures; old Aave vault withdrawal needs its guardian signing channel. No claim of executed migration without transaction hashes.
+
+## Owner-requested removal and template-repeat correction
+
+Owner explicitly requested removal of Shorts `6FZYG2_TLzE` (expected LTZZZ channel `UCnKqseQ7uivSc7FN38ccRUA`); original publication remains recorded in `results/publishing/youtube-daily-2026-10-28.json`. Operation card: `YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json` in this directory. Only that video is authorized by this operation; historical receipts are not rewritten as if it never existed.
+
+The authenticated exact-target removal checked the Google channel and recorded DELETE 204 with fresh absent readback. A source patch, queued job or HTTP 200 alone is not deletion proof. Actual outcome belongs in `results/publishing/youtube-removal-<run>-<attempt>.json`. Original asset bytes are blocked from re-upload by hash.
+
+The existing daily workflow now requires a fresh prepared asset. It skips without one, records the blocker and no longer renders another generic ANS-template video as fallback. The original single cron remains; no second publisher/schedule is introduced. Prepared media whose bytes were already used is rejected even under a new date/name.
+
+WorkBuddy's reported `ltzzz-daily-2026-10-29.mp4` is a media artifact label, not a statement of the user's local date. Publication business dates remain America/Tijuana. The script exists in Git. The share page was unreadable, but an authenticated R2 read later located the actual MP4/meta. Run `40814866842` verified the original hash and measured 768×1344, 15.083333 seconds, H.264 plus AAC; admission stopped on aspect ratio before any publication. Do not substitute the old renderer, label the new media published, or claim native DeepSeek/Kimi review without executor evidence.
+
+Manus handoff remains separate from production acceptance. Latest inspected `results/publishing/manus-dispatch/2026-10-28.json` records `blocked_manus_api_not_configured`, remote_task_created=false and publication_verified=false. A share URL/local file or written inbox card cannot stand in for a Manus task ID and platform permalink.
+
+The follow-up normalizes this exact source to 720×1280 with scale and padding, preserves the complete frame/AI label and copies AAC audio. Original MP4 and JSON are kept in R2. The original content hash is reserved before replacement to prevent a concurrent cron from publishing it; queue byte and metadata replacements use ETag checks. No AI rendering, `queue/run`, second cron, or Manus task is triggered. Admission still requires an actual deploy receipt and queue readback; automatic publication requires a later genuine cron and public/processed/channel-matched Google readback.
+
+Actual admission completed: run `40816131578`, attempt 1, source `e3ccc01c1f0efd3fdae1a47df7c01ed98e7c7694`, deployed successfully and returned queued=true via authenticated byte/hash/metadata readback. New SHA256 `b8efbd68883c5ba31a1c3a7dc8ae8cca3262a7c7c9f91337cf3f1e68721ed19b`, 2,336,889 bytes, 720×1280, 15.083333 seconds, H.264/AAC. Original preserved=true. Proof: `results/publishing/workbuddy-existing-admission-40816131578-1.json`, pinned in commit `6ea2db97909ce5de5ebb6072e82bf3c51b6a86e7`. Uploads=0, model_calls=0, published=false. Existing queue cron `0 14 * * *` UTC remains responsible; its next actual run and Google readback have not yet been observed. Later deploy reruns reconcile the normalized content receipt even after queue archival; they do not render or upload again.
