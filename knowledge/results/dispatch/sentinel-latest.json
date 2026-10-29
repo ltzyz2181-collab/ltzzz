@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-28T21:36:41.945Z",
+  "at": "2026-10-29T01:32:54.858Z",
   "date": "2026-10-29",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -103,27 +103,50 @@
       "claim_verified": false
     },
     {
+      "id": "ANS-2026-10-29-doubao",
+      "date": "2026-10-29",
+      "issuer": "gpt",
+      "assigned_to": "doubao",
+      "phase": "independent_draft_review_completed",
+      "due_at": "2026-10-29T03:00:00+08:00",
+      "evidence": [
+        "knowledge/results/ans-cycle/2026-10-29.json",
+        "knowledge/results/ans-cycle/2026-10-29-worker.json",
+        "knowledge/results/ans-cycle/2026-10-29-reviewer.json"
+      ],
+      "independent_review_verified": true,
+      "draft_accepted": true,
+      "deployed": false,
+      "actual_provider": "Doubao",
+      "instruction": "独立草稿审核及远端回读已完成；拒绝不等于生产完成，作者修复仍按原工作单跟进。",
+      "issue": "independent_draft_review_completed",
+      "overdue": false,
+      "status": "evidence_present_scope_limited",
+      "file": "knowledge/results/ans-cycle/2026-10-29.json",
+      "claim_verified": false
+    },
+    {
       "id": "REAL-HIRE-20261029-CLAUDE-01",
       "date": "2026-10-29",
       "issuer": "claude",
       "assigned_to": "gpt",
-      "phase": "blocked_reconcile_existing_attempt",
+      "phase": "hire_receipt_present_scope_limited",
       "due_at": "2026-10-29T12:00:00+08:00",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261029.json"
       ],
       "instruction": "跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。",
-      "issue": "blocked_reconcile_existing_attempt",
+      "issue": "hire_receipt_present_scope_limited",
       "overdue": false,
-      "status": "not_due",
+      "status": "evidence_present_scope_limited",
       "file": "knowledge/results/claude-team/real-hire-20261029.json",
       "claim_verified": false
     }
   ],
   "overdue_count": 0,
-  "deadline_unverified_count": 6,
+  "deadline_unverified_count": 7,
   "claim_verified": false,
-  "run_id": "40773348472",
+  "run_id": "40801057753",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -137,7 +160,7 @@
       "item": "AI雇AI回执(T1)",
       "state": "OK",
       "evidence": "knowledge/results/hire / knowledge/results/claude-team",
-      "note": "knowledge/results/claude-team/real-hire-20261029.json:waiting_same_day_ANS_assignment;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
+      "note": "knowledge/results/claude-team/real-hire-20261029.json:internal_engineering_artifact_accepted;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
     },
     {
       "item": "投资观察回执(T2)",
@@ -167,13 +190,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "72 个原任务/72 条警告；验证认领 24、提交 23、独立审核 16、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "72 个原任务/72 条警告；验证认领 24、提交 23、独立审核 17、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
       "state": "OK",
       "evidence": "ops/dispatch/",
-      "note": "DAILY-2026-10-29-qianwen:awaiting_agent_ack；CONTROL-2026-10-29-deepseek:not_due；CONTROL-2026-10-29-doubao:not_due；CONTROL-REVIEW-2026-10-29:not_due；DAILY-2026-10-29-claude:delivery_channel_reference_not_completion；REAL-HIRE-20261029-CLAUDE-01:not_due"
+      "note": "DAILY-2026-10-29-qianwen:awaiting_agent_ack；CONTROL-2026-10-29-deepseek:not_due；CONTROL-2026-10-29-doubao:not_due；CONTROL-REVIEW-2026-10-29:not_due；DAILY-2026-10-29-claude:delivery_channel_reference_not_completion；ANS-2026-10-29-doubao:evidence_present_scope_limited；REAL-HIRE-20261029-CLAUDE-01:evidence_present_scope_limited"
     }
   ],
   "business_alerts": [
@@ -186,6 +209,6 @@
       "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/40773348472-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/40801057753-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
