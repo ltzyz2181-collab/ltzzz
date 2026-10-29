@@ -2,10 +2,10 @@ name: Deploy YouTube uploader retaining OAuth
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['youtube-upload-worker.js', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
+    paths: ['youtube-upload-worker.js', 'youtube-owner-removal.mjs', 'scripts/remove-owner-youtube-video.mjs', 'ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json', 'scripts/tests/youtube-owner-removal.test.mjs', 'scripts/tests/youtube-removal-edge.test.mjs', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
   push:
     branches: [main]
-    paths: ['youtube-upload-worker.js', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
+    paths: ['youtube-upload-worker.js', 'youtube-owner-removal.mjs', 'scripts/remove-owner-youtube-video.mjs', 'ops/dispatch/YOUTUBE-AUTOMATION-20261013-REMOVE-6FZYG2_TLzE.json', 'scripts/tests/youtube-owner-removal.test.mjs', 'scripts/tests/youtube-removal-edge.test.mjs', 'wrangler.youtube-upload.toml', 'scripts/tests/youtube-auth-status.test.mjs', 'scripts/tests/video-scheduler.test.mjs', '.github/workflows/deploy-youtube-uploader.yml']
 permissions: {contents: read}
 concurrency: {group: youtube-uploader-deploy, cancel-in-progress: false}
 jobs:
@@ -17,7 +17,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --check youtube-upload-worker.js
-      - run: node --test scripts/tests/youtube-auth-status.test.mjs scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs
+      - run: node --test scripts/tests/youtube-auth-status.test.mjs scripts/tests/video-scheduler.test.mjs scripts/tests/video-queue-client.test.mjs scripts/tests/video-queue-only.test.mjs scripts/tests/youtube-owner-removal.test.mjs scripts/tests/prepared-video-policy.test.mjs
+      - name: Install pinned isolated Worker runtime harness without project lifecycle scripts
+        run: npm install --prefix /tmp/ltzzz-youtube-edge --ignore-scripts --no-audit --no-fund miniflare@4.20251008.0
+      - name: Exercise removal through actual workerd with synthetic Google responses
+        env:
+          MINIFLARE_MODULE: /tmp/ltzzz-youtube-edge/node_modules/miniflare/dist/src/index.js
+        run: node --test scripts/tests/youtube-removal-edge.test.mjs
   deploy:
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -44,7 +50,7 @@ jobs:
           let h;
           for(let n=0;n<24;n++){
             h=await fetch(base+'/health').then(r=>r.json());
-            if(h.auth_readiness)break;
+            if(h.auth_readiness&&h.owner_removal)break;
             await new Promise(resolve=>setTimeout(resolve,5000));
           }
           const denied=await fetch(base+'/youtube/publication?key=configuration-check');
@@ -56,13 +62,19 @@ jobs:
           fs.mkdirSync('results/publishing',{recursive:true});
           fs.writeFileSync('results/publishing/youtube-auth-readiness-'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(receipt,null,2)+'\n');
           console.log(JSON.stringify(receipt));
-          if(denied.status!==401||!authed.ok||!publication.ok||!h.auth_readiness||typeof s.connected!=='boolean'||(s.credential_present&&typeof s.reauth_required!=='boolean'))process.exitCode=1;
+          if(denied.status!==401||!authed.ok||!publication.ok||!h.auth_readiness||!h.owner_removal||typeof s.connected!=='boolean'||(s.credential_present&&typeof s.reauth_required!=='boolean'))process.exitCode=1;
           JS
+      - name: Remove only the owner-requested video and reconcile the prepared WorkBuddy queue
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/remove-owner-youtube-video.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: youtube-auth-readiness-${{ github.run_id }}
-          path: results/publishing/youtube-auth-readiness-*.json
+          path: |
+            results/publishing/youtube-auth-readiness-*.json
+            results/publishing/youtube-removal-*.json
           retention-days: 14
       - name: Archive actual authentication readiness
         if: always()
@@ -72,6 +84,8 @@ jobs:
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
           git add -- "$file"
+          removal="results/publishing/youtube-removal-${{ github.run_id }}-${{ github.run_attempt }}.json"
+          if test -f "$removal"; then git add -- "$removal"; fi
           if git diff --staged --quiet; then exit 0; fi
           git commit -m 'Record actual YouTube OAuth readiness without uploading'
           for attempt in 1 2 3 4; do
