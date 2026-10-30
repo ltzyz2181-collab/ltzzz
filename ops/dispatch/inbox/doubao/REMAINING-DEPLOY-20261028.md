@@ -72,3 +72,28 @@ GPT 正在原步骤修订格式检查、去掉无关 ListUsers 权限依赖、�
 长期方向：账本、幂等预留与并发协调评估迁到具备事务和唯一约束的受管数据库；私钥保管独立设计，不把明文私钥作为普通数据库字段，也不把普通加密存储描述为不可导出。若选 KMS/密钥托管，先核实实际算法兼容、生成和读取权限，再按确切代码审计。现有 NAS 在迁移与回滚验证前保留，本条不创建计费数据库或改算法/信任根。
 
 GPT 当前环境已重新读取安全配置：无云 outbound identity、Secret 或 runtime variable，没有直接火山写通道；现有 GitHub Actions 探针仅允许四项读操作，本次未新增写入口。因此这是一份已写入原卡的接力和来源记录，不是豆包已接单、自动唤醒或挂载成功；A2/A3/B、付款与正式五签保持原状态。
+
+## 当前 owner 授权：先验证 NAS 开白，完成本次默认关闭部署
+
+记录时间：2026-10-30T03:14:29Z。owner 当前原话：“先验证本次开白。让我把现在的部署完成，完成这一步先，可以先让豆包部署吗，你给豆包发任务我转给他。”
+
+本节更新上节“不新增代码部署许可”的旧范围：**现在授权原火山执行端使用已有资源完成 NAS 配置、上传确切已审源码并发布默认关闭的签名服务**，不用等待数据库选型，不要求 owner 再次上传 ZIP 或确认同一动作。这是 owner 的部署授权，不冒称 Claude 已批准部署；不是 A2/A3/B、资金、信任登记或正式五签的启用授权。本卡已写入不等于豆包已接单；由 owner 转交后，实际执行端沿原租约认领并回接单。
+
+### 固定交付输入（GPT 本轮已实做）
+
+- 源码提交：`768c51d42715ffc33af18d91d4bd49c97ee5f41d`；从此固定提交构建，不能用滚动 main 或桌面旧 ZIP 代替。
+- 已比较完整 25 个 Git 源文件及构建器：全部与 Claude 已审基准 `f115af017e021b34dab8d7ffa10e70929f5498cc` 的 Git blob 相同，不只是三份运行时文件。构建补入固定 bootstrap/package 后，清单共 28 项。
+- 本轮在独立干净 worktree 运行 `node scripts/build-volc-signer-release.mjs /tmp/ltzzz-volc-nas-20261030-fixed-bundle`，所得 `source_sha256=fa671aeca066e3ffb4eee6be9edf2eb3f6aab85cd4f957ab9f020244e8a64b6e`。该目录只在 GPT 环境，不假称豆包可直接访问；豆包从上述 Git 提交重建到自己的新目录。
+- 五份现有测试文件本轮实际复跑 **61/61 通过、0 失败、0 跳过**；原 TAP SHA256 `f5ba128b345582972860b7a4fabcadf4b52dd633db2ed767c910932b4eef2ba3`。这是本地合成测试，不是 NAS/重启或模型验收；没有生成私钥、没有模型调用。
+
+### 交豆包的执行顺序
+
+1. **认领与目标**：沿原 `PLAN-PATCHGATE-ESCROW-20261023 / SPLIT-SIGNER-INFRA-20261026` 查询现有租约和回执，确认无其他执行端在发布。回读账号 `2131926778`、北京区域、函数 `jt247vfx / ltzzz-signer-volc-attest` 及自己的实际云角色标识；不换账号，不索取/复制任何凭据。
+2. **验证开白**：刷新原函数控制台，再保存已有 NAS、挂载点和 VPC 配置。原 NAS `ltzzz-signer-nas / enas-cnbjd0cc4e306ea6c4`、挂载点 `ltzzz-signer-mnt`、远端 `/`、本地 `/mnt/nas`；ID/名称先从控制台核对，报告不能替代实测。保留保存结果与 request/log ID；错误则准确回报原工单，不重复建资源、不删 NAS/账本/密钥。区分“已保存待发布”与“生效版本已启用挂载”。
+3. **重建并发布**：从固定 Git 提交生成全新闭包，逐项核对 28 项清单和上述摘要；ZIP 根目录必须直接含构建器生成的 `index.js`、`package.json`、`modules/`，不套额外文件夹。记录原可回滚 revision，上传到原函数并发布，让 NAS 配置同时生效。使用 `SIGNER_STORE_DIR=/mnt/nas/ltzzz-signer` 子目录；`SIGNER_SOURCE_COMMIT` 和 `SIGNER_SOURCE_SHA256` 绑定本次确切提交/摘要，账号与部署证据绑定来自真实控制面，不能手填假证据。保持 `NATIVE_ATTESTATION_ENABLED=false`；已有 Secret 沿原受管方式使用，不读回/输出值，不把私钥带入桌面或 GitHub。
+4. **读回已部署实物**：核对发布 revision、实际源码包/清单、实际 NFS/NFS4 挂载、目录属主 UID/GID/权限和可读取/发布/调试主体；只存公开标识、权限引用与哈希，不下载私钥。环境变量里写了正确摘要不算源码验证，NasStorage.EnableNas=true 不独自证明运行时共享挂载。使用官方诊断能力或现有已审认证挑战取得运行时证据，不临时往控制台补未审诊断代码。
+5. **入口和挑战**：复用已有网关/路由，先验证 `GET /health` 返回已审响应（ready=false、signing_enabled=false），不再出现旧 `/tmp` 版本字段。健康 200 只记入口可用。若现有受信 OIDC 调用方具备能力，再用 fresh nonce 做两次签名挑战，中间受控重启/发布同一源码，要求不同 `instance_boot_id`、同一公钥/SPKI、签名有效及源码/账号绑定匹配；由云运行时保管/必要时首次生成软件密钥，不能替换已有钥或把首次生成说成重启通过。
+6. **分段交付，不卡住已完成部分**：当前 `deploy-signer-volc.yml` 仍是只读流程且没有 `id-token: write`；不要把它当自动部署/挑战入口，也不能用 IAM/Ark Key 代替 GitHub OIDC。如果挑战调用方尚不可用，准确写 `restart_challenge_verified=false` 与具体通道缺项，照实交付已完成的开白、挂载配置、源码发布与入口证据。不得为消除这个阻塞开放匿名挑战、降低鉴权或伪造签名。原生豆包模型调用/签名属于后续受控验收，本轮不为“部署完成”打开模型签名开关。
+7. **原单回执并回读**：沿现有 `knowledge/results/patchgate/split-signers/volc-closeout-20261029/` 提交一个清晰部署回执（PR，禁止直接覆盖无关 main 文件），记录实际 UTC、操作者/云角色、source_commit、清单摘要、账号/区域/函数、旧/新 revision、NAS 生效与实测结果、去敏 URL、工具 request/run/attempt 和各阶段真实状态。非 Actions 操作的 run_id/run_attempt 取不到就填 null，不能编造。网址去 userinfo/query/fragment，非标准路径/不明域名不公开；不要把旧 voiceapi.com 报告改写成另一个地址去调用。`paid=false, tx_hash=null` 仅表示无链上付款，现有云资源仍计费。没有完成挂载/挑战就保留各自未验收状态，不能一概写“上线成功”。
+
+本轮先完成现有资源上的默认关闭部署；不新建数据库或另一套 NAS/网关，不新增付费 cron，不改预算/算法/信任根，不登记生产公钥，不启用 A2/A3/B、付款或正式五签。长期数据库迁移后置，不让它阻塞上述已有部署步骤。
