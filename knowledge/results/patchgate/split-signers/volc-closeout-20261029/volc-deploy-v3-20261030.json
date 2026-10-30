@@ -54,8 +54,20 @@
     "gateway_url": "https://sfvi0b8oule5k2u0shhcs.apigateway-cn-beijing.voiceapi.com/health",
     "attempt_local_chrome": "ERR_SSL_UNRECOGNIZED_NAME_ALERT (egress/SNI interception)",
     "attempt_in_instance_curl": "HTTP:000 (no route / egress)",
-    "status": "not confirmed",
-    "note": "入口回读未完成：不能记为'入口已通'，更不能记为'全部就绪'。"
+    "status": "gateway_route_not_confirmed; function-level /health verified",
+    "function_level_test": {
+      "method": "VeFaaS 开发调试（函数测试）模拟 APIG 事件 path=/health method=GET",
+      "result": "测试成功（CPU 109ms / 内存 68.75 MiB / 执行 175ms）",
+      "response": {
+        "service": "ltzzz-signer-volc-attest",
+        "ready": false,
+        "signing_enabled": false,
+        "model_calls": 0,
+        "status": "readiness_requires_authenticated_challenge_and_independent_cloud_evidence"
+      },
+      "interpretation": "V3 闭包真实运行；/health 返回与已审版一致（fail-closed，不谎报就绪，signing_enabled=false，model_calls=0）。网关外部路由回读仍受出口限制未确认。"
+    },
+    "note": "网关入口回读未完成：不能记为'入口已通'，更不能记为'全部就绪'；函数级 /health 逻辑已通过线上实例测试核验。"
   },
   "restart_challenge": {
     "verified": false,
