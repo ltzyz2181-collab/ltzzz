@@ -1,0 +1,28 @@
+{
+  "accepted": true,
+  "artifact_sha256": "661de57eec8415dedc4eaff77c34d14481c2694f08b72d8ef306088cfa0e025c",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 的席位循环确实直接调用 recoverArtifact(root,record,agent,seat) 且未使用其布尔返回值。",
+    "recoverArtifact 的实现可复核：仅处理 generation_started 或 generation_unknown_no_repurchase、无 artifact、有 assignment 且 claim_verified 为 true 的席位；扫描 artifacts 目录后，只有唯一候选通过 validateArtifact 时才写入 seat.artifact、将状态改为 generated_pending_sync、保存 ledger 并返回 true；无目录、无候选、多候选或校验失败均返回 false。",
+    "syncDailyBoard 在调用 recoverArtifact 后，先处理失败席位，再无条件检查 seat.status === 'generation_started'，并将其改写为 generation_unknown_no_repurchase。因此，当轮 recoverArtifact 返回 false 且状态仍为 generation_started 时，确实会进入该降级分支。",
+    "finding 中“恢复成功后仍继续执行后续无条件降级逻辑”的表述需要限定：若 recoverArtifact 当轮成功，seat.status 已变为 generated_pending_sync，不会再落入 generation_started 降级；但调用方忽略返回值，缺少基于恢复结果的显式分支和 continue，问题分析的核心成立。",
+    "finding 中“ledger 中已有唯一完整 artifact 的崩溃恢复场景可能丢失可恢复状态”也需限定为：artifact 文件已存在但当轮 recoverArtifact 未识别或未成功恢复时，generation_started 席位会被同轮标记为 generation_unknown_no_repurchase。若唯一完整 artifact 当轮通过 validateArtifact，则不会被该降级分支覆盖。",
+    "minimal_patch 使用 const recovered = recoverArtifact(...) 捕获结果，并在 recovered 为 true 且状态为 generated_pending_sync 时设置 sync_reason、保存并 continue，可使成功恢复路径显式跳过同轮后续逻辑。recoverArtifact 成功时内部已经保存一次，补丁中的 saveLedger 冗余但不改变状态语义。",
+    "补丁在 recovered === false 且 seat.status 仍为 generation_started 时设置 generation_unknown_no_repurchase、保存并 continue，与现有未知结果不重复采购语义一致；该分支不包含 call()、submit_task 或其他模型调用，静态看不会新增采购。",
+    "补丁在恢复成功后 continue，会使该席位当轮不执行 readRemote、submit_task 或 review 回读，而等待后续 syncDailyBoard；这是保守且可复核的调度选择，但交付正文未明确说明这一语义变化。",
+    "verification_commands 提供了语法检查、diff 查看和关键补丁字符串的静态检查入口；remaining_blocker 也明确承认尚未写盘、故障注入或端到端验证，因此本验收对象只能是可复核的问题分析与修复草稿，不是已上线修复。"
+  ],
+  "unverified": [
+    "未在当前审核环境取得该交付物原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。",
+    "未验证 minimal_patch 已写入仓库或工作区；不能声称代码已执行、测试、合并、部署或上线。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs。",
+    "未实际执行 node --check scripts/daily-task-board.mjs。",
+    "未实际执行 git diff，无法确认补丁按当前缩进、分号和代码风格能否干净应用。",
+    "未运行自动化单元测试，尚未覆盖 recoverArtifact 的成功、无目录、无候选、多候选、损坏文件、哈希不匹配、run_key/source_commit/task 绑定错误等分支。",
+    "未做 artifact 已写盘但 ledger 未更新的故障注入，无法实证恢复路径与同轮降级路径的实际行为。",
+    "未验证恢复成功后等待下一轮 syncDailyBoard 是否会造成延迟、重复扫描，或与 scripts/daily-task-board.mjs 中 materializeDailyReview、syncDailyReview、第二次 syncDailyBoard 的顺序产生交互问题。",
+    "未验证 generated_pending_sync 后续 readRemote、submit_task、snapshot readback、独立 review、异常落盘和重试的端到端幂等性。",
+    "未验证是否完全不新增模型调用、API 费用、重复采购、资金交易或其他副作用。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本、线上关键行为或真实崩溃恢复结果。"
+  ]
+}
