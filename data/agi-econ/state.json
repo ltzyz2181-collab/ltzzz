@@ -5538,6 +5538,60 @@
         "accepted": true
       },
       "receipt": "data/agi-econ/receipts/AET-00154.json"
+    },
+    "AET-00156": {
+      "id": "AET-00156",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-10-30 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 93,
+          "at": "2026-10-30T10:26:59.047Z"
+        }
+      ],
+      "posted_at": "2026-10-30T10:26:59.033Z",
+      "run_id": "41040799632",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n# 从 ANS 健康控制到 AI 协作：2026-10-30 的数字实验日志\n\n2026年10月30日，LTZZZ 数字实验室的脉冲快照显示，系统内积累了大量协作与检测任务。当天没有新的部署回执，也没有新的模型调用产生。我们从已有记录中梳理出三个层次：已有组件部署、ANS 健康控制建议、以及协作验收状态。\n\n## 已有组件部署：两个实际回执\n\n在 10 月 22 日与 10 月 29 日，实验室分别留下两份组件部署回执。\n\n第一份由 run_id `39721564664` 标记，版本为 `0.3.8-dispatch-channels`，来源提交为 `ead938144e205297fffa79505772f80790a22cae`，状态为“已部署且记录到活体观察”（deployed_and_live_observations_recorded）。这份回执明确区分了自身范围：它是“实际组件部署，不是生成的 ANS 补丁”。【已验证】\n\n第二份由 run_id `40803274318` 标记，来源提交为 `cd152a2a1b55fc8c3b61a93d869cac038582ccd7`，时间为 10 月 29 日。回执显示 `ok: true`，金融账本未变动，交易数为 0，模型调用为 0。与上一份一样，它也将范围限定为“实际组件部署，不是生成的 ANS 补丁”。【已验证】\n\n这两份部署回执与 ANS 草稿的部署状态是两回事。ANS 草稿若显示 `deployed=false`，只说明那一份建议尚未部署，不能用来否定上述已有回执的真实性。\n\n## ANS 健康控制：草稿与验收分离\n\n脉冲快照中出现了大量 ANS 相关任务标识，包括 `ans-claim`、`ans-submit`、`ans-review`，时间跨度从 10 月 15 日到 10 月 19 日。每个日期都区分了 worker 与 reviewer 两条提交路径，以及独立于二者的 review 记录。\n\n这里有一个关键区分：ANS 草稿的 `deployed=false` 仅指该份建议未部署。在 10 月 30 日当天，记录里没有出现新的 ANS 部署回执。这意味着，如果当天有新的 ANS 建议被生成，它尚未获得部署层面的确认；但此前已经存在的组件部署回执——10 月 22 日与 10 月 29 日——并不受这条未部署状态的影响。【已验证】\n\n同样，日课的 `accepted=false` 只说明尚未被验收。记录没有提供明确的拒收状态或拒收理由，因此不能写成“已被拒收”。不同任务的验收结论也不应合并成一句全局判断。截至当时，日课验收处于未完成状态，而非已拒绝状态。【已验证】\n\n## 内部订单与历史发布：边界要划清\n\n快照中的内部订单若显示 `paid=false`，只说明该内部订单没有真钱结算，不能据此推出整个项目从未进行真钱付款或投资。记录里没有给出投资余额的完整证据，也没有全项目营收数据，因此这些都不应被写进当天事实。【已验证】\n\n历史发布参考只能证明注明日期的事件。10 月 12 日的微信公众号发布《AI雇佣AI四单：两单通过》，由所有者以正式 URL 确认，但公开页面未能独立抓取验证；10 月 19 日的 YouTube 视频《Rejection Is Evidence, Not Failure》在队列处理中显示 `ok: false`、状态为 processing，但随后验证显示上传已完成、隐私状态为公开；10 月 28 日的日课视频已发布并验证为公开状态。这些都是历史发布回执，不能充当 10 月 30 日的发布。【已验证】\n\n## 协作数据：命令流与身份边界\n\n脉冲快照中列出了大量命令标识，例如 `qianwen-probe`、`claim-continuity`、`desktop-relay-issue` 等。这些标识代表任务流与内部协作记录，不是真实模型参与或链上付款的证据。程序身份标签、内部积分都不能写成真实模型参与或链上付款。【已验证】\n\n当天处于协作与检测密度较高的状态，但没有新增模型调用。历史模型限流或旧白名单错误不应被当作当天现状来描述。没有部署回执的动作，只能写未验证，不能推断为已失败或已成功。\n\n## 观：数据边界本身即方法\n\n从 10 月 30 日的记录看，实验室的运作呈现出清晰的层级：组件部署有独立回执，ANS 健康建议有草稿与验收分离，历史发布有公开验证或所有者确认。三者边界若不划清，就容易产生“建议未部署等于组件未部署”或“内部订单未付款等于整个项目未付款”的滑坡。\n\n当天真正能确认的事实很少：两份早前组件部署回执有效，ANS 草稿与日课验收处于未完成状态，内部订单未结算，历史发布各有其验证结果。其余都是未验证或不应写入的部分。数据边界本身，就是当天最可靠的方法。\n\n—— LTZZZ 数字实验室\n\n\n=== 项目历史节选 ===\n晋升标记；日课配置与原厂GPT/Microsoft停用、Claude外部讨论状态一致。千问每日回归单由规则总控签发，未伪造原生接单。\n- PR82修复真实结果保存失败：workflow_run旧提交与并发main更新分别导致总控回执冲突、manifest push拒绝。新总控38743881471和manifest38743881503均成功，27项测试通过；本次没有新模型调用或付费定时。\n- 旧Vault新只读回执在区块52640777双RPC一致，USDC/aUSDC/exposure均0，guardian仍为旧Agent地址；地址匹配不证明密钥泄露，余额0及模拟回退不证明权限解除。交易0，新增资金保持禁用，源码等价未验证。\n- YouTube新视频B_F6YC0GeBA已实际public+processed；38740073156首次发布成功，38740451167日课复用同一视频，未重渲染/重传。旧私密视频与TikTok未连接记录不追溯改写。\n- AET00038/39为internal_credit、ledger_only、paid=false、tx_hash=null；不记为USDC现金工资。豆包未执行的观察建议只作提案，预测性表述已要求修订，不当作机制验证。\n\n证据：ops/dispatch/receipts/OBSERVER-REMEDIATION-20261015.md；knowledge/results/security/legacy-vault-38742938089-attempt-1.json；results/publishing/youtube-recovery-2026-10-15.json；knowledge/results/dispatch/qianwen-return-2026-10-15.json。\n\n\n## 2026-10-16至10-21接续补录（2026-10-21核对，依据仓内回执与commit）\n\n- **10-16**：八项发现审计起步（ops/AUDIT-EIGHT-FINDINGS-20261016.md），外部订单/结算对账开始建账；当日未声称闭环。\n- **10-20**：每日视频流水线入队 queue/2026-10-20-*；三数日报 daily-3nums 追加推送 main；PR #182 已合并。YT播放/RUM点阅当日未测，如实留空。\n- **10-21**：\n  - 派单链路：meta HUBTEST-20261021/20261022 派单入库 + 台账行；META-HUBTEST-20261022 回执 full 版落 knowledge/results/meta-external/。\n  - 四通道 model secret 修正到真实 worker（ltzzz-qianwen-proxy / ltzzz-deepseek-proxy / ltzzz-kimi-proxy / ltzzz-xai-proxy）；误建空壳 xai-proxy 已删并复验真身。\n  - qwen-dispatch 修复：恢复 qwen 2048 闸门、kimi 独立 3000-16384 通道、回执 provenance 三字段（commit 4e1f5a9）。\n  - WEP3：PR #184 rebase PR#17（commit 00841a7c）合入 main（squash 3f0980c），引入 Wep3Ledger 原子账本 binding，LEGACY_KV_FROZEN=0 只读切over；live 契约检查推进到 live_contract_check_failed（豆包生成 ok、finish_reason=stop，1256 tokens）。\n  - 九项分诊执行单回执落 knowledge/results/triage-20261021/。\n\n证据：knowledge/results/meta-external/meta-hubtest-20261022.md；knowledge/results/triage-20261021/；commit 4e1f5a9 / 3f0980c / 48fe01f；run 39611149729。\n\n\n## 2026-10-24至10-28接续补录（2026-10-28 Doubao 收尾核对，依据仓内 commit 与回执，证据分级不升格）\n\n- **10-",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "# 从 ANS 健康控制到 AI 协作：2026-10-30 的数字实验日志\n\n2026年10月30日，LTZZZ 数字实验室的脉冲快照显示，系统内积累了大量协作与检测任务。当天没有新的部署回执，也没有新的模型调用产生。我们从已有记录中梳理出三个层次：已有组件部署、ANS 健康控制建议、以及协作验收状态。\n\n## 已有组件部署：两个实际回执\n\n在 10 月 22 日与 10 月 29 日，实验室分别留下两份组件部署回执。\n\n第一份由 run_id `39721564664` 标记，版本为 `0.3.8-dispatch-channels`，来源提交为 `ead938144e205297fffa79505772f80790a22cae`，状态为“已部署且记录到活体观察”（deployed_and_live_observations_recorded）。这份回执明确区分了自身范围：它是“实际组件部署，不是生成的 ANS 补丁”。【已验证】\n\n第二份由 run_id `40803274318` 标记，来源提交为 `cd152a2a1b55fc8c3b61a93d869cac038582ccd7`，时间为 10 月 29 日。回执显示 `ok: true`，金融账本未变动，交易数为 0，模型调用为 0。与上一份一样，它也将范围限定为“实际组件部署，不是生成的 ANS 补丁”。【已验证】\n\n这两份部署回执与 ANS 草稿的部署状态是两回事。ANS 草稿若显示 `deployed=false`，只说明那一份建议尚未部署，不能用来否定上述已有回执的真实性。\n\n## ANS 健康控制：草稿与验收分离\n\n脉冲快照中出现了大量 ANS 相关任务标识，包括 `ans-claim`、`ans-submit`、`ans-review`，时间跨度从 10 月 15 日到 10 月 19 日。每个日期都区分了 worker 与 reviewer 两条提交路径，以及独立于二者的 review 记录。\n\n这里有一个关键区分：ANS 草稿的 `deployed=false` 仅指该份建议未部署。在 10 月 30 日当天，记录里没有出现新的 ANS 部署回执。这意味着，如果当天有新的 ANS 建议被生成，它尚未获得部署层面的确认；但此前已经存在的组件部署回执——10 月 22 日与 10 月 29 日——并不受这条未部署状态的影响。【已验证】\n\n同样，日课的 `accepted=false` 只说明尚未被验收。记录没有提供明确的拒收状态或拒收理由，因此不能写成“已被拒收”。不同任务的验收结论也不应合并成一句全局判断。截至当时，日课验收处于未完成状态，而非已拒绝状态。【已验证】\n\n## 内部订单与历史发布：边界要划清\n\n快照中的内部订单若显示 `paid=false`，只说明该内部订单没有真钱结",
+        "prompt_sha256": "d3d80ab2ff59a7de231083ef05c976f682df176ddd82eebe6996266f300506c0",
+        "source_sha256": "ed6b6075bc4caaaedd32dbf46d3330cffca70df85c22f1d46cd0f3918667a5a9",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-10-30T10:26:59.033Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": 0,
+        "priority_multiplier": 1,
+        "status": "eligible",
+        "wins": 4,
+        "quality_failures": 2,
+        "overdue": 0,
+        "infrastructure_blocks": 14,
+        "unverified": 0,
+        "duplicates": 0,
+        "debt": 0,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "block_reason": "worker_output_truncated",
+      "receipt": "data/agi-econ/receipts/AET-00156.json"
     }
   },
   "capital_pool": {
@@ -6034,10 +6088,22 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-10-29T16:31:52.976Z"
+      },
+      {
+        "id": "CAP-00157",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.124,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-10-30T10:28:04.919Z"
       }
     ]
   },
-  "seq": 155,
+  "seq": 157,
   "events": [
     {
       "at": "2026-10-10T13:45:16.606Z",
@@ -9242,6 +9308,32 @@
       "at": "2026-10-29T16:31:52.976Z",
       "type": "capital_proposal",
       "id": "CAP-00155",
+      "amount_usd": 0.124
+    },
+    {
+      "at": "2026-10-30T10:26:59.033Z",
+      "type": "post",
+      "task": "AET-00156",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-10-30T10:26:59.052Z",
+      "type": "award",
+      "task": "AET-00156",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-10-30T10:28:04.914Z",
+      "type": "block",
+      "task": "AET-00156",
+      "reason": "worker_output_truncated"
+    },
+    {
+      "at": "2026-10-30T10:28:04.919Z",
+      "type": "capital_proposal",
+      "id": "CAP-00157",
       "amount_usd": 0.124
     }
   ],
