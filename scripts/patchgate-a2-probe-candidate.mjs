@@ -16,7 +16,7 @@ export async function runCandidateProbes({candidateRoot,control}){
  const {canonical,sha256,subjectFor,TASK}=shared,{mergeDocsOnce,signExecutorAttestation,validateA2Request,a2GithubApi}=target;
  const defaults=JSON.parse(fs.readFileSync(path.join(candidateRoot,'config/patchgate-a2.json'))),policy=JSON.parse(fs.readFileSync(path.join(candidateRoot,'config/patch-policy.json')));
  const A='a'.repeat(40),B='b'.repeat(40),C='c'.repeat(40),H='1'.repeat(64),REPO='ltzyz2181-collab/ltzzz',ROOT='/repos/'+REPO;
- const now=Date.now(),providers=['openai',...defaults.required_stage_auditors,'github_actions'];
+ const now=Date.now(),providers=['openai','aliyun_dashscope','volcengine_ark','github_actions'];
  if(providers.length!==4||new Set(providers).size!==4)throw Error('probe_requires_two_distinct_non_author_signers');
  // Fresh process-local fixture keys only, never persisted or enrolled.
  const pairs=providers.map((provider,i)=>({...generateKeyPairSync('ed25519'),provider,id:'probe-key-'+i,executor:'probe-executor-'+i}));
@@ -29,7 +29,7 @@ export async function runCandidateProbes({candidateRoot,control}){
   const author=sign(0,{subject,role:'author'}),checks=sign(3,{subject,role:'checks',passed:true,checker_base_sha:A,checks_sha256:sha256(canonical(checkRuns))});
   const review=i=>sign(i,{subject,role:'review',verdict:'approve',generation_verified:true,metadata_source:'provider_response',model:'probe-model-'+i,finish_reason:'stop',output_sha256:H});
   const rolloutSubject={task_id:TASK,phase:'A2',runtime_bundle_sha256:H};
-  const config={...defaults,enabled:true,base_compare_and_swap_verified:true,production_signing_keys_provisioned:true,runtime_bundle_sha256:H,stage_audits:[1,2].map(i=>sign(i,{subject:rolloutSubject,role:'stage_review',verdict:'approve',artifact_sha256:H,reviewed_source_commit:A}))};
+  const config={...defaults,authorization_mode:'independent_signers',signer_source_binding_required:true,required_stage_auditors:['aliyun_dashscope','volcengine_ark'],required_candidate_review_providers:['aliyun_dashscope','volcengine_ark'],enabled:true,base_compare_and_swap_verified:true,production_signing_keys_provisioned:true,runtime_bundle_sha256:H,stage_audits:[1,2].map(i=>sign(i,{subject:rolloutSubject,role:'stage_review',verdict:'approve',artifact_sha256:H,reviewed_source_commit:A}))};
   const auditMetadata={schema:'ltzzz.external-stage-audit.v1',task_id:TASK,phase:'A2',seat:'claude',verdict:'approve',reviewed_source_commit:A,runtime_bundle_sha256:H};
   const auditBytes=Buffer.from('```json\n'+JSON.stringify(auditMetadata)+'\n```\nFixture PR readback only, not native Claude proof.\n');
   const readback={schema:'ltzzz.external-audit-pr-readback.v1',source:'github_rest_immutable_pr_file',repository:REPO,pr_http_status:200,file_http_status:200,pr_number:244,pr_head_sha:C,pr_url:'https://github.com/'+REPO+'/pull/244',submitter_login:'fixture-audit-submitter',submitter_id:'42',artifact:{path:'knowledge/results/patchgate/a2-probe-fixture-audit.md',blob_sha:createHash('sha1').update(Buffer.from('blob '+auditBytes.length+'\0')).update(auditBytes).digest('hex'),sha256:sha256(auditBytes)},body_base64:auditBytes.toString('base64'),fetched_at_utc:new Date(now).toISOString(),reviewed_source_commit:A,reviewed_bundle_sha256:H,reviewed_bundle_verification:'trusted_base_fixed_manifest',native_authorship_verified:false};
