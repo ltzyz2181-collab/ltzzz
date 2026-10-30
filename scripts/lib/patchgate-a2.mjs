@@ -1,7 +1,8 @@
 // A2 draft. This module is loaded only from an audited main commit, never PR code.
 import {createPrivateKey, createPublicKey, createHash, sign} from 'node:crypto';
-import {authenticate, canonical, evaluate, sha256, subjectFor, TASK, validateTrust} from './patchgate.mjs';
+import {authenticate, canonical, evaluate, sha256, subjectFor, TASK, validateTrust,classify,scanDiff} from './patchgate.mjs';
 import {DOCS_BASE_STRATEGY,A2_STOP_REF,prepareDocsReadback,verifyDocsMerge,validDocsReadback} from './patchgate-a2-readback.mjs';
+import {CONTROLLER_MODE,controllerDecisionMatches,controllerDecisionEvidence} from './controller-decision.mjs';
 
 export const REPOSITORY='ltzyz2181-collab/ltzzz';
 const ROOT='/repos/'+REPOSITORY, SHA=/^[a-f0-9]{40}$/, HASH=/^[a-f0-9]{64}$/;
@@ -9,6 +10,11 @@ const ID=/^[A-Z0-9][A-Z0-9_-]{6,80}$/, BRANCH='patchgate-a2-actions/';
 const only=(o,keys)=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
 const actor=a=>a&&typeof a.login==='string'&&!!a.login&&/^\d+$/.test(String(a.id||''));
 export const A2_MODEL_SIGNERS=Object.freeze(['aliyun_dashscope','volcengine_ark']);
+export const controllerMode=config=>config?.authorization_mode===CONTROLLER_MODE;
+export function controllerMergeSubject({subject,runnerSha,runtimeBundleSha256,prNumber,runId,checkRuns}){
+  return {task_id:TASK,scope:'A2_L0_docs_controller',source_main_sha:runnerSha,pr_number:prNumber,head_sha:subject.head_sha,
+    subject_sha256:sha256(canonical(subject)),checks_sha256:sha256(canonical(checkRuns)),runtime_bundle_sha256:runtimeBundleSha256,run_id:runId};
+}
 const CLAUDE_CHANNEL=Object.freeze({kind:'repository_pr_advisory',required_before_rollout:false,signing_provider:'github_actions',proof_role:'external_audit_readback',native_authorship_verified:false,counts_toward_model_quorum:false,admission_authority:'none_shared_github_login'});
 
 // Advisory integrity helper only. An infrastructure signature proves a hash-bound
@@ -85,11 +91,17 @@ export function notificationActorAllowed({readback,proof,allowlist,authorExecuto
 export function sourceBindingsVerified({registry,trust}){return trust?.source_binding_required===true&&validateExecutorRegistry({registry,trust})&&trust.keys.some(k=>k.enabled===true);}
 
 export function validateA2Config(config) {
+  const controlled=controllerMode(config),a=config?.controller_authority;
+  if(config?.authorization_mode!==undefined&&!['independent_signers',CONTROLLER_MODE].includes(config.authorization_mode))throw Error('invalid_A2_authorization_mode');
+  if(controlled&&(!only(a,['controller_id','workflow_path','workflow_id','github_actor_ids'])||!['gpt','qianwen'].includes(a.controller_id)
+    ||a.workflow_path!=='.github/workflows/patchgate-a2-execute.yml'||!Number.isSafeInteger(a.workflow_id)||a.workflow_id<1
+    ||!Array.isArray(a.github_actor_ids)||!a.github_actor_ids.length||a.github_actor_ids.some(x=>!Number.isSafeInteger(x)||x<1)
+    ||new Set(a.github_actor_ids).size!==a.github_actor_ids.length))throw Error('registered_A2_controller_authority_required');
   if(config?.schema_version!==1||config.task_id!==TASK||config.phase!=='A2'||config.repository!==REPOSITORY||typeof config.enabled!=='boolean'
-    ||config.signer_source_binding_required!==true||config.stage_review_scope!=='A2_L0_docs_only'
+    ||config.signer_source_binding_required!==!controlled||config.stage_review_scope!=='A2_L0_docs_only'
     ||config.scope!=='ordinary_markdown_only'||canonical(config.allowed_risk_classes)!==canonical(['L0'])||config.merge_method!=='merge'
-    ||canonical(config.required_stage_auditors)!==canonical(A2_MODEL_SIGNERS)
-    ||canonical(config.required_candidate_review_providers)!==canonical(A2_MODEL_SIGNERS)
+    ||canonical(config.required_stage_auditors)!==canonical(controlled?[]:A2_MODEL_SIGNERS)
+    ||canonical(config.required_candidate_review_providers)!==canonical(controlled?[]:A2_MODEL_SIGNERS)
     ||canonical(config.claude_audit_channel)!==canonical(CLAUDE_CHANNEL)||!Array.isArray(config.external_stage_audits)
     ||!Array.isArray(config.notification_actors)||config.notification_actors.some(a=>!actor(a)||typeof a.executor!=='string'||!a.executor)
     ||typeof config.base_compare_and_swap_verified!=='boolean'||!Array.isArray(config.stage_audits)||!Array.isArray(config.required_check_names)||!config.required_check_names.length
@@ -101,8 +113,11 @@ export function validateA2Config(config) {
 
 export function rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now=Date.now()}) {
   validateA2Config(config);
-  if(config.enabled!==true||config.production_signing_keys_provisioned!==true||!sourceBindingsVerified({registry,trust})
-    ||!SHA.test(runnerSha||'')||!HASH.test(runtimeBundleSha256||'')||config.runtime_bundle_sha256!==runtimeBundleSha256)return false;
+  if(config.enabled!==true||!SHA.test(runnerSha||'')||!HASH.test(runtimeBundleSha256||'')||config.runtime_bundle_sha256!==runtimeBundleSha256)return false;
+  // The owner delegates decisions to the existing authenticated main executor.
+  // Per-candidate controller capabilities are still required before any write.
+  if(controllerMode(config))return true;
+  if(config.production_signing_keys_provisioned!==true||!sourceBindingsVerified({registry,trust}))return false;
   // Audit signatures live outside the bundle they authenticate. A source commit
   // is metadata, not a self-referential commit containing its own signature.
   const subject={task_id:TASK,phase:'A2',runtime_bundle_sha256:runtimeBundleSha256};
@@ -189,16 +204,21 @@ async function releaseStop(api,headSha){
   }catch{return false;}
 }
 
-export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations,checkRuns,runnerSha,runtimeBundleSha256,prNumber,runId,now=Date.now()}) {
+export async function mergeDocsOnce({api,config,registry,policy,trust,snapshot,attestations=[],checkRuns,runnerSha,runtimeBundleSha256,prNumber,runId,controllerDecision,now=Date.now()}) {
   // All arguments except PR identity/diff are collected by trusted main code.
   if(!Number.isSafeInteger(prNumber)||prNumber<1||!/^\d+$/.test(runId||''))throw Error('A2_executor_context_required');
   const subject=subjectFor(snapshot),context={number:prNumber,headSha:subject.head_sha,runnerSha};
-  if(subject.base_sha!==runnerSha||!rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now}))return {status:'A2_disabled_or_missing_audited_signers',automatic_merge:false};
-  const evaluation=evaluate({policy,trust,snapshot,attestations,now});
+  if(subject.base_sha!==runnerSha||!rolloutApproved({config,registry,trust,runnerSha,runtimeBundleSha256,now}))return {status:controllerMode(config)?'A2_disabled_or_runtime_not_bound':'A2_disabled_or_missing_audited_signers',automatic_merge:false};
+  const controlled=controllerMode(config),decisionSubject=controllerMergeSubject({subject,runnerSha,runtimeBundleSha256,prNumber,runId,checkRuns});
+  if(controlled&&(!controllerDecisionMatches(controllerDecision,{subject:decisionSubject,now})
+    ||controllerDecisionEvidence(controllerDecision).controller_id!==config.controller_authority.controller_id))return {status:'A2_controller_identity_required',automatic_merge:false};
+  const evaluation=controlled?{validation_passed:scanDiff(policy,snapshot.files).length===0,risk_class:classify(policy,snapshot.files).level,
+    authorization_mode:CONTROLLER_MODE,independent_model_quorum_verified:false}:evaluate({policy,trust,snapshot,attestations,now});
   const proofs=attestations.map(a=>authenticate(a,{trust,subject,role:'review',now,maxAge:policy.max_review_age_seconds})).filter(a=>!!a&&a.executor!==evaluation.author_executor&&a.provider!==evaluation.author_provider&&a.payload.verdict==='approve'&&a.payload.generation_verified===true&&a.payload.metadata_source==='provider_response'&&typeof a.payload.model==='string'&&!!a.payload.model&&['stop','end_turn'].includes(a.payload.finish_reason)&&HASH.test(a.payload.output_sha256||''));
   const boundChecks=attestations.map(a=>authenticate(a,{trust,subject,role:'checks',now,maxAge:policy.max_review_age_seconds})).some(a=>!!a&&a.executor!==evaluation.author_executor&&a.payload.passed===true&&a.payload.checker_base_sha===runnerSha&&a.payload.checks_sha256===sha256(canonical(checkRuns)));
-  if(!boundChecks||!evaluation.validation_passed||evaluation.risk_class!=='L0'||snapshot.files.some(f=>f.mode!=='100644'||!f.path.endsWith('.md'))
-    ||!config.required_candidate_review_providers.every(p=>proofs.some(a=>a.provider===p))||!checksSatisfied({checkRuns,config,headSha:subject.head_sha}))return {status:'A2_admission_blocked',automatic_merge:false,evaluation};
+  if((!controlled&&!boundChecks)||!evaluation.validation_passed||evaluation.risk_class!=='L0'||classify(policy,snapshot.files).modifies_own_checks
+    ||snapshot.files.some(f=>f.mode!=='100644'||f.binary||!f.path.endsWith('.md'))
+    ||(!controlled&&!config.required_candidate_review_providers.every(p=>proofs.some(a=>a.provider===p)))||!checksSatisfied({checkRuns,config,headSha:subject.head_sha}))return {status:'A2_admission_blocked',automatic_merge:false,evaluation};
   await currentPR(api,context);
   const approved=await prepareDocsReadback({api,snapshot,policy});
   // Reserve the global stop latch BEFORE any merge. A crashed runner, unknown
