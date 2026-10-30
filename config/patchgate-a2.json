@@ -2,7 +2,7 @@
   "schema_version": 1,
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "phase": "A2",
-  "enabled": false,
+  "enabled": true,
   "repository": "ltzyz2181-collab/ltzzz",
   "scope": "ordinary_markdown_only",
   "allowed_risk_classes": [
@@ -12,7 +12,7 @@
   "required_stage_auditors": [],
   "required_candidate_review_providers": [],
   "notification_actors": [],
-  "runtime_bundle_sha256": null,
+  "runtime_bundle_sha256": "ae43ad8b9ad1d033e490a55a65e37a5825a14967fc321aaa1de6d5ab9562632b",
   "stage_audits": [],
   "required_check_names": [
     "patchgate-a2-base-checks"
@@ -23,7 +23,7 @@
   "financial_execution": false,
   "production_signing_keys_provisioned": false,
   "limitations": [
-    "Default off; no production Ed25519 key is enrolled by this draft.",
+    "Controller-authenticated L0 Markdown automation enabled; no production Ed25519 key is enrolled or required in this mode.",
     "A0-A3 labels contain L0-L3 risk levels; owner L4 notice means future highest-risk rollout, not a new permissive grade.",
     "No signatures, Claude PR review, or runner live merge acceptance is claimed by configuration.",
     "notificationActorAllowed is an unconsumed future high-risk helper; no L3/A4 notification admission is implemented or activated.",
@@ -32,7 +32,7 @@
     "C2 PR247: base checks require pull_request_target, trusted-main workflow and actual event/base/head/PR marker. No live activation is claimed.",
     "B2 PR248: L0 Markdown only; no atomic expected-base claim. Verify actual merge parents, full before/after tree delta, blob identities and modes. Concurrent non-L0 base changes stop execution.",
     "Owner controller mode: existing authenticated GitHub main executor decides; reviews are advisory, no native model-signature quorum is claimed.",
-    "Still default off. Actual execution workflow registration, fixed source/check binding, controller identity, docs-only scope, durable stop latch and post-merge readback remain required. Financial execution is excluded."
+    "Actual registered workflow/actor, exact runtime and head/check binding, docs-only scope, durable stop latch and post-merge readback remain required. Financial execution, L1+ merge, deployment and rollback are excluded. Live merge acceptance is recorded only after a real run."
   ],
   "base_compare_and_swap_verified": false,
   "claude_audit_channel": {
@@ -57,5 +57,6 @@
     "github_actor_ids": [
       261544579
     ]
-  }
+  },
+  "activation_basis": "owner current session authorizes autonomous patch/merge/deploy/recovery; reviews supervise; formal five-signature governance deferred"
 }
