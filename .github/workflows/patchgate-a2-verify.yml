@@ -1,10 +1,10 @@
 name: PatchGate A2 candidate tests only
 on:
   pull_request:
-    paths: ['config/patch*.json', 'scripts/patchgate*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/patchgate*.test.mjs', '.github/workflows/patchgate-a2-verify.yml']
+    paths: ['config/patch*.json', 'scripts/patchgate*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/patchgate*.test.mjs', 'scripts/lib/controller-decision.mjs', 'scripts/tests/controller-decision.test.mjs', '.github/workflows/patchgate-a2-verify.yml']
   push:
     branches: [main, codex/patchgate-a2-20261025]
-    paths: ['config/patch*.json', 'scripts/patchgate*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/patchgate*.test.mjs', '.github/workflows/patchgate-a2-verify.yml']
+    paths: ['config/patch*.json', 'scripts/patchgate*.mjs', 'scripts/lib/patchgate*.mjs', 'scripts/tests/patchgate*.test.mjs', 'scripts/lib/controller-decision.mjs', 'scripts/tests/controller-decision.test.mjs', '.github/workflows/patchgate-a2-verify.yml']
 permissions: {contents: read}
 concurrency: {group: 'patchgate-a2-verify-${{ github.event.pull_request.number || github.ref }}', cancel-in-progress: false}
 jobs:
@@ -20,4 +20,4 @@ jobs:
         run: |
           node --check scripts/lib/patchgate-a2.mjs
           node --check scripts/patchgate-a2-preflight.mjs
-          node --test scripts/tests/patchgate*.test.mjs
+          node --test scripts/tests/patchgate*.test.mjs scripts/tests/controller-decision.test.mjs

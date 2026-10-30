@@ -1,6 +1,6 @@
 // Deterministic lifecycle, no keys, network, approvals by identity or transfer code.
 import {canonical,sha256} from './patchgate.mjs';
-import {paymentPolicyDigest, paymentActivationSubject, PAYMENT_COOLDOWN_MS, PAYMENT_PROMOTION_COUNT} from './small-payment-authorization.mjs';
+import {paymentPolicyDigest, paymentActivationSubject, PAYMENT_COOLDOWN_MS, PAYMENT_PROMOTION_COUNT,controllerPaymentMode} from './small-payment-authorization.mjs';
 const H = /^[a-f0-9]{64}$/, SHA = /^[a-f0-9]{40}$/;
 export const PAYMENT_REPOSITORY = 'ltzyz2181-collab/ltzzz';
 export const activationPath = digest => 'knowledge/results/payments/activation/' + digest + '.json';
@@ -52,7 +52,7 @@ export function activationRecord({policy, release_sha256, authority, command, ev
   return {schema: 'ltzzz.small-payment.public-activation.v1',
     subject: paymentActivationSubject({policy, release_sha256, authority, command}), command,
     authorized_at_utc: new Date(now).toISOString(), minimum_cooldown_ms: PAYMENT_COOLDOWN_MS,
-    evidence: {reviews: structuredClone(evidence.reviews)}};
+    evidence: controllerPaymentMode(authority)?{controller_decision:structuredClone(evidence.controller_decision)}:{reviews: structuredClone(evidence.reviews)}};
 }
 
 export function publicActivationReadback(publication, readback, expectedBytes) {

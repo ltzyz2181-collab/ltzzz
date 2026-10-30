@@ -7,7 +7,7 @@ on:
         required: true
         type: string
   pull_request:
-    paths: [scripts/lib/patchgate-a2-executor.mjs,scripts/patchgate-a2-execute.mjs,scripts/tests/patchgate-a2-executor.test.mjs,.github/workflows/patchgate-a2-execute.yml]
+    paths: [scripts/lib/patchgate-a2-executor.mjs,scripts/lib/controller-decision.mjs,scripts/patchgate-a2-execute.mjs,scripts/tests/patchgate-a2-executor.test.mjs,scripts/tests/controller-decision.test.mjs,.github/workflows/patchgate-a2-execute.yml]
 permissions: {contents: read}
 concurrency: {group: 'patchgate-a2-executor-${{ github.event_name }}-${{ github.ref }}', cancel-in-progress: false}
 jobs:
@@ -19,7 +19,7 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/patchgate*.test.mjs
+      - run: node --test scripts/tests/patchgate*.test.mjs scripts/tests/controller-decision.test.mjs
   gate:
     needs: verify
     if: github.repository == 'ltzyz2181-collab/ltzzz' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - id: gate
-        name: Read only fixed main policy, stage audit and actual executor registration
+        name: Read fixed main policy, runtime binding and actual executor registration
         env:
           PATCHGATE_A2_REQUEST: ${{ inputs.request }}
         run: node scripts/patchgate-a2-execute.mjs gate "$RUNNER_TEMP/patchgate-a2-gate.json"

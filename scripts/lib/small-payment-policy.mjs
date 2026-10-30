@@ -35,7 +35,9 @@ export function evaluateSmallPayment({request,policy,context}={}){
   if(policy?.enabled!==true)add('policy_disabled');
   const now=typeof context?.now==='number'&&Number.isSafeInteger(context.now)&&context.now>=0?context.now:at(context?.now);
   const required=policy?.independent_reviews?.required_providers;
-  if(!unique(required)||required.length!==2||!PAYMENT_REVIEW_PROVIDERS.every(p=>required.includes(p))||!paymentActivationMatches(context?.activationProof,{policy,release_sha256:context?.release_sha256,command:context?.activationCommand??null,now}))add('independent_native_reviews_required');
+  const controlled=policy?.independent_reviews?.mode==='authenticated_controller';
+  if(policy?.independent_reviews?.mode!==undefined&&!['independent_signers','authenticated_controller'].includes(policy.independent_reviews.mode))add('invalid_payment_policy_authorization_mode');
+  if(!unique(required)||(controlled?required.length!==0:required.length!==2||!PAYMENT_REVIEW_PROVIDERS.every(p=>required.includes(p)))||!paymentActivationMatches(context?.activationProof,{policy,release_sha256:context?.release_sha256,command:context?.activationCommand??null,now}))add(controlled?'authenticated_controller_activation_required':'independent_native_reviews_required');
   const w=windows(now);out.windows={timezone:'Asia/Shanghai',day_start_utc:new Date(w.day_start_ms).toISOString(),week_start_utc:new Date(w.week_start_ms).toISOString(),rolling_start_utc:new Date(w.rolling_start_ms).toISOString(),observed_at_utc:new Date(now).toISOString()};
   if(!exact(request,['payment_id','controller_id','payee_id','purpose_id','amount_raw','rail'])){add('unexpected_or_missing_request_fields');return out;}
   if(['payment_id','controller_id','payee_id','purpose_id'].some(k=>!validId(request[k]))){add('invalid_request_identity');return out;}

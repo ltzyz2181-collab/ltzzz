@@ -1,5 +1,6 @@
 // Fixed BASE review manifest; no candidate-provided list.
 export const A2_REVIEW_FILES=Object.freeze([
+  'scripts/lib/controller-decision.mjs','scripts/tests/controller-decision.test.mjs','config/autonomy-authority.json','config/review-delegation.json',
   'config/patch-policy.json','config/patchgate-trust.json','config/patchgate-executors.json','config/patchgate-a2.json',
   'scripts/patchgate.mjs','scripts/lib/patchgate.mjs','scripts/lib/patchgate-a2.mjs','scripts/lib/patchgate-a2-readback.mjs','scripts/patchgate-a2-preflight.mjs',
   'scripts/tests/patchgate.test.mjs','scripts/tests/patchgate-a1.test.mjs','scripts/tests/patchgate-a2.test.mjs',
