@@ -1,0 +1,15 @@
+{
+  "finding": "scripts/lib/daily-task-board.mjs 的 syncDailyBoard 调用 recoverArtifact 后忽略返回值，导致恢复成功（状态已变更为 generated_pending_sync）时仍会继续执行后续无条件降级逻辑；当轮未被恢复的 generation_started 席位被直接覆盖为 generation_unknown_no_repurchase，且在 ledger 中已有唯一完整 artifact 的崩溃恢复场景下可能丢失可恢复状态。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-10-30-reviewer.json"
+  ],
+  "minimal_patch": "在 syncDailyBoard 的席位循环中，将 recoverArtifact(root,record,agent,seat); 替换为：\nconst recovered = recoverArtifact(root,record,agent,seat);\nif (recovered && seat.status === 'generated_pending_sync') {\n  seat.sync_reason = 'immutable_artifact_verified_from_prior_crash';\n  saveLedger(root, record);\n  continue;\n}\nif (recovered === false && seat.status === 'generation_started') {\n  seat.status = 'generation_unknown_no_repurchase';\n  seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\n  saveLedger(root, record);\n  continue;\n}",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "git diff -- scripts/lib/daily-task-board.mjs",
+    "node -e \"const fs=require('fs');const s=fs.readFileSync('scripts/lib/daily-task-board.mjs','utf8');if(!s.includes(\\\"const recovered = recoverArtifact(root,record,agent,seat)\\\"))throw Error('patch_not_applied');if(!s.includes(\\\"recovered === false && seat.status === 'generation_started'\\\"))throw Error('guard_missing');console.log('static_check_ok')\""
+  ],
+  "remaining_blocker": "补丁尚未实际写入仓库、未执行故障注入或端到端验证；需在 artifact 已写盘但 ledger 未更新的崩溃场景中验证恢复路径不会触发同轮降级覆盖，且不新增模型调用或重复采购。"
+}
