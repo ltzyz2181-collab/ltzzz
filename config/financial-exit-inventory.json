@@ -511,6 +511,30 @@
         }
       ],
       "scope": "Production Market and forwarded context do not receive treasury keys; provider RPC only allows readonly methods. Historical injected library mocks are not production authorization."
+    },
+    {
+      "path": "scripts/lib/controller-paid-practice.mjs",
+      "sha256": "1919cccdd99c5aa5642ef4ddc0d91033e9b98a45bfb32afc50fb5b8e4ca55654",
+      "disposition": "upstream_guarded_client",
+      "guards": [
+        {
+          "path": "scripts/lib/controller-paid-practice.mjs",
+          "required": "one_bound_practice_payment_only"
+        },
+        {
+          "path": "scripts/lib/controller-paid-practice.mjs",
+          "required": "bound_short_lived_practice_authorization_required"
+        },
+        {
+          "path": "scripts/lib/controller-paid-practice.mjs",
+          "required": "same_input_already_accepted_no_repurchase"
+        },
+        {
+          "path": "scripts/controller-paid-practice.mjs",
+          "required": "validatePracticeBridgeClaim"
+        }
+      ],
+      "scope": "One explicitly authorized controller practice, existing Worker fixed provider/treasury/Base USDC quote <=0.05; no private key or retired-entry bypass. Unknown reconciles without repurchase; authentic bridge claim before funds."
     }
   ],
   "financial_execution": false,

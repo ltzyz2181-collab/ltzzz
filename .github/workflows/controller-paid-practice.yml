@@ -1,0 +1,76 @@
+name: Controller one-off paid AI practice
+on:
+  workflow_dispatch:
+    inputs:
+      command_id:
+        description: Strict CTRL command ID; one durable claim, no payment retry
+        type: string
+        required: true
+      task_id:
+        description: Original PLAN-PATCHGATE-ESCROW-20261023 task
+        type: string
+        required: true
+  pull_request:
+    paths: [scripts/controller-paid-practice.mjs,scripts/lib/controller-paid-practice.mjs,scripts/tests/controller-paid-practice.test.mjs,.github/workflows/controller-paid-practice.yml]
+permissions: {contents: read}
+concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node --test scripts/tests/controller-paid-practice.test.mjs scripts/tests/daily-external-hire.test.mjs scripts/tests/funded-relay.test.mjs
+  execute:
+    needs: verify
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (github.actor == 'ltzyz2181-collab' || github.actor == 'github-actions[bot]') && github.repository == 'ltzyz2181-collab/ltzzz'
+    permissions: {contents: write, actions: read}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      CONTROLLER_COMMAND_ID: ${{ inputs.command_id }}
+      CONTROLLER_TASK_ID: ${{ inputs.task_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prepare separate practice claim without modifying the daily internal task
+        run: node scripts/controller-paid-practice.mjs prepare
+      - name: Persist exact claim and source hashes before any model or payment call
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/controller-practice/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Controller one-off AI practice claim before external execution'
+          node tools/push-receipt-commit.mjs
+      - name: Reconcile then at most one fixed-provider purchase and native Doubao review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY || secrets.ARK_API_KEY }}
+          DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
+          DOUBAO_BASE_URL: ${{ vars.DOUBAO_BASE_URL || secrets.DOUBAO_BASE_URL }}
+        run: node scripts/controller-paid-practice.mjs execute
+      - name: Preserve actual payment, delivery, review or precise blocker
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          if ! test -d knowledge/results/controller-practice; then exit 0; fi
+          git add knowledge/results/controller-practice/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Controller one-off AI practice actual execution evidence'
+          node tools/push-receipt-commit.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: controller-paid-practice-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/controller-practice/
+          retention-days: 30
