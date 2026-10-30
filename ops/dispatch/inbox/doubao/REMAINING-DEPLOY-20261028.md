@@ -97,3 +97,17 @@ GPT 当前环境已重新读取安全配置：无云 outbound identity、Secret 
 7. **原单回执并回读**：沿现有 `knowledge/results/patchgate/split-signers/volc-closeout-20261029/` 提交一个清晰部署回执（PR，禁止直接覆盖无关 main 文件），记录实际 UTC、操作者/云角色、source_commit、清单摘要、账号/区域/函数、旧/新 revision、NAS 生效与实测结果、去敏 URL、工具 request/run/attempt 和各阶段真实状态。非 Actions 操作的 run_id/run_attempt 取不到就填 null，不能编造。网址去 userinfo/query/fragment，非标准路径/不明域名不公开；不要把旧 voiceapi.com 报告改写成另一个地址去调用。`paid=false, tx_hash=null` 仅表示无链上付款，现有云资源仍计费。没有完成挂载/挑战就保留各自未验收状态，不能一概写“上线成功”。
 
 本轮先完成现有资源上的默认关闭部署；不新建数据库或另一套 NAS/网关，不新增付费 cron，不改预算/算法/信任根，不登记生产公钥，不启用 A2/A3/B、付款或正式五签。长期数据库迁移后置，不让它阻塞上述已有部署步骤。
+
+## 工单补充：开白无期限，继续既有部署
+
+记录时间：2026-10-30T03:23:23Z。owner 最新转贴客服回复：NAS 开白后没有期限；veFaaS 支持绑定自己的 VPC；KMS 能力正由客服向 KMS 侧确认；客服仍在询问实际挂载是否正常。这是转贴来源记录，不是 GPT 独立打开工单或挂载成功的证据。上节“临时开白”的解读据此更正为“开白无已知到期限制”，无需重复追问开白期限；NAS 长期产品支持承诺不据此补造。
+
+继续执行上一节 owner 已授权的“现有 NAS 验证与默认关闭服务部署”，不用等待数据库/KMS 答复，也不新建重复 NAS 或数据库。挂载结果尚待原云执行端实测，回工单不能先写已成功。
+
+成本已核对官方公开文档：NAS 极速型按配置容量乘以时长计费、每小时结算；不是按函数调用次数或文件实际用量收费。按 owner 当前表单的 100GiB、¥0.25/小时，NAS 本身约 ¥6/天、¥180/30天，函数和网关费用另计。停用函数或卸载挂载不等于释放 NAS 存储，也没有取得“保留数据免费暂停”的依据。删除文件系统会使其中数据不可恢复；owner 本次询问计费不等于授权删除密钥、账本或已有文件系统，不为省费反复删建或换钥。
+
+官方依据：
+- https://docs.volcengine.com/docs/elastic-file-storage/bill-able-items-extreme-file-nas?lang=zh
+- https://docs.volcengine.com/docs/elastic-file-storage/deleting-file-systems?lang=zh
+
+当前部署先复用已存在资源完成验收，回执注明实际计费资源及是否已创建；后续低成本方案另评估，不宣称数据库必然更便宜。A2/A3/B、付款和正式五签不变。
