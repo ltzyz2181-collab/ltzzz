@@ -42,7 +42,13 @@
     "mountinfo_evidence": "234 217 0:48 / /mnt/nas rw,relatime shared:107 - nfs :/enas-cnbjd0cc4e306ea6c4/ rw,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,nolock,noresvport,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.0.207,mountvers=3,mountproto=tcp,local_lock=all,addr=192.168.0.207",
     "writable_by_runtime_user": false,
     "runtime_user": "faas uid=1000 gid=1000 (function runtime node process runs as faas)",
-    "detail": "faas user cannot create /mnt/nas/ltzzz-signer: Permission denied (no sudo). NAS root owned by root drwxr-xr-x. Persistence via SIGNER_STORE_DIR not confirmed; code would fall back to /tmp which is NOT acceptable persistence per task card."
+    "detail": "faas user cannot create /mnt/nas/ltzzz-signer: Permission denied (no sudo). NAS root owned by root drwxr-xr-x. Persistence via SIGNER_STORE_DIR not confirmed. CORRECTION: audited code has NO /tmp or TOS fallback (receipt.json line 37: 'no /tmp/TOS fallback'); storage is fail-closed, persistence simply fails until the directory is usable.",
+    "permission_plane": {
+      "vefaas_side": "存储配置抽屉仅提供 文件系统/挂载点/远端目录/本地目录，无属主或权限选项（已现场截图确认）。",
+      "nas_side": "NAS 权限组 pgroup-default 规则 = 0.0.0.0/0 + 读写 + Root用户保持(no_root_squash)；此规则只影响 root 映射，faas(uid 1000) 对 root:root 755 根目录仍无写权限。",
+      "required_fix": "由 NAS 维护身份（火山侧/工单 T-2026102917230001）在文件系统 enas-cnbjd0cc4e306ea6c4 根创建目录 /ltzzz-signer 并 chown uid=1000:gid=1000（faas 运行用户），chmod 700 或 750。不设置 777、不删除/更换密钥。",
+      "status": "pending_nas_maintenance"
+    }
   },
   "health_readback": {
     "gateway_url": "https://sfvi0b8oule5k2u0shhcs.apigateway-cn-beijing.voiceapi.com/health",
@@ -63,10 +69,10 @@
     "production_public_key_registry": "closed"
   },
   "open_issues": [
-    "NAS write permission: faas uid=1000 cannot create SIGNER_STORE_DIR; persistence not confirmed (fallback /tmp only, unacceptable as persistence)",
+    "NAS write permission: faas uid=1000 cannot create SIGNER_STORE_DIR; persistence not confirmed. CORRECTION: audited code is fail-closed with no /tmp/TOS fallback (receipt.json line 37). NAS 侧需维护身份创建 /ltzzz-signer 并 chown 1000:1000.",
     "health readback unreachable from both local Chrome and instance curl (egress / VPC routing); gateway route itself not yet exercised on V3",
     "network config (VPC/subnet/security group) publish state: instance outbound curl HTTP:000 suggests egress limits; needs confirmation before ARK outbound calls",
     "restart challenge verification pending (requires reachable authenticated caller)",
-    "NAS enablement is temporary whitelist per support T-2026102917230001; long-term recommended path is database-backed storage (deferred per task card, not blocking this deployment)"
+    "NAS enablement: CORRECTION — 客服已确认开白无期限（非临时），NAS 计费持续（无到期日）；KMS 信封加密迁移已按官方文档核对，留作后续迁移，不阻塞本轮 NAS 部署验收"
   ]
 }
