@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {generateKeyPairSync,createHash} from 'node:crypto';
 import {canonical, sha256, subjectFor, TASK} from '../lib/patchgate.mjs';
-import {validateExecutorRegistry,signExecutorAttestation,notificationActorAllowed,validateA2Config,rolloutApproved,checksSatisfied,validateA2Request,a2GithubApi,mergeDocsOnce,externalAuditProofMatches} from '../lib/patchgate-a2.mjs';
+import {validateExecutorRegistry,signExecutorAttestation,notificationActorAllowed,validateA2Config,rolloutApproved,checksSatisfied,validateA2Request,a2GithubApi,mergeDocsOnce,externalAuditProofMatches,controllerMergeSubject} from '../lib/patchgate-a2.mjs';
+import {createControllerDecisionAuthority,controllerDecisionEvidence} from '../lib/controller-decision.mjs';
 import {A2_STOP_REF,prepareDocsReadback,verifyDocsMerge} from '../lib/patchgate-a2-readback.mjs';
 const policy=JSON.parse(fs.readFileSync(new URL('../../config/patch-policy.json',import.meta.url)));
 const defaults=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-a2.json',import.meta.url)));
@@ -20,7 +21,7 @@ function fixture(){
   const author=sign(0,{subject,role:'author'}),checks=sign(3,{subject,role:'checks',passed:true,checker_base_sha:A,checks_sha256:sha256(canonical(checkRuns))});
   const review=i=>sign(i,{subject,role:'review',verdict:'approve',generation_verified:true,metadata_source:'provider_response',model:'fixture-native-'+i,finish_reason:'stop',output_sha256:H});
   const rolloutSubject={task_id:TASK,phase:'A2',runtime_bundle_sha256:H};
-  const config={...defaults,enabled:true,base_compare_and_swap_verified:true,production_signing_keys_provisioned:true,runtime_bundle_sha256:H,stage_audits:[1,2].map(i=>sign(i,{subject:rolloutSubject,role:'stage_review',verdict:'approve',artifact_sha256:H,reviewed_source_commit:A}))};
+  const config={...defaults,authorization_mode:'independent_signers',signer_source_binding_required:true,required_stage_auditors:['aliyun_dashscope','volcengine_ark'],required_candidate_review_providers:['aliyun_dashscope','volcengine_ark'],enabled:true,base_compare_and_swap_verified:true,production_signing_keys_provisioned:true,runtime_bundle_sha256:H,stage_audits:[1,2].map(i=>sign(i,{subject:rolloutSubject,role:'stage_review',verdict:'approve',artifact_sha256:H,reviewed_source_commit:A}))};
   const auditMetadata={schema:'ltzzz.external-stage-audit.v1',task_id:TASK,phase:'A2',seat:'claude',verdict:'approve',reviewed_source_commit:A,runtime_bundle_sha256:H};
   const auditBytes=Buffer.from('```json\n'+JSON.stringify(auditMetadata)+'\n```\nFixture external report, not a native provider attestation.\n');
   const readback={schema:'ltzzz.external-audit-pr-readback.v1',source:'github_rest_immutable_pr_file',repository:REPO,pr_http_status:200,file_http_status:200,pr_number:244,pr_head_sha:C,pr_url:'https://github.com/'+REPO+'/pull/244',submitter_login:'fixture-audit-submitter',submitter_id:'42',artifact:{path:'knowledge/results/patchgate/a2-fixture-audit.md',blob_sha:C,sha256:sha256(auditBytes)},body_base64:auditBytes.toString('base64'),fetched_at_utc:new Date(now).toISOString(),reviewed_source_commit:A,reviewed_bundle_sha256:H,reviewed_bundle_verification:'trusted_base_fixed_manifest',native_authorship_verified:false};
@@ -61,6 +62,34 @@ test('production configuration remains disabled, unsigned and no side effects',(
   assert.equal(validateA2Config(defaults),defaults);assert.equal(defaults.enabled,false);assert.equal(defaults.production_signing_keys_provisioned,false);
   assert.equal(defaults.base_compare_and_swap_verified,false);assert.deepEqual(defaults.stage_audits,[]);assert.deepEqual(defaults.notification_actors,[]);
 });
+async function controlledFixture(){
+ const f=fixture();f.args.config={...defaults,enabled:true,runtime_bundle_sha256:H};f.args.attestations=[];
+ f.args.trust={schema_version:1,enabled:false,keys:[]};f.args.registry={executors:[]};f.args.snapshot.trust_sha256=sha256(canonical(f.args.trust));
+ const authorize=createControllerDecisionAuthority({controllerIds:['gpt'],authenticate:async()=>({verified:true,controller_id:'gpt',identity_evidence_sha256:H})});
+ const subject=controllerMergeSubject({...f.args,subject:subjectFor(f.args.snapshot)});
+ f.args.controllerDecision=await authorize({subject,now});return f;
+}
+test('controller mode merges docs through the same latch and readback with no model signing keys',async()=>{
+ const f=await controlledFixture(),r=await mergeDocsOnce(f.args);assert.equal(r.status,'merged_readback_verified');assert.equal(f.state.merges,1);
+ assert.equal(r.receipt_persisted,true);assert.equal(r.stop_latch_released,true);assert.equal(f.args.trust.keys.length,0);
+});
+test('configuration, advisory prose and serialized controller evidence cannot authorize a merge',async()=>{
+ for(const token of [undefined,{verified:true}]){const f=await controlledFixture();f.args.controllerDecision=token;const r=await mergeDocsOnce(f.args);assert.equal(r.status,'A2_controller_identity_required');assert.equal(f.state.merges,0);assert.equal(f.state.refs.size,0);}
+ const f=await controlledFixture();f.args.controllerDecision=controllerDecisionEvidence(f.args.controllerDecision);assert.equal((await mergeDocsOnce(f.args)).automatic_merge,false);
+});
+test('controller grant cannot authorize changed head, checks or runtime bytes',async()=>{
+ for(const mutate of [f=>f.args.snapshot.head_sha=C,f=>f.args.checkRuns[0].conclusion='failure',f=>f.args.runtimeBundleSha256='2'.repeat(64)]){
+  const f=await controlledFixture();mutate(f);assert.equal((await mergeDocsOnce(f.args)).automatic_merge,false);assert.equal(f.state.merges,0);
+ }
+});
+test('controller mode retains protected-path, binary and mode fences',async()=>{
+ for(const change of [{path:'wallet/addresses.md'},{mode:'120000'},{binary:true},{path:'.github/workflows/evil.md'}]){
+  const f=await controlledFixture();Object.assign(f.args.snapshot.files[0],change);
+  const authorize=createControllerDecisionAuthority({controllerIds:['gpt'],authenticate:async()=>({verified:true,controller_id:'gpt',identity_evidence_sha256:H})});
+  f.args.controllerDecision=await authorize({subject:controllerMergeSubject({...f.args,subject:subjectFor(f.args.snapshot)}),now});
+  assert.equal((await mergeDocsOnce(f.args)).automatic_merge,false);assert.equal(f.state.merges,0);
+ }
+});
 test('real current executor transports are not yet admitted as cryptographic signers',()=>{
   const registry=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-executors.json',import.meta.url))),trust=JSON.parse(fs.readFileSync(new URL('../../config/patchgate-trust.json',import.meta.url)));
   assert.equal(validateExecutorRegistry({registry,trust}),false);
@@ -68,7 +97,7 @@ test('real current executor transports are not yet admitted as cryptographic sig
 test('disabled A2 makes zero network calls even if candidate proof fixtures are valid',async()=>{
   const f=fixture();let calls=0;
   const r=await mergeDocsOnce({...f.args,config:defaults,api:async()=>{calls++;throw Error('no network');}});
-  assert.equal(r.status,'A2_disabled_or_missing_audited_signers');assert.equal(calls,0);
+  assert.equal(r.status,'A2_disabled_or_runtime_not_bound');assert.equal(calls,0);
 });
 test('one executor cannot change provider on rotation or alias the same public key',()=>{
   const f=fixture();assert.equal(validateExecutorRegistry(f.args),true);
@@ -151,7 +180,8 @@ test('readonly preflight reports real blockers; bundle changes invalidate approv
   const {bundleDigest,preflightA2}=await import('../patchgate-a2-preflight.mjs');
   const read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
   const out=preflightA2({read,sourceCommit:A,now});
-  assert.ok(out.blockers.includes('registered_real_signers_not_provisioned'));
+  assert.equal(out.blockers.includes('registered_real_signers_not_provisioned'),false);
+  assert.ok(out.blockers.includes('controller_runtime_not_enabled_or_bound'));
   assert.ok(out.blockers.includes('A2_switch_disabled'));assert.equal(out.blockers.includes('atomic_base_fence_not_implemented_or_verified'),false);
   assert.equal(out.native_model_calls,0);assert.equal(out.financial_execution,false);
   const original=bundleDigest({read}),changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,enabled:true}):read(name)});
@@ -192,9 +222,10 @@ function advisoryMatches(args){
   return externalAuditProofMatches({record:args.config.external_stage_audits[0],trust:args.trust,readbacks:args.externalAuditReadbacks,
     subject:{task_id:TASK,phase:'A2',runtime_bundle_sha256:H},now});
 }
-test('B1 actual model signers are Qwen and Doubao; Claude has no delegated Anthropic key',()=>{
-  assert.deepEqual(defaults.required_stage_auditors,['aliyun_dashscope','volcengine_ark']);
-  assert.deepEqual(defaults.required_candidate_review_providers,['aliyun_dashscope','volcengine_ark']);
+test('controller mode removes native signer prerequisites; Claude remains advisory',()=>{
+  assert.equal(defaults.authorization_mode,'authenticated_controller');
+  assert.deepEqual(defaults.required_stage_auditors,[]);
+  assert.deepEqual(defaults.required_candidate_review_providers,[]);
   assert.equal(defaults.claude_audit_channel.native_authorship_verified,false);
   assert.equal(defaults.claude_audit_channel.counts_toward_model_quorum,false);
   assert.equal(defaults.claude_audit_channel.required_before_rollout,false);

@@ -1,7 +1,8 @@
 // Trusted cloud executor library. No HTTP routes, credentials, keys or live defaults.
 import {createHash} from 'node:crypto';
 import {evaluateSmallPayment} from './small-payment-policy.mjs';
-import {verifySmallPaymentActivation,verifySmallPaymentAnomaly,paymentPolicyDigest,paymentActivationSubject,paymentActivationMatches,PAYMENT_COOLDOWN_MS} from './small-payment-authorization.mjs';
+import {verifySmallPaymentActivation,verifySmallPaymentAnomaly,verifyControllerPaymentAnomaly,paymentAnomalySubject,controllerPaymentMode,paymentPolicyDigest,paymentActivationSubject,paymentActivationMatches,PAYMENT_COOLDOWN_MS} from './small-payment-authorization.mjs';
+import {createControllerDecisionAuthority,controllerDecisionEvidence} from './controller-decision.mjs';
 import {freezePaymentState,paymentLifecycleCommand,activationRecord,publicActivationBytes,publicActivationReadback,lifecycleAllowsPayment} from './small-payment-lifecycle.mjs';
 const KEY='ltzzz.small-payment-state.v1', HASH=/^[a-f0-9]{64}$/, TX=/^0x[a-fA-F0-9]{64}$/;
 const PROVIDERS=new Set(['anthropic','aliyun_dashscope','volcengine_ark','deepseek','xai','openai','moonshot']);
@@ -28,6 +29,14 @@ const blocked=reason=>({status:'blocked_no_execution',reason,execution_attempted
 // store.transaction must be serializable across workers and durable before returning.
 export function createSmallPaymentService({policy,release_sha256,store,loadBudgetEvidence,authenticateController,authenticateAuditor,activationAuthority,loadActivationEvidence,publishActivation,readPublicActivation,execute,verifySettlement,verifyAudit,scheduleAudit,clock=Date.now}={}){
  policy=structuredClone(policy);activationAuthority=structuredClone(activationAuthority);
+ const controlled=controllerPaymentMode(activationAuthority);
+ const authorizeController=controlled&&policy?.enabled===true&&activationAuthority?.enabled===true&&typeof authenticateController==='function'
+   ?createControllerDecisionAuthority({controllerIds:activationAuthority.controller_ids,authenticate:authenticateController}):null;
+ async function controllerApproval(context,command){
+  if(!authorizeController)throw Error('authenticated_payment_controller_adapter_required');
+  const decision=await authorizeController({context,subject:paymentActivationSubject({policy,release_sha256,authority:activationAuthority,command}),now:clock()});
+  return {controllerDecision:decision,evidence:{controller_decision:controllerDecisionEvidence(decision)}};
+ }
  let locallyHalted=false;
  const get=async tx=>{
   const s=await tx.get(KEY);
@@ -55,8 +64,10 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
   s.events.push({kind:'automatic_freeze',trigger,reason:s.freeze_reason,payment_ids:overdue.map(o=>o.request.payment_id),at_utc:new Date(now).toISOString()});return true;
  }
  async function active(context){
-  if(locallyHalted||policy?.enabled!==true||!HASH.test(release_sha256||'')||typeof loadActivationEvidence!=='function')return null;
-  try{const s=await store.transaction(async tx=>structuredClone(await get(tx)));if(!lifecycleAllowsPayment(s,{policy,release_sha256,authority:activationAuthority,now:clock()}))return null;const proof=verifySmallPaymentActivation({policy,release_sha256,authority:activationAuthority,command:s.activation.command,evidence:await loadActivationEvidence({...context,command:s.activation.command}),now:clock()});return {proof,command:s.activation.command,activation_sha256:s.activation.sha256};}catch{return null;}
+  if(locallyHalted||policy?.enabled!==true||!HASH.test(release_sha256||'')||(!controlled&&typeof loadActivationEvidence!=='function'))return null;
+  try{const s=await store.transaction(async tx=>structuredClone(await get(tx)));if(!lifecycleAllowsPayment(s,{policy,release_sha256,authority:activationAuthority,now:clock()}))return null;
+   const approval=controlled?await controllerApproval(context,s.activation.command):{evidence:await loadActivationEvidence({...context,command:s.activation.command})};
+   const proof=verifySmallPaymentActivation({policy,release_sha256,authority:activationAuthority,command:s.activation.command,...approval,now:clock()});return {proof,command:s.activation.command,activation_sha256:s.activation.sha256};}catch{return null;}
  }
  function normalizedReceipt(receipt,op){
   if(!receipt||typeof receipt!=='object'||!Object.hasOwn(receipt,'paid')||typeof receipt.paid!=='boolean'||!Object.hasOwn(receipt,'tx_hash')||!Object.hasOwn(receipt,'provider_receipt_id')||receipt.payment_id!==op.request.payment_id||receipt.amount_raw!==op.request.amount_raw||receipt.currency!=='USDC'||receipt.recipient_key!==op.history.recipient_key||receipt.purpose_id!==op.request.purpose_id||!HASH.test(receipt.evidence_sha256||''))throw Error('payment_receipt_identity_or_explicit_fields_missing');
@@ -69,12 +80,13 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
    if(s.pending_activation?.record.command.kind===kind&&s.pending_activation.record.command.target_stage===target_stage&&s.pending_activation.freeze_sequence===s.freeze_sequence)return structuredClone(s.pending_activation.record.command);
    return paymentLifecycleCommand(s,{kind,target_stage},{policy,release_sha256,authority:activationAuthority,now:clock()});
   },
-  async activate({command,evidence}={}){
+  async activate({command,evidence,context}={}){
    let pending;
    try{
     command=structuredClone(command);evidence=structuredClone(evidence);
     if(policy?.enabled!==true||typeof publishActivation!=='function'||typeof readPublicActivation!=='function')return blocked('payment_disabled_or_publication_adapter_missing');
-    const proof=verifySmallPaymentActivation({policy,release_sha256,authority:activationAuthority,command,evidence,now:clock()});
+    const approval=controlled?await controllerApproval(context,command):{evidence};evidence=approval.evidence;
+    const proof=verifySmallPaymentActivation({policy,release_sha256,authority:activationAuthority,command,...approval,now:clock()});
     const reserved=await store.transaction(async tx=>{
      const s=await get(tx);
      if(freezeOverdue(s,clock(),'activation')){await tx.put(KEY,s);return {blocked:s.freeze_reason};}
@@ -100,13 +112,13 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
     const result=await store.transaction(async tx=>{
      const s=await get(tx),now=clock();
      if(s.pending_activation?.sha256!==pending.sha256||s.freeze_sequence!==command.freeze_sequence)throw Error('freeze_changed_during_activation');
-     if(!paymentActivationMatches(proof,{policy,release_sha256,command,now}))throw Error('native_reviews_expired_during_publication');
+     if(!paymentActivationMatches(proof,{policy,release_sha256,command,now}))throw Error(controlled?'controller_authorization_expired_during_publication':'native_reviews_expired_during_publication');
      const a={record:pending.record,sha256:pending.sha256,command,release_sha256,
       policy_sha256:paymentPolicyDigest(policy),authority_sha256:paymentPolicyDigest(activationAuthority),
       publication:confirmed,public_confirmed_at:now,ready_at:now+PAYMENT_COOLDOWN_MS};
      s.activation=a;s.pending_activation=null;s.switch_enabled=true;s.frozen=false;s.freeze_reason=null;s.freeze_release_sha256=null;
      if(!s.release_history.includes(release_sha256))s.release_history.push(release_sha256);
-     s.events.push({kind:'dual_signed_activation_publicly_confirmed',activation_sha256:a.sha256,release_sha256,stage:command.target_stage,
+     s.events.push({kind:controlled?'controller_activation_publicly_confirmed':'dual_signed_activation_publicly_confirmed',activation_sha256:a.sha256,release_sha256,stage:command.target_stage,
       freeze_sequence:s.freeze_sequence,at_utc:new Date(now).toISOString(),not_before_utc:new Date(a.ready_at).toISOString()});
      await tx.put(KEY,s);return a;
     });
@@ -117,17 +129,19 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
     return {status:pending?'activation_reserved_publication_pending':'blocked_no_execution',reason:safeError(e),execution_attempted:false};
    }
   },
-  async reportAnomaly({report}={}){
+  async reportAnomaly({report,context}={}){
    try{
     report=structuredClone(report);
     const snapshot=await store.transaction(async tx=>structuredClone(await get(tx)));
     const digest=snapshot.activation?.sha256??paymentPolicyDigest(null);
-    const verified=verifySmallPaymentAnomaly({policy,release_sha256,authority:activationAuthority,activation_sha256:digest,freeze_sequence:snapshot.freeze_sequence,report,now:clock()});
+    let decision;
+    if(controlled){if(!authorizeController)throw Error('authenticated_payment_controller_adapter_required');decision=await authorizeController({context,subject:paymentAnomalySubject({policy,release_sha256,authority:activationAuthority,activation_sha256:digest,freeze_sequence:snapshot.freeze_sequence}),now:clock()});}
+    const verified=(controlled?verifyControllerPaymentAnomaly:verifySmallPaymentAnomaly)({policy,release_sha256,authority:activationAuthority,activation_sha256:digest,freeze_sequence:snapshot.freeze_sequence,report,controllerDecision:decision,now:clock()});
     const result=await store.transaction(async tx=>{
      const s=await get(tx);
      if((s.activation?.sha256??paymentPolicyDigest(null))!==digest||s.freeze_sequence!==snapshot.freeze_sequence)throw Error('anomaly_state_changed_retry_verification');
-     freezePaymentState(s,'signed_model_anomaly',clock());s.freeze_release_sha256=release_sha256;
-     s.events.push({kind:'signed_model_anomaly',...verified,report,at_utc:new Date(clock()).toISOString()});
+     freezePaymentState(s,controlled?'controller_reported_anomaly':'signed_model_anomaly',clock());s.freeze_release_sha256=release_sha256;
+     s.events.push({kind:controlled?'controller_reported_anomaly':'signed_model_anomaly',...verified,report,at_utc:new Date(clock()).toISOString()});
      await tx.put(KEY,s);return {status:'payment_switch_disabled',freeze_persisted:true,freeze_sequence:s.freeze_sequence};
     });
     locallyHalted=true;return result;
@@ -139,7 +153,7 @@ export function createSmallPaymentService({policy,release_sha256,store,loadBudge
     request=structuredClone(request); // freeze caller intent before the first await
     const activation=await active(context);
     const activationProof=activation?.proof,activationCommand=activation?.command;
-    if(!activationProof)return blocked('payment_disabled_cooling_unpublished_or_native_signatures_missing');
+    if(!activationProof)return blocked(controlled?'payment_disabled_cooling_unpublished_or_controller_identity_missing':'payment_disabled_cooling_unpublished_or_native_signatures_missing');
     if(!store||typeof store.transaction!=='function'||typeof authenticateController!=='function'||typeof loadBudgetEvidence!=='function'||typeof execute!=='function'||typeof verifySettlement!=='function'||typeof scheduleAudit!=='function')return blocked('required_authenticated_executor_capability_missing');
     const actor=await authenticateController(context);
     if(actor?.verified!==true||actor.controller_id!==request?.controller_id)return blocked('authenticated_controller_identity_required');

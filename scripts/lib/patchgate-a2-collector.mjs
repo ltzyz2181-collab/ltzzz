@@ -19,6 +19,12 @@ export function validateCollectionRequest(request){
   if(Object.keys(request).sort().join(',')!==['schema','task_id','candidate_pr','candidate_head','audit_pr','audit_path'].sort().join(','))throw Error('unexpected_collection_request_fields');
   return request;
 }
+export function validateCheckRequest(request){
+  if(request?.schema!=='ltzzz.patchgate.a2-controller-request.v1')return validateCollectionRequest(request);
+  if(request.task_id!==TASK||!integer(request.candidate_pr)||request.candidate_pr>999999999||!SHA.test(request.candidate_head||'')
+    ||Object.keys(request).sort().join(',')!==['schema','task_id','candidate_pr','candidate_head'].sort().join(','))throw Error('invalid_A2_controller_request');
+  return request;
+}
 
 // Read-only fixed-origin surface. No merge, branch protection mutation, private
 // configuration, arbitrary paths, raw HTML, callbacks or redirects are allowed.
@@ -123,7 +129,7 @@ export function assessBaseProtection(response,{requiredCheck='patchgate-a2-base-
 // A workflow ID is assigned by GitHub only after deployment. The fixed main
 // policy supplies it; a PR or request cannot register a check by choosing its name.
 export async function collectTrustedChecks({api,request,baseSha,authority,now=Date.now(),maxAge=86400}){
-  validateCollectionRequest(request);
+  validateCheckRequest(request);
   if(!SHA.test(baseSha||'')||!Number.isFinite(now)||!Number.isSafeInteger(maxAge)||maxAge<1)throw Error('invalid_checks_context');
   const p=validatePR(await api(ROOT+'/pulls/'+request.candidate_pr),{number:request.candidate_pr,head:request.candidate_head,base:baseSha,open:true});
   if(!authority||authority.workflow_path!==BASE_CHECK_WORKFLOW||!integer(authority.workflow_id)||authority.app_id!==15368||authority.job_name!=='patchgate-a2-base-checks'

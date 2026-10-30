@@ -9,12 +9,11 @@
   "purposes": [],
   "registered_budget_ids": [],
   "independent_reviews": {
-    "required_providers": [
-      "aliyun_dashscope",
-      "volcengine_ark"
-    ],
+    "required_providers": [],
     "activation_authority_ref": "config/small-payment-activation-authority.json",
-    "claude_channel": "repository_pr_advisory_not_cryptographic_quorum"
+    "claude_channel": "repository_pr_advisory_not_cryptographic_quorum",
+    "mode": "authenticated_controller",
+    "review_role": "supervision_not_activation_approval"
   },
   "rollout": {
     "cooldown_seconds": 86400,
@@ -25,7 +24,8 @@
       100
     ],
     "consecutive_audited_payments_per_promotion": 10,
-    "promotion_requires_native_dual_signatures": true,
-    "unfreeze_requires_new_release": true
+    "promotion_requires_native_dual_signatures": false,
+    "unfreeze_requires_new_release": true,
+    "decision_authority": "authenticated_controller"
   }
 }
