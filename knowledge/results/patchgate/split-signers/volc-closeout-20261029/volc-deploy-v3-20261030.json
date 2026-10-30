@@ -47,7 +47,26 @@
       "vefaas_side": "存储配置抽屉仅提供 文件系统/挂载点/远端目录/本地目录，无属主或权限选项（已现场截图确认）。",
       "nas_side": "NAS 权限组 pgroup-default 规则 = 0.0.0.0/0 + 读写 + Root用户保持(no_root_squash)；此规则只影响 root 映射，faas(uid 1000) 对 root:root 755 根目录仍无写权限。",
       "required_fix": "由 NAS 维护身份（火山侧/工单 T-2026102917230001）在文件系统 enas-cnbjd0cc4e306ea6c4 根创建目录 /ltzzz-signer 并 chown uid=1000:gid=1000（faas 运行用户），chmod 700 或 750。不设置 777、不删除/更换密钥。",
-      "status": "pending_nas_maintenance"
+      "status": "superseded_by_release (owner 2026-10-29 最新指令：0.0.0.0/0+no_root_squash 权限过宽，不在其下初始化真实签名密钥；替代方案未定前不购买)"
+    },
+    "release": {
+      "owner_decision": "2026-10-29 最新指令：暂停补 NAS 方案；先核查 NAS 是否空测试资源（不读取/导出私钥）；确认无保留数据且无依赖后安全释放并回读停费结果；情况不明则保全数据、报告阻塞。",
+      "data_verification": {
+        "instance_ls_la": "total 4; drwxr-xr-x 3 root root 87 Oct 29 16:30 . ; 无任何子目录/文件（仅 . 和 ..）",
+        "instance_du": "0 /mnt/nas",
+        "instance_find": "find /mnt/nas -mindepth 1 -maxdepth 3 → 空（无任何文件/目录）",
+        "snapshot_check": "快照页暂无数据（无手动快照/自动快照策略）",
+        "mount_dependencies": "仅本函数单挂载点 ltzzz-signer-mnt（NAS 挂载点列表仅 1 个）；无 ECS 或其他实例挂载",
+        "capacity_746MiB_explanation": "控制台/df 显示 746MiB 已用，但实例内 du=0 且 find 为空 → 为 NAS 文件系统内部元数据开销（极速型文件系统固有），非用户数据；密钥/账本均不存在（函数从未生成私钥，SIGNER_STORE_DIR 目录从未创建）",
+        "private_key_touched": false
+      },
+      "actions": [
+        "NAS 挂载点 ltzzz-signer-mnt（mount-c2ded7a3）已禁用（状态已关停，确认弹窗 ID/名称核对）",
+        "NAS 文件系统 enas-cnbjd0cc4e306ea6c4 已删除（删除确认弹窗 ID/名称核对后确认删除）",
+        "文件系统列表回读：暂无数据（NAS 已释放，按量计费停止）"
+      ],
+      "billing_order_note": "删除触发费用中心预订单 BO2000001060529653538（URL finance/order/pay），页面空白未加载出金额；未点击任何支付按钮（用户约束：付款关闭）；NAS 已删除、列表空=计费对象已移除。订单实际金额请用户在费用中心订单列表核验。",
+      "status": "released; billing_readback=file_system_list_empty"
     }
   },
   "health_readback": {
@@ -74,17 +93,25 @@
     "reason": "受管认证挑战调用方不可达（与 /health 回读同样受阻），未执行不同 instance_boot_id / 同公钥 / fresh nonce 验签。私钥始终留在火山侧，未导出。"
   },
   "billing": {
-    "nas": "ltzzz-signer-nas enas-cnbjd0cc4e306ea6c4, 极速型 100GiB, ¥0.25/时, 已开通无到期日、持续计费 (see 1aabcf6a)",
-    "new_resources_created": "none (reused existing NAS / gateway / function)",
+    "nas": "ltzzz-signer-nas enas-cnbjd0cc4e306ea6c4, 极速型 100GiB, 按量计费已开通（原 ¥0.25/时口径）；2026-10-29 已安全释放（挂载点禁用+文件系统删除），文件系统列表回读空=计费对象已移除；删除触发预订单 BO2000001060529653538 金额未确认（未点任何支付）",
+    "new_resources_created": "none (reused existing NAS / gateway / function; NAS now released)",
     "payment_made": false,
     "a2_a3_b_enabled": false,
     "production_public_key_registry": "closed"
   },
+  "replacement_storage": {
+    "status": "quote_pending_workorder",
+    "owner_instruction": "2026-10-29 最新指令：替代存储暂不购买；先由工单回复产品和完整最低报价，用户确认方案与费用后再决定（回复方案后发我）。",
+    "clue": "NAS 容量型 2026-09-26 起停止新购，官方推荐替代=弹性文件存储 EFS（基线带宽/预置带宽/突发带宽/接入点/目录配额，支持 rsync 迁移）；NAS 极速型已释放；备选思路：对象存储 TOS / 云数据库（原工程师建议对接数据库）",
+    "purchase_made": false
+  },
   "open_issues": [
-    "NAS write permission: faas uid=1000 cannot create SIGNER_STORE_DIR; persistence not confirmed. CORRECTION: audited code is fail-closed with no /tmp/TOS fallback (receipt.json line 37). NAS 侧需维护身份创建 /ltzzz-signer 并 chown 1000:1000.",
+    "NAS 已按 owner 最新指令安全释放（2026-10-29）：核查为空测试资源（根目录空/du=0/无快照/单挂载点，746MiB 为文件系统元数据开销，未读私钥）→ 挂载点禁用 + 文件系统删除 + 列表回读空。删除触发预订单 BO2000001060529653538，页面空白金额未确认（未点支付），请在费用中心订单列表核验是否有扣款。",
+    "0.0.0.0/0+no_root_squash 权限过宽已由 owner 锁定：不在该配置下初始化真实签名密钥（NAS 已释放，此约束自然满足）",
+    "替代存储未购买：待工单回复产品和完整最低报价（NAS 容量型停售、推荐 EFS；极速型已释放）后由 owner 拍板",
     "health readback unreachable from both local Chrome and instance curl (egress / VPC routing); gateway route itself not yet exercised on V3",
     "network config (VPC/subnet/security group) publish state: instance outbound curl HTTP:000 suggests egress limits; needs confirmation before ARK outbound calls",
     "restart challenge verification pending (requires reachable authenticated caller)",
-    "NAS enablement: CORRECTION — 客服已确认开白无期限（非临时），NAS 计费持续（无到期日）；KMS 信封加密迁移已按官方文档核对，留作后续迁移，不阻塞本轮 NAS 部署验收"
+    "NAS enablement history: CORRECTION — 客服已确认开白无期限（非临时）；NAS 现已释放停费；KMS 信封加密迁移已按官方文档核对，留作后续迁移，不阻塞本轮验收"
   ]
 }
