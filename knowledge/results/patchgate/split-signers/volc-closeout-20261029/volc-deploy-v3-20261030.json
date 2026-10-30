@@ -1,0 +1,72 @@
+{
+  "task": "PLAN-PATCHGATE-ESCROW-20261023 / SPLIT-SIGNER-INFRA-20261026 (volc closeout, owner-authorized default-off deployment)",
+  "operator": "doubao-vefaas",
+  "date_utc": "2026-10-30T04:18:54Z",
+  "region": "cn-beijing (华北2 北京)",
+  "function_id": "jt247vfx",
+  "function_name": "ltzzz-signer-volc-attest",
+  "release": {
+    "record_id": "gcpm36wqduy2jipr",
+    "from": "v2",
+    "to": "v3",
+    "percent": "v3=100% / v2=0%",
+    "start_local": "2026-10-29 21:02:37",
+    "end_local": "2026-10-29 21:03:13",
+    "status": "completed",
+    "instance": "vefaas-jt247vfx-lxrmw7ilv-dbi1douf9gjgvllmfeng (zone d, Ready, V3 online)"
+  },
+  "source_closure": {
+    "commit": "768c51d42715ffc33af18d91d4bd49c97ee5f41d",
+    "expected_sha256": "fa671aeca066e3ffb4eee6be9edf2eb3f6aab85cd4f957ab9f020244e8a64b6e",
+    "closure_manifest_count": 28,
+    "deployed_file_count": 31,
+    "deployed_root_hashes": {
+      "index.js": "d98da567ee312c552af0f5fc512c96787e78ae9bc8788227fe2576f6d08700b5",
+      "package.json": "8b5c3bbb57c6b887ece5ffbde77a457e539b4b64ec5ee3dae4684ad48657bd27"
+    },
+    "local_bundle_root_hashes_match_deployed": true,
+    "code_path_in_instance": "/opt/bytefaas/modules/cloud/signer-volc-attest"
+  },
+  "env_verified_in_instance": {
+    "SIGNER_SOURCE_SHA256": "fa671aeca066e3ffb4eee6be9edf2eb3f6aab85cd4f957ab9f020244e8a64b6e",
+    "SIGNER_SOURCE_COMMIT": "768c51d42715ffc33af18d91d4bd49c97ee5f41d",
+    "SIGNER_STORE_DIR": "/mnt/nas/ltzzz-signer",
+    "NATIVE_ATTESTATION_ENABLED": "false"
+  },
+  "nas_mount": {
+    "enabled": true,
+    "mountpoint": "/mnt/nas",
+    "type": "nfs (vers=3)",
+    "remote": ":/enas-cnbjd0cc4e306ea6c4/",
+    "mount_ip": "192.168.0.207",
+    "mountinfo_evidence": "234 217 0:48 / /mnt/nas rw,relatime shared:107 - nfs :/enas-cnbjd0cc4e306ea6c4/ rw,vers=3,rsize=1048576,wsize=1048576,namlen=255,hard,nolock,noresvport,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.0.207,mountvers=3,mountproto=tcp,local_lock=all,addr=192.168.0.207",
+    "writable_by_runtime_user": false,
+    "runtime_user": "faas uid=1000 gid=1000 (function runtime node process runs as faas)",
+    "detail": "faas user cannot create /mnt/nas/ltzzz-signer: Permission denied (no sudo). NAS root owned by root drwxr-xr-x. Persistence via SIGNER_STORE_DIR not confirmed; code would fall back to /tmp which is NOT acceptable persistence per task card."
+  },
+  "health_readback": {
+    "gateway_url": "https://sfvi0b8oule5k2u0shhcs.apigateway-cn-beijing.voiceapi.com/health",
+    "attempt_local_chrome": "ERR_SSL_UNRECOGNIZED_NAME_ALERT (egress/SNI interception)",
+    "attempt_in_instance_curl": "HTTP:000 (no route / egress)",
+    "status": "not confirmed",
+    "note": "入口回读未完成：不能记为'入口已通'，更不能记为'全部就绪'。"
+  },
+  "restart_challenge": {
+    "verified": false,
+    "reason": "受管认证挑战调用方不可达（与 /health 回读同样受阻），未执行不同 instance_boot_id / 同公钥 / fresh nonce 验签。私钥始终留在火山侧，未导出。"
+  },
+  "billing": {
+    "nas": "ltzzz-signer-nas enas-cnbjd0cc4e306ea6c4, 极速型 100GiB, ¥0.25/时, 已开通无到期日、持续计费 (see 1aabcf6a)",
+    "new_resources_created": "none (reused existing NAS / gateway / function)",
+    "payment_made": false,
+    "a2_a3_b_enabled": false,
+    "production_public_key_registry": "closed"
+  },
+  "open_issues": [
+    "NAS write permission: faas uid=1000 cannot create SIGNER_STORE_DIR; persistence not confirmed (fallback /tmp only, unacceptable as persistence)",
+    "health readback unreachable from both local Chrome and instance curl (egress / VPC routing); gateway route itself not yet exercised on V3",
+    "network config (VPC/subnet/security group) publish state: instance outbound curl HTTP:000 suggests egress limits; needs confirmation before ARK outbound calls",
+    "restart challenge verification pending (requires reachable authenticated caller)",
+    "NAS enablement is temporary whitelist per support T-2026102917230001; long-term recommended path is database-backed storage (deferred per task card, not blocking this deployment)"
+  ]
+}
