@@ -1,0 +1,346 @@
+{
+  "source_commit": "73933305ce94fe0b7ed763abd713c43f6ac72308",
+  "trigger_commit": "73933305ce94fe0b7ed763abd713c43f6ac72308",
+  "predicate_revision": "provided-contract-v2-detailed-evidence",
+  "predicate_source_sha256": "865600cd2201745b4eecc5f527d3b82261fc033ce0f8465418d49ccae8daba86",
+  "at": "2026-10-30T02:07:08.032Z",
+  "execution_id": "40989732278",
+  "task_kind": "provided_spec_readonly_HTTP_contract_check",
+  "spec_provided_in_prompt": true,
+  "original_design_claimed": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "live_contract_check_failed",
+  "worker_generation": {
+    "model": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "finish_reason": "stop",
+    "tokens_used": 1270
+  },
+  "source": "knowledge/results/wep3/delivery-contract-2026-10-30.json",
+  "source_delivery_file_sha256": "04f7fe679b8a6d83024d16a51fcc5257e24a3c2794b5181abcbfb2e9ba90b156",
+  "negative_controls": {
+    "kind": "local_assertion_evaluator_fault_injection",
+    "network_calls": 0,
+    "independent_design_proven": false,
+    "passed": true,
+    "samples": [
+      {
+        "name": "baseline",
+        "pass": true,
+        "expected": true
+      },
+      {
+        "name": "wrong_http_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_json_rejected",
+        "pass": false,
+        "expected": false
+      },
+      {
+        "name": "wrong_authentication_rejected",
+        "pass": false,
+        "expected": false
+      }
+    ]
+  },
+  "live_checks": [
+    {
+      "id": "HEALTH_PUBLIC_001",
+      "path": "/health",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true
+      },
+      "passed": true,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": true,
+        "expected_shape_valid": true,
+        "expected_http": 200,
+        "actual_http": 200,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "ok",
+            "expected": true,
+            "actual": true,
+            "actual_present": true,
+            "expected_type": "boolean",
+            "actual_type": "boolean",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "75796860c701d7db76ffddf0700746a8c645f3ed3c0dd583e3e93c00d2efb5a9",
+      "observed_at": "2026-10-30T02:07:32.580Z",
+      "method": "GET",
+      "auth_kind": "public"
+    },
+    {
+      "id": "TREASURY_PUBLIC_002",
+      "path": "/market/treasury",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": true,
+        "controlled": false,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+      },
+      "passed": false,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": false,
+        "expected_shape_valid": true,
+        "expected_http": 200,
+        "actual_http": 200,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "ok",
+            "expected": true,
+            "actual": true,
+            "actual_present": true,
+            "expected_type": "boolean",
+            "actual_type": "boolean",
+            "matched": true
+          },
+          {
+            "key": "controlled",
+            "expected": true,
+            "actual": false,
+            "actual_present": true,
+            "expected_type": "boolean",
+            "actual_type": "boolean",
+            "matched": false
+          },
+          {
+            "key": "address",
+            "expected": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+            "actual": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+            "actual_present": true,
+            "expected_type": "string",
+            "actual_type": "string",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "f3e0e219797600ea43d44d26163303fc4edf1f628dcbebe7de36bf6d1f6b7336",
+      "observed_at": "2026-10-30T02:07:32.664Z",
+      "method": "GET",
+      "auth_kind": "public"
+    },
+    {
+      "id": "AAVE_STATUS_PUBLIC_003",
+      "path": "/market/aave/status",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "ok": false
+      },
+      "passed": false,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": false,
+        "expected_shape_valid": true,
+        "expected_http": 200,
+        "actual_http": 200,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "ok",
+            "expected": true,
+            "actual": false,
+            "actual_present": true,
+            "expected_type": "boolean",
+            "actual_type": "boolean",
+            "matched": false
+          },
+          {
+            "key": "chain_id",
+            "expected": 8453,
+            "actual": null,
+            "actual_present": false,
+            "expected_type": "number",
+            "actual_type": "undefined",
+            "matched": false
+          }
+        ]
+      },
+      "response_sha256": "ce00a2b9fc1784b7b37c93d1d307f1f0500c86c75b8cd4dde27ce5c639f6dd5f",
+      "observed_at": "2026-10-30T02:07:33.366Z",
+      "method": "GET",
+      "auth_kind": "public"
+    },
+    {
+      "id": "RUNNER_READINESS_PUBLIC_004",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": false
+      },
+      "passed": true,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": true,
+        "expected_shape_valid": true,
+        "expected_http": 200,
+        "actual_http": 200,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "authenticated",
+            "expected": false,
+            "actual": false,
+            "actual_present": true,
+            "expected_type": "boolean",
+            "actual_type": "boolean",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "83cbf6d4524fbe9195534df78c5c63afaf2ee4159aa4d71edc7ea722229649aa",
+      "observed_at": "2026-10-30T02:07:33.516Z",
+      "method": "GET",
+      "auth_kind": "public"
+    },
+    {
+      "id": "RUNNER_READINESS_VALID_005",
+      "path": "/market/runner/readiness",
+      "http": 200,
+      "expected_http": 200,
+      "actual": {
+        "authenticated": true
+      },
+      "passed": true,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": true,
+        "expected_shape_valid": true,
+        "expected_http": 200,
+        "actual_http": 200,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "authenticated",
+            "expected": true,
+            "actual": true,
+            "actual_present": true,
+            "expected_type": "boolean",
+            "actual_type": "boolean",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "e433da78b037a98c183159f0ddc0bf8500b336c3cc2bd8bce07e2fdfc07183ef",
+      "observed_at": "2026-10-30T02:07:33.652Z",
+      "method": "GET",
+      "auth_kind": "valid"
+    },
+    {
+      "id": "AAVE_PREVIEW_PUBLIC_006",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": true,
+        "expected_shape_valid": true,
+        "expected_http": 401,
+        "actual_http": 401,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "error",
+            "expected": "pin_required",
+            "actual": "pin_required",
+            "actual_present": true,
+            "expected_type": "string",
+            "actual_type": "string",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "0ec67ce8b9de09509319fc97c835dff3420341719bcfb62fb016becf13184202",
+      "observed_at": "2026-10-30T02:07:33.809Z",
+      "method": "POST",
+      "auth_kind": "public"
+    },
+    {
+      "id": "AAVE_PREVIEW_WRONG_007",
+      "path": "/market/aave/preview",
+      "http": 401,
+      "expected_http": 401,
+      "actual": {
+        "error": "pin_required"
+      },
+      "passed": true,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": true,
+        "expected_shape_valid": true,
+        "expected_http": 401,
+        "actual_http": 401,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "error",
+            "expected": "pin_required",
+            "actual": "pin_required",
+            "actual_present": true,
+            "expected_type": "string",
+            "actual_type": "string",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "0ec67ce8b9de09509319fc97c835dff3420341719bcfb62fb016becf13184202",
+      "observed_at": "2026-10-30T02:07:33.969Z",
+      "method": "POST",
+      "auth_kind": "wrong"
+    },
+    {
+      "id": "AAVE_PREVIEW_VALID_TO_008",
+      "path": "/market/aave/preview",
+      "http": 422,
+      "expected_http": 422,
+      "actual": {
+        "error": "arbitrary_transaction_parameters_forbidden"
+      },
+      "passed": true,
+      "comparison": {
+        "revision": "provided-contract-v2-detailed-evidence",
+        "passed": true,
+        "expected_shape_valid": true,
+        "expected_http": 422,
+        "actual_http": 422,
+        "http_matched": true,
+        "fields": [
+          {
+            "key": "error",
+            "expected": "arbitrary_transaction_parameters_forbidden",
+            "actual": "arbitrary_transaction_parameters_forbidden",
+            "actual_present": true,
+            "expected_type": "string",
+            "actual_type": "string",
+            "matched": true
+          }
+        ]
+      },
+      "response_sha256": "5ff76aaa3884f8e644ba0e8a779f6f18dec8649e6c472a558217019dd39892b4",
+      "observed_at": "2026-10-30T02:07:34.048Z",
+      "method": "POST",
+      "auth_kind": "valid"
+    }
+  ],
+  "worker_tokens": 1270
+}
