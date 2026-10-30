@@ -1,9 +1,10 @@
-// Trusted-main orchestration only. It cannot generate signatures or model output.
+// Trusted-main orchestration; decisions use the configured authenticated authority.
 import {createHash} from 'node:crypto';
 import {canonical,sha256,subjectFor,classify,scanDiff,TASK} from './patchgate.mjs';
 import {preflightA2} from '../patchgate-a2-preflight.mjs';
-import {validateCollectionRequest} from './patchgate-a2-collector.mjs';
-import {mergeDocsOnce,REPOSITORY} from './patchgate-a2.mjs';
+import {validateCheckRequest} from './patchgate-a2-collector.mjs';
+import {mergeDocsOnce,REPOSITORY,controllerMode,controllerMergeSubject} from './patchgate-a2.mjs';
+import {createControllerDecisionAuthority,controllerDecisionEvidence,CONTROLLER_MODE} from './controller-decision.mjs';
 const ROOT='/repos/'+REPOSITORY,SHA=/^[a-f0-9]{40}$/,HASH=/^[a-f0-9]{64}$/;
 export const EXECUTION_WORKFLOW='.github/workflows/patchgate-a2-execute.yml';
 const exact=(o,keys)=>!!o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).sort().join(',')===[...keys].sort().join(',');
@@ -17,12 +18,12 @@ export function executionContext({env,checkout}){
 export function executionRequest(text){
   if(typeof text!=='string'||Buffer.byteLength(text)>4096)throw Error('bounded_public_execution_request_required');
   let r;try{r=JSON.parse(text);}catch{throw Error('execution_request_JSON_invalid');}
-  // Existing collector identity schema only. Audit PR/path is advisory, not a vote.
-  return validateCollectionRequest(r);
+  // Controller identity input or the legacy signed-admission request. No overrides.
+  return validateCheckRequest(r);
 }
 export function executionGate({context,request,read,now=Date.now(),preflight=preflightA2}){
   if(!SHA.test(context?.source||''))throw Error('trusted_source_required');
-  validateCollectionRequest(request);
+  validateCheckRequest(request);
   const result=preflight({read,sourceCommit:context.source,now}),policy=JSON.parse(read('config/patchgate-a2-reconcile.json'));
   const blockers=[...result.blockers],a=policy.execution_authority;
   if(policy.schema!=='ltzzz.patchgate.a2-reconcile-policy.v1'||policy.task_id!==TASK||policy.financial_execution!==false||typeof policy.automatic_release_enabled!=='boolean')throw Error('fixed_reconciliation_policy_required');
@@ -77,6 +78,8 @@ export async function executeA2({context,request,read,snapshotFor,collectChecks,
   try{
     const gate=executionGate({context,request,read,now,preflight});out.blockers=gate.blockers;out.runtime_bundle_sha256=gate.runtime_bundle.sha256;
     if(!gate.enabled)return out; // No network or write adapter while default off.
+    const config=JSON.parse(read('config/patchgate-a2.json')),controlled=controllerMode(config);
+    if(!controlled&&request.schema!=='ltzzz.patchgate.a2-collection-request.v1')throw Error('signed_mode_requires_signed_admission_request');
     verifyExecutionRun(await readApi(ROOT+'/actions/runs/'+context.run_id),{context,authority:gate.authority});
     const {snapshot,policy,trust}=await snapshotFor({base:context.source,head:request.candidate_head});
     if(snapshot.repository!==REPOSITORY||snapshot.task_id!==TASK||snapshot.base_sha!==context.source||snapshot.head_sha!==request.candidate_head
@@ -85,14 +88,26 @@ export async function executeA2({context,request,read,snapshotFor,collectChecks,
     if(risk.level!=='L0'||risk.modifies_own_checks||findings.length||!snapshot.files.length||snapshot.files.some(f=>f.mode!=='100644'||f.binary||!f.path.endsWith('.md')))throw Error('ordinary_L0_markdown_only');
     const checks=await collectChecks({request,baseSha:context.source,authority:JSON.parse(read('config/patchgate-a2-collector.json')).check_authority,now});
     if(checks.passed!==true||checks.checker_base_sha!==context.source||checks.checks_sha256!==sha256(canonical(checks.check_runs)))throw Error('actual_trusted_checks_required');
-    const admission=await readCandidateAdmission({api:readApi,request,snapshot,checks});out.admission=admission.evidence;
-    verifyExecutionRun(await readApi(ROOT+'/actions/runs/'+context.run_id),{context,authority:gate.authority});
+    let controllerDecision,admission={attestations:[]};
+    if(!controlled){admission=await readCandidateAdmission({api:readApi,request,snapshot,checks});out.admission=admission.evidence;}
+    const runResponse=await readApi(ROOT+'/actions/runs/'+context.run_id);
+    verifyExecutionRun(runResponse,{context,authority:gate.authority});
+    if(controlled){
+      const a=config.controller_authority,r=runResponse.data;
+      if(a.workflow_id!==gate.authority.workflow_id||a.workflow_path!==gate.authority.workflow_path
+        ||!a.github_actor_ids.includes(r.actor?.id))throw Error('registered_controller_workflow_actor_required');
+      const authorize=createControllerDecisionAuthority({controllerIds:[a.controller_id],authenticate:async()=>({verified:true,controller_id:a.controller_id,
+        identity_evidence_sha256:sha256(canonical({source:context.source,run_id:context.run_id,run_attempt:context.run_attempt,workflow_id:r.workflow_id,actor_id:r.actor.id}))})});
+      controllerDecision=await authorize({subject:controllerMergeSubject({subject:subjectFor(snapshot),runnerSha:context.source,runtimeBundleSha256:gate.runtime_bundle.sha256,
+        prNumber:request.candidate_pr,runId:context.run_id,checkRuns:checks.check_runs}),now});
+      out.authorization_mode=CONTROLLER_MODE;out.controller_decision=controllerDecisionEvidence(controllerDecision);
+    }
     out.mutation_adapter_called=true;
-    // Existing audited cryptographic quorum, expected-head/CAS, L0 full-tree
-    // readback and durable failure handling are the only mutation path.
-    const result=await merge({api:mergeApi,config:JSON.parse(read('config/patchgate-a2.json')),registry:JSON.parse(read('config/patchgate-executors.json')),
+    // Both authority modes use the same expected-head, stop latch, L0 full-tree
+    // readback and durable failure handling before any mutation is accepted.
+    const result=await merge({api:mergeApi,config,registry:JSON.parse(read('config/patchgate-executors.json')),
       policy,trust,snapshot,attestations:admission.attestations,checkRuns:checks.check_runs,runnerSha:context.source,runtimeBundleSha256:gate.runtime_bundle.sha256,
-      prNumber:request.candidate_pr,runId:context.run_id,now});
+      prNumber:request.candidate_pr,runId:context.run_id,controllerDecision,now});
     out.status=result.status;out.automatic_merge=result.automatic_merge===true;out.operation_result=result;
   }catch(e){out.status=out.mutation_adapter_called?'executor_failed_reconcile_no_retry':'blocked_before_merge';out.error=/^[A-Za-z0-9_]+$/.test(e.message)?e.message:'executor_failure_details_not_exported';}
   return out;

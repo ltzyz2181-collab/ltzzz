@@ -19,12 +19,35 @@ function fixture(){
  const readApi=async url=>{validateExecutionReadEndpoint(url);state.reads.push(url);if(url===ROOT+'/actions/runs/12345'){state.runReads++;return {status:200,data:structuredClone(state.run)};}
   if(url===ROOT+'/git/ref/heads/'+branch)return {status:200,data:{ref:'refs/heads/'+branch,object:{sha:C,type:state.refType||'commit'}}};
   if(url===ROOT+'/contents/'+path+'?ref='+C){const bytes=Buffer.from(JSON.stringify(state.envelope)+'\n');return {status:200,data:{path,type:'file',encoding:'base64',size:bytes.length,content:bytes.toString('base64'),sha:state.tampered?'0'.repeat(40):createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex')}};}throw Error('unexpected_fixture_read');};
- const read=name=>name==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(name)),execution_authority:authority}):raw(name);
+ const read=name=>name==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(name)),execution_authority:authority}):name==='config/patchgate-a2.json'?JSON.stringify({...JSON.parse(raw(name)),authorization_mode:'independent_signers',signer_source_binding_required:true,required_stage_auditors:['aliyun_dashscope','volcengine_ark'],required_candidate_review_providers:['aliyun_dashscope','volcengine_ark']}):raw(name);
  const args={context,request,read,snapshotFor:async()=>({snapshot,policy,trust}),collectChecks:async()=>checks,readApi,mergeApi:async()=>{throw Error('must_not_issue_real_mutation');},preflight,merge:async args=>{state.merges++;state.mergeArgs=args;return {status:'fixture_guarded_merger_called_once',automatic_merge:false};}};
  return {args,state,snapshot,checks};
 }
 test('execution accepts only exact main/dispatch/workflow/checkout context',()=>{assert.equal(executionContext({env,checkout:A}).source,A);for(const patch of [{GITHUB_REPOSITORY:'evil/fork'},{GITHUB_REF:'refs/pull/246/merge'},{GITHUB_EVENT_NAME:'pull_request_target'},{GITHUB_SHA:B},{GITHUB_RUN_ATTEMPT:'0'},{GITHUB_WORKFLOW_REF:REPO+'/.github/workflows/evil.yml@refs/heads/main'}])assert.throws(()=>executionContext({env:{...env,...patch},checkout:A}));});
 test('input identity rejects overrides, credentials, money, unknown fields and unbounded JSON',()=>{assert.deepEqual(executionRequest(JSON.stringify(request)),request);for(const patch of [{enabled:true},{token:'fixture-secret'},{paid:true},{signatures:[]},{candidate_head:'main'},{audit_path:'.env'},{task_id:'OTHER-TASK'}])assert.throws(()=>executionRequest(JSON.stringify({...request,...patch})));assert.throws(()=>executionRequest(' '.repeat(4097)));});
+function controllerFixture(){
+ const f=fixture(),read=f.args.read;
+ f.args.request={schema:'ltzzz.patchgate.a2-controller-request.v1',task_id:TASK,candidate_pr:246,candidate_head:B};
+ f.state.run.actor={id:261544579,login:'fixture-controller'};
+ f.args.read=name=>name==='config/patchgate-a2.json'?JSON.stringify({...JSON.parse(raw(name)),enabled:true,runtime_bundle_sha256:H,
+  controller_authority:{controller_id:'gpt',workflow_path:EXECUTION_WORKFLOW,workflow_id:777,github_actor_ids:[261544579]}}):read(name);
+ return f;
+}
+test('controller request needs no audit PR, model signature, policy override or credential',()=>{
+ const f=controllerFixture();assert.deepEqual(executionRequest(JSON.stringify(f.args.request)),f.args.request);
+ for(const field of ['controller_id','enabled','controllerDecision','token','authority'])assert.throws(()=>executionRequest(JSON.stringify({...f.args.request,[field]:true})));
+});
+test('controller execution authenticates the actual main run and never reads native signer admission',async()=>{
+ const f=controllerFixture(),r=await executeA2(f.args);assert.equal(f.state.merges,1);assert.equal(f.state.runReads,2);
+ assert.equal(f.state.reads.length,2);assert.equal(r.authorization_mode,'authenticated_controller');
+ assert.equal(r.controller_decision.independent_model_quorum_verified,false);assert.deepEqual(f.state.mergeArgs.attestations,[]);
+ assert.ok(f.state.mergeArgs.controllerDecision);assert.equal(r.financial_execution,false);
+});
+test('controller actor, workflow, candidate head and actual failed checks cannot be self-approved',async()=>{
+ for(const mutate of [f=>f.state.run.actor.id=42,f=>f.state.run.workflow_id=778,f=>f.checks.passed=false,f=>f.args.request.candidate_head=C]){
+  const f=controllerFixture();mutate(f);const r=await executeA2(f.args);assert.equal(f.state.merges,0);assert.equal(r.automatic_merge,false);
+ }
+});
 test('actual default policy stops before all network, model and mutation adapters',async()=>{let calls=0;const nope=async()=>{calls++;throw Error('must_not_call');};const r=await executeA2({context,request,read:raw,snapshotFor:nope,collectChecks:nope,readApi:nope,mergeApi:nope,merge:nope});assert.equal(r.status,'blocked_before_merge');assert.ok(r.blockers.includes('A2_switch_disabled'));assert.ok(r.blockers.includes('actual_execution_workflow_not_registered'));assert.equal(r.mutation_adapter_called,false);assert.equal(calls,0);});
 test('even a successful configuration preflight cannot invent an execution workflow authority',()=>{for(const a of [null,{workflow_path:EXECUTION_WORKFLOW,workflow_id:0},{workflow_path:'.github/workflows/evil.yml',workflow_id:777},{...authority,override:true}]){const read=p=>p==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(p)),execution_authority:a}):raw(p);assert.equal(executionGate({context,request,read,preflight}).enabled,false);}});
 test('read transport denies generic writes, private files, redirects and foreign repositories before HTTP',async()=>{let calls=0;const api=executionReadApi({token:'fixture',fetchImpl:async()=>{calls++;throw Error('never');}});for(const u of [ROOT+'/pulls/246/merge',ROOT+'/contents/.env?ref='+A,ROOT+'/git/ref/heads/main','https://evil.invalid','/repos/evil/repo/actions/runs/1'])await assert.rejects(api(u));assert.equal(calls,0);});

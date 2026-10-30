@@ -9,14 +9,8 @@
     "L0"
   ],
   "merge_method": "merge",
-  "required_stage_auditors": [
-    "aliyun_dashscope",
-    "volcengine_ark"
-  ],
-  "required_candidate_review_providers": [
-    "aliyun_dashscope",
-    "volcengine_ark"
-  ],
+  "required_stage_auditors": [],
+  "required_candidate_review_providers": [],
   "notification_actors": [],
   "runtime_bundle_sha256": null,
   "stage_audits": [],
@@ -33,13 +27,12 @@
     "A0-A3 labels contain L0-L3 risk levels; owner L4 notice means future highest-risk rollout, not a new permissive grade.",
     "No signatures, Claude PR review, or runner live merge acceptance is claimed by configuration.",
     "notificationActorAllowed is an unconsumed future high-risk helper; no L3/A4 notification admission is implemented or activated.",
-    "Trusted-main execution CLI/workflow is a separately reviewed candidate; it cannot merge while A2 is disabled, actual workflow authority or real signatures are missing. No live execution acceptance is claimed.",
-    "B1 selects Qwen and Doubao executor attestations, never an Anthropic key held by GPT or a model. Real key enrollment remains B4 and is not completed.",
     "C1 PR247: shared-login Claude reports are preserved advisory artifacts, not authenticated Claude/owner signatures and not a rollout requirement. Operational independent audit and original dissent remain visible.",
     "No independent owner account is registered; a comment by the shared GitHub account is never treated as owner-only confirmation.",
     "C2 PR247: base checks require pull_request_target, trusted-main workflow and actual event/base/head/PR marker. No live activation is claimed.",
     "B2 PR248: L0 Markdown only; no atomic expected-base claim. Verify actual merge parents, full before/after tree delta, blob identities and modes. Concurrent non-L0 base changes stop execution.",
-    "A fixed global stop latch is acquired before merging and released only after verified post-merge readback and receipt persistence. Unknown/failure outcomes retain it across runners. A3/L1+ still require protection and separate approval."
+    "Owner controller mode: existing authenticated GitHub main executor decides; reviews are advisory, no native model-signature quorum is claimed.",
+    "Still default off. Actual execution workflow registration, fixed source/check binding, controller identity, docs-only scope, durable stop latch and post-merge readback remain required. Financial execution is excluded."
   ],
   "base_compare_and_swap_verified": false,
   "claude_audit_channel": {
@@ -54,6 +47,15 @@
   "external_stage_audits": [],
   "base_fence_strategy": "L0_postmerge_readback_persistent_stop_latch",
   "postmerge_readback_enforced": true,
-  "signer_source_binding_required": true,
-  "stage_review_scope": "A2_L0_docs_only"
+  "signer_source_binding_required": false,
+  "stage_review_scope": "A2_L0_docs_only",
+  "authorization_mode": "authenticated_controller",
+  "controller_authority": {
+    "controller_id": "gpt",
+    "workflow_path": ".github/workflows/patchgate-a2-execute.yml",
+    "workflow_id": 396973369,
+    "github_actor_ids": [
+      261544579
+    ]
+  }
 }
