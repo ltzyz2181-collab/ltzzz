@@ -58,8 +58,8 @@ function fixture(){
   return {args,state,sign,subject,author,checks,review,readback,externalProof,rolloutSubject};
 }
 
-test('production configuration remains disabled, unsigned and no side effects',()=>{
-  assert.equal(validateA2Config(defaults),defaults);assert.equal(defaults.enabled,false);assert.equal(defaults.production_signing_keys_provisioned,false);
+test('repository controller mode enables only L0 docs and grants no funds or signing keys',()=>{
+  assert.equal(validateA2Config(defaults),defaults);assert.equal(defaults.enabled,true);assert.equal(defaults.production_signing_keys_provisioned,false);assert.equal(defaults.financial_execution,false);assert.deepEqual(defaults.allowed_risk_classes,['L0']);
   assert.equal(defaults.base_compare_and_swap_verified,false);assert.deepEqual(defaults.stage_audits,[]);assert.deepEqual(defaults.notification_actors,[]);
 });
 async function controlledFixture(){
@@ -96,7 +96,7 @@ test('real current executor transports are not yet admitted as cryptographic sig
 });
 test('disabled A2 makes zero network calls even if candidate proof fixtures are valid',async()=>{
   const f=fixture();let calls=0;
-  const r=await mergeDocsOnce({...f.args,config:defaults,api:async()=>{calls++;throw Error('no network');}});
+  const r=await mergeDocsOnce({...f.args,config:{...defaults,enabled:false},api:async()=>{calls++;throw Error('no network');}});
   assert.equal(r.status,'A2_disabled_or_runtime_not_bound');assert.equal(calls,0);
 });
 test('one executor cannot change provider on rotation or alias the same public key',()=>{
@@ -179,15 +179,18 @@ test('B2 PR248 requires post-merge controls for L0 and makes no atomic expected-
 test('readonly preflight reports real blockers; bundle changes invalidate approved audits',async()=>{
   const {bundleDigest,preflightA2}=await import('../patchgate-a2-preflight.mjs');
   const read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
-  const out=preflightA2({read,sourceCommit:A,now});
+  const disabledRead=name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,enabled:false,runtime_bundle_sha256:null}):read(name);
+  const out=preflightA2({read:disabledRead,sourceCommit:A,now});
   assert.equal(out.blockers.includes('registered_real_signers_not_provisioned'),false);
   assert.ok(out.blockers.includes('controller_runtime_not_enabled_or_bound'));
   assert.ok(out.blockers.includes('A2_switch_disabled'));assert.equal(out.blockers.includes('atomic_base_fence_not_implemented_or_verified'),false);
   assert.equal(out.native_model_calls,0);assert.equal(out.financial_execution,false);
-  const original=bundleDigest({read}),changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,enabled:true}):read(name)});
+  const original=bundleDigest({read}),changed=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,enabled:!defaults.enabled}):read(name)});
   assert.notEqual(original.sha256,changed.sha256);
   const evidenceOnly=bundleDigest({read:name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,runtime_bundle_sha256:H,stage_audits:[{untrusted:true}]}):read(name)});
   assert.equal(original.sha256,evidenceOnly.sha256);
+  const boundRead=name=>name==='config/patchgate-a2.json'?JSON.stringify({...defaults,runtime_bundle_sha256:original.sha256}):read(name);
+  assert.deepEqual(preflightA2({read:boundRead,sourceCommit:A,now}).blockers,[]);
 });
 
 test('receipt transport rejects malformed/extra/funds fields before any HTTP request',async()=>{
