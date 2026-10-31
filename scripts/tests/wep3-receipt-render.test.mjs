@@ -69,3 +69,24 @@ test('missing or nonarray checks and network failure are handled', async () => {
   const failed = await render(null, new Error('network'));
   assert.match(failed.state.textContent, /暂无可读取回执/);
 });
+
+test('execution and commit provenance remain visible for blocked provider deliveries', async () => {
+  const elements = await render({
+    at: '2026-10-31T01:45:22.188Z',
+    execution_id: '41156800095',
+    source_commit: '0527dc8e07a2e402420737010497ac0b637394f1',
+    trigger_commit: '0527dc8e07a2e402420737010497ac0b637394f1',
+    status: 'blocked',
+    reason: 'fresh_provider_delivery_failed',
+    worker_generation: {status: 'exception', tokens_used: 0},
+    paid: false,
+    tx_hash: null,
+  });
+  const detail = JSON.parse(elements.detail.textContent);
+  assert.equal(detail.execution_id, '41156800095');
+  assert.equal(detail.source_commit, '0527dc8e07a2e402420737010497ac0b637394f1');
+  assert.equal(detail.trigger_commit, detail.source_commit);
+  assert.equal(detail.reason, 'fresh_provider_delivery_failed');
+  assert.match(elements.money.textContent, /付款标记.*否/);
+  assert.equal(elements.detail.innerHTML, '');
+});
