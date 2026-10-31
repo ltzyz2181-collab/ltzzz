@@ -1,4 +1,5 @@
 import {createHash, randomUUID} from 'node:crypto';
+import {loadLessons, checkConsidered} from './lessons.mjs';
 
 export const sha256 = value => createHash('sha256').update(value).digest('hex');
 export const unitKey = task => sha256(`${task.task_id}\0${task.step_id}`);
@@ -11,7 +12,7 @@ const text = value => typeof value === 'string' && value.trim().length > 0;
 export function safePath(value) {
   return text(value) && !/^[/.]|[\\\u0000-\u001f%?#]/.test(value) && value.split('/').every(v => v && v !== '.' && v !== '..' && v !== '.git');
 }
-export function validatePreflight(record, {coreHash, sourceCommit}) {
+export function validatePreflight(record, {coreHash, sourceCommit}, tags = []) {
   const errors = [];
   if (!record || typeof record !== 'object' || record.template_only) return ['preflight_missing_or_template'];
   for (const field of ['goal','impulse_check','independent_check']) if (!text(record[field])) errors.push(`missing_${field}`);
@@ -21,6 +22,14 @@ export function validatePreflight(record, {coreHash, sourceCommit}) {
   if (!['none','existing_machine_policy','external_platform_verification'].includes(record.approval_kind)) errors.push('new_personal_or_five_signature_gate_not_authorized');
   if (!HASH.test(coreHash) || record.core_view_sha256 !== coreHash) errors.push('core_view_hash_mismatch');
   if (!COMMIT.test(sourceCommit) || record.source_commit !== sourceCommit) errors.push('base_commit_mismatch');
+  // Reflection harness wiring (docs/REFLECTION-HARNESS.md §9, advisory phase): report only, never block.
+  try {
+    const {lessons, problems} = loadLessons();
+    if (problems.length) console.warn(`reflection_harness: lesson_problems ${problems.join(',')}`);
+    for (const w of checkConsidered(record, lessons, tags)) console.warn(`reflection_harness: ${w}`);
+  } catch (e) {
+    console.warn(`reflection_harness: ${e.message}`);
+  }
   return errors;
 }
 
