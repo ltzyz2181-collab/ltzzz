@@ -1,0 +1,49 @@
+{
+  "id": "L-20261030-005",
+  "agent_actual": {
+    "provider": "multiple",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "ltzzz-memory/项目历史.md section 2026-10-13至10-14",
+    "commit": null
+  },
+  "task_tags": [
+    "revenue",
+    "daily_report",
+    "absence_of_data"
+  ],
+  "error_class": "stale_evidence",
+  "signature": "no_record_treated_as_zero",
+  "what_happened": "Per project history, the daily 3-number report treated missing ledger records as 0 income although unrecorded income could not be verified; it was corrected to 'unmeasured'.",
+  "expected": "Missing evidence is reported as unmeasured, not as zero.",
+  "evidence": [
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e",
+      "commit": null,
+      "verified_by_reporter": false
+    }
+  ],
+  "root_cause": {
+    "text": "A default value of 0 was used for a missing measurement.",
+    "status": "hypothesis"
+  },
+  "rule": "Report a metric with no evidence as 'unmeasured' and keep it out of totals, using 0 only when a source states 0.",
+  "check": {
+    "kind": "preflight_question",
+    "ref": null
+  },
+  "severity": "medium",
+  "mandatory": false,
+  "observed_at": "2026-10-30T23:00:00Z",
+  "reporter": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5"
+  },
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}
