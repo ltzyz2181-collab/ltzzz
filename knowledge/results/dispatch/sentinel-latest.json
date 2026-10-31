@@ -1,5 +1,5 @@
 {
-  "at": "2026-10-31T02:00:24.211Z",
+  "at": "2026-10-31T09:17:05.092Z",
   "date": "2026-10-31",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -42,8 +42,8 @@
       ],
       "instruction": "读取真实回执，签发下一轮任务；先查已有派单，不重复调用已预留模型或重新采购。",
       "issue": "dispatch_missing",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/control/2026-10-31.json",
       "claim_verified": false
     },
@@ -53,7 +53,7 @@
       "issuer": "gpt",
       "assigned_to": "claude",
       "phase": "external_pr_route_reference_only",
-      "due_at": "2026-10-31T09:00:00+08:00",
+      "due_at": "2026-10-31T22:00:00+08:00",
       "evidence": [
         "ops/dispatch/DAILY-2026-10-31-claude.md"
       ],
@@ -195,10 +195,10 @@
       "claim_verified": false
     }
   ],
-  "overdue_count": 0,
+  "overdue_count": 1,
   "deadline_unverified_count": 8,
   "claim_verified": false,
-  "run_id": "41157952121",
+  "run_id": "41188048427",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -242,21 +242,25 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "81 个原任务/81 条警告；验证认领 28、提交 27、独立审核 16、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "82 个原任务/82 条警告；验证认领 28、提交 27、独立审核 16、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
-      "state": "OK",
+      "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "DAILY-2026-10-31-qianwen:not_due；CONTROL-REVIEW-2026-10-31:not_due；DAILY-2026-10-31-claude:delivery_channel_reference_not_completion；DAILY-2026-10-31-deepseek:not_due；DAILY-2026-10-31-doubao:not_due；AUTO-2026-10-31-health:not_due；ANS-2026-10-31-doubao:evidence_present_scope_limited；REAL-HIRE-20261031-CLAUDE-01:evidence_present_scope_limited"
+      "note": "DAILY-2026-10-31-qianwen:not_due；CONTROL-REVIEW-2026-10-31:warning_required；DAILY-2026-10-31-claude:delivery_channel_reference_not_completion；DAILY-2026-10-31-deepseek:not_due；DAILY-2026-10-31-doubao:not_due；AUTO-2026-10-31-health:not_due；ANS-2026-10-31-doubao:evidence_present_scope_limited；REAL-HIRE-20261031-CLAUDE-01:evidence_present_scope_limited"
     }
   ],
   "business_alerts": [
     {
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED"
+    },
+    {
+      "item": "今日派单跟踪",
+      "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/41157952121-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/41188048427-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
