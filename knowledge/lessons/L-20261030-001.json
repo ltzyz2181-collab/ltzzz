@@ -1,0 +1,56 @@
+{
+  "id": "L-20261030-001",
+  "agent_actual": {
+    "provider": "github_actions_fixed_rules",
+    "model": null
+  },
+  "source": {
+    "kind": "receipt",
+    "ref": "knowledge/results/wep3/aave-41060028762.json",
+    "commit": null
+  },
+  "task_tags": [
+    "commit_message",
+    "receipt",
+    "funded_order",
+    "deployment_claim"
+  ],
+  "error_class": "overclaim",
+  "signature": "title_says_success_body_says_blocked",
+  "what_happened": "Automatic commits titled 'Autonomous funded-order and snapshot evidence' and 'WEP3 actual deployment acceptance' contain receipts with on_chain_executed=false, tx_hash=null, error treasury_signer_missing, x402_simulation_only=true, real_hire_verified=false, live_revenue_cents=0.",
+  "expected": "Titles and summaries state the actual status (blocked, simulation only) so a reader of git log does not infer that money moved or a real hire happened.",
+  "evidence": [
+    {
+      "path": "knowledge/results/wep3/aave-41060028762.json",
+      "sha256": "bb55ac0ce36df7a0f0d39f3864b985ee953cb5016cbc38c978ce3e4bff85b3bf",
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "knowledge/results/wep3/40989732278.json",
+      "sha256": "493949aa565b8b20fb028ba8faa7011b51eb8c1bb81ee3894891a78f8d43aa05",
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "Commit title is a fixed string in the workflow and is not derived from the receipt status.",
+    "status": "hypothesis"
+  },
+  "rule": "Derive every automatic commit title and status line from the receipt's own status fields, never from a fixed success-sounding string.",
+  "check": {
+    "kind": "ci_guard",
+    "ref": null
+  },
+  "severity": "medium",
+  "mandatory": false,
+  "observed_at": "2026-10-30T23:00:00Z",
+  "reporter": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5"
+  },
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}
