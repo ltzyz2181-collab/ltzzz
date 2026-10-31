@@ -1,0 +1,55 @@
+{
+  "id": "L-20261030-007",
+  "agent_actual": {
+    "provider": "github_actions_fixed_rules",
+    "model": null
+  },
+  "source": {
+    "kind": "receipt",
+    "ref": "knowledge/results/claude-team/real-hire-20261030.json",
+    "commit": null
+  },
+  "task_tags": [
+    "receipt",
+    "input_hash",
+    "dispatch_card"
+  ],
+  "error_class": "integrity_unpinned",
+  "signature": "input_hash_without_commit",
+  "what_happened": "The receipt records sha256 69a65e4c... for ans-cycle/2026-10-30.json, but that file was rewritten four times the same day and now hashes differently, and the receipt does not say which commit holds the hashed version.",
+  "expected": "Each recorded input hash is paired with the commit that contains that exact version.",
+  "evidence": [
+    {
+      "path": "knowledge/results/claude-team/real-hire-20261030.json",
+      "sha256": "1c2553babdbe2045b5ad65acaf0900ce769c28040b2e45d6e70858606bb6a70f",
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "knowledge/results/ans-cycle/2026-10-30.json",
+      "sha256": "e2afdbbdefd82e8f4e82b277b86b4e4e9316eaa4b1ab1ebc4a179c72686b774c",
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "The receipt writer stored path and hash but not the commit of the hashed bytes.",
+    "status": "verified"
+  },
+  "rule": "Store path, sha256 and commit for every input hash in a receipt.",
+  "check": {
+    "kind": "deterministic_test",
+    "ref": null
+  },
+  "severity": "low",
+  "mandatory": false,
+  "observed_at": "2026-10-30T23:00:00Z",
+  "reporter": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5"
+  },
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}

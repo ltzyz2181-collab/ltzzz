@@ -1,0 +1,49 @@
+{
+  "id": "L-20261030-006",
+  "agent_actual": {
+    "provider": "openai",
+    "model": null
+  },
+  "source": {
+    "kind": "pr",
+    "ref": "294",
+    "commit": "f115af017e021b34dab8d7ffa10e70929f5498cc"
+  },
+  "task_tags": [
+    "pull_request",
+    "review_request",
+    "signer"
+  ],
+  "error_class": "scope_creep",
+  "signature": "unrelated_files_in_review_pr",
+  "what_happened": "PR #294 asked for an exact-head review of the Volc signer repair but carried 55 files, including video-output binaries, job logs, relay copies and a 2046-line funded-order inspection record.",
+  "expected": "A PR sent for exact-head review contains only the files the review covers.",
+  "evidence": [
+    {
+      "path": "https://github.com/ltzyz2181-collab/ltzzz/pull/301",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "Merging main into the working branch brought unrelated files into the PR diff.",
+    "status": "verified"
+  },
+  "rule": "Before requesting an exact-head review, compare the PR file list with the review scope and open a clean PR when they differ.",
+  "check": {
+    "kind": "ci_guard",
+    "ref": null
+  },
+  "severity": "medium",
+  "mandatory": false,
+  "observed_at": "2026-10-30T23:00:00Z",
+  "reporter": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5"
+  },
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}

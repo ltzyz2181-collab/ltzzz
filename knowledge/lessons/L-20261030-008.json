@@ -1,0 +1,49 @@
+{
+  "id": "L-20261030-008",
+  "agent_actual": {
+    "provider": "multiple",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "ltzzz-memory/项目历史.md section 2026-10-15",
+    "commit": null
+  },
+  "task_tags": [
+    "deployment_claim",
+    "draft_review",
+    "patch_automation"
+  ],
+  "error_class": "unverified_completion",
+  "signature": "draft_review_passed_called_deployed",
+  "what_happened": "Per project history, ANS generation, a different-provider draft review and a board hash readback ran, but automatic test-merge-deploy of arbitrary patches did not exist, and the history warns against using a passed draft in place of a deployment receipt.",
+  "expected": "Draft, test, deployment and actual delivery are reported as separate states.",
+  "evidence": [
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e",
+      "commit": null,
+      "verified_by_reporter": false
+    }
+  ],
+  "root_cause": {
+    "text": "A review verdict on a draft was reported with the vocabulary of deployment.",
+    "status": "hypothesis"
+  },
+  "rule": "Name the highest state actually evidenced (draft, test, deployed, delivered) and do not use a lower state's receipt for a higher state.",
+  "check": {
+    "kind": "preflight_question",
+    "ref": null
+  },
+  "severity": "high",
+  "mandatory": false,
+  "observed_at": "2026-10-30T23:00:00Z",
+  "reporter": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5"
+  },
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}
