@@ -19,7 +19,9 @@ function fixture(){
  const readApi=async url=>{validateExecutionReadEndpoint(url);state.reads.push(url);if(url===ROOT+'/actions/runs/12345'){state.runReads++;return {status:200,data:structuredClone(state.run)};}
   if(url===ROOT+'/git/ref/heads/'+branch)return {status:200,data:{ref:'refs/heads/'+branch,object:{sha:C,type:state.refType||'commit'}}};
   if(url===ROOT+'/contents/'+path+'?ref='+C){const bytes=Buffer.from(JSON.stringify(state.envelope)+'\n');return {status:200,data:{path,type:'file',encoding:'base64',size:bytes.length,content:bytes.toString('base64'),sha:state.tampered?'0'.repeat(40):createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex')}};}throw Error('unexpected_fixture_read');};
- const read=name=>name==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(name)),execution_authority:authority}):name==='config/patchgate-a2.json'?JSON.stringify({...JSON.parse(raw(name)),authorization_mode:'independent_signers',signer_source_binding_required:true,required_stage_auditors:['aliyun_dashscope','volcengine_ark'],required_candidate_review_providers:['aliyun_dashscope','volcengine_ark']}):raw(name);
+ const checkerPolicy=JSON.parse(raw('config/patchgate-a2-collector.json'));
+ const trustedChecker={...checkerPolicy,check_authority:{...checkerPolicy.check_authority,workflow_sha256:sha256(raw('.github/workflows/patchgate-a2-base-checks.yml'))}};
+ const read=name=>name==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(name)),execution_authority:authority}):name==='config/patchgate-a2.json'?JSON.stringify({...JSON.parse(raw(name)),authorization_mode:'independent_signers',signer_source_binding_required:true,required_stage_auditors:['aliyun_dashscope','volcengine_ark'],required_candidate_review_providers:['aliyun_dashscope','volcengine_ark']}):name==='config/patchgate-a2-collector.json'?JSON.stringify(trustedChecker):raw(name);
  const args={context,request,read,snapshotFor:async()=>({snapshot,policy,trust}),collectChecks:async()=>checks,readApi,mergeApi:async()=>{throw Error('must_not_issue_real_mutation');},preflight,merge:async args=>{state.merges++;state.mergeArgs=args;return {status:'fixture_guarded_merger_called_once',automatic_merge:false};}};
  return {args,state,snapshot,checks};
 }
@@ -50,6 +52,20 @@ test('controller actor, workflow, candidate head and actual failed checks cannot
 });
 test('explicit off or unregistered policy stops before all network, model and mutation adapters',async()=>{let calls=0;const nope=async()=>{calls++;throw Error('must_not_call');};const read=p=>p==='config/patchgate-a2.json'?JSON.stringify({...JSON.parse(raw(p)),enabled:false}):p==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(p)),execution_authority:null}):raw(p);const r=await executeA2({context,request,read,snapshotFor:nope,collectChecks:nope,readApi:nope,mergeApi:nope,merge:nope});assert.equal(r.status,'blocked_before_merge');assert.ok(r.blockers.includes('A2_switch_disabled'));assert.ok(r.blockers.includes('actual_execution_workflow_not_registered'));assert.equal(r.mutation_adapter_called,false);assert.equal(calls,0);});
 test('even a successful configuration preflight cannot invent an execution workflow authority',()=>{for(const a of [null,{workflow_path:EXECUTION_WORKFLOW,workflow_id:0},{workflow_path:'.github/workflows/evil.yml',workflow_id:777},{...authority,override:true}]){const read=p=>p==='config/patchgate-a2-reconcile.json'?JSON.stringify({...JSON.parse(raw(p)),execution_authority:a}):raw(p);assert.equal(executionGate({context,request,read,preflight}).enabled,false);}});
+test('stale trusted-main checker registration stops at read-only gate before network or merge',async()=>{
+ const f=fixture(),read=f.args.read,policy=JSON.parse(read('config/patchgate-a2-collector.json'));
+ f.args.read=name=>name==='config/patchgate-a2-collector.json'?JSON.stringify({...policy,check_authority:{...policy.check_authority,workflow_sha256:'0'.repeat(64)}}):read(name);
+ const gate=executionGate({context,request,read:f.args.read,preflight});
+ assert.equal(gate.enabled,false);assert.ok(gate.blockers.includes('registered_check_workflow_digest_changed'));
+ const r=await executeA2(f.args);
+ assert.equal(r.status,'blocked_before_merge');assert.equal(f.state.runReads,0);assert.equal(f.state.merges,0);
+});
+test('malformed checker registration cannot enable a trusted-main write job',()=>{
+ const f=fixture(),read=f.args.read,policy=JSON.parse(read('config/patchgate-a2-collector.json'));
+ f.args.read=name=>name==='config/patchgate-a2-collector.json'?JSON.stringify({...policy,check_authority:{...policy.check_authority,workflow_id:0}}):read(name);
+ const gate=executionGate({context,request,read:f.args.read,preflight});
+ assert.equal(gate.enabled,false);assert.ok(gate.blockers.includes('trusted_base_check_workflow_not_registered'));
+});
 test('read transport denies generic writes, private files, redirects and foreign repositories before HTTP',async()=>{let calls=0;const api=executionReadApi({token:'fixture',fetchImpl:async()=>{calls++;throw Error('never');}});for(const u of [ROOT+'/pulls/246/merge',ROOT+'/contents/.env?ref='+A,ROOT+'/git/ref/heads/main','https://evil.invalid','/repos/evil/repo/actions/runs/1'])await assert.rejects(api(u));assert.equal(calls,0);});
 test('read transport uses fixed HTTPS origin and redirection error, with no secrets in results',async()=>{let req;const api=executionReadApi({token:'fixture-auth',fetchImpl:async(u,o)=>{req={u,o};return Response.json({id:1});}});const r=await api(ROOT+'/actions/runs/1');assert.equal(req.o.method,'GET');assert.equal(req.o.redirect,'error');assert.equal(req.u,'https://api.github.com'+ROOT+'/actions/runs/1');assert.ok(!JSON.stringify(r).includes('fixture-auth'));});
 test('actual run must match registered workflow, main source, event, repository, attempt and active status',()=>{const f=fixture();verifyExecutionRun({status:200,data:f.state.run},{context,authority});for(const patch of [{workflow_id:778},{event:'pull_request'},{head_sha:B},{run_attempt:2},{status:'completed'},{head_repository:{full_name:'evil/fork'}}])assert.throws(()=>verifyExecutionRun({status:200,data:{...f.state.run,...patch}},{context,authority}));});
