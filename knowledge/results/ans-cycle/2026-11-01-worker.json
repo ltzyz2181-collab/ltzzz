@@ -1,0 +1,28 @@
+{
+  "finding": "scripts/lib/daily-task-board.mjs 的 syncDailyBoard 在调用 recoverArtifact 后忽略其返回值：恢复成功（seat.status 变为 generated_pending_sync）的席位会继续落入后续无条件 generation_started 降级分支的条件检查，但该分支在恢复成功后不会命中；真正缺陷在于恢复失败且无唯一可验证 artifact 时，调用方未基于返回值显式分流，导致依赖状态顺序而非显式控制流。更关键的断点是 recoverArtifact 只处理 generation_started 和 generation_unknown_no_repurchase，而 syncDailyBoard 在恢复尝试后立即把 generation_started 改写为 generation_unknown_no_repurchase，却未在改写前判断是否已存在唯一完整 artifact。若 artifact 文件与 ledger 状态因崩溃顺序不一致，recoverArtifact 返回 false 且 seat.status 仍为 generation_started，同轮即被降级，丢失可恢复窗口。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-10-31-reviewer.json"
+  ],
+  "minimal_patch": "--- a/scripts/lib/daily-task-board.mjs\n+++ b/scripts/lib/daily-task-board.mjs\n@@ -133,7 +133,17 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote, now=Date.now()}) {\n   if (record.date !== date) throw Error('reservation_date_mismatch');\n   for (const [agent, seat] of Object.entries(record.seats)) {\n-    recoverArtifact(root,record,agent,seat);\n+    const recovered = recoverArtifact(root,record,agent,seat);\n+    if (recovered && seat.status === 'generated_pending_sync') {\n+      seat.sync_reason = 'immutable_artifact_recovered_verified_no_model_replay';\n+      saveLedger(root,record);\n+      continue;\n+    }\n     if(seat.assignment&&seat.claim_verified&&['generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n-    if (seat.status === 'generation_started') {\n+    if (seat.status === 'generation_started' && !recovered) {\n       seat.status = 'generation_unknown_no_repurchase';\n       seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\n       saveLedger(root,record);\n+      continue;\n     }",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "git diff -- scripts/lib/daily-task-board.mjs",
+    "grep -n 'recoverArtifact' scripts/lib/daily-task-board.mjs",
+    "grep -n 'generation_unknown_no_repurchase' scripts/lib/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "未实施端到端故障注入验证：需构造 artifact 已写盘但 ledger 状态仍为 generation_started 的崩溃场景，实证 recoverArtifact 返回 true 后同轮不再降级；且未确认 recovered 为 true 时 saveLedger 的冗余写盘不会与后续 syncDailyBoard 的二次扫描产生竞态。",
+  "supervisory_proposal": {
+    "accepted": false,
+    "operation": "memory_promotion",
+    "subject_sha256": "ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8",
+    "reasons": [
+      "候选材料为 2026-09-21 每日整理，来源文件提供的 source_sha256（35246c3...）与给定 subject_sha256（ae543cc...）不一致，无法确认待晋升对象的字节哈希。",
+      "material 中存在未验证声明，如『本地 FFmpeg 视频链路：仓库 README 记录为已真实验证』，该表述在 source_text 内被明确标记为无法调用本机服务，不满足 Memory 晋升要求。",
+      "候选 claim 将装备论上升为长期核心知识，但 source_text 自身反复强调不能将 AI 生成内容直接标为已验证结果，且未提供独立人工验证回执或跨日复现实证。",
+      "本次监督仅为附带任务，不因此轮工程草稿存在而被推导通过。"
+    ]
+  }
+}

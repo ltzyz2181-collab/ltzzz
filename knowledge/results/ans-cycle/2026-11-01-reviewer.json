@@ -1,0 +1,48 @@
+{
+  "accepted": true,
+  "artifact_sha256": "d47ad696f3bf70af45921d57dcf8f914d041c6b6fa98ca74c30462d9eddd2d2a",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 的席位循环确实直接调用 recoverArtifact(root,record,agent,seat)，但没有接收或使用其布尔返回值。",
+    "recoverArtifact 的实现可静态复核：仅在状态为 generation_started 或 generation_unknown_no_repurchase、seat.artifact 不存在、存在 assignment 且 claim_verified 为 true 时扫描 artifacts 目录；只有唯一候选通过 validateArtifact 时才写入 seat.artifact、将状态改为 generated_pending_sync、保存 ledger 并返回 true；无目录、无候选、多候选或校验失败均返回 false。",
+    "syncDailyBoard 在 recoverArtifact 调用后先处理失败席位，再检查 seat.status === 'generation_started' 并将其改写为 generation_unknown_no_repurchase。因此，当 recoverArtifact 返回 false 且状态仍为 generation_started 时，同轮确实会进入降级分支。",
+    "交付 finding 对成功恢复路径的表述有自我修正且结论成立：若 recoverArtifact 当轮成功，seat.status 已变为 generated_pending_sync，现有代码不会再命中 generation_started 降级；真正可复核的问题是调用方未基于返回值显式分流，而是依赖状态变更和语句顺序。",
+    "交付指出的关键崩溃窗口成立：若 artifact 文件已写盘但因文件不完整、哈希不符、绑定不符、多候选或其他原因导致当轮 recoverArtifact 返回 false，且 ledger 仍为 generation_started，则同轮会被降级为 generation_unknown_no_repurchase。由于 recoverArtifact 也接受 generation_unknown_no_repurchase，后续仍有恢复机会，但同轮恢复窗口确实结束。",
+    "minimal_patch 使用 const recovered = recoverArtifact(...) 捕获结果，并在 recovered 为 true 且状态为 generated_pending_sync 时设置 sync_reason、保存 ledger 并 continue，可使成功恢复路径显式跳过同轮后续逻辑。recoverArtifact 成功时内部已经保存一次，补丁中的 saveLedger 属于冗余写盘，但不改变状态语义。",
+    "补丁将 generation_started 降级条件改为 seat.status === 'generation_started' && !recovered，并在降级后 continue；该分支静态看不包含 call()、submit_task 或其他模型调用，符合未知结果不重复采购的既有语义。",
+    "补丁恢复成功后 continue，会使该席位当轮不执行 readRemote、submit_task 或 review 回读，而等待后续 syncDailyBoard；scripts/daily-task-board.mjs 的 sync 分支会调用两次 syncDailyBoard，因此可能在同一脚本后续第二次调用中继续同步，但这仍是未经验证的调度语义。",
+    "verification_commands 提供语法检查、diff 查看和关键字符串定位等可复核入口；remaining_blocker 明确承认尚未实施故障注入和端到端验证，因此本次只能验收问题分析与补丁草稿的可复核性，不能认定修复已执行或上线。"
+  ],
+  "unverified": [
+    "未在当前审核环境取得该交付物原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。",
+    "未验证 minimal_patch 已写入仓库或工作区；不能声称代码已执行、测试、合并、部署或上线。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs 或 node --check scripts/daily-task-board.mjs。",
+    "未实际执行 git diff，无法确认补丁按当前缩进、分号和代码风格能否干净应用。",
+    "未运行自动化单元测试，尚未覆盖 recoverArtifact 的成功、无目录、无候选、多候选、损坏文件、哈希不匹配、run_key/source_commit/task 绑定错误等分支。",
+    "未做 artifact 已写盘但 ledger 未更新的故障注入，无法实证恢复路径与同轮降级路径的实际行为。",
+    "未验证 recovered 为 true 时补丁中的冗余 saveLedger 是否会引入额外写盘、文件竞争或与并发 syncDailyBoard 扫描相关的竞态。",
+    "未验证恢复成功后 continue 与 scripts/daily-task-board.mjs 中 materializeDailyReview、syncDailyReview、第二次 syncDailyBoard 的顺序是否产生非预期交互。",
+    "未验证 generated_pending_sync 后续 readRemote、submit_task、snapshot readback、独立 review、异常落盘和重试的端到端幂等性。",
+    "未验证补丁在所有路径下均不新增模型调用、API 费用、重复采购、资金交易或其他副作用。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本、线上关键行为或真实崩溃恢复结果。"
+  ],
+  "supervisory_review": {
+    "accepted": false,
+    "operation": "memory_promotion",
+    "subject_sha256": "ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8",
+    "artifact_sha256": "f4ad776cf6c9b2d4032cdf759d9a9c3ff6f67b544b8eecbc69075138c4dcdffe",
+    "reasons": [
+      "独立对照监督工件与完整来源，工件声明的操作是 memory_promotion，待晋升 subject_sha256 为 ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8，但来源对象给出的 source_sha256 为 35246c3ea53c1d22d005383287dc021c365e22426614ac17a56204ccc1ef1821，二者不一致，无法确认待晋升字节就是给定 subject_sha256 所标识的对象。",
+      "完整来源将装备论表述为结构化整理、可验证假设和记录框架，并未提供足以把该候选直接晋升为长期核心知识的独立验证闭环；文中还明确要求记录证据、反例与可验证结果。",
+      "完整来源明确写明不能把 AI 生成内容直接标为已验证结果、不能把代码存在当作已经上线、不能把接口存在当作调用成功，因此不能把候选 claim 从整理材料提升为已验证长期事实。",
+      "完整来源中的本地 FFmpeg 视频链路状态同时说明 README 有历史验证记录、但本次自动任务无法调用 127.0.0.1:8788 本机服务，外部视频服务未调用，OAuth 与公开发布未执行；这些未验证事项不能支持记忆晋升。",
+      "监督结论独立于工程交付验收；工程草稿可复核不等于 memory_promotion 候选通过。"
+    ],
+    "unverified": [
+      "未在当前审核环境取得监督工件原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。",
+      "未读取 memory/daily/2026-09-21.md 的仓库原始字节，无法独立重算其 source_sha256。",
+      "无法确认 subject_sha256 对应的确切字节内容及其与完整来源文本之间的关系。",
+      "未验证候选材料之后是否存在独立人工回执、跨日复现实证或其他可支持晋升的补充证据。",
+      "未验证任何视频生成、外部视频服务调用、OAuth 授权或公开发布行为。"
+    ]
+  }
+}
