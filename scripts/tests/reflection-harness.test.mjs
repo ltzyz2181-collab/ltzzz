@@ -114,3 +114,11 @@ test('the deployed CLI reads immutable blobs, updates one event and makes repeat
  assert.throws(()=>run(first));
  const summary=JSON.parse(fs.readFileSync(path.join(root,'knowledge/learning/summary.json')));assert.equal(summary.attempts,1);assert.equal(summary.outcomes.draft_reviewed,1);
 }));
+test('observer also follows token-authored task workflow completion using trusted main without model credentials',()=>{
+ const workflow=fs.readFileSync('.github/workflows/reflection-harness.yml','utf8');
+ assert.match(workflow,/workflow_run:[\s\S]*Execute LTZZZ AI task queue/);
+ assert.match(workflow,/head_repository\.full_name == github\.repository/);
+ assert.match(workflow,/with: \{ref: main, fetch-depth: 0\}/);
+ assert.match(workflow,/HARNESS_SOURCE_COMMIT/);
+ assert.ok(!workflow.includes('secrets.')&&!workflow.includes('cron:'));
+});
