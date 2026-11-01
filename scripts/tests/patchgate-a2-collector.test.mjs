@@ -12,6 +12,11 @@ const now=Date.parse('2026-10-26T00:00:00Z'),at=new Date(now).toISOString(),PATH
 const authority={workflow_path:BASE_CHECK_WORKFLOW,workflow_id:100,app_id:15368,job_name:'patchgate-a2-base-checks',workflow_sha256:sha256(fs.readFileSync(new URL('../../'+BASE_CHECK_WORKFLOW,import.meta.url)))};
 const request={schema:'ltzzz.patchgate.a2-collection-request.v1',task_id:TASK,candidate_pr:250,candidate_head:B,audit_pr:244,audit_path:PATH};
 const read=name=>fs.readFileSync(new URL('../../'+name,import.meta.url));
+test('registered checker digest binds the actual trusted workflow bytes rather than only a synthetic fixture',()=>{
+  const registered=JSON.parse(read('config/patchgate-a2-collector.json')).check_authority;
+  assert.equal(registered.workflow_path,BASE_CHECK_WORKFLOW);
+  assert.equal(registered.workflow_sha256,sha256(read(BASE_CHECK_WORKFLOW)));
+});
 function contents(path,bytes){return {status:200,data:{path,type:'file',size:bytes.length,encoding:'base64',content:bytes.toString('base64')+'\n',sha:createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex')}};}
 function fixture(){
   const bundle=bundleDigest({read});
