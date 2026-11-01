@@ -2321,7 +2321,22 @@
       "impact": "low",
       "status": "candidate",
       "deduped": true,
-      "conflicts": [],
+      "conflicts": [
+        {
+          "with": "ops/dispatch/MODELCAT-KIMICN-20261022.md (v2, 2026-10-28)",
+          "conflict": "10-20/21/22/11-01 的 kimi_cn 目录降级建议与 v2 拆维度要求冲突；A保持 catalogue_verified_no_generation。",
+          "verdict": "仅作废该候选中的目录降级建议；其他观察仍待独立复核",
+          "additional_error": "10-10 空正文被拒是失败尝试，不是有效生成记录；不能据此声称目录A与实际生成矛盾。",
+          "correct_model": "A=catalogue_verified_no_generation；B=last_generation_outcome=failed_20261010_empty_response",
+          "risk_closure": "A在11-01扫描未污染，旧建议未执行；本次补B及生产者历史附加字段，不能称新生成验证。",
+          "evidence": [
+            "ops/dispatch/MODELCAT-KIMICN-20261022.md",
+            "data/memory/qianwen.json",
+            "knowledge/results/providers/catalogue-latest.json",
+            "ltzzz-memory/项目历史.md"
+          ]
+        }
+      ],
       "human_confirm": false,
       "human_confirmation_required": false,
       "review_status": "pending_review"
