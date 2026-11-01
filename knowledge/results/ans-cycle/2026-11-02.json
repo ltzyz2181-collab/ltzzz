@@ -4,7 +4,7 @@
   "run_id": "41354642452",
   "source_commit": "3c913a6d89415a7476123bb7b39f9c7e7e151af0",
   "at": "2026-11-01T21:57:50.421Z",
-  "status": "claimed_before_model_calls",
+  "status": "draft_rejected",
   "generation_policy": "ans_short_non_thinking_v2",
   "priority": "ANS autonomous dispatch and feedback",
   "tasks": [
@@ -19,8 +19,44 @@
       "role": "independent_reviewer"
     }
   ],
-  "calls": [],
-  "artifacts": [],
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-11-01T21:57:52.971Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 29305
+    },
+    {
+      "requested_agent": "Doubao",
+      "status": "success",
+      "at": "2026-11-01T21:58:00.788Z",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "finish_reason": "stop",
+      "tokens_used": 30482
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "worker",
+      "task_id": "ANS-2026-11-02-deepseek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "sha256": "3fc0a84a2ce7813a11ab29c8ff06fda2fddb657b685d401b691ee2bdb15128f5",
+      "path": "knowledge/results/ans-cycle/2026-11-02-worker.json"
+    },
+    {
+      "role": "reviewer",
+      "task_id": "ANS-2026-11-02-doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "sha256": "de39236fdf6f9847a576bc60312a61bac22996eb3c9c664b21dc00799f01fd40",
+      "path": "knowledge/results/ans-cycle/2026-11-02-reviewer.json"
+    }
+  ],
   "openai_calls": 0,
   "financial_execution": false,
   "paid": false,
@@ -35,5 +71,203 @@
     },
     "subject_sha256": "ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419",
     "source_text": "# Grok 每日观察 · 2026-09-21\n\n## 1. 装备论观察\n\n**观察：系统是否把“状态—边界—下一步”外化成可检索记录，可能比单纯要求参与者保持意志力，更能稳定长期行为。**\n\n来源：`ltzzz-memory/装备论.md` 的核心假设把身体、感知、习气、环境、软件、AI 与社会工具作为可长期观察的“装备系统”，并要求每次新增内容写明观察、来源、假设、反例、AI验证、人工验证与下一步。\n\n### 可验证假设\n连续 7 天比较两类任务：\n- A：有状态、失败原因、下一步和结果文件的任务；\n- B：只有自然语言提醒、没有结构化结果记录的任务。\n\n记录：触发率、完成率、失败定位时间、重复确认次数、下一步是否明确。该观察只检验行为组织效果，不检验疾病治疗效果。\n\n### 对心理健康议题的启发（非医学结论）\n- 焦虑：把模糊担忧拆成事实、可控动作、等待项，可能降低不确定性带来的反复确认；这是行为设计启发，不等于焦虑症治疗证据。\n- 抑郁：把任务拆成低门槛、可完成、可见的步骤，可能增加行动反馈；不能据此诊断抑郁或替代心理治疗、药物治疗。\n- 双相相关问题：结构化记录睡眠、精力、活动量、情绪变化，可能帮助形成时间序列；但双相诊断需要专业人员综合评估病程、持续时间、严重程度、功能受损及其他医学因素，不能由“装备论”或 AI 自行判定。\n\n## 2. APP / Web3 代码审查\n\n审查对象：`app.html`、`wallet-lab.html`。\n\n### 真实发现\n`wallet-lab.html` 提供真实 ETH 转账和赞赏入口，页面明确要求由钱包弹窗交给用户本人确认，并禁止向网站或 AI 提供助记词、私钥、密码和验证码。当前代码未见把私钥写入页面的迹象。\n\n### 本次是否实施代码修改\n**未实施生产代码修改。**\n\n原因：本次可见代码片段不足以安全确认转账处理函数的完整校验、网络切换和金额解析逻辑；在未完整验证前直接改动真实转账路径，可能造成兼容性或资金风险。根据“不得修改真实资金、支付或生产权限”的约束，本次只留下审查记录，不制造无意义修改。\n\n### 下一步最小安全改进\n在完整核对转账函数后，优先补充：\n1. 目标地址 checksum / 格式校验；\n2. 金额解析失败与非正数的明确阻断；\n3. 链 ID 与页面声明网络不一致时的阻断提示；\n4. 每次用户确认前显示目标地址、网络、金额和预计手续费摘要。\n\n## 3. 状态\n\n### 已上线\n- 今日观察记录已写入本文件。\n- APP / Web3 代码审查已完成。\n- 未对密钥、真实资金、支付权限或生产权限做修改。\n\n### 等人工凭证\n- 完整转账函数代码核对所需的部署版本 / 运行日志。\n- 如要启用更严格的生产保护，还需要由人工配置相应的前端发布与钱包网络策略；本次未触碰。\n\n## 4. 医学边界\n\n本记录是思想讨论、行为组织实验和软件安全审查，不是医学诊断或治疗建议。若出现持续或明显影响生活的情绪、睡眠、精力、冲动控制变化，应寻求合格医疗/心理专业人员评估。"
-  }
+  },
+  "pulse_observed_at": "2026-11-01T21:56:49.667Z",
+  "actual_autonomic_feedback": {
+    "version": 1,
+    "observed_at": "2026-11-01T21:56:49.667Z",
+    "cases": [],
+    "open_cases": 0,
+    "action_taken": {
+      "type": "apply_health_dispatch_controls",
+      "paused_agents": [],
+      "dispatch_paused": false
+    },
+    "follow_up_receipt": {
+      "previous_observation_at": "2026-11-01T21:51:49.453Z",
+      "current_observation_at": "2026-11-01T21:56:49.667Z",
+      "next_probe_due_at": "2026-11-01T22:01:49.667Z"
+    },
+    "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
+    "financial_execution": false,
+    "model_generation_proven": false,
+    "real_money_penalty": false
+  },
+  "remote_claims": true,
+  "inputs": [
+    {
+      "file": "scripts/lib/daily-task-board.mjs",
+      "sha256": "d62cb7817af6e907854eb5c88088e50823d2bcf706e009f00ecf165c7b87bfdc",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "scripts/daily-task-board.mjs",
+      "sha256": "703790c5b25c91c216ebb05d3a0c5a6908772fa1f0a0516142713f23140e2d01",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "scripts/lib/pulse-client.mjs",
+      "sha256": "74678862d82f618f87abc0111319903100ea69a61857b6e87f4adde87906b4a7",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "workers/pulse-worker/index.js",
+      "sha256": "3b3bceabedbeb3c4b19f7d011d51a4a2d9ef02b2ded84a00c34f24f334106e1f",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "workers/pulse-worker/engine.js",
+      "sha256": "b46053c7f73001ef110a3260930ce2a642b136444b7856a77b8fef1a85872d0e",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "workers/pulse-worker/tasks.js",
+      "sha256": "9577bcec2bd2716dc276fe7c5b9ebd5f19392dd5979ba621190c4895f3fb54cf",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "scripts/lib/daily-assignment.mjs",
+      "sha256": "149bf53f6daa890ba86ce45c515a5dc158fe3be6ad1f7252a5e77c5bf2f48813",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "scripts/run-autonomous-control.mjs",
+      "sha256": "944d60d024a0a51388c020fa43e7f9d3cb6a85f3cdeaee00d0d770594d87b7ba",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "scripts/run-daily-tasks.mjs",
+      "sha256": "053d92c255b9013549ce46f361477c566324fe6228402cc6494d12b35db53a05",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "docs/ANS-AUTONOMOUS-PULSE.md",
+      "sha256": "7c8e34b2186faa1da46936c60f9c9002ab1fd93ba324d532e5c11dc46f4b5722",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    },
+    {
+      "file": "knowledge/results/ans-cycle/2026-11-01-reviewer.json",
+      "sha256": "11f4e824fd00adbfca89e2e0dd1d594ddbaa7e2fff13985d65f9973dbec31ab4",
+      "commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641"
+    }
+  ],
+  "execution_source_commit": "ba51c84ef3f5892eacd3d0a0fdb6a7fa04d4b641",
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "ans-worker-and-independent-review",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "f0dc82d62d732fc89fd51d7645a9d27b7a31ad07979c2e8c378638da3d1c0c41",
+      "invalid_entries": 0
+    }
+  },
+  "execution_expectation": {
+    "expected_status": "draft_independently_reviewed",
+    "source": "controller_fixed_expectation_not_model_prediction",
+    "verification": "bound independent artifact review only; no deployment or platform acceptance"
+  },
+  "provider_attempts": [
+    {
+      "requested_agent": "DeepSeek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 29305,
+      "request_id": null,
+      "completion_id": "545c05ec-8104-4d94-a348-74fc52c843e4",
+      "stream_complete": true,
+      "error": null
+    },
+    {
+      "requested_agent": "Doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 30482,
+      "request_id": null,
+      "completion_id": null,
+      "stream_complete": null,
+      "error": null
+    }
+  ],
+  "worker_raw_output": "```json\n{\n  \"finding\": \"recoverArtifact 的调用方 syncDailyBoard 忽略返回布尔值，导致恢复成功路径与同轮降级路径之间缺少显式分流。更关键的断点是：当 seat.status 已经变成 generation_unknown_no_repurchase（例如上一轮 sync 因无唯一候选而降级），artifact 文件随后由外部流程或其他副本恢复到位时，recoverArtifact 会接受 generation_unknown_no_repurchase 状态并恢复为 generated_pending_sync；但 syncDailyBoard 在同轮先调用 recoverArtifact 后，恢复后的 generated_pending_sync 会落入后续同步分支。实际断点在于同步分支继续执行 validateArtifact 之前，没有先检查 seat.recovery 或返回状态，也没有在恢复成功时立即保存后 continue，因此可能与同轮后续快照/readRemote 产生非预期顺序；而 scripts/daily-task-board.mjs 的 sync 分支在同一次 Node 进程内调用 syncDailyBoard 两次，使恢复后的席位可能在第二次调用中被重复处理或错误降级。具体表现为：第一次 sync 中 recoverArtifact 返回 true 且状态变为 generated_pending_sync，但 syncDailyBoard 未返回或继续；第二次 sync 中该席位进入同步逻辑，既未验证恢复事件在场，也没有阻止同轮重复验证。\",\n  \"evidence_paths\": [\n    \"scripts/lib/daily-task-board.mjs\",\n    \"scripts/daily-task-board.mjs\"\n  ],\n  \"minimal_patch\": \"--- a/scripts/lib/daily-task-board.mjs\\n+++ b/scripts/lib/daily-task-board.mjs\\n@@ -239,7 +239,13 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote\\n   if (!record) return null;\\n   if (record.date !== date) throw Error('reservation_date_mismatch');\\n   for (const [agent, seat] of Object.entries(record.seats)) {\\n-    recoverArtifact(root,record,agent,seat);\\n+    const recovered = recoverArtifact(root,record,agent,seat);\\n+    if (recovered && seat.status === 'generated_pending_sync') {\\n+      seat.sync_reason = 'immutable_artifact_recovered_in_sync';\\n+      seat.recovery = seat.recovery || 'immutable_artifact_verified_no_model_replay';\\n+      saveLedger(root,record);\\n+      continue;\\n+    }\\n     if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\\n     if (seat.status === 'generation_started') {\\n       seat.status = 'generation_unknown_no_repurchase';\\n@@ -249,6 +255,7 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote\\n       saveLedger(root,record);\\n     }\\n+    if (seat.recovery && seat.status === 'generated_pending_sync') continue;\\n     if (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;\",\n  \"verification_commands\": [\n    \"node --check scripts/lib/daily-task-board.mjs\",\n    \"node --check scripts/daily-task-board.mjs\",\n    \"grep -n \\\"continue\\\" scripts/lib/daily-task-board.mjs | head -20\",\n    \"grep -n \\\"recovered\\\" scripts/lib/daily-task-board.mjs\",\n    \"git diff -- scripts/lib/daily-task-board.mjs\"\n  ],\n  \"remaining_blocker\": \"尚未在故障注入环境中实证 artifact 已写盘但 ledger 为 generation_started 或 generation_unknown_no_repurchase 的两种恢复路径；也未运行受控测试验证补丁在恢复成功时确实跳过同轮后续同步，且第二次 syncDailyBoard 调用不会清除恢复状态。\"\n}\n```",
+  "worker_raw_sha256": "d58b792e3f52bed9963d8b305216afa302cc3d80486a9190f83adb6fa587490d",
+  "worker_format": "json_engineering_draft",
+  "action_taken": {
+    "type": "engineering_draft_created_not_deployed",
+    "artifact_sha256": "3fc0a84a2ce7813a11ab29c8ff06fda2fddb657b685d401b691ee2bdb15128f5"
+  },
+  "follow_up_receipt": {
+    "artifact_sha256": "3fc0a84a2ce7813a11ab29c8ff06fda2fddb657b685d401b691ee2bdb15128f5",
+    "reviewer_provider": "Doubao",
+    "reviewer_model": "doubao-seed-2-1-pro-260915",
+    "accepted": false,
+    "scope": "independent_engineering_draft_review_not_production_execution"
+  },
+  "audit_raw_output": "{\"accepted\":false,\"artifact_sha256\":\"3fc0a84a2ce7813a11ab29c8ff06fda2fddb657b685d401b691ee2bdb15128f5\",\"reasons\":[\"对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 当前确实直接调用 recoverArtifact(root,record,agent,seat) 且忽略其布尔返回值；这一事实可由源码静态复核。\",\"recoverArtifact 的行为与 finding 的核心描述一致：仅接受 generation_started 或 generation_unknown_no_repurchase；在无 seat.artifact、有 assignment、claim_verified 为 true 时扫描 artifacts 目录；唯一候选通过 validateArtifact 后写入 artifact、将状态改为 generated_pending_sync、设置 recovery、保存 ledger 并返回 true，否则返回 false。\",\"现有 syncDailyBoard 在 recoverArtifact 成功后不会命中失败席位分支，也不会命中 generation_started 降级分支，而会落入后续 generated_pending_sync 同步逻辑；因此 finding 中关于“恢复成功后同轮继续 validateArtifact/readRemote/snapshot 等流程、缺少显式分流”的断点成立。\",\"finding 对 scripts/daily-task-board.mjs 的双次调用描述属实：sync 分支先 await syncDailyBoard(options)，随后执行 materializeDailyReview、syncDailyReview，再 await syncDailyBoard(options)。但交付没有证明第二次调用必然导致重复处理或错误降级，只能证明存在需要测试的调度交互。\",\"minimal_patch 的第一处改动能够捕获 recoverArtifact 返回值，并在恢复成功且状态为 generated_pending_sync 时保存后 continue，使恢复席位跳过同轮后续同步；该补丁草稿与所定位问题相关且可复核。\",\"但 minimal_patch 不是完整、可直接验收的补丁：补丁后半段声称加入 `if (seat.recovery && seat.status === 'generated_pending_sync') continue;`，却没有给出将 generation_started 降级为 generation_unknown_no_repurchase 后立即 continue 的改动；因此第一次恢复失败且原状态为 generation_started 时，仍会在同轮继续走到 generated_pending_sync 等状态过滤，虽然通常会因状态不匹配而 continue，但补丁没有形成其 finding 所要求的清晰恢复/降级分流。\",\"补丁在 recoverArtifact 成功分支中再次 saveLedger，而 recoverArtifact 内部已经 saveLedger；该冗余写入本身不改变状态语义，但交付未说明其必要性，也未评估并发或写盘影响。\",\"补丁设置 `seat.recovery = seat.recovery || 'immutable_artifact_verified_no_model_replay'`，与 recoverArtifact 已设置的固定 recovery 文案基本兼容；但没有新增回归断言证明恢复事件、artifact 绑定和后续同步状态均符合预期。\",\"verification_commands 主要是语法检查、字符串查找和 diff 查看，其中两个 node --check 路径重复，且没有自动化测试覆盖恢复成功、无候选、多候选、损坏 artifact、generation_started 同轮降级、generation_unknown_no_repurchase 后续恢复以及双次 syncDailyBoard 交互。\",\"remaining_blocker 已明确承认尚未故障注入、尚未受控测试、尚未验证第二次 syncDailyBoard 不清除恢复状态；因此该交付只能视为问题分析和补丁草稿，不能认定修复已应用、测试通过或上线。\"],\"unverified\":[\"未在当前审核环境取得交付物原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。\",\"未验证 minimal_patch 已写入仓库或工作区；不能声称补丁已执行、测试、合并、部署或上线。\",\"未实际执行 node --check scripts/lib/daily-task-board.mjs 或 node --check scripts/daily-task-board.mjs。\",\"未实际执行 grep 或 git diff，无法确认补丁能否按当前文件内容、缩进和上下文干净应用。\",\"未运行自动化单元测试或集成测试，recoverArtifact 的成功、无目录、无候选、多候选、文件损坏、哈希不符、run_key/source_commit/task 绑定错误等分支均未实证。\",\"未做 artifact 已写盘但 ledger 仍为 generation_started 的故障注入，无法实证 recoverArtifact 返回 false 时同轮降级及后续恢复行为。\",\"未做 ledger 为 generation_unknown_no_repurchase 且 artifact 后到位的故障注入，无法实证后续恢复、保存和同步顺序。\",\"未验证恢复成功后 continue 是否会延迟必要的远端 artifact 持久化检查或提交，并导致脚本退出码、看板状态与预期不一致。\",\"未验证 scripts/daily-task-board.mjs 中第一次 syncDailyBoard、materializeDailyReview、syncDailyReview、第二次 syncDailyBoard 的组合是否会重复处理、错误降级或清除恢复状态。\",\"未验证 generated_pending_sync 在后续调用中的 readRemote、submit_task、snapshot readback、独立 review、异常落盘和重试幂等性。\",\"未验证补丁在所有路径下均不新增模型调用、API 费用、重复采购、资金交易或其他未经授权副作用。\",\"未验证生产部署、目标环境、制品 SHA、生产版本、线上关键行为或真实崩溃恢复结果。\"]}",
+  "audit": {
+    "accepted": false,
+    "artifact_sha256": "3fc0a84a2ce7813a11ab29c8ff06fda2fddb657b685d401b691ee2bdb15128f5",
+    "reasons": [
+      "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 当前确实直接调用 recoverArtifact(root,record,agent,seat) 且忽略其布尔返回值；这一事实可由源码静态复核。",
+      "recoverArtifact 的行为与 finding 的核心描述一致：仅接受 generation_started 或 generation_unknown_no_repurchase；在无 seat.artifact、有 assignment、claim_verified 为 true 时扫描 artifacts 目录；唯一候选通过 validateArtifact 后写入 artifact、将状态改为 generated_pending_sync、设置 recovery、保存 ledger 并返回 true，否则返回 false。",
+      "现有 syncDailyBoard 在 recoverArtifact 成功后不会命中失败席位分支，也不会命中 generation_started 降级分支，而会落入后续 generated_pending_sync 同步逻辑；因此 finding 中关于“恢复成功后同轮继续 validateArtifact/readRemote/snapshot 等流程、缺少显式分流”的断点成立。",
+      "finding 对 scripts/daily-task-board.mjs 的双次调用描述属实：sync 分支先 await syncDailyBoard(options)，随后执行 materializeDailyReview、syncDailyReview，再 await syncDailyBoard(options)。但交付没有证明第二次调用必然导致重复处理或错误降级，只能证明存在需要测试的调度交互。",
+      "minimal_patch 的第一处改动能够捕获 recoverArtifact 返回值，并在恢复成功且状态为 generated_pending_sync 时保存后 continue，使恢复席位跳过同轮后续同步；该补丁草稿与所定位问题相关且可复核。",
+      "但 minimal_patch 不是完整、可直接验收的补丁：补丁后半段声称加入 `if (seat.recovery && seat.status === 'generated_pending_sync') continue;`，却没有给出将 generation_started 降级为 generation_unknown_no_repurchase 后立即 continue 的改动；因此第一次恢复失败且原状态为 generation_started 时，仍会在同轮继续走到 generated_pending_sync 等状态过滤，虽然通常会因状态不匹配而 continue，但补丁没有形成其 finding 所要求的清晰恢复/降级分流。",
+      "补丁在 recoverArtifact 成功分支中再次 saveLedger，而 recoverArtifact 内部已经 saveLedger；该冗余写入本身不改变状态语义，但交付未说明其必要性，也未评估并发或写盘影响。",
+      "补丁设置 `seat.recovery = seat.recovery || 'immutable_artifact_verified_no_model_replay'`，与 recoverArtifact 已设置的固定 recovery 文案基本兼容；但没有新增回归断言证明恢复事件、artifact 绑定和后续同步状态均符合预期。",
+      "verification_commands 主要是语法检查、字符串查找和 diff 查看，其中两个 node --check 路径重复，且没有自动化测试覆盖恢复成功、无候选、多候选、损坏 artifact、generation_started 同轮降级、generation_unknown_no_repurchase 后续恢复以及双次 syncDailyBoard 交互。",
+      "remaining_blocker 已明确承认尚未故障注入、尚未受控测试、尚未验证第二次 syncDailyBoard 不清除恢复状态；因此该交付只能视为问题分析和补丁草稿，不能认定修复已应用、测试通过或上线。"
+    ],
+    "unverified": [
+      "未在当前审核环境取得交付物原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。",
+      "未验证 minimal_patch 已写入仓库或工作区；不能声称补丁已执行、测试、合并、部署或上线。",
+      "未实际执行 node --check scripts/lib/daily-task-board.mjs 或 node --check scripts/daily-task-board.mjs。",
+      "未实际执行 grep 或 git diff，无法确认补丁能否按当前文件内容、缩进和上下文干净应用。",
+      "未运行自动化单元测试或集成测试，recoverArtifact 的成功、无目录、无候选、多候选、文件损坏、哈希不符、run_key/source_commit/task 绑定错误等分支均未实证。",
+      "未做 artifact 已写盘但 ledger 仍为 generation_started 的故障注入，无法实证 recoverArtifact 返回 false 时同轮降级及后续恢复行为。",
+      "未做 ledger 为 generation_unknown_no_repurchase 且 artifact 后到位的故障注入，无法实证后续恢复、保存和同步顺序。",
+      "未验证恢复成功后 continue 是否会延迟必要的远端 artifact 持久化检查或提交，并导致脚本退出码、看板状态与预期不一致。",
+      "未验证 scripts/daily-task-board.mjs 中第一次 syncDailyBoard、materializeDailyReview、syncDailyReview、第二次 syncDailyBoard 的组合是否会重复处理、错误降级或清除恢复状态。",
+      "未验证 generated_pending_sync 在后续调用中的 readRemote、submit_task、snapshot readback、独立 review、异常落盘和重试幂等性。",
+      "未验证补丁在所有路径下均不新增模型调用、API 费用、重复采购、资金交易或其他未经授权副作用。",
+      "未验证生产部署、目标环境、制品 SHA、生产版本、线上关键行为或真实崩溃恢复结果。"
+    ],
+    "executed_by": "Doubao",
+    "model": "doubao-seed-2-1-pro-260915",
+    "scope": "engineering_draft_only"
+  },
+  "deployed": false,
+  "completed_at": "2026-11-01T21:58:31.433Z"
 }
