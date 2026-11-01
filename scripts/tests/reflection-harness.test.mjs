@@ -128,5 +128,7 @@ test('observer also follows token-authored task workflow completion using truste
  assert.match(workflow,/head_repository\.full_name == github\.repository/);
  assert.match(workflow,/with: \{ref: main, fetch-depth: 0\}/);
  assert.match(workflow,/HARNESS_SOURCE_COMMIT/);
+ assert.match(workflow,/group: 'harness-\$\{\{ github\.ref \}\}'/);
+ assert.ok(!workflow.includes('harness-${{ github.event_name }}'));
  assert.ok(!workflow.includes('secrets.')&&!workflow.includes('cron:'));
 });
