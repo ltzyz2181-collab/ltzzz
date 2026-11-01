@@ -35,7 +35,7 @@ controlled=false 不证明项目整体钱包丢失控制权。此前只读部署
 
 原queue没有使用assessDelivery，共享assessor只检查正常结束和完成标记。已让显式required_sections参与queue判断，并将千问日课的固定必需段接入生成、不可变工件验证及失败同步。缺段为missing_required_section，经远端失败回读落failed_no_repurchase；其余段落结构通过仍只是草稿，不能自动accepted。引用、代码围栏、空段后接其他标题不当成有效段。
 
-补段执行结果以 `knowledge/results/qwen-dispatch/QWEN-SUPERVISE-20261101.json` 为准，发布前不冒称已完成。模型产出、结构检查、不同提供商复核和业务接受分开。
+补段执行结果已按真实回执回读，见下文执行后验收；结构通过与内容接受分开。
 
 ## 验证与边界
 
@@ -53,3 +53,13 @@ DeepSeek多写的第二角色审核没有当成豆包独立交付。实际豆包
 - 10-18 reconcile SHA256 `8d229a815f51ced12914a3d46738693b918a84f2f839b8ca1313cb8e618cde93`。
 
 复算方式与committed_sha见 `knowledge/results/ans-cycle/reconcile-manifest-20261101.json`；不以此冒称原工程修复通过或已部署。
+
+## 主线执行后验收（2026-11-01）
+
+#342已合并：`3c720ed4e1a5166233611d6afa408c3d880e1690`，merged_at=2026-11-01T11:49:29Z。PR实际运行的8个检查均success，其余为skipped，未把跳过当通过。主线run41303596990仅部署验证，日志明确no model calls or task mutations；不重复生成日课。
+
+既有provider-readiness run41303596945真实GET后，catalogue-latest与monthly-2026-11依然A=catalogue_verified_no_generation，B=failed_20261010_empty_response，generation_verified=false。这证明新生产器实际携带B，不是只手改历史产物；没有新Kimi生成调用。目录回读commit `1e3f5a6b366ff152fb43f230958cd08b7e2d6054`。
+
+千问补段run41303597022已真实完成一次native qwen-plus调用（finish_reason=stop，tokens_used=2306，request_id=d454d109-067b-9122-a9ca-f03357336e76），原回执commit `14c2d29595ebf719f24eb890e6ca236e633fa2fc`，共享Skill/反思上下文注入有真实executor metadata。required_sections结构检查通过；但本总控以不同实际提供商OpenAI复核内容后**拒绝**：把A2 #324/#326写成ANS编号、无证据断言RETURN校验链未触发、用监督来源/已交回执冒充补派卡路径。具体逐项证据见 `knowledge/results/qwen-dispatch/QWEN-SUPERVISE-20261101-review.json`。原输出与原accepted=false保留，缺失的原日课监督内容仍未验收，不重调、不以总控修正稿冒称千问交付。
+
+本轮实际国内补核对native请求共3次（DeepSeek1、豆包1、千问1）；审核和Git/测试不新增模型API。项目钱包资金动作仍0，API账单费用未独立对账。主线独立manifest和两份ANS完整字节哈希已再次复算匹配。

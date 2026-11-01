@@ -1,0 +1,64 @@
+{
+  "task_id": "QWEN-SUPERVISE-20261101",
+  "original_task_id": "DAILY-2026-10-31-qianwen",
+  "at_utc": "2026-11-01T11:51:55.445848+00:00",
+  "status": "rejected_content_evidence_binding",
+  "accepted": false,
+  "reviewer": {
+    "actual_provider": "OpenAI",
+    "client": "Codex controller",
+    "model": null,
+    "different_from_author_provider": true
+  },
+  "author": {
+    "actual_provider": "aliyun_dashscope",
+    "model": "qwen-plus",
+    "model_source": "provider_response",
+    "request_id": "d454d109-067b-9122-a9ca-f03357336e76",
+    "finish_reason": "stop",
+    "tokens_used": 2306,
+    "model_calls": 1
+  },
+  "source_receipt": {
+    "path": "knowledge/results/qwen-dispatch/QWEN-SUPERVISE-20261101.json",
+    "commit": "14c2d29595ebf719f24eb890e6ca236e633fa2fc",
+    "sha256": "a5f558b4e5aed748058da887e158a33a878f9af774bd6d20206b70f39f9906cd",
+    "output_sha256": "847e3cc2bc94d92681c1b5c68da9422e98b495f98d5b678842366cc87aa9f525",
+    "run_id": "41303597022"
+  },
+  "structural_check": "passed_required_section_and_completion_marker_only",
+  "reasons": [
+    {
+      "observed": "ANS-324/326 实物状态回读",
+      "finding": "Conflates A2 PR #324/#326 with ANS original Task IDs. The supplied snapshot explicitly identified them as PR318 replacements; no such ANS task IDs were provided.",
+      "evidence": [
+        "ops/dispatch/outbox/receipts/GPT-PR318-MERGE-ACCEPTANCE-20261031.md",
+        "ops/dispatch/queue/QWEN-SUPERVISE-20261101.json"
+      ]
+    },
+    {
+      "observed": "GPT-PR318 回执未触发QIANWEN-RETURN校验链",
+      "finding": "The claimed missing trigger is unsupported by the provided sources. It must be marked 未核查 rather than asserted as a fact.",
+      "evidence": [
+        "ops/dispatch/queue/QWEN-SUPERVISE-20261101.json"
+      ]
+    },
+    {
+      "observed": "补派卡路径 points to oversight and an already-completed PR318 receipt",
+      "finding": "Does not identify the actual supplementary card for the claimed missing step. The real current card is ops/dispatch/queue/QWEN-SUPERVISE-20261101.json. Source documents and delivered receipts are not substitute dispatch paths.",
+      "evidence": [
+        "ops/dispatch/queue/QWEN-SUPERVISE-20261101.json"
+      ]
+    }
+  ],
+  "valid_observations_preserved": [
+    "Mandatory heading/body and completion marker present.",
+    "self_review_conflict label and suggestion for another seat review present.",
+    "No actual native GitHub read is proven; the author was given controller-read excerpts."
+  ],
+  "action": "Retain original Task ID and raw output; mark supplementary content unfinished. No automatic regeneration or second paid call. Controller factual corrections are in the batch receipt, not attributed to Qwen.",
+  "new_model_calls_for_review": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
