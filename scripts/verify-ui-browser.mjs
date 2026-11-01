@@ -155,6 +155,19 @@ try {
           .filter(key => headers[key]).map(key => [key, headers[key]])),
         inline_script_sha256: sha(servedBytes.toString().match(/<script>([\s\S]*?)<\/script>/)?.[1] || ''),
         expected_inline_script_sha256: sha(files[file].toString().match(/<script>([\s\S]*?)<\/script>/)?.[1] || '')});
+      observation.external_script_metadata = await page.evaluate(html => {
+        const document = new DOMParser().parseFromString(html, 'text/html');
+        return Array.from(document.querySelectorAll('script[src]')).map(script => {
+          const url = new URL(script.getAttribute('src'), 'https://ltzzz.com');
+          let beacon = null;
+          try {beacon = JSON.parse(script.getAttribute('data-cf-beacon'));} catch {}
+          return {origin: url.origin, path: url.pathname,
+            attribute_names: Array.from(script.attributes).map(attribute => attribute.name),
+            integrity: script.getAttribute('integrity'), crossorigin: script.getAttribute('crossorigin'),
+            beacon_json_keys: beacon && typeof beacon === 'object' ? Object.keys(beacon) : null,
+            inline_content_length: script.textContent.length};
+        });
+      }, servedBytes.toString());
       assert.equal(response.status(), 200);
       observation.source_comparison = compareUiSource(files[file], servedBytes);
       assert.equal(observation.source_comparison.matched, true, 'Production HTML differs beyond permitted Cloudflare analytics injection');

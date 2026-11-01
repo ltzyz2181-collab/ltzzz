@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compareUiSource} from '../lib/ui-source-comparison.mjs';
+import {createHash} from 'node:crypto';
 const source = '<!doctype html><main>actual application</main><script>app()</script></html>';
 const edge = '<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v123" data-cf-beacon=\'{"token":"public-fixture-id"}\'></script>';
-const compare = actual => compareUiSource(Buffer.from(source), Buffer.from(actual));
+const fixtureHash = createHash('sha256').update(edge).digest('hex');
+const compare = actual => compareUiSource(Buffer.from(source), Buffer.from(actual), [fixtureHash]);
 test('exact production bytes remain exact', () => {
   assert.equal(compare(source).kind, 'exact'); assert.equal(compare(source).matched, true);
 });
@@ -12,8 +14,19 @@ test('one empty known Cloudflare analytics tag may be omitted from byte comparis
   assert.equal(result.matched, true); assert.equal(result.kind, 'cloudflare_analytics_injection_only');
   assert.notEqual(result.observed_sha256, result.expected_sha256);
   assert.equal(result.normalized_sha256, result.expected_sha256);
-  assert.equal(result.removed_edge_scripts[0].path, '/beacon.min.js/v123');
+  assert.equal(result.removed_edge_scripts[0].tag_sha256, fixtureHash);
   assert.doesNotMatch(JSON.stringify(result), /public-fixture-id/);
+});
+test('events, fake src inside data attributes, duplicate src and changed paths fail the exact tag pin', () => {
+  for (const changed of [edge.replace(' defer ', ' onerror="globalThis.PWNED=1" defer '),
+    `<script data-note=' src="https://static.cloudflareinsights.com/beacon.min.js"' src="https://evil.invalid/app.js"></script>`,
+    edge.replace(' defer ', ' src="https://evil.invalid/app.js" defer '),
+    edge.replace('/v123', '/arbitrary-unreviewed/path')]) {
+    assert.equal(compare(source.replace('</html>', changed + '</html>')).matched, false);
+  }
+});
+test('an unpinned edge tag fails closed', () => {
+  assert.equal(compareUiSource(Buffer.from(source), Buffer.from(source.replace('</html>', edge + '</html>')), []).matched, false);
 });
 test('application text and JavaScript edits cannot be normalized away', () => {
   for (const change of [source.replace('application', 'forged'), source.replace('app()', 'evil()')]) {
