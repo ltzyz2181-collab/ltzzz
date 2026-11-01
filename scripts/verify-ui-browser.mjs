@@ -135,6 +135,8 @@ try {
       page.on('response', response => responses.push({path: new URL(response.url()).pathname, status: response.status()}));
       let response, actualHash;
       const propagation = [];
+      const observation = {page: file, passed: false, propagation};
+      report.production_results.push(observation);
       for (let attempt = 0; attempt < 12; attempt++) {
         response = await page.goto(`https://ltzzz.com/${file}`, {waitUntil: 'networkidle', timeout: 60000});
         actualHash = sha(await response.body());
@@ -142,6 +144,14 @@ try {
         if (response.status() === 200 && actualHash === sha(files[file])) break;
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
+      const servedBytes = await response.body();
+      fs.writeFileSync(path.join(output, `production-${file}-response.html`), servedBytes);
+      const headers = response.headers();
+      Object.assign(observation, {observed_sha256: actualHash,
+        headers: Object.fromEntries(['content-type', 'server', 'etag', 'last-modified', 'cf-cache-status']
+          .filter(key => headers[key]).map(key => [key, headers[key]])),
+        inline_script_sha256: sha(servedBytes.toString().match(/<script>([\s\S]*?)<\/script>/)?.[1] || ''),
+        expected_inline_script_sha256: sha(files[file].toString().match(/<script>([\s\S]*?)<\/script>/)?.[1] || '')});
       assert.equal(response.status(), 200);
       assert.equal(actualHash, sha(files[file]), 'Production HTML differs from verified source');
       await page.waitForFunction(file => file === 'wep3.html'
@@ -163,7 +173,7 @@ try {
       }
       const screenshot = await page.screenshot({fullPage: true});
       fs.writeFileSync(path.join(output, `production-${file}.png`), screenshot);
-      report.production_results.push({page: file, observed_sha256: actualHash, passed: true, propagation, responses});
+      Object.assign(observation, {passed: true, responses});
       await context.close();
     }
   }
