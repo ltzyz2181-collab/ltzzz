@@ -19,3 +19,16 @@ test('long fences and later headings cannot impersonate the required section',()
   '<!--\n【派单监督】\ncomment only\n-->','    【派单监督】\n    indented code'];
  for(const output of bodies)assert.equal(assessDelivery({output:output+'\n【交付结束】',finish_reason:'stop',required_sections:['【派单监督】']}).status,'missing_required_section');
 });
+
+test('inline supervision content is a real section but still only a draft',()=>{
+ for(const body of ['【派单监督】责任席：千问；原 Task ID：DAILY-2026-10-31-qianwen', '【派单监督】 责任席：千问', '## 【派单监督】：责任席：千问']){
+  const r=assessDelivery({output:body+'\n【交付结束】',finish_reason:'stop',required_sections:['【派单监督】']});
+  assert.equal(r.status,'structurally_complete');assert.equal(r.accepted,false);
+ }
+});
+test('inline marker cannot be forged by first-line indented code, quote, fence, comment or empty heading',()=>{
+ for(const body of ['    【派单监督】责任席：千问', '>【派单监督】责任席：千问', '```md\n【派单监督】责任席：千问\n```', '<!-- 【派单监督】责任席 -->', '【派单监督】【交付结束】', '【派单监督】：---']){
+  const r=assessDelivery({output:body+'\n【交付结束】',finish_reason:'stop',required_sections:['【派单监督】']});
+  assert.equal(r.status,'missing_required_section',body);
+ }
+});
