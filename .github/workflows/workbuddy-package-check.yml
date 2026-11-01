@@ -1,0 +1,19 @@
+name: WorkBuddy package example parity
+on:
+  pull_request:
+    paths: ['products/workbuddy/**','scripts/check-workbuddy-examples.mjs','scripts/tests/workbuddy-examples.test.mjs','.github/workflows/workbuddy-package-check.yml']
+  push:
+    branches: [main]
+    paths: ['products/workbuddy/**','scripts/check-workbuddy-examples.mjs','scripts/tests/workbuddy-examples.test.mjs','.github/workflows/workbuddy-package-check.yml']
+permissions: {contents: read}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/check-workbuddy-examples.mjs
+      - run: node --test scripts/tests/workbuddy-examples.test.mjs
