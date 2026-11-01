@@ -1,0 +1,55 @@
+{
+  "id": "L-20261030-003",
+  "agent_actual": {
+    "provider": "multiple",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "ltzzz-memory/项目历史.md sections 10-12 and 10-14",
+    "commit": null
+  },
+  "task_tags": [
+    "model_output",
+    "delivery",
+    "memory_file"
+  ],
+  "error_class": "truncated_output",
+  "signature": "truncated_text_accepted_as_delivery",
+  "what_happened": "Per project history, on 10-12 truncated Doubao, Grok and DeepSeek bodies had been accepted as deliveries and were later rejected; on 10-14 two entries of 识神.md held a tool-truncation placeholder or were missing.",
+  "expected": "A delivery is accepted only with finish_reason=stop and a completion marker, and a core memory file is never overwritten by a model's partial output.",
+  "evidence": [
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e",
+      "commit": null,
+      "verified_by_reporter": false
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f",
+      "commit": null,
+      "verified_by_reporter": false
+    }
+  ],
+  "root_cause": {
+    "text": "Acceptance looked at the presence of text, not at end-of-output evidence.",
+    "status": "hypothesis"
+  },
+  "rule": "Reject any output without finish_reason=stop and the completion marker, and never write model output into a core memory file without the integrity check.",
+  "check": {
+    "kind": "deterministic_test",
+    "ref": "scripts/check-core-memory.mjs"
+  },
+  "severity": "high",
+  "mandatory": false,
+  "observed_at": "2026-10-30T23:00:00Z",
+  "reporter": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5"
+  },
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}

@@ -1,0 +1,44 @@
+{
+  "run_id": "41243685507",
+  "source_commit": "55c77ab787b9a147481da3474627c5b7318f5274",
+  "scope": "explicit_operational_review_separate_from_engineering_acceptance",
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-10-31T21:27:51.106Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 28251
+    },
+    {
+      "requested_agent": "Doubao",
+      "status": "success",
+      "at": "2026-10-31T21:27:59.431Z",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "finish_reason": "stop",
+      "tokens_used": 31444
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "text": "{\n  \"operation\": \"memory_promotion\",\n  \"subject\": {\n    \"candidate_id\": \"CAND-20260921-3524\",\n    \"claim\": \"装备论：把人、身体、感知、习气、环境、软件与 AI 视为可长期观察和迭代的“装备系统”。\",\n    \"source\": \"memory/daily/2026-09-21.md\",\n    \"source_sha256\": \"35246c3ea53c1d22d005383287dc021c365e22426614ac17a56204ccc1ef1821\"\n  },\n  \"subject_sha256\": \"ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8\",\n  \"prescreen\": {\n    \"accepted\": false,\n    \"operation\": \"memory_promotion\",\n    \"subject_sha256\": \"ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8\",\n    \"reasons\": [\n      \"候选材料为 2026-09-21 每日整理，来源文件提供的 source_sha256（35246c3...）与给定 subject_sha256（ae543cc...）不一致，无法确认待晋升对象的字节哈希。\",\n      \"material 中存在未验证声明，如『本地 FFmpeg 视频链路：仓库 README 记录为已真实验证』，该表述在 source_text 内被明确标记为无法调用本机服务，不满足 Memory 晋升要求。\",\n      \"候选 claim 将装备论上升为长期核心知识，但 source_text 自身反复强调不能将 AI 生成内容直接标为已验证结果，且未提供独立人工验证回执或跨日复现实证。\",\n      \"本次监督仅为附带任务，不因此轮工程草稿存在而被推导通过。\"\n    ]\n  },\n  \"engineering_artifact_sha256\": \"d47ad696f3bf70af45921d57dcf8f914d041c6b6fa98ca74c30462d9eddd2d2a\"\n}\n",
+      "sha256": "f4ad776cf6c9b2d4032cdf759d9a9c3ff6f67b544b8eecbc69075138c4dcdffe"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "text": "{\n  \"accepted\": false,\n  \"operation\": \"memory_promotion\",\n  \"subject_sha256\": \"ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8\",\n  \"artifact_sha256\": \"f4ad776cf6c9b2d4032cdf759d9a9c3ff6f67b544b8eecbc69075138c4dcdffe\",\n  \"reasons\": [\n    \"独立对照监督工件与完整来源，工件声明的操作是 memory_promotion，待晋升 subject_sha256 为 ae543cc21fcd423cb71ce23ee9c6795d454cb7a18bdd3d979c0d3801153a05d8，但来源对象给出的 source_sha256 为 35246c3ea53c1d22d005383287dc021c365e22426614ac17a56204ccc1ef1821，二者不一致，无法确认待晋升字节就是给定 subject_sha256 所标识的对象。\",\n    \"完整来源将装备论表述为结构化整理、可验证假设和记录框架，并未提供足以把该候选直接晋升为长期核心知识的独立验证闭环；文中还明确要求记录证据、反例与可验证结果。\",\n    \"完整来源明确写明不能把 AI 生成内容直接标为已验证结果、不能把代码存在当作已经上线、不能把接口存在当作调用成功，因此不能把候选 claim 从整理材料提升为已验证长期事实。\",\n    \"完整来源中的本地 FFmpeg 视频链路状态同时说明 README 有历史验证记录、但本次自动任务无法调用 127.0.0.1:8788 本机服务，外部视频服务未调用，OAuth 与公开发布未执行；这些未验证事项不能支持记忆晋升。\",\n    \"监督结论独立于工程交付验收；工程草稿可复核不等于 memory_promotion 候选通过。\"\n  ],\n  \"unverified\": [\n    \"未在当前审核环境取得监督工件原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。\",\n    \"未读取 memory/daily/2026-09-21.md 的仓库原始字节，无法独立重算其 source_sha256。\",\n    \"无法确认 subject_sha256 对应的确切字节内容及其与完整来源文本之间的关系。\",\n    \"未验证候选材料之后是否存在独立人工回执、跨日复现实证或其他可支持晋升的补充证据。\",\n    \"未验证任何视频生成、外部视频服务调用、OAuth 授权或公开发布行为。\"\n  ]\n}\n",
+      "sha256": "e9dd6fadd9b23f4151ecf620fe0ee9f79a9c6fa29deb5c79c56ff9d19f902170"
+    }
+  ],
+  "model_calls_added_for_supervision": 0,
+  "paid": false,
+  "tx_hash": null
+}
