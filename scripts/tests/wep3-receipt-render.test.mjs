@@ -90,3 +90,23 @@ test('execution and commit provenance remain visible for blocked provider delive
   assert.match(elements.money.textContent, /付款标记.*否/);
   assert.equal(elements.detail.innerHTML, '');
 });
+
+test('failed HTTP status and malformed expected shape are visible in receipt details', async () => {
+  const elements = await render({
+    status: 'live_contract_check_failed', paid: false, tx_hash: null,
+    live_checks: [
+      {id: 'HTTP_503', path: '/health', passed: false, http: 503,
+       comparison: {expected_http: 200, actual_http: 503, http_matched: false, expected_shape_valid: true, fields: []}},
+      {id: 'INVALID_SPEC', path: '/status', passed: false,
+       comparison: {expected_http: 200, actual_http: 200, http_matched: true, expected_shape_valid: false, fields: []}},
+    ],
+  });
+  const failed = JSON.parse(elements.detail.textContent).failed_checks;
+  assert.equal(failed.length, 2);
+  assert.equal(failed[0].expected_http, 200);
+  assert.equal(failed[0].actual_http, 503);
+  assert.equal(failed[0].http_matched, false);
+  assert.equal(failed[1].expected_shape_valid, false);
+  assert.match(elements.state.textContent, /未通过/);
+  assert.match(elements.money.textContent, /付款标记.*否/);
+});
