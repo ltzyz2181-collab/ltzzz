@@ -30,6 +30,7 @@ if(phase==='prepare'){
   const historicalReviews=fs.readdirSync('knowledge/results/ans-cycle').filter(f=>f.endsWith('-reviewer.json')).sort().slice(-1);
   for(const name of historicalReviews){const file='knowledge/results/ans-cycle/'+name;docs.push(...pinnedInputs([file],{commit:docs[0].commit}));}
 record.inputs=docs.map(d=>({file:d.file,sha256:d.sha256,commit:d.commit}));
+  record.execution_source_commit=docs[0].commit;
   const {createModelRouter}=await import('./lib/domestic-model-router.mjs');const call=createModelRouter({record:attempt=>{record.provider_attempts||=[];record.provider_attempts.push(attempt);save(record);}});
   const skill=skillContext({scope:'ans-worker-and-independent-review'});record.skill=skill.proof;save(record);
   await executeCycle(record,{call,context:skill.text+'\n'+docs.map(d=>'## '+d.file+'\n'+d.text).join('\n'),save});

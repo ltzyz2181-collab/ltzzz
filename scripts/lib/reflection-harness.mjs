@@ -42,12 +42,21 @@ export function publicObservation(receipt,{file,commit,bytes}){
   lane='external';task=receipt.task_id;run=receipt.execution_id;status=receipt.outcome;outcome=receipt.outcome;
   issue=Object.hasOwn(RECIPES,receipt.issue)?receipt.issue:null;
  }else throw Error('receipt_path_not_allowed');
- return {schema:'ltzzz.harness.observation.v1',id:hash(lane+'\0'+task+'\0'+run),lane,task_id:task,execution_id:run,reported_status:status,outcome,issue,calls,source:{path:file,commit,sha256:hash(bytes)},evidence_level:'pinned_repository_receipt_not_independent_platform_authentication',root_cause:'unverified',content_retained:false,weights_trained:false};
+ const reflection=receipt.skill?.reflection;
+ const experience=reflection&&SHA.test(reflection.context_sha256||'')?{
+  context_sha256:reflection.context_sha256,
+  lesson_ids:Array.isArray(reflection.lesson_ids)?reflection.lesson_ids.filter(id=>/^L-\d{8}-\d{3}$/.test(id)).slice(0,8):[],
+  strategy_ids:Array.isArray(reflection.strategy_ids)?reflection.strategy_ids.filter(id=>Object.hasOwn(RECIPES,id)).slice(0,6):[],
+  evidence:'executor_recorded_context_injection_not_behavioral_compliance'
+ }:null;
+ return {schema:'ltzzz.harness.observation.v1',id:hash(lane+'\0'+task+'\0'+run),lane,task_id:task,execution_id:run,reported_status:status,outcome,issue,calls,experience_at_execution:experience,execution_source_commit:HEX.test(receipt.execution_source_commit||'')?receipt.execution_source_commit:null,source:{path:file,commit,sha256:hash(bytes)},evidence_level:'pinned_repository_receipt_not_independent_platform_authentication',root_cause:'unverified',content_retained:false,weights_trained:false};
 }
 export function summarize(events){
- const outcomes={},issues={};
- for(const e of events){outcomes[e.outcome]=(outcomes[e.outcome]||0)+1;if(e.issue)issues[e.issue]=(issues[e.issue]||0)+1;}
- return {schema:'ltzzz.harness.summary.v1',attempts:events.length,outcomes,issues,strategies:Object.entries(issues).filter(([id])=>Object.hasOwn(RECIPES,id)).sort(([a],[b])=>a.localeCompare(b)).map(([id,occurrences])=>({id,occurrences,recurrence_kind:'same_observed_category_not_verified_same_root_cause',next_action:occurrences>1?'change_method_and_regression_check_before_next_attempt':'use_evidence_linked_strategy',...RECIPES[id]})),interpretation:'Repository-reported outcomes; retrieval is not compliance, a hypothesis is not a root cause, and fewer recorded errors alone do not prove improvement.',model_calls:0,financial_execution:false};
+ const outcomes={},issues={},withContext={attempts:0,outcomes:{}},withoutContext={attempts:0,outcomes:{}};
+ for(const e of events){outcomes[e.outcome]=(outcomes[e.outcome]||0)+1;if(e.issue)issues[e.issue]=(issues[e.issue]||0)+1;
+  const cohort=e.experience_at_execution?withContext:withoutContext;cohort.attempts++;cohort.outcomes[e.outcome]=(cohort.outcomes[e.outcome]||0)+1;
+ }
+ return {schema:'ltzzz.harness.summary.v1',attempts:events.length,outcomes,issues,with_reflection_context:withContext,without_reflection_context:withoutContext,strategies:Object.entries(issues).filter(([id])=>Object.hasOwn(RECIPES,id)).sort(([a],[b])=>a.localeCompare(b)).map(([id,occurrences])=>({id,occurrences,recurrence_kind:'same_observed_category_not_verified_same_root_cause',next_action:occurrences>1?'change_method_and_regression_check_before_next_attempt':'use_evidence_linked_strategy',...RECIPES[id]})),interpretation:'Repository-reported outcomes; cohorts have different task scopes, retrieval is not compliance, a hypothesis is not a root cause, and fewer recorded errors alone do not prove improvement.',model_calls:0,financial_execution:false};
 }
 const defaultTags=['receipt','model_output','delivery','provider_identity','input_hash','draft_review','external_platform','registration'];
 export function reflectionContext({root='.',tags=defaultTags}={}){
