@@ -28,6 +28,11 @@ test('events, fake src inside data attributes, duplicate src and changed paths f
 test('an unpinned edge tag fails closed', () => {
   assert.equal(compareUiSource(Buffer.from(source), Buffer.from(source.replace('</html>', edge + '</html>')), []).matched, false);
 });
+test('the same pinned bytes inside title, style or an attribute are never removed', () => {
+  for (const original of ['<title>LABEL</title></html>', '<style>LABEL</style></html>', '<main data-label="LABEL"></main></html>']) {
+    assert.equal(compareUiSource(Buffer.from(original), Buffer.from(original.replace('LABEL', edge + 'LABEL')), [fixtureHash]).matched, false);
+  }
+});
 test('application text and JavaScript edits cannot be normalized away', () => {
   for (const change of [source.replace('application', 'forged'), source.replace('app()', 'evil()')]) {
     assert.equal(compare(change.replace('</html>', edge + '</html>')).matched, false);

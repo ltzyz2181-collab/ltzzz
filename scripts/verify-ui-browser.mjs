@@ -164,6 +164,7 @@ try {
           return {origin: url.origin, path: url.pathname,
             attribute_names: Array.from(script.attributes).map(attribute => attribute.name),
             integrity: script.getAttribute('integrity'), crossorigin: script.getAttribute('crossorigin'),
+            type: script.getAttribute('type'),
             beacon_json_keys: beacon && typeof beacon === 'object' ? Object.keys(beacon) : null,
             inline_content_length: script.textContent.length};
         });
