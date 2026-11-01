@@ -1,5 +1,7 @@
 name: UI browser and read-only Treasury evidence
 on:
+  pull_request:
+    paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', '.github/workflows/ui-treasury-verification.yml']
   push:
     branches: [main]
     paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', 'scripts/read-treasury-evidence.mjs', 'scripts/review-ui-deepseek.mjs', '.github/workflows/ui-treasury-verification.yml']
@@ -56,7 +58,7 @@ jobs:
           path: ${{ runner.temp }}/ui-evidence/
           retention-days: 14
   treasury-readonly:
-    if: contains(github.event.head_commit.message, '[treasury-readonly]')
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[treasury-readonly]')
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -78,7 +80,7 @@ jobs:
           path: ${{ runner.temp }}/treasury-evidence/
           retention-days: 14
   native-review:
-    if: contains(github.event.head_commit.message, '[ui-native-review]')
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[ui-native-review]')
     permissions: {contents: write}
     runs-on: ubuntu-latest
     timeout-minutes: 8
