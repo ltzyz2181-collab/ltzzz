@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {canonicalProvider} from './provider-identity.mjs';
 
 export const ERROR_CLASSES=['overclaim','truncated_output','unverified_completion','identity_mismatch','stale_evidence','scope_creep','fabricated_detail','integrity_unpinned','environment_assumption','other'];
 export const STATUSES=['observed','adopted','verified','retired'];
@@ -38,13 +39,14 @@ export function validateLesson(l){
   // Promotion rules: a model's own account of its mistake is not enough to enforce anything.
   if(['adopted','verified'].includes(l.status)){
     if(!l.review||l.review.verdict!=='accept')e.push('adopted_requires_accepting_review');
-    else if(isObj(l.agent_actual)&&l.review.provider===l.agent_actual.provider)e.push('review_must_be_different_provider');
+    else if(isObj(l.agent_actual)&&canonicalProvider(l.review.provider)===canonicalProvider(l.agent_actual.provider))e.push('review_must_be_different_provider');
     if(l.root_cause?.status!=='verified'&&l.mandatory)e.push('mandatory_requires_verified_root_cause');
     if(Array.isArray(l.evidence)&&!l.evidence.some(x=>x.verified_by_reporter))e.push('adopted_requires_checked_evidence');
   }
   if(l.status==='verified'){
     if(!['deterministic_test','ci_guard'].includes(l.check?.kind)||!l.check?.ref)e.push('verified_requires_machine_check');
   }
+  if(l.adopted_at!==undefined&&!Number.isFinite(Date.parse(l.adopted_at)))e.push('adopted_at');
   return e;
 }
 
@@ -54,6 +56,8 @@ export function loadLessons(dir='knowledge/lessons'){
   const out=[],problems=[],seen=new Map();
   if(!fs.existsSync(dir))return {lessons:out,problems};
   for(const name of fs.readdirSync(dir).filter(n=>/^L-\d{8}-\d{3}\.json$/.test(n)).sort()){
+    const stat=fs.lstatSync(path.join(dir,name));
+    if(!stat.isFile()||stat.size>24000){problems.push(`${name}:bounded_regular_file_required`);continue;}
     let l;try{l=JSON.parse(fs.readFileSync(path.join(dir,name),'utf8'));}catch{problems.push(`${name}:invalid_json`);continue;}
     const errs=validateLesson(l);
     if(l.id&&name!==`${l.id}.json`)errs.push('filename_must_equal_id');
@@ -87,10 +91,13 @@ export function checkConsidered(preflight,lessons,tags){
   for(const row of listed){
     if(!isObj(row)||!known.has(row.id)){errors.push(`unknown_lesson:${row?.id}`);continue;}
     if(typeof row.applied!=='boolean'||!text(row.note,300))errors.push(`note_and_applied_required:${row.id}`);
+    if(ids.has(row.id))errors.push(`duplicate_lesson:${row.id}`);
     ids.add(row.id);
   }
-  for(const r of retrieve(lessons,{tags,limit:50,includeObserved:false}))
+  for(const r of retrieve(lessons,{tags,limit:lessons.length,includeObserved:false})){
     if(r.mandatory&&!ids.has(r.id))errors.push(`mandatory_lesson_not_considered:${r.id}`);
+    else if(r.mandatory&&!listed.some(row=>row.id===r.id&&row.applied===true))errors.push(`mandatory_lesson_not_applied:${r.id}`);
+  }
   return errors;
 }
 
@@ -107,13 +114,16 @@ export function matchRecurrence(lessons,failure){
 }
 
 export function stats(lessons){
-  const byClass={};let afterAdoption=0;
+  const byClass={};let afterAdoption=0,unclassified=0;
   for(const l of lessons){
     const c=byClass[l.error_class]??={lessons:0,recurrences:0};
     c.lessons++;c.recurrences+=l.recurrences.length;
-    if(['adopted','verified'].includes(l.status))afterAdoption+=l.recurrences.length;
+    if(['adopted','verified'].includes(l.status)){
+      if(Number.isFinite(Date.parse(l.adopted_at)))afterAdoption+=l.recurrences.filter(r=>Date.parse(r.observed_at)>=Date.parse(l.adopted_at)).length;
+      else unclassified+=l.recurrences.length;
+    }
   }
-  return {total:lessons.length,by_status:Object.fromEntries(STATUSES.map(s=>[s,lessons.filter(l=>l.status===s).length])),by_class:byClass,recurrences_after_adoption:afterAdoption};
+  return {total:lessons.length,by_status:Object.fromEntries(STATUSES.map(s=>[s,lessons.filter(l=>l.status===s).length])),by_class:byClass,recurrences_after_adoption:afterAdoption,recurrences_without_adoption_timestamp:unclassified};
 }
 
 // Draft skeleton from a failure receipt (e.g. platform rejection, blocked run). The author must
