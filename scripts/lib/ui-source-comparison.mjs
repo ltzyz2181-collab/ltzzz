@@ -18,15 +18,17 @@ export function compareUiSource(expectedBytes, observedBytes, trustedTagHashes =
     const offset = expected.toLowerCase().lastIndexOf(close);
     if (offset >= 0) tailPositions.set(offset, 'before_' + close.slice(2, -1));
   }
-  const normalized = observed.replace(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi, (tag, attrs, body, offset) => {
+  const normalized = observed.replace(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>(\n?)/gi, (match, attrs, body, terminator, offset) => {
+    const tag = terminator ? match.slice(0, -1) : match;
     const digest = hash(tag);
     result.observed_script_tags.push({tag_sha256: digest, bytes: Buffer.byteLength(tag)});
-    if (body.trim() || !trustedTagHashes.includes(digest) || !tailPositions.has(offset)) return tag;
-    result.removed_edge_scripts.push({tag_sha256: digest, insertion_position: tailPositions.get(offset)});
+    if (body.trim() || !trustedTagHashes.includes(digest) || !tailPositions.has(offset)) return match;
+    result.removed_edge_scripts.push({tag_sha256: digest, insertion_position: tailPositions.get(offset),
+      removed_terminator: terminator ? 'LF' : null});
     return '';
   });
   result.normalized_sha256 = hash(normalized);
-  if (result.removed_edge_scripts.length === 1 && normalized.trimEnd() === expected.trimEnd()) {
+  if (result.removed_edge_scripts.length === 1 && normalized === expected) {
     result.matched = true; result.kind = 'cloudflare_analytics_injection_only';
   }
   return result;
