@@ -4,7 +4,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {dailyAssignment} from './daily-assignment.mjs';
 import {pulseGate} from './pulse-client.mjs';
-import {assessDelivery} from '../delivery-integrity.mjs';
+import {assessDelivery,requiredSectionsForAgent} from '../delivery-integrity.mjs';
 
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export const ledgerPath = date => {
@@ -100,7 +100,8 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   let result;
   try { result = await call(); }
   catch { result = {ok:false,status:'generation_unknown',error:'provider_result_unknown'}; }
-  const integrity = assessDelivery({output:result.output, finish_reason:result.finish_reason});
+  const required_sections=requiredSectionsForAgent(agent);
+  const integrity = assessDelivery({output:result.output, finish_reason:result.finish_reason,required_sections});
   const complete = result.ok === true && integrity.status === 'structurally_complete' && !/SPEND_PROPOSAL\s*[:：]/i.test(result.output || '');
   const artifact = {
     ...(result.skill?{skill:result.skill}:{}),
@@ -110,7 +111,7 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
     reported_model:result.model || null, model_source:result.model_source || null, source_commit:record.source_commit,
     run_key:runKey, output:String(result.output || ''), finish_reason:result.finish_reason || null,
     tokens_used:result.tokens_used ?? null, request_id:result.request_id || null,
-    integrity, status:complete?'complete':'incomplete_or_failed', provider_status:result.status || null,
+    integrity,required_sections, status:complete?'complete':'incomplete_or_failed', provider_status:result.status || null,
     accepted:false, paid:false, tx_hash:null
   };
   const bytes = JSON.stringify(artifact, null, 2)+'\n';
@@ -120,7 +121,7 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   fs.mkdirSync(path.dirname(file), {recursive:true});
   fs.writeFileSync(file, bytes, {flag:'wx'});
   seat.artifact = {path:relative, sha256:hash};
-  seat.status = complete ? 'generated_pending_sync' : 'generation_failed_no_repurchase';
+  seat.status = complete ? 'generated_pending_sync' : integrity.status==='missing_required_section'?'missing_required_section':'generation_failed_no_repurchase';
   seat.integrity = integrity;
   saveLedger(root, record);
   return {...result,execution:artifact.execution};
@@ -132,7 +133,7 @@ export function validateArtifact(root, record, agent, seat) {
   const bytes = fs.readFileSync(path.join(root, a.path));
   if (digest(bytes) !== a.sha256) throw Error('artifact_hash_mismatch');
   const body = JSON.parse(bytes);
-  if (body.date !== record.date || body.run_key !== record.run_key || body.task_id !== seat.assignment?.id || body.logical_seat !== agent || body.source_commit !== record.source_commit || body.status !== 'complete' || assessDelivery(body).status !== 'structurally_complete' || /SPEND_PROPOSAL\s*[:：]/i.test(body.output || '')) throw Error('artifact_binding_invalid');
+  if (body.date !== record.date || body.run_key !== record.run_key || body.task_id !== seat.assignment?.id || body.logical_seat !== agent || body.source_commit !== record.source_commit || body.status !== 'complete' || assessDelivery({...body,required_sections:requiredSectionsForAgent(agent)}).status !== 'structurally_complete' || /SPEND_PROPOSAL\s*[:：]/i.test(body.output || '')) throw Error('artifact_binding_invalid');
   return bytes;
 }
 
@@ -184,7 +185,7 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
   if (record.date !== date) throw Error('reservation_date_mismatch');
   for (const [agent, seat] of Object.entries(record.seats)) {
     recoverArtifact(root,record,agent,seat);
-    if(seat.assignment&&seat.claim_verified&&['generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}
+    if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}
     if (seat.status === 'generation_started') {
       seat.status = 'generation_unknown_no_repurchase';
       seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';
@@ -242,4 +243,4 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
   return record;
 }
 
-export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','failure_sync_unknown','sync_unknown','review_unknown'].includes(seat.status));
+export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','missing_required_section','failure_sync_unknown','sync_unknown','review_unknown'].includes(seat.status));

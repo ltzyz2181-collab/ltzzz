@@ -1,5 +1,14 @@
 import {selectKimiModel} from '../../lib/kimi-profile.js';
 import {qwenConfig} from './qwen-config.mjs';
+// Catalogue visibility and historical generation outcome are independent dimensions.
+export function withGenerationHistory(row,history){
+  const entry=history?.entries?.[row.seat];
+  if(!entry)return row;
+  if(!/^[a-z0-9_]{3,100}$/.test(entry.last_generation_outcome||'')||!Array.isArray(entry.evidence)||!entry.evidence.length
+    ||entry.evidence.some(e=>typeof e.path!=='string'||e.path.split('/').includes('..')||!/^[a-f0-9]{40}$/.test(e.commit||'')||!/^[a-f0-9]{64}$/.test(e.sha256||'')))throw Error('invalid_generation_history_evidence');
+  return {...row,last_generation_outcome:entry.last_generation_outcome,last_generation_outcome_scope:'last_known_pinned_history_not_a_new_generation_probe',
+    last_generation_outcome_evidence:entry.evidence.map(({path,commit,sha256,section})=>({path,commit,sha256,section}))};
+}
 export function catalogProviders(env = process.env) {
   let q; try {q=qwenConfig(env);} catch {q={key:'',model:env.DASHSCOPE_MODEL||'qwen-plus',configuration_error:true};}
   return [

@@ -29,3 +29,7 @@
 1. 本复核落盘；
 2. 追加派单（DELIVER-ANS-RECONCILE-20261101-gpt.md）：DeepSeek 补交付 10-25 verification、豆包补交付 10-18 reconcile，均须真实读源文件+算哈希+写盘+可回读，且按 §2 规范处理 self_sha256；
 3. 交付回执必须落盘且 GitHub 可回读（404 即视为未交付），草稿不算完成。
+
+## 后续总控对账（2026-11-01；保留上文历史观察）
+
+上述时点判断不能覆盖后续实际证据。参见 `ops/dispatch/outbox/receipts/GPT-BATCH-RECEIPT-20261101.md`：#318由#324/#326替代，已有关闭说明与原outbox回执；A2历史首次L0自动合并有真实回读。新增真实SIGKILL测试验证本地恢复继续同步，未采纳continue补丁，不代表原ANS生产修复。两份补核对由真实国内native调用及总控读源物化，完整字节hash以 `knowledge/results/ans-cycle/reconcile-manifest-20261101.json` 为准；原工程拒绝与未知请求保留，不把元数据补交付写成工程验收。

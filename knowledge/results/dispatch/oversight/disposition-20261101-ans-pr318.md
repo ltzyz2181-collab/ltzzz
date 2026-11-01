@@ -59,3 +59,7 @@ if (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_p
 1. 本复核落盘（本文）；
 2. 派单卡更新（PR-REVIEW-MERGE-318-FOLLOWUP-20261101-gpt.md）：#318 关闭未合并须说明/重开合并并回读；ANS 补丁按复核结论不采纳 continue 方案，如需验证先做故障注入测试并附证据；
 3. 所有历史派单要求回执后才可宣称完成；无回执一律登记 `dispatched_no_receipt`，不充数。
+
+## 后续总控对账（2026-11-01；保留上文历史观察）
+
+上述时点判断不能覆盖后续实际证据。参见 `ops/dispatch/outbox/receipts/GPT-BATCH-RECEIPT-20261101.md`：#318由#324/#326替代，已有关闭说明与原outbox回执；A2历史首次L0自动合并有真实回读。新增真实SIGKILL测试验证本地恢复继续同步，未采纳continue补丁，不代表原ANS生产修复。两份补核对由真实国内native调用及总控读源物化，完整字节hash以 `knowledge/results/ans-cycle/reconcile-manifest-20261101.json` 为准；原工程拒绝与未知请求保留，不把元数据补交付写成工程验收。

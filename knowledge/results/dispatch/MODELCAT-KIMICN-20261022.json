@@ -1,0 +1,58 @@
+{
+  "task_id": "MODELCAT-KIMICN-20261022",
+  "revision": "v2_20261028",
+  "at_utc": "2026-11-01T11:43:42.300762+00:00",
+  "status": "implemented_and_locally_verified",
+  "actual_provider": "OpenAI",
+  "client": "Codex",
+  "model": null,
+  "sources": [
+    {
+      "path": "ops/dispatch/MODELCAT-KIMICN-20261022.md",
+      "commit": "42050ac955e4090e68cef73e28f92708e877fbbf",
+      "sha256": "00ccf0a8739b01ff694469695eceed31a4cb2fc6870699c7d91cc6a0398fbd2c",
+      "bytes": 1987
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "commit": "42050ac955e4090e68cef73e28f92708e877fbbf",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e",
+      "bytes": 16862
+    }
+  ],
+  "changes": [
+    {
+      "path": "knowledge/results/providers/catalogue-latest.json",
+      "a_path": "$.seats[3].status",
+      "old_a": "catalogue_verified_no_generation",
+      "new_a": "catalogue_verified_no_generation",
+      "b_path": "$.seats[3].last_generation_outcome",
+      "new_b": "failed_20261010_empty_response",
+      "scan_time_not_rewritten": true
+    },
+    {
+      "path": "knowledge/results/providers/monthly-2026-11.json",
+      "a_path": "$.seats[3].status",
+      "old_a": "catalogue_verified_no_generation",
+      "new_a": "catalogue_verified_no_generation",
+      "b_path": "$.seats[3].last_generation_outcome",
+      "new_b": "failed_20261010_empty_response",
+      "scan_time_not_rewritten": true
+    }
+  ],
+  "producer": [
+    "data/provider-generation-history.json",
+    "scripts/lib/model-catalog.mjs",
+    "scripts/provider-readiness.mjs"
+  ],
+  "candidate": "CAND-20261101-qianwen-8b29ef0d",
+  "candidate_disposition": "reject_catalogue_downgrade_only_preserve_other_observations_for_review",
+  "config_ai_providers_changed": false,
+  "core_memory_changed": false,
+  "network_calls": 0,
+  "model_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "evidence": "knowledge/results/dispatch/oversight/dispatch-reconcile-tests-20261101.json",
+  "limitation": "Historical empty response outcome; this metadata enrichment is not a new native Kimi generation or recovery proof."
+}

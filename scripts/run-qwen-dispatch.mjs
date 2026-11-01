@@ -4,6 +4,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {callAgent} from './call-qwen.mjs';
 import {KIMI_PROFILE} from '../lib/kimi-profile.js';
+import {assessDelivery,validRequiredSections} from './delivery-integrity.mjs';
 
 /**
  * Qwen dispatch consumer. Cards: ops/dispatch/queue/*.json (agent "qianwen").
@@ -33,6 +34,8 @@ export function validateCard(card, file) {
   if (isKimi && (mt < KIMI_PROFILE.minimum_output_tokens || mt > KIMI_PROFILE.default_output_tokens)) errors.push(`kimi_max_tokens_must_be_${KIMI_PROFILE.minimum_output_tokens}_to_${KIMI_PROFILE.default_output_tokens}`);
   if (card.model !== undefined && !/^(qwen|kimi)[a-zA-Z0-9_.-]*$/i.test(card.model)) errors.push('invalid_model');
   if (card.real_money === true) errors.push('real_money_not_allowed_in_qwen_dispatch');
+  if (Object.hasOwn(card,'required_sections')&&!validRequiredSections(card.required_sections)) errors.push('invalid_required_sections');
+  if (Object.hasOwn(card,'original_task_id')&&(typeof card.original_task_id!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_-]{5,120}$/.test(card.original_task_id))) errors.push('invalid_original_task_id');
   return errors;
 }
 
@@ -50,7 +53,7 @@ export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'kn
   const out = path.join(receiptDir, f);
   let card; try { card = JSON.parse(bytes); } catch { card = null; }
   const errors = validateCard(card, file);
-  const base = {task_id: card?.id || path.basename(f, '.json'), card_sha256: sha(bytes), run_id: runId, executor: 'qianwen', queue_dispatcher: 'qianwen', at: now(), paid: false, tx_hash: null, financial_execution: false};
+  const base = {task_id: card?.id || path.basename(f, '.json'), original_task_id:card?.original_task_id||card?.id||path.basename(f,'.json'), card_sha256: sha(bytes), run_id: runId, executor: 'qianwen', queue_dispatcher: 'qianwen', at: now(), paid: false, tx_hash: null, financial_execution: false};
   if (errors.length) { fs.writeFileSync(out, JSON.stringify({...base, status: 'rejected_invalid_card', errors, model_calls: 0}, null, 2) + '\n'); return {executed: false, reason: 'invalid_card', errors, model_calls: 0}; }
   fs.writeFileSync(out, JSON.stringify({...base, status: 'reserved_before_provider_call', model_calls: 0}, null, 2) + '\n');
   const result = await callWithSkill({scope:'qianwen-queue:'+card.id,prompt:card.prompt},input=>call({prompt:input,maxTokens:card.max_tokens??1024,model:card.model}));
@@ -59,12 +62,14 @@ export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'kn
   // actually generated the output. kimi cards ride the qianwen queue but the output
   // must be attributed to kimi, not charged/credited to the qianwen seat.
   const generatedBy = result.model || null;
+  const integrity=Object.hasOwn(card,'required_sections')?assessDelivery({output:result.output,finish_reason:result.finish_reason,required_sections:card.required_sections}):null;
+  const deliveryStatus=result.ok ? integrity&&integrity.status!=='structurally_complete'?integrity.status:'draft_delivered_pending_independent_review' : result.status;
   const attributionNote = generatedBy && !/^qwen/i.test(generatedBy)
     ? `qianwen seat only queued/dispatched; actual generation by ${generatedBy} — attribute cost and credit to ${generatedBy}, not qianwen`
     : generatedBy
       ? `generation by ${generatedBy} via qianwen queue`
       : null;
-  const receipt = {...base, skill:result.skill, model_source:result.model_source||null, status: result.ok ? 'draft_delivered_pending_independent_review' : result.status, model_calls: attempted ? 1 : 0,
+  const receipt = {...base, ...(integrity?{delivery_integrity:integrity,required_sections:card.required_sections}:{}), skill:result.skill, model_source:result.model_source||null, status: deliveryStatus, model_calls: attempted ? 1 : 0,
     model_calls_definition: 'generation_requests_attempted_not_billing_proof', native_qwen_call: result.native_qwen_call === true,
     model: result.model || null, generated_by_model: generatedBy, attribution_note: attributionNote,
     finish_reason: result.finish_reason || null, tokens_used: result.tokens_used || 0, request_id: result.request_id || null,
