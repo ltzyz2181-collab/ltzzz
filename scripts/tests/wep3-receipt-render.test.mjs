@@ -53,6 +53,32 @@ test('missing status and payment remain unknown', async () => {
   assert.match(elements.money.textContent, /未知/);
 });
 
+test('null field entries do not hide a real failed check', async () => {
+  const elements = await render({status: 'live_contract_check_failed', paid: false,
+    live_checks: [null, {id: 'CONTROL', passed: false, comparison: {fields: [null,
+      {key: 'controlled', expected: true, actual: false, matched: false}]}}]});
+  assert.match(elements.state.textContent, /未通过/);
+  assert.equal(JSON.parse(elements.detail.textContent).failed_checks[0].failed_fields[0].actual, false);
+  assert.match(elements.money.textContent, /否/);
+});
+
+test('prototype property names remain literal statuses', async () => {
+  for (const status of ['toString', 'constructor', '__proto__']) {
+    assert.equal((await render({status})).state.textContent, status);
+  }
+});
+
+test('generation summary permits only primitive public metadata', async () => {
+  const elements = await render({status: 'blocked', worker_generation: {
+    status: 'exception', model: 'test-model', tokens_used: 0,
+    request_id: {error: 'TEST_ONLY_SECRET'}, error: 'TEST_ONLY_SECRET',
+    headers: {Authorization: 'Bearer TEST_ONLY_SECRET'},
+  }});
+  assert.deepEqual(JSON.parse(elements.detail.textContent).worker_generation,
+    {status: 'exception', model: 'test-model', tokens_used: 0});
+  assert.doesNotMatch(elements.detail.textContent, /TEST_ONLY_SECRET|Authorization/);
+});
+
 test('malicious receipt strings remain text, never HTML', async () => {
   const payload = '<svg onload=alert(1)>';
   const elements = await render({status: payload, paid: 'false', live_checks: [{id: payload, passed: false}]});
