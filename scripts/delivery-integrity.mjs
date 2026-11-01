@@ -4,9 +4,9 @@ export function validRequiredSections(sections){
     &&sections.every(s=>typeof s==='string'&&s.trim()===s&&s.length>0&&s.length<=100&&!/[\r\n]/.test(s));
 }
 export function assessDelivery({output='',finish_reason=null,required_sections=[]}){
-  const text=String(output).trim();
+  const text=String(output).trimEnd();
   if(!validRequiredSections(required_sections))return {status:'invalid_delivery_requirements',reason:'invalid_required_sections',accepted:false};
-  if(!text)return {status:'incomplete',reason:'empty_output'};
+  if(!text.trim())return {status:'incomplete',reason:'empty_output'};
   if(['length','max_tokens','content_filter'].includes(finish_reason))return {status:'incomplete',reason:'provider_'+finish_reason};
   if(!['stop','end_turn'].includes(finish_reason))return {status:'unverified',reason:'missing_or_unknown_finish_reason'};
   if(!text.endsWith('【交付结束】'))return {status:'incomplete',reason:'completion_marker_missing'};
@@ -25,7 +25,11 @@ export function assessDelivery({output='',finish_reason=null,required_sections=[
     lines.push({text:value.replace(/^#{1,6}\s+/,''),boundary:/^#{1,6}(?:\s|$)|^【/.test(value)});
   }
   const missing=required_sections.filter(section=>!lines.some((line,index)=>{
-    if(![section,section+':',section+'：'].includes(line.text))return false;
+    if(!line.text.startsWith(section))return false;
+    const suffix=line.text.slice(section.length);
+    // Real inline supervision content is a body; comments, quotes, fences and indented code are excluded above.
+    const inline=suffix.replace(/^[\s:：\-—]+/u,'').trim();
+    if(inline)return !inline.startsWith('【')&&/[\p{L}\p{N}]/u.test(inline);
     for(const body of lines.slice(index+1)){
       if(!body.text)continue;
       return !body.boundary;
