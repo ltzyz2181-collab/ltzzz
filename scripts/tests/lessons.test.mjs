@@ -59,10 +59,12 @@ test('recurrence of an adopted lesson means the rule failed and escalates to a m
   assert.equal(matchRecurrence([a],{error_class:'overclaim',signature:'brand_new_pit'}).action,'draft_new_lesson');
   assert.ok(matchRecurrence([a],{error_class:'nope',signature:'x'}).error);
 });
-test('stats count recurrences after adoption separately',()=>{
-  const a=adopted({recurrences:[{observed_at:'2026-11-01T00:00:00Z',source_ref:'run 1'}]});
+test('stats count only dated recurrences after adoption separately',()=>{
+  const a=adopted({adopted_at:'2026-10-31T00:00:00Z',recurrences:[{observed_at:'2026-11-01T00:00:00Z',source_ref:'run 1'},{observed_at:'2026-10-30T00:00:00Z',source_ref:'before adoption'}]});
   const s=stats([a,base()]);
   assert.equal(s.recurrences_after_adoption,1);assert.equal(s.by_status.adopted,1);assert.equal(s.by_status.observed,1);
+  assert.equal(stats([{...a,adopted_at:undefined}]).recurrences_after_adoption,0);
+  assert.equal(stats([{...a,adopted_at:undefined}]).recurrences_without_adoption_timestamp,2);
 });
 test('loader rejects invalid json, wrong filename and duplicates',()=>{
   const d=fs.mkdtempSync(path.join(os.tmpdir(),'les-'));

@@ -1,4 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
+import {reflectionContext} from './reflection-harness.mjs';
 export const SKILL_DIR='skills/ltzzz-task-execution';
 export const CORE_FILES=['SKILL.md','references/runtime-contract.md','references/task-card.md','references/receipt-template.json','references/contribution-template.md'];
 export const skillHash=value=>createHash('sha256').update(value).digest('hex');
@@ -43,7 +44,8 @@ export function skillContext({root='.',scope='task'}={}){
   }
   const rows=nativeReviewEvidence(review,pack.core_sha256);if(new Set(rows.map(r=>r.actual_provider)).size<2)throw Error('skill_independent_reviews_missing');
   const runtime=pack.sources.find(s=>s.path.endsWith('runtime-contract.md'));
-  return {text:`【LTZZZ Skill ${m.version}；core=${pack.core_sha256}；scope=${scope}】\n${runtime.text}`,proof:{applied:true,status:'active_context_injected',version:m.version,core_sha256:pack.core_sha256,runtime_sha256:runtime.sha256,activation_path:ref.path,scope}};
+  const reflection=reflectionContext({root});
+  return {text:`【LTZZZ Skill ${m.version}；core=${pack.core_sha256}；scope=${scope}】\n${runtime.text}`+reflection.text,proof:{applied:true,status:'active_context_injected',version:m.version,core_sha256:pack.core_sha256,runtime_sha256:runtime.sha256,activation_path:ref.path,scope,reflection:reflection.proof}};
  }catch{return {text:'',proof:{applied:false,status:'skill_unavailable_or_integrity_error',scope}};}
 }
 export function syncSkillAdapters({root='.',check=false}={}){
