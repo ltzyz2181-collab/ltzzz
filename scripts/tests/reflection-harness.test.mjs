@@ -36,6 +36,14 @@ test('repeated errors select a changed method, not a longer log or an automatic 
  assert.equal(s.strategies[0].occurrences,2);assert.match(s.strategies[0].next_action,/change_method/);
  assert.match(s.strategies[0].change,/Split/);assert.equal(s.model_calls,0);
 });
+test('later outcomes retain the exact retrieved experience and a denominator without claiming learning success',()=>{
+ const plain=observe(receipt()),withContext=observe({...receipt('draft_independently_reviewed'),run_id:'second_run',execution_source_commit:commit,skill:{reflection:{context_sha256:'b'.repeat(64),lesson_ids:['L-20261030-003','SECRET'],strategy_ids:['truncated_output','SEND_SECRET']}}});
+ assert.deepEqual(withContext.experience_at_execution.lesson_ids,['L-20261030-003']);
+ assert.deepEqual(withContext.experience_at_execution.strategy_ids,['truncated_output']);
+ const s=summarize([plain,withContext]);assert.equal(s.with_reflection_context.attempts,1);assert.equal(s.without_reflection_context.attempts,1);
+ assert.equal(s.with_reflection_context.outcomes.draft_reviewed,1);assert.equal(withContext.execution_source_commit,commit);
+ assert.match(s.interpretation,/different task scopes/);
+});
 test('external refusal is a stop lesson; arbitrary private packages are never ingested',()=>{
  const event=publicObservation({status:'rejected_region_eligibility_followup_paused',mail_body:'PRIVATE'},{file:'knowledge/results/external-markets/m1/2hives-application-20261027.json',commit,bytes:'fixture'});
  assert.equal(event.issue,'region_ineligible');assert.ok(!JSON.stringify(event).includes('PRIVATE'));
