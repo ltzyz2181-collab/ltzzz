@@ -1,4 +1,5 @@
 import {skillContext} from './lib/ltzzz-skill.mjs';
+import {pinnedInputs} from './lib/pinned-inputs.mjs';
 import fs from 'node:fs';import path from 'node:path';
 import {nextSupervision,persistSupervision} from './lib/pending-supervision.mjs';
 import {prepareDailyHire,reconcileInternalHire} from './lib/daily-hire-files.mjs';
@@ -25,10 +26,10 @@ if(phase==='prepare'){
   for(const t of record.tasks){const gate=pulseGate(snapshot,t.agent);if(!gate.allowed)throw Error('pulse_paused_'+t.agent);await control({id:'ans-claim-'+date+'-'+t.agent,action:'claim_task',agent:t.agent,task_id:t.id});}
   record.remote_claims=true;save(record);
   const inputs=['scripts/lib/daily-task-board.mjs','scripts/daily-task-board.mjs','scripts/lib/pulse-client.mjs','workers/pulse-worker/index.js','workers/pulse-worker/engine.js','workers/pulse-worker/tasks.js','scripts/lib/daily-assignment.mjs','scripts/run-autonomous-control.mjs','scripts/run-daily-tasks.mjs','docs/ANS-AUTONOMOUS-PULSE.md','ltzzz-memory/装备论.md'];
-  const docs=inputs.map(file=>({file,text:fs.readFileSync(file,'utf8')}));
+  const docs=pinnedInputs(inputs);
   const historicalReviews=fs.readdirSync('knowledge/results/ans-cycle').filter(f=>f.endsWith('-reviewer.json')).sort().slice(-1);
-  for(const name of historicalReviews){const file='knowledge/results/ans-cycle/'+name;docs.push({file,text:fs.readFileSync(file,'utf8')});}
-record.inputs=docs.map(d=>({file:d.file,sha256:digest(d.text)}));
+  for(const name of historicalReviews){const file='knowledge/results/ans-cycle/'+name;docs.push(...pinnedInputs([file],{commit:docs[0].commit}));}
+record.inputs=docs.map(d=>({file:d.file,sha256:d.sha256,commit:d.commit}));
   const {createModelRouter}=await import('./lib/domestic-model-router.mjs');const call=createModelRouter({record:attempt=>{record.provider_attempts||=[];record.provider_attempts.push(attempt);save(record);}});
   const skill=skillContext({scope:'ans-worker-and-independent-review'});record.skill=skill.proof;save(record);
   await executeCycle(record,{call,context:skill.text+'\n'+docs.map(d=>'## '+d.file+'\n'+d.text).join('\n'),save});
