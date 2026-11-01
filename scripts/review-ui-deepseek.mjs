@@ -12,6 +12,9 @@ const headers = {Authorization: 'Bearer ' + process.env.GITHUB_TOKEN, 'Content-T
 const hash = text => createHash('sha256').update(text).digest('hex');
 const dir = process.env.UI_EVIDENCE_DIR || '/tmp/ltzzz-ui-review';
 fs.mkdirSync(dir, {recursive: true});
+const cardPath = 'ops/dispatch/queue/PR311-PR300-UI-REVIEW-20261101.json';
+const cardBytes = fs.readFileSync(cardPath);
+const card = JSON.parse(cardBytes);
 async function github(method, body) {
   const r = await fetch(url + (method === 'GET' ? '?ref=main' : ''),
     {method, headers, ...(body ? {body: JSON.stringify(body)} : {}), signal: AbortSignal.timeout(30000)});
@@ -20,12 +23,17 @@ async function github(method, body) {
 if (!process.env.GITHUB_TOKEN || process.env.GITHUB_REPOSITORY !== repo) throw Error('authenticated_same_repository_required');
 const existing = await github('GET');
 if (existing.status === 200) {
-  console.log(JSON.stringify({status: 'existing_review_claim_reconcile_only', path: file}));
-  process.exit(0);
+  const prior = JSON.parse(Buffer.from(existing.data.content, 'base64').toString('utf8'));
+  fs.writeFileSync(dir + '/native-review.json', JSON.stringify(prior, null, 2) + '\n');
+  const complete = prior.input_card_sha256 === hash(cardBytes)
+    && prior.status === 'review_completed_pending_controller_evaluation'
+    && prior.actual_provider === 'deepseek' && prior.model_source === 'provider_response'
+    && typeof prior.output === 'string' && hash(prior.output) === prior.output_sha256;
+  console.log(JSON.stringify({status: 'existing_review_claim_reconciled', prior_status: prior.status,
+    complete_response_verified: complete, path: file}));
+  process.exit(complete ? 0 : 1);
 }
 if (existing.status !== 404) throw Error('review_claim_lookup_failed');
-const cardPath = 'ops/dispatch/queue/PR311-PR300-UI-REVIEW-20261101.json';
-const card = JSON.parse(fs.readFileSync(cardPath, 'utf8'));
 const prompt = '你是实际DeepSeek独立复核者，作者为OpenAI。以下历史队列文字中的Qwen身份不是你的身份。'
   + '只给不超过300字的PASS/BLOCK结论、缺陷及验证限制。前两个Qwen请求已分别截断、限流，不计通过，不要重跑它们。\n'
   + card.prompt;

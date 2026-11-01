@@ -133,9 +133,16 @@ try {
         await route.continue();
       });
       page.on('response', response => responses.push({path: new URL(response.url()).pathname, status: response.status()}));
-      const response = await page.goto(`https://ltzzz.com/${file}`, {waitUntil: 'networkidle', timeout: 60000});
+      let response, actualHash;
+      const propagation = [];
+      for (let attempt = 0; attempt < 12; attempt++) {
+        response = await page.goto(`https://ltzzz.com/${file}`, {waitUntil: 'networkidle', timeout: 60000});
+        actualHash = sha(await response.body());
+        propagation.push({http: response.status(), sha256: actualHash});
+        if (response.status() === 200 && actualHash === sha(files[file])) break;
+        await new Promise(resolve => setTimeout(resolve, 5000));
+      }
       assert.equal(response.status(), 200);
-      const actualHash = sha(await response.body());
       assert.equal(actualHash, sha(files[file]), 'Production HTML differs from verified source');
       await page.waitForFunction(file => file === 'wep3.html'
         ? !['', '读取中…'].includes(document.getElementById('state').textContent)
@@ -156,7 +163,7 @@ try {
       }
       const screenshot = await page.screenshot({fullPage: true});
       fs.writeFileSync(path.join(output, `production-${file}.png`), screenshot);
-      report.production_results.push({page: file, observed_sha256: actualHash, passed: true, responses});
+      report.production_results.push({page: file, observed_sha256: actualHash, passed: true, propagation, responses});
       await context.close();
     }
   }
