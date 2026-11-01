@@ -10,6 +10,7 @@ examples_zh:
   - "对照两份资料，列出冲突和日期差异。"
 examples_en:
   - "Check these claims and mark unsupported ones."
+  - "Compare the two documents and list conflicts and date differences."
 version: 1.0.0
 author: 世章印章（广州）有限责任公司
 ---
