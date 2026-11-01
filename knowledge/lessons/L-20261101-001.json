@@ -1,0 +1,49 @@
+{
+  "id": "L-20261101-001",
+  "observed_at": "2026-11-01T01:44:05.306079Z",
+  "agent_actual": {
+    "provider": "unknown",
+    "model": null
+  },
+  "reporter": {
+    "provider": "openai",
+    "model": null
+  },
+  "source": {
+    "kind": "run",
+    "ref": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/41262170474/job/124717481239",
+    "commit": "719c882797a8fbad1ace5705a845a6e97ca5f884"
+  },
+  "task_tags": [
+    "ci_test",
+    "time_boundary",
+    "receipt"
+  ],
+  "error_class": "environment_assumption",
+  "signature": "test_uses_two_changing_clocks",
+  "what_happened": "Main CI failed the stale/future token test with Missing expected rejection; the test captured a second and later let the verifier read a new clock. The exact failing loop item was not logged.",
+  "expected": "Each negative boundary assertion should build and verify its token against one fixed instant.",
+  "evidence": [
+    {
+      "path": "scripts/tests/patchgate-oidc.test.mjs",
+      "sha256": "7d8abfb80678db968301a2295cd7a20cc8cfb6b31521e2b83eab577db08fcdac",
+      "commit": "719c882797a8fbad1ace5705a845a6e97ca5f884",
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "A deterministic replay shows iat=sec+31 rejects at sec but legitimately passes at sec+1 (30-second skew). This demonstrates a test timing race; the specific failing parameter in the historical run is unverified.",
+    "status": "hypothesis"
+  },
+  "rule": "Use one injected clock for token fixtures and verifier boundary assertions, and test the exact allowed and rejected sides explicitly.",
+  "check": {
+    "kind": "deterministic_test",
+    "ref": "scripts/tests/patchgate-oidc.test.mjs"
+  },
+  "severity": "medium",
+  "mandatory": false,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}
