@@ -1,7 +1,7 @@
 {
   "task_id": "PLAN-EXTERNAL-MARKETS-20261024",
-  "at_utc": "2026-10-28T13:02:30Z",
-  "status": "M1_Claude_plan_adopted_waiting_official_reply_and_permitted_trial",
+  "at_utc": "2026-11-01T00:50:24.707228Z",
+  "status": "M1_platform_rejected_region_eligibility_followup_paused",
   "phase": "M1",
   "pr": 226,
   "head": "6218e81caacd9be45fdce46119fff98fdf4d88b8",
@@ -18,7 +18,7 @@
     "original_artifact_status_is_historical_not_rewritten": true
   },
   "merge_conflict_resolution": "retained_both_current_main_patchgate_row_and_M0_row_no_force_push",
-  "M1_enabled": true,
+  "M1_enabled": false,
   "M2_enabled": false,
   "registered_accounts": 0,
   "orders": 0,
@@ -89,41 +89,38 @@
     }
   },
   "worker_states": {
-    "gpt": "actual_coordination_plan_adopted_existing_application_waiting_permitted_trial",
-    "doubao": "assigned_waiting_acceptance_and_permitted_package",
-    "kimi": "assigned_waiting_acceptance_and_permitted_package"
+    "gpt": "paused_platform_explicitly_rejected_no_package",
+    "doubao": "paused_platform_explicitly_rejected_no_package",
+    "kimi": "paused_platform_explicitly_rejected_no_package"
   },
   "automatic_followup": {
     "id": "6ae080c255f48191aabc03f7adbee8b7",
-    "enabled": true,
+    "enabled": false,
     "schedule": "hourly_condition_watch",
     "first_tool_inspection_observed": true,
     "unattended_execution_verified": false,
     "automation_run_id": null,
     "known_thread_messages": 1,
-    "official_reply_observed": false,
-    "last_observed_at_utc": "2026-10-27T19:08:32Z",
+    "official_reply_observed": true,
+    "last_observed_at_utc": "2026-11-01T00:50:24.707228Z",
     "must_not_infer_success_from_last_run_time": true,
     "no_repeated_registration": true,
     "last_tool_evidence": {
-      "gmail_thread_id": "1a17cf44f3bdf73e",
-      "message_ids": [
-        "1a17cf44f3bdf73e"
-      ],
-      "labels": [
-        "SENT"
-      ],
-      "sent_query_result_count": 1,
-      "official_sender_query_result_count": 0,
-      "not_a_platform_acceptance": true,
-      "thread_read_success": true,
-      "sent_search_success": true,
-      "official_sender_search_success": true
+      "original_thread_id": "1a17cf44f3bdf73e",
+      "followup_thread_id": "1a1914f490bd44c9",
+      "owner_followup_sent_id": "1a19157d0260a56f",
+      "official_reply_id": "1a1917f267b168fc",
+      "official_sender": "info@2hives.com",
+      "spf": "pass",
+      "dkim_2hives": "pass",
+      "dmarc": "pass",
+      "result": "rejected_region_eligibility",
+      "not_a_platform_acceptance": true
     },
     "last_attempt_at_utc": "2026-10-27T19:08:32Z",
-    "last_attempt_status": "verified_mailbox_recovered_no_new_official_reply",
+    "last_attempt_status": "official_rejection_authenticated_followup_paused",
     "current_mailbox_verified": true,
-    "current_reply_count": 0,
+    "current_reply_count": 1,
     "last_attempt_error": null,
     "previous_failed_attempt": {
       "at_utc": "2026-10-27T17:32:04Z",
@@ -141,16 +138,22 @@
         "retry_policy": "do_not_repeat_failed_calls_in_this_round_reconcile_on_existing_followup",
         "owner_verification_required": false
       }
-    }
+    },
+    "is_enabled_readback_verified": true,
+    "paused_at_utc": "2026-11-01T00:45:28.112913Z",
+    "pause_tool": "automations.update then peek",
+    "response_thread_id": "1a1914f490bd44c9",
+    "response_message_id": "1a1917f267b168fc"
   },
   "current_limitations": [
-    "No platform confirmation, trial package or task reference has arrived in the inspected thread.",
     "2hives is currently unpaid volunteer practice; no revenue claim.",
     "Mainland eligibility and cross-provider processing permission were asked, not assumed.",
     "HTTP apply not announced live; ClawTasks free flag conflicts with legacy stake field and listing failed.",
     "Adapter PR273 is offline-tested only, default off; no production mailbox/store adapter deployed.",
     "No private package material may be published or sent to additional providers without applicable permission.",
-    "Claude M1 standard PR275 is adopted with explicitly attributed GPT correction; no real trial/package/reference has arrived, no delivery performed; PR273/274 independent audits requested, not received."
+    "Claude M1 standard PR275 is adopted with explicitly attributed GPT correction; no real trial/package/reference has arrived, no delivery performed; PR273/274 independent audits requested, not received.",
+    "Official authenticated reply rejects mainland-operated teams and will not issue a trial package; do not process or forward platform material; this follow-up is paused.",
+    "Owner sent one follow-up in a separate thread quoting the original Task ID; it is not a second registration."
   ],
   "current_followup_scope": {
     "platform": "2hives",
@@ -159,7 +162,9 @@
     "other_registrations_not_in_this_followup": true,
     "maximum_real_tasks_this_round": 3,
     "pause_on_explicit_rejection_or_exit": true,
-    "platform_business_requires_actual_package_and_reference": true
+    "platform_business_requires_actual_package_and_reference": true,
+    "paused": true,
+    "no_further_platform_contact": true
   },
   "review_requests": {
     "pr273": {
@@ -310,5 +315,15 @@
       "original_task_id": "PLAN-EXTERNAL-MARKETS-20261024",
       "foundation_receipt": "knowledge/results/automation-foundation/20261028/runtime-acceptance.json"
     }
+  },
+  "pause_reason": "official_platform_explicit_rejection_no_trial_package",
+  "official_reply_observed": true,
+  "platform_rejections": 1,
+  "followup_messages_sent_by_owner": 1,
+  "presentation_policy": {
+    "public_name": "LTZZZ AI 协作系统",
+    "planning_and_execution": "LTZZZ AI seats via actually available executors",
+    "owner_role": "account holder and authorization contact; not falsely described as human delivery team lead",
+    "region": "disclose actual legally relevant operating location when requested; do not use rebranding to evade platform restrictions"
   }
 }
