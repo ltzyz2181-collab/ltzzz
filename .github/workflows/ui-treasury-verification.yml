@@ -1,0 +1,100 @@
+name: UI browser and read-only Treasury evidence
+on:
+  push:
+    branches: [main]
+    paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/read-treasury-evidence.mjs', 'scripts/review-ui-deepseek.mjs', '.github/workflows/ui-treasury-verification.yml']
+permissions: {contents: read}
+concurrency: {group: 'ui-treasury-verification-${{ github.sha }}', cancel-in-progress: false}
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Install isolated browser test dependency
+        run: |
+          npm install --prefix "$RUNNER_TEMP/ui-browser" --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+          node "$RUNNER_TEMP/ui-browser/node_modules/playwright-core/cli.js" install --with-deps chromium
+          echo "PLAYWRIGHT_MODULE=$RUNNER_TEMP/ui-browser/node_modules/playwright-core/index.mjs" >> "$GITHUB_ENV"
+      - name: Pinned premerge candidates, Node and actual Chromium regression
+        env:
+          UI_EVIDENCE_DIR: ${{ runner.temp }}/ui-evidence/candidate
+        run: |
+          git fetch origin 7c19422cf0071d4b64c88f34a66a6093860b7011 17912d13e30a304e75cdce9746293c5e8596b2fd
+          mkdir -p "$RUNNER_TEMP/ui-candidate/scripts/tests"
+          for file in wep3.html scripts/tests/wep3-receipt-render.test.mjs; do
+            git show "7c19422cf0071d4b64c88f34a66a6093860b7011:$file" > "$RUNNER_TEMP/ui-candidate/$file"
+          done
+          for file in treasury-dashboard.html scripts/tests/treasury-dashboard-render.test.mjs; do
+            git show "17912d13e30a304e75cdce9746293c5e8596b2fd:$file" > "$RUNNER_TEMP/ui-candidate/$file"
+          done
+          node --test "$RUNNER_TEMP/ui-candidate/scripts/tests/wep3-receipt-render.test.mjs" "$RUNNER_TEMP/ui-candidate/scripts/tests/treasury-dashboard-render.test.mjs"
+          UI_SOURCE_DIR="$RUNNER_TEMP/ui-candidate" node scripts/verify-ui-browser.mjs
+      - name: Check whether both reviewed UIs are on this main commit
+        id: scope
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';import {createHash} from 'node:crypto';
+          const expected={'wep3.html':'93b5e476846e3f760790d1d93ac6aee1ec84f0d3b5f209fa0f79add657abdb25','treasury-dashboard.html':'b7309adc7ff91883035ec8960e6ca647476b3504907893e33851d3a862ed16cd'};
+          const ready=Object.entries(expected).every(([file,hash])=>createHash('sha256').update(fs.readFileSync(file)).digest('hex')===hash);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,'ready='+ready+'\n');
+          console.log(ready?'Both reviewed UIs are present; verify production':'Production acceptance pending both UI merges');
+          JS
+      - name: Verify deployed pages in actual Chromium
+        if: steps.scope.outputs.ready == 'true'
+        env:
+          UI_EVIDENCE_DIR: ${{ runner.temp }}/ui-evidence/production
+        run: node scripts/verify-ui-browser.mjs --production
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-browser-${{ github.run_id }}
+          path: ${{ runner.temp }}/ui-evidence/
+          retention-days: 14
+  treasury-readonly:
+    if: contains(github.event.head_commit.message, '[treasury-readonly]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Read versions, binding names, public state and Safe configuration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          UI_EVIDENCE_DIR: ${{ runner.temp }}/treasury-evidence
+        run: node scripts/read-treasury-evidence.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: treasury-readonly-${{ github.run_id }}
+          path: ${{ runner.temp }}/treasury-evidence/
+          retention-days: 14
+  native-review:
+    if: contains(github.event.head_commit.message, '[ui-native-review]')
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: One hash-bound supplemental review, with durable exclusive claim
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          UI_EVIDENCE_DIR: ${{ runner.temp }}/native-ui-review
+        run: node scripts/review-ui-deepseek.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-independent-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/native-ui-review/
+          retention-days: 14
