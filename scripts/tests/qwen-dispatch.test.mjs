@@ -13,6 +13,25 @@ test('no cards -> no call', async () => {
   const r = await runOnce({...p, call: async () => { calls++; }});
   assert.equal(r.executed, false); assert.equal(calls, 0);
 });
+test('required supervision cannot be delivered by normal stop and end marker alone',async()=>{
+ const p=mk();card(p.queueDir,{required_sections:['【派单监督】']});
+ const r=await runOnce({...p,call:async()=>({ok:true,status:'success',output:'普通产出\n【交付结束】',finish_reason:'stop',model:'qwen-plus'})});
+ assert.equal(r.status,'missing_required_section');
+ const rec=JSON.parse(fs.readFileSync(path.join(p.receiptDir,'QWEN-TEST-0001.json')));
+ assert.match(rec.output,/普通产出/);assert.equal(rec.accepted,false);assert.deepEqual(rec.delivery_integrity.missing_sections,['【派单监督】']);
+ assert.deepEqual(pending(p),[]); // rejected delivery never causes a second paid request
+});
+test('malformed required_sections is rejected before provider access',async()=>{
+ for(const required_sections of [null,'【派单监督】',[''],['【派单监督】','【派单监督】'],['bad\nheader']]){
+  const p=mk();card(p.queueDir,{required_sections});let calls=0;
+  const r=await runOnce({...p,call:async()=>{calls++;}});assert.equal(r.reason,'invalid_card');assert.equal(calls,0);
+ }
+});
+test('populated required supervision is a draft awaiting independent review',async()=>{
+ const p=mk();card(p.queueDir,{required_sections:['【派单监督】']});
+ const r=await runOnce({...p,call:async()=>({ok:true,status:'success',output:'【派单监督】\n责任席：千问；未核查不代表不存在。\n【交付结束】',finish_reason:'stop',model:'qwen-plus'})});
+ assert.equal(r.status,'draft_delivered_pending_independent_review');
+});
 test('valid card -> one call, draft only, never accepted/paid', async () => {
   const p = mk(); card(p.queueDir); let calls = 0;
   const r = await runOnce({...p, call: async () => { calls++; return {ok: true, status: 'success', output: '回执', native_qwen_call: true, model: 'qwen-plus', finish_reason: 'stop', tokens_used: 9}; }});

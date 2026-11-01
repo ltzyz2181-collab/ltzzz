@@ -1,6 +1,14 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
-import {catalogProviders,inspectCatalog,inspectBalance} from '../lib/model-catalog.mjs';
+import {catalogProviders,inspectCatalog,inspectBalance,withGenerationHistory} from '../lib/model-catalog.mjs';
 const provider={seat:'qianwen',base:'https://dashscope.aliyuncs.com/compatible-mode/v1',key:'fixture-secret',selected_model:'qwen-plus'};
+test('historical empty response never downgrades catalogue status or proves generation',()=>{
+ const original={seat:'kimi_cn',status:'catalogue_verified_no_generation',generation_verified:false,model_calls:0};
+ const history={entries:{kimi_cn:{last_generation_outcome:'failed_20261010_empty_response',status:'failed_generation',generation_verified:true,
+  evidence:[{path:'ltzzz-memory/项目历史.md',commit:'a'.repeat(40),sha256:'b'.repeat(64),section:'10-10（五）'}]}}};
+ const r=withGenerationHistory(original,history);assert.equal(r.status,original.status);assert.equal(r.generation_verified,false);assert.equal(r.model_calls,0);
+ assert.equal(r.last_generation_outcome,'failed_20261010_empty_response');assert.equal(original.last_generation_outcome,undefined);
+ assert.equal(withGenerationHistory({seat:'deepseek'},history).last_generation_outcome,undefined);
+});
 test('each provider reads only its own key; disabled GPT/Claude native keys are never catalogued',()=>{
  const rows=catalogProviders({DASHSCOPE_API_KEY:'q',DEEPSEEK_API_KEY:'d',DOUBAO_API_KEY:'b',MOONSHOT_API_KEY_CN:'cn',KIMI_API_KEY:'global',MOONSHOT_API_KEY:'unclassified',XAI_API_KEY:'x',ANTHROPIC_API_KEY:'foreign',OPENAI_API_KEY:'foreign'});
  assert.deepEqual(rows.map(r=>r.key),['q','d','b','cn','global','x']);assert.ok(!rows.some(r=>r.key==='foreign'));

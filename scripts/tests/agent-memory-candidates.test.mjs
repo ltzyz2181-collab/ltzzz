@@ -16,3 +16,10 @@ test('incomplete output, rejected attribution, metadata and sensitive content ar
 test('real scanner creates one candidate per source entry and never applies or edits core memory on replay',()=>fixture(root=>{
  write(root,'doubao',[entry()]);fs.mkdirSync(path.join(root,'ltzzz-memory'));fs.writeFileSync(path.join(root,'ltzzz-memory/important.md'),'original');const script=path.resolve('tools/promote-memory.mjs');for(let n=0;n<2;n++){const r=spawnSync(process.execPath,[script,'--collect-only','--date',date],{cwd:root,encoding:'utf8'});assert.equal(r.status,0,r.stderr);}const q=JSON.parse(fs.readFileSync(path.join(root,'memory/promote/queue.json')));assert.equal(q.items.length,1);assert.deepEqual(q.applied,[]);assert.equal(q.items[0].review_status,'pending_review');assert.equal(fs.readFileSync(path.join(root,'ltzzz-memory/important.md'),'utf8'),'original');assert.equal(fs.existsSync(path.join(root,'memory/long-term')),false);
 }));
+test('rescan preserves a recorded conflict rather than resetting it to an empty list',()=>fixture(root=>{
+ write(root,'qianwen',[entry({executed_by:'qianwen'})]);const script=path.resolve('tools/promote-memory.mjs');
+ const run=()=>spawnSync(process.execPath,[script,'--collect-only','--date',date],{cwd:root,encoding:'utf8'});
+ assert.equal(run().status,0);const file=path.join(root,'memory/promote/queue.json'),queue=JSON.parse(fs.readFileSync(file));
+ const conflict={with:'MODELCAT-v2',verdict:'catalogue and generation are separate'};queue.items[0].conflicts=[conflict];fs.writeFileSync(file,JSON.stringify(queue));
+ assert.equal(run().status,0);assert.deepEqual(JSON.parse(fs.readFileSync(file)).items[0].conflicts,[conflict]);
+}));

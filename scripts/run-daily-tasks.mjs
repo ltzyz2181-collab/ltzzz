@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import {readLedger,runReservedSeat,ledgerPath,digest} from "./lib/daily-task-board.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
-import { assessDelivery } from "./delivery-integrity.mjs";
+import { assessDelivery,requiredSectionsForAgent } from "./delivery-integrity.mjs";
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
 import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
@@ -166,8 +166,9 @@ async function main() {
       urge,
       reviewPrompt,
       ch.agent === 'qianwen' ? qianwenOversightContext({root:ROOT}) : '',
+      ch.agent === 'qianwen' ? '现行目录派单，历史千问建议不能覆盖其v2拆维度要求：\n'+fs.readFileSync(path.join(ROOT,'ops/dispatch/MODELCAT-KIMICN-20261022.md'),'utf8') : '',
       ch.agent === 'qianwen' ? qwenReviewContext(reflections, readLedger(ROOT,today), today) : '',
-      ch.agent === 'qianwen' ? '月度模型目录参考（GET探针不证明生成能力，不按型号字符串排序判断新旧）：'+JSON.stringify(readJson(path.join(ROOT,'knowledge/results/providers/catalogue-latest.json'),null)?.seats?.map(row=>({seat:row.seat,status:row.status,selected_model:row.selected_model,selected_model_listed:row.selected_model_listed,added_model_ids:row.added_model_ids?.slice(0,5),removed_model_ids:row.removed_model_ids?.slice(0,5)}))||[]) : '',
+      ch.agent === 'qianwen' ? '月度模型目录参考（目录A与生成B分开；失败尝试不是成功生成；GET探针不证明生成能力）：'+JSON.stringify(readJson(path.join(ROOT,'knowledge/results/providers/catalogue-latest.json'),null)?.seats?.map(row=>({seat:row.seat,status:row.status,last_generation_outcome:row.last_generation_outcome,last_generation_outcome_evidence:row.last_generation_outcome_evidence,selected_model:row.selected_model,selected_model_listed:row.selected_model_listed,added_model_ids:row.added_model_ids?.slice(0,5),removed_model_ids:row.removed_model_ids?.slice(0,5)}))||[]) : '',
     ].filter(Boolean).join("\n\n");
 
     if (coreMemory.audit.status !== 'complete') {
@@ -190,8 +191,8 @@ async function main() {
     const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>callWithSkill({root:ROOT,scope:"daily:"+ch.agent,prompt},input=>mod.callAgent({apiKey:process.env[ch.key]||"",prompt:input}))});
     if (res.ok) {
       const output = String(res.output || "").trim();
-      const integrity = assessDelivery({output,finish_reason:res.finish_reason});
-      const status = integrity.status==='structurally_complete'?'success':'incomplete_output';
+      const integrity = assessDelivery({output,finish_reason:res.finish_reason,required_sections:requiredSectionsForAgent(ch.agent)});
+      const status = integrity.status==='structurally_complete'?'success':integrity.status==='missing_required_section'?'missing_required_section':'incomplete_output';
       if (/SPEND_PROPOSAL\s*[:：]/i.test(output)) {
         const error = "本流程只生成读后感，不接收支出提案；该模型产出未保存。";
         failures.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, status: "out_of_scope_output", error });
