@@ -1,0 +1,65 @@
+name: Harness observe learn and verify
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/harness.mjs','scripts/lib/reflection-harness.mjs','scripts/lib/provider-identity.mjs','scripts/lib/pinned-inputs.mjs','scripts/lib/lessons.mjs','scripts/lib/ltzzz-skill.mjs','scripts/tests/reflection-harness.test.mjs','knowledge/lessons/**','knowledge/results/ans-cycle/*.json','knowledge/results/harness-input/*.json','knowledge/results/external-markets/m1/2hives-application-20261027.json','.github/workflows/reflection-harness.yml']
+  pull_request:
+    paths: ['scripts/harness.mjs','scripts/lib/reflection-harness.mjs','scripts/lib/provider-identity.mjs','scripts/lib/pinned-inputs.mjs','scripts/lib/lessons.mjs','scripts/lib/ltzzz-skill.mjs','scripts/tests/reflection-harness.test.mjs','scripts/tests/lessons.test.mjs','knowledge/lessons/**','.github/workflows/reflection-harness.yml']
+  workflow_dispatch:
+  # GITHUB_TOKEN commits do not emit another push workflow. Observe the actual task
+  # workflow's completion as well, including failures, using trusted main only.
+  workflow_run:
+    workflows: ['Execute LTZZZ AI task queue']
+    types: [completed]
+    branches: [main]
+permissions: {contents: read}
+concurrency: {group: 'harness-${{ github.event_name }}-${{ github.ref }}', cancel-in-progress: false}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/lessons.test.mjs scripts/tests/reflection-harness.test.mjs scripts/tests/ltzzz-skill.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/workpool.test.mjs
+  observe:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_repository.full_name == github.repository)
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Observe only pinned public receipts; no model or cloud credentials
+        run: |
+          SOURCE_COMMIT=$(git rev-parse HEAD)
+          echo "HARNESS_SOURCE_COMMIT=$SOURCE_COMMIT" >> "$GITHUB_ENV"
+          node scripts/harness.mjs observe "$SOURCE_COMMIT"
+          node scripts/harness.mjs before > /tmp/harness-context.json
+      - name: Record actual first-run tool evidence when experience changes
+        run: |
+          git add knowledge/learning/
+          if git diff --staged --quiet; then exit 0; fi
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          import {hash} from './scripts/lib/reflection-harness.mjs';
+          const summary=fs.readFileSync('knowledge/learning/summary.json');
+          const context=JSON.parse(fs.readFileSync('/tmp/harness-context.json'));
+          const modules=['scripts/harness.mjs','scripts/lib/reflection-harness.mjs','scripts/lib/lessons.mjs','scripts/lib/ltzzz-skill.mjs','scripts/lib/pinned-inputs.mjs'];
+          const evidence={schema:'ltzzz.harness.activation.v1',source_commit:process.env.HARNESS_SOURCE_COMMIT,run_id:process.env.GITHUB_RUN_ID,at_utc:new Date().toISOString(),status:'cloud_observation_and_context_probe_executed',summary_sha256:hash(summary),context_proof:context.proof,module_hashes:Object.fromEntries(modules.map(p=>[p,hash(fs.readFileSync(p))])),model_calls:0,weights_trained:false,all_desktop_clients_loaded:false,financial_execution:false};
+          fs.mkdirSync('knowledge/results/harness',{recursive:true});fs.writeFileSync('knowledge/results/harness/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(evidence,null,2)+'\n');
+          JS
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/harness/
+          git commit -m 'Harness observed repository outcomes and built next-task context; no model training'
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1

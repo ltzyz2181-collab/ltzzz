@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Check claim, incomplete-output and independent review regressions
-        run: node --test scripts/tests/pulse-feedback.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/ans-review-recovery.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-board-sync.test.mjs
+        run: node --test scripts/tests/pulse-feedback.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/ans-review-recovery.test.mjs scripts/tests/ans-task-review.test.mjs scripts/tests/deepseek-thinking-option.test.mjs scripts/tests/daily-assignment-handover.test.mjs scripts/tests/daily-assignment.test.mjs scripts/tests/ans-board-sync.test.mjs scripts/tests/reflection-harness.test.mjs
       - name: Prepare today's ANS direction and two durable assignments, no models
         id: prepare
         env:
@@ -63,7 +63,7 @@ jobs:
           git config user.email bot@ltzzz.com
           git add knowledge/results/ans-cycle/ knowledge/results/pulse/latest.json knowledge/results/claude-team/ ops/dispatch/
           if git diff --staged --quiet; then exit 0; fi
-          git commit -m 'ANS actual model deliverables and independent verdict'
+          git commit -m "$(node scripts/harness.mjs title knowledge/results/ans-cycle/$ANS_DATE.json)"
           for attempt in 1 2 3 4; do
             git pull --rebase origin main
             if git push origin HEAD:main; then exit 0; fi
