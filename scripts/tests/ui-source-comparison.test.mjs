@@ -28,6 +28,13 @@ test('events, fake src inside data attributes, duplicate src and changed paths f
 test('an unpinned edge tag fails closed', () => {
   assert.equal(compareUiSource(Buffer.from(source), Buffer.from(source.replace('</html>', edge + '</html>')), []).matched, false);
 });
+test('only the single LF adjacent to the pinned edge tag is omitted; other whitespace stays exact', () => {
+  const result = compare(source.replace('</html>', edge + '\n</html>'));
+  assert.equal(result.matched, true); assert.equal(result.normalized_sha256, result.expected_sha256);
+  assert.equal(result.removed_edge_scripts[0].removed_terminator, 'LF');
+  assert.equal(compare(source.replace('</html>', edge + '\n\n</html>')).matched, false);
+  assert.equal(compare(source + edge + '\n\n').matched, false);
+});
 test('the same pinned bytes inside title, style or an attribute are never removed', () => {
   for (const original of ['<title>LABEL</title></html>', '<style>LABEL</style></html>', '<main data-label="LABEL"></main></html>']) {
     assert.equal(compareUiSource(Buffer.from(original), Buffer.from(original.replace('LABEL', edge + 'LABEL')), [fixtureHash]).matched, false);
