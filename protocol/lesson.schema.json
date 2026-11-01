@@ -1,0 +1,27 @@
+{
+  "$comment": "Human-readable schema. The authoritative checks are in scripts/lib/lessons.mjs (validateLesson).",
+  "type": "object",
+  "required": ["id","observed_at","agent_actual","reporter","source","task_tags","error_class","signature","what_happened","expected","evidence","root_cause","rule","check","severity","mandatory","effect","status","review","recurrences"],
+  "properties": {
+    "id": "L-YYYYMMDD-NNN",
+    "observed_at": "ISO-8601 UTC",
+    "agent_actual": {"provider": "who actually made the error (not the logical seat)", "model": "string|null"},
+    "reporter": {"provider": "who wrote this lesson", "model": "string|null"},
+    "source": {"kind": "receipt|pr|run|review|external_platform", "ref": "path, PR number or run id", "commit": "40-hex|null"},
+    "task_tags": ["lowercase_snake tags used to retrieve the lesson for similar tasks"],
+    "error_class": ["overclaim","truncated_output","unverified_completion","identity_mismatch","stale_evidence","scope_creep","fabricated_detail","integrity_unpinned","environment_assumption","other"],
+    "signature": "short lowercase_snake name of the specific pit; error_class:signature is the dedupe fingerprint",
+    "what_happened": "observable facts only",
+    "expected": "what should have happened",
+    "evidence": [{"path": "repo path or URL", "sha256": "64-hex|null", "commit": "40-hex|null", "verified_by_reporter": "boolean"}],
+    "root_cause": {"text": "string", "status": "hypothesis|verified"},
+    "rule": "one sentence, imperative, adds caution only",
+    "check": {"kind": "preflight_question|deterministic_test|ci_guard|manual_review", "ref": "path or null"},
+    "severity": "low|medium|high",
+    "mandatory": "boolean: must be listed in preflight.lessons_considered when tags overlap",
+    "effect": "adds_caution_only",
+    "status": "observed|adopted|verified|retired",
+    "review": {"provider": "reviewer provider (must differ from agent_actual.provider)", "verdict": "accept|reject", "ref": "path or PR"},
+    "recurrences": [{"observed_at": "ISO-8601", "source_ref": "string"}]
+  }
+}

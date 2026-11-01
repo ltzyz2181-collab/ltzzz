@@ -1,0 +1,275 @@
+{
+  "schema_version": 2,
+  "date": "2026-11-01",
+  "run_key": "41258219792:1",
+  "source_commit": "1e9b95b0c9dab49db0c6f0449bc6bf805f480e06",
+  "seats": {
+    "deepseek": {
+      "agent": "deepseek",
+      "status": "completed_draft_review",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": true,
+      "review_verified": true,
+      "accepted": true,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "DAILY-2026-11-01-deepseek",
+        "instruction": "复用 ANS-2026-10-26-deepseek（engineering_completion_unverified）。只读 ops/dispatch/oversight/ANS-2026-10-26-deepseek.md 与 knowledge/results/ans-cycle/ 同日回执，核对工程完成证据；能补则补，不能补标 blocked。交付 knowledge/results/dispatch/oversight/ANS-2026-10-26-deepseek-closure.json：实际 provider/model、source commit、测试命令及通过/失败数、用量(NULL)。禁止伪造 claim_verified，不新增付费调用。",
+        "source": "actual_model_review",
+        "source_date": "2026-10-31",
+        "execution_date": "2026-11-01",
+        "source_task_id": "CONTROL-2026-11-01-deepseek"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-01-deepseek-9137311f20037818",
+        "task_id": "DAILY-2026-11-01-deepseek",
+        "run_key": "41258219792:1"
+      },
+      "claim_receipt": {
+        "task_id": "DAILY-2026-11-01-deepseek",
+        "task_date": "2026-11-01",
+        "request_id": "daily-claim-2026-11-01-deepseek-9137311f20037818",
+        "run_key": "41258219792:1",
+        "claimed_by": "deepseek",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-01T00:46:42.939Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "execution_started_at": "2026-11-01T00:46:46.099Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-deepseek-e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c.json",
+        "sha256": "e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-01-deepseek-9137311f20037818",
+        "task_id": "DAILY-2026-11-01-deepseek",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-deepseek-e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c.json",
+        "sha256": "e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c"
+      },
+      "submission_receipt": {
+        "task_id": "DAILY-2026-11-01-deepseek",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-01-deepseek-e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c.json",
+        "evidence_sha256": "e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c",
+        "submitted_at": "2026-11-01T00:48:33.489Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "sync_reason": "bound_independent_draft_review_verified_not_deployment",
+      "review_receipt": {
+        "scope": "engineering_draft_only",
+        "accepted": true,
+        "worker_actual_provider": "deepseek",
+        "reviewer_actual_provider": "doubao",
+        "evidence_path": "knowledge/results/daily-board/reviews/2026-11-01-deepseek-568fb210ab65ec58517d3d3a66129ff4916d621f7edda5bccb0b2cd7ef8fe1f7.json",
+        "evidence_sha256": "568fb210ab65ec58517d3d3a66129ff4916d621f7edda5bccb0b2cd7ef8fe1f7",
+        "reviewed_sha256": "e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c",
+        "at": "2026-11-01T00:48:35.392Z",
+        "provenance": "authenticated_executor_attestation",
+        "task_id": "DAILY-2026-11-01-deepseek",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      }
+    },
+    "doubao": {
+      "agent": "doubao",
+      "status": "submitted_pending_review",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": true,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "DAILY-2026-11-01-doubao",
+        "instruction": "独立复核 ANS-2026-10-22-doubao（blocked_reconcile_existing_attempt）。读取 repair_file 与相关 ans/wep3 回执，完成对账并给出 true/false/blocked。交付 knowledge/results/dispatch/oversight/ANS-2026-10-22-doubao-reconcile.json：读取路径及 SHA256、差异项、是否需重试、实际模型与用量。不得把已验收写回，不新调用。",
+        "source": "actual_model_review",
+        "source_date": "2026-10-31",
+        "execution_date": "2026-11-01",
+        "source_task_id": "CONTROL-2026-11-01-doubao"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-01-doubao-9137311f20037818",
+        "task_id": "DAILY-2026-11-01-doubao",
+        "run_key": "41258219792:1"
+      },
+      "claim_receipt": {
+        "task_id": "DAILY-2026-11-01-doubao",
+        "task_date": "2026-11-01",
+        "request_id": "daily-claim-2026-11-01-doubao-9137311f20037818",
+        "run_key": "41258219792:1",
+        "claimed_by": "doubao",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-01T00:46:43.545Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "execution_started_at": "2026-11-01T00:46:59.669Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-doubao-b3cbb0d1b53d759885f5cb4a892349bb55feb6c4e6950039d6a21ed3dd2e8efb.json",
+        "sha256": "b3cbb0d1b53d759885f5cb4a892349bb55feb6c4e6950039d6a21ed3dd2e8efb"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-01-doubao-9137311f20037818",
+        "task_id": "DAILY-2026-11-01-doubao",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-doubao-b3cbb0d1b53d759885f5cb4a892349bb55feb6c4e6950039d6a21ed3dd2e8efb.json",
+        "sha256": "b3cbb0d1b53d759885f5cb4a892349bb55feb6c4e6950039d6a21ed3dd2e8efb"
+      },
+      "submission_receipt": {
+        "task_id": "DAILY-2026-11-01-doubao",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-01-doubao-b3cbb0d1b53d759885f5cb4a892349bb55feb6c4e6950039d6a21ed3dd2e8efb.json",
+        "evidence_sha256": "b3cbb0d1b53d759885f5cb4a892349bb55feb6c4e6950039d6a21ed3dd2e8efb",
+        "submitted_at": "2026-11-01T00:48:33.953Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "sync_reason": "remote_artifact_and_board_hash_verified"
+    },
+    "grok": {
+      "agent": "grok",
+      "status": "submitted_pending_review",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": true,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "AUTO-2026-11-01-health",
+        "instruction": "自主检查最新Pulse心跳与实际生成回执是否混淆，交可核验证据或修复，不能凭健康200宣布模型已生成。",
+        "source": "self_discovered_available_task_not_claim_proof",
+        "execution_date": "2026-11-01"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-01-grok-9137311f20037818",
+        "task_id": "AUTO-2026-11-01-health",
+        "run_key": "41258219792:1"
+      },
+      "claim_receipt": {
+        "task_id": "AUTO-2026-11-01-health",
+        "task_date": "2026-11-01",
+        "request_id": "daily-claim-2026-11-01-grok-9137311f20037818",
+        "run_key": "41258219792:1",
+        "claimed_by": "grok",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-01T00:46:43.758Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "execution_started_at": "2026-11-01T00:47:49.774Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-grok-46c2cddf8658275d1bd1d5187b223dedf04551febd824bbf47a11e5c01a726bd.json",
+        "sha256": "46c2cddf8658275d1bd1d5187b223dedf04551febd824bbf47a11e5c01a726bd"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-01-grok-9137311f20037818",
+        "task_id": "AUTO-2026-11-01-health",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-grok-46c2cddf8658275d1bd1d5187b223dedf04551febd824bbf47a11e5c01a726bd.json",
+        "sha256": "46c2cddf8658275d1bd1d5187b223dedf04551febd824bbf47a11e5c01a726bd"
+      },
+      "submission_receipt": {
+        "task_id": "AUTO-2026-11-01-health",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-01-grok-46c2cddf8658275d1bd1d5187b223dedf04551febd824bbf47a11e5c01a726bd.json",
+        "evidence_sha256": "46c2cddf8658275d1bd1d5187b223dedf04551febd824bbf47a11e5c01a726bd",
+        "submitted_at": "2026-11-01T00:48:34.420Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "sync_reason": "remote_artifact_and_board_hash_verified"
+    },
+    "qianwen": {
+      "agent": "qianwen",
+      "status": "submitted_pending_review",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": true,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "DAILY-2026-11-01-qianwen",
+        "instruction": "交叉审阅其他席当日产出及证据，识别系统风险或记忆不一致，提出可验证改进；结合月度模型目录检查提出更新建议，未实测不得称已恢复或已部署。",
+        "source": "pulse_direct_assignment",
+        "execution_date": "2026-11-01"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-01-qianwen-9137311f20037818",
+        "task_id": "DAILY-2026-11-01-qianwen",
+        "run_key": "41258219792:1"
+      },
+      "claim_receipt": {
+        "task_id": "DAILY-2026-11-01-qianwen",
+        "task_date": "2026-11-01",
+        "request_id": "daily-claim-2026-11-01-qianwen-9137311f20037818",
+        "run_key": "41258219792:1",
+        "claimed_by": "qianwen",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-01T00:46:44.143Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "execution_started_at": "2026-11-01T00:48:15.508Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-qianwen-18f17d1c6c42e93b9664b93f43a21aa07351df16aae8efade37ccf76df40bbd3.json",
+        "sha256": "18f17d1c6c42e93b9664b93f43a21aa07351df16aae8efade37ccf76df40bbd3"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-01-qianwen-9137311f20037818",
+        "task_id": "DAILY-2026-11-01-qianwen",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-01-qianwen-18f17d1c6c42e93b9664b93f43a21aa07351df16aae8efade37ccf76df40bbd3.json",
+        "sha256": "18f17d1c6c42e93b9664b93f43a21aa07351df16aae8efade37ccf76df40bbd3"
+      },
+      "submission_receipt": {
+        "task_id": "DAILY-2026-11-01-qianwen",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-01-qianwen-18f17d1c6c42e93b9664b93f43a21aa07351df16aae8efade37ccf76df40bbd3.json",
+        "evidence_sha256": "18f17d1c6c42e93b9664b93f43a21aa07351df16aae8efade37ccf76df40bbd3",
+        "submitted_at": "2026-11-01T00:48:34.918Z",
+        "observed_at": "2026-11-01T00:45:55.644Z"
+      },
+      "sync_reason": "remote_artifact_and_board_hash_verified"
+    }
+  },
+  "paid": false,
+  "tx_hash": null,
+  "daily_review_binding": {
+    "date": "2026-11-01",
+    "run_key": "41258219792:1",
+    "source_commit": "1e9b95b0c9dab49db0c6f0449bc6bf805f480e06",
+    "task_id": "DAILY-2026-11-01-deepseek",
+    "worker_artifact": {
+      "path": "knowledge/results/daily-board/artifacts/2026-11-01-deepseek-e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c.json",
+      "sha256": "e799c2725dabf69f7d304a97089bfd153369abc6f43f97eaf8a896f39401a39c"
+    },
+    "reviewer_task_id": "DAILY-2026-11-01-doubao"
+  },
+  "independent_review": {
+    "artifact": {
+      "path": "knowledge/results/daily-board/reviews/2026-11-01-deepseek-568fb210ab65ec58517d3d3a66129ff4916d621f7edda5bccb0b2cd7ef8fe1f7.json",
+      "sha256": "568fb210ab65ec58517d3d3a66129ff4916d621f7edda5bccb0b2cd7ef8fe1f7"
+    },
+    "status": "completed_draft_review",
+    "command_id": "daily-review-2026-11-01-9137311f20037818",
+    "verified": true
+  }
+}
