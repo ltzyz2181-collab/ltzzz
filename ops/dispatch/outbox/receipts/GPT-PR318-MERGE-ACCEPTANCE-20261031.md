@@ -17,7 +17,11 @@
 
 历史首次 A2 自动合并已通过：#315 head `6c6e110ee2332c59ab354daaa5c9e56cd48d98b9`，run `41258918486`，合并 commit `b0d846b1b223f1363eabeb39c0674d10327ba7e0`，状态 `merged_readback_verified`。原回执 commit `de89b4179f559dfcadc4b7c554abf14eaea243d5`、路径 `knowledge/results/patchgate/a2/69531db024f53032d55c0ed2cd9d1b183c48f05a50cec141929079093ef2b38a.json`。
 
-本次候选发布状态：本地验证已完成，主线合并与 CI 回读待本次真实工具结果补入。历史首次验收不改写为新 bundle 已做过另一次自动合并；不重放旧命令 `CTRL-A2-PR315-0952783F`，不清租约/止动记录。
+本次发布已回读：#324 合并 commit `719c882797a8fbad1ace5705a845a6e97ca5f884`；后续 #326 合并 commit `b24c740963850a0dc04184eebf2b27c0a808a945`。该固定主线版本 preflight blockers=[]，49 文件 runtime 摘要仍为 `2af679084487ae49379f38653dab886c6b948fecc207484efed59c2896e7f46e`。主线回归 run `41262380612` / job `124718093274` 成功；历史首次验收不改写为新 bundle 已做过另一次自动合并，不重放旧命令 `CTRL-A2-PR315-0952783F`，不清租约/止动记录。
+
+#324 首次主线全回归 run `41262170474` 在已有 OIDC 边界测试出现 Missing expected rejection，失败记录保留。#326 将夹具与校验器绑定同一显式时钟，并增加 sec→sec+1 的确定性回归；生产认证代码未改，未放宽认证。修复后本地 PatchGate/controller 266 项及 lessons/Harness 25 项合计 291 项全部通过；主线 266 项全过、0 失败/跳过。该真实问题已记入建议性教训 `L-20261101-001`，不伪造根因的历史细项或异供应商接受。
+
+旧 #318 草稿和 #319 文档审计已关闭并保留原文与对账评论，现行实现在 #324/#326。#319 有用建议作为参考，不形成新审批门槛。
 
 ## 原单附带核对
 
