@@ -5,6 +5,7 @@ import path from 'node:path';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
+import {compareUiSource} from './lib/ui-source-comparison.mjs';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const output = process.env.UI_EVIDENCE_DIR || '/tmp/ltzzz-ui-browser';
@@ -19,7 +20,7 @@ const files = Object.fromEntries(['wep3.html', 'treasury-dashboard.html'].map(fi
 const report = {at_utc: new Date().toISOString(), browser: browser.version(),
   source_commit: process.env.GITHUB_SHA || null,
   source_files: Object.fromEntries(Object.entries(files).map(([file, bytes]) => [file, sha(bytes)])),
-  fixture_results: [], production_results: [], non_get_requests: [], paid: false, tx_hash: null};
+  fixture_results: [], production_results: [], non_get_requests: [], blocked_external_get_requests: [], paid: false, tx_hash: null};
 const payload = '<img src=x onerror="globalThis.PWNED=1">';
 const failedReceipt = {status: 'live_contract_check_failed', paid: false, tx_hash: null,
   worker_generation: {status: 'success', tokens_used: 0, error: 'TEST_ONLY_SECRET'},
@@ -127,9 +128,11 @@ try {
       page.on('pageerror', error => errors.push(error.message));
       await page.route('**/*', async route => {
         const req = route.request(), url = new URL(req.url());
-        if (req.method() !== 'GET' || ![
-          'https://ltzzz.com', 'https://ltzzz-treasury-v11.ltzyz2181.workers.dev'
-        ].includes(url.origin)) {report.non_get_requests.push({method: req.method(), path: url.pathname}); await route.abort(); return;}
+        if (req.method() !== 'GET') {report.non_get_requests.push({method: req.method(), path: url.pathname}); await route.abort(); return;}
+        if (!['https://ltzzz.com', 'https://ltzzz-treasury-v11.ltzyz2181.workers.dev'].includes(url.origin)) {
+          report.blocked_external_get_requests.push({origin: url.origin, path: url.pathname});
+          await route.abort(); return;
+        }
         await route.continue();
       });
       page.on('response', response => responses.push({path: new URL(response.url()).pathname, status: response.status()}));
@@ -141,7 +144,7 @@ try {
         response = await page.goto(`https://ltzzz.com/${file}`, {waitUntil: 'networkidle', timeout: 60000});
         actualHash = sha(await response.body());
         propagation.push({http: response.status(), sha256: actualHash});
-        if (response.status() === 200 && actualHash === sha(files[file])) break;
+        if (response.status() === 200 && compareUiSource(files[file], await response.body()).matched) break;
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
       const servedBytes = await response.body();
@@ -153,7 +156,9 @@ try {
         inline_script_sha256: sha(servedBytes.toString().match(/<script>([\s\S]*?)<\/script>/)?.[1] || ''),
         expected_inline_script_sha256: sha(files[file].toString().match(/<script>([\s\S]*?)<\/script>/)?.[1] || '')});
       assert.equal(response.status(), 200);
-      assert.equal(actualHash, sha(files[file]), 'Production HTML differs from verified source');
+      observation.source_comparison = compareUiSource(files[file], servedBytes);
+      assert.equal(observation.source_comparison.matched, true, 'Production HTML differs beyond permitted Cloudflare analytics injection');
+      assert.equal(observation.inline_script_sha256, observation.expected_inline_script_sha256);
       await page.waitForFunction(file => file === 'wep3.html'
         ? !['', '读取中…'].includes(document.getElementById('state').textContent)
         : document.getElementById('raw').textContent !== 'loading…', file);

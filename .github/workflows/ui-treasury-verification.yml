@@ -2,7 +2,7 @@ name: UI browser and read-only Treasury evidence
 on:
   push:
     branches: [main]
-    paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/read-treasury-evidence.mjs', 'scripts/review-ui-deepseek.mjs', '.github/workflows/ui-treasury-verification.yml']
+    paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', 'scripts/read-treasury-evidence.mjs', 'scripts/review-ui-deepseek.mjs', '.github/workflows/ui-treasury-verification.yml']
 permissions: {contents: read}
 concurrency: {group: 'ui-treasury-verification-${{ github.sha }}', cancel-in-progress: false}
 jobs:
@@ -14,6 +14,7 @@ jobs:
         with: {fetch-depth: 0, persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
+      - run: node --test scripts/tests/ui-source-comparison.test.mjs
       - name: Install isolated browser test dependency
         run: |
           npm install --prefix "$RUNNER_TEMP/ui-browser" --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
