@@ -6,8 +6,10 @@ import path from 'node:path';
 import {prepareDailyBoard,runReservedSeat,syncDailyBoard,readLedger,saveLedger,hasUnverifiedBoard} from '../lib/daily-task-board.mjs';
 import {taskCommand,seedTasks} from '../../workers/pulse-worker/tasks.js';
 import {control as pulseControl} from '../../workers/pulse-worker/engine.js';
+import {spawnSync} from 'node:child_process';
+import {recoverArtifact} from '../lib/daily-task-board.mjs';
 const date='2026-10-16',now=Date.parse(date+'T03:00:00Z'),agent='deepseek';
-function fixture(t){
+function fixture(t,agent='deepseek'){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'daily-board-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  let state=seedTasks({ran_at:new Date(now).toISOString(),agents:{}},now),posts=0,calls=0,remote=new Map();
  const options={root,date,runKey:'run:1',sourceCommit:'source-sha',agents:[agent],now,
@@ -19,6 +21,41 @@ function fixture(t){
  return {options,generate,commit,get state(){return state},get posts(){return posts},get calls(){return calls},remote};
 }
 const verdictFor=(seat,patch={})=>({accepted:true,artifact_sha256:seat.artifact.sha256,task_id:seat.assignment.id,date,run_key:'run:1',source_commit:'source-sha',actual_provider:'doubao',...patch});
+test('missing qianwen section reconciles the claimed task as failure without another generation',async t=>{
+ const f=fixture(t,'qianwen');await prepareDailyBoard(f.options);await f.generate();
+ assert.equal(readLedger(f.options.root,date).seats.qianwen.status,'missing_required_section');
+ assert.equal(hasUnverifiedBoard(readLedger(f.options.root,date)),true);
+ f.commit();await syncDailyBoard(f.options);const seat=readLedger(f.options.root,date).seats.qianwen;
+ assert.equal(seat.status,'failed_no_repurchase');assert.equal(seat.failure_verified,true);
+ assert.equal(seat.integrity.status,'missing_required_section');assert.equal(seat.accepted,false);
+ assert.equal(f.state.task_board.find(task=>task.id===seat.assignment.id).status,'failed_no_repurchase');
+ await f.generate();assert.equal(f.calls,1);assert.equal(hasUnverifiedBoard(readLedger(f.options.root,date)),false);
+});
+test('required supervision failure is persisted and never buys a second daily call',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'required-daily-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ saveLedger(root,{date,run_key:'run:1',source_commit:'fixture',seats:{qianwen:{status:'reserved'}},paid:false,tx_hash:null});
+ let calls=0;const options={root,date,runKey:'run:1',agent:'qianwen',call:async()=>{calls++;return {ok:true,output:'普通读后感\n【交付结束】',finish_reason:'stop'};}};
+ await runReservedSeat(options);const seat=readLedger(root,date).seats.qianwen;
+ assert.equal(seat.status,'missing_required_section');assert.equal(seat.integrity.status,'missing_required_section');
+ assert.equal(JSON.parse(fs.readFileSync(path.join(root,seat.artifact.path))).status,'incomplete_or_failed');
+ assert.equal((await runReservedSeat(options)).status,'blocked_no_repurchase');assert.equal(calls,1);
+});
+test('real SIGKILL after immutable artifact write recovers and submits the exact output without a provider replay',async t=>{
+ const f=fixture(t);await prepareDailyBoard(f.options);const root=f.options.root;
+ const moduleURL=new URL('../lib/daily-task-board.mjs',import.meta.url).href;
+ const child=`import fs from 'node:fs';import path from 'node:path';import {runReservedSeat} from ${JSON.stringify(moduleURL)};
+ const root=process.env.ANS_CRASH_FIXTURE_ROOT,original=fs.writeFileSync;
+ fs.writeFileSync=function(file,...args){const result=original.call(this,file,...args);if(String(file).includes('/artifacts/'))process.kill(process.pid,'SIGKILL');return result;};
+ await runReservedSeat({root,date:${JSON.stringify(date)},runKey:'run:1',agent:'deepseek',call:async()=>{fs.writeFileSync(path.join(root,'fixture-provider-calls'),'1');return {ok:true,output:'Fixture evidence only【交付结束】',finish_reason:'stop',model:'synthetic-fixture',model_source:'provider_response'};}});`;
+ const killed=spawnSync(process.execPath,['--input-type=module','-e',child],{env:{PATH:process.env.PATH,ANS_CRASH_FIXTURE_ROOT:root},encoding:'utf8',timeout:10000});
+ assert.equal(killed.signal,'SIGKILL',killed.stderr);
+ const after=readLedger(root,date),seat=after.seats.deepseek;assert.equal(seat.status,'generation_started');assert.equal(seat.artifact,undefined);
+ assert.equal(recoverArtifact(root,after,'deepseek',seat),true);assert.equal(seat.status,'generated_pending_sync');
+ assert.equal(fs.readFileSync(path.join(root,'fixture-provider-calls'),'utf8'),'1');
+ f.commit();await syncDailyBoard(f.options);assert.equal(readLedger(root,date).seats.deepseek.status,'submitted_pending_review');assert.equal(f.posts,2);
+ assert.equal((await runReservedSeat({root,date,runKey:'run:1',agent:'deepseek',call:()=>{throw Error('provider_must_not_be_replayed');}})).status,'blocked_no_repurchase');
+ console.log(JSON.stringify({test:'SIGKILL_after_immutable_write_before_ledger_pointer',signal:killed.signal,recovered:true,sync_status:readLedger(root,date).seats.deepseek.status,fixture_provider_calls:1,native_model_calls:0,financial_execution:false}));
+});
 test('failed provider attempt is hash-bound terminal board feedback; lost response reconciles and cannot buy again',async t=>{
  const f=fixture(t);await prepareDailyBoard(f.options);await f.generate({ok:false,status:'provider_transport_unknown',output:'',finish_reason:null});f.commit();
  await syncDailyBoard({...f.options,command:async body=>{await f.options.command(body);throw Error('lost response');}});
