@@ -28,6 +28,19 @@ export function executionGate({context,request,read,now=Date.now(),preflight=pre
   const blockers=[...result.blockers],a=policy.execution_authority;
   if(policy.schema!=='ltzzz.patchgate.a2-reconcile-policy.v1'||policy.task_id!==TASK||policy.financial_execution!==false||typeof policy.automatic_release_enabled!=='boolean')throw Error('fixed_reconciliation_policy_required');
   if(!exact(a,['workflow_path','workflow_id'])||a.workflow_path!==EXECUTION_WORKFLOW||!Number.isSafeInteger(a.workflow_id)||a.workflow_id<1)blockers.push('actual_execution_workflow_not_registered');
+  // Fail at the read-only gate when the registered trusted-main checker bytes
+  // drift. The collector independently repeats this check against immutable
+  // GitHub BASE/HEAD bytes; this precheck never substitutes for that proof.
+  const collector=JSON.parse(read('config/patchgate-a2-collector.json'));
+  const checker=collector?.check_authority;
+  if(collector.schema!=='ltzzz.patchgate.a2-collector-policy.v1'||collector.mode!=='observation_only'
+    ||collector.repository!==REPOSITORY||collector.signing_enabled!==false||collector.automatic_merge!==false
+    ||collector.financial_execution!==false||checker?.workflow_path!=='.github/workflows/patchgate-a2-base-checks.yml'
+    ||!Number.isSafeInteger(checker?.workflow_id)||checker.workflow_id<1||checker.app_id!==15368
+    ||checker.job_name!=='patchgate-a2-base-checks'||!HASH.test(checker.workflow_sha256||''))
+    blockers.push('trusted_base_check_workflow_not_registered');
+  else if(sha256(read(checker.workflow_path))!==checker.workflow_sha256)
+    blockers.push('registered_check_workflow_digest_changed');
   return {enabled:blockers.length===0,blockers,runtime_bundle:result.runtime_bundle,authority:a||null};
 }
 export function validateExecutionReadEndpoint(endpoint){
