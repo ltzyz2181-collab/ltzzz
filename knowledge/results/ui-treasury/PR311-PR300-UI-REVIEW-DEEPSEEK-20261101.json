@@ -2,15 +2,57 @@
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "step": "PR311_PR300_UI_INDEPENDENT_REVIEW",
   "author_provider": "openai",
-  "actual_provider": null,
+  "actual_provider": "deepseek",
   "run_id": "41281165576",
   "input_card": "ops/dispatch/queue/PR311-PR300-UI-REVIEW-20261101.json",
   "input_card_sha256": "154d64038241293126e30f4c3168334f6c9d3235e4507c518c8d38bd4965767d",
   "prompt_sha256": "bae5b721588b5374bbdb0b0eb8e3da5a01defdba75f502e9e71714ce2709531f",
   "source_commit": "b625db33018279620e9903963303849cac82c0f3",
   "at_utc": "2026-11-01T06:31:24.001Z",
-  "status": "reserved_before_provider_call",
-  "model_calls": 0,
+  "status": "review_completed_pending_controller_evaluation",
+  "model_calls": 1,
   "paid": false,
-  "tx_hash": null
+  "tx_hash": null,
+  "provider_endpoint": "https://api.deepseek.com/v1/chat/completions",
+  "model": "deepseek-v4-pro",
+  "model_source": "provider_response",
+  "request_id": null,
+  "finish_reason": "stop",
+  "tokens_used": 2732,
+  "output": "BLOCK\n\n风险：\n1. #311 `paid` 显示为“是/否/未知”，但注释称付款标记未独立链上核验，可能混淆“回执声明”与“已核验支付”；应显示为“未验证”而非“未知”。\n2. #311 状态映射含 `internal_credit_settled`，易将内部积分结算误读为现金结算；UI未加醒目的非现金提示。\n3. #311 `null` 字段处理部分满足：`tx_hash` 用 `||` 会把空字符串列为“无”，状态映射有兜底；`worker_generation` 白名单过滤OK。\n4. #300 `usagePercent(' ' , 10)`：字符串空白被当成 numeric，之后 `Number(' ')` 为 0，会误显示 0%，违反“空白应为未知”。应改为 `trim() !== ''`。\n5. #300 `displayValue(null)` 显示“未知”，但真实 0 保留，符合要求；进度钳制 0..100 正确。\n\n验证限制：只读静态审查，未运行页面或请求真实数据；#300 其他 DOM 字段 escapeHtml 未复核。",
+  "output_sha256": "e7b44cc2eb04bed996f745a569b05f58808056d3307d9f7324f696f48d57b544",
+  "error": null,
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "ui-review:PR311:PR300",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "f0dc82d62d732fc89fd51d7645a9d27b7a31ad07979c2e8c378638da3d1c0c41",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "f5cac030375354d82db419d004d447f6a679edc3bc2c97b342281c0509496c4c"
+  },
+  "finished_at_utc": "2026-11-01T06:31:29.939Z",
+  "no_transaction_or_wallet_action": true
 }
