@@ -11,7 +11,7 @@ examples_zh:
 examples_en:
   - "Check these claims and mark unsupported ones."
 version: 1.0.0
-author: LTZZZ AI 协作系统
+author: 世章印章（广州）有限责任公司
 ---
 # 来源核对
 
