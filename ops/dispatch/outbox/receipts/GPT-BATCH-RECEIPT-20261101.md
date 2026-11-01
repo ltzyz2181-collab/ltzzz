@@ -44,3 +44,12 @@ controlled=false 不证明项目整体钱包丢失控制权。此前只读部署
 DeepSeek多写的第二角色审核没有当成豆包独立交付。实际豆包raw review对草稿有异议（accepted=false），其JSONC片段未当严格JSON；总控保留异议、明确hash角色/历史和本轮commit/usage边界，最终只验元数据一致性，不接受原工程草稿。10-25旧Doubao超时未知及Qianwen后续拒绝审核、10-18已有拒绝均保留。
 
 本次原有国内执行器有真实DeepSeek与豆包各1次补核对调用；费用未从账单独立对账，**不声称免费模型API**。MODELCAT、RETURN验收和本地故障注入本身0模型调用；千问卡按真实回执另记。未调用钱包，paid=false/tx_hash=null仅指无项目资金动作；未新建付费cron、未调用原厂GPT/Claude API、未改.github/workflows、预算或信任根，未重放已知拒绝/未知资金命令。
+
+## 已提交实物回读
+
+两份补核对已在真实提交 `5a14fcd36a4ce764d3e15f1c7b233ee3dae55983` 通过GitHub连接器逐文件回读，随后从Git不可变blob独立复算，字节与本地严格JSON完全相同。外部manifest仅覆盖这两份文件：
+
+- 10-25 verification SHA256 `8811bb473e2a082e2aeb8e3daf230e832675a0346437bca96962bbedf17b5976`。
+- 10-18 reconcile SHA256 `8d229a815f51ced12914a3d46738693b918a84f2f839b8ca1313cb8e618cde93`。
+
+复算方式与committed_sha见 `knowledge/results/ans-cycle/reconcile-manifest-20261101.json`；不以此冒称原工程修复通过或已部署。
