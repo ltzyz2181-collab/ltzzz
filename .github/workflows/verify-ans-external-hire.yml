@@ -1,7 +1,7 @@
 name: Verify ANS and external-hire boundaries
 on:
   pull_request:
-    paths: ['tools/persist-pulse-receipts.mjs', 'scripts/tests/pulse-receipt-persistence.test.mjs', '.github/workflows/deploy-pulse.yml', '.github/workflows/watch-pulse.yml', 'wep3-*.js', 'workers/pulse-worker/**', 'scripts/lib/internal-daily-hire.mjs', 'scripts/lib/daily-hire-files.mjs', 'scripts/tests/internal-daily-hire.test.mjs', 'scripts/lib/daily-external-hire.mjs', 'scripts/lib/external-ai-relay.mjs', 'scripts/run-daily-external-hire.mjs', 'scripts/lib/ans-cycle.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/tests/daily-external-hire.test.mjs', 'scripts/tests/pulse-feedback.test.mjs', '.github/workflows/daily-external-hire.yml', '.github/workflows/verify-ans-external-hire.yml']
+    paths: ['tools/persist-pulse-receipts.mjs', 'scripts/tests/pulse-receipt-persistence.test.mjs', '.github/workflows/deploy-pulse.yml', '.github/workflows/watch-pulse.yml', 'wep3-*.js', 'workers/pulse-worker/**', 'scripts/lib/internal-daily-hire.mjs', 'scripts/lib/daily-hire-files.mjs', 'scripts/tests/internal-daily-hire.test.mjs', 'scripts/lib/daily-external-hire.mjs', 'scripts/lib/external-ai-relay.mjs', 'scripts/run-daily-external-hire.mjs', 'scripts/lib/ans-cycle.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/tests/daily-external-hire.test.mjs', 'scripts/tests/pulse-feedback.test.mjs', 'scripts/tests/ans-task-review.test.mjs', '.github/workflows/daily-external-hire.yml', '.github/workflows/verify-ans-external-hire.yml']
 permissions: {contents: read}
 concurrency: {group: 'ans-hire-check-${{ github.event.pull_request.number }}', cancel-in-progress: true}
 jobs:
