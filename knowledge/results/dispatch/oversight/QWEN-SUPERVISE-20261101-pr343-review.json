@@ -1,0 +1,155 @@
+{
+  "task_id": "QWEN-SUPERVISE-20261101",
+  "step": "PR343_controller_review_and_completion",
+  "at_utc": "2026-11-02T01:16:28.915002+00:00",
+  "original_pr": 343,
+  "original_head": "61da92d6924d68b64dd0fa77c41b006ebce2405c",
+  "current_main_source": "06b349177ea01081b6f259eb6ea3ae162584ae6c",
+  "actual_provider": "OpenAI",
+  "client": "Codex controller",
+  "model": null,
+  "actual_native_Claude_review_seen": false,
+  "different_native_provider_review_claimed": false,
+  "decision": "controller_approves_revised_candidate_after_tests_reviews_remain_supervisory",
+  "authorization": "Existing owner merge/deploy/recover authorization; config/autonomy-authority.json current_governance=controller_decides_reviews_advisory; no new permission requirement or expansion.",
+  "findings": [
+    {
+      "finding": "Original three required suites were 33/34, not fully green. The seat-level test contradicted the newly supported real inline section.",
+      "resolution": "Recognize a real leading inline section; still reject prose-only mentions, quotes, code, empty and hidden examples."
+    },
+    {
+      "finding": "Native adapter and daily runner trimmed leading indentation before the assessor. Parser-only trimEnd did not preserve end-to-end input.",
+      "resolution": "Use trimEnd at both upstream boundaries, with actual native-adapter mock RED→GREEN and one-request assertion."
+    },
+    {
+      "finding": "Legacy day-11-01 artifact has no supervision section; current validation fails before network read but sync recorded a generic remote failure.",
+      "resolution": "Keep sync_unknown and immutable/reservation state; expose only fixed local artifact_delivery_* reason codes. No remote task closure, generation replay or acceptance."
+    }
+  ],
+  "files": [
+    {
+      "path": "scripts/call-qwen.mjs",
+      "sha256": "1858453a13fdf82bdead424d5c4a89044ea4cad0e9bda8441fed83d92d9303fe",
+      "git_blob": "b3b9624e068af9b54ee25dc23241b386a7de297f"
+    },
+    {
+      "path": "scripts/delivery-integrity.mjs",
+      "sha256": "16c1edac20b196dedba0fa14396a6edb8bd258de536dba5631db0f8e33fd9ae6",
+      "git_blob": "77c02c284ea5599c5d98126cab486a5f3a851cfd"
+    },
+    {
+      "path": "scripts/lib/daily-task-board.mjs",
+      "sha256": "2f196071cbce4873a9598ff29f4128ba6d8228c1274b981a8ee6955a197f9c2d",
+      "git_blob": "da5c5509cb27a371102d2d7785817f3fb01a20c0"
+    },
+    {
+      "path": "scripts/run-daily-tasks.mjs",
+      "sha256": "f35b674de8891eacb21b042feb8ec1cebf7fdef4ced49131d72992910fa3dc84",
+      "git_blob": "45c69d32a6fc1164bc49a2537d4ecf96d6274239"
+    },
+    {
+      "path": "scripts/tests/daily-task-board.test.mjs",
+      "sha256": "c762b33f1cb746d07602efea0d96c292a297c2adc9f46b4cf7d5d3b3611e76c7",
+      "git_blob": "d860d48bb8483ee907f5a0c06045022c0ac0754c"
+    },
+    {
+      "path": "scripts/tests/delivery-integrity.test.mjs",
+      "sha256": "8dfdeedd45177235cedd252612f40f1a2c9bed36de2edaf9df3663a2df60989e",
+      "git_blob": "e2c08a08131ce524a1d40657b14dbf23916fe465"
+    },
+    {
+      "path": "scripts/tests/qwen-native.test.mjs",
+      "sha256": "2967fb9f48445d3ff81160aaf5363ade58e5ba42a29f8ec1225c4078f13b0634",
+      "git_blob": "7f7524faf554c75e63d270a5ce9bc3f43d3b5589"
+    },
+    {
+      "path": "scripts/tests/seat-delivery.test.mjs",
+      "sha256": "51e34981dd378096e7d8f028a2aed31b3f77c5a3e57fd9cb8435ddd0a3620c26",
+      "git_blob": "e7a0d4dd0635137812deb9c1de498537f2531c0a"
+    }
+  ],
+  "tests": [
+    {
+      "name": "original_head_required_three_suites",
+      "stdout_sha256": "d9a3596f42566433782326f8c4c2f89774d31d6dc98d82069ece75bfcb1a5ca4",
+      "tests": 34,
+      "passed": 33,
+      "failed": 1,
+      "stdout_excerpt": [
+        "not ok 34 - inline mention of supervision is not a valid supervision section",
+        "# tests 34",
+        "# pass 33",
+        "# fail 1"
+      ]
+    },
+    {
+      "name": "adapter_indentation_red",
+      "stdout_sha256": "62592c57fa9097bb42a218e0b319ff39e156fe48154cab865d53db8d77ec8465",
+      "tests": 12,
+      "passed": 11,
+      "failed": 1,
+      "stdout_excerpt": [
+        "not ok 1 - native adapter preserves first-line code indentation until supervision validation",
+        "    + actual - expected",
+        "    + '【派单监督】责任席：千问；代码示例\\n【交付结束】'",
+        "    - '    【派单监督】责任席：千问；代码示例\\n【交付结束】'",
+        "# tests 12",
+        "# pass 11",
+        "# fail 1"
+      ]
+    },
+    {
+      "name": "sync_reason_red",
+      "stdout_sha256": "b23b29c7ca4cdf4e9745e2d9fb8e8ad56b7b627b395b517e9d73468dd948d66d",
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "stdout_excerpt": [
+        "not ok 1 - a legacy submitted artifact missing supervision reports validation failure without replay or rewriting evidence",
+        "    + actual - expected",
+        "    + 'remote_submission_or_evidence_unverified'",
+        "    - 'artifact_delivery_missing_required_section'",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1"
+      ]
+    },
+    {
+      "name": "final_seven_suites",
+      "stdout_sha256": "143fde2640b9230e3dbcde29dd729aeaf96c3a4222111a67d4c1e8587ab3d970",
+      "tests": 94,
+      "passed": 94,
+      "failed": 0,
+      "stdout_excerpt": [
+        "# tests 94",
+        "# pass 94",
+        "# fail 0"
+      ]
+    },
+    {
+      "name": "final_required_three_suites",
+      "stdout_sha256": "268a2e431f79f028572d89428fdcbb3351fc4d9ab72cb900992172dc8e145539",
+      "tests": 34,
+      "passed": 34,
+      "failed": 0,
+      "stdout_excerpt": [
+        "# tests 34",
+        "# pass 34",
+        "# fail 0"
+      ]
+    }
+  ],
+  "node_version": "22.23.4",
+  "test_native_model_calls": 0,
+  "test_financial_execution": false,
+  "cloud_validation": "Pending revised exact-head CI and main workflow readback; skips are not test success.",
+  "lessons_applied": [
+    "L-20261030-002: preserve uncertainty about current remote state and absent Claude review",
+    "L-20261030-003: test the real producer path before completeness classification",
+    "L-20261030-007: pin raw file source/hash; do not replace historical evidence"
+  ],
+  "model_api_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
