@@ -2,6 +2,7 @@
  * call-grok.mjs — XAI/Grok 通道真实调用（密钥只从环境变量读取）
  * 默认模型 grok-4.6（该账号 Key.doc 标注可访问）；404 模型无权限时自动回退候选模型列表
  */
+import {upstreamRequestIdFrom} from '../lib/provider-execution.js';
 const MODEL_CANDIDATES = [
   process.env.XAI_MODEL, "grok-4.6", "grok-4-1", "grok-4", "grok-4-fast", "grok-2-latest",
 ].filter(Boolean);
@@ -34,7 +35,8 @@ export async function callAgent({ apiKey, prompt, model, maxTokens = 600 }) {
       const data = await resp.json();
       const output = (data.choices?.[0]?.message?.content || "").trim();
       const finish=data.choices?.[0]?.finish_reason,complete=!!output&&["stop","end_turn"].includes(finish);
-      return { ok: complete, status: !output?"empty_output":complete?"success":"incomplete_output", http:resp.status, output, finish_reason:finish, tokens_used:data.usage?.total_tokens||0, model:data.model||mdl, requested_model:mdl, model_source:data.model?"provider_response":"requested_model" };
+      const rid=upstreamRequestIdFrom(resp.headers);
+      return { ok: complete, status: !output?"empty_output":complete?"success":"incomplete_output", http:resp.status, output, finish_reason:finish, tokens_used:data.usage?.total_tokens||0, model:data.model||mdl, requested_model:mdl, model_source:data.model?"provider_response":"requested_model", completion_id:data.id||null, upstream_request_id:rid.value, upstream_request_id_source:rid.source };
     } catch (e) {
       return { ok: false, status: "exception", error: String(e) };
     }
