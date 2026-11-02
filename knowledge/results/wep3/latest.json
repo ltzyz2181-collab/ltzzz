@@ -1,10 +1,10 @@
 {
-  "source_commit": "047507a10945d6be8302dafeed671c6121f5286b",
-  "trigger_commit": "047507a10945d6be8302dafeed671c6121f5286b",
+  "source_commit": "f3f69ad29eb90ed681b87ac6615d135ec652eb36",
+  "trigger_commit": "f3f69ad29eb90ed681b87ac6615d135ec652eb36",
   "predicate_revision": "provided-contract-v2-detailed-evidence",
   "predicate_source_sha256": "865600cd2201745b4eecc5f527d3b82261fc033ce0f8465418d49ccae8daba86",
-  "at": "2026-11-01T01:23:35.741Z",
-  "execution_id": "41260861461",
+  "at": "2026-11-02T01:44:32.360Z",
+  "execution_id": "41373998174",
   "task_kind": "provided_spec_readonly_HTTP_contract_check",
   "spec_provided_in_prompt": true,
   "original_design_claimed": false,
@@ -15,10 +15,10 @@
     "model": "doubao-seed-2-1-pro-260915",
     "status": "success",
     "finish_reason": "stop",
-    "tokens_used": 1293
+    "tokens_used": 1142
   },
-  "source": "knowledge/results/wep3/delivery-contract-2026-11-01.json",
-  "source_delivery_file_sha256": "d8dd4d9cec8927ce5093f101cef3ada07a539cfe777b36128d6e11a2eab04429",
+  "source": "knowledge/results/wep3/delivery-contract-2026-11-02.json",
+  "source_delivery_file_sha256": "308f948b8fb6ad2a5f26602356b6f9f3ebdb2e6dc19f89a5506d0c03525b2362",
   "negative_controls": {
     "kind": "local_assertion_evaluator_fault_injection",
     "network_calls": 0,
@@ -49,7 +49,7 @@
   },
   "live_checks": [
     {
-      "id": "HEALTH_001",
+      "id": "T01",
       "path": "/health",
       "http": 200,
       "expected_http": 200,
@@ -77,12 +77,12 @@
         ]
       },
       "response_sha256": "75796860c701d7db76ffddf0700746a8c645f3ed3c0dd583e3e93c00d2efb5a9",
-      "observed_at": "2026-11-01T01:23:55.313Z",
+      "observed_at": "2026-11-02T01:44:47.165Z",
       "method": "GET",
       "auth_kind": "public"
     },
     {
-      "id": "TREASURY_001",
+      "id": "T02",
       "path": "/market/treasury",
       "http": 200,
       "expected_http": 200,
@@ -130,23 +130,22 @@
         ]
       },
       "response_sha256": "f3e0e219797600ea43d44d26163303fc4edf1f628dcbebe7de36bf6d1f6b7336",
-      "observed_at": "2026-11-01T01:23:55.398Z",
+      "observed_at": "2026-11-02T01:44:47.258Z",
       "method": "GET",
       "auth_kind": "public"
     },
     {
-      "id": "AAVE_STATUS_001",
+      "id": "T03",
       "path": "/market/aave/status",
       "http": 200,
       "expected_http": 200,
       "actual": {
-        "ok": true,
-        "chain_id": 8453
+        "ok": false
       },
-      "passed": true,
+      "passed": false,
       "comparison": {
         "revision": "provided-contract-v2-detailed-evidence",
-        "passed": true,
+        "passed": false,
         "expected_shape_valid": true,
         "expected_http": 200,
         "actual_http": 200,
@@ -155,30 +154,30 @@
           {
             "key": "ok",
             "expected": true,
-            "actual": true,
+            "actual": false,
             "actual_present": true,
             "expected_type": "boolean",
             "actual_type": "boolean",
-            "matched": true
+            "matched": false
           },
           {
             "key": "chain_id",
             "expected": 8453,
-            "actual": 8453,
-            "actual_present": true,
+            "actual": null,
+            "actual_present": false,
             "expected_type": "number",
-            "actual_type": "number",
-            "matched": true
+            "actual_type": "undefined",
+            "matched": false
           }
         ]
       },
-      "response_sha256": "f6e94c3d3f2aa89bbcc05ff257aeeda30707faf560758f610244040e03c574f3",
-      "observed_at": "2026-11-01T01:23:56.682Z",
+      "response_sha256": "ce00a2b9fc1784b7b37c93d1d307f1f0500c86c75b8cd4dde27ce5c639f6dd5f",
+      "observed_at": "2026-11-02T01:44:51.759Z",
       "method": "GET",
       "auth_kind": "public"
     },
     {
-      "id": "RUNNER_READINESS_PUBLIC_001",
+      "id": "T04",
       "path": "/market/runner/readiness",
       "http": 200,
       "expected_http": 200,
@@ -206,12 +205,12 @@
         ]
       },
       "response_sha256": "83cbf6d4524fbe9195534df78c5c63afaf2ee4159aa4d71edc7ea722229649aa",
-      "observed_at": "2026-11-01T01:23:56.765Z",
+      "observed_at": "2026-11-02T01:44:51.852Z",
       "method": "GET",
       "auth_kind": "public"
     },
     {
-      "id": "RUNNER_READINESS_VALID_001",
+      "id": "T05",
       "path": "/market/runner/readiness",
       "http": 200,
       "expected_http": 200,
@@ -239,12 +238,12 @@
         ]
       },
       "response_sha256": "e433da78b037a98c183159f0ddc0bf8500b336c3cc2bd8bce07e2fdfc07183ef",
-      "observed_at": "2026-11-01T01:23:56.789Z",
+      "observed_at": "2026-11-02T01:44:51.937Z",
       "method": "GET",
       "auth_kind": "valid"
     },
     {
-      "id": "AAVE_PREVIEW_PUBLIC_001",
+      "id": "T06",
       "path": "/market/aave/preview",
       "http": 401,
       "expected_http": 401,
@@ -272,12 +271,12 @@
         ]
       },
       "response_sha256": "0ec67ce8b9de09509319fc97c835dff3420341719bcfb62fb016becf13184202",
-      "observed_at": "2026-11-01T01:23:56.888Z",
+      "observed_at": "2026-11-02T01:44:52.032Z",
       "method": "POST",
       "auth_kind": "public"
     },
     {
-      "id": "AAVE_PREVIEW_WRONG_001",
+      "id": "T07",
       "path": "/market/aave/preview",
       "http": 401,
       "expected_http": 401,
@@ -305,12 +304,12 @@
         ]
       },
       "response_sha256": "0ec67ce8b9de09509319fc97c835dff3420341719bcfb62fb016becf13184202",
-      "observed_at": "2026-11-01T01:23:56.926Z",
+      "observed_at": "2026-11-02T01:44:52.179Z",
       "method": "POST",
       "auth_kind": "wrong"
     },
     {
-      "id": "AAVE_PREVIEW_VALID_ARBITRARY_TO_001",
+      "id": "T08",
       "path": "/market/aave/preview",
       "http": 422,
       "expected_http": 422,
@@ -338,10 +337,10 @@
         ]
       },
       "response_sha256": "5ff76aaa3884f8e644ba0e8a779f6f18dec8649e6c472a558217019dd39892b4",
-      "observed_at": "2026-11-01T01:23:56.955Z",
+      "observed_at": "2026-11-02T01:44:52.267Z",
       "method": "POST",
       "auth_kind": "valid"
     }
   ],
-  "worker_tokens": 1293
+  "worker_tokens": 1142
 }
