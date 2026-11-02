@@ -63,3 +63,13 @@ DeepSeek多写的第二角色审核没有当成豆包独立交付。实际豆包
 千问补段run41303597022已真实完成一次native qwen-plus调用（finish_reason=stop，tokens_used=2306，request_id=d454d109-067b-9122-a9ca-f03357336e76），原回执commit `14c2d29595ebf719f24eb890e6ca236e633fa2fc`，共享Skill/反思上下文注入有真实executor metadata。required_sections结构检查通过；但本总控以不同实际提供商OpenAI复核内容后**拒绝**：把A2 #324/#326写成ANS编号、无证据断言RETURN校验链未触发、用监督来源/已交回执冒充补派卡路径。具体逐项证据见 `knowledge/results/qwen-dispatch/QWEN-SUPERVISE-20261101-review.json`。原输出与原accepted=false保留，缺失的原日课监督内容仍未验收，不重调、不以总控修正稿冒称千问交付。
 
 本轮实际国内补核对native请求共3次（DeepSeek1、豆包1、千问1）；审核和Git/测试不新增模型API。项目钱包资金动作仍0，API账单费用未独立对账。主线独立manifest和两份ANS完整字节哈希已再次复算匹配。
+
+## PR #343 后续处理（原单接续）
+
+原两文件候选完整指定测试为33/34；已处理监督fixture与新inline语义冲突，并保留纯提及/引用/代码拒绝。Qwen适配器和日课调用两处上游trim也改为trimEnd，防止首行代码被提前去缩进。新增真实mock-adapter RED和固定同步诊断RED，最终Node22指定三组34/34、七组94/94（有重叠）。
+
+#343修订head `89169bb6f8178f755244e6811c2f42376925a389`，合并 `870d68e1ad57b64c4a1d3fe2bcec7d810bcec29d`；主线日课run41371796759/job125043632684实际92/92、0失败/跳过，日志明确deployment verification only，无模型调用或任务变更。完整回读见 `knowledge/results/dispatch/oversight/QWEN-SUPERVISE-20261101-pr343-closeout.json`。Claude未交独立原生审核，不冒称其通过；现行总控授权下由OpenAI总控裁定合并，不扩大A2自动执行权限。
+
+`DAILY-2026-11-01-qianwen` 的原18f17d1c...工件确无【派单监督】，当前校验先在本地失败，不能仅称网络同步故障。已有Pulse仓库快照证明同一Task ID+hash已submitted_pending_review；本次实时公开GET超时，远端仍待审/未验收，保留原认领、工件和提交意图。只修固定artifact_delivery_missing_required_section诊断，不重试模型、重提提交或代造失败/接受。对账实物：`knowledge/results/dispatch/oversight/DAILY-2026-11-01-qianwen-sync-reconcile.json`。
+
+本接续0模型API调用、0项目资金动作；A2历史L0验收结论不变，云签名/付款等阶段不由此自动完成。未重新采购NAS/RDS/KMS或恢复旧独立AI签名准入。
