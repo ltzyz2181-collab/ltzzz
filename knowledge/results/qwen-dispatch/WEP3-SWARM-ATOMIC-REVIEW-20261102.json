@@ -1,0 +1,61 @@
+{
+  "task_id": "WEP3-SWARM-ATOMIC-REVIEW-20261102",
+  "original_task_id": "WEP3-SWARM-TREE-2026-10-27",
+  "card_sha256": "64fbce4e4ce27bcf81ecbf13951fb0794870475025bf072477da16eeac0fb83a",
+  "run_id": "41407526967",
+  "executor": "qianwen",
+  "queue_dispatcher": "qianwen",
+  "at": "2026-11-02T07:37:53.525Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:WEP3-SWARM-ATOMIC-REVIEW-20261102",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "29e49b3e4b763413d79182863f9bc53e1cce4e93dc537afd01ff8c2973ca5c99",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "a24bedcfd06dfe92031a975faddb1796005e1d38f3b9d647675c9a8cb07c490e"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-plus",
+  "generated_by_model": "qwen-plus",
+  "attribution_note": "generation by qwen-plus via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 4116,
+  "request_id": "0e279ab1-c407-9ac6-a898-92034940ec1c",
+  "output": "```json\n{\n  \"verdict\": \"atomicity_violated_concurrent_write_risk\",\n  \"findings\": [\n    {\n      \"lesson_id\": \"L-20261030-008\",\n      \"severity\": \"high\",\n      \"finding\": \"Function G() performs non-atomic multi-key writes without transactional coordination across PAY_KV and storage. It writes parent intent (wep3:intent:<e>), child intents (wep3:intent:<D>), and ledger entries (wep3:ledger:<s>) in sequence — but no guarantee of atomic commit or rollback if any write fails mid-execution.\",\n      \"evidence\": \"Lines 74–85: await g(n,x,r); for(const t of k){ await g(n,'wep3:intent:'+t.id,t); await g(n,'wep3:ledger:'+s,{...}); } — no try/catch+revert, no storage.transaction wrapper, and PAY_KV is external KV with no cross-store ACID.\"\n    },\n    {\n      \"lesson_id\": \"L-20261030-002\",\n      \"severity\": \"high\",\n      \"finding\": \"Idempotency key resolution (A) and parent intent read (x) are separated by no lock or CAS; concurrent retries may observe stale r.remaining or r.children before update, causing slice_exceeds_remaining false negatives or duplicate children.\",\n      \"evidence\": \"Lines 59–61: y=await C(n,A); ... r=await C(n,x); — no synchronization between idempotency check and parent state read → race window under concurrency.\"\n    },\n    {\n      \"lesson_id\": \"L-20261030-007\",\n      \"severity\": \"medium\",\n      \"finding\": \"No input hash provenance recorded for intent plan i — missing raw-byte SHA256 of JSON input before parsing. Violates traceability requirement for atomic replay and audit.\",\n      \"evidence\": \"Function G() accepts i: unknown[]; computes request_sha256 only *after* parsing & validation (line 66), not over original bytes — cannot reconstruct exact input for deterministic replay.\"\n    },\n    {\n      \"lesson_id\": \"L-20261030-004\",\n      \"severity\": \"medium\",\n      \"finding\": \"Model/provider identity inferred from o (poster string) via j[o] map, but no runtime verification that j[o] matches actual executing seat or bound model — introduces provider spoofing risk in atomic context.\",\n      \"evidence\": \"Line 46: if(U.seats[j[o]]?.work_status===...) — j[o] is a static mapping; U.seats is loaded from seat-registry.json at build time, not validated against runtime execution context or model metadata.\"\n    }\n  ],\n  \"limitations\": [\n    {\n      \"scope\": \"concurrency_model\",\n      \"limitation\": \"No evidence of per-parent-id locking, queueing, or compare-and-swap on parent intent object. Concurrent spawnTree calls on same parentId e may corrupt r.children, r.held, r.remaining due to unsynchronized reads/writes.\"\n    },\n    {\n      \"scope\": \"rollback_capability\",\n      \"limitation\": \"No inverse operations or tombstone markers defined. If ledger write succeeds but intent write fails (or vice versa), no mechanism exists to detect or repair partial state — violates 'entire tree rollback' requirement.\"\n    },\n    {\n      \"scope\": \"input_validation_boundary\",\n      \"limitation\": \"Regex /^[A-Za-z0-9_.:-]{8,128}$/ for idempotency_key does not reject Unicode confusables or zero-width chars; insufficient for cryptographic binding integrity.\"\n    }\n  ]\n}\n```",
+  "output_sha256": "7b445ea649430bb552bfb009ceac516ddce5074e4e3aa92841064ccfc97c4f30",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-02T07:38:12.604Z"
+}
