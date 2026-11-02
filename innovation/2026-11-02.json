@@ -1,0 +1,155 @@
+{
+  "date": "2026-11-02",
+  "timezone": "Asia/Shanghai",
+  "source_commit": "894d5266205b7f51377edcb277e4d7f9fc5e6496",
+  "execution_id": "41420342463",
+  "status": "rejected_by_coordinator",
+  "seats": [
+    {
+      "seat": "gpt",
+      "executor": "gpt"
+    },
+    {
+      "seat": "microsoft",
+      "executor": "gpt",
+      "delegated": true
+    }
+  ],
+  "inputs": [
+    {
+      "file": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "file": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "file": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "file": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "file": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "file": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20"
+    },
+    {
+      "file": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    }
+  ],
+  "proposals": [
+    {
+      "seat": "gpt",
+      "executor": "gpt",
+      "execution": null,
+      "model_source": "provider_response",
+      "executed_by": "DeepSeek",
+      "logical_agent": "gpt",
+      "delegated": true,
+      "status": "submitted",
+      "output": "{\n  \"first_thought\": \"看到WEP3已有密封、报价、退款，但结算仍绑定交付物哈希或转账动作；真正缺的是把支付条件指向外部可观察的结果状态。\",\n  \"title\": \"结果指纹托管：按外部状态变化结算\",\n  \"hypothesis\": \"若支付条件绑定部署后的外部结果指纹（订单状态机、链上事件、日志摘要），而非交付物哈希，AI必须让真实外部状态改变才能释放；这更接近三维因果。\",\n  \"novelty\": \"WEP3是密封资金加交付物哈希加失败退款；本方案把结算对象改为外部结果指纹，交付物仅作辅助证据，不重复报价竞拍或出价tape。\",\n  \"experiment_kind\": \"new_code\",\n  \"measurements\": \"release_condition匹配率、误释放数、同一结果指纹跨provider复核一致性、外部状态缺失时保持held的比例。\",\n  \"next_patch\": \"新增outcome_escrow schema与本地fixture：只有收到两个独立provider对同一外部结果指纹的回执，状态才从held转released，否则blocked。\"\n}",
+      "tokens_used": 22908,
+      "model": "deepseek-v4-pro",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "autonomy:gpt",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "29e49b3e4b763413d79182863f9bc53e1cce4e93dc537afd01ff8c2973ca5c99",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "db7e122e1d7501d1a787b8b7f60e69e8d179c97957e1a07513ade43e4a758923"
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "reject",
+      "reason": "已实现执行器只跑本地固定样本；receipt_hash_benchmark仅改一条fixture的status再比哈希，没有外部订单状态机、链上事件、生产日志或真钱托管。提案把结算对象改名为外部结果指纹，next_patch仍是本地outcome_escrow fixture加双provider回执，与现有哈希/status比较同属模拟，不能验证误释放、跨真实provider一致、或外部状态缺失时保持held，更不能证明须改变真实外部状态才能释放。experiment_kind=new_code且不在可部署的receipt_hash_benchmark/intent_schema_trial/hire_acceptance_trial之内；预算仅API与固定模拟、不移动资金。假设与测量均无已实现观察边界，论据不足。",
+      "experiment_kind": "new_code",
+      "task_instruction": "",
+      "execution_scope": {
+        "validation_scope": "local_fixture_only",
+        "real_delivery_count": 0,
+        "quality_validation_performed": false
+      }
+    }
+  ],
+  "financial_execution": false,
+  "judge": {
+    "executor": "gpt",
+    "execution": null,
+    "model_source": "provider_response",
+    "executed_by": "Grok",
+    "logical_agent": "gpt",
+    "delegated": true,
+    "status": "submitted",
+    "output": "{\"decision\":\"reject\",\"reason\":\"已实现执行器只跑本地固定样本；receipt_hash_benchmark仅改一条fixture的status再比哈希，没有外部订单状态机、链上事件、生产日志或真钱托管。提案把结算对象改名为外部结果指纹，next_patch仍是本地outcome_escrow fixture加双provider回执，与现有哈希/status比较同属模拟，不能验证误释放、跨真实provider一致、或外部状态缺失时保持held，更不能证明须改变真实外部状态才能释放。experiment_kind=new_code且不在可部署的receipt_hash_benchmark/intent_schema_trial/hire_acceptance_trial之内；预算仅API与固定模拟、不移动资金。假设与测量均无已实现观察边界，论据不足。\",\"experiment_kind\":\"new_code\",\"task_instruction\":\"\"}",
+    "tokens_used": 6399,
+    "model": "grok-4.6",
+    "skill": {
+      "applied": true,
+      "status": "active_context_injected",
+      "version": "1.0.0",
+      "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+      "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+      "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+      "scope": "autonomy:gpt",
+      "reflection": {
+        "version": 1,
+        "status": "retrieved_not_compliance_verified",
+        "lesson_ids": [
+          "L-20261030-002",
+          "L-20261030-003",
+          "L-20261030-008",
+          "L-20261030-004",
+          "L-20261030-001",
+          "L-20261101-001",
+          "L-20261030-007"
+        ],
+        "strategy_ids": [
+          "draft_rejected",
+          "execution_blocked",
+          "region_ineligible",
+          "unpinned_input"
+        ],
+        "context_sha256": "29e49b3e4b763413d79182863f9bc53e1cce4e93dc537afd01ff8c2973ca5c99",
+        "invalid_entries": 0
+      },
+      "prompt_sha256": "71bb9ccbe491db79257108134320581a2fb86760421384674fc79bcc06d459eb"
+    }
+  }
+}
