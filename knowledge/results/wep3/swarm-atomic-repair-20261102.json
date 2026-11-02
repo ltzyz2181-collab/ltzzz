@@ -1,0 +1,74 @@
+{
+  "task_id": "WEP3-SWARM-TREE-2026-10-27",
+  "at_utc": "2026-11-02T07:36:26.300321+00:00",
+  "status": "candidate_tested_not_deployed",
+  "authorization": "Owner current-session instruction: arrange repair or deployment; controller may implement merge deploy and recover, reviewers supervise. No wallet transaction or new subscription.",
+  "source_base": "b508be8a286066a66e889ecf5781bc8d59afa562",
+  "actual_provider": "OpenAI",
+  "model": null,
+  "metadata_source": "Codex execution context; exact model identifier unavailable",
+  "inputs": [
+    {
+      "path": "wep3-worker.js",
+      "sha256": "19ca2ad4a43ab6b4e03307fd7edaf5c7f641a1193e40b045f3423a508c0f9c86"
+    },
+    {
+      "path": "wep3-swarm.js",
+      "sha256": "c47145d585ee9781b43d8351f9861786ec7a1cfc9a9d323ff60e7015374c8cfe"
+    },
+    {
+      "path": "wep3-ledger.js",
+      "sha256": "eca4967a25449031c39fcb15c426c7b9502137cb9a319113f514abca564a164e"
+    },
+    {
+      "path": "wep3.html",
+      "sha256": "dc3d96f6fe27323739e4090b53e45bb60dfc2d03963e3f5be6200a9134ff9b1b"
+    },
+    {
+      "path": ".github/workflows/wep3-atomic-maintenance.yml",
+      "sha256": "16656490bc308bae8365cb9ba27eb723741d4f8b8d2550c9fd01ade90998181e"
+    },
+    {
+      "path": "scripts/verify-wep3-maintenance.mjs",
+      "sha256": "fd9a2e5a223369a0376a0e579083ace07f146b3b5c21a0ca46f0ccd3da5aaffe"
+    }
+  ],
+  "verification": {
+    "node": "v22.23.4",
+    "passed": 123,
+    "failed": 0,
+    "red_swarm_failures": 8,
+    "red_renderer_failures": 2,
+    "logs": [
+      "knowledge/results/wep3/swarm-atomic-repair-20261102/swarm-red.tap",
+      "knowledge/results/wep3/swarm-atomic-repair-20261102/renderer-red.tap",
+      "knowledge/results/wep3/swarm-atomic-repair-20261102/node-123-green.tap"
+    ],
+    "browser": "pending_GitHub_Chromium",
+    "distinct_provider_component_review": "pending"
+  },
+  "implemented": [
+    "Restore named handleRequest and route all legacy ledger reads/writes consistently through the singleton Wep3Ledger after documented cutover.",
+    "Require a transaction-scoped unforgeable-by-request marker for spawn; no sequential KV fallback.",
+    "Reserve complete trees, parent, children, journal and idempotency result in one serial transaction; same key and different content conflicts.",
+    "Distinguish missing, null, empty and invalid transaction hash values without interpreting them as confirmed chain transactions.",
+    "Maintenance-only deployment skips the ordinary provisioning/paid workflow and verifies exact source revision plus unchanged existing financial book."
+  ],
+  "remaining": [
+    "Legacy freeze/drain and durable cutover evidence is not complete; LEGACY_KV_FROZEN stays 0 and live legacy writes remain closed.",
+    "Treasury public controlled=false reason treasury_not_provisioned is not corrected by provisioning a new signing key; actual signing/control evidence remains separate."
+  ],
+  "harness": {
+    "lessons_applied": [
+      "L-20261030-001",
+      "L-20261030-002",
+      "L-20261030-007"
+    ],
+    "actual_change": "Pinned byte hashes, preserved RED output, and kept candidate/tests/deployment/activation as separate states.",
+    "verification": "123 actual Node tests plus pending independent component and browser checks."
+  },
+  "model_API_calls_this_local_phase": 0,
+  "transactions_sent": 0,
+  "paid": false,
+  "tx_hash": null
+}
