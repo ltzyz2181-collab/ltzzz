@@ -21,7 +21,8 @@ test('long fences and later headings cannot impersonate the required section',()
 });
 
 test('inline supervision content is a real section but still only a draft',()=>{
- for(const body of ['【派单监督】责任席：千问；原 Task ID：DAILY-2026-10-31-qianwen', '【派单监督】 责任席：千问', '## 【派单监督】：责任席：千问']){
+ // U+00A0 is text, not CommonMark code indentation; keep the existing acceptance rule.
+ for(const body of ['【派单监督】责任席：千问；原 Task ID：DAILY-2026-10-31-qianwen', '【派单监督】 责任席：千问', '## 【派单监督】：责任席：千问', '\u00a0【派单监督】责任席：千问']){
   const r=assessDelivery({output:body+'\n【交付结束】',finish_reason:'stop',required_sections:['【派单监督】']});
   assert.equal(r.status,'structurally_complete');assert.equal(r.accepted,false);
  }
