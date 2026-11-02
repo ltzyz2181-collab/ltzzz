@@ -1,13 +1,13 @@
 import {auditProof} from './wep3-audit-proof.js';
 import seatRegistry from './identity/seat-registry.json' with {type:'json'};
 import {marketRoute,Market} from './wep3-market.js';
-import {spawnChild, spawnTree} from './wep3-swarm.js';
+import {spawnChild,spawnTree} from './wep3-swarm.js';
 export {Market};
 // Cloudflare renamed_classes preserves the existing namespace and stored book.
 export class MarketRuntimeV2 extends Market {}
 export class MarketRuntimeV3 extends Market {}
 /** LTZZZ WEP3 v1.1 — credit loop, skill-owner hire, SKU pay. */
-const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
+const cors = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Lab-Pin, X-Wep3-Intent, X-Pay-Secret, Idempotency-Key', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'};
 const AGENTS = ['Grok', 'Doubao', 'DeepSeek', 'Qianwen', 'Kimi', 'GPT', 'Microsoft', 'Claude', 'Meya'];
 // Keep legacy names for historical balance readback; only active seats may receive new work.
 const SEAT_IDS={GPT:'gpt',Doubao:'doubao',DeepSeek:'deepseek',Grok:'grok',Claude:'claude',Microsoft:'microsoft',Kimi:'kimi',Qianwen:'qianwen'};
@@ -25,7 +25,7 @@ const AGENT_ROLES = {
   LTZZZ:    { region: 'lab',    role: 'treasury / lab share', skills: [] }
 };
 for(const [name,id] of Object.entries(SEAT_IDS))Object.assign(AGENT_ROLES[name],{role:seatRegistry.seats[id].role,work_status:seatRegistry.seats[id].work_status,role_source:'identity/seat-registry.json',wallet_source:'wallet/addresses.md'});
-const SKILLS = [
+export const SKILLS = [
   {id: 'signal', owner: 'Grok', title: 'payment signal', price: 0.02, product: 'https://ltzzz.com/products.html'},
   {id: 'copy', owner: 'Doubao', title: 'product copy', price: 0.03, product: 'https://ltzzz.com/products.html'},
   {id: 'scan', owner: 'DeepSeek', title: 'market scan', price: 0.04, product: 'https://ltzzz.com/products.html'},
@@ -367,7 +367,10 @@ async function walletView(env, agent) {
   return { ok: true, agent, settlement_mode: 'internal_credit', paid: false, tx_hash: null, credit: row.credit, held: row.held || 0, earned: row.earned || 0, score: row.score, line: lineLimit(row), line_used: row.line_used || 0, spendable: spendable(row), stake: {shares: pos.shares || 0, staked: pos.staked || 0, value: stake_value, debt: pos.debt || 0}, net: Number((spendable(row) + stake_value - Number(pos.debt || 0)).toFixed(6)), pool: {total: pool.total, shares: pool.shares, fee_reserve: pool.fee_reserve, volume: pool.volume} };
 }
 async function hireLoop(env, body) {
-  if(!body.deliverable||!body.evidence_path||!body.worker)return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
+  if(!body||typeof body!=='object'||Array.isArray(body))return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
+  const evidence = body.evidence_path;
+  const validEvidence = typeof evidence === 'string' && evidence.startsWith('knowledge/results/') && evidence.length <= 500 && !/[\\\u0000-\u001f%?#]/.test(evidence) && evidence.split('/').every(part => part && part !== '.' && part !== '..');
+  if(typeof body.deliverable!=='string'||!body.deliverable.trim()||!validEvidence||!body.worker||typeof body.audit_report?.reason!=='string'||!body.audit_report.reason.trim())return {ok:false,error:'actual_delivery_and_independent_audit_required',status:422};
   try{body={...body,audit_report:auditProof(body.audit_report,body.agent,body.worker)};}catch(e){return {ok:false,error:e.message,status:422};}
   const poster = body.agent;
   const skill = SKILLS.find(s => s.id === body.skill);
@@ -463,12 +466,13 @@ async function openSwarm(env, poster, goal, budgetUsd, skillIds, execute = false
  return plan;
 }
 
-export default {async fetch(request, env) {
-  const market = await marketRoute(request, env); if (market) return market;
+// Called by Wep3Ledger with its transaction-scoped storage adapter. The public
+// entry below must never send financial writes straight back to legacy KV.
+export async function handleRequest(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, {headers: cors});
   const path = clean(new URL(request.url).pathname);
   try {
-    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', financial_execution_revision: 'external-purchase-v3', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', external_orders: 'https://ltzzz-wep3.ltzyz2181.workers.dev/market/start', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake', 'POST /swarm/spawn', 'POST /swarm/tree', 'POST /swarm/hire'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
+    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', runtime_revision:'wep3-atomic-repair-v1', source_commit:env.WEP3_SOURCE_COMMIT||null, atomic_ledger_ready: atomicLedgerReady(env), legacy_writes_enabled:atomicLedgerReady(env), financial_execution_revision: 'external-purchase-v3', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', external_orders: 'https://ltzzz-wep3.ltzyz2181.workers.dev/market/start', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake', 'POST /swarm/spawn', 'POST /swarm/tree', 'POST /swarm/hire'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
     if (request.method === 'POST' && !pinOk(request, env)) return json({ok: false, error: 'pin_required'}, 401);
     if (request.method === 'POST' && path !== '/checkout' && !path.startsWith('/pay/')) { const bodyPeek = request.headers.get('x-wep3-intent') || ''; const gated = await writeGate(env, request, bodyPeek || 'anon'); if (gated) return json({ok: false, ...gated}, 429); }
     if(path==='/okx/balance'){if(!pinOk(request,env))return json({error:'pin_required'},401);return json(await okxBalance(env));}
@@ -491,29 +495,56 @@ export default {async fetch(request, env) {
     if (path === '/stake' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const out = await doStake(env, body.agent || 'Grok', body.amount); return json(out, out.ok ? 200 : (out.status || 400)); }
     if (path === '/cite' && request.method === 'POST') { const body = await request.json().catch(() => ({})); const cited = await citeReceipt(env, body.receipt_id, body.agent || 'Grok', body.fee_usd); if (cited.error) return json({ok: false, ...cited}, cited.status || 409); return json({ok: true, status: 'CITED', ...cited}); }
     if ((path === '/hire' || path === '/mesh' || path === '/cycle') && request.method === 'POST') { const hired = await hireLoop(env, await request.json().catch(() => ({}))); return json(hired, hired.ok ? 200 : (hired.status || 400)); }
-
-    if (path === '/swarm/spawn' && request.method === 'POST') {
-      const body = await request.json().catch(() => ({}));
-      const out = await spawnChild(env, body.parent_intent_id, body.skill, Number(body.max_usd), body.title, body.poster || 'Grok', body.depth);
-      return json(out, out.ok ? 200 : (out.status || 400));
-    }
-    if (path === '/swarm/tree' && request.method === 'POST') {
-      const body = await request.json().catch(() => ({}));
-      const out = await spawnTree(env, body.parent_intent_id, body.plan, body.poster || 'Grok');
-      return json(out, out.ok ? 200 : (out.status || 400));
-    }
     if (path === '/swarm/hire' && request.method === 'POST') {
       const body = await request.json().catch(() => ({}));
       const out = await openSwarm(env, body.poster ?? body.agent ?? 'Grok', body.goal ?? body.title ?? 'swarm goal', body.budget_usd ?? body.max_usd, body.skills, body.execute ?? body.arm ?? false);
       return json(out, out.ok ? 200 : (out.status || 400));
+    }
+    if (path === '/swarm/spawn' && request.method === 'POST') {
+      const body=await request.json().catch(()=>({}));
+      const out=await spawnChild(env,body.parent_intent_id,body.skill,body.max_usd,body.title,body.poster??'Grok',body.depth,request.headers.get('Idempotency-Key'));
+      return json(out,out.ok?200:(out.status||400));
+    }
+    if (path === '/swarm/tree' && request.method === 'POST') {
+      const body=await request.json().catch(()=>({}));
+      const out=await spawnTree(env,body.parent_intent_id,body.plan,body.poster??'Grok',request.headers.get('Idempotency-Key'));
+      return json(out,out.ok?200:(out.status||400));
     }
     if (path === '/agents/roles' && request.method === 'GET') {
       return json({ok:true,agents:ACTIVE_AGENTS,temporarily_removed:['Microsoft'],roles:AGENT_ROLES,registry:'identity/seat-registry.json',wallet_source:'wallet/addresses.md',role_registration_only:true,generation_verified:false,model_calls:0});
     }
     return json({ok: false, error: 'not_found', path}, 404);
   } catch (err) { return json({ok: false, error: 'worker_exception', message: String(err && err.message || err)}, 500); }
+}
+
+const LEDGER_WRITES = new Set(['/checkout', '/deposit', '/withdraw', '/transfer', '/stake', '/cite', '/hire', '/mesh', '/cycle', '/swarm/spawn', '/swarm/tree']);
+const LEDGER_READS = new Set(['/tape', '/pulse', '/causal', '/treasury', '/ledger', '/pool']);
+function hasAtomicBinding(env) {
+  return typeof env.WEP3_LEDGER?.idFromName === 'function' && typeof env.WEP3_LEDGER?.get === 'function';
+}
+function atomicLedgerReady(env) { return env.LEGACY_KV_FROZEN === '1' && hasAtomicBinding(env); }
+
+export default { async fetch(request, env) {
+  const market = await marketRoute(request, env); if (market) return market;
+  const path = clean(new URL(request.url).pathname);
+  const write = request.method === 'POST' && LEDGER_WRITES.has(path);
+  const read = request.method === 'GET' && (LEDGER_READS.has(path) || path.startsWith('/wallet/') || path.startsWith('/invoice/'));
+  if (write) {
+    if (!pinOk(request, env)) return json({ok:false,error:'pin_required'},401);
+    if (env.LEGACY_KV_FROZEN !== '1') return json({ok:false,error:'legacy_cutover_not_confirmed',paid:false,tx_hash:null},503);
+    if (!hasAtomicBinding(env)) return json({ok:false,error:'atomic_ledger_not_configured',paid:false,tx_hash:null},503);
   }
-};
+  if (read && env.LEGACY_KV_FROZEN === '1' && !hasAtomicBinding(env)) return json({ok:false,error:'atomic_ledger_not_configured'},503);
+  if ((write || read) && atomicLedgerReady(env)) {
+    try {
+      const id = env.WEP3_LEDGER.idFromName('wep3-ledger-v1');
+      return await env.WEP3_LEDGER.get(id).fetch(request);
+    } catch { return json({ok:false,error:'ledger_unavailable',retryable:true,paid:false,tx_hash:null},503); }
+  }
+  if (read && (!env.PAY_KV || typeof env.PAY_KV.get !== 'function')) return json({ok:false,error:'legacy_read_source_not_configured'},503);
+  // Read-only fallback does not hydrate a new durable ledger before cutover.
+  // Pure swarm planning, disabled payment rails and metadata never enter storage.
+  return handleRequest(request, env);
+}};
 
 export { Wep3Ledger } from './wep3-ledger.js';
-

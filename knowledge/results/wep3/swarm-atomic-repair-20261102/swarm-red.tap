@@ -1,0 +1,208 @@
+TAP version 13
+# Subtest: legacy direct module calls cannot reproduce a partial KV debit
+not ok 1 - legacy direct module calls cannot reproduce a partial KV debit
+  ---
+  duration_ms: 2.557251
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:19:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    403 !== 503
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 503
+  actual: 403
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:21:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: both recursive routes require cutover and never write legacy KV
+not ok 2 - both recursive routes require cutover and never write legacy KV
+  ---
+  duration_ms: 8.414353
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:23:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    500 !== 503
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 503
+  actual: 500
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:24:181)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: one reservation atomically binds parent, child, journal and idempotency record
+not ok 3 - one reservation atomically binds parent, child, journal and idempotency record
+  ---
+  duration_ms: 1.516552
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    500 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 500
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:27:48)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: 20 concurrent requests and 100 retries after restart reserve once
+not ok 4 - 20 concurrent requests and 100 retries after restart reserve once
+  ---
+  duration_ms: 16.06746
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:32:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    500 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 500
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:33:119)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: same idempotency key with a changed amount or operation conflicts without a debit
+not ok 5 - same idempotency key with a changed amount or operation conflicts without a debit
+  ---
+  duration_ms: 1.503564
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:37:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    500 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 500
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:38:28)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: competing reservations cannot overspend a shared parent
+not ok 6 - competing reservations cannot overspend a shared parent
+  ---
+  duration_ms: 5.862684
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:42:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+      [
+    +   500,
+    +   500
+    -   200,
+    -   409
+      ]
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 200
+    1: 409
+  actual:
+    0: 500
+    1: 500
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:43:144)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: any durable row-write failure rolls back all rows and same-key retry succeeds
+not ok 7 - any durable row-write failure rolls back all rows and same-key retry succeeds
+  ---
+  duration_ms: 1.311712
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:46:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    500 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 500
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:47:32)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: tree validation rejects its invalid later step before reserving an earlier step
+ok 8 - tree validation rejects its invalid later step before reserving an earlier step
+  ---
+  duration_ms: 5.33762
+  type: 'test'
+  ...
+# Subtest: a complete tree is one exact-micro reservation and retries return the same child ids
+not ok 9 - a complete tree is one exact-micro reservation and retries return the same child ids
+  ---
+  duration_ms: 1.38561
+  type: 'test'
+  location: '/workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:53:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    500 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 500
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-swarm-atomic-repair-20261102/scripts/tests/wep3-swarm-atomic.test.mjs:54:159)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: invalid keys, nondecimal amounts, identity, depth and missing auth never reserve
+ok 10 - invalid keys, nondecimal amounts, identity, depth and missing auth never reserve
+  ---
+  duration_ms: 4.532747
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 2
+# fail 8
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 601.619301
