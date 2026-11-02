@@ -8,9 +8,9 @@ not ok 1 - legacy direct module calls cannot reproduce a partial KV debit
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     403 !== 503
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 503
@@ -30,9 +30,9 @@ not ok 2 - both recursive routes require cutover and never write legacy KV
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     500 !== 503
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 503
@@ -52,9 +52,9 @@ not ok 3 - one reservation atomically binds parent, child, journal and idempoten
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     500 !== 200
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 200
@@ -74,9 +74,9 @@ not ok 4 - 20 concurrent requests and 100 retries after restart reserve once
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     500 !== 200
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 200
@@ -96,9 +96,9 @@ not ok 5 - same idempotency key with a changed amount or operation conflicts wit
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     500 !== 200
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 200
@@ -119,14 +119,14 @@ not ok 6 - competing reservations cannot overspend a shared parent
   error: |-
     Expected values to be strictly deep-equal:
     + actual - expected
-    
+
       [
     +   500,
     +   500
     -   200,
     -   409
       ]
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected:
@@ -150,9 +150,9 @@ not ok 7 - any durable row-write failure rolls back all rows and same-key retry 
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     500 !== 200
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 200
@@ -178,9 +178,9 @@ not ok 9 - a complete tree is one exact-micro reservation and retries return the
   failureType: 'testCodeFailure'
   error: |-
     Expected values to be strictly equal:
-    
+
     500 !== 200
-    
+
   code: 'ERR_ASSERTION'
   name: 'AssertionError'
   expected: 200
