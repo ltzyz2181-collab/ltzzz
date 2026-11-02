@@ -105,7 +105,7 @@ export async function runReservedSeat({root, date, runKey, agent, call}) {
   const complete = result.ok === true && integrity.status === 'structurally_complete' && !/SPEND_PROPOSAL\s*[:：]/i.test(result.output || '');
   const artifact = {
     ...(result.skill?{skill:result.skill}:{}),
-    execution:finishExecution(execution,{http:result.http??null,transportOk:result.ok===true,data:{model:result.model_source==='provider_response'?(result.returned_model||result.model):null,choices:[{message:{content:result.output},finish_reason:result.finish_reason}],usage:{total_tokens:result.tokens_used}}}),
+    execution:finishExecution(execution,{http:result.http??null,transportOk:result.ok===true,upstreamRequestId:result.upstream_request_id??null,upstreamRequestIdSource:result.upstream_request_id_source??null,data:{id:result.completion_id??null,model:result.model_source==='provider_response'?(result.returned_model||result.model):null,choices:[{message:{content:result.output},finish_reason:result.finish_reason}],usage:{total_tokens:result.tokens_used}}}),
     schema_version:1, date, task_id:seat.assignment?.id || null, logical_seat:agent,
     actual_provider:result.ok ? agent : null, actual_model:result.model_source === 'provider_response' ? (result.returned_model || result.model || null) : null,
     reported_model:result.model || null, model_source:result.model_source || null, source_commit:record.source_commit,
