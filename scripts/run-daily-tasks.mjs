@@ -190,7 +190,7 @@ async function main() {
 
     const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>callWithSkill({root:ROOT,scope:"daily:"+ch.agent,prompt},input=>mod.callAgent({apiKey:process.env[ch.key]||"",prompt:input}))});
     if (res.ok) {
-      const output = String(res.output || "").trim();
+      const output = String(res.output || "").trimEnd();
       const integrity = assessDelivery({output,finish_reason:res.finish_reason,required_sections:requiredSectionsForAgent(ch.agent)});
       const status = integrity.status==='structurally_complete'?'success':integrity.status==='missing_required_section'?'missing_required_section':'incomplete_output';
       if (/SPEND_PROPOSAL\s*[:：]/i.test(output)) {

@@ -4,8 +4,15 @@ import {callAgent} from '../call-qwen.mjs';import {qwenConfig} from '../lib/qwen
 import {DAILY_CHANNELS,dailyAgents,qwenReviewContext} from '../lib/daily-channels.mjs';
 import {seedTasks} from '../../workers/pulse-worker/tasks.js';
 import {prepareDailyBoard,runReservedSeat} from '../lib/daily-task-board.mjs';
+import {assessDelivery} from '../delivery-integrity.mjs';
 import {control} from '../../workers/pulse-worker/engine.js';
 const key='sk-ws-FIXTURE.not-a-real-key',success={model:'qwen-provider-version',choices:[{finish_reason:'stop',message:{content:'真实测试输出【交付结束】'}}],usage:{total_tokens:32}};
+test('native adapter preserves first-line code indentation until supervision validation',async()=>{
+ const output='    【派单监督】责任席：千问；代码示例\n【交付结束】';let calls=0;
+ const r=await callAgent({apiKey:key,prompt:'fixture',fetchImpl:async()=>{calls++;return Response.json({...success,choices:[{finish_reason:'stop',message:{content:output}}]});}});
+ assert.equal(r.output,output);assert.equal(calls,1);
+ assert.equal(assessDelivery({...r,required_sections:['【派单监督】']}).status,'missing_required_section');
+});
 test('workspace key uses an actual interpolated Bearer header and returns provider model provenance',async()=>{
  let calls=0;const r=await callAgent({apiKey:key,prompt:'fixture',fetchImpl:async(url,init)=>{
   calls++;assert.equal(url,'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions');assert.equal(init.headers.Authorization,'Bearer '+key);assert.equal(init.redirect,'error');const b=JSON.parse(init.body);assert.equal(b.model,'qwen-plus');assert.equal(b.enable_thinking,false);return Response.json(success);
