@@ -98,6 +98,22 @@ test('claim, immutable full output, commit/readback, submit and pending/unpaid v
  assert.equal(f.state.task_board.find(t=>t.id===s.assignment.id).evidence_sha256,s.artifact.sha256);
  await syncDailyBoard(f.options);assert.equal(f.posts,2);assert.equal(f.calls,1);
 });
+test('provider-side identifiers from the adapter reach the immutable artifact and never imply acceptance',async t=>{
+ const f=fixture(t);await prepareDailyBoard(f.options);
+ await f.generate({completion_id:'chatcmpl-fixture-1',upstream_request_id:'tt-logid-fixture-9',upstream_request_id_source:'header:x-tt-logid'});
+ const seat=readLedger(f.options.root,date).seats[agent],artifact=JSON.parse(fs.readFileSync(path.join(f.options.root,seat.artifact.path)));
+ assert.equal(artifact.execution.provider_response_id,'chatcmpl-fixture-1');
+ assert.equal(artifact.execution.upstream_request_id,'tt-logid-fixture-9');
+ assert.equal(artifact.execution.upstream_request_id_source,'header:x-tt-logid');
+ assert.equal(artifact.execution.accepted,false);assert.equal(artifact.execution.paid,false);assert.equal(artifact.execution.tx_hash,null);
+});
+test('absent provider identifiers stay null instead of being synthesized',async t=>{
+ const f=fixture(t);await prepareDailyBoard(f.options);await f.generate();
+ const seat=readLedger(f.options.root,date).seats[agent],artifact=JSON.parse(fs.readFileSync(path.join(f.options.root,seat.artifact.path)));
+ assert.equal(artifact.execution.provider_response_id,null);
+ assert.equal(artifact.execution.upstream_request_id,null);
+ assert.equal(artifact.execution.upstream_request_id_source,null);
+});
 test('missing/stale/paused snapshots and rejected claims never purchase output',async t=>{
  for(const snapshot of [{available:false},{available:true,ran_at:'2020-01-01'}, {available:true,ran_at:new Date(now).toISOString(),manual:{global:true}}]){
   const f=fixture(t);await prepareDailyBoard({...f.options,snapshot:async()=>snapshot});await f.generate();assert.equal(f.calls,0);
