@@ -1,7 +1,7 @@
 {
   "task_id": "WEP3-SWARM-TREE-2026-10-27",
   "at_utc": "2026-11-02T07:36:26.300321+00:00",
-  "status": "candidate_tested_not_deployed",
+  "status": "guarded_repair_deployed_cutover_pending",
   "authorization": "Owner current-session instruction: arrange repair or deployment; controller may implement merge deploy and recover, reviewers supervise. No wallet transaction or new subscription.",
   "source_base": "b508be8a286066a66e889ecf5781bc8d59afa562",
   "actual_provider": "OpenAI",
@@ -10,27 +10,33 @@
   "inputs": [
     {
       "path": "wep3-worker.js",
-      "sha256": "19ca2ad4a43ab6b4e03307fd7edaf5c7f641a1193e40b045f3423a508c0f9c86"
+      "sha256": "19ca2ad4a43ab6b4e03307fd7edaf5c7f641a1193e40b045f3423a508c0f9c86",
+      "source_commit": "75ead46b162af42e6045067f117461dc0c4097ec"
     },
     {
       "path": "wep3-swarm.js",
-      "sha256": "c47145d585ee9781b43d8351f9861786ec7a1cfc9a9d323ff60e7015374c8cfe"
+      "sha256": "c47145d585ee9781b43d8351f9861786ec7a1cfc9a9d323ff60e7015374c8cfe",
+      "source_commit": "75ead46b162af42e6045067f117461dc0c4097ec"
     },
     {
       "path": "wep3-ledger.js",
-      "sha256": "eca4967a25449031c39fcb15c426c7b9502137cb9a319113f514abca564a164e"
+      "sha256": "eca4967a25449031c39fcb15c426c7b9502137cb9a319113f514abca564a164e",
+      "source_commit": "75ead46b162af42e6045067f117461dc0c4097ec"
     },
     {
       "path": "wep3.html",
-      "sha256": "dc3d96f6fe27323739e4090b53e45bb60dfc2d03963e3f5be6200a9134ff9b1b"
+      "sha256": "dc3d96f6fe27323739e4090b53e45bb60dfc2d03963e3f5be6200a9134ff9b1b",
+      "source_commit": "75ead46b162af42e6045067f117461dc0c4097ec"
     },
     {
       "path": ".github/workflows/wep3-atomic-maintenance.yml",
-      "sha256": "16656490bc308bae8365cb9ba27eb723741d4f8b8d2550c9fd01ade90998181e"
+      "sha256": "34b36ce1c3b14d83fd7ad8964c07865815ca213f1c7e2c4f7fda1e8599f7eb78",
+      "source_commit": "75ead46b162af42e6045067f117461dc0c4097ec"
     },
     {
       "path": "scripts/verify-wep3-maintenance.mjs",
-      "sha256": "fd9a2e5a223369a0376a0e579083ace07f146b3b5c21a0ca46f0ccd3da5aaffe"
+      "sha256": "fd9a2e5a223369a0376a0e579083ace07f146b3b5c21a0ca46f0ccd3da5aaffe",
+      "source_commit": "75ead46b162af42e6045067f117461dc0c4097ec"
     }
   ],
   "verification": {
@@ -46,8 +52,8 @@
     ],
     "browser": {
       "status": "CI_passed",
-      "run_id": "41407479992",
-      "head": "f8424b57f4f179f274b5e7037716970692d4cf63",
+      "run_id": "41408172309",
+      "head": "75ead46b162af42e6045067f117461dc0c4097ec",
       "cases": 14,
       "browser": "Chromium",
       "scope": "Candidate local HTML desktop/mobile with fixture receipts; no production browser claim yet."
@@ -111,8 +117,15 @@
         "normalization": "Trailing whitespace removed per line; substantive test output unchanged."
       }
     ],
-    "workflow_syntax": "Both workflows parse; actual GitHub CI validation succeeded on prior head; final workflow-only follow-up pending CI.",
-    "independent_model_API_bill_usd": null
+    "workflow_syntax": "Both workflows parsed and final-candidate GitHub validation succeeded.",
+    "independent_model_API_bill_usd": null,
+    "final_candidate_CI_run": "41408172309",
+    "production_browser": {
+      "artifact": "knowledge/results/wep3/swarm-atomic-repair-20261102/production-browser.json",
+      "run_id": "3c06e4e1-9643-40e5-876f-6581276f165a",
+      "verified": true,
+      "observed_hash_kind": "explicit_null"
+    }
   },
   "implemented": [
     "Restore named handleRequest and route all legacy ledger reads/writes consistently through the singleton Wep3Ledger after documented cutover.",
@@ -120,11 +133,13 @@
     "Reserve complete trees, parent, children, journal and idempotency result in one serial transaction; same key and different content conflicts.",
     "Distinguish missing, null, empty and invalid transaction hash values without interpreting them as confirmed chain transactions.",
     "Maintenance-only deployment skips the ordinary provisioning/paid workflow and verifies exact source revision plus unchanged existing financial book.",
-    "Maintenance omits repository default vars and uses --keep-vars, preserving existing live budget/config values; only source revision and legacy write guard are explicitly set."
+    "Maintenance omits repository default vars and uses --keep-vars, preserving existing live budget/config values; only source revision and legacy write guard are explicitly set.",
+    "Normal WEP3 deployment now requires atomic Swarm and complete ledger regression tests before deploy, preventing another whole-file restore from bypassing this repair."
   ],
   "remaining": [
     "Legacy freeze/drain and durable cutover evidence is not complete; LEGACY_KV_FROZEN stays 0 and live legacy writes remain closed.",
-    "Treasury public controlled=false reason treasury_not_provisioned is not corrected by provisioning a new signing key; actual signing/control evidence remains separate."
+    "Treasury public controlled=false reason treasury_not_provisioned is not corrected by provisioning a new signing key; actual signing/control evidence remains separate.",
+    "Authenticated production Swarm503 was not probed because this Actions job has no LAB_PIN binding; do not request/export that secret or broaden the runner role merely to turn a check green."
   ],
   "harness": {
     "lessons_applied": [
@@ -132,12 +147,42 @@
       "L-20261030-002",
       "L-20261030-007"
     ],
-    "actual_change": "Pinned byte hashes, preserved RED output, and kept candidate/tests/deployment/activation as separate states.",
+    "actual_change": "Restored one transactional route, added atomicity/idempotency/failure tests to both maintenance and normal deployment, and separated tested/deployed/activated states with pinned source hashes.",
     "verification": "123 actual Node tests plus pending independent component and browser checks."
   },
   "model_API_calls_this_local_phase": 0,
   "transactions_sent": 0,
   "paid": false,
   "tx_hash": null,
-  "controller_decision_at_utc": "2026-11-02T07:42:10.658325+00:00"
+  "controller_decision_at_utc": "2026-11-02T07:42:10.658325+00:00",
+  "completed_at_utc": "2026-11-02T07:53:51.150958+00:00",
+  "pr": 347,
+  "candidate_commit": "75ead46b162af42e6045067f117461dc0c4097ec",
+  "merge_commit": "197dc4da1744786970d4d1999ecf851bd6c69f3b",
+  "input_hash_scope": "Candidate source bytes bound to candidate_commit; source_base separately identifies the pre-repair baseline.",
+  "deployment": {
+    "run_id": "41408313726",
+    "receipt": "knowledge/results/wep3/atomic-maintenance-41408313726.json",
+    "code_deployed": true,
+    "source_commit": "197dc4da1744786970d4d1999ecf851bd6c69f3b",
+    "runtime_revision": "wep3-atomic-repair-v1",
+    "independent_public_GET_source_verified": true,
+    "financial_book_unchanged": true,
+    "book_sha256": "d18eed67bbc15e36dd7abdda4fec7e1d5e471e88c97319c3343a915ce7dc7097",
+    "legacy_cutover_completed": false,
+    "live_legacy_writes_enabled": false,
+    "authenticated_guard_probe_verified": false,
+    "actual_probe_scope": "Both Swarm endpoints returned401 for unauthenticated requests. LAB_PIN is not bound in this Actions job; authenticated Swarm503 is NOT claimed as production-verified. Source-bound guards and local authenticated tests passed."
+  },
+  "costs": {
+    "native_qwen_generation_requests": 1,
+    "qwen_API_bill_usd": null,
+    "production_browser_wallet_before_usd": "7.312",
+    "production_browser_wallet_after_usd": "7.232",
+    "observed_browser_wallet_delta_usd": "0.080",
+    "browser_auto_reload": "unconfigured",
+    "new_subscriptions": 0,
+    "treasury_transactions": 0,
+    "paid_scope": "No cash settlement or wallet transfer. Native-model and browser tool costs are separate."
+  }
 }
