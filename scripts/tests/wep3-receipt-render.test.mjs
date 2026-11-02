@@ -21,6 +21,18 @@ async function render(receipt, fetchError = null) {
   return elements;
 }
 
+test('transaction hash missing, explicit null and empty strings remain distinct',async()=>{
+  const absent=await render({paid:false}),none=await render({paid:false,tx_hash:null}),empty=await render({paid:false,tx_hash:''}),spaces=await render({paid:false,tx_hash:'  '});
+  assert.match(absent.money.textContent,/字段缺失/);assert.match(none.money.textContent,/明确 null/);assert.match(empty.money.textContent,/空字符串/);assert.match(spaces.money.textContent,/空字符串/);
+  assert.equal(new Set([absent.money.textContent,none.money.textContent,empty.money.textContent]).size,3);
+});
+test('malformed transaction hash types are not presented as absent transactions',async()=>{
+  for(const tx_hash of [false,0,{},[]])assert.match((await render({tx_hash})).money.textContent,/类型错误/);
+});
+test('reported hash is rendered as text and remains explicitly unverified',async()=>{
+  const hash='0x'+'a'.repeat(64),r=await render({paid:true,tx_hash:hash});assert.ok(r.money.textContent.includes(hash));assert.match(r.money.textContent,/未独立链上核验/);assert.equal(r.money.innerHTML,'');
+});
+
 test('failed live contract checks are visible without claiming settlement', async () => {
   const elements = await render({
     status: 'live_contract_check_failed', paid: false, tx_hash: null,
