@@ -73,3 +73,11 @@ DeepSeek多写的第二角色审核没有当成豆包独立交付。实际豆包
 `DAILY-2026-11-01-qianwen` 的原18f17d1c...工件确无【派单监督】，当前校验先在本地失败，不能仅称网络同步故障。已有Pulse仓库快照证明同一Task ID+hash已submitted_pending_review；本次实时公开GET超时，远端仍待审/未验收，保留原认领、工件和提交意图。只修固定artifact_delivery_missing_required_section诊断，不重试模型、重提提交或代造失败/接受。对账实物：`knowledge/results/dispatch/oversight/DAILY-2026-11-01-qianwen-sync-reconcile.json`。
 
 本接续0模型API调用、0项目资金动作；A2历史L0验收结论不变，云签名/付款等阶段不由此自动完成。未重新采购NAS/RDS/KMS或恢复旧独立AI签名准入。
+
+## #345 外部审计登记（原单接续）
+
+Claude外部客户端审计#345 head `0e91faf8ce7552b775b14fc5e6b376d53acb5c64`已在远端，已合并 `f2839dcd9a7e36543a73d29ca174b23b3245ac7d`；bootstrap/observe/offline均success，Codex代码审查completed无finding、无未解决线程，不需要重复推送。通过仅覆盖#343代码，不扩张为旧日课、远端同步、#315或付款验收；不伪造原生API身份。
+
+数量来自不同分组：GPT34=delivery-integrity9+seat-delivery15+qwen-dispatch10；Claude63=daily-task-board36+qwen-native12+seat-delivery15。94为7份明确清单，主线92是另一个workflow清单，未以“后来新增用例”的猜测解释差异。原94完整stdout已按此前提交hash补存 `knowledge/results/dispatch/oversight/evidence/pr343-original-94.tap`；主线92完整日志见run41371796759/job125043632684。
+
+U+00A0正例已加入现有参数化测试，仍仅结构通过、accepted=false，不改运行时代码。原审计hash、清单及本次复跑见 `knowledge/results/dispatch/oversight/QWEN-SUPERVISE-20261101-audit345-registration.json`。已证实“未推送”提醒与远端不符；尚未定位桌面提醒产生方，不冒称提醒系统已修复。新增模型API0、项目资金动作0。
