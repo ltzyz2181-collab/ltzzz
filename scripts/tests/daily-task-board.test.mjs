@@ -31,6 +31,29 @@ test('missing qianwen section reconciles the claimed task as failure without ano
  assert.equal(f.state.task_board.find(task=>task.id===seat.assignment.id).status,'failed_no_repurchase');
  await f.generate();assert.equal(f.calls,1);assert.equal(hasUnverifiedBoard(readLedger(f.options.root,date)),false);
 });
+test('a legacy submitted artifact missing supervision reports validation failure without replay or rewriting evidence',async t=>{
+ const f=fixture(t,'qianwen');await prepareDailyBoard(f.options);
+ await f.generate({output:'【派单监督】\n责任席：千问；未核查。\n【交付结束】'});
+ const record=readLedger(f.options.root,date),seat=record.seats.qianwen;
+ const body=JSON.parse(fs.readFileSync(path.join(f.options.root,seat.artifact.path)));
+ body.output='【观】旧日课未交监督段。\n【交付结束】';delete body.required_sections;
+ const bytes=Buffer.from(JSON.stringify(body,null,2)+'\n'),hash=(await import('node:crypto')).createHash('sha256').update(bytes).digest('hex');
+ seat.artifact={path:`knowledge/results/daily-board/artifacts/${date}-qianwen-${hash}.json`,sha256:hash};
+ fs.writeFileSync(path.join(f.options.root,seat.artifact.path),bytes);seat.status='sync_unknown';saveLedger(f.options.root,record);
+ let remoteReads=0;const posts=f.posts;
+ await syncDailyBoard({...f.options,readRemote:async()=>{remoteReads++;return bytes;}});
+ const after=readLedger(f.options.root,date).seats.qianwen;
+ assert.equal(after.status,'sync_unknown');assert.equal(after.sync_reason,'artifact_delivery_missing_required_section');
+ assert.equal(after.submission_verified,false);assert.equal(after.accepted,false);assert.equal(remoteReads,0);assert.equal(f.posts,posts);
+ assert.deepEqual(fs.readFileSync(path.join(f.options.root,seat.artifact.path)),bytes);
+ await f.generate();assert.equal(f.calls,1);
+});
+test('a real inline section crosses generation and submission gates without becoming accepted',async t=>{
+ const f=fixture(t,'qianwen');await prepareDailyBoard(f.options);
+ await f.generate({output:'【派单监督】责任席：千问；未核查。\n【交付结束】'});f.commit();await syncDailyBoard(f.options);
+ const seat=readLedger(f.options.root,date).seats.qianwen;
+ assert.equal(seat.status,'submitted_pending_review');assert.equal(seat.accepted,false);assert.equal(f.calls,1);
+});
 test('required supervision failure is persisted and never buys a second daily call',async t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'required-daily-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  saveLedger(root,{date,run_key:'run:1',source_commit:'fixture',seats:{qianwen:{status:'reserved'}},paid:false,tx_hash:null});

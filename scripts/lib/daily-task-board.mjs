@@ -133,7 +133,9 @@ export function validateArtifact(root, record, agent, seat) {
   const bytes = fs.readFileSync(path.join(root, a.path));
   if (digest(bytes) !== a.sha256) throw Error('artifact_hash_mismatch');
   const body = JSON.parse(bytes);
-  if (body.date !== record.date || body.run_key !== record.run_key || body.task_id !== seat.assignment?.id || body.logical_seat !== agent || body.source_commit !== record.source_commit || body.status !== 'complete' || assessDelivery({...body,required_sections:requiredSectionsForAgent(agent)}).status !== 'structurally_complete' || /SPEND_PROPOSAL\s*[:：]/i.test(body.output || '')) throw Error('artifact_binding_invalid');
+  if (body.date !== record.date || body.run_key !== record.run_key || body.task_id !== seat.assignment?.id || body.logical_seat !== agent || body.source_commit !== record.source_commit || body.status !== 'complete' || /SPEND_PROPOSAL\s*[:：]/i.test(body.output || '')) throw Error('artifact_binding_invalid');
+  const integrity=assessDelivery({...body,required_sections:requiredSectionsForAgent(agent)});
+  if(integrity.status!=='structurally_complete')throw Error('artifact_delivery_'+integrity.status);
   return bytes;
 }
 
@@ -234,9 +236,12 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
         seat.status = submitted.status;
         seat.sync_reason = 'bound_independent_draft_review_verified_not_deployment';
       }
-    } catch {
+    } catch (error) {
       seat.status = seat.status === 'review_unknown' ? 'review_unknown' : 'sync_unknown';
-      seat.sync_reason = 'remote_submission_or_evidence_unverified';
+      // A committed historical draft can fail a newer delivery rule before any
+      // network read. Keep the reservation and report that boundary accurately.
+      const localFailure=['artifact_delivery_missing_required_section','artifact_delivery_incomplete','artifact_delivery_unverified','artifact_delivery_invalid_delivery_requirements'];
+      seat.sync_reason = localFailure.includes(error?.message)?error.message:'remote_submission_or_evidence_unverified';
     }
     saveLedger(root, record);
   }

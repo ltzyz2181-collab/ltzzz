@@ -27,7 +27,9 @@ export async function callAgent({apiKey, prompt, model, maxTokens = 2048, fetchI
       const status = billing ? 'billing_or_quota_error' : response.status === 401 ? 'authentication_error' : response.status === 403 ? 'access_denied' : response.status === 429 ? 'rate_limited' : response.status === 404 || /model/i.test(code) ? 'model_or_endpoint_error' : 'api_error';
       return {ok: false, status, http: response.status, error: redact(`HTTP ${response.status}: ${code} ${data?.error?.message || data?.message || ''}`).slice(0, 300), request_id: requestId ? redact(requestId) : null, requested_model: requested};
     }
-    const choice = data?.choices?.[0], output = redact(choice?.message?.content).trim();
+    // Leading whitespace is part of Markdown provenance: do not turn an indented
+    // code example into a real required section before the delivery gate sees it.
+    const choice = data?.choices?.[0], output = redact(choice?.message?.content).trimEnd();
     const complete = !!output && ['stop', 'end_turn'].includes(choice?.finish_reason);
     return {ok: complete, status: !output ? 'empty_output' : complete ? 'success' : 'incomplete_output', output,
       finish_reason: choice?.finish_reason || null, tokens_used: Number.isFinite(data?.usage?.total_tokens) && data.usage.total_tokens >= 0 ? data.usage.total_tokens : 0,
