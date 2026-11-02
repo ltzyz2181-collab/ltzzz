@@ -1,0 +1,37 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
+const phase=process.argv[2],run=process.env.GITHUB_RUN_ID,sha=process.env.GITHUB_SHA;
+if(!['before','after'].includes(phase)||process.env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||process.env.GITHUB_REF!=='refs/heads/main'||!/^[0-9]+$/.test(run||'')||!/^[a-f0-9]{40}$/.test(sha||''))throw Error('trusted_main_maintenance_context_required');
+if(!process.env.CLOUDFLARE_API_TOKEN)throw Error('existing_cloudflare_identity_unavailable');
+const token=crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex');
+const dir='knowledge/results/wep3',path=dir+'/atomic-maintenance-'+run+'.json';
+fs.mkdirSync(dir,{recursive:true});
+async function json(path,options={}){const r=await fetch(base+path,{...options,signal:AbortSignal.timeout(20000)});let body;try{body=await r.json();}catch{body={error:'non_json_response'};}return{http:r.status,body};}
+async function snapshot(){const r=await json('/market/runtime-state',{headers:{'X-Lab-Pin':token}});if(r.http!==200||!r.body.ok||!/^[a-f0-9]{64}$/.test(r.body.book_sha256||''))throw Error('existing_financial_book_readback_unavailable');return Object.fromEntries(['ok','market_runtime_revision','aave_runtime_revision','procurement_runtime_revision','daily_hire_revision','book_sha256','order_count','ledger_count','live_revenue_cents','aave_intent_count','first_supply_confirmed','exit_test_confirmed','active_intent'].map(k=>[k,r.body[k]]));}
+if(phase==='before'){
+  const report={task_id:'WEP3-SWARM-TREE-2026-10-27',execution_id:run,source_commit:sha,at_utc:new Date().toISOString(),status:'maintenance_reserved_before_deploy',before:await snapshot(),model_calls:0,transactions_sent:0,paid:false,tx_hash:null};
+  fs.writeFileSync(path,JSON.stringify(report,null,2)+'\n');
+}else{
+  const report=JSON.parse(fs.readFileSync(path,'utf8'));
+  let health;
+  for(let attempt=0;attempt<12;attempt++){health=await json('/health');if(health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha)break;if(attempt<11)await new Promise(r=>setTimeout(r,2500));}
+  report.health=health;report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
+  const checks=[];
+  // The release must be read-only until the separate legacy freeze/drain and migration is evidenced.
+  const guarded=health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha&&health.body.atomic_ledger_ready===false&&health.body.legacy_writes_enabled===false;
+  if(guarded){
+    for(const route of ['/swarm/spawn','/swarm/tree']){
+      const headers={'Content-Type':'application/json','Idempotency-Key':'maintenance-'+run};if(process.env.LAB_PIN)headers['X-Lab-Pin']=process.env.LAB_PIN;
+      const r=await json(route,{method:'POST',headers,body:JSON.stringify({parent_intent_id:'maintenance-nonexistent-'+run,poster:'Grok',skill:'copy',max_usd:'0.000001',plan:[{skill:'copy',max_usd:'0.000001'}]})});
+      checks.push({route,http:r.http,error:r.body.error,authenticated:Boolean(process.env.LAB_PIN),passed:process.env.LAB_PIN?r.http===503&&r.body.error==='legacy_cutover_not_confirmed':r.http===401});
+    }
+  }
+  report.guarded_routes=checks;report.authenticated_guard_probe_verified=Boolean(process.env.LAB_PIN)&&checks.length===2&&checks.every(x=>x.passed);
+  report.code_deployed=guarded;report.swarm_live_writes_enabled=false;report.legacy_cutover_completed=false;report.completed_at_utc=new Date().toISOString();
+  report.ok=guarded&&report.financial_book_unchanged&&checks.length===2&&checks.every(x=>x.passed);
+  report.status=report.ok?'guarded_repair_deployed_cutover_pending':'maintenance_verification_failed';
+  fs.writeFileSync(path,JSON.stringify(report,null,2)+'\n');
+  console.log(JSON.stringify({status:report.status,source_commit:sha,book_unchanged:report.financial_book_unchanged,authenticated_guard_probe_verified:report.authenticated_guard_probe_verified,paid:false,tx_hash:null}));
+  if(!report.ok)process.exitCode=1;
+}

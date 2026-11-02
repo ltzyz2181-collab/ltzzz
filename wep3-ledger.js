@@ -1,5 +1,6 @@
 // One Durable Object owns all WEP3 balances, invoices and delivery deduplication.
 // KV is a read-only legacy source; new writes must never go back to it.
+export const ATOMIC_LEDGER_CONTEXT = Symbol('wep3.transaction-scoped-adapter');
 export class Wep3Ledger {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
 
@@ -37,7 +38,7 @@ export class Wep3Ledger {
           }
         };
         const { handleRequest } = await import('./wep3-worker.js');
-        const response = await handleRequest(request, {...this.env, PAY_KV: adapter});
+        const response = await handleRequest(request, {...this.env, PAY_KV: adapter, [ATOMIC_LEDGER_CONTEXT]: true});
         // Business rejection/refund commits; infrastructure failures roll back everything.
         if (response.status < 500 && staged.size) {
           await storage.transaction(async tx => {
