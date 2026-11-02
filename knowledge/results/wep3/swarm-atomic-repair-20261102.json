@@ -44,8 +44,53 @@
       "knowledge/results/wep3/swarm-atomic-repair-20261102/renderer-red.tap",
       "knowledge/results/wep3/swarm-atomic-repair-20261102/node-123-green.tap"
     ],
-    "browser": "pending_GitHub_Chromium",
-    "distinct_provider_component_review": "pending",
+    "browser": {
+      "status": "CI_passed",
+      "run_id": "41407479992",
+      "head": "f8424b57f4f179f274b5e7037716970692d4cf63",
+      "cases": 14,
+      "browser": "Chromium",
+      "scope": "Candidate local HTML desktop/mobile with fixture receipts; no production browser claim yet."
+    },
+    "distinct_provider_component_review": {
+      "provider": "Alibaba DashScope",
+      "model": "qwen-plus",
+      "model_source": "provider_response",
+      "native_qwen_call": true,
+      "request_id": "0e279ab1-c407-9ac6-a898-92034940ec1c",
+      "run_id": "41407526967",
+      "model_calls": 1,
+      "tokens_used": 4116,
+      "finish_reason": "stop",
+      "output_sha256": "7b445ea649430bb552bfb009ceac516ddce5074e4e3aa92841064ccfc97c4f30",
+      "receipt": "knowledge/results/qwen-dispatch/WEP3-SWARM-ATOMIC-REVIEW-20261102.json",
+      "model_verdict": "atomicity_violated_concurrent_write_risk",
+      "scope": "Exact two-module source hashes from the review card; full workflow/router review not claimed.",
+      "native_review_approved": false,
+      "controller_disposition": "accept_guarded_component_after_source_and_test_rebuttal",
+      "dispositions": [
+        {
+          "claim": "No transaction/rollback; PAY_KV writes external storage",
+          "response": "Rejected: transaction-only symbol is required; Wep3Ledger supplies PAY_KV adapter.put=staged.set, serializes the entire handler with blockConcurrencyWhile and commits its single storage.transaction only after a non-5xx response. Direct module use without this context is 503 before any KV read/write. Durable row failure regressions leave zero new records."
+        },
+        {
+          "claim": "Idempotency and parent reads race without a lock/CAS",
+          "response": "Rejected: both reads and commit run inside the same singleton DO blockConcurrencyWhile. 20 concurrent same-key requests, 100 retries after restart, competing keys and whole-tree commit failures were executed, not inferred."
+        },
+        {
+          "claim": "Canonical request hash must instead be a raw JSON byte hash",
+          "response": "Not a correctness defect: the idempotency digest intentionally binds normalized operation, parent, poster, amount micro-units, title and depth. Source file byte hashes and the minified review-representation hash are separately recorded. No raw-byte request-hash claim was made."
+        },
+        {
+          "claim": "Poster-to-seat mapping fabricates runtime model identity",
+          "response": "Not applicable: this is an authenticated task-budget reservation, with model_calls=0 and no claimed provider/model generation. Poster is a logical principal; native model identity stays separate."
+        },
+        {
+          "claim": "ASCII whitelist permits Unicode confusables or zero-width chars",
+          "response": "Rejected: anchored ASCII character classes exclude both; actual Request headers also enforce the HTTP value representation. No Unicode-normalization equivalence is used for keys."
+        }
+      ]
+    },
     "log_manifest": [
       {
         "path": "knowledge/results/wep3/swarm-atomic-repair-20261102/swarm-red.tap",
@@ -65,7 +110,9 @@
         "stored_sha256": "fe0e4d6ec1dc32e03c79a6d8bb41040504a516591ffb6039e1ebb767bb64b8db",
         "normalization": "Trailing whitespace removed per line; substantive test output unchanged."
       }
-    ]
+    ],
+    "workflow_syntax": "Both workflows parse; actual GitHub CI validation succeeded on prior head; final workflow-only follow-up pending CI.",
+    "independent_model_API_bill_usd": null
   },
   "implemented": [
     "Restore named handleRequest and route all legacy ledger reads/writes consistently through the singleton Wep3Ledger after documented cutover.",
@@ -90,5 +137,6 @@
   "model_API_calls_this_local_phase": 0,
   "transactions_sent": 0,
   "paid": false,
-  "tx_hash": null
+  "tx_hash": null,
+  "controller_decision_at_utc": "2026-11-02T07:42:10.658325+00:00"
 }
