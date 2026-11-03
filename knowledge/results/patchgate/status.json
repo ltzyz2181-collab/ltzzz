@@ -1,9 +1,9 @@
 {
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
   "source_plan_pr": 220,
-  "phase": "A2",
-  "status": "A2_authenticated_controller_L0_docs_live_merge_verified_wider_deploy_and_payments_not_accepted",
-  "at_utc": "2026-11-01T00:58:44.889201Z",
+  "phase": "A3_isolated_verified_B0_local",
+  "status": "A2_L0_merge_and_single_A3_target_verified_B0_locally_tested_B1_and_general_payments_pending",
+  "at_utc": "2026-11-03T08:57:30.295Z",
   "logical_seat": "gpt",
   "actual_provider": "openai",
   "model": null,
@@ -755,12 +755,15 @@
   },
   "configuration_evidence": "knowledge/results/patchgate/pr224-evidence/actual-configuration.json",
   "escrow": {
-    "phase": "not_entered",
-    "status": "blocked_by_A",
+    "phase": "B0",
+    "status": "local_EVM_10_of_10_passed_public_testnet_pending",
     "maximum_authorized_environment": "public_testnet_fake_tokens",
-    "transactions": []
+    "transactions": [],
+    "B0_receipt": "knowledge/results/patchgate/escrow-b0/20261103-local-acceptance.json",
+    "B1_readiness_receipt": "knowledge/results/patchgate/payment-readiness/41606747082-attempt-1.json",
+    "production_payments_enabled": false
   },
-  "next_phase": "Claude_rereview_exact_PR267_head_before_any_merge_or_activation_R6_cloud_and_trust_provisioning_still_unverified",
+  "next_phase": "B0_Linux_CI_acceptance_then_existing_testnet_account_control_fake_gas_token_and_B1_fund_release_refund_receipts",
   "automatic_merge": true,
   "automatic_deploy": false,
   "automatic_rollback": false,
@@ -1938,7 +1941,7 @@
     "payment_A2_A3_B_unchanged": true,
     "all_old_rejections_preserved": true
   },
-  "current_controller_scope": "A2 ordinary Markdown merges only; A3, deployment/rollback and generic payment activation remain separate and unverified. Historical independent-signature audits retain their original scope.",
+  "current_controller_scope": "Owner-authorized controller implementation, merge and deployment; review supervises. Proven automatic scope: A2 ordinary L0 documentation and one inert isolated A3 canary. General production mutation, rollback and payment remain separate and unaccepted.",
   "ui_treasury_acceptance": {
     "at_utc": "2026-11-01T06:58:58Z",
     "task_id": "PLAN-PATCHGATE-ESCROW-20261023",

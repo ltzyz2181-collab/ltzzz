@@ -1,0 +1,76 @@
+TAP version 13
+# This version of µWS is not compatible with your Node.js build:
+# Error: Cannot find module '../binaries/uws_linux_x64_127.node'
+# Require stack:
+# - /workspace/work/ltzzz-escrow-b0-20261103/experiments/testnet-escrow/node_modules/ganache/node_modules/@trufflesuite/uws-js-unofficial/src/uws.js
+# - /workspace/work/ltzzz-escrow-b0-20261103/experiments/testnet-escrow/node_modules/ganache/dist/node/core.js
+# Falling back to a NodeJS implementation; performance may be degraded.
+# Subtest: real local EVM funding and controller release preserve exact balances and bind delivery
+ok 1 - real local EVM funding and controller release preserve exact balances and bind delivery
+  ---
+  duration_ms: 4612.290342
+  type: 'test'
+  ...
+# Subtest: expired refund can be triggered by outsider while paused and only returns to fixed funder
+ok 2 - expired refund can be triggered by outsider while paused and only returns to fixed funder
+  ---
+  duration_ms: 1464.93877
+  type: 'test'
+  ...
+# Subtest: outsider cannot create, release or pause; caller cannot change beneficiary
+ok 3 - outsider cannot create, release or pause; caller cannot change beneficiary
+  ---
+  duration_ms: 867.894127
+  type: 'test'
+  ...
+# Subtest: per-order and total-open fake-token caps reject excess without reserving balances
+ok 4 - per-order and total-open fake-token caps reject excess without reserving balances
+  ---
+  duration_ms: 2460.719821
+  type: 'test'
+  ...
+# Subtest: pause prevents new funding and release but does not confiscate or delete escrow
+ok 5 - pause prevents new funding and release but does not confiscate or delete escrow
+  ---
+  duration_ms: 1816.777222
+  type: 'test'
+  ...
+# Subtest: empty hashes, unknown orders, invalid deadlines and release at exact timeout are refused
+ok 6 - empty hashes, unknown orders, invalid deadlines and release at exact timeout are refused
+  ---
+  duration_ms: 2337.866057
+  type: 'test'
+  ...
+# Subtest: fee-on-transfer funding is reverted atomically, including reservation and token balances
+ok 7 - fee-on-transfer funding is reverted atomically, including reservation and token balances
+  ---
+  duration_ms: 392.499543
+  type: 'test'
+  ...
+# Subtest: constructor rejects mainnet chain even with otherwise valid local addresses
+ok 8 - constructor rejects mainnet chain even with otherwise valid local addresses
+  ---
+  duration_ms: 106.929883
+  type: 'test'
+  ...
+# Subtest: only approved public testnet chain can be used besides the local EVM
+ok 9 - only approved public testnet chain can be used besides the local EVM
+  ---
+  duration_ms: 185.989604
+  type: 'test'
+  ...
+# Subtest: short outgoing transfer reverts release and refund atomically; order remains reserved
+ok 10 - short outgoing transfer reverts release and refund atomically; order remains reserved
+  ---
+  duration_ms: 1218.009378
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19792.242321
