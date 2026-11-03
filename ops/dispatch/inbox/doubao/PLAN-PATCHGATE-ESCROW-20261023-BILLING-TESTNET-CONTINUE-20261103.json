@@ -1,0 +1,57 @@
+{
+  "schema": "ltzzz.desktop.handoff.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "handoff_id": "BILLING-TESTNET-CONTINUE-20261103",
+  "assigned_seat": "doubao",
+  "decision_seat": "gpt",
+  "status": "prepared_not_desktop_acknowledged",
+  "authority": "owner authorized controller purchasing, implementation and ordinary decisions; supervisor review does not add owner approval",
+  "context": {
+    "A3": "PR354 main live run 41606351715 accepted one inert isolated target",
+    "B0": "PR356 main run 41607876382 passed local EVM; no public testnet transaction",
+    "readiness": "knowledge/results/patchgate/payment-readiness/41606747082-attempt-1.json",
+    "billing": "TinyFish OpenAI run 90afc128-7bc7-4822-8736-66a8ce0bfd48 and Anthropic run f8ca0712-caa4-4edb-8dce-98530f6121cf both completed at login; no credit purchase",
+    "owner_report": "both API consoles are already logged in locally; desktop session availability must be actually checked"
+  },
+  "billing_tasks": [
+    {
+      "id": "NATIVE-API-BILLING-20261103-OPENAI",
+      "url": "https://platform.openai.com/settings/organization/billing/overview",
+      "credential_binding_if_securely_provisioned": "OPENAI_API_KEY"
+    },
+    {
+      "id": "NATIVE-API-BILLING-20261103-CLAUDE",
+      "url": "https://platform.claude.com/settings/billing",
+      "credential_binding_if_securely_provisioned": "ANTHROPIC_API_KEY"
+    }
+  ],
+  "billing_instructions": [
+    "Use existing LTZZZ desktop API-console sessions. Check actual account, organization, eligibility, balance and purchase history; session names and chat subscription balances are insufficient.",
+    "Before checkout write an idempotent claim for the exact provider task ID in its existing task receipt and re-read it. Unknown or pending purchases require reconciliation, not another charge; cloud billing runs above made no purchase.",
+    "For an already-eligible OpenAI subscription API-credit benefit, claim only if the correct LTZZZ API organization is established and there is no upgrade or extra charge. Never buy a higher subscription for a benefit.",
+    "Otherwise one minimum one-time API credit purchase at most USD5 per provider is authorized using an already-saved valid payment method and an eligible account/region. Disable auto-reload. If the UI minimum exceeds USD5, preserve quote and ask GPT decision seat by reply; do not purchase it automatically.",
+    "No new bank/card/financial account, invented location or billing identity, sanctions/region bypass, chat subscription upgrade, wallet conversion or repeat charge. OTP/3DS/KYC that requires the account holder is a concrete platform verification blocker, not a request for business approval.",
+    "If a project-scoped API key already exists or can be securely provisioned within the correct LTZZZ account, place it directly in the designated existing managed Secret via the official console. Never send a key, cookie, password, card detail or screenshot containing one through email, chat, public GitHub or another model. Keep reserved native slots disabled until actual native execution is verified.",
+    "Return only account/organization redacted reference, actual balance and currency, purchase/grant reference, pending/confirmed status, auto-reload state and credential-presence booleans. Do not claim model generation from billing or heartbeat."
+  ],
+  "testnet_task": {
+    "id": "B1-TESTNET-CAPABILITY-20261103",
+    "scope": "inspect_existing_CDP_capability_only_no_new_financial_account_or_mainnet_action",
+    "required_bindings": ["CDP_API_KEY_ID", "CDP_API_KEY_SECRET", "CDP_WALLET_SECRET"],
+    "network": "base-sepolia",
+    "chain_id": 84532,
+    "instructions": [
+      "Current main runner finds all existing CDP bindings absent. Inspect whether an existing eligible LTZZZ CDP account/session and named account ltzzz-ops-v1 are actually available; do not infer availability from historical documentation.",
+      "If existing authorized credentials can be configured directly through the official managed Secret UI, record presence only and request GPT's read-only verification workflow; never transmit credential values or export old wallet private keys.",
+      "Do not create/fund a new financial account, transfer mainnet gas, call the treasury signer, deploy the escrow publicly or send a transaction in this capability subtask. Return exact account/region/auth/fake-gas/token blockers if capability is missing."
+    ]
+  },
+  "delivery": {
+    "channel": "reply_to_existing_authenticated_GPT_escalation_email_thread",
+    "required": ["original task ID", "handoff ID", "desktop actual tool execution evidence", "actual submitted and accepted states separately", "purchase or blocked references", "unknown values kept unknown"],
+    "model_identity": "actual provider/model only if the native executor supplies them; an email sender or seat label is not native generation proof"
+  },
+  "new_paid_schedule": false,
+  "mainnet_transactions": false,
+  "customer_order_claim": false
+}
