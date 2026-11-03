@@ -1,0 +1,44 @@
+{
+  "run_id": "41737707305",
+  "source_commit": "1f2ee176e90bea924d8c65d048d669142f677304",
+  "scope": "explicit_operational_review_separate_from_engineering_acceptance",
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-11-03T23:15:52.396Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 28698
+    },
+    {
+      "requested_agent": "Doubao",
+      "status": "success",
+      "at": "2026-11-03T23:15:59.816Z",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "finish_reason": "stop",
+      "tokens_used": 32496
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "text": "{\n  \"operation\": \"memory_promotion\",\n  \"subject\": {\n    \"candidate_id\": \"CAND-20260921-1912\",\n    \"claim\": \"**观察：系统是否把“状态—边界—下一步”外化成可检索记录，可能比单纯要求参与者保持意志力，更能稳定长期行为。**\",\n    \"source\": \"memory/daily/grok-2026-09-21.md\",\n    \"source_sha256\": \"191206ba75561e42681cfef443ad461ef952f0ad18d1716af1b4ca91bba5bfc2\"\n  },\n  \"subject_sha256\": \"ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419\",\n  \"prescreen\": {\n    \"accepted\": false,\n    \"operation\": \"memory_promotion\",\n    \"subject_sha256\": \"ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419\",\n    \"reasons\": [\n      \"未取得 subject 原始字节并重算 SHA-256，无法确认 source_text 与 subject_sha256 绑定关系。\",\n      \"source_text 未提供完整来源文件路径及提交证据，不能从当前材料证明该候选来自 memory/daily/grok-2026-09-21.md 的实际文件内容。\",\n      \"未核实候选是否已经过独立评审或记忆工作流处理，不能仅凭材料内自我声明晋升为核心记忆。\",\n      \"缺少独立复核者回执与评审通过证据，不能由工程草稿推导该记忆候选可晋升。\"\n    ]\n  },\n  \"engineering_artifact_sha256\": \"41c2d8b5eab57ce3b35cfec625cd7c28feb8ee4542c6fafeda12b72dc368e165\"\n}\n",
+      "sha256": "9e24c56b569673360e355e019b587d4f5f52baae28c8da0b1d1140be0843a855"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "text": "{\n  \"accepted\": false,\n  \"operation\": \"memory_promotion\",\n  \"subject_sha256\": \"ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419\",\n  \"artifact_sha256\": \"9e24c56b569673360e355e019b587d4f5f52baae28c8da0b1d1140be0843a855\",\n  \"reasons\": [\n    \"即使材料中给出了完整来源文本，也没有提供该来源文件所在 Git 提交、路径字节读取和 SHA-256 复算证据，不能证明 source_sha256 与 memory/daily/grok-2026-09-21.md 的实际版本绑定。\",\n    \"subject_sha256 是独立于 source_sha256 的另一哈希，但材料未提供 subject 原始字节、规范化规则或复算命令，无法确认候选 claim 与 subject_sha256 绑定。\",\n    \"候选内容是每日观察和可验证假设，材料没有独立评审者对事实边界、非医学结论、实验设计或长期记忆价值的通过回执。\",\n    \"没有证据显示该候选已进入并通过记忆晋升工作流，也没有核心记忆目标文件、提交哈希或回读记录；不能由工程监督草稿直接晋升。\",\n    \"监督工件自身只记录 prescreen rejected 和工程 artifact 关联，未提供可执行的记忆工作流批准证据；拒绝晋升与未验证事实状态相符。\"\n  ],\n  \"unverified\": [\n    \"未复算 source_sha256=191206ba75561e42681cfef443ad461ef952f0ad18d1716af1b4ca91bba5bfc2。\",\n    \"未复算 subject_sha256=ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419。\",\n    \"未复算监督工件 artifact_sha256=9e24c56b569673360e355e019b587d4f5f52baae28c8da0b1d1140be0843a855。\",\n    \"未验证来源文件的提交版本、仓库路径和完整字节与粘贴文本完全一致。\",\n    \"未验证候选是否已有独立记忆评审、批准回执或核心记忆部署回读。\"\n  ]\n}\n",
+      "sha256": "53511ea267354d8922c497d0317e9adfed0e8949f33f2f31a94bd5dae23c5c71"
+    }
+  ],
+  "model_calls_added_for_supervision": 0,
+  "paid": false,
+  "tx_hash": null
+}

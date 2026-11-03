@@ -1,0 +1,56 @@
+{
+  "accepted": false,
+  "artifact_sha256": "41c2d8b5eab57ce3b35cfec625cd7c28feb8ee4542c6fafeda12b72dc368e165",
+  "reasons": [
+    "静态源码确认 scripts/daily-task-board.mjs 的 sync 分支在 materializeDailyReview 和 syncDailyReview 前后各调用一次 syncDailyBoard(options)，第二次确实是全量同步入口。",
+    "scripts/lib/daily-task-board.mjs 中 syncDailyBoard 会遍历全部 ledger.seats，并对 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review 等状态先执行 seat.submission_verified=false、seat.review_verified=false、seat.accepted=false，然后重新读取 artifact、远端 artifact、snapshot 并重建 receipt；因此 finding 所指评审后再次进入全量同步、可能重置字段的断点有源码依据。",
+    "第二次全量同步并非必然重复发起 submit_task：syncDailyBoard 的 matches 会接受 submitted_pending_review、completed_draft_review、rejected_draft_review，且 command 层对相同 id 或相同 evidence 的 submit/review 有重复保护；交付中“可能被重复全量同步并覆盖字段”的表述成立，但“重复发起 submit/fail 命令”的实际发生条件未由当前材料证明。",
+    "交付提出的 syncReviewedSeats 在当前源码中不存在，scripts/lib/daily-task-board.mjs 也没有导出该函数；交付只给自然语言方案，没有可应用 diff、函数实现、导入修改或调用点替换，不能作为可复核代码补丁验收。",
+    "minimal_patch 声称复用 validateArtifact、readRemote、snapshot、command、taskFor 等内部函数，但其中 taskFor、evidencePath、keyed 在当前模块中不是 export；方案没有说明如何在不重构可见性的情况下复用，规格细节不可直接复核。",
+    "建议把 sync_unknown、review_unknown 与 submitted_pending_review、completed_draft_review、rejected_draft_review 一并作为“评审后席位”处理过宽。sync_unknown 可能发生在提交命令后回读不明，review_unknown 也可能发生在评审绑定校验失败；若不区分 remote task 当前状态和失败边界，笼统处理不能证明会跳过所有未提交或未进入评审席位。",
+    "建议条件要求 submission_verified===true，但 syncDailyBoard 在第二次进入时会先把该字段重置为 false；若 syncReviewedSeats 读取的是同一内存 record，该条件会拒绝刚由第一次同步验证、随后被重置的席位，交付没有说明在何处保留或重建该判定。",
+    "交付要求 review_unknown 时“只读取已存在 review receipt 并核对 remote review artifact，不再重新提交”，但没有给出如何从 remote task 而不是本地 seat 判定评审已存在，也没有定义 remote 仍为 claimed、submitted_pending_review、owner 冲突或 review 证据缺失时的状态迁移。",
+    "verification_commands 只有两个 node --check 和一个 hasUnverifiedBoard 内联表达式；当前交付没有新增 syncReviewedSeats，前两个检查最多验证现有文件语法，第三条只检查 hasUnverifiedBoard 对 review_unknown 模拟记录返回 true，不能验证双次同步修复、状态分流、幂等命令或评审回执。",
+    "第三条验证命令构造的 artifact 路径使用 deadbeef 占位且未创建对应文件，但命令只调用 hasUnverifiedBoard，不读取 artifact；它不能证明 validateArtifact、readRemote、review 绑定或 syncReviewedSeats 行为。",
+    "evidence_paths 列出的 knowledge/results/ans-cycle/2026-11-03-reviewer.json 是拒绝性评审回执，且其 artifact_sha256 与本次 hash 不同；它只能作为历史意见材料，不能证明本交付的新修复已经实现。",
+    "remaining_blocker 已明确承认真实运行环境、故障注入、重复模型调用/控制命令和字段覆盖均未验证；根据验收口径，只能确认这是问题分析与修复设想，不能认定补丁已执行、测试、合并、部署或上线。",
+    "监督结论拒绝 memory_promotion 是正确的：当前材料虽追加了完整来源文本，但没有可核验的来源文件提交版本、原始字节哈希复算流程、独立记忆工作流回执或评审通过证据；subject_sha256 与 source_sha256 的绑定关系仍未证明。"
+  ],
+  "unverified": [
+    "未取得工程交付 artifact 的原始字节，无法独立重算给定 artifact_sha256；本回执仅按要求严格回传该 hash。",
+    "未实际执行 node --check scripts/daily-task-board.mjs。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs。",
+    "未实际执行交付给出的 node 内联验证命令。",
+    "未取得或应用 syncReviewedSeats 的实际 diff，无法验证语法、缩进、导入/导出、函数边界和调用点替换。",
+    "未通过受控 ledger 与 fake snapshot/command/readRemote 测试验证第二次同步对 submission_verified、review_verified、accepted、submission_receipt、review_receipt、sync_reason 等字段的最终影响。",
+    "未验证第二次 syncDailyBoard 在网络失败、远端 artifact 缺失、snapshot 过期、任务 owner 冲突、review artifact 缺失或 hash 不一致时是否会发起重复 submit_task、fail_task 或其他控制命令。",
+    "未验证 completed_draft_review、rejected_draft_review、submitted_pending_review、sync_unknown、review_unknown、generated_pending_sync、failure_sync_unknown 等状态在建议分流中的允许和拒绝边界。",
+    "未验证 materializeDailyReview、syncDailyReview、recordDailyReviewReadback 对第二次同步的真实依赖，也未验证取消第二次全量同步后是否会遗漏必要的本地/远端回执收敛。",
+    "未验证建议实现不会触发额外模型调用、API 费用、重复采购或资金操作；静态源码显示 syncDailyBoard 本身不直接调用模型，但完整工作流未实证。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本或线上关键行为。",
+    "未取得 memory/daily/grok-2026-09-21.md 在具体提交中的原始字节，未复算 source_sha256=191206ba75561e42681cfef443ad461ef952f0ad18d1716af1b4ca91bba5bfc2。",
+    "未取得 subject_sha256=ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419 对应原始字节，无法确认其与候选文本或来源文件的哈希绑定。",
+    "未核实候选 CAND-20260921-1912 是否经过独立记忆评审、记忆工作流消费、晋升批准或核心记忆写入。",
+    "未取得监督工件原始字节，无法独立重算 supervisory artifact hash=9e24c56b569673360e355e019b587d4f5f52baae28c8da0b1d1140be0843a855；仅按要求回传。"
+  ],
+  "supervisory_review": {
+    "accepted": false,
+    "operation": "memory_promotion",
+    "subject_sha256": "ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419",
+    "artifact_sha256": "9e24c56b569673360e355e019b587d4f5f52baae28c8da0b1d1140be0843a855",
+    "reasons": [
+      "即使材料中给出了完整来源文本，也没有提供该来源文件所在 Git 提交、路径字节读取和 SHA-256 复算证据，不能证明 source_sha256 与 memory/daily/grok-2026-09-21.md 的实际版本绑定。",
+      "subject_sha256 是独立于 source_sha256 的另一哈希，但材料未提供 subject 原始字节、规范化规则或复算命令，无法确认候选 claim 与 subject_sha256 绑定。",
+      "候选内容是每日观察和可验证假设，材料没有独立评审者对事实边界、非医学结论、实验设计或长期记忆价值的通过回执。",
+      "没有证据显示该候选已进入并通过记忆晋升工作流，也没有核心记忆目标文件、提交哈希或回读记录；不能由工程监督草稿直接晋升。",
+      "监督工件自身只记录 prescreen rejected 和工程 artifact 关联，未提供可执行的记忆工作流批准证据；拒绝晋升与未验证事实状态相符。"
+    ],
+    "unverified": [
+      "未复算 source_sha256=191206ba75561e42681cfef443ad461ef952f0ad18d1716af1b4ca91bba5bfc2。",
+      "未复算 subject_sha256=ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419。",
+      "未复算监督工件 artifact_sha256=9e24c56b569673360e355e019b587d4f5f52baae28c8da0b1d1140be0843a855。",
+      "未验证来源文件的提交版本、仓库路径和完整字节与粘贴文本完全一致。",
+      "未验证候选是否已有独立记忆评审、批准回执或核心记忆部署回读。"
+    ]
+  }
+}
