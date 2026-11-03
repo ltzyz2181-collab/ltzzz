@@ -1,17 +1,34 @@
 {
   "schema": "ltzzz.patchgate.controller-progress.v1",
   "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
-  "at_utc": "2026-11-03T08:48:06.434Z",
-  "status": "A3_candidate_locally_tested_live_acceptance_pending",
+  "at_utc": "2026-11-03T09:05:04.249Z",
+  "status": "A3_single_isolated_target_live_verified_B0_local_EVM_passed_B1_and_production_payments_blocked",
   "A3": {
     "service": "ltzzz-patchgate-canary",
     "scope": "one_inert_isolated_target",
-    "local_checks": {"tests": 56, "passed": 56, "failed": 0},
-    "live_deployed": false,
-    "actual_version_reverification": false,
-    "financial_artifact_manifest": "verified_64_files_unchanged",
-    "financial_release_sha256": "2d5c5ea063476d8c325c9837a8b254c3f5470b1ac760aab024ce9762e40bbf28",
-    "deployment_receipt_expected_under": "knowledge/results/patchgate/a3/"
+    "local_checks": {
+      "tests": 56,
+      "passed": 56,
+      "failed": 0
+    },
+    "live_deployed": true,
+    "actual_version_reverification": true,
+    "financial_artifact_manifest": "unchanged_for_A3_updated_separately_for_B0_scope",
+    "deployment_receipt_expected_under": "knowledge/results/patchgate/a3/",
+    "implementation_pr": 354,
+    "merge_commit": "46fd581ae0a2e0880ee14598c5159cab643d9fd1",
+    "live_run_id": "41606351715",
+    "live_version_id": "fa4c7af6-9b12-47a5-b62e-f72127d32481",
+    "live_checks": {
+      "subject": true,
+      "transport": true,
+      "commit": true,
+      "fresh": true,
+      "current_version": true
+    },
+    "live_receipt": "knowledge/results/patchgate/a3/41606351715-attempt-1.json",
+    "live_receipt_git_blob": "35826997368360e7a9fcb786d8aa53f25d571b8a",
+    "financial_release_sha256_at_A3_acceptance": "2d5c5ea063476d8c325c9837a8b254c3f5470b1ac760aab024ce9762e40bbf28"
   },
   "external_AI_service_purchase": {
     "provider": "TinyFish",
@@ -22,10 +39,20 @@
     "duration_seconds": 39,
     "purpose": "anonymous_public_Deep_Superagent_browser_acceptance",
     "observed_source_commit": "a4b1d3345b0bfe06a7262a2a2848e47e8c4dc600",
-    "reported_checks": {"passed": 12, "failed": 0, "unverified": 1},
+    "reported_checks": {
+      "passed": 12,
+      "failed": 0,
+      "unverified": 1
+    },
     "unverified": "HTTP_401_status_not_directly_observed_in_browser_despite_unauthorized_response_body",
-    "wallet_before": {"USD": "7.232", "as_of": "2026-11-03T08:30:14.423Z"},
-    "wallet_after": {"USD": "7.088", "as_of": "2026-11-03T08:37:10.057Z"},
+    "wallet_before": {
+      "USD": "7.232",
+      "as_of": "2026-11-03T08:30:14.423Z"
+    },
+    "wallet_after": {
+      "USD": "7.088",
+      "as_of": "2026-11-03T08:37:10.057Z"
+    },
     "observed_wallet_delta_USD": "0.144",
     "invoice_verified": false,
     "customer_order": false,
@@ -54,7 +81,10 @@
       "API_balance": null
     },
     "billing_browser_service_cost": {
-      "wallet_after_billing_runs": {"USD": "6.928", "as_of": "2026-11-03T08:48:06.434Z"},
+      "wallet_after_billing_runs": {
+        "USD": "6.928",
+        "as_of": "2026-11-03T08:48:06.434Z"
+      },
       "observed_wallet_delta_USD": "0.160",
       "combined_external_test_and_login_runs_USD": "0.304",
       "API_credit_purchase_USD": "0",
@@ -63,23 +93,97 @@
     }
   },
   "B": {
-    "status": "public_testnet_fund_release_timeout_refund_not_yet_verified",
+    "status": "local_EVM_10_of_10_passed_B1_missing_existing_CDP_credentials",
     "live_testnet_transactions": [],
-    "mainnet_transfer": false
+    "mainnet_transfer": false,
+    "phase": "B0",
+    "implementation_pr": 356,
+    "merge_commit": "677c349460bfc76115ba649947aa8c664f54770e",
+    "Linux_CI": "41607745002",
+    "Linux_CI_status": "success",
+    "financial_controls_CI": "41607744826",
+    "financial_controls_CI_status": "success",
+    "B0_receipt": "knowledge/results/patchgate/escrow-b0/20261103-local-acceptance.json",
+    "B0_receipt_git_blob": "96c4e208ac3d6816e322225657dc6ffb569f8c3d",
+    "testnet_rpc_verified": true,
+    "testnet_chain_id": 84532,
+    "CDP_credential_bindings_present": false,
+    "keeper_verified": false,
+    "main_Linux_CI": {
+      "run_id": "41607876382",
+      "status": "success"
+    },
+    "main_financial_controls_CI": {
+      "run_id": "41607876501",
+      "status": "success"
+    }
   },
   "automatic_payment": {
     "enabled": false,
-    "observed_configuration_blockers": ["small_payment_registry_disabled", "controllers_payees_purposes_budget_ids_empty", "live_settlement_adapter_not_accepted"],
-    "treasury_controlled_false_not_proof_of_lost_key": true
+    "observed_configuration_blockers": [
+      "small_payment_registry_disabled",
+      "controllers_payees_purposes_budget_ids_empty",
+      "live_settlement_adapter_not_accepted"
+    ],
+    "treasury_controlled_false_not_proof_of_lost_key": true,
+    "actual_main_readback": {
+      "implementation_pr": 355,
+      "run_id": "41606747082",
+      "receipt": "knowledge/results/patchgate/payment-readiness/41606747082-attempt-1.json",
+      "receipt_git_blob": "93c1dfc4f69f0b0f8e99ae805c3059ff9eb9c2e7",
+      "live_customer_revenue_cents": 0,
+      "atomic_ledger_ready": false,
+      "legacy_writes_enabled": false,
+      "pending_Aave_intent": "AAVE-AUTO-bounded_supply-2026-10-20",
+      "old_external_order": {
+        "id": "EXT-AI-20261017-001",
+        "platform_reported_status": "paid_delivery_rejected",
+        "platform_reported_paid": true,
+        "platform_reported_tx_hash": "0x91e3941245fef223be3e1c2d726de6ef4fb730458861e0210cdbfed7b507d925",
+        "delivery_accepted": false,
+        "new_purchase": false
+      },
+      "daily_20261103_order_created": false
+    }
   },
   "lessons_applied": [
-    {"id": "L-20261030-002", "change": "Unknown native API balances, account eligibility and underlying TinyFish model remain null/unverified; live A3 waits for actual provider version API."},
-    {"id": "L-20261030-001", "change": "A3 workflow commit message reads its actual receipt status, including failures."},
-    {"id": "L-20261101-001", "change": "Deployment tests inject one clock, including stale Date and active-version race rejection."},
-    {"strategy": "execution_blocked", "change": "Same-source deployment is reconciled/reused; uncertain previous deployments block replacement. Billing login failures are preserved without repeated purchase."}
+    {
+      "id": "L-20261030-002",
+      "change": "Unknown native API balances, account eligibility and underlying TinyFish model remain null/unverified; live A3 waits for actual provider version API."
+    },
+    {
+      "id": "L-20261030-001",
+      "change": "A3 workflow commit message reads its actual receipt status, including failures."
+    },
+    {
+      "id": "L-20261101-001",
+      "change": "Deployment tests inject one clock, including stale Date and active-version race rejection."
+    },
+    {
+      "strategy": "execution_blocked",
+      "change": "Same-source deployment is reconciled/reused; uncertain previous deployments block replacement. Billing login failures are preserved without repeated purchase."
+    }
   ],
   "LTZZZ_chain_transactions": 0,
   "LTZZZ_chain_paid": false,
   "LTZZZ_chain_tx_hash": null,
-  "income": 0
+  "income": 0,
+  "current_financial_manifest": {
+    "source_files": 69,
+    "release_sha256": "d59d0c1a44b063863920936f1e38b6115610f2921d2684cc10431980ecf97c0c",
+    "scope": "explicitly_register_B0_testnet_only_source_no_production_activation"
+  },
+  "harness_public_metadata": {
+    "paths": [
+      "knowledge/results/harness-input/PATCHGATE-EXTERNAL-TEST-20261103.json",
+      "knowledge/results/harness-input/PATCHGATE-OPENAI-BILLING-20261103.json",
+      "knowledge/results/harness-input/PATCHGATE-CLAUDE-BILLING-20261103.json"
+    ],
+    "contains_private_input": false,
+    "weights_trained": false,
+    "observation_status": "cloud_observation_and_context_probe_executed",
+    "run_id": "41607876435",
+    "receipt": "knowledge/results/harness/41607876435.json",
+    "receipt_git_blob": "1da099f40fd26c962455a432d19f94dda85f22df"
+  }
 }
