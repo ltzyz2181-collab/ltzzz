@@ -1,0 +1,26 @@
+{
+  "finding": "scripts/daily-task-board.mjs 的 sync 分支在同步每日评审前后两次全量调用 syncDailyBoard，第二次调用没有按评审后状态分流，导致同一看板可能被重复全量同步并覆盖 submission/review 字段；这是派单消费与独立验收之间的真实断点。",
+  "evidence_paths": [
+    "scripts/daily-task-board.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-03-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/daily-task-board.mjs 中将第二次 await syncDailyBoard(options) 替换为仅同步评审后席位的函数 syncReviewedSeats；该函数遍历 ledger.seats，只处理 status 为 sync_unknown/review_unknown/submitted_pending_review/completed_draft_review/rejected_draft_review 且已有 artifact、submission_verified 为 true 的席位，调用与 syncDailyBoard 相同的验证/命令逻辑，但跳过所有未提交或未进入评审的席位，避免对 generated_pending_sync、failure_sync_unknown 等状态重复发起 submit/fail 命令。具体实现：从 ./lib/daily-task-board.mjs 导出 syncReviewedSeats，复用 validateArtifact、readRemote、snapshot、command、taskFor 等内部函数；若评审刚完成且 seat.status 为 review_unknown，则只读取已存在的 review receipt 并核对 remote review artifact，不再重新提交。",
+  "verification_commands": [
+    "node --check scripts/daily-task-board.mjs",
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const record={date:'2026-11-03',seats:{qianwen:{status:'review_unknown',submission_verified:true,artifact:{path:'knowledge/results/daily-board/artifacts/2026-11-03-qianwen-deadbeef.json',sha256:'deadbeef'.padEnd(64,'0')},assignment:{id:'DAILY-2026-11-03-qianwen'}}}}; console.log(m.hasUnverifiedBoard(record));})\""
+  ],
+  "remaining_blocker": "未在真实运行环境中验证第二次同步确实会覆盖 submission/review 字段；需在受控测试中注入 remote artifact 缺失、快照过期和评审冲突后运行 sync 分支，确认只处理评审后席位且不产生重复模型调用或控制命令。",
+  "supervisory_proposal": {
+    "accepted": false,
+    "operation": "memory_promotion",
+    "subject_sha256": "ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419",
+    "reasons": [
+      "未取得 subject 原始字节并重算 SHA-256，无法确认 source_text 与 subject_sha256 绑定关系。",
+      "source_text 未提供完整来源文件路径及提交证据，不能从当前材料证明该候选来自 memory/daily/grok-2026-09-21.md 的实际文件内容。",
+      "未核实候选是否已经过独立评审或记忆工作流处理，不能仅凭材料内自我声明晋升为核心记忆。",
+      "缺少独立复核者回执与评审通过证据，不能由工程草稿推导该记忆候选可晋升。"
+    ]
+  }
+}
