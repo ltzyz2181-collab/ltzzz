@@ -39,6 +39,16 @@
 - [x] 互派实测（豆包→WorkBuddy）：测试邮件已发送并回读 sent（msg_d6_3BE5f…）。
 - [ ] WorkBuddy→豆包 方向互派：待 WorkBuddy 席发信回执。
 - [ ] GPT 删除部分邮件：GPT 席侧执行（本席无 Gmail 登录态，不代操作；转 GPT 跟进）。
+- [x] **GPT 人工拍板通道建立（2026-11-03 15:54 CST）**：按 owner 新分工口径，豆包席今后遇到需人工拍板/异常处置事项，以邮件发至 GPT 人工席位（ltzyz2181@gmail.com）；通道测试邮件已发送并回读 sent（msg_3WOuC6NRFOD2FeFkOx8kNhmba4xPA0gBfa8V4WfS_j4XCg，2026-11-03T07:54:28Z，to=ltzyz2181@gmail.com）。
+
+## 分工口径（owner 定稿，2026-11-03）
+
+| 席位 | 角色 |
+|---|---|
+| DeepSeek | 日常总控 |
+| 豆包 / 千问 / Kimi | 通过现有 Key 通道执行 |
+| GPT | 需要判断与异常处理时的人工介入席位（拍板） |
+| 原厂 GPT / Claude | 保留接口位 |
 
 ## 记账
 
