@@ -62,6 +62,9 @@ async function load() {
     getJson('/health'),
     getJson('/regression'),
   ]);
+  if (!d || typeof d !== 'object' || Array.isArray(d) || !h || typeof h !== 'object' || Array.isArray(h) || !reg || typeof reg !== 'object' || Array.isArray(reg)) throw Error('Treasury API 响应结构异常');
+  if (d.counts != null && (typeof d.counts !== 'object' || Array.isArray(d.counts))) throw Error('Treasury counts 结构异常');
+  if (d.agents != null && (typeof d.agents !== 'object' || Array.isArray(d.agents))) throw Error('Treasury agents 结构异常');
   const c = d.counts || {};
   document.getElementById('stats').innerHTML = [
     ['今日支出', d.today_spend == null ? '未知' : d.today_spend + ' U'],
