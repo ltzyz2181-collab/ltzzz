@@ -29,7 +29,7 @@
     },
     {
       "path": "experiments/testnet-escrow/package-lock.json",
-      "sha256": "85a1790edb105e00e920ecc1019966c1f36644ddca62e1412503519be41d51a0"
+      "sha256": "1f901a3826510b3c0a8a86deb5351b358c1d6b72c20f65ad8274703fb398c665"
     }
   ],
   "local_EVM_chain_id": 31337,
@@ -49,5 +49,28 @@
   "public_chain_transactions": 0,
   "paid": false,
   "tx_hash": null,
-  "income": 0
+  "income": 0,
+  "CI_initial_failures": {
+    "local_EVM": {
+      "run_id": "41607219608",
+      "reason": "npm_ci_EBADPLATFORM_extraneous_bundled_fsevents_Darwin_dependency",
+      "repair": "remove_only_extraneous_lock_entries_preserve_actual_and_bundled_dependency_integrity"
+    },
+    "financial_inventory": {
+      "run_id": "41607219661",
+      "reason": "unregistered_financial_primitive_new_testnet_contract",
+      "repair": "register_exact_contract_hash_scope_and_guards_update_bound_inventory_and_manifest_without_disabling_detector"
+    }
+  },
+  "financial_manifest": {
+    "previous_release_sha256": "2d5c5ea063476d8c325c9837a8b254c3f5470b1ac760aab024ce9762e40bbf28",
+    "new_release_sha256": "d59d0c1a44b063863920936f1e38b6115610f2921d2684cc10431980ecf97c0c",
+    "production_payment_activation": false
+  },
+  "clean_locked_install": {
+    "command": "npm ci --ignore-scripts --no-audit --no-fund",
+    "status": "passed_after_removing_extraneous_lock_metadata",
+    "EVM_tests_passed": 10,
+    "root_financial_tests_passed": 242
+  }
 }
