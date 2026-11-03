@@ -5,6 +5,12 @@ import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.
 import {ORIGIN,MAX_WAIT_MS,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
+test('GPT queue evidence preserves code-owned content findings without arbitrary model fields',()=>{
+ const gate={revision:'executor-metadata-declarations-v1',source_commit:RUNTIME,passed:false,phase:'after_independent_review',findings:[{code:'unsupported_executor_metadata_declaration',field:'executed_by',line:2,seat:'qianwen',output_sha256:'c'.repeat(64),arbitrary:'drop me'}],arbitrary:'drop me'};
+ const result=publicJob({content_guard_revision:gate.revision,content_gate:{...gate,checks:[gate]}});
+ assert.equal(result.content_guard_revision,gate.revision);assert.equal(result.content_gate.passed,false);assert.equal(result.content_gate.findings[0].seat,'qianwen');
+ assert.equal(result.content_gate.findings[0].output_sha256,'c'.repeat(64));assert.equal(result.content_gate.checks.length,1);assert.doesNotMatch(JSON.stringify(result),/drop me/);
+});
 const input={task_id:'DSA-QUEUE-TEST-01',package_id:'PUBLIC-OWN-01',prompt:'Use only this LTZZZ-owned fictional dataset; explain why offline tests are not production acceptance.',data_classification:'public_distributable',platform:'internal'};
 const inputHash=await sha256(JSON.stringify(normalizeJob(input)));
 function fixture(patch={}){

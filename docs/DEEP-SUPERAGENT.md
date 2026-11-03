@@ -15,6 +15,8 @@
 
 普通工程与运营决策由已授权决策席处理，不重复要求 owner 确认；评审负责监督和保留异议。平台强制本人验证、外部法律条件和现有机器资金策略仍按实际要求执行。决策席不能把缺少凭据、执行能力或供应商回执变成“已完成”。
 
+原厂接口位已登记官方地址、服务端凭证绑定名称和空模型配置；它们当前未启用、未验收。以后实际额度和凭证可用时，由 GPT 按已有授权安排原厂执行器和真实调用验收，不额外等待 Claude 同意，也不把原有国内代理改名当原厂模型。
+
 ## 首版边界与两套系统并行
 
 唯一配置是 [`config/deep-superagent.json`](../config/deep-superagent.json)。首版只接受**自有且可分发的公开输入**；客户私密包、受限平台材料和凭据不进入此通道、公开仓库或额外模型。
@@ -64,5 +66,9 @@ UUMit 的 UT、WorkBuddy 结算、uGIG USD 和链上 USDC 不合并成一套收�
 行动前复用 `node scripts/harness.mjs before receipt,model_output,input_hash,external_platform`。每轮失败先保存实际边界和原请求 ID；结果未知先对账，再决定是否恢复。改变方法后用对应回归检查证明改变，不能用重复付费请求掩盖旧失败。
 
 通过现有 `knowledge/results/harness-input/` 入口提交 `ltzzz.harness.public-outcome.v1` 公共元数据封装，由已有 Reflection Harness 观察。封装区分 `draft`、`test_passed`、`submitted`、`platform_accepted`、`platform_rejected`、`blocked`、`unknown`；接受仍需原任务的真实平台证据。它改善经验检索与检查，不训练基础模型权重，也不证明所有桌面客户端已加载。
+
+首次真实五次原生调用已记录在 `bootstrap-41599473437-attempt-1.json`；云端原任务和 GPT 决定回传已在 `queue-41600598432-attempt-1.json` 回读，调用数仍为5。千问原文编造执行者/模型、回执路径和缩写哈希，虽然 DeepSeek 复核指出问题但给出 `approved=true`，GPT 仍按原执行 ID 请求修改，没有重购该任务。
+
+针对这次错误，新任务增加 `executor-metadata-declarations-v1` 检查：仅识别原文中若干直接的执行元数据声明，保留引用、代码示例和明确未知值；发现项绑定输出哈希并交给 GPT，即使复核模型说通过也不能清除。真实旧输出用于离线回放，旧任务和原模型意见保留。这不是通用事实校验，也不意味着新版本重新执行过那五次模型调用。
 
 本说明和配置不声明部署完成。实际部署、鉴权、任务认领、不同提供商生成/复核、回执和生产版本，须由本任务真实运行记录与线上回读分别验收；缺失项保持明确未验证。
