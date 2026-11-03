@@ -69,11 +69,15 @@ function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
 // A public-own-input queue receipt includes actual outputs for the GPT decision
 // seat to inspect with GitHub tools. It excludes auth headers and unknown fields.
 export function publicJob(job){
- const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error']);
+ const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error']);
  result.receipts=(job.receipts||[]).map(r=>pick(r,['stage','seat','actual_provider','actual_model','task_id','execution_id','source_commit','started_at','completed_at','status','generation_verified','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','tokens_used','reasoning_tokens','completion_tokens','upstream_http','output_sha256','error','accepted','paid','tx_hash']));
  result.outputs=(job.outputs||[]).map(o=>pick(o,['seat','actual_provider','task','text','sha256','request_id']));
  if(job.plan)result.plan={...pick(job.plan,['summary','needs_gpt_decision','reason']),tasks:(job.plan.tasks||[]).map(t=>pick(t,['seat','task']))};
  if(job.review)result.review={...pick(job.review,['approved','summary','needs_gpt_decision','reason','actual_provider','actual_model','output_sha256','independent_of_worker_providers']),reviewed:(job.review.reviewed||[]).map(v=>pick(v,['seat','sha256']))};
+ if(job.content_gate){
+  const gate=value=>({...pick(value,['phase','at','revision','source_commit','passed']),findings:(value.findings||[]).map(v=>pick(v,['code','field','line','seat','output_sha256']))});
+  result.content_gate={...gate(job.content_gate),checks:(job.content_gate.checks||[]).map(gate)};
+ }
  if(job.escalation)result.escalation=pick(job.escalation,['seat','kind','task_id','package_id','execution_id','input_sha256','reason','recipient','delivery','email_sent','gpt_decision_recorded','personal_owner_approval_required']);
  if(job.decision)result.decision={...pick(job.decision,['seat','kind','identity_source','actual_provider','actual_model','at','decision_id']),payload:decisionPayload(job.decision.payload||{})};
  return result;
