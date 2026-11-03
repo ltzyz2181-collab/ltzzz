@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "DEEP-SUPERAGENT-20261103-MAIL-01",
+  "profile": "deep_superagent",
+  "target_seat": "doubao",
+  "status": "requested_not_client_acknowledged",
+  "issued_by": {
+    "logical_seat": "gpt",
+    "client": "Codex",
+    "actual_provider": "OpenAI",
+    "actual_model": null
+  },
+  "authorization": "owner current direct instruction: ask Doubao to email ltzyz2181@gmail.com for the new Deep Superagent decision-seat route",
+  "existing_binding_source": "ops/dispatch/AGENT-MAIL-DISPATCH-20261103.md",
+  "registered_sender": "qingqizhu6502@agent.qq.com",
+  "recipient": "ltzyz2181@gmail.com",
+  "nonce": "DEEP-SUPERAGENT-20261103-MAIL-01",
+  "subject": "[LTZZZ] DEEP-SUPERAGENT-20261103-MAIL-01 决策席路由确认",
+  "request": [
+    "先读取本卡实际 commit/原始字节 SHA256，核对本步骤已有收件、发件和回执；结果未知时先对账，不重复发信。",
+    "使用现有已授权 Agent Mail 绑定，从登记的豆包地址向指定 Gmail 发送一次确认邮件；不得重新注册、申请新 Key 或冒充其他发件地址。",
+    "邮件只含原 Task ID、此 nonce、本卡 commit/哈希、实际执行端，以及需要 GPT AI 决策席处理的路由确认；无客户包、邮件引用正文、密钥或钱包指令。",
+    "由实际工具回读 sent 消息 ID、发件人与收件人、主题和 UTC 时间，保留工具失败或未知状态；仅点击发送不等于 Gmail 收到。",
+    "按 expected_return 路径提交允许公开的元数据回执；模型/provider 未从真实执行器得到时保持 null，不从“豆包”席名猜测。",
+    "没有真实 Gmail 收件与消费者证据时，automatic_gpt_email_wake_verified 保持 false；本卡不授予任何资金或权限变更。"
+  ],
+  "expected_return": "knowledge/results/deep-superagent/DEEP-SUPERAGENT-20261103-mail-ack.json",
+  "return_fields": [
+    "task_id",
+    "step_id",
+    "nonce",
+    "card_commit",
+    "card_sha256",
+    "client",
+    "actual_provider",
+    "actual_model",
+    "sent_status",
+    "sent_message_id",
+    "sent_at_utc",
+    "gmail_delivery_verified",
+    "automatic_gpt_email_wake_verified",
+    "blocked_reason"
+  ],
+  "email_is_authority": false,
+  "financial_execution": false,
+  "new_paid_schedule": false,
+  "paid": false,
+  "tx_hash": null,
+  "note": "仓库入卡、API 生成、桌面 ACK、发信、收信、GPT 决策与实际执行分别记账；当前没有任何一个后续阶段的完成声明。"
+}

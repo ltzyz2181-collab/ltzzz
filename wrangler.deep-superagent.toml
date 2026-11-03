@@ -1,0 +1,30 @@
+name = "ltzzz-deep-superagent"
+main = "workers/deep-superagent/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+# No model keys, financial bindings, cron or access to either existing ledger.
+# SUPERAGENT_SOURCE_COMMIT is injected by the trusted-main deployment executor.
+[[services]]
+binding = "DEEPSEEK"
+service = "ltzzz-deepseek-proxy"
+
+[[services]]
+binding = "DOUBAO"
+service = "ltzzz-doubao-proxy"
+
+[[services]]
+binding = "QIANWEN"
+service = "ltzzz-qianwen-proxy"
+
+[[services]]
+binding = "KIMI"
+service = "ltzzz-kimi-proxy"
+
+[[durable_objects.bindings]]
+name = "TASKS"
+class_name = "DeepTask"
+
+[[migrations]]
+tag = "deep-task-v1"
+new_sqlite_classes = ["DeepTask"]
