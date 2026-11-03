@@ -1,0 +1,76 @@
+{
+  "schema": "ltzzz.escrow.B0-local.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "at_utc": "2026-11-03T08:57:30.291Z",
+  "status": "local_EVM_10_of_10_passed_public_testnet_pending",
+  "node": "v22.23.4",
+  "tests": {
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "raw_output": "knowledge/results/patchgate/escrow-b0/20261103-local-tests.tap"
+  },
+  "source_files": [
+    {
+      "path": "experiments/testnet-escrow/contracts/TestnetTaskEscrow.sol",
+      "sha256": "488c644d62eff134ab852c4b2d24da8e50c6f79aaa1862e369fe5d6263834a67"
+    },
+    {
+      "path": "experiments/testnet-escrow/contracts/MockToken.sol",
+      "sha256": "320db1dd11b7aa54ea73ac91a19952fe7f114040d6d9f1429cb822ad54943292"
+    },
+    {
+      "path": "experiments/testnet-escrow/test/escrow.test.mjs",
+      "sha256": "a5a21a80914d5c06def56a012f3ad2881974cfdf77ade6a9b4f2911f93ecdd80"
+    },
+    {
+      "path": "experiments/testnet-escrow/package.json",
+      "sha256": "48eb1899dff3bef0b4890b60481c5374b300b2f8c9de1afa7bab055a2470845a"
+    },
+    {
+      "path": "experiments/testnet-escrow/package-lock.json",
+      "sha256": "1f901a3826510b3c0a8a86deb5351b358c1d6b72c20f65ad8274703fb398c665"
+    }
+  ],
+  "local_EVM_chain_id": 31337,
+  "public_testnet_transactions": [],
+  "controller_mode": "immutable_controller_authenticated_by_normal_chain_transaction",
+  "review_role": "supervision_not_model_signature_veto",
+  "only_testnet_and_local_chain": true,
+  "beneficiary": "immutable_funder_only_for_first_pilot",
+  "B1_blocker_evidence": "knowledge/results/patchgate/payment-readiness/41606747082-attempt-1.json",
+  "B1_blockers": [
+    "CDP_credentials_absent_in_actual_main_runner",
+    "testnet_account_control_gas_token_and_contract_not_verified",
+    "public_testnet_fund_release_timeout_refund_receipts_missing",
+    "automatic_keeper_not_deployed_or_verified"
+  ],
+  "model_calls": 0,
+  "public_chain_transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "income": 0,
+  "CI_initial_failures": {
+    "local_EVM": {
+      "run_id": "41607219608",
+      "reason": "npm_ci_EBADPLATFORM_extraneous_bundled_fsevents_Darwin_dependency",
+      "repair": "remove_only_extraneous_lock_entries_preserve_actual_and_bundled_dependency_integrity"
+    },
+    "financial_inventory": {
+      "run_id": "41607219661",
+      "reason": "unregistered_financial_primitive_new_testnet_contract",
+      "repair": "register_exact_contract_hash_scope_and_guards_update_bound_inventory_and_manifest_without_disabling_detector"
+    }
+  },
+  "financial_manifest": {
+    "previous_release_sha256": "2d5c5ea063476d8c325c9837a8b254c3f5470b1ac760aab024ce9762e40bbf28",
+    "new_release_sha256": "d59d0c1a44b063863920936f1e38b6115610f2921d2684cc10431980ecf97c0c",
+    "production_payment_activation": false
+  },
+  "clean_locked_install": {
+    "command": "npm ci --ignore-scripts --no-audit --no-fund",
+    "status": "passed_after_removing_extraneous_lock_metadata",
+    "EVM_tests_passed": 10,
+    "root_financial_tests_passed": 242
+  }
+}
