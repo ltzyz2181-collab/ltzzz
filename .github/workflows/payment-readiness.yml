@@ -1,0 +1,51 @@
+name: Observe existing payment and testnet capability without payment
+on:
+  pull_request:
+    paths: ['scripts/run-payment-readiness.mjs','scripts/tests/payment-readiness.test.mjs','.github/workflows/payment-readiness.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/run-payment-readiness.mjs','scripts/tests/payment-readiness.test.mjs','.github/workflows/payment-readiness.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: payment-readiness-observation, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/payment-readiness.test.mjs
+  observe:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Read fixed status endpoints and existing credential presence; never sign or pay
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WEP3_RUNNER_TOKEN: ${{ secrets.WEP3_RUNNER_TOKEN }}
+          CDP_API_KEY_ID: ${{ secrets.CDP_API_KEY_ID || secrets.CDP_API_KEY_NAME || secrets.COINBASE_API_KEY_ID }}
+          CDP_API_KEY_SECRET: ${{ secrets.CDP_API_KEY_SECRET || secrets.COINBASE_API_KEY_SECRET }}
+          CDP_WALLET_SECRET: ${{ secrets.CDP_WALLET_SECRET || secrets.COINBASE_WALLET_SECRET }}
+        run: node scripts/run-payment-readiness.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: payment-readiness-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/patchgate/payment-readiness/
+      - name: Preserve observation only
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/patchgate/payment-readiness/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record actual payment and testnet readiness observation without activation'
+          node tools/push-receipt-commit.mjs
