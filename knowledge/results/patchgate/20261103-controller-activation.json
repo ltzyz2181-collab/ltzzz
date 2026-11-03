@@ -1,0 +1,85 @@
+{
+  "schema": "ltzzz.patchgate.controller-progress.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "at_utc": "2026-11-03T08:48:06.434Z",
+  "status": "A3_candidate_locally_tested_live_acceptance_pending",
+  "A3": {
+    "service": "ltzzz-patchgate-canary",
+    "scope": "one_inert_isolated_target",
+    "local_checks": {"tests": 56, "passed": 56, "failed": 0},
+    "live_deployed": false,
+    "actual_version_reverification": false,
+    "financial_artifact_manifest": "verified_64_files_unchanged",
+    "financial_release_sha256": "2d5c5ea063476d8c325c9837a8b254c3f5470b1ac760aab024ce9762e40bbf28",
+    "deployment_receipt_expected_under": "knowledge/results/patchgate/a3/"
+  },
+  "external_AI_service_purchase": {
+    "provider": "TinyFish",
+    "underlying_model": null,
+    "run_id": "13f9f391-8469-4b86-8891-821883cd3144",
+    "status": "completed",
+    "steps": 9,
+    "duration_seconds": 39,
+    "purpose": "anonymous_public_Deep_Superagent_browser_acceptance",
+    "observed_source_commit": "a4b1d3345b0bfe06a7262a2a2848e47e8c4dc600",
+    "reported_checks": {"passed": 12, "failed": 0, "unverified": 1},
+    "unverified": "HTTP_401_status_not_directly_observed_in_browser_despite_unauthorized_response_body",
+    "wallet_before": {"USD": "7.232", "as_of": "2026-11-03T08:30:14.423Z"},
+    "wallet_after": {"USD": "7.088", "as_of": "2026-11-03T08:37:10.057Z"},
+    "observed_wallet_delta_USD": "0.144",
+    "invoice_verified": false,
+    "customer_order": false,
+    "chain_transaction": false,
+    "paid": true,
+    "tx_hash": null,
+    "income": 0,
+    "separate_from_LTZZZ_treasury_and_customer_revenue": true
+  },
+  "native_API_billing": {
+    "OpenAI": {
+      "run_id": "90afc128-7bc7-4822-8736-66a8ce0bfd48",
+      "steps": 6,
+      "status": "blocked_actual_API_login_required",
+      "observed_url": "https://platform.openai.com/login?next=%2Fsettings%2Forganization%2Fbilling%2Foverview",
+      "API_purchase": false,
+      "API_balance": null,
+      "eligible_subscription_credit_grant": "unverified"
+    },
+    "Anthropic": {
+      "run_id": "f8ca0712-caa4-4edb-8dce-98530f6121cf",
+      "steps": 4,
+      "status": "blocked_actual_API_login_required",
+      "observed_login": "Google_or_email_SSO_login_form",
+      "API_purchase": false,
+      "API_balance": null
+    },
+    "billing_browser_service_cost": {
+      "wallet_after_billing_runs": {"USD": "6.928", "as_of": "2026-11-03T08:48:06.434Z"},
+      "observed_wallet_delta_USD": "0.160",
+      "combined_external_test_and_login_runs_USD": "0.304",
+      "API_credit_purchase_USD": "0",
+      "auto_reload": "unconfigured",
+      "pending_top_up": null
+    }
+  },
+  "B": {
+    "status": "public_testnet_fund_release_timeout_refund_not_yet_verified",
+    "live_testnet_transactions": [],
+    "mainnet_transfer": false
+  },
+  "automatic_payment": {
+    "enabled": false,
+    "observed_configuration_blockers": ["small_payment_registry_disabled", "controllers_payees_purposes_budget_ids_empty", "live_settlement_adapter_not_accepted"],
+    "treasury_controlled_false_not_proof_of_lost_key": true
+  },
+  "lessons_applied": [
+    {"id": "L-20261030-002", "change": "Unknown native API balances, account eligibility and underlying TinyFish model remain null/unverified; live A3 waits for actual provider version API."},
+    {"id": "L-20261030-001", "change": "A3 workflow commit message reads its actual receipt status, including failures."},
+    {"id": "L-20261101-001", "change": "Deployment tests inject one clock, including stale Date and active-version race rejection."},
+    {"strategy": "execution_blocked", "change": "Same-source deployment is reconciled/reused; uncertain previous deployments block replacement. Billing login failures are preserved without repeated purchase."}
+  ],
+  "LTZZZ_chain_transactions": 0,
+  "LTZZZ_chain_paid": false,
+  "LTZZZ_chain_tx_hash": null,
+  "income": 0
+}
