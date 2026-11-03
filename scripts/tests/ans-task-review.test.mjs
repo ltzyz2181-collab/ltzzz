@@ -4,3 +4,20 @@ function fixture(){let s=seedTasks({},now),id=s.task_board[0].id;s=taskCommand(s
 const cmd=id=>({action:'review_task',task_id:id,agent:'doubao',accepted:true,reviewed_sha256:'a'.repeat(64),scope:'engineering_draft_only',worker_actual_provider:'deepseek',reviewer_actual_provider:'doubao',review_evidence_path:'knowledge/results/review.json',review_evidence_sha256:'b'.repeat(64)});
 test('independent hash-bound review closes a draft exactly once without cash or deployment',()=>{const {s,id}=fixture(),c=cmd(id),r=taskCommand(s,c,'qianwen',agents,now),t=r.state.task_board.find(t=>t.id===id);assert.equal(t.status,'completed_draft_review');assert.equal(t.paid,false);assert.equal(t.deployed,false);assert.equal(t.tx_hash,null);assert.equal(taskCommand(r.state,c,'gpt',agents,now).duplicate,true);assert.throws(()=>taskCommand(r.state,{...c,accepted:false},'gpt',agents,now));});
 test('wrong hashes, self-audit, path traversal and inflated deployed scope cannot close a task',()=>{const {s,id}=fixture();for(const patch of [{reviewed_sha256:'c'.repeat(64)},{reviewer_actual_provider:'deepseek'},{review_evidence_path:'ops/../../secret'},{scope:'production_deployed'},{accepted:'true'}])assert.throws(()=>taskCommand(s,{...cmd(id),...patch},'gpt',agents,now));});
+
+test('rejected ANS draft is terminal: same review idempotent, opposite review and resubmission blocked',()=>{
+ const {s,id}=fixture(),rejection={...cmd(id),accepted:false};
+ const first=taskCommand(s,rejection,'qianwen',agents,now);
+ const t=first.state.task_board.find(task=>task.id===id);
+ assert.equal(t.status,'rejected_draft_review');
+ assert.equal(t.review.accepted,false);
+ assert.equal(t.paid,false);
+ assert.equal(t.deployed,false);
+ assert.equal(t.tx_hash,null);
+ assert.equal(taskCommand(first.state,rejection,'qianwen',agents,now).duplicate,true);
+ assert.throws(()=>taskCommand(first.state,{...cmd(id),review_evidence_sha256:'c'.repeat(64)},'qianwen',agents,now),/review_already_final/);
+ const resubmit={action:'submit_task',task_id:id,agent:'deepseek',evidence_path:'knowledge/results/worker.json',evidence_sha256:'a'.repeat(64)};
+ assert.throws(()=>taskCommand(first.state,resubmit,'gpt',agents,now),/task_not_claimed/);
+ assert.throws(()=>taskCommand(first.state,{action:'claim_task',task_id:id,agent:'deepseek'},'gpt',agents,now),/task_not_available/);
+ assert.equal(first.state.task_board.some(task=>task.id===id+'-recheck'),false);
+});
