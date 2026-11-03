@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker,{DeepTask,normalizeJob,parsePlan,verifyReview,sha256} from '../../workers/deep-superagent/index.js';
+import fs from 'node:fs';
+import worker,{DeepTask,normalizeJob,parsePlan,verifyReview,sha256,unsupportedMetadataDeclarations,CONTENT_GUARD_REVISION} from '../../workers/deep-superagent/index.js';
 
 const TOKEN='test-only-service-token-not-a-real-key';
 const INPUT={task_id:'DEEP-SUPERAGENT-20261103-TEST',package_id:'',prompt:'Create a concise source-checking checklist; exercise all three workers.',data_classification:'public_distributable',platform:'internal'};
@@ -13,7 +14,7 @@ class Storage {
   async getAlarm(){return this.alarmTime;}
   transaction(fn){const result=this.tail.then(()=>fn(this));this.tail=result.catch(()=>{});return result;}
 }
-function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOverride=null}={}){
+function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOverride=null,workerOutput={}}={}){
   const objects=new Map(),calls=[];
   const env={LTZZZ_AGENT_TOKEN:TOKEN,SUPERAGENT_SOURCE_COMMIT:'a'.repeat(40)};
   for(const [binding,seat] of Object.entries({DEEPSEEK:'deepseek',DOUBAO:'doubao',QIANWEN:'qianwen',KIMI:'kimi'}))env[binding]={async fetch(request){
@@ -25,7 +26,7 @@ function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOve
     else if(seat==='deepseek'){
       const input=JSON.parse(body.messages[1].content);
       output=JSON.stringify(reviewOverride??{approved:true,summary:'Three reviewed source-check contributions; source access still requires evidence.',reviewed:input.outputs.map(v=>({seat:v.seat,sha256:v.sha256})),needs_gpt_decision:false});
-    }else output=seat+' draft: cite the actual source, timestamp and uncertainty.';
+    }else output=workerOutput[seat]??seat+' draft: cite the actual source, timestamp and uncertainty.';
     const receipt={executed_by:seat,task_id:body.task_id,actual_model:seat+'-provider-model',model_source:'provider_response',model_identity_verification:'upstream_metadata_not_cryptographic_attestation',request_id:'internal-'+calls.length,provider_response_id:'upstream-'+calls.length,upstream_request_id:null,finish_reason:seat===badSeat?'length':'stop',generation_verified:seat!==badSeat,tokens_used:123};
     return Response.json({model:receipt.actual_model,choices:[{message:{content:output},finish_reason:receipt.finish_reason}],ltzzz_receipt:receipt});
   }};
@@ -108,4 +109,33 @@ test('concurrent conflicting GPT decisions cannot overwrite each other',async()=
  const d={decision_id:'GPT-DECISION-ATOMIC-01',execution_id:job.execution_id,reviewed_input_sha256:job.input_sha256,decision:'keep_blocked',reason:'Keep actual evidence.'};
  const results=await Promise.all([f.request('/v1/jobs/'+INPUT.task_id+'/decision','POST',d),f.request('/v1/jobs/'+INPUT.task_id+'/decision','POST',{...d,decision_id:'GPT-DECISION-ATOMIC-02',decision:'approve_internal_draft'})]);
  assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);assert.equal((await task.state.storage.get('job')).decision.decision_id,d.decision_id);
+});
+const historical=JSON.parse(fs.readFileSync(new URL('../../knowledge/results/deep-superagent/bootstrap-41599473437-attempt-1.json',import.meta.url),'utf8')).bootstrap.job;
+const historicalQwen=historical.outputs.find(o=>o.seat==='qianwen');
+test('actual native Qwen counterexample flags fabricated executor/model/path/hash prose without changing its native identity',async()=>{
+ assert.equal(await sha256(historicalQwen.text),historicalQwen.sha256);
+ assert.deepEqual(unsupportedMetadataDeclarations(historicalQwen.text).map(f=>f.field),['executed_by','receipt_path','input_sha256']);
+ const receipt=historical.receipts.find(r=>r.seat==='qianwen');assert.equal(receipt.actual_provider,'aliyun_dashscope');assert.equal(receipt.actual_model,'qwen-plus');
+ assert.equal(historical.review.approved,true);assert.equal(historical.model_calls,5);
+});
+test('explicit unknown metadata and quoted/fenced examples do not assert unsupported execution facts',()=>{
+ for(const text of ['Executed by: unknown\nReceipt path: unverified\nInput hash (sha256): not computed','**Model:** 未核验\nActual provider: null','> *Executed by:* DeepSeek\n> Input hash: deadbeef','```json\nExecuted by: DeepSeek\nReceipt path: /invented\n```','~~~\nInput hash: a1f8...c3e7\n~~~','`Executed by: DeepSeek`','"Executed by: DeepSeek"','Example: Executed by: DeepSeek','Source A says three tests passed; no actual test log was supplied.'])assert.deepEqual(unsupportedMetadataDeclarations(text),[]);
+ assert.equal(unsupportedMetadataDeclarations('| Executed by | DeepSeek |').length,1);
+});
+test('code-owned metadata findings force GPT escalation despite a model approving the draft, without additional calls',async()=>{
+ const f=fixture({workerOutput:{qianwen:historicalQwen.text}});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+ const job=await task.state.storage.get('job');assert.equal(job.status,'needs_gpt_decision');assert.equal(job.escalation.reason,'unsupported_worker_executor_metadata');
+ assert.equal(job.review.approved,true);assert.equal(job.review.needs_gpt_decision,false);assert.equal(job.model_calls,5);assert.equal(f.calls.length,5);
+ assert.equal(job.content_gate.revision,CONTENT_GUARD_REVISION);assert.equal(job.content_gate.source_commit,'a'.repeat(40));assert.equal(job.content_gate.passed,false);
+ assert.deepEqual(job.content_gate.checks.map(c=>c.phase),['before_independent_review','after_independent_review']);
+ for(const flag of job.content_gate.findings){assert.equal(flag.seat,'qianwen');assert.equal(flag.output_sha256,historicalQwen.sha256);assert.ok(Number.isInteger(flag.line));}
+ const actual=job.receipts.find(r=>r.seat==='qianwen');assert.equal(actual.actual_provider,'aliyun_dashscope');assert.equal(actual.actual_model,'qianwen-provider-model');
+ for(const call of f.calls)assert.match(call.body.messages[0].content,/do not invent or report those metadata declarations/);
+ await task.alarm();assert.equal(f.calls.length,5);
+});
+test('existing terminal jobs remain byte-equivalent after the new guard is installed',async()=>{
+ const f=fixture();await f.request();const task=[...f.objects.values()][0];await task.state.storage.put('job',historical);
+ const before=JSON.stringify(await task.state.storage.get('job'));await task.alarm();
+ assert.equal(JSON.stringify(await task.state.storage.get('job')),before);assert.equal(f.calls.length,0);assert.equal(historical.content_gate,undefined);
+ const health=await (await f.request('/health','GET',null,{})).json();assert.equal(health.revision,'ltzzz.deep-superagent.v1');assert.equal(health.content_guard_revision,CONTENT_GUARD_REVISION);
 });
