@@ -1,0 +1,61 @@
+{
+  "task_id": "S1-LEGACY-AAVE-ANS-REVIEW-20261103",
+  "original_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "card_sha256": "a9e0348835e220dec5c134fb12b29d0b6f8c0d92cfbcfcf36d0ed4261d1c8c01",
+  "run_id": "41592650507",
+  "executor": "qianwen",
+  "queue_dispatcher": "qianwen",
+  "at": "2026-11-03T06:52:48.346Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:S1-LEGACY-AAVE-ANS-REVIEW-20261103",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "79a426f65ea5cf7ceb44a9a34c60bc7d0c524e8dae6bff2ae3e192b06b8fe184",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "8cbf2da87e324f72b7ad50d0f7fb48ca47e2f279b602716fc2fea1dd517b3081"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-plus",
+  "generated_by_model": "qwen-plus",
+  "attribution_note": "generation by qwen-plus via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 3475,
+  "request_id": "caa1a6b5-7601-9172-9cc1-fb301592f68b",
+  "output": "{\n  \"verdict350\": \"PASS\",\n  \"verdict349\": \"PASS\",\n  \"findings\": [\n    {\n      \"lesson_id\": \"L-20261030-002\",\n      \"evidence\": \"scripts/aave-owner-funding.mjs contains explicit call to denyLegacyFinancialExecution('scripts/aave-owner-funding.mjs'); test confirms no schedule/secrets/executor/write in workflow; no contact, version or backend inferred — all fields unverified where absent.\",\n      \"code_ref\": \"scripts/tests/legacy-aave-funding-retirement.test.mjs:12–20, scripts/aave-owner-funding.mjs (call site)\"\n    },\n    {\n      \"lesson_id\": \"L-20261030-008\",\n      \"evidence\": \"Workflow enforces offline-only execution (no network, no payment); status 'retired' is evidenced by absence of live triggers and presence of denyLegacyFinancialExecution; no draft/test/deployed receipt is used to claim higher state — only 'retired' is asserted and verified.\",\n      \"code_ref\": \".github/workflows/aave-owner-funding.yml (no schedule, no secrets, permissions: {contents: read}), scripts/tests/legacy-aave-funding-retirement.test.mjs\"\n    },\n    {\n      \"lesson_id\": \"L-20261030-007\",\n      \"evidence\": \"All inputs bound via exact Git commit not referenced here, but test fixture asserts static file reads (readFileSync) with path + content hash implied by deterministic test structure; however, raw-byte SHA256 not explicitly stored in receipt per L-20261030-007 — no receipt object shown in evidence.\",\n      \"code_ref\": \"scripts/tests/legacy-aave-funding-retirement.test.mjs (readFileSync usage, no receipt.write() or sha256 recording visible)\"\n    },\n    {\n      \"lesson_id\": \"L-20261030-003\",\n      \"evidence\": \"No core memory write occurs in #350 workflow; all steps are verification-only. #349 test uses deterministic taskCommand calls with explicit state mutation, but no model output is written to core memory without integrity check — no such write appears in provided code.\",\n      \"code_ref\": \"scripts/tests/funding-plan.test.mjs, invest-channel/tests/funding.test.cjs, #349 test — all use assert, no fs.writeFileSync to core memory\"\n    }\n  ],\n  \"limitations\": [\n    {\n      \"id\": \"L-20261030-007\",\n      \"reason\": \"Test suite reads files but does not record path + raw-byte SHA256 + commit in a receipt artifact. No receipt construction or persistence is present in the provided #350 or #349 code — thus L-20261030-007 remains unfulfilled at implementation level.\",\n      \"impact\": \"Prevents full reproducibility and provider-agnostic re-execution; violates 'input hash → receipt' binding requirement.\"\n    },\n    {\n      \"id\": \"L-20261030-004\",\n      \"reason\": \"Test assertions verify workflow structure and script behavior, but do not extract or log executed_by or model from response metadata — no response metadata is produced or consumed in these offline tests.\",\n      \"impact\": \"Seat assignment ('ltzzz-owner-aave-funding-offline') is present, but model identity and actual executor context remain unrecorded per rule.\"\n    },\n    {\n      \"id\": \"L-20261030-001\",\n      \"reason\": \"The workflow's status lines (e.g., 'Verify retired entrypoint...') are hardcoded strings, not derived from receipt status fields — no receipt exists in this workflow to source them from.\",\n      \"impact\": \"Violates deterministic commit-title derivation; status reporting is authorial, not evidential.\"\n    }\n  ]\n}",
+  "output_sha256": "fb527efbd84739c3fd18e9427713b25fb4fb27a6a680db24096d2db3e99210ea",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-03T06:53:08.662Z"
+}
