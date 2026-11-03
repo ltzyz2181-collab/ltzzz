@@ -5,19 +5,13 @@ const HASH=/^[a-f0-9]{40}$/,ID=/^CTRL-[A-Z0-9][A-Z0-9_-]{5,79}$/,TASK='PLAN-PATC
 const exact=(x,keys)=>x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).sort().join(',')===keys.sort().join(',');
 export function commandIdentity(command){return createHash('sha256').update(JSON.stringify(command)).digest('hex');}
 export function validateCommand(c){
- if(!exact(c,['schema','task_id','command_id','workflow','inputs'])||c.schema!=='ltzzz.controller-workflow-command.v1'||!ID.test(c.command_id||''))throw Error('invalid_controller_command');
- const expectedTask=c.workflow==='deep-superagent.yml'?'DEEP-SUPERAGENT-20261103':TASK;
- if(c.task_id!==expectedTask)throw Error('invalid_controller_command');
+ if(!exact(c,['schema','task_id','command_id','workflow','inputs'])||c.schema!=='ltzzz.controller-workflow-command.v1'||c.task_id!==TASK||!ID.test(c.command_id||''))throw Error('invalid_controller_command');
  if(c.workflow==='patchgate-a2-execute.yml'){
   if(!exact(c.inputs,['request'])||typeof c.inputs.request!=='string'||c.inputs.request.length>1024)throw Error('invalid_A2_command');
   let r;try{r=JSON.parse(c.inputs.request);}catch{throw Error('invalid_A2_command');}
   if(!exact(r,['schema','task_id','candidate_pr','candidate_head'])||r.schema!=='ltzzz.patchgate.a2-controller-request.v1'||r.task_id!==TASK||!Number.isSafeInteger(r.candidate_pr)||r.candidate_pr<1||r.candidate_pr>999999999||!HASH.test(r.candidate_head||''))throw Error('invalid_A2_command');
  }else if(c.workflow==='controller-paid-practice.yml'){
   if(!exact(c.inputs,['command_id','task_id'])||c.inputs.command_id!==c.command_id||c.inputs.task_id!==c.task_id)throw Error('invalid_practice_command');
- }else if(c.workflow==='deep-superagent.yml'){
-  // Only the fixed self-owned public bootstrap; no arbitrary prompt, model,
-  // task ID, endpoint, signer, budget or workflow may be supplied by a command.
-  if(!exact(c.inputs,['bootstrap'])||c.inputs.bootstrap!=='true')throw Error('invalid_superagent_command');
  }else throw Error('workflow_not_allowlisted');
  return structuredClone(c);
 }

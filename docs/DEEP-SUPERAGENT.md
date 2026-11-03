@@ -21,6 +21,21 @@
 
 新通道独立存储自己的任务与执行状态；原 Task ID、实际 package/order ID 和输入哈希必须保留。新旧系统之间的共享认领桥尚未验收，因此 `external_submissions_enabled=false`：不能分别认领同一客户单、重复注册、重复发布或重复交付。只有跨系统幂等桥、真实平台能力和资料处理许可均已验证，才能由既有授权执行器接通对应外部动作。
 
+首版内部任务使用 `DEEP-` 或 `DSA-` 命名空间；把旧平台单改标为 `internal` 也不能绕过认领桥。健康探测不触发模型。任务状态由 SQLite Durable Object 保存，原始输入、每次调用前的预留、实际模型响应与复核哈希分开记录；崩溃后的未知请求只对账，不自动重购。
+
+## 实际接单和 GPT 决策入口
+
+新通道的云端入口是 `https://ltzzz-deep-superagent.ltzyz2181.workers.dev`，部署状态仍以真实回执为准。`GET /health` 不生成内容；`/.well-known/agent-card.json` 只发布能力发现信息，未声称实现完整 A2A RPC。任务和状态接口强制服务端 Bearer 鉴权，模型 Key 只留在已有代理 Worker 中。
+
+GPT 或现有工程执行器可以用 GitHub 接力，不需要读出服务 Key：
+
+- 在 `ops/deep-superagent/tasks/<任务ID>.json` 新增一张卡，字段仅 `task_id`、`package_id`、`prompt`、`data_classification: "public_distributable"`、`platform: "internal"`。每次 push 最多一张新任务卡；不能修改旧卡制造重试。
+- 既有认证工作流先通过 GitHub CAS 写入不可自动清除的请求预留，再 GET 对账，必要时才 POST 一次；未知请求后只读对账。卡的提交、输入哈希、云端运行源码和实际执行 ID 分开记录。
+- GPT 读到真实 job 回执后，在 `ops/deep-superagent/decisions/<决定ID>.json` 新增决定卡：`task_id`、`package_id`、`decision_id`、`execution_id`、`reviewed_input_sha256`、`decision`、`reason`。`decision` 仅允许 `approve_internal_draft`、`request_revision`、`keep_blocked`。每次 push 最多一张新决定卡。
+- 决定由真实认证执行器送回原 Durable Object，并回读绑定值；不同决定不能覆盖原决定。同一决定不能被解释为客户接受、生产部署或付款。
+
+队列回执在 `knowledge/results/deep-superagent/queue-<run>-attempt-<attempt>.json`。工作流完成只表示对应传输与回读阶段，仍须检查其中实际 job 状态、各供应商生成回执和复核结果。这是新通道的 GitHub→云端接力，不是旧平台订单的共享认领桥。
+
 `financial_execution=false`。本通道不新增钱包、签名、付款或资金重试入口，不改支付/A2/A3/B、额度和信任根。模型 API 用量与链上资金分开记账；没有真实账单不能声称成本为零。没有业务任务时不靠新付费 cron 循环调用模型。
 
 ## 平台安排
