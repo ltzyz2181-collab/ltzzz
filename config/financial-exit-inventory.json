@@ -535,6 +535,30 @@
         }
       ],
       "scope": "One explicitly authorized controller practice, existing Worker fixed provider/treasury/Base USDC quote <=0.05; no private key or retired-entry bypass. Unknown reconciles without repurchase; authentic bridge claim before funds."
+    },
+    {
+      "path": "experiments/testnet-escrow/contracts/TestnetTaskEscrow.sol",
+      "sha256": "488c644d62eff134ab852c4b2d24da8e50c6f79aaa1862e369fe5d6263834a67",
+      "disposition": "external_contract_authority",
+      "guards": [
+        {
+          "path": "experiments/testnet-escrow/contracts/TestnetTaskEscrow.sol",
+          "required": "block.chainid != 31337 && block.chainid != 84532"
+        },
+        {
+          "path": "experiments/testnet-escrow/contracts/TestnetTaskEscrow.sol",
+          "required": "address public immutable funder"
+        },
+        {
+          "path": "experiments/testnet-escrow/contracts/TestnetTaskEscrow.sol",
+          "required": "onlyController nonReentrant whenNotPaused"
+        },
+        {
+          "path": ".github/workflows/escrow-b0.yml",
+          "required": "persist-credentials: false"
+        }
+      ],
+      "scope": "B0 local EVM pilot only, fixed controller and funder beneficiary, testnet/local chain guard, no public deployment workflow or credential binding; not an activation of production funds."
     }
   ],
   "financial_execution": false,
