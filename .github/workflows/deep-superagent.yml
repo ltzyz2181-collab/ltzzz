@@ -1,0 +1,66 @@
+name: Deep Superagent isolated deployment and explicit bootstrap
+on:
+  pull_request:
+    paths: ['workers/deep-superagent/**','config/deep-superagent.json','scripts/deploy-deep-superagent.mjs','scripts/tests/deep-superagent*.test.mjs','wrangler.deep-superagent.toml','.github/workflows/deep-superagent.yml']
+  push:
+    branches: [main]
+    paths: ['workers/deep-superagent/**','config/deep-superagent.json','scripts/deploy-deep-superagent.mjs','scripts/tests/deep-superagent*.test.mjs','wrangler.deep-superagent.toml','.github/workflows/deep-superagent.yml']
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: 'Run or reconcile the one fixed public test job through DeepSeek + Doubao/Qianwen/Kimi (max five model calls, no payment)'
+        type: boolean
+        default: false
+permissions: {contents: read}
+concurrency: {group: deep-superagent-isolated-deploy, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check workers/deep-superagent/index.js && node --check scripts/deploy-deep-superagent.mjs
+      - run: node --test scripts/tests/deep-superagent.test.mjs scripts/tests/deep-superagent-deploy.test.mjs scripts/tests/controller-workflow-command.test.mjs scripts/tests/lessons.test.mjs scripts/tests/reflection-harness.test.mjs scripts/tests/ltzzz-skill.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/workpool.test.mjs
+  deploy:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Deploy isolated code, existing service token and durable task namespace; no model request
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/deploy-deep-superagent.mjs deploy
+      - name: Execute or reconcile the one explicitly requested public bootstrap job
+        if: github.event_name == 'workflow_dispatch' && inputs.bootstrap == true
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          SUPERAGENT_BOOTSTRAP: 'true'
+        run: node scripts/deploy-deep-superagent.mjs bootstrap
+      - name: Retain actual deployment and optional bootstrap evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-superagent-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/*-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Persist metadata and public bootstrap evidence without replaying models
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/deep-superagent/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Record actual Deep Superagent deployment and optional bootstrap outcome'
+          node tools/push-receipt-commit.mjs
