@@ -1,0 +1,104 @@
+{
+  "schema": "ltzzz.patchgate.a3-live.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "source_commit": "46fd581ae0a2e0880ee14598c5159cab643d9fd1",
+  "run_id": "41606351715",
+  "run_attempt": "1",
+  "at_utc": "2026-11-03T08:51:25.147Z",
+  "scope": "one_inert_isolated_canary_not_generic_production_deployment",
+  "status": "single_isolated_A3_target_deployed_and_reverified",
+  "target": {
+    "service": "ltzzz-patchgate-canary",
+    "url": "https://ltzzz-patchgate-canary.ltzyz2181.workers.dev/canary"
+  },
+  "model_calls": 0,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "generic_production_deploy_enabled": false,
+  "automatic_rollback": false,
+  "financial_execution": false,
+  "observed_main_commit": "46fd581ae0a2e0880ee14598c5159cab643d9fd1",
+  "source_files": [
+    {
+      "path": "workers/patchgate-canary/index.js",
+      "git_blob": "eff42ec7801b1c405ecb50eef328fb718e52e95e"
+    },
+    {
+      "path": "wrangler.patchgate-canary.toml",
+      "git_blob": "0bee916072d8da79e45e624c0ea538df1639e58a"
+    },
+    {
+      "path": "config/patchgate-a3.json",
+      "git_blob": "900ccbda6bd11291133c549e6e93276e9f59c106"
+    },
+    {
+      "path": "config/patch-policy.json",
+      "git_blob": "fca8317f1d81f901eac37b94c850f7cc42e21897"
+    },
+    {
+      "path": "scripts/run-patchgate-a3.mjs",
+      "git_blob": "e483a8dd38c7839812f9e50a763bb56ca3afa774"
+    },
+    {
+      "path": "scripts/lib/patchgate.mjs",
+      "git_blob": "1a7c2cd49f1d4044d73e23839aea50b2d792ac77"
+    },
+    {
+      "path": ".github/workflows/patchgate-a3.yml",
+      "git_blob": "ccad73da8cc120610cf39f8798f1cc35a73fb388"
+    },
+    {
+      "path": "tools/push-receipt-commit.mjs",
+      "git_blob": "ba7a7fa459f8d014946bd77ad8e55f88fe87128d"
+    }
+  ],
+  "source_set_sha256": "db24d72384f0dd8bc18b40735ea275b68e176201dbd84424ac71de324873f038",
+  "base_commit": "1d4e77310214aaf599d71486517293496f7fe0b8",
+  "deployment_completed": true,
+  "evidence": {
+    "head_sha": "46fd581ae0a2e0880ee14598c5159cab643d9fd1",
+    "base_sha": "1d4e77310214aaf599d71486517293496f7fe0b8",
+    "target_environment": "canary",
+    "expected_version_id": "fa4c7af6-9b12-47a5-b62e-f72127d32481",
+    "observation": {
+      "url": "https://ltzzz-patchgate-canary.ltzyz2181.workers.dev/canary",
+      "http_status": 200,
+      "redirected": false,
+      "started_at_utc": "2026-11-03T08:51:35.744Z",
+      "finished_at_utc": "2026-11-03T08:51:36.235Z",
+      "http_date": "Tue, 03 Nov 2026 08:51:36 GMT",
+      "header_source_commit": "46fd581ae0a2e0880ee14598c5159cab643d9fd1",
+      "header_version_id": "fa4c7af6-9b12-47a5-b62e-f72127d32481",
+      "body_base64": "eyJzY2hlbWEiOiJsdHp6ei5wYXRjaGdhdGUuY2FuYXJ5LnYxIiwic291cmNlX2NvbW1pdCI6IjQ2ZmQ1ODFhZTBhMmUwODgwZWUxNDU5OGM1MTU5Y2FiNjQzZDlmZDEifQo=",
+      "body_sha256": "0f1ce1b6d36ce319ed8ccfe154f98c4769c0adcd7f677e7b534c281fb6f56336"
+    },
+    "platform": {
+      "http_status": 200,
+      "source": "cloudflare_current_deployment_api",
+      "service_name": "ltzzz-patchgate-canary",
+      "deployment_id": "05c4787b-4d4c-4784-bc14-405aae0ab90c",
+      "observed_at_utc": "2026-11-03T08:51:36.235Z",
+      "versions": [
+        {
+          "id": "fa4c7af6-9b12-47a5-b62e-f72127d32481",
+          "percentage": 100
+        }
+      ]
+    }
+  },
+  "verification": {
+    "status": "reverified_deterministic",
+    "passed": true,
+    "checks": {
+      "subject": true,
+      "transport": true,
+      "commit": true,
+      "fresh": true,
+      "current_version": true
+    },
+    "model_verdict_required": false,
+    "rollback_verified": false
+  },
+  "finished_at_utc": "2026-11-03T08:51:36.235Z"
+}
