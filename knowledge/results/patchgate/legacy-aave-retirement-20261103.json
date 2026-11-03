@@ -1,0 +1,261 @@
+{
+  "schema": "ltzzz.workflow-retirement-closeout.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "related_original_task_id": "ANS-2026-10-17-doubao",
+  "at": "2026-11-03T07:02:39.620476Z",
+  "status": "legacy_funding_workflow_retired_main_verified",
+  "observed_main_commit": "51d2750bab423a0cc1c9a11a4d1fe3ddc94049de",
+  "controller": {
+    "actual_provider": "OpenAI",
+    "client": "Codex",
+    "actual_model": null,
+    "model_identity_note": "Exact model identity is not supplied by this execution client; no native Claude execution claimed.",
+    "decision": "merge_under_existing_owner_authority_after_component_review_and_real_tests"
+  },
+  "pr350": {
+    "head": "47de0e1766468a521f0a2cff8faaf5bb6c8eaee2",
+    "merge_commit": "9436db8ecd48a8054684bb28d41898b55faf28a7",
+    "merged_at": "2026-11-03T06:58:49Z",
+    "candidate_ci_run": "41592585289",
+    "main_ci_run": "41593282487",
+    "main_ci_job": "125774714785",
+    "main_ci_conclusion": "success",
+    "retirement_test": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    "funding_plan": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    "simulated_chain": "passed_paused_identity_100_200_caps_replay_failed_withdrawal_atomicity_principal_transfer_owner_only_loss",
+    "local_validation": "Node22 static/plan 5/5 plus isolated Ganache invariants passed",
+    "effective_workflow": {
+      "schedule_removed": true,
+      "funding_secret_references_removed": true,
+      "contents_permission": "read",
+      "live_retired_entrypoint_call_removed": true,
+      "direct_main_push_removed": true,
+      "manual_and_scoped_offline_triggers_retained": true,
+      "dependency_registry_network_used": true,
+      "test_chain": "in_process_Ganache_no_external_chain_payment"
+    }
+  },
+  "pr349": {
+    "head": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+    "merge_commit": "51d2750bab423a0cc1c9a11a4d1fe3ddc94049de",
+    "merged_at": "2026-11-03T06:59:10Z",
+    "candidate_ci_run": "41592588454",
+    "candidate_ci_conclusion": "success",
+    "local_node": "22.23.4",
+    "full_workflow_command": {
+      "files": 31,
+      "passed": 246,
+      "failed": 0,
+      "skipped": 0,
+      "stdout_sha256": "9600c6013dfef221dba0c361cdf7b414d9c8680e3bf2cf81eca2383418110460"
+    },
+    "targeted_review_tests": {
+      "passed": 3,
+      "failed": 0,
+      "overlaps_full_set": true
+    },
+    "postmerge_policy_run": "41593317665",
+    "postmerge_policy_conclusion": "success",
+    "historical_worker_rejection_preserved": true,
+    "historical_reviewer_task_acceptance": false,
+    "historical_warning_closed": false,
+    "runtime_deployment_required": false
+  },
+  "sources": [
+    {
+      "path": ".github/workflows/aave-owner-funding.yml",
+      "commit": "47de0e1766468a521f0a2cff8faaf5bb6c8eaee2",
+      "git_blob": "e4cf72b3669813f322876ca3a48779814eee0892",
+      "sha256": "8e73b164af8a616616993da25f1148ac6e04fdfcbba6d042b1dcc9ffb97f42ea",
+      "bytes": 1660
+    },
+    {
+      "path": "scripts/tests/legacy-aave-funding-retirement.test.mjs",
+      "commit": "47de0e1766468a521f0a2cff8faaf5bb6c8eaee2",
+      "git_blob": "6614e92280cacda59ef9dc2b0c16a431aed9ec24",
+      "sha256": "ea9a7a7b33411470d454af3c266ee81ff7a8f8a1846c19fa091a6b1d27435274",
+      "bytes": 971
+    },
+    {
+      "path": "scripts/aave-owner-funding.mjs",
+      "commit": "47de0e1766468a521f0a2cff8faaf5bb6c8eaee2",
+      "git_blob": "475f22009136876fd33f37658cbd705c24b31733",
+      "sha256": "d3457e15ff9d2c65aa8b1d554028f7bf9e8935de20dbb99262e8c8bd948829b0",
+      "bytes": 224
+    },
+    {
+      "path": "scripts/tests/funding-plan.test.mjs",
+      "commit": "47de0e1766468a521f0a2cff8faaf5bb6c8eaee2",
+      "git_blob": "1edd52c4207da68b5cf893cef17c4a20b6f5c2b9",
+      "sha256": "19994032318040ec8809152c6403783b1bc42ee0a672964b4de60765c24e02b9",
+      "bytes": 1263
+    },
+    {
+      "path": "invest-channel/tests/funding.test.cjs",
+      "commit": "47de0e1766468a521f0a2cff8faaf5bb6c8eaee2",
+      "git_blob": "f415672cfab2ddf50d1a299bf688056a16a4f03a",
+      "sha256": "ffeefa88d0ba29c566aaedea081e43079625ce7281acb9f848c9bd1f42e58c1d",
+      "bytes": 4500
+    },
+    {
+      "path": ".github/workflows/verify-ans-external-hire.yml",
+      "commit": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+      "git_blob": "1ff975ab87bcae62e9b5b6e06ebbd2deceafc092",
+      "sha256": "18f82d25c90f871693a5714309d04edbf31d4f38b5f239330f12c0c7cc9493a8",
+      "bytes": 2764
+    },
+    {
+      "path": "scripts/tests/ans-task-review.test.mjs",
+      "commit": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+      "git_blob": "d46868feecf477a945ab0245cdd21b9e0e15374f",
+      "sha256": "9e26e9b5cfa09e625e49ed7c56b756da660c6d3d20e9441ab7ec41693c92416c",
+      "bytes": 2910
+    },
+    {
+      "path": "knowledge/results/dispatch/oversight/ANS-2026-10-17-doubao-reconciliation.json",
+      "commit": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+      "git_blob": "88690ee5c3823160783671d796a72a06c4e25ed5",
+      "sha256": "826ad51cb4b5627b8ea30ed0fad027b17d680e265aefe02da9457ae832a23e46",
+      "bytes": 3469
+    },
+    {
+      "path": "workers/pulse-worker/tasks.js",
+      "commit": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+      "git_blob": "e543e29fbf4e4464b571b2caa8b7891f3ed37386",
+      "sha256": "9577bcec2bd2716dc276fe7c5b9ebd5f19392dd5979ba621190c4895f3fb54cf",
+      "bytes": 6971
+    },
+    {
+      "path": "knowledge/results/ans-cycle/2026-10-17-worker.json",
+      "commit": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+      "git_blob": "465bf308043cfd2bcffcf4ade15ec383c322714e",
+      "sha256": "d6c1c37caba2e7ca587220b2e6fbf264558b78662cb09faafaf401d07875145d",
+      "bytes": 2639
+    },
+    {
+      "path": "knowledge/results/ans-cycle/2026-10-17-reviewer.json",
+      "commit": "25e9950472bd80fd696412dec95bc3f247a00cf9",
+      "git_blob": "41c88b4ee3ee550948ca4f442784f93a6dfded40",
+      "sha256": "45482117baf17b518be50f7d729fa08059f89d3aae35268060ef354102215a4b",
+      "bytes": 2938
+    },
+    {
+      "path": "knowledge/results/pulse/latest.json",
+      "commit": "51d2750bab423a0cc1c9a11a4d1fe3ddc94049de",
+      "git_blob": "d61c7c6d2e246c6258544b0ac4eece0cd6d02452",
+      "sha256": "c03e870791b2e627c18ba0cd92cab574288a0b029c40460fdc07f9872f7d8fab",
+      "bytes": 237984
+    },
+    {
+      "path": "scripts/call-qwen.mjs",
+      "commit": "51d2750bab423a0cc1c9a11a4d1fe3ddc94049de",
+      "git_blob": "b3b9624e068af9b54ee25dc23241b386a7de297f",
+      "sha256": "1858453a13fdf82bdead424d5c4a89044ea4cad0e9bda8441fed83d92d9303fe",
+      "bytes": 3610
+    }
+  ],
+  "independent_component_review": {
+    "task_id": "S1-LEGACY-AAVE-ANS-REVIEW-20261103",
+    "original_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "evidence": {
+      "path": "knowledge/results/qwen-dispatch/S1-LEGACY-AAVE-ANS-REVIEW-20261103.json",
+      "commit": "51d2750bab423a0cc1c9a11a4d1fe3ddc94049de",
+      "git_blob": "ecc7e6d4d1cc990cffd245ed259e4e255592ac2d",
+      "sha256": "55187762c20389334085c975c8fc92029ab572ce59cf7fee5b3a6b8cb800f6b7",
+      "bytes": 5667
+    },
+    "card": {
+      "path": "ops/dispatch/queue/S1-LEGACY-AAVE-ANS-REVIEW-20261103.json",
+      "commit": "51d2750bab423a0cc1c9a11a4d1fe3ddc94049de",
+      "git_blob": "f99abc28a2a709c790c918a81df947f7f6c01e10",
+      "sha256": "a9e0348835e220dec5c134fb12b29d0b6f8c0d92cfbcfcf36d0ed4261d1c8c01",
+      "bytes": 6290
+    },
+    "actual_provider": "aliyun_dashscope",
+    "provider_evidence": "scripts/call-qwen.mjs native execution metadata; native_qwen_call and request ID in executor receipt",
+    "actual_model": "qwen-plus",
+    "model_source": "provider_response",
+    "request_id": "caa1a6b5-7601-9172-9cc1-fb301592f68b",
+    "run_id": "41592650507",
+    "generation_requests": 1,
+    "tokens_reported": 3475,
+    "output_sha256": "fb527efbd84739c3fd18e9427713b25fb4fb27a6a680db24096d2db3e99210ea",
+    "finish_reason": "stop",
+    "verdict350": "PASS",
+    "verdict349": "PASS",
+    "scope": "Full PR350 workflow/test and exact PR349 added test plus bounded reconciliation summary; not a full historical task acceptance.",
+    "raw_review_retained": true,
+    "controller_disposition": "no_concrete_blocking_code_counterexample_found_for_these_components",
+    "limitations_disposition": [
+      {
+        "review_note": "No hashes or execution metadata in offline unit tests.",
+        "disposition": "Nonblocking for deterministic tests. Exact commit/path/raw-byte hashes and native model execution metadata are recorded in the dispatch card, executor receipt and this closeout, not inferred from deterministic assertions."
+      },
+      {
+        "review_note": "Hardcoded workflow step labels violate status/title derivation.",
+        "disposition": "Not adopted. These labels describe requested verification steps, not automatic success status or generated commit titles; actual outcomes come from test and Actions results."
+      },
+      {
+        "review_note": "Offline-only workflow has no network/live triggers.",
+        "disposition": "Narrowed. Manual and scoped PR/main triggers remain; npm fetches dependencies. Financial tests run on a local simulated chain; no live funding executor or external-chain transaction is invoked."
+      }
+    ],
+    "not_a_full_historical_artifact_acceptance": true,
+    "not_a_Claude_audit": true,
+    "api_bill_verified": false
+  },
+  "lessons_applied": [
+    {
+      "id": "L-20261030-007",
+      "change": "Bind exact candidate/main source bytes and original artifacts to paths, commits and raw SHA256.",
+      "verification": "All listed candidate bytes equal the merged main bytes; original worker/reviewer recorded hashes recomputed and matched."
+    },
+    {
+      "id": "L-20261030-004",
+      "change": "Use one existing native Qwen dispatcher and actual execution metadata; do not invent a Claude review.",
+      "verification": "Queue-card hash and model-output hash matched executor receipt; one request only."
+    },
+    {
+      "id": "L-20261030-002",
+      "change": "Preserve the unknown original task acceptance and model bill instead of inferring completion.",
+      "verification": "Historical warning remains open; original claim and provider attempts were not replayed."
+    },
+    {
+      "id": "execution_blocked",
+      "change": "Retire the obsolete hourly funding boundary after reconciling its legacy_financial_exit_disabled failure.",
+      "verification": "New main workflow has no schedule/Secrets/live call; retirement regression and simulated invariants passed in main CI."
+    }
+  ],
+  "remaining": {
+    "original_ans_reviewer_task": "submitted_pending_review_in_pinned_Pulse_snapshot_final_independent_acceptance_missing",
+    "original_warning_case_id": "fb123b376bde9cdf327e0150",
+    "historical_business_tasks_closed": 0,
+    "WEP3_atomic_cutover_A3_B": "outside_this_closeout_not_revalidated_or_enabled",
+    "original_reviewer_task_observation": {
+      "id": "ANS-2026-10-17-doubao",
+      "status": "submitted_pending_review",
+      "model_execution_verified": false,
+      "evidence_path": "knowledge/results/ans-cycle/2026-10-17-reviewer.json",
+      "evidence_sha256": "45482117baf17b518be50f7d729fa08059f89d3aae35268060ef354102215a4b"
+    }
+  },
+  "model_api_generation_requests_added": 1,
+  "financial_execution": false,
+  "real_funds_transactions": 0,
+  "new_paid_schedules": false,
+  "paid": false,
+  "tx_hash": null,
+  "paid_field_scope": "No treasury/settlement payment; paid=false is not a claim that the one native model request has zero API cost.",
+  "api_bill_amount_verified": false,
+  "original_claim_replayed": false,
+  "original_provider_attempt_replayed": false,
+  "wallet_or_budget_or_trust_root_changed": false
+}
