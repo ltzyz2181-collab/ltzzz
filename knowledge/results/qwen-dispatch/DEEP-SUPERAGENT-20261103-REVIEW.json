@@ -1,0 +1,61 @@
+{
+  "task_id": "DEEP-SUPERAGENT-20261103-REVIEW",
+  "original_task_id": "DEEP-SUPERAGENT-20261103",
+  "card_sha256": "454dcae7281fcc858aea7fddcb852860d56827bb5e0d96aa47221017e2db2040",
+  "run_id": "41598029892",
+  "executor": "qianwen",
+  "queue_dispatcher": "qianwen",
+  "at": "2026-11-03T07:42:01.730Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:DEEP-SUPERAGENT-20261103-REVIEW",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "79a426f65ea5cf7ceb44a9a34c60bc7d0c524e8dae6bff2ae3e192b06b8fe184",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "43cdc6fb1d50916a3e23247197d4d6a9151abf02f3c8fc4fc9d4cfb67b143470"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-plus",
+  "generated_by_model": "qwen-plus",
+  "attribution_note": "generation by qwen-plus via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 2998,
+  "request_id": "ad4950a7-475f-9de6-90ec-6c3465b6cea4",
+  "output": "{\n  \"verdict\": \"PASS\",\n  \"findings\": [],\n  \"limitations\": [\n    \"No concrete code counterexample was identified for automatic repeated payment: `job.paid` is initialized `false`, never auto-set to `true` in either `enqueue` or `alarm` fragments; no billing side-effect (e.g., external API call, ledger write, or financial_execution toggle) occurs without explicit downstream action outside these fragments.\",\n    \"No concrete code counterexample was identified for treating `actual_model` as truth without verification: `callSeat` strictly validates `r.actual_model` presence, type (`string`), non-emptiness, and alignment with `seat` (via `r.executed_by === seat`) before accepting the receipt — this satisfies L-20261030-002 (unverified fields left null) and L-20261030-003 (integrity-checked core memory insertion only after full evidence).\",\n    \"No concrete code counterexample was identified for bypassing original reservation via duplicate input: `enqueue` enforces strict `input_sha256 !== old.input_sha256 → throw 409`, and `alarm` does not re-enqueue or mutate `job.input_sha256`; reuse of same hash triggers `{duplicate:true}` but does not re-execute or re-bill — consistent with L-20261030-008 (state named by evidence, not assumption).\",\n    \"All observed behaviors align with harness lessons L-20261030-002, L-20261030-003, L-20261030-008, and L-20261030-004: `actual_model` is `null` until provider-supplied *and* validated; `finish_reason` and `generation_verified` are required for `status='complete_output_pending_review'`; state (`queued`/`unknown`/`complete_output_pending_review`) reflects actual control flow, not fixed strings; `executed_by` and `actual_provider` are sourced from receipt metadata, not memory.\"\n  ]\n}",
+  "output_sha256": "12821779d4a948fbc2bd155a2db9ee8a5649b978201fade84ff3bffdcb512920",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-03T07:42:14.473Z"
+}
