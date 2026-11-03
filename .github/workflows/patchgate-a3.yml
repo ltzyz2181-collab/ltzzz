@@ -1,0 +1,50 @@
+name: PatchGate A3 one isolated canary live acceptance
+on:
+  pull_request:
+    paths: ['workers/patchgate-canary/**','wrangler.patchgate-canary.toml','config/patchgate-a3.json','config/patch-policy.json','scripts/run-patchgate-a3.mjs','scripts/tests/patchgate-a3.test.mjs','.github/workflows/patchgate-a3.yml']
+  push:
+    branches: [main]
+    paths: ['workers/patchgate-canary/**','wrangler.patchgate-canary.toml','config/patchgate-a3.json','config/patch-policy.json','scripts/run-patchgate-a3.mjs','scripts/tests/patchgate-a3.test.mjs','.github/workflows/patchgate-a3.yml']
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: patchgate-a3-isolated-canary, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-patchgate-a3.mjs && node --test scripts/tests/patchgate-a3.test.mjs scripts/tests/patchgate.test.mjs
+  deploy:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Deploy one inert target and independently re-read current Cloudflare version
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/run-patchgate-a3.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: patchgate-a3-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/patchgate/a3/
+      - name: Preserve actual A3 evidence, never a payment or generic production activation
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/patchgate/a3/ knowledge/results/patchgate/status.json
+          if git diff --staged --quiet; then exit 0; fi
+          status=$(node -p "JSON.parse(require('fs').readFileSync('knowledge/results/patchgate/a3/'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json')).status")
+          git commit -m "Record A3 result: $status"
+          node tools/push-receipt-commit.mjs
