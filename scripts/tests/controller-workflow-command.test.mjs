@@ -10,10 +10,3 @@ test('untrusted actor, branch and event cannot dispatch',async()=>{for(const run
 test('request cannot choose a workflow, ref, budget, token or arbitrary inputs',()=>{for(const patch of [{workflow:'deploy-treasury.yml'},{ref:'evil'},{inputs:{token:'secret'}},{command_id:'../escape'}])assert.throws(()=>validateCommand({...command,...patch}));});
 test('practice identity is exact and contains no payment amount override',()=>{const c={...command,workflow:'controller-paid-practice.yml',inputs:{command_id:command.command_id,task_id:command.task_id}};assert.deepEqual(validateCommand(c),c);assert.throws(()=>validateCommand({...c,inputs:{...c.inputs,amount:'100'}}));});
 test('owner issue-comment command dispatches without changing candidate BASE',async()=>{const f=fixture({run:{event:'issue_comment'}}),r=await dispatchCommand({command,context:{...context,event:'issue_comment'},api:f.api});assert.equal(r.dispatched,true);assert.equal(f.posts(),1);});
-test('Deep Superagent permits only the exact public bootstrap and its own original task',async()=>{
- const c={...command,task_id:'DEEP-SUPERAGENT-20261103',command_id:'CTRL-DEEP-SUPERAGENT-20261103-01',workflow:'deep-superagent.yml',inputs:{bootstrap:'true'}};
- assert.deepEqual(validateCommand(c),c);
- for(const patch of [{task_id:command.task_id},{inputs:{bootstrap:'false'}},{inputs:{bootstrap:'true',prompt:'arbitrary'}},{inputs:{bootstrap:true}}])assert.throws(()=>validateCommand({...c,...patch}));
- assert.throws(()=>validateCommand({...command,task_id:c.task_id}));
- const f=fixture();assert.equal((await dispatchCommand({command:c,context,api:f.api})).dispatched,true);assert.equal(f.posts(),1);
-});

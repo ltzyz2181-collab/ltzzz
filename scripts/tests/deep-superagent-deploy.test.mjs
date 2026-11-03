@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {BOOTSTRAP_JOB,REVISION,bootstrapInputHash,trustedContext,assertCurrentMain,sourceReadSet,redact,wranglerFailureEvidence,validateJob,jobEvidenceIdentity,validateReplay,bootstrapVerdict,verifyDeployment,runBootstrap} from '../deploy-deep-superagent.mjs';
+import {BOOTSTRAP_JOB,BOOTSTRAP_COMMENT,REVISION,bootstrapInputHash,trustedContext,authorizedBootstrapComment,bootstrapRequested,assertCurrentMain,sourceReadSet,redact,wranglerFailureEvidence,validateJob,jobEvidenceIdentity,validateReplay,bootstrapVerdict,verifyDeployment,runBootstrap} from '../deploy-deep-superagent.mjs';
 import {normalizeJob,sha256} from '../../workers/deep-superagent/index.js';
 
 const SHA='a'.repeat(40),HASH='b'.repeat(64);
@@ -29,6 +29,32 @@ test('deployment accepts trusted main only and refuses changed runtime source be
  assert.doesNotThrow(()=>assertCurrentMain({context:trustedContext(env),run:fakeGit()}));
  assert.throws(()=>assertCurrentMain({context:trustedContext(env),run:fakeGit({head:'c'.repeat(40)})}),/stale_deployment_source/);
  for(const changed of ['workers/deep-superagent/index.js','lib/proxy-auth.js','config/deep-superagent.json','.github/workflows/deep-superagent.yml'])assert.throws(()=>assertCurrentMain({context:trustedContext(env),run:fakeGit({current:'c'.repeat(40),changed})}),error=>error.message==='stale_deployment_source'&&error.source_readback.source_readset_conflict.path===changed&&error.source_readback.source_readset_match===false);
+});
+test('only the exact created owner comment in the actual repository event enables bootstrap',()=>{
+ const event={action:'created',repository:{full_name:'ltzyz2181-collab/ltzzz'},comment:{id:1234567,user:{id:261544579},body:BOOTSTRAP_COMMENT}};
+ const issueEnv={...env,GITHUB_EVENT_NAME:'issue_comment',GITHUB_EVENT_PATH:'/actual-event.json'};
+ let pathRead;
+ const context=trustedContext(issueEnv,{readEvent:path=>{pathRead=path;return event;}});
+ assert.equal(pathRead,'/actual-event.json');assert.equal(context.owner_bootstrap_comment_verified,true);assert.equal(context.comment_author_id,261544579);assert.equal(context.comment_id,'1234567');
+ assert.equal(bootstrapRequested(issueEnv,context),true);
+ for(const changed of [
+  {...event,action:'edited'},
+  {...event,repository:{full_name:'attacker/ltzzz'}},
+  {...event,comment:{...event.comment,user:{id:1}}},
+  {...event,comment:{...event.comment,body:BOOTSTRAP_COMMENT+'\nplease run another task'}},
+  {...event,comment:{...event.comment,body:' '+BOOTSTRAP_COMMENT}},
+  {...event,comment:{...event.comment,body:'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP OTHER-TASK'}},
+  {...event,comment:{...event.comment,id:null}}
+ ]){
+  assert.equal(authorizedBootstrapComment(changed),false);
+  assert.throws(()=>trustedContext(issueEnv,{readEvent:()=>changed}),/trusted_owner_bootstrap_comment_required/);
+ }
+ assert.throws(()=>trustedContext({...issueEnv,GITHUB_EVENT_PATH:''}),/trusted_owner_bootstrap_comment_required/);
+ assert.throws(()=>trustedContext(issueEnv,{readEvent:()=>{throw Error('invalid_event_json');}}),/trusted_owner_bootstrap_comment_required/);
+ assert.equal(bootstrapRequested({...env,SUPERAGENT_BOOTSTRAP:'true'},trustedContext(env)),false);
+ assert.equal(bootstrapRequested({...env,GITHUB_EVENT_NAME:'workflow_dispatch',SUPERAGENT_BOOTSTRAP:'true'},{}),true);
+ assert.equal(bootstrapRequested({...env,GITHUB_EVENT_NAME:'workflow_dispatch',SUPERAGENT_BOOTSTRAP:'false'},{}),false);
+ assert.equal(bootstrapRequested(issueEnv,{}),false);
 });
 test('unrelated metadata-only main advance retains old exact source and records current observation',()=>{
  const current='c'.repeat(40),run=fakeGit({current});
@@ -130,6 +156,15 @@ test('credential redaction covers nested reports and no new model keys or schedu
  const workflow=fs.readFileSync('.github/workflows/deep-superagent.yml','utf8'),config=fs.readFileSync('wrangler.deep-superagent.toml','utf8');
  assert.doesNotMatch(workflow,/^\s*schedule:/m);assert.doesNotMatch(config,/crons\s*=|PAY_KV|WEP3_LEDGER|ANTHROPIC_API_KEY|OPENAI_API_KEY/);
  assert.match(workflow,/github\.event_name == 'workflow_dispatch' && inputs\.bootstrap == true/);
+ assert.match(workflow,/issue_comment:\s*\n\s*types: \[created\]/);
+ const lines=workflow.split('\n');
+ for(const [i,line] of lines.entries())if(line.includes('if:')&&line.includes("github.event_name == 'issue_comment'")){
+  assert.match(line,/github\.event\.comment\.user\.id == 261544579/);
+  assert.ok(line.includes("github.event.comment.body == '"+BOOTSTRAP_COMMENT+"'"));
+ }
+ assert.match(workflow,/verify:\s*\n\s*if: github\.event_name != 'issue_comment'/);
+ assert.doesNotMatch(workflow,/^concurrency:/m);
+ assert.doesNotMatch(workflow,/controller-workflow-command/);
  assert.match(config,/new_sqlite_classes = \["DeepTask"\]/);
  for(const [binding,service] of Object.entries({DEEPSEEK:'ltzzz-deepseek-proxy',DOUBAO:'ltzzz-doubao-proxy',QIANWEN:'ltzzz-qianwen-proxy',KIMI:'ltzzz-kimi-proxy'}))assert.match(config,new RegExp('binding = "'+binding+'"\\nservice = "'+service+'"'));
 });

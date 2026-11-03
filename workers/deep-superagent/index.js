@@ -27,7 +27,9 @@ export function normalizeJob(body){
   const keys=['task_id','package_id','prompt','data_classification','platform'];
   if(Object.keys(body).some(k=>!keys.includes(k)))throw fail('unknown_job_field');
   if(!ID.test(body.task_id||''))throw fail('invalid_task_id');
-  if(/^(ANS-|DAILY-)/.test(body.task_id))throw fail('legacy_task_requires_shared_claim_bridge',409);
+  // Until legacy consumers share the lease, only this new lane's task namespace
+  // is admitted. Merely labeling an old platform/ANS order "internal" is insufficient.
+  if(!/^(DEEP-|DSA-)/.test(body.task_id))throw fail('legacy_task_requires_shared_claim_bridge',409);
   const packageId=body.package_id??'';
   if(typeof packageId!=='string'||packageId.length>160||/[\u0000-\u001f]/.test(packageId))throw fail('invalid_package_id');
   if(body.data_classification!=='public_distributable')throw fail('public_distributable_input_required',403);

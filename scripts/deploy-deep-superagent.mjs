@@ -8,6 +8,7 @@ import {pathToFileURL} from 'node:url';
 
 export const REVISION='ltzzz.deep-superagent.v1';
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
+export const BOOTSTRAP_COMMENT='LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103';
 export const BOOTSTRAP_JOB=Object.freeze({
  task_id:'DEEP-SUPERAGENT-20261103-BOOTSTRAP',
  package_id:'BOOTSTRAP-PUBLIC-01',
@@ -22,9 +23,21 @@ const SHA=/^[a-f0-9]{40}$/;
 const resultDir='knowledge/results/deep-superagent';
 const code=error=>/^[a-z0-9_:-]{1,160}$/.test(error?.message||'')?error.message:'executor_or_transport_error';
 
-export function trustedContext(env=process.env){
- if(env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||env.GITHUB_REF!=='refs/heads/main'||!['push','workflow_dispatch'].includes(env.GITHUB_EVENT_NAME)||!SHA.test(env.GITHUB_SHA||'')||!/^\d{1,20}$/.test(env.GITHUB_RUN_ID||'')||!/^\d{1,6}$/.test(env.GITHUB_RUN_ATTEMPT||''))throw Error('trusted_main_execution_required');
- return {source_commit:env.GITHUB_SHA,run_id:env.GITHUB_RUN_ID,run_attempt:env.GITHUB_RUN_ATTEMPT};
+export function authorizedBootstrapComment(event){
+ return event?.action==='created'&&event.repository?.full_name==='ltzyz2181-collab/ltzzz'&&event.comment?.user?.id===261544579&&event.comment.body===BOOTSTRAP_COMMENT&&Number.isSafeInteger(event.comment.id)&&event.comment.id>0;
+}
+export function trustedContext(env=process.env,{readEvent=file=>JSON.parse(fs.readFileSync(file,'utf8'))}={}){
+ if(env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||env.GITHUB_REF!=='refs/heads/main'||!['push','workflow_dispatch','issue_comment'].includes(env.GITHUB_EVENT_NAME)||!SHA.test(env.GITHUB_SHA||'')||!/^\d{1,20}$/.test(env.GITHUB_RUN_ID||'')||!/^\d{1,6}$/.test(env.GITHUB_RUN_ATTEMPT||''))throw Error('trusted_main_execution_required');
+ const context={source_commit:env.GITHUB_SHA,run_id:env.GITHUB_RUN_ID,run_attempt:env.GITHUB_RUN_ATTEMPT};
+ if(env.GITHUB_EVENT_NAME==='issue_comment'){
+  let event;try{if(!env.GITHUB_EVENT_PATH)throw Error();event=readEvent(env.GITHUB_EVENT_PATH);}catch{throw Error('trusted_owner_bootstrap_comment_required');}
+  if(!authorizedBootstrapComment(event))throw Error('trusted_owner_bootstrap_comment_required');
+  Object.assign(context,{owner_bootstrap_comment_verified:true,comment_id:String(event.comment.id),comment_author_id:event.comment.user.id,trigger:'owner_exact_fixed_bootstrap_comment'});
+ }
+ return context;
+}
+export function bootstrapRequested(env,context){
+ return env.GITHUB_EVENT_NAME==='workflow_dispatch'&&env.SUPERAGENT_BOOTSTRAP==='true'||env.GITHUB_EVENT_NAME==='issue_comment'&&context.owner_bootstrap_comment_verified===true;
 }
 const READSET_ROOTS=['workers/deep-superagent/index.js','scripts/deploy-deep-superagent.mjs','.github/workflows/deep-superagent.yml','wrangler.deep-superagent.toml','tools/push-receipt-commit.mjs'];
 export function sourceReadSet({source,run}){
@@ -196,7 +209,7 @@ export async function main(mode,{env=process.env}={}){
    report.verification=await verifyDeployment({source:context.source_commit,token:env.LTZZZ_AGENT_TOKEN});
    report.status='deployment_health_and_auth_verified';
   }else{
-   if(env.GITHUB_EVENT_NAME!=='workflow_dispatch'||env.SUPERAGENT_BOOTSTRAP!=='true')throw Error('explicit_manual_bootstrap_required');
+   if(!bootstrapRequested(env,context))throw Error('explicit_authorized_bootstrap_required');
    report.stage='verify_current_deployment';save();
    report.deployment=await verifyDeployment({source:context.source_commit,token:env.LTZZZ_AGENT_TOKEN});
    report.stage='bootstrap_execute_or_reconcile';save();

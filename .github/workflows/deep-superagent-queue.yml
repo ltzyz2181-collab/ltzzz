@@ -1,0 +1,59 @@
+name: Deep Superagent queue and GPT decision bridge
+on:
+  pull_request:
+    paths: ['scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-queue.yml']
+  push:
+    branches: [main]
+    paths: ['ops/deep-superagent/tasks/*.json', 'ops/deep-superagent/decisions/*.json', 'scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-queue.yml']
+permissions: {contents: read}
+concurrency: {group: deep-superagent-queue, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-deep-superagent-queue.mjs && node --test scripts/tests/deep-superagent-queue.test.mjs
+  consume:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Reserve durable attempt, enqueue or reconcile, and record bound AI decisions
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-deep-superagent-queue.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deep-superagent-queue-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/queue-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Preserve exact public queue receipt without rerunning model requests
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const file='knowledge/results/deep-superagent/queue-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json';
+          if(!fs.existsSync(file))process.exit(0);
+          const receipt=JSON.parse(fs.readFileSync(file,'utf8'));
+          if(!/^queue_(blocked|pending_reconciliation|results_verified)$|^no_new_queue_cards$/.test(receipt.status))throw Error('invalid_queue_receipt_status');
+          execFileSync('git',['config','user.name','ltzzz-bot']);
+          execFileSync('git',['config','user.email','bot@ltzzz.com']);
+          execFileSync('git',['add','--',file]);
+          try{execFileSync('git',['diff','--staged','--quiet']);process.exit(0);}catch{}
+          execFileSync('git',['commit','-m','Deep Superagent queue: '+receipt.status],{stdio:'inherit'});
+          JS
+          node tools/push-receipt-commit.mjs

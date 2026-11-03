@@ -49,7 +49,7 @@ test('health/discovery separate presence from native generation, money and full 
 });
 test('internal public input only; unknown options, old task claims and external packages cannot bypass admission',()=>{
   assert.equal(normalizeJob(INPUT).prompt,INPUT.prompt);
-  for(const patch of [{data_classification:'confidential'},{platform:'uumit'},{endpoint:'https://attacker.test'},{model:'gpt'},{task_id:'ANS-2026-11-03-deepseek'},{package_id:'bad\npackage'}])assert.throws(()=>normalizeJob({...INPUT,...patch}));
+  for(const patch of [{data_classification:'confidential'},{platform:'uumit'},{endpoint:'https://attacker.test'},{model:'gpt'},{task_id:'ANS-2026-11-03-deepseek'},{task_id:'UUMIT-REAL-ORDER-001'},{package_id:'bad\npackage'}])assert.throws(()=>normalizeJob({...INPUT,...patch}));
 });
 test('DeepSeek cannot select reserved seats, duplicate workers or executable tool arguments',()=>{
   for(const tasks of [[{seat:'gpt',task:'act'}],[{seat:'kimi',task:'a'},{seat:'kimi',task:'b'}],[]])assert.throws(()=>parsePlan(JSON.stringify({summary:'plan',tasks})));
