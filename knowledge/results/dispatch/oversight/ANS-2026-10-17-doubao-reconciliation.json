@@ -1,0 +1,75 @@
+{
+  "schema": "ltzzz.original-task-reconciliation.v1",
+  "task_id": "ANS-2026-10-17-doubao",
+  "related_worker_task_id": "ANS-2026-10-17-deepseek",
+  "original_warning_case_id": "fb123b376bde9cdf327e0150",
+  "original_warning_issue": "blocked_reconcile_existing_attempt",
+  "source_main_commit": "464103830bb0852ee899ceec62419f0b6572a62e",
+  "status": "existing_evidence_reconciled_pending_independent_reviewer_task_acceptance",
+  "evidence": [
+    {
+      "path": "knowledge/results/ans-cycle/2026-10-17.json",
+      "git_blob_sha": "47e8a9ee2d433560b75d7c8e1a9d0b060bd962b6",
+      "run_id": "38932903711",
+      "source_commit": "2c243e48b9fdef7664db04cfc3fe888ee6e83d6a"
+    },
+    {
+      "path": "knowledge/results/ans-cycle/2026-10-17-worker.json",
+      "git_blob_sha": "465bf308043cfd2bcffcf4ade15ec383c322714e",
+      "recorded_sha256": "d6c1c37caba2e7ca587220b2e6fbf264558b78662cb09faafaf401d07875145d"
+    },
+    {
+      "path": "knowledge/results/ans-cycle/2026-10-17-reviewer.json",
+      "git_blob_sha": "41c88b4ee3ee550948ca4f442784f93a6dfded40",
+      "recorded_sha256": "45482117baf17b518be50f7d729fa08059f89d3aae35268060ef354102215a4b"
+    },
+    {
+      "path": "knowledge/results/pulse/latest.json",
+      "git_blob_sha": "dad8eb8ea213068574b9ca1af0795d1c84323cc5",
+      "scope": "current rolling snapshot; not immutable evidence of all historical transitions"
+    },
+    {
+      "path": "workers/pulse-worker/tasks.js",
+      "git_blob_sha": "e543e29fbf4e4464b571b2caa8b7891f3ed37386"
+    },
+    {
+      "path": "ops/dispatch/oversight/ANS-2026-10-17-doubao-blocked_reconcile_existing_attempt.md",
+      "git_blob_sha": "070ac671b2e9e600438524d3105caed39969ace1"
+    }
+  ],
+  "provider_generation_history": [
+    {
+      "actual_provider": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "tokens_reported": 12315,
+      "source": "original_run_provider_attempt"
+    },
+    {
+      "actual_provider": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "tokens_reported": 13561,
+      "source": "original_run_provider_attempt"
+    }
+  ],
+  "original_worker_draft_accepted": false,
+  "original_worker_review_status": "rejected_draft_review",
+  "reviewer_task_status_observed": "submitted_pending_review",
+  "reviewer_task_independently_accepted": false,
+  "actual_code_finding": "submit_task only accepts claimed; review_task final states cannot be overwritten by opposite review. Rejected draft has no automatic -recheck path; that is a separate possible recovery design question, not proof of the rejected original finding.",
+  "regression_test": "node --test scripts/tests/ans-task-review.test.mjs",
+  "tests_run_this_reconciliation": 0,
+  "tests_passed_this_reconciliation": null,
+  "pending": "Wait for real CI and independent acceptance of the reviewer task; do not close the original warning from this controller-authored reconciliation alone.",
+  "independent_review_of_this_reconciliation": false,
+  "deployment_evidence": null,
+  "production_deployed": false,
+  "paid": false,
+  "tx_hash": null,
+  "additional_model_calls": 0,
+  "additional_funds_moved": 0,
+  "model_bill_amount_verified": false,
+  "original_claim_replayed": false,
+  "original_provider_attempt_replayed": false,
+  "recorded_sha256_recomputed_this_run": false,
+  "note": "Existing raw rejection, task ids, leases and idempotency are unchanged. This is evidence organization plus a regression candidate, not new dispatch, acceptance or production closure."
+}
