@@ -1,0 +1,300 @@
+{
+  "date": "2026-11-03",
+  "timezone": "Asia/Shanghai",
+  "run_id": "41556195735",
+  "source_commit": "30a002fb79542604080aacc2767403d79d22c096",
+  "at": "2026-11-03T00:55:01.969Z",
+  "status": "draft_rejected",
+  "generation_policy": "ans_short_non_thinking_v2",
+  "priority": "ANS autonomous dispatch and feedback",
+  "tasks": [
+    {
+      "id": "ANS-2026-11-03-deepseek",
+      "agent": "deepseek",
+      "role": "worker"
+    },
+    {
+      "id": "ANS-2026-11-03-doubao",
+      "agent": "doubao",
+      "role": "independent_reviewer"
+    }
+  ],
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-11-03T00:55:05.705Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 28772
+    },
+    {
+      "requested_agent": "Doubao",
+      "status": "success",
+      "at": "2026-11-03T00:55:15.359Z",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "finish_reason": "stop",
+      "tokens_used": 29764
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "worker",
+      "task_id": "ANS-2026-11-03-deepseek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "sha256": "c5c35e840bbdcd5ff02c593689a8555f4c10dfd70f03cf7e26a04f957e3f5ad9",
+      "path": "knowledge/results/ans-cycle/2026-11-03-worker.json"
+    },
+    {
+      "role": "reviewer",
+      "task_id": "ANS-2026-11-03-doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "sha256": "c589c9444a768759964dda0b7f9974619876e8a3c61e67e19b93cf2e898e8234",
+      "path": "knowledge/results/ans-cycle/2026-11-03-reviewer.json"
+    }
+  ],
+  "openai_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "supervisory_subject": {
+    "operation": "memory_promotion",
+    "subject": {
+      "candidate_id": "CAND-20260921-1912",
+      "claim": "**观察：系统是否把“状态—边界—下一步”外化成可检索记录，可能比单纯要求参与者保持意志力，更能稳定长期行为。**",
+      "source": "memory/daily/grok-2026-09-21.md",
+      "source_sha256": "191206ba75561e42681cfef443ad461ef952f0ad18d1716af1b4ca91bba5bfc2"
+    },
+    "subject_sha256": "ed613c1815660140f990f4b6d9a1797dd6d8fc891cc3b67c38751c7526d9c419",
+    "source_text": "# Grok 每日观察 · 2026-09-21\n\n## 1. 装备论观察\n\n**观察：系统是否把“状态—边界—下一步”外化成可检索记录，可能比单纯要求参与者保持意志力，更能稳定长期行为。**\n\n来源：`ltzzz-memory/装备论.md` 的核心假设把身体、感知、习气、环境、软件、AI 与社会工具作为可长期观察的“装备系统”，并要求每次新增内容写明观察、来源、假设、反例、AI验证、人工验证与下一步。\n\n### 可验证假设\n连续 7 天比较两类任务：\n- A：有状态、失败原因、下一步和结果文件的任务；\n- B：只有自然语言提醒、没有结构化结果记录的任务。\n\n记录：触发率、完成率、失败定位时间、重复确认次数、下一步是否明确。该观察只检验行为组织效果，不检验疾病治疗效果。\n\n### 对心理健康议题的启发（非医学结论）\n- 焦虑：把模糊担忧拆成事实、可控动作、等待项，可能降低不确定性带来的反复确认；这是行为设计启发，不等于焦虑症治疗证据。\n- 抑郁：把任务拆成低门槛、可完成、可见的步骤，可能增加行动反馈；不能据此诊断抑郁或替代心理治疗、药物治疗。\n- 双相相关问题：结构化记录睡眠、精力、活动量、情绪变化，可能帮助形成时间序列；但双相诊断需要专业人员综合评估病程、持续时间、严重程度、功能受损及其他医学因素，不能由“装备论”或 AI 自行判定。\n\n## 2. APP / Web3 代码审查\n\n审查对象：`app.html`、`wallet-lab.html`。\n\n### 真实发现\n`wallet-lab.html` 提供真实 ETH 转账和赞赏入口，页面明确要求由钱包弹窗交给用户本人确认，并禁止向网站或 AI 提供助记词、私钥、密码和验证码。当前代码未见把私钥写入页面的迹象。\n\n### 本次是否实施代码修改\n**未实施生产代码修改。**\n\n原因：本次可见代码片段不足以安全确认转账处理函数的完整校验、网络切换和金额解析逻辑；在未完整验证前直接改动真实转账路径，可能造成兼容性或资金风险。根据“不得修改真实资金、支付或生产权限”的约束，本次只留下审查记录，不制造无意义修改。\n\n### 下一步最小安全改进\n在完整核对转账函数后，优先补充：\n1. 目标地址 checksum / 格式校验；\n2. 金额解析失败与非正数的明确阻断；\n3. 链 ID 与页面声明网络不一致时的阻断提示；\n4. 每次用户确认前显示目标地址、网络、金额和预计手续费摘要。\n\n## 3. 状态\n\n### 已上线\n- 今日观察记录已写入本文件。\n- APP / Web3 代码审查已完成。\n- 未对密钥、真实资金、支付权限或生产权限做修改。\n\n### 等人工凭证\n- 完整转账函数代码核对所需的部署版本 / 运行日志。\n- 如要启用更严格的生产保护，还需要由人工配置相应的前端发布与钱包网络策略；本次未触碰。\n\n## 4. 医学边界\n\n本记录是思想讨论、行为组织实验和软件安全审查，不是医学诊断或治疗建议。若出现持续或明显影响生活的情绪、睡眠、精力、冲动控制变化，应寻求合格医疗/心理专业人员评估。"
+  },
+  "pulse_observed_at": "2026-11-03T00:52:56.481Z",
+  "actual_autonomic_feedback": {
+    "version": 1,
+    "observed_at": "2026-11-03T00:52:56.481Z",
+    "cases": [],
+    "open_cases": 0,
+    "action_taken": {
+      "type": "apply_health_dispatch_controls",
+      "paused_agents": [],
+      "dispatch_paused": false
+    },
+    "follow_up_receipt": {
+      "previous_observation_at": "2026-11-03T00:47:56.250Z",
+      "current_observation_at": "2026-11-03T00:52:56.481Z",
+      "next_probe_due_at": "2026-11-03T00:57:56.481Z"
+    },
+    "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
+    "financial_execution": false,
+    "model_generation_proven": false,
+    "real_money_penalty": false
+  },
+  "remote_claims": true,
+  "inputs": [
+    {
+      "file": "scripts/lib/daily-task-board.mjs",
+      "sha256": "efd5889249be2e63b2dcc3637046b420b4455147f38ecbc1b62effeefa293e48",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "scripts/daily-task-board.mjs",
+      "sha256": "703790c5b25c91c216ebb05d3a0c5a6908772fa1f0a0516142713f23140e2d01",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "scripts/lib/pulse-client.mjs",
+      "sha256": "74678862d82f618f87abc0111319903100ea69a61857b6e87f4adde87906b4a7",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "workers/pulse-worker/index.js",
+      "sha256": "3b3bceabedbeb3c4b19f7d011d51a4a2d9ef02b2ded84a00c34f24f334106e1f",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "workers/pulse-worker/engine.js",
+      "sha256": "b46053c7f73001ef110a3260930ce2a642b136444b7856a77b8fef1a85872d0e",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "workers/pulse-worker/tasks.js",
+      "sha256": "9577bcec2bd2716dc276fe7c5b9ebd5f19392dd5979ba621190c4895f3fb54cf",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "scripts/lib/daily-assignment.mjs",
+      "sha256": "149bf53f6daa890ba86ce45c515a5dc158fe3be6ad1f7252a5e77c5bf2f48813",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "scripts/run-autonomous-control.mjs",
+      "sha256": "944d60d024a0a51388c020fa43e7f9d3cb6a85f3cdeaee00d0d770594d87b7ba",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "scripts/run-daily-tasks.mjs",
+      "sha256": "f35b674de8891eacb21b042feb8ec1cebf7fdef4ced49131d72992910fa3dc84",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "docs/ANS-AUTONOMOUS-PULSE.md",
+      "sha256": "7c8e34b2186faa1da46936c60f9c9002ab1fd93ba324d532e5c11dc46f4b5722",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    },
+    {
+      "file": "knowledge/results/ans-cycle/2026-11-02-reviewer.json",
+      "sha256": "de39236fdf6f9847a576bc60312a61bac22996eb3c9c664b21dc00799f01fd40",
+      "commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64"
+    }
+  ],
+  "execution_source_commit": "6533e57e01bc0f9b39ff6882fa897c07a72bec64",
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "ans-worker-and-independent-review",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "29e49b3e4b763413d79182863f9bc53e1cce4e93dc537afd01ff8c2973ca5c99",
+      "invalid_entries": 0
+    }
+  },
+  "execution_expectation": {
+    "expected_status": "draft_independently_reviewed",
+    "source": "controller_fixed_expectation_not_model_prediction",
+    "verification": "bound independent artifact review only; no deployment or platform acceptance"
+  },
+  "provider_attempts": [
+    {
+      "requested_agent": "DeepSeek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 28772,
+      "request_id": null,
+      "completion_id": "9eb6a156-08d4-41c6-b174-e4bbba2f9603",
+      "stream_complete": true,
+      "error": null
+    },
+    {
+      "requested_agent": "Doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 29764,
+      "request_id": null,
+      "completion_id": null,
+      "stream_complete": null,
+      "error": null
+    }
+  ],
+  "worker_raw_output": "```json\n{\n  \"finding\": \"scripts/daily-task-board.mjs 的 sync 分支存在重复同步断点：syncDailyBoard 被调用两次，且单次调用内恢复成功后的控制流未显式分流。第二次 syncDailyBoard 调用缺少调用后状态检查，可能在独立评审物化后重复处理或覆盖当日看板状态。\",\n  \"evidence_paths\": [\n    \"scripts/daily-task-board.mjs\",\n    \"scripts/lib/daily-task-board.mjs\",\n    \"knowledge/results/ans-cycle/2026-11-02-reviewer.json\"\n  ],\n  \"minimal_patch\": {\n    \"file\": \"scripts/daily-task-board.mjs\",\n    \"change\": \"在 sync 分支中，将第二个 await syncDailyBoard(options) 包裹为仅处理评审后的必要状态，避免重复同步已处理席位。\",\n    \"patch\": \"--- a/scripts/daily-task-board.mjs\\n+++ b/scripts/daily-task-board.mjs\\n@@ -42,9 +42,16 @@ const options={root,date,snapshot:pulseSnapshot,command,readRemote};\\n   await syncDailyBoard(options);\\n   materializeDailyReview({root,date});\\n   await syncDailyReview(options);\\n-  await syncDailyBoard(options);\\n+  const afterReview = await syncDailyBoard(options);\\n+  if (afterReview && hasUnverifiedBoard(afterReview)) {\\n+    console.error(JSON.stringify({date, unverified_seats: Object.entries(afterReview.seats).filter(([,s]) => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','missing_required_section','failure_sync_unknown','sync_unknown','review_unknown'].includes(s.status)).map(([a,s]) => ({agent:a,status:s.status}))}));\\n+  }\\n   const record=recordDailyReviewReadback({root,date});\\n   const resultUpdated=reconcileDailyResult(root,date);\\n   console.log(JSON.stringify({date,seats:record?Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status])):{}}));\\n   console.log(JSON.stringify({date,result_updated:resultUpdated,model_calls:0,production_deployment_accepted:false}));\\n   if(hasUnverifiedBoard(record)||record?.independent_review&&record.independent_review.verified!==true)process.exitCode=1;\"\n  },\n  \"verification_commands\": [\n    \"node --check scripts/daily-task-board.mjs\",\n    \"node --check scripts/lib/daily-task-board.mjs\",\n    \"node -e \\\"import('./scripts/lib/daily-task-board.mjs').then(m => { const r = {date:'2026-11-02', seats:{a:{status:'generation_started',assignment:{id:'DAILY-2026-11-02-a'},claim_verified:true,artifact:null}}}; console.log(m.hasUnverifiedBoard(r)); })\\\"\",\n    \"git diff -- scripts/daily-task-board.mjs\"\n  ],\n  \"remaining_blocker\": \"未在真实运行环境中验证第二次 syncDailyBoard 的重复处理效果；未实际执行受控故障注入以证明补丁消除重复同步；未确认评审工作流中 materializeDailyReview 与 syncDailyReview 是否依赖第二次 syncDailyBoard 的座位状态。\"\n}\n```",
+  "worker_raw_sha256": "f0f36d5551cac5aaa2a57ab831fe30a658980872f7bfcc81fe0ef1be54ff8893",
+  "worker_format": "json_engineering_draft",
+  "action_taken": {
+    "type": "engineering_draft_created_not_deployed",
+    "artifact_sha256": "c5c35e840bbdcd5ff02c593689a8555f4c10dfd70f03cf7e26a04f957e3f5ad9"
+  },
+  "follow_up_receipt": {
+    "artifact_sha256": "c5c35e840bbdcd5ff02c593689a8555f4c10dfd70f03cf7e26a04f957e3f5ad9",
+    "reviewer_provider": "Doubao",
+    "reviewer_model": "doubao-seed-2-1-pro-260915",
+    "accepted": false,
+    "scope": "independent_engineering_draft_review_not_production_execution"
+  },
+  "audit_raw_output": "{\"accepted\":false,\"artifact_sha256\":\"c5c35e840bbdcd5ff02c593689a8555f4c10dfd70f03cf7e26a04f957e3f5ad9\",\"reasons\":[\"源码可静态确认 scripts/daily-task-board.mjs 的 sync 分支确实两次调用 syncDailyBoard：第一次在 materializeDailyReview/syncDailyReview 之前，第二次在其之后。\",\"finding 中“第二次 syncDailyBoard 调用缺少调用后状态检查”与当前源码相符：原代码只是 await syncDailyBoard(options)，没有检查返回的 ledger。\",\"但 finding 声称第二次调用可能“重复处理或覆盖当日看板状态”，现有源码只能证明存在该调度交互，不能单独证明必然重复处理或覆盖；syncDailyBoard 内部通过任务状态、evidence path/hash 和重复 command id 做了若干幂等保护。\",\"交付的 minimal_patch 与其文字说明不一致：文字称将第二次调用“包裹为仅处理评审后的必要状态”，实际补丁仍无条件执行 await syncDailyBoard(options)，只是接收返回值并在存在未验证席位时打印错误，没有限制处理范围。\",\"补丁没有消除第二次全量 syncDailyBoard 调用，因此没有直接修复所描述的“重复同步断点”。\",\"补丁新增的 console.error 只输出未验证席位，不改变控制流、不阻止后续 recordDailyReviewReadback/reconcileDailyResult，也没有针对评审后状态做必要的显式分流。\",\"补丁引用的 afterReview.seats 结构与源码中 ledger record 的 seats 结构兼容，hasUnverifiedBoard 也已从 scripts/lib/daily-task-board.mjs 导入；从静态文本看该新增表达式大概率不造成引用错误，但这不能替代语法检查和运行验证。\",\"补丁 hunk 未显示对文件导入、函数签名或 syncDailyBoard 实现的修改；现有 hasUnverifiedBoard 已存在，因此该草稿的主要可复核变化仅是日志输出，不足以支撑 finding 提出的修复目标。\",\"verification_commands 中第三条只验证一个 generation_started 且 claim_verified=true、artifact=null 的模拟席位会被 hasUnverifiedBoard 判为未验证，不能验证第二次同步是否重复处理，也不能验证补丁有效性。\",\"verification_commands 没有自动化回归用例覆盖第一次 sync、materializeDailyReview、syncDailyReview、第二次 sync 的顺序，也没有覆盖评审完成、评审拒绝、sync_unknown、review_unknown 等关键状态。\",\"evidence_paths 中 knowledge/results/ans-cycle/2026-11-02-reviewer.json 的 artifact_sha256 是另一个哈希，内容讨论的也是 recoverArtifact 分流问题，不能作为本次补丁已经修复双次同步问题的证据。\",\"remaining_blocker 已承认未在真实环境验证重复处理效果、未做故障注入、未确认 materializeDailyReview 与 syncDailyReview 是否依赖第二次 syncDailyBoard；因此该交付最多是问题分析和补丁草稿，不能认定修复已应用或上线。\"],\"unverified\":[\"未取得本次工程交付原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。\",\"未实际执行 node --check scripts/daily-task-board.mjs。\",\"未实际执行 node --check scripts/lib/daily-task-board.mjs。\",\"未实际执行交付给出的 hasUnverifiedBoard node 内联命令。\",\"未实际执行 git diff，无法确认补丁是否已存在于工作区或能否干净应用。\",\"未验证补丁文本的 unified diff 行号、上下文和缩进是否与当前文件完全匹配。\",\"未运行自动化单元测试或集成测试。\",\"未验证第一次 syncDailyBoard 后 materializeDailyReview 和 syncDailyReview 对 ledger、任务板状态及评审证据的具体读写影响。\",\"未验证第二次 syncDailyBoard 是否会重复发起 submit_task、fail_task 或其他控制命令；虽然源码存在部分幂等逻辑，但未通过受控环境实证。\",\"未验证第二次 syncDailyBoard 是否会覆盖、重置或错误保留 submission_verified、review_verified、accepted、review_receipt、sync_reason 等字段。\",\"未验证 completed_draft_review、rejected_draft_review、submitted_pending_review、sync_unknown、review_unknown 等状态在双次同步下的最终退出码。\",\"未进行网络失败、远端 artifact 缺失、远端评审证据缺失、快照过期、任务 owner 冲突等故障注入。\",\"未验证补丁新增日志是否符合现有日志消费方的 JSON schema，是否会干扰 GitHub Actions 或后续解析。\",\"未证明补丁不会新增模型调用、API 费用、重复采购、资金交易或其他未经授权副作用；从源码静态看 syncDailyBoard 不直接调用模型，但未实证完整工作流。\",\"未验证生产部署、目标环境、制品 SHA、生产版本或线上关键行为。\"]}",
+  "audit": {
+    "accepted": false,
+    "artifact_sha256": "c5c35e840bbdcd5ff02c593689a8555f4c10dfd70f03cf7e26a04f957e3f5ad9",
+    "reasons": [
+      "源码可静态确认 scripts/daily-task-board.mjs 的 sync 分支确实两次调用 syncDailyBoard：第一次在 materializeDailyReview/syncDailyReview 之前，第二次在其之后。",
+      "finding 中“第二次 syncDailyBoard 调用缺少调用后状态检查”与当前源码相符：原代码只是 await syncDailyBoard(options)，没有检查返回的 ledger。",
+      "但 finding 声称第二次调用可能“重复处理或覆盖当日看板状态”，现有源码只能证明存在该调度交互，不能单独证明必然重复处理或覆盖；syncDailyBoard 内部通过任务状态、evidence path/hash 和重复 command id 做了若干幂等保护。",
+      "交付的 minimal_patch 与其文字说明不一致：文字称将第二次调用“包裹为仅处理评审后的必要状态”，实际补丁仍无条件执行 await syncDailyBoard(options)，只是接收返回值并在存在未验证席位时打印错误，没有限制处理范围。",
+      "补丁没有消除第二次全量 syncDailyBoard 调用，因此没有直接修复所描述的“重复同步断点”。",
+      "补丁新增的 console.error 只输出未验证席位，不改变控制流、不阻止后续 recordDailyReviewReadback/reconcileDailyResult，也没有针对评审后状态做必要的显式分流。",
+      "补丁引用的 afterReview.seats 结构与源码中 ledger record 的 seats 结构兼容，hasUnverifiedBoard 也已从 scripts/lib/daily-task-board.mjs 导入；从静态文本看该新增表达式大概率不造成引用错误，但这不能替代语法检查和运行验证。",
+      "补丁 hunk 未显示对文件导入、函数签名或 syncDailyBoard 实现的修改；现有 hasUnverifiedBoard 已存在，因此该草稿的主要可复核变化仅是日志输出，不足以支撑 finding 提出的修复目标。",
+      "verification_commands 中第三条只验证一个 generation_started 且 claim_verified=true、artifact=null 的模拟席位会被 hasUnverifiedBoard 判为未验证，不能验证第二次同步是否重复处理，也不能验证补丁有效性。",
+      "verification_commands 没有自动化回归用例覆盖第一次 sync、materializeDailyReview、syncDailyReview、第二次 sync 的顺序，也没有覆盖评审完成、评审拒绝、sync_unknown、review_unknown 等关键状态。",
+      "evidence_paths 中 knowledge/results/ans-cycle/2026-11-02-reviewer.json 的 artifact_sha256 是另一个哈希，内容讨论的也是 recoverArtifact 分流问题，不能作为本次补丁已经修复双次同步问题的证据。",
+      "remaining_blocker 已承认未在真实环境验证重复处理效果、未做故障注入、未确认 materializeDailyReview 与 syncDailyReview 是否依赖第二次 syncDailyBoard；因此该交付最多是问题分析和补丁草稿，不能认定修复已应用或上线。"
+    ],
+    "unverified": [
+      "未取得本次工程交付原始字节并重算 SHA-256，artifact_sha256 仅按要求严格回传。",
+      "未实际执行 node --check scripts/daily-task-board.mjs。",
+      "未实际执行 node --check scripts/lib/daily-task-board.mjs。",
+      "未实际执行交付给出的 hasUnverifiedBoard node 内联命令。",
+      "未实际执行 git diff，无法确认补丁是否已存在于工作区或能否干净应用。",
+      "未验证补丁文本的 unified diff 行号、上下文和缩进是否与当前文件完全匹配。",
+      "未运行自动化单元测试或集成测试。",
+      "未验证第一次 syncDailyBoard 后 materializeDailyReview 和 syncDailyReview 对 ledger、任务板状态及评审证据的具体读写影响。",
+      "未验证第二次 syncDailyBoard 是否会重复发起 submit_task、fail_task 或其他控制命令；虽然源码存在部分幂等逻辑，但未通过受控环境实证。",
+      "未验证第二次 syncDailyBoard 是否会覆盖、重置或错误保留 submission_verified、review_verified、accepted、review_receipt、sync_reason 等字段。",
+      "未验证 completed_draft_review、rejected_draft_review、submitted_pending_review、sync_unknown、review_unknown 等状态在双次同步下的最终退出码。",
+      "未进行网络失败、远端 artifact 缺失、远端评审证据缺失、快照过期、任务 owner 冲突等故障注入。",
+      "未验证补丁新增日志是否符合现有日志消费方的 JSON schema，是否会干扰 GitHub Actions 或后续解析。",
+      "未证明补丁不会新增模型调用、API 费用、重复采购、资金交易或其他未经授权副作用；从源码静态看 syncDailyBoard 不直接调用模型，但未实证完整工作流。",
+      "未验证生产部署、目标环境、制品 SHA、生产版本或线上关键行为。"
+    ],
+    "executed_by": "Doubao",
+    "model": "doubao-seed-2-1-pro-260915",
+    "scope": "engineering_draft_only"
+  },
+  "deployed": false,
+  "completed_at": "2026-11-03T00:55:44.753Z",
+  "submissions": [
+    {
+      "task_id": "ANS-2026-11-03-deepseek",
+      "status": "submitted_pending_review",
+      "evidence_path": "knowledge/results/ans-cycle/2026-11-03-worker.json",
+      "sha256": "c5c35e840bbdcd5ff02c593689a8555f4c10dfd70f03cf7e26a04f957e3f5ad9"
+    },
+    {
+      "task_id": "ANS-2026-11-03-doubao",
+      "status": "submitted_pending_review",
+      "evidence_path": "knowledge/results/ans-cycle/2026-11-03-reviewer.json",
+      "sha256": "c589c9444a768759964dda0b7f9974619876e8a3c61e67e19b93cf2e898e8234"
+    }
+  ],
+  "sync_status": "hashed_artifacts_submitted",
+  "remote_review_status": "rejected_draft_review",
+  "board_verification": {
+    "at": "2026-11-03T00:55:47.609Z",
+    "verified": true,
+    "worker_status": "rejected_draft_review",
+    "reviewer_status": "submitted_pending_review"
+  }
+}

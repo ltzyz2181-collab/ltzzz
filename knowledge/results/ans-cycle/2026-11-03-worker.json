@@ -1,0 +1,20 @@
+{
+  "finding": "scripts/daily-task-board.mjs 的 sync 分支存在重复同步断点：syncDailyBoard 被调用两次，且单次调用内恢复成功后的控制流未显式分流。第二次 syncDailyBoard 调用缺少调用后状态检查，可能在独立评审物化后重复处理或覆盖当日看板状态。",
+  "evidence_paths": [
+    "scripts/daily-task-board.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-02-reviewer.json"
+  ],
+  "minimal_patch": {
+    "file": "scripts/daily-task-board.mjs",
+    "change": "在 sync 分支中，将第二个 await syncDailyBoard(options) 包裹为仅处理评审后的必要状态，避免重复同步已处理席位。",
+    "patch": "--- a/scripts/daily-task-board.mjs\n+++ b/scripts/daily-task-board.mjs\n@@ -42,9 +42,16 @@ const options={root,date,snapshot:pulseSnapshot,command,readRemote};\n   await syncDailyBoard(options);\n   materializeDailyReview({root,date});\n   await syncDailyReview(options);\n-  await syncDailyBoard(options);\n+  const afterReview = await syncDailyBoard(options);\n+  if (afterReview && hasUnverifiedBoard(afterReview)) {\n+    console.error(JSON.stringify({date, unverified_seats: Object.entries(afterReview.seats).filter(([,s]) => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','missing_required_section','failure_sync_unknown','sync_unknown','review_unknown'].includes(s.status)).map(([a,s]) => ({agent:a,status:s.status}))}));\n+  }\n   const record=recordDailyReviewReadback({root,date});\n   const resultUpdated=reconcileDailyResult(root,date);\n   console.log(JSON.stringify({date,seats:record?Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status])):{}}));\n   console.log(JSON.stringify({date,result_updated:resultUpdated,model_calls:0,production_deployment_accepted:false}));\n   if(hasUnverifiedBoard(record)||record?.independent_review&&record.independent_review.verified!==true)process.exitCode=1;"
+  },
+  "verification_commands": [
+    "node --check scripts/daily-task-board.mjs",
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m => { const r = {date:'2026-11-02', seats:{a:{status:'generation_started',assignment:{id:'DAILY-2026-11-02-a'},claim_verified:true,artifact:null}}}; console.log(m.hasUnverifiedBoard(r)); })\"",
+    "git diff -- scripts/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "未在真实运行环境中验证第二次 syncDailyBoard 的重复处理效果；未实际执行受控故障注入以证明补丁消除重复同步；未确认评审工作流中 materializeDailyReview 与 syncDailyReview 是否依赖第二次 syncDailyBoard 的座位状态。"
+}
