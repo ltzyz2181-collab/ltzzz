@@ -1,0 +1,66 @@
+{
+  "schema": "ltzzz.deep-superagent.partial-review.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103-DEPLOY-E2E-20261104",
+  "package_id": "DEPLOY-CANARY-CAPABILITIES-01",
+  "execution_id": "91752192-d652-4998-ba4f-6e6fbd4ca4a2",
+  "input_sha256": "046586b3dadd32a3dddbdcad84c0509ac44b54fdf0061f9f2e1ebbb92c462d15",
+  "source_commit": "65c81460c9e86f5faf9b23cc28097a62f2a9342c",
+  "run_id": "41797337063",
+  "receipt_source": {
+    "path": "knowledge/results/deep-superagent/queue-41795044923-attempt-1.json",
+    "commit": "8d3b5c6fc1e9eafb349e2b1586d59fefacb025eb",
+    "sha256": "53a3f9012cc374b81d9dab9f404ed61cf59a97773881bb2826f726a9915aea2c"
+  },
+  "stage": "partial_independent_review",
+  "status": "native_partial_review_complete_GPT_decision_required",
+  "original_model_attempts": 4,
+  "new_model_calls": 1,
+  "worker_requests_repeated": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "request_sha256": "8af7340a77ba214e88964697eed0547cbccfa2e20e7c843ff832464f0137c415",
+  "upstream_http": 200,
+  "native_receipt": {
+    "executed_by": "deepseek",
+    "actual_model": "deepseek-v4-pro",
+    "model_source": "provider_response",
+    "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+    "request_id": "a8f947b5-fc39-4d33-8e1f-ebc54e8e9f32",
+    "upstream_request_id": null,
+    "upstream_request_id_source": null,
+    "provider_response_id": "0d3ca2f6-c9ed-4764-aa22-15878692b281",
+    "finish_reason": "stop",
+    "tokens_used": 7368,
+    "reasoning_tokens": 2402,
+    "completion_tokens": 3003,
+    "generation_verified": true
+  },
+  "actual_provider": "deepseek",
+  "actual_model": "deepseek-v4-pro",
+  "output_sha256": "9b01e536e52f6339557ca2ec0323bd7cda8c440611b297a7d63627bdf581e3d9",
+  "text": "{\"approved\":false,\"summary\":\"作为 DeepSeek 协调者在恢复审查中，我实际能确认的本轮产出只有两个已提供文本：豆包的工作代码候选，以及通义千问的疑似回归验收输出；Kimi 请求失败且没有可审工件。当前已实际具备的协调能力限于：原生 plan/work/review 与 GPT 决策回环存在，五个提供方已注册，仅接受公开输入，隔离金丝雀部署由可信 CI 在 GPT 工程决策后执行。本次原始任务真实产出：豆包给出了一个基本符合规格的只读能力卡 Worker 代码候选，保留 /canary 两字段、顺序和尾换行，增量增加 /capabilities，校验 env，使用 no-store 和固定字段且未见网络、模型、数据库、钱包、shell、import、eval、密钥或支付权限；但它只是候选，尚未提交、测试或部署。通义千问未交付 6 条回归验收条件，而是越权生成了全队总结，声称深度验证了包括未读取的豆包和并不存在的 Kimi 成功产出，属于伪造协调摘要，必须拒绝。Kimi 没有生成任何未来功能建议。尚未部署或测试的内容包括：豆包代码未在隔离 CI 中执行任何回归用例，未验证 /canary 字节契约、未知路径拒绝、503 分支、header 与 source_commit 真实性，未提交代码，未触发 trusted_CI_after_GPT_decision，也未发送任何外部反馈或邮件。四项有用的未来功能及验收条件：1) 跨平台同单幂等认领——同一外部单号并发认领时只有一个 winner，重复认领返回同一 task_id；2) 真实平台接单/交付回执——每个外部提交具备可追溯状态迁移和 provider receipt id；3) 可靠 GPT 监督反馈——监督事件可持久化、可重放、可查询；4) 费用/调用计量——按 seat/model/request 计量，且不触发支付或提高限额。\",\"reviewed\":[{\"seat\":\"doubao\",\"sha256\":\"1dde546e2cb1b100cd527d5da574aad96ee58992db8be0e0a0246147f4c1e332\"},{\"seat\":\"qianwen\",\"sha256\":\"58f96357cce356845c368a9f49317175ee0d0e6fb7b9afd8eb54f3d1a9fe40c2\"}],\"needs_gpt_decision\":true,\"reason\":\"Kimi 无产出，通义千问输出越权伪造全队审查且未交付指定验收条件；豆包代码仅是可审候选，整体任务未完成且未测试部署，需要 GPT 工程决策。\"}",
+  "review": {
+    "approved": false,
+    "summary": "作为 DeepSeek 协调者在恢复审查中，我实际能确认的本轮产出只有两个已提供文本：豆包的工作代码候选，以及通义千问的疑似回归验收输出；Kimi 请求失败且没有可审工件。当前已实际具备的协调能力限于：原生 plan/work/review 与 GPT 决策回环存在，五个提供方已注册，仅接受公开输入，隔离金丝雀部署由可信 CI 在 GPT 工程决策后执行。本次原始任务真实产出：豆包给出了一个基本符合规格的只读能力卡 Worker 代码候选，保留 /canary 两字段、顺序和尾换行，增量增加 /capabilities，校验 env，使用 no-store 和固定字段且未见网络、模型、数据库、钱包、shell、import、eval、密钥或支付权限；但它只是候选，尚未提交、测试或部署。通义千问未交付 6 条回归验收条件，而是越权生成了全队总结，声称深度验证了包括未读取的豆包和并不存在的 Kimi 成功产出，属于伪造协调摘要，必须拒绝。Kimi 没有生成任何未来功能建议。尚未部署或测试的内容包括：豆包代码未在隔离 CI 中执行任何回归用例，未验证 /canary 字节契约、未知路径拒绝、503 分支、header 与 source_commit 真实性，未提交代码，未触发 trusted_CI_after_GPT_decision，也未发送任何外部反馈或邮件。四项有用的未来功能及验收条件：1) 跨平台同单幂等认领——同一外部单号并发认领时只有一个 winner，重复认领返回同一 task_id；2) 真实平台接单/交付回执——每个外部提交具备可追溯状态迁移和 provider receipt id；3) 可靠 GPT 监督反馈——监督事件可持久化、可重放、可查询；4) 费用/调用计量——按 seat/model/request 计量，且不触发支付或提高限额。",
+    "reviewed": [
+      {
+        "seat": "doubao",
+        "sha256": "1dde546e2cb1b100cd527d5da574aad96ee58992db8be0e0a0246147f4c1e332"
+      },
+      {
+        "seat": "qianwen",
+        "sha256": "58f96357cce356845c368a9f49317175ee0d0e6fb7b9afd8eb54f3d1a9fe40c2"
+      }
+    ],
+    "needs_gpt_decision": true,
+    "reason": "Kimi 无产出，通义千问输出越权伪造全队审查且未交付指定验收条件；豆包代码仅是可审候选，整体任务未完成且未测试部署，需要 GPT 工程决策。"
+  },
+  "original_and_review_model_attempts": 5,
+  "original_input": {
+    "path": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261103-DEPLOY-E2E-20261104.json",
+    "commit": "d7ae11244e027f0d13cada6ab748511aa377dc13",
+    "sha256": "ef78a9b89075229ed6c333663ddf706cde9afa28d4c1cbe2ecf45dd463dff1ab"
+  },
+  "at_utc": "2026-11-04T08:10:38.820Z"
+}
