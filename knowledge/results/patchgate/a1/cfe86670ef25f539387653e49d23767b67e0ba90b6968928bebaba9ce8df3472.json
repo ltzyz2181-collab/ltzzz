@@ -1,0 +1,158 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-360",
+  "head_sha": "e394f079987be34ab37425eb0a7251ef1079f93e",
+  "pr_number": 360,
+  "source_main_sha": "c3178e25dcda8cb6bfe65d69ea4f6e1f956cb3c7",
+  "run_id": "41801263282",
+  "at_utc": "2026-11-04T08:40:13.884Z",
+  "idempotency_key": "PATCHGATE-PR-360:e394f079987be34ab37425eb0a7251ef1079f93e",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "47f53600c96caa80e5e5bf6a51ea42bc6f1c3b5e",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/deploy-agent-provenance.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/deploy-memory-os.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/kimi-postfix-probe.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "kimi-proxy-worker.js",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "knowledge/results/kimi-524-model-fix-20261104.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/deploy-agent-provenance.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/run-kimi-postfix-probe.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/kimi-model-override.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/kimi-postfix-probe.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-360",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-360",
+      "base_sha": "c3178e25dcda8cb6bfe65d69ea4f6e1f956cb3c7",
+      "head_sha": "e394f079987be34ab37425eb0a7251ef1079f93e",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "c1119822d0155471356579529457bc63267d72cc6567a3e4a1cda169e5e1415d"
+    },
+    "subject_sha256": "f9cff3859725b23cbe810697cfeb6b34262d36d0b856787698b9e58c11a90b59",
+    "idempotency_key": "PATCHGATE-PR-360:e394f079987be34ab37425eb0a7251ef1079f93e",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/deploy-agent-provenance.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.moonshot.cn"
+        ]
+      },
+      {
+        "path": "scripts/run-kimi-postfix-probe.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/run-kimi-postfix-probe.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api-kimi.ltzzz.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/kimi-model-override.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.moonshot.cn",
+          "fixture"
+        ]
+      },
+      {
+        "path": "scripts/tests/kimi-postfix-probe.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api-kimi.ltzzz.com",
+          "bad"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "authenticated_receipt_writer_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
