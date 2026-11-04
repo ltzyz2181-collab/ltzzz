@@ -166,7 +166,7 @@ test('credential redaction covers nested reports and no new model keys or schedu
  assert.doesNotMatch(workflow,/^concurrency:/m);
  assert.doesNotMatch(workflow,/controller-workflow-command/);
  assert.match(config,/new_sqlite_classes = \["DeepTask"\]/);
- for(const [binding,service] of Object.entries({DEEPSEEK:'ltzzz-deepseek-proxy',DOUBAO:'ltzzz-doubao-proxy',QIANWEN:'ltzzz-qianwen-proxy',KIMI:'ltzzz-kimi-proxy',GROK:'xai-proxy'}))assert.match(config,new RegExp('binding = "'+binding+'"\\nservice = "'+service+'"'));
+ for(const [binding,service] of Object.entries({DEEPSEEK:'ltzzz-deepseek-proxy',DOUBAO:'ltzzz-doubao-proxy',QIANWEN:'ltzzz-qianwen-proxy',KIMI:'ltzzz-kimi-proxy',GROK:'ltzzz-xai-proxy'}))assert.match(config,new RegExp('binding = "'+binding+'"\\nservice = "'+service+'"'));
 });
 test('Wrangler failure diagnostics retain actionable bounded output after credential redaction',()=>{
  const secret='sensitive-service-identity';
@@ -175,4 +175,9 @@ test('Wrangler failure diagnostics retain actionable bounded output after creden
  assert.doesNotMatch(JSON.stringify(details),/sensitive-service-identity/);
  assert.match(details.stderr_tail,/Worker upload rejected: \[REDACTED\]; binding target missing/);
  assert.equal(wranglerFailureEvidence({status:null,error:{code:'ETIMEDOUT'}},[]).process_error,'ETIMEDOUT');
+});
+test('Grok binding matches the actual verified Cloudflare service, not its health response label',()=>{
+ const receipt=JSON.parse(fs.readFileSync('knowledge/results/identity/provider-execution-41408321451.json'));
+ const actual=receipt.workers.find(v=>v.seat==='grok');assert.equal(actual.status,'deployed_health_revision_verified');assert.equal(actual.service,'ltzzz-xai-proxy');
+ const config=fs.readFileSync('wrangler.deep-superagent.toml','utf8');assert.ok(config.includes('binding = "GROK"\nservice = "'+actual.service+'"'));
 });
