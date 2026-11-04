@@ -24,6 +24,9 @@ test('the fixed original input must itself be public/internal and match the exac
 test('recovery prompt exposes actual failure and observed outputs; model summaries are never execution evidence',()=>{
  const {job}=fixture(),messages=reviewMessages(job),body=JSON.parse(messages[1].content);assert.equal(body.actual_receipts.at(-1).upstream_http,524);assert.equal(body.outputs.length,2);assert.equal(body.outputs.some(o=>o.seat==='kimi'),false);assert.match(messages[0].content,/Reject an output that substitutes a whole-team review/);assert.match(messages[0].content,/not a regeneration/);
 });
+test('missing engineering evidence and a 524 response are not asserted as no execution',()=>{
+ const messages=reviewMessages(fixture().job),body=JSON.parse(messages[1].content);assert.match(body.gpt_engineering_status,/not supplied/);assert.doesNotMatch(body.gpt_engineering_status,/not yet committed/);assert.match(messages[0].content,/HTTP524 does not prove no generation or charge/);assert.match(messages[0].content,/unverified, never not done/);
+});
 test('one real review request preserves the worker error and is not an approval or worker retry',async()=>{
  const {job,receipt}=fixture(),store=new Store();let n=0;
  const fetcher=async(url,o)=>{n++;assert.equal(url,'https://api-deep.ltzzz.com/');assert.equal(o.redirect,'error');assert.equal(JSON.parse(o.body).task_id,card.task_id);assert.equal(JSON.parse(o.body).model,undefined);return provider(job);};
