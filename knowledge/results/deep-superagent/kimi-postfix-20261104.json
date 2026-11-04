@@ -1,0 +1,202 @@
+{
+  "schema": "ltzzz.deep-superagent.kimi-postfix-closeout.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "execution_task_id": "DEEP-SUPERAGENT-20261103-DEPLOY-E2E-20261104",
+  "package_id": "DEPLOY-CANARY-CAPABILITIES-01",
+  "original_execution_id": "91752192-d652-4998-ba4f-6e6fbd4ca4a2",
+  "probe_id": "KIMI-POSTFIX-20261104-01",
+  "updated_at_utc": "2026-11-04T08:48:14.695410Z",
+  "status": "fixed_runtime_and_one_native_Kimi_generation_verified_original_unknown_preserved",
+  "implementation_pr": 360,
+  "repair_source_commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+  "probe_run_id": "41801658438",
+  "probe_run_conclusion": "success",
+  "actual_provider": "moonshot",
+  "actual_model": "kimi-k3",
+  "native_response": {
+    "schema_version": "ltzzz.provider-execution.v1",
+    "receipt_source": "worker_code",
+    "executed_by": "kimi",
+    "requested_model": "kimi-k3",
+    "actual_model": "kimi-k3",
+    "model_source": "provider_response",
+    "task_id": "DEEP-SUPERAGENT-20261103-DEPLOY-E2E-20261104",
+    "request_id": "254fb948-08b1-4f44-9ed7-784fd7547203",
+    "provider_response_id": "chatcmpl-2f2e05464cb9460714b703813",
+    "upstream_request_id": null,
+    "upstream_request_id_source": null,
+    "started_at": "2026-11-04T08:44:08.069Z",
+    "completed_at": "2026-11-04T08:44:25.122Z",
+    "upstream_http": 200,
+    "generation_verified": true,
+    "finish_reason": "stop",
+    "tokens_used": 180,
+    "reasoning_tokens": 32,
+    "completion_tokens": 55
+  },
+  "elapsed_ms": 17111,
+  "http": 200,
+  "output_sha256": "9f5740d7ed45698add1cd3e9d4b1ad0e9b2aa64495abbf7ac78833fd44807f73",
+  "marker_verified": true,
+  "native_receipt": {
+    "path": "knowledge/results/deep-superagent/kimi-postfix-41801658438-attempt-1.json",
+    "commit": "eebc2197ff867130203cf8f91bfabbec27f8df3e",
+    "git_blob": "8b450c95197c6de971c97e590d5401b488984392",
+    "sha256": "f3ce52d285e5852204593c6afa521fa7f433b4d49efb96c84c3c79b63bfefae9"
+  },
+  "durable_reservation_and_result": {
+    "path": "knowledge/results/deep-superagent/attempts/a1214690b8fce8bd114edb088c1318802f1d5d3a58b3f825bcbf6f085b4862ea.json",
+    "reservation_commit": "7ff02796c2f491c11f5f662d8ee2a1943c8d7167",
+    "reservation_git_blob": "535ea3e52c3fac6a6640804604db9a554adc7f77",
+    "reservation_status": "reserved_no_provider_retry",
+    "result_commit": "be10593428cc7d32a818f554fa58d6ed5f4b9a8f",
+    "result_git_blob": "5ee8d7222898e4b4f94fc8a928a3c8500a0f6c4d",
+    "result_status": "native_generation_and_marker_verified",
+    "both_actual_GitHub_readbacks_verified": true
+  },
+  "runtime_health": {
+    "http": 200,
+    "configured_model": "kimi-k3",
+    "model_override_configured": true,
+    "source_commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+    "kimi_model_resolution_revision": "kimi-model-override-v1",
+    "generation_verified": false
+  },
+  "runtime_auth_checks": [
+    {
+      "kind": "anonymous",
+      "http": 401,
+      "authenticated": false,
+      "model_calls": 0
+    },
+    {
+      "kind": "wrong",
+      "http": 401,
+      "authenticated": false,
+      "model_calls": 0
+    },
+    {
+      "kind": "valid",
+      "http": 200,
+      "authenticated": true,
+      "model_calls": 0
+    }
+  ],
+  "authenticated_catalogue": {
+    "http": 200,
+    "selected_model": "kimi-k3",
+    "model_calls": 0
+  },
+  "local_regressions": {
+    "node": "22.23.4",
+    "red": {
+      "passed": 2,
+      "failed": 1,
+      "failing_boundary": "health hardcoded auto instead of the effective variable"
+    },
+    "green": {
+      "passed": 63,
+      "failed": 0,
+      "skipped": 0
+    },
+    "output_budget_profile_sha256": "689d34979e2155072e4d2a5cc3135328f5112a80b16452434a53faf29da5844e",
+    "output_budget_profile_changed": false
+  },
+  "source_files": [
+    {
+      "path": "kimi-proxy-worker.js",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "f1dbe7f42570f6d30b54a950f1feb99da5a5aec71bbaec8fa6567b79a4ad9bfa"
+    },
+    {
+      "path": "scripts/deploy-agent-provenance.mjs",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "d15096d270fa69d2b2955c44246eeb04f4ff2cf71a865a5bbdef0c766303ae5c"
+    },
+    {
+      "path": "scripts/run-kimi-postfix-probe.mjs",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "27cdd8b03de30327ef151ac9f8295368d69b27e311d7fa23efe625385853e341"
+    },
+    {
+      "path": "scripts/tests/kimi-model-override.test.mjs",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "525bf6bc78caaccbbed911862476a8ab05deeb3d36c58d2fee2d2378dbd30900"
+    },
+    {
+      "path": "scripts/tests/kimi-postfix-probe.test.mjs",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "afcf18a8ce655ee80419a66368ce2f2048c16cbfcdef14e1bf5d83f8ae4d36de"
+    },
+    {
+      "path": ".github/workflows/deploy-agent-provenance.yml",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "d3b7673bd80eb9dba163c7d6959b74a9fd5a1422d1a36b4b145ba8e10435b1b7"
+    },
+    {
+      "path": ".github/workflows/deploy-memory-os.yml",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "71175967e48c012e725342ed5cc8c322f404420290531f63a0f181faa30df774"
+    },
+    {
+      "path": ".github/workflows/kimi-postfix-probe.yml",
+      "commit": "d73e2375fa6d3bb9f5270df9998e724d3caf7486",
+      "sha256": "805cfa53a3ea60a0e0588504c2e4d8645003c0fb8886bfe8ee391d6af14ddfb4"
+    }
+  ],
+  "deployment_scope": {
+    "first_Doubao_fix_run": "41799631834",
+    "first_Doubao_fix_run_status": "failure_before_any_proxy_deployed_Cloudflare_concurrent_write_11024",
+    "new_all_proxy_deploy_run": "41801393541",
+    "new_all_proxy_deploy_run_status": "deployment_with_blockers",
+    "new_all_proxy_deploy_receipt": "knowledge/results/identity/provider-execution-41801393541.json",
+    "new_deploy_receipt_commit": "aecdebdd8b36118bb39c80b56f579b966c0bbe3a",
+    "Kimi_fixed_code_and_model_health_readback_verified": true,
+    "deploy_time_runtime_catalogue_http": 503,
+    "later_independent_probe_runtime_catalogue_http": 200,
+    "all_proxy_deployment_failure_rewritten_as_success": false,
+    "scope": "The first deployment catalogue read failed; a later separately sealed preflight and actual native request passed. Do not rewrite that historical run or guarantee future catalogue/network/long-generation availability."
+  },
+  "original_524": {
+    "request_id": "65e61b39-eab9-4eae-b67d-52fe988f35f1",
+    "execution_id": "91752192-d652-4998-ba4f-6e6fbd4ca4a2",
+    "http": 524,
+    "generation_and_charge_result": "unknown",
+    "requests_repeated": 0,
+    "original_team_job": "blocked",
+    "original_Qwen_content_accepted": false
+  },
+  "cost": {
+    "new_service_generation_request_attempts": 1,
+    "new_known_completed_native_responses": 1,
+    "reported_tokens": 180,
+    "max_tokens_budget": 16384,
+    "actual_API_bill_verified": false,
+    "new_paid_schedules": 0,
+    "transactions": 0,
+    "income": 0,
+    "paid": false,
+    "tx_hash": null,
+    "scope": "Token usage from actual provider metadata; paid=false is no financial settlement, not free model usage."
+  },
+  "reflection": {
+    "lessons_applied": [
+      "L-20261030-003",
+      "L-20261030-004",
+      "L-20261030-007",
+      "execution_blocked"
+    ],
+    "concrete_changes": [
+      "Reconciled the failed deployment before treating the pushed fix as live.",
+      "Applied the model variable and made health report real config/source; fixed shared deployment concurrency.",
+      "Added an exact-source authenticated preflight and durable one-winner reservation with no unknown-result replay.",
+      "Kept the original job and provider failures; tested with the unchanged quality budget."
+    ],
+    "weights_trained": false
+  },
+  "GPT_current_session_readback_verified": true,
+  "new_feedback_email_sent": false,
+  "external_customer_or_platform_acceptance": false,
+  "financial_policy_changed": false,
+  "root_cause_scope": "Observed fixed-configuration omission and a deployment race; original 524 sole-cause claim and future zero-timeout guarantee remain unproven."
+}
