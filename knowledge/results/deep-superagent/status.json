@@ -1,8 +1,8 @@
 {
   "schema": "ltzzz.deep-superagent.status.v1",
   "task_id": "DEEP-SUPERAGENT-20261103",
-  "updated_at_utc": "2026-11-03T08:23:48.203692Z",
-  "status": "deployed_native_chain_and_GPT_decision_roundtrip_verified_content_revision_requested",
+  "updated_at_utc": "2026-11-04T07:23:00.978Z",
+  "status": "deployed_native_xai_generation_independent_review_and_GPT_internal_decision_verified",
   "profile": "deep_superagent",
   "controller": {
     "daily_coordinator": "deepseek",
@@ -23,15 +23,17 @@
     "verified": true,
     "revision": "ltzzz.deep-superagent.v1",
     "content_guard_revision": "executor-metadata-declarations-v1",
-    "actual_deployed_source_commit": "a4b1d3345b0bfe06a7262a2a2848e47e8c4dc600",
-    "run_id": "41602308307",
+    "actual_deployed_source_commit": "0a5cc3993675a1ebe04c6e101bcbd4024386c575",
+    "run_id": "41790433944",
     "PRs": [
       352,
-      353
+      353,
+      357
     ],
     "merge_commits": [
       "ed330db298349642285c0f0b3264126933c25dc1",
-      "a4b1d3345b0bfe06a7262a2a2848e47e8c4dc600"
+      "a4b1d3345b0bfe06a7262a2a2848e47e8c4dc600",
+      "0a5cc3993675a1ebe04c6e101bcbd4024386c575"
     ],
     "auth_http": {
       "anonymous": 401,
@@ -40,7 +42,13 @@
     },
     "anonymous_generation_http": 401,
     "deployment_model_calls": 0,
-    "native_keys": "Retained in four existing proxy Workers; only existing server service token is bound to new runtime."
+    "native_keys": "Retained in five existing proxy Workers; native xAI key stays in ltzzz-xai-proxy; no key copied into Superagent.",
+    "available_worker_seats": [
+      "doubao",
+      "qianwen",
+      "kimi",
+      "grok"
+    ]
   },
   "native_bootstrap": {
     "verified_generation_chain": true,
@@ -199,7 +207,11 @@
     "gpt": "reserved_disabled_model_unknown",
     "claude": "reserved_disabled_model_unknown",
     "actual_new_native_OpenAI_or_Anthropic_requests": 0,
-    "activation_authority": "GPT arranges when actual credentials/credit/capability exist under owner instruction; reviewer consent is not an extra gate"
+    "activation_authority": "GPT arranges when actual credentials/credit/capability exist under owner instruction; reviewer consent is not an extra gate",
+    "OpenAI_billing_receipt": "knowledge/results/native-api-billing/NATIVE-API-BILLING-20261103-OPENAI.json",
+    "OpenAI_billing_status": "blocked_platform_Cloudflare_human_verification_no_checkout",
+    "OpenAI_API_credit_purchase_confirmed": false,
+    "OpenAI_API_balance": null
   },
   "coexistence": {
     "new_isolated_Worker_and_Durable_Object": true,
@@ -224,14 +236,15 @@
     "unchanged_financial_release_sha256": "2d5c5ea063476d8c325c9837a8b254c3f5470b1ac760aab024ce9762e40bbf28"
   },
   "cost_and_funds": {
-    "new_native_provider_generation_requests": 6,
+    "new_native_provider_generation_requests": 9,
     "breakdown": {
       "limited_native_Qwen_component_review": 1,
       "original_bootstrap": 5,
       "queue_decision_readback": 0,
-      "guard_deployment": 0
+      "guard_deployment": 0,
+      "xai_extension_plan_work_review": 3
     },
-    "reported_tokens": 21180,
+    "reported_tokens": 28877,
     "actual_API_bill_verified": false,
     "cloud_bill_verified": false,
     "treasury_or_chain_transactions": 0,
@@ -240,7 +253,9 @@
     "income_this_internal_test": 0,
     "paid": false,
     "tx_hash": null,
-    "paid_scope": "No financial settlement, not a claim of free model/cloud usage."
+    "paid_scope": "No financial settlement, not a claim of free model/cloud usage.",
+    "this_extension_requests": 3,
+    "this_extension_reported_tokens": 7697
   },
   "evidence": [
     {
@@ -307,5 +322,26 @@
       "bytes": 16974
     }
   ],
-  "public_retention": "Only own public task code/model outputs plus allowed transport/task IDs, hashes and status. No email body, identity links, credentials or private customer package copied."
+  "public_retention": "Only own public task code/model outputs plus allowed transport/task IDs, hashes and status. No email body, identity links, credentials or private customer package copied.",
+  "xai_work_seat": {
+    "status": "native_generation_and_internal_draft_review_verified",
+    "actual_provider": "xai",
+    "actual_model": "grok-4.6",
+    "upstream_request_id": "9cd69399-bbcf-98cf-b8de-7ea00d7b39c5",
+    "output_sha256": "8836fc68839f5703cc449901bd10fc013c93bbaa157d01b200c6ed86a92565d5",
+    "receipt": "knowledge/results/deep-superagent/xai-extension-20261104.json",
+    "task_id": "DEEP-SUPERAGENT-20261103-XAI-20261104",
+    "package_id": "XAI-PUBLIC-ACCEPTANCE-01",
+    "execution_id": "8ed9e87a-7e54-45fc-8d4e-2bc191b3788c",
+    "queue_run_id": "41790634402",
+    "GPT_decision_run_id": "41791342619",
+    "external_customer_acceptance": false
+  },
+  "phone_dependency": {
+    "cloudflare_worker_requires_owner_phone_network": false,
+    "github_actions_requires_owner_phone_network": false,
+    "desktop_operator_requires_its_own_connectivity": true,
+    "GPT_chat_is_permanently_running": false,
+    "instant_email_wake_verified": false
+  }
 }
