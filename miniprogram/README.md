@@ -19,13 +19,17 @@
 
 ## AppID
 
-`project.config.json` 中的 `appid` 为 **`wx0b43a6cf2cb2b07d`**。
+当前 `project.config.json` 中的 `appid` 为 **`wx562bcb6057346fb2`**。现有企业小程序接续记录见 `docs/miniprogram-publish-checklist-20261102.md`；该文档记录桌面执行端报告的开发版 `0.1.1` 上传结果，不能代替本轮后台回读。
 
-已核实：该 AppID 来自微信后台「小程序基础信息」页，**是小程序 AppID，不是公众号 AppID**（2026-11-01 owner 确认）。公众号 AppID 与小程序 AppID 不通用，不能混用。
+历史小程序 AppID 为 `wx0b43a6cf2cb2b07d`。`results/commerce/miniprogram-upload-latest.json` 的旧 CI 回执仍引用它；不能据此认定当前企业小程序上传失败或已经发布。两者均不得与公众号 AppID 混用，实际上传前核对后台目标、主体和受管上传凭据的一致性。
 
 上传前仍需确认当前登录账号拥有该小程序的开发权限；`miniprogram-ci` 还需要上传私钥及 IP 白名单。
 
-## 备案现状（2026-11-01）
+## 备案接续（2026-11-04）
+
+owner 本轮反馈名称因英文含义说明被退回，提出改为「人工智能数字实验室」。这是 owner 报告；尚未在当前后台独立回读退回单、查重结果或提交新名称。纯中文候选及贴合当前服务展示功能的说明见 [`docs/MINIPROGRAM-NAME-20261104.md`](../docs/MINIPROGRAM-NAME-20261104.md)。名称变更、备案接受、代码提审、正式发布分别验收。
+
+## 历史备案意见（2026-11-01，旧账号阶段）
 
 小程序备案**被平台驳回**，五条意见：
 
