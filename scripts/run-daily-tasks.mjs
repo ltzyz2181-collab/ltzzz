@@ -165,6 +165,7 @@ async function main() {
       last3 ? `最近产出（续上下文）：\n${last3}` : "",
       urge,
       reviewPrompt,
+      ch.agent === 'qianwen' ? '【硬性输出要求】你的角色产出必须包含以「【派单监督】」为标题的一段（标题独占一行、行首即标题），写明当日 GPT 总控与 Claude 派单、认领、交付、审核、上线的监督结论与漏单判定；该段缺失视为交付不完整。其余段落按通用短格式。' : '',
       ch.agent === 'qianwen' ? qianwenOversightContext({root:ROOT}) : '',
       ch.agent === 'qianwen' ? '现行目录派单，历史千问建议不能覆盖其v2拆维度要求：\n'+fs.readFileSync(path.join(ROOT,'ops/dispatch/MODELCAT-KIMICN-20261022.md'),'utf8') : '',
       ch.agent === 'qianwen' ? qwenReviewContext(reflections, readLedger(ROOT,today), today) : '',
