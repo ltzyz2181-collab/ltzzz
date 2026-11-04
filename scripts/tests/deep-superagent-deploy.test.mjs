@@ -8,7 +8,7 @@ const SHA='a'.repeat(40),HASH='b'.repeat(64);
 const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'push',GITHUB_SHA:SHA,GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1'};
 const answer=(body,status=200)=>Response.json(body,{status});
 const healthy=()=>({revision:REVISION,source_commit:SHA,generation_verified:false,auth_configured:true});
-const ready=()=>({...healthy(),financial_execution:false,external_submissions_enabled:false,bindings:{deepseek:true,doubao:true,qianwen:true,kimi:true},reserved_native_seats:{gpt:'disabled_reserved',claude:'disabled_reserved'}});
+const ready=()=>({...healthy(),financial_execution:false,external_submissions_enabled:false,bindings:{deepseek:true,doubao:true,qianwen:true,kimi:true,grok:true},reserved_native_seats:{gpt:'disabled_reserved',claude:'disabled_reserved'}});
 function job(patch={}){
  return {task_id:BOOTSTRAP_JOB.task_id,package_id:BOOTSTRAP_JOB.package_id,input_sha256:bootstrapInputHash(),execution_id:'original-execution-01',source_commit:SHA,status:'completed_pending_external_acceptance',terminal:true,model_calls:5,receipts:['deepseek','doubao','qianwen','kimi','deepseek'].map((seat,index)=>({stage:'stage-'+index,seat,actual_provider:{deepseek:'deepseek',doubao:'bytedance',qianwen:'aliyun_dashscope',kimi:'moonshot_cn'}[seat],actual_model:seat+'-test-model',finish_reason:'stop',generation_verified:true,output_sha256:HASH,provider_response_id:'response-'+index})),accepted:false,paid:false,tx_hash:null,...patch};
 }
@@ -90,7 +90,7 @@ test('health and correct auth must match deployed source; probes never send a ge
  await assert.rejects(verifyDeployment({source:'d'.repeat(40),token:'test-service-identity',fetcher,attempts:1}),/deployment_source_or_health_unverified/);
 });
 test('missing service bindings or an enabled financial/native seat fail deployment acceptance',async()=>{
- for(const patch of [{bindings:{deepseek:true,doubao:true,qianwen:true,kimi:false}},{financial_execution:true},{reserved_native_seats:{gpt:'enabled',claude:'disabled_reserved'}}]){
+ for(const patch of [{bindings:{deepseek:true,doubao:true,qianwen:true,kimi:false,grok:true}},{bindings:{deepseek:true,doubao:true,qianwen:true,kimi:true,grok:false}},{financial_execution:true},{reserved_native_seats:{gpt:'enabled',claude:'disabled_reserved'}}]){
   const fetcher=async(url,options)=>url.endsWith('/health')?answer(healthy()):answer({...ready(),...patch},options.headers.Authorization==='Bearer test-service-identity'?200:401);
   await assert.rejects(verifyDeployment({source:SHA,token:'test-service-identity',fetcher,attempts:1}),/deployment_isolation_or_service_binding_unverified/);
  }
@@ -166,7 +166,7 @@ test('credential redaction covers nested reports and no new model keys or schedu
  assert.doesNotMatch(workflow,/^concurrency:/m);
  assert.doesNotMatch(workflow,/controller-workflow-command/);
  assert.match(config,/new_sqlite_classes = \["DeepTask"\]/);
- for(const [binding,service] of Object.entries({DEEPSEEK:'ltzzz-deepseek-proxy',DOUBAO:'ltzzz-doubao-proxy',QIANWEN:'ltzzz-qianwen-proxy',KIMI:'ltzzz-kimi-proxy'}))assert.match(config,new RegExp('binding = "'+binding+'"\\nservice = "'+service+'"'));
+ for(const [binding,service] of Object.entries({DEEPSEEK:'ltzzz-deepseek-proxy',DOUBAO:'ltzzz-doubao-proxy',QIANWEN:'ltzzz-qianwen-proxy',KIMI:'ltzzz-kimi-proxy',GROK:'ltzzz-xai-proxy'}))assert.match(config,new RegExp('binding = "'+binding+'"\\nservice = "'+service+'"'));
 });
 test('Wrangler failure diagnostics retain actionable bounded output after credential redaction',()=>{
  const secret='sensitive-service-identity';
@@ -175,4 +175,9 @@ test('Wrangler failure diagnostics retain actionable bounded output after creden
  assert.doesNotMatch(JSON.stringify(details),/sensitive-service-identity/);
  assert.match(details.stderr_tail,/Worker upload rejected: \[REDACTED\]; binding target missing/);
  assert.equal(wranglerFailureEvidence({status:null,error:{code:'ETIMEDOUT'}},[]).process_error,'ETIMEDOUT');
+});
+test('Grok binding matches the actual verified Cloudflare service, not its health response label',()=>{
+ const receipt=JSON.parse(fs.readFileSync('knowledge/results/identity/provider-execution-41408321451.json'));
+ const actual=receipt.workers.find(v=>v.seat==='grok');assert.equal(actual.status,'deployed_health_revision_verified');assert.equal(actual.service,'ltzzz-xai-proxy');
+ const config=fs.readFileSync('wrangler.deep-superagent.toml','utf8');assert.ok(config.includes('binding = "GROK"\nservice = "'+actual.service+'"'));
 });

@@ -126,7 +126,7 @@ export async function verifyDeployment({source,token,fetcher=fetch,pause=wait,at
   const observed=await requestJson(fetcher,'/v1/status',{token:credential});
   checks.push({kind,http:observed.http});
   if(observed.http!==expected)throw Error('deployment_auth_acceptance_failed');
-  if(kind==='valid'&&(observed.data?.revision!==REVISION||observed.data.source_commit!==source||observed.data.financial_execution!==false||observed.data.external_submissions_enabled!==false||['deepseek','doubao','qianwen','kimi'].some(seat=>observed.data.bindings?.[seat]!==true)||['gpt','claude'].some(seat=>observed.data.reserved_native_seats?.[seat]!=='disabled_reserved')))throw Error('deployment_isolation_or_service_binding_unverified');
+  if(kind==='valid'&&(observed.data?.revision!==REVISION||observed.data.source_commit!==source||observed.data.financial_execution!==false||observed.data.external_submissions_enabled!==false||['deepseek','doubao','qianwen','kimi','grok'].some(seat=>observed.data.bindings?.[seat]!==true)||['gpt','claude'].some(seat=>observed.data.reserved_native_seats?.[seat]!=='disabled_reserved')))throw Error('deployment_isolation_or_service_binding_unverified');
  }
  const anonymousPost=await requestJson(fetcher,'/v1/jobs',{method:'POST',body:{}});
  if(anonymousPost.http!==401)throw Error('anonymous_job_submission_not_denied');
