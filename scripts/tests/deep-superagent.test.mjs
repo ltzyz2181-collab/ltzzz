@@ -17,7 +17,7 @@ class Storage {
 function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOverride=null,workerOutput={}}={}){
   const objects=new Map(),calls=[];
   const env={LTZZZ_AGENT_TOKEN:TOKEN,SUPERAGENT_SOURCE_COMMIT:'a'.repeat(40)};
-  for(const [binding,seat] of Object.entries({DEEPSEEK:'deepseek',DOUBAO:'doubao',QIANWEN:'qianwen',KIMI:'kimi'}))env[binding]={async fetch(request){
+  for(const [binding,seat] of Object.entries({DEEPSEEK:'deepseek',DOUBAO:'doubao',QIANWEN:'qianwen',KIMI:'kimi',GROK:'grok'}))env[binding]={async fetch(request){
     assert.equal(request.headers.get('Authorization'),'Bearer '+TOKEN);
     const body=await request.json();calls.push({seat,body});
     if(seat===transportFailure)throw Error('secret-like transport text must not be persisted');
@@ -56,6 +56,25 @@ test('DeepSeek cannot select reserved seats, duplicate workers or executable too
   for(const tasks of [[{seat:'gpt',task:'act'}],[{seat:'kimi',task:'a'},{seat:'kimi',task:'b'}],[]])assert.throws(()=>parsePlan(JSON.stringify({summary:'plan',tasks})));
   const p=parsePlan(JSON.stringify({summary:'plan',tasks:[{seat:'doubao',task:'review data',command:'rm files'}]}));
   assert.deepEqual(p.tasks,[{seat:'doubao',task:'review data'}]);
+});
+test('native xAI is a registered work seat while the per-job three-worker limit remains unchanged',()=>{
+ assert.equal(parsePlan(JSON.stringify({summary:'xAI work',tasks:[{seat:'grok',task:'Check supplied public evidence'}]})).tasks[0].seat,'grok');
+ assert.throws(()=>parsePlan(JSON.stringify({summary:'too many calls',tasks:['doubao','qianwen','kimi','grok'].map(seat=>({seat,task:'public task'}))})));
+ const config=JSON.parse(fs.readFileSync('config/deep-superagent.json'));assert.ok(config.worker_seats.includes('grok'));assert.equal(config.native_paid_reserved_enabled,false);
+});
+test('Grok-only work uses its service binding, actual receipt metadata and independent DeepSeek review',async()=>{
+ const f=fixture({planOverride:{summary:'One xAI check',tasks:[{seat:'grok',task:'Review supplied public evidence'}],needs_gpt_decision:false}});
+ await f.request();await [...f.objects.values()][0].alarm();
+ const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json(),r=job.receipts.find(v=>v.seat==='grok');
+ assert.equal(job.model_calls,3);assert.deepEqual(f.calls.map(v=>v.seat),['deepseek','grok','deepseek']);assert.equal(r.actual_provider,'xai');assert.equal(r.actual_model,'grok-provider-model');assert.equal(r.generation_verified,true);
+ assert.equal(job.review.independent_of_worker_providers,true);assert.equal(job.status,'completed_pending_external_acceptance');assert.equal(job.accepted,false);assert.equal(job.paid,false);
+ const status=await (await f.request('/v1/status','GET')).json();assert.equal(status.bindings.grok,true);assert.ok(status.available_worker_seats.includes('grok'));
+ await f.request();await [...f.objects.values()][0].alarm();assert.equal(f.calls.length,3);
+});
+test('incomplete xAI output remains failed and is never relabelled as another native provider',async()=>{
+ const f=fixture({badSeat:'grok',planOverride:{summary:'One xAI task',tasks:[{seat:'grok',task:'Check source'}],needs_gpt_decision:false}});
+ await f.request();await [...f.objects.values()][0].alarm();const j=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+ assert.equal(j.status,'blocked');assert.equal(j.receipts.find(v=>v.seat==='grok').actual_provider,'xai');assert.equal(j.receipts.find(v=>v.seat==='grok').generation_verified,false);assert.equal(j.model_calls,2);await f.request();assert.equal(f.calls.length,2);
 });
 test('concurrent enqueue claims exactly once; changed input under same original ID conflicts',async()=>{
   const f=fixture();const responses=await Promise.all([f.request(),f.request()]);const a=await responses[0].json(),b=await responses[1].json();
