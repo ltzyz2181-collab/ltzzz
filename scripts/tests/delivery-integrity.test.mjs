@@ -1,4 +1,8 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {assessDelivery} from '../delivery-integrity.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {assessDelivery,requiredSectionsForAgent,deliveryRequirementsPrompt} from '../delivery-integrity.mjs';
+test('daily and queue instructions expose actual requirements without inventing tools or an extra paid retry',()=>{
+ const sections=requiredSectionsForAgent('qianwen'),p=deliveryRequirementsPrompt(sections);
+ for(const section of sections)assert.ok(p.includes(section));assert.match(p,/【交付结束】/);assert.match(p,/未提供终端/);assert.match(p,/未核查/);assert.throws(()=>deliveryRequirementsPrompt(['bad\nsection']));
+});
 test('token limit is rejected even with end marker',()=>assert.equal(assessDelivery({output:'draft【交付结束】',finish_reason:'length'}).status,'incomplete'));
 test('missing finish metadata cannot prove completeness',()=>assert.equal(assessDelivery({output:'text【交付结束】'}).status,'unverified'));
 test('normal stop with partial table is rejected',()=>assert.equal(assessDelivery({output:'| 0–6s | 手机消息',finish_reason:'stop'}).status,'incomplete'));

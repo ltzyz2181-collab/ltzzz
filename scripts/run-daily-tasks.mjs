@@ -8,7 +8,7 @@ import {qianwenOversightContext} from './lib/dispatch-oversight.mjs';
  * data/reflections/YYYY-MM-DD.md；执行状态保存至 data/results/YYYY-MM-DD.json。
  * 长期记忆文件只读；模型输出不自动晋升到 ltzzz-memory/。
  *
- * OpenAI与Microsoft付费日课停用；Claude为外部免费讨论席；逻辑总控由国内执行器接续。
+ * 原厂OpenAI付费日课停用不等于GPT总控停用；实际relay另以control回执核验。
  * 用法：node scripts/run-daily-tasks.mjs
  */
 import fs from "node:fs";
@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import {readLedger,runReservedSeat,ledgerPath,digest} from "./lib/daily-task-board.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
-import { assessDelivery,requiredSectionsForAgent } from "./delivery-integrity.mjs";
+import { assessDelivery,requiredSectionsForAgent,deliveryRequirementsPrompt } from "./delivery-integrity.mjs";
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
 import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
@@ -169,6 +169,7 @@ async function main() {
       ch.agent === 'qianwen' ? '现行目录派单，历史千问建议不能覆盖其v2拆维度要求：\n'+fs.readFileSync(path.join(ROOT,'ops/dispatch/MODELCAT-KIMICN-20261022.md'),'utf8') : '',
       ch.agent === 'qianwen' ? qwenReviewContext(reflections, readLedger(ROOT,today), today) : '',
       ch.agent === 'qianwen' ? '月度模型目录参考（目录A与生成B分开；失败尝试不是成功生成；GET探针不证明生成能力）：'+JSON.stringify(readJson(path.join(ROOT,'knowledge/results/providers/catalogue-latest.json'),null)?.seats?.map(row=>({seat:row.seat,status:row.status,last_generation_outcome:row.last_generation_outcome,last_generation_outcome_evidence:row.last_generation_outcome_evidence,selected_model:row.selected_model,selected_model_listed:row.selected_model_listed,added_model_ids:row.added_model_ids?.slice(0,5),removed_model_ids:row.removed_model_ids?.slice(0,5)}))||[]) : '',
+      ch.agent === 'qianwen' ? deliveryRequirementsPrompt(requiredSectionsForAgent(ch.agent)) : '',
     ].filter(Boolean).join("\n\n");
 
     if (coreMemory.audit.status !== 'complete') {
