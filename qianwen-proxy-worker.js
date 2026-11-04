@@ -7,7 +7,7 @@ import {beginExecution,executionResponse} from './lib/provider-execution.js';
 //
 // Secrets / Variables：
 //   QWEN_API_KEY   必填 — 百炼 API Key（sk- 开头）
-//   QWEN_MODEL     可选 — 默认 qwen-plus；总控类任务建议 qwen-max 系
+//   QWEN_MODEL     可选 — 默认 qwen-max（2026-11-04 owner 升配；总控/监督类任务用 qwen-max 系）
 //   QWEN_BASE_URL  可选 — 默认 OpenAI 兼容 Chat Completions 地址
 //
 // 健康检查：GET /health
@@ -28,7 +28,7 @@ export default {
         service: 'ltzzz-qianwen-proxy',
         did: 'did:ltzzz:qianwen',
         has_key: Boolean(env.QWEN_API_KEY),
-        ...modelConfiguration(env.QWEN_MODEL || 'qwen-plus',{source:env.QWEN_MODEL?'environment_override':'worker_default',override:Boolean(env.QWEN_MODEL)}),
+        ...modelConfiguration(env.QWEN_MODEL || 'qwen-max',{source:env.QWEN_MODEL?'environment_override':'worker_default',override:Boolean(env.QWEN_MODEL)}),
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
         generation_verified: false,
         time: new Date().toISOString()
@@ -52,7 +52,7 @@ export default {
         return json({ error: 'messages is required', stage: 'request_validation' }, 400);
       }
 
-      const model = body.model || env.QWEN_MODEL || 'qwen-plus';
+      const model = body.model || env.QWEN_MODEL || 'qwen-max';
 
       const upstreamUrl =
         env.QWEN_BASE_URL ||

@@ -10,7 +10,7 @@ export function withGenerationHistory(row,history){
     last_generation_outcome_evidence:entry.evidence.map(({path,commit,sha256,section})=>({path,commit,sha256,section}))};
 }
 export function catalogProviders(env = process.env) {
-  let q; try {q=qwenConfig(env);} catch {q={key:'',model:env.DASHSCOPE_MODEL||'qwen-plus',configuration_error:true};}
+  let q; try {q=qwenConfig(env);} catch {q={key:'',model:env.DASHSCOPE_MODEL||'qwen-max',configuration_error:true};}
   return [
     {seat:'qianwen',base:q.base,key:q.key,selected_model:q.model,configuration_error:q.configuration_error},
     {seat:'deepseek',base:'https://api.deepseek.com/v1',key:env.DEEPSEEK_API_KEY,selected_model:env.DEEPSEEK_MODEL||'deepseek-v4-pro'},

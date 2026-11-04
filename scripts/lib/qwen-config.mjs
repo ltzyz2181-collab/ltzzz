@@ -1,6 +1,6 @@
 export function qwenConfig(env = process.env, suppliedKey) {
   const key = suppliedKey || env.DASHSCOPE_API_KEY || env.QWEN_API_KEY || '';
-  const model = env.DASHSCOPE_MODEL || env.QWEN_MODEL || 'qwen-plus';
+  const model = env.DASHSCOPE_MODEL || env.QWEN_MODEL || 'qwen-max';
   const configured = env.DASHSCOPE_BASE_URL || env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
   const url = new URL(configured);
   const standard = ['dashscope.aliyuncs.com', 'dashscope-intl.aliyuncs.com', 'dashscope-us.aliyuncs.com'].includes(url.hostname);
