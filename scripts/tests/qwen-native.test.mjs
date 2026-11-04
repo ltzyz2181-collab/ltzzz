@@ -15,7 +15,7 @@ test('native adapter preserves first-line code indentation until supervision val
 });
 test('workspace key uses an actual interpolated Bearer header and returns provider model provenance',async()=>{
  let calls=0;const r=await callAgent({apiKey:key,prompt:'fixture',fetchImpl:async(url,init)=>{
-  calls++;assert.equal(url,'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions');assert.equal(init.headers.Authorization,'Bearer '+key);assert.equal(init.redirect,'error');const b=JSON.parse(init.body);assert.equal(b.model,'qwen-plus');assert.equal(b.enable_thinking,false);return Response.json(success);
+  calls++;assert.equal(url,'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions');assert.equal(init.headers.Authorization,'Bearer '+key);assert.equal(init.redirect,'error');const b=JSON.parse(init.body);assert.equal(b.model,'qwen-max');assert.equal(b.enable_thinking,false);return Response.json(success);
  }});assert.equal(calls,1);assert.equal(r.ok,true);assert.equal(r.model,'qwen-provider-version');assert.equal(r.model_source,'provider_response');assert.equal(r.executed_by,'qianwen');assert.equal(r.tokens_used,32);
 });
 test('missing dedicated key does not borrow foreign provider credentials',()=>{assert.equal(qwenConfig({OPENAI_API_KEY:'sk-foreign'}).key,'');assert.equal(qwenConfig({QWEN_API_KEY:key}).key,key);assert.equal(qwenConfig({DASHSCOPE_API_KEY:key,QWEN_API_KEY:'other'}).key,key);});

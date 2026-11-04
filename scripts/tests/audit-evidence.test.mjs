@@ -9,7 +9,7 @@ function fixture(){
  const save=()=>{fs.mkdirSync(path.dirname(root+'/'+file),{recursive:true});fs.writeFileSync(root+'/'+file,JSON.stringify(record));};save();return {root,file,record,save,cleanup:()=>fs.rmSync(root,{recursive:true,force:true})};
 }
 test('health reports code defaults or catalogue policy independently of an explicit MODEL secret, without generation',async()=>{
- for(const [worker,expected] of [[qianwen,'qwen-plus'],[deepseek,'deepseek-flash'],[grok,'grok-3'],[kimi,'auto']]){
+ for(const [worker,expected] of [[qianwen,'qwen-max'],[deepseek,'deepseek-flash'],[grok,'grok-3'],[kimi,'auto']]){
   const r=await worker.fetch(new Request('https://fixture/health'),{}),d=await r.json();assert.equal(d.model_configured,true);assert.equal(d.model_override_configured,false);assert.equal(d.configured_model,expected);assert.equal(d.generation_verified,false);assert.equal(d.model_configuration_revision,'model-configuration-v2');
  }
  const d=await (await doubao.fetch(new Request('https://fixture/health'),{})).json();assert.equal(d.model_configured,false);assert.equal(d.model_config_source,'required_model_missing');
