@@ -1,7 +1,15 @@
 import {qwenConfig} from './lib/qwen-config.mjs';
 
-/** Native DashScope Qwen only. No fallback to other providers and no retries. */
-export async function callAgent({apiKey, prompt, model, maxTokens = 2048, fetchImpl = fetch} = {}) {
+/**
+ * Native DashScope Qwen only. No fallback to other providers and no retries.
+ * Default output budget raised 2048 -> 4096 (2026-11-04): daily qianwen tasks
+ * feed ~27k input tokens (six core-memory docs + oversight context) and must
+ * emit 6 required sections; a 2048 ceiling truncated the output (finish_reason
+ * = length) and dropped the required 【派单监督】 section. 4096 matches the
+ * call ceiling, keeps the qwen-max upgrade unnecessary, and is verified by the
+ * native tests (maxTokens 0 / 10000 still rejected).
+ */
+export async function callAgent({apiKey, prompt, model, maxTokens = 4096, fetchImpl = fetch} = {}) {
   let config;
   try { config = qwenConfig(process.env, apiKey); }
   catch { return {ok: false, status: 'configuration_error', error: 'Qwen endpoint or key type does not match the pay-as-you-go channel'}; }
