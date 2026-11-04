@@ -1,0 +1,52 @@
+name: Deep Superagent partial-result native review without worker replay
+on:
+  pull_request:
+    paths: ['scripts/run-deep-partial-review.mjs','scripts/tests/deep-partial-review.test.mjs','.github/workflows/deep-superagent-partial-review.yml']
+  push:
+    branches: [main]
+    paths: ['ops/deep-superagent/reviews/*.json','scripts/run-deep-partial-review.mjs','scripts/tests/deep-partial-review.test.mjs','.github/workflows/deep-superagent-partial-review.yml']
+permissions: {contents: read}
+concurrency: {group: deep-superagent-partial-review, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-deep-partial-review.mjs && node --test scripts/tests/deep-partial-review.test.mjs
+  review:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Reserve one coordinator review of existing public artifacts; no worker retry
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-deep-partial-review.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deep-partial-review-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/partial-review-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+      - name: Preserve actual native result and errors
+        if: always()
+        run: |
+          file="knowledge/results/deep-superagent/partial-review-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}.json"
+          if ! test -f "$file"; then exit 0; fi
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add "$file"
+          if git diff --staged --quiet; then exit 0; fi
+          status=$(node -p "JSON.parse(require('fs').readFileSync('$file')).status")
+          git commit -m "Deep partial review: $status"
+          node tools/push-receipt-commit.mjs
