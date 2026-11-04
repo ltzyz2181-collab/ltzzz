@@ -1,0 +1,71 @@
+{
+  "task_id": "A-REBUKE-QIANWEN-20261104B",
+  "original_task_id": "A-REBUKE-QIANWEN-20261104",
+  "card_sha256": "6d973939c6e06ce40e9127de8ae77f5076c023b65beed82c3be6ca1ab3706287",
+  "run_id": "41801102424",
+  "executor": "qianwen",
+  "queue_dispatcher": "qianwen",
+  "at": "2026-11-04T08:38:54.314Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "delivery_integrity": {
+    "status": "incomplete",
+    "reason": "completion_marker_missing"
+  },
+  "required_sections": [
+    "【承认与否】",
+    "【实际动作】",
+    "【席位表态】",
+    "【反证】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:A-REBUKE-QIANWEN-20261104B",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "d79858996d243a2bffdd1b244972f18d93571fc8d81a3c9a5ff4770f6be6904c",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "48bc1245a1653c40e93a391e23eef2fa4c950f04084648313f3ccd060e10478b"
+  },
+  "model_source": "provider_response",
+  "status": "incomplete",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-plus",
+  "generated_by_model": "qwen-plus",
+  "attribution_note": "generation by qwen-plus via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 1994,
+  "request_id": "d2f824d4-f22f-91cb-9fe2-12e81f663ece",
+  "output": "段一【承认与否】：承认。因 finish_reason=length 表明输出被截断，未达成完整响应闭环，与 generation_verified=true 所隐含的完整性验证矛盾；该标志仅在 finish_reason=stop 且通过 scripts/check-core-memory.mjs 完整性校验后方可置 true（L-20261030-003）。\n\n段二【实际动作】：无。2026-10-29 至 11-04 期间无可验证 commit 或回执路径存于当前执行器上下文；所有 harness 数据均标注为 advisory，未触发 deterministic_test 执行，亦无 receipts 提交记录（L-20261030-007 要求路径/SHA256/commit 三者俱全，当前缺全部）。\n\n段三【席位表态】：需整改后评估。下一次日课将执行：① 运行 scripts/check-core-memory.mjs 对本次输出字节流做 SHA256 回读校验并输出 raw-byte hash；② 调用 scripts/tests/ans-cycle.test.mjs 验证 draft_rejected 策略是否激活，并记录其 exit code 与 stderr 输出路径；③ 从 task context 中提取 bound reviewer artifact 的 Git commit hash，执行 git cat-file -p <hash> 并保存输出至 /receipts/audit-20261105/rev-artifact.txt。\n\n段四【反证】：无反证。指控依据为实际响应元数据（finish_reason=length）与 self-reported generation_verified=true 的确定性冲突，该冲突可由 response metadata 直接观测，无证据错误。  \n\n（字数：398）",
+  "output_sha256": "eff53618874f4f5fa4d38db869a86f770b7541ad5a945951398a23b29378df30",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-04T08:39:04.299Z"
+}
