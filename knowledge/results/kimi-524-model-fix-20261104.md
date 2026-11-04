@@ -27,3 +27,11 @@
 ## 后续观察点
 - 若固定 kimi-k3 后仍偶发 524：下一步把 kimi 通道 `max_tokens` 显式下调（如 4096），并给 kimi-proxy 上游 fetch 加 AbortSignal.timeout。
 - 未动 KIMI_API_KEY（Worker Secret 明文不可读）；未动 KIMI_PROFILE（owner 质量档）。
+
+## GPT 现场复核补充（原诊断保留，以下区分事实与推断）
+
+- `96823255` 的部署 run `41799631834` 已结束为 failure；Cloudflare code `11024` 表示 Daily Worker 被另一部署并发修改。实际回执为 `deployment_with_blockers`，`workers=[]`，不能用“已推送”代替上线。
+- 原 health 代码始终报告 `configured_model=auto`，不能反映 `KIMI_MODEL`；原部署脚本也没有应用该变量。Deep 服务绑定的请求没有显式模型，因此仅修 Daily caller 不能证明 Deep 路径已绕开目录查询。本轮补齐部署变量、真实配置/源码回读，并为上述遗漏增加回归。
+- `has_key=true` 仅证明有非空配置；未授权目录请求的 401 仅证明该请求能到达认证入口。二者都不能证明已存 Key 有效，也不能排除实际生成链路的网络延迟。必须核验认证目录和本轮真实原生生成回执。
+- `max_tokens=16384` 是预算，不代表实际输出长度或耗时。原 524 与目录查询/推理长耗时之间尚缺逐段生产追踪；“已找到唯一根因”“以后不会 524”均未证实。
+- 本轮保留 `KIMI_PROFILE` 的既有预算，不降档或改 Key。新增一张有原任务/包/修复提交绑定、CAS 防重预留的公开短回答测试卡；仅在配置/鉴权/目录预检通过后允许一次生成。上次未知请求不重放；实际测试结果另存可回读回执。

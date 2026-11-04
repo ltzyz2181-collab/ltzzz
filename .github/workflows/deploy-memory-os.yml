@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+# Both workflows write ltzzz-daily-automation; avoid Cloudflare error 11024.
+concurrency: {group: coded-agent-identity-deployment, cancel-in-progress: false}
+
 jobs:
   deploy-daily-cron:
     runs-on: ubuntu-latest
