@@ -75,7 +75,11 @@ export default {
       // 2026-10-01 修正：moonshot-v1 系列与 kimi-k2.5 已于 2026-08-31 下线，
       // 沿用旧默认值会返回 404 "Not found the model or Permission denied"。
       // 现行可用：kimi-k3 / kimi-k2.6 / kimi-k2.7-code（总控实测确认）。
-      let model=body.model || 'auto';
+      // 2026-11-04 修复：支持 KIMI_MODEL 变量固定模型（原代码注释声明支持但未引用）。
+      // 调用方显式传 'auto' 时视为未指定，优先 KIMI_MODEL，避免每次调用拉 /v1/models
+      // （该请求 20s 超时 + 上游推理长输出易叠加超 CF 100s 窗口 → 524）。
+      const requested=(body.model&&body.model!=='auto')?body.model:(env.KIMI_MODEL||'auto');
+      let model=requested;
       if(model==='auto'){
         const catalog=await fetch('https://api.moonshot.cn/v1/models',{headers:{Authorization:'Bearer '+env.KIMI_API_KEY},signal:AbortSignal.timeout(20000)});
         if(!catalog.ok)return json({error:'official_model_catalogue_unavailable',http:catalog.status},503);

@@ -366,7 +366,9 @@ export async function callAI({ channel, env, ctx, taskName, prompt, expect, time
       apiKey = env.MOONSHOT_API_KEY;
     } else {
       apiUrl = "https://api-kimi.ltzzz.com/";
-      model = "auto";
+      // 2026-11-04 修复：proxy 内置 Key 时固定 kimi-k3（可被 KIMI_MODEL 覆盖），
+      // 不再传 'auto'（每次拉官方目录 + 默认 16384 长输出易超 CF 100s → 524）。
+      model = env.KIMI_MODEL || "kimi-k3";
       apiKey = env.LTZZZ_AGENT_TOKEN;
     }
   } else if (channel === "claude") {
