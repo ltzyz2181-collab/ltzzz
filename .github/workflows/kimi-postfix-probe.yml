@@ -1,0 +1,52 @@
+name: One bounded Kimi post-repair native generation test
+on:
+  pull_request:
+    paths: ['scripts/run-kimi-postfix-probe.mjs','scripts/tests/kimi-postfix-probe.test.mjs','.github/workflows/kimi-postfix-probe.yml']
+  push:
+    branches: [main]
+    paths: ['ops/deep-superagent/probes/KIMI-POSTFIX-20261104-01.json']
+permissions: {contents: read}
+concurrency: {group: coded-agent-identity-deployment, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-kimi-postfix-probe.mjs && node --test scripts/tests/kimi-postfix-probe.test.mjs scripts/tests/kimi-model-override.test.mjs
+  probe:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify deployed fixed model and reserve before exactly one public test request
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-kimi-postfix-probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kimi-postfix-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/kimi-postfix-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+      - name: Preserve actual result without retrying generation
+        if: always()
+        run: |
+          file="knowledge/results/deep-superagent/kimi-postfix-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}.json"
+          if ! test -f "$file"; then exit 0; fi
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add "$file"
+          if git diff --staged --quiet; then exit 0; fi
+          status=$(node -p "JSON.parse(require('fs').readFileSync('$file')).status")
+          git commit -m "Kimi post-repair test: $status"
+          node tools/push-receipt-commit.mjs
