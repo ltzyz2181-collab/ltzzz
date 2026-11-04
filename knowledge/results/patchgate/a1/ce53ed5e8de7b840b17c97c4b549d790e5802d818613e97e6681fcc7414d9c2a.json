@@ -1,0 +1,116 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-358",
+  "head_sha": "6fe315e7cd042a13a6d65b853e99030201c28d93",
+  "pr_number": 358,
+  "source_main_sha": "8d3b5c6fc1e9eafb349e2b1586d59fefacb025eb",
+  "run_id": "41796980998",
+  "at_utc": "2026-11-04T08:06:45.163Z",
+  "idempotency_key": "PATCHGATE-PR-358:6fe315e7cd042a13a6d65b853e99030201c28d93",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "8d3b5c6fc1e9eafb349e2b1586d59fefacb025eb",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/deep-superagent-partial-review.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/DEEP-SUPERAGENT.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/run-deep-partial-review.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/deep-partial-review.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-358",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-358",
+      "base_sha": "8d3b5c6fc1e9eafb349e2b1586d59fefacb025eb",
+      "head_sha": "6fe315e7cd042a13a6d65b853e99030201c28d93",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "47baa9a634c0e84da995c5a921891f301f425ffc14c959746206fed26f8a2fa1"
+    },
+    "subject_sha256": "302d1113a26d0df871aeb52ae7999c89e542ce249e093c9d408064e83b77ada0",
+    "idempotency_key": "PATCHGATE-PR-358:6fe315e7cd042a13a6d65b853e99030201c28d93",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/run-deep-partial-review.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/run-deep-partial-review.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api-deep.ltzzz.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/deep-partial-review.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api-deep.ltzzz.com",
+          "attacker.test"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
