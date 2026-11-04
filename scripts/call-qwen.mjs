@@ -1,13 +1,10 @@
 import {qwenConfig} from './lib/qwen-config.mjs';
 
 /**
- * Native DashScope Qwen only. No fallback to other providers and no retries.
- * Default output budget raised 2048 -> 4096 (2026-11-04): daily qianwen tasks
- * feed ~27k input tokens (six core-memory docs + oversight context) and must
- * emit 6 required sections; a 2048 ceiling truncated the output (finish_reason
- * = length) and dropped the required 【派单监督】 section. 4096 matches the
- * call ceiling, keeps the qwen-max upgrade unnecessary, and is verified by the
- * native tests (maxTokens 0 / 10000 still rejected).
+ * Native DashScope Qwen only, without fallback or retries.
+ * Existing 4096 default retained from ecc338f7 for observation. Historical daily
+ * missing-section responses ended with stop, so budget exhaustion is not their
+ * established cause. Actual completion/reasoning usage is recorded below.
  */
 export async function callAgent({apiKey, prompt, model, maxTokens = 4096, fetchImpl = fetch} = {}) {
   let config;
