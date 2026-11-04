@@ -38,6 +38,17 @@ export async function collectCanary({source,base,api,fetcher=fetch,clock=Date.no
   const verification=verifyDeployment({subject:{head_sha:source,base_sha:base},evidence,allowedTargets:[{url:TARGET.url}],freshnessSeconds:300,now:finished});
   return {evidence,verification};
 }
+export async function collectCapabilities({source,expectedVersion,api,fetcher=fetch,clock=Date.now}){
+  if(!SHA.test(source||'')||typeof expectedVersion!=='string'||!expectedVersion)throw Error('capability_subject_required');
+  const started=clock(),initial=activeVersion(await api('/deployments')),url=new URL('/capabilities',TARGET.url).href;
+  const response=await fetcher(url,{redirect:'error',headers:{Accept:'application/json','Cache-Control':'no-cache'},signal:AbortSignal.timeout(20000)}),bytes=Buffer.from(await response.arrayBuffer());
+  if(bytes.length>4096)throw Error('capability_metadata_too_large');
+  let body;try{body=JSON.parse(bytes.toString('utf8'));}catch{throw Error('capability_json_required');}
+  const current=activeVersion(await api('/deployments')),finished=clock(),date=Date.parse(response.headers.get('Date'));
+  const expected={schema:'ltzzz.deep-superagent.capability-card.v1',coordinator:'deepseek',worker_seats:['doubao','qianwen','kimi','grok'],decision_seat:'gpt',deployment_executor:'trusted_CI_after_GPT_decision',financial_execution:false,external_submissions_enabled:false,native_paid_reserved_enabled:false,source_commit:source};
+  const checks={transport:response.status===200&&response.redirected===false&&/application\/json/i.test(response.headers.get('Content-Type')||''),contract:canonical(body)===canonical(expected),commit:body?.source_commit===source&&response.headers.get('X-Source-Commit')===source,current_version:initial.id===expectedVersion&&current.id===expectedVersion&&response.headers.get('X-Worker-Version-Id')===expectedVersion,fresh:Number.isFinite(date)&&finished>=started&&finished-started<=300000&&date>=started-300000&&date<=finished+5000};
+  return {passed:Object.values(checks).every(Boolean),checks,url,http_status:response.status,body,body_sha256:sha256(bytes),header_source_commit:response.headers.get('X-Source-Commit'),header_version_id:response.headers.get('X-Worker-Version-Id'),http_date:response.headers.get('Date'),platform_version_id:current.id,observed_at_utc:new Date(finished).toISOString()};
+}
 export function reconcileExisting(readback){
   if(readback.verification.passed)return {already_current:true};
   const e=readback.evidence,body=JSON.parse(Buffer.from(e.observation.body_base64,'base64').toString('utf8'));
@@ -75,6 +86,8 @@ export async function main(env=process.env){
       if(Date.now()<deadline)await new Promise(r=>setTimeout(r,2000));
     }while(Date.now()<deadline);
     if(!report.verification?.passed)throw Error('canary_live_reverification_failed');
+    report.capabilities_verification=await collectCapabilities({source:context.source_commit,expectedVersion:report.evidence.expected_version_id,api});
+    if(!report.capabilities_verification.passed)throw Error('capability_live_reverification_failed');
     delete report.readback_error;report.status='single_isolated_A3_target_deployed_and_reverified';report.finished_at_utc=new Date().toISOString();save();
     fs.writeFileSync(path.join(folder,'latest.json'),JSON.stringify(redact(report,secrets),null,2)+'\n');
     const stateFile='knowledge/results/patchgate/status.json',state=JSON.parse(fs.readFileSync(stateFile));

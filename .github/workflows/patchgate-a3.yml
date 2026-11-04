@@ -1,10 +1,10 @@
 name: PatchGate A3 one isolated canary live acceptance
 on:
   pull_request:
-    paths: ['workers/patchgate-canary/**','wrangler.patchgate-canary.toml','config/patchgate-a3.json','config/patch-policy.json','scripts/run-patchgate-a3.mjs','scripts/tests/patchgate-a3.test.mjs','.github/workflows/patchgate-a3.yml']
+    paths: ['workers/patchgate-canary/**','wrangler.patchgate-canary.toml','config/patchgate-a3.json','config/patch-policy.json','scripts/run-patchgate-a3.mjs','scripts/tests/patchgate-a3.test.mjs','scripts/tests/deep-capability-card.test.mjs','.github/workflows/patchgate-a3.yml']
   push:
     branches: [main]
-    paths: ['workers/patchgate-canary/**','wrangler.patchgate-canary.toml','config/patchgate-a3.json','config/patch-policy.json','scripts/run-patchgate-a3.mjs','scripts/tests/patchgate-a3.test.mjs','.github/workflows/patchgate-a3.yml']
+    paths: ['workers/patchgate-canary/**','wrangler.patchgate-canary.toml','config/patchgate-a3.json','config/patch-policy.json','scripts/run-patchgate-a3.mjs','scripts/tests/patchgate-a3.test.mjs','scripts/tests/deep-capability-card.test.mjs','.github/workflows/patchgate-a3.yml']
   workflow_dispatch:
 permissions: {contents: read}
 concurrency: {group: patchgate-a3-isolated-canary, cancel-in-progress: false}
@@ -16,7 +16,7 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check scripts/run-patchgate-a3.mjs && node --test scripts/tests/patchgate-a3.test.mjs scripts/tests/patchgate.test.mjs
+      - run: node --check scripts/run-patchgate-a3.mjs && node --test scripts/tests/patchgate-a3.test.mjs scripts/tests/patchgate.test.mjs scripts/tests/deep-capability-card.test.mjs
   deploy:
     needs: verify
     if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
