@@ -32,6 +32,10 @@ export async function callAgent({apiKey, prompt, model, maxTokens = 2048, fetchI
     const choice = data?.choices?.[0], output = redact(choice?.message?.content).trimEnd();
     const complete = !!output && ['stop', 'end_turn'].includes(choice?.finish_reason);
     return {ok: complete, status: !output ? 'empty_output' : complete ? 'success' : 'incomplete_output', output,
+      http:response.status,prompt_tokens:Number.isSafeInteger(data?.usage?.prompt_tokens)?data.usage.prompt_tokens:null,
+      upstream_base:base,request_options:{enable_thinking:false,stream:false,max_tokens:maxTokens},
+      completion_tokens:Number.isSafeInteger(data?.usage?.completion_tokens)?data.usage.completion_tokens:null,
+      reasoning_tokens:Number.isSafeInteger(data?.usage?.completion_tokens_details?.reasoning_tokens)?data.usage.completion_tokens_details.reasoning_tokens:null,
       finish_reason: choice?.finish_reason || null, tokens_used: Number.isFinite(data?.usage?.total_tokens) && data.usage.total_tokens >= 0 ? data.usage.total_tokens : 0,
       executed_by: 'qianwen', provider: 'aliyun_dashscope', native_qwen_call: true,
       model: redact(data?.model || requested), model_source: data?.model ? 'provider_response' : 'requested_model',
