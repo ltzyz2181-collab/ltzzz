@@ -29,3 +29,10 @@ qwen-max 输出能力更强、单次调用成本高于 qwen-plus。日课 max_ca
 
 ## 记账
 paid=false、tx_hash=null、income=0；无密钥改动泄露、无资金动作。
+
+## 后续进展（同日晚些）
+- 部署 CI run 41804912226：千问 deployed_health_revision_verified，health configured_model=qwen-max（environment_override）。
+- 独立实测：api-qianwen.ltzzz.com/health 三个 CF 边缘 IP 均 qwen-max。
+- 真实调用：三张复核卡（A/B/C）model=qwen-max、provider 自报 qwen-max、finish_reason=stop、tokens 1697/1539/1541；C 卡 delivery_integrity=structurally_complete（【交付结束】收尾）。回执 knowledge/results/qwen-dispatch/A-UPGRADE-QWENMAX-20261104{,B,C}.json。
+- 遗留：qwen-dispatch.yml 默认 DASHSCOPE_MODEL 因 OAuth 凭据无 workflow scope 未更新（git push 与 gh api 均 403）——不影响已生效链路（日课代码默认 + 卡显式 model），待 owner 网页端改或换带 workflow scope 凭据。
+- 已发 GPT 人工席测试邮件：msg_Fa_yThfqygPxlDq7hYjHsjZDG2gGygWndk53S_APXyqBPA（留痕 ops/dispatch/inbox/gpt/QIANWEN-UPGRADE-GPT-ESCALATION-20261104.md）。
