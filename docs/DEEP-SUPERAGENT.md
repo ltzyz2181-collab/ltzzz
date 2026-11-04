@@ -10,7 +10,7 @@
 | 豆包 | 原生任务执行；接力已有平台、桌面和 Agent Mail | API 生成、桌面接单和邮件送达分别验收 |
 | 千问 | 原生执行、字段/任务对账、独立组件复核 | 真实 provider/model/request ID 来自执行器 |
 | Kimi | 长材料与来源工作，复用已有队列 | Key 配置、排队、生成和交付分别记录 |
-| Grok / xAI | 通过既有 `xai-proxy` 原生执行公开资料核对等工作 | Key 留在原代理；service binding 和探活不等于真实生成 |
+| Grok / xAI | 通过既有 `ltzzz-xai-proxy` 原生执行公开资料核对等工作 | Key 留在原代理；service binding 和探活不等于真实生成 |
 | GPT | 当前 Codex AI 决策席、工程和异常处置；owner 所称“人工席位” | 是 AI 介入席，不是生物意义上的人工；当前没有已验收的自动邮件唤醒 |
 | 原厂 GPT、Claude | 保留原厂 API 接口位，当前禁用 | 未产生真实调用就不冒充原厂执行或 Claude 审计 |
 
