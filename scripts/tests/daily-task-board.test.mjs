@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {prepareDailyBoard,runReservedSeat,syncDailyBoard,readLedger,saveLedger,hasUnverifiedBoard} from '../lib/daily-task-board.mjs';
+import {prepareDailyBoard,runReservedSeat,syncDailyBoard,syncReviewedSeats,readLedger,saveLedger,hasUnverifiedBoard} from '../lib/daily-task-board.mjs';
 import {taskCommand,seedTasks} from '../../workers/pulse-worker/tasks.js';
 import {control as pulseControl} from '../../workers/pulse-worker/engine.js';
 import {spawnSync} from 'node:child_process';
@@ -343,4 +343,60 @@ test('matching DAILY id on board can still reserve after ANS→DAILY rewrite pat
   assert.equal(seat.status, 'reserved');
   assert.equal(seat.assignment.id, `DAILY-${date}-${agent}`);
   assert.equal(f.posts, 1);
+});
+
+test('review-gap snapshot must not retrigger submit_task on the post-review readback sync', async t => {
+  const f = fixture(t);
+  await prepareDailyBoard(f.options);
+  await f.generate(); f.commit(); await syncDailyBoard(f.options);
+  const seat = readLedger(f.options.root, date).seats[agent];
+  assert.equal(seat.status, 'submitted_pending_review');
+  const postsBefore = f.posts;
+  // Fault injection: the review has happened in another process, but this process
+  // snapshot still reads the stale 'claimed' board row (cross-process read skew).
+  const staleBoard = structuredClone(f.state);
+  staleBoard.task_board.find(task => task.id === seat.assignment.id).status = 'claimed';
+  await syncReviewedSeats({...f.options, snapshot: async () => ({available:true, ...staleBoard})});
+  assert.equal(f.posts, postsBefore, 'post-review readback must not resubmit an already submitted seat');
+  assert.equal(f.calls, 1);
+  const kept = readLedger(f.options.root, date).seats[agent];
+  assert.equal(kept.status, 'submitted_pending_review');
+  assert.equal(kept.sync_reason, 'review_not_yet_on_board_no_resubmit');
+  assert.equal(kept.submission_verified, true);
+});
+
+test('reviewed seat readback completes via syncReviewedSeats without resubmission or verified-flag reset', async t => {
+  const f = fixture(t);
+  await prepareDailyBoard(f.options); await f.generate(); f.commit(); await syncDailyBoard(f.options);
+  const seat = readLedger(f.options.root, date).seats[agent];
+  const reviewBytes = Buffer.from(JSON.stringify(verdictFor(seat)));
+  const {digest} = await import('../lib/daily-task-board.mjs');
+  const reviewPath='knowledge/results/reviewer-readback.json';
+  f.remote.set(reviewPath, reviewBytes);
+  const reviewed = taskCommand(f.state,{action:'review_task',task_id:seat.assignment.id,agent:'doubao',accepted:true,reviewed_sha256:seat.artifact.sha256,scope:'engineering_draft_only',worker_actual_provider:'deepseek',reviewer_actual_provider:'doubao',review_evidence_path:reviewPath,review_evidence_sha256:digest(reviewBytes)},'qianwen',[agent,'doubao'],now).state;
+  const postsBefore = f.posts;
+  const record = await syncReviewedSeats({...f.options, snapshot: async () => ({available:true, ...reviewed})});
+  const final = record.seats[agent];
+  assert.equal(final.status,'completed_draft_review');
+  assert.equal(final.review_verified,true);
+  assert.equal(final.submission_verified,true);
+  assert.equal(f.posts, postsBefore, 'review readback must not resubmit');
+  assert.equal(f.calls,1);
+});
+
+test('tampered review evidence still degrades to review_unknown under syncReviewedSeats', async t => {
+  const f = fixture(t);
+  await prepareDailyBoard(f.options); await f.generate(); f.commit(); await syncDailyBoard(f.options);
+  const seat = readLedger(f.options.root, date).seats[agent];
+  const reviewBytes = Buffer.from(JSON.stringify(verdictFor(seat)));
+  const {digest} = await import('../lib/daily-task-board.mjs');
+  const reviewPath='knowledge/results/reviewer-tamper.json';
+  f.remote.set(reviewPath, reviewBytes);
+  const reviewed = taskCommand(f.state,{action:'review_task',task_id:seat.assignment.id,agent:'doubao',accepted:true,reviewed_sha256:seat.artifact.sha256,scope:'engineering_draft_only',worker_actual_provider:'deepseek',reviewer_actual_provider:'doubao',review_evidence_path:reviewPath,review_evidence_sha256:digest(reviewBytes)},'qianwen',[agent,'doubao'],now).state;
+  f.remote.set(reviewPath, Buffer.from('{}'));
+  await syncReviewedSeats({...f.options, snapshot: async () => ({available:true, ...reviewed})});
+  const final = readLedger(f.options.root, date).seats[agent];
+  assert.equal(final.status,'review_unknown');
+  assert.equal(final.review_verified,false);
+  assert.equal(final.accepted,false);
 });

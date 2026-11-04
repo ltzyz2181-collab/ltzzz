@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {prepareDailyBoard,syncDailyBoard,hasUnverifiedBoard} from './lib/daily-task-board.mjs';
+import {prepareDailyBoard,syncDailyBoard,syncReviewedSeats,hasUnverifiedBoard} from './lib/daily-task-board.mjs';
 import {pulseSnapshot,PULSE_URL} from './lib/pulse-client.mjs';
 import {pulseToken} from './pulse-credentials.mjs';
 import {reconcileDailyResult} from './lib/daily-board-lineage.mjs';
@@ -29,7 +29,7 @@ if(process.argv[2]==='prepare'){
  await syncDailyBoard(options);
  materializeDailyReview({root,date});
  await syncDailyReview(options);
- await syncDailyBoard(options);
+ await syncReviewedSeats(options);
  const record=recordDailyReviewReadback({root,date});
  const resultUpdated=reconcileDailyResult(root,date);
  console.log(JSON.stringify({date,seats:record?Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status])):{}}));

@@ -248,4 +248,51 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
   return record;
 }
 
+export async function syncReviewedSeats({root, date, snapshot, command, readRemote, now=Date.now()}) {
+  const record = readLedger(root, date);
+  if (!record) return null;
+  if (record.date !== date) throw Error('reservation_date_mismatch');
+  for (const [agent, seat] of Object.entries(record.seats)) {
+    if (!seat.assignment || !seat.claim_verified || !seat.artifact) continue;
+    if (!['submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;
+    // Post-review readback only: never re-submits and never clears a verified
+    // submission; a review that is not yet on the board is left pending.
+    try {
+      const bytes = validateArtifact(root, record, agent, seat);
+      if (digest(await readRemote(seat.artifact.path)) !== digest(bytes)) throw Error('remote_artifact_not_persisted');
+      const before = await snapshot(), task = taskFor(before, seat.assignment.id);
+      if (!fresh(before, agent, now) || task?.date !== date || task?.claimed_by !== agent) throw Error('board_unavailable_or_wrong_owner');
+      const finalStatuses = ['completed_draft_review','rejected_draft_review'];
+      const matches = t => ['submitted_pending_review',...finalStatuses].includes(t?.status) && t.date === date && t.claimed_by === agent && t.evidence_path === seat.artifact.path && t.evidence_sha256 === seat.artifact.sha256 && t.paid === false;
+      if (!matches(task) || !finalStatuses.includes(task.status)) {
+        seat.status = 'submitted_pending_review';
+        seat.sync_reason = 'review_not_yet_on_board_no_resubmit';
+        seat.review_verified = false;
+        saveLedger(root, record);
+        continue;
+      }
+      const review = task.review;
+      const body = JSON.parse(bytes);
+      if (review?.scope !== 'engineering_draft_only' || typeof review.accepted !== 'boolean' || review.reviewed_sha256 !== seat.artifact.sha256 || review.worker_actual_provider !== body.actual_provider || !review.reviewer_actual_provider || review.worker_actual_provider === review.reviewer_actual_provider || !evidencePath(review.evidence_path) || !/^[a-f0-9]{64}$/.test(review.evidence_sha256 || '')) throw Error('review_binding_invalid');
+      const reviewBytes = await readRemote(review.evidence_path);
+      if (digest(reviewBytes) !== review.evidence_sha256) throw Error('review_artifact_hash_mismatch');
+      const verdict = JSON.parse(Buffer.from(reviewBytes).toString('utf8'));
+      if (verdict.accepted !== review.accepted || (verdict.artifact_sha256 || verdict.reviewed_sha256) !== seat.artifact.sha256 || verdict.task_id !== seat.assignment.id || verdict.date !== record.date || verdict.run_key !== record.run_key || verdict.source_commit !== record.source_commit || verdict.actual_provider !== review.reviewer_actual_provider) throw Error('review_artifact_semantic_mismatch');
+      if ((task.status === 'completed_draft_review') !== review.accepted) throw Error('review_status_mismatch');
+      seat.review_receipt = {...review,task_id:task.id,observed_at:before.ran_at};
+      seat.review_verified = true;
+      seat.accepted = review.accepted;
+      seat.status = task.status;
+      seat.sync_reason = 'bound_independent_draft_review_readback_no_resubmit';
+    } catch (error) {
+      seat.status = 'review_unknown';
+      seat.review_verified = false;
+      seat.accepted = false;
+      seat.sync_reason = error?.message || 'review_readback_unverified';
+    }
+    saveLedger(root, record);
+  }
+  return record;
+}
+
 export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','missing_required_section','failure_sync_unknown','sync_unknown','review_unknown'].includes(seat.status));
