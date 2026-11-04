@@ -5,7 +5,7 @@
   "package_id": "DEPLOY-CANARY-CAPABILITIES-01",
   "execution_id": "91752192-d652-4998-ba4f-6e6fbd4ca4a2",
   "input_sha256": "046586b3dadd32a3dddbdcad84c0509ac44b54fdf0061f9f2e1ebbb92c462d15",
-  "status": "partial_native_Deep_review_received_candidate_local_tests_passed_deployment_pending",
+  "status": "isolated_native_candidate_deployed_and_reverified_GPT_feedback_pending_original_worker_failures_preserved",
   "original_queue_run": "41795044923",
   "original_queue_status": "blocked",
   "original_error": "native_generation_evidence_incomplete",
@@ -164,6 +164,11 @@
       "passed": 64,
       "failed": 0,
       "path": "knowledge/results/deep-superagent/deploy-e2e-20261104/green.tap"
+    },
+    "combined": {
+      "passed": 96,
+      "failed": 0,
+      "scope": "canary64_plus_partial_review_queue32"
     }
   },
   "partial_review": {
@@ -213,13 +218,41 @@
     "operator_scope_correction": "Original review input lacked actual local-test/PR/deployment observations and used a stale negative engineering-status sentence. Preserve the native text; missing evidence means unverified, and Kimi HTTP524 does not prove no generation/charge. GPT checks real Git/CI evidence separately. Future relay prompt now removes this unsupported negative claim."
   },
   "deployment": {
-    "deployed": false,
-    "target": "ltzzz-patchgate-canary",
-    "new_route": "/capabilities",
+    "deployed": true,
+    "implementation_pr": 359,
+    "source_commit": "fbd57d9eed4383a41547f61b7345ab39c298b81b",
+    "run_id": "41798322857",
+    "version_id": "5c89b5fe-14b4-4a85-ab4f-879cf07da728",
+    "original_canary_checks": {
+      "subject": true,
+      "transport": true,
+      "commit": true,
+      "fresh": true,
+      "current_version": true
+    },
+    "capability_card_checks": {
+      "transport": true,
+      "contract": true,
+      "commit": true,
+      "current_version": true,
+      "fresh": true
+    },
+    "capabilities_url": "https://ltzzz-patchgate-canary.ltzyz2181.workers.dev/capabilities",
+    "actual_body_sha256": "75dfeb709ab53bdb8b4b5e5f21010e8765593740f6a3848e684ff9f658471bd2",
+    "receipt": {
+      "path": "knowledge/results/patchgate/a3/41798322857-attempt-1.json",
+      "commit": "d00ccaf96ec92b55d9abef9a2cfcbb9a1717a66b",
+      "sha256": "ae3680125b7bdf4a656c6dc44a359bc57f33578f961e787b1d438ac2a202fab7",
+      "git_blob": "3c56dd255d46973ba9c1186cdcc3c6117e2ddcb2"
+    },
     "general_production_enabled": false
   },
   "feedback_to_GPT": {
-    "verified": false
+    "verified": false,
+    "decision_id": "GPT-DEEP-DEPLOY-E2E-20261104-01",
+    "decision": "request_revision_for_original_failed_worker_deliverables_only",
+    "deployed_Doubao_artifact_accepted": true,
+    "email_status": "pending_actual_send"
   },
   "income": 0,
   "paid": false,
@@ -233,5 +266,19 @@
     "qianwen_content_accepted": false,
     "kimi_result": "unknown_no_retry",
     "scope": "Native DeepSeek advises that Doubao code is usable. Its overall false approval is retained because original worker tasks failed; it is not overridden into a successful full-team run."
-  }
+  },
+  "CI": {
+    "canary_PR": "41798101111",
+    "partial_review_PR": "41798101267",
+    "financial_PR": "41798100934",
+    "canary_main": "41798322857",
+    "partial_review_main": "41798322954",
+    "financial_main": "41798322883",
+    "all_success": true
+  },
+  "total_model_request_attempts": 5,
+  "known_completed_native_responses": 4,
+  "known_reported_tokens": 20602,
+  "unknown_usage_seat": "kimi",
+  "original_worker_requests_repeated": 0
 }
