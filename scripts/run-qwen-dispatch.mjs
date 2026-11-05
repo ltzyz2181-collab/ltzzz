@@ -2,9 +2,10 @@ import {callWithSkill} from './lib/ltzzz-skill.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 import {callAgent} from './call-qwen.mjs';
 import {KIMI_PROFILE} from '../lib/kimi-profile.js';
-import {assessDelivery,validRequiredSections} from './delivery-integrity.mjs';
+import {assessDelivery,validRequiredSections,deliveryRequirementsPrompt} from './delivery-integrity.mjs';
 
 /**
  * Qwen dispatch consumer. Cards: ops/dispatch/queue/*.json (agent "qianwen").
@@ -45,7 +46,7 @@ export function pending({queueDir, receiptDir}) {
     .filter(f => !fs.existsSync(path.join(receiptDir, f)));
 }
 
-export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'knowledge/results/qwen-dispatch', call = callAgent, runId = process.env.GITHUB_RUN_ID || 'local', now = () => new Date().toISOString()} = {}) {
+export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'knowledge/results/qwen-dispatch', call = callAgent, runId = process.env.GITHUB_RUN_ID || 'local', now = () => new Date().toISOString(), reserve=async()=>({verified:false,scope:'local_test_only'})} = {}) {
   const todo = pending({queueDir, receiptDir});
   if (!todo.length) return {executed: false, reason: 'no_pending_cards', model_calls: 0};
   const f = todo[0], file = path.join(queueDir, f), bytes = fs.readFileSync(file, 'utf8');
@@ -56,7 +57,9 @@ export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'kn
   const base = {task_id: card?.id || path.basename(f, '.json'), original_task_id:card?.original_task_id||card?.id||path.basename(f,'.json'), card_sha256: sha(bytes), run_id: runId, executor: 'qianwen', queue_dispatcher: 'qianwen', at: now(), paid: false, tx_hash: null, financial_execution: false};
   if (errors.length) { fs.writeFileSync(out, JSON.stringify({...base, status: 'rejected_invalid_card', errors, model_calls: 0}, null, 2) + '\n'); return {executed: false, reason: 'invalid_card', errors, model_calls: 0}; }
   fs.writeFileSync(out, JSON.stringify({...base, status: 'reserved_before_provider_call', model_calls: 0}, null, 2) + '\n');
-  const result = await callWithSkill({scope:'qianwen-queue:'+card.id,prompt:card.prompt},input=>call({prompt:input,maxTokens:card.max_tokens??1024,model:card.model}));
+  const reservation=await reserve({file:out,sha256:sha(fs.readFileSync(out))});
+  const prompt=Object.hasOwn(card,'required_sections')?card.prompt+'\n\n'+deliveryRequirementsPrompt(card.required_sections):card.prompt;
+  const result = await callWithSkill({scope:'qianwen-queue:'+card.id,prompt},input=>call({prompt:input,maxTokens:card.max_tokens??1024,model:card.model}));
   const attempted = !['not_configured', 'configuration_error'].includes(result.status);
   // Provenance split: who queued the card (queue_dispatcher=qianwen) vs which model
   // actually generated the output. kimi cards ride the qianwen queue but the output
@@ -69,21 +72,36 @@ export async function runOnce({queueDir = 'ops/dispatch/queue', receiptDir = 'kn
     : generatedBy
       ? `generation by ${generatedBy} via qianwen queue`
       : null;
-  const receipt = {...base, ...(integrity?{delivery_integrity:integrity,required_sections:card.required_sections}:{}), skill:result.skill, model_source:result.model_source||null, status: deliveryStatus, model_calls: attempted ? 1 : 0,
+  const receipt = {...base, reservation, ...(integrity?{delivery_integrity:integrity,required_sections:card.required_sections}:{}), skill:result.skill, model_source:result.model_source||null, status: deliveryStatus, model_calls: attempted ? 1 : 0,
     model_calls_definition: 'generation_requests_attempted_not_billing_proof', native_qwen_call: result.native_qwen_call === true,
     model: result.model || null, generated_by_model: generatedBy, attribution_note: attributionNote,
     finish_reason: result.finish_reason || null, tokens_used: result.tokens_used || 0, request_id: result.request_id || null,
-    output: result.ok ? result.output : null, output_sha256: result.ok ? sha(result.output) : null, error: result.ok ? null : result.error || null,
+    actual_provider:result.provider||null,actual_model:result.model_source==='provider_response'?(result.model||null):null,
+    http:result.http??null,completion_id:result.completion_id||null,prompt_tokens:result.prompt_tokens??null,completion_tokens:result.completion_tokens??null,reasoning_tokens:result.reasoning_tokens??null,
+    upstream_base:result.upstream_base||null,request_options:result.request_options||null,
+    output: typeof result.output==='string'&&result.output?result.output:null, output_sha256: typeof result.output==='string'&&result.output?sha(result.output):null, error: result.ok ? null : result.error || null,
     accepted: false, deployed: false, independent_review: 'pending_other_provider', finished_at: now()};
   fs.writeFileSync(out, JSON.stringify(receipt, null, 2) + '\n');
   return {executed: true, task_id: base.task_id, status: receipt.status, model_calls: receipt.model_calls};
+}
+
+export async function durableMainReservation({file,sha256}){
+  if(process.env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||process.env.GITHUB_REF!=='refs/heads/main'||!/^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA||'')||!/^(push|workflow_dispatch)$/.test(process.env.GITHUB_EVENT_NAME||''))throw Error('trusted_main_reservation_required');
+  const git=args=>execFileSync('git',args,{encoding:'utf8'}).trim();
+  const source_commit=git(['rev-parse','HEAD']);
+  git(['config','user.name','ltzzz-bot']);git(['config','user.email','bot@ltzzz.com']);git(['add','--',file]);git(['commit','-m','Reserve Qwen dispatch before one provider call']);
+  execFileSync(process.execPath,['tools/push-receipt-commit.mjs'],{stdio:'inherit'});
+  const commit=git(['rev-parse','HEAD']);
+  const response=await fetch('https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/'+commit+'/'+file,{redirect:'error',cache:'no-store',signal:AbortSignal.timeout(25000)});
+  if(!response.ok||sha(Buffer.from(await response.arrayBuffer()))!==sha256)throw Error('remote_reservation_bytes_unverified');
+  return {verified:true,path:file,commit,sha256,executor_source_commit:source_commit};
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   if (process.argv[2] === '--list') {
     console.log(JSON.stringify({pending: pending({queueDir: 'ops/dispatch/queue', receiptDir: 'knowledge/results/qwen-dispatch'})}, null, 2));
   } else {
-    const r = await runOnce();
+    const r = await runOnce({reserve:durableMainReservation});
     console.log(JSON.stringify(r));
     if (r.executed && r.status !== 'draft_delivered_pending_independent_review') process.exitCode = 1;
   }
