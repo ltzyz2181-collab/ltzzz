@@ -1,10 +1,14 @@
 name: Deep Superagent isolated deployment and explicit bootstrap
 on:
   pull_request:
-    paths: ['workers/deep-superagent/**','config/deep-superagent.json','scripts/deploy-deep-superagent.mjs','scripts/tests/deep-superagent*.test.mjs','wrangler.deep-superagent.toml','.github/workflows/deep-superagent.yml']
+    paths: ['workers/deep-superagent/**','config/deep-superagent.json','scripts/deploy-deep-superagent.mjs','scripts/tests/deep-superagent*.test.mjs','scripts/lib/deep-release-reconcile.mjs','wrangler.deep-superagent.toml','.github/workflows/deep-superagent.yml']
   push:
     branches: [main]
-    paths: ['workers/deep-superagent/**','config/deep-superagent.json','scripts/deploy-deep-superagent.mjs','scripts/tests/deep-superagent*.test.mjs','wrangler.deep-superagent.toml','.github/workflows/deep-superagent.yml']
+    paths: ['workers/deep-superagent/**','config/deep-superagent.json','scripts/deploy-deep-superagent.mjs','scripts/tests/deep-superagent*.test.mjs','scripts/lib/deep-release-reconcile.mjs','wrangler.deep-superagent.toml','.github/workflows/deep-superagent.yml']
+  workflow_run:
+    workflows: ['Key Liveness Probe (AI seats)']
+    types: [completed]
+    branches: [main]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -16,7 +20,7 @@ on:
 permissions: {contents: read}
 jobs:
   verify:
-    if: github.event_name != 'issue_comment' || (github.repository == 'ltzyz2181-collab/ltzzz' && github.event.comment.user.id == 261544579 && github.event.comment.body == 'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103')
+    if: (github.event_name != 'issue_comment' && github.event_name != 'workflow_run') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request') || (github.repository == 'ltzyz2181-collab/ltzzz' && github.event.comment.user.id == 261544579 && github.event.comment.body == 'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103')
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -25,10 +29,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --check workers/deep-superagent/index.js && node --check scripts/deploy-deep-superagent.mjs
-      - run: node --test scripts/tests/deep-superagent.test.mjs scripts/tests/deep-superagent-deploy.test.mjs scripts/tests/lessons.test.mjs scripts/tests/reflection-harness.test.mjs scripts/tests/ltzzz-skill.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/workpool.test.mjs
+      - run: node --test scripts/tests/deep-superagent.test.mjs scripts/tests/deep-superagent-deploy.test.mjs scripts/tests/deep-superagent-reconcile.test.mjs scripts/tests/lessons.test.mjs scripts/tests/reflection-harness.test.mjs scripts/tests/ltzzz-skill.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/workpool.test.mjs
   deploy:
     needs: verify
-    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'issue_comment' && github.event.comment.user.id == 261544579 && github.event.comment.body == 'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103'))
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request') || (github.event_name == 'issue_comment' && github.event.comment.user.id == 261544579 && github.event.comment.body == 'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103'))
     # Apply the deployment lock only after the trusted trigger guard. Unrelated
     # issue comments cannot replace or cancel a pending authorized bootstrap.
     concurrency: {group: deep-superagent-isolated-deploy, cancel-in-progress: false}
@@ -45,7 +49,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
-        run: node scripts/deploy-deep-superagent.mjs deploy
+        run: node scripts/deploy-deep-superagent.mjs ${{ github.event_name == 'workflow_run' && 'reconcile' || 'deploy' }}
       - name: Execute or reconcile the one explicitly requested public bootstrap job
         if: (github.event_name == 'workflow_dispatch' && inputs.bootstrap == true) || (github.event_name == 'issue_comment' && github.event.comment.user.id == 261544579 && github.event.comment.body == 'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103')
         env:
@@ -57,7 +61,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deep-superagent-${{ github.run_id }}-attempt-${{ github.run_attempt }}
-          path: knowledge/results/deep-superagent/*-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          path: |
+            knowledge/results/deep-superagent/*-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+            .deep-superagent-reconcile-observation.json
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 30
       - name: Persist metadata and public bootstrap evidence without replaying models
