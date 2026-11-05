@@ -37,3 +37,28 @@ test('inline marker cannot be forged by first-line indented code, quote, fence, 
   assert.equal(r.status,'missing_required_section',body);
  }
 });
+
+test('qianwen card requires four sections, not only supervision',()=>{
+ const sections=requiredSectionsForAgent('qianwen');
+ assert.deepEqual(sections,['【读后感】','【观】','【lessons核对】','【派单监督】']);
+ assert.deepEqual(requiredSectionsForAgent('deepseek'),[]);
+});
+test('qianwen delivery missing reading notes or observation is rejected even with supervision present',()=>{
+ const required=requiredSectionsForAgent('qianwen');
+ const onlySupervision='【派单监督】责任席：千问；原 Task ID：DAILY-2026-11-05-qianwen；未核查。\n【交付结束】';
+ assert.equal(assessDelivery({output:onlySupervision,finish_reason:'stop',required_sections:required}).status,'missing_required_section');
+ const three='【读后感】读了记忆。\n【观】观察到一条。\n【派单监督】责任席：千问；未核查。\n【交付结束】';
+ const r=assessDelivery({output:three,finish_reason:'stop',required_sections:required});
+ assert.equal(r.status,'missing_required_section');
+ assert.deepEqual(r.missing_sections,['【lessons核对】']);
+});
+test('lessons slot accepts the existing xingshen heading as an alias',()=>{
+ const required=requiredSectionsForAgent('qianwen');
+ const body='【读后感】读了记忆。\n【观】观察到一条。\n【行深】回读了受管执行器。\n【派单监督】责任席：千问；未核查。\n【交付结束】';
+ assert.equal(assessDelivery({output:body,finish_reason:'stop',required_sections:required}).status,'structurally_complete');
+});
+test('empty required section still fails under the four-section contract',()=>{
+ const required=requiredSectionsForAgent('qianwen');
+ const body='【读后感】\n【观】观察到一条。\n【行深】回读了受管执行器。\n【派单监督】责任席：千问；未核查。\n【交付结束】';
+ assert.equal(assessDelivery({output:body,finish_reason:'stop',required_sections:required}).status,'missing_required_section');
+});
