@@ -162,7 +162,7 @@ test('credential redaction covers nested reports and no new model keys or schedu
   assert.match(line,/github\.event\.comment\.user\.id == 261544579/);
   assert.ok(line.includes("github.event.comment.body == '"+BOOTSTRAP_COMMENT+"'"));
  }
- assert.match(workflow,/verify:\s*\n\s*if: github\.event_name != 'issue_comment'/);
+ assert.match(workflow,/verify:\s*\n\s*if: \(github\.event_name != 'issue_comment' && github\.event_name != 'workflow_run'\)/);
  assert.doesNotMatch(workflow,/^concurrency:/m);
  assert.doesNotMatch(workflow,/controller-workflow-command/);
  assert.match(config,/new_sqlite_classes = \["DeepTask"\]/);
