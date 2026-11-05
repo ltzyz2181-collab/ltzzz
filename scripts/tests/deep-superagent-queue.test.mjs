@@ -5,6 +5,13 @@ import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.
 import {ORIGIN,MAX_WAIT_MS,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
+test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
+ const result=publicJob({receipts:[{truncated:true,output_present:true,request_options:{max_tokens:8192,thinking_type:'disabled',arbitrary:'secret fixture'}}]});
+ assert.equal(result.receipts[0].truncated,true);assert.equal(result.receipts[0].output_present,true);
+ assert.deepEqual(result.receipts[0].request_options,{max_tokens:8192,thinking_type:'disabled',source:'executor_request_not_provider_attestation'});
+ assert.doesNotMatch(JSON.stringify(result),/secret fixture/);
+ const bad=publicJob({receipts:[{request_options:{max_tokens:{nested:'not public'},thinking_type:'unknown'}}]});assert.equal(bad.receipts[0].request_options.max_tokens,null);assert.equal(bad.receipts[0].request_options.thinking_type,null);
+});
 test('GPT queue evidence preserves code-owned content findings without arbitrary model fields',()=>{
  const gate={revision:'executor-metadata-declarations-v1',source_commit:RUNTIME,passed:false,phase:'after_independent_review',findings:[{code:'unsupported_executor_metadata_declaration',field:'executed_by',line:2,seat:'qianwen',output_sha256:'c'.repeat(64),arbitrary:'drop me'}],arbitrary:'drop me'};
  const result=publicJob({content_guard_revision:gate.revision,content_gate:{...gate,checks:[gate]}});
