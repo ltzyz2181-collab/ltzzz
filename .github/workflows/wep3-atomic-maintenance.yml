@@ -2,10 +2,10 @@ name: WEP3 atomic repair maintenance (no payments)
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['wep3-worker.js', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
+    paths: ['wep3-worker.js', 'wep3-signer-proof.js', 'scripts/tests/wep3-signer-proof.test.mjs', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
   push:
     branches: [main]
-    paths: ['wep3-worker.js', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
+    paths: ['wep3-worker.js', 'wep3-signer-proof.js', 'scripts/tests/wep3-signer-proof.test.mjs', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
 permissions: {contents: read}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
@@ -18,7 +18,7 @@ jobs:
         with: {node-version: '22'}
       - run: npm ci --ignore-scripts
       - run: node --check wep3-worker.js && node --check wep3-swarm.js && node --check scripts/verify-wep3-maintenance.mjs
-      - run: node --test scripts/tests/wep3-swarm-atomic.test.mjs scripts/tests/wep3-swarm.test.mjs scripts/tests/wep3.test.mjs scripts/tests/wep3-receipt-render.test.mjs scripts/tests/audit-provenance.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-external-orders.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs scripts/tests/wep3-procurement.test.mjs
+      - run: node --test scripts/tests/wep3-signer-proof.test.mjs scripts/tests/wep3-swarm-atomic.test.mjs scripts/tests/wep3-swarm.test.mjs scripts/tests/wep3.test.mjs scripts/tests/wep3-receipt-render.test.mjs scripts/tests/audit-provenance.test.mjs scripts/tests/wep3-market.test.mjs scripts/tests/wep3-base-payment.test.mjs scripts/tests/wep3-autonomous.test.mjs scripts/tests/wep3-aave.test.mjs scripts/tests/wep3-external-orders.test.mjs scripts/tests/wep3-runtime-readiness.test.mjs scripts/tests/wep3-procurement.test.mjs
       - run: npm install --no-save playwright@1.56.1
       - run: npx playwright install --with-deps chromium
       - run: node scripts/test-wep3-maintenance-browser.mjs
