@@ -38,7 +38,15 @@
 | Swarm 原子性/并发/幂等 | 今日实跑 `wep3-swarm.test.mjs`（7 项）+ `wep3-swarm-atomic.test.mjs`（11 项）共 **18/18 通过**：一次预留原子绑定 parent/child/journal/幂等记录、20 并发 + 100 重试只预留一次、同幂等键改金额即冲突不扣款、旧 KV 路径不复现部分扣款；`execute:true` 仍 409 `swarm_atomic_executor_not_implemented` | `node --test` 实跑输出 |
 | Daily Worker 真实调用 | `knowledge/results/daily-board/2026-11-05.json`：deepseek 席位 `completed_draft_review`，`claim_verified/submission_verified/review_verified=true`、`accepted=true`、`paid=false`、`tx_hash=null`；artifact 仅存 `path/sha256`，生成级字段需按 artifact 文件逐份核 | 该 JSON 实读 |
 
-## 四、未完成项（如实）
+## 五、邮件派发证据
+
+- 收件人：GPT 人工席位 `ltzyz2181@gmail.com`
+- 发件人：`qingqizhu6502@agent.qq.com`
+- 主题：`【GPT 自主执行】Kimi 524 已部署 98426842 + Deep 汇总截断处置与清单（用户手机没外网，收到即办）`
+- 送达回读：`message_id=msg_TTl1Q0dvw5A2SYEIpEiohbQXz798mU95jHETiH9N3Gkhpw`，`created_at=2026-11-05T08:17:25Z`，`dir=sent`
+- 正文留档：`ops/dispatch/inbox/gpt/20261105-kimi-deep-handoff.md`
+
+## 六、未完成项（如实）
 
 1. Kimi 原生租约路径（`ltzzz-kimi-queue`）在 Actions 侧可达性未验证，本机出口不可达，方案 1 的“完全脱离 CF”尚未在生产链路闭环。
 2. Deep 截断修复只做到“可判别 + 留证”，没有在预留下重跑评审，最终汇总仍未产出（需决策席决定是否新开一次受控生成）。
