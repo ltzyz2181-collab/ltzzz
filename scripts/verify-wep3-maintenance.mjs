@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import {verifyMessage} from 'ethers';
+import {OPERATING_TREASURY,SIGNER_PROOF_REVISION} from '../wep3-signer-proof.js';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
 const phase=process.argv[2],run=process.env.GITHUB_RUN_ID,sha=process.env.GITHUB_SHA;
 if(!['before','after'].includes(phase)||process.env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||process.env.GITHUB_REF!=='refs/heads/main'||!/^[0-9]+$/.test(run||'')||!/^[a-f0-9]{40}$/.test(sha||''))throw Error('trusted_main_maintenance_context_required');
@@ -17,6 +19,12 @@ if(phase==='before'){
   let health;
   for(let attempt=0;attempt<12;attempt++){health=await json('/health');if(health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha)break;if(attempt<11)await new Promise(r=>setTimeout(r,2500));}
   report.health=health;report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
+  const nonce=crypto.randomBytes(32).toString('hex');
+  const anonymous=await json('/treasury/signer-proof?nonce='+nonce);
+  const signer=await json('/treasury/signer-proof?nonce='+nonce,{headers:{'X-Lab-Pin':token}});
+  let recovered=null;try{recovered=verifyMessage(signer.body.message,signer.body.signature);}catch{}
+  const expectedMessage=['LTZZZ operating treasury identity proof only','Not login, payment, permit, transaction or five-signature wallet authorization','origin='+base,'chain_id=8453','address='+OPERATING_TREASURY,'nonce='+nonce,'issued_at='+signer.body.issued_at].join('\n');
+  report.signer_proof={anonymous_http:anonymous.http,http:signer.http,body:signer.body,recovered_address:recovered,verified:anonymous.http===401&&signer.http===200&&signer.body.ok===true&&signer.body.revision===SIGNER_PROOF_REVISION&&signer.body.source_commit===sha&&signer.body.nonce===nonce&&signer.body.message===expectedMessage&&recovered?.toLowerCase()===OPERATING_TREASURY.toLowerCase()&&signer.body.chain_id===8453&&signer.body.transaction_adapter_ready===false&&signer.body.transactions===0};
   const checks=[];
   // The release must be read-only until the separate legacy freeze/drain and migration is evidenced.
   const guarded=health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha&&health.body.atomic_ledger_ready===false&&health.body.legacy_writes_enabled===false;
@@ -29,7 +37,7 @@ if(phase==='before'){
   }
   report.guarded_routes=checks;report.authenticated_guard_probe_verified=Boolean(process.env.LAB_PIN)&&checks.length===2&&checks.every(x=>x.passed);
   report.code_deployed=guarded;report.swarm_live_writes_enabled=false;report.legacy_cutover_completed=false;report.completed_at_utc=new Date().toISOString();
-  report.ok=guarded&&report.financial_book_unchanged&&checks.length===2&&checks.every(x=>x.passed);
+  report.ok=guarded&&report.financial_book_unchanged&&checks.length===2&&checks.every(x=>x.passed)&&report.signer_proof.verified;
   report.status=report.ok?'guarded_repair_deployed_cutover_pending':'maintenance_verification_failed';
   fs.writeFileSync(path,JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({status:report.status,source_commit:sha,book_unchanged:report.financial_book_unchanged,authenticated_guard_probe_verified:report.authenticated_guard_probe_verified,paid:false,tx_hash:null}));
