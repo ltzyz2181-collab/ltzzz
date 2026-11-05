@@ -1,0 +1,118 @@
+{
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "KIMI-LEASE-READBACK-20261105",
+  "idempotency_key": "DEEP-SUPERAGENT-20261103/KIMI-LEASE-READBACK-20261105",
+  "claimed_by": "doubao",
+  "claimed_at": "2026-11-05T08:47:00Z",
+  "claim_count": 1,
+  "duplicate_claim": false,
+  "constraint": "zero_generation",
+  "model_calls": 0,
+  "upstream_attempts": 0,
+  "reserve_calls": 0,
+  "release_calls": 0,
+  "secrets_exported": false,
+  "token_compat_changed": false,
+  "paid_cron_created": false,
+  "paid": false,
+  "tx_hash": null,
+  "generation_verified": false,
+
+  "lease_channel_sources_read": [
+    "workers/kimi-queue/index.js",
+    "scripts/agi-econ/kimi-cn.mjs",
+    "kimi-proxy-worker.js",
+    "wrangler.deep-superagent.toml",
+    ".github/workflows/deploy-kimi-queue.yml"
+  ],
+
+  "reconcile_findings": [
+    {
+      "id": "R1",
+      "finding": "租约网关只有三条路由：公开 GET /health；受 Bearer LTZZZ_AGENT_TOKEN 保护 POST /reserve 与 POST /release；其余 404。",
+      "evidence": "workers/kimi-queue/index.js:12-14"
+    },
+    {
+      "id": "R2",
+      "finding": "/reserve 本身不产生模型调用：仅生成 36 位 lease UUID、expires_at=now+330s，返回 upstream_attempts:0。模型调用发生在 lease 之后的直连 Moonshot，因此 reserve 不是生成动作，但会产生 lease 记录（有状态副作用），按任务卡未盲发。",
+      "evidence": "workers/kimi-queue/index.js:34-45；scripts/agi-econ/kimi-cn.mjs kimiCall()"
+    },
+    {
+      "id": "R3",
+      "finding": "无预留即无生成：拿不到 lease 时客户端返回 gateway_error / gateway_not_configured / not_configured，upstream_attempts=0，不存在绕过租约的旁路。",
+      "evidence": "scripts/agi-econ/kimi-cn.mjs early returns"
+    },
+    {
+      "id": "R4",
+      "finding": "释放路径闭合：无论成功/失败都在 finally 里 POST /release（outcome 字段），失败时靠 330s 到期由 Durable Object alarm 清理，不重试、不重复计费。",
+      "evidence": "scripts/agi-econ/kimi-cn.mjs finally；workers/kimi-queue/index.js alarm()"
+    },
+    {
+      "id": "R5",
+      "finding": "关键结构结论：生产 Kimi 代理 api-kimi.ltzzz.com（kimi-proxy-worker.js）完全不引用租约网关，Deep Worker 的 kimi binding 指向 ltzzz-kimi-proxy 而非 queue。即『长任务改走租约』不是改配置能完成，需要改 binding 或重写代理。",
+      "evidence": "grep -n 'kimi-queue|lease' kimi-proxy-worker.js => 0 命中；wrangler.deep-superagent.toml:22 service=\"ltzzz-kimi-proxy\""
+    },
+    {
+      "id": "R6",
+      "finding": "双 token 不兼容仍然存在：queue 网关用 LTZZZ_AGENT_TOKEN，kimi-domestic 用 KIMI_WORKER_TOKEN。按任务卡要求未做兼容改造，只记录。",
+      "evidence": "workers/kimi-queue/index.js:13；workers/kimi-domestic/index.js"
+    }
+  ],
+
+  "reachability_evidence": {
+    "actions_side": {
+      "status": "reachable_verified_historically",
+      "run_id": "39513398586",
+      "run_conclusion": "success",
+      "head_sha": "4d5390d8",
+      "observed_at": "2026-10-20T23:12:16.997Z",
+      "receipt_path": "knowledge/results/kimi/queue-39513398586-attempt-1.json",
+      "health_ok": true,
+      "has_key": true,
+      "auth_configured": true,
+      "limiter_mode": "provider_limits_only_no_application_throttle",
+      "concurrency": null,
+      "min_interval_ms": 0,
+      "model_calls": 0,
+      "transactions": 0,
+      "age_days_at_check": 16
+    },
+    "vm_side": {
+      "status": "unreachable",
+      "checked_at": "2026-11-05T08:45:00Z",
+      "dns_resolved": true,
+      "dns_time_s": 0.004,
+      "http_code": "000",
+      "attempts": 3,
+      "observed": "DNS 正常解析，TCP/TLS 阶段无响应，12-40s 超时，0 字节返回；workers.dev 域在本机出口整体不可达",
+      "model_calls": 0
+    }
+  },
+
+  "blocked_items": [
+    {
+      "id": "B1",
+      "item": "Actions 侧实时（本轮）可达性复测",
+      "reason": "唯一现成零生成探针是 deploy-kimi-queue.yml 内的 /health 回读步骤，但该工作流是部署型（会 wrangler deploy + secret bulk 写生产）；本轮 gh 凭据无 workflow scope，且不以部署工作流冒充纯探针。最近一次真实证据停在 2026-10-20，距今 16 天。",
+      "needs": "一个仅含 GET /health 的独立 workflow_dispatch 探针（或已有 runner 侧 one-shot 探针），不触发部署与生成。"
+    },
+    {
+      "id": "B2",
+      "item": "租约鉴权实测（401 vs 200）",
+      "reason": "需要以正确 Bearer 调 /reserve 才能区分『鉴权通过』与『token 不匹配』，这会新建 lease 记录，与任务卡『不要盲发 reserve』冲突；本机也未持有 LTZZZ_AGENT_TOKEN 值（按要求不导出）。因此只核到 auth_configured=true 这一元数据，未做实测。",
+      "needs": "授权一次带鉴权的只读探针（例如 /health 增加受保护的 GET /auth/check 只回布尔），或有 runner 侧探针代为执行。"
+    },
+    {
+      "id": "B3",
+      "item": "预留/释放对账（reserved vs released 数量）",
+      "reason": "lease 记录存在 Durable Object storage 内，网关未提供只读导出端点；/release 需要合法 lease UUID 且会改状态，零生成前提下不可用。故只能做代码级闭合核对，不能做数量对账。",
+      "needs": "在网关增加只读 /leases/count（Bearer 保护、不返回 UUID、不返回 Key），或由 DO 侧定时导出脱敏计数。"
+    }
+  ],
+
+  "unchanged_facts": [
+    "Kimi 524 与模型选型无关，属 CF 边缘 100s 窗口 + 同步代理无上游超时；98426842 已部署并以 90s 主动超时改为可判别 504。",
+    "本次未重放任何历史请求，未触发 kimi-native-audit，未新增付费 cron，无资金动作。",
+    "Treasury #351、WEP3 交易适配、Kimi 长任务三线仍分开验收，本次结论不冒充其通过。"
+  ]
+}
