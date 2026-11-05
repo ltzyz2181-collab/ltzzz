@@ -22,7 +22,7 @@ import { assessDelivery,requiredSectionsForAgent,deliveryRequirementsPrompt } fr
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
 import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
-import {dailyReviewPrompt,materializeDailyReview} from './lib/daily-independent-review.mjs';
+import {dailyReviewPromptsForSeat,materializeAllDailyReviews} from './lib/daily-independent-review.mjs';
 import {DAILY_CHANNELS, qwenReviewContext} from './lib/daily-channels.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -153,7 +153,7 @@ async function main() {
       "不要直接修改或声称修改 ltzzz-memory/ 长期文件；建议只能作为每日候选。梦境相关只概括记录规则与待验证问题，不逐字复述梦境细节。",
       "本任务生成读后感与可复用工程/验收草稿，优先完成总控派单或自主发现的任务；不要输出 SPEND_PROPOSAL、钱包提案或转账/付款操作。",
     ].join("\n");
-    const reviewPrompt=ch.agent==='doubao'?dailyReviewPrompt({root:ROOT,date:today,runKey}):'';
+    const reviewPrompt=dailyReviewPromptsForSeat({root:ROOT,date:today,runKey},ch.agent);
     const prompt = [
       `今天是 ${today}（UTC+8）。你的角色任务：${roleTask}`,
       reflectionGuidance,
@@ -238,7 +238,7 @@ async function main() {
 
   tasks.push(...inactiveDailySeats(taskDefs));
 
-  materializeDailyReview({root:ROOT,date:today});
+  materializeAllDailyReviews({root:ROOT,date:today});
 
   const finalBoard=readLedger(ROOT,today);
   for (const task of tasks) {
