@@ -4,7 +4,7 @@ import {readDeepSeekResponse} from './lib/deepseek-stream.mjs';
 export async function callAgent({apiKey,prompt,model,maxTokens=8192,onProgress,thinking='enabled'}){
  if(!['enabled','disabled'].includes(thinking))throw Error('invalid_thinking_mode');
  if(!apiKey)return {ok:false,status:'not_configured',error:'DEEPSEEK_API_KEY 未配置'};
- const requestedModel=model||process.env.DEEPSEEK_MODEL||routedModel('deepseek','deepseek-reasoner');
+ const requestedModel=model||process.env.DEEPSEEK_MODEL||routedModel('deepseek','deepseek-v4-pro');
  // Redact before returning or checkpointing; do not retain reasoning_content.
  const redact=value=>{
   if(typeof value==='string')return value.replaceAll(apiKey,'[REDACTED]');

@@ -218,7 +218,7 @@ async function main() {
       writeJson(memPath, mem);
       if(status==='success')delete pending.reminders[ch.agent];
       else {pending.reminders[ch.agent]={date:today,status:'pending',status_reason:status,reason:integrity.reason};failures.push({agent:ch.agent,status,error:integrity.reason});}
-      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, skill:res.skill||null, status, finish_reason:res.finish_reason||null, delivery_integrity:integrity, output_preview: output.slice(0, 200), full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
+      tasks.push({ agent: ch.agent, executed_by: ch.executed_by || ch.agent, task: roleTask, skill:res.skill||null, status, finish_reason:res.finish_reason||null, model: res.model || null, model_source: res.model_source || null, tokens_used: Number.isFinite(res.tokens_used) ? res.tokens_used : null, delivery_integrity:integrity, output_preview: output.slice(0, 200), full_output_file: `data/memory/${ch.agent}.json`, core_memory_status: coreMemory.audit.status });
       reflections.push({ agent: ch.agent, status, output });
       console.log(`[run-daily-tasks] ${ch.agent}: ${status}`);
     } else {
