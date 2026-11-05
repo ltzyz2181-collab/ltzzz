@@ -1,0 +1,26 @@
+{
+  "accepted": true,
+  "artifact_sha256": "46256a40aa43cf55c12b45e5cd22bc077f5eb475c561a1fbf2f97701287b9d5f",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 对状态属于 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review 的席位，确实在重新校验前无条件执行 submission_verified=false、review_verified=false、accepted=false。",
+    "同一函数随后调用 validateArtifact 和 readRemote(seat.artifact.path)；若 readRemote 短暂失败，会在完成 snapshot 或 review 复核前进入 catch。catch 保留或设置 sync_unknown/review_unknown，并将 sync_reason 写为 remote_submission_or_evidence_unverified，finding 所述瞬时远端读取导致最终评审本地绑定状态丢失的路径可由源码静态确认。",
+    "若 snapshot 不 fresh、task owner/date 不符，或远端任务状态既不匹配 submitted/final 证据也不是 claimed，会抛出 board_unavailable_or_wrong_owner 或 board_conflict；若远端任务恰为 claimed 且属于该 agent，代码会复用或创建 submission_intent 并调用 action:'submit_task'。因此 finding 关于误判 claimed 时可能再次提交的链路与源码一致。",
+    "进入最终评审校验前，代码先把 seat.status 设置为 review_unknown 并 saveLedger，然后才验证 review 绑定、review evidence hash、verdict 语义、actual_provider 独立性和状态一致性；任一步失败都会落入 catch 并保持 review_unknown，符合 finding 对独立验收恢复断点的描述。",
+    "minimal_patch 建议在重置前识别本地最终状态，先进行只读 artifact、readRemote、snapshot 和任务板稳定性复核；异常时保留本地绑定并标记 deferred，而不是清空字段或继续提交。该修复方向直接针对源码中已确认的状态重置和 catch 降级路径，作为代码/规格草稿具备可复核性。",
+    "补丁引用的 validateArtifact、digest、readRemote、snapshot、fresh、taskFor、saveLedger 均在 scripts/lib/daily-task-board.mjs 的 syncDailyBoard 作用域内可用；字段名 status、review_verified、review_receipt、accepted、artifact、assignment.id、evidence_path、evidence_sha256 也与当前数据结构和任务板校验代码一致。",
+    "交付明确承认未执行测试命令、未做故障注入，且没有声称补丁已经写盘、执行、合并、部署或上线；这与本次仅验收代码/规格草稿可复核性的范围一致。"
+  ],
+  "unverified": [
+    "未取得交付物原始字节，无法独立重算给定 artifact_sha256，只能按要求严格回传。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs。",
+    "未实际执行 node --check scripts/daily-task-board.mjs。",
+    "未实际执行交付列出的 hasUnverifiedBoard 内联 Node 验证命令，且该命令中的日期、artifact 路径和哈希为占位样例，不能证明真实 ledger 行为。",
+    "未审查 git diff，也未确认 minimal_patch 是否已写入工作树。",
+    "未使用受控 ledger、fake snapshot、fake readRemote 和 fake command 做运行时测试。",
+    "未通过故障注入验证 readRemote 工作产物短暂失败、review evidence 读取失败、snapshot 过期、网络超时、任务板 owner 冲突等场景下最终评审席位不会被降级或重复 submit_task。",
+    "未验证建议补丁在远端状态不稳定但本地已有最终评审回执时的 deferred/continue 分支不会掩盖真实证据冲突，也未验证下一轮恢复的完整状态迁移。",
+    "未审查 scripts/lib/daily-independent-review.mjs 及 materializeAllDailyReviews、syncAllDailyReviews、recordAllDailyReviewReadbacks 的实现，未验证整个 sync CLI 编排下的完整幂等性。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本或线上关键行为。",
+    "未验证是否触发任何模型调用、API 费用、采购、支付或资金操作。"
+  ]
+}

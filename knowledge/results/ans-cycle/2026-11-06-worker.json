@@ -1,0 +1,16 @@
+{
+  "finding": "syncDailyBoard 在处理已进入最终评审状态（completed_draft_review/rejected_draft_review）的席位时，会先无条件重置 submission_verified、review_verified、accepted 为 false，然后重新执行提交与评审校验。若远端任务板已是最终状态且 review 绑定有效，该校验会通过并恢复字段；但一旦 readRemote 对工作产物路径短暂失败或 snapshot 偶发过期，catch 会把席位降级为 review_unknown，并清空已验证的 review_receipt、review_verified 和 accepted，造成同一不可变产物被反复重新验证，甚至可能触发一次新的 submit_task 命令（若远端状态被误判为 claimed）。这就是派单/任务消费/独立验收恢复链上的真实断点。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-05-reviewer.json"
+  ],
+  "minimal_patch": "在 syncDailyBoard 的循环内，对已处于最终评审状态且本地已有 review_verified=true、review_receipt、accepted 与 status 一致的席位，先做只读幂等复核而不是进入可重置提交/评审路径。具体改动：在处理 generated_pending_sync/sync_unknown/submitted_pending_review/review_unknown/completed_draft_review/rejected_draft_review 之前，插入如下恢复分支（约30行）：\n\n```js\nconst finalByLocal = ['completed_draft_review','rejected_draft_review'].includes(seat.status);\nif (finalByLocal && seat.review_verified === true && seat.review_receipt && typeof seat.accepted === 'boolean' && seat.artifact) {\n  try {\n    const bytes = validateArtifact(root, record, agent, seat);\n    if (digest(await readRemote(seat.artifact.path)) !== digest(bytes)) throw Error('remote_artifact_not_persisted');\n    const observed = await snapshot();\n    if (!fresh(observed, agent, now)) throw Error('snapshot_unavailable');\n    const task = taskFor(observed, seat.assignment.id);\n    const stable = task && ['completed_draft_review','rejected_draft_review'].includes(task.status)\n      && task.evidence_path === seat.artifact.path\n      && task.evidence_sha256 === seat.artifact.sha256\n      && task.review?.evidence_sha256 === seat.review_receipt.evidence_sha256\n      && (task.status === 'completed_draft_review') === seat.accepted;\n    if (stable) {\n      seat.sync_reason = 'final_review_already_bound_no_reverification';\n      saveLedger(root, record);\n      continue;\n    }\n  } catch {\n    // 保留本地已绑定状态，不因瞬时远端失败降级；下一轮幂等复核。\n    seat.sync_reason = 'final_review_remote_recheck_deferred';\n    saveLedger(root, record);\n    continue;\n  }\n}\n```\n",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const r={date:'2026-11-06',seats:{gpt:{status:'completed_draft_review',review_verified:true,accepted:true,artifact:{path:'knowledge/results/daily-board/artifacts/2026-11-06-gpt-<sha>.json',sha256:'<sha>'},review_receipt:{evidence_sha256:'<review-sha>'},assignment:{id:'DAILY-2026-11-06-gpt'}}}};console.log(m.hasUnverifiedBoard(r)===false?'ok':'fail')})\"",
+    "git diff -- scripts/lib/daily-task-board.mjs scripts/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "未实际执行上述测试命令；未在受控 ledger 与 fake snapshot/readRemote 下做故障注入，未验证瞬时 readRemote 失败时最终评审席位不会降级为 review_unknown 或重发 submit_task。"
+}
