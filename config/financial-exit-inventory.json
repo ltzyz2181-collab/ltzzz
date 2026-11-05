@@ -559,6 +559,30 @@
         }
       ],
       "scope": "B0 local EVM pilot only, fixed controller and funder beneficiary, testnet/local chain guard, no public deployment workflow or credential binding; not an activation of production funds."
+    },
+    {
+      "path": "wep3-signer-proof.js",
+      "sha256": "6d8aa2454a801707530eac73ef0bd5bd3adbbac59bb621f51c062a7928de5e9e",
+      "disposition": "identity_only",
+      "guards": [
+        {
+          "path": "wep3-signer-proof.js",
+          "required": "url.pathname !== '/treasury/signer-proof'"
+        },
+        {
+          "path": "wep3-signer-proof.js",
+          "required": "supplied !== env.WEP3_RUNNER_TOKEN"
+        },
+        {
+          "path": "wep3-signer-proof.js",
+          "required": "wallet.address.toLowerCase() !== OPERATING_TREASURY.toLowerCase()"
+        },
+        {
+          "path": "wep3-signer-proof.js",
+          "required": "transaction_adapter_ready:false"
+        }
+      ],
+      "scope": "EIP191 fixed-domain proof of the existing registered operating treasury only. No arbitrary signing/transactions/broadcast; legacy credential stripping unchanged, excluded five-signature Safe unavailable."
     }
   ],
   "financial_execution": false,
