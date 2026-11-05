@@ -10,7 +10,7 @@ import {upstreamRequestIdFrom} from '../lib/provider-execution.js';
  */
 import {routedModel} from './model-routing.mjs';
 const BASE = () => process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const MODEL = () => process.env.DOUBAO_MODEL || routedModel("doubao","doubao-seed-evolving");
+const MODEL = () => process.env.DOUBAO_MODEL || routedModel("doubao","doubao-seed-2-1-pro-260915");
 
 async function tryOpenAICompatible(apiKey, prompt, base, model, maxTokens, thinking) {
   const resp = await preconnectFetch(`${base}/chat/completions`, {
