@@ -13,6 +13,16 @@ test('no cards -> no call', async () => {
   const r = await runOnce({...p, call: async () => { calls++; }});
   assert.equal(r.executed, false); assert.equal(calls, 0);
 });
+test('a lost durable reservation blocks before the provider; a recorded intent is not repurchased',async()=>{
+ const p=mk();card(p.queueDir);let calls=0;
+ await assert.rejects(()=>runOnce({...p,reserve:async()=>{throw Error('write_unknown');},call:async()=>{calls++;}}),/write_unknown/);
+ const r=await runOnce({...p,call:async()=>{calls++;}});assert.equal(r.model_calls,0);assert.equal(calls,0);
+});
+test('the provider receives the same required sections and end marker the delivery gate enforces',async()=>{
+ const p=mk(),c=card(p.queueDir,{required_sections:['【派单监督】','【lessons核对】']});let calls=0;
+ await runOnce({...p,call:async input=>{calls++;assert.ok(input.prompt.lastIndexOf('【派单监督】')>input.prompt.lastIndexOf(c.prompt));assert.ok(input.prompt.lastIndexOf('【lessons核对】')>input.prompt.lastIndexOf(c.prompt));assert.ok(input.prompt.lastIndexOf('【交付结束】')>input.prompt.lastIndexOf(c.prompt));return {ok:true,output:'【派单监督】未核查。\n【lessons核对】仅引用提供证据。\n【交付结束】',finish_reason:'stop'};}});
+ assert.equal(calls,1);
+});
 test('required supervision cannot be delivered by normal stop and end marker alone',async()=>{
  const p=mk();card(p.queueDir,{required_sections:['【派单监督】']});
  const r=await runOnce({...p,call:async()=>({ok:true,status:'success',output:'普通产出\n【交付结束】',finish_reason:'stop',model:'qwen-plus'})});
@@ -48,6 +58,12 @@ test('provider failure is recorded as failure, not success, and not retried', as
   const p = mk(); card(p.queueDir); let calls = 0;
   const r = await runOnce({...p, call: async () => { calls++; return {ok: false, status: 'billing_or_quota_error', error: 'HTTP 400'}; }});
   assert.equal(r.status, 'billing_or_quota_error'); assert.equal(calls, 1); assert.deepEqual(pending(p), []);
+});
+test('truncated text and real usage evidence survive a rejection without triggering another generation',async()=>{
+ const p=mk();card(p.queueDir,{required_sections:['【派单监督】']});let calls=0;
+ const call=async()=>{calls++;return {ok:false,status:'incomplete_output',output:'partial evidence',finish_reason:'length',provider:'aliyun_dashscope',model:'qwen-plus',model_source:'provider_response',http:200,completion_id:'native-id',prompt_tokens:50,completion_tokens:100,reasoning_tokens:0};};
+ await runOnce({...p,call});await runOnce({...p,call});const r=JSON.parse(fs.readFileSync(path.join(p.receiptDir,'QWEN-TEST-0001.json')));
+ assert.equal(calls,1);assert.equal(r.output,'partial evidence');assert.equal(r.accepted,false);assert.equal(r.status,'incomplete_output');assert.equal(r.reasoning_tokens,0);assert.equal(r.completion_id,'native-id');assert.equal(r.actual_provider,'aliyun_dashscope');
 });
 test('invalid cards rejected without model call (real_money, wrong agent, id mismatch)', async () => {
   for (const over of [{real_money: true}, {agent: 'deepseek'}, {max_tokens: 99999}]) {

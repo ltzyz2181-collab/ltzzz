@@ -27,3 +27,10 @@
 
 ## 记账
 - paid=false、tx_hash=null、income=0；无密钥改动、无资金动作。
+
+
+## GPT 实物复核更正（2026-11-04）
+
+保留 ecc338f7 的 4096 默认值供后续观察，不将它计为已验收的根因修复。11-02、11-03、11-04 的 qianwen 原工件均为 `finish_reason=stop`，所以这些缺段不是已证实的 length 截断；27k 为历史 total_tokens，不能当 completion_tokens。第二问旧回执仍为 `incomplete / completion_marker_missing`，不是完整交付。首问消费者会在 result.ok=false 时统一写 output=null，因此不能据此证明上游没有任何部分正文，更不能断定推理耗尽。
+
+当前确切工程缺口是生成提示与格式门禁不同步。共享必填段/结束标记、保留部分输出及真实用量、先云端预留再调用的修复和席位处置见 `knowledge/results/dispatch/oversight/qianwen-gpt-decision-20261104.json`。保持 qwen-plus，不新增未经核验的模型或自动付费重试；一次短测试通过也不能证明可承担无监督验收/总控。
