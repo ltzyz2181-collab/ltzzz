@@ -89,6 +89,10 @@ test('full durable native chain runs Deep plan, three real-bindable workers and 
   assert.equal(job.receipts.length,5);assert.equal(job.outputs.length,3);assert.equal(job.review.independent_of_worker_providers,true);assert.equal(job.review.approved,true);
   for(const r of job.receipts){assert.equal(r.generation_verified,true);assert.equal(r.model_source,'provider_response');assert.ok(r.actual_model);assert.ok(r.provider_response_id);assert.match(r.output_sha256,/^[a-f0-9]{64}$/);}
   assert.equal(f.calls.find(v=>v.seat==='kimi').body.max_tokens,16384);
+  const coordination=f.calls.filter(v=>v.seat==='deepseek');assert.equal(coordination.length,2);
+  for(const call of coordination){assert.deepEqual(call.body.thinking,{type:'disabled'});assert.equal(call.body.max_tokens,8192);}
+  for(const call of f.calls.filter(v=>v.seat!=='deepseek'))assert.equal(Object.hasOwn(call.body,'thinking'),false);
+  for(const receipt of job.receipts.filter(v=>v.seat==='deepseek'))assert.equal(receipt.request_options.thinking_type,'disabled');
   assert.equal(job.accepted,false);assert.equal(job.platform_accepted,false);assert.equal(job.paid,false);assert.equal(job.tx_hash,null);
   assert.equal(job.reflection.status,'context_injected_not_compliance_verified');assert.equal(job.weights_trained,false);
   const duplicate=await (await f.request()).json();assert.equal(duplicate.duplicate,true);assert.equal(duplicate.execution_id,job.execution_id);assert.equal(duplicate.model_calls,5);

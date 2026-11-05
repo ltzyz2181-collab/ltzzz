@@ -1,6 +1,7 @@
 import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
 import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {deepThinkingOptions} from './lib/deepseek-thinking.js';
 // LTZZZ · DeepSeek API proxy — Cloudflare Worker（v2，补齐健康检查）
 // 槽位：did:ltzzz:deepseek（研究席 · 记忆与内容研究主力）
 // v1→v2 变更：新增 GET /health（部署可验证性，对齐千问/Kimi 槽位规范）；
@@ -32,6 +33,7 @@ export default {
         has_key: Boolean(env.DEEPSEEK_API_KEY),
         ...modelConfiguration(env.DEEPSEEK_MODEL || 'deepseek-flash',{source:env.DEEPSEEK_MODEL?'environment_override':'worker_default',override:Boolean(env.DEEPSEEK_MODEL)}),
         identity_receipt_revision: 'ltzzz.provider-execution.v1',
+        deepseek_thinking_revision: 'deepseek-thinking-option-v1',
         generation_verified: false,
         time: new Date().toISOString()
       });
@@ -53,6 +55,9 @@ export default {
       if (!messages.length) {
         return json({ error: 'messages is required', stage: 'request_validation' }, 400);
       }
+      let thinkingOptions;
+      try { thinkingOptions = deepThinkingOptions(body.thinking); }
+      catch { return json({error:'invalid_thinking_option',stage:'request_validation',model_calls:0},400); }
 
       const model = body.model || env.DEEPSEEK_MODEL || 'deepseek-flash';
 
@@ -71,6 +76,7 @@ export default {
           messages,
           temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
           max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 1200,
+          ...thinkingOptions,
           stream: false
         })
       });
