@@ -98,11 +98,19 @@ test('full durable native chain runs Deep plan, three real-bindable workers and 
   const duplicate=await (await f.request()).json();assert.equal(duplicate.duplicate,true);assert.equal(duplicate.execution_id,job.execution_id);assert.equal(duplicate.model_calls,5);
   await task.alarm();assert.equal(f.calls.length,5);
 });
-test('upstream incomplete output blocks and escalates rather than pretending worker success or automatically retrying',async()=>{
+test('truncated worker output is recorded as truncation, not as missing generation, and never auto-retried',async()=>{
   const f=fixture({badSeat:'kimi'});await f.request();const task=[...f.objects.values()][0];await task.alarm();
   const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
-  assert.equal(job.status,'blocked');assert.equal(job.error,'native_generation_evidence_incomplete');assert.equal(job.model_calls,4);assert.equal(job.escalation.seat,'gpt');assert.equal(job.escalation.personal_owner_approval_required,false);
+  assert.equal(job.status,'blocked');assert.equal(job.error,'output_truncated_at_output_budget');assert.equal(job.model_calls,4);assert.equal(job.escalation.seat,'gpt');assert.equal(job.escalation.personal_owner_approval_required,false);
+  const receipt=job.receipts.find(r=>r.seat==='kimi');
+  assert.equal(receipt.truncated,true);assert.equal(receipt.output_present,true);assert.equal(receipt.status,'truncated_output_pending_decision');assert.match(receipt.output_sha256,/^[a-f0-9]{64}$/);assert.equal(receipt.generation_verified,false);
   assert.equal(job.escalation.email_sent,false);assert.equal(job.accepted,false);await f.request();await task.alarm();assert.equal(f.calls.length,4);
+});
+test('empty content still counts as missing generation evidence rather than truncation',async()=>{
+  const f=fixture({badSeat:'kimi',workerOutput:{kimi:''}});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'blocked');assert.equal(job.error,'native_generation_evidence_incomplete');assert.equal(job.model_calls,4);
+  const receipt=job.receipts.find(r=>r.seat==='kimi');assert.notEqual(receipt.truncated,true);assert.equal(receipt.generation_verified,false);
 });
 test('crash after durable generation reservation never replays an uncertain provider request',async()=>{
   const f=fixture();await f.request();const task=[...f.objects.values()][0],job=await task.state.storage.get('job');
