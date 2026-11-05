@@ -5,7 +5,7 @@ import {pulseSnapshot,PULSE_URL} from './lib/pulse-client.mjs';
 import {pulseToken} from './pulse-credentials.mjs';
 import {reconcileDailyResult} from './lib/daily-board-lineage.mjs';
 import {cstDate} from '../workers/pulse-worker/tasks.js';
-import {materializeDailyReview,syncDailyReview,recordDailyReviewReadback} from './lib/daily-independent-review.mjs';
+import {materializeAllDailyReviews,syncAllDailyReviews,recordAllDailyReviewReadbacks} from './lib/daily-independent-review.mjs';
 import {dailyAgents} from './lib/daily-channels.mjs';
 const root=process.cwd(),date=process.env.DAILY_DATE||cstDate();
 const runKey=`${process.env.GITHUB_RUN_ID||'local'}:${process.env.GITHUB_RUN_ATTEMPT||'1'}`;
@@ -27,12 +27,12 @@ if(process.argv[2]==='prepare'){
 }else if(process.argv[2]==='sync'){
  const options={root,date,snapshot:pulseSnapshot,command,readRemote};
  await syncDailyBoard(options);
- materializeDailyReview({root,date});
- await syncDailyReview(options);
+ materializeAllDailyReviews({root,date});
+ await syncAllDailyReviews(options);
  await syncReviewedSeats(options);
- const record=recordDailyReviewReadback({root,date});
+ const record=recordAllDailyReviewReadbacks({root,date});
  const resultUpdated=reconcileDailyResult(root,date);
  console.log(JSON.stringify({date,seats:record?Object.fromEntries(Object.entries(record.seats).map(([a,s])=>[a,s.status])):{}}));
  console.log(JSON.stringify({date,result_updated:resultUpdated,model_calls:0,production_deployment_accepted:false}));
- if(hasUnverifiedBoard(record)||record?.independent_review&&record.independent_review.verified!==true)process.exitCode=1;
+ if(hasUnverifiedBoard(record)||record?.independent_review&&record.independent_review.verified!==true||Object.values(record?.independent_reviews||{}).some(r=>r.verified!==true))process.exitCode=1;
 }else throw Error('prepare_or_sync_required');

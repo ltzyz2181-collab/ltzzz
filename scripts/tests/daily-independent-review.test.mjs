@@ -73,3 +73,40 @@ test('paused task board blocks review even with complete and committed provider 
  await f.sync({snapshot:async()=>({available:true,...f.state,manual:{global:true}})});
  assert.equal(f.commands.filter(c=>c.action==='review_task').length,0);assert.equal(f.calls,2);
 });
+
+test('owner-authorized Qianwen reviews Doubao and Grok in its existing fourth call without self-review',async t=>{
+ const {dailyReviewPromptsForSeat,materializeAllDailyReviews,syncAllDailyReviews,recordAllDailyReviewReadbacks}=await import('../lib/daily-independent-review.mjs');
+ const {syncReviewedSeats}=await import('../lib/daily-task-board.mjs');
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'qwen-multi-review-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const agents=['deepseek','doubao','grok','qianwen'];let state=seedTasks({ran_at:new Date(now).toISOString(),agents:{}},now),calls=0;const commands=[],remote=new Map();
+ const options={root,date,now,runKey:'run:multi',sourceCommit:'source-sha',agents,snapshot:async()=>({available:true,...structuredClone(state)}),command:async body=>{commands.push(body);state=control(state,{...body,reason:'test'},'qianwen',{targets:agents.map(name=>({name})),baseline_concurrency:1},now).state;},readRemote:async file=>{if(!remote.has(file))throw Error('not_committed');return remote.get(file);}};
+ await prepareDailyBoard(options);
+ const generate=async(agent,output)=>runReservedSeat({...options,agent,call:async()=>{calls++;return {ok:true,status:'success',output,finish_reason:'stop',model:agent==='qianwen'?'qwen-max':agent+'-native',model_source:'provider_response'};}});
+ await generate('deepseek','Own public draft【交付结束】');
+ const dp=dailyReviewPromptsForSeat(options,'doubao'),dh=readLedger(root,date).seats.deepseek.artifact.sha256;assert.match(dp,/DeepSeek|deepseek/);
+ await generate('doubao','【日课独立审核JSON】\n```json\n'+JSON.stringify({accepted:true,artifact_sha256:dh,reasons:['Bound draft'],unverified:['No deployment']})+'\n```\n【日课独立审核结束】\n【交付结束】');
+ await generate('grok','A public measurable suggestion【交付结束】');
+ const qp=dailyReviewPromptsForSeat(options,'qianwen');assert.match(qp,/日课独立审核JSON:doubao/);assert.match(qp,/日课独立审核JSON:grok/);assert.doesNotMatch(qp,/日课独立审核JSON:qianwen/);
+ const ledger=readLedger(root,date),blocks=['doubao','grok'].map(w=>'【日课独立审核JSON:'+w+'】\n```json\n'+JSON.stringify({accepted:w==='doubao',artifact_sha256:ledger.seats[w].artifact.sha256,reasons:[w==='doubao'?'The supplied draft is scoped':'Suggested claim lacks supplied evidence'],unverified:['No deployment']})+'\n```\n【日课独立审核结束:'+w+'】');
+ await generate('qianwen','【派单监督】逐项审阅已提供工件，未执行命令。\n'+blocks.join('\n')+'\n【交付结束】');
+ materializeAllDailyReviews(options);
+ const commit=()=>{const visit=dir=>{for(const e of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())visit(f);else remote.set(path.relative(root,f).split(path.sep).join('/'),fs.readFileSync(f));}};visit(root);};
+ commit();await syncDailyBoard(options);await syncAllDailyReviews(options);await syncReviewedSeats(options);const result=recordAllDailyReviewReadbacks(options);
+ assert.equal(calls,4);assert.equal(commands.filter(c=>c.action==='review_task').length,3);
+ assert.equal(result.seats.deepseek.status,'completed_draft_review');assert.equal(result.seats.doubao.status,'completed_draft_review');assert.equal(result.seats.grok.status,'rejected_draft_review');
+ assert.equal(commands.find(c=>c.action==='review_task'&&c.worker_actual_provider==='grok').task_id,ledger.seats.grok.assignment.id);
+ assert.equal(result.seats.qianwen.status,'submitted_pending_review');assert.equal(result.seats.qianwen.accepted,false);assert.equal(result.independent_reviews.doubao.verified,true);assert.equal(result.independent_reviews.grok.verified,true);
+ for(const c of commands.filter(c=>c.action==='review_task'&&c.agent==='qianwen')){assert.notEqual(c.worker_actual_provider,c.reviewer_actual_provider);assert.equal(c.scope,'engineering_draft_only');}
+ await syncAllDailyReviews(options);await syncReviewedSeats(options);assert.equal(commands.filter(c=>c.action==='review_task').length,3);assert.equal(calls,4);
+});
+
+test('unregistered and self-review pairs are rejected before evidence or provider IO',()=>{
+ assert.throws(()=>dailyReviewPrompt({root:'not-read',date,runKey:'x',workerAgent:'qianwen',reviewerAgent:'qianwen'}),/self_review/);
+ assert.throws(()=>dailyReviewPrompt({root:'not-read',date,runKey:'x',workerAgent:'grok',reviewerAgent:'grok'}),/self_review/);
+});
+
+test('actual sync CLI wires the new review functions and stays read-only for an absent ledger',async t=>{
+ const {spawnSync}=await import('node:child_process');const root=fs.mkdtempSync(path.join(os.tmpdir(),'review-sync-cli-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const r=spawnSync(process.execPath,[path.resolve('scripts/daily-task-board.mjs'),'sync'],{cwd:root,env:{PATH:process.env.PATH,DAILY_DATE:date},encoding:'utf8'});
+ assert.equal(r.status,0,r.stderr);assert.match(r.stdout,/"model_calls":0/);assert.equal(fs.readdirSync(root).length,0);
+});

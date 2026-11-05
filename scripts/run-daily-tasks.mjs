@@ -8,7 +8,7 @@ import {qianwenOversightContext} from './lib/dispatch-oversight.mjs';
  * data/reflections/YYYY-MM-DD.md；执行状态保存至 data/results/YYYY-MM-DD.json。
  * 长期记忆文件只读；模型输出不自动晋升到 ltzzz-memory/。
  *
- * OpenAI与Microsoft付费日课停用；Claude为外部免费讨论席；逻辑总控由国内执行器接续。
+ * 原厂OpenAI付费日课停用不等于GPT总控停用；实际relay另以control回执核验。
  * 用法：node scripts/run-daily-tasks.mjs
  */
 import fs from "node:fs";
@@ -18,11 +18,11 @@ import { fileURLToPath } from "node:url";
 import {readLedger,runReservedSeat,ledgerPath,digest} from "./lib/daily-task-board.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
-import { assessDelivery,requiredSectionsForAgent } from "./delivery-integrity.mjs";
+import { assessDelivery,requiredSectionsForAgent,deliveryRequirementsPrompt } from "./delivery-integrity.mjs";
 import {inactiveDailySeats} from './lib/daily-seat-policy.mjs';
 import {applyAvailableExternalReport} from './lib/external-report.mjs';
 import {projectDailyBoard} from './lib/daily-board-lineage.mjs';
-import {dailyReviewPrompt,materializeDailyReview} from './lib/daily-independent-review.mjs';
+import {dailyReviewPromptsForSeat,materializeAllDailyReviews} from './lib/daily-independent-review.mjs';
 import {DAILY_CHANNELS, qwenReviewContext} from './lib/daily-channels.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -153,7 +153,7 @@ async function main() {
       "不要直接修改或声称修改 ltzzz-memory/ 长期文件；建议只能作为每日候选。梦境相关只概括记录规则与待验证问题，不逐字复述梦境细节。",
       "本任务生成读后感与可复用工程/验收草稿，优先完成总控派单或自主发现的任务；不要输出 SPEND_PROPOSAL、钱包提案或转账/付款操作。",
     ].join("\n");
-    const reviewPrompt=ch.agent==='doubao'?dailyReviewPrompt({root:ROOT,date:today,runKey}):'';
+    const reviewPrompt=dailyReviewPromptsForSeat({root:ROOT,date:today,runKey},ch.agent);
     const prompt = [
       `今天是 ${today}（UTC+8）。你的角色任务：${roleTask}`,
       reflectionGuidance,
@@ -170,6 +170,7 @@ async function main() {
       ch.agent === 'qianwen' ? '现行目录派单，历史千问建议不能覆盖其v2拆维度要求：\n'+fs.readFileSync(path.join(ROOT,'ops/dispatch/MODELCAT-KIMICN-20261022.md'),'utf8') : '',
       ch.agent === 'qianwen' ? qwenReviewContext(reflections, readLedger(ROOT,today), today) : '',
       ch.agent === 'qianwen' ? '月度模型目录参考（目录A与生成B分开；失败尝试不是成功生成；GET探针不证明生成能力）：'+JSON.stringify(readJson(path.join(ROOT,'knowledge/results/providers/catalogue-latest.json'),null)?.seats?.map(row=>({seat:row.seat,status:row.status,last_generation_outcome:row.last_generation_outcome,last_generation_outcome_evidence:row.last_generation_outcome_evidence,selected_model:row.selected_model,selected_model_listed:row.selected_model_listed,added_model_ids:row.added_model_ids?.slice(0,5),removed_model_ids:row.removed_model_ids?.slice(0,5)}))||[]) : '',
+      ch.agent === 'qianwen' ? deliveryRequirementsPrompt(requiredSectionsForAgent(ch.agent)) : '',
     ].filter(Boolean).join("\n\n");
 
     if (coreMemory.audit.status !== 'complete') {
@@ -237,7 +238,7 @@ async function main() {
 
   tasks.push(...inactiveDailySeats(taskDefs));
 
-  materializeDailyReview({root:ROOT,date:today});
+  materializeAllDailyReviews({root:ROOT,date:today});
 
   const finalBoard=readLedger(ROOT,today);
   for (const task of tasks) {

@@ -1,5 +1,7 @@
 name: Qwen dispatch consumer
 on:
+  pull_request:
+    paths: ['scripts/run-qwen-dispatch.mjs','scripts/call-qwen.mjs','scripts/delivery-integrity.mjs','scripts/run-daily-tasks.mjs','scripts/tests/qwen-dispatch.test.mjs','scripts/tests/qwen-native.test.mjs','scripts/tests/delivery-integrity.test.mjs','.github/workflows/qwen-dispatch.yml']
   workflow_dispatch:
   push:
     branches: [main]
@@ -7,7 +9,17 @@ on:
 permissions: {contents: write}
 concurrency: {group: qwen-dispatch, cancel-in-progress: false}
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --check scripts/run-daily-tasks.mjs && node --test scripts/tests/qwen-dispatch.test.mjs scripts/tests/qwen-native.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/seat-delivery.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs
   consume:
+    needs: verify
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
