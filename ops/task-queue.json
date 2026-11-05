@@ -141,6 +141,16 @@
         "innovation/2026-10-29.json"
       ],
       "instruction": "总控已批准工程研究任务，提供完整最小代码补丁与验证步骤；不声称代码已部署。新增ObservableVestIntent本地固定样本及纯校验代码：字段包括observable_kind、fetch_spec、expected_digest、vest_bps、revoke_until、negative_receipt_template；校验枚举互斥、必填/可选、SHA256摘要格式、vest_bps范围、revoke_until时长和negative_receipt_template引用关系。运行正反例本地用例，只证明字段合法和约束成立；不部署、不付费、不调用外部回读或链上，不得声称已实现外部状态兑现、分片释放或链上证明。"
+    },
+    {
+      "id": "INNOVATION-2026-11-05-GROK",
+      "agent": "doubao",
+      "inputs": [
+        "AI-START-HERE.md",
+        "wep3-worker.js",
+        "innovation/2026-11-05.json"
+      ],
+      "instruction": "总控已批准工程研究任务，提供完整最小代码补丁与验证步骤；不声称代码已部署。实现 intent_schema_trial 的拒单 intent schema 和正反 fixture：合法 blocked/unverified/缺 hash 的拒单 intent 应 accept；伪装成功但缺 path/sha256/commit 的 intent 应 reject；finish_reason 非 stop 应 reject。使用一个注入时钟固定边界，记录每个输入原始字节 SHA256、path 与 commit；产物最高为 draft，不写盘、不部署、不声称交付；完成后返回 receipt，部署前仍需他方实际 provider 复核。"
     }
   ]
 }
