@@ -1,18 +1,36 @@
 {
   "schema": "ltzzz.sentinel-coverage.v1",
-  "at": "2026-11-05T14:04:39.297Z",
-  "window_start": "2026-10-31T14:04:39.297Z",
+  "at": "2026-11-05T22:32:26.686Z",
+  "window_start": "2026-10-31T22:32:26.686Z",
   "window_days": 5,
   "scope": "Observed GitHub Actions runs and sampled job steps; not file-count divided by theoretical cron slots",
   "actions_read_permission_verified": true,
   "model_calls": 0,
   "runs": [
     {
+      "id": 42122314571,
+      "run_attempt": 1,
+      "event": "schedule",
+      "status": "in_progress",
+      "conclusion": null,
+      "created_at": "2026-11-05T22:32:14Z",
+      "head_sha": "dd5e0e9713333853fb18e37dceb3f2c2525e284c"
+    },
+    {
+      "id": 42061519907,
+      "run_attempt": 1,
+      "event": "schedule",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-11-05T16:08:02Z",
+      "head_sha": "26c361fccc54aadcdce27d9a1c743a5526583396"
+    },
+    {
       "id": 42041459737,
       "run_attempt": 1,
       "event": "push",
-      "status": "in_progress",
-      "conclusion": null,
+      "status": "completed",
+      "conclusion": "success",
       "created_at": "2026-11-05T14:04:17Z",
       "head_sha": "d9a7d91b7ba80c13c8baa66c9625f7e50562eae4"
     },
@@ -195,27 +213,23 @@
       "conclusion": "success",
       "created_at": "2026-10-31T23:05:12Z",
       "head_sha": "f6c10f583e10885332d65bee9024436126dae7fc"
-    },
-    {
-      "id": 41235493675,
-      "run_attempt": 1,
-      "event": "schedule",
-      "status": "completed",
-      "conclusion": "success",
-      "created_at": "2026-10-31T19:42:44Z",
-      "head_sha": "d3b3f3afba79af77f89cc8dd2ad0fe43ff460a66"
-    },
-    {
-      "id": 41215618878,
-      "run_attempt": 1,
-      "event": "schedule",
-      "status": "completed",
-      "conclusion": "success",
-      "created_at": "2026-10-31T15:35:53Z",
-      "head_sha": "cb4b0282d8c7f671d279de54031ffe5cc4a7825e"
     }
   ],
   "sampled_jobs": [
+    {
+      "run_id": 42061519907,
+      "scan": "success",
+      "persistence": "failure",
+      "alarm": "skipped",
+      "classification": "scan_or_persistence_not_verified"
+    },
+    {
+      "run_id": 42041459737,
+      "scan": "success",
+      "persistence": "success",
+      "alarm": "success",
+      "classification": "scan_and_persistence_succeeded"
+    },
     {
       "run_id": 41989059637,
       "scan": "success",
@@ -348,20 +362,6 @@
       "persistence": "success",
       "alarm": "success",
       "classification": "scan_and_persistence_succeeded"
-    },
-    {
-      "run_id": 41235493675,
-      "scan": "success",
-      "persistence": "success",
-      "alarm": "success",
-      "classification": "scan_and_persistence_succeeded"
-    },
-    {
-      "run_id": 41215618878,
-      "scan": "success",
-      "persistence": "success",
-      "alarm": "success",
-      "classification": "scan_and_persistence_succeeded"
     }
   ],
   "nominal_hourly_slots": 120,
@@ -371,7 +371,7 @@
   "observed_scheduled_runs": 19,
   "completed_runs": 21,
   "sample_size": 21,
-  "sampled_persistence_successes": 19,
+  "sampled_persistence_successes": 18,
   "sampled_business_alerts": 0,
   "status": "observed_window_recorded"
 }
