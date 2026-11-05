@@ -9,6 +9,81 @@
   "paid": false,
   "tx_hash": null,
   "financial_execution": false,
-  "status": "reserved_before_provider_call",
-  "model_calls": 0
+  "reservation": {
+    "verified": true,
+    "path": "knowledge/results/qwen-dispatch/QW-FIX-TEMPLATE-20261103.json",
+    "commit": "ca0c67cb9b3b40bc185e18d77e12c696836fba26",
+    "sha256": "da41ff9fc44e8cce77bcd358e5c00ba707a35c38872140d5b52a3460189adabe",
+    "executor_source_commit": "c721e02b6fa1fe69c7262c7da69b00de86443ec1"
+  },
+  "delivery_integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "required_sections": [
+    "【派单监督】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:QW-FIX-TEMPLATE-20261103",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "d79858996d243a2bffdd1b244972f18d93571fc8d81a3c9a5ff4770f6be6904c",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "37cf1268bf559af912f747fbbc847a95f1aa7a68f299da506569cf7dcec5c418"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-max",
+  "generated_by_model": "qwen-max",
+  "attribution_note": "generation by qwen-max via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 3904,
+  "request_id": "768a7af0-5997-90b3-871a-de4b4af3142c",
+  "actual_provider": "aliyun_dashscope",
+  "actual_model": "qwen-max",
+  "http": 200,
+  "completion_id": "chatcmpl-768a7af0-5997-90b3-871a-de4b4af3142c",
+  "prompt_tokens": 3338,
+  "completion_tokens": 566,
+  "reasoning_tokens": null,
+  "upstream_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "request_options": {
+    "enable_thinking": false,
+    "stream": false,
+    "max_tokens": 2048
+  },
+  "output": "【派单监督】\n本单收到的两个原Task ID分别为DAILY-2026-11-05-doubao和AUTO-2026-11-05-health。责任席为doubao和grok。证据路径包括knowledge/results/daily-board/artifacts/2026-11-05-doubao-62de15c4e1cfd093b7f8d4bf1cae9258e174416789f0df5bd4a42a432ea8b8b5.json和knowledge/results/daily-board/artifacts/2026-11-05-grok-2d325be80e8a6037def9802df2d4a95fe62dc6125ac535a4961780774526c6d1.json。未核查项涉及各工件内哈希回读一致性、源码及测试实际执行情况、监控奖惩修复生产部署状态以及模型身份密码学证明等。\n\n【日课独立审核JSON:doubao】\n```json\n{\"accepted\": true, \"artifact_sha256\": \"62de15c4e1cfd093b7f8d4bf1cae9258e174416789f0df5bd4a42a432ea8b8b5\", \"reasons\": [\"文档结构合理，如实反映现状与限制\",\"符合任务边界要求，未越界声称\"], \"unverified\": [\"源码及测试实际执行情况\",\"监控奖惩修复生产部署状态\",\"工件内各哈希回读一致性\",\"模型身份密码学证明\"]}\n```\n【日课独立审核结束:doubao】\n\n【日课独立审核JSON:grok】\n```json\n{\"accepted\": true, \"artifact_sha256\": \"2d325be80e8a6037def9802df2d4a95fe62dc6125ac535a4961780774526c6d1\", \"reasons\": [\"正确区分了心跳与生成的状态差异\",\"清晰指出了存在的不确定性\"], \"unverified\": [\"当日生成回执存在性\",\"Pulse快照最新性\",\"实际上游模型验证\",\"仓内当日生成JSON是否存在\"]}\n```\n【日课独立审核结束:grok】\n\n【交付结束】",
+  "output_sha256": "29cfc71107c0df66d8e8929cba3bf3b5f2f27fa7a48e7d3ce1ef82aaf627c5f9",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-05T06:57:04.352Z"
 }
