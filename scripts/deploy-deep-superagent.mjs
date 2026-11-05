@@ -5,6 +5,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {trustedAuditCompletion,planReconciliation,continuityAnchor} from './lib/deep-release-reconcile.mjs';
 
 export const REVISION='ltzzz.deep-superagent.v1';
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
@@ -27,8 +28,13 @@ export function authorizedBootstrapComment(event){
  return event?.action==='created'&&event.repository?.full_name==='ltzyz2181-collab/ltzzz'&&event.comment?.user?.id===261544579&&event.comment.body===BOOTSTRAP_COMMENT&&Number.isSafeInteger(event.comment.id)&&event.comment.id>0;
 }
 export function trustedContext(env=process.env,{readEvent=file=>JSON.parse(fs.readFileSync(file,'utf8'))}={}){
- if(env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||env.GITHUB_REF!=='refs/heads/main'||!['push','workflow_dispatch','issue_comment'].includes(env.GITHUB_EVENT_NAME)||!SHA.test(env.GITHUB_SHA||'')||!/^\d{1,20}$/.test(env.GITHUB_RUN_ID||'')||!/^\d{1,6}$/.test(env.GITHUB_RUN_ATTEMPT||''))throw Error('trusted_main_execution_required');
+ if(env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||env.GITHUB_REF!=='refs/heads/main'||!['push','workflow_dispatch','issue_comment','workflow_run'].includes(env.GITHUB_EVENT_NAME)||!SHA.test(env.GITHUB_SHA||'')||!/^\d{1,20}$/.test(env.GITHUB_RUN_ID||'')||!/^\d{1,6}$/.test(env.GITHUB_RUN_ATTEMPT||''))throw Error('trusted_main_execution_required');
  const context={source_commit:env.GITHUB_SHA,run_id:env.GITHUB_RUN_ID,run_attempt:env.GITHUB_RUN_ATTEMPT};
+ if(env.GITHUB_EVENT_NAME==='workflow_run'){
+  let event;try{event=readEvent(env.GITHUB_EVENT_PATH);}catch{throw Error('trusted_audit_completion_required');}
+  if(!trustedAuditCompletion(event))throw Error('trusted_audit_completion_required');
+  context.trigger='existing_zero_generation_audit_completed';context.upstream_run_id=String(event.workflow_run.id);
+ }
  if(env.GITHUB_EVENT_NAME==='issue_comment'){
   let event;try{if(!env.GITHUB_EVENT_PATH)throw Error();event=readEvent(env.GITHUB_EVENT_PATH);}catch{throw Error('trusted_owner_bootstrap_comment_required');}
   if(!authorizedBootstrapComment(event))throw Error('trusted_owner_bootstrap_comment_required');
@@ -113,7 +119,7 @@ async function requestJson(fetcher,route,{method='GET',token,body}={}){
  const data=await response.json().catch(()=>null);
  return {http:response.status,data};
 }
-export async function verifyDeployment({source,token,fetcher=fetch,pause=wait,attempts=12}){
+export async function verifyDeployment({source,closure,token,fetcher=fetch,pause=wait,attempts=12}){
  let health;
  for(let i=0;i<attempts;i++){
   try{health=await requestJson(fetcher,'/health');}catch{health={http:null,data:null};}
@@ -121,12 +127,13 @@ export async function verifyDeployment({source,token,fetcher=fetch,pause=wait,at
   if(i<attempts-1)await pause(2000);
  }
  if(health?.http!==200||health.data?.revision!==REVISION||health.data.source_commit!==source||health.data.generation_verified!==false||health.data.auth_configured!==true)throw Error('deployment_source_or_health_unverified');
+ if(closure&&health.data.source_readset_sha256!==closure)throw Error('deployment_closure_unverified');
  const checks=[];
  for(const [kind,credential,expected] of [['anonymous',null,401],['wrong','deliberately-invalid-superagent-token',401],['valid',token,200]]){
   const observed=await requestJson(fetcher,'/v1/status',{token:credential});
   checks.push({kind,http:observed.http});
   if(observed.http!==expected)throw Error('deployment_auth_acceptance_failed');
-  if(kind==='valid'&&(observed.data?.revision!==REVISION||observed.data.source_commit!==source||observed.data.financial_execution!==false||observed.data.external_submissions_enabled!==false||['deepseek','doubao','qianwen','kimi','grok'].some(seat=>observed.data.bindings?.[seat]!==true)||['gpt','claude'].some(seat=>observed.data.reserved_native_seats?.[seat]!=='disabled_reserved')))throw Error('deployment_isolation_or_service_binding_unverified');
+  if(kind==='valid'&&(observed.data?.revision!==REVISION||observed.data.source_commit!==source||(closure&&observed.data.source_readset_sha256!==closure)||observed.data.financial_execution!==false||observed.data.external_submissions_enabled!==false||['deepseek','doubao','qianwen','kimi','grok'].some(seat=>observed.data.bindings?.[seat]!==true)||['gpt','claude'].some(seat=>observed.data.reserved_native_seats?.[seat]!=='disabled_reserved')))throw Error('deployment_isolation_or_service_binding_unverified');
  }
  const anonymousPost=await requestJson(fetcher,'/v1/jobs',{method:'POST',body:{}});
  if(anonymousPost.http!==401)throw Error('anonymous_job_submission_not_denied');
@@ -186,17 +193,29 @@ function shell(args,secrets){
 }
 export async function main(mode,{env=process.env}={}){
  const context=trustedContext(env),report={schema:'ltzzz.deep-superagent.executor.v1',task_id:'DEEP-SUPERAGENT-20261103',...context,at_utc:new Date().toISOString(),mode,status:'started',financial_execution:false,transactions:0,paid:false,tx_hash:null,api_bill_verified:false,paid_field_scope:'No financial settlement; paid=false does not mean a native model request has zero API cost.',new_paid_schedules:false,native_gpt_claude_enabled:false};
- if(!['deploy','bootstrap'].includes(mode))throw Error('invalid_superagent_executor_mode');
+ if(!['deploy','reconcile','bootstrap'].includes(mode))throw Error('invalid_superagent_executor_mode');
  const filename=path.join(resultDir,`${mode}-${context.run_id}-attempt-${context.run_attempt}.json`),secrets=[env.LTZZZ_AGENT_TOKEN,env.CLOUDFLARE_API_TOKEN];
- const save=()=>{fs.mkdirSync(resultDir,{recursive:true});fs.writeFileSync(filename,JSON.stringify(redact(report,secrets),null,2)+'\n');};
+ const save=()=>{fs.mkdirSync(resultDir,{recursive:true});const target=report.status==='release_unchanged_verified'?'.deep-superagent-reconcile-observation.json':filename;fs.writeFileSync(target,JSON.stringify(redact(report,secrets),null,2)+'\n');};
  let temporary;
  try{
   if(!env.LTZZZ_AGENT_TOKEN)throw Error('existing_service_token_required');
-  if(mode==='deploy'){
+  if(mode==='deploy'||mode==='reconcile'){
    report.model_calls=0;
    if(!env.CLOUDFLARE_API_TOKEN||!env.CLOUDFLARE_ACCOUNT_ID)throw Error('existing_cloud_deployment_credentials_required');
-   Object.assign(report,assertCurrentMain({context}));report.source_validation_before_initial={observed_main_commit:report.observed_main_commit,source_readset_sha256:report.source_readset_sha256};report.stage='initial_upload';save();
-   const deployArgs=['deploy','--keep-vars','-c','wrangler.deep-superagent.toml','--var','SUPERAGENT_SOURCE_COMMIT:'+context.source_commit];
+   Object.assign(report,assertCurrentMain({context}));report.source_validation_before_initial={observed_main_commit:report.observed_main_commit,source_readset_sha256:report.source_readset_sha256};
+   const anchorRoute='/v1/jobs/'+BOOTSTRAP_JOB.task_id+'?package_id='+encodeURIComponent(BOOTSTRAP_JOB.package_id);
+   let anchor;
+   if(mode==='reconcile'){
+    report.reconciliation=planReconciliation(await requestJson(fetch,'/health'),report.source_readset_sha256);
+    const before=await requestJson(fetch,anchorRoute,{token:env.LTZZZ_AGENT_TOKEN});
+    if(before.http!==200)throw Error('durable_continuity_anchor_unavailable');anchor=continuityAnchor(before.data);report.durable_anchor_before_sha256=digest(anchor);
+    if(report.reconciliation.action==='verify_unchanged'){
+     report.verification=await verifyDeployment({source:report.reconciliation.previous_release.source_commit,closure:report.source_readset_sha256,token:env.LTZZZ_AGENT_TOKEN});
+     report.status='release_unchanged_verified';report.deployments=0;return report;
+    }
+   }
+   report.stage='initial_upload';save();
+   const deployArgs=['deploy','--keep-vars','-c','wrangler.deep-superagent.toml','--var','SUPERAGENT_SOURCE_COMMIT:'+context.source_commit,'--var','SUPERAGENT_SOURCE_SHA256:'+report.source_readset_sha256];
    shell(deployArgs,secrets);
    report.stage='bind_existing_service_identity';save();
    temporary=fs.mkdtempSync(path.join(os.tmpdir(),'ltzzz-superagent-secrets-'));
@@ -206,7 +225,9 @@ export async function main(mode,{env=process.env}={}){
    // Secret binding creates a version; finish with the pinned reviewed source.
    Object.assign(report,assertCurrentMain({context}));report.stage='final_upload';save();shell(deployArgs,secrets);
    report.stage='production_readback';save();
-   report.verification=await verifyDeployment({source:context.source_commit,token:env.LTZZZ_AGENT_TOKEN});
+   report.verification=await verifyDeployment({source:context.source_commit,closure:report.source_readset_sha256,token:env.LTZZZ_AGENT_TOKEN});
+   if(anchor){const after=await requestJson(fetch,anchorRoute,{token:env.LTZZZ_AGENT_TOKEN});if(after.http!==200||continuityAnchor(after.data)!==anchor)throw Error('durable_job_changed_during_release');report.durable_anchor_after_sha256=digest(continuityAnchor(after.data));report.durable_job_continuity_verified=true;}
+   report.deployments=1;
    report.status='deployment_health_and_auth_verified';
   }else{
    if(!bootstrapRequested(env,context))throw Error('explicit_authorized_bootstrap_required');
