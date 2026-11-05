@@ -33,7 +33,7 @@ test('missing qianwen section reconciles the claimed task as failure without ano
 });
 test('a legacy submitted artifact missing supervision reports validation failure without replay or rewriting evidence',async t=>{
  const f=fixture(t,'qianwen');await prepareDailyBoard(f.options);
- await f.generate({output:'【派单监督】\n责任席：千问；未核查。\n【交付结束】'});
+ await f.generate({output:'【读后感】读了当日记忆。\n【观】观察到一条。\n【行深】回读了执行器。\n【派单监督】\n责任席：千问；未核查。\n【交付结束】'});
  const record=readLedger(f.options.root,date),seat=record.seats.qianwen;
  const body=JSON.parse(fs.readFileSync(path.join(f.options.root,seat.artifact.path)));
  body.output='【观】旧日课未交监督段。\n【交付结束】';delete body.required_sections;
@@ -50,7 +50,7 @@ test('a legacy submitted artifact missing supervision reports validation failure
 });
 test('a real inline section crosses generation and submission gates without becoming accepted',async t=>{
  const f=fixture(t,'qianwen');await prepareDailyBoard(f.options);
- await f.generate({output:'【派单监督】责任席：千问；未核查。\n【交付结束】'});f.commit();await syncDailyBoard(f.options);
+ await f.generate({output:'【读后感】读了当日记忆。\n【观】观察到一条。\n【行深】回读了执行器。\n【派单监督】责任席：千问；未核查。\n【交付结束】'});f.commit();await syncDailyBoard(f.options);
  const seat=readLedger(f.options.root,date).seats.qianwen;
  assert.equal(seat.status,'submitted_pending_review');assert.equal(seat.accepted,false);assert.equal(f.calls,1);
 });

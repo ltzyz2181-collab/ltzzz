@@ -1,4 +1,9 @@
-export const requiredSectionsForAgent = agent => agent==='qianwen' ? ['【派单监督】'] : [];
+// Owner card QW-REVIEW-DEPUTY-20261104 requires four sections from qianwen.
+// '【lessons核对】' is the card name; qianwen's live template uses '【行深】',
+// so the gate accepts either heading for the same slot instead of breaking delivery.
+const QIANWEN_REQUIRED_SECTIONS=['【读后感】','【观】','【lessons核对】','【派单监督】'];
+export const sectionAliases = Object.freeze({'【lessons核对】':['【lessons核对】','【行深】']});
+export const requiredSectionsForAgent = agent => agent==='qianwen' ? QIANWEN_REQUIRED_SECTIONS.slice() : [];
 export function validRequiredSections(sections){
   return Array.isArray(sections)&&sections.length<=16&&new Set(sections).size===sections.length
     &&sections.every(s=>typeof s==='string'&&s.trim()===s&&s.length>0&&s.length<=100&&!/[\r\n]/.test(s));
@@ -36,9 +41,9 @@ export function assessDelivery({output='',finish_reason=null,required_sections=[
     const value=line.trim();
     lines.push({text:value.replace(/^#{1,6}\s+/,''),boundary:/^#{1,6}(?:\s|$)|^【/.test(value)});
   }
-  const missing=required_sections.filter(section=>!lines.some((line,index)=>{
-    if(!line.text.startsWith(section))return false;
-    const suffix=line.text.slice(section.length);
+  const missing=required_sections.filter(section=>!(sectionAliases[section]||[section]).some(heading=>lines.some((line,index)=>{
+    if(!line.text.startsWith(heading))return false;
+    const suffix=line.text.slice(heading.length);
     // Real inline supervision content is a body; comments, quotes, fences and indented code are excluded above.
     const inline=suffix.replace(/^[\s:：\-—]+/u,'').trim();
     if(inline)return !inline.startsWith('【')&&/[\p{L}\p{N}]/u.test(inline);
@@ -47,7 +52,7 @@ export function assessDelivery({output='',finish_reason=null,required_sections=[
       return !body.boundary;
     }
     return false;
-  }));
+  })));
   if(missing.length)return {status:'missing_required_section',reason:'required_section_absent_or_empty',missing_sections:missing,accepted:false};
   return {status:'structurally_complete',reason:'normal_stop_and_completion_marker',accepted:false};
 }

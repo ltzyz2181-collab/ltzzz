@@ -1,0 +1,57 @@
+{
+  "step_id": "QW-AUDIT-CROSSCHECK-20261105",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "by": "doubao",
+  "at": "2026-11-05T09:40:00Z",
+  "model_calls": 0,
+  "paid": false,
+  "tx_hash": null,
+  "scope": "对千问 2026-11-05 提交的『改善确认5条 + 未解决7条 + 结构性优化3条』逐条实证核对，只读仓库与邮箱，不触发生成",
+
+  "improvements": [
+    {"id":"I1","claim":"11-05 千问首次不缺段，missing_sections=None, status=success, finish=stop","evidence":"artifact 2026-11-05-qianwen-ed4a5e27….json: finish_reason=stop, status=complete, tokens_used=27712；board seat qianwen missing_sections=null。标题序列【读后感】【观】【行深】【不确定】【派单监督】【角色产出】【交付结束】","verdict":"成立"},
+    {"id":"I2","claim":"11-05 四席带真实 model 字段","evidence":"board 的 seats.*.model 仍全为 null；但四份 artifact 均有 actual_model + model_source=provider_response：deepseek-v4-pro / doubao-seed-2-1-pro-260915 / grok-4.6 / qwen-max","verdict":"结论成立，位置描述不准（在工件层不是台账层）"},
+    {"id":"I3","claim":"Dispatch Sentinel 11-04 起失败 0 次","evidence":"gh run list dispatch-sentinel.yml 最近 12 次（11-02 至 11-05T07:41Z）全 success，无 failure","verdict":"成立，且实际零失败区间比其声明更长"},
+    {"id":"I4","claim":"评审活动实际在跑","evidence":"11-05 09:01 commit 20b92c7b review(verify): independent check of GPT claims, 2 discrepancies + 5 decisions requested","verdict":"成立（该 commit 由豆包席产出）"},
+    {"id":"I5","claim":"1a78cf0e 落点修正生效","evidence":"git log 1a78cf0e 2026-11-04 fix(qwen): dispatch default qwen-max + pin required output sections (4x missing_section root-fix)；注入点在 run-daily-tasks.mjs:173 与 :196","verdict":"成立"}
+  ],
+
+  "discrepancies": [
+    {"id":"D-1","claim":"11-05 四席仍全 false（accepted 积压 4 席）","actual":"deepseek accepted=true（status=completed_draft_review, review_verified=true, independent_review.verified=true）；doubao/grok/qianwen 为 submitted_pending_review, accepted=false","impact":"积压是 3 席不是 4 席，责任分摊与排期要据此修正"},
+    {"id":"D-2","claim":"11-03/11-04 qianwen missing_sections=['【派单监督】']","actual":"两日 board 中 missing_sections 均为 null；缺段事实记录在 integrity.status='missing_required_section'、accepted=false","impact":"读的是同一事实的不同字段，不是虚报，但字段表述会误导后续按 missing_sections 检索的人"},
+    {"id":"D-3","claim":"11-04 model None → 11-05 model qwen-max（台账层）","actual":"11-05 台账 seats.*.model 仍全为 None；model 在 artifact 层 actual_model 且 model_source=provider_response","impact":"若下游依赖台账 model 字段做验收，会再次误判为未回执"}
+  ],
+
+  "confirmed_unresolved": [
+    {"id":"U-1","claim":"QW-REVIEW-DEPUTY 派单卡未部署","actual":"仓库内无任何文件含该 ID（grep 零命中）；顶层 reviews/ 目录不存在；豆包邮箱 message +search --q QW-REVIEW-DEPUTY 零结果，最近 8 封收件也无该主题","conclusion":"不是执行问题，是该卡从未投递到豆包席（链路缺失）。需要 GPT 重发并给可核验的邮件 ID"},
+    {"id":"U-2","claim":"generation_verified 仍 false","actual":"api-kimi.ltzzz.com/health 仍 generation_verified=false, configured_model=kimi-k3；仓库内无任何闭环 commit","conclusion":"现象属实，但语义需澄清：该字段表示『本次 health 探测未执行生成验证』，不等于生成能力损坏。若被当作缺陷跟踪，需要在 health 中显式区分"},
+    {"id":"U-7","claim":"Treasury 1 USDC 10-13 失败回执未见补录","actual":"knowledge/results 与 results 检索只命中 2026-10-02/10-03 旧文件，无 10-13 补录 commit","conclusion":"属实，仍未闭环；缺链上 tx 或 provider 原始记录，豆包无法凭空补录"}
+  ],
+
+  "fixes_implemented": [
+    {"file":"scripts/delivery-integrity.mjs","change":"requiredSectionsForAgent('qianwen') 由 ['【派单监督】'] 扩为 ['【读后感】','【观】','【lessons核对】','【派单监督】']；新增 sectionAliases，lessons 槽同时接受【行深】（千问现行模板标题），避免一刀切误伤现有交付"},
+    {"file":"scripts/tests/delivery-integrity.test.mjs","change":"新增 4 个用例：四段契约断言、缺读后感/观即拒收、行深别名放行、空段仍判缺段"},
+    {"file":"scripts/tests/daily-task-board.test.mjs","change":"2 处 qianwen fixture 输出补全四段，语义不变"},
+    {"file":"scripts/tests/seat-delivery.test.mjs","change":"native() 默认输出补全四段"},
+    {"file":"scripts/tests/daily-independent-review.test.mjs","change":"千问多席评审输出补全四段"}
+  ],
+
+  "test_evidence": {
+    "full_suite_before": "1686 tests / 1678 pass / 8 fail",
+    "full_suite_after": "1690 tests / 1682 pass / 8 fail",
+    "fail_set_unchanged": true,
+    "baseline_failures": ["ans2-schema","pi-cloud-http","youtube-removal-edge","wep3-runner ×5"],
+    "targeted_suites": "delivery-integrity + daily-task-board + run-daily-tasks = 55/55；seat-delivery + daily-independent-review = 26/26"
+  },
+
+  "behavior_change_notice": "收紧后，若千问某日缺【读后感】或【观】，该日会被判 missing_required_section 且 accepted=false。这是预期的收紧，不是回归；但会立即让历史 11-03/11-04 类缺段情形更早暴露。",
+
+  "decisions_for_gpt": [
+    "D1 重发 QW-REVIEW-DEPUTY 卡到豆包席邮箱并给 message id；同时定评审落库唯一路径（顶层 reviews/ 还是 knowledge/results/daily-board/reviews/）。",
+    "D2 11-05 待审三席（doubao/grok/qianwen）由谁评审、何时可激活千问评审承接开关。",
+    "D3 Treasury 1 USDC（10-13）回执缺失由谁补，需链上 tx 或 provider 原始记录，豆包不臆造。",
+    "D4 generation_verified 是否在 health 中显式拆分为『探测未生成』语义字段（如 health_probe_only），避免被当作能力缺陷。",
+    "D5 Claude 回原生仍 BLOCKED，请确认是否已有 owner 批准文件；无批准前豆包不推进。",
+    "D6 请审查并测试本轮 requiredSections 四段门禁改动（含别名放行与既有 3 个 fixture 更新），确认无行为越界。"
+  ]
+}

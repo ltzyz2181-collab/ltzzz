@@ -88,7 +88,7 @@ test('owner-authorized Qianwen reviews Doubao and Grok in its existing fourth ca
  await generate('grok','A public measurable suggestion【交付结束】');
  const qp=dailyReviewPromptsForSeat(options,'qianwen');assert.match(qp,/日课独立审核JSON:doubao/);assert.match(qp,/日课独立审核JSON:grok/);assert.doesNotMatch(qp,/日课独立审核JSON:qianwen/);
  const ledger=readLedger(root,date),blocks=['doubao','grok'].map(w=>'【日课独立审核JSON:'+w+'】\n```json\n'+JSON.stringify({accepted:w==='doubao',artifact_sha256:ledger.seats[w].artifact.sha256,reasons:[w==='doubao'?'The supplied draft is scoped':'Suggested claim lacks supplied evidence'],unverified:['No deployment']})+'\n```\n【日课独立审核结束:'+w+'】');
- await generate('qianwen','【派单监督】逐项审阅已提供工件，未执行命令。\n'+blocks.join('\n')+'\n【交付结束】');
+ await generate('qianwen','【读后感】读了当日记忆。\n【观】观察到两条待审工件。\n【行深】逐项核对工件哈希。\n【派单监督】逐项审阅已提供工件，未执行命令。\n'+blocks.join('\n')+'\n【交付结束】');
  materializeAllDailyReviews(options);
  const commit=()=>{const visit=dir=>{for(const e of fs.readdirSync(dir,{withFileTypes:true})){const f=path.join(dir,e.name);if(e.isDirectory())visit(f);else remote.set(path.relative(root,f).split(path.sep).join('/'),fs.readFileSync(f));}};visit(root);};
  commit();await syncDailyBoard(options);await syncAllDailyReviews(options);await syncReviewedSeats(options);const result=recordAllDailyReviewReadbacks(options);
