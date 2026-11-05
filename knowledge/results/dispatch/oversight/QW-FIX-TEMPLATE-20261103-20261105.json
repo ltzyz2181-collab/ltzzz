@@ -1,0 +1,169 @@
+{
+  "schema": "ltzzz.owner-authority-and-qianwen-rollout.v1",
+  "task_id": "QW-FIX-TEMPLATE-20261103",
+  "at_utc": "2026-11-05T07:01:06.198Z",
+  "owner_authority": "config/owner-authority-20261105.json",
+  "implementation_pr": 362,
+  "merge_source_commit": "b0112e12751c07f9b7d64427dc4fbba04bba4656",
+  "status": "owner_authority_merged_Qianwen_review_intake_deployed_and_native_manual_test_verified",
+  "prior_pr": {
+    "number": 361,
+    "status": "closed_superseded_by_362_not_a_rollback"
+  },
+  "local_validation": {
+    "review_delivery_lineage": {
+      "passed": 106,
+      "failed": 0
+    },
+    "financial_offline": {
+      "passed": 242,
+      "failed": 0
+    },
+    "manifest_sources": 70,
+    "release_sha256": "a63a56c20fe2059b650169773eae4d2be4495231a5139f1e0b8f95266dcba2e1"
+  },
+  "CI": {
+    "PR_Qwen": "41983562548",
+    "PR_financial": "41983562727",
+    "PR_review_delegation": "41983562419",
+    "main_daily_zero_generation": "41983630219",
+    "main_financial_offline": "41983630338",
+    "main_review_delegation": "41983630301",
+    "native_test": "41983745909"
+  },
+  "native_test": {
+    "run_id": "41983745909",
+    "actual_provider": "aliyun_dashscope",
+    "actual_model": "qwen-max",
+    "model_source": "provider_response",
+    "http": 200,
+    "finish_reason": "stop",
+    "request_id": "768a7af0-5997-90b3-871a-de4b4af3142c",
+    "completion_id": "chatcmpl-768a7af0-5997-90b3-871a-de4b4af3142c",
+    "tokens_used": 3904,
+    "prompt_tokens": 3338,
+    "completion_tokens": 566,
+    "reasoning_tokens": null,
+    "request_options": {
+      "enable_thinking": false,
+      "stream": false,
+      "max_tokens": 2048
+    },
+    "reservation": {
+      "verified": true,
+      "path": "knowledge/results/qwen-dispatch/QW-FIX-TEMPLATE-20261103.json",
+      "commit": "ca0c67cb9b3b40bc185e18d77e12c696836fba26",
+      "sha256": "da41ff9fc44e8cce77bcd358e5c00ba707a35c38872140d5b52a3460189adabe",
+      "executor_source_commit": "c721e02b6fa1fe69c7262c7da69b00de86443ec1"
+    },
+    "output_sha256": "29cfc71107c0df66d8e8929cba3bf3b5f2f27fa7a48e7d3ce1ef82aaf627c5f9",
+    "original_receipt": {
+      "path": "knowledge/results/qwen-dispatch/QW-FIX-TEMPLATE-20261103.json",
+      "commit": "6d1d9a07304db5144e04c16a776a8b57e806f22b",
+      "git_blob": "7d15912661a7d5d251f84600fbb93a05c8f86139",
+      "sha256": "1f3d41aa3a84700ac760a2db863b1c3a1b0f95cf7de9c6eecc15ede72090cbde"
+    },
+    "verdicts": [
+      {
+        "worker_seat": "doubao",
+        "original_task_id": "DAILY-2026-11-05-doubao",
+        "artifact_path": "knowledge/results/daily-board/artifacts/2026-11-05-doubao-62de15c4e1cfd093b7f8d4bf1cae9258e174416789f0df5bd4a42a432ea8b8b5.json",
+        "artifact_sha256": "62de15c4e1cfd093b7f8d4bf1cae9258e174416789f0df5bd4a42a432ea8b8b5",
+        "verdict": {
+          "accepted": true,
+          "reasons": [
+            "文档结构合理，如实反映现状与限制",
+            "符合任务边界要求，未越界声称"
+          ],
+          "unverified": [
+            "源码及测试实际执行情况",
+            "监控奖惩修复生产部署状态",
+            "工件内各哈希回读一致性",
+            "模型身份密码学证明"
+          ]
+        }
+      },
+      {
+        "worker_seat": "grok",
+        "original_task_id": "AUTO-2026-11-05-health",
+        "artifact_path": "knowledge/results/daily-board/artifacts/2026-11-05-grok-2d325be80e8a6037def9802df2d4a95fe62dc6125ac535a4961780774526c6d1.json",
+        "artifact_sha256": "2d325be80e8a6037def9802df2d4a95fe62dc6125ac535a4961780774526c6d1",
+        "verdict": {
+          "accepted": true,
+          "reasons": [
+            "正确区分了心跳与生成的状态差异",
+            "清晰指出了存在的不确定性"
+          ],
+          "unverified": [
+            "当日生成回执存在性",
+            "Pulse快照最新性",
+            "实际上游模型验证",
+            "仓内当日生成JSON是否存在"
+          ]
+        }
+      }
+    ],
+    "scope": "One separately reserved manual native test of supplied public peer drafts; not a replay of the spent daily reservation, not a claim that these manual opinions were already posted to Pulse or accepted by a customer."
+  },
+  "normal_daily_deployment": {
+    "pairs": [
+      [
+        "deepseek",
+        "doubao"
+      ],
+      [
+        "doubao",
+        "qianwen"
+      ],
+      [
+        "grok",
+        "qianwen"
+      ]
+    ],
+    "role_authorization_effective": true,
+    "extra_scheduled_model_calls": 0,
+    "first_unattended_Qianwen_daily_review_task_readback_verified": false,
+    "existing_daily_tasks_replayed": false,
+    "Qianwen_self_review": false
+  },
+  "financial_execution": {
+    "owner_authorized_GPT_autonomy": true,
+    "five_signature_wallets_excluded": true,
+    "repeat_owner_approval_required": false,
+    "autonomous_funded_run": "41983651569",
+    "observed_http": 422,
+    "error": "treasury_signer_missing",
+    "on_chain_executed": false,
+    "tx_hash": null,
+    "market_orders": [],
+    "status": "actual_signer_capability_blocked_not_owner_authorization_missing",
+    "bypass_five_signature_wallet_or_export_keys": false
+  },
+  "mail_readback": {
+    "registered_sender_authenticated": true,
+    "spf": "pass",
+    "dkim": "pass",
+    "dmarc": "pass",
+    "message_ids": [
+      "1a1a95dc45a91c8f",
+      "1a1a95dacbe72e54",
+      "1a1a60280311d988",
+      "1a1a5d8d4cbb8ed2"
+    ],
+    "body_or_identity_tokens_copied_to_repository": false,
+    "reply_status": "actual_SENT_readback_verified",
+    "reply_message_id": "1a1aa8542c9fe02d",
+    "reply_thread_id": "1a1aa8542c9fe02d",
+    "actual_client_ACK": false
+  },
+  "cost": {
+    "new_native_model_request_attempts": 1,
+    "reported_tokens": 3904,
+    "actual_API_bill_verified": false,
+    "new_paid_schedules": 0,
+    "treasury_transactions": 0,
+    "income": 0,
+    "paid": false,
+    "tx_hash": null
+  }
+}
