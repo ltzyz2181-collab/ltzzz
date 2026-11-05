@@ -1,7 +1,9 @@
 import {modelConfiguration} from './lib/model-configuration.js';
-import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {beginExecution,executionResponse,finishExecution} from './lib/provider-execution.js';
 import {authCheck,proxyAuthState,proxyAuth} from './lib/proxy-auth.js';
 import {KIMI_PROFILE,kimiTokens,selectKimiModel} from './lib/kimi-profile.js';
+// 同步代理只在 90s 内作答；低于 Cloudflare 100s 边缘窗口，超时前主动返回可判别错误。
+const UPSTREAM_TIMEOUT_MS = 90000;
 // LTZZZ · Kimi（Moonshot AI）API proxy — Cloudflare Worker
 // 槽位：did:ltzzz:kimi（总控挑战者，2026-09-30 起，接替 GPT 席位比拼）
 // Key 只放 Worker Secret（wrangler secret put KIMI_API_KEY），浏览器与仓库都不接触 Key。
@@ -92,15 +94,22 @@ export default {
       // Domestic seat uses the same official region as the verified CN key.
       const upstreamUrl = 'https://api.moonshot.cn/v1/chat/completions';
 
-      const upstream = await fetch(upstreamUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.KIMI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          messages,
+      // 2026-11-05（方案1·同步入口兜底）：上游同步调用必须自带超时。
+      // 原先没有 AbortSignal，长任务会一直挂到 Cloudflare 的 100s 边缘窗口，
+      // 由 CF 抛 524 —— 那是"不知道有没有生成、也不知道有没有计费"的状态。
+      // 现在在 90s 主动放弃，返回可判别 504 + 回执，把不确定性变成明确的超时事实。
+      let upstream;
+      try {
+        upstream = await fetch(upstreamUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.KIMI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+          body: JSON.stringify({
+            model,
+            messages,
           // 2026-10-01 修正：kimi-k3 / k2.6 / k2.7-code 仅接受 temperature=1，
           // 传 0.4 会报 "invalid temperature: only 1 is allowed for this model"。
           temperature: /^kimi-(k3|k2\.6|k2\.7)/.test(model)
@@ -113,9 +122,20 @@ export default {
           // reasoning_effort 仅按需透传：未验证 Moonshot 是否全模型支持，不默认强制，
           // 避免向不支持的模型发送未知参数导致 400。
           ...(body.reasoning_effort ? { reasoning_effort: body.reasoning_effort } : {}),
-          stream: false
-        })
-      });
+            stream: false
+          })
+        });
+      } catch (err) {
+        const receipt = finishExecution(execution, {http: null, data: {error: 'upstream_timeout'}, transportOk: false});
+        return json({
+          error: 'upstream_timeout',
+          stage: 'upstream_call',
+          timeout_ms: UPSTREAM_TIMEOUT_MS,
+          // 明确保留"上游可能已生成并计费"的未知性，禁止据此盲重试。
+          upstream_outcome_unknown: true,
+          ltzzz_receipt: {...receipt, timeout_observed: true}
+        }, 504);
+      }
 
       return executionResponse(upstream,execution,cors());
     } catch (e) {

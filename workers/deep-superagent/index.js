@@ -175,7 +175,7 @@ export class DeepTask {
         }));
         const failure=outcomes.find(r=>r.status==='rejected');if(failure)throw failure.reason;
         if(job.content_guard_revision===CONTENT_GUARD_REVISION){const before=await checkContent(job.outputs,job.source_commit,'before_independent_review');job.content_gate={...before,checks:[before]};await this.state.storage.put('job',job);}
-        const reviewInstruction='Independently review these outputs from other providers. Return ONLY JSON {"approved":true,"summary":"useful final synthesis and any source caveats","reviewed":[{"seat":"...","sha256":"EXACT supplied hash"}],"needs_gpt_decision":false,"reason":null}. Include each output once with the exact hash. Check correctness, source claims and format. Reject unsupported runtime metadata declarations and request GPT decision; code-owned content findings cannot be cleared by your opinion. Reviewer opinion is advisory to GPT and does not change authority. Do not claim you authored the other providers work or that external acceptance occurred.';
+        const reviewInstruction='Independently review these outputs from other providers. Return ONLY JSON {"approved":true,"summary":"useful final synthesis and any source caveats","reviewed":[{"seat":"...","sha256":"EXACT supplied hash"}],"needs_gpt_decision":false,"reason":null}. Include each output once with the exact hash. Check correctness, source claims and format. Reject unsupported runtime metadata declarations and request GPT decision; code-owned content findings cannot be cleared by your opinion. Reviewer opinion is advisory to GPT and does not change authority. Do not claim you authored the other providers work or that external acceptance occurred. Output budget is tight: keep summary under 800 characters, do not restate the inputs, and keep reason under 200 characters so the JSON envelope is never cut off.';
         const r=await this.callSeat(job,'independent_review','deepseek',[{role:'system',content:context+'\n'+reviewInstruction},{role:'user',content:JSON.stringify({original_request:job.prompt,outputs:job.outputs,content_gate:job.content_gate??null})}]);
         job.review=verifyReview(r.text,job.outputs);job.review.actual_provider='deepseek';job.review.actual_model=r.receipt.actual_model;job.review.output_sha256=r.receipt.output_sha256;job.review.independent_of_worker_providers=job.outputs.every(o=>o.actual_provider!=='deepseek');
         if(job.content_guard_revision===CONTENT_GUARD_REVISION){const after=await checkContent(job.outputs,job.source_commit,'after_independent_review');job.content_gate={...after,checks:[...job.content_gate.checks,after]};}
@@ -196,11 +196,19 @@ export class DeepTask {
       const response=await binding.fetch(new Request('https://proxy.internal/',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+this.env.LTZZZ_AGENT_TOKEN},body:JSON.stringify({task_id:job.task_id,messages,max_tokens:seat==='kimi'?KIMI_PROFILE.default_output_tokens:seat==='qianwen'?4096:8192}),signal:AbortSignal.timeout(240000)}));
       const data=await response.json();const r=data?.ltzzz_receipt,text=data?.choices?.[0]?.message?.content;
       receipt.upstream_http=response.status;receipt.completed_at=now();
-      if(r&&typeof r==='object')for(const k of ['actual_model','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','tokens_used','reasoning_tokens','completion_tokens'])receipt[k]=r[k]??null;
+      if(r&&typeof r==='object')for(const k of ['actual_model','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','truncated','output_present','tokens_used','reasoning_tokens','completion_tokens'])receipt[k]=r[k]??null;
+      // 截断是独立维度：上游确实作答，只是输出预算用尽。既不能记成"未生成"，
+      // 也不能悄悄算作完整交付；记录分片哈希后交由决策席处理，且不重放同一请求。
+      const truncatedOutput=response.ok&&r&&typeof r==='object'&&r.executed_by===seat&&r.task_id===job.task_id&&r.model_source==='provider_response'&&typeof text==='string'&&Boolean(text.trim())&&(r.truncated===true||r.finish_reason==='length');
+      if(truncatedOutput){
+        receipt.truncated=true;receipt.output_present=true;receipt.status='truncated_output_pending_decision';receipt.error='output_truncated_at_output_budget';
+        if(text.length<=100000)receipt.output_sha256=await sha256(text);
+        throw fail('output_truncated_at_output_budget',502);
+      }
       if(!response.ok||!r||r.executed_by!==seat||r.task_id!==job.task_id||r.generation_verified!==true||r.model_source!=='provider_response'||typeof r.actual_model!=='string'||!r.actual_model||!['stop','end_turn'].includes(r.finish_reason)||typeof text!=='string'||!text.trim()||!r.request_id||!(r.upstream_request_id||r.provider_response_id))throw fail('native_generation_evidence_incomplete',502);
       if(text.length>100000)throw fail('native_output_too_large',502);
       receipt.output_sha256=await sha256(text);receipt.generation_verified=true;receipt.status='complete_output_pending_review';await this.state.storage.put('job',job);
       return {text,receipt};
-    }catch(e){receipt.completed_at=now();receipt.status='failed_or_uncertain_no_retry';receipt.error=e.status?e.message:'native_transport_or_decode_uncertain';await this.state.storage.put('job',job);throw fail(receipt.error,502);}
+    }catch(e){receipt.completed_at=now();receipt.status=receipt.truncated?'truncated_output_pending_decision':'failed_or_uncertain_no_retry';receipt.error=e.status?e.message:'native_transport_or_decode_uncertain';await this.state.storage.put('job',job);throw fail(receipt.error,502);}
   }
 }
