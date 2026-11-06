@@ -47,3 +47,9 @@ GPT已沿登记豆包原thread发出明确决定，Sent 1a1afb614ef7c728：
 - https://help.openai.com/en/articles/9275245-chatgpt-free-tier-faq
 - https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt
 
+
+## 实际上线回读（07:26 UTC）
+
+PR #367合并0ca1b144f24e6491ed7d8ae4ad6a2ff78e979533；原生源码审阅42180206556由Grok给有界PASS，相关Node22测试10/10通过。Actions观察42180823362真实运行，7次GET均HTTP200，财务book前后相同。但Aave业务结果ok=false，工作流如实failure；具体错误原因未核验，不猜测为密钥丢失或RPC问题。WEP3 atomic_ledger_ready=false、legacy_writes_enabled=false，Treasury健康/看板读取成功。此为新观察，不改写旧日回执。
+
+原件：[固定服务观察](https://github.com/ltzyz2181-collab/ltzzz/blob/1d837c30d694f9cd5132d917ce013047b8ab0488/knowledge/results/deep-superagent/service-continuity-42180823362-attempt-1.json)。本轮汇总见[会员接续回执](../knowledge/results/deep-superagent/membership-continuity-20261106.json)，网页续费状态见[独立续费任务](../knowledge/results/billing/chatgpt-web-renewal-20261106.json)。已派出不等于副协调/宿主实际执行；账户登录未保存则不能代称续费成功。

@@ -1,0 +1,175 @@
+{
+  "schema": "ltzzz.membership-continuity.result.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "goal_id": "GOAL-LTZZZ-AUTONOMY-20261105",
+  "recorded_at_utc": "2026-11-06T07:37:42.207Z",
+  "status": "deployed_with_blockers",
+  "implementation": {
+    "pr": 367,
+    "merge_commit": "0ca1b144f24e6491ed7d8ae4ad6a2ff78e979533",
+    "candidate_source": "d69c74ef2703ce29aaf17fb477f27ad16ee0f355",
+    "target": "GitHub Actions fixed seven-GET observer, reuse existing Key Liveness events; no new cron or Cloudflare Worker change",
+    "workflow": ".github/workflows/service-continuity.yml",
+    "tests": {
+      "node22_targeted": 10,
+      "passed": 10,
+      "failed": 0,
+      "full_suite_claim": false
+    },
+    "financial_manifest_sources": 75,
+    "financial_manifest_sha256": "14abdf45db7a602216240a758a130ead2af399acff749f3eb55eb47aa68f78b7"
+  },
+  "independent_source_review": {
+    "run_id": "42180206556",
+    "task_id": "DEEP-SUPERAGENT-20261103-MEMBERSHIP-CONTINUITY-AUDIT-20261106",
+    "package_id": "CONTINUITY-SOURCE-01",
+    "execution_id": "64849bf7-ac2c-45ff-b862-a110510a404b",
+    "status": "completed_pending_external_acceptance",
+    "scope": "Actual Deep plan, xAI Grok bounded source PASS, Deep summary. Reviewer did not run tests/deploy or verify commit. GPT accepts source, not full autonomy.",
+    "worker_output_sha256": "09d8be23b1ab45b947afc80b3f9d83c89bea536f7791ea1322b9ea3005c460d3",
+    "actual_responses": [
+      {
+        "stage": "plan",
+        "actual_provider": "deepseek",
+        "actual_model": "deepseek-v4-pro",
+        "request_id": "e054556c-1669-4df9-9617-cb42c29c0243",
+        "upstream_request_id": null,
+        "provider_response_id": "c7dbdbb3-7f60-4a37-87f1-17647a1ab850",
+        "upstream_http": 200,
+        "finish_reason": "stop",
+        "output_sha256": "d0c3ccca6aca9354905f80e3949df0824b5ee52cfecf87c0a1d637edf8f99011",
+        "tokens_reported": 4233
+      },
+      {
+        "stage": "work_grok",
+        "actual_provider": "xai",
+        "actual_model": "grok-4.6",
+        "request_id": "694017f0-341e-4933-9ad2-5d38cbbf51f0",
+        "upstream_request_id": "4e2e0125-c225-935d-94df-9b18d0377792",
+        "provider_response_id": "4e2e0125-c225-935d-94df-9b18d0377792",
+        "upstream_http": 200,
+        "finish_reason": "stop",
+        "output_sha256": "09d8be23b1ab45b947afc80b3f9d83c89bea536f7791ea1322b9ea3005c460d3",
+        "tokens_reported": 15907
+      },
+      {
+        "stage": "independent_review",
+        "actual_provider": "deepseek",
+        "actual_model": "deepseek-v4-pro",
+        "request_id": "1727f86f-7350-47ce-98df-a8d1a43fb0a5",
+        "upstream_request_id": null,
+        "provider_response_id": "f12d6612-63ce-435a-ad94-1f1e7a84cbf0",
+        "upstream_http": 200,
+        "finish_reason": "stop",
+        "output_sha256": "4cd7c679e2ef91a475420195e331841ed0ef54906efdf05e8bba74411dde66e5",
+        "tokens_reported": 4908
+      }
+    ],
+    "GPT_bound_decision_id": "GPT-MEMBERSHIP-CONTINUITY-20261106",
+    "GPT_decision_readback_verified": false,
+    "language_scope": "Grok bounded source finding returned Chinese; Deep final summary returned English despite requested Chinese, original retained without regeneration."
+  },
+  "cloud_observation": {
+    "run_id": "42180823362",
+    "conclusion": "failure",
+    "status": "service_observation_blocked",
+    "all_seven_HTTP200": true,
+    "application_passes": 6,
+    "application_checks": 7,
+    "failing_check": "aave_status",
+    "aave_HTTP": 200,
+    "aave_ok": false,
+    "aave_error_code": null,
+    "aave_root_cause": "not_retained_or_verified; no inference of key loss or RPC cause",
+    "market_treasury_controlled": false,
+    "atomic_ledger_ready": false,
+    "legacy_writes_enabled": false,
+    "financial_book_unchanged": true,
+    "book_sha256": "46b040ba66fadf0e34296375cb584186e7454ae9717ac65ba21068085ab7afb2",
+    "evidence": {
+      "source_commit": "1d837c30d694f9cd5132d917ce013047b8ab0488",
+      "path": "knowledge/results/deep-superagent/service-continuity-42180823362-attempt-1.json",
+      "sha256": "cb5e06cc001801787f2ffd28f4ff07dd7347de021a210149dc32c4ff2bf51726",
+      "bytes": 4296,
+      "git_blob": "16878d55f49010e846765855575a3a7595879287"
+    },
+    "model_api_calls": 0,
+    "transactions": 0,
+    "signing_attempts": 0
+  },
+  "goal_observer": {
+    "run_id": "42180823368",
+    "status": "active_acceptance_pending",
+    "goal_completed": false,
+    "membership_independent_handoff_criterion_added": true,
+    "criterion_verified": false,
+    "criteria_total": 17,
+    "criteria_passed": 0
+  },
+  "mail": {
+    "registered_scope_only": true,
+    "received": [
+      {
+        "message_id": "1a1afaa41d8d5434",
+        "thread_id": "1a1aac8c64300eb4",
+        "SPF": "pass",
+        "DKIM": "pass",
+        "DMARC": "pass"
+      },
+      {
+        "message_id": "1a1afab38c9c4b2d",
+        "thread_id": "1a1aac8c64300eb4",
+        "SPF": "pass",
+        "DKIM": "pass",
+        "DMARC": "pass"
+      }
+    ],
+    "sent": [
+      {
+        "message_id": "1a1afb614ef7c728",
+        "thread_id": "1a1aac8c64300eb4",
+        "SENT_readback_verified": true,
+        "purpose": "#351 execution/merge/deploy authority and domestic-deputy handoff; zero extra daily generations"
+      },
+      {
+        "message_id": "1a1afc6c02e82e8f",
+        "thread_id": "1a1aac8c64300eb4",
+        "SENT_readback_verified": true,
+        "purpose": "Actual C service observation, preserved Aave failure"
+      }
+    ],
+    "body_copied_to_public_files": false,
+    "recipient_execution_ack_for_new_handoff_verified": false
+  },
+  "autonomous_handoff": {
+    "authority_ref": "config/autonomy-authority.json",
+    "native_coordinator": "deepseek",
+    "already_authorized_ordinary_engineering_deputy": "qianwen",
+    "tool_executors": [
+      "doubao",
+      "workbuddy"
+    ],
+    "GPT_role_retained": true,
+    "actual_provider_identity_not_relabelled": true,
+    "runbook": "docs/CONTINUITY-WITHOUT-CHATGPT-PLUS.md",
+    "subscription_independent_Gmail_bridge_verified": false,
+    "AgentMail_host_scheduled_to_merge_delivery_loop_verified": false,
+    "full_unattended_goal_verified": false,
+    "new_fund_privileges": false,
+    "five_signature_wallets_excluded": true
+  },
+  "billing_task": "CHATGPT-WEB-RENEWAL-20261106",
+  "billing_receipt": "knowledge/results/billing/chatgpt-web-renewal-20261106.json",
+  "existing_daily_automation_reused_and_prompt_updated": true,
+  "actual_scheduler_run_new_round_verified": false,
+  "scope": "The observer and native generation host use separate service/API identities rather than Plus. End-to-end mailbox/deputy execution and renewal remain evidence-gated, not implied by a document or send.",
+  "model_api_calls": 3,
+  "reported_tokens": 25048,
+  "actual_API_bill_verified": false,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "paid_scope": "No subscription renewal or settlement; existing native model/API and runner costs are not claimed free.",
+  "new_paid_model_cron": false
+}
+
