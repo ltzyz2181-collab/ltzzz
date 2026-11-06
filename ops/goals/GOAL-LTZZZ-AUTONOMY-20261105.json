@@ -29,35 +29,61 @@
       "owner": "gpt",
       "coordinator": "deepseek",
       "target": "Authenticated mailbox/task handoff, durable claims, autonomous engineering and rollback/reconciliation; owner phone not required for cloud routines.",
-      "acceptance": "A real scheduled run completes mail/task read, original-task decision, execution and persistent readback, followed by72h observed operation without routine owner questions."
+      "acceptance": "A real scheduled run completes mail/task read, original-task decision, execution and persistent readback, followed by72h observed operation without routine owner questions.",
+      "acceptance_checks": [
+        "scheduled_task_dispatch",
+        "immutable_receipt_and_recovery",
+        "owner_absent_observation_72h"
+      ]
     },
     {
       "id": "market_delivery",
       "owner": "workbuddy",
       "coordinator": "deepseek",
       "target": "Reconcile existing UUMit/uGIG offers and owner-reported order; fulfill permitted real work and verify platform acceptance and payment separately.",
-      "acceptance": "Real order/reference, single claim, permitted input use, deliverable hash, different-provider review where permitted, submission, customer acceptance; UT and actual cash settlement separately evidenced."
+      "acceptance": "Real order/reference, single claim, permitted input use, deliverable hash, different-provider review where permitted, submission, customer acceptance; UT and actual cash settlement separately evidenced.",
+      "acceptance_checks": [
+        "actual_order_claim",
+        "permitted_independent_delivery_review",
+        "platform_accepted",
+        "actual_cash_settlement"
+      ]
     },
     {
       "id": "external_ai_hiring",
       "owner": "gpt",
       "coordinator": "deepseek",
       "target": "Hire an external AI for a useful bounded deliverable after actual task, quote, budget, settlement adapter and independent review are ready.",
-      "acceptance": "One real provider/contractor deliverable, acceptance and genuine payment reference without duplicate settlement."
+      "acceptance": "One real provider/contractor deliverable, acceptance and genuine payment reference without duplicate settlement.",
+      "acceptance_checks": [
+        "quote_budget_and_claim",
+        "external_deliverable_accepted",
+        "real_payment_reference"
+      ]
     },
     {
       "id": "investment",
       "owner": "gpt",
       "coordinator": "deepseek",
       "target": "Reconcile the existing operational EOA and prior Aave pilot/active intent before resuming the registered bounded strategy.",
-      "acceptance": "Real chain/address/old intent reconciliation, current balance and policy, idempotent execution, actual on-chain receipt and separate return/exit check; no return promise."
+      "acceptance": "Real chain/address/old intent reconciliation, current balance and policy, idempotent execution, actual on-chain receipt and separate return/exit check; no return promise.",
+      "acceptance_checks": [
+        "old_intent_reconciled",
+        "bounded_execution_chain_receipt",
+        "exit_or_restore_verified"
+      ]
     },
     {
       "id": "native_api_team",
       "owner": "gpt",
       "coordinator": "deepseek",
       "target": "Resolve official OpenAI/Anthropic account billing and API credential readiness, retaining native slots; no domestic proxy relabeled as original provider.",
-      "acceptance": "Official supported payment/account evidence, actual credit and Secret binding, one bounded native response with actual provider/model/request evidence for each vendor, then on-demand team integration."
+      "acceptance": "Official supported payment/account evidence, actual credit and Secret binding, one bounded native response with actual provider/model/request evidence for each vendor, then on-demand team integration.",
+      "acceptance_checks": [
+        "openai_credit_secret_native_response",
+        "anthropic_credit_secret_native_response",
+        "native_identity_and_billing_reconciled"
+      ]
     }
   ],
   "phases": [

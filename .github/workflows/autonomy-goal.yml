@@ -1,0 +1,43 @@
+name: Observe LTZZZ long-running autonomy goal (no model calls)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['ops/goals/**','scripts/lib/autonomy-goal.mjs','scripts/observe-autonomy-goal.mjs','scripts/tests/autonomy-goal.test.mjs','.github/workflows/autonomy-goal.yml']
+  push:
+    branches: [main]
+    paths: ['ops/goals/**','scripts/lib/autonomy-goal.mjs','scripts/observe-autonomy-goal.mjs','scripts/tests/autonomy-goal.test.mjs','.github/workflows/autonomy-goal.yml']
+  workflow_run:
+    workflows: ['Deep Superagent queue and GPT decision bridge','Key Liveness Probe (AI seats)','Kimi zero-generation readonly lease diagnostics']
+    types: [completed]
+    branches: [main]
+permissions: {contents: read}
+concurrency: {group: ltzzz-autonomy-goal, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/autonomy-goal.test.mjs
+  observe:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.event != 'pull_request_target'))
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node scripts/observe-autonomy-goal.mjs
+      - name: Retain changed goal evidence only
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/goals/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Observed autonomy goal evidence; no payment or model request'
+          node tools/push-receipt-commit.mjs

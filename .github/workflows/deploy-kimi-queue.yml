@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['lib/kimi-profile.js', 'workers/kimi-queue/**', 'wrangler.kimi-queue.toml', 'scripts/tests/kimi-queue.test.mjs', '.github/workflows/deploy-kimi-queue.yml']
+    paths: ['lib/kimi-profile.js', 'workers/kimi-queue/**', 'wrangler.kimi-queue.toml', 'scripts/tests/kimi-queue.test.mjs', 'scripts/tests/kimi-readonly.test.mjs', '.github/workflows/deploy-kimi-queue.yml']
 permissions: {contents: write}
 concurrency: {group: kimi-queue-deploy, cancel-in-progress: false}
 jobs:
@@ -15,7 +15,7 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/kimi-queue.test.mjs
+      - run: node --test scripts/tests/kimi-queue.test.mjs scripts/tests/kimi-readonly.test.mjs
       - name: Deploy using existing domestic key and service token
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -25,20 +25,21 @@ jobs:
         run: |
           node - <<'JS'
           const fs=require('fs');for(const k of ['MOONSHOT_API_KEY_CN','LTZZZ_AGENT_TOKEN'])if(!process.env[k])throw Error('Missing '+k);
-          fs.writeFileSync('/tmp/kimi-queue-secrets.json',JSON.stringify({MOONSHOT_API_KEY_CN:process.env.MOONSHOT_API_KEY_CN,LTZZZ_AGENT_TOKEN:process.env.LTZZZ_AGENT_TOKEN}));
+          fs.writeFileSync('/tmp/kimi-queue-secrets.json',JSON.stringify({MOONSHOT_API_KEY_CN:process.env.MOONSHOT_API_KEY_CN,LTZZZ_AGENT_TOKEN:process.env.LTZZZ_AGENT_TOKEN}),{mode:0o600});
           JS
-          npx --yes wrangler@4 deploy -c wrangler.kimi-queue.toml
+          npx --yes wrangler@4 deploy --keep-vars -c wrangler.kimi-queue.toml --var KIMI_QUEUE_SOURCE_COMMIT:${GITHUB_SHA}
           npx --yes wrangler@4 secret bulk /tmp/kimi-queue-secrets.json -c wrangler.kimi-queue.toml
           rm -f /tmp/kimi-queue-secrets.json
+          npx --yes wrangler@4 deploy --keep-vars -c wrangler.kimi-queue.toml --var KIMI_QUEUE_SOURCE_COMMIT:${GITHUB_SHA}
       - name: Verify queue configuration without a generation request
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           const url='https://ltzzz-kimi-queue.ltzyz2181.workers.dev/health';let h;
-          for(let i=0;i<12;i++){h=await fetch(url).then(r=>r.json());if(h.limiter_mode==='provider_limits_only_no_application_throttle')break;await new Promise(r=>setTimeout(r,3000));}
+          for(let i=0;i<12;i++){h=await fetch(url).then(r=>r.json());if(h.limiter_mode==='provider_limits_only_no_application_throttle'&&h.observer_revision==='kimi-readonly-observer-v1'&&h.source_commit===process.env.GITHUB_SHA)break;await new Promise(r=>setTimeout(r,3000));}
           const receipt={at:new Date().toISOString(),run_id:process.env.GITHUB_RUN_ID,health:h,model_calls:0,transactions:0,generation_verified:false};
           fs.mkdirSync('knowledge/results/kimi',{recursive:true});fs.writeFileSync('knowledge/results/kimi/queue-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json',JSON.stringify(receipt,null,2));
-          if(!h.has_key||!h.auth_configured||h.limiter_mode!=='provider_limits_only_no_application_throttle'||h.concurrency!==null||h.min_interval_ms!==0)process.exitCode=1;
+          if(h.observer_revision!=='kimi-readonly-observer-v1'||h.source_commit!==process.env.GITHUB_SHA||!h.has_key||!h.auth_configured||h.limiter_mode!=='provider_limits_only_no_application_throttle'||h.concurrency!==null||h.min_interval_ms!==0)process.exitCode=1;
           JS
       - name: Persist actual queue deployment result; no model request
         if: always()
@@ -48,5 +49,4 @@ jobs:
           git add knowledge/results/kimi/
           git diff --staged --quiet && exit 0
           git commit -m 'Kimi shared limiter actual acceptance receipt'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          node tools/push-receipt-commit.mjs
