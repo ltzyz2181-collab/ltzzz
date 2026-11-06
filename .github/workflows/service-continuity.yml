@@ -1,0 +1,53 @@
+name: Observe services without ChatGPT membership (no models)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['scripts/probe-service-continuity.mjs','scripts/tests/service-continuity.test.mjs','.github/workflows/service-continuity.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/probe-service-continuity.mjs','scripts/tests/service-continuity.test.mjs','.github/workflows/service-continuity.yml']
+  workflow_run:
+    workflows: ['Key Liveness Probe (AI seats)']
+    types: [completed]
+    branches: [main]
+permissions: {contents: read}
+concurrency: {group: service-continuity-observation, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/service-continuity.test.mjs
+  observe:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.event != 'pull_request_target'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Observe fixed services, compare book; never generate or settle
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/probe-service-continuity.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: service-continuity-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/service-continuity-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+      - name: Keep actual observation, including blocked outcomes
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/deep-superagent/service-continuity-${GITHUB_RUN_ID}-attempt-${GITHUB_RUN_ATTEMPT}.json
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Observed fixed services without model or settlement calls'
+          node tools/push-receipt-commit.mjs
