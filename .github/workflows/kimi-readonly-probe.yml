@@ -1,0 +1,50 @@
+name: Kimi zero-generation readonly lease diagnostics
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['workers/kimi-queue/**','scripts/probe-kimi-readonly.mjs','scripts/tests/kimi-readonly.test.mjs','.github/workflows/kimi-readonly-probe.yml']
+  workflow_run:
+    workflows: ['Deploy authenticated Kimi leases (provider limits only)']
+    types: [completed]
+    branches: [main]
+permissions: {contents: read}
+concurrency: {group: kimi-readonly-diagnostics, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/kimi-queue.test.mjs scripts/tests/kimi-readonly.test.mjs
+  probe:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event != 'pull_request'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Read health, auth and counts without model or lease writes
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: node scripts/probe-kimi-readonly.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kimi-readonly-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/kimi-readonly-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+      - name: Keep actual readback without retrying a provider request
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/deep-superagent/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Kimi read-only lease diagnostic outcome; zero generation'
+          node tools/push-receipt-commit.mjs
