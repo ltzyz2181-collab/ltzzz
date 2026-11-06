@@ -1,0 +1,26 @@
+{
+  "id": "WEP3-SWARM-INDEPENDENT-20261106",
+  "by": "doubao",
+  "at": "2026-11-06T06:45:00Z",
+  "type": "independent_test_evidence",
+  "subject": "Swarm 并发 / 事务失败 / 幂等重试的独立测试证据",
+  "command": "node --test --test-reporter=tap scripts/tests/wep3-swarm.test.mjs scripts/tests/wep3-swarm-atomic.test.mjs",
+  "source_commit": "bb6e6ee8",
+  "result": {"tests": 18, "pass": 18, "fail": 0},
+  "raw_tap": "knowledge/results/wep3/swarm-independent-20261106/swarm.tap",
+  "covered_claims": [
+    "20 并发请求 + 重启后 100 次重试只预留一次（幂等键 + 崩溃恢复）",
+    "同一幂等键改金额/改操作必须冲突且不产生扣账",
+    "共享父账户竞争预留不能超支",
+    "任一持久行写失败必须整组回滚，同键重试可成功",
+    "树校验先拒绝非法后段，不得提前预留前段",
+    "完整树为一次精确微单位预留，重试返回同一子 id",
+    "任一子树提交失败后父与整树状态不变",
+    "legacy 直接模块调用不得复现部分 KV 扣账；递归路由必须要求 cutover"
+  ],
+  "independence_boundary": "本证据是豆包席在 11-06 独立执行得到的机器输出，不是被测代码作者自报；执行者与作者非同一次运行。",
+  "limits": "只证明仓库内单测层行为，不证明生产 Durable Object 已部署该实现，也不证明真实资金链路可执行；生产执行仍为 409 swarm_atomic_executor_not_implemented。",
+  "paid": false,
+  "tx_hash": null,
+  "model_calls": 0
+}
