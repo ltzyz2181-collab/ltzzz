@@ -1,0 +1,126 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-367",
+  "head_sha": "d69c74ef2703ce29aaf17fb477f27ad16ee0f355",
+  "pr_number": 367,
+  "source_main_sha": "54bb011acc3bfbdfb589aa6ae3a598e272f50664",
+  "run_id": "42180211292",
+  "at_utc": "2026-11-06T07:20:30.920Z",
+  "idempotency_key": "PATCHGATE-PR-367:d69c74ef2703ce29aaf17fb477f27ad16ee0f355",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "475b3776ef16e9f284d057e9f1f3ea80908b7ae6",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/service-continuity.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/CONTINUITY-WITHOUT-CHATGPT-PLUS.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/goals/GOAL-LTZZZ-AUTONOMY-20261105.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/goals/GOAL-LTZZZ-AUTONOMY-20261105.state.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/probe-service-continuity.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/service-continuity.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-367",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-367",
+      "base_sha": "54bb011acc3bfbdfb589aa6ae3a598e272f50664",
+      "head_sha": "d69c74ef2703ce29aaf17fb477f27ad16ee0f355",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "5291e731f9f554ea4315ec3334abd8d68efdb718ce7d9ba807aa9b03598fab4a"
+    },
+    "subject_sha256": "7ae0dbc25bb244dd4be845bbef0170acb78c1f91ac3e88c79667c0552e0c24f7",
+    "idempotency_key": "PATCHGATE-PR-367:d69c74ef2703ce29aaf17fb477f27ad16ee0f355",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "docs/CONTINUITY-WITHOUT-CHATGPT-PLUS.md",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "help.openai.com"
+        ]
+      },
+      {
+        "path": "scripts/probe-service-continuity.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/probe-service-continuity.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-treasury-v11.ltzyz2181.workers.dev",
+          "ltzzz-wep3.ltzyz2181.workers.dev"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
