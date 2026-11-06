@@ -15,6 +15,18 @@
     <view class="title">下单前须知</view>
     <view class="body">{{product.notice}}</view>
   </view>
-  <view class="note">本页不提供在线支付或自动交付；下单与交付以实际服务页面为准。</view>
+
+  <view class="buy-bar">
+    <view class="agree-row" bindtap="toggleAgree">
+      <view class="checkbox {{agreed ? 'checked' : ''}}">{{agreed ? '✓' : ''}}</view>
+      <view class="agree-text">我已阅读并同意<text class="agree-link" catchtap="openAgreement">《服务协议与退款规则》</text>，知悉本服务为人工交付的数字服务</view>
+    </view>
+    <button class="buy-btn" bindtap="onBuy" loading="{{paying}}" disabled="{{paying}}">
+      {{payEnabled ? '立即购买 ' + product.priceLabel : '支付暂未开放'}}
+    </button>
+    <view class="order-link" bindtap="openOrders">查看我的订单 →</view>
+  </view>
+
+  <view class="note">运营主体：{{merchantName}}。支付成功后，我们在 24 小时内通过微信或小程序订单页与你确认材料并交付电子文档；未按约交付可申请退款。</view>
 </view>
 <view class="page" wx:else><view class="heading">未找到服务</view><view class="intro">请返回服务列表重新选择。</view></view>
