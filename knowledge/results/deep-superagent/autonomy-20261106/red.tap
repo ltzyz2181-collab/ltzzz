@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: elapsed target date, one order or a completed label cannot declare goal or cash success
+ok 1 - elapsed target date, one order or a completed label cannot declare goal or cash success
+  ---
+  duration_ms: 51.347077
+  type: 'test'
+  ...
+# Subtest: all pinned acceptance receipts and actual GPT closeout are separate requirements
+ok 2 - all pinned acceptance receipts and actual GPT closeout are separate requirements
+  ---
+  duration_ms: 2.182566
+  type: 'test'
+  ...
+# Subtest: stale hashes, rolling refs, path escapes or absent receipts remain unverified
+ok 3 - stale hashes, rolling refs, path escapes or absent receipts remain unverified
+  ---
+  duration_ms: 1.117226
+  type: 'test'
+  ...
+# Subtest: same input does not create progress merely because the observation time changed
+ok 4 - same input does not create progress merely because the observation time changed
+  ---
+  duration_ms: 0.604555
+  type: 'test'
+  ...
+# Subtest: an empty goal cannot satisfy acceptance vacuously
+not ok 5 - an empty goal cannot satisfy acceptance vacuously
+  ---
+  duration_ms: 1.717702
+  type: 'test'
+  location: '/workspace/work/ltzzz-autonomy-goal-20261106/scripts/tests/autonomy-goal.test.mjs:26:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'throws'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-autonomy-goal-20261106/scripts/tests/autonomy-goal.test.mjs:27:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: public/wrong callers cannot inspect lease state, including direct DO reads
+ok 6 - public/wrong callers cannot inspect lease state, including direct DO reads
+  ---
+  duration_ms: 63.099377
+  type: 'test'
+  ...
+# Subtest: authenticated counts are non-mutating, omit identities and retain unknown historical totals
+ok 7 - authenticated counts are non-mutating, omit identities and retain unknown historical totals
+  ---
+  duration_ms: 5.820118
+  type: 'test'
+  ...
+# Subtest: probe uses only seven GETs, proves auth and does not reserve, release or generate
+ok 8 - probe uses only seven GETs, proves auth and does not reserve, release or generate
+  ---
+  duration_ms: 10.867188
+  type: 'test'
+  ...
+# Subtest: transport loss is blocked without retries or pretending queue died
+ok 9 - transport loss is blocked without retries or pretending queue died
+  ---
+  duration_ms: 1.610085
+  type: 'test'
+  ...
+# Subtest: a stale or mixed deployment source cannot pass the read-only probe
+ok 10 - a stale or mixed deployment source cannot pass the read-only probe
+  ---
+  duration_ms: 19.426826
+  type: 'test'
+  ...
+# Subtest: a probe cannot claim acceptance without a specific expected deployment
+not ok 11 - a probe cannot claim acceptance without a specific expected deployment
+  ---
+  duration_ms: 13.110175
+  type: 'test'
+  location: '/workspace/work/ltzzz-autonomy-goal-20261106/scripts/tests/kimi-readonly.test.mjs:40:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (file:///workspace/work/ltzzz-autonomy-goal-20261106/scripts/tests/kimi-readonly.test.mjs:41:20)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: direct Durable Object write routes require the same service identity
+not ok 12 - direct Durable Object write routes require the same service identity
+  ---
+  duration_ms: 4.140209
+  type: 'test'
+  location: '/workspace/work/ltzzz-autonomy-goal-20261106/scripts/tests/kimi-readonly.test.mjs:43:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    200 !== 401
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 401
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/work/ltzzz-autonomy-goal-20261106/scripts/tests/kimi-readonly.test.mjs:45:52)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 9
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 384.454046

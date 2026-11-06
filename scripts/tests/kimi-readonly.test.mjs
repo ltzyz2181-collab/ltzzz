@@ -6,6 +6,7 @@ function fixture(){
  let writes=0,modelReads=0;const env={LTZZZ_AGENT_TOKEN:'fixture-service',KIMI_QUEUE_SOURCE_COMMIT:'a'.repeat(40)};
  Object.defineProperty(env,'MOONSHOT_API_KEY_CN',{get(){modelReads++;return 'fixture-model-key';}});
  const storage={list:async({prefix})=>new Map([...rows].filter(([k])=>k.startsWith(prefix))),put:async()=>{writes++;},delete:async()=>{writes++;},setAlarm:async()=>{writes++;}};
+ storage.get=async key=>rows.get(key);storage.transaction=async fn=>fn(storage);
  const gate=new KimiGate({storage},env);env.KIMI_GATE={idFromName:()=> 'same-existing-object',get:()=>({fetch:req=>gate.fetch(req)})};
  return {env,rows,gate,writes:()=>writes,modelReads:()=>modelReads,fetcher:(url,options)=>worker.fetch(new Request(url,options),env)};
 }
@@ -23,11 +24,11 @@ test('authenticated counts are non-mutating, omit identities and retain unknown 
  assert.equal(JSON.stringify(b).includes('private-one'),false);assert.deepEqual([...f.rows],before);assert.equal(f.writes(),0);assert.equal(f.modelReads(),0);
 });
 test('probe uses only seven GETs, proves auth and does not reserve, release or generate',async()=>{
- const f=fixture(),seen=[];const r=await probeKimiReadonly({token:'fixture-service',fetcher:(url,o)=>{seen.push({url,o});return f.fetcher(url,o);}});
+ const f=fixture(),seen=[];const r=await probeKimiReadonly({token:'fixture-service',expectedSourceCommit:'a'.repeat(40),fetcher:(url,o)=>{seen.push({url,o});return f.fetcher(url,o);}});
  assert.equal(r.verified,true);assert.equal(seen.length,7);assert.equal(seen.every(x=>x.o.method==='GET'&&!/reserve|release|chat|completion/.test(x.url)),true);assert.equal(f.writes(),0);assert.equal(r.model_calls,0);
 });
 test('transport loss is blocked without retries or pretending queue died',async()=>{
- let count=0;const r=await probeKimiReadonly({token:'fixture',fetcher:async()=>{count++;throw Error('transport');}});assert.equal(count,7);assert.equal(r.verified,false);assert.equal(r.status,'readonly_probe_blocked');
+ let count=0;const r=await probeKimiReadonly({token:'fixture',expectedSourceCommit:'a'.repeat(40),fetcher:async()=>{count++;throw Error('transport');}});assert.equal(count,7);assert.equal(r.verified,false);assert.equal(r.status,'readonly_probe_blocked');
 });
 test('a stale or mixed deployment source cannot pass the read-only probe',async()=>{
  const f=fixture();
@@ -35,4 +36,12 @@ test('a stale or mixed deployment source cannot pass the read-only probe',async(
  assert.equal((await probeKimiReadonly({token:'fixture-service',expectedSourceCommit:'a'.repeat(40),fetcher:async(url,o)=>{
   const r=await f.fetcher(url,o),b=await r.json();if(url.endsWith('/leases/count')&&r.status===200)b.source_commit='c'.repeat(40);return Response.json(b,{status:r.status});
  }})).verified,false);
+});
+test('a probe cannot claim acceptance without a specific expected deployment',async()=>{
+ const f=fixture();await assert.rejects(()=>probeKimiReadonly({token:'fixture-service',fetcher:f.fetcher}),/expected_source_commit_required/);
+});
+test('direct Durable Object write routes require the same service identity',async()=>{
+ const f=fixture();
+ for(const route of ['/reserve','/release'])assert.equal((await f.gate.fetch(new Request('https://test'+route,{method:'POST',body:JSON.stringify({messages:[{role:'user',content:'x'}],lease:'a'.repeat(36)})}))).status,401);
+ assert.equal(f.writes(),0);
 });
