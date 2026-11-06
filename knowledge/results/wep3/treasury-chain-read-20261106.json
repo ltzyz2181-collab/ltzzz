@@ -1,0 +1,69 @@
+{
+  "at_utc": "2026-11-06T06:42:31.272Z",
+  "source_commit": null,
+  "mode": "read_only_reconciliation",
+  "signing_attempts": 0,
+  "transaction_broadcasts": 0,
+  "funding_retries": 0,
+  "paid": false,
+  "tx_hash": null,
+  "workers": [],
+  "public_readbacks": [
+    {
+      "service": "wep3",
+      "endpoint": "/health",
+      "http": null,
+      "response_sha256": null,
+      "fields": {}
+    },
+    {
+      "service": "wep3",
+      "endpoint": "/market/aave/status",
+      "http": null,
+      "response_sha256": null,
+      "fields": {}
+    },
+    {
+      "service": "treasury-v11",
+      "endpoint": "/health",
+      "http": null,
+      "response_sha256": null,
+      "fields": {}
+    },
+    {
+      "service": "treasury-v11",
+      "endpoint": "/dashboard",
+      "http": null,
+      "response_sha256": null,
+      "fields": {}
+    }
+  ],
+  "chain_reads": [
+    {
+      "network": "eip155:1",
+      "rpc_host": "ethereum-rpc.publicnode.com",
+      "block": "0x19221a6",
+      "address": "0x76379a52a9e82c259E5Db417104C65C26f9C58a3",
+      "code_sha256": "c7404fa90f9417f24a7f3e1ee736d3f7843f419188a98921fa385dac0e8a693b",
+      "getOwners": [
+        "0xb99C6751f443842F4987bb2017580405572Df905",
+        "0xD834a769b31447daf5a042009CF06fAFCE7e2F51",
+        "0x01B80610D88E96C9888a19e30D73Abbe5E6E7D4C",
+        "0x68B81beAE18433A85a8feD67dE8EDfB717e279a7",
+        "0x394103e5E846f709CE5126c203b1EF38D7cA70a6"
+      ],
+      "getThreshold": "3",
+      "nonce": "7",
+      "status": "on_chain_configuration_read"
+    }
+  ],
+  "cloudflare_metadata": "existing_CI_credentials_unavailable",
+  "interpretation": {
+    "treasury_proof_endpoint_not_called": "GET /market/treasury may sign a fixed message when configured; this no-signing readback deliberately excludes it",
+    "controlled_definition": "WEP3 Worker local signing proof for its configured Base receive address; not global wallet ownership",
+    "separate_treasury_v11": "Ethereum Safe address differs from WEP3 Base EOA; health constants and old counters are not fresh key possession proof",
+    "current_private_key_possession_verified": false,
+    "financial_recovery_or_retry_authorized_by_this_evidence": false,
+    "deployment_commit_limitation": "Worker version IDs/timestamps and API revisions are evidence; no full Git source binding is inferred"
+  }
+}
