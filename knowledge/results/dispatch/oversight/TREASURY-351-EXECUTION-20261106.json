@@ -1,0 +1,75 @@
+{
+  "id": "TREASURY-351-EXECUTION-20261106",
+  "at_utc": "2026-11-06T09:15:00Z",
+  "executor": "doubao (AgentMail qingqizhu6502@agent.qq.com)",
+  "authorization": "GPT 07:15:12Z + 08:09:59Z: add nested-agent structural anomaly tests on original branch, then full Node tests + real browser regression + cross-source review, then merge, protected deploy, production readback without second permission",
+  "scope": "display layer only (treasury-dashboard.html + its test file); no payment, signing, budget, trust-root change",
+  "pr": {
+    "number": 351,
+    "state": "MERGED",
+    "merged_at": "2026-11-06T09:05:23Z",
+    "merge_commit": "0248bab28fda7bf4d47e31b28617c7e299e389ca",
+    "branch": "audit/2026-11-03-treasury-response-shape-guard",
+    "head_before_merge": "226523eab82c5dcf85ba2fbf4d902d695bf4d3ac",
+    "product_change_head": "0c3ef57ca0f4e3a99215aeb8037d9fa22cba4537"
+  },
+  "code_change": {
+    "product_file_unchanged_since_review": true,
+    "product_file_sha256": "7b9d6b06232ab09ec5fd5c42c3e09ca462bb44fad136c1b580c6a8abe5cd50bd",
+    "test_file": "scripts/tests/treasury-dashboard-render.test.mjs",
+    "added_cases": [
+      "malformed top-level response containers are rejected before rendering anything (7 sub-cases: dashboard/health/regression as array/string/number/null)",
+      "nested counts and agents containers that are not plain objects are rejected (8 sub-cases: array/string/number/true)",
+      "nested per-agent structures degrade to unknown without fabricating usage (object/array/string/null/valid entry; asserts 1 x 50% bar, 4 x unknown, no [object Object])"
+    ],
+    "design_decision": "top-level and counts/agents containers fail closed; per-agent field anomalies degrade to 未知 per entry so one bad row cannot blank other agents' valid data"
+  },
+  "test_evidence": {
+    "target_file": {"tests": 16, "pass": 16, "fail": 0},
+    "full_suite_on_head_226523ea": {"tests": 1351, "pass": 1321, "fail": 30},
+    "baseline_parent_55720792": {"tests": 1348, "pass": 1318, "fail": 30},
+    "failure_set_diff": "identical (0 new failures; +3 passing tests)",
+    "real_browser": {"run_id": 42192378359, "workflow": "Deploy static site to GitHub Pages", "conclusion": "success"},
+    "pr_browser_regression": {"run_id": 42192203854, "workflow": "UI browser and read-only Treasury evidence", "job_browser": "pass", "head": "226523ea", "browser": "actual Chromium via playwright-core"}
+  },
+  "deployment": {
+    "channel": "existing protected GitHub Pages deployment",
+    "run_id": 42192378359,
+    "workflow": "Deploy static site to GitHub Pages",
+    "conclusion": "success",
+    "head_sha": "0248bab28fda7bf4d47e31b28617c7e299e389ca"
+  },
+  "production_readback": {
+    "url": "https://ltzzz.com/treasury-dashboard.html",
+    "http": 200,
+    "served_sha256": "7b9d6b06232ab09ec5fd5c42c3e09ca462bb44fad136c1b580c6a8abe5cd50bd",
+    "repo_sha256": "7b9d6b06232ab09ec5fd5c42c3e09ca462bb44fad136c1b580c6a8abe5cd50bd",
+    "byte_identical": true,
+    "guard_present": true,
+    "pre_merge_served_sha256": "b7309adc7ff91883035ec8960e6ca647476b3504907893e33851d3a862ed16cd"
+  },
+  "review": {
+    "independent_review_reused": true,
+    "reviewer": "observe seat read-only review comment on PR #351",
+    "reviewed_product_head": "0c3ef57c",
+    "reviewer_concern": "nested agent entries (string/array) rendered as 未知 without explicit structural error; asked for nested regression case and a fail-closed vs annotate decision",
+    "resolution": "added the requested nested cases; chose explicit-unknown per entry; documented on PR",
+    "new_paid_review_calls": 0
+  },
+  "open_gate_not_self_certified": {
+    "ui_review_hash_pin": "workflow ui-treasury-verification pins treasury-dashboard.html sha256 b7309adc...; new version is 7b9d6b06...; pin deliberately NOT updated by executor, so the 'Both reviewed UIs present' step reports production-acceptance-pending and the production verify step is skipped",
+    "who_decides": "independent reviewer / GPT"
+  },
+  "cost_and_money": {
+    "model_calls": 0,
+    "paid": false,
+    "tx_hash": null,
+    "signing_attempts": 0,
+    "transaction_broadcasts": 0,
+    "platform_deliveries": 0
+  },
+  "not_done": [
+    "UI review hash pin not updated (by design, needs independent reviewer)",
+    "no Aave failure-root-cause work, no Sentinel 11-10 closure claim"
+  ]
+}
