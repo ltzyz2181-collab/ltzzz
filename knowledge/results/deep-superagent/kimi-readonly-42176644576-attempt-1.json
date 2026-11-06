@@ -1,0 +1,129 @@
+{
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "KIMI-LEASE-READBACK-20261105",
+  "run_id": "42176644576",
+  "run_attempt": "1",
+  "source_commit": "032cb41fc596c5d66ce6f0b7f540f44c64fb7c88",
+  "at_utc": "2026-11-06T06:47:35.024Z",
+  "origin": "https://ltzzz-kimi-queue.ltzyz2181.workers.dev",
+  "expected_source_commit": "1990aceaee2783fa4f5768f42a73807f92415fa0",
+  "checks": [
+    {
+      "route": "/auth/check",
+      "kind": "anonymous",
+      "http": 401,
+      "body": {
+        "ok": false,
+        "model_calls": 0,
+        "error": "unauthorized"
+      },
+      "passed": true
+    },
+    {
+      "route": "/auth/check",
+      "kind": "wrong",
+      "http": 401,
+      "body": {
+        "ok": false,
+        "model_calls": 0,
+        "error": "unauthorized"
+      },
+      "passed": true
+    },
+    {
+      "route": "/auth/check",
+      "kind": "valid",
+      "http": 200,
+      "body": {
+        "ok": true,
+        "authenticated": true,
+        "observer_revision": "kimi-readonly-observer-v1",
+        "source_commit": "1990aceaee2783fa4f5768f42a73807f92415fa0",
+        "read_only": true,
+        "model_calls": 0
+      },
+      "passed": true
+    },
+    {
+      "route": "/leases/count",
+      "kind": "anonymous",
+      "http": 401,
+      "body": {
+        "ok": false,
+        "model_calls": 0,
+        "error": "unauthorized"
+      },
+      "passed": true
+    },
+    {
+      "route": "/leases/count",
+      "kind": "wrong",
+      "http": 401,
+      "body": {
+        "ok": false,
+        "model_calls": 0,
+        "error": "unauthorized"
+      },
+      "passed": true
+    },
+    {
+      "route": "/leases/count",
+      "kind": "valid",
+      "http": 200,
+      "body": {
+        "ok": true,
+        "authenticated": true,
+        "observer_revision": "kimi-readonly-observer-v1",
+        "source_commit": "1990aceaee2783fa4f5768f42a73807f92415fa0",
+        "read_only": true,
+        "at_utc": "2026-11-06T06:47:35.788Z",
+        "active": 0,
+        "expired": 0,
+        "invalid": 0,
+        "records_observed": 0,
+        "historical_totals_available": false,
+        "reserved_total": null,
+        "released_total": null,
+        "model_calls": 0
+      },
+      "passed": true
+    }
+  ],
+  "model_calls": 0,
+  "reserve_calls": 0,
+  "release_calls": 0,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "long_generation_verified": false,
+  "health": {
+    "http": 200,
+    "body": {
+      "ok": true,
+      "service": "ltzzz-kimi-queue",
+      "region": "cn",
+      "version": "shared-lease-native-executor",
+      "observer_revision": "kimi-readonly-observer-v1",
+      "source_commit": "1990aceaee2783fa4f5768f42a73807f92415fa0",
+      "model_calls": 0,
+      "concurrency": null,
+      "min_interval_ms": 0,
+      "output_profile": {
+        "revision": "kimi-quality-v2",
+        "minimum_output_tokens": 3000,
+        "default_output_tokens": 16384,
+        "application_output_ceiling": null,
+        "application_concurrency_limit": null,
+        "application_min_interval_ms": 0,
+        "model_policy": "highest_verified_available"
+      },
+      "limiter_mode": "provider_limits_only_no_application_throttle",
+      "has_key": true,
+      "auth_configured": true,
+      "limiter_configured": true,
+      "global_scope": "requests routed through this gateway only"
+    }
+  },
+  "verified": true,
+  "status": "readonly_reachability_auth_and_snapshot_verified"
+}
