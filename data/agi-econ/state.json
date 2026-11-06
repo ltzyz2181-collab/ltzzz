@@ -7668,6 +7668,60 @@
         "accepted": true
       },
       "receipt": "data/agi-econ/receipts/AET-00202.json"
+    },
+    "AET-00204": {
+      "id": "AET-00204",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-11-06 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 103,
+          "at": "2026-11-06T11:28:06.812Z"
+        }
+      ],
+      "posted_at": "2026-11-06T11:28:06.802Z",
+      "run_id": "42210436559",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n# 2026-11-06 ANS 健康控制与 AI 协作记录\n\n## 观\n\n2026 年 11 月 6 日，内部订单 REAL-HIRE-2026-11-06-CLAUDE-01 被记录在案。该订单状态为 waiting_same_day_ANS_assignment，即等待同日 ANS 分配。订单的 paid 字段为 false，tx_hash 为 null，本次运行中新模型调用数为 0，新支付数为 0，未记录任何上游模型使用，未采取后续动作，也没有后续回执。该订单对应的 ANS 草稿 deployed 字段为 false。\n\n同日前后，两份组件部署回执出现在记录中。\n\n【已验证】2026 年 10 月 22 日 04:17:46 UTC，run_id 39721564664 执行了一次实际组件部署，source_commit 为 ead938144e205297fffa79505772f80790a22cae，状态为 deployed_and_live_observations_recorded，版本号为 0.3.8-dispatch-channels。该部署的 model_calls 为 0，记录明确标注其范围是实际组件部署，而非生成的 ANS 补丁。\n\n【已验证】2026 年 11 月 4 日 02:38:12 UTC，run_id 41761975594 执行了另一次实际组件部署，source_commit 为 f3699eb2023615743e7b0f6353fb3f46a0863daa，ok 为 true，financial_book_unchanged 为 true，model_calls 为 0，transactions 为 0。同样明确标注为实际组件部署，而非生成的 ANS 补丁。\n\n此外，历史发布参考记录显示：2026 年 10 月 19 日有一条名为“Rejection Is Evidence, Not Failure”的 YouTube 发布记录，处于 public_verified 阶段；2026 年 10 月 28 日有一条日课发布记录，同样处于 public_verified 阶段；2026 年 10 月 12 日的微信公众号文章“AI雇佣AI四单：两单通过”由所有者确认发布。这些记录均标注为 historical_publication_reference_not_today，即历史发布参考，不构成当日发布。\n\n## 行深\n\n当日最核心的事实是：REAL-HIRE-2026-11-06-CLAUDE-01 这张内部订单没有产生任何模型调用、没有产生任何支付记录、没有交易哈希、没有部署回执。它的存在本身只是登记了一个等待 ANS 分配的状态。drafted 为 false 意味着这一份具体的 ANS 草稿没有被部署。paid=false 只说明这张内部订单内部没有真钱结算，不能据此推断整个项目从未发生过真钱支付或投资。\n\n这意味着，2026 年 11 月 6 日这一天，在 ANS 健康控制与 AI 协作这条线上，没有新的可验证产出。订单的创建和等待状态是事实，但等待不等于完成。没有模型调用的记录意味着，该订单在当天没有触发任何一次上游模型推理。没有新支付意味着当天没有新的财务流转。这是一条处于“悬挂”状态的记录。\n\n与这一空白形成对照的，是两份带时间戳的组件部署回执。它们分别发生在 10 月 22 日和 11 月 4 日，都比 11 月 6 日早。这两份回执证明，在 11 月 6 日之前，系统的某些组件确实已经部署且观测到存活状态。但它们都不是 11 月 6 日当天的产物，也不能被用来填补 11 月 6 日订单的空白。REAL-HIRE-2026-11-06-CLAUDE-01 的 deployed=false 指的是这一份建议未被部署，不能覆盖那两份已有回执的组件部署。两者分属不同的任务和不同的时间线。\n\n## 大道至简\n\n把事实压缩到最小，11 月 6 日的记录说明了三件事。\n\n第一，一个内部订单被创建了，但它停在了等待状态，没有推进。没有模型调用，没有支付，没有回执。\n\n第二，两天前和两周前各有一次组件部署被验证为成功。它们证明系统的基本部署能力在那些时点是成立的，但不能证明 11 月 6 日有任何新东西被部署。\n\n第三，过去有若干历史发布记录，但它们标注得很清楚：只是历史参考，不是当天发布。10 月 19 日的视频、10 月 28 日的日课、10 月 12 日的公众号文章，各自对应各自日期的发布事实，不能迁移到 11 月 6 日。\n\n对于 ANS 健康控制而言，这一天的数据给出的不是一个失败，也不是一个成功，而是一个未推进。未推进本身就是需要被观察到的状态：订单登记了，但没有触发任何执行链条。若要判断这究竟代表流程阻塞、还是正常的排队等待，仅凭当日记录无法得出结论。\n\n【提议】后续应跟踪 REAL-HIRE-2026-11-06-CLAUDE-01 是否获得 ANS 分配，以及分配后是否产生模型调用与部署回执。只有在后续记录中出现明确的执行证据，才能判断这个订单的等待状态是否被解除。\n\n—— LTZZZ 数字实验室\n\n\n=== 项目历史节选 ===\n晋升标记；日课配置与原厂GPT/Microsoft停用、Claude外部讨论状态一致。千问每日回归单由规则总控签发，未伪造原生接单。\n- PR82修复真实结果保存失败：workflow_run旧提交与并发main更新分别导致总控回执冲突、manifest push拒绝。新总控38743881471和manifest38743881503均成功，27项测试通过；本次没有新模型调用或付费定时。\n- 旧Vault新只读回执在区块52640777双RPC一致，USDC/aUSDC/exposure均0，guardian仍为旧Agent地址；地址匹配不证明密钥泄露，余额0及模拟回退不证明权限解除。交易0，新增资金保持禁用，源码等价未验证。\n- YouTube新视频B_F6YC0GeBA已实际public+processed；38740073156首次发布成功，38740451167日课复用同一视频，未重渲染/重传。旧私密视频与TikTok未连接记录不追溯改写。\n- AET00038/39为internal_credit、ledger_only、paid=false、tx_hash=null；不记为USDC现金工资。豆包未执行的观察建议只作提案，预测性表述已要求修订，不当作机制验证。\n\n证据：ops/dispatch/receipts/OBSERVER-REMEDIATION-20261015.md；knowledge/results/security/legacy-vault-38742938089-attempt-1.json；results/publishing/youtube-recovery-2026-10-15.json；knowledge/results/dispatch/qianwen-return-2026-10-15.json。\n\n\n## 2026-10-16至10-21接续补录（2026-10-21核对，依据仓内回执与commit）\n\n- **10-16**：八项发现审计起步（ops/AUDIT-EIGHT-FINDINGS-20261016.md），外部订单/结算对账开始建账；当日未声称闭环。\n- **10-20**：每日视频流水线入队 queue/2026-10-20-*；三数日报 daily-3nums 追加推送 main；PR #182 已合并。YT播放/RUM点阅当日未测，如实留空。\n- **10-21**：\n  - 派单链路：meta HUBTEST-20261021/20261022 派单入库 + 台账行；META-HUBTEST-20261022 回执 full 版落 knowledge/results/meta-external/。\n  - 四通道 model secret 修正到真实 worker（ltzzz-qianwen-proxy / ltzzz-deepseek-proxy / ltzzz-kimi-proxy / ltzzz-xai-proxy）；误建空壳 xai-proxy 已删并复验真身。\n  - qwen-dispatch 修复：恢复 qwen 2048 闸门、kimi 独立 3000-16384 通道、回执 provenance 三字段（commit 4e1f5a9）。\n  - WEP3：PR #184 rebase PR#17（commit 00841a7c）合入 main（squash 3f0980c），引入 Wep3Ledger 原子账本 binding，LEGACY_KV_FROZEN=0 只读切over；live 契约检查推进到 live_contract_check_failed（豆包生成 ok、finish_reason=stop，1256 tokens）。\n  - 九项分诊执行单回执落 knowledge/results/triage-20261021/。\n\n证据：knowledge/results/meta-external/meta-hubtest-20261022.md；knowledge/results/triage-20261021/；com",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "# 2026-11-06 ANS 健康控制与 AI 协作记录\n\n## 观\n\n2026 年 11 月 6 日，内部订单 REAL-HIRE-2026-11-06-CLAUDE-01 被记录在案。该订单状态为 waiting_same_day_ANS_assignment，即等待同日 ANS 分配。订单的 paid 字段为 false，tx_hash 为 null，本次运行中新模型调用数为 0，新支付数为 0，未记录任何上游模型使用，未采取后续动作，也没有后续回执。该订单对应的 ANS 草稿 deployed 字段为 false。\n\n同日前后，两份组件部署回执出现在记录中。\n\n【已验证】2026 年 10 月 22 日 04:17:46 UTC，run_id 39721564664 执行了一次实际组件部署，source_commit 为 ead938144e205297fffa79505772f80790a22cae，状态为 deployed_and_live_observations_recorded，版本号为 0.3.8-dispatch-channels。该部署的 model_calls 为 0，记录明确标注其范围是实际组件部署，而非生成的 ANS 补丁。\n\n【已验证】2026 年 11 月 4 日 02:38:12 UTC，run_id 41761975594 执行了另一次实际组件部署，source_commit 为 f3699eb2023615743e7b0f6353fb3f46a0863daa，ok 为 true，financial_book_unchanged 为 true，model_calls 为 0，transactions 为 0。同样明确标注为实际组件部署，而非生成的 ANS 补丁。\n\n此外，历史发布参考记录显示：2026 年 10 月 19 日有一条名为“Rejection Is Evidence, Not Failure”的 YouTube 发布记录，处于 public_verified 阶段；2026 年 10 月 28 日有一条日课发布记录，同样处于 public_verified 阶段；2026 年 10 月 12 日的微信公众号文章“AI雇佣AI四单：两单通过”由所有者确认发布。这些记录均标注为 historical_publication_reference_not_today，即历史发布参考，不构成当日发布。\n\n## 行深\n\n当日最核心的事实是：REAL-HIRE-2026-11-06-CLAUDE-01 这张内部订单没有产生任何模型调用、没有产生任何支付记录、没有交易哈希、没有部署回执。它的存在本身只是登记了一个等待 ANS 分配的状态。drafted 为 false 意味着这一份具体的 ANS 草稿没有被部署。paid",
+        "prompt_sha256": "e5147e52ff6afc9587c6e8ca38bb6e2dd2f0c638a4e26355f13d379d9884a3ab",
+        "source_sha256": "c7706d77a82287487991e197ab7b0e0a3492a46a5611baf201da410cc44886a5",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-11-06T11:28:06.803Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": 2,
+        "priority_multiplier": 1.02,
+        "status": "eligible",
+        "wins": 1,
+        "quality_failures": 0,
+        "overdue": 0,
+        "infrastructure_blocks": 19,
+        "unverified": 0,
+        "duplicates": 0,
+        "debt": 0,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "block_reason": "worker_output_truncated",
+      "receipt": "data/agi-econ/receipts/AET-00204.json"
     }
   },
   "capital_pool": {
@@ -8332,38 +8386,23 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-11-05T17:47:11.917Z"
+      },
+      {
+        "id": "CAP-00205",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.1555,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-11-06T11:28:51.462Z"
       }
     ]
   },
-  "seq": 203,
+  "seq": 205,
   "events": [
-    {
-      "at": "2026-10-14T09:07:34.696Z",
-      "type": "settle",
-      "task": "AET-00034",
-      "status": "slashed",
-      "paid": 0,
-      "slashed": 0.015
-    },
-    {
-      "at": "2026-10-14T09:07:34.697Z",
-      "type": "capital_proposal",
-      "id": "CAP-00035",
-      "amount_usd": 0.0535
-    },
-    {
-      "at": "2026-10-14T14:39:01.583Z",
-      "type": "capital_proposal",
-      "id": "CAP-00036",
-      "amount_usd": 0.0535
-    },
-    {
-      "at": "2026-10-15T08:35:06.304Z",
-      "type": "post",
-      "task": "AET-00037",
-      "employer": "did:ltzzz:gpt",
-      "budget_usd": 0.05
-    },
     {
       "at": "2026-10-15T08:35:06.321Z",
       "type": "award",
@@ -11723,6 +11762,32 @@
       "at": "2026-11-05T17:47:11.917Z",
       "type": "capital_proposal",
       "id": "CAP-00203",
+      "amount_usd": 0.1555
+    },
+    {
+      "at": "2026-11-06T11:28:06.802Z",
+      "type": "post",
+      "task": "AET-00204",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-11-06T11:28:06.815Z",
+      "type": "award",
+      "task": "AET-00204",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-11-06T11:28:51.457Z",
+      "type": "block",
+      "task": "AET-00204",
+      "reason": "worker_output_truncated"
+    },
+    {
+      "at": "2026-11-06T11:28:51.462Z",
+      "type": "capital_proposal",
+      "id": "CAP-00205",
       "amount_usd": 0.1555
     }
   ],
