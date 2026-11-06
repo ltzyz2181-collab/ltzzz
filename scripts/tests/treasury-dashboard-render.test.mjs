@@ -115,3 +115,46 @@ test('missing per-agent amounts and limits are unknown, real zero remains zero',
   assert.match(elements.agents.innerHTML,/style="width:0%"/);
   assert.equal((elements.agents.innerHTML.match(/用量比例未知/g)||[]).length,2);
 });
+
+test('malformed top-level response containers are rejected before rendering anything',async()=>{
+  const msg='Treasury API 响应结构异常';
+  const cases=[
+    [[],{},{},msg],
+    ['ok',{},{},msg],
+    [42,{},{},msg],
+    [{},[],{},msg],
+    [{},'ok',{},msg],
+    [{},{},null,msg],
+    [{},{},[],msg],
+  ];
+  for(const [dashboard,health,regression,expected] of cases){
+    const {elements}=await render(dashboard,health,regression);
+    assert.equal(elements.stats.innerHTML,'','stats must stay empty on malformed shape');
+    assert.equal(elements.agents.innerHTML,'','agents must stay empty on malformed shape');
+    assert.equal(elements.raw.textContent,'Error: '+expected);
+  }
+});
+
+test('nested counts and agents containers that are not plain objects are rejected',async()=>{
+  for(const counts of [[],'pending',7,true]){
+    const {elements}=await render({counts});
+    assert.equal(elements.stats.innerHTML,'');
+    assert.match(elements.raw.textContent,/Treasury counts 结构异常/);
+  }
+  for(const agents of [[],'agent',7,true]){
+    const {elements}=await render({agents});
+    assert.equal(elements.agents.innerHTML,'');
+    assert.match(elements.raw.textContent,/Treasury agents 结构异常/);
+  }
+});
+
+test('nested per-agent structures degrade to unknown without fabricating usage',async()=>{
+  const {elements}=await render({agents:{
+    nested:{used:{amount:1},daily_limit:[2],single_limit:{x:1},remaining:{y:2}},
+    arrayAgent:[1,2],stringAgent:'5',nullAgent:null,ok:{used:5,daily_limit:10}
+  }});
+  staticTagsOnly(elements.agents.innerHTML);
+  assert.deepEqual([...elements.agents.innerHTML.matchAll(/style="width:(\d+)%"/g)].map(m=>Number(m[1])),[50]);
+  assert.equal((elements.agents.innerHTML.match(/用量比例未知/g)||[]).length,4);
+  assert.doesNotMatch(elements.agents.innerHTML,/\[object Object\]/);
+});
