@@ -1,4 +1,6 @@
 import {KIMI_PROFILE} from '../../lib/kimi-profile.js';
+import {authCheck} from '../../lib/proxy-auth.js';
+export const OBSERVER_REVISION='kimi-readonly-observer-v1';
 export function failureKind(status,body){
  const type=body?.error?.type||body?.error?.code||'';
  if(/exceeded_current_quota|insufficient_quota|insufficient_balance/i.test(type))return 'quota_exhausted';
@@ -9,7 +11,13 @@ export function failureKind(status,body){
 export default {
  async fetch(request,env){
   const url=new URL(request.url);
-  if(request.method==='GET'&&url.pathname==='/health')return Response.json({ok:true,service:'ltzzz-kimi-queue',region:'cn',version:'shared-lease-native-executor',concurrency:null,min_interval_ms:0,output_profile:KIMI_PROFILE,limiter_mode:'provider_limits_only_no_application_throttle',has_key:!!env.MOONSHOT_API_KEY_CN,auth_configured:!!env.LTZZZ_AGENT_TOKEN,limiter_configured:!!env.KIMI_GATE,global_scope:'requests routed through this gateway only'});
+  if(request.method==='GET'&&url.pathname==='/health')return Response.json({ok:true,service:'ltzzz-kimi-queue',region:'cn',version:'shared-lease-native-executor',observer_revision:OBSERVER_REVISION,source_commit:env.KIMI_QUEUE_SOURCE_COMMIT||null,model_calls:0,concurrency:null,min_interval_ms:0,output_profile:KIMI_PROFILE,limiter_mode:'provider_limits_only_no_application_throttle',has_key:!!env.MOONSHOT_API_KEY_CN,auth_configured:!!env.LTZZZ_AGENT_TOKEN,limiter_configured:!!env.KIMI_GATE,global_scope:'requests routed through this gateway only'});
+  if(request.method==='GET'&&['/auth/check','/leases/count'].includes(url.pathname)){
+   const check=await authCheck(request,env);if(check.status!==200)return check;
+   if(url.pathname==='/auth/check')return Response.json({ok:true,authenticated:true,observer_revision:OBSERVER_REVISION,source_commit:env.KIMI_QUEUE_SOURCE_COMMIT||null,read_only:true,model_calls:0});
+   if(!env.KIMI_GATE)return Response.json({error:'limiter_not_configured',model_calls:0},{status:503});
+   return env.KIMI_GATE.get(env.KIMI_GATE.idFromName('domestic-shared-key')).fetch(request);
+  }
   if(!env.LTZZZ_AGENT_TOKEN||request.headers.get('Authorization')!==`Bearer ${env.LTZZZ_AGENT_TOKEN}`)return Response.json({error:'unauthorized'},{status:401});
   if(request.method!=='POST'||!['/reserve','/release'].includes(url.pathname))return Response.json({error:'not_found'},{status:404});
   if(!env.MOONSHOT_API_KEY_CN||!env.KIMI_GATE)return Response.json({error:'gateway_not_configured'},{status:503});
@@ -24,6 +32,12 @@ export class KimiGate {
   if(next!==null)await this.state.storage.setAlarm(next);
  }
  async fetch(request){
+  if(request.method==='GET'&&new URL(request.url).pathname==='/leases/count'){
+   const check=await authCheck(request,this.env);if(check.status!==200)return check;
+   const rows=await this.state.storage.list({prefix:'lease:'}),at=Date.now();let active=0,expired=0,invalid=0;
+   for(const row of rows.values()){if(!Number.isFinite(row?.expires_at))invalid++;else if(row.expires_at<=at)expired++;else active++;}
+   return Response.json({ok:true,observer_revision:OBSERVER_REVISION,source_commit:this.env.KIMI_QUEUE_SOURCE_COMMIT||null,read_only:true,at_utc:new Date(at).toISOString(),active,expired,invalid,records_observed:rows.size,reserved_total:null,released_total:null,historical_totals_available:false,model_calls:0});
+  }
   const body=await request.json().catch(()=>null);
   const pathname=new URL(request.url).pathname;
   if(pathname==='/release'){
