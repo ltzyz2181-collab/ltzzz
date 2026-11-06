@@ -9,6 +9,86 @@
   "paid": false,
   "tx_hash": null,
   "financial_execution": false,
-  "status": "reserved_before_provider_call",
-  "model_calls": 0
+  "reservation": {
+    "verified": true,
+    "path": "knowledge/results/qwen-dispatch/QW-STATE-CONTINUITY-LINEAR-20261106B.json",
+    "commit": "42c37fecd913648f566f04f8ab1a6d7c20eb6d4e",
+    "sha256": "1a15e52e54bec7e45f8923c148d7db955980bef89ae69c653775d3dfd296b288",
+    "executor_source_commit": "a997fa0ca92779580983d8ed61faeb2e576918be"
+  },
+  "delivery_integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "required_sections": [
+    "【结论】",
+    "【现状纠正】",
+    "【状态文件设计】",
+    "【读写流程】",
+    "【风险与降级】",
+    "【未做的事】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:QW-STATE-CONTINUITY-LINEAR-20261106B",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "2fac3c2fd2b7463b5d4d721e27a6aa4ddb9de48c7ca6e0fd41e029f6b0e7a48e",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "9134f1ad5947873b2627cc578a7c21d6c32a9e7d402a2faf9ecf459513277f8f"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-max",
+  "generated_by_model": "qwen-max",
+  "attribution_note": "generation by qwen-max via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 2815,
+  "request_id": "a7f50da6-0017-9d03-87b3-06b728245701",
+  "actual_provider": "aliyun_dashscope",
+  "actual_model": "qwen-max",
+  "http": 200,
+  "completion_id": "chatcmpl-a7f50da6-0017-9d03-87b3-06b728245701",
+  "prompt_tokens": 2192,
+  "completion_tokens": 623,
+  "reasoning_tokens": null,
+  "upstream_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "request_options": {
+    "enable_thinking": false,
+    "stream": false,
+    "max_tokens": 2048
+  },
+  "output": "【结论】\n根据提供的背景信息，本地 linear 技能仅限于在当前客户端环境下使用，不具备与外部 Linear SaaS 服务交互的能力。因此，该技能的任何状态变更和任务管理操作都必须被明确标记为非权威来源，并且需要通过工程手段确保状态数据能够在会话之间连续传递。\n\n【现状纠正】\n- **能力边界**：本地 linear 技能可以将待办事项拆分为编号从 LIN-001 开始的问题（issue），并按照预设规则确定优先级。此外，它还能够以自然语言的形式更新这些 issue 的状态，并将状态存储在一个本地文件中。然而，这个本地技能并不支持与真实的 Linear SaaS 平台进行通信或同步数据。\n- **限制条件**：由于本地状态文件无法被其他席位访问，这使得本地 linear 技能不适合作为跨席位任务分配、验收或完成状态确认的依据。同时，考虑到缺乏与 GitHub Issue 系统直接对接的功能，可能会导致状态信息出现不一致的情况。\n- **合规用途**：建议仅将此工具用于个人或团队内部的任务跟踪需求，在确保所有参与者都清楚其局限性的前提下使用。\n\n【状态文件设计】\n为了实现状态信息的持久化保存，我们提议创建一个 JSON 格式的文件 `data/state/qianwen-board.json` 来记录线性看板的状态。文件结构如下：\n```json\n{\n  \"schema_version\": \"1.0\",\n  \"last_updated_iso\": \"2023-11-06T10:00:00Z\",\n  \"authority\": \"local_draft_not_authoritative\",\n  \"items\": [\n    {\n      \"id\": \"LIN-001\",\n      \"title\": \"Example task title\",\n      \"status\": \"open\",\n      \"priority\": \"high\"\n    },\n    // 更多条目...\n  ]\n}\n```\n\n【读写流程】\n- **初始化时**：每次对话开始前检查是否存在上述指定路径下的状态文件；如果存在，则加载其内容到内存中供后续处理使用；若不存在或者读取失败，则尝试从仓库及关联的 GitHub Issues 获取最新状态作为初始值。\n- **结束时**：对话结束后，将内存中的状态对象序列化成 JSON 字符串格式后写入到之前提到的位置。注意在此过程中应确保原子性以避免并发修改问题。\n\n【风险与降级】\n- 如果在启动阶段发现无法正确读取状态文件（比如因为文件损坏），系统应当优雅地降级至默认状态，并明确告知用户当前情况以及采取了哪些措施来恢复服务。\n- 在发生写入错误的情况下，同样需要向用户报告异常，并建议他们手动备份现有工作以防丢失重要信息。\n\n【未做的事】\n- 实现具体的代码逻辑来支持上述描述的功能。\n- 对所提方案进行任何形式的实际测试或部署验证。\n\n【交付结束】",
+  "output_sha256": "32ccfee83fdbda13aebc2e98e8bb269f7593defd8204e0547e06eed9f1e7fe1a",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-06T15:16:03.444Z"
 }
