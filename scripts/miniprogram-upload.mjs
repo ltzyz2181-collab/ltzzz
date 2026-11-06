@@ -5,8 +5,8 @@ import path from 'node:path';
 const receipt = {
   run_id: process.env.GITHUB_RUN_ID || null,
   source_commit: process.env.GITHUB_SHA || null,
-  appid: process.env.MINI_APPID || 'wx0b43a6cf2cb2b07d',
-  appid_source: process.env.MINI_APPID ? 'configured_secret' : 'repository_historical_key_filename',
+  appid: process.env.MINI_APPID || null,
+  appid_source: process.env.MINI_APPID ? 'configured_secret' : 'not_configured',
   status: 'blocked_configuration', upload_attempted: false, uploaded: false, published: false,
   version: '0.1.' + (process.env.GITHUB_RUN_NUMBER || '0'),
   missing: [],
@@ -22,6 +22,12 @@ async function checkpoint(phase) {
 }
 try {
   await checkpoint('credential_check');
+  const projectConfig = JSON.parse(await fs.readFile('miniprogram/project.config.json', 'utf8'));
+  receipt.expected_appid = projectConfig.appid;
+  if (receipt.appid !== receipt.expected_appid) {
+    receipt.status = 'blocked_appid_mismatch';
+    receipt.missing.push('configured_appid_matches_project');
+  }
   if (!/^wx[0-9a-f]{16}$/i.test(receipt.appid)) receipt.missing.push('valid_mini_program_appid');
   const supplied = process.env.MINI_UPLOAD_KEY || '';
   if (!supplied) receipt.missing.push('mini_program_upload_private_key');

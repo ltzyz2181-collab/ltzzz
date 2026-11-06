@@ -1,6 +1,7 @@
 <view class="page">
   <view class="heading">我的订单</view>
-  <view class="intro">支付成功后 24 小时内人工交付电子文档。若长时间未收到交付，请通过小程序内客服或订单页说明联系。</view>
+  <view class="intro" wx:if="{{payEnabled}}">支付成功后 24 小时内人工交付电子文档。若长时间未收到交付，请通过小程序内客服或订单页说明联系。</view>
+  <view class="intro" wx:else>当前开放服务介绍，在线预约尚未开放。</view>
 
   <view wx:if="{{loading}}" class="card"><view class="body">加载中…</view></view>
 
@@ -16,7 +17,7 @@
     <view class="row">下单时间：{{item.created_at_label}}</view>
   </view>
 
-  <button class="contact-btn" open-type="contact" session-from="order-delivery">联系客服提交材料</button>
+  <button wx:if="{{payEnabled}}" class="contact-btn" open-type="contact" session-from="order-delivery">联系客服提交材料</button>
 
   <view class="note">订单数据仅用于交付与售后核对，不会用于其他用途。</view>
 </view>
