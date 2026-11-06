@@ -23,3 +23,6 @@ test('stale hashes, rolling refs, path escapes or absent receipts remain unverif
 test('same input does not create progress merely because the observation time changed',()=>{
  assert.equal(run().progress_fingerprint,run(state,'2026-11-10T00:00:00Z').progress_fingerprint);assert.equal(run().model_calls,0);assert.equal(run().transactions,0);
 });
+test('an empty goal cannot satisfy acceptance vacuously',()=>{
+ assert.throws(()=>evaluateGoal({...goal,tracks:[]},state,{readPinned:()=>Buffer.from('')}),/goal_tracks_required/);
+});

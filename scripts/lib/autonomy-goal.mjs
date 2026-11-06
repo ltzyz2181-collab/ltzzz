@@ -4,6 +4,7 @@ export const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 export function safeEvidence(ref){return !!ref&&/^knowledge\/results\/[A-Za-z0-9_./-]+$/.test(ref.path||'')&&!ref.path.split('/').some(p=>p==='..'||p==='.'||p.startsWith('.env')||/^(?:secrets?|credentials?|private[-_]?keys?)\./i.test(p))&&/^[a-f0-9]{40}$/.test(ref.source_commit||'')&&/^[a-f0-9]{64}$/.test(ref.sha256||'');}
 export function evaluateGoal(goal,state,{readPinned,now=new Date().toISOString()}={}){
  if(goal?.schema!=='ltzzz.autonomy.goal.v1'||goal.goal_id!==GOAL_ID||state?.goal_id!==GOAL_ID)throw Error('goal_identity_required');
+ if(!Array.isArray(goal.tracks)||!goal.tracks.length)throw Error('goal_tracks_required');
  const errors=[],tracks=[];
  function verified(ref){if(!safeEvidence(ref))return false;try{return digest(readPinned(ref))===ref.sha256;}catch{return false;}}
  for(const track of goal.tracks){
