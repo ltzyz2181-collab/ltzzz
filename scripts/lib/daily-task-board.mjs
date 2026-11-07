@@ -301,6 +301,10 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
         seat.accepted = review.accepted;
         seat.status = submitted.status;
         seat.sync_reason = 'bound_independent_draft_review_verified_not_deployment';
+        // 本轮已完成完整只读核验（产物哈希+评审回执哈希+语义+状态一致性），
+        // 当前核验状态即为 verified，避免下游把刚核验通过的终态误判为待核。
+        seat.revalidation = 'verified';
+        seat.revalidation_reason = 'final_review_revalidated_stable';
       }
     } catch (error) {
       seat.status = seat.status === 'review_unknown' ? 'review_unknown' : 'sync_unknown';

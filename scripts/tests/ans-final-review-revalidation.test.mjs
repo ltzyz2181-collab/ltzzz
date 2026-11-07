@@ -165,3 +165,20 @@ test('restored remote returns to verified state idempotently and repeated sync s
  assert.equal(hasUnverifiedBoard(f.record()),false);
  assert.equal(f.posts,posts);assert.equal(f.calls,calls);
 });
+
+test('a final seat verified in the same sync round is not reported as pending revalidation',async t=>{
+ const f=plateau(t);
+ await prepareDailyBoard(f.options);await f.generate();f.commit();await syncDailyBoard(f.options);
+ const seat=f.seat();
+ const reviewPath='knowledge/results/ans-reval-inline.json';
+ const reviewBytes=Buffer.from(JSON.stringify(verdictFor(seat)));
+ f.remote.set(reviewPath,reviewBytes);
+ const reviewed=taskCommand(f.state,{action:'review_task',task_id:seat.assignment.id,agent:'doubao',accepted:true,reviewed_sha256:seat.artifact.sha256,scope:'engineering_draft_only',worker_actual_provider:'deepseek',reviewer_actual_provider:'doubao',review_evidence_path:reviewPath,review_evidence_sha256:digest(reviewBytes)},'qianwen',[agent,'doubao'],now).state;
+ await syncDailyBoard({...f.options,snapshot:async()=>({available:true,...structuredClone(reviewed)})});
+ const after=f.seat();
+ assert.equal(after.status,'completed_draft_review');
+ assert.equal(after.review_verified,true);
+ assert.equal(after.revalidation,'verified');
+ // 同轮已完整核验，CLI 的未验证门禁不得误判为失败
+ assert.equal(hasUnverifiedBoard(f.record()),false);
+});
