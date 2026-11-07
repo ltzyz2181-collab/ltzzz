@@ -33,8 +33,9 @@
   },
 
   "package": {
-    "vpay-notify.zip": { "bytes": 3654, "sha256": "10b3ae59a6211c41e2d4a3e7eed7e2e7819039b6125a03ef10ccc4d70bf8a6d0", "contents": ["index.js", "package.json"] },
-    "vpay-order.zip": { "bytes": 2878, "sha256": "bbadc27d51170ee1056c181ec91a9cc3368df6b304ec461286b11bb55f9d4897", "contents": ["index.js", "package.json"] }
+    "vpay-notify.zip": { "bytes": 3654, "sha256": "d4fe80f8ee34a5563a5f113be56f764517248712971f543a84375166d9dab611", "contents": ["index.js", "package.json"] },
+    "vpay-order.zip": { "bytes": 2878, "sha256": "81bc06b5c6bd32d974d8f900743d49fc6fdf2a005e94ee8716512f034120b506", "contents": ["index.js", "package.json"] },
+    "hash_convention": "以上为实际上传的 zip 字节哈希。zip 内含文件时间戳，同一份源码在不同时刻打包会得到不同 zip 哈希（初稿记录的 10b3ae59…/bbadc27d… 即为另一次打包）。因此部署有效性不以 zip 哈希判定，改以两项为准：① 包内 index.js 的 sha256 与 PR head 逐字一致；② 控制台函数列表「更新时间」推进"
   },
 
   "platform": {
@@ -52,7 +53,10 @@
       "target": "cloudfunction vpay-notify $DEFAULT",
       "identity_auth": "未开启",
       "rate_limit": "未设置",
-      "final_state": "已启用（验证完毕后恢复启用，理由见 restore_entry）"
+      "final_state_at_receipt_draft": "已启用（2026-11-07T07:58:49Z 验证时匿名与错签名均返回 403，说明当时路由通）",
+      "final_state_measured_later": "禁用（2026-11-07T23:26:00Z 复测三组请求全部 423 GATEWAY_ROUTE_DISABLED）",
+      "final_state": "以复测为准：禁用",
+      "discrepancy_note": "初稿记录与复测不一致。禁用发生的时间与操作方本轮未能取证（控制台登录态在复测前过期，访问服务页不可达），不作推测、不记名。凡涉及当前是否可收敛回调的判断，一律以 423 实测为准"
     }
   },
 
@@ -76,6 +80,14 @@
     { "probe": "直接调用云函数（event 无 httpMethod，控制台测试）", "result_body": { "ErrCode": 403, "ErrMsg": "authenticated_http_push_required" }, "request_id": "6fecb3bf-da81-11f1-b7a7-525400c2e9a8", "expected": "拒绝未证实平台来源", "result": "pass" }
   ],
   "verification_utc": "2026-11-07T07:58:49Z",
+  "verification_reproducible_now": false,
+  "verification_reproducible_note": "上述 5 项在路由启用状态下取得；2026-11-07T23:26:00Z 复核时路由已禁用，同类请求全部返回 423，无法原地重放。原始 403 结果保留为历史实测，不回填、不抹除、不用合成 fixture 覆盖",
+  "probe_after_disable_utc": "2026-11-07T23:26:00Z",
+  "probe_after_disable": [
+    { "probe": "GET 无签名", "http": 423, "code": "GATEWAY_ROUTE_DISABLED" },
+    { "probe": "POST 无签名", "http": 423, "code": "GATEWAY_ROUTE_DISABLED" },
+    { "probe": "POST 伪造 40 位签名", "http": 423, "code": "GATEWAY_ROUTE_DISABLED" }
+  ],
 
   "data_state": {
     "collection": "orders",
@@ -101,7 +113,8 @@
   "restore_entry": {
     "http_route_enable": "控制台 https://tcb.cloud.tencent.com/dev?envId=shizhang-pay-d0g1n58020acf6b5b#/env/http-access → 路由管理 → /vpay-notify 行 → 路由启用 开关置为开",
     "http_route_disable": "同上开关置为关（本次临时止损使用的方式，实测返回 423 GATEWAY_ROUTE_DISABLED）",
-    "current": "已启用",
+    "current": "禁用（2026-11-07T23:26:00Z 实测 423 GATEWAY_ROUTE_DISABLED）",
+    "current_note": "初稿写「已启用」源于 07:58:49Z 的 403 验签结果；此后路由被重新关闭，本轮无法取证何时由谁关闭。影响：真实回调当前不可达，沙箱验收只能停在未验",
     "why_enabled_again": "新版已部署且验签实测生效（匿名与错签名全部 403），伪造写入面已关闭；若保持停用，真实回调将永久不可达，无法进入下一步真实验收",
     "function_rollback": "函数版本仅 $LATEST 100% 流量，无历史版本可切；回滚方式为重新上传上一版代码包"
   },
