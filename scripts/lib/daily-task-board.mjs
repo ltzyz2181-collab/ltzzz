@@ -181,6 +181,46 @@ async function syncFailedSeat({root,record,agent,seat,snapshot,command,readRemot
  saveLedger(root,record);
 }
 
+// ANS P1-01: 已绑定最终评审的席位必须先把"当前核验状态"与"历史结论"分开，
+// 不得在重新校验前无条件清空本地已验证结论。
+// 只读复核三种出口：verified（当前仍成立）/ unavailable（瞬时不可读，保留历史结论并标注待核）/ conflict（证据真实不符，明确降级）。
+const FINAL_STATUSES = ['completed_draft_review','rejected_draft_review'];
+const REVALIDATION_CONFLICT_ERRORS = new Set([
+  'remote_artifact_not_persisted',
+  'review_artifact_hash_mismatch',
+  'review_artifact_semantic_mismatch',
+  'review_binding_invalid',
+  'review_status_mismatch',
+  'board_conflict'
+]);
+async function recheckBoundFinalReview({root,record,agent,seat,snapshot,readRemote,now}){
+  try{
+    const bytes = validateArtifact(root, record, agent, seat);
+    if (digest(await readRemote(seat.artifact.path)) !== digest(bytes)) throw Error('remote_artifact_not_persisted');
+    const observed = await snapshot();
+    if (observed?.available !== true) throw Error('snapshot_unavailable');
+    const task = taskFor(observed, seat.assignment.id);
+    if (!task) throw Error('snapshot_unavailable');
+    if (task.date !== record.date || task.claimed_by !== agent) throw Error('board_conflict');
+    if (!fresh(observed, agent, now)) throw Error('snapshot_unavailable');
+    if (!FINAL_STATUSES.includes(task.status)) throw Error('final_review_state_conflict');
+    if (task.evidence_path !== seat.artifact.path || task.evidence_sha256 !== seat.artifact.sha256) throw Error('final_review_evidence_conflict');
+    const review = task.review;
+    if (!review || !evidencePath(review.evidence_path) || !/^[a-f0-9]{64}$/.test(review.evidence_sha256 || '')) throw Error('review_binding_invalid');
+    const reviewBytes = await readRemote(review.evidence_path);
+    if (digest(reviewBytes) !== review.evidence_sha256) throw Error('review_artifact_hash_mismatch');
+    const verdict = JSON.parse(Buffer.from(reviewBytes).toString('utf8'));
+    if (verdict.accepted !== seat.accepted || (verdict.artifact_sha256 || verdict.reviewed_sha256) !== seat.artifact.sha256 || verdict.task_id !== seat.assignment.id || verdict.date !== record.date || verdict.run_key !== record.run_key) throw Error('review_artifact_semantic_mismatch');
+    if ((task.status === 'completed_draft_review') !== verdict.accepted) throw Error('review_status_mismatch');
+    return {outcome:'verified', reason:'final_review_revalidated_stable'};
+  }catch(error){
+    const message = error?.message || 'final_review_recheck_failed';
+    // 未知错误按冲突处理（fail-closed）：宁可明确降级并保留旧证据，也不把真实不符伪装成瞬时不可用。
+    const conflict = REVALIDATION_CONFLICT_ERRORS.has(message) || message.startsWith('final_review_');
+    return {outcome: conflict ? 'conflict' : 'unavailable', reason: message};
+  }
+}
+
 export async function syncDailyBoard({root, date, snapshot, command, readRemote, now=Date.now()}) {
   const record = readLedger(root, date);
   if (!record) return null;
@@ -194,6 +234,32 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
       saveLedger(root,record);
     }
     if (!seat.assignment || !seat.claim_verified || !seat.artifact || !['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review'].includes(seat.status)) continue;
+    if (FINAL_STATUSES.includes(seat.status) && seat.review_verified === true && seat.review_receipt) {
+      const {outcome, reason} = await recheckBoundFinalReview({root,record,agent,seat,snapshot,readRemote,now});
+      seat.revalidation = outcome;
+      seat.revalidation_reason = reason;
+      if (outcome === 'verified') {
+        seat.sync_reason = reason;
+        saveLedger(root, record);
+        continue;
+      }
+      if (outcome === 'unavailable') {
+        // 保留历史结论与原 review_receipt，但不伪装为当前已核验：revalidation=unavailable 由 hasUnverifiedBoard 暴露。
+        seat.sync_reason = 'final_review_revalidation_unavailable';
+        saveLedger(root, record);
+        continue;
+      }
+      // 真实证据冲突：明确降级，旧证据保留在 review_receipt 中备查。
+      seat.review_conflict = true;
+      seat.review_verified = false;
+      seat.accepted = false;
+      seat.status = 'review_unknown';
+      seat.sync_reason = `final_review_evidence_conflict:${reason}`;
+      saveLedger(root, record);
+      continue;
+    }
+    seat.revalidation = undefined;
+    seat.revalidation_reason = undefined;
     seat.submission_verified = false;
     seat.review_verified = false;
     seat.accepted = false;
@@ -295,4 +361,4 @@ export async function syncReviewedSeats({root, date, snapshot, command, readRemo
   return record;
 }
 
-export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','missing_required_section','failure_sync_unknown','sync_unknown','review_unknown'].includes(seat.status));
+export const hasUnverifiedBoard = record => Object.values(record?.seats || {}).some(seat => ['blocked','claim_pending','generation_started','generation_unknown_no_repurchase','missing_required_section','failure_sync_unknown','sync_unknown','review_unknown'].includes(seat.status) || (FINAL_STATUSES.includes(seat.status) && seat.revalidation !== 'verified'));
