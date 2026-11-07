@@ -1,6 +1,7 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
+import test from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import fs from 'node:fs';import {control} from '../../workers/pulse-worker/engine.js';
 import {publishControllerDailyReview} from '../lib/controller-daily-review.mjs';
 import {assignDailyReviewers} from '../lib/daily-review-assignment.mjs';
+const pulseConfig=JSON.parse(fs.readFileSync(new URL('../../workers/pulse-worker/pulse.json',import.meta.url)));
 const hash=b=>createHash('sha256').update(b).digest('hex');
 function fixture(){
  const date='2026-11-06',task_id='DAILY-'+date+'-qianwen',source_commit='a'.repeat(40),run_key='123:1';
@@ -10,7 +11,7 @@ function fixture(){
  const raw=Buffer.from(JSON.stringify(verdict)),reviewRef={path:`knowledge/results/daily-board/reviews/${date}-qianwen-${hash(raw)}.json`,sha256:hash(raw)};
  const record={date,source_commit,run_key,seats:{qianwen:{claim_verified:true,submission_verified:true,assignment:{id:task_id},artifact}}};
  let current={id:task_id,date,claimed_by:'qianwen',evidence_path:artifact.path,evidence_sha256:artifact.sha256,status:'submitted_pending_review'},calls=0,reservation=null;
- const opts={record,reviewRef,read:async p=>p===artifact.path?worker:raw,observe:async()=>current,latch:{read:async()=>reservation,compareAndSwap:async(k,p,s)=>{if(reservation)return false;reservation={state:s};return true;}},command:async c=>{calls++;current={...current,status:c.accepted?'completed_draft_review':'rejected_draft_review',review:{scope:c.scope,worker_actual_provider:c.worker_actual_provider,reviewer_actual_provider:c.reviewer_actual_provider,accepted:c.accepted,reviewed_sha256:c.reviewed_sha256,evidence_path:c.review_evidence_path,evidence_sha256:c.review_evidence_sha256}};}};
+ const opts={record,reviewRef,read:async p=>p===artifact.path?worker:raw,observe:async()=>current,latch:{read:async()=>reservation,compareAndSwap:async(k,p,s)=>{if(reservation)return false;reservation={state:s};return true;}},command:async c=>{calls++;const result=control({task_board:[current]},c,'gpt',pulseConfig,Date.parse('2026-11-06T06:00:00Z'));current=result.state.task_board.find(t=>t.id===task_id);}};
  return {opts,calls:()=>calls,setCurrent:v=>{current=v;},getCurrent:()=>current};
 }
 test('actual GPT review is published once and reconciled without buying a native API call',async()=>{
@@ -27,4 +28,17 @@ test('another final review and altered hashes are preserved or rejected before p
 test('every seat has an explicit route or review_unassigned; planned bindings do not confer acceptance',()=>{
  const r={date:'2026-11-06',seats:Object.fromEntries(['deepseek','doubao','grok','qianwen','unknown'].map(agent=>[agent,{assignment:{id:'TASK-'+agent},artifact:{path:'x',sha256:'a'.repeat(64)},accepted:agent==='unknown'}]))};assignDailyReviewers(r);
  assert.equal(r.seats.qianwen.review_assignment.reviewer,'gpt');assert.equal(r.seats.qianwen.review_assignment.native_fallback,'deepseek');assert.equal(r.seats.qianwen.review_assignment.reviewer_execution_verified,false);assert.equal(r.seats.unknown.review_assignment.status,'review_unassigned');assert.equal(r.seats.unknown.status,'review_unassigned');assert.equal(r.seats.unknown.review_verified,false);assert.equal(r.seats.unknown.accepted,false);
+});
+
+test('only the two pinned pre-mutation missing-reason incidents can use one corrected reservation',async()=>{
+ const f=fixture(),states=new Map();let posts=0;
+ f.opts.latch={read:async k=>states.get(k)||null,compareAndSwap:async(k,p,s)=>{if(states.has(k))return false;states.set(k,{state:s});return true;}};
+ const command=f.opts.command;f.opts.command=async c=>{posts++;throw Error('unknown_transport');};
+ await publishControllerDailyReview(f.opts);assert.equal(posts,1); // a new-schema uncertainty cannot be recovered
+ const proof={verified:true,task_id:f.opts.record.seats.qianwen.assignment.id,review_sha256:f.opts.reviewRef.sha256,prior_run_id:'42348121504',failure:'missing_required_reason_before_mutation'};
+ f.opts.reconciledLegacyRejection=proof;await publishControllerDailyReview(f.opts);assert.equal(posts,1);
+ for(const value of states.values())delete value.state.request_schema; // actual old-format reservation, retained
+ f.opts.command=async c=>{posts++;return command(c);};
+ const result=await publishControllerDailyReview(f.opts);assert.equal(result.verified,true);assert.equal(result.legacy_rejection_reconciled,true);assert.equal(posts,2);assert.equal(states.size,2);
+ await publishControllerDailyReview(f.opts);assert.equal(posts,2);
 });
