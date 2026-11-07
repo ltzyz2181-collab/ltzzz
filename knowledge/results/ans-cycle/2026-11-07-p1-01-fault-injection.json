@@ -1,0 +1,165 @@
+{
+  "source": {
+    "ans_run_id": "42098078672",
+    "ans_date": "2026-11-06",
+    "p1_id": "P1-01",
+    "executed_by": "doubao"
+  },
+  "baseline_commit": "33e8f991",
+  "baseline_commit_subject": "docs: 虚拟支付部署安排（核实8项已完成、VPAY_ENV=1 沙箱、剩余4步与上传通道判断）",
+  "branch": "fix/ans-p1-01-final-review-revalidation",
+  "generated_at": "2026-11-07T06:59:56Z",
+  "note": "无敏感信息：仅合成 fixture 状态字段，不含凭据、密钥、真实用户数据或资金动作",
+  "before_fix": {
+    "summary": {
+      "A_flags_cleared": true,
+      "B_flags_cleared": true,
+      "AB_sync_reason_identical": true,
+      "conflict_distinguishable": false,
+      "auto_recovery": true
+    },
+    "cases": [
+      {
+        "case": "baseline_final_state",
+        "expect": "completed_draft_review / review_verified=true / accepted=true",
+        "observed": {
+          "status": "completed_draft_review",
+          "submission_verified": true,
+          "review_verified": true,
+          "accepted": true,
+          "review_receipt": {
+            "evidence_sha256": "20419833e9540835be18a40e3351f2c7231e2cb2212c412027eca969c4bda307"
+          },
+          "sync_reason": "bound_independent_draft_review_verified_not_deployment",
+          "deployed": false
+        },
+        "passed": true
+      },
+      {
+        "case": "A_transient_remote_read_failure",
+        "expect": "应保留 completed_draft_review 与 review_verified",
+        "observed": {
+          "status": "sync_unknown",
+          "submission_verified": false,
+          "review_verified": false,
+          "accepted": false,
+          "review_receipt": {
+            "evidence_sha256": "20419833e9540835be18a40e3351f2c7231e2cb2212c412027eca969c4bda307"
+          },
+          "sync_reason": "remote_submission_or_evidence_unverified",
+          "deployed": false
+        },
+        "degraded": true,
+        "flags_cleared": true,
+        "new_submit": 0,
+        "sync_reason": "remote_submission_or_evidence_unverified"
+      },
+      {
+        "case": "B_real_evidence_conflict",
+        "expect": "应进入明确的冲突处理，而非与瞬时失败同路径",
+        "observed": {
+          "status": "review_unknown",
+          "submission_verified": true,
+          "review_verified": false,
+          "accepted": false,
+          "review_receipt": {
+            "evidence_sha256": "4cff3175bf788368ed36208891e5cfda6a4a6ec11c00348aa88370295949b58c"
+          },
+          "sync_reason": "remote_submission_or_evidence_unverified",
+          "deployed": false
+        },
+        "degraded": true,
+        "flags_cleared": true,
+        "new_submit": 0,
+        "sync_reason": "remote_submission_or_evidence_unverified"
+      },
+      {
+        "case": "C_downgrade_then_restore",
+        "expect": "降级后应能幂等恢复且不重复提交",
+        "degraded_to": "sync_unknown",
+        "restored_to": "completed_draft_review",
+        "auto_recovered": true,
+        "new_submit": 0
+      }
+    ]
+  },
+  "after_fix": {
+    "summary": {
+      "A_flags_cleared": false,
+      "B_flags_cleared": true,
+      "AB_sync_reason_identical": false,
+      "conflict_distinguishable": true,
+      "auto_recovery": true
+    },
+    "cases": [
+      {
+        "case": "baseline_final_state",
+        "expect": "completed_draft_review / review_verified=true / accepted=true",
+        "observed": {
+          "status": "completed_draft_review",
+          "submission_verified": true,
+          "review_verified": true,
+          "accepted": true,
+          "review_receipt": {
+            "evidence_sha256": "8164e731b901dd73602ecd122b3ba24596a1ad423766f5f323a681e527aca14e"
+          },
+          "sync_reason": "bound_independent_draft_review_verified_not_deployment",
+          "deployed": false
+        },
+        "passed": true
+      },
+      {
+        "case": "A_transient_remote_read_failure",
+        "expect": "应保留 completed_draft_review 与 review_verified",
+        "observed": {
+          "status": "completed_draft_review",
+          "submission_verified": true,
+          "review_verified": true,
+          "accepted": true,
+          "review_receipt": {
+            "evidence_sha256": "8164e731b901dd73602ecd122b3ba24596a1ad423766f5f323a681e527aca14e"
+          },
+          "sync_reason": "final_review_revalidation_unavailable",
+          "deployed": false
+        },
+        "degraded": false,
+        "flags_cleared": false,
+        "new_submit": 0,
+        "sync_reason": "final_review_revalidation_unavailable"
+      },
+      {
+        "case": "B_real_evidence_conflict",
+        "expect": "应进入明确的冲突处理，而非与瞬时失败同路径",
+        "observed": {
+          "status": "review_unknown",
+          "submission_verified": true,
+          "review_verified": false,
+          "accepted": false,
+          "review_receipt": {
+            "evidence_sha256": "65f975557184b75ac3ec3b0fca58be1e1dfcc55744392ad169252d65fe947df1"
+          },
+          "sync_reason": "final_review_evidence_conflict:review_artifact_hash_mismatch",
+          "deployed": false
+        },
+        "degraded": true,
+        "flags_cleared": true,
+        "new_submit": 0,
+        "sync_reason": "final_review_evidence_conflict:review_artifact_hash_mismatch"
+      },
+      {
+        "case": "C_downgrade_then_restore",
+        "expect": "降级后应能幂等恢复且不重复提交",
+        "degraded_to": "completed_draft_review",
+        "restored_to": "completed_draft_review",
+        "auto_recovered": true,
+        "new_submit": 0
+      }
+    ]
+  },
+  "diff": {
+    "A_transient_no_longer_degrades": true,
+    "conflict_still_degrades": true,
+    "reasons_now_distinguishable": true,
+    "no_new_submission_in_any_case": true
+  }
+}
