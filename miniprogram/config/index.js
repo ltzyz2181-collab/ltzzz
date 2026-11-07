@@ -6,9 +6,9 @@ module.exports = {
   // 注意：环境到期 2026-12-06，续费后配置与数据保留。
   cloudEnv: 'shizhang-pay-d0g1n58020acf6b5b',
 
-  // 在线支付入口开关。云函数部署 + 商户号关联完成后保持 true；
+  // 当前先开放展示体验；云函数、商户关联及真实支付验收完成后再设为 true；
   // 若临时要下线支付，改为 false，购买按钮会提示「支付暂未开放」。
-  payEnabled: true,
+  payEnabled: false,
 
   // 展示在服务协议、订单页的主体与售后信息
   merchantName: '世章印章（广州）有限责任公司',

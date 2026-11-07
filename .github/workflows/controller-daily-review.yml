@@ -1,0 +1,43 @@
+name: Publish bound GPT daily review (no model calls)
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['scripts/lib/controller-daily-review.mjs','scripts/lib/daily-review-assignment.mjs','scripts/publish-controller-daily-review.mjs','scripts/tests/controller-daily-review.test.mjs','scripts/tests/miniprogram-capability.test.mjs','scripts/miniprogram-upload.mjs','miniprogram/**','.github/workflows/controller-daily-review.yml']
+  push:
+    branches: [main]
+    paths: ['ops/dispatch/controller-daily-review.json','scripts/lib/controller-daily-review.mjs','scripts/publish-controller-daily-review.mjs','.github/workflows/controller-daily-review.yml']
+permissions: {contents: read}
+concurrency: {group: daily-controller-review, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/controller-daily-review.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs scripts/tests/miniprogram-capability.test.mjs
+  publish:
+    needs: verify
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Publish current controller review; native GPT API is not invoked
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/publish-controller-daily-review.mjs
+      - name: Preserve exact board readback or blocker without resubmitting other seats
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/daily-board/ knowledge/results/dispatch/oversight/ data/results/
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m 'Bound GPT daily review and narrow board readback; no model purchase'
+          node tools/push-receipt-commit.mjs

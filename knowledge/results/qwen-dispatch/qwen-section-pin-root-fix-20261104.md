@@ -30,3 +30,9 @@
 - 11-04 与 11-03 工件开头同质化嫌疑——待对比两天完整工件确认是否 entry 回灌（独立跟进）。
 - finance/ 下 qwen 用量月账无监控行——下次巡检加。
 - 完成判定四标准：11-05~07 三日 missing_sections=[]；health generation_verified=true；至少一份工件 accepted=true（待 owner 定评审承接方）；Sentinel 11-10 无新失败。
+
+## 2026-11-06 GPT接续处置（保留上文历史）
+
+上文四标准中的health.generation_verified=true不适用：health只做无生成探活，实际生成由对应原生回执验收。改用原Task/原hash/真实provider_response与finish、非空产物。11-05与11-06四段结构已用当前校验器读原工件确认，11-07仍待观察。三日观察是修复效果标准，不是owner已授千问评审/副协调的任职前提。
+
+当前稿的真实内容审核与原生生成分开，不保证指定审方即接受；Dispatch Sentinel自己的窗口也不与新continuity服务观察混同。准确字段及窗口处置见docs/EVIDENCE-FIELD-DICTIONARY.md。
