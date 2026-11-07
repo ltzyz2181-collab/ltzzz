@@ -6,7 +6,7 @@ Page({
     product: null,
     agreed: false,
     paying: false,
-    payEnabled: config.payEnabled,
+    payEnabled: config.payEnabled === true && !!config.cloudEnv && !!wx.cloud?.callFunction,
     merchantName: config.merchantName
   },
 
@@ -35,12 +35,8 @@ Page({
   onBuy() {
     const product = this.data.product;
     if (!product || this.data.paying) return;
-    if (!config.payEnabled) {
-      wx.showToast({ title: '支付暂未开放', icon: 'none' });
-      return;
-    }
-    if (!config.cloudEnv) {
-      wx.showToast({ title: '支付环境未配置', icon: 'none' });
+    if (!this.data.payEnabled) {
+      wx.showToast({ title: '在线预约暂未开放', icon: 'none' });
       return;
     }
     if (!this.data.agreed) {
