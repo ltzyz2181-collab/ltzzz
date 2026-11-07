@@ -1,0 +1,15 @@
+{
+  "finding": "syncDailyBoard在进入最终评审校验前无条件清空review_verified和accepted，且readRemote瞬时失败会因catch把最终结果状态降级为sync_unknown，导致本地已经绑定的独立验收回执被丢弃。修复为：先对最终状态做只读复核，复核通过再更新；远端读取失败时保留原状态并标记deferred，不留空、不重新提交。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-06-reviewer.json",
+    "scripts/daily-task-board.mjs"
+  ],
+  "minimal_patch": "文件：scripts/lib/daily-task-board.mjs\n位置：syncDailyBoard 的 for 循环内，当前代码段\n  seat.submission_verified = false;\n  seat.review_verified = false;\n  seat.accepted = false;\n  try {\n    const bytes = validateArtifact(...);\n    if (digest(await readRemote(seat.artifact.path)) !== digest(bytes)) ...\n\n改为：\n  const finalStatuses = ['completed_draft_review','rejected_draft_review'];\n  const hadFinal = finalStatuses.includes(seat.status) && seat.review_verified === true;\n  seat.submission_verified = false;\n  seat.review_verified = false;\n  seat.accepted = false;\n  try {\n    const bytes = validateArtifact(...);\n    let remoteBytes;\n    try {\n      remoteBytes = await readRemote(seat.artifact.path);\n    } catch (e) {\n      if (hadFinal) {\n        seat.review_verified = true;\n        seat.accepted = seat.status === 'completed_draft_review';\n        seat.submission_verified = true;\n        seat.sync_reason = 'final_review_preserved_readonly_deferred';\n        saveLedger(root, record);\n        continue;\n      }\n      throw e;\n    }\n    if (digest(remoteBytes) !== digest(bytes)) throw Error('remote_artifact_not_persisted');\n    // 其余逻辑不变；只有复核全部通过才在最后写 seat.review_verified = true\n",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const root='/tmp/ltzzz-test';const record={date:'2026-11-07',run_key:'local:1',source_commit:'unverified',seats:{deepseek:{status:'completed_draft_review',review_verified:true,accepted:true,assignment:{id:'DAILY-2026-11-07-deepseek'},claim_verified:true,artifact:{path:'knowledge/results/daily-board/artifacts/2026-11-07-deepseek-unverified.json',sha256:'unverified'}}}};const readRemote=async()=>{throw new Error('transient')};const snapshot=async()=>({available:true,ran_at:new Date().toISOString(),task_board:[{id:'DAILY-2026-11-07-deepseek',status:'completed_draft_review',claimed_by:'deepseek',date:'2026-11-07',evidence_path:'knowledge/results/daily-board/artifacts/2026-11-07-deepseek-unverified.json',evidence_sha256:'unverified',paid:false,review:{accepted:true}}]});const command=async()=>{throw new Error('should_not_call')};m.syncDailyBoard({root,date:'2026-11-07',snapshot,command,readRemote}).then(r=>console.log(JSON.stringify(r.seats.deepseek)))})\""
+  ],
+  "remaining_blocker": "未实际执行测试与故障注入；readRemote、validateArtifact和受控账本需在真实运行或测试夹具中验证，且完整验收依赖独立提供商复核。"
+}

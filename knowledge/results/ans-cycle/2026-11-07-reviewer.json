@@ -1,0 +1,26 @@
+{
+  "accepted": true,
+  "artifact_sha256": "eb904a245a093d1b71ec4d21aa94862007715f27ebd3df622ce2381a1d2e2fea",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs 的 syncDailyBoard，席位进入 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review 的处理分支后，确实先无条件执行 seat.submission_verified=false、seat.review_verified=false、seat.accepted=false，然后才调用 validateArtifact 和 readRemote。",
+    "源码显示 validateArtifact 后立即比较 digest(await readRemote(seat.artifact.path)) 与本地产物摘要；readRemote 瞬时抛错会直接进入外层 catch。由于此前最终评审字段已被清空，catch 会把非 review_unknown 场景置为 sync_unknown，并写入 remote_submission_or_evidence_unverified，finding 所述本地已绑定最终评审回执被丢弃的路径可静态复核。",
+    "源码还显示在远端任务未匹配 submitted/final 证据且状态为 claimed 时，会复用 submission_intent 并执行 action:'submit_task'；因此在远端读取或快照不稳定造成误判时存在重复提交路径，finding 的风险描述与当前控制流一致。",
+    "最终评审复核前，源码先将 seat.status 设置为 review_unknown 并 saveLedger，之后才校验 review.scope、accepted、reviewed_sha256、worker/reviewer actual_provider 独立性、review evidence 路径和哈希、评审 verdict 语义及状态一致性；任一步失败均落入 catch，符合 finding 对独立验收断点和降级问题的描述。",
+    "minimal_patch 的修复方向是在重置前记录 hadFinal，并将 readRemote 单独包裹；当已有最终评审且读取瞬时失败时恢复 review_verified、accepted、submission_verified，写入 final_review_preserved_readonly_deferred 后保存并 continue。该草稿直接针对已确认的提前清空和 catch 降级路径，作为代码/规格草稿具备可复核性。",
+    "补丁使用的 validateArtifact、digest、readRemote、saveLedger、seat.status、seat.review_verified、seat.accepted、seat.submission_verified、seat.artifact、seat.sync_reason 等函数或字段均存在于当前源码和数据结构中；正常路径要求远端哈希复核通过后再继续后续状态更新，方向与 finding 一致。",
+    "交付明确说明未实际执行测试、故障注入、部署或上线，没有把建议补丁表述为已写盘、已合并或已生效；本次仅验收代码/规格草稿的可复核性，范围内可以接受。"
+  ],
+  "unverified": [
+    "未取得本次交付物原始字节，无法独立重算 artifact_sha256，只能严格回传给定哈希。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs。",
+    "未实际执行 node --check scripts/daily-task-board.mjs。",
+    "未实际执行交付中的内联 Node 故障注入命令；该命令还使用 /tmp/ltzzz-test、unverified 哈希和占位 artifact 路径，不能证明真实账本行为。",
+    "未审查工作树 diff，无法确认 minimal_patch 已实际写入。",
+    "补丁文本以 validateArtifact(...) 和“其余逻辑不变”省略具体代码，尚未逐行验证其作为完整补丁的语法正确性、变量作用域和所有状态迁移。",
+    "未用受控 ledger、fake readRemote、fake snapshot、fake command 验证最终评审在工作产物读取失败、评审证据读取失败、快照过期、owner 冲突、网络超时等场景下均不会被清空或重复 submit_task。",
+    "未验证 deferred 分支不会掩盖真实的远端证据冲突、评审绑定冲突或哈希不一致，也未验证下一轮自动恢复能否准确重新复核并清除 deferred。",
+    "未审查 scripts/lib/daily-independent-review.mjs 以及 materializeAllDailyReviews、syncAllDailyReviews、recordAllDailyReviewReadbacks，无法确认 scripts/daily-task-board.mjs 完整 sync 编排下的端到端幂等性。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本或线上关键行为。",
+    "未验证是否触发模型调用、API 费用、采购、支付或资金操作。"
+  ]
+}
