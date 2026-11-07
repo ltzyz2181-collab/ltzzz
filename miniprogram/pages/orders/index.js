@@ -5,6 +5,7 @@ const STATUS_LABEL = {
   paid: '已支付 · 待交付',
   delivered: '已交付',
   refunded: '已退款',
+  refund_pending_verification: '退款核对中 · 暂停交付',
   closed: '已关闭'
 };
 

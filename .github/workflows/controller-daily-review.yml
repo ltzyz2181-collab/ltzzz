@@ -2,7 +2,7 @@ name: Publish bound GPT daily review (no model calls)
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['scripts/lib/controller-daily-review.mjs','scripts/lib/daily-review-assignment.mjs','scripts/publish-controller-daily-review.mjs','scripts/tests/controller-daily-review.test.mjs','scripts/tests/miniprogram-capability.test.mjs','scripts/miniprogram-upload.mjs','miniprogram/**','.github/workflows/controller-daily-review.yml']
+    paths: ['scripts/lib/controller-daily-review.mjs','scripts/lib/daily-review-assignment.mjs','scripts/publish-controller-daily-review.mjs','scripts/tests/controller-daily-review.test.mjs','scripts/tests/miniprogram-capability.test.mjs','scripts/tests/vpay-notify-security.test.mjs','scripts/miniprogram-upload.mjs','miniprogram/**','.github/workflows/controller-daily-review.yml']
   push:
     branches: [main]
     paths: ['ops/dispatch/controller-daily-review.json','scripts/lib/controller-daily-review.mjs','scripts/publish-controller-daily-review.mjs','.github/workflows/controller-daily-review.yml']
@@ -16,7 +16,7 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/controller-daily-review.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs scripts/tests/miniprogram-capability.test.mjs
+      - run: node --test scripts/tests/controller-daily-review.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs scripts/tests/miniprogram-capability.test.mjs scripts/tests/vpay-notify-security.test.mjs
   publish:
     needs: verify
     if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
