@@ -26,13 +26,13 @@ jobs:
         env:
           UI_EVIDENCE_DIR: ${{ runner.temp }}/ui-evidence/candidate
         run: |
-          git fetch origin 7c19422cf0071d4b64c88f34a66a6093860b7011 17912d13e30a304e75cdce9746293c5e8596b2fd
+          git fetch origin 7c19422cf0071d4b64c88f34a66a6093860b7011 226523eab82c5dcf85ba2fbf4d902d695bf4d3ac
           mkdir -p "$RUNNER_TEMP/ui-candidate/scripts/tests"
           for file in wep3.html scripts/tests/wep3-receipt-render.test.mjs; do
             git show "7c19422cf0071d4b64c88f34a66a6093860b7011:$file" > "$RUNNER_TEMP/ui-candidate/$file"
           done
           for file in treasury-dashboard.html scripts/tests/treasury-dashboard-render.test.mjs; do
-            git show "17912d13e30a304e75cdce9746293c5e8596b2fd:$file" > "$RUNNER_TEMP/ui-candidate/$file"
+            git show "226523eab82c5dcf85ba2fbf4d902d695bf4d3ac:$file" > "$RUNNER_TEMP/ui-candidate/$file"
           done
           node --test "$RUNNER_TEMP/ui-candidate/scripts/tests/wep3-receipt-render.test.mjs" "$RUNNER_TEMP/ui-candidate/scripts/tests/treasury-dashboard-render.test.mjs"
           UI_SOURCE_DIR="$RUNNER_TEMP/ui-candidate" node scripts/verify-ui-browser.mjs
@@ -41,7 +41,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';import {createHash} from 'node:crypto';
-          const expected={'wep3.html':'93b5e476846e3f760790d1d93ac6aee1ec84f0d3b5f209fa0f79add657abdb25','treasury-dashboard.html':'b7309adc7ff91883035ec8960e6ca647476b3504907893e33851d3a862ed16cd'};
+          const expected={'wep3.html':'93b5e476846e3f760790d1d93ac6aee1ec84f0d3b5f209fa0f79add657abdb25','treasury-dashboard.html':'7b9d6b06232ab09ec5fd5c42c3e09ca462bb44fad136c1b580c6a8abe5cd50bd'};
           const ready=Object.entries(expected).every(([file,hash])=>createHash('sha256').update(fs.readFileSync(file)).digest('hex')===hash);
           fs.appendFileSync(process.env.GITHUB_OUTPUT,'ready='+ready+'\n');
           console.log(ready?'Both reviewed UIs are present; verify production':'Production acceptance pending both UI merges');
