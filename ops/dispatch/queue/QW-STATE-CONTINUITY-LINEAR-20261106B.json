@@ -1,0 +1,18 @@
+{
+  "id": "QW-STATE-CONTINUITY-LINEAR-20261106B",
+  "agent": "qianwen",
+  "model": "qwen-max",
+  "max_tokens": 2048,
+  "original_task_id": "QW-STATE-CONTINUITY-LINEAR-20261106B",
+  "real_money": false,
+  "required_sections": [
+    "【结论】",
+    "【现状纠正】",
+    "【状态文件设计】",
+    "【读写流程】",
+    "【风险与降级】",
+    "【未做的事】"
+  ],
+  "purpose": "owner 要求纠正本地 linear 仿制技能的定位，并给出可落盘的会话状态连续性方案",
+  "prompt": "你是千问席。owner 反馈两件事，请你给出可复核的方案，不要执行工具、不要声称部署、不要自称跑过测试。\n\n背景事实（可复核，不是转述）：\n1. owner 在自己客户端创建了一个名为 linear 的技能，行为是：把待办拆成 LIN-001 起的 issue、按规则定优先级、用自然语言改状态、状态存在本地看板文件、不连外部服务。\n2. 真正的 Linear 是外部 SaaS，官方有 MCP Server（https://mcp.linear.app）与 GraphQL API（https://api.linear.app/graphql）。豆包席实测：读到了 linear 插件 Skill 的工具目录（50+ 项，含 get_workspace/list_teams/list_issues/save_issue），但工具检索两轮均未返回任何 Linear MCP 工具，只命中 GitHub MCP。结论：连接未握手，且凭证不跨客户端共享。\n3. 所以本地仿制技能与真 Linear 是两套东西，不能混为一谈。\n\n请回答三件事：\nA) 定位纠正：说明你这个本地 linear 技能的能力边界——它能做什么、不能做什么；明确它不得作为跨席位派单、验收或\"已完成\"的权威状态源，理由要具体（本地文件不可被其他席位回读、状态无证据绑定、与仓库权威通道 GitHub Issue 会双口径漂移）。给出它唯一合规的用法。\nB) 记忆连续性：模型本身没有跨会话记忆，这是事实，不要承诺\"原厂设置好记忆\"。请给出工程解法：把所有需要延续的状态落盘到仓库固定路径 data/state/qianwen-board.json，每轮对话开始先读、结束写回。请写出：字段 schema（含 schema_version、last_updated_iso、authority（必须标 local_draft_not_authoritative）、items 数组的字段）、读写伪码、并发/冲突合并规则、读不到或解析失败时的降级行为（必须以仓库与 GitHub Issue 为准并在输出里标注，不得静默用本地残留）。\nC) 证明：给出一条可被独立复核的最小验证——同一份 board 文件在两次运行之间被正确读取并识别出变更，需列出要贴出的字段名和比对方式。不得声称已经实现或已通过测试。\n\n硬约束：不要索取任何密钥、令牌、证件；不要把 owner 个人信息写进方案；不要在方案里假设可以访问外部 Linear；如果某项做不到，写在【未做的事】里。"
+}
