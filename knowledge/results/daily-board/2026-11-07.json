@@ -1,0 +1,146 @@
+{
+  "schema_version": 2,
+  "date": "2026-11-07",
+  "run_key": "42325486995:1",
+  "source_commit": "ffb4ff535e229c92e741be3d9f3796d224ec9636",
+  "seats": {
+    "deepseek": {
+      "agent": "deepseek",
+      "status": "reserved",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": false,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "DAILY-2026-11-07-deepseek",
+        "instruction": "复用原 Task ID 闭环 ANS-2026-11-04-deepseek 与 DAILY-2026-11-05-deepseek 未验证完成声明：只读原 run、源码与回执，零新增模型调用、不补生成、不购买；核对 finish_reason、实际 provider/model、源 commit、产物 SHA-256、paid/tx_hash。产出 knowledge/results/dispatch/oversight/deepseek-reconcile-20261106.json，字段含 source_run、source_commit、reviewed_hashes、status、blocked_reason、paid=false、tx_hash=null，并更新 latest.json 对应 warning。量测：新回执入库且 status 为 reconciled_blocked 或 reconciled_verified。",
+        "source": "actual_model_review",
+        "source_date": "2026-11-06",
+        "execution_date": "2026-11-07",
+        "source_task_id": "CONTROL-2026-11-07-deepseek"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-07-deepseek-4156f57ecb6de3cc",
+        "task_id": "DAILY-2026-11-07-deepseek",
+        "run_key": "42325486995:1"
+      },
+      "claim_receipt": {
+        "task_id": "DAILY-2026-11-07-deepseek",
+        "task_date": "2026-11-07",
+        "request_id": "daily-claim-2026-11-07-deepseek-4156f57ecb6de3cc",
+        "run_key": "42325486995:1",
+        "claimed_by": "deepseek",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-07T01:42:30.262Z",
+        "observed_at": "2026-11-07T01:37:57.780Z"
+      }
+    },
+    "doubao": {
+      "agent": "doubao",
+      "status": "reserved",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": false,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "DAILY-2026-11-07-doubao",
+        "instruction": "独立复核 AUTO-2026-11-05-health 与 DAILY-2026-11-05-doubao 的 review_missing：只读既有回执和源码，不调用模型。产出 knowledge/results/ans-cycle/2026-11-06-doubao-review.json，包含 reviewer 实际 provider/model、source_sha256、review_status=accepted/rejected/blocked、missing_fields、paid=false、tx_hash=null；原回执缺失就如实记 blocked，不补写。量测：文件入库，review_status 与源哈希一致，并把 latest.json 两个 warning 更新为 closed_pending_review 或写 repair_file。",
+        "source": "actual_model_review",
+        "source_date": "2026-11-06",
+        "execution_date": "2026-11-07",
+        "source_task_id": "CONTROL-2026-11-07-doubao"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-07-doubao-4156f57ecb6de3cc",
+        "task_id": "DAILY-2026-11-07-doubao",
+        "run_key": "42325486995:1"
+      },
+      "claim_receipt": {
+        "task_id": "DAILY-2026-11-07-doubao",
+        "task_date": "2026-11-07",
+        "request_id": "daily-claim-2026-11-07-doubao-4156f57ecb6de3cc",
+        "run_key": "42325486995:1",
+        "claimed_by": "doubao",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-07T01:42:30.815Z",
+        "observed_at": "2026-11-07T01:37:57.780Z"
+      }
+    },
+    "grok": {
+      "agent": "grok",
+      "status": "reserved",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": false,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "AUTO-2026-11-07-health",
+        "instruction": "自主检查最新Pulse心跳与实际生成回执是否混淆，交可核验证据或修复，不能凭健康200宣布模型已生成。",
+        "source": "self_discovered_available_task_not_claim_proof",
+        "execution_date": "2026-11-07"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-07-grok-4156f57ecb6de3cc",
+        "task_id": "AUTO-2026-11-07-health",
+        "run_key": "42325486995:1"
+      },
+      "claim_receipt": {
+        "task_id": "AUTO-2026-11-07-health",
+        "task_date": "2026-11-07",
+        "request_id": "daily-claim-2026-11-07-grok-4156f57ecb6de3cc",
+        "run_key": "42325486995:1",
+        "claimed_by": "grok",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-07T01:42:31.267Z",
+        "observed_at": "2026-11-07T01:37:57.780Z"
+      }
+    },
+    "qianwen": {
+      "agent": "qianwen",
+      "status": "reserved",
+      "reason": "remote_claim_verified",
+      "claim_verified": true,
+      "submission_verified": false,
+      "review_verified": false,
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "deployed": false,
+      "assignment": {
+        "id": "DAILY-2026-11-07-qianwen",
+        "instruction": "交叉审阅其他席当日产出及证据，识别系统风险或记忆不一致，提出可验证改进；结合月度模型目录检查提出更新建议，未实测不得称已恢复或已部署。",
+        "source": "pulse_direct_assignment",
+        "execution_date": "2026-11-07"
+      },
+      "claim_intent": {
+        "id": "daily-claim-2026-11-07-qianwen-4156f57ecb6de3cc",
+        "task_id": "DAILY-2026-11-07-qianwen",
+        "run_key": "42325486995:1"
+      },
+      "claim_receipt": {
+        "task_id": "DAILY-2026-11-07-qianwen",
+        "task_date": "2026-11-07",
+        "request_id": "daily-claim-2026-11-07-qianwen-4156f57ecb6de3cc",
+        "run_key": "42325486995:1",
+        "claimed_by": "qianwen",
+        "actor": "qianwen",
+        "claimed_at": "2026-11-07T01:42:31.681Z",
+        "observed_at": "2026-11-07T01:37:57.780Z"
+      }
+    }
+  },
+  "paid": false,
+  "tx_hash": null
+}
