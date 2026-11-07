@@ -1,0 +1,14 @@
+{
+  "finding": "daily-task-board.mjs 的 syncDailyBoard 在终态席位重校验时，已绑定最终评审（review_verified=true 且有 review_receipt）的席位在遇到 readRemote(seat.artifact.path) 瞬时失败时，会先进入非终态分支并执行 seat.submission_verified=false、seat.review_verified=false、seat.accepted=false，再在 validateArtifact 后因远程哈希读取失败落入 catch，将席位降级为 sync_unknown 并写入 remote_submission_or_evidence_unverified。这导致已验证的最终评审回执被瞬时网络失败清除，且后续 syncReviewedSeats 不再把该席位视为有 artifact 的待评审状态，断开了独立验收闭环。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-07-reviewer.json"
+  ],
+  "minimal_patch": "在 syncDailyBoard 中，将终态复核分支与普通同步分支的入口改为先捕获终态证据，再决定重置：\n\n1. 在函数开头新增：\n   const finalBound = FINAL_STATUSES.includes(seat.status) && seat.review_verified === true && seat.review_receipt;\n   const hadFinalEvidence = finalBound && seat.submission_verified === true && seat.accepted === true;\n\n2. 在进入普通同步分支前，先尝试终态轻型重校验：\n   if (hadFinalEvidence) {\n     const {outcome, reason} = await recheckBoundFinalReview({root,record,agent,seat,snapshot,readRemote,now});\n     if (outcome === 'verified') { seat.revalidation='verified'; seat.revalidation_reason=reason; seat.sync_reason='final_review_revalidated_stable'; saveLedger(root, record); continue; }\n     if (outcome === 'unavailable') { seat.revalidation='unavailable'; seat.revalidation_reason=reason; seat.sync_reason='final_review_preserved_readonly_deferred'; saveLedger(root, record); continue; }\n     // outcome === 'conflict': 降级并保留旧回执\n     seat.review_conflict = true; seat.review_verified = false; seat.accepted = false; seat.status = 'review_unknown'; seat.sync_reason = `final_review_evidence_conflict:${reason}`; saveLedger(root, record); continue;\n   }\n\n3. 修改普通同步分支的重置逻辑：只有当 !hadFinalEvidence 时才执行 seat.submission_verified=false、seat.review_verified=false、seat.accepted=false，避免终态席位在非冲突路径被无条件清空。\n\n4. 补充回归断言：在 scripts/tests/ans-cycle.test.mjs 中增加用例，构造 review_verified=true 的终态席位与 readRemote 抛错场景，断言 syncDailyBoard 后 seat.status 保持 completed_draft_review/rejected_draft_review、seat.review_verified 保持 true、seat.submission_verified 保持 true、seat.accepted 保持不变，并且不触发 submit_task 命令。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node scripts/daily-task-board.mjs sync"
+  ],
+  "remaining_blocker": "未验证生产部署与线上回读；本地补丁未写入工作树，需要执行器应用后运行回归测试并将终态瞬时失败场景的 ledger 与 Pulse 回执作为验收证据。"
+}
