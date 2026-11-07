@@ -1,0 +1,25 @@
+{
+  "accepted": true,
+  "artifact_sha256": "d600a1a3aeb8beacebcb92df058f2d5deebd3161e7b86c01dc5ac8fffdb450d5",
+  "reasons": [
+    "对照当前 scripts/lib/daily-task-board.mjs，syncDailyBoard 已在普通同步分支前新增 FINAL_STATUSES、recheckBoundFinalReview 及终态席位专用复核入口；该入口要求 review_verified === true 且存在 review_receipt，和交付针对的已绑定最终评审场景一致。",
+    "终态轻型复核先执行 validateArtifact、远端 artifact 哈希读取、snapshot/owner/status 校验、review evidence 哈希与 verdict 语义校验；readRemote 抛错且错误不属于明确冲突码时返回 unavailable。syncDailyBoard 对 unavailable 仅写 revalidation、revalidation_reason 和 sync_reason='final_review_revalidation_unavailable'，随后 continue，不再进入普通分支，也不会清空 submission_verified、review_verified、accepted 或终态 status。",
+    "普通同步分支中的 seat.submission_verified=false、seat.review_verified=false、seat.accepted=false 位于终态专用分支之后；已绑定终态席位在 verified 或 unavailable 出口均已 continue，只有非终态或真实冲突路径才会到达相应重置逻辑，修复方向与 finding 指出的提前清空问题相匹配。",
+    "冲突路径会设置 review_conflict=true、review_verified=false、accepted=false、status='review_unknown'，并保留原 review_receipt；recheckBoundFinalReview 将远程未持久化、哈希不符、语义不符、绑定错误、状态不符和 board_conflict 归为 conflict，其他未知瞬时异常归为 unavailable，具备可静态复核的三态边界。",
+    "hasUnverifiedBoard 已把 FINAL_STATUSES 且 revalidation !== 'verified' 的席位视为未核验，因此 unavailable 不会被伪装成当前复核通过；同时历史终态字段和回执被保留，符合只读保留与延迟复核目标。",
+    "交付中的 verification_commands 指向存在的源码和测试入口；remaining_blocker 明确承认补丁应用、回归测试、生产部署和线上回读尚未验证，没有声称建议代码已经执行、上线或产生资金操作。"
+  ],
+  "unverified": [
+    "未取得交付物原始字节，无法独立重算 artifact_sha256，只能严格回传给定哈希。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs。",
+    "未实际执行 node --test scripts/tests/ans-cycle.test.mjs。",
+    "未实际执行 node scripts/daily-task-board.mjs sync。",
+    "提供材料中没有展示 scripts/tests/ans-cycle.test.mjs 的新增回归用例，无法确认 readRemote 抛错时终态 status、review_verified、submission_verified、accepted 保持不变以及不触发 submit_task 的断言已经存在并通过。",
+    "未审查当前工作树 diff，无法确认所给源码状态与实际仓库提交、文件字节或待应用补丁之间的关系。",
+    "未用受控 ledger、fake readRemote、fake snapshot、fake command 覆盖 artifact 读取失败、review evidence 读取失败、snapshot 过期、owner 冲突、哈希不一致、语义不一致、状态冲突等边界。",
+    "未验证终态 unavailable 在下一轮网络恢复后能否自动转为 verified，也未验证真实冲突不会被错误归类为 unavailable。",
+    "未审查 scripts/lib/daily-independent-review.mjs、daily-board-lineage.mjs 及 sync 编排中的其他模块，无法确认完整 daily sync 端到端幂等性。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本、线上关键行为或 Pulse 回执。",
+    "未验证是否触发模型调用、API 费用、采购、支付或其他资金操作。"
+  ]
+}
