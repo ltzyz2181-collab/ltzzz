@@ -3,152 +3,162 @@ const crypto = require('crypto');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
-
-// ── 小程序虚拟支付消息推送接收（HTTP 网关 + 云函数调用双通道）─────────────
-// 通道 A：HTTP 网关路由 /vpay-notify（微信公众平台「消息推送」自定义服务器模式）
-//   GET  → 平台验证 URL，原样回 echostr（校验 sha1 签名）
-//   POST → 事件推送，JSON / XML 均可，回 {"ErrCode":0,"ErrMsg":"success"}
-// 通道 B：直接云函数调用（event 里直接带 Event 字段）
-// 发货以本推送为主；推送丢失时由订单页/人工核对兜底。
-// 幂等：以业务单号 outTradeNo 判定，重复推送只置一次 paid。
-
 const PUSH_TOKEN = process.env.VPAY_PUSH_TOKEN || '';
-
-function pickString(v) {
-  return typeof v === 'string' ? v : (v == null ? '' : String(v));
+const MAX_BODY_BYTES = 64 * 1024;
+const success = () => ({ ErrCode: 0, ErrMsg: 'success' });
+const fail = code => { throw new Error(code); };
+const text = value => typeof value === 'string' ? value : '';
+const object = value => value && typeof value === 'object' && !Array.isArray(value);
+function integer(value) {
+  if (typeof value === 'string' && /^(0|[1-9]\d*)$/.test(value)) value = Number(value);
+  return Number.isSafeInteger(value) && value >= 0 ? value : -1;
 }
 
+// Current deployment uses MP plaintext message push over HTTPS. Token signature
+// is the documented inbound protocol, not the outbound virtual-payment paySig.
+// Missing configuration NEVER opens the endpoint. Safe/encrypted mode requires
+// a separate, verified AES implementation/config migration; reject it meanwhile.
 function checkSignature(query) {
-  if (!PUSH_TOKEN) return true; // 未配置令牌时不强制校验，避免把自己锁死
-  const { signature, timestamp, nonce } = query || {};
-  if (!signature || !timestamp || !nonce) return false;
-  const raw = [PUSH_TOKEN, timestamp, nonce].sort().join('');
-  const calc = crypto.createHash('sha1').update(raw).digest('hex');
-  return calc === signature;
+  if (!PUSH_TOKEN || !object(query)) return false;
+  const { signature, timestamp, nonce } = query;
+  if (!/^[a-f0-9]{40}$/.test(text(signature)) || !/^\d{1,16}$/.test(text(timestamp)) || !text(nonce) || nonce.length > 256) return false;
+  const digest = crypto.createHash('sha1').update([PUSH_TOKEN, timestamp, nonce].sort().join('')).digest();
+  return crypto.timingSafeEqual(digest, Buffer.from(signature, 'hex'));
 }
 
-// 极简 XML → 对象（只处理一层嵌套，够消息推送用）
-function parseXml(xml) {
-  const out = {};
+// Bounded, non-entity-expanding parser for MP's nested message fields. Reject
+// malformed/duplicate fields instead of accepting an ambiguous payment proof.
+function parseXml(xml, depth = 0) {
+  if (depth > 6) fail('invalid_payload');
+  const out = Object.create(null);
   const re = /<(\w+)>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([\s\S]*?))<\/\1>/g;
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    const key = m[1];
-    const val = m[2] !== undefined ? m[2] : m[3];
-    if (/^<\w+>/.test(val.trim())) {
-      out[key] = parseXml(val);
-    } else {
-      out[key] = val.trim();
-    }
+  let m, cursor = 0;
+  while ((m = re.exec(xml))) {
+    if (xml.slice(cursor, m.index).trim() || Object.hasOwn(out, m[1])) fail('invalid_payload');
+    const value = m[2] === undefined ? m[3].trim() : m[2];
+    out[m[1]] = m[2] === undefined && value.startsWith('<') ? parseXml(value, depth + 1) : value;
+    cursor = re.lastIndex;
   }
+  if (!cursor || xml.slice(cursor).trim()) fail('invalid_payload');
   return out;
 }
-
 function normalizeEvent(raw) {
-  if (raw && typeof raw === 'object') return raw;
-  const text = pickString(raw).trim();
-  if (!text) return {};
-  if (text[0] === '{') {
-    try { return JSON.parse(text); } catch (e) { return {}; }
+  if (object(raw)) {
+    if (Buffer.byteLength(JSON.stringify(raw)) > MAX_BODY_BYTES) fail('invalid_payload');
+    if (raw.Encrypt) fail('encrypted_mode_not_configured');
+    return { event: raw, xml: false };
   }
-  if (text[0] === '<') return parseXml(text);
-  return {};
+  if (typeof raw !== 'string' || Buffer.byteLength(raw) > MAX_BODY_BYTES) fail('invalid_payload');
+  let input = raw.trim();
+  let event, xml = false;
+  if (input.startsWith('{')) {
+    try { event = JSON.parse(input); } catch (_) { fail('invalid_payload'); }
+  } else if (input.startsWith('<')) {
+    if (/<!DOCTYPE|<!ENTITY/i.test(input)) fail('invalid_payload');
+    input = input.replace(/^<\?xml[^?]*\?>\s*/, '');
+    const root = parseXml(input);
+    if (Object.keys(root).length !== 1 || !object(root.xml)) fail('invalid_payload');
+    event = root.xml; xml = true;
+  } else fail('invalid_payload');
+  if (!object(event)) fail('invalid_payload');
+  if (event.Encrypt) fail('encrypted_mode_not_configured');
+  return { event, xml };
 }
 
-async function handleDeliver(e) {
-  const outTradeNo = pickString(e.OutTradeNo);
-  const payInfo = e.WeChatPayInfo || {};
-  const wxOrderId = pickString(payInfo.MchOrderNo);
-  const goods = e.GoodsInfo || {};
-  const productId = pickString(goods.ProductId);
-  const env = Number(e.Env || 0);
-
-  if (!outTradeNo) {
-    console.error('deliver notify without outTradeNo');
-    return { ErrCode: 0, ErrMsg: 'success' };
-  }
-
+async function findOrder(outTradeNo) {
+  if (!text(outTradeNo) || outTradeNo.length > 64) fail('invalid_order_reference');
   const found = await db.collection('orders').where({ out_trade_no: outTradeNo }).get();
-  const order = (found.data || [])[0];
-  if (!order) {
-    console.error('deliver notify for unknown order', outTradeNo);
-    return { ErrCode: 0, ErrMsg: 'success' };
+  if (!Array.isArray(found.data) || found.data.length !== 1) fail('order_not_unique_or_unavailable');
+  return found.data[0];
+}
+function checkOwnerAndEnvironment(event, order) {
+  if (order.pay_channel !== 'virtual' || !text(order.openid) || event.OpenId !== order.openid) fail('order_binding_mismatch');
+  const env = integer(event.Env);
+  if (![0, 1].includes(env) || env !== order.env) fail('order_binding_mismatch');
+}
+function orderCondition(order) {
+  return { _id: order._id, status: order.status, openid: order.openid, env: order.env,
+    product_id: order.product_id, amount: order.amount, pay_channel: 'virtual' };
+}
+async function handleDeliver(event) {
+  const order = await findOrder(event.OutTradeNo);
+  checkOwnerAndEnvironment(event, order);
+  const goods = event.GoodsInfo || {}, wxOrderId = text(event.WeChatPayInfo?.MchOrderNo);
+  // Current catalogue only sells one item, without discounts. Missing price is
+  // unknown, not proof of payment; keep the order pending for reconciliation.
+  if (goods.ProductId !== order.product_id || integer(goods.Quantity) !== 1 || !Number.isSafeInteger(order.amount) || order.amount <= 0 ||
+      integer(goods.OrigPrice) !== order.amount || integer(goods.ActualPrice) !== order.amount || !wxOrderId || wxOrderId.length > 128) fail('order_payment_mismatch');
+  if (['paid', 'delivered'].includes(order.status)) {
+    if (order.wx_order_id !== wxOrderId) fail('payment_reference_conflict');
+    return success();
   }
-  if (order.status === 'paid' || order.status === 'delivered') {
-    return { ErrCode: 0, ErrMsg: 'success' };
+  if (['refunded', 'closed', 'refund_pending_verification'].includes(order.status)) return success();
+  if (order.status !== 'pending') fail('order_state_conflict');
+  const now = new Date().toISOString();
+  const result = await db.collection('orders').where(orderCondition(order)).update({ data: {
+    status: 'paid', paid_at: now, wx_order_id: wxOrderId,
+    notify_product_id: goods.ProductId, notify_quantity: 1, notify_at: now
+  } });
+  if (result.stats?.updated !== 1) {
+    const current = await findOrder(event.OutTradeNo);
+    if (!['refunded', 'closed', 'refund_pending_verification'].includes(current.status) &&
+        !(['paid', 'delivered'].includes(current.status) && current.wx_order_id === wxOrderId)) fail('order_state_conflict');
   }
-
-  await db.collection('orders').doc(order._id).update({
-    data: {
-      status: 'paid',
-      paid_at: new Date().toISOString(),
-      wx_order_id: wxOrderId,
-      env: env,
-      notify_product_id: productId,
-      notify_quantity: Number(goods.Quantity || 1),
-      notify_at: new Date().toISOString()
-    }
-  });
-  console.log('order paid', outTradeNo, wxOrderId);
-  return { ErrCode: 0, ErrMsg: 'success' };
+  return success();
 }
-
-async function handleRefund(e) {
-  const outTradeNo = pickString(e.OutTradeNo);
-  if (!outTradeNo) return { ErrCode: 0, ErrMsg: 'success' };
-  const found = await db.collection('orders').where({ out_trade_no: outTradeNo }).get();
-  const order = (found.data || [])[0];
-  if (!order) return { ErrCode: 0, ErrMsg: 'success' };
-  await db.collection('orders').doc(order._id).update({
-    data: { status: 'refunded', refunded_at: new Date().toISOString() }
-  });
-  return { ErrCode: 0, ErrMsg: 'success' };
+async function handleRefund(event) {
+  // No verified refund request ledger/query adapter exists yet. A bound success
+  // signal pauses fulfillment, but is not invented as a final refund receipt.
+  if (integer(event.RetCode) !== 0) {
+    if (event.RetCode === undefined) fail('refund_result_missing');
+    return success();
+  }
+  const order = await findOrder(event.MchOrderId);
+  checkOwnerAndEnvironment(event, order);
+  const amount = integer(event.RefundFee);
+  if (!text(order.wx_order_id) || event.WxOrderId !== order.wx_order_id || !text(event.MchRefundId) || !text(event.WxRefundId) ||
+      amount <= 0 || amount > order.amount) fail('refund_binding_mismatch');
+  if (['refunded', 'refund_pending_verification'].includes(order.status)) return success();
+  if (!['paid', 'delivered'].includes(order.status)) fail('refund_state_unverified');
+  const result = await db.collection('orders').where(orderCondition(order)).update({ data: {
+    status: 'refund_pending_verification', refund_signal_at: new Date().toISOString(),
+    refund_amount_pending: amount, refund_reference_pending: event.MchRefundId,
+    wx_refund_reference_pending: event.WxRefundId
+  } });
+  if (result.stats?.updated !== 1) fail('refund_state_conflict');
+  return success();
 }
-
-async function dispatch(e) {
-  if (e.Event === 'xpay_goods_deliver_notify') return await handleDeliver(e);
-  if (e.Event === 'xpay_refund_notify') return await handleRefund(e);
-  console.log('vpay notify ignored event', pickString(e.Event));
-  return { ErrCode: 0, ErrMsg: 'success' };
+async function dispatch(event) {
+  if (event.Event === 'xpay_goods_deliver_notify') return handleDeliver(event);
+  if (event.Event === 'xpay_refund_notify') return handleRefund(event);
+  if (text(event.Event).startsWith('xpay_')) fail('event_not_supported');
+  return success();
 }
-
-function httpReply(statusCode, contentType, body) {
-  return { statusCode: statusCode, headers: { 'Content-Type': contentType }, body: body };
-}
+const httpReply = (statusCode, contentType, body) => ({ statusCode, headers: { 'Content-Type': contentType }, body });
 
 exports.main = async function (event) {
-  const e = event || {};
+  const request = event || {};
+  // Caller-controlled Event/OPENID/SOURCE cannot establish platform ingress.
+  // Only the configured HTTP push route is enabled by this deployment.
+  if (!request.httpMethod) return { ErrCode: 403, ErrMsg: 'authenticated_http_push_required' };
+  const method = text(request.httpMethod).toUpperCase();
+  if (!['GET', 'POST'].includes(method)) return httpReply(405, 'text/plain', 'method not allowed');
+  const query = request.queryStringParameters || request.queryString;
+  if (!checkSignature(query)) return httpReply(403, 'text/plain', 'invalid signature');
+  if (method === 'GET') return httpReply(200, 'text/plain', text(query.echostr));
+  let xml = false;
   try {
-    // HTTP 网关形态
-    if (e.httpMethod) {
-      const method = String(e.httpMethod).toUpperCase();
-      const query = e.queryString || e.queryStringParameters || {};
-      if (method === 'GET') {
-        const echo = pickString(query.echostr);
-        if (!checkSignature(query)) {
-          console.error('push verify signature mismatch');
-          return httpReply(403, 'text/plain', 'invalid signature');
-        }
-        console.log('push verify ok');
-        return httpReply(200, 'text/plain', echo);
-      }
-      let body = e.body;
-      if (e.isBase64Encoded && typeof body === 'string') {
-        body = Buffer.from(body, 'base64').toString('utf8');
-      }
-      const payload = normalizeEvent(body);
-      console.log('vpay notify(http)', pickString(payload.Event), pickString(payload.OutTradeNo));
-      const result = await dispatch(payload);
-      return httpReply(200, 'application/json', JSON.stringify(result));
+    let body = request.body;
+    if (request.isBase64Encoded) {
+      if (typeof body !== 'string' || body.length > Math.ceil(MAX_BODY_BYTES / 3) * 4) fail('invalid_payload');
+      body = Buffer.from(body, 'base64').toString('utf8');
     }
-    // 云函数直接调用形态
-    console.log('vpay notify(call)', pickString(e.Event), pickString(e.OutTradeNo));
-    return await dispatch(e);
-  } catch (err) {
-    console.error('vpay notify failed', err && err.message);
-    // 返回非 0 会触发平台重试，这里保留错误让重试机制兜底
-    const fail = { ErrCode: -1, ErrMsg: (err && err.message) || 'error' };
-    if (e.httpMethod) return httpReply(200, 'application/json', JSON.stringify(fail));
-    return fail;
+    const normalized = normalizeEvent(body); xml = normalized.xml;
+    const result = await dispatch(normalized.event);
+    return httpReply(200, xml ? 'application/xml' : 'application/json', xml ? '<xml><ErrCode>0</ErrCode><ErrMsg><![CDATA[success]]></ErrMsg></xml>' : JSON.stringify(result));
+  } catch (_) {
+    // Never echo provider/network errors, URLs, payloads or credentials.
+    console.error('vpay_notification_unverified');
+    return httpReply(200, xml ? 'application/xml' : 'application/json', xml ? '<xml><ErrCode>-1</ErrCode><ErrMsg><![CDATA[notification_unverified]]></ErrMsg></xml>' : JSON.stringify({ ErrCode: -1, ErrMsg: 'notification_unverified' }));
   }
 };

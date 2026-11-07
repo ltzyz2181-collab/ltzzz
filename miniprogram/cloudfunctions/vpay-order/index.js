@@ -74,6 +74,7 @@ function code2Session(code) {
 exports.main = async function (event) {
   const ctx = cloud.getWXContext();
   const OPENID = ctx.OPENID;
+  if (!OPENID) return { ok: false, message: '请重新进入小程序' };
 
   const goods = pickGoods(event && event.productId);
   if (!goods) return { ok: false, message: '服务不存在' };
@@ -88,12 +89,12 @@ exports.main = async function (event) {
   try {
     session = await code2Session(code);
   } catch (e) {
-    console.error('code2Session error', e && e.message);
+    console.error('code2Session_request_failed');
     return { ok: false, message: '登录校验失败，请重试' };
   }
   if (!session || !session.session_key || !session.openid) {
-    console.error('code2Session bad', JSON.stringify(session));
-    return { ok: false, message: '登录校验失败：' + ((session && session.errmsg) || '未返回 session_key') };
+    console.error('code2Session_response_unverified');
+    return { ok: false, message: '登录校验失败，请重试' };
   }
   if (OPENID && session.openid !== OPENID) {
     return { ok: false, message: '用户身份不一致，请重进小程序' };
@@ -131,7 +132,7 @@ exports.main = async function (event) {
       }
     });
   } catch (e) {
-    console.error('order save failed', e && e.message);
+    console.error('order_save_failed');
     return { ok: false, message: '订单写入失败，请联系客服' };
   }
 
