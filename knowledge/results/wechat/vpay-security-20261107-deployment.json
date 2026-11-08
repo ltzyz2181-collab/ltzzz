@@ -1,0 +1,138 @@
+{
+  "receipt": "VPAY-1.0.2-AUTH-FIX-01-DEPLOY-20261107",
+  "slice": "VPAY-1.0.2-AUTH-FIX-01",
+  "task_thread": "WECHAT-MINIPROGRAM-CONTINUE-20261101",
+  "executed_by": "doubao-seat",
+  "executed_from": "cloud-vm",
+  "timezone_note": "以下 UTC 为国际标准时间；platform_local 为 CloudBase 控制台显示时间（UTC+8）",
+
+  "source": {
+    "pull_request": 374,
+    "head_commit": "913d2bdd6a7e96b6ba42851e9cd731df83f0fe29",
+    "head_verified": true,
+    "merge_commit_on_main": "8628168b",
+    "main_head_at_check": "2ff0dfc1",
+    "files_sha256": {
+      "miniprogram/cloudfunctions/vpay-notify/index.js": "550c3d9dd06ae6ec49fd96727b3d1f61e40c6af2d67da085a56dc5e9598d1f84",
+      "miniprogram/cloudfunctions/vpay-order/index.js": "6e9fa1039d7024759a7657b44f7ea3c04243698174e26590813efef60089acf4"
+    },
+    "hash_match_with_gpt_declared": true,
+    "hash_match_at_origin_main": true
+  },
+
+  "test": {
+    "runner": "node v22.23.2 (--test)",
+    "command": "node --test scripts/tests/vpay-notify-security.test.mjs scripts/tests/miniprogram-capability.test.mjs scripts/tests/controller-daily-review.test.mjs",
+    "results": [
+      { "file": "vpay-notify-security.test.mjs", "tests": 15, "pass": 15, "fail": 0 },
+      { "file": "miniprogram-capability.test.mjs", "tests": 4, "pass": 4, "fail": 0 },
+      { "file": "controller-daily-review.test.mjs", "tests": 5, "pass": 5, "fail": 0 }
+    ],
+    "all_green": true,
+    "note": "实跑数字按本次独立执行为准；与交付方自报的 Node24 口径（15/15、相关 24/24）在文件粒度的统计方式上不同，但 fail 均为 0"
+  },
+
+  "package": {
+    "vpay-notify.zip": { "bytes": 3654, "sha256": "d4fe80f8ee34a5563a5f113be56f764517248712971f543a84375166d9dab611", "contents": ["index.js", "package.json"] },
+    "vpay-order.zip": { "bytes": 2878, "sha256": "81bc06b5c6bd32d974d8f900743d49fc6fdf2a005e94ee8716512f034120b506", "contents": ["index.js", "package.json"] },
+    "hash_convention": "以上为实际上传的 zip 字节哈希。zip 内含文件时间戳，同一份源码在不同时刻打包会得到不同 zip 哈希（初稿记录的 10b3ae59…/bbadc27d… 即为另一次打包）。因此部署有效性不以 zip 哈希判定，改以两项为准：① 包内 index.js 的 sha256 与 PR head 逐字一致；② 控制台函数列表「更新时间」推进"
+  },
+
+  "platform": {
+    "env_id": "shizhang-pay-d0g1n58020acf6b5b",
+    "env_plan": "个人版",
+    "env_expire": "2026-12-06 23:59:59",
+    "runtime": "Node.js 20.19",
+    "deployed": [
+      { "function": "vpay-notify", "function_id": "lam-p2st3nmv", "version": "$LATEST", "flow": "100%", "modified_local": "2026-11-07 15:55:06", "status": "正常" },
+      { "function": "vpay-order", "function_id": "lam-ri922njb", "version": "$LATEST", "flow": "100%", "modified_local": "2026-11-07 15:56:40", "status": "正常" }
+    ],
+    "http_route": {
+      "domain": "shizhang-pay-d0g1n58020acf6b5b-1526598896.ap-shanghai.app.tcloudbase.com",
+      "path": "/vpay-notify",
+      "target": "cloudfunction vpay-notify $DEFAULT",
+      "identity_auth": "未开启",
+      "rate_limit": "未设置",
+      "final_state_at_receipt_draft": "已启用（2026-11-07T07:58:49Z 验证时匿名与错签名均返回 403，说明当时路由通）",
+      "final_state_measured_later": "禁用（2026-11-07T23:26:00Z 复测三组请求全部 423 GATEWAY_ROUTE_DISABLED）",
+      "final_state": "以复测为准：禁用",
+      "discrepancy_note": "初稿记录与复测不一致。禁用发生的时间与操作方本轮未能取证（控制台登录态在复测前过期，访问服务页不可达），不作推测、不记名。凡涉及当前是否可收敛回调的判断，一律以 423 实测为准"
+    }
+  },
+
+  "interim_mitigation": {
+    "action": "暂时关闭 /vpay-notify 的 HTTP 路由（网关不支持按 HTTP 方法单独阻断，按授权改为停用整条路由）",
+    "method": "CloudBase 控制台 #/env/http-access → 路由启用 开关 → 确认关闭",
+    "route_update_time_local": "2026-11-07 15:48:44",
+    "evidence": [
+      { "probe": "GET /vpay-notify（无签名）", "http": 423, "code": "GATEWAY_ROUTE_DISABLED", "request_id": "27f80340-97a7-45c5-ab78-ffefb861a9be" },
+      { "probe": "POST /vpay-notify（无签名 probe）", "http": 423, "code": "GATEWAY_ROUTE_DISABLED", "request_id": "2386653a-e4ba-4b50-9992-8efe7b7cf620" }
+    ],
+    "utc": "2026-11-07T07:48:55Z",
+    "status": "已完成（不是已安排）"
+  },
+
+  "sandbox_verification": [
+    { "probe": "POST 匿名伪造 xpay_goods_deliver_notify（带真实 out_trade_no）", "http": 403, "body": "invalid signature", "expected": "拒绝", "result": "pass" },
+    { "probe": "GET 匿名", "http": 403, "body": "invalid signature", "expected": "拒绝", "result": "pass" },
+    { "probe": "GET 匿名带 echostr", "http": 403, "body": "invalid signature", "expected": "拒绝", "result": "pass" },
+    { "probe": "POST 错签名（signature=全0）", "http": 403, "body": "invalid signature", "expected": "拒绝", "result": "pass" },
+    { "probe": "直接调用云函数（event 无 httpMethod，控制台测试）", "result_body": { "ErrCode": 403, "ErrMsg": "authenticated_http_push_required" }, "request_id": "6fecb3bf-da81-11f1-b7a7-525400c2e9a8", "expected": "拒绝未证实平台来源", "result": "pass" }
+  ],
+  "verification_utc": "2026-11-07T07:58:49Z",
+  "verification_reproducible_now": false,
+  "verification_reproducible_note": "上述 5 项在路由启用状态下取得；2026-11-07T23:26:00Z 复核时路由已禁用，同类请求全部返回 423，无法原地重放。原始 403 结果保留为历史实测，不回填、不抹除、不用合成 fixture 覆盖",
+  "probe_after_disable_utc": "2026-11-07T23:26:00Z",
+  "probe_after_disable": [
+    { "probe": "GET 无签名", "http": 423, "code": "GATEWAY_ROUTE_DISABLED" },
+    { "probe": "POST 无签名", "http": 423, "code": "GATEWAY_ROUTE_DISABLED" },
+    { "probe": "POST 伪造 40 位签名", "http": 423, "code": "GATEWAY_ROUTE_DISABLED" }
+  ],
+
+  "data_state": {
+    "collection": "orders",
+    "documents": 1,
+    "order": {
+      "out_trade_no": "VP20261107045028c2a3f1e1",
+      "amount": 990,
+      "env": 1,
+      "status": "pending",
+      "created_at": "2026-11-07T04:50:28.239Z",
+      "untampered_after_probe": true
+    },
+    "note": "伪造请求全部 403，订单仍为 1 条且未被置为 paid"
+  },
+
+  "not_verified": [
+    "真实官方沙箱支付回调事件：无实际付款成功事件，字段名（OpenId / GoodsInfo.OrigPrice / ActualPrice / WeChatPayInfo.MchOrderNo）未用真实回调核过，按约定写未验，未用合成 fixture 代替",
+    "幂等与退款后重放的真实链路：仅由单元测试覆盖，未用真实回调验证",
+    "R5 网关限频：仍为未设置；只读确认可配置，未擅自加限额",
+    "真实收入、正式发布、提交审核：备案仍为管局审核中，未进入"
+  ],
+
+  "restore_entry": {
+    "http_route_enable": "控制台 https://tcb.cloud.tencent.com/dev?envId=shizhang-pay-d0g1n58020acf6b5b#/env/http-access → 路由管理 → /vpay-notify 行 → 路由启用 开关置为开",
+    "http_route_disable": "同上开关置为关（本次临时止损使用的方式，实测返回 423 GATEWAY_ROUTE_DISABLED）",
+    "current": "禁用（2026-11-07T23:26:00Z 实测 423 GATEWAY_ROUTE_DISABLED）",
+    "current_note": "初稿写「已启用」源于 07:58:49Z 的 403 验签结果；此后路由被重新关闭，本轮无法取证何时由谁关闭。影响：真实回调当前不可达，沙箱验收只能停在未验",
+    "why_enabled_again": "新版已部署且验签实测生效（匿名与错签名全部 403），伪造写入面已关闭；若保持停用，真实回调将永久不可达，无法进入下一步真实验收",
+    "function_rollback": "函数版本仅 $LATEST 100% 流量，无历史版本可切；回滚方式为重新上传上一版代码包"
+  },
+
+  "boundaries": {
+    "VPAY_ENV_changed": false,
+    "credentials_read_or_stored": false,
+    "plaintext_secret_copied": false,
+    "openid_in_receipt": "仅记录订单号与状态，未写入完整 openid",
+    "miniprogram_code_changed": false,
+    "live_environment_switched": false,
+    "real_payment_simulated": false,
+    "note": "本轮仅做止损、复核、部署云函数与线上回读，未触碰小程序端代码与上传流程"
+  },
+
+  "next": [
+    "用真实官方沙箱事件核字段、幂等、退款后重放（需实际发起一笔沙箱支付并完成）",
+    "补主动查单兜底（xpay 协议，不得用普通微信支付 /v3 作为虚拟支付兜底）",
+    "限频按微信重试要求确定后再配置"
+  ]
+}
