@@ -182,3 +182,67 @@ test('a final seat verified in the same sync round is not reported as pending re
  // 同轮已完整核验，CLI 的未验证门禁不得误判为失败
  assert.equal(hasUnverifiedBoard(f.record()),false);
 });
+
+// R-2 新增边界（2026-11-08）：401/403 与未知内部异常必须落成固定枚举，
+// 不得伪装成证据冲突，也不得把异常原文（可能含 secret/URL/payload）写进台账。
+test('auth rejection is auth_blocked, keeps the historical verdict and never retries',async t=>{
+ const {f,reviewed,reviewPath}=await reachFinal(t);
+ const before=f.seat(),posts=f.posts,calls=f.calls;
+ await syncDailyBoard({...f.options,
+  readRemote:async file=>{
+   if(file===reviewPath)throw Object.assign(new Error('401 unauthorized SYNTHETIC_TOKEN_MARKER_abc'),{status:401});
+   if(!f.remote.has(file))throw Error('not_committed');
+   return f.remote.get(file);
+  },
+  snapshot:async()=>({available:true,...structuredClone(reviewed)})});
+ const after=f.seat();
+ assert.equal(after.revalidation,'auth_blocked');
+ assert.equal(after.revalidation_reason,'auth_blocked');
+ assert.equal(after.sync_reason,'final_review_revalidation_auth_blocked');
+ assert.equal(after.status,'completed_draft_review');
+ assert.equal(after.review_verified,true);
+ assert.equal(after.accepted,true);
+ assert.equal(after.review_conflict,undefined);
+ assert.equal(f.posts,posts);assert.equal(f.calls,calls);
+ assert.equal(JSON.stringify(f.record()).includes('SYNTHETIC_TOKEN_MARKER'),false);
+ assert.equal(hasUnverifiedBoard(f.record()),true);
+});
+
+test('unknown internal exception collapses to internal_error without leaking its text',async t=>{
+ const {f}=await reachFinal(t);
+ const before=f.seat(),posts=f.posts,calls=f.calls;
+ await syncDailyBoard({...f.options,snapshot:async()=>{throw Error('SYNTHETIC_INTERNAL_MARKER_9z at https://leak.example/x?key=abc');}});
+ const after=f.seat();
+ assert.equal(after.revalidation,'internal_error');
+ assert.equal(after.revalidation_reason,'internal_error');
+ assert.equal(after.sync_reason,'final_review_revalidation_internal_error');
+ assert.equal(after.status,'completed_draft_review');
+ assert.equal(after.review_verified,true);
+ assert.equal(f.posts,posts);assert.equal(f.calls,calls);
+ const serialized=JSON.stringify(f.record());
+ assert.equal(serialized.includes('SYNTHETIC_INTERNAL_MARKER'),false);
+ assert.equal(serialized.includes('leak.example'),false);
+ assert.equal(hasUnverifiedBoard(f.record()),true);
+});
+
+test('timeout and 5xx are transient unavailable, not a conflict downgrade',async t=>{
+ for(const error of [Object.assign(new Error('boom'),{status:503}),Object.assign(new Error('timeout'),{name:'TimeoutError'}),Object.assign(new Error('429'),{status:429})]){
+  const {f}=await reachFinal(t);
+  await syncDailyBoard({...f.options,readRemote:async()=>{throw error;}});
+  const after=f.seat();
+  assert.equal(after.revalidation,'unavailable');
+  assert.equal(after.review_verified,true);
+  assert.equal(after.accepted,true);
+ }
+});
+
+test('repeated sync on a stable final review adds no posts, calls or money actions',async t=>{
+ const {f,reviewed,sync}=await reachFinal(t);
+ const posts=f.posts,calls=f.calls;
+ await sync(reviewed);await sync(reviewed);
+ assert.equal(f.posts,posts);
+ assert.equal(f.calls,calls);
+ assert.equal(f.seat().revalidation,'verified');
+ assert.equal(f.seat().status,'completed_draft_review');
+ assert.equal(hasUnverifiedBoard(f.record()),false);
+});
