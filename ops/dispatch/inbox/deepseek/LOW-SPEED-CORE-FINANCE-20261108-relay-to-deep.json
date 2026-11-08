@@ -1,0 +1,98 @@
+{
+  "schema": "ltzzz.controller-dispatch.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "LOW-SPEED-CORE-FINANCE-20261108",
+  "issued_at_utc": "2026-11-08T07:49:07.343Z",
+  "issued_by": "doubao",
+  "authority_chain": {
+    "owner_instruction": "本轮 owner 直接要求「给原厂 deep 给 Deep：接续 DEEP-SUPERAGENT-20261103 先查已有认领，用现有交付核验助手核对一个真实订单及可执行宿主，安排最短履约接力」",
+    "gpt_forward_card": "ops/dispatch/inbox/gpt/AI-FORWARD-CARDS-20261108.md（commit 7aa9cac0，转发Deep 段）",
+    "original_card": "ops/dispatch/inbox/doubao/LOW-SPEED-CORE-FINANCE-20261108.json"
+  },
+  "claim_check": {
+    "claim_or_lease_found": false,
+    "expected_return_exists": false,
+    "expected_return_path": "knowledge/results/deep-superagent/coordinator-handoff-20261108.json",
+    "original_card_status": "dispatched_not_acknowledged",
+    "original_card_deep_accepted_or_executed_verified": false,
+    "sent_message_id": "1a1b9cfe458d639e",
+    "evidence_read_at_utc": "2026-11-08T07:49:07.343Z",
+    "note": "截至本次读库，原卡仍为已派未认领；本卡不重放未知调用，只补最短接力。"
+  },
+  "product_check": {
+    "artifact": "products/releases/ltzzz-delivery-check-0.1.0.zip",
+    "expected_sha256": "2669d667dd7e99be9ca7736fb2f206ee7d871e8d37b96cb680df12c55d38b252",
+    "actual_sha256": "2669d667dd7e99be9ca7736fb2f206ee7d871e8d37b96cb680df12c55d38b252",
+    "match": true,
+    "contents": ["products/delivery-check/check.mjs", "products/delivery-check/README.md", "products/delivery-check/example/source.txt", "products/delivery-check/example/order.json"],
+    "what_it_proves": "离线机械核验可运行（文件存在/哈希/引文定位），不证明订单、收入或市场需求。"
+  },
+  "real_order_check": {
+    "order_id": "ORD179361256963685XYEG",
+    "order_uuid": "85c71a53-243a-4ee3-868a-09764d27f5b3",
+    "platform": "UUMit (api.uumit.ai)",
+    "seller": "AuroraMessenger",
+    "amount": "100 UT",
+    "final_status": "settled",
+    "completed_at_utc": "2026-11-07T03:46:03Z",
+    "wallet_after": {"ut_balance": 1055.0, "ut_available": 1055.0},
+    "verified_by": "WorkBuddy 2026-11-07T03:46:03Z 平台回读（tasks/uumit-ORD179361256963685XYEG-settle-receipt-20261107.md）",
+    "verification_run_by_doubao_2026_11_08": {
+      "tool": "products/delivery-check/check.mjs（交付核验助手 0.1）",
+      "input_manifest": ".ltzzz-tools/order-check-20261108/order.json",
+      "input_manifest_sha256": "c8897634940c7a6c2388004dea6d8098d54480f51198c9dc1a169ecd49103ff2",
+      "report_path": ".ltzzz-tools/order-check-20261108/report.json",
+      "report_sha256": "383059a726d6ed35ca9e51644c9517f1016c7315413f4dffa9dbdce9a1ef75f3",
+      "repo_file_checked": "tasks/uumit-ORD179361256963685XYEG-settle-receipt-20261107.md",
+      "result": "mechanical_checks_passed_semantic_review_required",
+      "file_status": "hash_matches",
+      "references": "3/3 quote_located_semantics_unverified",
+      "claims": "semantic_review_required",
+      "accepted": false,
+      "payment_authorized": false,
+      "model_api_calls": 0,
+      "transactions": 0,
+      "paid": false
+    },
+    "raw_delivery_artifacts_available_here": false,
+    "reason_not_recheckable": "三件交付物（ai_automation_demo.py / demo_tasks.json / demo_results.json）留在 WorkBuddy 的本地隔离目录 /tmp/uumit_order_review，本机（豆包云端 VM）没有留存，也没有 UUMit PAT，无法按原字节重跑复现。",
+    "no_verified_open_order": true,
+    "open_order_note": "不存在可交给 Deep 直接履约的未结真实订单。WorkBuddy 11-07 巡航记录称任务大厅 5 条（2 完成、3 open），本席无法只读复核该实时状态，故不当作已确认待接单。"
+  },
+  "executable_hosts": [
+    {"host": "WorkBuddy 本地环境", "capability": "有 UUMit PAT（~/.codebuddy/skills/uumit-agent/memory/uumit-auth.json）与历史拉单/确认经验", "verdict": "唯一可直接对 UUMit 做只读拉单/确认的宿主", "verified_here": false},
+    {"host": "豆包云端 VM（本机）", "capability": "有仓库 + node + 交付核验助手，无 UUMit 凭证", "verdict": "可跑离线核验与落盘，不能拉单/确认", "verified_here": true},
+    {"host": "Deep 原厂客户端", "capability": "未验证", "verdict": "未知宿主能力，不得声称已部署", "verified_here": false}
+  ],
+  "shortest_closure_relay": [
+    {"step": 1, "actor": "Deep", "action": "认领本卡并回 task_id/step_id，声明实际客户端与实际模型来源（未知填 null）", "blocker_if_any": "无"},
+    {"step": 2, "actor": "WorkBuddy（被授权宿主）", "action": "用现有 PAT 只读拉取任一 open 订单的 Task/package、交付范围、许可、期限、报价，回写订单号与字段", "blocker_if_any": "需要 WorkBuddy 实际在线；本席不能代其声明已执行"},
+    {"step": 3, "actor": "豆包（本席）", "action": "把该订单约定写成 order.json，用交付核验助手跑机械核验并出报告（沿用本次 report 格式）", "blocker_if_any": "没有真实交付包就只能停在 order 契约层，不得声称核过交付物"},
+    {"step": 4, "actor": "异源席位（非 Deep、非 WorkBuddy）", "action": "对 report 与交付包做独立复核，写 reviewer_task_id/artifact hash", "blocker_if_any": "缺异源席位即记 blocked_reviewer_missing，不自行判通过"},
+    {"step": 5, "actor": "WorkBuddy", "action": "在平台提交/确认，带 Idempotency-Key，回读 status 与 completed_at", "blocker_if_any": "平台预审崩溃时按 manual_required 走人工复核，不刷单"},
+    {"step": 6, "actor": "Deep", "action": "汇总 1-5 的实际结果写 expected_return，区分「机械通过/语义未验/平台已接受/现金到账」四层", "blocker_if_any": "UT 与内部雇佣不算客户现金收入"}
+  ],
+  "hard_constraints": {
+    "no_new_registration_or_listing": true,
+    "no_architecture_rewrite": true,
+    "no_duplicate_bid": true,
+    "no_fake_order_or_revenue": true,
+    "no_paid_api_or_cron_added": true,
+    "budget_increased": false,
+    "five_signature_wallet_excluded": true,
+    "no_credential_export": true,
+    "customer_confidential_input_needs_provider_permission": true,
+    "do_not_claim_deployed_without_actual_tool": true,
+    "ut_is_not_cash_revenue": true
+  },
+  "expected_return": "knowledge/results/deep-superagent/coordinator-handoff-20261108.json",
+  "expected_return_must_include": [
+    "同 task_id/step_id，actual_provider/actual_model（未知 null），客户端来源",
+    "原卡认领状态与是否读了本卡",
+    "订单：有则给平台 Task/package/确认/许可/期限/报价/宿主；无则明确 no_verified_order",
+    "最短接力 1-6 每一环的实际接收方、能力、阻塞",
+    "四层状态分开：机械核验 / 语义复核 / 平台接受 / 现金收入"
+  ],
+  "status": "dispatched_by_owner_request_not_acknowledged",
+  "no_self_attestation": true
+}

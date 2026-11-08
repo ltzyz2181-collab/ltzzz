@@ -1,0 +1,112 @@
+{
+  "schema": "ltzzz.deep-relay-prereq.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "LOW-SPEED-CORE-FINANCE-20261108",
+  "prepared_by": "doubao",
+  "prepared_at_utc": "2026-11-08T07:49:07.343Z",
+  "purpose": "本席在把卡交 Deep 之前做的可得性前置核验；不代替 Deep 的认领与回执。",
+  "dispatch_card": {
+    "path": "ops/dispatch/inbox/deepseek/LOW-SPEED-CORE-FINANCE-20261108-relay-to-deep.json",
+    "sha256": "e5cad17b454753426b0415dcc12c613629cbb49b7c3d69463236dc2523211171"
+  },
+  "product": {
+    "path": "products/releases/ltzzz-delivery-check-0.1.0.zip",
+    "sha256": "2669d667dd7e99be9ca7736fb2f206ee7d871e8d37b96cb680df12c55d38b252",
+    "match": true
+  },
+  "tool_run": {
+    "tool": "products/delivery-check/check.mjs",
+    "command": "node products/delivery-check/check.mjs . .ltzzz-tools/order-check-20261108/order.json",
+    "status": "mechanical_checks_passed_semantic_review_required",
+    "failure_count": 0,
+    "accepted": false,
+    "payment_authorized": false,
+    "semantic_verified": false,
+    "independent_review_verified": false,
+    "files": [
+      {
+        "path": "tasks/uumit-ORD179361256963685XYEG-settle-receipt-20261107.md",
+        "status": "hash_matches",
+        "sha256": "7af0b9172002e46521cf8019f615e7c1b0926319a9659c39042966ff11f5a586"
+      }
+    ],
+    "references": [
+      {
+        "id": "ref-settled",
+        "status": "quote_located_semantics_unverified",
+        "semantic_verified": false
+      },
+      {
+        "id": "ref-amount",
+        "status": "quote_located_semantics_unverified",
+        "semantic_verified": false
+      },
+      {
+        "id": "ref-balance",
+        "status": "quote_located_semantics_unverified",
+        "semantic_verified": false
+      }
+    ],
+    "claims": [
+      {
+        "id": "claim-1",
+        "status": "semantic_review_required",
+        "semantic_verified": false
+      },
+      {
+        "id": "claim-2",
+        "status": "semantic_review_required",
+        "semantic_verified": false
+      }
+    ],
+    "input_manifest_sha256": "c8897634940c7a6c2388004dea6d8098d54480f51198c9dc1a169ecd49103ff2",
+    "report_sha256": "383059a726d6ed35ca9e51644c9517f1016c7315413f4dffa9dbdce9a1ef75f3",
+    "raw_report_location": ".ltzzz-tools/order-check-20261108/report.json（私有，未入库）"
+  },
+  "order": {
+    "order_id": "ORD179361256963685XYEG",
+    "status": "settled",
+    "completed_at_utc": "2026-11-07T03:46:03Z",
+    "amount": "100 UT",
+    "verified_by": "WorkBuddy 平台回读 2026-11-07",
+    "deliverable_bytes_available": false,
+    "note": "已结单不能当待履约新单；三件交付物留在 WorkBuddy 本地，本席无法按原字节复跑。"
+  },
+  "open_order": {
+    "verified": false,
+    "record": "WorkBuddy 称大厅 5 条（2完成/3open），本席不可只读复核",
+    "value": "no_verified_order"
+  },
+  "hosts": [
+    {
+      "host": "WorkBuddy 本地环境",
+      "capability": "有 UUMit PAT（~/.codebuddy/skills/uumit-agent/memory/uumit-auth.json）与历史拉单/确认经验",
+      "verdict": "唯一可直接对 UUMit 做只读拉单/确认的宿主",
+      "verified_here": false
+    },
+    {
+      "host": "豆包云端 VM（本机）",
+      "capability": "有仓库 + node + 交付核验助手，无 UUMit 凭证",
+      "verdict": "可跑离线核验与落盘，不能拉单/确认",
+      "verified_here": true
+    },
+    {
+      "host": "Deep 原厂客户端",
+      "capability": "未验证",
+      "verdict": "未知宿主能力，不得声称已部署",
+      "verified_here": false
+    }
+  ],
+  "blockers": [
+    "本机无 UUMit PAT，不能拉单/确认；拉单必须由 WorkBuddy 实际执行",
+    "交付物原字节不在本机，无法复现 demo_results.json 一致性",
+    "Deep 原厂客户端能力未验证，不得声称已部署",
+    "异源复核席位尚未指定"
+  ],
+  "next_action": "Deep 认领本卡 → WorkBuddy 拉一个 open 单 → 交本席写 order.json 跑机械核验 → 异源复核 → WorkBuddy 平台提交回读 → Deep 汇总 expected_return",
+  "no_self_attestation": true,
+  "model_api_calls": 0,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null
+}
