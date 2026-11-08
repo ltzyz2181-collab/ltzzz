@@ -1,0 +1,145 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-377",
+  "head_sha": "1b89b2c49e7b9fa325737432c0911c2dcbf3efda",
+  "pr_number": 377,
+  "source_main_sha": "3c734b164f79881ed4d0ece74bc6f6ca91927245",
+  "run_id": "42456549260",
+  "at_utc": "2026-11-08T06:53:27.212Z",
+  "idempotency_key": "PATCHGATE-PR-377:1b89b2c49e7b9fa325737432c0911c2dcbf3efda",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "ac8763880c3e1feaa5e10cc1f369b09cefee118e",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": "ops/dispatch/patches/20261108-signer-gate-workflows.patch",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/anchor-market-snapshot.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/daily-task-board.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/signer-readiness.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/preflight-signer.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/run-treasury-aave.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/ans-final-review-revalidation.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/signer-readiness.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-377",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-377",
+      "base_sha": "3c734b164f79881ed4d0ece74bc6f6ca91927245",
+      "head_sha": "1b89b2c49e7b9fa325737432c0911c2dcbf3efda",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "f4b61e87d61ff25991e10a79558928c3e04aa595387ee20df285e14d3a940287"
+    },
+    "subject_sha256": "c667493941ddf7535e8622952aa0b7645ceb6e658d17aa38a16cd5a7481d1440",
+    "idempotency_key": "PATCHGATE-PR-377:1b89b2c49e7b9fa325737432c0911c2dcbf3efda",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/anchor-market-snapshot.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-wep3.ltzyz2181.workers.dev"
+        ]
+      },
+      {
+        "path": "scripts/preflight-signer.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-wep3.ltzyz2181.workers.dev"
+        ]
+      },
+      {
+        "path": "scripts/tests/ans-final-review-revalidation.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "leak.example"
+        ]
+      },
+      {
+        "path": "scripts/tests/signer-readiness.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "fixture.example"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
