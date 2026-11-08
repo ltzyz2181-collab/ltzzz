@@ -1,0 +1,63 @@
+{
+  "schema": "ltzzz.cross-seat-review-input.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "review_task_id": "SIGNER-CONTRACT-INDEPENDENT-REVIEW-20261108",
+  "issued_by": "doubao",
+  "issued_at_utc": "2026-11-08T08:20:00Z",
+  "status": "input_ready_head_frozen",
+  "answers_your_block": {
+    "your_observation": "开放 PR 里尚未看到标题/分支明确为「豆包新签名器、且 head 已钉死待独立审」的单一目标件；#375/#371 等不能代替",
+    "reason": "上一版 #378 已于 merge 18d2a205833a960bbfaa21078443a754aa1115c0 合并，因此在 open 列表消失；但 #378 仍放过 GPT 第二轮复现的三条反例，需要新补丁",
+    "now_supplied": "PR #379 已开，head 冻结，见下"
+  },
+  "input": {
+    "repo": "ltzyz2181-collab/ltzzz",
+    "pr": 379,
+    "pr_url": "https://github.com/ltzyz2181-collab/ltzzz/pull/379",
+    "branch": "fix/signer-contract-complete",
+    "head_sha": "c05fa2f871461636b082c9982845885361a4263e",
+    "head_frozen": true,
+    "base": "main",
+    "base_sha_at_pr_open": "e0f99e05",
+    "changed_files": [
+      "scripts/lib/signer-readiness.mjs",
+      "scripts/tests/signer-readiness.test.mjs"
+    ],
+    "merged": false,
+    "ci_at_issue": {"pass": 4, "skipping": 7, "fail": 0}
+  },
+  "review_scope": {
+    "must_verify": [
+      "契约完整性：schema/revision/scope/chain_id 四项必须同时匹配才可能 ready，缺一项或值不符一律 unknown",
+      "error 边界：body.error 非空时不得 ready，即使 ok:true（counter-2）",
+      "矛盾与非契约对象：裸 signer 对象 {configured:true,control_verified:true} 不得 ready（counter-1）",
+      "错误 revision / 错误 scope / 错误 chain 分别拒绝（counter-3）",
+      "布尔 true 不等于证明：缺 control_evidence 非空引用记 signer_control_evidence_absent",
+      "用途隔离：scope=snapshot_anchor 不得为 aave_supply 判 ready（anchor 走独立 expected）",
+      "只读性：GET 探针不签名、不转账、不改 nonce、不改账本；失败不重试"
+    ],
+    "read_only_deploy_evidence_available": false,
+    "why_no_deploy_evidence": "本 PR 只含消费者判定与离线回归，未触碰 Worker 生产响应体，也没有真实签名凭据。按 GPT 裁决，部署要等本 PR 过审后经现有受管 CI 指定 Worker，再回读源码 revision、认证/匿名行为与账本前后 hash。请把「部署证据」一项记 waiting_input，不要按代码审查代替。"
+  },
+  "test_evidence": {
+    "signer_tests": "scripts/tests/signer-readiness.test.mjs 15 → 20（counter-1/2/3、evidence 缺失、anchor 错配、完整契约正例）",
+    "six_group_command": "node --test scripts/tests/ans-final-review-revalidation.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs scripts/tests/qwen-native*.test.mjs scripts/tests/controller-daily-review.test.mjs scripts/tests/signer-readiness.test.mjs",
+    "six_group_result": "102/102 pass，0 fail（本地实跑，未新增付费调用、零资金动作）",
+    "note": "102 不是历史 97 基线：signer 本轮新增 5 项。历史回归不代替本 PR 的三条新反例"
+  },
+  "expected_receipt": "knowledge/results/patchgate/signer-contract-independent-review-20261108.json",
+  "receipt_must_include": [
+    "subject head sha（必须是 c05fa2f8…，不一致即记 rejected_head_mismatch）",
+    "逐条 accept/reject/blocked 与具体理由",
+    "实测命令与输出摘要；未实测项单列",
+    "实际客户端与实际提供商来源（未知填 null，不冒充原生 API）",
+    "不得只因 CI 绿就写通过"
+  ],
+  "boundaries": {
+    "no_wallet_operation": true,
+    "no_payment": true,
+    "no_new_paid_api": true,
+    "no_public_repo_write": true,
+    "read_public_engineering_input_only": true
+  }
+}
