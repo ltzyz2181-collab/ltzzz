@@ -127,6 +127,21 @@ test('anchor scope cannot cover the aave gate (separate capabilities)', () => {
   assert.equal(e.reason, 'signer_contract_scope_mismatch');
 });
 
+test('root true never overrides negative nested canonical fields or aliases', () => {
+  const root = { ok:true, schema:'ltzzz.treasury-signer-status.v1', revision:'wep3-signer-status-v1', scope:'aave_supply', chain_id:8453, configured:true, control_verified:true, control_evidence:'fixture-proof' };
+  for (const negative of [{signer_configured:false},{configured:false},{signer_control_verified:false},{control_verified:false}]) {
+    const result=classifySignerResponse({http:200,body:{...root,signer:negative}});
+    assert.notEqual(result.state,'ready');assert.equal(fundingGate(result).allowed,false);
+  }
+});
+
+test('nested true never overrides a negative root declaration', () => {
+  const signer = {schema:'ltzzz.treasury-signer-status.v1',revision:'wep3-signer-status-v1',scope:'aave_supply',chain_id:8453,configured:true,control_verified:true,control_evidence:'fixture-proof'};
+  for(const negative of [{configured:false},{signer_configured:false},{control_verified:false},{signer_control_verified:false}]) {
+    assert.notEqual(classifySignerResponse({http:200,body:{ok:true,signer,...negative}}).state,'ready');
+  }
+});
+
 test('HTTP 422 treasury_signer_missing is missing, never retried', async () => {
   let calls = 0;
   const e = await probeSignerCapability({

@@ -90,6 +90,15 @@ export function classifySignerResponse({ http, body, expected = SIGNER_CONTRACT 
     : (body.schema !== undefined ? body : null);
 
   if (contract) {
+    // A negative declaration at either level cannot be hidden by a positive
+    // canonical field or alias at the other level.
+    const declarations = contract === body ? [body] : [contract, body];
+    if (declarations.some(row => row.configured === false || row.signer_configured === false)) {
+      return { state: 'missing', reason: 'signer_configured_false' };
+    }
+    if (declarations.some(row => row.control_verified === false || row.signer_control_verified === false)) {
+      return { state: 'unknown', reason: 'signer_control_not_verified' };
+    }
     const pick = (key) => (contract[key] !== undefined ? contract[key] : body[key]);
     const schema = pick('schema');
     const revision = pick('revision');
