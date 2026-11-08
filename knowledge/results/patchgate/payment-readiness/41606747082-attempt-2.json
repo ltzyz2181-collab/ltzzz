@@ -1,0 +1,180 @@
+{
+  "schema": "ltzzz.payment.readiness-observation.v1",
+  "task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "source_commit": "430ba220cbeda282716cf94e761ee204af2c2e9f",
+  "run_id": "41606747082",
+  "run_attempt": "2",
+  "at_utc": "2026-11-07T07:59:46.257Z",
+  "status": "observed_not_activated",
+  "model_calls": 0,
+  "new_payment_attempts": 0,
+  "new_signatures": 0,
+  "transactions_submitted": 0,
+  "paid": false,
+  "tx_hash": null,
+  "configuration": {
+    "enabled": false,
+    "controller_count": 0,
+    "payee_count": 0,
+    "purpose_count": 0,
+    "budget_id_count": 0,
+    "activation_authority_enabled": false,
+    "authorization_mode": "authenticated_controller",
+    "review_role": "supervision_not_activation_approval"
+  },
+  "testnet": {
+    "network": "base-sepolia",
+    "expected_chain_id": 84532,
+    "credential_presence": {
+      "api_key_id": false,
+      "api_key_secret": false,
+      "wallet_secret": false
+    },
+    "existing_named_account": "ltzzz-ops-v1",
+    "account_creation": false,
+    "signing": false,
+    "faucet_request": false,
+    "live_escrow_transactions": [],
+    "readiness": "blocked_missing_existing_CDP_credentials",
+    "RPC": {
+      "http_status": 200,
+      "chain_id": 84532,
+      "block_number": 55582598,
+      "verified": true
+    }
+  },
+  "snapshots": [
+    {
+      "route": "/health",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:46.562Z",
+      "response_sha256": "344109626de847d96d403436d9f37c1ff89cc8fdf8364f779f637115a8022244",
+      "metadata": {
+        "ok": true,
+        "runtime_revision": "wep3-atomic-repair-v1",
+        "source_commit": "a0d5c0f4b25845f19bce73f775e3ce93da1e6b63",
+        "atomic_ledger_ready": false,
+        "legacy_writes_enabled": false
+      }
+    },
+    {
+      "route": "/market/catalog",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:47.018Z",
+      "response_sha256": "3bbeb7125d431f49cfe0670a8ac2a36590bcbf0632f88680ede625d705fcb01b",
+      "metadata": {
+        "ok": true,
+        "live_revenue_cents": 0,
+        "test_revenue_cents": 15471,
+        "rails": {
+          "stripe": {
+            "configured": false,
+            "mode": "test"
+          },
+          "x402": {
+            "configured": true,
+            "status": "v2_exact_base",
+            "network": "eip155:8453",
+            "asset": "USDC"
+          },
+          "base_usdc": {
+            "configured": false,
+            "status": "legacy_direct_transfer_disabled_use_standard_x402",
+            "receiver_ready": true
+          },
+          "solana_usdc": {
+            "configured": false,
+            "status": "not_implemented"
+          },
+          "alipay": {
+            "configured": false,
+            "status": "not_implemented"
+          }
+        }
+      }
+    },
+    {
+      "route": "/market/treasury",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:47.155Z",
+      "response_sha256": "f3e0e219797600ea43d44d26163303fc4edf1f628dcbebe7de36bf6d1f6b7336",
+      "metadata": {
+        "ok": true,
+        "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+        "controlled": false
+      }
+    },
+    {
+      "route": "/market/aave/status",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:48.097Z",
+      "response_sha256": "ce00a2b9fc1784b7b37c93d1d307f1f0500c86c75b8cd4dde27ce5c639f6dd5f",
+      "metadata": {
+        "ok": false,
+        "error": "base_rpc_read_failed",
+        "aave_runtime_revision": "aave-guard-v9"
+      }
+    },
+    {
+      "route": "/market/runtime-state",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:48.189Z",
+      "response_sha256": "677eb111cf1664e00e5c0ca427e461e8bc602ed0498690bde9165f364be6f5c8",
+      "metadata": {
+        "ok": true,
+        "market_runtime_revision": "market-runtime-v3",
+        "aave_runtime_revision": "aave-guard-v9",
+        "procurement_runtime_revision": "external-purchase-v5",
+        "daily_hire_revision": "daily-external-hire-v1",
+        "book_sha256": "41b2e93053667b1f44d26b90256a637fd194ea05bc6956b2310a426b88b37b40",
+        "order_count": 212,
+        "ledger_count": 83,
+        "live_revenue_cents": 0,
+        "aave_intent_count": 12,
+        "first_supply_confirmed": true,
+        "exit_test_confirmed": true,
+        "active_intent": "AAVE-AUTO-bounded_supply-2026-10-20"
+      }
+    },
+    {
+      "route": "/market/procurement/order",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:48.269Z",
+      "response_sha256": "7a61b2c0b41d4dbb6fa9250a21da359f5c11dc39ee043587adc533d71376806a",
+      "metadata": {
+        "ok": true,
+        "revision": "external-purchase-v5",
+        "reused": true,
+        "order": {
+          "id": "EXT-AI-20261017-001",
+          "status": "paid_delivery_rejected",
+          "paid": true,
+          "tx_hash": "0x91e3941245fef223be3e1c2d726de6ef4fb730458861e0210cdbfed7b507d925",
+          "delivery_accepted": false,
+          "request_sha256": "84c1c281bb84e20aa75a8374060522dac9771988d60601940fbac7b5f636bf3a",
+          "model_generation_attempts": 1,
+          "independent_review_status": "pending",
+          "http": 200,
+          "response_sha256": "344d91018601b1cd6d6324621374752d49be29fa2f73c8d44da5f7cf6ee9d31b",
+          "deliverable_sha256": "bd118fc23371a9d8842fd1bba729b5609eeafacb99a40b18421e1bb8ff775b7c"
+        }
+      }
+    },
+    {
+      "route": "/market/procurement/daily?date=2026-11-03",
+      "http_status": 200,
+      "observed_at_utc": "2026-11-07T07:59:48.404Z",
+      "response_sha256": "8b06fa8ea3b005a3bb561b95e679959f3563e544abccdecde5f86679f34a04fa",
+      "metadata": {
+        "ok": true,
+        "revision": "external-purchase-v5",
+        "status": "ready_for_one_owner_authorized_purchase",
+        "order_id": "REAL-HIRE-20261103-CLAUDE-01",
+        "max_usdc": "0.05",
+        "paid": false,
+        "tx_hash": null,
+        "daily_hire_revision": "daily-external-hire-v1"
+      }
+    }
+  ]
+}
