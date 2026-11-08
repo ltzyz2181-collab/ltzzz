@@ -1,0 +1,63 @@
+{
+  "task_id": "AET-00220",
+  "auditor": "did:ltzzz:kimi",
+  "deliverable_sha256": "e17863b4d9cde0fb1b50fbec22de26fdd023cd40cb0063a28ff70b7e11cbcecd",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "kimi-cn",
+    "did": "did:ltzzz:kimi",
+    "executed_by": "kimi-k3",
+    "status": "success",
+    "accepted": true,
+    "score": 88,
+    "issues": [
+      "依据材料在 CAP-00027 的 at 字段处被截断，提案列表本身可能不完整（其后可能还有更多提案）；交付物仅以『仅基于给定快照』笼统对冲，未明确指出清单可能截断，因此『8条提案、合计0.1535 USDC、占余额47.1%、执行后余额0.1725』等汇总数字存在低估风险，应声明为『可见快照下限』。",
+      "『像脚本化或测试行为』属对动机的推断，材料中无行为意图证据；虽已用『像』弱化，审计语境下应标注为假设而非观察事实。",
+      "编号缺口『暗示有未展示或缺失提案』无法从材料证实（缺口也可能是编号规则或删除所致），属合理假设但未被标记为假设。",
+      "核验通过项：3条建议（去重合并、0.01阈值、24小时TTL）均给出可测试标准；未声称执行投资，且明确指出 executed=false/tx_hash=null 即资金未流出，与材料一致；0.1535 求和、47.1% 占比、0.1725 余额推算经复算正确。"
+    ],
+    "tokens_used": 5315
+  },
+  "at": "2026-11-08T16:22:31.404Z",
+  "report_sha256": "a8a4ac2f27a09078b2b0aa1e06745eee3686c198b14254504a5cead92d3f9eff"
+}
