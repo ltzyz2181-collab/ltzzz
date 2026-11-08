@@ -85,6 +85,19 @@
         "anthropic_credit_secret_native_response",
         "native_identity_and_billing_reconciled"
       ]
+    },
+    {
+      "id": "core_product",
+      "owner": "gpt",
+      "coordinator": "deepseek",
+      "target": "Deliver one lean product: local delivery package checks plus permitted source/semantic review and a concrete acceptance report. Reuse existing market offers.",
+      "acceptance": "Runnable prototype and tests; one real permitted customer delivery; customer acceptance and actual cash settlement separately verified.",
+      "acceptance_checks": [
+        "prototype_and_negative_cases",
+        "permitted_customer_delivery",
+        "customer_acceptance",
+        "cash_settlement_and_cost_reconciliation"
+      ]
     }
   ],
   "phases": [
@@ -164,5 +177,33 @@
     "stale_or_blocked": "GPT investigates missing capability and assigns next bounded task; do not merely repeat status or ask routine owner approval.",
     "no_changes": "No duplicate task/call/registration/submission/payment or repeated notification."
   },
-  "continuity_runbook": "docs/CONTINUITY-WITHOUT-CHATGPT-PLUS.md"
+  "continuity_runbook": "docs/CONTINUITY-WITHOUT-CHATGPT-PLUS.md",
+  "operating_mode": {
+    "mode": "low_speed_until_revenue_validation",
+    "source": "owner direct instruction 2026-11-07",
+    "review_date": "2026-11-14",
+    "auto_expire": false,
+    "new_paid_model_cron": false,
+    "native_paid_GPT_Claude_schedule": false,
+    "existing_daily_learning_preserved": true,
+    "idle_model_calls_guaranteed_zero": false,
+    "notes": "Existing learning still has provider costs; queue/day and marketing/week are concrete reductions, not a verified bill amount.",
+    "queue_schedule_UTC": "15 0 * * *",
+    "X_marketing_schedule_UTC": "15 14 * * 2",
+    "WeChat_article_schedule_UTC": "20 11 * * 3",
+    "funded_order_polling": "existing bounded cadence retained; at most one funded job, no duplicate payment",
+    "expansion_trigger": "real customer acceptance plus verified cash settlement and known contribution margin",
+    "monthly_bill_verified": false
+  },
+  "core_product": {
+    "id": "LTZZZ-DELIVERY-CHECK",
+    "name": "LTZZZ交付核验助手",
+    "scope": "one report product reusing source-check and delivery acceptance templates",
+    "prototype": "products/delivery-check/README.md",
+    "prototype_is_commercial_acceptance": false,
+    "workflow": "mechanical local checks then permitted semantic/source review then actual independent acceptance",
+    "channels": "reuse existing uGIG/UUMit/WorkBuddy/WeChat; no new account or duplicate listing by this plan",
+    "purchase_is_not_revenue": true,
+    "new_customer_data_retention": "private authorized host only; no public repo/model without explicit data-processing permission"
+  }
 }

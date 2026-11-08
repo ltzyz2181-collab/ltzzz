@@ -4,7 +4,8 @@ on:
     branches: [main]
     paths: ['ops/task-queue.json', 'scripts/run-task-queue.mjs', 'scripts/run-ans-cycle.mjs', 'scripts/lib/ans-cycle.mjs', '.github/workflows/execute-task-queue.yml']
   schedule:
-    - cron: '15 */6 * * *'
+    # Owner 2026-11-07: low-speed operation; existing event/manual recovery retained.
+    - cron: '15 0 * * *'
   workflow_run:
     workflows: ['Deploy and control LTZZZ Pulse']
     types: [completed]
