@@ -3,13 +3,26 @@ on:
   schedule:
     - cron: '20 */6 * * *'
   workflow_dispatch:
+  pull_request:
+    paths: ['scripts/lib/signer-readiness.mjs','scripts/preflight-signer.mjs','scripts/run-treasury-aave.mjs','scripts/anchor-market-snapshot.mjs','scripts/tests/signer-readiness.test.mjs','.github/workflows/autonomous-funded-orders.yml']
   push:
     branches: [main]
     paths: ['.github/workflows/autonomous-funded-orders.yml']
 permissions: {contents: write}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Offline signer-gate regression (no network, no funds)
+        run: node --test scripts/tests/signer-readiness.test.mjs
   execute:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -38,10 +51,27 @@ jobs:
           NODE_OPTIONS: --dns-result-order=ipv4first
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         run: node scripts/fulfill-market-orders.mjs
-      - name: Bounded Aave cycle (wait when USDC or gas missing)
+      - name: Preflight treasury signer capability (read-only, no funding attempt)
+        id: signer
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/preflight-signer.mjs
+      - name: Bounded Aave cycle (skipped unless signer capability is proven)
+        if: steps.signer.outputs.state == 'ready'
         run: node scripts/run-treasury-aave.mjs
       - name: Weekly public snapshot anchoring with Worker treasury signer
+        if: steps.signer.outputs.state == 'ready'
         run: node scripts/anchor-market-snapshot.mjs
+      - name: Report funding-step outcome without masking order fulfilment
+        if: always()
+        run: |
+          state="${{ steps.signer.outputs.state }}"
+          blocked="${{ steps.signer.outputs.blocked_status }}"
+          echo "signer_state=${state:-missing-output} blocked_status=${blocked:-unknown}"
+          if [ "$state" != "ready" ]; then
+            echo "::error::Funding steps skipped (${blocked:-blocked_signer_unverified}); signer capability not proven. Order fulfilment receipt is preserved separately and is not a green funding result."
+            exit 1
+          fi
       - name: Save actual receipts
         if: always()
         run: |
