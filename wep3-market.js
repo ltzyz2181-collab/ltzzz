@@ -1,4 +1,5 @@
 import {withoutFinancialCredentials} from './lib/financial-exit-guard.js';
+import {transactionSignerStatus,SIGNER_STATUS_SCOPES} from './wep3-signer-status.js';
 import {fundOKX,fundingRelay} from './wep3-okx-funding.js';
 import {externalPurchase,completeExternalRelay,PROCUREMENT_REVISION} from './wep3-procurement.js';
 import {dailyHireReview} from './wep3-procurement-review.js';
@@ -86,7 +87,17 @@ export class Market {
       return reply({...r,daily_hire_revision:DAILY_HIRE_REVISION},r.ok?200:422);
     }
     if(p==='/market/procurement/order'&&['GET','POST'].includes(request.method)){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await externalPurchase(this,book,{execute:request.method==='POST'});return reply(r,r.ok?200:422);}
-    if(p==='/market/aave/status'&&request.method==='GET')return reply({...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
+    if(p==='/market/aave/status'&&request.method==='GET'){
+      const capability=u.searchParams.get('capability');
+      if(capability!==null){
+        if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);
+        if([...u.searchParams.keys()].length!==1||!SIGNER_STATUS_SCOPES.includes(capability))return reply({ok:false,error:'unsupported_signer_scope'},400);
+        return reply(transactionSignerStatus(this.env,capability));
+      }
+      // Preserve the public balance/status contract; only authenticated callers
+      // receive the additional transaction-adapter observation.
+      return reply({... (this.admin(request)?transactionSignerStatus(this.env):{}),...await aaveStatus(this,book),aave_runtime_revision:AAVE_RUNTIME_REVISION});
+    }
     if(p==='/market/aave/reconcile'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await reconcileAaveTransactions(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:422);}
     if(p==='/market/aave/diagnostics'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const r=await diagnoseAave(this,book);return reply({...r,aave_runtime_revision:AAVE_RUNTIME_REVISION},r.ok?200:503);}
     if(p==='/market/aave/intent'&&request.method==='GET'){if(!this.admin(request))return reply({ok:false,error:'pin_required'},401);const i=book.aave?.intents?.[u.searchParams.get('id')];return reply(i?{ok:true,...publicAaveIntent(i)}:{ok:false,error:'intent_missing'},i?200:404);}
