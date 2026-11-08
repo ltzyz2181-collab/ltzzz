@@ -1,0 +1,127 @@
+{
+  "schema": "ltzzz.deep-superagent.mail-qwen-handoff.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "QWEN-CHECK-AI-HANDOFF-20261108",
+  "recorded_at_utc": "2026-11-08T07:40:58.252Z",
+  "source_commit": "3dccf57d517187106bb69c6e536d5181fe9af24c",
+  "authority_ref": "config/owner-authority-20261105.json",
+  "source_message": {
+    "message_id": "1a1ba0701493ab78",
+    "thread_id": "1a1ba0701493ab78",
+    "spf": "pass",
+    "dkim": "pass",
+    "dmarc": "pass"
+  },
+  "reply": {
+    "message_id": "1a1ba199c93a6491",
+    "thread_id": "1a1ba0701493ab78",
+    "SENT_read_back": true
+  },
+  "qianwen": {
+    "daily_task_id": "DAILY-2026-11-08-qianwen",
+    "daily_status": "completed_draft_review",
+    "daily_accepted": true,
+    "daily_review_verified": true,
+    "daily_scope": "engineering_draft_only",
+    "artifact_sha256": "047aa91873d3f16a351e88bfdc6079904da42eb76f08a95759e23dd33b9746b2",
+    "review_sha256": "37c833f5cca1c6637893719dec0611533eb85c86bd6d5df3cb302e663ba0cb90",
+    "separate_task_id": "QWEN-FOUR-RULINGS-20261108",
+    "nonce": "87eaac89ea441a46c893d118087eef2f",
+    "dispatch_path": "ops/dispatch/inbox/qianwen/20261108-QIANWEN-FOUR-RULINGS-DISPATCH.md",
+    "expected_return": "knowledge/results/qwen-four-rulings/QWEN-FOUR-RULINGS-20261108.json",
+    "return_exists_at_source_commit": false,
+    "dispatch_is_not_receipt": true,
+    "actual_Qianwen_acknowledged": false
+  },
+  "linear": {
+    "Doubao_consumer_type": "repo_export",
+    "consumed_file_sha256": "1a911cdb8a3a56113f8af741d92243a64a848953685f7e3c47c14ef730ee72d9",
+    "consumed_bytes_recomputed_match": true,
+    "native_consumer_access_verified": false,
+    "comment_count_at_previous_snapshot": 8,
+    "earlier_7_count_is_prior_time_not_same_snapshot_contradiction": true,
+    "latest_snapshot_path": "ops/dispatch/inbox/gpt/linear-board-latest.json",
+    "latest_export_from_actual_native_reads": true
+  },
+  "signer": {
+    "original_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+    "PR378_merge_verified": "18d2a205833a960bbfaa21078443a754aa1115c0",
+    "local_node": "v24.19.0",
+    "regression": {
+      "files": 6,
+      "passed": 97,
+      "failed": 0
+    },
+    "original_two_examples_fixed": true,
+    "additional_local_probes": [
+      {
+        "case": "signer booleans without schema revision scope",
+        "observed": "ready",
+        "expected": "not_ready"
+      },
+      {
+        "case": "ok true with nonempty business error",
+        "observed": "ready",
+        "expected": "not_ready"
+      },
+      {
+        "case": "incorrect revision scope and chain_id 1",
+        "observed": "ready",
+        "expected": "not_ready"
+      }
+    ],
+    "probe_network_calls": 0,
+    "new_fix_implemented_by_current_executor": false,
+    "producer_contract_deployed": false,
+    "automatic_payment_verified": false,
+    "assigned_next": "Doubao strict producer+consumer contract and three negative cases before R4; fixed-head review then scoped managed deployment and readback"
+  },
+  "handoffs": {
+    "cards_path": "ops/dispatch/inbox/gpt/AI-FORWARD-CARDS-20261108.md",
+    "cards_published_commit": "7aa9cac0a1093662a40890d985c80006d839b716",
+    "routing_source": "latest direct user instruction in this turn",
+    "Doubao": {
+      "route": "authenticated email",
+      "status": "sent_and_read_back"
+    },
+    "Qianwen": {
+      "route": "owner_forward",
+      "status": "prepared_not_delivered",
+      "original_task_id": "QWEN-FOUR-RULINGS-20261108"
+    },
+    "Deep": {
+      "route": "owner_forward",
+      "status": "prepared_not_delivered",
+      "original_task_id": "DEEP-SUPERAGENT-20261103",
+      "original_step_id": "LOW-SPEED-CORE-FINANCE-20261108"
+    },
+    "Grok": {
+      "route": "owner_forward",
+      "status": "waiting_for_new_fixed_PR_head_not_delivered",
+      "original_task_id": "PLAN-PATCHGATE-ESCROW-20261023"
+    }
+  },
+  "existing_automation": {
+    "id": "6aaccafa09308191be2975d0e5014abe",
+    "routing_prompt_update_succeeded": true,
+    "schedule_unchanged": true,
+    "new_schedule_created": false,
+    "unattended_execution_verified": false
+  },
+  "harness": {
+    "context_sha256": "3c7151ab52fb8b46509c52fc0f118166f661f7b1c5510ad1ce9e7bda9a5ca0d2",
+    "lessons_applied": [
+      "L-20261030-002",
+      "L-20261030-004",
+      "L-20261030-007"
+    ],
+    "concrete_change": "Check exact expected Qwen return separately from accepted daily; recompute consumer snapshot bytes; reproduce current merged-code counterexamples before dispatch."
+  },
+  "raw_mail_exported": false,
+  "credentials_exported": false,
+  "model_api_calls": 0,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "status": "Doubao_SENT_verified_other_AI_owner_forward_pending"
+}
