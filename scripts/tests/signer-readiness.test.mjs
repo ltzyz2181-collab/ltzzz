@@ -6,15 +6,57 @@ const origin = 'https://fixture.example';
 const pin = 'fixture-private-pin';
 const json = body => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 
-test('ready only when a readiness flag is explicitly true', async () => {
+test('ready requires the explicit contract: configured AND control_verified', async () => {
+  const e = await probeSignerCapability({
+    origin, pin,
+    fetcher: async () => json({
+      ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
+      signer: { configured: true, control_verified: true, scope: 'aave_supply', chain_id: 8453 },
+    }),
+  });
+  assert.equal(e.state, 'ready');
+  assert.equal(e.reason, 'explicit_contract_ready');
+  assert.equal(fundingGate(e).allowed, true);
+  assert.equal(e.funding_attempted, false);
+  assert.equal(e.on_chain_executed, false);
+  assert.equal(e.tx_hash, null);
+});
+
+test('control not verified keeps the gate shut even when configured', () => {
+  const e = classifySignerResponse({ http: 200, body: { ok: true, schema: 'ltzzz.treasury-signer-status.v1', signer: { configured: true } } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_control_unverified');
+  assert.equal(fundingGate(e).allowed, false);
+});
+
+test('legacy alias alone can never open the gate without the contract', () => {
   for (const flag of ['treasury_signer_configured', 'signer_configured', 'signer_ready']) {
-    const e = await probeSignerCapability({ origin, pin, fetcher: async () => json({ ok: true, [flag]: true }) });
-    assert.equal(e.state, 'ready');
-    assert.equal(fundingGate(e).allowed, true);
-    assert.equal(e.funding_attempted, false);
-    assert.equal(e.on_chain_executed, false);
-    assert.equal(e.tx_hash, null);
+    const e = classifySignerResponse({ http: 200, body: { ok: true, [flag]: true } });
+    assert.equal(e.state, 'unknown');
+    assert.equal(e.reason, 'signer_capability_declared_without_contract');
+    assert.equal(fundingGate(e).allowed, false);
   }
+});
+
+// 2026-11-08 GPT 复现的两条真实反例：本地纯函数调用，零网络、零资金。
+test('a failing service response with signer_ready:true is NOT ready', () => {
+  const e = classifySignerResponse({ http: 200, body: { ok: false, error: 'synthetic_service_failure', signer_ready: true } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_status_reports_failure');
+  assert.equal(fundingGate(e).allowed, false);
+});
+
+test('contradictory capability flags (configured:false + ready:true) are NOT ready', () => {
+  const e = classifySignerResponse({ http: 200, body: { ok: true, signer_configured: false, signer_ready: true } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'conflicting_signer_flags');
+  assert.equal(fundingGate(e).allowed, false);
+});
+
+test('a contract that says configured:false is missing, not ready', () => {
+  const e = classifySignerResponse({ http: 200, body: { ok: true, schema: 'ltzzz.treasury-signer-status.v1', signer: { configured: false, control_verified: true } } });
+  assert.equal(e.state, 'missing');
+  assert.equal(fundingGate(e).blocked_status, 'blocked_missing_signer');
 });
 
 test('HTTP 422 treasury_signer_missing is missing, never retried', async () => {
@@ -94,7 +136,8 @@ test('only whitelisted non-secret keys are retained as evidence', async () => {
   });
   assert.deepEqual(e.observed_keys, ['aave_runtime_revision', 'ok', 'treasury_signer_configured']);
   assert.equal(JSON.stringify(e).includes('leak-me'), false);
-  assert.equal(e.state, 'ready');
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_capability_declared_without_contract');
 });
 
 test('non-JSON body is unknown, not a silent pass', async () => {
