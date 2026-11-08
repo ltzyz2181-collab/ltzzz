@@ -41,26 +41,39 @@
     "reviewers": "supervise and retain disagreements; do not replace the controller decision",
     "existing_financial_policy_and_platform_requirements_preserved": true,
     "layers": {
-      "A_deep_autonomous": [
+      "A_deep_autonomous_execution": [
         "自主接取与拆解内部 DEEP-/DSA- 任务（自有可分发的公开输入）",
         "自主从豆包/千问/Kimi/Grok 四席中选择 1-3 席执行",
         "自主执行、复核、补审、写回执并落库",
-        "自主向决策席提交候选与阻塞",
-        "无外部派单时的自检、对账、回归与找活",
-        "按 owner 2026-11-08 授权，自主接受外部平台订单"
+        "按 owner 2026-11-08 授权，自主接受外部平台订单（可事前接单，事后提交 GPT 审核）",
+        "无外部派单时的自检、对账、回归与找活"
       ],
-      "B_gpt_decision": [
+      "B_gpt_full_decision_and_treasury": [
+        "所有决策裁决：任务优先级、范围冲突、对外报价与客户口径、执行候选接受与否、事后订单审核",
+        "收款、放款、退款、结算的自主执行（多签钱包相关操作除外）",
+        "海外平台账户的自主注册与维护",
         "生产部署与 revision 变更",
-        "对外报价、客户口径与不可撤销承诺",
-        "跨系统共享认领桥的接通",
-        "与 A 组（小程序 1.0.2）范围冲突的裁定",
-        "接受或否决 Deep 的执行候选"
+        "跨系统共享认领桥的接通"
       ],
       "C_owner_only": [
-        "任何资金动作、钱包签名、付款与放款",
-        "收款账户与结算方式",
-        "实名、扫码、平台强制本人验证",
-        "生产密钥与凭据变更"
+        "多签（multisig）钱包的任何签名与资金动作",
+        "平台强制生物人完成的实名、扫码、人脸或视频验证",
+        "生产密钥与根凭据的变更",
+        "平台条款或适用法律明确禁止由代理执行的动作"
+      ]
+    },
+    "decision_rule": "所有决策由 GPT 裁决；豆包/千问/Kimi/Grok/DeepSeek 按裁决执行，执行结果与阻塞如实回执，不得以执行代替裁决",
+    "owner_grant": {
+      "source": "owner direct instruction in the current session, 2026-11-08",
+      "granted": [
+        "GPT 自由注册海外账户",
+        "GPT 自主执行收款/放款/退款/结算（多签除外）",
+        "所有决策归 GPT 裁决",
+        "Deep 可事前接单、事后由 GPT 审核"
+      ],
+      "not_granted": [
+        "多签钱包签名",
+        "代理生物人实名验证"
       ]
     }
   },
@@ -184,13 +197,58 @@
       "no private customer package, restricted platform material or credential enters this lane",
       "deliverable and acceptance are recorded separately from payment"
     ],
-    "payment_boundary": "order acceptance is allowed;收款、放款、退款与结算仍属 owner-only 资金动作",
+    "payment_boundary": "收款/放款/退款/结算由 GPT 执行；多签钱包除外；Deep 不直接触碰资金",
     "not_verified_yet": {
       "cross_system_claim_bridge_verified": false,
       "automatic_client_roundtrip_verified": false,
       "real_generation_and_delivery_verified": false,
       "note": "允许接单不等于已具备接单能力；上述三项仍为 false，实际接到单需平台侧执行回执"
-    }
+    },
+    "acceptance_mode": "pre_accept_then_gpt_review",
+    "review_rule": "Deep 可事前接单，须在接单后 24 小时内提交 GPT 审核；GPT 否决时 Deep 负责按平台规则撤销或转交，不得搁置订单不处理",
+    "pre_accept_checklist": [
+      "能力自检：现有席位与工具能否在期限内交付",
+      "期限核对：与现有队列不冲突",
+      "报价与成本：不低于既有口径，不亏本接单",
+      "数据边界：输入为自有可分发公开材料或已获授权的客户材料",
+      "接单即登记：订单号、平台、金额、币种、期限、交付物清单"
+    ]
   },
-  "external_submissions_enabled_note": "owner-authorized 2026-11-08; limited to existing accounts/listings; payment remains owner-only"
+  "external_submissions_enabled_note": "owner-authorized 2026-11-08; limited to existing accounts/listings; payment remains owner-only",
+  "treasury_authority": {
+    "holder": "gpt",
+    "actions": [
+      "收款",
+      "放款",
+      "退款",
+      "结算"
+    ],
+    "owner_approval_required": false,
+    "excluded": [
+      "multisig_wallet_operations"
+    ],
+    "record_required_per_action": [
+      "amount",
+      "currency",
+      "counterparty",
+      "platform_or_chain_receipt",
+      "tx_hash_or_platform_order_id",
+      "executed_at_utc",
+      "actual_executor"
+    ],
+    "audit_rule": "每笔资金动作必须可由第三方按其回执复算；无回执不得记已收/已付",
+    "dual_write": "资金动作与订单履约分开记录，不得用订单完成代替到账",
+    "no_silent_reversal": "退款与冲正必须留原交易引用，不得覆盖原记录"
+  },
+  "account_registration_authority": {
+    "holder": "gpt",
+    "scope": "海外平台账户",
+    "constraints": [
+      "不得违反平台条款或适用法律；平台禁止代理注册的不做",
+      "实名、人脸、视频等强制生物人验证仍需 owner 本人",
+      "新注册账户必须登记：平台、账户标识、用途、注册时间、状态、可用凭据引用（不记录密码明文）",
+      "不得用新账户规避既有封禁或重复注册限制"
+    ],
+    "registry_path": "knowledge/results/accounts/external-accounts.json"
+  }
 }
