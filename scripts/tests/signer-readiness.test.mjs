@@ -11,7 +11,10 @@ test('ready requires the explicit contract: configured AND control_verified', as
     origin, pin,
     fetcher: async () => json({
       ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
-      signer: { configured: true, control_verified: true, scope: 'aave_supply', chain_id: 8453 },
+      signer: {
+        configured: true, control_verified: true, scope: 'aave_supply', chain_id: 8453,
+        control_evidence: 'knowledge/results/patchgate/control-proof-aave-20261105.json',
+      },
     }),
   });
   assert.equal(e.state, 'ready');
@@ -23,7 +26,10 @@ test('ready requires the explicit contract: configured AND control_verified', as
 });
 
 test('control not verified keeps the gate shut even when configured', () => {
-  const e = classifySignerResponse({ http: 200, body: { ok: true, schema: 'ltzzz.treasury-signer-status.v1', signer: { configured: true } } });
+  const e = classifySignerResponse({ http: 200, body: {
+    ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
+    signer: { configured: true, scope: 'aave_supply', chain_id: 8453, control_evidence: 'proof-ref' },
+  } });
   assert.equal(e.state, 'unknown');
   assert.equal(e.reason, 'signer_control_unverified');
   assert.equal(fundingGate(e).allowed, false);
@@ -42,7 +48,7 @@ test('legacy alias alone can never open the gate without the contract', () => {
 test('a failing service response with signer_ready:true is NOT ready', () => {
   const e = classifySignerResponse({ http: 200, body: { ok: false, error: 'synthetic_service_failure', signer_ready: true } });
   assert.equal(e.state, 'unknown');
-  assert.equal(e.reason, 'signer_status_reports_failure');
+  assert.equal(e.reason, 'signer_status_reports_error');
   assert.equal(fundingGate(e).allowed, false);
 });
 
@@ -54,9 +60,71 @@ test('contradictory capability flags (configured:false + ready:true) are NOT rea
 });
 
 test('a contract that says configured:false is missing, not ready', () => {
-  const e = classifySignerResponse({ http: 200, body: { ok: true, schema: 'ltzzz.treasury-signer-status.v1', signer: { configured: false, control_verified: true } } });
+  const e = classifySignerResponse({ http: 200, body: {
+    ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
+    signer: { configured: false, control_verified: true, scope: 'aave_supply', chain_id: 8453, control_evidence: 'proof-ref' },
+  } });
   assert.equal(e.state, 'missing');
   assert.equal(fundingGate(e).blocked_status, 'blocked_missing_signer');
+});
+
+// GPT 2026-11-08T07:40Z 第二轮三条反例：均为本地纯函数调用，零网络零资金。
+test('counter-1: a bare signer object without schema/revision/scope is NOT ready', () => {
+  const e = classifySignerResponse({ http: 200, body: { ok: true, signer: { configured: true, control_verified: true } } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_contract_schema_mismatch');
+  assert.equal(fundingGate(e).allowed, false);
+});
+
+test('counter-2: ok:true with a business error string is NOT ready', () => {
+  const e = classifySignerResponse({ http: 200, body: {
+    ok: true, error: 'synthetic_service_failure', schema: 'ltzzz.treasury-signer-status.v1',
+    revision: 'wep3-signer-status-v1', scope: 'aave_supply', chain_id: 8453,
+    configured: true, control_verified: true, control_evidence: 'proof-ref',
+  } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_status_reports_error');
+  assert.equal(fundingGate(e).allowed, false);
+});
+
+test('counter-3: wrong revision, wrong scope or wrong chain are NOT ready', () => {
+  const base = {
+    ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
+    scope: 'aave_supply', chain_id: 8453, configured: true, control_verified: true, control_evidence: 'proof-ref',
+  };
+  const known = classifySignerResponse({ http: 200, body: base });
+  assert.equal(known.state, 'ready', 'complete contract must be ready');
+
+  const cases = [
+    [{ revision: 'wrong_revision' }, 'signer_contract_revision_mismatch'],
+    [{ scope: 'wrong_operation' }, 'signer_contract_scope_mismatch'],
+    [{ chain_id: 1 }, 'signer_contract_chain_mismatch'],
+    [{ revision: 'wrong_revision', scope: 'wrong_operation', chain_id: 1 }, 'signer_contract_revision_mismatch'],
+  ];
+  for (const [patch, reason] of cases) {
+    const e = classifySignerResponse({ http: 200, body: { ...base, ...patch } });
+    assert.equal(e.state, 'unknown');
+    assert.equal(e.reason, reason);
+    assert.equal(fundingGate(e).allowed, false);
+  }
+});
+
+test('a boolean true without a control evidence reference is NOT ready', () => {
+  const e = classifySignerResponse({ http: 200, body: {
+    ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
+    scope: 'aave_supply', chain_id: 8453, configured: true, control_verified: true,
+  } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_control_evidence_absent');
+});
+
+test('anchor scope cannot cover the aave gate (separate capabilities)', () => {
+  const e = classifySignerResponse({ http: 200, body: {
+    ok: true, schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1',
+    scope: 'snapshot_anchor', chain_id: 8453, configured: true, control_verified: true, control_evidence: 'proof-ref',
+  } }, { expected: { schema: 'ltzzz.treasury-signer-status.v1', revision: 'wep3-signer-status-v1', scope: 'aave_supply', chain_id: 8453 } });
+  assert.equal(e.state, 'unknown');
+  assert.equal(e.reason, 'signer_contract_scope_mismatch');
 });
 
 test('HTTP 422 treasury_signer_missing is missing, never retried', async () => {
