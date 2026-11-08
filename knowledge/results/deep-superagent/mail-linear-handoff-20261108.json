@@ -1,0 +1,139 @@
+{
+  "schema": "ltzzz.deep-superagent.mail-linear-handoff.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "step_id": "LINEAR-CROSS-CLIENT-20261108",
+  "related_task_ids": [
+    "QW-REVIEW-DEPUTY-20261104",
+    "PLAN-PATCHGATE-ESCROW-20261023"
+  ],
+  "recorded_at_utc": "2026-11-08T07:13:16.793Z",
+  "authority_ref": "config/owner-authority-20261105.json",
+  "source_messages": [
+    {
+      "message_id": "1a1b9ed340a17555",
+      "thread_id": "1a1b9ed340a17555",
+      "spf": "pass",
+      "dkim": "pass",
+      "dmarc": "pass",
+      "sender": "registered_Doubao_relay",
+      "reported_author": "qianwen_reported_not_independent_sender"
+    },
+    {
+      "message_id": "1a1b9f5accf4e410",
+      "thread_id": "1a1b9f5accf4e410",
+      "spf": "pass",
+      "dkim": "pass",
+      "dmarc": "pass",
+      "sender": "registered_Doubao_host"
+    }
+  ],
+  "outgoing": [
+    {
+      "purpose": "Linear_readback_instructions",
+      "message_id": "1a1b9fdcd140d19c",
+      "thread_id": "1a1b9fdcd140d19c",
+      "SENT_read_back": true
+    },
+    {
+      "purpose": "Qianwen_four_decisions",
+      "message_id": "1a1b9fe7877516ef",
+      "thread_id": "1a1b9ed340a17555",
+      "SENT_read_back": true
+    },
+    {
+      "purpose": "Signer_explicit_contract_and_conflict_followup",
+      "message_id": "1a1b9ff6d5417d53",
+      "thread_id": "1a1b9f5accf4e410",
+      "SENT_read_back": true
+    }
+  ],
+  "linear": {
+    "workspace_verified": "920fe71a-16d2-42e7-a3c8-0f100ed0a2e5",
+    "native_reader": "current_GPT_Codex",
+    "issue_ids": [
+      "LTZ-5",
+      "LTZ-6",
+      "LTZ-7",
+      "LTZ-8"
+    ],
+    "statuses": {
+      "LTZ-5": "In Progress",
+      "LTZ-6": "Done",
+      "LTZ-7": "In Progress",
+      "LTZ-8": "In Progress"
+    },
+    "snapshot_path": "ops/dispatch/inbox/gpt/linear-board-latest.json",
+    "guide_path": "docs/LINEAR-CROSS-CLIENT-READBACK.md",
+    "initial_export_commit": "897a2fb65688ca8b528bb87c8ab08e14d23dba17",
+    "initial_export_and_guide_bytes_verified": true,
+    "public_comment_format": "sanitized_summary_not_full_body",
+    "official_documentation": "https://linear.app/docs/mcp",
+    "official_readonly_mcp": "https://mcp.linear.app/mcp/readonly",
+    "official_docs_actually_read": true,
+    "consumer_direct_access_verified": false,
+    "OAuth_changed_or_shared": false,
+    "client_configured_by_this_executor": false,
+    "doubao_execution_acknowledged": false
+  },
+  "automation": {
+    "id": "6aaccafa09308191be2975d0e5014abe",
+    "existing_prompt_updated_and_read_back": true,
+    "schedule_unchanged": true,
+    "new_paid_cron": false,
+    "future_unattended_export_verified": false
+  },
+  "qianwen_decisions": [
+    "Do not re-review or repurchase the identical Nov7 rejected draft. Keep original rejection; future actual revision retains original Task and new hash.",
+    "Use existing daily independent reviewer writer path knowledge/results/daily-board/reviews/<date>-<worker>-<receipt_sha256>.json; actual reviewer identity in fields, no invented filename.",
+    "Null missing_sections neither proves missing nor complete. Structural validator and content verdict must bind exact artifact separately.",
+    "Conclude this bounded voucher search as documented_missing_evidence if actually checked; original financial fact remains unverified, never invent hash or new unsupported state. Reopen on new original evidence, not repeated empty lookup."
+  ],
+  "engineering": {
+    "PR377_merge_verified": "db421de02c9e437750a7d4ee169ccc0e21988009",
+    "real_gate_run": "42456830138",
+    "real_gate_status": "preflight_unknown_Aave_anchor_skipped_summary_failure",
+    "source_baseline": "975d7fff",
+    "local_node": "v24.19.0",
+    "local_regression": {
+      "files": 6,
+      "passed": 92,
+      "failed": 0,
+      "reported_96_not_reproduced": true
+    },
+    "synthetic_probes": [
+      {
+        "input": "HTTP200 ok=false/error plus signer_ready=true",
+        "observed": "ready",
+        "expected": "not_ready",
+        "network_calls": 0
+      },
+      {
+        "input": "HTTP200 signer_configured=false plus signer_ready=true",
+        "observed": "ready",
+        "expected": "not_ready",
+        "network_calls": 0
+      }
+    ],
+    "followup": "explicit compatible read-only scoped signer contract plus errors/conflicts take priority; configured/control/chain/gas/ledger/budget/settlement separately verified",
+    "new_fix_implemented_by_this_executor": false,
+    "production_payment_enabled": false,
+    "model_api_calls": 0,
+    "transactions": 0
+  },
+  "harness": {
+    "context_sha256": "3c7151ab52fb8b46509c52fc0f118166f661f7b1c5510ad1ce9e7bda9a5ca0d2",
+    "lessons_applied": [
+      "L-20261030-002",
+      "L-20261030-004",
+      "L-20261030-007"
+    ],
+    "concrete_change": "native issue/comments read and bounded redaction before export; no cross-client OAuth claim; reconcile merged code and actual CI before reply"
+  },
+  "raw_mail_bodies_exported": false,
+  "credentials_exported": false,
+  "model_api_calls": 0,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "status": "three_SENT_replies_verified_consumer_native_access_pending"
+}
