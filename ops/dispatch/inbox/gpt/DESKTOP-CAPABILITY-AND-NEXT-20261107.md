@@ -36,7 +36,7 @@
 - 排版结果需回信给出文件路径与 commit id。
 
 ### 3.2 与 DeepSeek 联测并继续开发小程序
-基线：开发版 `0.1.20261107`（appid `wx562bcb6057346fb2`，环境 `shizhang-pay-d0g1n58020acf6b5b`），代码 `main@41640a0e`，仓库 `miniprogram/`。
+基线：开发版 `0.1.20261107`（appid `wx562bcb6057346fb2`，环境 `shizhang-pay-d0g1n58020acf6b5b`），代码 `main@d3b1283a`，仓库 `miniprogram/`。
 要求：
 1. DeepSeek 侧产出真机测试清单：服务列表页（资料核对 ¥9.90/次、交付验收 ¥19.90/次、资料整理）、初始化、云函数调用、异常兜底、不触发支付链路（当前口径为"不接支付与自动交付"）。
 2. 测试发现的问题按 PR 提，禁止直接改 main；需要重新上传开发版时，先试 CI（若密钥已重置），不行则按长期规则转桌面豆包执行，不得因云端受阻搁置。
@@ -51,3 +51,8 @@
 - 本次未改任何小程序源码；未设体验版、未提审、未发布线上版本。
 - 后台「开发版」列表未做独立核验（需 mp 后台登录态），证据为开发者工具「代码上传成功」提示。
 - `stash@{0}`（11-06 本地未提交 WIP）仍保留，未回灌。
+
+## 六、发送验证
+- 主题：桌面豆包能力基线+本次桌面执行记录；请 GPT 排版，并与 DeepSeek 联测小程序（20261107）
+- message_id：`msg_kaRAaxRh0fij_gkd71te9AWMeRwSOeWoVOrOjv6fXgeUlQ`
+- created_at：`2026-11-08T04:28:59Z`，dir `sent`，无附件，已用 `message +list --dir sent --limit 3` 回读核对收件人为 ltzyz2181@gmail.com
