@@ -33,13 +33,36 @@
     "activation_decision": "GPT AI decision seat may arrange activation under existing owner authority when actual credit, credentials and native executor evidence are available; reviewer consent is not an extra owner gate"
   },
   "financial_execution": false,
-  "external_submissions_enabled": false,
+  "external_submissions_enabled": true,
   "authority": {
     "source": "owner direct instruction in the current session, 2026-11-03",
     "scope": "deep_superagent profile only; ordinary planning, engineering and exception decisions delegated to the GPT AI decision seat",
     "repeat_owner_confirmation_for_ordinary_operations": false,
     "reviewers": "supervise and retain disagreements; do not replace the controller decision",
-    "existing_financial_policy_and_platform_requirements_preserved": true
+    "existing_financial_policy_and_platform_requirements_preserved": true,
+    "layers": {
+      "A_deep_autonomous": [
+        "自主接取与拆解内部 DEEP-/DSA- 任务（自有可分发的公开输入）",
+        "自主从豆包/千问/Kimi/Grok 四席中选择 1-3 席执行",
+        "自主执行、复核、补审、写回执并落库",
+        "自主向决策席提交候选与阻塞",
+        "无外部派单时的自检、对账、回归与找活",
+        "按 owner 2026-11-08 授权，自主接受外部平台订单"
+      ],
+      "B_gpt_decision": [
+        "生产部署与 revision 变更",
+        "对外报价、客户口径与不可撤销承诺",
+        "跨系统共享认领桥的接通",
+        "与 A 组（小程序 1.0.2）范围冲突的裁定",
+        "接受或否决 Deep 的执行候选"
+      ],
+      "C_owner_only": [
+        "任何资金动作、钱包签名、付款与放款",
+        "收款账户与结算方式",
+        "实名、扫码、平台强制本人验证",
+        "生产密钥与凭据变更"
+      ]
+    }
   },
   "seat_roles": {
     "deepseek": "daily coordination, task decomposition and evidence-based routing",
@@ -146,5 +169,28 @@
   "deployment": {
     "status": "requires_actual_deployment_receipt_and_runtime_readback",
     "configuration_is_deployment_proof": false
-  }
+  },
+  "external_order_policy": {
+    "enabled_by": "owner direct instruction in the current session, 2026-11-08",
+    "scope": "existing accounts and existing listings only; no new account, platform registration or new listing",
+    "allowed_channels": {
+      "uumit": "existing platform handoff, skill 20167d5a-5d3b-45e7-8521-e8cf7e58cd09, original task UUMIT-FREE-PRACTICE-20261101",
+      "ugig": "existing offer 30d11247-8686-4d19-b20d-f78464dcd371 (USD5 source-check)",
+      "workbuddy": "existing submission os_f8a49bc830defb02"
+    },
+    "hard_conditions": [
+      "each accepted order must carry platform order id, idempotency key and platform receipt",
+      "no duplicate claim of the same customer order across systems until the shared claim bridge is verified",
+      "no private customer package, restricted platform material or credential enters this lane",
+      "deliverable and acceptance are recorded separately from payment"
+    ],
+    "payment_boundary": "order acceptance is allowed;收款、放款、退款与结算仍属 owner-only 资金动作",
+    "not_verified_yet": {
+      "cross_system_claim_bridge_verified": false,
+      "automatic_client_roundtrip_verified": false,
+      "real_generation_and_delivery_verified": false,
+      "note": "允许接单不等于已具备接单能力；上述三项仍为 false，实际接到单需平台侧执行回执"
+    }
+  },
+  "external_submissions_enabled_note": "owner-authorized 2026-11-08; limited to existing accounts/listings; payment remains owner-only"
 }
