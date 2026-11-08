@@ -1,0 +1,30 @@
+name: Delivery check product offline acceptance
+on:
+  pull_request:
+    paths: ['products/delivery-check/**','scripts/tests/delivery-check-product.test.mjs','.github/workflows/delivery-check-product.yml']
+  push:
+    branches: [main]
+    paths: ['products/delivery-check/**','scripts/tests/delivery-check-product.test.mjs','.github/workflows/delivery-check-product.yml']
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/delivery-check-product.test.mjs
+      - name: Run synthetic example locally, without provider or customer data
+        run: node products/delivery-check/check.mjs products/delivery-check/example products/delivery-check/example/order.json > "$RUNNER_TEMP/delivery-example-report.json"
+      - name: Package public prototype and record separate file hash
+        run: |
+          zip -r "$RUNNER_TEMP/ltzzz-delivery-check-0.1.0.zip" products/delivery-check
+          sha256sum "$RUNNER_TEMP/ltzzz-delivery-check-0.1.0.zip" > "$RUNNER_TEMP/delivery-package-sha256.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ltzzz-delivery-check-0.1.0-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/ltzzz-delivery-check-0.1.0.zip
+            ${{ runner.temp }}/delivery-example-report.json
+            ${{ runner.temp }}/delivery-package-sha256.txt
