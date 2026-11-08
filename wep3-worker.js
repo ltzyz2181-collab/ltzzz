@@ -1,5 +1,6 @@
 import {auditProof} from './wep3-audit-proof.js';
 import {signerProofRoute} from './wep3-signer-proof.js';
+import {SIGNER_STATUS_REVISION} from './wep3-signer-status.js';
 import seatRegistry from './identity/seat-registry.json' with {type:'json'};
 import {marketRoute,Market} from './wep3-market.js';
 import {spawnChild,spawnTree} from './wep3-swarm.js';
@@ -473,7 +474,7 @@ export async function handleRequest(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, {headers: cors});
   const path = clean(new URL(request.url).pathname);
   try {
-    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', runtime_revision:'wep3-atomic-repair-v1', source_commit:env.WEP3_SOURCE_COMMIT||null, atomic_ledger_ready: atomicLedgerReady(env), legacy_writes_enabled:atomicLedgerReady(env), financial_execution_revision: 'external-purchase-v3', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', external_orders: 'https://ltzzz-wep3.ltzyz2181.workers.dev/market/start', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake', 'POST /swarm/spawn', 'POST /swarm/tree', 'POST /swarm/hire'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
+    if (path === '/' || path === '/health') return json({ok: true, service: 'ltzzz-wep3', version: '1.1.0', runtime_revision:'wep3-atomic-repair-v1', signer_status_revision:SIGNER_STATUS_REVISION, source_commit:env.WEP3_SOURCE_COMMIT||null, atomic_ledger_ready: atomicLedgerReady(env), legacy_writes_enabled:atomicLedgerReady(env), financial_execution_revision: 'external-purchase-v3', thesis: 'Credit loop deposit/transfer/credit-pay/hire/withdraw. Skill owners bid first.', live: 'https://ltzzz-wep3.ltzyz2181.workers.dev', page: 'https://ltzzz.com/wep3-pay.html', external_orders: 'https://ltzzz-wep3.ltzyz2181.workers.dev/market/start', split: '70/10/20 on seal', pin: Boolean(env.LAB_PIN), endpoints: ['GET /sku', 'POST /checkout', 'POST /pay/confirm', 'POST /pay/credit', 'POST /deposit', 'POST /withdraw', 'POST /transfer', 'GET /treasury', 'GET /ledger', 'GET /wallet/:agent', 'POST /hire', 'POST /cite', 'POST /stake', 'POST /swarm/spawn', 'POST /swarm/tree', 'POST /swarm/hire'], write_cap: '12 mutating posts per actor per hour unless LAB_PIN matches'});
     if (request.method === 'POST' && !pinOk(request, env)) return json({ok: false, error: 'pin_required'}, 401);
     if (request.method === 'POST' && path !== '/checkout' && !path.startsWith('/pay/')) { const bodyPeek = request.headers.get('x-wep3-intent') || ''; const gated = await writeGate(env, request, bodyPeek || 'anon'); if (gated) return json({ok: false, ...gated}, 429); }
     if(path==='/okx/balance'){if(!pinOk(request,env))return json({error:'pin_required'},401);return json(await okxBalance(env));}

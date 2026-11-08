@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import {readSignerStatus} from './lib/signer-status-readback.mjs';
 import {verifyMessage} from 'ethers';
 import {OPERATING_TREASURY,SIGNER_PROOF_REVISION} from '../wep3-signer-proof.js';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
 const phase=process.argv[2],run=process.env.GITHUB_RUN_ID,sha=process.env.GITHUB_SHA;
 if(!['before','after'].includes(phase)||process.env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||process.env.GITHUB_REF!=='refs/heads/main'||!/^[0-9]+$/.test(run||'')||!/^[a-f0-9]{40}$/.test(sha||''))throw Error('trusted_main_maintenance_context_required');
 if(!process.env.CLOUDFLARE_API_TOKEN)throw Error('existing_cloudflare_identity_unavailable');
+const statusOnlyRelease=execFileSync('git',['show','-s','--format=%B',sha],{encoding:'utf8'}).includes('[signer-status-readback]');
 const token=crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex');
 const dir='knowledge/results/wep3',path=dir+'/atomic-maintenance-'+run+'.json';
 fs.mkdirSync(dir,{recursive:true});
@@ -13,12 +16,22 @@ async function json(path,options={}){const r=await fetch(base+path,{...options,s
 async function snapshot(){const r=await json('/market/runtime-state',{headers:{'X-Lab-Pin':token}});if(r.http!==200||!r.body.ok||!/^[a-f0-9]{64}$/.test(r.body.book_sha256||''))throw Error('existing_financial_book_readback_unavailable');return Object.fromEntries(['ok','market_runtime_revision','aave_runtime_revision','procurement_runtime_revision','daily_hire_revision','book_sha256','order_count','ledger_count','live_revenue_cents','aave_intent_count','first_supply_confirmed','exit_test_confirmed','active_intent'].map(k=>[k,r.body[k]]));}
 if(phase==='before'){
   const report={task_id:'WEP3-SWARM-TREE-2026-10-27',execution_id:run,source_commit:sha,at_utc:new Date().toISOString(),status:'maintenance_reserved_before_deploy',before:await snapshot(),model_calls:0,transactions_sent:0,paid:false,tx_hash:null};
+  if(statusOnlyRelease){report.task_id='PLAN-PATCHGATE-ESCROW-20261023';report.release_kind='signer_status_readonly';}
   fs.writeFileSync(path,JSON.stringify(report,null,2)+'\n');
 }else{
   const report=JSON.parse(fs.readFileSync(path,'utf8'));
   let health;
   for(let attempt=0;attempt<12;attempt++){health=await json('/health');if(health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha)break;if(attempt<11)await new Promise(r=>setTimeout(r,2500));}
   report.health=health;report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
+  if(statusOnlyRelease){
+    report.signer_status=await readSignerStatus({base,token,sourceCommit:sha});
+    report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
+    report.ok=health.http===200&&health.body.source_commit===sha&&health.body.signer_status_revision==='wep3-signer-status-v1'&&health.body.atomic_ledger_ready===false&&health.body.legacy_writes_enabled===false&&report.financial_book_unchanged&&report.signer_status.ok;
+    report.new_signatures=0;report.status=report.ok?'signer_status_producer_deployed_readback_verified':'signer_status_readback_failed';report.completed_at_utc=new Date().toISOString();
+    fs.writeFileSync(path,JSON.stringify(report,null,2)+'\n');
+    console.log(JSON.stringify({status:report.status,source_commit:sha,book_unchanged:report.financial_book_unchanged,model_calls:0,transactions:0,paid:false,tx_hash:null}));
+    if(!report.ok)process.exitCode=1;
+  }else{
   const nonce=crypto.randomBytes(32).toString('hex');
   const anonymous=await json('/treasury/signer-proof?nonce='+nonce);
   const signer=await json('/treasury/signer-proof?nonce='+nonce,{headers:{'X-Lab-Pin':token}});
@@ -42,4 +55,5 @@ if(phase==='before'){
   fs.writeFileSync(path,JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({status:report.status,source_commit:sha,book_unchanged:report.financial_book_unchanged,authenticated_guard_probe_verified:report.authenticated_guard_probe_verified,paid:false,tx_hash:null}));
   if(!report.ok)process.exitCode=1;
+  }
 }

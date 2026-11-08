@@ -142,13 +142,14 @@ export async function probeSignerCapability({
   origin,
   pin,
   fetcher = fetch,
+  expected = SIGNER_CONTRACT,
   timeoutMs = 20000,
   now = () => new Date().toISOString(),
 } = {}) {
   const evidence = {
     schema: 'ltzzz.treasury-signer-preflight.v1',
     origin: origin || null,
-    path: STATUS_PATH,
+    path: STATUS_PATH+'?capability='+encodeURIComponent(expected.scope),
     checked_at_utc: now(),
     http: null,
     state: 'unknown',
@@ -161,7 +162,7 @@ export async function probeSignerCapability({
   };
   if (!origin) { evidence.reason = 'origin_not_configured'; return evidence; }
   try {
-    const response = await fetcher(origin + STATUS_PATH, {
+    const response = await fetcher(origin + evidence.path, {
       method: 'GET',
       redirect: 'error',
       headers: pin ? { 'X-Lab-Pin': pin } : {},
@@ -170,7 +171,7 @@ export async function probeSignerCapability({
     evidence.http = response.status;
     let body = null;
     try { body = await response.json(); } catch { body = null; }
-    const verdict = classifySignerResponse({ http: response.status, body });
+    const verdict = classifySignerResponse({ http: response.status, body, expected });
     evidence.state = verdict.state;
     evidence.reason = verdict.reason;
     evidence.observed_keys = evidenceKeys(body);
