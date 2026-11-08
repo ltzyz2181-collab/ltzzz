@@ -18,6 +18,11 @@ try{
   report.service_verified=!!((response.ok&&result.ok===true)||guardedPreview);
   if(action==='diagnose')report.execution_blocked=result.storage?.ok===false;
   if(guardedPreview)report.execution_blocked=true;
+  // Signer capability is a precondition, not a retryable error: the Worker
+  // reported 422 treasury_signer_missing with on_chain_executed=false in run
+  // 42453653984. Record it as a named blocked outcome, skip the funding step and
+  // never retry (a missing signer cannot appear by retrying).
+  if(response.status===422&&result?.error==='treasury_signer_missing'){report.status='blocked_missing_signer';report.service_verified=false;report.execution_blocked=true;report.on_chain_executed=false;report.tx_hash=null;break;}
   if(!report.service_verified){report.status='service_or_execution_failed';process.exitCode=1;break;}
   if(!readOnly&&result.status==='confirmed'){report.on_chain_executed=true;report.tx_hash=result.steps?.findLast(s=>s.kind==='supply'||s.kind==='withdraw')?.tx_hash||null;break;}
   if(readOnly||!['pending','pending_confirmations'].includes(result.status))break;

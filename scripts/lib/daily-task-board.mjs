@@ -189,35 +189,74 @@ const REVALIDATION_CONFLICT_ERRORS = new Set([
   'remote_artifact_not_persisted',
   'review_artifact_hash_mismatch',
   'review_artifact_semantic_mismatch',
+  'review_artifact_unparsable',
   'review_binding_invalid',
   'review_status_mismatch',
   'board_conflict'
 ]);
+// Fixed additional codes emitted by this module only.
+const REVALIDATION_FINAL_CONFLICT_CODES = new Set(['final_review_state_conflict','final_review_evidence_conflict']);
+// Transient loss of readability: network/timeout/429/5xx or an observation that
+// is simply absent. These keep the historical conclusion and mark it unre-checked.
+const REVALIDATION_UNAVAILABLE_ERRORS = new Set(['snapshot_unavailable','remote_io_unavailable','board_observation_unavailable','rate_limited']);
+const REVALIDATION_AUTH_ERRORS = new Set(['auth_blocked','unauthorized','forbidden']);
+class RevalidationFailure extends Error {
+  constructor(code, cause) { super(code); this.code = code; if (cause) this.cause = cause; }
+}
+// ANS P1-01 boundary: only fixed, enumerated codes may reach the ledger. Any
+// unexpected exception collapses to `internal_error` so raw error text (which can
+// carry URLs, payload fragments or secrets) never lands in a receipt or log.
+export function classifyRevalidationFailure(error) {
+  const code = typeof error?.code === 'string' && /^[a-z0-9_]{1,80}$/.test(error.code) ? error.code : '';
+  const message = typeof error?.message === 'string' ? error.message : '';
+  const token = code || message;
+  if (REVALIDATION_CONFLICT_ERRORS.has(token)) return { outcome: 'conflict', reason: token };
+  if (REVALIDATION_FINAL_CONFLICT_CODES.has(token)) return { outcome: 'conflict', reason: token };
+  if (REVALIDATION_UNAVAILABLE_ERRORS.has(token)) return { outcome: 'unavailable', reason: token };
+  if (REVALIDATION_AUTH_ERRORS.has(token)) return { outcome: 'auth_blocked', reason: 'auth_blocked' };
+  const status = error?.status;
+  if (status === 401 || status === 403) return { outcome: 'auth_blocked', reason: 'auth_blocked' };
+  if (status === 429 || error?.name === 'TimeoutError' || error?.name === 'AbortError') return { outcome: 'unavailable', reason: 'remote_io_unavailable' };
+  if (Number.isInteger(status) && status >= 500 && status < 600) return { outcome: 'unavailable', reason: 'remote_io_unavailable' };
+  return { outcome: 'internal_error', reason: 'internal_error' };
+}
+async function readBoundRemote(readRemote, target) {
+  let bytes;
+  try { bytes = await readRemote(target); }
+  catch (error) {
+    const status = error?.status;
+    if (status === 401 || status === 403) throw new RevalidationFailure('auth_blocked', error);
+    throw new RevalidationFailure('remote_io_unavailable', error);
+  }
+  if (bytes == null) throw new RevalidationFailure('remote_artifact_not_persisted');
+  return bytes;
+}
 async function recheckBoundFinalReview({root,record,agent,seat,snapshot,readRemote,now}){
   try{
     const bytes = validateArtifact(root, record, agent, seat);
-    if (digest(await readRemote(seat.artifact.path)) !== digest(bytes)) throw Error('remote_artifact_not_persisted');
+    if (digest(await readBoundRemote(readRemote, seat.artifact.path)) !== digest(bytes)) throw new RevalidationFailure('remote_artifact_not_persisted');
     const observed = await snapshot();
-    if (observed?.available !== true) throw Error('snapshot_unavailable');
+    if (observed?.available !== true) throw new RevalidationFailure('snapshot_unavailable');
     const task = taskFor(observed, seat.assignment.id);
-    if (!task) throw Error('snapshot_unavailable');
-    if (task.date !== record.date || task.claimed_by !== agent) throw Error('board_conflict');
-    if (!fresh(observed, agent, now)) throw Error('snapshot_unavailable');
-    if (!FINAL_STATUSES.includes(task.status)) throw Error('final_review_state_conflict');
-    if (task.evidence_path !== seat.artifact.path || task.evidence_sha256 !== seat.artifact.sha256) throw Error('final_review_evidence_conflict');
+    if (!task) throw new RevalidationFailure('snapshot_unavailable');
+    if (task.date !== record.date || task.claimed_by !== agent) throw new RevalidationFailure('board_conflict');
+    if (!fresh(observed, agent, now)) throw new RevalidationFailure('snapshot_unavailable');
+    if (!FINAL_STATUSES.includes(task.status)) throw new RevalidationFailure('final_review_state_conflict');
+    if (task.evidence_path !== seat.artifact.path || task.evidence_sha256 !== seat.artifact.sha256) throw new RevalidationFailure('final_review_evidence_conflict');
     const review = task.review;
-    if (!review || !evidencePath(review.evidence_path) || !/^[a-f0-9]{64}$/.test(review.evidence_sha256 || '')) throw Error('review_binding_invalid');
-    const reviewBytes = await readRemote(review.evidence_path);
-    if (digest(reviewBytes) !== review.evidence_sha256) throw Error('review_artifact_hash_mismatch');
-    const verdict = JSON.parse(Buffer.from(reviewBytes).toString('utf8'));
-    if (verdict.accepted !== seat.accepted || (verdict.artifact_sha256 || verdict.reviewed_sha256) !== seat.artifact.sha256 || verdict.task_id !== seat.assignment.id || verdict.date !== record.date || verdict.run_key !== record.run_key) throw Error('review_artifact_semantic_mismatch');
-    if ((task.status === 'completed_draft_review') !== verdict.accepted) throw Error('review_status_mismatch');
+    if (!review || !evidencePath(review.evidence_path) || !/^[a-f0-9]{64}$/.test(review.evidence_sha256 || '')) throw new RevalidationFailure('review_binding_invalid');
+    const reviewBytes = await readBoundRemote(readRemote, review.evidence_path);
+    if (digest(reviewBytes) !== review.evidence_sha256) throw new RevalidationFailure('review_artifact_hash_mismatch');
+    let verdict;
+    try { verdict = JSON.parse(Buffer.from(reviewBytes).toString('utf8')); }
+    catch { throw new RevalidationFailure('review_artifact_unparsable'); }
+    if (verdict.accepted !== seat.accepted || (verdict.artifact_sha256 || verdict.reviewed_sha256) !== seat.artifact.sha256 || verdict.task_id !== seat.assignment.id || verdict.date !== record.date || verdict.run_key !== record.run_key) throw new RevalidationFailure('review_artifact_semantic_mismatch');
+    if ((task.status === 'completed_draft_review') !== verdict.accepted) throw new RevalidationFailure('review_status_mismatch');
     return {outcome:'verified', reason:'final_review_revalidated_stable'};
   }catch(error){
-    const message = error?.message || 'final_review_recheck_failed';
-    // 未知错误按冲突处理（fail-closed）：宁可明确降级并保留旧证据，也不把真实不符伪装成瞬时不可用。
-    const conflict = REVALIDATION_CONFLICT_ERRORS.has(message) || message.startsWith('final_review_');
-    return {outcome: conflict ? 'conflict' : 'unavailable', reason: message};
+    // Fail-closed: an unexpected exception can never be read as "verified", and
+    // its raw text is replaced by a fixed code before persistence.
+    return classifyRevalidationFailure(error);
   }
 }
 
@@ -243,9 +282,15 @@ export async function syncDailyBoard({root, date, snapshot, command, readRemote,
         saveLedger(root, record);
         continue;
       }
-      if (outcome === 'unavailable') {
-        // 保留历史结论与原 review_receipt，但不伪装为当前已核验：revalidation=unavailable 由 hasUnverifiedBoard 暴露。
-        seat.sync_reason = 'final_review_revalidation_unavailable';
+      if (outcome !== 'conflict') {
+        // 瞬时不可读 / 鉴权被拒 / 未知内部异常：历史结论与原 review_receipt 原样保留，
+        // 但当前不再计为已核验（hasUnverifiedBoard 依据 revalidation !== 'verified' 暴露）。
+        // 异常原文一律不落账，只写固定枚举码。
+        seat.sync_reason = outcome === 'unavailable'
+          ? 'final_review_revalidation_unavailable'
+          : outcome === 'auth_blocked'
+            ? 'final_review_revalidation_auth_blocked'
+            : 'final_review_revalidation_internal_error';
         saveLedger(root, record);
         continue;
       }
