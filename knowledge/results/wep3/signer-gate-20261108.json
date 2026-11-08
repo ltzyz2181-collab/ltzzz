@@ -1,0 +1,48 @@
+{
+  "schema": "ltzzz.treasury-signer-gate-deployment.v1",
+  "at_utc": "2026-11-08T06:59:58Z",
+  "scope": "云端席按 GPT 2026-11-08T06:42Z 部署待决清单执行；小程序 / CloudBase vpay 明确归桌面 11-09 窗口，本席未触碰 miniprogram/",
+  "pr": {
+    "number": 377,
+    "url": "https://github.com/ltzyz2181-collab/ltzzz/pull/377",
+    "merge_commit": "db421de02c9e437750a7d4ee169ccc0e21988009",
+    "merge_method": "squash",
+    "pr_checks": {"pass": 8, "skipping": 12, "fail": 0}
+  },
+  "changes_landed": [
+    "scripts/lib/signer-readiness.mjs: 只读单次探测 + 四态分类 + fundingGate",
+    "scripts/preflight-signer.mjs: 写 signer-preflight-<run>-attempt-<n>.json 并导出 state/blocked_status",
+    "scripts/run-treasury-aave.mjs: 422 treasury_signer_missing -> blocked_missing_signer",
+    "scripts/anchor-market-snapshot.mjs: 同错误分支 + on_chain 依据 on_chain_executed",
+    "scripts/lib/daily-task-board.mjs: 复验四枚举 unavailable/conflict/auth_blocked/internal_error，非 conflict 保留历史结论",
+    "scripts/tests/signer-readiness.test.mjs: 新增 10 项",
+    "scripts/tests/ans-final-review-revalidation.test.mjs: 9 -> 13 项（auth_blocked / internal_error / 429-5xx / 重复同步）",
+    ".github/workflows/autonomous-funded-orders.yml: preflight 步骤 + Aave/anchor 仅 ready 才跑 + 非 ready 显式 ::error exit 1",
+    ".github/workflows/controller-daily-review.yml: PR 路径纳入 daily-task-board.mjs 与 ANS 测试"
+  ],
+  "local_tests": {"total": 96, "pass": 96, "fail": 0, "files": ["ans-final-review-revalidation 13", "daily-task-board 41", "daily-independent-review 11", "qwen-native 12", "controller-daily-review 9", "signer-readiness 10"]},
+  "funded_gate_first_real_run": {
+    "run_id": "42456830138",
+    "trigger": "merge push to main (workflow file self-path)",
+    "order_fulfilment_step": "success (unchanged入口, 不因缺口全停)",
+    "preflight": {"http": 200, "state": "unknown", "reason": "signer_capability_not_declared", "observed_keys": ["aave_runtime_revision", "error", "ok"], "retries": 0, "funding_attempted": false},
+    "aave_step": "skipped",
+    "anchor_step": "skipped",
+    "summary_step": "exit 1 with ::error — intentional fail-closed, not a swallowed green",
+    "receipts_saved": true,
+    "receipt_path": "knowledge/results/wep3/signer-preflight-42456830138-attempt-1.json"
+  },
+  "open_gap": "Worker /market/aave/status 的既有契约是 {ok, chain_id}（见 scripts/lib/live-wep3-eight.mjs），本次实测响应体只含 ok / error / aave_runtime_revision，未声明 signer 就绪字段。因此门按设计长期停在 blocked_signer_unverified：资金步骤被跳过而不是盲发。要真正放开 Aave，需要 Worker 侧暴露显式 signer 就绪字段（或把判定改到 runtime-state 的 treasury 标志），属下一项独立工作。",
+  "not_done": [
+    "CDP 三元组注入：仍缺值，需 owner 从既有 ltzzz-ops-v1 提供；B0/B1 测试网证据依赖它",
+    "R-4 隔离状态 atomic canary：未动手，atomic_ledger_ready 仍 false",
+    "S-3 Daily Worker 对账与最多一次 DeepSeek 调用：未执行",
+    "小程序沙箱全链路 / CloudBase vpay：按用户明确边界归桌面，本次未部署"
+  ],
+  "boundaries_respected": {
+    "miniprogram_untouched": true,
+    "no_duplicate_payment": true,
+    "no_full_redeploy_on_script_discovery": true,
+    "no_continue_on_error_for_funding": true
+  }
+}
