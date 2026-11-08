@@ -1,5 +1,43 @@
 import test from 'node:test';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {Market,hash} from '../../wep3-market.js';import {MarketRuntimeV3} from '../../wep3-worker.js';import {AAVE_RUNTIME_REVISION} from '../../wep3-aave.js';
 globalThis.crypto??=crypto.webcrypto;
+import {transactionSignerStatus} from '../../wep3-signer-status.js';
+import {readSignerStatus} from '../lib/signer-status-readback.mjs';
+
+test('signer status requires auth and observes only the guarded transaction adapter without effects',async()=>{
+ let saved={ledger:[{id:'existing'}],orders:{},aave:{active_intent:'preserved'}};const before=structuredClone(saved);let writes=0,network=0;
+ const env={LAB_PIN:'pin',WEP3_SOURCE_COMMIT:'a'.repeat(40)};
+ for(const key of ['TREASURY_EXECUTOR_KEY','FUNDING_EXECUTOR_KEY','PRIVATE_KEY'])Object.defineProperty(env,key,{enumerable:true,get(){throw Error('credential must never be read');}});
+ const market=new Market({storage:{async get(){return structuredClone(saved)},async put(k,v){writes++;saved=v;}}},env);
+ const original=globalThis.fetch;globalThis.fetch=async()=>{network++;throw Error('no RPC or signer calls');};
+ try{
+  for(const scope of ['aave_supply','snapshot_anchor']){
+   const route='/market/aave/status?capability='+scope;
+   assert.equal((await send(market,route)).status,401);
+   assert.equal((await send(market,route,undefined,{'X-Lab-Pin':'wrong'})).status,401);
+   const r=await send(market,route,undefined,{'X-Lab-Pin':'pin'});
+   assert.equal(r.status,200);assert.equal(r.body.schema,'ltzzz.treasury-signer-status.v1');assert.equal(r.body.revision,'wep3-signer-status-v1');assert.equal(r.body.scope,scope);assert.equal(r.body.source_commit,'a'.repeat(40));
+   assert.equal(r.body.configured,false);assert.equal(r.body.control_verified,null);assert.equal(r.body.control_evidence,null);assert.equal(r.body.transaction_adapter_ready,false);assert.equal(r.body.signed,false);assert.equal(r.body.transactions,0);
+  }
+  assert.equal((await send(market,'/market/aave/status?capability=wrong',undefined,{'X-Lab-Pin':'pin'})).status,400);
+  assert.equal((await send(market,'/market/aave/status?capability=aave_supply&capability=snapshot_anchor',undefined,{'X-Lab-Pin':'pin'})).status,400);
+  const publicStatus=await send(market,'/market/aave/status');assert.equal(publicStatus.body.error,'treasury_missing');assert.equal(publicStatus.body.schema,undefined);
+  assert.equal(writes,0);assert.equal(network,0);assert.deepEqual(saved,before);
+ }finally{globalThis.fetch=original;}
+});
+
+test('deployment readback uses six GETs, isolates scopes, and retains only safe fields',async()=>{
+ const sha='b'.repeat(40),calls=[];
+ const fetcher=async(url,options)=>{calls.push({url,method:options.method});const scope=new URL(url).searchParams.get('capability');const auth=options.headers['X-Lab-Pin'];return Response.json(auth==='fixture-token'?{...transactionSignerStatus({WEP3_SOURCE_COMMIT:sha},scope),future_private_value:'never-export-this'}:{ok:false,error:'pin_required'},{status:auth==='fixture-token'?200:401});};
+ const report=await readSignerStatus({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:sha,fetcher});
+ assert.equal(report.ok,true);assert.equal(calls.length,6);assert.equal(calls.every(c=>c.method==='GET'),true);assert.equal(report.rows.every(r=>r.gate.state==='missing'),true);assert.equal(JSON.stringify(report).includes('never-export-this'),false);assert.equal(JSON.stringify(report).includes('fixture-token'),false);
+});
+
+test('deployment readback rejects a stale source and any claim that the adapter was enabled',async()=>{
+ for(const patch of [{source_commit:'c'.repeat(40)},{configured:true},{control_verified:true},{transactions:1}]){
+  const fetcher=async(url,options)=>Response.json(options.headers['X-Lab-Pin']==='fixture-token'?{...transactionSignerStatus({WEP3_SOURCE_COMMIT:'b'.repeat(40)},new URL(url).searchParams.get('capability')),...patch}:{ok:false},{status:options.headers['X-Lab-Pin']==='fixture-token'?200:401});
+  assert.equal((await readSignerStatus({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:'b'.repeat(40),fetcher})).ok,false);
+ }
+});
 const secret='whsec_fixture';
 test('renamed runtime reuses existing book; authenticated state proof hides signed bytes and does not mutate',async()=>{
  const f=fixture(),book=await f.market.read();book.orders.historical={id:'historical',status:'delivered'};
