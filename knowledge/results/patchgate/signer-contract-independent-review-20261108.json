@@ -1,0 +1,118 @@
+{
+  "schema": "ltzzz.patchgate.independent-review.v1",
+  "review_id": "SIGNER-CONTRACT-INDEPENDENT-REVIEW-20261108",
+  "reviewed_at_utc": "2026-11-08T08:05:00Z",
+  "reviewer": {
+    "logical_seat": "xai",
+    "actual_provider": "xai",
+    "client": "grok"
+  },
+  "subject": {
+    "pr": 379,
+    "title": "fix(signer): 完整契约（schema/revision/scope/chain）+ error 边界｜head 已冻结，待异源独立审",
+    "html_url": "https://github.com/ltzyz2181-collab/ltzzz/pull/379",
+    "head_sha": "c05fa2f871461636b082c9982845885361a4263e",
+    "head_ref": "fix/signer-contract-complete",
+    "base_ref": "main",
+    "base_sha_observed": "e0f99e052f2abfbf90e45c31f31cccf8404fbf41",
+    "head_frozen_claim": true,
+    "changed_files": [
+      "scripts/lib/signer-readiness.mjs",
+      "scripts/tests/signer-readiness.test.mjs"
+    ]
+  },
+  "head_match": {
+    "expected": "c05fa2f871461636b082c9982845885361a4263e",
+    "observed": "c05fa2f871461636b082c9982845885361a4263e",
+    "status": "matched"
+  },
+  "verdict": {
+    "code_review": "approve_with_conditions",
+    "production_ready": false,
+    "merge_recommendation": "eligible_for_merge_as_consumer_gate_only",
+    "rejected_head_mismatch": false,
+    "ci_green_alone_not_sufficient": true
+  },
+  "checklist": {
+    "contract_four_fields": {
+      "status": "pass",
+      "detail": "ready requires schema=ltzzz.treasury-signer-status.v1, revision=wep3-signer-status-v1, scope=aave_supply, chain_id=8453 via SIGNER_CONTRACT defaults; mismatches return unknown with distinct reasons"
+    },
+    "error_boundary": {
+      "status": "pass",
+      "detail": "non-empty body.error wins over capability fields including ok:true; treasury_signer_missing maps to missing; other errors -> signer_status_reports_error"
+    },
+    "bare_signer_object": {
+      "status": "pass",
+      "detail": "counter-1: signer:{configured,control_verified} without schema -> signer_contract_schema_mismatch, not ready"
+    },
+    "rev_scope_chain_rejects": {
+      "status": "pass",
+      "detail": "counter-3 covers wrong revision, scope, chain_id separately and combined; first mismatch reason wins for combined case"
+    },
+    "boolean_requires_control_evidence": {
+      "status": "pass",
+      "detail": "configured===true and control_verified===true still require non-empty control_evidence or control_proof_ref string; else signer_control_evidence_absent"
+    },
+    "anchor_aave_isolation": {
+      "status": "pass",
+      "detail": "anchor scope snapshot_anchor with aave expected returns signer_contract_scope_mismatch; expected parameter allows separate capabilities"
+    },
+    "get_readonly": {
+      "status": "pass",
+      "detail": "probeSignerCapability uses GET only, retries=0, funding_attempted=false, on_chain_executed=false, tx_hash=null; no sign/transfer/nonce mutation in reviewed files"
+    }
+  },
+  "counterexamples_observed": [
+    {
+      "id": "counter-1",
+      "input": "ok:true + signer:{configured:true,control_verified:true} only",
+      "expected_reason": "signer_contract_schema_mismatch",
+      "local_test": "pass"
+    },
+    {
+      "id": "counter-2",
+      "input": "ok:true + error:synthetic_service_failure + full contract fields",
+      "expected_reason": "signer_status_reports_error",
+      "local_test": "pass"
+    },
+    {
+      "id": "counter-3",
+      "input": "wrong revision/scope/chain_id",
+      "expected_reasons": [
+        "signer_contract_revision_mismatch",
+        "signer_contract_scope_mismatch",
+        "signer_contract_chain_mismatch"
+      ],
+      "local_test": "pass"
+    }
+  ],
+  "local_verification": {
+    "command": "node --test scripts/tests/signer-readiness.test.mjs",
+    "at_sha": "c05fa2f871461636b082c9982845885361a4263e",
+    "tests": 20,
+    "passed": 20,
+    "failed": 0
+  },
+  "ci_observed": {
+    "note": "check_runs at review time: offline/verify/observe/bootstrap success; several suite jobs skipped; 0 fail. CI green is not treated as production proof.",
+    "fail_count": 0
+  },
+  "deployment_evidence": {
+    "status": "waiting_input",
+    "detail": "PR only changes consumer classifier and unit tests. Worker production fields (schema/revision/scope/chain_id/configured/control_verified/control_evidence) not deployed in this PR. Code review must not substitute for read-back of live Worker contract shape, auth/anonymous behavior, or ledger hash before/after."
+  },
+  "conditions": [
+    "Do not treat merge of #379 as Worker signer production readiness",
+    "After merge, managed CI must deploy/publish producer fields then re-probe GET /market/aave/status with revision and evidence read-back",
+    "No wallet operations performed by this review"
+  ],
+  "scope_exclusions": [
+    "miniprogram/",
+    "wallet keys / CDP secrets",
+    "on-chain txs",
+    "Worker deploy artifacts"
+  ],
+  "paid": false,
+  "tx_hash": null
+}
