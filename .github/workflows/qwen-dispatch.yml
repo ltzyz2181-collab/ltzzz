@@ -1,7 +1,7 @@
 name: Qwen dispatch consumer
 on:
   pull_request:
-    paths: ['scripts/run-qwen-dispatch.mjs','scripts/call-qwen.mjs','scripts/delivery-integrity.mjs','scripts/run-daily-tasks.mjs','scripts/tests/qwen-dispatch.test.mjs','scripts/tests/qwen-native.test.mjs','scripts/tests/delivery-integrity.test.mjs','.github/workflows/qwen-dispatch.yml']
+    paths: ['scripts/run-qwen-dispatch.mjs','scripts/call-qwen.mjs','scripts/delivery-integrity.mjs','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/tests/qwen-dispatch.test.mjs','scripts/tests/qwen-native.test.mjs','scripts/tests/delivery-integrity.test.mjs','scripts/tests/daily-task-board.test.mjs','scripts/tests/daily-independent-review.test.mjs','scripts/tests/ans-final-review-revalidation.test.mjs','scripts/tests/ans-final-review-recovery.injection.mjs','.github/workflows/qwen-dispatch.yml']
   workflow_dispatch:
   push:
     branches: [main]
@@ -16,7 +16,7 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check scripts/run-daily-tasks.mjs && node --test scripts/tests/qwen-dispatch.test.mjs scripts/tests/qwen-native.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/seat-delivery.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs
+      - run: node --check scripts/run-daily-tasks.mjs && node --check scripts/lib/daily-task-board.mjs && node --check scripts/tests/ans-final-review-recovery.injection.mjs && node --test scripts/tests/qwen-dispatch.test.mjs scripts/tests/qwen-native.test.mjs scripts/tests/delivery-integrity.test.mjs scripts/tests/seat-delivery.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/daily-independent-review.test.mjs scripts/tests/ans-final-review-revalidation.test.mjs && node scripts/tests/ans-final-review-recovery.injection.mjs
   consume:
     needs: verify
     if: github.event_name != 'pull_request'
