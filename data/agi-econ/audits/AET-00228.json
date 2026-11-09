@@ -1,0 +1,63 @@
+{
+  "task_id": "AET-00228",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "ba47df25c6847e850c0adeda7aec2da6b67d882a66f7dd667c329c8ba2836a4f",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": true,
+    "score": 85,
+    "issues": [
+      "剩余资金占比标注错误：0.1785/0.332≈53.77%；46.23%实际是影子承诺额0.1535占余额的比例。",
+      "“可见8条全部应触发24小时去重”不严谨：按精确 asset+thesis+by，前两条与后6条的 thesis 前缀不同；且 CAP-00027 的 at 被截断，无法完成其24小时窗口判定，只能确认至少7条存在可验证重复关系。",
+      "“更像自动化测试或批量生成”缺少直接依据，应表述为基于重复模式的待验证假设；可见完整时间跨度约为2天5小时36分，“约2天内”表述偏紧。",
+      "“影子状态与收益目标存在矛盾”略有过度解读：提案已声明“仅记账不执行”，其中收益可理解为影子假设，不能等同于声称已产生实际收益。"
+    ],
+    "tokens_used": 7179
+  },
+  "at": "2026-11-09T20:06:25.346Z",
+  "report_sha256": "429c19d970324f5aec53c4ad8822acd1de4a824428b7b774604a05f5258e4ea7"
+}
