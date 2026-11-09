@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-11-09T08:18:25Z",
+  "subject": "ANS P1-01 复核补测：语法检查 / 故障注入 / 端到端测试",
+  "trigger": "owner 指出 2026-11-08 审核记录 accepted=true 但未执行语法检查、故障注入与端到端测试",
+  "audited_record": "knowledge/results/ans-cycle/2026-11-08-reviewer.json",
+  "audit_artifact_sha256_claimed": "d600a1a3aeb8beacebcb92df058f2d5deebd3161e7b86c01dc5ac8fffdb450d5",
+  "environment": {
+    "node": "v22.23.2",
+    "ajv": "6.15.0",
+    "os": "linux vm"
+  },
+  "files_sha256": {
+    "scripts/lib/daily-task-board.mjs": "c33fca7ac0b495615c02c271dcc0a83ed5b08b2278305e260605454bba908cc7",
+    "scripts/tests/ans-final-review-revalidation.test.mjs": "8e0763ffc25ac45f760d469148fba3d3770e40a42e2ed57d851ce65d887ab7b9",
+    "scripts/tests/ans-final-review-recovery.injection.mjs": "60d9905fccaa47419ac7bccb806ae55233658116f31c4357a5d2cca152fb30cc",
+    "scripts/tests/ans2-schema.test.mjs": "c2a245a4ca44a656d22bf597bb9db6bc35cab98a3aa53b3f303fb26c0a1a1f08"
+  },
+  "step1_syntax": {
+    "command": "node --check <file>",
+    "files": 11,
+    "ok": 11,
+    "fail": 0,
+    "verdict": "pass"
+  },
+  "step2_injection": {
+    "command": "node scripts/tests/ans-final-review-recovery.injection.mjs",
+    "verdict": "pass",
+    "assertions": 7,
+    "assertions_passed": 7,
+    "exit_code": 0,
+    "negative_control": "把 A_flags_cleared 期望故意改错后 exit=1 并点名失败项，证明断言可拦截",
+    "summary": {
+      "A_flags_cleared": false,
+      "B_flags_cleared": true,
+      "AB_sync_reason_identical": false,
+      "conflict_distinguishable": true,
+      "auto_recovery": true
+    },
+    "before_this_round": "该脚本此前只算 summary 不比对、恒定 exit 0，属观察记录而非验证；本轮已补断言与退出码"
+  },
+  "step3_e2e": {
+    "command": "node --test <6 files>",
+    "tests": 38,
+    "pass": 38,
+    "fail": 0,
+    "verdict": "pass",
+    "files": [
+      "ans-cycle",
+      "ans-board-sync",
+      "ans-review-recovery",
+      "ans-task-review",
+      "ans2-schema",
+      "ans-final-review-revalidation"
+    ],
+    "not_run": "node scripts/daily-task-board.mjs sync 真实入口未跑：会写真实 ledger 并触发网络，属生产动作，审核阶段不执行"
+  },
+  "defects_found_and_fixed": [
+    {
+      "id": "V-1",
+      "what": "scripts/tests/ans2-schema.test.mjs 从未纳入任何 CI workflow，是孤儿测试",
+      "fix": "未擅改 workflow（OAuth 缺 workflow scope），仅记录；需 owner/GPT 决定是否并入门禁"
+    },
+    {
+      "id": "V-2",
+      "what": "ans2-schema.test.mjs 首次实跑即崩：ajv6 只内置 http://json-schema.org/draft-07/schema#，而 schema 文件写 https 写法，compile 抛 no schema with key or ref",
+      "fix": "仅在测试内把 $schema 归一为 ajv6 认可的 URI，未改 knowledge/schemas/ans2-follow-up-receipt.v3.json 本身；ajv 6.12.6 与 6.15.0 均复现，与版本无关"
+    },
+    {
+      "id": "V-3",
+      "what": "本机 node_modules 缺 devDependency ajv，测试直接 ERR_MODULE_NOT_FOUND",
+      "fix": "npm install ajv@6.15.0 --no-save --no-package-lock，package.json 与 lock 未改动"
+    },
+    {
+      "id": "V-4",
+      "what": "故障注入脚本无断言、恒定 exit 0，行为退化也可通过",
+      "fix": "新增 7 条期望断言 + verdict/failures 字段 + 非零退出，并用反向对照验证拦截有效"
+    }
+  ],
+  "audit_record_problem": "2026-11-08-reviewer.json 把 node --check、node --test、真实 sync、故障注入全部列入 unverified，却仍给出 accepted=true；且其 artifact_sha256=d600a1a3 与当前源码 c33fca7a 不一致，被审对象与仓库字节未对齐",
+  "money_actions": 0,
+  "model_calls": 0
+}

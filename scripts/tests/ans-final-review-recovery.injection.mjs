@@ -99,6 +99,23 @@ out.summary={
 const A=out.cases.find(c=>c.case==='A_transient_remote_read_failure'),B=out.cases.find(c=>c.case==='B_real_evidence_conflict');
 out.summary.conflict_distinguishable = !!(A&&B&&A.sync_reason!==B.sync_reason);
 
+// 期望断言：这是验证脚本，不是观察脚本。summary 之前只算不判，行为坏了也照样退出 0。
+const caseOf=name=>out.cases.find(c=>c.case===name);
+const expectations=[
+  ['A 瞬时远端读取失败不得清掉 review_verified 与终态', out.summary.A_flags_cleared===false],
+  ['B 真实证据冲突必须清掉 review_verified', out.summary.B_flags_cleared===true],
+  ['A/B 两条路径的 sync_reason 必须可区分', out.summary.AB_sync_reason_identical===false&&out.summary.conflict_distinguishable===true],
+  ['A 瞬时失败不得触发重复提交', caseOf('A_transient_remote_read_failure')?.new_submit===0],
+  ['B 真实冲突不得触发重复提交', caseOf('B_real_evidence_conflict')?.new_submit===0],
+  ['C 远端恢复后必须幂等回到 verified', out.summary.auto_recovery===true],
+  ['C 降级再恢复全程不得触发重复提交', caseOf('C_downgrade_then_restore')?.new_submit===0],
+];
+const failures=expectations.filter(([,ok])=>!ok).map(([name])=>name);
+out.assertions=expectations.map(([name,ok])=>({name,passed:ok}));
+out.verdict=failures.length===0?'pass':'fail';
+out.failures=failures;
+
 const target=process.argv[2]||'/tmp/ans-p1-01-injection.json';
 fs.writeFileSync(target,JSON.stringify(out,null,2)+'\n');
 console.log(JSON.stringify(out,null,2));
+if(failures.length){console.error('INJECTION FAIL: '+failures.join(' | '));process.exit(1);}

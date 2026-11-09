@@ -6,6 +6,12 @@ import Ajv from 'ajv';
 const ajv = new Ajv({ allErrors: true, jsonPointers: true });
 const SCHEMA_PATH = 'knowledge/schemas/ans2-follow-up-receipt.v3.json';
 const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, 'utf8'));
+// ajv@6 只内置 http://json-schema.org/draft-07/schema# 这一 meta 引用，
+// schema 文件用的是 https 写法，直接 compile 会抛 no schema with key or ref。
+// 只在测试内把 $schema 归一到 ajv6 认可的 URI，不改仓库 schema 文件本身。
+if (schema.$schema === 'https://json-schema.org/draft-07/schema#') {
+  schema.$schema = 'http://json-schema.org/draft-07/schema#';
+}
 const validate = ajv.compile(schema);
 
 const base = {
