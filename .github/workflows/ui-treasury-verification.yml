@@ -36,6 +36,13 @@ jobs:
           done
           node --test "$RUNNER_TEMP/ui-candidate/scripts/tests/wep3-receipt-render.test.mjs" "$RUNNER_TEMP/ui-candidate/scripts/tests/treasury-dashboard-render.test.mjs"
           UI_SOURCE_DIR="$RUNNER_TEMP/ui-candidate" node scripts/verify-ui-browser.mjs
+      - name: Verify the current pull-request UI candidate
+        if: github.event_name == 'pull_request'
+        env:
+          UI_EVIDENCE_DIR: ${{ runner.temp }}/ui-evidence/current-pr
+        run: |
+          node --test scripts/tests/wep3-receipt-render.test.mjs scripts/tests/treasury-dashboard-render.test.mjs
+          UI_SOURCE_DIR=. node scripts/verify-ui-browser.mjs
       - name: Check whether both reviewed UIs are on this main commit
         id: scope
         run: |
