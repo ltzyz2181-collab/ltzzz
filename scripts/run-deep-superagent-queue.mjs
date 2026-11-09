@@ -61,8 +61,9 @@ export function sameDecision(existing,payload){
  return !!existing&&Object.keys(existing).length===5&&JSON.stringify(decisionPayload(existing))===JSON.stringify(payload);
 }
 
-function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
- if(!job||job.task_id!==task_id||job.package_id!==package_id||!SHA.test(job.input_sha256||'')||(input_sha256&&job.input_sha256!==input_sha256)||typeof job.execution_id!=='string'||!job.execution_id||(execution_id&&job.execution_id!==execution_id)||!COMMIT.test(job.source_commit||'')||job.revision!==REVISION||!STATUSES.has(job.status)||typeof job.terminal!=='boolean'||!Number.isSafeInteger(job.model_calls)||job.model_calls<0||job.model_calls>5||!Array.isArray(job.receipts)||job.receipts.length>5||job.financial_execution!==false||job.external_submissions_enabled!==false||job.paid!==false||job.tx_hash!==null)throw Error('remote_job_binding_or_isolation_invalid');
+export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
+ const maxCalls=task_id==='DEEP-DAILY-SUPERVISION'?3:5;
+ if(!job||job.task_id!==task_id||job.package_id!==package_id||!SHA.test(job.input_sha256||'')||(input_sha256&&job.input_sha256!==input_sha256)||typeof job.execution_id!=='string'||!job.execution_id||(execution_id&&job.execution_id!==execution_id)||!COMMIT.test(job.source_commit||'')||job.revision!==REVISION||!STATUSES.has(job.status)||typeof job.terminal!=='boolean'||!Number.isSafeInteger(job.model_calls)||job.model_calls<0||job.model_calls>maxCalls||!Array.isArray(job.receipts)||job.receipts.length>maxCalls||job.financial_execution!==false||job.external_submissions_enabled!==false||job.paid!==false||job.tx_hash!==null)throw Error('remote_job_binding_or_isolation_invalid');
  return job;
 }
 

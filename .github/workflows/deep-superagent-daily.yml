@@ -1,0 +1,72 @@
+name: Deep Superagent daily evidence supervision
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/run-deep-superagent-daily.mjs'
+      - 'scripts/run-deep-superagent-queue.mjs'
+      - 'workers/deep-superagent/index.js'
+      - 'scripts/tests/deep-superagent-daily.test.mjs'
+      - 'scripts/tests/deep-superagent-queue.test.mjs'
+      - 'scripts/tests/deep-superagent.test.mjs'
+      - '.github/workflows/deep-superagent-daily.yml'
+      - 'config/deep-superagent.json'
+permissions: {contents: read}
+concurrency: {group: deep-superagent-daily, cancel-in-progress: false}
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: >-
+          node --check scripts/run-deep-superagent-daily.mjs &&
+          node --check scripts/run-deep-superagent-queue.mjs &&
+          node --test scripts/tests/deep-superagent-daily.test.mjs
+          scripts/tests/deep-superagent-queue.test.mjs
+          scripts/tests/deep-superagent.test.mjs
+  execute:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 1, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Build trusted evidence readset, reserve idempotent daily attempt, and reconcile
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-deep-superagent-daily.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deep-superagent-daily-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/deep-superagent/daily-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Preserve daily receipt without retrying provider requests
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const file='knowledge/results/deep-superagent/daily-'+process.env.GITHUB_RUN_ID+'-attempt-'+process.env.GITHUB_RUN_ATTEMPT+'.json';
+          if(!fs.existsSync(file))process.exit(0);
+          const receipt=JSON.parse(fs.readFileSync(file,'utf8'));
+          if(!/^daily_result_readback_complete$|^blocked$/.test(receipt.status))throw Error('invalid_daily_receipt_status');
+          execFileSync('git',['config','user.name','ltzzz-bot']);
+          execFileSync('git',['config','user.email','bot@ltzzz.com']);
+          execFileSync('git',['add','--',file]);
+          try{execFileSync('git',['diff','--staged','--quiet']);process.exit(0);}catch{}
+          execFileSync('git',['commit','-m','Deep Superagent daily: '+receipt.status],{stdio:'inherit'});
+          JS
+          node tools/push-receipt-commit.mjs

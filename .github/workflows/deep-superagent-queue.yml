@@ -1,10 +1,10 @@
 name: Deep Superagent queue and GPT decision bridge
 on:
   pull_request:
-    paths: ['scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-queue.yml']
+    paths: ['scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-daily.yml', '.github/workflows/deep-superagent-queue.yml']
   push:
     branches: [main]
-    paths: ['ops/deep-superagent/tasks/*.json', 'ops/deep-superagent/decisions/*.json', 'scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-queue.yml']
+    paths: ['ops/deep-superagent/tasks/*.json', 'ops/deep-superagent/decisions/*.json', 'scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-daily.yml', '.github/workflows/deep-superagent-queue.yml']
 permissions: {contents: read}
 concurrency: {group: deep-superagent-queue, cancel-in-progress: false}
 jobs:
