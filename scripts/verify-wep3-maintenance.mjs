@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {readSignerStatus} from './lib/signer-status-readback.mjs';
+import {readSignerStatusWithPropagation} from './lib/signer-status-readback.mjs';
 import {verifyMessage} from 'ethers';
 import {OPERATING_TREASURY,SIGNER_PROOF_REVISION} from '../wep3-signer-proof.js';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev';
@@ -24,7 +24,7 @@ if(phase==='before'){
   for(let attempt=0;attempt<12;attempt++){health=await json('/health');if(health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha)break;if(attempt<11)await new Promise(r=>setTimeout(r,2500));}
   report.health=health;report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
   if(statusOnlyRelease){
-    report.signer_status=await readSignerStatus({base,token,sourceCommit:sha});
+    report.signer_status=await readSignerStatusWithPropagation({base,token,sourceCommit:sha});
     report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
     report.ok=health.http===200&&health.body.source_commit===sha&&health.body.signer_status_revision==='wep3-signer-status-v1'&&health.body.atomic_ledger_ready===false&&health.body.legacy_writes_enabled===false&&report.financial_book_unchanged&&report.signer_status.ok;
     report.new_signatures=0;report.status=report.ok?'signer_status_producer_deployed_readback_verified':'signer_status_readback_failed';report.completed_at_utc=new Date().toISOString();
