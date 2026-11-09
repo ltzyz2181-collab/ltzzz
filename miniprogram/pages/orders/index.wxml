@@ -6,7 +6,8 @@
   <view wx:if="{{loading}}" class="card"><view class="body">加载中…</view></view>
 
   <view wx:elif="{{empty}}" class="card">
-    <view class="body">暂无订单记录。支付成功后订单会出现在这里。</view>
+    <view class="body" wx:if="{{payEnabled}}">暂无订单记录。支付成功后订单会出现在这里。</view>
+    <view class="body" wx:else>暂无订单记录。在线支付通道尚在开通中，当前只能浏览服务介绍。</view>
   </view>
 
   <view class="card" wx:for="{{orders}}" wx:key="_id">
