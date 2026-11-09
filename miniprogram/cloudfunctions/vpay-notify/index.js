@@ -165,9 +165,12 @@ exports.main = async function (event) {
     const normalized = normalizeEvent(body); xml = normalized.xml;
     const result = await dispatch(normalized.event);
     return httpReply(200, xml ? 'application/xml' : 'application/json', xml ? '<xml><ErrCode>0</ErrCode><ErrMsg><![CDATA[success]]></ErrMsg></xml>' : JSON.stringify(result));
-  } catch (_) {
+  } catch (error) {
     // Never echo provider/network errors, URLs, payloads or credentials.
-    console.error('vpay_notification_unverified');
+    // Only our own fail() codes (lowercase snake case) are safe to log.
+    const code = typeof error?.message === 'string' && /^[a-z][a-z0-9_]{2,63}$/.test(error.message)
+      ? error.message : 'unclassified';
+    console.error('vpay_notification_unverified', code);
     return httpReply(200, xml ? 'application/xml' : 'application/json', xml ? '<xml><ErrCode>-1</ErrCode><ErrMsg><![CDATA[notification_unverified]]></ErrMsg></xml>' : JSON.stringify({ ErrCode: -1, ErrMsg: 'notification_unverified' }));
   }
 };
