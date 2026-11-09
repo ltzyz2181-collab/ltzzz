@@ -9,5 +9,6 @@
     <view class="price">{{item.priceLabel}}</view>
     <view class="link">查看服务 →</view>
   </view>
-  <view class="note">本页展示服务内容、检查项与明码价格，支持微信在线支付；支付成功后 24 小时内人工交付电子文档。</view>
+  <view class="note" wx:if="{{payEnabled}}">本页展示服务内容、检查项与明码价格，支持微信在线支付；支付成功后 24 小时内人工交付电子文档。</view>
+  <view class="note" wx:else>本页展示服务内容、检查项与明码价格。在线支付通道尚在开通中，当前只能浏览服务介绍；开放后本页会明确提示，在此之前不接受下单与付款。</view>
 </view>

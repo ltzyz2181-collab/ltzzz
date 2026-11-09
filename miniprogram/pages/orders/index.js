@@ -1,4 +1,13 @@
+const { products } = require('../../data/products');
 const config = require('../../config/index');
+
+// 历史订单里存的是下单当时的商品标题（旧名「稿件源文核验」等）；
+// 展示层按 product_id 映射到 data/products.js 的当前名称，避免旧标题泄漏给用户。
+const PRODUCT_TITLE = {};
+products.forEach(p => {
+  PRODUCT_TITLE[p.id] = p.title;
+  PRODUCT_TITLE[p.id.replace(/-/g, '_')] = p.title; // source-check ↔ source_check
+});
 
 const STATUS_LABEL = {
   pending: '待支付',
@@ -32,9 +41,13 @@ Page({
     this.setData({ loading: true });
     wx.cloud.callFunction({ name: 'order-list' })
       .then(res => {
-        const list = ((res && res.result && res.result.orders) || []).map(o => ({
+        const raw = (res && res.result && res.result.orders) || [];
+        // 支付未开放时不展示 pending（未付款）订单：体验环境里那些真实测试单
+        // 只有下单人自己能处理，不该出现在任何体验者的订单列表里。
+        const visible = config.payEnabled === true ? raw : raw.filter(o => o && o.status !== 'pending');
+        const list = visible.map(o => ({
           _id: o._id,
-          title: o.title,
+          title: PRODUCT_TITLE[o.product_id] || o.title,
           out_trade_no: o.out_trade_no,
           amountLabel: ((o.amount || 0) / 100).toFixed(2),
           statusLabel: STATUS_LABEL[o.status] || o.status,
