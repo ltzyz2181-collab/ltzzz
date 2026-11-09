@@ -224,3 +224,101 @@ export function applyResults(rootDir, {applied, dryRun = false} = {}) {
   fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2) + '\n');
   return result;
 }
+
+// ---------------- CLI ----------------
+// 用法：node scripts/run-memory-promotion-review.mjs --limit 1 [--dry-run] [--candidate <id>]
+async function main() {
+  const args = process.argv.slice(2);
+  const getArg = (flag, dflt) => {
+    const i = args.indexOf(flag);
+    return i >= 0 && args[i + 1] ? args[i + 1] : dflt;
+  };
+  const limit = Number(getArg('--limit', '1'));
+  const onlyId = getArg('--candidate', null);
+  const dryRun = args.includes('--dry-run');
+  const rootDir = process.cwd();
+
+  const runId = process.env.GITHUB_RUN_ID || String(Date.now()).slice(-10);
+  const sourceCommit = (process.env.GITHUB_SHA
+    || (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim());
+
+  const {callAgent: callDoubao} = await import('./call-doubao.mjs');
+  const {callAgent: callDeepSeek} = await import('./call-deepseek.mjs');
+
+  const worker = {
+    provider: 'doubao',
+    model: process.env.DOUBAO_MODEL || 'doubao-seed-evolving',
+    apiKey: process.env.DOUBAO_API_KEY || process.env.ARK_API_KEY,
+    callAgent: callDoubao
+  };
+  const reviewer = {
+    provider: 'deepseek',
+    model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-pro',
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    callAgent: callDeepSeek
+  };
+
+  const missing = [];
+  if (!worker.apiKey) missing.push('DOUBAO_API_KEY|ARK_API_KEY');
+  if (!reviewer.apiKey) missing.push('DEEPSEEK_API_KEY');
+  if (missing.length) {
+    console.log(JSON.stringify({
+      status: 'not_configured', missing, model_calls: 0, paid: false,
+      note: '缺少模型凭据，未做任何调用；不得据此判定评审通过'
+    }));
+    process.exitCode = 2;
+    return;
+  }
+
+  const queue = JSON.parse(fs.readFileSync(path.join(rootDir, 'memory/promote/queue.json'), 'utf8'));
+  let pool = (queue.items || []).filter(i => i.status === 'candidate');
+  if (onlyId) pool = pool.filter(i => i.id === onlyId);
+  // 优先高影响、优先最新日期
+  pool.sort((a, b) => (a.impact === 'high' ? 1 : 0) - (b.impact === 'high' ? 1 : 0)
+    || String(b.id).localeCompare(String(a.id)));
+  const targets = pool.slice(0, Math.max(1, Math.min(limit, 5)));
+
+  if (!targets.length) {
+    console.log(JSON.stringify({status: 'no_candidate', model_calls: 0}));
+    return;
+  }
+
+  const results = [];
+  for (const item of targets) {
+    try {
+      const r = await reviewOneCandidate(item, {rootDir, runId, sourceCommit, worker, reviewer, dryRun});
+      results.push(r);
+      console.log(JSON.stringify({candidate: item.id, accepted: r.accepted, reason: r.reason || null, receipt: r.receipt_path || null}));
+    } catch (e) {
+      results.push({id: item.id, accepted: false, reason: 'executor_error:' + String(e.message || e).slice(0, 160)});
+      console.log(JSON.stringify({candidate: item.id, accepted: false, error: String(e.message || e).slice(0, 160)}));
+    }
+  }
+
+  let applied = [];
+  if (!dryRun) {
+    const res = applyResults(rootDir, {applied: results});
+    applied = res.applied || [];
+  }
+
+  console.log(JSON.stringify({
+    status: 'review_run_completed',
+    run_id: runId,
+    source_commit: sourceCommit,
+    reviewed: results.length,
+    accepted: results.filter(r => r.accepted).length,
+    applied_ids: applied,
+    model_calls: results.length * 2,
+    paid: false,
+    tx_hash: null,
+    dry_run: dryRun
+  }));
+  if (!results.some(r => r.accepted)) process.exitCode = 1;
+}
+
+if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
+  main().catch(e => {
+    console.log(JSON.stringify({status: 'executor_aborted', error: String(e.message || e).slice(0, 200), model_calls: 0}));
+    process.exitCode = 1;
+  });
+}
