@@ -1,0 +1,106 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-384",
+  "head_sha": "eab6e899ab2b65e198f629bafe9e235247e3d340",
+  "pr_number": 384,
+  "source_main_sha": "4a291a9e7099e6f73ceac699ad8446232602b776",
+  "run_id": "42589804199",
+  "at_utc": "2026-11-09T08:58:35.538Z",
+  "idempotency_key": "PATCHGATE-PR-384:eab6e899ab2b65e198f629bafe9e235247e3d340",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "51286817a6cb3075081b477070dabaaeac10ef74",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": "agent-orchestrator-worker.js",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/agent-orchestrator-auth.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "test-orchestrator.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-384",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-384",
+      "base_sha": "4a291a9e7099e6f73ceac699ad8446232602b776",
+      "head_sha": "eab6e899ab2b65e198f629bafe9e235247e3d340",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "e844415c30ae48438e64e328fcbdfed75de2c400d39a856f634ae00bfafc2292"
+    },
+    "subject_sha256": "0b8867319cbf6b4071fa3fc6148f2db0cb250fd1410785225faaa25a13e38d75",
+    "idempotency_key": "PATCHGATE-PR-384:eab6e899ab2b65e198f629bafe9e235247e3d340",
+    "risk_class": "L2",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 1,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/tests/agent-orchestrator-auth.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "localhost"
+        ]
+      },
+      {
+        "path": "test-orchestrator.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "localhost"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
