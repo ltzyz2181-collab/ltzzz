@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42598054767",
+  "source_commit": "1c9dcb5a354196fc414b11c3ebbfc7656f4b7b7f",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261107-deepseek-f14982cb",
+  "created_at": "2026-11-09T10:09:05.428Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"421979d941d2a857fbecc58cc4277ce39338d0fd376d344db80ac22e01231561\",\"subject\":{\"candidate_id\":\"CAND-20261107-deepseek-f14982cb\",\"claim\":\"`ltzzz-memory/重要事件.md`“2026-10-22～23”节：ANS 补丁审方 `accepted=false`，生产修复未完成；Pulse 快照只含 `ok:true,http:200`，无 provider/model/finish_reason。\",\"source\":\"memory/daily/agent-2026-11-07-deepseek-f14982cbdf05.md\",\"source_sha256\":\"628c815e2327ce6322b917ee36850b8196afa38e2b1582808dec76425a8f797a\"}}",
+      "sha256": "bb7e1ce479750ee855e719e6b9667496fd8420e705a99091ea9d7ccdf2bdaa36"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"421979d941d2a857fbecc58cc4277ce39338d0fd376d344db80ac22e01231561\",\"artifact_sha256\":\"bb7e1ce479750ee855e719e6b9667496fd8420e705a99091ea9d7ccdf2bdaa36\",\"accepted\":true,\"reasons\":[\"可作为对重要事件节既有记载的可复用状态摘录：审方 accepted=false 与 Pulse 快照字段范围均为可独立引用的事实，未把字段缺失写成未部署/无付费等已证实结论。\",\"限制：生产修复未完成属阶段性状态，后续可能变化；本条只约束该节当时记载与快照可见字段，覆盖面仅此两事。\"],\"unverified\":[\"源文件 memory/daily/agent-2026-11-07-deepseek-f14982cbdf05.md 正文未在评审包内展开，claim 与 ltzzz-memory/重要事件.md「2026-10-22～23」节是否逐字对应只能采信提交方。\"]}",
+      "sha256": "277056d9e913dc982a49c21cd22d5d0a5b3a12d101876b80fb59a5cb02175b45"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 936,
+    "reviewer_tokens": 3533,
+    "model_calls": 2
+  }
+}
