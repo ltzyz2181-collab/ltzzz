@@ -7,9 +7,11 @@ const html = fs.readFileSync(new URL('../../wep3.html', import.meta.url), 'utf8'
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script, 'WEP3 receipt script must exist');
 
-async function render(receipt, fetchError = null) {
-  const elements = Object.fromEntries(['state', 'money', 'detail'].map(id => [id, {textContent: '', innerHTML: ''}]));
+async function render(receipt, fetchError = null, now = Date.parse('2026-11-09T06:00:00Z')) {
+  const elements = Object.fromEntries(['state', 'freshness', 'money', 'detail'].map(id => [id, {textContent: '', innerHTML: ''}]));
+  const FixedDate = class extends Date { static now() { return now; } };
   const context = vm.createContext({
+    Date: FixedDate,
     document: {getElementById: id => elements[id]},
     fetch: async () => {
       if (fetchError) throw fetchError;
@@ -72,6 +74,30 @@ test('null field entries do not hide a real failed check', async () => {
   assert.match(elements.state.textContent, /未通过/);
   assert.equal(JSON.parse(elements.detail.textContent).failed_checks[0].failed_fields[0].actual, false);
   assert.match(elements.money.textContent, /否/);
+});
+
+test('stale archived receipts are explicitly distinguished from current chain state', async () => {
+  const elements = await render({at: '2026-11-02T01:44:32.360Z'});
+  assert.match(elements.freshness.textContent, /超过24小时/);
+  assert.match(elements.freshness.textContent, /不代表当前链上状态/);
+});
+
+test('fresh receipt timestamps are shown as recent without implying chain verification', async () => {
+  const elements = await render({at: '2026-11-09T05:30:00.000Z'});
+  assert.match(elements.freshness.textContent, /在24小时内/);
+  assert.doesNotMatch(elements.freshness.textContent, /已超过24小时/);
+});
+
+test('missing, invalid and future receipt timestamps remain unverified', async () => {
+  for (const receipt of [{}, {at: 'not-a-date'}, {at: '2026-11-09T07:00:00.000Z'}]) {
+    const elements = await render(receipt);
+    assert.match(elements.freshness.textContent, /不能判断新鲜度/);
+  }
+});
+
+test('network failure does not leave a stale freshness claim', async () => {
+  const elements = await render(null, new Error('network'));
+  assert.match(elements.freshness.textContent, /读取失败/);
 });
 
 test('prototype property names remain literal statuses', async () => {
