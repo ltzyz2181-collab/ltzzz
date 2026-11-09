@@ -1,0 +1,19 @@
+{
+  "finding": "run-daily-tasks.mjs 在 readLedger 后只校验本地 ledger 与远端 ledger 字节哈希一致，但 runReservedSeat 前未验证 boardLedger.seats[agent].status==='reserved' 且 claim_receipt.run_key 与当前 runKey 一致。prepare 与 run 使用不同 runKey 来源（prepare 用 process.env.GITHUB_RUN_ATTEMPT，run 用同源但独立拼接），在 GitHub 重试/重新运行场景下，run-daily-tasks 可能读到旧 attempt 的 reserved 席位，runReservedSeat 返回 blocked_no_repurchase，导致所有席位静默失败且无模型调用，而输出仍写入 data/results。",
+  "evidence_paths": [
+    "scripts/run-daily-tasks.mjs",
+    "scripts/daily-task-board.mjs",
+    "scripts/lib/daily-task-board.mjs"
+  ],
+  "minimal_patch": {
+    "file": "scripts/run-daily-tasks.mjs",
+    "change": "在 main() 中 boardLedger 读取后、reservationResponse 校验前，添加 runKey 一致性校验：\n\n  const runKey = `${process.env.GITHUB_RUN_ID || 'local'}:${process.env.GITHUB_RUN_ATTEMPT || '1'}`;\n  const staleRunSeats = Object.values(boardLedger?.seats || {})\n    .filter(s => s.status === 'reserved' && s.claim_receipt?.run_key && s.claim_receipt.run_key !== runKey);\n  if (staleRunSeats.length) {\n    throw Error(`daily_reservation_run_key_mismatch:${staleRunSeats.map(s => s.agent).join(',')}`);\n  }\n",
+    "regression_check": "node --test scripts/tests/ans-cycle.test.mjs 应包含：构造 boardLedger 含 status='reserved' 且 claim_receipt.run_key 为旧值，断言 main() 抛错且不进入 runReservedSeat、不写 data/results。"
+  },
+  "verification_commands": [
+    "node --check scripts/run-daily-tasks.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "DAILY_DATE=2026-11-10 GITHUB_RUN_ID=test GITHUB_RUN_ATTEMPT=2 node scripts/run-daily-tasks.mjs"
+  ],
+  "remaining_blocker": "unverified：未在当前工作树确认 daily-task-board.mjs 的 prepare 命令实际写入的 run_key 格式；未验证 GitHub 重试/重新运行场景下 env 是否保留 GITHUB_RUN_ATTEMPT；需真实 run 日志确认 staleRunSeats 触发时的失败传播路径。"
+}
