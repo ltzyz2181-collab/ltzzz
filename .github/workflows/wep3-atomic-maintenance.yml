@@ -10,7 +10,7 @@ permissions: {contents: read}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
@@ -30,7 +30,7 @@ jobs:
   deploy:
     needs: validate
     if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[wep3-maintenance]')))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions: {contents: write}
     steps:
