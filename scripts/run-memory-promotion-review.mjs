@@ -306,7 +306,8 @@ async function main() {
       if (m) reviewedIds.add(m[1]);
     }
   }
-  let pool = (queue.items || []).filter(i => i.status === 'candidate' && !reviewedIds.has(i.id));
+  let pool = (queue.items || []).filter(i => i.status === 'candidate' && !reviewedIds.has(i.id)
+    && i.review_status !== 'precheck_blocked');
   if (onlyId) pool = pool.filter(i => i.id === onlyId);
   // 优先高影响、优先最新日期
   pool.sort((a, b) => (a.impact === 'high' ? 1 : 0) - (b.impact === 'high' ? 1 : 0)
@@ -346,7 +347,7 @@ async function main() {
     reviewed: results.length,
     accepted: results.filter(r => r.accepted).length,
     applied_ids: applied,
-    model_calls: results.length * 2,
+    model_calls: results.reduce((n, r) => n + (r.receipt_path ? 2 : 0), 0),
     paid: false,
     tx_hash: null,
     dry_run: dryRun
