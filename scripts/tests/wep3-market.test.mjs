@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {Market,hash} from '../../wep3-market.js';import {MarketRuntimeV3} from '../../wep3-worker.js';import {AAVE_RUNTIME_REVISION} from '../../wep3-aave.js';
 globalThis.crypto??=crypto.webcrypto;
 import {transactionSignerStatus} from '../../wep3-signer-status.js';
-import {readSignerStatus} from '../lib/signer-status-readback.mjs';
+import {readSignerStatus,readSignerStatusWithPropagation} from '../lib/signer-status-readback.mjs';
 
 test('signer status requires auth and observes only the guarded transaction adapter without effects',async()=>{
  let saved={ledger:[{id:'existing'}],orders:{},aave:{active_intent:'preserved'}};const before=structuredClone(saved);let writes=0,network=0;
@@ -30,6 +30,19 @@ test('deployment readback uses six GETs, isolates scopes, and retains only safe 
  const fetcher=async(url,options)=>{calls.push({url,method:options.method});const scope=new URL(url).searchParams.get('capability');const auth=options.headers['X-Lab-Pin'];return Response.json(auth==='fixture-token'?{...transactionSignerStatus({WEP3_SOURCE_COMMIT:sha},scope),future_private_value:'never-export-this'}:{ok:false,error:'pin_required'},{status:auth==='fixture-token'?200:401});};
  const report=await readSignerStatus({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:sha,fetcher});
  assert.equal(report.ok,true);assert.equal(calls.length,6);assert.equal(calls.every(c=>c.method==='GET'),true);assert.equal(report.rows.every(r=>r.gate.state==='missing'),true);assert.equal(JSON.stringify(report).includes('never-export-this'),false);assert.equal(JSON.stringify(report).includes('fixture-token'),false);
+});
+
+test('signer status propagation poll retries only bounded read-only GET checks and stops on verified contract',async()=>{
+ const sha='b'.repeat(40);let requests=0,pauses=0,clock=0;
+ const fetcher=async(url,options)=>{requests++;assert.equal(options.method,'GET');const auth=options.headers['X-Lab-Pin'];if(requests<=6)return Response.json({ok:false,error:'old_edge'}, {status:200});return Response.json(auth==='fixture-token'?{...transactionSignerStatus({WEP3_SOURCE_COMMIT:sha},new URL(url).searchParams.get('capability'))}:{ok:false,error:'pin_required'},{status:auth==='fixture-token'?200:401});};
+ const report=await readSignerStatusWithPropagation({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:sha,fetcher,pause:async ms=>{assert.equal(ms,5000);pauses++;},now:()=>String(++clock)});
+ assert.equal(report.ok,true);assert.equal(requests,12);assert.equal(pauses,1);assert.equal(report.propagation.attempts.length,2);assert.equal(report.propagation.verified_attempt,2);assert.equal(report.propagation.complete,true);
+});
+
+test('signer status propagation poll stops fail-closed at its strict retry bound',async()=>{
+ let requests=0,pauses=0;
+ const report=await readSignerStatusWithPropagation({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:'b'.repeat(40),attempts:3,fetcher:async(url,options)=>{requests++;assert.equal(options.method,'GET');return Response.json({ok:false,error:'stale_or_auth_failure'},{status:200});},pause:async()=>{pauses++;}});
+ assert.equal(report.ok,false);assert.equal(requests,18);assert.equal(pauses,2);assert.equal(report.propagation.attempts.length,3);assert.equal(report.propagation.verified_attempt,null);assert.equal(report.propagation.complete,false);
 });
 
 test('deployment readback rejects a stale source and any claim that the adapter was enabled',async()=>{
