@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42598054767",
+  "source_commit": "1c9dcb5a354196fc414b11c3ebbfc7656f4b7b7f",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261108-qianwen-d9abd2cb",
+  "created_at": "2026-11-09T10:04:10.785Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"681eb7b8f091a1fc656c99aa52412f7f9aa900e03c81709482fed998d90337ea\",\"subject\":{\"candidate_id\":\"CAND-20261108-qianwen-d9abd2cb\",\"claim\":\"`魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉验证。\",\"source\":\"memory/daily/agent-2026-11-08-qianwen-d9abd2cb9f17.md\",\"source_sha256\":\"f741463dbbc1664b0e18874ae51dcd6a2510485399ddd9413c49ffd871e0ef78\"}}",
+      "sha256": "41c16dd672e9f10ac187bb6221df24ae83fe26d71570e22187848323420f4bef"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"681eb7b8f091a1fc656c99aa52412f7f9aa900e03c81709482fed998d90337ea\",\"artifact_sha256\":\"41c16dd672e9f10ac187bb6221df24ae83fe26d71570e22187848323420f4bef\",\"accepted\":true,\"reasons\":[\"该条是对指定文档条目标注状态的可复用事实记录，主体清楚，未见与已载事实冲突、未见把推断写成已证实结论，也不涉及资金/权限/安全错误结论，可晋升。\",\"限制：条目编号与“待补”为阶段性状态，后续可能变更；评审包未附源文件正文，粒度偏细、覆盖面仅限所列条目，但不构成拒因。\"],\"unverified\":[\"魄.md条目2/4/5与识神.md条目1/4/6是否均标“待补”多AI交叉验证，只能采信所给源路径，无法在本包内核对原文。\"]}",
+      "sha256": "593763153f4662869f8ddc55fe0e418b3c8186910d236a8926cece32cc40283a"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 619,
+    "reviewer_tokens": 3145,
+    "model_calls": 2
+  }
+}

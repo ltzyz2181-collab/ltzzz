@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42598054767",
+  "source_commit": "1c9dcb5a354196fc414b11c3ebbfc7656f4b7b7f",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261106-deepseek-59258fe6",
+  "created_at": "2026-11-09T10:11:55.976Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"acca743e3305bf061508e3880df16b79aad8a28b3110daf2545420043f8ccc34\",\"subject\":{\"candidate_id\":\"CAND-20261106-deepseek-59258fe6\",\"claim\":\"`ltzzz-memory/重要事件.md`“2026-10-22～23”节：ANS补丁审方 `accepted=false`，“call前写response”时序不成立，生产修复未完成；`Pulse快照`只有`ok:true http:200`，无原生生成/交付字段。\",\"source\":\"memory/daily/agent-2026-11-06-deepseek-59258fe6fecb.md\",\"source_sha256\":\"70c4e7d260ec0104281f5d19c2c35b1ed62dd1bb81da296efca17e7206a253d1\"}}",
+      "sha256": "d8d9dc69224705f362eb9385c1fc349c38b20551fa9e64c1b24d3d4f5969da35"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"acca743e3305bf061508e3880df16b79aad8a28b3110daf2545420043f8ccc34\",\"artifact_sha256\":\"d8d9dc69224705f362eb9385c1fc349c38b20551fa9e64c1b24d3d4f5969da35\",\"accepted\":true,\"reasons\":[\"可独立复用：把 ANS 补丁审方 accepted=false、「call前写response」时序不成立、生产修复未完成，以及 Pulse 快照仅有 ok:true http:200、无原生生成/交付字段，固化为可引用的状态记录，后续相关决策可直接对照。\",\"限制：生产修复未完成属阶段性状态，不得当作永久终态；本条是对重要事件节的摘要，粒度偏粗，细节仍以源节为准；含对已有审方结论的复述，但不淹没可复用事实。\"],\"unverified\":[\"本评审包未附源文件正文，无法逐字核验 ltzzz-memory/重要事件.md「2026-10-22～23」节及 daily log 是否与 claim 一致，只能采信提交方转述。\",\"ANS 审方原文与 Pulse 快照原始字段集合未在包内出示。\"]}",
+      "sha256": "bf15337dfbfbd24be30ef77702ccfa8fcb0f168746fb2764d301c398b31c3ce9"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1123,
+    "reviewer_tokens": 3722,
+    "model_calls": 2
+  }
+}
