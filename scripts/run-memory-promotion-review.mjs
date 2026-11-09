@@ -71,7 +71,9 @@ function artifactOf({role, provider, model, text}) {
 async function callProvider(callAgent, apiKey, prompt) {
   const r = await callAgent({apiKey, prompt, maxTokens: 4000, thinking: 'disabled'});
   if (!r || r.ok !== true || typeof r.output !== 'string' || !r.output.trim()) {
-    throw Error('provider_call_failed:' + String((r && (r.status || r.error)) || 'unknown'));
+    const detail = [r && r.status, r && (r.error || r.reason || r.network_error_code), r && r.http]
+      .filter(Boolean).join('|').slice(0, 200);
+    throw Error('provider_call_failed:' + (detail || 'unknown'));
   }
   if (!['stop', 'end_turn'].includes(String(r.finish_reason))) {
     throw Error('provider_finish_reason_not_complete:' + String(r.finish_reason));
@@ -247,13 +249,13 @@ async function main() {
 
   const worker = {
     provider: 'doubao',
-    model: process.env.DOUBAO_MODEL || 'doubao-seed-evolving',
+    model: process.env.DOUBAO_MODEL || undefined,
     apiKey: process.env.DOUBAO_API_KEY || process.env.ARK_API_KEY,
     callAgent: callDoubao
   };
   const reviewer = {
     provider: 'deepseek',
-    model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-pro',
+    model: process.env.DEEPSEEK_MODEL || undefined,
     apiKey: process.env.DEEPSEEK_API_KEY,
     callAgent: callDeepSeek
   };
