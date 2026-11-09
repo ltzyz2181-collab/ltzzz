@@ -2,15 +2,15 @@ name: WEP3 atomic repair maintenance (no payments)
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['wep3-worker.js', 'wep3-signer-proof.js', 'scripts/tests/wep3-signer-proof.test.mjs', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
+    paths: ['wep3-worker.js', 'wep3-signer-proof.js', 'scripts/tests/wep3-receipt-render.test.mjs', 'scripts/tests/wep3-signer-proof.test.mjs', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
   push:
     branches: [main]
-    paths: ['wep3-worker.js', 'wep3-signer-proof.js', 'scripts/tests/wep3-signer-proof.test.mjs', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
+    paths: ['wep3-worker.js', 'wep3-signer-proof.js', 'scripts/tests/wep3-receipt-render.test.mjs', 'scripts/tests/wep3-signer-proof.test.mjs', 'wep3-ledger.js', 'wep3-swarm.js', 'wep3.html', 'scripts/tests/wep3-swarm-atomic.test.mjs', 'scripts/verify-wep3-maintenance.mjs', '.github/workflows/wep3-atomic-maintenance.yml']
 permissions: {contents: read}
 concurrency: {group: wep3-deploy-and-accept, cancel-in-progress: false}
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
