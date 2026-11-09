@@ -6,7 +6,7 @@
 
 ## 一、结论（四句话）
 
-1. **不需要重传**：`git log 1f1e5207..origin/main -- miniprogram/ scripts/miniprogram-upload.mjs .github/workflows/miniprogram-upload.yml` 为空，已上传的 `0.1.6` 就是当前源码；本轮进到上传表单后取消，未产生重复上传。
+1. **不需要重传**：`git log 1f1e5207..origin/main -- miniprogram/ scripts/miniprogram-upload.mjs .github/workflows/miniprogram-upload.yml` 为空，已上传的 `0.1.6` 就是当前源码；本轮进到上传表单后取消，未产生重复上传。上传回执 `results/commerce/miniprogram-upload-latest.json`：`run_id 42426523043`、`source_commit 1f1e5207`、`version 0.1.6`、`uploaded true` / `published false`。
 2. **后台「开发版」列表已独立核验**（这是排期里挂了两天的空白项）：开发版两个——`0.1.6`（ci机器人1，2026-11-07 15:44:06）与 `0.1.20261107`（擎起柱，2026-11-07 20:13:33），后者带**体验版**标记。
 3. **体验版已经存在**，无需再设：`0.1.20261107` 即当前体验版（可扫描访问）。`git merge-base --is-ancestor 1f1e5207 5ddc193b` → yes，且两者之间 `miniprogram/` 改动 0 条，即 `0.1.20261107` 与 `0.1.6` 代码内容一致、且都等于当前 main 的 `miniprogram/`。
 4. **提审与发布仍不做**：后台显示「线上版本：尚未提交线上版本」「审核版本：无」，且「小程序备案：管局审核中」——备案未通过前不满足上架，属 owner 本人动作。
@@ -88,3 +88,8 @@
 1. 备案「管局审核中」通过后，才进入提审前置。
 2. 提审前建议先修 D1（文案口径矛盾）与 D2/D3（体验者可见的脏数据与旧标题），否则审核与首批体验者会看到不一致信息。
 3. 提审 → 发布线上，两步仍是 owner 本人在后台操作。
+
+## 九、推送通道与定时复核
+
+- 本卡与 5 张截图在桌面端已 commit（本地 `83cde871`），但桌面到 `github.com:443` TCP 不通（同一时段 `api.github.com:443` 通、本地代理 `127.0.0.1:10810` 拒绝连接），`git push` 两次失败后改由云主机通道推送：远端 `origin/main` = `994dbd07`，6 个文件的 blob 哈希与本地逐个一致（内容零差异，仅提交号不同）。
+- 2026-11-09T02:31Z 定时复核：`git log 1f1e5207..origin/main -- miniprogram/` 仍为 0 条，故依旧无需重传；本卡与 5 张截图均已在 `origin/main` 可读。
