@@ -106,8 +106,11 @@ commit `adab20d9`（`fix(vpay-notify): 退款推送按 WxOrderId 绑定订单`�
    均被拒：`updateFunctionCode 在 cloud mode 下不可用，因为该操作依赖本地函数代码目录`。
    唯一可用通道是控制台「函数 → 上传 ZIP」，而桌面环境在本轮取证中途掉线（`client:1044603:832795323182164` offline），
    浏览器不可用。**部署待桌面恢复后执行**。
-2. 因此订单仍是 `delivered`，退款字段仍未写入。修复部署后，微信下一次重试（若尚未耗尽 15 次）会自行迁移；
-   若重试已耗尽，则需按已有微信证据做一次对账写入（届时另行取证，不伪造推送）。
+2. 订单已对账，但**不是回调写的**：2026-11-09 18:13（CST）经 CloudBase MCP 直写 `orders`，
+   把首单从 `delivered` 改为 `refund_pending_verification`，并写入 `refund_signal_at=2026-11-09T09:44:09Z`
+   （微信退款成功时间）、`refund_amount_pending=990`、`refund_reference_pending`、`wx_refund_reference_pending`，
+   另加 `refund_reconciled_at` 与 `refund_reconcile_source` 标记来源，**未伪造任何推送**。回读已确认。
+   部署完成后的新退款将由回调自动迁移；本单若再收到重试推送，`handleRefund` 已幂等放行、不会重复写。
 3. `delivered_at` / `closed_at` 仍未写入（控制台只能改值、不能加字段，历史遗留）。
 4. 微信侧「交易单号」`4500000521202611091049547966` 与库内 `wx_order_id=VPO261109170747016376319` 的层级关系仍未核实；
    交叉锚点继续用「商户单号 + 金额 + 时间」。
