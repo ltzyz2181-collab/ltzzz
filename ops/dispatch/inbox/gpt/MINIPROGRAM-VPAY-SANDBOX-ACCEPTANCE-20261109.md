@@ -86,7 +86,7 @@ AppID `wx562bcb6057346fb2` / OfferID `1450712330` / `VPAY_ENV=1`（沙箱）
 
 1. **云函数逐次调用日志没取到**：CloudBase 概览页明示「日志服务未启用，无法进行运行状态分析」。所以本次回调判定依赖 DB 字段迁移，而非函数日志原件。若后续要留日志级证据，需先在控制台开启日志服务。
 2. **两套单号未做映射核实**：微信后台表格「交易单号」为 `4500000521202611091049547966`，与 DB 中 `wx_order_id=VPO261109170747016376319` 不是同一标识。二者应为不同层标识，本轮**未核实其对应关系**，交叉锚点改用「商户单号 + 金额 + 时间」。
-3. **两笔历史 pending 未处理**：`VP20261107045028c2a3f1e1`（`2026-11-07T04:50:28.239Z`）、`VP202611070806582eb81ed9`（`2026-11-07T08:06:58.327Z`），同为 `source_check` 990 分、`pending`、`wx_order_id=null`。`payEnabled=true` 后页面层不再过滤 `pending`，这两笔会出现在订单页。是否标 `closed` 属数据写操作，等 owner 决定。
+3. **两笔历史 pending 未处理**：`VP20261107045028c2a3f1e1`（`2026-11-07T04:50:28.239Z`）、`VP202611070806582eb81ed9`（`2026-11-07T08:06:58.327Z`），同为 `source_check` 990 分、`pending`、`wx_order_id=null`。`payEnabled=true` 后页面层不再过滤 `pending`，这两笔会出现在订单页。是否标 `closed` 属数据写操作，等 owner 决定。（2026-11-09 已按 owner 指令处理，见第 7 节）
 4. **交付状态未发生**：本产品为人工交付服务，回调只把单置 `paid`，`delivered` 需人工完成后另行标记。
 5. **前端「已支付」显示未截图取证**：只做了后端（DB）与微信侧（交易订单）双证，未录小程序端刷新后的页面。
 6. **线上发布仍被两条前置挡住**：账号未通过微信认证完成主体真实性验证、小程序备案未完成（2–22 工作日）。本次只跑到体验版沙箱，未涉及提审/发布。
@@ -100,3 +100,19 @@ AppID `wx562bcb6057346fb2` / OfferID `1450712330` / `VPAY_ENV=1`（沙箱）
 - 下单函数：`vpay-order`（`GOODS` 三件：`source_check` 990 / `delivery_check` 1990 / `document_tidy` 1490）
 - 支付开关：`miniprogram/config/index.js` → `payEnabled`（现为 `true`，验收逻辑：不过就改回 `false`）
 - 复查入口：小程序后台「版本管理 → 开发版本 / 体验版」、虚拟支付「交易订单（沙箱环境）」、CloudBase「文档型数据库 orders」
+
+---
+
+## 7. 数据状态迁移（2026-11-09 补做，已导出回读）
+
+| 订单 | 迁移 | 理由 |
+|---|---|---|
+| `VP20261107045028c2a3f1e1` | `pending` → `closed` | 11-07 未付款测试单，`paid_at`/`wx_order_id` 均为 null，长期滞留会在订单页显示「待支付」 |
+| `VP202611070806582eb81ed9` | `pending` → `closed` | 同上 |
+| `VP202611090907466de445e3` | `paid` → `delivered` | 按 owner 指令做一次完整交付演练；`paid_at`/`wx_order_id`/`notify_at`/`notify_product_id`/`notify_quantity` 全部原样保留 |
+
+- 操作方式：CloudBase 控制台 → 文档型数据库 → `orders` → 逐条展开 → `status` 字段铅笔 → 改值 → 确定（逐字段编辑，未动其它字段）。
+- 回读方式（独立于操作界面）：再次「导出数据」得 `database_export-shizhang-pay-d0g1n58020acf6b5b-orders(1).json`（1098 字节、3 行），三条 `status` 依次为 `closed` / `closed` / `delivered`；首单其余字段逐项核对无变化。导出记录显示本次导出在 2026-11-09 01:36–01:38（PST）区间。
+- 兼容性核对（`vpay-notify/index.js`）：`handleDeliver` 对 `closed` 直接返回 `success()`，对 `paid|delivered` 要求 `wx_order_id` 一致；`handleRefund` 允许 `paid|delivered` 进入 `refund_pending_verification`。本次迁移不阻断后续退款通知处理。
+- 未能做到：控制台逐字段编辑只能改已有字段，文档级「整篇编辑」入口点击无响应，因此**未新增 `delivered_at` / `closed_at` 字段**；交付/关闭的具体时刻没有落库，以本节操作时间（2026-11-09 01:36–01:40 PST 区间）为准。
+- 本轮未做：未发起沙箱退款、未开启 CloudBase 日志服务、未改小程序版本。
