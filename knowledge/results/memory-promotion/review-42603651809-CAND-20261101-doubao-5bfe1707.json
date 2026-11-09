@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42603651809",
+  "source_commit": "43b121af23c6babf4c4c48a04e653d3ab6c86d79",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261101-doubao-5bfe1707",
+  "created_at": "2026-11-09T10:48:01.459Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"5663e22c2caddcf9d28bbbffb936ef07a3fafe1cccfa1856bfa3dce8fa8d2e8f\",\"subject\":{\"candidate_id\":\"CAND-20261101-doubao-5bfe1707\",\"claim\":\"未提供ANS-2026-10-22对账所需repair_file、ans/wep3回执；DeepSeek工件结构完整，缺证据时标blocked符合分层规则；Pulse仅证代理HTTP存活。\",\"source\":\"memory/daily/agent-2026-11-01-doubao-5bfe17077db8.md\",\"source_sha256\":\"0663a7d99a886f8493945d50e74cae431500c749dbc82600de59eef87c2cce2c\"}}",
+      "sha256": "568cf97089064ffec6da279e36b4d951fc4030a204fa1c8d154a7fd167f9fffa"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"5663e22c2caddcf9d28bbbffb936ef07a3fafe1cccfa1856bfa3dce8fa8d2e8f\",\"artifact_sha256\":\"568cf97089064ffec6da279e36b4d951fc4030a204fa1c8d154a7fd167f9fffa\",\"accepted\":true,\"reasons\":[\"主体是可独立复用的阶段性状态：对账缺件范围、DeepSeek缺证标blocked、Pulse探测边界，未发现与已载事实冲突，也无资金/权限/安全向错误结论。\",\"限制：含“符合分层规则”的规范性判断；未附 repair_file/回执原文或哈希，粒度偏粗，复用须回源核对；后续状态可能变化。\"],\"unverified\":[\"源文件正文未随包提供，故 ANS-2026-10-22 缺 repair_file 与 ans/wep3 回执、DeepSeek 工件结构完整、Pulse 仅证代理 HTTP 存活等均只能采信提交方转述。\"]}",
+      "sha256": "bd1f1cb5d7f5f78e6a1b7543711db095c4119a968ce8ba9aa6713214a456a105"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 655,
+    "reviewer_tokens": 3672,
+    "model_calls": 2
+  }
+}

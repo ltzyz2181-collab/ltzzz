@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42603651809",
+  "source_commit": "43b121af23c6babf4c4c48a04e653d3ab6c86d79",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261024-doubao-8b112111",
+  "created_at": "2026-11-09T10:52:36.043Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"4a57082c5489d484eb93fda27d2d508fa29eaa1ac0666b7484c385a3c137805b\",\"subject\":{\"candidate_id\":\"CAND-20261024-doubao-8b112111\",\"claim\":\"`knowledge/results/daily-board/artifacts/2026-10-24-deepseek-8dee47fe….json`：结构完整无截断，finish_reason=stop，自标验收、测试、部署、付款均未完成，输出与元数据一致；`ltzzz-memory/重要事件.md`2026-10-22~23节明确ANS补丁被拒、生产修复未完成，边界清晰。\",\"source\":\"memory/daily/agent-2026-10-24-doubao-8b11211177be.md\",\"source_sha256\":\"13267afa385361060f0fd027e2b252380d71a9aa9bcd302d71670cfd2c912767\"}}",
+      "sha256": "5fa37fe6030218256a22cf7fad8c24b8431999e523af882b24d675b97beaeae4"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"4a57082c5489d484eb93fda27d2d508fa29eaa1ac0666b7484c385a3c137805b\",\"artifact_sha256\":\"5fa37fe6030218256a22cf7fad8c24b8431999e523af882b24d675b97beaeae4\",\"accepted\":true,\"reasons\":[\"可用于长期记忆：该条把两处可独立复用的状态钉住——产物JSON结构完整、finish_reason=stop、输出与元数据一致；以及重要事件.md在2026-10-22~23节对ANS补丁被拒、生产修复未完成的明确边界。主体是当时一致的事实记录，不是空复述。\",\"限制：验收/测试/部署/付款“均未完成”只能当作源产物自标或当时快照，不得由finish_reason=stop单独推出未运行/未部署/无付费；涉及付款的资金状态未在本包内独立核验，使用时不得当成已审计结论。属阶段性状态，后续可能变化。\"],\"unverified\":[\"knowledge/results/daily-board/artifacts/2026-10-24-deepseek-8dee47fe….json 字段原文未随包提供，结构完整、finish_reason、自标未完成项只能采信转述\",\"ltzzz-memory/重要事件.md 2026-10-22~23节原文未随包提供，ANS补丁被拒与生产修复未完成只能采信转述\",\"source 文件 memory/daily/agent-2026-10-24-doubao-8b11211177be.md 正文未随包提供\"]}",
+      "sha256": "e1f1400b956ddd96eb8cc2e95f1ee66278b046fad5121701c8f6c7e90b0eba0f"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 723,
+    "reviewer_tokens": 6230,
+    "model_calls": 2
+  }
+}
