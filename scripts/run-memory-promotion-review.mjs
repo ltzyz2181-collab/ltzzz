@@ -69,7 +69,7 @@ function artifactOf({role, provider, model, text}) {
 }
 
 async function callProvider(callAgent, apiKey, prompt) {
-  const r = await callAgent({apiKey, prompt, maxTokens: 4000, thinking: 'disabled'});
+  const r = await callAgent({apiKey, prompt, maxTokens: 4000});
   if (!r || r.ok !== true || typeof r.output !== 'string' || !r.output.trim()) {
     const detail = [r && r.status, r && (r.error || r.reason || r.network_error_code), r && r.http]
       .filter(Boolean).join('|').slice(0, 200);
@@ -244,25 +244,32 @@ async function main() {
   const sourceCommit = (process.env.GITHUB_SHA
     || (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim());
 
-  const {callAgent: callDoubao} = await import('./call-doubao.mjs');
-  const {callAgent: callDeepSeek} = await import('./call-deepseek.mjs');
+  // provider 可经环境变量指定：CI 位于境外，火山方舟北京端点会 ETIMEDOUT，故默选用境外可达的一对
+  const workerProvider = (process.env.REVIEW_WORKER || 'deepseek').toLowerCase();
+  const reviewerProvider = (process.env.REVIEW_REVIEWER || 'grok').toLowerCase();
 
-  const worker = {
-    provider: 'doubao',
-    model: process.env.DOUBAO_MODEL || undefined,
-    apiKey: process.env.DOUBAO_API_KEY || process.env.ARK_API_KEY,
-    callAgent: callDoubao
+  const adapters = {
+    doubao: {file: './call-doubao.mjs', model: process.env.DOUBAO_MODEL, key: process.env.DOUBAO_API_KEY || process.env.ARK_API_KEY, keyName: 'DOUBAO_API_KEY|ARK_API_KEY'},
+    deepseek: {file: './call-deepseek.mjs', model: process.env.DEEPSEEK_MODEL, key: process.env.DEEPSEEK_API_KEY, keyName: 'DEEPSEEK_API_KEY'},
+    grok: {file: './call-grok.mjs', model: process.env.XAI_MODEL, key: process.env.XAI_API_KEY, keyName: 'XAI_API_KEY'}
   };
-  const reviewer = {
-    provider: 'deepseek',
-    model: process.env.DEEPSEEK_MODEL || undefined,
-    apiKey: process.env.DEEPSEEK_API_KEY,
-    callAgent: callDeepSeek
+
+  const build = async (name) => {
+    const a = adapters[name];
+    if (!a) throw Error('unsupported_provider:' + name);
+    const {callAgent} = await import(a.file);
+    return {provider: name, model: a.model || undefined, apiKey: a.key, callAgent};
   };
+
+  if (workerProvider === reviewerProvider) throw Error('worker_and_reviewer_must_be_different_providers');
+  if (!adapters[workerProvider] || !adapters[reviewerProvider]) throw Error('unsupported_provider_pair');
+
+  const worker = await build(workerProvider);
+  const reviewer = await build(reviewerProvider);
 
   const missing = [];
-  if (!worker.apiKey) missing.push('DOUBAO_API_KEY|ARK_API_KEY');
-  if (!reviewer.apiKey) missing.push('DEEPSEEK_API_KEY');
+  if (!worker.apiKey) missing.push(adapters[workerProvider].keyName);
+  if (!reviewer.apiKey) missing.push(adapters[reviewerProvider].keyName);
   if (missing.length) {
     console.log(JSON.stringify({
       status: 'not_configured', missing, model_calls: 0, paid: false,
