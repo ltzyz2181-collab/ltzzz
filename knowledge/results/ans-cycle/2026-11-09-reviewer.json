@@ -1,0 +1,27 @@
+{
+  "accepted": true,
+  "artifact_sha256": "3ab64ed09c02d265b672c34ac4f36b06ec24c8cb7c6b89cc926ab80ab9ba8935",
+  "reasons": [
+    "对照 scripts/run-daily-tasks.mjs，main() 在读取 boardLedger 后仅通过远端 raw.githubusercontent.com 回读并比较本地 ledger 与远端 ledger 的字节哈希；该校验发生在局部 runKey 定义和任何席位 runKey 预检之前。",
+    "对照 scripts/lib/daily-task-board.mjs，runReservedSeat 已在函数内部验证 record.run_key === runKey、seat.status === 'reserved'，并在有 assignment 时验证 claim_verified、execution_date、claim_receipt.task_id 及 claim_receipt.run_key；因此当前 runKey 与旧 ledger 不匹配时会返回 {ok:false,status:'blocked_no_repurchase'}，不会执行传入的 call()，finding 所述无模型调用路径可由源码静态复核。",
+    "对照 scripts/run-daily-tasks.mjs，runReservedSeat 返回非 ok 后，代码只把 res.status/res.error 记录到 failures、tasks、reflections 和 pending.reminders，主流程不抛出；循环结束后仍会写 data/reflections、data/results/<date>.json、pending-reminders.json 和 data/reports/latest.md，故 finding 关于失败被记录但结果文件仍写入的描述成立。",
+    "对照 scripts/daily-task-board.mjs，prepare 使用顶层 runKey，格式确为 `${process.env.GITHUB_RUN_ID||'local'}:${process.env.GITHUB_RUN_ATTEMPT||'1'}`；scripts/run-daily-tasks.mjs 的 run 阶段在 main() 内使用相同表达式。二者不是同一个变量，且 prepare 会把 run_key 持久化到 ledger，重试时若读到旧 attempt ledger，runReservedSeat 的 runKey 边界会阻断执行，问题机理与源码一致。",
+    "minimal_patch 建议在 boardLedger 读取和远端持久化校验之后、席位循环之前扫描所有 status==='reserved'、存在 claim_receipt.run_key 且不同于当前 runKey 的席位并 fail-closed 抛错；按给出的插入位置，这会阻止 runReservedSeat 和后续 data/results 写入，修复方向与已识别边界相符。",
+    "交付明确把补丁称为 minimal_patch/regression_check，并在 remaining_blocker 中承认 prepare 写入格式、GitHub 重试环境变量和真实失败传播仍未验证；没有声称补丁已应用、测试已通过、服务已部署或发生付款。"
+  ],
+  "unverified": [
+    "未取得交付物原始字节，无法独立重算 artifact_sha256，只能严格回传给定哈希。",
+    "未实际执行 node --check scripts/run-daily-tasks.mjs。",
+    "未实际执行 node --test scripts/tests/ans-cycle.test.mjs。",
+    "未实际执行带 GITHUB_RUN_ID/GITHUB_RUN_ATTEMPT 的 scripts/run-daily-tasks.mjs。",
+    "提供源码未展示 scripts/tests/ans-cycle.test.mjs 内容，无法确认旧 attempt reserved ledger 用例、不进入 runReservedSeat、不写 data/results 的回归断言已经存在或通过。",
+    "未审查当前工作树 diff，无法确认 minimal_patch 是否已应用、插入位置是否与实际文件完全匹配，也无法确认补丁本身的语法和作用域。",
+    "补丁扫描所有 reserved 席位，而 runReservedSeat 对无 assignment 的席位只要求 record.run_key、seat.status；未验证这种全局预检是否会误报合法的无 assignment 预留席位，或是否应同时校验顶层 record.run_key。",
+    "未验证 GitHub Actions 重新运行、失败重试及不同触发方式下 GITHUB_RUN_ID、GITHUB_RUN_ATTEMPT 的实际取值和保留规则。",
+    "未验证远端 ledger URL、分支和缓存行为在真实 CI 中是否始终代表 prepare 提交后的 durable 状态。",
+    "未验证抛出 daily_reservation_run_key_mismatch 后 GitHub 工作流、日志、重试策略和告警如何传播。",
+    "未验证 data/results、knowledge/results/daily-board、远端任务板之间的完整 lineage、幂等恢复和自动清理行为。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本、线上关键行为或 Pulse 回执。",
+    "未验证是否触发模型调用、API 费用、采购、支付或其他资金操作。"
+  ]
+}
