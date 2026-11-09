@@ -250,5 +250,20 @@
       "不得用新账户规避既有封禁或重复注册限制"
     ],
     "registry_path": "knowledge/results/accounts/external-accounts.json"
+  },
+  "daily_supervision": {
+    "enabled_on_merge": true,
+    "source": "owner direct request in the current session, 2026-11-09",
+    "workflow": ".github/workflows/deep-superagent-daily.yml",
+    "schedule_utc": "30 0 * * *",
+    "mode": "daily_read_only_review_of_pinned_public_readset",
+    "idempotency": "stable task id plus source-readset hash package id; unchanged readset reuses existing durable job without another provider POST",
+    "max_model_calls_per_new_readset": 3,
+    "max_output_tokens_per_call": 2048,
+    "retries_on_uncertain_provider_outcome": 0,
+    "financial_execution": false,
+    "external_submissions_enabled": false,
+    "native_gpt_claude_enabled": false,
+    "deployment_status": "not_deployed_until_merge_and_first_scheduled_receipt_readback"
   }
 }
