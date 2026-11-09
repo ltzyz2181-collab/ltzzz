@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import worker,{DeepTask,normalizeJob,parsePlan,verifyReview,sha256,unsupportedMetadataDeclarations,CONTENT_GUARD_REVISION} from '../../workers/deep-superagent/index.js';
+import worker,{DeepTask,normalizeJob,parsePlan,outputTokenLimit,verifyReview,sha256,unsupportedMetadataDeclarations,CONTENT_GUARD_REVISION} from '../../workers/deep-superagent/index.js';
 
 const TOKEN='test-only-service-token-not-a-real-key';
 const INPUT={task_id:'DEEP-SUPERAGENT-20261103-TEST',package_id:'',prompt:'Create a concise source-checking checklist; exercise all three workers.',data_classification:'public_distributable',platform:'internal'};
@@ -60,6 +60,11 @@ test('DeepSeek cannot select reserved seats, duplicate workers or executable too
 test('native xAI is a registered work seat while the per-job three-worker limit remains unchanged',()=>{
  assert.equal(parsePlan(JSON.stringify({summary:'xAI work',tasks:[{seat:'grok',task:'Check supplied public evidence'}]})).tasks[0].seat,'grok');
  assert.throws(()=>parsePlan(JSON.stringify({summary:'too many calls',tasks:['doubao','qianwen','kimi','grok'].map(seat=>({seat,task:'public task'}))})));
+ assert.throws(()=>parsePlan(JSON.stringify({summary:'daily cap',tasks:[{seat:'doubao',task:'one'},{seat:'grok',task:'two'}]}),{maxTasks:1}));
+ assert.equal(parsePlan(JSON.stringify({summary:'daily cap',tasks:[{seat:'doubao',task:'one'}]}),{maxTasks:1}).tasks.length,1);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','deepseek'),2048);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','kimi'),2048);
+ assert.equal(outputTokenLimit('DEEP-ORDINARY','kimi'),16384);
  const config=JSON.parse(fs.readFileSync('config/deep-superagent.json'));assert.ok(config.worker_seats.includes('grok'));assert.equal(config.native_paid_reserved_enabled,false);
 });
 test('Grok-only work uses its service binding, actual receipt metadata and independent DeepSeek review',async()=>{
