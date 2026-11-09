@@ -67,3 +67,14 @@
 ## 五、下一步唯一的关键路径
 
 配齐虚拟支付密钥 → 配置并验证回调地址 → 沙箱下一单 → 验证 `vpay-notify` 验签与 `pending → paid` 迁移 → 才谈把 `payEnabled` 改 true。这条链上任何一环缺证据，`payEnabled` 都不能开。
+
+---
+
+## 更正（2026-11-09 实测追加）
+
+本文件 Q4④「回调地址未配、无法核实」与 Q1「云函数密钥无法核实」两处结论，已被同日实测推翻：
+
+- 回调地址已在后台「开发管理 → 消息推送」配好，指向 `vpay-notify`，并由云主机发起真实 GET 握手取得 HTTP 200 + `echostr` 回显；
+- `vpay-order` 的 6 个环境变量全部存在，沙箱 AppKey 与后台「查看沙箱AppKey」逐段指纹一致。
+
+取证与完整结论见：`ops/dispatch/inbox/gpt/MINIPROGRAM-VPAY-CONFIG-VERIFY-20261109.md`。
