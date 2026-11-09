@@ -5,6 +5,8 @@
 //   1. 所有 API Key 只从 Worker 环境变量（wrangler secret）读取，绝不下发到浏览器。
 //   2. 本 Worker 不持有资金、不托管密钥之外任何敏感数据。
 //   3. 未配置 Key 的席位返回明确的“接口位保留”状态，不假装已实现。
+//   4. /orchestrate 必须带 X-Orchestrator-Key 且与服务端 ORCHESTRATOR_KEY 一致；
+//      未配置 ORCHESTRATOR_KEY 时一律 503 拒绝（fail-closed），绝不降级为"无 key 就放行"。
 //
 // 部署（Cloudflare Workers）：
 //   npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator
@@ -24,6 +26,39 @@ const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-5';
 const DEFAULT_XAI_MODEL = 'grok-3';
 
+// ---------- 访问控制常量 ----------
+const ORCHESTRATOR_KEY_HEADER = 'x-orchestrator-key';
+const MAX_BODY_BYTES = 64 * 1024;
+const MAX_QUESTION_CHARS = 4000;
+
+// 定长比较，避免按字符提前返回泄露匹配前缀
+function timingSafeEqualStr(a, b) {
+  const x = String(a == null ? '' : a);
+  const y = String(b == null ? '' : b);
+  let diff = x.length ^ y.length;
+  const len = Math.max(x.length, y.length);
+  for (let i = 0; i < len; i += 1) {
+    diff |= (x.charCodeAt(i) || 0) ^ (y.charCodeAt(i) || 0);
+  }
+  return diff === 0;
+}
+
+// fail-closed：没配密钥=不可用；配了密钥但没带/带错=401
+function authorizeOrchestrator(request, env) {
+  const expected = env && env.ORCHESTRATOR_KEY;
+  if (!expected) {
+    return { ok: false, status: 503, error: 'orchestrator_key_not_configured' };
+  }
+  const supplied = request.headers.get(ORCHESTRATOR_KEY_HEADER);
+  if (!supplied) {
+    return { ok: false, status: 401, error: 'unauthorized' };
+  }
+  if (!timingSafeEqualStr(supplied, expected)) {
+    return { ok: false, status: 401, error: 'unauthorized' };
+  }
+  return { ok: true };
+}
+
 const EXPERT_SYSTEM = {
   doubao: '你是 LTZZZ 数字实验室的「豆包专家席」，侧重执行与工程落地。回答要具体、可验证、少空话。',
   deepseek: '你是 LTZZZ 数字实验室的「DeepSeek 专家席」，侧重研究与分析。回答要具体、可验证、少空话。',
@@ -41,10 +76,22 @@ export default {
       return json({ error: 'POST /orchestrate only' }, 404);
     }
 
+    // 鉴权先于任何解析与模型调用：匿名请求不得触发 makePlan / runExpert
+    const auth = authorizeOrchestrator(request, env);
+    if (!auth.ok) return json({ error: auth.error }, auth.status);
+
     try {
-      const body = await request.json();
-      const question = String(body.question || '').trim();
+      const raw = await request.text();
+      if (raw.length > MAX_BODY_BYTES) return json({ error: 'body_too_large' }, 413);
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        return json({ error: 'invalid_json' }, 400);
+      }
+      const question = String((body && body.question) || '').trim();
       if (!question) return json({ error: 'question is required' }, 400);
+      if (question.length > MAX_QUESTION_CHARS) return json({ error: 'question_too_long' }, 400);
 
       // 1. 总控规划：配置了 OPENAI_API_KEY 用 ChatGPT，否则用内置确定性路由（不假装已接总控模型）
       const plan = await makePlan(env, question);
