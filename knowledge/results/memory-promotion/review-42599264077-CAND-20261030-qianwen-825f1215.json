@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42599264077",
+  "source_commit": "77e1dfdb4d9ac2285a33953d8e5a6f4a41a60b22",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261030-qianwen-825f1215",
+  "created_at": "2026-11-09T10:26:31.702Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\n  \"operation\": \"memory_promotion\",\n  \"subject_sha256\": \"b57fe9c7f08a7194d3f7cd8589870aa969294d7c54d910ed3464cc4550dcc529\",\n  \"subject\": {\"candidate_id\":\"CAND-20261030-qianwen-825f1215\",\"claim\":\"`魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉验证；`项目历史.md`10-10(五)记Kimi-CN“正文为空→审计驳回”，但月度目录仍列`kimi_cn`为`catalogue_verified_no_generation`，与实测矛盾；Pulse快照仅证HTTP存活，与`grok`工件中`model_calls=0`、`finish_reason=stop`一致，但目录未同步标注该席位“无生成”。\",\"source\":\"memory/daily/agent-2026-10-30-qianwen-825f1215ea51.md\",\"source_sha256\":\"6cab954fc5819af02a0652925b953dc568fcf4b92304bf3d159c39596e97c8fe\"}\n}",
+      "sha256": "8c0a3db5b1914fa21bf27ba529da79fdc80a40aa4cb8b3083b7badec54be25ef"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"b57fe9c7f08a7194d3f7cd8589870aa969294d7c54d910ed3464cc4550dcc529\",\"artifact_sha256\":\"8c0a3db5b1914fa21bf27ba529da79fdc80a40aa4cb8b3083b7badec54be25ef\",\"accepted\":true,\"reasons\":[\"主体是可独立复用的文档/目录状态对照：待补标记、Kimi-CN 历史记载与月度目录字段、Pulse 与 grok 工件字段并列，不涉及资金/权限/安全错误结论，整体可安全晋升。\",\"限制：`无生成`是对 model_calls=0 与 finish_reason=stop 的解释性归纳，finish_reason=stop 本身不证明未生成；Pulse 仅证 HTTP 存活，不得外推未运行/未部署/无付费。\",\"限制：`catalogue_verified_no_generation` 与「正文为空→审计驳回」语义未必等同，「与实测矛盾」是该日志的对照判断，属阶段性观察，覆盖面不全。\"],\"unverified\":[\"魄.md 条目2/4/5、识神.md 条目1/4/6 是否均标「待补」多AI交叉验证\",\"项目历史.md 10-10(五) 原文及月度目录对 kimi_cn 的 catalogue_verified_no_generation 标注\",\"Pulse 快照内容及 grok 工件中 model_calls=0、finish_reason=stop 的具体取值\",\"源文件 memory/daily/agent-2026-10-30-qianwen-825f1215ea51.md 是否完整支撑上述转述\"]}",
+      "sha256": "3ef4b06c3585c85be3423ab5ce2bf82ec0d0af367c14f102e9a02e47c2744215"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1608,
+    "reviewer_tokens": 5437,
+    "model_calls": 2
+  }
+}

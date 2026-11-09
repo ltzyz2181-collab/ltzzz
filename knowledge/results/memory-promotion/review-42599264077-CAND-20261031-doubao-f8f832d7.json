@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42599264077",
+  "source_commit": "77e1dfdb4d9ac2285a33953d8e5a6f4a41a60b22",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261031-doubao-f8f832d7",
+  "created_at": "2026-11-09T10:24:51.597Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"8630949eefa39b62df93e33ca977a11377a48d22f84c0a4035fcbf20f9c9a07c\",\"subject\":{\"candidate_id\":\"CAND-20261031-doubao-f8f832d7\",\"claim\":\"1. 六份核心记忆均明确区分观察、AI解释、待验证项与事实；2. 待审DeepSeek工件结构完整，finish_reason=stop，自标未读目标文件、交付/部署/付款均为false；3. 本次未提供ANS-2026-10-18对应派单及当日回执。\",\"source\":\"memory/daily/agent-2026-10-31-doubao-f8f832d7a7b3.md\",\"source_sha256\":\"8772fa7993b0f09ba24e9d35c610f738223e5659906fb30bb2acd995f3285021\"}}",
+      "sha256": "3aba83d130c2cbc74e3c5c5427a07c92860b6c0a03abddbf277d7865de7ac5c7"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"8630949eefa39b62df93e33ca977a11377a48d22f84c0a4035fcbf20f9c9a07c\",\"artifact_sha256\":\"3aba83d130c2cbc74e3c5c5427a07c92860b6c0a03abddbf277d7865de7ac5c7\",\"accepted\":true,\"reasons\":[\"三条均为可独立复用的阶段性观察/状态记录，来源路径已给出，未见与已载事实的直接冲突，整体可安全晋升。\",\"限制：第2点中「未读目标文件、交付/部署/付款均为false」应理解为待审工件自标字段，不得由 finish_reason=stop 推定未运行/未部署/无付费，也不得当作已核验的资金或部署结论使用。\",\"限制：第1点属结构评估、粒度较粗；第3点只记录本次材料缺失，覆盖面不全且后续可能因补件而变化。\"],\"unverified\":[\"六份核心记忆是否均明确区分观察、AI解释、待验证项与事实，无法对照源文件核验。\",\"待审DeepSeek工件的实际结构、finish_reason 及自标字段取值，仅能采信提交表述。\",\"本次是否确实未提供 ANS-2026-10-18 对应派单及当日回执，无法从提交包外核实。\"]}",
+      "sha256": "ada2d33e8858e1646d4926ee4fdc8214836bb901b527ae04be03f876da4479e0"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 753,
+    "reviewer_tokens": 4982,
+    "model_calls": 2
+  }
+}
