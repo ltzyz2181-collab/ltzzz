@@ -1,10 +1,10 @@
 name: UI browser and read-only Treasury evidence
 on:
   pull_request:
-    paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', '.github/workflows/ui-treasury-verification.yml']
+    paths: ['wep3.html', 'scripts/tests/wep3-receipt-render.test.mjs', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', '.github/workflows/ui-treasury-verification.yml']
   push:
     branches: [main]
-    paths: ['wep3.html', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', 'scripts/read-treasury-evidence.mjs', 'scripts/review-ui-deepseek.mjs', '.github/workflows/ui-treasury-verification.yml']
+    paths: ['wep3.html', 'scripts/tests/wep3-receipt-render.test.mjs', 'treasury-dashboard.html', 'scripts/verify-ui-browser.mjs', 'scripts/lib/ui-source-comparison.mjs', 'scripts/tests/ui-source-comparison.test.mjs', 'scripts/read-treasury-evidence.mjs', 'scripts/review-ui-deepseek.mjs', '.github/workflows/ui-treasury-verification.yml']
 permissions: {contents: read}
 concurrency: {group: 'ui-treasury-verification-${{ github.sha }}', cancel-in-progress: false}
 jobs:
