@@ -3,11 +3,11 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: '本次评审条数（1-5）'
+        description: '本次评审条数（1-12）'
         required: false
         default: '1'
       candidate:
-        description: '指定候选 ID（留空=自动挑选高影响最新）'
+        description: '指定候选 ID（留空=自动挑选未评审的高影响候选）'
         required: false
         default: ''
       dry_run:
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   review:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,7 +33,7 @@ jobs:
           node-version: '22'
       - name: Probe provider reachability from this runner (no credentials used)
         run: |
-          for u in https://api.deepseek.com/v1/models https://api.x.ai/v1/models https://ark.cn-beijing.volces.com/api/v3/models; do
+          for u in https://api.deepseek.com/v1/models https://api.x.ai/v1/models; do
             code=$(curl -sS -m 8 -o /dev/null -w '%{http_code}' "$u" 2>/dev/null || echo TIMEOUT)
             echo "probe $u -> $code"
           done
@@ -56,7 +56,6 @@ jobs:
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          # 逐个 add：任一 pathspec 不存在会让整条 git add 失败并静默丢全部变更
           for p in knowledge/results/memory-promotion memory/promote/queue.json memory/long-term; do
             if [ -e "$p" ]; then git add -A -- "$p"; fi
           done
