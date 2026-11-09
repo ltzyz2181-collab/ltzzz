@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42596069016",
+  "source_commit": "9f381626839e6cd8d6cfadaa3f648cbf9f1da65e",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261109-doubao-a2fc8c20",
+  "created_at": "2026-11-09T09:49:12.281Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"d63d56c992754ed8abbc25b8ebf0a4be74507e9f6da1988c2b73dd332ba7af54\",\"subject\":{\"candidate_id\":\"CAND-20261109-doubao-a2fc8c20\",\"claim\":\"1.《重要事件》2026-10-22~23节载ANS补丁accepted=false、生产修复未完成；2.DeepSeek工件finish_reason=stop，自标断言未运行、未部署，无付费；3.Pulse快照仅证6代理HTTP200存活，不证奖惩逻辑生效。\",\"source\":\"memory/daily/agent-2026-11-09-doubao-a2fc8c204778.md\",\"source_sha256\":\"44d83d92145f0e89ed445f6a64d05063c041fc17a149ef4a840434a58e1a1268\"}}",
+      "sha256": "c3337861910664a86ec95dc811f80543e0aa0f8fb30b7c3aa0785b750799327c"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"d63d56c992754ed8abbc25b8ebf0a4be74507e9f6da1988c2b73dd332ba7af54\",\"artifact_sha256\":\"c3337861910664a86ec95dc811f80543e0aa0f8fb30b7c3aa0785b750799327c\",\"accepted\":false,\"reasons\":[\"三条主张均来自单日 daily 日志的操作状态快照，属过程元数据而非可跨会话复用的稳定事实。\",\"第3条是 Pulse HTTP200 存活记录及其证明边界，属于应拦截的重复日常观察。\",\"第1条是 ANS 补丁 accepted=false、生产修复未完成的待补清单，状态会变，不宜固化为长期记忆。\",\"第2条是 DeepSeek 单次工件的 finish_reason 与未运行/未部署/无付费记录，属一次性运行元数据。\",\"提交包未提供已载长期记忆对照，无法排除同义重述。\"],\"unverified\":[\"无法核验《重要事件》2026-10-22~23原文是否确载 ANS 补丁 accepted=false 及生产修复未完成\",\"无法核验 DeepSeek 工件 finish_reason=stop、自标断言未运行/未部署、无付费\",\"无法核验 Pulse 快照是否仅含6代理 HTTP200 以及奖惩逻辑是否未获证\",\"无法对照已载长期记忆是否已有相同、冲突或同义条目\"]}",
+      "sha256": "5c267b0c8343cb150253dc7a943b5685be8b984cdff7e816f10345c0ad94c711"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1123,
+    "reviewer_tokens": 3269,
+    "model_calls": 2
+  }
+}

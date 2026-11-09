@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42596069016",
+  "source_commit": "9f381626839e6cd8d6cfadaa3f648cbf9f1da65e",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261109-qianwen-ef2da802",
+  "created_at": "2026-11-09T09:48:04.289Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"5babe5f3fe77a38256649722fb05b8f2323103c0ea400c042babf757deb06783\",\"subject\":{\"candidate_id\":\"CAND-20261109-qianwen-ef2da802\",\"claim\":\"`魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉验证。\",\"source\":\"memory/daily/agent-2026-11-09-qianwen-ef2da802de0e.md\",\"source_sha256\":\"9e723e4dccf33d77f3e429f6c7870cbf72f901f5d5de146b24e7ee7715de5ae8\"}}",
+      "sha256": "8fd74b6a94cc455abad55341fe8dc4817080ded14e693666965044e8a894ec90"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"5babe5f3fe77a38256649722fb05b8f2323103c0ea400c042babf757deb06783\",\"artifact_sha256\":\"8fd74b6a94cc455abad55341fe8dc4817080ded14e693666965044e8a894ec90\",\"accepted\":false,\"reasons\":[\"候选内容是某日日志里的文档状态快照（魄.md 2/4/5、识神.md 1/4/6 标“待补”），属于过程元数据，不是可跨会话复用的实质事实。\",\"同类“待补”清单会随补写失效，晋升长期记忆会把瞬时缺口固化成伪事实。\",\"符合应驳回的日常观察重复：相同待补清单，无新增稳定知识。\"],\"unverified\":[\"未能打开魄.md、识神.md及源日志核验条目编号与“待补/多AI交叉验证”原文，条目对应关系只能采信提交方转述。\"]}",
+      "sha256": "7a3252e7395c85e1adf940c02c39aee5a822d2bec4c19a7326226eb8a146a2ec"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1032,
+    "reviewer_tokens": 2443,
+    "model_calls": 2
+  }
+}
