@@ -1,0 +1,77 @@
+{
+  "schema": "ltzzz.patchgate.independent-review.v1",
+  "review_id": "SIGNER-CONTRACT-INDEPENDENT-REVIEW-8CF64C69-20261109",
+  "reviewed_at_utc": "2026-11-09T08:32:00Z",
+  "reviewer": {
+    "logical_seat": "xai",
+    "actual_provider": "xai",
+    "client": "grok"
+  },
+  "subject": {
+    "kind": "single_commit",
+    "commit_sha": "8cf64c6980915e30961fa7b680cea76452538710",
+    "parent_sha": "c05fa2f871461636b082c9982845885361a4263e",
+    "pr": 379,
+    "note": "Process gap: independent review of 2026-11-08 covered frozen head c05fa2f only; PR was merged with this additional commit without a separate XAI review at merge time. This receipt reviews only 8cf64c69."
+  },
+  "head_match": {
+    "expected": "8cf64c6980915e30961fa7b680cea76452538710",
+    "observed": "8cf64c6980915e30961fa7b680cea76452538710",
+    "status": "matched"
+  },
+  "diff_scope": {
+    "files": [
+      "scripts/lib/signer-readiness.mjs",
+      "scripts/tests/signer-readiness.test.mjs"
+    ],
+    "additions": 24,
+    "deletions": 0,
+    "summary": "Before field pick: scan contract and body levels for explicit negatives; configured/signer_configured false -> missing; control_verified/signer_control_verified false -> unknown. Two tests: root true cannot mask nested false; nested true cannot mask root false."
+  },
+  "verdict": {
+    "code_review": "approve",
+    "production_ready": false,
+    "process_gap_acknowledged": true,
+    "ci_green_alone_not_sufficient": true,
+    "rejected_head_mismatch": false
+  },
+  "checklist": {
+    "cross_level_negative_retention": {
+      "status": "pass",
+      "detail": "declarations = [contract,body] when distinct; any false configured/alias -> missing; any false control_verified/alias -> unknown before pick() can promote true from the other level"
+    },
+    "direction_stricter_than_c05fa2f": {
+      "status": "pass",
+      "detail": "Fail-closed addition only; does not loosen schema/revision/scope/chain/error/evidence rules from c05fa2f"
+    },
+    "tests_present": {
+      "status": "pass",
+      "detail": "root true vs nested negative; nested true vs root negative; both assert not ready and fundingGate.allowed false"
+    },
+    "readonly_scope": {
+      "status": "pass",
+      "detail": "Consumer classifier + unit tests only; no Worker producer, no sign, no transfer, no nonce"
+    }
+  },
+  "local_verification": {
+    "command": "node --test scripts/tests/signer-readiness.test.mjs",
+    "at_sha": "8cf64c6980915e30961fa7b680cea76452538710",
+    "tests": 22,
+    "passed": 22,
+    "failed": 0
+  },
+  "deployment_evidence": {
+    "status": "failed_prior_receipt",
+    "detail": "Managed CI producer deploy after #380: knowledge/results/wep3/atomic-maintenance-42462551716.json status=signer_status_readback_failed. Anonymous/wrong-token capability GETs returned HTTP 200; versioned signer fields null. Health signer_status_revision present does not substitute status contract. This commit does not fix producer auth or status payload.",
+    "receipt_path": "knowledge/results/wep3/atomic-maintenance-42462551716.json",
+    "run_id": "42462551716"
+  },
+  "conditions": [
+    "Statement '#379 fully independently reviewed' is only true after this receipt plus prior c05fa2f review",
+    "Do not treat consumer gate merge as Worker signer production readiness",
+    "Producer auth (401 anonymous/wrong token) and versioned status fields remain blockers"
+  ],
+  "paid": false,
+  "tx_hash": null,
+  "model_calls": 0
+}
