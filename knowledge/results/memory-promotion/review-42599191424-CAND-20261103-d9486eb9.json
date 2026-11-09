@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42599191424",
+  "source_commit": "164218263f764340bd33ffc22be48e70c910b8c0",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261103-d9486eb9",
+  "created_at": "2026-11-09T10:18:15.726Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"fd21d8d15762fc650d5778d4e351ecdbb37fb0b3efbbae019156c4c5bc84b1e9\",\"subject\":{\"candidate_id\":\"CAND-20261103-d9486eb9\",\"claim\":\"> 本回执即今日日课工件缺失的【派单监督】段的补交付。\",\"source\":\"memory/daily/2026-11-03-qianwen-dispatch-supervision.md\",\"source_sha256\":\"4945fd6ec209b679500d1af6d6024defac8f4f73ab1a64a50c84a9595397ae51\"}}",
+      "sha256": "7665a3a06ecf2b289e20fc0d63a83191e65a5ac1627fc547562e3fb6c1252340"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"fd21d8d15762fc650d5778d4e351ecdbb37fb0b3efbbae019156c4c5bc84b1e9\",\"artifact_sha256\":\"7665a3a06ecf2b289e20fc0d63a83191e65a5ac1627fc547562e3fb6c1252340\",\"accepted\":true,\"reasons\":[\"可作为2026-11-03日课工件曾缺失【派单监督】段、并以该回执作补交付的阶段性状态记录复用，不涉及资金/权限/安全结论，也未见与已载事实的直接冲突。\",\"限制：claim以「本回执」作指示性指称，脱离原回执上下文不可独立解读；「今日」须绑定source文件名中的日期，不得泛化为其他日期。\"],\"unverified\":[\"源文件 memory/daily/2026-11-03-qianwen-dispatch-supervision.md 原文未随包提供，无法核对claim是否为其原文摘录或与source_sha256一致。\",\"日课工件是否确曾缺失该段、本条是否确为对应补交付，仅能采信提交方陈述。\"]}",
+      "sha256": "58c201e4fdfd8213e13e8a9eacc63234c8da2bbb5dde40421d9f11aed6037d5c"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 783,
+    "reviewer_tokens": 3380,
+    "model_calls": 2
+  }
+}
