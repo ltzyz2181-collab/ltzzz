@@ -311,7 +311,7 @@ async function main() {
   // 优先高影响、优先最新日期
   pool.sort((a, b) => (a.impact === 'high' ? 1 : 0) - (b.impact === 'high' ? 1 : 0)
     || String(b.id).localeCompare(String(a.id)));
-  const targets = pool.slice(0, Math.max(1, Math.min(limit, 12)));
+  const targets = pool.slice(0, Math.max(1, Math.min(limit, 40)));
 
   if (!targets.length) {
     console.log(JSON.stringify({status: 'no_candidate', model_calls: 0}));
