@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42599264077",
+  "source_commit": "77e1dfdb4d9ac2285a33953d8e5a6f4a41a60b22",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261031-qianwen-bb15f29f",
+  "created_at": "2026-11-09T10:23:15.166Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"fc41b056b2fa883e8e93129403d18bef521e46a8b69d75ffdbc481421e54695f\",\"subject\":{\"candidate_id\":\"CAND-20261031-qianwen-bb15f29f\",\"claim\":\"`魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉验证；`项目历史.md`10-10(五)记Kimi-CN“正文为空→审计驳回”，但月度目录仍列`kimi_cn`为`catalogue_verified_no_generation`，与实测矛盾；Pulse快照六席http=200，但`grok`工件明确`model_calls=0`，证实心跳≠生成。\",\"source\":\"memory/daily/agent-2026-10-31-qianwen-bb15f29f28e8.md\",\"source_sha256\":\"08a9032c4d0686adb9c3ff1aa81231531c05461e9e5a9550445e68cace0af318\"}}",
+      "sha256": "75573a6e6721fe728092db2c94194da8baa73b282aaa2be97c047e3324d9c10a"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"fc41b056b2fa883e8e93129403d18bef521e46a8b69d75ffdbc481421e54695f\",\"artifact_sha256\":\"75573a6e6721fe728092db2c94194da8baa73b282aaa2be97c047e3324d9c10a\",\"accepted\":true,\"reasons\":[\"可复用：魄.md 2/4/5 与识神.md 1/4/6 的“待补”交叉验证标注、项目历史对 Kimi-CN 空正文审计驳回、月度目录对 kimi_cn 的 catalogue_verified_no_generation 枚举、以及 Pulse 六席 http=200 对照 grok 工件 model_calls=0，均为可检索的状态事实。\",\"限制：“与实测矛盾”把目录枚举与历史审计结论之间的张力写成已证实矛盾，可能只是状态机/命名差异；“证实心跳≠生成”仅由该次 grok 工件支持，不得外推为全局定律。待补与目录状态属阶段性记录。\"],\"unverified\":[\"魄.md 条目2/4/5、识神.md 条目1/4/6 原文是否均标“待补”\",\"项目历史.md 10-10(五) 是否确记 Kimi-CN“正文为空→审计驳回”\",\"月度目录是否仍列 kimi_cn 为 catalogue_verified_no_generation\",\"Pulse 快照六席 http=200 及 grok 工件 model_calls=0（源日更未随包提供，只能采信引用）\"]}",
+      "sha256": "fe2429156ebe019419039d31d771e288f9642ba71bab8d88588c3d710d77d186"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1490,
+    "reviewer_tokens": 5940,
+    "model_calls": 2
+  }
+}
