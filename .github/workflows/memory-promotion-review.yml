@@ -56,7 +56,11 @@ jobs:
         run: |
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
-          git add knowledge/results/memory-promotion memory/promote/queue.json memory/long-term 2>/dev/null || true
+          # 逐个 add：任一 pathspec 不存在会让整条 git add 失败并静默丢全部变更
+          for p in knowledge/results/memory-promotion memory/promote/queue.json memory/long-term; do
+            if [ -e "$p" ]; then git add -A -- "$p"; fi
+          done
+          git status --porcelain | head -20
           if git diff --staged --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
           git commit -m "memory: dual-provider review run ${{ github.run_id }}"
