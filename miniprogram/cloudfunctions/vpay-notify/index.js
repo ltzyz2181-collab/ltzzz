@@ -71,6 +71,14 @@ async function findOrder(outTradeNo) {
   if (!Array.isArray(found.data) || found.data.length !== 1) fail('order_not_unique_or_unavailable');
   return found.data[0];
 }
+// Refund push carries the payment's WxOrderId and no OpenId/Env, so refund
+// binding resolves through the stored wx_order_id written at delivery time.
+async function findOrderByWxRef(wxOrderId) {
+  if (!text(wxOrderId) || wxOrderId.length > 128) fail('invalid_order_reference');
+  const found = await db.collection('orders').where({ wx_order_id: wxOrderId }).get();
+  if (!Array.isArray(found.data) || found.data.length !== 1) fail('order_not_unique_or_unavailable');
+  return found.data[0];
+}
 function checkOwnerAndEnvironment(event, order) {
   if (order.pay_channel !== 'virtual' || !text(order.openid) || event.OpenId !== order.openid) fail('order_binding_mismatch');
   const env = integer(event.Env);
@@ -113,10 +121,11 @@ async function handleRefund(event) {
     if (event.RetCode === undefined) fail('refund_result_missing');
     return success();
   }
-  const order = await findOrder(event.MchOrderId);
-  checkOwnerAndEnvironment(event, order);
+  const wxOrderId = text(event.WxOrderId);
+  const order = await findOrderByWxRef(wxOrderId);
+  if (order.pay_channel !== 'virtual' || !text(order.wx_order_id) || order.wx_order_id !== wxOrderId) fail('refund_binding_mismatch');
   const amount = integer(event.RefundFee);
-  if (!text(order.wx_order_id) || event.WxOrderId !== order.wx_order_id || !text(event.MchRefundId) || !text(event.WxRefundId) ||
+  if (!text(event.MchRefundId) || !text(event.WxRefundId) ||
       amount <= 0 || amount > order.amount) fail('refund_binding_mismatch');
   if (['refunded', 'refund_pending_verification'].includes(order.status)) return success();
   if (!['paid', 'delivered'].includes(order.status)) fail('refund_state_unverified');
