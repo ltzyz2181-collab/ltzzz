@@ -297,7 +297,10 @@ async function main() {
     try {
       const r = await reviewOneCandidate(item, {rootDir, runId, sourceCommit, worker, reviewer, dryRun});
       results.push(r);
-      console.log(JSON.stringify({candidate: item.id, accepted: r.accepted, reason: r.reason || null, receipt: r.receipt_path || null}));
+      console.log(JSON.stringify({
+        candidate: item.id, accepted: r.accepted, reason: r.reason || null, receipt: r.receipt_path || null,
+        reviewer_reasons: r.reviewer_reasons || null
+      }));
     } catch (e) {
       results.push({id: item.id, accepted: false, reason: 'executor_error:' + String(e.message || e).slice(0, 160)});
       console.log(JSON.stringify({candidate: item.id, accepted: false, error: String(e.message || e).slice(0, 160)}));
@@ -322,7 +325,8 @@ async function main() {
     tx_hash: null,
     dry_run: dryRun
   }));
-  if (!results.some(r => r.accepted)) process.exitCode = 1;
+  // 评审通过数可以为 0：这是合法的评审结论，不是执行失败。
+  // 只有真正的执行异常（未捕获错误）才应以非零退出。
 }
 
 if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
