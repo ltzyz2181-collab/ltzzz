@@ -78,3 +78,23 @@
 - `vpay-order` 的 6 个环境变量全部存在，沙箱 AppKey 与后台「查看沙箱AppKey」逐段指纹一致。
 
 取证与完整结论见：`ops/dispatch/inbox/gpt/MINIPROGRAM-VPAY-CONFIG-VERIFY-20261109.md`。
+
+
+## 六、GPT 裁决（2026-11-09T08:53Z）
+
+原任务：`WECHAT-MINIPROGRAM-CONTINUE-20261101`；package：`VPAY-1.0.2-AUTH-FIX-01`。GPT 已沿登记豆包原 thread 回复，Sent message ID `1a1bf837ab09324d`，thread `1a1be2a3aef8fe75`。
+
+### Q1–Q5 决定
+
+1. **通道**：先走小程序虚拟支付 B 的有界官方沙箱验证，不并行 JSAPI；前提是官方后台确认这些人工数字服务类别符合虚拟支付资格。OfferID 签约不等于商品类别、真实回调或支付链路已验收。JSAPI 留待商户产品权限正式开通后另评估；不绕过平台拒绝。
+2. **备案**：备案通过前不公开收款、不正式提审/发布。代码、CI、DevTools 和平台明确允许的私有沙箱测试可继续；不在共享体验版开放支付入口。
+3. **产品与数据**：`payEnabled` 继续 `false`，直到密钥存在性、真实官方沙箱支付、`vpay-notify` 验签、`pending → paid`、`order-query` 回读、重复通知/幂等/退款/重放及版本验收均有证据。未开放文案统一为：「在线支付通道尚在开通与验收中，当前仅可浏览服务介绍，不接受下单或付款。」交付保持 24 小时内人工交付，不自动发货。两条 pending 订单保留数据库原记录，不删除、不改 closed、不标演示；`order-list` 按 OPENID 过滤，因此只对原下单 OPENID 可见，非所有体验者可见。历史订单优先显示原标题快照，当前商品名只可作为次级标签；当前 product_id 全量替换历史标题的展示映射需修订，不改数据库及微信道具标题。
+4. **部署**：不做 CloudBase 全量重部署。只在函数源码变化、哈希固定且测试通过后按函数粒度部署。顺序为先核源码/运行环境/密钥存在性，再核回调 URL 与无效签名 403 且 DB 不变，再开有界官方沙箱窗口做一笔真实沙箱支付与回调、查单回读、重复/退款/重放，最后关闭窗口。暂不新建 CloudBase 环境；`VPAY_ENV=1` 只是代码默认值，必须核实真实运行值。秘密只在官方控制台/密钥管理中配置，回执只记录变量名存在性，不记录值。保留现有 `miniprogram-upload.yml`，不新增付费 cron 或无关 workflow。
+5. **版本节奏**：先对本次开发版 `0.1.7` 做 DevTools/真机验收，验收通过后才考虑设为体验版；当前体验版仍为 `0.1.20261107`。备案通过后提审，审核通过后发布。普通后台动作按 owner 已授权流程推进；只有平台实际强制扫码/短信/本人验证时才停在该步，不绕过。
+
+### 执行状态边界
+
+- 当前已证：run `42586893072` 成功上传开发版 `0.1.7`（`uploaded=true`、`published=false`）；当前 `payEnabled=false`。
+- 未证：`0.1.7` 的 DevTools/真机验收、实际 `VPAY_ENV`、云函数秘密存在性、官方沙箱支付/回调、数据库状态迁移、提审或线上发布。
+- 本节为 GPT 裁决与后续执行边界，不是支付开通、CloudBase 部署、客户交付或收入回执。状态：`decision_sent_execution_pending`。
+- 本轮 Gmail connector 未暴露原始 Authentication-Results/SPF/DKIM/DMARC 头；真实 From 与登记地址一致，但不把本轮邮件认证标记为 pass。
