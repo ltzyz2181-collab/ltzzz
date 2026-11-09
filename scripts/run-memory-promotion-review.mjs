@@ -223,7 +223,9 @@ export function applyResults(rootDir, {applied, dryRun = false} = {}) {
   }
   if (dryRun) return {applied: [], queue};
   const result = applyReviewedMemory(queue, {rootDir});
-  fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2) + '\n');
+  // 全量重写会改变既有 164 条条目的序列化格式、制造大量无关 diff；
+  // 因此只在确有晋升结果时才写回，被拒结论以回执为准。
+  if ((result.applied || []).length) fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2) + '\n');
   return result;
 }
 
