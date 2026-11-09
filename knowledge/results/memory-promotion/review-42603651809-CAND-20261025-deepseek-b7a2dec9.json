@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42603651809",
+  "source_commit": "43b121af23c6babf4c4c48a04e653d3ab6c86d79",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261025-deepseek-b7a2dec9",
+  "created_at": "2026-11-09T10:51:30.586Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"4f045f218b71ebc9b2b60a396731c39e05efdbe478bb9bba5e6e8092a63caf51\",\"subject\":{\"candidate_id\":\"CAND-20261025-deepseek-b7a2dec9\",\"claim\":\"`ltzzz-memory/重要事件.md`“2026-10-22～23”节：ANS错误补丁被拒绝，审方`accepted=false`，补丁测试/生产修复未完成；Pulse快照仅证6代理HTTP 200未暂停，不证ANS已修复/交付。\",\"source\":\"memory/daily/agent-2026-10-25-deepseek-b7a2dec9924a.md\",\"source_sha256\":\"4fdfb93c57eb8e6d17c1ac5111ff978360e89f2cf3a72e1cb52b6271df01f004\"}}",
+      "sha256": "906b9b50c694a21ec3a5947b1a968de6465c750c98d0373a0b207eb2387fec31"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"4f045f218b71ebc9b2b60a396731c39e05efdbe478bb9bba5e6e8092a63caf51\",\"artifact_sha256\":\"906b9b50c694a21ec3a5947b1a968de6465c750c98d0373a0b207eb2387fec31\",\"accepted\":true,\"reasons\":[\"该条把ANS错误补丁审方拒绝、修复未完成，与Pulse快照仅证6代理HTTP 200未暂停明确拆开，未把存活探测写成已修复/已交付，主体可独立复用。\",\"限制：属2026-10-22～23阶段性状态，后续可能变化；未含拒绝细则、补丁内容与生产验证步骤，覆盖面不全。\"],\"unverified\":[\"源文件 memory/daily/agent-2026-10-25-deepseek-b7a2dec9924a.md 原文未随包提供，claim与source_sha256只能按提交方陈述采信。\",\"ltzzz-memory/重要事件.md「2026-10-22～23」节既有措辞未能对照核验。\"]}",
+      "sha256": "99620fe9a82fb7ad107be3b6a418eeeaa79953d74ef9e319a1a6e33ce3635826"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1212,
+    "reviewer_tokens": 3622,
+    "model_calls": 2
+  }
+}
