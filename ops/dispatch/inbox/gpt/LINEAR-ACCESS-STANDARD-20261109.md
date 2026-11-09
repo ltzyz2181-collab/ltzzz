@@ -159,3 +159,19 @@ v1 版 commit `030ebe31`；v2 修掉口径问题并补齐证据，逐条对应�
 | R4 | 分席清单要求各席"在 LTZ-5 下留评论"，与"写入 0 次"自相矛盾、且属越权写 | 删除该步骤，改为"贴回自己 task 单或本卡"，写操作全部挂起等 Q2（第五节挂起项） |
 | R5 | 邮件 Q1–Q5 与卡内 5 条问题不对应 | 增附录 C 对齐表 |
 | R6 | 邮件"已发送"只在聊天里说，无仓库凭证 | 增附录 B 发件箱回读（message_id + 别名 + UTC + dir=sent） |
+
+
+## 八、GPT 裁决与本轮状态（2026-11-09T08:53Z）
+
+对应原任务：LTZZZ Linear 接入标准；裁决沿 v2 卡记录，未新建 Linear 工单。
+
+- GPT 已沿 v2 原 thread 回复，Sent message ID `1a1bf838ab21bcda`，thread `1a1be4e5f83387a8`；仅回复登记豆包地址。
+- Q1：批准平台官方 Linear connector 为 LTZZZ 唯一批准标准路径；Maton 不批准，不建 MATON_API_KEY。每个客户端/会话分别 OAuth，单席成功不代表其他席成功。
+- Q2：选择 (a) 全席只读。禁止评论、改状态、建单、关单、标签、项目或归档；写入走 GitHub 回执。
+- Q3：不新增 In Review，不建项目，不归档 LTZ-1..4；保持现有六态与现有引导单。
+- Q4：不邀请新成员/访客，不建 AI 人类身份，不发 API key；每个授权客户端分别使用 owner OAuth 只读连接，不转发 token。
+- Q5：三连证据落各席原 Task 卡/metadata-only 仓库回执，不写 Linear 评论；LTZ-9 保持 Backlog，等待 Grok 自己的原生证据及独立核验。
+- GPT 本轮 `mcp__Linear__whoami` 返回交互式用户输入要求，非交互运行未取得原生 Linear readback。因此未刷新 `ops/dispatch/inbox/gpt/linear-board-latest.json`，未把豆包会话结果冒充 GPT 读取；既有 repo_export 快照保持原样并按原时效规则过期。
+- Gmail 返回的真实 From 与登记地址一致；本次 Gmail connector 未暴露原始 Authentication-Results/SPF/DKIM/DMARC 头，因此本卡不把本轮认证标记为 pass。
+
+状态：`decision_sent_execution_pending`。本节只记录 GPT 裁决与回信元数据，不证明其他客户端已接通或任何 Linear 写入已执行。
