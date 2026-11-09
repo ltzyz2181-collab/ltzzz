@@ -210,10 +210,14 @@ test('persistent GitHub CAS transport shares the execution time limit and cannot
  assert.equal(calls,0);
 });
 
-test('queue workflow has no cron or provider keys and confines credentialed execution to trusted main pushes',()=>{
+test('push queue remains append-only while daily scheduler is separate and bounded',()=>{
  const workflow=fs.readFileSync('.github/workflows/deep-superagent-queue.yml','utf8');
  assert.doesNotMatch(workflow,/\bschedule:|\bcron:|\bworkflow_dispatch:/);
  assert.doesNotMatch(workflow,/DEEPSEEK_API_KEY|DOUBAO_API_KEY|MOONSHOT_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY/);
  assert.match(workflow,/github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' && github\.repository == 'ltzyz2181-collab\/ltzzz'/);
  assert.match(workflow,/node tools\/push-receipt-commit\.mjs/);
+ const daily=fs.readFileSync('.github/workflows/deep-superagent-daily.yml','utf8');
+ assert.match(daily,/schedule:[\s\S]*cron: '30 0 \* \* \*'/);
+ assert.match(daily,/node scripts\/run-deep-superagent-daily\.mjs/);
+ assert.doesNotMatch(daily,/DEEPSEEK_API_KEY|DOUBAO_API_KEY|MOONSHOT_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY/);
 });
