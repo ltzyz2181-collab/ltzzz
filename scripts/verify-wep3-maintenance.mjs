@@ -9,6 +9,12 @@ const phase=process.argv[2],run=process.env.GITHUB_RUN_ID,sha=process.env.GITHUB
 if(!['before','after'].includes(phase)||process.env.GITHUB_REPOSITORY!=='ltzyz2181-collab/ltzzz'||process.env.GITHUB_REF!=='refs/heads/main'||!/^[0-9]+$/.test(run||'')||!/^[a-f0-9]{40}$/.test(sha||''))throw Error('trusted_main_maintenance_context_required');
 if(!process.env.CLOUDFLARE_API_TOKEN)throw Error('existing_cloudflare_identity_unavailable');
 const statusOnlyRelease=execFileSync('git',['show','-s','--format=%B',sha],{encoding:'utf8'}).includes('[signer-status-readback]');
+const signerProducerFiles=['wep3-worker.js','wep3-market.js','wep3-signer-status.js','wep3-aave.js','lib/financial-exit-guard.js','wrangler.wep3.toml'];
+function signerProducerSourceMatches(observed){
+  if(observed===sha)return true;
+  if(!/^[a-f0-9]{40}$/.test(observed||''))return false;
+  try{execFileSync('git',['merge-base','--is-ancestor',observed,sha],{stdio:'ignore'});execFileSync('git',['diff','--quiet',observed,sha,'--',...signerProducerFiles],{stdio:'ignore'});return true;}catch{return false;}
+}
 const token=crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex');
 const dir='knowledge/results/wep3',path=dir+'/atomic-maintenance-'+run+'.json';
 fs.mkdirSync(dir,{recursive:true});
@@ -24,7 +30,8 @@ if(phase==='before'){
   for(let attempt=0;attempt<12;attempt++){health=await json('/health');if(health.http===200&&health.body.runtime_revision==='wep3-atomic-repair-v1'&&health.body.source_commit===sha)break;if(attempt<11)await new Promise(r=>setTimeout(r,2500));}
   report.health=health;report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
   if(statusOnlyRelease){
-    report.signer_status=await readSignerStatusWithPropagation({base,token,sourceCommit:sha});
+    report.signer_status=await readSignerStatusWithPropagation({base,token,sourceCommit:sha,sourceCommitMatcher:signerProducerSourceMatches});
+    report.signer_status.producer_source={expected_worker_commit:sha,files_compared:signerProducerFiles,observed_commits:[...new Set(report.signer_status.rows.map(row=>row.observed.source_commit).filter(Boolean))],equivalent:report.signer_status.rows.every(row=>row.source_commit_match==='exact'||row.source_commit_match==='producer_code_equivalent')};
     report.after=await snapshot();report.financial_book_unchanged=report.before.book_sha256===report.after.book_sha256;
     report.ok=health.http===200&&health.body.source_commit===sha&&health.body.signer_status_revision==='wep3-signer-status-v1'&&health.body.atomic_ledger_ready===false&&health.body.legacy_writes_enabled===false&&report.financial_book_unchanged&&report.signer_status.ok;
     report.new_signatures=0;report.status=report.ok?'signer_status_producer_deployed_readback_verified':'signer_status_readback_failed';report.completed_at_utc=new Date().toISOString();

@@ -39,6 +39,15 @@ test('signer status propagation poll retries only bounded read-only GET checks a
  assert.equal(report.ok,true);assert.equal(requests,12);assert.equal(pauses,1);assert.equal(report.propagation.attempts.length,2);assert.equal(report.propagation.verified_attempt,2);assert.equal(report.propagation.complete,true);
 });
 
+test('readback can accept an older source only when trusted verifier proves producer files are byte-equivalent',async()=>{
+ const current='b'.repeat(40),producer='a'.repeat(40);
+ const fetcher=async(url,options)=>{const scope=new URL(url).searchParams.get('capability'),auth=options.headers['X-Lab-Pin'];return Response.json(auth==='fixture-token'?{...transactionSignerStatus({WEP3_SOURCE_COMMIT:producer},scope)}:{ok:false,error:'pin_required'},{status:auth==='fixture-token'?200:401});};
+ const rejected=await readSignerStatus({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:current,fetcher});
+ assert.equal(rejected.ok,false);assert.equal(rejected.rows.every(row=>row.source_commit_match==='mismatch'),true);
+ const accepted=await readSignerStatus({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:current,fetcher,sourceCommitMatcher:observed=>observed===producer});
+ assert.equal(accepted.ok,true);assert.equal(accepted.rows.every(row=>row.source_commit_match==='producer_code_equivalent'),true);
+});
+
 test('signer status propagation poll stops fail-closed at its strict retry bound',async()=>{
  let requests=0,pauses=0;
  const report=await readSignerStatusWithPropagation({base:'https://fixture.invalid',token:'fixture-token',sourceCommit:'b'.repeat(40),attempts:3,fetcher:async(url,options)=>{requests++;assert.equal(options.method,'GET');return Response.json({ok:false,error:'stale_or_auth_failure'},{status:200});},pause:async()=>{pauses++;}});
