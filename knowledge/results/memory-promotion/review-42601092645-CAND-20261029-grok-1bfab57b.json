@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42601092645",
+  "source_commit": "251c3e8cbd9643d43610cbc31211728e19550488",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261029-grok-1bfab57b",
+  "created_at": "2026-11-09T10:30:45.363Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"a0d9212bb6060eafe21eabdf0fce1e730b13de127475365a7726573bd507c1f4\",\"subject\":{\"candidate_id\":\"CAND-20261029-grok-1bfab57b\",\"claim\":\"本轮 Pulse `ran_at=2026-10-28T22:28:13.715Z`，六席 http=200/ok/paused=false，材料自标非生成验收。《项目历史》10-10(五) Kimi-CN 成功空正文被驳；10-14 部署成功且 `model_calls=0`。《识神》校注：可读≠完整。《重要事件》10-13 探针过但调用0。\",\"source\":\"memory/daily/agent-2026-10-29-grok-1bfab57b3301.md\",\"source_sha256\":\"76ff06f9d41beafb0c952d457df1817d44251c0b2078265b432816be6ff49b6a\"}}",
+      "sha256": "d6c718f766583d3f8a5b44b611debb2f14c9216bcdf58e187469f769afeae385"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"a0d9212bb6060eafe21eabdf0fce1e730b13de127475365a7726573bd507c1f4\",\"artifact_sha256\":\"d6c718f766583d3f8a5b44b611debb2f14c9216bcdf58e187469f769afeae385\",\"accepted\":true,\"reasons\":[\"可独立复用的阶段性事实记录：Pulse 运行时刻、六席探测结果，以及项目史上可对照节点（Kimi-CN 空正文被驳、部署成功且 model_calls=0、探针过但调用0、可读≠完整）。\",\"限制：条目高度压缩、多主题拼合；含少量过程字段与校注口径；状态后续可能变化，但不构成影响使用的事实错误、推断冒充或权限资金安全结论。\"],\"unverified\":[\"源文件正文未随包提供，无法逐字核对 claim 与 memory/daily/agent-2026-10-29-grok-1bfab57b3301.md 是否一致\",\"六席 http=200/ok/paused=false 的原始响应未给出\",\"“材料自标非生成验收”的判定依据未展开\"]}",
+      "sha256": "3c3868e79de98e69462efbdeaf3cf5b6d611f2418dc70b019f503953551dc791"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1329,
+    "reviewer_tokens": 3854,
+    "model_calls": 2
+  }
+}

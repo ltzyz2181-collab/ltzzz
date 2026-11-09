@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42601092645",
+  "source_commit": "251c3e8cbd9643d43610cbc31211728e19550488",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261022-doubao-9efd8a0e",
+  "created_at": "2026-11-09T10:45:43.325Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"14367079206cc88bbfe20f5bdb9471b65a0793bb4d0377fadb23d2d4c1879955\",\"subject\":{\"candidate_id\":\"CAND-20261022-doubao-9efd8a0e\",\"claim\":\"内联 Pulse 快照（2026-10-21T23:18:50.959Z）：6 个 agent 均 `ok:true/http:200/paused:false`，仅证明存活。\",\"source\":\"memory/daily/agent-2026-10-22-doubao-9efd8a0eadec.md\",\"source_sha256\":\"65fc4c8ba4327da383fa8615fc46dd4b093a15afb952eb47dad98447451b119a\"}}",
+      "sha256": "a7a03c3449967155f4300c862721bb9d913eebc0128b52e5f672a48d4ae16a23"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"14367079206cc88bbfe20f5bdb9471b65a0793bb4d0377fadb23d2d4c1879955\",\"artifact_sha256\":\"a7a03c3449967155f4300c862721bb9d913eebc0128b52e5f672a48d4ae16a23\",\"accepted\":true,\"reasons\":[\"该条是带时间戳的存活快照，把结论明确限定为 ok/http/paused 三项与“仅证明存活”，未把未验证推断写成已证实事实，可作阶段性状态安全复用。\",\"限制：仅为 2026-10-21T23:18:50.959Z 的点状态，后续可能变化；未列出 6 个 agent 身份；评审方未打开源文件核验原文。\"],\"unverified\":[\"源文件 memory/daily/agent-2026-10-22-doubao-9efd8a0eadec.md 是否确实记载该时间戳及 6 个 agent 均 ok:true/http:200/paused:false\",\"6 个 agent 的具体身份及逐项指标是否与源文件一致\"]}",
+      "sha256": "0726fc7450454b219c950e0afddde42faf1172542c0ec27fd6bbdfb4feaae301"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 986,
+    "reviewer_tokens": 3307,
+    "model_calls": 2
+  }
+}

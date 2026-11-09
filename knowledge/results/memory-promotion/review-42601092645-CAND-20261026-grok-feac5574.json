@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "run_id": "42601092645",
+  "source_commit": "251c3e8cbd9643d43610cbc31211728e19550488",
+  "operation": "memory_promotion",
+  "candidate_id": "CAND-20261026-grok-feac5574",
+  "created_at": "2026-11-09T10:39:36.449Z",
+  "read_only": false,
+  "paid": false,
+  "tx_hash": null,
+  "artifacts": [
+    {
+      "role": "worker",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"f76a07bdc53e42929af3f8a392dabf62b8a6dc1e965949644b7dad8dbefd6197\",\"subject\":{\"candidate_id\":\"CAND-20261026-grok-feac5574\",\"claim\":\"本轮 Pulse `ran_at=2026-10-25T22:30:18.965Z`，六席 http=200/ok/paused=false，材料自标非生成验收。《项目历史》10-10(五) Kimi-CN 成功空正文被驳；10-14 部署成功且 `model_calls=0`。《识神》校注：可读≠完整。Skill：心跳200不能代替生产交付。\",\"source\":\"memory/daily/agent-2026-10-26-grok-feac55749c56.md\",\"source_sha256\":\"3744433c986cdc92b5eb19d469c9772cfe8fa49876b115c101e99bc9f5de9dad\"}}",
+      "sha256": "63511f56a914565e8e0aa2a5a074afd8e0b5e0bb211e534646d30c05e4e847e6"
+    },
+    {
+      "role": "reviewer",
+      "executed_by": "grok",
+      "model": "grok-4.6",
+      "text": "{\"operation\":\"memory_promotion\",\"subject_sha256\":\"f76a07bdc53e42929af3f8a392dabf62b8a6dc1e965949644b7dad8dbefd6197\",\"artifact_sha256\":\"63511f56a914565e8e0aa2a5a074afd8e0b5e0bb211e534646d30c05e4e847e6\",\"accepted\":true,\"reasons\":[\"本条主体是可独立复用的运行快照与项目史摘要：Pulse ran_at、六席 http=200/ok/paused=false，以及 10-10 空正文被驳、10-14 部署成功且 model_calls=0；校注与 Skill 把「可读≠完整」「心跳200不能代替生产交付」标成提醒，未把 200/ok 写成已完成生产交付，不构成影响使用的事实错误或未验证推断坐实。\",\"限制：含过程字段（时间戳、http 状态）；属阶段性状态，后续可能变化；历史为压缩复述、覆盖面不全；Skill 是规范性提醒而非新的操作事实。\"],\"unverified\":[\"源文件 memory/daily/agent-2026-10-26-grok-feac55749c56.md 原文未在本包展开，只能采信提交方自称来源与哈希。\",\"《项目历史》10-10(五)、10-14 两条的原始记载未给出，只能采信摘要。\",\"「六席」具体名单与「材料自标非生成验收」的判定依据未给出。\"]}",
+      "sha256": "57b9194c06975d460b80dfbe1da1e9fef7a67f272cecbdbea0191fe6220ecf9a"
+    }
+  ],
+  "calls": [
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "deepseek",
+      "model": "deepseek-v4-pro"
+    },
+    {
+      "status": "success",
+      "finish_reason": "stop",
+      "executed_by": "grok",
+      "model": "grok-4.6"
+    }
+  ],
+  "usage": {
+    "worker_tokens": 1329,
+    "reviewer_tokens": 4536,
+    "model_calls": 2
+  }
+}
