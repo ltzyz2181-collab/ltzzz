@@ -296,12 +296,22 @@ async function main() {
   }
 
   const queue = JSON.parse(fs.readFileSync(path.join(rootDir, 'memory/promote/queue.json'), 'utf8'));
-  let pool = (queue.items || []).filter(i => i.status === 'candidate');
+  // 已产出回执的候选一律跳过：被拒的候选按协议仍是 status=candidate，
+  // 若不做此过滤，批量执行会反复挑中同一批，永远清不完积压。
+  const receiptDir = path.join(rootDir, 'knowledge/results/memory-promotion');
+  const reviewedIds = new Set();
+  if (fs.existsSync(receiptDir)) {
+    for (const f of fs.readdirSync(receiptDir)) {
+      const m = /^review-\d+-(.+)\.json$/.exec(f);
+      if (m) reviewedIds.add(m[1]);
+    }
+  }
+  let pool = (queue.items || []).filter(i => i.status === 'candidate' && !reviewedIds.has(i.id));
   if (onlyId) pool = pool.filter(i => i.id === onlyId);
   // 优先高影响、优先最新日期
   pool.sort((a, b) => (a.impact === 'high' ? 1 : 0) - (b.impact === 'high' ? 1 : 0)
     || String(b.id).localeCompare(String(a.id)));
-  const targets = pool.slice(0, Math.max(1, Math.min(limit, 5)));
+  const targets = pool.slice(0, Math.max(1, Math.min(limit, 12)));
 
   if (!targets.length) {
     console.log(JSON.stringify({status: 'no_candidate', model_calls: 0}));
