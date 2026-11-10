@@ -1,6 +1,6 @@
 # 虚拟支付退款通知失效：定位与修复回执（2026-11-09）
 
-状态：`root_cause_proven_by_logs_fix_committed_deploy_blocked`
+状态：`root_cause_proven_by_logs_fix_committed_deployed_verified_by_code_readback`
 
 ## 1. 结论先说
 
@@ -101,11 +101,11 @@ commit `adab20d9`（`fix(vpay-notify): 退款推送按 WxOrderId 绑定订单`�
 
 ## 5. 未完成（如实列出）
 
-1. **函数尚未部署**。`adab20d9` 只在 GitHub main 上，CloudBase 线上 `vpay-notify` 仍是旧代码。
-   本席尝试用 CloudBase MCP 的 `updateFunctionCode` 直接推代码包（zip 与 `functionRootPath` 两种方式都试了），
-   均被拒：`updateFunctionCode 在 cloud mode 下不可用，因为该操作依赖本地函数代码目录`。
-   唯一可用通道是控制台「函数 → 上传 ZIP」，而桌面环境在本轮取证中途掉线（`client:1044603:832795323182164` offline），
-   浏览器不可用。**部署待桌面恢复后执行**。
+1. ~~函数尚未部署~~ → **已于 2026-11-10 08:41（CST）部署完成并回读确认，见第 8 节**。
+   早期尝试记录（保留）：CloudBase MCP `manageFunctions(action=updateFunctionCode)` 在 cloud mode 下
+   无论传 `functionRootPath` 还是 `zipFile` 均被拒（「该操作依赖本地函数代码目录」）；
+   `queryFunctions` 的 live enum 也不含 `getFunctionUploadUrl`。最终走官方管控面
+   `callCloudApi(service=tcb, action=UpdateFunctionCode, CodeSource=ZipFile, InstallDependency=TRUE)` 成功。
 2. 订单已对账，但**不是回调写的**：2026-11-09 18:13（CST）经 CloudBase MCP 直写 `orders`，
    把首单从 `delivered` 改为 `refund_pending_verification`，并写入 `refund_signal_at=2026-11-09T09:44:09Z`
    （微信退款成功时间）、`refund_amount_pending=990`、`refund_reference_pending`、`wx_refund_reference_pending`，
@@ -127,9 +127,48 @@ commit `adab20d9`（`fix(vpay-notify): 退款推送按 WxOrderId 绑定订单`�
 | 18:08 | 本地回放官方报文：旧码 -1，新码 0 + 迁移 |
 | 18:11 | 修复提交 `adab20d9` 并 push 到 main |
 | 18:15 | 桌面环境掉线，控制台部署通道不可用 |
+| 次日 08:41:34 | 经 `callCloudApi` → tcb `UpdateFunctionCode` 推送修复包（`RequestId ff28b0d3-2192-4e35-a166-b353329595d9`），函数进入 `Updating` |
+| 次日 08:44 | 函数回到 `Active`；下载线上包逐字节核对为修复版（见第 8 节） |
 
 ## 7. 本轮更正（对既有回执的修订）
 
 `MINIPROGRAM-VPAY-SANDBOX-ACCEPTANCE-20261109.md` 第 7 节仍写着「未发起沙箱退款、未开启 CloudBase 日志服务」，
 与事实不符：本轮**已真实发起全额退款**（微信侧成功、用户到账），**日志服务已开启**并取到函数级证据。
 两份表述以本回执为准。
+
+## 8. 部署完成与线上核对（2026-11-10，CST）
+
+### 8.1 推送
+
+- 通道：`callCloudApi` → `service=tcb`，`action=UpdateFunctionCode`（Version 2018-06-08），
+  cloud mode 可用、不依赖本地目录。
+- 入参：`EnvId=shizhang-pay-d0g1n58020acf6b5b`、`FunctionName=vpay-notify`、`Handler=index.main`、
+  `CodeSource=ZipFile`、`InstallDependency=TRUE`、`Publish=FALSE`、`Code.ZipFile=<base64>`。
+- 返回：`RequestId ff28b0d3-2192-4e35-a166-b353329595d9`；随后 `ModTime` 变为 `2026-11-10 08:41:34`。
+
+### 8.2 回读核对（不是"接口返回即成功"）
+
+| 检查项 | 实测值 | 判定 |
+|---|---|---|
+| 函数状态 | `Updating` → `Active`（08:44 复核） | 部署终态已完成 |
+| 代码包 SHA256（`getFunctionDownloadUrl`） | `f231efc65c20ad974f3562f84df35b0896a6962e78375e13f6bd9d8d970d44ed` | 与下载所得 zip 实算一致 |
+| 线上 zip 内 `index.js` 长度 / MD5 | 9766 字节 / `5D8D02427E61289EE91487917463C863` | 与仓库修复版逐字节相同 |
+| 关键标识 | 第 76 行 `findOrderByWxRef`、第 125 行按其反查、第 172 行 `unclassified`；全文无 `findOrder(event.MchOrderId)` | 退款分支已是修复版 |
+| 代码体积 | `CodeSize 7266061` | `InstallDependency=TRUE` 已装依赖 |
+| 环境变量 | `VPAY_PUSH_TOKEN` 仍在（值脱敏 `***`，`ValueLength 16`） | 配置未被覆盖 |
+| 运行时/处理器 | `Nodejs20.19` / `index.main` / `Type Event` / `VPC` 空 | 与部署前一致 |
+
+### 8.3 线上冒烟（真实签名，不伪造推送）
+
+用真实 `VPAY_PUSH_TOKEN` 按文档规则算签名，向 `…/vpay-notify` 发 **GET 验签握手**（该分支只回 `echostr`，不读不写库，不是支付/退款通知）：
+
+- 返回 `HTTP 200`，正文与请求的 `echostr` 完全一致（`echo_match=True`）。
+- 含义：新代码已在线加载、`wx-server-sdk` 依赖安装可用、签名/白名单逻辑正常、入口可服务。
+
+### 8.4 边界与仍未证的部分
+
+- **没有**用构造的退款报文去打线上（owner 明确禁止伪造通知），因此"下一笔真实退款会被自动接收并迁移状态"这一点，
+  §4 的 6 组回放（同报文、同代码）是行为证据，线上首证只能等**下一笔真实退款**发生。
+- 本单（`VPR26110917109261225`）的微信重试预算已在 15 次内耗尽，不会再对我方推送，故它不会自己变。
+  其 `refund_pending_verification` 仍是 §5-2 所述的人工对账写入。
+- 数据库未被本次部署改动：三条订单状态与字段与 §5-2 写入后一致（首单仍 `refund_pending_verification`）。
