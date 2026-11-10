@@ -409,7 +409,8 @@
     "ans-claim-2026-11-10-doubao",
     "ans-submit-2026-11-10-worker",
     "ans-submit-2026-11-10-reviewer",
-    "ans-review-2026-11-10"
+    "ans-review-2026-11-10",
+    "review-42785883496"
   ],
   "manual": {},
   "limits": {
@@ -424,25 +425,6 @@
     "all_tasks_independent_review": true
   },
   "events": [
-    {
-      "id": "ans-review-2026-11-05",
-      "type": "controller_review_task",
-      "actor": "qianwen",
-      "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
-      "at": "2026-11-04T23:38:29.959Z"
-    },
-    {
-      "id": "wallet_unknown:1793838612377",
-      "type": "sensor_unavailable",
-      "at": "2026-11-05T00:30:12.377Z",
-      "sensor": "wallet_balance"
-    },
-    {
-      "id": "wallet_unknown:1793843118061",
-      "type": "sensor_unavailable",
-      "at": "2026-11-05T01:45:18.061Z",
-      "sensor": "wallet_balance"
-    },
     {
       "id": "daily-claim-2026-11-05-deepseek-b904906ad9d29de0",
       "type": "controller_claim_task",
@@ -1716,17 +1698,36 @@
       "actor": "qianwen",
       "reason": "Owner priority: close ANS dispatch/execution/feedback loop",
       "at": "2026-11-10T07:25:34.660Z"
+    },
+    {
+      "id": "wallet_unknown:1794299639573",
+      "type": "sensor_unavailable",
+      "at": "2026-11-10T08:33:59.573Z",
+      "sensor": "wallet_balance"
+    },
+    {
+      "id": "review-42785883496",
+      "type": "controller_review_task",
+      "actor": "gpt",
+      "reason": "Decision-seat metadata review relayed by owner; executor submits under its own signed role, seat identity unchanged",
+      "at": "2026-11-10T08:51:25.384Z"
+    },
+    {
+      "id": "wallet_unknown:1794303850701",
+      "type": "sensor_unavailable",
+      "at": "2026-11-10T09:44:10.701Z",
+      "sensor": "wallet_balance"
     }
   ],
   "agents": {
     "doubao": {
       "failures": 0,
-      "successes": 7509,
+      "successes": 7538,
       "offline": false,
       "name": "doubao",
       "ok": true,
       "http": 200,
-      "latency_ms": 66,
+      "latency_ms": 67,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1736,7 +1737,7 @@
     },
     "deepseek": {
       "failures": 0,
-      "successes": 7509,
+      "successes": 7538,
       "offline": false,
       "name": "deepseek",
       "ok": true,
@@ -1751,12 +1752,12 @@
     },
     "kimi": {
       "failures": 0,
-      "successes": 7509,
+      "successes": 7538,
       "offline": false,
       "name": "kimi",
       "ok": true,
       "http": 200,
-      "latency_ms": 67,
+      "latency_ms": 57,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1766,12 +1767,12 @@
     },
     "grok": {
       "failures": 0,
-      "successes": 7483,
+      "successes": 7512,
       "offline": false,
       "name": "grok",
       "ok": true,
       "http": 200,
-      "latency_ms": 33,
+      "latency_ms": 31,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1781,12 +1782,12 @@
     },
     "qianwen": {
       "failures": 0,
-      "successes": 7509,
+      "successes": 7538,
       "offline": false,
       "name": "qianwen",
       "ok": true,
       "http": 200,
-      "latency_ms": 34,
+      "latency_ms": 37,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1796,12 +1797,12 @@
     },
     "wep3": {
       "failures": 0,
-      "successes": 7509,
+      "successes": 7538,
       "offline": false,
       "name": "wep3",
       "ok": true,
       "http": 200,
-      "latency_ms": 126,
+      "latency_ms": 124,
       "paused": false,
       "dispatch_allowed": true,
       "max_concurrency": 1,
@@ -1811,7 +1812,7 @@
     }
   },
   "cooldowns": {
-    "wallet_unknown": 1794293918298,
+    "wallet_unknown": 1794303850701,
     "collector_transport": 1792041866310,
     "wallet_drop": 1792416520100
   },
@@ -1822,14 +1823,14 @@
     "balance_usdc": "210.869201",
     "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
     "chain_id": 8453,
-    "rpc": "https://base-rpc.publicnode.com",
+    "rpc": "https://mainnet.base.org",
     "evidence": "eth_chainId_and_eth_call_balanceOf",
     "low": false,
     "sudden_drop": false
   },
   "mode": "parasympathetic",
   "active_controller": "gpt",
-  "ran_at": "2026-11-10T07:23:48.540Z",
+  "ran_at": "2026-11-10T09:49:10.857Z",
   "version": "0.3.8-dispatch-channels",
   "model_calls": 0,
   "financial_execution": false,
@@ -1841,180 +1842,6 @@
     "note": "未配置主动消息渠道；告警保存在/status，由外部工作流检查。"
   },
   "history": [
-    {
-      "at": "2026-11-09T07:24:50.302Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T07:29:50.500Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T07:34:50.674Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 1
-    },
-    {
-      "at": "2026-11-09T07:39:50.827Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T07:44:51.006Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T07:49:51.168Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T07:54:51.320Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T07:59:51.479Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:04:51.647Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:09:51.813Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:14:51.971Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:19:52.134Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:24:52.328Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:29:52.521Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:34:52.680Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:39:52.840Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:44:52.997Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:49:53.188Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 1
-    },
-    {
-      "at": "2026-11-09T08:54:53.347Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T08:59:53.506Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:04:53.674Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:09:53.837Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:14:53.997Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:19:54.165Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:24:54.365Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:29:54.614Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:34:54.832Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:39:54.982Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
-    {
-      "at": "2026-11-09T09:44:55.136Z",
-      "mode": "parasympathetic",
-      "unhealthy": [],
-      "alerts": 0
-    },
     {
       "at": "2026-11-09T09:49:55.282Z",
       "mode": "parasympathetic",
@@ -3568,12 +3395,186 @@
       "mode": "parasympathetic",
       "unhealthy": [],
       "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:28:48.768Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:33:48.914Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:38:51.967Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:43:52.117Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:48:55.211Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:53:55.367Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T07:58:55.526Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:03:55.696Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:08:55.849Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:13:56.002Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:18:56.158Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:23:56.316Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:28:56.479Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:33:59.573Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 1
+    },
+    {
+      "at": "2026-11-10T08:38:59.733Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:43:59.911Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:49:00.060Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:54:03.115Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T08:59:03.311Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:04:03.475Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:09:06.569Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:14:06.765Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:19:06.979Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:24:07.091Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:29:07.286Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:34:07.456Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:39:07.610Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
+    },
+    {
+      "at": "2026-11-10T09:44:10.701Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 1
+    },
+    {
+      "at": "2026-11-10T09:49:10.857Z",
+      "mode": "parasympathetic",
+      "unhealthy": [],
+      "alerts": 0
     }
   ],
   "collector_health": "observed",
   "incentives": {
-    "at": "2026-11-10T01:34:07.689Z",
-    "source_commit": "d87045452397127ed5bb043c66e67f9faae9ff0c",
+    "at": "2026-11-10T09:53:48.275Z",
+    "source_commit": "e263f453f9e49f8d6a24f805b4e0d7345c0283ea",
     "input_sha256": "8af4de221707f3493bd6ff9410c5a835e73972270eb07be992d0f6f429990738",
     "verification": "recomputed_from_hashed_independent_receipts",
     "profiles": {
@@ -3746,28 +3747,6 @@
       "evidence_path": "ops/AI-AUTO-WORK.md",
       "evidence_sha256": "fa44e0627b68d32f2f3bd66a6974bf16f852b1274bc40ff5749fdd6e2501f1e1",
       "submitted_at": "2026-10-16T10:14:34.711Z",
-      "model_execution_verified": false
-    },
-    {
-      "id": "ANS-2026-10-17-doubao",
-      "agent": "doubao",
-      "instruction": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
-      "status": "submitted_pending_review",
-      "source": "coordinator_rules_zero_model_baseline",
-      "assigned_to": "doubao",
-      "execution_chain": "ans",
-      "date": "2026-10-17",
-      "created_at": "2026-10-16T16:04:46.990Z",
-      "origin": "logical_gpt_coordinator_rules_not_native_gpt_call",
-      "paid": false,
-      "tx_hash": null,
-      "claimed_by": "doubao",
-      "claim_actor": "qianwen",
-      "claimed_at": "2026-10-16T16:33:46.012Z",
-      "claim_kind": "authenticated_executor_declaration_not_native_model_proof",
-      "evidence_path": "knowledge/results/ans-cycle/2026-10-17-reviewer.json",
-      "evidence_sha256": "45482117baf17b518be50f7d729fa08059f89d3aae35268060ef354102215a4b",
-      "submitted_at": "2026-10-16T16:34:19.508Z",
       "model_execution_verified": false
     },
     {
@@ -6590,7 +6569,7 @@
   "daily_dispatch_date": "2026-11-10",
   "last_balance": {
     "units": "210869201",
-    "at": 1794295428540
+    "at": 1794304150857
   },
   "dispatches": [
     {
@@ -6803,7 +6782,7 @@
   "task_board_schema_version": 4,
   "autonomic_feedback": {
     "version": 1,
-    "observed_at": "2026-11-10T07:23:48.540Z",
+    "observed_at": "2026-11-10T09:49:10.857Z",
     "cases": [],
     "open_cases": 0,
     "action_taken": {
@@ -6812,20 +6791,20 @@
       "dispatch_paused": false
     },
     "follow_up_receipt": {
-      "previous_observation_at": "2026-11-10T07:18:48.377Z",
-      "current_observation_at": "2026-11-10T07:23:48.540Z",
-      "next_probe_due_at": "2026-11-10T07:28:48.540Z"
+      "previous_observation_at": "2026-11-10T09:44:10.701Z",
+      "current_observation_at": "2026-11-10T09:49:10.857Z",
+      "next_probe_due_at": "2026-11-10T09:54:10.857Z"
     },
     "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
     "financial_execution": false,
     "model_generation_proven": false,
     "real_money_penalty": false
   },
-  "state_revision": 6585,
-  "state_updated_at": "2026-11-10T07:25:34.660Z",
+  "state_revision": 6616,
+  "state_updated_at": "2026-11-10T09:53:48.346Z",
   "durable_revision": "pulse-state-v2",
   "stale": false,
-  "alarm_at": 1794295728540,
+  "alarm_at": 1794304450857,
   "controllers": [
     "gpt",
     "qianwen"
