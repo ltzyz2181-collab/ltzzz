@@ -8878,6 +8878,60 @@
         "accepted": false
       },
       "receipt": "data/agi-econ/receipts/AET-00230.json"
+    },
+    "AET-00232": {
+      "id": "AET-00232",
+      "employer": "did:ltzzz:gpt",
+      "title": "memory fact-check 2026-11-10 gate",
+      "spec": "对当日文章逐条核查是否有项目历史依据，最多8条，给可信度评分",
+      "acceptance": [
+        "# 记忆事实核查"
+      ],
+      "budget_usd": 0.05,
+      "status": "blocked",
+      "bids": [
+        {
+          "worker": "did:ltzzz:kimi",
+          "ask_usd": 0.03,
+          "reputation": 107,
+          "at": "2026-11-10T11:44:13.573Z"
+        }
+      ],
+      "posted_at": "2026-11-10T11:44:13.562Z",
+      "run_id": "42809856802",
+      "attempt": 2,
+      "context": {
+        "prompt": "以「# 记忆事实核查」开头，逐条列出「文章说法 → 依据/无依据 → 建议修改」，最多8条，最后给可信度评分(0-100)。\n\n=== 文章 ===\n\n\n=== 项目历史节选 ===\n晋升标记；日课配置与原厂GPT/Microsoft停用、Claude外部讨论状态一致。千问每日回归单由规则总控签发，未伪造原生接单。\n- PR82修复真实结果保存失败：workflow_run旧提交与并发main更新分别导致总控回执冲突、manifest push拒绝。新总控38743881471和manifest38743881503均成功，27项测试通过；本次没有新模型调用或付费定时。\n- 旧Vault新只读回执在区块52640777双RPC一致，USDC/aUSDC/exposure均0，guardian仍为旧Agent地址；地址匹配不证明密钥泄露，余额0及模拟回退不证明权限解除。交易0，新增资金保持禁用，源码等价未验证。\n- YouTube新视频B_F6YC0GeBA已实际public+processed；38740073156首次发布成功，38740451167日课复用同一视频，未重渲染/重传。旧私密视频与TikTok未连接记录不追溯改写。\n- AET00038/39为internal_credit、ledger_only、paid=false、tx_hash=null；不记为USDC现金工资。豆包未执行的观察建议只作提案，预测性表述已要求修订，不当作机制验证。\n\n证据：ops/dispatch/receipts/OBSERVER-REMEDIATION-20261015.md；knowledge/results/security/legacy-vault-38742938089-attempt-1.json；results/publishing/youtube-recovery-2026-10-15.json；knowledge/results/dispatch/qianwen-return-2026-10-15.json。\n\n\n## 2026-10-16至10-21接续补录（2026-10-21核对，依据仓内回执与commit）\n\n- **10-16**：八项发现审计起步（ops/AUDIT-EIGHT-FINDINGS-20261016.md），外部订单/结算对账开始建账；当日未声称闭环。\n- **10-20**：每日视频流水线入队 queue/2026-10-20-*；三数日报 daily-3nums 追加推送 main；PR #182 已合并。YT播放/RUM点阅当日未测，如实留空。\n- **10-21**：\n  - 派单链路：meta HUBTEST-20261021/20261022 派单入库 + 台账行；META-HUBTEST-20261022 回执 full 版落 knowledge/results/meta-external/。\n  - 四通道 model secret 修正到真实 worker（ltzzz-qianwen-proxy / ltzzz-deepseek-proxy / ltzzz-kimi-proxy / ltzzz-xai-proxy）；误建空壳 xai-proxy 已删并复验真身。\n  - qwen-dispatch 修复：恢复 qwen 2048 闸门、kimi 独立 3000-16384 通道、回执 provenance 三字段（commit 4e1f5a9）。\n  - WEP3：PR #184 rebase PR#17（commit 00841a7c）合入 main（squash 3f0980c），引入 Wep3Ledger 原子账本 binding，LEGACY_KV_FROZEN=0 只读切over；live 契约检查推进到 live_contract_check_failed（豆包生成 ok、finish_reason=stop，1256 tokens）。\n  - 九项分诊执行单回执落 knowledge/results/triage-20261021/。\n\n证据：knowledge/results/meta-external/meta-hubtest-20261022.md；knowledge/results/triage-20261021/；commit 4e1f5a9 / 3f0980c / 48fe01f；run 39611149729。\n\n\n## 2026-10-24至10-28接续补录（2026-10-28 Doubao 收尾核对，依据仓内 commit 与回执，证据分级不升格）\n\n- **10-26（signer/OIDC 系列，全部 default-off，无资金授权）**：\n  - #255 OIDC approve 合并（98a970d0/58cef023/44616a2d/a79fb25c）；#259 A2 docs executor 合并但保持 disabled（d6ce5e2a）；#262 disabled A2 executor 审阅归档（460cb873/4af62847/818cd8e9）；#263 按 Claude266 以 default-off signer 候选合并（8094f98b/9f12c598）；PR264/265 signer 修订（c16da837/6f17cc3d）；#267 tested candidate 审阅（a3a195a7）；PR268 R1-R4 修复+冻结逾期 reservation+要求原生签名审阅（20eec721/48f03b92/ecee95bf）。\n  - 全部保持未激活：无 enrollment、无 signer admission、无资金权限。\n- **10-27**：\n  - WEP3 源码恢复练习：wep3-worker.js 截断恢复 + /swarm/spawn + /swarm/tree 递归多级 AGI hiring（8e733249/dbf5e816/67226493/9eb75c58）——**practice，live 服务未动**；worker full restore 因体积挂起待后续。\n  - 原生千问组件复核派单（PR-only dispatch to xAI，2dfd48c3/472db576/08391ec5/914edd11）；Claude exact-head 复核 M1/S1 候选（e3b36757）。\n  - 每日发布回执：YouTube 实际上传+public 核验（d49a8ff8）、Instagram 不可变日更+Manus 任务（0d8754d0/86cac02c）、x 日更（8e824140）；external AI hire 实际付款回执（e06ab66d/df8996bd）。\n- **10-28（本次 9 项收尾，均 paid=false / tx_hash=null / 零付费模型调用 / 无新交易）**：\n  - P1-A Aave 资金状态派生对账：approve 已上链 confirmed、supply 422 未广播、intent 级 on_chain_executed=false 澄清（aave-39372257199-reconciled-20261028.json）。\n  - P1-B PR #148 合并前原生 Claude 审阅缺口永久留痕 + 回顾性追审派单（REVIEW-PR148-RETRO-20261028；补审不反向洗白）。\n  - P1-C data/results/2026-10-20.json tasks[0] delivery_status 修正为 rejected_draft_review（附更正注记）。\n  - P2-05 ANS2 schema 两对跨字段条件强制修复派单（SCHEMA-ENFORCE-ANS2-20261028，TDD 4 用例）。\n  - P2-06 MODELCAT-KIMICN-20261022 卡修订 v2：目录登记状态（A，不变）与最近生成结果（B，新增字段）拆两维度。\n  - P2-07 doubao 10-20 独立审核文件落盘（原仅内联于 data/memory/doubao.json）。\n  - P2-08 时间戳语义定义：observed_at<claimed_at 属正常先观后认领，数据不反转。\n  - P2-09 promote 队列补 10-20 四席候选（deepseek/doubao/qianwen/grok，锚定 daily-board artifacts）。\n  - 千问两张子卡核验：WECHAT 子卡作废（联系人/版本/验收后台均编造），META 子卡环境订正为 CF Llama 3.1 8B；META-CLASSIFY-OVERSIGHT 已派发未消费，待 GPT 说明漏转或排队。\n\n证据：knowledge/results/dispatch/oversight/disposition-pr148-gate-20261028.md、disposition-p2-20261028.md、disposition-qwen-draft-cards-20261028.md；ops/dispatch/REVIEW-PR148-RETRO-20261028.md、SCHEMA-ENFORCE-ANS2-20261028.md、MODELCAT-KIMICN-20261022.md(v2)；",
+        "mark": "# 记忆事实核查",
+        "source_excerpt": "\n\n晋升标记；日课配置与原厂GPT/Microsoft停用、Claude外部讨论状态一致。千问每日回归单由规则总控签发，未伪造原生接单。\n- PR82修复真实结果保存失败：workflow_run旧提交与并发main更新分别导致总控回执冲突、manifest push拒绝。新总控38743881471和manifest38743881503均成功，27项测试通过；本次没有新模型调用或付费定时。\n- 旧Vault新只读回执在区块52640777双RPC一致，USDC/aUSDC/exposure均0，guardian仍为旧Agent地址；地址匹配不证明密钥泄露，余额0及模拟回退不证明权限解除。交易0，新增资金保持禁用，源码等价未验证。\n- YouTube新视频B_F6YC0GeBA已实际public+processed；38740073156首次发布成功，38740451167日课复用同一视频，未重渲染/重传。旧私密视频与TikTok未连接记录不追溯改写。\n- AET00038/39为internal_credit、ledger_only、paid=false、tx_hash=null；不记为USDC现金工资。豆包未执行的观察建议只作提案，预测性表述已要求修订，不当作机制验证。\n\n证据：ops/dispatch/receipts/OBSERVER-REMEDIATION-20261015.md；knowledge/results/security/legacy-vault-38742938089-attempt-1.json；results/publishing/youtube-recovery-2026-10-15.json；knowledge/results/dispatch/qianwen-return-2026-10-15.json。\n\n\n## 2026-10-16至10-21接续补录（2026-10-21核对，依据仓内回执与commit）\n\n- **10-16**：八项发现审计起步（ops/AUDIT-EIGHT-FINDINGS-20261016.md），外部订单/结算对账开始建账；当日未声称闭环。\n- **10-20**：每日视频流水线入队 queue/2026-10-20-*；三数日报 daily-3nums 追加推送 main；PR #182 已合并。YT播放/RUM点阅当日未测，如实留空。\n- **10-21**：\n  - 派单链路：meta HUBTEST-20261021/20261022 派单入库 + 台账行；META-HUBTEST-20261022 回执 full 版落 knowledge/results/meta-external/。\n  - 四通道 model secret 修正到真实 worker（ltzzz-qianwen",
+        "prompt_sha256": "ffd33f20eabed9558a4a192a1a44b339bacb7839eee19c4cfacc3350d0d41a35",
+        "source_sha256": "6a854f8b387ada5cfaa10d04459bdd19e81bac42f1a8746d2cb4c7af58e328a3",
+        "prompt_truncated": true,
+        "source_truncated": true,
+        "pinned_at": "2026-11-10T11:44:13.562Z"
+      },
+      "bid_mode": "program_rule",
+      "action_incentive": {
+        "worker": "did:ltzzz:kimi",
+        "score": 2,
+        "priority_multiplier": 1.02,
+        "status": "eligible",
+        "wins": 1,
+        "quality_failures": 0,
+        "overdue": 0,
+        "infrastructure_blocks": 19,
+        "unverified": 0,
+        "duplicates": 0,
+        "debt": 0,
+        "probation": false,
+        "ask_cap_share": 0.4,
+        "tier": "healthy",
+        "real_money_penalty": false
+      },
+      "worker": "did:ltzzz:kimi",
+      "price_usd": 0.03,
+      "block_reason": "worker_output_truncated",
+      "receipt": "data/agi-econ/receipts/AET-00232.json"
     }
   },
   "capital_pool": {
@@ -9638,37 +9692,23 @@
         "executed": false,
         "tx_hash": null,
         "at": "2026-11-09T20:07:50.019Z"
+      },
+      {
+        "id": "CAP-00233",
+        "by": "did:ltzzz:deepseek",
+        "asset": "USDC-Aave-v3-Base",
+        "amount_usd": 0.1825,
+        "thesis": "影子提案：稳定币借贷收益，仅记账不执行",
+        "compassion_check": "no-labor-displacement-asset",
+        "status": "shadow",
+        "executed": false,
+        "tx_hash": null,
+        "at": "2026-11-10T11:45:13.882Z"
       }
     ]
   },
-  "seq": 231,
+  "seq": 233,
   "events": [
-    {
-      "at": "2026-10-18T13:30:32.086Z",
-      "type": "post",
-      "task": "AET-00067",
-      "employer": "did:ltzzz:gpt",
-      "budget_usd": 0.05
-    },
-    {
-      "at": "2026-10-18T13:30:32.091Z",
-      "type": "block",
-      "task": "AET-00067",
-      "reason": "execution_exception"
-    },
-    {
-      "at": "2026-10-18T13:30:32.093Z",
-      "type": "post",
-      "task": "AET-00068",
-      "employer": "did:ltzzz:gpt",
-      "budget_usd": 0.05
-    },
-    {
-      "at": "2026-10-18T13:30:32.097Z",
-      "type": "block",
-      "task": "AET-00068",
-      "reason": "execution_exception"
-    },
     {
       "at": "2026-10-18T13:30:32.098Z",
       "type": "capital_proposal",
@@ -13033,6 +13073,32 @@
       "at": "2026-11-09T20:07:50.019Z",
       "type": "capital_proposal",
       "id": "CAP-00231",
+      "amount_usd": 0.1825
+    },
+    {
+      "at": "2026-11-10T11:44:13.562Z",
+      "type": "post",
+      "task": "AET-00232",
+      "employer": "did:ltzzz:gpt",
+      "budget_usd": 0.05
+    },
+    {
+      "at": "2026-11-10T11:44:13.574Z",
+      "type": "award",
+      "task": "AET-00232",
+      "worker": "did:ltzzz:kimi",
+      "price": 0.03
+    },
+    {
+      "at": "2026-11-10T11:45:13.877Z",
+      "type": "block",
+      "task": "AET-00232",
+      "reason": "worker_output_truncated"
+    },
+    {
+      "at": "2026-11-10T11:45:13.882Z",
+      "type": "capital_proposal",
+      "id": "CAP-00233",
       "amount_usd": 0.1825
     }
   ],
