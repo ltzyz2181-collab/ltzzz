@@ -209,6 +209,24 @@ function usdcHex(v){return '0x'+BigInt(Math.round(Number(v)*1e6)).toString(16)}
 // USDC (Ethereum) 合约地址
 const USDC_ADDR='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 function detect(){provider=window.ethereum||window.okxwallet||null;return provider}
+async function ensureSettlementNetwork(outputId){
+  const config=window.LTZZZ_SETTLEMENT_WALLET||{};
+  const expected=Number(config.chainId);
+  if(!Number.isSafeInteger(expected)||expected<=0){
+    $(outputId).textContent='结算网络配置无效，已阻止链上操作。';
+    return false;
+  }
+  try{
+    const current=await provider.request({method:'eth_chainId'});
+    if(typeof current!=='string'||!/^0x[0-9a-f]+$/i.test(current))throw Error('invalid_chain_id');
+    if(BigInt(current)===BigInt(expected))return true;
+    const network=config.network||('chainId '+expected);
+    $(outputId).textContent='当前钱包网络为 '+current+'，结算地址要求 '+network+'（chainId='+expected+'）。请在钱包中手动切换；本次未发起链上操作。';
+  }catch(e){
+    $(outputId).textContent='无法确认当前钱包网络，已阻止链上操作。';
+  }
+  return false;
+}
 
 // ===== 唯一结算地址（来自 ltzzz-settlement.js，全站单源）=====
 function settlementAddress() {
@@ -231,6 +249,7 @@ async function connect(){
     const a=await provider.request({method:'eth_requestAccounts'});
     account=a[0];
     $('status').textContent='已连接：'+account;
+    if(!await ensureSettlementNetwork('status'))return;
     // 读取 ETH / USDC 余额并同步到收益控制台（分开统计，仅本机记录）
     try{
       const eth=await provider.request({method:'eth_getBalance',params:[account,'latest']});
@@ -268,6 +287,7 @@ function recordTip(currency, amount, tx, sim) {
 
 $('send').onclick=async()=>{
   if(!account){await connect();if(!account)return}
+  if(!await ensureSettlementNetwork('tx'))return;
   const to=$('to').value.trim(),amount=$('amount').value.trim();
   if(!/^0x[a-fA-F0-9]{40}$/.test(to)){$('tx').textContent='请输入有效的 0x 收款地址。';return}
   if(!(Number(amount)>0)){$('tx').textContent='请输入大于 0 的 ETH 金额。';return}
@@ -280,6 +300,7 @@ $('send').onclick=async()=>{
 
 $('donate').onclick=async()=>{
   if(!account){await connect();if(!account)return}
+  if(!await ensureSettlementNetwork('donateOut'))return;
   const asset=$('donateAsset').value;
   const amount=Number($('donateAmount').value);
   // 目标地址强制取唯一结算地址（不读 DOM，防页面篡改；全站只有一个）
@@ -319,6 +340,7 @@ $('refreshSettle').onclick=async()=>{
   if(!detect()){out.textContent='未检测到钱包。连接 MetaMask/OKX 后可读取链上数据。';return}
   try{
     if(!account){await connect();if(!account)return}
+    if(!await ensureSettlementNetwork('settleOut'))return;
     out.textContent='读取链上数据中…';
     // ETH 余额
     const ethBal=await provider.request({method:'eth_getBalance',params:[settle,'latest']});
