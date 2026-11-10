@@ -7,6 +7,7 @@ try{
  // 指定 task_id 时无论其处在何种状态都回显，用于写回后的独立状态核验（终态任务不会出现在 discovered 里）。
  const focus=process.env.AGENT_TASK_ID?board.tasks.find(t=>t.id===process.env.AGENT_TASK_ID):null;
  if(focus)report.focus_task={id:focus.id,status:focus.status,assigned_to:focus.assigned_to,evidence_sha256:focus.evidence_sha256,review:focus.review};
+ else if(process.env.AGENT_TASK_ID){report.focus_missing=true;report.board_shape=Object.keys(board);report.all_task_ids=(board.tasks||[]).map(t=>t.id);report.history_ids=(board.history||board.archived||[]).map(t=>t.id).slice(0,50);}
  if(action!=='discover'){
   const task_id=process.env.AGENT_TASK_ID||relevant[0]?.id;if(!task_id)throw Error('no_available_task');
   // actor 角色必须与声明身份一致：gpt 走系统签发的 gpt token，不能用 qianwen token 顶替，
