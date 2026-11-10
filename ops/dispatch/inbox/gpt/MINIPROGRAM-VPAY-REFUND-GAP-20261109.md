@@ -1,6 +1,10 @@
 # 虚拟支付退款通知失效：定位与修复回执（2026-11-09）
 
-状态：`root_cause_proven_by_logs_fix_committed_deployed_verified_by_code_readback`
+状态：`root_cause_proven_by_logs_fix_committed_deployed_verified_by_code_readback`；
+`full_refund_terminal=refunded`（`24babab6` 已上线）；首单 `refunded`（owner 口径人工对账）
+
+> 读完 §1–§8 只需知道：根因已证、修复已上线、线上代码逐字节核对通过。
+> §9 是第二轮（全额退款直接落 `refunded`）的变更、部署、核对与首单改判记录。
 
 ## 1. 结论先说
 
@@ -172,3 +176,94 @@ commit `adab20d9`（`fix(vpay-notify): 退款推送按 WxOrderId 绑定订单`�
 - 本单（`VPR26110917109261225`）的微信重试预算已在 15 次内耗尽，不会再对我方推送，故它不会自己变。
   其 `refund_pending_verification` 仍是 §5-2 所述的人工对账写入。
 - 数据库未被本次部署改动：三条订单状态与字段与 §5-2 写入后一致（首单仍 `refund_pending_verification`）。
+  〔该句为 08:4x 时点的事实；首单随后按 owner 口径改判 `refunded`，见 §9.5。〕
+
+## 9. 第二轮：全额退款直接落 `refunded`（2026-11-10）
+
+状态补充：`full_refund_terminal_state=refunded`；首单人工对账终态 `refunded`；线上函数已是 `24babab6` 版。
+
+### 9.1 变更内容（commit `24babab6`，已 push main）
+
+在 §4 修复版基础上只改退款终态口径，发货分支一行未动：
+
+- **全额退款**（`RefundFee === order.amount`）→ 直接写 `status = 'refunded'`，同时写 `refunded_at` /
+  `refund_amount` / `refund_reference` / `wx_refund_reference`；
+- **部分退款** → 仍停 `refund_pending_verification`（不把只退了一部分的单标成全退）；
+- 反查方式仍是 `findOrderByWxRef(WxOrderId)` + `pay_channel === 'virtual'` + 金额/单号一致性校验 + 乐观更新
+  （`stats.updated !== 1` 抛 `refund_state_conflict`）。
+
+口径来源：owner 对本单直接回「已退款」，据此确认全额退款的终态就是 `refunded`。
+
+### 9.2 回归（7 组回放，改前后对照）
+
+脚本 `regress.js`（`Module._load` 劫持 `wx-server-sdk`、内存版 `orders`、签名走 `queryStringParameters`、
+`VPAY_PUSH_TOKEN=shizhangvpay2026`）在本机跑两组代码：
+
+| 版本 | 结果 |
+|---|---|
+| `24babab6`（全额→`refunded`） | 7 组全部通过 |
+| `2e131a96`（全额→`refund_pending_verification`） | 只有「全额退款」那一组守卫值不同（写的是 `refund_pending_verification`），其余 6 组两版逐项一致 |
+
+说明：该脚本是临时文件，跑完即清理（当前 `/tmp/vpayprobe` 已不存在），此处只记录当时结论；
+可复核的行为差异直接看 `git show 24babab6` / `git show 2e131a96:miniprogram/cloudfunctions/vpay-notify/index.js`。
+
+### 9.3 部署通道（本轮唯一走通的一条）
+
+`callCloudApi` 手工转录 5KB base64、`manageFunctions.updateFunctionCode`（cloud mode 拒绝本地目录）、
+`getFunctionUploadUrl`（live enum 无此项）、`miniprogram-ci cloud.uploadFunction`（41001 access_token missing）、
+本地私钥换腾讯云签名头（四种组合只回 `{"errCode":0}`，票据既不在 body 也不在响应头）——全部走不通，详见过程记录。
+
+最终通道是**微信开发者工具 CLI 直传目录**：
+
+- 前置：IDE 设置 `security.enableServicePort = true`（该开关在
+  `…\微信开发者工具\User Data\2ca4252ffa87560ea1fd48b913e45179\WeappLocalData\localstorage_*.json` 的 `security` 段；
+  改前为 `false`/`port:null`，两份文件均留 `.bak-20261110` 备份），然后启动 IDE，由 IDE 自行选端口监听
+  （`Default\.cli` 记录实际端口）；
+- 命令：`cli cloud functions deploy -e shizhang-pay-d0g1n58020acf6b5b -p <vpay-notify 目录> -r --appid wx562bcb6057346fb2`；
+- 输出：`√ [vpay-notify] cloudfunction vpay-notify exists in the cloud, will update it` → `√ deploy cloudfunctions`，
+  表格 `success true / filesCount 2 / packSize '3.8 KB'`，exit 0。
+
+### 9.4 线上核对（四条互相独立的证据）
+
+| 检查 | 实测 | 判定 |
+|---|---|---|
+| `getFunctionDetail` | `Status Active`、`AvailableStatus Available`、`ModTime 2026-11-10 09:28:42`、`CodeSize 7266119`、`RequestId 22553b29-7e0f-4032-b803-b6bff62a11e1` | 已替换上一版 |
+| `CodeInfo` 全文 | 含 `findOrderByWxRef` 与「full → `status:'refunded'`」分支，无 `findOrder(event.MchOrderId)` | 线上是 `24babab6` 版 |
+| 包 SHA256（`getFunctionDownloadUrl`） | `b968a847caa450710914846ea4c6e966ca30b367326f05993123822e92418f02`，与下载得到 7266119 字节 zip 实算一致 | 传输无损 |
+| 包内 `index.js` | 10171 字节 / `b41c856073877d226ceceb00399c32428bc520b01953b43e10aaa39f255f3f15` | 与仓库 `24babab6` 版、与部署目录**逐字节相同** |
+| 包内 `package.json` | 127 字节 / `57cb56e8821aa844468b2dc825e8f178de4e368816a01f49b559e5cb37b479c7` | 一致 |
+| 线上 GET 验签握手 | `HTTP 200`，正文回显 `livecheck-after-deploy` | 新代码已在线加载、入口可服务 |
+
+（GET 握手只回 `echostr`，不读不写库，仍不是伪造推送。）
+
+### 9.5 首单终态（owner 口径「已退款」，人工对账而非回调）
+
+`writeNoSqlDatabaseContent` `action=update` + `$set`，`requestId d6189d45-21fd-4ada-bf29-b39d1c05cf7c`，
+`modifiedCount 1 / matchedCount 1`；写入后回读（`requestId dac2334c-c343-49e1-85cf-ccc640486222`）：
+
+| 字段 | 值 |
+|---|---|
+| `status` | `refunded` |
+| `refund_amount` | `990`（分，= 9.90 元全额） |
+| `refund_reference` | `VP202611090907466de445e3` |
+| `wx_refund_reference` | `VPR26110917109261225` |
+| `refunded_at` | `2026-11-09T09:44:09.000Z`（微信侧退款成功时刻） |
+| `refund_verdict` | `owner_confirmed_refunded` |
+| `refund_verdict_at` | `2026-11-10T00:56:00.000Z` |
+
+部署完成后再次直读（`requestId 668da3fe-6a8b-4d03-9693-7c92cd1a696a`）：首单仍为 `status=refunded`、
+`refund_amount 990`、`wx_refund_reference VPR26110917109261225`、`refund_verdict owner_confirmed_refunded`，
+其余两条订单未受影响。
+
+首单旧的 `refund_amount_pending` / `refund_signal_at` / `refund_reference_pending` /
+`wx_refund_reference_pending` / `refund_reconciled_at` / `refund_reconcile_source` **保留未清理**（作为
+「回调曾被拒 → 人工对账」的历史留痕），是否清理由 owner 决定。
+
+### 9.6 仍未证 / 边界
+
+- 「下一笔真实全额退款会自己落到 `refunded`」仍只有**同报文回放 + 线上代码逐字节核对**作证据；
+  真实首证要等下一笔退款，本轮没有伪造推送去打线上。
+- 部分退款的长期终态（是否也自动收口）owner 未拍板，代码当前刻意停在 `refund_pending_verification`。
+- 小程序端订单页「已退款」的展示尚未截图取证。
+- 部署用的 IDE 服务端口开关本轮临时打开；按收尾约定已恢复原值（`enableServicePort=false`、`port=null`），
+  如需再次 CLI 部署要重开并按 `Default\.cli` 读实际端口。
