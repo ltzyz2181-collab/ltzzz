@@ -1,4 +1,4 @@
-import fs from 'node:fs';import crypto from 'node:crypto';
+import fs from 'node:fs';import crypto from 'node:crypto';import {classifySignerStatus} from './lib/signer-status-verdict.mjs';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev',action=process.env.AAVE_ACTION||'auto',amount=process.env.AAVE_AMOUNT||'1',id=process.env.AAVE_INTENT_ID||'AAVE-RUN-'+(process.env.GITHUB_RUN_ID||Date.now());
 const auth=process.env.WEP3_RUNNER_TOKEN||(process.env.CLOUDFLARE_API_TOKEN?crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex'):'');
 const readOnly=['status','diagnose','reconcile','preview','auto-preview'].includes(action);
@@ -15,6 +15,15 @@ try{
   if(expected&&result.aave_runtime_revision!==expected){report.service_verified=false;report.status='stale_worker_revision';if(attempt+1<tries){await new Promise(resolve=>setTimeout(resolve,3000));continue;}process.exitCode=1;break;}
   if(report.status==='stale_worker_revision')delete report.status;
   const guardedPreview=action==='auto-preview'&&response.status===422&&result.status==='blocked_reconciliation'&&result.signed===false;
+  // status 返回的是「签名能力就绪度」，ok:false 表示门正常关着，不是服务坏了。
+  // 判定见 scripts/lib/signer-status-verdict.mjs：真实执行或未知状态仍然 fail-closed。
+  if(action==='status'){
+   const verdict=classifySignerStatus(result,response.status);
+   report.signer_verdict=verdict.verdict;report.signer_expected_block=verdict.expectedBlock;report.signer_blocked_reason=verdict.blockedReason;
+   if(verdict.executionOccurred){report.status='unexpected_signer_execution';report.service_verified=false;process.exitCode=1;break;}
+   if(!verdict.serviceOk){report.status='signer_status_unexpected';report.service_verified=false;process.exitCode=1;break;}
+   report.service_verified=true;break;
+  }
   report.service_verified=!!((response.ok&&result.ok===true)||guardedPreview);
   if(action==='diagnose')report.execution_blocked=result.storage?.ok===false;
   if(guardedPreview)report.execution_blocked=true;
