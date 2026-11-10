@@ -29,7 +29,7 @@ test('R1 real exchange client rejects before reading credential getters or fetch
 
 
 const walletLabHtml = fs.readFileSync(path.join(root, 'wallet-lab.html'), 'utf8');
-const walletLabScript = [...walletLabHtml.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)].at(-1)?.[1];
+const walletLabScript = [...walletLabHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(walletLabScript, 'wallet-lab inline transaction script must exist');
 
 function mountWalletLab(chainResults = []) {
