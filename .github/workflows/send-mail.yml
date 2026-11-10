@@ -1,0 +1,44 @@
+name: Send one email (manual, no model calls)
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: '收件地址'
+        required: true
+      subject:
+        description: '邮件主题'
+        required: true
+      body_path:
+        description: '仓库内正文文件路径（发出的就是这份字节）'
+        required: true
+        default: 'ops/dispatch/inbox/gpt/REPORT-20261110-icp-filing-approved-and-status-doubao.md'
+permissions: {contents: read}
+concurrency: {group: send-mail, cancel-in-progress: false}
+jobs:
+  send:
+    if: github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Guard credential presence without printing values
+        env:
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+        run: |
+          missing=""
+          [ -z "$MAIL_HOST" ] && missing="$missing MAIL_HOST"
+          [ -z "$MAIL_USER" ] && missing="$missing MAIL_USER"
+          [ -z "$MAIL_PASS" ] && missing="$missing MAIL_PASS"
+          if [ -n "$missing" ]; then echo "::error::缺少 secret:$missing"; exit 1; fi
+          echo "三个邮件 secret 均已配置"
+      - name: Send the exact reviewed bytes
+        env:
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+          MAIL_TO: ${{ inputs.to }}
+          MAIL_SUBJECT: ${{ inputs.subject }}
+          MAIL_BODY_PATH: ${{ inputs.body_path }}
+        run: python3 scripts/send-mail.py
