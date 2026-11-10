@@ -3,6 +3,7 @@ const crypto = require('crypto');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
+const _ = db.command;
 const PUSH_TOKEN = process.env.VPAY_PUSH_TOKEN || '';
 const MAX_BODY_BYTES = 64 * 1024;
 const success = () => ({ ErrCode: 0, ErrMsg: 'success' });
@@ -100,7 +101,7 @@ async function handleDeliver(event) {
     if (order.wx_order_id !== wxOrderId) fail('payment_reference_conflict');
     return success();
   }
-  if (['refunded', 'closed', 'refund_pending_verification'].includes(order.status)) return success();
+  if (['refunded', 'closed', 'refund_pending_verification', 'partially_refunded'].includes(order.status)) return success();
   if (order.status !== 'pending') fail('order_state_conflict');
   const now = new Date().toISOString();
   const result = await db.collection('orders').where(orderCondition(order)).update({ data: {
@@ -109,7 +110,7 @@ async function handleDeliver(event) {
   } });
   if (result.stats?.updated !== 1) {
     const current = await findOrder(event.OutTradeNo);
-    if (!['refunded', 'closed', 'refund_pending_verification'].includes(current.status) &&
+    if (!['refunded', 'closed', 'refund_pending_verification', 'partially_refunded'].includes(current.status) &&
         !(['paid', 'delivered'].includes(current.status) && current.wx_order_id === wxOrderId)) fail('order_state_conflict');
   }
   return success();
@@ -117,8 +118,10 @@ async function handleDeliver(event) {
 async function handleRefund(event) {
   // A platform-attested refund for a bound order is the refund receipt itself.
   // Owner decided (2026-11-09) that a FULL refund closes the order as `refunded`.
-  // A PARTIAL refund is not the whole order: it pauses fulfillment and stays
-  // `refund_pending_verification` for reconciliation instead of claiming full refund.
+  // Owner decided (2026-11-10) that a PARTIAL refund also closes on its own, but
+  // as `partially_refunded` carrying the accumulated amount: claiming `refunded`
+  // for money that was only partly returned would be a false statement. Once the
+  // partial refunds add up to the order amount, the order becomes `refunded`.
   if (integer(event.RetCode) !== 0) {
     if (event.RetCode === undefined) fail('refund_result_missing');
     return success();
@@ -126,21 +129,23 @@ async function handleRefund(event) {
   const wxOrderId = text(event.WxOrderId);
   const order = await findOrderByWxRef(wxOrderId);
   if (order.pay_channel !== 'virtual' || !text(order.wx_order_id) || order.wx_order_id !== wxOrderId) fail('refund_binding_mismatch');
-  const amount = integer(event.RefundFee);
-  if (!text(event.MchRefundId) || !text(event.WxRefundId) ||
+  const amount = integer(event.RefundFee), wxRefundId = text(event.WxRefundId);
+  if (!text(event.MchRefundId) || !wxRefundId ||
       amount <= 0 || amount > order.amount) fail('refund_binding_mismatch');
   if (['refunded', 'refund_pending_verification'].includes(order.status)) return success();
-  if (!['paid', 'delivered'].includes(order.status)) fail('refund_state_unverified');
-  const now = new Date().toISOString(), full = amount === order.amount;
-  const result = await db.collection('orders').where(orderCondition(order)).update({ data: full ? {
-    status: 'refunded', refunded_at: now, refund_signal_at: now,
-    refund_amount: amount, refund_reference: event.MchRefundId,
-    wx_refund_reference: event.WxRefundId
-  } : {
-    status: 'refund_pending_verification', refund_signal_at: now,
-    refund_amount_pending: amount, refund_reference_pending: event.MchRefundId,
-    wx_refund_reference_pending: event.WxRefundId
-  } });
+  // Platform retries the same WxRefundId; replaying it must not double-count.
+  const applied = Array.isArray(order.refund_wx_refs) ? order.refund_wx_refs : [];
+  if (applied.includes(wxRefundId)) return success();
+  if (!['paid', 'delivered', 'partially_refunded'].includes(order.status)) fail('refund_state_unverified');
+  const prior = integer(order.refunded_total), total = (prior >= 0 ? prior : 0) + amount;
+  if (total > order.amount) fail('refund_over_total');
+  const now = new Date().toISOString(), full = total === order.amount;
+  const result = await db.collection('orders').where(orderCondition(order)).update({ data: Object.assign({
+    status: full ? 'refunded' : 'partially_refunded',
+    refunded_total: total, refund_amount: total,
+    refund_signal_at: now, refund_reference: event.MchRefundId,
+    wx_refund_reference: wxRefundId, refund_wx_refs: _.push([wxRefundId])
+  }, full ? { refunded_at: now } : {}) });
   if (result.stats?.updated !== 1) fail('refund_state_conflict');
   return success();
 }
