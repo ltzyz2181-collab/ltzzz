@@ -15,6 +15,22 @@ export function readLedger(root, date) {
   const file = path.join(root, ledgerPath(date));
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
 }
+/**
+ * Fail closed unless the day's reservation belongs to this exact run.
+ *
+ * runReservedSeat already refuses to spend on a foreign lease, but it reports
+ * that as {ok:false} per seat, so a caller that keeps looping still writes a
+ * results/reflections/reminders file that looks like a completed daily run even
+ * though no seat executed. Re-running an old attempt must therefore abort
+ * before the first provider request and before anything is written.
+ */
+export function assertRunKeyOwnership(ledger, runKey) {
+  if (!ledger || typeof ledger !== 'object') throw Error('daily_reservation_missing');
+  const owned = ledger.run_key;
+  if (typeof owned !== 'string' || !owned) throw Error('daily_reservation_run_key_absent');
+  if (owned !== runKey) throw Error('daily_reservation_run_key_mismatch');
+  return true;
+}
 export function saveLedger(root, record) {
   const file = path.join(root, ledgerPath(record.date));
   fs.mkdirSync(path.dirname(file), {recursive:true});
