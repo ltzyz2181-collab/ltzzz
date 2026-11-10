@@ -1,0 +1,189 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "date": "2026-11-11",
+  "at_utc": "2026-11-10T23:06:00Z",
+  "mail_backlog": {
+    "count": 35,
+    "open_count": 11,
+    "readset_sha256": "f6b81990389e",
+    "changed_since_yesterday": false,
+    "note": "收件箱近 21 天邮件与昨日逐字节一致，说明过去 24h 无新邮件，待办面未变化"
+  },
+  "repo_observations": {
+    "oversight": {
+      "date": "2026-11-11",
+      "open_warning_cases": 150,
+      "unique_original_tasks": 150,
+      "not_rechecked_in_current_window": 118
+    },
+    "failures_24h": 5,
+    "failures_detail": [
+      {
+        "run": 42827081616,
+        "job": "deploy",
+        "conclusion": "cancelled",
+        "cause": "并发替代，非 artifact 重复"
+      },
+      {
+        "run": 42826925748,
+        "job": "deploy",
+        "conclusion": "cancelled",
+        "cause": "并发替代，非 artifact 重复"
+      },
+      {
+        "run": 42898677207,
+        "job": "post",
+        "conclusion": "failure",
+        "cause": "日志已过期，原因未知"
+      },
+      {
+        "run": 42888935108,
+        "job": "execute",
+        "conclusion": "failure",
+        "cause": "verify 步骤被跳过，日志不可取"
+      },
+      {
+        "run": 42831579654,
+        "job": "observe",
+        "conclusion": "failure",
+        "cause": "无 ChatGPT 会员的服务观测 workflow，日志不可用"
+      }
+    ],
+    "open_pr_count": 30
+  },
+  "queue_runs": [
+    {
+      "run": 42917686671,
+      "card": "DAILY-1",
+      "result": "invalid_deepseek_plan",
+      "note": "首次派单，planner 空 plan"
+    },
+    {
+      "run": 42918224651,
+      "card": "DAILY-1-V2",
+      "result": "needs_gpt_decision 但 calls=1 outputs=0",
+      "note": "plan 含 needs_gpt_decision:true，状态机直接升级，跳过 worker"
+    },
+    {
+      "run": 42919106306,
+      "card": "DAILY-1-V3",
+      "result": "三席均回放 plan 结构",
+      "note": "worker 收到的 task 虽自包含，但仍照抄原 prompt 的 plan 骨架"
+    },
+    {
+      "run": 42919592533,
+      "card": "DAILY-1-V4",
+      "result": "仍回放 plan 结构",
+      "note": "同上"
+    },
+    {
+      "run": 42920132148,
+      "card": "DAILY-1-V5",
+      "result": "completed_pending_external_acceptance",
+      "note": "按角色分格式后成功，7 项全部判定"
+    }
+  ],
+  "mechanism_findings": [
+    {
+      "finding": "plan 内 needs_gpt_decision:true 会短路 worker 执行",
+      "evidence": "run 42918224651 model_calls=1、outputs=[]，仅有 plan receipt",
+      "action": "任务卡骨架不得携带该标志"
+    },
+    {
+      "finding": "worker 继承原 prompt 全文（original_request 与 assigned_task 一并传入）",
+      "evidence": "workers/deep-superagent/index.js 第 183 行 user content 为 {original_request: job.prompt, assigned_task: task.task}",
+      "impact": "原 prompt 里的输出骨架会被 worker 照抄，导致 worker 回放 plan 而非做判定",
+      "action": "原 prompt 必须按角色分别声明格式，并明确禁止 worker 输出 summary/tasks"
+    },
+    {
+      "finding": "plan 空 plan 是模型输出不合 schema，非分组数量问题",
+      "evidence": "parsePlan 只要求 summary 非空≤2000、tasks≥1、seat 合法、task≤3000；单组合法",
+      "action": "保留显式列举以提合规率，不再把组数当机制解释"
+    }
+  ],
+  "items": [
+    {
+      "ref": "O1",
+      "fact": "邮件 backlog 24h 无变化",
+      "route": "needs_gpt_decision",
+      "rule_id": "4",
+      "operator_review": "采纳",
+      "note": "老化无决策，不能静默搁置"
+    },
+    {
+      "ref": "O2",
+      "fact": "150 未闭环 / 118 未复核",
+      "route": "blocked_evidence_needed",
+      "rule_id": "3",
+      "operator_review": "采纳",
+      "note": "缺可复核证据"
+    },
+    {
+      "ref": "O3",
+      "fact": "两次 Pages 为并发取消",
+      "route": "coordinator_close_with_receipt",
+      "rule_id": "1",
+      "operator_review": "采纳并已执行",
+      "note": "确认 cancelled 非缺陷，artifact 修复未被推翻"
+    },
+    {
+      "ref": "O4",
+      "fact": "30 个 open PR",
+      "route": "needs_gpt_decision",
+      "rule_id": "2",
+      "operator_review": "采纳"
+    },
+    {
+      "ref": "C1",
+      "fact": "provider 模型配置五项裁决",
+      "route": "needs_gpt_decision",
+      "rule_id": "2",
+      "operator_review": "采纳"
+    },
+    {
+      "ref": "C2",
+      "fact": "勘误后两问",
+      "route": "needs_gpt_decision",
+      "rule_id": "2",
+      "operator_review": "采纳"
+    },
+    {
+      "ref": "C3",
+      "fact": "小程序支付开通",
+      "route": "needs_owner_decision",
+      "rule_id": "5",
+      "operator_review": "采纳",
+      "note": "支付属 owner"
+    }
+  ],
+  "seats": {
+    "plan": "deepseek-v4-pro 200",
+    "work_doubao": "doubao-seed-2-1-pro-260915 200",
+    "work_qianwen": "qwen-max 200",
+    "independent_review": "deepseek-v4-pro 200"
+  },
+  "counts": {
+    "coordinator_closeable": 1,
+    "needs_gpt_decision": 4,
+    "needs_owner_decision": 1,
+    "blocked_evidence_needed": 1
+  },
+  "operator_actions": [
+    {
+      "ref": "O3",
+      "action": "confirmed_cancelled_by_concurrency",
+      "wrote": false
+    },
+    {
+      "ref": "O1",
+      "action": "escalated_to_gpt",
+      "wrote": false
+    }
+  ],
+  "writes_performed": 0,
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "external_submissions": 0,
+  "financial_execution": false,
+  "discipline": "未合并 PR、未生产部署、未改合约或支付语义、未动 allowedAgents、未伪造 review receipt；邮件正文与金额未写入仓库或外发"
+}
