@@ -298,8 +298,10 @@ owner 就「部分退款要不要也自动收口」只回了「完成部署」�
 
 ### 10.3 回放回归（9 组，非伪造推送）
 
-`/tmp/vpaypartial/regress.cjs`：`Module._load` 劫持 `wx-server-sdk` 换成内存 `orders`，签名仍走
-`queryStringParameters` 真实 SHA1，`VPAY_PUSH_TOKEN='shizhangvpay2026'`。
+回归已入库：`scripts/tests/vpay-notify-refund.test.mjs`，`node --test scripts/tests/vpay-notify-refund.test.mjs`
+直接可跑（9 个用例全 PASS）。实现方式是 `Module._load` 劫持 `wx-server-sdk` 换成内存 `orders`，
+签名仍走 `queryStringParameters` 真实 SHA1，`VPAY_PUSH_TOKEN='shizhangvpay2026'`，全部经由
+`exports.main` 的真实 HTTP 入口驱动，不直接调用内部函数。
 
 | 组 | 场景 | 新版 | 旧版（`79737923`） |
 |---|---|---|---|
