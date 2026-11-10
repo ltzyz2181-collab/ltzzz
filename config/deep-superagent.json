@@ -33,7 +33,21 @@
     "activation_decision": "GPT AI decision seat may arrange activation under existing owner authority when actual credit, credentials and native executor evidence are available; reviewer consent is not an extra owner gate"
   },
   "financial_execution": false,
-  "external_submissions_enabled": true,
+  "external_submissions_enabled": false,
+  "external_submissions_suspension": {
+    "suspended_at": "2026-11-10",
+    "decided_by": "gpt_decision_seat",
+    "relayed_by_owner_in_session": true,
+    "basis": "接单能力三项验证均未通过（cross_system_claim_bridge_verified / automatic_client_roundtrip_verified / real_generation_and_delivery_verified 全为 false）；开通权限与系统实际声明不一致",
+    "consistency_evidence": "workers/deep-superagent/index.js health() 与 scripts/run-patchgate-a3.mjs 能力卡均硬编码 external_submissions_enabled:false",
+    "scope": "仅收口外部接单与外部提交；financial_execution 与 GPT 直接授权均不变",
+    "unchanged_by_this_change": [
+      "financial_execution=false",
+      "GPT 直接决策与资金执行授权",
+      "不新增人工审批或 Claude 否决权"
+    ],
+    "reactivation_requires": "cross_system_claim_bridge_verified 与 real_generation_and_delivery_verified 转为 true，并有平台侧执行回执；由 GPT 决策席重新开通"
+  },
   "authority": {
     "source": "owner direct instruction in the current session, 2026-11-03",
     "scope": "deep_superagent profile only; ordinary planning, engineering and exception decisions delegated to the GPT AI decision seat",
@@ -45,7 +59,7 @@
         "自主接取与拆解内部 DEEP-/DSA- 任务（自有可分发的公开输入）",
         "自主从豆包/千问/Kimi/Grok 四席中选择 1-3 席执行",
         "自主执行、复核、补审、写回执并落库",
-        "按 owner 2026-11-08 授权，自主接受外部平台订单（可事前接单，事后提交 GPT 审核）",
+        "按 owner 2026-11-08 授权，自主接受外部平台订单（可事前接单，事后提交 GPT 审核）【2026-11-10 起暂停：见 external_order_policy.effective=false】",
         "无外部派单时的自检、对账、回归与找活"
       ],
       "B_gpt_full_decision_and_treasury": [
@@ -74,6 +88,9 @@
       "not_granted": [
         "多签钱包签名",
         "代理生物人实名验证"
+      ],
+      "suspended": [
+        "Deep 可事前接单、事后由 GPT 审核（2026-11-10 暂停，降级为历史待审材料）"
       ]
     }
   },
@@ -184,7 +201,7 @@
     "configuration_is_deployment_proof": false
   },
   "external_order_policy": {
-    "enabled_by": "owner direct instruction in the current session, 2026-11-08",
+    "enabled_by": "owner direct instruction in the current session, 2026-11-08（已降级为历史材料，当前不生效）",
     "scope": "existing accounts and existing listings only; no new account, platform registration or new listing",
     "allowed_channels": {
       "uumit": "existing platform handoff, skill 20167d5a-5d3b-45e7-8521-e8cf7e58cd09, original task UUMIT-FREE-PRACTICE-20261101",
@@ -212,7 +229,10 @@
       "报价与成本：不低于既有口径，不亏本接单",
       "数据边界：输入为自有可分发公开材料或已获授权的客户材料",
       "接单即登记：订单号、平台、金额、币种、期限、交付物清单"
-    ]
+    ],
+    "status": "historical_material_only",
+    "effective": false,
+    "historical_note": "2026-11-08 的接单授权声明保留为历史待审材料，不再作为当前生效依据；见 external_submissions_suspension"
   },
   "external_submissions_enabled_note": "owner-authorized 2026-11-08; limited to existing accounts/listings; payment remains owner-only",
   "treasury_authority": {
