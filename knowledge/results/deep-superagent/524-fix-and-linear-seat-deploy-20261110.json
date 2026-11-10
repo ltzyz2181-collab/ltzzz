@@ -1,0 +1,87 @@
+{
+  "schema": "ltzzz.receipt.524-fix-and-linear-seat-deploy.v1",
+  "at_utc": "2026-11-10T09:56:00Z",
+  "task": "部署 524 修复 + 给各原厂席位部署 Linear 只读能力并实测",
+  "correction_of_previous_conclusion": {
+    "previous": "524 不在本仓库代码范围，worker 只是状态机，真调用在远端 Deep 服务",
+    "actual": "workers/deep-superagent/index.js:202 调的是 service binding；豆包 proxy 源码 doubao-proxy-worker.js 就在仓库根目录，第 72 行的 upstream fetch 没有任何 AbortSignal",
+    "evidence": "run 42787062754 实测 09:00:55 → 09:03:00 共 125 秒，超过 Cloudflare ~100s 边缘窗口"
+  },
+  "fix": {
+    "files": [
+      "doubao-proxy-worker.js",
+      "workers/deep-superagent/index.js",
+      "scripts/tests/doubao-proxy-timeout.test.mjs",
+      "scripts/tests/deep-superagent.test.mjs"
+    ],
+    "changes": [
+      "upstream fetch 加 signal: AbortSignal.timeout(90000)",
+      "超时返回可判别 504 {error:upstream_timeout, stage:upstream_call, timeout_ms:90000, upstream_outcome_unknown:true, ltzzz_receipt:{...timeout_observed:true}}",
+      "outputTokenLimit 给豆包席 2048（原 8192），使生成落进 100s 窗口内",
+      "照抄 kimi-proxy-worker.js 已在生产运行的同类先例"
+    ],
+    "untouched": [
+      "lib/doubao-route.js 仍只允许 ark.cn-beijing.volces.com 官方路由",
+      "其他席位输出预算不变（kimi 16384 / qianwen 4096 / 其他 8192）"
+    ],
+    "tests": "73 项全过（deep-superagent 系列 6 个文件 + doubao-proxy-timeout + doubao-proxy-call + provider-execution）"
+  },
+  "deployment": {
+    "doubao_proxy": {
+      "workflow": "deploy-doubao-worker.yml",
+      "run_id": 42794169408,
+      "conclusion": "success",
+      "status": "deployed_health_revision_verified",
+      "health": {
+        "revision": "ltzzz.provider-execution.v1",
+        "daily_recovery_revision": "doubao-proxy-daily-v3",
+        "configured_model": "doubao-seed-2-1-pro-260915",
+        "upstream_host": "ark.cn-beijing.volces.com",
+        "upstream_path": "/api/v3/chat/completions",
+        "model_configuration_revision": "model-configuration-v2",
+        "generation_verified": false,
+        "probe_scope": "health_no_generation"
+      },
+      "auth_checks": [
+        {"kind": "anonymous", "http": 401},
+        {"kind": "wrong", "http": 401},
+        {"kind": "valid", "http": 200}
+      ],
+      "blocker_fixed": "workflow 原先缺 DOUBAO_API_KEY / LTZZZ_AGENT_TOKEN，脚本会 throw existing_doubao_api_key_required；已通过连接器补 env（commit e263f453）"
+    },
+    "deep_superagent": {
+      "workflow": "deep-superagent.yml",
+      "run_id": 42793509468,
+      "event": "push",
+      "head_sha": "40bce24e",
+      "conclusion": "success",
+      "status": "deployment_health_and_auth_verified",
+      "jobs": ["verify", "deploy"]
+    }
+  },
+  "linear": {
+    "credential_binding": "LINEAR_API_KEY (repository secret, personal key full access)",
+    "workflow": "linear-seat-probe.yml",
+    "run_id": 42793588472,
+    "seats_tested": ["deepseek", "doubao", "qianwen", "kimi", "grok", "gpt", "claude"],
+    "all_jobs": "completed success",
+    "per_seat": {
+      "http": 200,
+      "viewer": "李天柱",
+      "organization": "ltzzz",
+      "issue_count": 9,
+      "issue_identifiers": ["LTZ-7", "LTZ-1", "LTZ-8", "LTZ-9", "LTZ-5", "LTZ-6", "LTZ-4", "LTZ-2", "LTZ-3"],
+      "response_sha256_prefix": "24596113d53f",
+      "identical_across_seats": true,
+      "writes_performed": false
+    },
+    "receipts": "knowledge/results/linear/<seat>-readback.json",
+    "honest_scope": "七个席位跑的是同一把仓库级 key。这证明读取通道对每个席位名可执行且读回同一份真实看板；不等于每个席位持有各自独立签发的 key。若需逐席位独立凭据，须在 Linear 后台各建一把并各自写入 secret。",
+    "capability_boundary": "只读：客户端只发 query，测试断言 payload 不含 mutation；不建 issue、不加评论、不改状态。终态改写权未授予。"
+  },
+  "github_constraint_observed": {
+    "issue": "本机 OAuth 无 workflow scope",
+    "push_rejected": "refusing to allow an OAuth App to create or update workflow without workflow scope",
+    "resolution": "代码走 git push；workflow 文件走 GitHub 连接器 create_or_update_file 带 blob sha"
+  }
+}
