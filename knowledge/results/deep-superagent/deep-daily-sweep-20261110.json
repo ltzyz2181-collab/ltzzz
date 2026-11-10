@@ -1,0 +1,119 @@
+{
+  "schema": "ltzzz.deep-superagent.daily-sweep.v1",
+  "generated_at": "2026-11-10T13:45:00Z",
+  "source": {
+    "queue_run": 42826305472,
+    "task_id": "DEEP-SUPERAGENT-20261110-DAILY-SWEEP-V1",
+    "mail_backlog_sha": "f6b81990389e",
+    "mail_items_total": 35,
+    "mail_items_open": 11
+  },
+  "job_status": {
+    "status": "blocked",
+    "error": "native_generation_evidence_incomplete",
+    "model_calls": 4,
+    "outputs": 2,
+    "reason": "C 组四席未返回，A/B 组已判 8 项"
+  },
+  "seats": {
+    "plan": "deepseek 200",
+    "A_group": "doubao 200 (1024 budget, 366 chars)",
+    "B_group": "qianwen 200 (74 tok)",
+    "C_group": "kimi 未返回"
+  },
+  "items": [
+    {
+      "ref": "89b336dd",
+      "age_days": 5,
+      "title_public": "L1-L10 逐条回复不得跳过",
+      "deep_route": null,
+      "operator_route": "needs_gpt_decision",
+      "rule_id": "4",
+      "review_note": "doubao 判 coordinator_close/rule6，误判：明确要求逐条答复且超5天，规则4直接命中"
+    },
+    {
+      "ref": "67e54303",
+      "age_days": 3,
+      "title_public": "VPAY 合并→沙箱部署→回读",
+      "deep_route": null,
+      "operator_route": "needs_gpt_decision",
+      "rule_id": "2",
+      "review_note": "与 doubao 一致；部署属B层"
+    },
+    {
+      "ref": "c55b0153",
+      "age_days": 3,
+      "title_public": "账号注册授权与清单",
+      "deep_route": null,
+      "operator_route": "needs_owner_decision",
+      "rule_id": "5",
+      "review_note": "doubao 判 coordinator_close/rule6，误判：涉外部账号注册授权，非协调员可关"
+    },
+    {
+      "ref": "a38b0f8e",
+      "age_days": 3,
+      "title_public": "Linear 无可调用连接器",
+      "deep_route": null,
+      "operator_route": "blocked_evidence_needed",
+      "rule_id": "3",
+      "review_note": "doubao 判 coordinator_close/rule6，误判：缺连接器是结构性证据缺口"
+    },
+    {
+      "ref": "35e009a3",
+      "age_days": 2,
+      "title_public": "字节缺失仍阻塞",
+      "deep_route": null,
+      "operator_route": "blocked_evidence_needed",
+      "rule_id": "3",
+      "review_note": "与 qianwen 一致"
+    },
+    {
+      "ref": "ba4ddc11",
+      "age_days": 2,
+      "title_public": "signer 门显式契约后再部署",
+      "deep_route": null,
+      "operator_route": "needs_gpt_decision",
+      "rule_id": "2",
+      "review_note": "与 qianwen 一致；含部署"
+    },
+    {
+      "ref": "21f16a13",
+      "age_days": 2,
+      "title_public": "四项裁决+缺失凭证",
+      "deep_route": null,
+      "operator_route": "needs_gpt_decision",
+      "rule_id": "2",
+      "review_note": "与 qianwen 一致"
+    },
+    {
+      "ref": "e25c2951",
+      "age_days": 2,
+      "title_public": "#376 已合并，补最短缺口",
+      "deep_route": null,
+      "operator_route": "deploy_confirm_only",
+      "rule_id": "1",
+      "review_note": "与 qianwen 一致；已合并不再重部署"
+    }
+  ],
+  "operator_review": {
+    "doubao_route_errors": 3,
+    "pattern": "doubao 把 A 组三条一律标 rule_id 6 并给 coordinator_close_with_receipt；rule 6 是授权负面条款，不是分流规则，等于绕过规则序",
+    "guard": "任何 coordinator_close_with_receipt 在执行前必须重跑规则 1-5；不命中则升级为 needs_gpt_decision 或 needs_owner_decision"
+  },
+  "counts": {
+    "coordinator_closeable": 0,
+    "deploy_confirm_only": 1,
+    "needs_gpt_decision": 4,
+    "needs_owner_decision": 1,
+    "blocked_evidence_needed": 2,
+    "unjudged": 4
+  },
+  "writes_performed": 0,
+  "deploys_performed": 0,
+  "merges_performed": 0,
+  "external_submissions": 0,
+  "next": {
+    "c_group": "需补派一次（新 task_id，卡只含 C 组四项）",
+    "daily_schedule": "待接入"
+  }
+}
