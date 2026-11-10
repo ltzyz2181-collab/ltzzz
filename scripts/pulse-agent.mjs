@@ -4,6 +4,9 @@ const action=process.env.AGENT_ACTION||'discover',agent=process.env.AGENT_NAME||
 try{
  const r=await fetch(PULSE_URL+'/tasks',{signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('task_board_unreachable');const board=await r.json();
  const relevant=board.tasks.filter(t=>t.date===board.date&&(!t.assigned_to||t.assigned_to===agent)&&['available','assigned'].includes(t.status));report.discovered=relevant.map(t=>({id:t.id,status:t.status,instruction:t.instruction}));
+ // 指定 task_id 时无论其处在何种状态都回显，用于写回后的独立状态核验（终态任务不会出现在 discovered 里）。
+ const focus=process.env.AGENT_TASK_ID?board.tasks.find(t=>t.id===process.env.AGENT_TASK_ID):null;
+ if(focus)report.focus_task={id:focus.id,status:focus.status,assigned_to:focus.assigned_to,evidence_sha256:focus.evidence_sha256,review:focus.review};
  if(action!=='discover'){
   const task_id=process.env.AGENT_TASK_ID||relevant[0]?.id;if(!task_id)throw Error('no_available_task');
   // actor 角色必须与声明身份一致：gpt 走系统签发的 gpt token，不能用 qianwen token 顶替，
