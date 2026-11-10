@@ -1,0 +1,84 @@
+{
+  "schema": "ltzzz.deep-superagent.engineering-sweep.v1",
+  "at_utc": "2026-11-10T10:54:30Z",
+  "run_id": "42802613400",
+  "card": "DEEP-SUPERAGENT-20261110-ENGINEERING-SWEEP-V3",
+  "package_id": "LTZZZ-PUBLIC-ENG-SWEEP-03",
+  "outcome": {
+    "queue_status": "queue_results_verified",
+    "job_status": "needs_gpt_decision",
+    "accepted": false,
+    "error": null,
+    "model_calls": 5,
+    "note": "this is the first batch in which the doubao seat returned a valid generation; the previous four batches ended in native_generation_evidence_incomplete"
+  },
+  "seat_receipts": [
+    {"stage": "plan", "seat": "deepseek", "actual_model": "deepseek-v4-pro", "http": 200, "completion_tokens": 197, "status": "complete_output_pending_review"},
+    {"stage": "work_doubao", "seat": "doubao", "actual_model": "doubao-seed-2-1-pro-260915", "http": 200, "completion_tokens": 1771, "status": "complete_output_pending_review"},
+    {"stage": "work_qianwen", "seat": "qianwen", "actual_model": "qwen-max", "http": 200, "completion_tokens": 74, "status": "complete_output_pending_review"},
+    {"stage": "work_kimi", "seat": "kimi", "actual_model": "kimi-k3", "http": 200, "completion_tokens": 3277, "status": "complete_output_pending_review"},
+    {"stage": "independent_review", "seat": "deepseek", "actual_model": "deepseek-v4-pro", "http": 200, "completion_tokens": 288, "status": "complete_output_pending_review"}
+  ],
+  "doubao_budget_change": {
+    "from": 2048,
+    "to": 1024,
+    "commit": "882ac7be",
+    "deployed_health": "deployment_health_and_auth_verified",
+    "result": "first successful doubao generation across five attempted batches"
+  },
+  "observations_used": [
+    {"key": "S01", "statement": "queue pipeline failed twice because the operator pushed three cards at once and later deleted two cards; the guard rejected both patterns by design", "repeatable": false, "code_defect": false, "verified_by": "runs 42796806278 and 42796956851 receipts"},
+    {"key": "S02", "statement": "build-and-publish pipeline failed once at the build step, so the published site was not updated", "repeatable": true, "code_defect": true, "verified_by": "gh run list window"},
+    {"key": "S03", "statement": "service-observe run failed once at the probe step on the membership-free path", "repeatable": "unknown", "code_defect": false, "verified_by": "gh run list window"},
+    {"key": "S04", "statement": "thirty pull requests open and unmerged", "repeatable": "n/a", "code_defect": false, "verified_by": "gh pr list"},
+    {"key": "S05", "statement": "two test assertions red, both encoding a payment contract the owner already superseded by decision", "repeatable": true, "code_defect": false, "verified_by": "prior CI records"},
+    {"key": "S06", "statement": "one worker seat exceeded the fixed transport window on earlier batches", "repeatable": true, "code_defect": false, "verified_by": "runs 42797198529 and 42797889986 receipts"},
+    {"key": "S07", "statement": "planner returns an empty plan when the task lacks an explicit item grouping", "repeatable": true, "code_defect": false, "verified_by": "runs 42798359164, 42798846481, 42801630978, 42802123760"}
+  ],
+  "deep_dispositions": [
+    {"key": "S01", "disposition": "no_action_operator_error", "basis_field": "cause_code", "seat": "doubao", "agrees_with_operator": true},
+    {"key": "S02", "disposition": "fix_now_by_engineering_seat", "basis_field": "code_defect", "seat": "doubao"},
+    {"key": "S03", "disposition": "route_to_external_dependency", "basis_field": "cause_code", "seat": "doubao"},
+    {"key": "S04", "disposition": "route_to_owner_decision", "basis_field": "accumulation", "seat": "qianwen"},
+    {"key": "S05", "disposition": "route_to_owner_decision", "basis_field": "superseded_contract", "seat": "qianwen"},
+    {"key": "S06", "disposition": "route_to_external_dependency", "basis_field": "cause_code", "seat": "kimi"},
+    {"key": "S07", "disposition": "route_to_external_dependency", "basis_field": "cause_code", "seat": "kimi"}
+  ],
+  "operator_followup_verification": {
+    "S02": {
+      "deep_said": "fix_now_by_engineering_seat",
+      "operator_checked": true,
+      "failed_run": "42799377329",
+      "failing_step": "Assert exactly one pages artifact before deploy",
+      "exit": 1,
+      "runs_after_that_succeeded": ["42801399959", "42801631075", "42802123750"],
+      "conclusion": "not a standing code defect; the artifact assertion raced an artifact that had not been produced yet on that run, and three subsequent runs passed",
+      "action_taken": "no code change",
+      "input_error_admitted": "the observation given to Deep marked code_defect true for S02; that flag was the operator's inference from repeatable=true and was wrong. Deep routed correctly for the input it was given, so this is an input-quality fault, not a reasoning fault"
+    },
+    "S01": {
+      "deep_said": "no_action_operator_error",
+      "operator_checked": true,
+      "conclusion": "confirmed; both aborted runs are receipts of operator misuse of the append-only guard, no code regression"
+    }
+  },
+  "what_the_operator_will_do_with_these": [
+    "S02: inspected and closed as an intermittent artifact race, not a standing defect; no deploy made",
+    "S01, S03, S06, S07: record as known external or structural issues; no code change attempted",
+    "S04, S05: carry to the decision seat, because both need a decision before any code changes"
+  ],
+  "dispositions_never_claim": {
+    "merge_authorised": false,
+    "deploy_authorised": false,
+    "contract_change_authorised": false,
+    "payment_change_authorised": false
+  },
+  "planner_mechanism_finding": {
+    "statement": "the planner needs explicit item grouping; with a natural three-group layout it splits correctly, without one it returns a null plan regardless of field length or prompt brevity",
+    "evidence_runs": ["42798359164", "42798846481", "42801630978", "42802123760", "42802613400"],
+    "implication": "self-directed open work must be expressed as grouped checklists, otherwise it is dead on arrival"
+  },
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
