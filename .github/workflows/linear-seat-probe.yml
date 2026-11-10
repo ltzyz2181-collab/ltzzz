@@ -1,0 +1,29 @@
+name: Linear Seat Probe
+on:
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: linear-seat-probe, cancel-in-progress: false}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        seat: [deepseek, doubao, qianwen, kimi, grok, gpt, claude]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Contract tests before touching the real workspace
+        run: node --test scripts/tests/linear-read.test.mjs scripts/tests/linear-seat-probe.test.mjs
+      - name: Read the LTZZZ board as this seat
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          SEAT: ${{ matrix.seat }}
+        run: node scripts/linear-seat-probe.mjs "$SEAT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linear-readback-${{ matrix.seat }}
+          path: knowledge/results/linear/${{ matrix.seat }}-readback.json
+          if-no-files-found: warn
