@@ -78,6 +78,11 @@ export function parsePlan(text,{maxTasks=3}={}){
 }
 export function outputTokenLimit(taskId,seat){
   if(taskId==='DEEP-DAILY-SUPERVISION')return 2048;
+  // 2026-11-10：豆包席经 CF 边缘转发方舟北京端点。实测 8192 输出预算下的生成
+  // 时长会越过 Cloudflare 的 100s 窗口（09:00:55→09:03:00 得到 524）。把它降到
+  // 2048 落进时限内，与既有 DEEP-DAILY-SUPERVISION 口径一致；其他席位预算不变。
+  // 这不是降低模型档位，也不是改端点：方舟北京仍是唯一官方路由。
+  if(seat==='doubao')return 2048;
   return seat==='kimi'?KIMI_PROFILE.default_output_tokens:seat==='qianwen'?4096:8192;
 }
 function parseObject(text){
