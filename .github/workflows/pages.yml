@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: read
+  # 读本 run 的 artifact 列表，供 artifact 唯一性守卫使用（只读）。
+  actions: read
   pages: write
   id-token: write
 
@@ -42,10 +44,29 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      # 契约：一个 run 内 github-pages 只能有一份。
+      # 失败 run 42765758716 的成因是 job 被重跑（attempt 2）后 attempt 1 的
+      # artifact 未被清理，run 内累计两份，deploy-pages 报 count is 2。
+      # 这里在上传前判定：没有则上传，已有一份则复用（同 commit 同一份构建），
+      # 多于一份立即失败并诊断 —— 不靠删除 artifact 让报错消失。
+      - name: Guard pages artifact uniqueness before upload
+        id: artifact_guard
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verify-pages-artifact-contract.mjs --mode=pre-upload
+
       - name: Upload artifact
+        if: steps.artifact_guard.outputs.action == 'upload'
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
+
+      - name: Assert exactly one pages artifact before deploy
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verify-pages-artifact-contract.mjs --mode=pre-deploy
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
