@@ -70,7 +70,7 @@ test('runner distinguishes a verified reconciliation block from HTTP failures an
   ['auto',200,{ok:false,error:'another_intent_pending'},1]
  ]){
   const mock=`globalThis.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(result))},{status:${http}});await import(${JSON.stringify('file://'+script)});`;
-  const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:action,AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'test',WEP3_RUNNER_TOKEN:'fixture'},encoding:'utf8'});
+  const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:action,AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'test',GITHUB_RUN_ATTEMPT:'1',WEP3_RUNNER_TOKEN:'fixture'},encoding:'utf8'});
   assert.equal(r.status,exit,r.stderr);const report=JSON.parse(r.stdout.trim());assert.equal(report.on_chain_executed,false);assert.equal(report.tx_hash,null);assert.equal(report.service_verified,exit===0);if(exit===0)assert.equal(report.execution_blocked,true);
  }}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
@@ -107,13 +107,13 @@ test('full status transport verifies reserve and reads all balances at one block
 test('deployment runner waits for the expected Worker revision rather than accepting a stale successful response',async()=>{
  const fs=await import('node:fs'),path=await import('node:path'),{spawnSync}=await import('node:child_process');fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/aave-revision-test-')),script=path.resolve('scripts/run-treasury-aave.mjs');
  try{const mock=`let calls=0;globalThis.setTimeout=fn=>{fn();return 0};globalThis.fetch=async()=>new Response(JSON.stringify({ok:true,status:'diagnostic_only',storage:{ok:false},signed:false,aave_runtime_revision:++calls<3?'old':'aave-guard-v4'}));await import(${JSON.stringify('file://'+script)});`;
- const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'aave-guard-v4',GITHUB_RUN_ID:'test'},encoding:'utf8'});assert.equal(r.status,0,r.stderr);const report=JSON.parse(r.stdout.trim());assert.equal(report.result.aave_runtime_revision,'aave-guard-v4');assert.equal(report.service_verified,true);assert.equal(report.status,undefined);}finally{fs.rmSync(dir,{recursive:true,force:true});}
+ const r=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'aave-guard-v4',GITHUB_RUN_ID:'test',GITHUB_RUN_ATTEMPT:'1'},encoding:'utf8'});assert.equal(r.status,0,r.stderr);const report=JSON.parse(r.stdout.trim());assert.equal(report.result.aave_runtime_revision,'aave-guard-v4');assert.equal(report.service_verified,true);assert.equal(report.status,undefined);}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 
 test('read-only runner retains HTTP metadata when an edge HTML page cannot be parsed as JSON',async()=>{
  const fs=await import('node:fs'),path=await import('node:path'),{spawnSync}=await import('node:child_process');fs.mkdirSync('work',{recursive:true});const dir=fs.mkdtempSync(path.resolve('work/aave-html-test-')),script=path.resolve('scripts/run-treasury-aave.mjs');
  try{const mock=`globalThis.fetch=async()=>new Response('<!DOCTYPE html>private fixture',{status:503,headers:{'content-type':'text/html'}});await import(${JSON.stringify('file://'+script)});`;
- const run=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'fixture'},encoding:'utf8'});
+ const run=spawnSync(process.execPath,['--input-type=module','-e',mock],{cwd:dir,env:{...process.env,AAVE_ACTION:'diagnose',AAVE_EXPECTED_REVISION:'',GITHUB_RUN_ID:'fixture',GITHUB_RUN_ATTEMPT:'1'},encoding:'utf8'});
  assert.equal(run.status,1,run.stderr);const report=JSON.parse(run.stdout.trim());assert.equal(report.http,503);assert.equal(report.status,'non_json_service_response');assert.equal(report.content_type,'text/html');assert.equal(report.on_chain_executed,false);assert.equal(run.stdout.includes('private fixture'),false);
  assert.ok(fs.existsSync(path.join(dir,'knowledge/results/wep3/aave-diagnose-fixture.json')));
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
