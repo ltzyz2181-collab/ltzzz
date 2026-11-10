@@ -1,0 +1,13 @@
+{
+  "finding": "scripts/run-daily-tasks.mjs 在读取 boardLedger 后仅比较本地 ledger 与远端 ledger 的字节哈希，未在调用 runReservedSeat 前校验当前 runKey 与 ledger 顶层 run_key 是否一致。GitHub Actions 重跑或 prepare 与 run 使用不同 GITHUB_RUN_ATTEMPT 时，旧 attempt 的 reserved 席位会被逐个执行 runReservedSeat，最终以 blocked_no_repurchase 失败但主流程仍继续写入 data/results、reflections、pending-reminders 和 reports，造成失败被记录但结果文件仍写入的误导性状态。",
+  "evidence_paths": [
+    "scripts/run-daily-tasks.mjs",
+    "scripts/lib/daily-task-board.mjs"
+  ],
+  "minimal_patch": "在 scripts/run-daily-tasks.mjs 中 boardLedger 读取和远端持久化校验之后、席位循环之前插入以下代码：\n\n```js\n  const currentRunKey = `${process.env.GITHUB_RUN_ID || \"local\"}:${process.env.GITHUB_RUN_ATTEMPT || \"1\"}`;\n  if (boardLedger.run_key !== currentRunKey) {\n    throw Error(`daily_reservation_run_key_mismatch: ledger=${boardLedger.run_key} current=${currentRunKey}`);\n  }\n  const mismatchSeats = Object.entries(boardLedger.seats || {})\n    .filter(([, seat]) => seat.status === 'reserved' && seat.claim_receipt?.run_key && seat.claim_receipt.run_key !== currentRunKey)\n    .map(([agent, seat]) => `${agent}:${seat.claim_receipt.run_key}`);\n  if (mismatchSeats.length) {\n    throw Error(`daily_reservation_seat_run_key_mismatch: ${mismatchSeats.join(',')}`);\n  }\n```\n\n同时删除下方原有的 `const runKey=...` 定义，复用上述 currentRunKey 变量传入 runReservedSeat。",
+  "verification_commands": [
+    "node --check scripts/run-daily-tasks.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs 2>&1 | grep -E 'run_key|mismatch|reserved' || echo 'NO_MATCHING_TEST'"
+  ],
+  "remaining_blocker": "未验证 GitHub Actions 重跑时 GITHUB_RUN_ID/GITHUB_RUN_ATTEMPT 的实际取值与 prepare 阶段是否一致；未确认是否存在合法的无 assignment reserved 席位会被全局预检误报；未执行真实 CI 验证失败传播与结果文件不写入的行为。"
+}
