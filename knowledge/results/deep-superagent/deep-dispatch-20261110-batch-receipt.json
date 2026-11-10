@@ -1,0 +1,114 @@
+{
+  "schema": "ltzzz.deep-superagent.batch-receipt.v1",
+  "at_utc": "2026-11-10T10:27:00Z",
+  "batch": "deep-router-worker-utilization-20261110",
+  "operator_seat": "doubao",
+  "how_the_batch_was_run": {
+    "channel": "ops/deep-superagent/tasks/<TASK_ID>.json -> push main -> deep-superagent-queue.yml consume -> POST /v1/jobs -> poll -> receipt",
+    "queue_rules_learned_this_batch": [
+      "only cards whose git diff status is A are posted; D or M aborts the whole run with queue_cards_are_append_only",
+      "at most one new card per kind per push; three cards at once aborts with maximum_one_new_card_per_kind_per_push",
+      "an existing card is never replayed, so a re-dispatch needs a new task_id in a new file while the old file stays"
+    ]
+  },
+  "runs": [
+    {
+      "run_id": "42796806278",
+      "outcome": "queue_blocked",
+      "detail": "maximum_one_new_card_per_kind_per_push",
+      "counts_as_evidence": false
+    },
+    {
+      "run_id": "42796956851",
+      "outcome": "queue_blocked",
+      "detail": "queue_cards_are_append_only (a deleted card aborted the run)",
+      "counts_as_evidence": false
+    },
+    {
+      "run_id": "42797198529",
+      "outcome": "queue_results_verified",
+      "card": "DEEP-SUPERAGENT-20261110-LINEAR-INTAKE-V2",
+      "package_id": "LTZZZ-PUBLIC-LINEAR-BOARD-02",
+      "execution_id": "794ecea9-fd42-4856-b57a-d6a322598ef8",
+      "model_calls": 4,
+      "job_status": "blocked",
+      "accepted": false,
+      "error": "native_generation_evidence_incomplete",
+      "seats": {
+        "plan_deepseek": "http 200 deepseek-v4-pro generation_verified true finish stop",
+        "work_doubao": "http 504 upstream_timeout, failed_or_uncertain_no_retry",
+        "work_qianwen": "http 200 qwen-max generation_verified true",
+        "work_kimi": "http 504 upstream_timeout, failed_or_uncertain_no_retry"
+      }
+    },
+    {
+      "run_id": "42797889986",
+      "outcome": "queue_results_verified",
+      "card": "DEEP-SUPERAGENT-20261110-ACCEPTANCE-PATH-V1",
+      "package_id": "LTZZZ-PUBLIC-ACCEPTANCE-OVERSIGHT-02",
+      "model_calls": 4,
+      "job_status": "blocked",
+      "accepted": false,
+      "error": "native_generation_evidence_incomplete",
+      "seats": {
+        "plan_deepseek": "http 200 deepseek-v4-pro generation_verified true",
+        "work_doubao": "http 504 upstream_timeout, failed_or_uncertain_no_retry",
+        "work_qianwen": "http 200 qwen-max generation_verified true",
+        "work_kimi": "http 200 kimi-k3 generation_verified true"
+      }
+    },
+    {
+      "run_id": "42798359164",
+      "outcome": "queue_results_verified",
+      "card": "DEEP-SUPERAGENT-20261110-CAPABILITY-GAP-V1",
+      "job_status": "blocked",
+      "error": "invalid_deepseek_plan",
+      "planner_output": null,
+      "counts_as_evidence": true
+    },
+    {
+      "run_id": "42798846481",
+      "outcome": "queue_results_verified",
+      "card": "DEEP-SUPERAGENT-20261110-SELF-PICK-V1",
+      "job_status": "blocked",
+      "error": "invalid_deepseek_plan",
+      "planner_output": null,
+      "counts_as_evidence": true
+    }
+  ],
+  "verified_findings": [
+    "the router/worker path is real end to end: the qianwen and kimi seats produced schema-correct JSON over inlined sanitized samples, and the plan seat produced a three-seat split",
+    "the 90s upstream timeout fix changed the doubao seat failure from an opaque 524 into a discriminable 504 upstream_timeout; the fix is live and observable, it did not make doubao succeed",
+    "the doubao seat failed on all three executed tasks; the kimi seat failed on the first and succeeded on the second, so seat timings differ per invocation and per seat",
+    "the planner accepts checklist-and-rule tasks and rejects open-ended ones; both open-ended variants came back as invalid_deepseek_plan with a null plan",
+    "no write was performed by Deep on any external system in this batch; every disposition is advisory and every receipt states reading a board never authorises writing status, comments or closing an item"
+  ],
+  "disposition_quality_sample": {
+    "board_items_verified_by_qianwen": {
+      "I04": "keep_backlog rule 1",
+      "I05": "stale_close rule 3",
+      "I06": "keep_backlog rule 1"
+    },
+    "acceptance_sample_by_kimi": {
+      "A01": "accept_writeback all rules pass",
+      "A02": "reject_and_requeue invalid reviewer credential",
+      "A03": "reject_and_requeue receipt sha does not verify",
+      "A04": "escalate_human forbidden shortcut attempted",
+      "A05": "reject_and_requeue missing required fields"
+    },
+    "note_on_A04": "the seat held the line the owner cares about: editing an allow-list or fabricating a receipt hash never manufactures authority, so the item is escalated instead of accepted"
+  },
+  "capability_boundaries_observed": [
+    "worker seats are text-only model seats with no network, no file system and no external write authority",
+    "the planner requires a checklist-shaped task; open-ended scheme design yields invalid_deepseek_plan",
+    "seat latency is not uniform: doubao did not finish inside 90s on any of three attempts, kimi did on one of two"
+  ],
+  "needs_decision_from_gpt": [
+    "doubao seat: lower its output budget, drop it from the worker pool, or accept fail-closed incomplete evidence on every batch",
+    "whether native_generation_evidence_incomplete should block a whole batch when 3 of 4 seats returned valid evidence",
+    "whether the queue's one-card-per-push limit should stay as the operator interface, or whether a batch manifest is worth building"
+  ],
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
