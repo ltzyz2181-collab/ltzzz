@@ -1,7 +1,7 @@
 # 虚拟支付退款通知失效：定位与修复回执（2026-11-09）
 
 状态：`root_cause_proven_by_logs_fix_committed_deployed_verified_by_code_readback`；
-`full_refund_terminal=refunded`（`24babab6` 已上线）；首单 `refunded`（owner 口径人工对账）
+`full_refund_terminal=refunded`（`24babab6` 已上线）；`partial_refund_terminal=partially_refunded`（累计到全额转 `refunded`，`9ef0b59b` 已上线）；首单 `refunded`（owner 口径人工对账）
 
 > 读完 §1–§8 只需知道：根因已证、修复已上线、线上代码逐字节核对通过。
 > §9 是第二轮（全额退款直接落 `refunded`）的变更、部署、核对与首单改判记录。
@@ -267,3 +267,88 @@ commit `adab20d9`（`fix(vpay-notify): 退款推送按 WxOrderId 绑定订单`�
 - 小程序端订单页「已退款」的展示尚未截图取证。
 - 部署用的 IDE 服务端口开关本轮临时打开；按收尾约定已恢复原值（`enableServicePort=false`、`port=null`），
   如需再次 CLI 部署要重开并按 `Default\.cli` 读实际端口。
+
+## 10. 第三轮：部分退款也自动收口（2026-11-10）
+
+状态补充：`partial_refund_terminal=partially_refunded`（累计到订单全额时自动转 `refunded`；
+提交 `9ef0b59b`，已部署到线上 `$LATEST`）。
+
+### 10.1 owner 口径与设计取舍
+
+owner 就「部分退款要不要也自动收口」只回了「完成部署」。执行端按「收口但不说假话」落地：
+
+- 部分退款不再停在 `refund_pending_verification`（那样等于永远要人来管），而是落独立终态
+  `partially_refunded`，同时把已退金额累加进 `refunded_total`。
+- 只退了一部分就写 `refunded` 是事实错误，因此不冒充「已退款」。
+- 多笔部分退款累加到订单全额时，自动升级为 `refunded` 并写 `refunded_at`。
+- 同一 `WxRefundId` 重复推送幂等：`refund_wx_refs` 数组去重，不重复累计。
+- 累计超额抛 `refund_over_total`，不静默截断。
+
+### 10.2 改动
+
+| 文件 | 变更 |
+|---|---|
+| `miniprogram/cloudfunctions/vpay-notify/index.js` | 新增 `const _ = db.command;`；`handleRefund` 允许从 `paid`/`delivered`/`partially_refunded` 进入；`refund_wx_refs` 去重幂等；`total=(refunded_total||0)+amount`，`total>amount`→`refund_over_total`；`total===amount`→`refunded`+`refunded_at`，否则 `partially_refunded`；写 `refunded_total/refund_amount/refund_signal_at/refund_reference/wx_refund_reference/refund_wx_refs` |
+| `miniprogram/cloudfunctions/vpay-notify/index.js` | `handleDeliver` 两处终态集合补 `partially_refunded`，否则发货推送会把部分退款的单改回 `paid` |
+| `miniprogram/pages/orders/index.js` | 新增 `partially_refunded: '部分退款 · 暂停交付'` |
+
+- `order-query` 只对 `status==='pending'` 动手，不受影响，未重部署；其余 4 个云函数未动。
+- 改动文件 `index.js` 10712 字节 / sha256 `a4162837e0287a83ff39c35c0aac993662e25f70e63df9a97bfebf1b460b657b`；
+  `git diff --stat`：2 文件、23 插入 / 17 删除。
+
+### 10.3 回放回归（9 组，非伪造推送）
+
+`/tmp/vpaypartial/regress.cjs`：`Module._load` 劫持 `wx-server-sdk` 换成内存 `orders`，签名仍走
+`queryStringParameters` 真实 SHA1，`VPAY_PUSH_TOKEN='<REDACTED>'`。
+
+| 组 | 场景 | 新版 | 旧版（`79737923`） |
+|---|---|---|---|
+| A | 全额 990 → `refunded` + `refunded_total` | PASS | FAIL（无累计字段） |
+| B | 部分 400 → `partially_refunded` | PASS | FAIL（落 `refund_pending_verification`） |
+| C | 再退 590 累计 990 → `refunded` | PASS | FAIL（不升级） |
+| D | 同 `WxRefundId` 重复推送 | PASS | FAIL（无去重） |
+| E | 单笔 1200 超额拒 | PASS | PASS |
+| F | 累计 400+700 超额拒 | PASS | FAIL（无累计校验） |
+| G | `partially_refunded` 后发货推送不改状态 | PASS | FAIL（`order_state_conflict`） |
+| H | `pending` 订单收退款拒 | PASS | PASS |
+| I | `RetCode≠0` 不写库 | PASS | PASS |
+
+新版 **9/9 ALL PASS、exit 0**；旧版 **5/9 FAIL**。`node --check` 两个改动文件均通过。
+一次中途失败（G）是夹具缺 `product_id` 导致 `order_payment_mismatch`，补夹具后通过，与业务代码无关。
+
+### 10.4 部署与线上核对
+
+- 通道沿用上一轮唯一可用的：微信开发者工具 CLI 本地服务端口
+  （临时把 `security.enableServicePort` 置 `true`/`port:3799`，IDE 自选 `41074`）。
+- `cli cloud functions deploy -e shizhang-pay-d0g1n58020acf6b5b -p <目录> -r --appid wx562bcb6057346fb2`
+  → `success true / filesCount 2 / packSize '4.0 KB'`，exit 0。
+- `getFunctionDetail`（`RequestId 868f97e6-e349-4e5d-a6b6-9191fee0ebb3`）：`ModTime 2026-11-10 09:45:45`、
+  `Status Active`、`AvailableStatus Available`、`CodeSize 7266298`，`FunctionId lam-p2st3nmv` 未变。
+- `getFunctionDownloadUrl`（`RequestId 077d55c8-4a1f-4a43-a635-b32e2581879a`）：`CodeSha256
+  834be8aafbe5c224db0bf0ade3c5a1193fe0ffc28e37828505d8fe40fd343179`；下载 7266298 字节实算同值。
+- 包内 `index.js` 10712 字节 / `a4162837…b657b`、`package.json` 127 / `57cb56e8…79c7`，与部署目录逐字节一致；
+  包内代码含 `const _ = db.command;`（第 6 行）、`partially_refunded`（104/113/139/144 行）、
+  `refund_wx_refs: _.push([wxRefundId])`（147 行）。
+- 真实签名 GET 握手：`HTTP 200` 且回显 `echostr`（私钥未变、明文推送路由正常）。
+
+### 10.5 数据库现状（部署后回读）
+
+`readNoSqlDatabaseContent`（`requestId d333ad37-11be-43f7-92ec-598084ff6155`）：`orders` 仍 3 条。
+
+| `_id` | `status` | 说明 |
+|---|---|---|
+| `9dd802d16af18d620027c9cc7ae0093a` | `refunded` | 首单，`refund_amount 990`、`wx_refund_reference VPR26110917109261225`、`refund_verdict owner_confirmed_refunded` |
+| `9dd802d16aeedc22000bd4762e38df72` | `closed` | 未支付，未受影响 |
+| `70d1f9116aeeae14000f0daa27ce54fc` | `closed` | 未支付，未受影响 |
+
+首单没有 `refunded_total` / `refund_wx_refs`（那是人工对账写的历史终态）；因为 `status=refunded` 会在
+入口短路返回 success，后续任何退款推送都不会改写它，也不会重复累计。
+
+### 10.6 仍未证 / 边界
+
+- 「下一笔真实部分退款会自己落 `partially_refunded`」目前只有同报文回放 + 线上包逐字节核对作证据；
+  真实首证要等下一笔退款，本轮没有伪造推送打线上。
+- 订单页新标签（「部分退款 · 暂停交付」）已进仓库并随 `9ef0b59b`，但**线上开发版仍是上一版**，
+  需下一次上传/发布才在界面生效；在此之前部分退款的单会显示原始状态文本。
+- 部署用的 IDE 服务端口开关已恢复原值（`enableServicePort=false`、`port=null`，两份 JSON 均 Test-Json 通过），
+  27+ 个 IDE 进程已清空。
