@@ -49,7 +49,7 @@ try {
       await checkpoint('upload_request');
       let progressReported = false;
       await Promise.race([
-        ci.upload({ project, version: receipt.version, desc: 'LTZZZ 数字实验室服务展示：资料核对/交付验收/资料整理；不接支付与自动交付', setting: { es6: true, minify: true }, onProgressUpdate: () => {
+        ci.upload({ project, version: receipt.version, desc: 'LTZZZ 数字实验室：资料核对 / 交付验收 / 资料整理；虚拟支付（沙箱环境）已接入，支付成功自动触发交付', setting: { es6: true, minify: true }, onProgressUpdate: () => {
           if (!progressReported) { console.log('Mini program SDK progress received'); progressReported = true; }
         } }),
         new Promise((_, reject) => {
