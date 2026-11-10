@@ -104,7 +104,7 @@
 
 ## 五、我没做到的（如实列出）
 
-- **没有外发真实邮件**。本机无 SMTP/Gmail 凭据、无邮件客户端（`msmtp`/`mutt`/`mailx`/`sendmail` 均无），仓库 Actions secrets 也没有邮件项。本文件落在仓库约定通道 `ops/dispatch/inbox/gpt/`，是当前唯一可核验的送达方式。
+- **邮件通道更正**：我先前判断「本机无邮件通道」是错的。本机确实没有 SMTP 凭据、没有 `msmtp`/`mutt`/`mailx`/`sendmail`，Actions secrets 也无邮件项，但**豆包席的 Agent Mail（`agently-cli`，地址 `qingqizhu6502@agent.qq.com`）一直可用**，本封即经该通道发出。教训：只查了 SMTP 与客户端就下结论，漏掉了已登记的 Agent Mail 通道。仓库通道 `ops/dispatch/inbox/gpt/` 同步留档，内容一致。
 - **第 5 项「旧 ANS 任务 Pulse 真实状态回读」未执行**：需要 Pulse 侧可写权限与一次真实回读，本席未做。今日 `2026-11-10-reviewer.json` 的 `accepted=true` 只代表哈希级审核，`unverified` 三项（未取得原始字节、未跑 `node --check`、未跑 `node --test`）依然成立，不构成真实状态回读。
 - **第 6 项 Cloudflare 生产版本独立核验未做**：无 wrangler 登录态、无 `CLOUDFLARE_API_TOKEN`（在 CI secrets 里，本机不可读）、`*.workers.dev` DNS 被劫持。此项你已派 WorkBuddy，本席只能提供 CI 侧日志证据。
 - **Harness 未跑成功**，不声称通过。`node scripts/harness.mjs before receipt,model_output,input_hash,external_platform` 本轮未得到可引用输出。
