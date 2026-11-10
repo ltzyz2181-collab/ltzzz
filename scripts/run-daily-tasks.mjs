@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import {readLedger,runReservedSeat,ledgerPath,digest} from "./lib/daily-task-board.mjs";
+import {readLedger,runReservedSeat,assertRunKeyOwnership,ledgerPath,digest} from "./lib/daily-task-board.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery,requiredSectionsForAgent,deliveryRequirementsPrompt } from "./delivery-integrity.mjs";
@@ -113,13 +113,19 @@ async function main() {
     .map((file) => file.path);
 
   const pulseAssignments=readJson(path.join(ROOT,"knowledge/results/pulse/latest.json"),null);
+  const runKey=`${process.env.GITHUB_RUN_ID||"local"}:${process.env.GITHUB_RUN_ATTEMPT||"1"}`;
   const boardLedger=readLedger(ROOT,today);
   // A successful local prepare is not durable permission to spend. Verify the
   // exact reservation bytes on main before the first provider request.
   if (!boardLedger) throw Error('daily_reservation_missing');
+  // A re-run must not resume another attempt's lease. runReservedSeat rejects a
+  // foreign lease as {ok:false}, which callers treat as one more seat failure,
+  // so a whole loop of blocked seats would still be written out as a completed
+  // daily result. Stop here instead: before the remote check, before any
+  // provider request, and before any results/reflections/reminders file exists.
+  assertRunKeyOwnership(boardLedger, runKey);
   const reservationResponse=await fetch(`https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/${ledgerPath(today)}`,{signal:AbortSignal.timeout(15000),cache:'no-store'});
   if (!reservationResponse.ok || digest(Buffer.from(await reservationResponse.arrayBuffer()))!==digest(fs.readFileSync(path.join(ROOT,ledgerPath(today))))) throw Error('daily_reservation_not_durable');
-  const runKey=`${process.env.GITHUB_RUN_ID||"local"}:${process.env.GITHUB_RUN_ATTEMPT||"1"}`;
   const assignmentRecords={};
   const taskDefs = readJson(path.join(DATA, "tasks", "daily-tasks.json"), { tasks: [] });
   const pending = readJson(PENDING_FILE, { updated_at: null, reminders: {} });
