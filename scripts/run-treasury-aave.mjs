@@ -1,4 +1,4 @@
-import fs from 'node:fs';import crypto from 'node:crypto';import {classifySignerStatus} from './lib/signer-status-verdict.mjs';
+import fs from 'node:fs';import crypto from 'node:crypto';import {classifySignerStatus} from './lib/signer-status-verdict.mjs';import {writeDeploymentRecord} from './lib/wep3-deployment-latest.mjs';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev',action=process.env.AAVE_ACTION||'auto',amount=process.env.AAVE_AMOUNT||'1',id=process.env.AAVE_INTENT_ID||'AAVE-RUN-'+(process.env.GITHUB_RUN_ID||Date.now());
 const auth=process.env.WEP3_RUNNER_TOKEN||(process.env.CLOUDFLARE_API_TOKEN?crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex'):'');
 const readOnly=['status','diagnose','reconcile','preview','auto-preview'].includes(action);
@@ -20,9 +20,11 @@ try{
   if(action==='status'){
    const verdict=classifySignerStatus(result,response.status);
    report.signer_verdict=verdict.verdict;report.signer_expected_block=verdict.expectedBlock;report.signer_blocked_reason=verdict.blockedReason;
-   if(verdict.executionOccurred){report.status='unexpected_signer_execution';report.service_verified=false;process.exitCode=1;break;}
-   if(!verdict.serviceOk){report.status='signer_status_unexpected';report.service_verified=false;process.exitCode=1;break;}
-   report.service_verified=true;break;
+   // 部署记录另存一份，绝不覆盖成交回执 latest.json；只在部署 workflow 内持久化。
+   const persist=()=>{if((process.env.GITHUB_WORKFLOW_REF||'').includes('deploy-wep3.yml')){try{writeDeploymentRecord({verdict,report,triggerCommit:process.env.GITHUB_SHA||null});}catch{}}};
+   if(verdict.executionOccurred){report.status='unexpected_signer_execution';report.service_verified=false;persist();process.exitCode=1;break;}
+   if(!verdict.serviceOk){report.status='signer_status_unexpected';report.service_verified=false;persist();process.exitCode=1;break;}
+   report.service_verified=true;persist();break;
   }
   report.service_verified=!!((response.ok&&result.ok===true)||guardedPreview);
   if(action==='diagnose')report.execution_blocked=result.storage?.ok===false;
