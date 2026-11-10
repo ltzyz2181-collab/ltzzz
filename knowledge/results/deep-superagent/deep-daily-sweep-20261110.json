@@ -135,5 +135,18 @@
     "timezone": "Asia/Shanghai",
     "first_run": "2026-11-11 06:45",
     "runtime": "云电脑（本机有 agently-cli 与 git 认证）"
+  },
+  "c_group_retry": {
+    "queue_run": 42826925851,
+    "task_id": "DEEP-SUPERAGENT-20261110-DAILY-SWEEP-C2",
+    "status": "blocked",
+    "error": "invalid_deepseek_plan",
+    "model_calls": 1,
+    "conclusion": "C 组四项本轮仍未判定，如实记为 unjudged，不用其他席位结果顶替"
+  },
+  "planner_finding_correction": {
+    "earlier_claim": "planner 必须显式分组才能产出 plan",
+    "correction": "该归因不成立。parsePlan 只要求 summary 为非空字符串、tasks 至少 1 项且每人 seat 合法、task 不超过 3000 字；单组任务完全合法。本次 C2 只写一组仍返回空 plan，说明失败点是模型输出的 JSON 不合 schema，显式列举与固定 route 集合只是提高了合规率，组数不是必要条件。",
+    "action": "后续每日卡保留显式列举与固定 route 集合以提高合规率，但不再把分组数量当作机制解释。"
   }
 }
