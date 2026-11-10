@@ -1,7 +1,10 @@
 import {modelConfiguration} from './lib/model-configuration.js';
 import {proxyAuth,proxyAuthState,authCheck} from './lib/proxy-auth.js';
-import {beginExecution,executionResponse} from './lib/provider-execution.js';
+import {beginExecution,executionResponse,finishExecution} from './lib/provider-execution.js';
 import {doubaoRoute} from './lib/doubao-route.js';
+// 2026-11-10：同步上游只在 90s 内作答；低于 Cloudflare 100s 边缘窗口，
+// 超时前主动返回可判别错误，而不是让 CF 抛无信息的 524。
+const UPSTREAM_TIMEOUT_MS = 90000;
 // LTZZZ · 豆包（火山方舟）API proxy — Cloudflare Worker
 // Key 只放 Worker Secret，浏览器不接触 Key。
 //
@@ -69,21 +72,39 @@ export default {
       const route=doubaoRoute(env),upstreamUrl=route.url;
 
       const execution=beginExecution('doubao',model,body.task_id);
-      const upstream = await fetch(upstreamUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${route.key}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model,
-          ...(body.thinking?.type==='disabled'?{thinking:{type:'disabled'}}:{}),
-          messages,
-          temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
-          max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 1200,
-          stream: false
-        })
-      });
+      // 2026-11-10 修复 524：原先这里没有 AbortSignal，长输出（8192 tokens）
+      // 会一直挂到 Cloudflare 的 100s 边缘窗口，由 CF 抛 524 —— 那是
+      // "不知道有没有生成、也不知道有没有计费"的状态。现在 90s 主动放弃，
+      // 返回可判别 504 + 回执，把不确定性变成明确的超时事实（禁止盲重试）。
+      let upstream;
+      try {
+        upstream = await fetch(upstreamUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${route.key}`,
+            'Content-Type': 'application/json'
+          },
+          signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+          body: JSON.stringify({
+            model,
+            ...(body.thinking?.type==='disabled'?{thinking:{type:'disabled'}}:{}),
+            messages,
+            temperature: typeof body.temperature === 'number' ? body.temperature : 0.4,
+            max_tokens: Number.isInteger(body.max_tokens) ? body.max_tokens : 1200,
+            stream: false
+          })
+        });
+      } catch (err) {
+        const receipt = finishExecution(execution, {http: null, data: {error: 'upstream_timeout'}, transportOk: false});
+        return json({
+          error: 'upstream_timeout',
+          stage: 'upstream_call',
+          timeout_ms: UPSTREAM_TIMEOUT_MS,
+          // 保留"上游可能已生成并计费"的未知性，禁止据此重放同一请求。
+          upstream_outcome_unknown: true,
+          ltzzz_receipt: {...receipt, timeout_observed: true}
+        }, 504);
+      }
 
       return executionResponse(upstream,execution,cors());
     } catch (e) {

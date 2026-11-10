@@ -65,6 +65,11 @@ test('native xAI is a registered work seat while the per-job three-worker limit 
  assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','deepseek'),2048);
  assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','kimi'),2048);
  assert.equal(outputTokenLimit('DEEP-ORDINARY','kimi'),16384);
+ // 豆包席受 Cloudflare 100s 边缘窗口与方舟北京链路约束，普通任务也按 2048 计，
+ // 避免 8192 输出预算把生成拖成 524；其他席位预算保持不变。
+ assert.equal(outputTokenLimit('DEEP-ORDINARY','doubao'),2048);
+ assert.equal(outputTokenLimit('DEEP-ORDINARY','qianwen'),4096);
+ assert.equal(outputTokenLimit('DEEP-ORDINARY','grok'),8192);
  const config=JSON.parse(fs.readFileSync('config/deep-superagent.json'));assert.ok(config.worker_seats.includes('grok'));assert.equal(config.native_paid_reserved_enabled,false);
 });
 test('Grok-only work uses its service binding, actual receipt metadata and independent DeepSeek review',async()=>{
