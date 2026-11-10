@@ -10,10 +10,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/provider-execution.test.mjs
+      - run: node --test scripts/tests/provider-execution.test.mjs scripts/tests/doubao-proxy-call.test.mjs scripts/tests/doubao-proxy-timeout.test.mjs
       - name: Preserve the existing Worker key and model instead of replacing them
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DEPLOY_SEATS: doubao
+          DOUBAO_API_KEY: ${{ secrets.DOUBAO_API_KEY }}
+          DOUBAO_MODEL: ${{ secrets.DOUBAO_MODEL }}
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: node scripts/deploy-agent-provenance.mjs
