@@ -115,8 +115,10 @@ async function handleDeliver(event) {
   return success();
 }
 async function handleRefund(event) {
-  // No verified refund request ledger/query adapter exists yet. A bound success
-  // signal pauses fulfillment, but is not invented as a final refund receipt.
+  // A platform-attested refund for a bound order is the refund receipt itself.
+  // Owner decided (2026-11-09) that a FULL refund closes the order as `refunded`.
+  // A PARTIAL refund is not the whole order: it pauses fulfillment and stays
+  // `refund_pending_verification` for reconciliation instead of claiming full refund.
   if (integer(event.RetCode) !== 0) {
     if (event.RetCode === undefined) fail('refund_result_missing');
     return success();
@@ -129,8 +131,13 @@ async function handleRefund(event) {
       amount <= 0 || amount > order.amount) fail('refund_binding_mismatch');
   if (['refunded', 'refund_pending_verification'].includes(order.status)) return success();
   if (!['paid', 'delivered'].includes(order.status)) fail('refund_state_unverified');
-  const result = await db.collection('orders').where(orderCondition(order)).update({ data: {
-    status: 'refund_pending_verification', refund_signal_at: new Date().toISOString(),
+  const now = new Date().toISOString(), full = amount === order.amount;
+  const result = await db.collection('orders').where(orderCondition(order)).update({ data: full ? {
+    status: 'refunded', refunded_at: now, refund_signal_at: now,
+    refund_amount: amount, refund_reference: event.MchRefundId,
+    wx_refund_reference: event.WxRefundId
+  } : {
+    status: 'refund_pending_verification', refund_signal_at: now,
     refund_amount_pending: amount, refund_reference_pending: event.MchRefundId,
     wx_refund_reference_pending: event.WxRefundId
   } });
