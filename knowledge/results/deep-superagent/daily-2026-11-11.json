@@ -185,5 +185,112 @@
   "deploys_performed": 0,
   "external_submissions": 0,
   "financial_execution": false,
-  "discipline": "未合并 PR、未生产部署、未改合约或支付语义、未动 allowedAgents、未伪造 review receipt；邮件正文与金额未写入仓库或外发"
+  "discipline": "未合并 PR、未生产部署、未改合约或支付语义、未动 allowedAgents、未伪造 review receipt；邮件正文与金额未写入仓库或外发",
+  "receipt_contract": "ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md",
+  "sections": {
+    "done": [
+      {
+        "item": "O3 两次 Pages 部署确认",
+        "evidence": "job 结论实读为 cancelled，非 failure；确认并发替代，未重新部署",
+        "status": "closed_by_coordinator"
+      },
+      {
+        "item": "今日队列派单打通",
+        "evidence": "run 42920132148 status completed_pending_external_acceptance，七项全判"
+      },
+      {
+        "item": "支付与自动交付描述纠偏",
+        "evidence": "miniprogram/README.md 与 docs/DESKTOP-CAPABILITY-AND-NEXT-20261107.md 已改为实际口径",
+        "status": "documented"
+      },
+      {
+        "item": "每日回执四段结构定型",
+        "evidence": "ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "ref": "O1",
+          "issue": "邮件积压 24 小时完全不动",
+          "consequence": "不裁决则每日重复上报，待办面不会推进",
+          "partial_work_possible": "可先按主题归档并标注优先级，但不代为答复"
+        },
+        {
+          "ref": "O4",
+          "issue": "30 个 open PR 是否授权按批次清理",
+          "consequence": "长期积压，CI 反馈噪声掩盖真失败",
+          "partial_work_possible": "可先产出按风险分级的清理清单"
+        },
+        {
+          "ref": "O2",
+          "issue": "150 未闭环 / 118 未复核是快照滞后还是任务未推进",
+          "consequence": "口径不定则每日重复报同一条",
+          "partial_work_possible": "可对比连续两日快照做增量归因"
+        },
+        {
+          "ref": "C1",
+          "issue": "provider 模型配置五项裁决",
+          "consequence": "席位额度与档位维持现状",
+          "partial_work_possible": "可产出配置差异对照"
+        },
+        {
+          "ref": "C2",
+          "issue": "勘误后两问",
+          "consequence": "旧卡范围与新卡重叠未清",
+          "partial_work_possible": "可标注重叠边界"
+        },
+        {
+          "ref": "run 42898677207",
+          "issue": "X 每日帖失败且日志过期，是否降低重跑阈值以便留证",
+          "consequence": "失败无证据，只能记 job 级结论",
+          "partial_work_possible": "可在 workflow 增加失败快照上传"
+        }
+      ],
+      "owner": [
+        {
+          "ref": "C3",
+          "issue": "小程序支付开通与自动交付范围",
+          "consequence": "沙箱下单与 pending→paid 实测只能由 owner 在微信内完成",
+          "partial_work_possible": "可准备真机下单核对清单"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "action": "对 30 个 open PR 产出按风险分级的清理清单",
+        "owner": "this_seat",
+        "done_when": "清单落盘并列出每个 PR 的合并风险与阻塞原因"
+      },
+      {
+        "action": "对比连续两日 oversight 快照做增量归因，回答 O2",
+        "owner": "this_seat",
+        "done_when": "给出新增/消除/滞留三类的具体计数"
+      },
+      {
+        "action": "把四段结构写入每日定时任务 query，使后续每日自动产出",
+        "owner": "this_seat",
+        "done_when": "任务详情回读包含四段要求"
+      }
+    ],
+    "later": [
+      {
+        "item": "自动交付产物生成（资料核对/验收结论/整理结果）",
+        "dependency": "owner 确认交付形态与自动生成边界",
+        "note": "当前只有订单状态自动化，无产物自动生成"
+      },
+      {
+        "item": "沙箱真实下单与 pending→paid 端到端验证",
+        "dependency": "owner 在微信内完成支付确认"
+      },
+      {
+        "item": "PAYMENT-MANIFEST-DRIFT 遗留处理",
+        "dependency": "GPT 派单确认"
+      },
+      {
+        "item": "LTZ-8 看板推进",
+        "dependency": "Linear 写权限口径（Deep 无网络，只能由本席代理执行）"
+      }
+    ]
+  }
 }
