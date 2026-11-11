@@ -1,0 +1,35 @@
+name: Deploy LTZZZ relay proxy
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'workers/relay-proxy/**'
+      - 'wrangler.relay-proxy.toml'
+      - '.github/workflows/deploy-relay-proxy.yml'
+permissions: {contents: read}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy -c wrangler.relay-proxy.toml
+      - name: Bind server-side secrets only when they exist (values never echoed)
+        env:
+          STATION_KEY: ${{ secrets.RELAY_STATION_KEY }}
+          PROXY_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+        run: |
+          if [ -n "$STATION_KEY" ]; then
+            printf '%s' "$STATION_KEY" | npx wrangler secret put RELAY_STATION_KEY -c wrangler.relay-proxy.toml
+          else
+            echo "RELAY_STATION_KEY absent: worker answers proxy_key_missing until owner sets it"
+          fi
+          if [ -n "$PROXY_TOKEN" ]; then
+            printf '%s' "$PROXY_TOKEN" | npx wrangler secret put PROXY_ACCESS_TOKEN -c wrangler.relay-proxy.toml
+          else
+            echo "PROXY_ACCESS_TOKEN absent: every call will be rejected as proxy_unauthorized"
+          fi
