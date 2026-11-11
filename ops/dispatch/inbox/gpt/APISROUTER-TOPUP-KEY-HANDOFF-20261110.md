@@ -90,7 +90,7 @@
 3. ~~**GPT 系（`gpt-5.5`）当下不可用**~~ → **已被 6.1 节推翻**：`gpt-5.5` 与 `gpt-6-astra` 确实不可用，但 `gpt-5.6-luna / gpt-5.6-sol / gpt-6-sol / gpt-6.1-sol` 实测 200 成功返回正文。
 4. 修正结论：这个中转站**有可用的 GPT 与 Claude 口子，但不是全档可用**；能否给 GPT 席当"临时备选"取决于是否只用 6.1 节点出的那批可用模型。
 
-### 6.1 第二批实测：Claude 全系 + GPT 旗舰（2026-11-11T03:1xZ）
+### 6.1 第二批实测：Claude 全系 + GPT 旗舰（2026-11-11T02:44–02:52Z）
 
 统一 `POST /v1/chat/completions`，`messages=[{role:user,content:"ping"}]`，`max_tokens=16`，客户端超时 35 s。
 
