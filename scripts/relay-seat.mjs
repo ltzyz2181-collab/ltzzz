@@ -60,10 +60,13 @@ function resolveTransport(policy) {
   const proxyEnv = boundary.proxy_env || 'LTZZZ_RELAY_PROXY_URL';
   const proxyUrl = process.env[proxyEnv] || boundary.proxy_url || null;
   if (proxyUrl) {
+    // The proxy access token is a scoped gateway credential, never the station key.
+    const tokenEnv = boundary.proxy_token_env || 'LTZZZ_RELAY_PROXY_TOKEN';
+    const proxyToken = process.env[tokenEnv] || '';
     return {
       mode: 'ltzzz_proxy',
       url: String(proxyUrl).replace(/\/$/, '') + '/chat/completions',
-      headers: {},
+      headers: proxyToken ? { 'x-ltzzz-seat-token': proxyToken } : {},
       fingerprint: null,
       boundaryException: false,
     };

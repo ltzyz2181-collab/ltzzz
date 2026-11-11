@@ -2,18 +2,17 @@
   "spec_id": "RELAY-SEAT-ACCEPTANCE-20261111",
   "verdict": "not_accepted",
   "counts": {
-    "pass": 0,
-    "fail": 7,
-    "insufficient": 0
+    "pass": 1,
+    "fail": 5,
+    "insufficient": 1
   },
   "blocked_by": [
     "real_call_success",
     "class_routing_verified",
     "request_identity_recorded",
-    "failure_modes_verified",
     "not_counted_as_business_task",
     "no_funds_signature_production",
-    "key_boundary_respected"
+    "failure_modes_verified"
   ],
   "criteria": [
     {
@@ -36,9 +35,12 @@
     },
     {
       "id": "failure_modes_verified",
-      "status": "FAIL",
-      "detail": "no failure-mode evidence at all; missing: short_request_refusal, balance_insufficient_or_floor_close, timeout_or_network_failure",
-      "evidence": []
+      "status": "INSUFFICIENT",
+      "detail": "missing failure categories: timeout_or_network_failure",
+      "evidence": [
+        "knowledge/results/relay-seat/refusals/20261111T132142Z-deepseek-short-fixture.json",
+        "knowledge/results/relay-seat/refusals/20261111T132151Z-deepseek-floor-fixture.json"
+      ]
     },
     {
       "id": "not_counted_as_business_task",
@@ -54,11 +56,14 @@
     },
     {
       "id": "key_boundary_respected",
-      "status": "FAIL",
-      "detail": "no evidence documents to inspect",
-      "evidence": []
+      "status": "PASS",
+      "detail": "no key material in evidence; transport and non-official routing declared",
+      "evidence": [
+        "knowledge/results/relay-seat/refusals/20261111T132142Z-deepseek-short-fixture.json",
+        "knowledge/results/relay-seat/refusals/20261111T132151Z-deepseek-floor-fixture.json"
+      ]
     }
   ],
-  "generated_at": "2026-11-11T12:09:56.223Z",
+  "generated_at": "2026-11-11T13:22:03.942Z",
   "verdict_path": "knowledge/results/relay-seat/acceptance-verdict.json"
 }
