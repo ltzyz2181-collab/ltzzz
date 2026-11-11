@@ -117,6 +117,28 @@
       "Only long-context or batch work can absorb that fixed overhead; short pings cannot"
     ]
   },
+  "access_boundary": {
+    "owner_ruling": "2026-11-11 corrected ruling",
+    "key_holder": "ltzzz_server_secret_only",
+    "seat_direct_key_allowed": false,
+    "preferred_transport": "ltzzz_proxy",
+    "proxy_env": "LTZZZ_RELAY_PROXY_URL",
+    "dev_direct_key_override": "--direct-key, recorded in evidence as boundary_exception true",
+    "secret_must_not_appear_in": [
+      "repository",
+      "frontend",
+      "pull_request",
+      "email",
+      "chat_window"
+    ],
+    "acceptance_spec": "config/relay-seat-acceptance.json",
+    "not_enough_for_acceptance": [
+      "HTTP 200 alone",
+      "a model name echoed in the request body",
+      "a directory listing",
+      "another agent's verbal claim without local evidence files"
+    ]
+  },
   "executor": {
     "module": "scripts/relay-seat.mjs",
     "guard": "scripts/lib/relay-seat-guard.mjs",

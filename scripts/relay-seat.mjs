@@ -46,6 +46,42 @@ function fingerprint(key) {
   return 'sha256:16=' + crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
 }
 
+function requestIdFrom(headers, payload) {
+  for (const name of ['x-request-id', 'x-oneapi-request-id', 'request-id', 'x-upstream-request-id']) {
+    const value = headers?.get ? headers.get(name) : null;
+    if (value) return { id: value, source: 'header:' + name };
+  }
+  if (payload && payload.id) return { id: String(payload.id), source: 'body:id' };
+  return { id: null, source: null };
+}
+
+function resolveTransport(policy) {
+  const boundary = policy.access_boundary || {};
+  const proxyEnv = boundary.proxy_env || 'LTZZZ_RELAY_PROXY_URL';
+  const proxyUrl = process.env[proxyEnv] || boundary.proxy_url || null;
+  if (proxyUrl) {
+    return {
+      mode: 'ltzzz_proxy',
+      url: String(proxyUrl).replace(/\/$/, '') + '/chat/completions',
+      headers: {},
+      fingerprint: null,
+      boundaryException: false,
+    };
+  }
+  // The owner ruling keeps the station key in a server secret: a seat may not hold it directly.
+  const directAllowed = boundary.seat_direct_key_allowed === true || flag('direct-key', false) === true;
+  if (!directAllowed) throw new Error('relay_direct_key_forbidden');
+  const key = loadKey(policy);
+  if (!key) throw new Error('relay_key_missing_env_or_local_file');
+  return {
+    mode: 'direct_station_key_dev_exception',
+    url: policy.station.base_url.replace(/\/$/, '') + '/chat/completions',
+    headers: { Authorization: 'Bearer ' + key.key },
+    fingerprint: fingerprint(key.raw),
+    boundaryException: true,
+  };
+}
+
 function writeEvidence(file, payload) {
   const target = path.join(root, file);
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -76,6 +112,45 @@ async function callModel(policy) {
   const promptSha = crypto.createHash('sha256').update(prompt).digest('hex');
   const inputTokens = estimateInputTokens(prompt);
 
+  const purpose = String(flag('purpose', 'generation'));
+  if (!['generation', 'acceptance_probe'].includes(purpose)) throw new Error('relay_purpose_invalid');
+  if (purpose === 'generation') {
+    const verdictPath = path.join(root, policy.access_boundary?.acceptance_verdict || 'knowledge/results/relay-seat/acceptance-verdict.json');
+    let verdict = null;
+    try {
+      verdict = JSON.parse(fs.readFileSync(verdictPath, 'utf8'));
+    } catch {
+      verdict = null;
+    }
+    if (!verdict || verdict.verdict !== 'accepted') {
+      const decision = {
+        allowed: false,
+        code: 'relay_acceptance_not_passed',
+        detail: 'generation output requires an accepted relay acceptance verdict; run node scripts/relay-seat-acceptance.mjs',
+        sent_http_request: false,
+        requires_close: false,
+        acceptance_verdict: verdict?.verdict ?? 'missing',
+      };
+      const evidence = writeEvidence('knowledge/results/relay-seat/refusals/' + stamp() + '-' + requestedAgent + '.json', {
+        schema_version: 1,
+        kind: 'relay_seat_refusal',
+        policy_id: policy.policy_id,
+        at: new Date().toISOString(),
+        requested_agent: requestedAgent,
+        purpose,
+        station_model: model,
+        decision,
+        prompt: { chars: prompt.length, estimated_input_tokens: inputTokens, sha256: promptSha },
+        sent_http_request: false,
+        key_transport: 'not_used_before_http',
+        key_fingerprint: null,
+      });
+      print({ ok: false, status: 'refused_before_http', decision, evidence });
+      process.exitCode = 2;
+      return;
+    }
+  }
+
   const { status, balance } = currentSeat(policy);
   const decision = evaluateRelayCall({ policy, model, inputTokens, batch, balanceUsd: balance, seatStatus: status });
 
@@ -95,10 +170,12 @@ async function callModel(policy) {
       policy_id: policy.policy_id,
       at,
       requested_agent: requestedAgent,
+      purpose,
       station_model: model,
       decision,
       prompt: { chars: prompt.length, estimated_input_tokens: inputTokens, sha256: promptSha },
       sent_http_request: false,
+      key_transport: 'not_used_before_http',
       key_fingerprint: null,
     });
     print({ ok: false, status: 'refused_before_http', decision, evidence });
@@ -106,25 +183,27 @@ async function callModel(policy) {
     return;
   }
 
-  const key = loadKey(policy);
-  if (!key) throw new Error('relay_key_missing_env_or_local_file');
-  const url = policy.station.base_url.replace(/\/$/, '') + '/chat/completions';
+  const transport = resolveTransport(policy);
+  const url = transport.url;
+  const requestedAt = new Date().toISOString();
   const started = Date.now();
   const maxAttempts = Math.max(1, Math.min(3, Number(flag('attempts', 2)) || 1));
   const attemptLog = [];
   let http = null;
   let payload = null;
   let failure = null;
+  let responseHeaders = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const attemptStart = Date.now();
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key.key },
+        headers: { 'Content-Type': 'application/json', ...transport.headers },
         body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], max_tokens: maxTokens, temperature: 0 }),
         signal: AbortSignal.timeout(120000),
       });
       http = response.status;
+      responseHeaders = response.headers;
       const text = await response.text();
       try {
         payload = JSON.parse(text);
@@ -197,6 +276,11 @@ async function callModel(policy) {
     seatAfter = state.status;
   }
 
+  const requestId = requestIdFrom(responseHeaders, payload);
+  const servedModel = typeof payload?.model === 'string' ? payload.model : null;
+  const servedName = String(servedModel || model);
+  const modelClass = /^claude/i.test(servedName) ? 'claude' : /^gpt/i.test(servedName) ? 'gpt' : 'other';
+
   const evidence = writeEvidence(
     'knowledge/results/relay-seat/calls/' + stamp() + '-' + requestedAgent + '-' + model + '-' + promptSha.slice(0, 8) + '.json',
     {
@@ -204,13 +288,35 @@ async function callModel(policy) {
       kind: 'relay_seat_call',
       policy_id: policy.policy_id,
       at: new Date().toISOString(),
+      requested_at: requestedAt,
+      responded_at: new Date().toISOString(),
+      request_id: requestId.id,
+      request_id_source: requestId.source,
       requested_agent: requestedAgent,
+      purpose,
+      generation_output: purpose === 'generation',
       executed_by: 'apisrouter_relay',
       station: policy.station.name,
       station_kind: policy.station.kind,
       official_provider_api: false,
       station_model: model,
+      model_served: servedModel,
       model_tier: decision.model_tier,
+      model_class: modelClass,
+      routing: {
+        requested_model: model,
+        served_model: servedModel,
+        station: policy.station.name,
+        upstream_hint: payload?.system_fingerprint ?? responseHeaders?.get?.('x-upstream-model') ?? null,
+      },
+      key_transport: transport.mode,
+      boundary_exception: transport.boundaryException,
+      effects: {
+        business_task_completed: false,
+        authority_effect: 'none',
+        funds_or_signature_surface: false,
+        production_write: false,
+      },
       max_tokens: maxTokens,
       batch,
       prompt: { chars: prompt.length, estimated_input_tokens: inputTokens, sha256: promptSha },
@@ -234,7 +340,7 @@ async function callModel(policy) {
       attempts: attemptLog,
       retry_policy: 'retry only when no HTTP response arrived; a request that reached the station is never replayed',
       reply: { chars: content.length, preview: content.slice(0, 160) },
-      key_fingerprint: fingerprint(key.raw),
+      key_fingerprint: transport.fingerprint,
       failure,
       http_error: http !== null && http !== 200 ? payload?.error ?? payload : null,
     },

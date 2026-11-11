@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "spec_id": "RELAY-SEAT-ACCEPTANCE-20261111",
+  "owner_ruling": "原厂 API 不是 GPT/Claude 执行席启用的必要条件；中转接口验收通过即可使用，但验收不能只以 HTTP 200 判断。GPT 决策席与执行席分离，模型生成能力与资金执行权限分离。",
+  "pass_rule": "all_criteria_must_pass",
+  "not_sufficient_on_their_own": [
+    "HTTP 200 alone",
+    "a model name echoed in the request body",
+    "a directory listing that contains the model",
+    "another agent's verbal claim without local evidence files"
+  ],
+  "criteria": [
+    {
+      "id": "real_call_success",
+      "label": "实际模型调用成功并取得有效响应",
+      "type": "successful_call",
+      "requires": ["http=200", "finish_reason=stop", "completion_tokens>0", "cost_usd>0"]
+    },
+    {
+      "id": "class_routing_verified",
+      "label": "能区分 GPT 类与 Claude 类调用及实际路由",
+      "type": "class_coverage",
+      "classes": ["claude", "gpt"],
+      "min_success_each": 1
+    },
+    {
+      "id": "request_identity_recorded",
+      "label": "有真实 request id、模型名称、时间与用量记录",
+      "type": "request_identity",
+      "requires": ["request_id", "model_served", "at", "usage.prompt_tokens_billed", "usage.completion_tokens", "duration_ms"]
+    },
+    {
+      "id": "failure_modes_verified",
+      "label": "失败、余额不足、超时能够正确返回",
+      "type": "failure_mode_coverage",
+      "required_categories": [
+        "short_request_refusal",
+        "balance_insufficient_or_floor_close",
+        "timeout_or_network_failure"
+      ]
+    },
+    {
+      "id": "not_counted_as_business_task",
+      "label": "不会把模型调用误记成业务任务完成",
+      "type": "no_business_completion"
+    },
+    {
+      "id": "no_funds_signature_production",
+      "label": "不会触发资金、签名或生产写操作",
+      "type": "no_execution_surface"
+    },
+    {
+      "id": "key_boundary_respected",
+      "label": "密钥不出现在证据中，且标注了密钥通道",
+      "type": "key_boundary",
+      "forbidden_patterns": ["sk-[A-Za-z0-9]{8,}"],
+      "requires": ["key_transport", "official_provider_api=false"]
+    }
+  ]
+}
