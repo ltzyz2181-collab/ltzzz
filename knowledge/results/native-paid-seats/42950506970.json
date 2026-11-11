@@ -1,0 +1,139 @@
+{
+  "schema_version": "ltzzz.native-paid-seat-probe.v1",
+  "observed_at_utc": "2026-11-11T03:06:38.773Z",
+  "run_id": "42950506970",
+  "source_commit": "132caffaab5e052c5f23ab3f630f988aa4637d67",
+  "vantage": "GitHub Actions runner; official provider endpoints only; no relay",
+  "probe_shape": {
+    "max_tokens": 16,
+    "prompt_chars": 4,
+    "timeout_ms": 60000
+  },
+  "seats": {
+    "claude": {
+      "provider": "anthropic",
+      "official_base": "https://api.anthropic.com",
+      "credential_binding": "ANTHROPIC_API_KEY",
+      "key_present": true,
+      "catalogue": {
+        "ok": true,
+        "http": 200,
+        "error_class": "ok",
+        "error": null,
+        "model_count": 15,
+        "model_ids": [
+          "claude-fable-5-2",
+          "claude-haiku-5-5",
+          "claude-sonnet-5-5",
+          "claude-opus-5-5",
+          "claude-fable-5-1",
+          "claude-opus-5",
+          "claude-sonnet-5",
+          "claude-fable-5",
+          "claude-opus-4-8",
+          "claude-opus-4-7",
+          "claude-sonnet-4-6",
+          "claude-opus-4-6",
+          "claude-opus-4-5-20251101",
+          "claude-haiku-4-5-20251001",
+          "claude-sonnet-4-5-20250929"
+        ],
+        "latency_ms": 266
+      },
+      "generation": {
+        "ok": false,
+        "http": 400,
+        "model": "claude-haiku-4-5-20251001",
+        "model_source": "catalogue_cheapest_haiku",
+        "actual_model": null,
+        "finish_reason": null,
+        "output": "",
+        "usage": {
+          "input_tokens": null,
+          "output_tokens": null
+        },
+        "provider_request_id": "req_011CgvQH2sHNRXMxbxhtB9Sd",
+        "input_token_inflation": false,
+        "error_class": "insufficient_credits",
+        "error": "{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\"request_id\":\"req_011CgvQH2sHNRXMxbxhtB9Sd\"}",
+        "latency_ms": 247
+      },
+      "status": "insufficient_credits",
+      "generation_verified": false
+    },
+    "gpt": {
+      "provider": "openai",
+      "official_base": "https://api.openai.com/v1",
+      "credential_binding": "OPENAI_API_KEY",
+      "key_present": true,
+      "catalogue": {
+        "ok": true,
+        "http": 200,
+        "error_class": "ok",
+        "error": null,
+        "model_count": 96,
+        "model_ids": [
+          "tts-1",
+          "gpt-5-mini",
+          "gpt-5-mini-2025-08-07",
+          "gpt-5.4-2026-03-05",
+          "gpt-5-nano",
+          "gpt-5.4-mini",
+          "gpt-realtime-2.1-mini",
+          "gpt-realtime-2025-08-28",
+          "omni-moderation-2024-09-26",
+          "gpt-live-transcribe",
+          "gpt-5.6-luna",
+          "omni-moderation-latest",
+          "gpt-realtime-2",
+          "gpt-5-search-api",
+          "gpt-5.5-2026-04-23",
+          "gpt-5.5-pro",
+          "gpt-4o-mini-transcribe-2025-03-20",
+          "gpt-audio-2025-08-28",
+          "gpt-4o-2024-11-20",
+          "gpt-5.1",
+          "whisper-1",
+          "gpt-5-pro",
+          "gpt-realtime-whisper",
+          "gpt-realtime",
+          "tts-1-hd",
+          "gpt-realtime-1.5",
+          "gpt-5.2-pro",
+          "gpt-4o-mini-transcribe-2025-12-15",
+          "gpt-5-pro-2025-10-06",
+          "gpt-5.6-sol"
+        ],
+        "latency_ms": 1268
+      },
+      "generation": {
+        "ok": false,
+        "http": 429,
+        "model": "gpt-4o-mini",
+        "model_source": "catalogue_preferred_mini",
+        "actual_model": null,
+        "finish_reason": null,
+        "output": "",
+        "usage": {
+          "input_tokens": null,
+          "output_tokens": null
+        },
+        "provider_request_id": "req_d8558f7071334e1d83f3edf0f44502be",
+        "input_token_inflation": false,
+        "error_class": "insufficient_quota",
+        "error": "{\n    \"error\": {\n        \"message\": \"Your account is not active, please check your billing details on our website.\",\n        \"type\": \"billing_not_active\",\n        \"param\": null,\n        \"code\": \"billing_not_active\"\n    }\n}\n",
+        "latency_ms": 989
+      },
+      "status": "insufficient_quota",
+      "generation_verified": false
+    }
+  },
+  "conclusion": {
+    "claude_native_generation_verified": false,
+    "gpt_native_generation_verified": false,
+    "both_verified": false,
+    "relay_results_not_reused": true
+  },
+  "secrets_printed": false,
+  "financial_actions": 0
+}
