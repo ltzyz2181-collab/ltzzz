@@ -32,6 +32,45 @@
     },
     "activation_decision": "GPT AI decision seat may arrange activation under existing owner authority when actual credit, credentials and native executor evidence are available; reviewer consent is not an extra owner gate"
   },
+  "relay_generation_seats": {
+    "policy_status": "code_ready_pending_owner_credential_and_acceptance",
+    "decided_by": "owner_via_gpt_decision_seat_2026-11-11",
+    "sequencing": "acceptance_before_any_generation",
+    "acceptance_gate": "RELAY_ACCEPTANCE_VERIFIED must equal 1; without it the seats stay closed",
+    "gpt": {
+      "role": "execution_seat_generation_only",
+      "provider": "apisrouter_relay",
+      "base_url": "https://api.apisrouter.com/v1",
+      "credential_binding": "RELAY_API_KEY",
+      "model_binding": "RELAY_MODEL_GPT",
+      "decision_authority": false,
+      "native_api_required": false,
+      "status": "closed_until_credential_and_acceptance"
+    },
+    "claude": {
+      "role": "execution_seat_generation_only",
+      "provider": "apisrouter_relay",
+      "base_url": "https://api.apisrouter.com/v1",
+      "credential_binding": "RELAY_API_KEY",
+      "model_binding": "RELAY_MODEL_CLAUDE",
+      "decision_authority": false,
+      "native_api_required": false,
+      "status": "closed_until_credential_and_acceptance"
+    }
+  },
+  "relay_ruling": {
+    "coordinator_needs_native_or_relay_api": false,
+    "execution_seats_after_acceptance": ["gpt", "claude"],
+    "decision_seat": "manual_owner_via_codex_or_web_not_relay",
+    "allowed_relay_use": ["长文草稿", "执行席产物", "对账草稿", "异源复核文案", "文档与会员类辅助"],
+    "forbidden_relay_use": ["treasury", "withdrawal", "wallet", "signer", "safe", "payment_execution"],
+    "known_limitations": [
+      "第三方聚合中转，非原厂通道，不能声称原厂身份",
+      "GPT 系单次 ping 实测计约 4387 隐藏前缀 prompt token，需按实际 usage 计量",
+      "中转账户余额 13.00 美元，耗尽即失败",
+      "gpt-6-sol 等模型名不在 OpenAI 官方目录内"
+    ]
+  },
   "financial_execution": false,
   "external_submissions_enabled": false,
   "external_submissions_suspension": {
