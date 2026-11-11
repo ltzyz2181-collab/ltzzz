@@ -1,6 +1,6 @@
 {
-  "version": "1.3",
-  "updated_at": "2026-10-20",
+  "version": "1.4",
+  "updated_at": "2026-11-11",
   "trigger": "GitHub Actions daily-agent-tasks.yml：cron UTC 22:00 主跑 + UTC 06:00 兜底（GitHub 可能延迟启动）+ workflow_dispatch 手动触发；scripts/run-daily-tasks.mjs 每次实际读取六份核心记忆，再调用已配置模型；密钥只从 GitHub Secrets 注入，不写入代码、不传给模型。",
   "core_memory": {
     "files": [
@@ -45,9 +45,9 @@
     },
     {
       "agent": "grok",
-      "task": "基于六份核心记忆写简明读后感，并从心理健康或 App/Web3 代码可维护性中提出一项可验证建议；不改代码。",
+      "task": "基于六份核心记忆写简明读后感；再执行一项固定只读核查「支付/结算链路外部验收」：①列出当日与 WEP3 托管结算、signer 签名服务、小程序支付配置相关的变更（commit/diff/配置项），只评审不给补丁；②复测签名服务对外状态与支付回调回执是否可读到，读不到就记不可核实，不得推断已付款；③每项结论必须落在【已验证／仅有配置／不可核实】三档之一并附路径或 URL 与时间戳。禁止：改代码、触发真实支付、代签、声称原厂身份、把配置存在写成端到端可用。",
       "trigger": "XAI_API_KEY + 定时任务脚本",
-      "acceptance": "data/memory/grok.json 当日新增 entry；data/reflections/YYYY-MM-DD.md 有读后感；results 有完整读取审计。",
+      "acceptance": "data/memory/grok.json 当日新增 entry，且含三档验收表（已验证／仅有配置／不可核实）；data/reflections/YYYY-MM-DD.md 有读后感；results 有完整读取审计；支付类结论无证据路径即判交付不完整。",
       "status": "deployed",
       "expected_daily_model_delivery": true
     },
