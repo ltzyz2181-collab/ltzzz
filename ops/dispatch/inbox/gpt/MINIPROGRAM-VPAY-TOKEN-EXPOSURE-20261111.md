@@ -37,5 +37,34 @@
 ## 4. 需要裁决的点（交 GPT）
 
 - A. 是否立即轮换 `VPAY_PUSH_TOKEN`（并授权按上述顺序操作：先 CloudBase 环境变量，再微信后台消息推送 Token）。
+  **已关闭（owner 直接决定，不需裁决）**：不轮换、不动 CloudBase 环境变量与微信后台 Token。
 - B. 是否接受"历史保留旧值、靠轮换使其失效"，还是要求改写历史。
+  **已关闭**：owner 先要求"记录删掉就行、不改写历史"，随后追加"旧值也删掉，免得误导" → 已执行历史改写，见第 5 节。
 - C. `vpay-notify-security.test.mjs` 那条既有失败要不要本轮就修（涉及退款"暂停交付"语义，与 0.1.10 提审中的版本口径相关）。
+
+## 5. 历史改写（2026-11-11 owner 追加"旧值也删掉"后执行）
+
+- 目标：从 main 的**历史提交**里删掉该值，不只是删当前文件。
+- 方法：`git fast-export main` → 自写 Python 逐 blob 精确替换（只有 blob 内确实含该字面值才改）→ `git fast-import`。
+- 为什么不用 `git filter-repo`：先在拷贝仓库上试跑 `--replace-text`，它把**所有**文件内容整体替换成 `***REMOVED***`（README 等 7917 个文件全被改写）。该结果只在本地、未推送，已 `git reset --hard` 回滚到 `bd33b45e`，正式仓库改走自写管道。
+- 改写前备份：本机 bundle `/home/user/ltzzz-pre-purge-20261111.bundle`（75 MB，改写前完整 main）；本地分支 `backup/pre-purge-20261111`（指向改写前 `bd33b45e`）。
+- 替换口径：`.md` → `<已移除明文，值仅存于云函数环境变量>`；`.mjs`/`.js` → `test-push-token-local-only`；其余 → `<REDACTED>`。实际命中 **8 个 blob**。
+
+验证（逐项可复现）：
+
+- 改写后 main 的树与原提交树完全相同（`878ec775…`），`git diff-tree -r bd33b45e HEAD` 路径差异 **0** → 历史之外的仓库当前内容一个字节未动。
+- `git log main -S '<原值>'` → **空**；工作树 grep → **空**。
+- 改写期间远端又前进一个提交（`b4d99abb` sentinel 派单哨兵 18:00），未丢弃：用它的原树+原提交信息接在改写后的历史上重建，本地/远端提交数同为 **4857**，树一致。
+- 强推：`b4d99abb → 8e4df402`，使用 `--force-with-lease`（lease 为推送时刻的真实远端值）。
+- 独立复核：从 GitHub 重新 clone main 到临时目录，`git log --all -S '<原值>'` → **空**。
+
+哈希影响（容易被误读，必须写清）：
+
+- `03ef2b3a` 之后全部提交哈希已变化。此前回执/邮件里引用的 `7c3f0234`、`cf847e48`、`bd33b45e`、`72336bc7`、`c175c271`、`79737923` 在新历史中**已不存在**；内容仍在，编号失效。
+- 新历史里对应「security(vpay): 移除仓库内明文…」的提交为 `3267a6de`（原编号 `cf847e48`）。
+
+仍未消除的暴露面（如实记录，不当作已解决）：
+
+- GitHub 不立即删除不可达旧提交。实测 `raw.githubusercontent.com/…/72336bc7/scripts/tests/vpay-notify-refund.test.mjs` 仍 **200 且含该值**（`cf847e48` 200 但不含值；`03ef2b3a` 已 404）。即：知道旧 SHA 者在一段时间内仍可能读到。
+- 彻底清除只能向 GitHub Support 提工单清理不可达对象（无公开 API），或等其 GC 自然回收。是否提工单待 owner 一句话。
+- 本地其他分支（`feat/*`、`fix/*` 等，均未推送）仍指向旧对象、内容含该值，未改写；一旦推送会重新引入，故保持不动。
