@@ -64,6 +64,7 @@ npx wrangler secret put PROXY_ACCESS_TOKEN -c wrangler.relay-proxy.toml
 - 已部署：`https://ltzzz-relay-proxy.ltzyz2181.workers.dev`（`/v1/chat/completions`），由 `deploy-relay-proxy.yml` 经 `CLOUDFLARE_API_TOKEN` 发布。
 - 已绑定 `PROXY_ACCESS_TOKEN`（由仓库 Secret `LTZZZ_AGENT_TOKEN` 注入）；无令牌请求返回 401。
 - **`RELAY_STATION_KEY` 尚未注入**：此时代理对任何已鉴权调用返回 503 `proxy_key_missing`。原始 key 只在持有它的机器上执行 `wrangler secret put`，不进仓库。
+- GitHub Actions 冒烟实测：无令牌 POST 返回 `401 proxy_unauthorized`（run 43029265751），证明网关可达且鉴权生效。
 - 云主机对该 workers.dev 域名的 DNS 被污染（解析到无关 IPv6），本机 curl 不通；网关可达性以 GitHub Actions 网络内的冒烟步骤为准（期望 401）。
 - 验收判定仍为 `not_accepted`（1 PASS / 5 FAIL / 1 INSUFFICIENT）：两条 guard 拒绝证据来自临时台账 fixture，真实成功调用、双类覆盖、request ID、超时证据仍缺。
 - 临时台账 fixture 未触碰真实余额与真实账户；证据内用 `evidence_origin=temp_ledger_fixture_no_real_account_touched` 标注来源。
