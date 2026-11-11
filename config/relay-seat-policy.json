@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "owner_decision": {
+    "decided_by": "owner",
+    "decided_at": "2026-11-11",
+    "source": "owner session instruction",
+    "terms": [
+      "account balance below 3 USD automatically closes this relay seat",
+      "Claude four tiers plus gpt-6.1-sol accept only long-context or batch requests",
+      "short requests must not be sent to this station at all"
+    ]
+  },
+  "station": {
+    "name": "APIsRouter",
+    "kind": "third_party_aggregator_relay",
+    "base_url": "https://api.apisrouter.com/v1",
+    "key_env": "APISROUTER_API_KEY",
+    "local_key_file": ".secrets-local/apisrouter-key.txt",
+    "not_official_provider_api": true,
+    "owned_account": "ltzyz2181@gmail.com",
+    "data_egress": "prompts and parameters transit the station to upstream vendors; logs are retained on its servers"
+  },
+  "balance_guard": {
+    "floor_usd": 3,
+    "currency": "USD",
+    "on_below_floor": "close_seat",
+    "closed_seat_effect": "every relay call is refused before any HTTP request until an owner or GPT decision seat reopens the seat",
+    "ledger_path": "knowledge/results/relay-seat/balance-ledger.json",
+    "state_path": "knowledge/results/relay-seat/seat-state.json",
+    "balance_basis": "last confirmed console balance minus recorded call cost; the station exposes no key-authenticated balance endpoint (GET /api/user/self returns 'access token invalid'), so an unverified ledger refuses calls instead of assuming a balance",
+    "unknown_balance_policy": "refuse",
+    "reopen_requires": "a confirmed console balance at or above floor_usd written by the owner or the GPT decision seat"
+  },
+  "routing": {
+    "mode": "long_context_or_batch_only",
+    "short_request_rule": "forbidden",
+    "min_input_tokens": 4096,
+    "token_estimator": "CJK characters count as one token each, other characters as one token per four characters",
+    "batch_override": "a caller may pass batch=true only for a real batch aggregation; the flag is recorded in evidence so a short request cannot hide behind it silently",
+    "allowlist": [
+      {
+        "model": "claude-opus-5-5",
+        "vendor": "anthropic",
+        "tier": "claude",
+        "price_input_usd_per_1m": 3,
+        "price_output_usd_per_1m": 16,
+        "observed_latency_s": 3.82,
+        "observed_usage": "5 in / 1 out on a ping"
+      },
+      {
+        "model": "claude-opus-5",
+        "vendor": "anthropic",
+        "tier": "claude",
+        "price_input_usd_per_1m": 4,
+        "price_output_usd_per_1m": 20,
+        "observed_latency_s": 10.36,
+        "observed_usage": "5 in / 1 out on a ping"
+      },
+      {
+        "model": "claude-sonnet-4-6",
+        "vendor": "anthropic",
+        "tier": "claude",
+        "price_input_usd_per_1m": 2.4,
+        "price_output_usd_per_1m": 12,
+        "observed_latency_s": 12.85,
+        "observed_usage": "5 in / 1 out on a ping"
+      },
+      {
+        "model": "claude-haiku-5-5",
+        "vendor": "anthropic",
+        "tier": "claude",
+        "price_input_usd_per_1m": 0.08,
+        "price_output_usd_per_1m": 0.4,
+        "observed_latency_s": 18.46,
+        "observed_usage": "8 in / 15 out on a ping"
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "vendor": "openai",
+        "tier": "gpt",
+        "price_input_usd_per_1m": 1.5,
+        "price_output_usd_per_1m": 8,
+        "observed_latency_s": 13.99,
+        "observed_usage": "1446 in / 5 out on a ping",
+        "known_input_inflation_tokens": 1446
+      }
+    ],
+    "excluded_models": [
+      {
+        "model": "claude-sonnet-5",
+        "reason": "35 s client timeout, never observed a 200"
+      },
+      {
+        "model": "gpt-5.5",
+        "reason": "503 model_temporarily_unavailable and later 35 s timeout"
+      },
+      {
+        "model": "gpt-6-astra",
+        "reason": "35 s client timeout"
+      },
+      {
+        "model": "gpt-5.6-luna",
+        "reason": "works but bills 4389 input tokens for a one-word ping; excluded from short and general routing"
+      },
+      {
+        "model": "gpt-5.6-sol",
+        "reason": "works but bills 4387 input tokens for a one-word ping; excluded from short and general routing"
+      },
+      {
+        "model": "gpt-6-sol",
+        "reason": "works but bills 4387 input tokens for a one-word ping; excluded from short and general routing"
+      }
+    ],
+    "notes": [
+      "The station quotes 0.75-0.80 of official unit prices, but GPT-family calls carry a hidden input prefix billed to this account",
+      "Only long-context or batch work can absorb that fixed overhead; short pings cannot"
+    ]
+  },
+  "executor": {
+    "module": "scripts/relay-seat.mjs",
+    "guard": "scripts/lib/relay-seat-guard.mjs",
+    "default_requested_agent": "deepseek",
+    "recorded_fact": "requested_agent is the seat asking for the call; executed_by is the station and upstream vendor, never the requesting seat"
+  }
+}
