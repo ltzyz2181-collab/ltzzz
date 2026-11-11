@@ -1,0 +1,65 @@
+{
+  "task_id": "AET-00240",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "ab19e25d7ec510d197bed166edfaa409e93d4cc6b516a15734a516ddb4233b30",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": true,
+    "score": 84,
+    "issues": [
+      "覆盖不完整：60 条提交中约 10 条未被评审或归类，包括 f5867b9、299def4、beb7de4、85272f6、bb951b1、ef8f673、e9f5880、530e79d、4a8ea0c、22dbb2b。",
+      "资金/派单链路遗漏：f5867b9（付款前派单）、299def4/bb951b1（真实回执复核与派单）、beb7de4/22dbb2b（钱包操作）未给出已完成/提议判定，影响对资金相关提交的审计完整性。",
+      "“网关冒烟实测 401”的直接依据是 85272f6；交付物仅引用 d2d765e，未给该具体事实标注对应短哈希，不完全满足“每条事实注明 commit 短哈希”。",
+      "3 USD 余额熔断与白名单的功能实现是 e9f5880（feat），交付物只列回执 e48dd42，遗漏功能本体提交，造成功能与收据归因不完整。",
+      "5334657、b52c812 等含“funded”字样的条目仅依据 commit 标题被归入支付/资金证据，未标注缺少链上交易哈希等独立佐证；虽未超出材料原话，但审计结论应保留该证据层级。",
+      "94a7eb7 除“中转 GPT/Claude 席位接入方案”外，还包含“复核千问11-11六项判定”，交付物概括不完整。"
+    ],
+    "tokens_used": 10169
+  },
+  "at": "2026-11-11T17:26:14.818Z",
+  "report_sha256": "862f1db11736e258feb0c76e5c754182ad70883e42358d8bc7b5f225ed5190d2"
+}

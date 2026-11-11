@@ -1,0 +1,62 @@
+{
+  "task_id": "AET-00241",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "9607f4e66d5a8e498da46a4c5565c1c5da278eab590f579e940ece600632dde3",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": true,
+    "score": 90,
+    "issues": [
+      "时间跨度表述不严谨：CAP-00027 的 at 字段被截断，无法确认其是否落在截至 CAP-00025 的 53.6 小时窗口内；该窗口内只能确认 7 条完整时间戳提案，不应称其中出现 8 条。",
+      "“资金未实际流出”“链上可见余额应保持 0.401 不变”只能由所列提案的 shadow、executed=false、tx_hash=null 推断为这些提案未执行，不能单独证明不存在池外交易或其他链上资金移动；应通过地址交易列表和余额快照验证。",
+      "24 小时累计限额测试直接使用全周期累计 0.1535 USD 作为当前值，虽然该值小于 50% 上限可作为保守通过判断，但严格测试应按滚动 24 小时窗口聚合计算。"
+    ],
+    "tokens_used": 7341
+  },
+  "at": "2026-11-11T17:28:17.893Z",
+  "report_sha256": "d0e7bd552afe09426a0c3a70f58516e7ddb34e80af25c6fa922a2a59814ab82d"
+}
