@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import {readLedger,runReservedSeat,assertRunKeyOwnership,ledgerPath,digest} from "./lib/daily-task-board.mjs";
+import {readLedger,runReservedSeat,assertRunKeyOwnership,reservationRefusalRecord,ledgerPath,digest} from "./lib/daily-task-board.mjs";
 import { classifyTaskOutcome } from "./task-outcome.mjs";
 import {validateCoreDocument} from './lib/core-memory-integrity.mjs';
 import { assessDelivery,requiredSectionsForAgent,deliveryRequirementsPrompt } from "./delivery-integrity.mjs";
@@ -123,7 +123,16 @@ async function main() {
   // so a whole loop of blocked seats would still be written out as a completed
   // daily result. Stop here instead: before the remote check, before any
   // provider request, and before any results/reflections/reminders file exists.
-  assertRunKeyOwnership(boardLedger, runKey);
+  try {
+    assertRunKeyOwnership(boardLedger, runKey);
+  } catch (error) {
+    // 拒执行也要留证：抛错前先写拒执行回执，避免只剩 CI 日志、事后无法回读失败原因。
+    const refusal = reservationRefusalRecord(boardLedger, runKey);
+    const dir = path.join(ROOT, "knowledge/results/daily-blocked");
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${today}-${String(runKey).replace(/[^0-9A-Za-z]/g, "_")}.json`), JSON.stringify(refusal, null, 2) + "\n");
+    throw error;
+  }
   const reservationResponse=await fetch(`https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/${ledgerPath(today)}`,{signal:AbortSignal.timeout(15000),cache:'no-store'});
   if (!reservationResponse.ok || digest(Buffer.from(await reservationResponse.arrayBuffer()))!==digest(fs.readFileSync(path.join(ROOT,ledgerPath(today))))) throw Error('daily_reservation_not_durable');
   const assignmentRecords={};

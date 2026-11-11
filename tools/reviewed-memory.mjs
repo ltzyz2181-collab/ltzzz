@@ -5,11 +5,24 @@ import {reviewApproval, sha256} from '../scripts/lib/review-approval.mjs';
 import {substantiveClaim} from './memory-candidate-quality.mjs';
 
 export const memorySubject = item => ({candidate_id: item.id, claim: item.claim, source: item.source, source_sha256: item.source_sha256});
+const normalizeClaim = value => String(value || '').replace(/\s+/g, '');
 export function applyReviewedMemory(queue, {rootDir = process.cwd()} = {}) {
   const applied = [];
+  // 同一条主张只允许晋升一次：已 applied 的主张再次出现时不得重复写入派生记忆。
+  const appliedByClaim = new Map();
+  for (const item of queue.items || []) {
+    if (item.status === 'applied' && item.claim) appliedByClaim.set(normalizeClaim(item.claim), item.id);
+  }
   for (const item of queue.items || []) {
     if (item.status !== 'candidate' || !item.review_reference) continue;
     item.human_confirmation_required = false;
+    const prior = item.claim ? appliedByClaim.get(normalizeClaim(item.claim)) : undefined;
+    if (prior && prior !== item.id) {
+      item.review_status = 'duplicate_claim';
+      item.review_reason = 'duplicate_claim_already_applied:' + prior;
+      item.duplicate_of = prior;
+      continue;
+    }
     try {
       if (item.eligible_for_promotion === false || item.content_quality === 'operational_metadata'
         || !substantiveClaim(item.claim || '') || !Array.isArray(item.conflicts) || item.conflicts.length) throw Error('candidate_quality_or_conflict_unresolved');
@@ -28,6 +41,8 @@ export function applyReviewedMemory(queue, {rootDir = process.cwd()} = {}) {
         if (fs.readFileSync(file, 'utf8') !== bytes) throw Error('immutable_promoted_memory_differs');
       } else fs.writeFileSync(file, bytes, {flag: 'wx'});
       item.status = 'applied'; item.applied_to = relative; item.applied_sha256 = sha256(bytes);
+      if (item.claim) appliedByClaim.set(normalizeClaim(item.claim), item.id);
+      delete item.duplicate_of;
       item.confirmation_provenance = 'independent_executor_review_not_human_confirmation';
       item.review_proof = approval.proof; delete item.review_reason; applied.push(item.id);
     } catch (error) {

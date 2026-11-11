@@ -31,6 +31,24 @@ export function assertRunKeyOwnership(ledger, runKey) {
   if (owned !== runKey) throw Error('daily_reservation_run_key_mismatch');
   return true;
 }
+/** 租约拒绝的取证记录：先落盘再抛错，避免只留 CI 日志、事后无法回读失败证据。 */
+export function reservationRefusalRecord(ledger, runKey, at = new Date().toISOString()) {
+  const object = ledger && typeof ledger === 'object' ? ledger : null;
+  const owned = object && typeof object.run_key === 'string' && object.run_key ? object.run_key : null;
+  const reason = !object ? 'daily_reservation_missing' : !owned ? 'daily_reservation_run_key_absent' : owned !== runKey ? 'daily_reservation_run_key_mismatch' : null;
+  return {
+    schema_version: 1,
+    at,
+    current_run_key: runKey || null,
+    ledger_run_key: owned,
+    ledger_date: object && typeof object.date === 'string' ? object.date : null,
+    refused: Boolean(reason),
+    reason,
+    seats: object && object.seats && typeof object.seats === 'object' ? Object.keys(object.seats) : [],
+    scope: 'refused_before_any_seat_execution_and_before_result_files_written',
+    note: '本文件只记录拒执行事实，不代表任何席位已执行、已生成或已交付。'
+  };
+}
 export function saveLedger(root, record) {
   const file = path.join(root, ledgerPath(record.date));
   fs.mkdirSync(path.dirname(file), {recursive:true});
