@@ -1,0 +1,45 @@
+name: Native paid seats probe (official Anthropic and OpenAI only)
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: Free-text note stored in the receipt; no secret material
+        type: string
+        default: manual
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/probe-native-paid-seats.mjs'
+      - '.github/workflows/probe-native-paid-seats.yml'
+permissions: {contents: read}
+concurrency: {group: native-paid-seats-probe, cancel-in-progress: false}
+jobs:
+  probe:
+    if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PROBE_NOTE: ${{ inputs.note || 'push' }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: 'main', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Probe official endpoints once each (no relay, no retry)
+        run: node scripts/probe-native-paid-seats.mjs
+      - name: Commit probe receipt
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/native-paid-seats/
+          git diff --staged --quiet && exit 0
+          git commit -m "probe(native): official Anthropic/OpenAI generation evidence ${GITHUB_RUN_ID}"
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
