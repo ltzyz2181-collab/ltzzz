@@ -1,0 +1,28 @@
+{
+  "accepted": true,
+  "artifact_sha256": "eb480ced1e35a1387ad2c688b803a22235581b5a436e22640deba680ffa41013",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs 的 runReservedSeat：席位先被置为 generation_started 并 saveLedger；call() 返回后，无论 complete 是否为 true，都会构造 artifact 并执行 fs.writeFileSync。失败 artifact 的 body.status 明确为 incomplete_or_failed。",
+    "同一函数中，seat.artifact 与最终状态是在不可变 artifact 写入之后才更新，并随后 saveLedger。因此源码确实存在 writeFileSync 已完成、进程在 saveLedger 前终止时，ledger 仍停留在 generation_started 且 seat.artifact 为空的窗口。",
+    "对照 recoverArtifact：其入口仅接受 generation_started 与 generation_unknown_no_repurchase，并要求 seat.artifact 为空；候选恢复完全依赖 validateArtifact。validateArtifact 强制 body.status === 'complete'，所以唯一候选为 incomplete_or_failed 时会抛出 artifact_binding_invalid，候选不会进入 matches。",
+    "recoverArtifact 在 matches.length !== 1 时返回 false，不修改席位；随后 syncDailyBoard 对仍为 generation_started 的席位写入 generation_unknown_no_repurchase，原因是 no_unique_complete_artifact_outcome_unknown。该状态不会进入普通 artifact 提交路径，finding 所描述的失败证据无法被提交为 submitted_pending_review 的断点由源码支持。",
+    "minimal_patch 中新增对 incomplete_or_failed 候选的独立哈希、文件名和绑定字段校验，并在唯一匹配时回填 seat.artifact、设置 generation_failed_no_repurchase 后保存 ledger；这与 syncDailyBoard 随后调用 syncFailedSeat 的既有失败同步路径衔接，且不重放模型调用，修复方向与断点一致。",
+    "补丁仍保留 complete 候选走 validateArtifact 和 generated_pending_sync 的现有路径；失败候选要求 date、run_key、task_id、logical_seat、source_commit 与当前 reservation 完全一致，并要求文件名内嵌哈希等于实际字节 SHA-256，静态上满足不可变证据绑定和 fail-closed 原则。",
+    "交付内容限定为 finding、补丁草稿、验证命令和剩余阻塞，没有声称补丁已应用、测试已通过、服务已部署或发生转账。"
+  ],
+  "unverified": [
+    "未取得交付物原始字节，无法独立重算给定 artifact_sha256；当前只能严格回传该哈希。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs，补丁应用后的语法正确性未验证。",
+    "未实际执行 npm test、node --test 或交付中的临时复现脚本；失败 artifact 恢复、唯一性冲突、complete artifact 原路径及幂等重跑行为均未被运行验证。",
+    "未审查实际 Git diff，无法确认补丁插入位置、变量作用域、缩进、JSON 解析异常处理及与现有代码的合并结果完全正确。",
+    "交付建议把 incomplete_or_failed 加入 recoverArtifact 入口，但所述崩溃发生时 ledger 的实际状态通常仍是 generation_started；加入该状态主要服务于其他异常或未来状态，是否必要仍需测试和状态机审查。",
+    "交付文字提到“该模块同步前的中间态”，但最小 diff 只加入 incomplete_or_failed，未枚举或实现其他中间态；状态机覆盖是否完整未验证。",
+    "failMatches 扫描代码未展示与 complete matches 扫描并存时的完整最终函数结构；若同一目录同时存在唯一失败候选和其他 complete/失败候选，最终优先级、歧义处理和返回状态仍需通过完整补丁确认。",
+    "syncFailedSeat 要求远端 readRemote(a.path) 的哈希也等于本地 artifact 哈希；补丁只恢复本地 ledger。若失败 artifact 尚未提交到远端仓库，后续会进入 failure_sync_unknown，这一恢复出口和重试行为未验证。",
+    "未验证其他调用方是否依赖 recoverArtifact 只恢复 complete artifact、或依赖 generation_unknown_no_repurchase 不绑定 artifact 的现有行为。",
+    "未验证真实 crash、CI 日志或生产链路中是否实际出现过该断点；本次仅确认源码层面的可发生性。",
+    "未验证 GitHub Actions 进程终止时机、文件持久化、工作目录保留、artifact 上传及跨 job/runner 生命周期是否符合该恢复假设。",
+    "未验证生产部署、目标环境、制品 SHA、生产版本或线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金操作；本次仅为源码和规格草稿的静态可复核性验收。"
+  ]
+}
