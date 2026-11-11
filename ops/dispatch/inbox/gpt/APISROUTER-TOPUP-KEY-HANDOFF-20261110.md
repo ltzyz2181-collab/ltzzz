@@ -69,7 +69,28 @@
 
 ## 六、请 GPT 席实测"能不能用"（本卡要点）
 
-本席已做最小验证（`/v1/models` 200），但**一次真实模型调用尚未做过**。请按下列四步实测并回执：
+**补充（2026-11-11T02:5xZ）：本席已自行做完真实模型调用测试，结论见第 6.0 节；本节步骤仍可供复核。**
+
+### 6.0 真实调用实测结果（本席执行，非推测）
+
+| 模型 | 结果 | 耗时 |
+|---|---|---|
+| `glm-5.3-flash` | **200**，`choices[0].message.content` = `收到`，usage `prompt 17 / completion 98 / total 115`（其中 reasoning 95） | 8.59 s |
+| `qwen3.8-flash` | 503 `model_temporarily_unavailable` | 2.53 s |
+| `gemini-2.5-flash` | 503 `model_temporarily_unavailable` | 1.95 s |
+| `gemini-3.8-flash` | 503 `model_temporarily_unavailable` | — |
+| `MiniMax-M3` | 503 `model_temporarily_unavailable` | — |
+| `gpt-5.5` | 503 `model_temporarily_unavailable`，`retry_after_seconds=60`，`feedback_id=fb_10f70d78-e4dc-4346-a0dc-a69d343e0502` | 15.6 s |
+| `deepseek-v4.1-flash` | 40 s 无响应（客户端超时） | 40+ s |
+
+**由此得到的判定（重要，请裁决时一并考虑）：**
+
+1. 密钥与计费链路**是通的**：`/v1/models` 200（61 个模型）、`glm-5.3-flash` 真实返回中文正文并按 usage 计费。
+2. 但**并非所有模型可用**：所测 7 个模型里只有 1 个成功，5 个报 `model_temporarily_unavailable`（带 60 秒重试建议），1 个挂住超时。
+3. **GPT 系（`gpt-5.5`）当下不可用**。也就是说这个中转站并没有稳定的原厂 GPT 通道，"买它来给 GPT 席用"这个目的并不成立——它的实际可用性取决于上游临时状态，不能当生产依赖。
+4. 因此建议：这 $13 只作为"临时备选通道"记账，**不要把它写成 GPT 席的常规依赖**；若确需稳定 GPT 能力，仍应走官方额度或既有方舟/其他直连通道。
+
+以下步骤保留供复核（若你要独立验证，不必重复全部，只要跑一次 `glm-5.3-flash` 对照即可）：
 
 ```bash
 KEY=$(tr -d '\r\n' < "/mnt/c/Users/李天柱/Desktop/ltzzz-repo/.secrets-local/apisrouter-key.txt")
@@ -104,5 +125,16 @@ curl -sS https://api.apisrouter.com/v1/chat/completions \
 
 - 首选：本卡直接续写或在 `ops/dispatch/inbox/gpt/` 新建回执卡；
 - 次选：回复邮件 `msg_9S0tztX0aERCuL9IGWIxaoVrlz15aZ-pQKoMSuvKqKgdag`（收件 `qingqizhu6502@agent.qq.com`）。
+
+## 九、交接通道说明（owner 2026-11-10 反馈"电脑登不上 GPT"）
+
+本机实测出口状况：`https://chatgpt.com` 12 s 超时（000）、`https://api.openai.com/v1/models` 12 s 超时（000）、`https://auth.openai.com` 403（2.26 s）。即 **OpenAI 域在本机直连不可达**，GPT 席无法在本机启动登录。
+
+因此按 `config/deep-superagent.json` 第 86 行的口径（GPT = 本机 Codex AI 决策席，读 scoped mailbox，`email_is_authority=false`），本席采取两条并行交接：
+
+1. **仓库交接（授权路径）**：本卡片落在 `ops/dispatch/inbox/gpt/` 并已推 `origin/main`，commit 见下方；
+2. **邮件告知（非授权路径）**：同内容邮件已发 `ltzyz2181@gmail.com`，`msg_9S0tztX0aERCuL9IGWIxaoVrlz15aZ-pQKoMSuvKqKgdag`。
+
+限制如实说明：若 GPT 席的宿主环境本身也出不去（OpenAI 域被阻断），上述材料只能等链路恢复或换环境后才会被读到；本席不能代替任何席位完成登录，也不把"已投递"写成"已被读取"。
 
 —— 豆包席 `qingqizhu6502@agent.qq.com`
