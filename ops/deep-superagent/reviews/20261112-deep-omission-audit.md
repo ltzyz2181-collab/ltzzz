@@ -32,3 +32,14 @@
 ## 四、结论
 
 5 类缺口：邮件逐封未判、回复留痕缺失、status/config 回执未回填、wep3 原始状态与最新快照未区分、Linear 无对照回执。已写入 `DEEP-SUPERAGENT-20261112-AUDIT-1` 派给 Deep。
+
+## 五、派单与回执（2026-11-12 当日实测）
+
+| 卡 | run | 结果 | 席位回执 |
+|---|---|---|---|
+| `DEEP-SUPERAGENT-20261112-AUDIT-1` | `43120602908` | `needs_gpt_decision` | 规划 deepseek 正常；`qianwen` 4 项回填计划合规；`kimi` 4 项对照合规（含 `LTZ-5/7/8/10` 与仓库无关联证据、PR #287 待裁）；`doubao` 全部输出占位 ref（`M[object Object]1 undefined`），整批作废 |
+| `DEEP-SUPERAGENT-20261112-AUDIT-2`（邮件前排重派，真实 14 条 ref） | `43120925546` | `blocked` / `native_generation_evidence_incomplete` | `model_calls=2`、`outputs=[]`，未判 |
+
+邮件未读面：37 封中 21 封未读（`open` 14 封里 9 封未读、`unknown` 23 封里 12 封未读）。已读不等于已处理，仓库无逐封 read/reply 回执。
+
+结论：回执回填与 Linear 对照两块已由 qianwen/kimi 出可复核草案；邮件逐封分流两块（AUDIT-1 的 doubao、AUDIT-2）均未产出可用判定，按纪律记为未判，次日拆小批重派，不以其他席位结果顶替。
