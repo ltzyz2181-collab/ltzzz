@@ -1,0 +1,860 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "date": "2026-11-12",
+  "at_utc": "2026-11-11T23:00:12Z",
+  "mail_backlog": {
+    "count": 37,
+    "open_count": 14,
+    "unknown_count": 23,
+    "readset_sha256": "7639dd6b4aa7f026348a526a7df76a8d0c134f927f673b6bdc393ea7614a3fde",
+    "path": "knowledge/results/deep-superagent/mail-backlog/latest.json",
+    "contains_mail_body": false,
+    "changed_since_yesterday": true,
+    "note": "过去 24h 新增 2 封（37 vs 昨日 35），open 从 11 升至 14"
+  },
+  "repo_observations": {
+    "oversight": {
+      "date": "2026-11-12",
+      "open_warning_cases": 157,
+      "unique_original_tasks": 157,
+      "not_rechecked_in_current_window": 125,
+      "by_responsible_seat": {
+        "qianwen": 50,
+        "doubao": 33,
+        "grok": 26,
+        "deepseek": 39,
+        "gpt": 9
+      }
+    },
+    "failures_24h": 7,
+    "failures_detail": [
+      {
+        "run": 43089276318,
+        "name": "Autonomous funded LTZZZ orders",
+        "conclusion": "failure",
+        "cause": "未归因，需看日志"
+      },
+      {
+        "run": 43029205491,
+        "name": "Observe LTZZZ long-running autonomy goal (no model calls)",
+        "conclusion": "failure",
+        "cause": "未归因"
+      },
+      {
+        "run": 43028729132,
+        "name": "Deploy LTZZZ relay proxy",
+        "conclusion": "failure",
+        "cause": "Secret 步骤缺 CF 凭据环境变量，已被 43028885409 取代"
+      },
+      {
+        "run": 42997327729,
+        "name": "Deploy static site to GitHub Pages",
+        "conclusion": "failure",
+        "cause": "未归因"
+      },
+      {
+        "run": 43029350832,
+        "name": "Deploy static site to GitHub Pages",
+        "conclusion": "cancelled",
+        "cause": "并发替代"
+      },
+      {
+        "run": 43028688884,
+        "name": "Deploy static site to GitHub Pages",
+        "conclusion": "cancelled",
+        "cause": "并发替代"
+      },
+      {
+        "run": 43011860105,
+        "name": "Deploy static site to GitHub Pages",
+        "conclusion": "cancelled",
+        "cause": "并发替代"
+      }
+    ],
+    "open_pr_count": 1,
+    "open_prs": [
+      {
+        "number": 287,
+        "title": "fix(wep3): fail closed before any production Worker upload"
+      }
+    ]
+  },
+  "queue_runs": [
+    {
+      "run": 43114926487,
+      "card": "DEEP-SUPERAGENT-20261112-DAILY-1",
+      "result": "blocked",
+      "cause": "invalid_deepseek_task",
+      "note": "planner 输出的单任务超过 3000 字上限（解析校验 t.task.length>3000），未产生任何判定"
+    },
+    {
+      "run": 43115331756,
+      "card": "DEEP-SUPERAGENT-20261112-DAILY-2",
+      "result": "blocked",
+      "cause": "native_generation_evidence_incomplete",
+      "note": "deepseek+ doubao+qianwen 出输出，kimi 失败；A/B 组共 19 项判定可用"
+    },
+    {
+      "run": 43115837048,
+      "card": "DEEP-SUPERAGENT-20261112-DAILY-3",
+      "result": "blocked",
+      "cause": "native_generation_evidence_incomplete",
+      "note": "doubao 失败；qianwen 返回 ref 与卡内 ref 不一致，判定不采信，C 组 23 项记未判"
+    }
+  ],
+  "mechanism_findings": [
+    {
+      "finding": "planner 单任务 text 上限 3000 字",
+      "evidence": "workers/deep-superagent/index.js parsePlan 对 t.task.length>3000 抛 invalid_deepseek_task；run 43114926487 calls=1 outputs=[]",
+      "action": "每日卡按 ≤3000 字分块，一块一席"
+    },
+    {
+      "finding": "席位会返回不在卡内的 ref",
+      "evidence": "run 43115837048 qianwen 返回 c09f2d2f/67e5ce9d 等非卡内 ref",
+      "action": "回执复核必须逐 ref 对卡校验，对不上即弃用"
+    },
+    {
+      "finding": "两席同日连续失败不等于卡错",
+      "evidence": "43115331756/43115837048 均为 native_generation_evidence_incomplete，非 schema 错",
+      "action": "记录未判，次日拆小批重派"
+    }
+  ],
+  "items": [
+    {
+      "ref": "A1",
+      "group": "A",
+      "title": "oversight backlog 157 open warning cases / 125 not rechecked (2026-11-12)",
+      "age_days": 0,
+      "mail_status": "verified",
+      "seat": "doubao",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R4",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R4",
+      "review_note": "复核改判：原判 blocked/R3 不成立，证据已在 latest.json，属积压未复核"
+    },
+    {
+      "ref": "A2",
+      "group": "A",
+      "title": "7 failed or cancelled workflow runs in 24h",
+      "age_days": 0,
+      "mail_status": "verified",
+      "seat": "doubao",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：7 条失败 run 需修复口径"
+    },
+    {
+      "ref": "A3",
+      "group": "A",
+      "title": "relay proxy deployed: run 43028885409 success, smoke 401",
+      "age_days": 0,
+      "mail_status": "verified",
+      "seat": "doubao",
+      "seat_route": "deploy_confirm_only",
+      "seat_rule": "R1",
+      "final_route": "deploy_confirm_only",
+      "final_rule": "R1",
+      "review_note": "保留：run 43028885409 与冒烟 401 已证实部署，本席仅确认未部署"
+    },
+    {
+      "ref": "A4",
+      "group": "A",
+      "title": "open pull requests 1 (#287)",
+      "age_days": 0,
+      "mail_status": "verified",
+      "seat": "doubao",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：唯一 open PR #287 需合并裁决"
+    },
+    {
+      "ref": "A5",
+      "group": "A",
+      "title": "mail backlog 37 messages / 14 open / 23 unknown",
+      "age_days": 0,
+      "mail_status": "verified",
+      "seat": "doubao",
+      "seat_route": "coordinator_close_with_receipt",
+      "seat_rule": "R1",
+      "final_route": "coordinator_close_with_receipt",
+      "final_rule": "R1",
+      "review_note": "复核改判：原判 blocked/R3 不成立，计数由本地核验，回执落盘即闭环"
+    },
+    {
+      "ref": "67e5430332838e2d",
+      "group": "B",
+      "title": "RE: 20261107-VPAY-DEPLOY｜#374修复及CI已交付，承接复核→合并→",
+      "age_days": 4,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：复核→合并→沙箱部署"
+    },
+    {
+      "ref": "c55b0153b838b334",
+      "group": "B",
+      "title": "ACCOUNT-REGISTRATION-PLAN-20261107｜新增注册授权与立即/短",
+      "age_days": 4,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_owner_decision",
+      "seat_rule": "R5",
+      "final_route": "needs_owner_decision",
+      "final_rule": "R5",
+      "review_note": "保留：账号注册授权"
+    },
+    {
+      "ref": "35e009a39885e44b",
+      "group": "B",
+      "title": "RE: 千问字节缺失｜保留阻塞、交真实原件；有范围查找回执已登记",
+      "age_days": 3,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "blocked_evidence_needed",
+      "seat_rule": "R3",
+      "final_route": "blocked_evidence_needed",
+      "final_rule": "R3",
+      "review_note": "保留：缺真实原件"
+    },
+    {
+      "ref": "ba4ddc11868d81a8",
+      "group": "B",
+      "title": "RE: signer门实测｜采用显式契约，先拒绝错误和矛盾字段再部署",
+      "age_days": 3,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：signer 门部署"
+    },
+    {
+      "ref": "21f16a13dcfdf51c",
+      "group": "B",
+      "title": "RE: QWEN-REPLY-20261108｜四项裁决、现行评审路径与缺失凭证处置",
+      "age_days": 3,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：四项裁决"
+    },
+    {
+      "ref": "e25c295141f6baae",
+      "group": "B",
+      "title": "RE: LTZZZ低速核心产品与放款接续｜#376已合并，Deep协调、原任务补最短缺口",
+      "age_days": 3,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_owner_decision",
+      "seat_rule": "R5",
+      "final_route": "needs_owner_decision",
+      "final_rule": "R5",
+      "review_note": "复核改判：原判 deploy_confirm_only/R1，#376 仅子项已合并，放款接续属资金口径"
+    },
+    {
+      "ref": "68c0e8cf42cd744b",
+      "group": "B",
+      "title": "RE: PROVIDER-MODEL-CONFIG-20261105｜五项裁决、千问异源复核",
+      "age_days": 3,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：五项裁决"
+    },
+    {
+      "ref": "f37f74a2260e0983",
+      "group": "B",
+      "title": "Re: 勘误｜Linear 卡 v2 已覆盖 v1 口径（commit 76edf969）｜",
+      "age_days": 2,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：Q1/Q2 答复"
+    },
+    {
+      "ref": "76204610598d12d6",
+      "group": "B",
+      "title": "Re: 请求裁决：小程序开通支付（产品重编 + 部署方案 + Q1-Q5 逐条拍板）",
+      "age_days": 2,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：支付开通 Q1-Q5"
+    },
+    {
+      "ref": "3b86bfbe9f010dd1",
+      "group": "B",
+      "title": "Re: 【补告知·已验收】小程序虚拟支付沙箱首单已付款成功，退款链路已上线并逐字节核对",
+      "age_days": 0,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "deploy_confirm_only",
+      "seat_rule": "R1",
+      "final_route": "deploy_confirm_only",
+      "final_rule": "R1",
+      "review_note": "保留：沙箱首单与退款已上线，仅确认，不做资金动作"
+    },
+    {
+      "ref": "a4892a62f3078715",
+      "group": "B",
+      "title": "Re: Re: [LTZZZ][审计] Deep 巡检五席全绿，七项判定与一处输入偏差",
+      "age_days": 0,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：审计偏差需口径"
+    },
+    {
+      "ref": "58679a674803de2a",
+      "group": "B",
+      "title": "Re: 【LTZZZ】千问11-11监督核实结论+已部署2处闸门+需GPT裁决5项",
+      "age_days": 0,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：需 GPT 裁决 5 项"
+    },
+    {
+      "ref": "accc365c8999ec45",
+      "group": "B",
+      "title": "Re: [LTZZZ][纠偏] 小程序支付实为已接入·自动交付边界与 Deep 每日四段结构",
+      "age_days": 0,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "保留：交付边界口径"
+    },
+    {
+      "ref": "37c0b81f45bea064",
+      "group": "B",
+      "title": "Re: [LTZZZ] ICP 备案通过（粤ICP备2026177896号）+ 11-10 ",
+      "age_days": 0,
+      "mail_status": "open",
+      "seat": "qianwen",
+      "seat_route": "needs_gpt_decision",
+      "seat_rule": "R2",
+      "final_route": "needs_gpt_decision",
+      "final_rule": "R2",
+      "review_note": "复核改判：原判 deploy_confirm_only/R1，标题含 5 项待裁决，不能按已部署关闭"
+    },
+    {
+      "ref": "ecfa23295f3699d5",
+      "group": "C",
+      "title": "Re: PROVIDER-MODEL-CONFIG-20261105：5 席位模型配置排查与",
+      "age_days": 4,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "d3be193cf44d5246",
+      "group": "C",
+      "title": "RE: ANS-P1-01｜73/73独立复跑通过；补错误分类/脱敏及#372范围更正后结案",
+      "age_days": 4,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "e491cdf3994ca30e",
+      "group": "C",
+      "title": "RE: 20261107-VPAY-DEPLOY｜先阻断旧回调写入，我修R1/R2及退款重放",
+      "age_days": 4,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "272905d8f3d3dc30",
+      "group": "C",
+      "title": "Re: ANS-P1-01｜采纳有界修复，由你实施；保留历史证据，分开当前核验状态",
+      "age_days": 4,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "8c904c897ea3f2b5",
+      "group": "C",
+      "title": "RE: Deep接力前置核验｜GPT主审、Grok接续；订单许可与实际认领分开",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "7dc8b020630b8465",
+      "group": "C",
+      "title": "LTZZZ｜豆包现在查看LTZ-5～8：仓库快照入口与本客户端Linear只读接入",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "8e4dc215f68a6d00",
+      "group": "C",
+      "title": "RE: 云端部署待决清单｜批次、执行席、资金失败与Pages对账裁决",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "86f6166348a25d91",
+      "group": "C",
+      "title": "RE: 低速核心产品与放款接续｜两份制品编号已对账、CDP与桌面接续",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "3a765645dbed18d5",
+      "group": "C",
+      "title": "RE: 桌面兜底长期分工｜已登记、直接派、沿原Task回执，无需重复工程批准",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "37927aef73397c20",
+      "group": "C",
+      "title": "RE: QIANWEN-AUDIT-QUERY-20261108｜六项答复，今日审核已真实发",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "fef375c762241ae6",
+      "group": "C",
+      "title": "RE: 桌面能力与兜底｜三份正式文档已交，Deep清单＋桌面实测接续，无需重复重置密钥",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "0a14a24522913f3f",
+      "group": "C",
+      "title": "RE: 20261108-VPAY-ONLINE｜五项裁决：先验新版沙箱路由，备案后提审；桌",
+      "age_days": 3,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "cbf6039f2d2a9040",
+      "group": "C",
+      "title": "Re: FWD(千问·豆包代发): DEEP-DAILY-TASKS-20261109 关于",
+      "age_days": 2,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "7a62ac73578e1ce2",
+      "group": "C",
+      "title": "[GPT派单] LTZZZ部署失败修复候选｜PAGES-ARTIFACT-DUP + PAY",
+      "age_days": 1,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "c09f2d2f75af7f3a",
+      "group": "C",
+      "title": "Re: 【LTZZZ】XAI(Grok)每日任务已设置：支付/结算链路只读外部验收(comm",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "67e5ce9dd4e97222",
+      "group": "C",
+      "title": "Re: Re: Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "0e6a877ac48e8c98",
+      "group": "C",
+      "title": "Re: Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "807ff89553649f48",
+      "group": "C",
+      "title": "Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：七项判定",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "479bc00cba2e0e61",
+      "group": "C",
+      "title": "Re: [LTZZZ][审计] Deep 巡检五席全绿，七项判定与一处输入偏差",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "ac571e9790ba341b",
+      "group": "C",
+      "title": "Re: Linear 全席接入已实测通过（标准卡 030ebe31 已入库）｜请裁决 5 项",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "6b020bbfedceb047",
+      "group": "C",
+      "title": "Re: DEEP-WORKER-EXECUTION-REPORT-20261109 | 七轮",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "b407ef4942426e82",
+      "group": "C",
+      "title": "Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：七项判定与三次机",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    },
+    {
+      "ref": "ba6f535ef260c642",
+      "group": "C",
+      "title": "Re: 【续篇·需裁决】Claude 与 GPT 全档实测：四个 Claude 可用、GPT",
+      "age_days": 0,
+      "mail_status": "unknown",
+      "seat": "kimi|doubao|qianwen",
+      "seat_route": null,
+      "seat_rule": null,
+      "final_route": "unjudged_seat_failure",
+      "final_rule": null,
+      "review_note": "kimi 首轮失败；第二轮 doubao 失败、qianwen 返回的 ref 不在卡内，按纪律记未判，不顶替"
+    }
+  ],
+  "seats": {
+    "planner": "deepseek",
+    "workers": [
+      "doubao",
+      "qianwen",
+      "kimi"
+    ],
+    "kimi": "failed_or_uncertain_no_retry",
+    "doubao": "failed in retry",
+    "qianwen": "responded but refs mismatched in retry"
+  },
+  "counts": {
+    "by_route": {
+      "needs_gpt_decision": 13,
+      "deploy_confirm_only": 2,
+      "coordinator_close_with_receipt": 1,
+      "needs_owner_decision": 2,
+      "blocked_evidence_needed": 1,
+      "unjudged_seat_failure": 23
+    },
+    "total": 42
+  },
+  "operator_actions": [
+    {
+      "action": "确认中转代理已部署",
+      "evidence": [
+        "run 43028885409 success",
+        "smoke 401 proxy_unauthorized",
+        "commit 85272f621"
+      ],
+      "scope": "仅确认与记录，未部署"
+    },
+    {
+      "action": "逐条复核 A/B 组席位判定",
+      "evidence": "daily JSON items[].seat_route vs final_route",
+      "changes": [
+        "A1 blocked->needs_gpt_decision",
+        "A5 blocked->coordinator_close_with_receipt",
+        "B6 deploy_confirm_only->needs_owner_decision",
+        "B14 deploy_confirm_only->needs_gpt_decision"
+      ],
+      "scope": "仅改判与记录，未执行任何合并/部署/资金动作"
+    },
+    {
+      "action": "C 组 23 项记未判",
+      "evidence": "kimi 失败 + doubao 失败 + qianwen ref 错位",
+      "scope": "不顶替、不猜测"
+    }
+  ],
+  "writes_performed": 6,
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "external_submissions": [],
+  "financial_execution": false,
+  "discipline": {
+    "no_merge": true,
+    "no_production_deploy": true,
+    "no_contract_or_payment_semantics_change": true,
+    "no_funds_action": true,
+    "no_allowedAgents_change": true,
+    "no_fake_review_receipt": true
+  },
+  "receipt_contract": "ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md",
+  "sections": {
+    "done": [
+      {
+        "item": "邮件待办采集",
+        "evidence": "knowledge/results/deep-superagent/mail-backlog/latest.json，count=37，open=14，unknown=23，sha256=7639dd6b4aa7f026348a526a7df76a8d0c134f927f673b6bdc393ea7614a3fde，contains_mail_body=false"
+      },
+      {
+        "item": "队列三轮回执落库",
+        "evidence": "knowledge/results/deep-superagent/queue-43114926487-attempt-1.json、queue-43115331756-attempt-1.json、queue-43115837048-attempt-1.json"
+      },
+      {
+        "item": "中转代理部署状态确认",
+        "evidence": "run 43028885409 success，deploy-relay-proxy 冒烟 401 proxy_unauthorized，commit 85272f621；本席仅确认未部署"
+      },
+      {
+        "item": "仓库观测落账",
+        "evidence": "oversight 157/125（knowledge/results/dispatch/oversight/latest.json，date 2026-11-12）；24h 失败 7 条；open PR 1（#287）"
+      },
+      {
+        "item": "A/B 组逐条复核完成",
+        "evidence": "19 项全部有最终 route，4 项改判记录在 items[].review_note"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "ref": "B1",
+          "issue": "#374 VPAY 修复已交付，需裁决是否放行复核→合并→沙箱部署",
+          "consequence": "支付修复停在交付态，线上仍旧行为",
+          "partial": "可先出复核清单与回滚方案，不合并"
+        },
+        {
+          "ref": "B4",
+          "issue": "signer 门显式契约是否按现方案部署",
+          "consequence": "签名门无法上线",
+          "partial": "可先跑本地契约测试"
+        },
+        {
+          "ref": "B5",
+          "issue": "QWEN-REPLY 四项裁决",
+          "consequence": "千问席位口径悬空",
+          "partial": "可整理四项事实与选项"
+        },
+        {
+          "ref": "B7",
+          "issue": "provider model config 五项裁决",
+          "consequence": "模型配置无法定版",
+          "partial": "可出对照表"
+        },
+        {
+          "ref": "B8",
+          "issue": "Linear 卡 v1/v2 覆盖关系下 Q1/Q2 答复",
+          "consequence": "重复口径继续消耗",
+          "partial": "可标注 v2 已覆盖范围"
+        },
+        {
+          "ref": "B9",
+          "issue": "小程序开通支付 Q1-Q5",
+          "consequence": "支付能力停在沙箱",
+          "partial": "可先出部署与风控清单"
+        },
+        {
+          "ref": "B11/B12/B13/B14",
+          "issue": "审计偏差、监督结论、交付边界、ICP 后 5 项裁决",
+          "consequence": "监督与交付边界无定论",
+          "partial": "可逐条列事实"
+        },
+        {
+          "ref": "C1-C23",
+          "issue": "23 项 unknown 状态未判（席位失败/ref 错位）",
+          "consequence": "待办面有盲区",
+          "partial": "可按每批 5 项拆小卡重派"
+        }
+      ],
+      "owner": [
+        {
+          "ref": "B2",
+          "issue": "账号注册授权与办理顺序",
+          "consequence": "注册不推进",
+          "partial": "可先查旧号状态"
+        },
+        {
+          "ref": "B6",
+          "issue": "放款接续与低速核心产品资金口径",
+          "consequence": "放款链路无法继续",
+          "partial": "可只做非资金部分核对"
+        },
+        {
+          "ref": "B10",
+          "issue": "沙箱首单已付款事实的确认口径（本席不做资金动作）",
+          "consequence": "支付验收缺 owner 认可",
+          "partial": "可核对退款链路证据"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "action": "C 组按每批 5-6 项拆小卡重派，单席单块，要求逐字回显 ref",
+        "done_when": "23 项均有 route 且 ref 与卡内完全一致"
+      },
+      {
+        "action": "对 7 条失败 run 逐条归因（43089276318、43029205491、42997327729 未归因）",
+        "done_when": "三条各写出日志证据与处置建议"
+      },
+      {
+        "action": "为 B1 出复核清单与回滚方案（不合并、不部署）",
+        "done_when": "清单落盘 ops/deep-superagent/reviews/ 并在回执引用"
+      }
+    ],
+    "later": [
+      {
+        "item": "中转席位 accepted",
+        "depends_on": "owner 注入 RELAY_STATION_KEY + 桌面跑 gpt-6.1-sol probe + 超时证据",
+        "precondition": "key 持有机器执行 wrangler secret put"
+      },
+      {
+        "item": "小程序支付/放款上线",
+        "depends_on": "owner 裁决 B9/B6",
+        "precondition": "资金动作授权"
+      },
+      {
+        "item": "C 组全量判定的稳定化",
+        "depends_on": "席位稳定性",
+        "precondition": "小批重派验证 ref 回显"
+      }
+    ]
+  }
+}
