@@ -13,7 +13,8 @@ import Module from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const TOKEN = '<REDACTED>';
+// 测试用固定假令牌：与云函数环境变量无关，仅保证自签自验一致，避免把真实令牌写进仓库。
+const TOKEN = 'test-push-token-local-only';
 process.env.VPAY_PUSH_TOKEN = TOKEN;
 
 const here = path.dirname(fileURLToPath(import.meta.url));

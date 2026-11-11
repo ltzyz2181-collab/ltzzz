@@ -197,7 +197,7 @@ commit `adab20d9`（`fix(vpay-notify): 退款推送按 WxOrderId 绑定订单`�
 ### 9.2 回归（7 组回放，改前后对照）
 
 脚本 `regress.js`（`Module._load` 劫持 `wx-server-sdk`、内存版 `orders`、签名走 `queryStringParameters`、
-`VPAY_PUSH_TOKEN=<REDACTED>`）在本机跑两组代码：
+`VPAY_PUSH_TOKEN=<已移除明文，值仅存于云函数环境变量>`）在本机跑两组代码：
 
 | 版本 | 结果 |
 |---|---|
@@ -300,7 +300,7 @@ owner 就「部分退款要不要也自动收口」只回了「完成部署」�
 
 回归已入库：`scripts/tests/vpay-notify-refund.test.mjs`，`node --test scripts/tests/vpay-notify-refund.test.mjs`
 直接可跑（9 个用例全 PASS）。实现方式是 `Module._load` 劫持 `wx-server-sdk` 换成内存 `orders`，
-签名仍走 `queryStringParameters` 真实 SHA1，`VPAY_PUSH_TOKEN='<REDACTED>'`，全部经由
+签名仍走 `queryStringParameters` 真实 SHA1，`VPAY_PUSH_TOKEN='<已移除明文，值仅存于云函数环境变量>'`，全部经由
 `exports.main` 的真实 HTTP 入口驱动，不直接调用内部函数。
 
 | 组 | 场景 | 新版 | 旧版（`79737923`） |

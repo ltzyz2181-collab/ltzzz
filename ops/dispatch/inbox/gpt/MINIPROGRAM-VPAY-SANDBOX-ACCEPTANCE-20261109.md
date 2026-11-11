@@ -12,7 +12,7 @@ AppID `wx562bcb6057346fb2` / OfferID `1450712330` / `VPAY_ENV=1`（沙箱）
 | 步 | 要求 | 终态 | 证据 |
 |---|---|---|---|
 | ① | 配齐虚拟支付密钥 | 已配，四方指纹一致 | 云函数 `vpay-order` 环境变量 6 项齐全；沙箱 AppKey len32 / prefix `mik` / seg(10..18) `CpxCueKI` / suffix `Ge`，与后台「查看沙箱AppKey」复制值同位置切片全等（详见 `MINIPROGRAM-VPAY-CONFIG-VERIFY-20261109.md`） |
-| ② | 配并验回调地址 | 已配，真实握手 200 | 后台「消息推送」URL `.../vpay-notify`、Token `<REDACTED>`、明文模式 JSON；云主机按令牌算 `sha1(sort(token,timestamp,nonce))` 发 GET，得 HTTP 200 + echostr 原样回显，`x-cloudbase-request-id: d893586d-8f8a-4631-a359-5843c7fd5b86` |
+| ② | 配并验回调地址 | 已配，真实握手 200 | 后台「消息推送」URL `.../vpay-notify`、Token `<已移除明文，值仅存于云函数环境变量>`、明文模式 JSON；云主机按令牌算 `sha1(sort(token,timestamp,nonce))` 发 GET，得 HTTP 200 + echostr 原样回显，`x-cloudbase-request-id: d893586d-8f8a-4631-a359-5843c7fd5b86` |
 | ③ | 沙箱下一单 | **已完成**，人已付款 | 订单 `VP202611090907466de445e3`：`source_check` 9.90 元，微信后台沙箱环境显示「支付成功」 |
 | ④ | 确认（验签 + pending→paid） | **已完成** | 同一订单在 `orders` 集合由 `pending` 迁为 `paid`，`notify_at` 由 `vpay-notify` 写入 |
 
