@@ -1,0 +1,7 @@
+{
+  "task_id": "DEEP-SUPERAGENT-20261112-AUDIT-3",
+  "package_id": "LTZZZ-PUBLIC-AUDIT-20261112-03",
+  "prompt": "ROLE A planner seat deepseek: output {\"summary\":\"...\",\"tasks\":[one task]} and copy BLOCK 1 verbatim to seat qianwen. No decision flags, no extra keys.\nROLE B worker seat qianwen: ignore planner shape, output only {\"items\":[{\"id\":\"...\",\"repo_state\":\"...\",\"change\":\"...\",\"acceptance\":\"...\",\"gate\":\"...\",\"evidence\":\"...\"}]} with exactly 6 items in order. Never output summary or tasks.\n\nBLOCK 1 (qianwen):\nGPT decisions to turn into an execution ledger. For each item state current repo state evidence, the minimal change, a verifiable acceptance check, and the gate that must not be crossed. Do not propose merges, deploys, fund actions or transaction fabrication.\n1 WEP3: signer readiness classifier has contradictory field precedence; fix precedence; fund gate stays closed.\n2 DAILY: two stale tests must follow owner-approved semantics; keep runKey fail-closed.\n3 PR #383: 299 commits behind; resolve base first, then CI on current main baseline; no early merge.\n4 VPAY: remove plaintext token from repo, add refund tests to CI, add partial-refund customer copy; next real refund readback only, no test transactions.\n5 DEEP: reconcile status.json old deployed version with 2026-11-11 run receipts; do not replay run 42975617178.\n6 LINEAR: after Harness pass, write de-identified native read-only readback snapshot into Linear.",
+  "data_classification": "public_distributable",
+  "platform": "internal"
+}
