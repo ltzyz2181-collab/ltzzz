@@ -20,6 +20,8 @@ jobs:
           command: deploy -c wrangler.relay-proxy.toml
       - name: Bind server-side secrets only when they exist (values never echoed)
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           STATION_KEY: ${{ secrets.RELAY_STATION_KEY }}
           PROXY_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
         run: |
