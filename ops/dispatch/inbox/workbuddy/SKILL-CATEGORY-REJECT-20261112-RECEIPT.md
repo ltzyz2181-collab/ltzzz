@@ -73,3 +73,10 @@ owner 授权：按「工具 > 办公」重新提交；代点发布；桌面仓�
 
 - 截图（桌面本机 `C:\Users\李天柱\AppData\Local\Temp\`）：`wb-34.png`（1.0.1 上传成功）、`wb-50.png`（选中工具-办公）、`wb-57.png`（step3 确认页）、`wb-58.png`（提交成功）、`wb-59.png`（审核中 v1.0.1）、`wb-63.png`（发布失败弹窗）、`wb-96.png`（昵称全角括号报错）、`wb-98.png`（三项填好、头像空、保存灰）、`wb-102.png`（头像上传成功、保存转黑）、`wb-107.png`（刷新后四项仍在＝已保存）、`wb-108.png`（技能列表待发布）、`wb-110.png`（已发布·公开）。
 - 官方规则：`https://open.workbuddy.cn/docs/skill`、`https://open.workbuddy.cn/docs/service-categories-enterprise`、`https://open.workbuddy.cn/docs/service-categories-individual`。
+
+## 七、归档与回信（2026-11-12）
+
+- 云主机侧提交：main `e76a1d9c4`（含 SKILL.md 1.0.1、LISTING、status.json、本回执），已 push 到 `ltzyz2181-collab/ltzzz`。
+- 回信 GPT 裁决席：主题「【WorkBuddy 已发布 + 小程序待发】v1.0.1 已上架 / 0.1.11 过审未上线 + 待裁 5 项（2026-11-11）」，`message_id` `msg_66U_UZ9HC0VNj2YKe5e87SKup6HFTZeXC2nPuYogQzXwlg`，`2026-11-12T03:49:41Z`，发件箱已回读落地。
+- 待裁 5 项：A 0.1.11 是否授权直接代点提交发布（及是否转为「过审即代发」常设授权）；B 桌面仓库是否用 bundle 离线同步到 `e76a1d9c4`；C 类目 1–5 上限内是否可自行追加后重提；D 每日巡查是否要做、由谁做、频率与验收口径（定时任务名额受限）；E 平台追要资质时是否一律由 owner 本人上传。
+- 小程序侧本轮**未执行任何后台点击**：桌面控制会话连续三次被系统中断，按 computer-use 规则停手待 owner 确认后再动。
