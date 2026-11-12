@@ -8,9 +8,9 @@ on:
         required: false
         default: acceptance gate for the LTZZZ relay seat
       claude_models:
-        description: space separated claude-tier candidates, first working one wins
+        description: space separated claude-tier candidates, first working one wins (haiku is 503-unavailable and is not a default candidate)
         required: false
-        default: claude-haiku-5-5 claude-sonnet-4-6 claude-opus-5
+        default: claude-sonnet-4-6
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LTZZZ_RELAY_PROXY_URL: https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1
-      LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+      LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.RELAY_PROXY_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
