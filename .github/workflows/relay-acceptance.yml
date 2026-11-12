@@ -38,6 +38,12 @@ jobs:
             fi
             echo "CLAUDE_UNAVAILABLE_MODEL=$m"
           done
+      - name: Network failure mode probe
+        continue-on-error: true
+        env:
+          LTZZZ_RELAY_PROXY_URL: https://relay-proxy-unreachable.invalid/v1
+        run: |
+          node scripts/relay-seat.mjs --call --purpose acceptance_probe --model gpt-6.1-sol --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 8 || echo "NETWORK_FAILURE_PROBE_RECORDED_AS_FAILURE=true"
       - name: Print sanitized call evidence
         if: always()
         run: |
