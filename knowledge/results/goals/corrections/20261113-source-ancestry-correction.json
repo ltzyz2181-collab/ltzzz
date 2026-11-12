@@ -1,0 +1,35 @@
+{
+ "schema": "ltzzz.goal.evidence-correction.v1",
+ "goal_id": "GOAL-LTZZZ-AUTONOMY-20261105",
+ "kind": "append_only_source_ancestry_correction",
+ "recorded_at_utc": "2026-11-13T00:00:00.000Z",
+ "state_path": "ops/goals/GOAL-LTZZZ-AUTONOMY-20261105.state.json",
+ "evidence_path": "knowledge/results/products/delivery-check-0.1.0-release-20261108.json",
+ "old_source_commit": "a606873951f69694a9abc17cb196342effdac33f",
+ "old_sha256": "4ee93fac75e3f78b913a2cc1a3ddef3fc394c23c3977c4735df99029ee6505c8",
+ "receipt_internal_source_commit": "7729a4edb1609869629d1ee1bd7b410f22c49693",
+ "current_main_source_commit": "a6fc4d5c0ddfae9fb2aa7343df713aae3172bfbf",
+ "same_bytes_verified": true,
+ "observed_sha256": "4ee93fac75e3f78b913a2cc1a3ddef3fc394c23c3977c4735df99029ee6505c8",
+ "package_path": "products/releases/ltzzz-delivery-check-0.1.0.zip",
+ "expected_package_sha256": "2669d667dd7e99be9ca7736fb2f206ee7d871e8d37b96cb680df12c55d38b252",
+ "observed_package_sha256": "2669d667dd7e99be9ca7736fb2f206ee7d871e8d37b96cb680df12c55d38b252",
+ "package_same_bytes_verified": true,
+ "ancestry": {
+  "command": "git merge-base <old_source_commit> <current_main_source_commit>",
+  "exit_code": 1,
+  "common_ancestor": null,
+  "finding": "no_common_ancestor_history_rewritten"
+ },
+ "why_unreachable": "The old commit and current main share no common ancestor: the repository history was rewritten before this correction was recorded, so the old SHA cannot be walked back to current main.",
+ "what_this_proves": [
+  "the referenced receipt file and its package are byte-identical to the hashes the goal state expects",
+  "the old source_commit is unreachable from current main"
+ ],
+ "what_this_does_not_prove": [
+  "that the original release run was reproducible from current main",
+  "that any acceptance check was satisfied",
+  "that the goal can be completed"
+ ],
+ "history_policy": "no reset, no clean, no force-push, no rewrite; original file, original state and every prior receipt stay unchanged"
+}
