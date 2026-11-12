@@ -66,7 +66,7 @@
    "direct_station_key_allowed": false,
    "batch_only": true,
    "model_availability": {
-    "claude-sonnet-4-6": "current_candidate",
+    "claude-sonnet-4-6": "current_candidate_end_to_end_verified",
     "claude-haiku-5-5": "unavailable_site_503_do_not_use",
     "claude-opus-5-5": "not_used",
     "claude-opus-5": "not_used"
@@ -76,9 +76,15 @@
   "credential_binding": "RELAY_PROXY_TOKEN",
   "credential_holder": "ltzzz-relay-proxy worker secret RELAY_STATION_KEY",
   "batch_declaration": "every Deep relayed call sends x-ltzzz-batch: 1; interactive short prompts are still refused by the proxy",
-  "dispatch_policy": "native_first_relay_only_on_explicit_request",
-  "native_first_guard": "relay_seat_requires_explicit_request (workers/deep-superagent/index.js)",
-  "role_boundary": "relay seats are execution-only: never planner, never independent review"
+  "dispatch_policy": "native_first_preference_relay_always_callable",
+  "native_first_guard": "relay_dispatch_audit_only (workers/deep-superagent/index.js): a relay dispatch without an explicit relay request is recorded as a deviation instead of being blocked",
+  "role_boundary": "relay seats are execution-only: never planner, never independent review",
+  "owner_override_20261113": {
+   "owner_instruction": "relay must not be restricted; gpt and claude must both be callable normally",
+   "effect": "relay seats stay open; the explicit-request gate no longer blocks a dispatch, it only records relay_dispatch.deviation",
+   "unchanged": "relay seats remain execution-only: never planner, never independent review; funds/signer/wallet still excluded",
+   "paid_lane": "owner authorized normal calls; ledger keeps periodic estimates only, no automatic stop-loss"
+  }
  },
  "relay_ruling": {
   "coordinator_needs_native_or_relay_api": false,

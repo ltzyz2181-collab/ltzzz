@@ -213,7 +213,10 @@ export class DeepTask {
       const planCall=await this.callSeat(job,'plan','deepseek',[{role:'system',content:context+'\n'+planner},{role:'user',content:job.prompt}]);
       job.plan=parsePlan(planCall.text,{maxTasks:job.task_id==='DEEP-DAILY-SUPERVISION'?1:3,seats});
       const relayPlanned=job.plan.tasks.filter(t=>relaySeats.includes(t.seat));
-      if(relayPlanned.length&&!relayRequested(job.prompt))throw fail('relay_seat_requires_explicit_request',409);
+      // Native-first is a dispatch preference, not a relay ban: an owner-authorized
+      // relay dispatch proceeds even when the request does not spell it out, but the
+      // deviation is recorded so it can be reconciled instead of silently absorbed.
+      if(relayPlanned.length)job.relay_dispatch={policy:'native_first_preference_audit_only',explicit_request:relayRequested(job.prompt),seats:relayPlanned.map(t=>t.seat),deviation:!relayRequested(job.prompt)};
       await this.state.storage.put('job',job);
       if(job.plan.needs_gpt_decision){job.status='needs_gpt_decision';job.escalation=this.escalation(job,job.plan.reason||'coordinator_requested_decision');}
       else{

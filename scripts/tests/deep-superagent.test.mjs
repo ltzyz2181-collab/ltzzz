@@ -208,16 +208,23 @@ test('closed relay seat is not offered to the planner and cannot be forced by a 
  assert.deepEqual(status.relay_seats,{gpt:'relay_proxy_token_missing',claude:'relay_proxy_token_missing'});
  assert.ok(!status.available_worker_seats.includes('gpt'));
 });
-test('enabled relay seat cannot be used unless the request explicitly asks for it',async()=>{
+test('relay dispatch without an explicit relay request is recorded as a deviation, not blocked',async()=>{
  const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false},prompt:'Create a concise source-checking checklist; exercise all three workers.'});
  Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
  const realFetch=globalThis.fetch;
- globalThis.fetch=async()=>{throw Error('relay fetch must not start under a native-first violation');};
+ globalThis.fetch=async(url,opts)=>{
+  const u=new URL(String(url));assert.equal(u.hostname,'ltzzz-relay-proxy.ltzyz2181.workers.dev');assert.equal(u.pathname,'/v1/chat/completions');
+  assert.equal(opts.headers['x-ltzzz-seat-token'],'test-only-proxy-token');assert.equal(opts.headers['x-ltzzz-batch'],'1');
+  return Response.json({id:'relay-req-audit',model:'gpt-6.1-sol',choices:[{message:{content:'relay draft: bounded, keeps source caveats.'},finish_reason:'stop'}],usage:{prompt_tokens:4387,completion_tokens:8,total_tokens:4395}});
+ };
  try{
   await f.request();await [...f.objects.values()][0].alarm();
   const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
-  assert.equal(job.status,'blocked');assert.equal(job.error,'relay_seat_requires_explicit_request');
-  assert.deepEqual(f.calls.map(v=>v.seat),['deepseek']);assert.equal(job.model_calls,1);assert.deepEqual(job.outputs,[]);
+  assert.equal(job.status,'completed_pending_external_acceptance');
+  assert.equal(job.relay_dispatch.policy,'native_first_preference_audit_only');
+  assert.equal(job.relay_dispatch.deviation,true);assert.equal(job.relay_dispatch.explicit_request,false);
+  assert.deepEqual(job.relay_dispatch.seats,['gpt']);
+  assert.equal(job.outputs[0].actual_provider,'apisrouter_relay');assert.equal(job.model_calls,3);
  }finally{globalThis.fetch=realFetch;}
 });
 test('relay seat refuses planning and independent review even when enabled',async()=>{
