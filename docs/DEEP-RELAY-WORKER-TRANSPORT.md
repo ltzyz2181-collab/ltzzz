@@ -46,3 +46,10 @@ Deep Worker(仅持 RELAY_PROXY_TOKEN) → LTZZZ relay proxy /v1/chat/completions
 ## 6. 未改变的红线
 
 资金、签名、钱包、Safe、放款、生产写仍在模型执行器之外；评审与独立复核仍要 ≥2 家原生 provider，中转调用不进该映射；技能迭代仍需 owner 建 Issue 触发；评审、技能迭代、资金三类自动化部署仍需 GPT 网页版裁决后执行。
+
+## 6. 2026-11-12 修订：原生优先与令牌拆分
+
+- **原生优先是代码级守卫，不是提示词建议**：`relayRequested(prompt)` + `relay_seat_requires_explicit_request`（409）。planner 若在用户原始请求未显式要求 gpt/claude/长上下文/批处理时选了中转席，任务在派发前失败关闭，不会产生中转调用。
+- **中转席仍只做执行席**：`relay_seat_generation_only` 继续拒绝 plan 与 independent_review 阶段；独立复核固定走原生 DeepSeek。
+- **模型可用性**：`claude-haiku-5-5` 站点 503，配置标注为不可用；`claude-sonnet-4-6` 是当前候选。relay-acceptance 默认候选已改为 sonnet，不再默认探测 haiku。
+- **令牌拆分**：Deep 只持 `RELAY_PROXY_TOKEN`（值来自仓库 secret `RELAY_PROXY_ACCESS_TOKEN`），对外鉴权仍是 `LTZZZ_AGENT_TOKEN`。relay-proxy 的 `PROXY_ACCESS_TOKEN` 也由同一个新 secret 注入，两边单一来源。deploy 脚本缺该 secret 时 `split_relay_gateway_token_required` 直接失败，不会退回共用旧令牌。

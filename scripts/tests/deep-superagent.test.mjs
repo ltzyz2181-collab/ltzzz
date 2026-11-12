@@ -14,7 +14,7 @@ class Storage {
   async getAlarm(){return this.alarmTime;}
   transaction(fn){const result=this.tail.then(()=>fn(this));this.tail=result.catch(()=>{});return result;}
 }
-function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOverride=null,workerOutput={}}={}){
+function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOverride=null,workerOutput={},prompt=INPUT.prompt}={}){
   const objects=new Map(),calls=[];
   const env={LTZZZ_AGENT_TOKEN:TOKEN,SUPERAGENT_SOURCE_COMMIT:'a'.repeat(40)};
   for(const [binding,seat] of Object.entries({DEEPSEEK:'deepseek',DOUBAO:'doubao',QIANWEN:'qianwen',KIMI:'kimi',GROK:'grok'}))env[binding]={async fetch(request){
@@ -31,7 +31,7 @@ function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOve
     return Response.json({model:receipt.actual_model,choices:[{message:{content:output},finish_reason:receipt.finish_reason}],ltzzz_receipt:receipt});
   }};
   env.TASKS={idFromName:n=>n,get(n){if(!objects.has(n))objects.set(n,new DeepTask({storage:new Storage()},env));return objects.get(n);}};
-  const request=(path='/v1/jobs',method='POST',body=INPUT,auth=headers)=>worker.fetch(new Request('https://superagent.test'+path,{method,headers:auth,...(method==='POST'?{body:JSON.stringify(body)}:{})}),env);
+  const request=(path='/v1/jobs',method='POST',body={...INPUT,prompt},auth=headers)=>worker.fetch(new Request('https://superagent.test'+path,{method,headers:auth,...(method==='POST'?{body:JSON.stringify(body)}:{})}),env);
   return {env,objects,calls,request};
 }
 
@@ -208,6 +208,18 @@ test('closed relay seat is not offered to the planner and cannot be forced by a 
  assert.deepEqual(status.relay_seats,{gpt:'relay_proxy_token_missing',claude:'relay_proxy_token_missing'});
  assert.ok(!status.available_worker_seats.includes('gpt'));
 });
+test('enabled relay seat cannot be used unless the request explicitly asks for it',async()=>{
+ const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false},prompt:'Create a concise source-checking checklist; exercise all three workers.'});
+ Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
+ const realFetch=globalThis.fetch;
+ globalThis.fetch=async()=>{throw Error('relay fetch must not start under a native-first violation');};
+ try{
+  await f.request();await [...f.objects.values()][0].alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'blocked');assert.equal(job.error,'relay_seat_requires_explicit_request');
+  assert.deepEqual(f.calls.map(v=>v.seat),['deepseek']);assert.equal(job.model_calls,1);assert.deepEqual(job.outputs,[]);
+ }finally{globalThis.fetch=realFetch;}
+});
 test('relay seat refuses planning and independent review even when enabled',async()=>{
  const f=fixture();
  Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol'});
@@ -218,7 +230,7 @@ test('relay seat refuses planning and independent review even when enabled',asyn
  assert.equal(job.model_calls,0);
 });
 test('verified relay seat generates a third-party receipt with bounded budget; review stays native',async()=>{
- const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false}});
+ const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false},prompt:'Use the relay gpt seat to draft a bounded memo; this is a long-context/batch probe.'});
  Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
  const realFetch=globalThis.fetch,seen=[];
  globalThis.fetch=async(url,opts)=>{

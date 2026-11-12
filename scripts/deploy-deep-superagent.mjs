@@ -194,11 +194,12 @@ function shell(args,secrets){
 export async function main(mode,{env=process.env}={}){
  const context=trustedContext(env),report={schema:'ltzzz.deep-superagent.executor.v1',task_id:'DEEP-SUPERAGENT-20261103',...context,at_utc:new Date().toISOString(),mode,status:'started',financial_execution:false,transactions:0,paid:false,tx_hash:null,api_bill_verified:false,paid_field_scope:'No financial settlement; paid=false does not mean a native model request has zero API cost.',new_paid_schedules:false,native_gpt_claude_enabled:false};
  if(!['deploy','reconcile','bootstrap'].includes(mode))throw Error('invalid_superagent_executor_mode');
- const filename=path.join(resultDir,`${mode}-${context.run_id}-attempt-${context.run_attempt}.json`),secrets=[env.LTZZZ_AGENT_TOKEN,env.CLOUDFLARE_API_TOKEN];
+ const filename=path.join(resultDir,`${mode}-${context.run_id}-attempt-${context.run_attempt}.json`),secrets=[env.LTZZZ_AGENT_TOKEN,env.RELAY_PROXY_ACCESS_TOKEN,env.CLOUDFLARE_API_TOKEN];
  const save=()=>{fs.mkdirSync(resultDir,{recursive:true});const target=report.status==='release_unchanged_verified'?'.deep-superagent-reconcile-observation.json':filename;fs.writeFileSync(target,JSON.stringify(redact(report,secrets),null,2)+'\n');};
  let temporary;
  try{
   if(!env.LTZZZ_AGENT_TOKEN)throw Error('existing_service_token_required');
+  if(!env.RELAY_PROXY_ACCESS_TOKEN)throw Error('split_relay_gateway_token_required');
   if(mode==='deploy'||mode==='reconcile'){
    report.model_calls=0;
    if(!env.CLOUDFLARE_API_TOKEN||!env.CLOUDFLARE_ACCOUNT_ID)throw Error('existing_cloud_deployment_credentials_required');
@@ -219,7 +220,7 @@ export async function main(mode,{env=process.env}={}){
    shell(deployArgs,secrets);
    report.stage='bind_existing_service_identity';save();
    temporary=fs.mkdtempSync(path.join(os.tmpdir(),'ltzzz-superagent-secrets-'));
-   const secretFile=path.join(temporary,'service.json');fs.writeFileSync(secretFile,JSON.stringify({LTZZZ_AGENT_TOKEN:env.LTZZZ_AGENT_TOKEN,RELAY_PROXY_TOKEN:env.LTZZZ_AGENT_TOKEN}),{mode:0o600});
+   const secretFile=path.join(temporary,'service.json');fs.writeFileSync(secretFile,JSON.stringify({LTZZZ_AGENT_TOKEN:env.LTZZZ_AGENT_TOKEN,RELAY_PROXY_TOKEN:env.RELAY_PROXY_ACCESS_TOKEN}),{mode:0o600});
    shell(['secret','bulk',secretFile,'-c','wrangler.deep-superagent.toml'],secrets);
    fs.rmSync(temporary,{recursive:true,force:true});temporary=null;
    // Secret binding creates a version; finish with the pinned reviewed source.
