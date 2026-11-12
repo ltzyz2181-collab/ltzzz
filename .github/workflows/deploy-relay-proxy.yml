@@ -23,7 +23,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           STATION_KEY: ${{ secrets.RELAY_STATION_KEY }}
-          PROXY_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          PROXY_TOKEN: ${{ secrets.RELAY_PROXY_ACCESS_TOKEN }}
         run: |
           if [ -n "$STATION_KEY" ]; then
             printf '%s' "$STATION_KEY" | npx wrangler secret put RELAY_STATION_KEY -c wrangler.relay-proxy.toml
