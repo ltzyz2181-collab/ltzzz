@@ -1,0 +1,274 @@
+{
+ "schema": "ltzzz.deep-superagent.daily.v1",
+ "date": "2026-11-13",
+ "generated_at_utc": "2026-11-13T00:00:00.000Z",
+ "mail": {
+  "window_days": 21,
+  "count": 38,
+  "open_count": 14,
+  "unknown_count": 24,
+  "path": "knowledge/results/deep-superagent/mail-backlog/latest.json",
+  "readset_sha256": "7f409f3ef215756f1312cd5c07fa45b3c522e4035524d46ac35235d59262293c",
+  "contains_mail_body": false
+ },
+ "repo_observation": {
+  "oversight_backlog": {
+   "open_warning_cases": 164,
+   "unique_original_tasks": 164,
+   "not_rechecked_in_current_window": 130,
+   "source": "knowledge/results/dispatch/oversight/latest.json"
+  },
+  "failure_runs_24h": {
+   "observe_long_running_autonomy": [
+    "43322897021",
+    "43322681580",
+    "43322351696",
+    "43322044378",
+    "43321639551"
+   ],
+   "pages_deploy": [
+    "43322069735"
+   ],
+   "harness_observe": [
+    "43322023407"
+   ],
+   "deep_queue": [
+    "43321773962"
+   ],
+   "autonomous_funded_orders": [
+    "43295806225"
+   ]
+  },
+  "harness_fixed": {
+   "run": "43322242372",
+   "conclusion": "success",
+   "commit": "b68980562"
+  },
+  "open_prs": [
+   {
+    "number": 395,
+    "title": "WEP3 signer status fail closed on RPC errors"
+   },
+   {
+    "number": 287,
+    "title": "fix(wep3): fail closed before production Worker upload"
+   }
+  ]
+ },
+ "queue_run_id": "43329285671",
+ "queue_receipt": "knowledge/results/deep-superagent/queue-43329285671-attempt-1.json",
+ "card": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261113-DAILY-1.json",
+ "job_status": "blocked",
+ "job_error": "native_generation_evidence_incomplete",
+ "model_calls": 4,
+ "seat_receipts": [
+  {
+   "seat": "deepseek",
+   "stage": "plan",
+   "actual_provider": "deepseek",
+   "actual_model": "deepseek-v4-pro",
+   "upstream_http": 200,
+   "tokens_used": 1810
+  },
+  {
+   "seat": "doubao",
+   "stage": "work_doubao",
+   "actual_provider": "volcengine_ark",
+   "actual_model": null,
+   "upstream_http": 504,
+   "tokens_used": null,
+   "verdict": "未判 (seat timeout, not substituted)"
+  },
+  {
+   "seat": "qianwen",
+   "stage": "work_qianwen",
+   "actual_provider": "aliyun_dashscope",
+   "actual_model": "qwen-max",
+   "upstream_http": 200,
+   "tokens_used": 1871
+  },
+  {
+   "seat": "grok",
+   "stage": "work_grok",
+   "actual_provider": "xai",
+   "actual_model": "grok-4.6",
+   "upstream_http": 200,
+   "tokens_used": 7083
+  }
+ ],
+ "routes": [
+  {
+   "ref": "OBS-HARNESS",
+   "seat_said": "deploy_confirm_only",
+   "final_route": "coordinator_close_with_receipt",
+   "recheck": "run 43322242372 success 已在仓库可核验，按 R1/R2 收尾，写入本回执 done 段",
+   "close_evidence": "run 43322242372 + commit b68980562"
+  },
+  {
+   "ref": "OBS-OBSERVER-FAIL",
+   "seat_said": "needs_gpt_decision",
+   "final_route": "next_immediate",
+   "recheck": "observer 连续失败属工程诊断，不涉评审/资金/部署，R4 误用；本席可自查并把证据落盘",
+   "close_evidence": "diagnosis file under knowledge/results/deep-superagent/"
+  },
+  {
+   "ref": "OBS-PAGES-FAIL",
+   "seat_said": "needs_gpt_decision",
+   "final_route": "needs_owner_decision",
+   "recheck": "Pages 属生产侧发布，按 R3 归 owner；本席只做状态确认与记录，不自行部署",
+   "close_evidence": "run 43322069735 + 状态记录"
+  },
+  {
+   "ref": "OBS-OVERSIGHT",
+   "seat_said": "needs_gpt_decision",
+   "final_route": "next_immediate",
+   "recheck": "有界复查属于补齐记录，不需裁决；164 条中先做一小片（10 条）",
+   "close_evidence": "复查回执条目数"
+  },
+  {
+   "ref": "OBS-PRS",
+   "seat_said": "needs_owner_decision",
+   "final_route": "needs_gpt_decision",
+   "recheck": "PR 395/287 是评审与合并门，按 R4 归 GPT；非资金，不按 R3",
+   "close_evidence": "GPT 对两 PR 的处理口径"
+  },
+  {
+   "ref": "C1",
+   "seat_said": "blocked_evidence_needed",
+   "final_route": "coordinator_close_with_receipt",
+   "recheck": "两份回执已在仓库可核验，R5 不成立；R2 命中收尾",
+   "close_evidence": "queue-43180300883-attempt-1.json / queue-43321506982-attempt-1.json"
+  },
+  {
+   "ref": "C2",
+   "seat_said": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "recheck": "保留：audit-only 派单属自动化口径变更，需 GPT 裁决；证据 config/deep-superagent.json + 948872686",
+   "close_evidence": "GPT 是否接受 audit-only 与 owner override"
+  },
+  {
+   "ref": "C3",
+   "seat_said": "blocked_evidence_needed",
+   "final_route": "split",
+   "recheck": "拆分：receipt 落盘部分证据齐全（bbbd00926，sha 4ee93fac/2669d667）→ 收尾；observer 结果仍失败 → next_immediate 诊断",
+   "close_evidence": "correction receipt 路径 + observer 证据文件"
+  },
+  {
+   "ref": "C4",
+   "seat_said": "needs_owner_decision",
+   "final_route": "needs_owner_decision",
+   "recheck": "保留：余额与单次成本未知，属资金口径，只能 owner 定",
+   "close_evidence": "控制台余额 + 两次付费调用账单"
+  }
+ ],
+ "sections": {
+  "done": [
+   {
+    "item": "邮件积压采集",
+    "evidence": "knowledge/results/deep-superagent/mail-backlog/latest.json (sha256 7f409f3f…, commit 8a5b89209)",
+    "note": "38 封 / 21 天，open 14，unknown 24，正文未落盘"
+   },
+   {
+    "item": "每日巡检卡派发",
+    "evidence": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261113-DAILY-1.json, queue run 43329285671, receipt knowledge/results/deep-superagent/queue-43329285671-attempt-1.json",
+    "note": "一推一卡，未删改旧卡"
+   },
+   {
+    "item": "Harness 修复并跑绿",
+    "evidence": "commit b68980562, workflow run 43322242372 success",
+    "note": "46 文件 / 46 事件；ancestry_disjoint 45；stale 回卷拒绝守卫生效"
+   },
+   {
+    "item": "goal source-ancestry correction receipt",
+    "evidence": "knowledge/results/goals/corrections/20261113-source-ancestry-correction.json (commit bbbd00926)，文件 sha 4ee93fac…，包 sha 2669d667…，merge-base exit 1",
+    "note": "goal state 已追加引用（commit c25386fa6），原证据未改"
+   },
+   {
+    "item": "relay 双侧可调用",
+    "evidence": "gpt: queue-43180300883-attempt-1.json (gpt-6.1-sol 200, 7957 tok)；claude: queue-43321506982-attempt-1.json (claude-sonnet-4-6 200, 548 tok, request msg_waS7HDfzPDZOy3CuRHNIGeWP)",
+    "note": "两侧均为 apisrouter_relay 实际路由"
+   },
+   {
+    "item": "status.json 刷新",
+    "evidence": "knowledge/results/deep-superagent/status.json (commit e0a0aa0ea)",
+    "note": "旧 11-08 值标注为 stale"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [
+    {
+     "item": "native-first 派单改为 audit-only、owner_override_20261113",
+     "blocker": "GPT 尚未确认该口径",
+     "consequence": "Deep 仍可派中转，但审计口径未获裁决，后续复核无统一依据",
+     "partial": "Deep 可先继续按 audit 记录派单，不改代码"
+    },
+    {
+     "item": "PR 395 / 287 是否进入评审与合并",
+     "blocker": "合并需裁决，本席不得合并",
+     "consequence": "signer 与 WEP3 预部署护栏停在 open",
+     "partial": "可继续补评审材料，不合并"
+    },
+    {
+     "item": "Pages 部署失败 43322069735 修复方案",
+     "blocker": "生产侧发布，需裁决",
+     "consequence": "静态站停在旧版本",
+     "partial": "可给出根因与最小改动，不部署"
+    },
+    {
+     "item": "doubao 席 504 是否允许以 qianwen+grok 双原生席完成本轮",
+     "blocker": "native_generation_evidence_incomplete 硬门",
+     "consequence": "本轮 job 判 blocked，结论不完整",
+     "partial": "已保留两席结果并标注 doubao 未判"
+    }
+   ],
+   "owner": [
+    {
+     "item": "relay 成本台账与控制台余额对账",
+     "blocker": "consolidated balance 未读取，单次 cost 未知",
+     "consequence": "无法判断付费 lane 真实消耗",
+     "partial": "可继续记估算，不做自动止损"
+    },
+    {
+     "item": "小程序支付后续（沙箱首单已付款）",
+     "blocker": "资金语义只能 owner 定",
+     "consequence": "交付与退款链路口径无法定稿",
+     "partial": "只做状态记录"
+    }
+   ]
+  },
+  "next_immediate": [
+   {
+    "item": "诊断 observer 连续失败（43322897021 / 43322681580 / 43322351696）",
+    "criterion": "产出含失败步骤、报错原文与 commit 的只读诊断文件，不部署"
+   },
+   {
+    "item": "oversight backlog 有界复查 10 条",
+    "criterion": "10 条各写复查结论与证据指针，落盘可核验"
+   },
+   {
+    "item": "补写 C1/C3 收尾回执",
+    "criterion": "回执路径入本文件 done 段，并指向可核验接收文件"
+   }
+  ],
+  "later": [
+   {
+    "item": "Linear 快照重导出",
+    "dependency": "导出权限/外部方，且当前 board 仍 11-08",
+    "precondition": "拿到新 export 后重写快照"
+   },
+   {
+    "item": "QWEN-FOUR-RULINGS 指定文件",
+    "dependency": "真实原件缺失",
+    "precondition": "原件到位后重核"
+   },
+   {
+    "item": "中转重部署确认（11-12 邮件无回复）",
+    "dependency": "GPT 回复",
+    "precondition": "收到裁决后按口径调整"
+   }
+  ]
+ },
+ "writes_performed": 3,
+ "merges_performed": 0,
+ "deploys_performed": 0
+}
