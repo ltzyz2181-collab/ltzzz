@@ -25,10 +25,14 @@ try{
     const prior=JSON.parse(fs.readFileSync(target,'utf8'));
     if(prior.source.commit!==event.source.commit){
      ancestry.checked++;
-     // A disjoint/rewritten history is recorded, not treated as invalid provenance:
-     // the observation is append-only and the gap itself is the evidence to reconcile.
-     try{execFileSync('git',['merge-base','--is-ancestor',prior.source.commit,event.source.commit],{stdio:'pipe'});}
-     catch{ancestry.disjoint++;}
+     // Distinguish a stale/rewound scan from a genuinely disjoint history:
+     // - new event commit is an ancestor of the recorded one => stale rewind, refuse;
+     // - neither is an ancestor => history was rewritten, record the gap as evidence.
+     let newAncestor=false,priorAncestor=false;
+     try{execFileSync('git',['merge-base','--is-ancestor',event.source.commit,prior.source.commit],{stdio:'pipe'});newAncestor=true;}catch{newAncestor=false;}
+     if(newAncestor)throw Error('stale_scan_older_commit');
+     try{execFileSync('git',['merge-base','--is-ancestor',prior.source.commit,event.source.commit],{stdio:'pipe'});priorAncestor=true;}catch{priorAncestor=false;}
+     if(!priorAncestor)ancestry.disjoint++;
     }
    }
    if(!fs.existsSync(target)||fs.readFileSync(target,'utf8')!==text){fs.writeFileSync(target,text);changed++;}
