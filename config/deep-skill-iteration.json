@@ -1,0 +1,65 @@
+{
+  "schema": "ltzzz.deep-skill-iteration.v1",
+  "owner_authorization": "2026-11-12 owner 授权 Deep 巡查并提出 skill 迭代方案，方案一律先呈 GPT 裁决；裁决通过才可进入既有 owner Issue 评审与合并流程",
+  "scope": {
+    "repo_tracked": [
+      "skills/ltzzz-task-execution",
+      ".github/skills/ltzzz-task-execution",
+      ".claude/skills/ltzzz-task-execution",
+      ".agents/skills/ltzzz-task-execution"
+    ],
+    "out_of_scope": "平台级（豆包/用户目录下）skills 不在本仓库内，Deep 只读不改；需要改动时只出方案，不碰文件",
+    "evidence_sources": [
+      "knowledge/results/deep-superagent/queue-*.json",
+      "knowledge/results/skill-review/**",
+      "knowledge/results/deep-superagent/daily-*.json",
+      "ops/deep-superagent/tasks/*.json",
+      "docs/**skill**"
+    ]
+  },
+  "deep_allowed": [
+    "读取范围内 skill 文件与上述证据",
+    "产出 1-3 条迭代提案：问题、证据 ref、改动点、预期收益、风险、回退方式",
+    "在独立分支准备补丁草稿，不合并到 main",
+    "把提案提交 GPT 决策席裁决"
+  ],
+  "deep_forbidden": [
+    "直接修改 main 上的 SKILL.md 或 references",
+    "自行合并 PR、自行部署、自行发布 skill 版本",
+    "自我裁决或声称已获批准",
+    "触碰资金、签名、钱包、Safe、放款、生产写、凭据",
+    "无证据声称某改动会提升效果"
+  ],
+  "approval": {
+    "requirement": "任何会改变 skill 行为、或声称能带来使用提升的迭代，一律需要 GPT 裁决通过",
+    "decision_seat": "gpt",
+    "decision_evidence": "GPT 裁决回执（邮件回复或 ops/deep-superagent/decisions 记录），需写明批准范围",
+    "owner_issue_required": true,
+    "owner_issue_title_prefix": "[LTZZZ技能评审]",
+    "flow": [
+      "Deep 月度巡查 -> 提案",
+      "GPT 裁决（approve / reject / revise）",
+      "owner 建 Issue 触发既有评审流水线",
+      "评审通过后合并；部署仍按既有发布流程"
+    ],
+    "note": "裁决通过不等于已合并、更不等于已部署；三者分别留证"
+  },
+  "cadence": {
+    "frequency": "monthly",
+    "task_id_pattern": "DEEP-SKILL-ITER-<YYYYMM>-01",
+    "monthly_report": "knowledge/results/skill-iteration/<YYYY-MM>.json"
+  },
+  "monthly_flow": [
+    "枚举范围内 skill 与版本哈希，列出本月无提案的 skill 并说明原因",
+    "按证据筛出候选（回执失败、评审反复指出的同类问题、任务卡被误用等）",
+    "每条提案给：现状、证据、改动点、预期收益、风险、可回退方式、是否改变行为",
+    "派一张 DEEP-SKILL-ITER-<YYYYMM>-01 卡请 Deep 复核提案（只做草稿，不做裁决）",
+    "把提案与 Deep 复核结果发 GPT 裁决",
+    "落盘月度报告，状态 awaiting_gpt_decision；未获裁决前不改任何 skill 文件"
+  ],
+  "red_lines": [
+    "资金、签名、钱包、Safe、放款、生产写永不进入 skill 执行器",
+    "评审、技能迭代、资金三类自动化部署须 GPT 裁决后才执行",
+    "skill 内容不得写入凭据、真实邮箱正文或未脱敏数据"
+  ]
+}
