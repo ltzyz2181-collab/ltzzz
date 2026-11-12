@@ -7,6 +7,10 @@ on:
         description: why this live probe is being run
         required: false
         default: acceptance gate for the LTZZZ relay seat
+      claude_models:
+        description: space separated claude-tier candidates, first working one wins
+        required: false
+        default: claude-haiku-5-5 claude-sonnet-4-6 claude-opus-5
 
 permissions:
   contents: read
@@ -25,7 +29,15 @@ jobs:
       - name: Probe gpt class through the LTZZZ worker
         run: node scripts/relay-seat.mjs --call --purpose acceptance_probe --model gpt-6.1-sol --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
       - name: Probe claude class through the LTZZZ worker
-        run: node scripts/relay-seat.mjs --call --purpose acceptance_probe --model claude-haiku-5-5 --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
+        run: |
+          for m in ${{ inputs.claude_models }}; do
+            echo "--- trying $m"
+            if node scripts/relay-seat.mjs --call --purpose acceptance_probe --model "$m" --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64; then
+              echo "CLAUDE_SUCCESS_MODEL=$m"
+              break
+            fi
+            echo "CLAUDE_UNAVAILABLE_MODEL=$m"
+          done
       - name: Print sanitized call evidence
         if: always()
         run: |
