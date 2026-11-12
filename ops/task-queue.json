@@ -151,6 +151,16 @@
         "innovation/2026-11-05.json"
       ],
       "instruction": "总控已批准工程研究任务，提供完整最小代码补丁与验证步骤；不声称代码已部署。实现 intent_schema_trial 的拒单 intent schema 和正反 fixture：合法 blocked/unverified/缺 hash 的拒单 intent 应 accept；伪装成功但缺 path/sha256/commit 的 intent 应 reject；finish_reason 非 stop 应 reject。使用一个注入时钟固定边界，记录每个输入原始字节 SHA256、path 与 commit；产物最高为 draft，不写盘、不部署、不声称交付；完成后返回 receipt，部署前仍需他方实际 provider 复核。"
+    },
+    {
+      "id": "INNOVATION-2026-11-12-GROK",
+      "agent": "doubao",
+      "inputs": [
+        "AI-START-HERE.md",
+        "wep3-worker.js",
+        "innovation/2026-11-12.json"
+      ],
+      "instruction": "总控已批准工程研究任务，提供完整最小代码补丁与验证步骤；不声称代码已部署。实现ChallengerIntent schema及本地固定样本执行器，字段包含claim_hash、claimed_state、evidenced_state、challenger_provider；新增至少一个过声称应接受的正夹具和一个同态应拒绝的反夹具；运行intent_schema_trial并记录回执与哈希；不涉及真钱或链上，不声称已部署，executed_by与model从响应元数据补录，无法取得时填unverified。"
     }
   ]
 }
