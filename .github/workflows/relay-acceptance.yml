@@ -1,0 +1,36 @@
+name: Relay proxy live acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: why this live probe is being run
+        required: false
+        default: acceptance gate for the LTZZZ relay seat
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      LTZZZ_RELAY_PROXY_URL: https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1
+      LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Probe gpt class through the LTZZZ worker
+        run: node scripts/relay-seat.mjs --purpose acceptance_probe --model gpt-6.1-sol --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
+      - name: Probe claude class through the LTZZZ worker
+        run: node scripts/relay-seat.mjs --purpose acceptance_probe --model claude-haiku-5-5 --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
+      - name: Print sanitized call evidence
+        if: always()
+        run: |
+          for f in knowledge/results/relay-seat/calls/*.json; do
+            [ -e "$f" ] || continue
+            echo "EVIDENCE_FILE=$f"
+            cat "$f"
+          done
