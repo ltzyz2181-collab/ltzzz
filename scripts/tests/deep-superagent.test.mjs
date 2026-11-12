@@ -180,17 +180,21 @@ test('existing terminal jobs remain byte-equivalent after the new guard is insta
  assert.equal(JSON.stringify(await task.state.storage.get('job')),before);assert.equal(f.calls.length,0);assert.equal(historical.content_gate,undefined);
  const health=await (await f.request('/health','GET',null,{})).json();assert.equal(health.revision,'ltzzz.deep-superagent.v1');assert.equal(health.content_guard_revision,CONTENT_GUARD_REVISION);
 });
-test('relay execution seats fail closed until credential, allowlisted host, model name and acceptance all exist',()=>{
+test('relay execution seats fail closed until proxy token, allowlisted proxy, model name and acceptance all exist',()=>{
  const base={LTZZZ_AGENT_TOKEN:TOKEN};
- assert.equal(relaySeatState(base,'gpt'),'relay_credential_missing');
- assert.deepEqual(relaySeatStates(base),{gpt:'relay_credential_missing',claude:'relay_credential_missing'});
+ const PROXY='https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1';
+ assert.equal(relaySeatState(base,'gpt'),'relay_proxy_token_missing');
+ assert.deepEqual(relaySeatStates(base),{gpt:'relay_proxy_token_missing',claude:'relay_proxy_token_missing'});
  assert.deepEqual(availableWorkSeats(base),['doubao','qianwen','kimi','grok']);
- const keyed={...base,RELAY_API_KEY:'test-only-relay-key'};
+ // A station key on this seat is a boundary violation, not a fallback path.
+ assert.equal(relaySeatState({...base,RELAY_API_KEY:'test-only-station-key'},'gpt'),'relay_direct_station_key_forbidden');
+ const keyed={...base,RELAY_PROXY_TOKEN:'test-only-proxy-token'};
  assert.equal(relaySeatState(keyed,'gpt'),'relay_acceptance_pending');
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_BASE_URL:'https://api.openai.com/v1',RELAY_MODEL_GPT:'gpt-6-sol'},'gpt'),'relay_base_url_not_allowlisted');
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_BASE_URL:'http://api.apisrouter.com/v1',RELAY_MODEL_GPT:'gpt-6-sol'},'gpt'),'relay_base_url_not_allowlisted');
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_BASE_URL:'https://api.apisrouter.com/v1'},'gpt'),'relay_model_not_configured');
- const on={...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_BASE_URL:'https://api.apisrouter.com/v1',RELAY_MODEL_GPT:'gpt-6-sol',RELAY_MODEL_CLAUDE:'claude-opus-5-5'};
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://api.apisrouter.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'http://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/chat/completions',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_path_not_allowlisted');
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY},'gpt'),'relay_model_not_configured');
+ const on={...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY,RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'};
  assert.equal(relaySeatState(on,'gpt'),'relay_generation_enabled');
  assert.equal(relaySeatState(on,'claude'),'relay_generation_enabled');
  assert.deepEqual(availableWorkSeats(on),['doubao','qianwen','kimi','grok','gpt','claude']);
@@ -201,12 +205,12 @@ test('closed relay seat is not offered to the planner and cannot be forced by a 
  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
  assert.equal(job.status,'blocked');assert.equal(job.error,'invalid_deepseek_task');assert.deepEqual(f.calls.map(v=>v.seat),['deepseek']);
  const status=await (await f.request('/v1/status','GET')).json();
- assert.deepEqual(status.relay_seats,{gpt:'relay_credential_missing',claude:'relay_credential_missing'});
+ assert.deepEqual(status.relay_seats,{gpt:'relay_proxy_token_missing',claude:'relay_proxy_token_missing'});
  assert.ok(!status.available_worker_seats.includes('gpt'));
 });
 test('relay seat refuses planning and independent review even when enabled',async()=>{
  const f=fixture();
- Object.assign(f.env,{RELAY_API_KEY:'test-only-relay-key',RELAY_BASE_URL:'https://api.apisrouter.com/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6-sol'});
+ Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol'});
  const task=new DeepTask({storage:new Storage()},f.env);
  const job={task_id:'DEEP-RELAY-STAGE-TEST',execution_id:'e1',source_commit:null,receipts:[],model_calls:0,outputs:[]};
  await assert.rejects(()=>task.callSeat(job,'plan','gpt',[]),/relay_seat_generation_only/);
@@ -215,22 +219,22 @@ test('relay seat refuses planning and independent review even when enabled',asyn
 });
 test('verified relay seat generates a third-party receipt with bounded budget; review stays native',async()=>{
  const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false}});
- Object.assign(f.env,{RELAY_API_KEY:'test-only-relay-key',RELAY_BASE_URL:'https://api.apisrouter.com/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6-sol',RELAY_MODEL_CLAUDE:'claude-opus-5-5'});
+ Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
  const realFetch=globalThis.fetch,seen=[];
  globalThis.fetch=async(url,opts)=>{
-  const u=new URL(String(url));assert.equal(u.hostname,'api.apisrouter.com');assert.equal(u.pathname,'/v1/chat/completions');
-  assert.equal(opts.headers.Authorization,'Bearer test-only-relay-key');seen.push(JSON.parse(opts.body));
-  return Response.json({id:'relay-req-1',model:'gpt-6-sol',choices:[{message:{content:'relay draft: bounded, keeps source caveats and uncertainty.'},finish_reason:'stop'}],usage:{prompt_tokens:4387,completion_tokens:9,total_tokens:4396}});
+  const u=new URL(String(url));assert.equal(u.hostname,'ltzzz-relay-proxy.ltzyz2181.workers.dev');assert.equal(u.pathname,'/v1/chat/completions');
+  assert.equal(opts.headers.Authorization,undefined);assert.equal(opts.headers['x-ltzzz-seat-token'],'test-only-proxy-token');assert.equal(opts.headers['x-ltzzz-batch'],'1');seen.push(JSON.parse(opts.body));
+  return Response.json({id:'relay-req-1',model:'gpt-6.1-sol',choices:[{message:{content:'relay draft: bounded, keeps source caveats and uncertainty.'},finish_reason:'stop'}],usage:{prompt_tokens:4387,completion_tokens:9,total_tokens:4396}});
  };
  try{
   await f.request();const task=[...f.objects.values()][0];await task.alarm();
   const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json(),r=job.receipts.find(v=>v.seat==='gpt');
   assert.equal(r.actual_provider,'apisrouter_relay');assert.equal(r.official_provider_attestation,false);assert.equal(r.native_provider,false);assert.equal(r.decision_authority,false);
-  assert.equal(r.generation_verified,true);assert.equal(r.actual_model,'gpt-6-sol');assert.equal(r.request_id,'relay-req-1');assert.equal(r.finish_reason,'stop');
+  assert.equal(r.generation_verified,true);assert.equal(r.actual_model,'gpt-6.1-sol');assert.equal(r.relay_transport,'ltzzz_proxy_seat_token');assert.equal(r.batch_declared,true);assert.equal(r.request_id,'relay-req-1');assert.equal(r.finish_reason,'stop');
   assert.equal(r.prompt_tokens,4387);assert.equal(r.request_options.max_tokens,2048);assert.equal(job.outputs[0].actual_provider,'apisrouter_relay');
   assert.equal(job.review.actual_provider,'deepseek');assert.equal(job.review.independent_of_worker_providers,true);
   assert.equal(job.status,'completed_pending_external_acceptance');assert.equal(job.model_calls,3);assert.equal(job.accepted,false);assert.equal(job.financial_execution,false);
-  assert.deepEqual(seen.map(b=>b.model),['gpt-6-sol']);assert.deepEqual(f.calls.map(v=>v.seat),['deepseek','deepseek']);
+  assert.deepEqual(seen.map(b=>b.model),['gpt-6.1-sol']);assert.deepEqual(f.calls.map(v=>v.seat),['deepseek','deepseek']);
   const status=await (await f.request('/v1/status','GET')).json();assert.equal(status.relay_seats.gpt,'relay_generation_enabled');assert.ok(status.available_worker_seats.includes('gpt'));
  }finally{globalThis.fetch=realFetch;}
 });

@@ -36,3 +36,7 @@
 - 本轮真实支出：0.011234 + 0.005436 = 0.016670 USD。
 - 席位余额：12.947201 → 12.930531 USD，距 $3 下限仍有 9.930531 USD。
 - 失败调用（503、ENOTFOUND）未见计费；若站点事后补扣，属未记录不确定性，下一次 `set-balance` 以控制台余额为准覆盖。
+
+## 5. 后续更新（同日，v2 传输层）
+
+上文第 3 节「Deep Worker 自身仍为关闭」这条，已在获得 owner 授权后改掉：Deep 的 `relay_generation_seats` 已改为只持 `RELAY_PROXY_TOKEN`、经 `x-ltzzz-seat-token` 调 LTZZZ Worker，不再需要 `RELAY_API_KEY`；直接配置站点 key 会被判 `relay_direct_station_key_forbidden`。详见 `docs/DEEP-RELAY-WORKER-TRANSPORT.md`，历史结论保留不改。

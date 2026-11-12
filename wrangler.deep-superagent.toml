@@ -3,16 +3,16 @@ main = "workers/deep-superagent/index.js"
 compatibility_date = "2026-11-01"
 workers_dev = true
 
-# Third-party relay execution seats (gpt / claude) stay CLOSED by default.
-# Order of activation: inject RELAY_API_KEY (secret) -> run the acceptance probe
-# -> set RELAY_MODEL_GPT / RELAY_MODEL_CLAUDE -> flip RELAY_ACCEPTANCE_VERIFIED to "1".
-# Any missing piece reports its own state in /health and /v1/status instead of
-# silently falling back to a native provider channel.
+# Third-party relay execution seats (gpt / claude). This Worker holds only the
+# scoped proxy token (secret RELAY_PROXY_TOKEN) and calls the LTZZZ relay proxy;
+# the station key lives solely in that proxy's server secret. A direct station
+# key here is refused as relay_direct_station_key_forbidden.
+# Every relayed call declares x-ltzzz-batch: 1 (batch items, not interactive).
 [vars]
-RELAY_BASE_URL = "https://api.apisrouter.com/v1"
-RELAY_ACCEPTANCE_VERIFIED = "0"
-RELAY_MODEL_GPT = ""
-RELAY_MODEL_CLAUDE = ""
+RELAY_PROXY_URL = "https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1"
+RELAY_ACCEPTANCE_VERIFIED = "1"
+RELAY_MODEL_GPT = "gpt-6.1-sol"
+RELAY_MODEL_CLAUDE = "claude-sonnet-4-6"
 
 # No model keys, financial bindings, cron or access to either existing ledger.
 # SUPERAGENT_SOURCE_COMMIT is injected by the trusted-main deployment executor.

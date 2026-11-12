@@ -27,7 +27,7 @@ function messageText(messages) {
     .join('\n');
 }
 
-export function validateRequest(body) {
+export function validateRequest(body, { batch = false } = {}) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { ok: false, status: 400, code: 'proxy_body_invalid' };
   }
@@ -42,7 +42,8 @@ export function validateRequest(body) {
   }
   const text = messageText(body.messages);
   const estimated = estimateTokens(text);
-  if (estimated < MIN_INPUT_TOKENS) {
+  // A batch caller declares itself explicitly; a plain short prompt is still refused.
+  if (estimated < MIN_INPUT_TOKENS && batch !== true) {
     return { ok: false, status: 400, code: 'proxy_short_request_forbidden', estimated_input_tokens: estimated };
   }
   if (estimated > MAX_INPUT_TOKENS) {
@@ -86,6 +87,10 @@ export default {
     if (!['/v1/chat/completions', '/chat/completions'].includes(route)) return json(404, 'proxy_route_not_found');
     if (request.method !== 'POST') return json(405, 'proxy_method_not_allowed');
     if (!authorized(request, env.PROXY_ACCESS_TOKEN)) return json(401, 'proxy_unauthorized');
+    // Explicit batch declaration: the caller accepts that the request is a batch
+    // item rather than an interactive long-context prompt. It only relaxes the
+    // minimum-input gate; the maximum-context gate still applies.
+    const batch = request.headers.get('x-ltzzz-batch') === '1';
     const stationKey = String(env.RELAY_STATION_KEY ?? '').trim();
     if (!stationKey) return json(503, 'proxy_key_missing');
     let body;
@@ -94,7 +99,7 @@ export default {
     } catch {
       return json(400, 'proxy_body_invalid');
     }
-    const verdict = validateRequest(body);
+    const verdict = validateRequest(body, { batch });
     if (!verdict.ok) return json(verdict.status, verdict.code, { estimated_input_tokens: verdict.estimated_input_tokens ?? null });
     const base = String(env.STATION_BASE || 'https://api.apisrouter.com/v1').replace(/\/$/, '');
     let upstream;

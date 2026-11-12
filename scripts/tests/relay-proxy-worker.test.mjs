@@ -72,3 +72,37 @@ test('gateway rejects unknown routes and methods', async () => {
   const wrongMethod = await worker.fetch(request({}, { method: 'GET', token: 'proxy-token' }), { PROXY_ACCESS_TOKEN: 'proxy-token', RELAY_STATION_KEY: 'station-key' });
   assert.equal(wrongMethod.status, 405);
 });
+
+test('batch declaration relaxes only the minimum-input gate', () => {
+  const short = { model: 'gpt-6.1-sol', messages: [{ role: 'user', content: 'batch item: summarize one public note' }], max_tokens: 512 };
+  assert.equal(validateRequest(short).code, 'proxy_short_request_forbidden');
+  assert.equal(validateRequest(short, { batch: true }).ok, true);
+  const tooBig = { model: 'gpt-6.1-sol', messages: [{ role: 'user', content: '长文'.repeat(600000) }] };
+  assert.equal(validateRequest(tooBig, { batch: true }).code, 'proxy_context_too_large');
+});
+
+test('gateway honours the batch header and still refuses an undeclared short call', async () => {
+  const env = { PROXY_ACCESS_TOKEN: 'proxy-token', RELAY_STATION_KEY: 'station-key' };
+  const realFetch = globalThis.fetch;
+  let called = 0;
+  globalThis.fetch = async () => {
+    called += 1;
+    return Response.json({ id: 'batch-req-1', model: 'gpt-6.1-sol', choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] });
+  };
+  try {
+    const body = { model: 'gpt-6.1-sol', messages: [{ role: 'user', content: 'batch item' }] };
+    const plain = await worker.fetch(request(body), env);
+    assert.equal(plain.status, 400);
+    assert.equal(called, 0);
+    const batched = new Request('https://ltzzz-relay-proxy.example.workers.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-ltzzz-seat-token': 'proxy-token', 'x-ltzzz-batch': '1' },
+      body: JSON.stringify(body),
+    });
+    const response = await worker.fetch(batched, env);
+    assert.equal(response.status, 200);
+    assert.equal(called, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

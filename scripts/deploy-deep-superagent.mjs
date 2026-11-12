@@ -219,7 +219,7 @@ export async function main(mode,{env=process.env}={}){
    shell(deployArgs,secrets);
    report.stage='bind_existing_service_identity';save();
    temporary=fs.mkdtempSync(path.join(os.tmpdir(),'ltzzz-superagent-secrets-'));
-   const secretFile=path.join(temporary,'service.json');fs.writeFileSync(secretFile,JSON.stringify({LTZZZ_AGENT_TOKEN:env.LTZZZ_AGENT_TOKEN}),{mode:0o600});
+   const secretFile=path.join(temporary,'service.json');fs.writeFileSync(secretFile,JSON.stringify({LTZZZ_AGENT_TOKEN:env.LTZZZ_AGENT_TOKEN,RELAY_PROXY_TOKEN:env.LTZZZ_AGENT_TOKEN}),{mode:0o600});
    shell(['secret','bulk',secretFile,'-c','wrangler.deep-superagent.toml'],secrets);
    fs.rmSync(temporary,{recursive:true,force:true});temporary=null;
    // Secret binding creates a version; finish with the pinned reviewed source.

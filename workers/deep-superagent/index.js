@@ -8,20 +8,26 @@ import {KIMI_PROFILE} from '../../lib/kimi-profile.js';
 export const REVISION='ltzzz.deep-superagent.v1';
 export const CONTENT_GUARD_REVISION='executor-metadata-declarations-v1';
 const SEATS={deepseek:{binding:'DEEPSEEK',provider:'deepseek'},doubao:{binding:'DOUBAO',provider:'volcengine_ark'},qianwen:{binding:'QIANWEN',provider:'aliyun_dashscope'},kimi:{binding:'KIMI',provider:'moonshot'},grok:{binding:'GROK',provider:'xai'}};
-// Third-party relay execution seats (APIsRouter). They are NOT native provider
-// channels and hold no decision authority. Both stay closed until the owner
-// injects the credential AND the relay acceptance record is verified; a missing
-// key, a pending acceptance, a non-allowlisted host or a missing model name all
-// fail closed rather than silently falling back to a native channel.
-export const RELAY_REVISION='relay-execution-seats-v1';
-export const RELAY_HOST='api.apisrouter.com';
+// Third-party relay execution seats. The station key never leaves the LTZZZ
+// relay proxy Worker: this Worker holds only a scoped gateway token and calls
+// the proxy, never api.apisrouter.com directly. Both seats stay closed until the
+// owner injects the gateway token AND the relay acceptance record is verified; a
+// missing token, a pending acceptance, a non-allowlisted proxy host or a missing
+// model name all fail closed rather than silently falling back to a native channel.
+export const RELAY_REVISION='relay-execution-seats-v2-proxy-transport';
+export const RELAY_HOST='ltzzz-relay-proxy.ltzyz2181.workers.dev';
+const RELAY_PROXY_PATH='/v1';
 const RELAY_SEATS={gpt:{model_var:'RELAY_MODEL_GPT'},claude:{model_var:'RELAY_MODEL_CLAUDE'}};
 export function relaySeatState(env,seat){
  if(!Object.hasOwn(RELAY_SEATS,seat))return 'not_a_relay_seat';
- if(!env?.RELAY_API_KEY)return 'relay_credential_missing';
+ // A direct station key on this seat is a boundary violation, not a fallback.
+ if(env?.RELAY_API_KEY)return 'relay_direct_station_key_forbidden';
+ if(!env?.RELAY_PROXY_TOKEN)return 'relay_proxy_token_missing';
  if(env.RELAY_ACCEPTANCE_VERIFIED!=='1')return 'relay_acceptance_pending';
- let base;try{base=new URL(env.RELAY_BASE_URL||'');}catch{return 'relay_base_url_invalid';}
- if(base.protocol!=='https:'||base.hostname!==RELAY_HOST)return 'relay_base_url_not_allowlisted';
+ let base;try{base=new URL(env.RELAY_PROXY_URL||'');}catch{return 'relay_proxy_url_invalid';}
+ if(base.protocol!=='https:'||base.hostname!==RELAY_HOST)return 'relay_proxy_host_not_allowlisted';
+ if([...base.search,...base.hash].length)return 'relay_proxy_url_not_allowlisted';
+ if(base.pathname.replace(/\/+$/,'')!==RELAY_PROXY_PATH)return 'relay_proxy_path_not_allowlisted';
  if(typeof env[RELAY_SEATS[seat].model_var]!=='string'||!env[RELAY_SEATS[seat].model_var])return 'relay_model_not_configured';
  return 'relay_generation_enabled';
 }
@@ -257,11 +263,13 @@ export class DeepTask {
     if(state!=='relay_generation_enabled')throw fail('relay_seat_not_enabled_'+state,503);
     if(stage!=='work_'+seat)throw fail('relay_seat_generation_only',403);
     if(job.receipts.some(r=>r.stage===stage))throw fail('provider_attempt_already_reserved',409);
-    const model=this.env[RELAY_SEATS[seat].model_var],maxTokens=outputTokenLimit(job.task_id,seat),base=String(this.env.RELAY_BASE_URL).replace(/\/+$/,'');
-    const receipt={stage,seat,actual_provider:'apisrouter_relay',relay_host:RELAY_HOST,official_provider_attestation:false,native_provider:false,decision_authority:false,actual_model:null,task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
+    const model=this.env[RELAY_SEATS[seat].model_var],maxTokens=outputTokenLimit(job.task_id,seat),base=String(this.env.RELAY_PROXY_URL).replace(/\/+$/,'');
+    const receipt={stage,seat,actual_provider:'apisrouter_relay',relay_host:RELAY_HOST,relay_transport:'ltzzz_proxy_seat_token',batch_declared:true,official_provider_attestation:false,native_provider:false,decision_authority:false,actual_model:null,task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
     job.receipts.push(receipt);job.model_calls++;await this.state.storage.put('job',job);
     try{
-      const response=await fetch(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+this.env.RELAY_API_KEY},body:JSON.stringify({model,messages,max_tokens:maxTokens}),signal:AbortSignal.timeout(120000)});
+      // Deep dispatches bounded drafting items, so every relayed call declares
+      // itself a batch item; the proxy still enforces its context ceiling.
+      const response=await fetch(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','x-ltzzz-seat-token':this.env.RELAY_PROXY_TOKEN,'x-ltzzz-batch':'1'},body:JSON.stringify({model,messages,max_tokens:maxTokens}),signal:AbortSignal.timeout(120000)});
       const data=await response.json().catch(()=>null);
       receipt.upstream_http=response.status;receipt.completed_at=now();
       const text=data?.choices?.[0]?.message?.content,finish=data?.choices?.[0]?.finish_reason,requestId=data?.id||response.headers.get('x-request-id')||null,usage=data?.usage||{};
