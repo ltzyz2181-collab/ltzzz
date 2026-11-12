@@ -34,6 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
+        with: {node-version: '22'}
       - name: Observe only pinned public receipts; no model or cloud credentials
         run: |
           SOURCE_COMMIT=$(git rev-parse HEAD)
@@ -51,8 +52,7 @@ jobs:
           const context=JSON.parse(fs.readFileSync('/tmp/harness-context.json'));
           const modules=['scripts/harness.mjs','scripts/lib/reflection-harness.mjs','scripts/lib/lessons.mjs','scripts/lib/ltzzz-skill.mjs','scripts/lib/pinned-inputs.mjs'];
           const evidence={schema:'ltzzz.harness.activation.v1',source_commit:process.env.HARNESS_SOURCE_COMMIT,run_id:process.env.GITHUB_RUN_ID,at_utc:new Date().toISOString(),status:'cloud_observation_and_context_probe_executed',summary_sha256:hash(summary),context_proof:context.proof,module_hashes:Object.fromEntries(modules.map(p=>[p,hash(fs.readFileSync(p))])),model_calls:0,weights_trained:false,all_desktop_clients_loaded:false,financial_execution:false};
-          fs.mkdirSync('knowledge/results/harness',{recursive:true});fs.writeFileSync('knowledge/results/harness/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(evidence,null,2)+'
-');
+          fs.mkdirSync('knowledge/results/harness',{recursive:true});fs.writeFileSync('knowledge/results/harness/'+process.env.GITHUB_RUN_ID+'.json',JSON.stringify(evidence,null,2)+'\n');
           JS
           git config user.name ltzzz-bot
           git config user.email bot@ltzzz.com
