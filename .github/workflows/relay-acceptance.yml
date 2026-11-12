@@ -23,9 +23,9 @@ jobs:
         with:
           node-version: '20'
       - name: Probe gpt class through the LTZZZ worker
-        run: node scripts/relay-seat.mjs --purpose acceptance_probe --model gpt-6.1-sol --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
+        run: node scripts/relay-seat.mjs --call --purpose acceptance_probe --model gpt-6.1-sol --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
       - name: Probe claude class through the LTZZZ worker
-        run: node scripts/relay-seat.mjs --purpose acceptance_probe --model claude-haiku-5-5 --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
+        run: node scripts/relay-seat.mjs --call --purpose acceptance_probe --model claude-haiku-5-5 --requested-agent deepseek --prompt-file fixtures/relay-seat/long-context-probe.txt --max-tokens 64
       - name: Print sanitized call evidence
         if: always()
         run: |
