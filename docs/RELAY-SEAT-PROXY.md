@@ -82,3 +82,11 @@ npx wrangler secret put PROXY_ACCESS_TOKEN -c wrangler.relay-proxy.toml
 | 合规 | 厂商条款 | 多一层转售条款；不能对外宣称是原厂调用 |
 
 因此仓库把 `official_provider_api=false` 写进每条证据，禁止把中转调用伪装成原厂。
+
+## 5. 2026-11-12 实测状态
+
+- `RELAY_STATION_KEY` 已由持 key 的桌面机经 stdin 注入 Worker Secret，未打印、未入库；同一 Worker 后续真实调用不再返回 503 `proxy_key_missing`。
+- 真实调用记录：`gpt-6.1-sol` 200/stop/0.011234 USD，`claude-sonnet-4-6` 200/stop/0.005436 USD，`claude-haiku-5-5` 站点侧 503 暂不可用，另有一次 DNS 不可达探针记 `ENOTFOUND` 且未记成功。
+- 验收判定 `accepted`（7/7），证据在 `knowledge/results/relay-seat/calls/20261112T0131*.json`，回执见 `docs/RELAY-SEAT-LIVE-ACCEPTANCE-20261112.md`。
+- 仍未覆盖：Worker 侧 504 上游超时未真实触发；Deep Worker 自身仍以 `RELAY_API_KEY` 直连站点，尚未改为经本 Worker 转发，故 Deep 席仍关闭。
+- 复跑方式：`gh workflow run relay-acceptance.yml -f reason="<原因>"`，令牌由 CI 从 `LTZZZ_AGENT_TOKEN` 注入，不落地到任何机器。

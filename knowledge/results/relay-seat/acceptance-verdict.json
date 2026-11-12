@@ -1,69 +1,82 @@
 {
   "spec_id": "RELAY-SEAT-ACCEPTANCE-20261111",
-  "verdict": "not_accepted",
+  "verdict": "accepted",
   "counts": {
-    "pass": 1,
-    "fail": 5,
-    "insufficient": 1
+    "pass": 7,
+    "fail": 0,
+    "insufficient": 0
   },
-  "blocked_by": [
-    "real_call_success",
-    "class_routing_verified",
-    "request_identity_recorded",
-    "not_counted_as_business_task",
-    "no_funds_signature_production",
-    "failure_modes_verified"
-  ],
+  "blocked_by": [],
   "criteria": [
     {
       "id": "real_call_success",
-      "status": "FAIL",
-      "detail": "no evidence document shows a 200 stop response with output tokens and a recorded cost",
-      "evidence": []
+      "status": "PASS",
+      "detail": "2 successful call document(s)",
+      "evidence": [
+        "knowledge/results/relay-seat/calls/20261112T013154Z-deepseek-gpt-6.1-sol-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013159Z-deepseek-claude-sonnet-4-6-63a58cc5.json"
+      ]
     },
     {
       "id": "class_routing_verified",
-      "status": "FAIL",
-      "detail": "no successful call evidence",
-      "evidence": []
+      "status": "PASS",
+      "detail": "successful calls cover claude + gpt",
+      "evidence": [
+        "knowledge/results/relay-seat/calls/20261112T013154Z-deepseek-gpt-6.1-sol-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013159Z-deepseek-claude-sonnet-4-6-63a58cc5.json"
+      ]
     },
     {
       "id": "request_identity_recorded",
-      "status": "FAIL",
-      "detail": "no successful call evidence",
-      "evidence": []
+      "status": "PASS",
+      "detail": "request id, served model, time and usage all recorded",
+      "evidence": [
+        "knowledge/results/relay-seat/calls/20261112T013154Z-deepseek-gpt-6.1-sol-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013159Z-deepseek-claude-sonnet-4-6-63a58cc5.json"
+      ]
     },
     {
       "id": "failure_modes_verified",
-      "status": "INSUFFICIENT",
-      "detail": "missing failure categories: timeout_or_network_failure",
+      "status": "PASS",
+      "detail": "short-request refusal, balance/floor handling and network failure all evidenced",
       "evidence": [
         "knowledge/results/relay-seat/refusals/20261111T132142Z-deepseek-short-fixture.json",
-        "knowledge/results/relay-seat/refusals/20261111T132151Z-deepseek-floor-fixture.json"
+        "knowledge/results/relay-seat/refusals/20261111T132151Z-deepseek-floor-fixture.json",
+        "knowledge/results/relay-seat/calls/20261112T013202Z-deepseek-gpt-6.1-sol-63a58cc5.json"
       ]
     },
     {
       "id": "not_counted_as_business_task",
-      "status": "FAIL",
-      "detail": "no successful call evidence",
-      "evidence": []
+      "status": "PASS",
+      "detail": "every successful call declares business_task_completed=false and authority_effect=none",
+      "evidence": [
+        "knowledge/results/relay-seat/calls/20261112T013154Z-deepseek-gpt-6.1-sol-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013159Z-deepseek-claude-sonnet-4-6-63a58cc5.json"
+      ]
     },
     {
       "id": "no_funds_signature_production",
-      "status": "FAIL",
-      "detail": "no successful call evidence",
-      "evidence": []
+      "status": "PASS",
+      "detail": "every successful call declares no funds/signature surface and no production write",
+      "evidence": [
+        "knowledge/results/relay-seat/calls/20261112T013154Z-deepseek-gpt-6.1-sol-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013159Z-deepseek-claude-sonnet-4-6-63a58cc5.json"
+      ]
     },
     {
       "id": "key_boundary_respected",
       "status": "PASS",
       "detail": "no key material in evidence; transport and non-official routing declared",
       "evidence": [
+        "knowledge/results/relay-seat/calls/20261112T013154Z-deepseek-gpt-6.1-sol-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013156Z-deepseek-claude-haiku-5-5-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013159Z-deepseek-claude-sonnet-4-6-63a58cc5.json",
+        "knowledge/results/relay-seat/calls/20261112T013202Z-deepseek-gpt-6.1-sol-63a58cc5.json",
         "knowledge/results/relay-seat/refusals/20261111T132142Z-deepseek-short-fixture.json",
         "knowledge/results/relay-seat/refusals/20261111T132151Z-deepseek-floor-fixture.json"
       ]
     }
   ],
-  "generated_at": "2026-11-11T13:22:03.942Z",
+  "generated_at": "2026-11-12T01:32:29.798Z",
   "verdict_path": "knowledge/results/relay-seat/acceptance-verdict.json"
 }
