@@ -1,0 +1,473 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "source_commit": "235e6dbd249199f36efbad32ae7ee69a1602729d",
+  "run_id": "43175640014",
+  "run_attempt": "1",
+  "task_id": "DEEP-DAILY-SUPERVISION",
+  "at_utc": "2026-11-12T07:29:41.548Z",
+  "status": "daily_result_readback_complete",
+  "model_calls_limit": 3,
+  "output_tokens_per_call_limit": 2048,
+  "retries_allowed": 0,
+  "financial_execution": false,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "api_bill_verified": false,
+  "source_readset": [
+    {
+      "path": "knowledge/results/daily-board/artifacts/2026-11-06-grok-2e47650416c99a89d7727a371543371342352e96260a1344ef317f6f0a6df6aa.json",
+      "sha256": "2e47650416c99a89d7727a371543371342352e96260a1344ef317f6f0a6df6aa"
+    },
+    {
+      "path": "knowledge/results/daily-board/reviews/2026-11-06-grok-daf66ba612ccd5e0ec62f6415ad07c7f9181f4ac6fcb47381dbd77d53d8cbc3a.json",
+      "sha256": "daf66ba612ccd5e0ec62f6415ad07c7f9181f4ac6fcb47381dbd77d53d8cbc3a"
+    },
+    {
+      "path": "knowledge/results/daily-board/reviews/2026-11-06-qianwen-abbcda39edc4460c59b4e5f399a8c1eef09cd85a6dd89e43a854e357946ac224.json",
+      "sha256": "abbcda39edc4460c59b4e5f399a8c1eef09cd85a6dd89e43a854e357946ac224"
+    },
+    {
+      "path": "ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md",
+      "sha256": "aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6"
+    },
+    {
+      "path": "ops/dispatch/inbox/gpt/20261107-ans-p1-01-fault-injection.md",
+      "sha256": "7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5"
+    }
+  ],
+  "input_sha256": "2b33ede757bf7e38b51b3fa37bacf54e577ed437d5b72b1029ee6b8824b9e380",
+  "job": null,
+  "readset_sha256": "38880e133e299322f1fa63e701987835437e7bdb7d7198b7b1137eb4546e4fec",
+  "backlog_summary": {
+    "open_warning_cases": 157,
+    "unique_original_tasks": 157,
+    "not_rechecked_in_current_window": 125,
+    "by_responsible_seat": {
+      "qianwen": 50,
+      "doubao": 33,
+      "grok": 26,
+      "deepseek": 39,
+      "gpt": 9
+    },
+    "oldest_first": [
+      {
+        "task_id": "QIANWEN-RETURN-2026-10-16",
+        "date": "2026-10-16",
+        "assigned_to": "qianwen",
+        "missing_stage": "external_return_claim_missing",
+        "evidence": [
+          "knowledge/results/dispatch/qianwen-return-2026-10-16.json"
+        ],
+        "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-10-16-external_return_claim_missing.md"
+      },
+      {
+        "task_id": "DAILY-2026-10-17-doubao",
+        "date": "2026-10-17",
+        "assigned_to": "doubao",
+        "missing_stage": "review_missing",
+        "evidence": [
+          "knowledge/results/daily-board/2026-10-17.json",
+          "knowledge/results/daily-board/artifacts/2026-10-17-doubao-191df86fe2f71ddf81e8ac242262959a0d1968614d8c27e98e6f666a2fbcb9c3.json"
+        ],
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-17-doubao-review_missing.md"
+      },
+      {
+        "task_id": "AUTO-2026-10-17-health",
+        "date": "2026-10-17",
+        "assigned_to": "grok",
+        "missing_stage": "review_missing",
+        "evidence": [
+          "knowledge/results/daily-board/2026-10-17.json",
+          "knowledge/results/daily-board/artifacts/2026-10-17-grok-d80a6488093a1e49fb1d97e7eae496530ef3fb3fe2eb788fb02dfe0b72da17c4.json"
+        ],
+        "repair_file": "ops/dispatch/oversight/AUTO-2026-10-17-health-review_missing.md"
+      },
+      {
+        "task_id": "DAILY-2026-10-17-deepseek",
+        "date": "2026-10-17",
+        "assigned_to": "deepseek",
+        "missing_stage": "revision_required",
+        "evidence": [
+          "knowledge/results/daily-board/2026-10-17.json",
+          "knowledge/results/daily-board/artifacts/2026-10-17-deepseek-4d4bfad7725e81fa381cf2d6ed46305dd70ca08114b4f0bdb1f918f6eb2bf526.json"
+        ],
+        "repair_file": "ops/dispatch/oversight/DAILY-2026-10-17-deepseek-revision_required.md"
+      },
+      {
+        "task_id": "ANS-2026-10-17-doubao",
+        "date": "2026-10-17",
+        "assigned_to": "doubao",
+        "missing_stage": "blocked_reconcile_existing_attempt",
+        "evidence": [
+          "knowledge/results/ans-cycle/2026-10-17.json"
+        ],
+        "repair_file": "ops/dispatch/oversight/ANS-2026-10-17-doubao-blocked_reconcile_existing_attempt.md"
+      }
+    ]
+  },
+  "item": {
+    "kind": "task",
+    "task_id": "DEEP-DAILY-SUPERVISION",
+    "package_id": "readset-38880e133e299322f1fa63e701987835437e7bdb7d7198b7b1137eb4546e4fec",
+    "queue_card_source_commit": "235e6dbd249199f36efbad32ae7ee69a1602729d",
+    "input_sha256": "2b33ede757bf7e38b51b3fa37bacf54e577ed437d5b72b1029ee6b8824b9e380",
+    "payload_sha256": "2b33ede757bf7e38b51b3fa37bacf54e577ed437d5b72b1029ee6b8824b9e380",
+    "attempt_key": "7167d724845bf3b8a9ea0570a47da0da7c042ebe45eeeb32b4908c3c0428efcd",
+    "post_attempted": true,
+    "reused_existing": false,
+    "first_post_outcome": "accepted_response_pending_get_readback",
+    "status": "job_terminal_observed",
+    "financial_execution": false,
+    "paid": false,
+    "tx_hash": null,
+    "attempt_latch": "durable_reserved_before_post",
+    "first_post_http": 202,
+    "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+    "runtime_source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+    "model_calls_original_task_total": 3,
+    "job": {
+      "task_id": "DEEP-DAILY-SUPERVISION",
+      "package_id": "readset-38880e133e299322f1fa63e701987835437e7bdb7d7198b7b1137eb4546e4fec",
+      "input_sha256": "2b33ede757bf7e38b51b3fa37bacf54e577ed437d5b72b1029ee6b8824b9e380",
+      "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+      "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+      "revision": "ltzzz.deep-superagent.v1",
+      "content_guard_revision": "executor-metadata-declarations-v1",
+      "created_at": "2026-11-12T07:29:44.012Z",
+      "started_at": "2026-11-12T07:29:44.112Z",
+      "completed_at": "2026-11-12T07:30:17.992Z",
+      "status": "completed_pending_external_acceptance",
+      "terminal": true,
+      "model_calls": 3,
+      "model_calls_definition": "service_generation_requests_attempted_not_billing_proof",
+      "accepted": false,
+      "platform_accepted": false,
+      "deployed": false,
+      "paid": false,
+      "tx_hash": null,
+      "financial_execution": false,
+      "external_submissions_enabled": false,
+      "weights_trained": false,
+      "receipts": [
+        {
+          "stage": "plan",
+          "seat": "deepseek",
+          "actual_provider": "deepseek",
+          "actual_model": "deepseek-v4-pro",
+          "task_id": "DEEP-DAILY-SUPERVISION",
+          "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+          "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+          "started_at": "2026-11-12T07:29:44.112Z",
+          "completed_at": "2026-11-12T07:29:55.716Z",
+          "status": "complete_output_pending_review",
+          "generation_verified": true,
+          "model_source": "provider_response",
+          "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+          "request_id": "4ee40191-f05c-402a-b849-4b031b046ae3",
+          "upstream_request_id": null,
+          "upstream_request_id_source": null,
+          "provider_response_id": "9f787cdb-13ca-438a-ad23-f3207c1b1fdd",
+          "finish_reason": "stop",
+          "truncated": false,
+          "output_present": true,
+          "tokens_used": 8138,
+          "reasoning_tokens": null,
+          "completion_tokens": 447,
+          "upstream_http": 200,
+          "output_sha256": "c3e53338b63c74175317aa0435d43e4c63d42ca4ee6bee9f01a0f9a2da314c95",
+          "accepted": false,
+          "paid": false,
+          "tx_hash": null,
+          "request_options": {
+            "max_tokens": 2048,
+            "thinking_type": "disabled",
+            "source": "executor_request_not_provider_attestation"
+          }
+        },
+        {
+          "stage": "work_qianwen",
+          "seat": "qianwen",
+          "actual_provider": "aliyun_dashscope",
+          "actual_model": "qwen-max",
+          "task_id": "DEEP-DAILY-SUPERVISION",
+          "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+          "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+          "started_at": "2026-11-12T07:29:55.716Z",
+          "completed_at": "2026-11-12T07:30:14.005Z",
+          "status": "complete_output_pending_review",
+          "generation_verified": true,
+          "model_source": "provider_response",
+          "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+          "request_id": "acc2949e-54c8-410d-a8b1-6db2236b369d",
+          "upstream_request_id": "42987759-481b-9732-aa90-7d9d3e97f0e8",
+          "upstream_request_id_source": "header:x-request-id",
+          "provider_response_id": "chatcmpl-42987759-481b-9732-aa90-7d9d3e97f0e8",
+          "finish_reason": "stop",
+          "truncated": false,
+          "output_present": true,
+          "tokens_used": 9833,
+          "reasoning_tokens": null,
+          "completion_tokens": 496,
+          "upstream_http": 200,
+          "output_sha256": "1972abb372381e614bce0ead166170cf55f45575039e384e69123f27de959a76",
+          "accepted": false,
+          "paid": false,
+          "tx_hash": null,
+          "request_options": {
+            "max_tokens": 2048,
+            "thinking_type": null,
+            "source": "executor_request_not_provider_attestation"
+          }
+        },
+        {
+          "stage": "independent_review",
+          "seat": "deepseek",
+          "actual_provider": "deepseek",
+          "actual_model": "deepseek-v4-pro",
+          "task_id": "DEEP-DAILY-SUPERVISION",
+          "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+          "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+          "started_at": "2026-11-12T07:30:14.005Z",
+          "completed_at": "2026-11-12T07:30:17.992Z",
+          "status": "complete_output_pending_review",
+          "generation_verified": true,
+          "model_source": "provider_response",
+          "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+          "request_id": "6d7a81a3-528b-4161-953a-e94582d01853",
+          "upstream_request_id": null,
+          "upstream_request_id_source": null,
+          "provider_response_id": "bd5b3266-7a95-489b-abf3-a88065a21f87",
+          "finish_reason": "stop",
+          "truncated": false,
+          "output_present": true,
+          "tokens_used": 9341,
+          "reasoning_tokens": null,
+          "completion_tokens": 132,
+          "upstream_http": 200,
+          "output_sha256": "ed53c1692cd9d4333740cd171906f2bdfef606c4da4957ba23569fe495396a58",
+          "accepted": false,
+          "paid": false,
+          "tx_hash": null,
+          "request_options": {
+            "max_tokens": 2048,
+            "thinking_type": "disabled",
+            "source": "executor_request_not_provider_attestation"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "seat": "qianwen",
+          "actual_provider": "aliyun_dashscope",
+          "task": "只读复核 ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md (sha256=aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6) 与 20261107-ans-p1-01-fault-injection.md (sha256=7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5)：核对PR #373/提交8263f6d1是否在仓内可查、73 pass/0 fail是否有测试日志、故障注入4场景是否有可复现产物，逐项标unknown/blocked，不关闭原Task。",
+          "text": "### 审核报告\n\n#### 1. 文件复核\n- **文件路径与SHA-256校验**\n  - `ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md` (sha256=aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6)\n  - `ops/dispatch/inbox/gpt/20261107-ans-p1-01-fault-injection.md` (sha256=7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5)\n\n#### 2. PR #373 和提交 8263f6d1 核查\n- **PR #373 是否在仓库内可查**：unknown\n- **提交 8263f6d1 是否在仓库内可查**：unknown\n\n#### 3. 测试日志核查\n- **73 pass/0 fail 的测试日志是否可查**：unknown\n\n#### 4. 故障注入场景复现\n- **基线场景**：unknown\n- **A 场景（远端瞬时读不到工作产物）**：unknown\n- **B 场景（远端评审回执内容被真实替换）**：unknown\n- **C 场景（降级后远端恢复）**：unknown\n\n#### 5. 下一步建议\n- **核查 PR #373 和提交 8263f6d1 是否在仓库内存在**。\n- **查找并验证 73 pass/0 fail 的测试日志**。\n- **复现故障注入的四个场景，确保结果可重复**。\n\n### 总结\n- 本次审核未关闭原 Task。\n- 所有未验证项均标记为 unknown。\n- 建议进行进一步核查以确认各项证据。",
+          "sha256": "1972abb372381e614bce0ead166170cf55f45575039e384e69123f27de959a76",
+          "request_id": "acc2949e-54c8-410d-a8b1-6db2236b369d"
+        }
+      ],
+      "plan": {
+        "summary": "审计建议：对受管快照与5份来源文件做只读复核。观察：Grok 11-06工件自证为草稿检查，accepted=false/deployed=false/paid=false；qianwen评审回执accepted=true但scope=engineering_draft_only且unverified列出ANS部署与脚本运行未证；gpt复核qianwen评审回执accepted=false并指出复用无关审核理由。两份GPT inbox文件为豆包席声明，其中deploy-receipt-correction声称PR #373合并提交8263f6d1、73 pass/0 fail，fault-injection声称4场景实测与未改生产代码，但均无本包内可验证的执行日志或合并回执，标unknown。backlog 157项未复核125项，最老5项均未关闭。推断：ANS P1-01从设计到生产回读均仅有来源声明，无独立可验证证据；qianwen对grok的接受理由存在具体缺陷但grok生成回执本身仍为已证草稿，不应升格为部署/接受。",
+        "needs_gpt_decision": false,
+        "reason": null,
+        "tasks": [
+          {
+            "seat": "qianwen",
+            "task": "只读复核 ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md (sha256=aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6) 与 20261107-ans-p1-01-fault-injection.md (sha256=7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5)：核对PR #373/提交8263f6d1是否在仓内可查、73 pass/0 fail是否有测试日志、故障注入4场景是否有可复现产物，逐项标unknown/blocked，不关闭原Task。"
+          }
+        ]
+      },
+      "review": {
+        "approved": true,
+        "summary": "Qianwen output correctly marks PR/commit/test logs/injection scenarios as unknown and does not close the task. It is a read-only review, consistent with the request. Caveat: it supplies a self-declared sha256 and request_id without independent verification; treat those as source claims, not executor-attested metadata.",
+        "needs_gpt_decision": false,
+        "reason": null,
+        "actual_provider": "deepseek",
+        "actual_model": "deepseek-v4-pro",
+        "output_sha256": "ed53c1692cd9d4333740cd171906f2bdfef606c4da4957ba23569fe495396a58",
+        "independent_of_worker_providers": true,
+        "reviewed": [
+          {
+            "seat": "qianwen",
+            "sha256": "1972abb372381e614bce0ead166170cf55f45575039e384e69123f27de959a76"
+          }
+        ]
+      },
+      "content_gate": {
+        "phase": "after_independent_review",
+        "at": "2026-11-12T07:30:17.992Z",
+        "revision": "executor-metadata-declarations-v1",
+        "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+        "passed": true,
+        "findings": [],
+        "checks": [
+          {
+            "phase": "before_independent_review",
+            "at": "2026-11-12T07:30:14.005Z",
+            "revision": "executor-metadata-declarations-v1",
+            "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+            "passed": true,
+            "findings": []
+          },
+          {
+            "phase": "after_independent_review",
+            "at": "2026-11-12T07:30:17.992Z",
+            "revision": "executor-metadata-declarations-v1",
+            "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+            "passed": true,
+            "findings": []
+          }
+        ]
+      }
+    },
+    "path": "generated_from_trusted_readset",
+    "card_sha256": "2b33ede757bf7e38b51b3fa37bacf54e577ed437d5b72b1029ee6b8824b9e380"
+  },
+  "job_status": "completed_pending_external_acceptance",
+  "model_calls": 3,
+  "receipts": [
+    {
+      "stage": "plan",
+      "seat": "deepseek",
+      "actual_provider": "deepseek",
+      "actual_model": "deepseek-v4-pro",
+      "task_id": "DEEP-DAILY-SUPERVISION",
+      "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+      "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+      "started_at": "2026-11-12T07:29:44.112Z",
+      "completed_at": "2026-11-12T07:29:55.716Z",
+      "status": "complete_output_pending_review",
+      "generation_verified": true,
+      "model_source": "provider_response",
+      "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+      "request_id": "4ee40191-f05c-402a-b849-4b031b046ae3",
+      "upstream_request_id": null,
+      "upstream_request_id_source": null,
+      "provider_response_id": "9f787cdb-13ca-438a-ad23-f3207c1b1fdd",
+      "finish_reason": "stop",
+      "truncated": false,
+      "output_present": true,
+      "tokens_used": 8138,
+      "reasoning_tokens": null,
+      "completion_tokens": 447,
+      "upstream_http": 200,
+      "output_sha256": "c3e53338b63c74175317aa0435d43e4c63d42ca4ee6bee9f01a0f9a2da314c95",
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "request_options": {
+        "max_tokens": 2048,
+        "thinking_type": "disabled",
+        "source": "executor_request_not_provider_attestation"
+      }
+    },
+    {
+      "stage": "work_qianwen",
+      "seat": "qianwen",
+      "actual_provider": "aliyun_dashscope",
+      "actual_model": "qwen-max",
+      "task_id": "DEEP-DAILY-SUPERVISION",
+      "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+      "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+      "started_at": "2026-11-12T07:29:55.716Z",
+      "completed_at": "2026-11-12T07:30:14.005Z",
+      "status": "complete_output_pending_review",
+      "generation_verified": true,
+      "model_source": "provider_response",
+      "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+      "request_id": "acc2949e-54c8-410d-a8b1-6db2236b369d",
+      "upstream_request_id": "42987759-481b-9732-aa90-7d9d3e97f0e8",
+      "upstream_request_id_source": "header:x-request-id",
+      "provider_response_id": "chatcmpl-42987759-481b-9732-aa90-7d9d3e97f0e8",
+      "finish_reason": "stop",
+      "truncated": false,
+      "output_present": true,
+      "tokens_used": 9833,
+      "reasoning_tokens": null,
+      "completion_tokens": 496,
+      "upstream_http": 200,
+      "output_sha256": "1972abb372381e614bce0ead166170cf55f45575039e384e69123f27de959a76",
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "request_options": {
+        "max_tokens": 2048,
+        "thinking_type": null,
+        "source": "executor_request_not_provider_attestation"
+      }
+    },
+    {
+      "stage": "independent_review",
+      "seat": "deepseek",
+      "actual_provider": "deepseek",
+      "actual_model": "deepseek-v4-pro",
+      "task_id": "DEEP-DAILY-SUPERVISION",
+      "execution_id": "c31520c2-67b5-4d14-bf95-ba4cecb8f98d",
+      "source_commit": "95cd599dadd128a3371c35b7bc6674a36f4f4fbc",
+      "started_at": "2026-11-12T07:30:14.005Z",
+      "completed_at": "2026-11-12T07:30:17.992Z",
+      "status": "complete_output_pending_review",
+      "generation_verified": true,
+      "model_source": "provider_response",
+      "model_identity_verification": "upstream_metadata_not_cryptographic_attestation",
+      "request_id": "6d7a81a3-528b-4161-953a-e94582d01853",
+      "upstream_request_id": null,
+      "upstream_request_id_source": null,
+      "provider_response_id": "bd5b3266-7a95-489b-abf3-a88065a21f87",
+      "finish_reason": "stop",
+      "truncated": false,
+      "output_present": true,
+      "tokens_used": 9341,
+      "reasoning_tokens": null,
+      "completion_tokens": 132,
+      "upstream_http": 200,
+      "output_sha256": "ed53c1692cd9d4333740cd171906f2bdfef606c4da4957ba23569fe495396a58",
+      "accepted": false,
+      "paid": false,
+      "tx_hash": null,
+      "request_options": {
+        "max_tokens": 2048,
+        "thinking_type": "disabled",
+        "source": "executor_request_not_provider_attestation"
+      }
+    }
+  ],
+  "plan": {
+    "summary": "审计建议：对受管快照与5份来源文件做只读复核。观察：Grok 11-06工件自证为草稿检查，accepted=false/deployed=false/paid=false；qianwen评审回执accepted=true但scope=engineering_draft_only且unverified列出ANS部署与脚本运行未证；gpt复核qianwen评审回执accepted=false并指出复用无关审核理由。两份GPT inbox文件为豆包席声明，其中deploy-receipt-correction声称PR #373合并提交8263f6d1、73 pass/0 fail，fault-injection声称4场景实测与未改生产代码，但均无本包内可验证的执行日志或合并回执，标unknown。backlog 157项未复核125项，最老5项均未关闭。推断：ANS P1-01从设计到生产回读均仅有来源声明，无独立可验证证据；qianwen对grok的接受理由存在具体缺陷但grok生成回执本身仍为已证草稿，不应升格为部署/接受。",
+    "needs_gpt_decision": false,
+    "reason": null,
+    "tasks": [
+      {
+        "seat": "qianwen",
+        "task": "只读复核 ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md (sha256=aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6) 与 20261107-ans-p1-01-fault-injection.md (sha256=7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5)：核对PR #373/提交8263f6d1是否在仓内可查、73 pass/0 fail是否有测试日志、故障注入4场景是否有可复现产物，逐项标unknown/blocked，不关闭原Task。"
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "seat": "qianwen",
+      "actual_provider": "aliyun_dashscope",
+      "task": "只读复核 ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md (sha256=aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6) 与 20261107-ans-p1-01-fault-injection.md (sha256=7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5)：核对PR #373/提交8263f6d1是否在仓内可查、73 pass/0 fail是否有测试日志、故障注入4场景是否有可复现产物，逐项标unknown/blocked，不关闭原Task。",
+      "text": "### 审核报告\n\n#### 1. 文件复核\n- **文件路径与SHA-256校验**\n  - `ops/dispatch/inbox/gpt/20261107-ans-p1-01-deploy-receipt-correction.md` (sha256=aa470a80c58c6287b5bb5fff23b27e96f7793b0c68bfb5feecc9dc41a778a7f6)\n  - `ops/dispatch/inbox/gpt/20261107-ans-p1-01-fault-injection.md` (sha256=7115c84ba937bb3108edada8dd1d777adb7f6e12bb1d033498620a1d476429d5)\n\n#### 2. PR #373 和提交 8263f6d1 核查\n- **PR #373 是否在仓库内可查**：unknown\n- **提交 8263f6d1 是否在仓库内可查**：unknown\n\n#### 3. 测试日志核查\n- **73 pass/0 fail 的测试日志是否可查**：unknown\n\n#### 4. 故障注入场景复现\n- **基线场景**：unknown\n- **A 场景（远端瞬时读不到工作产物）**：unknown\n- **B 场景（远端评审回执内容被真实替换）**：unknown\n- **C 场景（降级后远端恢复）**：unknown\n\n#### 5. 下一步建议\n- **核查 PR #373 和提交 8263f6d1 是否在仓库内存在**。\n- **查找并验证 73 pass/0 fail 的测试日志**。\n- **复现故障注入的四个场景，确保结果可重复**。\n\n### 总结\n- 本次审核未关闭原 Task。\n- 所有未验证项均标记为 unknown。\n- 建议进行进一步核查以确认各项证据。",
+      "sha256": "1972abb372381e614bce0ead166170cf55f45575039e384e69123f27de959a76",
+      "request_id": "acc2949e-54c8-410d-a8b1-6db2236b369d"
+    }
+  ],
+  "review": {
+    "approved": true,
+    "summary": "Qianwen output correctly marks PR/commit/test logs/injection scenarios as unknown and does not close the task. It is a read-only review, consistent with the request. Caveat: it supplies a self-declared sha256 and request_id without independent verification; treat those as source claims, not executor-attested metadata.",
+    "needs_gpt_decision": false,
+    "reason": null,
+    "actual_provider": "deepseek",
+    "actual_model": "deepseek-v4-pro",
+    "output_sha256": "ed53c1692cd9d4333740cd171906f2bdfef606c4da4957ba23569fe495396a58",
+    "independent_of_worker_providers": true,
+    "reviewed": [
+      {
+        "seat": "qianwen",
+        "sha256": "1972abb372381e614bce0ead166170cf55f45575039e384e69123f27de959a76"
+      }
+    ]
+  },
+  "finished_at_utc": "2026-11-12T07:30:20.140Z"
+}
