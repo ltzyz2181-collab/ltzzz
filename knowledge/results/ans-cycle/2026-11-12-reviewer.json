@@ -1,0 +1,27 @@
+{
+  "accepted": true,
+  "artifact_sha256": "0c23068386c3aa7d271c32eba44ae0c995f28415df36086d924f63c6e18ed245",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs：runReservedSeat 先将 seat.status 置为 generation_started 并 saveLedger，随后构造 artifact；无论 complete 是否为 true，都会执行 fs.writeFileSync 写入 status 为 complete 或 incomplete_or_failed 的 JSON。",
+    "源码显示 seat.artifact、seat.status 的最终更新以及第二次 saveLedger 均发生在 artifact 文件写入之后，因此确实存在文件已落盘但 ledger 仍为 generation_started 且 seat.artifact 为空的崩溃窗口。",
+    "对照 validateArtifact：该函数强制要求 body.status === 'complete'，并校验 date、run_key、task_id、logical_seat、source_commit 等绑定字段；incomplete_or_failed artifact 会因 artifact_binding_invalid 被拒绝。",
+    "对照 recoverArtifact：现有实现只收集通过 validateArtifact 的 complete artifact；当目录中仅有绑定正确的 incomplete_or_failed artifact 时，matches.length 为 0，函数返回 false，不会回填 artifact。",
+    "对照 syncDailyBoard：recoverArtifact 返回 false 后，仍处于 generation_started 的席位会被改写为 generation_unknown_no_repurchase；该状态不在失败同步状态列表中，也不满足普通 artifact 提交条件，源码支持 finding 所述证据断链。",
+    "minimal_patch 提出的 validateFailedArtifact 会重新读取候选文件、校验实际字节 SHA-256、文件路径及 incomplete_or_failed、date、run_key、task_id、logical_seat、source_commit 绑定关系；静态上符合哈希绑定和 fail-closed 要求。",
+    "补丁在唯一失败候选时回填 seat.artifact，并将状态设置为 generation_failed_no_repurchase；syncDailyBoard 的既有条件会把该状态送入 syncFailedSeat，从而衔接失败任务回读路径，且不触发模型重放。",
+    "补丁保留 complete artifact 的 validateArtifact 与 generated_pending_sync 路径；交付内容属于 finding、补丁草稿、验证命令和剩余阻塞，没有声称补丁已合入、测试已执行、服务已部署或转账已发生。"
+  ],
+  "unverified": [
+    "未取得该交付物原始字节，无法独立重算 artifact_sha256；只能严格回传给定哈希。",
+    "未实际应用补丁或审查最终 Git diff，无法确认插入位置、函数结构、作用域、格式、异常处理和合并结果完全可编译。",
+    "未实际执行 node --check scripts/lib/daily-task-board.mjs，补丁后的语法正确性未验证。",
+    "未实际执行 node --test、完整测试套件或交付中的临时复现脚本；失败 artifact 恢复、多候选歧义、complete artifact 兼容、幂等重跑均未运行验证。",
+    "补丁同时扫描 completeMatches 与 failedMatches，但草稿未完整证明两类候选并存时的优先级和歧义处理；例如唯一失败候选与一个或多个 complete 候选并存时的期望状态仍需测试确认。",
+    "recoverArtifact 入口加入 generation_unknown_no_repurchase 可支持再次 sync 时恢复失败证据，但该状态下恢复后直接进入 syncFailedSeat 的完整行为尚未验证。",
+    "syncFailedSeat 还要求 readRemote(a.path) 返回内容的 SHA-256 与本地哈希一致；补丁只恢复本地 ledger 和本地 artifact，远端尚未持久化时会进入 failure_sync_unknown，该后续路径未验证。",
+    "未验证其他调用方是否依赖 recoverArtifact 仅恢复 complete artifact，或依赖 generation_unknown_no_repurchase 不绑定 artifact 的旧行为。",
+    "未验证真实生产环境中该崩溃窗口是否实际发生，也未验证 CI/runner 的进程终止、工作目录保留和 artifact 生命周期是否满足恢复假设。",
+    "未验证补丁合入 main、完整 CI、部署回读、目标环境、制品 SHA、生产版本及线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金操作；本次结论仅限源码和规格草稿的静态可复核性。"
+  ]
+}
