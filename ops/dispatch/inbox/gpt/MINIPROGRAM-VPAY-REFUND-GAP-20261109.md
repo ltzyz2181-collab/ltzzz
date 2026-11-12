@@ -354,3 +354,43 @@ owner 就「部分退款要不要也自动收口」只回了「完成部署」�
   需下一次上传/发布才在界面生效；在此之前部分退款的单会显示原始状态文本。
 - 部署用的 IDE 服务端口开关已恢复原值（`enableServicePort=false`、`port=null`，两份 JSON 均 Test-Json 通过），
   27+ 个 IDE 进程已清空。
+
+## 11. 退款裁决权与客户告知口径（owner 2026-11-12 定，已落地部分）
+
+规则原文见 `docs/2026-11-12-退款裁决与客户告知口径.md`，此处只记本轮实际改了什么、还差什么。
+
+### 11.1 裁决权（已写入 docs + AGENTS.md）
+
+- 人工核对后退款状态改判，只能由 **GPT 决策席**裁决。
+- 豆包、WorkBuddy 只能采集微信退款记录、云函数日志、数据库现状并上报，**不得自行改判**。
+- `vpay-notify` 收到真实微信推送后的自动落库不属于人工改判，照常运行。
+
+### 11.2 授权来源（已补字段，未覆盖历史）
+
+- 现状核查：首单 `9dd802d16af18d620027c9cc7ae0093a` 只有 `refund_verdict=owner_confirmed_refunded`，
+  **没有来源说明字段**，确属"字段替代授权"的情况。
+- 处置：`writeNoSqlDatabaseContent` `$set` 仅新增两字段，`requestId 15403423-2e5f-4f9e-af70-23328b4741e2`，`modifiedCount 1`：
+  - `refund_verdict_source`：写明按 owner 会话口径改判、无独立书面授权文件、人工核对依据为微信退款单号
+    `VPR26110917109261225` + 云日志 `request_id 822a9cea-dc24-11f1-946e-52540006055e`，
+    并注明"后续同类改判须先有 GPT 裁决记录再落库"。
+  - `refund_verdict_source_at`：`2026-11-12T00:00:00.000Z`。
+- 回读（`requestId 1918f11e-4ae4-4838-aa51-3efd789861cc`）：首单 `status=refunded`、`refund_amount 990`、
+  `wx_refund_reference VPR26110917109261225` 均未变；其余订单（2 关闭 + 6 待支付）未受影响。
+
+### 11.3 客户可见口径（代码已改，未上线）
+
+原实现只显示状态文本（`部分退款 · 暂停交付`），不显示退款金额与后续说明 —— 不符合新规。已改：
+
+- `miniprogram/pages/orders/index.js`：新增退款说明映射，部分退款/核对中/已退款分别给出金额与下一步；
+  计算 `refunded_total`（回退 `refund_amount`）、剩余未退、退款完成时间。
+- `miniprogram/pages/orders/index.wxml`：新增"已退金额""剩余未退（交付暂停）""退款完成时间"三行 + 说明块。
+- `miniprogram/app.wxss`：新增 `.refund-note` 样式。
+- 校验：`node --check miniprogram/pages/orders/index.js` 通过。
+
+生效条件：这属于小程序前端，需重新上传开发版并发布后才会在客户手机上出现；本轮**没有**上传，也没有发布。
+
+### 11.4 真实退款验收要求（尚无首证）
+
+- 下一笔真实退款必须采集：微信侧真实退款单号/请求标识、退款状态、云函数 `request_id`、数据库回读，四者对齐。
+- 不得用合成推送冒充线上验收；回放只能标注为离线行为证据。
+- 当前状态：真实下一笔尚未发生，无线上首证。

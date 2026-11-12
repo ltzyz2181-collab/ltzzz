@@ -15,6 +15,10 @@
     <view class="row">订单号：{{item.out_trade_no}}</view>
     <view class="row">金额：¥{{item.amountLabel}}</view>
     <view class="row">状态：{{item.statusLabel}}</view>
+    <view class="row" wx:if="{{item.refundedLabel}}">已退金额：¥{{item.refundedLabel}}</view>
+    <view class="row" wx:if="{{item.remainingLabel}}">剩余未退：¥{{item.remainingLabel}}（交付暂停）</view>
+    <view class="row" wx:if="{{item.refundTimeLabel}}">退款完成时间：{{item.refundTimeLabel}}</view>
+    <view class="refund-note" wx:if="{{item.refundNote}}">{{item.refundNote}}</view>
     <view class="row">下单时间：{{item.created_at_label}}</view>
   </view>
 
