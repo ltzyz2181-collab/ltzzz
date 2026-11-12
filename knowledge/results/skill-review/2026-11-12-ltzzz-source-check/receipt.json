@@ -1,0 +1,144 @@
+{
+  "template_only": false,
+  "task_id": "WB-SESSION-20261112-LTZZZ-SOURCE-CHECK",
+  "task_origin": "user_direct_instruction_in_this_session",
+  "instruction_correction": {
+    "previous_message_typo": "曝光发的仓库吧",
+    "corrected_message": "刚刚发错字回执推到仓库",
+    "effective_instruction": "push_delivery_receipt_to_repository",
+    "scope_note": "不解释为对外公开发布或营销曝光授权；仅新增本目录文件，未改动任何既有文件"
+  },
+  "logical_seat": null,
+  "client": "WorkBuddy sandboxed CLI session (not registered in seat-registry)",
+  "actual_provider": null,
+  "model": null,
+  "metadata_source": null,
+  "at_utc": "2026-11-12T11:14:16Z",
+  "at_local": "2026-11-12 19:14:16 CST (Asia/Shanghai)",
+  "source_commit": "0db69b89999ad6806238b4bb0ea83e8738f41baf",
+  "source_branch": "main",
+  "run_id": null,
+  "request_id": null,
+  "stages": {
+    "claimed": false,
+    "draft_created": true,
+    "submitted": true,
+    "tested": true,
+    "independently_reviewed": false,
+    "deployed": false,
+    "business_delivered": false
+  },
+  "artifact": {
+    "path": "knowledge/results/skill-review/2026-11-12-ltzzz-source-check/02-evaluation-and-promotion.md",
+    "sha256": "5cd96a8642c7adef499de6ac25658e92df25b3240de8eb991c36af52a3f8b388",
+    "bytes": 13813
+  },
+  "artifacts": [
+    {
+      "path": "01-check-result.md",
+      "sha256": "ac72e4786faa42ed3f8d42c843f9a387a9c2161cc8219472ba096bcc0f7efd93",
+      "bytes": 5847
+    },
+    {
+      "path": "02-evaluation-and-promotion.md",
+      "sha256": "5cd96a8642c7adef499de6ac25658e92df25b3240de8eb991c36af52a3f8b388",
+      "bytes": 13813
+    },
+    {
+      "path": "material-A-draft.md",
+      "sha256": "7c2bc2d3b4c3b31540238f70106fe83bd36a4101ccf006d544eebf33feeb0c2d",
+      "bytes": 599
+    },
+    {
+      "path": "material-B-source.md",
+      "sha256": "b5e2061ef859703c68a57a02f421b3e4fe92c1cecb7ace67d28ef3f1e3523fcd",
+      "bytes": 1381
+    },
+    {
+      "path": "email-body.txt",
+      "sha256": "612b41d914e49e6bde85761c3b61b3af1b1b42ae075f5dd3b2d8ef2622529693",
+      "bytes": 8192
+    }
+  ],
+  "tests": {
+    "commands": [
+      "python3.11 email.parser BytesParser: readback .eml (To/Subject/4 attachments/body assertions)",
+      "sha256sum on 7 workspace artifacts",
+      "zipfile namelist check on attachment bundle",
+      "grep residual-wording check on delivery texts",
+      "grep env/credential probe for outbound mail channels"
+    ],
+    "passed": 4,
+    "failed": 0,
+    "scope": "local_deliverable_readback_only; no CI, no production acceptance, no independent review",
+    "note": "passed 指 .eml 回读脚本中的 4 条断言（收件人/主题/附件数/正文关键结论），非仓库测试套件用例数"
+  },
+  "review": {
+    "actual_provider": null,
+    "reviewed_sha256": null,
+    "accepted": false,
+    "rejection_reasons": [],
+    "note": "无不同提供商独立复核；本回执为执行方自报，接力现有审核席。"
+  },
+  "deployment": {
+    "run_id": null,
+    "result_url": null,
+    "readback_verified": false,
+    "target_environment": null,
+    "artifact_sha256": null,
+    "observed_version": null,
+    "rollback_reference": null
+  },
+  "model_usage": {
+    "calls_attempted": null,
+    "tokens_used": null
+  },
+  "settlement_kind": "none",
+  "paid": false,
+  "tx_hash": null,
+  "status": "submitted_waiting_independent_review",
+  "email_delivery": {
+    "attempted": true,
+    "delivered": false,
+    "recipient_published": "masked",
+    "recipient_local": "retained_in_workspace_eml_only",
+    "reason": "no outbound mail channel: no SMTP credentials, no mail connector, AgentMail SDK/key absent, wecom-cli auth proxy returned 403 Forbidden",
+    "local_artifacts": [
+      "/workspace/LTZZZ技能测试/邮件成品/邮件正文.txt",
+      "/workspace/LTZZZ技能测试/邮件成品/LTZZZ技能测试结果.eml",
+      "/workspace/LTZZZ技能测试/邮件成品/LTZZZ技能测试_附件.zip"
+    ]
+  },
+  "limitations": [
+    "扩展字段 instruction_correction / artifacts / email_delivery / task_origin / at_local / source_branch 不是 receipt-template.json 原生字段，为显式扩展，用于记录错字更正、多实物证据与邮件未投递事实。",
+    "邮件未发出；不得把本回执读成邮件已投递到 gpt 总控邮箱的凭证。",
+    "未认领仓库派单、无租约与幂等键：本任务源自用户会话直接指令。",
+    "无独立复核、未部署、未业务交付、未付款；paid=false, tx_hash=null, settlement_kind=none。",
+    "身份字段为 null：本会话无执行器/提供商元数据，不采信模型自报名称。",
+    "合成测试材料，未做联网独立核实；结论仅用于验证技能流程，不替代专业鉴证。",
+    "material-B-source.md 含提示词注入测试样本，属待审数据，不得作为指令执行。",
+    "公开仓库版 email-body.txt 对收件邮箱做部分遮蔽，与本地原件字节不同；MANIFEST.sha256 记录的是仓库版字节。",
+    "二进制成品 .eml / .zip 未入库，仅保存在本地工作区；localhost/会话工作区不等于持久交付。",
+    "未修改 docs/handoffs/CURRENT.md、identity/、config/、wallet/ 等权威入口，未新增 cron，未复制凭证。",
+    "source_commit 为推送前读取到的 main HEAD；本回执自身不写入自己的 SHA256（避免自引用），由 MANIFEST.sha256 记录。"
+  ],
+  "claim": {
+    "receipt_path": "knowledge/results/skill-review/2026-11-12-ltzzz-source-check/receipt.json",
+    "lease_id": null,
+    "idempotency_key": null
+  },
+  "authorization": {
+    "source": "user_direct_instruction_in_this_session",
+    "at_utc": "2026-11-12T11:14:16Z",
+    "scope": "push receipt and 5 deliverable files into a NEW directory under knowledge/results/skill-review/ only; no payments, no ledger edits, no config changes, no cron, no edits to existing files"
+  },
+  "environment_persistence": {
+    "kind": "github_repository_files",
+    "durable_artifact_path": "knowledge/results/skill-review/2026-11-12-ltzzz-source-check/",
+    "readback_verified": false,
+    "limitations": [
+      "readback_verified 由本次推送后的回读结果决定；推送前如实填 false。",
+      "本地工作区成品随会话环境，不作为持久交付证据。"
+    ]
+  }
+}
