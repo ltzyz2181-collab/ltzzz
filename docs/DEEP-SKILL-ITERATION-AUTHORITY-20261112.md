@@ -10,7 +10,14 @@ owner 授权 Deep 具备「技能迭代提案能力」，同时把裁决权与�
 
 三条状态必须分开留证：**已裁决 / 已合并 / 已部署**，不得互相顶替。
 
-## 2. 范围
+## 2. 裁决与部署（2026-11-12 修订）
+
+- **不再需要 owner 建 Issue**。GPT 裁决通过就是唯一裁决门，通过后自动进入部署，owner 不需要出手。
+- 部署自动化顺序：裁决回执校验（`scripts/verify-skill-iteration-decision.mjs`，校验 approver=gpt、proposal_sha256 与批准范围）→ 改 skill → 补 ≥2 家原生 provider 的 activation 证据 → 同步 `.github/.claude/.agents` 适配目录 → 跑测试与 distribution check → 合并推送 → 写 deployed 记录。
+- 代码层仍然 fail-closed：`skillContext()` 必须有与当前 `core_sha256` 绑定的 activation 证据，且 ≥2 家原生 provider；缺了会让 skill 直接不可用。所以自动流程必须先补证据再部署，不能跳过。
+- 三段状态分开留证：已裁决（decision id）/ 已合并（commit）/ 已部署（deployed 记录）。
+
+## 3. 范围
 
 仓库内可迭代（仍需裁决 + Issue）：
 
@@ -21,7 +28,7 @@ owner 授权 Deep 具备「技能迭代提案能力」，同时把裁决权与�
 
 不在仓库内（Deep 只读不改，只出方案）：平台级/用户目录下的各类 doubao skills。
 
-## 3. 月度巡查做什么
+## 4. 月度巡查做什么
 
 每月一次，按 `config/deep-skill-iteration.json` 的 `monthly_flow`：
 
@@ -31,19 +38,20 @@ owner 授权 Deep 具备「技能迭代提案能力」，同时把裁决权与�
 4. 派一张 `DEEP-SKILL-ITER-<YYYYMM>-01` 卡请 Deep 复核提案（只做草稿，不做裁决）。
 5. 提案 + Deep 复核结果发 GPT 裁决。
 6. 落盘 `knowledge/results/skill-iteration/<YYYY-MM>.json`，状态 `awaiting_gpt_decision`。
+7. 收到批准回执后自动部署并写 deployed 记录，不需要 owner 介入。
 
 未获裁决前，不改任何 skill 文件。
 
-## 4. 与既有流程的关系
+## 5. 与既有流程的关系
 
 | 层 | 谁做 | 产物 |
 | --- | --- | --- |
 | 发现与提案 | Deep（月度巡查） | 提案清单 + 证据 ref |
-| 裁决 | GPT 决策席 | approve / revise / reject 回执 |
-| 评审与合并 | owner Issue `[LTZZZ技能评审]` 触发的既有流水线 | review 记录 + PR |
-| 发布 | 既有发布流程 | release 记录 |
+| 裁决 | GPT 决策席（唯一裁决门） | approve / revise / reject 回执 |
+| 审查证据 | 自动跑 ≥2 家原生 provider | activation 证据（代码强制） |
+| 合并与部署 | 自动流程 | commit + deployed 记录 |
 
-## 5. 红线
+## 6. 红线
 
 - 资金、签名、钱包、Safe、放款、生产写永不进入 skill 执行器。
 - 评审、技能迭代、资金三类自动化部署须 GPT 裁决后才执行。

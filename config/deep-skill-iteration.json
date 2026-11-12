@@ -33,16 +33,20 @@
   "approval": {
     "requirement": "任何会改变 skill 行为、或声称能带来使用提升的迭代，一律需要 GPT 裁决通过",
     "decision_seat": "gpt",
-    "decision_evidence": "GPT 裁决回执（邮件回复或 ops/deep-superagent/decisions 记录），需写明批准范围",
-    "owner_issue_required": true,
+    "decision_evidence": "GPT 裁决回执（ops/deep-superagent/decisions/dsi-*.json 或邮件回执），需写明批准范围与 proposal_sha256",
+    "owner_issue_required": false,
+    "owner_issue_optional": true,
     "owner_issue_title_prefix": "[LTZZZ技能评审]",
+    "deploy_after_decision": true,
+    "decision_guard": "scripts/verify-skill-iteration-decision.mjs",
+    "decision_schema": "ltzzz.skill-iteration.decision.v1",
     "flow": [
       "Deep 月度巡查 -> 提案",
       "GPT 裁决（approve / reject / revise）",
-      "owner 建 Issue 触发既有评审流水线",
-      "评审通过后合并；部署仍按既有发布流程"
+      "裁决回执校验通过后自动执行：原生 review 证据补录 -> activation -> 适配目录同步 -> 合并推送",
+      "部署完成留证；owner 不需要手工建 Issue 或手工触发"
     ],
-    "note": "裁决通过不等于已合并、更不等于已部署；三者分别留证"
+    "note": "GPT 裁决是唯一裁决门；代码层仍强制 ≥2 家原生 provider 的 activation 证据，失败会 fail-closed 使 skill 不可用，因此自动流程必须先补齐该证据再部署。已裁决 / 已合并 / 已部署 三者分别留证"
   },
   "cadence": {
     "frequency": "monthly",
@@ -55,7 +59,10 @@
     "每条提案给：现状、证据、改动点、预期收益、风险、可回退方式、是否改变行为",
     "派一张 DEEP-SKILL-ITER-<YYYYMM>-01 卡请 Deep 复核提案（只做草稿，不做裁决）",
     "把提案与 Deep 复核结果发 GPT 裁决",
-    "落盘月度报告，状态 awaiting_gpt_decision；未获裁决前不改任何 skill 文件"
+    "落盘月度报告，状态 awaiting_gpt_decision；未获裁决前不改任何 skill 文件",
+    "收到 GPT 批准回执后：用 scripts/verify-skill-iteration-decision.mjs 校验裁决与 proposal_sha256",
+    "校验通过即自动部署：改 skill -> 补 ≥2 家原生 provider 的 activation 证据 -> 同步适配目录 -> 跑测试与 distribution check -> 合并推送",
+    "部署后落盘 deployed 记录（commit、core_sha256、review 证据路径、时间），不需要 owner 建 Issue 或手工触发"
   ],
   "red_lines": [
     "资金、签名、钱包、Safe、放款、生产写永不进入 skill 执行器",
