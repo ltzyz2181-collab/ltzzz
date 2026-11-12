@@ -1,0 +1,41 @@
+{
+ "schema": "ltzzz.deep-superagent.observer-diagnosis.v1",
+ "date": "2026-11-13",
+ "subject": "long-running autonomy observer keeps failing after the correction receipt",
+ "runs": [
+  "43322897021",
+  "43322681580",
+  "43322351696",
+  "43322044378",
+  "43321639551"
+ ],
+ "observed_output": "{\"status\":\"goal_observed_no_progress_change\",\"goal_id\":\"GOAL-LTZZZ-AUTONOMY-20261105\",\"model_calls\":0,\"transactions\":0} then exit code 1",
+ "root_cause": {
+  "where": "scripts/observe-autonomy-goal.mjs line 15: exitCode=1 when observed.errors.length>0",
+  "error": "unverified_evidence:core_product:prototype_and_negative_cases",
+  "mechanism": "evaluateGoal readPinned still resolves the ORIGINAL evidence_ref whose source_commit is a606873951f69694a9abc17cb196342effdac33f; that commit has no common ancestor with HEAD, so merge-base --is-ancestor exits 1 and execFileSync throws, producing the error",
+  "why_the_correction_receipt_did_not_help": "commit c25386fa6 only APPENDED a second ref; the evaluator still walks the first (original) ref, so the unreachable ref keeps failing",
+  "not_a_crash": "the observer prints a valid observation first; the red CI is the evidence-integrity error path, not a runtime failure"
+ },
+ "candidate_fixes": [
+  {
+   "id": "F1",
+   "change": "evaluator treats a ref as satisfied when a reachable correction ref in evidence_corrections points to a byte-verified copy",
+   "risk": "changes evidence-selection semantics; needs a unit test that a superseded ref cannot be used to fake acceptance"
+  },
+  {
+   "id": "F2",
+   "change": "state marks the original ref with superseded_by and evaluator skips superseded refs",
+   "risk": "touches state semantics; must stay append-only (keep the old ref visible)"
+  }
+ ],
+ "recommendation": "F1 with an explicit allowlist: only refs whose bytes are sha256-verified at a reachable commit may stand in; no acceptance claim may be derived from the substitute",
+ "constraints": "no reset, no force-push; the original ref stays visible; write with tests first, no deployment today",
+ "evidence": {
+  "goal_state": "ops/goals/GOAL-LTZZZ-AUTONOMY-20261105.state.json",
+  "observation_file": "knowledge/results/goals/GOAL-LTZZZ-AUTONOMY-20261105.json",
+  "observation_status": "blocked_evidence_integrity",
+  "correction_receipt": "knowledge/results/goals/corrections/20261113-source-ancestry-correction.json",
+  "correction_commit": "bbbd00926"
+ }
+}
