@@ -192,6 +192,11 @@
     "item": "status.json 刷新",
     "evidence": "knowledge/results/deep-superagent/status.json (commit e0a0aa0ea)",
     "note": "旧 11-08 值标注为 stale"
+   },
+   {
+    "item": "observer 连续失败根因诊断",
+    "evidence": "knowledge/results/deep-superagent/observer-diagnosis-2026-11-13.json (commit 6ff60f534)",
+    "note": "根因：评估器仍在解析原始 evidence_ref(a60687…)，该提交与 HEAD 无共同祖先导致 unverified_evidence；correction receipt 只是追加引用，未替代被解析的那一条。exit 1 属证据完整性错误路径，不是崩溃"
    }
   ],
   "awaiting_decision": {
@@ -238,16 +243,16 @@
   },
   "next_immediate": [
    {
-    "item": "诊断 observer 连续失败（43322897021 / 43322681580 / 43322351696）",
-    "criterion": "产出含失败步骤、报错原文与 commit 的只读诊断文件，不部署"
-   },
-   {
     "item": "oversight backlog 有界复查 10 条",
     "criterion": "10 条各写复查结论与证据指针，落盘可核验"
    },
    {
     "item": "补写 C1/C3 收尾回执",
     "criterion": "回执路径入本文件 done 段，并指向可核验接收文件"
+   },
+   {
+    "item": "按 F1 方案（可核验替换 ref + 测试）修观察器证据选择",
+    "criterion": "单测覆盖：不可核验 ref 不得替代，且不得由替代推出验收；跑绿后观察器转绿"
    }
   ],
   "later": [
@@ -268,7 +273,7 @@
    }
   ]
  },
- "writes_performed": 3,
+ "writes_performed": 5,
  "merges_performed": 0,
  "deploys_performed": 0,
  "mail_delivery": {
