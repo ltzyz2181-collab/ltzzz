@@ -1,0 +1,54 @@
+{
+  "document_type": "readback_verification",
+  "note": "本文件为推送完成后生成的独立回读凭证，不在 MANIFEST.sha256 覆盖范围内；MANIFEST 覆盖的 7 个文件字节未改动，sha256sum -c 仍全部通过。",
+  "receipt_path": "knowledge/results/skill-review/2026-11-12-ltzzz-source-check/receipt.json",
+  "verified_at_utc": "2026-11-12T11:52:03Z",
+  "verification_window_note": "目录回读、raw 字节拉取与 SHA256 复算发生于 2026-11-12T11:36Z–11:52Z（UTC）之间；verified_at_utc 为本凭证定稿时刻。",
+  "verified_scope": "content_bytes_and_directory_listing",
+  "method": [
+    "GitHub MCP get_file_contents 列出目录，确认 8 个文件名与 size",
+    "urllib 拉取 raw.githubusercontent.com 上 main 分支的 8 个文件字节",
+    "Python hashlib.sha256 逐文件复算，与 MANIFEST.sha256 的 7 条记录比对",
+    "检查 email-body.txt 收件邮箱遮蔽、material-B-source.md 待审数据警示"
+  ],
+  "results": {
+    "directory_files_found": 8,
+    "manifest_entries": 7,
+    "manifest_matched": 7,
+    "manifest_mismatched": 0,
+    "manifest_missing": 0,
+    "email_recipient_full_address_present": false,
+    "email_recipient_masked_address_present": true,
+    "material_b_pending_data_warning_present": true,
+    "check_result_key_conclusions_present": true,
+    "transient_note": "01-check-result.md 首次 raw 拉取超时，重试后成功且 SHA256 匹配；属网络波动，非文件缺失，目录回读已确认其存在 5847 字节。"
+  },
+  "push_commits": [
+    {
+      "sha": "e9ba0b293e2deb194b058d1aee7758f18e6bafa3",
+      "subject": "回执与交接说明 + 两份测试材料"
+    },
+    {
+      "sha": "7eddbb8a6c5c66dd1f44553e062eeda95883d26c",
+      "subject": "核对表全文"
+    },
+    {
+      "sha": "cb552f09718f72869cbc82e67fe1b1b46211b755",
+      "subject": "评估与推广建议全文"
+    },
+    {
+      "sha": "a1022104dfc3f2fa8c8c751f78712318930c7af6",
+      "subject": "脱敏邮件正文 + SHA256 清单"
+    }
+  ],
+  "environment_facts": {
+    "parallel_commit_on_main": "145590ad53ea37fdcbb15a158bef3140340d27bf (DeFi automated pilot, 11:48 UTC, ltzzz-bot)",
+    "impact": "main HEAD 在本回执推送后前移；本目录 8 个文件未受该提交影响，内容校验仍成立。",
+    "push_author_email_visibility": "推送提交的 committer email 为 ltzyz2181@gmail.com，属 git 历史既有公开信息；本次脱敏仅针对新增的 email-body.txt 正文，不构成该邮箱的全局脱敏。"
+  },
+  "limitations": [
+    "本凭证验证的是仓库文件字节与清单一致，不等于不同提供商独立复核、不等于 CI 通过、不等于生产验收。",
+    "receipt.json 中 environment_persistence.readback_verified 保持 false：该字段记录推送时点状态，后续回读结果以本文件为准，未回写旧回执。",
+    "邮件仍未发出；本凭证不构成邮件投递证据。"
+  ]
+}
