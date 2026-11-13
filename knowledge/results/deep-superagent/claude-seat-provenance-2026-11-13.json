@@ -1,0 +1,65 @@
+{
+ "schema": "ltzzz.deep-superagent.seat-provenance.v1",
+ "generated_at": "2026-11-13",
+ "question": "claude 中转席到底是原厂 Anthropic 还是第三方中转",
+ "verdict": "third_party_relay",
+ "verdict_short": "中转（第三方聚合 apisrouter），非 Anthropic 官方直连",
+ "evidence": [
+  {
+   "id": "E1",
+   "what": "relay-proxy 上游地址",
+   "value": "https://api.apisrouter.com/v1（workers/relay-proxy/worker.mjs:104，env.STATION_BASE 默认值）",
+   "proves": "出网目标不是 api.anthropic.com"
+  },
+  {
+   "id": "E2",
+   "what": "调用协议",
+   "value": "POST {base}/chat/completions，OpenAI 兼容 schema",
+   "proves": "Anthropic 原生是 /v1/messages + x-api-key + anthropic-version，这里走的是兼容层，属聚合网关形态"
+  },
+  {
+   "id": "E3",
+   "what": "席位回执",
+   "value": "stage=work_claude, actual_provider=apisrouter_relay, actual_model=claude-sonnet-4-6, upstream_http=200, tokens_used=548",
+   "proves": "Deep 记录的实际 provider 标签就是 apisrouter_relay"
+  },
+  {
+   "id": "E4",
+   "what": "上游请求号",
+   "value": "request_id=msg_waS7HDfzPDZOy3CuRHNIGeWP",
+   "proves": "仅说明上游返回了 msg_ 形态的 id；中转可透传或自造，不构成原厂证明"
+  },
+  {
+   "id": "E5",
+   "what": "gpt 席对照",
+   "value": "run 43180300883：apisrouter_relay / gpt-6.1-sol / 7957 tokens / upstream 200",
+   "proves": "gpt 与 claude 两席共用同一上游聚合网关"
+  }
+ ],
+ "does_not_prove": "无法据此证明后端权重来自 Anthropic；中转层可转发、可替换模型、可改写输出，且我方拿不到模型指纹或签名级证明。",
+ "region_block": {
+  "fact": "账号所有者在该地区无法登录 claude.ai 官方 Web/App（提示所在地区不支持）",
+  "consequence": "官方账号路径在当前地区不可用，中转席是唯一可用通道",
+  "note": "这与 GitHub Claude App 权限是两条独立通道，互不影响"
+ },
+ "risks": [
+  {
+   "risk": "prompt 全文经第三方网关，属数据出境/第三方可见",
+   "mitigation": "只派脱敏、public_distributable 内容；不传凭据、金额、密钥"
+  },
+  {
+   "risk": "输出可能被中转层改写或降级模型",
+   "mitigation": "中转只做执行席，不做 planner/独立复核；结论一律由原生席复核"
+  },
+  {
+   "risk": "模型身份不可核验",
+   "mitigation": "对外表述标注“中转调用”，不得声称 Anthropic 原厂"
+  }
+ ],
+ "conclusion_for_dispatch": "可以继续用，但必须按“第三方中转”对待：不假设它是原厂，不把它当唯一证据来源。",
+ "decisions_needed": [
+  "是否在对外文档/agent-card 里显式标注 claude 席为第三方中转（现状是否已标注需确认）",
+  "是否要求增加上游回执留存（响应头/请求号/耗时）作为每次中转调用的证据",
+  "是否收紧中转席可处理的 data_classification（是否只允许 public_distributable）"
+ ]
+}
