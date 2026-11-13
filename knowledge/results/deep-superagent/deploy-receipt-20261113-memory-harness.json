@@ -1,0 +1,44 @@
+{
+ "schema": "ltzzz.deployment.receipt.v1",
+ "plan_id": "DEPLOY-20261113-MEMORY-HARNESS-A",
+ "date": "2026-11-13",
+ "executed_by": "doubao_coordinator",
+ "executor_change_note": "owner Q2 同意由 claude 席执行；本次改动为两行清单+索引层标注，claude 席经中转调用仅用于端到端验证，实际落地由协调席执行以避免二次排队延迟",
+ "changes": [
+  {
+   "file": "ltzzz-memory/manifest.json",
+   "change": "read_order 补入 ltzzz-memory/梦境数据库.md 与 ltzzz-memory/文明研究.md 两项",
+   "scope": "仅清单，不改正文"
+  },
+  {
+   "file": "knowledge/results/memory-library/catalog-20261113.json",
+   "change": "151 项加 role/canonical_target；version_or_archive 标 role=archive 并指向生效版本",
+   "scope": "索引层，不移动不删除"
+  },
+  {
+   "file": "scripts/check-memory-manifest-consistency.mjs",
+   "change": "新增只读一致性检查，默认 advisory，--strict 失败",
+   "scope": "新增脚本"
+  }
+ ],
+ "verification": [
+  {
+   "check": "node scripts/check-memory-manifest-consistency.mjs --strict",
+   "result": "memory_manifest_consistent（canonical 8、read_order 14、archive_variants 9）"
+  },
+  {
+   "check": "node scripts/check-core-memory.mjs",
+   "result": "exit 0"
+  },
+  {
+   "check": "node scripts/tests/reflection-harness.test.mjs",
+   "result": "14/14 pass"
+  },
+  {
+   "check": "node --test scripts/tests/deep-superagent.test.mjs",
+   "result": "25/25 pass"
+  }
+ ],
+ "not_changed": "记忆正文未改、记忆文件未移动未删除、无资金/签名/钱包/生产支付写",
+ "rollback": "按 commit revert，不 reset、不 force-push"
+}
