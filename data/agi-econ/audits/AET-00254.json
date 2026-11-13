@@ -1,0 +1,63 @@
+{
+  "task_id": "AET-00254",
+  "auditor": "did:ltzzz:kimi",
+  "deliverable_sha256": "a175ae8dd196b11e0c52eb712e4cc674eb126747b63083c50d2f49e2f7403cd9",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "kimi-cn",
+    "did": "did:ltzzz:kimi",
+    "executed_by": "kimi-k3",
+    "status": "success",
+    "accepted": true,
+    "score": 91,
+    "issues": [
+      "轻微：交付物称「共 8 条影子提案」，但依据材料 JSON 在 CAP-00027 的 at 字段处被截断，提案数组可能还有更多条目未展示；交付物仅标注了时间戳截断，未明确说明提案列表本身可能不完整，总数应加限定语",
+      "建议1的测试预期「应输出全部或大部分被标记为 non-viable」预设了过滤结果，依据材料中并无 gas 成本与预期收益数据支持该结论，宜改为中性表述（如「输出标记结果并可审计」）",
+      "「符合当前合规标记」一句中，依据材料只有 compassion_check 字段取值，并无合规标准定义，属轻微解读超出材料",
+      "其余核查通过：余额 0.445、8 条可见提案、合计 0.1535、占比 34.5%、重复金额对、ID 不连续、日期分布等均与材料一致；明确声明实际链上流出为 0、未声称执行投资；3 条建议均附可测试方法，对截断数据做了适当保留"
+    ],
+    "tokens_used": 6102
+  },
+  "at": "2026-11-13T17:25:51.172Z",
+  "report_sha256": "d115e2777fd57d8c57ba363dff515f887a258042f946f7b5fd69288ca7540c2e"
+}
