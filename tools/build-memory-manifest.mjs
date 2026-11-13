@@ -15,6 +15,8 @@ const READ_ORDER = [
   'lab/DECISIONS.md',
   'lab/tasks.md',
   'lab/CAPABILITY_MAP.md',
+  'ltzzz-memory/梦境数据库.md',
+  'ltzzz-memory/文明研究.md',
   'ltzzz-memory/重要事件.md',
   'ltzzz-memory/项目历史.md',
   'ltzzz-memory/装备论.md',
