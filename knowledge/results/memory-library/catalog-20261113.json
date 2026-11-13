@@ -1,0 +1,1258 @@
+{
+ "schema": "ltzzz.memory-library.catalog.v1",
+ "generated_at": "2026-11-13",
+ "root": "ltzzz-memory",
+ "file_count": 151,
+ "class_counts": {
+  "other": 120,
+  "ops": 7,
+  "canonical": 9,
+  "session_draft": 5,
+  "version_or_archive": 10
+ },
+ "canonical_set": [
+  "README.md",
+  "装备论.md",
+  "魄.md",
+  "识神.md",
+  "梦境数据库.md",
+  "文明研究.md",
+  "项目历史.md",
+  "重要事件.md"
+ ],
+ "canonical_set_source": "scripts/ai-memory-pack.mjs（记忆包只打包这 8 份，并由 scripts/lib/core-memory-integrity.mjs 校验）",
+ "issues": [
+  {
+   "id": "M1",
+   "issue": "同主题多版本并存：装备论/魄/识神/梦境数据库/文明研究/重要事件均有 -v1 或 -入档 变体",
+   "impact": "检索时可能读到旧版本，人工难以判断当前生效版本",
+   "proposal": "保留 canonical 为准，变体统一标注 role=archive 并在索引中指向 canonical；不删除、不改正文"
+  },
+  {
+   "id": "M2",
+   "issue": "运营类与核心记忆混放同一目录（daily-3nums、LTZZZ-OS、PROMOTION、task-assign 等）",
+   "impact": "core memory 校验范围与运营文件边界不清",
+   "proposal": "索引中按 class 分区；物理迁移需 owner 批准，避免破坏脚本路径"
+  },
+  {
+   "id": "M3",
+   "issue": "manifest.json 与 canon 的 8 份文件是否一致未在本次核对中确认",
+   "impact": "打包清单可能与实际集合漂移",
+   "proposal": "增加一致性断言（manifest vs canon 集合），纳入 harness 检查"
+  }
+ ],
+ "items": [
+  {
+   "path": "Daily-AI-Scheduler.md",
+   "class": "other",
+   "bytes": 946,
+   "sha256": "d8772c94b577a203d4e26be62937a62242658c9c63ebba9bb77df61be64640de",
+   "first_heading": "Daily AI Scheduler",
+   "last_commit_date": "2026-09-21"
+  },
+  {
+   "path": "LTZZZ-OS.md",
+   "class": "ops",
+   "bytes": 904,
+   "sha256": "5fa9c4ea361d7c6dae59a4461e4aec4e4f88180af5987cb5ad4f47fcb35946ea",
+   "first_heading": "LTZZZ OS",
+   "last_commit_date": "2026-09-21"
+  },
+  {
+   "path": "PROMOTION.md",
+   "class": "ops",
+   "bytes": 1680,
+   "sha256": "8a2e5f02da53c2f07a4b2d0e3e6192e8f3b409a279b5a6683681dcc897977af1",
+   "first_heading": "记忆晋升",
+   "last_commit_date": "2026-10-15"
+  },
+  {
+   "path": "README.md",
+   "class": "canonical",
+   "bytes": 5883,
+   "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181",
+   "first_heading": "LTZZZ Memory Engine · 记忆中心",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "daily-3nums-2026-10-07-row.md",
+   "class": "ops",
+   "bytes": 367,
+   "sha256": "b481ebe6b5da3e32cd507248194af2da12011ff8f8695ea822f57f4a79bbc6c5",
+   "first_heading": "daily-3nums 行（XAI 补）",
+   "last_commit_date": "2026-10-06"
+  },
+  {
+   "path": "daily-3nums.md",
+   "class": "ops",
+   "bytes": 5633,
+   "sha256": "d61d2b207683c65aa49d0aa65d55eb9b033a0368d208e1a2cae1a71bd895131d",
+   "first_heading": "LTZZZ 三数日报（K2 · 每日 22:00 抄录）",
+   "last_commit_date": "2026-11-12"
+  },
+  {
+   "path": "doubao-20261001-01.md",
+   "class": "session_draft",
+   "bytes": 2337,
+   "sha256": "37ae68cdf1fd972c9a3d38c60a9525c22bdfbba1bfc5c9c5178e76e2ecc5ad5a",
+   "first_heading": "视频脚本草稿 · 2026-10-01（豆包 · 每日视频流水线）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "doubao-20261001-02.md",
+   "class": "session_draft",
+   "bytes": 1765,
+   "sha256": "24132d458d3ae602bb4344090de5563931fe8906e95a1b5967b934cd33464220",
+   "first_heading": "豆包执行记录 · 2026-10-01（第 2 条）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "manifest.json",
+   "class": "ops",
+   "bytes": 53131,
+   "sha256": "7864a8dd3e25e2882398b9bd4cd4a6492aed03325f405fe56c59c54d3a528288",
+   "first_heading": "",
+   "last_commit_date": "2026-11-03"
+  },
+  {
+   "path": "memory-engine.md",
+   "class": "ops",
+   "bytes": 295,
+   "sha256": "cec3bb5c0b54c91b12012437a672d823741184a4ac5e81d226d5e1bc8923b94d",
+   "first_heading": "Memory Engine · OS 环",
+   "last_commit_date": "2026-09-21"
+  },
+  {
+   "path": "task-assign-meta-20261001.md",
+   "class": "ops",
+   "bytes": 2434,
+   "sha256": "c0935f23015fac21fd588b903128a002a8630ca25e650e59044fe8515ad60533",
+   "first_heading": "Meta 正式任务单",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "小说-20261005-魄的交接.md",
+   "class": "session_draft",
+   "bytes": 1266,
+   "sha256": "f4fc172cb9bdcf38d8ffa7ad94e36ff121840ada576985da98dc704354a6dd42",
+   "first_heading": "小说·《魄的交接》（2026-10-05）",
+   "last_commit_date": "2026-10-05"
+  },
+  {
+   "path": "文明研究-DeepSeek提炼.md",
+   "class": "version_or_archive",
+   "bytes": 1655,
+   "sha256": "8d24e4f8523e20429a1c6ea763811c8650e214e0d9aa7541e8330a3afddf1d68",
+   "first_heading": "条目 4｜因果·觉知与\"果\"的坍缩",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "文明研究-v1.md",
+   "class": "version_or_archive",
+   "bytes": 2899,
+   "sha256": "1f9e67d5cfdce7b0c70b461de7940708d89999ea1d1fe18681a68d3d2a972f49",
+   "first_heading": "文明研究（首批入档 · 代 Microsoft 工位完成）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "文明研究-入档.md",
+   "class": "version_or_archive",
+   "bytes": 2899,
+   "sha256": "1f9e67d5cfdce7b0c70b461de7940708d89999ea1d1fe18681a68d3d2a972f49",
+   "first_heading": "文明研究（首批入档 · 代 Microsoft 工位完成）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "文明研究.md",
+   "class": "canonical",
+   "bytes": 3923,
+   "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e",
+   "first_heading": "文明研究",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "梦境数据库-v1.md",
+   "class": "version_or_archive",
+   "bytes": 401,
+   "sha256": "85190983757e1e5d1b7e375c1b500a31085e82c7e63df60f2a6eb6541eb47f87",
+   "first_heading": "",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "梦境数据库-入档.md",
+   "class": "version_or_archive",
+   "bytes": 2683,
+   "sha256": "903f2f5757c529284706bd7c54b9ac114520e3fd7adb5d5d63eb89044f539d1a",
+   "first_heading": "梦境与身体事件数据库（首批入档）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "梦境数据库.md",
+   "class": "canonical",
+   "bytes": 3638,
+   "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983",
+   "first_heading": "梦境数据库",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "装备论.md",
+   "class": "canonical",
+   "bytes": 1254,
+   "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20",
+   "first_heading": "装备论",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "识神-入档.md",
+   "class": "version_or_archive",
+   "bytes": 6936,
+   "sha256": "889b070ca20cf34175e5635311b9ed6ebce8c9303d61b6a7049687e7d737b488",
+   "first_heading": "识神（入档版）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "识神.md",
+   "class": "canonical",
+   "bytes": 7135,
+   "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b",
+   "first_heading": "识神",
+   "last_commit_date": "2026-10-14"
+  },
+  {
+   "path": "重要事件-v1.md",
+   "class": "version_or_archive",
+   "bytes": 2243,
+   "sha256": "d7c90b19e212ae17bda7a5bb8539c9a07e5b757b3f037b6ea5404072df537090",
+   "first_heading": "重要事件账本（首批入档）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "重要事件-入档.md",
+   "class": "version_or_archive",
+   "bytes": 3299,
+   "sha256": "3b8d013543ca351ca266450a3895743fd969c9dc133ae0d6d3bbdcebf5f67e56",
+   "first_heading": "重要事件账本（首批入档）",
+   "last_commit_date": "2026-10-01"
+  },
+  {
+   "path": "重要事件-补录-20261016-1023.md",
+   "class": "version_or_archive",
+   "bytes": 2783,
+   "sha256": "d964250932a6f21aa975a4697ae420c1848fef3e64cbc31338286d2e1ca20809",
+   "first_heading": "《重要事件》补录 · 2026-10-16 至 10-23",
+   "last_commit_date": "2026-10-23"
+  },
+  {
+   "path": "重要事件.md",
+   "class": "canonical",
+   "bytes": 19519,
+   "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f",
+   "first_heading": "重要事件",
+   "last_commit_date": "2026-10-28"
+  },
+  {
+   "path": "项目历史.md",
+   "class": "canonical",
+   "bytes": 16862,
+   "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e",
+   "first_heading": "项目历史",
+   "last_commit_date": "2026-10-28"
+  },
+  {
+   "path": "魄-入档.md",
+   "class": "version_or_archive",
+   "bytes": 6320,
+   "sha256": "0a6b8a62b9eb78a80ddacecf696e0e48338060f9d36e3c83e7d84812221b8204",
+   "first_heading": "魄（入档版）",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "魄.md",
+   "class": "canonical",
+   "bytes": 6878,
+   "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a",
+   "first_heading": "魄",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "discussions/2026-10-09-gpt-001.md",
+   "class": "other",
+   "bytes": 4378,
+   "sha256": "d9961bd7274a976eeb0ddc518958f08c8c2e156f4efdfd820ca6ca5edabad4b9",
+   "first_heading": "MEM-20261009-GPT-001｜记忆应当帮助人修正行动，也容纳尚无用途的观察",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "discussions/2026-10-09-gpt-reply-002.md",
+   "class": "other",
+   "bytes": 1303,
+   "sha256": "34865c46200b3db918109eada324c69c4a068ad00129549a070a70bc23877e1b",
+   "first_heading": "MEM-20261009-GPT-002｜首轮回复核查与 owner 指正",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "discussions/MEM-20261009-DEEPSEEK.md",
+   "class": "other",
+   "bytes": 691,
+   "sha256": "bffcf707b1b9423f85fd399b738bee2064e10f7ec8b3f382745fd2849913b34e",
+   "first_heading": "MEM-20261009-DEEPSEEK",
+   "last_commit_date": "2026-10-14"
+  },
+  {
+   "path": "discussions/MEM-20261009-DOUBAO.md",
+   "class": "other",
+   "bytes": 680,
+   "sha256": "76fd2aaf2f8e5b736d72cd7446bb01984ede0b9a8a9e89b6e5128ad1041d8053",
+   "first_heading": "MEM-20261009-DOUBAO",
+   "last_commit_date": "2026-10-14"
+  },
+  {
+   "path": "discussions/MEM-20261009-GROK.md",
+   "class": "other",
+   "bytes": 3999,
+   "sha256": "7e50e28e9d9a3ff42722e37d5c4cb9cb5838f4113bd7e460e709b1896f5c2fb3",
+   "first_heading": "MEM-20261009-GROK",
+   "last_commit_date": "2026-10-14"
+  },
+  {
+   "path": "discussions/README.md",
+   "class": "canonical",
+   "bytes": 3211,
+   "sha256": "c79030acd0132ce4533c658abe9124b83ae2c29ca0421d9d19f43b49e90d1c30",
+   "first_heading": "六篇记忆讨论室",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "discussions/TEMPLATE.md",
+   "class": "other",
+   "bytes": 1443,
+   "sha256": "1a8f6ba36e94f1e25342acd76319861912bec316641d303e0099c14daa4a26a6",
+   "first_heading": "MEM-YYYYMMDD-作者-序号｜一句明确主张",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "grokbot-weekly/2026-10-10.md",
+   "class": "other",
+   "bytes": 1641,
+   "sha256": "a8189fde1e9af9939f55eea7c17ad633f5ae40c1c78bcca03f4951e8d49303a0",
+   "first_heading": "Grok Bot 周报 · 2026-10-10（首期）· AI 雇佣 AI 大胆想法",
+   "last_commit_date": "2026-10-10"
+  },
+  {
+   "path": "guan/deepseek-2026-10-01.md",
+   "class": "other",
+   "bytes": 2608,
+   "sha256": "3e5de6d5ffeb28d2977682f14f34fd0f3c4ff6003f37b3b512a9ea79623b51a7",
+   "first_heading": "guan 记忆条目 · DeepSeek 归档提炼",
+   "last_commit_date": "2026-09-30"
+  },
+  {
+   "path": "kimi-weekly/2026-10-07.md",
+   "class": "other",
+   "bytes": 3819,
+   "sha256": "14edb3fc79e972035709799bd1a6bf76af17a3eec81c0c74135f633077ff6f67",
+   "first_heading": "Kimi Global 周度 AI 雇佣与投资提案 · 2026-10-07",
+   "last_commit_date": "2026-10-07"
+  },
+  {
+   "path": "kimi-weekly/2026-10-09-task.md",
+   "class": "other",
+   "bytes": 11052,
+   "sha256": "3ab6f52ded9dfb291722a3e99a5337a52eca114ecaf9e0783d960fc897d8754c",
+   "first_heading": "kimi-global 零API任务包 · 2026-10-09",
+   "last_commit_date": "2026-10-09"
+  },
+  {
+   "path": "kimi-weekly/2026-10-10-task.md",
+   "class": "other",
+   "bytes": 11052,
+   "sha256": "a4b0c9065e1cc011ce6fef3d359ac5d904d33b468a06223a9f59ad4dfd5bdf7d",
+   "first_heading": "kimi-global 零API任务包 · 2026-10-10",
+   "last_commit_date": "2026-10-10"
+  },
+  {
+   "path": "kimi-weekly/2026-10-17-task.md",
+   "class": "other",
+   "bytes": 11650,
+   "sha256": "ad4208d24141d323e0beaa34d24757e3cfe98fcb8351eb27682e46808beae89c",
+   "first_heading": "kimi-global 零API任务包 · 2026-10-17",
+   "last_commit_date": "2026-10-17"
+  },
+  {
+   "path": "kimi-weekly/2026-10-24-task.md",
+   "class": "other",
+   "bytes": 11698,
+   "sha256": "33c50e7029164440073b6a7a40e85841748de33cba91aa8922a98ee92fb1adc6",
+   "first_heading": "kimi-global 零API任务包 · 2026-10-24",
+   "last_commit_date": "2026-10-24"
+  },
+  {
+   "path": "kimi-weekly/2026-10-31-task.md",
+   "class": "other",
+   "bytes": 12110,
+   "sha256": "76906273e1367b1f57d7b41606942c41a6f2bc2d582496cff7752670fb30818f",
+   "first_heading": "kimi-global 零API任务包 · 2026-10-31",
+   "last_commit_date": "2026-10-31"
+  },
+  {
+   "path": "kimi-weekly/2026-11-07-task.md",
+   "class": "other",
+   "bytes": 12110,
+   "sha256": "1092ff9bf1e54eca908cb0f163634355865e9cbbf51043d2fdd22ac2ba053dc4",
+   "first_heading": "kimi-global 零API任务包 · 2026-11-07",
+   "last_commit_date": "2026-11-07"
+  },
+  {
+   "path": "tasks/doubao-defi-signer-2026-10-09.md",
+   "class": "session_draft",
+   "bytes": 1164,
+   "sha256": "153db2904713f24ec9dd19e5d04a4a77bd538b3d2ee1de3c944136b602830a28",
+   "first_heading": "豆包持钥执行席：1 USDC DeFi闭环正式派单",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/doubao-kimi-domestic-2026-10-09.md",
+   "class": "session_draft",
+   "bytes": 1031,
+   "sha256": "93e1cdf1c60ffcd01c988cbf3013e2be9ba9764904f2095fdbd84db83310c599",
+   "first_heading": "豆包：国内Kimi Secret接入正式派单",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/economy-2026-10-09.md",
+   "class": "other",
+   "bytes": 4539,
+   "sha256": "aef90274061a5b0a5daa1fce5bb7e53b1b8a2835e88df3c85769b2027b022b6e",
+   "first_heading": "每日 AI 委托与投资测试单 · 2026-10-09",
+   "last_commit_date": "2026-10-09"
+  },
+  {
+   "path": "tasks/economy-2026-10-10.md",
+   "class": "other",
+   "bytes": 2432,
+   "sha256": "993e14b155fcd0cebb48d45c943e2f11193d4bdaeb16b727a4b75a6cf3d0635f",
+   "first_heading": "每日 AI 委托与投资测试单 · 2026-10-10",
+   "last_commit_date": "2026-10-10"
+  },
+  {
+   "path": "tasks/manus-instagram-first-post-20261009.md",
+   "class": "other",
+   "bytes": 3927,
+   "sha256": "30f8b77e62b9a40823f88a993aeff539a4cf571dcc6853d283e874062ae3f9c1",
+   "first_heading": "Manus：LTZZZ Instagram 首帖正式发布任务",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/memory-discussion-20261009.md",
+   "class": "other",
+   "bytes": 1286,
+   "sha256": "c0bc52476cf080137e7c51f3dad58b0e26690ff004dff2d45e51d7bd734a93e1",
+   "first_heading": "六篇记忆讨论派单 · 2026-10-09 UTC",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/meta-review-followup-20261009.md",
+   "class": "other",
+   "bytes": 1033,
+   "sha256": "7de95d176b33bf797fe208d0d5c69656f2b8e30d75c4c0e314d2069f064177af",
+   "first_heading": "Meta 审查后续任务",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/qianwen-audit-2026-10-09.md",
+   "class": "other",
+   "bytes": 746,
+   "sha256": "977272798012ed9a0053ea5c1fa57b6b3f295bc056c07660ce4cea93c21350a8",
+   "first_heading": "千问独立审计席正式派单",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/task-assign-meta-HUBTEST-20261021.md",
+   "class": "other",
+   "bytes": 2338,
+   "sha256": "a2c1266e0031907104cc27796036f9ba258a530233bd5eb53615e7c0040016f3",
+   "first_heading": "task-assign: META-HUBTEST-20261021",
+   "last_commit_date": "2026-10-21"
+  },
+  {
+   "path": "tasks/workbuddy-2026-10-09.md",
+   "class": "other",
+   "bytes": 1180,
+   "sha256": "f4217eb97ce2aa2f9118b4e298aa03a26a45b2e5a6246633a926aa12e9b2ecaf",
+   "first_heading": "taskMetaDeploy — 正式无 Key 文件派单",
+   "last_commit_date": "2026-10-08"
+  },
+  {
+   "path": "tasks/control/2026-10-09.md",
+   "class": "other",
+   "bytes": 696,
+   "sha256": "b2b820e64fd6d8e3544d6208ba4a715bbbf9fc41c5206bfec0a3110bcc51dd52",
+   "first_heading": "总控每日派单与回执审查 · 2026-10-09",
+   "last_commit_date": "2026-10-09"
+  },
+  {
+   "path": "tasks/control/2026-10-10.md",
+   "class": "other",
+   "bytes": 673,
+   "sha256": "49bc3681573469ccd617549e604404fa504dc956f38e6c3468e4723dae9858af",
+   "first_heading": "总控每日派单与回执审查 · 2026-10-10",
+   "last_commit_date": "2026-10-10"
+  },
+  {
+   "path": "tasks/control/2026-10-11.md",
+   "class": "other",
+   "bytes": 671,
+   "sha256": "9a0ef15d7a865e01170155a1e90ba6c7972baf51b23d767980de4c922ede65b9",
+   "first_heading": "总控每日派单与回执审查 · 2026-10-11",
+   "last_commit_date": "2026-10-11"
+  },
+  {
+   "path": "tasks/control/2026-10-12.md",
+   "class": "other",
+   "bytes": 671,
+   "sha256": "80c2d67f37641b73ff63149be4e6800f50f3fb9cb2187d1f83abe6aa8bcb3e05",
+   "first_heading": "总控每日派单与回执审查 · 2026-10-12",
+   "last_commit_date": "2026-10-12"
+  },
+  {
+   "path": "tasks/control/2026-10-13.md",
+   "class": "other",
+   "bytes": 671,
+   "sha256": "fe0882e63b906c6143c4669b48b3ccc57e1b7a4b2b0d25515db9cb8c1f79ad0a",
+   "first_heading": "总控每日派单与回执审查 · 2026-10-13",
+   "last_commit_date": "2026-10-12"
+  },
+  {
+   "path": "tasks/control/2026-10-14.md",
+   "class": "other",
+   "bytes": 671,
+   "sha256": "1bc6815100c1709e1d6384f7d596bde67f6131a710394b7afd642c4a861d2db0",
+   "first_heading": "总控每日派单与回执审查 · 2026-10-14",
+   "last_commit_date": "2026-10-13"
+  },
+  {
+   "path": "tasks/control/2026-10-15.md",
+   "class": "other",
+   "bytes": 556,
+   "sha256": "ae7c5980c84eb17612ca9004379172175432334037386e12b9267e1aa78f6592",
+   "first_heading": "每日总控派单 · 2026-10-15",
+   "last_commit_date": "2026-10-15"
+  },
+  {
+   "path": "tasks/control/2026-10-16.md",
+   "class": "other",
+   "bytes": 556,
+   "sha256": "7ae9340834e3752647a90005391d93e4422d59328fdc38f6502f7c851f2da33d",
+   "first_heading": "每日总控派单 · 2026-10-16",
+   "last_commit_date": "2026-10-16"
+  },
+  {
+   "path": "tasks/control/2026-10-17.md",
+   "class": "other",
+   "bytes": 1226,
+   "sha256": "72883f1bbc2e0cbc532946bcbd6881e513f6aefe924d6847e7ca1f9062de1cfc",
+   "first_heading": "每日总控派单 · 2026-10-17",
+   "last_commit_date": "2026-10-17"
+  },
+  {
+   "path": "tasks/control/2026-10-18.md",
+   "class": "other",
+   "bytes": 1199,
+   "sha256": "5c20b2479ed26d52e3440130ea31fb1d9ccd116ae66050ae5839752693411f06",
+   "first_heading": "每日总控派单 · 2026-10-18",
+   "last_commit_date": "2026-10-18"
+  },
+  {
+   "path": "tasks/control/2026-10-19.md",
+   "class": "other",
+   "bytes": 1386,
+   "sha256": "f22f8e4afb35241f86ec521b9627f3cffc5060db926730bfb9d6532fca7911b8",
+   "first_heading": "每日总控派单 · 2026-10-19",
+   "last_commit_date": "2026-10-19"
+  },
+  {
+   "path": "tasks/control/2026-10-20.md",
+   "class": "other",
+   "bytes": 746,
+   "sha256": "c1f364da8bb7d4d963c49a79f5571abadbf8029a78c47ebb0b84686b5a69d03c",
+   "first_heading": "每日总控派单 · 2026-10-20",
+   "last_commit_date": "2026-10-20"
+  },
+  {
+   "path": "tasks/control/2026-10-21.md",
+   "class": "other",
+   "bytes": 1257,
+   "sha256": "4b5bd850c10ee0fd7a7d0cb9daee7abce00b14ea1428dc8db32d0e9564b13573",
+   "first_heading": "每日总控派单 · 2026-10-21",
+   "last_commit_date": "2026-10-21"
+  },
+  {
+   "path": "tasks/control/2026-10-22.md",
+   "class": "other",
+   "bytes": 1373,
+   "sha256": "063d086d733b46780653a486533d05130ecc4f3d85ee6e49017dde6f842b7b99",
+   "first_heading": "每日总控派单 · 2026-10-22",
+   "last_commit_date": "2026-10-22"
+  },
+  {
+   "path": "tasks/control/2026-10-23.md",
+   "class": "other",
+   "bytes": 1017,
+   "sha256": "b021974b63f6efb291f6ac5b3866a1c3fdc6df093367a63041d2847f81fc0bd5",
+   "first_heading": "每日总控派单 · 2026-10-23",
+   "last_commit_date": "2026-10-23"
+  },
+  {
+   "path": "tasks/control/2026-10-24.md",
+   "class": "other",
+   "bytes": 758,
+   "sha256": "d9ae7f2ac2cff94b51d22da21194245e3d7c81f143dbd345f15a45f24ede1277",
+   "first_heading": "每日总控派单 · 2026-10-24",
+   "last_commit_date": "2026-10-24"
+  },
+  {
+   "path": "tasks/control/2026-10-25.md",
+   "class": "other",
+   "bytes": 1148,
+   "sha256": "a08f0d7ed14c10d76bb1e00c82c338a686764b2c659a4fcaa8a1be687b40527e",
+   "first_heading": "每日总控派单 · 2026-10-25",
+   "last_commit_date": "2026-10-25"
+  },
+  {
+   "path": "tasks/control/2026-10-26.md",
+   "class": "other",
+   "bytes": 965,
+   "sha256": "beaaa6f39557826663677597496cee8c9d4d0316b8e16067b43377d494f387a0",
+   "first_heading": "每日总控派单 · 2026-10-26",
+   "last_commit_date": "2026-10-26"
+  },
+  {
+   "path": "tasks/control/2026-10-27.md",
+   "class": "other",
+   "bytes": 967,
+   "sha256": "8f849c9627dd9f3dbfccd079e332f8d9f81c03c0d335ab35c704695140cc8e3e",
+   "first_heading": "每日总控派单 · 2026-10-27",
+   "last_commit_date": "2026-10-27"
+  },
+  {
+   "path": "tasks/control/2026-10-28.md",
+   "class": "other",
+   "bytes": 1148,
+   "sha256": "86c674efdfc554315259a722e617fae1d15af4fd83e62fa3b9db525b9de65e1d",
+   "first_heading": "每日总控派单 · 2026-10-28",
+   "last_commit_date": "2026-10-28"
+  },
+  {
+   "path": "tasks/control/2026-10-29.md",
+   "class": "other",
+   "bytes": 1093,
+   "sha256": "98ea6f54747fe9eeb020f09868f850181f8ceb3369ac682f0a04526844271dc7",
+   "first_heading": "每日总控派单 · 2026-10-29",
+   "last_commit_date": "2026-10-29"
+  },
+  {
+   "path": "tasks/control/2026-10-30.md",
+   "class": "other",
+   "bytes": 1052,
+   "sha256": "6706b61fd60377f03537d1127b08fc3c6ee5810190991a415f07b9a6d5ae6e08",
+   "first_heading": "每日总控派单 · 2026-10-30",
+   "last_commit_date": "2026-10-30"
+  },
+  {
+   "path": "tasks/control/2026-10-31.md",
+   "class": "other",
+   "bytes": 987,
+   "sha256": "44e8b0482cad4a59a7059191583f913cdaa1b47a76e188c15f1c2ead7cd14341",
+   "first_heading": "每日总控派单 · 2026-10-31",
+   "last_commit_date": "2026-10-31"
+  },
+  {
+   "path": "tasks/control/2026-11-01.md",
+   "class": "other",
+   "bytes": 963,
+   "sha256": "6257128017af717d8f7efd225b9f660040adb52cfe6f00be2ed4c979ffcc9107",
+   "first_heading": "每日总控派单 · 2026-11-01",
+   "last_commit_date": "2026-11-01"
+  },
+  {
+   "path": "tasks/control/2026-11-02.md",
+   "class": "other",
+   "bytes": 1235,
+   "sha256": "a2140a6f81bc3f323890c945c7a9cd32c46ac27dd162144cf98211c509620081",
+   "first_heading": "总控每日派单与回执审查 · 2026-11-02",
+   "last_commit_date": "2026-11-02"
+  },
+  {
+   "path": "tasks/control/2026-11-03.md",
+   "class": "other",
+   "bytes": 990,
+   "sha256": "87a7eebb02dfec6c12f437f347b707e705a1c198a67ee4f66cc111a3b3fb33aa",
+   "first_heading": "每日总控派单 · 2026-11-03",
+   "last_commit_date": "2026-11-03"
+  },
+  {
+   "path": "tasks/control/2026-11-04.md",
+   "class": "other",
+   "bytes": 993,
+   "sha256": "9e0889f620d7d606606896727319b5100c0fca1aacf5209f12929ba56e07c5da",
+   "first_heading": "每日总控派单 · 2026-11-04",
+   "last_commit_date": "2026-11-04"
+  },
+  {
+   "path": "tasks/control/2026-11-05.md",
+   "class": "other",
+   "bytes": 1392,
+   "sha256": "7c81f94681c007e841f04e9ddd85bb919a6786a0d2066afe2ba815fb1aeae737",
+   "first_heading": "每日总控派单 · 2026-11-05",
+   "last_commit_date": "2026-11-05"
+  },
+  {
+   "path": "tasks/control/2026-11-06.md",
+   "class": "other",
+   "bytes": 1280,
+   "sha256": "35e395c0257231a101dd4adc79df3f141dfa0b9fc308fa52369b90b3680cdee1",
+   "first_heading": "每日总控派单 · 2026-11-06",
+   "last_commit_date": "2026-11-06"
+  },
+  {
+   "path": "tasks/control/2026-11-07.md",
+   "class": "other",
+   "bytes": 779,
+   "sha256": "cd9616cfde43280191082450df6abab47e4b733ce38498157213c8685de136b1",
+   "first_heading": "每日总控派单 · 2026-11-07",
+   "last_commit_date": "2026-11-07"
+  },
+  {
+   "path": "tasks/control/2026-11-08.md",
+   "class": "other",
+   "bytes": 556,
+   "sha256": "1295e4f89d48281d866af4e8a758c2b3fea50c920d3667fab92d9085e74770c5",
+   "first_heading": "每日总控派单 · 2026-11-08",
+   "last_commit_date": "2026-11-08"
+  },
+  {
+   "path": "tasks/control/2026-11-09.md",
+   "class": "other",
+   "bytes": 1115,
+   "sha256": "117122dd2525337dbe1ee3d72ecff11e43657fd14ee7f0ebe04d84807a7f0ead",
+   "first_heading": "总控每日派单与回执审查 · 2026-11-09",
+   "last_commit_date": "2026-11-09"
+  },
+  {
+   "path": "tasks/control/2026-11-10.md",
+   "class": "other",
+   "bytes": 959,
+   "sha256": "16f8007f9021a1ebff0476b38c81159c313c920801794104c3eaf5f90a41af0c",
+   "first_heading": "每日总控派单 · 2026-11-10",
+   "last_commit_date": "2026-11-10"
+  },
+  {
+   "path": "tasks/control/2026-11-11.md",
+   "class": "other",
+   "bytes": 926,
+   "sha256": "4fb6eedea33cc51d7cb8a8e3ad60dab7c48af6739b7e98ce982948e8334c71ba",
+   "first_heading": "每日总控派单 · 2026-11-11",
+   "last_commit_date": "2026-11-11"
+  },
+  {
+   "path": "tasks/control/2026-11-12.md",
+   "class": "other",
+   "bytes": 1263,
+   "sha256": "10395c8bdb8b3ac81013464c7ce82588304164fdd1fb9b22c51a7b5aad7c1b42",
+   "first_heading": "每日总控派单 · 2026-11-12",
+   "last_commit_date": "2026-11-12"
+  },
+  {
+   "path": "tasks/control/2026-11-13.md",
+   "class": "other",
+   "bytes": 973,
+   "sha256": "63b672eecce296d645a3ccdb8c1cfed7c4fe3387c8a9425d87c405db513c39a5",
+   "first_heading": "总控每日派单与回执审查 · 2026-11-13",
+   "last_commit_date": "2026-11-12"
+  },
+  {
+   "path": "tasks/innovation/2026-10-09-qianwen.md",
+   "class": "other",
+   "bytes": 711,
+   "sha256": "3d30a87116b0800af84ea85a7ead91bc6ae4b3c6baa5efbe3e2079dc86550e97",
+   "first_heading": "周创新任务：qianwen",
+   "last_commit_date": "2026-10-09"
+  },
+  {
+   "path": "tasks/innovation/2026-10-09-workbuddy.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "d079e9befff2a57b107849478a5792249cc0fb2a2d714b20dea77bca51aec472",
+   "first_heading": "周创新任务：workbuddy",
+   "last_commit_date": "2026-10-09"
+  },
+  {
+   "path": "tasks/innovation/2026-10-10-kimi_domestic.md",
+   "class": "other",
+   "bytes": 723,
+   "sha256": "01ed0d1e5687dbc750ac1fe1a8ed605c5b6cf5ded34cc006d763d984dad922de",
+   "first_heading": "周创新任务：kimi_domestic",
+   "last_commit_date": "2026-10-10"
+  },
+  {
+   "path": "tasks/innovation/2026-10-10-kimi_global.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "02785f98cc127185233f700d47bc4222b07e8d6cafe48611f591643058e1f4ed",
+   "first_heading": "周创新任务：kimi_global",
+   "last_commit_date": "2026-10-10"
+  },
+  {
+   "path": "tasks/innovation/2026-10-11-meta.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "e2c0c111dbb75c6eb77a1dc331ba61956c20432d7c49dd04d20a5205b377ab35",
+   "first_heading": "周创新任务：meta",
+   "last_commit_date": "2026-10-11"
+  },
+  {
+   "path": "tasks/innovation/2026-10-11-meta_hosted.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "89af7f927bd24d11d54d951c359dc1d76274c03c16040e2c2e8664d281274b51",
+   "first_heading": "周创新任务：meta_hosted",
+   "last_commit_date": "2026-10-11"
+  },
+  {
+   "path": "tasks/innovation/2026-10-12-gpt.md",
+   "class": "other",
+   "bytes": 703,
+   "sha256": "136e18875dd45adc7ca52a789f321da07375b071b6b9e25c0e925bbccb2579e6",
+   "first_heading": "周创新任务：gpt",
+   "last_commit_date": "2026-10-12"
+  },
+  {
+   "path": "tasks/innovation/2026-10-12-microsoft.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "f1e683d60c8d5adafcfd61bb8e070f314263a985db8f3c8f7b692c6f404f268c",
+   "first_heading": "周创新任务：microsoft",
+   "last_commit_date": "2026-10-12"
+  },
+  {
+   "path": "tasks/innovation/2026-10-13-deepseek.md",
+   "class": "other",
+   "bytes": 713,
+   "sha256": "263ef04614f36435e6bde6096d0f452d00915304ea6c58f4cec06fdeec75a8ae",
+   "first_heading": "周创新任务：deepseek",
+   "last_commit_date": "2026-10-13"
+  },
+  {
+   "path": "tasks/innovation/2026-10-14-doubao.md",
+   "class": "other",
+   "bytes": 709,
+   "sha256": "249333e86e085a6bcc567b3d190042ab67b128be74945e60c4fc9d4b86c42961",
+   "first_heading": "周创新任务：doubao",
+   "last_commit_date": "2026-10-14"
+  },
+  {
+   "path": "tasks/innovation/2026-10-14-manus.md",
+   "class": "other",
+   "bytes": 707,
+   "sha256": "fb373847363b825a254f49922ec4a0314cce81041f7dcc50be5c5453cd9122dc",
+   "first_heading": "周创新任务：manus",
+   "last_commit_date": "2026-10-14"
+  },
+  {
+   "path": "tasks/innovation/2026-10-15-grok.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "a6882e310ca076f9c5698fb6c29f7cc3327d7dc9d68540ac11f59cbbf479e946",
+   "first_heading": "周创新任务：grok",
+   "last_commit_date": "2026-10-15"
+  },
+  {
+   "path": "tasks/innovation/2026-10-16-qianwen.md",
+   "class": "other",
+   "bytes": 711,
+   "sha256": "0ab40e0fdcd3c20dc20cd4253bc442d56665a5a629e829f9f732d400fc495ae2",
+   "first_heading": "周创新任务：qianwen",
+   "last_commit_date": "2026-10-16"
+  },
+  {
+   "path": "tasks/innovation/2026-10-16-workbuddy.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "d5e63120ddbfe56cef10e097590c940c7f97d96fa1ff3dcbe0489863fca5caff",
+   "first_heading": "周创新任务：workbuddy",
+   "last_commit_date": "2026-10-16"
+  },
+  {
+   "path": "tasks/innovation/2026-10-17-kimi_domestic.md",
+   "class": "other",
+   "bytes": 723,
+   "sha256": "552fc3c9134b68a46f3bea625b1c9ccf712451ab356911001ad0ee1ef866a96a",
+   "first_heading": "周创新任务：kimi_domestic",
+   "last_commit_date": "2026-10-17"
+  },
+  {
+   "path": "tasks/innovation/2026-10-17-kimi_global.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "59116b18fd4630049785af78a3c4e2e31f3cb64e136a0ea2a46a37a930dc1ed6",
+   "first_heading": "周创新任务：kimi_global",
+   "last_commit_date": "2026-10-17"
+  },
+  {
+   "path": "tasks/innovation/2026-10-18-meta.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "603108a4d6387682bf07f70d4462c3fe29037f7d361d777e62ea59fa28a4c536",
+   "first_heading": "周创新任务：meta",
+   "last_commit_date": "2026-10-18"
+  },
+  {
+   "path": "tasks/innovation/2026-10-18-meta_hosted.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "2338e2dc1ea67c53f3780f7bed7e3bf3d4f6e816fc10634db3d2447111dbfa5e",
+   "first_heading": "周创新任务：meta_hosted",
+   "last_commit_date": "2026-10-18"
+  },
+  {
+   "path": "tasks/innovation/2026-10-19-gpt.md",
+   "class": "other",
+   "bytes": 703,
+   "sha256": "0768e428b025cb13cf10bf37b1864e2cf77985af14fdd36559515994585edb89",
+   "first_heading": "周创新任务：gpt",
+   "last_commit_date": "2026-10-19"
+  },
+  {
+   "path": "tasks/innovation/2026-10-19-microsoft.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "4f9d94abab97cf1a5c050dc9732cdb87ea5b74f56a09d5fea8a2c1710376db08",
+   "first_heading": "周创新任务：microsoft",
+   "last_commit_date": "2026-10-19"
+  },
+  {
+   "path": "tasks/innovation/2026-10-20-deepseek.md",
+   "class": "other",
+   "bytes": 713,
+   "sha256": "6e361902753da04fa846868d21be9226e28c143c66a8d31224aea51ae1ae743b",
+   "first_heading": "周创新任务：deepseek",
+   "last_commit_date": "2026-10-20"
+  },
+  {
+   "path": "tasks/innovation/2026-10-21-doubao.md",
+   "class": "other",
+   "bytes": 709,
+   "sha256": "b685d6744e67462f20098d1f61766eb69ad850226c54c9eb30cbd053a316bf13",
+   "first_heading": "周创新任务：doubao",
+   "last_commit_date": "2026-10-21"
+  },
+  {
+   "path": "tasks/innovation/2026-10-21-manus.md",
+   "class": "other",
+   "bytes": 707,
+   "sha256": "537e0a6859a6c5bc3dab122b6186301764f84428b69201d3897746c07a8591a4",
+   "first_heading": "周创新任务：manus",
+   "last_commit_date": "2026-10-21"
+  },
+  {
+   "path": "tasks/innovation/2026-10-22-grok.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "002e22240455ff682fa7351eae991be514a8f8c004a949a499637e123b0c1504",
+   "first_heading": "周创新任务：grok",
+   "last_commit_date": "2026-10-22"
+  },
+  {
+   "path": "tasks/innovation/2026-10-23-qianwen.md",
+   "class": "other",
+   "bytes": 711,
+   "sha256": "8013e81342b504ba2bbd2cac52355feded1f0f15bc599a328a3495a790a18d20",
+   "first_heading": "周创新任务：qianwen",
+   "last_commit_date": "2026-10-23"
+  },
+  {
+   "path": "tasks/innovation/2026-10-23-workbuddy.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "b68aefb927f7b467e18a91b53634045387eff9945693274419bf2f1ff04c2391",
+   "first_heading": "周创新任务：workbuddy",
+   "last_commit_date": "2026-10-23"
+  },
+  {
+   "path": "tasks/innovation/2026-10-24-kimi_domestic.md",
+   "class": "other",
+   "bytes": 723,
+   "sha256": "7b366e54bbb08d464b4724b8c9bfecf9ab86938ede53f150c00b953b96f76000",
+   "first_heading": "周创新任务：kimi_domestic",
+   "last_commit_date": "2026-10-24"
+  },
+  {
+   "path": "tasks/innovation/2026-10-24-kimi_global.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "0d3e5a93b02b0115b8390ebfd79cd7aa02c8f2738954ccc41a81809411b8a64a",
+   "first_heading": "周创新任务：kimi_global",
+   "last_commit_date": "2026-10-24"
+  },
+  {
+   "path": "tasks/innovation/2026-10-25-meta.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "5cf56a71f79700ded2ced6b7411950fd0cd33c5e1418f6b1db51dad7702c2c4c",
+   "first_heading": "周创新任务：meta",
+   "last_commit_date": "2026-10-25"
+  },
+  {
+   "path": "tasks/innovation/2026-10-25-meta_hosted.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "31fcdbaca8f529afbfc9c4bca8b93a3cba2e6b9bbb2012821f19476ffb21a7ec",
+   "first_heading": "周创新任务：meta_hosted",
+   "last_commit_date": "2026-10-25"
+  },
+  {
+   "path": "tasks/innovation/2026-10-26-gpt.md",
+   "class": "other",
+   "bytes": 703,
+   "sha256": "a2d9916e4b8c8b81f305be043e01de35db0b08a1bd7c0ab3d6dde0095c67e523",
+   "first_heading": "周创新任务：gpt",
+   "last_commit_date": "2026-10-26"
+  },
+  {
+   "path": "tasks/innovation/2026-10-26-microsoft.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "72e705d91439533758e53f40d81fceb9f9569912b33ef46392393a8e202c4f60",
+   "first_heading": "周创新任务：microsoft",
+   "last_commit_date": "2026-10-26"
+  },
+  {
+   "path": "tasks/innovation/2026-10-27-deepseek.md",
+   "class": "other",
+   "bytes": 713,
+   "sha256": "d071164fc60a11742a379a1d7c177171dc1dce2811801602c9e1023abf63181a",
+   "first_heading": "周创新任务：deepseek",
+   "last_commit_date": "2026-10-27"
+  },
+  {
+   "path": "tasks/innovation/2026-10-28-doubao.md",
+   "class": "other",
+   "bytes": 709,
+   "sha256": "e03e367862b3955a0c9e06e476042b821cc4e33887f2b6cc4ddf3f5a805b7204",
+   "first_heading": "周创新任务：doubao",
+   "last_commit_date": "2026-10-28"
+  },
+  {
+   "path": "tasks/innovation/2026-10-28-manus.md",
+   "class": "other",
+   "bytes": 707,
+   "sha256": "4fe8844c33d5e32f6d0f62ec012a90634b325529f11efc16de340ed5018e4849",
+   "first_heading": "周创新任务：manus",
+   "last_commit_date": "2026-10-28"
+  },
+  {
+   "path": "tasks/innovation/2026-10-29-grok.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "445828d027c6a0efe42fdf3b727fed799b703e352b3f827fee73c2b5041e7a2a",
+   "first_heading": "周创新任务：grok",
+   "last_commit_date": "2026-10-29"
+  },
+  {
+   "path": "tasks/innovation/2026-10-30-qianwen.md",
+   "class": "other",
+   "bytes": 711,
+   "sha256": "d996cf5a93c747253643914c3dd8170de687d829524bf5ebea8aac3c949fc18c",
+   "first_heading": "周创新任务：qianwen",
+   "last_commit_date": "2026-10-30"
+  },
+  {
+   "path": "tasks/innovation/2026-10-30-workbuddy.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "22f49bfc60368a3ae5f3a11c384f41d82fe8184890293db3f0828c3684d027bf",
+   "first_heading": "周创新任务：workbuddy",
+   "last_commit_date": "2026-10-30"
+  },
+  {
+   "path": "tasks/innovation/2026-10-31-kimi_domestic.md",
+   "class": "other",
+   "bytes": 723,
+   "sha256": "9dea5c9800739e87d08845503adc345b5b4517da6f49a1e65f938b31fcd3aba2",
+   "first_heading": "周创新任务：kimi_domestic",
+   "last_commit_date": "2026-10-31"
+  },
+  {
+   "path": "tasks/innovation/2026-10-31-kimi_global.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "c2288495d41c06a54e81eea041f6645d7bf9f693fe2304578fb4ad4f6ff31df1",
+   "first_heading": "周创新任务：kimi_global",
+   "last_commit_date": "2026-10-31"
+  },
+  {
+   "path": "tasks/innovation/2026-11-01-meta.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "3edf6851aefc5c3b7a308018cb1c8d752ae2d1ededfee559bac9c17c86d39f28",
+   "first_heading": "周创新任务：meta",
+   "last_commit_date": "2026-11-01"
+  },
+  {
+   "path": "tasks/innovation/2026-11-01-meta_hosted.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "1a57ad061f5fd01e3afa4e0bf996f4f4deb9c55be13bdd8580b3fd6210695826",
+   "first_heading": "周创新任务：meta_hosted",
+   "last_commit_date": "2026-11-01"
+  },
+  {
+   "path": "tasks/innovation/2026-11-02-gpt.md",
+   "class": "other",
+   "bytes": 703,
+   "sha256": "49f079283867d71b016bd97265691734e3c57bad65efd16af826a1a53a223dd7",
+   "first_heading": "周创新任务：gpt",
+   "last_commit_date": "2026-11-02"
+  },
+  {
+   "path": "tasks/innovation/2026-11-02-microsoft.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "1f606d0b5cd2f1d37032ea5f0f383eb4251e6b623c144908f8a6210fb2ad8696",
+   "first_heading": "周创新任务：microsoft",
+   "last_commit_date": "2026-11-02"
+  },
+  {
+   "path": "tasks/innovation/2026-11-03-deepseek.md",
+   "class": "other",
+   "bytes": 713,
+   "sha256": "9cf845077bc2abf63d0265df2a1c4537013f47a5435d468c01fbf41f25f97782",
+   "first_heading": "周创新任务：deepseek",
+   "last_commit_date": "2026-11-03"
+  },
+  {
+   "path": "tasks/innovation/2026-11-04-doubao.md",
+   "class": "other",
+   "bytes": 709,
+   "sha256": "2b28ade86ad80e7bf8ae4382e122c049167ecdaf428d671cdea2da508797087b",
+   "first_heading": "周创新任务：doubao",
+   "last_commit_date": "2026-11-04"
+  },
+  {
+   "path": "tasks/innovation/2026-11-04-manus.md",
+   "class": "other",
+   "bytes": 707,
+   "sha256": "93e005fff74a5f36100111bb63d6e28b171f6a149f8ee78f3e57ff3e125522c8",
+   "first_heading": "周创新任务：manus",
+   "last_commit_date": "2026-11-04"
+  },
+  {
+   "path": "tasks/innovation/2026-11-05-grok.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "4d49e0201f6e7071b34666e25576bb16a9f073f452cfe7c960b9a51bde0d2999",
+   "first_heading": "周创新任务：grok",
+   "last_commit_date": "2026-11-05"
+  },
+  {
+   "path": "tasks/innovation/2026-11-06-qianwen.md",
+   "class": "other",
+   "bytes": 711,
+   "sha256": "10f7272d03a5828f5040b69bb5817a96ff6b3d3a7b05cda51cbf6bb9abd3c3f2",
+   "first_heading": "周创新任务：qianwen",
+   "last_commit_date": "2026-11-06"
+  },
+  {
+   "path": "tasks/innovation/2026-11-06-workbuddy.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "bea9005c6f67170b6fa2fb37fb33ee9f00811b93807493f0fee5217a0d9e0005",
+   "first_heading": "周创新任务：workbuddy",
+   "last_commit_date": "2026-11-06"
+  },
+  {
+   "path": "tasks/innovation/2026-11-07-kimi_domestic.md",
+   "class": "other",
+   "bytes": 723,
+   "sha256": "e70dc5638298b09a4c39793f95fa6e7e5841d52b3fe786a41921599350447a4f",
+   "first_heading": "周创新任务：kimi_domestic",
+   "last_commit_date": "2026-11-07"
+  },
+  {
+   "path": "tasks/innovation/2026-11-07-kimi_global.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "854fec39a7cd0d6549d09529788a6e42663ace6ce66e997c07e6307423238b9a",
+   "first_heading": "周创新任务：kimi_global",
+   "last_commit_date": "2026-11-07"
+  },
+  {
+   "path": "tasks/innovation/2026-11-08-meta.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "4ef849ae466c026b95afe4801e6d0f0144565c110bb2a84522dbd652f0cb7be2",
+   "first_heading": "周创新任务：meta",
+   "last_commit_date": "2026-11-08"
+  },
+  {
+   "path": "tasks/innovation/2026-11-08-meta_hosted.md",
+   "class": "other",
+   "bytes": 719,
+   "sha256": "e4e1ab137abb4579a1f7ceb8f8c00c2c0fc8a0ffc5959be76834340fd4a41de2",
+   "first_heading": "周创新任务：meta_hosted",
+   "last_commit_date": "2026-11-08"
+  },
+  {
+   "path": "tasks/innovation/2026-11-09-gpt.md",
+   "class": "other",
+   "bytes": 703,
+   "sha256": "0c41ed355b378a0a1eb1cb4013b9be3769b67d8cc28c4a0684b04046d21fd215",
+   "first_heading": "周创新任务：gpt",
+   "last_commit_date": "2026-11-09"
+  },
+  {
+   "path": "tasks/innovation/2026-11-09-microsoft.md",
+   "class": "other",
+   "bytes": 715,
+   "sha256": "81e10fd3f93fa305be69b32c287d1517884db6b251255b1da17612714de3299c",
+   "first_heading": "周创新任务：microsoft",
+   "last_commit_date": "2026-11-09"
+  },
+  {
+   "path": "tasks/innovation/2026-11-10-deepseek.md",
+   "class": "other",
+   "bytes": 713,
+   "sha256": "18f472528903e22578edff7db382dc722d845631c6c89525d688a3c8b817b2f2",
+   "first_heading": "周创新任务：deepseek",
+   "last_commit_date": "2026-11-10"
+  },
+  {
+   "path": "tasks/innovation/2026-11-11-doubao.md",
+   "class": "other",
+   "bytes": 709,
+   "sha256": "d0b87d338e741a7a6c388f5e783b4b0537c3390c2f1701aeb91a055a26ff7aeb",
+   "first_heading": "周创新任务：doubao",
+   "last_commit_date": "2026-11-11"
+  },
+  {
+   "path": "tasks/innovation/2026-11-11-manus.md",
+   "class": "other",
+   "bytes": 707,
+   "sha256": "877bec8eaa9316a47a41040651cc11d6cf2caa1b6fe25439a765f1b420af606c",
+   "first_heading": "周创新任务：manus",
+   "last_commit_date": "2026-11-11"
+  },
+  {
+   "path": "tasks/innovation/2026-11-12-grok.md",
+   "class": "other",
+   "bytes": 705,
+   "sha256": "5008118b85e94b00aeda5523484791faefabd03b79db1157646aaa827d1c311e",
+   "first_heading": "周创新任务：grok",
+   "last_commit_date": "2026-11-12"
+  }
+ ],
+ "integrity": {
+  "checker": "scripts/check-core-memory.mjs 已跑，退出码 0",
+  "harness_tests": "scripts/tests/reflection-harness.test.mjs 14/14 pass"
+ }
+}

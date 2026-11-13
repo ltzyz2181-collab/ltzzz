@@ -1,0 +1,73 @@
+{
+ "schema": "ltzzz.deployment.plan.v1",
+ "plan_id": "DEPLOY-20261113-MEMORY-HARNESS-A",
+ "date": "2026-11-13",
+ "requested_by": "owner",
+ "scope": [
+  {
+   "item": "记忆文件库索引 + 归档/生效版本标注",
+   "artifact": "knowledge/results/memory-library/catalog-20261113.json",
+   "type": "repo_read_only_metadata",
+   "done": true
+  },
+  {
+   "item": "harness 祖先判断纠错（双向 ancestry）",
+   "artifact": "scripts/harness.mjs + knowledge/results/goals/corrections/20261113-source-ancestry-correction.json",
+   "type": "code_already_on_main",
+   "commit": "b68980562",
+   "done": true
+  },
+  {
+   "item": "记忆库一致性断言（manifest vs canonical 集合）",
+   "artifact": "scripts/lib/core-memory-integrity.mjs 增补",
+   "type": "code_change",
+   "done": false
+  },
+  {
+   "item": "变体文件 role=archive 标注（仅索引层，不改正文、不移动文件）",
+   "artifact": "knowledge/results/memory-library/catalog-20261113.json issues.M1",
+   "type": "index_annotation",
+   "done": false
+  }
+ ],
+ "authority": {
+  "owner_instruction_20261113": "今天授权克劳德可部署；整理 Memory 与 harness 纠错后交 GPT 裁决，再由豆包部署",
+  "executor_seat": "claude",
+  "verifier_seat": "doubao",
+  "ruling_required_from": "gpt",
+  "ruling_subjects": [
+   "评审类部署",
+   "技能迭代类部署",
+   "资金类部署"
+  ],
+  "note": "本计划不含资金、钱包、签名、生产支付写；命中上述三类的部分不在本包内"
+ },
+ "sequence": [
+  "1. 索引与纠错证据落盘（已完成，纯读）",
+  "2. GPT 裁决：是否批准本包，以及是否允许 claude 席在本包范围内执行代码改动",
+  "3. 裁决通过后由 claude 席执行 M1/M3 改动，只走 PR，不直推 main",
+  "4. 豆包席复核：跑 reflection-harness 14 项与 deep-superagent 25 项单测、跑一次 harness 观测、核对 correction 引用未改原文",
+  "5. 复核通过后由豆包席合并并部署；部署后回读 status.json 与 harness 观测指标"
+ ],
+ "verification": {
+  "tests": [
+   "node scripts/tests/reflection-harness.test.mjs",
+   "node --test scripts/tests/deep-superagent.test.mjs",
+   "node scripts/check-core-memory.mjs"
+  ],
+  "acceptance": [
+   "14/14 与 25/25 全绿",
+   "core memory 校验退出码 0",
+   "harness 观测 ancestry_checked 与 ancestry_disjoint 计数出现且 issues 不新增",
+   "correction receipt 原始 evidence 未被修改（sha256 与 4ee93fac… 一致）"
+  ],
+  "rollback": "按 commit 粒度 git revert；不做 reset、不做 force-push"
+ },
+ "not_in_scope": [
+  "合并 PR 之外的生产写",
+  "资金/签名/钱包/Safe/放款",
+  "allowedAgents 变更",
+  "伪造 review receipt"
+ ],
+ "status": "awaiting_gpt_ruling"
+}
