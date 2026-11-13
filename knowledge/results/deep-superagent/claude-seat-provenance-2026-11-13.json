@@ -61,5 +61,30 @@
   "是否在对外文档/agent-card 里显式标注 claude 席为第三方中转（现状是否已标注需确认）",
   "是否要求增加上游回执留存（响应头/请求号/耗时）作为每次中转调用的证据",
   "是否收紧中转席可处理的 data_classification（是否只允许 public_distributable）"
- ]
+ ],
+ "owner_decision": {
+  "decision_id": "owner-q5-relay-until-official-recharge-20261113",
+  "decided_by": "owner",
+  "decided_at": "2026-11-13",
+  "question": "是否长期以中转替代官方账号（原 Q5）",
+  "decision": "在原厂渠道可正常充值之前，gpt 与 claude 一律使用中转，不等待官方账号",
+  "basis": "原厂账号受银行与地区限制，当前无法充值 gpt 与 claude；官方 claude.ai 在本地区亦无法登录",
+  "scope": {
+   "seats": [
+    "gpt",
+    "claude"
+   ],
+   "channel": "apisrouter_relay",
+   "excluded": "无；两席均按中转执行"
+  },
+  "valid_until": "原厂渠道可正常充值并通过一次端到端校验之日；届时由 owner 重新裁定是否切换",
+  "constraints_unchanged": [
+   "中转只做执行席，不做 planner 与 independent_review",
+   "不传凭据、金额、密钥；只派 public_distributable 脱敏内容",
+   "结论一律由原生席复核，不把中转输出当唯一证据",
+   "对外表述标注为第三方中转，不得声称 Anthropic 原厂"
+  ],
+  "review_trigger": "原厂充值可用 / 中转质量或价格异常 / 出现数据合规要求收紧"
+ },
+ "status": "owner_ruled_pending_gpt_ack"
 }
