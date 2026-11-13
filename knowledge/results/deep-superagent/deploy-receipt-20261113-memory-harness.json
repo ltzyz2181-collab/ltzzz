@@ -19,6 +19,11 @@
    "file": "scripts/check-memory-manifest-consistency.mjs",
    "change": "新增只读一致性检查，默认 advisory，--strict 失败",
    "scope": "新增脚本"
+  },
+  {
+   "file": "tools/build-memory-manifest.mjs",
+   "change": "READ_ORDER 补入 梦境数据库.md 与 文明研究.md",
+   "scope": "生成器根因修复；此前手改 manifest 被 Sync Memory Manifest（9656a70a7）覆盖"
   }
  ],
  "verification": [
@@ -37,8 +42,30 @@
   {
    "check": "node --test scripts/tests/deep-superagent.test.mjs",
    "result": "25/25 pass"
+  },
+  {
+   "check": "node tools/build-memory-manifest.mjs && node scripts/check-memory-manifest-consistency.mjs --strict",
+   "result": "manifest 378 文件、read_order 14、memory_manifest_consistent"
   }
  ],
  "not_changed": "记忆正文未改、记忆文件未移动未删除、无资金/签名/钱包/生产支付写",
- "rollback": "按 commit revert，不 reset、不 force-push"
+ "rollback": "按 commit revert，不 reset、不 force-push",
+ "incident": {
+  "id": "manifest-overwrite-20261113",
+  "detail": "手改 ltzzz-memory/manifest.json 后，sync-memory.yml 在提交 94b33edaa 上重新生成并覆盖（9656a70a7），read_order 回退为 12 项；改为修生成器后一致",
+  "lesson": "记忆清单类文件必须改生成器，不能只改产物"
+ },
+ "relay_verification": {
+  "run": "43414222772",
+  "receipt": "knowledge/results/deep-superagent/queue-43414222772-attempt-1.json",
+  "task_id": "DEEP-RELAY-PROBE-20261113-04",
+  "seat": "claude",
+  "actual_provider": "apisrouter_relay",
+  "actual_model": "claude-sonnet-4-6",
+  "upstream_http": 200,
+  "request_id": "msg_f0VG496D77grUnhM78EBdvaW",
+  "tokens_used": 527,
+  "meaning": "owner 与 GPT 就中转连续性达成一致后，中转席恢复可调用的运行态证据；不构成原厂证明"
+ },
+ "status": "deployed_and_verified"
 }
