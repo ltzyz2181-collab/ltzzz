@@ -1,0 +1,13 @@
+{
+  "finding": "recoverArtifact无法恢复incomplete_or_failed状态的崩溃窗口：runReservedSeat在artifact落盘后、ledger状态更新前崩溃时，唯一合法失败产物被丢弃，席位被置为generation_unknown_no_repurchase，之后无路径进入syncFailedSeat，导致失败证据永久断链、任务板永远停在claimed。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-12-reviewer.json"
+  ],
+  "minimal_patch": "在scripts/lib/daily-task-board.mjs的recoverArtifact函数中，将入口状态扩展为['generation_started','generation_unknown_no_repurchase']，改为同时收集complete与incomplete_or_failed候选；分离两类matches；满足唯一性时优先回填失败候选为generation_failed_no_repurchase（syncDailyBoard随后送入syncFailedSeat），完整候选保持generated_pending_sync；两类候选并存仍返回false。新增validateFailedArtifact，校验路径、SHA-256、body.status==='incomplete_or_failed'及date/run_key/task_id/logical_seat/source_commit绑定。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/recover-failed-artifact.test.mjs 2>/dev/null || node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const fs=require('fs');const p='knowledge/results/daily-board/artifacts/2026-11-12-gpt-deadbeef.json';const rec={date:'2026-11-12',run_key:'r',source_commit:'c',seats:{gpt:{agent:'gpt',status:'generation_started',assignment:{id:'T',date:'2026-11-12'},claim_verified:true}}};const seat=rec.seats.gpt;fs.writeFileSync(p,JSON.stringify({schema_version:1,date:'2026-11-12',run_key:'r',task_id:'T',logical_seat:'gpt',source_commit:'c',status:'incomplete_or_failed',output:'x',finish_reason:'stop',integrity:{status:'missing_required_section'}}));const ok=m.recoverArtifact('.',rec,'gpt',seat);console.log('recover=',ok,'status=',seat.status,'artifact=',seat.artifact?.sha256);})\""
+  ],
+  "remaining_blocker": "补丁仅在静态规格层面成立；未在真实生产环境复现该崩溃窗口，未验证远端raw.githubusercontent回读失败产物时syncFailedSeat后续的readRemote hash一致性与failure_sync_unknown行为。需在隔离checkout中构造崩溃残留、执行恢复与失败同步全链路，再合入main并触发dedicated CI运行验证。"
+}

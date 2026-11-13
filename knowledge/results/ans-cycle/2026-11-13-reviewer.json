@@ -1,0 +1,27 @@
+{
+  "accepted": true,
+  "artifact_sha256": "590f640709ca9052e81a551d4031518c7031ae4f8166a5d44d1af88f8f9a9504",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs 的 runReservedSeat：席位先被置为 generation_started 并 saveLedger；之后 artifact 被 fs.writeFileSync 落盘；seat.artifact、最终 seat.status 和最后一次 saveLedger 才执行，因此源码确实存在 artifact 已写入但 ledger 未更新的崩溃窗口。",
+    "落盘 artifact 的 status 由 complete 条件决定，可为 complete 或 incomplete_or_failed；交付 finding 对失败产物存在性的描述与源码一致。",
+    "现有 validateArtifact 强制 body.status === 'complete'，同时校验路径、SHA-256、date、run_key、task_id、logical_seat、source_commit 和结构完整性；绑定正确的 incomplete_or_failed 候选会被拒绝。",
+    "现有 recoverArtifact 只把通过 validateArtifact 的候选加入 matches；若崩溃后目录中唯一候选是 incomplete_or_failed，matches.length 为 0 并返回 false，不会回填 seat.artifact。",
+    "syncDailyBoard 在 recoverArtifact 失败后会把仍为 generation_started 的席位改为 generation_unknown_no_repurchase；该状态既不在 syncFailedSeat 的失败状态列表中，也不满足普通 artifact 提交路径，源码支持失败证据断链和任务板停留 claimed 的结论。",
+    "minimal_patch 提出新增 validateFailedArtifact，并校验路径、实际字节 SHA-256、body.status === 'incomplete_or_failed' 以及 date、run_key、task_id、logical_seat、source_commit 绑定；作为静态规格符合不可变证据和 fail-closed 原则。",
+    "minimal_patch 将唯一失败候选回填为 generation_failed_no_repurchase；该状态已包含在 syncDailyBoard 调用 syncFailedSeat 的状态列表中，静态上可衔接 fail_task 与远端 hash 回读路径，且不需要再次模型调用。",
+    "补丁规格保留 complete 候选使用 validateArtifact 并进入 generated_pending_sync；同时要求 complete 与 failed 候选并存时返回 false，可避免在多个合法或冲突产物之间任意选择。",
+    "交付明确列出 remaining_blocker，没有声称补丁已写盘、测试通过、合入 main、部署上线或发生转账；验收范围限于 finding 与补丁草稿的静态可复核性。"
+  ],
+  "unverified": [
+    "未获得交付物原始字节，无法重算 artifact_sha256；当前只能严格回传给定哈希。",
+    "未实际应用 minimal_patch，也未审查最终 Git diff，因此插入位置、函数签名、作用域、代码格式和完整可编译性尚未验证。",
+    "未执行 node --check scripts/lib/daily-task-board.mjs，补丁后语法未验证。",
+    "未执行 node --test、交付中的临时复现脚本或完整测试套件；失败产物恢复、complete 产物兼容、多候选歧义、幂等重跑均未实测。",
+    "generation_unknown_no_repurchase 状态下再次进入 recoverArtifact 并恢复失败产物后，syncFailedSeat 的完整状态迁移尚未通过测试验证。",
+    "syncFailedSeat 要求远端 readRemote(a.path) 的字节哈希等于本地 sha256；远端尚未持久化或读取失败时 failure_sync_unknown 的后续重试和恢复行为未验证。",
+    "未验证其他调用方是否依赖 recoverArtifact 只恢复 complete artifact，或依赖 generation_unknown_no_repurchase 不绑定 artifact 的旧行为。",
+    "未在隔离 checkout 中构造真实进程崩溃、工作目录残留和 artifact 生命周期条件；生产环境是否实际发生该窗口未验证。",
+    "未验证补丁合入 main、dedicated CI、部署回读、目标环境、制品 SHA、生产版本及线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金事项；本结论仅限源码与规格草稿的静态审查。"
+  ]
+}
