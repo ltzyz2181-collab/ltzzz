@@ -1,0 +1,402 @@
+{
+ "schema": "ltzzz.deep-superagent.daily.v1",
+ "date": "2026-11-14",
+ "generated_at_utc": "2026-11-14T00:30:00Z",
+ "trigger": "manual (06:45 定时已于 11-12 后停摆，本日手动补跑；定时恢复后下次 2026-11-15 06:45)",
+ "mail": {
+  "file": "knowledge/results/deep-superagent/mail-backlog/latest.json",
+  "count": 37,
+  "open_count": 13,
+  "window_days": 21,
+  "contains_body": false
+ },
+ "repo_observation": {
+  "oversight_backlog": 165,
+  "not_rechecked": 130,
+  "failed_runs_24h": [
+   43495544132
+  ],
+  "open_prs": [
+   395,
+   287
+  ]
+ },
+ "card": {
+  "attempt_1": "DEEP-SUPERAGENT-20261114-DAILY-1 (run 43533152957, invalid_deepseek_task: planner task 超 3000 字符)",
+  "attempt_2": "DEEP-SUPERAGENT-20261114-DAILY-2 (run 43533345000)",
+  "attempt_3": "DEEP-SUPERAGENT-20261114-DAILY-3 (run 43533674782, 17 行全部命中真实 ref)"
+ },
+ "queue_run_id": 43533674782,
+ "queue_receipt": "knowledge/results/deep-superagent/queue-43533674782-attempt-1.json",
+ "job_status": "needs_gpt_decision",
+ "model_calls": 3,
+ "seat_receipts": [
+  {
+   "seat": "deepseek",
+   "model": "deepseek-v4-pro",
+   "http": 200,
+   "tokens": 1817,
+   "role": "planner"
+  },
+  {
+   "seat": "claude",
+   "provider": "apisrouter_relay",
+   "model": "claude-sonnet-4-6",
+   "http": 200,
+   "tokens": 1962,
+   "role": "worker"
+  },
+  {
+   "seat": "deepseek",
+   "model": "deepseek-v4-pro",
+   "http": 200,
+   "tokens": 2616,
+   "role": "review"
+  }
+ ],
+ "worker_fabrication": {
+  "seat": "claude",
+  "kind": "worker_fabricated_refs",
+  "evidence": "输出表使用 mail-001..mail-013，latest.json 真实 ref 为 35e009a3… / ba4ddc11… 等 13 个；表中 subject 也非邮件主题",
+  "also": "worker 自称已读文件，但队列沙箱无该路径，<read_file> 标签为无效调用",
+  "consequence": "该表不可作为分流依据，已全部作废并由协调席按真实 ref 重做",
+  "needs_guard": "在 prompt 中枚举真实 ref 并要求逐条原样引用；worker 输出校验 ref 必须存在于输入集合，否则整卡作废",
+  "status": "已修正：attempt 3 通过真实 ref 重跑，17 行全部命中"
+ },
+ "routes": [
+  {
+   "ref": "35e009a39885e44b",
+   "age_days": 5,
+   "subject": "千问字节缺失｜交真实原件；有范围查找回执已登记",
+   "route": "blocked_evidence_needed",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "blocked_evidence_needed",
+   "final_route": "blocked_evidence_needed"
+  },
+  {
+   "ref": "ba4ddc11868d81a8",
+   "age_days": 5,
+   "subject": "signer门实测｜显式契约，先拒错误再部署",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision"
+  },
+  {
+   "ref": "21f16a13dcfdf51c",
+   "age_days": 5,
+   "subject": "QWEN-REPLY-20261108｜四项裁决与缺失凭证",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision"
+  },
+  {
+   "ref": "e25c295141f6baae",
+   "age_days": 5,
+   "subject": "#376已合并，Deep协调、原任务补最短缺口",
+   "route": "coordinator_close_with_receipt",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt"
+  },
+  {
+   "ref": "f37f74a2260e0983",
+   "age_days": 4,
+   "subject": "勘误｜Linear 卡 v2 覆盖 v1（76edf969）｜回 Q1/Q2",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "needs_gpt_decision",
+   "correction_reason": "邮件要求据此回 Q1/Q2，属待答裁决项，不能当已关闭"
+  },
+  {
+   "ref": "76204610598d12d6",
+   "age_days": 4,
+   "subject": "请求裁决：小程序开通支付 Q1-Q5",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision"
+  },
+  {
+   "ref": "3b86bfbe9f010dd1",
+   "age_days": 2,
+   "subject": "小程序虚拟支付沙箱首单付款成功，退款链路已上线",
+   "route": "deploy_confirm_only",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "deploy_confirm_only",
+   "final_route": "deploy_confirm_only"
+  },
+  {
+   "ref": "a4892a62f3078715",
+   "age_days": 2,
+   "subject": "Deep 巡检五席全绿，七项判定与一处输入偏差",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "needs_gpt_decision",
+   "correction_reason": "含七项判定，需按裁决项处理"
+  },
+  {
+   "ref": "58679a674803de2a",
+   "age_days": 2,
+   "subject": "千问11-11监督核实结论+已部署2处闸门+需GPT裁决5项",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision"
+  },
+  {
+   "ref": "accc365c8999ec45",
+   "age_days": 2,
+   "subject": "纠偏：小程序支付实为已接入·自动交付边界",
+   "route": "coordinator_close_with_receipt",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "deploy_confirm_only",
+   "final_route": "deploy_confirm_only"
+  },
+  {
+   "ref": "37c0b81f45bea064",
+   "age_days": 2,
+   "subject": "ICP 备案通过（粤ICP备2026177896号）+5 项待裁决",
+   "route": "needs_gpt_decision",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_owner_decision",
+   "final_route": "needs_gpt_decision",
+   "correction_reason": "5 项待裁决为主体，ICP 备案只是背景"
+  },
+  {
+   "ref": "c96ab9053576d5c4",
+   "age_days": 1,
+   "subject": "中转执行席：Worker 转发跑通一次真实中转，待裁决",
+   "route": "coordinator_close_with_receipt",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision"
+  },
+  {
+   "ref": "2b3050253fdbc338",
+   "age_days": 0,
+   "subject": "补充裁决：AI雇佣AI改为逐步验收｜撤销固定期限",
+   "route": "coordinator_close_with_receipt",
+   "route_source": "coordinator_recheck",
+   "note": "席位原表 ref 虚构，本表按 latest.json 真实 ref 重做",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "coordinator_close_with_receipt",
+   "correction_reason": "本身即 GPT 补充裁决，应记为已收裁决并补回执"
+  },
+  {
+   "ref": "PR-395",
+   "route": "needs_gpt_decision",
+   "note": "三处补强属评审权限，需 GPT 批准范围",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision"
+  },
+  {
+   "ref": "PR-287",
+   "route": "needs_gpt_decision",
+   "note": "维持 DRAFT，不合并",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt"
+  },
+  {
+   "ref": "workflow-43495544132",
+   "route": "blocked_evidence_needed",
+   "note": "失败日志未取到，需 gh run view 日志路径",
+   "worker_route": "blocked_evidence_needed",
+   "final_route": "blocked_evidence_needed"
+  },
+  {
+   "ref": "oversight-backlog-165",
+   "route": "needs_gpt_decision",
+   "note": "130 条未复查，复查口径需裁决",
+   "worker_route": "needs_owner_decision",
+   "final_route": "needs_gpt_decision",
+   "correction_reason": "复查口径与代执行权限属 GPT 裁决范围"
+  }
+ ],
+ "sections": {
+  "done": [
+   {
+    "item": "邮件积压采集",
+    "evidence": "knowledge/results/deep-superagent/mail-backlog/latest.json (sha256 c72adeb7…, count 37, open 13, 正文未落盘)"
+   },
+   {
+    "item": "卡 1 失败定位",
+    "evidence": "run 43533152957, error=invalid_deepseek_task；根因 planner task 字符串超 3000 字符",
+    "note": "未删改旧卡，另起 DAILY-2"
+   },
+   {
+    "item": "每日分流补跑成功（第三版）",
+    "evidence": "run 43533674782：planner 1817 tok、claude 中转席 1962 tok、复核 2616 tok；17 行 ref 全部命中",
+    "note": "替换掉被虚构 ref 污染的 attempt 2"
+   },
+   {
+    "item": "协调席逐条复核并改判 5 条",
+    "evidence": "daily-2026-11-14.json review.corrected",
+    "note": "f37f74a2/a4892a62 升 needs_gpt_decision；2b305025 记为已收裁决；37c0b81f 归裁决席；oversight 归 GPT"
+   },
+   {
+    "item": "卡 2 跑通三席",
+    "evidence": "run 43533345000：planner deepseek 200/1389 tok；claude apisrouter_relay 200/1519 tok；复核 deepseek 200/2303 tok",
+    "note": "中转席自 11-13 决议后可调用"
+   },
+   {
+    "item": "worker 虚构 ref 识别与作废",
+    "evidence": "输出 mail-001..mail-013 与 latest.json 13 个真实 ref 不匹配；<read_file> 为无效标签",
+    "note": "协调席按真实 ref 重做本日 routes"
+   },
+   {
+    "item": "定时任务恢复",
+    "evidence": "cron 17642657602306 状态 Active，下次 2026-11-15 06:45；为腾名额暂停 22:00 三数日报与 08:30 AI 巡检",
+    "note": "套餐仅允许 1 条启用"
+   },
+   {
+    "item": "Claude App 维持记录",
+    "evidence": "knowledge/results/decisions/conflict-relay-resolution-20261113.json (commit 5bd5ec49e)"
+   },
+   {
+    "item": "记忆与 harness 部署",
+    "evidence": "deploy-receipt-20261113-memory-harness.json (commit cca9f82e5)、builder 修复 36fab9d1b"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [
+    {
+     "item": "PR #395 三处补强",
+     "blocker": "source_commit 40-hex 绑定、verdict 持久化 allowlist、持久化失败不得空 catch 属评审权限",
+     "if_not": "#395 停在 OPEN，signer 门不落地",
+     "deep_can": "可先写好补丁与测试，不合并"
+    },
+    {
+     "item": "observer 评估器修复",
+     "blocker": "评估器仍解析不可达 evidence_ref a60687，GPT 已表示接续",
+     "if_not": "goal 保持 blocked_evidence_integrity",
+     "deep_can": "可复现并给出最小修法"
+    },
+    {
+     "item": "worker 虚构 ref 护栏",
+     "blocker": "是否把 ref 存在性校验做成硬门（整卡作废）需裁决",
+     "if_not": "每日分流可能继续被虚构条目污染",
+     "deep_can": "可先在 prompt 枚举真实 ref"
+    },
+    {
+     "item": "CI 纳入 strict 清单检查",
+     "blocker": "修改 CI 行为需批准",
+     "if_not": "manifest 再被覆盖时无告警",
+     "deep_can": "本地已可跑 --strict"
+    },
+    {
+     "item": "oversight 130 条未复查口径",
+     "blocker": "是否按原 id 复查、是否允许代执行需裁决",
+     "if_not": "监督积压持续增长",
+     "deep_can": "可做有界复查"
+    }
+   ],
+   "owner": [
+    {
+     "item": "定时名额唯一",
+     "blocker": "套餐只允许 1 条启用；现为 06:45 巡检",
+     "if_not": "08:30 巡检与 22:00 三数日报继续停用",
+     "deep_can": "如需恢复需停 06:45 或升级套餐"
+    }
+   ]
+  },
+  "next_immediate": [
+   {
+    "action": "把真实 13 个 ref 直接枚举进下一张卡（≤1200 字符），并加 ref 存在性校验",
+    "done_when": "回执中每条 ref 均可在 latest.json 命中，无虚构项"
+   },
+   {
+    "action": "取 workflow 43495544132 失败日志并落盘证据",
+    "done_when": "日志路径写入回执"
+   },
+   {
+    "action": "PR #395 补丁与测试准备好（不合并）",
+    "done_when": "本地测试通过、补丁可评审"
+   }
+  ],
+  "later": [
+   {
+    "item": "QWEN-FOUR-RULINGS 归档",
+    "depends_on": "原件到位"
+   },
+   {
+    "item": "oversight 积压有界复查",
+    "depends_on": "GPT 口径裁决"
+   },
+   {
+    "item": "08:30 巡检/三数日报恢复",
+    "depends_on": "owner 决定名额或升级套餐"
+   }
+  ]
+ },
+ "writes_performed": {
+  "commits": 3,
+  "files": [
+   "mail-backlog/latest.json",
+   "tasks/DEEP-SUPERAGENT-20261114-DAILY-1.json",
+   "tasks/DEEP-SUPERAGENT-20261114-DAILY-2.json",
+   "tasks/DEEP-SUPERAGENT-20261114-DAILY-3.json",
+   "daily-2026-11-14.json"
+  ]
+ },
+ "merges_performed": 0,
+ "deploys_performed": 0,
+ "mail_delivery": {
+  "sent": true,
+  "message_id": "msg_hIXOosBNl5aPtLZP3G2yjJl1ddy5h6zzBZtOKQsHwk1I4A",
+  "created_at": "2026-11-14T00:25:06Z",
+  "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-14（补 6:45 任务）"
+ },
+ "review": {
+  "policy": "按规则 7 不盲从席位判定，逐条复核",
+  "corrected": [
+   {
+    "ref": "f37f74a2260e0983",
+    "from": "coordinator_close_with_receipt",
+    "to": "needs_gpt_decision",
+    "reason": "邮件要求据此回 Q1/Q2，属待答裁决项，不能当已关闭"
+   },
+   {
+    "ref": "a4892a62f3078715",
+    "from": "coordinator_close_with_receipt",
+    "to": "needs_gpt_decision",
+    "reason": "含七项判定，需按裁决项处理"
+   },
+   {
+    "ref": "2b3050253fdbc338",
+    "from": "needs_gpt_decision",
+    "to": "coordinator_close_with_receipt",
+    "reason": "本身即 GPT 补充裁决，应记为已收裁决并补回执"
+   },
+   {
+    "ref": "37c0b81f45bea064",
+    "from": "needs_owner_decision",
+    "to": "needs_gpt_decision",
+    "reason": "5 项待裁决为主体，ICP 备案只是背景"
+   },
+   {
+    "ref": "oversight-backlog-165",
+    "from": "needs_owner_decision",
+    "to": "needs_gpt_decision",
+    "reason": "复查口径与代执行权限属 GPT 裁决范围"
+   }
+  ],
+  "fabricated_refs": 0,
+  "ref_match": "17/17 命中 latest.json 与 repo 观测"
+ }
+}
