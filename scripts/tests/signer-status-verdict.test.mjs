@@ -125,6 +125,7 @@ test('revision/scope/chain 任一缺失或不匹配都不得放行', () => {
 test('source_commit 必须是 40-hex 且部署回读必须匹配预期提交', () => {
   assert.equal(classifySignerStatus({...healthyReady, source_commit: undefined}, 200).verdict, 'source_commit_invalid');
   assert.equal(classifySignerStatus({...healthyReady, source_commit: 'not-a-commit'}, 200).verdict, 'source_commit_invalid');
+  assert.equal(classifySignerStatus({...healthyReady, source_commit: 1234567890123456789012345678901234567890}, 200).verdict, 'source_commit_invalid');
   assert.equal(classifySignerStatus(healthyReady, 200, 'a'.repeat(40)).verdict, 'source_commit_mismatch');
   const matched = classifySignerStatus(healthyReady, 200, SOURCE_COMMIT);
   assert.equal(matched.verdict, 'ready');
