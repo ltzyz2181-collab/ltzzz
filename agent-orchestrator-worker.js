@@ -14,13 +14,20 @@
 //   npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY
 //   可选: npx wrangler secret put OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY
 //
-// 豆包走 Agent Plan 专属 Key（Anthropic 兼容端点）：
-//   DOUBAO_BASE_URL           默认 https://ark.cn-beijing.volces.com/api/plan
-//   DOUBAO_AGENT_PLAN_API_KEY Agent Plan 专属 Key（不是普通方舟 Key）
-//   DOUBAO_MODEL              默认 doubao-seed-evolving
+// 豆包席位两条真实路由，按现有 Key 自动选择，绝不假装已接入：
+//   1. Agent Plan（套餐额度）— Anthropic 兼容，需「专属」API Key（与方舟平台 Key 不同）
+//        DOUBAO_BASE_URL           默认 https://ark.cn-beijing.volces.com/api/plan
+//        DOUBAO_AGENT_PLAN_API_KEY Agent Plan 专属 Key
+//        DOUBAO_MODEL              默认 doubao-seed-evolving
+//   2. 方舟平台按量（普通 Key）— OpenAI 兼容
+//        DOUBAO_ARK_BASE_URL       默认 https://ark.cn-beijing.volces.com/api/v3
+//        ARK_API_KEY / DOUBAO_API_KEY  普通方舟 Key（模型需在控制台已开通）
+//        DOUBAO_ARK_MODEL          默认 doubao-seed-2-1-lite-260915（本账号实测已开通）
 
 const DEFAULT_DOUBAO_BASE = 'https://ark.cn-beijing.volces.com/api/plan';
 const DEFAULT_DOUBAO_MODEL = 'doubao-seed-evolving';
+const DEFAULT_DOUBAO_ARK_BASE = 'https://ark.cn-beijing.volces.com/api/v3';
+const DEFAULT_DOUBAO_ARK_MODEL = 'doubao-seed-2-1-lite-260915';
 const DEFAULT_DEEPSEEK_MODEL = 'deepseek-flash';
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-5';
@@ -72,6 +79,33 @@ export default {
       return new Response(null, { status: 204, headers: cors() });
     }
     const url = new URL(request.url);
+
+    // 部署探针：只报“有没有配 Key/走哪条路由”，不泄露任何 Key 值，也不需要鉴权。
+    if (request.method === 'GET' && url.pathname === '/health') {
+      const planKey = Boolean(env.DOUBAO_AGENT_PLAN_API_KEY);
+      const arkKey = Boolean(env.ARK_API_KEY || env.DOUBAO_API_KEY);
+      return json({
+        ok: true,
+        service: 'ltzzz-agent-orchestrator',
+        doubao: {
+          route: planKey ? 'agent_plan' : (arkKey ? 'ark_v3' : 'unconfigured'),
+          agent_plan_key: planKey,
+          ark_key: arkKey,
+          model: planKey
+            ? (env.DOUBAO_MODEL || DEFAULT_DOUBAO_MODEL)
+            : (env.DOUBAO_ARK_MODEL || env.DOUBAO_MODEL || DEFAULT_DOUBAO_ARK_MODEL)
+        },
+        orchestrator_key_configured: Boolean(env.ORCHESTRATOR_KEY),
+        seats: {
+          deepseek: Boolean(env.DEEPSEEK_API_KEY),
+          openai: Boolean(env.OPENAI_API_KEY),
+          grok: Boolean(env.XAI_API_KEY),
+          claude: Boolean(env.ANTHROPIC_API_KEY)
+        },
+        time: new Date().toISOString()
+      }, 200);
+    }
+
     if (request.method !== 'POST' || url.pathname !== '/orchestrate') {
       return json({ error: 'POST /orchestrate only' }, 404);
     }
@@ -210,34 +244,66 @@ async function runExpert(env, agent, task) {
   }
 }
 
-// 豆包：Agent Plan 专属 Key，Anthropic 兼容端点 /v1/messages
+// 豆包：优先 Agent Plan 专属 Key（Anthropic 兼容 /v1/messages）；
+// 没有 Agent Plan Key 时退回方舟平台 Key（OpenAI 兼容 /chat/completions）。
+// 两条路由都在返回体里显式标注 route，便于区分“走套餐”与“走按量计费”。
 async function callDoubao(env, task) {
-  const key = env.DOUBAO_AGENT_PLAN_API_KEY;
-  if (!key) return stubReply('doubao', '未配置 DOUBAO_AGENT_PLAN_API_KEY（接口位已保留）');
-  const base = (env.DOUBAO_BASE_URL || DEFAULT_DOUBAO_BASE).replace(/\/$/, '');
-  const model = env.DOUBAO_MODEL || DEFAULT_DOUBAO_MODEL;
-  const r = await fetch(base + '/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'Authorization': 'Bearer ' + key,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 1200,
-      system: EXPERT_SYSTEM.doubao,
-      messages: [{ role: 'user', content: task }]
-    })
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) return { agent: 'doubao', ok: false, model, error: shortError(j) };
-  const text = (j.content || [])
-    .filter((p) => p && p.type === 'text' && p.text)
-    .map((p) => p.text)
-    .join('') || JSON.stringify(j).slice(0, 300);
-  return { agent: 'doubao', ok: true, model, text };
+  const planKey = env.DOUBAO_AGENT_PLAN_API_KEY;
+  if (planKey) {
+    const base = (env.DOUBAO_BASE_URL || DEFAULT_DOUBAO_BASE).replace(/\/$/, '');
+    const model = env.DOUBAO_MODEL || DEFAULT_DOUBAO_MODEL;
+    const r = await fetch(base + '/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': planKey,
+        'Authorization': 'Bearer ' + planKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1200,
+        system: EXPERT_SYSTEM.doubao,
+        messages: [{ role: 'user', content: task }]
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return { agent: 'doubao', ok: false, route: 'agent_plan', model, error: shortError(j) };
+    const text = (j.content || [])
+      .filter((p) => p && p.type === 'text' && p.text)
+      .map((p) => p.text)
+      .join('') || JSON.stringify(j).slice(0, 300);
+    return { agent: 'doubao', ok: true, route: 'agent_plan', model, text };
+  }
+
+  const arkKey = env.ARK_API_KEY || env.DOUBAO_API_KEY;
+  if (arkKey) {
+    const base = (env.DOUBAO_ARK_BASE_URL || DEFAULT_DOUBAO_ARK_BASE).replace(/\/$/, '');
+    const model = env.DOUBAO_ARK_MODEL || env.DOUBAO_MODEL || DEFAULT_DOUBAO_ARK_MODEL;
+    const r = await fetch(base + '/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + arkKey
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: EXPERT_SYSTEM.doubao },
+          { role: 'user', content: task }
+        ],
+        temperature: 0.4,
+        max_tokens: 1200,
+        stream: false
+      })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return { agent: 'doubao', ok: false, route: 'ark_v3', model, error: shortError(j) };
+    const text = j.choices?.[0]?.message?.content || JSON.stringify(j).slice(0, 300);
+    return { agent: 'doubao', ok: true, route: 'ark_v3', model, text, usage: j.usage || null };
+  }
+
+  return stubReply('doubao', '未配置豆包 Key（DOUBAO_AGENT_PLAN_API_KEY 或 ARK_API_KEY）——接口位保留');
 }
 
 // DeepSeek：OpenAI 兼容端点 /chat/completions
@@ -384,7 +450,7 @@ function shortError(j) {
 function cors() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, anthropic-version',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, anthropic-version, x-orchestrator-key',
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 }

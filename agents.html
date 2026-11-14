@@ -25,7 +25,9 @@
 <h2 data-i18n="sec2.title">多 Agent 编排：总控 → 专家</h2>
 <p data-i18n="sec2.desc">总控（ChatGPT，可配置）把问题拆成 4 个子任务，并行交给 豆包 / DeepSeek / Grok / Claude 专家席。后端 Worker 持有全部 Key，网页不保存任何 Key；未配置 Key 的席位会明确显示「接口位保留」。</p>
 <label data-i18n="label.endpoint">编排 Worker 地址</label>
-<input id="orchEndpoint" placeholder="占位 · 未部署（编排 Worker 未上线）" data-i18n-placeholder="endpoint.placeholder">
+<input id="orchEndpoint" value="https://api-orch.ltzzz.com/orchestrate" placeholder="https://api-orch.ltzzz.com/orchestrate" data-i18n-placeholder="endpoint.placeholder">
+<label data-i18n="label.orchkey">编排访问口令（X-Orchestrator-Key）</label>
+<input id="orchKey" type="password" placeholder="填 Cloudflare Secret 里的 ORCHESTRATOR_KEY" data-i18n-placeholder="orchkey.placeholder">
 <label data-i18n="label.question">问题</label>
 <textarea id="orchQuestion" data-i18n="q.default">请设计一个 LTZZZ 今天就能验证的 AI 实验：用 AI 完成一件真实小事，并记录结果。</textarea>
 <button class="btn primary" id="orchRun" data-i18n="run.btn">开始编排</button>
@@ -48,7 +50,7 @@
 </div>
 <h3 style="margin:16px 0 8px" data-i18n="summary.title">总控汇总</h3>
 <div class="result" id="orchSummary" style="min-height:64px">—</div>
-<p class="note" style="margin-top:12px" data-i18n="note.deploy" data-i18n-html>部署编排 Worker：<span class="mono">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>，然后配置 Secret：<span class="mono">npx wrangler secret put DEEPSEEK_API_KEY</span>、<span class="mono">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span>（豆包用 Agent Plan 专属 Key，Base URL 默认 <span class="mono">https://ark.cn-beijing.volces.com/api/plan</span>，模型 <span class="mono">doubao-seed-evolving</span>）；可选 <span class="mono">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>。</p>
+<p class="note" style="margin-top:12px" data-i18n="note.deploy" data-i18n-html>已部署：<span class="mono">wrangler deploy -c wrangler.orchestrator.toml</span> → <span class="mono">api-orch.ltzzz.com</span>。Secret：<span class="mono">ORCHESTRATOR_KEY</span>（页面访问口令，必填）、<span class="mono">ARK_API_KEY</span>（方舟普通 Key，当前豆包席位走 <span class="mono">/api/v3</span> + <span class="mono">doubao-seed-2-1-lite-260915</span>）。若以后拿到 Agent Plan 专属 Key，只需再配 <span class="mono">DOUBAO_AGENT_PLAN_API_KEY</span>，Worker 会自动切到 <span class="mono">/api/plan</span>，无需改代码。可选 <span class="mono">DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>。</p>
 </section>
 
 <div class="grid">
@@ -70,7 +72,7 @@ window.I18N_DICT = {
     "nav.wallet": "钱包",
     "nav.channels": "通道",
     "nav.app": "APP",
-    "banner": "<strong>当前状态：</strong>多 Agent 编排 Worker 已提供（总控 → 专家）。DeepSeek、豆包可接真实 API Key；Grok、Claude 保留接口位。所有 Key 只放后端环境变量，绝不写进网页。<span style=\"color:#ffd166\">编排 Worker 尚未部署（占位 · 未部署），输入框暂不可用。</span>",
+    "banner": "<strong>当前状态：</strong>多 Agent 编排 Worker 已部署在 <span class=\"mono\">api-orch.ltzzz.com</span>（总控 → 专家）。豆包席位走已开通的方舟模型真实应答；DeepSeek / Grok / Claude 未配 Key 时明确显示「接口位保留」。所有 Key 只放后端环境变量，绝不写进网页。<span style=\"color:#ffd166\">Agent Plan 专属 Key 尚未开通，当前走方舟按量端点。</span>",
     "h1": "多 Agent 实验室",
     "lead": "总控（ChatGPT，可配置）把问题拆成子任务，并行交给豆包 / DeepSeek / Grok / Claude 专家席；后端 Worker 持有全部 Key。未配置 Key 的席位会明确显示「接口位保留」，不假装已实现。",
     "sec1.title": "五个 Agent",
@@ -92,7 +94,9 @@ window.I18N_DICT = {
     "sec2.title": "多 Agent 编排：总控 → 专家",
     "sec2.desc": "总控（ChatGPT，可配置）把问题拆成 4 个子任务，并行交给 豆包 / DeepSeek / Grok / Claude 专家席。后端 Worker 持有全部 Key，网页不保存任何 Key；未配置 Key 的席位会明确显示「接口位保留」。",
     "label.endpoint": "编排 Worker 地址",
-    "endpoint.placeholder": "占位 · 未部署（编排 Worker 未上线）",
+    "endpoint.placeholder": "https://api-orch.ltzzz.com/orchestrate",
+    "label.orchkey": "编排访问口令（X-Orchestrator-Key）",
+    "orchkey.placeholder": "填 Cloudflare Secret 里的 ORCHESTRATOR_KEY",
     "label.question": "问题",
     "q.default": "请设计一个 LTZZZ 今天就能验证的 AI 实验：用 AI 完成一件真实小事，并记录结果。",
     "run.btn": "开始编排",
@@ -122,7 +126,7 @@ window.I18N_DICT = {
     "ds.q.default": "请给我设计一个 LTZZZ 多 Agent 实验，要求今天就能验证。",
     "ds.btn": "调用 DeepSeek",
     "db.title": "② 豆包 Agent 接入口",
-    "db.desc": "豆包使用方舟 Agent Plan 专属 Key。这里先准备接口位，等 Worker 部署好就可以接入。",
+    "db.desc": "豆包席位已在编排 Worker 内接真实模型（方舟 /api/v3 + doubao-seed-2-1-lite-260915）。Agent Plan 专属 Key 尚未开通；开通后只需加一个 Secret 即自动切换。",
     "db.label.endpoint": "豆包 Worker 地址",
     "db.endpoint.placeholder": "https://你的doubao-worker.workers.dev",
     "db.label.model": "模型",
@@ -172,7 +176,9 @@ window.I18N_DICT = {
     "sec2.title": "Multi-Agent Orchestration: Orchestrator → Experts",
     "sec2.desc": "The orchestrator (ChatGPT, configurable) splits a question into 4 subtasks and hands them in parallel to Doubao / DeepSeek / Grok / Claude expert seats. The backend Worker holds all keys; the webpage stores none. Seats without a key clearly show “slot reserved”.",
     "label.endpoint": "Orchestrator Worker URL",
-    "endpoint.placeholder": "Placeholder · Not deployed (orchestrator worker offline)",
+    "endpoint.placeholder": "https://api-orch.ltzzz.com/orchestrate",
+    "label.orchkey": "Orchestrator access key (X-Orchestrator-Key)",
+    "orchkey.placeholder": "Value of the ORCHESTRATOR_KEY secret",
     "label.question": "Question",
     "q.default": "Design an AI experiment LTZZZ can validate today: use AI to finish one small real task, and record the result.",
     "run.btn": "Start Orchestration",
@@ -193,7 +199,7 @@ window.I18N_DICT = {
     "lbl.grok": "Grok",
     "lbl.claude": "Claude",
     "summary.title": "Orchestrator Summary",
-    "note.deploy": "Deploy the orchestration Worker: <span class=\"mono\">npx wrangler deploy agent-orchestrator-worker.js --name ltzzz-agent-orchestrator</span>, then configure secrets: <span class=\"mono\">npx wrangler secret put DEEPSEEK_API_KEY</span>, <span class=\"mono\">npx wrangler secret put DOUBAO_AGENT_PLAN_API_KEY</span> (Doubao uses the Agent Plan key; Base URL defaults to <span class=\"mono\">https://ark.cn-beijing.volces.com/api/plan</span>, model <span class=\"mono\">doubao-seed-evolving</span>); optional <span class=\"mono\">OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>.",
+    "note.deploy": "Deployed: <span class=\"mono\">wrangler deploy -c wrangler.orchestrator.toml</span> → <span class=\"mono\">api-orch.ltzzz.com</span>. Secrets: <span class=\"mono\">ORCHESTRATOR_KEY</span> (page access key, required), <span class=\"mono\">ARK_API_KEY</span> (Ark key; the Doubao seat currently uses <span class=\"mono\">/api/v3</span> with <span class=\"mono\">doubao-seed-2-1-lite-260915</span>). Once an Agent Plan dedicated key is available, add <span class=\"mono\">DOUBAO_AGENT_PLAN_API_KEY</span> and the Worker switches to <span class=\"mono\">/api/plan</span> automatically — no code change. Optional: <span class=\"mono\">DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / XAI_API_KEY</span>.",
     "ds.title": "① DeepSeek Real-Call Test",
     "ds.desc": "Paste your own Cloudflare Worker URL. The Worker holds <span class=\"mono\">DEEPSEEK_API_KEY</span>; the webpage itself never stores keys.",
     "ds.label.endpoint": "DeepSeek Worker URL",
@@ -202,7 +208,7 @@ window.I18N_DICT = {
     "ds.q.default": "Design an LTZZZ multi-agent experiment that can be validated today.",
     "ds.btn": "Call DeepSeek",
     "db.title": "② Doubao Agent Entry",
-    "db.desc": "Doubao uses the Ark Agent Plan dedicated key. This is a slot prepared now; it can be connected once the Worker is deployed.",
+    "db.desc": "The Doubao seat now calls a real model inside the orchestrator Worker (Ark /api/v3 + doubao-seed-2-1-lite-260915). The Agent Plan dedicated key is not activated yet; once it exists, adding one secret switches the route automatically.",
     "db.label.endpoint": "Doubao Worker URL",
     "db.endpoint.placeholder": "https://your-doubao-worker.workers.dev",
     "db.label.model": "Model",
@@ -243,18 +249,22 @@ document.getElementById('doubaoRun').onclick=()=>callWorker(document.getElementB
 // ---- 多 Agent 编排（总控 → 专家）----
 function seatStatus(id,text,ok){const el=document.getElementById(id);if(!el)return;el.textContent=text;el.style.borderColor=ok===true?'#4de0a7':ok===false?'#ff7a7a':'';el.style.color=ok===true?'#6bf0bb':ok===false?'#ff9d9d':'';}
 async function runOrchestrator(){
-  const endpoint=document.getElementById('orchEndpoint').value.trim();
+  const endpointRaw=document.getElementById('orchEndpoint').value.trim();
+  const key=(document.getElementById('orchKey')?.value||'').trim();
   const question=document.getElementById('orchQuestion').value.trim();
   const statusEl=document.getElementById('orchStatus');
-  if(!endpoint){statusEl.textContent='请先填写编排 Worker 地址';return;}
+  if(!endpointRaw){statusEl.textContent='请先填写编排 Worker 地址';return;}
   if(!question){statusEl.textContent='请填写问题';return;}
+  // 允许只填域名：自动补 /orchestrate
+  const endpoint=/\/orchestrate$/.test(endpointRaw)?endpointRaw:endpointRaw.replace(/\/+$/,'')+'/orchestrate';
+  if(!key){statusEl.textContent='请填写编排访问口令（ORCHESTRATOR_KEY）';return;}
   statusEl.textContent='正在编排…';
   document.getElementById('orchPlan').textContent='等待总控规划…';
   document.getElementById('orchSummary').textContent='—';
   ['st-plan','st-doubao','st-deepseek','st-grok','st-claude'].forEach(id=>seatStatus(id,'调用中…'));
   ['r-doubao','r-deepseek','r-grok','r-claude'].forEach(id=>document.getElementById(id).textContent='—');
   try{
-    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});
+    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-Orchestrator-Key':key},body:JSON.stringify({question})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok) throw new Error(data?.error||('HTTP '+r.status));
     seatStatus('st-plan','已完成',true);

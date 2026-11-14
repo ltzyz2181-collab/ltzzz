@@ -71,4 +71,18 @@ const bad = await worker.fetch(new Request('https://localhost/orchestrate', { me
 console.log(`[GET 拒绝] status=${bad.status}`);
 if (bad.status !== 404) { console.log('  !!! FAILED'); process.exitCode = 1; }
 
+// 校验部署探针：只报配置有无，不泄露 Key 值
+const health = await worker.fetch(new Request('https://localhost/health', { method: 'GET' }), {});
+const dh = await health.json();
+console.log(`[GET /health] status=${health.status} doubao.route=${dh.doubao?.route} orchestrator_key=${dh.orchestrator_key_configured}`);
+if (health.status !== 200 || dh.ok !== true || dh.doubao?.route !== 'unconfigured') { console.log('  !!! FAILED'); process.exitCode = 1; }
+const body2 = JSON.stringify(dh);
+if (/ark-|sk-/.test(body2)) { console.log('  !!! FAILED: health 泄露疑似 Key 片段'); process.exitCode = 1; }
+
+// 校验豆包双路由选择：只有普通方舟 Key 时应选 ark_v3，且不被当作 Agent Plan
+const h2 = await worker.fetch(new Request('https://localhost/health', { method: 'GET' }), { ARK_API_KEY: 'test-ark-key' });
+const dh2 = await h2.json();
+console.log(`[health 方舟 Key] route=${dh2.doubao?.route} model=${dh2.doubao?.model}`);
+if (dh2.doubao?.route !== 'ark_v3') { console.log('  !!! FAILED'); process.exitCode = 1; }
+
 console.log('验证完成 ✓');

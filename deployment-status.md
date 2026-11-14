@@ -866,3 +866,42 @@ ltzzz.com 200；新文档 docs/operations/OKX-FUNDED-ROUND-20261017.md 200；ide
 | F 转账 / Aave 执行 / WEP3 收入 | 未完成 | 无 txid/receipt，口径不变 |
 
 （本回执不含任何凭证值；Key.doc 未读；ltzzz-secrets.md 未触碰；链上查询全部公开只读。）
+
+---
+
+# 编排 Worker · 豆包 API 接入回执（2026-11-14 · 本机执行）
+
+## 结论一句话
+`ltzzz-agent-orchestrator` **已部署并真实调用通过**（豆包席位有真实模型应答）；
+**Agent Plan 专属接入未完成**——本机只有普通方舟 Key，`/api/plan` 返回 401，账户也未开通 `doubao-seed-evolving`。当前走方舟按量端点 `/api/v3` + 已开通模型 `doubao-seed-2-1-lite-260915`。
+
+## 状态判定（四公式口径）
+| 项 | 状态 | 依据 |
+|---|---|---|
+| Worker 部署 | **DEPLOYED** | `wrangler deploy -c wrangler.orchestrator.toml`，Version ID `550d7e72-e193-49de-8878-b5d19bd7a3a9` |
+| 自定义域 | **VERIFIED** | `api-orch.ltzzz.com` DNS 已解析到 CF；`GET /health` HTTP 200 |
+| 豆包真实调用（方舟 v3） | **VERIFIED** | `POST /orchestrate` 200，replies.doubao.ok=true，route=ark_v3，model=doubao-seed-2-1-lite-260915，返回真实文本 |
+| Agent Plan 专属路由 | **BLOCKED** | 本机 `ark-22…` 对 `/api/plan/v1/messages` 返回 401 AuthenticationError；`/api/v3` 下 `doubao-seed-evolving` 返回 ModelNotOpen |
+| 鉴权 | VERIFIED | 无 `X-Orchestrator-Key` → 401；未配 `ORCHESTRATOR_KEY` → 503（本地测试用例覆盖） |
+| 其它席位 | 接口位保留 | deepseek / grok / claude 未配 Key，返回 stub，不伪装成功 |
+| 页面接线 | CODE_COMMITTED（PUSH 待确认） | agents.html 默认地址 + 口令输入 + `X-Orchestrator-Key` 头 + `/orchestrate` 自动补全 |
+
+## 本机 Key 实测（只报状态，不记录值）
+| 探测 | 结果 |
+|---|---|
+| `GET /api/v3/models` | 200（Key 有效，54 个模型可见） |
+| `POST /api/v3 doubao-seed-2-1-lite-260915` | 200「OK」→ 已开通、可用 |
+| `POST /api/v3 doubao-seed-2-1-pro-260915` | 404 ModelNotOpen |
+| `POST /api/v3 deepseek-v4-1-flash-261017` | 404 ModelNotOpen |
+| `POST /api/v3 doubao-seed-evolving` | 404 ModelNotOpen |
+| `POST /api/plan/v1/messages`（Bearer / x-api-key 两种） | 401 AuthenticationError |
+
+判定：本机 Key 是**方舟平台普通 Key**，不是 Agent Plan 专属 Key；Agent Plan 套餐在该账户上未见开通证据。
+
+## 需要 owner（一次性，只进 Secret/控制台）
+1. 若要真走 **Agent Plan**：在方舟控制台开通 Agent Plan 并复制「专属 API Key」，我只需 `wrangler secret put DOUBAO_AGENT_PLAN_API_KEY`，Worker 自动切 `/api/plan`，**不需要改代码**。
+2. 若继续按量走：在控制台开通 `doubao-seed-evolving`（或指定其它已开通模型），我把 `DOUBAO_ARK_MODEL` 一改即可。
+3. DeepSeek / Grok / Claude 席位如需真实应答，对应 Key 走 Secret 注入即可，同样不改代码。
+
+## 网络说明
+`*.workers.dev` 在本机与云主机均为不可达（云主机侧代理 CONNECT 返回 502），与既有 `api-deep/api-qianwen/api-kimi` 同一原因；故本次直接用自定义子域 `api-orch.ltzzz.com` 验收。

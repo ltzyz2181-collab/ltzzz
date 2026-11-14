@@ -1,0 +1,14 @@
+name = "ltzzz-agent-orchestrator"
+main = "agent-orchestrator-worker.js"
+compatibility_date = "2026-11-13"
+
+# workers.dev 在大陆网络不可达（既有记录：api-deep/api-qianwen/api-kimi 均走自定义子域），
+# 因此这里绑定 api-orch.ltzzz.com，页面和总控都从该域名调用。
+routes = [
+  { pattern = "api-orch.ltzzz.com", custom_domain = true }
+]
+
+# 豆包席位路由由 Secret 自动决定，不在此写死：
+#   有 DOUBAO_AGENT_PLAN_API_KEY -> Agent Plan（Anthropic 兼容 /api/plan）
+#   否则有 ARK_API_KEY / DOUBAO_API_KEY -> 方舟平台按量（/api/v3）
+# 模型名可用 [vars] 覆盖；默认见源码 DEFAULT_DOUBAO_* 常量。
