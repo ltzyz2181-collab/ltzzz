@@ -1,7 +1,8 @@
-import fs from 'node:fs';import crypto from 'node:crypto';import {classifySignerStatus} from './lib/signer-status-verdict.mjs';import {writeDeploymentRecord} from './lib/wep3-deployment-latest.mjs';
+import fs from 'node:fs';import crypto from 'node:crypto';import {classifySignerStatus} from './lib/signer-status-verdict.mjs';import {persistDeploymentRecord} from './lib/wep3-deployment-latest.mjs';
 const base='https://ltzzz-wep3.ltzyz2181.workers.dev',action=process.env.AAVE_ACTION||'auto',amount=process.env.AAVE_AMOUNT||'1',id=process.env.AAVE_INTENT_ID||'AAVE-RUN-'+(process.env.GITHUB_RUN_ID||Date.now());
 const auth=process.env.WEP3_RUNNER_TOKEN||(process.env.CLOUDFLARE_API_TOKEN?crypto.createHmac('sha256',process.env.CLOUDFLARE_API_TOKEN).update('ltzzz-runner-v2').digest('hex'):'');
 const readOnly=['status','diagnose','reconcile','preview','auto-preview'].includes(action);
+const inDeployWorkflow=(process.env.GITHUB_WORKFLOW_REF||'').includes('deploy-wep3.yml');
 const report={at:new Date().toISOString(),execution_id:process.env.GITHUB_RUN_ID||'local',run_attempt:process.env.GITHUB_RUN_ATTEMPT||'1',action,read_only:readOnly,on_chain_executed:false,tx_hash:null};
 try{
  if(!['status','diagnose','reconcile','preview','auto-preview','auto','supply','withdraw'].includes(action))throw Error('unsupported_action');
@@ -18,12 +19,28 @@ try{
   // status 返回的是「签名能力就绪度」，ok:false 表示门正常关着，不是服务坏了。
   // 判定见 scripts/lib/signer-status-verdict.mjs：真实执行或未知状态仍然 fail-closed。
   if(action==='status'){
-   const verdict=classifySignerStatus(result,response.status);
+   const expectedSourceCommit=inDeployWorkflow?(process.env.GITHUB_SHA||null):null;
+   report.expected_source_commit=expectedSourceCommit;
+   const verdict=classifySignerStatus(result,response.status,expectedSourceCommit);
    report.signer_verdict=verdict.verdict;report.signer_expected_block=verdict.expectedBlock;report.signer_blocked_reason=verdict.blockedReason;
    // 部署记录另存一份，绝不覆盖成交回执 latest.json；只在部署 workflow 内持久化。
-   const persist=()=>{if((process.env.GITHUB_WORKFLOW_REF||'').includes('deploy-wep3.yml')){try{writeDeploymentRecord({verdict,report,triggerCommit:process.env.GITHUB_SHA||null});}catch{}}};
+   const persist=()=>{
+    if(!inDeployWorkflow)return;
+    const outcome=persistDeploymentRecord({verdict,report,triggerCommit:process.env.GITHUB_SHA||null});
+    report.deployment_record_persisted=outcome.ok;
+    report.deployment_record_path=outcome.path;
+    if(!outcome.ok){
+     report.deployment_record_error=outcome.error;
+     report.status='deployment_record_persist_failed';
+     report.service_verified=false;
+     process.exitCode=1;
+    }
+   };
    if(verdict.executionOccurred){report.status='unexpected_signer_execution';report.service_verified=false;persist();process.exitCode=1;break;}
-   if(!verdict.serviceOk){report.status='signer_status_unexpected';report.service_verified=false;persist();process.exitCode=1;break;}
+   if(!verdict.serviceOk){
+    report.status=verdict.verdict==='source_commit_mismatch'?'signer_status_source_commit_mismatch':verdict.verdict==='source_commit_invalid'?'signer_status_source_commit_invalid':'signer_status_unexpected';
+    report.service_verified=false;persist();process.exitCode=1;break;
+   }
    report.service_verified=true;persist();break;
   }
   report.service_verified=!!((response.ok&&result.ok===true)||guardedPreview);
