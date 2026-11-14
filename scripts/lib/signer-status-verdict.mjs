@@ -62,11 +62,11 @@ export function classifySignerStatus(resultBody, httpStatus, expectedSourceCommi
 
   // The status body must identify the exact Worker source. During the deploy
   // workflow it must also match the commit passed to wrangler via GITHUB_SHA.
-  if (!SOURCE_COMMIT_SHA.test(r.source_commit || '')) {
+  if (typeof r.source_commit !== 'string' || !SOURCE_COMMIT_SHA.test(r.source_commit)) {
     return result('source_commit_invalid', {blockedReason: 'source_commit_invalid'});
   }
   if (expectedSourceCommit !== null && expectedSourceCommit !== undefined &&
-      (!SOURCE_COMMIT_SHA.test(expectedSourceCommit) || r.source_commit !== expectedSourceCommit)) {
+      (typeof expectedSourceCommit !== 'string' || !SOURCE_COMMIT_SHA.test(expectedSourceCommit) || r.source_commit !== expectedSourceCommit)) {
     return result('source_commit_mismatch', {blockedReason: 'source_commit_mismatch'});
   }
 
