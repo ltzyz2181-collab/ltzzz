@@ -1,0 +1,120 @@
+{
+ "schema": "ltzzz.skill-iteration.monthly.v1",
+ "month": "2026-11",
+ "generated_at_utc": "2026-11-14T22:52:00Z",
+ "trigger": "knowledge/results/skill-iteration/2026-11.json 不存在，按 query 第六节必须执行",
+ "scope": {
+  "dirs": [
+   "skills/ltzzz-task-execution",
+   ".github/skills/ltzzz-task-execution",
+   ".claude/skills/ltzzz-task-execution",
+   ".agents/skills/ltzzz-task-execution"
+  ],
+  "identical": true,
+  "sha256_prefix": "38cbfec8bd49",
+  "bytes": 7479,
+  "unchanged_this_month": true
+ },
+ "review_card": "ops/deep-superagent/tasks/DEEP-SKILL-ITER-202611-01.json",
+ "queue_run_id": 43650077152,
+ "seat_receipts": [
+  {
+   "seat": "deepseek",
+   "role": "planner",
+   "http": 200,
+   "tokens": 1158
+  },
+  {
+   "seat": "claude",
+   "provider": "apisrouter_relay",
+   "model": "claude-sonnet-4-6",
+   "http": 200,
+   "tokens": 771
+  },
+  {
+   "seat": "deepseek",
+   "role": "review",
+   "http": 200,
+   "tokens": 1552
+  }
+ ],
+ "deep_review_verdicts": [
+  {
+   "proposal": "P1",
+   "verdict": "accept_draft",
+   "reason": "Addresses observed fabrication. Rule addition is surgical, reversible, bounded risk."
+  },
+  {
+   "proposal": "P2",
+   "verdict": "accept_draft",
+   "reason": "Observed failure mode. Explicit bounds prevent rejection, rollback is trivial."
+  },
+  {
+   "proposal": "P3",
+   "verdict": "reject",
+   "reason": "Duplicates prompt guidance. No new enforcement mechanism, adds maintenance burden."
+  }
+ ],
+ "proposals": [
+  {
+   "id": "P1",
+   "title": "ref 保真规则",
+   "status": "proposed",
+   "current": "skill 未规定 ref 只能逐字复制",
+   "evidence_refs": [
+    "queue-43533345000-attempt-1.json（虚构 ref mail-001..mail-013 与伪 read_file 标签）"
+   ],
+   "change": "SKILL.md 加一条：ref 必须从给定集合逐字复制，无法读取写 unable_to_read，禁止编造 ref 与伪造读取标签",
+   "benefit": "消除虚构分流行",
+   "risk": "提示词增加约 40 词",
+   "rollback": "删除该行",
+   "behavior_change": true,
+   "deep_review": "accept_draft"
+  },
+  {
+   "id": "P2",
+   "title": "卡长度上限",
+   "status": "proposed",
+   "current": "任务卡模板无长度约束",
+   "evidence_refs": [
+    "run 43533152957 invalid_deepseek_task（planner task 超 3000 字符，index.js:105 校验）"
+   ],
+   "change": "任务卡参考写明 planner task ≤1500、worker task ≤3000，背景放卡体",
+   "benefit": "避免整卡被拒",
+   "risk": "任务描述变简可能丢上下文",
+   "rollback": "撤回该说明",
+   "behavior_change": true,
+   "deep_review": "accept_draft"
+  },
+  {
+   "id": "P3",
+   "title": "rule 6 常设标注",
+   "status": "proposed",
+   "current": "每日 prompt 反复声明 rule 6 是负面授权条款",
+   "evidence_refs": [
+    "daily-2026-11-13/14/15.json 与三份 prompt 中的重复声明"
+   ],
+   "change": "把这句一次性写进 SKILL.md",
+   "benefit": "减少误标",
+   "risk": "与 prompt 重复、增加维护点",
+   "rollback": "删除该行",
+   "behavior_change": false,
+   "deep_review": "reject"
+  }
+ ],
+ "decision_request": {
+  "to": "gpt",
+  "questions": [
+   "是否批准 P1/P2 进入补丁草稿（仅 skill 目录内文本）",
+   "P3 是否同意不做或改到别处",
+   "批准后是否同意按 decision 校验脚本先行、再补 activation 证据、再同步适配目录并跑测试推送"
+  ],
+  "sent_mail_message_id": "msg_u2lyOhYZNFd4uQI2EAQZayKf6pybHuCkaiLXsUW_3-mu4g",
+  "sent_at_utc": "2026-11-14T22:51:51Z"
+ },
+ "status": "awaiting_gpt_decision",
+ "writes_to_skills": 0,
+ "merges": 0,
+ "deploys": 0,
+ "guard": "scripts/verify-skill-iteration-decision.mjs（exit 0 才继续；approver 必须 gpt，proposal_sha256 必须一致）"
+}

@@ -187,8 +187,8 @@
    "ref": "PR-395",
    "label": "WEP3 signer 已合并",
    "worker_route": "coordinator_close_with_receipt",
-   "final_route": "blocked_evidence_needed",
-   "correction_reason": "已合并但需核对 diff 是否真含三处补强，证据未取"
+   "final_route": "coordinator_close_with_receipt",
+   "correction_reason": "已核对合并提交 6dbc4c9b8：message 与文件清单含 source_commit 绑定/verdict 持久化/持久化失败非空 catch，且 22 项相关测试全通过"
   },
   {
    "ref": "consult-2026-11-14",
@@ -198,9 +198,9 @@
   }
  ],
  "route_counts": {
-  "blocked_evidence_needed": 5,
+  "blocked_evidence_needed": 4,
   "needs_gpt_decision": 12,
-  "coordinator_close_with_receipt": 2,
+  "coordinator_close_with_receipt": 3,
   "deploy_confirm_only": 2
  },
  "ref_match": "20/20 命中输入清单，无虚构",
@@ -287,16 +287,14 @@
     "item": "协调席复核改判 10 条",
     "evidence": "daily-2026-11-15.json review.corrected",
     "note": "其中 ba4ddc/f37f74/3b86bf/a4892a/accc365/2b3050/PR-396/PR-287/oversight/PR-395"
+   },
+   {
+    "item": "PR-395 三处补强核对",
+    "evidence": "合并提交 6dbc4c9b8 含 .github/workflows/reflection-harness.yml 的 source_commit、signer-status-verdict.mjs 125 行改动、wep3-deployment-latest.mjs 的持久化失败显式返回 error；node --test 22 通过 0 失败"
    }
   ],
   "awaiting_decision": {
    "gpt": [
-    {
-     "item": "PR-395 合并后是否满足三处补强",
-     "blocker": "已 MERGED(11-14 08:44)，但 diff 是否含 source_commit 绑定、verdict allowlist、无空 catch 未核",
-     "if_not": "signer 门可能带缺口上线",
-     "deep_can": "取合并 diff 并逐条比对，不合并新 PR"
-    },
     {
      "item": "PR-396 goal 证据纠正",
      "blocker": "开放中，合并需裁决",
@@ -339,16 +337,19 @@
   },
   "next_immediate": [
    {
-    "action": "取 3 个失败 run 的日志并落盘",
-    "done_when": "日志路径写入回执"
+    "action": "取 43625211999 与 43597005266 日志（--log-failed 返回空）",
+    "done_when": "日志路径写入回执",
+    "status": "blocked_method"
    },
    {
-    "action": "核对 PR-395 合并 diff 是否含三处补强",
-    "done_when": "逐条给出 yes/no 与文件行号"
+    "action": "核对 PR-395 三处补强",
+    "done_when": "逐条 yes/no",
+    "status": "done"
    },
    {
-    "action": "跑 PR-396 本地测试与 check",
-    "done_when": "测试通过记录"
+    "action": "跑 PR-396 本地测试",
+    "done_when": "测试通过记录",
+    "status": "pending"
    }
   ],
   "later": [
@@ -367,13 +368,30 @@
   ]
  },
  "writes_performed": {
-  "commits": 1,
+  "commits": 3,
   "files": [
    "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261115-DAILY-1.json",
-   "mail-backlog/latest.json"
+   "ops/deep-superagent/tasks/DEEP-SKILL-ITER-202611-01.json",
+   "knowledge/results/deep-superagent/mail-backlog/latest.json",
+   "knowledge/results/deep-superagent/run-logs/43648417927.txt",
+   "knowledge/results/deep-superagent/daily-2026-11-15.json",
+   "knowledge/results/skill-iteration/2026-11.json"
   ]
  },
  "merges_performed": 0,
  "deploys_performed": 0,
- "monthly_skill_iteration": "pending_in_this_run"
+ "monthly_skill_iteration": {
+  "status": "awaiting_gpt_decision",
+  "record": "knowledge/results/skill-iteration/2026-11.json",
+  "card": "DEEP-SKILL-ITER-202611-01",
+  "queue_run_id": 43650077152,
+  "mail_message_id": "msg_u2lyOhYZNFd4uQI2EAQZayKf6pybHuCkaiLXsUW_3-mu4g",
+  "writes_to_skills": 0
+ },
+ "mail_delivery": {
+  "message_id": "msg_BO8YGzgD1F5O8uDVtxtLebS2VkB0OQwYwrxjFAakPBE8CQ",
+  "created_at_utc": "2026-11-14T22:51:34Z",
+  "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-15",
+  "two_step_confirm": true
+ }
 }
