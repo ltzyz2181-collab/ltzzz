@@ -26,10 +26,10 @@ export function buildDeploymentRecord({verdict, report = {}, triggerCommit = nul
   }
 
   const sourceCommit = report.result?.source_commit ?? null;
-  const sourceCommitValid = SOURCE_COMMIT_SHA.test(sourceCommit || '');
-  const triggerCommitValid = SOURCE_COMMIT_SHA.test(triggerCommit || '');
+  const sourceCommitValid = typeof sourceCommit === 'string' && SOURCE_COMMIT_SHA.test(sourceCommit);
+  const triggerCommitValid = typeof triggerCommit === 'string' && SOURCE_COMMIT_SHA.test(triggerCommit);
   const sourceCommitMatch = sourceCommitValid && triggerCommitValid && sourceCommit === triggerCommit;
-  const verdictIsHealthy = HEALTHY_VERDICTS.includes(verdict.verdict) && sourceCommitMatch;
+  const verdictIsHealthy = HEALTHY_VERDICTS.includes(verdict.verdict) && verdict.serviceOk === true && sourceCommitMatch;
 
   return {
     schema: DEPLOYMENT_SCHEMA,
