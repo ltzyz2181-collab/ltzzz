@@ -57,3 +57,10 @@ test("页面包含可回退说明与标签事件回执", () => {
   assert.match(html, /addEventListener\("launch"/, "缺少 launch 事件回执");
   assert.match(html, /addEventListener\("error"/, "缺少 error 事件回执");
 });
+
+test("标签状态必须由升级检测决定，不得在插入 DOM 后无条件报“已渲染”", () => {
+  assert.match(html, /customElements\.get\("wx-open-launch-weapp"\)/, "缺少自定义元素升级检测");
+  assert.match(html, /shadowRoot/, "缺少影子树内容检测");
+  assert.match(html, /未升级/, "缺少“未升级”状态文案");
+  assert.match(html, /已插入宿主/, "插入后应先报中间态，不能直接写“已渲染”");
+});
