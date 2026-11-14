@@ -1,0 +1,158 @@
+{
+ "schema": "ltzzz.deep-superagent.consult.v1",
+ "date": "2026-11-14",
+ "topic": "LTZZZ 结构框架与各 AI 职能安排咨询",
+ "run_id": 43581220049,
+ "card": "ops/deep-superagent/tasks/DEEP-STRUCT-CONSULT-20261114-01.json",
+ "receipt": "knowledge/results/deep-superagent/queue-43581220049-attempt-1.json",
+ "seat_receipts": [
+  {
+   "seat": "deepseek",
+   "role": "planner",
+   "http": 200,
+   "tokens": 1343
+  },
+  {
+   "seat": "gpt",
+   "provider": "apisrouter_relay",
+   "model": "gpt-6.1-sol",
+   "http": 200,
+   "tokens": 6138
+  },
+  {
+   "seat": "claude",
+   "provider": "apisrouter_relay",
+   "model": "claude-sonnet-4-6",
+   "http": 200,
+   "tokens": 1997
+  },
+  {
+   "seat": "deepseek",
+   "role": "review",
+   "http": 200,
+   "tokens": 3973
+  }
+ ],
+ "gpt_view": {
+  "核心": "规划/执行/裁决分离可用，但边界含糊：中转 claude 的评审不能被当成独立复核；协调席的复核范围没定义；回执状态混用；GPT 的授权范围没写清",
+  "自荐职能": "作为“受限授权内的 AI 裁决席”，输出四种处置：批准范围内/附条件批准/退回修订/needs_decision，每次写许可动作、边界、所需证据、回退；不得自我扩权、不得授权账号级动作、不得豁免独立复核",
+  "立即批准": "三项程序性改动（决策卡、执行反馈与独立复核分离、回执分状态位）",
+  "暂缓": "任何涉及钱/密钥/凭据/账号/生产写/新外部服务的建议"
+ },
+ "claude_view": {
+  "核心": "中转链路不透明：无法自证 provider/model，上下文可能被缓存或改写，工具结果只有文本，超时无法判断是否送达，限流不可见",
+  "该做": "有界文件改动+验证、跑测试与构建、带行号的评审备忘、结构化产出",
+  "不该做": "跨会话多日编排、席位间任务分配、需要猜 owner 意图的活",
+  "立即批准": "EXECUTOR_LOG、任务边界协议",
+  "附条件": "RELAY_STATUS 先影子运行一周"
+ },
+ "merged_proposals": [
+  {
+   "id": "P1",
+   "title": "决策卡：每次派单写清授权范围",
+   "source": "gpt",
+   "现状": "派单只说任务，未写允许动作/禁止动作/完成证据/停止条件/回退",
+   "改动": "卡模板加五个字段 + 一个 authorization 标记（已授权 / 属 GPT 委任范围 / needs_decision）",
+   "cost": "每卡多 30-60 字起草；无新外部依赖",
+   "risk": "流程变慢；用默认模板+仅记录例外来控制",
+   "rollback": "弃用模板，保留已完成卡与硬边界",
+   "needs": "owner 采纳即可，无需新权限"
+  },
+  {
+   "id": "P2",
+   "title": "把中继的 claude 评审改称“执行反馈”，独立复核留给 deepseek",
+   "source": "gpt",
+   "现状": "claude 经中转，其评审容易被当成独立复核",
+   "改动": "回执里 claude 意见统一标 execution_feedback；independent_review 只认非中转路径的 deepseek；该路径不可用时挂起需独立复核的动作",
+   "cost": "多一道评审等待",
+   "risk": "评审成瓶颈或走过场；限定在决策卡范围内并要求具体findings",
+   "rollback": "暂停新流程，动作挂起等合规替代，不得把中转反馈改回独立复核",
+   "needs": "需 GPT 裁决：是否同意把中转席排除在独立复核之外"
+  },
+  {
+   "id": "P3",
+   "title": "回执分状态位：授权/输出/观测验证/处置",
+   "source": "gpt",
+   "现状": "四段回执混用“已判定”和“已完成”",
+   "改动": "四段改为授权与范围、输出与来源声明、观测验证、处置与回退；只记录证据支持的最高状态；执行器来源无法核实时写 unknown",
+   "cost": "模板维护与取证成本",
+   "risk": "字段增加诱发虚报；允许显式 unknown/pending",
+   "rollback": "恢复旧版式，保留证据并纠正含糊状态",
+   "needs": "owner 采纳即可"
+  },
+  {
+   "id": "P4",
+   "title": "执行席回执内嵌 EXECUTOR_LOG",
+   "source": "claude",
+   "现状": "中转链路上席位无法自证 provider/model，回执只能写“claude 席经中转”",
+   "改动": "worker 回复带 fenced 块：时间戳、尝试的工具调用、结果哈希、重试次数、上下文用量；协调席解析入回执",
+   "cost": "每回复 50-80 tokens；解析约 40 行",
+   "risk": "中转剥离日志则退化为现状；路径需脱敏",
+   "rollback": "删日志要求即可",
+   "needs": "owner 采纳即可，但需注意这不构成原厂身份证明"
+  },
+  {
+   "id": "P5",
+   "title": "任务边界协议：完成判据 + 工具调用预算 + 升级扳机",
+   "source": "claude",
+   "现状": "何时停、何时升级靠事后判断",
+   "改动": "每卡写可测完成断言、最大工具调用数、escalate_if 三条；席位开工先声明以哪条为准",
+   "cost": "planner 每卡多 40-60 字；席位 30 tokens",
+   "risk": "过紧导致早升级；先给宽预算再收紧",
+   "rollback": "退回隐式边界",
+   "needs": "owner 采纳即可"
+  },
+  {
+   "id": "P6",
+   "title": "中转健康自报 + 连续三次 degraded 告警",
+   "source": "claude",
+   "现状": "中转限流/重试不可见，只能事后从输出里猜",
+   "改动": "回复首行 RELAY_STATUS: nominal|degraded|unknown；协调席连续三次 degraded 告警",
+   "cost": "每回复 10 tokens + 15 行阈值逻辑",
+   "risk": "误报；先影子运行一周再启用",
+   "rollback": "删状态行",
+   "needs": "需 GPT 裁决：影子期长度与告警方式"
+  }
+ ],
+ "decision_request": {
+  "to": "gpt",
+  "items": [
+   {
+    "proposal": "P1",
+    "ask": "是否采纳决策卡模板（是否要你委任范围内的常规例外自行处置）"
+   },
+   {
+    "proposal": "P2",
+    "ask": "是否同意中转 claude 只作执行反馈、独立复核只给非中转路径的 deepseek；不可用时挂起"
+   },
+   {
+    "proposal": "P3",
+    "ask": "是否采纳四段状态位改写（unknown 可写、不得虚报）"
+   },
+   {
+    "proposal": "P4",
+    "ask": "是否要求 worker 回执内嵌 EXECUTOR_LOG（明确不构成原厂证明）"
+   },
+   {
+    "proposal": "P5",
+    "ask": "是否采纳任务边界协议（完成断言/调用预算/升级扳机）"
+   },
+   {
+    "proposal": "P6",
+    "ask": "RELAY_STATUS 影子期多久、连续几次 degraded 触发告警"
+   }
+  ]
+ },
+ "caveats": [
+  "两份备忘均由中转席产出，不构成原厂身份或独立复核",
+  "未含任何客户数据、金额、凭据",
+  "本文件为建议稿，未改任何流程、未部署"
+ ],
+ "status": "awaiting_gpt_decision",
+ "mail": {
+  "to": "ltzyz2181@gmail.com",
+  "subject": "[LTZZZ][咨询转裁决] 结构框架与各 AI 职能安排（GPT+Claude 合并稿，6 项待裁决）",
+  "message_id": "msg_Y9KN67OK8nzsVck_3IkMpDY08dWh7kqIzFiLmcuT1JIKlQ",
+  "created_at": "2026-11-14T09:38:06Z"
+ }
+}
