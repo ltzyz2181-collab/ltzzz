@@ -905,3 +905,24 @@ ltzzz.com 200；新文档 docs/operations/OKX-FUNDED-ROUND-20261017.md 200；ide
 
 ## 网络说明
 `*.workers.dev` 在本机与云主机均为不可达（云主机侧代理 CONNECT 返回 502），与既有 `api-deep/api-qianwen/api-kimi` 同一原因；故本次直接用自定义子域 `api-orch.ltzzz.com` 验收。
+
+---
+
+## 追加：owner 指定切 `doubao-seed-evolving` 的实测（2026-11-14 二次部署）
+
+owner 指示「效果一样就按这个（按量走 seed-evolving）」后，本轮按此执行并实测，结论是**该模型在本账号未激活，切过去线上会逐次失败**，故已回落。
+
+| 步骤 | 动作 | 结果 |
+|---|---|---|
+| 1 | `wrangler.orchestrator.toml` 加 `[vars] DOUBAO_ARK_MODEL = "doubao-seed-evolving"` 并 `wrangler deploy` | DEPLOYED，Version `42426f43-d2d6-4edb-9a1e-43ff7669792c` |
+| 2 | `GET /health` | 200，`model=doubao-seed-evolving`（配置生效） |
+| 3 | `POST /orchestrate`（带 `X-Orchestrator-Key`） | HTTP 200 但 `doubao.ok=false`，错误原文：`Your account 2102402864 has not activated the model doubao-seed-evolving. Please activate the model service in the Ark Console.` |
+| 4 | 回落：`[vars] DOUBAO_ARK_MODEL = "doubao-seed-2-1-lite-260915"` 重新部署 | DEPLOYED，Version `10ca51e8-3e94-45c2-9a3b-33d266ab31f7` |
+| 5 | 复查 `POST /orchestrate` | 200（20.1s），`doubao.ok=true`，`model=doubao-seed-2-1-lite-260915`，返回真实中文长文本 |
+
+判定：
+- **"换模型"这条路当前不可行**，不是代码问题，是账号授权问题（account `2102402864` 未激活该模型）。
+- 线上现运行版本为 lite 回落版，页面可用状态不变；`/health` 现报 `route=ark_v3`、`model=doubao-seed-2-1-lite-260915`。
+- 一旦控制台开通 `doubao-seed-evolving`（或拿到 Agent Plan 专属 Key），只改 `[vars]` 一行 / 加一个 Secret，无需改代码。
+
+待裁事项（已同步邮件请 GPT 席裁决）：见同日 `ops/dispatch/inbox/gpt/` 或在 `ltzzz-secrets.md` 外的公开记录。

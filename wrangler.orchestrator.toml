@@ -12,3 +12,8 @@ routes = [
 #   有 DOUBAO_AGENT_PLAN_API_KEY -> Agent Plan（Anthropic 兼容 /api/plan）
 #   否则有 ARK_API_KEY / DOUBAO_API_KEY -> 方舟平台按量（/api/v3）
 # 模型名可用 [vars] 覆盖；默认见源码 DEFAULT_DOUBAO_* 常量。
+[vars]
+# 2026-11-14 实测：owner 指定的 doubao-seed-evolving 在本账号（2102402864）未激活，
+# POST /api/v3 返回 "has not activated the model"，故回落到已开通的 lite，避免线上逐次失败。
+# 一旦控制台开通 seed-evolving（或 Agent Plan 专属 Key 到位），只改本行 / 加一个 Secret 即可。
+DOUBAO_ARK_MODEL = "doubao-seed-2-1-lite-260915"
