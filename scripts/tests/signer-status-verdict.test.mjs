@@ -12,12 +12,15 @@ import {
   SIGNER_STATUS_CHAIN_ID,
 } from '../lib/signer-status-verdict.mjs';
 
+const SOURCE_COMMIT = '3c4507ecb9dfc3c21fcc32c3550a4d3d22d18070';
+
 const healthyBlocked = {
   ok: true,
   schema: SIGNER_STATUS_SCHEMA,
   revision: SIGNER_STATUS_REVISION,
   scope: SIGNER_STATUS_SCOPE,
   chain_id: SIGNER_STATUS_CHAIN_ID,
+  source_commit: SOURCE_COMMIT,
   configured: false,
   configured_basis: 'existing_legacy_guard_denies_transaction_adapter',
   control_verified: null,
@@ -37,6 +40,7 @@ const healthyReady = {
   revision: SIGNER_STATUS_REVISION,
   scope: SIGNER_STATUS_SCOPE,
   chain_id: SIGNER_STATUS_CHAIN_ID,
+  source_commit: SOURCE_COMMIT,
   configured: true,
   configured_basis: 'verified_transaction_adapter_with_control_evidence',
   control_verified: true,
@@ -116,6 +120,15 @@ test('revision/scope/chain 任一缺失或不匹配都不得放行', () => {
     assert.equal(v.capabilityReady, false);
     assert.equal(v.verdict, 'contract_mismatch');
   }
+});
+
+test('source_commit 必须是 40-hex 且部署回读必须匹配预期提交', () => {
+  assert.equal(classifySignerStatus({...healthyReady, source_commit: undefined}, 200).verdict, 'source_commit_invalid');
+  assert.equal(classifySignerStatus({...healthyReady, source_commit: 'not-a-commit'}, 200).verdict, 'source_commit_invalid');
+  assert.equal(classifySignerStatus(healthyReady, 200, 'a'.repeat(40)).verdict, 'source_commit_mismatch');
+  const matched = classifySignerStatus(healthyReady, 200, SOURCE_COMMIT);
+  assert.equal(matched.verdict, 'ready');
+  assert.equal(matched.capabilityReady, true);
 });
 
 test('signed/transactions/on-chain/paid/tx_hash 任一执行迹象必须失败', () => {
