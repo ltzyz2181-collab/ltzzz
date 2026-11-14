@@ -9,6 +9,13 @@ export const SIGNER_STATUS_SCHEMA = 'ltzzz.treasury-signer-status.v1';
 export const SIGNER_STATUS_REVISION = 'wep3-signer-status-v1';
 export const SIGNER_STATUS_SCOPE = 'aave_supply';
 export const SIGNER_STATUS_CHAIN_ID = 8453;
+export const SIGNER_STATUS_VERDICTS = Object.freeze([
+  'ready', 'expected_safety_block', 'http_not_ok', 'schema_mismatch',
+  'unexpected_execution', 'service_error', 'service_not_ok', 'contract_mismatch',
+  'source_commit_invalid', 'source_commit_mismatch', 'inconsistent_block_contract',
+  'readiness_contract_incomplete', 'unknown_block',
+]);
+const SOURCE_COMMIT_SHA = /^[a-f0-9]{40}$/;
 
 const BASE = {
   serviceOk: false,
@@ -26,7 +33,7 @@ const nonExecuting = r =>
   r.paid === false &&
   r.tx_hash === null;
 
-export function classifySignerStatus(resultBody, httpStatus) {
+export function classifySignerStatus(resultBody, httpStatus, expectedSourceCommit = null) {
   const r = resultBody && typeof resultBody === 'object' && !Array.isArray(resultBody)
     ? resultBody
     : {};
@@ -52,6 +59,16 @@ export function classifySignerStatus(resultBody, httpStatus) {
     r.scope !== SIGNER_STATUS_SCOPE ||
     r.chain_id !== SIGNER_STATUS_CHAIN_ID
   ) return result('contract_mismatch', {blockedReason: r.status || null});
+
+  // The status body must identify the exact Worker source. During the deploy
+  // workflow it must also match the commit passed to wrangler via GITHUB_SHA.
+  if (!SOURCE_COMMIT_SHA.test(r.source_commit || '')) {
+    return result('source_commit_invalid', {blockedReason: 'source_commit_invalid'});
+  }
+  if (expectedSourceCommit !== null && expectedSourceCommit !== undefined &&
+      (!SOURCE_COMMIT_SHA.test(expectedSourceCommit) || r.source_commit !== expectedSourceCommit)) {
+    return result('source_commit_mismatch', {blockedReason: 'source_commit_mismatch'});
+  }
 
   if (r.status === 'blocked_transaction_adapter') {
     const knownBasis = [
