@@ -11,17 +11,25 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {SIGNER_STATUS_VERDICTS} from './signer-status-verdict.mjs';
 
 export const DEPLOYMENT_SCHEMA = 'ltzzz.wep3.deployment-latest.v1';
 export const DEPLOYMENT_REL_PATH = 'knowledge/results/wep3/deployment-latest.json';
 export const SETTLEMENT_RECEIPT_REL_PATH = 'knowledge/results/wep3/latest.json';
 export const HEALTHY_VERDICTS = ['ready', 'expected_safety_block'];
-const ALL_VERDICTS = [...HEALTHY_VERDICTS, 'http_not_ok', 'schema_mismatch', 'unexpected_execution', 'unknown_block'];
+export const ALL_VERDICTS = [...SIGNER_STATUS_VERDICTS];
+const SOURCE_COMMIT_SHA = /^[a-f0-9]{40}$/;
 
 export function buildDeploymentRecord({verdict, report = {}, triggerCommit = null, settlement = null, now = new Date()}) {
   if (!verdict || !ALL_VERDICTS.includes(verdict.verdict)) {
     throw new Error('unknown_signer_verdict');
   }
+
+  const sourceCommit = report.result?.source_commit ?? null;
+  const sourceCommitValid = SOURCE_COMMIT_SHA.test(sourceCommit || '');
+  const triggerCommitValid = SOURCE_COMMIT_SHA.test(triggerCommit || '');
+  const sourceCommitMatch = sourceCommitValid && triggerCommitValid && sourceCommit === triggerCommit;
+  const verdictIsHealthy = HEALTHY_VERDICTS.includes(verdict.verdict) && sourceCommitMatch;
 
   return {
     schema: DEPLOYMENT_SCHEMA,
@@ -30,14 +38,18 @@ export function buildDeploymentRecord({verdict, report = {}, triggerCommit = nul
     at: new Date(now).toISOString(),
     run_id: report.execution_id || null,
     run_attempt: String(report.run_attempt || '1'),
-    trigger_commit: triggerCommit || null,
-    source_commit: report.result?.source_commit || null,
+    trigger_commit: triggerCommitValid ? triggerCommit : null,
+    trigger_commit_valid: triggerCommitValid,
+    source_commit: sourceCommitValid ? sourceCommit : null,
+    source_commit_valid: sourceCommitValid,
+    source_commit_match: sourceCommitMatch,
+    deployment_verified: verdictIsHealthy && report.service_verified === true,
     http: typeof report.http === 'number' ? report.http : null,
     service_verified: report.service_verified === true,
     signer_verdict: verdict.verdict,
     signer_expected_block: verdict.expectedBlock === true,
     signer_blocked_reason: verdict.blockedReason || null,
-    verdict_is_healthy: HEALTHY_VERDICTS.includes(verdict.verdict),
+    verdict_is_healthy: verdictIsHealthy,
     settlement,
   };
 }
@@ -70,4 +82,14 @@ export function writeDeploymentRecord({verdict, report = {}, root = '.', trigger
   fs.mkdirSync(path.dirname(target), {recursive: true});
   fs.writeFileSync(target, JSON.stringify(record, null, 2));
   return record;
+}
+
+// Persistence failures are data, not a best-effort no-op. Callers must write
+// the explicit failure into their run receipt and fail the workflow.
+export function persistDeploymentRecord(args) {
+  try {
+    return {ok: true, path: DEPLOYMENT_REL_PATH, record: writeDeploymentRecord(args)};
+  } catch {
+    return {ok: false, path: DEPLOYMENT_REL_PATH, error: 'deployment_record_write_failed'};
+  }
 }
