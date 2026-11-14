@@ -86,8 +86,11 @@ var CFG = {
     return;
   }
 
-  document.getElementById("v-tag").textContent = "已渲染";
-  document.getElementById("v-tag").className = "v ok";
+  // 说明：把标签元素插入 DOM 不等于微信已渲染。真机实测（2026-11-13）曾因此误报“已渲染”，
+  // 所以这里先报“已插入”，最终状态由下方升级检测决定，未经检测不得写“已渲染”。
+  var vTag = document.getElementById("v-tag");
+  vTag.textContent = "已插入宿主，等待微信注入…";
+  vTag.className = "v warn";
 
   var host = document.getElementById("tagHost");
   var tag = document.createElement("wx-open-launch-weapp");
@@ -114,6 +117,27 @@ var CFG = {
     d.textContent = "开放标签报错：" + (e && e.detail ? JSON.stringify(e.detail) : "unknown");
   });
   host.appendChild(tag);
+
+  // 升级检测：只有微信真的注入了该自定义元素（存在构造函数且影子树里有内容）才报“已渲染”。
+  // 否则报“未升级”，并说明缺的是 wx.config/openTagList 与已认证公众号签名这一前置。
+  window.setTimeout(function () {
+    var upgraded = !!(window.customElements && window.customElements.get("wx-open-launch-weapp"));
+    var hasShadow = !!(tag.shadowRoot && tag.shadowRoot.childElementCount > 0);
+    if (upgraded && hasShadow) {
+      vTag.textContent = "已渲染";
+      vTag.className = "v ok";
+      return;
+    }
+    vTag.textContent = "未升级（微信未注入该标签）";
+    vTag.className = "v bad";
+    var d = document.getElementById("diag");
+    d.hidden = false;
+    d.innerHTML = "<strong>标签元素已插入，但微信没有把它升级成可点的按钮。</strong><br>" +
+      "开放标签要求先把 <span class=\"pill\">wx-open-launch-weapp</span> 写进 wx.config 的 openTagList，" +
+      "而 wx.config 的签名只能用<b>已认证公众号</b>的 appid + secret 生成。" +
+      "本小程序后台「设置 → 基本设置 → 相关公众号」为空，缺这个前置，标签就不会被注入。<br>" +
+      "可用替代入口：微信后台「小程序码」可直接为 pages/orders/index 生成小程序码，不需要任何签名。";
+  }, 1500);
 })();
 </script>
 </body>
