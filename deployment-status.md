@@ -884,7 +884,7 @@ ltzzz.com 200；新文档 docs/operations/OKX-FUNDED-ROUND-20261017.md 200；ide
 | Agent Plan 专属路由 | **BLOCKED** | 本机 `ark-22…` 对 `/api/plan/v1/messages` 返回 401 AuthenticationError；`/api/v3` 下 `doubao-seed-evolving` 返回 ModelNotOpen |
 | 鉴权 | VERIFIED | 无 `X-Orchestrator-Key` → 401；未配 `ORCHESTRATOR_KEY` → 503（本地测试用例覆盖） |
 | 其它席位 | 接口位保留 | deepseek / grok / claude 未配 Key，返回 stub，不伪装成功 |
-| 页面接线 | CODE_COMMITTED（PUSH 待确认） | agents.html 默认地址 + 口令输入 + `X-Orchestrator-Key` 头 + `/orchestrate` 自动补全 |
+| 页面接线 | **VERIFIED（已发布）** | commit `877b06dd` 已推到 `main`；`https://ltzzz.com/agents.html` 实测含 `api-orch` 接线（7 处）与口令输入框；预检 OPTIONS 204 且允许 `x-orchestrator-key` |
 
 ## 本机 Key 实测（只报状态，不记录值）
 | 探测 | 结果 |
