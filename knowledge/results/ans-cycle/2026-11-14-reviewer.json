@@ -1,0 +1,24 @@
+{
+  "accepted": true,
+  "artifact_sha256": "0bc006aaeed5cdacd3697bc0e02048b45baa3af91509c958db843508036d2989",
+  "reasons": [
+    "对照 scripts/run-daily-tasks.mjs：runReservedSeat 返回进入 else 分支后，代码仍执行 failures.push、pending.reminders 写入、tasks.push 和 reflections.push；这些 tasks 项的 full_output_file 被填为 data/memory/<agent>.json，即使该失败分支没有写入对应 memory 文件。",
+    "失败席位在循环结束后仍保留在 tasks 数组中；随后代码无条件生成 data/reflections/<today>.md，并构造 result 后写入 data/results/<today>.json。因此 finding 所称失败状态下仍产生 reflections 和 daily results 文件，与源码一致。",
+    "对照 scripts/lib/daily-task-board.mjs 的 runReservedSeat：失败时会写入 immutable artifact，并将席位状态置为 missing_required_section 或 generation_failed_no_repurchase；syncDailyBoard 会将这些状态交给 syncFailedSeat，要求远端任务 failure.evidence_path 与 artifact path/hash 一致。",
+    "run-daily-tasks.mjs 在读取 finalBoard 后只在 assignmentRecords 存在时补充 assignment.status、evidence_path 和 evidence_sha256；它没有从 tasks、reflections 或 daily result 中剔除终态失败席位。因此 daily 结果投影同时包含失败任务记录，而绑定的 evidence_path 可能来自 artifact，finding 所指口径混杂具有源码依据。",
+    "minimal_patch 要求按 runReservedSeat 的终态失败状态跳过成功投影，并在写 data/results 前依据 finalBoard.seats[agent].status 过滤，仅允许 generated_pending_sync 或 sync_unknown 进入每日结果；作为修复规格，直接针对已识别的失败投影边界，静态上可复核。",
+    "交付没有声称补丁已经执行、测试通过、部署或上线，并在 remaining_blocker 中明确要求真实 checkout 复现；本次验收可限于 finding 与补丁草稿的静态可复核性。"
+  ],
+  "unverified": [
+    "未获得交付物原始字节，无法重算 artifact_sha256；只能严格回传给定哈希。",
+    "未实际应用 minimal_patch，未审查最终 diff；具体插入位置、约25行改动是否足够、变量作用域和语法正确性尚未验证。",
+    "未执行 node --check scripts/run-daily-tasks.mjs 或 scripts/lib/daily-task-board.mjs。",
+    "未执行 node --test scripts/tests/ans-cycle.test.mjs、给定的内联 node 命令或完整测试套件；失败席位过滤、daily results 投影、幂等重跑和恢复路径均未实测。",
+    "补丁规格只允许 generated_pending_sync 或 sync_unknown 投影到 daily 结果，可能遗漏 submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review 等既有合法状态；该过滤条件是否过窄尚未验证。",
+    "未验证跳过 data/memory、reflections 和 tasks.push 后，data/reports/latest.md、pending reminders、外部报告投影及其他调用方是否仍保持一致。",
+    "未验证 syncFailedSeat 的独立验收恢复是否会因 daily runner 的投影调整而受影响；远端 fail_task、evidence hash 回读和重试行为未实测。",
+    "未在真实 checkout 中构造 generation_failed_no_repurchase、missing_required_section、generation_unknown 等失败分支，也未观察实际文件写入时点。",
+    "未验证补丁合入、CI、部署回读、目标环境、制品 SHA、生产版本及线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金事项；本结论仅限源码与规格草稿的静态审查。"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "finding": "run-daily-tasks.mjs 在 runReservedSeat 返回 {ok:false,status:'generation_failed_no_repurchase'} 等失败状态时，仍继续写入 data/memory/<agent>.json、data/reflections/<date>.md 和 data/results/<date>.json，导致 syncDailyBoard 的失败同步路径与每日结果投影相互矛盾；失败席位的 evidence_path 在 finalBoard 中为 null，但 data/results 已声称整个 daily 运行有产出，阻断后续 syncFailedSeat 的独立验收恢复。",
+  "evidence_paths": [
+    "scripts/run-daily-tasks.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/lib/daily-board-lineage.mjs",
+    "scripts/task-outcome.mjs"
+  ],
+  "minimal_patch": "在 scripts/run-daily-tasks.mjs 的 main() 中，对每个席位的 res 结果先判定终态。若 runReservedSeat 返回 ok:false 且 status 为 generation_failed_no_repurchase、missing_required_section 或 generation_unknown，则跳过该席位的 data/memory、reflections 和 tasks.push 成功投影，仅将 failures 记录为不可恢复失败；在写 data/results 前用 finalBoard.seats[ch.agent].status 再次过滤，只有状态为 generated_pending_sync 或 sync_unknown 的席位才允许投影到 daily 结果。具体规模约 25 行。",
+  "verification_commands": [
+    "node --check scripts/run-daily-tasks.mjs",
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs --test-name-pattern='generation_failed_no_repurchase' || true",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>console.log(m.hasUnverifiedBoard({seats:{a:{status:'generation_failed_no_repurchase'}}})))\""
+  ],
+  "remaining_blocker": "未能在当前会话中读取到 data/memory/<agent>.json 或 data/results/<date>.json 的实际写入时点与 finalBoard 的最终状态，无法证明 daily 结果投影已覆盖 failed seats；需在真实 checkout 中执行 run-reserved-seat 失败分支并观察 syncDailyBoard 的回读路径，再确认补丁是否真正阻断失败席位污染每日结果。"
+}
