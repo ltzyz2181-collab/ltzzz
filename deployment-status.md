@@ -925,4 +925,4 @@ owner 指示「效果一样就按这个（按量走 seed-evolving）」后，本
 - 线上现运行版本为 lite 回落版，页面可用状态不变；`/health` 现报 `route=ark_v3`、`model=doubao-seed-2-1-lite-260915`。
 - 一旦控制台开通 `doubao-seed-evolving`（或拿到 Agent Plan 专属 Key），只改 `[vars]` 一行 / 加一个 Secret，无需改代码。
 
-待裁事项（已同步邮件请 GPT 席裁决）：见同日 `ops/dispatch/inbox/gpt/` 或在 `ltzzz-secrets.md` 外的公开记录。
+待裁事项（A 保持 lite 现状 / B 开通 seed-evolving / C 开通 Agent Plan / D 另指派）：已于 2026-11-14T02:59:46Z 由豆包席 `qingqizhu6502@agent.qq.com` 发出裁决请求邮件至 `ltzyz2181@gmail.com`，主题「【裁决请求】豆包 API 接入：Agent Plan 未开通 / seed-evolving 未激活，现走 lite 按量且已上线 api-orch.ltzzz.com」，message_id `msg_M3hN721RfoYZGD_hnS-0Gf7iaJ20juaa80v_uzFeEhu6rg`（已核实出现在 sent 目录）。裁决回来前维持现状，不擅自切换。
