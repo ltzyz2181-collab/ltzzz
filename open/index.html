@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>世章 AI 助手 · 开放标签预览</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 20px 40px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f4f6f8; color: #122534;
+    -webkit-text-size-adjust: 100%;
+  }
+  .card {
+    max-width: 560px; margin: 0 auto 16px; background: #fff; border-radius: 14px;
+    padding: 20px; box-shadow: 0 1px 3px rgba(18,37,52,.08);
+  }
+  h1 { font-size: 18px; margin: 0 0 6px; letter-spacing: .3px; }
+  .sub { font-size: 13px; color: #6b7c8c; margin: 0; line-height: 1.6; }
+  .row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 7px 0; border-bottom: 1px dashed #e6ebf0; }
+  .row:last-child { border-bottom: 0; }
+  .k { color: #6b7c8c; flex: 0 0 auto; }
+  .v { text-align: right; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .ok { color: #17795e; }
+  .bad { color: #b3261e; }
+  .warn { color: #9a6700; }
+  .tag-wrap { margin: 18px 0 4px; text-align: center; }
+  .hint { font-size: 12px; color: #6b7c8c; line-height: 1.7; margin-top: 10px; }
+  .diag { border-left: 3px solid #b3261e; padding: 10px 14px; background: #fdf3f2; border-radius: 8px; font-size: 13px; line-height: 1.8; }
+  .pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #eef2f5; color: #46586a; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>世章 AI 助手 · 开放标签预览页</h1>
+  <p class="sub">本页仅用于验证 <code>wx-open-launch-weapp</code> 的 AppID、页面路径与开放标签参数，不在生产首页链路中，删除本文件即可完全回退。</p>
+</div>
+
+<div class="card" id="envCard">
+  <div class="row"><span class="k">运行环境</span><span class="v" id="v-ua">检测中…</span></div>
+  <div class="row"><span class="k">小程序 AppID</span><span class="v" id="v-appid">-</span></div>
+  <div class="row"><span class="k">原始 ID（username）</span><span class="v" id="v-username">-</span></div>
+  <div class="row"><span class="k">跳转页面路径</span><span class="v" id="v-path">-</span></div>
+  <div class="row"><span class="k">标签状态</span><span class="v" id="v-tag">-</span></div>
+</div>
+
+<div class="card" id="actionCard">
+  <div class="tag-wrap" id="tagHost"></div>
+  <div class="diag" id="diag" hidden></div>
+  <p class="hint">验证要点：①在微信内打开本页；②点击按钮应直接拉起到指定小程序页面；③未拉起时看下方事件回执（launch/error），不要用浏览器直接访问判断成败。</p>
+</div>
+
+<script>
+// —— 预览配置：唯一需要人工填写的字段是 username（小程序原始 ID，gh_ 开头）——
+var CFG = {
+  appid: "wx562bcb6057346fb2",
+  username: "",                                  // ← 缺此项时本页进入诊断模式，不渲染标签
+  path: "pages/orders/index.html",               // 对应 miniprogram/app.json 的 pages/orders/index
+  version: "release",
+  extraData: ""
+};
+
+(function () {
+  var isWechat = /micromessenger/i.test(navigator.userAgent);
+  var usernameOk = /^gh_[0-9a-z]{8,}$/.test(CFG.username.trim());
+
+  document.getElementById("v-ua").textContent = isWechat ? "微信内（可验证开放标签）" : "非微信环境（标签不会渲染）";
+  document.getElementById("v-ua").className = "v " + (isWechat ? "ok" : "warn");
+  document.getElementById("v-appid").textContent = CFG.appid;
+  document.getElementById("v-username").textContent = usernameOk ? CFG.username : "未配置";
+  document.getElementById("v-username").className = "v " + (usernameOk ? "ok" : "bad");
+  document.getElementById("v-path").textContent = CFG.path;
+
+  if (!usernameOk) {
+    document.getElementById("v-tag").textContent = "fail-closed（未渲染，避免误判为成功）";
+    document.getElementById("v-tag").className = "v bad";
+    var d = document.getElementById("diag");
+    d.hidden = false;
+    d.innerHTML = "<strong>缺少小程序原始 ID。</strong><br>" +
+      "开放标签 wx-open-launch-weapp 使用 <span class=\"pill\">username</span>（gh_ 开头的原始 ID），不是 AppID。" +
+      "AppID 已核对为 " + CFG.appid + "，但原始 ID 只能从微信公众平台「设置 → 基本设置 → 账号信息」读取。" +
+      "把 <code>gh_…</code> 填进本文件顶部 CFG.username 后重新上传，本页才会渲染可点击的标签。";
+    return;
+  }
+
+  document.getElementById("v-tag").textContent = "已渲染";
+  document.getElementById("v-tag").className = "v ok";
+
+  var host = document.getElementById("tagHost");
+  var tag = document.createElement("wx-open-launch-weapp");
+  tag.setAttribute("id", "launch-weapp");
+  tag.setAttribute("username", CFG.username.trim());
+  tag.setAttribute("path", CFG.path + (CFG.path.indexOf("?") > -1 ? "&" : "?") + "from=openag");
+  tag.setAttribute("version", CFG.version);
+
+  var tpl = document.createElement("script");
+  tpl.setAttribute("type", "text/wxtag-template");
+  tpl.textContent =
+    "<style>.btn{display:inline-block;padding:14px 30px;border-radius:10px;background:#122534;color:#fff;font-size:16px;letter-spacing:.5px;}</style>" +
+    "<div class=\"btn\">打开世章 AI 助手</div>";
+  tag.appendChild(tpl);
+
+  tag.addEventListener("launch", function () {
+    document.getElementById("v-tag").textContent = "已拉起小程序";
+  });
+  tag.addEventListener("error", function (e) {
+    document.getElementById("v-tag").textContent = "拉起失败（见诊断）";
+    document.getElementById("v-tag").className = "v bad";
+    var d = document.getElementById("diag");
+    d.hidden = false;
+    d.textContent = "开放标签报错：" + (e && e.detail ? JSON.stringify(e.detail) : "unknown");
+  });
+  host.appendChild(tag);
+})();
+</script>
+</body>
+</html>
