@@ -1,0 +1,15 @@
+execute	Report funding-step outcome without masking order fulfilment	﻿2026-11-14T22:30:38.6548991Z ##[group]Run state="missing"
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6549352Z [36;1mstate="missing"[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6549617Z [36;1mblocked="blocked_missing_signer"[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6550079Z [36;1mecho "signer_state=${state:-missing-output} blocked_status=${blocked:-unknown}"[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6550899Z [36;1mif [ "$state" != "ready" ]; then[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6551741Z [36;1m  echo "::error::Funding steps skipped (${blocked:-blocked_signer_unverified}); signer capability not proven. Order fulfilment receipt is preserved separately and is not a green funding result."[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6552581Z [36;1m  exit 1[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6552793Z [36;1mfi[0m
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6601374Z shell: /usr/bin/bash -e {0}
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6601646Z env:
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6602236Z   WEP3_RUNNER_TOKEN: ***
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6602508Z ##[endgroup]
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6673577Z signer_state=missing blocked_status=blocked_missing_signer
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6693628Z ##[error]Funding steps skipped (blocked_missing_signer); signer capability not proven. Order fulfilment receipt is preserved separately and is not a green funding result.
+execute	Report funding-step outcome without masking order fulfilment	2026-11-14T22:30:38.6702593Z ##[error]Process completed with exit code 1.
