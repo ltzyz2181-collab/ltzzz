@@ -67,6 +67,10 @@ test('source_commit 与 trigger_commit 必须是 40-hex 且完全匹配', () => 
   assert.equal(malformed.trigger_commit, null);
   assert.equal(malformed.trigger_commit_valid, false);
   assert.equal(malformed.verdict_is_healthy, false);
+
+  const numeric = buildDeploymentRecord({verdict, report: {...report, result: {source_commit: 1234567890123456789012345678901234567890}}, triggerCommit: TRIGGER_COMMIT});
+  assert.equal(numeric.source_commit, null);
+  assert.equal(numeric.source_commit_valid, false);
 });
 
 test('所有 classifier verdict 均可持久化，且只有健康 verdict 加匹配提交才健康', () => {
@@ -76,6 +80,8 @@ test('所有 classifier verdict 均可持久化，且只有健康 verdict 加匹
     assert.equal(r.signer_verdict, name);
     assert.equal(r.verdict_is_healthy, ['ready', 'expected_safety_block'].includes(name));
   }
+  const forgedReady = buildDeploymentRecord({verdict: {...verdict, verdict: 'ready', serviceOk: false}, report, triggerCommit: TRIGGER_COMMIT});
+  assert.equal(forgedReady.verdict_is_healthy, false);
   assert.throws(() => buildDeploymentRecord({verdict: {...verdict, verdict: 'unlisted'}, report, triggerCommit: TRIGGER_COMMIT}), /unknown_signer_verdict/);
 });
 
