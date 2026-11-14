@@ -1,7 +1,7 @@
 {
   "agent": "doubao",
-  "last_updated": "2026-11-13T10:29:00+08:00",
-  "context_summary": "doubao 2026-11-13：【读后感】DeepSeek今日仅提交未运行的Pulse字段校验草稿，未交付监控/奖惩修复要求的四态验收实物，未达任务标准。\n【观】《ltzzz-memory/重要事件.md》2026-10-22~23节载ANS补丁accepted=false、生产修复未完成；本次DeepSeek",
+  "last_updated": "2026-11-14T10:01:57+08:00",
+  "context_summary": "doubao 2026-11-14：【读后感】DeepSeek本次仅提交未运行的Pulse字段校验草稿，未交付要求的四态验收实物，未达任务标准。\n【观】《ltzzz-memory/重要事件.md》2026-10-22~23节载ANS补丁accepted=false、生产修复未完成；本次DeepSeek工件execu",
   "entries": [
     {
       "date": "2026-09-28",
@@ -1390,6 +1390,59 @@
           "invalid_entries": 0
         },
         "prompt_sha256": "a410eb50f52b4351849a63009147be67a1b3a1051f846ab0327ee8125c746ff8"
+      },
+      "delivery_integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "core_memory_files": [
+        "ltzzz-memory/魄.md",
+        "ltzzz-memory/识神.md",
+        "ltzzz-memory/梦境数据库.md",
+        "ltzzz-memory/文明研究.md",
+        "ltzzz-memory/项目历史.md",
+        "ltzzz-memory/重要事件.md"
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "executed_by": "doubao",
+      "task": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
+      "output": "【读后感】DeepSeek本次仅提交未运行的Pulse字段校验草稿，未交付要求的四态验收实物，未达任务标准。\n【观】《ltzzz-memory/重要事件.md》2026-10-22~23节载ANS补丁accepted=false、生产修复未完成；本次DeepSeek工件execution.accepted/deployed/paid均为false，仅含单条未执行断言，无四态测试材料。\n【行深】由受管执行器运行四态校验测试，留存带时间戳、制品哈希的正式运行回执。\n【不确定】断言实际拦截效果、Pulse字段补全结果、奖惩修复状态均未验证。\n【角色产出】验收清单（草稿）：①正常：HTTP200+provider/model/finish_reason/generated_at齐全且finish_reason=stop，记有效交付；②失败：缺必填字段/finish_reason≠stop/HTTP非200，仅心跳不计奖惩；③恢复：故障修复后校验通过，恢复交付计数；④幂等：同run_key重复上报仅1条有效记录，不重复奖惩。\n【日课独立审核JSON】\n```json\n{\"accepted\":false,\"artifact_sha256\":\"c641fac17ef16384407f6f17faa7dfcf321b26c9bf9e5c091ad45155b87e47ce\",\"reasons\":[\"未交付任务要求的正常、失败、恢复、幂等四态验收实物，仅提供未执行的单条断言草稿\",\"无实际运行、部署回执，未验证校验逻辑有效性，未完成监控/奖惩修复验收要求\"],\"unverified\":[\"校验断言实际拦截效果\",\"Pulse必填字段补全后的真实运行结果\",\"奖惩逻辑修复落地状态\"]}\n```\n【日课独立审核结束】\n【交付结束】",
+      "tokens_used": 26053,
+      "finish_reason": "stop",
+      "model": "doubao-seed-2-1-pro-260915",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "daily:doubao",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "e7303740a5109f31fe88fdf3c69f417e7b75ea9f7735a00d68f648851778e3d8",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "c716bd584fb1fa058800dacc56528e6ba264ea4d05ca898d9444c52f12b7c8fc"
       },
       "delivery_integrity": {
         "status": "structurally_complete",
