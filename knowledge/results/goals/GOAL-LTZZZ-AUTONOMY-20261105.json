@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.autonomy.goal-observation.v1",
   "goal_id": "GOAL-LTZZZ-AUTONOMY-20261105",
-  "status": "blocked_evidence_integrity",
+  "status": "active_acceptance_pending",
   "active_phase": "P0",
   "tracks": [
     {
@@ -13,22 +13,30 @@
         {
           "id": "scheduled_task_dispatch",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "immutable_receipt_and_recovery",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "owner_absent_observation_72h",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "membership_independent_handoff",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         }
       ],
       "blockers": [
@@ -45,22 +53,30 @@
         {
           "id": "actual_order_claim",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "permitted_independent_delivery_review",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "platform_accepted",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "actual_cash_settlement",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         }
       ],
       "blockers": [
@@ -76,17 +92,23 @@
         {
           "id": "quote_budget_and_claim",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "external_deliverable_accepted",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "real_payment_reference",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         }
       ],
       "blockers": [
@@ -102,17 +124,23 @@
         {
           "id": "old_intent_reconciled",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "bounded_execution_chain_receipt",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "exit_or_restore_verified",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         }
       ],
       "blockers": [
@@ -128,17 +156,23 @@
         {
           "id": "openai_credit_secret_native_response",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "anthropic_credit_secret_native_response",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "native_identity_and_billing_reconciled",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         }
       ],
       "blockers": [
@@ -148,34 +182,59 @@
     {
       "id": "core_product",
       "status": "offline_prototype_and_low_speed_release_verified_real_customer_pending",
-      "verified_checks": 0,
+      "verified_checks": 1,
       "required_checks": 4,
       "checks": [
         {
           "id": "prototype_and_negative_cases",
-          "verified": false,
+          "verified": true,
           "evidence_refs": [
             {
               "path": "knowledge/results/products/delivery-check-0.1.0-release-20261108.json",
               "source_commit": "a606873951f69694a9abc17cb196342effdac33f",
               "sha256": "4ee93fac75e3f78b913a2cc1a3ddef3fc394c23c3977c4735df99029ee6505c8"
+            },
+            {
+              "path": "knowledge/results/goals/corrections/20261113-source-ancestry-correction.json",
+              "source_commit": "bbbd00926f968c48e0d3558d883eb57b5ae8c738",
+              "kind": "append_only_source_ancestry_correction",
+              "corrects": "a606873951f69694a9abc17cb196342effdac33f",
+              "note": "records that the old source commit is unreachable from current main while the receipt bytes are unchanged",
+              "sha256": "fcb0485e85059c2f38312b70445768cc86904c5176ec46bd9f0b4db0ea1557e3"
+            }
+          ],
+          "verification_method": "append_only_source_ancestry_correction",
+          "correction_refs": [
+            {
+              "path": "knowledge/results/goals/corrections/20261113-source-ancestry-correction.json",
+              "source_commit": "bbbd00926f968c48e0d3558d883eb57b5ae8c738",
+              "sha256": "fcb0485e85059c2f38312b70445768cc86904c5176ec46bd9f0b4db0ea1557e3",
+              "replacement_source_commit": "a6fc4d5c0ddfae9fb2aa7343df713aae3172bfbf",
+              "package_path": "products/releases/ltzzz-delivery-check-0.1.0.zip",
+              "package_sha256": "2669d667dd7e99be9ca7736fb2f206ee7d871e8d37b96cb680df12c55d38b252"
             }
           ]
         },
         {
           "id": "permitted_customer_delivery",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "customer_acceptance",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         },
         {
           "id": "cash_settlement_and_cost_reconciliation",
           "verified": false,
-          "evidence_refs": []
+          "evidence_refs": [],
+          "verification_method": null,
+          "correction_refs": []
         }
       ],
       "blockers": [
@@ -183,23 +242,21 @@
       ]
     }
   ],
-  "errors": [
-    "unverified_evidence:core_product:prototype_and_negative_cases"
-  ],
+  "errors": [],
   "controller_closeout_verified": false,
-  "observed_at_utc": "2026-11-11T13:27:18.411Z",
-  "planned_phase": "P2",
+  "observed_at_utc": "2026-11-15T08:03:19.897Z",
+  "planned_phase": "P3",
   "target_review_date": "2026-11-20",
   "auto_expire": false,
   "goal_completed": false,
   "owner_routine_operations_required": false,
-  "evidence_scope": "Pinned repository bytes verified; external acceptance and bank/provider facts require their actual receipts and GPT closeout.",
-  "progress_fingerprint": "a3fee6ecc1b597e68cfc007e0260b29d2de9a602011abc307b03e59081c41be2",
+  "evidence_scope": "Pinned repository bytes verified; the original source-ancestry correction is accepted only when the correction receipt, reachable replacement receipt bytes and release-package bytes all match their pinned SHA-256 values. External acceptance and bank/provider facts require their actual receipts and GPT closeout.",
+  "progress_fingerprint": "94c623117c509e428a7b2bc0ea212258674f4c31847018ebd0e42681df282e67",
   "model_calls": 0,
   "transactions": 0,
   "paid": false,
   "tx_hash": null,
-  "run_id": "43029205491",
+  "run_id": "43692677568",
   "run_attempt": "1",
-  "source_commit": "649ff8be5ac05be946c05e128d2e7066e3423809"
+  "source_commit": "44c9e0ed73922947e9903e5b66785357212e2062"
 }
