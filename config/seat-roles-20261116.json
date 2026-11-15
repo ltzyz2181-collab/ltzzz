@@ -63,7 +63,8 @@
    ],
    "self_limit": "中转不可自证 provider/model；上下文可能被改写；工具结果只有文本；超时与限流不可见 → 其裁决必须标 relay_attested=false，且不得作为资金/生产写/范围扩张的最终依据",
    "batch_only": true,
-   "min_input_tokens": 4096
+   "min_input_tokens": 4096,
+   "funds_decision_note": "owner 2026-11-16 将项目资金裁决权交 GPT 决策席（5 签钱包除外）；但中转 GPT 席不可自证、不可签名 → 只能出裁决口径，执行由闸门与 executor 完成，钱不由模型搬"
   },
   "relay_claude": {
    "provider": "apisrouter_relay",
@@ -121,7 +122,42 @@
    ],
    "revocable": true,
    "status": "authorized_validate_then_deploy_in_repo"
+  },
+  {
+   "id": "OWNER-AUTH-20261116-FUNDS-TO-GPT",
+   "item": "LTZZZ 项目资金裁决权归 GPT 决策席（5 签钱包除外）",
+   "authorized_by": "owner",
+   "authorized_at": "2026-11-16",
+   "place_of_authorization": "本对话 + 本文件（唯一台账）；副本随席位定位邮件备案",
+   "scope": "项目资金用途、单笔上限、是否启动自动付款、付给谁，由 GPT 裁决席给口径",
+   "excluded": [
+    "5 签钱包（Safe 多签）的任何签名与转移动作",
+    "主模型席位直接签名",
+    "凭据与私钥访问"
+   ],
+   "constraints": [
+    "执行仍由既有 executor 与闸门完成，模型席不得直接签名",
+    "每笔需 receipt 与可用回退",
+    "自动化付款在未取得 GPT 裁决前保持 enabled=false"
+   ],
+   "revocable": true,
+   "status": "authorized_gpt_funds_decision_excluding_5sign_wallet"
   }
  ],
- "deployment_note": "部署=配置与文档入库并 push main；不涉及生产部署、不涉及资金、不涉及凭据"
+ "deployment_note": "部署=配置与文档入库并 push main；不涉及生产部署、不涉及资金、不涉及凭据",
+ "phase2_salary_resolution": {
+  "id": "PHASE2-SALARY",
+  "status": "partially_resolved_2026-11-16",
+  "resolution": "付款方与裁决权 = GPT 决策席（5 签钱包除外）；单笔上限与是否开跑由 GPT 裁决后写入 small-payment-autonomy.json",
+  "still_open": [
+   "自动付款是否已测、测试记录在哪、最快可测路径（沙箱/testnet）"
+  ],
+  "observed_now": {
+   "small_payment_autonomy": "enabled=false，controllers/payees/purposes 均为空",
+   "local_tests": "agi-pay-stream / payment-readiness / small-payment-authorization / agi-econ 共 42 通过 0 失败",
+   "readiness_run": "脚本要求 trusted_main_snapshot，仅能在 CI main push 运行，本地跑不了",
+   "last_readiness_ci": "run 41606747082 failure（12 天前），run 41606569659 success 但为 PR 分支",
+   "agent_pay_history": "deploy-agent-pay 于 2026-09-24/25 多次 success，含 testnet-first 与 1 USDT Safe 测试台账"
+  }
+ }
 }
