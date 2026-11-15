@@ -1,0 +1,93 @@
+{
+ "schema": "ltzzz.deep-superagent.patrol.v1",
+ "date": "2026-11-16",
+ "at_utc": "2026-11-16T06:50:00Z",
+ "source": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md",
+ "mode": "read_only",
+ "items": [
+  {
+   "n": 1,
+   "name": "记忆库六份核心 + 总控交接单只读扫描",
+   "status": "ok",
+   "evidence": "git log --since=7.days -- ltzzz-memory/；grep -c '待处理|未处理|待办|TODO' 六份核心；ltzzz-memory/tasks/control/2026-11-15.md",
+   "findings": {
+    "core_files_commits_7d": 0,
+    "core_files": [
+     "梦境数据库.md",
+     "文明研究.md",
+     "装备论.md",
+     "识神.md",
+     "魄.md",
+     "重要事件.md"
+    ],
+    "open_markers": {
+     "梦境数据库.md": 2,
+     "其余五份": 0
+    },
+    "open_items": [
+     "梦境数据库.md 待办：记录 2 的『擎起柱』语义请 owner 有空时一句话校准",
+     "梦境数据库.md 待办：后续每月从新归档增量提取，入库前先核原文行号"
+    ],
+    "changed_memory_files_7d": [
+     "daily-3nums.md",
+     "kimi-weekly/2026-11-14-task.md",
+     "manifest.json",
+     "tasks/control/2026-11-09..15.md"
+    ],
+    "latest_control_task": "tasks/control/2026-11-15.md 无未处理标记；内容为 deepseek/doubao 两席 ANS/Pulse 首要任务",
+    "note": "只列不改；本项未写入记忆库"
+   }
+  },
+  {
+   "n": 2,
+   "name": "视频流水线最近 run 结论与产物",
+   "status": "ok",
+   "evidence": "gh run list --limit 20 过滤 video；run 43757770282",
+   "run_id": 43757770282,
+   "workflow": "Daily YouTube prepared video or render with public verification",
+   "conclusion": "success",
+   "created_at": "2026-11-15T20:23:06Z"
+  },
+  {
+   "n": 3,
+   "name": "ltzzz.com 可达性探测",
+   "status": "ok",
+   "evidence": "curl -sS -o /dev/null -w 'code=%{http_code} time=%{time_total}s' --max-time 25 https://ltzzz.com/",
+   "http_status": 200,
+   "time_total_s": 1.285256
+  },
+  {
+   "n": 4,
+   "name": "WorkBuddy skill os_f8a49bc830defb02 只读巡检",
+   "status": "unknown",
+   "evidence": "repo 内仅 id 引用：config/deep-superagent.json、docs/DEEP-SUPERAGENT.md、knowledge/results/patrol/2026-11-12-patrol-workbuddy-miniprogram.json、knowledge/results/workbuddy-monetization/WORKBUDDY-SKILL-MONETIZE-20261031/status.json",
+   "reason": "读 open.workbuddy.cn/skill/all 需微信扫码登录；本轮云主机无登录态，未伪造状态",
+   "last_known": "2026-11-12 浏览器读回：LTZZZ 来源核对清单 已发布 v1.0.1，配额 1/20（账户级）"
+  },
+  {
+   "n": 5,
+   "name": "微信公众平台 AppID wx562bcb6057346fb2 只读巡检",
+   "status": "unknown",
+   "evidence": "repo 内引用 docs/2026-11-11-小程序0.1.11提审与部署回执.md 等",
+   "reason": "公众平台后台需扫码登录，本轮无凭据与登录态；不从历史文档推定当前状态"
+  },
+  {
+   "n": 6,
+   "name": "三数次日补记（data_date=2026-11-15）",
+   "status": "ok",
+   "evidence": "ltzzz-memory/daily-3nums.md 追加补记行",
+   "data_date": "2026-11-15",
+   "values": {
+    "yt_views": null,
+    "site_beacons": null,
+    "cart_checkout_clicks": null,
+    "revenue": null
+   },
+   "reason": "YouTube Studio 与 CF Web Analytics 后台均需登录，本席无凭据；按规则写 null/未测，未用 11-16 当日值充当前一日",
+   "note": "当日已有 Actions 自动行（全未测），本行是补记标注，不覆盖原行"
+  }
+ ],
+ "skipped": [],
+ "blocking": false,
+ "note": "六项均只读；无资金、无凭据写入、无生产写、未改记忆库与 skill"
+}

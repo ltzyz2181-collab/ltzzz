@@ -1,0 +1,591 @@
+{
+ "schema": "ltzzz.deep-superagent.daily.v1",
+ "date": "2026-11-16",
+ "generated_at_utc": "2026-11-16T06:55:00Z",
+ "trigger": "cron 17642657602306 06:45 手动补执行（含并入的六项只读巡检）",
+ "mail": {
+  "backlog_path": "knowledge/results/deep-superagent/mail-backlog/latest.json",
+  "generated_at": "2026-11-15T22:45:40.195Z",
+  "count": 37,
+  "open_count": 13,
+  "unknown_count": 24,
+  "window_days": 21,
+  "readset_sha256": "f8d8efb865fe846ce3f9b36f37f64e28b47bb5c95037f19499ccbb18ac8155af",
+  "contains_mail_body": false,
+  "external_model_safe": true
+ },
+ "repo_observation": {
+  "oversight_latest": "knowledge/results/dispatch/oversight/latest.json",
+  "oversight_date": "2026-11-16",
+  "oversight_run": 43760129088,
+  "model_calls": 0,
+  "open_warning_cases": 183,
+  "unique_original_tasks": 183,
+  "not_rechecked_in_current_window": 145,
+  "by_seat": {
+   "qianwen": 58,
+   "deepseek": 46,
+   "doubao": 40,
+   "grok": 30,
+   "gpt": 9
+  },
+  "first_warning_case": "4f66fd19d7259593648ee251 CONTROL-2026-10-18-deepseek blocked_reconcile_existing_attempt state=open last_observed 2026-10-24T13:06Z",
+  "stage_counts_note": "engineering_deliveries_verified 0 / production_deployments_verified 0，scope=已扫来源内已验证，不代表项目完成度",
+  "failure_runs_24h": [
+   {
+    "run": 43749433903,
+    "workflow": "Autonomous funded LTZZZ orders",
+    "at": "2026-11-15T18:55:04Z",
+    "head": "c7945e9c4",
+    "failed_step": "Report funding-step outcome without masking order fulfilment",
+    "log": "gh run view --log-failed 与 --log 均取不到输出，已用 API 取到失败步骤名"
+   },
+   {
+    "run": 43718379738,
+    "workflow": "Daily Agent Tasks",
+    "at": "2026-11-15T13:19:18Z",
+    "head": "4e050367d",
+    "failed_step": "Reconcile committed deliveries without model calls",
+    "log": "同上，仅取到失败步骤名"
+   }
+  ],
+  "open_pr_count": 1,
+  "open_prs": [
+   {
+    "number": 287,
+    "draft": true,
+    "title": "fix(wep3): fail closed before any production Worker upload"
+   }
+  ],
+  "verified_merged_prs": [
+   {
+    "number": 396,
+    "merge_commit": "44c9e0ed73922947e9903e5b66785357212e2062",
+    "merged_at": "2026-11-15T08:02:59Z"
+   },
+   {
+    "number": 376,
+    "merge_commit": "7729a4edb1609869629d1ee1bd7b410f22c49693",
+    "merged_at": "2026-11-08T06:11:27Z"
+   }
+  ]
+ },
+ "card": {
+  "task_id": "DEEP-SUPERAGENT-20261116-DAILY-1",
+  "path": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261116-DAILY-1.json",
+  "commit": "83be04977",
+  "prompt_chars": 2818,
+  "rows": 24,
+  "groups": {
+   "A": 13,
+   "B": 5,
+   "C": 6
+  },
+  "push_policy": "一次 push 只新增一张卡，未删改旧卡"
+ },
+ "queue_run_id": 43771186482,
+ "queue_run_attempt": 1,
+ "queue_receipt": "knowledge/results/deep-superagent/queue-43771186482-attempt-1.json",
+ "job_status": "needs_gpt_decision",
+ "model_calls": 3,
+ "error": null,
+ "seat_receipts": [
+  {
+   "stage": "plan",
+   "seat": "deepseek",
+   "provider": "deepseek",
+   "model": "deepseek-v4-pro",
+   "http": 200,
+   "tokens": 1835
+  },
+  {
+   "stage": "work",
+   "seat": "claude",
+   "provider": "apisrouter_relay",
+   "model": "claude-sonnet-4-6",
+   "http": 200,
+   "tokens": 2179
+  },
+  {
+   "stage": "independent_review",
+   "seat": "deepseek",
+   "provider": "deepseek",
+   "model": "deepseek-v4-pro",
+   "http": 200,
+   "tokens": 2838,
+   "approved": false,
+   "summary": "格式合规但多处路由误判：PR-287 deploy_confirm_only 无部署可确认；PR-396 与 patrol 缺盘上回执；oversight 与 run 属观测而非缺件；provider 元数据不可验证"
+  }
+ ],
+ "routes": [
+  {
+   "ref": "35e009a39885e44b",
+   "deep_route": "blocked_evidence_needed",
+   "final_route": "blocked_evidence_needed",
+   "reason": "保留：缺千问原始件，修复文件 ops/dispatch/oversight/QIANWEN-RETURN-2026-10-16-external_return_claim_missing.md"
+  },
+  {
+   "ref": "ba4ddc11868d81a8",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：signer 显式契约口径需裁决"
+  },
+  {
+   "ref": "21f16a13dcfdf51c",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：QWEN-REPLY 四项裁决未回"
+  },
+  {
+   "ref": "e25c295141f6baae",
+   "deep_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt",
+   "reason": "复核通过：#376 MERGED 7729a4edb @ 2026-11-08T06:11:27Z，回执已落盘关闭"
+  },
+  {
+   "ref": "f37f74a2260e0983",
+   "deep_route": "blocked_evidence_needed",
+   "final_route": "needs_gpt_decision",
+   "reason": "改判：非缺件，是等 Q1/Q2 答复；按规则 2 升为 GPT 裁决"
+  },
+  {
+   "ref": "76204610598d12d6",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：小程序支付 Q1-Q5"
+  },
+  {
+   "ref": "3b86bfbe9f010dd1",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：虚拟支付沙箱首单与退款链路待口径"
+  },
+  {
+   "ref": "a4892a62f3078715",
+   "deep_route": "blocked_evidence_needed",
+   "final_route": "needs_gpt_decision",
+   "reason": "改判：审计报告已在 daily-2026-11-12.json，非缺件；输入偏差处置待裁决"
+  },
+  {
+   "ref": "58679a674803de2a",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：5 项裁决"
+  },
+  {
+   "ref": "accc365c8999ec45",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：自动交付边界口径"
+  },
+  {
+   "ref": "37c0b81f45bea064",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：ICP 后 5 项裁决"
+  },
+  {
+   "ref": "c96ab9053576d5c4",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：中转执行席口径"
+  },
+  {
+   "ref": "2b3050253fdbc338",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：AI 雇佣 AI 逐步验收"
+  },
+  {
+   "ref": "7a62ac73578e1ce2",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：涉生产制品，不自行修"
+  },
+  {
+   "ref": "41517575cdca23a5",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：8 类闭合裁决"
+  },
+  {
+   "ref": "35d425aa2d3eb724",
+   "deep_route": "needs_owner_decision",
+   "final_route": "needs_owner_decision",
+   "reason": "保留：Owner 新授权，只能 owner 决定"
+  },
+  {
+   "ref": "536beb46e239a3f8",
+   "deep_route": "needs_owner_decision",
+   "final_route": "needs_owner_decision",
+   "reason": "保留：立项与路线图，owner 决定"
+  },
+  {
+   "ref": "d73ce0aad1d1fb88",
+   "deep_route": "needs_gpt_decision",
+   "final_route": "needs_gpt_decision",
+   "reason": "保留：催办 8 项 + 中转/Claude App 口径冲突"
+  },
+  {
+   "ref": "PR-396",
+   "deep_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt",
+   "reason": "复核通过：MERGED 44c9e0ed73922947e9903e5b66785357212e2062 @ 2026-11-15T08:02:59Z，回执关闭"
+  },
+  {
+   "ref": "PR-287",
+   "deep_route": "deploy_confirm_only",
+   "final_route": "needs_gpt_decision",
+   "reason": "改判：draft PR 无部署可确认；合并即生产 Worker 上传前闸门，按规则 2 归 GPT"
+  },
+  {
+   "ref": "run-43749433903",
+   "deep_route": "blocked_evidence_needed",
+   "final_route": "needs_gpt_decision",
+   "reason": "改判：已取失败步骤 Report funding-step outcome without masking order fulfilment；资金路径不自行改"
+  },
+  {
+   "ref": "run-43718379738",
+   "deep_route": "blocked_evidence_needed",
+   "final_route": "needs_gpt_decision",
+   "reason": "改判：已取失败步骤 Reconcile committed deliveries without model calls；修 reconcile 需授权"
+  },
+  {
+   "ref": "oversight-183",
+   "deep_route": "blocked_evidence_needed",
+   "final_route": "needs_gpt_decision",
+   "reason": "改判：属观测积压非缺件；145 条复查需口径/容量裁决"
+  },
+  {
+   "ref": "patrol-merged",
+   "deep_route": "deploy_confirm_only",
+   "final_route": "coordinator_close_with_receipt",
+   "reason": "改判：无部署；今日六项巡检已执行并落 knowledge/results/patrol/2026-11-16.json"
+  }
+ ],
+ "route_counts": {
+  "blocked_evidence_needed": 1,
+  "needs_gpt_decision": 18,
+  "coordinator_close_with_receipt": 3,
+  "needs_owner_decision": 2
+ },
+ "ref_match": "24/24 行均命中卡内真实 ref，无编造；Deep 输出未出现额外 ref",
+ "review": {
+  "corrected_count": 7,
+  "corrected": [
+   {
+    "ref": "f37f74a2260e0983",
+    "from": "blocked_evidence_needed",
+    "to": "needs_gpt_decision",
+    "why": "非缺件，是等 Q1/Q2 答复"
+   },
+   {
+    "ref": "a4892a62f3078715",
+    "from": "blocked_evidence_needed",
+    "to": "needs_gpt_decision",
+    "why": "审计报告已在 daily-2026-11-12.json"
+   },
+   {
+    "ref": "PR-287",
+    "from": "deploy_confirm_only",
+    "to": "needs_gpt_decision",
+    "why": "draft PR，无部署可确认；合并涉生产写闸门"
+   },
+   {
+    "ref": "run-43749433903",
+    "from": "blocked_evidence_needed",
+    "to": "needs_gpt_decision",
+    "why": "已取失败步骤名，资金路径不自行修"
+   },
+   {
+    "ref": "run-43718379738",
+    "from": "blocked_evidence_needed",
+    "to": "needs_gpt_decision",
+    "why": "已取失败步骤名，修 reconcile 需授权"
+   },
+   {
+    "ref": "oversight-183",
+    "from": "blocked_evidence_needed",
+    "to": "needs_gpt_decision",
+    "why": "观测积压非缺件，复查口径需裁决"
+   },
+   {
+    "ref": "patrol-merged",
+    "from": "deploy_confirm_only",
+    "to": "coordinator_close_with_receipt",
+    "why": "无部署；巡检已执行落盘，按规则 4 回执关闭"
+   }
+  ],
+  "kept": 17,
+  "closures": [
+   "PR-396",
+   "e25c295141f6baae",
+   "patrol-merged"
+  ],
+  "closure_receipt": "knowledge/results/deep-superagent/closures-2026-11-16.json"
+ },
+ "patrol": {
+  "receipt": "knowledge/results/patrol/2026-11-16.json",
+  "items_ok": 4,
+  "items_unknown": 2,
+  "items_failed": 0,
+  "site": {
+   "http": 200,
+   "time_s": 1.285256
+  },
+  "video_run": {
+   "run": 43757770282,
+   "conclusion": "success",
+   "at": "2026-11-15T20:23:06Z"
+  },
+  "memory_open_items": [
+   "梦境数据库.md 待办：擎起柱语义待 owner 校准",
+   "梦境数据库.md 待办：归档增量提取前先核原文行号"
+  ],
+  "unknown": [
+   "WorkBuddy os_f8a49bc830defb02：需微信扫码登录，无登录态",
+   "微信公众平台 wx562bcb605734f6b2：需扫码登录，无凭据"
+  ],
+  "three_nums": {
+   "data_date": "2026-11-15",
+   "yt_views": null,
+   "site_beacons": null,
+   "cart_clicks": null,
+   "revenue": null,
+   "reason": "后台需登录，本席无凭据；未用当日值充前一日",
+   "path": "ltzzz-memory/daily-3nums.md"
+  },
+  "blocking": false
+ },
+ "sections": {
+  "done": [
+   {
+    "item": "邮件积压采集",
+    "evidence": "mail-backlog/latest.json count 37 / open 13，commit 338097c64"
+   },
+   {
+    "item": "今日分流卡派发并跑通",
+    "evidence": "card commit 83be04977；run 43771186482 success，3 席 200（1835/2179/2838 tok）"
+   },
+   {
+    "item": "协调席复核后按回执关闭 3 条",
+    "evidence": "closures-2026-11-16.json：PR-396 MERGED 44c9e0ed7；#376 MERGED 7729a4edb；patrol-merged 落 patrol/2026-11-16.json"
+   },
+   {
+    "item": "六项并入巡检执行并落盘",
+    "evidence": "knowledge/results/patrol/2026-11-16.json：4 ok / 2 unknown / 0 failed"
+   },
+   {
+    "item": "三数次日补记",
+    "evidence": "ltzzz-memory/daily-3nums.md 追加 data_date=2026-11-15 补记行，四项未测已写原因"
+   },
+   {
+    "item": "日汇总邮件送达",
+    "evidence": "message_id msg__3wtgaYFy4R8L5-MOpgmR_i6NRXoqOAUlRtq2IrrfyCVPQ，2026-11-15T22:51:23Z，发件箱回读确认"
+   },
+   {
+    "item": "月度 skill 迭代按规则跳过",
+    "evidence": "knowledge/results/skill-iteration/2026-11.json 已存在"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [
+    {
+     "item": "signer 显式契约口径",
+     "ref": "ba4ddc11868d81a8",
+     "blocker": "需 GPT 给契约字段口径",
+     "if_not": "signer 门继续停在测试态",
+     "deep_can": "整理现有实测与字段清单"
+    },
+    {
+     "item": "QWEN-REPLY 四项裁决",
+     "ref": "21f16a13dcfdf51c",
+     "blocker": "四项裁决未回",
+     "if_not": "评审路径与缺失凭证处置悬空",
+     "deep_can": "列现状对照表"
+    },
+    {
+     "item": "勘误 Linear 卡 v2 后回 Q1/Q2",
+     "ref": "f37f74a2260e0983",
+     "blocker": "等答复",
+     "if_not": "Q1/Q2 口径不定",
+     "deep_can": "出问答对照草稿"
+    },
+    {
+     "item": "小程序支付 Q1-Q5",
+     "ref": "76204610598d12d6",
+     "blocker": "产品与部署方案需拍板",
+     "if_not": "支付边界不明",
+     "deep_can": "只读核对现状"
+    },
+    {
+     "item": "虚拟支付沙箱首单与退款链路",
+     "ref": "3b86bfbe9f010dd1",
+     "blocker": "验收口径",
+     "if_not": "验收无法定稿",
+     "deep_can": "核对回执与日志"
+    },
+    {
+     "item": "自动交付边界",
+     "ref": "accc365c8999ec45",
+     "blocker": "边界语义",
+     "if_not": "自动交付范围不清",
+     "deep_can": "列现有边界事实"
+    },
+    {
+     "item": "ICP 后 5 项",
+     "ref": "37c0b81f45bea064",
+     "blocker": "5 项待裁",
+     "if_not": "备案后动作停摆",
+     "deep_can": "整理清单"
+    },
+    {
+     "item": "中转执行席口径",
+     "ref": "c96ab9053576d5c4",
+     "blocker": "中转是否扩大使用",
+     "if_not": "中转停在单次验证",
+     "deep_can": "保留现状证据"
+    },
+    {
+     "item": "AI 雇佣 AI 逐步验收",
+     "ref": "2b3050253fdbc338",
+     "blocker": "验收节奏",
+     "if_not": "固定期限撤销后无节奏",
+     "deep_can": "出分阶段清单"
+    },
+    {
+     "item": "8 类未裁决闭合",
+     "ref": "41517575cdca23a5",
+     "blocker": "集中裁决未回",
+     "if_not": "8 类悬空",
+     "deep_can": "逐条列现状"
+    },
+    {
+     "item": "催办 8 项与中转/Claude App 冲突",
+     "ref": "d73ce0aad1d1fb88",
+     "blocker": "口径冲突",
+     "if_not": "执行席选择不明",
+     "deep_can": "列出冲突点"
+    },
+    {
+     "item": "审计输入偏差处置",
+     "ref": "a4892a62f3078715",
+     "blocker": "处置口径",
+     "if_not": "偏差留存未处置",
+     "deep_can": "定位报告 daily-2026-11-12.json 并摘要"
+    },
+    {
+     "item": "部署失败修复候选",
+     "ref": "7a62ac73578e1ce2",
+     "blocker": "涉生产制品",
+     "if_not": "Pages 制品重复与支付清单问题留存",
+     "deep_can": "只做只读差异分析"
+    },
+    {
+     "item": "PR-287 合并裁决",
+     "ref": "PR-287",
+     "blocker": "draft，合并即生产上传闸门",
+     "if_not": "WEP3 上传前 fail-closed 不生效",
+     "deep_can": "出 diff 与闸门摘要"
+    },
+    {
+     "item": "run 43749433903 资金步骤失败",
+     "ref": "run-43749433903",
+     "blocker": "资金路径不自行改",
+     "if_not": "资金步骤失败不可见",
+     "deep_can": "取 artifact 与步骤名证据"
+    },
+    {
+     "item": "run 43718379738 delivery reconcile 失败",
+     "ref": "run-43718379738",
+     "blocker": "修 reconcile 需授权",
+     "if_not": "交付对账继续失败",
+     "deep_can": "复现最小失败路径"
+    },
+    {
+     "item": "oversight 183 warn / 145 未复查",
+     "ref": "oversight-183",
+     "blocker": "复查口径与代查授权",
+     "if_not": "积压继续增长",
+     "deep_can": "按 oldest_first 有界抽样 10 条"
+    }
+   ],
+   "owner": [
+    {
+     "item": "Source Intelligence MVP 新授权派单",
+     "ref": "35d425aa2d3eb724",
+     "blocker": "只能 owner 定是否启动与范围",
+     "if_not": "不启动",
+     "deep_can": "出范围与资源草案"
+    },
+    {
+     "item": "AI 雇佣 AI Phase1 立项与路线",
+     "ref": "536beb46e239a3f8",
+     "blocker": "owner 立项决定",
+     "if_not": "Phase1 不启动",
+     "deep_can": "出 Phase1 范围草案"
+    }
+   ]
+  },
+  "next_immediate": [
+   {
+    "action": "oversight 145 条有界抽样 10 条并归类",
+    "criteria": "生成 knowledge/results/dispatch/oversight/recheck-2026-11-16.md，含 case_id/席位/缺阶段/建议，不代签不改状态"
+   },
+   {
+    "action": "两次失败 run 取 Actions artifact 或按步骤名复现最小失败路径",
+    "criteria": "落 knowledge/results/deep-superagent/run-evidence-2026-11-16.md，含可复现命令与输出片段"
+   },
+   {
+    "action": "补 PR-287 diff 与闸门摘要供裁决",
+    "criteria": "落 knowledge/results/deep-superagent/pr287-review-2026-11-16.md，含改动文件清单与 fail-closed 触发点"
+   }
+  ],
+  "later": [
+   {
+    "item": "GPT 18 项裁决后的逐条处置",
+    "depends": "GPT 决策席答复"
+   },
+   {
+    "item": "owner 2 项立项决定后的启动准备",
+    "depends": "owner 决定"
+   },
+   {
+    "item": "三数真实取值",
+    "depends": "YouTube Studio 与 CF Web Analytics 登录态或只读令牌"
+   },
+   {
+    "item": "WorkBuddy 与微信公众平台巡检转 ok",
+    "depends": "微信扫码登录（需 owner 或浏览器接管）"
+   }
+  ]
+ },
+ "writes_performed": 4,
+ "merges_performed": 0,
+ "deploys_performed": 0,
+ "write_details": [
+  "knowledge/results/patrol/2026-11-16.json",
+  "knowledge/results/deep-superagent/closures-2026-11-16.json",
+  "knowledge/results/deep-superagent/daily-2026-11-16.json",
+  "ltzzz-memory/daily-3nums.md 追加补记行"
+ ],
+ "monthly_skill_iteration": {
+  "executed": false,
+  "skipped_monthly_skill_iteration": true,
+  "reason": "knowledge/results/skill-iteration/2026-11.json 已存在，非每月 1 日，按第六节第 18 条条件跳过"
+ },
+ "mail_delivery": {
+  "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-16",
+  "to": "ltzyz2181@gmail.com",
+  "from": "qingqizhu6502@agent.qq.com",
+  "message_id": "msg__3wtgaYFy4R8L5-MOpgmR_i6NRXoqOAUlRtq2IrrfyCVPQ",
+  "created_at": "2026-11-15T22:51:23Z",
+  "confirmed_by": "message +list --dir sent --limit 1"
+ },
+ "answer_three": {
+  "deployed_or_done": "0 部署；本轮完成采集、派卡、队列、复核关闭 3 条、六项巡检、三数补记、日邮件",
+  "awaiting": "GPT 18 项 + owner 2 项",
+  "next": "145 条抽样复查、失败 run 取证、PR-287 摘要",
+  "later": "裁决后逐条处置、三数与 WorkBuddy/微信巡检转 ok"
+ }
+}

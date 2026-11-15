@@ -45,3 +45,4 @@
 | 2026-11-13 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |
 | 2026-11-14 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |
 | 2026-11-15 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |
+| 2026-11-15（补记） | 未测 | 未测 | 未测 | 未测 | data_date=2026-11-15；YouTube Studio 与 CF Web Analytics 后台需登录，本席无凭据，未测；不把 11-16 当日值充作前一日 | 豆包 |
