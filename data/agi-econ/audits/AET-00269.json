@@ -1,0 +1,65 @@
+{
+  "task_id": "AET-00269",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "5cf429d9cbf1c7858231b95d6df59af507e0b602911b92fe7be5ef38015d6f9b",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": true,
+    "score": 82,
+    "issues": [
+      "核心数据可复核：8条提案金额合计为0.1535 USD，占0.472 USD余额的32.52%；所列提案均显示status=shadow、executed=false、tx_hash=null，且交付物未声称已执行投资。",
+      "“低风险”评价缺乏依据：材料仅说明稳定币借贷收益和no-labor-displacement-asset，未提供智能合约风险、收益率、Gas、清算或脱钩数据，不能直接判定为低风险。",
+      "“实际资金流出为0”“没有真实流出”“完全停留在账本层”表述过强。依据材料只能证明所列提案无执行标记和交易哈希，未提供地址、浏览器记录或完整流水，不能排除账本外交易。",
+      "余额守恒论证不充分：仅有单个当前余额，没有期初余额和完整资金流水，无法独立证明“余额未被扣减”。建议1中“所有提案未执行则余额恒等于0.472”也不严谨，因为其他收支可能改变余额；应测试影子提案本身不生成扣账分录，并用完整流水对账。",
+      "CAP-00027的at字段被截断，因此“集中在2026-10-10至2026-10-12、约2天多”的完整时间序列结论无法完全验证，交付物虽已指出截断，但仍使用了该时间范围。",
+      "建议3中“链上交易金额必须与amount_usd一致”需要补充美元报价、代币精度和汇率口径；Gas费通常也不等于转账金额，应分别校验交易金额与手续费。"
+    ],
+    "tokens_used": 6589
+  },
+  "at": "2026-11-15T16:37:46.159Z",
+  "report_sha256": "6baf8fa6d5c3881e96549589e64b5d3f5c9733d7bc0efedb5c01b036be96c020"
+}
