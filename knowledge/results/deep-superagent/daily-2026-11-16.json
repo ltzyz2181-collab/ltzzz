@@ -386,6 +386,10 @@
    {
     "item": "月度 skill 迭代按规则跳过",
     "evidence": "knowledge/results/skill-iteration/2026-11.json 已存在"
+   },
+   {
+    "item": "中转席位定位裁决与 AI 雇佣 AI Phase1 v0 落地",
+    "evidence": "config/seat-roles-20261116.json + scripts/hire-phase1.mjs（7 测试通过）+ ledger.jsonl 两条样例回执 + 邮件 msg_oqUQUhgCpoicx7cF_YDINjDTZBoPaBVnMcsUjSPJYN67_Q"
    }
   ],
   "awaiting_decision": {
@@ -587,5 +591,36 @@
   "awaiting": "GPT 18 项 + owner 2 项",
   "next": "145 条抽样复查、失败 run 取证、PR-287 摘要",
   "later": "裁决后逐条处置、三数与 WorkBuddy/微信巡检转 ok"
+ },
+ "seat_roles_deployment": {
+  "role_ruling": "config/seat-roles-20261116.json（owner 2026-11-16 授权）",
+  "docs": [
+   "docs/2026-11-16-席位定位裁决与AI雇佣AI授权.md",
+   "docs/HIRE-AI-PHASE1-SPEC-20261116.md"
+  ],
+  "phase1_code": [
+   "scripts/hire-phase1.mjs",
+   "scripts/tests/hire-phase1.test.mjs"
+  ],
+  "phase1_tests": "7 pass / 0 fail",
+  "phase1_e2e": {
+   "sample_accepted": "HIRE-SAMPLE-20261116-01 receipt 1fe140c2…",
+   "sample_forbidden_escalated": "HIRE-SAMPLE-20261116-02 needs_owner_decision forbidden_intent:safe"
+  },
+  "runs": [
+   43774188024,
+   43774382494,
+   43774615322,
+   43774735271
+  ],
+  "receipt": "knowledge/results/deep-superagent/seat-roles-2026-11-16.json",
+  "mail": {
+   "message_id": "msg_oqUQUhgCpoicx7cF_YDINjDTZBoPaBVnMcsUjSPJYN67_Q",
+   "created_at": "2026-11-15T23:29:24Z"
+  },
+  "production_deploy": false,
+  "money": false,
+  "credentials": false,
+  "note": "代码与配置入库视为 in_repo 部署；本项不改变 deploys_performed 的 production 口径，仍记 0"
  }
 }
