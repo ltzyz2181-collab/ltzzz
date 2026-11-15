@@ -1,0 +1,136 @@
+{
+ "schema": "ltzzz.channel-test.v1",
+ "date": "2026-11-15",
+ "machine": "Windows desktop (世章)",
+ "cron_decision": {
+  "owner_decision": "6:45 保留，08:30 与 22:00 不恢复；必要项并入 6:45",
+  "job": "17642657602306",
+  "schedule": "45 6 * * *",
+  "status": "Active",
+  "next_trigger": "2026-11-16 06:45:00",
+  "merged_items_file": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md",
+  "query_updated": true,
+  "merged_items": [
+   "记忆库与交接单只读",
+   "视频流水线状态",
+   "ltzzz.com 可达性",
+   "WorkBuddy 只读",
+   "微信公众平台只读",
+   "前一日三数补记"
+  ]
+ },
+ "measurements": [
+  {
+   "id": 1,
+   "item": "Codex 桌面应用",
+   "result": "已装 build 26.1027.30824；默认模型 gpt-5.6-sol；CLI 不在 PATH"
+  },
+  {
+   "id": 2,
+   "item": "DeepSeek key1 deepseek-chat",
+   "result": "200",
+   "latency_ms": 1075,
+   "prompt_tokens": 19,
+   "completion_tokens": 22,
+   "reasoning": false,
+   "answer": "17*23=391 正确"
+  },
+  {
+   "id": 3,
+   "item": "DeepSeek key1 deepseek-reasoner",
+   "result": "200",
+   "latency_ms": 1852,
+   "prompt_tokens": 44,
+   "completion_tokens": 200,
+   "reasoning_chars": 563
+  },
+  {
+   "id": 4,
+   "item": "DeepSeek anthropic 兼容端点",
+   "result": "200",
+   "note": "Claude Code 形态客户端可跑，模型为 deepseek-chat"
+  },
+  {
+   "id": 5,
+   "item": "api.anthropic.com",
+   "result": "403 Request not allowed",
+   "note": "地区策略拒绝，TCP 443 可连"
+  },
+  {
+   "id": 6,
+   "item": "api.openai.com",
+   "result": "TCP 443 不通"
+  },
+  {
+   "id": 7,
+   "item": "relay-proxy workers.dev",
+   "result": "连接失败（桌面与云主机均不可达）",
+   "note": "中转只在 GitHub Actions 可用"
+  },
+  {
+   "id": 8,
+   "item": "api.apisrouter.com",
+   "result": "本机入口不可用"
+  }
+ ],
+ "deep_review": {
+  "card": "DEEP-CHANNEL-TEST-20261115-01",
+  "run_id": 43670292387,
+  "status": "needs_gpt_decision",
+  "model_calls": 3,
+  "seats": [
+   {
+    "seat": "deepseek",
+    "http": 200,
+    "tokens": 1156
+   },
+   {
+    "seat": "claude",
+    "provider": "apisrouter_relay",
+    "http": 200,
+    "tokens": 1136
+   },
+   {
+    "seat": "deepseek",
+    "role": "review",
+    "http": 200,
+    "tokens": 1893
+   }
+  ],
+  "verdicts": {
+   "native": "仅直连 DeepSeek 官方端点可称 native；anthropic 兼容端点与中转均不算原生",
+   "usage": "Deep key 用于 planner/worker；中转只给 Actions，禁止桌面任务与凭据操作",
+   "missing_evidence": [
+    "真实任务执行日志",
+    "每通道成本与额度",
+    "网络错误下的失败模式"
+   ]
+  }
+ },
+ "email": {
+  "message_id": "msg_o3qcMUpAthdbcxz9D6khJGiqsBdPi8Rf_Z5gA6n-puzakw",
+  "created_at_utc": "2026-11-15T03:02:38Z",
+  "subject": "[LTZZZ][通道测试] 桌面 GPT/Claude 与中转能力差别 2026-11-15"
+ },
+ "project_note": {
+  "removed_project_id": "38436687007387138",
+  "state": "does not exist or is not accessible",
+  "restore_possible": false,
+  "reason": "当前工具集没有项目重建/恢复接口，只能由用户在客户端重新添加或重建",
+  "content_preserved": [
+   "docs/2026-11-14-三通道接入与LTZZZ职能重排提案.md"
+  ]
+ },
+ "decisions_requested": [
+  "桌面 Deep key 通道是否定为本机低敏执行通道",
+  "Claude Code(deepseek 后端)是否常设并写 actual_provider",
+  "两枚明文 key 是否迁 DPAPI"
+ ],
+ "writes": {
+  "docs": 2,
+  "ops": 1,
+  "commits": 3,
+  "merges": 0,
+  "deploys": 0
+ }
+}
