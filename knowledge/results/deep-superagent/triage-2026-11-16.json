@@ -1,0 +1,42 @@
+{
+ "schema": "ltzzz.deep-superagent.triage.v1",
+ "date": "2026-11-16",
+ "at_utc": "2026-11-16T08:25:00Z",
+ "card": {
+  "task_id": "DEEP-SUPERAGENT-20261116-TRIAGE-1",
+  "run": 43776272246,
+  "job_status": "blocked",
+  "error": "native_generation_evidence_incomplete",
+  "model_calls": 3
+ },
+ "seats_returned": {
+  "gpt": "returned full 8-line table for both tickets; both marked blocked_evidence_needed",
+  "doubao": "NOT RETURNED — 未判，不用其他席位结果顶替"
+ },
+ "gpt_routing": [
+  {
+   "ticket": "ticket1 自动付款实测",
+   "route": "blocked_evidence_needed",
+   "owner": "coordinator/owner",
+   "reason": "live auto-payment evidence absent; small payment closed; receipts observed_not_activated; dry-run required; 42 local tests pass"
+  },
+  {
+   "ticket": "ticket2 桌面 Codex/Claude 部署",
+   "route": "blocked_evidence_needed",
+   "owner": "coordinator",
+   "reason": "desktop tooling and environment visibility unverified"
+  }
+ ],
+ "coordinator_verdict": {
+  "ticket1": "取证由协调席完成，见 knowledge/results/deep-superagent/payment-status-2026-11-16.json；seat 无仓库读取能力，不能自行取证",
+  "ticket2": "三档判定见 docs/2026-11-16-桌面Codex与ClaudeCode部署通道判定.md；本轮桌面环境不可见，未复测"
+ },
+ "review": {
+  "approved": false,
+  "reason": "席位自报 provider 与 seat 名错写（gpt 席重复声明 own_seat）",
+  "reviewer": "native deepseek"
+ },
+ "deploys": 0,
+ "money": 0,
+ "writes_performed": 2
+}
