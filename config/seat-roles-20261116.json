@@ -1,0 +1,127 @@
+{
+ "schema": "ltzzz.seat-roles.v1",
+ "role_id": "SEAT-ROLES-20261116",
+ "decided_by": "owner",
+ "decided_at": "2026-11-16",
+ "decision_source": "owner session instruction 2026-11-16（本对话）：『就按他们提的给中转 ai 安排』+ 两项 owner 项授权",
+ "override_scope": "只新增受限裁决位，不改变 relay 执行席 receipt 语义（decision_authority 仍为 false，financial_execution 仍为 false）",
+ "seats": {
+  "relay_gpt": {
+   "provider": "apisrouter_relay",
+   "model_default": "gpt-6.1-sol",
+   "kind": "bounded_adjudicator",
+   "title": "受限授权内的 AI 裁决席",
+   "granted_by": "owner 2026-11-16",
+   "allowed_dispositions": [
+    {
+     "id": "approve_in_scope",
+     "meaning": "在已授予范围内直接批准",
+     "requires": [
+      "scope_ref",
+      "permitted_actions",
+      "evidence_refs",
+      "rollback"
+     ]
+    },
+    {
+     "id": "conditional_approve",
+     "meaning": "附条件批准，条件必须在下一轮前可核验",
+     "requires": [
+      "conditions",
+      "verification",
+      "deadline",
+      "evidence_refs"
+     ]
+    },
+    {
+     "id": "return_for_revision",
+     "meaning": "退回修订，必须写明缺哪一项、按什么判据补齐",
+     "requires": [
+      "missing_items",
+      "acceptance_criteria"
+     ]
+    },
+    {
+     "id": "needs_decision",
+     "meaning": "超出授予范围，转 owner 或原生复核，不得自行扩范围",
+     "requires": [
+      "why_out_of_scope",
+      "escalate_to"
+     ]
+    }
+   ],
+   "forbidden_actions": [
+    "funding_moves",
+    "signing",
+    "wallet_or_safe_ops",
+    "loan_disbursement",
+    "production_write",
+    "credential_access",
+    "scope_expansion_without_owner",
+    "self_attesting_provider_or_model",
+    "accepting_relay_claude_as_independent_review"
+   ],
+   "self_limit": "中转不可自证 provider/model；上下文可能被改写；工具结果只有文本；超时与限流不可见 → 其裁决必须标 relay_attested=false，且不得作为资金/生产写/范围扩张的最终依据",
+   "batch_only": true,
+   "min_input_tokens": 4096
+  },
+  "relay_claude": {
+   "provider": "apisrouter_relay",
+   "model_default": "claude-sonnet-4-6",
+   "kind": "bounded_executor",
+   "allowed": [
+    "单点有界改动",
+    "带行号评审",
+    "执行后自验（测试/回读）"
+   ],
+   "not_allowed": [
+    "跨会话编排",
+    "席位间任务分配",
+    "独立复核（自证不可），只能作第二意见",
+    "触碰资金/签名/生产写/凭据"
+   ],
+   "self_limit": "它的局限由本席自述：无法自证 provider/模型、上下文可能被改写、工具结果只有文本、超时无法判断送达、限流不可见"
+  },
+  "relay_claude_review_rule": "中转 claude 的评审不得当独立复核；独立复核固定在原生 deepseek 复核席，二者冲突时以原生复核为准",
+  "deepseek_reviewer": {
+   "kind": "independent_review",
+   "provider": "deepseek_native",
+   "must_be": "不是被审对象的同一席位；对 relay 席输出必须重算规则 1-5"
+  }
+ },
+ "owner_authorizations": [
+  {
+   "id": "OWNER-AUTH-20261116-SOURCE-INTEL",
+   "item": "Source Intelligence MVP 新授权",
+   "authorized_by": "owner",
+   "authorized_at": "2026-11-16",
+   "place_of_authorization": "本对话 + 本仓库该文件（授权以本文件为唯一台账）；副本随日汇总邮件送达 GPT 备案",
+   "scope": "MVP 范围定义、仓库内实现、只读采集与本地测试",
+   "excluded": [
+    "新增付费账号",
+    "对外发布",
+    "生产部署",
+    "凭据采购"
+   ],
+   "revocable": true,
+   "status": "authorized_start_mvp_scope"
+  },
+  {
+   "id": "OWNER-AUTH-20261116-HIRE-PHASE1",
+   "item": "AI 雇佣 AI Phase1 立项",
+   "authorized_by": "owner",
+   "authorized_at": "2026-11-16",
+   "place_of_authorization": "本对话 + 本仓库该文件",
+   "scope": "Phase1 = 仓库内可验证的雇佣闭环：雇佣单规格、验收判据、receipt 记账、拒绝权；先征询各席创新方案再定规格",
+   "excluded": [
+    "真实付薪上线",
+    "新增第三方账号注册",
+    "生产部署",
+    "资金动作"
+   ],
+   "revocable": true,
+   "status": "authorized_validate_then_deploy_in_repo"
+  }
+ ],
+ "deployment_note": "部署=配置与文档入库并 push main；不涉及生产部署、不涉及资金、不涉及凭据"
+}
