@@ -1,0 +1,98 @@
+{
+ "schema": "ltzzz.deep-superagent.payment-status.v1",
+ "date": "2026-11-16",
+ "at_utc": "2026-11-16T08:05:00Z",
+ "question": "LTZZZ 自动付款功能是否已测过？记录在哪？最快可测路径？",
+ "verdict": "未做过真实小额自动付款测试。仓库里只有『就绪观测』与离线测试，支付开关一直关闭。",
+ "evidence": {
+  "config": {
+   "path": "config/small-payment-autonomy.json",
+   "enabled": false,
+   "controllers": 0,
+   "payees": 0,
+   "purposes": 0,
+   "budget_ids": 0
+  },
+  "activation": {
+   "path": "config/small-payment-activation-authority.json",
+   "enabled": false,
+   "status": "not_activated_registered_payment_controls_and_live_adapters_still_required"
+  },
+  "readiness_receipts": [
+   {
+    "path": "knowledge/results/patchgate/payment-readiness/41606747082-attempt-1.json",
+    "at": "2026-11-03T08:54:34Z",
+    "status": "observed_not_activated",
+    "new_payment_attempts": 0,
+    "new_signatures": 0,
+    "transactions_submitted": 0
+   },
+   {
+    "path": "knowledge/results/patchgate/payment-readiness/41606747082-attempt-2.json",
+    "at": "2026-11-07T07:59:46Z",
+    "status": "observed_not_activated",
+    "new_payment_attempts": 0,
+    "new_signatures": 0,
+    "transactions_submitted": 0
+   },
+   {
+    "path": "knowledge/results/patchgate/payment-readiness/latest.json",
+    "same_run": 41606747082,
+    "note": "latest 指向 attempt-2"
+   }
+  ],
+  "local_tests": {
+   "command": "node --test scripts/tests/agi-pay-stream.test.mjs scripts/tests/payment-readiness.test.mjs scripts/tests/small-payment-authorization.test.mjs scripts/tests/agi-econ.test.mjs",
+   "result": "42 pass / 0 fail",
+   "ran_at_utc": "2026-11-16T07:57Z"
+  },
+  "executor_guard": {
+   "path": "scripts/execute-agent-payment.mjs",
+   "line": 17,
+   "rule": "未设 LTZZZ_WALLET_DRY_RUN=true 直接 denyLegacyFinancialExecution → 真实付款路径被代码关闭"
+  },
+  "readiness_script": {
+   "path": "scripts/run-payment-readiness.mjs",
+   "guard": "trusted_main_snapshot_required",
+   "local_run": "本地执行被拒（非 CI main 快照），只能由 CI 跑"
+  },
+  "distinct_real_tx": {
+   "path": "results/TX-20260925-1U-UCARD.md",
+   "at": "2026-09-25",
+   "amount": "1 USDT",
+   "from": "LTZZZ Safe 0x76379a52…f9C58a3",
+   "tx_hash": "0x3df2e54b7eed234a7556f54cc21695326bf62e50261d1557923d3da9198754da",
+   "nature": "3/5 多签最小额测试（豆包+GPT+主人），属 5 签钱包，不计入自动付款"
+  },
+  "ci_history": {
+   "deploy-agent-pay": "2026-09-24/25 多次 success（testnet-first 与 Allowance Module 路径）",
+   "payment-readiness": "run 41606747082 conclusion=failure，但两 attempt 均写 observed_not_activated 回执；PR 分支 run 41606569659 success"
+  }
+ },
+ "what_is_missing_for_a_real_test": [
+  "controllers/payees/purposes/budget 登记（现在全空）",
+  "单笔上限与累计额度（需 GPT 裁决写入 policy）",
+  "测试网参数（链、RPC、测试币来源）与收款测试地址",
+  "把 LTZZZ_WALLET_DRY_RUN 从 true 切到 false 的一次授权（属 GPT 裁决范围）"
+ ],
+ "fastest_safe_path": {
+  "scope": "测试网（Base Sepolia 或 X Layer testnet），金额用测试币，不动 LTZZZ 项目资金",
+  "steps": [
+   "登记 1 个 controller + 1 个 payee + 1 个 purpose + budget=测试用",
+   "在测试网跑 1 笔极小额，落 tx_hash 与 receipt",
+   "在同一 receipt 记 chain_id 与 network，确认不是主网",
+   "失败即回滚 policy 到 enabled=false"
+  ],
+  "needs": "GPT 裁决单笔上限与是否开放 dry-run 关闭；不需要 owner 出真钱"
+ },
+ "owner_ruling": {
+  "at": "2026-11-16",
+  "term": "LTZZZ 项目资金一律由 GPT 决策席裁决，5 签钱包除外",
+  "path": "config/seat-roles-20261116.json OWNER-AUTH-20261116-FUNDS-TO-GPT"
+ },
+ "seat_round": {
+  "run": 43775880497,
+  "result": "gpt/doubao 都回『本环境读不到仓库，只能 unknown』→ 中转席无仓库取证能力；付款取证必须由协调席做",
+  "review": "approved=false（席位自报 provider 与 seat 名错写）"
+ }
+}
