@@ -1,0 +1,16 @@
+{
+  "finding": "run-daily-tasks.mjs 在 runReservedSeat 返回失败（ok:false）后仍将席位写入 tasks/reflections，并最终无条件写入 data/results/{date}.json 与 data/reflections/{date}.md，导致失败席位被投影为每日结果的一部分。该行为与 daily-task-board.mjs 已定义的终态失败状态（missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase）不一致，且 artifacts 可能不存在或未同步，造成每日结果口径混杂。",
+  "evidence_paths": [
+    "scripts/run-daily-tasks.mjs",
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-14-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/run-daily-tasks.mjs 的循环结束后、构造 result 之前，按 finalBoard.seats[agent].status 过滤失败席位。\n\n具体规格：\n1. 在 for (const ch of CHANNELS) 循环结束后，读取 const finalBoard = readLedger(ROOT, today)；\n2. 定义 const allowedStatuses = new Set(['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review']);\n3. 过滤 tasks = tasks.filter(task => { const seat = finalBoard?.seats?.[task.agent]; return !seat || allowedStatuses.has(seat.status); });\n4. 过滤 reflections 同理，只保留 tasks 中对应 agent 的 reflections；\n5. 不修改 runReservedSeat、syncDailyBoard、syncFailedSeat 的现有逻辑。",
+  "verification_commands": [
+    "node --check scripts/run-daily-tasks.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node -e \"const fs=require('fs'); const src=fs.readFileSync('scripts/run-daily-tasks.mjs','utf8'); if(!src.includes('allowedStatuses')) throw Error('patch_not_found');\"",
+    "node --test scripts/tests/reflection-harness.test.mjs"
+  ],
+  "remaining_blocker": "未在真实 checkout 中构造 generation_failed_no_repurchase 或 missing_required_section 分支，也未实际执行补丁并回读 data/results/{date}.json；补丁是否足够覆盖所有失败投影路径尚未实测。"
+}

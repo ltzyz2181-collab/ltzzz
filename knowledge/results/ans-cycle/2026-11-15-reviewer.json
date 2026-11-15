@@ -1,0 +1,25 @@
+{
+  "accepted": true,
+  "artifact_sha256": "5979ec2a6e71e44a2995fab5d688076e881fd86eb2c206fbdbf88d8070a4d187",
+  "reasons": [
+    "对照 scripts/run-daily-tasks.mjs：runReservedSeat 返回 {ok:false} 时进入 else 分支，仍执行 failures.push、pending.reminders 写入、tasks.push 和 reflections.push；循环结束后这些失败席位仍留在 tasks/reflections 投影数据中。",
+    "同一文件随后无条件使用 reflections 生成 data/reflections/{date}.md，并构造包含 tasks、failures、pending_reminders 的 result，再写入 data/results/{date}.json；因此 finding 所述失败席位被投影进每日结果，与源码一致。",
+    "对照 scripts/lib/daily-task-board.mjs：runReservedSeat 对不完整或失败交付会把席位置为 missing_required_section 或 generation_failed_no_repurchase；syncDailyBoard 还定义 failure_sync_unknown、failed_no_repurchase 等失败路径。这些状态在语义上是终态失败或失败同步状态，不应与成功/待审交付混作同一每日成果口径。",
+    "run-daily-tasks.mjs 在循环后读取 finalBoard，但仅用席位状态和 artifact 路径补充 task.assignment/full_output_file，没有按 finalBoard.seats[agent].status 剔除失败席位，也没有过滤对应 reflections。",
+    "minimal_patch 指定在构造 result 前重新读取 finalBoard，并允许 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review；该允许集合覆盖 daily-task-board.mjs 中可进入正常提交/评审投影的状态，同时排除 missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase 等失败状态，静态上直接针对所报问题。",
+    "补丁规格还要求同步过滤 reflections，且不修改 runReservedSeat、syncDailyBoard、syncFailedSeat；这保持失败证据写入和远端 fail_task 同步边界不变，只调整每日结果投影，作为代码/规格草稿具备可复核性。",
+    "交付明确给出 verification_commands 和 remaining_blocker，没有声称补丁已执行、测试通过、部署或上线；本次只能验收 finding 与修复规格的静态可复核性。"
+  ],
+  "unverified": [
+    "未获得该交付物原始字节，无法独立重算 artifact_sha256；只能严格回传给定哈希。",
+    "未实际应用 minimal_patch，未审查最终 diff；插入位置、变量作用域、语法和是否能干净合入尚未验证。",
+    "未执行 node --check scripts/run-daily-tasks.mjs。",
+    "未执行 node --test scripts/tests/ans-cycle.test.mjs、node --test scripts/tests/reflection-harness.test.mjs 或交付中的内联检查命令。",
+    "未在真实 checkout 构造 missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase 分支，也未回读确认 data/results/{date}.json 与 data/reflections/{date}.md 不再投影失败席位。",
+    "未验证过滤后 failures、pending_reminders、data/reports/latest.md、inactiveDailySeats、applyAvailableExternalReport、projectDailyBoard 及其他下游消费方的口径是否仍一致。",
+    "规格中 !seat 时默认保留任务的容错选择是否符合无席位或非每日预留场景，尚未通过测试验证。",
+    "未验证 syncFailedSeat、远端 fail_task、证据哈希回读、崩溃恢复和幂等重跑路径是否受投影过滤影响。",
+    "未验证补丁合入、CI、部署回读、目标环境、制品 SHA、生产版本及线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金事项；本结论仅限源码与规格草稿的静态审查。"
+  ]
+}
