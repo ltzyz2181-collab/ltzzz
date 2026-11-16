@@ -1,0 +1,14 @@
+{
+  "finding": "scripts/lib/daily-task-board.mjs 的 syncDailyBoard 中存在状态机断点：当座位状态为 'generation_started' 时，代码先调用 recoverArtifact()，若无唯一完整产物则将其降级为 'generation_unknown_no_repurchase'；但下一轮进入时该状态不在 syncFailedSeat 的处理列表（['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase']）中，也不在正常提交路径的状态列表（['generated_pending_sync','sync_unknown','submitted_pending_review','review_unknown','completed_draft_review','rejected_draft_review']）中，且 hasUnverifiedBoard 将其暴露为待核验。该座位永远无法被 syncFailedSeat 或正常提交路径消费，形成真实断点：崩溃恢复后的座位既不失败闭环也不提交验收。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs"
+  ],
+  "minimal_patch": "在 syncDailyBoard 的恢复分支中，将 recoverArtifact 返回 false 且原状态为 'generation_started' 的座位直接降级为 'generation_failed_no_repurchase'，使其能被下一轮 syncFailedSeat 消费；同时为 syncFailedSeat 增加可失败证据路径。具体修改：\n\n在 syncDailyBoard 内：\n```js\nrecoverArtifact(root,record,agent,seat);\nif (seat.status === 'generation_started') {\n  seat.status = 'generation_failed_no_repurchase';\n  seat.sync_reason = 'no_unique_complete_artifact_outcome_unknown';\n  saveLedger(root,record);\n  continue;\n}\n```\n\n并将 syncFailedSeat 的调用条件改为：\n```js\nif(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase','generation_unknown_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n```",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"const {hasUnverifiedBoard}=await import('./scripts/lib/daily-task-board.mjs'); const record={seats:{test:{status:'generation_unknown_no_repurchase'}}}; console.assert(hasUnverifiedBoard(record)===true);\""
+  ],
+  "remaining_blocker": "需在真实 checkout 中构造 generation_unknown_no_repurchase 分支并执行 syncDailyBoard，回读远端 fail_task 是否成功写入，确认该座位最终变为 failed_no_repurchase 且 hasUnverifiedBoard 不再暴露该座位。"
+}
