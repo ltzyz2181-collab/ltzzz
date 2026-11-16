@@ -1,0 +1,235 @@
+{
+  "schema": "ltzzz.gpt.ruling.v1",
+  "date": "2026-11-16",
+  "issuer": "gpt_decision_seat",
+  "source_task_id": "DEEP-SUPERAGENT-20261116-DAILY-1",
+  "source_commit": "8237e99b4b0fd105b3fed9f053e6548baff9591f",
+  "source_queue_run_id": 43771186482,
+  "source_triage": "knowledge/results/deep-superagent/triage-2026-11-16.json",
+  "relay_gpt_used": false,
+  "relay_attested": false,
+  "note": "本记录由当前 GPT-6 决策席依据固定仓库与邮件证据形成，未调用中转 GPT。seat-roles-20261116 的受限裁决授权已存在，但运行时仍将 relay GPT 标记为 execution-only/decision_authority=false，尚未接通。",
+  "summary": {
+    "gpt_items": 18,
+    "owner_items_already_authorized": 2,
+    "coordinator_closures_verified": 3,
+    "evidence_blocked": 1,
+    "code_changes": 0,
+    "production_deployments": 0,
+    "payments": 0
+  },
+  "decisions": [
+    {
+      "ref": "ba4ddc11868d81a8",
+      "topic": "WEP3 signer contract",
+      "disposition": "keep_blocked",
+      "ruling": "transactionSignerStatus currently configured=false, control_verified=null, transaction_adapter_ready=false; never infer signer readiness from ok=true.",
+      "evidence_refs": [
+        "wep3-signer-status.js",
+        "knowledge/results/patchgate/payment-readiness/41606747082-attempt-2.json"
+      ]
+    },
+    {
+      "ref": "21f16a13dcfdf51c",
+      "topic": "QWEN-FOUR-RULINGS",
+      "disposition": "return_for_revision",
+      "ruling": "The specified original four-ruling file is absent. Preserve nonce and pending state; do not invent source content.",
+      "evidence_refs": [
+        "knowledge/results/deep-superagent/open-rulings-20261113.json"
+      ]
+    },
+    {
+      "ref": "f37f74a2260e0983",
+      "topic": "Linear v2 Q1/Q2",
+      "disposition": "needs_decision",
+      "ruling": "Need the exact v2 card text and existing replies before a substantive ruling; do not answer from v1.",
+      "evidence_refs": [
+        "knowledge/results/deep-superagent/daily-2026-11-16.json"
+      ]
+    },
+    {
+      "ref": "76204610598d12d6",
+      "topic": "Mini-program payment Q1-Q5",
+      "disposition": "already_decided",
+      "ruling": "LTZ-5 records that Q1-Q5 were answered in the 2026-11-09 email. Continue under that ruling; no new payment or production permission.",
+      "evidence_refs": [
+        "LTZ-5",
+        "knowledge/results/wechat/vpay-security-20261107-deployment.json"
+      ]
+    },
+    {
+      "ref": "3b86bfbe9f010dd1",
+      "topic": "Virtual payment sandbox first order/refund",
+      "disposition": "keep_blocked",
+      "ruling": "No verified official sandbox callback or real idempotent refund; vpay-notify historical probe later returned 423 GATEWAY_ROUTE_DISABLED. No new payment/refund.",
+      "evidence_refs": [
+        "knowledge/results/wechat/vpay-security-20261107-deployment.json"
+      ]
+    },
+    {
+      "ref": "a4892a62f3078715",
+      "topic": "Input deviation handling",
+      "disposition": "approve_in_scope",
+      "ruling": "Append raw bytes/hash and separately record normalized bytes/hash, rule version, reason and timestamp. Never overwrite or silently normalize source input.",
+      "evidence_refs": [
+        "knowledge/results/deep-superagent/daily-2026-11-16.json"
+      ]
+    },
+    {
+      "ref": "58679a674803de2a",
+      "topic": "Five-item ruling set",
+      "disposition": "return_for_revision",
+      "ruling": "The full five questions and evidence are not present in the triage snapshot. Require original text and Task IDs.",
+      "evidence_refs": [
+        "knowledge/results/deep-superagent/daily-2026-11-16.json"
+      ]
+    },
+    {
+      "ref": "accc365c8999ec45",
+      "topic": "Automatic delivery boundary",
+      "disposition": "conditional_approve",
+      "ruling": "Only after verified platform event, accepted order state, independent deliverable check, idempotency binding and platform receipt. Otherwise keep draft/manual delivery.",
+      "evidence_refs": [
+        "knowledge/results/wechat/vpay-security-20261107-deployment.json"
+      ]
+    },
+    {
+      "ref": "37c0b81f45bea064",
+      "topic": "ICP follow-up five items",
+      "disposition": "needs_decision",
+      "ruling": "Need the exact five actions and current official receipts. Filing approval alone does not authorize publishing, payment or account changes.",
+      "evidence_refs": [
+        "knowledge/results/deep-superagent/daily-2026-11-16.json"
+      ]
+    },
+    {
+      "ref": "c96ab9053576d5c4",
+      "topic": "Relay execution/adjudication seats",
+      "disposition": "conditional_approve",
+      "ruling": "Owner authorized bounded relay GPT adjudication, but runtime still marks relay GPT execution-only/decision_authority=false. Policy is approved; automatic use remains blocked until runtime bridge and tests align.",
+      "evidence_refs": [
+        "config/seat-roles-20261116.json",
+        "config/deep-superagent.json",
+        "workers/deep-superagent/index.js"
+      ]
+    },
+    {
+      "ref": "2b3050253fdbc338",
+      "topic": "AI hiring staged acceptance",
+      "disposition": "approve_in_scope",
+      "ruling": "Phase1 in-repo hiring spec, acceptance, append-only receipt and refusal rights approved; one key step at a time; amount_usd=0, paid=false, financial_execution=false.",
+      "evidence_refs": [
+        "config/seat-roles-20261116.json",
+        "scripts/hire-phase1.mjs",
+        "scripts/tests/hire-phase1.test.mjs"
+      ]
+    },
+    {
+      "ref": "7a62ac73578e1ce2",
+      "topic": "Production artifact changes",
+      "disposition": "keep_blocked",
+      "ruling": "Read-only diff/hash/workflow review only until exact artifact, target environment, rollback and independent review are bound.",
+      "evidence_refs": [
+        "knowledge/results/deep-superagent/daily-2026-11-16.json"
+      ]
+    },
+    {
+      "ref": "41517575cdca23a5",
+      "topic": "Eight-class closure set",
+      "disposition": "needs_decision",
+      "ruling": "The 2026-11-13 eight rulings remain valid, but this day's eight-class refs are not mapped item-by-item. Do not infer all are duplicates or close them.",
+      "evidence_refs": [
+        "knowledge/results/decisions/gpt-ruling-20261113-0850.json",
+        "knowledge/results/decisions/gpt-ruling-20261113-0855.json"
+      ]
+    },
+    {
+      "ref": "d73ce0aad1d1fb88",
+      "topic": "Eight-item follow-up and relay/Claude App conflict",
+      "disposition": "conditional_approve",
+      "ruling": "Later owner instruction and 2026-11-16 seat-role file supersede the older relay stop for policy scope; Claude GitHub App permissions remain unchanged. Runtime relay GPT still blocked pending implementation.",
+      "evidence_refs": [
+        "config/seat-roles-20261116.json",
+        "config/deep-superagent.json",
+        "knowledge/results/decisions/gpt-ruling-20261113-0850.json"
+      ]
+    },
+    {
+      "ref": "PR-287",
+      "topic": "WEP3 predeploy fail-closed PR",
+      "disposition": "keep_blocked",
+      "ruling": "Keep DRAFT; old base branch and exact combined main review absent. Do not merge or deploy until rebased and independently reviewed.",
+      "evidence_refs": [
+        "https://github.com/ltzyz2181-collab/ltzzz/pull/287"
+      ]
+    },
+    {
+      "ref": "run-43749433903",
+      "topic": "Autonomous funded orders failure",
+      "disposition": "keep_blocked",
+      "ruling": "Preserve failure; no payment retry or model replay. Diagnose reporting/receipt step only; do not change payment execution, signer or budget.",
+      "evidence_refs": [
+        "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/43749433903"
+      ]
+    },
+    {
+      "ref": "run-43718379738",
+      "topic": "Daily Agent Tasks reconcile failure",
+      "disposition": "approve_in_scope",
+      "ruling": "Read-only reproduce reconcile failure without model calls. Any code fix requires isolated PR, Harness, tests and required CI; no duplicate delivery.",
+      "evidence_refs": [
+        "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/43718379738"
+      ]
+    },
+    {
+      "ref": "oversight-183",
+      "topic": "183 warnings / 145 not rechecked",
+      "disposition": "conditional_approve",
+      "ruling": "Authorize oldest-first read-only sample of 10; report case_id, seat, missing stage and recommendation. Do not alter statuses or bulk-close.",
+      "evidence_refs": [
+        "knowledge/results/dispatch/oversight/latest.json"
+      ]
+    }
+  ],
+  "owner_authorizations": {
+    "source_intelligence_mvp": "已由 owner 在 config/seat-roles-20261116.json 授权：MVP、仓库内实现、只读采集和本地测试；不含新增付费账号、对外发布、生产部署或凭据采购。",
+    "ai_hiring_phase1": "已由 owner 授权：雇佣单规格、验收判据、receipt 记账和拒绝权；不含真实付薪上线、第三方注册、生产部署或资金动作。"
+  },
+  "payment_ruling": {
+    "phase1": "仓库内零金额闭环 only：amount_usd=0, paid=false, financial_execution=false。",
+    "phase2": "仅批准 Base Sepolia 隔离测试准备；最多一笔 0.05 test USDC，需 test-only controller/payee/purpose/budget，chain_id=84532，配置与 mainnet 隔离。",
+    "mainnet_auto_payout": "not_authorized_now",
+    "reason": "small-payment-autonomy 与 activation authority 关闭；controller/payee/purpose/budget 为空；live signer/adapter 未验证；legacy executor fail-closed。"
+  },
+  "desktop_ruling": {
+    "A": "approved: clean repo code changes, local tests, isolated commit/PR",
+    "B": "approved: existing GitHub Actions deployment after exact main SHA, target, version, CI and post-deploy smoke verification",
+    "C": "not_approved: direct production writes, payment switches, signing, Safe/multisig, secrets/credentials",
+    "codex": "已有真实改码、测试、push main、Actions 证据",
+    "claude_code": "WSL2 本机改码与 2/2 测试证据存在；push 由云端执行，桌面直接 push 未验证"
+  },
+  "automation_p0": {
+    "features": [
+      "Task ID + Gmail thread/message ID 去重与 append-only 决策账本",
+      "INBOX→DEDUPLICATE→CLASSIFY→DECISION→EXECUTION_ALLOWED→EVIDENCE_REVIEW→ACCEPTED/NEEDS_REVISION 状态机",
+      "绑定 run/commit/target/version 的 CI、MERGED、DEPLOYED、SMOKE_VERIFIED 分层证据"
+    ],
+    "status": "已建 issue #397 请求单点方案，但实际模型输出阻塞；尚无实现提交。",
+    "issue": "https://github.com/ltzyz2181-collab/ltzzz/issues/397",
+    "run_id": 43851144643,
+    "blocker": "DeepSeek deepseek-v4-pro finish_reason=length, tokens_used=21174, empty_output；豆包未调用；automatic_retry_allowed=false。"
+  },
+  "communications": {
+    "new_dispatch_emails_sent": [
+      {
+        "to": "qingqizhu6502@agent.qq.com",
+        "message_id": "1a1e3f5fb2fcc0ea"
+      },
+      {
+        "to": "sgii7122@agent.qq.com",
+        "message_id": "1a1e3f6090141829"
+      }
+    ],
+    "email_replies_sent": 0
+  }
+}
