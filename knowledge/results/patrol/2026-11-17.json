@@ -1,0 +1,61 @@
+{
+  "schema": "ltzzz.deep-superagent.patrol.v1",
+  "date": "2026-11-17",
+  "generated_at_utc": "2026-11-16T23:00:00Z",
+  "source": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md（原 08:30 / 22:00 并入 6:45）",
+  "mode": "read_only_low_priority_does_not_block_daily_pipeline",
+  "items": [
+    {
+      "id": 1,
+      "name": "记忆库六份核心记忆 + 总控交接文档只读扫描",
+      "status": "ok",
+      "evidence": "ltzzz-memory/{魄,识神,梦境数据库,文明研究,项目历史,重要事件}.md 与 LTZZZ-OS.md 逐份 grep 待办/未处理/TODO/待裁决；git log 末次改动 3c992de16(2026-10-08)/983a8b140(2026-10-14)/4e1380a2b(2026-10-28)",
+      "findings": "六份核心记忆无新增未处理条目；梦境数据库.md 有 1 处历史标记未新增；总控交接文档 LTZZZ-OS.md 无待办标记（末次改动 2026-09-21）。未修改任何记忆文件。",
+      "duration_s": 8
+    },
+    {
+      "id": 2,
+      "name": "视频流水线最近一次 run 结论与产物",
+      "status": "ok",
+      "evidence": "gh run list：43969490689 'IG Daily Card (render + commit)' success 2026-11-16T22:22Z；43966690235 'Pulse independent external watcher' success 2026-11-16T22:06Z",
+      "findings": "最近一次卡片渲染流水线成功，产物随 bot commit 入库；无失败 run。",
+      "duration_s": 5
+    },
+    {
+      "id": 3,
+      "name": "ltzzz.com 可访问性探测",
+      "status": "ok",
+      "evidence": "curl -sS -o /dev/null -m 20 -w '%{http_code} %{time_total}' https://ltzzz.com -> status=200 time=1.508795s",
+      "findings": "站点可访问，耗时 1.51s。",
+      "duration_s": 2
+    },
+    {
+      "id": 4,
+      "name": "WorkBuddy（skill os_f8a49bc830defb02）只读巡检",
+      "status": "unknown",
+      "evidence": "云主机环境无 WorkBuddy 相关凭据（env 无相关变量），config 中仅有 skill id 引用；不伪造可用状态",
+      "findings": "无凭据，无法只读核验；需 owner 侧登录态或浏览器接管才能转 ok。",
+      "duration_s": 3
+    },
+    {
+      "id": 5,
+      "name": "微信公众平台（AppID wx562bcb6057346fb2）只读巡检",
+      "status": "unknown",
+      "evidence": "云主机无微信公众平台登录态；docs 内仅有 AppID 引用，无可用 token",
+      "findings": "需扫码登录（owner 本人或浏览器接管），本轮记 unknown。",
+      "duration_s": 2
+    },
+    {
+      "id": 6,
+      "name": "三数日报次日补记（data_date=2026-11-16）",
+      "status": "ok",
+      "evidence": "追加至 ltzzz-memory/daily-3nums.md：| 2026-11-16（补记） | 未测 | 未测 | 未测 | 未测 | data_date=2026-11-16；YouTube Studio / CF Web Analytics / 店铺后台均需登录，云主机无凭据，未测 | Deep |",
+      "findings": "三项均缺凭据，按契约写未测并标注 data_date，不以 2026-11-17 当日值充当。",
+      "duration_s": 2
+    }
+  ],
+  "blocking": "none（第 4、5 项 unknown 不阻断主流水线）",
+  "changes_to_memory": 0,
+  "changes_to_skills": 0,
+  "money_actions": 0
+}

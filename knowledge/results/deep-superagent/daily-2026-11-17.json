@@ -1,0 +1,567 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "date": "2026-11-17",
+  "generated_at_utc": "2026-11-16T23:05:00Z",
+  "trigger": "cron 17642657602306 06:45（含并入的六项只读巡检）",
+  "mail": {
+    "backlog_path": "knowledge/results/deep-superagent/mail-backlog/latest.json",
+    "generated_at": "2026-11-16T22:46:13.692Z",
+    "count": 38,
+    "open_count": 11,
+    "unknown_count": 27,
+    "window_days": 21,
+    "readset_sha256": "f7755e77a68f661ff3505929bddafebdaf24ae42f0664bb3bc1150817ff6fd63",
+    "contains_mail_body": false,
+    "external_model_safe": true
+  },
+  "repo_observation": {
+    "oversight_latest": "knowledge/results/dispatch/oversight/latest.json",
+    "oversight_date": "2026-11-17",
+    "oversight_run": 43923486341,
+    "oversight_at": "2026-11-16T17:56:03.484Z",
+    "model_calls": 0,
+    "open_warning_cases": 188,
+    "unique_original_tasks": 188,
+    "not_rechecked_in_current_window": 152,
+    "by_seat": {
+      "qianwen": 60,
+      "deepseek": 47,
+      "doubao": 41,
+      "grok": 31,
+      "gpt": 9
+    },
+    "failure_runs_24h": [
+      {
+        "run": 43967736256,
+        "workflow": "Autonomous funded LTZZZ orders",
+        "at": "2026-11-16T22:12:15Z",
+        "head": "1e67967b7"
+      },
+      {
+        "run": 43887083220,
+        "workflow": "Observe services without ChatGPT membership (no models)",
+        "at": "2026-11-16T14:34:08Z",
+        "head": "58ed5579d"
+      },
+      {
+        "run": 43886971335,
+        "workflow": "Deploy static site to GitHub Pages",
+        "at": "2026-11-16T14:33:29Z",
+        "head": "17bdf24c0"
+      }
+    ],
+    "memo": "三条失败 run 仅取到结论与 head，失败步骤与日志未取，故 B2 记 blocked_evidence_needed",
+    "open_pr_count": 2,
+    "open_prs": [
+      {
+        "number": 398,
+        "draft": false,
+        "title": "fix(hire): Phase1 安全加固",
+        "head": "fix/hire-phase1-security",
+        "created": "2026-11-16"
+      },
+      {
+        "number": 287,
+        "draft": true,
+        "title": "fix(wep3): fail closed before any production Worker upload",
+        "head": "audit/wep3-predeploy-failclosed-20261028",
+        "created": "2026-10-28"
+      }
+    ],
+    "main_head_verified": "a79fbe3fa（协调席实际 fetch origin main；本次卡提交后 2d7cbfb10）"
+  },
+  "cards": [
+    {
+      "task_id": "DEEP-SUPERAGENT-20261117-DAILY-1",
+      "path": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-1.json",
+      "commit": "2d7cbfb10",
+      "prompt_chars": 4896,
+      "groups": {
+        "A": 11,
+        "B": 6,
+        "C": 8
+      },
+      "seat_plan": "qianwen=A / grok=B / doubao=C"
+    },
+    {
+      "task_id": "DEEP-SUPERAGENT-20261117-DAILY-2",
+      "path": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-2.json",
+      "commit": "c0974a308",
+      "prompt_chars": 3074,
+      "groups": {
+        "C": 8
+      },
+      "seat_plan": "qianwen=C（重试），原因 doubao 504"
+    }
+  ],
+  "queue_runs": [
+    {
+      "run_id": 43973460564,
+      "attempt": 1,
+      "receipt": "knowledge/results/deep-superagent/queue-43973460564-attempt-1.json",
+      "queue_status": "queue_results_verified",
+      "job_status": "blocked",
+      "error": "native_generation_evidence_incomplete",
+      "model_calls": 4,
+      "seat_receipts": [
+        {
+          "seat": "deepseek(plan)",
+          "http": 200,
+          "status": "complete_output_pending_review",
+          "tokens": 2501
+        },
+        {
+          "seat": "qianwen",
+          "http": 200,
+          "status": "complete_output_pending_review",
+          "tokens": 3090
+        },
+        {
+          "seat": "grok",
+          "http": 200,
+          "status": "complete_output_pending_review"
+        },
+        {
+          "seat": "doubao",
+          "http": 504,
+          "status": "failed_or_uncertain_no_retry",
+          "note": "无输出，C 组未判，未用其他席位结果顶替"
+        }
+      ],
+      "review": "null（job blocked，未进入原生复核）"
+    },
+    {
+      "run_id": 43974172292,
+      "attempt": 1,
+      "receipt": "knowledge/results/deep-superagent/queue-43974172292-attempt-1.json",
+      "queue_status": "queue_results_verified",
+      "job_status": "needs_gpt_decision",
+      "error": null,
+      "model_calls": 3,
+      "seat_receipts": [
+        {
+          "seat": "deepseek(plan)",
+          "http": 200,
+          "tokens": null
+        },
+        {
+          "seat": "qianwen",
+          "http": 200,
+          "status": "complete_output_pending_review"
+        },
+        {
+          "seat": "deepseek(review)",
+          "http": 200,
+          "approved": false,
+          "reason": "unsupported provider/request-id metadata declarations; routing lacks evidence"
+        }
+      ],
+      "review_note": "复核否决理由与实测不符：worker 输出中不含 actual_provider/request_id/actual_model 任何字段（全文本检索均为 False），代码层 content gate 未产生 findings（content_findings=null）。按规则 2 仍不接受该输出为终稿，整体升级 needs_gpt_decision；偏差如实记录，不擅自改判复核。"
+    }
+  ],
+  "routes": [
+    {
+      "ref": "35e009a39885e44b",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：千问字节缺失属口径裁决，无原生复核可关闭",
+      "title": "千问字节缺失｜保留阻塞、交真实原件"
+    },
+    {
+      "ref": "ba4ddc11868d81a8",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：signer 显式契约字段口径未定",
+      "title": "signer门实测｜显式契约，先拒绝错误和矛盾字段"
+    },
+    {
+      "ref": "f37f74a2260e0983",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：Linear 卡 v2 覆盖 v1 后仍待回 Q1/Q2",
+      "title": "Linear 卡 v2 已覆盖 v1 口径｜请回 Q1/Q2"
+    },
+    {
+      "ref": "76204610598d12d6",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：小程序支付开通方案 Q1-Q5 未拍板",
+      "title": "小程序开通支付｜产品重编+部署方案+Q1-Q5"
+    },
+    {
+      "ref": "3b86bfbe9f010dd1",
+      "group": "A",
+      "seat_route": "needs_owner_decision",
+      "route": "needs_owner_decision",
+      "recheck": "维持：沙箱首单已付款成功，涉及真实交易通道归 owner",
+      "title": "虚拟支付沙箱首单已付款成功、退款链路已上线"
+    },
+    {
+      "ref": "a4892a62f3078715",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：五席全绿结论需决策席确认口径",
+      "title": "[审计] Deep 巡检五席全绿，七项判定与一处偏差"
+    },
+    {
+      "ref": "58679a674803de2a",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：两处闸门已部署，5 项裁决未回",
+      "title": "千问11-11监督核实+已部署2处闸门+需裁决5项"
+    },
+    {
+      "ref": "accc365c8999ec45",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：自动交付边界与每日四段结构待确认",
+      "title": "小程序支付实为已接入·自动交付边界与Deep每日四段结构"
+    },
+    {
+      "ref": "37c0b81f45bea064",
+      "group": "A",
+      "seat_route": "coordinator_close_with_receipt",
+      "route": "needs_gpt_decision",
+      "recheck": "升级：席位判可关闭，但当日无原生 deepseek 复核（不可采信），且该邮件名下仍带 5 项待裁决，直接关闭会吞掉裁决",
+      "title": "ICP 备案通过（粤ICP备2026177896号）+11-10 工程状态+5 项待裁决"
+    },
+    {
+      "ref": "c96ab9053576d5c4",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：传输层已切 Worker 转发并跑通一次，尚待裁决边界",
+      "title": "中转执行席：Deep 传输层已切 Worker 转发"
+    },
+    {
+      "ref": "2b3050253fdbc338",
+      "group": "A",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：AI雇佣AI改逐步验收，需对齐 Phase1 验收口径",
+      "title": "补充裁决：AI雇佣AI改为逐步验收｜撤销所有固定期限"
+    },
+    {
+      "ref": "B1",
+      "group": "B",
+      "seat_route": "blocked_evidence_needed",
+      "route": "blocked_evidence_needed",
+      "recheck": "维持：oversight 188 条 open、152 条本窗口未复核，缺当前窗口复核证据，不能凭旧状态关闭",
+      "title": "oversight backlog 152 条未复核"
+    },
+    {
+      "ref": "B2",
+      "group": "B",
+      "seat_route": "blocked_evidence_needed",
+      "route": "blocked_evidence_needed",
+      "recheck": "维持：三条失败 run 只有结论，缺失败步骤与日志证据",
+      "title": "24h 内 3 条 workflow failure"
+    },
+    {
+      "ref": "B3",
+      "group": "B",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "维持：#398 与 #287 均 open，合并与否属决策席",
+      "title": "2 个 open PR（#398、#287 draft）"
+    },
+    {
+      "ref": "B4",
+      "group": "B",
+      "seat_route": "blocked_evidence_needed",
+      "route": "closed_with_coordinator_receipt",
+      "recheck": "改判：席位未 fetch 才记 blocked；协调席已实际 fetch 并确认 HEAD=a79fbe3fa（提交后 2d7cbfb10），证据在本次日回执",
+      "title": "main HEAD 需独立 fetch 核验"
+    },
+    {
+      "ref": "B5",
+      "group": "B",
+      "seat_route": "blocked_evidence_needed",
+      "route": "blocked_evidence_needed",
+      "recheck": "维持：27 封 unknown 表示分类证据不足，不得猜",
+      "title": "27 封 unknown 邮件"
+    },
+    {
+      "ref": "B6",
+      "group": "B",
+      "seat_route": "blocked_evidence_needed",
+      "route": "closed_with_coordinator_receipt",
+      "recheck": "改判：协调席自身 actions 可核验——本轮 merges=0、deploys=0、money=0，已写入本回执计数",
+      "title": "今日无部署/合并/资金动作需证据"
+    },
+    {
+      "ref": "8d9a5f45ab685bbb",
+      "group": "C",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "路由保留，但整份输出复核未通过，仅作建议待 GPT 复核",
+      "title": "Re: Phase1 六项安全要求落地核对"
+    },
+    {
+      "ref": "5556bddb2622ff00",
+      "group": "C",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "同上",
+      "title": "Re: Phase1 六项安全要求落地核对（第二封）"
+    },
+    {
+      "ref": "adad792d0ef16422",
+      "group": "C",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "同上",
+      "title": "Re: 席位定位裁决与 AI 雇佣 AI Phase1 部署"
+    },
+    {
+      "ref": "6a5c732286808bf3",
+      "group": "C",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "同上",
+      "title": "Re: ChatGPT Wallet 总控钱包方案 v1（5 问）"
+    },
+    {
+      "ref": "cad495cb967efd7c",
+      "group": "C",
+      "seat_route": "needs_gpt_decision",
+      "route": "needs_gpt_decision",
+      "recheck": "同上",
+      "title": "Re: Wallet P1 分流现状与方案稿（4 问）"
+    },
+    {
+      "ref": "0c44d7ce5b18a34e",
+      "group": "C",
+      "seat_route": "needs_owner_decision",
+      "route": "needs_owner_decision",
+      "recheck": "路由保留：18 项裁决落库与执行顺序终归 owner 确认；复核未通过仅影响建议效力",
+      "title": "[GPT正式裁决+分流] 2026-11-16 18 项"
+    },
+    {
+      "ref": "fba4b8506b3a9e95",
+      "group": "C",
+      "seat_route": "needs_owner_decision",
+      "route": "needs_owner_decision",
+      "recheck": "同上：草案需 owner 定稿",
+      "title": "[GPT裁决草稿] Wallet P1、Wallet v1 与桌面部署档位"
+    },
+    {
+      "ref": "7a62ac73578e1ce2",
+      "group": "C",
+      "seat_route": "blocked_evidence_needed",
+      "route": "blocked_evidence_needed",
+      "recheck": "维持：部署失败修复候选缺失败步骤证据",
+      "title": "[GPT派单] 部署失败修复候选 PAGES-ARTIFACT-DUP"
+    }
+  ],
+  "route_counts": {
+    "needs_gpt_decision": 16,
+    "needs_owner_decision": 3,
+    "blocked_evidence_needed": 4,
+    "closed_with_coordinator_receipt": 2
+  },
+  "ref_match": {
+    "mail_open": 11,
+    "repo_obs": 6,
+    "mail_unknown_sampled": 8,
+    "total": 25
+  },
+  "review": {
+    "coordinator": "deepseek(裁决执行方)",
+    "native_review_run": 43974172292,
+    "native_review_approved": false,
+    "recheck_actions": [
+      "唯一 coordinator_close（37c0b81f45bea064）升级为 needs_gpt_decision",
+      "B4/B6 由 blocked 改判为 coordinator 已核验并写入回执",
+      "C 组整体降级为建议，不当终稿"
+    ],
+    "doubao_504_note": "豆包席超时不是判定结果，C 组第一次记为未判"
+  },
+  "patrol": {
+    "path": "knowledge/results/patrol/2026-11-17.json",
+    "items": 6,
+    "status_counts": {
+      "ok": 4,
+      "unknown": 2,
+      "failed": 0
+    },
+    "three_numbers": "追加 data_date=2026-11-16 一行，YT/RUM/进账均未测（无后台凭据），未用当日值顶替"
+  },
+  "sections": {
+    "done": [
+      {
+        "item": "邮件积压采集（21 天窗口）",
+        "evidence": "mail-backlog/latest.json count=38 open=11 unknown=27，generated_at 2026-11-16T22:46Z，readset_sha256 f7755e77…"
+      },
+      {
+        "item": "今日分流卡派发（A/B/C 三组）",
+        "evidence": "card DEEP-SUPERAGENT-20261117-DAILY-1 commit 2d7cbfb10；queue run 43973460564 status=queue_results_verified"
+      },
+      {
+        "item": "C 组补跑卡（doubao 504 后重建，未删旧卡）",
+        "evidence": "card DEEP-SUPERAGENT-20261117-DAILY-2 commit c0974a308；queue run 43974172292 成功，qianwen 8 条路由 + 原生复核"
+      },
+      {
+        "item": "席位判定逐条复核（不盲从）",
+        "evidence": "25 条路由 16 gpt / 3 owner / 4 evidence / 2 coordinator-已核验；唯一 close 建议被升级，见 routes 字段"
+      },
+      {
+        "item": "六项并入巡检落盘",
+        "evidence": "knowledge/results/patrol/2026-11-17.json：4 ok / 2 unknown / 0 failed；ltzzz.com 200（1.51s）"
+      },
+      {
+        "item": "三数次日补记",
+        "evidence": "ltzzz-memory/daily-3nums.md 追加 data_date=2026-11-16 行，四项未测并写明原因"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "item": "#398 Phase1 六项安全是否符合验收口径",
+          "refs": [
+            "8d9a5f45ab685bbb",
+            "5556bddb2622ff00"
+          ],
+          "blocker": "六项核对已发信，裁决未回",
+          "if_not": "Phase1 停在 open，不合并部署",
+          "deep_can": "已出逐条行号核对与 16 例测试结果"
+        },
+        {
+          "item": "#398 是否合并、#287 是否保留 draft",
+          "refs": [
+            "B3"
+          ],
+          "blocker": "无合并授权与验收口径",
+          "if_not": "两个 PR 继续挂着，分支漂移风险累积",
+          "deep_can": "补两份 diff 摘要与闸门说明"
+        },
+        {
+          "item": "Wallet v1 方案 5 问 + P1 分流 4 问",
+          "refs": [
+            "6a5c732286808bf3",
+            "cad495cb967efd7c"
+          ],
+          "blocker": "方案稿待裁决",
+          "if_not": "钱包功能不能动工",
+          "deep_can": "出方案对照与不越权部分"
+        },
+        {
+          "item": "signer 显式契约字段口径",
+          "ref": "ba4ddc11868d81a8",
+          "blocker": "字段口径未定",
+          "if_not": "signer 门停在测试态",
+          "deep_can": "整理实测与字段清单"
+        },
+        {
+          "item": "ICP 备案那条邮件的 5 项待裁决",
+          "ref": "37c0b81f45bea064",
+          "blocker": "本该可关闭，但名下带 5 项裁决",
+          "if_not": "关闭即吞裁决，故不关",
+          "deep_can": "拆出 5 项单独成清单"
+        }
+      ],
+      "owner": [
+        {
+          "item": "虚拟支付沙箱首单已付款，后续通道口径",
+          "ref": "3b86bfbe9f010dd1",
+          "blocker": "涉及真实交易通道",
+          "if_not": "支付边界不定",
+          "deep_can": "只做状态记录，不触碰资金"
+        },
+        {
+          "item": "18 项裁决落库后的执行顺序确认",
+          "ref": "0c44d7ce5b18a34e",
+          "blocker": "需 owner 确认顺序",
+          "if_not": "执行顺序不明",
+          "deep_can": "出执行顺序建议表"
+        },
+        {
+          "item": "Wallet 草案定稿",
+          "ref": "fba4b8506b3a9e95",
+          "blocker": "需 owner 拍板",
+          "if_not": "草案无法转正式",
+          "deep_can": "整理差异点"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "action": "oversight 152 条未复核项有界抽样 10 条归类",
+        "criteria": "生成 knowledge/results/dispatch/oversight/recheck-2026-11-17.md，含 case_id/席位/缺阶段/建议，不改状态不代签"
+      },
+      {
+        "action": "三条失败 run 取失败步骤名与最小复现命令",
+        "criteria": "生成 knowledge/results/deep-superagent/run-evidence-2026-11-17.md，含 run id、失败步骤、日志取得方式"
+      },
+      {
+        "action": "补 #398 六项核对摘要与 #287 diff 摘要供裁决",
+        "criteria": "生成 knowledge/results/deep-superagent/pr-summary-2026-11-17.md，逐条带文件与行号"
+      },
+      {
+        "action": "把 37c0b81f45bea064 名下 5 项待裁决拆成独立清单",
+        "criteria": "生成 knowledge/results/deep-superagent/icp-mail-split-2026-11-17.md，每项一条可裁决问题"
+      }
+    ],
+    "later": [
+      {
+        "item": "GPT 16 条 gpt 路由的逐条处置",
+        "depends": "GPT 决策席答复"
+      },
+      {
+        "item": "3 条 owner 路由的落地",
+        "depends": "owner 决定（支付通道/执行顺序/草案定稿）"
+      },
+      {
+        "item": "三数真实取值",
+        "depends": "YouTube Studio 与 CF Web Analytics 登录态或只读令牌"
+      },
+      {
+        "item": "WorkBuddy 与微信公众平台巡检转 ok",
+        "depends": "微信扫码登录（owner 本人或浏览器接管）"
+      },
+      {
+        "item": "#398 合并与部署",
+        "depends": "GPT 验收口径 + 合并授权（本轮未合并未部署）"
+      }
+    ]
+  },
+  "writes_performed": 4,
+  "write_details": [
+    "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-1.json",
+    "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-2.json",
+    "knowledge/results/patrol/2026-11-17.json",
+    "knowledge/results/deep-superagent/daily-2026-11-17.json",
+    "ltzzz-memory/daily-3nums.md（1 行追加）"
+  ],
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "monthly_skill_iteration": {
+    "skipped": true,
+    "reason": "today=2026-11-17 非每月 1 日，且 knowledge/results/skill-iteration/2026-11.json 已存在，按第六条跳过",
+    "file": "knowledge/results/skill-iteration/2026-11.json"
+  },
+  "answer_three": {
+    "deployed_or_done": "无部署；已完成的是采集、两张卡派发与队列跑通、25 条路由与复核、六项巡检落盘、三数补记",
+    "awaiting": "GPT 16 条（Phase1 验收与 #398 合并、Wallet v1/P1、signer 契约、ICP 名下 5 项等）；owner 3 条（支付通道、18 项执行顺序、Wallet 草案定稿）",
+    "next_immediate": "152 条抽样复核、三条失败 run 证据、#398/#287 摘要、ICP 邮件拆 5 项",
+    "later": "GPT/owner 裁决落地、三数取真实值、WorkBuddy 与微信转 ok、#398 合并部署"
+  },
+  "paid": false,
+  "financial_execution": false,
+  "tx_hash": null,
+  "mail_delivery": {
+    "to": "ltzyz2181@gmail.com",
+    "from": "qingqizhu6502@agent.qq.com",
+    "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-17",
+    "message_id": "msg_7FMTAA_5gXrDBFlUqwMDe_UEjUs2msV51bMdWCImZvSw2g",
+    "created_at": "2026-11-16T22:57:31Z",
+    "readback": "message +list --dir sent --limit 1 已见该件（subject/收件人/message_id 一致）"
+  }
+}
