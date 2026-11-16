@@ -47,3 +47,13 @@
 ## 纪律（不变）
 
 不得合并 PR、不得做生产部署、不得改合约或支付语义、不得发起资金动作、不得改 `allowedAgents`、不得伪造任何 review receipt。`writes_performed` / `merges_performed` / `deploys_performed` 三个计数必须如实。
+
+## 第五段（2026-11-17 起强制）：裁决回执跟踪（ruling_tracker）
+
+四段之外另加一段，防止把「已裁决」写成「待裁决」。规则与脚本见 `ops/deep-superagent/RULING-TRACKING.md`。
+
+- 每天采集之后必跑 `node scripts/track-gpt-rulings.mjs --limit 50 --window-days 14 --write`。
+- 日回执必须带 `ruling_tracker` 字段（counts / pending_over_24h / 生成时间）。
+- 路由复核以账本为准：有回信的线程不得再判 `needs_gpt_decision`，改写 `decided_pending_execution` 并附 `decision_id` 与回信 `message_id`。
+- 超过 24h 未回信的线程，在每日邮件顶部单独提醒，不在四段里反复重发全文。
+- 回信到达但未读时，必须先读正文再判定；未读即判定视为未核实。
