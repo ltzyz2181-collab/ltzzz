@@ -99,10 +99,21 @@ function buildReply(msg, ctx) {
   return clip('已收到，AI 已自动登记并回复。查订单进度可在「我的订单」页，或把订单号发我，我立刻查。' + '\n' + FOOTER);
 }
 
+// 落库/回写统一的幂等键：有 MsgId 用 MsgId；事件推送不带 MsgId，
+// 用 evt_<event>_<openid>_<createTime>，微信重试同一事件时不会重复落库/重复回话。
+function recordKey(msg) {
+  if (msg.msgId) return String(msg.msgId);
+  if (msg.msgType === 'event' && msg.openid) {
+    return 'evt_' + (msg.eventName || 'unknown') + '_' + msg.openid + '_' + (msg.createTime || 0);
+  }
+  return '';
+}
+
 function buildMessageRecord(msg, extra) {
   const x = extra || {};
   return {
     msg_id: msg.msgId ? String(msg.msgId) : '',
+    record_key: recordKey(msg),
     openid: msg.openid,
     msg_type: msg.msgType,
     event_name: msg.eventName,
@@ -128,6 +139,7 @@ module.exports = {
   normalizePush,
   shouldReply,
   buildReply,
+  recordKey,
   buildMessageRecord,
   ORDER_NO_RE
 };

@@ -11,9 +11,10 @@ const MESSAGES = 'service_messages';
 
 async function recordMessage(record) {
   try {
-    if (record.msg_id) {
-      // 以 msg_id 作为主键，微信重推同一条消息时天然幂等。
-      await db.collection(MESSAGES).add({ data: Object.assign({ _id: record.msg_id }, record) });
+    const key = record.record_key || record.msg_id;
+    if (key) {
+      // 以统一幂等键作为 _id：文本/图片消息用 MsgId，事件推送用 evt_<event>_<openid>_<createTime>。
+      await db.collection(MESSAGES).add({ data: Object.assign({ _id: key }, record) });
     } else {
       await db.collection(MESSAGES).add({ data: record });
     }
@@ -68,9 +69,10 @@ exports.main = async (event) => {
     return 'success'; // 对微信始终返回 success，避免重试风暴
   }
 
-  if (msg.msgId) {
+  const replyKey = logic.recordKey(msg);
+  if (replyKey) {
     try {
-      await db.collection(MESSAGES).doc(String(msg.msgId)).update({
+      await db.collection(MESSAGES).doc(replyKey).update({
         data: { replied: true, reply_content: replyContent, replied_at: new Date().toISOString() }
       });
     } catch (err) {
