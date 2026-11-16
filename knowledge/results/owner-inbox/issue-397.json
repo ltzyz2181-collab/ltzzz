@@ -1,0 +1,20 @@
+{
+  "id": "issue-397",
+  "mode": "execute",
+  "role_mode": "native_domestic",
+  "task": "LTZZZ Owner 2026-11-16 已授权的一个关键步骤：为今天要推进的 P0 自动化闭环与 AI 雇佣 AI Phase1 做独立方案核验，并给出唯一最先实施的仓库内步骤。输入仅限公开仓库代码/配置/已公开回执，不读邮件正文、客户数据、Secrets、密钥或私有资料。\n\n背景事实（均以 main 固定源码/回执为准）：\n- main 当前 HEAD：8237e99b4b0fd105b3fed9f053e6548baff9591f。\n- 三项 P0 建议：①按原 Task ID/message/thread 去重的裁决队列与 append-only 决策账本；②状态机 INBOX→DEDUPLICATE→CLASSIFY→RELAY_GPT/MAIN_GPT/OWNER→DECISION_RECORDED→EXECUTION_ALLOWED→EVIDENCE_REVIEW→ACCEPTED/NEEDS_REVISION；③部署后核对 workflow run、目标环境、commit/version 与 smoke test，区分 CI_PASS / MERGED / DEPLOYED / SMOKE_VERIFIED。\n- AI 雇佣 AI Phase1 已有 scripts/hire-phase1.mjs、7 项测试、0 金额 receipt；仍未接入自动日流水线。Phase1 必须保持 paid=false、amount_usd=0、financial_execution=false。\n- 当前小额付款策略 enabled=false，controllers/payees/purposes/budget_ids 为空；不得开启真钱支付，不得访问或要求任何凭据。\n- 2026-11-16 seat-roles 授权：中转 GPT 是受限裁决席，但 provider/model 不可自证；中转 Claude 是单点执行席，不得自审；DeepSeek 原生独立复核；资金/签名/钱包/Safe/放款/生产写/凭据权限不得交给模型执行。\n- 桌面 Codex 已有一次真实改码→测试→push main→Actions 成功证据；桌面 Claude Code 本轮不可见，不能宣称已验证。\n\n请按以下输出：\n1. DeepSeek：审查上述三项 P0 与 Phase1 现状，指出已有实现、重复功能、真实缺口和最小反例；给出文件路径/函数/测试位置，不得把建议写成已完成。\n2. DeepSeek 只选择一个最先实施的关键步骤（不跨阶段、不并行），给出最小 patch 文件清单、状态迁移/幂等键/append-only 规则、验收测试、回滚方式、成本与风险。优先考虑 Phase1 receipt 与日流水线的无资金接线，但如发现更高风险阻断，说明原因。\n3. 豆包：独立反驳 DeepSeek 方案，检查状态机重复执行、重复支付/重复记账、accepted 后降级、失败/超时/unknown、模型席位身份自报、邮件自动发送、生产部署误判等反例；必须给出通过/不通过与具体修正。\n4. 输出实际调用证据：requested seat、actual provider/model、request_id（若真实返回）、finish_reason、tokens/usage（若可得）；不可得写 unavailable，不得自称原厂 GPT/Claude，不得伪造。\n5. 结尾只给一个建议的下一步任务及其明确 PASS 条件，等待 GPT 独立审查后再继续。\n\n禁止：提交/合并/部署代码；创建 PR；调用第三方中转；读取/输出 Secrets；发送或回复邮件；付款、签名、链上操作；改变 small-payment-autonomy.json；修改生产 Worker/Cloudflare 配置；自动推进 Phase2。所有结果仅作为未验收的分析草稿，等 GPT 复核。",
+  "issue_number": 397,
+  "author": "ltzyz2181-collab",
+  "source": "https://github.com/ltzyz2181-collab/ltzzz/issues/397",
+  "at": "2026-11-16T10:42:07.501Z",
+  "source_commit": "8237e99b4b0fd105b3fed9f053e6548baff9591f",
+  "run_id": "43851144643",
+  "input_sha256": "9a3126f4958f6c0552250b354b757195881d35bc95a74003f35f04d94c1ccb46",
+  "status": "claimed",
+  "calls": [],
+  "outputs": [],
+  "openai_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
