@@ -83,3 +83,25 @@ owner 2026-11-16 决定：**继续用 flash**，因此把 `model` 显式写成 `
 1. reasoner 真身：需要另一个开通 reasoner 的 key，或中转席位。
 2. 桌面 `gh`：要不要装，决定能不能在桌面直接开 PR / 手动 dispatch。
 3. 对照实验：同一任务跑「裸 API / Codex / Claude Code」三次，比成功率、耗时至可运行、改动文件数，目前只有 Codex 一侧数据。
+
+## 九、端到端演练：对话部署闭环（2026-11-16 03:22Z）
+
+第一次用桌面 Codex 走完「改代码 → 跑测试 → push main → Actions 回读」，证据如下。
+
+执行方式：为不碰桌面仓库当前分支（`feat/order-closure`，工作树有 26 个未提交改动）与未提交工作，从 `origin/main` 拉了一个干净 worktree `%TEMP%\ltzzz-e2e`，Codex 在该 worktree 内作业。
+
+Codex 实际做了：
+1. 新建 `scripts/desktop-codex-provider-report.mjs`，导出纯函数 `parseCodexProviderConfig(text)`，解析顶层 `model` / `model_provider` 与 `[model_providers.<name>]` 的 `base_url` / `wire_api`。
+2. 新建 `scripts/tests/desktop-codex-provider-report.test.mjs`，`node --test` 覆盖三种情况：有 provider 段、缺 provider 段、带注释行。
+3. 自跑 `node --test scripts/tests/desktop-codex-provider-report.test.mjs`：3/3 通过。
+4. `git add` 两文件、commit `fdf00a3c feat: desktop codex provider report helper`，`git push origin HEAD:main`（快进 `47e3094c..fdf00a3c`，未 force、未 rebase）。
+
+复核席独立复跑同一测试：3/3 通过、exit 0；`git ls-remote origin main` 回读 `fdf00a3c3447b4369c6a162cf95eee7cafe94e4e`，与推送一致；文档 commit `c2ac60e87` 仍在 main 祖先链上（`git merge-base --is-ancestor` 通过）。
+
+push 触发的部署（`gh run list` 回读，均为 completed/success）：
+- Deploy static site to GitHub Pages：run `43797764581`，headSha `fdf00a3c`
+- Small payment policy offline validation (no payment)：run `43797764433`，headSha `fdf00a3c`
+
+同窗口另有一条与本次改动无关的 schedule 事件失败：Daily Agent Tasks，run `43787280142`，headSha `c2ac60e87`，属既有定时任务的独立问题，不记入本次改动结论。
+
+结论：桌面 Codex 的「对话部署」不再只是能力验证——改代码、跑测试、commit、push main、Actions 成功回读这五步已在真实仓库闭环，packets 计为 writes 2（两个新文件）+1（本文档补充），merges 1，deploys 2（Pages + 支付策略离线校验，均为 CI 侧自动部署，未做生产写）。
