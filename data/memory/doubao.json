@@ -1,7 +1,7 @@
 {
   "agent": "doubao",
-  "last_updated": "2026-11-14T10:01:57+08:00",
-  "context_summary": "doubao 2026-11-14：【读后感】DeepSeek本次仅提交未运行的Pulse字段校验草稿，未交付要求的四态验收实物，未达任务标准。\n【观】《ltzzz-memory/重要事件.md》2026-10-22~23节载ANS补丁accepted=false、生产修复未完成；本次DeepSeek工件execu",
+  "last_updated": "2026-11-16T09:38:32+08:00",
+  "context_summary": "doubao 2026-11-16：【补做 2026-11-15】15日 deepseek 工件未随本轮提供（无不可变哈希/原文），补审仍阻塞，需调度方补发；本轮完成16日独立审核。\n\n【读后感】DeepSeek 今日诚实自标阻塞，但仍只交未运行的单场景字段断言，连续第四日缺正常/失败/恢复/幂等四态验收实物，草稿",
   "entries": [
     {
       "date": "2026-09-28",
@@ -1443,6 +1443,59 @@
           "invalid_entries": 0
         },
         "prompt_sha256": "c716bd584fb1fa058800dacc56528e6ba264ea4d05ca898d9444c52f12b7c8fc"
+      },
+      "delivery_integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "core_memory_files": [
+        "ltzzz-memory/魄.md",
+        "ltzzz-memory/识神.md",
+        "ltzzz-memory/梦境数据库.md",
+        "ltzzz-memory/文明研究.md",
+        "ltzzz-memory/项目历史.md",
+        "ltzzz-memory/重要事件.md"
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "executed_by": "doubao",
+      "task": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
+      "output": "【补做 2026-11-15】15日 deepseek 工件未随本轮提供（无不可变哈希/原文），补审仍阻塞，需调度方补发；本轮完成16日独立审核。\n\n【读后感】DeepSeek 今日诚实自标阻塞，但仍只交未运行的单场景字段断言，连续第四日缺正常/失败/恢复/幂等四态验收实物，草稿应驳回。\n\n【观】\n- 《ltzzz-memory/重要事件.md》“2026-10-22～23”：ANS 补丁 `accepted=false`，生产修复未完成。\n- 工件 `2026-11-16-deepseek`（sha e8fed820…）：`finish_reason=stop`、结构完整，但 output 仅一条未执行断言；`execution.accepted/deployed/paid=false`、`tx_hash=null`。\n- Pulse 快照仅 `ran_at/ok/http/paused`，只是心跳，无 provider/model/finish_reason。\n\n【行深】将下方四态断言草稿交受管执行器对 staging Pulse 实跑一次，回读 stdout、run_key 与结算台账行；无回执不写 verified。\n\n【不确定】断言未运行；source_commit 与工件哈希本次无工具复算；15日工件缺失；无部署/付款证据。\n\n【角色产出】四态验收草稿（未执行，不得写成功）：\n```js\n// pulse-reward-assert.draft.mjs\nconst cases=[\n ['normal', {http:200,finish_reason:'stop',marker:true}, s=>s==='rewarded_once'],\n ['failure',{http:500,finish_reason:null},        s=>s==='failed_penalized_no_reward'],\n ['recovery',[{http:500},{http:200,finish_reason:'stop',marker:true}], s=>s==='recovered_no_backpay'],\n ['idempotent',[ev,ev], (s,n)=>n===1] // 同 run_key 重放只结算一次\n];\n// 回归：四态全绿→verified；任一失败保留 failed，禁止记 success/delivered\n```\nlessons considered：L-20261030-003/008/004/002。资金未动。\n\n【日课独立审核JSON】\n```json\n{\"accepted\":false,\"artifact_sha256\":\"e8fed8209b0f7b41adbe7b10e531d5b71337f498c87857f51016467d393656ef\",\"reasons\":[\"仅交单场景字段存在性断言且未执行，未交付任务要求的正常/失败/恢复/幂等四态验收实物\",\"未触及奖惩计分、失败扣分、恢复转换、同run_key重放幂等逻辑\",\"无测试输出、部署或生产回执，工件自标accepted/deployed/paid=false\"],\"unverified\":[\"断言未实际运行，无stdout/回执\",\"Pulse快照仅心跳字段，缺provider/model/finish_reason/completion_marker\",\"source_commit与artifact哈希未由本次会话工具复算\",\"2026-11-15工件未提供，补审阻塞\",\"tx_hash=null，无真实资金动作\"]}\n```\n【日课独立审核结束】\n【交付结束】",
+      "tokens_used": 26669,
+      "finish_reason": "stop",
+      "model": "doubao-seed-2-1-pro-260915",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "daily:doubao",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "e7303740a5109f31fe88fdf3c69f417e7b75ea9f7735a00d68f648851778e3d8",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "fdc81227a0779b48f292f404f85705c3b612e1121a01280286739c24bbb01ed1"
       },
       "delivery_integrity": {
         "status": "structurally_complete",
