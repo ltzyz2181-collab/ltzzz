@@ -1,0 +1,100 @@
+{
+  "schema": "ltzzz.gpt.ruling.followup.v1",
+  "date": "2026-11-16",
+  "parent_decision": "knowledge/results/decisions/gpt-ruling-20261116.json",
+  "task_id": "DEEP-HIRE-PHASE1-SAFETY-REVIEW-20261116-1",
+  "queue_run_id": 43852429242,
+  "source_commit": "fc824836fe1d786d96ac9489f36dc56907224d42",
+  "status": "phase1_safety_patch_required_before_daily_integration",
+  "direct_gpt_code_findings": [
+    {
+      "file": "scripts/hire-phase1.mjs",
+      "function": "appendReceipt",
+      "finding": "appendReceipt does not call assertAppendOnly; accepted receipt downgrade protection exists only as a standalone helper and is not enforced on write."
+    },
+    {
+      "file": "scripts/hire-phase1.mjs",
+      "function": "readLedger",
+      "finding": "readLedger parses state but does not verify receipt_sha256 or validate order_sha256 integrity."
+    },
+    {
+      "file": "scripts/hire-phase1.mjs",
+      "function": "validateOrder/gateOutcome",
+      "finding": "evidence_paths is only checked as a string; existence, repository containment, file type and content hash are not verified."
+    },
+    {
+      "file": "scripts/hire-phase1.mjs",
+      "function": "defaultRunner",
+      "finding": "acceptance_gate accepts any single node command without shell metacharacters; node -e is permitted, so an order can pass with a trivial process.exit(0) and can select arbitrary Node scripts."
+    },
+    {
+      "file": "scripts/hire-phase1.mjs",
+      "function": "appendReceipt",
+      "finding": "No idempotency key or duplicate order/receipt guard exists."
+    },
+    {
+      "file": "scripts/hire-phase1.mjs",
+      "function": "main",
+      "finding": "The module is not connected to daily-external-hire.yml or scripts/run-daily-external-hire.mjs; it is currently a standalone self-test harness."
+    },
+    {
+      "file": "ops/hire/orders/HIRE-SAMPLE-20261116-01.json",
+      "function": "acceptance_gate",
+      "finding": "The sample accepted receipt used node -e process.exit(0); it proves command exit only, not that a hired AI delivered an artifact meeting task acceptance."
+    }
+  ],
+  "independent_ai_result": {
+    "planner": {
+      "seat": "deepseek",
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "request_id": "221c352a-9803-42e4-8243-f266ff2d48d4",
+      "finish_reason": "stop",
+      "tokens_used": 1188
+    },
+    "worker": {
+      "seat": "qianwen",
+      "provider": "aliyun_dashscope",
+      "model": "qwen-max",
+      "request_id": "ebbea5e7-4da6-432d-a2c4-7beb3e0b4334",
+      "finish_reason": "stop",
+      "tokens_used": 1518,
+      "output_sha256": "8c95b6ce62fb8e985b5d159095dec620be2698b1ca1497a6ba5c9138ab4f47d7"
+    },
+    "reviewer": {
+      "seat": "deepseek",
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "request_id": "960e2138-6d81-4964-b1b1-3feba7cd5f44",
+      "finish_reason": "stop",
+      "tokens_used": 2139,
+      "approved": false,
+      "reason": "Insufficient evidence from named files; output generic and violates required review format."
+    }
+  },
+  "ruling": {
+    "disposition": "return_for_revision",
+    "decision": "Do not connect current hire-phase1 v0 to automatic daily execution or any payment path until a safety patch is merged and tested.",
+    "required_patch": [
+      "Use a named allowlist of acceptance gate IDs; never execute arbitrary node command or node -e from an order.",
+      "Verify evidence_paths are repository-contained regular files and bind their SHA-256 into the receipt.",
+      "Enforce assertAppendOnly inside appendReceipt; accepted is terminal and cannot be downgraded.",
+      "Add idempotency key bound to order_id + order_sha256 + state; duplicate invocation must not append a second receipt.",
+      "Validate receipt_sha256 and required money invariants on every readLedger line.",
+      "Bind actual provider/model/request_id/output hash/reviewer evidence from the executor; never accept seat self-attestation.",
+      "Only after these pass, integrate one zero-value Phase1 order into daily pipeline."
+    ],
+    "acceptance": "Dedicated PR; Harness preflight on exact main; focused tests for allowlisted gates, path traversal, missing evidence, hash tampering, accepted-terminal, duplicate/idempotency, actual seat metadata, paid=false, amount_usd=0, financial_execution=false; required CI green; independent review PASS.",
+    "rollback": "Revert the Phase1 safety patch; keep the daily pipeline disconnected and all payment switches disabled."
+  },
+  "money": {
+    "phase1": "zero-value only",
+    "testnet": "preparation only; one transaction max 0.05 test USDC on Base Sepolia after test-only controller/payee/purpose/budget and adapter are verified",
+    "mainnet": "not authorized now",
+    "payment_policy_enabled": false,
+    "paid": false,
+    "financial_execution": false,
+    "tx_hash": null
+  },
+  "next_step": "Create a dedicated Phase1 safety PR; do not run the daily hire or any payment until its tests and independent review pass."
+}
