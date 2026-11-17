@@ -14,10 +14,11 @@ function fixture({ orderPatch = {}, pushToken = token, beforeUpdate } = {}) {
   const update = async (condition, { data }) => {
     if (beforeUpdate) beforeUpdate(order);
     if (!match(condition)) return { stats: { updated: 0 } };
-    Object.assign(order, data); writes++;
+    for (const [k, v] of Object.entries(data)) order[k] = v && typeof v === 'object' && v.__pushValues ? (Array.isArray(order[k]) ? order[k].concat(v.__pushValues) : [...v.__pushValues]) : v;
+    writes++;
     return { stats: { updated: 1 } };
   };
-  const db = { collection: () => ({
+  const db = { command: { push: v => ({ __pushValues: v }) }, collection: () => ({
     where: condition => ({ get: async () => { reads++; return { data: match(condition) ? [{ ...order }] : [] }; }, update: data => update(condition, data) }),
     doc: id => ({ update: data => update({ _id: id }, data) })
   }) };
@@ -90,11 +91,23 @@ test('failed refund and unrelated refund do not turn any order into refunded', a
     assert.equal(f.order.status, 'paid'); assert.equal(f.writes(), 0);
   }
 });
-test('bound successful refund signal pauses fulfillment, without inventing final refund proof', async () => {
+test('full refund closes the order as refunded and a later delivery push cannot reopen it', async () => {
   const f = fixture({ orderPatch: { status: 'paid', wx_order_id: 'WX-FIXTURE' } });
   const e = { Event: 'xpay_refund_notify', MchOrderId: 'VP-FIXTURE', WxOrderId: 'WX-FIXTURE', OpenId: 'owner', Env: 1, RetCode: 0, RefundFee: 990, MchRefundId: 'REF-FIXTURE', WxRefundId: 'WXREF-FIXTURE' };
-  await f.run(signed(e)); assert.equal(f.order.status, 'refund_pending_verification');
-  await f.run(signed(delivery())); assert.equal(f.order.status, 'refund_pending_verification'); assert.equal(f.writes(), 1);
+  await f.run(signed(e)); assert.equal(f.order.status, 'refunded'); assert.equal(f.order.refunded_total, 990); assert.ok(f.order.refunded_at);
+  await f.run(signed(delivery())); assert.equal(f.order.status, 'refunded'); assert.equal(f.writes(), 1);
+});
+test('partial refunds accumulate to a full refund, and replaying one refund id is idempotent', async () => {
+  const f = fixture({ orderPatch: { status: 'paid', wx_order_id: 'WX-FIXTURE' } });
+  const base = { Event: 'xpay_refund_notify', MchOrderId: 'VP-FIXTURE', WxOrderId: 'WX-FIXTURE', OpenId: 'owner', Env: 1, RetCode: 0, MchRefundId: 'REF-1', WxRefundId: 'WXREF-1' };
+  await f.run(signed({ ...base, RefundFee: 500 })); assert.equal(f.order.status, 'partially_refunded'); assert.equal(f.order.refunded_total, 500); assert.equal(f.writes(), 1);
+  await f.run(signed({ ...base, RefundFee: 500 })); assert.equal(f.order.refunded_total, 500); assert.equal(f.writes(), 1);
+  await f.run(signed({ ...base, RefundFee: 490, WxRefundId: 'WXREF-2', MchRefundId: 'REF-2' })); assert.equal(f.order.status, 'refunded'); assert.equal(f.order.refunded_total, 990); assert.equal(f.writes(), 2);
+});
+test('refund_pending_verification keeps further refund pushes from double-counting (F2 observation)', async () => {
+  const f = fixture({ orderPatch: { status: 'refund_pending_verification', wx_order_id: 'WX-FIXTURE' } });
+  await f.run(signed({ Event: 'xpay_refund_notify', WxOrderId: 'WX-FIXTURE', RetCode: 0, RefundFee: 300, MchRefundId: 'REF-3', WxRefundId: 'WXREF-3' }));
+  assert.equal(f.order.status, 'refund_pending_verification'); assert.equal(f.writes(), 0); assert.equal(f.order.refunded_total, undefined);
 });
 test('unsupported HTTP methods and unknown orders are never acknowledged as paid', async () => {
   const f = fixture(); assert.equal((await f.run(signed(delivery(), { httpMethod: 'PUT' }))).statusCode, 405); assert.equal(f.writes(), 0);

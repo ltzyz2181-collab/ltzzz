@@ -93,13 +93,17 @@ Page({
           const refunded = Number.isFinite(o.refunded_total) ? o.refunded_total
             : (Number.isFinite(o.refund_amount) ? o.refund_amount : 0);
           const isRefunded = o.status === 'refunded' || o.status === 'partially_refunded' || o.status === 'refund_pending_verification';
+          // F1（2026-11-11 回执）：历史上若被手工写库成 partially_refunded 且已退满，
+          // 展示层按「已退款」兜底，避免「部分退款」却没有「剩余未退」的自相矛盾状态。
+          const fullRefund = isRefunded && total > 0 && refunded >= total;
+          const displayStatus = fullRefund ? 'refunded' : o.status;
           return {
             _id: o._id,
             status: o.status,
             title: PRODUCT_TITLE[o.product_id] || o.title,
             out_trade_no: o.out_trade_no,
             amountLabel: (total / 100).toFixed(2),
-            statusLabel: STATUS_LABEL[o.status] || o.status,
+            statusLabel: STATUS_LABEL[displayStatus] || displayStatus,
             created_at_label: formatTime(o.created_at),
             delivered_at_label: formatTime(o.delivered_at),
             intakeFiles: intakeView(o.intake),
@@ -108,8 +112,8 @@ Page({
             // 部分退款要同时写清「退了多少、还剩多少」，避免客户以为全额已退。
             refundedLabel: isRefunded && refunded > 0 ? (refunded / 100).toFixed(2) : '',
             remainingLabel: isRefunded && refunded > 0 && total - refunded > 0 ? ((total - refunded) / 100).toFixed(2) : '',
-            refundTimeLabel: formatTime(o.refunded_at),
-            refundNote: REFUND_NOTE[o.status] || ''
+            refundTimeLabel: formatTime(o.refunded_at || (fullRefund ? o.refund_signal_at : null)),
+            refundNote: REFUND_NOTE[displayStatus] || ''
           };
         });
         this.setData({ orders: list, loading: false, empty: list.length === 0, error: false, errorMessage: '' });

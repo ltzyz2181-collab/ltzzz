@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import Module from 'node:module';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // 测试用固定假令牌：与云函数环境变量无关，仅保证自签自验一致，避免把真实令牌写进仓库。
 const TOKEN = 'test-push-token-local-only';
@@ -55,7 +55,7 @@ Module._load = function (request, ...rest) {
   return origLoad.call(this, request, ...rest);
 };
 
-const fn = await import(FN);
+const fn = await import(pathToFileURL(FN).href);
 const handler = fn.main || fn.exports.main;
 
 const now = new Date().toISOString();
