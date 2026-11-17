@@ -12,7 +12,7 @@
 | 采纳但必须补动作 | §一 L3（补授权溯源字段）、§三.3（补 thread_id）、§五.11（补中转五要素）、§五.15（旧禁令标失效）、§五.16（合并/部署分权） |
 | 只能部分采纳 | §五.1 Phase1（并入 main ≠ 通过，须挂"待复审"标记） |
 | 不能采纳（前提已不成立） | §五.2 order-deliver 等 Owner 给 OpenID |
-| 不能采纳（与 owner 现行授权冲突） | §六「豆包＝只读独立审查席」 |
+| 不能采纳（owner 2026-11-17 当面推翻） | §六「豆包＝只读独立审查席」——owner 原话：「豆包是执行席位 不能限制豆包部署」 |
 | 必须立即整改（我已违规） | §二.4 无关私人邮件不得进项目记录 —— 已修 |
 
 ## 二、逐条对照
@@ -85,6 +85,10 @@
 
 冲突根因：`AGENTS.md` 与 `config/owner-authority-20261105.json` 明确 controller 可在授权内实现/合并/部署，owner 也明确要求"全主动化、最后不要用到人工"。若照裁决执行，今天这 5 项全部变成越权，且等于把执行权收回给需要人工的席位。
 
+**owner 2026-11-17 已当面裁定**：「豆包是执行席位 不能限制豆包部署」「各 AI 不能停止工作」。
+按 `config/owner-authority-20261105.json` 与 `AGENTS.md`，owner 的直接指令是最高授权来源，
+因此 §六 关于豆包「只读」的表述在本仓库**不生效**，需 GPT 修订；其余座位的分工不受影响，照常工作。
+
 判定：**不采纳"只读"这一限制**，但采纳它的内核——"不能自己改自己审"。建议改成：
 - 豆包＝执行+落地席（现状），但**凡豆包自己提交的改动，独立审查由千问/Claude 承担**，我不给自己的提交签"已审"；
 - 邮件隐私/去重/幂等/凭据/失败处理这 5 个审查主题保留给我，作为对我**产出**的审查，不是对我**权限**的限制。
@@ -109,3 +113,24 @@
 ## 四、未解决残留
 
 - 旧 `mail-fullbox/latest.json` 的私人标题已进入 public main 历史（`ab53159bc`）；删工作区文件不清历史，重写历史需 owner 单独决定，我不自行 `filter-branch`。
+
+## 五、4 项待办落地结果（2026-11-17）
+
+| 待办 | 落地物 | 验证 |
+|---|---|---|
+| ① 部署回执补授权溯源 | `ops/deploy-receipts/DR-20261117-order-deliver.json`、`...-miniprogram-frontend.json`、`...-miniprogram-trial-review.json` 三张均加 `authorized_by`（owner 原话 + 时间 + 渠道 + 范围限制） | 逐张回读字段 |
+| ② 合并/部署分权 | 新增 `scripts/lib/deploy-authority.mjs` 闸门：`automatic_merge` 与 `automatic_deploy` 独立字段，`excluded_families` 优先硬拒，回滚默认拒，未知动作 fail-closed | `scripts/tests/deploy-authority-gate.test.mjs` 4/4 |
+| ③ 中转五要素 | `config/relay-seat-policy.json` 新增 `adjudication_authority` / `failure_fallback` / `cost_guard`；核查表 `docs/RELAY-FIVE-ELEMENT-CHECK-20261117.md` | relay 回归 24/24；③ 成本上限仍缺数字 |
+| ④ Phase1 标待复审 | `docs/HIRE-AI-PHASE1-SPEC-20261116.md` 顶部 `acceptance=pending_gpt_review`，明确"并入 main ≠ 通过" | 回读文档 |
+
+## 六、冲突清单（owner 要求必须逐条罗列）
+
+| 冲突项 | 冲突对象 | 性质 | 处置 |
+|---|---|---|---|
+| 豆包只能"只读审查"，不得部署/合并/提交 | owner 现行授权 + `AGENTS.md` + 本日 5 项实操 | owner 权限被裁决收回 | 按 owner 裁定执行，裁决待 GPT 修订 |
+| Phase1「不批准合并」vs 补丁已并入 main | 早前评审 `return_for_revision` | 状态与动作不一致 | 不回退 main，挂 `pending_gpt_review`，禁止写成已通过 |
+| 自动部署需"独立授权"vs owner「自动部署吧」 | §一 L3 / §五.16 vs owner 2026-11-17 指令 | owner 已主动放开 | 以 owner 为准；用 `authorized_by` 留溯源，被排除族仍硬拦 |
+| §五.2 等 owner 给 OpenID | 事实层 | 前提已过时 | 不采纳，已回信更正 |
+| 桌面落后 209 提交不得强推 | 与"自动同步"习惯 | 无实质冲突 | 保留为待办，不强推 |
+
+**停工禁令**：任何一条冲突都不得成为某个席位停工的理由。冲突按"记入本文档 + 邮件呈报 GPT + 继续按 owner 现行授权执行"三步处理。
