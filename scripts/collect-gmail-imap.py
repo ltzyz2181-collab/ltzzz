@@ -31,6 +31,8 @@ USER = os.environ.get('GMAIL_IMAP_USER', 'ltzyz2181@gmail.com')
 PASSWORD = os.environ.get('GMAIL_IMAP_APP_PASSWORD', '')
 
 AMOUNT = re.compile(r'[0-9][0-9.,]*\s*(?:UT|USDT|CNY|USD|EUR|ETH|BTC|元|美元|港币)', re.I)
+# 符号在前的金额（¥9.90 / $12.34 / €99）单独一条：上面的正则只认「数字在前」的写法。
+AMOUNT_SYMBOL = re.compile(r'[¥\u00a5$\uff04\u20ac\u00a3]\s*[0-9][0-9.,]*')
 TOKEN = re.compile(r'[A-Za-z0-9_\-]{28,}')
 DISPATCH = re.compile(r'(派单|裁决|待决|待处置|待办|未完成|缺口|pending|action required)', re.I)
 CLOSED = re.compile(r'(验收通过|已合并|已部署|部署完成|已闭环|已收口|已修复并部署|already merged|accepted)', re.I)
@@ -43,6 +45,7 @@ def sha256(text):
 
 def redact(subject):
     s = AMOUNT.sub('<amount>', subject or '')
+    s = AMOUNT_SYMBOL.sub('<amount>', s)
     s = TOKEN.sub('<token>', s)
     s = re.sub(r'\s+', ' ', s).strip()
     return s[:60]

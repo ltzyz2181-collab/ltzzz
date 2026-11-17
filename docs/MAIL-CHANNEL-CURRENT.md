@@ -77,3 +77,27 @@
 - 产物：`knowledge/results/deep-superagent/mail-intake/latest.json`（`schema=ltzzz.mail-intake.v1`）。
 - 语义：`status` 只由两条通道的真实结果推导（ok / partial / failed）；任一通道失败都不许写成读过。
 - 校验：`scripts/tests/mail-intake.test.mjs` 在 CI 里校验结构、状态推导与脱敏约束，不重跑采集。
+
+## 8. 2026-11-17 六项验收实跑回执（勿再重复问、勿再要密码）
+
+结论：六项**全部有真实输出**，凭据**本来就在**云主机，不需要 owner 再写文件、也不需要向 owner 索要密码。
+
+- 凭据位置（唯一一份）：云主机 `/home/user/.config/ltzzz/gmail-imap.env`，`600`，77 字节，2026-11-17 12:11 落盘；
+  两个键 `GMAIL_IMAP_USER`（19 字符）/ `GMAIL_IMAP_APP_PASSWORD`（16 字符）。脚本自己读文件，值不进对话、不进仓库、不进 Actions 日志。
+- 实跑口径（`node scripts/run-mail-intake.mjs`，2026-11-17T07:33:04Z）：
+
+| 验收项 | 真实结果 | 依据字段 |
+|---|---|---|
+| IMAP 真实登录 | ok（TLS 993 + LOGIN + readonly SELECT） | `provider=gmail_imap`、`read_only=true` |
+| 30 天窗口条数 | **1366 封**，未截断 | `window_since=18-Oct-2026`、`window_truncated=false`（上限 2500） |
+| 全箱总数 / 未读 | **4698 / 3875** | `full_box_total`、`full_box_unseen` |
+| 采集条数 | Gmail 1366 + Agent Mail 38 = **合并 1404** | `counts.unified=1404` |
+| 去重结果 | 1404 → 过滤已闭环已读 → **143 条待办**，去重后唯一 ref 143/143 | `counts.open_or_dispatch=143` |
+| 脱敏结果 | **0 条残留**；`<amount>` 命中 18、`<token>` 命中 24；正文未落盘 | 全量 1366 条复查 + `bodies_persisted=false` |
+
+- 回执文件：`ops/mail-receipts/MR-20261117-gmail-imap.json`。
+- **本轮修掉一个真实缺口**：`AMOUNT` 只认「数字在前」的写法，`¥9.90` 这类符号在前的金额没被打码（首轮只有 8 条命中）。
+  已补 `AMOUNT_SYMBOL`（`¥/$/€/£`），重跑后命中 8→18；回归测试 `scripts/tests/gmail-redact.test.mjs`（5 例，与 `mail-intake.test.mjs` 合跑 9/9）。
+- **换机器必读**：凭据只在云主机这一台。别的机器/别的席位跑同一脚本会 fail-closed 写 `creds_missing`——这是**预期行为**，
+  不是「凭据缺失待补」，也不得据此报「六项无回执」。要复跑就在云主机跑。
+

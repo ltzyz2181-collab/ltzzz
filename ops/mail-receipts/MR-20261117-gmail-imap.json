@@ -1,0 +1,63 @@
+{
+  "schema": "ltzzz.mail.receipt.v1",
+  "receipt_id": "MR-20261117-gmail-imap",
+  "target": "gmail_fullbox_imap",
+  "at": "2026-11-17T07:33:04Z",
+  "machine": "云主机 /home/user/ltzzz",
+  "credential": {
+    "path": "/home/user/.config/ltzzz/gmail-imap.env",
+    "mode": "600",
+    "size": 77,
+    "keys": [
+      "GMAIL_IMAP_USER(len=19)",
+      "GMAIL_IMAP_APP_PASSWORD(len=16)"
+    ],
+    "note": "凭据由脚本自行从该文件读取；值未进入对话、未进仓库、未进 Actions 日志"
+  },
+  "items": [
+    {
+      "item": "IMAP 真实登录成功",
+      "result": "ok",
+      "evidence": "imap.gmail.com:993 TLS + LOGIN 成功，readonly SELECT INBOX；provider=gmail_imap，read_only=true"
+    },
+    {
+      "item": "30 天窗口条数 / 是否截断",
+      "result": "1366 / 未截断",
+      "evidence": "window_since=18-Oct-2026，lookback_days=30，MAX_WINDOW_MESSAGES=2500，window_truncated=false"
+    },
+    {
+      "item": "全箱总数与未读数",
+      "result": "4698 / 3875",
+      "evidence": "STATUS INBOX (MESSAGES 4698 UNSEEN 3875)"
+    },
+    {
+      "item": "采集条数",
+      "result": "1366 封（Gmail）+ 38 封（Agent Mail）= 合并 1404",
+      "evidence": "mail-intake counts.unified=1404"
+    },
+    {
+      "item": "去重结果",
+      "result": "143 条待办（去重后唯一 ref 143/143）",
+      "evidence": "unified 1404 → 过滤已闭环已读 → open_or_dispatch 143 → Map 去重后仍 143"
+    },
+    {
+      "item": "脱敏结果",
+      "result": "0 条残留",
+      "evidence": "subject_short 中 <amount> 命中 18 条、<token> 命中 24 条；对 1366 条全量复查符号在前金额/数字在前金额/长令牌，残留 0；bodies_persisted=false"
+    }
+  ],
+  "regression": {
+    "test": "scripts/tests/gmail-redact.test.mjs",
+    "result": "5/5 pass（与 mail-intake.test.mjs 合跑 9/9）",
+    "fixed_gap": "首轮实跑发现 AMOUNT 只认「数字在前」写法，¥9.90 未打码；已补 AMOUNT_SYMBOL（¥/$/€/£）后重跑，打码条数 8→18"
+  },
+  "artifacts": [
+    "knowledge/results/deep-superagent/mail-fullbox/latest.json",
+    "knowledge/results/deep-superagent/mail-intake/latest.json"
+  ],
+  "notes": [
+    "另一席位报「gmail-imap.env 不存在」是**它自己所在机器**没有该文件；凭据只落在云主机这一台，换机器跑必然 creds_missing，属于预期 fail-closed，不是缺口。",
+    "本次未向 owner 索要密码，也未手工写文件：脚本读取本机既有 600 权限文件完成全流程。",
+    "GPT 裁决类回信：check-gpt-ruling-mail 报 received=true / days_since_last_ruling=0（今日 2 封）。"
+  ]
+}
