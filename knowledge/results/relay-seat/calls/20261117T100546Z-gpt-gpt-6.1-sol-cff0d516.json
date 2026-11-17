@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-17T10:05:46.709Z",
+  "requested_at": "2026-11-17T10:04:41.166Z",
+  "responded_at": "2026-11-17T10:05:46.709Z",
+  "request_id": "2026111710044258708903vqPn1SIe",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "gpt",
+  "purpose": "generation",
+  "generation_output": true,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "model_tier": "gpt",
+  "model_class": "gpt",
+  "routing": {
+    "requested_model": "gpt-6.1-sol",
+    "served_model": "gpt-6.1-sol",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "ltzzz_proxy",
+  "boundary_exception": false,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 1200,
+  "batch": false,
+  "prompt": {
+    "chars": 6032,
+    "estimated_input_tokens": 4345,
+    "sha256": "cff0d516c3928581681b3231b55fa111b0854cbdb47ab8576cc4dace5afaf215"
+  },
+  "http": 200,
+  "duration_ms": 65542,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 5088,
+    "prompt_tokens_billed": 5088,
+    "usage_source": "reported",
+    "completion_tokens": 1155,
+    "total_tokens": 6243
+  },
+  "cost_usd": 0.016872,
+  "balance_before_usd": 12.868358,
+  "balance_after_usd": 12.851486,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 65542,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 1034,
+    "preview": "Q1 | 补证据 | 定时运行属于无人值守的运行时行为变更，不应仅凭现有工作流测试启用；需先明确固定时间、采集范围、仓库写入边界、失败告警、幂等约束和可回退方案 | 可能在无人工复核时读取邮箱或写入仓库，且失败可能造成重复采集或状态误判 | 补充定时配置草案、最小权限说明、回退步骤、告警验证和一次受控演练证据\n\nQ2 ",
+    "text": "Q1 | 补证据 | 定时运行属于无人值守的运行时行为变更，不应仅凭现有工作流测试启用；需先明确固定时间、采集范围、仓库写入边界、失败告警、幂等约束和可回退方案 | 可能在无人工复核时读取邮箱或写入仓库，且失败可能造成重复采集或状态误判 | 补充定时配置草案、最小权限说明、回退步骤、告警验证和一次受控演练证据\n\nQ2 | requires_gpt_final | 当前仅有修订内容、本地测试和专用 CI 成功，GPT 仍为 NEEDS_REVISION，且独立安全复核与最终 PASS 尚未完成；合入 main 也不能替代最终验收 | 未完成最终验收即合入可能使未闭环的 hire-phase1 逻辑进入默认分支 | 由 GPT 总控完成最终复核并明确 PASS/拒绝；在此之前保持 OPEN，不得将其写成已合入或已部署\n\nQ3 | requires_gpt_final | PR #287 直接触及生产 Worker 上传路径，属于生产部署/生产写入面的 L3 事项，本席无权批准 | 可能改变生产写入的失败行为、数据完整性或外部系统影响范围 | 由 Owner 或 Owner 明确授权的 GPT 总控席决定；先补完整安全复核、生产前验证、回退方案和部署回执\n\nQ4 | 补证据 | 现有证据只证明 Linear 只读导出成功，不证明桌面 Claude 派单映射已定义，也不证明扩展后仍无写操作 | 映射不清可能遗漏或过度纳入 issue，或意外触发 Linear 写入 | 补充纳入/排除规则、字段映射、同步频率、去重与冲突处理、只读权限证明及明确的无写操作验证\n\nQ5 | 补证据 | 多项关键状态仍未闭环：Phase 1 缺真实 IMAP 登录回执，mail-intake 缺 submitted/platform_accepted，邮件回读仍 pending，三个失败工作流缺逐项恢复证据，PR #408 缺 GPT 最终 PASS 与独立安全复核结论 | 可能把仓库生效、平台接受、邮件投递、生产上线或修复完成相互误认为同一状态 | 最小证据集为各项原始 CI/平台回执、IMAP 登录与回读结果、逐项失败原因及恢复验证、#408 独立复核和最终验收记录，并按 planned/submitted/deployed/live 分层记录\n\nOVERALL | 先补齐状态分层与关键原始回执，任何生产写入或未完成 GPT 最终验收的事项均不得推进 | Q5"
+  },
+  "key_fingerprint": null,
+  "failure": null,
+  "http_error": null
+}
