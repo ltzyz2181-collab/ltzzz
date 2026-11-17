@@ -84,3 +84,24 @@ node --test scripts/tests/hire-phase1.test.mjs
 - 未修改生产 Worker，未做任何生产部署。
 - 未合并 PR，未启用定时任务。
 - 本报告不声称“Phase 1 已通过”；最终验收权在 GPT，需另收豆包安全审查与千问 CI 复核。
+
+## 八、2026-11-17 二次修订：Windows 写入回滚
+
+本地 Windows 复跑发现两个跨平台缺陷，已修：
+
+1. **失败回滚在 Windows 实际不生效**：账本原来以 `a`（O_APPEND）打开，Windows 对该描述符执行 `ftruncate` 返回 `EPERM`。写入中途失败时虽然抛出了错误，但文件里保留了半条 JSONL。
+   - 修复：改为 `r+`（不存在时 `wx+`）打开，并按 `sizeBefore` 显式定位写入；失败时 `ftruncate(sizeBefore)` 在 Windows/Linux 都能截断回原长度。
+   - 影响：并发仍由既有锁串行化；零资金不变量未变。
+2. **路径断言把 Windows 反斜杠误判为失败**：`resolveLedgerPath()` 返回平台原生绝对路径，测试与 `phase1-smoke` 却用 `/` 结尾匹配，导致 Windows 上 `selfcheck` 与路径测试假失败。
+   - 修复：断言前统一把 `\` 归一为 `/`，约束本身不变。
+3. **stale reclaim sidecar 替换窗口**：`tryBreakStaleReclaimSidecar()` 原来在读取后直接 unlink。现改为 unlink 前再次读取并比对 `dev`/`ino`/`token`/stale，缩小“替换后误删新 sidecar”的窗口。
+
+复跑结果（Windows，本机）：
+
+```
+node --test scripts/tests/hire-phase1.test.mjs
+# tests 46 / pass 46 / fail 0 / skipped 0 / todo 0
+```
+
+说明：本节是同一 PR #408 的追加修订，不另开 PR；仍未合并、未部署、未进入 Phase 2。
+

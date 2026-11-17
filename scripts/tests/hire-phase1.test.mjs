@@ -644,7 +644,7 @@ test('releasing a lock only removes the lock this process owns', () => {
 
 test('a short write is completed instead of being reported as appended', () => {
   const ledger = tempLedger();
-  const io = {write: (fd, buffer, offset, length) => writeSync(fd, buffer, offset, Math.min(7, length))};
+  const io = {write: (fd, buffer, offset, length, position) => writeSync(fd, buffer, offset, Math.min(7, length), position)};
   const result = appendReceipt(ledger, acceptReceipt(), {io});
   assert.equal(result.appended, true);
   const rows = readLedger(ledger);
@@ -657,9 +657,9 @@ test('a write failure rolls the ledger back and is not reported as appended', ()
   appendReceipt(ledger, acceptReceipt());
   const before = readFileSync(ledger).length;
   let calls = 0;
-  const io = {write: (fd, buffer, offset, length) => {
+  const io = {write: (fd, buffer, offset, length, position) => {
     calls += 1;
-    if (calls === 1) return writeSync(fd, buffer, offset, 5);
+    if (calls === 1) return writeSync(fd, buffer, offset, 5, position);
     throw Object.assign(new Error('synthetic ENOSPC'), {code: 'ENOSPC'});
   }};
   const second = acceptReceipt({order_id: 'HIRE-TEST-20261116-42', idempotency_key: 'HIRE-TEST-20261116-42.attempt-1'});
@@ -697,8 +697,9 @@ test('the ledger path is confined to knowledge/results/hire/', () => {
   for (const candidate of rejected) {
     assert.throws(() => resolveLedgerPath(candidate), error => Boolean(error.code), `accepted ${candidate}`);
   }
-  assert.ok(resolveLedgerPath(undefined).endsWith('knowledge/results/hire/ledger-v1.jsonl'));
-  assert.ok(resolveLedgerPath('knowledge/results/hire/ci-ledger.jsonl').endsWith('knowledge/results/hire/ci-ledger.jsonl'));
+  const portable = value => value.replaceAll('\\', '/');
+  assert.ok(portable(resolveLedgerPath(undefined)).endsWith('knowledge/results/hire/ledger-v1.jsonl'));
+  assert.ok(portable(resolveLedgerPath('knowledge/results/hire/ci-ledger.jsonl')).endsWith('knowledge/results/hire/ci-ledger.jsonl'));
 });
 
 test('a symlinked or directory ledger path is refused', () => {

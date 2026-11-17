@@ -106,7 +106,7 @@ check('ledger-path-confined', () => {
     try { resolveLedgerPath(candidate); } catch { threw = true; }
     assert(threw, `escape path accepted: ${candidate}`);
   }
-  assert(resolveLedgerPath(undefined).endsWith('knowledge/results/hire/ledger-v1.jsonl'), 'default ledger path changed');
+  assert(resolveLedgerPath(undefined).replaceAll('\\', '/').endsWith('knowledge/results/hire/ledger-v1.jsonl'), 'default ledger path changed');
 });
 
 // 8. An "accepted" receipt cannot be manufactured without a passing gate.

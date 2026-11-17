@@ -950,9 +950,16 @@ function isLockStale(state, {staleMs, now}) {
 function tryBreakStaleReclaimSidecar(reclaimPath, {staleMs, now}) {
   const state = readLockState(reclaimPath);
   if (!state) return;
-  if (isLockStale(state, {staleMs, now})) {
-    try { unlinkSync(reclaimPath); } catch {}
-  }
+  if (!isLockStale(state, {staleMs, now})) return;
+  // The sidecar has no higher lock, so re-read its identity immediately before
+  // unlinking. This narrows the replace-then-unlink window; a reclaimer that
+  // replaced the sidecar with a live one is preserved.
+  const again = readLockState(reclaimPath);
+  if (!again) return;
+  if (again.dev !== state.dev || again.ino !== state.ino) return;
+  if (state.token !== null && again.token !== state.token) return;
+  if (!isLockStale(again, {staleMs, now})) return;
+  try { unlinkSync(reclaimPath); } catch {}
 }
 
 // Returns true when the observed lock is gone and the caller may retry the
@@ -1045,16 +1052,34 @@ export function acquireLedgerLock(ledgerPath, {timeoutMs = 15000, staleMs = 3000
 const DEFAULT_IO = Object.freeze({
   open: openSync,
   close: closeSync,
-  write: writeSync,
+  write: (fd, buffer, offset, length, position) => writeSync(fd, buffer, offset, length, position),
   fsync: fsyncSync,
   ftruncate: ftruncateSync,
   fstat: fstatSync,
 });
 
-function writeAllSync(fd, buffer, io) {
+// The ledger is opened read/write rather than append-only so that a failed
+// write can be rolled back with ftruncate on every platform. Windows rejects
+// ftruncate on O_APPEND descriptors with EPERM, which would leave a partial
+// JSONL tail behind exactly when the rollback matters.
+function openLedgerForAppend(io, target) {
+  try {
+    return io.open(target, 'r+', 0o600);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  try {
+    return io.open(target, 'wx+', 0o600);
+  } catch (error) {
+    if (error.code === 'EEXIST') return io.open(target, 'r+', 0o600);
+    throw error;
+  }
+}
+
+function writeAllSync(fd, buffer, io, position = 0) {
   let offset = 0;
   while (offset < buffer.length) {
-    const written = io.write(fd, buffer, offset, buffer.length - offset);
+    const written = io.write(fd, buffer, offset, buffer.length - offset, position + offset);
     if (!Number.isSafeInteger(written) || written <= 0) {
       fail('ledger_write_incomplete', `${offset}/${buffer.length}`);
     }
@@ -1091,11 +1116,11 @@ export function appendReceipt(ledgerPath, receipt, options = {}) {
     }
 
     const buffer = Buffer.from(`${canonicalJson(receipt)}\n`, 'utf8');
-    const fd = io.open(target, 'a', 0o600);
+    const fd = openLedgerForAppend(io, target);
     try {
       const sizeBefore = io.fstat(fd).size;
       try {
-        const written = writeAllSync(fd, buffer, io);
+        const written = writeAllSync(fd, buffer, io, sizeBefore);
         if (written !== buffer.length) fail('ledger_write_incomplete', `${written}/${buffer.length}`);
         io.fsync(fd);
       } catch (error) {
