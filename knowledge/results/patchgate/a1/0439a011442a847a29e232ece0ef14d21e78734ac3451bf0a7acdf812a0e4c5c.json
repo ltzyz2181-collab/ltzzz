@@ -1,0 +1,149 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-410",
+  "head_sha": "cbf1f0d1d9af4a4b06c90817e5f13f246f583586",
+  "pr_number": 410,
+  "source_main_sha": "0525b0790935bf56b97469297add940729c7d23a",
+  "run_id": "44050518216",
+  "at_utc": "2026-11-17T08:53:05.896Z",
+  "idempotency_key": "PATCHGATE-PR-410:cbf1f0d1d9af4a4b06c90817e5f13f246f583586",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "73a221e1c68074c8ccf265aab60820642e6c20c9",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/email-authority.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/email-authority-20261117.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/relay-seat-policy.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/2026-11-16-部署自动化授权与阶段不变量.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/2026-11-17-邮件自动化三级授权裁决.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/2026-11-17-部署汇总与待裁决-邮件稿.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/DEPLOY-RECEIPT-CURRENT.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/claude/EMAIL-PHASE2-20261117.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/deploy/EMAIL-OWNER-REPORT-20261117.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/deploy/EMAIL-WORKFLOW-20261117.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/doubao/EMAIL-REVIEW-20261117.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "ops/dispatch/inbox/qianwen/EMAIL-LEDGER-20261117.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/email-authority.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-410",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-410",
+      "base_sha": "0525b0790935bf56b97469297add940729c7d23a",
+      "head_sha": "cbf1f0d1d9af4a4b06c90817e5f13f246f583586",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "6127509d5430fe2fb311e45623d0e11dafa4f9b6587f24796d553a0d00e5a5ba"
+    },
+    "subject_sha256": "493e2811393d2e8343ac449d88abe736dac80b7ea694cd4d9068b105aabae6d1",
+    "idempotency_key": "PATCHGATE-PR-410:cbf1f0d1d9af4a4b06c90817e5f13f246f583586",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "config/relay-seat-policy.json",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-relay-proxy.ltzyz2181.workers.dev"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
