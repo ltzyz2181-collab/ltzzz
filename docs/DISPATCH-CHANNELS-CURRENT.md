@@ -45,3 +45,13 @@ Owner 最新说明仅使用 WorkBuddy 网页版，没有 WorkBuddy 桌面接入�
 ## WorkBuddy 网页真实回包（本轮新增）
 
 Owner 提供具体会话并保存登录后，TinyFish run `3b9dae5c-b53e-49d1-8647-5c2a87da10df` 在该网页实际发送一条 `WB-WEB-20261022-01` 通讯任务，页面实际回复 `ACK WB-WEB-20261022-01`，逐字匹配；界面模型选项为“快速”，具体提供商/model 未显示。实证见 [网页回执](../knowledge/results/dispatch-channels/WORKBUDDY-WEB-20261022.json)。这补上网页登录和单次发收验证；不证明工具任务交付、定时常驻或无人值守接单。原 #193 仓库规则执行器证据继续单独保留。
+
+## 豆包队列（2026-11-17 新增）
+
+此前 `ops/dispatch/inbox/doubao/` 里的历史卡片没有通用消费器（`native-inbox.yml` 只认固定的 `REMAINING-DEPLOY-20261028.md`）。本轮新增独立车道：
+
+- 卡片目录 `ops/dispatch/queue-doubao/*.json`（与千问队列分开，避免千问消费者取到豆包卡后写一张 `rejected_invalid_card` 回执把卡片吃掉）。
+- 消费者 `scripts/run-doubao-dispatch.mjs`，每次 run 最多消费 1 张，调用前先落盘并推送 reservation。
+- 工作流 `.github/workflows/doubao-dispatch.yml`：verify job 跑测试；只有 push main / workflow_dispatch 才会真正调用模型。
+- 通道只走已有豆包代理（`DOUBAO_USE_PROXY=true`），没有 Key 直连回退；缺代理直接失败。
+- 回执落在 `knowledge/results/doubao-dispatch/<id>.json`，状态固定为 `draft_delivered_pending_independent_review`，`accepted=false`、`financial_execution=false`。
