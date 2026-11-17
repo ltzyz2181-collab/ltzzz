@@ -3,14 +3,18 @@
 // 背景：2026-11-17 首轮实跑发现 ¥9.90 这种符号在前写法未被 AMOUNT 命中（漏脱敏）。
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 
-const ROOT = '/home/user/ltzzz';
+// 从测试文件位置推导仓库根目录：本机、CI、任意 worktree 都能跑，不写死云主机路径。
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const COLLECTOR = path.join(ROOT, 'scripts/collect-gmail-imap.py');
 
 function redact(subject) {
   const py = `
-import importlib.util, json, sys
-spec = importlib.util.spec_from_file_location('cg', '${ROOT}/scripts/collect-gmail-imap.py')
+import importlib.util, json
+spec = importlib.util.spec_from_file_location('cg', ${JSON.stringify(COLLECTOR)})
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 print(json.dumps(m.redact(${JSON.stringify(subject)}), ensure_ascii=False))

@@ -1,0 +1,64 @@
+name: Mail intake phase 2 contract checks
+# 只做仓库内契约测试：不连邮箱、不读凭据、不写仓库、不启用任何定时任务。
+# Phase 1 的真实 IMAP 回执必须由 Owner 在本机执行，CI 不持有、也拿不到应用专用密码。
+on:
+  pull_request:
+    paths:
+      - 'scripts/mail/**'
+      - 'scripts/run-mail-intake.mjs'
+      - 'scripts/track-gpt-rulings.mjs'
+      - 'scripts/check-gpt-ruling-mail.mjs'
+      - 'scripts/check-gmail-credentials.mjs'
+      - 'scripts/record-task-state-correction.mjs'
+      - 'scripts/collect-gmail-imap.py'
+      - 'scripts/tests/mail-*.test.mjs'
+      - 'scripts/tests/gmail-*.test.mjs'
+      - 'scripts/tests/ruling-tracker.test.mjs'
+      - 'scripts/tests/task-state-correction.test.mjs'
+      - 'scripts/tests/test_gmail_imap_body.py'
+      - 'scripts/tests/mail-workflow-policy.test.mjs'
+      - 'ops/deep-superagent/corrections/**'
+      - 'knowledge/results/deep-superagent/daily-2026-11-17.json'
+      - '.github/workflows/mail-intake-phase2.yml'
+  workflow_dispatch:
+
+permissions: {contents: read}
+concurrency: {group: 'mail-intake-phase2-${{ github.ref }}', cancel-in-progress: true}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Unit tests (dedupe / intake / tracker / corrections / credentials)
+        run: |
+          node --test \
+            scripts/tests/mail-dedupe.test.mjs \
+            scripts/tests/mail-intake-pipeline.test.mjs \
+            scripts/tests/mail-intake.test.mjs \
+            scripts/tests/ruling-tracker.test.mjs \
+            scripts/tests/gpt-ruling-mail.test.mjs \
+            scripts/tests/task-state-correction.test.mjs \
+            scripts/tests/gmail-redact.test.mjs \
+            scripts/tests/gmail-body-peek.test.mjs \
+            scripts/tests/gmail-credentials.test.mjs \
+            scripts/tests/mail-workflow-policy.test.mjs
+
+      - name: Python BODY.PEEK tests
+        run: python3 scripts/tests/test_gmail_imap_body.py
+
+      - name: Correction ledger hash chain and source records
+        run: node scripts/record-task-state-correction.mjs --verify
+
+      - name: Credential check fails closed when nothing is configured
+        run: |
+          set +e
+          node scripts/check-gmail-credentials.mjs --env-file "$RUNNER_TEMP/absent.env" --json
+          code=$?
+          set -e
+          test "$code" = 2 || { echo "expected exit 2 (blocked), got $code"; exit 1; }
