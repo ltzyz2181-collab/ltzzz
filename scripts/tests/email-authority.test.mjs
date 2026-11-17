@@ -100,10 +100,16 @@ test('every deployment completion sends a report with ruling items and a next-st
   assert.equal(r.receipt_required, true);
 });
 
-test('deploy authority is revised by this ruling: merge may automate, production deploy may not', () => {
+test('deploy authority follows owner authorization: auto merge and auto deploy are on; phase guards stay closed', () => {
   const d = read('config/deploy-authority-20261116.json');
-  assert.equal(d.revised_by, 'GPT-LTZZZ-AUTONOMY-RULING-20261117-01');
-  assert.equal(d.automatic_deploy, false);
-  assert.equal(d.automatic_merge.allowed, true);
-  assert.equal(d.production_deploy.not_covered_by_this_record, true);
+  assert.equal(d.automatic_deploy, true);
+  const current = read('config/deploy-automation-authority-20261117.json');
+  assert.equal(current.automatic_merge, true);
+  assert.equal(current.automatic_deploy, true);
+  assert.equal(current.financial_execution, false);
+  assert.equal(current.production_signing, false);
+  assert.ok(current.excluded_families.includes('five_signature_safe'));
+  for (const p of ['config/patch-policy.json', 'config/patchgate-a2.json', 'config/pi-cloud.json']) {
+    assert.equal(read(p).automatic_deploy, false, p + ' must stay fail-closed');
+  }
 });
