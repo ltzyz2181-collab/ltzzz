@@ -31,9 +31,10 @@ function mockFetcher({onMutation} = {}) {
 }
 
 test("只允许 Linear 入门模板这 4 条，其他标识符一律拒绝", () => {
-  assert.deepEqual(ALLOWED_ISSUES, ["LTZ-1", "LTZ-2", "LTZ-3", "LTZ-4"]);
+  assert.deepEqual(ALLOWED_ISSUES, ["LTZ-1", "LTZ-2", "LTZ-3", "LTZ-4", "LTZ-9"]);
   assert.deepEqual(parseIssueList("LTZ-1, LTZ-2"), ["LTZ-1", "LTZ-2"]);
   assert.throws(() => parseIssueList("LTZ-5"), /not_allowlisted:LTZ-5/);
+  assert.deepEqual(parseIssueList("LTZ-9"), ["LTZ-9"]);
   assert.throws(() => parseIssueList(""), /issues_required/);
 });
 

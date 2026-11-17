@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// 唯一允许写入的范围：Linear 自带入门模板 issue。其他任何标识符一律拒绝。
-export const ALLOWED_ISSUES = Object.freeze(["LTZ-1", "LTZ-2", "LTZ-3", "LTZ-4"]);
+// 唯一允许写入的范围：Linear 自带入门模板 + 已完成使命的连通性测试。其他任何标识符一律拒绝。
+export const ALLOWED_ISSUES = Object.freeze(["LTZ-1", "LTZ-2", "LTZ-3", "LTZ-4", "LTZ-9"]);
 export const DEFAULT_ENDPOINT = "https://api.linear.app/graphql";
 
 const ISSUE_QUERY = `query LtzzzTriageIssue($id:String!){

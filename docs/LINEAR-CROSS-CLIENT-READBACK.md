@@ -41,7 +41,7 @@ GPT本轮先实际读取四项与评论后导出上述滚动文件。后续沿�
 
 ## 2026-11-17 追加：受限写入（仅 4 条模板 issue）
 
-- 唯一写例外：`LTZ-1`/`LTZ-2`/`LTZ-3`/`LTZ-4`（Linear 自带入门模板）允许标记 Done 或归档；其余 issue 仍只读。
+- 唯一写例外：`LTZ-1`/`LTZ-2`/`LTZ-3`/`LTZ-4`（Linear 自带入门模板）与 `LTZ-9`（已完成使命的连通性实测）允许标记 Done 或归档；其余 issue 仍只读。
 - 白名单硬编码在 `scripts/linear-board-triage.mjs`，其他标识符直接拒绝（`not_allowlisted:<id>`）；`Done` 状态按 `type=completed` 选取，找不到就报错，不猜。
 - 入口：`.github/workflows/linear-board-triage.yml`，`confirm=false` 只 dry-run，`confirm=true` 才写；写入回执落 `ops/linear-triage/<UTC时间>-<动作>.json`，含 before/after。
-- 本次执行：LTZ-1/2/3/4 → Done（owner 2026-11-17「清」）。
+- 本次执行：LTZ-1/2/3/4 → Done，LTZ-9 → Done（owner 2026-11-17「清」「9」）。
