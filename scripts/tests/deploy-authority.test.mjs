@@ -20,7 +20,11 @@ const AUTHORITY = 'config/deploy-authority-20261116.json';
 test('deploy authority record states owner authorization without overclaiming', () => {
   const a = read(AUTHORITY);
   assert.equal(a.schema, 'ltzzz.deploy-authority.v1');
-  assert.equal(a.automatic_deploy, true);
+  assert.equal(a.automatic_deploy, false);
+  assert.equal(a.automatic_merge.allowed, true);
+  assert.equal(a.production_deploy.not_covered_by_this_record, true);
+  assert.match(a.production_deploy.requires, /independent owner authorization/);
+  assert.equal(a.revised_by, 'GPT-LTZZZ-AUTONOMY-RULING-20261117-01');
   assert.match(a.recorded_at_utc, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
   assert.ok(a.authorization?.source);
   assert.ok(a.authorization?.instruction);
@@ -28,6 +32,7 @@ test('deploy authority record states owner authorization without overclaiming', 
   assert.ok(a.authorization.scope);
   assert.ok(Array.isArray(a.preconditions) && a.preconditions.length >= 3);
   assert.ok(a.not_claimed.includes('any specific deployment has already occurred under this record'));
+  assert.ok(a.not_claimed.includes('production deployment under this record'));
 });
 
 test('rollback entry stays explicit and manual', () => {
@@ -77,7 +82,8 @@ test('authority registry stays byte-locked; the deploy record points at itself i
   assert.equal(Object.hasOwn(JSON.parse(autonomy), 'deployment_authority'), false);
   const a = read(AUTHORITY);
   assert.equal(a.schema, 'ltzzz.deploy-authority.v1');
-  assert.equal(a.automatic_deploy, true);
+  assert.equal(a.automatic_deploy, false);
+  assert.equal(a.production_deploy.not_covered_by_this_record, true);
 });
 
 test('deploys stay triggered by push to main', () => {
