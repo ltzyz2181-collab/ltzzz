@@ -1,0 +1,32 @@
+name: Dispatch seat policy
+
+on:
+  pull_request:
+    paths:
+      - 'config/dispatch-seat-policy-*.json'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/tests/dispatch-seat-policy.test.mjs'
+      - 'ops/deep-superagent/tasks/**.json'
+      - '.github/workflows/dispatch-seat-policy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'config/dispatch-seat-policy-*.json'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'ops/deep-superagent/tasks/**.json'
+
+permissions: {contents: read}
+
+jobs:
+  check:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    permissions: {contents: read}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/dispatch-seat-policy.test.mjs
+      - name: Validate task cards against seat policy
+        run: node scripts/dispatch-seat-policy.mjs check

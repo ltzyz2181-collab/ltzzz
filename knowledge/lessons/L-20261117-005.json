@@ -1,0 +1,72 @@
+{
+  "id": "L-20261117-005",
+  "observed_at": "2026-11-17T07:20:00Z",
+  "agent_actual": {
+    "provider": "doubao",
+    "model": null
+  },
+  "reporter": {
+    "provider": "doubao",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "docs/DISPATCH-SEAT-POLICY-CURRENT.md",
+    "commit": null
+  },
+  "task_tags": [
+    "recurrence",
+    "lesson_enforcement",
+    "dispatch",
+    "seat_policy",
+    "owner_fatigue"
+  ],
+  "error_class": "other",
+  "signature": "same_pit_repeated_no_preflight_gate",
+  "what_happened": "同类问题连续多轮复发（邮件没收到、仓库有值还要 owner 找、日报啰嗦无分流）。每轮事后都写了 lesson 与 CURRENT 文档，但下一轮开始干活前没有任何强制步骤去查这些 lesson，也没有『同一 signature 复发 N 次即升级』的机制，于是同样的坑按天重复，owner 反复当人肉校验器。",
+  "expected": "lesson 必须在派单/开工前被强制查询并记录 lessons_considered（已有 checkConsidered 机制但只在 workpool 预检路径生效）；同一 signature 累计 3 次应自动升级为 mandatory 并要求 owner 可见的处置结论；重要任务默认多席（Deep 主办 + Claude/GPT 中转复核）以降低单席盲区。",
+  "evidence": [
+    {
+      "path": "config/dispatch-seat-policy-20261117.json",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "scripts/dispatch-seat-policy.mjs",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "docs/DISPATCH-SEAT-POLICY-CURRENT.md",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "进化落在『事后记录』一层，缺少『开工前强制读取 + 复发计数升级 + 多席交叉检查』三层，单席执行时无人纠偏。",
+    "status": "hypothesis"
+  },
+  "rule": "动手前必须按 task_tags 查 knowledge/lessons 并用 checkConsidered 记录 lessons_considered；同一 signature 复发 3 次升级 mandatory 并给出机制修正；重要任务（资金/退款/签名/部署/凭据/合规）一律按 config/dispatch-seat-policy-20261117.json 派 Deep 主办 + Claude/GPT 中转复核。",
+  "check": {
+    "kind": "ci_guard",
+    "ref": "scripts/tests/dispatch-seat-policy.test.mjs"
+  },
+  "severity": "high",
+  "mandatory": true,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": [
+    {
+      "observed_at": "2026-11-17T06:40:00Z",
+      "source_ref": "owner：明明仓库就有偏要我找"
+    },
+    {
+      "observed_at": "2026-11-17T07:20:00Z",
+      "source_ref": "owner：为什么反复坑反复踩 天天做重复事情"
+    }
+  ]
+}
