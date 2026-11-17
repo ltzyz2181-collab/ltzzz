@@ -1,0 +1,97 @@
+{
+ "schema": "ltzzz.deep-superagent.automation-receipt.v1",
+ "date": "2026-11-17",
+ "owner_decision": "除资金、放款这类重要事件外全部自动化 + 自动化部署；1/18/19/15 部署，12 Gmail 读全箱，13 汇总邮件必发，11 先 PR+测试绿了再部署并报 GPT",
+ "items": [
+  {
+   "item": "11",
+   "action": "relay adjudication wiring",
+   "status": "deployed",
+   "evidence": {
+    "pr": 399,
+    "merge_commit": "ae72704dc3a9803b55e6c16ae1c1f14e44249853",
+    "deploy_run": "44009939161",
+    "receipt": "knowledge/results/deep-superagent/deploy-44009939161-attempt-1.json",
+    "tests": "11 new cases; deep-superagent suite 60 pass / 0 fail",
+    "health": "relay_adjudication.enabled=true, relay_attested=false, model_calls=0"
+   }
+  },
+  {
+   "item": "1",
+   "action": "Phase1 six security requirements rebuilt on main",
+   "status": "merged",
+   "evidence": {
+    "pr": 400,
+    "merge_commit": "2658ef22d",
+    "closed_pr": 398,
+    "files": [
+     "scripts/hire-phase1.mjs",
+     "scripts/hire/gates/phase1-smoke.mjs",
+     "scripts/tests/hire-phase1.test.mjs",
+     "docs/HIRE-AI-PHASE1-SPEC-20261116.md",
+     "ops/hire/orders/HIRE-SAMPLE-20261116-01.json",
+     "ops/hire/orders/HIRE-SAMPLE-20261116-02-forbidden.json"
+    ],
+    "tests_on_main": "node --test scripts/tests/hire-phase1.test.mjs -> 16 pass / 0 fail",
+    "ci": ["bootstrap pass", "offline pass", "observe pass"]
+   }
+  },
+  {
+   "item": "15",
+   "action": "relay 口径统一，历史记录标注 superseded",
+   "status": "documented",
+   "evidence": {"doc": "docs/RELAY-SEAT-CURRENT.md", "commit": "1a8cfc701"}
+  },
+  {
+   "item": "13",
+   "action": "汇总邮件改为必发",
+   "status": "documented",
+   "evidence": {"doc": "docs/MAIL-CHANNEL-CURRENT.md", "commit": "1a8cfc701"}
+  },
+  {
+   "item": "12",
+   "action": "Gmail 全箱读取",
+   "status": "code_ready_creds_missing",
+   "evidence": {
+    "script": "scripts/collect-gmail-fullbox.mjs",
+    "receipt": "knowledge/results/deep-superagent/mail-fullbox/latest.json",
+    "observed": "status=creds_missing, count=0, exit 3",
+    "required_env": ["GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN"]
+   },
+   "note": "fail-closed；Agent Mail 仍是唯一可读收件渠道"
+  },
+  {
+   "item": "18",
+   "action": "桌面 github.com 出网",
+   "status": "blocked_external",
+   "evidence": {
+    "doc": "docs/DESKTOP-SYNC-CURRENT.md",
+    "commit": "fe9276430",
+    "observed": "github.com:443 git 连接 21090ms 超时；api.github.com 200；raw/codeload 301；127.0.0.1:10810 未监听"
+   },
+   "note": "非配置问题，出口被封；推送继续走云主机"
+  },
+  {
+   "item": "19",
+   "action": "桌面仓库同步",
+   "status": "blocked_by_item18",
+   "evidence": {
+    "branch": "feat/order-closure",
+    "head": "f42e5b33",
+    "behind_main": 229,
+    "uncommitted": "27 项，全部未跟踪",
+    "backup_dir": "C:\\Users\\李天柱\\ltzzz-backup-20261117"
+   }
+  }
+ ],
+ "mail_report": {
+  "channel": "agent_mail",
+  "from": "qingqizhu6502@agent.qq.com",
+  "to": "ltzyz2181@gmail.com",
+  "subject": "[LTZZZ][自动化] 第11项中转裁决已上线 / 第1项Phase1并入main / 桌面出口受阻",
+  "message_id": "msg_WpmrreBo5ywZ2ju3UFqVh8wuxW6uxvSz6zE_Mgw9crqCtQ",
+  "queued": true,
+  "body_persisted_in_repo": false
+ },
+ "counts": {"merges_performed": 2, "deploys_performed": 1, "docs_committed": 4, "fund_actions": 0}
+}
