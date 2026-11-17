@@ -2,9 +2,9 @@
  "schema": "ltzzz.seat-roles.v1",
  "role_id": "SEAT-ROLES-20261116",
  "decided_by": "owner",
- "decided_at": "2026-11-16",
+ "decided_at": "2026-11-17",
  "decision_source": "owner session instruction 2026-11-16（本对话）：『就按他们提的给中转 ai 安排』+ 两项 owner 项授权",
- "override_scope": "只新增受限裁决位，不改变 relay 执行席 receipt 语义（decision_authority 仍为 false，financial_execution 仍为 false）",
+ "override_scope": "只新增受限裁决位；2026-11-17 起 relay_gpt 的裁决在运行时接通（stage=relay_adjudication），资金族短路到 gpt 决策席，执行席 receipt 语义不变（decision_authority 未改变，financial_execution 仍为 false）",
  "seats": {
   "relay_gpt": {
    "provider": "apisrouter_relay",
@@ -142,6 +142,31 @@
    ],
    "revocable": true,
    "status": "authorized_gpt_funds_decision_excluding_5sign_wallet"
+  },
+  {
+   "id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
+   "item": "中转 GPT 运行时裁决接线（非资金项）",
+   "authorized_by": "owner",
+   "authorized_at": "2026-11-17",
+   "place_of_authorization": "本对话 + 本文件（唯一台账）；副本随汇总邮件送达 GPT 备案",
+   "scope": "非资金常规项的运行时裁决：文档与口径、状态确认、记录补写、执行序、证据缺口归类；只出裁决记录，不执行",
+   "excluded": [
+    "资金动作与放款",
+    "退款语义与支付口径",
+    "钱包/Safe 多签",
+    "签名与私钥",
+    "凭据访问",
+    "生产写",
+    "对外发布"
+   ],
+   "constraints": [
+    "资金族在任何 relay 调用之前短路为 needs_decision 并升级到 gpt 决策席",
+    "裁决记录 relay_attested=false，不得声明 accepted/deployed/paid",
+    "provider 失败或 JSON 不合格记为 undecided，不重试，不用他席结果顶替",
+    "裁决不改变执行席 decision_authority"
+   ],
+   "revocable": true,
+   "status": "authorized_runtime_wiring_except_funds_family"
   }
  ],
  "deployment_note": "部署=配置与文档入库并 push main；不涉及生产部署、不涉及资金、不涉及凭据",

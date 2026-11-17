@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import worker,{DeepTask,normalizeJob,parsePlan,outputTokenLimit,verifyReview,sha256,unsupportedMetadataDeclarations,CONTENT_GUARD_REVISION,relaySeatState,relaySeatStates,availableWorkSeats} from '../../workers/deep-superagent/index.js';
 
+// Relay adjudication stage tests live in their own file, imported here so the
+// existing CI verify step (no workflow-scope token here) still runs them.
+import './deep-superagent-adjudicator.test.mjs';
 const TOKEN='test-only-service-token-not-a-real-key';
 const INPUT={task_id:'DEEP-SUPERAGENT-20261103-TEST',package_id:'',prompt:'Create a concise source-checking checklist; exercise all three workers.',data_classification:'public_distributable',platform:'internal'};
 const headers={Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'};
