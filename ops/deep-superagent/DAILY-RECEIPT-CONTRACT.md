@@ -68,3 +68,14 @@ owner 2026-11-17 明确要求：每日巡检必须告诉他，有没有发了但
 - 数量为零时写 `count: 0` 并注明"本窗口内所有请裁决邮件均有同主题回信"，不许省略整段。
 - 匹配不上 ≠ GPT 没回。回信主题常被改写，所以措辞只写「未见到同主题回信」，不得写成「GPT 未回复」。
 - 同一天若 `agent_mail.status` 非 ok（读不到收件箱），本段必须记 `unknown` 并说明原因，不得默认零。
+
+## 第六段（2026-11-17 增补）：当日是否收到 GPT 裁决回信（gpt_ruling_received）
+
+owner 2026-11-17 明确要求：每日巡检如果**没收到 GPT 回复的裁决邮件**，必须直接告诉他，不要等他来问。
+
+- 每天在 Agent Mail 收件箱按 `from.email` 命中 GPT 席位（`ltzyz2181@gmail.com` / name `LTZZZ`）的信件里，判断当日窗口内是否存在**裁决类**回信（主题或正文含 ruling/裁决/decision/disposition/keep_blocked/approve 等，且非自动通知）。
+- 字段固定为 `gpt_ruling_received: {received, last_received_at_utc, last_message_id, days_since_last_ruling, severity, note}`，写进 `daily-<YYYY-MM-DD>.json` 并在汇总邮件正文第一段之后单独一行提示，**每天都要出现**。
+- `received=false` 且 `days_since_last_ruling>=1` 时：`severity='owner_attention'`，提示语固定为「今日未见 GPT 裁决回信，已连续 N 天」。
+- `received=false` 但当天是休息日/无待裁决事项时，仍要写出来，`note` 说明「当日无待裁决项」，不得整段省略。
+- 收件箱读不到（`agent_mail.status` 非 ok）：本段记 `received='unknown'`、`severity='unknown'`，并附失败原因，**不得**默认写成"没收到"。
+- 只报事实与计数，不替 GPT 补裁决、不因缺回信自行推进 `keep_blocked` / `needs_decision` 项。
