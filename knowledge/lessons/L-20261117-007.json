@@ -1,0 +1,57 @@
+{
+  "id": "L-20261117-007",
+  "observed_at": "2026-11-17T07:40:00Z",
+  "agent_actual": {
+    "provider": "doubao",
+    "model": null
+  },
+  "reporter": {
+    "provider": "doubao",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "results/commerce/miniprogram-upload-latest.json",
+    "commit": "e2400548e22f817fac4119b3fb253c13238b7900"
+  },
+  "task_tags": [
+    "miniprogram",
+    "release",
+    "version_number",
+    "ci",
+    "regression"
+  ],
+  "error_class": "other",
+  "signature": "upload_version_from_run_number",
+  "what_happened": "中小程序上传脚本用 '0.1.' + GITHUB_RUN_NUMBER 生成版本号：本工作流第 9 次运行上传出 0.1.9，而当时线上已发布 0.1.12。该版本一旦提交审核会被微信判为降级，整轮上传白做；更严重的是工作流每重跑一次版本号只跟 run 序号走，与线上实际发布版本无任何关系，线上发过几次版本后这条路必然再次撞上。",
+  "expected": "版本号必须是仓库里单调递增的持久状态：读 results/commerce/miniprogram-version.json 的 next_version，上传成功后自增写回并在 workflow 里提交该文件；读不到才回退，回退时在回执里标 version_source=fallback。",
+  "evidence": [
+    {
+      "path": "results/commerce/miniprogram-upload-latest.json",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "results/commerce/miniprogram-version.json",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "把『CI 内部计数器』当成了『对外发布版本号』。run 序号是流水线私有且会因重跑/删 run 而错位，发布版本号是跨流水线、跨手工发版的全局事实，两者必须解耦。",
+    "status": "verified"
+  },
+  "rule": "任何对外发布/提审的版本号只能取自仓库内持久版本文件（schemas:results/commerce/miniprogram-version.json），上传成功后由脚本自增写回并提交；禁止用 GITHUB_RUN_NUMBER、时间戳或本地计数器生成对外版本号；提审前先核对 next_version > 微信后台线上版本。",
+  "check": {
+    "kind": "ci_guard",
+    "ref": ".github/workflows/miniprogram-upload.yml"
+  },
+  "severity": "high",
+  "mandatory": true,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": []
+}
