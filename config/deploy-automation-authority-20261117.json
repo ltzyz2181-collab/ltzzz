@@ -1,0 +1,44 @@
+{
+  "schema": "ltzzz.deploy-automation-authority.v1",
+  "authority_id": "OWNER-AUTH-20261117-DEPLOY-AUTOMATION",
+  "authorized_by": "owner",
+  "decided_at": "2026-11-17",
+  "owner_instruction": "自动部署吧（第16项 automatic_deploy 松开；除资金、放款这类重要事件外全部自动化）",
+  "automatic_merge": true,
+  "automatic_deploy": true,
+  "automatic_rollback": false,
+  "financial_execution": false,
+  "production_signing": false,
+  "real_funds_enabled": false,
+  "deploy_scope": [
+    "cloudflare_workers",
+    "github_actions_pipeline",
+    "documentation_and_test_artifacts",
+    "repository_skill_distribution_non_signature"
+  ],
+  "excluded_families": [
+    "funding_moves",
+    "loan_disbursement",
+    "refund_semantics",
+    "wallet_or_safe_ops",
+    "signing",
+    "credential_access",
+    "production_write_with_funds_effect",
+    "five_signature_safe"
+  ],
+  "preconditions": [
+    "tests_green_before_merge",
+    "health_readback_after_deploy",
+    "deploy_receipt_written_to_knowledge/results",
+    "model_calls_zero_for_verification_only",
+    "no_funds_actions_in_same_run"
+  ],
+  "guards_preserved": {
+    "note": "A0/A2/A3 与 pi-cloud 的 validation_only 开关是阶段级结构性护栏，不随本授权翻转；本授权只覆盖真正的生产部署执行权。",
+    "config/patch-policy.json:automatic_deploy": false,
+    "config/patchgate-a2.json:automatic_deploy": false,
+    "config/patchgate-a3.json:generic_production_deploy_enabled": false,
+    "config/pi-cloud.json:automatic_deploy": false
+  },
+  "audit_reading": "部署回执必须写 source_commit、run_id、health 快照；没有回读的部署记为 unknown，不得记为 deployed。"
+}
