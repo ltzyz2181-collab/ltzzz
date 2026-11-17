@@ -1,0 +1,70 @@
+{
+  "schema": "ltzzz.deploy-docket.v1",
+  "date": "2026-11-17",
+  "issued_by": "cloud-main (doubao execution seat)",
+  "issued_at": "2026-11-17T09:50:00Z",
+  "consumed_by": "DEEP 每日巡检（次日按本清单裁决/部署）",
+  "owner_note": "今日给 GPT 的邮件额度与算力已用完，今日不再出邮件裁决；明日巡检按本清单推进",
+  "hard_criteria": ["能自动部署", "任务不中断", "项目能持续运行"],
+  "already_deployed_do_not_repeat": [
+    {"target": "order-deliver 云函数", "id": "lam-r5yum0gf", "receipt": "ops/deploy-receipts/DR-20261117-order-deliver.json", "note": "同代码同环境 15:11 已冗余重部署一次，禁止再部署"},
+    {"target": "gmail-intake phase2", "receipt": "ops/deploy-receipts/DR-20261117-mail-intake-phase2.json"},
+    {"target": "email-authority policy file", "receipt": "ops/deploy-receipts/DR-20261117-pr410-email-authority.json", "note": "运行时自动发送仍未落地"},
+    {"target": "desktop-claude dispatch channel", "receipt": "ops/deploy-receipts/DR-20261117-dispatch-channel.json"},
+    {"target": "relay-seat cost guard", "receipt": "ops/deploy-receipts/DR-20261117-relay-cost-caps.json"},
+    {"target": "miniprogram 0.1.13", "receipt": "ops/deploy-receipts/DR-20261117-miniprogram-trial-review.json", "note": "已提审，published=false，线上仍 0.1.12，禁止按 0.1.9 提审"}
+  ],
+  "items": [
+    {
+      "id": "D-01",
+      "target": "PR #287 wep3 predeploy fail-closed",
+      "state": "MERGEABLE / validate SUCCESS / deploy job skipped",
+      "gate": {"action": "merge+deploy", "family": "cloudflare_workers", "allowed": true, "reason": "owner_authorized_auto_merge / auto_deploy"},
+      "next_action": "巡检日合并 → 触部署 → 回读 health → 写 ops/deploy-receipts 回执",
+      "blocker": null,
+      "note": "改动本身是上传前的 fail-closed 守卫；部署后必须有一次 health 回读，否则按未部署处理"
+    },
+    {
+      "id": "D-02",
+      "target": "PR #408 hire-phase1 repair",
+      "state": "MERGEABLE / Phase1 acceptance SUCCESS @3757e5e71 / GPT 状态 NEEDS_REVISION",
+      "gate": {"action": "merge", "family": "github_actions_pipeline", "allowed": true, "reason": "owner_authorized_auto_merge"},
+      "next_action": "不合并；等 GPT 最终 PASS 与独立复核到齐后再动",
+      "blocker": "gpt_final_pass_missing + independent_review_missing",
+      "note": "合并权限虽开，但‘合并 ≠ 验收’；以最新裁决 NEEDS_REVISION 为准"
+    },
+    {
+      "id": "D-03",
+      "target": "分支 codex/email-authority-20261117（邮件三级授权）",
+      "state": "6120f6f6 已推 origin，未合 main；另有本地 7d3d8c7f 未推",
+      "gate": {"action": "merge", "family": "documentation_and_test_artifacts", "allowed": true, "reason": "owner_authorized_auto_merge"},
+      "next_action": "合并前先补推 7d3d8c7f → 跑 10 条回归 → 合 main → 写回执",
+      "blocker": "local_commit_unpushed",
+      "note": "只合策略与测试，不等于启用自动发送运行时"
+    },
+    {
+      "id": "D-04",
+      "target": "Gmail Intake 每日定时开 schedule",
+      "state": "未开",
+      "gate": {"action": "deploy", "family": "schedule_enable", "allowed": null},
+      "next_action": "保持关闭，等 GPT 对 §三.4 专项禁令的裁决",
+      "blocker": "gpt_ruling_missing_on_schedule_ban",
+      "note": "专项禁令优先于一般自动部署授权"
+    },
+    {
+      "id": "D-05",
+      "target": "DEEP 队列自身",
+      "state": "queue_blocked / error=legacy_task_requires_shared_claim_bridge / items=0",
+      "gate": {"action": "n/a"},
+      "next_action": "巡检第一步修 claim bridge，否则明日仍无 items 可执行",
+      "blocker": "legacy_task_requires_shared_claim_bridge",
+      "note": "这是‘今天没有新部署产物’的根因，不是没人干活"
+    }
+  ],
+  "relay_channel": {
+    "status": "verified_open",
+    "evidence": ["knowledge/results/relay-seat/acceptance-20261117.json", "knowledge/results/relay-seat/calls/20261117T094244Z-gpt-gpt-6.1-sol-92fadfd4.json"],
+    "balance_derived_usd": 12.868358,
+    "use": "可作次日异源复核通道；输出仅 advice，不得写成 GPT 裁决"
+  }
+}
