@@ -1,0 +1,65 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-relay-cost-caps",
+  "target": "relay-seat-cost-guard",
+  "platform": "github+cloudflare",
+  "env_id": "ltzzz-repo/main + ltzzz-relay-proxy",
+  "code_commit": null,
+  "code_path": "config,scripts,workers/relay-proxy",
+  "deployed_at": null,
+  "deployment_status": "pending_ci",
+  "verified": [
+    {
+      "kind": "local_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/relay-proxy-worker.test.mjs scripts/tests/relay-seat-guard.test.mjs → 32/32 pass；node --check 通过"
+    },
+    {
+      "kind": "policy_readback",
+      "result": "ok",
+      "evidence": "config/relay-seat-policy.json cost_guard 已写 per_call=0.05 / daily=0.50 / project=10 / auto_topup=false / cap_status=set_by_gpt_ruling_20261117_03"
+    },
+    {
+      "kind": "real_ledger_dry_run",
+      "result": "ok",
+      "evidence": "使用真实 seat-state + balance-ledger 评估 gpt-6.1-sol 4161 input / 1024 max output：estimated 0.014434，daily 0.062173，project 0.131642（含旧无价条目 0.05 预留），decision=relay_call_allowed"
+    }
+  ],
+  "blockers": [
+    "等待 main 推送后 deploy-relay-proxy.yml 运行结果"
+  ],
+  "next_action": "推送后回读 workflow 运行与 main 文件，更新本回执为 GREEN 或记录失败原因",
+  "known_issues": [
+    "scripts/tests/workpool.test.mjs 在 Windows 工作树因 CORE-VIEW.md CRLF 与配置 LF 哈希不一致而失败，属预存在环境问题，非本次改动引入。",
+    "scripts/tests/deep-superagent.test.mjs 在 Windows 因路径拼接成 C:\\\\C:\\\\... 报 ENOENT，属预存在环境问题。",
+    "中转代理为无状态 Worker，只能强制单次调用上限；每日/项目累计上限由 scripts/relay-seat.mjs 调用前按账本强制。直接持有 proxy token 的其他调用方不受每日/项目上限约束，需后续引入状态存储或统一走 relay-seat。"
+  ],
+  "notes": [
+    "本回执按 GPT-HIRE-PHASE1-REVIEW-20261117-03 的预算裁决落地：单次 $0.05、每日 $0.50、项目累计 $10、余额底线 $3、禁止自动充值。",
+    "同一提交登记 GPT 裁决文档 docs/2026-11-17-GPT-RULING-20261117-03-登记.md 与裁决邮件回执 ops/mail-receipts/MR-20261117-gpt-ruling-03.json。",
+    "中转建议（advice_only）只作为建议存档，不写成裁决；正式裁决以 decision_id GPT-HIRE-PHASE1-REVIEW-20261117-03 为准。"
+  ],
+  "operator": {
+    "seat": "deploy_seat",
+    "env": "windows-desktop worktree codex-email-authority-20261117",
+    "recorded_by": "codex"
+  },
+  "authorized_by": {
+    "authorized_by": "GPT decision seat",
+    "evidence_type": "owner_transcribed_gpt_ruling_in_session",
+    "channel": "Codex 桌面会话",
+    "requirement": "预算上限由 GPT 裁决给出；仓库内门禁与测试属授权范围",
+    "decision_id": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
+    "scope_limit": "仓库代码、测试与中转代理单次成本门禁；不含真实资金、私钥签名、五签 Safe、Phase 2 真付薪"
+  },
+  "code_sha256": {
+    "config/relay-seat-policy.json": "768c00fb648d9d3938d1d46af3636e8979b19098c627348e3c3c287e6660c600",
+    "scripts/lib/relay-seat-guard.mjs": "4891ad5caefde6e66cbd73d83e4f6bad622abc0f7fff998f61fd00eb5eb57e02",
+    "scripts/relay-seat.mjs": "15fd6fa1db31fa1974cf36967e50af0643073589b9dc034c6a49fc01b1385c77",
+    "workers/relay-proxy/worker.mjs": "6ef7d5bcabab4726ebed54785a240fc5744ea7e152dc0899ff2174945c2a6d52",
+    "scripts/tests/relay-seat-guard.test.mjs": "3549c63869d36298d47af56fdf0dc6805c44d7f71f7c9c71cbf19a0b950a0884",
+    "scripts/tests/relay-proxy-worker.test.mjs": "f263a315f381ff264679827a7988bd300bd4376ce15df173d12fddb14360621e",
+    "docs/2026-11-17-GPT-RULING-20261117-03-登记.md": "0268dc5a9f272229f8309e701c095954950cc86a03cd1a5cc4b029053a6aeeca",
+    "ops/mail-receipts/MR-20261117-gpt-ruling-03.json": "6be204ef49024cc4dd74e675402d6faf65ba33bed064e3d459d063efe5d858d9"
+  }
+}

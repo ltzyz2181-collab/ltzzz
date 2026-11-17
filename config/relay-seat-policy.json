@@ -174,10 +174,17 @@
     "blocks_other_independent_tasks": false
   },
   "cost_guard": {
-    "per_call_cost_cap_usd": null,
-    "daily_cost_cap_usd": null,
-    "cap_status": "unset_requires_owner_or_gpt_number",
-    "current_hard_ceiling": "balance_guard.floor_usd（低于 3 USD 自动关席）",
-    "note": "未设单价/日额上限前，只允许已登记在 allowlist 的模型，且每次调用必须记 usage 与费用到 balance-ledger。"
+    "per_call_cost_cap_usd": 0.05,
+    "daily_cost_cap_usd": 0.5,
+    "project_cost_cap_usd": 10,
+    "auto_topup": false,
+    "cap_status": "set_by_gpt_ruling_20261117_03",
+    "authorized_by": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
+    "authorized_at": "2026-11-17",
+    "basis": "GPT 预算裁决：单次 $0.05、每日 $0.50、项目累计 $10、余额底线 $3、禁止自动充值",
+    "estimate_rule": "调用前按 allowlist 单价 × (输入 token 估算 + max_tokens) 计最坏成本；等于上限放行，超过上限在发出 HTTP 前拒绝",
+    "unknown_ledger_policy": "refuse",
+    "current_hard_ceiling": "min(cost_guard 三项上限, balance_guard.floor_usd)",
+    "note": "任何一项超限都在发出 HTTP 前 fail closed；账本缺失或不可读同样拒绝；无成本字段的旧条目按单次上限预留。"
   }
 }

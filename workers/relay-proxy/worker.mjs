@@ -9,6 +9,17 @@ export const ALLOWED_MODELS = [
 ];
 export const MIN_INPUT_TOKENS = 4096;
 export const MAX_INPUT_TOKENS = 1100000;
+// Keep in sync with config/relay-seat-policy.json cost_guard and routing.allowlist.
+// The proxy is stateless, so it can only enforce the per-call worst-case bound;
+// daily and project caps are enforced by the seat guard before it calls out.
+export const MAX_CALL_COST_USD = 0.05;
+export const MODEL_PRICES = {
+  'claude-opus-5-5': { input: 3, output: 16, hiddenInputTokens: 0 },
+  'claude-opus-5': { input: 4, output: 20, hiddenInputTokens: 0 },
+  'claude-sonnet-4-6': { input: 2.4, output: 12, hiddenInputTokens: 0 },
+  'claude-haiku-5-5': { input: 0.08, output: 0.4, hiddenInputTokens: 0 },
+  'gpt-6.1-sol': { input: 1.5, output: 8, hiddenInputTokens: 1446 },
+};
 
 export function estimateTokens(text) {
   const value = String(text ?? '');
@@ -53,7 +64,23 @@ export function validateRequest(body, { batch = false } = {}) {
   if (maxTokens !== null && (!Number.isSafeInteger(maxTokens) || maxTokens < 1 || maxTokens > 32768)) {
     return { ok: false, status: 400, code: 'proxy_max_tokens_invalid' };
   }
-  return { ok: true, model: body.model, estimated_input_tokens: estimated };
+  if (maxTokens === null) {
+    return { ok: false, status: 400, code: 'proxy_max_tokens_required_for_cost_cap' };
+  }
+  const prices = MODEL_PRICES[body.model];
+  const billedInput = estimated + (prices.hiddenInputTokens || 0);
+  const worstCaseCost = Number(((billedInput * prices.input + maxTokens * prices.output) / 1e6).toFixed(6));
+  if (worstCaseCost > MAX_CALL_COST_USD) {
+    return {
+      ok: false,
+      status: 403,
+      code: 'proxy_per_call_cost_cap_exceeded',
+      estimated_input_tokens: estimated,
+      worst_case_cost_usd: worstCaseCost,
+      per_call_cost_cap_usd: MAX_CALL_COST_USD,
+    };
+  }
+  return { ok: true, model: body.model, estimated_input_tokens: estimated, worst_case_cost_usd: worstCaseCost };
 }
 
 function constantTimeEqual(a, b) {
@@ -100,7 +127,12 @@ export default {
       return json(400, 'proxy_body_invalid');
     }
     const verdict = validateRequest(body, { batch });
-    if (!verdict.ok) return json(verdict.status, verdict.code, { estimated_input_tokens: verdict.estimated_input_tokens ?? null });
+    if (!verdict.ok) {
+      return json(verdict.status, verdict.code, {
+        estimated_input_tokens: verdict.estimated_input_tokens ?? null,
+        worst_case_cost_usd: verdict.worst_case_cost_usd ?? null,
+      });
+    }
     const base = String(env.STATION_BASE || 'https://api.apisrouter.com/v1').replace(/\/$/, '');
     let upstream;
     try {

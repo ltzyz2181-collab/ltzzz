@@ -154,8 +154,17 @@ async function callModel(policy) {
     }
   }
 
-  const { status, balance } = currentSeat(policy);
-  const decision = evaluateRelayCall({ policy, model, inputTokens, batch, balanceUsd: balance, seatStatus: status });
+  const { ledger, status, balance } = currentSeat(policy);
+  const decision = evaluateRelayCall({
+    policy,
+    model,
+    inputTokens,
+    batch,
+    balanceUsd: balance,
+    seatStatus: status,
+    ledger,
+    maxCompletionTokens: maxTokens,
+  });
 
   if (!decision.allowed && decision.requires_close) {
     closeRelaySeat(root, policy, {
@@ -410,6 +419,7 @@ function showState(policy) {
     allowlist: policy.routing.allowlist.map((entry) => entry.model),
     seat_status: status,
     balance_usd_estimate: balance,
+    cost_guard: policy.cost_guard ?? null,
     state,
     key_fingerprint: (() => {
       const key = loadKey(policy);

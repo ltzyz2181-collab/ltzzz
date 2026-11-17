@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { ALLOWED_MODELS, MIN_INPUT_TOKENS, authorized, estimateTokens, validateRequest } from '../../workers/relay-proxy/worker.mjs';
+import fs from 'node:fs';
+import worker, { ALLOWED_MODELS, MODEL_PRICES, MAX_CALL_COST_USD, MIN_INPUT_TOKENS, authorized, estimateTokens, validateRequest } from '../../workers/relay-proxy/worker.mjs';
 import { estimateInputTokens } from '../lib/relay-seat-guard.mjs';
 
 const longText = '长上下文验收文本。'.repeat(700); // > 4096 estimated tokens
@@ -90,7 +91,7 @@ test('gateway honours the batch header and still refuses an undeclared short cal
     return Response.json({ id: 'batch-req-1', model: 'gpt-6.1-sol', choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] });
   };
   try {
-    const body = { model: 'gpt-6.1-sol', messages: [{ role: 'user', content: 'batch item' }] };
+    const body = { model: 'gpt-6.1-sol', messages: [{ role: 'user', content: 'batch item' }], max_tokens: 512 };
     const plain = await worker.fetch(request(body), env);
     assert.equal(plain.status, 400);
     assert.equal(called, 0);
@@ -105,4 +106,34 @@ test('gateway honours the batch header and still refuses an undeclared short cal
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('proxy prices match the seat policy allowlist and per-call cap', () => {
+  const policy = JSON.parse(fs.readFileSync('config/relay-seat-policy.json', 'utf8'));
+  assert.equal(policy.cost_guard.per_call_cost_cap_usd, MAX_CALL_COST_USD);
+  for (const entry of policy.routing.allowlist) {
+    assert.deepEqual(MODEL_PRICES[entry.model], {
+      input: entry.price_input_usd_per_1m,
+      output: entry.price_output_usd_per_1m,
+      hiddenInputTokens: entry.known_input_inflation_tokens || 0,
+    }, entry.model);
+  }
+});
+
+test('proxy refuses a worst-case call above the per-call cap without an upstream request', () => {
+  const atCap = validateRequest({ model: 'gpt-6.1-sol', messages: [{ role: 'user', content: longText }], max_tokens: 4797 });
+  assert.equal(atCap.ok, true);
+  assert.equal(atCap.worst_case_cost_usd, 0.049995);
+
+  const over = validateRequest({ model: 'gpt-6.1-sol', messages: [{ role: 'user', content: longText }], max_tokens: 4798 });
+  assert.equal(over.ok, false);
+  assert.equal(over.code, 'proxy_per_call_cost_cap_exceeded');
+  assert.equal(over.status, 403);
+  assert.ok(over.worst_case_cost_usd > MAX_CALL_COST_USD);
+});
+
+test('proxy refuses an unbounded max_tokens because the call cost cannot be capped', () => {
+  const verdict = validateRequest({ model: 'claude-opus-5-5', messages: [{ role: 'user', content: longText }] });
+  assert.equal(verdict.ok, false);
+  assert.equal(verdict.code, 'proxy_max_tokens_required_for_cost_cap');
 });

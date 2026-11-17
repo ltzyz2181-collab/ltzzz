@@ -52,11 +52,71 @@ export function costUsd(policy, model, promptTokens, completionTokens) {
   );
 }
 
+export function utcDayOf(iso) {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+}
+
+// Spend totals come from the same ledger that records each call. Unpriced
+// entries are counted separately so the guard can fail closed instead of
+// silently under-counting spend against a cap.
+export function spendTotals(ledger, now = new Date().toISOString()) {
+  const entries = Array.isArray(ledger?.entries) ? ledger.entries : [];
+  const day = utcDayOf(now);
+  let daily = 0;
+  let project = 0;
+  let unpriced = 0;
+  let dailyUnpriced = 0;
+  for (const entry of entries) {
+    const cost = numberOrNull(entry?.cost_usd);
+    if (cost === null) {
+      unpriced += 1;
+      if (day !== null && utcDayOf(entry?.at) === day) dailyUnpriced += 1;
+      continue;
+    }
+    project += cost;
+    if (day !== null && utcDayOf(entry?.at) === day) daily += cost;
+  }
+  for (const period of Array.isArray(ledger?.prior_periods) ? ledger.prior_periods : []) {
+    project += numberOrNull(period?.recorded_cost_usd) || 0;
+  }
+  return {
+    day,
+    daily_usd: Number(daily.toFixed(6)),
+    project_usd: Number(project.toFixed(6)),
+    entry_count: entries.length,
+    unpriced_entry_count: unpriced,
+    daily_unpriced_entry_count: dailyUnpriced,
+  };
+}
+
 // Every refusal is decided before any HTTP request is made. Unknown state never opens the seat.
-export function evaluateRelayCall({ policy, model, inputTokens, batch = false, balanceUsd, seatStatus } = {}) {
+export function evaluateRelayCall({
+  policy,
+  model,
+  inputTokens,
+  batch = false,
+  balanceUsd,
+  seatStatus,
+  ledger = null,
+  maxCompletionTokens = null,
+  now = new Date().toISOString(),
+} = {}) {
   const floor = policy?.balance_guard?.floor_usd ?? 3;
   const minTokens = policy?.routing?.min_input_tokens ?? 4096;
   const balance = numberOrNull(balanceUsd);
+  const guard = policy?.cost_guard || {};
+  const perCallCap = numberOrNull(guard.per_call_cost_cap_usd);
+  const dailyCap = numberOrNull(guard.daily_cost_cap_usd);
+  const projectCap = numberOrNull(guard.project_cost_cap_usd);
+  const capsEnforced = perCallCap !== null || dailyCap !== null || projectCap !== null;
+  const costGuardBase = {
+    cap_status: guard.cap_status ?? 'unset',
+    enforced: capsEnforced,
+    per_call_cost_cap_usd: perCallCap,
+    daily_cost_cap_usd: dailyCap,
+    project_cost_cap_usd: projectCap,
+  };
   const base = {
     model,
     floor_usd: floor,
@@ -65,6 +125,7 @@ export function evaluateRelayCall({ policy, model, inputTokens, batch = false, b
     estimated_input_tokens: numberOrNull(inputTokens),
     batch: batch === true,
     seat_status: seatStatus ?? 'unknown',
+    cost_guard: costGuardBase,
   };
   const denied = (code, detail, extra = {}) => ({
     ...base,
@@ -111,11 +172,60 @@ export function evaluateRelayCall({ policy, model, inputTokens, batch = false, b
       model_tier: entry.tier,
     };
   }
+  let costFacts = {
+    ...costGuardBase,
+    estimated_call_cost_usd: null,
+    daily_spent_usd: null,
+    project_spent_usd: null,
+  };
+  if (capsEnforced) {
+    if (!ledger || typeof ledger !== 'object' || !Array.isArray(ledger.entries)) {
+      return denied('relay_cost_ledger_unverified', 'cost caps are configured but the spend ledger is missing or unreadable; fail closed', { cost_guard: costFacts });
+    }
+    const completion = numberOrNull(maxCompletionTokens);
+    if (completion === null || completion < 0) {
+      return denied('relay_cost_estimate_unavailable', 'cost caps require max_completion_tokens to bound the worst-case call cost', { cost_guard: costFacts });
+    }
+    const estimated = costUsd(policy, model, numberOrNull(inputTokens) ?? 0, completion);
+    if (estimated === null) {
+      return denied('relay_cost_estimate_unavailable', 'no allowlisted price found for this model', { cost_guard: costFacts });
+    }
+    const spend = spendTotals(ledger, now);
+    costFacts = {
+      ...costFacts,
+      estimated_call_cost_usd: estimated,
+      daily_spent_usd: spend.daily_usd,
+      project_spent_usd: spend.project_usd,
+    };
+    // A legacy entry without cost cannot be re-priced from the ledger alone.
+    // Reserve the per-call cap for each such entry so the caps still bound spend.
+    if (spend.unpriced_entry_count > 0 && perCallCap === null) {
+      return denied('relay_cost_ledger_unpriced_entries', 'the spend ledger has entries without a recorded cost and no per-call cap exists to reserve against them', { cost_guard: costFacts });
+    }
+    const unknownReserve = Number((spend.unpriced_entry_count * (perCallCap ?? 0)).toFixed(6));
+    const dailyReserve = Number((spend.daily_unpriced_entry_count * (perCallCap ?? 0)).toFixed(6));
+    costFacts = {
+      ...costFacts,
+      unpriced_entry_count: spend.unpriced_entry_count,
+      unknown_reserve_usd: unknownReserve,
+      daily_reserve_usd: dailyReserve,
+    };
+    if (perCallCap !== null && estimated > perCallCap) {
+      return denied('relay_per_call_cap_exceeded', 'the worst-case cost of this call exceeds the per-call cap; no HTTP request is sent', { cost_guard: costFacts });
+    }
+    if (dailyCap !== null && Number((spend.daily_usd + dailyReserve + estimated).toFixed(6)) > dailyCap) {
+      return denied('relay_daily_cap_exceeded', 'this call would exceed the daily spend cap; no HTTP request is sent', { cost_guard: costFacts });
+    }
+    if (projectCap !== null && Number((spend.project_usd + unknownReserve + estimated).toFixed(6)) > projectCap) {
+      return denied('relay_project_cap_exceeded', 'this call would exceed the project lifetime spend cap; no HTTP request is sent', { cost_guard: costFacts });
+    }
+  }
   return {
     ...base,
     allowed: true,
     sent_http_request: true,
     code: 'relay_call_allowed',
+    cost_guard: costFacts,
     detail: 'allowlisted model with enough input context or a declared batch',
     requires_close: false,
     model_tier: entry.tier,
