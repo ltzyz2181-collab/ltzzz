@@ -21,6 +21,14 @@
 - 两段式确认：第二步带 `confirmation_token`；发后从发件箱回读 `message_id`。
 - 正文纯文本；不写金额、凭据、邮件原文。
 
+### 2.1 桌面席位（2026-11-17 实测可用）：owner QQ 邮箱 SMTP
+
+- 通道：`smtp.qq.com:465` SSL，发件 `306122054@qq.com`（owner 本人 QQ 邮箱）→ `ltzyz2181@gmail.com`。
+- 凭据：`~/.config/ltzzz/qq-smtp.env`（仓库外，ACL 仅当前用户；**不进 git、不打印、不写进回执**）。
+- 为什么不用 Gmail SMTP：本机 `smtp.gmail.com:465/587` 均超时（`smtp.qq.com:465` 正常，属 Gmail SMTP 被阻断）；`imap.gmail.com:993` 可读，用于投递回读。
+- 投递回读：Gmail IMAP 993 只读、`BODY.PEEK`，按 `SINCE` + 主题/MESSAGE-ID 核对。QQ 会重写 `Message-ID`，回执同时记录生成值与投递值。
+- 已用此通道发送：`MR-20261117-pr410-deploy-report`（2026-11-17T09:13:40Z）。
+
 ## 三、收信（历史记录：2026-11-17 上半日的能力缺口，下半日已解除，见文首结论）
 
 - 收信现状：只有 Agent Mail 的收件箱可读（`agently-cli message +list --dir inbox`）。
