@@ -29,3 +29,4 @@ node scripts/deploy-receipt.mjs list                  # 全部回执摘要
 ## 当前回执
 
 - `DR-20261117-order-deliver`：order-deliver 已部署到 `shizhang-pay-d0g1n58020acf6b5b`，GREEN（详情回读 + 冒烟调用 + 配置回读三条证据）。
+- `DR-20261117-miniprogram-frontend`：小程序前端（订单页退款兜底）已上传开发版 0.1.9，绑 `ca0ad10b8`，GREEN；**published=false**（体验版/线上版仍需微信后台发布）。

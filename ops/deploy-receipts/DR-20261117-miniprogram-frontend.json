@@ -1,0 +1,48 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-miniprogram-frontend",
+  "target": "miniprogram-frontend",
+  "platform": "wechat-miniprogram",
+  "env_id": "wx562bcb6057346fb2",
+  "function_id": null,
+  "code_commit": "ca0ad10b8cde235f9716e75308307d062599375f",
+  "code_path": "miniprogram/pages/orders",
+  "deployed_at": "2026-11-17T07:07:33+00:00",
+  "verified": [
+    {
+      "kind": "upload_receipt",
+      "result": "ok",
+      "evidence": "GitHub Actions run 44036178741（Mini Program Upload，source_commit ca0ad10b8）→ results/commerce/miniprogram-upload-latest.json：status=uploaded_development_version, uploaded=true, published=false, version=0.1.9, appid=wx562bcb6057346fb2, appid_source=configured_secret, missing=[]"
+    },
+    {
+      "kind": "code_sha256",
+      "result": "ok",
+      "evidence": "orders 页三个文件按 origin/main 现字节计算 sha256（见 code_sha256），与 PR #406 合并后的内容一致"
+    }
+  ],
+  "config": {
+    "appid": "wx562bcb6057346fb2",
+    "version": "0.1.9",
+    "channel": "development"
+  },
+  "blockers": [
+    "published=false：开发版已上传，但体验版/线上版未发布。要上线需在微信后台把 0.1.9 提交审核并发布，这一步需要 owner 或管理员账号在微信侧点击，命令行做不到。"
+  ],
+  "next_action": "owner 在微信公众平台把 0.1.9 设为体验版/提交审核；发布后由本席回填 published=true 并复核线上版本号。",
+  "notes": [
+    "本次部署只覆盖小程序前端展示层（订单页退款兜底 F1）。16（授权记录）与 4（memory 映射）无运行时产物，不需要部署。",
+    "云函数未改动：order-deliver 仍是 DR-20261117-order-deliver 那次部署（lam-r5yum0gf），无需重部署。",
+    "push-to-main 自动触发的 workflow：Deploy authority record / Core memory integrity / Small payment offline / Pages 均已在 ca0ad10b8 上跑过。"
+  ],
+  "operator": {
+    "seat": "doubao-main",
+    "env": "vm",
+    "recorded_by": "doubao-main"
+  },
+  "code_sha256": {
+    "index.js": "68cf1811a64ecc5275ff57521d70e4b11011cf9a8a85816178a393db46638c3b",
+    "index.json": "68ead110fd545153f26ecca91deeda5c3667d38014b97ea28570beed1fd0457b",
+    "index.wxml": "b0ab533400abd65d450bfbadc525ca992791b8d208b5603b393702b1e69b321a",
+    "index.wxss": "757ddfd496cff2150c61a40e1054e5b43ef76803d36ef2e856de4c16be71bbb6"
+  }
+}
