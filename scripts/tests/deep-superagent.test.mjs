@@ -1,3 +1,5 @@
+import './input-normalization.test.mjs';
+import './delivery-boundary.test.mjs';
 import './mail-intake.test.mjs';
 import './deep-superagent-deploy-automation.test.mjs';
 import test from 'node:test';
