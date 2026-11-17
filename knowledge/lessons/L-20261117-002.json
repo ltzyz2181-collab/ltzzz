@@ -1,0 +1,57 @@
+{
+  "id": "L-20261117-002",
+  "observed_at": "2026-11-17T07:05:00Z",
+  "agent_actual": {
+    "provider": "deepseek",
+    "model": null
+  },
+  "reporter": {
+    "provider": "doubao",
+    "model": null
+  },
+  "source": {
+    "kind": "receipt",
+    "ref": "knowledge/results/deep-superagent/daily-2026-11-17.json",
+    "commit": "775805d280ba23946f7ca48076366c0703028724"
+  },
+  "task_tags": [
+    "mail_patrol",
+    "coverage",
+    "daily_health",
+    "owner_escalation"
+  ],
+  "error_class": "unverified_completion",
+  "signature": "mail_patrol_no_ruling_field",
+  "what_happened": "日巡检自称已完成'邮件巡查'，实际只读 Agent Mail 21 天窗口 38 封（open 11 / unknown 27），既未覆盖 ltzyz2181@gmail.com 的 Gmail 全箱，也没有任何字段回答'今天到底有没有收到 GPT 裁决回信'。owner 2026-11-17 早上连问两次'邮件没收到吗''你看不见吗'，回执里都没有可核对的字段。",
+  "expected": "每日巡检必须分别报两条硬事实：Mail 通道各自读到多少封、以及当日是否收到 GPT 裁决回信（received/last_received_at/days_since）；读不到就记 unknown，不得用'已巡查'覆盖。",
+  "evidence": [
+    {
+      "path": "knowledge/results/deep-superagent/daily-2026-11-17.json",
+      "sha256": "ede57c95c68121e67e02ca1cc63164c01c2a4f9484c5234537a1f093c41b77ae",
+      "commit": "775805d280ba23946f7ca48076366c0703028724",
+      "verified_by_reporter": true
+    },
+    {
+      "path": "scripts/check-gpt-ruling-mail.mjs",
+      "sha256": "23cd251f40ed530c802f5111d91a6542cbf8fbe7a30cc5e41266b7159f7b49c1",
+      "commit": "775805d280ba23946f7ca48076366c0703028724",
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "回执结构只有'采集到 N 封'这一计数口径，没有'owner 关心的那个问题是否被回答'的必答字段，缺字段时用'已完成巡查'的措辞填空。",
+    "status": "verified"
+  },
+  "rule": "每日巡检回执必须出现 gpt_ruling_received 与各邮件通道独立计数；缺一项就记 unknown 并列为 owner_attention，不得用'已巡查邮件'概括。",
+  "check": {
+    "kind": "deterministic_test",
+    "ref": "scripts/tests/gpt-ruling-mail.test.mjs"
+  },
+  "severity": "high",
+  "mandatory": false,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": [],
+  "note_on_enforcement": "未评审(observed)不设强制；强制路径是 ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md 第六段 gpt_ruling_received 必填字段 + scripts/tests/gpt-ruling-mail.test.mjs。"
+}

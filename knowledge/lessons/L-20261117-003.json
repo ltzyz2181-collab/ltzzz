@@ -1,0 +1,61 @@
+{
+  "id": "L-20261117-003",
+  "observed_at": "2026-11-17T01:39:21Z",
+  "agent_actual": {
+    "provider": "qianwen",
+    "model": null
+  },
+  "reporter": {
+    "provider": "doubao",
+    "model": null
+  },
+  "source": {
+    "kind": "receipt",
+    "ref": "knowledge/results/dispatch/oversight/latest.json",
+    "commit": "a5a2013f37dbd7722b9c18673a52b5d8f048c1ca"
+  },
+  "task_tags": [
+    "oversight",
+    "backlog",
+    "recurrence",
+    "read_only_sample"
+  ],
+  "error_class": "other",
+  "signature": "oversight_backlog_recounted_not_reduced",
+  "what_happened": "监督 latest.json 当日 open_warning_cases=188、not_rechecked_in_current_window=152，最旧案件可追到 2026-10-16（QIANWEN-RETURN-2026-10-16），且多条 case 的 warning_dates 连续多日重复累加。每日只重算数量、按席位分摊，没有按最旧优先逐条处置，于是同一批告警连续多天以同样数字出现。",
+  "expected": "监督积压必须按最旧优先抽样处置并留只读结论（缺阶段+建议），数量口径与处置动作分开报；连续多日不变的 case 应升级为 owner_attention 而不是继续累加天数。",
+  "evidence": [
+    {
+      "path": "knowledge/results/dispatch/oversight/latest.json",
+      "sha256": "13cb61d006113b38feed8b84c25cd9e6ae5368e8d51c5462a6b689e23ed12a69",
+      "commit": "a5a2013f37dbd7722b9c18673a52b5d8f048c1ca",
+      "verified_by_reporter": true
+    },
+    {
+      "path": "knowledge/results/dispatch/oversight/readonly-sample-10-2026-11-17.json",
+      "sha256": "2beeee5356392f5a4112e62f594f978743b9bb86bad75892bce0ab629050abe5",
+      "commit": "775805d280ba23946f7ca48076366c0703028724",
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "监督产出以'统计+分派'为终点，没有'最旧 N 条逐条给建议'的输出形状，积压因此只增不减。",
+    "status": "hypothesis"
+  },
+  "rule": "监督每日必须输出最旧 N 条只读抽样（case_id/席位/缺阶段/建议），并对连续 3 天以上同数字的积压显式升级，不得只重复报总数。",
+  "check": {
+    "kind": "manual_review",
+    "ref": "knowledge/results/dispatch/oversight/readonly-sample-10-2026-11-17.json"
+  },
+  "severity": "medium",
+  "mandatory": false,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": [
+    {
+      "observed_at": "2026-11-17T02:00:00Z",
+      "source_ref": "knowledge/results/dispatch/oversight/2026-11-16.json"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+ "schema": "ltzzz.deep-superagent.evolution-receipt.v1",
+ "date": "2026-11-17",
+ "owner_question": "你们做的事有没有写进『出问题进化』",
+ "answer": "已写入仓库，不是口头结论",
+ "lessons": [
+  {
+   "id": "L-20261117-001",
+   "signature": "reply_not_paired_with_ask",
+   "problem": "日巡检把已有回信的裁决判为待裁决",
+   "mechanism_fix": "scripts/track-gpt-rulings.mjs + ops/deep-superagent/RULING-TRACKING.md"
+  },
+  {
+   "id": "L-20261117-002",
+   "signature": "mail_patrol_no_ruling_field",
+   "problem": "自称已巡查邮件，但无『今日是否收到裁决』字段、未覆盖 Gmail 全箱",
+   "mechanism_fix": "DAILY-RECEIPT-CONTRACT 第六段 + scripts/check-gpt-ruling-mail.mjs 接进 run-mail-intake"
+  },
+  {
+   "id": "L-20261117-003",
+   "signature": "oversight_backlog_recounted_not_reduced",
+   "problem": "oversight 188 条积压连续多日同数字重算",
+   "mechanism_fix": "最旧优先只读抽样 10 条落盘，连续 3 天同数字升级"
+  }
+ ],
+ "verification": {
+  "lessons_validate": "node scripts/lessons.mjs validate -> 12 lessons, 0 problems",
+  "tests": "node --test lessons/reflection-harness/ltzzz-skill/ans-cycle/workpool -> 71 pass 0 fail"
+ },
+ "today_facts": {
+  "morning_patrol_ran": true,
+  "patrol_trigger": "cron 06:45 Asia/Shanghai",
+  "patrol_mail_read": "Agent Mail 38 封 / open 11",
+  "patrol_gmail_read": false,
+  "patrol_ruling_field": false,
+  "then_fixed_same_day": "correction_2026-11-17 + track-gpt-rulings.mjs"
+ },
+ "deep_did_work": {
+  "routing": "A/B/C 三组卡 + 25 条路由复核",
+  "queue": "run 43973460564 model_calls=4 job=blocked(native_generation_evidence_incomplete)",
+  "merges": 0,
+  "deploys": 0
+ },
+ "gpt_ruling_mail": {
+  "received": true,
+  "today_count": 2,
+  "last_received_at_utc": "2026-11-16T19:54:37Z",
+  "gap_days": [
+   "2026-11-14",
+   "2026-11-15"
+  ]
+ },
+ "model_calls": 0,
+ "paid": false,
+ "financial_execution": false
+}
