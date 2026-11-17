@@ -1,0 +1,69 @@
+{
+  "id": "L-20261117-004",
+  "observed_at": "2026-11-17T06:40:00Z",
+  "agent_actual": {
+    "provider": "doubao",
+    "model": null
+  },
+  "reporter": {
+    "provider": "doubao",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "docs/ORDER-DELIVER-ADMIN-OPENID-CURRENT.md",
+    "commit": null
+  },
+  "task_tags": [
+    "repo_search",
+    "owner_identifier",
+    "openid",
+    "whitelist",
+    "unmerged_branch",
+    "claim_of_absence"
+  ],
+  "error_class": "unverified_completion",
+  "signature": "claimed_absence_after_partial_grep",
+  "what_happened": "被问 order-deliver 管理员 openid 白名单值在哪取时，先答『仓库侧没有任何 ADMIN_OPENID(S)/adminOpenid/whitelist 常量（grep miniprogram docs config 无命中）』，据此让对方去云开发控制台取。实际：未合并分支 feat/order-closure 已有 miniprogram/cloudfunctions/order-deliver/（lib/logic.js 读 process.env.ADMIN_OPENIDS），且 docs/2026-11-13-客服与交付闭环三项落地.md:64 已写明唯一 paid 单的 openid 为 o8IYYxiWJIJo6Lz5TuLUYlz1uFxw。检索只覆盖 main 工作树的三个目录，未覆盖其它分支。",
+  "expected": "任何『仓库里没有 X』的结论都必须先覆盖全部本地与远端分支（git grep <pattern> <每个 ref>、git log --all -S<pattern>），并在结论里写明检索的 ref 列表与目录；未覆盖分支时只能说『在 main 的这些目录没找到』并继续扩大检索。",
+  "evidence": [
+    {
+      "path": "docs/2026-11-13-客服与交付闭环三项落地.md",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "miniprogram/cloudfunctions/order-deliver/index.js",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "docs/ORDER-DELIVER-ADMIN-OPENID-CURRENT.md",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "把『当前分支工作树里 grep 不到』当成『仓库不存在』，且默认未合并分支不需要查。",
+    "status": "hypothesis"
+  },
+  "rule": "凡结论为『仓库里没有 X』前，必须用 git grep 对全部本地+远端分支检索并列出检索过的 ref；未覆盖分支时不得据该结论向 owner 索要值。",
+  "check": {
+    "kind": "manual_review",
+    "ref": "docs/ORDER-DELIVER-ADMIN-OPENID-CURRENT.md"
+  },
+  "severity": "medium",
+  "mandatory": true,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": [
+    {
+      "observed_at": "2026-11-17T06:40:00Z",
+      "source_ref": "owner 2026-11-17 原话：明明仓库就有偏要我找"
+    }
+  ]
+}
