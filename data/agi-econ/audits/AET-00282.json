@@ -1,0 +1,63 @@
+{
+  "task_id": "AET-00282",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "38d061cd8c28764a1d6c559d35aa393db56e23cb37525cf38c2527763e7a57aa",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": true,
+    "score": 86,
+    "issues": [
+      "分类口径偏粗：dd510c7、69e654d 仅为 provider 调用前的 reserve dispatch，31e2576 为 CI 复核卡，却与 f4bd855 等支付/验收证据同列在“外部AI雇佣/派单/验收/账本”中，容易被解读为雇佣已闭环；应拆分为“预备派单/待调用”和“已验收/有支付证据”。",
+      "第1条建议存在证据口径错误：7ed637c 的提交信息是“payment 前的 dispatch”，不是支付或验收证据；draft 回执也不应直接“转为 accepted”，只能在取得真实供应商 accepted 回执及 f4bd855 同等级支付/验收证据后更新状态。",
+      "“实际完成”对 feat/chore/docs 类提交的验证强度表述不足。虽然开头声明仅依据提交信息，但该标题仍可能把“提交已存在”混同于“运行结果已独立验收”，建议改为“提交记录完成/提交内容自称完成”。",
+      "a3d146e 是 pending review/unpaid，04cecf5 是可行性评估，二者并非严格意义上的“提议”；建议分别标注为“待裁决/未付款”和“评估完成但未执行”。"
+    ],
+    "tokens_used": 10040
+  },
+  "at": "2026-11-17T18:47:15.895Z",
+  "report_sha256": "73330547be1ceee417abc8fdf87b80c023dfda538cb02eaf308834870ee3f660"
+}
