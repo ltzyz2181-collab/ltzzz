@@ -7,6 +7,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+const execFileAsync=promisify(execFile);
 
 const ROOT='/home/user/ltzzz';
 const OUT_DIR=path.join(ROOT,'knowledge/results/deep-superagent/mail-intake');
@@ -71,5 +74,13 @@ const payload={
 
 fs.mkdirSync(OUT_DIR,{recursive:true});
 fs.writeFileSync(OUT,JSON.stringify(payload,null,1)+'\n');
+// 每日必答：今天有没有收到 GPT 裁决回信。读不到邮箱记 unknown，不默认成"没收到"。
+try{
+  const {stdout}=await execFileAsync(process.execPath,[path.join(ROOT,'scripts/check-gpt-ruling-mail.mjs')],{timeout:90000,cwd:ROOT});
+  const line=String(stdout).trim().split('\n').pop();
+  console.log(line);
+}catch(error){
+  console.log(JSON.stringify({status:'unknown',received:'unknown',note:'GPT 裁决邮件检查失败：'+String(error.message).slice(0,160)}));
+}
 console.log(JSON.stringify({status,agent:payload.agent_mail,gmail:payload.gmail_fullbox,open:dedup.length}));
 process.exit(status==='failed'?3:0);
