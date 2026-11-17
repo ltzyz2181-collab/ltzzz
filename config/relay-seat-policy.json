@@ -155,5 +155,29 @@
     "guard": "scripts/lib/relay-seat-guard.mjs",
     "default_requested_agent": "deepseek",
     "recorded_fact": "requested_agent is the seat asking for the call; executed_by is the station and upstream vendor, never the requesting seat"
+  },
+  "adjudication_authority": {
+    "policy": "GPT 裁决 §五.11：中转可在已授权范围接入，但高风险不得由中转自动批准",
+    "relay_may_approve_high_risk": false,
+    "relay_output_is": "advice_only_not_a_ruling",
+    "high_risk_requires": "gpt_decision_seat（资金/退款/签名/生产部署/权限/Secrets/外部平台不可逆）",
+    "must_not_be_cited_as": "GPT 裁决原文 / owner 授权",
+    "self_approval_forbidden": true
+  },
+  "failure_fallback": {
+    "on_proxy_error": "fail_closed_refuse",
+    "on_upstream_5xx": "record_error_and_return，不重试",
+    "on_429": "不自动重试，记证据",
+    "on_unknown_balance": "refuse（沿用 balance_guard.unknown_balance_policy）",
+    "fallback_to_direct_key": false,
+    "fallback_to_other_station": false,
+    "blocks_other_independent_tasks": false
+  },
+  "cost_guard": {
+    "per_call_cost_cap_usd": null,
+    "daily_cost_cap_usd": null,
+    "cap_status": "unset_requires_owner_or_gpt_number",
+    "current_hard_ceiling": "balance_guard.floor_usd（低于 3 USD 自动关席）",
+    "note": "未设单价/日额上限前，只允许已登记在 allowlist 的模型，且每次调用必须记 usage 与费用到 balance-ledger。"
   }
 }

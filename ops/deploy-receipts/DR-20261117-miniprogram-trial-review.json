@@ -1,0 +1,75 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-miniprogram-trial-review",
+  "target": "miniprogram-frontend",
+  "platform": "wechat-miniprogram",
+  "env_id": "wx562bcb6057346fb2",
+  "function_id": null,
+  "code_commit": "e2400548e22f817fac4119b3fb253c13238b7900",
+  "code_path": "miniprogram/pages/orders",
+  "deployed_at": "2026-11-17T07:35:31Z",
+  "verified": [
+    {
+      "kind": "upload_receipt",
+      "result": "ok",
+      "evidence": "GitHub Actions run 44038005496（Mini Program Upload，source_commit e2400548e）→ results/commerce/miniprogram-upload-latest.json：status=uploaded_development_version, uploaded=true, published=false, version=0.1.13, version_source=repository_version_file, appid=wx562bcb6057346fb2, missing=[]"
+    },
+    {
+      "kind": "version_registry",
+      "result": "ok",
+      "evidence": "results/commerce/miniprogram-version.json：next_version 已由脚本自增 0.1.13 → 0.1.14，last_uploaded_version=0.1.13，last_run_id=44038005496，changed_by=scripts/miniprogram-upload.mjs"
+    },
+    {
+      "kind": "trial_version",
+      "result": "ok",
+      "evidence": "微信后台开发版 0.1.13（开发者 ci机器人1）已执行「选为体验版本」，弹窗提示「体验版已生效」，体验版路径 pages/product/index?id=source-check"
+    },
+    {
+      "kind": "review_submitted",
+      "result": "ok",
+      "evidence": "微信后台「审核版本」区显示 0.1.13（审核中），提交审核时间 2026-11-16 23:33:17，页面提示「预计在1-7天内完成审核」；提交表单项：版本描述已填、小程序订单中心path=pages/orders/index、测试账号=无需登录、仅企业微信=否"
+    },
+    {
+      "kind": "code_sha256",
+      "result": "ok",
+      "evidence": "orders 页四文件按 origin/main ab53159bc 现字节重算 sha256 与 code_sha256 一致（前端字节自 ca0ad10b8 未变）"
+    }
+  ],
+  "config": {
+    "appid": "wx562bcb6057346fb2",
+    "version": "0.1.13",
+    "channel": "trial",
+    "review_status": "in_review",
+    "live_version": "0.1.12"
+  },
+  "blockers": [
+    "published=false 仍成立：线上版本还是 0.1.12（2026-11-16 17:49:54 发布，发布者 擎起柱）。0.1.13 只到『审核中』，微信审核未通过前无法点发布，命令行与 CI 都无法跨过这一步。"
+  ],
+  "next_action": "等微信审核结果（预计 1-7 天）：通过后在后台「审核版本」点发布上线 0.1.13，随后回填本回执 published=true / live_version=0.1.13；被驳回则按驳回原因改版后重传（版本号从 results/commerce/miniprogram-version.json 取 0.1.14）。",
+  "notes": [
+    "本回执取代 DR-20261117-miniprogram-frontend（那张只记了 0.1.9 开发版上传，版本号低于当时线上 0.1.12，若直接提审会被判降级）。",
+    "版本号机制已修：scripts/miniprogram-upload.mjs 改读 results/commerce/miniprogram-version.json 的 next_version，上传成功后自增写回；PR #407 → e2400548e。",
+    "线上 0.1.12 已含订单页退款兜底与「查询失败不再伪装空列表」，本次 0.1.13 是同一份前端字节的重新提审（外加版本号机制修正），业务逻辑无新增改动。",
+    "微信后台无 API 走 CI：设为体验版/提交审核/发布三步只能在管理后台点击，本回执记录的是本席在桌面浏览器实际操作的结果。"
+  ],
+  "operator": {
+    "seat": "doubao-main",
+    "env": "client:1044603:832795323182164",
+    "recorded_by": "doubao-main"
+  },
+  "code_sha256": {
+    "index.js": "731a6cddaa17af311117c7e78b8582c059cfb6fbc42efef46181650d89929b3a",
+    "index.json": "68ead110fd545153f26ecca91deeda5c3667d38014b97ea28570beed1fd0457b",
+    "index.wxml": "b0ab533400abd65d450bfbadc525ca992791b8d208b5603b393702b1e69b321a",
+    "index.wxss": "757ddfd496cff2150c61a40e1054e5b43ef76803d36ef2e856de4c16be71bbb6"
+  },
+  "authorized_by": {
+    "authorized_by": "owner",
+    "evidence_type": "owner_direct_instruction_in_session",
+    "channel": "豆包工作台对话（owner 直连）",
+    "requirement": "GPT 裁决 §一 L3：生产部署须独立 Owner 授权；本字段即授权溯源，非 AI 自授权",
+    "instruction_quote": "1→2→3 执行  WorkBuddy 送审和 0.1.12 都会改变对外状态  一起部署",
+    "instruction_at": "2026-11-17（提交 0.1.12/0.1.13 审核当天）",
+    "scope_limit": "仅限开发版/体验版上传与提交审核；正式发布仍需 owner 亲自点击"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "receipt_id": "MR-20261117-deploy-conflict-report",
+  "kind": "L2 部署呈报 + 冲突罗列 + 裁决请求（非 L3 授权请求）",
+  "sent_at": "2026-11-17T08:09:29Z",
+  "from": "qingqizhu6502@agent.qq.com",
+  "to": "ltzyz2181@gmail.com",
+  "message_id": "msg_OPwJmj-BOWubuia4nbixbyt-UIPFyvZqeKsnahuJeRf_qg",
+  "subject": "【部署呈报】2026-11-17 部署4项+冲突5条，请裁 R1-R4",
+  "body_file": "/home/user/mail-20261117-deploy-conflict.md",
+  "deploy_facts": [
+    "order-deliver 云函数：14:42 部署，15:11 冗余重部署（C-20261117-06），冒烟 7206821b fail-closed NO_IDENTITY",
+    "PR #406 合并 ca0ad10b8（16/4/3 三项），CI 5 pass / 7 skipping / 0 fail",
+    "小程序上传 run 44036178741 = 0.1.9（低于线上 0.1.12，作废）；run 44038005496 = 0.1.13（version_source=repository_version_file）",
+    "微信后台：0.1.13 设为体验版 + 已提交审核（审核中，提交 2026-11-16 23:33:17，预计 1-7 天）；线上仍 0.1.12，published=false"
+  ],
+  "refs": [
+    "ops/deploy-receipts/DR-20261117-order-deliver.json",
+    "ops/deploy-receipts/DR-20261117-miniprogram-frontend.json",
+    "ops/deploy-receipts/DR-20261117-miniprogram-trial-review.json",
+    "results/commerce/miniprogram-upload-latest.json",
+    "results/commerce/miniprogram-version.json",
+    "docs/RULING-CONFLICT-20261117.md",
+    "knowledge/lessons/L-20261117-007.json"
+  ],
+  "asks": [
+    "R1 席位列：豆包是否由「只读审查席」改为「执行席（可合并/部署/提审，资金与签名留人工）」",
+    "R2 微信审核通过后的「点发布」是否纳入自动部署（首发是否保留一次人工确认）",
+    "R3 提审/发布是否归 deploy-automation 部署族 + 同字节二次上传是否列禁止表",
+    "R4 追认 08:03Z 邮件未回的 3 项：Phase1 复审 / 中转成本上限数字 / 中转裁决权"
+  ],
+  "readback": "message +list --dir sent --limit 3 命中该 message_id，created_at 2026-11-17T08:09:29Z",
+  "do_not_resend": true,
+  "note": "08:03Z 已有 MR-20261117-ruling-conflict-report（冲突呈报）；本封补充「今日部署事实 + 部署侧面冲突 + 带编号裁决」，两封不重复：前者是裁决对照表，后者是部署账。"
+}

@@ -2,13 +2,27 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// 版本号不能再用 workflow run 序号：工作流第九次运行时得到 0.1.9，会低于手工上传的 0.1.12，
+// 提交审核时被判定为降级。改为读仓库里的单调递增版本文件，上传成功后自增写回。
+const versionFile = 'results/commerce/miniprogram-version.json';
+let versionState = null;
+try {
+  versionState = JSON.parse(await fs.readFile(versionFile, 'utf8'));
+} catch {
+  versionState = null;
+}
+const plannedVersion = typeof versionState?.next_version === 'string' && /^\d+\.\d+\.\d+$/.test(versionState.next_version)
+  ? versionState.next_version
+  : '0.1.' + (process.env.GITHUB_RUN_NUMBER || '0');
+
 const receipt = {
   run_id: process.env.GITHUB_RUN_ID || null,
   source_commit: process.env.GITHUB_SHA || null,
   appid: process.env.MINI_APPID || null,
   appid_source: process.env.MINI_APPID ? 'configured_secret' : 'not_configured',
   status: 'blocked_configuration', upload_attempted: false, uploaded: false, published: false,
-  version: '0.1.' + (process.env.GITHUB_RUN_NUMBER || '0'),
+  version: plannedVersion,
+  version_source: versionState?.next_version ? 'repository_version_file' : 'workflow_run_number',
   missing: [],
 };
 const output = 'results/commerce/miniprogram-upload-latest.json';
@@ -83,6 +97,23 @@ try {
   if (temporary) await fs.rm(temporary, { recursive: true, force: true });
   await fs.mkdir(path.dirname(output), { recursive: true });
   await fs.writeFile(output, JSON.stringify(receipt, null, 2) + '\n');
+  if (receipt.uploaded) {
+    const parts = receipt.version.split('.').map(Number);
+    parts[2] += 1;
+    const nextVersion = parts.join('.');
+    const state = {
+      schema: 'ltzzz.miniprogram.version.v1',
+      next_version: nextVersion,
+      last_uploaded_version: receipt.version,
+      last_uploaded_at: new Date().toISOString(),
+      last_run_id: receipt.run_id,
+      last_source_commit: receipt.source_commit,
+      changed_by: 'scripts/miniprogram-upload.mjs',
+    };
+    await fs.mkdir(path.dirname(versionFile), { recursive: true });
+    await fs.writeFile(versionFile, JSON.stringify(state, null, 2) + '\n');
+    console.log('Next upload version reserved: ' + nextVersion);
+  }
   console.log(JSON.stringify(receipt));
 }
 

@@ -22,6 +22,12 @@
 
 真正的部署入口是各服务自己的 workflow（push main 命中路径即部署）。本授权改变的是"要不要请示"，不是这些阶段的验证契约。
 
+## 2.1 闸门的代码位置（不是只有文字）
+
+- 判定函数：`scripts/lib/deploy-authority.mjs` → `decide({action:'merge'|'deploy'|'rollback', family})`
+- 合并与部署是两个独立开关（`automatic_merge` / `automatic_deploy`），`excluded_families` 命中时**优先硬拒**，回滚默认拒，未知动作 fail-closed
+- 回归：`node --test scripts/tests/deploy-authority-gate.test.mjs`
+
 ## 3. 审计读法
 
 1. 先读本文件，再读 `config/deploy-automation-authority-20261117.json`。

@@ -7,6 +7,7 @@
 纪律：
 - 只读（readonly SELECT / BODY.PEEK），不写信、不标已读、不删邮件。
 - 正文永不落盘：只保留 id、日期、发件域、短标题、标题哈希、未读标记。
+- 只保留 LTZZZ 项目渠道的发件域标题；其余私人邮件只计数、不留标题（GPT 裁决 2026-11-17 §二.4）。
 - 金额与令牌类字符串在短标题里一律替换为占位符。
 - 凭据只从环境变量读，绝不写进仓库；缺失时 fail-closed 写原因。
 
@@ -31,7 +32,22 @@ USER = os.environ.get('GMAIL_IMAP_USER', 'ltzyz2181@gmail.com')
 PASSWORD = os.environ.get('GMAIL_IMAP_APP_PASSWORD', '')
 
 AMOUNT = re.compile(r'[0-9][0-9.,]*\s*(?:UT|USDT|CNY|USD|EUR|ETH|BTC|元|美元|港币)', re.I)
+# 符号在前的金额（¥9.90 / $12.34 / €99）单独一条：上面的正则只认「数字在前」的写法。
+AMOUNT_SYMBOL = re.compile(r'[¥\u00a5$\uff04\u20ac\u00a3]\s*[0-9][0-9.,]*')
 TOKEN = re.compile(r'[A-Za-z0-9_\-]{28,}')
+# GPT 裁决 GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二.4：不将无关个人信息纳入项目记录。
+# 只允许这些项目渠道的发件域把「短标题」落盘；其余邮件仅计入 project_unrelated_count，标题直接丢弃。
+PROJECT_DOMAINS = {
+    'agent.qq.com',            # Agent Mail 席位通道
+    'github.com',              # 仓库 / CI 通知
+    'weixin.qq.com',           # 微信公众平台
+    'mp.weixin.qq.com',
+    'wechat.com',
+    'tencent.com',
+    'cloud.tencent.com',
+    'x.ai',                    # Grok 席位
+}
+
 DISPATCH = re.compile(r'(派单|裁决|待决|待处置|待办|未完成|缺口|pending|action required)', re.I)
 CLOSED = re.compile(r'(验收通过|已合并|已部署|部署完成|已闭环|已收口|已修复并部署|already merged|accepted)', re.I)
 OPENISH = re.compile(r'(等待|待补|待回|待裁决|阻塞|未回|缺口|尚未|未完成|请据此|请回)', re.I)
@@ -43,6 +59,7 @@ def sha256(text):
 
 def redact(subject):
     s = AMOUNT.sub('<amount>', subject or '')
+    s = AMOUNT_SYMBOL.sub('<amount>', s)
     s = TOKEN.sub('<token>', s)
     s = re.sub(r'\s+', ' ', s).strip()
     return s[:60]
@@ -138,6 +155,7 @@ def main():
 
         # 批量 FETCH：一次取 100 封的头部，避免逐封往返被 Gmail 限速。
         messages = []
+        unrelated = 0
         batch = 100
         for start in range(0, len(ids), batch):
             chunk = ids[start:start + batch]
@@ -158,6 +176,9 @@ def main():
                 sender = msg.get('From', '') or ''
                 domain = re.search(r'@([^\s>]+)', sender)
                 unread = b'\\Seen' not in (meta if isinstance(meta, bytes) else b'')
+                if (domain.group(1) if domain else None) not in PROJECT_DOMAINS:
+                    unrelated += 1
+                    continue
                 messages.append({
                     'ref': sha256(msg.get('Message-ID', '') or subject)[:16],
                     'date': (msg.get('Date', '') or '')[:40],
@@ -182,9 +203,12 @@ def main():
             window_truncated=len(ids) >= MAX_WINDOW_MESSAGES,
             dispatch_wording_count=dispatch_count,
             channel_check={'imap_tls': 'ok', 'https_google': 'unreachable_from_vm'},
+            subject_scope='project_domains_only',
+            project_unrelated_count=unrelated,
+            contains_mail_body=False,
         ))
-        print('ok count=%d open=%d full_box=%d unseen=%d dispatch_wording=%d'
-              % (len(messages), open_count, total, unseen, dispatch_count))
+        print('ok count=%d open=%d full_box=%d unseen=%d dispatch_wording=%d unrelated_dropped=%d'
+              % (len(messages), open_count, total, unseen, dispatch_count, unrelated))
         return 0
     finally:
         try:
