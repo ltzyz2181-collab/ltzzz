@@ -33,3 +33,4 @@ node scripts/deploy-receipt.mjs list                  # 全部回执摘要
 - `DR-20261117-miniprogram-frontend`：小程序前端（订单页退款兜底）已上传开发版 0.1.9，绑 `ca0ad10b8`，GREEN；**published=false**。已被下面这张取代（0.1.9 低于当时线上 0.1.12，直接提审会被判降级）。
 - `DR-20261117-miniprogram-trial-review`：0.1.13 已上传（run 44038005496，source `e2400548e`）→ 后台设为体验版 → 已提交审核（0.1.13 审核中，预计 1-7 天），GREEN；**published=false** 仍成立（线上 0.1.12 未变，审核通过后才可点发布）。
 - `DR-20261117-dispatch-channel`：桌面 Claude 派单通道（PR #412）已合入默认分支 `63a3bf41`，issue 表单与协议文档生效，GREEN（模板回读 + 标签回读 + 无自动化监听三条证据）。**无运行时服务部署，故无线上 smoke**；Phase 1 仍为 `BLOCKED_EVIDENCE`。
+- `DR-20261117-mail-intake-phase2`：Gmail 摄入 Phase 2（PR #409）已合入默认分支 `63933f4e`，三层去重 / 裁决继承 / 只读正文 / append-only 状态修正生效，GREEN（PR 合并回读 + main CI deploy/offline 双 success + 定向测试 33/33 + 无 schedule + 文件回读五条证据）。**只到仓库态 deployed；submitted 与 platform_accepted 未发生**，`mail-intake-phase2.yml` 仍只在 `pull_request` 与 `workflow_dispatch` 触发，未启用任何定时运行。
