@@ -1,0 +1,43 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-mail-intake-phase2",
+  "target": "gmail-intake-phase2",
+  "platform": "github-default-branch",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "63933f4e8cc0dec00a53ad9490c997ec633a5e92",
+  "code_path": "scripts/mail",
+  "deployed_at": "2026-11-17T01:36:35-08:00",
+  "verified": [
+    {
+      "kind": "pr_merged",
+      "result": "ok",
+      "evidence": "GitHub REST GET /repos/ltzyz2181-collab/ltzzz/pulls/409 => state closed, merged=true, merge_commit_sha 63933f4e8cc0dec00a53ad9490c997ec633a5e92；合并前将 origin/main 测试合并进 head f926d629 无冲突"
+    },
+    {
+      "kind": "main_ci",
+      "result": "ok",
+      "evidence": "commit 63933f4e 的 check-runs：deploy completed success、offline completed success（0 failure）"
+    },
+    {
+      "kind": "targeted_tests",
+      "result": "ok",
+      "evidence": "在 origin/main 合入 #409 head 的结果上运行 node --test scripts/tests/mail-intake-pipeline.test.mjs scripts/tests/gmail-credentials.test.mjs scripts/tests/mail-workflow-policy.test.mjs => # tests 33 / # pass 33 / # fail 0"
+    },
+    {
+      "kind": "no_schedule_enabled",
+      "result": "ok",
+      "evidence": "git show origin/main:.github/workflows/mail-intake-phase2.yml 的 on: 仅 pull_request(paths 过滤) 与 workflow_dispatch，无 schedule/cron；该工作流只跑仓库内契约测试，不连邮箱、不读凭据"
+    },
+    {
+      "kind": "repo_readback",
+      "result": "ok",
+      "evidence": "origin/main 上存在 scripts/mail/dedupe.mjs（273 行）、scripts/mail/corrections.mjs（183 行）、docs/MAIL-INTAKE-PHASE2-20261117.md（130 行）、ops/deep-superagent/mail-intake/phase1-status.json；#409 共 23 文件 +3414/-260"
+    }
+  ],
+  "blockers": [],
+  "next_action": "Phase 2 代码已在默认分支生效，但只完成 draft/tested/merged/deployed（仓库态）四态；submitted（真实每日流水线运行）与 platform_accepted 未发生。邮件自动化仍受 config/email-authority-20261117.json 约束，L3 不放行。Phase 1 仍为 BLOCKED_EVIDENCE，直到产生真实 IMAP 登录回执。下一步待 Owner 裁决：是否启用每日 mail-intake 定时运行、是否部署 PR #408/#287。",
+  "code_sha256": {
+    "corrections.mjs": "64bd6981149d66791fae20ffa64514f5574ee969a500b2e9737fb6efd505aa91",
+    "dedupe.mjs": "d073eee3836d04954a35cdac3af9772db7dd5123b242ed33b6938441d3697e59"
+  }
+}
