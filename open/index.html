@@ -122,6 +122,8 @@ var CFG = {
       diag("开放标签报错：" + (e && e.detail ? JSON.stringify(e.detail) : "unknown"));
     });
     host.appendChild(tag);
+    // 插入 DOM 不等于微信已渲染（2026-11-13 曾因此误报“已渲染”）：先报中间态，最终状态由下方升级检测决定
+    setTag("已插入宿主，等待微信注入…", "warn");
 
     // 只有微信真的注入了该自定义元素（构造函数存在且影子树有内容）才报"已渲染"
     window.setTimeout(function () {
