@@ -59,5 +59,20 @@
     "另一席位报「gmail-imap.env 不存在」是**它自己所在机器**没有该文件；凭据只落在云主机这一台，换机器跑必然 creds_missing，属于预期 fail-closed，不是缺口。",
     "本次未向 owner 索要密码，也未手工写文件：脚本读取本机既有 600 权限文件完成全流程。",
     "GPT 裁决类回信：check-gpt-ruling-mail 报 received=true / days_since_last_ruling=0（今日 2 封）。"
-  ]
+  ],
+  "revision": {
+    "at": "2026-11-17T07:50:26Z",
+    "reason": "GPT 裁决 GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二.4：不将无关个人信息纳入项目记录；仓库为 public，原产物含 1366 封私人邮件标题（含验证码类）。",
+    "change": "scripts/collect-gmail-imap.py 增加 PROJECT_DOMAINS 白名单：非项目渠道邮件只计数、标题直接丢弃，不落盘。",
+    "window_fetched": 1371,
+    "project_kept": 1076,
+    "unrelated_dropped": 295,
+    "artifacts": [
+      "knowledge/results/deep-superagent/mail-fullbox/latest.json",
+      ".../mail-intake/latest.json",
+      ".../mail-backlog/latest.json"
+    ],
+    "items_status": "六项数字按本修订后的产物为准：窗口 1076（已截断? false）、全箱 4703 未读 3880、合并 1076+38=1114、待办 141、脱敏残留 0",
+    "history_note": "旧产物已随 ab53159bc 进入公开 main 的历史，删除工作区文件不会清除历史 blob；是否重写历史需 owner 单独决定。"
+  }
 }
