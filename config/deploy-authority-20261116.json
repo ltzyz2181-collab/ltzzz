@@ -1,0 +1,48 @@
+{
+  "schema": "ltzzz.deploy-authority.v1",
+  "recorded_at_utc": "2026-11-17T03:30:09Z",
+  "authorization": {
+    "source": "owner direct instruction in the current Codex session",
+    "instruction": "16 顺序开工",
+    "owner_date": "2026-11-16",
+    "timezone": "America/Tijuana",
+    "scope": "LTZZZ repository workflows that deploy on merge to main"
+  },
+  "automatic_deploy": true,
+  "already_automatic": {
+    "mechanism": "push to main triggers the matching .github/workflows/deploy-*.yml",
+    "examples": [
+      ".github/workflows/deploy-relay-proxy.yml",
+      ".github/workflows/deploy-wep3.yml",
+      ".github/workflows/deploy-cloud-hub.yml"
+    ],
+    "note": "Deployment was already automatic before this record; this record makes the authorization explicit and testable."
+  },
+  "preconditions": [
+    "tests required by the touched workflow pass",
+    "the change reaches main through the existing controller path",
+    "the previous deployment or version identifier is recorded before deploying"
+  ],
+  "rollback": {
+    "required": true,
+    "entry": "record the prior worker deployment id or version id in the deploy receipt",
+    "automatic_rollback": false
+  },
+  "phase_configs_not_flipped": {
+    "config/patch-policy.json": "A0 validation_only invariant; automatic_deploy must stay false",
+    "config/patchgate-a2.json": "A2 docs-only invariant; automatic_deploy must stay false",
+    "config/patchgate-cloud-publisher.json": "publisher invariant; automatic_deploy must stay false",
+    "config/pi-cloud.json": "isolated pi smoke invariant; automatic_deploy must stay false"
+  },
+  "exclusions": [
+    "five_signature_wallet",
+    "smart contract deployment",
+    "wallet signing or transfers",
+    "real funds"
+  ],
+  "not_claimed": [
+    "any specific deployment has already occurred under this record",
+    "external platform acceptance or review",
+    "automatic rollback implementation"
+  ]
+}

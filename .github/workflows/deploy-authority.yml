@@ -1,0 +1,27 @@
+name: Deploy authority record
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'config/deploy-authority-*.json'
+      - 'config/autonomy-authority.json'
+      - 'scripts/tests/deploy-authority.test.mjs'
+      - '.github/workflows/deploy-authority.yml'
+  pull_request:
+    paths:
+      - 'config/deploy-authority-*.json'
+      - 'config/autonomy-authority.json'
+      - 'scripts/tests/deploy-authority.test.mjs'
+      - '.github/workflows/deploy-authority.yml'
+permissions: {contents: read}
+concurrency: {group: deploy-authority-verify, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/deploy-authority.test.mjs
