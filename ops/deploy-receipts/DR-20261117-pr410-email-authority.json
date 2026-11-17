@@ -1,0 +1,96 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-pr410-email-authority",
+  "target": "email-authority-policy",
+  "platform": "github",
+  "env_id": "ltzzz-repo/main",
+  "code_commit": "1c5dedb80742d7a89a60933637a80c3ba21fc76d",
+  "code_path": "config",
+  "deployed_at": "2026-11-17T08:53:29Z",
+  "verified": [
+    {
+      "kind": "merge_to_main",
+      "result": "ok",
+      "evidence": "PR #410 合并入 main，merge commit 1c5dedb80742d7a89a60933637a80c3ba21fc76d；git merge-base --is-ancestor 1c5dedb8 origin/main 返回 0"
+    },
+    {
+      "kind": "ci_checks",
+      "result": "ok",
+      "evidence": "PR #410 CI：success/skipped，无失败项"
+    },
+    {
+      "kind": "unit_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/email-authority.test.mjs scripts/tests/deploy-authority.test.mjs scripts/tests/deploy-authority-gate.test.mjs scripts/tests/deploy-receipt.test.mjs → 29/29 pass"
+    },
+    {
+      "kind": "policy_readback",
+      "result": "ok",
+      "evidence": "main 上 config/email-authority-20261117.json 已含 L1/L2 auto_send=true、L3 auto_send=false、deployment_completion_report（8 必填字段 + 幂等）；config/deploy-automation-authority-20261117.json automatic_deploy=true，资金/签名/五签 Safe 仍硬拦"
+    }
+  ],
+  "blockers": [],
+  "next_action": null,
+  "known_issues": [
+    "scripts/tests/relay-seat-acceptance.test.mjs 仍有 3 条预存在失败，非本次改动引入，未修；不阻断本回执。",
+    "本次为仓库策略与测试，不含运行时服务部署；Phase 3 自动发送运行时未实现（R4 待裁）。"
+  ],
+  "notes": [
+    "本回执随同 PR 落盘：docs/2026-11-17-部署完成呈报-GPT裁决.md；邮件回执 ops/mail-receipts/MR-20261117-pr410-deploy-report.json 只在真实发送成功后写入，未发送则不存在。",
+    "同一 PR 内把 config/email-authority-20261117.json 的 amended_at_utc 由未来的 09:05:00Z 修正为真实记录时间 08:41:18Z；code_sha256 按落盘时工作树计算。",
+    "code_path=config 的哈希漂移即代表策略文件在本次部署后被改动，需重新出回执，属预期语义。"
+  ],
+  "operator": {
+    "seat": "deploy_seat",
+    "env": "windows-desktop worktree codex-email-authority-20261117",
+    "recorded_by": "codex"
+  },
+  "authorized_by": {
+    "authorized_by": "owner",
+    "evidence_type": "owner_direct_instruction_in_session",
+    "channel": "Codex 桌面会话",
+    "requirement": "config/email-authority L3：生产部署须独立 Owner 授权；本字段即授权溯源",
+    "instruction_quote": "部署吧 做完后给gpt 裁决",
+    "instruction_at": "2026-11-17T08:50Z 前后（本会话）",
+    "scope_limit": "仓库策略/配置文件合并入 main + 部署呈报邮件；不含资金、签名、五签 Safe、外部不可逆操作"
+  },
+  "code_sha256": {
+    "account-registration-authority-20261107.json": "0bfb6749113455fd690031b2d56d291992631c30e4d67d6f6227f71e6ee0b3cb",
+    "ai-providers.json": "012da98c960cf39bd181d727231d7fda6e2170bc11f9384d317f8135f41f991c",
+    "autonomy-authority.json": "621d8a58ce6de46094dcddc838bf7f79f7d82791eda08e0cc88cb7a35629bec3",
+    "claude-team.json": "e79263732f866cd1ea0434c9491174707bc1529951420333c056f779e47f7e5d",
+    "deep-skill-iteration.json": "0bd767f37ebf996c54882e0533e358c0e29cfb4f4dc0e0471fc6d5fa50bfff0f",
+    "deep-superagent.json": "bc02961f7a5f5b3dda734c3b8608c48b3ffa686c69968c2a0dd7c284f3d7859e",
+    "deploy-authority-20261116.json": "49b53b42f25c6b08d67c15d82e62e02b2ea1294a07867119c160d24fd66c9488",
+    "deploy-automation-authority-20261117.json": "60f228b3e81f3ff0b1c59c6b3de02815a08da4bd1cd99aa07ffa4aac0bd016b7",
+    "dispatch-seat-policy-20261117.json": "f51b447f6e6bb6d50189037787cb561c931fb32374c636bc99ba69d63631fd67",
+    "email-authority-20261117.json": "b1aa424f4a1e478976d865f46a257c44df7ca90ec297795b298cced6bc9e0dd4",
+    "financial-exit-inventory.json": "4309691ced54463a0b70f1d98474d3f29e82a1503f7577392e41cddb5804b8ce",
+    "innovation-rota.json": "db3a98333316d7e352d599075d8733c1b7de05b034f85ce823ca0403a25aef62",
+    "ltzzz-skill-release.json": "bd044a81fef94d0233d260b15220d7ee28fab2c6aa1d3a4c3432fbc5fd5e814f",
+    "ltzzz-skill.json": "8668b82b0103bb77e5aa1132ed5825a262d2e6f298f05a4a16ac3fe7b4aaa3a5",
+    "owner-authority-20261105.json": "56164cdcad6e71e4aed29115f66860c2856789b50d467af18dcbe9be8d56feb1",
+    "owner-web3-readonly.json": "a2555ece2febd0db9aaf9aa7bdc2483bbaab643a7da54eb74b45cd06dab26408",
+    "patch-policy.json": "4cf27ec9dacf244689f85f36761c4d3dfe0c0ad1ea09d3799bf971c91927cb01",
+    "patchgate-a2-collector.json": "39659da6c2152ce6b6d44f5c352ad2c84147dcff194f73d02cdbcf4aa9da2fb8",
+    "patchgate-a2-reconcile.json": "c83eb48c8ca56e5fbceccbf612c74f72401fee3af9749c9849963804674081ca",
+    "patchgate-a2.json": "8af4ecdb1db490228caedba10d59fe8f69fdcff41b71a5f139ca7f4e82f0ccbc",
+    "patchgate-a3.json": "5af4bb619eceda257688fe23a7113823254f26fbf449fe8cc955f3da930f89f5",
+    "patchgate-author-checks.json": "2e6d4b49dd586449738d231e1cc50984371b32d26b0efe92d6cb60b5f8040649",
+    "patchgate-cloud-publisher.json": "ca94035f465a41b1aefa616624310439f7ec378ffe8638efdc7e3dac3c46935e",
+    "patchgate-executors.json": "79c6f14fa19d6627dd1f96e6c65184d2271290b5d18765c3e7b21055f4b47d86",
+    "patchgate-model-attestation.json": "05672d0f219d21bcbe8abbf7b311dd1cdad9783071a878751df4349f663d06a3",
+    "patchgate-trust.json": "b38fa49001f73ebe7364c145bc6acf9cf9540a57ab1b046928c6219940c093e4",
+    "pi-cloud-runtime/package-lock.json": "1d88ae708c71d04826491925c02ecc4dbc240616af977cc6c1b139191290e395",
+    "pi-cloud-runtime/package.json": "4e5515b883ddc18d37580b530e598b08449b10440a072f60f8643a3178444dfa",
+    "pi-cloud.json": "e66076153ed020841021e89bb4eeb6ca1ab0010ef42f28b265fb7f152063fb53",
+    "relay-seat-acceptance.json": "87c44a0b44e6fb70ccdfda65ee44e0fe306c620cdb6c248f5ba35450c78e90bc",
+    "relay-seat-policy.json": "0d052e193de69d58db3d67141024206b8873659346425f7fcd64f3d9f3e5c5d0",
+    "review-delegation.json": "280709ecbf1113b37efba0e3f289f07f183abd18fe18782053c22f38d6dd5166",
+    "seat-roles-20261116.json": "e732cc9618316902c6779c1a4bc200196cc77bce86cd14c9d3c1749726c8e648",
+    "small-payment-activation-authority.json": "dc5e556b5f86c88a8f0e53f8d2a256aa71f8438d73d9a488febb7ea5deb9c816",
+    "small-payment-autonomy.json": "c23854ef0852cdd55348a2f832c4cd7dcd59f51c419bfe615204a56781f7d620",
+    "vscode/deepseek.chatLanguageModels.template.json": "c1800967f90c4193e0489a44f8bb1287d9f16375d1fb2304c7613653081aebf3",
+    "workpool.json": "c1a5112a2a000ae57cfbbec90d737a13679b9083a9bcabfae4e1744c5d250c94"
+  }
+}
