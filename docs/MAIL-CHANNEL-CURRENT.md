@@ -70,3 +70,10 @@
 - 失败语义：缺凭据写 `creds_missing`；登录失败重试三次（30s/90s 退避）后写 `imap_login_failed` 并带 `retries`；
   任何非 ok 结果写盘前会把上一次 ok 另存 `last-ok.json`，避免把可核验结果覆盖成废态。
 - 已知限制：单次约 2.5 分钟（1400 封量级），偶发云主机到 993 的 TCP 握手超时（重试可过）。
+
+## 7. 每日流水线的唯一入口
+
+- 命令：`node scripts/run-mail-intake.mjs`（先 Agent Mail，再 Gmail 全箱，最后合并）。
+- 产物：`knowledge/results/deep-superagent/mail-intake/latest.json`（`schema=ltzzz.mail-intake.v1`）。
+- 语义：`status` 只由两条通道的真实结果推导（ok / partial / failed）；任一通道失败都不许写成读过。
+- 校验：`scripts/tests/mail-intake.test.mjs` 在 CI 里校验结构、状态推导与脱敏约束，不重跑采集。

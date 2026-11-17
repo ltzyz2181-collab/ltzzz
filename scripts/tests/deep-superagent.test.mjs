@@ -1,3 +1,4 @@
+import './mail-intake.test.mjs';
 import './deep-superagent-deploy-automation.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
