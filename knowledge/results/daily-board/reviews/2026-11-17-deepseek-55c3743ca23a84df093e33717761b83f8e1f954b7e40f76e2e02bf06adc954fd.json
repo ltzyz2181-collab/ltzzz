@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "accepted": false,
+  "reasons": [
+    "仅交一条未写盘、未运行的负向断言草稿，缺任务要求的正常/恢复/幂等三态验收实物",
+    "字段名与实际回执schema不符：断言读r.execution.provider/model/completion_marker，实际为顶层actual_provider/actual_model，execution无provider/completion_marker字段，真实完整回执会被误阻断",
+    "未覆盖奖惩结算：失败退款、恢复后结算、重复触发不重复奖惩均无用例",
+    "execution.accepted/deployed/paid均为false且无测试回执，不能记修复通过"
+  ],
+  "unverified": [
+    "断言对真实ANS回执的实际行为，未执行无回执",
+    "Pulse agents.ok与实际provider/model一致性，快照仅心跳",
+    "actual_model=deepseek-v4-pro仅provider_response，非加密证明",
+    "工件SHA256由派单提供，审方无工具独立复算",
+    "生产监控/奖惩修复是否部署"
+  ],
+  "scope": "engineering_draft_only",
+  "artifact_sha256": "cbb1d6cd189b55bacc175cc80afe1668abfa318e85e63416dc6314f472ac201a",
+  "task_id": "DAILY-2026-11-17-deepseek",
+  "date": "2026-11-17",
+  "run_key": "44016586904:1",
+  "source_commit": "76240e348db5b79cc4880c331cfeba5257e52ea5",
+  "actual_provider": "doubao",
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "reviewer_task_id": "DAILY-2026-11-17-doubao",
+  "reviewer_artifact_path": "knowledge/results/daily-board/artifacts/2026-11-17-doubao-39e2311052842f28391c8fe4da4ade28d5ffded9678415e6ad5461bed57322e0.json",
+  "reviewer_artifact_sha256": "39e2311052842f28391c8fe4da4ade28d5ffded9678415e6ad5461bed57322e0",
+  "deployed": false,
+  "paid": false,
+  "tx_hash": null
+}
