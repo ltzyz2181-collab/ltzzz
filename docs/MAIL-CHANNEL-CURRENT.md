@@ -110,12 +110,9 @@
   不是「凭据缺失待补」，也不得据此报「六项无回执」。要复跑就在云主机跑。
 
 
-## 9. QQ 邮箱 IMAP 凭据（2026-11-17 增补）
+## 9. QQ 邮箱 306122054 凭据的归属（2026-11-17 修正）
 
-- 凭据位置：云主机 `/home/user/.config/ltzzz/qq-mail.env`，`chmod 600`，仓库外；值**不进对话、不进仓库、不进 Actions 日志**。
-- 键：`QQ_IMAP_USER`、`QQ_IMAP_APP_PASSWORD`；另记 `QQ_IMAP_HOST/PORT`（`imap.qq.com:993`）与 `QQ_SMTP_HOST/PORT`（`smtp.qq.com:465`）。
-- **账号核对（重要）**：owner 本轮消息写的账号是 `306122043@qq.com`，但同一授权码实测属于 **`306122054@qq.com`**（本文 §2.1 记录的 owner QQ 邮箱）。
-  两者只差一位，属于手输笔误；凭据按实测通过的 `306122054@qq.com` 落盘，`306122043@qq.com` 登录返回 `AUTHENTICATIONFAILED`。
-- 实测（2026-11-17T17:31 本地，只读，`SELECT readonly`，未取任何正文）：
-  - IMAP `imap.qq.com:993` TLS + `LOGIN` **OK**，`INBOX` 共 **3045** 封，未取信、未标已读。
-- 结论：QQ 邮箱**收信（IMAP）与发信（SMTP，见 §2.1）两条通道均已可用**；授权码不再向 owner 索要。
+- **归属：桌面 GPT 席与桌面 Claude 席的通道，不是云主机/豆包席的通道。** 该账号的 16 位授权码由 owner 交给桌面两席使用（桌面侧 `~/.config/ltzzz/qq-smtp.env`，见本文 §2.1）。
+- 2026-17:31 云主机侧曾按 owner 转发的同一授权码落过一份 `~/.config/ltzzz/qq-mail.env`，实测 `imap.qq.com:993 LOGIN OK / INBOX 3045`（只读，未取正文）。owner 澄清"发错了，是桌面 GPT 和桌面 Claude 用的"后，**云主机副本已 `shred` 删除，不保留**。
+- 记录口径：本条只记归属与所在机器，不记值、不留副本；云主机侧任何脚本读该邮箱都应 fail-closed (`creds_missing`)，不得据此推断通道不可用。
+- 若以后云主机确实需要 QQ 收信，应让 owner 单独为该机器签发新授权码，不复用桌面两席那一份。
