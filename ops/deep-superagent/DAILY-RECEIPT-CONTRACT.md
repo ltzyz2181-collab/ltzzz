@@ -57,3 +57,14 @@
 - 路由复核以账本为准：有回信的线程不得再判 `needs_gpt_decision`，改写 `decided_pending_execution` 并附 `decision_id` 与回信 `message_id`。
 - 超过 24h 未回信的线程，在每日邮件顶部单独提醒，不在四段里反复重发全文。
 - 回信到达但未读时，必须先读正文再判定；未读即判定视为未核实。
+
+
+## 第五段（2026-11-17 增补）：未收到 GPT 回信的催办清单（mail_awaiting_reply）
+
+owner 2026-11-17 明确要求：每日巡检必须告诉他，有没有发了但没等到 GPT 回信的裁决请求。
+
+- 每天读 `knowledge/results/deep-superagent/mail-intake/latest.json`：`agent_mail` 段是收到的信，`gmail_fullbox` 段是我方发出的信。以「我方发出的问询/请裁决类主题」去匹配「收件箱里同主题的 Re: 回信」，匹配不上的进本段。
+- 字段固定为 `mail_awaiting_reply: {count, items:[{sent_at, subject_short, age_days, matched_reply:false}]}`，写进 `daily-<YYYY-MM-DD>.json` 并进汇总邮件，**不分日期**——每天都要出现这一段。
+- 数量为零时写 `count: 0` 并注明"本窗口内所有请裁决邮件均有同主题回信"，不许省略整段。
+- 匹配不上 ≠ GPT 没回。回信主题常被改写，所以措辞只写「未见到同主题回信」，不得写成「GPT 未回复」。
+- 同一天若 `agent_mail.status` 非 ok（读不到收件箱），本段必须记 `unknown` 并说明原因，不得默认零。
