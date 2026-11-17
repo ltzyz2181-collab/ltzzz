@@ -1,0 +1,52 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-order-deliver",
+  "target": "order-deliver",
+  "platform": "tcb",
+  "env_id": "shizhang-pay-d0g1n58020acf6b5b",
+  "function_id": "lam-r5yum0gf",
+  "code_commit": "f48fd14ada8293c183de32df905f8349007cc84a",
+  "code_path": "miniprogram/cloudfunctions/order-deliver",
+  "deployed_at": "2026-11-17T14:42:59+08:00",
+  "verified": [
+    {
+      "kind": "function_detail",
+      "result": "ok",
+      "evidence": "queryFunctions getFunctionDetail：AddTime 2026-11-17 14:42:59 / Status Active / AvailableStatus Available / Runtime Nodejs20.19 / Handler index.main / CodeResult success / FunctionId lam-r5yum0gf"
+    },
+    {
+      "kind": "invoke_smoke",
+      "result": "ok",
+      "evidence": "tcb fn invoke（桌面 tcb 3.9.2）RequestId 7206821b-d285-4c6e-91f5-a8dc6def6972，返回 {ok:false,code:'NO_IDENTITY'}，Duration 4ms：无微信身份时 fail-closed，证明函数可运行且身份校验在生效"
+    },
+    {
+      "kind": "config_readback",
+      "result": "ok",
+      "evidence": "Environment.ADMIN_OPENIDS 已写入（CloudBase 回显值遮蔽，ValueLength=28，与白名单 openid 长度一致）；Timeout 由默认 3s 调为 10s"
+    }
+  ],
+  "config": {
+    "ADMIN_OPENIDS": "set(len=28)",
+    "timeout": 10,
+    "runtime": "Nodejs20.19",
+    "type": "Event",
+    "handler": "index.main"
+  },
+  "blockers": [],
+  "next_action": null,
+  "notes": [
+    "部署路径：桌面云主机 tcb CLI（3.9.2，已登录，默认环境即目标环境）；代码取自 origin/main 归档，未使用桌面脏工作区。",
+    "CloudBase MCP 处于 cloud mode，createFunction/updateFunctionCode 被拒（依赖本地函数目录），invokeFunction 被 CAM 拦截；已改用桌面 tcb CLI 完成部署与冒烟，MCP 只用于配置写入与回读。",
+    "残留（不影响上线判定）：小程序真机端到端（下单→上传材料→管理员交付）尚未跑；kf-reply 线上版本另行核对。"
+  ],
+  "operator": {
+    "seat": "doubao-main",
+    "env": "vm + 世章(windows)",
+    "recorded_by": "doubao-main"
+  },
+  "code_sha256": {
+    "index.js": "7a99b9bf529921d5f6110c4129a7828780af679a7a1efe3050df3ee4f2e1ac75",
+    "lib/logic.js": "690c0474ff7b7dc4fe32158bfa616c403c5c68c44e9fea17575d6bdf15040c39",
+    "package.json": "2f9b75d5528a33e95738c8acaac7f4de9750a90579f72bfb4f58732758addb0c"
+  }
+}

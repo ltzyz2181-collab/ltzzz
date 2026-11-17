@@ -1,0 +1,68 @@
+{
+  "id": "L-20261117-006",
+  "observed_at": "2026-11-17T07:45:00Z",
+  "agent_actual": {
+    "provider": "doubao",
+    "model": null
+  },
+  "reporter": {
+    "provider": "doubao",
+    "model": null
+  },
+  "source": {
+    "kind": "review",
+    "ref": "docs/DEPLOY-RECEIPT-CURRENT.md",
+    "commit": "f48fd14ada8293c183de32df905f8349007cc84a"
+  },
+  "task_tags": [
+    "deploy",
+    "receipt",
+    "idempotency",
+    "readjudication",
+    "owner_fatigue"
+  ],
+  "error_class": "other",
+  "signature": "deploy_without_receipt_readjudicated",
+  "what_happened": "order-closure 分支合并进 main（PR #405 → f48fd14ad）后没有立刻部署，也没有留下任何『已部署/未部署、部署到哪、证据是什么』的回执。下一轮 owner 只能再问一遍『要不要部署』，等于同一件事被重新裁决一次；此前的多次部署同样只在聊天里口头交代，仓库里查不到部署事实。",
+  "expected": "每次部署（以及每次『决定不部署』）都必须在 ops/deploy-receipts/ 留一张回执：代码提交 SHA + 目标环境 + 部署后回读证据 + 未清阻碍 + 下一手动作；任何席位在裁决同一目标前先跑 node scripts/deploy-receipt.mjs latest <target> 读回执，不得从零重来。",
+  "evidence": [
+    {
+      "path": "scripts/deploy-receipt.mjs",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "scripts/tests/deploy-receipt.test.mjs",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    },
+    {
+      "path": "ops/deploy-receipts/DR-20261117-order-deliver.json",
+      "sha256": null,
+      "commit": null,
+      "verified_by_reporter": true
+    }
+  ],
+  "root_cause": {
+    "text": "部署动作被视为『聊天里的过程』而不是『仓库里的状态』。没有状态载体，就无法判断某目标是否已部署、部署的是哪一版代码，于是每轮都从『要不要部署』重新开始。",
+    "status": "hypothesis"
+  },
+  "rule": "部署前后都必须落 ops/deploy-receipts/ 回执（record + verify）；回执必须绑定 code_commit 与代码哈希，非全绿必须写 blockers 与 next_action；裁决部署类事项前先 latest <target> 读回执；回执落盘后在 docs/2026-11-16-已闭环事项登记与勿重复清单.md 补一行指向 receipt_id。",
+  "check": {
+    "kind": "ci_guard",
+    "ref": "scripts/tests/deploy-receipt.test.mjs"
+  },
+  "severity": "high",
+  "mandatory": true,
+  "effect": "adds_caution_only",
+  "status": "observed",
+  "review": null,
+  "recurrences": [
+    {
+      "observed_at": "2026-11-17T07:45:00Z",
+      "source_ref": "owner：每（次）部署完任务不留回执吗 下次裁决还来一遍 一个事重复做很多遍 还没记录"
+    }
+  ]
+}
