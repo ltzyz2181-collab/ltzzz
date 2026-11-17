@@ -105,3 +105,13 @@ node --test scripts/tests/hire-phase1.test.mjs
 
 说明：本节是同一 PR #408 的追加修订，不另开 PR；仍未合并、未部署、未进入 Phase 2。
 
+### 8.1 CI 证据绑定修正
+
+首次重跑发现 artifact 的 `commit` 取的是 `GITHUB_SHA`，在 `pull_request` 事件下那是 GitHub 的合成 merge commit，不是 PR head。已修：
+
+- E2E 步骤显式传入 `github.event.pull_request.head.sha` 与 `base.sha`；
+- `e2e-summary.json` 同时记录 `commit`（head）、`base_commit`、`merge_commit`；
+- 新增 CI 断言：artifact 的 `commit` 必须等于本次测试的 head，否则工作流失败。
+
+这样“artifact 对应正确 commit”不再依赖人工解释。
+
