@@ -24,7 +24,7 @@ function loadPage({orders, payEnabled = true}) {
       throw new Error('unexpected require: ' + name);
     },
     Page: value => { def = value; },
-    wx: {cloud: {callFunction: async () => ({result: {orders}})}},
+    wx: {cloud: {callFunction: async () => ({result: {ok: true, orders}})}},
     console,
   };
   vm.runInNewContext(source, context);

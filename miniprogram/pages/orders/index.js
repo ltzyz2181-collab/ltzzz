@@ -71,7 +71,7 @@ Page({
       return;
     }
     this.setData({ loading: true, error: false, errorMessage: '' });
-    wx.cloud.callFunction({ name: 'order-list' })
+    return wx.cloud.callFunction({ name: 'order-list' })
       .then(res => {
         const result = (res && res.result) || {};
         if (result.ok !== true) {
