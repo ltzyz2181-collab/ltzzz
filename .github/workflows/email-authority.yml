@@ -1,0 +1,31 @@
+name: Email authority record
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'config/email-authority-*.json'
+      - 'config/deploy-authority-*.json'
+      - 'config/relay-seat-policy.json'
+      - 'scripts/tests/email-authority.test.mjs'
+      - 'scripts/tests/deploy-authority.test.mjs'
+      - '.github/workflows/email-authority.yml'
+  pull_request:
+    paths:
+      - 'config/email-authority-*.json'
+      - 'config/deploy-authority-*.json'
+      - 'config/relay-seat-policy.json'
+      - 'scripts/tests/email-authority.test.mjs'
+      - 'scripts/tests/deploy-authority.test.mjs'
+      - '.github/workflows/email-authority.yml'
+permissions: {contents: read}
+concurrency: {group: email-authority-verify, cancel-in-progress: false}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node --test scripts/tests/email-authority.test.mjs scripts/tests/deploy-authority.test.mjs

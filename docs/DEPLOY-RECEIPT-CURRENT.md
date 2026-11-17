@@ -19,6 +19,7 @@ node scripts/deploy-receipt.mjs list                  # 全部回执摘要
 - 有任一 `verified` 不是 `ok`，必须写 `blockers` 和 `next_action`，不允许“部署成功”这种无证据结论。
 - `record` 会对 `code_path` 下所有文件（跳过 node_modules）算 sha256 存进回执；`verify` 重算并报差异——代码改过但没重新部署，会直接暴露成漂移。
 - 一次部署事件一张回执；新部署换新 `receipt_id`，不覆盖旧回执。
+- 回执落盘后必须按 `config/email-authority-20261117.json` 的 `deployment_completion_report` 发出汇总邮件：包含 `receipt_id`、状态分层（draft/tested/merged/deployed/submitted/platform_accepted）、待裁决项和明确的“下一步做什么”询问；同一回执只发一次。该邮件属 L1，不等于 L3 生产部署授权。
 
 ## 与“勿重复清单”的分工
 
