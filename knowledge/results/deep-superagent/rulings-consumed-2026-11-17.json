@@ -1,0 +1,244 @@
+{
+ "schema": "ltzzz.deep-superagent.rulings-consumed.v1",
+ "date": "2026-11-17",
+ "question": "22 条 answered_but_unread 是否真的读了并落地",
+ "read_method": "agently-cli message +read --id <完整 message_id> 逐封取正文（HTML 转纯文本）；read_scope=full_body 为全文读完，head_tail 为首段+结尾。",
+ "counts": {
+  "unread_before": 22,
+  "consumed": 22,
+  "open_blocked": 2,
+  "open_needs_check": 3,
+  "closed": 12,
+  "superseded": 1,
+  "partially_closed": 1,
+  "partial": 1,
+  "action_done": 1,
+  "open_not_started": 1
+ },
+ "items": [
+  {
+   "n": 1,
+   "replied_at": "2026-11-08",
+   "thread": "千问字节缺失｜保留阻塞、交真实原件",
+   "decision": "保持 blocked_bytes_not_received，不代填 expected_return",
+   "status": "open_blocked",
+   "note": "缺千问原 JSON 原件，无法复算 SHA256",
+   "evidence": "knowledge/results/deep-superagent/mail-intake/triage-2026-11-17.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 2,
+   "replied_at": "2026-11-08",
+   "thread": "Deep接力前置核验｜GPT主审、Grok接续",
+   "decision": "未收到 coordinator-handoff 前保持 dispatched_not_acknowledged；异源审=GPT/Grok；平台私包未获许可不得外发",
+   "status": "open_blocked",
+   "note": "协调卡未到；平台数据许可未确认",
+   "evidence": "knowledge/results/dispatch/oversight/latest.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 3,
+   "replied_at": "2026-11-09",
+   "thread": "DEEP-DAILY-TASKS-20261109 只批一个内部试点",
+   "decision": "只批一次内部试点（LOW-SPEED-CORE-FINANCE-20261108 最早失败边界 + router 是否真收到/排队/执行），最多 1 次规划调用，不接外单",
+   "status": "open_needs_check",
+   "note": "需核对是否已跑过该试点，本轮未查",
+   "evidence": "ops/deep-superagent/tasks/",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 4,
+   "replied_at": "2026-11-09",
+   "thread": "签名器 PR #379/#380 事实更正",
+   "decision": "#379 已合并 4c8607f6、#380 已合并；不得再称等待合并；XAI 只审过旧 head",
+   "status": "closed",
+   "note": "事实已按合并结果记录；本次未再改代码",
+   "evidence": "docs/DEPLOY-AUTOMATION-CURRENT.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 5,
+   "replied_at": "2026-11-09",
+   "thread": "小程序开通支付 Q1–Q5",
+   "decision": "走 B（虚拟支付）沙箱验证；不接 JSApi；真实支付确认由 owner 完成",
+   "status": "closed",
+   "note": "payEnabled=true 已落地，0.1.11 于 2026-11-11 22:49:47 全量发布",
+   "evidence": "docs/2026-11-11-小程序0.1.11提审与部署回执.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 6,
+   "replied_at": "2026-11-09",
+   "thread": "Linear 卡 v2 Q1–Q5",
+   "decision": "只走官方连接器；全席只读；不改状态机；不邀人；每席自证三连",
+   "status": "closed",
+   "note": "当前 Linear 仍是只读，未建 issue/comment",
+   "evidence": "config/seat-roles-20261116.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 7,
+   "replied_at": "2026-11-10",
+   "thread": "#388/#389 验收通过、WEP3 与 Daily 分线",
+   "decision": "接受 Pages 部署结果，不重复部署；WEP3 保持交易适配器关闭；Daily 是准入闸门不是故障",
+   "status": "closed",
+   "note": "reconcile exit 1 已定论为 fail-closed 既定行为",
+   "evidence": "knowledge/results/deep-superagent/decision-items-2026-11-17.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 8,
+   "replied_at": "2026-11-11",
+   "thread": "13 美元余额保留、不批无限额 key、原厂被账务阻断",
+   "decision": "不充值、不把无限额 key 交给任何 agent、不接原厂",
+   "status": "superseded",
+   "note": "11-13 owner 授权恢复 relay 并重新部署，本裁决被新授权覆盖",
+   "evidence": "docs/RELAY-SEAT-CURRENT.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 9,
+   "replied_at": "2026-11-11",
+   "thread": "ICP 5 项裁决",
+   "decision": "①修过时测试断言不改支付实现；②Base RPC 先退避串行；③发布硬门只认 all_payment_release.files；④未读取的配置不单独部署；⑤A3/B 保持关闭",
+   "status": "partially_closed",
+   "note": "①已修（controller-daily-review 测试通过）；②③④⑤按现状态维持；Base RPC 退避未新做",
+   "evidence": "scripts/tests/controller-daily-review.test.mjs",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 10,
+   "replied_at": "2026-11-11",
+   "thread": "资金权限 + ANS 三层绑定",
+   "decision": "放款/退款/结算一律 GPT 席；ANS 只准新增 companion/binding index，不改六个原件",
+   "status": "partial",
+   "note": "资金约束已在部署授权里排除；ANS companion binding 未做",
+   "evidence": "config/deploy-automation-authority-20261117.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 11,
+   "replied_at": "2026-11-11",
+   "thread": "支付纠偏 + 自动交付边界 + 四段日报",
+   "decision": "接受纠偏；自动交付不批，先人工；真实沙箱由 owner；四段回执结构确立",
+   "status": "closed",
+   "note": "自动交付已做成 draft_only 闸门（第 8 项），四段契约在跑",
+   "evidence": "scripts/lib/delivery-boundary.mjs",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 12,
+   "replied_at": "2026-11-11",
+   "thread": "Linear 原生只读快照落盘",
+   "decision": "把正下方 JSON 原样写入 ops/dispatch/inbox/gpt/linear-board-latest.json，只做这一份文件的提交",
+   "status": "action_done",
+   "note": "本轮已写入该文件（4 个 issue，status=verified_snapshot）；来源为 GPT 自报原生读取，我方未独立复核",
+   "evidence": "ops/dispatch/inbox/gpt/linear-board-latest.json",
+   "read_scope": "full_body"
+  },
+  {
+   "n": 13,
+   "replied_at": "2026-11-11",
+   "thread": "#383 分支口径核对",
+   "decision": "不孤立拷测试进旧分支、不 rebase 不强推；先收到 #383 现状再动",
+   "status": "open_needs_check",
+   "note": "#383 当前状态未查",
+   "evidence": "knowledge/results/dispatch/oversight/latest.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 14,
+   "replied_at": "2026-11-11",
+   "thread": "Deep 原生执行回执补充",
+   "decision": "把 run 42975617178 的回执与 hash 记入当天日报快照之外",
+   "status": "closed",
+   "note": "已在当日回执补充留痕",
+   "evidence": "knowledge/results/deep-superagent/daily-42975617178-attempt-1.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 15,
+   "replied_at": "2026-11-11",
+   "thread": "run 42752837326 根因更正",
+   "decision": "exit 1 来自 hasUnverifiedBoard，不是测试失败；不得把 draft review 当交付",
+   "status": "closed",
+   "note": "已并入第 17 项只读复现结论，并写成 lesson",
+   "evidence": "knowledge/lessons/L-20261117-001.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 16,
+   "replied_at": "2026-11-11",
+   "thread": "沙箱首单已验收 + 退款人工对账",
+   "decision": "接受首单支付验收；退款 refunded 是人工对账写入；不证明自动收下一笔退款回调",
+   "status": "closed",
+   "note": "退款口径文档已按客户侧到账凭证优先更正",
+   "evidence": "docs/2026-11-12-退款裁决与客户告知口径.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 17,
+   "replied_at": "2026-11-11",
+   "thread": "Grok 每日只读外部验收任务",
+   "decision": "Grok 只读，不写支付、不触发真实支付；下一轮验收 data/memory/grok.json 三档表",
+   "status": "open_needs_check",
+   "note": "需在下一轮 Grok 工件产出后验收",
+   "evidence": "data/memory/grok.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 18,
+   "replied_at": "2026-11-12",
+   "thread": "0.1.11 已发布、文档需更正",
+   "decision": "更正旧文档为 0.1.11 已全量发布，引用第九十节，不得写成真实部分退款",
+   "status": "closed",
+   "note": "文档已写 0.1.11 全量发布，无需要重新上传的残留",
+   "evidence": "docs/2026-11-12-退款裁决与客户告知口径.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 19,
+   "replied_at": "2026-11-13",
+   "thread": "Source Intelligence MVP 立项",
+   "decision": "以 ltzzz-source-check v1.0.2 为基础做可测可演示产品",
+   "status": "open_not_started",
+   "note": "未启动；仅 relay 恢复与 Phase1 落地",
+   "evidence": "docs/HIRE-AI-PHASE1-SPEC-20261116.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 20,
+   "replied_at": "2026-11-13",
+   "thread": "恢复 relay 并重新部署",
+   "decision": "按既有架构建/核验 ltzzz-relay-proxy 与 Deep relay 接入，走 deploy-relay-proxy.yml",
+   "status": "closed",
+   "note": "已部署：PR #399 + deploy run 44009939161",
+   "evidence": "knowledge/results/deep-superagent/automation-2026-11-17.json",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 21,
+   "replied_at": "2026-11-13",
+   "thread": "AI雇佣AI Phase1 立项",
+   "decision": "立刻启动 Phase1，不只写报告；11-27 前完成底座",
+   "status": "closed",
+   "note": "PR #400 合并 2658ef22d，Phase1 六项 + 16 例测试",
+   "evidence": "docs/HIRE-AI-PHASE1-SPEC-20261116.md",
+   "read_scope": "head_tail"
+  },
+  {
+   "n": 22,
+   "replied_at": "2026-11-13",
+   "thread": "本周未裁决 8 项 + 中转/Claude App 冲突",
+   "decision": "撤销 08:50 停用裁决；relay 纳入供应但记真实 provider；只开模型 API；不自动充值；不批无限额 key",
+   "status": "closed",
+   "note": "relay 已恢复并部署；Claude App 口径见 RELAY-SEAT-CURRENT",
+   "evidence": "docs/RELAY-SEAT-CURRENT.md",
+   "read_scope": "head_tail"
+  }
+ ],
+ "note": "closed=已有后续落地证据；superseded=被 11-13 owner 新授权覆盖；open_* 各自注明缺什么。没有一条记成已完成而无证据。",
+ "model_calls": 0,
+ "paid": false,
+ "financial_execution": false
+}
