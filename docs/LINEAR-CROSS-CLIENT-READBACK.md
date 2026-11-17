@@ -38,3 +38,10 @@ GPT本轮先实际读取四项与评论后导出上述滚动文件。后续沿�
 - 触发：`workflow_dispatch` 或每日 01:00 UTC；`permissions: contents: write`，脚本本身只读，`writes_performed=false`。
 - 失败语义：读取失败不写文件、不产出空看板；工作流保留上一成功版。
 - 手动触发（桌面 github.com:443 不通时用 API）：`POST /repos/ltzyz2181-collab/ltzzz/actions/workflows/linear-board-export.yml/dispatches {"ref":"main"}`。
+
+## 2026-11-17 追加：受限写入（仅 4 条模板 issue）
+
+- 唯一写例外：`LTZ-1`/`LTZ-2`/`LTZ-3`/`LTZ-4`（Linear 自带入门模板）允许标记 Done 或归档；其余 issue 仍只读。
+- 白名单硬编码在 `scripts/linear-board-triage.mjs`，其他标识符直接拒绝（`not_allowlisted:<id>`）；`Done` 状态按 `type=completed` 选取，找不到就报错，不猜。
+- 入口：`.github/workflows/linear-board-triage.yml`，`confirm=false` 只 dry-run，`confirm=true` 才写；写入回执落 `ops/linear-triage/<UTC时间>-<动作>.json`，含 before/after。
+- 本次执行：LTZ-1/2/3/4 → Done（owner 2026-11-17「清」）。

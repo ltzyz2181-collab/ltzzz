@@ -1,0 +1,62 @@
+name: Linear Board Triage
+on:
+  workflow_dispatch:
+    inputs:
+      issues:
+        description: '仅允许 LTZ-1,LTZ-2,LTZ-3,LTZ-4'
+        required: true
+        default: 'LTZ-1,LTZ-2,LTZ-3,LTZ-4'
+      action:
+        description: 'done 或 archive'
+        required: true
+        type: choice
+        options: [done, archive]
+        default: done
+      confirm:
+        description: 'true 才真正写入 Linear；false 只 dry-run'
+        required: true
+        type: choice
+        options: ['false', 'true']
+        default: 'false'
+permissions: {contents: write}
+concurrency: {group: linear-board-triage, cancel-in-progress: false}
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Contract tests before touching the real board
+        run: node --test scripts/tests/linear-read.test.mjs scripts/tests/linear-board-triage.test.mjs
+      - name: Triage (allowlisted identifiers only)
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          ISSUES: ${{ inputs.issues }}
+          ACTION: ${{ inputs.action }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          OUT="ops/linear-triage/${STAMP}-${ACTION}.json"
+          echo "RECEIPT=$OUT" >> "$GITHUB_ENV"
+          if [ "$CONFIRM" = "true" ]; then
+            node scripts/linear-board-triage.mjs --issues "$ISSUES" --action "$ACTION" --out "$OUT" --confirm
+          else
+            node scripts/linear-board-triage.mjs --issues "$ISSUES" --action "$ACTION" --out "$OUT"
+          fi
+      - name: Commit receipt
+        if: always() && env.RECEIPT != ''
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add ops/linear-triage/
+          if git diff --staged --quiet; then echo "no_receipt"; exit 0; fi
+          git commit -m "chore(linear): triage receipt $RECEIPT"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 5
+          done
+          exit 1
