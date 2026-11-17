@@ -1,0 +1,28 @@
+{
+  "accepted": true,
+  "artifact_sha256": "2eef5c6c148abea17976d785e885e13076bec46d7fb2aed98a8d07999fe4c19d",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，syncDailyBoard 每轮先调用 recoverArtifact；该函数只在无既有 artifact 且恰好找到一个通过 validateArtifact 的完整产物时，把 generation_started 或 generation_unknown_no_repurchase 转为 generated_pending_sync。无产物、多个候选或候选校验失败均返回 false。",
+    "syncDailyBoard 在 recoverArtifact 后，syncFailedSeat 的现有触发列表仅包含 missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase，不包含 generation_unknown_no_repurchase。",
+    "同一控制流中，recoverArtifact 未恢复且 seat.status 仍为 generation_started 时，代码将状态改写为 generation_unknown_no_repurchase、写入 sync_reason 并保存；该状态不进入正常提交路径，因为后续路径要求 seat.artifact 且状态属于 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review。",
+    "hasUnverifiedBoard 明确将 generation_unknown_no_repurchase 列为未核验状态，因此 finding 所述座位会持续暴露为待核验且无法由当前提交或失败同步路径闭环，静态源码证据成立。",
+    "补丁第 3 项把 generation_unknown_no_repurchase 加入 syncFailedSeat 调度列表，方向上能消费该状态；补丁第 2 项为无 artifact 的该状态生成本地 failure evidence，文件名绑定 date、agent、内容 sha256，并把 seat.artifact 绑定到该证据，随后复用 fail_task 流程，针对现有 failure_artifact_required 断点。",
+    "failure evidence 内容包含 date、task_id、logical_seat、run_key、source_commit、failure_kind、reason、generated_at；syncFailedSeat 后续校验要求 body.status 为 incomplete_or_failed，并校验 date、run_key、task_id、logical_seat、source_commit、本地哈希和远端哈希。补丁生成对象确实设置 status:'incomplete_or_failed'，与该校验一致。",
+    "workers/pulse-worker/tasks.js 的 fail_task 接受 evidence_path、evidence_sha256 和 failure_kind='incomplete_or_failed_provider_output'，并要求任务由同一 agent claimed；补丁调用参数与该服务端校验相匹配。成功回读 failed_no_repurchase 后，hasUnverifiedBoard 不再把 failed_no_repurchase 视为未核验状态。",
+    "交付明确限定为 minimal_patch 和验证命令，并列明 remaining_blocker，没有声称补丁已经执行、测试、部署、上线或转账；本次验收也仅确认 finding 和补丁草稿相对于所给源码的可复核性。"
+  ],
+  "unverified": [
+    "未获得交付物原始字节，无法独立重算 artifact_sha256；只能严格回传给定哈希。",
+    "未实际应用补丁，未审查最终 unified diff；语法、插入位置、冲突和可合入性尚未验证。",
+    "未执行 node --check scripts/lib/daily-task-board.mjs。",
+    "未执行 node --test scripts/tests/ans-cycle.test.mjs、node --test scripts/tests/reflection-harness.test.mjs 或交付中的内联 hasUnverifiedBoard 命令。",
+    "未在真实 checkout 构造 artifact 写入前崩溃、无 artifact、多 artifact、唯一完整 artifact、唯一不完整 artifact 等恢复分支。",
+    "补丁使用 fs.writeFileSync(..., {flag:'wx'}) 创建 failure evidence；若同一逻辑座位重复恢复且目标文件因任何原因已存在，异常会被 syncFailedSeat 捕获并落为 failure_sync_unknown。该幂等/残留文件行为尚未通过测试验证。",
+    "failure evidence 是在同步阶段本地生成，随后 syncFailedSeat 立即要求 readRemote(a.path) 的哈希一致；未验证实际提交流程如何保证该新证据在 fail_task 前已持久化到远端，静态补丁本身未展示提交和远端传播步骤。",
+    "未验证新增 failure evidence 的远端持久化、Pulse fail_task 幂等响应、二次运行重复命令、快照不可用、鉴权失败、网络瞬断和历史 generation_unknown_no_repurchase 账本迁移行为。",
+    "未回读真实 Pulse 任务板，未确认任务最终为 failed_no_repurchase，且 failure.evidence_path、failure.evidence_sha256 与本地产物一致。",
+    "未确认端到端运行后 hasUnverifiedBoard 对目标座位返回 false；交付中的内联命令只检查初始状态，不能证明闭环后的状态。",
+    "未验证 CI、合并提交、部署回执、目标环境、制品 SHA、生产版本及线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金事项；本结论仅限源码与工程草稿的静态审查。"
+  ]
+}
