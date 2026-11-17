@@ -84,6 +84,22 @@ test('money, signing, real refunds and unapproved deploys stay out of scope', ()
   for (const keyword of ['真实资金', '私钥签名', '真实退款', '未经批准的生产部署', '不可逆']) assert.ok(s.includes(keyword), keyword);
 });
 
+test('every deployment completion sends a report with ruling items and a next-step question', () => {
+  const r = read(POLICY).deployment_completion_report;
+  assert.equal(r.required, true);
+  assert.equal(r.send_level, 'L1_information');
+  assert.deepEqual(r.required_fields, [
+    'receipt_id', 'code_commit', 'deployed_at', 'deployment_status',
+    'verified', 'blockers', 'items_requiring_owner_ruling', 'next_step_question',
+  ]);
+  assert.match(r.next_step_question, /询问 Owner 下一步/);
+  assert.match(r.ruling_items, /需要 Owner 裁决/);
+  assert.match(r.no_false_completion, /平台验收/);
+  assert.match(r.idempotency, /原线程/);
+  assert.match(r.l3_boundary, /L3/);
+  assert.equal(r.receipt_required, true);
+});
+
 test('deploy authority is revised by this ruling: merge may automate, production deploy may not', () => {
   const d = read('config/deploy-authority-20261116.json');
   assert.equal(d.revised_by, 'GPT-LTZZZ-AUTONOMY-RULING-20261117-01');

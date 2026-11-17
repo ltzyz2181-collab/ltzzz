@@ -4,6 +4,8 @@
   "decided_at": "2026-11-17",
   "decided_by": "gpt_decision_seat",
   "recorded_at_utc": "2026-11-17T04:10:00Z",
+  "amended_at_utc": "2026-11-17T09:05:00Z",
+  "amendment": "Owner 2026-11-17 追加：部署完成后必须发出汇总邮件，列出待裁决事项并明确询问下一步。",
   "supersedes": [
     "此前 Gmail Intake Hygiene 工单中的一律禁止自动发送邮件限制",
     "与之冲突的旧邮件禁令"
@@ -48,6 +50,36 @@
     "channel_separation": "Agent Mail 与 Gmail 是不同通道，不得互相替代",
     "dedupe_keys": ["message_id", "thread_id", "original_task_id"],
     "history_policy": "保留历史裁决状态"
+  },
+  "deployment_completion_report": {
+    "required": true,
+    "trigger": "任一部署、上传、提审或部署回执落盘后；成功、失败、部分成功都必须发",
+    "send_level": "L1_information",
+    "recipients": "Owner 或已授权的项目联系人",
+    "required_fields": [
+      "receipt_id",
+      "code_commit",
+      "deployed_at",
+      "deployment_status",
+      "verified",
+      "blockers",
+      "items_requiring_owner_ruling",
+      "next_step_question"
+    ],
+    "status_separation": [
+      "draft",
+      "tested",
+      "merged",
+      "deployed",
+      "submitted",
+      "platform_accepted"
+    ],
+    "next_step_question": "邮件必须明确询问 Owner 下一步做什么；不得只报完成",
+    "ruling_items": "必须列出需要 Owner 裁决的事项、默认建议和等待状态",
+    "no_false_completion": "上传、提审、CI 通过不得写成平台验收或线上生效",
+    "idempotency": "同一部署回执只发一次；结果未知先查原线程，不得盲目重发",
+    "l3_boundary": "邮件本身不得包含或触发付款、退款、签名、生产部署等 L3 动作",
+    "receipt_required": true
   },
   "daily_loop": [
     "gmail_intake",
