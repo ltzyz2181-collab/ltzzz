@@ -1,0 +1,53 @@
+name: Relay Ruling Request
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'allowlisted model (gpt-6.1-sol / claude tiers)'
+        required: true
+        default: gpt-6.1-sol
+      prompt_file:
+        description: 'long-context prompt file (>=4096 estimated tokens)'
+        required: true
+        default: fixtures/relay-seat/ruling-r1-r6.txt
+      max_tokens:
+        description: 'completion cap'
+        required: true
+        default: '1200'
+permissions: {contents: write}
+concurrency: {group: relay-ruling-request, cancel-in-progress: false}
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LTZZZ_RELAY_PROXY_URL: https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1
+      LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.RELAY_PROXY_ACCESS_TOKEN }}
+      MODEL: ${{ inputs.model }}
+      PROMPT_FILE: ${{ inputs.prompt_file }}
+      MAX_TOKENS: ${{ inputs.max_tokens }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Guard tests before any paid call
+        run: node --test scripts/tests/relay-seat-guard.test.mjs scripts/tests/relay-proxy-worker.test.mjs
+      - name: Current seat state (refuses when unknown balance)
+        run: node scripts/relay-seat.mjs --state
+      - name: Ask the relay (advisory only, never an L3 approval)
+        run: node scripts/relay-seat.mjs --call --purpose generation --model "$MODEL" --requested-agent gpt --prompt-file "$PROMPT_FILE" --max-tokens "$MAX_TOKENS"
+      - name: Commit evidence even when the call fails
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/relay-seat/
+          if git diff --staged --quiet; then echo "no_evidence"; exit 0; fi
+          git commit -m "chore(relay): ruling request evidence $(date -u +%Y-%m-%dT%H:%MZ)"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 5
+          done
+          exit 1

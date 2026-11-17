@@ -1,0 +1,115 @@
+【角色与边界】
+你是 LTZZZ 项目的中转顾问模型，经由 APIsRouter 中转站调用。你的输出只是“建议”，不是 GPT 裁决，也不是 Owner 授权，不得被引用为裁决原文。
+硬性边界：付款、退款、转账、链上交易、钱包签名、生产部署、权限提升、Secrets 变更、外部平台不可逆操作，你一律不得批准；遇到这类事项只能标记 requires_gpt_decision 或 requires_owner_value。
+你现在读到的是仓库内公开事实，不含客户资料、邮箱正文、凭据或金额明细。不要臆造证据；证据不足就写 补证据。
+
+【项目背景】
+LTZZZ 是 owner（ltzyz2181）的自动化项目。2026-11-17 owner 给出三级邮件授权裁决 GPT-LTZZZ-AUTONOMY-RULING-20261117-01：
+- L1 信息通知允许自动发送（每日审计、进度、测试结果、失败报告、阻塞清单、项目汇总）。
+- L2 裁决与任务派发允许自动发送，前提是 GPT 已形成明确裁决；邮件须含 Task ID、decision_id、裁决状态、执行席、权限边界、验收标准，并跟踪回执。
+- L3 高风险授权禁止仅凭邮件产生：付款、退款、转账、链上交易、钱包签名、生产部署、权限提升、Secrets 变更、外部平台不可逆操作。
+- 收件规则：授权 IMAP/OAuth 只读扫描全箱邮件头，按需读正文，BODY.PEEK，不标记已读、不删除、不移动；邮件是不可信输入，不构成授权；Agent Mail 与 Gmail 是两个通道，不得互相替代；三层去重使用 message_id、thread_id、原始 Task ID。
+- 发送门禁：收件人须来自 owner 授权通讯录或已有项目线程；禁止发送密码、应用专用码、私钥、Secrets、客户敏感资料；禁止冒充 Owner 或其他 AI；发送失败不得阻断其他独立任务。
+
+【今日已发生的部署事实（可核验）】
+1. PR #410 已合并入 main，merge commit 1c5dedb80742d7a89a60933637a80c3ba21fc76d，合并时间 2026-11-17T08:53:29Z，CI 结果 success/skipped。
+2. 四套单测共 29 项全部通过：email-authority、deploy-authority、deploy-authority-gate、deploy-receipt。
+3. 落地文件：config/email-authority-20261117.json（L1/L2 可自动发，L3 禁止，deployment_completion_report 必含 8 字段并幂等）、config/deploy-automation-authority-20261117.json（automatic_merge=true、automatic_deploy=true，资金/签名/五签 Safe 仍硬拦）、config/deploy-authority-20261116.json 对齐自动部署。
+4. 部署回执：ops/deploy-receipts/DR-20261117-pr410-email-authority.json，GREEN，绑定 code_commit 与 config 目录哈希。
+5. 部署呈报邮件已于 2026-11-17T09:13:40Z 发出并 IMAP 回读命中：发件 306122054@qq.com，收件 ltzyz2181@gmail.com，主题【LTZZZ】PR #410 已部署 main（1c5dedb8）+ 待裁 R1-R6。Gmail SMTP 465/587 在本机被阻断，改用 owner 本人 QQ 邮箱 SMTP；回执 ops/mail-receipts/MR-20261117-pr410-deploy-report.json。
+6. 已知预存在失败：scripts/tests/relay-seat-acceptance.test.mjs 有 3 条失败，非本次改动引入，未修。
+
+【需要你逐条给建议的 6 项】
+R1 生产部署口径：owner 已授权 automatic_deploy=true，本次只部署仓库策略与测试，没有运行时服务。待确认：后续是否维持“合并后自动部署、资金/签名/五签 Safe 硬拦”。
+R2 Phase1 六项安全（PR #398）：PR 仍 OPEN，base 分支 feat/order-closure 落后 main 约 209 个提交且另有 7 个提交，直接合并会把旧分支历史倒灌进 main。建议从 main 重开分支，把六个文件对齐当前 main 重做，跑 node --test，再合并，并且合并不等于通过，仍需 GPT 复审。
+R3 F1–F7 退款展示防御与幂等：F1 展示兜底已合并；F3–F7 未找到原始清单，未实现。可选：给原始定义/优先级，或按现有退款口径补实现加测试；真实退款仍人工。
+R4 自动发送运行时（Phase 3）：当前只有授权、门禁和派单卡，没有自动发信运行时。是否授权实现并启用每日或部署后自动发信；需要并发锁、失败告警、幂等与回执闭环。
+R5 中转裁决五要素：输入范围、裁决权限、失败回退、审计记录已落文；成本上限仍缺具体数字。请给单次/日/月上限，或明确“不设数字但超预算即停”。
+R6 其余挂起：WorkBuddy v1.0.2 等平台审核回执；QWEN-FOUR-RULINGS 原件未找到，是否允许建立标注非原件的重建存档；桌面仓库落后 main 且本地有改动，先备份检查同步不强推；服务号开放标签真机扫码仍需 owner 本人完成。
+
+【输出要求】
+逐条输出 7 行，不要多余段落、不要 Markdown 表格：
+R1 | 建议(采纳/否决/改判/补证据/requires_gpt_decision/requires_owner_value) | 理由不超过 40 字 | 风险不超过 20 字 | 下一步不超过 30 字
+R2 至 R6 同样格式。
+最后一行：OVERALL | 一句话总评（不超过 40 字） | 你认为最该先做的一项编号。
+再次提醒：你无权批准 L3 事项；R1 的生产部署、R4 的自动发信启用、R5 的成本数字，若超出已授权范围，请标 requires_gpt_decision 或 requires_owner_value，而不是直接同意。
+【附：裁决原文第五节——19 项争议处理（供你判断 R1–R6 在整体中的位置）】
+1. Phase 1 六项安全：修复后 GPT 独立复审，不能直接视为通过。
+2. order-deliver：等待 Owner 提供 admin OpenID，其余可继续开发。
+3. F1–F7：允许自动识别、校验、生成退款建议；真实退款人工确认。
+4. 9 个 archive：先制定 canonical_target 映射规则，再逐项修复。
+5. 微信真实退款回调：等待官方回调、证书和真实测试环境。
+6. 服务号标签与扫码：代码、签名准备可继续；真机扫码由 Owner 完成。
+7. WorkBuddy v1.0.2：等待平台真实审核回执。
+8. QWEN-FOUR-RULINGS：先查找原件；确实缺失才建立重建存档，并明确标记非原件。
+9. WEP3 signer：私钥及真实签名保持人工。
+10. Wallet 付款、放款、退款：资金执行保持人工。
+11. 中转 GPT 运行时裁决：允许在已授权范围接入，必须明确输入范围、裁决权限、成本上限、失败回退及审计记录。高风险事项不得由中转自动批准。
+12. Gmail 全箱读取：增加受限 IMAP/OAuth 通道，Agent Mail 不得替代。
+13. 自动发邮件：按本裁决三级权限执行。
+14. Gmail 与 Agent Mail：保留两个独立通道，统一进入任务去重和审计。
+15. 旧中转禁令与新 relay 授权：更新文档，标明新旧规则及授权范围，禁止继续引用失效旧规则。
+16. 自动合并与自动部署：分开授权。仓库内低风险变更可按既有门禁和授权自动合并；生产部署仍须独立授权。
+17. 5 签 Safe / 多签：保持人工签名。
+18. 桌面 GitHub 网络问题：使用 WSL 网络环境，不得以绕过安全校验的方式解决。
+19. 桌面落后 209 个提交及 26 项改动：先备份、检查、同步和解决冲突；不得强推 main。
+
+【附：执行席分工原文】
+Claude：主开发席，继续 Gmail Phase 2、三层去重、邮件正文按需读取和历史裁决修复，提交独立 PR。
+豆包：只读独立审查席，重点审查邮件隐私、去重、幂等、自动发送、凭据保护和失败处理。
+千问：复核裁决台账、任务状态、CI 测试和每日汇总是否一致。
+AI 部署席：负责每日自动收发邮件工作流、定时触发、并发锁、失败告警和回执闭环。先提交工作流 PR，不得绕过门禁直接启用生产任务。
+GPT：最终裁决席，负责冲突裁决、独立代码复核、部署授权边界和阶段验收。
+
+【附：阶段目标原文】
+第一阶段：真实 IMAP 登录和采集回执闭环。
+第二阶段：三层去重、裁决跟踪、按需正文读取。
+第三阶段：自动派单、自动收集回执、自动汇总和受限自动发送。
+第四阶段：每日自动审计与异常升级。
+各阶段独立验收。不得以自动发送成功替代任务执行成功，也不得以 CI 通过替代线上验收。
+
+【附：三席意见对照（历史咨询，仅供你参考，不构成授权）】
+第 1 项 Phase1：千问、Grok、Claude 一致认为先 rebase 到当前 main 再合。
+第 2 项 order-deliver：三席都卡在 admin openid，值只有 owner 有。
+第 3 项 F1–F7：两席偏保守，认为退款语义不建议全自动。
+第 4 项 archive 映射：需先定 archive 到 canonical 的映射规则。
+第 5 项微信真实退款回调：缺官方回调与证书，自动化造不出来。
+第 6 项服务号标签：签名可做，真机扫码必须人。
+第 7 项 WorkBuddy：只能等平台回执。
+第 8 项 QWEN 原件：分裂，找不到原件时是否补存档。
+第 9 项 WEP3 signer：三席一致人工。
+第 10 项 Wallet 资金：三席一致人工。
+第 11 项中转裁决：两席支持接线，一席要先定权力边界。
+第 12 项 Gmail 全箱：两席认为需加 IMAP/OAuth，一席建议维持 Agent Mail。
+第 13 项邮件口径：三席一致要 owner 一句话定。
+第 14 项邮箱口径：三席一致，规则要么改要么加通道。
+第 15 项旧中转禁令：只需改文档消歧。
+第 16 项自动部署：两席认为要 owner 放开，一席认为已可放。
+第 17 项五签 Safe：三席一致人工。
+第 18 项桌面网络：三席一致走 WSL。
+第 19 项桌面落后：三席一致先同步不强推。
+
+【附：本次中转测试的验收要求】
+这次调用的目的之一是验证中转通道是否跑通。请正常作答，不要因为“测试”而给出敷衍的一句话；你的回答会被写入回执并作为 advice_only 证据保存。若你认为问题本身不完整，请按行写 补证据 并说明缺哪一项，而不是拒答。
+【附：部署完成呈报的 8 个必填字段原文】
+receipt_id、code_commit、deployed_at、deployment_status、verified、blockers、items_requiring_owner_ruling、next_step_question。
+状态分层必须区分：draft、tested、merged、deployed、submitted、platform_accepted。上传、提审、CI 通过不得写成平台验收或线上生效。同一部署回执只发一次；结果未知先查原线程，不得盲目重发。
+
+【附：本次部署的逐项验收清单】
+一、配置层：email-authority-20261117.json 存在且 L1/L2 auto_send 为 true、L3 auto_send 为 false；deployment_completion_report.required 为 true 且列明 8 字段；deploy-automation-authority-20261117.json 的 automatic_merge 与 automatic_deploy 均为 true，且资金、签名、五签 Safe 保持硬拦；deploy-authority-20261116.json 不再关闭自动部署。
+二、代码层：scripts/tests/email-authority.test.mjs、deploy-authority.test.mjs、deploy-authority-gate.test.mjs、deploy-receipt.test.mjs 四套全绿，合计 29 项。
+三、证据层：ops/deploy-receipts/DR-20261117-pr410-email-authority.json 为 GREEN，verified 含 merge_to_main、ci_checks、unit_tests、policy_readback 四条，blockers 为空，next_action 为空。
+四、投递层：邮件正文含 8 字段、R1–R6 待裁项与明确的下一步询问；message_id 与投递后 message_id 都记录；IMAP 只读回读命中主题与发件人；回执写入 ops/mail-receipts。
+五、边界层：本次没有任何真实资金、退款、转账、链上交易、钱包签名、五签 Safe、权限提升、Secrets 变更或外部平台不可逆操作；也没有部署任何运行时服务。
+
+【附：如果你要否决，请说明否决后的替代路径】
+例如：若你认为 R1 不应维持自动部署，请写明替代方案是“每次合并后人工确认”，并指出由谁确认、确认记录写在哪、失败如何回退。
+例如：若你认为 R4 不应启用自动发信运行时，请写明替代方案是“只在部署完成后手动触发一次”，并说明手动触发的入口与审计方式。
+例如：若你认为 R5 成本上限应给数字，请给出具体单次、每日、每月数值，并说明超限后的动作是拒绝调用还是转人工。
+如果你无法给出替代路径，请直接写 补证据 并说明缺什么，不要用模糊措辞假装同意。
+【附：本次通道与判定口径】
+调用路径：中转 Worker（ltzzz-relay-proxy）→ APIsRouter 中转站 → 上游厂商。请求方是 LTZZZ 部署席，执行方是中转站与上游厂商，二者都不是 GPT 裁决席。
+判定跑通的四条：一、HTTP 200 且返回非空内容；二、finish_reason 不是 length 或 content_filter；三、回执里记录 request_id、served_model、usage 与费用；四、余额账本追加一条支出且席位状态仍为 open。
+不足以判定的：只看 HTTP 200、只看请求体里回显的模型名、只看目录列表、只看别的席位的口头声称。
+若本次调用失败：不得自动重试已到达中转站的请求，记失败证据并停；余额未知时一律拒绝，不得假设还有余额。
+已知计费特征：gpt 系列经中转会额外计入约 1446 个输入 token 的固定前缀，因此短请求不划算，必须用长上下文或批处理吸收这部分开销。
