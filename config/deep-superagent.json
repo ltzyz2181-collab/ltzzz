@@ -92,7 +92,7 @@
    "gpt",
    "claude"
   ],
-  "decision_seat": "manual_owner_via_codex_or_web_not_relay",
+  "decision_seat": "relay_gpt_bounded_adjudication_routine_only_funds_manual",
   "allowed_relay_use": [
    "长文草稿",
    "执行席产物",
@@ -126,6 +126,31 @@
     "原生席复核结论",
     "对外标注第三方中转"
    ]
+  },
+  "relay_adjudication": {
+   "revision": "relay-bounded-adjudication-v1",
+   "authorized_by": "owner",
+   "authorized_at": "2026-11-17",
+   "authorization_ticket": "本对话：除资金、放款这类重要事件外，中转 GPT 裁决；先做 PR + 测试，绿了再部署，不碰资金",
+   "seat": "gpt",
+   "transport": "apisrouter_relay via ltzzz proxy seat token",
+   "stage": "relay_adjudication",
+   "endpoint": "POST /v1/jobs/<task_id>/adjudication",
+   "scope": "非资金常规项：文档与口径、状态确认、记录补写、执行序、证据缺口归类",
+   "excluded_families": [
+    "funding_moves",
+    "loan_disbursement",
+    "refund_semantics",
+    "wallet_or_safe_ops",
+    "signing",
+    "credential_access",
+    "production_write"
+   ],
+   "short_circuit": "funds family is escalated to gpt_decision_seat as a manual decision before any relay call",
+   "execution_authority": false,
+   "relay_attested": false,
+   "writes_execution": false,
+   "failure_semantics": "provider error or malformed JSON is recorded as undecided, never retried inside the stage and never filled from another seat"
   }
  },
  "financial_execution": false,
@@ -196,7 +221,7 @@
   "qianwen": "native execution, task/schema reconciliation and independent component review",
   "kimi": "native execution and long-document/source work through the existing verified queue",
   "grok": "native xAI work through the existing ltzzz-xai-proxy service; provider key stays in that proxy, and generation requires actual provider response evidence",
-  "gpt": "current Codex AI decision and engineering seat; existing daily engineering automation reads the scoped mailbox; not a biological human or an instantaneous email consumer",
+  "gpt": "current Codex AI decision seat; since 2026-11-17 also the bounded relay adjudicator for routine non-funds items (relay_attested=false, no execution authority); not a biological human or an instantaneous email consumer",
   "claude": "original-provider API slot reserved and disabled; no native review is implied"
  },
  "identity_policy": "logical seat, client, actual provider and actual model are separate; use executor metadata and retain null for unknown identities",
