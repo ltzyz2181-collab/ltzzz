@@ -1,0 +1,28 @@
+{
+  "receipt_id": "RELAY-ACCEPTANCE-20261117",
+  "asked_by": "owner",
+  "question": "中转 GPT 裁决是否通了",
+  "workflow": {"file": ".github/workflows/relay-acceptance.yml", "run_id": 44057252830, "conclusion": "success", "triggered_at": "2026-11-17T09:37:23Z"},
+  "transport": {"mode": "ltzzz_proxy", "url": "https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1", "token_source": "GitHub Actions secret RELAY_PROXY_ACCESS_TOKEN（不在任何席位本机）"},
+  "calls": [
+    {"model": "gpt-6.1-sol", "ok": true, "http": 200, "duration_ms": 14472, "finish_reason": "stop",
+     "usage": {"prompt_tokens": 6845, "completion_tokens": 161}, "cost_usd": 0.011555,
+     "balance_after_usd": 12.918976, "seat_state": "open",
+     "reply_preview": "已了解并遵守以下边界：LTZZZ 中转执行席仅处理长文草稿/执行席产物/对账草稿/异源复核文案/文档辅助；调用须标注真实路由、模型名称、服务商与账单归属；不得伪装原厂调用；资金…"},
+    {"model": "claude-sonnet-4-6", "ok": true, "http": 200, "duration_ms": 3892,
+     "usage": {"prompt_tokens": 7123, "completion_tokens": 6}, "cost_usd": 0.017167, "seat_state": "open"}
+  ],
+  "failure_mode_probe": {"url": "https://relay-proxy-unreachable.invalid/v1", "ok": false, "cost_usd": null, "recorded_as_failure": true},
+  "cost_this_run_usd": 0.028722,
+  "verdict": "通：真实调用成功、有返回正文、有 usage 与费用、余额未触底线",
+  "not_yet_proven": [
+    "四态裁决结构（decision_id / APPROVED / NEEDS_REVISION / BLOCKED）尚未由中转席产出过——本次返回是正文而非裁决对象",
+    "replay 证据文件只写到 CI 临时工作区，未提交回仓库；仓库里 calls/ 仍是 2026-11-12 的旧件",
+    "本地 balance-ledger 需人工补记（已补 2 条，derived_balance=12.901809）"
+  ],
+  "refs": [
+    "config/relay-seat-policy.json",
+    "knowledge/results/relay-seat/balance-ledger.json",
+    "knowledge/results/relay-seat/seat-state.json"
+  ]
+}
