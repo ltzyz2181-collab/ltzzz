@@ -41,3 +41,14 @@ git worktree add ..\ltzzz-main origin/main
 ```
 
 `git worktree add` 不改动 `feat/order-closure` 及其未跟踪文件，另开一个指向 `origin/main` 的工作目录用于当前工作；确认无误后再决定是否把 `feat/order-closure` 归档。
+
+## 8. 2026-11-17 桌面复测（此前两件堵点均已消解）
+
+| 项目 | 实测命令 | 结果 |
+|---|---|---|
+| Git bash fork | `& "C:\Program Files\Git\bin\bash.exe" -lc 'echo OK'` | 输出 `OK`、`exit=0`；`dofork ... 0xC0000142` 未再复现 |
+| MSYS 层 | `bash -lc 'uname -a; ls -la /etc/profile; which git'` | `MINGW64_NT-10.0-26300 ... Msys`、`/etc/profile` 5606 bytes、`/ucrt64/bin/git`、`git 2.56.0.windows.4` |
+| WSL 凭据 | `git config --global credential.helper`（Ubuntu-24.04 内） | `/mnt/c/Program Files/Git/ucrt64/libexec/git-core/git-credential-wincred.exe` |
+| WSL 认证 | `GIT_TERMINAL_PROMPT=0 timeout 25 git ls-remote origin HEAD` | 返回 `d837331f980d692075fe5df007d6d38c4966bfdd HEAD`、`rc=0` |
+
+结论：`0xC0000142` 那一层已恢复，**重装 Git for Windows 不必做**；WSL 侧凭据已落在 Windows 凭据管理器（WSL 内无明文 token），并能自动认证。桌面只剩仓库状态问题（`feat/order-closure` 落后 main、26 个本地改动），这一项按上节序列另开 worktree 处理，不动原分支。

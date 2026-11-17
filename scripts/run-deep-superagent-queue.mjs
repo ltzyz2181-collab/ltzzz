@@ -61,6 +61,31 @@ export function sameDecision(existing,payload){
  return !!existing&&Object.keys(existing).length===5&&JSON.stringify(decisionPayload(existing))===JSON.stringify(payload);
 }
 
+export const NORMALIZATION_RULE='input-normalization-v1';
+
+// GPT 2026-11-16 disposition #6（approve_in_scope，ref a4892a62f3078715）：
+// 原始字节/哈希与归一化字节/哈希必须分开记，规则版本、原因、时间一并留痕，
+// 不得静默归一化或覆盖源输入。正常化后的 card 仍是下游唯一执行口径，
+// 这里只追加可核验的原始侧证据，不改变任何现有字段语义。
+export async function normalizationRecord(rawBody,card){
+  const rawPrompt=typeof rawBody?.prompt==='string'?rawBody.prompt:'';
+  const normalizedPrompt=typeof card?.prompt==='string'?card.prompt:'';
+  const rawBodyJson=JSON.stringify(rawBody);
+  const applied=rawPrompt!==normalizedPrompt;
+  return {
+    rule_version:NORMALIZATION_RULE,
+    applied,
+    reason:applied?'outer_whitespace_trimmed':'none',
+    raw_prompt_sha256:await sha256(rawPrompt),
+    normalized_prompt_sha256:await sha256(normalizedPrompt),
+    raw_prompt_bytes:Buffer.byteLength(rawPrompt,'utf8'),
+    normalized_prompt_bytes:Buffer.byteLength(normalizedPrompt,'utf8'),
+    raw_body_sha256:await sha256(rawBodyJson),
+    normalized_body_sha256:await sha256(JSON.stringify(card)),
+    recorded_at_utc:new Date().toISOString()
+  };
+}
+
 export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
  const maxCalls=task_id==='DEEP-DAILY-SUPERVISION'?3:5;
  if(!job||job.task_id!==task_id||job.package_id!==package_id||!SHA.test(job.input_sha256||'')||(input_sha256&&job.input_sha256!==input_sha256)||typeof job.execution_id!=='string'||!job.execution_id||(execution_id&&job.execution_id!==execution_id)||!COMMIT.test(job.source_commit||'')||job.revision!==REVISION||!STATUSES.has(job.status)||typeof job.terminal!=='boolean'||!Number.isSafeInteger(job.model_calls)||job.model_calls<0||job.model_calls>maxCalls||!Array.isArray(job.receipts)||job.receipts.length>maxCalls||job.financial_execution!==false||job.external_submissions_enabled!==false||job.paid!==false||job.tx_hash!==null)throw Error('remote_job_binding_or_isolation_invalid');
@@ -134,11 +159,12 @@ async function reservePost({store,key,state,outcome}){
 export async function runQueueCard({kind,body,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,deadline=clock()+MAX_WAIT_MS,onObservation=()=>{}}){
  if(!KINDS.has(kind)||!COMMIT.test(source_commit||'')||!token)throw Error('trusted_queue_card_context_required');
  const card=kind==='task'?normalizeJob(body):normalizeDecision(body);
+ const normalization=kind==='task'?await normalizationRecord(body,card):null;
  const payload=kind==='task'?card:decisionPayload(card);
  const inputHash=kind==='task'?await sha256(JSON.stringify(card)):card.reviewed_input_sha256;
  const payloadHash=await sha256(JSON.stringify(payload));
  const key=await sha256(JSON.stringify(['deep_superagent_queue',kind,card.task_id,card.package_id]));
- const outcome={kind,task_id:card.task_id,package_id:card.package_id,queue_card_source_commit:source_commit,input_sha256:inputHash,payload_sha256:payloadHash,attempt_key:key,post_attempted:false,reused_existing:false,first_post_outcome:'not_attempted',status:'started',financial_execution:false,paid:false,tx_hash:null};
+ const outcome={kind,task_id:card.task_id,package_id:card.package_id,queue_card_source_commit:source_commit,input_sha256:inputHash,raw_input_sha256:normalization?.raw_body_sha256??null,normalization,payload_sha256:payloadHash,attempt_key:key,post_attempted:false,reused_existing:false,first_post_outcome:'not_attempted',status:'started',financial_execution:false,paid:false,tx_hash:null};
  const route='/v1/jobs/'+card.task_id+'?package_id='+encodeURIComponent(card.package_id);
  const req=(url,options={})=>requestJson(fetcher,url,{token,deadline,clock,...options});
  const observe=job=>{
@@ -160,7 +186,7 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
   }
   if(!job||kind==='decision'){
    if(clock()>=deadline)throw Error('queue_time_budget_exhausted');
-   const state={schema:'ltzzz.deep-superagent.queue-attempt.v1',kind,task_id:card.task_id,package_id:card.package_id,payload_sha256:payloadHash,input_sha256:inputHash,source_card_commit:source_commit,status:'post_reserved_no_automatic_replay',created_at_utc:new Date().toISOString()};
+   const state={schema:'ltzzz.deep-superagent.queue-attempt.v1',kind,task_id:card.task_id,package_id:card.package_id,payload_sha256:payloadHash,input_sha256:inputHash,raw_input_sha256:normalization?.raw_body_sha256??null,normalization,source_card_commit:source_commit,status:'post_reserved_no_automatic_replay',created_at_utc:new Date().toISOString()};
    const acquired=await reservePost({store,key,state,outcome});
    onObservation(outcome);
    if(acquired){

@@ -1,0 +1,91 @@
+{
+ "schema": "ltzzz.deep-superagent.decision-items.v1",
+ "date": "2026-11-17",
+ "timezone": "Asia/Shanghai",
+ "authority": {
+  "file": "knowledge/results/decisions/gpt-ruling-20261116.json",
+  "issuer": "gpt_decision_seat",
+  "items": ["#6", "#8", "#17", "#18"]
+ },
+ "model_calls": 0,
+ "paid": false,
+ "tx_hash": null,
+ "financial_execution": false,
+ "production_signing": false,
+ "items": [
+  {
+   "id": "#6",
+   "topic": "input_deviation_dual_hash",
+   "disposition": "approve_in_scope",
+   "ref": "a4892a62f3078715",
+   "status": "implemented_and_tested",
+   "change": "scripts/run-deep-superagent-queue.mjs 新增 NORMALIZATION_RULE='input-normalization-v1' 与 normalizationRecord()，在 runQueueCard 内把 raw_prompt_sha256 / normalized_prompt_sha256 / 两侧字节数 / raw_body_sha256 / rule_version / reason / recorded_at_utc 写进 outcome 与 durable attempt state",
+   "invariants": [
+    "existing input_sha256 / payload_sha256 语义不变，下游执行口径仍是归一化后的卡片",
+    "原始侧哈希与归一化侧哈希分开记录，禁止静默归一化或覆盖源输入",
+    "applied=false 时 reason 记 none，两侧 prompt 哈希相等"
+   ],
+   "tests": "scripts/tests/input-normalization.test.mjs（4 例）",
+   "test_result": "4/4 通过；scripts/tests/deep-superagent-queue.test.mjs 23/23 通过；scripts/tests/deep-superagent.test.mjs 55/55 通过"
+  },
+  {
+   "id": "#8",
+   "topic": "automatic_delivery_boundary",
+   "disposition": "conditional_approve",
+   "ref": "accc365c8999ec45",
+   "status": "implemented_and_tested_gate_only",
+   "change": "scripts/lib/delivery-boundary.mjs 新增 evaluateDeliveryBoundary()：平台事件 + 订单态 + 独立交付校验 + 幂等键 + 平台回执 五条件同时成立才 auto_deliver_allowed",
+   "invariants": [
+    "缺平台回执 / 独立校验 / 平台事件任一 → draft_only",
+    "仅缺订单态或幂等键 → manual_confirm_required",
+    "合成或测试类事件不算平台事件；自评不算独立校验",
+    "判定模块 delivery_attempted=false、external_submission_attempted=false、financial_execution=false，不发起任何交付"
+   ],
+   "not_done": "未接线到 order-deliver 云函数（main 无该目录；接线需管理员 openid 白名单与平台侧回调）",
+   "tests": "scripts/tests/delivery-boundary.test.mjs（5 例）",
+   "test_result": "5/5 通过"
+  },
+  {
+   "id": "#17",
+   "topic": "run_43718379738_readonly_reproduction",
+   "disposition": "approve_in_scope",
+   "status": "reproduced_readonly",
+   "run": {
+    "id": "43718379738",
+    "name": "Daily Agent Tasks",
+    "event": "schedule",
+    "branch": "main",
+    "conclusion": "failure",
+    "created_at": "2026-11-15T13:19:18Z"
+   },
+   "failing_job": {"id": "132824758724", "name": "run-tasks", "failing_step": "Reconcile committed deliveries without model calls", "workflow_line": ".github/workflows/daily-agent-tasks.yml:135"},
+   "root_cause": "该步执行 node scripts/daily-task-board.mjs sync；脚本末尾在 hasUnverifiedBoard(record) 或 independent_review.verified!==true 时置 process.exitCode=1。当日记录 knowledge/results/daily-board/2026-11-15.json 的 independent_review.verified=false（independent_reviews.grok=true），因此 exit 1 是 fail-closed 的既定行为，不是异常崩溃",
+   "readback": {"has_unverified_board": false, "independent_review_verified": false, "seats": {"deepseek": "submitted_pending_review", "doubao": "failed_no_repurchase", "grok": "completed_draft_review", "qianwen": "submitted_pending_review"}},
+   "model_calls": 0,
+   "code_fix": "未做；按裁决须独立 PR + Harness + 测试 + CI 才能改 reconcile 行为"
+  },
+  {
+   "id": "#18",
+   "topic": "oversight_backlog_readonly_sample",
+   "disposition": "conditional_approve",
+   "status": "sampled_readonly",
+   "source": "knowledge/results/dispatch/oversight/latest.json",
+   "source_run_id": "43997187428",
+   "source_commit": "a5a2013f37dbd7722b9c18673a52b5d8f048c1ca",
+   "totals_observed": {"open_warning_cases": 188, "not_rechecked_in_current_window": 152, "by_seat": {"qianwen": 60, "doubao": 41, "grok": 31, "deepseek": 47, "gpt": 9}},
+   "note": "当日现场为 188 条 open / 152 条本窗口未复核，与先前口径的 183 / 145 有差异，按最新现场记数",
+   "sample_output": "knowledge/results/dispatch/oversight/readonly-sample-10-2026-11-17.json",
+   "sampled": 10,
+   "state_changed": false,
+   "batch_closed": false
+  }
+ ],
+ "environment_side": {
+  "item": "桌面临时堵点（非 18 项裁决内容，属主线环境项）",
+  "git_bash": "已恢复：bash -lc 'echo OK' = OK、exit=0，dofork 0xC0000142 未复现",
+  "git_windows_reinstall": "不必做",
+  "wsl_credential_helper": "/mnt/c/Program Files/Git/ucrt64/libexec/git-core/git-credential-wincred.exe",
+  "wsl_ls_remote": "d837331f980d692075fe5df007d6d38c4966bfdd HEAD, rc=0",
+  "documented_in": "docs/DESKTOP-SYNC-CURRENT.md 第 8 节"
+ }
+}
