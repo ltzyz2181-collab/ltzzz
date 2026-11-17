@@ -38,6 +38,8 @@ python3 scripts/collect-gmail-imap.py             # 保留真实退出码与产�
 
 `scripts/check-gmail-credentials.mjs` 只报告文件是否存在、权限是否为 600、键名是否齐全；**不输出任何值**，并在环境变量已注入时直接判 ready、不读文件。
 
+自定义凭据路径用 `--credentials-file <path>`。**不要用 `--env-file`**：Node 22 会把它当成 Node 自己的选项，在脚本运行前就吞掉（报 `node: <path>: not found`、退出码 9）。该问题由 CI 首次运行时捕获，已改为 `--credentials-file` 并补了真实 CLI 调用测试。
+
 ## 3. Phase 2 实现
 
 ### 3.1 三层去重（`scripts/mail/dedupe.mjs`）

@@ -5,8 +5,11 @@
 // 不得进入仓库或 Actions 日志。因此本脚本的输出只允许出现键名与状态。
 //
 // 用法：
-//   node scripts/check-gmail-credentials.mjs [--write <status.json>] [--json]
+//   node scripts/check-gmail-credentials.mjs [--credentials-file <path>] [--write <status.json>] [--json]
 // 退出码：0 = ready；2 = blocked（缺文件/权限过宽/缺键）；3 = 检查自身失败
+//
+// 注意：不要用 `--env-file`。Node 22 会把它当成自己的 CLI 选项，在脚本运行前就吞掉
+// （报 `node: <path>: not found`、退出码 9），脚本根本收不到。故改用 --credentials-file。
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -109,14 +112,22 @@ export function checkCredentials({envFile = defaultEnvFile(), env = process.env,
 }
 
 export function parseArgs(argv = process.argv.slice(2)) {
-  const get = (flag, fallback) => {
-    const index = argv.indexOf(flag);
-    return index >= 0 && argv[index + 1] ? argv[index + 1] : fallback;
+  // 同时支持 `--flag value` 与 `--flag=value`；别名按顺序取第一个出现的。
+  const get = (flags, fallback) => {
+    for (const flag of flags) {
+      for (let i = 0; i < argv.length; i += 1) {
+        const arg = argv[i];
+        if (arg === flag && argv[i + 1]) return argv[i + 1];
+        if (arg.startsWith(flag + '=')) return arg.slice(flag.length + 1);
+      }
+    }
+    return fallback;
   };
   return {
-    write: get('--write', null),
+    write: get(['--write'], null),
     json: argv.includes('--json'),
-    envFile: get('--env-file', defaultEnvFile()),
+    // --env-file 仅为兼容保留：Node 22 会先吞掉它，通常到不了这里。
+    envFile: get(['--credentials-file', '--env-file'], defaultEnvFile()),
   };
 }
 

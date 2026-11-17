@@ -37,3 +37,10 @@ test('CI 明确声明 Phase 1 真实回执由 Owner 本机完成', () => {
   assert.match(source, /Owner 在本机执行/);
   assert.match(source, /不持有、也拿不到应用专用密码/);
 });
+
+test('凭据检查步骤使用脚本自己的参数，不用 Node 会吞掉的 --env-file', () => {
+  const line = source.split('\n').find((l) => l.includes('node scripts/check-gmail-credentials.mjs')) || '';
+  assert.match(line, /--credentials-file/, '必须用脚本可接收的参数名');
+  assert.ok(!/\s--env-file(\s|=)/.test(line), 'Node 22 会把 --env-file 当自己的选项吞掉');
+  assert.match(line, /--json/);
+});

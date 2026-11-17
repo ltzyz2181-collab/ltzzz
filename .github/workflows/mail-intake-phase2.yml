@@ -58,7 +58,7 @@ jobs:
       - name: Credential check fails closed when nothing is configured
         run: |
           set +e
-          node scripts/check-gmail-credentials.mjs --env-file "$RUNNER_TEMP/absent.env" --json
+          node scripts/check-gmail-credentials.mjs --credentials-file "$RUNNER_TEMP/absent.env" --json
           code=$?
           set -e
           test "$code" = 2 || { echo "expected exit 2 (blocked), got $code"; exit 1; }

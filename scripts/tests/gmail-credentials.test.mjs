@@ -5,11 +5,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {
   REQUIRED_KEYS,
   checkCredentials,
   defaultEnvFile,
+  parseArgs,
 } from '../check-gmail-credentials.mjs';
+
+const SCRIPT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../check-gmail-credentials.mjs");
 
 const SECRET = 'abcd efgh ijkl mnop';
 
@@ -70,4 +75,47 @@ test('环境变量已注入时不再读文件，也不回显值', () => {
 test('默认路径遵循 GMAIL_IMAP_ENV_FILE 覆盖', () => {
   assert.equal(defaultEnvFile({GMAIL_IMAP_ENV_FILE: '/x/y.env', HOME: '/home/u'}), '/x/y.env');
   assert.equal(defaultEnvFile({HOME: '/home/u'}), '/home/u/.config/ltzzz/gmail-imap.env');
+});
+
+test("parseArgs 支持 --credentials-file 的两种写法", () => {
+  assert.equal(parseArgs(["--credentials-file", "/a/b.env"]).envFile, "/a/b.env");
+  assert.equal(parseArgs(["--credentials-file=/a/b.env"]).envFile, "/a/b.env");
+  assert.equal(parseArgs([]).envFile, defaultEnvFile());
+});
+
+test("CLI 真实调用：文件缺失时退出码 2，参数没有被 Node 吞掉", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ltzzz-cred-"));
+  const absent = path.join(dir, "absent.env");
+  const run = spawnSync(process.execPath, [SCRIPT, "--credentials-file", absent, "--json"], {
+    encoding: "utf8",
+    env: {...process.env, GMAIL_IMAP_APP_PASSWORD: "", GMAIL_IMAP_ENV_FILE: ""},
+  });
+  assert.equal(run.signal, null, "进程不得因参数解析失败而异常退出");
+  assert.equal(run.status, 2, `期望 2（blocked），实际 ${run.status}: ${run.stderr}`);
+  const parsed = JSON.parse(run.stdout);
+  assert.equal(parsed.status, "file_missing");
+  assert.equal(parsed.values_printed, false);
+});
+
+test("CLI 真实调用：--credentials-file=<path> 等号写法同样可用", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ltzzz-cred-"));
+  const absent = path.join(dir, "absent.env");
+  const run = spawnSync(process.execPath, [SCRIPT, `--credentials-file=${absent}`, "--json"], {
+    encoding: "utf8",
+    env: {...process.env, GMAIL_IMAP_APP_PASSWORD: "", GMAIL_IMAP_ENV_FILE: ""},
+  });
+  assert.equal(run.status, 2, `期望 2（blocked），实际 ${run.status}: ${run.stderr}`);
+});
+
+test("CLI 真实调用：600 权限齐全时退出码 0，输出不含密码", () => {
+  const file = tmpEnv(`GMAIL_IMAP_USER=ltzyz2181@gmail.com
+GMAIL_IMAP_APP_PASSWORD=${SECRET}
+`);
+  const run = spawnSync(process.execPath, [SCRIPT, "--credentials-file", file, "--json"], {
+    encoding: "utf8",
+    env: {...process.env, GMAIL_IMAP_APP_PASSWORD: "", GMAIL_IMAP_ENV_FILE: ""},
+  });
+  assert.equal(run.status, 0, `期望 0（ready），实际 ${run.status}: ${run.stderr}`);
+  assert.ok(!run.stdout.includes(SECRET), "stdout 不得包含密码值");
+  assert.ok(!run.stderr.includes(SECRET), "stderr 不得包含密码值");
 });
