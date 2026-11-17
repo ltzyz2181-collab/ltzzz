@@ -342,7 +342,7 @@ async function callModel(policy) {
       guard: { code: decision.code, routing_reason: decision.routing_reason ?? null },
       attempts: attemptLog,
       retry_policy: 'retry only when no HTTP response arrived; a request that reached the station is never replayed',
-      reply: { chars: content.length, preview: content.slice(0, 160) },
+      reply: { chars: content.length, preview: content.slice(0, 160), text: content.slice(0, 8000) },
       key_fingerprint: transport.fingerprint,
       failure,
       http_error: http !== null && http !== 200 ? payload?.error ?? payload : null,
@@ -361,6 +361,7 @@ async function callModel(policy) {
     balance_after_usd: balanceAfter,
     seat_state: seatAfter,
     reply_preview: content.slice(0, 120),
+    reply_chars: content.length,
     evidence,
     failure,
   });
