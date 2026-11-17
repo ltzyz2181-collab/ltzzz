@@ -1,0 +1,32 @@
+{
+ "schema": "ltzzz.gmail-intake.phase1-status.v1",
+ "task_id": "LTZZZ-GMAIL-INTAKE-HYGIENE-20261117-02",
+ "phase": 1,
+ "status": "BLOCKED_EVIDENCE",
+ "updated_at": "2026-11-17T08:04:46Z",
+ "blocked_reason": "desktop_host_has_no_imap_credentials",
+ "why_not_done": "本机 /home/tianzhu/.config/ltzzz/gmail-imap.env 不存在；按工单 §四，密码只能由 Owner 在本机自行配置，AI 不得索要、不得代填。没有真实登录回执前，Phase 1 不得标记 DONE。",
+ "credential_check": {
+  "receipt": "ops/mail-receipts/MR-20261117-desktop-gmail-credential-check.json",
+  "status": "file_missing",
+  "values_printed": false,
+  "password_value_emitted": false
+ },
+ "cloud_vm_receipt": {
+  "receipt": "ops/mail-receipts/MR-20261117-gmail-imap.json",
+  "note": "云主机已有真实 IMAP 回执（修订后：窗口 1076、全箱 4703/3880、合并 1114、待办 141、脱敏残留 0）。该回执不能替代本机回执。"
+ },
+ "required_to_unblock": [
+  "Owner 在本机创建 600 权限的 ~/.config/ltzzz/gmail-imap.env，填 GMAIL_IMAP_USER 与 GMAIL_IMAP_APP_PASSWORD（应用专用密码）",
+  "Owner 自己执行 node scripts/check-gmail-credentials.mjs，确认 status=ready",
+  "Owner 自己执行一次 python3 scripts/collect-gmail-imap.py，保留真实退出码与产物",
+  "Owner 把「登录成败 / 30 天窗口条数与截断 / 全箱总数与未读 / 实际采集数 / 去重结果 / 脱敏结果 / 退出码」回填本文件并把 status 改为 DONE"
+ ],
+ "not_performed": [
+  "未向 Owner 索要密码或应用专用密码",
+  "未创建、未写入任何凭据文件",
+  "未执行真实 IMAP 登录",
+  "未把任何邮件正文写入仓库或日志"
+ ],
+ "acceptance_owner": "GPT 决定席（依据真实回执，不由开发席自评）"
+}

@@ -5,12 +5,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
+import {fileURLToPath} from 'node:url';
+import {redactSubject} from './track-gpt-rulings.mjs';
 
 const run = promisify(execFile);
-const CLI = process.env.AGENTLY_CLI || '/home/user/.npm-global/bin/agently-cli';
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// 不写死云主机路径：优先显式配置，其次该主机上已知的全局安装位置，最后交给 PATH。
+const CLI = process.env.AGENTLY_CLI
+  || (fs.existsSync('/home/user/.npm-global/bin/agently-cli') ? '/home/user/.npm-global/bin/agently-cli' : 'agently-cli');
 const GPT_SENDER = 'ltzyz2181@gmail.com';
 const RULING = /(裁决|ruling|disposition|keep_blocked|return_for_revision|needs_decision|approve_in_scope|conditional_approve|已落库)/i;
-const OUT = 'knowledge/results/deep-superagent/gpt-ruling-mail/latest.json';
+const OUT = path.join(REPO_ROOT, 'knowledge/results/deep-superagent/gpt-ruling-mail/latest.json');
 const SCHEMA = 'ltzzz.gpt-ruling-mail.v1';
 
 function shanghaiDate(iso) {
@@ -39,7 +44,7 @@ export function summarize(messages, now = new Date()) {
     today_count: todayRulings.length,
     last_received_at_utc: last?.created_at ?? null,
     last_message_id: last?.message_id ?? null,
-    last_subject: last?.subject ?? null,
+    last_subject: last ? redactSubject(last.subject, 90) : null,
     days_since_last_ruling: daysSince,
     severity: todayRulings.length > 0 ? 'ok' : daysSince !== null && daysSince >= 1 ? 'owner_attention' : 'unknown',
     note: todayRulings.length > 0
