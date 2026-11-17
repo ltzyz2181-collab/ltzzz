@@ -13,3 +13,4 @@
 - 发送前必须校验六个必填字段与收件人来源。
 - 未知发送结果先查原线程，不得盲目重发。
 - 上线（启用 schedule）属生产变更，须单独授权。
+- 每次部署/上传/提审回执落盘后，必须按 `config/email-authority-20261117.json` 的 `deployment_completion_report` 发汇总邮件，列出待裁决事项并明确询问 Owner 下一步；不得只报完成。
