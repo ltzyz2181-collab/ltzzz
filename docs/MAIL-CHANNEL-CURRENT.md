@@ -25,3 +25,19 @@
 
 - 每日汇总邮件缺失 = 真违规（必须发）。
 - `mail-fullbox` 回执 `creds_missing` = 能力缺口，不是"读过全箱"；必须如实写进日回执。
+
+## 5. 网络可达性实测（2026-11-17）
+
+| 端点 | 云主机 | 桌面（世章） |
+| --- | --- | --- |
+| `oauth2.googleapis.com` | 000（不通） | 未测（浏览器打开 Gmail 停在起始页，页面未加载） |
+| `gmail.googleapis.com` | 000（不通） | 同上 |
+| `mail.google.com` | 000（不通） | 不可达 |
+| `accounts.google.com` | 000（不通） | 不可达 |
+
+结论：Gmail 全箱读取当前**不只是缺凭据，两端都到不了 Google**。因此：
+
+1. 凭据到手也无法在云主机直接调 Gmail REST —— `scripts/collect-gmail-fullbox.mjs` 会停在 `token_exchange_failed`。
+2. 可行路径是把读取放进有 Google 出网的 Cloudflare Worker（现成的 `ltzzz-youtube-upload` 已具备 Google OAuth + KV refresh_token 机制），由它代读、云主机只取脱敏元数据。
+3. 该路径仍需一次**新的 Gmail 只读 scope 同意**，而同意页需要能访问 Google 的浏览器；桌面当前出口到不了 Google，故这一步仍卡在网络上。
+4. 在拿到出网能力之前，Agent Mail 仍是唯一可读收件渠道，Gmail 项按 `blocked_external` 记录，不得写成"已读取"。
