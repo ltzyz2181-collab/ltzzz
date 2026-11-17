@@ -28,3 +28,13 @@ Streamable HTTP 只读地址：`https://mcp.linear.app/mcp/readonly`。
 
 GPT本轮先实际读取四项与评论后导出上述滚动文件。后续沿现有巡检任务刷新，不新增付费cron。仅更改真实读回后的快照；工具/认证失败保留上一成功版，在原任务回执说明缺项，不改时间制造新鲜假象。
 当前会话一次成功导出不证明后续无人值守刷新已执行，也不证明豆包自己的OAuth已授权。
+
+
+## 2026-11-17 追加：无 key 的只读导出通道
+
+- 背景：Codex 的 Linear OAuth 走不通（Linear 拉 `https://chatgpt.com/oauth/codex/client.json` 返回 403，CIMD 客户端元数据取不到）。
+- 现成通道：仓库 Actions 密钥 `LINEAR_API_KEY`（值不可读，符合设计）+ `linear-board-export.yml`。
+- 导出：`node scripts/linear-board-export.mjs` → `ops/dispatch/inbox/gpt/linear-board-latest.json`（含 id/标题/状态/优先级/更新时间/短评论摘要，不含评论全文与凭据）。
+- 触发：`workflow_dispatch` 或每日 01:00 UTC；`permissions: contents: write`，脚本本身只读，`writes_performed=false`。
+- 失败语义：读取失败不写文件、不产出空看板；工作流保留上一成功版。
+- 手动触发（桌面 github.com:443 不通时用 API）：`POST /repos/ltzyz2181-collab/ltzzz/actions/workflows/linear-board-export.yml/dispatches {"ref":"main"}`。
