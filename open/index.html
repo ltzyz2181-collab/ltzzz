@@ -54,18 +54,24 @@
 </div>
 
 <script>
-// —— 预览配置：唯一需要人工填写的字段是 username（小程序原始 ID，gh_ 开头）——
+// —— 预览配置 ——
+// 2026-11-17 实测更正：服务号「小程序管理」已关联「世章 AI 助手」「世章刻章」，
+// 旧注释里"相关公众号为空→结构性死路"的前提已被推翻。真正缺的是「JS接口安全域名」未设置。
 var CFG = {
   appid: "wx562bcb6057346fb2",
-  username: "gh_52e35279b132",                   // 微信公众平台「设置→基本设置→账号信息→原始ID」实读
-  path: "pages/orders/index.html",               // 对应 miniprogram/app.json 的 pages/orders/index
+  username: "gh_52e35279b132",                   // 小程序原始 ID（公众平台「设置→基本设置」实读）
+  path: "pages/orders/index",                    // 对应 miniprogram/app.json 的 pages/orders/index（不要带 .html）
   version: "release",
-  extraData: ""
+  extraData: "",
+  // 签名接口：已认证服务号的 AppSecret 只存在 worker 加密变量里，前端只拿签名，不碰密钥
+  signEndpoint: "https://ltzzz-wechat-publisher.ltzyz2181.workers.dev/jsapi-sign"
 };
 
 (function () {
   var isWechat = /micromessenger/i.test(navigator.userAgent);
   var usernameOk = /^gh_[0-9a-z]{8,}$/.test(CFG.username.trim());
+  var vTag = document.getElementById("v-tag");
+  var d = document.getElementById("diag");
 
   document.getElementById("v-ua").textContent = isWechat ? "微信内（可验证开放标签）" : "非微信环境（标签不会渲染）";
   document.getElementById("v-ua").className = "v " + (isWechat ? "ok" : "warn");
@@ -74,70 +80,99 @@ var CFG = {
   document.getElementById("v-username").className = "v " + (usernameOk ? "ok" : "bad");
   document.getElementById("v-path").textContent = CFG.path;
 
+  function setTag(text, cls) { vTag.textContent = text; vTag.className = "v " + cls; }
+  function diag(html) { d.hidden = false; d.innerHTML = html; }
+
   if (!usernameOk) {
-    document.getElementById("v-tag").textContent = "fail-closed（未渲染，避免误判为成功）";
-    document.getElementById("v-tag").className = "v bad";
-    var d = document.getElementById("diag");
-    d.hidden = false;
-    d.innerHTML = "<strong>缺少小程序原始 ID。</strong><br>" +
-      "开放标签 wx-open-launch-weapp 使用 <span class=\"pill\">username</span>（gh_ 开头的原始 ID），不是 AppID。" +
-      "AppID 已核对为 " + CFG.appid + "，但原始 ID 只能从微信公众平台「设置 → 基本设置 → 账号信息」读取。" +
-      "把 <code>gh_…</code> 填进本文件顶部 CFG.username 后重新上传，本页才会渲染可点击的标签。";
+    setTag("fail-closed（未渲染，避免误判为成功）", "bad");
+    diag("<strong>缺少小程序原始 ID。</strong><br>开放标签用的是 username（gh_ 开头），不是 AppID。把 gh_… 填进 CFG.username 后重新上传。");
     return;
   }
 
-  // 说明：把标签元素插入 DOM 不等于微信已渲染。真机实测（2026-11-13）曾因此误报“已渲染”，
-  // 所以这里先报“已插入”，最终状态由下方升级检测决定，未经检测不得写“已渲染”。
-  var vTag = document.getElementById("v-tag");
-  vTag.textContent = "已插入宿主，等待微信注入…";
-  vTag.className = "v warn";
+  // 1) 先拿签名（服务端算 jsapi_ticket + sha1），再 wx.config，最后才渲染标签
+  function loadSdk() {
+    return new Promise(function (resolve, reject) {
+      if (window.wx && window.wx.config) return resolve();
+      var el = document.createElement("script");
+      el.src = "https://res.wx.qq.com/open/js/jweixin-1.6.0.js";
+      el.onload = resolve;
+      el.onerror = function () { reject(new Error("jweixin_load_failed")); };
+      document.head.appendChild(el);
+    });
+  }
 
-  var host = document.getElementById("tagHost");
-  var tag = document.createElement("wx-open-launch-weapp");
-  tag.setAttribute("id", "launch-weapp");
-  tag.setAttribute("username", CFG.username.trim());
-  tag.setAttribute("path", CFG.path + (CFG.path.indexOf("?") > -1 ? "&" : "?") + "from=openag");
-  tag.setAttribute("version", CFG.version);
+  function renderTag() {
+    var host = document.getElementById("tagHost");
+    var tag = document.createElement("wx-open-launch-weapp");
+    tag.setAttribute("id", "launch-weapp");
+    tag.setAttribute("username", CFG.username.trim());
+    tag.setAttribute("path", CFG.path + (CFG.path.indexOf("?") > -1 ? "&" : "?") + "from=openag");
+    tag.setAttribute("version", CFG.version);
 
-  var tpl = document.createElement("script");
-  tpl.setAttribute("type", "text/wxtag-template");
-  tpl.textContent =
-    "<style>.btn{display:inline-block;padding:14px 30px;border-radius:10px;background:#122534;color:#fff;font-size:16px;letter-spacing:.5px;}</style>" +
-    "<div class=\"btn\">打开世章 AI 助手</div>";
-  tag.appendChild(tpl);
+    var tpl = document.createElement("script");
+    tpl.setAttribute("type", "text/wxtag-template");
+    tpl.textContent =
+      "<style>.btn{display:inline-block;padding:14px 30px;border-radius:10px;background:#122534;color:#fff;font-size:16px;letter-spacing:.5px;}</style>" +
+      "<div class=\"btn\">打开世章 AI 助手</div>";
+    tag.appendChild(tpl);
 
-  tag.addEventListener("launch", function () {
-    document.getElementById("v-tag").textContent = "已拉起小程序";
-  });
-  tag.addEventListener("error", function (e) {
-    document.getElementById("v-tag").textContent = "拉起失败（见诊断）";
-    document.getElementById("v-tag").className = "v bad";
-    var d = document.getElementById("diag");
-    d.hidden = false;
-    d.textContent = "开放标签报错：" + (e && e.detail ? JSON.stringify(e.detail) : "unknown");
-  });
-  host.appendChild(tag);
+    tag.addEventListener("launch", function () { setTag("已拉起小程序", "ok"); });
+    tag.addEventListener("error", function (e) {
+      setTag("拉起失败（见诊断）", "bad");
+      diag("开放标签报错：" + (e && e.detail ? JSON.stringify(e.detail) : "unknown"));
+    });
+    host.appendChild(tag);
 
-  // 升级检测：只有微信真的注入了该自定义元素（存在构造函数且影子树里有内容）才报“已渲染”。
-  // 否则报“未升级”，并说明缺的是 wx.config/openTagList 与已认证公众号签名这一前置。
-  window.setTimeout(function () {
-    var upgraded = !!(window.customElements && window.customElements.get("wx-open-launch-weapp"));
-    var hasShadow = !!(tag.shadowRoot && tag.shadowRoot.childElementCount > 0);
-    if (upgraded && hasShadow) {
-      vTag.textContent = "已渲染";
-      vTag.className = "v ok";
-      return;
-    }
-    vTag.textContent = "未升级（微信未注入该标签）";
-    vTag.className = "v bad";
-    var d = document.getElementById("diag");
-    d.hidden = false;
-    d.innerHTML = "<strong>标签元素已插入，但微信没有把它升级成可点的按钮。</strong><br>" +
-      "开放标签要求先把 <span class=\"pill\">wx-open-launch-weapp</span> 写进 wx.config 的 openTagList，" +
-      "而 wx.config 的签名只能用<b>已认证公众号</b>的 appid + secret 生成。" +
-      "本小程序后台「设置 → 基本设置 → 相关公众号」为空，缺这个前置，标签就不会被注入。<br>" +
-      "可用替代入口：微信后台「小程序码」可直接为 pages/orders/index 生成小程序码，不需要任何签名。";
-  }, 1500);
+    // 只有微信真的注入了该自定义元素（构造函数存在且影子树有内容）才报"已渲染"
+    window.setTimeout(function () {
+      var upgraded = !!(window.customElements && window.customElements.get("wx-open-launch-weapp"));
+      var hasShadow = !!(tag.shadowRoot && tag.shadowRoot.childElementCount > 0);
+      if (upgraded && hasShadow) { setTag("已渲染", "ok"); return; }
+      setTag("未升级（微信未注入该标签）", "bad");
+      diag("<strong>标签已插入但微信没把它升级成按钮。</strong><br>" +
+        "需要三件同时成立：① wx.config 成功（jsApiList: [] + openTagList: [wx-open-launch-weapp]）；" +
+        "② 本页域名已在服务号「功能设置 → JS接口安全域名」里保存；③ 微信内打开。<br>" +
+        "2026-11-17 实测：服务号已关联小程序 ✓，JS接口安全域名 = 未设置 ✗ —— 卡在第 ② 步。");
+    }, 1500);
+  }
+
+  if (!isWechat) {
+    setTag("微信外无法验证（标签不会渲染）", "warn");
+    diag("请用微信扫本页地址打开，才能判断开放标签是否可用。");
+    return;
+  }
+
+  var pageUrl = location.href.split("#")[0];
+  setTag("请求 JS-SDK 签名…", "warn");
+
+  fetch(CFG.signEndpoint + "?url=" + encodeURIComponent(pageUrl), { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (sig) {
+      if (!sig || !sig.ok) throw new Error("sign_failed " + JSON.stringify(sig && sig.error || sig));
+      return loadSdk().then(function () { return sig; });
+    })
+    .then(function (sig) {
+      window.wx.config({
+        debug: false,
+        appId: sig.app_id,
+        timestamp: sig.timestamp,
+        nonceStr: sig.noncestr,
+        signature: sig.signature,
+        jsApiList: [],
+        openTagList: ["wx-open-launch-weapp"]
+      });
+      window.wx.ready(function () { renderTag(); });
+      window.wx.error(function (res) {
+        setTag("wx.config 失败", "bad");
+        diag("<strong>wx.config 被拒：</strong>" + String(res && res.errMsg || "") + "<br>" +
+          "最常见原因是本页域名没有写进服务号「JS接口安全域名」（2026-11-17 实测该处仍是「未设置」），" +
+          "或页面 URL 与签名用的 url 不完全一致。");
+      });
+    })
+    .catch(function (e) {
+      setTag("签名/加载失败", "bad");
+      diag(String(e && e.message || e));
+    });
 })();
 </script>
 </body>

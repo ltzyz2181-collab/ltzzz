@@ -54,6 +54,19 @@ export default {
       const date=url.searchParams.get('date')||todayCN();if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return json({ok:false,error:'invalid_date'},422);
       try{const article=await buildArticle(env,date);return json({ok:true,date,status:article.eligibility?.status||'NO_CONTENT',draft_eligible:article.eligibility?.draft_eligible===true,article_sha256:article.eligibility?.article_sha256||null,publication_checked:false,read_only:true});}catch{return json({ok:false,date,status:"READINESS_UNAVAILABLE",draft_eligible:false,read_only:true},503);}
     }
+    if (url.pathname === "/jsapi-sign" && request.method === "GET") {
+      // 2026-11-17：给 open/index.html 用的 JS-SDK 签名接口。只用已存加密 secret 在本 worker 内算，
+      // 明文 secret 不进对话、不进前端、不进云函数。
+      const target = url.searchParams.get("url") || "";
+      if (!/^https?:\/\/[^\s]+$/i.test(target) || target.indexOf("#") > -1) return json({ok:false,error:"invalid_url"},400);
+      try {
+        const ticket = await getJsapiTicket(env);
+        const noncestr = "ltzzz" + randHex(8);
+        const timestamp = Math.floor(Date.now() / 1000);
+        const signature = await sha1Hex("jsapi_ticket=" + ticket + "&noncestr=" + noncestr + "&timestamp=" + timestamp + "&url=" + target);
+        return json({ok:true,app_id:env.WECHAT_APP_ID,app_id_suffix:String(env.WECHAT_APP_ID||"").slice(-6),timestamp,noncestr,signature,ticket_cached_backend:!!env.MEMORY_BUCKET});
+      } catch (e) { return json({ok:false,error:e.platform||{message:"jsapi_ticket_or_sign_failed"}},502); }
+    }
     if (url.pathname === "/publish" && request.method === "POST") {
       if(!env.BOT_ADMIN_TOKEN || request.headers.get("Authorization")!=="Bearer "+env.BOT_ADMIN_TOKEN)return json({error:"unauthorized"},401);
       const mode = url.searchParams.get("mode") || "draft";
@@ -252,6 +265,30 @@ async function publish(env, mode, date=todayCN()) {
   try { await env.MEMORY_BUCKET.put(key,JSON.stringify(receipt,null,2)); }
   catch { receipt.receipt_persistence_failed=true;receipt.ok=false; }
   return receipt;
+}
+async function getJsapiTicket(env) {
+  if (!env.WECHAT_APP_ID || !env.WECHAT_APP_SECRET) throw new Error("WECHAT_APP_ID/SECRET missing");
+  const scope = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(env.WECHAT_APP_ID + '|jsapi-ticket'));
+  const key = 'wechat/private/jsapi-ticket-' + Array.from(new Uint8Array(scope)).map(x => x.toString(16).padStart(2, '0')).join('') + '.json';
+  try { const cached = await env.MEMORY_BUCKET?.get(key); if (cached) { const v = JSON.parse(await cached.text()); if (v.ticket && v.expires_at > Date.now() + 300000) return v.ticket; } } catch {}
+  const token = await getAccessToken(env);
+  const r = await fetch("https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=" + encodeURIComponent(token) + "&type=jsapi", { signal: AbortSignal.timeout(20000) });
+  const j = await r.json();
+  if (r.ok && j.errcode === 0 && j.ticket) {
+    if (env.MEMORY_BUCKET) await env.MEMORY_BUCKET.put(key, JSON.stringify({ ticket: j.ticket, expires_at: Date.now() + Math.min(Number(j.expires_in) || 7200, 7200) * 1000 }));
+    return j.ticket;
+  }
+  const e = new Error("jsapi ticket rejected");
+  e.platform = { endpoint: "ticket/getticket", http: r.status, errcode: j.errcode ?? null, errmsg: String(j.errmsg || "no ticket").slice(0, 200) };
+  throw e;
+}
+async function sha1Hex(text) {
+  const d = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function randHex(n) {
+  const b = crypto.getRandomValues(new Uint8Array(n));
+  return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join('');
 }
 async function getAccessToken(env) {
   if (!env.WECHAT_APP_ID || !env.WECHAT_APP_SECRET) throw new Error("WECHAT_APP_ID/SECRET missing");
