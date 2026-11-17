@@ -1,0 +1,37 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-dispatch-channel",
+  "target": "desktop-claude-dispatch-channel",
+  "platform": "github-default-branch",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "63a3bf413d9ea0468b3f65d550094e7c9a09ecc6",
+  "code_path": ".github/ISSUE_TEMPLATE",
+  "deployed_at": "2026-11-17T01:07:40-08:00",
+  "verified": [
+    {
+      "kind": "repo_readback",
+      "result": "ok",
+      "evidence": "git show origin/main:.github/ISSUE_TEMPLATE/dispatch-desktop-claude.yml 返回 2828 字节；GitHub contents API blob sha b6d11f4bc1；代码提交 63a3bf41（PR #412 squash 合并）"
+    },
+    {
+      "kind": "labels_readback",
+      "result": "ok",
+      "evidence": "REST GET /repos/ltzyz2181-collab/ltzzz/labels/seat%3Adesktop-claude => 200 color 5319e7；/labels/dispatch => 200 color 0e8a16"
+    },
+    {
+      "kind": "automation_absent",
+      "result": "ok",
+      "evidence": "grep ISSUE_TEMPLATE .github/workflows：workpool.yml 仅在 issues 事件且含 work:open 标签时触发；external-report-inbox.yml 只监听自身模板路径；没有任何 workflow 监听 dispatch 或 seat:desktop-claude 标签"
+    }
+  ],
+  "blockers": [],
+  "next_action": "GPT 裁决席按 docs/DISPATCH-CHANNEL-DESKTOP-CLAUDE.md 用 issue 表单开单；首次派单后由桌面 Claude 以 [claimed]/[delivered] 评论回执。本次只上线派单通道（默认分支生效），无运行时服务部署，因此无线上 smoke；Phase 1 仍为 BLOCKED_EVIDENCE。",
+  "code_sha256": {
+    "control-relay.yml": "2d2d88c041c43cbbd5b7a204427805c2bce1df5b43aa8c4f30566ad9eff9af61",
+    "dispatch-desktop-claude.yml": "0eca1f48a541e1e9bc3f2d14faea65c591f392ed1c6f2d8a9e59aea8c25353f6",
+    "external-report.yml": "b5bdd9bc48a2b5356dd48f30e1d421a28faff4dadc32e2ac2c656eb0086096f7",
+    "memory-discussion.yml": "d2e542d8a0e7d37f5d2e44a24e4e1e5bc5b2acf3cf8fdab60c19a9e444f22357",
+    "owner-dispatch.yml": "689b06274b69d7c3685f3d3b907eb017cc39c88555df5165958ff0d0c7da622c",
+    "work-pool.yml": "d0ef559d6818faf46c58e72e947e57a792d7aa7b7b10380fa8e3fa062c4f5580"
+  }
+}
