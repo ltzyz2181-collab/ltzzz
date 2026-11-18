@@ -6,7 +6,13 @@
 //   Multiple artifacts named "github-pages" were unexpectedly found ... count is 2.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {analyzePagesArtifacts, renderDiagnostics, PAGES_ARTIFACT_NAME} from '../lib/pages-artifact-contract.mjs';
+import {
+  analyzePagesArtifacts,
+  isVisibilityRetryable,
+  pollPagesArtifacts,
+  renderDiagnostics,
+  PAGES_ARTIFACT_NAME,
+} from '../lib/pages-artifact-contract.mjs';
 
 const a = (id, name = PAGES_ARTIFACT_NAME, extra = {}) => ({id, name, size_in_bytes: 51616153, expired: false, ...extra});
 
@@ -69,6 +75,89 @@ test('名称不完全匹配的不计入（github-pages-v2 不是重名）', () =
 test('非法入参与非法 mode 必须报错', () => {
   assert.throws(() => analyzePagesArtifacts(null), /pages_artifact_list_invalid/);
   assert.throws(() => analyzePagesArtifacts([], {mode: 'nope'}), /pages_artifact_mode_invalid/);
+});
+
+test('部署前零份会做有界轮询，artifact 可见后放行', async () => {
+  const responses = [[], [], [a(13739905380)]];
+  const delays = [];
+  const r = await pollPagesArtifacts({
+    mode: 'pre-deploy',
+    fetchOnce: async (attempt) => responses[attempt - 1] ?? [],
+    maxAttempts: 5,
+    delayMs: 10,
+    sleep: async (ms) => {
+      delays.push(ms);
+    },
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.action, 'deploy');
+  assert.equal(r.attempts, 3);
+  assert.equal(r.visibility_retry, true);
+  assert.deepEqual(delays, [10, 10]);
+});
+
+test('部署前轮询到上限仍零份则失败', async () => {
+  let calls = 0;
+  const r = await pollPagesArtifacts({
+    mode: 'pre-deploy',
+    fetchOnce: async () => {
+      calls += 1;
+      return [];
+    },
+    maxAttempts: 4,
+    delayMs: 0,
+    sleep: async () => {},
+  });
+  assert.equal(calls, 4);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'no_pages_artifact');
+  assert.equal(r.attempts, 4);
+});
+
+test('部署前多份不会被轮询掩盖，首次即失败', async () => {
+  let calls = 0;
+  const r = await pollPagesArtifacts({
+    mode: 'pre-deploy',
+    fetchOnce: async () => {
+      calls += 1;
+      return [a(1), a(2)];
+    },
+    maxAttempts: 5,
+    delayMs: 10,
+    sleep: async () => {},
+  });
+  assert.equal(calls, 1);
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'multiple_pages_artifacts');
+  assert.equal(r.visibility_retry, false);
+});
+
+test('上传前零份不轮询，直接返回 upload', async () => {
+  let calls = 0;
+  const r = await pollPagesArtifacts({
+    mode: 'pre-upload',
+    fetchOnce: async () => {
+      calls += 1;
+      return [];
+    },
+    maxAttempts: 5,
+    delayMs: 10,
+    sleep: async () => {},
+  });
+  assert.equal(calls, 1);
+  assert.equal(r.action, 'upload');
+  assert.equal(r.visibility_retry, false);
+});
+
+test('isVisibilityRetryable 只对 pre-deploy 的零份结果成立', () => {
+  const zero = {ok: false, reason: 'no_pages_artifact'};
+  assert.equal(isVisibilityRetryable({mode: 'pre-deploy', result: zero, attempt: 1, maxAttempts: 3}), true);
+  assert.equal(isVisibilityRetryable({mode: 'pre-deploy', result: zero, attempt: 3, maxAttempts: 3}), false);
+  assert.equal(
+    isVisibilityRetryable({mode: 'pre-deploy', result: {ok: false, reason: 'multiple_pages_artifacts'}, attempt: 1, maxAttempts: 3}),
+    false,
+  );
+  assert.equal(isVisibilityRetryable({mode: 'pre-upload', result: zero, attempt: 1, maxAttempts: 3}), false);
 });
 
 test('诊断文本包含 run 上下文与成因说明', () => {

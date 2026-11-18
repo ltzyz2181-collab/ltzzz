@@ -14,13 +14,25 @@
 // 退出码：契约成立 0；契约被破坏 1。
 
 import fs from 'node:fs';
-import {analyzePagesArtifacts, renderDiagnostics} from './lib/pages-artifact-contract.mjs';
+import {
+  analyzePagesArtifacts,
+  pollPagesArtifacts,
+  renderDiagnostics,
+  PAGES_ARTIFACT_VISIBILITY_DELAY_MS,
+  PAGES_ARTIFACT_VISIBILITY_MAX_ATTEMPTS,
+} from './lib/pages-artifact-contract.mjs';
 
 function arg(name, fallback = null) {
   const hit = process.argv.find((a) => a === `--${name}` || a.startsWith(`--${name}=`));
   if (!hit) return fallback;
   if (hit === `--${name}`) return true;
   return hit.slice(`--${name}=`.length);
+}
+
+function intArg(name, fallback) {
+  const raw = arg(name, null);
+  const n = Number(raw === null || raw === true ? fallback : raw);
+  return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : fallback;
 }
 
 async function fetchArtifacts() {
@@ -47,15 +59,25 @@ async function main() {
   const mode = String(arg('mode', 'pre-upload'));
   const fromFile = arg('from-file', null);
 
-  let artifacts;
+  let result;
   if (fromFile) {
     const raw = JSON.parse(fs.readFileSync(String(fromFile), 'utf8'));
-    artifacts = Array.isArray(raw) ? raw : raw.artifacts;
+    const artifacts = Array.isArray(raw) ? raw : raw.artifacts;
+    result = {...analyzePagesArtifacts(artifacts, {mode}), attempts: 1, visibility_retry: false};
   } else {
-    artifacts = await fetchArtifacts();
+    // pre-deploy 的"零份"可能只是列表接口尚未可见，做有界轮询；多份仍立即失败。
+    result = await pollPagesArtifacts({
+      mode,
+      fetchOnce: fetchArtifacts,
+      maxAttempts: intArg('poll-attempts', PAGES_ARTIFACT_VISIBILITY_MAX_ATTEMPTS),
+      delayMs: intArg('poll-delay-ms', process.env.PAGES_ARTIFACT_POLL_DELAY_MS ?? PAGES_ARTIFACT_VISIBILITY_DELAY_MS),
+      onRetry: ({attempt, nextAttempt, delayMs, result: r}) => {
+        console.error(
+          `pages_artifact_visibility_wait attempt=${attempt} next=${nextAttempt} delay_ms=${delayMs} reason=${r.reason}`,
+        );
+      },
+    });
   }
-
-  const result = analyzePagesArtifacts(artifacts, {mode});
   const context = {
     mode,
     repository: process.env.GITHUB_REPOSITORY,
