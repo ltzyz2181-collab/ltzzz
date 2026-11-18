@@ -9,8 +9,75 @@
   "paid": false,
   "tx_hash": null,
   "financial_execution": false,
-  "status": "reserved_before_provider_call",
-  "model_calls": 0,
+  "reservation": {
+    "verified": true,
+    "path": "knowledge/results/doubao-dispatch/DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2A.json",
+    "commit": "2680e7970cb496715ed9b4f97d78e996dd968989",
+    "sha256": "4dbba808a46cf5e892b008c4f1c2e1e51c64df80c30957d875ddbb28c4fcc2c6",
+    "executor_source_commit": "ad78f4e71a201c7e1d7523333486c0c54fa024f8"
+  },
+  "delivery_integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "required_sections": [
+    "【逐项结论】",
+    "【风险汇总】",
+    "【无法核验】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "doubao-queue:DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2A",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261117-006",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "8862fb0fdc785c62995c22c24e56ec04e16298af7206ff5155bd0f1fd72710aa",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "90320451e4afea5ed70823e9e67d0451ed9124da5f8e3d18eab7ec275c1e5f60"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_doubao_call": true,
+  "model": "doubao-seed-2-1-pro-260915",
+  "generated_by_model": "doubao-seed-2-1-pro-260915",
+  "finish_reason": "stop",
+  "tokens_used": 7859,
+  "request_id": null,
+  "actual_provider": null,
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "http": 200,
+  "completion_id": null,
+  "output": "【逐项结论】\n第1项 · MEDIUM · scripts/hire-phase1.mjs:743-821 · 调用方可自造 receipt.gate 与 receipt_sha256，verifyReceipt 仅做结构自洽校验，不绑定真实 gate 执行产物或签名。 · 正常经 gateOutcome 不可伪造，但直接调用 verifyReceipt/assertAppendOnly 可接受伪造 accepted，缺外部可信执行绑定。\n第2项 · NONE · scripts/hire-phase1.mjs:81-111,579-646 · 白名单仅 deliverable-audit 为 order_acceptance，phase1-smoke 被拒绝；accepted 还校验 gate.kind。 · 白名单与 gateOutcome 绑定足够，自检闸不能冒充订单验收。\n第3项 · MEDIUM · scripts/hire-phase1.mjs:331-419,542-578 · 若订单只选 contains_all 等弱内容条件，同路径换内容仍可满足；sha256 条件非强制。 · 验收可绑内容但不强制逐字节哈希，留路径换内容可能通过，无法证明绑定实际交付字节。\n第5项 · LOW · scripts/hire-phase1.mjs:822-841 · 先以 idempotency_key 查重，再以 order_id 查重；同键仅允许状态与 reason 完全相同的重放。 · 常规重复 append 会识别；但绕过 verifyReceipt/appendReceipt 直接写账本无防护，同键不同 reason 也被拒。\n\n【风险汇总】\n1. receipt 校验缺少与真实 gate 运行记录、输出工件或可信签名的绑定，直接构造 JSON 可通过纯函数验收。\n2. 验收标准允许不使用 sha256，弱内容条件不能防止同路径交付物被替换。\n\n【无法核验】\n1. scripts/hire/gates/deliverable-audit.mjs 未提供，无法确认其实际读取字节、哈希及 criteria 判定。\n2. scripts/hire/gates/phase1-smoke.mjs 未提供，无法核验运行边界。\n3. 相关测试文件及 PR 其余代码未提供，无法核验集成写入权限、调用约束与回归覆盖。\n【交付结束】",
+  "output_sha256": "f0eb8b73bd77b0518eff69d6e347ba3d55ddef02c5482ddcf4b3e05f0cf67096",
+  "error": null,
   "accepted": false,
-  "deployed": false
+  "deployed": false,
+  "actual_cloud_deployment": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-18T01:31:14.208Z"
 }
