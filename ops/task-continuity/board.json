@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T06:52:00.000Z",
+  "updated_at": "2026-11-18T07:02:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -372,17 +372,33 @@
       "id": "DEEP-QUEUE-20261118-DAILY1",
       "title": "Deep 队列 DAILY-1 空转：双角色卡 + 席位 504",
       "state": "in_review",
-      "next_owner": "claude",
-      "next_action": "核对 BACKLOG-1 单角色卡是否产出 7 条 route；若仍空转，改为按席位拆卡而不是加大 prompt",
+      "next_owner": "gpt",
+      "next_action": "裁决 Deep 是否继续承担 route 定责；未裁决前只发「归并去重」卡，route 与 owner 由看板落定",
       "evidence": [
         "run 44193726857 success（传输层），job 50940484 blocked，error=native_generation_evidence_incomplete",
         "doubao 504 / kimi 504；qianwen 输出「没有需要复核的内容」；route 产出 0 条",
         "op card DEEP-SUPERAGENT-20261118-DAILY-1 同卡要求协调席 route 与复核席 agree/disagree",
         "run 44249940832 verify 失败：本次推送误用旧版队列脚本，consume 跳过，BACKLOG-1 未被消费",
-        "恢复 main 基线后重发 BACKLOG-2；BACKLOG-1 作为未消费卡保留，不删除、不追改"
+        "恢复 main 基线后重发 BACKLOG-2；BACKLOG-1 作为未消费卡保留，不删除、不追改",
+        "run 44250221231 consume success；BACKLOG-2 job_terminal_observed，产出 7 条 ROUTE",
+        "route 质量不达标：B1/B3/B4/B7 四条可执行或属 GPT 的事被判 needs_owner_decision"
       ],
-      "updated_at": "2026-11-18T06:52:00.000Z",
-      "note": "第一次重发因旧脚本覆盖 main 被 CI 挡住（好处：卡没被烧掉）。已按 main 基线重建再发。"
+      "updated_at": "2026-11-18T07:02:00.000Z",
+      "note": "派是派了，也真出了 7 条 route；问题是它倾向把所有事上抛 owner，等于把分流退化成转交。"
+    },
+    {
+      "id": "DEEP-ROUTE-SCOPE",
+      "title": "Deep 是「只做归并」还是「继续定 route」",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "裁决 Deep 卡的职责范围：A 只做 task_id 级归并去重；B 继续给 route 但只允许 evidence/close 两类",
+      "evidence": [
+        "BACKLOG-2 实测：7 条 route 中 5 条 needs_owner_decision，B1 归并任务被判上抛",
+        "DAILY-1 实测：双角色卡下 route 产出 0",
+        "ops/deploy-receipts/DR-20261118-deep-card-contract-gate.json"
+      ],
+      "updated_at": "2026-11-18T07:02:00.000Z",
+      "unblock_condition": "GPT 在 A/B 中选一条，并写明 Deep 输出允许出现的 route 子集"
     }
   ]
 }
