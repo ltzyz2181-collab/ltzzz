@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.js';
-import {ORIGIN,MAX_WAIT_MS,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
+import {ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
 test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
@@ -40,10 +40,14 @@ function fakeTime(){let time=0;return {clock:()=>time,pause:async ms=>{time+=ms;
 function decision(patch={}){return {task_id:input.task_id,package_id:input.package_id,decision_id:'GPT-QUEUE-DECISION-01',execution_id:'mock-execution-original',reviewed_input_sha256:inputHash,decision:'approve_internal_draft',reason:'Reviewed public own outputs and actual evidence; this approves only an internal draft.',...patch};}
 const base=(extra={})=>({kind:'task',body:input,source_commit:SOURCE,token:TOKEN,store:latchStore(),...fakeTime(),deadline:20,...extra});
 
-test('only one new top-level card of each kind is selected; tasks precede decisions',()=>{
- const cards=selectQueueCards([{status:'A',path:'ops/deep-superagent/decisions/DECISION-001.json'},{status:'M',path:'docs/unrelated.md'},{status:'A',path:'ops/deep-superagent/tasks/TASK-001.json'}]);
- assert.deepEqual(cards.map(x=>x.kind),['task','decision']);
- assert.throws(()=>selectQueueCards([{status:'A',path:'ops/deep-superagent/tasks/TASK-001.json'},{status:'A',path:'ops/deep-superagent/tasks/TASK-002.json'}]),/maximum_one/);
+test('a bounded batch of new top-level cards is selected in one push; tasks precede decisions',()=>{
+ const cards=selectQueueCards([{status:'A',path:'ops/deep-superagent/decisions/DECISION-001.json'},{status:'M',path:'docs/unrelated.md'},{status:'A',path:'ops/deep-superagent/tasks/TASK-001.json'},{status:'A',path:'ops/deep-superagent/tasks/TASK-002.json'},{status:'A',path:'ops/deep-superagent/tasks/TASK-003.json'}]);
+ assert.deepEqual(cards.map(x=>x.kind),['task','task','task','decision']);
+ assert.equal(MAX_NEW_CARDS_PER_KIND,3);
+ assert.equal(MAX_NEW_CARDS,6);
+ assert.throws(()=>selectQueueCards([{status:'A',path:'ops/deep-superagent/tasks/TASK-001.json'},{status:'A',path:'ops/deep-superagent/tasks/TASK-002.json'},{status:'A',path:'ops/deep-superagent/tasks/TASK-003.json'},{status:'A',path:'ops/deep-superagent/tasks/TASK-004.json'}]),/maximum_new_cards_per_kind_per_push/);
+ const six=[...Array(3)].map((_,i)=>({status:'A',path:`ops/deep-superagent/tasks/TASK-00${i+1}.json`})).concat([...Array(3)].map((_,i)=>({status:'A',path:`ops/deep-superagent/decisions/DECISION-00${i+1}.json`})));
+ assert.equal(selectQueueCards(six).length,6);
  for(const change of [{status:'M',path:'ops/deep-superagent/tasks/TASK-001.json'},{status:'D',path:'ops/deep-superagent/tasks/TASK-001.json'},{status:'A',path:'ops/deep-superagent/tasks/sub/TASK-001.json'},{status:'A',path:'ops/deep-superagent/decisions/../../other.json'}])assert.throws(()=>selectQueueCards([change]));
 });
 
@@ -207,8 +211,8 @@ test('queue execution context is trusted main push only; latches use a separate 
 
 test('queue-wide timeout and maximum card count remain bounded',async()=>{
  await assert.rejects(()=>runQueue({cards:[],source_commit:SOURCE,timeoutMs:MAX_WAIT_MS+1}),/invalid_bounded/);
- await assert.rejects(()=>runQueue({cards:[{kind:'task'},{kind:'task'}],source_commit:SOURCE}),/maximum_one/);
- await assert.rejects(()=>runQueue({cards:[{kind:'task'},{kind:'decision'},{kind:'task'}],source_commit:SOURCE}),/invalid_bounded/);
+ await assert.rejects(()=>runQueue({cards:[{kind:'task',path:'ops/deep-superagent/tasks/TASK-001.json'},{kind:'task',path:'ops/deep-superagent/tasks/TASK-001.json'}],source_commit:SOURCE}),/duplicate_queue_card_path/);
+ await assert.rejects(()=>runQueue({cards:[...Array(MAX_NEW_CARDS+1)].map((_,i)=>({kind:'task',path:`ops/deep-superagent/tasks/TASK-${String(i).padStart(3,'0')}.json`})),source_commit:SOURCE}),/invalid_bounded/);
 });
 
 test('persistent GitHub CAS transport shares the execution time limit and cannot start after expiry',async()=>{

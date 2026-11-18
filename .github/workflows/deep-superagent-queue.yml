@@ -21,7 +21,8 @@ jobs:
     needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    # 2026-11-17/18 owner 放开「一次一张卡」后，一批最多 6 张卡要在同一次 run 内跑完。
+    timeout-minutes: 25
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4

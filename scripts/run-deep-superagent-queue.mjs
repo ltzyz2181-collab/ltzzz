@@ -10,6 +10,11 @@ import {WorkpoolGitHubStore} from './lib/workpool-github.mjs';
 
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
 export const MAX_WAIT_MS=480000;
+// Owner 2026-11-17/18「有限制团队自动化部署的指令全部放开」：一次 push 里的多张卡要一起消费，
+// 不再要求「一张卡一次 push」。上限仍然存在，避免一次 push 变成无界并发；append-only 与重复检测不变。
+// 两类卡（task/decision）各 3 张，runQueue 的总量上限即 6 张。
+export const MAX_NEW_CARDS_PER_KIND=3;
+export const MAX_NEW_CARDS=MAX_NEW_CARDS_PER_KIND*2;
 const REPOSITORY='ltzyz2181-collab/ltzzz';
 const SHA=/^[a-f0-9]{64}$/;
 const COMMIT=/^[a-f0-9]{40}$/;
@@ -37,7 +42,7 @@ export function selectQueueCards(changes){
   if(!match)throw Error('invalid_queue_card_path');
   if(change.status!=='A')throw Error('queue_cards_are_append_only');
   const kind=match[1]==='tasks'?'task':'decision';
-  if(++counts[kind]>1)throw Error('maximum_one_new_card_per_kind_per_push');
+  if(++counts[kind]>MAX_NEW_CARDS_PER_KIND)throw Error('maximum_new_cards_per_kind_per_push');
   selected.push({kind,path:name});
  }
  return selected.sort((a,b)=>a.kind===b.kind?a.path.localeCompare(b.path):a.kind==='task'?-1:1);
@@ -226,8 +231,8 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
 }
 
 export async function runQueue({cards,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,timeoutMs=MAX_WAIT_MS,onObservation=()=>{}}){
- if(!Array.isArray(cards)||cards.length>2||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>MAX_WAIT_MS)throw Error('invalid_bounded_queue_run');
- if(cards.some(c=>!KINDS.has(c.kind))||new Set(cards.map(c=>c.kind)).size!==cards.length)throw Error('maximum_one_new_card_per_kind_per_push');
+ if(!Array.isArray(cards)||cards.length>MAX_NEW_CARDS||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>MAX_WAIT_MS)throw Error('invalid_bounded_queue_run');
+ if(cards.some(c=>!KINDS.has(c.kind))||new Set(cards.map(c=>c.path)).size!==cards.length)throw Error('duplicate_queue_card_path');
  const deadline=clock()+timeoutMs,items=[];
  for(const card of cards){
   if(clock()>=deadline){items.push({kind:card.kind,path:card.path,status:'pending_reconcile_get_only',error:'queue_time_budget_exhausted',post_attempted:false});continue;}
