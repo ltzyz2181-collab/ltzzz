@@ -89,6 +89,7 @@ jobs:
             'a forged gate result is never accepted',
             'cannot inject a command',
             'a sensitive order never reaches the gate runner',
+            'only the five-signature wallet is routed to the owner multisig',
             'English funding, signing and production phrases are refused',
             'Chinese funding, signing and production phrases are refused',
             'evidence must live in an allowed root',
@@ -164,8 +165,11 @@ jobs:
           }
 
           const forbidden = run('run-forbidden', ['run', FORBIDDEN, ledger]);
-          if (forbidden.payload.state !== 'needs_owner_decision') {
+          if (forbidden.payload.state !== 'needs_decision') {
             throw new Error(`forbidden order was not escalated: ${JSON.stringify(forbidden.payload)}`);
+          }
+          if (forbidden.payload.escalate_to !== 'gpt_decision_seat') {
+            throw new Error(`non-five-signature wallet order was not routed to the GPT decision seat: ${JSON.stringify(forbidden.payload)}`);
           }
           if (!Array.isArray(forbidden.payload.criteria) || forbidden.payload.criteria.length !== 0) {
             throw new Error('forbidden order ran the acceptance gate');
@@ -178,16 +182,19 @@ jobs:
           if (existsSync('escaped.jsonl')) throw new Error('escaping ledger path wrote a file');
 
           const rows = readFileSync(ledger, 'utf8').trim().split('\n').map(line => JSON.parse(line));
-          if (rows.length !== 2) throw new Error(`ledger rows=${rows.length} (expected accepted + owner decision)`);
+          if (rows.length !== 2) throw new Error(`ledger rows=${rows.length} (expected accepted + decision)`);
           const [accepted, decision] = rows;
-          if (accepted.state !== 'accepted' || accepted.revision !== 'hire-phase1-v1.1') throw new Error('accepted row invalid');
+          if (accepted.state !== 'accepted' || accepted.revision !== 'hire-phase1-v1.2') throw new Error('accepted row invalid');
           if (!/^[0-9a-f]{64}$/.test(accepted.receipt_sha256)) throw new Error('accepted receipt has no sha256');
           if (!/^[0-9a-f]{64}$/.test(accepted.order_sha256)) throw new Error('accepted order has no sha256');
           if (accepted.gate.ran !== true || accepted.gate.ok !== true || accepted.gate.kind !== 'order_acceptance') {
             throw new Error('accepted row has no passing order-acceptance gate');
           }
-          if (decision.state !== 'needs_owner_decision' || decision.gate.ran !== false) {
-            throw new Error('owner-decision row ran the gate');
+          if (decision.state !== 'needs_decision' || decision.gate.ran !== false) {
+            throw new Error('decision row ran the gate');
+          }
+          if (decision.escalate_to !== 'gpt_decision_seat') {
+            throw new Error('non-five-signature wallet decision row was not routed to the GPT decision seat');
           }
           for (const row of rows) {
             if (row.amount_usd !== 0 || row.paid !== false || row.financial_execution !== false) {
@@ -205,7 +212,8 @@ jobs:
             rows: rows.length,
             accepted_order_id: accepted.order_id,
             accepted_receipt_sha256: accepted.receipt_sha256,
-            owner_decision_order_id: decision.order_id,
+            decision_order_id: decision.order_id,
+            decision_escalate_to: decision.escalate_to,
             amount_usd: 0,
             paid: false,
             financial_execution: false,

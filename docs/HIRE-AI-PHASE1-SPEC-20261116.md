@@ -18,7 +18,7 @@
 | 雇佣单规格 | `ops/hire/orders/*.json` + `validateOrder()` | 八个必填字段（含 `idempotency_key`）；未知字段直接拒；`salary` 在 Phase1 只能是 `none`；`acceptance_gate` 只能取显式允许列表中的闸 ID |
 | 验收闸 | `gateOutcome()` 按闸 ID 映射到固定脚本；闸分 `harness_self_check` 与 `order_acceptance` 两类 | 自检闸只证明 harness 行为，**不能验收订单**；订单只能走 `deliverable-audit`，按 `acceptance_criteria` 检查真实交付物内容；exit 非 0 或闸输出与 harness 重算的哈希不自洽 = `refused` |
 | 回执账 | `knowledge/results/hire/ledger-v1.jsonl`，`appendReceipt()` | 只追加 + 令牌化文件锁（安全回收、不删他人锁）；整行写完并 `fsync`，未写完回滚；每条含 `order_sha256`、`receipt_sha256`、`gate`、`paid:false`、`financial_execution:false`、`amount_usd:0`；同一幂等键/订单号不重复记账；**写入边界在 `appendReceipt()` 内部执行**（`resolveLedgerPath()`），模块直接调用与 CLI 一样只能落在 `knowledge/results/hire/`，绝对路径、`..`、反斜杠、非规范路径和符号链接一律拒绝 |
-| 拒绝权 | `classifyIntent()` + `assertAppendOnly()` | 命中资金/签名/钱包/Safe/放款/凭据/生产写，直接落 `needs_owner_decision`，**不跑闸、不执行**；`accepted` 是终态 |
+| 拒绝权 | `classifyIntent()` + `assertAppendOnly()` | 命中资金/退款/签名/钱包/Safe/放款/凭据/生产写，直接落 `needs_decision` 并写明 `escalate_to`，**不跑闸、不执行**；只有五签钱包（`five_signature`）升级到 `owner_multisig`，其余升级到 `gpt_decision_seat`；`accepted` 是终态 |
 
 ## 三、为什么闸要这么严
 
@@ -46,8 +46,18 @@ v1 的验收闸只检查源码里存在三个字符串，无法证明交付物�
 3. **检查真实交付物**。`deliverable-audit` 重新读取每个交付物字节、重算 SHA-256 后逐条判定；空交付物、仅空白、占位符（TODO/TBD/占位/待补充）一律不通过。闸输出必须带 `order_sha256`、逐条判据结果与证据哈希，harness 用自己的哈希再核一遍，**模型无法只靠自述通过**。
 4. **锁回收无竞争窗口**。锁文件带随机 owner token；回收前用同一 fd 读取 dev/inode/token，再用旁路 reclaim 锁串行化，**持锁后重新比对身份**，身份变了立即放弃，绝不按旧观察删除新锁；释放只删 token 属于自己的锁。
 5. **账本整行写入**。`writeSync` 循环直到写满并核对字节数；`fsync` 失败向上抛；任何失败都用 `ftruncate` 回滚到写入前长度，不留半行 JSONL。
-6. **中英文资金/生产操作拒绝**。`FORBIDDEN_INTENT_RULES` 增加短语规则与动词-宾语组合，覆盖 `transfer money`、`withdraw funds`、`send payment`、`sign transaction`、`deploy to production`、`modify production configuration` 及中文对应表达；命中即 `needs_owner_decision`，闸不执行。
+6. **中英文资金/生产操作拒绝**。`FORBIDDEN_INTENT_RULES` 增加短语规则与动词-宾语组合，覆盖 `transfer money`、`withdraw funds`、`send payment`、`sign transaction`、`deploy to production`、`modify production configuration` 及中文对应表达；命中即升级裁决，闸不执行（当时状态名为 `needs_owner_decision`，路由见 3.3）。
 7. **ledgerPath 边界**。CLI 只接受 `knowledge/results/hire/<name>.jsonl`；拒绝绝对路径、`..`、反斜杠、非规范化路径、符号链接与目录替换，并核对真实路径仍在允许目录内。
+
+### 3.3 v1.2 升级路由修正（2026-11-17，中转 GPT 有界裁决决定）
+
+旧实现把所有被禁意图一律写成 `needs_owner_decision`，等于让 Owner 逐项审批资金事项，与 2026-11-17 决定不符。v1.2 改为：
+
+1. **新状态名**：被禁意图写 `needs_decision`，并带 `escalate_to`。
+2. **路由判据**：只有命中 `five_signature`（五签/五人签名/5 of 5/five-signature）时 `escalate_to=owner_multisig`；资金、退款、普通钱包/Safe、签名、凭据、生产写等一律 `escalate_to=gpt_decision_seat`。与 `workers/deep-superagent/adjudicator.mjs` 的 `escalationTargetFor()` 使用同一判据。
+3. **目标绑定**：`escalate_to` 由命中族推导，调用方不能指定；`buildReceipt()` 与 `verifyReceipt()` 都重算，伪造或省略都报 `invalid_escalate_to`，且该字段计入 `receipt_sha256`。
+4. **历史只读兼容**：已落账的 `needs_owner_decision` 回执按原字节可读、可校验，但 `buildReceipt()` 不再写该状态；不回写、不批量改历史账本。
+5. **风险表达**：`needs_decision` 只表示「已升级、未执行」，不得被写成已合并、已部署或已验收；`escalate_to` 不是审批结果，只是路由。
 
 ## 四、命令
 
@@ -67,6 +77,7 @@ node scripts/hire-phase1.mjs run ops/hire/orders/<order>.json knowledge/results/
 - v1.1（GPT 总控 `NEEDS_REVISION` 后返工）：`node --test scripts/tests/hire-phase1.test.mjs` → 41 通过 / 0 失败 / 0 跳过。新增订单验收闸 `deliverable-audit`，`phase1-smoke` 降级为纯自检、不可接受任何订单。
 - v1.1 反例实测：空交付物、纯空白、含 `TODO` 的未完成稿、内容不匹配的错交付物均被拒；伪造闸结果（错 `order_sha256`、少一条 criteria、`paid=true`、证据哈希变化）一律 `gate_output_invalid`；6 个进程并发各落 1 行、5 个进程同单只落 1 行；部分写入与 `fsync` 失败均回滚到写入前长度；回收竞争下不删除已被替换的锁；账本路径逃逸、符号链接、目录替换全部拒绝。
 - 专用 CI `.github/workflows/hire-phase1.yml` 实际执行上述测试文件，并在 TAP 层断言 `fail=0`、`skipped=0`、`pass≥40` 且 23 个强制用例名仍存在（删测试即红），随后跑 CLI 端到端（selfcheck、validate、accepted 两次幂等、禁资金单升级、账本路径逃逸拒绝），逐行校验 `amount_usd=0 / paid=false / financial_execution=false`，并上传 TAP、E2E 摘要和账本作为证据。
+- v1.2 路由修正（2026-11-18）：`node --test scripts/tests/hire-phase1.test.mjs` → 51 通过 / 0 失败 / 0 跳过。五签样例 `escalate_to=owner_multisig`，资金/普通钱包/Safe/生产写 `escalate_to=gpt_decision_seat`；伪造或省略 `escalate_to` 报 `invalid_escalate_to`；v1.1 的 `needs_owner_decision` 历史回执仍可按原字节校验，但新回执不再写该状态。
 
 ## 六、席位方案的来源
 

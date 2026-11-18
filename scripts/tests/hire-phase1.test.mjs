@@ -28,6 +28,7 @@ import {
   buildReceipt,
   canonicalJson,
   classifyIntent,
+  escalationTargetFor,
   gateOutcome,
   hashObject,
   normalizeOrder,
@@ -317,7 +318,8 @@ test('a sensitive order never reaches the gate runner', () => {
   let calls = 0;
   const runner = () => { calls += 1; return {}; };
   const outcome = gateOutcome(baseOrder({objective: 'transfer money to the ops wallet'}), {runner});
-  assert.equal(outcome.state, 'needs_owner_decision');
+  assert.equal(outcome.state, 'needs_decision');
+  assert.equal(outcome.escalate_to, 'gpt_decision_seat');
   assert.equal(outcome.gate.ran, false);
   assert.equal(calls, 0);
 });
@@ -376,15 +378,81 @@ test('harmless objectives are not refused, so the refusal is not a blunt keyword
   }
 });
 
-test('a refused English order becomes needs_owner_decision with no gate execution', () => {
+test('only the five-signature wallet is routed to the owner multisig', () => {
+  // 2026-11-17 决定：资金/退款/签名/普通钱包等交 GPT 总控席，只有五签钱包留 Owner/多签。
+  for (const text of [
+    'five signature approval for the wallet',
+    'require 5 of 5 signatures before the transfer',
+    'five_signature release',
+    '五签钱包转出资金',
+    '五人签名后执行',
+  ]) {
+    const intents = classifyIntent(text);
+    assert.ok(intents.includes('five_signature'), `five-signature intent not detected: ${text} -> ${intents}`);
+    assert.equal(escalationTargetFor(intents), 'owner_multisig', text);
+  }
+  for (const text of ['transfer money to the ops wallet', 'sign transaction', 'refund the customer', 'deploy to production']) {
+    assert.equal(escalationTargetFor(classifyIntent(text)), 'gpt_decision_seat', text);
+  }
+});
+
+test('a five-signature order is escalated to the owner multisig and the receipt binds escalate_to', () => {
   const ledger = tempLedger();
-  const order = baseOrder({objective: 'deploy to production and update the production configuration'});
+  const order = baseOrder({objective: 'execute the five-signature wallet transfer'});
   const outcome = gateOutcome(order);
-  assert.equal(outcome.state, 'needs_owner_decision');
+  assert.equal(outcome.state, 'needs_decision');
+  assert.equal(outcome.escalate_to, 'owner_multisig');
   const receipt = buildReceipt(order, outcome, {at: FIXED_AT});
   appendReceipt(ledger, receipt);
   const [row] = readLedger(ledger);
-  assert.equal(row.state, 'needs_owner_decision');
+  assert.equal(row.escalate_to, 'owner_multisig');
+  assert.equal(row.gate.ran, false);
+});
+
+test('a receipt cannot relabel or omit its escalation target', () => {
+  const order = baseOrder({objective: 'transfer money to the ops wallet'});
+  const receipt = buildReceipt(order, gateOutcome(order), {at: FIXED_AT});
+  assert.equal(receipt.escalate_to, 'gpt_decision_seat');
+
+  const forged = {...receipt, escalate_to: 'owner_multisig'};
+  delete forged.receipt_sha256;
+  forged.receipt_sha256 = hashObject(forged);
+  assert.throws(() => verifyReceipt(forged), /invalid_escalate_to/);
+
+  const omitted = {...receipt};
+  delete omitted.escalate_to;
+  delete omitted.receipt_sha256;
+  omitted.receipt_sha256 = hashObject(omitted);
+  assert.throws(() => verifyReceipt(omitted), /invalid_escalate_to/);
+});
+
+test('historical needs_owner_decision receipts stay readable but are never written again', () => {
+  const order = baseOrder({objective: 'transfer money to the ops wallet'});
+  const current = buildReceipt(order, gateOutcome(order), {at: FIXED_AT});
+
+  const legacy = {...current, revision: 'hire-phase1-v1.1', state: 'needs_owner_decision'};
+  delete legacy.escalate_to;
+  delete legacy.receipt_sha256;
+  legacy.receipt_sha256 = hashObject(legacy);
+  assert.equal(verifyReceipt(legacy), true);
+
+  assert.throws(
+    () => buildReceipt(order, {state: 'needs_owner_decision', reason: current.reason, gate: current.gate}, {at: FIXED_AT}),
+    /invalid_receipt_state/,
+  );
+});
+
+test('a refused English order becomes needs_decision with no gate execution', () => {
+  const ledger = tempLedger();
+  const order = baseOrder({objective: 'deploy to production and update the production configuration'});
+  const outcome = gateOutcome(order);
+  assert.equal(outcome.state, 'needs_decision');
+  assert.equal(outcome.escalate_to, 'gpt_decision_seat');
+  const receipt = buildReceipt(order, outcome, {at: FIXED_AT});
+  appendReceipt(ledger, receipt);
+  const [row] = readLedger(ledger);
+  assert.equal(row.state, 'needs_decision');
+  assert.equal(row.escalate_to, 'gpt_decision_seat');
   assert.equal(row.gate.ran, false);
   assert.deepEqual(row.gate.criteria, []);
 });
@@ -838,12 +906,13 @@ test('the accepted sample order validates and the forbidden sample order is refu
 
   const forbiddenOrder = JSON.parse(readFileSync(join(REPO_ROOT, SAMPLE_FORBIDDEN), 'utf8'));
   const outcome = gateOutcome(forbiddenOrder);
-  assert.equal(outcome.state, 'needs_owner_decision');
+  assert.equal(outcome.state, 'needs_decision');
+  assert.equal(outcome.escalate_to, 'gpt_decision_seat');
   assert.equal(outcome.gate.ran, false);
 });
 
 test('canonical JSON is stable and the revision is declared', () => {
   assert.equal(canonicalJson({b: 1, a: [2, {d: 3, c: 4}]}), canonicalJson({a: [2, {c: 4, d: 3}], b: 1}));
-  assert.equal(PHASE1_REVISION, 'hire-phase1-v1.1');
+  assert.equal(PHASE1_REVISION, 'hire-phase1-v1.2');
   assert.equal(lstatSync(join(REPO_ROOT, 'scripts', 'hire', 'gates', 'deliverable-audit.mjs')).isFile(), true);
 });

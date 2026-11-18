@@ -36,7 +36,8 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
 export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const PHASE1_REVISION = 'hire-phase1-v1.1';
+export const PHASE1_REVISION = 'hire-phase1-v1.2';
+const SUPPORTED_RECEIPT_REVISIONS = new Set([PHASE1_REVISION, 'hire-phase1-v1.1']);
 // v0 wrote `ledger.jsonl` with a different schema (no idempotency key / evidence
 // metadata), so it stays frozen as historical evidence. v1 writes here.
 export const DEFAULT_LEDGER_PATH = 'knowledge/results/hire/ledger-v1.jsonl';
@@ -139,7 +140,9 @@ export const FORBIDDEN_INTENT_RULES = Object.freeze([
   {id: 'payment_processor', re: /\b(?:paypal|pay[\s_-]?pal|venmo|alipay|ali[\s_-]?pay|wxpay|wechat[\s_-]?pay)\b/},
   // --- English single tokens that are unambiguous on their own ---
   {id: 'funding', re: /\bfunding\b/},
+  {id: 'refund', re: /\brefund(?:s|ed|ing)?\b|\bchargebacks?\b/},
   {id: 'wallet', re: /\bwallets?\b/},
+  {id: 'five_signature', re: /\bfive[\s_-]?signature\b|\b5\s*(?:of|\/)\s*5\b/},
   {id: 'safe_wallet', re: /\bsafe[\s_-]?(?:wallet|multisig|module|transaction)\b/},
   {id: 'loan', re: /\b(?:loan|loans|lending|borrow|borrowing)\b/},
   {id: 'credential', re: /\bcredentials?\b/},
@@ -147,6 +150,7 @@ export const FORBIDDEN_INTENT_RULES = Object.freeze([
   //     cannot slip through a per-character split. ---
   {id: 'zh_transfer', compact: true, re: /(转账|转出|转钱|汇款|打款|打钱|付款|付钱|支付|出钱|给钱|代付|扣款|划款|划拨|出金|入金|提现|放款|收款|退款|返款|结汇|清算|结算)/},
   {id: 'zh_wallet', compact: true, re: /(钱包|私钥|助记词|密钥|凭据|口令|签名|签署|授权签名)/},
+  {id: 'five_signature', compact: true, re: /(五签|五人签名|5分之5)/},
   {id: 'zh_funds', compact: true, re: /(资金|余额|保证金|铸币|增发|销毁代币)/},
   {id: 'zh_prod', compact: true, re: /(生产部署|部署到生产|生产环境|生产配置|线上配置|修改生产|发布到生产|合约部署)/},
 ]);
@@ -156,7 +160,34 @@ export const FORBIDDEN_INTENT = Object.freeze([
   ...new Set(FORBIDDEN_INTENT_RULES.flatMap(rule => [rule.id])),
 ]);
 
-export const RECEIPT_STATES = new Set(['accepted', 'refused', 'needs_owner_decision']);
+export const ESCALATION_TARGETS = Object.freeze({
+  GPT: 'gpt_decision_seat',
+  OWNER_MULTISIG: 'owner_multisig',
+});
+
+// 只有五签钱包归 Owner/多签；其余被禁意图（资金、退款、普通钱包/Safe、
+// 签名、凭据、生产写等）进 GPT 决策席，不再转 Owner 逐项审批。
+// 与 workers/deep-superagent/adjudicator.mjs 的 escalationTargetFor 保持同一判据。
+const OWNER_MULTISIG_INTENTS = new Set(['five_signature']);
+
+export function escalationTargetFor(forbiddenIds = []) {
+  return forbiddenIds.some(id => OWNER_MULTISIG_INTENTS.has(id))
+    ? ESCALATION_TARGETS.OWNER_MULTISIG
+    : ESCALATION_TARGETS.GPT;
+}
+
+export const RECEIPT_STATES = new Set(['accepted', 'refused', 'needs_decision']);
+// 历史回执保留原值，只用于读取校验，不再由本版本写入。
+export const LEGACY_RECEIPT_STATES = new Set(['needs_owner_decision']);
+export const DECISION_STATES = new Set([...RECEIPT_STATES, ...LEGACY_RECEIPT_STATES]);
+const DECISION_WAITING_STATES = new Set(['needs_decision', ...LEGACY_RECEIPT_STATES]);
+
+// 升级目标必须由命中族推导，调用方不能自行指定；写回执与读回执用同一判据。
+function assertEscalationTarget(value, forbiddenIds) {
+  const expected = escalationTargetFor(forbiddenIds);
+  if (value !== expected) fail('invalid_escalate_to', `${value ?? 'null'}!=${expected}`);
+  return value;
+}
 
 // Evidence may only come from these repository roots. Paths are repo-relative
 // POSIX paths; absolute paths, traversal and symlinks are rejected.
@@ -609,8 +640,9 @@ export function gateOutcome(order, {runner = defaultRunner} = {}) {
   const gateId = order?.acceptance_gate ?? null;
   if (forbidden.length) {
     return {
-      state: 'needs_owner_decision',
+      state: 'needs_decision',
       reason: `forbidden_intent:${forbidden.join(',')}`,
+      escalate_to: escalationTargetFor(forbidden),
       gate: {id: gateId, kind: null, ran: false, ok: false, reason: 'forbidden_intent'},
     };
   }
@@ -696,7 +728,7 @@ function normalizeGateBlock(gate, order, state) {
       }
     }
   }
-  if (state === 'needs_owner_decision' && block.ran) fail('owner_decision_with_gate_run');
+  if (DECISION_WAITING_STATES.has(state) && block.ran) fail('decision_with_gate_run');
   return block;
 }
 
@@ -708,12 +740,15 @@ export function buildReceipt(order, outcome, {at = new Date().toISOString(), roo
   const normalized = normalizeOrder(order);
   const gateBlock = normalizeGateBlock(outcome.gate, normalized, outcome.state);
   const forbidden = classifyIntent([normalized.objective, normalized.role, normalized.acceptance_gate].join(' '));
-  if (forbidden.length && outcome.state !== 'needs_owner_decision') {
-    fail('forbidden_intent_requires_owner_decision', forbidden.join(','));
+  if (forbidden.length && outcome.state !== 'needs_decision') {
+    fail('forbidden_intent_requires_decision', forbidden.join(','));
   }
-  if (!forbidden.length && outcome.state === 'needs_owner_decision') {
-    fail('owner_decision_without_forbidden_intent');
+  if (!forbidden.length && outcome.state === 'needs_decision') {
+    fail('decision_without_forbidden_intent');
   }
+  const escalateTo = outcome.state === 'needs_decision'
+    ? assertEscalationTarget(outcome.escalate_to, forbidden)
+    : null;
   const evidence = validateEvidence(normalized, {root});
   if (!evidence.ok) fail('invalid_evidence', evidence.problems.join(','));
 
@@ -724,6 +759,7 @@ export function buildReceipt(order, outcome, {at = new Date().toISOString(), roo
     seat: normalized.seat,
     state: outcome.state,
     reason: outcome.reason,
+    escalate_to: escalateTo,
     acceptance_gate: normalized.acceptance_gate,
     gate: gateBlock,
     evidence_paths: normalized.evidence_paths,
@@ -783,14 +819,16 @@ function verifyGateBlock(gate, receipt) {
       }
     }
   }
-  if (receipt.state === 'needs_owner_decision' && gate.ran === true) fail('owner_decision_with_gate_run');
+  if (DECISION_WAITING_STATES.has(receipt.state) && gate.ran === true) fail('decision_with_gate_run');
   if (receipt.state === 'refused' && gate.ran === true && gate.ok === true) fail('refused_with_gate_pass');
 }
 
 export function verifyReceipt(receipt) {
   if (!isPlainObject(receipt)) fail('receipt_not_an_object');
-  if (receipt.revision !== PHASE1_REVISION) fail('unsupported_revision', String(receipt.revision));
-  if (!RECEIPT_STATES.has(receipt.state)) fail('invalid_receipt_state');
+  // v1.1 回执保留可读：历史账本不因升级路由而被判无效。
+  if (!SUPPORTED_RECEIPT_REVISIONS.has(receipt.revision)) fail('unsupported_revision', String(receipt.revision));
+  // 历史 needs_owner_decision 回执保持原样可读；新写入只允许 RECEIPT_STATES。
+  if (!DECISION_STATES.has(receipt.state)) fail('invalid_receipt_state');
   if (receipt.paid !== false || receipt.financial_execution !== false) fail('phase1_must_not_pay');
   if (receipt.amount_usd !== 0) fail('phase1_must_not_spend');
   if (typeof receipt.reason !== 'string' || !receipt.reason) fail('invalid_receipt_reason');
@@ -827,12 +865,14 @@ export function verifyReceipt(receipt) {
   verifyGateBlock(receipt.gate, receipt);
 
   const forbidden = classifyIntent([receipt.order.objective, receipt.order.role, receipt.order.acceptance_gate].join(' '));
-  if (forbidden.length && receipt.state !== 'needs_owner_decision') {
-    fail('forbidden_intent_requires_owner_decision', forbidden.join(','));
+  if (forbidden.length && !DECISION_WAITING_STATES.has(receipt.state)) {
+    fail('forbidden_intent_requires_decision', forbidden.join(','));
   }
-  if (!forbidden.length && receipt.state === 'needs_owner_decision') {
-    fail('owner_decision_without_forbidden_intent');
+  if (!forbidden.length && DECISION_WAITING_STATES.has(receipt.state)) {
+    fail('decision_without_forbidden_intent');
   }
+  // 只对当前格式的 needs_decision 校验升级目标；历史回执按当时的规则留存。
+  if (receipt.state === 'needs_decision') assertEscalationTarget(receipt.escalate_to, forbidden);
 
   const body = {...receipt};
   delete body.receipt_sha256;
@@ -852,7 +892,8 @@ export function assertAppendOnly(previous, next) {
   if (sameKey) {
     verifyReceipt(sameKey);
     if (sameKey.order_sha256 !== next.order_sha256) fail('idempotency_key_conflict');
-    if (sameKey.state === next.state && sameKey.reason === next.reason) {
+    const sameEscalation = (sameKey.escalate_to ?? null) === (next.escalate_to ?? null);
+    if (sameKey.state === next.state && sameKey.reason === next.reason && sameEscalation) {
       return {duplicate: true, existing: sameKey};
     }
     if (sameKey.state === 'accepted') fail('accepted_order_is_terminal');
@@ -1339,6 +1380,7 @@ export function main(argv) {
       ok: true,
       state: receipt.state,
       reason: receipt.reason,
+      escalate_to: receipt.escalate_to,
       gate: receipt.gate.id,
       criteria: receipt.gate.criteria.map(item => item.id),
       ledger: target,
