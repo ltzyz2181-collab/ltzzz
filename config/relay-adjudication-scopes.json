@@ -1,0 +1,105 @@
+{
+  "schema": "ltzzz.relay-adjudication-scopes.v1",
+  "revision": "relay-adjudication-scopes-v1",
+  "note": "中转裁决只能在下列具名范围内成立。每一条 permitted_actions 都必须命中本范围的 allowed_action_patterns，且不得命中任何禁区；范围外一律 needs_decision。范围本身来自已存在的 owner 授权文件，不因本文件新增任何权限。",
+  "authority_sources": [
+    "docs/OWNER-AUTHORITY-CURRENT.md",
+    "config/owner-authority-20261105.json",
+    "config/deploy-automation-authority-20261117.json"
+  ],
+  "funds_family_short_circuited": true,
+  "scopes": [
+    {
+      "scope_ref": "SCOPE-INTERNAL-DOCS-20261117",
+      "description": "修订 docs/ 下的口径、状态与回执说明；不写代码、不部署、不触资金。",
+      "authority_source": "docs/OWNER-AUTHORITY-CURRENT.md",
+      "expires_at": null,
+      "allowed_action_patterns": [
+        "docs?/",
+        "文档",
+        "口径",
+        "说明",
+        "注释",
+        "markdown",
+        "\\.md\\b",
+        "\\bREADME\\b",
+        "回执",
+        "状态确认",
+        "RELAY-SEAT-CURRENT"
+      ],
+      "forbidden_action_patterns": []
+    },
+    {
+      "scope_ref": "SCOPE-INTERNAL-TESTS-20261117",
+      "description": "只读验证、回归测试与证据复算；不修改生产状态。",
+      "authority_source": "docs/OWNER-AUTHORITY-CURRENT.md",
+      "expires_at": null,
+      "allowed_action_patterns": [
+        "测试",
+        "\\btests?\\b",
+        "回归",
+        "\\bregression\\b",
+        "验证",
+        "\\bverification\\b",
+        "断言",
+        "\\bassert(?:ion|ions)?\\b",
+        "\\bfixtures?\\b",
+        "只读",
+        "read-only",
+        "复算",
+        "证据",
+        "\\bevidence\\b",
+        "\\bsha256\\b"
+      ],
+      "forbidden_action_patterns": []
+    },
+    {
+      "scope_ref": "SCOPE-INTERNAL-QUEUE-20261117",
+      "description": "内部 Deep 队列卡片、分流回执与状态记录；不对外投稿、不接单收款。",
+      "authority_source": "docs/OWNER-AUTHORITY-CURRENT.md",
+      "expires_at": null,
+      "allowed_action_patterns": [
+        "队列",
+        "\\bqueue\\b",
+        "卡片",
+        "\\bcards?\\b",
+        "分流",
+        "\\bdispatch\\b",
+        "回执",
+        "\\breceipts?\\b",
+        "ops/deep-superagent",
+        "knowledge/results",
+        "状态",
+        "\\bstatus\\b",
+        "工作流",
+        "\\bworkflows?\\b"
+      ],
+      "forbidden_action_patterns": []
+    },
+    {
+      "scope_ref": "SCOPE-INTERNAL-CODE-NONFUNDS-20261117",
+      "description": "内部仓库常规代码、测试与配置改动；资金/签名/钱包/生产发布等禁区在裁决层先短路。",
+      "authority_source": "config/deploy-automation-authority-20261117.json",
+      "expires_at": null,
+      "allowed_action_patterns": [
+        "代码",
+        "\\bcode\\b",
+        "脚本",
+        "\\bscripts?\\b",
+        "修复",
+        "\\bfix(?:es|ed|ing)?\\b",
+        "重构",
+        "\\brefactor(?:ing)?\\b",
+        "测试",
+        "\\btests?\\b",
+        "文档",
+        "docs?/",
+        "配置",
+        "\\bconfig(?:uration)?\\b",
+        "回执",
+        "\\breceipts?\\b"
+      ],
+      "forbidden_action_patterns": []
+    }
+  ]
+}

@@ -377,7 +377,39 @@ async function callModel(policy) {
   process.exitCode = ok ? 0 : 3;
 }
 
-function setBalance(policy) {
+// The runtime budget gate lives in the proxy Durable Object. A local ledger
+// confirmation that never reaches it would leave the authoritative gate on a
+// stale, possibly higher baseline, so record the sync outcome next to the local
+// result and fail the command when the proxy is configured but unreachable.
+async function syncProxyBalance(policy, { balanceUsd, actor, basis }) {
+  const boundary = policy.access_boundary || {};
+  const proxyUrl = process.env[boundary.proxy_env || 'LTZZZ_RELAY_PROXY_URL'] || boundary.proxy_url || null;
+  if (!proxyUrl) return { ok: null, reason: 'proxy_not_configured' };
+  const tokenEnv = boundary.proxy_token_env || 'LTZZZ_RELAY_PROXY_TOKEN';
+  const token = process.env[tokenEnv] || '';
+  if (!token) return { ok: false, error: 'proxy_token_missing' };
+  const endpoint = String(proxyUrl).replace(/\/$/, '').replace(/\/chat\/completions$/, '') + '/budget/confirm';
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-ltzzz-seat-token': token },
+      body: JSON.stringify({ balance_usd: balanceUsd, confirmed_by: actor, basis, at: new Date().toISOString() }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await response.json().catch(() => null);
+    return {
+      ok: response.ok && data?.ok === true,
+      status: response.status,
+      snapshot: data?.snapshot ?? null,
+      error: data?.error ?? null,
+      endpoint,
+    };
+  } catch (error) {
+    return { ok: false, endpoint, error: String(error?.message || error).slice(0, 160) };
+  }
+}
+
+async function setBalance(policy) {
   const value = Number(flag('balance', 'NaN'));
   const actor = flag('confirmed-by', null);
   const basis = flag('basis', null);
@@ -391,6 +423,8 @@ function setBalance(policy) {
     basis: String(basis),
     note: note && note !== true ? String(note) : null,
   });
+  const proxy = await syncProxyBalance(policy, { balanceUsd: result.balance_usd, actor: String(actor), basis: String(basis) });
+  if (proxy.ok === false) process.exitCode = 3;
   if (result.balance_usd < policy.balance_guard.floor_usd) {
     const state = closeRelaySeat(root, policy, {
       balanceUsd: result.balance_usd,
@@ -398,7 +432,7 @@ function setBalance(policy) {
       detail: 'confirmed balance is under the owner floor',
       actor: String(actor),
     });
-    print({ ok: true, balance_usd: result.balance_usd, seat_state: state.status, ledger: policy.balance_guard.ledger_path, state_file: policy.balance_guard.state_path });
+    print({ ok: true, balance_usd: result.balance_usd, seat_state: state.status, ledger: policy.balance_guard.ledger_path, state_file: policy.balance_guard.state_path, proxy_budget_sync: proxy });
     return;
   }
   const state = openRelaySeat(root, policy, {
@@ -406,7 +440,7 @@ function setBalance(policy) {
     actor: String(actor),
     basis: String(basis),
   });
-  print({ ok: true, balance_usd: result.balance_usd, seat_state: state.status, ledger: policy.balance_guard.ledger_path, state_file: policy.balance_guard.state_path });
+  print({ ok: true, balance_usd: result.balance_usd, seat_state: state.status, ledger: policy.balance_guard.ledger_path, state_file: policy.balance_guard.state_path, proxy_budget_sync: proxy });
 }
 
 function showState(policy) {

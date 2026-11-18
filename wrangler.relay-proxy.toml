@@ -3,5 +3,26 @@ main = "workers/relay-proxy/worker.mjs"
 compatibility_date = "2026-09-17"
 workers_dev = true
 
+# Runtime budget gate shared by every transport (CLI seat and Deep Worker).
+# The Durable Object is the authoritative ledger for the per-call, daily,
+# project and balance-floor caps in config/relay-seat-policy.json.
+[durable_objects]
+bindings = [
+  { name = "BUDGET", class_name = "RelayBudget" },
+]
+
+[[migrations]]
+tag = "relay-budget-v1"
+new_sqlite_classes = ["RelayBudget"]
+
 [vars]
 STATION_BASE = "https://api.apisrouter.com/v1"
+# Seed = the 2026-11-11 owner console baseline 13.00 USD minus the 0.183113 USD
+# recorded in knowledge/results/relay-seat/balance-ledger.json, minus a
+# conservative 0.05 USD for the 2026-11-12 call whose cost the station did not
+# report and 0.0298 USD for the unrecorded connection-level uncertainty.
+# A console-confirmed balance replaces this through POST /v1/budget/confirm.
+RELAY_CONFIRMED_BALANCE_USD = "12.737087"
+RELAY_BALANCE_CONFIRMED_AT = "2026-11-18T02:36:40.932Z"
+RELAY_BALANCE_CONFIRMED_BY = "derived_console_baseline_minus_recorded_cost"
+RELAY_BALANCE_SOURCE = "knowledge/results/relay-seat/balance-ledger.json baseline 13.00 minus 0.183113 recorded, 0.05 unknown-cost call reserve, 0.0298 unrecorded uncertainty"
