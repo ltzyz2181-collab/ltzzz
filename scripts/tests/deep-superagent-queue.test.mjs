@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.js';
-import {ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
+import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
 test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
@@ -232,4 +232,22 @@ test('push queue remains append-only while daily scheduler is separate and bound
  assert.match(daily,/schedule:[\s\S]*cron: '30 0 \* \* \*'/);
  assert.match(daily,/node scripts\/run-deep-superagent-daily\.mjs/);
  assert.doesNotMatch(daily,/DEEPSEEK_API_KEY|DOUBAO_API_KEY|MOONSHOT_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY/);
+});
+
+test('a card carrying coordinator routes and a reviewer contract is rejected before any POST', () => {
+  const prompt = [
+    'GROUP B:',
+    '- B1 backlog',
+    '协调席输出：每项一行 <ref> | <route> | <理由一句>',
+    '复核席输出：逐条写 agree/disagree',
+  ].join('\n');
+  assert.throws(() => assertCardContract({prompt}), /card_contract_split_required:coordinator_reviewer/);
+});
+
+test('a single-role route card passes the contract gate', () => {
+  const prompt = [
+    'WORKER COVERAGE: exactly qianwen',
+    '协调席输出：每项一行 <ref> | <route> | <理由一句>',
+  ].join('\n');
+  assert.doesNotThrow(() => assertCardContract({prompt}));
 });

@@ -11,6 +11,11 @@ import {analyzeCardPrompt} from './check-card-contract.mjs';
 
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
 export const MAX_WAIT_MS=480000;
+// Owner 2026-11-17/18「有限制团队自动化部署的指令全部放开」：一次 push 里的多张卡要一起消费，
+// 不再要求「一张卡一次 push」。上限仍然存在，避免一次 push 变成无界并发；append-only 与重复检测不变。
+// 两类卡（task/decision）各 3 张，runQueue 的总量上限即 6 张。
+export const MAX_NEW_CARDS_PER_KIND=3;
+export const MAX_NEW_CARDS=MAX_NEW_CARDS_PER_KIND*2;
 const REPOSITORY='ltzyz2181-collab/ltzzz';
 const SHA=/^[a-f0-9]{64}$/;
 const COMMIT=/^[a-f0-9]{40}$/;
@@ -38,10 +43,18 @@ export function selectQueueCards(changes){
   if(!match)throw Error('invalid_queue_card_path');
   if(change.status!=='A')throw Error('queue_cards_are_append_only');
   const kind=match[1]==='tasks'?'task':'decision';
-  if(++counts[kind]>1)throw Error('maximum_one_new_card_per_kind_per_push');
+  if(++counts[kind]>MAX_NEW_CARDS_PER_KIND)throw Error('maximum_new_cards_per_kind_per_push');
   selected.push({kind,path:name});
  }
  return selected.sort((a,b)=>a.kind===b.kind?a.path.localeCompare(b.path):a.kind==='task'?-1:1);
+}
+
+// 2026-11-18: a card may not ask one seat for coordinator routes and another
+// for agree/disagree review. Measured: coordinator seat returned 504, reviewer
+// had nothing to review, job ended blocked with zero routes. Reject before POST.
+export function assertCardContract(body){
+ const contract=analyzeCardPrompt(body?.prompt);
+ if(contract.mixed)throw Error('card_contract_split_required:'+contract.reasons.join('_'));
 }
 
 export function normalizeDecision(body){
@@ -96,12 +109,14 @@ export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
 // A public-own-input queue receipt includes actual outputs for the GPT decision
 // seat to inspect with GitHub tools. It excludes auth headers and unknown fields.
 export function publicJob(job){
- const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error']);
+ const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error','plan_source','plan_issues']);
+ result.unjudged=(job.unjudged||[]).map(v=>pick(v,['seat','error']));
+ if(job.coordinator_parse)result.coordinator_parse=pick(job.coordinator_parse,['error','raw_preview','tokens_used','request_id']);
  result.receipts=(job.receipts||[]).map(r=>pick(r,['stage','seat','actual_provider','actual_model','task_id','execution_id','source_commit','started_at','completed_at','status','generation_verified','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','truncated','output_present','tokens_used','reasoning_tokens','completion_tokens','upstream_http','output_sha256','error','accepted','paid','tx_hash']));
  for(let i=0;i<result.receipts.length;i++){const options=job.receipts[i].request_options;if(options)result.receipts[i].request_options={max_tokens:Number.isSafeInteger(options.max_tokens)&&options.max_tokens>0?options.max_tokens:null,thinking_type:['enabled','disabled'].includes(options.thinking_type)?options.thinking_type:null,source:'executor_request_not_provider_attestation'};}
  result.outputs=(job.outputs||[]).map(o=>pick(o,['seat','actual_provider','task','text','sha256','request_id']));
  if(job.plan)result.plan={...pick(job.plan,['summary','needs_gpt_decision','reason']),tasks:(job.plan.tasks||[]).map(t=>pick(t,['seat','task']))};
- if(job.review)result.review={...pick(job.review,['approved','summary','needs_gpt_decision','reason','actual_provider','actual_model','output_sha256','independent_of_worker_providers']),reviewed:(job.review.reviewed||[]).map(v=>pick(v,['seat','sha256']))};
+ if(job.review)result.review={...pick(job.review,['approved','summary','needs_gpt_decision','reason','actual_provider','actual_model','output_sha256','independent_of_worker_providers','status','error']),reviewed:(job.review.reviewed||[]).map(v=>pick(v,['seat','sha256']))};
  if(job.content_gate){
   const gate=value=>({...pick(value,['phase','at','revision','source_commit','passed']),findings:(value.findings||[]).map(v=>pick(v,['code','field','line','seat','output_sha256']))});
   result.content_gate={...gate(job.content_gate),checks:(job.content_gate.checks||[]).map(gate)};
@@ -225,8 +240,8 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
 }
 
 export async function runQueue({cards,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,timeoutMs=MAX_WAIT_MS,onObservation=()=>{}}){
- if(!Array.isArray(cards)||cards.length>2||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>MAX_WAIT_MS)throw Error('invalid_bounded_queue_run');
- if(cards.some(c=>!KINDS.has(c.kind))||new Set(cards.map(c=>c.kind)).size!==cards.length)throw Error('maximum_one_new_card_per_kind_per_push');
+ if(!Array.isArray(cards)||cards.length>MAX_NEW_CARDS||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>MAX_WAIT_MS)throw Error('invalid_bounded_queue_run');
+ if(cards.some(c=>!KINDS.has(c.kind))||new Set(cards.map(c=>c.path)).size!==cards.length)throw Error('duplicate_queue_card_path');
  const deadline=clock()+timeoutMs,items=[];
  for(const card of cards){
   if(clock()>=deadline){items.push({kind:card.kind,path:card.path,status:'pending_reconcile_get_only',error:'queue_time_budget_exhausted',post_attempted:false});continue;}
@@ -256,7 +271,7 @@ export async function main({env=process.env}={}){
    const bytes=execFileSync('git',['show',context.source_commit+':'+card.path]);
    if(bytes.byteLength>32768)throw Error('queue_card_too_large');
    const body=JSON.parse(bytes.toString('utf8'));
-   if(card.kind==='task'){const contract=analyzeCardPrompt(body.prompt);if(contract.mixed)throw Error('card_contract_split_required:'+contract.reasons.join('_'));}
+   if(card.kind==='task')assertCardContract(body);
    if(card.kind==='task')normalizeJob(body);else normalizeDecision(body);
    cards.push({...card,body,card_sha256:createHash('sha256').update(bytes).digest('hex')});
   }

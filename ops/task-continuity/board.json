@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T06:40:00.000Z",
+  "updated_at": "2026-11-18T06:52:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -307,10 +307,10 @@
       "next_action": "等 BACKLOG-1 实际跑过新门后转 done；后续新卡一律先跑 check-card-contract --strict",
       "evidence": [
         "scripts/check-card-contract.mjs 新增 coordinator_reviewer 判定（3 条新测试，8 pass）",
-        "scripts/run-deep-superagent-queue.mjs 消费前校验，混卡直接 card_contract_split_required",
-        "node --test scripts/tests/deep-superagent-queue.test.mjs → 23 pass"
+        "scripts/run-deep-superagent-queue.mjs 导出 assertCardContract，消费前校验，混卡直接 card_contract_split_required",
+        "node --test scripts/tests/deep-superagent-queue.test.mjs → 26 pass（含混卡拒绝与单角色放行两条）"
       ],
-      "updated_at": "2026-11-18T06:40:00.000Z",
+      "updated_at": "2026-11-18T06:52:00.000Z",
       "note": "只拦新卡，历史 84 张里的 6 张 mixed 不追溯。"
     },
     {
@@ -377,10 +377,12 @@
       "evidence": [
         "run 44193726857 success（传输层），job 50940484 blocked，error=native_generation_evidence_incomplete",
         "doubao 504 / kimi 504；qianwen 输出「没有需要复核的内容」；route 产出 0 条",
-        "op card DEEP-SUPERAGENT-20261118-DAILY-1 同卡要求协调席 route 与复核席 agree/disagree"
+        "op card DEEP-SUPERAGENT-20261118-DAILY-1 同卡要求协调席 route 与复核席 agree/disagree",
+        "run 44249940832 verify 失败：本次推送误用旧版队列脚本，consume 跳过，BACKLOG-1 未被消费",
+        "恢复 main 基线后重发 BACKLOG-2；BACKLOG-1 作为未消费卡保留，不删除、不追改"
       ],
-      "updated_at": "2026-11-18T06:40:00.000Z",
-      "note": "队列本身没坏，坏的是卡：一卡两角色，协调席席位挂掉后复核席空转。"
+      "updated_at": "2026-11-18T06:52:00.000Z",
+      "note": "第一次重发因旧脚本覆盖 main 被 CI 挡住（好处：卡没被烧掉）。已按 main 基线重建再发。"
     }
   ]
 }
