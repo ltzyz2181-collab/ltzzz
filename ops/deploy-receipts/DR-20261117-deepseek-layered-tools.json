@@ -1,0 +1,72 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-deepseek-layered-tools",
+  "target": "deepseek-layered-tools",
+  "platform": "github",
+  "env_id": "ltzzz-repo/main",
+  "code_commit": "d2acd508518b2eb6b13f7947a45d68b8c1d03f50",
+  "code_path": "scripts/lib,scripts,config/ai-providers.json,.github/workflows/docs",
+  "deployed_at": "2026-11-18T02:44:00Z",
+  "deployment_status": "deployed",
+  "verified": [
+    {
+      "kind": "local_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/deepseek-tools.test.mjs scripts/tests/deepseek-shadow-routing.test.mjs → 30/30 pass；node --check 通过"
+    },
+    {
+      "kind": "real_shadow_run",
+      "result": "ok",
+      "evidence": "真实双模型各一次：worker+thinking=disabled 下 pro 8/25、flash 25/25（shadow-20261118T022740Z.json）；thinking=enabled 4096/8192 均 finish_reason=length 且 0 字符（022802Z/022922Z）"
+    },
+    {
+      "kind": "workflow_registered",
+      "result": "ok",
+      "evidence": "GET /actions/workflows 返回 deepseek-shadow-routing.yml 状态 active（id 422112328），说明 YAML 可解析；仅 workflow_dispatch，无 cron"
+    },
+    {
+      "kind": "main_commit",
+      "result": "ok",
+      "evidence": "Git Data API 以 force=false 推 main，commit d2acd508；base b07cdaab"
+    },
+    {
+      "kind": "ci_checks",
+      "result": "ok",
+      "evidence": "同提交 run 44224143894 Small payment policy success；44224143857 Pages 为 cancelled（并发取消，非失败）"
+    }
+  ],
+  "blockers": [],
+  "next_action": "等待 GPT 对 A-1..A-5 / B-1..B-6 / C-1..C-3 的建议与正式裁决；未裁决前不切换默认模型、不接线 SOURCE-INTEL、不启用定时",
+  "known_issues": [
+    "影子测量只有一张卡、每模型各一次，F2 的 25/25 是单样本，不能当稳定能力结论。",
+    "第 2 次运行的 9 行 unknown_ref 属测量端缺陷（B1-B6 未被 extractRefs 识别），已修；该回执保留但不应作为模型失败证据。",
+    "config/ai-providers.json 的 tiers 是口径记录，不是运行时开关；生产 dispatcher 未读该字段。",
+    "DeepSeek 10 次调用约 4.8 万 tokens，未与账单核对，api_bill_verified=false。"
+  ],
+  "notes": [
+    "本回执只覆盖仓库代码与测试，不代表生产调度已启用；search/fetch 仍只有模块与 CLI，未接 SOURCE-INTEL。",
+    "新增工作流只手动触发并上传 artifact，不写仓库、不部署、不改模型。"
+  ],
+  "operator": {
+    "seat": "deploy_seat",
+    "env": "windows-desktop worktree codex-email-authority-20261117",
+    "recorded_by": "codex"
+  },
+  "authorized_by": {
+    "authorized_by": "owner instruction in session",
+    "evidence_type": "owner_typed_instruction",
+    "channel": "Codex 桌面会话",
+    "requirement": "owner 要求按分层接入方案安排部署，并把钱包三项交 GPT 裁决",
+    "scope_limit": "仓库代码与只读工具；不含资金、签名、五签 Safe、生产部署变更"
+  },
+  "code_sha256": {
+    "scripts/lib/deepseek-tools.mjs": "a6fce92bb60f15bbe024cca70305e404689638ace20586dba84cae28933bd511",
+    "scripts/deepseek-tools.mjs": "00e1faa53eeaa98623348fae913f394babd1d27ab86b364dd74acf7da240448a",
+    "scripts/deepseek-shadow-routing.mjs": "8c09096b2dcf5ca2fe8a632762dd4c603812cff22f16d494b6867683c5a4570a",
+    "scripts/tests/deepseek-tools.test.mjs": "df012184b8898f56bd4e6cd03053c973e356c68201454abceb04359152c71aa4",
+    "scripts/tests/deepseek-shadow-routing.test.mjs": "9110365e4eccdbaa806a2c6835bc44f98407317c499a4120d2bd528c3f91f020",
+    "config/ai-providers.json": "34a7069eca3fd4abdb94068851ac07e06beaac226eabb78940c2f51a99fb7d1f",
+    ".github/workflows/deepseek-shadow-routing.yml": "8af2d86a4305bccc23b83e2d6f85368c01347da39eaacc5f9767a7ca2e18caec",
+    "docs/2026-11-17-DeepSeek分层接入与影子路由测试.md": "4fedd1ff38a3260012d0218f0ad85080912ef08c259e0b6373f3df88486660d3"
+  }
+}

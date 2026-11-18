@@ -1,0 +1,105 @@
+【角色与边界】
+
+你是 LTZZZ 项目经由 APIsRouter 中转站调用的顾问模型。你的输出只是"建议"，不是 GPT 裁决原文，不是 Owner 授权，也不能被后续任何席位引用为裁决依据。真正的裁决由 GPT 裁决席给出并落 decision_id。
+
+硬性边界：付款、退款、转账、链上交易、钱包签名、五签 Safe、生产部署、权限提升、Secrets 变更、外部平台不可逆操作，你一律不得批准。遇到这类事项，只能标 REQUIRES_OWNER_VALUE 或 BLOCKED，并说明缺什么。
+
+你读到的是仓库内公开事实。不含客户资料、邮箱正文、凭据、私钥或金额明细。不要臆造证据；证据不足就写"补证据"，不要用常识补空。
+
+【项目背景】
+
+LTZZZ 是 owner（ltzyz2181）的自动化项目，仓库 ltzyz2181-collab/ltzzz。owner 在 2026-11-17 给出过三级邮件授权：L1 信息通知可自动发送；L2 裁决与任务派发在 GPT 已形成明确裁决后可自动发送，且必须含 Task ID、decision_id、裁决状态、执行席、权限边界、验收标准；L3 高风险授权（付款、退款、转账、链上交易、钱包签名、生产部署、权限提升、Secrets 变更、外部平台不可逆操作）禁止仅凭邮件产生。
+
+同时 owner 给过一组预算上限：单次模型调用估算成本 ≤ 0.05 美元，每日累计 ≤ 0.50 美元，项目累计 ≤ 10 美元，账户余额安全底线 3 美元，禁止自动充值。该上限原本用于中转 GPT 席位，DeepSeek 原生 API 是否在同一预算池内，目前没有明文，这正是本次要问的 C-2。
+
+项目当前的分工是：GPT 是最终裁决席；Claude 是主开发席；豆包是执行、部署、提审席，自身提交由其他席复核；千问是复核席，负责裁决台账、任务状态、CI 与汇总一致性；Deep 是总账与派单席。桌面 Codex/Claude 只承担改码与本地测试，推送与 Actions 回读在云侧完成。
+
+【今天已部署的 A 组：钱包三项改动】
+
+A 组代码提交：10617ffc12dac2450544401f77621a65fa959565，标题"fix(wallet): USDC 余额双行 + wallet-ops 失败即红 + 队列循环消费上限 3"，共 16 个文件。
+
+A1 USDC 双行余额显示。目的：原来的余额视图只展示 ETH，Base 链上的 USDC 不可见，导致"钱包里到底有多少钱"要靠人工去区块浏览器核对。改动落在 scripts/wallet/balance-view.mjs 与 scripts/wallet/rpc.mjs，新增 agent-wallet/wallet/tokens.json 记录 Base USDC 合约地址与精度，读取方式为只读 JSON-RPC 调用 eth_call 的 balanceOf，不做任何签名与转账。真实读数：chain_id=8453，block 58886036，ETH 0.008278278362988452，USDC 29.293744。测试新增 scripts/wallet/__tests__/rpc-token.test.mjs 共 225 行，覆盖代币精度换算、零余额、异常返回、超长返回、RPC 报错等分支。CI 证据：wallet-p0-checks run 44221316763 success，日志中确认 USDC 用例真实执行，不是被跳过。
+
+已知局限：只用一个公共 RPC 端点读取，没有第二源交叉验证；如果该端点返回被污染或过期数据，本地账本会记录一个错误余额，但不会造成资金动作，因为这是只读展示。是否要求第二源，是 A-4。
+
+A2 wallet-ops 失败即红。目的：原来 wallet-ops 工作流在关键步骤失败时仍然整体退出 0，等于把失败伪装成通过。改动落在 .github/workflows/ltzzz-wallet-ops.yml（+47/-13）、新增 scripts/wallet-ops-receipt.mjs 与 scripts/tests/wallet-ops-receipt.test.mjs。逻辑是每一步都写回执到 ops/wallet-ops/last-run.json，任何步骤失败、超时、或回执缺失都让整个 job 判红，而不是在末尾统一 exit 0。真实运行：run 44221339282 success，8 个步骤全部执行，回执落盘。这是"失败会红"的正面验证，但反向验证（故意制造一次失败看它是否真的红）目前没有做，因为不想在生产工作流里注入失败。这一点需要你判断：是否接受"正向 8/8 全绿 + 单测覆盖失败分支"作为充分证据，还是必须补一次受控的负向演练。
+
+A3 队列多卡消费上限 3。目的：原来的派单队列一次可能消费任意多张卡，成本与影响面不可控。改动落在 scripts/run-qwen-dispatch.mjs 与 scripts/run-doubao-dispatch.mjs，引入环境变量 DISPATCH_MAX_CARDS，默认 3；当预留（reservation）结果不确定时立即停止，而不是继续消费下一张卡。测试在 scripts/tests/qwen-dispatch.test.mjs 与 doubao-dispatch.test.mjs。CI 证据：small-payment-policy run 44221316724 success；task-continuity run 44221643053 success。
+
+已知局限：3 这个默认值是经验值，没有成本模型推导；"不确定即停"会让队列在遇到上游抖动时偏保守，可能积压。是否调整，是 A-3。
+
+A 组的部署回执是 ops/deploy-receipts/DR-20261117-wallet-p1-usdc-ops-failloud-dispatch.json，登记在 commit e71b7cc9ce546a53d36003ebe80480541734a9ad。同日部署汇总邮件已发出，回执 ops/mail-receipts/MR-20261117-wallet-p1-usdc-ops.json，Gmail INBOX UID 4780，标记 do_not_resend=true，不会重复发送。邮件投递 ID 被 QQ 改写为 tencent_ 前缀，原 Message-ID 无法直接对上，这是已知的通道特性，已如实记录，没有伪装成"原样投递"。
+
+A 组明确没有做的事：没有真实付款、没有放款、没有退款、没有签名、没有私钥接触、没有五签 Safe 操作、没有生产部署以外的权限提升。balance-view 只读，wallet-ops 只跑既有只读检查，队列上限只影响派单数量。
+
+【今天已部署的 B 组：DeepSeek 分层接入与影子路由测量】
+
+背景：DeepSeek 通知 V4.1-Flash 已更新至 1017 版本，并新增网页搜索与抓取 API。本地实测 GET /v1/models 只返回 deepseek-flash 与 deepseek-v4-pro 两个 id，没有单独的 1017 模型 id，所以"换成 1017"在接口层没有可切换对象，1017 是版本说明而不是新模型。这一点先纠正了一个可能的误解。
+
+同时，前一天队列卡在"协调席没吐出路由行"。所以这次不整体换模型，而是分层：主线（plan 席、写卡、分流）继续用 deepseek-v4-pro；Flash 只接新增的只读网页能力，以及作为 worker 路由的候选；路由能力先用影子测试测量，不凭感觉替换。B 组代码提交 d2acd508518b2eb6b13f7947a45d68b8c1d03f50。
+
+B1 只读工具层。新增 scripts/lib/deepseek-tools.mjs 与 CLI scripts/deepseek-tools.mjs，封装官方 Search 与 Fetch。约束：query 最多 128 个 Unicode 字符；count 1 到 50；url 最长 8192 且禁止带 user:password；显式拒绝 localhost、127/8、10/8、192.168/16、172.16-31、169.254、::1、.local、.internal，避免把内网地址送给外部抓取；402 归为 insufficient_balance，408/429/5xx 归为 transient_upstream 且标记 retryable，401/403 归为 auth_or_forbidden；空结果返回 ok 且 charged=false，有结果才 charged=true；所有错误文本脱敏，绝不回显 API Key。测试 scripts/tests/deepseek-tools.test.mjs 共 12 项。
+
+B2 影子测量工具。新增 scripts/deepseek-shadow-routing.mjs，把同一张卡分别发给两个模型，逐行核对输出是否满足"每个 ref 恰好一条 ROUTE 行"。合格判据：0 missing、0 duplicate、0 invalid、0 多余行，且 route_lines 等于 refs_total；加 --require-all-five 时还要求五类 route 都出现。每模型每次只发一次请求，失败只记录不重试。测试 scripts/tests/deepseek-shadow-routing.test.mjs 共 18 项，包含"两个模型都失败时仍然只各调一次"的用例。
+
+B3 实测结果。用的卡是 ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-1.json，public_distributable，25 个 ref（GROUP A 11 条邮件、GROUP B 6 条仓库观察、GROUP C 8 条邮件）。共 5 次运行、10 次模型调用：
+
+第 1 次，原卡原样、thinking=disabled、max_tokens=2048：pro 与 flash 都返回 planner JSON，ROUTE 行 0 条，pro 有 21 行非 ROUTE。回执 shadow-20261118T022602Z.json。
+第 2 次，worker 口径、thinking=disabled、2048：pro 8/19，flash 覆盖 19/19 但 9 行被判 unknown_ref。回执 shadow-20261118T022700Z.json。
+第 3 次，worker 口径、thinking=disabled、2048：pro 8/25（只答 C 组），flash 25/25 且 pass=true。回执 shadow-20261118T022740Z.json。
+第 4 次，worker 口径、thinking=enabled、4096：两模型 finish_reason=length，输出 0 字符。回执 shadow-20261118T022802Z.json。
+第 5 次，worker 口径、thinking=enabled、8192：两模型同样 length 且 0 字符。回执 shadow-20261118T022922Z.json。
+
+第 2 次的 9 行 unknown_ref 是测量端缺陷，不是模型错误：卡里 GROUP B 写作 B1 到 B6，不是 16 位哈希，第一版 ref 提取只认哈希。已修并补测试，第 3 次才是有效对照。这一点我主动写出来，是因为不希望在证据里留下一个会被误读为"Flash 乱输出"的数字。
+
+B4 四个发现。
+
+F1 卡本身混了两套契约。同一张卡里既有"Planner deepseek: return ONLY JSON"，又有"Worker: return ONLY one line per ref"。两个模型都选择先满足 planner 契约，于是 ROUTE 行 0 条。这与"协调席没吐出路由行"是同一个失败面：不是模型不会分诊，而是指令在互相抵消。
+
+F2 在 worker 口径下 Flash 没有更差，反而更全。同一提示词，Flash 25/25 全覆盖、无多余行、无 markdown；Pro 只覆盖 8/25 并停在 C 组。此前"Flash 一次给齐多组路由行大概率更差"的猜测，在这张卡上不成立。
+
+F3 thinking 开启会把完成预算烧光。thinking=enabled 时，4096 与 8192 两种预算下两模型都是 finish_reason=length、输出 0 字符。而 scripts/call-deepseek.mjs 的默认正是 thinking='enabled'、maxTokens=8192。任何沿用默认值调用长卡的既有入口，都有拿到空正文的风险。这是我今天认为最值得优先修的一条，因为它能解释"协调席没吐出路由行"而完全不涉及模型能力差异。
+
+F4 单样本。只测了一张卡、每模型各一次。Pro 的 8/25 也可能来自卡里"WORKER COVERAGE 写了三个席位"导致的自限，需要在拆卡后复测才能定性。
+
+B5 配置与工作流。config/ai-providers.json 的 providers.deepseek 下新增 tiers：main_line（deepseek-v4-pro，planner/写卡/分流，thinking enabled）、worker_routing（thinking disabled，min_max_tokens 4096）、web_tools（只读 Search/Fetch，无模型调用，按成功请求计费 5 元/1000 次）。default_model 没有改。新增 .github/workflows/deepseek-shadow-routing.yml，只有 workflow_dispatch，没有 cron，只上传 artifact，不写仓库、不部署。已确认该工作流被 GitHub 正确注册为 active，说明 YAML 可解析。
+
+B6 成本与未做。10 次调用合计约 4.8 万 tokens，未与账单核对，api_bill_verified=false。没有把 Flash 写进路由链路；没有把 search/fetch 接进 SOURCE-INTEL 抓取步骤（目前只有模块与 CLI）；没有定时调用；没有改生产 dispatcher；没有生产部署；没有资金动作。
+
+【需要你给出建议的问题】
+
+A-1 是否接受钱包三项（USDC 双行、wallet-ops 失败即红、队列多卡上限 3）作为"已部署且验证充分"，可以留存而不回退？
+A-2 wallet-ops 的"失败即红"目前只有正向 8/8 全绿加单测覆盖失败分支，没有做受控负向演练。这算充分，还是必须补一次注入失败的演练？
+A-3 队列 DISPATCH_MAX_CARDS 默认 3 是否合理？"reservation 不确定即停"是否过保守，要不要改成有限次重试后再停？
+A-4 USDC 余额只读单一公共 RPC，没有第二源。是否需要第二源交叉验证，还是接受"只读展示、错了也不动钱"的风险等级？
+A-5 wallet-ops 失败是否允许用 L1 邮件自动通知 owner，还是必须先经 GPT 复核再发？
+
+B-1 是否接受"主线保持 deepseek-v4-pro + Flash 仅限只读工具与 worker 路由候选"作为正式分层口径？
+B-2 worker 路由是否强制 pin thinking=disabled 且 max_tokens 不低于 4096？
+B-3 基于 25/25 的单样本，是否现在就允许 Flash 承担 worker 路由，还是必须先做 3 张卡的复测？
+B-4 planner 与 worker 是否必须拆成两次独立调用或两张卡？（当前同卡双契约导致 0 条 ROUTE）
+B-5 把 search/fetch 接进 SOURCE-INTEL 抓取步骤，是否需要单独一次裁决？成本按 5 元/1000 次成功请求，是否要再设一个每日子上限？
+B-6 新增的手动影子工作流是否要纳入每日审计清单，还是保持"需要时才跑"？
+
+C-1 scripts/call-deepseek.mjs 的默认 thinking 是否应改为 disabled，还是保留默认但强制调用方显式传参？
+C-2 今天 10 次 DeepSeek 原生调用，是否计入 GPT 预算裁决的每日 0.50 美元上限？DeepSeek 账户与 relay 账户是两个账本，目前没有合并核算口径。
+C-3 是否要为 DeepSeek 也加一个类似 relay-seat-guard 的调用前成本门禁？现在只有 relay 侧有。
+
+【证据索引】
+
+A 组：提交 10617ffc12dac2450544401f77621a65fa959565；回执 ops/deploy-receipts/DR-20261117-wallet-p1-usdc-ops-failloud-dispatch.json；邮件回执 ops/mail-receipts/MR-20261117-wallet-p1-usdc-ops.json；CI run 44221316763（wallet-p0-checks）、44221316724（small-payment-policy）、44221643053（task-continuity）、44221339282（wallet-ops 8/8）。
+
+B 组：提交 d2acd508518b2eb6b13f7947a45d68b8c1d03f50；文档 docs/2026-11-17-DeepSeek分层接入与影子路由测试.md；五份影子回执在 knowledge/results/deepseek-shadow/ 下，文件名 shadow-20261118T022602Z.json、shadow-20261118T022700Z.json、shadow-20261118T022740Z.json、shadow-20261118T022802Z.json、shadow-20261118T022922Z.json；配置 config/ai-providers.json；工作流 .github/workflows/deepseek-shadow-routing.yml。
+
+如果你要引用某条证据，请直接写文件名或 run id，不要写"根据仓库"这类无法核对的表述。
+
+【输出格式】
+
+请对每一项输出一行，不要写长篇散文：
+
+DECISION | <A-1..C-3> | APPROVE 或 CONDITIONAL_APPROVE 或 NEEDS_REVISION 或 BLOCKED 或 REQUIRES_OWNER_VALUE | <理由，不超过 40 字>
+NEXT | <A-1..C-3> | <下一步动作，不超过 30 字>
+
+最后可以补一段不超过 150 字的总体意见，说明你认为哪一项最该先做。如果某一项证据不足，写"补证据"并指出缺哪一份，不要用推测填充。
+
+再次强调：你的输出是建议，不是裁决。任何涉及资金、签名、五签 Safe、生产部署、权限提升、Secrets 变更的结论，都只能作为 GPT 裁决席的输入。

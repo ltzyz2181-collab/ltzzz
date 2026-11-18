@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T02:32:11.000Z",
+  "updated_at": "2026-11-18T02:45:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -225,6 +225,50 @@
         "ops/task-continuity/board.json"
       ],
       "updated_at": "2026-11-18T01:55:51.795Z"
+    },
+    {
+      "id": "WALLET-THREE-GPT-RULING",
+      "title": "钱包三项（USDC 双行 / wallet-ops 失败即红 / 队列多卡上限 3）交 GPT 裁决",
+      "state": "in_review",
+      "next_owner": "gpt",
+      "next_action": "裁决 A-1..A-5：是否接受为已部署且充分，是否补负向演练与第二 RPC 源",
+      "evidence": [
+        "commit 10617ffc12dac2450544401f77621a65fa959565（16 文件）",
+        "ops/deploy-receipts/DR-20261117-wallet-p1-usdc-ops-failloud-dispatch.json",
+        "fixtures/relay-seat/ruling-wallet-deepseek-20261117.txt",
+        "CI 44221316763 / 44221316724 / 44221643053 / 44221339282"
+      ],
+      "updated_at": "2026-11-18T02:45:00.000Z",
+      "note": "无真实资金、无签名、无五签 Safe；balance-view 只读。"
+    },
+    {
+      "id": "DEEPSEEK-LAYERED-INTEGRATION",
+      "title": "DeepSeek 分层接入：主线 Pro 不动，Flash 限只读工具与 worker 路由候选",
+      "state": "in_review",
+      "next_owner": "gpt",
+      "next_action": "裁决 B-1..B-6 / C-1..C-3：分层口径、thinking 默认值、DeepSeek 是否计入每日预算",
+      "evidence": [
+        "commit d2acd508518b2eb6b13f7947a45d68b8c1d03f50",
+        "docs/2026-11-17-DeepSeek分层接入与影子路由测试.md",
+        "knowledge/results/deepseek-shadow/shadow-20261118T022740Z.json（pro 8/25, flash 25/25）",
+        "knowledge/results/deepseek-shadow/shadow-20261118T022922Z.json（thinking=enabled 空输出）",
+        "config/ai-providers.json providers.deepseek.tiers"
+      ],
+      "updated_at": "2026-11-18T02:45:00.000Z",
+      "note": "未改 default_model、未接生产路由链路、无定时调用；10 次调用约 4.8 万 tokens，未对账。"
+    },
+    {
+      "id": "DEEPSEEK-ROUTING-SPLIT",
+      "title": "把 planner 与 worker 拆成两次调用并用 3 张卡复测（影子，不改生产）",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "拆成独立 planner / worker 两次调用，跑 3 张不同卡，核对 ROUTE 覆盖与空输出",
+      "evidence": [
+        "docs/2026-11-17-DeepSeek分层接入与影子路由测试.md §5 F1/F3/F4",
+        "scripts/deepseek-shadow-routing.mjs（--prompt-mode worker）"
+      ],
+      "updated_at": "2026-11-18T02:45:00.000Z",
+      "note": "单样本结论需替换；只做测量，不切换任何默认模型。"
     }
   ]
 }
