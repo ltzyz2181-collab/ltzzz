@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T02:40:00.000Z",
+  "updated_at": "2026-11-18T02:32:11.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -159,28 +159,46 @@
     {
       "id": "GMAIL-PHASE1-IMAP-EVIDENCE",
       "title": "Gmail 摄入 Phase 1 真实 IMAP 登录回执",
-      "state": "waiting_external",
-      "next_owner": "deploy_seat",
-      "next_action": "等一次真实登录采集回执产出后再改状态",
-      "evidence": [],
-      "updated_at": "2026-11-17T11:00:00Z",
-      "unblock_condition": "真实 IMAP 登录与采集回执"
+      "state": "done",
+      "evidence": [
+        "run 44223647149（workflow_dispatch, mode=read-only-intake）conclusion=success",
+        "凭证检查 status=ready / values_printed=false / password_value_emitted=false / source=environment",
+        "latest.json：gmail_fullbox status=ok count=1095 full_box_total=4774 unseen=3951 window_truncated=false provider=gmail_imap",
+        "结果提交 commit b07cdaabb4a05badd4e8467609305e68ca6bc87f"
+      ],
+      "updated_at": "2026-11-18T02:32:11.000Z",
+      "note": "真实 IMAP 登录、窗口枚举与脱敏结果落库均已发生；bodies_persisted=false，未落正文。"
     },
     {
       "id": "GMAIL-DAILY-READONLY-SCHEDULE",
       "title": "Gmail 每日只读摄入定时启用（contract 不放 secret、intake 写回受限）",
       "state": "in_review",
       "next_owner": "deploy_seat",
-      "next_action": "推送后立刻 dispatch 一次 read-only-intake，按最小证据集核对（run id/status、read_only、bodies_persisted、计数、脱敏提交、artifact sha256），与 GMAIL-PHASE1-IMAP-EVIDENCE 一并转 done 或记录卡点",
+      "next_action": "回读 00:23 UTC 自然 schedule 触发的那次 run（是否仍 partial）；确认后转 done，失败则按 R1–R6 回退",
       "evidence": [
         ".github/workflows/mail-intake-phase2.yml（contract 只读无 secret；intake 仅在 schedule 或手动 read-only-intake 触发）",
-        "scripts/tests/mail-workflow-policy.test.mjs（12 项策略断言）",
-        "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md（DR-20261118-gmail-intake-schedule，含 R1–R6 回退）",
-        "仓库 Actions secrets 仅新增 GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD 两个名称（值未打印、未落盘）",
-        "node --test scripts/tests/mail-workflow-policy.test.mjs = 12 pass 0 fail"
+        "scripts/tests/mail-workflow-policy.test.mjs（14 项策略断言，含 YAML 真实解析）",
+        "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md（含 R1–R6 回退）",
+        "真实 run 44223647149 success：read_only=true / bodies_persisted=false / contains_mail_body=false / external_model_safe=true",
+        "计数 unified=1133 open=200 duplicates=137 conflicts=0；artifact mail-intake-44223647149-1 209864 bytes",
+        "结果提交 commit b07cdaabb4a05badd4e8467609305e68ca6bc87f"
       ],
-      "updated_at": "2026-11-18T02:40:00.000Z",
-      "note": "授权依据 GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二/§六 + Owner 2026-11-17“启用”指令。尚无真实定时 run 证据前，不得写成“已跑通”；凭证缺失时 intake 必须失败且不读邮箱。"
+      "updated_at": "2026-11-18T02:32:11.000Z",
+      "note": "已真实跑通一次手动 dispatch；status=partial 的原因是 Agent Mail 通道缺 agently-cli，不是 Gmail。cron 自然触发尚未回读，故保持 in_review。"
+    },
+    {
+      "id": "GMAIL-AGENT-MAIL-CI-CHANNEL",
+      "title": "Agent Mail 通道在 CI 缺失（agently-cli ENOENT）导致每日摄入只能 partial",
+      "state": "blocked_decision",
+      "next_owner": "owner",
+      "next_action": "决定是给 CI 提供 agently-cli 安装方式与该邮箱独立凭据，还是确认每日只跑 Gmail 通道并把 agent_mail/ruling_tracker 记 unknown",
+      "evidence": [
+        "run 44223647149 日志：tracker status=unknown，note=收件箱读取失败：spawnSync agently-cli ENOENT；agent_mail=missing，run_code=1",
+        "latest.json status=partial（gmail=ok, agent_mail=missing）",
+        "scripts/run-mail-intake.mjs 第 445 行调用 node scripts/collect-mail-backlog.mjs，CI 内无 agently-cli 与 Agent Mail 凭据"
+      ],
+      "updated_at": "2026-11-18T02:32:11.000Z",
+      "unblock_condition": "Owner 给出 agently-cli 的 CI 安装方式与 Agent Mail 凭据，或书面确认只保留 Gmail 单通道并把另一通道记 unknown"
     },
     {
       "id": "TASK-CONTINUITY-BOARD",

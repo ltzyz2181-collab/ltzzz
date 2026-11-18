@@ -4,9 +4,15 @@
   "target": "wallet-p1-3 + gmail-daily-intake",
   "platform": "github-actions + repo",
   "env_id": "ltzyz2181-collab/ltzzz@main",
-  "code_commit": "8ff2b63693d75e6aa9e4f0cbf1f662a8181da300",
+  "code_commit": "881b883fb30c2a255cd2e55270fc28c947090918",
   "code_path": "scripts/wallet、.github/workflows/mail-intake-phase2.yml、scripts/tests/mail-workflow-policy.test.mjs、ops/task-continuity/board.json、ops/deep-superagent/tasks",
-  "deployed_at": "2026-11-18T02:27:14Z",
+  "deployed_at": "2026-11-18T02:32:11Z",
+  "code_commit_history": [
+    {"commit": "8ff2b63693d75e6aa9e4f0cbf1f662a8181da300", "what": "Wallet P1-3 + 工作流拆分 + 策略测试 + 文档 + 看板 + Deep 任务卡（8 文件）"},
+    {"commit": "59d0504754a0d7e0855e7724998f3f86e03c1959", "what": "本回执初版 + 已闭环事项登记"},
+    {"commit": "881b883fb30c2a255cd2e55270fc28c947090918", "what": "修复 run 标量冒号导致的 YAML 解析失败 + 2 项回归断言"},
+    {"commit": "b07cdaabb4a05badd4e8467609305e68ca6bc87f", "what": "第一次真实只读摄入自动提交的结果（[skip ci]）"}
+  ],
   "authority": {
     "gpt_ruling": "GPT-WALLET-V1-20261116-01（P0 只读余额视图/自检/离线测试 + P1 仅登记式订阅与账本结构；20 USD 自动打款不批准；DRY_RUN 保持；微信/支付宝凭证仍人工）",
     "owner_instruction": "Owner 2026-11-17：Gmail 给出最小证据集与回退方案后启用；同日：叫 Deep 团队回答做了什么/卡哪里/哪些没做",
@@ -15,10 +21,10 @@
   "states": {
     "draft": "done",
     "tested": "done",
-    "merged": "this_push",
-    "deployed": "wallet: 无需独立部署（仓库脚本）；gmail: 工作流随 main 生效，但定时 run 尚未触发",
-    "submitted": "not_yet",
-    "platform_accepted": "not_yet"
+    "merged": "done（8ff2b636 / 59d05047 / 881b883f 均已在 main）",
+    "deployed": "wallet: 仓库脚本无需独立部署；gmail: 工作流在 main 生效，schedule 23 0 * * * 已随文件生效",
+    "submitted": "done：一次真实 workflow_dispatch（mode=read-only-intake）run 44223647149 完成",
+    "platform_accepted": "GitHub Actions 执行成功（conclusion=success）；该状态只表示平台跑了这条工作流，不含任何业务/客户验收"
   },
   "verified": [
     {
@@ -34,7 +40,27 @@
     {
       "kind": "policy_tests_mail_workflow",
       "result": "ok",
-      "evidence": "node --test scripts/tests/mail-workflow-policy.test.mjs = 12 pass / 0 fail，覆盖：单一定时、contract 无 secret 只读、intake 仅两个 secret、禁止打印凭证、失败即闭、intake 不跑 PR、git add 路径受限、仅 ok/partial 提交、无合并/部署、无 push 触发"
+      "evidence": "node --test scripts/tests/mail-workflow-policy.test.mjs = 14 pass / 0 fail，覆盖：单一定时、contract 无 secret 只读、intake 仅两个 secret、禁止打印凭证、失败即闭、intake 不跑 PR、git add 路径受限、仅 ok/partial 提交、无合并/部署、无 push 触发、run plain scalar 不得含 \": \"、有 PyYAML 时真实解析工作流"
+    },
+    {
+      "kind": "gmail_real_read_only_run",
+      "result": "ok",
+      "evidence": "run 44223647149（workflow_dispatch, mode=read-only-intake, head 0982cd718）conclusion=success；步骤 4 凭证检查 status=ready / values_printed=false / password_value_emitted=false / source=environment / keys=GMAIL_IMAP_USER+GMAIL_IMAP_APP_PASSWORD；步骤 5 摄入完成，INTAKE_EXIT=2（partial）；步骤 7 结果已提交为 b07cdaabb4a05badd4e8467609305e68ca6bc87f；步骤 8 artifact mail-intake-44223647149-1，209864 bytes，未过期"
+    },
+    {
+      "kind": "gmail_read_only_boundaries",
+      "result": "ok",
+      "evidence": "latest.json：schema=ltzzz.mail-intake.v1，status=partial，read_only=true，bodies_persisted=false，contains_mail_body=false，external_model_safe=true；gmail_fullbox status=ok count=1095 open_count=1049 full_box_total=4774 unseen=3951 window_truncated=false bodies_read=50 provider=gmail_imap"
+    },
+    {
+      "kind": "gmail_counts_and_dedupe",
+      "result": "ok",
+      "evidence": "counts: unified=1133, open_or_dispatch=200, duplicates_removed=137, ruling_conflicts=0；dedupe v1 三层：input=1133 clusters=996 duplicates=137（thread_id 117 / task_id 5 / single 875），history_preserved=true"
+    },
+    {
+      "kind": "deep_worker_status_report",
+      "result": "ok",
+      "evidence": "队列 run 44223353494 consume success；任务卡 DEEP-WALLET-P1-REVIEW-20261118-1 终态 needs_gpt_decision，model_calls=4；qianwen 产出三行 STATUS（I1 done / I2 not_done / I3 blocked_by_evidence）；doubao 无输出（upstream_gateway_timeout_504，记 unjudged）；deepseek 独立复核 approved=true，指出 I2 应记 blocked_by_authority"
     },
     {
       "kind": "actions_secrets_names",
@@ -48,14 +74,27 @@
     }
   ],
   "not_verified": [
-    "Gmail 每日只读摄入的真实 run 尚未发生：schedule 未到点，手动 dispatch 尚未执行；在拿到 run id 与 latest.json 回读前，不得写成“已跑通”或“已读取邮箱”",
-    "Gmail intake 产物只允许在 status=ok|partial 时提交，且只 git add knowledge/results/deep-superagent/mail-* 与 ruling-tracker/；failed 时只报警不提交——该分支尚未被真实失败触发验证",
+    "Agent Mail 通道在 CI 内没有跑起来：run 44223647149 的 tracker 记 spawnSync agently-cli ENOENT，agent_mail=missing，因此合并 status=partial 而不是 ok；Gmail 通道本身是 ok",
+    "定时 schedule 尚未按 cron 自然触发过一次：目前只有一次手动 workflow_dispatch 的真实证据，下一次 00:23 UTC 到点后的 run 仍需回读",
+    "Gmail intake 的 failed（退出码 3）分支未被真实触发：目前只验证了 partial（退出码 2）会告警但仍提交",
     "Wallet P1-3 的 GPT 精确 diff 复核尚未发生：看板记 in_review/next_owner=gpt，不是 done",
     "P1-1 合并时缺少 GPT 精确 diff 复核记录（见 authority.merge_condition_not_met），本回执不补写该复核",
     "Wallet v1 裁决中“20 USD 自动打款不批准 / DRY_RUN 保持 / 微信支付宝人工凭证”均为边界确认，不是能力上线，也没有任何真实打款验证",
-    "Deep 团队（qianwen/doubao）对本轮三个事项的书面回报尚未产生：任务卡 DEEP-WALLET-P1-REVIEW-20261118-1 随本次 push 入队，结果以队列 run 回执为准"
+    "Deep 团队只拿到 qianwen 一席书面回报；doubao 仍是 504 无输出（unjudged），不代表豆包已复核"
   ],
-  "blockers": [],
+  "incidents": [
+    {
+      "id": "INC-20261118-mail-yaml-scalar",
+      "observed": "push 8ff2b636 与 59d05047 各产生一条 mail-intake-phase2 的失败 run（44223351361、44223432629），无任何 job",
+      "root_cause": "工作流第 177 行 `run: echo \"::warning::... partial: ...\"` 是含 \": \" 的 plain scalar，PyYAML 报 mapping values are not allowed here；GitHub 解析失败后只建空 run",
+      "fix": "改为块标量 run: |；策略测试新增 plain-scalar 冒号断言与 PyYAML 真实解析断言（41cd1849 → 远端 881b883f）",
+      "verification": "修复后 workflow_dispatch run 44223647149 正常解析出 contract/intake 两个 job 并执行成功"
+    }
+  ],
+  "blockers": [
+    "Agent Mail 频道在 GitHub Actions 内不可用：agently-cli 未安装（ENOENT），需要安装方式与独立凭据；在此之前每日摄入只能是 partial，agent_mail/ruling_tracker 记 missing/unknown",
+    "GPT 精确 diff 复核（P1-3 与 P1-1 合并条件）未发生，看板保持 in_review"
+  ],
   "rollback": {
     "doc": "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md",
     "steps": [
@@ -70,12 +109,12 @@
   "code_sha256": {
     "scripts/wallet/core.mjs": "9dab06c80cfe4fbce846019f3e228c805deaefbeac227c730363e57516865357",
     "scripts/wallet/__tests__/ledger.test.mjs": "392567febafa9dba42a12f096c105bce7b8a2e832dc609f81a1baa960490371d",
-    ".github/workflows/mail-intake-phase2.yml": "3d5712f0181c5a59e2d3d5e3de119730f1ad04c8deb1166b4611122196986c14",
-    "scripts/tests/mail-workflow-policy.test.mjs": "51a564c05fe6fbdccc0fdc3e08e766beb04a1a1545c8dbe2458c8093125639dc",
+    ".github/workflows/mail-intake-phase2.yml": "8154dceacbb08309551c42758c07f5bce14bde584aa8a5f722835ebbf5f114a1",
+    "scripts/tests/mail-workflow-policy.test.mjs": "29d5d614f05ab8074eb7f0e322d6b8341ac4f751e288130ba06736ce79186c24",
     "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md": "78ec9ffd9b4c018774e9fdd5eaceed5a2cb6faad7f20e2163eac1c131a52b4af",
     "ops/task-continuity/board.json": "77ab8446b01f109de47c42f994ce79c85632df0fd8184bebeaefb123fc5d631f",
     "ops/deep-superagent/tasks/DEEP-WALLET-P1-REVIEW-20261118-1.json": "21385e34acd42e8107db14821c61ce7499b348c067f4601b965656fb8ddb28d9",
     "excluded_from_push": "scripts/wallet/rpc.mjs, scripts/wallet/balance-view.mjs, agent-wallet/wallet/tokens.json, scripts/wallet/__tests__/onchain.test.mjs, scripts/wallet/__tests__/rpc-token.test.mjs —— 属 main 已有 P1-1（commit 10617ffc），本次不改写"
   },
-  "next_action": "推送后：1) 手动 dispatch mail-intake-phase2（mode=read-only-intake）并回读最小证据集；2) 读 Deep 队列 run 的两个席回报；3) 把 WALLET-P1-INCREMENTAL-VERIFY 交 GPT 精确 diff 复核、GMAIL-DAILY-READONLY-SCHEDULE 交部署席确认，两者未闭环前看板保持 in_review。"
+  "next_action": "1) 等 00:23 UTC 的自然 schedule run，回读是否仍为 partial；2) 解决 agently-cli 在 CI 的安装与独立凭据（Owner/部署席），否则每日摄入长期只能 partial；3) WALLET-P1-INCREMENTAL-VERIFY 交 GPT 精确 diff 复核，未复核前看板保持 in_review；4) doubao 504 已第 N 次出现（本卡 unjudged），需要换通道或换模型，不要原样重试。"
 }

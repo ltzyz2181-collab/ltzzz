@@ -49,6 +49,23 @@
 - 下一次自然 `schedule` run 与手动 run 的证据结构一致；
 - 两次都不出现任何正文、密码、完整标题（非项目域标题只计数）。
 
+### 2.1 本轮实测证据（run 44223647149，2026-11-18T02:29Z）
+
+| # | 实测值 |
+| --- | --- |
+| 1 | run https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44223647149 ｜ id=44223647149 ｜ attempt=1 ｜ event=**workflow_dispatch**（自然 schedule 尚未到点）｜ conclusion=success ｜ head=0982cd718 |
+| 2 | `status=ready` ｜ `source=environment` ｜ `values_printed=false` ｜ `password_value_emitted=false` ｜ keys=GMAIL_IMAP_USER + GMAIL_IMAP_APP_PASSWORD ｜ 日志中密码显示为 `***` |
+| 3 | `status=partial`（原因见下）｜ `gmail_fullbox.status=ok` ｜ `read_only=true` ｜ `bodies_persisted=false` ｜ `contains_mail_body=false` ｜ `external_model_safe=true` |
+| 4 | `count=1095` ｜ `open_count=1049` ｜ `full_box_total=4774` ｜ `full_box_unseen=3951` ｜ `window_truncated=false` ｜ `bodies_read=50`（只取头，不取正文） |
+| 5 | `counts.unified=1133` ｜ `open_or_dispatch=200` ｜ `duplicates_removed=137` ｜ `ruling_conflicts=0`；dedupe v1：input 1133 → clusters 996（thread 117 / task 5 / single 875），`history_preserved=true` |
+| 6 | 未出现正文键；`bodies_persisted=false`、`contains_mail_body=false`、`external_model_safe=true` |
+| 7 | 结果提交 `b07cdaabb4a05badd4e8467609305e68ca6bc87f`（`chore(mail): daily read-only intake 2026-11-18 [skip ci]`） |
+| 8 | artifact `mail-intake-44223647149-1` ｜ 209864 bytes ｜ `sha256:23e8b502b54ffdaf6a2bc134a51bb1e6faf85a65791d9014f6f118cf749f0e47` ｜ 到期 2026-12-18 |
+
+`status=partial` 的唯一原因：Agent Mail 通道在 CI 内不可用——日志 `tracker status=unknown ... spawnSync agently-cli ENOENT`，`agent_mail=missing`。Gmail 通道本身 `ok`。该缺口单独登记为看板 `GMAIL-AGENT-MAIL-CI-CHANNEL`。
+
+仍未发生：自然 `schedule`（00:23 UTC）触发的那次 run；`failed`（退出码 3）分支的真实触发。
+
 ## 3. 回退方案（按影响面从小到大）
 
 | 级别 | 动作 | 生效时间 | 验证 |
