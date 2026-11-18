@@ -1,0 +1,81 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-wallet-p1-3-and-mail-schedule",
+  "target": "wallet-p1-3 + gmail-daily-intake",
+  "platform": "github-actions + repo",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "8ff2b63693d75e6aa9e4f0cbf1f662a8181da300",
+  "code_path": "scripts/wallet、.github/workflows/mail-intake-phase2.yml、scripts/tests/mail-workflow-policy.test.mjs、ops/task-continuity/board.json、ops/deep-superagent/tasks",
+  "deployed_at": "2026-11-18T02:27:14Z",
+  "authority": {
+    "gpt_ruling": "GPT-WALLET-V1-20261116-01（P0 只读余额视图/自检/离线测试 + P1 仅登记式订阅与账本结构；20 USD 自动打款不批准；DRY_RUN 保持；微信/支付宝凭证仍人工）",
+    "owner_instruction": "Owner 2026-11-17：Gmail 给出最小证据集与回退方案后启用；同日：叫 Deep 团队回答做了什么/卡哪里/哪些没做",
+    "merge_condition_not_met": "P1-1 由 commit 10617ffc 合入 main 时，裁决要求的 GPT 精确 diff 复核没有留下记录；本回执不声称该复核已通过"
+  },
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "this_push",
+    "deployed": "wallet: 无需独立部署（仓库脚本）；gmail: 工作流随 main 生效，但定时 run 尚未触发",
+    "submitted": "not_yet",
+    "platform_accepted": "not_yet"
+  },
+  "verified": [
+    {
+      "kind": "targeted_tests_wallet",
+      "result": "ok",
+      "evidence": "node --test scripts/wallet/__tests__/ = 25 pass / 0 fail，跑法为远端 P1-1 实现（rpc.mjs / balance-view.mjs / tokens.json / rpc-token.test.mjs / onchain.test.mjs，均取自 main）叠加本次 P1-3（core.mjs + ledger.test.mjs），未覆盖远端文件"
+    },
+    {
+      "kind": "targeted_tests_mail_contract",
+      "result": "ok",
+      "evidence": "契约测试 90 pass / 0 fail；Python BODY.PEEK 用例 31 OK；纠偏校验 OK；凭证缺失即失败用例通过"
+    },
+    {
+      "kind": "policy_tests_mail_workflow",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/mail-workflow-policy.test.mjs = 12 pass / 0 fail，覆盖：单一定时、contract 无 secret 只读、intake 仅两个 secret、禁止打印凭证、失败即闭、intake 不跑 PR、git add 路径受限、仅 ok/partial 提交、无合并/部署、无 push 触发"
+    },
+    {
+      "kind": "actions_secrets_names",
+      "result": "ok",
+      "evidence": "GitHub Actions secrets 仅新增 GMAIL_IMAP_USER 与 GMAIL_IMAP_APP_PASSWORD 两个名称（API 返回 http=201，值经 libsodium sealed box 加密传输，未打印、未落盘、未进仓库）；secret 列表只核对名称"
+    },
+    {
+      "kind": "board_validation",
+      "result": "ok",
+      "evidence": "按 main 的 scripts/task-continuity.mjs validateBoard 校验 ops/task-continuity/board.json：tasks=17，errors=0"
+    }
+  ],
+  "not_verified": [
+    "Gmail 每日只读摄入的真实 run 尚未发生：schedule 未到点，手动 dispatch 尚未执行；在拿到 run id 与 latest.json 回读前，不得写成“已跑通”或“已读取邮箱”",
+    "Gmail intake 产物只允许在 status=ok|partial 时提交，且只 git add knowledge/results/deep-superagent/mail-* 与 ruling-tracker/；failed 时只报警不提交——该分支尚未被真实失败触发验证",
+    "Wallet P1-3 的 GPT 精确 diff 复核尚未发生：看板记 in_review/next_owner=gpt，不是 done",
+    "P1-1 合并时缺少 GPT 精确 diff 复核记录（见 authority.merge_condition_not_met），本回执不补写该复核",
+    "Wallet v1 裁决中“20 USD 自动打款不批准 / DRY_RUN 保持 / 微信支付宝人工凭证”均为边界确认，不是能力上线，也没有任何真实打款验证",
+    "Deep 团队（qianwen/doubao）对本轮三个事项的书面回报尚未产生：任务卡 DEEP-WALLET-P1-REVIEW-20261118-1 随本次 push 入队，结果以队列 run 回执为准"
+  ],
+  "blockers": [],
+  "rollback": {
+    "doc": "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md",
+    "steps": [
+      "R1 关定时：删除 mail-intake-phase2.yml 的 schedule 段（或整条 intake job）后推送 main，契约 job 不受影响",
+      "R2 关手动：把 workflow_dispatch 的 read-only-intake 选项移除",
+      "R3 删 secret：删除 GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD，intake 立即失败即闭且不读邮箱",
+      "R4 吊销授权：在 Google 账号吊销该应用专用密码",
+      "R5 回退代码：revert 本次 commit（工作流 + 策略测试 + 文档 + 看板）",
+      "R6 恢复现场：以最后一次 status=ok 的 mail 结果文件为准，删除后续 partial 产物"
+    ]
+  },
+  "code_sha256": {
+    "scripts/wallet/core.mjs": "9dab06c80cfe4fbce846019f3e228c805deaefbeac227c730363e57516865357",
+    "scripts/wallet/__tests__/ledger.test.mjs": "392567febafa9dba42a12f096c105bce7b8a2e832dc609f81a1baa960490371d",
+    ".github/workflows/mail-intake-phase2.yml": "3d5712f0181c5a59e2d3d5e3de119730f1ad04c8deb1166b4611122196986c14",
+    "scripts/tests/mail-workflow-policy.test.mjs": "51a564c05fe6fbdccc0fdc3e08e766beb04a1a1545c8dbe2458c8093125639dc",
+    "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md": "78ec9ffd9b4c018774e9fdd5eaceed5a2cb6faad7f20e2163eac1c131a52b4af",
+    "ops/task-continuity/board.json": "77ab8446b01f109de47c42f994ce79c85632df0fd8184bebeaefb123fc5d631f",
+    "ops/deep-superagent/tasks/DEEP-WALLET-P1-REVIEW-20261118-1.json": "21385e34acd42e8107db14821c61ce7499b348c067f4601b965656fb8ddb28d9",
+    "excluded_from_push": "scripts/wallet/rpc.mjs, scripts/wallet/balance-view.mjs, agent-wallet/wallet/tokens.json, scripts/wallet/__tests__/onchain.test.mjs, scripts/wallet/__tests__/rpc-token.test.mjs —— 属 main 已有 P1-1（commit 10617ffc），本次不改写"
+  },
+  "next_action": "推送后：1) 手动 dispatch mail-intake-phase2（mode=read-only-intake）并回读最小证据集；2) 读 Deep 队列 run 的两个席回报；3) 把 WALLET-P1-INCREMENTAL-VERIFY 交 GPT 精确 diff 复核、GMAIL-DAILY-READONLY-SCHEDULE 交部署席确认，两者未闭环前看板保持 in_review。"
+}
