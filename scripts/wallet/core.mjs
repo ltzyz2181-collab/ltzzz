@@ -545,10 +545,7 @@ function emptyAssetState(asset, seq) {
   };
 }
 
-export function foldBalances(events) {
-  const accounts = new Map();
-  const violations = [];
-
+function foldInto(accounts, violations, events) {
   for (const event of events) {
     if (!event || typeof event.account !== 'string') continue;
     let account = accounts.get(event.account);
@@ -608,7 +605,12 @@ export function foldBalances(events) {
         break;
     }
   }
+}
 
+export function foldBalances(events) {
+  const accounts = new Map();
+  const violations = [];
+  foldInto(accounts, violations, events);
   return {accounts, violations};
 }
 
@@ -802,22 +804,257 @@ function acquireLedgerLock(ledgerPath, options = {}) {
   }
 }
 
+// ---------- verified-prefix cache (append fast path) ----------
+//
+// The cache never replaces verification: every append still checks the ledger
+// bytes it did not verify itself. A stale, truncated or edited prefix falls
+// back to the full load + verifyLedger path. Read APIs never use this cache.
+
+export const VERIFY_STATE_SCHEMA = 'ltzzz.wallet.verify.v1';
+
+export function resolveVerifyStatePath(ledgerPath) {
+  return path.join(path.dirname(ledgerPath), 'verify-state.json');
+}
+
+function serializeFolded(folded) {
+  const accounts = [];
+  for (const state of folded.accounts.values()) {
+    const byAsset = [];
+    for (const assetState of state.byAsset.values()) {
+      byAsset.push({
+        asset: assetState.asset,
+        net: assetState.net.toString(),
+        frozen: assetState.frozen.toString(),
+        credited: assetState.credited.toString(),
+        debited: assetState.debited.toString(),
+        frozenIn: assetState.frozenIn.toString(),
+        frozenOut: assetState.frozenOut.toString(),
+        settled: assetState.settled.toString(),
+        events: assetState.events,
+        firstSeq: assetState.firstSeq,
+        lastSeq: assetState.lastSeq,
+      });
+    }
+    accounts.push({account: state.account, events: state.events, monetaryEvents: state.monetaryEvents, byAsset});
+  }
+  return {accounts};
+}
+
+function restoreFolded(serialized) {
+  const invalid = message => new WalletError('verify_state_invalid', message);
+  if (!isPlainObject(serialized) || !Array.isArray(serialized.accounts)) throw invalid('folded snapshot is invalid');
+  const big = (value) => {
+    if (typeof value !== 'string' || !/^\d+$/.test(value)) throw invalid('folded amount is not an integer string');
+    return BigInt(value);
+  };
+  const accounts = new Map();
+  for (const account of serialized.accounts) {
+    if (!isPlainObject(account) || typeof account.account !== 'string' || !Array.isArray(account.byAsset)) {
+      throw invalid('folded account is invalid');
+    }
+    const byAsset = new Map();
+    for (const state of account.byAsset) {
+      if (!isPlainObject(state) || typeof state.asset !== 'string') throw invalid('folded asset is invalid');
+      byAsset.set(state.asset, {
+        asset: state.asset,
+        net: big(state.net),
+        frozen: big(state.frozen),
+        credited: big(state.credited),
+        debited: big(state.debited),
+        frozenIn: big(state.frozenIn),
+        frozenOut: big(state.frozenOut),
+        settled: big(state.settled),
+        events: state.events,
+        firstSeq: state.firstSeq,
+        lastSeq: state.lastSeq,
+      });
+    }
+    accounts.set(account.account, {
+      account: account.account,
+      byAsset,
+      events: account.events,
+      monetaryEvents: account.monetaryEvents,
+    });
+  }
+  return {accounts, violations: []};
+}
+
+function verifyStatePayload(cached) {
+  return {
+    schema: VERIFY_STATE_SCHEMA,
+    ledger: cached.ledger,
+    bytes: cached.bytes,
+    count: cached.count,
+    head: cached.head,
+    prefix_sha256: cached.prefix_sha256,
+    folded: cached.folded,
+    idempotency: cached.idempotency,
+  };
+}
+
+function readVerifyState(file) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return isPlainObject(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeVerifyState(file, state) {
+  const temp = `${file}.tmp`;
+  const fd = fs.openSync(temp, 'w', 0o600);
+  try {
+    fs.writeSync(fd, JSON.stringify(state));
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(temp, file);
+}
+
+// Returns a verified base state (prefix from cache, or the whole ledger), or
+// throws ledger_corrupt exactly like the previous full path.
+function loadForAppend(ledgerPath, options) {
+  const statePath = options.verifyStatePath ?? resolveVerifyStatePath(ledgerPath);
+  const cached = options.forceFull ? null : readVerifyState(statePath);
+  let buffer = null;
+  try {
+    buffer = fs.readFileSync(ledgerPath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    buffer = Buffer.alloc(0);
+  }
+
+  // The cache is an external anchor for length: a file shorter than a prefix
+  // that was verified before has been truncated, so refuse instead of
+  // silently accepting the shorter chain.
+  if (cached && cached.schema === VERIFY_STATE_SCHEMA && cached.ledger === ledgerPath &&
+      Number.isSafeInteger(cached.bytes) && cached.bytes > buffer.length) {
+    throw new WalletError('ledger_corrupt', 'ledger is shorter than its verified prefix', {
+      errors: [{line: 0, code: 'ledger_truncated', message: 'ledger is shorter than the verified prefix'}],
+      file: ledgerPath,
+    });
+  }
+
+  if (cached && cached.schema === VERIFY_STATE_SCHEMA && cached.ledger === ledgerPath &&
+      Number.isSafeInteger(cached.bytes) && cached.bytes >= 0 && cached.bytes <= buffer.length &&
+      (cached.bytes === 0 || buffer[cached.bytes - 1] === 0x0a) &&
+      Number.isSafeInteger(cached.count) && cached.count >= 0 &&
+      cached.prefix_sha256 === sha256Hex(buffer.subarray(0, cached.bytes).toString('utf8')) &&
+      cached.state_sha256 === sha256Hex(canonicalJson(verifyStatePayload(cached)))) {
+    const prefixText = buffer.subarray(0, cached.bytes).toString('utf8');
+    let head = GENESIS_PREV_HASH;
+    let anchorOk = cached.count === 0;
+    if (cached.count > 0) {
+      try {
+        const end = prefixText.length - 1;
+        const start = prefixText.lastIndexOf('\n', end - 1) + 1;
+        const anchor = JSON.parse(prefixText.slice(start, end));
+        anchorOk = isPlainObject(anchor) && anchor.seq === cached.count - 1 &&
+          anchor.hash === cached.head && HASH_RE.test(String(anchor.hash)) &&
+          hashEventRecord(anchor) === anchor.hash;
+        head = anchor?.hash ?? null;
+      } catch {
+        anchorOk = false;
+      }
+    } else {
+      anchorOk = cached.head === GENESIS_PREV_HASH;
+    }
+    if (anchorOk) {
+      const tail = buffer.subarray(cached.bytes).toString('utf8');
+      const lines = tail === '' ? [] : tail.split('\n');
+      if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+      const events = [];
+      let tailOk = lines.every(line => line.trim() !== '');
+      let lastHash = head;
+      for (let index = 0; tailOk && index < lines.length; index += 1) {
+        let stored;
+        try {
+          stored = JSON.parse(lines[index]);
+        } catch {
+          tailOk = false;
+          break;
+        }
+        if (!isPlainObject(stored) || stored.seq !== cached.count + index || stored.prevHash !== lastHash ||
+            !HASH_RE.test(String(stored.hash)) || hashEventRecord(stored) !== stored.hash ||
+            validateStoredEvent(stored).length > 0 ||
+            (cached.idempotency && Object.hasOwn(cached.idempotency, stored.idempotencyKey)) ||
+            events.some(existing => existing.idempotencyKey === stored.idempotencyKey)) {
+          tailOk = false;
+          break;
+        }
+        events.push(stored);
+        lastHash = stored.hash;
+      }
+      if (tailOk) {
+        let folded;
+        try {
+          folded = restoreFolded(cached.folded);
+        } catch {
+          folded = null;
+        }
+        if (folded) {
+          foldInto(folded.accounts, folded.violations, events);
+          return {
+            ledgerPath,
+            statePath,
+            raw: buffer.toString('utf8'),
+            events,
+            folded,
+            count: cached.count + events.length,
+            head: lastHash,
+            idempotency: {...(cached.idempotency || {})},
+            prefixOnly: true,
+          };
+        }
+      }
+    }
+  }
+
+  const load = loadLedger({ledgerPath});
+  const chain = verifyLedger(load);
+  if (!chain.ok) {
+    throw new WalletError('ledger_corrupt', 'refusing to append to an invalid ledger', {
+      errors: chain.errors,
+      file: chain.file,
+    });
+  }
+  const idempotency = {};
+  for (const event of load.events) {
+    if (typeof event.idempotencyKey !== 'string') continue;
+    idempotency[event.idempotencyKey] = {
+      seq: event.seq,
+      intentHash: typeof event.intentHash === 'string' ? event.intentHash : intentHashFor(event),
+    };
+  }
+  return {
+    ledgerPath,
+    statePath,
+    raw: load.raw,
+    events: load.events,
+    folded: foldBalances(load.events),
+    count: chain.count,
+    head: chain.head,
+    idempotency,
+    prefixOnly: false,
+  };
+}
+
 export function appendEvent(input, options = {}) {
   const ledgerPath = resolveLedgerPath(options);
   const event = normalizeEvent(input, options);
   const release = acquireLedgerLock(ledgerPath, options);
 
   try {
-    const load = loadLedger({ledgerPath});
-    const chain = verifyLedger(load);
-    if (!chain.ok) {
-      throw new WalletError('ledger_corrupt', 'refusing to append to an invalid ledger', {
-        errors: chain.errors,
-        file: chain.file,
-      });
+    let base = loadForAppend(ledgerPath, options);
+    // A key recorded in the verified prefix cannot be judged from the tail
+    // alone: reload the full ledger so replay/conflict semantics stay exact.
+    if (base.prefixOnly && Object.hasOwn(base.idempotency, event.idempotencyKey)) {
+      base = loadForAppend(ledgerPath, {...options, forceFull: true});
     }
 
-    for (const existing of load.events) {
+    for (const existing of base.events) {
       if (existing.idempotencyKey !== event.idempotencyKey) continue;
       const existingIntent = typeof existing.intentHash === 'string' ? existing.intentHash : intentHashFor(existing);
       if (existingIntent === event.intentHash) {
@@ -825,7 +1062,7 @@ export function appendEvent(input, options = {}) {
           event: existing,
           appended: false,
           duplicate: true,
-          chain: {ok: true, count: chain.count, head: chain.head},
+          chain: {ok: true, count: base.count, head: base.head},
         };
       }
       throw new WalletError('idempotency_conflict', 'idempotencyKey was already used with a different event', {
@@ -834,11 +1071,11 @@ export function appendEvent(input, options = {}) {
       });
     }
 
-    const folded = foldBalances(load.events);
+    const folded = base.folded;
     assertEffectAllowed(event, folded);
 
-    const seq = load.events.length;
-    const prevHash = seq === 0 ? GENESIS_PREV_HASH : load.events[seq - 1].hash;
+    const seq = base.count;
+    const prevHash = seq === 0 ? GENESIS_PREV_HASH : base.head;
     const body = {...event, seq, prevHash};
     const stored = {...body, hash: hashEventRecord(body)};
 
@@ -848,7 +1085,7 @@ export function appendEvent(input, options = {}) {
         appended: false,
         duplicate: false,
         dryRun: true,
-        chain: {ok: true, count: chain.count, head: chain.head},
+        chain: {ok: true, count: base.count, head: base.head},
       };
     }
 
@@ -861,11 +1098,34 @@ export function appendEvent(input, options = {}) {
       fs.closeSync(fd);
     }
 
+    // Best-effort cache refresh: the ledger itself is already durable, so a
+    // cache write failure must not turn a successful append into an error.
+    try {
+      foldInto(folded.accounts, folded.violations, [stored]);
+      const nextRaw = base.raw + line;
+      const payload = {
+        schema: VERIFY_STATE_SCHEMA,
+        ledger: ledgerPath,
+        bytes: Buffer.byteLength(nextRaw, 'utf8'),
+        count: seq + 1,
+        head: stored.hash,
+        prefix_sha256: sha256Hex(nextRaw),
+        folded: serializeFolded(folded),
+        idempotency: {
+          ...base.idempotency,
+          [stored.idempotencyKey]: {seq: stored.seq, intentHash: stored.intentHash},
+        },
+      };
+      writeVerifyState(base.statePath, {...payload, state_sha256: sha256Hex(canonicalJson(payload))});
+    } catch {
+      // A stale cache only costs one full verification on the next append.
+    }
+
     return {
       event: stored,
       appended: true,
       duplicate: false,
-      chain: {ok: true, count: chain.count + 1, head: stored.hash},
+      chain: {ok: true, count: seq + 1, head: stored.hash},
     };
   } finally {
     release();

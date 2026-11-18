@@ -7,6 +7,7 @@ import {
   amountToUnits,
   appendEvent,
   deriveBalance,
+  resolveVerifyStatePath,
   unitsToAmount,
   verifyChain,
 } from '../core.mjs';
@@ -140,4 +141,93 @@ test('amounts are decimal strings with no floating-point path', () => {
   assert.throws(() => amountToUnits('1e-3'), error => error.code === 'invalid_amount');
   assert.throws(() => amountToUnits(1), error => error.code === 'invalid_amount');
   assert.throws(() => amountToUnits('1.0000000000000000001'), error => error.code === 'invalid_amount');
+});
+
+function seedEvent(index) {
+  return {
+    type: 'credit',
+    account: 'agent:test',
+    asset: 'USDC',
+    amount: '1',
+    idempotencyKey: `seed-${index}`,
+    at: new Date(Date.UTC(2026, 0, 1, 0, 0, index)).toISOString(),
+  };
+}
+
+test('verified-prefix cache produces the same chain as the full path', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ltzzz-wallet-cache-'));
+  t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+  const cachedLedger = path.join(dir, 'cached.jsonl');
+  const fullLedger = path.join(dir, 'full.jsonl');
+
+  for (let index = 0; index < 30; index += 1) {
+    appendEvent(seedEvent(index), {ledgerPath: cachedLedger});
+    appendEvent(seedEvent(index), {ledgerPath: fullLedger});
+    fs.rmSync(resolveVerifyStatePath(fullLedger), {force: true});
+  }
+
+  for (let index = 30; index < 50; index += 1) {
+    appendEvent(seedEvent(index), {ledgerPath: cachedLedger});
+    fs.rmSync(resolveVerifyStatePath(fullLedger), {force: true});
+    appendEvent(seedEvent(index), {ledgerPath: fullLedger});
+  }
+
+  assert.deepEqual(ledgerLines(cachedLedger), ledgerLines(fullLedger));
+  assert.equal(verifyChain({ledgerPath: cachedLedger}).ok, true);
+  assert.equal(verifyChain({ledgerPath: fullLedger}).ok, true);
+  const cache = JSON.parse(fs.readFileSync(resolveVerifyStatePath(cachedLedger), 'utf8'));
+  assert.equal(cache.schema, 'ltzzz.wallet.verify.v1');
+  assert.equal(cache.count, 50);
+  assert.equal(cache.head, JSON.parse(ledgerLines(cachedLedger).at(-1)).hash);
+});
+
+test('an edited prefix falls back to full verification and refuses the append', t => {
+  const ledgerPath = tempLedger(t);
+  const base = {account: 'agent:test', asset: 'USDC', at: '2026-11-16T00:00:00.000Z'};
+  appendEvent({...base, type: 'credit', amount: '10', idempotencyKey: 'c-1'}, {ledgerPath});
+  appendEvent({...base, type: 'credit', amount: '10', idempotencyKey: 'c-2'}, {ledgerPath});
+
+  const lines = ledgerLines(ledgerPath);
+  const second = JSON.parse(lines[1]);
+  second.amount = '99';
+  lines[1] = JSON.stringify(second);
+  fs.writeFileSync(ledgerPath, `${lines.join('\n')}\n`);
+
+  assert.throws(
+    () => appendEvent({...base, type: 'credit', amount: '1', idempotencyKey: 'c-3'}, {ledgerPath}),
+    error => error.code === 'ledger_corrupt',
+  );
+  assert.equal(ledgerLines(ledgerPath).length, 2);
+});
+
+test('a truncated ledger is refused while the verified prefix is longer', t => {
+  const ledgerPath = tempLedger(t);
+  const base = {account: 'agent:test', asset: 'USDC', at: '2026-11-16T00:00:00.000Z'};
+  appendEvent({...base, type: 'credit', amount: '10', idempotencyKey: 'c-1'}, {ledgerPath});
+  appendEvent({...base, type: 'credit', amount: '10', idempotencyKey: 'c-2'}, {ledgerPath});
+
+  const lines = ledgerLines(ledgerPath);
+  fs.writeFileSync(ledgerPath, `${lines[0]}\n`);
+
+  assert.throws(
+    () => appendEvent({...base, type: 'credit', amount: '1', idempotencyKey: 'c-3'}, {ledgerPath}),
+    error => error.code === 'ledger_corrupt' &&
+      (error.errors || []).some(entry => entry.code === 'ledger_truncated'),
+  );
+  assert.equal(ledgerLines(ledgerPath).length, 1);
+});
+
+test('a forged cache head is ignored and the whole ledger is re-verified', t => {
+  const ledgerPath = tempLedger(t);
+  const base = {account: 'agent:test', asset: 'USDC', at: '2026-11-16T00:00:00.000Z'};
+  appendEvent({...base, type: 'credit', amount: '10', idempotencyKey: 'c-1'}, {ledgerPath});
+
+  const cachePath = resolveVerifyStatePath(ledgerPath);
+  const cache = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+  cache.head = 'f'.repeat(64);
+  fs.writeFileSync(cachePath, JSON.stringify(cache));
+
+  const result = appendEvent({...base, type: 'credit', amount: '1', idempotencyKey: 'c-2'}, {ledgerPath});
+  assert.equal(result.appended, true);
+  assert.equal(verifyChain({ledgerPath}).ok, true);
 });

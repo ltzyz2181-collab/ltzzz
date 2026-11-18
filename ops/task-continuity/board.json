@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T02:13:10.054Z",
+  "updated_at": "2026-11-18T02:40:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -21,15 +21,18 @@
     },
     {
       "id": "WALLET-P1-INCREMENTAL-VERIFY",
-      "title": "Wallet P1-3：appendEvent 由 O(n²) 改为增量/分页校验",
-      "state": "ready",
-      "next_owner": "claude",
-      "next_action": "按 docs/2026-11-16-wallet-P1-实施方案.md §2 落代码 + 等价性测试（同样本前后哈希与错误行为一致）",
+      "title": "Wallet P1-3：appendEvent 增量校验（已验证前缀缓存，读写语义不变）",
+      "state": "in_review",
+      "next_owner": "gpt",
+      "next_action": "按 GPT-WALLET-P1-20261116-01 的合并条件做精确 diff 复核；代码已合并 main，复核结论落地后转 done",
       "evidence": [
-        "docs/2026-11-16-wallet-P1-实施方案.md",
-        "scripts/wallet/core.mjs"
+        "docs/2026-11-16-wallet-P1-实施方案.md §2",
+        "scripts/wallet/core.mjs（resolveVerifyStatePath / loadForAppend）",
+        "scripts/wallet/__tests__/ledger.test.mjs（等价性、前缀被改、截断、伪造缓存 4 例）",
+        "node --test scripts/wallet/__tests__/ = 25 pass 0 fail（远端 P1-1 实现 + 本次 P1-3）"
       ],
-      "updated_at": "2026-11-17T11:00:00Z"
+      "updated_at": "2026-11-18T02:40:00.000Z",
+      "note": "缓存只加速 appendEvent；所有读路径仍全量 verifyLedger。前缀被编辑/账本截断/缓存头伪造均 fail-closed 或回退全量校验；命中缓存内幂等键时强制全量重载，保持 replay/conflict 语义。"
     },
     {
       "id": "WALLET-P1-USDC-BALANCE",
@@ -162,6 +165,22 @@
       "evidence": [],
       "updated_at": "2026-11-17T11:00:00Z",
       "unblock_condition": "真实 IMAP 登录与采集回执"
+    },
+    {
+      "id": "GMAIL-DAILY-READONLY-SCHEDULE",
+      "title": "Gmail 每日只读摄入定时启用（contract 不放 secret、intake 写回受限）",
+      "state": "in_review",
+      "next_owner": "deploy_seat",
+      "next_action": "推送后立刻 dispatch 一次 read-only-intake，按最小证据集核对（run id/status、read_only、bodies_persisted、计数、脱敏提交、artifact sha256），与 GMAIL-PHASE1-IMAP-EVIDENCE 一并转 done 或记录卡点",
+      "evidence": [
+        ".github/workflows/mail-intake-phase2.yml（contract 只读无 secret；intake 仅在 schedule 或手动 read-only-intake 触发）",
+        "scripts/tests/mail-workflow-policy.test.mjs（12 项策略断言）",
+        "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md（DR-20261118-gmail-intake-schedule，含 R1–R6 回退）",
+        "仓库 Actions secrets 仅新增 GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD 两个名称（值未打印、未落盘）",
+        "node --test scripts/tests/mail-workflow-policy.test.mjs = 12 pass 0 fail"
+      ],
+      "updated_at": "2026-11-18T02:40:00.000Z",
+      "note": "授权依据 GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二/§六 + Owner 2026-11-17“启用”指令。尚无真实定时 run 证据前，不得写成“已跑通”；凭证缺失时 intake 必须失败且不读邮箱。"
     },
     {
       "id": "TASK-CONTINUITY-BOARD",

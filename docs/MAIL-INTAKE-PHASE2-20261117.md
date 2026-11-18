@@ -1,5 +1,7 @@
 # Gmail 摄入 Phase 2（2026-11-17）
 
+> **后续状态（2026-11-18）**：本文是 2026-11-17 当时的记录。此后按 Owner“给出最小证据集与回退方案后启用”的指令，工作流已拆成 `contract`（无 secret、只读）与 `intake`（定时或手动 read-only，两个 Gmail secret）两个 job，并新增每日定时与策略测试。启用方式、最小证据集与回退 R1–R6 见 `docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md` 与 `ops/deploy-receipts/DR-20261118-wallet-p1-3-and-mail-schedule.json`。下文“未启用定时/无 secrets”等句子只描述当时状态，不代表现在。
+
 任务：`LTZZZ-GMAIL-INTAKE-HYGIENE-20261117-02`，第二裁决 `GPT-LTZZZ-AUTONOMY-RULING-20261117-01`。
 
 **当前状态**：代码完成、专项测试通过、独立分支待 PR；**未合并 main、未部署、未启用每日定时、未自动发送任何邮件**。Phase 1 仍为 `BLOCKED_EVIDENCE`（本机无凭据，见 §2）。
