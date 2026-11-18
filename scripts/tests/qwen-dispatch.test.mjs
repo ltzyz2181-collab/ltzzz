@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {runOnce, validateCard, pending} from '../run-qwen-dispatch.mjs';
+import {runOnce, runBatch, validateCard, pending} from '../run-qwen-dispatch.mjs';
 
 const mk = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'qd-')); return {queueDir: path.join(d, 'q'), receiptDir: path.join(d, 'r')}; };
 const card = (dir, over = {}) => { fs.mkdirSync(dir, {recursive: true}); const c = {id: 'QWEN-TEST-0001', agent: 'qianwen', prompt: '请用一句话说明什么是任务认领回执，不要执行任何命令。', max_tokens: 128, ...over}; fs.writeFileSync(path.join(dir, c.id + '.json'), JSON.stringify(c)); return c; };
@@ -93,4 +93,52 @@ test('receipt separates queue dispatcher from actual generating model', async ()
   assert.equal(rec.queue_dispatcher, 'qianwen');
   assert.equal(rec.generated_by_model, 'kimi-k3');
   assert.ok(rec.attribution_note && /kimi/i.test(rec.attribution_note) && /qianwen/i.test(rec.attribution_note), rec.attribution_note);
+});
+
+test('runBatch consumes multiple pending cards in one run (default cap applies)', async () => {
+  const p = mk(); let calls = 0;
+  card(p.queueDir, {id: 'QWEN-BATCH-0001'});
+  card(p.queueDir, {id: 'QWEN-BATCH-0002'});
+  const call = async () => { calls += 1; return {ok: true, status: 'success', output: '回执', model: 'qwen-plus', finish_reason: 'stop', tokens_used: 3}; };
+  const batch = await runBatch({...p, call});
+  assert.equal(calls, 2);
+  assert.equal(batch.executed_count, 2);
+  assert.equal(batch.stopped_reason, 'no_pending_cards');
+  assert.equal(batch.model_calls, 2);
+  assert.deepEqual(pending(p), []);
+});
+
+test('runBatch honours the limit and leaves later cards for the next run', async () => {
+  const p = mk(); let calls = 0;
+  for (const id of ['QWEN-CAP-0001', 'QWEN-CAP-0002', 'QWEN-CAP-0003', 'QWEN-CAP-0004']) card(p.queueDir, {id});
+  const batch = await runBatch({...p, limit: 2, call: async () => { calls += 1; return {ok: true, status: 'success', output: '回执', model: 'qwen-plus', finish_reason: 'stop'}; }});
+  assert.equal(calls, 2);
+  assert.equal(batch.executed_count, 2);
+  assert.equal(batch.stopped_reason, 'limit_reached');
+  assert.equal(pending(p).length, 2);
+});
+
+test('runBatch stops on an uncertain reservation instead of buying another card', async () => {
+  const p = mk(); let calls = 0;
+  card(p.queueDir, {id: 'QWEN-STOP-0001'});
+  card(p.queueDir, {id: 'QWEN-STOP-0002'});
+  await assert.rejects(() => runBatch({...p, reserve: async () => { throw Error('write_unknown'); }, call: async () => { calls += 1; }}), /write_unknown/);
+  assert.equal(calls, 0);
+});
+
+test('invalid cards are consumed and do not block later valid cards', async () => {
+  const p = mk(); let calls = 0;
+  card(p.queueDir, {id: 'QWEN-BAD-0001', agent: 'doubao'});
+  card(p.queueDir, {id: 'QWEN-GOOD-0001'});
+  const batch = await runBatch({...p, call: async () => { calls += 1; return {ok: true, status: 'success', output: '回执', model: 'qwen-plus', finish_reason: 'stop'}; }});
+  assert.equal(calls, 1);
+  assert.equal(batch.executed_count, 1);
+  assert.equal(batch.stopped_reason, 'no_pending_cards');
+});
+
+test('runBatch refuses an invalid limit before any provider call', async () => {
+  const p = mk(); card(p.queueDir); let calls = 0;
+  await assert.rejects(() => runBatch({...p, limit: 0, call: async () => { calls += 1; }}), /invalid_batch_limit/);
+  await assert.rejects(() => runBatch({...p, limit: 21, call: async () => { calls += 1; }}), /invalid_batch_limit/);
+  assert.equal(calls, 0);
 });

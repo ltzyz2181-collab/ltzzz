@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {runOnce, validateCard, pending, assertProxyOnly} from '../run-doubao-dispatch.mjs';
+import {runOnce, runBatch, validateCard, pending, assertProxyOnly} from '../run-doubao-dispatch.mjs';
 
 const mk = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'dd-')); return {queueDir: path.join(d, 'q'), receiptDir: path.join(d, 'r')}; };
 const card = (dir, over = {}) => { fs.mkdirSync(dir, {recursive: true}); const c = {id: 'DOUBAO-TEST-0001', agent: 'doubao', prompt: '请只读复核下面给出的账本写入边界，逐条给出结论，不要声称已部署。', max_tokens: 1024, ...over}; fs.writeFileSync(path.join(dir, c.id + '.json'), JSON.stringify(c)); return c; };
@@ -78,4 +78,49 @@ test('doubao may not be called without the existing proxy', () => {
   assert.throws(() => assertProxyOnly({}), /existing_proxy_only_no_fallback/);
   assert.throws(() => assertProxyOnly({DOUBAO_USE_PROXY: '1'}), /existing_proxy_only_no_fallback/);
   assert.doesNotThrow(() => assertProxyOnly({DOUBAO_USE_PROXY: 'true'}));
+});
+test('runBatch consumes multiple pending cards in one run (default cap applies)', async () => {
+  const p = mk(); let calls = 0;
+  card(p.queueDir, {id: 'DOUBAO-BATCH-0001'});
+  card(p.queueDir, {id: 'DOUBAO-BATCH-0002'});
+  const call = async () => { calls += 1; return {ok: true, status: 'success', output: '回执', model: 'doubao-pro', finish_reason: 'stop'}; };
+  const batch = await runBatch({...p, call});
+  assert.equal(calls, 2);
+  assert.equal(batch.executed_count, 2);
+  assert.equal(batch.stopped_reason, 'no_pending_cards');
+});
+
+test('runBatch honours the limit and leaves later cards for the next run', async () => {
+  const p = mk(); let calls = 0;
+  for (const id of ['DOUBAO-CAP-0001', 'DOUBAO-CAP-0002', 'DOUBAO-CAP-0003', 'DOUBAO-CAP-0004']) card(p.queueDir, {id});
+  const batch = await runBatch({...p, limit: 2, call: async () => { calls += 1; return {ok: true, status: 'success', output: '回执', model: 'doubao-pro', finish_reason: 'stop'}; }});
+  assert.equal(calls, 2);
+  assert.equal(batch.executed_count, 2);
+  assert.equal(batch.stopped_reason, 'limit_reached');
+  assert.equal(pending(p).length, 2);
+});
+
+test('runBatch stops on an uncertain reservation instead of buying another card', async () => {
+  const p = mk(); let calls = 0;
+  card(p.queueDir, {id: 'DOUBAO-STOP-0001'});
+  card(p.queueDir, {id: 'DOUBAO-STOP-0002'});
+  await assert.rejects(() => runBatch({...p, reserve: async () => { throw Error('write_unknown'); }, call: async () => { calls += 1; }}), /write_unknown/);
+  assert.equal(calls, 0);
+});
+
+test('invalid cards are consumed and do not block later valid cards', async () => {
+  const p = mk(); let calls = 0;
+  card(p.queueDir, {id: 'DOUBAO-BAD-0001', agent: 'qianwen'});
+  card(p.queueDir, {id: 'DOUBAO-GOOD-0001'});
+  const batch = await runBatch({...p, call: async () => { calls += 1; return {ok: true, status: 'success', output: '回执', model: 'doubao-pro', finish_reason: 'stop'}; }});
+  assert.equal(calls, 1);
+  assert.equal(batch.executed_count, 1);
+  assert.equal(batch.stopped_reason, 'no_pending_cards');
+});
+
+test('runBatch refuses an invalid limit before any provider call', async () => {
+  const p = mk(); card(p.queueDir); let calls = 0;
+  await assert.rejects(() => runBatch({...p, limit: 0, call: async () => { calls += 1; }}), /invalid_batch_limit/);
+  await assert.rejects(() => runBatch({...p, limit: 21, call: async () => { calls += 1; }}), /invalid_batch_limit/);
+  assert.equal(calls, 0);
 });

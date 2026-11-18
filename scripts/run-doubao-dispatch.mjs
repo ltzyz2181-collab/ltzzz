@@ -90,6 +90,30 @@ export async function runOnce({queueDir = 'ops/dispatch/queue-doubao', receiptDi
   return {executed: true, task_id: base.task_id, status: receipt.status, model_calls: receipt.model_calls};
 }
 
+// Consume pending cards in one run. Each card is still reserved before its
+// provider call, and the loop stops at the first card whose reservation is
+// uncertain: a write-unknown reservation must never be followed by another
+// paid call. Invalid cards are consumed (their rejection receipt is written)
+// and do not block the remaining queue.
+export async function runBatch({limit = 3, ...options} = {}) {
+  const max = Number(limit);
+  if (!Number.isSafeInteger(max) || max < 1 || max > 20) throw Error('invalid_batch_limit');
+  const results = [];
+  for (let index = 0; index < max; index += 1) {
+    const result = await runOnce(options);
+    results.push(result);
+    if (result.reason === 'no_pending_cards') break;
+  }
+  const executed = results.filter(result => result.executed);
+  const last = results[results.length - 1];
+  return {
+    executed_count: executed.length,
+    model_calls: results.reduce((sum, result) => sum + (result.model_calls || 0), 0),
+    stopped_reason: last?.reason || 'limit_reached',
+    results,
+  };
+}
+
 export async function durableMainReservation({file, sha256}) {
   assertProxyOnly(process.env);
   if (process.env.GITHUB_REPOSITORY !== 'ltzyz2181-collab/ltzzz' || process.env.GITHUB_REF !== 'refs/heads/main' || !/^[a-f0-9]{40}$/.test(process.env.GITHUB_SHA || '') || !/^(push|workflow_dispatch)$/.test(process.env.GITHUB_EVENT_NAME || '')) throw Error('trusted_main_reservation_required');
@@ -108,8 +132,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (process.argv[2] === '--list') {
     console.log(JSON.stringify({pending: pending({queueDir: 'ops/dispatch/queue-doubao', receiptDir: 'knowledge/results/doubao-dispatch'})}, null, 2));
   } else {
-    const r = await runOnce({reserve: durableMainReservation});
-    console.log(JSON.stringify(r));
-    if (r.executed && r.status !== 'draft_delivered_pending_independent_review') process.exitCode = 1;
+    const limit = Number(process.env.DISPATCH_MAX_CARDS || 3);
+    const batch = await runBatch({limit, reserve: durableMainReservation});
+    console.log(JSON.stringify(batch));
+    if (batch.results.some(r => r.executed && r.status !== 'draft_delivered_pending_independent_review')) process.exitCode = 1;
   }
 }

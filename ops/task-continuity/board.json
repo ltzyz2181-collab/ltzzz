@@ -1,20 +1,21 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T01:55:51.795Z",
+  "updated_at": "2026-11-18T02:08:15.099Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
       "title": "PR #408 Phase 1 六项安全（豆包 1 HIGH / 千问 CI 复核已交付）",
-      "state": "blocked_decision",
-      "next_owner": "gpt",
-      "next_action": "对豆包 HIGH（资金意图正则）与 4 项 MEDIUM 逐条裁决：先修再复审，还是接受为设计边界",
+      "state": "in_review",
+      "next_owner": "claude",
+      "next_action": "在最新 main 基线重跑 hire-phase1 CI，回读新 head 结果；通过后按两席审查呈报等合并决定",
       "evidence": [
         "docs/HIRE-PHASE1-REVIEW-20261117-03-DOUBAO.md",
-        "docs/HIRE-PHASE1-REVIEW-20261117-03-QWEN.md"
+        "docs/HIRE-PHASE1-REVIEW-20261117-03-QWEN.md",
+        "docs/HIRE-PHASE1-REVIEW-20261117-03-CLAUDE.md"
       ],
-      "updated_at": "2026-11-17T11:00:00Z",
-      "unblock_condition": "GPT 明示裁决；在此之前不合并不进 Phase 2"
+      "updated_at": "2026-11-18T02:08:15.099Z",
+      "note": "第 8 项 HIGH（资金意图绕过）已修复并推分支 head a0b87265；旧 CI 证据作废，需重跑。"
     },
     {
       "id": "WALLET-P1-INCREMENTAL-VERIFY",
@@ -30,38 +31,45 @@
     },
     {
       "id": "WALLET-P1-USDC-BALANCE",
-      "title": "Wallet P1-1：余额从 ETH 改读 Base USDC",
-      "state": "blocked_decision",
-      "next_owner": "gpt",
-      "next_action": "裁决 P1-1 的 4 问（默认链/合约是否内置、是否双行显示 ETH+USDC、锚定方案、能否 CI 绿即合）",
+      "title": "Wallet P1-1：余额双行显示 ETH + Base USDC（已实现，待合并）",
+      "state": "done",
       "evidence": [
-        "docs/2026-11-16-wallet-P1-实施方案.md"
+        "agent-wallet/wallet/tokens.json",
+        "scripts/wallet/rpc.mjs",
+        "scripts/wallet/balance-view.mjs",
+        "scripts/wallet/__tests__/rpc-token.test.mjs",
+        "live_read_2026-11-17: ETH 0.008278278362988452 / USDC 29.293744 @ chain 8453 block 58886036"
       ],
-      "updated_at": "2026-11-17T11:00:00Z",
-      "unblock_condition": "GPT 裁决；未裁决前不动 rpc.mjs 口径"
+      "updated_at": "2026-11-18T02:08:15.099Z",
+      "note": "默认链 Base 8453、合约在 tokens.json 而非代码；原生 ETH 行保留，新增 USDC 行。"
     },
     {
       "id": "WALLET-OPS-LEGACY-JOB",
-      "title": "ltzzz-wallet-ops.yml 每步 `|| true`，永远绿，失败不可见",
-      "state": "ready",
-      "next_owner": "deploy_seat",
-      "next_action": "改为逐步记录退出码并在同一次 run 内写状态回执；失败要红，不要静默绿",
+      "title": "ltzzz-wallet-ops.yml 静默绿（已改为失败即红 + 逐步回执）",
+      "state": "done",
       "evidence": [
-        ".github/workflows/ltzzz-wallet-ops.yml"
+        ".github/workflows/ltzzz-wallet-ops.yml",
+        "scripts/wallet-ops-receipt.mjs",
+        "scripts/tests/wallet-ops-receipt.test.mjs",
+        "knowledge/results/patchgate/post271/artifact-manifest.json#wallet_ops_fail_loud_update_20261117"
       ],
-      "updated_at": "2026-11-17T11:00:00Z"
+      "updated_at": "2026-11-18T02:08:15.099Z",
+      "note": "移除每步 || true，改 continue-on-error + outcome 回执；任一必需步骤未成功则 run 变红。release 行已同步重钉。"
     },
     {
       "id": "DISPATCH-MULTI-CARD",
-      "title": "千问/豆包消费者每次 run 只取 1 张卡，队列会停住",
-      "state": "ready",
-      "next_owner": "claude",
-      "next_action": "在工作流里循环消费到无卡或达上限（默认 3），保持每卡先落 reservation 再调用的语义",
+      "title": "千问/豆包消费者单次 run 只取 1 张卡（已改为上限 3 张循环）",
+      "state": "done",
       "evidence": [
         "scripts/run-qwen-dispatch.mjs",
-        "scripts/run-doubao-dispatch.mjs"
+        "scripts/run-doubao-dispatch.mjs",
+        "scripts/tests/qwen-dispatch.test.mjs",
+        "scripts/tests/doubao-dispatch.test.mjs",
+        ".github/workflows/qwen-dispatch.yml",
+        ".github/workflows/doubao-dispatch.yml"
       ],
-      "updated_at": "2026-11-18T01:55:51.795Z"
+      "updated_at": "2026-11-18T02:08:15.099Z",
+      "note": "runBatch 默认上限 3（DISPATCH_MAX_CARDS），每卡先落 reservation；reservation 不确定时立即停止，不再买下一张。"
     },
     {
       "id": "ORDER-DELIVER-FN",

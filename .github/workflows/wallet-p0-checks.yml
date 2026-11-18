@@ -1,10 +1,10 @@
 name: Wallet P0 read-only checks
 on:
   pull_request:
-    paths: ['scripts/wallet/**','lib/financial-exit-guard.js','.github/workflows/wallet-p0-checks.yml']
+    paths: ['scripts/wallet/**','scripts/wallet-ops-receipt.mjs','scripts/tests/wallet-ops-receipt.test.mjs','lib/financial-exit-guard.js','.github/workflows/ltzzz-wallet-ops.yml','.github/workflows/wallet-p0-checks.yml']
   push:
     branches: [main]
-    paths: ['scripts/wallet/**','lib/financial-exit-guard.js','.github/workflows/wallet-p0-checks.yml']
+    paths: ['scripts/wallet/**','scripts/wallet-ops-receipt.mjs','scripts/tests/wallet-ops-receipt.test.mjs','lib/financial-exit-guard.js','.github/workflows/ltzzz-wallet-ops.yml','.github/workflows/wallet-p0-checks.yml']
   schedule:
     - cron: '30 5 * * *'
   workflow_dispatch:
@@ -21,5 +21,7 @@ jobs:
         with: {node-version: '22'}
       - name: Ledger, balance view and adapter tests (no keys, no network)
         run: node --test scripts/wallet/__tests__/*.test.mjs
+      - name: Wallet ops receipt contract (a failed step must turn the run red)
+        run: node --test scripts/tests/wallet-ops-receipt.test.mjs
       - name: Self-test (synthetic chain, idempotency, tamper detection, fail-closed rails)
         run: node scripts/wallet/selftest.mjs

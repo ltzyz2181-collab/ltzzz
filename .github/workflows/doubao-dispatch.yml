@@ -21,15 +21,16 @@ jobs:
     needs: verify
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --test scripts/tests/doubao-dispatch.test.mjs
-      - name: Process at most one pending Doubao card (existing proxy only, no key fallback)
+      - name: Process up to 3 pending Doubao cards (existing proxy only, no key fallback)
         env:
+          DISPATCH_MAX_CARDS: ${{ vars.DISPATCH_MAX_CARDS || '3' }}
           DOUBAO_USE_PROXY: 'true'
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           DOUBAO_MODEL: ${{ vars.DOUBAO_MODEL }}
