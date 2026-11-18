@@ -1,0 +1,80 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-task-hub-p0",
+  "target": "task-hub-p0",
+  "platform": "github-actions+github-issues",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "73670f38da3d70418ff31bfacb080c154a7c0253",
+  "code_path": "scripts/lib/task-hub.mjs,scripts/task-hub.mjs,scripts/task-hub-mail.mjs,scripts/tests/task-hub.test.mjs,.github/workflows/task-hub.yml,.github/ISSUE_TEMPLATE/dispatch-seat.yml,docs/TASK-HUB-CURRENT.md",
+  "deployed_at": "2026-11-18T08:10:42Z",
+  "deployment_status": "workflow_dispatched_and_observed",
+  "verified": [
+    {
+      "kind": "merged",
+      "result": "ok",
+      "evidence": "PR #429 squash 合并 → 73670f38da3d70418ff31bfacb080c154a7c0253；合并前 9 项检查 3 success（bootstrap/observe/offline）、6 skipped（路径条件未命中），无失败"
+    },
+    {
+      "kind": "workflow_run_success",
+      "result": "ok",
+      "evidence": "workflow_dispatch run 44264760176，event=workflow_dispatch，head_sha=73670f38，conclusion=success；hub job 全部步骤 success，含「回归测试」「按评论证据校正标签」「回收过期租约」「落盘状态快照」「提交快照」"
+    },
+    {
+      "kind": "snapshot_committed",
+      "result": "ok",
+      "evidence": "main 由 run 自动提交 de541f513b97db68acf699cb6e93006c5ba0915d，作者 ltzzz-task-hub，消息「task-hub: 任务中心快照 2026-11-18 16:10」；knowledge/results/task-hub/latest.json 回读 schema=ltzzz.task-hub.v1，generated_at=2026-11-18T08:10:56.837Z，counts.open=0（当前无 dispatch 开放 issue）"
+    },
+    {
+      "kind": "labels_initialized",
+      "result": "ok",
+      "evidence": "node scripts/task-hub.mjs init-labels --apply：新建 11 个标签（seat:gpt/doubao/deep/workbuddy/qianwen/deepseek 与 hub:new/claimed/delivered/blocked/stale）；seat:desktop-claude 与 dispatch 已存在，未重复创建"
+    },
+    {
+      "kind": "targeted_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/task-hub.test.mjs scripts/tests/dispatch-oversight.test.mjs → tests 32 / pass 32 / fail 0；工作流内重复执行 task-hub.test.mjs 亦通过"
+    },
+    {
+      "kind": "read_only_baseline",
+      "result": "ok",
+      "evidence": "部署前以 status 只读回读：open=0，无既有 dispatch issue 会被标签校正或租约回收误改"
+    }
+  ],
+  "not_verified": [
+    "邮件通道：task-hub-mail.mjs 只做过 dry-run 逻辑，未在本机实际 --send；SMTP 凭据不进 CI，线上未发出任何任务通知",
+    "Linear 镜像：未接入，当前仍是人工/后续事项",
+    "自然 schedule 运行：只验证了 workflow_dispatch；每 15 分钟的 cron 首次自然运行尚未观察",
+    "真实领取链路：尚无一张 dispatch issue 走过 poll→claim→delivered 全链路；claim 竞态只在注入时钟的单元测试里验证",
+    "platform_accepted：GitHub Actions 成功不等于业务验收"
+  ],
+  "blockers": [],
+  "next_action": "由 GPT 总控用 dispatch-seat.yml 或 `task-hub.mjs create --apply` 投出第一张真实任务卡，观察 poll/claim/delivered 与标签流转；随后观察一次自然 schedule run。邮件发送要在持 SMTP 凭据的机器上单独验证后再写“已通知”。",
+  "code_sha256": {
+    "scripts/lib/task-hub.mjs": "0f86a7be63e0e9003030513126dfd4e0065238787f6dfbaea840b3135c4057d4",
+    "scripts/task-hub.mjs": "921a3b3833d84b5b07db59020ed90c7e45c2ea8f427feb27e64b6eaf55bc2339",
+    "scripts/task-hub-mail.mjs": "4ac5c6ce2dffa5b10608400b68f25f7aae21b8ef5572fed5bb3abbd022e52172",
+    "scripts/tests/task-hub.test.mjs": "65b95a98686316a5bf6be9807fb31b78aef488f2498edc5571ebe7b79382385b",
+    ".github/workflows/task-hub.yml": "613a89b70e3891d1b9a44eea232e974ce8bb958145e48390c236a8776119d1ae",
+    ".github/ISSUE_TEMPLATE/dispatch-seat.yml": "4e120877f28e23c2624ff6244d851048a67f5da0f094e9de1cb82236d900a9ca",
+    "docs/TASK-HUB-CURRENT.md": "deb52ffe64762ad939580d2ce2113d5c2adc91398ab5e96c35d295aed4a7bffa"
+  },
+  "notes": [
+    "状态分层：draft=完成；tested=本地 32/32；merged=73670f38；deployed=run 44264760176 + 快照提交 de541f51；submitted/platform_accepted 未发生。",
+    "系统设计为无模型调用、无资金动作；issue 文本不能授权资金/退款/签名/密钥/生产部署/外部不可逆操作。",
+    "Windows 工作树存在 MP_verify 同名的两个大小写路径，属既有仓库问题，本次未触碰、未提交。"
+  ],
+  "operator": {
+    "seat": "desktop-claude",
+    "env": "windows-desktop Git Bash + WSL node",
+    "recorded_by": "claude"
+  },
+  "authorized_by": {
+    "authorized_by": "owner direct instruction in session",
+    "evidence_type": "owner_transcribed_instruction",
+    "channel": "桌面 Claude 会话（转发 GPT 方案）",
+    "requirement": "做一个可实行落地方案，能自动化用即可，不要求完美；思考好安排部署",
+    "quote": "你根据gpt 发来的 做一个可实行落地方案就行 能自动化用就行 不一定要完美 你思考好安排部署吧",
+    "decision_id": "OWNER-AUTH-20261118-TASK-HUB",
+    "scope_limit": "只建任务登记与调度通道；不含资金、退款、钱包、签名、凭据与外部不可逆操作"
+  }
+}
