@@ -38,6 +38,11 @@
       "kind": "main_commit",
       "result": "ok",
       "evidence": "Git Data API force=false 推 main，commit 75f55526，base c27777ce"
+    },
+    {
+      "kind": "post_fix_ci",
+      "result": "ok",
+      "evidence": "7db27db3 上 4/4 绿：Small payment policy 44226198299、Wallet P0 44226198162、Task continuity 44226198157、Pages 44226198116"
     }
   ],
   "blockers": [],
@@ -47,7 +52,8 @@
     "单样本问题仍未完全消除：DAILY-1 只跑了 1 次；pro 的自限与卡内三席位写法相关，属推断，未做反事实对照。",
     "6 张历史卡仍是 planner/worker 混写；未批量改写，以免改动历史任务卡。",
     "x-sales-post.mjs 由隐式 enabled 改为显式 disabled，属行为修正（400 token 预算下开启 thinking 会输出空正文）；未做真实发帖验证。",
-    "成本未对账：本轮 8 次 DeepSeek 调用未与账单核对，api_bill_verified=false。"
+    "成本未对账：本轮 8 次 DeepSeek 调用未与账单核对，api_bill_verified=false。",
+    "run 44225990833（Deep Superagent，workflow_dispatch，非本席位触发）在 35cbb93b 上失败于 bootstrap 步骤 job_status=null；事件为手动派发，与本轮改动无因果，仅登记。"
   ],
   "notes": [
     "本轮只做测量与防护，未改 default_model、未接 SOURCE-INTEL、无定时调用、无资金动作。",
@@ -79,5 +85,7 @@
     "scripts/x-sales-post.mjs": "0d9c9729fdc27100491c09cc34668ae40c762bf3ca866f15a7f6e0e020ce9773",
     "scripts/autonomy-core.mjs": "c1358cd227d4da0f06a962bf9726b155c82fdca629c8eb799a62760cf31cdf57",
     "docs/2026-11-18-DeepSeek三卡复测与防护.md": "2da0047d77de2410f71fe4db2697c6f97596d12a09871f801b6d73ee01d9a6d3"
-  }
+  },
+  "follow_up_commit": "7db27db385c14cc615fc341b1aa83c1daf1b0f24",
+  "follow_up_note": "该提交回退 ltzzz-wallet-ops.yml 并更正文档/回执表述；docs 与 workflow 的 sha256 以该提交为准。"
 }
