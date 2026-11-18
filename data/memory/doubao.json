@@ -1,7 +1,7 @@
 {
   "agent": "doubao",
-  "last_updated": "2026-11-17T12:23:24+08:00",
-  "context_summary": "doubao 2026-11-17：【读后感】DeepSeek 连续多日只交未运行的单条负向断言草稿，缺正常/失败/恢复/幂等四态验收，且字段名与真实回执 schema 不符，应驳回。\n\n【观】\n- 《ltzzz-memory/重要事件.md》“2026-10-22～23”：ANS 补丁 accepted=fals",
+  "last_updated": "2026-11-18T11:24:39+08:00",
+  "context_summary": "doubao 2026-11-18：【读后感】DeepSeek 今日诚实自标阻塞、正确区分心跳与交付，但仍只交一条未运行的单断言草稿，未覆盖正常/失败/恢复/幂等四态，奖惩逻辑完全未涉，应驳回。\n\n【观】\n- 《重要事件.md》“2026-10-22～23”：ANS 补丁 accepted=false、生产修复未完",
   "entries": [
     {
       "date": "2026-09-28",
@@ -1549,6 +1549,60 @@
           "invalid_entries": 0
         },
         "prompt_sha256": "0449a181142d6b615430aa0d5516418a2785f38184ba30bcf7332613c348ec03"
+      },
+      "delivery_integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "core_memory_files": [
+        "ltzzz-memory/魄.md",
+        "ltzzz-memory/识神.md",
+        "ltzzz-memory/梦境数据库.md",
+        "ltzzz-memory/文明研究.md",
+        "ltzzz-memory/项目历史.md",
+        "ltzzz-memory/重要事件.md"
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "executed_by": "doubao",
+      "task": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
+      "output": "【读后感】DeepSeek 今日诚实自标阻塞、正确区分心跳与交付，但仍只交一条未运行的单断言草稿，未覆盖正常/失败/恢复/幂等四态，奖惩逻辑完全未涉，应驳回。\n\n【观】\n- 《重要事件.md》“2026-10-22～23”：ANS 补丁 accepted=false、生产修复未完成。\n- 今日工件 execution：finish_reason=stop、结构完整，但 accepted/deployed/paid 均 false；output 仅一条 heartbeat_only 断言且自标未运行；Pulse 快照（2026-11-17T22:50Z）六席只有 ok/http/paused。断言要求心跳快照自带交付字段，未绑定目标 schema，存在设计性假设。\n\n【行深】由受管执行器把下列四态清单落为 scripts/tests/ 只读测试，锚定 source_commit 73af088 与工件 sha256，先对现快照实跑留失败证据，再谈修复。\n\n【不确定】工件 sha256 我无工具重算，按信封照抄；六席实际 provider/model、ANS 修复是否部署、断言实跑结果均未验证。\n\n【角色产出】ANS/Pulse 监控-奖惩四态验收清单（草稿，未运行，不声称写盘/测试/部署）：\n1. 正常：六席心跳 200 且当日交付回执含 actual_provider/actual_model/finish_reason=stop/完成标记；监控判 healthy，奖惩仅记 1 次成功分。\n2. 失败：注入 HTTP500、缺字段、finish_reason≠stop；判 heartbeat_only/failed，计 0 分并扣罚一次，paid=false。\n3. 恢复：同席先失败后恢复，仅在新回执达标时翻转 failed→healthy，旧失败留痕不静默改写。\n4. 幂等：同一 run_key/request_id 重复上报 N 次，奖惩只结算一次，重复脉冲不重复扣分/奖励；输入以 commit+sha256 锚定。\n每态须 record+verify 双回执并绑定 code_commit 与代码哈希（L-20261117-006）；状态据实标注（L-20261030-008/003）。Actual change：提出四态验收清单；verification still needed：受管执行器实跑并回读。\n\n【日课独立审核JSON】\n```json\n{\"accepted\":false,\"artifact_sha256\":\"0ce793abc5f1c4124d40b4b018597717c7a34c43c637e5f1322ea7a2769613de\",\"reasons\":[\"仅一条未运行的字段存在断言，缺任务要求的正常/失败/恢复/幂等四态验收实物\",\"未涉及奖惩修复：无成功计分、失败扣罚、恢复翻转、重复上报不重复结算的任何检查\",\"断言未实跑、无测试文件/commit/回读回执，且要求心跳快照自带交付字段却未绑定目标 schema，'当前快照应失败'属推断\",\"引用快照为2026-11-17T22:50Z非当日；虽诚实自标accepted/deployed/paid=false且结构完整，仍不满足交付标准\"],\"unverified\":[\"工件sha256未经本席重算，按任务信封照抄\",\"六席实际provider/model与finish_reason\",\"ANS监控/奖惩生产修复是否部署\",\"断言对真实快照的执行结果\"]}\n```\n【日课独立审核结束】\n【交付结束】",
+      "tokens_used": 27910,
+      "finish_reason": "stop",
+      "model": "doubao-seed-2-1-pro-260915",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "daily:doubao",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261117-006",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "8862fb0fdc785c62995c22c24e56ec04e16298af7206ff5155bd0f1fd72710aa",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "42d8dba07e57510b904159cc0916ec5542996fee56ff597f783949ddb28e1c90"
       },
       "delivery_integrity": {
         "status": "structurally_complete",
