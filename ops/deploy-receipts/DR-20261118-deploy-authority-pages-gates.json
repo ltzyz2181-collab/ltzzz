@@ -1,0 +1,75 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-deploy-authority-pages-gates",
+  "target": "deploy-authority-fail-closed + pages-artifact-visibility-poll + relay-governance-consistency",
+  "platform": "github",
+  "env_id": "ltzzz-repo/main",
+  "code_commit": "37dec7d1aba92072189e6ea8227758963141bc89",
+  "code_path": "scripts/lib/deploy-authority.mjs,scripts/lib/pages-artifact-contract.mjs,scripts/verify-pages-artifact-contract.mjs,scripts/tests/deploy-authority-gate.test.mjs,scripts/tests/pages-artifact-contract.test.mjs,config/email-authority-20261117.json,config/relay-adjudication-scopes.json,docs/OWNER-AUTHORITY-CURRENT.md,docs/RELAY-SEAT-CURRENT.md",
+  "deployed_at": "2026-11-18T07:08:51Z",
+  "deployment_status": "merged_not_runtime_deployed",
+  "verified": [
+    {
+      "kind": "pull_request_merge",
+      "result": "ok",
+      "evidence": "PR #424 “fix(gate): 部署族缺省或未知一律拒绝，Pages 可见性竞态有界轮询” 以 squash 合并为 37dec7d1aba92072189e6ea8227758963141bc89，提交时间 2026-11-17T23:08:51-08:00"
+    },
+    {
+      "kind": "local_tests",
+      "result": "ok",
+      "evidence": "在 git archive origin/main 的 LF 原生副本 /tmp/ltzzz-main-gates 复跑 deploy-authority / deploy-authority-gate / email-authority / deploy-receipt / pages-artifact-contract / relay-proxy-worker / deep-superagent-adjudicator → tests 94 / pass 94 / fail 0"
+    },
+    {
+      "kind": "ci_checks",
+      "result": "ok",
+      "evidence": "PR head 03a47dc1c05182f93dd030f042df9d56fc7fb188：run 44255372565 Small payment policy offline validation success；44255372640 Email authority record success；44255369275 PatchGate A1 success；44255369257 PatchGate A2 success；44255369259 Workpool skipped（路径未命中）"
+    },
+    {
+      "kind": "fail_closed_regression",
+      "result": "ok",
+      "evidence": "新增回归覆盖 family 为 undefined/null/空串/空白/数字、未登记族 brand_new_family（merge/deploy/rollback 三动作）与缺 deploy_scope，全部 deny；deploy_scope 内既有族行为不变"
+    },
+    {
+      "kind": "pages_visibility_regression",
+      "result": "ok",
+      "evidence": "pre-deploy 零 artifact 有界轮询（默认 6×5s）在测试中第 3 次成功并记录 delays；轮询耗尽仍失败；多份 artifact 首次即失败；pre-upload 与 --from-file 不轮询"
+    },
+    {
+      "kind": "governance_consistency",
+      "result": "ok",
+      "evidence": "docs/OWNER-AUTHORITY-CURRENT.md 增补中转 GPT 有界裁决正式决定；config/email-authority-20261117.json 增加 relay_verdict_is_not_approval 与 relay_adjudication 路由；config/relay-adjudication-scopes.json 增加 forbidden_families 与 relay_verdict_limits；docs/RELAY-SEAT-CURRENT.md 补授权链第 5 条"
+    },
+    {
+      "kind": "byte_locked_file_untouched",
+      "result": "ok",
+      "evidence": "config/owner-authority-20261105.json 被 knowledge/results/patchgate/post271/artifact-manifest.json 的 small_payment_release.files 字节锁定；本次未改写，决定通过 docs/OWNER-AUTHORITY-CURRENT.md 记录生效，避免 manifest_source_bytes_changed"
+    }
+  ],
+  "blockers": [],
+  "next_action": "观察合并后首个 GitHub Pages 部署 run，确认 pre-deploy 在真实可见性竞态下按轮询预期等待/复用；在拿到该 run 证据前，只记“已合并 + 本地/CI 测试通过”，不得记“线上已验证竞态修复”。",
+  "known_issues": [
+    "scripts/lib/deploy-authority.mjs 目前未被确认为实际部署工作流的统一调用入口；本修复消除的是门禁自身的 fail-open 缺陷，不宣称由此消除了任何生产误部署。",
+    "Pages 轮询只在 pre-deploy 且零 artifact 时生效；多份同名 artifact 仍首次硬失败，不做删除或静默选择。",
+    "本回执的 deployed_at 为合并时间，不是运行时部署时间；deployment_status=merged_not_runtime_deployed 表示代码已进 main，但未触达生产 Pages/Worker 运行态。",
+    "工作区 MP_verify_xe1mBNate0chEc0j.txt 存在与本批次无关的既存大小写改动，未纳入提交。"
+  ],
+  "notes": [
+    "状态分层：draft/tested/merged 完成；deployed（运行时）与 platform_accepted 未发生，不得合并表述。",
+    "owner 原话将该门禁定为“上线前必须修复的门禁缺陷”，并要求修正 GPT/Owner 路由与风险表达；本回执按此记录，不把修复写成已造成生产误部署的事后归因。",
+    "治理路由：五签钱包归 Owner/多签；资金、退款、签名、普通钱包/Safe、凭据、生产写归 GPT 决策席；relay 裁决不得宣称 merged/deployed/accepted。"
+  ],
+  "operator": {
+    "seat": "desktop_claude",
+    "env": "windows-desktop Git Bash + WSL node",
+    "recorded_by": "claude"
+  },
+  "authorized_by": {
+    "authorized_by": "owner direct instruction in session",
+    "evidence_type": "owner_transcribed_instruction",
+    "channel": "桌面 Claude 会话",
+    "requirement": "修复部署权限闸门 fail-open 与 Pages 可见性竞态；同步 main；修正 GPT/Owner 路由和风险表达；工程类变更可自动合并，部署后发邮件询问下一步",
+    "quote": "部署权限闸门：scripts/lib/deploy-authority.mjs 对缺失或未知 family 有 fail-open 风险……先作为上线前必须修复的门禁缺陷，不宣称已经造成生产误部署。Pages：修复 artifact 可见性竞态。治理文件一致性：更新豆包席位、GPT 人工席位、邮件授权和 relay 裁决范围",
+    "decision_id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
+    "scope_limit": "仓库代码、测试与文档；不含资金、放款、退款语义、钱包/五签 Safe、签名、凭据、外部平台不可逆提交"
+  }
+}
