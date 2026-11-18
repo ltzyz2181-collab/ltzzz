@@ -1,0 +1,32 @@
+name: Wallet P0 read-only checks
+on:
+  pull_request:
+    paths: ['scripts/wallet/**','lib/financial-exit-guard.js','.github/workflows/wallet-p0-checks.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/wallet/**','lib/financial-exit-guard.js','.github/workflows/wallet-p0-checks.yml']
+  schedule:
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: wallet-p0-${{ github.event.pull_request.number || github.ref }}, cancel-in-progress: false}
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Read-only ledger, balance view and adapter tests (no keys, no network)
+        run: node --test scripts/wallet/__tests__/*.test.mjs
+      - name: Self-test (synthetic chain, idempotency, tamper detection, fail-closed rails)
+        run: node scripts/wallet/selftest.mjs
+      - name: No write-path RPC may appear in the wallet skeleton
+        run: |
+          if grep -RIn "eth_sendRawTransaction\|eth_sendTransaction" scripts/wallet --include='*.mjs' | grep -v "__tests__"; then
+            echo "write-path RPC found in wallet skeleton"
+            exit 1
+          fi
+          echo "no write RPC in scripts/wallet (tests excluded)"
