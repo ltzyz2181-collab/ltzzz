@@ -1,0 +1,25 @@
+name: Wallet P0 read-only checks
+on:
+  pull_request:
+    paths: ['scripts/wallet/**','lib/financial-exit-guard.js','.github/workflows/wallet-p0-checks.yml']
+  push:
+    branches: [main]
+    paths: ['scripts/wallet/**','lib/financial-exit-guard.js','.github/workflows/wallet-p0-checks.yml']
+  schedule:
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: wallet-p0-checks, cancel-in-progress: false}
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Ledger, balance view and adapter tests (no keys, no network)
+        run: node --test scripts/wallet/__tests__/*.test.mjs
+      - name: Self-test (synthetic chain, idempotency, tamper detection, fail-closed rails)
+        run: node scripts/wallet/selftest.mjs
