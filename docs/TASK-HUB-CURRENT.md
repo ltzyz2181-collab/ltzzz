@@ -102,10 +102,14 @@ node scripts/task-hub-mail.mjs --seat desktop-claude --send
 
 ## 9. 当前状态（分开报告）
 
-- 代码与测试：已写完，`node --test scripts/tests/task-hub.test.mjs` 10/10 通过（本地，Windows）。
-- 分支/PR：待推送。
-- 合并：未合并。
-- 部署（定时工作流首次真实运行）：未发生。
-- 平台接受：未验证。
+- draft：完成。
+- tested：`node --test scripts/tests/task-hub.test.mjs scripts/tests/dispatch-oversight.test.mjs` → 32/32 通过（本地 Windows；工作流内也重复跑 task-hub 套件）。
+- merged：PR #429 → `73670f38da3d70418ff31bfacb080c154a7c0253`。
+- deployed：workflow_dispatch run `44264760176` success（head=73670f38），全部步骤 success；main 自动快照提交 `de541f51`，`knowledge/results/task-hub/latest.json` 回读 `counts.open=0`；`init-labels --apply` 新建 11 个标签。
+- 邮件通知：脚本已就绪，默认 dry-run；尚未在持 SMTP 凭据的机器上做过真实发送验证。
+- Linear 镜像：未接入。
+- 自然定时：每 15 分钟的 `schedule` 首次自然运行尚在观察（已用手动触发验证同一代码路径）。
+- 真实任务链路：尚无一张 dispatch issue 走过 `poll → claim → delivered`。
+- submitted / platform_accepted：未发生。
 
-后续每次状态变化都按 `draft / tested / merged / deployed / platform_accepted` 分开更新本节，不合并叙述。
+后续每次状态变化都按 `draft / tested / merged / deployed / submitted / platform_accepted` 分开更新本节，不合并叙述。
