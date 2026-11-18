@@ -163,18 +163,35 @@ function adjudicationProof(root, record, row, now) {
   return {phase:task.phase,reviewed_at:record.reviewed_at};
 }
 
+function applyAdjudication(row, file, record, proof) {
+  Object.assign(row,{state:'resolved_by_repository_evidence',resolved_at:proof.reviewed_at,resolved_by:record.reviewed_by,
+    adjudication_file:file,adjudication_evidence:record.evidence.map(e=>e.path),adjudication_phase:proof.phase,
+    resolution_reason:record.reason,resolution_scope:'warning_resolution_only_not_production_completion'});
+  delete row.reverted_reason;
+}
+
 export function resolveAdjudicatedCases({root='.', cases, now=new Date().toISOString()}) {
-  const resolved=[];
+  const resolved=[], revalidated=[], reverted=[];
   for(const row of Object.values(cases||{})) {
-    if(row?.state!=='open' || !safeId(row.case_id) || !safeId(row.task_id)) continue;
-    const file=`${ADJUDICATION_DIR}/${row.case_id}.json`, record=read(root,file), proof=adjudicationProof(root,record,row,now);
-    if(!proof) continue;
-    Object.assign(row,{state:'resolved_by_repository_evidence',resolved_at:proof.reviewed_at,resolved_by:record.reviewed_by,
-      adjudication_file:file,adjudication_evidence:record.evidence.map(e=>e.path),adjudication_phase:proof.phase,
-      resolution_reason:record.reason,resolution_scope:'warning_resolution_only_not_production_completion'});
-    resolved.push(row.case_id);
+    if(!safeId(row?.case_id) || !safeId(row?.task_id)) continue;
+    const file=`${ADJUDICATION_DIR}/${row.case_id}.json`;
+    if(row.state==='open') {
+      const record=read(root,file), proof=adjudicationProof(root,record,row,now);
+      if(!proof) continue;
+      applyAdjudication(row,file,record,proof); resolved.push(row.case_id); continue;
+    }
+    // A resolution that came from an adjudication file is re-checked on every run:
+    // the evidence bytes, the historic phase and the task binding must still hold.
+    // A row this run resolved from its own canonical observation (resolved_at=now)
+    // does not depend on the file and is left alone.
+    if(row.state!=='resolved_by_repository_evidence' || row.adjudication_file!==file || row.resolved_at===now) continue;
+    const record=read(root,file), proof=adjudicationProof(root,record,row,now);
+    if(proof) { applyAdjudication(row,file,record,proof); revalidated.push(row.case_id); continue; }
+    for(const key of ['resolved_at','resolved_by','adjudication_file','adjudication_evidence','adjudication_phase','resolution_reason','resolution_scope']) delete row[key];
+    Object.assign(row,{state:'open',last_observed_at:now,reverted_reason:'adjudication_evidence_no_longer_valid'});
+    reverted.push(row.case_id);
   }
-  return resolved;
+  return {resolved,revalidated,reverted};
 }
 
 export function buildAdjudication({root='.', caseId, taskId, evidence, reason, reviewedAt=new Date().toISOString(), now=reviewedAt}) {
@@ -213,8 +230,9 @@ export function runDispatchOversight({root='.', now=new Date().toISOString(), so
   // again. Disappearance from the bounded window is never proof of completion.
   for(const [key,row] of Object.entries(cases)) if(!seen.has(key) && report.tasks.some(t=>t.id===row.task_id)) {const current=report.tasks.find(t=>t.id===row.task_id);row.state=current.reference_only?'reclassified_delivery_channel_not_completed':'superseded_by_current_phase';row.reclassification_reason=current.reference_only?'Active external PR route; native claim not scheduled, no work completion inferred':null;row.current_phase=current.phase;row.updated_at=now;}
   const adjudicated=resolveAdjudicatedCases({root,cases,now});
+  if(adjudicated.reverted.length) report.reverted_adjudications=adjudicated.reverted;
   const warnings=Object.values(cases).filter(row=>row.state==='open');
-  Object.assign(report,{schema:'ltzzz.dispatch-oversight.v1',supervisor:'qianwen',executed_by:'repository_rules',native_qianwen_call:false,source_commit:sourceCommit,run_id:runId,model_calls:0,new_paid_schedules:0,paid:false,tx_hash:null,controller_permissions_reduced:false,automatic_financial_replay:false,warnings,adjudicated_cases:adjudicated,
+  Object.assign(report,{schema:'ltzzz.dispatch-oversight.v1',supervisor:'qianwen',executed_by:'repository_rules',native_qianwen_call:false,source_commit:sourceCommit,run_id:runId,model_calls:0,new_paid_schedules:0,paid:false,tx_hash:null,controller_permissions_reduced:false,automatic_financial_replay:false,warnings,adjudicated_cases:adjudicated.resolved,adjudication_revalidated:adjudicated.revalidated,
     qianwen_daily_task_id:`DAILY-${report.date}-qianwen`,native_qianwen_review_verified:nativeQianwenOversight(root,report.date).independent_review_verified,native_qianwen_supervision:nativeQianwenOversight(root,report.date),scope:'repository_evidence_and_reminder_dispatch_not_execution_or_independent_native_audit'});
   const count=predicate=>report.tasks.filter(predicate).length;
   report.stage_counts={scope:'verified_in_scanned_sources_not_total_project_completion',tasks_observed:report.tasks.length,
