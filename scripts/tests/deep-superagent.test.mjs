@@ -22,18 +22,19 @@ class Storage {
   async getAlarm(){return this.alarmTime;}
   transaction(fn){const result=this.tail.then(()=>fn(this));this.tail=result.catch(()=>{});return result;}
 }
-function fixture({badSeat=null,transportFailure=null,planOverride=null,reviewOverride=null,workerOutput={},prompt=INPUT.prompt}={}){
+function fixture({badSeat=null,transportFailure=null,planOverride=null,planText=null,reviewOverride=null,reviewText=null,workerOutput={},workerHttpFailure=null,prompt=INPUT.prompt}={}){
   const objects=new Map(),calls=[];
   const env={LTZZZ_AGENT_TOKEN:TOKEN,SUPERAGENT_SOURCE_COMMIT:'a'.repeat(40)};
   for(const [binding,seat] of Object.entries({DEEPSEEK:'deepseek',DOUBAO:'doubao',QIANWEN:'qianwen',KIMI:'kimi',GROK:'grok'}))env[binding]={async fetch(request){
     assert.equal(request.headers.get('Authorization'),'Bearer '+TOKEN);
     const body=await request.json();calls.push({seat,body});
     if(seat===transportFailure)throw Error('secret-like transport text must not be persisted');
+    if(workerHttpFailure?.seat===seat)return Response.json({error:'upstream_timeout'},{status:workerHttpFailure.status});
     let output;
-    if(seat==='deepseek'&&calls.filter(v=>v.seat==='deepseek').length===1)output=JSON.stringify(planOverride??{summary:'Three verifiable tasks',tasks:['doubao','qianwen','kimi'].map(s=>({seat:s,task:'Provide '+s+' checklist contribution'})),needs_gpt_decision:false});
+    if(seat==='deepseek'&&calls.filter(v=>v.seat==='deepseek').length===1)output=planText??JSON.stringify(planOverride??{summary:'Three verifiable tasks',tasks:['doubao','qianwen','kimi'].map(s=>({seat:s,task:'Provide '+s+' checklist contribution'})),needs_gpt_decision:false});
     else if(seat==='deepseek'){
       const input=JSON.parse(body.messages[1].content);
-      output=JSON.stringify(reviewOverride??{approved:true,summary:'Three reviewed source-check contributions; source access still requires evidence.',reviewed:input.outputs.map(v=>({seat:v.seat,sha256:v.sha256})),needs_gpt_decision:false});
+      output=reviewText??JSON.stringify(reviewOverride??{approved:true,summary:'Three reviewed source-check contributions; source access still requires evidence.',reviewed:input.outputs.map(v=>({seat:v.seat,sha256:v.sha256})),needs_gpt_decision:false});
     }else output=workerOutput[seat]??seat+' draft: cite the actual source, timestamp and uncertainty.';
     const receipt={executed_by:seat,task_id:body.task_id,actual_model:seat+'-provider-model',model_source:'provider_response',model_identity_verification:'upstream_metadata_not_cryptographic_attestation',request_id:'internal-'+calls.length,provider_response_id:'upstream-'+calls.length,upstream_request_id:null,finish_reason:seat===badSeat?'length':'stop',generation_verified:seat!==badSeat,tokens_used:123};
     return Response.json({model:receipt.actual_model,choices:[{message:{content:output},finish_reason:receipt.finish_reason}],ltzzz_receipt:receipt});
@@ -116,19 +117,57 @@ test('full durable native chain runs Deep plan, three real-bindable workers and 
   const duplicate=await (await f.request()).json();assert.equal(duplicate.duplicate,true);assert.equal(duplicate.execution_id,job.execution_id);assert.equal(duplicate.model_calls,5);
   await task.alarm();assert.equal(f.calls.length,5);
 });
-test('truncated worker output is recorded as truncation, not as missing generation, and never auto-retried',async()=>{
+test('truncated worker output is recorded as truncation while other seats keep their reviewed outputs',async()=>{
   const f=fixture({badSeat:'kimi'});await f.request();const task=[...f.objects.values()][0];await task.alarm();
   const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
-  assert.equal(job.status,'blocked');assert.equal(job.error,'output_truncated_at_output_budget');assert.equal(job.model_calls,4);assert.equal(job.escalation.seat,'gpt');assert.equal(job.escalation.personal_owner_approval_required,false);
+  // 单个席位截断不再让整单变成 0 路由：成功席位照常复核，截断席位记入 unjudged。
+  assert.equal(job.status,'needs_gpt_decision');assert.equal(job.error,undefined);assert.equal(job.model_calls,5);assert.equal(job.outputs.length,2);
+  assert.deepEqual(job.unjudged,[{seat:'kimi',error:'output_truncated_at_output_budget'}]);assert.equal(job.escalation.reason,'partial_seat_coverage');assert.equal(job.escalation.seat,'gpt');assert.equal(job.escalation.personal_owner_approval_required,false);
   const receipt=job.receipts.find(r=>r.seat==='kimi');
   assert.equal(receipt.truncated,true);assert.equal(receipt.output_present,true);assert.equal(receipt.status,'truncated_output_pending_decision');assert.match(receipt.output_sha256,/^[a-f0-9]{64}$/);assert.equal(receipt.generation_verified,false);
-  assert.equal(job.escalation.email_sent,false);assert.equal(job.accepted,false);await f.request();await task.alarm();assert.equal(f.calls.length,4);
+  assert.equal(job.review.reviewed.length,2);
+  assert.equal(job.escalation.email_sent,false);assert.equal(job.accepted,false);await f.request();await task.alarm();assert.equal(f.calls.length,5);
 });
 test('empty content still counts as missing generation evidence rather than truncation',async()=>{
   const f=fixture({badSeat:'kimi',workerOutput:{kimi:''}});await f.request();const task=[...f.objects.values()][0];await task.alarm();
   const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
-  assert.equal(job.status,'blocked');assert.equal(job.error,'native_generation_evidence_incomplete');assert.equal(job.model_calls,4);
+  assert.equal(job.status,'needs_gpt_decision');assert.equal(job.error,undefined);assert.equal(job.model_calls,5);
+  assert.deepEqual(job.unjudged,[{seat:'kimi',error:'native_generation_evidence_incomplete'}]);
   const receipt=job.receipts.find(r=>r.seat==='kimi');assert.notEqual(receipt.truncated,true);assert.equal(receipt.generation_verified,false);
+});
+test('coordinator prose is recovered by one deterministic native task instead of blocking at zero routes',async()=>{
+  const f=fixture({planText:'I will route this to doubao and qianwen.'});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'needs_gpt_decision');assert.equal(job.plan_source,'deterministic_fallback');
+  assert.equal(job.coordinator_parse.error,'model_json_invalid');assert.match(job.coordinator_parse.raw_preview,/route this/);
+  assert.deepEqual(job.plan.tasks.map(t=>t.seat),['qianwen']);assert.equal(job.outputs.length,1);assert.equal(job.review.reviewed.length,1);
+  assert.equal(job.model_calls,3);assert.equal(job.escalation.reason,'plan_recovered_without_valid_coordinator_plan');
+  assert.deepEqual(f.calls.map(v=>v.seat),['deepseek','qianwen','deepseek']);
+});
+test('a plan with one invalid seat keeps its valid tasks instead of failing the whole job',async()=>{
+  const f=fixture({planOverride:{summary:'salvage',tasks:[{seat:'gpt',task:'closed seat'},{seat:'qianwen',task:'bounded check'},{seat:'qianwen',task:'duplicate'}],needs_gpt_decision:false}});
+  await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'needs_gpt_decision');assert.equal(job.plan_source,'coordinator_salvaged');
+  assert.deepEqual(job.plan.tasks.map(t=>t.seat),['qianwen']);
+  assert.deepEqual(job.plan_issues,['invalid_deepseek_task','invalid_task_dropped','duplicate_seat_dropped']);
+  assert.equal(job.outputs.length,1);assert.equal(job.model_calls,3);assert.equal(job.escalation.reason,'plan_recovered_without_valid_coordinator_plan');
+});
+test('a 90s upstream timeout keeps its own error code and does not discard other seat outputs',async()=>{
+  const f=fixture({workerHttpFailure:{seat:'doubao',status:504}});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'needs_gpt_decision');assert.equal(job.outputs.length,2);assert.equal(job.model_calls,5);
+  assert.deepEqual(job.unjudged,[{seat:'doubao',error:'upstream_gateway_timeout_504'}]);
+  const receipt=job.receipts.find(v=>v.seat==='doubao');
+  assert.equal(receipt.upstream_http,504);assert.equal(receipt.status,'failed_or_uncertain_no_retry');assert.equal(receipt.error,'upstream_gateway_timeout_504');
+  assert.equal(job.review.reviewed.length,2);assert.equal(job.escalation.reason,'partial_seat_coverage');
+});
+test('a failed independent review preserves worker outputs and escalates instead of returning zero routes',async()=>{
+  const f=fixture({reviewText:'not json'});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'needs_gpt_decision');assert.equal(job.outputs.length,3);assert.equal(job.model_calls,5);
+  assert.equal(job.review.status,'unavailable');assert.equal(job.review.error,'model_json_invalid');
+  assert.equal(job.escalation.reason,'model_json_invalid');
 });
 test('crash after durable generation reservation never replays an uncertain provider request',async()=>{
   const f=fixture();await f.request();const task=[...f.objects.values()][0],job=await task.state.storage.get('job');
@@ -207,11 +246,16 @@ test('relay execution seats fail closed until proxy token, allowlisted proxy, mo
  assert.equal(relaySeatState(on,'claude'),'relay_generation_enabled');
  assert.deepEqual(availableWorkSeats(on),['doubao','qianwen','kimi','grok','gpt','claude']);
 });
-test('closed relay seat is not offered to the planner and cannot be forced by a plan',async()=>{
+test('closed relay seat is never offered or dispatched; an invalid plan falls back to a native seat',async()=>{
  const f=fixture({planOverride:{summary:'relay attempt',tasks:[{seat:'gpt',task:'Draft a memo'}],needs_gpt_decision:false}});
  await f.request();await [...f.objects.values()][0].alarm();
  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
- assert.equal(job.status,'blocked');assert.equal(job.error,'invalid_deepseek_task');assert.deepEqual(f.calls.map(v=>v.seat),['deepseek']);
+ // 非法任务被丢弃，作业不会在第一跳死掉；兜底只派原生席位，绝不派被关闭的中转席。
+ assert.equal(job.status,'needs_gpt_decision');assert.equal(job.plan_source,'deterministic_fallback');
+ assert.deepEqual(job.plan_issues,['invalid_deepseek_task','invalid_task_dropped','no_valid_tasks']);
+ assert.deepEqual(job.plan.tasks.map(t=>t.seat),['qianwen']);assert.equal(job.outputs.length,1);
+ assert.ok(!job.receipts.some(r=>r.seat==='gpt'));assert.equal(job.escalation.reason,'plan_recovered_without_valid_coordinator_plan');
+ assert.deepEqual(f.calls.map(v=>v.seat),['deepseek','qianwen','deepseek']);
  const status=await (await f.request('/v1/status','GET')).json();
  assert.deepEqual(status.relay_seats,{gpt:'relay_proxy_token_missing',claude:'relay_proxy_token_missing'});
  assert.ok(!status.available_worker_seats.includes('gpt'));

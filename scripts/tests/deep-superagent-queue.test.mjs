@@ -12,6 +12,14 @@ test('queue preserves truncation and bounded request options without provider-at
  assert.doesNotMatch(JSON.stringify(result),/secret fixture/);
  const bad=publicJob({receipts:[{request_options:{max_tokens:{nested:'not public'},thinking_type:'unknown'}}]});assert.equal(bad.receipts[0].request_options.max_tokens,null);assert.equal(bad.receipts[0].request_options.thinking_type,null);
 });
+test('queue evidence preserves plan recovery, unjudged seats and unavailable review without leaking unknown fields',()=>{
+ const result=publicJob({plan_source:'deterministic_fallback',plan_issues:['model_json_invalid','no_valid_tasks'],coordinator_parse:{error:'model_json_invalid',raw_preview:'prose only',tokens_used:1699,request_id:'req-1',secret:'drop me'},unjudged:[{seat:'doubao',error:'upstream_gateway_timeout_504',secret:'drop me'}],review:{status:'unavailable',error:'independent_review_unavailable',secret:'drop me'}});
+ assert.equal(result.plan_source,'deterministic_fallback');assert.deepEqual(result.plan_issues,['model_json_invalid','no_valid_tasks']);
+ assert.deepEqual(result.unjudged,[{seat:'doubao',error:'upstream_gateway_timeout_504'}]);
+ assert.deepEqual(result.coordinator_parse,{error:'model_json_invalid',raw_preview:'prose only',tokens_used:1699,request_id:'req-1'});
+ assert.equal(result.review.status,'unavailable');assert.equal(result.review.error,'independent_review_unavailable');
+ assert.doesNotMatch(JSON.stringify(result),/drop me/);
+});
 test('GPT queue evidence preserves code-owned content findings without arbitrary model fields',()=>{
  const gate={revision:'executor-metadata-declarations-v1',source_commit:RUNTIME,passed:false,phase:'after_independent_review',findings:[{code:'unsupported_executor_metadata_declaration',field:'executed_by',line:2,seat:'qianwen',output_sha256:'c'.repeat(64),arbitrary:'drop me'}],arbitrary:'drop me'};
  const result=publicJob({content_guard_revision:gate.revision,content_gate:{...gate,checks:[gate]}});
