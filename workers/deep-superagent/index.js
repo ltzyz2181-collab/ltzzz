@@ -4,7 +4,8 @@ import hashLesson from '../../knowledge/lessons/L-20261030-007.json' with {type:
 import evidenceLesson from '../../knowledge/lessons/L-20261030-008.json' with {type:'json'};
 import {proxyAuth} from '../../lib/proxy-auth.js';
 import {KIMI_PROFILE} from '../../lib/kimi-profile.js';
-import {ADJUDICATION_REVISION,fundFamilyHit,fundShortCircuit,adjudicationPrompt,parseAdjudication,adjudicationRecord} from './adjudicator.mjs';
+import {ADJUDICATION_REVISION,ADJUDICATION_SCOPES,fundFamilyHit,fundShortCircuit,adjudicationPrompt,parseAdjudication,adjudicationRecord,adjudicationUncertain} from './adjudicator.mjs';
+import {estimateWorstCaseCost,usageCostUsd,messagesInputTokens,RELAY_COST_GUARD,RELAY_BALANCE_FLOOR_USD} from './accounting.mjs';
 
 export const REVISION='ltzzz.deep-superagent.v1';
 export const CONTENT_GUARD_REVISION='executor-metadata-declarations-v1';
@@ -184,7 +185,7 @@ export function verifyReview(text,outputs){
   return {approved:r.approved,summary:r.summary,reviewed:r.reviewed,needs_gpt_decision:r.needs_gpt_decision,reason:typeof r.reason==='string'?r.reason.slice(0,2000):null};
 }
 
-function health(env){return {ok:true,service:'ltzzz-deep-superagent',revision:REVISION,content_guard_revision:CONTENT_GUARD_REVISION,relay_revision:RELAY_REVISION,source_commit:env.SUPERAGENT_SOURCE_COMMIT||null,source_readset_sha256:env.SUPERAGENT_SOURCE_SHA256||null,auth_configured:Boolean(env.LTZZZ_AGENT_TOKEN),profile:policy.profile,coordinator:'deepseek',available_worker_seats:availableWorkSeats(env),relay_seats:relaySeatStates(env),relay_seats_definition:'third_party_relay_execution_seats_owner_delegated_except_funds',relay_adjudication:{revision:ADJUDICATION_REVISION,enabled:relaySeatState(env,'gpt')==='relay_generation_enabled',seat:'gpt',scope_exclusion:'funds_signing_refund_wallet_credential_production_write',records_execution:false,relay_attested:false},decision_seat:'gpt',decision_seat_kind:'AI_manual_intervention',generation_verified:false,financial_execution:false,external_submissions_enabled:false};}
+function health(env){return {ok:true,service:'ltzzz-deep-superagent',revision:REVISION,content_guard_revision:CONTENT_GUARD_REVISION,relay_revision:RELAY_REVISION,source_commit:env.SUPERAGENT_SOURCE_COMMIT||null,source_readset_sha256:env.SUPERAGENT_SOURCE_SHA256||null,auth_configured:Boolean(env.LTZZZ_AGENT_TOKEN),profile:policy.profile,coordinator:'deepseek',available_worker_seats:availableWorkSeats(env),relay_seats:relaySeatStates(env),relay_seats_definition:'third_party_relay_execution_seats_owner_delegated_except_funds',relay_adjudication:{revision:ADJUDICATION_REVISION,enabled:relaySeatState(env,'gpt')==='relay_generation_enabled',seat:'gpt',scope_exclusion:'funds_signing_refund_wallet_credential_production_write',five_signature_escalation:'owner_multisig',scope_registry:'config/relay-adjudication-scopes.json',scope_count:ADJUDICATION_SCOPES.length,data_classification_required:'public_distributable',claim_lease_seconds:180,budget_gate:'relay_proxy_durable_object',budget_limits:{per_call_usd:RELAY_COST_GUARD.per_call_cost_cap_usd??null,daily_usd:RELAY_COST_GUARD.daily_cost_cap_usd??null,project_usd:RELAY_COST_GUARD.project_cost_cap_usd??null,balance_floor_usd:RELAY_BALANCE_FLOOR_USD},records_execution:false,relay_attested:false},decision_seat:'gpt',decision_seat_kind:'AI_manual_intervention',generation_verified:false,financial_execution:false,external_submissions_enabled:false};}
 function card(env){return {name:'LTZZZ Deep Superagent',description:'Isolated DeepSeek coordination and native work seats; GPT AI decision handoff.',version:REVISION,protocol_support:'discovery_only_not_full_A2A_RPC',capabilities:{durable_tasks:true,provider_provenance:true,streaming:false,native_gpt:false,native_claude:false,external_submission:false,payments:false},authentication:{scheme:'Bearer',server_side_only:true},source_commit:env.SUPERAGENT_SOURCE_COMMIT||null};}
 function objectKey(taskId,packageId){return JSON.stringify([taskId,packageId]);}
 export default {
@@ -249,36 +250,77 @@ export class DeepTask {
       if(path==='/adjudication'&&request.method==='POST'){
         const d=await readJson(request);
         if(!d||typeof d!=='object'||Array.isArray(d)||Object.keys(d).some(k=>k!=='adjudication_id')||!ID.test(d.adjudication_id||''))throw fail('invalid_adjudication_request');
+        // Provider egress requires public-distributable input. Re-checked here
+        // because adjudication can be requested long after enqueue.
+        if(job.data_classification!=='public_distributable')throw fail('adjudication_public_distributable_input_required',403);
         if(!job.terminal)throw fail('job_not_terminal',409);
-        if(job.adjudication){if(job.adjudication.adjudication_id===d.adjudication_id)return json({...job.adjudication,duplicate:true});throw fail('adjudication_already_recorded',409);}
+        // Atomic claim before any paid request: concurrent callers must never
+        // produce two provider calls for the same adjudication or a raced id.
+        const claim=await this.state.storage.transaction(async tx=>{
+          const cur=await tx.get('job');
+          if(cur.data_classification!=='public_distributable')throw fail('adjudication_public_distributable_input_required',403);
+          if(!cur.terminal)throw fail('job_not_terminal',409);
+          if(cur.adjudication){
+            if(cur.adjudication.adjudication_id===d.adjudication_id)return {kind:'duplicate',record:cur.adjudication};
+            throw fail('adjudication_already_recorded',409);
+          }
+          const prior=cur.adjudication_claim;
+          if(prior){
+            if(prior.adjudication_id!==d.adjudication_id)throw fail('adjudication_claim_conflict',409);
+            if(prior.status==='in_flight'&&Date.parse(prior.lease_until)>Date.now())return {kind:'in_flight',claim:prior};
+            // The earlier attempt lost its lease without a verdict. A paid
+            // request may already have left the Worker, so it becomes
+            // undecided and is never replayed.
+            const record=adjudicationUncertain({task_id:cur.task_id,input_sha256:cur.input_sha256,adjudication_id:d.adjudication_id,error:'adjudication_claim_abandoned_no_retry',relay_called:true,at:now()});
+            record.claim_abandoned_at=prior.claimed_at??null;
+            cur.adjudication=record;delete cur.adjudication_claim;
+            await tx.put('job',cur);return {kind:'abandoned',record};
+          }
+          const claimRecord={adjudication_id:d.adjudication_id,status:'in_flight',claimed_at:now(),lease_until:new Date(Date.now()+180000).toISOString(),execution_id:cur.execution_id,input_sha256:cur.input_sha256,data_classification:cur.data_classification};
+          cur.adjudication_claim=claimRecord;await tx.put('job',cur);
+          return {kind:'claimed',job:cur,claim:claimRecord};
+        });
+        if(claim.kind==='duplicate')return json({...claim.record,duplicate:true});
+        if(claim.kind==='in_flight')return json({adjudication_id:d.adjudication_id,status:'in_progress',duplicate:true,relay_called:null,accepted:false,deployed:false,financial_execution:false,execution_authority:false},202);
+        if(claim.kind==='abandoned')return json(claim.record,202);
+        const claimedJob=claim.job;
         let record;
-        const hit=fundFamilyHit({task_id:job.task_id,prompt:job.prompt,outputs:(job.outputs||[]).map(o=>o.text)});
-        if(hit.hit){
-          // Funds/signing family never reaches the relay seat: short-circuit first.
-          record={...fundShortCircuit({task_id:job.task_id,input_sha256:job.input_sha256,family:hit.family}),adjudication_id:d.adjudication_id,status:'needs_decision',at:now()};
-        }else{
-          const st=relaySeatState(this.env,'gpt');
-          if(st!=='relay_generation_enabled'){
-            record={revision:ADJUDICATION_REVISION,adjudication_id:d.adjudication_id,stage:'relay_adjudication',seat:'gpt',relay_called:false,status:'undecided',error:'relay_gpt_not_enabled_'+st,task_id:job.task_id,input_sha256:job.input_sha256,relay_attested:false,accepted:false,deployed:false,financial_execution:false,execution_authority:false,at:now()};
+        try{
+          const hit=fundFamilyHit({task_id:claimedJob.task_id,prompt:claimedJob.prompt,outputs:(claimedJob.outputs||[]).map(o=>o.text)});
+          if(hit.hit){
+            // Funds/signing family never reaches the relay seat: short-circuit first.
+            record={...fundShortCircuit({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,family:hit.family}),adjudication_id:d.adjudication_id,status:'needs_decision',at:now()};
           }else{
-            const messages=adjudicationPrompt({task_id:job.task_id,input_sha256:job.input_sha256,input_text:job.prompt});
-            try{
-              const r=await this.callRelayAdjudication(job,messages);
-              const v=parseAdjudication(r.text,{task_id:job.task_id,input_sha256:job.input_sha256});
-              record=v.ok?{...adjudicationRecord({task_id:job.task_id,input_sha256:job.input_sha256,decision:v.decision,receipt:r.receipt}),adjudication_id:d.adjudication_id,status:'adjudicated',at:now()}
-                :{revision:ADJUDICATION_REVISION,adjudication_id:d.adjudication_id,stage:'relay_adjudication',seat:'gpt',relay_called:true,status:'undecided',error:v.error,missing:v.missing??null,actual_provider:'apisrouter_relay',actual_model:r.receipt.actual_model??null,request_id:r.receipt.request_id??null,relay_attested:false,task_id:job.task_id,input_sha256:job.input_sha256,accepted:false,deployed:false,financial_execution:false,execution_authority:false,at:now()};
-            }catch(e){
-              // A failed or uncertain provider call is recorded as undecided, never
-              // retried inside this stage and never filled in from another seat.
-              const receipt=(job.receipts||[]).filter(x=>x.stage==='relay_adjudication').pop()||{};
-              record={revision:ADJUDICATION_REVISION,adjudication_id:d.adjudication_id,stage:'relay_adjudication',seat:'gpt',relay_called:true,status:'undecided',error:e.status?e.message:'relay_adjudication_uncertain',actual_provider:'apisrouter_relay',actual_model:receipt.actual_model??null,request_id:receipt.request_id??null,relay_attested:false,task_id:job.task_id,input_sha256:job.input_sha256,accepted:false,deployed:false,financial_execution:false,execution_authority:false,at:now()};
+            const st=relaySeatState(this.env,'gpt');
+            if(st!=='relay_generation_enabled'){
+              record=adjudicationUncertain({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,adjudication_id:d.adjudication_id,error:'relay_gpt_not_enabled_'+st,relay_called:false,at:now()});
+            }else{
+              const messages=adjudicationPrompt({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,input_text:claimedJob.prompt});
+              try{
+                const r=await this.callRelayAdjudication(claimedJob,messages);
+                const v=parseAdjudication(r.text,{task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256});
+                record=v.ok
+                  ?{...adjudicationRecord({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,decision:v.decision,receipt:r.receipt}),adjudication_id:d.adjudication_id,status:'adjudicated',at:now()}
+                  :adjudicationUncertain({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,adjudication_id:d.adjudication_id,error:v.error,missing:v.missing??null,relay_called:true,receipt:r.receipt,at:now()});
+              }catch(e){
+                // A failed or uncertain provider call is recorded as undecided,
+                // never retried inside this stage and never filled in from
+                // another seat. The proxy settles its own budget entry. Re-read
+                // the job so the audit keeps the receipt written before egress
+                // (the pre-call snapshot cannot contain it).
+                const current=await this.state.storage.get('job');
+                const receipt=(current?.receipts||[]).filter(x=>x.stage==='relay_adjudication').pop()||{};
+                record=adjudicationUncertain({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,adjudication_id:d.adjudication_id,error:e.status?e.message:'relay_adjudication_uncertain',relay_called:true,receipt,at:now()});
+              }
             }
           }
+        }catch(e){
+          record=adjudicationUncertain({task_id:claimedJob.task_id,input_sha256:claimedJob.input_sha256,adjudication_id:d.adjudication_id,error:e.status?e.message:'relay_adjudication_failed_before_call',relay_called:false,at:now()});
         }
         return this.state.storage.transaction(async tx=>{
           const cur=await tx.get('job');
-          if(cur.adjudication){if(cur.adjudication.adjudication_id===record.adjudication_id)return json({...cur.adjudication,duplicate:true});throw fail('adjudication_already_recorded',409);}
-          cur.adjudication=record;await tx.put('job',cur);
+          if(cur.adjudication&&cur.adjudication.adjudication_id!==record.adjudication_id)throw fail('adjudication_already_recorded',409);
+          cur.adjudication=record;delete cur.adjudication_claim;await tx.put('job',cur);
           return json(record,record.status==='adjudicated'?200:202);
         });
       }
@@ -355,28 +397,71 @@ export class DeepTask {
     job.terminal=true;job.completed_at=now();job.events.push({name:'ltzzz.task.outcome',trace_id:job.execution_id,at:job.completed_at,status:job.status,input_sha256:job.input_sha256});
     await this.state.storage.put('job',job);
   }
+  // Receipt writes use their own transaction so a slow provider call cannot
+  // overwrite a concurrent decision or claim with a stale job snapshot.
+  async beginReceipt(receipt){
+    return this.state.storage.transaction(async tx=>{
+      const cur=await tx.get('job');
+      if(cur.receipts.some(r=>r.receipt_id===receipt.receipt_id))throw fail('receipt_already_recorded',409);
+      cur.receipts.push(receipt);cur.model_calls++;
+      await tx.put('job',cur);return cur;
+    });
+  }
+  async patchReceipt(receiptId,patch){
+    return this.state.storage.transaction(async tx=>{
+      const cur=await tx.get('job');
+      const receipt=cur.receipts.find(r=>r.receipt_id===receiptId);
+      if(receipt)Object.assign(receipt,patch);
+      await tx.put('job',cur);return receipt||null;
+    });
+  }
   async callRelayAdjudication(job,messages){
     const state=relaySeatState(this.env,'gpt');
     if(state!=='relay_generation_enabled')throw fail('relay_adjudication_not_enabled_'+state,503);
-    if(job.receipts.some(r=>r.stage==='relay_adjudication'))throw fail('provider_attempt_already_reserved',409);
     const model=this.env[RELAY_SEATS.gpt.model_var],maxTokens=2048,base=String(this.env.RELAY_PROXY_URL).replace(/\/+$/,'');
-    const receipt={stage:'relay_adjudication',seat:'gpt',actual_provider:'apisrouter_relay',relay_host:RELAY_HOST,relay_transport:'ltzzz_proxy_seat_token',batch_declared:true,official_provider_attestation:false,native_provider:false,relay_attested:false,decision_authority:'owner_delegated_except_funds_family',actual_model:null,task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
-    job.receipts.push(receipt);job.model_calls++;await this.state.storage.put('job',job);
+    // Estimated worst case is recorded before egress; the relay proxy's durable
+    // budget ledger is the authoritative gate and settles the actual amount.
+    const estimated=estimateWorstCaseCost({model,messages,maxCompletionTokens:maxTokens});
+    if(estimated===null)throw fail('relay_adjudication_model_not_allowlisted',503);
+    const receipt={receipt_id:crypto.randomUUID(),stage:'relay_adjudication',seat:'gpt',actual_provider:'apisrouter_relay',relay_host:RELAY_HOST,relay_transport:'ltzzz_proxy_seat_token',batch_declared:true,official_provider_attestation:false,native_provider:false,relay_attested:false,decision_authority:'bounded_adjudication_owner_delegated_except_funds_and_five_signature',actual_model:null,provider_reported_model:null,prompt_tokens:null,completion_tokens:null,tokens_used:null,estimated_cost_usd:estimated,actual_cost_usd:null,latency_ms:null,balance_after_usd:null,budget_reservation_id:null,budget_gate:'relay_proxy_durable_object',task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),upstream_http:null,status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
+    await this.beginReceipt(receipt);
+    const started=Date.now();
     try{
       const response=await fetch(base+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','x-ltzzz-seat-token':this.env.RELAY_PROXY_TOKEN,'x-ltzzz-batch':'1'},body:JSON.stringify({model,messages,max_tokens:maxTokens}),signal:AbortSignal.timeout(90000)});
       const data=await response.json().catch(()=>null);
-      receipt.upstream_http=response.status;receipt.completed_at=now();
+      const latency=Date.now()-started;
       const text=data?.choices?.[0]?.message?.content,finish=data?.choices?.[0]?.finish_reason,requestId=data?.id||response.headers.get('x-request-id')||null,usage=data?.usage||{};
-      receipt.request_id=requestId;receipt.finish_reason=finish??null;
-      receipt.tokens_used=typeof usage.total_tokens==='number'?usage.total_tokens:null;
-      receipt.provider_reported_model=typeof data?.model==='string'?data.model:null;
-      if(!response.ok||typeof text!=='string'||!text.trim()||!['stop','end_turn'].includes(finish)||!requestId||typeof data?.model!=='string'||!data.model)throw fail('relay_adjudication_evidence_incomplete',502);
+      const promptTokens=typeof usage.prompt_tokens==='number'?usage.prompt_tokens:null;
+      const completionTokens=typeof usage.completion_tokens==='number'?usage.completion_tokens:null;
+      const headerNumber=name=>{const raw=response.headers.get(name);if(raw===null||raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null;};
+      const actualCost=headerNumber('x-ltzzz-cost-usd')??usageCostUsd({model,reportedPromptTokens:promptTokens,estimatedInputTokens:messagesInputTokens(messages),completionTokens});
+      const patch={upstream_http:response.status,completed_at:now(),latency_ms:latency,request_id:requestId,finish_reason:finish??null,prompt_tokens:promptTokens,completion_tokens:completionTokens,tokens_used:typeof usage.total_tokens==='number'?usage.total_tokens:null,provider_reported_model:typeof data?.model==='string'?data.model:null,estimated_cost_usd:estimated,actual_cost_usd:actualCost,balance_after_usd:headerNumber('x-ltzzz-balance-after-usd'),budget_reservation_id:response.headers.get('x-ltzzz-budget-reservation')||null,usage_source:promptTokens&&promptTokens>0?'provider_reported':'estimated_floor'};
+      if(!response.ok){
+        const code=data?.error?.code||'relay_upstream_http_error_'+response.status;
+        Object.assign(receipt,patch,{status:'failed_or_uncertain_no_retry',error:'relay_adjudication_'+code});
+        await this.patchReceipt(receipt.receipt_id,receipt);
+        throw fail('relay_adjudication_'+code,502);
+      }
+      if(typeof text!=='string'||!text.trim()||!['stop','end_turn'].includes(finish)||!requestId||typeof data?.model!=='string'||!data.model){
+        Object.assign(receipt,patch,{status:'failed_or_uncertain_no_retry',error:'relay_adjudication_evidence_incomplete'});
+        await this.patchReceipt(receipt.receipt_id,receipt);
+        throw fail('relay_adjudication_evidence_incomplete',502);
+      }
       if(text.length>100000)throw fail('relay_adjudication_output_too_large',502);
-      receipt.actual_model=data.model;receipt.generation_verified=true;receipt.status='complete_output_pending_review';receipt.output_sha256=await sha256(text);
-      await this.state.storage.put('job',job);return {text,receipt};
-    }catch(e){receipt.completed_at=now();receipt.status='failed_or_uncertain_no_retry';receipt.error=e.status?e.message:'relay_adjudication_transport_uncertain';await this.state.storage.put('job',job);throw fail(receipt.error,502);}
+      const outputSha=await sha256(text);
+      Object.assign(receipt,patch,{actual_model:data.model,generation_verified:true,status:'complete_output_pending_review',output_sha256:outputSha});
+      await this.patchReceipt(receipt.receipt_id,{...patch,actual_model:data.model,generation_verified:true,status:'complete_output_pending_review',output_sha256:outputSha});
+      return {text,receipt};
+    }catch(e){
+      const patch={completed_at:now(),latency_ms:Date.now()-started,status:'failed_or_uncertain_no_retry',error:e.status?e.message:(e?.name==='TimeoutError'||e?.name==='AbortError'?'relay_adjudication_timeout':'relay_adjudication_transport_or_decode_uncertain')};
+      Object.assign(receipt,patch);
+      await this.patchReceipt(receipt.receipt_id,patch);
+      throw fail(receipt.error,502);
+    }
   }
-  escalation(job,reason){return {seat:'gpt',kind:'AI_decision_handoff',task_id:job.task_id,package_id:job.package_id,execution_id:job.execution_id,input_sha256:job.input_sha256,reason,recipient:'ltzyz2181@gmail.com',delivery:'pending_doubao_desktop_or_existing_engineering_automation',email_sent:false,gpt_decision_recorded:false,personal_owner_approval_required:false};}
+  // Internal human decisions go to the GPT decision queue. Naming the owner's
+  // mailbox here would turn every routine escalation into an owner approval.
+  escalation(job,reason){return {seat:'gpt',kind:'AI_decision_handoff',task_id:job.task_id,package_id:job.package_id,execution_id:job.execution_id,input_sha256:job.input_sha256,reason,queue:'gpt_decision_queue',delivery:'gpt_decision_queue_not_owner_approval',email_sent:false,gpt_decision_recorded:false,personal_owner_approval_required:false};}
   async callSeat(job,stage,seat,messages){
     if(Object.hasOwn(RELAY_SEATS,seat))return this.callRelaySeat(job,stage,seat,messages);
     const spec=SEATS[seat],binding=this.env[spec?.binding];if(!binding?.fetch||!this.env.LTZZZ_AGENT_TOKEN)throw fail('native_binding_not_configured',503);
