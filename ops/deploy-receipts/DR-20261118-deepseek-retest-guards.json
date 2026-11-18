@@ -41,8 +41,9 @@
     }
   ],
   "blockers": [],
-  "next_action": "等 GPT 复核三卡结论与是否拆生产卡；新卡先跑 check-card-contract --strict。SOURCE-INTEL 接线与 search/fetch 日额仍等 owner 给值",
+  "next_action": "等 GPT 复审 wallet-ops 回执门提案与三卡结论；新卡先跑 check-card-contract --strict。SOURCE-INTEL 接线与 search/fetch 日额仍等 owner 给值",
   "known_issues": [
+    "wallet-ops 回执缺失 fail-closed 门未落地：该 workflow 属 small_payment_release 逐字节锁定件，改动触发 manifest_source_bytes_changed（run 44225933765），已回退原字节，等待复审后再改。",
     "单样本问题仍未完全消除：DAILY-1 只跑了 1 次；pro 的自限与卡内三席位写法相关，属推断，未做反事实对照。",
     "6 张历史卡仍是 planner/worker 混写；未批量改写，以免改动历史任务卡。",
     "x-sales-post.mjs 由隐式 enabled 改为显式 disabled，属行为修正（400 token 预算下开启 thinking 会输出空正文）；未做真实发帖验证。",
@@ -68,7 +69,7 @@
     "scripts/deepseek-shadow-routing.mjs": "a4673d57a94e0e8201e92e457a8be059589868cd98dd64ebd33f35b580e24fe5",
     "scripts/tests/deepseek-shadow-routing.test.mjs": "ba4da25bd31cb761f745fff185499f5b65b6449222009d46e2b46caf0684ec81",
     "scripts/tests/wallet-ops-drill.test.mjs": "0458fc0acbeb9d787869b998a06ab54688bf4f42915cc5c9bd6d829dd476ed23",
-    ".github/workflows/ltzzz-wallet-ops.yml": "934c8998ca9dd9329643f4ed2a39b2f45bf6031421ec4aea023d8350f1316b3e",
+    ".github/workflows/ltzzz-wallet-ops.yml": "a471137fe1786bb3130234519a06647721a2b5dfc718c620d9a9d10a60105b2e",
     "scripts/deepseek-callsite-audit.mjs": "2af78b833212e440d089861db0c7fa7bf6153caa8b2a3d146d0def3e327428b4",
     "scripts/tests/deepseek-callsite-audit.test.mjs": "0c46cebbe4c60715f5b94c81614ce19d4c3c28be88cfb0101fbef6bb1f223890",
     "scripts/check-card-contract.mjs": "109667b345088db1df47cd56974cd965cbeba09cd3ea7b6d859222ff2445569f",
@@ -77,6 +78,6 @@
     "scripts/run-memory-promotion-review.mjs": "01d4259e234b06b28d16cfd19a714db8384347a6d91f9872002b59afdc7305be",
     "scripts/x-sales-post.mjs": "0d9c9729fdc27100491c09cc34668ae40c762bf3ca866f15a7f6e0e020ce9773",
     "scripts/autonomy-core.mjs": "c1358cd227d4da0f06a962bf9726b155c82fdca629c8eb799a62760cf31cdf57",
-    "docs/2026-11-18-DeepSeek三卡复测与防护.md": "04ea3b54920818194cf0ba50d98489476a3dd0eb75bcb49a1eefbb18d4d431c0"
+    "docs/2026-11-18-DeepSeek三卡复测与防护.md": "2da0047d77de2410f71fe4db2697c6f97596d12a09871f801b6d73ee01d9a6d3"
   }
 }

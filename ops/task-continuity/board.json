@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T03:15:00.000Z",
+  "updated_at": "2026-11-18T03:25:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -285,7 +285,7 @@
         "docs/2026-11-18-DeepSeek三卡复测与防护.md §2"
       ],
       "updated_at": "2026-11-18T03:15:00.000Z",
-      "note": "隔离负测 6 项：failure/cancelled/缺 outcome/全空环境均 exit 1；未改生产工作流逻辑，只加回执缺失门。"
+      "note": "隔离负测 6 项全过；回执缺失 fail-closed 门需改支付发布件，已回退并登记为 WALLET-OPS-RECEIPT-GUARD。"
     },
     {
       "id": "DEEPSEEK-CALLSITE-AUDIT",
@@ -311,6 +311,21 @@
       ],
       "updated_at": "2026-11-18T03:15:00.000Z",
       "note": "历史 84 张卡中 6 张混写；未设为 CI 强制门，避免历史卡变红。"
+    },
+    {
+      "id": "WALLET-OPS-RECEIPT-GUARD",
+      "title": "wallet-ops 回执缺失 fail-closed 门（需发布件复审）",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "复审是否允许修改 ltzzz-wallet-ops.yml 并重钉 small_payment_release",
+      "evidence": [
+        "CI run 44225933765（manifest_source_bytes_changed）",
+        ".github/workflows/ltzzz-wallet-ops.yml（已回退原字节）",
+        "docs/2026-11-18-DeepSeek三卡复测与防护.md §2"
+      ],
+      "updated_at": "2026-11-18T03:25:00.000Z",
+      "unblock_condition": "GPT 明确批准修改支付发布件并重钉 manifest，或明确判定该缺口可接受",
+      "note": "未重钉 manifest：那会绕过发布件复审。"
     }
   ]
 }
