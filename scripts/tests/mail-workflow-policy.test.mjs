@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -101,6 +102,32 @@ test('凭据检查步骤使用脚本自己的参数，不用 Node 会吞掉的 -
   assert.match(line, /--credentials-file/, '必须用脚本可接收的参数名');
   assert.ok(!/\s--env-file(\s|=)/.test(line), 'Node 22 会把 --env-file 当自己的选项吞掉');
   assert.match(line, /--json/);
+});
+
+test('run 的 plain scalar 不得含冒号加空格（会让整条工作流解析失败、静默不建 job）', () => {
+  const bad = [];
+  source.split('\n').forEach((line, i) => {
+    const m = line.match(/^(\s*)run:\s+(?![|>])(.+)$/);
+    if (!m) return;
+    const value = m[2].trim();
+    if (value.startsWith('"') || value.startsWith("'")) return;
+    if (/:(\s|$)/.test(value)) bad.push(`第 ${i + 1} 行: ${line.trim()}`);
+  });
+  assert.deepEqual(bad, [], 'run 值含 ": " 时必须加引号或改成块标量（run: |）');
+});
+
+test('工作流能被真正的 YAML 解析器读通', (t) => {
+  const probe = spawnSync('python3', ['-c', 'import yaml'], {encoding: 'utf8'});
+  if (probe.status !== 0) {
+    t.skip('本机无 python3 + PyYAML，跳过真实解析校验');
+    return;
+  }
+  const parsed = spawnSync(
+    'python3',
+    ['-c', 'import sys,yaml;d=yaml.safe_load(open(sys.argv[1]));assert isinstance(d.get("jobs"),dict) and d["jobs"]', WORKFLOW],
+    {encoding: 'utf8'},
+  );
+  assert.equal(parsed.status, 0, `YAML 解析失败：\n${parsed.stderr || ''}`);
 });
 
 test('工作流指向最小证据集与回退方案文档', () => {

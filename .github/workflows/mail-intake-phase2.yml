@@ -174,7 +174,8 @@ jobs:
 
       - name: Warn when a channel failed (partial)
         if: env.INTAKE_EXIT == '2'
-        run: echo "::warning::Mail intake partial: at least one channel failed; Gmail status is recorded in latest.json."
+        run: |
+          echo "::warning::Mail intake partial: at least one channel failed; Gmail status is recorded in latest.json."
 
       - name: Alarm when the run failed
         if: env.INTAKE_EXIT != '0' && env.INTAKE_EXIT != '2'
