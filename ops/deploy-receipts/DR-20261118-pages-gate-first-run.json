@@ -1,0 +1,52 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-pages-gate-first-run",
+  "target": "pages-artifact-contract-runtime-observation",
+  "platform": "github-pages",
+  "env_id": "ltzzz-repo/pages-production",
+  "code_commit": "37dec7d1aba92072189e6ea8227758963141bc89",
+  "code_path": ".github/workflows/pages.yml,scripts/verify-pages-artifact-contract.mjs,scripts/lib/pages-artifact-contract.mjs",
+  "deployed_at": "2026-11-18T07:09:28Z",
+  "deployment_status": "runtime_observed",
+  "verified": [
+    {
+      "kind": "pages_run_success",
+      "result": "ok",
+      "evidence": "推送 run 44256612545：head_sha=37dec7d1aba92072189e6ea8227758963141bc89，event=push，run_attempt=1，created_at 2026-11-18T07:08:54Z，updated_at 2026-11-18T07:09:28Z，conclusion=success"
+    },
+    {
+      "kind": "gate_steps_executed",
+      "result": "ok",
+      "evidence": "同一 run 的 job deploy 步骤：7 “Guard pages artifact uniqueness before upload” success；9 “Assert exactly one pages artifact before deploy” success；10 “Deploy to GitHub Pages” success。第 9 步在 37dec7d1 的工作流中为无条件执行，即新的 pre-deploy 契约闸确已在运行态执行。"
+    },
+    {
+      "kind": "polling_not_triggered",
+      "result": "ok",
+      "evidence": "该 run 内只有一份 github-pages artifact，pre-deploy 首次检查即通过，有界轮询路径未被触发；本次不构成“竞态下等待/复用”的实证。"
+    }
+  ],
+  "blockers": [],
+  "next_action": "需要一次可控的重复 artifact 场景（跨 attempt 或测试环境注入）来验证有界轮询与多份硬失败边界；在取得该证据前，不得写成“竞态修复已实证”。",
+  "known_issues": [
+    "本回执只证明新的 pre-deploy 闸在真实 Pages run 中执行并通过，不证明竞态分支被走到。",
+    "GitHub Pages 运行时无法从 run 摘要反推 artifact 数量，只能确认单份场景下未轮询；真实竞态仍需受控复现。"
+  ],
+  "notes": [
+    "状态分层：merged（PR #424 → 37dec7d1）与运行时观察（本回执）分别登记；platform_accepted 仍未发生。",
+    "前置回执：ops/deploy-receipts/DR-20261118-deploy-authority-pages-gates.json 的 next_action 即“观察合并后首个 Pages run”，本回执为该动作的观察结果。"
+  ],
+  "operator": {
+    "seat": "desktop_claude",
+    "env": "windows-desktop Git Bash + WSL node",
+    "recorded_by": "claude"
+  },
+  "authorized_by": {
+    "authorized_by": "owner direct instruction in session",
+    "evidence_type": "owner_transcribed_instruction",
+    "channel": "桌面 Claude 会话",
+    "requirement": "修复 Pages artifact 可见性竞态；部署完成呈报以实际证据为准，不夸大已验收",
+    "quote": "Pages：修复 artifact 可见性竞态。",
+    "decision_id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
+    "scope_limit": "只读观察 CI run；不含生产配置写入、资金、钱包、凭据"
+  }
+}
