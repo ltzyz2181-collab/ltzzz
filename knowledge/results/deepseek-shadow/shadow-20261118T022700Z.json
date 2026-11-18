@@ -1,0 +1,139 @@
+{
+  "schema": "ltzzz.deepseek.shadow-routing.v1",
+  "at": "2026-11-18T02:27:13.953Z",
+  "card": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-1.json",
+  "card_sha256": "1b9353461051ad0de9c7f271c289c409d3575b035e102a8331f071a7ab99aee9",
+  "card_task_id": "DEEP-SUPERAGENT-20261117-DAILY-1",
+  "refs_total": 19,
+  "models": [
+    "deepseek-v4-pro",
+    "deepseek-flash"
+  ],
+  "max_tokens": 2048,
+  "thinking": "disabled",
+  "prompt_mode": "worker",
+  "prompt_sha256": "38d3a0141ab38a1ca0a0bf12278d1b740b8427f214c71585070ca198d1a97410",
+  "require_all_five": false,
+  "per_model": [
+    {
+      "model": "deepseek-v4-pro",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 2433,
+      "output_chars": 1131,
+      "output_sha256": "3b109bb68b404c7e8962a08f641b1a0dfe273b16083d67469bb443d2b3c4d563",
+      "output": "ROUTE | 8d9a5f45ab685bbb | needs_gpt_decision | Phase1 六项安全要求落地核对，需 GPT 裁决是否满足部署条件\nASK | 8d9a5f45ab685bbb | gpt | 请裁决 Phase1 六项安全要求是否已全部落地，可否进入部署\nROUTE | 5556bddb2622ff00 | needs_gpt_decision | 同一 Phase1 六项安全要求核对，需 GPT 裁决\nASK | 5556bddb2622ff00 | gpt | 请裁决 Phase1 六项安全要求是否已全部落地\nROUTE | adad792d0ef16422 | needs_gpt_decision | 中转席位裁决与 AI 雇佣 AI Phase1 部署，需 GPT 拍板\nASK | adad792d0ef16422 | gpt | 请裁决中转席位定位及 Phase1 部署是否放行\nROUTE | 6a5c732286808bf3 | needs_gpt_decision | ChatGPT Wallet 总控智能体钱包方案 v1，涉及钱包方案需 GPT 裁决\nASK | 6a5c732286808bf3 | gpt | 请裁决 Wallet 总控智能体钱包方案 v1 五问\nROUTE | cad495cb967efd7c | needs_gpt_decision | Wallet P1 分流现状与方案稿，需 GPT 裁决 4 问\nASK | cad495cb967efd7c | gpt | 请裁决 Wallet P1 分流方案四问\nROUTE | 0c44d7ce5b18a34e | needs_gpt_decision | GPT 正式裁决 18 项已落库，需确认执行顺序无异议\nASK | 0c44d7ce5b18a34e | gpt | 请确认 18 项裁决执行顺序是否可继续\nROUTE | fba4b8506b3a9e95 | needs_gpt_decision | GPT 裁决草稿涉及 Wallet P1、v1 与桌面部署，待正式化\nASK | fba4b8506b3a9e95 | gpt | 请确认裁决草稿内容是否可正式落库\nROUTE | 7a62ac73578e1ce2 | blocked_evidence_needed | 部署失败修复候选，需先确认 PAGES-ARTIFACT-DUP 与 PAY 根因证据\nASK | 7a62ac73578e1ce2 | evidence | 请提供 PAGES-ARTIFACT-DUP 与 PAY 失败的具体日志或复现证据",
+      "evaluation": {
+        "route_lines": 8,
+        "refs_total": 19,
+        "covered_refs": 8,
+        "missing_refs": [
+          "35e009a39885e44b",
+          "ba4ddc11868d81a8",
+          "f37f74a2260e0983",
+          "76204610598d12d6",
+          "3b86bfbe9f010dd1",
+          "a4892a62f3078715",
+          "58679a674803de2a",
+          "accc365c8999ec45",
+          "37c0b81f45bea064",
+          "c96ab9053576d5c4",
+          "2b3050253fdbc338"
+        ],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [
+          "needs_gpt_decision",
+          "blocked_evidence_needed"
+        ],
+        "route_vocabulary_complete": true,
+        "ask_expected": 8,
+        "output_nonempty": true,
+        "all_five_present": false,
+        "pass": false
+      }
+    },
+    {
+      "model": "deepseek-flash",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 3227,
+      "output_chars": 5048,
+      "output_sha256": "0a37835b47d4360ed369d07ed18e260e092e927ce8e4b9ae932f8f7c7f046f06",
+      "output": "ROUTE | 35e009a39885e44b | blocked_evidence_needed | Blocker retained pending genuine source; range lookup receipt only, no real document yet.\nASK | 35e009a39885e44b | evidence | Genuine original document for the retained blocker; current range-lookup receipt is insufficient.\nROUTE | ba4ddc11868d81a8 | needs_gpt_decision | Explicit contract adoption needs ruling on rejection order before deploy.\nASK | ba4ddc11868d81a8 | gpt | Confirm explicit contract with fail-closed ordering before deployment.\nROUTE | f37f74a2260e0983 | coordinator_close_with_receipt | Correction already folded into v2 covering v1; receipt exists, pending deepseek recheck.\nROUTE | 76204610598d12d6 | needs_owner_decision | Miniapp payment enablement plus deployment plan and Q1-Q5 require owner sign-off.\nASK | 76204610598d12d6 | owner | Decide payment enablement, deployment approach, and Q1-Q5 line by line.\nROUTE | 3b86bfbe9f010dd1 | needs_owner_decision | Sandbox first-pay success and refund path touched money-adjacent flow; owner ack needed.\nASK | 3b86bfbe9f010dd1 | owner | Acknowledge sandbox payment/refund acceptance and confirm no production money action.\nROUTE | a4892a62f3078715 | coordinator_close_with_receipt | Audit sweep all-green with one input deviation noted; close on deepseek recheck.\nROUTE | 58679a674803de2a | needs_gpt_decision | Two gates deployed but five items explicitly wait on GPT ruling.\nASK | 58679a674803de2a | gpt | Rule on the five outstanding items after the two deployed gates.\nROUTE | accc365c8999ec45 | coordinator_close_with_receipt | Correction of payment status and delivery boundary; scope clarification only, close on recheck.\nROUTE | 37c0b81f45bea064 | coordinator_close_with_receipt | ICP filing confirmation is status-only, no money or production write; close on recheck.\nROUTE | c96ab9053576d5c4 | coordinator_close_with_receipt | Transport switched to Worker forwarding with one real run proven; close on recheck.\nROUTE | 2b3050253fdbc338 | needs_owner_decision | Revoking all fixed deadlines and switching to stepwise acceptance changes commitments; owner must decide.\nASK | 2b3050253fdbc338 | owner | Confirm stepwise acceptance model and revocation of all fixed deadlines.\nROUTE | B1 | needs_gpt_decision | 152 of 188 warning cases unrechecked in window, seat split material; oversight decision needed.\nASK | B1 | gpt | Decide recheck window and seat-level remediation for 152 unrechecked warning cases.\nROUTE | B2 | blocked_evidence_needed | Three failed runs in 24h; causes unknown, no logs cited before any rerun.\nASK | B2 | evidence | Failure logs or cause for the three runs, especially the funded-orders job.\nROUTE | B3 | needs_gpt_decision | Two open PRs including a month-old fail-closed fix; merge decisions outside worker scope.\nASK | B3 | gpt | Rule on #398 and stale #287 disposition; no merge performed by worker.\nROUTE | B4 | coordinator_close_with_receipt | HEAD a79fbe3 observed after fetch, auto commit only; report as evidence, no action.\nROUTE | B5 | coordinator_close_with_receipt | Mail window counts only; no bodies, no amounts, de-identified status.\nROUTE | B6 | coordinator_close_with_receipt | No deploy, merge, or money action by this seat; negative self-report only.\nROUTE | 8d9a5f45ab685bbb | needs_gpt_decision | Phase1 six safety requirements await ruling; newest duplicate, batch with prior.\nASK | 8d9a5f45ab685bbb | gpt | Rule on the six Phase1 safety requirements to unblock the area.\nROUTE | 5556bddb2622ff00 | needs_gpt_decision | Same Phase1 six-requirement request; duplicate of prior, one ruling covers both.\nASK | 5556bddb2622ff00 | gpt | Single ruling on Phase1 six requirements applies to this duplicate.\nROUTE | adad792d0ef16422 | needs_gpt_decision | Seat positioning ruling plus Phase1 deploy step 2 waiting on decision.\nASK | adad792d0ef16422 | gpt | Confirm relay seat positioning and approve Phase1 deploy step 2.\nROUTE | 6a5c732286808bf3 | needs_owner_decision | Wallet control-agent proposal is wallet/money scope; owner only, never a model seat.\nASK | 6a5c732286808bf3 | owner | Decide wallet v1 approach; five questions stay outside model routing entirely.\nROUTE | cad495cb967efd7c | needs_owner_decision | Wallet P1 triage touches wallet scope; four questions owner-only.\nASK | cad495cb967efd7c | owner | Answer the four Wallet P1 questions; no model seat may rule here.\nROUTE | 0c44d7ce5b18a34e | needs_gpt_decision | 18 rulings logged with execution order; coordinator must verify sequence before action.\nASK | 0c44d7ce5b18a34e | gpt | Confirm execution order and that logged rulings stay unchanged.\nROUTE | fba4b8506b3a9e95 | needs_owner_decision | Draft wallet and desktop rulings are wallet scope; owner decides, model may not.\nASK | fba4b8506b3a9e95 | owner | Adopt or amend draft rulings on Wallet P1, Wallet v1, desktop deploy.\nROUTE | 7a62ac73578e1ce2 | needs_gpt_decision | Deploy-failure repair candidates including a payment item need ruling before any fix.\nASK | 7a62ac73578e1ce2 | gpt | Rule on PAGES-ARTIFACT-DUP repair and keep PAY item owner-only.",
+      "evaluation": {
+        "route_lines": 19,
+        "refs_total": 19,
+        "covered_refs": 19,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [
+          {
+            "line": "ROUTE | B1 | needs_gpt_decision | 152 of 188 warning cases unrechecked in window, seat split material; oversight decision needed.",
+            "reason": "unknown_ref"
+          },
+          {
+            "line": "ASK | B1 | gpt | Decide recheck window and seat-level remediation for 152 unrechecked warning cases.",
+            "reason": "ask_unknown_ref"
+          },
+          {
+            "line": "ROUTE | B2 | blocked_evidence_needed | Three failed runs in 24h; causes unknown, no logs cited before any rerun.",
+            "reason": "unknown_ref"
+          },
+          {
+            "line": "ASK | B2 | evidence | Failure logs or cause for the three runs, especially the funded-orders job.",
+            "reason": "ask_unknown_ref"
+          },
+          {
+            "line": "ROUTE | B3 | needs_gpt_decision | Two open PRs including a month-old fail-closed fix; merge decisions outside worker scope.",
+            "reason": "unknown_ref"
+          },
+          {
+            "line": "ASK | B3 | gpt | Rule on #398 and stale #287 disposition; no merge performed by worker.",
+            "reason": "ask_unknown_ref"
+          },
+          {
+            "line": "ROUTE | B4 | coordinator_close_with_receipt | HEAD a79fbe3 observed after fetch, auto commit only; report as evidence, no action.",
+            "reason": "unknown_ref"
+          },
+          {
+            "line": "ROUTE | B5 | coordinator_close_with_receipt | Mail window counts only; no bodies, no amounts, de-identified status.",
+            "reason": "unknown_ref"
+          },
+          {
+            "line": "ROUTE | B6 | coordinator_close_with_receipt | No deploy, merge, or money action by this seat; negative self-report only.",
+            "reason": "unknown_ref"
+          }
+        ],
+        "extra_lines": [],
+        "distinct_routes": [
+          "blocked_evidence_needed",
+          "needs_gpt_decision",
+          "coordinator_close_with_receipt",
+          "needs_owner_decision"
+        ],
+        "route_vocabulary_complete": true,
+        "ask_expected": 14,
+        "output_nonempty": true,
+        "all_five_present": false,
+        "pass": false
+      }
+    }
+  ],
+  "verdict": {
+    "pro_pass": false,
+    "flash_pass": false,
+    "flash_regression": false,
+    "recommendation": "keep_pro_as_main_line; flash remains limited to search/fetch"
+  },
+  "notes": [
+    "Shadow only; no routing change, no merge, no deployment.",
+    "deepseek-flash is the official flash channel; the 1017 update is a version notice, not a new model id in /v1/models.",
+    "A failed call is recorded once and never retried blindly."
+  ]
+}
