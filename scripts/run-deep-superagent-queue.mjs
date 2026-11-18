@@ -95,12 +95,14 @@ export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
 // A public-own-input queue receipt includes actual outputs for the GPT decision
 // seat to inspect with GitHub tools. It excludes auth headers and unknown fields.
 export function publicJob(job){
- const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error']);
+ const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error','plan_source','plan_issues']);
+ result.unjudged=(job.unjudged||[]).map(v=>pick(v,['seat','error']));
+ if(job.coordinator_parse)result.coordinator_parse=pick(job.coordinator_parse,['error','raw_preview','tokens_used','request_id']);
  result.receipts=(job.receipts||[]).map(r=>pick(r,['stage','seat','actual_provider','actual_model','task_id','execution_id','source_commit','started_at','completed_at','status','generation_verified','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','truncated','output_present','tokens_used','reasoning_tokens','completion_tokens','upstream_http','output_sha256','error','accepted','paid','tx_hash']));
  for(let i=0;i<result.receipts.length;i++){const options=job.receipts[i].request_options;if(options)result.receipts[i].request_options={max_tokens:Number.isSafeInteger(options.max_tokens)&&options.max_tokens>0?options.max_tokens:null,thinking_type:['enabled','disabled'].includes(options.thinking_type)?options.thinking_type:null,source:'executor_request_not_provider_attestation'};}
  result.outputs=(job.outputs||[]).map(o=>pick(o,['seat','actual_provider','task','text','sha256','request_id']));
  if(job.plan)result.plan={...pick(job.plan,['summary','needs_gpt_decision','reason']),tasks:(job.plan.tasks||[]).map(t=>pick(t,['seat','task']))};
- if(job.review)result.review={...pick(job.review,['approved','summary','needs_gpt_decision','reason','actual_provider','actual_model','output_sha256','independent_of_worker_providers']),reviewed:(job.review.reviewed||[]).map(v=>pick(v,['seat','sha256']))};
+ if(job.review)result.review={...pick(job.review,['approved','summary','needs_gpt_decision','reason','actual_provider','actual_model','output_sha256','independent_of_worker_providers','status','error']),reviewed:(job.review.reviewed||[]).map(v=>pick(v,['seat','sha256']))};
  if(job.content_gate){
   const gate=value=>({...pick(value,['phase','at','revision','source_commit','passed']),findings:(value.findings||[]).map(v=>pick(v,['code','field','line','seat','output_sha256']))});
   result.content_gate={...gate(job.content_gate),checks:(job.content_gate.checks||[]).map(gate)};
