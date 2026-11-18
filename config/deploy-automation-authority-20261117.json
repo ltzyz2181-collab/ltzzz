@@ -44,5 +44,14 @@
     "config/patchgate-a3.json:generic_production_deploy_enabled": false,
     "config/pi-cloud.json:automatic_deploy": false
   },
-  "audit_reading": "部署回执必须写 source_commit、run_id、health 快照；没有回读的部署记为 unknown，不得记为 deployed。"
+  "audit_reading": "部署回执必须写 source_commit、run_id、health 快照；没有回读的部署记为 unknown，不得记为 deployed。",
+  "queue_throughput": {
+    "changed_at": "2026-11-18",
+    "previous": "一次 push 只能新增 1 张同类卡（maximum_one_new_card_per_kind_per_push），多推直接报错",
+    "now": "一次 push 最多 3 张同类卡、合计 6 张，同一次 run 内全部消费；工作流 consume 超时 12 分钟调到 25 分钟",
+    "unchanged": "任务卡仍是 append-only（M/D 一律拒绝）、路径唯一性、每单执行预算与不重放语义",
+    "code": "scripts/run-deep-superagent-queue.mjs MAX_NEW_CARDS_PER_KIND / MAX_NEW_CARDS",
+    "test": "scripts/tests/deep-superagent-queue.test.mjs",
+    "note": "这是吞吐上限调整，不是资金或凭据授权；excluded_families 全部继续有效。"
+  }
 }
