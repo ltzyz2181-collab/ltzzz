@@ -1,0 +1,42 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-doubao-dispatch-lane",
+  "task_id": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
+  "code_commit": "c422a988ae3102c4761c8790b97af8aa4f928324",
+  "docs_commit": "dd13a4538044b2b55cbbefcda90822f2db36a34c",
+  "pr_408_head": "0d253c8631526b70a9983cc1be902c6f179e4f8b",
+  "deployed_at": "2026-11-18T01:33Z",
+  "deployment_status": "deployed_repo_state",
+  "verified": [
+    "PR #419 verify job success (run 44063960722)；consume 在 PR 上按设计跳过",
+    "豆包消费 run 44216335289 success，回执 DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2A.json",
+    "豆包消费 run 44216611001 success，回执 DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2B.json",
+    "千问消费 run 44063693379 success，回执 QWEN-HIRE-PHASE1-CI-REVIEW-20261117-03.json",
+    "两份豆包回执 delivery_integrity=structurally_complete，finish_reason=stop，native_doubao_call=true"
+  ],
+  "not_verified": [
+    "PR #408 未合并、未 PASS，Phase 1 验收仍未完成",
+    "豆包与千问输出均为 draft，未做 GPT 独立复核",
+    "本工作流只验证仓库内消费与回执写入，不代表生产部署或线上验收"
+  ],
+  "blockers": [
+    "豆包第 8 项 HIGH：资金意图正则过窄（代付/扣款/划拨、payout/disburse/reimburse、零宽字符）",
+    "PR #408 仍 NEEDS_REVISION",
+    "卡 …-03 run 44064158710 HTTP 504 upstream_outcome_unknown，可能已有一次未知计费"
+  ],
+  "items_requiring_owner_ruling": [
+    "第 8 项 HIGH 是否先修再复审",
+    "第 1/3 项 MEDIUM 是否接受为 Phase 1 离线设计边界",
+    "504 未知计费是否去火山方舟后台核对",
+    "千问将本机 46/46 判为 UNVERIFIABLE，是否需补等价 CI 证据"
+  ],
+  "next_step_question": "先按 HIGH 出修复（会使当前 CI 证据作废并需重跑），还是先交 GPT 席裁决后再动代码？",
+  "model_calls": {
+    "qianwen": 1,
+    "doubao": 4
+  },
+  "model_call_notes": "豆包 4 次 = 1 次 504 未知 + 1 次截断 + 2 次成功；未触及单次 $0.05 / 每日 $0.50 上限",
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}
