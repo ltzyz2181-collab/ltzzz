@@ -1,0 +1,77 @@
+{
+  "schema": "ltzzz.deep.execution-receipt.v1",
+  "receipt_id": "DEEP-504-AND-DEPLOY-AUTHORITY-20261118",
+  "task_origin": "真实用户会话（owner）：先处理豆包 504 换通道/换模型；有限制团队自动化部署的指令全部放开；看 deep 分流与团队部署实况并处理改进项",
+  "produced_at_utc": "2026-11-18T03:05:00Z",
+  "executor": {"logical_seat": "main_agent", "client": "doubao_work", "env": "vm /home/user/ltzzz", "actual_provider": "not_applicable_for_repo_ops"},
+  "source_commit": "df4aea317 (main, 探针脚本)；504 修复提交 fa6d4b05caa179c035d53cb7c28b37b5fa075f3b",
+  "sections": {
+    "done": [
+      {
+        "item": "豆包/Kimi 双 504 的归因",
+        "evidence": "knowledge/results/deep-superagent/queue-44193726857-attempt-1.json：work_doubao 与 work_kimi 同为 upstream_http=504、output_present=false；plan(deepseek 200/1699tok) 与 work_qianwen(qwen-max 200/1552tok) 正常",
+        "conclusion": "不是单席偶发，也不是密钥失效：两个代理都在 90s 主动弃等；豆包席位此前未关思考、Kimi 席位走 k3 类思考档 + 8192 输出预算，属于推理链跑不过 90s 窗口"
+      },
+      {
+        "item": "换模型+关思考的修复（已合入 main 并自动部署）",
+        "commit": "fa6d4b05caa179c035d53cb7c28b37b5fa075f3b",
+        "files": [
+          "workers/deep-superagent/index.js：THINKING_OFF_SEATS 增加 doubao（显式 thinking:{type:disabled}）；新增 seatModelOverride()，按 DOUBAO_SEAT_MODEL / KIMI_SEAT_MODEL 做席位级模型覆盖，未设覆盖的席位请求体不许多带 model，代理全局默认与日课不受影响",
+          "wrangler.deep-superagent.toml：DOUBAO_SEAT_MODEL=doubao-seed-2-1-lite-260915、KIMI_SEAT_MODEL=kimi-k3.1-pro-highspeed（两个模型名均在 knowledge/results/providers/catalogue-latest.json 的账号可用清单内）",
+          "scripts/tests/deep-superagent.test.mjs：新增席位模型覆盖断言；原「非 DeepSeek 席位不得带 thinking」断言改为「deepseek/doubao 必须 disabled，其余不得出现」"
+        ],
+        "tests": "node --test scripts/tests/deep-superagent.test.mjs scripts/tests/deep-superagent-deploy.test.mjs = 80/80 pass；补测试后 64/64 pass",
+        "deploy": "push main 触发 .github/workflows/deep-superagent.yml run 44225791026 = success；日志 status=deployment_health_and_auth_verified、source_commit=fa6d4b05caa179c035d53cb7c28b37b5fa075f3b"
+      },
+      {
+        "item": "部署自动化限制放开（工程类）",
+        "files": [
+          "config/deploy-automation-authority-20261117.json：新增 owner_reaffirmed_at=2026-11-18、owner_reaffirmation、gpt_pass_required_before_engineering_deploy=false、decision_review_is_not_a_deploy_gate_for_engineering=true；excluded_families 与 guards_preserved 原样保留",
+          "docs/OWNER-AUTHORITY-CURRENT.md：写入 2026-11-18 部署自动化重申段",
+          "scripts/tests/deploy-authority-gate.test.mjs：新增断言（cloudflare_workers deploy allowed、github_actions_pipeline merge=owner_authorized_auto_merge、funding_moves/signing/wallet_or_safe_ops/five_signature_safe 仍 deny）"
+        ],
+        "tests": "node --test scripts/tests/deploy-authority-gate.test.mjs pass",
+        "not_changed_and_why": "A0/A2/A3/publisher/pi-cloud 的 automatic_deploy=false 是阶段级 fail-closed 不变量，翻转会让 validatePolicy/validateA2Config/validatePiCloudConfig 抛错，按既往结论保持不动"
+      },
+      {
+        "item": "Deep 分流与团队部署实况核对",
+        "findings": [
+          "#420（af53df22c，部分成功语义 + 队列规划恢复）在 2026-11-18T01:51Z 已部署成功（run 44218922039）；今日 22:49Z 的 blocked 回执产生于该修复之前，属陈旧状态，不重复修",
+          "GPT 18 项裁决中 Phase1 仍未执行完的部分按裁决顺序属 GPT 裁决面；relay GPT 授权与运行时不一致、PR #398 五项阻断均在待办",
+          "inbox 最新 8 封全部 is_read=true，无未读裁决；未出现新 GPT 裁决"
+        ]
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "卡点": "#398 与 #408 的「等 GPT PASS 才可合入/部署」与 owner 2026-11-18「工程类部署不再等 GPT PASS」冲突",
+          "不给裁决的后果": "这两条 PR 继续挂着，Phase1 无法推进",
+          "Deep 可先做的部分": "只能做测试与证据补齐，不能替代 GPT 的 PASS 结论；按新规则工程类可直接走 CI 绿合并，需要 GPT 一句话确认是否适用"
+        }
+      ],
+      "owner": [
+        {
+          "卡点": "席位活体探针需要一条 workflow（本机 OAuth 缺 workflow scope，推不上）",
+          "不给裁决的后果": "豆包换档后的真实 200 只能等下一次日课队列自然验证",
+          "Deep 可先做的部分": "脚本已入库 scripts/probe-deep-seat-liveness.mjs，workflow 一建即可跑"
+        }
+      ]
+    },
+    "next_immediate": [
+      "下一次 Deep 队列运行后，逐席位核对豆包/Kimi 是否 200，并把 latency_ms 与 actual_model 写进当日回执",
+      "用现有 patchgate-doubao-probe 做一次豆包侧 live 触碰，补一条 200/非 200 证据"
+    ],
+    "later": [
+      "GPT 对 #398/#408 在新部署规则下的处置（依赖 GPT 裁决）",
+      "席位探针 workflow 落地（依赖 owner 在网页创建，需 workflow scope）"
+    ]
+  },
+  "writes_performed": 3,
+  "merges_performed": 1,
+  "deploys_performed": 1,
+  "financial_execution": false,
+  "production_signing": false,
+  "paid": false,
+  "notes": "本次不触碰资金、签名、钱包、退款语义；部署回读以 CI 日志 source_commit 为准，未把 health 通过写成生成已验证。"
+}
