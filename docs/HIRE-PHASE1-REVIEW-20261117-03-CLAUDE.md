@@ -128,3 +128,49 @@ node --test scripts/tests/hire-phase1.test.mjs
 - 新增 1 项对抗测试，覆盖 26 条拆分/同义/不可见字符串。
 
 未做：语义模型判定（成本与不可判定性），仍为规则法；豆包其余 4 项 MEDIUM 未改，等 GPT 席裁决。修复后测试 47/47，head 变更会让上一轮 CI 证据作废，需重跑。
+
+## 10. GPT/Owner 路由修正 · 2026-11-18
+
+按 2026-11-17 22:15 中转 GPT 正式决定，旧实现把所有被禁意图写成 `needs_owner_decision`（等于 Owner 逐项审批资金）已不成立。
+
+- 新状态：`needs_decision` + `escalate_to`；`buildReceipt()` 不再写旧状态。
+- 路由：只有 `five_signature`（五签/五人签名/5 of 5/five-signature）→ `owner_multisig`；资金、退款、普通钱包/Safe、签名、凭据、生产写 → `gpt_decision_seat`。
+- 绑定：`escalate_to` 由命中族推导，伪造或省略报 `invalid_escalate_to`，并计入 `receipt_sha256`。
+- 历史：v1.1 的 `needs_owner_decision` 回执按原字节可读；v1.2 回执若回写旧状态报 `legacy_state_requires_v1_1_revision`。
+- 版本：`PHASE1_REVISION` 升至 `hire-phase1-v1.2`；CI 强制用例清单加入路由用例。
+- 判据与 `workers/deep-superagent/adjudicator.mjs` 的 `escalationTargetFor()` 一致。
+
+## 11. 复核记录 · 2026-11-18
+
+说明：本节由执行席完成，属于执行席自查，不等同豆包/千问/GPT 的第三方独立评审。
+
+复核范围：PR #408 全量 diff、路由修正、复合并发与 CI 证据链。
+
+发现并修复：
+
+- v1.2 回执可把 `state` 改回 `needs_owner_decision` 并重算哈希后通过校验，削弱「新回执不再写旧状态」的承诺。已加修订-状态绑定（`legacy_state_requires_v1_1_revision`）并补测试。
+
+确认项：
+
+- `paid=false`、`financial_execution=false`、`amount_usd=0` 在写入与读取路径均未放宽。
+- `appendReceipt()` 路径边界下沉后，模块直调与 CLI 同受限。
+- 锁回收仍只删身份未变的锁；合并 main 未引入重复实现。
+- `hire-phase1` 测试 51/51；GitHub Actions 在 head `eca868d1` 上 4 项 success、workpool skipped。
+- Harness 规定测试集 70/71；唯一失败是 Windows 工作区 `CORE-VIEW.md` 的 CRLF 读取差异，去 CR 后哈希与 `config/workpool.json` 一致，Linux CI 通过。
+
+残余风险（不阻塞合并，后续跟踪）：
+
+1. 拒绝权仍是规则法，覆盖不了未列举的新表述。
+2. 回执是自包含哈希而非签名；能改写账本的人可伪造自洽行，信任边界仍是仓库写权限。
+3. `escalate_to` 尚未接入实际派单队列，目前只是回执路由字段。
+
+状态（分层）：
+
+| 状态 | 结果 |
+|---|---|
+| draft | 完成 |
+| tested（本地） | 51/51 |
+| pushed | 完成 |
+| merged | **未发生** |
+| deployed | **未发生** |
+| platform_accepted | **未发生** |
