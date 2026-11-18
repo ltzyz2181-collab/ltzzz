@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T07:02:00.000Z",
+  "updated_at": "2026-11-18T07:12:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -357,48 +357,80 @@
     },
     {
       "id": "PR287-BASE-MISMATCH",
-      "title": "PR #287（WEP3 fail-closed）base 不是 main",
-      "state": "blocked_decision",
+      "title": "PR #287 已关闭：旧 diff 不复用",
+      "state": "done",
       "next_owner": "gpt",
       "next_action": "裁决 PR #287 是从当前 main 重开一条分支，还是关闭并保留补丁；不得直接把旧 base 合入 main",
       "evidence": [
-        "PR #287 head 35efe1b7，base 为 fix/wep3-restore-complete-router-20261027",
-        "审计 2026-11-17 列为 2 个开放 PR 之一"
+        "PR #287 closed 2026-11-18T06:24:04Z，附关闭说明",
+        "main 现 workflow 已重写，含 [wep3-maintenance] 通道与另一套测试清单"
       ],
-      "updated_at": "2026-11-18T06:40:00.000Z",
+      "updated_at": "2026-11-18T07:12:00.000Z",
       "unblock_condition": "GPT 给出「重开」或「关闭」其中一条，并指定承载分支"
     },
     {
       "id": "DEEP-QUEUE-20261118-DAILY1",
-      "title": "Deep 队列 DAILY-1 空转：双角色卡 + 席位 504",
-      "state": "in_review",
-      "next_owner": "gpt",
+      "title": "Deep 队列 DAILY-1 空转：已定位并停用 route 用法",
+      "state": "done",
+      "next_owner": "claude",
       "next_action": "裁决 Deep 是否继续承担 route 定责；未裁决前只发「归并去重」卡，route 与 owner 由看板落定",
       "evidence": [
-        "run 44193726857 success（传输层），job 50940484 blocked，error=native_generation_evidence_incomplete",
-        "doubao 504 / kimi 504；qianwen 输出「没有需要复核的内容」；route 产出 0 条",
-        "op card DEEP-SUPERAGENT-20261118-DAILY-1 同卡要求协调席 route 与复核席 agree/disagree",
-        "run 44249940832 verify 失败：本次推送误用旧版队列脚本，consume 跳过，BACKLOG-1 未被消费",
-        "恢复 main 基线后重发 BACKLOG-2；BACKLOG-1 作为未消费卡保留，不删除、不追改",
-        "run 44250221231 consume success；BACKLOG-2 job_terminal_observed，产出 7 条 ROUTE",
-        "route 质量不达标：B1/B3/B4/B7 四条可执行或属 GPT 的事被判 needs_owner_decision"
+        "run 44193726857 job 50940484 blocked，0 route（双角色卡 + 豆包 504）",
+        "run 44250221231 BACKLOG-2 success，7 route 但 5 条上抛 owner",
+        "卡契约门与 assertCardContract 已上线"
       ],
-      "updated_at": "2026-11-18T07:02:00.000Z",
-      "note": "派是派了，也真出了 7 条 route；问题是它倾向把所有事上抛 owner，等于把分流退化成转交。"
+      "updated_at": "2026-11-18T07:12:00.000Z",
+      "note": "队列本身可用；不再作为分流裁决入口。"
     },
     {
       "id": "DEEP-ROUTE-SCOPE",
-      "title": "Deep 是「只做归并」还是「继续定 route」",
-      "state": "blocked_decision",
+      "title": "Deep 职责范围：只做归并，实际改为脚本执行",
+      "state": "done",
       "next_owner": "gpt",
       "next_action": "裁决 Deep 卡的职责范围：A 只做 task_id 级归并去重；B 继续给 route 但只允许 evidence/close 两类",
       "evidence": [
-        "BACKLOG-2 实测：7 条 route 中 5 条 needs_owner_decision，B1 归并任务被判上抛",
-        "DAILY-1 实测：双角色卡下 route 产出 0",
-        "ops/deploy-receipts/DR-20261118-deep-card-contract-gate.json"
+        "决定 A：Deep 不再定 route",
+        "BACKLOG-2 实测 7 条 route 中 5 条上抛 owner，判为不可用",
+        "归并改由 scripts/merge-oversight-backlog.mjs 确定性执行（0 模型调用）"
       ],
-      "updated_at": "2026-11-18T07:02:00.000Z",
-      "unblock_condition": "GPT 在 A/B 中选一条，并写明 Deep 输出允许出现的 route 子集"
+      "updated_at": "2026-11-18T07:12:00.000Z",
+      "unblock_condition": "GPT 在 A/B 中选一条，并写明 Deep 输出允许出现的 route 子集",
+      "note": "route 与 owner 由看板决定；模型只做只读复核，不做分派。"
+    },
+    {
+      "id": "OVERSIGHT-MERGE-DETERMINISTIC",
+      "title": "Oversight 积压确定性归并（按原 Task ID，无模型调用）",
+      "state": "done",
+      "evidence": [
+        "scripts/merge-oversight-backlog.mjs + 5 项测试",
+        "哨兵 run 44251041961 @63277a60 快照：196 warning、196 unique、0 重复、0 席位冲突",
+        "knowledge/results/dispatch/oversight/merged-20261118.json",
+        "ops/task-continuity/oversight-merged-20261118.md"
+      ],
+      "updated_at": "2026-11-18T07:12:00.000Z",
+      "note": "188/196 不是重复案例，是不同原任务；归并不产生合并，真正欠的是逐项复核。"
+    },
+    {
+      "id": "CONTROL-SNAPSHOT-STALE",
+      "title": "控制快照落后于 main（非同 SHA 验收）",
+      "state": "done",
+      "evidence": [
+        "派单哨兵 run 44251041961 success @63277a6035276cd86d55b369d036274527bf5963",
+        "latest.json at 2026-11-18T06:24:16Z，source_commit=63277a60"
+      ],
+      "updated_at": "2026-11-18T07:12:00.000Z"
+    },
+    {
+      "id": "WEP3-PREDEPLOY-GUARD",
+      "title": "WEP3 生产上传前置门：从当前 main 重做",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "基于当前 main 的 deploy-wep3.yml 重做两道门（仅 workflow_dispatch + 已复核 SHA 精确匹配；上传前只读 atomic/health 校验），并保留 maintenance 通道",
+      "evidence": [
+        "原 PR #287 的两道门意图",
+        "main 当前 deploy 条件为 event_name != push 或 maintenance 消息例外"
+      ],
+      "updated_at": "2026-11-18T07:12:00.000Z"
     }
   ]
 }
