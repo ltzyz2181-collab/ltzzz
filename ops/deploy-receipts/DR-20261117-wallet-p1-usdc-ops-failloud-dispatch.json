@@ -1,0 +1,38 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261117-wallet-p1-usdc-ops-failloud-dispatch",
+  "task_ids": [
+    "WALLET-P1-USDC-BALANCE",
+    "WALLET-OPS-LEGACY-JOB",
+    "DISPATCH-MULTI-CARD"
+  ],
+  "code_commit": "10617ffc12dac2450544401f77621a65fa959565",
+  "deployed_at": "2026-11-18T02:13:10.054Z",
+  "deployment_status": "deployed_repo_state",
+  "verified": [
+    "本机 wallet 33/33（含新增 rpc-token 12 项）+ selftest 7/7 PASS",
+    "真实 Base 只读：ETH 0.008278278362988452 / USDC 29.293744 @ chain 8453 block 58886036（地址 0x21F502f29294c50d9C37A30dc038D8D95eB97fdc）",
+    "wallet-p0-checks push run 44221316763 success；dispatch run 44221335316 success（Linux，新测试已执行）",
+    "small-payment-policy push run 44221316724 success：manifest release 重钉在 Linux 逐字节校验通过",
+    "LTZZZ Wallet Operations dispatch run 44221339282 success；ops/wallet-ops/last-run.json 记录 8/8 步骤 success，ok=true，随 8341edb8 落盘",
+    "qwen/doubao dispatch 32/32（含 runBatch 上限、reservation 不确定即停、坏卡不阻塞）",
+    "task-continuity --strict 通过；看板三项已置 done",
+    "PR #408 更新到最新 main 基线 head cc0ada4139e8f013faaaaa2f0433e87bf8a39342；AI hire Phase1 CI run 44221366036 success"
+  ],
+  "not_verified": [
+    "wallet-ops 真实失败路径未在线上触发；失败即红目前由单测覆盖，成功 run 不能证明失败会红",
+    "USDC 只取了一次公开 RPC，未做多 RPC 交叉校验",
+    "余额视图仍是只读 CLI，未接入前端或告警",
+    "PR #408 未合并；4 项 MEDIUM 未修"
+  ],
+  "blockers": [],
+  "items_requiring_owner_ruling": [
+    "PR #408 是否现在合并（HIGH 已修、CI 绿、两席报告已交；4 项 MEDIUM 属已知边界）",
+    "队列单次上限 3 是否调整（成本影响：每 run 最多 3 次模型调用）",
+    "USDC 余额是否进入对外展示或告警"
+  ],
+  "next_step_question": "是否合并 PR #408？若不合并，是否先做 P1-3 增量校验或先修 4 项 MEDIUM？",
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+}

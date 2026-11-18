@@ -1,0 +1,70 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-deep-queue-batch",
+  "target": "deep-superagent-queue",
+  "platform": "github_actions",
+  "env_id": "ltzyz2181-collab/ltzzz",
+  "code_commit": "cfdc54ab9ddfdabfbfa8473daa1994975d765082",
+  "code_path": "scripts/run-deep-superagent-queue.mjs",
+  "deployed_at": "2026-11-18T03:12:09Z",
+  "verified": [
+    {
+      "kind": "merge_commit",
+      "result": "ok",
+      "evidence": "PR #422 merged into main as cfdc54ab9ddfdabfbfa8473daa1994975d765082; mergeable_state=clean, 全部 check 非 skipped 项为 success"
+    },
+    {
+      "kind": "workflow_run",
+      "result": "ok",
+      "evidence": "Deep Superagent queue and GPT decision bridge run 44228676032 (push, head=cfdc54ab)：verify success + consume success（consume 实际执行了 checkout / node / 两段回执提交步骤，不是 skipped）"
+    },
+    {
+      "kind": "queue_receipt_readback",
+      "result": "ok",
+      "evidence": "main 上 knowledge/results/deep-superagent/queue-44228676032-attempt-1.json：source_commit=cfdc54ab…，status=no_new_queue_cards，items=[]，financial_execution=false，paid=false。证明新队列代码在 main 的 Actions 里真实跑通，本次没有新卡因此没有产生模型调用"
+    },
+    {
+      "kind": "local_tests",
+      "result": "ok",
+      "evidence": "WSL/Linux：deep-superagent.test.mjs 64 pass / 0 fail；deep-superagent-queue + deploy-automation + deploy-receipt + deploy-authority-gate 42 pass / 0 fail；合并跑 95 pass / 0 fail"
+    }
+  ],
+  "blockers": [],
+  "next_action": null,
+  "code_sha256": {
+    "scripts/run-deep-superagent-queue.mjs": "bba894a20c92826b8e974c65534a52cc030bddf1cab427494def4567858041d8",
+    "scripts/tests/deep-superagent-queue.test.mjs": "6688d60239f8e7a5d5e3128184184a9d14e38846ec034728decd788bff25c284",
+    "scripts/tests/deep-superagent-deploy-automation.test.mjs": "4bd82662cfec2f6467f5f48ad69609639dfaf094366553e4fd3d08ea42c9f6b2",
+    ".github/workflows/deep-superagent-queue.yml": "13d877a96ce23a0dcbbbfd16a67e780d3cd7276f121823195fc3c791e49bacb6",
+    "config/deploy-automation-authority-20261117.json": "0e8ddd5bd02e3b84801708b4960cca78f96302168573557b6845c1daab9c687d",
+    "docs/OWNER-AUTHORITY-CURRENT.md": "2f7b9de086bad71389055321ffead96c1f2b4e00f434a0fbb7f3e7d14a75892a",
+    "docs/2026-11-18-AI雇佣AI-竞争力评估与改进清单.md": "91d762a3e2e6983a48bdcd94641290956b48ee5631c0d17139fe3e7534a1abce"
+  },
+  "state_split": {
+    "draft": "完成",
+    "tested": "完成（本地 64 + 42 项，CI verify 亦绿）",
+    "merged": "完成（cfdc54ab）",
+    "deployed": "完成（GitHub Actions 队列工作流随 main 生效，run 44228676032 实跑）",
+    "submitted": "不适用（无外部平台提交）",
+    "platform_accepted": "仅指 GitHub Actions 执行成功；不含业务验收、客户验收或收入"
+  },
+  "notes": [
+    "本次只改仓库内队列脚本/工作流/文档，没有部署 Cloudflare Worker、没有动资金、没有新增付费调用；transactions=0。",
+    "放开的是吞吐上限（同类 3 张、合计 6 张），append-only、路径唯一、不重放不确定付费请求的语义未变。",
+    "排除了资金/签名/凭据族自动化的开关全部保持原值：financial_execution=false、production_signing=false、real_funds_enabled=false。",
+    "同步修复 deep-superagent-deploy-automation.test.mjs 用 URL.pathname 在中文路径下 ENOENT 的本机可复现问题（改 fileURLToPath）。"
+  ],
+  "operator": {
+    "seat": "claude-code",
+    "env": "windows-desktop + wsl-ubuntu-24.04",
+    "recorded_by": "claude-code"
+  },
+  "authorized_by": {
+    "authorized_by": "owner",
+    "evidence_type": "owner_direct_instruction_in_session",
+    "channel": "Claude Code 会话（owner 直连）",
+    "instruction_quote": "有限制团队自动化部署的指令全部放开 让deep 团队顺利部署任务",
+    "instruction_at": "2026-11-17",
+    "scope_limit": "仓库内非资金工程改动；不含资金、签名、凭据与外部平台提交"
+  }
+}

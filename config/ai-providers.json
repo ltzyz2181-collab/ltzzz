@@ -18,7 +18,31 @@
       "model_env": "DEEPSEEK_MODEL",
       "default_model": "deepseek-v4-pro",
       "mode": "github_actions",
-      "note": "Versioned Pro selected from account catalogue and verified by real six-memory generation in run 38332295036; thinking enabled."
+      "note": "Versioned Pro selected from account catalogue and verified by real six-memory generation in run 38332295036; thinking enabled. On 2026-11-17 the owner adopted layered integration: main line stays Pro, Flash is limited to the new read-only web tools and to worker routing candidates.",
+      "tiers": {
+        "main_line": {
+          "model": "deepseek-v4-pro",
+          "scope": "planner, card writing, routing decision",
+          "thinking": "enabled",
+          "note": "Unchanged on 2026-11-17. The Flash-1017 notice did not add a new model id: /v1/models still lists only deepseek-flash and deepseek-v4-pro."
+        },
+        "worker_routing": {
+          "model": "deepseek-v4-pro",
+          "scope": "one ROUTE line per ref",
+          "thinking": "disabled",
+          "min_max_tokens": 4096,
+          "note": "Shadow run 2026-11-17: with thinking=enabled this 25-ref card returned finish_reason=length and zero output characters at both 4096 and 8192 max_tokens. Pin thinking=disabled for route output.",
+          "flash_candidate": "deepseek-flash passed 25/25 refs in the same worker-mode shadow; eligible as a candidate, not the default."
+        },
+        "web_tools": {
+          "module": "scripts/lib/deepseek-tools.mjs",
+          "cli": "scripts/deepseek-tools.mjs",
+          "models": [],
+          "scope": "SOURCE-INTEL search and fetch only",
+          "billing": "5 CNY per 1000 successful requests; no model call, no token charge",
+          "note": "Read-only Search/Fetch attached as a separate capability. Not wired into the routing loop and not enabled in any schedule."
+        }
+      }
     },
     "doubao": {
       "module": "scripts/call-doubao.mjs",

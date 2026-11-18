@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const root = new URL('../../', import.meta.url).pathname;
+// 用 fileURLToPath 而不是 URL.pathname：Windows 下路径含中文时 pathname 会留下 %E6%9D%8E… 编码，
+// 本机跑测试会 ENOENT（CI 的 ASCII 路径看不出来）。
+const root = fileURLToPath(new URL('../../', import.meta.url));
 const read = (p) => JSON.parse(fs.readFileSync(root + p, 'utf8'));
 const authority = read('config/deploy-automation-authority-20261117.json');
 

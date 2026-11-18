@@ -1,6 +1,10 @@
-name: Mail intake phase 2 contract checks
-# 只做仓库内契约测试：不连邮箱、不读凭据、不写仓库、不启用任何定时任务。
-# Phase 1 的真实 IMAP 回执必须由 Owner 在本机执行，CI 不持有、也拿不到应用专用密码。
+name: Mail intake phase 2
+# 两个独立 job：
+# - contract：仅仓库内契约测试，不连邮箱、不读 secrets、不写仓库；PR 与手动默认跑这个。
+# - intake：每日只读采集，只用 GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD 两个 secrets，
+#   把脱敏后的 latest.json 等结果提交回 main。缺 secrets 时 fail-closed，不读邮箱。
+# 依据：GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二、§六（部署席负责定时触发/并发锁/失败告警）。
+# 最小证据集与回退方案：docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md
 on:
   pull_request:
     paths:
@@ -21,14 +25,25 @@ on:
       - 'knowledge/results/deep-superagent/daily-2026-11-17.json'
       - '.github/workflows/mail-intake-phase2.yml'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'contract = 契约测试；read-only-intake = 立刻跑一次只读采集'
+        type: choice
+        options: [contract, read-only-intake]
+        default: contract
+  schedule:
+    # 每天 00:23 UTC（北京时间 08:23）跑一次只读采集。
+    - cron: '23 0 * * *'
 
 permissions: {contents: read}
 concurrency: {group: 'mail-intake-phase2-${{ github.ref }}', cancel-in-progress: true}
 
 jobs:
   contract:
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'read-only-intake') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions: {contents: read}
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
@@ -62,3 +77,108 @@ jobs:
           code=$?
           set -e
           test "$code" = 2 || { echo "expected exit 2 (blocked), got $code"; exit 1; }
+
+  intake:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'read-only-intake') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions: {contents: write}
+    concurrency: {group: 'mail-intake-daily', cancel-in-progress: false}
+    env:
+      GMAIL_IMAP_USER: ${{ secrets.GMAIL_IMAP_USER }}
+      GMAIL_IMAP_APP_PASSWORD: ${{ secrets.GMAIL_IMAP_APP_PASSWORD }}
+      LTZZZ_ROOT: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: 'main', fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Fail closed when the Gmail secrets are absent
+        run: |
+          if [ -z "${GMAIL_IMAP_USER:-}" ] || [ -z "${GMAIL_IMAP_APP_PASSWORD:-}" ]; then
+            echo "::error::GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD secrets are absent; no mailbox read attempted."
+            exit 1
+          fi
+          node scripts/check-gmail-credentials.mjs --json
+
+      - name: Read-only intake (Gmail IMAP + existing channels)
+        run: |
+          set +e
+          node scripts/run-mail-intake.mjs
+          code=$?
+          set -e
+          echo "INTAKE_EXIT=$code" >> "$GITHUB_ENV"
+          # 退出码 0=ok，2=partial，3=failed，4=并发被拒；先不在这里中断，留证据再判。
+          exit 0
+
+      - name: Redacted summary (status and counts only)
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file = 'knowledge/results/deep-superagent/mail-intake/latest.json';
+          const out = process.env.GITHUB_STEP_SUMMARY;
+          const rows = [];
+          try {
+            const p = JSON.parse(fs.readFileSync(file, 'utf8'));
+            rows.push(`status=${p.status}`);
+            rows.push(`gmail=${p.gmail_fullbox?.status ?? 'unknown'}`);
+            rows.push(`agent_mail=${p.agent_mail?.status ?? 'unknown'}`);
+            rows.push(`counts=${JSON.stringify(p.counts ?? {})}`);
+            rows.push(`window=${p.gmail_fullbox?.window_since ?? 'n/a'} truncated=${p.gmail_fullbox?.window_truncated ?? 'n/a'}`);
+            rows.push(`read_only=${p.gmail_fullbox?.read_only ?? 'n/a'} bodies_persisted=${p.gmail_fullbox?.bodies_persisted ?? 'n/a'}`);
+          } catch (error) {
+            rows.push(`latest.json unreadable: ${error.message}`);
+          }
+          const text = '### Mail intake (redacted)\n\n```\n' + rows.join('\n') + '\n```\n';
+          console.log(text);
+          if (out) fs.appendFileSync(out, text);
+          JS
+
+      - name: Commit redacted result (ok/partial only)
+        if: always()
+        run: |
+          status=$(node -p "JSON.parse(require('fs').readFileSync('knowledge/results/deep-superagent/mail-intake/latest.json','utf8')).status" 2>/dev/null || echo missing)
+          case "$status" in
+            ok|partial) ;;
+            *) echo "status=$status; result not committed"; exit 0 ;;
+          esac
+          git config user.name 'ltzzz-mail-bot'
+          git config user.email 'bot@ltzzz.com'
+          git add \
+            knowledge/results/deep-superagent/mail-intake/latest.json \
+            knowledge/results/deep-superagent/mail-intake/runs.jsonl \
+            knowledge/results/deep-superagent/mail-fullbox/latest.json \
+            knowledge/results/deep-superagent/mail-fullbox/last-ok.json \
+            knowledge/results/deep-superagent/mail-backlog/latest.json \
+            knowledge/results/deep-superagent/ruling-tracker/latest.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'no result change'
+            exit 0
+          fi
+          git commit -m "chore(mail): daily read-only intake $(date -u +%F) [skip ci]"
+          node tools/push-receipt-commit.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mail-intake-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            knowledge/results/deep-superagent/mail-intake/
+            knowledge/results/deep-superagent/mail-fullbox/
+            knowledge/results/deep-superagent/mail-backlog/latest.json
+            knowledge/results/deep-superagent/ruling-tracker/latest.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Warn when a channel failed (partial)
+        if: env.INTAKE_EXIT == '2'
+        run: |
+          echo "::warning::Mail intake partial: at least one channel failed; Gmail status is recorded in latest.json."
+
+      - name: Alarm when the run failed
+        if: env.INTAKE_EXIT != '0' && env.INTAKE_EXIT != '2'
+        run: |
+          echo "::error::Mail intake exited ${INTAKE_EXIT}; see latest.json and the artifact."
+          exit 1

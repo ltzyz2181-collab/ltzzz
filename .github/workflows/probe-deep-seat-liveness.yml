@@ -1,0 +1,35 @@
+name: Probe Deep Seat Liveness
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: probe-deep-seat-liveness
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Probe doubao and kimi seat liveness
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          DOUBAO_SEAT_MODEL: doubao-seed-2-1-pro-260915
+          KIMI_SEAT_MODEL: kimi-k3.1-pro-highspeed
+        run: node scripts/probe-deep-seat-liveness.mjs
+      - name: Upload probe receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seat-liveness-${{ github.run_id }}
+          path: knowledge/results/deep-superagent/seat-liveness-*.json
+          if-no-files-found: warn

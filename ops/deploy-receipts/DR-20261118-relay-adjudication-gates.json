@@ -1,0 +1,94 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-relay-adjudication-gates",
+  "target": "relay-bounded-adjudication-security-gates",
+  "platform": "github+cloudflare",
+  "env_id": "ltzzz-repo/main + ltzzz-relay-proxy + ltzzz-deep-superagent",
+  "code_commit": "b22c7ebfcb75d11d7dce62d3b542a2e0ec6e00dd",
+  "code_path": "config,scripts,workers/relay-proxy,workers/deep-superagent,wrangler.relay-proxy.toml,docs/RELAY-SEAT-CURRENT.md",
+  "deployed_at": "2026-11-18T06:38:13Z",
+  "deployment_status": "deployed",
+  "verified": [
+    {
+      "kind": "local_tests",
+      "result": "ok",
+      "evidence": "WSL node --test scripts/tests/relay-proxy-worker.test.mjs scripts/tests/deep-superagent-adjudicator.test.mjs → tests 45 / pass 45 / fail 0"
+    },
+    {
+      "kind": "local_tests_broader",
+      "result": "ok",
+      "evidence": "受影响的 deep-superagent-deploy 与 relay-seat-acceptance 套件在 WSL 原生副本（LF 换行、无 Windows 路径前缀）复跑 30/30 pass；Windows 工作树下的 5 个失败为 CRLF 与 import.meta.url 路径环境问题，非本次代码引入"
+    },
+    {
+      "kind": "pull_request_merge",
+      "result": "ok",
+      "evidence": "PR #423 “fix(relay): 补齐有界裁决八道安全闸门” 已合并，merge commit b22c7ebfcb75d11d7dce62d3b542a2e0ec6e00dd；11 文件 +1266/-104"
+    },
+    {
+      "kind": "deploy_relay_proxy",
+      "result": "ok",
+      "evidence": "GitHub Actions run 44252705775 “Deploy LTZZZ relay proxy” success；head_sha=b22c7ebf，created 2026-11-18T06:37:28Z，updated 06:38:02Z；工作流内含 401 鉴权 smoke"
+    },
+    {
+      "kind": "deploy_deep_superagent",
+      "result": "ok",
+      "evidence": "GitHub Actions run 44252706126 “Deep Superagent isolated deployment and explicit bootstrap” success；head_sha=b22c7ebf，created 2026-11-18T06:37:28Z，updated 06:38:13Z"
+    },
+    {
+      "kind": "deep_health_readback",
+      "result": "ok",
+      "evidence": "main 上 knowledge/results/deep-superagent/deploy-44252706126-attempt-1.json：status=deployment_health_and_auth_verified，source_commit=b22c7ebf…，source_readset_match=true；relay_adjudication.revision=relay-bounded-adjudication-v2，enabled=true，scope_count=4，five_signature_escalation=owner_multisig，data_classification_required=public_distributable，claim_lease_seconds=180，budget_gate=relay_proxy_durable_object，budget_limits per_call=0.05/daily=0.5/project=10/floor=3"
+    },
+    {
+      "kind": "deep_auth_smoke",
+      "result": "ok",
+      "evidence": "同一部署回执 auth_checks：anonymous 401 / wrong 401 / valid 200；anonymous_job_post_http=401；model_calls=0，financial_execution=false"
+    },
+    {
+      "kind": "budget_gate_config_readback",
+      "result": "ok",
+      "evidence": "wrangler.relay-proxy.toml 含 BUDGET Durable Object 绑定与 relay-budget-v1 迁移；基线 RELAY_CONFIRMED_BALANCE_USD=12.737087 由 13.00 − 0.183113 已记录 − 0.05 无价条目预留 − 0.0298 未记录不确定额复算一致"
+    }
+  ],
+  "blockers": [],
+  "next_action": "用带 proxy token 的线上请求补一次 GET /v1/budget/state 与超限拒绝实测；在拿到该证据前，只记“已部署 + 仓库测试/健康回读通过”，不得记“线上已验证预算拦截”",
+  "known_issues": [
+    "本机到 ltzzz-relay-proxy.ltzyz2181.workers.dev 与 ltzzz-deep-superagent.ltzyz2181.workers.dev 的直连请求超时（http=000），因此线上健康与鉴权证据取自部署工作流提交的回执，而非本机实时探针。",
+    "部署工作流只做健康回读与 401/错误 token/正确 token 的鉴权 smoke；带 token 的 /v1/budget/state 与真实超限拒绝尚未执行，RelayBudget 的线上运行时行为未直接验证。",
+    "relay proxy 工作流目前没有部署后 budget-state 回读步骤，建议后续单开 PR 增加（不阻塞本次口径）。",
+    "Windows 工作树中 MP_verify_xe1mBNate0chEc0j.txt 因大小写变体索引条目既存问题持续显示为 M，与本回执无关，未纳入提交。"
+  ],
+  "notes": [
+    "本次落地八道安全闸门：①权限口径分离（legacy advisory 与 bounded adjudication 分列）；②relay proxy RelayBudget Durable Object 出站前原子预占 + 实际结算，单次 $0.05 / 每日 $0.50 / 项目 $10 / 余额底线 $3 / 未知余额拒绝；③调用审计含 tokens、estimated/actual cost、latency、balance_after、reservation_id、upstream_http、request_id；④仅接受 data_classification=public_distributable；⑤scope_ref 绑定 config/relay-adjudication-scopes.json 的 4 个具名范围并逐条校验 permitted_actions；⑥高风险分类补齐购买/充值/订阅与发布/上线/灰度等同义词，五签单独成族；⑦needs_decision 只升级到 gpt_decision_seat，不再出现 owner 邮箱或 owner 逐项审批；⑧Durable Object 存储内原子 claim + 180 秒租约，并发返回 202 in_progress，过期记 undecided 且不重放。",
+    "状态分层（按 AGENTS.md）：draft/tested/merged/deployed 已完成；submitted（带 token 的线上预算与并发实测）与 platform_accepted 未发生，不得写成已线上验收。",
+    "裁决权限口径：draft/tested/merged/deployed 是本次部署事实；relay 有界裁决只产出记录，relay_attested=false、execution_authority=false，不得声明 approved/deployed/accepted；资金仍归 GPT 决策席，五签仍归 owner/multisig。",
+    "owner 指示为“不否决已经部署的中转功能，也不回滚；日常绑定裁决权限等安全闸门修好后部署”，本次按该指示完成修复并部署，未回滚既有中转功能。"
+  ],
+  "operator": {
+    "seat": "desktop_claude",
+    "env": "windows-desktop WSL node + Git Bash",
+    "recorded_by": "claude"
+  },
+  "authorized_by": {
+    "authorized_by": "owner direct instruction in session",
+    "evidence_type": "owner_transcribed_instruction",
+    "channel": "桌面 Claude 会话",
+    "requirement": "修复八道安全闸门后部署，不回滚已部署中转功能",
+    "quote": "不否决已经部署的中转功能，也不回滚；但日常绑定裁决权限要等上述安全闸门你修好   部署",
+    "decision_id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
+    "scope_limit": "仓库代码、测试、relay proxy 与 Deep Superagent 部署；不含资金、放款、退款语义、钱包/五签 Safe、签名、凭据、外部平台不可逆提交"
+  },
+  "code_sha256": {
+    "config/relay-adjudication-scopes.json": "4c598aa6d864d31bef0ecbe4e9fa610001d05cb8a44ebff58d0074b23c47d318",
+    "config/relay-seat-policy.json": "f86f7ff265fd5d2dd53399b9387e78151a248da6f24e131708808ea1b5654ee8",
+    "docs/RELAY-SEAT-CURRENT.md": "1dd4b6b0791400f2c9f57db0f70430c6b3ba85246ef39a331c59e8707977ef04",
+    "scripts/relay-seat.mjs": "57fe42b9c3dd893899197e7c666b27a92e2c4de93ec33f2087741bc1e26669d2",
+    "scripts/tests/deep-superagent-adjudicator.test.mjs": "b7f50f88bd3fa8f761b117b4b09fb2c940e391327ad2e30c0d093e53005ceb32",
+    "scripts/tests/relay-proxy-worker.test.mjs": "7c0e829b004ccabf7f9d7d2b3968baaf297234d66f5a8b0a1397614f7a249c1c",
+    "workers/deep-superagent/accounting.mjs": "3be2e040d1ea4f14ad80b7d2c5ff74c44b4257789642404fd09b85d20c05ee6e",
+    "workers/deep-superagent/adjudicator.mjs": "bbc62672823e99f5668cd6aa7d7ace09bd982a00e3b20b72c99aacd9b475e1cc",
+    "workers/deep-superagent/index.js": "7772333da0a0dd07368d7085851f04408be95772065a003e9bb941aaf9f818c1",
+    "workers/relay-proxy/worker.mjs": "90aba5128bf1ba4e0c4275ab113e3adcbdd0357143c2c031acc571d5a44d949f",
+    "wrangler.relay-proxy.toml": "9e8052ae0ef60ebabefcad9cedf994916f787e0a28bd0c3ff69805a1b103339b"
+  }
+}

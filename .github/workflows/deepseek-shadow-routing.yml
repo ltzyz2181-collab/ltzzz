@@ -1,0 +1,65 @@
+name: DeepSeek shadow routing
+
+# Evidence only. Manual dispatch only: never scheduled, never merges, never deploys,
+# never changes the routing model. It runs the unit tests, then asks both DeepSeek
+# channels the same card and stores the comparison as an artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      card:
+        description: 'Card path (blank = newest daily card)'
+        required: false
+        default: 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-1.json'
+      prompt_mode:
+        description: 'card | worker'
+        required: false
+        default: 'worker'
+      thinking:
+        description: 'enabled | disabled (disabled is the measured default for routing)'
+        required: false
+        default: 'disabled'
+      max_tokens:
+        description: 'Completion budget'
+        required: false
+        default: '2048'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ltzzz-deepseek-shadow
+  cancel-in-progress: false
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests
+        run: node --test scripts/tests/deepseek-tools.test.mjs scripts/tests/deepseek-shadow-routing.test.mjs
+      - name: Shadow run
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          CARD: ${{ inputs.card }}
+          PROMPT_MODE: ${{ inputs.prompt_mode }}
+          THINKING: ${{ inputs.thinking }}
+          MAX_TOKENS: ${{ inputs.max_tokens }}
+        run: |
+          set -euo pipefail
+          args=(--prompt-mode "$PROMPT_MODE" --thinking "$THINKING" --max-tokens "$MAX_TOKENS" --models deepseek-v4-pro,deepseek-flash)
+          if [ -n "$CARD" ]; then args+=(--card "$CARD"); fi
+          node scripts/deepseek-shadow-routing.mjs "${args[@]}" --json --out "knowledge/results/deepseek-shadow/shadow-ci-${{ github.run_id }}-${{ github.run_attempt }}.json" | tee shadow-result.json
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deepseek-shadow-${{ github.run_id }}
+          path: |
+            shadow-result.json
+            knowledge/results/deepseek-shadow/*.json
+          if-no-files-found: warn
+          retention-days: 30

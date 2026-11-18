@@ -1,0 +1,71 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-deep-card-contract-gate",
+  "target": "deep-superagent-card-contract-gate",
+  "platform": "github",
+  "env_id": "ltzzz-repo/main",
+  "code_commit": "c1c9ddc2e02981b0e10fcf0386c4954bd9e7ceed",
+  "code_path": "scripts,ops/deep-superagent/tasks,ops/task-continuity",
+  "deployed_at": "2026-11-18T06:58:00Z",
+  "deployment_status": "deployed",
+  "verified": [
+    {
+      "kind": "root_cause",
+      "result": "observed",
+      "evidence": "DAILY-1 job 50940484 blocked：协调席（doubao）504、复核席无输入，route 产出 0；卡内同时要求协调席 route 与复核席 agree/disagree"
+    },
+    {
+      "kind": "local_tests",
+      "result": "ok",
+      "evidence": "check-card-contract 8 pass；deep-superagent-queue 26 pass；task-continuity 8 pass"
+    },
+    {
+      "kind": "ci_verify",
+      "result": "ok",
+      "evidence": "run 44250221231 verify success（node --check + node --test queue）"
+    },
+    {
+      "kind": "ci_consume",
+      "result": "ok",
+      "evidence": "run 44250221231 consume success；BACKLOG-2 job_terminal_observed，qianwen 200，deepseek 200/200"
+    },
+    {
+      "kind": "route_output",
+      "result": "partial",
+      "evidence": "BACKLOG-2 产出 7 条 ROUTE，但 5 条为 needs_owner_decision（B1/B3/B4/B7 泛化上抛），1 条 needs_gpt_decision，1 条 blocked_evidence_needed，1 条 close"
+    }
+  ],
+  "blockers": [
+    "route 质量不达标：B1（按原 Task ID 归并 188 条 warning）属可执行机械活，被判 needs_owner_decision；B7（reconcile 四席记录）属 claude 活，同样上抛。",
+    "第一次重发（f4abc944）误用旧版队列脚本覆盖 main，CI verify 失败、consume 跳过，BACKLOG-1 未被消费并保留为历史卡。"
+  ],
+  "next_action": "把 Deep 卡从「定 route」改为「只做归并」：输入 task_id 清单，输出去重后的唯一任务表；route 与 owner 由看板与 GPT 决定。是否继续让 Deep 定 route 需 GPT 裁决。",
+  "known_issues": [
+    "只拦新卡，84 张历史卡中 6 张 planner/worker 混写未追溯。",
+    "BACKLOG-2 只跑 1 次，route 偏差是否为单样本未做对照。",
+    "成本未对账：本轮 3 次模型调用未与账单核对，api_bill_verified=false。",
+    "docs/2026-11-16-已闭环事项登记与勿重复清单.md 未补行，待与本次登记一并处理。"
+  ],
+  "notes": [
+    "未改资金、签名、退款语义；未合并 PR；未生产部署。",
+    "assertCardContract 在消费入口 fail-closed，混卡直接 card_contract_split_required，不产生 POST。"
+  ],
+  "operator": {
+    "seat": "deploy_seat",
+    "env": "windows-desktop worktree codex-email-authority-20261117",
+    "recorded_by": "codex"
+  },
+  "authorized_by": {
+    "authorized_by": "owner instruction in session",
+    "evidence_type": "owner_typed_instruction",
+    "channel": "Codex 桌面会话",
+    "requirement": "owner：不违规且能推进的自行部署；需要拍板的交其他席位",
+    "scope_limit": "仓库内测量、测试与防护；不含资金、签名、五签 Safe、生产路由切换"
+  },
+  "code_sha256": {
+    "scripts/check-card-contract.mjs": "d660d7fb11fc49e8bc4d0250213f0fe85dff7cc0c462af70158508f2895d0a7d",
+    "scripts/tests/check-card-contract.test.mjs": "07053a4002fa5bd1a0f66432505674b3054cb887e381e0d8e6f01941c7f5fdc7",
+    "scripts/run-deep-superagent-queue.mjs": "03632cc5740e04f820963f9ab72158eb1c9ba1b616b1b2055fa4812117f6f8d1",
+    "scripts/tests/deep-superagent-queue.test.mjs": "e06480da86bd45b2e2ccbf83037cdf567e12f69269a5673a86ee5539530960e0"
+  }
+}

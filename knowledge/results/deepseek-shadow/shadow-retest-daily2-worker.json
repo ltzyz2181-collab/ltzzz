@@ -1,0 +1,89 @@
+{
+  "schema": "ltzzz.deepseek.shadow-routing.v1",
+  "at": "2026-11-18T02:45:33.545Z",
+  "card": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-2.json",
+  "card_sha256": "92318bf42645b21f774825da13468fd22a13cde60ba08b1831eb3724352ce75a",
+  "card_task_id": "DEEP-SUPERAGENT-20261117-DAILY-2",
+  "refs_total": 8,
+  "models": [
+    "deepseek-v4-pro",
+    "deepseek-flash"
+  ],
+  "max_tokens": 2048,
+  "thinking": "disabled",
+  "prompt_mode": "worker",
+  "prompt_sha256": "4356a22c565174b1fa2412dd64e07ec7fd1b9605353380361f1cf775d3241f35",
+  "require_all_five": false,
+  "per_model": [
+    {
+      "model": "deepseek-v4-pro",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 1583,
+      "output_chars": 1072,
+      "output_sha256": "c5b5cee6e24f7a32715cd806f2666ce72be398522b38e51b8cdf38a0682c2cb7",
+      "output": "ROUTE | 8d9a5f45ab685bbb | needs_owner_decision | 安全要求落地核对涉及六项裁决，超出模型书面权限，需所有者裁定。\nASK | 8d9a5f45ab685bbb | owner | 六项安全要求落地核对的具体裁决项及书面依据。\nROUTE | 5556bddb2622ff00 | needs_owner_decision | 同一安全要求落地核对线程，涉及合规与授权边界，需所有者裁定。\nASK | 5556bddb2622ff00 | owner | 安全要求落地核对的具体裁决内容及可执行范围。\nROUTE | adad792d0ef16422 | needs_owner_decision | 席位定位与部署方案涉及生产写入和授权边界，需所有者裁定。\nASK | adad792d0ef16422 | owner | 中转席位裁决与部署的授权范围及书面证据。\nROUTE | 6a5c732286808bf3 | needs_owner_decision | 钱包方案五问涉及资金与签名权限，超出模型书面权限。\nASK | 6a5c732286808bf3 | owner | 钱包方案五问的具体决策点及授权依据。\nROUTE | cad495cb967efd7c | needs_owner_decision | 钱包分流方案四问涉及资金与生产路径，需所有者裁定。\nASK | cad495cb967efd7c | owner | 钱包分流四问的决策依据及可执行授权。\nROUTE | 0c44d7ce5b18a34e | blocked_evidence_needed | 18项裁决已落库与执行顺序，需仓库书面证据确认。\nASK | 0c44d7ce5b18a34e | evidence | 18项裁决落库记录与执行顺序的仓库证据。\nROUTE | fba4b8506b3a9e95 | blocked_evidence_needed | 裁决草稿涉及钱包与桌面部署，需仓库书面证据确认。\nASK | fba4b8506b3a9e95 | evidence | Wallet P1、Wallet v1 与桌面部署的仓库书面证据。\nROUTE | 7a62ac73578e1ce2 | needs_owner_decision | 部署失败修复涉及生产写入候选，超出模型书面权限。\nASK | 7a62ac73578e1ce2 | owner | 部署修复候选的授权范围及书面依据。",
+      "evaluation": {
+        "route_lines": 8,
+        "refs_total": 8,
+        "covered_refs": 8,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [
+          "needs_owner_decision",
+          "blocked_evidence_needed"
+        ],
+        "route_vocabulary_complete": true,
+        "ask_expected": 8,
+        "output_nonempty": true,
+        "all_five_present": false,
+        "pass": true
+      }
+    },
+    {
+      "model": "deepseek-flash",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 1576,
+      "output_chars": 1754,
+      "output_sha256": "5680ba5ca04226e6a2959307161becdee02cb53636db05f6b9796cf0b2510ea6",
+      "output": "ROUTE | 8d9a5f45ab685bbb | needs_gpt_decision | Six-item security checkpoint ruling still open; latest reply lacks verdict.\nASK | 8d9a5f45ab685bbb | gpt | Verdict on six-item security requirements checklist; no receipt present.\nROUTE | 5556bddb2622ff00 | needs_gpt_decision | Ruling requested on six-item security landing; unresolved.\nASK | 5556bddb2622ff00 | gpt | Issue ruling or close with receipt reference; current state unknown.\nROUTE | adad792d0ef16422 | needs_gpt_decision | Relay seat ruling and Phase1 deploy ordering awaiting decision.\nASK | adad792d0ef16422 | gpt | Decide relay seat placement and Phase1 deploy sequence.\nROUTE | 6a5c732286808bf3 | needs_owner_decision | Wallet/Safe scheme is money scope; ASK line only, owner rules.\nASK | 6a5c732286808bf3 | owner | Wallet scheme touches money/signing scope; owner decision needed, no model seat can rule.\nROUTE | cad495cb967efd7c | needs_owner_decision | Wallet P1 triage is money scope; owner decision, not a model seat.\nASK | cad495cb967efd7c | owner | Four triage questions touch wallet/disbursement scope; owner must answer.\nROUTE | 0c44d7ce5b18a34e | needs_gpt_decision | 18 rulings recorded as executed; coordinator must recheck rules 1-5 before close.\nASK | 0c44d7ce5b18a34e | gpt | Confirm recorded rulings map to repo evidence and pass rules 1-5 recheck.\nROUTE | fba4b8506b3a9e95 | needs_gpt_decision | Draft ruling on wallet and desktop deploy; not final.\nASK | fba4b8506b3a9e95 | gpt | Finalize draft; wallet items stay owner scope until separated.\nROUTE | 7a62ac73578e1ce2 | blocked_evidence_needed | Deploy-fix dispatch lacks repo artifact evidence; agent 6d stale.\nASK | 7a62ac73578e1ce2 | evidence | Provide repo refs for duplicate artifact and pay issue; no receipt exists.",
+      "evaluation": {
+        "route_lines": 8,
+        "refs_total": 8,
+        "covered_refs": 8,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [
+          "needs_gpt_decision",
+          "needs_owner_decision",
+          "blocked_evidence_needed"
+        ],
+        "route_vocabulary_complete": true,
+        "ask_expected": 8,
+        "output_nonempty": true,
+        "all_five_present": false,
+        "pass": true
+      }
+    }
+  ],
+  "verdict": {
+    "pro_pass": true,
+    "flash_pass": true,
+    "flash_regression": false,
+    "recommendation": "keep_pro_as_main_line; flash remains limited to search/fetch"
+  },
+  "notes": [
+    "Shadow only; no routing change, no merge, no deployment.",
+    "deepseek-flash is the official flash channel; the 1017 update is a version notice, not a new model id in /v1/models.",
+    "A failed call is recorded once and never retried blindly."
+  ]
+}

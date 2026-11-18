@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-18T02:36:40.933Z",
+  "requested_at": "2026-11-18T02:35:58.643Z",
+  "responded_at": "2026-11-18T02:36:40.933Z",
+  "request_id": "202611180235597269697832MBwkNde",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "gpt",
+  "purpose": "generation",
+  "generation_output": true,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "model_tier": "gpt",
+  "model_class": "gpt",
+  "routing": {
+    "requested_model": "gpt-6.1-sol",
+    "served_model": "gpt-6.1-sol",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "ltzzz_proxy",
+  "boundary_exception": false,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 2000,
+  "batch": false,
+  "prompt": {
+    "chars": 8206,
+    "estimated_input_tokens": 4516,
+    "sha256": "42737a0b83b05c9b3699c1bed6f8d60c5bf1e61136ab85b376a31d2c717f05ce"
+  },
+  "http": 200,
+  "duration_ms": 42289,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 4196,
+    "prompt_tokens_billed": 4196,
+    "usage_source": "reported",
+    "completion_tokens": 1530,
+    "total_tokens": 5726
+  },
+  "cost_usd": 0.018534,
+  "balance_before_usd": 12.835421,
+  "balance_after_usd": 12.816887,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 42289,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 1372,
+    "preview": "DECISION | A-1 | CONDITIONAL_APPROVE | 仅建议留存观察，不认定验证充分或授权部署\nNEXT | A-1 | 补原部署Owner授权及负向演练回执\n\nDECISION | A-2 | NEEDS_REVISION | run 44221339282仅证明成功路径\nNEXT | A-2",
+    "text": "DECISION | A-1 | CONDITIONAL_APPROVE | 仅建议留存观察，不认定验证充分或授权部署\nNEXT | A-1 | 补原部署Owner授权及负向演练回执\n\nDECISION | A-2 | NEEDS_REVISION | run 44221339282仅证明成功路径\nNEXT | A-2 | 补隔离负测：失败、超时、缺回执均判红\n\nDECISION | A-3 | CONDITIONAL_APPROVE | 暂留上限3；预留不确定时不得盲目重试\nNEXT | A-3 | 补单卡成本模型；先核对预留再谈重试\n\nDECISION | A-4 | CONDITIONAL_APPROVE | 单源仅限非权威展示，不得作为资金动作依据\nNEXT | A-4 | 标注来源、区块及陈旧状态，核查下游用途\n\nDECISION | A-5 | APPROVE | 纯失败事实通知属L1，不得夹带裁决或派单\nNEXT | A-5 | 自动通知须脱敏、去重并附run及回执位置\n\nDECISION | B-1 | CONDITIONAL_APPROVE | 接受分层设计，不等于授权付费调用或上线\nNEXT | B-1 | 固化角色边界，主线thinking改为显式配置\n\nDECISION | B-2 | NEEDS_REVISION | 路由应显式禁用thinking；4096下限证据不足\nNEXT | B-2 | 按卡长复测预算，勿将4096视为充分保障\n\nDECISION | B-3 | NEEDS_REVISION | 单卡25/25仅证明格式覆盖，未证明分流正确\nNEXT | B-3 | 预算明确后补三张代表卡及逐条语义复核\n\nDECISION | B-4 | APPROVE | 必须拆分输出契约；双角色任务须独立调用\nNEXT | B-4 | 分离planner与worker提示及各自验收器\n\nDECISION | B-5 | REQUIRES_OWNER_VALUE | 新增付费抓取的预算池与每日子上限未授权\nNEXT | B-5 | Owner明确额度后另提GPT接入裁决\n\nDECISION | B-6 | CONDITIONAL_APPROVE | 纳入每日审计清单，不等于每日运行或调用\nNEXT | B-6 | 按需触发；审计运行记录、费用及异常状态\n\nDECISION | C-1 | NEEDS_REVISION | 不宜全局静默切换；调用方必须显式指定\nNEXT | C-1 | 补调用点清单；迁移后缺参即拒绝请求\n\nDECISION | C-2 | REQUIRES_OWNER_VALUE | 两账本是否共池无明文，不得追认预算授权\nNEXT | C-2 | 补十次账单；Owner明确共池及历史归集口径\n\nDECISION | C-3 | CONDITIONAL_APPROVE | 建议增加调用前门禁；额度与上线仍须授权\nNEXT | C-3 | 先离线测试估算、预留、对账及不确定即停\n\n以上均为顾问建议，不是GPT裁决或Owner授权。优先处理C-2：预算口径明确前暂停新增付费测试；同步离线修复C-1/B-4，并补A-2隔离负测。任何生产部署仍须Owner明确授权。"
+  },
+  "key_fingerprint": null,
+  "failure": null,
+  "http_error": null
+}

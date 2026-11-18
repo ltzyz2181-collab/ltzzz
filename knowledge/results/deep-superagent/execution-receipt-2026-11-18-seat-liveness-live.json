@@ -1,0 +1,87 @@
+{
+  "schema": "ltzzz.deep.execution-receipt.v1",
+  "receipt_id": "deep-2026-11-18-seat-liveness-live",
+  "produced_at_utc": "2026-11-18T03:17:00Z",
+  "task_origin": "owner 直接指令（本会话）：把卡住的豆包 504 换档后真实 200 实测闭环",
+  "executor": {
+    "logical_seat": "doubao_desktop",
+    "client": "doubao work desktop (Windows) + Aha browser (bu plane)",
+    "browser_plane": "bu",
+    "note": "OAuth token 缺 workflow scope，push 被拒；改为登录后浏览器网页创建 + GitHub API 写入"
+  },
+  "sections": {
+    "done": [
+      {
+        "item": "创建席位活体探针 workflow 并在 main 上可用",
+        "evidence": {
+          "path": ".github/workflows/probe-deep-seat-liveness.yml",
+          "commit": "bdcc26d（网页创建）；8233fbd9（档位对齐 pro）"
+        }
+      },
+      {
+        "item": "探针首次运行暴露真因：lite 档未开通，返回 404 ModelNotOpen",
+        "evidence": {
+          "run": "44228451074",
+          "url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44228451074",
+          "doubao": "http 404 ModelNotOpen doubao-seed-2-1-lite-260915",
+          "kimi": "http 200 actual_model=kimi-k3.1-pro-highspeed latency 3913ms"
+        }
+      },
+      {
+        "item": "豆包席位改回已开通的 pro 档并重新实测通过",
+        "evidence": {
+          "commit": "73040cd4（wrangler.deep-superagent.toml）",
+          "probe_run": "44228913488",
+          "doubao": "http 200 actual_model=doubao-seed-2-1-pro-260915 latency 1524ms finish=stop tokens 55 thinking=disabled",
+          "kimi": "http 200 actual_model=kimi-k3.1-pro-highspeed latency 3067ms finish=stop tokens 124",
+          "verdict": "seats_live",
+          "receipt": "knowledge/results/deep-superagent/seat-liveness-2026-11-18-44228913488.json（commit 142e372f）"
+        }
+      },
+      {
+        "item": "配置变更触发 Worker 自动部署并成功",
+        "evidence": {
+          "run": "deep-superagent.yml #248（commit 73040cd）",
+          "status": "completed successfully 54s"
+        }
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [],
+      "owner": [
+        {
+          "item": "probe workflow 是否保留为常驻手动探针（手动触发，不排 cron）",
+          "blocker": "保留无额外成本；若要改成每日自动跑，会新增夜间模型调用与推送，属无人值守行为变更，需 owner 拍板",
+          "consequence_if_not_decided": "维持现状：只能手动点一次，不自排",
+          "partial_work_deep_can_do": "已保留手动触发形态，未加 schedule"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "item": "在下一次 Deep 日课队列里核对 worker 回执的 request_options.seat_model 是否为 pro 档与 kimi 高速档，确认席位级覆盖已生效到队列链路",
+        "completion_criteria": "queue-<run>-attempt-1.json 中 doubao/kimi 两个 work_* 回执 http=200 且 actual_model 与 wrangler 变量一致"
+      }
+    ],
+    "later": [
+      {
+        "item": "Worker 内部变量已随部署生效但仍缺端到端队列验证",
+        "depends_on": "下一次 Deep 日课队列自然运行（不额外花钱）",
+        "precondition": "日课按原计划触发"
+      }
+    ]
+  },
+  "counts": {
+    "writes_performed": 4,
+    "merges_performed": 0,
+    "deploys_performed": 1,
+    "model_calls": 3,
+    "financial_execution": false,
+    "writes_note": "4 = workflow 新建 + 档位修正×2(workflow/toml) + 回执入库；本回执自身为第 5 笔写入"
+  },
+  "not_claimed": [
+    "未做端到端队列验证（等日课自然跑）",
+    "未把探针自排为定时任务",
+    "未改动资金、签名、钱包、Safe、放款任何环节"
+  ]
+}
