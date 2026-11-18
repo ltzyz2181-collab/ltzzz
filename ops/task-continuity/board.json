@@ -1,0 +1,169 @@
+{
+  "schema": "ltzzz.task-continuity.v1",
+  "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
+  "updated_at": "2026-11-17T11:00:00Z",
+  "tasks": [
+    {
+      "id": "HIRE-PHASE1-408",
+      "title": "PR #408 Phase 1 六项安全（豆包 1 HIGH / 千问 CI 复核已交付）",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "对豆包 HIGH（资金意图正则）与 4 项 MEDIUM 逐条裁决：先修再复审，还是接受为设计边界",
+      "evidence": [
+        "docs/HIRE-PHASE1-REVIEW-20261117-03-DOUBAO.md",
+        "docs/HIRE-PHASE1-REVIEW-20261117-03-QWEN.md"
+      ],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "GPT 明示裁决；在此之前不合并不进 Phase 2"
+    },
+    {
+      "id": "WALLET-P1-INCREMENTAL-VERIFY",
+      "title": "Wallet P1-3：appendEvent 由 O(n²) 改为增量/分页校验",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "按 docs/2026-11-16-wallet-P1-实施方案.md §2 落代码 + 等价性测试（同样本前后哈希与错误行为一致）",
+      "evidence": [
+        "docs/2026-11-16-wallet-P1-实施方案.md",
+        "scripts/wallet/core.mjs"
+      ],
+      "updated_at": "2026-11-17T11:00:00Z"
+    },
+    {
+      "id": "WALLET-P1-USDC-BALANCE",
+      "title": "Wallet P1-1：余额从 ETH 改读 Base USDC",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "裁决 P1-1 的 4 问（默认链/合约是否内置、是否双行显示 ETH+USDC、锚定方案、能否 CI 绿即合）",
+      "evidence": [
+        "docs/2026-11-16-wallet-P1-实施方案.md"
+      ],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "GPT 裁决；未裁决前不动 rpc.mjs 口径"
+    },
+    {
+      "id": "WALLET-OPS-LEGACY-JOB",
+      "title": "ltzzz-wallet-ops.yml 每步 `|| true`，永远绿，失败不可见",
+      "state": "ready",
+      "next_owner": "deploy_seat",
+      "next_action": "改为逐步记录退出码并在同一次 run 内写状态回执；失败要红，不要静默绿",
+      "evidence": [
+        ".github/workflows/ltzzz-wallet-ops.yml"
+      ],
+      "updated_at": "2026-11-17T11:00:00Z"
+    },
+    {
+      "id": "DISPATCH-MULTI-CARD",
+      "title": "千问/豆包消费者每次 run 只取 1 张卡，队列会停住",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "在工作流里循环消费到无卡或达上限（默认 3），保持每卡先落 reservation 再调用的语义",
+      "evidence": [
+        "scripts/run-qwen-dispatch.mjs",
+        "scripts/run-doubao-dispatch.mjs"
+      ],
+      "updated_at": "2026-11-17T11:00:00Z"
+    },
+    {
+      "id": "ORDER-DELIVER-FN",
+      "title": "order-deliver 云函数 + 订单交付物区块",
+      "state": "waiting_owner",
+      "next_owner": "owner",
+      "next_action": "给出管理员 openid 后即可开发接入",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "Owner 提供 admin openid 白名单值"
+    },
+    {
+      "id": "REFUND-DEFENSE-F1F7",
+      "title": "F1–F7 退款展示防御 / 幂等",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "裁决退款语义是否允许自动实现到 PR 级别，还是保持人工终判",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "GPT 裁决 + 一次 review"
+    },
+    {
+      "id": "MEMORY-ARCHIVE-CANONICAL",
+      "title": "9 个 archive 缺 canonical_target",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "先定 archive→canonical 映射规则，再批量补数据",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "映射规则确定"
+    },
+    {
+      "id": "WECHAT-REFUND-CALLBACK",
+      "title": "微信真实退款回调",
+      "state": "waiting_external",
+      "next_owner": "deploy_seat",
+      "next_action": "等官方回调与证书到位后接入并做一次真实回执",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "官方回调地址 + 证书 + 真实测试环境"
+    },
+    {
+      "id": "WECHAT-SERVICE-TAGS",
+      "title": "服务号开放标签 + 真机扫码",
+      "state": "waiting_owner",
+      "next_owner": "owner",
+      "next_action": "代码与签名准备可继续，真机扫码必须 Owner 完成",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "Owner 真机扫码"
+    },
+    {
+      "id": "WORKBUDDY-1-0-2",
+      "title": "WorkBuddy v1.0.2 提审",
+      "state": "waiting_external",
+      "next_owner": "deploy_seat",
+      "next_action": "等平台审核回执，拿到后回填版本与制品 SHA",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "平台提审回执"
+    },
+    {
+      "id": "QWEN-FOUR-RULINGS-ORIGINAL",
+      "title": "QWEN-FOUR-RULINGS 原件",
+      "state": "waiting_external",
+      "next_owner": "deploy_seat",
+      "next_action": "先找原件与哈希；确实缺失才建重建存档并标注非原件",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "原件或哈希出现"
+    },
+    {
+      "id": "WEP3-SIGNER",
+      "title": "WEP3 signer 真实签名",
+      "state": "waiting_owner",
+      "next_owner": "owner",
+      "next_action": "私钥不在环境内，保持人工签名",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "Owner 或 5 签 Safe 人工执行"
+    },
+    {
+      "id": "GMAIL-PHASE1-IMAP-EVIDENCE",
+      "title": "Gmail 摄入 Phase 1 真实 IMAP 登录回执",
+      "state": "waiting_external",
+      "next_owner": "deploy_seat",
+      "next_action": "等一次真实登录采集回执产出后再改状态",
+      "evidence": [],
+      "updated_at": "2026-11-17T11:00:00Z",
+      "unblock_condition": "真实 IMAP 登录与采集回执"
+    },
+    {
+      "id": "TASK-CONTINUITY-BOARD",
+      "title": "立项连续性看板（本文件 + 超期告警）",
+      "state": "in_progress",
+      "next_owner": "deploy_seat",
+      "next_action": "本次先落看板与 CI；下一轮把席位交接契约写进 dispatch 模板",
+      "evidence": [
+        "scripts/task-continuity.mjs",
+        ".github/workflows/task-continuity.yml"
+      ],
+      "updated_at": "2026-11-17T11:00:00Z"
+    }
+  ]
+}

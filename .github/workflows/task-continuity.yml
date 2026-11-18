@@ -1,0 +1,36 @@
+name: Task continuity board
+on:
+  pull_request:
+    paths: ['scripts/task-continuity.mjs','scripts/tests/task-continuity.test.mjs','ops/task-continuity/board.json','.github/workflows/task-continuity.yml']
+  push:
+    branches: [main]
+    paths: ['ops/task-continuity/board.json','scripts/task-continuity.mjs','scripts/tests/task-continuity.test.mjs','.github/workflows/task-continuity.yml']
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: task-continuity, cancel-in-progress: false}
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Board contract tests
+        run: node --test scripts/tests/task-continuity.test.mjs
+      - name: Report stalled and actionable items (zero model calls, zero writes)
+        run: |
+          node scripts/task-continuity.mjs --json > /tmp/board.json
+          node scripts/task-continuity.mjs | tee /tmp/board.md
+          node -e "const r=require('/tmp/board.json');for(const id of r.stalled)console.log('::warning::ready 任务超期未动: '+id);console.log('open='+r.open+' actionable='+r.actionable.length+' warn='+r.warn.length+' stalled='+r.stalled.length)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: task-continuity-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            /tmp/board.json
+            /tmp/board.md
+          retention-days: 30

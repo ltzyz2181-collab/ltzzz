@@ -36,6 +36,8 @@ jobs:
             cat /tmp/small-payment-tests.txt
             exit 1
           fi
+      - name: Wallet P0 read-only skeleton tests (no keys, no ledger writes)
+        run: node --test scripts/wallet/__tests__/*.test.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
