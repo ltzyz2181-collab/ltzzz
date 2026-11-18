@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T03:25:00.000Z",
+  "updated_at": "2026-11-18T06:40:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -301,16 +301,17 @@
     },
     {
       "id": "DEEPSEEK-CARD-SPLIT-ROLLOUT",
-      "title": "新卡强制卡契约检查并把 planner/worker 拆成两张",
-      "state": "ready",
+      "title": "Deep 卡契约拆分：消费入口 fail-closed",
+      "state": "in_review",
       "next_owner": "claude",
-      "next_action": "新卡生成后跑 check-card-contract --strict；混写即拆为 planner 卡与 worker 卡",
+      "next_action": "等 BACKLOG-1 实际跑过新门后转 done；后续新卡一律先跑 check-card-contract --strict",
       "evidence": [
-        "scripts/check-card-contract.mjs",
-        "docs/2026-11-18-DeepSeek三卡复测与防护.md §4"
+        "scripts/check-card-contract.mjs 新增 coordinator_reviewer 判定（3 条新测试，8 pass）",
+        "scripts/run-deep-superagent-queue.mjs 消费前校验，混卡直接 card_contract_split_required",
+        "node --test scripts/tests/deep-superagent-queue.test.mjs → 23 pass"
       ],
-      "updated_at": "2026-11-18T03:15:00.000Z",
-      "note": "历史 84 张卡中 6 张混写；未设为 CI 强制门，避免历史卡变红。"
+      "updated_at": "2026-11-18T06:40:00.000Z",
+      "note": "只拦新卡，历史 84 张里的 6 张 mixed 不追溯。"
     },
     {
       "id": "WALLET-OPS-RECEIPT-GUARD",
@@ -326,6 +327,60 @@
       "updated_at": "2026-11-18T03:25:00.000Z",
       "unblock_condition": "GPT 明确批准修改支付发布件并重钉 manifest，或明确判定该缺口可接受",
       "note": "未重钉 manifest：那会绕过发布件复审。"
+    },
+    {
+      "id": "DAILY-AGENT-TASKS-RECONCILE",
+      "title": "Daily Agent Tasks step 10 reconcile 退出 1（四席状态未核验）",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "把 deepseek rejected_draft_review / doubao submitted_pending_review / grok submitted_pending_review 三席记录跑到已核验，qianwen failed_no_repurchase 按原 Task ID 归并；不得放宽 daily-task-board.mjs 的失败条件",
+      "evidence": [
+        "run 44229919131 failure @ 73af088e（2026-11-18T03:22:05Z），step 10 exit 1",
+        "scripts/daily-task-board.mjs:41 对未核验 board 与 unverified independent_review 置 exitCode=1"
+      ],
+      "updated_at": "2026-11-18T06:40:00.000Z",
+      "note": "这是 fail-closed 正常报警，不是脚本 bug；要修的是席位记录，不是检查条件。"
+    },
+    {
+      "id": "FUNDED-ORDERS-SIGNER-BLOCK",
+      "title": "Autonomous funded orders 三次失败（blocked_missing_signer）",
+      "state": "waiting_external",
+      "next_owner": "deploy_seat",
+      "next_action": "确认 signer 能力是否已在任一已授权环境实测可用；可用则以一次真实签名回执解锁，不可用则保持阻断并记录缺口",
+      "evidence": [
+        "run 44175140782 failure，reason=blocked_missing_signer",
+        "三次同因失败，无资金动作发生（paid=false, tx_hash=null）"
+      ],
+      "updated_at": "2026-11-18T06:40:00.000Z",
+      "unblock_condition": "signer 能力实测通过并产出一次真实签名回执；未证明前保持 blocked",
+      "note": "安全阻断生效中，不是流水线故障。"
+    },
+    {
+      "id": "PR287-BASE-MISMATCH",
+      "title": "PR #287（WEP3 fail-closed）base 不是 main",
+      "state": "blocked_decision",
+      "next_owner": "gpt",
+      "next_action": "裁决 PR #287 是从当前 main 重开一条分支，还是关闭并保留补丁；不得直接把旧 base 合入 main",
+      "evidence": [
+        "PR #287 head 35efe1b7，base 为 fix/wep3-restore-complete-router-20261027",
+        "审计 2026-11-17 列为 2 个开放 PR 之一"
+      ],
+      "updated_at": "2026-11-18T06:40:00.000Z",
+      "unblock_condition": "GPT 给出「重开」或「关闭」其中一条，并指定承载分支"
+    },
+    {
+      "id": "DEEP-QUEUE-20261118-DAILY1",
+      "title": "Deep 队列 DAILY-1 空转：双角色卡 + 席位 504",
+      "state": "in_review",
+      "next_owner": "claude",
+      "next_action": "核对 BACKLOG-1 单角色卡是否产出 7 条 route；若仍空转，改为按席位拆卡而不是加大 prompt",
+      "evidence": [
+        "run 44193726857 success（传输层），job 50940484 blocked，error=native_generation_evidence_incomplete",
+        "doubao 504 / kimi 504；qianwen 输出「没有需要复核的内容」；route 产出 0 条",
+        "op card DEEP-SUPERAGENT-20261118-DAILY-1 同卡要求协调席 route 与复核席 agree/disagree"
+      ],
+      "updated_at": "2026-11-18T06:40:00.000Z",
+      "note": "队列本身没坏，坏的是卡：一卡两角色，协调席席位挂掉后复核席空转。"
     }
   ]
 }
