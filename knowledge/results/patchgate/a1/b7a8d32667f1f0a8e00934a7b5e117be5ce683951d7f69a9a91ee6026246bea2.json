@@ -1,0 +1,131 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-429",
+  "head_sha": "fa4cf2f6256d96bc19c0f26c29f2dd57656ea0ae",
+  "pr_number": 429,
+  "source_main_sha": "391ebfb7053a77245f7df2e694b8173cd816ba67",
+  "run_id": "44264492584",
+  "at_utc": "2026-11-18T08:09:00.549Z",
+  "idempotency_key": "PATCHGATE-PR-429:fa4cf2f6256d96bc19c0f26c29f2dd57656ea0ae",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "391ebfb7053a77245f7df2e694b8173cd816ba67",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/dispatch-seat.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": ".github/workflows/task-hub.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/TASK-HUB-CURRENT.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/lib/task-hub.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/task-hub-mail.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/task-hub.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/task-hub.test.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-429",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-429",
+      "base_sha": "391ebfb7053a77245f7df2e694b8173cd816ba67",
+      "head_sha": "fa4cf2f6256d96bc19c0f26c29f2dd57656ea0ae",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "a557ee1aebc79c74bdb88f138bb65c35b174a70f0d2a3ed3a35765f799870081"
+    },
+    "subject_sha256": "48607c202487e7a7af34c0d040bfe22eca45d0004399a274273e4f1ffcb21fd7",
+    "idempotency_key": "PATCHGATE-PR-429:fa4cf2f6256d96bc19c0f26c29f2dd57656ea0ae",
+    "risk_class": "L3",
+    "requires_canary": false,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/task-hub-mail.mjs",
+        "code": "new_dynamic_execution_requires_review"
+      },
+      {
+        "path": "scripts/task-hub.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "api.github.com"
+        ]
+      },
+      {
+        "path": "scripts/tests/task-hub.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "github.com",
+          "x"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
