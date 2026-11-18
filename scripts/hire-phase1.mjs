@@ -113,26 +113,42 @@ export const FORBIDDEN_INTENT_RULES = Object.freeze([
   // --- English phrases (separators may be spaces, underscores or hyphens) ---
   {id: 'transfer_money', re: /\btransfer(?:s|ring|red)?[\s_-]+(?:the[\s_-]+|all[\s_-]+|some[\s_-]+)?(?:money|funds?|cash|balance|usd|usdt|usdc|eth|btc|cny|rmb)\b/},
   {id: 'withdraw_funds', re: /\bwithdraw(?:s|ing|al|als)?[\s_-]+(?:the[\s_-]+|all[\s_-]+|some[\s_-]+)?(?:funds?|money|cash|balance|usdt|usdc|eth)\b/},
+  // "with draw funds" / "with_draw_funds" survives the space-preserving pass, so the
+  // rule also runs against the whitespace-stripped text.
+  {id: 'withdraw_funds', compact: true, re: /withdraw(?:s|ing|al|als)?(?:the|all|some)?(?:funds|money|cash|balance|usdt|usdc|eth)/},
   {id: 'send_payment', re: /\b(?:send|sends|sending|sent|remit|remits|remitting)[\s_-]+(?:a[\s_-]+|the[\s_-]+|out[\s_-]+)?(?:payment|payments|money|funds?|remittance)\b/},
   {id: 'sign_transaction', re: /\b(?:sign|signs|signing|signed)[\s_-]+(?:a[\s_-]+|the[\s_-]+|any[\s_-]+)?(?:transaction|transactions|tx|txs|payload|message|message[\s_-]+hash|order|orders|contract[\s_-]+call)\b/},
+  // Joined forms: a zero-width or hyphen removal must not turn "send payment" into
+  // "sendpayment" and escape the spaced phrase rules above.
+  {id: 'transfer_money', compact: true, re: /transfer(?:s|ring|red)?(?:the|all|some)?(?:money|funds?|cash|balance|usd|usdt|usdc|eth|btc|cny|rmb)/},
+  {id: 'send_payment', compact: true, re: /(?:send|sends|sending|sent|remit|remits|remitting)(?:a|the|out)?(?:payment|payments|money|funds?|remittance)/},
+  {id: 'sign_transaction', compact: true, re: /(?:sign|signs|signing|signed)(?:a|the|any)?(?:transaction|transactions|tx|txs|payload|message|messagehash|order|orders|contractcall)/},
   {id: 'deploy_to_production', re: /\bdeploy(?:s|ing|ment)?[\s_-]+(?:to[\s_-]+|into[\s_-]+|in[\s_-]+)?(?:production|prod|mainnet)\b/},
   {id: 'modify_production_config', re: /\b(?:modify|modifies|modifying|change|changes|changing|update|updates|updating|edit|edits|editing|write|writes|writing|patch|patches|patching|rotate|rotating)[\s_-]+(?:the[\s_-]+|a[\s_-]+)?(?:production|prod)[\s_-]+(?:configuration|config|configs|settings?|secrets?|environment|env|credentials?)\b/},
   {id: 'production_write', re: /\bproduction[\s_-]?(?:write|writes|writing|mutation|deploy|deployment)\b/},
   {id: 'private_key', re: /\bprivate[\s_-]?keys?\b/},
   {id: 'seed_phrase', re: /\b(?:seed|mnemonic)[\s_-]?(?:phrase|words)\b/},
   {id: 'api_secret', re: /\b(?:api[\s_-]?secrets?|client[\s_-]?secrets?|access[\s_-]?tokens?|refresh[\s_-]?tokens?)\b/},
+  // --- English money synonyms that a single-keyword list would miss ---
+  {id: 'payout', re: /\b(?:payouts?|pay[\s_-]?outs?)\b/},
+  {id: 'disbursement', re: /disburse(?:s|d|ment|ments)?/, compact: true},
+  {id: 'reimbursement', re: /reimburse(?:s|d|ment|ments)?/, compact: true},
+  {id: 'cash_out', re: /\bcash[\s_-]?outs?\b/},
+  {id: 'top_up', re: /\btop[\s_-]?ups?\b/},
+  {id: 'settle_payment', re: /\bsettle(?:s|d|ment)?[\s_-]+(?:the[\s_-]+)?(?:payment|payments|invoice|invoices|bill|bills|balance)\b/},
+  {id: 'payment_processor', re: /\b(?:paypal|pay[\s_-]?pal|venmo|alipay|ali[\s_-]?pay|wxpay|wechat[\s_-]?pay)\b/},
   // --- English single tokens that are unambiguous on their own ---
   {id: 'funding', re: /\bfunding\b/},
-  {id: 'disbursement', re: /\bdisbursements?\b/},
   {id: 'wallet', re: /\bwallets?\b/},
   {id: 'safe_wallet', re: /\bsafe[\s_-]?(?:wallet|multisig|module|transaction)\b/},
   {id: 'loan', re: /\b(?:loan|loans|lending|borrow|borrowing)\b/},
   {id: 'credential', re: /\bcredentials?\b/},
-  // --- Chinese phrases and tokens ---
-  {id: 'zh_transfer', re: /(转账|转出|汇款|打款|放款|提现|付款|支付|收款)/},
-  {id: 'zh_wallet', re: /(钱包|私钥|助记词|密钥|凭据|口令|签名|签署|授权签名)/},
-  {id: 'zh_funds', re: /(资金|余额|保证金|铸币|增发|销毁代币)/},
-  {id: 'zh_prod', re: /(生产部署|部署到生产|生产环境|生产配置|线上配置|修改生产|发布到生产|合约部署)/},
+  // --- Chinese: matched after removing all whitespace, so "转 账" and "钱 包"
+  //     cannot slip through a per-character split. ---
+  {id: 'zh_transfer', compact: true, re: /(转账|转出|转钱|汇款|打款|打钱|付款|付钱|支付|出钱|给钱|代付|扣款|划款|划拨|出金|入金|提现|放款|收款|退款|返款|结汇|清算|结算)/},
+  {id: 'zh_wallet', compact: true, re: /(钱包|私钥|助记词|密钥|凭据|口令|签名|签署|授权签名)/},
+  {id: 'zh_funds', compact: true, re: /(资金|余额|保证金|铸币|增发|销毁代币)/},
+  {id: 'zh_prod', compact: true, re: /(生产部署|部署到生产|生产环境|生产配置|线上配置|修改生产|发布到生产|合约部署)/},
 ]);
 
 // Kept for backwards compatibility: callers that only need the raw token list.
@@ -417,18 +433,29 @@ export function validateAcceptanceCriteria(criteria, evidencePaths = []) {
 
 // ---------- order validation ----------
 
-export function classifyIntent(text) {
-  if (text === undefined || text === null) return [];
-  if (typeof text !== 'string') return ['invalid_intent_text'];
-  const low = text
+// Invisible and format characters that survive NFKC. Zero-width joiners between
+// two letters would otherwise split "wallet" or "转账" into harmless-looking text.
+const INVISIBLE_CHARS = /[\u00AD\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/g;
+
+export function normalizeIntentText(text) {
+  return text
     .normalize('NFKC')
-    .replace(/[​-‍﻿]/g, '')
+    .replace(INVISIBLE_CHARS, '')
     .replace(/[_-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .toLowerCase();
-  return FORBIDDEN_INTENT_RULES
-    .filter(rule => rule.re.test(low))
-    .map(rule => rule.id);
+}
+
+export function classifyIntent(text) {
+  if (text === undefined || text === null) return [];
+  if (typeof text !== 'string') return ['invalid_intent_text'];
+  const low = normalizeIntentText(text);
+  const compact = low.replace(/\s+/g, '');
+  const hits = new Set();
+  for (const rule of FORBIDDEN_INTENT_RULES) {
+    if (rule.re.test(low) || (rule.compact && rule.re.test(compact))) hits.add(rule.id);
+  }
+  return [...hits];
 }
 
 export function validateOrder(order, {root = REPO_ROOT} = {}) {

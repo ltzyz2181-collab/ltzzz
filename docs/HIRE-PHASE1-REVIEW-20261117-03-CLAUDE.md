@@ -115,3 +115,16 @@ node --test scripts/tests/hire-phase1.test.mjs
 
 这样“artifact 对应正确 commit”不再依赖人工解释。
 
+## 9. 豆包 HIGH（第 8 项）修复 · 2026-11-17
+
+豆包 R2B 第 8 项判 HIGH：资金意图正则过窄，「转 账」「with draw funds」「payout / disburse / reimburse」以及零宽字符插入都能绕过。
+
+本轮改动（仅 `scripts/hire-phase1.mjs` 与测试，不碰零资金不变量）：
+
+- `classifyIntent` 增加 `compact` 通道：中文规则和英文拼接规则在「去掉全部空白」的文本上再匹配一次，`转 账`、`钱 包`、`with draw funds` 不再绕过。
+- 不可见字符从 4 个扩展到 U+00AD、U+061C、U+115F/U+1160、U+17B4/U+17B5、U+180B-180E、U+200B-200F、U+202A-202E、U+2060-2064、U+2066-206F、U+3164、U+FE00-FE0F、U+FEFF、U+FFA0。
+- 英文新增：`payout`/`pay out`、`cash out`、`top up`、`disburse*`、`reimburse*`、`settle payment|invoice|balance`、`paypal`/`venmo`/`alipay`/`wxpay`/`wechat pay`。
+- 中文新增：代付、扣款、划款、划拨、出金、入金、转钱、打钱、付钱、出钱、给钱、退款、返款、结汇、清算、结算。
+- 新增 1 项对抗测试，覆盖 26 条拆分/同义/不可见字符串。
+
+未做：语义模型判定（成本与不可判定性），仍为规则法；豆包其余 4 项 MEDIUM 未改，等 GPT 席裁决。修复后测试 47/47，head 变更会让上一轮 CI 证据作废，需重跑。

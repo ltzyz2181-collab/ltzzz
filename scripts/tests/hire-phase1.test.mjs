@@ -360,6 +360,16 @@ test('Chinese funding, signing and production phrases are refused', () => {
   }
 });
 
+test('split, synonym and invisible-character funding attempts are still refused', () => {
+  const phrases = [
+    '转 账', '付 款', '钱 包', '代付', '扣款', '划拨', '出钱', '打钱', '结算', '退款',
+    'with draw funds', 'with_draw_funds', 'pay pal', 'pay out', 'cash out', 'top up',
+    'payout 20 USDC', 'disburse the budget', 'reimburse the client', 'settle payment for invoice 7',
+    'wal\u200Blet', 'wal\u00ADlet', '转\u2060账', 'ｗａｌｌｅｔ', 'send\u200Dpayment', 'transfer\u2060money',
+  ];
+  for (const phrase of phrases) assert.ok(classifyIntent(phrase).length > 0, 'not refused: ' + JSON.stringify(phrase));
+});
+
 test('harmless objectives are not refused, so the refusal is not a blunt keyword filter', () => {
   for (const text of ['read docs and report broken links', 'audit the Phase1 spec against the implementation', '整理文档目录']) {
     assert.deepEqual(classifyIntent(text), [], `over-refused: ${text}`);
