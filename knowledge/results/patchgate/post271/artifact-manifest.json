@@ -381,8 +381,8 @@
       },
       {
         "path": ".github/workflows/ltzzz-wallet-ops.yml",
-        "sha256": "ac16ddc2a6272f2838cea5b8468bce00c7583d95d6707c6c86a23a013b605a65",
-        "bytes": 2132
+        "bytes": 3262,
+        "sha256": "a471137fe1786bb3130234519a06647721a2b5dfc718c620d9a9d10a60105b2e"
       },
       {
         "path": ".github/workflows/small-payment-policy.yml",
@@ -590,7 +590,7 @@
         "bytes": 31395
       }
     ],
-    "sha256": "0a424b30cbb751eeaab8824bfb08b9d604ef97505f45f8c9b53db10eea95a542"
+    "sha256": "69020f86bc1554acdd63e5670796ed6f8c38ae7d92f6c2fdcecc1e7346909415"
   },
   "hash_scope": "Original LF UTF-8 Git blob bytes; manifest excludes itself and later engineering/runner receipts; its immutable commit and byte digest are recorded outside it.",
   "approval_state": "owner_delegated_controller_decision_reviews_advisory_default_off_not_live_accepted",
@@ -619,5 +619,20 @@
     "previous_small_payment_release_sha256": "14abdf45db7a602216240a758a130ead2af399acff749f3eb55eb47aa68f78b7",
     "old_authorization_reused": false,
     "current_small_payment_release_sha256": "0a424b30cbb751eeaab8824bfb08b9d604ef97505f45f8c9b53db10eea95a542"
+  },
+  "wallet_ops_fail_loud_update_20261117": {
+    "task_id": "WALLET-OPS-LEGACY-JOB",
+    "decision": "owner_instruction_20261117_fail_loud",
+    "changed_files": [
+      ".github/workflows/ltzzz-wallet-ops.yml"
+    ],
+    "previous_bytes": 2132,
+    "previous_sha256": "ac16ddc2a6272f2838cea5b8468bce00c7583d95d6707c6c86a23a013b605a65",
+    "new_bytes": 3262,
+    "new_sha256": "a471137fe1786bb3130234519a06647721a2b5dfc718c620d9a9d10a60105b2e",
+    "summary": "移除每一步的 || true，改为 continue-on-error + 逐步 outcome 回执；任一必需步骤未成功则 run 变红。未改动任何资金动作或白名单。",
+    "financial_behavior_changed": false,
+    "snapshot_set_updated": false,
+    "note": "快照集合保持 2026-10-27 时点证据；仅重钉本次确有字节变化的 release 行。"
   }
 }

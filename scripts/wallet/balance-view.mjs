@@ -6,15 +6,18 @@
 // - An unreadable onchain value is reported as `status: "unavailable"` and
 //   never becomes 0. Provider balances stay explicitly `unverified` until an
 //   adapter is reviewed and registered.
+// - ERC-20 balances are opt-in through agent-wallet/wallet/tokens.json. The
+//   native line is always kept, so a token read can never hide native balance.
 import fs from 'node:fs';
 import path from 'node:path';
 import {parseArgs} from 'node:util';
 import {pathToFileURL} from 'node:url';
 import {ROOT, deriveBalance} from './core.mjs';
-import {readOnchainBalance} from './rpc.mjs';
+import {readOnchainBalance, readTokenBalance, isValidTokenAddress} from './rpc.mjs';
 import {adapterStatus} from './adapters/index.mjs';
 
 const WALLET_FILE = path.join(ROOT, 'agent-wallet', 'ltzzz-wallet.json');
+const TOKENS_FILE = path.join(ROOT, 'agent-wallet', 'wallet', 'tokens.json');
 
 function firstEnv(names) {
   for (const name of names) {
@@ -31,6 +34,38 @@ function configuredAddress() {
   } catch {
     return null;
   }
+}
+
+export function loadTokenConfigs({tokensPath = TOKENS_FILE} = {}) {
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+  } catch {
+    return [];
+  }
+  const rows = Array.isArray(parsed?.tokens) ? parsed.tokens : [];
+  const tokens = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const asset = typeof row.asset === 'string' ? row.asset.trim() : '';
+    if (!asset) continue;
+    const chainId = Number.isSafeInteger(row.chainId) ? row.chainId : 8453;
+    tokens.push({
+      asset,
+      chainId,
+      address: row.address,
+      decimalsHint: Number.isSafeInteger(row.decimalsHint) ? row.decimalsHint : null,
+      valid_address: isValidTokenAddress(row.address),
+    });
+  }
+  return tokens;
+}
+
+export function selectTokens({tokensPath = TOKENS_FILE, token} = {}) {
+  const rows = loadTokenConfigs({tokensPath});
+  if (!token) return rows;
+  const wanted = String(token).toUpperCase();
+  return rows.filter(row => row.asset.toUpperCase() === wanted);
 }
 
 export function resolveOnchainConfig({rpcUrl, address, onchain = true} = {}) {
@@ -71,6 +106,9 @@ export async function buildBalanceView({
   timeoutMs,
   onchain = true,
   rail,
+  tokens,
+  tokenSymbol,
+  tokensPath,
 } = {}) {
   const generatedAt = new Date().toISOString();
   let ledger;
@@ -89,9 +127,17 @@ export async function buildBalanceView({
     };
   }
 
+  const configuredTokens = Array.isArray(tokens)
+    ? tokens
+    : selectTokens({tokensPath, token: tokenSymbol});
+
   let onchainResult;
+  const tokenResults = [];
   if (onchain === false) {
     onchainResult = {status: 'unavailable', reason: 'disabled', address: null, rpc: null};
+    for (const token of configuredTokens) {
+      tokenResults.push({status: 'unavailable', reason: 'disabled', asset: token.asset, address: null, rpc: null});
+    }
   } else {
     const config = resolveOnchainConfig({rpcUrl, address, onchain});
     onchainResult = await readOnchainBalance({
@@ -100,6 +146,16 @@ export async function buildBalanceView({
       fetchImpl,
       timeoutMs,
     });
+    for (const token of configuredTokens) {
+      tokenResults.push(await readTokenBalance({
+        address: config.address,
+        token,
+        rpcUrl: config.rpcUrl,
+        expectChainId: token.chainId ?? 8453,
+        fetchImpl,
+        timeoutMs,
+      }));
+    }
   }
 
   const providerStatus = rail ? adapterStatus(rail) : null;
@@ -118,9 +174,22 @@ export async function buildBalanceView({
     account,
     ledger,
     onchain: onchainResult,
+    onchain_tokens: tokenResults,
     onchain_status: onchainResult.status,
     provider,
   };
+}
+
+function formatOnchain(result, tokenAsset = null) {
+  if (result.status === 'ok') {
+    if (result.wei !== undefined) {
+      return `onchain: ok ${result.amount} ETH (wei ${result.wei}, chain ${result.chain_id})`;
+    }
+    const asset = result.asset || tokenAsset || 'TOKEN';
+    return `onchain: ok ${result.amount} ${asset} (units ${result.units}, chain ${result.chain_id}, block ${result.block_number})`;
+  }
+  const label = tokenAsset ? `onchain ${tokenAsset}` : 'onchain';
+  return `${label}: unavailable (${result.reason})`;
 }
 
 export function formatBalanceView(view) {
@@ -136,10 +205,9 @@ export function formatBalanceView(view) {
       lines.push(`  ${asset}: net ${state.net}, available ${state.available}, frozen ${state.frozen}`);
     }
   }
-  if (view.onchain.status === 'ok') {
-    lines.push(`onchain: ok ${view.onchain.amount} ETH (wei ${view.onchain.wei}, chain ${view.onchain.chain_id})`);
-  } else {
-    lines.push(`onchain: unavailable (${view.onchain.reason})`);
+  lines.push(formatOnchain(view.onchain));
+  for (const token of view.onchain_tokens || []) {
+    lines.push(formatOnchain(token, token.asset || null));
   }
   const providerBalance = view.provider.balance === null ? 'null' : view.provider.balance;
   lines.push(`provider: ${view.provider.status} (balance_source=${view.provider.balance_source}, balance=${providerBalance})`);
@@ -155,6 +223,9 @@ Options:
   --ledger <path>    ledger file (default: agent-wallet/wallet/ledger.jsonl)
   --rpc <url>        read-only JSON-RPC endpoint (default: WALLET_RPC_URL / RPC_URL / ETH_RPC_URL)
   --address <hex>    onchain address (default: WALLET_ADDRESS or agent-wallet/ltzzz-wallet.json)
+  --token <symbol>   only read this ERC-20 symbol from the token config
+  --tokens <path>    token config file (default: agent-wallet/wallet/tokens.json)
+  --no-tokens        skip ERC-20 reads (the native ETH line is still shown)
   --rail <name>      provider rail label; P0 reports it as unverified/not_adapted
   --timeout <ms>     RPC timeout (default 5000)
   --json             emit machine-readable JSON
@@ -170,6 +241,9 @@ export async function main(argv = process.argv.slice(2)) {
       ledger: {type: 'string'},
       rpc: {type: 'string'},
       address: {type: 'string'},
+      token: {type: 'string'},
+      tokens: {type: 'string'},
+      'no-tokens': {type: 'boolean'},
       rail: {type: 'string'},
       timeout: {type: 'string'},
       json: {type: 'boolean'},
@@ -208,6 +282,9 @@ export async function main(argv = process.argv.slice(2)) {
     timeoutMs,
     onchain: values['no-onchain'] ? false : true,
     rail: values.rail,
+    tokenSymbol: values['no-tokens'] ? undefined : values.token,
+    tokensPath: values.tokens,
+    tokens: values['no-tokens'] ? [] : undefined,
   });
 
   if (values.json) console.log(JSON.stringify(view, null, 2));

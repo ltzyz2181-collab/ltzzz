@@ -1,0 +1,44 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-deep-superagent-liveness",
+  "target": "deep-superagent",
+  "platform": "cloudflare-workers",
+  "env_id": "ltzzz-deep-superagent@production",
+  "code_commit": "af53df22c1447c51bd2ec59fb52b8c1d638d8f29",
+  "code_path": "workers/deep-superagent",
+  "deployed_at": "2026-11-18T01:52:00Z",
+  "verified": [
+    {
+      "kind": "workflow_deploy",
+      "result": "ok",
+      "evidence": "GitHub Actions run 44218922039（Deep Superagent isolated deployment and explicit bootstrap）event=push，conclusion=success，head=af53df22c1447c51bd2ec59fb52b8c1d638d8f29"
+    },
+    {
+      "kind": "production_readback",
+      "result": "ok",
+      "evidence": "部署证据 knowledge/results/deep-superagent/deploy-44218922039-attempt-1.json：status=deployment_health_and_auth_verified，health.ok=true，source_commit=af53df22，source_readset_sha256=289cf291acc37d4d4424162c56fe1fb277461077a8b4b5bd83af2bd3bb82875a，worker index.js blob=4d0a2566dfa3483ca20efde8ccec01557ffca892，auth checks 401/401/200，deployments=1，model_calls=0"
+    },
+    {
+      "kind": "targeted_tests",
+      "result": "ok",
+      "evidence": "部署工作流 verify 测试集 8 个文件：tests 158 / pass 158 / fail 0；另跑 deep-superagent-queue + deploy + reconcile + daily + deploy-receipt：tests 60 / pass 60 / fail 0；新增协调席散文兜底、非法席位回收、504 部分成功、复核不可用保留输出、队列证据白名单用例"
+    },
+    {
+      "kind": "relay_ruling_evidence",
+      "result": "ok",
+      "evidence": "Relay Ruling Request run 44218929744 success；evidence knowledge/results/relay-seat/calls/20261118T015146Z-gpt-gpt-6.1-sol-3dda9f27.json；Q1 采纳 / Q2 补证据 / Q3 采纳 / Q4 采纳 / Q5 补证据；cost_usd=0.016065，balance 12.851486→12.835421；advisory only，不构成部署或平台接受"
+    }
+  ],
+  "not_verified": [
+    "部署后的真实队列 run（submitted）尚未触发：本次只验证部署健康、鉴权与代码 readset，不含一次真实 plan→work→review 运行",
+    "platform_accepted 未发生：Worker 健康回读不等于平台验收",
+    "Gmail Intake 每日定时未启用：中转裁决 Q2 为补证据，需先明确读取范围、写入面、告警与回退方案",
+    "YouTube Studio / CF RUM / 进账 三项仍无凭据，继续记未测/unverified"
+  ],
+  "blockers": [],
+  "next_action": "用一张新的 DEEP-SUPERAGENT-* 任务卡触发一次真实队列 run，回读 unjudged、部分覆盖、独立复核与终态；在此之前不得写成 submitted 或 platform_accepted。Gmail 每日定时保持关闭，先按中转 Q2 补最小证据集。",
+  "code_sha256": {
+    "adjudicator.mjs": "9aee622479d474c04c0b29ecb5755cd029257f750b809ebd58176e45d9a7cb6e",
+    "index.js": "93b79329c3bba38e2287f9e9303c99c83dc550e3e981ae9b8756e8fd82a66980"
+  }
+}

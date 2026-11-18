@@ -23,41 +23,75 @@ jobs:
       - name: Install deps
         run: npm install
       - name: Collect AI spend proposals (from today's outputs)
-        run: node scripts/collect-spend-proposals.mjs || true
+        id: collect
+        continue-on-error: true
+        run: node scripts/collect-spend-proposals.mjs
       - name: Check balance
+        id: balance
+        continue-on-error: true
         env:
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
           LTZZZ_WALLET_DRY_RUN: 'true'
-        run: node scripts/check-balance.mjs || true
+        run: node scripts/check-balance.mjs
       - name: Execute agent spending proposals
+        id: spend
+        continue-on-error: true
         env:
           LTZZZ_BASE_RPC: ${{ vars.LTZZZ_BASE_RPC || 'https://mainnet.base.org' }}
           LTZZZ_WALLET_DRY_RUN: 'true'
         run: |
           for agent in gpt doubao deepseek grok claude microsoft; do
-            node scripts/run-agent-spending.mjs --agent "$agent" --limit 5 || true
+            echo "::group::$agent"
+            node scripts/run-agent-spending.mjs --agent "$agent" --limit 5
+            echo "::endgroup::"
           done
       - name: Treasury refill (auto, once daily)
+        id: refill
+        continue-on-error: true
         env:
           LTZZZ_WALLET_DRY_RUN: 'true'
-        run: node scripts/treasury-refill.mjs || true
+        run: node scripts/treasury-refill.mjs
       - name: Cross audit
-        run: node scripts/audit-spending.mjs || true
+        id: audit
+        continue-on-error: true
+        run: node scripts/audit-spending.mjs
       - name: Anchor reasoning hashes
-        run: node scripts/anchor-reasoning.mjs || true
+        id: anchor
+        continue-on-error: true
+        run: node scripts/anchor-reasoning.mjs
       - name: Guardian alert
+        id: guardian
+        continue-on-error: true
         env:
           GUARDIAN_WEBHOOK: ${{ secrets.GUARDIAN_WEBHOOK }}
-        run: node scripts/guardian-alert.mjs || true
+        run: node scripts/guardian-alert.mjs
       - name: Build spend feed
-        run: node scripts/spend-feed.mjs || true
-      - name: Commit wallet records
+        id: feed
+        continue-on-error: true
+        run: node scripts/spend-feed.mjs
+      - name: Record run receipt (fails the job when any step failed)
+        if: always()
+        env:
+          STEP_COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+          STEP_BALANCE_OUTCOME: ${{ steps.balance.outcome }}
+          STEP_SPEND_OUTCOME: ${{ steps.spend.outcome }}
+          STEP_REFILL_OUTCOME: ${{ steps.refill.outcome }}
+          STEP_AUDIT_OUTCOME: ${{ steps.audit.outcome }}
+          STEP_ANCHOR_OUTCOME: ${{ steps.anchor.outcome }}
+          STEP_GUARDIAN_OUTCOME: ${{ steps.guardian.outcome }}
+          STEP_FEED_OUTCOME: ${{ steps.feed.outcome }}
+        run: node scripts/wallet-ops-receipt.mjs
+      - name: Commit wallet records and run receipt
+        if: always()
         run: |
+          mkdir -p ops/wallet-ops
           git config user.name "ltzzz-bot"
           git config user.email "bot@ltzzz.com"
-          git add agent-wallet/
-          git diff --staged --quiet && echo "no changes" && exit 0
+          git add agent-wallet/ ops/wallet-ops/
+          if git diff --staged --quiet; then
+            echo "no changes"
+            exit 0
+          fi
           git commit -m "wallet ops $(date +%Y-%m-%d-%H)"
-          git fetch origin main
-          git rebase origin/main || true
+          git pull --rebase origin main
           git push origin HEAD:main

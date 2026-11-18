@@ -1,0 +1,181 @@
+{
+ "schema": "ltzzz.deep-superagent.daily.v1",
+ "date": "2026-11-18",
+ "at_utc": "2026-11-17T22:56:00Z",
+ "mail_intake": {
+  "gmail": {
+   "status": "ok",
+   "window_count": 1081,
+   "open_count": 1035,
+   "full_box_total": 4755,
+   "full_box_unseen": 3932,
+   "provider": "gmail_imap",
+   "read_only": true,
+   "bodies_persisted": false
+  },
+  "agent_mail": {
+   "status": "missing",
+   "count": 38,
+   "open_count": 11,
+   "note": "状态字段为 missing，但计数可读；按实测记 partial，不写成 ok"
+  },
+  "merged_open": 200,
+  "duplicates": 135
+ },
+ "gpt_ruling_received": {
+  "received": false,
+  "today_count": 0,
+  "last_received_at_utc": "2026-11-17",
+  "days_since_last_ruling": 1,
+  "severity": "low"
+ },
+ "rulings_consumed": {
+  "file": "knowledge/results/deep-superagent/rulings-consumed-2026-11-18.json",
+  "read_now": 8,
+  "new_decision_ids": 0
+ },
+ "repo_observation": {
+  "oversight": {
+   "date": "2026-11-18",
+   "open_warning_cases": 195,
+   "unique_original_tasks": 195,
+   "not_rechecked_in_current_window": 159,
+   "by_responsible_seat": {
+    "qianwen": 62,
+    "deepseek": 49,
+    "doubao": 43,
+    "grok": 32,
+    "gpt": 9
+   }
+  },
+  "failures_24h": [
+   "44188411363 X daily value/sales post",
+   "44175140782 Autonomous funded LTZZZ orders (预期 blocked_missing_signer)",
+   "44139504462 Deploy static site to GitHub Pages (artifact 索引竞态)"
+  ],
+  "open_pr": 2,
+  "open_pr_list": [
+   408,
+   287
+  ]
+ },
+ "queue_run": {
+  "run_id": "44193726857",
+  "attempt": 1,
+  "status": "queue_results_verified",
+  "job_status": "blocked",
+  "error": "native_generation_evidence_incomplete",
+  "model_calls": 4,
+  "receipts": [
+   {
+    "stage": "plan",
+    "seat": "deepseek",
+    "actual_model": "deepseek-v4-pro",
+    "status": "complete_output_pending_review",
+    "generation_verified": true,
+    "tokens_used": 1699,
+    "completion_tokens": 222
+   },
+   {
+    "stage": "work_doubao",
+    "seat": "doubao",
+    "status": "no_output_returned"
+   },
+   {
+    "stage": "work_qianwen",
+    "seat": "qianwen",
+    "status": "returned",
+    "text_summary": "协调席未给出任何 coordinator_close_with_receipt 或 deploy_confirm_only 项"
+   }
+  ],
+  "routes": [],
+  "routes_note": "协调席未产出任何路由行，无 route 可复核；不按席位自述补填"
+ },
+ "review_conclusion": "今日无可执行的 coordinator_close_with_receipt：队列在第一跳即 blocked，协调席输出缺路由行。不回填、不代填，按未判记录并升级 GPT。",
+ "sections": {
+  "done": [
+   {
+    "item": "邮件采集",
+    "evidence": "knowledge/results/deep-superagent/mail-intake/latest.json（Gmail 全箱 4755 / 窗口 1081 / 待办 200）",
+    "status": "done"
+   },
+   {
+    "item": "8 封历史裁决回复逐封读取并消费",
+    "evidence": "knowledge/results/deep-superagent/rulings-consumed-2026-11-18.json",
+    "status": "done"
+   },
+   {
+    "item": "今日任务卡落库",
+    "evidence": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261118-DAILY-1.json，commit 2c1c983a1",
+    "status": "done"
+   },
+   {
+    "item": "合并巡检六项",
+    "evidence": "knowledge/results/patrol/2026-11-18.json",
+    "status": "done_with_2_unknown"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [
+    {
+     "item": "Gmail Intake 每日只读工作流是否开 schedule",
+     "blocker": "§三.4 专项禁令未撤",
+     "consequence": "不开则每日只读采集只能靠本席手动跑，自动化断链",
+     "deep_can_presplit": "可继续每天手动跑采集并把回执写入仓库"
+    }
+   ],
+   "owner": [
+    {
+     "item": "三数凭据（YouTube Studio / CF Web Analytics / 进账后台）",
+     "blocker": "云主机无登录凭据",
+     "consequence": "三数继续全列未测，日报无法给真实数字",
+     "deep_can_presplit": "可先把取数脚本与字段口径定好，等凭据到位直接跑"
+    }
+   ],
+   "money_or_signing": "无 —— 今日未发生任何资金、签名、放款动作"
+  },
+  "next_immediate": [
+   {
+    "item": "定位 native_generation_evidence_incomplete 根因（豆包席空返回 + 协调席缺路由行）",
+    "completion_criteria": "本地复现一次并在队列回执里定位到具体护栏分支",
+    "deadline": "下一个工作日窗口内"
+   },
+   {
+    "item": "把 200 条待办按年龄分桶出机器可读清单",
+    "completion_criteria": "knowledge/results/deep-superagent/backlog-buckets-2026-11-18.json 生成且条数合计=200"
+   },
+   {
+    "item": "Pages pre-deploy 加有上限轮询修复",
+    "completion_criteria": "scripts 里改动 + 单测通过（不合并、不部署）"
+   }
+  ],
+  "later": [
+   {
+    "item": "PR #408 合并",
+    "depends_on": "GPT 最终 PASS + 独立复核"
+   },
+   {
+    "item": "PR #287 生产部署",
+    "depends_on": "GPT/owner 对生产写入面的确认"
+   },
+   {
+    "item": "Deep skill 月度迭代",
+    "depends_on": "knowledge/results/skill-iteration/2026-11.json 已存在，本月跳过，无需裁决"
+   }
+  ]
+ },
+ "counts": {
+  "writes_performed": 5,
+  "merges_performed": 0,
+  "deploys_performed": 0
+ },
+ "skipped_monthly_skill_iteration": "2026-11 提案文件已存在（knowledge/results/skill-iteration/2026-11.json），按第六条跳过本月巡查",
+ "receipt_path": "knowledge/results/deep-superagent/daily-2026-11-18.json",
+ "email": {
+  "to": "ltzyz2181@gmail.com",
+  "from": "qingqizhu6502@agent.qq.com",
+  "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-18",
+  "message_id": "msg_c8j8jM0NralMWVA55ksfGXFDDPO66PX3v-konNoBW9j_0Q",
+  "queued_at_utc": "2026-11-17T22:53:34Z"
+ }
+}

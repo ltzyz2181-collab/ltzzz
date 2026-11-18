@@ -1,0 +1,82 @@
+{
+  "task_id": "DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03A",
+  "original_task_id": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
+  "card_sha256": "90f6830d66e0fb5a72a9a01e9ee0cda2e289e8d34845b2df5068f8dfd3106409",
+  "run_id": "44216037180",
+  "executor": "doubao",
+  "queue_dispatcher": "doubao",
+  "at": "2026-11-18T01:28:29.508Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "reservation": {
+    "verified": true,
+    "path": "knowledge/results/doubao-dispatch/DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03A.json",
+    "commit": "eb04bca4348e20cfec627c3b1a0d206e2112674d",
+    "sha256": "f5664422f1ed18bee53992aca4ed3286ebaac6e84474c7d7f52c9c6d012c631a",
+    "executor_source_commit": "154a6a0c75ec592e0465b9dfb0d72cd818297666"
+  },
+  "delivery_integrity": {
+    "status": "incomplete",
+    "reason": "provider_length"
+  },
+  "required_sections": [
+    "【逐项结论】",
+    "【风险汇总】",
+    "【无法核验】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "doubao-queue:DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03A",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261117-006",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "8862fb0fdc785c62995c22c24e56ec04e16298af7206ff5155bd0f1fd72710aa",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "19794523869135de230b4040618169916936d7ea22e351ab3de8d8c0827e4b32"
+  },
+  "model_source": "provider_response",
+  "status": "incomplete_or_unverified_proxy_output",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_doubao_call": true,
+  "model": "doubao-seed-2-1-pro-260915",
+  "generated_by_model": "doubao-seed-2-1-pro-260915",
+  "finish_reason": "length",
+  "tokens_used": 6001,
+  "request_id": null,
+  "actual_provider": null,
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "http": 200,
+  "completion_id": null,
+  "output": "【逐项结论】\n\n第1项 · MEDIUM · scripts/hire-phase1.mjs:743-821（verifyGateBlock / verifyReceipt），另见 L822-L841 · 复现方式：调用方自行构造一个 isPlainObject 的 receipt，设置 revision=PHASE1_REVISION、state='accepted'、paid=false、financial_execution=false、amount_usd=0，使 order 快照通过 validateOrderSnapshot，并令 receipt.order_sha256=hashObject(order)、各冗余字段与 order 一致、evidence 元数据合法；再构造 gate={id: order.acceptance_gate, ran:true, ok:true, kind:'order_acceptance', output_sha256:<HASH 合法串>, criteria: order.acceptance_criteria 逐项映射且每项 ok:true}，保证 classifyIntent([objective,role,acceptance_gate].join(' ')) 返回空数组，最后令 receipt_sha256=hashObject(去掉 receipt_sha256 字段后的 body)。仅凭本卡代码，verifyReceipt(receipt) 会走到 `return true`，verifyGateBlock 不会 fail。\n- 代码支持什么：\n  1. accepted 不是由 verifyReceipt/verifyGateBlock “执行真实验收”后决定，而是完全取自调用方传入的 `receipt.state`。这两个函数只做自洽性校验：state 必须属于 RECEIPT_STATES（集合定义未在本卡给出，属未核验），accepted 时要求 gate.ran===true、gate.ok===true、gate.kind==='order_acceptance'、gate.output_sha256 为 HASH 格式、gate.criteria 与 order.acceptance_criteria 等长且逐项 id 相同、ok===true。\n  2. 调用方可以同时伪造 receipt 与 gate 字段；代码中没有任何签名、外部执行回执、产出物实哈希回读或 gate 结果独立来源校验。`gate.output_sha256` 只校验字符串形状（HASH.test），未与 evidence[*].sha256 或磁盘实物哈希绑定。\n  3. verifyGateBlock 对“状态与闸结论不一致”覆盖了三类：accepted 但闸未跑/未过/类型非 order_acceptance/缺输出哈希/准则未全过；needs_owner_decision 但 gate.ran===true；refused 但 gate.ran===true && gate.ok===true。它能拦住这些字段层面的不一致。\n  4. verifyReceipt 还强制零资金不变量（paid/financial_execution 必须 false、amount_usd 必须 0）、order_sha256 与冗余字段一致、receipt_sha256 自哈希一致。\n- 只是推断、未验证：\n  - 无法从本卡确认正常生产路径中 gate 是否由不可被调用方篡改的执行器生成、receipt 是否另有签名/密封、ledger 写入权限是否限制为受管执行器；这些可能在未提供的主流程、测试或其他文件中存在，故不能断言“线上可被任意人伪造 accepted 并入账”。\n  - validateOrderSnapshot、classifyIntent、HASH、PHASE1_REVISION、RECEIPT_STATES、hashObject、canonicalJson、isPlainObject、fail 的具体实现未提供，绕过所需的具体字段取值（例如 acceptance_criteria 的最小合法形态、objective 如何避开 forbidden 分类）未核验。\n  - 一个边界点仅从片段推断：refused 且 gate.ran===true、gate.ok!==true 不会 fail；若语义上“闸跑过但失败”应对应 refused，这是自洽的，但若存在其他状态（RECEIPT_STATES 未知）则 gate 与 state 不交叉校验，不能确认是否为缺口。\n  - 风险等级定为 MEDIUM 而非 HIGH 的原因：在本卡可见范围内，任何能调用 verifyReceipt/appendReceipt 的一方都能自造自洽的 accepted receipt；但是否构成真实可利用的越权，取决于未提供的调用边界与凭证控制，无法据此单独定级 HIGH。\n\n第5项 · MEDIUM · scripts/hire-phase1.mjs:822-841（assertAppendOnly），关联 L1091-1147（appendReceipt） · 复现方式：\n  (a) 同一 receipt 对象/同一行字节重复 append：assertAppendOnly 先以 `idempotency_key` 精确相等找到 previous 项，再比较 order_sha256；若 state 与 reason 也相同，返回 `{duplicate:true}`，appendReceipt 据此 appended:false，不重复记账。\n  (b) 构造两个字节不同但语义相同的 receipt：保持 idempotency_key、order_sha256、state、reason 不变，仅改 `at`（新时间戳）或 evidence 元数据以外、不参与上述四项比较的字段，并重算 receipt_sha256——仍被判 duplicate，不重复入账（代码注释明确忽略 at/receipt_sha256）。\n  (c) 绕过尝试：换一个新的 idempotency_key，但保持 order_id 相同 → 被 `sameOrder` 分支拦截，非 accepted 报 `order_id_conflict`，已 accepted 报 `accepted_order_is_terminal`。\n  (d) 潜在绕过：保持同一 idempotency_key 与同一 order_sha256，但把 state 或 reason 改成不同值（例如已存在 refused，再提交 accepted，且 accepted 对应 gate 自洽）→ 不满足 duplicate 条件；若旧 state 不是 'accepted'，代码走到 `fail('idempotency_key_conflict')`，会被拦。但若同一 idempotency_key 下旧记录 state==='accepted'，任何不同 state/reason 都先撞 `accepted_order_is_terminal`。因此在“键”层面，换 state/reason 不能成功追加。\n- 代码支持什么：\n  1. 去重分两层键：第一键 `idempotency_key` 严格相等；命中后要求 `order_sha256` 相等，否则 idempotency_key_conflict；state 与 reason 同时相等才视为幂等重放（duplicate），state/reason 任一不同且旧记录非 accepted → idempotency_key_conflict，旧为 accepted → accepted_order_is_terminal。第二键 `order_id` 严格相等：新幂等键下同一 order 一律拒绝（accepted_order_is_terminal 或 order_id_conflict）。\n  2. “字节不同但语义相同”的重放（仅 at、receipt_sha256 不同）被显式当作 duplicate，注释与实现一致；appendReceipt 返回 appended:false 并回报账上已存 receipt_sha256",
+  "output_sha256": "4cc1dfde73a0b6d9d2a020c8e2d01bbf6e0ffa47063eb09e58cb578081db7aaa",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "actual_cloud_deployment": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-18T01:29:12.106Z"
+}

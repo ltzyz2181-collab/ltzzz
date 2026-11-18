@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-18T01:51:46.384Z",
+  "requested_at": "2026-11-18T01:51:17.829Z",
+  "responded_at": "2026-11-18T01:51:46.384Z",
+  "request_id": "20261118015118953878245U1haepuq",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "gpt",
+  "purpose": "generation",
+  "generation_output": true,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "model_tier": "gpt",
+  "model_class": "gpt",
+  "routing": {
+    "requested_model": "gpt-6.1-sol",
+    "served_model": "gpt-6.1-sol",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "ltzzz_proxy",
+  "boundary_exception": false,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 1400,
+  "batch": false,
+  "prompt": {
+    "chars": 7551,
+    "estimated_input_tokens": 5526,
+    "sha256": "3dda9f27b2d8d060ea0bdf9208023b67304281f8906155e097a99de1d9057436"
+  },
+  "http": 200,
+  "duration_ms": 28554,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 4625,
+    "prompt_tokens_billed": 4625,
+    "usage_source": "reported",
+    "completion_tokens": 1141,
+    "total_tokens": 5766
+  },
+  "cost_usd": 0.016065,
+  "balance_before_usd": 12.851486,
+  "balance_after_usd": 12.835421,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 28554,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 1347,
+    "preview": "Q1 | 采纳 | 仅采纳仓库内代码与测试层面的日常容错修复建议；单席位失败不应抹除其他真实产物，规划恢复不得改变原任务意图 | 截断可能改变任务语义，部分覆盖与复核不可用不得记为验收通过；恢复不得绕过预算或扩大席位权限 | 保留严格校验，仅从可解析结构回收合法任务；无法解析时单席位有界兜底，禁止重复派发；保留原任务编",
+    "text": "Q1 | 采纳 | 仅采纳仓库内代码与测试层面的日常容错修复建议；单席位失败不应抹除其他真实产物，规划恢复不得改变原任务意图 | 截断可能改变任务语义，部分覆盖与复核不可用不得记为验收通过；恢复不得绕过预算或扩大席位权限 | 保留严格校验，仅从可解析结构回收合法任务；无法解析时单席位有界兜底，禁止重复派发；保留原任务编号、脱敏审计证据及独立复核记录，缺覆盖或复核不可用须升级决策席；调用前核验全部成本门禁，本建议不授权部署\nQ2 | 补证据 | 双通道采集获批不等于无人值守定时运行获批；须先明确读取范围、仓库写入面及既有授权是否覆盖 schedule | 邮箱只读不代表全流程无写入；可能摄入私人邮件、重复处理或静默失败；若涉及生产部署、权限升级或 Secrets 变更，须 requires_gpt_final | 补定时时间与时区、授权依据、筛选及脱敏规则、结果写入范围、去重与并发控制；最小回退为禁用 schedule 并恢复手动触发、保留历史；失败须向既有授权通道告警并记录任务编号、阶段、错误码及最近成功时间，不含邮件正文或凭据\nQ3 | 采纳 | 三项均无可验证来源，应保持数值留空，展示“未测”并标记 unverified，不得填零或估算 | 账号权限过宽、资源口径不明或将凭据写入公开仓库会越界；配置 Secrets 或提升权限须 requires_gpt_final | Owner 仅需通过既有安全渠道提供限定资源的只读访问：YouTube 为指定频道后台统计读取授权及频道标识；RUM 为指定站点统计读取授权及资源标识；进账为指定账户只读流水授权或可验证脱敏对账单；另明确日期窗口、指标及币种口径，均不包含付款、签名或管理权限\nQ4 | 采纳 | 按所给快照，将今日资金、签名及放款零动作作为事实状态记录，不是待批准的例外，也不构成本席独立核验 | 不得把零动作记录解释为未来资金权限或交易授权 | 保持零动作并保留可回读记录；任何新增资金、付款、退款、转账、链上交易、钱包签名或五签 Safe 请求均属 L3，须 requires_gpt_final，五签仍不得自动化代签\nQ5 | 补证据 | 本地测试通过不能证明运行环境已更新或平台已接受；当前缺真实队列运行证据及部署回执 | 部署目标若属于生产服务，必须 requires_gpt_final；既有标准工作流授权不得被扩大解释 | 部署前补齐任务授权与非生产写入面证明、改动文件及差异、code_commit 与代码哈希、158 项及新增用例的实际测试日志、独立复核结论、回退版本、预算核验和 ops/deploy-receipts/ 前置回执；部署后回读标准工作流日志、平台返回及运行版本、同提交和哈希绑定的后置回执，以及绑定原任务编号的真实 run/attempt 证据，核对调用预算、HTTP 状态、模型与请求标识、输出哈希、恢复字段、部分覆盖、独立复核和终态；真实失败分支未触发时标未验证，不为取证重复计费，邮件回读未完成记 pending，平台接受须单独举证\nOVERALL | 以上仅为建议：先补齐 Q5 的部署前证据，再由既有授权执行席推进；Q2 暂不启用，三项未测与资金零动作保持不变 | Q5"
+  },
+  "key_fingerprint": null,
+  "failure": null,
+  "http_error": null
+}

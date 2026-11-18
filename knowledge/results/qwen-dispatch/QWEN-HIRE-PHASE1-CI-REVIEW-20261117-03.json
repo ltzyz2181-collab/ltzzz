@@ -1,0 +1,91 @@
+{
+  "task_id": "QWEN-HIRE-PHASE1-CI-REVIEW-20261117-03",
+  "original_task_id": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
+  "card_sha256": "f96b39200b22149cfa5fe6f366b5811325fc14f536789944fe2bae300def1d6e",
+  "run_id": "44063693379",
+  "executor": "qianwen",
+  "queue_dispatcher": "qianwen",
+  "at": "2026-11-17T10:19:39.406Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "reservation": {
+    "verified": true,
+    "path": "knowledge/results/qwen-dispatch/QWEN-HIRE-PHASE1-CI-REVIEW-20261117-03.json",
+    "commit": "69e654d7f360a7f34562c5e9b70289a8d68ba59a",
+    "sha256": "e9224006d7c1c8eb8470af3d29fe53975eaf7e34f00057bd5d19ea08e1a3edff",
+    "executor_source_commit": "31e2576ed4ff601c548397b9d8a0e417608a6d3c"
+  },
+  "delivery_integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "required_sections": [
+    "【核查结论】",
+    "【无法核验】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "qianwen-queue:QWEN-HIRE-PHASE1-CI-REVIEW-20261117-03",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261117-006",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "8862fb0fdc785c62995c22c24e56ec04e16298af7206ff5155bd0f1fd72710aa",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "68b323a45efd7763483f25f9d0803a7a3007b06d25e433b1042833c884d609d0"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_qwen_call": true,
+  "model": "qwen-max",
+  "generated_by_model": "qwen-max",
+  "attribution_note": "generation by qwen-max via qianwen queue",
+  "finish_reason": "stop",
+  "tokens_used": 3426,
+  "request_id": "1e98f094-07e0-9d17-92ef-96f90c4cb0f9",
+  "actual_provider": "aliyun_dashscope",
+  "actual_model": "qwen-max",
+  "http": 200,
+  "completion_id": "chatcmpl-1e98f094-07e0-9d17-92ef-96f90c4cb0f9",
+  "prompt_tokens": 2600,
+  "completion_tokens": 826,
+  "reasoning_tokens": null,
+  "upstream_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "request_options": {
+    "enable_thinking": false,
+    "stream": false,
+    "max_tokens": 2048
+  },
+  "output": "【核查结论】\n1. CI 是否跑在最新修订 commit（0d253c86），还是跑在旧 commit 上？  \n   **PASS**：根据提供的信息，artifact 中记录的 commit 与 PR head 的 commit 相同，均为 0d253c8631526b70a9983cc1be902c6f179e4f8b。这表明 CI 跑在了最新的修订 commit 上。\n\n2. 是否真实执行 hire-phase1.test.mjs（而不是被跳过、todo、改名伪覆盖、或失败被吞）？证据强度如何？  \n   **PASS_WITH_CAVEAT**：CI run 的输出显示所有测试通过，且没有失败或跳过的项目。然而，没有直接的日志或更详细的输出来证明测试确实按预期运行，而非被绕过或模拟成功。尽管如此，基于现有信息，可以认为测试是被执行了。\n\n3. E2E 是否真实执行，还是被 mock 掉？  \n   **PASS_WITH_CAVEAT**：账本中记录的 E2E 测试项均显示 amount_usd=0 和 paid=false，表明未涉及实际财务操作。虽然这符合预期（如果测试设计为不进行真金白银交易），但无法从这些数据判断是否真的执行了完整的 E2E 流程而不仅仅是部分环节或模拟。\n\n4. artifact 是否对应正确 commit？若 commit/base_commit/merge_commit 三条同时存在且 CI 有断言，是否足以排除「artifact 来自别的分支」？  \n   **PASS**：artifact 记录的 commit 与 PR head 匹配，并且 CI 断言 artifact.commit 必须等于被测试的 head，这有效地确保了 artifact 是针对正确的 commit 生成的，从而排除了来自其他分支的可能性。\n\n5. amount_usd=0、paid=false、financial_execution=false 是否在账本每一行成立？2 行是否覆盖全部 E2E 路径？  \n   **PASS**：给定的数据点支持该声明，即每条记录都显示 amount_usd=0 和 paid=false。但是，关于这两行是否代表了所有的 E2E 路径，则需要额外的信息来确认；目前仅基于此不能做出绝对判断。\n\n6. 「behind=0 / base=main」是否说明分支与最新 main 同步？还有什么同步风险（例如 PR 期间 main 再前进）？  \n   **PASS_WITH_CAVEAT**：当前状态指示 PR 分支与 main 分支同步 (behind=0)，这意味着在 CI 运行时它们是一致的。然而，存在 PR 期间 main 分支继续前进的风险，这将导致合并冲突或新的差异，除非采取措施保持同步。\n\n7. Windows 本机 46/46 连跑 10 次能否替代 CI 证据？  \n   **UNVERIFIABLE**：本地环境下的测试结果并不能完全代替 CI 环境中的测试结果，因为两者可能有不同的配置和依赖条件。此外，缺乏具体的日志或证据来验证这些本地测试是如何执行的。\n\n8. 以上事实里，哪些是你无法核验的？  \n   - 具体 CI 日志内容及测试步骤细节\n   - E2E 测试是否完整执行，包括但不限于其内部逻辑实现\n   - 所有本地测试的确切执行过程及其环境设置\n   - 在 CI 运行之后是否有新的提交加入到 PR 中\n\n【无法核验】\n- 具体 CI 日志内容及测试步骤细节\n- E2E 测试是否完整执行，包括但不限于其内部逻辑实现\n- 所有本地测试的确切执行过程及其环境设置\n- 在 CI 运行之后是否有新的提交加入到 PR 中\n\n【交付结束】",
+  "output_sha256": "a4a56e4319f925a10fbce5c46e3a37772c3dea61f06237149b9ccace8f74a4b0",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-17T10:20:04.485Z"
+}

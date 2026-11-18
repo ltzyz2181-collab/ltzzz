@@ -1,0 +1,83 @@
+{
+  "task_id": "DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2B",
+  "original_task_id": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
+  "card_sha256": "b29f7c975f686436d919f3f8a05dbf9a2df1ed4669949677e515614a9ce1592e",
+  "run_id": "44216611001",
+  "executor": "doubao",
+  "queue_dispatcher": "doubao",
+  "at": "2026-11-18T01:33:06.163Z",
+  "paid": false,
+  "tx_hash": null,
+  "financial_execution": false,
+  "reservation": {
+    "verified": true,
+    "path": "knowledge/results/doubao-dispatch/DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2B.json",
+    "commit": "b40a52421c583f77fcbb01f0e01a0683c9d12580",
+    "sha256": "845cd8fad8e5e5b8371ebe0cdee2c0e1ab6c82b836e1e07fe5b2994d456a33fd",
+    "executor_source_commit": "a104b4613d0dea8f474bc124b01c84daf7719f18"
+  },
+  "delivery_integrity": {
+    "status": "structurally_complete",
+    "reason": "normal_stop_and_completion_marker",
+    "accepted": false
+  },
+  "required_sections": [
+    "【逐项结论】",
+    "【风险汇总】",
+    "【无法核验】"
+  ],
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "doubao-queue:DOUBAO-HIRE-PHASE1-SECURITY-REVIEW-20261117-03R2B",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261117-006",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "8862fb0fdc785c62995c22c24e56ec04e16298af7206ff5155bd0f1fd72710aa",
+      "invalid_entries": 0
+    },
+    "prompt_sha256": "817b572c636dbbdcc852fc7f06da764c659a5f36081bdd439163f6b615022872"
+  },
+  "model_source": "provider_response",
+  "status": "draft_delivered_pending_independent_review",
+  "model_calls": 1,
+  "model_calls_definition": "generation_requests_attempted_not_billing_proof",
+  "native_doubao_call": true,
+  "model": "doubao-seed-2-1-pro-260915",
+  "generated_by_model": "doubao-seed-2-1-pro-260915",
+  "finish_reason": "stop",
+  "tokens_used": 7963,
+  "request_id": null,
+  "actual_provider": null,
+  "actual_model": "doubao-seed-2-1-pro-260915",
+  "http": 200,
+  "completion_id": null,
+  "output": "【逐项结论】\n第4项 · MEDIUM · hire-phase1.mjs:943-1051 · 两进程可同时持有各自sidecar后重读同一陈旧锁并均unlink；dev/ino/token能防替换误删，但unlink非按inode绑定，胜者随后建锁、败者finally删自己sidecar不删新锁，主风险是回收竞态与PID复用误判。\n第6项 · MEDIUM · hire-phase1.mjs:1118-1139 · 异常时ftruncate(sizeBefore)+fsync可清半条；但进程SIGKILL/断电发生在部分write后无回滚，且r+从当前size写依赖锁与fstat，若外部截断或同文件并发可损坏。\n第7项 · NONE · hire-phase1.mjs:1154-1211,1303 · CLI把原始ledgerPath交给appendReceipt；模块也强制resolveLedgerPath，已拦绝对路径、反斜杠、空字节、../、规范化差异、软链及realpath越界。\n第8项 · HIGH · hire-phase1.mjs:112-142,420-433 · “转 账”“pay pal”“with draw funds”“wallet”夹零宽外不可见符可绕过；中文“代付/扣款/划拨/出钱”，英文“payout/disburse/reimburse/settle payment”未覆盖，属真实意图缺口。\n\n【风险汇总】\n1. 陈旧锁回收仅靠sidecar串行创建，但删除锁与后续O_EXCL之间仍有多进程竞态，需原子rename或打开句柄链接校验。\n2. 崩溃断电无法执行截断回滚，需原子临时文件rename或记录预写日志，启动时修复半截尾行。\n3. 资金意图正则过窄，需按语义扩展中英支付/出金词及字符插入、全角符号、同形字归一化测试。\n\n【无法核验】\n1. deliverable-audit.mjs、phase1-smoke.mjs及测试文件未提供，无法核验调用面与回归。\n2. readLockState/newLockToken/isProcessAlive/DEFAULT_IO实现未提供，锁状态解析与进程存活判断未核验。\n3. 未提供仓库工具与commit，全文哈希、PR差异及实际运行结果均未核验。\n\n【交付结束】",
+  "output_sha256": "abd25cc5fe010d6603b24d31c9cbc40cf242960c3587d2b7e8ea9bc6026d4ce2",
+  "error": null,
+  "accepted": false,
+  "deployed": false,
+  "actual_cloud_deployment": false,
+  "independent_review": "pending_other_provider",
+  "finished_at": "2026-11-18T01:33:30.760Z"
+}

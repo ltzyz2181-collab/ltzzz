@@ -21,15 +21,16 @@ jobs:
     needs: verify
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --test scripts/tests/qwen-dispatch.test.mjs
-      - name: Process at most one pending Qwen card (native DashScope, existing Secret)
+      - name: Process up to 3 pending Qwen cards (native DashScope, existing Secret)
         env:
+          DISPATCH_MAX_CARDS: ${{ vars.DISPATCH_MAX_CARDS || '3' }}
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY || secrets.QWEN_API_KEY }}
           DASHSCOPE_MODEL: ${{ vars.DASHSCOPE_MODEL || vars.QWEN_MODEL || 'qwen-max' }}
           DASHSCOPE_BASE_URL: ${{ vars.DASHSCOPE_BASE_URL || vars.QWEN_BASE_URL }}
