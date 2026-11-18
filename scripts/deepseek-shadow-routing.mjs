@@ -21,11 +21,10 @@ export const ROUTES = Object.freeze([
 
 export const ASK_TARGETS = Object.freeze(['gpt', 'owner', 'evidence']);
 
-export const PROMPT_MODES = Object.freeze(['card', 'worker']);
+export const PROMPT_MODES = Object.freeze(['card', 'worker', 'planner']);
 
-// The daily card mixes a planner contract (return JSON) and a worker contract
-// (return ROUTE lines). A worker-scoped run appends an explicit override so the
-// shadow measures the routing step that actually failed, not the planner step.
+export const PLANNER_SEATS = Object.freeze(['qianwen', 'grok', 'doubao']);
+
 export const WORKER_OVERRIDE = [
   '',
   '---',
@@ -36,11 +35,22 @@ export const WORKER_OVERRIDE = [
   'No markdown, no code fence, no prose.',
 ].join('\n');
 
+export const PLANNER_OVERRIDE = [
+  '',
+  '---',
+  'SHADOW OVERRIDE: You are the planner seat for this run.',
+  'Ignore the worker FORMAT block below. Return ONLY a JSON object:',
+  '{"summary":"<=100 chars","tasks":[{"seat":"qianwen|grok|doubao","task":"<=900 chars"}],"needs_gpt_decision":false,"reason":null}',
+  'No markdown fence, no prose outside the JSON, no extra keys.',
+].join('\n');
+
 export function buildPrompt(cardPrompt, mode = 'card') {
   if (!PROMPT_MODES.includes(mode)) throw new Error('invalid_prompt_mode');
-  return mode === 'worker' ? String(cardPrompt || '') + '\n' + WORKER_OVERRIDE : String(cardPrompt || '');
+  const base = String(cardPrompt || '');
+  if (mode === 'worker') return base + '\n' + WORKER_OVERRIDE;
+  if (mode === 'planner') return base + '\n' + PLANNER_OVERRIDE;
+  return base;
 }
-
 export const REF_PATTERNS = Object.freeze([
   /^- ([0-9a-f]{16}) age=/,
   /^- (B\d{1,3})\b/,
@@ -119,7 +129,65 @@ export function parseRouteOutput(text, refs) {
   };
 }
 
-export function evaluateShadow(text, refs, {requireAllFive = false} = {}) {
+export function parsePlannerOutput(text, {seats = PLANNER_SEATS, maxTasks = 3, maxTaskChars = 900} = {}) {
+  const base = {ok: false, error: null, summary: null, tasks: [], seats_seen: [], needs_gpt_decision: null};
+  const raw = String(text || '').trim();
+  if (!raw) return {...base, error: 'empty'};
+  const fence = String.fromCharCode(96).repeat(3);
+  if (raw.startsWith(fence)) return {...base, error: 'markdown_fence'};
+  if (!raw.startsWith('{') || !raw.endsWith('}')) return {...base, error: 'prose_outside_json'};
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return {...base, error: 'invalid_json'};
+  }
+  const fail = (error, extra = {}) => ({
+    ...base,
+    error,
+    summary: typeof data?.summary === 'string' ? data.summary : null,
+    needs_gpt_decision: typeof data?.needs_gpt_decision === 'boolean' ? data.needs_gpt_decision : null,
+    ...extra,
+  });
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return fail('not_object');
+  if (typeof data.summary !== 'string' || !data.summary.trim()) return fail('summary_missing');
+  if (data.summary.length > 100) return fail('summary_too_long');
+  if (!Array.isArray(data.tasks)) return fail('tasks_missing');
+  if (data.tasks.length === 0) return fail('tasks_empty');
+  if (data.tasks.length > maxTasks) return fail('too_many_tasks', {task_count: data.tasks.length});
+  const tasks = [];
+  for (const [i, task] of data.tasks.entries()) {
+    if (!task || typeof task !== 'object') return fail('task_not_object', {task_index: i});
+    if (typeof task.seat !== 'string' || !task.seat.trim()) return fail('task_seat_missing', {task_index: i});
+    if (!seats.includes(task.seat)) return fail('invalid_seat', {task_index: i, seat: task.seat});
+    if (typeof task.task !== 'string' || !task.task.trim()) return fail('task_text_missing', {task_index: i});
+    if (task.task.length > maxTaskChars) return fail('task_too_long', {task_index: i, task_chars: task.task.length});
+    tasks.push({seat: task.seat, task: task.task});
+  }
+  if (typeof data.needs_gpt_decision !== 'boolean') return fail('needs_gpt_decision_not_boolean');
+  if (data.needs_gpt_decision && (typeof data.reason !== 'string' || !data.reason.trim())) return fail('reason_required');
+  const seatsSeen = [...new Set(tasks.map(t => t.seat))];
+  if (seatsSeen.length !== tasks.length) return fail('duplicate_seat');
+  return {ok: true, error: null, summary: data.summary, tasks, seats_seen: seatsSeen, needs_gpt_decision: data.needs_gpt_decision, reason: data.reason ?? null};
+}
+
+export function evaluateShadow(text, refs, {requireAllFive = false, mode = 'worker'} = {}) {
+  if (mode === 'planner') {
+    const planner = parsePlannerOutput(text);
+    return {
+      ...planner,
+      route_lines: 0,
+      refs_total: refs.length,
+      covered_refs: 0,
+      missing_refs: [],
+      duplicate_refs: [],
+      invalid_lines: [],
+      extra_lines: [],
+      distinct_routes: [],
+      all_five_present: false,
+      pass: planner.ok && planner.tasks.length >= 1 && planner.tasks.length <= 3,
+    };
+  }
   const parsed = parseRouteOutput(text, refs);
   const ok = parsed.output_nonempty
     && parsed.missing_refs.length === 0
@@ -130,7 +198,6 @@ export function evaluateShadow(text, refs, {requireAllFive = false} = {}) {
     && (!requireAllFive || parsed.distinct_routes.length === 5);
   return {...parsed, all_five_present: parsed.distinct_routes.length === 5, pass: ok};
 }
-
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -184,7 +251,7 @@ export async function runShadow({
       output_chars: output.length,
       output_sha256: sha256(output),
       output,
-      evaluation: evaluateShadow(output, refs, {requireAllFive}),
+      evaluation: evaluateShadow(output, refs, {requireAllFive, mode: promptMode === 'planner' ? 'planner' : 'worker'}),
     });
   }
 
@@ -231,7 +298,7 @@ export async function runShadow({
 
 const USAGE = [
   'Usage:',
-  '  node scripts/deepseek-shadow-routing.mjs [--card <path>] [--models a,b] [--max-tokens 1024] [--prompt-mode card|worker] [--thinking enabled|disabled] [--require-all-five] [--out <path>] [--json]',
+  '  node scripts/deepseek-shadow-routing.mjs [--card <path>] [--models a,b] [--max-tokens 1024] [--prompt-mode card|worker|planner] [--thinking enabled|disabled] [--require-all-five] [--out <path>] [--json]',
   '  node scripts/deepseek-shadow-routing.mjs --help',
   '',
   'Runs the same card prompt on deepseek-v4-pro and deepseek-flash, then checks',

@@ -1,0 +1,91 @@
+{
+  "schema": "ltzzz.deepseek.shadow-routing.v1",
+  "at": "2026-11-18T02:45:44.369Z",
+  "card": "fixtures/deepseek-shadow/card-group-b.json",
+  "card_sha256": "88a981e9b840025e731aa47be2cd6f3a5b9240e93505991c6aa1825be6a21531",
+  "card_task_id": "SHADOW-GROUP-B-20261118",
+  "refs_total": 6,
+  "models": [
+    "deepseek-v4-pro",
+    "deepseek-flash"
+  ],
+  "max_tokens": 2048,
+  "thinking": "disabled",
+  "prompt_mode": "worker",
+  "prompt_sha256": "ab3789e0a90089ffe2fd2a90d8bd51508541f0d5885efb2e11b4f610cea3021d",
+  "require_all_five": false,
+  "per_model": [
+    {
+      "model": "deepseek-v4-pro",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 1065,
+      "output_chars": 1186,
+      "output_sha256": "37b44f2484bb4467df3e1913c88fc99f992dde4150516e20012a9eeaa02966b5",
+      "output": "ROUTE | B1 | blocked_evidence_needed | 188 open warning cases not rechecked in current window; repo evidence insufficient to determine disposition or action.\nASK | B1 | evidence | Need current recheck status and disposition for 152 unrechecked cases to determine if coordination or escalation required.\nROUTE | B2 | coordinator_close_with_receipt | Three failed workflow runs identified with timestamps and names; repo evidence confirms failures.\nROUTE | B3 | needs_owner_decision | Two open PRs require review and merge decision; no evidence of approval or rejection.\nASK | B3 | owner | Need owner decision on merging PR #398 and #287 given safety and fail-closed changes.\nROUTE | B4 | coordinator_close_with_receipt | HEAD on main is a79fbe3fa as observed after fetch; repo state consistent.\nROUTE | B5 | blocked_evidence_needed | 27 unknown emails and 11 open; cannot assess without de-identified labels or disposition evidence.\nASK | B5 | evidence | Need de-identified status and age for 27 unknown emails to determine if action required.\nROUTE | B6 | coordinator_close_with_receipt | No production deploy, merge, or money action performed today by this seat; repo history confirms.",
+      "evaluation": {
+        "route_lines": 6,
+        "refs_total": 6,
+        "covered_refs": 6,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [
+          "blocked_evidence_needed",
+          "coordinator_close_with_receipt",
+          "needs_owner_decision"
+        ],
+        "route_vocabulary_complete": true,
+        "ask_expected": 3,
+        "output_nonempty": true,
+        "all_five_present": false,
+        "pass": true
+      }
+    },
+    {
+      "model": "deepseek-flash",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 1023,
+      "output_chars": 860,
+      "output_sha256": "52598c54f3a90d185f2cc738616913b99dd9059d99a93ccf29b750662d120045",
+      "output": "ROUTE | B1 | needs_gpt_decision | 152 of 188 unrechecked in window; seat backlog orphaned, route needs adjudication\nASK | B1 | gpt | Decide recheck window and disposition for 152 unrechecked original tasks\nROUTE | B2 | blocked_evidence_needed | Failed run logs not provided; cause unknown for all 3 runs\nASK | B2 | evidence | Provide failed-run logs and error output for the 3 runs\nROUTE | B3 | coordinator_close_with_receipt | 2 open PRs need review; no merge action taken today\nROUTE | B4 | coordinator_close_with_receipt | HEAD recorded as repo evidence only; no write action\nROUTE | B5 | needs_owner_decision | 27 unknown emails, oldest open 8d; bodies excluded from scope\nASK | B5 | owner | Decide handling for 27 unknown-status emails outside de-identified scope\nROUTE | B6 | coordinator_close_with_receipt | No deploy, merge or money action; limits held",
+      "evaluation": {
+        "route_lines": 6,
+        "refs_total": 6,
+        "covered_refs": 6,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [
+          "needs_gpt_decision",
+          "blocked_evidence_needed",
+          "coordinator_close_with_receipt",
+          "needs_owner_decision"
+        ],
+        "route_vocabulary_complete": true,
+        "ask_expected": 3,
+        "output_nonempty": true,
+        "all_five_present": false,
+        "pass": true
+      }
+    }
+  ],
+  "verdict": {
+    "pro_pass": true,
+    "flash_pass": true,
+    "flash_regression": false,
+    "recommendation": "keep_pro_as_main_line; flash remains limited to search/fetch"
+  },
+  "notes": [
+    "Shadow only; no routing change, no merge, no deployment.",
+    "deepseek-flash is the official flash channel; the 1017 update is a version notice, not a new model id in /v1/models.",
+    "A failed call is recorded once and never retried blindly."
+  ]
+}

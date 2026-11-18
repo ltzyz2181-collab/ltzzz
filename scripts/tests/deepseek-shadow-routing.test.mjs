@@ -6,6 +6,8 @@ import path from 'node:path';
 import {
   ROUTES,
   REF_PATTERNS,
+  PLANNER_SEATS,
+  parsePlannerOutput,
   PROMPT_MODES,
   WORKER_OVERRIDE,
   buildPrompt,
@@ -299,14 +301,14 @@ test('runShadow fails closed without a card, refs or api key', async () => {
   }
 });
 test('buildPrompt keeps the card prompt intact and appends a worker override', () => {
-  assert.deepEqual([...PROMPT_MODES], ['card', 'worker']);
+  assert.deepEqual([...PROMPT_MODES], ['card', 'worker', 'planner']);
   assert.equal(buildPrompt('hello', 'card'), 'hello');
   assert.equal(buildPrompt('hello'), 'hello');
   const worker = buildPrompt('hello', 'worker');
   assert.ok(worker.startsWith('hello\n'));
   assert.ok(worker.includes(WORKER_OVERRIDE));
   assert.match(worker, /SHADOW OVERRIDE: You are the worker seat/);
-  assert.throws(() => buildPrompt('hello', 'planner'), /invalid_prompt_mode/);
+  assert.throws(() => buildPrompt('hello', 'reviewer'), /invalid_prompt_mode/);
   assert.equal(buildPrompt(undefined, 'card'), '');
 });
 
@@ -337,7 +339,7 @@ test('runShadow worker mode sends the override and records the prompt mode', asy
       cardPath: cardFile,
       call: fakeCall,
       apiKey: 'test-key',
-      promptMode: 'planner',
+      promptMode: 'reviewer',
     });
     assert.equal(bad.status, 'invalid_prompt_mode');
     assert.equal(bad.ok, false);
@@ -362,4 +364,72 @@ test('extractRefs also picks up B-labelled repo items in order', () => {
   assert.equal(REF_PATTERNS.length, 2);
   assert.deepEqual(extractRefs('- B1 status=open'), ['B1']);
   assert.deepEqual(extractRefs('- Bytecode note'), []);
+});
+
+const PLANNER_OK = JSON.stringify({
+  summary: 'route mail and repo items to three seats',
+  tasks: [
+    {seat: 'qianwen', task: 'handle GROUP A refs'},
+    {seat: 'grok', task: 'handle GROUP B items'},
+    {seat: 'doubao', task: 'handle GROUP C refs'},
+  ],
+  needs_gpt_decision: false,
+  reason: null,
+});
+
+test('parsePlannerOutput accepts the documented planner JSON', () => {
+  assert.deepEqual([...PLANNER_SEATS], ['qianwen', 'grok', 'doubao']);
+  const parsed = parsePlannerOutput(PLANNER_OK);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.error, null);
+  assert.equal(parsed.tasks.length, 3);
+  assert.deepEqual(parsed.seats_seen, ['qianwen', 'grok', 'doubao']);
+  assert.equal(parsed.needs_gpt_decision, false);
+});
+
+test('parsePlannerOutput rejects fences, prose and malformed JSON', () => {
+  const fence = String.fromCharCode(96).repeat(3);
+  assert.equal(parsePlannerOutput(fence + 'json\n' + PLANNER_OK + '\n' + fence).error, 'markdown_fence');
+  assert.equal(parsePlannerOutput('Here you go: ' + PLANNER_OK).error, 'prose_outside_json');
+  assert.equal(parsePlannerOutput('{not json}').error, 'invalid_json');
+  assert.equal(parsePlannerOutput('').error, 'empty');
+});
+
+test('parsePlannerOutput enforces summary, task count and seat vocabulary', () => {
+  const mk = (patch) => JSON.stringify({...JSON.parse(PLANNER_OK), ...patch});
+  assert.equal(parsePlannerOutput(mk({summary: ''})).error, 'summary_missing');
+  assert.equal(parsePlannerOutput(mk({summary: 'x'.repeat(101)})).error, 'summary_too_long');
+  assert.equal(parsePlannerOutput(mk({tasks: []})).error, 'tasks_empty');
+  assert.equal(parsePlannerOutput(mk({tasks: [{seat: 'qianwen', task: 'x'}, {seat: 'qianwen', task: 'y'}]})).error, 'duplicate_seat');
+  assert.equal(parsePlannerOutput(mk({tasks: [1, 2, 3, 4].map((_, i) => ({seat: ['qianwen','grok','doubao','qianwen'][i], task: 'x'}))})).error, 'too_many_tasks');
+  assert.equal(parsePlannerOutput(mk({tasks: [{seat: 'claude', task: 'x'}]})).error, 'invalid_seat');
+  assert.equal(parsePlannerOutput(mk({tasks: [{seat: 'qianwen', task: 'x'.repeat(901)}]})).error, 'task_too_long');
+  assert.equal(parsePlannerOutput(mk({tasks: [{seat: 'qianwen'}]})).error, 'task_text_missing');
+  assert.equal(parsePlannerOutput(mk({needs_gpt_decision: 'no'})).error, 'needs_gpt_decision_not_boolean');
+  assert.equal(parsePlannerOutput(mk({needs_gpt_decision: true, reason: ''})).error, 'reason_required');
+  const needs = parsePlannerOutput(mk({needs_gpt_decision: true, reason: 'owner value missing'}));
+  assert.equal(needs.ok, true);
+  assert.equal(needs.needs_gpt_decision, true);
+});
+
+test('evaluateShadow in planner mode judges the JSON contract, not ROUTE lines', () => {
+  const good = evaluateShadow(PLANNER_OK, REFS, {mode: 'planner'});
+  assert.equal(good.pass, true);
+  assert.equal(good.route_lines, 0);
+  assert.equal(good.refs_total, REFS.length);
+  assert.equal(good.all_five_present, false);
+
+  const workerText = evaluateShadow(GOOD, REFS, {mode: 'planner'});
+  assert.equal(workerText.pass, false);
+  assert.equal(workerText.error, 'prose_outside_json');
+
+  const oneTask = evaluateShadow(JSON.stringify({summary: 's', tasks: [{seat: 'grok', task: 't'}], needs_gpt_decision: false, reason: null}), REFS, {mode: 'planner'});
+  assert.equal(oneTask.pass, true);
+});
+
+test('buildPrompt planner mode appends the planner override only', () => {
+  const planner = buildPrompt('GROUP C:', 'planner');
+  assert.ok(planner.includes('SHADOW OVERRIDE: You are the planner seat'));
+  assert.ok(!planner.includes('SHADOW OVERRIDE: You are the worker seat'));
+  assert.ok(planner.indexOf('planner seat') > planner.indexOf('GROUP C:'));
 });

@@ -83,7 +83,7 @@ function artifactOf({role, provider, model, text}) {
 }
 
 async function callProvider(callAgent, apiKey, prompt) {
-  const r = await callAgent({apiKey, prompt, maxTokens: 4000});
+  const r = await callAgent({apiKey, prompt, maxTokens: 4000, thinking: 'enabled'});
   if (!r || r.ok !== true || typeof r.output !== 'string' || !r.output.trim()) {
     const detail = [r && r.status, r && (r.error || r.reason || r.network_error_code), r && r.http]
       .filter(Boolean).join('|').slice(0, 200);

@@ -21,7 +21,7 @@ async function invokeProvider(agent,prompt,maxTokens,options={}){
    if(!r.ok)return {status:'api_error',output:null};const d=await r.json();res={ok:d.ltzzz_receipt?d.ltzzz_receipt.generation_verified===true:true,status:d.ltzzz_receipt?.status,output:d.choices?.[0]?.message?.content,finish_reason:d.choices?.[0]?.finish_reason,tokens_used:d.usage?.total_tokens,model:d.model,model_source:d.ltzzz_receipt?.model_source||(d.model?'provider_response':null),execution:d.ltzzz_receipt||null};
   }else{
    if(!p?.module||!process.env[p.secret])return {status:'not_configured',output:null};
-   res=await (await import(path.resolve(p.module))).callAgent({apiKey:process.env[p.secret],prompt,maxTokens});
+   res=await (await import(path.resolve(p.module))).callAgent({apiKey:process.env[p.secret],prompt,maxTokens,thinking:p.thinking||'enabled'});
   }
   const output=res.ok?String(res.output||'').trim():'';
   return {execution:res.execution||null,model_source:res.model_source||null,executed_by:res.executed_by||({deepseek:'DeepSeek',doubao:'Doubao',grok:'Grok',qianwen_proxy:'Qianwen'}[agent]||agent),logical_agent:agent,delegated:res.delegated===true||agent==='gpt',status:res.finish_reason==='length'?'truncated_output':res.ok&&output?'submitted':res.status||'empty_output',output:output||null,tokens_used:res.tokens_used||0,model:res.model||null};

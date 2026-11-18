@@ -1,0 +1,124 @@
+{
+  "schema": "ltzzz.deepseek.shadow-routing.v1",
+  "at": "2026-11-18T02:46:11.326Z",
+  "card": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261117-DAILY-1.json",
+  "card_sha256": "1b9353461051ad0de9c7f271c289c409d3575b035e102a8331f071a7ab99aee9",
+  "card_task_id": "DEEP-SUPERAGENT-20261117-DAILY-1",
+  "refs_total": 25,
+  "models": [
+    "deepseek-v4-pro",
+    "deepseek-flash"
+  ],
+  "max_tokens": 2048,
+  "thinking": "disabled",
+  "prompt_mode": "planner",
+  "prompt_sha256": "c74793cc4e92eb6271ca5c78dd333a65ea4a533b74b4ecde8dcb41b0dda175d0",
+  "require_all_five": false,
+  "per_model": [
+    {
+      "model": "deepseek-v4-pro",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 2034,
+      "output_chars": 426,
+      "output_sha256": "8a353187cf98d33bf2d7f304153a706642979e982de9f5253786413fb246acea",
+      "output": "{\"summary\":\"按新影子覆盖：仅规划器输出JSON，不执行worker格式\",\"tasks\":[{\"seat\":\"qianwen\",\"task\":\"处理GROUP A全部11个邮件ref，按规则1-6逐条路由，禁止涉及金额、签名、钱包、凭证、生产写入等ASK线；未知状态不得猜测，必须保持unknown。\"},{\"seat\":\"grok\",\"task\":\"处理GROUP B全部6个仓库观察项，按规则1-6逐条路由，repo证据only；涉及部署、合并、资金操作等需owner/evidence路由，不得自行关闭。\"},{\"seat\":\"doubao\",\"task\":\"处理GROUP C全部8个状态unknown邮件ref，按规则1-6逐条路由；未知保持unknown，不得替代其他席位结果或虚构回执；涉及钱包、签名、生产写入等必须ASK owner。\"}],\"needs_gpt_decision\":false,\"reason\":null}",
+      "evaluation": {
+        "ok": true,
+        "error": null,
+        "summary": "按新影子覆盖：仅规划器输出JSON，不执行worker格式",
+        "tasks": [
+          {
+            "seat": "qianwen",
+            "task": "处理GROUP A全部11个邮件ref，按规则1-6逐条路由，禁止涉及金额、签名、钱包、凭证、生产写入等ASK线；未知状态不得猜测，必须保持unknown。"
+          },
+          {
+            "seat": "grok",
+            "task": "处理GROUP B全部6个仓库观察项，按规则1-6逐条路由，repo证据only；涉及部署、合并、资金操作等需owner/evidence路由，不得自行关闭。"
+          },
+          {
+            "seat": "doubao",
+            "task": "处理GROUP C全部8个状态unknown邮件ref，按规则1-6逐条路由；未知保持unknown，不得替代其他席位结果或虚构回执；涉及钱包、签名、生产写入等必须ASK owner。"
+          }
+        ],
+        "seats_seen": [
+          "qianwen",
+          "grok",
+          "doubao"
+        ],
+        "needs_gpt_decision": false,
+        "reason": null,
+        "route_lines": 0,
+        "refs_total": 25,
+        "covered_refs": 0,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [],
+        "all_five_present": false,
+        "pass": true
+      }
+    },
+    {
+      "model": "deepseek-flash",
+      "provider_status": "success",
+      "ok": true,
+      "request_id": null,
+      "finish_reason": "stop",
+      "tokens_used": 2428,
+      "output_chars": 2111,
+      "output_sha256": "b4ac598dccbe9a27f4a35a8a183ea45dae12e74e515b812e9de910ae13363289",
+      "output": "{\"summary\":\"Triage 25 refs: 11 Group A to qianwen, 6 Group B to grok, 8 Group C to doubao.\",\"tasks\":[{\"seat\":\"qianwen\",\"task\":\"Route each of the 11 GROUP A refs to exactly one route from: coordinator_close_with_receipt | needs_gpt_decision | needs_owner_decision | blocked_evidence_needed | deploy_confirm_only. Emit one line per ref: ROUTE | <ref> | <route> | <reason <=25 words>. For any ref routed needs_gpt_decision, needs_owner_decision or blocked_evidence_needed, add ASK | <ref> | gpt|owner|evidence | <what is needed <=30 words>. Keep each line <=120 chars. Rules: relay is never independent review; no self-attested provider/model; status labels only, no mail bodies, amounts or credentials; unknown stays unknown; money/signing/wallet/disbursement/production-writes/credentials are ASK lines only, never a model route (rule 6 is not a routing reason). Omit any ref outside GROUP A rather than guessing.\"},{\"seat\":\"grok\",\"task\":\"For each of the 6 GROUP B items (B1-B6) emit one line: ROUTE | <ref> | <route> | <reason <=25 words>, where ref is the B-label (B1..B6) and route is one of: coordinator_close_with_receipt | needs_gpt_decision | needs_owner_decision | blocked_evidence_needed | deploy_confirm_only. Add ASK | <ref> | gpt|owner|evidence | <what is needed <=30 words> only for refs routed to needs_gpt_decision, needs_owner_decision or blocked_evidence_needed. Repo evidence only; no production deploy, no merge, no money action claimed. Keep lines <=120 chars. No summary or metadata lines.\"},{\"seat\":\"doubao\",\"task\":\"Route each of the 8 GROUP C refs (status=unknown) to exactly one route from: coordinator_close_with_receipt | needs_gpt_decision | needs_owner_decision | blocked_evidence_needed | deploy_confirm_only. Emit ROUTE | <ref> | <route> | <reason <=25 words> per ref; add ASK | <ref> | gpt|owner|evidence | <what is needed <=30 words> for needs_gpt_decision, needs_owner_decision or blocked_evidence_needed. Unknown stays unknown; never invent a receipt; no mail bodies or credentials. Keep lines <=120 chars. Omit refs outside GROUP C.\"}],\"needs_gpt_decision\":false,\"reason\":null}",
+      "evaluation": {
+        "ok": true,
+        "error": null,
+        "summary": "Triage 25 refs: 11 Group A to qianwen, 6 Group B to grok, 8 Group C to doubao.",
+        "tasks": [
+          {
+            "seat": "qianwen",
+            "task": "Route each of the 11 GROUP A refs to exactly one route from: coordinator_close_with_receipt | needs_gpt_decision | needs_owner_decision | blocked_evidence_needed | deploy_confirm_only. Emit one line per ref: ROUTE | <ref> | <route> | <reason <=25 words>. For any ref routed needs_gpt_decision, needs_owner_decision or blocked_evidence_needed, add ASK | <ref> | gpt|owner|evidence | <what is needed <=30 words>. Keep each line <=120 chars. Rules: relay is never independent review; no self-attested provider/model; status labels only, no mail bodies, amounts or credentials; unknown stays unknown; money/signing/wallet/disbursement/production-writes/credentials are ASK lines only, never a model route (rule 6 is not a routing reason). Omit any ref outside GROUP A rather than guessing."
+          },
+          {
+            "seat": "grok",
+            "task": "For each of the 6 GROUP B items (B1-B6) emit one line: ROUTE | <ref> | <route> | <reason <=25 words>, where ref is the B-label (B1..B6) and route is one of: coordinator_close_with_receipt | needs_gpt_decision | needs_owner_decision | blocked_evidence_needed | deploy_confirm_only. Add ASK | <ref> | gpt|owner|evidence | <what is needed <=30 words> only for refs routed to needs_gpt_decision, needs_owner_decision or blocked_evidence_needed. Repo evidence only; no production deploy, no merge, no money action claimed. Keep lines <=120 chars. No summary or metadata lines."
+          },
+          {
+            "seat": "doubao",
+            "task": "Route each of the 8 GROUP C refs (status=unknown) to exactly one route from: coordinator_close_with_receipt | needs_gpt_decision | needs_owner_decision | blocked_evidence_needed | deploy_confirm_only. Emit ROUTE | <ref> | <route> | <reason <=25 words> per ref; add ASK | <ref> | gpt|owner|evidence | <what is needed <=30 words> for needs_gpt_decision, needs_owner_decision or blocked_evidence_needed. Unknown stays unknown; never invent a receipt; no mail bodies or credentials. Keep lines <=120 chars. Omit refs outside GROUP C."
+          }
+        ],
+        "seats_seen": [
+          "qianwen",
+          "grok",
+          "doubao"
+        ],
+        "needs_gpt_decision": false,
+        "reason": null,
+        "route_lines": 0,
+        "refs_total": 25,
+        "covered_refs": 0,
+        "missing_refs": [],
+        "duplicate_refs": [],
+        "invalid_lines": [],
+        "extra_lines": [],
+        "distinct_routes": [],
+        "all_five_present": false,
+        "pass": true
+      }
+    }
+  ],
+  "verdict": {
+    "pro_pass": true,
+    "flash_pass": true,
+    "flash_regression": false,
+    "recommendation": "keep_pro_as_main_line; flash remains limited to search/fetch"
+  },
+  "notes": [
+    "Shadow only; no routing change, no merge, no deployment.",
+    "deepseek-flash is the official flash channel; the 1017 update is a version notice, not a new model id in /v1/models.",
+    "A failed call is recorded once and never retried blindly."
+  ]
+}
