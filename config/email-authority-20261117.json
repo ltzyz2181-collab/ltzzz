@@ -36,7 +36,18 @@
     "forbidden_content": ["密码", "应用专用码", "私钥", "Secrets", "客户敏感资料"],
     "impersonation_forbidden": true,
     "runner_judgement_is_not_gpt_ruling": true,
+    "relay_verdict_is_not_approval": true,
+    "relay_verdict_may_not_claim": ["merged", "deployed", "platform_accepted"],
     "send_failure_must_not_block_independent_tasks": true
+  },
+  "relay_adjudication": {
+    "decision_id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
+    "verdict_is_not_approval": true,
+    "may_not_claim": ["merged", "deployed", "platform_accepted"],
+    "escalation_recipient": "gpt_decision_seat",
+    "owner_item_by_item_approval": false,
+    "five_signature_route": "owner_multisig",
+    "note": "中转裁决只产出有界记录；需要决策时进 GPT 决策队列，不转成 Owner 逐项审批邮件。"
   },
   "gmail_intake": {
     "transport": "经授权的 IMAP/OAuth 通道",
@@ -101,10 +112,10 @@
   },
   "seats": {
     "claude": "主开发席：Gmail Phase 2、三层去重、按需正文读取、历史裁决修复",
-    "doubao": "只读独立审查席：邮件隐私、去重、幂等、自动发送、凭据保护、失败处理",
+    "doubao": "执行与部署席：按派单执行修复和部署；在独立审查任务中仍只作只读审查，不审自己的产出",
     "qianwen": "复核裁决台账、任务状态、CI 测试与每日汇总一致性",
     "deploy_seat": "每日收发的定时触发、并发锁、失败告警与回执闭环；先提 PR，不绕过门禁",
-    "gpt": "最终裁决席：冲突裁决、独立代码复核、部署授权边界、阶段验收"
+    "gpt": "最终裁决席与 GPT 人工席位：冲突裁决、独立代码复核、部署授权边界、阶段验收；资金事项由其自主决策执行（五签除外），不再转 Owner 逐项审批"
   },
   "stage_gates": [
     {"stage": 1, "goal": "真实 IMAP 登录与采集回执闭环"},

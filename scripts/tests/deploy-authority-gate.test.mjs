@@ -33,6 +33,38 @@ test('未知动作必须 fail-closed', () => {
   assert.equal(decide({action: 'publish'}).allowed, false);
   assert.equal(decide({action: 'publish'}).reason, 'unknown_action');
 });
+
+test('缺失 family 必须 fail-closed，不得绕过排除族判定', () => {
+  const a = loadAuthority();
+  for (const family of [undefined, null, '', '   ', 42]) {
+    const r = decide({action: 'deploy', family, authority: a});
+    assert.equal(r.allowed, false, `family=${String(family)} 不应被自动部署`);
+    assert.equal(r.reason, 'missing_family');
+  }
+});
+
+test('未知 family 必须 fail-closed，不能因不在排除表而放行', () => {
+  const a = loadAuthority();
+  const r = decide({action: 'deploy', family: 'brand_new_family', authority: a});
+  assert.equal(r.allowed, false);
+  assert.equal(r.reason, 'unknown_family:brand_new_family');
+  assert.equal(decide({action: 'merge', family: 'brand_new_family', authority: a}).allowed, false);
+  assert.equal(decide({action: 'rollback', family: 'brand_new_family', authority: a}).allowed, false);
+});
+
+test('授权对象缺少 deploy_scope 时必须 fail-closed', () => {
+  const a = loadAuthority();
+  const {deploy_scope, ...withoutScope} = a;
+  assert.equal(deploy_scope.length > 0, true);
+  assert.equal(decide({action: 'deploy', family: 'cloudflare_workers', authority: withoutScope}).reason, 'deploy_scope_missing');
+});
+
+test('deploy_scope 中登记的每个族仍可自动部署（回归）', () => {
+  const a = loadAuthority();
+  for (const fam of a.deploy_scope) {
+    assert.equal(decide({action: 'deploy', family: fam, authority: a}).allowed, true, fam);
+  }
+});
 // 2026-11-18 owner 重申：工程类部署不再等 GPT PASS；资金族仍硬拒。
 test('owner 2026-11-18 reaffirmation keeps engineering deploys ungated while funds stay excluded', async()=>{
   const {decide,loadAuthority}=await import('../lib/deploy-authority.mjs');

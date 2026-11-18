@@ -48,6 +48,45 @@ export function analyzePagesArtifacts(rawArtifacts, {mode = 'pre-upload'} = {}) 
   return {ok: true, action: 'deploy', reason: 'exactly_one_pages_artifact', count: 1, artifact_ids: ids(pages)};
 }
 
+// 可见性竞态：upload-artifact 成功返回后，artifacts 列表接口仍可能短暂返回 0 份
+// （GitHub 侧最终一致性）。pre-deploy 只在这种"零份"形态下做有界轮询；
+// 多份是真实契约破坏，必须立即失败，绝不靠等待让它自己消失。
+export const PAGES_ARTIFACT_VISIBILITY_MAX_ATTEMPTS = 6;
+export const PAGES_ARTIFACT_VISIBILITY_DELAY_MS = 5000;
+
+export function isVisibilityRetryable({mode, result, attempt, maxAttempts}) {
+  if (mode !== 'pre-deploy') return false;
+  if (!result || result.ok !== false || result.reason !== 'no_pages_artifact') return false;
+  return attempt < maxAttempts;
+}
+
+export async function pollPagesArtifacts({
+  mode,
+  fetchOnce,
+  maxAttempts = PAGES_ARTIFACT_VISIBILITY_MAX_ATTEMPTS,
+  delayMs = PAGES_ARTIFACT_VISIBILITY_DELAY_MS,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  onRetry = null,
+  analyze = analyzePagesArtifacts,
+} = {}) {
+  if (typeof fetchOnce !== 'function') throw Error('pages_artifact_fetch_missing');
+  const attempts = Math.max(1, Math.trunc(maxAttempts));
+  let result = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const artifacts = await fetchOnce(attempt);
+    result = analyze(artifacts, {mode});
+    if (!isVisibilityRetryable({mode, result, attempt, maxAttempts: attempts})) {
+      return {...result, attempts: attempt, visibility_retry: attempt > 1};
+    }
+    if (typeof onRetry === 'function') onRetry({attempt, nextAttempt: attempt + 1, delayMs, result});
+    await sleep(delayMs);
+  }
+
+  // 循环只会因 maxAttempts<=0 的上方钳制而不可能走到这里，保留兜底仍按失败处理。
+  return {...(result || {ok: false, action: 'fail', reason: 'no_pages_artifact', count: 0}), attempts, visibility_retry: true};
+}
+
 export function renderDiagnostics(result, context = {}) {
   const lines = [
     `pages_artifact_contract: ${result.ok ? 'ok' : 'violated'}`,
@@ -56,6 +95,7 @@ export function renderDiagnostics(result, context = {}) {
   if (context.repository) lines.push(`repository=${context.repository}`);
   if (context.run_id) lines.push(`run_id=${context.run_id}`);
   if (context.run_attempt) lines.push(`run_attempt=${context.run_attempt}`);
+  if (result.attempts > 1) lines.push(`visibility_poll_attempts=${result.attempts}`);
   if (result.artifact_ids?.length) lines.push(`artifact_ids=${result.artifact_ids.join(',')}`);
   if (!result.ok && result.reason === 'multiple_pages_artifacts') {
     lines.push(

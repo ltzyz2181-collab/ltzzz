@@ -7,6 +7,28 @@
     "config/owner-authority-20261105.json",
     "config/deploy-automation-authority-20261117.json"
   ],
+  "decision_id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
+  "decided_at": "2026-11-17",
+  "allowed_scope_summary": "日常、低风险、可逆、内部仓库范围内的任务，由中转 GPT 作有界裁决。",
+  "forbidden_families": [
+    "funds",
+    "refunds",
+    "signing",
+    "wallet_operations",
+    "keys_or_credentials",
+    "permission_changes",
+    "production_writes",
+    "external_irreversible_actions"
+  ],
+  "relay_verdict_limits": {
+    "relay_attested": false,
+    "execution_authority": false,
+    "may_not_claim": ["merged", "deployed", "platform_accepted"],
+    "escalation_recipient": "gpt_decision_seat",
+    "five_signature_route": "owner_multisig",
+    "owner_item_by_item_approval": false
+  },
+  "execution_seat": "doubao continues to execute and deploy; a relay verdict is not an execution or deployment record",
   "funds_family_short_circuited": true,
   "scopes": [
     {
