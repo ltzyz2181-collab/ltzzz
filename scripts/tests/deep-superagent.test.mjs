@@ -110,8 +110,11 @@ test('full durable native chain runs Deep plan, three real-bindable workers and 
   assert.equal(f.calls.find(v=>v.seat==='kimi').body.max_tokens,16384);
   const coordination=f.calls.filter(v=>v.seat==='deepseek');assert.equal(coordination.length,2);
   for(const call of coordination){assert.deepEqual(call.body.thinking,{type:'disabled'});assert.equal(call.body.max_tokens,8192);}
-  for(const call of f.calls.filter(v=>v.seat!=='deepseek'))assert.equal(Object.hasOwn(call.body,'thinking'),false);
-  for(const receipt of job.receipts.filter(v=>v.seat==='deepseek'))assert.equal(receipt.request_options.thinking_type,'disabled');
+  // 豆包分流席与 DeepSeek 一样显式关思考（2026-11-18 双 504 复盘）；
+  // qianwen/kimi/grok 的代理不透传 thinking，请求体里不得出现该字段。
+  for(const call of f.calls.filter(v=>!['deepseek','doubao'].includes(v.seat)))assert.equal(Object.hasOwn(call.body,'thinking'),false);
+  for(const call of f.calls.filter(v=>v.seat==='doubao'))assert.deepEqual(call.body.thinking,{type:'disabled'});
+  for(const receipt of job.receipts.filter(v=>v.seat==='deepseek'||v.seat==='doubao'))assert.equal(receipt.request_options.thinking_type,'disabled');
   assert.equal(job.accepted,false);assert.equal(job.platform_accepted,false);assert.equal(job.paid,false);assert.equal(job.tx_hash,null);
   assert.equal(job.reflection.status,'context_injected_not_compliance_verified');assert.equal(job.weights_trained,false);
   const duplicate=await (await f.request()).json();assert.equal(duplicate.duplicate,true);assert.equal(duplicate.execution_id,job.execution_id);assert.equal(duplicate.model_calls,5);
@@ -308,4 +311,16 @@ test('verified relay seat generates a third-party receipt with bounded budget; r
   assert.deepEqual(seen.map(b=>b.model),['gpt-6.1-sol']);assert.deepEqual(f.calls.map(v=>v.seat),['deepseek','deepseek']);
   const status=await (await f.request('/v1/status','GET')).json();assert.equal(status.relay_seats.gpt,'relay_generation_enabled');assert.ok(status.available_worker_seats.includes('gpt'));
  }finally{globalThis.fetch=realFetch;}
+});
+test('doubao seat honours the DOUBAO_SEAT_MODEL override and records it in the receipt',async()=>{
+  const f=fixture();f.env.DOUBAO_SEAT_MODEL='doubao-seed-2-1-lite-260915';
+  await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const call=f.calls.find(v=>v.seat==='doubao');
+  assert.equal(call.body.model,'doubao-seed-2-1-lite-260915');
+  assert.deepEqual(call.body.thinking,{type:'disabled'});
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  const receipt=job.receipts.find(v=>v.seat==='doubao');
+  assert.equal(receipt.request_options.seat_model,'doubao-seed-2-1-lite-260915');
+  // 未配覆盖的席位不得凭空多带 model 字段，代理的全局默认模型不被本改动改掉。
+  for(const other of f.calls.filter(v=>v.seat!=='doubao'))assert.equal(Object.hasOwn(other.body,'model'),false);
 });

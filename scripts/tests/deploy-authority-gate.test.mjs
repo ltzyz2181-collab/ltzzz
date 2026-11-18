@@ -33,3 +33,14 @@ test('未知动作必须 fail-closed', () => {
   assert.equal(decide({action: 'publish'}).allowed, false);
   assert.equal(decide({action: 'publish'}).reason, 'unknown_action');
 });
+// 2026-11-18 owner 重申：工程类部署不再等 GPT PASS；资金族仍硬拒。
+test('owner 2026-11-18 reaffirmation keeps engineering deploys ungated while funds stay excluded', async()=>{
+  const {decide,loadAuthority}=await import('../lib/deploy-authority.mjs');
+  const a=loadAuthority();
+  assert.equal(a.owner_reaffirmed_at,'2026-11-18');
+  assert.equal(a.gpt_pass_required_before_engineering_deploy,false);
+  assert.equal(a.decision_review_is_not_a_deploy_gate_for_engineering,true);
+  assert.equal(decide({action:'deploy',family:'cloudflare_workers',authority:a}).allowed,true);
+  assert.equal(decide({action:'merge',family:'github_actions_pipeline',authority:a}).reason,'owner_authorized_auto_merge');
+  for(const fam of ['funding_moves','signing','wallet_or_safe_ops','five_signature_safe'])assert.equal(decide({action:'deploy',family:fam,authority:a}).allowed,false);
+});

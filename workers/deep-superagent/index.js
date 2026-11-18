@@ -9,6 +9,18 @@ import {ADJUDICATION_REVISION,fundFamilyHit,fundShortCircuit,adjudicationPrompt,
 export const REVISION='ltzzz.deep-superagent.v1';
 export const CONTENT_GUARD_REVISION='executor-metadata-declarations-v1';
 const SEATS={deepseek:{binding:'DEEPSEEK',provider:'deepseek'},doubao:{binding:'DOUBAO',provider:'volcengine_ark'},qianwen:{binding:'QIANWEN',provider:'aliyun_dashscope'},kimi:{binding:'KIMI',provider:'moonshot'},grok:{binding:'GROK',provider:'xai'}};
+// Seats whose reasoning chain must be switched off for bounded shard work: a
+// reasoning chain does not fit the 90s upstream window these proxies enforce.
+const THINKING_OFF_SEATS=new Set(['deepseek','doubao']);
+// Per-seat model override, read from the Worker variable of the same name.
+// Unset means "keep the proxy's own default model"; the proxy stays the owner
+// of its global model setting, so the daily lane is not silently re-pointed.
+const SEAT_MODEL_VARS={doubao:'DOUBAO_SEAT_MODEL',kimi:'KIMI_SEAT_MODEL'};
+export function seatModelOverride(seat,env){
+ const v=SEAT_MODEL_VARS[seat];if(!v)return null;
+ const m=env?.[v];return typeof m==='string'&&m.trim()?m.trim():null;
+}
+const SEAT_MODEL_OVERRIDE=seatModelOverride;
 // Third-party relay execution seats. The station key never leaves the LTZZZ
 // relay proxy Worker: this Worker holds only a scoped gateway token and calls
 // the proxy, never api.apisrouter.com directly. Both seats stay closed until the
@@ -370,11 +382,16 @@ export class DeepTask {
     const spec=SEATS[seat],binding=this.env[spec?.binding];if(!binding?.fetch||!this.env.LTZZZ_AGENT_TOKEN)throw fail('native_binding_not_configured',503);
     if(job.receipts.some(r=>r.stage===stage))throw fail('provider_attempt_already_reserved',409);
     const maxTokens=outputTokenLimit(job.task_id,seat);
-    const thinking=seat==='deepseek'?{type:'disabled'}:undefined;
-    const receipt={stage,seat,actual_provider:spec.provider,actual_model:null,task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,thinking_type:thinking?.type??null,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
+    // 2026-11-18（豆包/Kimi 双 504 复盘）：思考型默认档在 90s 上游窗口内出不来，
+    // 分流席要的是短路由行，不需要推理链。豆包与 DeepSeek 一样显式关思考；
+    // Kimi 的代理不透传 thinking 字段，只允许用 KIMI_SEAT_MODEL 换到非思考档。
+    const thinking=THINKING_OFF_SEATS.has(seat)?{type:'disabled'}:undefined;
+    // 席位专用模型覆盖：不动代理全局默认（日课仍用原档），只给 Deep 分流席换快档。
+    const seatModel=SEAT_MODEL_OVERRIDE(seat,this.env);
+    const receipt={stage,seat,actual_provider:spec.provider,actual_model:null,task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,thinking_type:thinking?.type??null,seat_model:seatModel,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
     job.receipts.push(receipt);job.model_calls++;await this.state.storage.put('job',job);
     try{
-      const response=await binding.fetch(new Request('https://proxy.internal/',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+this.env.LTZZZ_AGENT_TOKEN},body:JSON.stringify({task_id:job.task_id,messages,max_tokens:maxTokens,...(thinking?{thinking}:{})}),signal:AbortSignal.timeout(240000)}));
+      const response=await binding.fetch(new Request('https://proxy.internal/',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+this.env.LTZZZ_AGENT_TOKEN},body:JSON.stringify({task_id:job.task_id,messages,max_tokens:maxTokens,...(thinking?{thinking}:{}),...(seatModel?{model:seatModel}:{})}),signal:AbortSignal.timeout(240000)}));
       const data=await response.json();const r=data?.ltzzz_receipt,text=data?.choices?.[0]?.message?.content;
       receipt.upstream_http=response.status;receipt.completed_at=now();
       if(r&&typeof r==='object')for(const k of ['actual_model','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','truncated','output_present','tokens_used','reasoning_tokens','completion_tokens'])receipt[k]=r[k]??null;

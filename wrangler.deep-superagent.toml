@@ -13,6 +13,11 @@ RELAY_PROXY_URL = "https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1"
 RELAY_ACCEPTANCE_VERIFIED = "1"
 RELAY_MODEL_GPT = "gpt-6.1-sol"
 RELAY_MODEL_CLAUDE = "claude-sonnet-4-6"
+# 2026-11-18：豆包/Kimi 分流席连续 504（上游 90s 窗口内出不来）。
+# 只给 Deep 分流席换已验证可用的快档模型，代理与日课自己的 DOUBAO_MODEL
+# 全局默认不动；本变量留空即回到代理默认档。
+DOUBAO_SEAT_MODEL = "doubao-seed-2-1-lite-260915"
+KIMI_SEAT_MODEL = "kimi-k3.1-pro-highspeed"
 
 # No model keys, financial bindings, cron or access to either existing ledger.
 # SUPERAGENT_SOURCE_COMMIT is injected by the trusted-main deployment executor.

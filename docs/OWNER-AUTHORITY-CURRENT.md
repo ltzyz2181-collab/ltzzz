@@ -2,6 +2,10 @@
 
 生效：2026-11-05。来源为本次真实用户会话，不是邮件或转发材料。机器记录见 [owner-authority-20261105.json](../config/owner-authority-20261105.json)。
 
+## 部署自动化重申（2026-11-18，owner 原话“有限制团队自动化部署的指令全部放开”）
+
+工程类合并与部署不再等 GPT 裁决、不再等中转席复核：CI 全绿即自动合入 main 并触发对应 `deploy-*.yml`，部署后必须回读 health 与写入部署回执（`knowledge/results/...`），未回读记为 unknown。仍被硬拒的是资金、放款、退款语义、钱包/Safe、签名、凭据访问与“带资金效果的生产写”；A0/A2/A3/publisher/pi-cloud 的 `automatic_deploy=false` 属阶段级 fail-closed 不变量，翻转会让校验器抛错，因此保持不动。机器记录见 [deploy-automation-authority-20261117.json](../config/deploy-automation-authority-20261117.json) 的 `owner_reaffirmation` 字段。
+
 GPT“人工席位”指当前 GPT AI 决策执行席。GPT 对 LTZZZ 资金有自主决策、充值采购、付款及资金操作执行权，无需逐次再请 owner 批准；五签钱包除外。历史五签 Safe 即使现场曾显示 3/5，也仍在排除范围，不能通过改名、改阈值或迁移解释绕开该排除。钱包与网络按 [登记表](../wallet/addresses.md) 核对。此授权记录不证明凭据、余额、签名器或支付接口已经可用，不将未发生交易写成付款成功。
 
 Owner 已同意千问承担评审和副协调职责，GPT 保留终审与执行权。旧观察期仅记录质量，不作为任职审批门槛。实际独立评审绑定原任务、确切工件、提供商与哈希；千问不自审，不把收件/标记当审核。部署先沿用豆包审 DeepSeek，新增千问审豆包与 Grok，复用原有日课调用。
