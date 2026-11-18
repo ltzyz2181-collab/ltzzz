@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T02:45:00.000Z",
+  "updated_at": "2026-11-18T02:50:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -236,10 +236,11 @@
         "commit 10617ffc12dac2450544401f77621a65fa959565（16 文件）",
         "ops/deploy-receipts/DR-20261117-wallet-p1-usdc-ops-failloud-dispatch.json",
         "fixtures/relay-seat/ruling-wallet-deepseek-20261117.txt",
-        "CI 44221316763 / 44221316724 / 44221643053 / 44221339282"
+        "CI 44221316763 / 44221316724 / 44221643053 / 44221339282",
+        "knowledge/results/relay-seat/calls/20261118T023640Z-gpt-gpt-6.1-sol-42737a0b.json"
       ],
-      "updated_at": "2026-11-18T02:45:00.000Z",
-      "note": "无真实资金、无签名、无五签 Safe；balance-view 只读。"
+      "updated_at": "2026-11-18T02:50:00.000Z",
+      "note": "无真实资金、无签名、无五签 Safe；balance-view 只读。 中转 advice_only 已回（14 项），不可当裁决：A-1 CONDITIONAL / A-2 NEEDS_REVISION / B-3 NEEDS_REVISION / C-2 REQUIRES_OWNER_VALUE。"
     },
     {
       "id": "DEEPSEEK-LAYERED-INTEGRATION",
@@ -252,10 +253,11 @@
         "docs/2026-11-17-DeepSeek分层接入与影子路由测试.md",
         "knowledge/results/deepseek-shadow/shadow-20261118T022740Z.json（pro 8/25, flash 25/25）",
         "knowledge/results/deepseek-shadow/shadow-20261118T022922Z.json（thinking=enabled 空输出）",
-        "config/ai-providers.json providers.deepseek.tiers"
+        "config/ai-providers.json providers.deepseek.tiers",
+        "knowledge/results/relay-seat/calls/20261118T023640Z-gpt-gpt-6.1-sol-42737a0b.json"
       ],
-      "updated_at": "2026-11-18T02:45:00.000Z",
-      "note": "未改 default_model、未接生产路由链路、无定时调用；10 次调用约 4.8 万 tokens，未对账。"
+      "updated_at": "2026-11-18T02:50:00.000Z",
+      "note": "未改 default_model、未接生产路由链路、无定时调用；10 次调用约 4.8 万 tokens，未对账。 中转 advice_only 已回（14 项），不可当裁决：A-1 CONDITIONAL / A-2 NEEDS_REVISION / B-3 NEEDS_REVISION / C-2 REQUIRES_OWNER_VALUE。"
     },
     {
       "id": "DEEPSEEK-ROUTING-SPLIT",
@@ -269,6 +271,33 @@
       ],
       "updated_at": "2026-11-18T02:45:00.000Z",
       "note": "单样本结论需替换；只做测量，不切换任何默认模型。"
+    },
+    {
+      "id": "WALLET-OPS-NEGATIVE-DRILL",
+      "title": "wallet-ops 失败即红的隔离负向演练（A-2）",
+      "state": "ready",
+      "next_owner": "deploy_seat",
+      "next_action": "在隔离副本注入失败/超时/缺回执三种情况，验证 job 判红；不碰生产工作流",
+      "evidence": [
+        "scripts/wallet-ops-receipt.mjs",
+        "scripts/tests/wallet-ops-receipt.test.mjs",
+        "knowledge/results/relay-seat/calls/20261118T023640Z-gpt-gpt-6.1-sol-42737a0b.json"
+      ],
+      "updated_at": "2026-11-18T02:50:00.000Z",
+      "note": "中转建议标 NEEDS_REVISION：run 44221339282 只证明成功路径。"
+    },
+    {
+      "id": "DEEPSEEK-CALLSITE-AUDIT",
+      "title": "call-deepseek 调用点 thinking 显式化审计（C-1）",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "列出全部 call-deepseek 调用点并标注期望 thinking；缺参即拒绝，不静默改默认",
+      "evidence": [
+        "scripts/call-deepseek.mjs",
+        "knowledge/results/relay-seat/calls/20261118T023640Z-gpt-gpt-6.1-sol-42737a0b.json"
+      ],
+      "updated_at": "2026-11-18T02:50:00.000Z",
+      "note": "中转建议：不宜全局静默切换默认值。"
     }
   ]
 }
