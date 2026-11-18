@@ -143,6 +143,27 @@ test('tampered adjudication evidence resolves nothing; unrelated cases stay open
  assert.ok(r.warnings.some(w=>w.case_id===other));
 }));
 
+test('a recorded adjudication is re-checked every run and reverts to open once its evidence changes',()=>fixture(root=>{
+ const {taskId,caseId,ansFile,rp}=closedAnsWithOldWarning(root);
+ const built=buildAdjudication({root,caseId,taskId,evidence:[ansFile,rp],reason:'原任务审核阶段已由独立审核回执补齐；本裁决只解决该历史 warning，不宣称生产完成。',reviewedAt:'2026-10-23T12:00:00Z'});
+ write(root,built.path,built.record);
+ const first=runDispatchOversight({root,now:'2026-11-01T15:00:00Z',lookback:1});
+ assert.deepEqual(first.adjudicated_cases,[caseId]);
+ const second=runDispatchOversight({root,now:'2026-11-02T15:00:00Z',lookback:1});
+ assert.deepEqual(second.adjudicated_cases,[]);
+ assert.deepEqual(second.adjudication_revalidated,[caseId]);
+ assert.equal(second.warnings.some(w=>w.case_id===caseId),false);
+ fs.appendFileSync(path.join(root,rp),' ');
+ const third=runDispatchOversight({root,now:'2026-11-03T15:00:00Z',lookback:1});
+ assert.deepEqual(third.adjudication_revalidated,[]);
+ assert.deepEqual(third.reverted_adjudications,[caseId]);
+ assert.ok(third.warnings.some(w=>w.case_id===caseId));
+ const row=JSON.parse(fs.readFileSync(path.join(root,OVERSIGHT_ROOT,'warnings.json'))).cases[caseId];
+ assert.equal(row.state,'open');
+ assert.equal(row.reverted_reason,'adjudication_evidence_no_longer_valid');
+ assert.equal(row.adjudication_file,undefined);
+}));
+
 test('adjudication refuses an unresolved historic phase, a foreign task id, or a trivial reason',()=>fixture(root=>{
  board(root,{claim:false});
  const taskId='DAILY-2026-10-22-deepseek',issue='claim_missing',caseId=sha(taskId+'\0'+issue).slice(0,24);
