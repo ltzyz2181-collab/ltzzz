@@ -3,7 +3,12 @@
   "receipt_id": "DEEP-504-AND-DEPLOY-AUTHORITY-20261118",
   "task_origin": "真实用户会话（owner）：先处理豆包 504 换通道/换模型；有限制团队自动化部署的指令全部放开；看 deep 分流与团队部署实况并处理改进项",
   "produced_at_utc": "2026-11-18T03:05:00Z",
-  "executor": {"logical_seat": "main_agent", "client": "doubao_work", "env": "vm /home/user/ltzzz", "actual_provider": "not_applicable_for_repo_ops"},
+  "executor": {
+    "logical_seat": "main_agent",
+    "client": "doubao_work",
+    "env": "vm /home/user/ltzzz",
+    "actual_provider": "not_applicable_for_repo_ops"
+  },
   "source_commit": "df4aea317 (main, 探针脚本)；504 修复提交 fa6d4b05caa179c035d53cb7c28b37b5fa075f3b",
   "sections": {
     "done": [
@@ -40,6 +45,11 @@
           "GPT 18 项裁决中 Phase1 仍未执行完的部分按裁决顺序属 GPT 裁决面；relay GPT 授权与运行时不一致、PR #398 五项阻断均在待办",
           "inbox 最新 8 封全部 is_read=true，无未读裁决；未出现新 GPT 裁决"
         ]
+      },
+      {
+        "item": "豆包探针实测未成行（如实记录）",
+        "evidence": "run 44226456050 patchgate-doubao-probe 在 1 秒内失败 A2_Doubao_probe_failed_no_automatic_retry，DOUBAO_MODEL 环境为空、无 doubao-result.json 产物",
+        "conclusion": "该探针依赖 CI 侧豆包密钥，当前不可作换档后的 live 证据；真实 200 待下一次 Deep 队列自然验证"
       }
     ],
     "awaiting_decision": {
@@ -73,5 +83,13 @@
   "financial_execution": false,
   "production_signing": false,
   "paid": false,
-  "notes": "本次不触碰资金、签名、钱包、退款语义；部署回读以 CI 日志 source_commit 为准，未把 health 通过写成生成已验证。"
+  "notes": "本次不触碰资金、签名、钱包、退款语义；部署回读以 CI 日志 source_commit 为准，未把 health 通过写成生成已验证。",
+  "notification": {
+    "channel": "agent_mail",
+    "from": "qingqizhu6502@agent.qq.com",
+    "to": "ltzyz2181@gmail.com",
+    "subject": "[LTZZZ][回执] 2026-11-18 豆包504修复已部署 + 工程类部署限制放开",
+    "message_id": "msg_3xkP1ym0W96He8wR2B_pKnLnY0qdH8wb2qhOP_YqbP6eTQ",
+    "readback": "sent 目录回读存在"
+  }
 }
