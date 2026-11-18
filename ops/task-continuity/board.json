@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-17T11:00:00Z",
+  "updated_at": "2026-11-18T01:55:51.795Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -61,7 +61,7 @@
         "scripts/run-qwen-dispatch.mjs",
         "scripts/run-doubao-dispatch.mjs"
       ],
-      "updated_at": "2026-11-17T11:00:00Z"
+      "updated_at": "2026-11-18T01:55:51.795Z"
     },
     {
       "id": "ORDER-DELIVER-FN",
@@ -156,14 +156,28 @@
     {
       "id": "TASK-CONTINUITY-BOARD",
       "title": "立项连续性看板（本文件 + 超期告警）",
-      "state": "in_progress",
-      "next_owner": "deploy_seat",
-      "next_action": "本次先落看板与 CI；下一轮把席位交接契约写进 dispatch 模板",
+      "state": "done",
       "evidence": [
         "scripts/task-continuity.mjs",
-        ".github/workflows/task-continuity.yml"
+        "scripts/tests/task-continuity.test.mjs",
+        "ops/task-continuity/board.json",
+        ".github/workflows/task-continuity.yml",
+        ".github/workflows/wallet-p0-checks.yml",
+        "commit d52b67205d0b94eba5e77412b7b3f80163f46ca6"
       ],
-      "updated_at": "2026-11-17T11:00:00Z"
+      "updated_at": "2026-11-18T01:55:51.795Z"
+    },
+    {
+      "id": "TASK-HANDOFF-CONTRACT",
+      "title": "席位交接契约：结束前必须写 next_action/next_owner",
+      "state": "ready",
+      "next_owner": "deploy_seat",
+      "next_action": "把 next_action/next_owner/unblock_condition 写进派单卡模板与各工作流收尾步骤，让回执写完就等于状态已推进",
+      "evidence": [
+        "docs/2026-11-17-立项连续性与停滞根因.md",
+        "ops/task-continuity/board.json"
+      ],
+      "updated_at": "2026-11-18T01:55:51.795Z"
     }
   ]
 }
