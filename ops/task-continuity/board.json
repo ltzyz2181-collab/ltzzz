@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T02:50:00.000Z",
+  "updated_at": "2026-11-18T03:15:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -262,42 +262,55 @@
     {
       "id": "DEEPSEEK-ROUTING-SPLIT",
       "title": "把 planner 与 worker 拆成两次调用并用 3 张卡复测（影子，不改生产）",
-      "state": "ready",
-      "next_owner": "claude",
-      "next_action": "拆成独立 planner / worker 两次调用，跑 3 张不同卡，核对 ROUTE 覆盖与空输出",
+      "state": "in_review",
+      "next_owner": "gpt",
+      "next_action": "复核三卡复测：pro 仅在三席位卡自限、单席位卡与 flash 均全过；决定是否拆生产卡",
       "evidence": [
         "docs/2026-11-17-DeepSeek分层接入与影子路由测试.md §5 F1/F3/F4",
-        "scripts/deepseek-shadow-routing.mjs（--prompt-mode worker）"
+        "scripts/deepseek-shadow-routing.mjs（--prompt-mode worker）",
+        "knowledge/results/deepseek-shadow/shadow-retest-daily1-worker.json",
+        "knowledge/results/deepseek-shadow/shadow-retest-daily2-worker.json",
+        "knowledge/results/deepseek-shadow/shadow-retest-groupb-worker.json"
       ],
-      "updated_at": "2026-11-18T02:45:00.000Z",
-      "note": "单样本结论需替换；只做测量，不切换任何默认模型。"
+      "updated_at": "2026-11-18T03:15:00.000Z",
+      "note": "影子层面已拆分并复测；生产卡尚未拆。"
     },
     {
       "id": "WALLET-OPS-NEGATIVE-DRILL",
       "title": "wallet-ops 失败即红的隔离负向演练（A-2）",
-      "state": "ready",
-      "next_owner": "deploy_seat",
-      "next_action": "在隔离副本注入失败/超时/缺回执三种情况，验证 job 判红；不碰生产工作流",
+      "state": "done",
       "evidence": [
-        "scripts/wallet-ops-receipt.mjs",
-        "scripts/tests/wallet-ops-receipt.test.mjs",
-        "knowledge/results/relay-seat/calls/20261118T023640Z-gpt-gpt-6.1-sol-42737a0b.json"
+        "scripts/tests/wallet-ops-drill.test.mjs",
+        ".github/workflows/ltzzz-wallet-ops.yml（回执缺失 fail-closed）",
+        "docs/2026-11-18-DeepSeek三卡复测与防护.md §2"
       ],
-      "updated_at": "2026-11-18T02:50:00.000Z",
-      "note": "中转建议标 NEEDS_REVISION：run 44221339282 只证明成功路径。"
+      "updated_at": "2026-11-18T03:15:00.000Z",
+      "note": "隔离负测 6 项：failure/cancelled/缺 outcome/全空环境均 exit 1；未改生产工作流逻辑，只加回执缺失门。"
     },
     {
       "id": "DEEPSEEK-CALLSITE-AUDIT",
       "title": "call-deepseek 调用点 thinking 显式化审计（C-1）",
+      "state": "done",
+      "evidence": [
+        "scripts/deepseek-callsite-audit.mjs",
+        "scripts/tests/deepseek-callsite-audit.test.mjs",
+        "docs/2026-11-18-DeepSeek三卡复测与防护.md §3"
+      ],
+      "updated_at": "2026-11-18T03:15:00.000Z",
+      "note": "8 个调用点全部显式 thinking，implicit=0；未改 call-deepseek 默认值（属需裁决改动）。"
+    },
+    {
+      "id": "DEEPSEEK-CARD-SPLIT-ROLLOUT",
+      "title": "新卡强制卡契约检查并把 planner/worker 拆成两张",
       "state": "ready",
       "next_owner": "claude",
-      "next_action": "列出全部 call-deepseek 调用点并标注期望 thinking；缺参即拒绝，不静默改默认",
+      "next_action": "新卡生成后跑 check-card-contract --strict；混写即拆为 planner 卡与 worker 卡",
       "evidence": [
-        "scripts/call-deepseek.mjs",
-        "knowledge/results/relay-seat/calls/20261118T023640Z-gpt-gpt-6.1-sol-42737a0b.json"
+        "scripts/check-card-contract.mjs",
+        "docs/2026-11-18-DeepSeek三卡复测与防护.md §4"
       ],
-      "updated_at": "2026-11-18T02:50:00.000Z",
-      "note": "中转建议：不宜全局静默切换默认值。"
+      "updated_at": "2026-11-18T03:15:00.000Z",
+      "note": "历史 84 张卡中 6 张混写；未设为 CI 强制门，避免历史卡变红。"
     }
   ]
 }
