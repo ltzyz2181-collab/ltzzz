@@ -827,6 +827,10 @@ export function verifyReceipt(receipt) {
   if (!isPlainObject(receipt)) fail('receipt_not_an_object');
   // v1.1 回执保留可读：历史账本不因升级路由而被判无效。
   if (!SUPPORTED_RECEIPT_REVISIONS.has(receipt.revision)) fail('unsupported_revision', String(receipt.revision));
+  // 旧状态名只属于 v1.1；v1.2 回执不得回写 needs_owner_decision。
+  if (receipt.state === 'needs_owner_decision' && receipt.revision !== 'hire-phase1-v1.1') {
+    fail('legacy_state_requires_v1_1_revision');
+  }
   // 历史 needs_owner_decision 回执保持原样可读；新写入只允许 RECEIPT_STATES。
   if (!DECISION_STATES.has(receipt.state)) fail('invalid_receipt_state');
   if (receipt.paid !== false || receipt.financial_execution !== false) fail('phase1_must_not_pay');

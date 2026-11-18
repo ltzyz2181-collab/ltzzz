@@ -436,6 +436,12 @@ test('historical needs_owner_decision receipts stay readable but are never writt
   legacy.receipt_sha256 = hashObject(legacy);
   assert.equal(verifyReceipt(legacy), true);
 
+  const relabelled = {...current, state: 'needs_owner_decision'};
+  delete relabelled.escalate_to;
+  delete relabelled.receipt_sha256;
+  relabelled.receipt_sha256 = hashObject(relabelled);
+  assert.throws(() => verifyReceipt(relabelled), /legacy_state_requires_v1_1_revision/);
+
   assert.throws(
     () => buildReceipt(order, {state: 'needs_owner_decision', reason: current.reason, gate: current.gate}, {at: FIXED_AT}),
     /invalid_receipt_state/,
