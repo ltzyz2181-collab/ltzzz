@@ -1,0 +1,155 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-423",
+  "head_sha": "eb1fe0008116d64e8c97ef1b693bf0cdf340ed0d",
+  "pr_number": 423,
+  "source_main_sha": "77a7d9244bbb7b7a1488943f047e4cb46187ba75",
+  "run_id": "44252608088",
+  "at_utc": "2026-11-18T06:36:58.244Z",
+  "idempotency_key": "PATCHGATE-PR-423:eb1fe0008116d64e8c97ef1b693bf0cdf340ed0d",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "6d290af9d97b9c74f1d4e5ece2ec10f559879c03",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": "config/relay-adjudication-scopes.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "config/relay-seat-policy.json",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "docs/RELAY-SEAT-CURRENT.md",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/relay-seat.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/deep-superagent-adjudicator.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/relay-proxy-worker.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workers/deep-superagent/accounting.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workers/deep-superagent/adjudicator.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workers/deep-superagent/index.js",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workers/relay-proxy/worker.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "wrangler.relay-proxy.toml",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-423",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-423",
+      "base_sha": "77a7d9244bbb7b7a1488943f047e4cb46187ba75",
+      "head_sha": "eb1fe0008116d64e8c97ef1b693bf0cdf340ed0d",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "c4b3a472542bdea3dfb44659b0792921f04f1cc381a8519d94d101fc4f892842"
+    },
+    "subject_sha256": "b84c31c0f38919a8d073341915d73d03db50d5658ef38ab50ab5f5d94f87fb22",
+    "idempotency_key": "PATCHGATE-PR-423:eb1fe0008116d64e8c97ef1b693bf0cdf340ed0d",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/tests/deep-superagent-adjudicator.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "task.internal"
+        ]
+      },
+      {
+        "path": "scripts/tests/relay-proxy-worker.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-relay-proxy.example.workers.dev",
+          "relay-budget.internal"
+        ]
+      },
+      {
+        "path": "workers/relay-proxy/worker.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "relay-budget.internal"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
