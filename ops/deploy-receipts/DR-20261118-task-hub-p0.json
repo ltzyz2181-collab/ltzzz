@@ -38,10 +38,15 @@
       "kind": "read_only_baseline",
       "result": "ok",
       "evidence": "部署前以 status 只读回读：open=0，无既有 dispatch issue 会被标签校正或租约回收误改"
+    },
+    {
+      "kind": "deployment_report_email",
+      "result": "smtp_accepted_readback_unverified",
+      "evidence": "QQ SMTP 发送完成，Message-ID <179498973965.435.1816768238400231172@qq.com>，正文 2838 字节；QQ 已发送文件夹按 Message-ID 回读 found=False（QQ 不保证把 SMTP 提交写入已发送），投递到收件箱未回读"
     }
   ],
   "not_verified": [
-    "邮件通道：task-hub-mail.mjs 只做过 dry-run 逻辑，未在本机实际 --send；SMTP 凭据不进 CI，线上未发出任何任务通知",
+    "任务通知邮件：task-hub-mail.mjs 只做过 dry-run 逻辑，未实际 --send；部署呈报邮件由另一脚本发出（见 deployment_report_email），两者不能互相替代",
     "Linear 镜像：未接入，当前仍是人工/后续事项",
     "自然 schedule 运行：只验证了 workflow_dispatch；每 15 分钟的 cron 首次自然运行尚未观察",
     "真实领取链路：尚无一张 dispatch issue 走过 poll→claim→delivered 全链路；claim 竞态只在注入时钟的单元测试里验证",
