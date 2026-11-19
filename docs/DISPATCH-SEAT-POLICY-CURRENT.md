@@ -65,6 +65,13 @@ CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep
    并把政策元数据剥离后再发 worker（worker 的 5 字段 schema 不变）。
 5. **中转裁决**：Deep 卡输出里的 `ASK | ref | gpt | ...` 由每日合并脚本提取为
    `ops/deep-superagent/ruling-requests/` 的公开请求，状态 `awaiting_gpt`；中转席只出意见，不持裁决权。
+   - 2026-11-19 修正（真实回执暴露）：`coordinator_plan_unparseable` 恰为 28 字符，被旧的
+     28+ 长 token 规则打成 `<token>`，裁决请求里连原因都没有；且该次执行输出只有
+     `ASK | ... | owner/evidence |`、没有 `ASK | gpt`，导致 `asks=[]`，GPT 无从裁决。
+     现在原因码与受控枚举（route/status 词汇）原样保留，凭据型长串仍打码；
+     没有 `ASK | gpt` 行时补一条明确的裁决问题（接受关闭 / 退回重跑 / 补证据后再复核），
+     并把复核否决理由 `review_reason` 与相关 `owner/evidence` 待补项一并写入请求。
+   - 旧请求 append-only 不覆盖：内容更差时追加 `...-rN.json` 修正记录并写 `supersedes`。
 
 如实边界：这一步解决的是「每天有一张 Deep 卡被真实消费」，不等于业务验收、模型权重训练或平台已接受。
 

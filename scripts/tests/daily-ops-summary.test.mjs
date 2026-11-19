@@ -10,6 +10,7 @@ import {
   buildSummary,
   collectEvidence,
   extractAsks,
+  redactReason,
   redactText,
   summarizeQueueReport,
   writeSummary,
@@ -126,6 +127,55 @@ test('脱敏函数去掉长 token 与金额', () => {
   assert.doesNotMatch(text, /100 USDC|abcdefghijklmnopqrstuvwxyz/);
 });
 
+test('原因码保留原意，只有像凭据的长串才打码', () => {
+  // 2026-11-19 实测：coordinator_plan_unparseable 恰好 28 字符，被旧规则吃成 <token>
+  assert.equal(redactReason('coordinator_plan_unparseable'), 'coordinator_plan_unparseable');
+  assert.equal(redactReason('upstream_gateway_timeout_504'), 'upstream_gateway_timeout_504');
+  assert.equal(redactReason(''), '');
+  assert.equal(redactReason('ghp_abcdefghijklmnopqrstuvwxyz0123456789'), '<token>');
+  assert.equal(redactReason('0123456789abcdef0123456789abcdef01234567'), '<token>');
+});
+
+test('needs_gpt_decision 没有 ASK | gpt 行时补裁决问题，并带上复核意见', () => {
+  const report = {
+    schema: 'ltzzz.deep-superagent.queue.v1', run_id: '50000000009',
+    items: [{
+      task_id: 'DSA-GPT-FALLBACK', package_id: 'PKG-FALLBACK', status: 'job_terminal_observed',
+      job: {
+        status: 'needs_gpt_decision', model_calls: 3,
+        plan: {reason: 'coordinator_plan_unparseable'},
+        review: {needs_gpt_decision: true, reason: 'C2 and C4 incorrectly routed as coordinator_close_with_receipt'},
+        outputs: [{text: 'ASK | B1 | evidence | 需要邮件通道回执'}],
+      },
+    }],
+  };
+  const items = summarizeQueueReport(report);
+  assert.equal(items[0].reason, 'coordinator_plan_unparseable');
+  assert.equal(items[0].review_reason, 'C2 and C4 incorrectly routed as coordinator_close_with_receipt');
+  const summary = buildSummary({
+    date: '2026-11-19', evidence: evidence({queueReports: [{path: 'queue.json', body: report}]}),
+  });
+  assert.equal(summary.counts.needs_gpt_decision, 1);
+  const [item] = summary.needs_gpt_decision;
+  assert.equal(item.asks.length, 1);
+  assert.equal(item.asks[0].target, 'gpt');
+  assert.match(item.asks[0].ask, /decision_id/);
+  assert.equal(item.related_asks.length, 1);
+  assert.match(summary.email.body, /复核意见：C2 and C4/);
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'daily-ops-gpt-'));
+  try {
+    const written = writeSummary({root, summary});
+    const record = JSON.parse(fs.readFileSync(path.join(root, written.ruling_requests[0].path), 'utf8'));
+    assert.equal(record.reason, 'coordinator_plan_unparseable');
+    assert.equal(record.asks.length, 1);
+    assert.equal(record.asks[0].target, 'gpt');
+    assert.equal(record.related_asks.length, 1);
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+  }
+});
+
 test('裁决请求 append-only，重复写入不覆盖', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'daily-ops-summary-'));
   try {
@@ -145,6 +195,39 @@ test('裁决请求 append-only，重复写入不覆盖', () => {
     const second = writeSummary({root, summary});
     assert.equal(second.ruling_requests[0].status, 'already_exists');
     assert.equal(fs.readFileSync(abs, 'utf8'), before);
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+  }
+});
+
+test('旧裁决请求缺 reason/asks 时追加 -rN 修正记录，不覆盖原文件', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'daily-ops-rreq-'));
+  try {
+    const summary = buildSummary({date: '2026-11-19', evidence: evidence()});
+    const dir = path.join(root, 'ops/deep-superagent/ruling-requests');
+    fs.mkdirSync(dir, {recursive: true});
+    const base = path.join(dir, 'RREQ-2026-11-19-DSA-GPT-01-50000000001.json');
+    const legacy = {
+      schema: REQUEST_SCHEMA,
+      request_id: 'RREQ-2026-11-19-DSA-GPT-01-50000000001',
+      reason: '<token>', asks: [], status: 'awaiting_gpt',
+    };
+    fs.writeFileSync(base, JSON.stringify(legacy, null, 1) + '\n');
+    const before = fs.readFileSync(base, 'utf8');
+
+    const written = writeSummary({root, summary});
+    assert.equal(written.ruling_requests[0].status, 'superseded');
+    assert.match(written.ruling_requests[0].path, /-r2\.json$/);
+    assert.equal(fs.readFileSync(base, 'utf8'), before, '旧请求不得被覆盖');
+    const fixed = JSON.parse(fs.readFileSync(path.join(root, written.ruling_requests[0].path), 'utf8'));
+    assert.equal(fixed.supersedes, 'RREQ-2026-11-19-DSA-GPT-01-50000000001');
+    assert.equal(fixed.request_id, 'RREQ-2026-11-19-DSA-GPT-01-50000000001-r2');
+    assert.equal(fixed.reason, '涉及签名路径，需 GPT 裁决');
+    assert.equal(fixed.asks.length, 1);
+
+    const again = writeSummary({root, summary});
+    assert.equal(again.ruling_requests[0].status, 'already_exists');
+    assert.match(again.ruling_requests[0].path, /-r2\.json$/);
   } finally {
     fs.rmSync(root, {recursive: true, force: true});
   }
