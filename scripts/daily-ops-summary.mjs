@@ -25,19 +25,57 @@ const readJson = (root, rel, fallback = null) => {
   }
 };
 
+// 受控枚举是公开词汇，长度可能 ≥28（coordinator_close_with_receipt 等），
+// 在句子里不能被长 token 规则误打成 <token>；打码前先占位，打码后还原。
+// 只保护这份固定清单，任何不在清单里的长串仍按凭据处理。
+const PROTECTED_CODES = [
+  'coordinator_close_with_receipt',
+  'coordinator_plan_unparseable',
+  'needs_gpt_decision',
+  'needs_owner_decision',
+  'blocked_evidence_needed',
+  'deploy_confirm_only',
+  'completed_pending_external_acceptance',
+  'daily_result_readback_complete',
+  'queue_results_verified',
+  'model_json_invalid',
+];
+const PLACEHOLDER = '\u0001';
+
 export function redactText(value, max = 240) {
-  return String(value ?? '')
-    .replace(TOKEN_RE, '<token>')
-    .replace(AMOUNT_RE, '<amount>')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, max);
+  let text = String(value ?? '');
+  const held = [];
+  for (const code of PROTECTED_CODES) {
+    if (!text.includes(code)) continue;
+    const slot = `${PLACEHOLDER}${held.length}${PLACEHOLDER}`;
+    held.push(code);
+    text = text.split(code).join(slot);
+  }
+  text = text.replace(TOKEN_RE, '<token>').replace(AMOUNT_RE, '<amount>');
+  for (let index = 0; index < held.length; index += 1) {
+    text = text.split(`${PLACEHOLDER}${index}${PLACEHOLDER}`).join(held[index]);
+  }
+  return text.replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
 // 标识与状态是受控枚举/ID，不能按长 token 规则打码，否则会把
 // completed_pending_external_acceptance 这类真实状态误写成 <token>。
 const plain = (value, max = 80) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 const short = (value, max = 80) => redactText(value, max);
+
+// 原因码是小写蛇形枚举（如 coordinator_plan_unparseable、upstream_gateway_timeout_504），
+// 旧的 28+ 长 token 规则会把整串吃成 <token>，丢掉真实原因。
+// 判定「像枚举」而不是「像凭据」：整串由 ≥2 段小写字母/数字组成、总长 ≤64、
+// 且没有超过 24 字符的单段。这样 `ghp_<36 位随机串>`、纯十六进制哈希、
+// 带大写或连字符的内容仍会被打码。
+const REASON_CODE_RE = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$/;
+export function redactReason(value, max = 240) {
+  const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+  const looksLikeEnum = REASON_CODE_RE.test(text) && text.length <= 64
+    && text.split('_').every((part) => part.length <= 24);
+  if (looksLikeEnum) return text.slice(0, max);
+  return redactText(text, max);
+}
 
 function statusOf(item) {
   return String(item?.job?.status || item?.status || 'unknown');
@@ -64,6 +102,7 @@ export function summarizeQueueReport(report, sourcePath = null) {
   const items = Array.isArray(report?.items) ? report.items : [];
   return items.map((item) => {
     const job = item.job || {};
+    const review = job.review || {};
     const asks = extractAsks(job.outputs || []);
     const status = statusOf(item);
     const gptAsk = asks.filter((ask) => ask.target === 'gpt');
@@ -74,9 +113,12 @@ export function summarizeQueueReport(report, sourcePath = null) {
       run_id: report?.run_id ? String(report.run_id) : null,
       source: sourcePath,
       status: plain(status, 80),
-      reason: short(job.plan?.reason || item.error || '', 240) || null,
+      reason: redactReason(job.plan?.reason || item.error || '', 240) || null,
+      // 独立复核的否决理由不是长 token，必须原意保留给 GPT 决策席。
+      review_reason: redactReason(review.reason || '', 240) || null,
       model_calls: Number.isFinite(job.model_calls) ? job.model_calls : null,
-      needs_gpt_decision: status === 'needs_gpt_decision' || job.plan?.needs_gpt_decision === true || gptAsk.length > 0,
+      needs_gpt_decision: status === 'needs_gpt_decision' || job.plan?.needs_gpt_decision === true
+        || review.needs_gpt_decision === true || gptAsk.length > 0,
       needs_owner_decision: status === 'needs_owner_decision' || ownerAsk.length > 0,
       asks,
     };
@@ -146,14 +188,24 @@ export function buildSummary({date, now = new Date(), evidence}) {
       source: item.source,
     }));
 
-  const needsGpt = queueItems.filter((item) => item.needs_gpt_decision).map((item) => ({
-    task_id: item.task_id,
-    package_id: item.package_id,
-    run_id: item.run_id,
-    reason: item.reason,
-    asks: item.asks.filter((ask) => ask.target === 'gpt'),
-    source: item.source,
-  }));
+  // 任务以 needs_gpt_decision 结束但执行输出里没有 `ASK | ... | gpt |` 行时，
+  // 不能把空数组当裁决请求发出去。这里补一条明确、通用的裁决问题，
+  // 让 GPT 决策席知道要回答什么；不代替 GPT 做任何判断。
+  const DEFAULT_GPT_ASK = '任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。';
+  const needsGpt = queueItems.filter((item) => item.needs_gpt_decision).map((item) => {
+    const gptAsks = item.asks.filter((ask) => ask.target === 'gpt');
+    if (!gptAsks.length) gptAsks.push({ref: item.task_id || 'unknown', target: 'gpt', ask: DEFAULT_GPT_ASK});
+    return {
+      task_id: item.task_id,
+      package_id: item.package_id,
+      run_id: item.run_id,
+      reason: item.reason,
+      review_reason: item.review_reason,
+      asks: gptAsks,
+      related_asks: item.asks.filter((ask) => ask.target !== 'gpt'),
+      source: item.source,
+    };
+  });
   const needsOwner = queueItems.filter((item) => item.needs_owner_decision && !item.needs_gpt_decision).map((item) => ({
     task_id: item.task_id,
     package_id: item.package_id,
@@ -243,8 +295,10 @@ export function buildEmail(summary) {
   if (summary.needs_gpt_decision.length) {
     for (const item of summary.needs_gpt_decision) {
       lines.push(`- ${item.task_id}（run=${item.run_id ?? 'unknown'}）：${item.reason || '见 ASK'}`);
+      if (item.review_reason) lines.push(`  复核意见：${item.review_reason}`);
       for (const ask of item.asks) lines.push(`  ASK ${ask.ref}：${ask.ask}`);
       if (!item.asks.length) lines.push('  ASK：请对该任务给出 decision_id 与范围。');
+      for (const ask of item.related_asks || []) lines.push(`  相关待补（${ask.target}）${ask.ref}：${ask.ask}`);
     }
   } else {
     lines.push('- 今天没有需要 GPT 裁决的项。');
@@ -258,6 +312,10 @@ export function buildEmail(summary) {
   lines.push('- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。');
   return {subject, body: lines.join('\n') + '\n'};
 }
+
+// 只比较决定「这条裁决请求是否可执行」的字段；时间戳等易变字段不参与。
+const sameRequest = (a, b) => JSON.stringify([a?.reason, a?.review_reason, a?.asks, a?.related_asks])
+  === JSON.stringify([b.reason, b.review_reason, b.asks, b.related_asks]);
 
 export function writeSummary({root = REPO_ROOT, summary}) {
   if (!DATE_RE.test(String(summary?.date || '')) || summary.schema !== SUMMARY_SCHEMA) throw new Error('invalid_summary_write');
@@ -287,22 +345,19 @@ export function writeSummary({root = REPO_ROOT, summary}) {
   for (const item of summary.needs_gpt_decision) {
     const safeTask = String(item.task_id || 'unknown').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 100);
     const safeRun = String(item.run_id || 'unknown').replace(/[^0-9A-Za-z_-]/g, '_').slice(0, 30);
-    const rel = `ops/deep-superagent/ruling-requests/RREQ-${summary.date}-${safeTask}-${safeRun}.json`;
-    const abs = path.join(root, rel);
-    if (fs.existsSync(abs)) {
-      requests.push({path: rel, status: 'already_exists'});
-      continue;
-    }
+    const baseId = `RREQ-${summary.date}-${safeTask}-${safeRun}`;
     const record = {
       schema: REQUEST_SCHEMA,
-      request_id: `RREQ-${summary.date}-${safeTask}-${safeRun}`,
+      request_id: baseId,
       created_at_utc: summary.generated_at_utc,
       date: summary.date,
       task_id: item.task_id,
       package_id: item.package_id,
       run_id: item.run_id,
       reason: item.reason,
+      review_reason: item.review_reason || null,
       asks: item.asks,
+      related_asks: item.related_asks || [],
       status: 'awaiting_gpt',
       requested_from: 'gpt_decision_seat',
       decision_authority: 'gpt_or_owner_only',
@@ -311,8 +366,27 @@ export function writeSummary({root = REPO_ROOT, summary}) {
       contains_credentials: false,
       contains_customer_data: false,
     };
-    fs.writeFileSync(abs, JSON.stringify(record, null, 1) + '\n');
-    requests.push({path: rel, status: 'created'});
+    // append-only 不覆盖旧文件；但如果旧请求内容更差（例如 reason 被打成 <token>、
+    // asks 为空），就追加一个 -rN 修正记录并用 supersedes 指回旧请求。
+    const revisions = fs.readdirSync(requestDir)
+      .map((name) => /^(RREQ-.+?)(?:-r(\d+))?\.json$/.exec(name))
+      .filter((match) => match && match[1] === baseId)
+      .map((match) => ({name: `${match[1]}${match[2] ? `-r${match[2]}` : ''}.json`, revision: Number(match[2] || 1)}))
+      .sort((a, b) => a.revision - b.revision);
+    const current = revisions.length ? readJson(root, `ops/deep-superagent/ruling-requests/${revisions.at(-1).name}`) : null;
+    if (current && sameRequest(current, record)) {
+      requests.push({path: `ops/deep-superagent/ruling-requests/${revisions.at(-1).name}`, status: 'already_exists'});
+      continue;
+    }
+    let rel = `ops/deep-superagent/ruling-requests/${baseId}.json`;
+    if (revisions.length) {
+      const nextVersion = revisions.at(-1).revision + 1;
+      rel = `ops/deep-superagent/ruling-requests/${baseId}-r${nextVersion}.json`;
+      record.request_id = `${baseId}-r${nextVersion}`;
+      record.supersedes = baseId;
+    }
+    fs.writeFileSync(path.join(root, rel), JSON.stringify(record, null, 1) + '\n');
+    requests.push({path: rel, status: revisions.length ? 'superseded' : 'created'});
   }
   return {
     json: path.relative(root, jsonPath).split(path.sep).join('/'),
