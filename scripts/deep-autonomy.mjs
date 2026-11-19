@@ -1,0 +1,441 @@
+// Deep 自主执行层（owner 2026-11-19 直接指令）。
+//
+// 目标：Deep 不再只是“文本分诊”。每日卡可以声明 autonomy.mode=auto，让 GitHub
+// Actions 里的受信桥接层代它做四件事：
+//   1) repo_read  —— 在 checkout 里读取目标文件，注入 prompt 后再交给模型；
+//   2) code_change—— 模型输出带 <<<FILE:path>>> 块，桥上落盘、跑测试、开 PR 并合并；
+//   3) deploy     —— 合并后自动 workflow_dispatch 指定部署工作流；
+//   4) mail       —— 用模型输出或卡面正文，经既有 send-mail.py 发信并留回执。
+//
+// 边界（仍然保留，不扩大）：
+//   - 资金、签名、退款终态、私钥/助记词/凭据、Secrets、owner 授权文件不自动执行；
+//     这些命中后保持 needs_gpt_decision，由 GPT 席裁决。
+//   - 模型输出永远不会被当作可执行代码直接运行；只接受受限的整文件写入块。
+//   - 所有动作都写公开回执；不落邮件正文、不落凭据、不落客户输入。
+import fs from 'node:fs';
+import path from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+
+export const AUTONOMY_REVISION = 'deep-autonomy-v1';
+export const AUTONOMY_SCHEMA = 'ltzzz.deep-superagent.autonomy.v1';
+
+// 触发后一律不自动执行的领域。只拦“钱与密钥”，不拦代码、部署、邮件。
+export const FIDUCIARY_RE = /(?:私钥|助记词|助记码|密钥|凭据|转账|放款|退款|签名|钱包|提现|付款|收款地址|five[_-]?signature|private[ _-]?key|seed[ _-]?phrase|mnemonic|wallet|withdraw|transfer\s+funds|refund|payment|sign(?:ing|ature)?|0x[0-9a-fA-F]{40})/i;
+
+// 允许以点开头（.github/、.env），这样 deniedWritePath 能给出具体原因而不是笼统的 invalid_path。
+const ID = /^[a-z0-9.][a-z0-9._/-]{0,200}$/i;
+const WORKFLOW = /^[a-z0-9][a-z0-9-]{0,80}\.yml$/;
+const EMAIL = /^[^\s@,]{1,160}@[^\s@,]{1,160}\.[A-Za-z]{2,}$/;
+const WRITE_LIMIT_FILES = 6;
+const WRITE_LIMIT_BYTES = 400 * 1024;
+const REPO_READ_LIMIT_FILES = 8;
+const REPO_READ_LIMIT_BYTES = 64 * 1024;
+
+const fail = (message) => {
+  throw new Error(message);
+};
+const safePath = (value) => {
+  if (typeof value !== 'string' || !ID.test(value)) return false;
+  const normalized = path.posix.normalize(value.replaceAll('\\', '/'));
+  if (normalized !== value || normalized === '.' || normalized === '..') return false;
+  return !normalized.startsWith('../') && !normalized.startsWith('/') && !normalized.includes('/../');
+};
+
+// 禁止自动改写的路径：授权、凭据、工作流、钱包/资金、锁文件。
+export function deniedWritePath(file) {
+  const value = String(file || '').replaceAll('\\', '/');
+  if (!safePath(value)) return 'invalid_path';
+  if (value.startsWith('.git/') || value === '.git') return 'git_metadata';
+  if (value.startsWith('.github/workflows/')) return 'workflow_definition';
+  if (/^config\/(?:owner-authority|deep-autonomy)/.test(value)) return 'authority_config';
+  if (/^(?:wallet|treasury|escrow|contracts)\//.test(value)) return 'funds_path';
+  if (/(?:^|\/)(?:\.env|secrets?|credentials?)(?:$|\/|\.)/i.test(value)) return 'credential_path';
+  // send-mail.py 是发信通道本身；run-mail-intake / deploy-receipt 是收信与部署回执工具。
+  if (/^scripts\/(?:send-mail|run-mail-intake|deploy-receipt)\.(?:mjs|js|py)$/.test(value)) return 'protected_script';
+  return null;
+}
+
+export function normalizeAutonomy(value, {allowedMailTo = null} = {}) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) fail('invalid_autonomy');
+  const allowedKeys = new Set(['mode', 'repo_read', 'code_change', 'deploy', 'mail']);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) fail('invalid_autonomy_field');
+  if (value.mode !== 'auto') fail('invalid_autonomy_mode');
+  const result = {mode: 'auto', repo_read: [], code_change: false, deploy: null, mail: null};
+
+  if (value.repo_read !== undefined) {
+    if (!Array.isArray(value.repo_read) || value.repo_read.length > REPO_READ_LIMIT_FILES) fail('invalid_repo_read');
+    for (const file of value.repo_read) {
+      if (!safePath(file)) fail('invalid_repo_read_path');
+      if (deniedWritePath(file) === 'credential_path' || deniedWritePath(file) === 'authority_config') fail('denied_repo_read_path');
+      if (!result.repo_read.includes(file)) result.repo_read.push(file);
+    }
+  }
+
+  if (value.code_change !== undefined) {
+    if (typeof value.code_change !== 'boolean') fail('invalid_code_change');
+    result.code_change = value.code_change;
+  }
+
+  if (value.deploy !== undefined) {
+    const deploy = value.deploy;
+    if (!deploy || typeof deploy !== 'object' || Array.isArray(deploy)) fail('invalid_deploy');
+    if (Object.keys(deploy).some((key) => !['workflow'].includes(key))) fail('invalid_deploy_field');
+    if (typeof deploy.workflow !== 'string' || !WORKFLOW.test(deploy.workflow)) fail('invalid_deploy_workflow');
+    result.deploy = {workflow: deploy.workflow};
+  }
+
+  if (value.mail !== undefined) {
+    const mail = value.mail;
+    if (!mail || typeof mail !== 'object' || Array.isArray(mail)) fail('invalid_mail');
+    if (Object.keys(mail).some((key) => !['to', 'subject', 'body', 'body_from_output'].includes(key))) fail('invalid_mail_field');
+    if (!Array.isArray(mail.to) || mail.to.length !== 1 || !EMAIL.test(mail.to[0])) fail('invalid_mail_to');
+    if (allowedMailTo && mail.to[0].toLowerCase() !== String(allowedMailTo).toLowerCase()) fail('mail_recipient_not_owner_allowlisted');
+    if (typeof mail.subject !== 'string' || !mail.subject.trim() || mail.subject.length > 180 || /[\r\n]/.test(mail.subject)) fail('invalid_mail_subject');
+    const hasBody = typeof mail.body === 'string' && mail.body.trim();
+    if (!hasBody && mail.body_from_output !== true) fail('invalid_mail_body');
+    if (mail.body !== undefined && (typeof mail.body !== 'string' || mail.body.length > 20000)) fail('invalid_mail_body');
+    if (mail.body_from_output !== undefined && typeof mail.body_from_output !== 'boolean') fail('invalid_mail_body_from_output');
+    result.mail = {
+      to: [mail.to[0]],
+      subject: mail.subject.trim(),
+      body: hasBody ? mail.body : null,
+      body_from_output: mail.body_from_output === true,
+    };
+  }
+
+  return result;
+}
+
+export function stripAutonomy(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+  const {autonomy, ...rest} = body;
+  return rest;
+}
+
+export function taskAutonomyMetadata(body, options = {}) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  return normalizeAutonomy(body.autonomy, options);
+}
+
+// 读取 repo_read 指定的文件。返回 {text, files, skipped}；任何越界/缺失文件只记录，
+// 不阻断整张卡（模型可以看到缺少哪些证据）。
+export function readRepoContext(root, files) {
+  const parts = [];
+  const evidence = [];
+  let total = 0;
+  for (const file of files || []) {
+    const abs = path.join(root, file);
+    let stat;
+    try {
+      stat = fs.statSync(abs);
+    } catch {
+      evidence.push({path: file, status: 'missing'});
+      continue;
+    }
+    if (!stat.isFile()) {
+      evidence.push({path: file, status: 'not_a_file'});
+      continue;
+    }
+    if (total + stat.size > REPO_READ_LIMIT_BYTES) {
+      evidence.push({path: file, status: 'size_budget_exceeded', bytes: stat.size});
+      continue;
+    }
+    const raw = fs.readFileSync(abs);
+    total += raw.length;
+    const text = raw.toString('utf8');
+    parts.push(`===== FILE: ${file} =====\n${text}\n===== END FILE: ${file} =====`);
+    evidence.push({path: file, status: 'read', bytes: raw.length, sha256: createHash('sha256').update(raw).digest('hex')});
+  }
+  return {
+    text: parts.length
+      ? '\n\n【仓库读取证据（由受信桥接层读取，不是模型自述）】\n' + parts.join('\n\n')
+      : '',
+    files: evidence,
+    revision: AUTONOMY_REVISION,
+  };
+}
+
+export function applyRepoContext(body, repoContext) {
+  if (!repoContext?.text) return body;
+  return {...body, prompt: `${body.prompt}${repoContext.text}`};
+}
+
+export function fiduciaryHit({prompt = '', outputs = []} = {}) {
+  const text = [prompt, ...outputs.map((output) => output?.text || '')].join('\n');
+  const match = FIDUCIARY_RE.exec(text);
+  return match ? {hit: true, token: match[0]} : {hit: false, token: null};
+}
+
+// 只接受显式文件块：
+// <<<FILE:path>>>
+// ...content...
+// <<<END>>>
+export function extractFileWrites(text) {
+  const source = String(text || '');
+  const writes = [];
+  const re = /<<<FILE:([^>\n]+)>>>\r?\n([\s\S]*?)\r?\n<<<END>>>/g;
+  let match;
+  while ((match = re.exec(source))) {
+    writes.push({path: match[1].trim(), content: match[2]});
+  }
+  return writes;
+}
+
+export function validateWrites(writes) {
+  if (!writes.length) return {ok: false, error: 'no_file_writes'};
+  if (writes.length > WRITE_LIMIT_FILES) return {ok: false, error: 'too_many_files'};
+  const seen = new Set();
+  let total = 0;
+  for (const write of writes) {
+    const denied = deniedWritePath(write.path);
+    if (denied) return {ok: false, error: `denied_path:${denied}:${write.path}`};
+    if (seen.has(write.path)) return {ok: false, error: `duplicate_file:${write.path}`};
+    seen.add(write.path);
+    const bytes = Buffer.byteLength(write.content, 'utf8');
+    if (bytes > WRITE_LIMIT_BYTES) return {ok: false, error: `file_too_large:${write.path}`};
+    total += bytes;
+  }
+  if (total > WRITE_LIMIT_BYTES) return {ok: false, error: 'total_size_exceeded'};
+  return {ok: true, writes};
+}
+
+const defaultRunTests = (root) =>
+  execFileSync('node', [
+    '--test',
+    'scripts/tests/check-card-contract.test.mjs',
+    'scripts/tests/dispatch-seat-policy.test.mjs',
+    'scripts/tests/dispatch-daily-card.test.mjs',
+    'scripts/tests/deep-superagent-queue.test.mjs',
+    'scripts/tests/deep-superagent-autonomy.test.mjs',
+  ], {cwd: root, encoding: 'utf8', timeout: 240000});
+
+async function githubApi(fetcher, token, repository, route, method = 'GET', body) {
+  const response = await fetcher(`https://api.github.com/repos/${repository}${route}`, {
+    method,
+    headers: {
+      authorization: `Bearer ${token}`,
+      accept: 'application/vnd.github+json',
+      'content-type': 'application/json',
+      'user-agent': 'ltzzz-deep-autonomy',
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`github_${method.toLowerCase()}_${response.status}:${text.slice(0, 160)}`);
+  return text ? JSON.parse(text) : null;
+}
+
+async function receiptExists(fetcher, token, repository, receiptPath) {
+  const response = await fetcher(`https://api.github.com/repos/${repository}/contents/${receiptPath}?ref=main`, {
+    headers: {authorization: `Bearer ${token}`, accept: 'application/vnd.github+json'},
+  });
+  return response.status === 200;
+}
+
+function git(root, args, options = {}) {
+  return execFileSync('git', args, {cwd: root, encoding: 'utf8', ...options});
+}
+
+export async function executeAutonomy({
+  autonomy,
+  job,
+  outputs = [],
+  root = process.cwd(),
+  env = process.env,
+  fetcher = fetch,
+  runTests = defaultRunTests,
+  clock = Date.now,
+} = {}) {
+  if (!autonomy || autonomy.mode !== 'auto') return {status: 'not_requested', revision: AUTONOMY_REVISION};
+  const fiduciary = fiduciaryHit({prompt: job?.prompt, outputs});
+  if (fiduciary.hit) {
+    return {status: 'blocked_fiduciary', revision: AUTONOMY_REVISION, token: fiduciary.token, actions: [], needs_gpt_decision: true};
+  }
+
+  const token = env.GITHUB_TOKEN;
+  const repository = env.GITHUB_REPOSITORY;
+  const runId = env.GITHUB_RUN_ID || 'local';
+  const taskId = job?.task_id || 'DEEP-UNKNOWN';
+  const inputSha = job?.input_sha256 || '0'.repeat(64);
+  const receiptPath = `knowledge/results/deep-superagent/autonomy/${taskId}-${inputSha}.json`;
+  const actions = [];
+  const receipt = {
+    schema: AUTONOMY_SCHEMA,
+    revision: AUTONOMY_REVISION,
+    status: 'started',
+    task_id: taskId,
+    input_sha256: inputSha,
+    run_id: runId,
+    at_utc: new Date(clock()).toISOString(),
+    actions,
+    financial_execution: false,
+    secrets_included: false,
+  };
+
+  // 幂等：同一 task + 同一输入只执行一次；重跑只回读已有回执。
+  if (token && repository) {
+    try {
+      if (await receiptExists(fetcher, token, repository, receiptPath)) {
+        return {status: 'already_executed', revision: AUTONOMY_REVISION, receipt_path: receiptPath, actions: [], needs_gpt_decision: false};
+      }
+    } catch {
+      /* 读不到就继续；真正写回执失败会在下面暴露。 */
+    }
+  }
+
+  try {
+    // 1) code_change
+    let startRef = null;
+    if (autonomy.code_change) {
+      try {
+        startRef = git(root, ['rev-parse', 'HEAD']).trim();
+      } catch {
+        startRef = null;
+      }
+      const writes = extractFileWrites(outputs.map((output) => output?.text || '').join('\n\n'));
+      const valid = validateWrites(writes);
+      if (!valid.ok) {
+        actions.push({action: 'code_change', status: 'rejected', error: valid.error});
+      } else {
+        const branch = `deep-auto/${String(taskId).toLowerCase().replace(/[^a-z0-9/-]/g, '-')}-${runId}`.slice(0, 120);
+        const originals = new Map();
+        let testResult = null;
+        try {
+          for (const write of writes) {
+            const abs = path.join(root, write.path);
+            if (fs.existsSync(abs)) originals.set(write.path, fs.readFileSync(abs));
+            fs.mkdirSync(path.dirname(abs), {recursive: true});
+            fs.writeFileSync(abs, write.content);
+          }
+          testResult = runTests(root);
+          if (!token || !repository) throw new Error('github_token_missing');
+          git(root, ['config', 'user.name', 'ltzzz-deep-autonomy']);
+          git(root, ['config', 'user.email', 'bot@ltzzz.com']);
+          git(root, ['checkout', '-B', branch]);
+          git(root, ['add', '--', ...writes.map((write) => write.path)]);
+          git(root, ['commit', '-m', `deep(auto): ${taskId} ${runId}`]);
+          git(root, ['push', 'origin', `HEAD:refs/heads/${branch}`]);
+          const pr = await githubApi(fetcher, token, repository, '/pulls', 'POST', {
+            title: `deep(auto): ${taskId}`,
+            head: branch,
+            base: 'main',
+            body: `自动执行回执：任务 ${taskId}，运行 ${runId}。测试通过后由 Deep 自动合并。`,
+          });
+          const merge = await githubApi(fetcher, token, repository, `/pulls/${pr.number}/merge`, 'PUT', {merge_method: 'squash'});
+          actions.push({
+            action: 'code_change',
+            status: merge.merged ? 'merged' : 'merge_pending',
+            branch,
+            pr: pr.number,
+            merge_sha: merge.sha || null,
+            files: writes.map((write) => write.path),
+          });
+        } catch (error) {
+          for (const [file, content] of originals) {
+            try {
+              fs.writeFileSync(path.join(root, file), content);
+            } catch {
+              /* 恢复失败时保留原文件；回执写明。 */
+            }
+          }
+          actions.push({action: 'code_change', status: 'failed', error: String(error?.message || error).slice(0, 200), test_ok: Boolean(testResult)});
+        }
+      }
+    }
+
+    // 代码动作会把本地切到模型分支；无论成败都回到 main（已合并）或起始提交，
+    // 这样后面的部署和工作流回执提交仍落在 main 上，而不是模型分支。
+    if (startRef) {
+      try {
+        const codeAction = actions.find((action) => action.action === 'code_change');
+        if (codeAction?.status === 'merged') {
+          // Actions 里可能是 detached HEAD（push 触发时 checkout 的是 SHA），
+          // 用 fetch + checkout -B 而不是假设本地已有 main 分支。
+          git(root, ['fetch', 'origin', 'main']);
+          git(root, ['checkout', '-B', 'main', 'origin/main']);
+        } else {
+          git(root, ['checkout', '--detach', startRef]);
+        }
+      } catch {
+        /* 回执会记录实际发生的动作；这里不掩盖上面的结果。 */
+      }
+    }
+
+    // 2) deploy：只允许显式声明的部署工作流，且代码动作已合并或未请求。
+    if (autonomy.deploy) {
+      const codeAction = actions.find((action) => action.action === 'code_change');
+      if (codeAction && codeAction.status !== 'merged') {
+        actions.push({action: 'deploy', status: 'skipped', error: 'code_change_not_merged'});
+      } else if (!token || !repository) {
+        actions.push({action: 'deploy', status: 'failed', error: 'github_token_missing'});
+      } else {
+        try {
+          await githubApi(fetcher, token, repository, `/actions/workflows/${autonomy.deploy.workflow}/dispatches`, 'POST', {ref: 'main'});
+          actions.push({action: 'deploy', status: 'dispatched', workflow: autonomy.deploy.workflow});
+        } catch (error) {
+          actions.push({action: 'deploy', status: 'failed', workflow: autonomy.deploy.workflow, error: String(error?.message || error).slice(0, 200)});
+        }
+      }
+    }
+
+    // 3) mail
+    if (autonomy.mail) {
+      const mailAction = {action: 'mail', status: 'skipped', to_count: autonomy.mail.to.length, recipient_domains: [...new Set(autonomy.mail.to.map((addr) => addr.split('@')[1]))]};
+      actions.push(mailAction);
+      const body = autonomy.mail.body || outputs.map((output) => output?.text || '').join('\n\n');
+      if (!body.trim()) {
+        mailAction.status = 'failed';
+        mailAction.error = 'empty_mail_body';
+      } else if (!env.MAIL_SMTP_USER || !(env.MAIL_SMTP_AUTH_CODE || env.MAIL_SMTP_PASSWORD)) {
+        mailAction.status = 'failed';
+        mailAction.error = 'mail_credentials_missing';
+      } else {
+        const tmp = fs.mkdtempSync(path.join(env.RUNNER_TEMP || '/tmp', 'deep-mail-'));
+        const bodyFile = path.join(tmp, 'body.txt');
+        const metaFile = path.join(tmp, 'meta.json');
+        fs.writeFileSync(bodyFile, body);
+        fs.writeFileSync(metaFile, JSON.stringify({
+          schema: 'ltzzz.deep-superagent.email-meta.v1',
+          date: new Date(clock()).toISOString().slice(0, 10),
+          subject: autonomy.mail.subject,
+          body_file: bodyFile,
+          contains_mail_body: false,
+          counts: {autonomy_revision: AUTONOMY_REVISION},
+        }, null, 2));
+        const sendReceipt = `knowledge/results/deep-superagent/autonomy/mail-${taskId}-${runId}.json`;
+        try {
+          execFileSync('python3', ['scripts/send-mail.py', '--meta', metaFile, '--receipt', sendReceipt], {
+            cwd: root,
+            env: {...env, AUTOLOOP_MAIL_TO: autonomy.mail.to.join(',')},
+            encoding: 'utf8',
+            timeout: 120000,
+          });
+          mailAction.status = 'sent';
+          mailAction.receipt = sendReceipt;
+        } catch (error) {
+          mailAction.status = 'failed';
+          mailAction.error = String(error?.message || error).slice(0, 200);
+        }
+      }
+    }
+
+    receipt.status = actions.every((action) => ['merged', 'dispatched', 'sent', 'skipped_blocked'].includes(action.status)) ? 'executed' : 'partial';
+    if (!actions.length) receipt.status = 'no_actions';
+    receipt.completed_at_utc = new Date(clock()).toISOString();
+  } catch (error) {
+    receipt.status = 'failed';
+    receipt.error = String(error?.message || error).slice(0, 200);
+  }
+
+  // 回执只落公开事实，不落正文、不落收件人完整地址。
+  try {
+    const abs = path.join(root, receiptPath);
+    fs.mkdirSync(path.dirname(abs), {recursive: true});
+    fs.writeFileSync(abs, JSON.stringify(receipt, null, 1) + '\n');
+  } catch {
+    receipt.receipt_write_error = true;
+  }
+  return {...receipt, receipt_path: receiptPath, needs_gpt_decision: false};
+}

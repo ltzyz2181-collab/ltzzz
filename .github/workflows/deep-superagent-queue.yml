@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/deep-autonomy.mjs'
+      - 'scripts/tests/deep-superagent-autonomy.test.mjs'
       - 'scripts/dispatch-seat-policy.mjs'
       - 'scripts/dispatch-daily-card.mjs'
       - 'scripts/tests/deep-superagent-queue.test.mjs'
@@ -25,6 +27,8 @@ on:
       - 'ops/deep-superagent/tasks/*.json'
       - 'ops/deep-superagent/decisions/*.json'
       - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/deep-autonomy.mjs'
+      - 'scripts/tests/deep-superagent-autonomy.test.mjs'
       - 'scripts/dispatch-seat-policy.mjs'
       - 'scripts/dispatch-daily-card.mjs'
       - 'scripts/tests/deep-superagent-queue.test.mjs'
@@ -48,12 +52,14 @@ jobs:
       - name: Syntax check
         run: |
           node --check scripts/run-deep-superagent-queue.mjs
+          node --check scripts/deep-autonomy.mjs
           node --check scripts/dispatch-seat-policy.mjs
           node --check scripts/dispatch-daily-card.mjs
       - name: Queue and policy tests
         run: >-
           node --test
           scripts/tests/deep-superagent-queue.test.mjs
+          scripts/tests/deep-superagent-autonomy.test.mjs
           scripts/tests/dispatch-seat-policy.test.mjs
           scripts/tests/dispatch-daily-card.test.mjs
       - name: Dispatch seat policy gate (fail-closed before any POST)
@@ -67,7 +73,9 @@ jobs:
     runs-on: ubuntu-latest
     # 2026-11-17/18 owner 放开「一次一张卡」后，一批最多 6 张卡要在同一次 run 内跑完。
     timeout-minutes: 25
-    permissions: {contents: write}
+    # owner 2026-11-19：Deep 可以改代码、开/合并 PR、触发部署工作流并发信。
+    # 资金/签名/退款/凭据仍在 deep-autonomy.mjs 内 fail-closed，不等同于放开钱包。
+    permissions: {contents: write, pull-requests: write, actions: write}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,6 +88,14 @@ jobs:
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          AUTOLOOP_MAIL_TO: ${{ vars.AUTOLOOP_MAIL_TO }}
+          AUTOLOOP_SEND_MAIL: ${{ vars.AUTOLOOP_SEND_MAIL }}
+          MAIL_SMTP_HOST: ${{ vars.MAIL_SMTP_HOST }}
+          MAIL_SMTP_USER: ${{ secrets.MAIL_SMTP_USER }}
+          MAIL_SMTP_AUTH_CODE: ${{ secrets.MAIL_SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_SMTP_USER }}
+          GMAIL_IMAP_USER: ${{ secrets.GMAIL_IMAP_USER }}
+          GMAIL_IMAP_APP_PASSWORD: ${{ secrets.GMAIL_IMAP_APP_PASSWORD }}
         run: node scripts/run-deep-superagent-queue.mjs
       - uses: actions/upload-artifact@v4
         if: always()
@@ -101,6 +117,8 @@ jobs:
           execFileSync('git',['config','user.name','ltzzz-bot']);
           execFileSync('git',['config','user.email','bot@ltzzz.com']);
           execFileSync('git',['add','--',file]);
+          // autonomy 回执（code_change/deploy/mail）也要公开留痕；目录不存在时跳过。
+          if(fs.existsSync('knowledge/results/deep-superagent/autonomy'))execFileSync('git',['add','--','knowledge/results/deep-superagent/autonomy']);
           try{execFileSync('git',['diff','--staged','--quiet']);process.exit(0);}catch{}
           execFileSync('git',['commit','-m','Deep Superagent queue: '+receipt.status],{stdio:'inherit'});
           JS
