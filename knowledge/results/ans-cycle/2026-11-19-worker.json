@@ -1,0 +1,16 @@
+{
+  "finding": "syncDailyBoard 在 recoverArtifact 未能恢复唯一完整产物后，将无 artifact 的 generation_started 状态改为 generation_unknown_no_repurchase；该状态不在 syncFailedSeat 调度列表中，且后续提交路径要求 seat.artifact 存在，导致该席位永久停留在 hasUnverifiedBoard 暴露的未核验状态，无法进入失败同步闭环。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-17-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 的 syncFailedSeat 中加入无 artifact 时生成本地 failure evidence 的逻辑，并在 syncDailyBoard 中将 generation_unknown_no_repurchase 纳入 syncFailedSeat 调度列表。具体：\n1. 在 syncDailyBoard 的调度判断中，将 ['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'] 改为 ['missing_required_section','generation_failed_no_repurchase','generation_unknown_no_repurchase','failure_sync_unknown','failed_no_repurchase']。\n2. 在 syncFailedSeat 开头，当 seat.artifact 不存在且 seat.status === 'generation_unknown_no_repurchase' 时，生成本地 failure evidence：\n   const evidence = { schema_version: 1, status: 'incomplete_or_failed', date: record.date, task_id: seat.assignment.id, logical_seat: agent, run_key: record.run_key, source_commit: record.source_commit, failure_kind: 'incomplete_or_failed_provider_output', reason: 'generation_unknown_no_repurchase_no_unique_complete_artifact', generated_at: new Date(now).toISOString() };\n   const bytes = JSON.stringify(evidence, null, 2) + '\\n';\n   const hash = digest(bytes);\n   const relative = `knowledge/results/daily-board/artifacts/${record.date}-${agent}-${hash}.json`;\n   const file = path.join(root, relative);\n   fs.mkdirSync(path.dirname(file), { recursive: true });\n   fs.writeFileSync(file, bytes, { flag: 'wx' });\n   seat.artifact = { path: relative, sha256: hash };\n   seat.status = 'failure_sync_unknown';\n   saveLedger(root, record);\n  然后再执行现有 syncFailedSeat 后续逻辑。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const r={seats:{x:{status:'generation_unknown_no_repurchase',assignment:{id:'T'},claim_verified:true,artifact:null}}}; console.log(m.hasUnverifiedBoard(r))})\"",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const r={seats:{x:{status:'failed_no_repurchase',assignment:{id:'T'},claim_verified:true,failure_verified:true}}}; console.log(m.hasUnverifiedBoard(r))})\""
+  ],
+  "remaining_blocker": "failure evidence 在同步阶段本地生成后，syncFailedSeat 立即要求 readRemote(a.path) 与本地哈希一致；实际提交流程尚未验证如何保证该新证据在 fail_task 前已持久化到远端。需在真实 checkout 中构造无 artifact、多 artifact、唯一完整 artifact、唯一不完整 artifact 等恢复分支并回读远端以确认闭环。"
+}
