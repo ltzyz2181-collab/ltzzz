@@ -71,8 +71,15 @@ test('native xAI is a registered work seat while the per-job three-worker limit 
  assert.throws(()=>parsePlan(JSON.stringify({summary:'too many calls',tasks:['doubao','qianwen','kimi','grok'].map(seat=>({seat,task:'public task'}))})));
  assert.throws(()=>parsePlan(JSON.stringify({summary:'daily cap',tasks:[{seat:'doubao',task:'one'},{seat:'grok',task:'two'}]}),{maxTasks:1}));
  assert.equal(parsePlan(JSON.stringify({summary:'daily cap',tasks:[{seat:'doubao',task:'one'}]}),{maxTasks:1}).tasks.length,1);
- assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','deepseek'),2048);
- assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','kimi'),2048);
+ // 2026-11-19：日课不再是全席位一律 2048。豆包工作席在 2048 处被截断
+ // （run 44442932181：completion_tokens=2048、finish_reason=length、job blocked），
+ // 故日课按席位给预算：豆包 3072（仍留在 90s 代理时限内），千问/DeepSeek 4096，
+ // Kimi 取 profile 默认；中转计费席仍 2048 封顶。
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','doubao'),3072);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','deepseek'),4096);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','qianwen'),4096);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','kimi'),16384);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','gpt'),2048);
  assert.equal(outputTokenLimit('DEEP-ORDINARY','kimi'),16384);
  // 豆包席受 Cloudflare 100s 边缘窗口与方舟北京链路约束。2048 仍三次越时得到
  // 504 upstream_timeout，故 2026-11-10 二次下调到 1024；其他席位预算保持不变。

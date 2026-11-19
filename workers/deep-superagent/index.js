@@ -162,7 +162,22 @@ export function fallbackPlan(prompt,{seats=policy.worker_seats}={}){
   return {summary:'Coordinator output was not a valid plan; a single bounded native task was dispatched so the work can still be reviewed.',tasks:[{seat:picked,task}],needs_gpt_decision:false,reason:'coordinator_plan_unparseable'};
 }
 export function outputTokenLimit(taskId,seat){
-  if(taskId==='DEEP-DAILY-SUPERVISION')return 2048;
+  // 2026-11-19：日课原先把所有席位一律钉在 2048，实测豆包工作席回执
+  // （run 44442932181，2026-11-19T02:15:35Z→02:16:18Z）完成 2048 completion
+  // token 后 finish_reason=length、output_truncated_at_output_budget，整单
+  // job_status=blocked、outputs 为空、0 条路由。上游已是 http 200（504 已修），
+  // 截断纯属预算不够：2048 token 用了 43s，约 47 token/s。
+  // 因此日课按席位给预算，而不是统一 2048：
+  //  - 豆包 3072（≈65s，仍留在代理 UPSTREAM_TIMEOUT_MS=90000 与 CF 100s 窗口内，
+  //    不重复 2026-11-10 加预算撞 504/524 的老坑）；
+  //  - 千问 4096、DeepSeek 4096、Kimi 取 profile 默认（都无 90s 代理硬时限）；
+  //  - 其余（含中转计费席）保持 2048 封顶，不静默加预算。
+  if(taskId==='DEEP-DAILY-SUPERVISION'){
+    if(seat==='doubao')return 3072;
+    if(seat==='qianwen'||seat==='deepseek')return 4096;
+    if(seat==='kimi')return KIMI_PROFILE.default_output_tokens;
+    return 2048;
+  }
   // 2026-11-10：豆包席经 CF 边缘转发方舟北京端点。实测 8192 输出预算下的生成
   // 时长会越过 Cloudflare 的 100s 窗口（09:00:55→09:03:00 得到 524）。降到 2048
   // 后仍三次在 90s 内收不了尾（504 upstream_timeout），说明 2048 依旧偏大。
