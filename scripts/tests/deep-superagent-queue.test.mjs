@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.js';
-import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
+import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
 test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
@@ -200,10 +200,15 @@ test('public job evidence whitelists actual receipts and redacts known identitie
  assert.equal(JSON.stringify(record).includes(TOKEN),false);assert.match(record.outputs[0].text,/\[REDACTED\]/);
 });
 
-test('queue execution context is trusted main push only; latches use a separate branch namespace',()=>{
+test('queue execution context is trusted main push or daily-card-only dispatch; latches use a separate branch namespace',()=>{
  const env={GITHUB_REPOSITORY:'ltzyz2181-collab/ltzzz',GITHUB_REF:'refs/heads/main',GITHUB_EVENT_NAME:'push',GITHUB_SHA:SOURCE,GITHUB_RUN_ID:'12345',GITHUB_RUN_ATTEMPT:'1'};
  assert.equal(trustedQueueContext(env).source_commit,SOURCE);
- for(const patch of [{GITHUB_EVENT_NAME:'workflow_dispatch'},{GITHUB_EVENT_NAME:'pull_request'},{GITHUB_REF:'refs/heads/untrusted'},{GITHUB_REPOSITORY:'other/repo'}])assert.throws(()=>trustedQueueContext({...env,...patch}));
+ // dispatch 只作为 push 被抑制时的补口：sourceCommit 必须是显式给出的 40 位提交。
+ assert.equal(trustedQueueContext({...env,GITHUB_EVENT_NAME:'workflow_dispatch'},{eventName:'workflow_dispatch',sourceCommit:SOURCE}).source_commit,SOURCE);
+ assert.throws(()=>trustedQueueContext({...env,GITHUB_EVENT_NAME:'workflow_dispatch'},{eventName:'workflow_dispatch',sourceCommit:'not-a-sha'}),/trusted_main_push_required/);
+ for(const patch of [{GITHUB_EVENT_NAME:'pull_request'},{GITHUB_REF:'refs/heads/untrusted'},{GITHUB_REPOSITORY:'other/repo'}])assert.throws(()=>trustedQueueContext({...env,...patch}));
+ assert.equal(isDailyCardOnlyChange(['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261119-DAILY-2.json']),true);
+ for(const bad of [[],['scripts/run-deep-superagent-queue.mjs'],['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261119-DAILY-1.json','README.md'],['ops/deep-superagent/tasks/../evil.json'],['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261119-DAILY-10.json']])assert.equal(isDailyCardOnlyChange(bad),false);
  const store=new DeepQueueLatchStore({repository:env.GITHUB_REPOSITORY,token:'mock-github-token',baseCommit:SOURCE,baseTree:'c'.repeat(40),fetcher:()=>{throw Error('no_network');}});
  assert.equal(store.names('d'.repeat(64)).ref,'heads/deep-superagent/attempts/'+'d'.repeat(64));
  assert.throws(()=>store.names('../escape'));
@@ -224,9 +229,13 @@ test('persistent GitHub CAS transport shares the execution time limit and cannot
 
 test('push queue remains append-only while daily scheduler is separate and bounded',()=>{
  const workflow=fs.readFileSync('.github/workflows/deep-superagent-queue.yml','utf8');
- assert.doesNotMatch(workflow,/\bschedule:|\bcron:|\bworkflow_dispatch:/);
+ assert.doesNotMatch(workflow,/\bschedule:|\bcron:/);
+ // dispatch 只作为 GITHUB_TOKEN 推送被抑制时的补口，必须带 card_commit，且消费条件同时覆盖 push。
+ assert.match(workflow,/workflow_dispatch:[\s\S]*card_commit:[\s\S]*required: true/);
+ assert.match(workflow,/github\.event_name == 'push' \|\| github\.event_name == 'workflow_dispatch'/);
+ assert.match(workflow,/inputs\.card_commit/);
  assert.doesNotMatch(workflow,/DEEPSEEK_API_KEY|DOUBAO_API_KEY|MOONSHOT_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY/);
- assert.match(workflow,/github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' && github\.repository == 'ltzyz2181-collab\/ltzzz'/);
+ assert.match(workflow,/github\.ref == 'refs\/heads\/main' && github\.repository == 'ltzyz2181-collab\/ltzzz'/);
  assert.match(workflow,/node tools\/push-receipt-commit\.mjs/);
  const daily=fs.readFileSync('.github/workflows/deep-superagent-daily.yml','utf8');
  assert.match(daily,/schedule:[\s\S]*cron: '30 0 \* \* \*'/);

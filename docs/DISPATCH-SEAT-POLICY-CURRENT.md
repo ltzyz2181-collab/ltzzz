@@ -51,14 +51,16 @@ CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep
    - 只汇总公开回执（`dispatch/oversight`、`mail-intake`、最近队列卡、`daily-merge`、git HEAD）；
    - 证据缺失写 `unknown`，不猜测；同一天同一 suffix 重复运行幂等且不覆盖既有卡。
 2. **定时**：`.github/workflows/deep-dispatch-daily.yml`，cron `17 0 * * *`（00:17 UTC），也可 `workflow_dispatch` 指定日期与 suffix。
-3. **PAT 推送触发队列**：卡文件用 `LTZZZ_AGENT_TOKEN`（PAT）推送到 main，让 GitHub 产生真实的
-   push 事件与 `before..after` diff，再由既有的 `deep-superagent-queue.yml` 消费。
-   不能直接用 `GITHUB_TOKEN` 推送（GitHub 会抑制其触发的下游工作流），也不能在
-   `workflow_dispatch`/`schedule` 里直接跑队列脚本（队列信任模型要求真实 push range，
-   否则 fail-closed 为 `trusted_push_range_required`）。另需先清除 actions/checkout 写入的
-   `http.https://github.com/.extraheader`（它会让推送仍以 GITHUB_TOKEN 身份发出、触发被抑制），
-   再设置带 PAT 的 remote URL。推送后工作流会轮询确认对应 `head_sha` 的队列 run 已创建；
-   执行结果仍以该 run 的回执为准。
+3. **推送与派发队列**：卡文件用 `GITHUB_TOKEN` 推送到 main（`tools/push-receipt-commit.mjs`）。
+   GitHub 会抑制 `GITHUB_TOKEN` 推送产生的下游 push 工作流，所以每日工作流推完后调用
+   Actions API `workflow_dispatch` 显式派发 `deep-superagent-queue.yml`（`workflow_dispatch`
+   是 GitHub 官方允许的抑制例外），输入 `card_commit=<新提交 SHA>`。
+   队列脚本不接受任意 dispatch：它要求 `card_commit` 是 main 上的真实提交、该提交相对父提交
+   **只新增一张 `DEEP-SUPERAGENT-<YYYYMMDD>-DAILY-<N>.json`**，否则 fail-closed 为
+   `manual_dispatch_requires_daily_card_only`；提交不在 main 上则为 `manual_dispatch_commit_not_on_main`。
+   push 事件路径的校验保持不变（仍要求 `before..after` 真实 range）。
+   2026-11-19 实测：`LTZZZ_AGENT_TOKEN` 不是 GitHub PAT，用它做 git push 会被 GitHub 拒绝
+   （`Invalid username or token`，run 44451556933），因此不再走 PAT 推送。执行结果仍以队列 run 的回执为准。
 4. **入队前门禁**：生成卡后先跑 `check`；队列入口 `normalizeTaskCard()` 也会对 `importance`/`seats` 做 fail-closed 校验，
    并把政策元数据剥离后再发 worker（worker 的 5 字段 schema 不变）。
 5. **中转裁决**：Deep 卡输出里的 `ASK | ref | gpt | ...` 由每日合并脚本提取为
