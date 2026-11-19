@@ -35,13 +35,15 @@ jobs:
       AUTOLOOP_ENABLED: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply) && 'true' || vars.AUTOLOOP_ENABLED }}
       AUTOLOOP_SEND_MAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply) && 'true' || vars.AUTOLOOP_SEND_MAIL }}
       AUTOLOOP_MAIL_TO: ${{ vars.AUTOLOOP_MAIL_TO || 'ltzyz2181@gmail.com' }}
-      MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
-      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS || secrets.GMAIL_IMAP_USER }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD || secrets.GMAIL_IMAP_APP_PASSWORD }}
       MAIL_IMAP_HOST: ${{ vars.MAIL_IMAP_HOST || 'imap.gmail.com' }}
       MAIL_SMTP_HOST: ${{ vars.MAIL_SMTP_HOST || 'smtp.qq.com' }}
       MAIL_SMTP_USER: ${{ secrets.MAIL_SMTP_USER }}
       MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
       APISROUTER_API_KEY: ${{ secrets.APISROUTER_API_KEY }}
+      LTZZZ_RELAY_PROXY_URL: ${{ vars.LTZZZ_RELAY_PROXY_URL || 'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1' }}
+      LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.RELAY_PROXY_ACCESS_TOKEN }}
       AUTOLOOP_PYTHON: python3
     steps:
       - uses: actions/checkout@v4
