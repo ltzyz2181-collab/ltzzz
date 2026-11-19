@@ -1,7 +1,7 @@
 {
   "schema": "ltzzz.task-continuity.v1",
   "note": "每个立项任务只允许一个 next_action 与一个 next_owner。看板建立于 2026-11-17，滞留时长从建立时起算，不代表此前已停滞多久。",
-  "updated_at": "2026-11-18T07:12:00.000Z",
+  "updated_at": "2026-11-18T19:10:00.000Z",
   "tasks": [
     {
       "id": "HIRE-PHASE1-408",
@@ -431,6 +431,44 @@
         "main 当前 deploy 条件为 event_name != push 或 maintenance 消息例外"
       ],
       "updated_at": "2026-11-18T07:12:00.000Z"
+    },
+    {
+      "id": "DAILY-2026-11-18-CODEX",
+      "title": "DAILY-2026-11-18-codex：run-cycle 无审计仍放行",
+      "state": "done",
+      "evidence": [
+        "PR #437 已合并 7c76474b6eddd4b5ec0bd1bd421d4ad26eca43de",
+        "新增 cycle-outcome.mjs + 10 项反例测试；既有 agi-econ 54 项通过",
+        "push run 44443549816 success（cycle 步骤在 push 事件按设计跳过）",
+        "ops/dispatch/接单回执-DAILY-2026-11-18-codex.md",
+        "knowledge/results/external/2026-11-18-codex.md"
+      ],
+      "updated_at": "2026-11-18T19:10:00.000Z",
+      "note": "下次 03:40Z 定时运行才真正走新判定；push 事件不跑 cycle，避免重复计费。"
+    },
+    {
+      "id": "AGI-ECON-CI-TEST-WIRING",
+      "title": "cycle-outcome 反例测试接入 CI 测试清单",
+      "state": "in_review",
+      "next_owner": "claude",
+      "next_action": "确认下一次 AGI Econ 运行的第 4 步 Tests 实际执行 agi-econ-cycle-outcome.test.mjs 并全绿",
+      "evidence": [
+        "原测试清单为 7 个文件，未包含新增套件"
+      ],
+      "updated_at": "2026-11-18T19:10:00.000Z"
+    },
+    {
+      "id": "TASK-HUB-AUTOCLAIM",
+      "title": "GPT 派单能否自动接单：缺定时 claim 执行器",
+      "state": "ready",
+      "next_owner": "claude",
+      "next_action": "基于 scripts/task-hub.mjs 增加定时 poll→claim（只领取、不改生产），把接单回执写进 Issue；租约过期自动 reap",
+      "evidence": [
+        "scripts/task-hub.mjs 已有 sync/poll/claim/submit/block/reap/status/create CLI",
+        "仓库内没有 task-hub 定时工作流，当前接单靠人工执行",
+        "PR #431 为 task-hub 端到端回执测试，仍未合并"
+      ],
+      "updated_at": "2026-11-18T19:10:00.000Z"
     }
   ]
 }
