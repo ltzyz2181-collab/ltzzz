@@ -1,0 +1,105 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261119-deep-autonomy",
+  "target": "deep-superagent 队列自主执行桥（repo_read / code_change / deploy / mail）",
+  "platform": "github-actions+repo",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "9cd3ee5ba8cc452f0a3aa0229874aa8c6f366149",
+  "code_path": "config",
+  "deployed_at": "2026-11-19T10:05:00Z",
+  "owner_instruction": "2026-11-19 owner：给 Deep 安装仓库读权限、能改代码、能部署、必须自动、收发能发信、不用等 GPT 裁决",
+  "financial_execution": false,
+  "secrets_included": false,
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "done",
+    "deployed": "done",
+    "submitted": "done",
+    "platform_accepted": "not_yet"
+  },
+  "verified": [
+    {
+      "kind": "pull_request",
+      "result": "ok",
+      "evidence": "PR #465 https://github.com/ltzyz2181-collab/ltzzz/pull/465 merged via API; merge_commit 9cd3ee5ba8cc452f0a3aa0229874aa8c6f366149"
+    },
+    {
+      "kind": "code_on_main",
+      "result": "ok",
+      "evidence": "scripts/deep-autonomy.mjs sha256 a5bbf3a3b61c74d780e24139a50d364ceeeae5528cde66ac3046ff25da7e1da9; scripts/tests/deep-superagent-autonomy.test.mjs a349afbcefec8a0a8d84d54db393c259d483247d7f953ef6eda976e10a006b8d; scripts/run-deep-superagent-queue.mjs cc3eb1aecbe7d1d37ef8ffd134af078af1a4a0a6ed4c4b11eb6d6af92757f68f; .github/workflows/deep-superagent-queue.yml d3004df76f1a70f6dde9139aa56ba3584d56b89ea2667d2c7f92ccb52f8af0e3; config/deep-autonomy-20261119.json bb69b02794fb0f02240ec56003328bf14c879c9288be58fa6d997809b761200f"
+    },
+    {
+      "kind": "tests",
+      "result": "ok",
+      "evidence": "node --test deep-superagent-queue + deep-superagent-autonomy + dispatch-seat-policy + dispatch-daily-card = 60/60 pass; dispatch-seat-policy check problems 为空"
+    },
+    {
+      "kind": "workflow_runs",
+      "result": "ok",
+      "evidence": "PR #465 verify job success on head 6709a6755afa9cf10b5a35aded30b246e7062003 (run 44501031252 rerun); earlier 44500665639 success on ad7640bb"
+    },
+    {
+      "kind": "side_effect_boundary",
+      "result": "ok",
+      "evidence": "deep-autonomy.mjs 对资金/签名/退款/凭据/授权配置/工作流定义保持 fail-closed；模型输出只接受受限整文件块，不作为 shell 执行"
+    },
+    {
+      "kind": "platform_acceptance",
+      "result": "pending",
+      "evidence": "尚未用一张真实 autonomy.mode=auto 的任务卡跑通 repo_read 与 mail 的端到端回执；当前只验证了代码合并与 CI"
+    }
+  ],
+  "blockers": [
+    "端到端自主执行（真实任务卡 → repo_read → mail 回执）尚未跑通，platform_accepted=false",
+    "mail 通道依赖 Actions secrets MAIL_SMTP_USER / MAIL_SMTP_PASSWORD 与 vars AUTOLOOP_MAIL_TO，需确认真实注入"
+  ],
+  "next_action": "推送一张最小 autonomy 任务卡（repo_read + mail），观察 queue run 的 autonomy 回执与发信回执；成功后再把 platform_accepted 改为 done",
+  "counts": {
+    "pull_requests_merged": 1,
+    "tests_pass": 60,
+    "autonomy_tests": 18,
+    "blockers": 2
+  },
+  "code_sha256": {
+    "account-registration-authority-20261107.json": "0bfb6749113455fd690031b2d56d291992631c30e4d67d6f6227f71e6ee0b3cb",
+    "ai-providers.json": "10b517573b753b7ac8a77b6d86e5005d9d99b088e36279760be1fcdb130a4e7e",
+    "autonomy-authority.json": "621d8a58ce6de46094dcddc838bf7f79f7d82791eda08e0cc88cb7a35629bec3",
+    "claude-team.json": "e79263732f866cd1ea0434c9491174707bc1529951420333c056f779e47f7e5d",
+    "deep-autonomy-20261119.json": "bb69b02794fb0f02240ec56003328bf14c879c9288be58fa6d997809b761200f",
+    "deep-skill-iteration.json": "0bd767f37ebf996c54882e0533e358c0e29cfb4f4dc0e0471fc6d5fa50bfff0f",
+    "deep-superagent.json": "bc02961f7a5f5b3dda734c3b8608c48b3ffa686c69968c2a0dd7c284f3d7859e",
+    "deploy-authority-20261116.json": "49b53b42f25c6b08d67c15d82e62e02b2ea1294a07867119c160d24fd66c9488",
+    "deploy-automation-authority-20261117.json": "e23d451731b4a68ffa439e85986cfea34ceb309511467433686e680dca0d01fd",
+    "dispatch-seat-policy-20261117.json": "f51b447f6e6bb6d50189037787cb561c931fb32374c636bc99ba69d63631fd67",
+    "email-authority-20261117.json": "30cc09babd3f6211ff1849d12284f7a3668ca6a780e821cfce9ccd1714e8f1ba",
+    "financial-exit-inventory.json": "4309691ced54463a0b70f1d98474d3f29e82a1503f7577392e41cddb5804b8ce",
+    "innovation-rota.json": "db3a98333316d7e352d599075d8733c1b7de05b034f85ce823ca0403a25aef62",
+    "ltzzz-skill-release.json": "bd044a81fef94d0233d260b15220d7ee28fab2c6aa1d3a4c3432fbc5fd5e814f",
+    "ltzzz-skill.json": "8668b82b0103bb77e5aa1132ed5825a262d2e6f298f05a4a16ac3fe7b4aaa3a5",
+    "owner-authority-20261105.json": "56164cdcad6e71e4aed29115f66860c2856789b50d467af18dcbe9be8d56feb1",
+    "owner-web3-readonly.json": "a2555ece2febd0db9aaf9aa7bdc2483bbaab643a7da54eb74b45cd06dab26408",
+    "patch-policy.json": "4cf27ec9dacf244689f85f36761c4d3dfe0c0ad1ea09d3799bf971c91927cb01",
+    "patchgate-a2-collector.json": "39659da6c2152ce6b6d44f5c352ad2c84147dcff194f73d02cdbcf4aa9da2fb8",
+    "patchgate-a2-reconcile.json": "c83eb48c8ca56e5fbceccbf612c74f72401fee3af9749c9849963804674081ca",
+    "patchgate-a2.json": "8af4ecdb1db490228caedba10d59fe8f69fdcff41b71a5f139ca7f4e82f0ccbc",
+    "patchgate-a3.json": "5af4bb619eceda257688fe23a7113823254f26fbf449fe8cc955f3da930f89f5",
+    "patchgate-author-checks.json": "2e6d4b49dd586449738d231e1cc50984371b32d26b0efe92d6cb60b5f8040649",
+    "patchgate-cloud-publisher.json": "ca94035f465a41b1aefa616624310439f7ec378ffe8638efdc7e3dac3c46935e",
+    "patchgate-executors.json": "79c6f14fa19d6627dd1f96e6c65184d2271290b5d18765c3e7b21055f4b47d86",
+    "patchgate-model-attestation.json": "05672d0f219d21bcbe8abbf7b311dd1cdad9783071a878751df4349f663d06a3",
+    "patchgate-trust.json": "b38fa49001f73ebe7364c145bc6acf9cf9540a57ab1b046928c6219940c093e4",
+    "pi-cloud-runtime/package-lock.json": "1d88ae708c71d04826491925c02ecc4dbc240616af977cc6c1b139191290e395",
+    "pi-cloud-runtime/package.json": "4e5515b883ddc18d37580b530e598b08449b10440a072f60f8643a3178444dfa",
+    "pi-cloud.json": "e66076153ed020841021e89bb4eeb6ca1ab0010ef42f28b265fb7f152063fb53",
+    "relay-adjudication-scopes.json": "10acbd2d1517b66e6490531ba1f85934f76c0d8e2bea57b2ef68a0b52abcc76f",
+    "relay-seat-acceptance.json": "87c44a0b44e6fb70ccdfda65ee44e0fe306c620cdb6c248f5ba35450c78e90bc",
+    "relay-seat-policy.json": "73a7868c44f3ab77eb5a5ac6a85e4f298fce806e38df39d30c976159bf094615",
+    "review-delegation.json": "280709ecbf1113b37efba0e3f289f07f183abd18fe18782053c22f38d6dd5166",
+    "seat-roles-20261116.json": "e732cc9618316902c6779c1a4bc200196cc77bce86cd14c9d3c1749726c8e648",
+    "small-payment-activation-authority.json": "dc5e556b5f86c88a8f0e53f8d2a256aa71f8438d73d9a488febb7ea5deb9c816",
+    "small-payment-autonomy.json": "c23854ef0852cdd55348a2f832c4cd7dcd59f51c419bfe615204a56781f7d620",
+    "vscode/deepseek.chatLanguageModels.template.json": "c1800967f90c4193e0489a44f8bb1287d9f16375d1fb2304c7613653081aebf3",
+    "workpool.json": "c1a5112a2a000ae57cfbbec90d737a13679b9083a9bcabfae4e1744c5d250c94"
+  }
+}
