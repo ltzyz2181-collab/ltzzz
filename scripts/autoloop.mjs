@@ -131,7 +131,7 @@ async function gh(token, method, route, body) {
     redirect: 'error',
   });
   const text = await res.text();
-  if (!res.ok) throw new Error('autoloop_github_' + res.status);
+  if (!res.ok) throw new Error('autoloop_github_' + res.status + ':' + method + ' ' + path);
   return text ? JSON.parse(text) : null;
 }
 
