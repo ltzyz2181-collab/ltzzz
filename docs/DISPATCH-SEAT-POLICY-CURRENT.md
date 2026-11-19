@@ -50,8 +50,12 @@ CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep
    - 只汇总公开回执（`dispatch/oversight`、`mail-intake`、最近队列卡、`daily-merge`、git HEAD）；
    - 证据缺失写 `unknown`，不猜测；同一天重复运行幂等且不覆盖既有卡。
 2. **定时**：`.github/workflows/deep-dispatch-daily.yml`，cron `17 0 * * *`（00:17 UTC），也可 `workflow_dispatch` 指定日期。
-3. **同锁直连队列**：生成后直接运行 `scripts/run-deep-superagent-queue.mjs`，与 push 触发共用
-   `concurrency: deep-superagent-queue`。不依赖 GITHUB_TOKEN 推送去触发下游工作流（GitHub 会抑制这种递归触发）。
+3. **PAT 推送触发队列**：卡文件用 `LTZZZ_AGENT_TOKEN`（PAT）推送到 main，让 GitHub 产生真实的
+   push 事件与 `before..after` diff，再由既有的 `deep-superagent-queue.yml` 消费。
+   不能直接用 `GITHUB_TOKEN` 推送（GitHub 会抑制其触发的下游工作流），也不能在
+   `workflow_dispatch`/`schedule` 里直接跑队列脚本（队列信任模型要求真实 push range，
+   否则 fail-closed 为 `trusted_push_range_required`）。推送后工作流会轮询确认对应
+   `head_sha` 的队列 run 已创建；执行结果仍以该 run 的回执为准。
 4. **入队前门禁**：生成卡后先跑 `check`；队列入口 `normalizeTaskCard()` 也会对 `importance`/`seats` 做 fail-closed 校验，
    并把政策元数据剥离后再发 worker（worker 的 5 字段 schema 不变）。
 5. **中转裁决**：Deep 卡输出里的 `ASK | ref | gpt | ...` 由每日合并脚本提取为

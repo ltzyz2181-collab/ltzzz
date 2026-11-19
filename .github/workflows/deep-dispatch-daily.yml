@@ -58,8 +58,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions: {contents: write}
-    # 与 queue 工作流共用同一锁：本工作流直连队列时，push 触发的消费者不会并发重复下单。
-    concurrency: {group: deep-superagent-queue, cancel-in-progress: false}
     steps:
       - uses: actions/checkout@v4
         with: {ref: 'main', fetch-depth: 0, persist-credentials: true}
@@ -76,54 +74,62 @@ jobs:
           node scripts/dispatch-daily-card.mjs --date "$DATE"
           node scripts/dispatch-seat-policy.mjs check
 
-      - name: Consume the queue directly (daily trigger, not push-dependent)
+      - name: Commit the card with a PAT push so the queue push trigger is not suppressed
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set +e
-          node scripts/run-deep-superagent-queue.mjs
-          code=$?
-          set -e
-          echo "QUEUE_EXIT=$code" >> "$GITHUB_ENV"
-          # 非 0 也要保住回执再判；不在这里吞成成功。
-          exit 0
-
-      - name: Preserve daily card and exact queue receipt
-        if: always()
         run: |
           node --input-type=module <<'JS'
           import fs from 'node:fs';
           import {execFileSync} from 'node:child_process';
           const card = 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-' + process.env.CARD_DATE.replaceAll('-', '') + '-DAILY-1.json';
-          const queueFile = 'knowledge/results/deep-superagent/queue-' + process.env.GITHUB_RUN_ID + '-attempt-' + process.env.GITHUB_RUN_ATTEMPT + '.json';
           if (!fs.existsSync(card)) throw Error('daily_card_missing:' + card);
-          const add = [card];
-          if (fs.existsSync(queueFile)) {
-            const receipt = JSON.parse(fs.readFileSync(queueFile, 'utf8'));
-            if (!/^queue_(blocked|pending_reconciliation|results_verified)$|^no_new_queue_cards$/.test(receipt.status)) throw Error('invalid_queue_receipt_status');
-            add.push(queueFile);
-          }
           execFileSync('git', ['config', 'user.name', 'ltzzz-bot']);
           execFileSync('git', ['config', 'user.email', 'bot@ltzzz.com']);
-          execFileSync('git', ['add', '--', ...add]);
+          execFileSync('git', ['add', '--', card]);
           try { execFileSync('git', ['diff', '--staged', '--quiet']); process.exit(0); } catch {}
           execFileSync('git', ['commit', '-m', 'Deep dispatch daily card ' + process.env.CARD_DATE], {stdio: 'inherit'});
           JS
+          if git diff --quiet HEAD~1 -- "ops/deep-superagent/tasks/DEEP-SUPERAGENT-${CARD_DATE//-/}-DAILY-1.json" 2>/dev/null; then
+            echo "PUSHED=0" >> "$GITHUB_ENV"
+            echo "::notice::Daily card already exists unchanged; no push, no new queue trigger."
+            exit 0
+          fi
+          if [ -z "${LTZZZ_AGENT_TOKEN:-}" ]; then
+            echo "::error::LTZZZ_AGENT_TOKEN is absent; a GITHUB_TOKEN push would suppress the queue workflow."
+            exit 1
+          fi
+          # 用 PAT 推送：GitHub 会抑制 GITHUB_TOKEN 推送产生的下游工作流，
+          # 而队列的信任模型要求真实 push 的 before..after diff。
+          git remote set-url origin "https://x-access-token:${LTZZZ_AGENT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           node tools/push-receipt-commit.mjs
+          echo "NEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "PUSHED=1" >> "$GITHUB_ENV"
+
+      - name: Confirm the queue push trigger was created
+        if: env.PUSHED == '1'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          const url = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/deep-superagent-queue.yml/runs?head_sha=${process.env.NEW_SHA}&per_page=5`;
+          for (let i = 0; i < 18; i += 1) {
+            const response = await fetch(url, {headers: {Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json'}});
+            const data = await response.json();
+            const runs = Array.isArray(data.workflow_runs) ? data.workflow_runs : [];
+            if (runs.length) {
+              const run = runs[0];
+              console.log(JSON.stringify({triggered: true, run_id: run.id, status: run.status, url: run.html_url}));
+              process.exit(0);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+          }
+          throw Error('queue_run_not_triggered_for_card_commit');
+          JS
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: deep-dispatch-daily-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            ops/deep-superagent/tasks/DEEP-SUPERAGENT-*-DAILY-1.json
-            knowledge/results/deep-superagent/queue-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          path: ops/deep-superagent/tasks/DEEP-SUPERAGENT-*-DAILY-1.json
           if-no-files-found: warn
           retention-days: 30
-
-      - name: Fail when the queue did not complete cleanly
-        if: env.QUEUE_EXIT != '0'
-        run: |
-          echo "::error::Deep queue exited ${QUEUE_EXIT}; inspect the exact queue receipt, do not resend blindly."
-          exit 1
