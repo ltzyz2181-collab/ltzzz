@@ -126,6 +126,7 @@ test('executeAutonomy：code_change 无文件块时拒绝，不碰 git', async (
     autonomy: {mode: 'auto', code_change: true},
     job: {task_id: 'T', input_sha256: 'b'.repeat(64), prompt: '改代码'},
     outputs: [{text: '我想改但没给文件块'}],
+    root: tmp(),
     env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '1'},
     fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
   });
@@ -153,6 +154,16 @@ test('executeAutonomy：code_change 写盘、测试、开 PR 并合并', async (
     calls.push(`${options.method || 'GET'} ${url}`);
     if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
     if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 7})};
+    if (url.endsWith('/actions/workflows/deep-autonomy-verify.yml/dispatches')) return {status: 204, ok: true, text: async () => ''};
+    if (url.includes('/actions/workflows/deep-autonomy-verify.yml/runs')) {
+      return {
+        status: 200,
+        ok: true,
+        text: async () => JSON.stringify({
+          workflow_runs: [{id: 99, head_branch: 'deep-auto/deep-1-42', status: 'completed', conclusion: 'success', html_url: 'https://example/run/99'}],
+        }),
+      };
+    }
     if (url.endsWith('/pulls/7/merge')) return {status: 200, ok: true, text: async () => JSON.stringify({merged: true, sha: 'deadbeef'})};
     throw new Error(`unexpected ${url}`);
   };
@@ -171,13 +182,151 @@ test('executeAutonomy：code_change 写盘、测试、开 PR 并合并', async (
   assert.equal(result.actions[0].status, 'merged');
   assert.equal(result.actions[0].pr, 7);
   assert.equal(result.actions[0].merge_sha, 'deadbeef');
+  assert.equal(result.actions[0].ci.status, 'ci_passed');
+  assert.equal(result.actions[0].ci.run_id, 99);
   assert.ok(calls.some((call) => call.startsWith('POST ') && call.endsWith('/pulls')));
+  assert.ok(calls.some((call) => call.includes('/actions/workflows/deep-autonomy-verify.yml/dispatches')));
   const receipt = JSON.parse(fs.readFileSync(path.join(work, result.receipt_path), 'utf8'));
   assert.equal(receipt.schema, 'ltzzz.deep-superagent.autonomy.v1');
   assert.equal(receipt.financial_execution, false);
   assert.equal(receipt.secrets_included, false);
   // 合并后回到 main，回执落在 main 工作树。
   assert.equal(execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {cwd: work, encoding: 'utf8'}).trim(), 'main');
+});
+
+test('executeAutonomy：CI 失败时不合并，回执记录实际 run', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  const calls = [];
+  const fetcher = async (url, options = {}) => {
+    calls.push(`${options.method || 'GET'} ${url}`);
+    if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+    if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 8})};
+    if (url.endsWith('/dispatches')) return {status: 204, ok: true, text: async () => ''};
+    if (url.includes('/actions/workflows/deep-autonomy-verify.yml/runs')) {
+      return {
+        status: 200,
+        ok: true,
+        text: async () => JSON.stringify({
+          workflow_runs: [{id: 100, head_branch: 'deep-auto/deep-ci-52', status: 'completed', conclusion: 'failure', html_url: 'https://example/run/100'}],
+        }),
+      };
+    }
+    if (url.endsWith('/pulls/8/merge')) return {status: 200, ok: true, text: async () => JSON.stringify({merged: true, sha: 'should-not-happen'})};
+    throw new Error(`unexpected ${url}`);
+  };
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'DEEP-CI', input_sha256: '3'.repeat(64), prompt: '更新文档'},
+    outputs: [{text: '<<<FILE:a.md>>>\nnew\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '52'},
+    fetcher,
+    runTests: () => 'ok',
+  });
+
+  assert.equal(result.actions[0].status, 'ci_failed');
+  assert.equal(result.actions[0].pr, 8);
+  assert.equal(result.actions[0].ci.run_id, 100);
+  assert.equal(result.actions[0].merge_sha, undefined);
+  assert.equal(result.status, 'partial');
+  assert.ok(!calls.some((call) => call.includes('/pulls/8/merge')));
+});
+
+test('executeAutonomy：CI run 不出现时超时且不合并', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  const calls = [];
+  const fetcher = async (url, options = {}) => {
+    calls.push(`${options.method || 'GET'} ${url}`);
+    if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+    if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 9})};
+    if (url.endsWith('/dispatches')) return {status: 204, ok: true, text: async () => ''};
+    if (url.includes('/actions/workflows/deep-autonomy-verify.yml/runs')) {
+      return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs: []})};
+    }
+    if (url.endsWith('/pulls/9/merge')) return {status: 200, ok: true, text: async () => JSON.stringify({merged: true, sha: 'should-not-happen'})};
+    throw new Error(`unexpected ${url}`);
+  };
+  let now = 0;
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'DEEP-TIMEOUT', input_sha256: '4'.repeat(64), prompt: '更新文档'},
+    outputs: [{text: '<<<FILE:a.md>>>\nnew\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '53'},
+    fetcher,
+    runTests: () => 'ok',
+    clock: () => now,
+    sleep: async (ms) => {
+      now += ms;
+    },
+    ciTimeoutMs: 10000,
+    ciIntervalMs: 5000,
+  });
+
+  assert.equal(result.actions[0].status, 'ci_timeout');
+  assert.equal(result.actions[0].ci.error, 'ci_timeout');
+  assert.ok(!calls.some((call) => call.includes('/pulls/9/merge')));
+});
+
+test('executeAutonomy：CI dispatch 失败时不合并', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  const fetcher = async (url) => {
+    if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+    if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 10})};
+    if (url.endsWith('/dispatches')) return {status: 500, ok: false, text: async () => 'dispatch_failed'};
+    throw new Error(`unexpected ${url}`);
+  };
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'DEEP-NOCI', input_sha256: '5'.repeat(64), prompt: '更新文档'},
+    outputs: [{text: '<<<FILE:a.md>>>\nnew\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '54'},
+    fetcher,
+    runTests: () => 'ok',
+  });
+
+  assert.equal(result.actions[0].status, 'ci_dispatch_failed');
+  assert.equal(result.actions[0].merge_sha, undefined);
 });
 
 test('executeAutonomy：code_change 测试失败会恢复原文件且不合并', async () => {
@@ -216,6 +365,7 @@ test('executeAutonomy：code_change 未合并时 deploy 跳过', async () => {
     autonomy: {mode: 'auto', code_change: true, deploy: {workflow: 'deep-superagent-daily.yml'}},
     job: {task_id: 'DEEP-3', input_sha256: 'e'.repeat(64), prompt: '改代码'},
     outputs: [{text: '没有文件块'}],
+    root: tmp(),
     env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '44'},
     fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
   });
@@ -230,6 +380,7 @@ test('executeAutonomy：deploy 只按声明的 workflow 派发', async () => {
     autonomy: {mode: 'auto', deploy: {workflow: 'daily-ops-report.yml'}},
     job: {task_id: 'DEEP-4', input_sha256: 'f'.repeat(64), prompt: '部署每日报表'},
     outputs: [],
+    root: tmp(),
     env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '45'},
     fetcher: async (url, options = {}) => {
       calls.push(`${options.method} ${url}`);
@@ -246,6 +397,7 @@ test('executeAutonomy：mail 缺凭据时明确失败，不假装已发送', asy
     autonomy: {mode: 'auto', mail: {to: ['owner@example.com'], subject: '汇报', body: '正文'}},
     job: {task_id: 'DEEP-5', input_sha256: '1'.repeat(64), prompt: '发汇报邮件'},
     outputs: [],
+    root: tmp(),
     env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '46'},
     fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
   });
@@ -258,6 +410,7 @@ test('executeAutonomy：mail 正文为空时失败', async () => {
     autonomy: {mode: 'auto', mail: {to: ['owner@example.com'], subject: '汇报', body_from_output: true}},
     job: {task_id: 'DEEP-6', input_sha256: '2'.repeat(64), prompt: '发汇报邮件'},
     outputs: [],
+    root: tmp(),
     env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '47', MAIL_SMTP_USER: 'u', MAIL_SMTP_AUTH_CODE: 'p'},
     fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
   });
