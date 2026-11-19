@@ -19,6 +19,7 @@ import os
 import re
 import smtplib
 import sys
+import traceback
 
 SCHEMA = 'ltzzz.mail-send.v1'
 META_SCHEMA = 'ltzzz.deep-superagent.email-meta.v1'
@@ -177,6 +178,8 @@ def run(meta_path, body_path=None, receipt_path=None, dry_run=False, env=None, s
     try:
         result = send_via_smtp(host, port, user, password, message, smtp_factory=smtp_factory)
     except Exception as exc:  # noqa: BLE001
+        # 回执只记异常类型与消息；traceback 只进 stderr，便于定位而不会把凭据写入仓库。
+        traceback.print_exc()
         payload = receipt('failed', reason=type(exc).__name__, detail=str(exc)[:160],
                           smtp_host=host, smtp_port=port, **base)
         write_receipt(receipt_path, payload)
