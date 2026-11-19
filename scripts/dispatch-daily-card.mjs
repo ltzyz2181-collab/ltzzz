@@ -138,9 +138,8 @@ export function buildDailyCard({date, evidence, policy = loadPolicy(), suffix = 
   const prompt = [
     '内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。',
     '',
-    '你是规划席，只输出一个 JSON 计划，不要输出 ROUTE 行，不要 markdown 代码围栏。',
-    '计划格式：{"summary":"<不超过80字>","tasks":[{"seat":"qianwen","task":"<给 qianwen 的完整任务文本>"}],"needs_gpt_decision":false,"reason":null}',
-    'tasks 必须恰好 1 条，seat 必须是 qianwen；task 字段必须逐字包含下方【给 qianwen 的任务】全文，不得删改 ref、计数或输出格式。',
+    '【目标】对下列 ref 逐条定 route。',
+    '具体输入、规则与输出格式都在下方任务块内；执行席只按该块执行，外层不另发指令。',
     '',
     '【给 qianwen 的任务】',
     workerTask,

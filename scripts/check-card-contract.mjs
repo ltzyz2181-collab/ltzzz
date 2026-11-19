@@ -28,7 +28,7 @@ export function analyzeCardPrompt(prompt) {
   const hasWorker = WORKER_RE.test(text);
   const hasCoordinator = COORDINATOR_RE.test(text);
   const hasReviewer = REVIEWER_RE.test(text);
-  const hasNestedWorker = hasPlanner && hasWorker && NESTED_WORKER_RE.test(text);
+  const hasNestedWorker = hasWorker && NESTED_WORKER_RE.test(text);
   const reasons = [];
   if (hasPlanner && hasWorker && !hasNestedWorker) reasons.push('planner_worker');
   if (hasCoordinator && hasReviewer) reasons.push('coordinator_reviewer');

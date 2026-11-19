@@ -56,12 +56,12 @@ test('每日卡通过派单政策、卡合同与队列规范', () => {
   assert.deepEqual(Object.keys(normalizeTaskCard(card)).sort(), ['data_classification', 'package_id', 'platform', 'prompt', 'task_id']);
 });
 
-test('规划席只看到 JSON 契约，ROUTE 行只出现在给 qianwen 的任务块内', () => {
+test('外层只描述目标，ROUTE 指令只出现在给 qianwen 的任务块内', () => {
   const card = buildDailyCard({date: '2026-11-19', evidence: evidence(), policy});
   const outer = card.prompt.slice(0, card.prompt.indexOf('【给 qianwen 的任务】'));
-  assert.match(outer, /只输出一个 JSON 计划/);
-  assert.match(outer, /"tasks":\[\{"seat":"qianwen"/);
+  assert.match(outer, /执行席只按该块执行/);
   assert.doesNotMatch(outer, /^ROUTE \|/m);
+  assert.doesNotMatch(outer, /只输出一个 JSON 计划/);
   const nested = card.prompt.slice(card.prompt.indexOf('【给 qianwen 的任务】'));
   assert.match(nested, /^ROUTE \| <ref> \| <route> \|/m);
   assert.match(nested, /本次输入未给任何回执文件路径/);
