@@ -163,9 +163,13 @@ export async function publishChanges({token, cwd = process.cwd(), paths, branch,
 // Merge requires BOTH a path allowlist and an actually successful check run. A PR with
 // no checks is left open on purpose: silence is not evidence of health.
 export async function waitForChecks({token, sha, attempts = 18, pauseMs = 30000}) {
+  let empty = 0;
   for (let i = 0; i < attempts; i++) {
     const runs = await gh(token, 'GET', 'commits/' + sha + '/check-runs');
     const list = runs.check_runs || [];
+    // Nothing is ever attached on some branches; do not burn the whole window on silence.
+    empty = list.length === 0 ? empty + 1 : 0;
+    if (empty >= 2) return 'none_or_pending';
     if (list.some(r => r.conclusion === 'failure' || r.conclusion === 'timed_out')) return 'failed';
     const done = list.filter(r => r.status === 'completed');
     if (list.length > 0 && done.length === list.length && done.every(r => ['success', 'neutral', 'skipped'].includes(r.conclusion))) return 'success';
