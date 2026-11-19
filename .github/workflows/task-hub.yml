@@ -1,0 +1,61 @@
+name: Task Hub (任务中心 · 每 15 分钟)
+
+# 业主 2026-11-18 口径：GPT 裁决 → GitHub 派单 → Linear 同步 → 邮件通知 → Deep 调度 → 各席位领取。
+# 本工作流是「Deep 调度」的最小落地：校正标签、回收过期租约、落盘状态快照，无模型调用、无资金动作。
+# 邮件只是提醒，不在这里发：SMTP 凭据不进 CI，由 scripts/task-hub-mail.mjs 在持凭据的机器上执行。
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: ltzzz-task-hub
+  cancel-in-progress: false
+
+jobs:
+  hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 回归测试（纯逻辑，无网络）
+        run: node --test scripts/tests/task-hub.test.mjs
+
+      - name: 按评论证据校正标签
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/task-hub.mjs sync --apply
+
+      - name: 回收过期租约（超过 24h 未回报）
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/task-hub.mjs reap --apply
+
+      - name: 落盘状态快照
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/task-hub.mjs status --out knowledge/results/task-hub/latest.json
+
+      - name: 提交快照
+        run: |
+          git config user.name "ltzzz-task-hub"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/task-hub/latest.json
+          if git diff --staged --quiet; then
+            echo "no changes"; exit 0
+          fi
+          git commit -m "task-hub: 任务中心快照 $(TZ=Asia/Shanghai date +%F' '%H:%M)"
+          node tools/push-receipt-commit.mjs

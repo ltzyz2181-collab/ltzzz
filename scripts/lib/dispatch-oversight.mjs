@@ -7,6 +7,13 @@ import {cycleClosure} from './ans-review-recovery.mjs';
 import {externalReturnEvidence,ansCloseoutReview} from './oversight-closeout.mjs';
 
 export const OVERSIGHT_ROOT = 'knowledge/results/dispatch/oversight';
+export const ADJUDICATION_DIR = `${OVERSIGHT_ROOT}/adjudications`;
+export const ADJUDICATION_SCHEMA = 'ltzzz.oversight.adjudication.v1';
+// A phase in this set means the warned stage is no longer missing. The warning
+// resolver never treats a phase change as production completion; it only
+// resolves the historical warning it was bound to.
+const CLOSED_PHASES = ['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded','independent_draft_review_completed'];
+const closedPhase = task => CLOSED_PHASES.includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const safeId = id => /^[A-Za-z0-9_-]{1,160}$/.test(id || '');
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -115,7 +122,7 @@ export function inspectDispatches({root='.', now=new Date().toISOString(), lookb
     add({id,date:'2026-10-18',issuer:'claude',assigned_to:'claude',phase,delivery_channel:claudePolicy.channel,role_status:claudePolicy.work_status,delegated:linked.delegated===true,actual_provider:linked.actual_provider||null,native_generation_verified:false,submission_verified:linked.submission_verified===true,independent_review_verified:false,pr_url:linked.pr_url||null,due_at:deadline('2026-10-20','22:00'),evidence:['config/claude-team.json',acceptance.receipt,...(present?[delivery]:[]),...linked.evidence].filter(Boolean),instruction:'核对 Claude 已接三项规划/审计任务与真实 PR/交付的关联；登记缺链接不等于任务没做，先查现有成果，复用原 Task ID 补齐链接或说明阻塞，不重做订单/付款。'});
   }
   for(const task of tasks.values()) {
-    const closed=['recorded_dispatches','external_report_present_unverified','controller_review_record_present','engineering_delivery_verified_not_deployed','hire_receipt_present_scope_limited','external_pr_delivery_recorded','independent_draft_review_completed'].includes(task.phase) || (task.phase==='draft_reviewed_not_deployed' && !task.requires_engineering_followup);
+    const closed=closedPhase(task);
     const issue=task.phase==='draft_reviewed_not_deployed'?'engineering_completion_unverified':task.phase;
     observations.push({...task,issue,overdue:!task.reference_only&&!closed && Date.parse(now)>=Date.parse(task.due_at),status:task.reference_only?'delivery_channel_reference_not_completion':closed?'evidence_present_scope_limited':Date.parse(now)<Date.parse(task.due_at)?'not_due':'warning_required'});
   }
@@ -133,6 +140,71 @@ export function nativeQianwenOversight(root,date){
  const review=seat.review_receipt;
  if(seat.review_verified===true&&review?.task_id===seat.assignment.id&&review.reviewed_sha256===seat.artifact.sha256&&review.accepted===true&&reviewProof(root,ledger,seat,review)&&normalized(review.worker_actual_provider)===normalized(body.actual_provider)&&normalized(review.worker_actual_provider)!==normalized(review.reviewer_actual_provider))Object.assign(result,{status:'native_supervision_independently_reviewed',independent_review_verified:true,evidence:[...result.evidence,review.evidence_path]});
  return result;
+}
+
+// A historical warning may fall outside every later inspection window while the
+// missing stage was in fact supplied afterwards. Closing it requires a
+// per-original-task adjudication file with hash-bound evidence AND a canonical
+// re-observation at the original date showing a closed phase that differs from
+// the warned issue. There is no bulk switch: one file, one case_id.
+function adjudicationProof(root, record, row, now) {
+  if(record?.schema!==ADJUDICATION_SCHEMA || record.case_id!==row.case_id || record.task_id!==row.task_id || record.issue!==row.issue) return null;
+  if(record.decision!=='resolved_by_repository_evidence' || record.reviewed_by!=='gpt_decision_seat') return null;
+  if(typeof record.reason!=='string' || record.reason.trim().length<10) return null;
+  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(record.reviewed_at||'') || Date.parse(record.reviewed_at)>Date.parse(now)) return null;
+  if(!Array.isArray(record.evidence) || record.evidence.length===0 || record.evidence.length>8 || !record.evidence.every(e=>fileProof(root,e?.path,e?.sha256))) return null;
+  const date=row.original_task_date;
+  if(!datePattern.test(date||'')) return null;
+  let tasks; try { tasks=inspectDispatches({root,now:new Date(Date.parse(date+'T00:00:00Z')+86400000).toISOString(),lookback:4}).tasks; } catch { return null; }
+  const task=tasks.find(t=>t.id===row.task_id);
+  if(!task || task.issue===row.issue || !closedPhase(task)) return null;
+  // Evidence must include at least one file the historical task itself cites.
+  if(!record.evidence.some(e=>task.evidence.includes(e.path))) return null;
+  return {phase:task.phase,reviewed_at:record.reviewed_at};
+}
+
+function applyAdjudication(row, file, record, proof) {
+  Object.assign(row,{state:'resolved_by_repository_evidence',resolved_at:proof.reviewed_at,resolved_by:record.reviewed_by,
+    adjudication_file:file,adjudication_evidence:record.evidence.map(e=>e.path),adjudication_phase:proof.phase,
+    resolution_reason:record.reason,resolution_scope:'warning_resolution_only_not_production_completion'});
+  delete row.reverted_reason;
+}
+
+export function resolveAdjudicatedCases({root='.', cases, now=new Date().toISOString()}) {
+  const resolved=[], revalidated=[], reverted=[];
+  for(const row of Object.values(cases||{})) {
+    if(!safeId(row?.case_id) || !safeId(row?.task_id)) continue;
+    const file=`${ADJUDICATION_DIR}/${row.case_id}.json`;
+    if(row.state==='open') {
+      const record=read(root,file), proof=adjudicationProof(root,record,row,now);
+      if(!proof) continue;
+      applyAdjudication(row,file,record,proof); resolved.push(row.case_id); continue;
+    }
+    // A resolution that came from an adjudication file is re-checked on every run:
+    // the evidence bytes, the historic phase and the task binding must still hold.
+    // A row this run resolved from its own canonical observation (resolved_at=now)
+    // does not depend on the file and is left alone.
+    if(row.state!=='resolved_by_repository_evidence' || row.adjudication_file!==file || row.resolved_at===now) continue;
+    const record=read(root,file), proof=adjudicationProof(root,record,row,now);
+    if(proof) { applyAdjudication(row,file,record,proof); revalidated.push(row.case_id); continue; }
+    for(const key of ['resolved_at','resolved_by','adjudication_file','adjudication_evidence','adjudication_phase','resolution_reason','resolution_scope']) delete row[key];
+    Object.assign(row,{state:'open',last_observed_at:now,reverted_reason:'adjudication_evidence_no_longer_valid'});
+    reverted.push(row.case_id);
+  }
+  return {resolved,revalidated,reverted};
+}
+
+export function buildAdjudication({root='.', caseId, taskId, evidence, reason, reviewedAt=new Date().toISOString(), now=reviewedAt}) {
+  if(!safeId(caseId) || !safeId(taskId) || !Array.isArray(evidence) || evidence.length===0) throw Error('adjudication_input_invalid');
+  const row=read(root,`${OVERSIGHT_ROOT}/warnings.json`)?.cases?.[caseId];
+  if(!row || row.state!=='open') throw Error('adjudication_case_not_open');
+  if(row.task_id!==taskId) throw Error('adjudication_task_mismatch');
+  const record={schema:ADJUDICATION_SCHEMA,case_id:caseId,task_id:taskId,issue:row.issue,decision:'resolved_by_repository_evidence',
+    reviewed_by:'gpt_decision_seat',reviewed_at:reviewedAt,reason,
+    evidence:evidence.map(p=>({path:p,sha256:hash(fs.readFileSync(path.join(root,p)))})),
+    scope:'warning_resolution_only_not_production_completion'};
+  if(!adjudicationProof(root,record,row,now)) throw Error('adjudication_evidence_insufficient');
+  return {path:`${ADJUDICATION_DIR}/${caseId}.json`,record};
 }
 
 export function runDispatchOversight({root='.', now=new Date().toISOString(), sourceCommit=null, runId='local', lookback=7,nativeReceiptVerifier}={}) {
@@ -157,8 +229,10 @@ export function runDispatchOversight({root='.', now=new Date().toISOString(), so
   // A changed phase resolves the prior warning only when the same task was read
   // again. Disappearance from the bounded window is never proof of completion.
   for(const [key,row] of Object.entries(cases)) if(!seen.has(key) && report.tasks.some(t=>t.id===row.task_id)) {const current=report.tasks.find(t=>t.id===row.task_id);row.state=current.reference_only?'reclassified_delivery_channel_not_completed':'superseded_by_current_phase';row.reclassification_reason=current.reference_only?'Active external PR route; native claim not scheduled, no work completion inferred':null;row.current_phase=current.phase;row.updated_at=now;}
+  const adjudicated=resolveAdjudicatedCases({root,cases,now});
+  if(adjudicated.reverted.length) report.reverted_adjudications=adjudicated.reverted;
   const warnings=Object.values(cases).filter(row=>row.state==='open');
-  Object.assign(report,{schema:'ltzzz.dispatch-oversight.v1',supervisor:'qianwen',executed_by:'repository_rules',native_qianwen_call:false,source_commit:sourceCommit,run_id:runId,model_calls:0,new_paid_schedules:0,paid:false,tx_hash:null,controller_permissions_reduced:false,automatic_financial_replay:false,warnings,
+  Object.assign(report,{schema:'ltzzz.dispatch-oversight.v1',supervisor:'qianwen',executed_by:'repository_rules',native_qianwen_call:false,source_commit:sourceCommit,run_id:runId,model_calls:0,new_paid_schedules:0,paid:false,tx_hash:null,controller_permissions_reduced:false,automatic_financial_replay:false,warnings,adjudicated_cases:adjudicated.resolved,adjudication_revalidated:adjudicated.revalidated,
     qianwen_daily_task_id:`DAILY-${report.date}-qianwen`,native_qianwen_review_verified:nativeQianwenOversight(root,report.date).independent_review_verified,native_qianwen_supervision:nativeQianwenOversight(root,report.date),scope:'repository_evidence_and_reminder_dispatch_not_execution_or_independent_native_audit'});
   const count=predicate=>report.tasks.filter(predicate).length;
   report.stage_counts={scope:'verified_in_scanned_sources_not_total_project_completion',tasks_observed:report.tasks.length,

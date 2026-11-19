@@ -13,6 +13,8 @@
 | 五签 Safe | 独立成族，升级到 `owner_multisig`，**不进** gpt 决策席，更不经 relay | `escalationTargetFor()` + 单测 |
 | 裁决可执行性 | 裁决只出记录：`relay_attested=false`、`execution_authority=false`、不得声明 accepted/deployed/paid | `adjudicationRecord()` + 单测 |
 | 失败语义 | provider 错误或 JSON 不合格记为 `undecided`，不重试、不用他席顶替 | 单测 case 9、case 并发/放弃租约 |
+| 有界裁决范围 | 仅日常、低风险、可逆、内部仓库任务；资金/退款/签名/钱包/密钥/权限/生产写入/外部不可逆一律不进 relay | `config/relay-adjudication-scopes.json` 的 `forbidden_families` |
+| 执行与声明 | 豆包继续执行和部署；relay 裁决不得宣称 merged/deployed/platform_accepted | `relay_verdict_limits` + 单测 |
 
 ## 二、两个接口必须分开引用
 
@@ -46,6 +48,7 @@
 2. owner 2026-11-17：除资金、放款这类重要事件外，由中转 GPT 裁决；先做 PR + 测试，绿了再部署，不碰资金（`config/seat-roles-20261116.json` → `OWNER-AUTH-20261117-RELAY-ADJUDICATION`）。
 3. 资金裁决权仍在 GPT 决策席（5 签 Safe 除外），不因本次接线改变。
 4. 常规内部人工决策进入 GPT 决策队列，不升级成 owner 逐项审批；五签事项只走 owner/multisig。
+5. owner 2026-11-17 正式决定：日常、低风险、可逆、内部仓库任务可交中转 GPT 有界裁决；资金/退款/签名/钱包/密钥/权限/生产写入/外部不可逆暂不允许；资金归当前 GPT 总控席；五签归 Owner/多签；豆包继续执行和部署；裁决不得自称已合并、已部署或已验收。已部署的中转功能不否决、不回滚，日常绑定裁决权限在八道安全闸门修复部署后启用（`DR-20261118-relay-adjudication-gates`，代码 `b22c7ebf`）。
 
 ## 五、审计怎么读
 

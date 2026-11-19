@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {inspectDispatches,runDispatchOversight,qianwenOversightContext,OVERSIGHT_ROOT} from '../lib/dispatch-oversight.mjs';
+import {inspectDispatches,runDispatchOversight,qianwenOversightContext,buildAdjudication,ADJUDICATION_DIR,OVERSIGHT_ROOT} from '../lib/dispatch-oversight.mjs';
 const now='2026-10-22T15:00:00Z';
 const fixture=fn=>{const root=fs.mkdtempSync(path.join(os.tmpdir(),'oversight-'));try{return fn(root);}finally{fs.rmSync(root,{recursive:true,force:true});}};
 const write=(root,file,d)=>{fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.writeFileSync(path.join(root,file),typeof d==='string'?d:JSON.stringify(d));};
@@ -102,4 +102,75 @@ test('completed rejected ANS review closes the reviewer stage but retains origin
  const r={date:d,status:'draft_rejected',audit:{accepted:false,artifact_sha256:wh,executed_by:'Qianwen'},artifacts:[{role:'worker',task_id:`ANS-${d}-deepseek`,path:wp,sha256:wh,executed_by:'DeepSeek'},{role:'reviewer',task_id:`ANS-${d}-doubao`,path:rp,sha256:sha(rb),executed_by:'Qianwen'}],remote_review_status:'rejected_draft_review',sync_status:'hashed_artifacts_submitted',board_verification:{verified:true,worker_status:'rejected_draft_review'}};write(root,`knowledge/results/ans-cycle/${d}.json`,r);
  let ts=inspectDispatches({root,now,lookback:1}).tasks;assert.equal(ts.find(t=>t.id===`ANS-${d}-doubao`).overdue,false);assert.equal(ts.find(t=>t.id===`ANS-${d}-doubao`).actual_provider,'Qianwen');assert.equal(ts.find(t=>t.id===`ANS-${d}-deepseek`).overdue,true);assert.equal(ts.find(t=>t.id===`ANS-${d}-deepseek`).deployed,false);
  r.board_verification.verified=false;write(root,`knowledge/results/ans-cycle/${d}.json`,r);ts=inspectDispatches({root,now,lookback:1}).tasks;assert.equal(ts.find(t=>t.id===`ANS-${d}-doubao`).phase,'blocked_reconcile_existing_attempt');
+}));
+
+function closedAnsWithOldWarning(root) {
+ const d='2026-10-22',wp=`knowledge/results/ans-cycle/${d}-worker.json`,rp=`knowledge/results/ans-cycle/${d}-reviewer.json`,wb=JSON.stringify({finding:'unimplemented proposal'}),wh=sha(wb),rb=JSON.stringify({accepted:false,artifact_sha256:wh,reasons:['no patch']});
+ write(root,wp,wb);write(root,rp,rb);
+ const ansFile=`knowledge/results/ans-cycle/${d}.json`;
+ write(root,ansFile,{date:d,status:'draft_rejected',audit:{accepted:false,artifact_sha256:wh,executed_by:'Qianwen'},artifacts:[{role:'worker',task_id:`ANS-${d}-deepseek`,path:wp,sha256:wh,executed_by:'DeepSeek'},{role:'reviewer',task_id:`ANS-${d}-doubao`,path:rp,sha256:sha(rb),executed_by:'Qianwen'}],remote_review_status:'rejected_draft_review',sync_status:'hashed_artifacts_submitted',board_verification:{verified:true,worker_status:'rejected_draft_review'}});
+ const taskId=`ANS-${d}-doubao`,issue='blocked_reconcile_existing_attempt',caseId=sha(taskId+'\0'+issue).slice(0,24);
+ write(root,`${OVERSIGHT_ROOT}/warnings.json`,{cases:{[caseId]:{case_id:caseId,task_id:taskId,issue,state:'open',assigned_to:'doubao',original_task_date:d,warning_dates:[d],first_observed_at:`${d}T16:00:00Z`,evidence:[ansFile]}}});
+ return {d,taskId,caseId,ansFile,rp,issue};
+}
+
+test('an out-of-window warning closes only through one hash-bound per-case adjudication that the canonical historic recheck confirms',()=>fixture(root=>{
+ const {taskId,caseId,ansFile,rp}=closedAnsWithOldWarning(root);
+ const built=buildAdjudication({root,caseId,taskId,evidence:[ansFile,rp],reason:'原任务审核阶段已由独立审核回执补齐；本裁决只解决该历史 warning，不宣称生产完成。',reviewedAt:'2026-10-23T12:00:00Z'});
+ write(root,built.path,built.record);
+ const r=runDispatchOversight({root,now:'2026-11-01T15:00:00Z',lookback:1});
+ assert.deepEqual(r.adjudicated_cases,[caseId]);
+ assert.equal(r.warnings.some(w=>w.case_id===caseId),false);
+ const rows=JSON.parse(fs.readFileSync(path.join(root,OVERSIGHT_ROOT,'warnings.json'))).cases;
+ assert.equal(rows[caseId].state,'resolved_by_repository_evidence');
+ assert.equal(rows[caseId].adjudication_phase,'independent_draft_review_completed');
+ assert.equal(rows[caseId].resolution_scope,'warning_resolution_only_not_production_completion');
+ assert.equal(rows[caseId].resolved_by,'gpt_decision_seat');
+}));
+
+test('tampered adjudication evidence resolves nothing; unrelated cases stay open',()=>fixture(root=>{
+ const {taskId,caseId,ansFile,rp}=closedAnsWithOldWarning(root);
+ const other='deadbeefdeadbeefdeadbeef';
+ const cases=JSON.parse(fs.readFileSync(path.join(root,OVERSIGHT_ROOT,'warnings.json'))).cases;
+ cases[other]={case_id:other,task_id:'ANS-2026-10-22-deepseek',issue:'engineering_completion_unverified',state:'open',assigned_to:'deepseek',original_task_date:'2026-10-22',warning_dates:['2026-10-22'],first_observed_at:'2026-10-22T16:00:00Z',evidence:[ansFile]};
+ write(root,`${OVERSIGHT_ROOT}/warnings.json`,{cases});
+ const built=buildAdjudication({root,caseId,taskId,evidence:[ansFile,rp],reason:'审计证据在签发后应保持字节稳定，这里只用于验证篡改检测。',reviewedAt:'2026-10-23T12:00:00Z'});
+ write(root,built.path,built.record);
+ fs.appendFileSync(path.join(root,rp),' ');
+ const r=runDispatchOversight({root,now:'2026-11-01T15:00:00Z',lookback:1});
+ assert.equal(r.adjudicated_cases.length,0);
+ assert.ok(r.warnings.some(w=>w.case_id===caseId));
+ assert.ok(r.warnings.some(w=>w.case_id===other));
+}));
+
+test('a recorded adjudication is re-checked every run and reverts to open once its evidence changes',()=>fixture(root=>{
+ const {taskId,caseId,ansFile,rp}=closedAnsWithOldWarning(root);
+ const built=buildAdjudication({root,caseId,taskId,evidence:[ansFile,rp],reason:'原任务审核阶段已由独立审核回执补齐；本裁决只解决该历史 warning，不宣称生产完成。',reviewedAt:'2026-10-23T12:00:00Z'});
+ write(root,built.path,built.record);
+ const first=runDispatchOversight({root,now:'2026-11-01T15:00:00Z',lookback:1});
+ assert.deepEqual(first.adjudicated_cases,[caseId]);
+ const second=runDispatchOversight({root,now:'2026-11-02T15:00:00Z',lookback:1});
+ assert.deepEqual(second.adjudicated_cases,[]);
+ assert.deepEqual(second.adjudication_revalidated,[caseId]);
+ assert.equal(second.warnings.some(w=>w.case_id===caseId),false);
+ fs.appendFileSync(path.join(root,rp),' ');
+ const third=runDispatchOversight({root,now:'2026-11-03T15:00:00Z',lookback:1});
+ assert.deepEqual(third.adjudication_revalidated,[]);
+ assert.deepEqual(third.reverted_adjudications,[caseId]);
+ assert.ok(third.warnings.some(w=>w.case_id===caseId));
+ const row=JSON.parse(fs.readFileSync(path.join(root,OVERSIGHT_ROOT,'warnings.json'))).cases[caseId];
+ assert.equal(row.state,'open');
+ assert.equal(row.reverted_reason,'adjudication_evidence_no_longer_valid');
+ assert.equal(row.adjudication_file,undefined);
+}));
+
+test('adjudication refuses an unresolved historic phase, a foreign task id, or a trivial reason',()=>fixture(root=>{
+ board(root,{claim:false});
+ const taskId='DAILY-2026-10-22-deepseek',issue='claim_missing',caseId=sha(taskId+'\0'+issue).slice(0,24);
+ write(root,`${OVERSIGHT_ROOT}/warnings.json`,{cases:{[caseId]:{case_id:caseId,task_id:taskId,issue,state:'open',assigned_to:'deepseek',original_task_date:'2026-10-22',warning_dates:['2026-10-22'],first_observed_at:'2026-10-22T16:00:00Z',evidence:['knowledge/results/daily-board/2026-10-22.json']}}});
+ const evidence=['knowledge/results/daily-board/2026-10-22.json'];
+ assert.throws(()=>buildAdjudication({root,caseId,taskId,evidence,reason:'证据不足时不得关闭该历史 warning。',reviewedAt:'2026-10-23T12:00:00Z'}),/adjudication_evidence_insufficient/);
+ assert.throws(()=>buildAdjudication({root,caseId,taskId:'OTHER-TASK',evidence,reason:'任务编号不一致时必须拒绝而不是猜测。',reviewedAt:'2026-10-23T12:00:00Z'}),/adjudication_task_mismatch/);
+ assert.throws(()=>buildAdjudication({root,caseId,taskId,evidence,reason:'短',reviewedAt:'2026-10-23T12:00:00Z'}),/adjudication_evidence_insufficient/);
+ assert.equal(fs.existsSync(path.join(root,ADJUDICATION_DIR)),false);
 }));

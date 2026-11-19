@@ -21,10 +21,16 @@ export function decide({action, family = null, authority = null} = {}) {
 
   if (!['merge', 'deploy', 'rollback'].includes(action)) return deny('unknown_action');
 
+  // fail-closed：没有 deploy_scope 就无法证明该族被授权，一律拒绝。
+  if (!Array.isArray(a.deploy_scope)) return deny('deploy_scope_missing');
+  if (typeof fam !== 'string' || fam.trim() === '') return deny('missing_family');
+
   // 被排除族优先判定：即使开关为 true，资金/签名类也不得自动执行。
-  if (fam && Array.isArray(a.excluded_families) && a.excluded_families.includes(fam)) {
+  if (Array.isArray(a.excluded_families) && a.excluded_families.includes(fam)) {
     return deny(`excluded_family:${fam}`);
   }
+  // 未登记族（既不在 deploy_scope 也不在 excluded_families）默认拒绝，不再放行。
+  if (!a.deploy_scope.includes(fam)) return deny(`unknown_family:${fam}`);
   if (action === 'merge') return a.automatic_merge === true
     ? {allowed: true, reason: 'owner_authorized_auto_merge', authority_id: id, action, family: fam}
     : deny('auto_merge_disabled');

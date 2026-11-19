@@ -20,11 +20,13 @@ Owner 要求：总控持续统筹 ANS、AI 雇佣 AI、自主投资；千问每�
 
 新监督 SLA：总控每日审查/派单 17:00（现有 cron 16:20 后留余量）；Claude旧原生卡时限不用于当前未排班的PR渠道；已明确接单任务按原截止监督PR/交付；日课提交和独立审核 22:00；ANS 阻塞跟进 03:00；内部雇佣已有交付 12:00。到期前记 `not_due`。这些时间是本次监督约定，不冒称历史任务原来就有这个截止时间。
 
-同一任务/问题每个实际观察日最多一次警告；跨两个观察日未闭环为 `repeated_warning`。记录首次发现时间，不补造前几天的警告。不扣真钱、声誉，不暂停或撤销总控权限。超出窗口但没有复查的旧问题继续保留，不因“没再看见”自动关闭。
+同一任务/问题每个实际观察日最多一次警告；跨两个观察日未闭环为 `repeated_warning`。记录首次发现时间，不补造前几天的警告。不扣真钱、声誉，不暂停或撤销总控权限。超出窗口但没有复查的旧问题继续保留，不因“没再看见”自动关闭；确有后来实物补足缺失阶段的，按下方逐条裁决关闭，不批量。
 
 认领不等于交付；完整生成不等于独立审核；工程草稿通过不等于提交代码或上线。工件和审核 SHA-256 必须回读一致，实际作者与审核供应方必须不同。Claude 团队登记缺交付链接只记 `delivery_link_missing`，先找已有 PR，不能据此断言它没做。
 
 代码任务闭环可补 `knowledge/results/dispatch/oversight/closeouts/<原TaskID>.json`：`task_id`、40 位 `source_commit`、数字 `run_id`、本仓 `pr_url`，及 `artifact:{path,sha256}`、`tests:{path,sha256,passed:true,count}`。测试 JSON 必须同 run/commit，`passed=count, failed=0`；还须原任务已有哈希绑定的异供应方审核。该证明只关闭代码交付，部署需另验，扫描器不推断 `deployed=true`。
+
+历史 warning 已超出所有复查窗口、但缺失阶段后来确由仓库实物补齐的，可补 `knowledge/results/dispatch/oversight/adjudications/<case_id>.json`：`schema=ltzzz.oversight.adjudication.v1`、`case_id`、`task_id`、`issue`、`decision=resolved_by_repository_evidence`、`reviewed_by=gpt_decision_seat`、`reviewed_at`、`reason`，以及 1–8 个 `{path,sha256}` 证据。每次巡检重新核验三条：证据字节哈希一致；在原任务日期用规范检查器复查出封闭阶段且与原 issue 不同；证据至少包含原任务自身引用的一份文件。任一不满足即不关闭。已关闭的裁决不是一劳永逸：每次巡检都会重新核验，证据字节变化或历史阶段回退就把该 warning 恢复为 `open`（记 `reverted_reason=adjudication_evidence_no_longer_valid`，并列入 `reverted_adjudications`），通过则列入 `adjudication_revalidated`。一次只裁决一个 `case_id`，没有批量开关；该状态只表示这条历史 warning 的缺失阶段已补齐，不改变生产、部署、验收或资金状态。人工生成用 `node scripts/adjudicate-oversight-warning.mjs --case ... --task ... --evidence ... --reason ... [--write]`；Windows 工作树有 CRLF 时用 `--root` 指向 LF 快照，确保哈希与 CI 一致。自动巡检只在 Ubuntu CI 的 LF 检出上运行；若在 Windows 工作树手工跑全量巡检，请先取 LF 检出，否则会因证据字节不符把相关裁决恢复为 `open`（宁严不松，不会静默保留）。
 
 ## 本次核查基准 e149150（不是本次新增成果）
 
