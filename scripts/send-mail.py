@@ -114,9 +114,22 @@ def send_via_smtp(host, port, user, password, message, timeout=45, smtp_factory=
     try:
         conn = factory(host, port, timeout=timeout)
         conn.login(user, password)
-        code, detail = conn.send_message(message)
-        return {'status': 'sent', 'smtp_code': int(code),
-                'smtp_detail': str(detail or '')[:120], 'smtp_host': host, 'smtp_port': int(port)}
+        # send_message 返回「被拒收件人」字典，不是 (code, detail)。直接解包空字典会抛
+        # ValueError: not enough values to unpack；成功与否要按返回值判断。
+        refused = conn.send_message(message)
+        refused_count = len(refused) if isinstance(refused, dict) else 0
+        # 真正的 DATA 完成码由 smtplib 内部校验（非 250 会抛 SMTPDataError）；
+        # 这里再发 NOOP 取一个可见的会话响应码，并在回执里标明来源。
+        code, detail = conn.noop()
+        return {
+            'status': 'sent' if refused_count == 0 else 'refused',
+            'smtp_code': int(code),
+            'smtp_code_source': 'noop_after_send',
+            'smtp_detail': str(detail or '')[:120],
+            'refused_count': refused_count,
+            'smtp_host': host,
+            'smtp_port': int(port),
+        }
     finally:
         if conn is not None:
             try:
@@ -185,10 +198,12 @@ def run(meta_path, body_path=None, receipt_path=None, dry_run=False, env=None, s
         write_receipt(receipt_path, payload)
         return 3, payload
 
-    payload = receipt(result.pop('status'), message_id=str(message.get('Message-ID', ''))[:200],
+    status = result.pop('status')
+    payload = receipt(status, message_id=str(message.get('Message-ID', ''))[:200],
                       subject_preview=TOKEN.sub('<token>', subject)[:80], **base, **result)
     write_receipt(receipt_path, payload)
-    return 0, payload
+    # 只有所有收件人都未被拒收才算发送成功；refused 必须非 0 退出，不能当已送达。
+    return (0 if status == 'sent' else 3), payload
 
 
 def main(argv=None):
