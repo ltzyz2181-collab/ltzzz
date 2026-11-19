@@ -5,22 +5,29 @@ LTZZZ 每日合并 2026-11-19（UTC）
 - DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44481811025）
 
 二、需要 GPT 裁决
-- DEEP-SUPERAGENT-20261119-DAILY-2（run=44452129242）：coordinator_plan_unparseable
-  复核意见：C2 and C4 incorrectly routed as coordinator_close_with_receipt without actual receipts; C1 also lacks receipt evidence.
-  ASK DEEP-SUPERAGENT-20261119-DAILY-2：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。
-  相关待补（owner）A1：需要确认当前状态和下一步行动
-  相关待补（owner）A2：需要确认各席位任务分配情况
-  相关待补（evidence）B1：需要完整的邮件通道回执
-  相关待补（evidence）B2：需要邮件内容或相关凭证
-  相关待补（evidence）C3：需要 last_daily_merge 的具体时间和状态
+- DEEP-SUPERAGENT-20261119-DAILY-6（run=44490754007）：见 ASK
+  复核意见：C1 route may be wrong and B2 ASK contains a typo; reviewer cannot clear code-owned content findings.
+  ASK C3：给出decision_id并裁决
+  相关待补（evidence）A1：需要提供具体的回执路径和内容
+  相关待补（evidence）A2：需要提供具体的回执路径和内容
+  相关待补（evidence）B1：需要一致的回执信息
+  相关待补（evidence）B2：霮要一致的回执信息
+  相关待补（owner）C1：确认队列状态是否需要进一步处理
+- DEEP-SUPERAGENT-20261119-DAILY-7（run=44491462638）：见 ASK
+  ASK C1：需要GPT对pending决策进行裁决
+  ASK C3：需要GPT对pending决策进行裁决
+  相关待补（evidence）A1：需要具体的回执路径和一致性验证
+  相关待补（evidence）A2：需要具体的回执路径和一致性验证
+  相关待补（evidence）B1：需要一致的回执
+  相关待补（evidence）B2：需要一致的回执
 
 三、下一步
 - 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。
-- 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。
+- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。
 - 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。
 
 四、证据与边界
 - 邮件摄入：status=partial，gmail=ok，agent_mail=missing
 - 今日 Gmail 裁决类回信（仅元数据）：0
-- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-19.json
+- Deep 队列卡：7 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-19.json
 - 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。
