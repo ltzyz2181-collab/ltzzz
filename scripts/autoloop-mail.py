@@ -6,6 +6,7 @@ exit 0, because a mail outage must not stop the rest of the loop. Nothing here p
 password, and the reader never marks messages as seen.
 """
 import argparse
+import base64
 import datetime
 import re
 import email
@@ -22,6 +23,33 @@ from email.message import EmailMessage
 # Project-mail recognition: only LTZZZ project mail is relevant. Everything else stays
 # unread in the mailbox; we never fetch its body and never record it in project state.
 PROJECT_RE = re.compile(r"ltzzz|ltzyz2181|github\.com|autoloop|\u6d3e\u5355|\u88c1\u51b3|\u56de\u6267|Task\s*ID|APIsRouter", re.I)
+
+def _mutf7_decode(name):
+    """IMAP mailbox names are modified UTF-7; Gmail localizes folder names."""
+    out = []
+    i = 0
+    while i < len(name):
+        if name[i] != "&":
+            out.append(name[i])
+            i += 1
+            continue
+        j = name.find("-", i + 1)
+        if j == -1:
+            out.append(name[i])
+            i += 1
+            continue
+        chunk = name[i + 1:j]
+        if chunk == "":
+            out.append("&")
+        else:
+            b64 = chunk.replace(",", "/")
+            b64 += "=" * (-len(b64) % 4)
+            try:
+                out.append(base64.b64decode(b64).decode("utf-16-be"))
+            except Exception:
+                out.append(name[i:j + 1])
+        i = j + 1
+    return "".join(out)
 
 def _decode(value):
     try:
@@ -68,7 +96,8 @@ def read_headers(days, limit, out):
         except Exception:
             available = []
         if raw_folder.strip().upper() in ("ALL", "ALL_MAIL", "FULLBOX", "[GMAIL]/ALL MAIL"):
-            match = next((n for n in available if "all mail" in n.lower() or "所有邮件" in n), None)
+            match = next((n for n in available
+                          if "all mail" in _mutf7_decode(n).lower() or "所有邮件" in _mutf7_decode(n)), None)
             raw_folder = match or "INBOX"
         folder = raw_folder if (" " not in raw_folder or raw_folder.startswith('\"')) else '\"' + raw_folder + '\"'
         typ, _ = box.select(folder, readonly=True)
