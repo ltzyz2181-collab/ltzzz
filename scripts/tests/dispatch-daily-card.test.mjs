@@ -146,6 +146,12 @@ test('daily-merge 无顶层 status 时按 done/needs_gpt_decision 计数并给�
       status: 'queue_results_verified',
       items: [{task_id: 'DEEP-SUPERAGENT-20261119-DAILY-4', status: 'job_terminal_observed', job: {status: 'needs_gpt_decision'}}],
     }));
+    // 更新的 push 触发回执没有任务，C1 不应被它覆盖。
+    fs.writeFileSync(path.join(dir, 'queue-44489000000-attempt-1.json'), JSON.stringify({
+      run_id: '44489000000',
+      status: 'no_new_queue_cards',
+      items: [],
+    }));
     const found = collectEvidence(root, {exec: () => '0123456789ab\n'});
     assert.equal(found.daily.status, 'done=1 needs_gpt_decision=1');
     assert.equal(found.daily.path, 'knowledge/results/deep-superagent/daily-merge/2026-11-19.json');

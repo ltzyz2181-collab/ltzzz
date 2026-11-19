@@ -47,9 +47,22 @@ export function collectEvidence(root = REPO_ROOT, {exec = execFileSync} = {}) {
         return run(a) - run(b);
       });
     if (files.length) {
-      const latest = files[files.length - 1];
-      queue = JSON.parse(fs.readFileSync(path.join(queueDir, latest), 'utf8'));
-      queuePath = `knowledge/results/deep-superagent/${latest}`;
+      // push 触发的队列回执常是 no_new_queue_cards/items=0；C1 要看最近一次真正处理过任务的运行。
+      let chosen = null;
+      for (let i = files.length - 1; i >= 0; i -= 1) {
+        const name = files[i];
+        try {
+          const parsed = JSON.parse(fs.readFileSync(path.join(queueDir, name), 'utf8'));
+          if (!chosen) chosen = {name, parsed};
+          if (Array.isArray(parsed.items) && parsed.items.length) { chosen = {name, parsed}; break; }
+        } catch {
+          /* 跳过损坏回执，继续往前找。 */
+        }
+      }
+      if (chosen) {
+        queue = chosen.parsed;
+        queuePath = `knowledge/results/deep-superagent/${chosen.name}`;
+      }
     }
   } catch {
     queue = null;
