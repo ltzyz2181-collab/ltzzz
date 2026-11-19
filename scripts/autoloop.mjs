@@ -60,6 +60,16 @@ export function classifyIssue(issue, executors = []) {
   return {action: 'skip', reason: 'no_autoloop_label'};
 }
 
+// task-hub refuses a claim on an unassigned card. A card that carries an explicit
+// autoloop executor label is targeted at this seat, so the seat label is added first;
+// without that label nothing is claimed and the card stays as it was.
+export async function ensureSeatLabel({client, issue, seat}) {
+  if (!issue) return false;
+  if (derive(issue, {leaseHours: 24}).seat) return false;
+  await client.addLabels(issue.number, ['seat:' + seat]);
+  return true;
+}
+
 export function planWork({issues = [], seat, executors = [], now = new Date().toISOString(), leaseHours = 24}) {
   const claimable = [], adjudicable = [], skipped = [];
   for (const issue of issues) {
@@ -220,6 +230,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
   result.reaped = reaped.reaped || [];
   for (const item of plan.claimable) {
     try {
+      await ensureSeatLabel({client, issue: issues.find(i => i.number === item.number), seat});
       await cmdClaim({client, number: item.number, seat, branch: `autoloop/${item.number}`, now, leaseHours: 24});
       result.claimed.push(item.number);
       const outcome = executeExecutor(item.executor, {cwd});
@@ -258,6 +269,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
   }
   for (const item of plan.adjudicable) {
     try {
+      await ensureSeatLabel({client, issue: issues.find(i => i.number === item.number), seat});
       await cmdClaim({client, number: item.number, seat, branch: 'adjudication_only', now, leaseHours: 12});
       const verdict = runAdjudication(issues.find(i => i.number === item.number), {cwd});
       await client.comment(item.number, `[advisory] seat=relay verdict_is_not_approval=true ok=${verdict.ok}\n\n${verdict.stdout.slice(0, 4000)}`);
