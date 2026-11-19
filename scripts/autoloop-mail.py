@@ -56,11 +56,25 @@ def read_headers(days, limit, out):
         box = imaplib.IMAP4_SSL(c["host"], c["port"], ssl_context=ssl.create_default_context(), timeout=25)
         box.login(c["user"], c["password"])
         raw_folder = os.environ.get("MAIL_IMAP_FOLDER", "INBOX")
-        folder = raw_folder if (" " not in raw_folder or raw_folder.startswith('"')) else '"%s"' % raw_folder
+        available = []
+        try:
+            _, listing = box.list()
+            for line in (listing or []):
+                if not line:
+                    continue
+                text = line.decode("utf-8", "replace")
+                if '\"' in text:
+                    available.append(text.rsplit('\"', 2)[-2])
+        except Exception:
+            available = []
+        if raw_folder.strip().upper() in ("ALL", "ALL_MAIL", "FULLBOX", "[GMAIL]/ALL MAIL"):
+            match = next((n for n in available if "all mail" in n.lower() or "所有邮件" in n), None)
+            raw_folder = match or "INBOX"
+        folder = raw_folder if (" " not in raw_folder or raw_folder.startswith('\"')) else '\"' + raw_folder + '\"'
         typ, _ = box.select(folder, readonly=True)
         if typ != "OK":
             box.logout()
-            return {"status": "blocked_imap_select", "detail": raw_folder[:80]}
+            return {"status": "blocked_imap_select", "detail": raw_folder[:80], "available_folders": available[:20]}
         since = (datetime.datetime.utcnow() - datetime.timedelta(days=days)).strftime("%d-%b-%Y")
         typ, data = box.search(None, "(SINCE %s)" % since)
         if typ != "OK":
