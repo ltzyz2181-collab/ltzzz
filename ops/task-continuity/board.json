@@ -460,15 +460,18 @@
     {
       "id": "TASK-HUB-AUTOCLAIM",
       "title": "GPT 派单能否自动接单：缺定时 claim 执行器",
-      "state": "ready",
-      "next_owner": "claude",
-      "next_action": "基于 scripts/task-hub.mjs 增加定时 poll→claim（只领取、不改生产），把接单回执写进 Issue；租约过期自动 reap",
+      "state": "done",
+      "next_owner": "gpt",
+      "next_action": "已部署每日自动循环；下一步等 GPT 复核边界并决定是否扩大执行器白名单",
       "evidence": [
-        "scripts/task-hub.mjs 已有 sync/poll/claim/submit/block/reap/status/create CLI",
-        "仓库内没有 task-hub 定时工作流，当前接单靠人工执行",
-        "PR #431 为 task-hub 端到端回执测试，仍未合并"
+        "scripts/autoloop.mjs + .github/workflows/daily-autoloop.yml：cron 01:10Z / 13:10Z，含 reap/claim/执行/开PR/合并",
+        "run 44450688124：领取 #448 → PR #449 merged_on_verify_no_checks → 回执落 main → 邮件读 ok / 发 sent",
+        "run 44450088196：PR #446 自动合并（执行器 verify 通过、分支无检查）",
+        "标签契约：autoloop:exec:<id> 必须在 ops/autoloop/executors.json 登记；Issue 正文永不执行",
+        "human_only 否定句误拦已修，带反例测试；12→14 项测试全过",
+        "自动合并限 docs/ ops/ knowledge/results/ scripts/tests/；资金、退款、签名、五签、生产部署、Secrets 一律人工"
       ],
-      "updated_at": "2026-11-18T19:10:00.000Z"
+      "updated_at": "2026-11-19T03:40:00Z"
     }
   ]
 }
