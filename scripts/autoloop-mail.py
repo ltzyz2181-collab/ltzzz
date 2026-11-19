@@ -130,7 +130,8 @@ def read_headers(days, limit, out):
         kept = [i for i in items if PROJECT_RE.search(i["from"] + " " + i["subject"])]
         payload = {"status": "ok", "count": len(kept), "recent_headers": len(items),
                    "filtered_out": len(items) - len(kept), "items": kept,
-                   "mode": "headers_only_readonly_peek", "folder": raw_folder}
+                   "mode": "headers_only_readonly_peek", "folder": raw_folder,
+                   "available_folders": [f for f in available][:30]}
         if out:
             with open(out, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, ensure_ascii=False, indent=2)
