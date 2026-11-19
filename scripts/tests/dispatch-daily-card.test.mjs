@@ -37,12 +37,14 @@ const evidence = (overrides = {}) => ({
     run_id: '44250221231',
     status: 'queue_results_verified',
     items: 2,
-    task_statuses: [{task_id: 'DSA-TEST-01', status: 'job_terminal_observed', job_status: 'completed_pending_external_acceptance'}],
+    task_statuses: [{task_id: 'DSA-TEST-01', status: 'job_terminal_observed', job_status: 'needs_gpt_decision'}],
+    pending_gpt_decisions: 1,
     path: 'knowledge/results/deep-superagent/queue-44250221231-attempt-1.json',
   },
   daily: {
     status: 'done=2 needs_gpt_decision=1',
     generated_at_utc: '2026-11-18T07:48:00.000Z',
+    pending_gpt_decisions: 1,
     path: 'knowledge/results/deep-superagent/daily-merge/latest.json',
   },
   ...overrides,
@@ -75,16 +77,18 @@ test('外层只描述目标，ROUTE 指令只出现在给 qianwen 的任务块�
   assert.match(nested, /C4 main_short_sha=/);
 });
 
-test('可核实 ref 带上公开回执路径，汇总 ref 明确 path=none', () => {
+test('可核实 ref 带上回执路径与待裁数量，汇总 ref 明确 path=none', () => {
   const card = buildDailyCard({date: '2026-11-19', evidence: evidence(), policy});
-  assert.match(card.prompt, /C1 last_queue_run=44250221231 status=queue_results_verified items=2 path=knowledge\/results\/deep-superagent\/queue-44250221231-attempt-1\.json/);
-  assert.match(card.prompt, /C3 last_daily_merge=done=2 needs_gpt_decision=1 .*path=knowledge\/results\/deep-superagent\/daily-merge\/latest\.json/);
-  assert.match(card.prompt, /B1 .*path=knowledge\/results\/deep-superagent\/mail-intake\/latest\.json/);
+  assert.match(card.prompt, /C1 last_queue_run=44250221231 status=queue_results_verified items=2 pending_gpt_decisions=1 receipt_consistent=yes path=knowledge\/results\/deep-superagent\/queue-44250221231-attempt-1\.json/);
+  assert.match(card.prompt, /C3 last_daily_merge=done=2 needs_gpt_decision=1 .*pending_gpt_decisions=1 receipt_consistent=yes path=knowledge\/results\/deep-superagent\/daily-merge\/latest\.json/);
+  assert.match(card.prompt, /B1 .*receipt_consistent=no path=knowledge\/results\/deep-superagent\/mail-intake\/latest\.json/);
   assert.match(card.prompt, /A1 .*path=none/);
   assert.match(card.prompt, /A2 .*path=none/);
   assert.match(card.prompt, /ref，必须全部覆盖】A1 \/ A2 \/ B1 \/ B2 \/ C1 \/ C3/);
   assert.match(card.prompt, /不得省略、不得合并/);
-  assert.match(card.prompt, /ref 自己带非 none 的 path，且该路径就是该 ref 所述状态的回执 → coordinator_close_with_receipt/);
+  assert.match(card.prompt, /本卡只做分诊，不关闭任何项；不得输出 coordinator_close_with_receipt/);
+  assert.match(card.prompt, /pending_gpt_decisions 大于 0 → needs_gpt_decision/);
+  assert.doesNotMatch(card.prompt, /^coordinator_close_with_receipt \//m);
 });
 
 test('同日重试卡用 suffix 区分任务、包与文件名', () => {
@@ -147,6 +151,8 @@ test('daily-merge 无顶层 status 时按 done/needs_gpt_decision 计数并给�
     assert.equal(found.daily.path, 'knowledge/results/deep-superagent/daily-merge/2026-11-19.json');
     assert.equal(found.queue.run_id, '44488314090');
     assert.equal(found.queue.path, 'knowledge/results/deep-superagent/queue-44488314090-attempt-1.json');
+    assert.equal(found.queue.pending_gpt_decisions, 1);
+    assert.equal(found.daily.pending_gpt_decisions, 1);
   } finally {
     fs.rmSync(root, {recursive: true, force: true});
   }
