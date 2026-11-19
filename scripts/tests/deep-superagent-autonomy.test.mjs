@@ -1,0 +1,266 @@
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+
+import {
+  AUTONOMY_REVISION,
+  applyRepoContext,
+  deniedWritePath,
+  executeAutonomy,
+  extractFileWrites,
+  fiduciaryHit,
+  normalizeAutonomy,
+  readRepoContext,
+  stripAutonomy,
+  taskAutonomyMetadata,
+  validateWrites,
+} from '../deep-autonomy.mjs';
+
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'deep-autonomy-'));
+
+test('normalizeAutonomy：缺省返回 null，非法字段一律拒绝', () => {
+  assert.equal(normalizeAutonomy(undefined), null);
+  assert.equal(normalizeAutonomy(null), null);
+  assert.throws(() => normalizeAutonomy([]), /invalid_autonomy/);
+  assert.throws(() => normalizeAutonomy({mode: 'auto', extra: true}), /invalid_autonomy_field/);
+  assert.throws(() => normalizeAutonomy({mode: 'manual'}), /invalid_autonomy_mode/);
+});
+
+test('normalizeAutonomy：接受 repo_read / code_change / deploy / mail', () => {
+  const value = normalizeAutonomy({
+    mode: 'auto',
+    repo_read: ['scripts/run-deep-superagent-queue.mjs', 'scripts/run-deep-superagent-queue.mjs'],
+    code_change: true,
+    deploy: {workflow: 'deep-superagent-daily.yml'},
+    mail: {to: ['owner@example.com'], subject: '汇报', body: '正文'},
+  });
+  assert.deepEqual(value.repo_read, ['scripts/run-deep-superagent-queue.mjs']);
+  assert.equal(value.code_change, true);
+  assert.deepEqual(value.deploy, {workflow: 'deep-superagent-daily.yml'});
+  assert.equal(value.mail.subject, '汇报');
+  assert.equal(value.mail.body_from_output, false);
+});
+
+test('normalizeAutonomy：拒绝路径穿越、凭据路径、非白名单收件人', () => {
+  assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['../x']}), /invalid_repo_read_path/);
+  assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['.env']}), /denied_repo_read_path/);
+  assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['config/owner-authority-20261105.json']}), /denied_repo_read_path/);
+  assert.throws(
+    () => normalizeAutonomy({mode: 'auto', mail: {to: ['other@example.com'], subject: 'x', body: 'y'}}, {allowedMailTo: 'owner@example.com'}),
+    /mail_recipient_not_owner_allowlisted/,
+  );
+  assert.throws(() => normalizeAutonomy({mode: 'auto', deploy: {workflow: '../evil.yml'}}), /invalid_deploy_workflow/);
+});
+
+test('deniedWritePath：工作流、授权、资金、凭据与通道脚本不可自动改写', () => {
+  assert.equal(deniedWritePath('.github/workflows/deep-superagent-queue.yml'), 'workflow_definition');
+  assert.equal(deniedWritePath('config/owner-authority-20261105.json'), 'authority_config');
+  assert.equal(deniedWritePath('config/deep-autonomy-20261119.json'), 'authority_config');
+  assert.equal(deniedWritePath('wallet/main.json'), 'funds_path');
+  assert.equal(deniedWritePath('scripts/send-mail.py'), 'protected_script');
+  assert.equal(deniedWritePath('scripts/run-mail-intake.mjs'), 'protected_script');
+  assert.equal(deniedWritePath('scripts/deep-autonomy.mjs'), null);
+  assert.equal(deniedWritePath('docs/REFLECTION-HARNESS.md'), null);
+  assert.equal(deniedWritePath('../escape.mjs'), 'invalid_path');
+});
+
+test('fiduciaryHit：只拦资金/密钥，不拦普通代码与邮件', () => {
+  assert.equal(fiduciaryHit({prompt: '修复队列脚本'}).hit, false);
+  assert.equal(fiduciaryHit({prompt: '给 owner 发一封汇报邮件'}).hit, false);
+  assert.equal(fiduciaryHit({prompt: '把退款金额打给客户'}).hit, true);
+  assert.equal(fiduciaryHit({prompt: 'ok', outputs: [{text: 'private key: abc'}]}).hit, true);
+});
+
+test('extractFileWrites：只认显式 FILE 块', () => {
+  const writes = extractFileWrites('说明\n<<<FILE:docs/a.md>>>\n# A\n<<<END>>>\n尾巴');
+  assert.deepEqual(writes, [{path: 'docs/a.md', content: '# A'}]);
+  assert.deepEqual(extractFileWrites('没有文件块'), []);
+});
+
+test('validateWrites：拒绝空集、重复、超量、受保护路径', () => {
+  assert.equal(validateWrites([]).error, 'no_file_writes');
+  assert.equal(validateWrites([{path: 'a.md', content: '1'}, {path: 'a.md', content: '2'}]).error, 'duplicate_file:a.md');
+  assert.match(validateWrites([{path: '.github/workflows/x.yml', content: 'x'}]).error, /denied_path:workflow_definition/);
+  const many = Array.from({length: 7}, (_, i) => ({path: `f${i}.md`, content: 'x'}));
+  assert.equal(validateWrites(many).error, 'too_many_files');
+});
+
+test('readRepoContext / applyRepoContext：注入真实文件证据并记录缺失', () => {
+  const root = tmp();
+  fs.writeFileSync(path.join(root, 'a.md'), 'hello');
+  const context = readRepoContext(root, ['a.md', 'missing.md']);
+  assert.match(context.text, /hello/);
+  assert.deepEqual(context.files.map((file) => file.status), ['read', 'missing']);
+  const body = applyRepoContext({prompt: 'P'}, context);
+  assert.ok(body.prompt.startsWith('P'));
+  assert.match(body.prompt, /仓库读取证据/);
+});
+
+test('stripAutonomy / taskAutonomyMetadata：元数据与任务体分离', () => {
+  const body = {task_id: 'T', prompt: 'p', autonomy: {mode: 'auto', code_change: true}};
+  assert.deepEqual(stripAutonomy(body), {task_id: 'T', prompt: 'p'});
+  assert.deepEqual(taskAutonomyMetadata(body), {mode: 'auto', repo_read: [], code_change: true, deploy: null, mail: null});
+});
+
+test('executeAutonomy：未声明 auto 时不动', async () => {
+  const result = await executeAutonomy({autonomy: null, job: {task_id: 'T'}});
+  assert.equal(result.status, 'not_requested');
+  assert.equal(result.revision, AUTONOMY_REVISION);
+});
+
+test('executeAutonomy：资金/退款命中时 fail-closed', async () => {
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'T', input_sha256: 'a'.repeat(64), prompt: '请处理客户退款'},
+    outputs: [],
+  });
+  assert.equal(result.status, 'blocked_fiduciary');
+  assert.equal(result.needs_gpt_decision, true);
+});
+
+test('executeAutonomy：code_change 无文件块时拒绝，不碰 git', async () => {
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'T', input_sha256: 'b'.repeat(64), prompt: '改代码'},
+    outputs: [{text: '我想改但没给文件块'}],
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '1'},
+    fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+  });
+  assert.equal(result.actions[0].status, 'rejected');
+  assert.equal(result.actions[0].error, 'no_file_writes');
+  assert.equal(result.status, 'partial');
+});
+
+test('executeAutonomy：code_change 写盘、测试、开 PR 并合并', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  const calls = [];
+  const fetcher = async (url, options = {}) => {
+    calls.push(`${options.method || 'GET'} ${url}`);
+    if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+    if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 7})};
+    if (url.endsWith('/pulls/7/merge')) return {status: 200, ok: true, text: async () => JSON.stringify({merged: true, sha: 'deadbeef'})};
+    throw new Error(`unexpected ${url}`);
+  };
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'DEEP-1', input_sha256: 'c'.repeat(64), prompt: '更新文档'},
+    outputs: [{text: '<<<FILE:a.md>>>\nnew\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '42'},
+    fetcher,
+    runTests: () => 'ok',
+  });
+
+  assert.equal(result.status, 'executed');
+  assert.equal(result.actions[0].status, 'merged');
+  assert.equal(result.actions[0].pr, 7);
+  assert.equal(result.actions[0].merge_sha, 'deadbeef');
+  assert.ok(calls.some((call) => call.startsWith('POST ') && call.endsWith('/pulls')));
+  const receipt = JSON.parse(fs.readFileSync(path.join(work, result.receipt_path), 'utf8'));
+  assert.equal(receipt.schema, 'ltzzz.deep-superagent.autonomy.v1');
+  assert.equal(receipt.financial_execution, false);
+  assert.equal(receipt.secrets_included, false);
+  // 合并后回到 main，回执落在 main 工作树。
+  assert.equal(execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {cwd: work, encoding: 'utf8'}).trim(), 'main');
+});
+
+test('executeAutonomy：code_change 测试失败会恢复原文件且不合并', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'DEEP-2', input_sha256: 'd'.repeat(64), prompt: '更新文档'},
+    outputs: [{text: '<<<FILE:a.md>>>\nnew\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '43'},
+    fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+    runTests: () => {
+      throw new Error('boom');
+    },
+  });
+
+  assert.equal(result.actions[0].status, 'failed');
+  assert.equal(result.actions[0].test_ok, false);
+  assert.equal(fs.readFileSync(path.join(work, 'a.md'), 'utf8'), 'old\n');
+});
+
+test('executeAutonomy：code_change 未合并时 deploy 跳过', async () => {
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true, deploy: {workflow: 'deep-superagent-daily.yml'}},
+    job: {task_id: 'DEEP-3', input_sha256: 'e'.repeat(64), prompt: '改代码'},
+    outputs: [{text: '没有文件块'}],
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '44'},
+    fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+  });
+  const deploy = result.actions.find((action) => action.action === 'deploy');
+  assert.equal(deploy.status, 'skipped');
+  assert.equal(deploy.error, 'code_change_not_merged');
+});
+
+test('executeAutonomy：deploy 只按声明的 workflow 派发', async () => {
+  const calls = [];
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', deploy: {workflow: 'daily-ops-report.yml'}},
+    job: {task_id: 'DEEP-4', input_sha256: 'f'.repeat(64), prompt: '部署每日报表'},
+    outputs: [],
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '45'},
+    fetcher: async (url, options = {}) => {
+      calls.push(`${options.method} ${url}`);
+      if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+      return {status: 200, ok: true, text: async () => '{}'};
+    },
+  });
+  assert.equal(result.actions[0].status, 'dispatched');
+  assert.ok(calls.some((call) => call.includes('/actions/workflows/daily-ops-report.yml/dispatches')));
+});
+
+test('executeAutonomy：mail 缺凭据时明确失败，不假装已发送', async () => {
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', mail: {to: ['owner@example.com'], subject: '汇报', body: '正文'}},
+    job: {task_id: 'DEEP-5', input_sha256: '1'.repeat(64), prompt: '发汇报邮件'},
+    outputs: [],
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '46'},
+    fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+  });
+  assert.equal(result.actions[0].status, 'failed');
+  assert.equal(result.actions[0].error, 'mail_credentials_missing');
+});
+
+test('executeAutonomy：mail 正文为空时失败', async () => {
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', mail: {to: ['owner@example.com'], subject: '汇报', body_from_output: true}},
+    job: {task_id: 'DEEP-6', input_sha256: '2'.repeat(64), prompt: '发汇报邮件'},
+    outputs: [],
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '47', MAIL_SMTP_USER: 'u', MAIL_SMTP_AUTH_CODE: 'p'},
+    fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+  });
+  assert.equal(result.actions[0].status, 'failed');
+  assert.equal(result.actions[0].error, 'empty_mail_body');
+});

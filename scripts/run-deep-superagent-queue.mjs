@@ -9,6 +9,7 @@ import {normalizeJob,sha256,REVISION} from '../workers/deep-superagent/index.js'
 import {WorkpoolGitHubStore} from './lib/workpool-github.mjs';
 import {analyzeCardPrompt} from './check-card-contract.mjs';
 import {checkCard,loadPolicy} from './dispatch-seat-policy.mjs';
+import {AUTONOMY_REVISION,applyRepoContext,executeAutonomy,normalizeAutonomy,readRepoContext,stripAutonomy,taskAutonomyMetadata} from './deep-autonomy.mjs';
 
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
 export const MAX_WAIT_MS=480000;
@@ -84,9 +85,16 @@ export function taskDispatchMetadata(body){
  return {importance:body.importance,seats:body.seats};
 }
 
-export function normalizeTaskCard(body){
+// owner 2026-11-19：卡可以带 autonomy 元数据。它只影响受信桥接层的后置动作，
+// 不进入 Worker 请求体，也不改变 normalizeJob 的五字段隔离。
+export function parseTaskCard(body,{allowedMailTo=null}={}){
  taskDispatchMetadata(body);
- return normalizeJob(stripDispatchMetadata(body));
+ const autonomy=taskAutonomyMetadata(body,{allowedMailTo});
+ return {job:normalizeJob(stripDispatchMetadata(stripAutonomy(body))),autonomy,dispatch:taskDispatchMetadata(body)};
+}
+
+export function normalizeTaskCard(body,options={}){
+ return parseTaskCard(body,options).job;
 }
 
 export function normalizeDecision(body){
@@ -204,9 +212,10 @@ async function reservePost({store,key,state,outcome}){
  outcome.attempt_latch='concurrent_existing_no_post_replay';return false;
 }
 
-export async function runQueueCard({kind,body,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,deadline=clock()+MAX_WAIT_MS,onObservation=()=>{}}){
+export async function runQueueCard({kind,body,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,deadline=clock()+MAX_WAIT_MS,onObservation=()=>{},autonomy=null,repoContext=null,allowedMailTo=null,execute=executeAutonomy,autonomyRoot=process.cwd(),autonomyEnv=process.env,autonomyFetcher=fetch,autonomyRunTests=undefined}){
  if(!KINDS.has(kind)||!COMMIT.test(source_commit||'')||!token)throw Error('trusted_queue_card_context_required');
- const card=kind==='task'?normalizeTaskCard(body):normalizeDecision(body);
+ const preparedBody=kind==='task'?applyRepoContext(body,repoContext):body;
+ const card=kind==='task'?normalizeTaskCard(preparedBody,{allowedMailTo}):normalizeDecision(preparedBody);
  const normalization=kind==='task'?await normalizationRecord(body,card):null;
  const payload=kind==='task'?card:decisionPayload(card);
  const inputHash=kind==='task'?await sha256(JSON.stringify(card)):card.reviewed_input_sha256;
@@ -267,17 +276,36 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
    }else if(current.http!==404&&current.http!==null)throw Error('job_poll_readback_rejected');
    await pause(Math.max(0,Math.min(5000,deadline-clock())));
   }
+  // owner 2026-11-19：非资金任务不再等 GPT 裁决。job 已终态且卡面声明 auto 时，
+  // 由受信桥接层执行 code_change/deploy/mail；资金/签名/退款仍由 executeAutonomy
+  // 内部拦截并保持 needs_gpt_decision。
+  if(kind==='task'&&job?.terminal&&autonomy?.mode==='auto'){
+   try{
+    outcome.autonomy=await execute({
+     autonomy,
+     job:{...job,prompt:card.prompt},
+     outputs:job.outputs||[],
+     root:autonomyRoot,
+     env:autonomyEnv,
+     fetcher:autonomyFetcher,
+     ...(autonomyRunTests?{runTests:autonomyRunTests}:{}),
+     clock,
+    });
+   }catch(error){
+    outcome.autonomy={status:'failed',revision:AUTONOMY_REVISION,error:safeError(error),needs_gpt_decision:false};
+   }
+  }
  }catch(error){outcome.status='blocked';outcome.error=safeError(error);}
  onObservation(outcome);return outcome;
 }
 
-export async function runQueue({cards,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,timeoutMs=MAX_WAIT_MS,onObservation=()=>{}}){
+export async function runQueue({cards,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,timeoutMs=MAX_WAIT_MS,onObservation=()=>{},allowedMailTo=null,...autonomyRun}){
  if(!Array.isArray(cards)||cards.length>MAX_NEW_CARDS||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>MAX_WAIT_MS)throw Error('invalid_bounded_queue_run');
  if(cards.some(c=>!KINDS.has(c.kind))||new Set(cards.map(c=>c.path)).size!==cards.length)throw Error('duplicate_queue_card_path');
  const deadline=clock()+timeoutMs,items=[];
  for(const card of cards){
   if(clock()>=deadline){items.push({kind:card.kind,path:card.path,status:'pending_reconcile_get_only',error:'queue_time_budget_exhausted',post_attempted:false});continue;}
-  const result=await runQueueCard({...card,source_commit,token,store,fetcher,pause,clock,deadline,onObservation:progress=>onObservation([...items,{...progress,path:card.path,card_sha256:card.card_sha256}])});
+  const result=await runQueueCard({...card,source_commit,token,store,fetcher,pause,clock,deadline,allowedMailTo,...autonomyRun,onObservation:progress=>onObservation([...items,{...progress,path:card.path,card_sha256:card.card_sha256}])});
   items.push({...result,path:card.path,card_sha256:card.card_sha256});onObservation(items);
  }
  return items;
@@ -317,13 +345,19 @@ export async function main({env=process.env}={}){
    const bytes=execFileSync('git',['show',context.source_commit+':'+card.path]);
    if(bytes.byteLength>32768)throw Error('queue_card_too_large');
    const body=JSON.parse(bytes.toString('utf8'));
-   if(card.kind==='task')assertCardContract(body);
-   if(card.kind==='task')normalizeTaskCard(body);else normalizeDecision(body);
-   cards.push({...card,body,card_sha256:createHash('sha256').update(bytes).digest('hex')});
+   if(card.kind==='task'){
+    assertCardContract(body);
+    const parsed=parseTaskCard(body,{allowedMailTo:env.AUTOLOOP_MAIL_TO||null});
+    const repoContext=parsed.autonomy?.repo_read?.length?readRepoContext(process.cwd(),parsed.autonomy.repo_read):null;
+    cards.push({...card,body,autonomy:parsed.autonomy,repo_context:repoContext,card_sha256:createHash('sha256').update(bytes).digest('hex')});
+   }else{
+    normalizeDecision(body);
+    cards.push({...card,body,card_sha256:createHash('sha256').update(bytes).digest('hex')});
+   }
   }
   const baseTree=execFileSync('git',['rev-parse',context.source_commit+'^{tree}'],{encoding:'utf8'}).trim();
   const store=new DeepQueueLatchStore({repository:REPOSITORY,token:env.GITHUB_TOKEN,baseCommit:context.source_commit,baseTree});
-  report.items=await runQueue({cards,source_commit:context.source_commit,token:env.LTZZZ_AGENT_TOKEN,store,onObservation:items=>{report.items=items;save();}});
+  report.items=await runQueue({cards,source_commit:context.source_commit,token:env.LTZZZ_AGENT_TOKEN,store,allowedMailTo:env.AUTOLOOP_MAIL_TO||null,onObservation:items=>{report.items=items;save();}});
   report.status=report.items.some(x=>x.status==='blocked')?'queue_blocked':report.items.some(x=>x.status==='pending_reconcile_get_only')?'queue_pending_reconciliation':'queue_results_verified';
   if(report.status!=='queue_results_verified')process.exitCode=1;
  }catch(error){report.status='queue_blocked';report.error=safeError(error);process.exitCode=1;}

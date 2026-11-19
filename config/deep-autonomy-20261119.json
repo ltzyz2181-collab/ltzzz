@@ -1,0 +1,35 @@
+{
+  "schema": "ltzzz.deep-autonomy-authorization.v1",
+  "effective_date": "2026-11-19",
+  "source": "owner direct instruction in current conversation 2026-11-19: 给 deep 安装仓库读权限、能改代码、能部署、必须自动、收发能发信、不用等 GPT 裁决",
+  "authority_holder": "Deep Superagent execution seat (GitHub Actions trusted bridge, scripts/deep-autonomy.mjs)",
+  "permitted_without_gpt_decision": {
+    "repo_read": "读取卡面显式声明的仓库文件并注入提示词；不读凭据、Secrets、owner 授权文件",
+    "code_change": "把模型输出的受限整文件块 <<<FILE:path>>> 落盘，跑测试，开 PR 并合并到 main",
+    "deploy": "合并后按卡面声明的 workflow 触发 workflow_dispatch",
+    "mail": "经 scripts/send-mail.py 向 owner 允许名单收件人发信，并落公开回执"
+  },
+  "still_requires_gpt_decision": [
+    "资金、付款、转账、放款、退款终态裁决",
+    "签名、私钥、助记词、钱包操作",
+    "凭据、Secrets、owner 授权配置、工作流定义的改写",
+    "命中 FIDUCIARY_RE 的提示词或模型输出"
+  ],
+  "hard_guards": {
+    "module": "scripts/deep-autonomy.mjs",
+    "revision": "deep-autonomy-v1",
+    "write_limits": "最多 6 个文件、总计 400KB、拒绝路径穿越与受保护路径",
+    "receipts": "knowledge/results/deep-superagent/autonomy/（只落状态、哈希、PR/工作流编号，不落正文与完整收件人）",
+    "model_output_is_not_executable": true,
+    "financial_execution": false
+  },
+  "mail_allowlist": {
+    "env": "AUTOLOOP_MAIL_TO",
+    "rule": "收件人必须等于 owner 配置的 AUTOLOOP_MAIL_TO；未配置时只接受单个合法邮箱"
+  },
+  "relationship_to_owner_authority": {
+    "file": "config/owner-authority-20261105.json",
+    "note": "本记录只把 Deep 的工程执行（读仓库/改代码/部署/发信）从 GPT 裁决中解耦；不改变 GPT 对 LTZZZ 资金的自主决策权，也不触碰五签钱包排除项。"
+  },
+  "transactions_caused_by_this_record": 0
+}

@@ -16,6 +16,17 @@ Owner 已同意千问承担评审和副协调职责，GPT 保留终审与执行�
 
 本次不新增五签签名人、不改五签钱包、不发起资金交易。现行机器预算的数字和执行器启用状态单独登记；该记录本身不虚构新的金额、余额或成功交易。
 
+## Deep 自主执行权限（2026-11-19，owner 原话“给 deep 安装仓库读权限、能改代码、能部署、必须自动、收发能发信、不用等 GPT 裁决”）
+
+Deep 队列卡可以声明 `autonomy.mode="auto"`，由 GitHub Actions 的受信桥接层（`scripts/deep-autonomy.mjs`）代替模型执行四类工程动作，不再等 GPT 逐次裁决：
+
+- **repo_read**：读取卡面显式列出的仓库文件，注入提示词；不读凭据、Secrets、owner 授权文件。
+- **code_change**：只接受模型输出里的受限整文件块（`<<<FILE:path>>> ... <<<END>>>`），落盘后跑测试，测试通过才建分支、开 PR 并合并；失败自动还原原文件。
+- **deploy**：合并后按卡面声明的 `workflow` 触发 `workflow_dispatch`。
+- **mail**：经既有 `scripts/send-mail.py` 向 `AUTOLOOP_MAIL_TO` 允许名单收件人发信，并落公开回执。
+
+硬边界不放开：资金、放款、退款终态、签名、钱包、私钥/助记词、凭据、Secrets、owner 授权配置和工作流定义改写仍由 `FIDUCIARY_RE` 与 `deniedWritePath` fail-closed，命中后保持 `needs_gpt_decision`。模型输出永远不会被当作 shell 或脚本直接执行；回执只落状态、哈希、PR/工作流编号与收件人域，不落正文和完整地址。机器记录见 [deep-autonomy-20261119.json](../config/deep-autonomy-20261119.json)。
+
 ## 中转 GPT 有界裁决（2026-11-17 正式决定）
 
 - **允许目标**：日常、低风险、可逆、内部仓库范围内的任务，由中转 GPT 作有界裁决。
