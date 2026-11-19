@@ -172,8 +172,15 @@ function main(argv = process.argv.slice(2)) {
       return 0;
     }
     const result = writeDailyCard({root, date, evidence});
-    process.stdout.write(JSON.stringify({status: result.status, date, path: result.path}, null, 1) + '\n');
-    return result.status === 'already_exists_different' ? 1 : 0;
+    const different = result.status === 'already_exists_different';
+    process.stdout.write(JSON.stringify({
+      status: result.status,
+      date,
+      path: result.path,
+      ...(different ? {warning: 'existing daily card preserved; queue will consume the existing card'} : {}),
+    }, null, 1) + '\n');
+    // 同一天已有别的流程写入的卡时不覆盖，但也不阻断消费：队列读取既有卡并按内容执行。
+    return 0;
   } catch (error) {
     process.stderr.write(`[dispatch-daily-card] ${String(error?.message || error).slice(0, 300)}\n`);
     return 2;
