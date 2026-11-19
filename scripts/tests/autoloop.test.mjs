@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   loadExecutors, classifyIssue, planWork, pathsAllowed, buildEmailDigest,
-  adjudicationPrompt, executeExecutor,
+  adjudicationPrompt, executeExecutor, runVerification,
 } from '../autoloop.mjs';
 
 const execs = loadExecutors();
@@ -101,4 +101,15 @@ test('an un-negated fund or signing instruction still stops the executor', () =>
   assert.equal(refund.reason, 'human_only');
   const sign = classifyIssue(issue({title: 'WEP3 \u7b7e\u540d\u6267\u884c', labels: [{name: 'autoloop:exec:task-hub-status'}]}), execs);
   assert.equal(sign.reason, 'human_only');
+});
+
+test('an executor without verify is not treated as verified', () => {
+  const r = runVerification({id: 'x', command: ['node', '-v']});
+  assert.equal(r.ran, false);
+  assert.equal(r.ok, false);
+});
+
+test('executor registry rejects a verify command outside the allowlist', () => {
+  const fake = {readFileSync: () => JSON.stringify({schema: 'ltzzz.autoloop.executors.v1', executors: [{id: 'xx1', match: {label: 'a'}, command: ['node', '-v'], verify: ['sh', '-c', 'x']}]})};
+  assert.throws(() => loadExecutors(fake, 'virtual.json'), /executor_verify_not_allowlisted/);
 });

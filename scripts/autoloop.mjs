@@ -29,6 +29,10 @@ export function loadExecutors(fsImpl = fs, file = EXECUTOR_FILE) {
     if (!e.match?.label || typeof e.match.label !== 'string') throw new Error('bad_executor_label');
     if (!Array.isArray(e.command) || e.command.length === 0 || e.command.some(c => typeof c !== 'string')) throw new Error('bad_executor_command');
     if (!/^(node|python3|python|bash)$/.test(e.command[0])) throw new Error('executor_command_not_allowlisted');
+    if (e.verify !== undefined) {
+      if (!Array.isArray(e.verify) || e.verify.length === 0 || e.verify.some(c => typeof c !== 'string')) throw new Error('bad_executor_verify');
+      if (!/^(node|python3|python|bash)$/.test(e.verify[0])) throw new Error('executor_verify_not_allowlisted');
+    }
   }
   return raw.executors;
 }
@@ -182,6 +186,15 @@ export function executeExecutor(executor, {cwd = process.cwd()} = {}) {
   };
 }
 
+// Executor-local verification. PR check-runs are not reliable here (workflows on a
+// token-created branch can sit in action_required), so an executor may declare its own
+// verify command. It never replaces a failing check; it only stands in for silence.
+export function runVerification(executor, {cwd = process.cwd()} = {}) {
+  if (!Array.isArray(executor?.verify) || executor.verify.length === 0) return {ran: false, ok: false};
+  const r = runCmd(executor.verify, {cwd, timeout: 900000});
+  return {ran: true, ok: r.status === 0, code: r.status, stdout_tail: String(r.stdout || '').slice(-1500), stderr_tail: String(r.stderr || '').slice(-1500)};
+}
+
 export function changedPaths(cwd = process.cwd()) {
   const r = runCmd(['git', 'status', '--porcelain'], {cwd});
   return String(r.stdout || '').split('\n').filter(Boolean).map(l => l.slice(3).trim());
@@ -239,6 +252,12 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
         result.needsGpt.push(`#${item.number} ${item.task_id || ''} 执行器失败 exit=${outcome.http_code}`);
         continue;
       }
+      const verify = runVerification(item.executor, {cwd});
+      if (verify.ran && !verify.ok) {
+        await cmdBlock({client, number: item.number, reason: 'verify_failed', evidence: `exit=${verify.code}`, need: 'gpt'});
+        result.needsGpt.push(`#${item.number} ${item.task_id || ''} 执行器自检失败 exit=${verify.code}`);
+        continue;
+      }
       const changed = changedPaths(cwd);
       if (changed.length === 0) {
         await client.comment(item.number, `[note] seat=${seat} executor_ok=true changed_files=0 未产生改动，保持开启待人工确认`);
@@ -250,9 +269,10 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       let mergeState = 'not_merged';
       if (item.executor.auto_merge === true && pathsAllowed(changed)) {
         const checks = await waitForChecks({token, sha: published.commit});
-        if (checks === 'success') {
+        const silenceCovered = checks === 'none_or_pending' && verify.ran && verify.ok;
+        if (checks === 'success' || silenceCovered) {
           await gh(token, 'PUT', `pulls/${published.pr}/merge`, {merge_method: 'squash'});
-          mergeState = 'merged';
+          mergeState = silenceCovered ? 'merged_on_verify_no_checks' : 'merged';
         } else {
           mergeState = 'not_merged_' + checks;
           result.needsGpt.push(`#${item.number} 自动合并被拒：CI 状态 ${checks}`);
@@ -261,7 +281,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
         mergeState = 'not_merged_paths_outside_allowlist';
         result.needsGpt.push(`#${item.number} 改动了白名单外路径，保留 PR 待人工`);
       }
-      await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState === 'merged' ? 'success' : 'not_run', tests: 'executor_ok', deploy: 'not_deployed'});
+      await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState === 'merged' ? 'success' : 'not_run', tests: verify.ran ? (verify.ok ? 'verify_passed' : 'verify_failed') : 'executor_ok_only', deploy: 'not_deployed'});
       result.done.push(`#${item.number} ${item.task_id || ''} 改动 ${changed.length} 个文件，PR #${published.pr}（${mergeState}）`);
     } catch (error) {
       result.errors.push({number: item.number, error: String(error?.message || error).slice(0, 200)});
