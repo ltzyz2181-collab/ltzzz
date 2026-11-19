@@ -8,6 +8,7 @@ import { callAgent as deepseek } from '../call-deepseek.mjs';
 import { callAgent as grok } from '../call-grok.mjs';
 import { callAgent as doubao } from '../call-doubao.mjs';
 import { kimiCN } from './kimi-cn.mjs';
+import { classifyCycle } from './cycle-outcome.mjs';
 const root = process.env.LTZZZ_ROOT || process.cwd();
 const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
 const read = (p, n) => { try { return fs.readFileSync(`${root}/${p}`, 'utf8').slice(0, n); } catch { return ''; } };
@@ -46,9 +47,14 @@ const jobs = [
 const memoryContext = MEMORY_GATE.map((p) => `=== ${p} ===\n${read(p, 400)}`).join('\n');
 const out = [];
 for (const j of jobs) { try { out.push(await hire(s, { ...j, source: `${j.source}\n\n=== Memory excerpts (bounded; not full read) ===\n${memoryContext}`, auditors: AUD })); } catch (e) { out.push({ title: j.title, status: 'error', error: String(e.message || e) }); } }
+const outcome = classifyCycle(out);
 const cap = s.state.capital_pool.balance_usd > 0 ? s.capitalProposal('did:ltzzz:deepseek', { max_share: 0.5, thesis: '影子提案：稳定币借贷收益，仅记账不执行' }) : null;
 s.save();
 fs.mkdirSync(`${root}/results/agi-econ`, { recursive: true });
-fs.writeFileSync(`${root}/results/agi-econ/cycle-${day}.json`, JSON.stringify({ day, run_id: E.GITHUB_RUN_ID || 'local', jobs: out, capital_proposal: cap?.id || null }, null, 2) + '\n');
+fs.writeFileSync(`${root}/results/agi-econ/cycle-${day}.json`, JSON.stringify({ day, run_id: E.GITHUB_RUN_ID || 'local', jobs: out, outcome, capital_proposal: cap?.id || null }, null, 2) + '\n');
 console.log(JSON.stringify(out, null, 2));
+console.error(JSON.stringify({ cycle_outcome: outcome }));
+// A green workflow means at least one job reached the audit+settle gate. Zero audited jobs
+// with failures present is an outage, not a finished cycle.
+if (!outcome.ok) process.exitCode = 1;
 
