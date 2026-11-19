@@ -12,6 +12,13 @@ on:
       - '.github/workflows/deep-superagent-daily.yml'
       - '.github/workflows/deep-superagent-queue.yml'
       - '.github/workflows/deep-dispatch-daily.yml'
+  # 只补「每日调度工作流用 GITHUB_TOKEN 推卡、GitHub 抑制其 push 事件」这一条路径。
+  # 脚本会校验 card_commit 在 main 上，且该提交只新增一张 DAILY 卡。
+  workflow_dispatch:
+    inputs:
+      card_commit:
+        description: '每日卡提交 SHA（main 上、只新增一张 DAILY 卡）'
+        required: true
   push:
     branches: [main]
     paths:
@@ -54,14 +61,19 @@ jobs:
 
   consume:
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
     runs-on: ubuntu-latest
     # 2026-11-17/18 owner 放开「一次一张卡」后，一批最多 6 张卡要在同一次 run 内跑完。
     timeout-minutes: 25
     permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
-        with: {ref: '${{ github.sha }}', fetch-depth: 0, persist-credentials: true}
+        with:
+          ref: '${{ github.event_name == ''workflow_dispatch'' && inputs.card_commit || github.sha }}'
+          fetch-depth: 0
+          persist-credentials: true
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Reserve durable attempt, enqueue or reconcile, and record bound AI decisions

@@ -28,9 +28,18 @@ const pauseDefault=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const safeError=error=>/^[a-z0-9_:-]{1,180}$/.test(error?.message||'')?error.message:'queue_executor_or_transport_failed';
 const pick=(value,keys)=>Object.fromEntries(keys.filter(k=>value?.[k]!==undefined).map(k=>[k,value[k]]));
 
-export function trustedQueueContext(env=process.env){
- if(env.GITHUB_REPOSITORY!==REPOSITORY||env.GITHUB_REF!=='refs/heads/main'||env.GITHUB_EVENT_NAME!=='push'||!COMMIT.test(env.GITHUB_SHA||'')||!/^\d{1,20}$/.test(env.GITHUB_RUN_ID||'')||!/^\d{1,6}$/.test(env.GITHUB_RUN_ATTEMPT||''))throw Error('trusted_main_push_required');
- return {source_commit:env.GITHUB_SHA,run_id:env.GITHUB_RUN_ID,run_attempt:env.GITHUB_RUN_ATTEMPT};
+// push 仍是主通道。workflow_dispatch 只用于「工作流自己用 GITHUB_TOKEN 推了卡提交、
+// 下游 push 事件被 GitHub 抑制」这一种情形；卡提交本身要在 main 上、且 diff 只能是
+// 新增的每日卡（见 main() 的校验），不是放宽为任意 dispatch 都能消费队列。
+export function trustedQueueContext(env=process.env,{sourceCommit=env.GITHUB_SHA,eventName=env.GITHUB_EVENT_NAME}={}){
+ if(env.GITHUB_REPOSITORY!==REPOSITORY||env.GITHUB_REF!=='refs/heads/main'||!['push','workflow_dispatch'].includes(eventName)||!COMMIT.test(sourceCommit||'')||!/^\d{1,20}$/.test(env.GITHUB_RUN_ID||'')||!/^\d{1,6}$/.test(env.GITHUB_RUN_ATTEMPT||''))throw Error('trusted_main_push_required');
+ return {source_commit:sourceCommit,run_id:env.GITHUB_RUN_ID,run_attempt:env.GITHUB_RUN_ATTEMPT};
+}
+
+// workflow_dispatch 路径只接受「一次提交只新增一张每日卡」的 diff，防止把人工 dispatch
+// 变成绕过 push 校验的通用入口。返回 true 表示可用，false 表示路径/状态不合规。
+export function isDailyCardOnlyChange(names){
+ return Array.isArray(names)&&names.length>0&&names.every(name=>typeof name==='string'&&/^ops\/deep-superagent\/tasks\/DEEP-SUPERAGENT-\d{8}-DAILY-[1-9]\.json$/.test(name));
 }
 
 // Only newly added top-level JSON cards are consumable. Modifying an old card
@@ -275,17 +284,31 @@ export async function runQueue({cards,source_commit,token,store,fetcher=fetch,pa
 }
 
 export async function main({env=process.env}={}){
- const context=trustedQueueContext(env);
+ const event=JSON.parse(fs.readFileSync(env.GITHUB_EVENT_PATH,'utf8'));
+ const manual=env.GITHUB_EVENT_NAME==='workflow_dispatch';
+ const context=trustedQueueContext(env,{eventName:env.GITHUB_EVENT_NAME,sourceCommit:manual?event.inputs?.card_commit:env.GITHUB_SHA});
  const resultDir='knowledge/results/deep-superagent';
  const filename=path.join(resultDir,`queue-${context.run_id}-attempt-${context.run_attempt}.json`);
  const secrets=[env.LTZZZ_AGENT_TOKEN,env.GITHUB_TOKEN];
  const report={schema:'ltzzz.deep-superagent.queue.v1',...context,task_id:'DEEP-SUPERAGENT-20261103',at_utc:new Date().toISOString(),status:'started',items:[],financial_execution:false,transactions:0,paid:false,tx_hash:null,api_bill_verified:false,native_gpt_claude_enabled:false,new_paid_schedule:false,queue_status_scope:'Transport/readback only; inspect each durable job status and native receipts separately from draft or platform acceptance.',model_calls_note:'Model counts belong to original durable jobs; queue reuse/poll/decision do not prove new model calls, billing or zero cost.'};
  const save=()=>{fs.mkdirSync(resultDir,{recursive:true});fs.writeFileSync(filename,JSON.stringify(redactKnownSecrets(report,secrets),null,2)+'\n');};
  try{
-  const event=JSON.parse(fs.readFileSync(env.GITHUB_EVENT_PATH,'utf8'));
-  if(event.repository?.full_name!==REPOSITORY||event.ref!=='refs/heads/main'||event.after!==context.source_commit||!COMMIT.test(event.before||'')||/^0+$/.test(event.before))throw Error('trusted_push_range_required');
+  if(event.repository?.full_name!==REPOSITORY||event.ref!=='refs/heads/main')throw Error('trusted_push_range_required');
+  let before;
+  if(manual){
+   // dispatch 只补「GITHUB_TOKEN 推送抑制 push 事件」的每日卡路径：
+   // card_commit 必须是 main 上的真实提交，且该提交相对父提交只新增一张每日卡。
+   if(!COMMIT.test(event.inputs?.card_commit||'')||event.inputs.card_commit!==context.source_commit)throw Error('trusted_push_range_required');
+   try{execFileSync('git',['merge-base','--is-ancestor',context.source_commit,'origin/main'],{stdio:'ignore'});}catch{throw Error('manual_dispatch_commit_not_on_main');}
+   before=execFileSync('git',['rev-parse',context.source_commit+'^'],{encoding:'utf8'}).trim();
+   const names=execFileSync('git',['diff','--no-renames','--name-only',before,context.source_commit],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+   if(!isDailyCardOnlyChange(names))throw Error('manual_dispatch_requires_daily_card_only');
+  }else{
+   if(event.after!==context.source_commit||!COMMIT.test(event.before||'')||/^0+$/.test(event.before))throw Error('trusted_push_range_required');
+   before=event.before;
+  }
   if(execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()!==context.source_commit)throw Error('queue_source_checkout_mismatch');
-  const diff=execFileSync('git',['diff','--no-renames','--name-status',event.before,event.after,'--','ops/deep-superagent/tasks/','ops/deep-superagent/decisions/'],{encoding:'utf8'});
+  const diff=execFileSync('git',['diff','--no-renames','--name-status',before,context.source_commit,'--','ops/deep-superagent/tasks/','ops/deep-superagent/decisions/'],{encoding:'utf8'});
   const selected=selectQueueCards(diff.trim()?diff.trim().split('\n').map(line=>{const [status,...name]=line.split('\t');return {status,path:name.join('\t')};}):[]);
   if(!selected.length){report.status='no_new_queue_cards';return report;}
   if(!env.LTZZZ_AGENT_TOKEN||!env.GITHUB_TOKEN)throw Error('existing_queue_executor_credentials_required');
