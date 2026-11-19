@@ -1,10 +1,32 @@
 name: Deep Superagent queue and GPT decision bridge
 on:
   pull_request:
-    paths: ['scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-daily.yml', '.github/workflows/deep-superagent-queue.yml']
+    paths:
+      - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/tests/deep-superagent-queue.test.mjs'
+      - 'scripts/tests/dispatch-seat-policy.test.mjs'
+      - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'config/dispatch-seat-policy-20261117.json'
+      - '.github/workflows/deep-superagent-daily.yml'
+      - '.github/workflows/deep-superagent-queue.yml'
+      - '.github/workflows/deep-dispatch-daily.yml'
   push:
     branches: [main]
-    paths: ['ops/deep-superagent/tasks/*.json', 'ops/deep-superagent/decisions/*.json', 'scripts/run-deep-superagent-queue.mjs', 'scripts/tests/deep-superagent-queue.test.mjs', '.github/workflows/deep-superagent-daily.yml', '.github/workflows/deep-superagent-queue.yml']
+    paths:
+      - 'ops/deep-superagent/tasks/*.json'
+      - 'ops/deep-superagent/decisions/*.json'
+      - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/tests/deep-superagent-queue.test.mjs'
+      - 'scripts/tests/dispatch-seat-policy.test.mjs'
+      - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'config/dispatch-seat-policy-20261117.json'
+      - '.github/workflows/deep-superagent-daily.yml'
+      - '.github/workflows/deep-superagent-queue.yml'
+      - '.github/workflows/deep-dispatch-daily.yml'
 permissions: {contents: read}
 concurrency: {group: deep-superagent-queue, cancel-in-progress: false}
 jobs:
@@ -16,7 +38,20 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --check scripts/run-deep-superagent-queue.mjs && node --test scripts/tests/deep-superagent-queue.test.mjs
+      - name: Syntax check
+        run: |
+          node --check scripts/run-deep-superagent-queue.mjs
+          node --check scripts/dispatch-seat-policy.mjs
+          node --check scripts/dispatch-daily-card.mjs
+      - name: Queue and policy tests
+        run: >-
+          node --test
+          scripts/tests/deep-superagent-queue.test.mjs
+          scripts/tests/dispatch-seat-policy.test.mjs
+          scripts/tests/dispatch-daily-card.test.mjs
+      - name: Dispatch seat policy gate (fail-closed before any POST)
+        run: node scripts/dispatch-seat-policy.mjs check
+
   consume:
     needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'

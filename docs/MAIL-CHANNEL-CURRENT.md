@@ -116,3 +116,28 @@
 - 2026-17:31 云主机侧曾按 owner 转发的同一授权码落过一份 `~/.config/ltzzz/qq-mail.env`，实测 `imap.qq.com:993 LOGIN OK / INBOX 3045`（只读，未取正文）。owner 澄清"发错了，是桌面 GPT 和桌面 Claude 用的"后，**云主机副本已 `shred` 删除，不保留**。
 - 记录口径：本条只记归属与所在机器，不记值、不留副本；云主机侧任何脚本读该邮箱都应 fail-closed (`creds_missing`)，不得据此推断通道不可用。
 - 若以后云主机确实需要 QQ 收信，应让 owner 单独为该机器签发新授权码，不复用桌面两席那一份。
+
+## 10. 每日合并与发信接线（2026-11-18）
+
+- **读**：`scripts/run-mail-intake.mjs` 新增 `gmail_rulings` 元数据块：只按 `from_domain=gmail.com` +
+  主题命中裁决词筛选，输出 `today_count/window_count/latest_subject_short/decision_ids`，
+  `bodies_read=false`、`bodies_persisted=false`。读不到时 `status=unknown`，不写成「没有裁决」。
+- **合并**：`scripts/daily-ops-summary.mjs` 只读公开回执，生成
+  `knowledge/results/deep-superagent/daily-merge/<date>.json`、`email-<date>.txt`、`email-<date>.meta.json`，
+  并把需要 GPT 裁决的项写成 append-only 的 `ops/deep-superagent/ruling-requests/RREQ-*.json`
+  （`status=awaiting_gpt`、`decision_authority=gpt_or_owner_only`）。
+- **发**：`scripts/send-mail.py`（Python 标准库 `smtplib`，`smtp.qq.com:465` SSL）。
+  - CI 凭据：secret `MAIL_SMTP_USER` / `MAIL_SMTP_PASSWORD`；变量 `MAIL_SMTP_HOST`、`AUTOLOOP_MAIL_TO`、
+    `AUTOLOOP_SEND_MAIL`。脚本也接受 `MAIL_SMTP_AUTH_CODE` 作为授权码别名。
+  - 回执：`knowledge/results/deep-superagent/daily-merge/send-<date>.json`，只落主题/正文哈希、
+    收件人数量与域、SMTP 响应码和 `Message-ID`；不落正文、完整收件地址或授权码。
+  - 语义：缺凭据 `creds_missing`（exit 3）；开关关闭 `skipped_by_switch`；SMTP 失败 `failed`；
+    成功 `sent`。任何失败都不会被写成已发送。
+- **定时与触发**：`.github/workflows/daily-ops-report.yml`
+  - `workflow_run` 跟进「Mail intake phase 2」与「Deep Superagent daily evidence supervision」；
+  - 01:07 UTC 定时兜底；也可 `workflow_dispatch` 指定日期；
+  - 依赖未齐时（队列/日监督/邮件摄入任一缺当天回执）先 defer，不伪造完整日报；
+  - 同一天已有 `status=sent` 的回执则跳过重发，避免 workflow_run 重复发信。
+
+如实边界：邮件成功只证明 SMTP 接收（`250`）并记录了 `Message-ID`；不等于收件人已读，
+也不等于任何业务验收或部署完成。

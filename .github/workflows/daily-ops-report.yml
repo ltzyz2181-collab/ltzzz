@@ -1,0 +1,179 @@
+name: Daily ops merge and report mail
+# 每日合并 + 三段式日报（做了什么 / 需要 GPT 裁决 / 下一步）+ 发信。
+# 触发：
+#   - mail intake 或 deep daily 跑完后 workflow_run 跟进（首选，避免只等定时）；
+#   - 01:07 UTC 定时兜底（两个依赖都没触发时也出报告，缺证据写 unknown）；
+#   - 手动 workflow_dispatch。
+# 纪律：只汇总公开回执与脱敏元数据；不合并 PR、不部署、不动资金、不读邮件正文。
+# 同一天已成功发信则跳过重发；失败/缺凭据会重试并保留回执。
+on:
+  schedule:
+    - cron: '7 1 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '日期 YYYY-MM-DD；留空取当天 UTC'
+        required: false
+        default: ''
+      send:
+        description: 'always = 缺证据也发（unknown）；if_ready = 依赖未齐则只留回执'
+        type: choice
+        options: [if_ready, always]
+        default: if_ready
+  workflow_run:
+    workflows:
+      - Mail intake phase 2
+      - Deep Superagent daily evidence supervision
+    types: [completed]
+    branches: [main]
+  pull_request:
+    paths:
+      - 'scripts/daily-ops-summary.mjs'
+      - 'scripts/send-mail.py'
+      - 'scripts/run-mail-intake.mjs'
+      - 'scripts/tests/daily-ops-summary.test.mjs'
+      - 'scripts/tests/test_send_mail.py'
+      - 'scripts/tests/mail-intake.test.mjs'
+      - '.github/workflows/daily-ops-report.yml'
+permissions: {contents: read}
+concurrency: {group: daily-ops-report, cancel-in-progress: false}
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax check
+        run: |
+          node --check scripts/daily-ops-summary.mjs
+          node --check scripts/run-mail-intake.mjs
+          python3 -m py_compile scripts/send-mail.py
+      - name: Node tests
+        run: >-
+          node --test
+          scripts/tests/daily-ops-summary.test.mjs
+          scripts/tests/mail-intake.test.mjs
+      - name: Python sender tests (no real SMTP)
+        run: python3 scripts/tests/test_send_mail.py
+
+  report:
+    if: >-
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'cancelled')) &&
+      github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: 'main', fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Decide whether today's evidence is complete
+        id: readiness
+        env:
+          INPUT_DATE: ${{ inputs.date }}
+          INPUT_SEND: ${{ inputs.send }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          DATE="${INPUT_DATE:-$(date -u +%F)}"
+          echo "REPORT_DATE=$DATE" >> "$GITHUB_ENV"
+          if [ "$EVENT_NAME" != "workflow_run" ] || [ "${INPUT_SEND:-if_ready}" = "always" ]; then
+            echo "READY=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const date = process.env.REPORT_DATE;
+          const dir = 'knowledge/results/deep-superagent';
+          const read = (p) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } };
+          const today = (p) => { const v = read(p); return Boolean(v && String(v.at_utc || v.at || '').startsWith(date)); };
+          const files = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+          const queue = files.filter((f) => /^queue-\d+-attempt-\d+\.json$/.test(f)).some((f) => today(path.join(dir, f)));
+          const daily = files.filter((f) => /^daily-\d+-attempt-\d+\.json$/.test(f)).some((f) => today(path.join(dir, f)));
+          const intake = today(path.join(dir, 'mail-intake/latest.json'));
+          const ready = queue && daily && intake;
+          fs.appendFileSync(process.env.GITHUB_ENV, 'READY=' + (ready ? '1' : '0') + '\n');
+          console.log(JSON.stringify({date, queue, daily, intake, ready}));
+          JS
+
+      - name: Build daily merge, ruling requests and mail body
+        run: node scripts/daily-ops-summary.mjs --date "$REPORT_DATE"
+
+      - name: Redacted step summary
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const p = JSON.parse(fs.readFileSync('knowledge/results/deep-superagent/daily-merge/latest.json', 'utf8'));
+          const text = '### LTZZZ daily merge\n\n```\n' + JSON.stringify({date: p.date, counts: p.counts, mail: p.mail?.status, cards: p.dispatch?.card_count, financial_execution: p.financial_execution, paid: p.paid}, null, 1) + '\n```\n';
+          console.log(text);
+          if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, text);
+          JS
+
+      - name: Send report mail (idempotent per UTC day)
+        id: send
+        if: env.READY == '1'
+        env:
+          MAIL_SMTP_HOST: ${{ vars.MAIL_SMTP_HOST }}
+          MAIL_SMTP_USER: ${{ secrets.MAIL_SMTP_USER }}
+          MAIL_SMTP_AUTH_CODE: ${{ secrets.MAIL_SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_SMTP_USER }}
+          AUTOLOOP_MAIL_TO: ${{ vars.AUTOLOOP_MAIL_TO }}
+          AUTOLOOP_SEND_MAIL: ${{ vars.AUTOLOOP_SEND_MAIL }}
+        run: |
+          RECEIPT="knowledge/results/deep-superagent/daily-merge/send-${REPORT_DATE}.json"
+          if [ -f "$RECEIPT" ] && node -e "process.exit(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).status==='sent'?0:1)" "$RECEIPT"; then
+            echo "already sent for ${REPORT_DATE}; no duplicate email"
+            echo "SEND_EXIT=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          set +e
+          python3 scripts/send-mail.py \
+            --meta "knowledge/results/deep-superagent/daily-merge/email-${REPORT_DATE}.meta.json" \
+            --receipt "$RECEIPT"
+          code=$?
+          set -e
+          echo "SEND_EXIT=$code" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Deferred when dependencies are not ready
+        if: env.READY != '1'
+        run: |
+          echo "::notice::Dependencies for ${REPORT_DATE} are not complete (queue/daily/intake). No email sent; a later workflow_run or the 01:07 UTC schedule will retry."
+          echo "SEND_EXIT=0" >> "$GITHUB_ENV"
+
+      - name: Preserve merge receipt, ruling requests and send receipt
+        if: always()
+        run: |
+          git config user.name 'ltzzz-report-bot'
+          git config user.email 'bot@ltzzz.com'
+          git add knowledge/results/deep-superagent/daily-merge/ ops/deep-superagent/ruling-requests/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'no report change'
+            exit 0
+          fi
+          git commit -m "chore(deep): daily merge ${REPORT_DATE} [skip ci]"
+          node tools/push-receipt-commit.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-ops-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            knowledge/results/deep-superagent/daily-merge/
+            ops/deep-superagent/ruling-requests/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail when sending did not complete
+        if: env.READY == '1' && env.SEND_EXIT != '0'
+        run: |
+          echo "::error::Report mail exited ${SEND_EXIT}; see the send receipt. Do not claim the report was delivered."
+          exit 1

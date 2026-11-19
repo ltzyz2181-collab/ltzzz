@@ -1,0 +1,46 @@
+name: Dispatch seat policy gate
+# 把多席派单政策从纸面规则变成 CI 可执行门禁。
+# 覆盖：政策 JSON 未损坏、卡合同解析未被混用、队列目录中的新政策卡全部合规。
+# legacy 卡只计数不判错；显式声明 importance/seats 的卡缺席、角色错、持裁决权都会被拦下。
+on:
+  pull_request:
+    paths:
+      - 'config/dispatch-seat-policy-20261117.json'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/tests/dispatch-seat-policy.test.mjs'
+      - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'ops/deep-superagent/tasks/**'
+      - '.github/workflows/dispatch-seat-policy.yml'
+      - '.github/workflows/deep-dispatch-daily.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'config/dispatch-seat-policy-20261117.json'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/dispatch-daily-card.mjs'
+      - 'ops/deep-superagent/tasks/**'
+      - '.github/workflows/dispatch-seat-policy.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency: {group: dispatch-seat-policy, cancel-in-progress: false}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax check
+        run: |
+          node --check scripts/dispatch-seat-policy.mjs
+          node --check scripts/dispatch-daily-card.mjs
+      - name: Unit tests
+        run: >-
+          node --test
+          scripts/tests/dispatch-seat-policy.test.mjs
+          scripts/tests/dispatch-daily-card.test.mjs
+      - name: Policy check (fail-closed)
+        run: node scripts/dispatch-seat-policy.mjs check
