@@ -1,0 +1,22 @@
+{
+  "schema": "ltzzz.autoloop.executors.v1",
+  "note": "只有登记在这里、且命令首项在白名单内的执行器才会被自动运行。Issue 正文永不执行。",
+  "executors": [
+    {
+      "id": "task-hub-status",
+      "match": {"label": "autoloop:exec:task-hub-status"},
+      "command": ["node", "scripts/task-hub.mjs", "status", "--out", "knowledge/results/task-hub/latest.json"],
+      "auto_merge": false,
+      "risk": "low",
+      "produces": ["knowledge/results/task-hub/latest.json"]
+    },
+    {
+      "id": "oversight-merge",
+      "match": {"label": "autoloop:exec:oversight-merge"},
+      "command": ["node", "scripts/merge-oversight-backlog.mjs", "--json", "knowledge/results/dispatch/oversight/merged-latest.json", "--md", "ops/task-continuity/oversight-merged-latest.md"],
+      "auto_merge": true,
+      "risk": "low",
+      "produces": ["knowledge/results/dispatch/oversight/merged-latest.json", "ops/task-continuity/oversight-merged-latest.md"]
+    }
+  ]
+}

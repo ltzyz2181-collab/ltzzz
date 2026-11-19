@@ -1,0 +1,77 @@
+name: Daily autoloop (claim, execute, digest)
+
+# 每日自动闭环：回收过期租约 → 领取显式 opt-in 的低风险任务 → 执行器白名单运行 →
+# 自动开 PR（路径白名单内且 CI 成功才自动合并）→ 中转裁决建议 → 汇总邮件。
+# 安全默认：AUTOLOOP_ENABLED 不是 'true' 时只做计划，不领取、不执行、不发信。
+
+on:
+  schedule:
+    - cron: '10 1 * * *'
+    - cron: '10 13 * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: '真正执行（领取/执行/发信）'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: daily-autoloop
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      AUTOLOOP_SEAT: ${{ vars.AUTOLOOP_SEAT || 'desktop-claude' }}
+      AUTOLOOP_ENABLED: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply) && 'true' || vars.AUTOLOOP_ENABLED }}
+      AUTOLOOP_SEND_MAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply) && 'true' || vars.AUTOLOOP_SEND_MAIL }}
+      AUTOLOOP_MAIL_TO: ${{ vars.AUTOLOOP_MAIL_TO || 'ltzyz2181@gmail.com' }}
+      MAIL_ADDRESS: ${{ secrets.MAIL_ADDRESS }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+      MAIL_IMAP_HOST: ${{ vars.MAIL_IMAP_HOST || 'imap.gmail.com' }}
+      MAIL_SMTP_HOST: ${{ vars.MAIL_SMTP_HOST || 'smtp.qq.com' }}
+      MAIL_SMTP_USER: ${{ secrets.MAIL_SMTP_USER }}
+      MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+      APISROUTER_API_KEY: ${{ secrets.APISROUTER_API_KEY }}
+      AUTOLOOP_PYTHON: python3
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: true}
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Verify autoloop contracts
+        run: node --check scripts/autoloop.mjs && node --test scripts/tests/autoloop.test.mjs
+
+      - name: Run autoloop
+        run: node scripts/autoloop.mjs --apply --seat "$AUTOLOOP_SEAT" | tee autoloop.out
+
+      - name: Step summary
+        if: always()
+        run: |
+          {
+            echo "## 自动循环"
+            echo '```json'
+            tail -c 4000 autoloop.out 2>/dev/null || echo '{}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Persist run receipt
+        if: always()
+        run: |
+          git config user.name "ltzzz-autoloop"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/autoloop 2>/dev/null || true
+          if git diff --staged --quiet; then echo "no receipt changes"; exit 0; fi
+          git commit -m "chore(autoloop): daily run $(date -u +%F)"
+          node tools/push-receipt-commit.mjs
