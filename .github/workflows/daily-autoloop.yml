@@ -58,7 +58,7 @@ jobs:
         run: node --check scripts/autoloop.mjs && node --test scripts/tests/autoloop.test.mjs
 
       - name: Run autoloop
-        run: node scripts/autoloop.mjs --apply --seat "$AUTOLOOP_SEAT" | tee autoloop.out
+        run: node scripts/autoloop.mjs --apply --seat "$AUTOLOOP_SEAT" | tee "$RUNNER_TEMP/autoloop.out"
 
       - name: Step summary
         if: always()
@@ -66,7 +66,7 @@ jobs:
           {
             echo "## 自动循环"
             echo '```json'
-            tail -c 4000 autoloop.out 2>/dev/null || echo '{}'
+            tail -c 4000 "$RUNNER_TEMP/autoloop.out" 2>/dev/null || echo '{}'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
