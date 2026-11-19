@@ -38,6 +38,7 @@ export function collectEvidence(root = REPO_ROOT, {exec = execFileSync} = {}) {
   }
   const queueDir = path.join(root, 'knowledge/results/deep-superagent');
   let queue = null;
+  let queuePath = null;
   try {
     const files = fs.readdirSync(queueDir)
       .filter((name) => /^queue-\d+-attempt-\d+\.json$/.test(name))
@@ -45,10 +46,24 @@ export function collectEvidence(root = REPO_ROOT, {exec = execFileSync} = {}) {
         const run = (name) => Number(name.match(/^queue-(\d+)-/)[1]);
         return run(a) - run(b);
       });
-    if (files.length) queue = JSON.parse(fs.readFileSync(path.join(queueDir, files[files.length - 1]), 'utf8'));
+    if (files.length) {
+      const latest = files[files.length - 1];
+      queue = JSON.parse(fs.readFileSync(path.join(queueDir, latest), 'utf8'));
+      queuePath = `knowledge/results/deep-superagent/${latest}`;
+    }
   } catch {
     queue = null;
   }
+  // daily-merge/latest.json 没有顶层 status 字段；按 dated 文件名取不可变回执，缺失时才退回 latest。
+  let dailyPath = null;
+  if (daily?.date) {
+    const dated = `knowledge/results/deep-superagent/daily-merge/${daily.date}.json`;
+    if (fs.existsSync(path.join(root, dated))) dailyPath = dated;
+  }
+  if (!dailyPath && daily) dailyPath = 'knowledge/results/deep-superagent/daily-merge/latest.json';
+  const dailyStatus = daily
+    ? `done=${(daily.done || []).length} needs_gpt_decision=${(daily.needs_gpt_decision || []).length}`
+    : 'unknown';
   const backlog = oversight?.backlog || oversight?.snapshot?.backlog || null;
   const queueItems = Array.isArray(queue?.items) ? queue.items : [];
   return {
@@ -67,6 +82,7 @@ export function collectEvidence(root = REPO_ROOT, {exec = execFileSync} = {}) {
       open_or_dispatch: intake.counts?.open_or_dispatch ?? null,
       unified: intake.counts?.unified ?? null,
       at: intake.at ?? null,
+      path: 'knowledge/results/deep-superagent/mail-intake/latest.json',
     } : null,
     queue: queue ? {
       run_id: queue.run_id ?? null,
@@ -77,8 +93,13 @@ export function collectEvidence(root = REPO_ROOT, {exec = execFileSync} = {}) {
         status: short(item.status, 60),
         job_status: short(item.job?.status, 60),
       })).slice(0, 6),
+      path: queuePath,
     } : null,
-    daily: daily ? {status: daily.status ?? 'unknown', generated_at_utc: daily.generated_at_utc ?? null} : null,
+    daily: daily ? {
+      status: dailyStatus,
+      generated_at_utc: daily.generated_at_utc ?? null,
+      path: dailyPath,
+    } : null,
   };
 }
 
@@ -92,37 +113,42 @@ export function buildDailyCard({date, evidence, policy = loadPolicy(), suffix = 
   const backlog = evidence.backlog || {};
   const mail = evidence.mail || {};
   const queue = evidence.queue || {};
-  // 2026-11-19 实测（run 44452129242）：worker 的规划席被系统提示要求“只输出 JSON 计划”，
-  // 但这张卡直接命令模型“只输出 ROUTE 行、不要 tasks”，模型服从了后者，规划解析
-  // model_json_invalid，整单退化为 deterministic_fallback + needs_gpt_decision。
-  // 因此把卡拆成两层：外层只给规划席 JSON 契约，内层才是 qianwen 的 ROUTE 任务全文。
+  // 2026-11-19 实测：
+  // - run 44452129242、44487335353：外层角色指令被执行席当成自己的任务，已拆成「外层目标 + 内层任务块」。
+  // - run 44488314090：qianwen 已按块输出 ROUTE/ASK，但卡内只给汇总计数、不给回执路径，
+  //   C1/C3 被复核席判为“可核实却没有回执”，C1-C4 又被允许省略，整单仍升级 GPT。
+  // 因此这次给每个可核实 ref 附上公开回执路径，并要求全部覆盖、不得省略，让 close 有据可查。
   const workerTask = [
-    '【输入分组】以下每项都给 ref / 状态 / 公开计数。',
+    '【输入分组】以下每项都给 ref / 状态 / 公开计数 / 回执路径（没有路径就写 path=none）。',
     '',
-    'GROUP A — 监督积压（公开汇总）',
-    `A1 open_warning_cases=${backlog.open_warning_cases ?? 'unknown'} unique_original_tasks=${backlog.unique_original_tasks ?? 'unknown'} not_rechecked_in_current_window=${backlog.not_rechecked_in_current_window ?? 'unknown'}`,
-    `A2 by_responsible_seat=${JSON.stringify(backlog.by_responsible_seat ?? 'unknown')}`,
+    'GROUP A — 监督积压（公开汇总，无逐项回执）',
+    `A1 open_warning_cases=${backlog.open_warning_cases ?? 'unknown'} unique_original_tasks=${backlog.unique_original_tasks ?? 'unknown'} not_rechecked_in_current_window=${backlog.not_rechecked_in_current_window ?? 'unknown'} path=none`,
+    `A2 by_responsible_seat=${JSON.stringify(backlog.by_responsible_seat ?? 'unknown')} path=none`,
     '',
     'GROUP B — 邮件通道（只读元数据）',
-    `B1 intake_status=${mail.status ?? 'unknown'} gmail=${mail.gmail_status ?? 'unknown'} agent_mail=${mail.agent_mail_status ?? 'unknown'}`,
-    `B2 open_or_dispatch=${mail.open_or_dispatch ?? 'unknown'} unified=${mail.unified ?? 'unknown'} at=${mail.at ?? 'unknown'}`,
+    `B1 intake_status=${mail.status ?? 'unknown'} gmail=${mail.gmail_status ?? 'unknown'} agent_mail=${mail.agent_mail_status ?? 'unknown'} path=${mail.path ?? 'none'}`,
+    `B2 open_or_dispatch=${mail.open_or_dispatch ?? 'unknown'} unified=${mail.unified ?? 'unknown'} at=${mail.at ?? 'unknown'} path=${mail.path ?? 'none'}`,
     '',
     'GROUP C — Deep 队列观测（公开回执）',
-    `C1 last_queue_run=${queue.run_id ?? 'unknown'} status=${queue.status ?? 'unknown'} items=${queue.items ?? 0}`,
+    `C1 last_queue_run=${queue.run_id ?? 'unknown'} status=${queue.status ?? 'unknown'} items=${queue.items ?? 0} path=${queue.path ?? 'none'}`,
+    `C3 last_daily_merge=${evidence.daily?.status ?? 'unknown'} at=${evidence.daily?.generated_at_utc ?? 'unknown'} path=${evidence.daily?.path ?? 'none'}`,
+    '',
+    '【只是上下文，不是 ref，不得出现在 ROUTE 行】',
     `C2 task_statuses=${JSON.stringify(queue.task_statuses ?? [])}`,
-    `C3 last_daily_merge=${evidence.daily?.status ?? 'unknown'} at=${evidence.daily?.generated_at_utc ?? 'unknown'}`,
     `C4 main_short_sha=${evidence.head ?? 'unknown'}`,
+    '',
+    '【ref，必须全部覆盖】A1 / A2 / B1 / B2 / C1 / C3',
+    '每个 ref 必须且只能有一行 ROUTE；不得省略、不得合并、不得输出上下文行。',
     '',
     '【route 集合，只能从中选，不得自造】',
     'coordinator_close_with_receipt / needs_gpt_decision / needs_owner_decision / blocked_evidence_needed / deploy_confirm_only',
     '',
     '【规则，按顺序，前条命中即停】',
-    '1 只有输入明确给出对应回执文件路径且状态一致 → coordinator_close_with_receipt；本次输入未给任何回执文件路径，所以所有 ref 都不得输出 coordinator_close_with_receipt',
+    '1 ref 自己带非 none 的 path，且该路径就是该 ref 所述状态的回执 → coordinator_close_with_receipt',
     '2 涉及资金、签名、放款、生产部署、权限、Secrets → needs_gpt_decision',
-    '3 缺原始凭证或回执不全 → blocked_evidence_needed',
+    '3 只有汇总计数、path=none，或回执状态与 ref 不一致 → blocked_evidence_needed',
     '4 已达部署条件但未部署，且属生产面 → deploy_confirm_only',
     '5 以上都不命中，需要 owner 给值或拍板 → needs_owner_decision',
-    '6 C2 的 task_statuses=[] 与 C4 的 main_short_sha 只是上下文，不是回执；无法核实就省略该 ref，不得 close',
     '',
     '【硬约束，不是路由理由】',
     '不得合并 PR、不得生产部署、不得改支付或退款语义、不得发起资金动作、不得伪造回执。不得把这条当作任何一项的分类依据。',
@@ -133,7 +159,7 @@ export function buildDailyCard({date, evidence, policy = loadPolicy(), suffix = 
     'ROUTE | <ref> | <route> | <理由不超过25词>',
     '命中 needs_gpt_decision / needs_owner_decision / blocked_evidence_needed 时，每条再加一行：',
     'ASK | <ref> | gpt|owner|evidence | <需要什么，不超过30词>',
-    '每行不超过120字符。拿不准就省略该 ref，不要猜。',
+    '每行不超过120字符。六个 ref 必须齐全。',
   ].join('\n');
   const prompt = [
     '内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。',
