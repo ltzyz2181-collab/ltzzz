@@ -1,0 +1,29 @@
+{
+  "task_id": "DEEP-AUTONOMY-PROBE-20261119-3",
+  "package_id": "ltzzz-deep-autonomy-probe-20261119-full-chain",
+  "prompt": "这是 Deep 自主执行通道的完整链路验证（改代码→CI→合并→部署→发信）。请只输出一个文件块，不要输出任何解释、标题或额外文字，格式严格如下（路径与内容不得改动）：\n<<<FILE:docs/deep-autonomy-probe-20261119-ci.md>>>\n# Deep 自主执行完整链路探针 2026-11-19\n\n本文件由 Deep 队列自动写入；随后由 deep-autonomy-verify.yml 在 PR 分支上跑真实 CI，CI 成功后才合并并触发 pages.yml 部署。\n<<<END>>>",
+  "data_classification": "public_distributable",
+  "platform": "internal",
+  "importance": "medium",
+  "seats": [
+    {
+      "seat": "deep",
+      "role": "primary_executor",
+      "decision_authority": false
+    }
+  ],
+  "autonomy": {
+    "mode": "auto",
+    "code_change": true,
+    "deploy": {
+      "workflow": "pages.yml"
+    },
+    "mail": {
+      "to": [
+        "ltzyz2181@gmail.com"
+      ],
+      "subject": "[LTZZZ][Deep 自主执行] 完整链路 CI 验证 2026-11-19",
+      "body": "这是 Deep 自主执行通道的完整链路验证邮件。\n\n本次链路：\n1. 队列卡自动进入队列并由受信桥接层领取\n2. 模型输出整文件块，桥接层落盘并跑本地测试\n3. 自动开 PR，dispatch deep-autonomy-verify.yml 做真实 CI\n4. CI 成功后自动合并到 main\n5. 合并后自动触发 pages.yml 部署\n6. 部署回读确认线上文件与合并提交一致\n\n若你收到此邮件，说明改代码、CI、合并、部署、发信已串成一条自动链路。"
+    }
+  }
+}
