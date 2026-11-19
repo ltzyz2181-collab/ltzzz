@@ -40,7 +40,12 @@ class FakeSMTP:
 
     def send_message(self, message):
         self.calls.append(('send_message', message))
-        return 250, b'OK queued as test'
+        # 与 smtplib 一致：返回被拒收件人字典，全部接收时为 {}。
+        return {}
+
+    def noop(self):
+        self.calls.append(('noop',))
+        return 250, b'OK'
 
     def quit(self):
         self.calls.append(('quit',))
@@ -128,6 +133,21 @@ class SendMailTest(unittest.TestCase):
         raw = open(self.receipt, encoding='utf-8').read()
         for forbidden in (AUTH_CODE, 'owner@example.com', 'deputy@example.org', '一、今天完成了什么'):
             self.assertNotIn(forbidden, raw, '回执不得包含 ' + forbidden)
+
+    def test_refused_recipient_is_not_reported_as_sent(self):
+        class Refused(FakeSMTP):
+            def send_message(self, message):
+                self.calls.append(('send_message', message))
+                return {'bad@example.net': (550, b'no such user')}
+
+        code, payload = sm.run(self.meta, receipt_path=self.receipt,
+                               env=self.env(), smtp_factory=Refused)
+        self.assertEqual(code, 3)
+        self.assertEqual(payload['status'], 'refused')
+        self.assertEqual(payload['refused_count'], 1)
+        self.assertEqual(payload['smtp_code'], 250)
+        raw = open(self.receipt, encoding='utf-8').read()
+        self.assertNotIn('bad@example.net', raw)
 
     def test_invalid_meta_schema_rejected(self):
         with open(self.meta, 'w', encoding='utf-8') as fh:

@@ -132,7 +132,14 @@
   - 回执：`knowledge/results/deep-superagent/daily-merge/send-<date>.json`，只落主题/正文哈希、
     收件人数量与域、SMTP 响应码和 `Message-ID`；不落正文、完整收件地址或授权码。
   - 语义：缺凭据 `creds_missing`（exit 3）；开关关闭 `skipped_by_switch`；SMTP 失败 `failed`；
-    成功 `sent`。任何失败都不会被写成已发送。
+    部分收件人被拒 `refused`（exit 3，回执记 `refused_count`）；全部接收才是 `sent`。
+    任何失败都不会被写成已发送。
+  - 2026-11-19 实测缺陷与修正：`smtplib.SMTP.send_message()` 返回「被拒收件人字典」，不是
+    `(code, detail)`。旧代码 `code, detail = conn.send_message(message)` 在全部接收时对空字典解包，
+    抛 `ValueError: not enough values to unpack (expected 2, got 0)`（run 44452335061 / 44453187521）。
+    现在按返回值判定 `sent`/`refused`，再发一次 `NOOP` 取可见会话码，回执写
+    `smtp_code_source=noop_after_send`；消息级接收由 smtplib 内部校验 DATA 响应保证
+    （非 250 抛 `SMTPDataError`）。
 - **定时与触发**：`.github/workflows/daily-ops-report.yml`
   - `workflow_run` 跟进「Mail intake phase 2」与「Deep Superagent daily evidence supervision」；
   - 01:07 UTC 定时兜底；也可 `workflow_dispatch` 指定日期；
