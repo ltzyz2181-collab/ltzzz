@@ -31,14 +31,20 @@ const evidence = (overrides = {}) => ({
     open_or_dispatch: 200,
     unified: 1133,
     at: '2026-11-18T02:29:51.596Z',
+    path: 'knowledge/results/deep-superagent/mail-intake/latest.json',
   },
   queue: {
     run_id: '44250221231',
     status: 'queue_results_verified',
     items: 2,
     task_statuses: [{task_id: 'DSA-TEST-01', status: 'job_terminal_observed', job_status: 'completed_pending_external_acceptance'}],
+    path: 'knowledge/results/deep-superagent/queue-44250221231-attempt-1.json',
   },
-  daily: {status: 'daily_result_readback_complete', generated_at_utc: '2026-11-18T07:48:00.000Z'},
+  daily: {
+    status: 'done=2 needs_gpt_decision=1',
+    generated_at_utc: '2026-11-18T07:48:00.000Z',
+    path: 'knowledge/results/deep-superagent/daily-merge/latest.json',
+  },
   ...overrides,
 });
 
@@ -64,8 +70,21 @@ test('外层只描述目标，ROUTE 指令只出现在给 qianwen 的任务块�
   assert.doesNotMatch(outer, /只输出一个 JSON 计划/);
   const nested = card.prompt.slice(card.prompt.indexOf('【给 qianwen 的任务】'));
   assert.match(nested, /^ROUTE \| <ref> \| <route> \|/m);
-  assert.match(nested, /本次输入未给任何回执文件路径/);
-  assert.match(nested, /C2 的 task_statuses=\[\] 与 C4 的 main_short_sha 只是上下文/);
+  assert.match(nested, /六个 ref 必须齐全/);
+  assert.match(nested, /C2 task_statuses=/);
+  assert.match(nested, /C4 main_short_sha=/);
+});
+
+test('可核实 ref 带上公开回执路径，汇总 ref 明确 path=none', () => {
+  const card = buildDailyCard({date: '2026-11-19', evidence: evidence(), policy});
+  assert.match(card.prompt, /C1 last_queue_run=44250221231 status=queue_results_verified items=2 path=knowledge\/results\/deep-superagent\/queue-44250221231-attempt-1\.json/);
+  assert.match(card.prompt, /C3 last_daily_merge=done=2 needs_gpt_decision=1 .*path=knowledge\/results\/deep-superagent\/daily-merge\/latest\.json/);
+  assert.match(card.prompt, /B1 .*path=knowledge\/results\/deep-superagent\/mail-intake\/latest\.json/);
+  assert.match(card.prompt, /A1 .*path=none/);
+  assert.match(card.prompt, /A2 .*path=none/);
+  assert.match(card.prompt, /ref，必须全部覆盖】A1 \/ A2 \/ B1 \/ B2 \/ C1 \/ C3/);
+  assert.match(card.prompt, /不得省略、不得合并/);
+  assert.match(card.prompt, /ref 自己带非 none 的 path，且该路径就是该 ref 所述状态的回执 → coordinator_close_with_receipt/);
 });
 
 test('同日重试卡用 suffix 区分任务、包与文件名', () => {
@@ -100,6 +119,34 @@ test('同一日期重复写入保持幂等且不覆盖既有卡', () => {
     const third = writeDailyCard({root, date: '2026-11-19', evidence: evidence(), policy});
     assert.equal(third.status, 'already_exists_different');
     assert.match(fs.readFileSync(abs, 'utf8'), /tampered/);
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+  }
+});
+
+test('daily-merge 无顶层 status 时按 done/needs_gpt_decision 计数并给出不可变路径', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dispatch-daily-evidence-'));
+  try {
+    const dir = path.join(root, 'knowledge/results/deep-superagent');
+    fs.mkdirSync(path.join(dir, 'daily-merge'), {recursive: true});
+    const dailyMerge = JSON.stringify({
+      date: '2026-11-19',
+      generated_at_utc: '2026-11-19T07:43:58.423Z',
+      done: [{task_id: 'DEEP-DAILY-SUPERVISION'}],
+      needs_gpt_decision: [{task_id: 'DEEP-SUPERAGENT-20261119-DAILY-2'}],
+    });
+    fs.writeFileSync(path.join(dir, 'daily-merge/2026-11-19.json'), dailyMerge);
+    fs.writeFileSync(path.join(dir, 'daily-merge/latest.json'), dailyMerge);
+    fs.writeFileSync(path.join(dir, 'queue-44488314090-attempt-1.json'), JSON.stringify({
+      run_id: '44488314090',
+      status: 'queue_results_verified',
+      items: [{task_id: 'DEEP-SUPERAGENT-20261119-DAILY-4', status: 'job_terminal_observed', job: {status: 'needs_gpt_decision'}}],
+    }));
+    const found = collectEvidence(root, {exec: () => '0123456789ab\n'});
+    assert.equal(found.daily.status, 'done=1 needs_gpt_decision=1');
+    assert.equal(found.daily.path, 'knowledge/results/deep-superagent/daily-merge/2026-11-19.json');
+    assert.equal(found.queue.run_id, '44488314090');
+    assert.equal(found.queue.path, 'knowledge/results/deep-superagent/queue-44488314090-attempt-1.json');
   } finally {
     fs.rmSync(root, {recursive: true, force: true});
   }
