@@ -20,6 +20,27 @@ test('a worker-only card passes', () => {
   assert.equal(r.refs, 1);
 });
 
+test('planner with an explicit nested worker block is a two-layer contract, not mixing', () => {
+  const r = analyzeCardPrompt([
+    PLANNER,
+    '【给 qianwen 的任务】',
+    'Worker: return one line per ref',
+    'ROUTE | <ref> | <route> | <reason>',
+  ].join('\n'));
+  assert.equal(r.has_planner, true);
+  assert.equal(r.has_worker, true);
+  assert.equal(r.has_nested_worker, true);
+  assert.equal(r.mixed, false);
+  assert.equal(r.verdict, 'ok');
+});
+
+test('planner and worker contracts without the nested marker are still flagged', () => {
+  const r = analyzeCardPrompt(PLANNER + '\nROUTE | <ref> | <route> | <reason>');
+  assert.equal(r.has_nested_worker, false);
+  assert.equal(r.mixed, true);
+  assert.deepEqual(r.reasons, ['planner_worker']);
+});
+
 test('a planner-only card passes', () => {
   const r = analyzeCardPrompt(PLANNER);
   assert.equal(r.has_planner, true);
