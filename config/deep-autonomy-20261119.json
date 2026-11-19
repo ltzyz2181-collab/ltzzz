@@ -5,7 +5,7 @@
   "authority_holder": "Deep Superagent execution seat (GitHub Actions trusted bridge, scripts/deep-autonomy.mjs)",
   "permitted_without_gpt_decision": {
     "repo_read": "读取卡面显式声明的仓库文件并注入提示词；不读凭据、Secrets、owner 授权文件",
-    "code_change": "把模型输出的受限整文件块 <<<FILE:path>>> 落盘，跑测试，开 PR 并合并到 main",
+    "code_change": "把模型输出的受限整文件块 <<<FILE:path>>> 落盘，跑本地测试，开 PR，dispatch deep-autonomy-verify.yml 做真实 CI，CI 成功后才合并到 main",
     "deploy": "合并后按卡面声明的 workflow 触发 workflow_dispatch",
     "mail": "经 scripts/send-mail.py 向 owner 允许名单收件人发信，并落公开回执"
   },
@@ -21,6 +21,7 @@
     "write_limits": "最多 6 个文件、总计 400KB、拒绝路径穿越与受保护路径",
     "receipts": "knowledge/results/deep-superagent/autonomy/（只落状态、哈希、PR/工作流编号，不落正文与完整收件人）",
     "model_output_is_not_executable": true,
+    "ci_gate": "合并前必须由 .github/workflows/deep-autonomy-verify.yml 在该 PR 分支上真实跑完且成功；dispatch 失败、run 失败或超时都不合并",
     "financial_execution": false
   },
   "mail_allowlist": {

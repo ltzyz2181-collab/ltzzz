@@ -31,6 +31,13 @@ const WRITE_LIMIT_FILES = 6;
 const WRITE_LIMIT_BYTES = 400 * 1024;
 const REPO_READ_LIMIT_FILES = 8;
 const REPO_READ_LIMIT_BYTES = 64 * 1024;
+// GITHUB_TOKEN 创建的 PR 不会触发 pull_request 工作流（GitHub 抑制递归事件），
+// 所以代码动作不能假设“PR 已开就有 CI”。桥接层显式 dispatch 一个独立验证工作流，
+// 等它真实跑完且成功后才合并；没有 CI 或 CI 失败都保持未合并。
+const CI_VERIFY_WORKFLOW = 'deep-autonomy-verify.yml';
+const CI_TIMEOUT_MS = 8 * 60 * 1000;
+const CI_INTERVAL_MS = 5000;
+const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const fail = (message) => {
   throw new Error(message);
@@ -238,6 +245,58 @@ function git(root, args, options = {}) {
   return execFileSync('git', args, {cwd: root, encoding: 'utf8', ...options});
 }
 
+// 显式 dispatch 验证工作流，并等到该分支上的这次 run 真正完成。
+// 返回 ok=false 时调用方不得合并；status 直接写进公开回执。
+async function waitForCi({
+  fetcher,
+  token,
+  repository,
+  branch,
+  clock = Date.now,
+  sleep = defaultSleep,
+  timeoutMs = CI_TIMEOUT_MS,
+  intervalMs = CI_INTERVAL_MS,
+}) {
+  let dispatchError = null;
+  try {
+    await githubApi(fetcher, token, repository, `/actions/workflows/${CI_VERIFY_WORKFLOW}/dispatches`, 'POST', {ref: branch});
+  } catch (error) {
+    dispatchError = String(error?.message || error).slice(0, 200);
+  }
+  if (dispatchError) return {ok: false, status: 'ci_dispatch_failed', error: dispatchError};
+
+  const deadline = clock() + timeoutMs;
+  let lastRun = null;
+  while (clock() < deadline) {
+    let runs = [];
+    try {
+      const data = await githubApi(fetcher, token, repository, `/actions/workflows/${CI_VERIFY_WORKFLOW}/runs?branch=${encodeURIComponent(branch)}&event=workflow_dispatch&per_page=10`);
+      runs = Array.isArray(data?.workflow_runs) ? data.workflow_runs : [];
+    } catch (error) {
+      return {ok: false, status: 'ci_lookup_failed', error: String(error?.message || error).slice(0, 200)};
+    }
+    lastRun = runs.find((run) => run.head_branch === branch) || null;
+    if (lastRun && lastRun.status === 'completed') {
+      const passed = lastRun.conclusion === 'success';
+      return {
+        ok: passed,
+        status: passed ? 'ci_passed' : 'ci_failed',
+        run_id: lastRun.id,
+        conclusion: lastRun.conclusion,
+        html_url: lastRun.html_url || null,
+      };
+    }
+    await sleep(intervalMs);
+  }
+  return {
+    ok: false,
+    status: 'ci_timeout',
+    run_id: lastRun?.id || null,
+    html_url: lastRun?.html_url || null,
+    error: 'ci_timeout',
+  };
+}
+
 export async function executeAutonomy({
   autonomy,
   job,
@@ -247,6 +306,9 @@ export async function executeAutonomy({
   fetcher = fetch,
   runTests = defaultRunTests,
   clock = Date.now,
+  sleep = defaultSleep,
+  ciTimeoutMs = CI_TIMEOUT_MS,
+  ciIntervalMs = CI_INTERVAL_MS,
 } = {}) {
   if (!autonomy || autonomy.mode !== 'auto') return {status: 'not_requested', revision: AUTONOMY_REVISION};
   const fiduciary = fiduciaryHit({prompt: job?.prompt, outputs});
@@ -321,17 +383,30 @@ export async function executeAutonomy({
             title: `deep(auto): ${taskId}`,
             head: branch,
             base: 'main',
-            body: `自动执行回执：任务 ${taskId}，运行 ${runId}。测试通过后由 Deep 自动合并。`,
+            body: `自动执行回执：任务 ${taskId}，运行 ${runId}。独立验证工作流通过后才由 Deep 自动合并。`,
           });
-          const merge = await githubApi(fetcher, token, repository, `/pulls/${pr.number}/merge`, 'PUT', {merge_method: 'squash'});
-          actions.push({
-            action: 'code_change',
-            status: merge.merged ? 'merged' : 'merge_pending',
-            branch,
-            pr: pr.number,
-            merge_sha: merge.sha || null,
-            files: writes.map((write) => write.path),
-          });
+          const ci = await waitForCi({fetcher, token, repository, branch, clock, sleep, timeoutMs: ciTimeoutMs, intervalMs: ciIntervalMs});
+          if (!ci.ok) {
+            actions.push({
+              action: 'code_change',
+              status: ci.status,
+              branch,
+              pr: pr.number,
+              files: writes.map((write) => write.path),
+              ci,
+            });
+          } else {
+            const merge = await githubApi(fetcher, token, repository, `/pulls/${pr.number}/merge`, 'PUT', {merge_method: 'squash'});
+            actions.push({
+              action: 'code_change',
+              status: merge.merged ? 'merged' : 'merge_pending',
+              branch,
+              pr: pr.number,
+              merge_sha: merge.sha || null,
+              files: writes.map((write) => write.path),
+              ci,
+            });
+          }
         } catch (error) {
           for (const [file, content] of originals) {
             try {
