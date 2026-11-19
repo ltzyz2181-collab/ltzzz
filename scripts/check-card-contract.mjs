@@ -17,6 +17,10 @@ export const PLANNER_RE = /planner[^\n]{0,60}return only json|"tasks"\s*:\s*\[/i
 export const WORKER_RE = /one line per ref|^\s*ROUTE\s*\|/im;
 export const COORDINATOR_RE = /协调席[^\n]{0,14}(?:输出|逐项|负责分流)|coordinator[^\n]{0,40}(?:return|emit|output)/i;
 export const REVIEWER_RE = /复核席[^\n]{0,14}(?:输出|逐条|复核|给)|reviewer[^\n]{0,40}(?:return|emit|output)|agree\s*\/\s*disagree/i;
+// 2026-11-19 实测（run 44452129242）：每日卡把「规划席只输出 JSON」和「worker 只输出
+// ROUTE 行」写在同一层，模型服从后者，规划解析 model_json_invalid。显式的
+// 【给 <seat> 的任务】块是两层契约：规划席只读外层，worker 只读块内，不算角色混写。
+export const NESTED_WORKER_RE = /【给\s*(?:qianwen|deepseek|kimi|grok|doubao)\s*的任务】/;
 
 export function analyzeCardPrompt(prompt) {
   const text = String(prompt || '');
@@ -24,12 +28,14 @@ export function analyzeCardPrompt(prompt) {
   const hasWorker = WORKER_RE.test(text);
   const hasCoordinator = COORDINATOR_RE.test(text);
   const hasReviewer = REVIEWER_RE.test(text);
+  const hasNestedWorker = hasPlanner && hasWorker && NESTED_WORKER_RE.test(text);
   const reasons = [];
-  if (hasPlanner && hasWorker) reasons.push('planner_worker');
+  if (hasPlanner && hasWorker && !hasNestedWorker) reasons.push('planner_worker');
   if (hasCoordinator && hasReviewer) reasons.push('coordinator_reviewer');
   return {
     has_planner: hasPlanner,
     has_worker: hasWorker,
+    has_nested_worker: hasNestedWorker,
     has_coordinator: hasCoordinator,
     has_reviewer: hasReviewer,
     reasons,

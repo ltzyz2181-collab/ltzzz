@@ -49,9 +49,23 @@ test('每日卡通过派单政策、卡合同与队列规范', () => {
   assert.equal(card.importance, 'medium');
   assert.deepEqual(card.seats, [{seat: 'deep', role: 'primary_executor', decision_authority: false}]);
   assert.deepEqual(checkCard(policy, card), []);
-  assert.equal(analyzeCardPrompt(card.prompt).mixed, false);
+  const contract = analyzeCardPrompt(card.prompt);
+  assert.equal(contract.mixed, false);
+  assert.equal(contract.has_nested_worker, true);
   assert.equal(normalizeTaskCard(card).task_id, card.task_id);
   assert.deepEqual(Object.keys(normalizeTaskCard(card)).sort(), ['data_classification', 'package_id', 'platform', 'prompt', 'task_id']);
+});
+
+test('规划席只看到 JSON 契约，ROUTE 行只出现在给 qianwen 的任务块内', () => {
+  const card = buildDailyCard({date: '2026-11-19', evidence: evidence(), policy});
+  const outer = card.prompt.slice(0, card.prompt.indexOf('【给 qianwen 的任务】'));
+  assert.match(outer, /只输出一个 JSON 计划/);
+  assert.match(outer, /"tasks":\[\{"seat":"qianwen"/);
+  assert.doesNotMatch(outer, /^ROUTE \|/m);
+  const nested = card.prompt.slice(card.prompt.indexOf('【给 qianwen 的任务】'));
+  assert.match(nested, /^ROUTE \| <ref> \| <route> \|/m);
+  assert.match(nested, /本次输入未给任何回执文件路径/);
+  assert.match(nested, /C2 的 task_statuses=\[\] 与 C4 的 main_short_sha 只是上下文/);
 });
 
 test('同日重试卡用 suffix 区分任务、包与文件名', () => {

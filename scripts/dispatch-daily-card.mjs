@@ -92,9 +92,11 @@ export function buildDailyCard({date, evidence, policy = loadPolicy(), suffix = 
   const backlog = evidence.backlog || {};
   const mail = evidence.mail || {};
   const queue = evidence.queue || {};
-  const prompt = [
-    '内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。',
-    '',
+  // 2026-11-19 实测（run 44452129242）：worker 的规划席被系统提示要求“只输出 JSON 计划”，
+  // 但这张卡直接命令模型“只输出 ROUTE 行、不要 tasks”，模型服从了后者，规划解析
+  // model_json_invalid，整单退化为 deterministic_fallback + needs_gpt_decision。
+  // 因此把卡拆成两层：外层只给规划席 JSON 契约，内层才是 qianwen 的 ROUTE 任务全文。
+  const workerTask = [
     '【输入分组】以下每项都给 ref / 状态 / 公开计数。',
     '',
     'GROUP A — 监督积压（公开汇总）',
@@ -114,23 +116,34 @@ export function buildDailyCard({date, evidence, policy = loadPolicy(), suffix = 
     '【route 集合，只能从中选，不得自造】',
     'coordinator_close_with_receipt / needs_gpt_decision / needs_owner_decision / blocked_evidence_needed / deploy_confirm_only',
     '',
-    '【五条规则，按顺序，前条命中即停】',
-    '1 已有实物回执且状态一致 → coordinator_close_with_receipt',
+    '【规则，按顺序，前条命中即停】',
+    '1 只有输入明确给出对应回执文件路径且状态一致 → coordinator_close_with_receipt；本次输入未给任何回执文件路径，所以所有 ref 都不得输出 coordinator_close_with_receipt',
     '2 涉及资金、签名、放款、生产部署、权限、Secrets → needs_gpt_decision',
     '3 缺原始凭证或回执不全 → blocked_evidence_needed',
     '4 已达部署条件但未部署，且属生产面 → deploy_confirm_only',
     '5 以上都不命中，需要 owner 给值或拍板 → needs_owner_decision',
+    '6 C2 的 task_statuses=[] 与 C4 的 main_short_sha 只是上下文，不是回执；无法核实就省略该 ref，不得 close',
     '',
     '【硬约束，不是路由理由】',
     '不得合并 PR、不得生产部署、不得改支付或退款语义、不得发起资金动作、不得伪造回执。不得把这条当作任何一项的分类依据。',
     '',
     '【WORKER COVERAGE】exactly qianwen，一张卡只派一个席位，不要输出其他席位。',
     '',
-    '【输出格式】只输出行，不要 summary，不要 tasks，不要计划段落，不要 markdown：',
+    '【worker 输出格式】只输出 ROUTE/ASK 行，不要解释段、不要计划段落、不要 markdown：',
     'ROUTE | <ref> | <route> | <理由不超过25词>',
     '命中 needs_gpt_decision / needs_owner_decision / blocked_evidence_needed 时，每条再加一行：',
     'ASK | <ref> | gpt|owner|evidence | <需要什么，不超过30词>',
     '每行不超过120字符。拿不准就省略该 ref，不要猜。',
+  ].join('\n');
+  const prompt = [
+    '内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。',
+    '',
+    '你是规划席，只输出一个 JSON 计划，不要输出 ROUTE 行，不要 markdown 代码围栏。',
+    '计划格式：{"summary":"<不超过80字>","tasks":[{"seat":"qianwen","task":"<给 qianwen 的完整任务文本>"}],"needs_gpt_decision":false,"reason":null}',
+    'tasks 必须恰好 1 条，seat 必须是 qianwen；task 字段必须逐字包含下方【给 qianwen 的任务】全文，不得删改 ref、计数或输出格式。',
+    '',
+    '【给 qianwen 的任务】',
+    workerTask,
   ].join('\n');
   const card = buildCard({policy, taskId, packageId, importance: 'medium', prompt});
   const problems = checkCard(policy, card);
