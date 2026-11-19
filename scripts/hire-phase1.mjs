@@ -14,7 +14,11 @@
 // - receipts are canonical JSON with receipt_sha256 and order_sha256; appends
 //   are locked, fully written or rolled back, idempotent; accepted is terminal;
 // - the CLI ledger path is confined to `knowledge/results/hire/`;
-// - no money, no credentials, no production writes.
+// - no money, no credentials, no production writes;
+// - forbidden-intent scanning uses one canonical collector: every field that
+//   can express an action or acceptance requirement (objective, role,
+//   acceptance_gate, rollback and all free text inside acceptance_criteria) is
+//   scanned before the gate runs and again when a receipt is built or verified.
 import {createHash, randomBytes} from 'node:crypto';
 import {
   closeSync,
@@ -489,6 +493,60 @@ export function classifyIntent(text) {
   return [...hits];
 }
 
+// ---------- canonical intent collection ----------
+
+// Order-level fields that can carry free-form instructions. Excluded structural
+// fields are constrained by schema: order_id/idempotency_key by regex, seat by
+// length, salary must be `none`, evidence_paths by the repo-path schema. None of
+// them can express an action, so including them would only add false positives.
+export const INTENT_ORDER_FIELDS = Object.freeze(['objective', 'role', 'acceptance_gate', 'rollback']);
+
+// acceptance_criteria is walked recursively so a nested string — or a criterion
+// field added in a future revision — is scanned by default (fail-closed). Only
+// these leaves are skipped because validateAcceptanceCriteria constrains them to
+// a shape that cannot carry an instruction: id (CRITERION_ID), kind (allowlist),
+// path (must be listed in evidence_paths), sha256 (64 lowercase hex) and keys
+// (identifier regex).
+export const CRITERION_NON_INSTRUCTION_KEYS = Object.freeze(['id', 'kind', 'path', 'sha256', 'keys']);
+
+function collectStringLeaves(value, out) {
+  if (typeof value === 'string') {
+    out.push(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectStringLeaves(item, out);
+    return;
+  }
+  if (isPlainObject(value)) {
+    for (const [key, item] of Object.entries(value)) {
+      if (CRITERION_NON_INSTRUCTION_KEYS.includes(key)) continue;
+      collectStringLeaves(item, out);
+    }
+  }
+}
+
+// Single source of truth for "what counts as intent text". gateOutcome,
+// buildReceipt and verifyReceipt must all use classifyOrderIntent() so a caller
+// cannot scan a narrower field set or pick its own escalation target.
+export function collectIntentTexts(order) {
+  if (!isPlainObject(order)) return [];
+  const texts = [];
+  for (const field of INTENT_ORDER_FIELDS) {
+    if (typeof order[field] === 'string') texts.push(order[field]);
+  }
+  collectStringLeaves(order.acceptance_criteria, texts);
+  return texts.filter(text => text.trim());
+}
+
+export function classifyOrderIntent(order) {
+  const hits = new Set();
+  for (const text of collectIntentTexts(order)) {
+    for (const id of classifyIntent(text)) hits.add(id);
+  }
+  return [...hits];
+}
+
 export function validateOrder(order, {root = REPO_ROOT} = {}) {
   if (!isPlainObject(order)) return ['order_not_an_object'];
   const problems = [];
@@ -635,8 +693,7 @@ export function verifyGateResult(order, result) {
 }
 
 export function gateOutcome(order, {runner = defaultRunner} = {}) {
-  const intentText = [order?.objective, order?.role, order?.acceptance_gate].filter(Boolean).join(' ');
-  const forbidden = classifyIntent(intentText);
+  const forbidden = classifyOrderIntent(order);
   const gateId = order?.acceptance_gate ?? null;
   if (forbidden.length) {
     return {
@@ -739,7 +796,7 @@ export function buildReceipt(order, outcome, {at = new Date().toISOString(), roo
   if (problems.length) fail('invalid_order', problems.join(','));
   const normalized = normalizeOrder(order);
   const gateBlock = normalizeGateBlock(outcome.gate, normalized, outcome.state);
-  const forbidden = classifyIntent([normalized.objective, normalized.role, normalized.acceptance_gate].join(' '));
+  const forbidden = classifyOrderIntent(normalized);
   if (forbidden.length && outcome.state !== 'needs_decision') {
     fail('forbidden_intent_requires_decision', forbidden.join(','));
   }
@@ -868,7 +925,7 @@ export function verifyReceipt(receipt) {
 
   verifyGateBlock(receipt.gate, receipt);
 
-  const forbidden = classifyIntent([receipt.order.objective, receipt.order.role, receipt.order.acceptance_gate].join(' '));
+  const forbidden = classifyOrderIntent(receipt.order);
   if (forbidden.length && !DECISION_WAITING_STATES.has(receipt.state)) {
     fail('forbidden_intent_requires_decision', forbidden.join(','));
   }

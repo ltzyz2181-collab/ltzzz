@@ -28,6 +28,8 @@ import {
   buildReceipt,
   canonicalJson,
   classifyIntent,
+  classifyOrderIntent,
+  collectIntentTexts,
   escalationTargetFor,
   gateOutcome,
   hashObject,
@@ -407,6 +409,94 @@ test('a five-signature order is escalated to the owner multisig and the receipt 
   const [row] = readLedger(ledger);
   assert.equal(row.escalate_to, 'owner_multisig');
   assert.equal(row.gate.ran, false);
+});
+
+// ---------- 4b. canonical intent coverage ----------
+
+test('intent collection covers rollback and acceptance-criteria free text', () => {
+  const texts = collectIntentTexts(baseOrder({
+    rollback: 'transfer funds back to the client',
+    acceptance_criteria: [
+      {id: 'structure', kind: 'markdown_headings', path: DELIVERABLE, min_count: 3, headings: ['refund the customer']},
+      {id: 'needle', kind: 'contains_all', path: DELIVERABLE, needles: ['sign transaction', 'private key']},
+    ],
+  }));
+  assert.ok(texts.includes('transfer funds back to the client'));
+  assert.ok(texts.includes('refund the customer'));
+  assert.ok(texts.includes('sign transaction'));
+  assert.ok(texts.includes('private key'));
+  assert.deepEqual(classifyOrderIntent(baseOrder()), []);
+});
+
+test('structural criterion fields are not scanned, unknown nested strings are', () => {
+  // id/kind/path/sha256/keys are schema-constrained and cannot carry an
+  // instruction; scanning them would only create false positives.
+  const structural = baseOrder({
+    acceptance_criteria: [
+      {
+        id: 'refund',
+        kind: 'contains_all',
+        path: DELIVERABLE,
+        needles: ['Phase1'],
+        sha256: 'a'.repeat(64),
+        keys: ['private_key'],
+        note: {helper: 'transfer funds'},
+      },
+    ],
+  });
+  const texts = collectIntentTexts(structural);
+  assert.ok(!texts.includes('refund'), 'criterion id was scanned');
+  assert.ok(!texts.includes('contains_all'), 'criterion kind was scanned');
+  assert.ok(!texts.includes('a'.repeat(64)), 'criterion sha256 was scanned');
+  assert.ok(!texts.includes('private_key'), 'criterion keys were scanned');
+  // Unknown/nested fields fail closed: they are scanned until classified.
+  assert.ok(texts.includes('transfer funds'));
+});
+
+test('forbidden intent hidden in rollback or acceptance criteria never reaches the gate', () => {
+  const cases = [
+    {overrides: {rollback: 'transfer funds back to the client'}, escalate: 'gpt_decision_seat'},
+    {overrides: {rollback: '退款给客户'}, escalate: 'gpt_decision_seat'},
+    {overrides: {acceptance_criteria: [
+      {id: 'structure', kind: 'markdown_headings', path: DELIVERABLE, min_count: 3, headings: ['refund the customer']},
+    ]}, escalate: 'gpt_decision_seat'},
+    {overrides: {acceptance_criteria: [
+      {id: 'structure', kind: 'markdown_headings', path: DELIVERABLE, min_count: 3, headings: ['deploy to production']},
+    ]}, escalate: 'gpt_decision_seat'},
+    {overrides: {acceptance_criteria: [
+      {id: 'needle', kind: 'contains_all', path: DELIVERABLE, needles: ['sign transaction']},
+    ]}, escalate: 'gpt_decision_seat'},
+    {overrides: {acceptance_criteria: [
+      {id: 'needle', kind: 'contains_all', path: DELIVERABLE, needles: ['private key']},
+    ]}, escalate: 'gpt_decision_seat'},
+    {overrides: {acceptance_criteria: [
+      {id: 'needle', kind: 'contains_all', path: DELIVERABLE, needles: ['sign' + String.fromCharCode(0x200B) + 'transaction']},
+    ]}, escalate: 'gpt_decision_seat'},
+    {overrides: {rollback: 'execute the five-signature wallet release'}, escalate: 'owner_multisig'},
+  ];
+  for (const {overrides, escalate} of cases) {
+    let calls = 0;
+    const outcome = gateOutcome(baseOrder(overrides), {runner: () => { calls += 1; return {}; }});
+    assert.equal(outcome.state, 'needs_decision', JSON.stringify(overrides));
+    assert.equal(outcome.escalate_to, escalate, JSON.stringify(overrides));
+    assert.equal(outcome.gate.ran, false);
+    assert.equal(calls, 0, `gate ran for ${JSON.stringify(overrides)}`);
+  }
+});
+
+test('receipt build and verification reuse the canonical intent scan', () => {
+  const order = baseOrder({rollback: 'transfer funds back to the client'});
+  const outcome = gateOutcome(order);
+  const receipt = buildReceipt(order, outcome, {at: FIXED_AT});
+  assert.equal(receipt.state, 'needs_decision');
+  assert.equal(receipt.escalate_to, 'gpt_decision_seat');
+  assert.equal(verifyReceipt(receipt), true);
+
+  // A receipt cannot hide a forbidden rollback/criterion by relabelling state.
+  const forged = {...receipt, state: 'refused', reason: 'synthetic', gate: {...receipt.gate, reason: 'synthetic'}};
+  delete forged.receipt_sha256;
+  forged.receipt_sha256 = hashObject(forged);
+  assert.throws(() => verifyReceipt(forged), /forbidden_intent_requires_decision/);
 });
 
 test('a receipt cannot relabel or omit its escalation target', () => {
