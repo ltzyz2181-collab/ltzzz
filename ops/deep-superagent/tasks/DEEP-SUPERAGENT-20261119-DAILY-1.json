@@ -1,0 +1,15 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261119-DAILY-1",
+ "package_id": "LTZZZ-DEEP-DAILY-20261119-1",
+ "prompt": "内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。\n\n【输入分组】以下每项都给 ref / 状态 / 公开计数。\n\nGROUP A — 监督积压（公开汇总）\nA1 open_warning_cases=202 unique_original_tasks=202 not_rechecked_in_current_window=164\nA2 by_responsible_seat={\"qianwen\":64,\"doubao\":44,\"grok\":33,\"deepseek\":51,\"gpt\":10}\n\nGROUP B — 邮件通道（只读元数据）\nB1 intake_status=ok gmail=ok agent_mail=missing\nB2 open_or_dispatch=200 unified=1146 at=2026-11-19T02:20:46.237Z\n\nGROUP C — Deep 队列观测（公开回执）\nC1 last_queue_run=44449088454 status=no_new_queue_cards items=0\nC2 task_statuses=[]\nC3 last_daily_merge=unknown at=unknown\nC4 main_short_sha=d311d5bb39b6\n\n【route 集合，只能从中选，不得自造】\ncoordinator_close_with_receipt / needs_gpt_decision / needs_owner_decision / blocked_evidence_needed / deploy_confirm_only\n\n【五条规则，按顺序，前条命中即停】\n1 已有实物回执且状态一致 → coordinator_close_with_receipt\n2 涉及资金、签名、放款、生产部署、权限、Secrets → needs_gpt_decision\n3 缺原始凭证或回执不全 → blocked_evidence_needed\n4 已达部署条件但未部署，且属生产面 → deploy_confirm_only\n5 以上都不命中，需要 owner 给值或拍板 → needs_owner_decision\n\n【硬约束，不是路由理由】\n不得合并 PR、不得生产部署、不得改支付或退款语义、不得发起资金动作、不得伪造回执。不得把这条当作任何一项的分类依据。\n\n【WORKER COVERAGE】exactly qianwen，一张卡只派一个席位，不要输出其他席位。\n\n【输出格式】只输出行，不要 summary，不要 tasks，不要计划段落，不要 markdown：\nROUTE | <ref> | <route> | <理由不超过25词>\n命中 needs_gpt_decision / needs_owner_decision / blocked_evidence_needed 时，每条再加一行：\nASK | <ref> | gpt|owner|evidence | <需要什么，不超过30词>\n每行不超过120字符。拿不准就省略该 ref，不要猜。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "medium",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  }
+ ]
+}
