@@ -193,6 +193,22 @@ export function executeExecutor(executor, {cwd = process.cwd()} = {}) {
 // Executor-local verification. PR check-runs are not reliable here (workflows on a
 // token-created branch can sit in action_required), so an executor may declare its own
 // verify command. It never replaces a failing check; it only stands in for silence.
+// Once the executor output is committed to its branch, the local worktree must go back
+// to HEAD; otherwise the receipt push later cannot rebase onto the advanced main.
+export function discardChanges({cwd = process.cwd(), paths = []} = {}) {
+  const restored = [];
+  for (const rel of paths) {
+    const tracked = spawnSync('git', ['ls-files', '--error-unmatch', '--', rel], {cwd, encoding: 'utf8'});
+    if (tracked.status === 0) {
+      spawnSync('git', ['restore', '--source=HEAD', '--staged', '--worktree', '--', rel], {cwd, encoding: 'utf8'});
+    } else {
+      try { fs.rmSync(path.join(cwd, rel), {force: true}); } catch {}
+    }
+    restored.push(rel);
+  }
+  return restored;
+}
+
 export function runVerification(executor, {cwd = process.cwd()} = {}) {
   if (!Array.isArray(executor?.verify) || executor.verify.length === 0) return {ran: false, ok: false};
   const r = runCmd(executor.verify, {cwd, timeout: 900000});
@@ -270,6 +286,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       }
       const branch = `autoloop/${item.number}-${(env.GITHUB_RUN_ID || 'local')}`;
       const published = await publishChanges({token, cwd, paths: changed, branch, message: `chore(autoloop): ${item.task_id || '#' + item.number}\n\n${item.executor.id}`});
+      discardChanges({cwd, paths: changed});
       let mergeState = 'not_merged';
       if (item.executor.auto_merge === true && pathsAllowed(changed)) {
         const checks = await waitForChecks({token, sha: published.commit});

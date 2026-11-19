@@ -73,6 +73,7 @@ jobs:
       - name: Persist run receipt
         if: always()
         run: |
+          git checkout -- . 2>/dev/null || true
           git config user.name "ltzzz-autoloop"
           git config user.email "bot@ltzzz.local"
           git add knowledge/results/autoloop 2>/dev/null || true
