@@ -1,0 +1,81 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261119-deep-autonomy-e2e-accepted",
+  "target": "deep-superagent 自主执行端到端链路（执行器与部署凭据验收）",
+  "platform": "github-actions+github-pages+cloudflare-worker",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "8f74e72ad64626e275f7ffba1c3d1d404e48d354",
+  "code_path": "docs/deep-autonomy-e2e-20261119",
+  "deployed_at": "2026-11-19T10:26:18Z",
+  "owner_instruction": "2026-11-19 owner：Issue 自动派单 → AI Worker 自动领取 → 仓库读写 → 修改代码 → 测试 → PR → CI → 自动合并 → 标准部署 → 线上版本回读 → 邮件回执；同时确认执行器与各席凭据真实可用",
+  "financial_execution": false,
+  "secrets_included": false,
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "done",
+    "deployed": "done",
+    "submitted": "done",
+    "platform_accepted": "bridge_actions_accepted_worker_job_fields_false"
+  },
+  "verified": [
+    {
+      "kind": "pull_request",
+      "result": "ok",
+      "evidence": "PR #470 https://github.com/ltzyz2181-collab/ltzzz/pull/470 merged via API; merge_commit 8f74e72ad64626e275f7ffba1c3d1d404e48d354"
+    },
+    {
+      "kind": "pr_ci",
+      "result": "ok",
+      "evidence": "deep-autonomy-verify.yml run 44505451413 conclusion success on branch docs/deep-e2e-evidence-20261119; only after that was PR #470 merged"
+    },
+    {
+      "kind": "deployment_run",
+      "result": "ok",
+      "evidence": "pages.yml run 44505548628 conclusion success, head_sha 8f74e72ad64626e275f7ffba1c3d1d404e48d354, created 2026-11-19T10:25:36Z, updated 2026-11-19T10:26:18Z"
+    },
+    {
+      "kind": "live_readback",
+      "result": "ok",
+      "evidence": "https://ltzzz.com/docs/deep-autonomy-e2e-20261119/report.md HTTP 200, 9581 bytes, sha256 3c92c19e4d3ca79274bb564bcadd713ee60715854ceee352b422cd0c75efe1d1 equals repo file at 8f74e72a"
+    },
+    {
+      "kind": "cloudflare_worker_credentials",
+      "result": "ok",
+      "evidence": "run 44501244192 conclusion success; knowledge/results/deep-superagent/deploy-44501244192-attempt-1.json status deployment_health_and_auth_verified, deployments 1, health.ok true, auth anonymous 401 / wrong 401 / valid 200, source_commit 9cd3ee5ba8cc452f0a3aa0229874aa8c6f366149, source_readset_sha256 bb5a070ae0a538ded8c46b7cac4661007f9dda50f19d983e3b7b43ef70883797"
+    },
+    {
+      "kind": "end_to_end_chain",
+      "result": "ok",
+      "evidence": "DEEP-AUTONOMY-PROBE-20261119-3: queue run 44503885577, CI run 44504093274 success, merge 06ca272697c2c25f2f027e0d86bb65720bf560a3, pages run 44504145519 success, live HTTP 200, mail smtp_code 250 message_id <179508340128.2664.13736539230842430590@qq.com>; autonomy receipt knowledge/results/deep-superagent/autonomy/DEEP-AUTONOMY-PROBE-20261119-3-baf3c0baf9269efa4852c2b6a0ec66257ab330d319ca7715267b7a4512a8caf5.json"
+    },
+    {
+      "kind": "executor_separation",
+      "result": "ok",
+      "evidence": "queue-44501945349-attempt-1.json: attempt_latch durable_reserved_before_post, first_post_http 202, plan_source coordinator, model_calls 3, actual_provider/actual_model recorded per call; scheduled label-sync Actions are not AI executors (model_calls 0)"
+    },
+    {
+      "kind": "side_effect_boundary",
+      "result": "ok",
+      "evidence": "no funds/refund/signature/wallet/credential changes; model output limited to whole-file blocks, max 6 files/400KB, never executed as shell"
+    }
+  ],
+  "blockers": [],
+  "next_action": "观察一次自然 cron 派单；如需“已送达”而非“SMTP 已接受”，另做邮箱回读；Worker 作业字段 accepted/platform_accepted/deployed 按 Worker 语义保持 false，不改成业务验收通过",
+  "harness": {
+    "command": "node scripts/harness.mjs before receipt,model_output,input_hash,external_platform",
+    "run_at": "2026-11-19T10:24:00Z",
+    "status": "retrieved_not_compliance_verified",
+    "lesson_ids": [
+      "L-20261117-006",
+      "L-20261030-004",
+      "L-20261030-007",
+      "L-20261030-001"
+    ],
+    "context_sha256": "7b2be851de6abea195765e90ef42dba4de55d9efc42ae120d3b9c956e723cad1",
+    "note": "检索记录是数据，不是执行证明；本回执的 PR/CI/Pages/线上回读/邮件证据另行记录"
+  },
+  "code_sha256": {
+    "report.md": "3c92c19e4d3ca79274bb564bcadd713ee60715854ceee352b422cd0c75efe1d1"
+  }
+}
