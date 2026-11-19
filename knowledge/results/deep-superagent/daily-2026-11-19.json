@@ -1,0 +1,77 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.receipt.v1",
+  "date_local_utc8": "2026-11-19",
+  "at_utc": "2026-11-19T02:25:00Z",
+  "status": "partial",
+  "summary_plain": {
+    "done": [
+      "发现今日 00:30Z 计划日课未触发，手动补跑 2 次",
+      "豆包席已是 200，504 确认修好，但 2048 token 处截断导致 0 路由",
+      "预算改按席位给（豆包 3072），已部署，64+29 测试通过"
+    ],
+    "awaiting": [
+      "无资金/签名/放款待裁",
+      "owner：探针是否排 cron 仍待定"
+    ]
+  },
+  "sections": {
+    "done": [
+      {
+        "item": "今日邮件摄入补跑",
+        "evidence": "node scripts/run-mail-intake.mjs status=ok；gmail full_box_total=4833, window count=1108, open=1069；agent count=38 open=10；合并待办 open=200",
+        "path": "knowledge/results/deep-superagent/mail-intake/latest.json"
+      },
+      {
+        "item": "今日 Deep 日课未按计划触发，已手动补跑并留回执",
+        "evidence": "schedule cron=30 0 * * *（08:30 CST）；00:00-02:15Z 无该 workflow 运行；补跑 run 44442932181（success, 1m11s）",
+        "path": "knowledge/results/deep-superagent/daily-44442932181-attempt-1.json"
+      },
+      {
+        "item": "504 修复已端到端确认生效",
+        "evidence": "work_doubao upstream_http=200, actual_model=doubao-seed-2-1-pro-260915, thinking=disabled, 43s",
+        "path": "knowledge/results/deep-superagent/daily-44442932181-attempt-1.json"
+      },
+      {
+        "item": "日课输出预算改为按席位，豆包 2048→3072",
+        "evidence": "commit 4c17f0c40；node --test deep-superagent 64/64、daily+queue 29/29；部署 run 44443357607 success",
+        "path": "workers/deep-superagent/index.js"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [],
+      "owner": [
+        {
+          "item": "席位活体探针是否改为每日自动跑",
+          "blocker": "现为手动触发，不排 cron 就不会每天自动验证席位",
+          "consequence_if_not_decided": "席位再次静默失效时要等到日课暴露才发现",
+          "partial_work_deep_can_do": "可继续用手动触发 + 日课回执双层核验，不改无人值守行为"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "action": "明晨 00:30Z 自动日课用 3072 预算跑一次",
+        "completion_criteria": "queue 回执里 work_doubao 不得出现 output_truncated_at_output_budget，且 completion_tokens<3072、finish_reason=stop"
+      }
+    ],
+    "later": [
+      {
+        "item": "若 3072 仍截断，则日课工作席改为非豆包席（qianwen 4096 / deepseek 4096）",
+        "depends_on": "明晨日课实测结果"
+      }
+    ]
+  },
+  "counts": {
+    "writes_performed": 3,
+    "merges_performed": 0,
+    "deploys_performed": 1,
+    "model_calls": 2,
+    "financial_execution": false,
+    "paid": false
+  },
+  "not_claimed": [
+    "今日分流路由：0 条，job_status=blocked",
+    "3072 预算是否足够：未验证（今日 attempt 幂等复用，需新 readset）",
+    "今日任务卡与队列：未生成（未新增卡，避免空转）"
+  ]
+}
