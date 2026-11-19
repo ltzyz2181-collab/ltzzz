@@ -5,8 +5,14 @@ LTZZZ 每日合并 2026-11-19（UTC）
 - DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44443485815）
 
 二、需要 GPT 裁决
-- DEEP-SUPERAGENT-20261119-DAILY-2（run=44452129242）：<token>
-  ASK：请对该任务给出 decision_id 与范围。
+- DEEP-SUPERAGENT-20261119-DAILY-2（run=44452129242）：coordinator_plan_unparseable
+  复核意见：C2 and C4 incorrectly routed as coordinator_close_with_receipt without actual receipts; C1 also lacks receipt evidence.
+  ASK DEEP-SUPERAGENT-20261119-DAILY-2：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。
+  相关待补（owner）A1：需要确认当前状态和下一步行动
+  相关待补（owner）A2：需要确认各席位任务分配情况
+  相关待补（evidence）B1：需要完整的邮件通道回执
+  相关待补（evidence）B2：需要邮件内容或相关凭证
+  相关待补（evidence）C3：需要 last_daily_merge 的具体时间和状态
 
 三、下一步
 - 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。
