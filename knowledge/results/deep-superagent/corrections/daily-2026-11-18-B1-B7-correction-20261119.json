@@ -1,0 +1,100 @@
+{
+ "schema": "ltzzz.deep-correction.v1",
+ "at": "2026-11-19T09:48:59Z",
+ "task_id": "DEEP-SUPERAGENT-20261118-BACKLOG-2",
+ "decision_id": "GPT-DECISION-20261118-DEEP-BACKLOG-ROUTE-01",
+ "append_only": true,
+ "overwrites_prior_receipt": false,
+ "supersedes": "none (append)",
+ "source_commit": "f35d00250a82a1ac8520b1894abf614a1e3857ae",
+ "input": {
+  "mail_message_id": "msg_I9cE3a5GXdbmh_pqqnA4C037twXBr1hXP1QRTVGNCEGKdA"
+ },
+ "items": [
+  {
+   "bucket": "B1",
+   "subject": "backlog 202 条 warning",
+   "status": "ACKNOWLEDGED_INCREMENTAL_MANAGEMENT",
+   "evidence": [
+    "knowledge/results/dispatch/oversight/latest.json (2026-11-19T01:49:13.495Z, warnings=202, tasks=68)",
+    "本轮回执新增卡=3（≤ 每次 3 卡 / 总 6 卡上限）"
+   ],
+   "next_action": "按原 Task ID 增量管理；不逐条新建卡；不要求 Owner 排序",
+   "owner": "deep"
+  },
+  {
+   "bucket": "B2",
+   "subject": "workflow failures 逐项分类",
+   "status": "PARTIALLY_RECHECKED",
+   "evidence": [
+    "PR #287 CLOSED 且 mergedAt=null（gh pr view 实测）",
+    "PR #408 state=OPEN, mergeable=UNKNOWN（gh pr view 实测）",
+    "其余运行分类沿用 GPT 邮件所列证据，本轮未逐条复跑"
+   ],
+   "next_action": "按最新 run 证据逐项标记 superseded / BLOCKED_EVIDENCE / NEEDS_REVISION；本轮不重跑模型请求",
+   "owner": "deep"
+  },
+  {
+   "bucket": "B3",
+   "subject": "PR 路由",
+   "status": "CORRECTED",
+   "evidence": [
+    "#408: OPEN / mergeable UNKNOWN / head branch fix/hire-phase1-repair-20261117-02 → NEEDS_REVISION 待同步最新 main + 精确 head CI",
+    "#287: CLOSED / mergedAt null → CLOSED_UNMERGED，不再按 open PR 路由"
+   ],
+   "next_action": "#408 同步 main 后重跑 CI 并请独立复核；#287 归档",
+   "owner": "deep"
+  },
+  {
+   "bucket": "B4",
+   "subject": "open issues",
+   "status": "CORRECTED_COUNT",
+   "evidence": [
+    "gh issue list --state open 实测=22（GPT 邮件写 16，为旧快照口径）"
+   ],
+   "next_action": "由 GPT 按证据与风险排序，不升级为 Owner 决策请求",
+   "owner": "gpt"
+  },
+  {
+   "bucket": "B5",
+   "subject": "branch protection",
+   "status": "VERIFIED_PARTIAL_PROTECTION",
+   "evidence": [
+    "gh api branches/main/protection: protected=yes, required_status_checks.enforcement_level=null, allow_force_pushes=false, allow_deletions=false"
+   ],
+   "next_action": "记录 required checks 未启用为独立证据缺口，不得写成完全保护",
+   "owner": "deep"
+  },
+  {
+   "bucket": "B6",
+   "subject": "oversight snapshot 版本",
+   "status": "SUPERSEDED_CONFIRMED",
+   "evidence": [
+    "最新快照 2026-11-19T01:49:13.495Z 已取代旧 source 5fd0a135；本轮只引用最新快照"
+   ],
+   "next_action": "持续只引用最新快照",
+   "owner": "deep"
+  },
+  {
+   "bucket": "B7",
+   "subject": "Daily Agent Tasks 输出",
+   "status": "BLOCKED_PENDING_REAL_EVIDENCE",
+   "evidence": [
+    "GPT 邮件指出输出仍含 rejected_draft_review / submitted_pending_review / failed_no_repurchase",
+    "本轮未重跑，未取到新的真实生成证据"
+   ],
+   "next_action": "责任席补齐真实生成与验收证据前保持阻塞；不发布",
+   "owner": "deep"
+  }
+ ],
+ "counts": {
+  "model_calls": 0,
+  "replayed_outcome_unknown": 0,
+  "duplicate_task_ids": 0,
+  "deploys": 0,
+  "merges": 0,
+  "financial_execution": false,
+  "open_issues_observed": 22,
+  "warnings_observed": 202
+ }
+}

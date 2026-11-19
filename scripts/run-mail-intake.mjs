@@ -387,7 +387,9 @@ export function buildIntake({
     contains_mail_body: false,
     external_model_safe: true,
     agent_mail: {
-      status: backlog?.status ?? 'missing',
+      // backlog 采集产物不写 status 字段（只有 items），旧写法 backlog?.status ?? 'missing'
+      // 会把已成功采集的通道误报成 missing。按实际内容派生，不用缺失字段判死。
+      status: agent.ok ? 'ok' : (Array.isArray(backlog?.items) && backlog.items.length ? 'partial' : 'missing'),
       count: backlog?.count || 0,
       open_count: backlog?.open_count || 0,
       run_code: agent.run_code,

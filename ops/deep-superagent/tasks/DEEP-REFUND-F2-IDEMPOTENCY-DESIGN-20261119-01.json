@@ -1,0 +1,7 @@
+{
+ "task_id": "DEEP-REFUND-F2-IDEMPOTENCY-DESIGN-20261119-01",
+ "package_id": "LTZZZ-DEEP-REFUND-F2-IDEMPOTENCY-DESIGN-20261119-01",
+ "prompt": "内部任务，公开仓库事实，仅合成 ID 与合成事件，不含客户数据与真实订单。\n来源裁决：GPT-DECISION-20261118-REFUND-F2-DESIGN-01，主账 Issue #434。\n目标：提交一份设计文档 + 合成测试向量 PR，覆盖退款通知的重复、乱序、累计上限、终态单调性，以及 refund_pending_verification 的人工核对状态。\n设计必须说明：canonical idempotency key、事件排序、累计上限、终态保护、缺失或冲突引用时的 fail-closed 行为。\n禁止：不改生产 vpay-notify 退款累计逻辑；不部署云函数；不建真实测试订单；不调用微信商户 API；不做真实支付退款；不读客户资料；不新增凭据；不启用 iOS IAP；不提审 ZIP；不发布平台版本。\n验收：PR 仅含设计与测试工件；测试只用 synthetic IDs/events；给出命令、原始输出、head SHA 与哈希；deploy=not_deployed、smoke=not_applicable、real_payments=0。设计不等于实现，合并需 GPT 审查。",
+ "data_classification": "public_distributable",
+ "platform": "internal"
+}

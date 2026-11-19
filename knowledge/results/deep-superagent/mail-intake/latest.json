@@ -1,26 +1,26 @@
 {
  "schema": "ltzzz.mail-intake.v1",
- "at": "2026-11-19T07:33:56.418Z",
- "status": "partial",
+ "at": "2026-11-19T09:51:11.621Z",
+ "status": "ok",
  "read_only": true,
  "bodies_persisted": false,
  "contains_mail_body": false,
  "external_model_safe": true,
  "agent_mail": {
-  "status": "missing",
+  "status": "ok",
   "count": 38,
   "open_count": 10,
-  "run_code": 1,
+  "run_code": 0,
   "timeout": false,
   "error": null,
-  "stderr_tail": null
+  "stderr_tail": "tip: agently-cli message +read --id msg_I9cE3a5GXdbmh_pqqnA4C037twXBr1hXP1QRTVGNCEGKdA"
  },
  "gmail_fullbox": {
   "status": "ok",
-  "count": 1154,
-  "open_count": 1115,
-  "full_box_total": 4899,
-  "full_box_unseen": 4075,
+  "count": 1166,
+  "open_count": 1127,
+  "full_box_total": 4915,
+  "full_box_unseen": 4091,
   "provider": "gmail_imap",
   "window_truncated": false,
   "bodies_read": 50,
@@ -30,26 +30,22 @@
   "stderr_tail": null
  },
  "ruling_tracker": {
-  "status": "unknown",
-  "path": "knowledge/results/deep-superagent/ruling-tracker/latest.json",
-  "generated_at_utc": "2026-11-19T07:34:05.288Z",
-  "counts": null,
-  "consume_gate_count": null,
-  "alerts_count": null,
-  "run_code": 2,
-  "error": null,
-  "stderr_tail": null,
-  "note": "收件箱读取失败：spawnSync agently-cli ENOENT"
- },
- "gmail_rulings": {
   "status": "ok",
-  "source": "gmail_metadata_only",
-  "today_count": 0,
-  "window_count": 1,
-  "latest_at": "Tue, 17 Nov 2026 00:51:17 -0800",
-  "latest_subject_short": "LTZZZ 今日进展与待裁决事项（<amount>-<amount>-<amount>）",
-  "decision_ids": [],
-  "bodies_read": false
+  "path": "knowledge/results/deep-superagent/ruling-tracker/latest.json",
+  "generated_at_utc": "2026-11-19T09:51:57.905Z",
+  "counts": {
+   "threads": 60,
+   "answered": 35,
+   "pending_no_reply": 25,
+   "answered_but_unread": 1,
+   "pending_over_24h": 25
+  },
+  "consume_gate_count": 1,
+  "alerts_count": 26,
+  "run_code": 0,
+  "error": null,
+  "stderr_tail": "tip: agently-cli message +read --id msg_uAlGqQbagIxdIj8WQ54DHCcX1XN93LAbSz5qKT4svTGYPw\ntip: agently-cli message +read --id msg_3xkP1ym0W96He8wR2B_pKnLnY0qdH8wb2qhOP_YqbP6eTQ",
+  "note": "本清单只做证据核对：reply_unread 表示裁决已到但日回执还没消费它，必须当天读正文后才能写 awaiting_decision。"
  },
  "dedupe": {
   "version": 1,
@@ -58,22 +54,22 @@
    "thread_id",
    "task_id"
   ],
-  "input": 1192,
-  "clusters": 1041,
-  "duplicates": 151,
+  "input": 1204,
+  "clusters": 1048,
+  "duplicates": 156,
   "layer_hits": {
    "message_id": 0,
-   "thread_id": 134,
+   "thread_id": 139,
    "task_id": 4,
-   "single": 904
+   "single": 906
   },
   "conflicts": [],
   "history_preserved": true
  },
  "counts": {
-  "unified": 1192,
+  "unified": 1204,
   "open_or_dispatch": 200,
-  "duplicates_removed": 151,
+  "duplicates_removed": 156,
   "ruling_conflicts": 0
  },
  "open_items": [
@@ -81,7 +77,7 @@
    "channel": "agent_mail",
    "ref": "f37f74a2260e0983",
    "status": "open",
-   "age_days": 9,
+   "age_days": 10,
    "subject_short": "Re: 勘误｜Linear 卡 v2 已覆盖 v1 口径（commit 76edf969）｜请据此回 Q1/Q2",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -100,7 +96,7 @@
    "channel": "agent_mail",
    "ref": "76204610598d12d6",
    "status": "open",
-   "age_days": 9,
+   "age_days": 10,
    "subject_short": "Re: 请求裁决：小程序开通支付（产品重编 + 部署方案 + Q1-Q5 逐条拍板）",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -119,14 +115,21 @@
    "channel": "agent_mail",
    "ref": "3b86bfbe9f010dd1",
    "status": "open",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: 【补告知·已验收】小程序虚拟支付沙箱首单已付款成功，退款链路已上线并逐字节核对",
    "has_dispatch_wording": false,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_3sym-oio_y6odonujihdufg1jzl-fbvxvmzhjugxuqgmna",
+     "at": "2026-11-11T09:05:46Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -138,14 +141,27 @@
    "channel": "agent_mail",
    "ref": "a4892a62f3078715",
    "status": "open",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: Re: [LTZZZ][审计] Deep 巡检五席全绿，七项判定与一处输入偏差",
    "has_dispatch_wording": false,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_rczolu4kgzvn66ceudcjgwmavdmaup1saevfxtardhjl9q",
+     "at": "2026-11-11T08:29:08Z",
+     "decision_id": null,
+     "verdict": null
+    },
+    {
+     "message_id": "msg_zwtmdbargsfwa05cwo6v7pp2kg5htyb3m05yiaprgn4qla",
+     "at": "2026-11-11T08:39:01Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -157,7 +173,7 @@
    "channel": "agent_mail",
    "ref": "58679a674803de2a",
    "status": "open",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: 【LTZZZ】千问11-11监督核实结论+已部署2处闸门+需GPT裁决5项",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -176,14 +192,21 @@
    "channel": "agent_mail",
    "ref": "accc365c8999ec45",
    "status": "open",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: [LTZZZ][纠偏] 小程序支付实为已接入·自动交付边界与 Deep 每日四段结构",
    "has_dispatch_wording": false,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_gx0lzpxjt_yvrnfdic-ts221jvbrmsmmf8__3mi0o-inyq",
+     "at": "2026-11-11T08:05:01Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -195,7 +218,7 @@
    "channel": "agent_mail",
    "ref": "37c0b81f45bea064",
    "status": "open",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: [LTZZZ] ICP 备案通过（粤ICP备2026177896号）+ 11-10 工程状态 + 5 项待裁决",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -214,14 +237,21 @@
    "channel": "agent_mail",
    "ref": "c96ab9053576d5c4",
    "status": "open",
-   "age_days": 6,
+   "age_days": 7,
    "subject_short": "Re: [LTZZZ][中转执行席] Deep 传输层已切 Worker 转发并跑通一次真实中转调用，待裁决",
    "has_dispatch_wording": false,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_8uwwc4uwmet7668k5c0cegw4uk0j1fajh1qujfa36in3ew",
+     "at": "2026-11-12T07:17:35Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -238,9 +268,16 @@
    "has_dispatch_wording": false,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_ona3ffbcep-kmrbkv16mru5fcjuxeq6vhsmx6m45fsblmq",
+     "at": "2026-11-13T10:57:04Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -271,14 +308,21 @@
    "channel": "agent_mail",
    "ref": "7a62ac73578e1ce2",
    "status": "unknown",
-   "age_days": 8,
+   "age_days": 9,
    "subject_short": "[GPT派单] LTZZZ部署失败修复候选｜PAGES-ARTIFACT-DUP + PAYMENT-MANIFEST-DRIFT",
    "has_dispatch_wording": true,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_hmblgalcidxb-ww7heqfafh3d82ffd2lnpx4bowtyhujug",
+     "at": "2026-11-10T06:37:03Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -290,7 +334,7 @@
    "channel": "agent_mail",
    "ref": "c09f2d2f75af7f3a",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: 【LTZZZ】XAI(Grok)每日任务已设置：支付/结算链路只读外部验收(commit 0d46a7e3)",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -309,7 +353,7 @@
    "channel": "agent_mail",
    "ref": "67e5ce9dd4e97222",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: Re: Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：七项判定与三次机制失败留证",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -328,7 +372,7 @@
    "channel": "agent_mail",
    "ref": "0e6a877ac48e8c98",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：七项判定与三次机制失败留证",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -347,7 +391,7 @@
    "channel": "agent_mail",
    "ref": "807ff89553649f48",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：七项判定与三次机制失败留证",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -366,14 +410,27 @@
    "channel": "agent_mail",
    "ref": "479bc00cba2e0e61",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: [LTZZZ][审计] Deep 巡检五席全绿，七项判定与一处输入偏差",
    "has_dispatch_wording": false,
    "thread_id": null,
    "task_ids": [],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_rczolu4kgzvn66ceudcjgwmavdmaup1saevfxtardhjl9q",
+     "at": "2026-11-11T08:29:08Z",
+     "decision_id": null,
+     "verdict": null
+    },
+    {
+     "message_id": "msg_zwtmdbargsfwa05cwo6v7pp2kg5htyb3m05yiaprgn4qla",
+     "at": "2026-11-11T08:39:01Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -385,7 +442,7 @@
    "channel": "agent_mail",
    "ref": "ac571e9790ba341b",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: Linear 全席接入已实测通过（标准卡 030ebe31 已入库）｜请裁决 5 项",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -404,16 +461,23 @@
    "channel": "agent_mail",
    "ref": "6b020bbfedceb047",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: DEEP-WORKER-EXECUTION-REPORT-20261109 | 七轮实跑结果 + 三项呈请裁决",
    "has_dispatch_wording": true,
    "thread_id": "c9caeaa769e3595a",
    "task_ids": [
     "DEEP-WORKER-EXECUTION-REPORT-20261109"
    ],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_ms6shlhybbwcz-b4xyq8pe5ike26toix5c0wjbi7cnrbcg",
+     "at": "2026-11-11T08:04:05Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 2,
    "layers": [
     "task_id"
@@ -422,13 +486,13 @@
     "6b020bbfedceb047",
     "c9caeaa769e3595a"
    ],
-   "ruling_unread": false
+   "ruling_unread": true
   },
   {
    "channel": "agent_mail",
    "ref": "b407ef4942426e82",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-11：七项判定与三次机制失败留证",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -447,7 +511,7 @@
    "channel": "agent_mail",
    "ref": "ba6f535ef260c642",
    "status": "unknown",
-   "age_days": 7,
+   "age_days": 8,
    "subject_short": "Re: 【续篇·需裁决】Claude 与 GPT 全档实测：四个 Claude 可用、GPT 6.x 可用但输入 token 膨胀 4400",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -466,7 +530,7 @@
    "channel": "agent_mail",
    "ref": "e179c7c9a9bfc403",
    "status": "unknown",
-   "age_days": 6,
+   "age_days": 7,
    "subject_short": "Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-12",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -485,7 +549,7 @@
    "channel": "agent_mail",
    "ref": "981ea45badb84131",
    "status": "unknown",
-   "age_days": 6,
+   "age_days": 7,
    "subject_short": "Re: 世章AI助手 0.1.11 客户视角验收完成（真机已核，两项发现待裁）",
    "has_dispatch_wording": false,
    "thread_id": null,
@@ -497,6 +561,44 @@
    "layers": [],
    "history": [
     "981ea45badb84131"
+   ],
+   "ruling_unread": false
+  },
+  {
+   "channel": "agent_mail",
+   "ref": "1edd9f643bbbc750",
+   "status": "unknown",
+   "age_days": 6,
+   "subject_short": "Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-13",
+   "has_dispatch_wording": false,
+   "thread_id": null,
+   "task_ids": [],
+   "ruling_status": "none",
+   "decision_id": null,
+   "rulings": [],
+   "merged_count": 1,
+   "layers": [],
+   "history": [
+    "1edd9f643bbbc750"
+   ],
+   "ruling_unread": false
+  },
+  {
+   "channel": "agent_mail",
+   "ref": "5076faa992593b27",
+   "status": "unknown",
+   "age_days": 6,
+   "subject_short": "Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-13",
+   "has_dispatch_wording": false,
+   "thread_id": null,
+   "task_ids": [],
+   "ruling_status": "none",
+   "decision_id": null,
+   "rulings": [],
+   "merged_count": 1,
+   "layers": [],
+   "history": [
+    "5076faa992593b27"
    ],
    "ruling_unread": false
   },
@@ -549,9 +651,16 @@
    "task_ids": [
     "RULING-20261113-OPEN8"
    ],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_0sgzlywyagorff-xo7b5uhxzaf1adxn2vuovzysqexxuzg",
+     "at": "2026-11-13T10:25:53Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -575,44 +684,6 @@
    "layers": [],
    "history": [
     "35d425aa2d3eb724"
-   ],
-   "ruling_unread": false
-  },
-  {
-   "channel": "agent_mail",
-   "ref": "1edd9f643bbbc750",
-   "status": "unknown",
-   "age_days": 5,
-   "subject_short": "Re: Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-13",
-   "has_dispatch_wording": false,
-   "thread_id": null,
-   "task_ids": [],
-   "ruling_status": "none",
-   "decision_id": null,
-   "rulings": [],
-   "merged_count": 1,
-   "layers": [],
-   "history": [
-    "1edd9f643bbbc750"
-   ],
-   "ruling_unread": false
-  },
-  {
-   "channel": "agent_mail",
-   "ref": "5076faa992593b27",
-   "status": "unknown",
-   "age_days": 5,
-   "subject_short": "Re: [LTZZZ][每日] Deep 巡检与分流 2026-11-13",
-   "has_dispatch_wording": false,
-   "thread_id": null,
-   "task_ids": [],
-   "ruling_status": "none",
-   "decision_id": null,
-   "rulings": [],
-   "merged_count": 1,
-   "layers": [],
-   "history": [
-    "5076faa992593b27"
    ],
    "ruling_unread": false
   },
@@ -760,9 +831,16 @@
    "task_ids": [
     "REFUND-DEFENSE-F2-IDEMPOTENCY-DESIGN-20261118-01"
    ],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_bu7-wafdutj1ty1nilk-klc9bhzfiuli72dabuypafcn3q",
+     "at": "2026-11-18T20:25:09Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -800,9 +878,16 @@
    "task_ids": [
     "TASK-HUB-SNAPSHOT-CONCURRENCY-20261118-01"
    ],
-   "ruling_status": "none",
+   "ruling_status": "decided",
    "decision_id": null,
-   "rulings": [],
+   "rulings": [
+    {
+     "message_id": "msg_tameb7zrvps3fxw13ndbol-ik5-fnlen2ruuq_sok9lhta",
+     "at": "2026-11-18T20:19:18Z",
+     "decision_id": null,
+     "verdict": null
+    }
+   ],
    "merged_count": 1,
    "layers": [],
    "history": [
@@ -4014,13 +4099,13 @@
   }
  ],
  "run": {
-  "run_id": "6cb8cf983418",
-  "run_key": "2026-11-19:dde1dc9f5ca1e0d0",
-  "started_at": "2026-11-19T07:33:56.418Z",
-  "input_sha256": "dde1dc9f5ca1e0d0f8eca2ed637caf50f2a07c8748142a73c2638e0af6900859",
-  "idempotency_key": "2026-11-19:dde1dc9f5ca1e0d0",
+  "run_id": "2b3465872015",
+  "run_key": "2026-11-19:b087c3da383def3a",
+  "started_at": "2026-11-19T09:51:11.621Z",
+  "input_sha256": "b087c3da383def3aa5dc21533b54ba80a02f48a7fdc3ff06f2b2b20c1be2df64",
+  "idempotency_key": "2026-11-19:b087c3da383def3a",
   "replay": false,
-  "previous_run_key": "2026-11-19:eab1260a9767a17e"
+  "previous_run_key": "2026-11-19:d9b45d0685f7bb39"
  },
  "sources": {
   "agent_mail": "knowledge/results/deep-superagent/mail-backlog/latest.json",
@@ -4028,7 +4113,7 @@
   "ruling_tracker": "knowledge/results/deep-superagent/ruling-tracker/latest.json"
  },
  "credentials": {
-  "loaded": false,
-  "reason": "already_in_env"
+  "loaded": true,
+  "keys": 2
  }
 }

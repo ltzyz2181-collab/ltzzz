@@ -1,0 +1,7 @@
+{
+ "task_id": "DEEP-WALLET-P1-CACHE-FORGERY-20261119-01",
+ "package_id": "LTZZZ-DEEP-WALLET-P1-CACHE-FORGERY-20261119-01",
+ "prompt": "内部任务，公开仓库事实，零真实资金，不含地址余额凭据客户数据。\n来源裁决：GPT-DECISION-20261118-WALLET-P1-3-CACHE-INTEGRITY-01，主账 Issue #433。\n前置事实：Wallet P1-3 的 verified-prefix cache 已校验 ledger prefix_sha256 与 state_sha256，但 state_sha256 是同一 cache 内可重算的无密钥 SHA256；restoreFolded 只验证字段形状与整数格式，未证明 folded balances / idempotency map 确由已验证 prefix 推导。既有 forged-head 测试未覆盖此情形。\n目标：补 forged-folded 与 forged-idempotency（重算 state_sha256）合成回归测试；安全默认是禁用快路径或从完整验证的 ledger prefix 重算。\n保留：hash-chain、exact decimal、idempotency、lock/fsync、read path full verify。\n禁止：真钱、转账、签名、结算、退款、RPC 写入、五签/Safe、真实余额地址、Secrets、新凭据、付费模型调用、生产部署。\n验收：伪造 folded balance 并重算校验和不得放行 settle/freeze/debit；伪造幂等表并重算校验和不得导致重复 key 追加；edited/truncated prefix、forged head、malformed cache、cache-write failure 仍 fail-closed 或回退全量验证；回执写 amount_usd=0、paid=false、financial_execution=false、transactions=0、signed=false、tx_hash=null。",
+ "data_classification": "public_distributable",
+ "platform": "internal"
+}
