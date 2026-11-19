@@ -1,7 +1,7 @@
 {
  "schema": "ltzzz.deep-superagent.daily-merge.v1",
  "date": "2026-11-19",
- "generated_at_utc": "2026-11-19T03:50:09.816Z",
+ "generated_at_utc": "2026-11-19T07:34:23.229Z",
  "done": [
   {
    "task_id": "DEEP-DAILY-SUPERVISION",
@@ -76,14 +76,20 @@
   "note": "政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权"
  },
  "mail": {
-  "status": "ok",
-  "at": "2026-11-19T02:20:46.237Z",
+  "status": "partial",
+  "at": "2026-11-19T07:33:56.418Z",
   "gmail_status": "ok",
   "agent_mail_status": "missing",
   "open_or_dispatch": 200,
   "gmail_rulings": {
-   "status": "unknown",
-   "today_count": null
+   "status": "ok",
+   "source": "gmail_metadata_only",
+   "today_count": 0,
+   "window_count": 1,
+   "latest_at": "Tue, 17 Nov 2026 00:51:17 -0800",
+   "latest_subject_short": "LTZZZ 今日进展与待裁决事项（<amount>-<amount>-<amount>）",
+   "decision_ids": [],
+   "bodies_read": false
   }
  },
  "counts": {
@@ -93,6 +99,7 @@
   "blocked": 0
  },
  "next_steps": [
+  "邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。",
   "已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
   "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
  ],
@@ -117,6 +124,6 @@
  "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
  "email": {
   "subject": "[LTZZZ日报] 2026-11-19 完成=2 待GPT裁决=1 阻塞=0",
-  "body": "LTZZZ 每日合并 2026-11-19（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44442932181）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44443485815）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261119-DAILY-2（run=44452129242）：coordinator_plan_unparseable\n  复核意见：C2 and C4 incorrectly routed as coordinator_close_with_receipt without actual receipts; C1 also lacks receipt evidence.\n  ASK DEEP-SUPERAGENT-20261119-DAILY-2：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n  相关待补（owner）A1：需要确认当前状态和下一步行动\n  相关待补（owner）A2：需要确认各席位任务分配情况\n  相关待补（evidence）B1：需要完整的邮件通道回执\n  相关待补（evidence）B2：需要邮件内容或相关凭证\n  相关待补（evidence）C3：需要 last_daily_merge 的具体时间和状态\n\n三、下一步\n- 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=ok，gmail=ok，agent_mail=missing\n- 今日 Gmail 裁决类回信（仅元数据）：unknown\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-19.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+  "body": "LTZZZ 每日合并 2026-11-19（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44442932181）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44443485815）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261119-DAILY-2（run=44452129242）：coordinator_plan_unparseable\n  复核意见：C2 and C4 incorrectly routed as coordinator_close_with_receipt without actual receipts; C1 also lacks receipt evidence.\n  ASK DEEP-SUPERAGENT-20261119-DAILY-2：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n  相关待补（owner）A1：需要确认当前状态和下一步行动\n  相关待补（owner）A2：需要确认各席位任务分配情况\n  相关待补（evidence）B1：需要完整的邮件通道回执\n  相关待补（evidence）B2：需要邮件内容或相关凭证\n  相关待补（evidence）C3：需要 last_daily_merge 的具体时间和状态\n\n三、下一步\n- 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。\n- 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=partial，gmail=ok，agent_mail=missing\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-19.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
  }
 }
