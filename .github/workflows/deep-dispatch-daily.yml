@@ -112,7 +112,21 @@ jobs:
           git config --local --unset-all 'http.https://github.com/.extraheader' || true
           git config --local --unset-all credential.helper || true
           git remote set-url origin "https://x-access-token:${LTZZZ_AGENT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          node tools/push-receipt-commit.mjs
+          # 内联 fetch/rebase/push：失败时输出脱敏 stderr，否则只能看到
+          # receipt_push_failed_not_a_concurrent_update，无法区分 403、分支保护或网络。
+          sanitize() { sed -E 's#x-access-token:[^@]*@#x-access-token:***@#g; s#https://[^@[:space:]]*@#https://***@#g' "$1" | tail -20; }
+          if ! git fetch origin main 2>push.err; then sanitize push.err; echo "::error::pat_fetch_failed"; exit 1; fi
+          if ! git rebase origin/main; then
+            git rebase --abort || true
+            echo "::error::card_rebase_conflict"
+            exit 1
+          fi
+          if ! git push origin HEAD:main 2>push.err; then
+            sanitize push.err
+            echo "::error::pat_push_failed"
+            exit 1
+          fi
+          rm -f push.err
           echo "NEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "PUSHED=1" >> "$GITHUB_ENV"
 
