@@ -86,3 +86,19 @@ test('executeExecutor reports a failing command instead of throwing', () => {
   assert.equal(r.http_code, 3);
 });
 
+
+test('a disclaimer clause does not trip the human-only gate', () => {
+  const r = classifyIssue(issue({
+    body: 'task_id: TASK-X\n\u672c\u5361\u4e0d\u6d89\u53ca\u8d44\u91d1\u3001\u7b7e\u540d\u3001\u751f\u4ea7\u90e8\u7f72\u3001Secrets\u3002',
+    labels: [{name: 'autoloop:exec:task-hub-status'}],
+  }), execs);
+  assert.equal(r.action, 'exec');
+});
+
+test('an un-negated fund or signing instruction still stops the executor', () => {
+  const refund = classifyIssue(issue({body: 'task_id: TASK-X\n\u81ea\u52a8\u9000\u6b3e 100 \u5143\u7ed9\u5ba2\u6237', labels: [{name: 'autoloop:exec:task-hub-status'}]}), execs);
+  assert.equal(refund.action, 'skip');
+  assert.equal(refund.reason, 'human_only');
+  const sign = classifyIssue(issue({title: 'WEP3 \u7b7e\u540d\u6267\u884c', labels: [{name: 'autoloop:exec:task-hub-status'}]}), execs);
+  assert.equal(sign.reason, 'human_only');
+});

@@ -33,11 +33,25 @@ export function loadExecutors(fsImpl = fs, file = EXECUTOR_FILE) {
   return raw.executors;
 }
 
+const RISK_TERM = /(\u8d44\u91d1|\u9000\u6b3e|\u7b7e\u540d|\u79c1\u94a5|\u4e94\u7b7e|\u751f\u4ea7\u90e8\u7f72|Secrets?|\u5bc6\u94a5|\u51ed\u636e|\u52a9\u8bb0\u8bcd)/i;
+const NEGATED = /(\u4e0d\u6d89\u53ca|\u4e0d\u542b|\u4e0d\u78b0|\u65e0\u9700|\u4e0d\u6388\u6743|\u4e0d\u6267\u884c|\u4e0d\u5141\u8bb8|\u4e0d\u5f97|\u4e0d\u80fd|\u7981\u6b62|\u4e25\u7981|\u65e0\u8d44\u91d1|\u6ca1\u6709\u8d44\u91d1|\u4e0d\u8fdb\u884c|\u4e0d\u53d1\u8d77|\u4e0d\u505a|\u4e0d\u6539\u53d8)/;
+
+// A dispatch card that says "this does not touch funds or signing" must not be blocked by
+// the very words it uses to disclaim them. Clauses carrying a negation are dropped before
+// the risk scan; an un-negated mention of a high-risk term still stops the executor.
+export function riskClauses(text = '') {
+  return String(text)
+    .split(/[\u3002\uff1b;\uff01!\uff1f?\n]|\u4f46\u662f|\u4e0d\u8fc7|\u7136\u800c|\u4f46/)
+    .map(c => c.trim())
+    .filter(Boolean)
+    .filter(c => RISK_TERM.test(c) && !NEGATED.test(c));
+}
+
 export function classifyIssue(issue, executors = []) {
   const labels = labelNames(issue);
   if (!issue || issue.pull_request) return {action: 'skip', reason: 'not_an_issue'};
   if (issue.state && issue.state !== 'open') return {action: 'skip', reason: 'not_open'};
-  if (labels.some(l => /(^|:)human-only$|^no-autoloop$/.test(l)) || /(资金|退款|签名|私钥|五签|生产部署|Secrets?|凭据)/i.test(`${issue.title || ''}${issue.body || ''}`)) {
+  if (labels.some(l => /(^|:)human-only$|^no-autoloop$/.test(l)) || riskClauses(`${issue.title || ''}\n${issue.body || ''}`).length > 0) {
     return {action: 'skip', reason: 'human_only'};
   }
   const exec = executors.find(e => labels.includes(e.match.label));
