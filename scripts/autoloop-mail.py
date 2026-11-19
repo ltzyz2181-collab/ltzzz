@@ -7,6 +7,7 @@ password, and the reader never marks messages as seen.
 """
 import argparse
 import datetime
+import re
 import email
 import email.utils
 import hashlib
@@ -15,7 +16,18 @@ import json
 import os
 import smtplib
 import ssl
+from email.header import decode_header, make_header
 from email.message import EmailMessage
+
+# Project-mail recognition: only LTZZZ project mail is relevant. Everything else stays
+# unread in the mailbox; we never fetch its body and never record it in project state.
+PROJECT_RE = re.compile(r"ltzzz|ltzyz2181|github\.com|autoloop|\u6d3e\u5355|\u88c1\u51b3|\u56de\u6267|Task\s*ID|APIsRouter", re.I)
+
+def _decode(value):
+    try:
+        return str(make_header(decode_header(value or "")))
+    except Exception:
+        return (value or "")
 
 def _out(payload):
     print(json.dumps(payload, ensure_ascii=False))
@@ -63,14 +75,19 @@ def read_headers(days, limit, out):
                 if isinstance(part, tuple):
                     raw = part[1]
             msg = email.message_from_bytes(raw)
+            subject = _decode(msg.get("Subject")).strip()
+            sender = _decode(msg.get("From")).strip()
             items.append({
                 "message_id": (msg.get("Message-ID") or "").strip(),
-                "from": (msg.get("From") or "").strip()[:200],
+                "from": sender[:200],
                 "date": (msg.get("Date") or "").strip()[:80],
-                "subject": (msg.get("Subject") or "").strip()[:200],
+                "subject": subject[:200],
             })
         box.logout()
-        payload = {"status": "ok", "count": len(items), "items": items, "mode": "headers_only_readonly_peek", "folder": raw_folder}
+        kept = [i for i in items if PROJECT_RE.search(i["from"] + " " + i["subject"])]
+        payload = {"status": "ok", "count": len(kept), "recent_headers": len(items),
+                   "filtered_out": len(items) - len(kept), "items": kept,
+                   "mode": "headers_only_readonly_peek", "folder": raw_folder}
         if out:
             with open(out, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, ensure_ascii=False, indent=2)
