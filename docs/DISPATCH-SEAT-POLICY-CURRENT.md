@@ -54,8 +54,10 @@ CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep
    push 事件与 `before..after` diff，再由既有的 `deep-superagent-queue.yml` 消费。
    不能直接用 `GITHUB_TOKEN` 推送（GitHub 会抑制其触发的下游工作流），也不能在
    `workflow_dispatch`/`schedule` 里直接跑队列脚本（队列信任模型要求真实 push range，
-   否则 fail-closed 为 `trusted_push_range_required`）。推送后工作流会轮询确认对应
-   `head_sha` 的队列 run 已创建；执行结果仍以该 run 的回执为准。
+   否则 fail-closed 为 `trusted_push_range_required`）。另需先清除 actions/checkout 写入的
+   `http.https://github.com/.extraheader`（它会让推送仍以 GITHUB_TOKEN 身份发出、触发被抑制），
+   再设置带 PAT 的 remote URL。推送后工作流会轮询确认对应 `head_sha` 的队列 run 已创建；
+   执行结果仍以该 run 的回执为准。
 4. **入队前门禁**：生成卡后先跑 `check`；队列入口 `normalizeTaskCard()` 也会对 `importance`/`seats` 做 fail-closed 校验，
    并把政策元数据剥离后再发 worker（worker 的 5 字段 schema 不变）。
 5. **中转裁决**：Deep 卡输出里的 `ASK | ref | gpt | ...` 由每日合并脚本提取为

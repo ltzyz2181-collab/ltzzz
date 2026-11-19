@@ -100,6 +100,10 @@ jobs:
           fi
           # 用 PAT 推送：GitHub 会抑制 GITHUB_TOKEN 推送产生的下游工作流，
           # 而队列的信任模型要求真实 push 的 before..after diff。
+          # actions/checkout 会把 GITHUB_TOKEN 写进 http.extraheader，它会压过 URL 里的 PAT；
+          # 必须先清掉，否则推送仍以 github-actions 身份发出，queue 工作流不会触发。
+          git config --local --unset-all 'http.https://github.com/.extraheader' || true
+          git config --local --unset-all credential.helper || true
           git remote set-url origin "https://x-access-token:${LTZZZ_AGENT_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           node tools/push-receipt-commit.mjs
           echo "NEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
