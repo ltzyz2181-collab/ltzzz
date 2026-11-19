@@ -44,12 +44,13 @@ CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep
 
 此前只有「push 卡文件才触发队列」，没有任何定时生成器，所以每日实际触发数为 0。现在补成闭环：
 
-1. **生成器**：`scripts/dispatch-daily-card.mjs --date YYYY-MM-DD`
-   - 写 `ops/deep-superagent/tasks/DEEP-SUPERAGENT-<YYYYMMDD>-DAILY-1.json`；
+1. **生成器**：`scripts/dispatch-daily-card.mjs --date YYYY-MM-DD [--suffix N]`
+   - 写 `ops/deep-superagent/tasks/DEEP-SUPERAGENT-<YYYYMMDD>-DAILY-<N>.json`；`N` 默认 1，
+     同日重试可用 2-9，任务 ID / 包 ID / 文件名一起变化，证据仍取自当天公开回执；
    - `importance=medium`，`seats=[{seat:deep, role:primary_executor, decision_authority:false}]`；
    - 只汇总公开回执（`dispatch/oversight`、`mail-intake`、最近队列卡、`daily-merge`、git HEAD）；
-   - 证据缺失写 `unknown`，不猜测；同一天重复运行幂等且不覆盖既有卡。
-2. **定时**：`.github/workflows/deep-dispatch-daily.yml`，cron `17 0 * * *`（00:17 UTC），也可 `workflow_dispatch` 指定日期。
+   - 证据缺失写 `unknown`，不猜测；同一天同一 suffix 重复运行幂等且不覆盖既有卡。
+2. **定时**：`.github/workflows/deep-dispatch-daily.yml`，cron `17 0 * * *`（00:17 UTC），也可 `workflow_dispatch` 指定日期与 suffix。
 3. **PAT 推送触发队列**：卡文件用 `LTZZZ_AGENT_TOKEN`（PAT）推送到 main，让 GitHub 产生真实的
    push 事件与 `before..after` diff，再由既有的 `deep-superagent-queue.yml` 消费。
    不能直接用 `GITHUB_TOKEN` 推送（GitHub 会抑制其触发的下游工作流），也不能在

@@ -82,11 +82,13 @@ export function collectEvidence(root = REPO_ROOT, {exec = execFileSync} = {}) {
   };
 }
 
-export function buildDailyCard({date, evidence, policy = loadPolicy()}) {
+export function buildDailyCard({date, evidence, policy = loadPolicy(), suffix = 1}) {
   if (!DATE_RE.test(String(date || ''))) throw new Error('invalid_daily_card_date');
+  // 同一天可能因首次未触发而需要重试卡；suffix 只影响任务/包/文件名，证据仍来自当天公开回执。
+  if (!Number.isInteger(suffix) || suffix < 1 || suffix > 9) throw new Error('invalid_daily_card_suffix');
   const stamp = date.replaceAll('-', '');
-  const taskId = `DEEP-SUPERAGENT-${stamp}-DAILY-1`;
-  const packageId = `LTZZZ-DEEP-DAILY-${stamp}-1`;
+  const taskId = `DEEP-SUPERAGENT-${stamp}-DAILY-${suffix}`;
+  const packageId = `LTZZZ-DEEP-DAILY-${stamp}-${suffix}`;
   const backlog = evidence.backlog || {};
   const mail = evidence.mail || {};
   const queue = evidence.queue || {};
@@ -138,13 +140,13 @@ export function buildDailyCard({date, evidence, policy = loadPolicy()}) {
   return card;
 }
 
-export function cardPath(date) {
-  return `ops/deep-superagent/tasks/DEEP-SUPERAGENT-${date.replaceAll('-', '')}-DAILY-1.json`;
+export function cardPath(date, suffix = 1) {
+  return `ops/deep-superagent/tasks/DEEP-SUPERAGENT-${date.replaceAll('-', '')}-DAILY-${suffix}.json`;
 }
 
-export function writeDailyCard({root = REPO_ROOT, date = businessDate(), evidence = collectEvidence(root), policy = loadPolicy()} = {}) {
-  const card = buildDailyCard({date, evidence, policy});
-  const rel = cardPath(date);
+export function writeDailyCard({root = REPO_ROOT, date = businessDate(), evidence = collectEvidence(root), policy = loadPolicy(), suffix = 1} = {}) {
+  const card = buildDailyCard({date, evidence, policy, suffix});
+  const rel = cardPath(date, suffix);
   const abs = path.join(root, rel);
   if (fs.existsSync(abs)) {
     const existing = fs.readFileSync(abs, 'utf8');
@@ -164,14 +166,15 @@ function main(argv = process.argv.slice(2)) {
   const date = get('--date') || businessDate();
   const root = get('--root') || REPO_ROOT;
   const dryRun = argv.includes('--dry-run');
+  const suffix = get('--suffix') ? Number(get('--suffix')) : 1;
   try {
     const evidence = collectEvidence(root);
-    const card = buildDailyCard({date, evidence});
+    const card = buildDailyCard({date, evidence, suffix});
     if (dryRun) {
-      process.stdout.write(JSON.stringify({status: 'dry_run', date, path: cardPath(date), card}, null, 1) + '\n');
+      process.stdout.write(JSON.stringify({status: 'dry_run', date, path: cardPath(date, suffix), card}, null, 1) + '\n');
       return 0;
     }
-    const result = writeDailyCard({root, date, evidence});
+    const result = writeDailyCard({root, date, evidence, suffix});
     const different = result.status === 'already_exists_different';
     process.stdout.write(JSON.stringify({
       status: result.status,
