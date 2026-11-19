@@ -22,6 +22,9 @@ from email.message import EmailMessage
 
 # Project-mail recognition: only LTZZZ project mail is relevant. Everything else stays
 # unread in the mailbox; we never fetch its body and never record it in project state.
+ALL_MAIL_TOKENS = ("all mail", "\u6240\u6709\u90f5\u4ef6", "\u6240\u6709\u90ae\u4ef6",
+                   "\u5168\u90e8\u90f5\u4ef6", "\u5168\u90e8\u90ae\u4ef6")
+
 PROJECT_RE = re.compile(r"ltzzz|ltzyz2181|github\.com|autoloop|\u6d3e\u5355|\u88c1\u51b3|\u56de\u6267|Task\s*ID|APIsRouter", re.I)
 
 def _mutf7_decode(name):
@@ -97,7 +100,7 @@ def read_headers(days, limit, out):
             available = []
         if raw_folder.strip().upper() in ("ALL", "ALL_MAIL", "FULLBOX", "[GMAIL]/ALL MAIL"):
             match = next((n for n in available
-                          if "all mail" in _mutf7_decode(n).lower() or "所有邮件" in _mutf7_decode(n)), None)
+                          if any(t in _mutf7_decode(n).lower() for t in ALL_MAIL_TOKENS)), None)
             raw_folder = match or "INBOX"
         folder = raw_folder if (" " not in raw_folder or raw_folder.startswith('\"')) else '\"' + raw_folder + '\"'
         typ, _ = box.select(folder, readonly=True)
