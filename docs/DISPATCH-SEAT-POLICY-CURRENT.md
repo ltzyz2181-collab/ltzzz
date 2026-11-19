@@ -29,10 +29,33 @@ node scripts/dispatch-seat-policy.mjs template \
 node scripts/dispatch-seat-policy.mjs check
 ```
 
-CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep-superagent/tasks/**.json` 或政策/脚本时，自动跑 7 条单元测试 + 卡校验，不合规直接红。
+CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep-superagent/tasks/**.json` 或政策/脚本时，自动跑单元测试 + 卡校验，不合规直接红。
+队列侧的消费入口也已接线：`.github/workflows/deep-superagent-queue.yml` 的 `verify` 在 POST 之前执行
+`node scripts/dispatch-seat-policy.mjs check`，政策卡不合规就不会进入消费 job。
 
 ## 四、边界如实写（别当成全仓已强制）
 
-- 现存的 **84 张历史卡没有 `importance`/`seats` 字段**，`check` 把它们计入 `legacy` 且**不判错**，回归结果：`checked=0, legacy=84, problems=[]`。历史卡不回填，避免伪造派单记录。
-- 2026-11-17 之后新建或重派的卡走 `template` 生成，才会真正被三席约束。
+- 现存历史卡没有 `importance`/`seats` 字段，`check` 把它们计入 `legacy` 且**不判错**；具体数量以当次 `check` 输出为准。
+  历史卡不回填，避免伪造派单记录。
+- 2026-11-17 之后新建或重派的卡走 `template` 或每日卡生成器，才会真正被三席/单席约束。
 - 政策是 owner 口述，落成配置 + 脚本 + CI 三道；`authority_kind=owner_verbal`，未经 owner 书面改写前不改。
+
+## 五、每日自动派单（2026-11-18 接线）
+
+此前只有「push 卡文件才触发队列」，没有任何定时生成器，所以每日实际触发数为 0。现在补成闭环：
+
+1. **生成器**：`scripts/dispatch-daily-card.mjs --date YYYY-MM-DD`
+   - 写 `ops/deep-superagent/tasks/DEEP-SUPERAGENT-<YYYYMMDD>-DAILY-1.json`；
+   - `importance=medium`，`seats=[{seat:deep, role:primary_executor, decision_authority:false}]`；
+   - 只汇总公开回执（`dispatch/oversight`、`mail-intake`、最近队列卡、`daily-merge`、git HEAD）；
+   - 证据缺失写 `unknown`，不猜测；同一天重复运行幂等且不覆盖既有卡。
+2. **定时**：`.github/workflows/deep-dispatch-daily.yml`，cron `17 0 * * *`（00:17 UTC），也可 `workflow_dispatch` 指定日期。
+3. **同锁直连队列**：生成后直接运行 `scripts/run-deep-superagent-queue.mjs`，与 push 触发共用
+   `concurrency: deep-superagent-queue`。不依赖 GITHUB_TOKEN 推送去触发下游工作流（GitHub 会抑制这种递归触发）。
+4. **入队前门禁**：生成卡后先跑 `check`；队列入口 `normalizeTaskCard()` 也会对 `importance`/`seats` 做 fail-closed 校验，
+   并把政策元数据剥离后再发 worker（worker 的 5 字段 schema 不变）。
+5. **中转裁决**：Deep 卡输出里的 `ASK | ref | gpt | ...` 由每日合并脚本提取为
+   `ops/deep-superagent/ruling-requests/` 的公开请求，状态 `awaiting_gpt`；中转席只出意见，不持裁决权。
+
+如实边界：这一步解决的是「每天有一张 Deep 卡被真实消费」，不等于业务验收、模型权重训练或平台已接受。
+

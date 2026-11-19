@@ -1,0 +1,129 @@
+name: Deep dispatch daily card
+# 每日生成一张 Deep 主办卡，并在同一并发锁内直接消费队列。
+# 背景（2026-11-18 核对）：队列只监听 ops/deep-superagent/tasks/ 的 push，
+# 没有任何定时卡生成器，所以「通道已部署」但每天触发数为 0。
+# 本工作流补三件事：
+#   1) 按 dispatch-seat-policy 模板生成每日卡（importance=medium，仅 Deep 主办）；
+#   2) 卡入队前先跑 `dispatch-seat-policy.mjs check`，不合规即 fail-closed；
+#   3) 生成后直接运行队列消费者，不依赖 push 触发（GITHUB_TOKEN 推送不会触发下游工作流）。
+on:
+  schedule:
+    # 每天 00:17 UTC（北京时间 08:17）。刻意避开 :00/:30，降低 GitHub 定时拥堵。
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '日期 YYYY-MM-DD；留空取当天 UTC'
+        required: false
+        default: ''
+  pull_request:
+    paths:
+      - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'scripts/tests/dispatch-seat-policy.test.mjs'
+      - 'scripts/tests/deep-superagent-queue.test.mjs'
+      - 'config/dispatch-seat-policy-20261117.json'
+      - '.github/workflows/deep-dispatch-daily.yml'
+permissions: {contents: read}
+concurrency: {group: deep-dispatch-daily, cancel-in-progress: false}
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax check
+        run: |
+          node --check scripts/dispatch-daily-card.mjs
+          node --check scripts/dispatch-seat-policy.mjs
+          node --check scripts/run-deep-superagent-queue.mjs
+      - name: Policy, card contract and queue tests
+        run: >-
+          node --test
+          scripts/tests/dispatch-daily-card.test.mjs
+          scripts/tests/dispatch-seat-policy.test.mjs
+          scripts/tests/deep-superagent-queue.test.mjs
+      - name: Policy check (fail-closed)
+        run: node scripts/dispatch-seat-policy.mjs check
+
+  dispatch:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {contents: write}
+    # 与 queue 工作流共用同一锁：本工作流直连队列时，push 触发的消费者不会并发重复下单。
+    concurrency: {group: deep-superagent-queue, cancel-in-progress: false}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: 'main', fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Generate daily card and run the policy gate
+        env:
+          INPUT_DATE: ${{ inputs.date }}
+        run: |
+          DATE="${INPUT_DATE:-}"
+          if [ -z "$DATE" ]; then DATE=$(date -u +%F); fi
+          echo "CARD_DATE=$DATE" >> "$GITHUB_ENV"
+          node scripts/dispatch-daily-card.mjs --date "$DATE"
+          node scripts/dispatch-seat-policy.mjs check
+
+      - name: Consume the queue directly (daily trigger, not push-dependent)
+        env:
+          LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          node scripts/run-deep-superagent-queue.mjs
+          code=$?
+          set -e
+          echo "QUEUE_EXIT=$code" >> "$GITHUB_ENV"
+          # 非 0 也要保住回执再判；不在这里吞成成功。
+          exit 0
+
+      - name: Preserve daily card and exact queue receipt
+        if: always()
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const card = 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-' + process.env.CARD_DATE.replaceAll('-', '') + '-DAILY-1.json';
+          const queueFile = 'knowledge/results/deep-superagent/queue-' + process.env.GITHUB_RUN_ID + '-attempt-' + process.env.GITHUB_RUN_ATTEMPT + '.json';
+          if (!fs.existsSync(card)) throw Error('daily_card_missing:' + card);
+          const add = [card];
+          if (fs.existsSync(queueFile)) {
+            const receipt = JSON.parse(fs.readFileSync(queueFile, 'utf8'));
+            if (!/^queue_(blocked|pending_reconciliation|results_verified)$|^no_new_queue_cards$/.test(receipt.status)) throw Error('invalid_queue_receipt_status');
+            add.push(queueFile);
+          }
+          execFileSync('git', ['config', 'user.name', 'ltzzz-bot']);
+          execFileSync('git', ['config', 'user.email', 'bot@ltzzz.com']);
+          execFileSync('git', ['add', '--', ...add]);
+          try { execFileSync('git', ['diff', '--staged', '--quiet']); process.exit(0); } catch {}
+          execFileSync('git', ['commit', '-m', 'Deep dispatch daily card ' + process.env.CARD_DATE], {stdio: 'inherit'});
+          JS
+          node tools/push-receipt-commit.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deep-dispatch-daily-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ops/deep-superagent/tasks/DEEP-SUPERAGENT-*-DAILY-1.json
+            knowledge/results/deep-superagent/queue-${{ github.run_id }}-attempt-${{ github.run_attempt }}.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail when the queue did not complete cleanly
+        if: env.QUEUE_EXIT != '0'
+        run: |
+          echo "::error::Deep queue exited ${QUEUE_EXIT}; inspect the exact queue receipt, do not resend blindly."
+          exit 1

@@ -18,7 +18,11 @@ import {spawnSync} from 'node:child_process';
 import {createHash, randomBytes} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {dedupeMessages, extractTaskIds, normalizeThreadKey} from './mail/dedupe.mjs';
-import {TRACKER_SCHEMA} from './track-gpt-rulings.mjs';
+import {TRACKER_SCHEMA, extractDecisionIds, redactSubject} from './track-gpt-rulings.mjs';
+
+// Gmail 里的 GPT 裁决回信只按主题元数据识别，不读正文；这条通道独立于
+// Agent Mail（CI 内 agently-cli 不可用时，Gmail 仍能报“今天有没有裁决回信”）。
+const GMAIL_RULING_RE = /(裁决|ruling|disposition|keep_blocked|return_for_revision|needs_decision|approve_in_scope|conditional_approve|已落库)/i;
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const INTAKE_SCHEMA = 'ltzzz.mail-intake.v1';
@@ -329,6 +333,28 @@ export function buildIntake({
   const backlogOk = agent.ok;
   const status = gmailOk && backlogOk && trackerOk ? 'ok' : (gmailOk || backlogOk || trackerOk ? 'partial' : 'failed');
 
+  const shanghaiDay = (value) => {
+    const parsed = Date.parse(value || '');
+    return Number.isFinite(parsed)
+      ? new Date(parsed).toLocaleDateString('sv-SE', {timeZone: 'Asia/Shanghai'})
+      : null;
+  };
+  const today = now.toLocaleDateString('sv-SE', {timeZone: 'Asia/Shanghai'});
+  const gmailRulingMessages = (fullbox?.messages || [])
+    .filter((message) => message.from_domain === 'gmail.com' && GMAIL_RULING_RE.test(String(message.subject_short || '')))
+    .sort((a, b) => Date.parse(b.date || 0) - Date.parse(a.date || 0));
+  const gmailRulingsToday = gmailRulingMessages.filter((message) => shanghaiDay(message.date) === today);
+  const gmailRulings = {
+    status: gmailOk ? 'ok' : 'unknown',
+    source: 'gmail_metadata_only',
+    today_count: gmailRulingsToday.length,
+    window_count: gmailRulingMessages.length,
+    latest_at: gmailRulingMessages[0]?.date ?? null,
+    latest_subject_short: gmailRulingMessages[0] ? redactSubject(gmailRulingMessages[0].subject_short, 90) : null,
+    decision_ids: extractDecisionIds(...gmailRulingMessages.slice(0, 20).map((message) => message.subject_short)),
+    bodies_read: false,
+  };
+
   const openItems = openClusters.slice(0, 200).map((item) => ({
     channel: item.channel,
     ref: item.ref,
@@ -395,6 +421,7 @@ export function buildIntake({
       stderr_tail: trackerRun?.stderr ? String(trackerRun.stderr).slice(0, 200) : null,
       note: tracker?.note ?? null,
     },
+    gmail_rulings: gmailRulings,
     dedupe: {
       version: dedupe.version,
       layers: ['message_id', 'thread_id', 'task_id'],

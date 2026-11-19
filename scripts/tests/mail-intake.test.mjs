@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {buildIntake} from '../run-mail-intake.mjs';
 
 // 合并邮件摄入产物是每日流水线的输入，CI 只校验落盘结果的结构与脱敏约束，
 // 不重跑采集（CI 无收信凭据，也不允许把正文带进仓库）。
@@ -60,6 +61,33 @@ test('open items carry only desensitized fields', () => {
     for (const ref of item.history || []) assert.equal(typeof ref, 'string');
   }
   assert.ok((doc.open_items || []).length <= 200, '待办清单必须有上限');
+});
+
+test('Gmail 裁决回信只按主题元数据统计，不读正文', () => {
+  const payload = buildIntake({
+    backlog: {status: 'ok', items: [], count: 0, open_count: 0},
+    fullbox: {
+      status: 'ok', count: 1, open_count: 1,
+      messages: [{
+        ref: 'gmail-ref-1',
+        date: 'Thu, 19 Nov 2026 08:00:00 +0800',
+        from_domain: 'gmail.com',
+        subject_short: 'RE: [GPT裁决] Phase1 范围确认 GPT-TEST-20261119-01',
+        status: 'unknown',
+        unread: false,
+      }],
+    },
+    tracker: null,
+    backlogRun: {code: 0},
+    gmailRun: {code: 0},
+    trackerRun: {code: 2},
+    now: new Date('2026-11-19T02:00:00.000Z'),
+  });
+  assert.equal(payload.gmail_rulings.status, 'ok');
+  assert.equal(payload.gmail_rulings.source, 'gmail_metadata_only');
+  assert.equal(payload.gmail_rulings.today_count, 1);
+  assert.equal(payload.gmail_rulings.bodies_read, false);
+  assert.deepEqual(payload.gmail_rulings.decision_ids, ['GPT-TEST-20261119-01']);
 });
 
 test('dedupe block declares layers and preserved history', () => {

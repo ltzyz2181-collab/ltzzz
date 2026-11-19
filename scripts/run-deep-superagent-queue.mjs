@@ -8,6 +8,7 @@ import {pathToFileURL} from 'node:url';
 import {normalizeJob,sha256,REVISION} from '../workers/deep-superagent/index.js';
 import {WorkpoolGitHubStore} from './lib/workpool-github.mjs';
 import {analyzeCardPrompt} from './check-card-contract.mjs';
+import {checkCard,loadPolicy} from './dispatch-seat-policy.mjs';
 
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
 export const MAX_WAIT_MS=480000;
@@ -55,6 +56,28 @@ export function selectQueueCards(changes){
 export function assertCardContract(body){
  const contract=analyzeCardPrompt(body?.prompt);
  if(contract.mixed)throw Error('card_contract_split_required:'+contract.reasons.join('_'));
+}
+
+// 政策元数据只用于派单审计，不进入 worker 请求体。带 importance/seats 的卡
+// 先过 dispatch-seat-policy 的 fail-closed 校验，再剥离元数据按既有 5 字段规范执行；
+// 历史卡（无这两个字段）仍走原路径，不改变已执行卡的行为。
+export function stripDispatchMetadata(body){
+ if(!body||typeof body!=='object'||Array.isArray(body))return body;
+ const {importance,seats,...rest}=body;
+ return rest;
+}
+
+export function taskDispatchMetadata(body){
+ if(!body||typeof body!=='object'||Array.isArray(body))return null;
+ if(body.importance===undefined&&body.seats===undefined)return null;
+ const problems=checkCard(loadPolicy(),body);
+ if(problems.length)throw Error('dispatch_seat_policy_violation:'+problems.join(';').slice(0,400));
+ return {importance:body.importance,seats:body.seats};
+}
+
+export function normalizeTaskCard(body){
+ taskDispatchMetadata(body);
+ return normalizeJob(stripDispatchMetadata(body));
 }
 
 export function normalizeDecision(body){
@@ -174,7 +197,7 @@ async function reservePost({store,key,state,outcome}){
 
 export async function runQueueCard({kind,body,source_commit,token,store,fetcher=fetch,pause=pauseDefault,clock=Date.now,deadline=clock()+MAX_WAIT_MS,onObservation=()=>{}}){
  if(!KINDS.has(kind)||!COMMIT.test(source_commit||'')||!token)throw Error('trusted_queue_card_context_required');
- const card=kind==='task'?normalizeJob(body):normalizeDecision(body);
+ const card=kind==='task'?normalizeTaskCard(body):normalizeDecision(body);
  const normalization=kind==='task'?await normalizationRecord(body,card):null;
  const payload=kind==='task'?card:decisionPayload(card);
  const inputHash=kind==='task'?await sha256(JSON.stringify(card)):card.reviewed_input_sha256;
@@ -272,7 +295,7 @@ export async function main({env=process.env}={}){
    if(bytes.byteLength>32768)throw Error('queue_card_too_large');
    const body=JSON.parse(bytes.toString('utf8'));
    if(card.kind==='task')assertCardContract(body);
-   if(card.kind==='task')normalizeJob(body);else normalizeDecision(body);
+   if(card.kind==='task')normalizeTaskCard(body);else normalizeDecision(body);
    cards.push({...card,body,card_sha256:createHash('sha256').update(bytes).digest('hex')});
   }
   const baseTree=execFileSync('git',['rev-parse',context.source_commit+'^{tree}'],{encoding:'utf8'}).trim();
