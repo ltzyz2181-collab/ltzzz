@@ -1,0 +1,39 @@
+{
+ "schema": "ltzzz.deep-daily-diagnosis.v1",
+ "at": "2026-11-19T10:04:40Z",
+ "question": "2026-11-19 日课仍 blocked，是规则卡住还是别的？",
+ "conclusion": "不是规则、也不是席位偷懒：当天 job 在旧预算版本下就已生成完毕，后续日课运行只是回读终态。",
+ "evidence": [
+  {
+   "fact": "自然 schedule run 44481811025 于 2026-11-19T07:43:29Z 触发（cron 目标 00:30Z，延迟约 7h13m），结论 success"
+  },
+  {
+   "fact": "该 run 产物 status=daily_result_readback_complete，job.status=blocked，error=all_worker_seats_failed"
+  },
+  {
+   "fact": "job.source_commit=9291dd60…（早于预算修复提交 4c17f0c40），说明 job 在旧代码下已 materialize"
+  },
+  {
+   "fact": "豆包席 receipt：completion_tokens=2048、finish_reason=length、error=output_truncated_at_output_budget；协调席 deepseek 263 tokens/stop 正常"
+  },
+  {
+   "fact": "预算修复 4c17f0c40 已部署：deploy-44443357607-attempt-1.json mode=deploy、source_commit=4c17f0c40、health 回读 source_commit=4c17f0c40、deployments=1"
+  },
+  {
+   "fact": "outputTokenLimit 现按席位：DEEP-DAILY-SUPERVISION 下 doubao=3072、qianwen/deepseek=4096"
+  }
+ ],
+ "why_still_blocked": "预算修复部署于 02:18Z，而当天 job 的生成发生在部署之前（job.source_commit 仍为旧提交）；07:43Z 的日课按 readset 幂等只回读终态，不会用新预算重跑。",
+ "verification_next": "下一自然日课（新 readset）应满足：work_doubao 无 output_truncated_at_output_budget、completion_tokens<3072、finish_reason=stop；否则按 L-20261117-006 在 ops/deploy-receipts 记 blocker。",
+ "residual_risks": [
+  "GitHub schedule 延迟可达数小时（00:30Z→07:43Z），属平台调度抖动，不是工作流坏了",
+  "队列桥无定时器：卡只在 push 触及 tasks/decisions/脚本路径时被消费，无卡时 0 次运行属正常",
+  "日课 job 按 readset 幂等：修复当日无法用重跑验证新预算"
+ ],
+ "counts": {
+  "model_calls": 0,
+  "deploys": 0,
+  "financial_execution": false,
+  "merges": 0
+ }
+}
