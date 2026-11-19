@@ -54,6 +54,17 @@ test('每日卡通过派单政策、卡合同与队列规范', () => {
   assert.deepEqual(Object.keys(normalizeTaskCard(card)).sort(), ['data_classification', 'package_id', 'platform', 'prompt', 'task_id']);
 });
 
+test('同日重试卡用 suffix 区分任务、包与文件名', () => {
+  const card = buildDailyCard({date: '2026-11-19', evidence: evidence(), policy, suffix: 2});
+  assert.equal(card.task_id, 'DEEP-SUPERAGENT-20261119-DAILY-2');
+  assert.equal(card.package_id, 'LTZZZ-DEEP-DAILY-20261119-2');
+  assert.equal(cardPath('2026-11-19', 2), 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261119-DAILY-2.json');
+  assert.deepEqual(checkCard(policy, card), []);
+  for (const suffix of [0, 10, 1.5, '2', null]) {
+    assert.throws(() => buildDailyCard({date: '2026-11-19', evidence: evidence(), policy, suffix}), /invalid_daily_card_suffix/);
+  }
+});
+
 test('日期非法时拒绝生成', () => {
   assert.match('2026-11-19', DATE_RE);
   assert.throws(() => buildDailyCard({date: '../20261119', evidence: evidence(), policy}), /invalid_daily_card_date/);
