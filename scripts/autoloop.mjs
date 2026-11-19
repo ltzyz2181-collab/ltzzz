@@ -74,7 +74,7 @@ export function buildEmailDigest({done = [], needsGpt = [], nextActions = [], ma
     `- run_id：${run.run_id || 'local'}`,
     `- 席位：${run.seat || 'unspecified'}`,
     `- 模式：${run.mode || 'plan_only'}`,
-    `- 邮箱：读 ${mail?.read?.status || 'not_attempted'} / 发 ${mail?.send?.status || 'not_attempted'}`,
+    `- 邮箱：读 ${mail?.read?.status || 'not_attempted'} / 发 ${mail?.send?.status || '见回执（本邮件即本次发送）'}`,
     '',
     '## 今天做了什么',
     bullet(done, '无自动完成项'),
@@ -260,16 +260,20 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
   // Mail is a report, never a gate: a mail outage is recorded and the loop continues.
   const day = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
   const mailRead = runMail(['read', '--days', '2', '--out', path.join(out, 'mail-headers.json')], {env, cwd});
-  const digest = buildEmailDigest({
+  const digestInput = {
     done: result.done, needsGpt: result.needsGpt, nextActions: result.nextActions,
     mail: {read: mailRead}, run: {day, run_id: result.run_id, seat, mode: 'apply'},
-  });
+  };
+  const digest = buildEmailDigest(digestInput);
   const bodyFile = path.join(out, 'digest.txt');
   fs.writeFileSync(bodyFile, digest.body, 'utf8');
   let mailSend = {status: 'skipped_disabled'};
   if (String(env.AUTOLOOP_SEND_MAIL || '').toLowerCase() === 'true') {
     mailSend = runMail(['send', '--subject', digest.subject, '--body-file', bodyFile, '--to', env.AUTOLOOP_MAIL_TO || 'ltzyz2181@gmail.com'], {env, cwd});
   }
+  // The email cannot contain its own delivery result, so the on-disk copy is re-rendered
+  // with the real statuses; the receipt stays the authoritative record either way.
+  fs.writeFileSync(bodyFile, buildEmailDigest({...digestInput, mail: {read: mailRead, send: mailSend}}).body, 'utf8');
   result.digest = {subject: digest.subject, body_file: bodyFile};
   result.mail = {read: mailRead.status, send: mailSend.status, read_detail: mailRead, send_detail: mailSend};
   fs.writeFileSync(path.join(out, `run-${result.run_id}.json`), JSON.stringify(result, null, 2) + '\n', 'utf8');

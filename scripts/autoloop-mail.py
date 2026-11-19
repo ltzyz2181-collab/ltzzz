@@ -6,6 +6,7 @@ exit 0, because a mail outage must not stop the rest of the loop. Nothing here p
 password, and the reader never marks messages as seen.
 """
 import argparse
+import datetime
 import email
 import email.utils
 import hashlib
@@ -42,9 +43,17 @@ def read_headers(days, limit, out):
     try:
         box = imaplib.IMAP4_SSL(c["host"], c["port"], ssl_context=ssl.create_default_context(), timeout=25)
         box.login(c["user"], c["password"])
-        box.select("INBOX", readonly=True)
-        since = email.utils.formatdate(__import__("time").time() - days * 86400, localtime=False, usegmt=True)
-        typ, data = box.search(None, f'(SINCE "{since[5:16]}")')
+        raw_folder = os.environ.get("MAIL_IMAP_FOLDER", "INBOX")
+        folder = raw_folder if (" " not in raw_folder or raw_folder.startswith('"')) else '"%s"' % raw_folder
+        typ, _ = box.select(folder, readonly=True)
+        if typ != "OK":
+            box.logout()
+            return {"status": "blocked_imap_select", "detail": raw_folder[:80]}
+        since = (datetime.datetime.utcnow() - datetime.timedelta(days=days)).strftime("%d-%b-%Y")
+        typ, data = box.search(None, "(SINCE %s)" % since)
+        if typ != "OK":
+            box.logout()
+            return {"status": "blocked_imap_search", "detail": str(data)[:160]}
         ids = (data[0] or b"").split()[-limit:]
         items = []
         for mid in ids:
@@ -61,7 +70,7 @@ def read_headers(days, limit, out):
                 "subject": (msg.get("Subject") or "").strip()[:200],
             })
         box.logout()
-        payload = {"status": "ok", "count": len(items), "items": items, "mode": "headers_only_readonly_peek"}
+        payload = {"status": "ok", "count": len(items), "items": items, "mode": "headers_only_readonly_peek", "folder": raw_folder}
         if out:
             with open(out, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, ensure_ascii=False, indent=2)
