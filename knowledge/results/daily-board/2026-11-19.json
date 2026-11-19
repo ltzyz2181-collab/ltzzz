@@ -6,7 +6,7 @@
   "seats": {
     "deepseek": {
       "agent": "deepseek",
-      "status": "reserved",
+      "status": "generated_pending_sync",
       "reason": "remote_claim_verified",
       "claim_verified": true,
       "submission_verified": false,
@@ -43,11 +43,21 @@
         "mode": "embedded_daily_call",
         "reviewer_task_id": "DAILY-2026-11-19-doubao",
         "reviewer_execution_verified": false
+      },
+      "execution_started_at": "2026-11-19T02:57:45.679Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-19-deepseek-8a1c5773bfd0d5ee4172df0218f125e58c85b608595502413a4c9c185cc5303f.json",
+        "sha256": "8a1c5773bfd0d5ee4172df0218f125e58c85b608595502413a4c9c185cc5303f"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
       }
     },
     "doubao": {
       "agent": "doubao",
-      "status": "reserved",
+      "status": "generation_failed_no_repurchase",
       "reason": "remote_claim_verified",
       "claim_verified": true,
       "submission_verified": false,
@@ -84,11 +94,20 @@
         "mode": "embedded_daily_call",
         "reviewer_task_id": "DAILY-2026-11-19-qianwen",
         "reviewer_execution_verified": false
+      },
+      "execution_started_at": "2026-11-19T02:58:20.446Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-19-doubao-2a7c8b40f49a939d6770283f615b91b7cd43f4046d4bf6fe403dd511c5087319.json",
+        "sha256": "2a7c8b40f49a939d6770283f615b91b7cd43f4046d4bf6fe403dd511c5087319"
+      },
+      "integrity": {
+        "status": "incomplete",
+        "reason": "empty_output"
       }
     },
     "grok": {
       "agent": "grok",
-      "status": "reserved",
+      "status": "generated_pending_sync",
       "reason": "remote_claim_verified",
       "claim_verified": true,
       "submission_verified": false,
@@ -125,11 +144,21 @@
         "mode": "embedded_daily_call",
         "reviewer_task_id": "DAILY-2026-11-19-qianwen",
         "reviewer_execution_verified": false
+      },
+      "execution_started_at": "2026-11-19T02:59:50.637Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-19-grok-e8c1ecd14c64aad20918a0db554e544d7c595e7c51dee2ec8c2f2c0527c524b0.json",
+        "sha256": "e8c1ecd14c64aad20918a0db554e544d7c595e7c51dee2ec8c2f2c0527c524b0"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
       }
     },
     "qianwen": {
       "agent": "qianwen",
-      "status": "reserved",
+      "status": "generated_pending_sync",
       "reason": "remote_claim_verified",
       "claim_verified": true,
       "submission_verified": false,
@@ -166,9 +195,56 @@
         "mode": "separate_controller_review_no_automatic_model_purchase",
         "reviewer_task_id": "REVIEW-2026-11-19-qianwen-by-gpt",
         "reviewer_execution_verified": false
+      },
+      "execution_started_at": "2026-11-19T03:00:22.022Z",
+      "artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-19-qianwen-c04beea6da9a1043e183ec574ed9e62473f362a0335f45457a118e13bac0debd.json",
+        "sha256": "c04beea6da9a1043e183ec574ed9e62473f362a0335f45457a118e13bac0debd"
+      },
+      "integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
       }
     }
   },
   "paid": false,
-  "tx_hash": null
+  "tx_hash": null,
+  "daily_review_binding": {
+    "date": "2026-11-19",
+    "run_key": "44448003276:1",
+    "source_commit": "81af475a01f0c0e573d296b2129bd62728cf3035",
+    "task_id": "DAILY-2026-11-19-deepseek",
+    "worker_artifact": {
+      "path": "knowledge/results/daily-board/artifacts/2026-11-19-deepseek-8a1c5773bfd0d5ee4172df0218f125e58c85b608595502413a4c9c185cc5303f.json",
+      "sha256": "8a1c5773bfd0d5ee4172df0218f125e58c85b608595502413a4c9c185cc5303f"
+    },
+    "reviewer_task_id": "DAILY-2026-11-19-doubao"
+  },
+  "daily_review_bindings": {
+    "grok": {
+      "date": "2026-11-19",
+      "run_key": "44448003276:1",
+      "source_commit": "81af475a01f0c0e573d296b2129bd62728cf3035",
+      "task_id": "AUTO-2026-11-19-health",
+      "worker_artifact": {
+        "path": "knowledge/results/daily-board/artifacts/2026-11-19-grok-e8c1ecd14c64aad20918a0db554e544d7c595e7c51dee2ec8c2f2c0527c524b0.json",
+        "sha256": "e8c1ecd14c64aad20918a0db554e544d7c595e7c51dee2ec8c2f2c0527c524b0"
+      },
+      "reviewer_task_id": "DAILY-2026-11-19-qianwen"
+    }
+  },
+  "independent_review": {
+    "status": "blocked_invalid_or_incomplete_review",
+    "verified": false
+  },
+  "independent_reviews": {
+    "grok": {
+      "artifact": {
+        "path": "knowledge/results/daily-board/reviews/2026-11-19-grok-313d258bcfa92fa8d8a71f06d020f80c1fb84932617a2b9d5af48c438911041a.json",
+        "sha256": "313d258bcfa92fa8d8a71f06d020f80c1fb84932617a2b9d5af48c438911041a"
+      },
+      "status": "generated_pending_sync"
+    }
+  }
 }
