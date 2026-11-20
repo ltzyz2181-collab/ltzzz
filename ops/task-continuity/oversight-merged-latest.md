@@ -1,8 +1,8 @@
 # Oversight 积压归并（按原 Task ID）
 
 - 来源：`knowledge/results/dispatch/oversight/latest.json`
-- 原始 warning 案例：202
-- 去重后任务：202
+- 原始 warning 案例：211
+- 去重后任务：211
 - 合并掉的重复：0
 - 席位冲突：0
 - 无 Task ID 的无效行：0
@@ -19,7 +19,8 @@
 | ANS-2026-11-02-deepseek | deepseek | engineering_completion_unverified | 1 | 7 | 2026-11-08T15:47:15.408Z |
 | ANS-2026-11-03-deepseek | deepseek | engineering_completion_unverified | 1 | 7 | 2026-11-09T07:39:24.423Z |
 | ANS-2026-11-04-deepseek | deepseek | engineering_completion_unverified | 1 | 7 | 2026-11-10T09:16:07.757Z |
-| ANS-2026-11-18-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 2 | 2026-11-19T01:49:13.495Z |
+| ANS-2026-11-18-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| ANS-2026-11-19-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 2 | 2026-11-20T01:02:20.183Z |
 | AUTO-2026-10-17-health | grok | review_missing | 1 | 2 | 2026-10-23T12:30:09.343Z |
 | AUTO-2026-10-18-health | grok | review_missing | 1 | 3 | 2026-10-24T13:06:19.231Z |
 | AUTO-2026-10-19-health | grok | review_missing | 1 | 4 | 2026-10-25T14:48:17.082Z |
@@ -47,12 +48,13 @@
 | AUTO-2026-11-10-health | grok | engineering_completion_unverified | 1 | 6 | 2026-11-16T07:39:10.756Z |
 | AUTO-2026-11-11-health | grok | revision_required | 1 | 6 | 2026-11-17T10:11:59.033Z |
 | AUTO-2026-11-12-health | grok | engineering_completion_unverified | 1 | 6 | 2026-11-18T11:08:12.779Z |
-| AUTO-2026-11-13-health | grok | engineering_completion_unverified | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| AUTO-2026-11-14-health | grok | revision_required | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| AUTO-2026-11-15-health | grok | engineering_completion_unverified | 1 | 5 | 2026-11-19T01:49:13.495Z |
-| AUTO-2026-11-16-health | grok | revision_required | 1 | 3 | 2026-11-19T01:49:13.495Z |
-| AUTO-2026-11-17-health | grok | revision_required | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| AUTO-2026-11-18-health | grok | review_missing | 1 | 1 | 2026-11-19T01:49:13.495Z |
+| AUTO-2026-11-13-health | grok | engineering_completion_unverified | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| AUTO-2026-11-14-health | grok | revision_required | 1 | 7 | 2026-11-20T01:02:20.183Z |
+| AUTO-2026-11-15-health | grok | engineering_completion_unverified | 1 | 6 | 2026-11-20T01:02:20.183Z |
+| AUTO-2026-11-16-health | grok | revision_required | 1 | 4 | 2026-11-20T01:02:20.183Z |
+| AUTO-2026-11-17-health | grok | revision_required | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| AUTO-2026-11-18-health | grok | review_missing | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| AUTO-2026-11-19-health | grok | engineering_completion_unverified | 1 | 1 | 2026-11-20T01:02:20.183Z |
 | CONTROL-2026-10-18-deepseek | deepseek | blocked_reconcile_existing_attempt | 1 | 3 | 2026-10-24T13:06:19.231Z |
 | CONTROL-2026-10-18-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 3 | 2026-10-24T13:06:19.231Z |
 | CONTROL-2026-11-03-deepseek | deepseek | claim_missing | 1 | 5 | 2026-11-08T15:47:15.408Z |
@@ -71,12 +73,14 @@
 | CONTROL-2026-11-12-doubao | doubao | claim_missing | 1 | 5 | 2026-11-17T10:11:59.033Z |
 | CONTROL-2026-11-13-deepseek | deepseek | claim_missing | 1 | 5 | 2026-11-18T11:08:12.779Z |
 | CONTROL-2026-11-13-doubao | doubao | claim_missing | 1 | 5 | 2026-11-18T11:08:12.779Z |
-| CONTROL-2026-11-14-deepseek | deepseek | claim_missing | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| CONTROL-2026-11-14-doubao | doubao | claim_missing | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| CONTROL-2026-11-17-deepseek | deepseek | claim_missing | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| CONTROL-2026-11-17-doubao | doubao | claim_missing | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| CONTROL-2026-11-18-deepseek | deepseek | claim_missing | 1 | 1 | 2026-11-19T01:49:13.495Z |
-| CONTROL-2026-11-18-doubao | doubao | claim_missing | 1 | 1 | 2026-11-19T01:49:13.495Z |
+| CONTROL-2026-11-14-deepseek | deepseek | claim_missing | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| CONTROL-2026-11-14-doubao | doubao | claim_missing | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| CONTROL-2026-11-17-deepseek | deepseek | claim_missing | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| CONTROL-2026-11-17-doubao | doubao | claim_missing | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| CONTROL-2026-11-18-deepseek | deepseek | claim_missing | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| CONTROL-2026-11-18-doubao | doubao | claim_missing | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| CONTROL-2026-11-19-deepseek | deepseek | claim_missing | 1 | 1 | 2026-11-20T01:02:20.183Z |
+| CONTROL-2026-11-19-doubao | doubao | claim_missing | 1 | 1 | 2026-11-20T01:02:20.183Z |
 | DAILY-2026-10-17-deepseek | deepseek | revision_required | 1 | 2 | 2026-10-23T12:30:09.343Z |
 | DAILY-2026-10-17-doubao | doubao | review_missing | 1 | 2 | 2026-10-23T12:30:09.343Z |
 | DAILY-2026-10-19-deepseek | deepseek | revision_required | 1 | 4 | 2026-10-25T14:48:17.082Z |
@@ -149,24 +153,27 @@
 | DAILY-2026-11-12-deepseek | deepseek | revision_required | 1 | 6 | 2026-11-18T11:08:12.779Z |
 | DAILY-2026-11-12-doubao | doubao | revision_required | 1 | 6 | 2026-11-18T11:08:12.779Z |
 | DAILY-2026-11-12-qianwen | qianwen | review_missing | 1 | 6 | 2026-11-18T11:08:12.779Z |
-| DAILY-2026-11-13-deepseek | deepseek | revision_required | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-13-doubao | doubao | revision_required | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-13-qianwen | qianwen | review_missing | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-14-deepseek | deepseek | revision_required | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-14-doubao | doubao | revision_required | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-14-qianwen | qianwen | review_missing | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-15-deepseek | deepseek | review_missing | 1 | 5 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-15-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 5 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-15-qianwen | qianwen | review_missing | 1 | 5 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-16-deepseek | deepseek | revision_required | 1 | 3 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-16-doubao | doubao | revision_required | 1 | 3 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-16-qianwen | qianwen | review_missing | 1 | 3 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-17-deepseek | deepseek | revision_required | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-17-doubao | doubao | revision_required | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-17-qianwen | qianwen | review_missing | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-18-deepseek | deepseek | revision_required | 1 | 1 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-18-doubao | doubao | review_missing | 1 | 1 | 2026-11-19T01:49:13.495Z |
-| DAILY-2026-11-18-qianwen | qianwen | blocked_reconcile_existing_attempt | 1 | 1 | 2026-11-19T01:49:13.495Z |
+| DAILY-2026-11-13-deepseek | deepseek | revision_required | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| DAILY-2026-11-13-doubao | doubao | revision_required | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| DAILY-2026-11-13-qianwen | qianwen | review_missing | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| DAILY-2026-11-14-deepseek | deepseek | revision_required | 1 | 7 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-14-doubao | doubao | revision_required | 1 | 7 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-14-qianwen | qianwen | review_missing | 1 | 7 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-15-deepseek | deepseek | review_missing | 1 | 6 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-15-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 6 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-15-qianwen | qianwen | review_missing | 1 | 6 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-16-deepseek | deepseek | revision_required | 1 | 4 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-16-doubao | doubao | revision_required | 1 | 4 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-16-qianwen | qianwen | review_missing | 1 | 4 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-17-deepseek | deepseek | revision_required | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-17-doubao | doubao | revision_required | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-17-qianwen | qianwen | review_missing | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-18-deepseek | deepseek | revision_required | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-18-doubao | doubao | review_missing | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-18-qianwen | qianwen | blocked_reconcile_existing_attempt | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-19-deepseek | deepseek | review_missing | 1 | 1 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-19-doubao | doubao | blocked_reconcile_existing_attempt | 1 | 1 | 2026-11-20T01:02:20.183Z |
+| DAILY-2026-11-19-qianwen | qianwen | review_missing | 1 | 1 | 2026-11-20T01:02:20.183Z |
 | QIANWEN-RETURN-2026-10-16 | qianwen | external_return_claim_missing | 1 | 1 | 2026-10-22T13:27:01.590Z |
 | QIANWEN-RETURN-2026-10-17 | qianwen | external_return_claim_missing | 1 | 2 | 2026-10-23T12:30:09.343Z |
 | QIANWEN-RETURN-2026-10-18 | qianwen | external_return_claim_missing | 1 | 3 | 2026-10-24T13:06:19.231Z |
@@ -195,12 +202,13 @@
 | QIANWEN-RETURN-2026-11-10 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-16T07:39:10.756Z |
 | QIANWEN-RETURN-2026-11-11 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-17T10:11:59.033Z |
 | QIANWEN-RETURN-2026-11-12 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-18T11:08:12.779Z |
-| QIANWEN-RETURN-2026-11-13 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| QIANWEN-RETURN-2026-11-14 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-19T01:49:13.495Z |
-| QIANWEN-RETURN-2026-11-15 | qianwen | external_return_claim_missing | 1 | 5 | 2026-11-19T01:49:13.495Z |
-| QIANWEN-RETURN-2026-11-16 | qianwen | external_return_claim_missing | 1 | 3 | 2026-11-19T01:49:13.495Z |
-| QIANWEN-RETURN-2026-11-17 | qianwen | external_return_claim_missing | 1 | 2 | 2026-11-19T01:49:13.495Z |
-| QIANWEN-RETURN-2026-11-18 | qianwen | external_return_claim_missing | 1 | 1 | 2026-11-19T01:49:13.495Z |
+| QIANWEN-RETURN-2026-11-13 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-19T09:52:59.437Z |
+| QIANWEN-RETURN-2026-11-14 | qianwen | external_return_claim_missing | 1 | 7 | 2026-11-20T01:02:20.183Z |
+| QIANWEN-RETURN-2026-11-15 | qianwen | external_return_claim_missing | 1 | 6 | 2026-11-20T01:02:20.183Z |
+| QIANWEN-RETURN-2026-11-16 | qianwen | external_return_claim_missing | 1 | 4 | 2026-11-20T01:02:20.183Z |
+| QIANWEN-RETURN-2026-11-17 | qianwen | external_return_claim_missing | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| QIANWEN-RETURN-2026-11-18 | qianwen | external_return_claim_missing | 1 | 2 | 2026-11-20T01:02:20.183Z |
+| QIANWEN-RETURN-2026-11-19 | qianwen | external_return_claim_missing | 1 | 1 | 2026-11-20T01:02:20.183Z |
 | REAL-HIRE-20261021-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 6 | 2026-10-27T13:57:47.134Z |
 | REAL-HIRE-20261022-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 7 | 2026-10-28T10:29:41.203Z |
 | REAL-HIRE-20261023-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 7 | 2026-10-29T15:51:36.386Z |
@@ -210,4 +218,5 @@
 | REAL-HIRE-20261102-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 7 | 2026-11-08T15:47:15.408Z |
 | REAL-HIRE-20261103-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 7 | 2026-11-09T07:39:24.423Z |
 | REAL-HIRE-20261104-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 7 | 2026-11-10T09:16:07.757Z |
-| REAL-HIRE-20261118-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 2 | 2026-11-19T01:49:13.495Z |
+| REAL-HIRE-20261118-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 3 | 2026-11-20T01:02:20.183Z |
+| REAL-HIRE-20261119-CLAUDE-01 | gpt | blocked_reconcile_existing_attempt | 1 | 2 | 2026-11-20T01:02:20.183Z |
