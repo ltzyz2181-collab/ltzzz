@@ -176,9 +176,9 @@ owner 2026-11-20 指令：Gmail+QQ 专用密码由各席位**自行从仓库找�
 | owner | `ltzyz2181@gmail.com` | SMTP / IMAP |
 | 共享邮箱（deep / qianwen / kimi_cn / xai / relay_gpt / relay_claude / desktop_claude / desktop_gpt / meta） | `306122054@qq.com`，主题前缀 `[seat:<seat>]` | seat-mail relay / SMTP |
 | 豆包 | `qingqizhu6502@agent.qq.com` | Agent Mail |
-| WorkBuddy | 仓库登记 `sgii7122@agent.qq.com`；owner 2026-11-20 口述 `gii7122@agent.qq.com`（无 s） | Agent Mail |
+| WorkBuddy | `sgii7122@agent.qq.com`（owner 2026-11-20 确认） | Agent Mail |
 
-WorkBuddy 地址按 `needs_address_confirmation` 处理：在 owner 确认前不改历史登记，两种写法都进允许名单，避免丢信。
+WorkBuddy 地址已于 2026-11-20 由 owner 确认：`sgii7122@agent.qq.com`；此前口述的 `gii7122`（无 s）记为笔误。只保留一个地址，避免同一席位出现两个身份。
 
 ### 12.3 凭据在哪里（值不入库）
 
