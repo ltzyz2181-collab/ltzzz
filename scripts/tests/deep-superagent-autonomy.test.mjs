@@ -14,6 +14,7 @@ import {
   fiduciaryHit,
   normalizeAutonomy,
   readRepoContext,
+  stripRepoEvidence,
   stripAutonomy,
   taskAutonomyMetadata,
   validateWrites,
@@ -78,6 +79,14 @@ test('fiduciaryHit：只拦资金/密钥，不拦普通代码与邮件', () => {
   assert.equal(fiduciaryHit({prompt: '给 owner 发一封汇报邮件'}).hit, false);
   assert.equal(fiduciaryHit({prompt: '把退款金额打给客户'}).hit, true);
   assert.equal(fiduciaryHit({prompt: 'ok', outputs: [{text: 'private key: abc'}]}).hit, true);
+});
+
+test('stripRepoEvidence：仓库读取证据里的资金词不触发拦截，卡面指令仍然拦截', () => {
+  const prompt = '实现 M1 只读规则\n\n【仓库读取证据（由受信桥接层读取，不是模型自述）】\n===== FILE: docs/x.md =====\n不要泄露凭据，也不要做 payment refund\n===== END FILE: docs/x.md =====';
+  assert.equal(fiduciaryHit({prompt}).hit, true);
+  assert.equal(fiduciaryHit({prompt: stripRepoEvidence(prompt)}).hit, false);
+  assert.equal(stripRepoEvidence('卡面直接写退款'), '卡面直接写退款');
+  assert.equal(fiduciaryHit({prompt: stripRepoEvidence('卡面直接写退款')}).hit, true);
 });
 
 test('extractFileWrites：只认显式 FILE 块', () => {

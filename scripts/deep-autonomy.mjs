@@ -184,6 +184,15 @@ export function applyRepoContext(body, repoContext) {
   return {...body, prompt: `${body.prompt}${repoContext.text}`};
 }
 
+// 仓库读取证据是“参考数据”，不是授权也不是执行指令。它由受信桥接层注入到 prompt 末尾，
+// 因此资金域拦截只看卡面指令与模型输出；否则任何提到 payment/凭据 的设计文档都会误杀普通工程卡。
+export const REPO_EVIDENCE_MARKER = '\n\n【仓库读取证据';
+export function stripRepoEvidence(prompt = '') {
+  const text = String(prompt || '');
+  const at = text.indexOf(REPO_EVIDENCE_MARKER);
+  return at < 0 ? text : text.slice(0, at);
+}
+
 export function fiduciaryHit({prompt = '', outputs = []} = {}) {
   const text = [prompt, ...outputs.map((output) => output?.text || '')].join('\n');
   const match = FIDUCIARY_RE.exec(text);
@@ -326,7 +335,8 @@ export async function executeAutonomy({
   ciIntervalMs = CI_INTERVAL_MS,
 } = {}) {
   if (!autonomy || autonomy.mode !== 'auto') return {status: 'not_requested', revision: AUTONOMY_REVISION};
-  const fiduciary = fiduciaryHit({prompt: job?.prompt, outputs});
+  // 只扫卡面指令与模型输出；注入的仓库读取证据按数据处理。
+  const fiduciary = fiduciaryHit({prompt: stripRepoEvidence(job?.prompt), outputs});
   if (fiduciary.hit) {
     return {status: 'blocked_fiduciary', revision: AUTONOMY_REVISION, token: fiduciary.token, actions: [], needs_gpt_decision: true};
   }
