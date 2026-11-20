@@ -55,6 +55,37 @@ async function callJson(url, {method = 'GET', token, body, timeoutMs = 20000, fe
   }
 }
 
+async function diagnoseInference({apiToken, accountId, model, fetchImpl = fetch}) {
+  const out = {model: model || null, run: null, meta_models: []};
+  if (!apiToken || !accountId) return out;
+  try {
+    const runRes = await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${encodeURIComponent(model || '@cf/meta/llama-3.1-8b-instruct-fp8')}`, {
+      method: 'POST',
+      headers: {Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json'},
+      body: JSON.stringify({messages: [{role: 'user', content: 'ping'}], max_tokens: 8}),
+    });
+    const text = await runRes.text();
+    let body = null; try { body = JSON.parse(text); } catch { body = null; }
+    out.run = {
+      http: runRes.status,
+      success: body ? body.success !== false : null,
+      error: String(body?.errors?.[0]?.message || (body ? '' : text.slice(0, 200)) || '').slice(0, 300) || null,
+      error_code: body?.errors?.[0]?.code ?? null,
+    };
+  } catch (error) {
+    out.run = {http: 0, error: String(error?.message || error).slice(0, 200)};
+  }
+  try {
+    const listRes = await fetchImpl(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/models/search?search=${encodeURIComponent('meta llama')}`, {headers: {Authorization: `Bearer ${apiToken}`}});
+    const body = await listRes.json().catch(() => null);
+    const items = Array.isArray(body?.result) ? body.result : [];
+    out.meta_models = items.map((item) => item?.name || item?.id).filter(Boolean).slice(0, 12);
+    out.meta_models_http = listRes.status;
+  } catch (error) {
+    out.meta_models_http = 0;
+  }
+  return out;
+}
 export async function probe({workerUrl, apiToken, accountId, timeoutMs = 20000, fetchImpl = fetch, now = new Date()} = {}) {
   const resolved = await resolveWorkerUrl({workerUrl, apiToken, accountId, fetchImpl});
   const token = process.env.META_WORKER_TOKEN || (apiToken ? createHmac('sha256', apiToken).update('ltzzz-meta-hosted-control-v1').digest('hex') : '');
@@ -91,6 +122,9 @@ export async function probe({workerUrl, apiToken, accountId, timeoutMs = 20000, 
       const output = String(probeRes.json?.output || '').toLowerCase();
       echoOk = output.includes(nonce);
       receipt.boundaries.model_calls = probeRes.http === 200 ? 1 : 0;
+      if (probeRes.http !== 200 && apiToken && accountId) {
+        receipt.checks.inference_diagnosis = await diagnoseInference({apiToken, accountId, model: health.json?.model, fetchImpl});
+      }
       receipt.evidence = {
         request_nonce: nonce,
         echo_matched: echoOk,

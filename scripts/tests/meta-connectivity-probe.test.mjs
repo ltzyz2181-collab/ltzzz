@@ -71,3 +71,21 @@ test('probe reports unauthorized deployments without calling the model', async (
   assert.equal(modelCalls, 0);
   assert.equal(receipt.boundaries.model_calls, 0);
 });
+test('probe records sanitized upstream diagnostics when inference fails', async () => {
+  const apiToken = 'cf_secret_not_in_receipt';
+  const fakeFetch = async (url) => {
+    const target = String(url);
+    if (target.endsWith('/health')) return json(200, {service: 'ltzzz-meta-hosted', auth_configured: true, ai_binding: true, model: '@cf/meta/dead-model'});
+    if (target.endsWith('/auth-check')) return json(200, {authorized: true});
+    if (target.endsWith('/task')) return json(502, {error: 'upstream_inference_failed'});
+    if (target.includes('/ai/run/')) return json(404, {success: false, errors: [{code: 5007, message: 'No such model'}]});
+    if (target.includes('/ai/models/search')) return json(200, {result: [{name: '@cf/meta/llama-3.1-8b-instruct'}]});
+    return json(404, {});
+  };
+  const receipt = await probe({workerUrl: 'https://ltzzz-meta-hosted.example.workers.dev', apiToken, accountId: 'acct', fetchImpl: fakeFetch});
+  assert.equal(receipt.verdict, 'deployed_inference_failed');
+  assert.equal(receipt.checks.inference_diagnosis.run.http, 404);
+  assert.match(receipt.checks.inference_diagnosis.run.error, /No such model/);
+  assert.deepEqual(receipt.checks.inference_diagnosis.meta_models, ['@cf/meta/llama-3.1-8b-instruct']);
+  assert.ok(!JSON.stringify(receipt).includes(apiToken), 'credential must not appear in diagnostics');
+});
