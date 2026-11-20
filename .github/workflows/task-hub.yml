@@ -49,13 +49,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/task-hub.mjs status --out knowledge/results/task-hub/latest.json
 
-      - name: 提交快照
+      - name: 提交快照（在最新 main 上重建，避免并发冲突）
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "ltzzz-task-hub"
-          git config user.email "bot@ltzzz.local"
-          git add knowledge/results/task-hub/latest.json
-          if git diff --staged --quiet; then
-            echo "no changes"; exit 0
-          fi
-          git commit -m "task-hub: 任务中心快照 $(TZ=Asia/Shanghai date +%F' '%H:%M)"
-          node tools/push-receipt-commit.mjs
+          git config --global user.name "ltzzz-task-hub"
+          git config --global user.email "bot@ltzzz.local"
+          node tools/push-generated-receipt.mjs \
+            --path knowledge/results/task-hub/latest.json \
+            --message "task-hub: 任务中心快照 $(TZ=Asia/Shanghai date +%F' '%H:%M)" \
+            -- node scripts/task-hub.mjs status --out knowledge/results/task-hub/latest.json
