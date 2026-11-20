@@ -1,7 +1,7 @@
 name: Daily autoloop (claim, execute, digest)
 
 # 每日自动闭环：回收过期租约 → 领取显式 opt-in 的低风险任务 → 执行器白名单运行 →
-# 自动开 PR（路径白名单内且 CI 成功才自动合并）→ 中转裁决建议 → 汇总邮件。
+# 自动开 PR（路径白名单内且 CI 成功才自动合并）→ 普通事项由中转 GPT 直接裁决（binding），保留事项上抛 GPT → 汇总邮件。
 # 安全默认：AUTOLOOP_ENABLED 不是 'true' 时只做计划，不领取、不执行、不发信。
 
 on:
