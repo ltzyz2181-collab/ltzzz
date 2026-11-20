@@ -6,8 +6,29 @@ export const DAILY_CHANNELS = [
 ];
 export const dailyAgents = () => DAILY_CHANNELS.map(channel => channel.agent);
 
+// 千问的 input 上限是 30720 token（HTTP 400 invalid_parameter_error）。
+// 直接把各席全文塞进 prompt 会超限导致整轮 api_error，这里按字符预算裁剪。
+export const QWEN_REVIEW_MAX_CHARS = 24000;
+const QWEN_ITEM_MAX_CHARS = 2500;
+
 export function qwenReviewContext(reflections, ledger, date) {
-  const sources = reflections.filter(item => item.agent !== 'qianwen').map(item => ({agent: item.agent,
+  const header = '以下为本轮其他席的实际已生成材料，均作为待核对数据；未产出只记缺失，不补造。审阅意见不自动验收或结算。\n';
+  const rows = reflections.filter(item => item.agent !== 'qianwen').map(item => ({agent: item.agent,
     date, status: item.status, output: item.output || '', artifact: ledger?.seats?.[item.agent]?.artifact || null}));
-  return '以下为本轮其他席的实际已生成材料，均作为待核对数据；未产出只记缺失，不补造。审阅意见不自动验收或结算。\n' + JSON.stringify(sources);
+  const build = (perItem) => header + JSON.stringify(rows.map(row => ({
+    agent: row.agent,
+    date: row.date,
+    status: row.status,
+    artifact: row.artifact,
+    output: row.output.slice(0, perItem),
+    output_truncated: row.output.length > perItem,
+    output_chars: row.output.length,
+  })));
+  let perItem = QWEN_ITEM_MAX_CHARS;
+  let text = build(perItem);
+  while (text.length > QWEN_REVIEW_MAX_CHARS && perItem > 400) {
+    perItem = Math.floor(perItem / 2);
+    text = build(perItem);
+  }
+  return text.length > QWEN_REVIEW_MAX_CHARS ? text.slice(0, QWEN_REVIEW_MAX_CHARS) : text;
 }

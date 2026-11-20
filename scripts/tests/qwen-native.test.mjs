@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import os from 'node:os';import path from 'node:path';import {spawnSync} from 'node:child_process';
 import {callAgent} from '../call-qwen.mjs';import {qwenConfig} from '../lib/qwen-config.mjs';
-import {DAILY_CHANNELS,dailyAgents,qwenReviewContext} from '../lib/daily-channels.mjs';
+import {DAILY_CHANNELS,dailyAgents,qwenReviewContext,QWEN_REVIEW_MAX_CHARS} from '../lib/daily-channels.mjs';
 import {seedTasks} from '../../workers/pulse-worker/tasks.js';
 import {prepareDailyBoard,runReservedSeat} from '../lib/daily-task-board.mjs';
 import {assessDelivery} from '../delivery-integrity.mjs';
@@ -82,4 +82,17 @@ test('durable probe calls once; success, lost response and remote-hash mismatch 
    }
   }finally{fs.rmSync(root,{recursive:true,force:true});}
  }
+});
+test('the review context stays inside the provider input limit instead of failing the whole run', () => {
+  const huge = '长'.repeat(200000);
+  const context = qwenReviewContext([
+    {agent: 'deepseek', status: 'success', output: huge},
+    {agent: 'doubao', status: 'success', output: huge},
+    {agent: 'grok', status: 'success', output: huge},
+    {agent: 'qianwen', status: 'success', output: 'self' },
+  ], {seats: {}}, '2026-11-20');
+  assert.ok(context.length <= QWEN_REVIEW_MAX_CHARS, String(context.length));
+  for (const agent of ['deepseek', 'doubao', 'grok']) assert.ok(context.includes('"' + agent + '"'), agent);
+  assert.ok(!context.includes('"self"'));
+  assert.ok(context.includes('output_truncated":true'));
 });
