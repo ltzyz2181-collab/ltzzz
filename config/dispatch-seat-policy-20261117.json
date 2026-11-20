@@ -1,72 +1,73 @@
 {
- "schema": "ltzzz.dispatch.seat-policy.v1",
- "effective_from": "2026-11-17",
- "authority": "owner 2026-11-17 原话：重要任务叫 deep 多派，中转克劳德和 GPT",
- "authority_kind": "owner_verbal",
- "principle": "重要任务默认多席派发：Deep 主办执行，Claude 中转与 GPT 中转各自独立复核；不是所有任务都多派，小改仍单席。",
- "importance_levels": {
-  "high": {
-   "tier": "multi_seat",
-   "seats": [
-    {
-     "seat": "deep",
-     "role": "primary_executor",
-     "required": true
+  "schema": "ltzzz.dispatch.seat-policy.v1",
+  "effective_from": "2026-11-17",
+  "authority": "owner 2026-11-17 原话：重要任务叫 deep 多派，中转克劳德和 GPT",
+  "authority_kind": "owner_verbal",
+  "principle": "重要任务默认多席派发：Deep 主办执行，Claude 中转与 GPT 中转各自独立复核；不是所有任务都多派，小改仍单席。",
+  "importance_levels": {
+    "high": {
+      "tier": "multi_seat",
+      "seats": [
+        {
+          "seat": "deep",
+          "role": "primary_executor",
+          "required": true
+        },
+        {
+          "seat": "claude-relay",
+          "role": "independent_review",
+          "required": true
+        },
+        {
+          "seat": "gpt-relay",
+          "role": "independent_review",
+          "required": true
+        }
+      ]
     },
-    {
-     "seat": "claude-relay",
-     "role": "independent_review",
-     "required": true
+    "medium": {
+      "tier": "single_seat_with_self_check",
+      "seats": [
+        {
+          "seat": "deep",
+          "role": "primary_executor",
+          "required": true
+        }
+      ]
     },
-    {
-     "seat": "gpt-relay",
-     "role": "independent_review",
-     "required": true
+    "low": {
+      "tier": "inline",
+      "seats": []
     }
-   ]
   },
-  "medium": {
-   "tier": "single_seat_with_self_check",
-   "seats": [
-    {
-     "seat": "deep",
-     "role": "primary_executor",
-     "required": true
-    }
-   ]
-  },
-  "low": {
-   "tier": "inline",
-   "seats": []
-  }
- },
- "high_importance_triggers": [
-  "fund",
-  "payment",
-  "refund",
-  "signature",
-  "safe_multisig",
-  "deploy",
-  "credentials",
-  "compliance",
-  "customer_notice"
- ],
- "hard_boundaries": [
-  "资金、放款、退款终判、签名、5 签 Safe 仍只由 GPT 决策席/人工裁决，中转模型只出意见不裁决",
-  "GPT 中转无权裁决；它是复核席，结论必须回给 GPT 本人或其裁决记录",
-  "重要任务派单前必须跑 lessons_considered（preflight 强制项）"
- ],
- "card_requirements": {
-  "required_fields": [
-   "task_id",
-   "package_id",
-   "prompt",
-   "data_classification",
-   "platform",
-   "importance",
-   "seats"
+  "high_importance_triggers": [
+    "fund",
+    "payment",
+    "refund",
+    "signature",
+    "safe_multisig",
+    "deploy",
+    "credentials",
+    "compliance",
+    "customer_notice"
   ],
-  "seats_must_list_required_seats": true,
-  "no_seat_may_claim_decision_authority": true
- }
+  "hard_boundaries": [
+    "资金、放款、退款终态、签名、私钥、钱包/五签 Safe 与凭据仍只由 GPT 决策席/人工裁决",
+    "中转席对非保留家族事项可以独立裁决；不再要求结论必须回给 GPT 本人",
+    "重要任务派单前必须跑 lessons_considered（preflight 强制项）"
+  ],
+  "card_requirements": {
+    "required_fields": [
+      "task_id",
+      "package_id",
+      "prompt",
+      "data_classification",
+      "platform",
+      "importance",
+      "seats"
+    ],
+    "seats_must_list_required_seats": true,
+    "no_seat_may_claim_decision_authority": true
+  },
+  "authority_note_20261119": "owner 2026-11-19：其他限制全放开，中转 AI 不能限制；只保留资金/退款终态/签名/私钥/钱包/凭据六族给 GPT"
 }

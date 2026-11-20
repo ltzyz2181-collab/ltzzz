@@ -18,6 +18,16 @@ export const MAX_WAIT_MS=480000;
 // 两类卡（task/decision）各 3 张，runQueue 的总量上限即 6 张。
 export const MAX_NEW_CARDS_PER_KIND=3;
 export const MAX_NEW_CARDS=MAX_NEW_CARDS_PER_KIND*2;
+export const MAIL_ALLOWLIST_PATH='config/mail-allowlist-20261119.json';
+// owner 2026-11-19：允许名单 = 环境变量（逗号分隔）+ 仓库配置；两者都为空时返回 null，
+// 由 normalizeAutonomy 接受最多 8 个合法地址。只比较地址，不比较席位名。
+export function mailAllowlist(env={},root=process.cwd()){
+ const configured=[];
+ try{const cfg=JSON.parse(fs.readFileSync(path.join(root,MAIL_ALLOWLIST_PATH),'utf8'));for(const entry of cfg.addresses||[])configured.push(typeof entry==='string'?entry:entry.address);}catch{}
+ const fromEnv=String(env.LTZZZ_MAIL_ALLOWLIST||env.AUTOLOOP_MAIL_TO||'').split(',');
+ const list=[...fromEnv,...configured].map(value=>String(value||'').trim().toLowerCase()).filter(Boolean);
+ return list.length?[...new Set(list)]:null;
+}
 const REPOSITORY='ltzyz2181-collab/ltzzz';
 const SHA=/^[a-f0-9]{64}$/;
 const COMMIT=/^[a-f0-9]{40}$/;
@@ -347,7 +357,7 @@ export async function main({env=process.env}={}){
    const body=JSON.parse(bytes.toString('utf8'));
    if(card.kind==='task'){
     assertCardContract(body);
-    const parsed=parseTaskCard(body,{allowedMailTo:env.AUTOLOOP_MAIL_TO||null});
+    const parsed=parseTaskCard(body,{allowedMailTo:mailAllowlist(env)});
     const repoContext=parsed.autonomy?.repo_read?.length?readRepoContext(process.cwd(),parsed.autonomy.repo_read):null;
     cards.push({...card,body,autonomy:parsed.autonomy,repo_context:repoContext,card_sha256:createHash('sha256').update(bytes).digest('hex')});
    }else{
@@ -357,7 +367,7 @@ export async function main({env=process.env}={}){
   }
   const baseTree=execFileSync('git',['rev-parse',context.source_commit+'^{tree}'],{encoding:'utf8'}).trim();
   const store=new DeepQueueLatchStore({repository:REPOSITORY,token:env.GITHUB_TOKEN,baseCommit:context.source_commit,baseTree});
-  report.items=await runQueue({cards,source_commit:context.source_commit,token:env.LTZZZ_AGENT_TOKEN,store,allowedMailTo:env.AUTOLOOP_MAIL_TO||null,onObservation:items=>{report.items=items;save();}});
+  report.items=await runQueue({cards,source_commit:context.source_commit,token:env.LTZZZ_AGENT_TOKEN,store,allowedMailTo:mailAllowlist(env),onObservation:items=>{report.items=items;save();}});
   report.status=report.items.some(x=>x.status==='blocked')?'queue_blocked':report.items.some(x=>x.status==='pending_reconcile_get_only')?'queue_pending_reconciliation':'queue_results_verified';
   if(report.status!=='queue_results_verified')process.exitCode=1;
  }catch(error){report.status='queue_blocked';report.error=safeError(error);process.exitCode=1;}

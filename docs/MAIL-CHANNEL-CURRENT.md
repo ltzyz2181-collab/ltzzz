@@ -148,3 +148,11 @@
 
 如实边界：邮件成功只证明 SMTP 接收（`250`）并记录了 `Message-ID`；不等于收件人已读，
 也不等于任何业务验收或部署完成。
+
+## 11. 2026-11-19 AI 互发邮件与全自动收发
+
+- owner 指令：邮件收、读、发全部自动；各 AI 能相互发邮件；各通道放开限制。
+- 允许名单：`config/mail-allowlist-20261119.json`，登记真实存在的三个地址（owner Gmail、共享 QQ 邮箱、Agent Mail）；每次最多 8 个收件人。
+- 席位路由：发给共享邮箱时主题带 `[seat:<seat>]`；收信侧按前缀归属，不丢信、不伪造席位。
+- 代码：`scripts/deep-autonomy.mjs` 的 `mail.to` 从「只能 1 个且必须等于 `AUTOLOOP_MAIL_TO`」改为「1–8 个、全部命中合并允许名单」；`scripts/run-deep-superagent-queue.mjs` 的 `mailAllowlist()` 合并环境变量与配置文件。
+- 未变：SMTP `250` 仍只代表服务器接受投递，不等于已读；回执仍不落正文、完整地址或授权码。

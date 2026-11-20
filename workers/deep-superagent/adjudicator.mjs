@@ -1,15 +1,15 @@
-// Bounded relay adjudication stage (owner authorization 2026-11-17).
-// The relay GPT seat may adjudicate routine, low-risk, reversible internal-repo
-// items only. Funds, signing, wallet, Safe, five-signature, disbursement, loan,
-// credential and production-write decisions are structurally short-circuited
-// before any relay call. Funds items stay with the GPT decision seat; the
-// five-signature wallet stays with the owner/multisig and is never escalated to
-// the GPT seat. This module is pure: no network, no storage, no side effects, so
-// the rules can be tested without provider calls.
+// Bounded relay adjudication stage (owner authorization 2026-11-19).
+// The relay GPT seat may adjudicate every matter except the six owner-retained
+// families: funds, refund terminal decisions, signing, private keys, wallet
+// operations and credentials. Those are structurally short-circuited before any
+// relay call. The five-signature wallet stays with the owner/multisig and is
+// never escalated to the GPT seat. Production writes, releases and deploys are
+// delegated and no longer short-circuited. This module is pure: no network, no
+// storage, no side effects, so the rules can be tested without provider calls.
 
 import scopeRegistry from '../../config/relay-adjudication-scopes.json' with {type: 'json'};
 
-export const ADJUDICATION_REVISION = 'relay-bounded-adjudication-v2';
+export const ADJUDICATION_REVISION = 'relay-bounded-adjudication-v3';
 export const DISPOSITIONS = ['approve_in_scope', 'conditional_approve', 'return_for_revision', 'needs_decision'];
 
 // Owner scope: everything except the important/funds family is delegated.
@@ -24,7 +24,6 @@ const FUND_FAMILY = [
   {family: 'wallet_or_safe_ops', pattern: /钱包|多签|safe\b|wallet|multisig/i},
   {family: 'signing', pattern: /签名|私钥|助记词|signer|private[ _-]?key|sign(?:ed|ing)?\b/i},
   {family: 'credential_access', pattern: /凭据|密钥|token\b|secret\b|password|credential/i},
-  {family: 'production_write', pattern: /生产写|生产部署|production write|production deploy|发布|上线|上架|投产|正式环境|生产环境|灰度发布|灰度|切流|推全|\bdeploy(?:ment|ed|ing)?\b/i},
 ];
 
 export function fundFamilyHit({task_id = '', prompt = '', outputs = []} = {}) {
@@ -144,7 +143,7 @@ export function adjudicationPrompt({ task_id, input_sha256, input_text }) {
   const scopeLines = ADJUDICATION_SCOPES.map(scope => `${scope.scope_ref}: ${scope.description}`).join(' | ');
   const body = [
     'You are the bounded relay adjudicator for the LTZZZ Deep Superagent. You decide routine, low-risk, reversible internal-repo items only.',
-    'Owner delegation excludes the funds and signing family: funding moves, purchases, subscriptions, billing, disbursement, loans, refunds, wallet, Safe, five-signature, signing, credentials, production writes, release/publish/go-live.',
+    'Owner delegation excludes only the funds family and the key/signing families: funding moves, purchases, subscriptions, billing, disbursement, loans, refund terminal decisions, wallet, Safe, five-signature, signing, private keys, credentials. Production writes, releases and deploys are delegated.',
     'That family is already short-circuited before you are called; never approve it here. Five-signature items never reach you and belong to the owner/multisig.',
     'You cannot execute anything, cannot merge, cannot deploy, cannot claim acceptance.',
     'Return ONLY JSON with exactly these keys: disposition, reason, task_id, input_sha256, and the fields required by your disposition.',

@@ -2,6 +2,17 @@
 
 生效：2026-11-05。来源为本次真实用户会话，不是邮件或转发材料。机器记录见 [owner-authority-20261105.json](../config/owner-authority-20261105.json)。
 
+## 2026-11-19 owner 最新指令（覆盖此前所有非保留家族限制）
+
+owner 原话：**“其他限制全放开 中转AI也不能限制 不要这么多限制 让deep 团队和各ai 跑通 邮件收读取全部和发 必须自动发 各ai 都能相互发邮件 和各通道都要放开限制 …… 资金、退款终态、签名、私钥、钱包、凭据 仍归 GPT 决策席 其他以后裁决一律不能限制”**。
+
+- **只保留六个家族给 GPT 决策席**：资金、退款终态、签名、私钥/助记词、钱包（含五签 Safe）、凭据/Secrets。
+- **其余不再设裁决门**：仓库读取、代码修改、PR、CI、合并、标准部署、邮件收发、AI 互发邮件、中转模型选择与请求长度、非保留家族的中转裁决。
+- **中转 AI 解禁**：`config/relay-seat-policy.json` 的 `long_context_or_batch_only`、短请求禁止与 4096 token 下限改为 `unrestricted`；余额下限仍属资金保护，保持。
+- **邮件全自动**：`config/mail-allowlist-20261119.json` 登记真实存在的 owner 邮箱、共享 QQ 邮箱与 Agent Mail；每次最多 8 个收件人，支持 AI 与 AI 互相发信。
+- **仍不放开的是凭据值本身**：token、授权码、密码不打印、不落仓库、不进日志；工作流与处理凭据的脚本可工程修改，但不得把凭据值写进任何可见产物。
+
+机器记录：[owner-authority-20261119.json](../config/owner-authority-20261119.json)、[deep-autonomy-20261119.json](../config/deep-autonomy-20261119.json)、[mail-allowlist-20261119.json](../config/mail-allowlist-20261119.json)、[relay-seat-policy.json](../config/relay-seat-policy.json)、[relay-adjudication-scopes.json](../config/relay-adjudication-scopes.json)。
 ## 部署自动化重申（2026-11-18，owner 原话“有限制团队自动化部署的指令全部放开”）
 
 工程类合并与部署不再等 GPT 裁决、不再等中转席复核：CI 全绿即自动合入 main 并触发对应 `deploy-*.yml`，部署后必须回读 health 与写入部署回执（`knowledge/results/...`），未回读记为 unknown。仍被硬拒的是资金、放款、退款语义、钱包/Safe、签名、凭据访问与“带资金效果的生产写”；A0/A2/A3/publisher/pi-cloud 的 `automatic_deploy=false` 属阶段级 fail-closed 不变量，翻转会让校验器抛错，因此保持不动。机器记录见 [deploy-automation-authority-20261117.json](../config/deploy-automation-authority-20261117.json) 的 `owner_reaffirmation` 字段。

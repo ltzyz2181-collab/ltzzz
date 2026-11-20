@@ -8,8 +8,8 @@
 //   4) mail       —— 用模型输出或卡面正文，经既有 send-mail.py 发信并留回执。
 //
 // 边界（仍然保留，不扩大）：
-//   - 资金、签名、退款终态、私钥/助记词/凭据、Secrets、owner 授权文件不自动执行；
-//     这些命中后保持 needs_gpt_decision，由 GPT 席裁决。
+//   - owner 2026-11-19 只保留六个家族给 GPT 决策席：资金、退款终态、签名、私钥/助记词、钱包、凭据/Secrets。
+//     其余工程动作（读仓库、改代码、部署、邮件、中转）不再逐项裁决。
 //   - 模型输出永远不会被当作可执行代码直接运行；只接受受限的整文件写入块。
 //   - 所有动作都写公开回执；不落邮件正文、不落凭据、不落客户输入。
 import fs from 'node:fs';
@@ -27,6 +27,19 @@ export const FIDUCIARY_RE = /(?:私钥|助记词|助记码|密钥|凭据|转账|
 const ID = /^[a-z0-9.][a-z0-9._/-]{0,200}$/i;
 const WORKFLOW = /^[a-z0-9][a-z0-9-]{0,80}\.yml$/;
 const EMAIL = /^[^\s@,]{1,160}@[^\s@,]{1,160}\.[A-Za-z]{2,}$/;
+const MAIL_RECIPIENT_LIMIT = 8;
+const allowlistSet = (value) => new Set((Array.isArray(value) ? value : String(value || '').split(','))
+  .map((entry) => String(entry).trim().toLowerCase())
+  .filter(Boolean));
+// 收件人按小写去重，但保留第一次出现的原始大小写，收件人看到的口径不变。
+const uniqueAddresses = (list) => {
+  const seen = new Map();
+  for (const addr of list) {
+    const key = String(addr).toLowerCase();
+    if (!seen.has(key)) seen.set(key, String(addr));
+  }
+  return [...seen.values()];
+};
 const WRITE_LIMIT_FILES = 6;
 const WRITE_LIMIT_BYTES = 400 * 1024;
 const REPO_READ_LIMIT_FILES = 8;
@@ -75,7 +88,7 @@ export function normalizeAutonomy(value, {allowedMailTo = null} = {}) {
     if (!Array.isArray(value.repo_read) || value.repo_read.length > REPO_READ_LIMIT_FILES) fail('invalid_repo_read');
     for (const file of value.repo_read) {
       if (!safePath(file)) fail('invalid_repo_read_path');
-      if (deniedWritePath(file) === 'credential_path' || deniedWritePath(file) === 'authority_config') fail('denied_repo_read_path');
+      if (deniedWritePath(file) === 'credential_path') fail('denied_repo_read_path');
       if (!result.repo_read.includes(file)) result.repo_read.push(file);
     }
   }
@@ -97,15 +110,17 @@ export function normalizeAutonomy(value, {allowedMailTo = null} = {}) {
     const mail = value.mail;
     if (!mail || typeof mail !== 'object' || Array.isArray(mail)) fail('invalid_mail');
     if (Object.keys(mail).some((key) => !['to', 'subject', 'body', 'body_from_output'].includes(key))) fail('invalid_mail_field');
-    if (!Array.isArray(mail.to) || mail.to.length !== 1 || !EMAIL.test(mail.to[0])) fail('invalid_mail_to');
-    if (allowedMailTo && mail.to[0].toLowerCase() !== String(allowedMailTo).toLowerCase()) fail('mail_recipient_not_owner_allowlisted');
+    if (!Array.isArray(mail.to) || mail.to.length < 1 || mail.to.length > MAIL_RECIPIENT_LIMIT) fail('invalid_mail_to');
+    if (!mail.to.every((addr) => typeof addr === 'string' && EMAIL.test(addr))) fail('invalid_mail_to');
+    const allow = allowlistSet(allowedMailTo);
+    if (allow.size && !mail.to.every((addr) => allow.has(String(addr).toLowerCase()))) fail('mail_recipient_not_allowlisted');
     if (typeof mail.subject !== 'string' || !mail.subject.trim() || mail.subject.length > 180 || /[\r\n]/.test(mail.subject)) fail('invalid_mail_subject');
     const hasBody = typeof mail.body === 'string' && mail.body.trim();
     if (!hasBody && mail.body_from_output !== true) fail('invalid_mail_body');
     if (mail.body !== undefined && (typeof mail.body !== 'string' || mail.body.length > 20000)) fail('invalid_mail_body');
     if (mail.body_from_output !== undefined && typeof mail.body_from_output !== 'boolean') fail('invalid_mail_body_from_output');
     result.mail = {
-      to: [mail.to[0]],
+      to: uniqueAddresses(mail.to),
       subject: mail.subject.trim(),
       body: hasBody ? mail.body : null,
       body_from_output: mail.body_from_output === true,

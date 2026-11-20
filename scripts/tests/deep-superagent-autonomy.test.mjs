@@ -47,12 +47,18 @@ test('normalizeAutonomy：接受 repo_read / code_change / deploy / mail', () =>
 test('normalizeAutonomy：拒绝路径穿越、凭据路径、非白名单收件人', () => {
   assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['../x']}), /invalid_repo_read_path/);
   assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['.env']}), /denied_repo_read_path/);
-  assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['config/owner-authority-20261105.json']}), /denied_repo_read_path/);
+  assert.deepEqual(normalizeAutonomy({mode: 'auto', repo_read: ['config/owner-authority-20261105.json']}).repo_read, ['config/owner-authority-20261105.json']);
   assert.throws(
     () => normalizeAutonomy({mode: 'auto', mail: {to: ['other@example.com'], subject: 'x', body: 'y'}}, {allowedMailTo: 'owner@example.com'}),
-    /mail_recipient_not_owner_allowlisted/,
+    /mail_recipient_not_allowlisted/,
   );
   assert.throws(() => normalizeAutonomy({mode: 'auto', deploy: {workflow: '../evil.yml'}}), /invalid_deploy_workflow/);
+});
+
+test('normalizeAutonomy：多收件人 AI 互发邮件，名单内全部放行', () => {
+  const value = normalizeAutonomy({mode: 'auto', mail: {to: ['Owner@Example.com', 'deep@example.com', 'owner@example.com'], subject: '互通', body: '正文'}}, {allowedMailTo: ['owner@example.com', 'deep@example.com']});
+  assert.deepEqual(value.mail.to, ['Owner@Example.com', 'deep@example.com']);
+  assert.throws(() => normalizeAutonomy({mode: 'auto', mail: {to: Array.from({length: 9}, (_, i) => `seat${i}@example.com`), subject: 'x', body: 'y'}}), /invalid_mail_to/);
 });
 
 test('deniedWritePath：工作流、授权、资金、凭据与通道脚本不可自动改写', () => {

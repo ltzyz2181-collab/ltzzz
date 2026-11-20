@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - run: node --check workers/deep-superagent/index.js && node --check scripts/deploy-deep-superagent.mjs
-      - run: node --test scripts/tests/deep-superagent.test.mjs scripts/tests/deep-superagent-deploy.test.mjs scripts/tests/deep-superagent-reconcile.test.mjs scripts/tests/lessons.test.mjs scripts/tests/reflection-harness.test.mjs scripts/tests/ltzzz-skill.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/workpool.test.mjs
+      - run: node --test scripts/tests/deep-superagent.test.mjs scripts/tests/deep-superagent-adjudicator.test.mjs scripts/tests/deep-superagent-deploy.test.mjs scripts/tests/deep-superagent-reconcile.test.mjs scripts/tests/lessons.test.mjs scripts/tests/reflection-harness.test.mjs scripts/tests/ltzzz-skill.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/workpool.test.mjs
   deploy:
     needs: verify
     if: github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request') || (github.event_name == 'issue_comment' && github.event.comment.user.id == 261544579 && github.event.comment.body == 'LTZZZ_DEEP_SUPERAGENT_BOOTSTRAP DEEP-SUPERAGENT-20261103'))
