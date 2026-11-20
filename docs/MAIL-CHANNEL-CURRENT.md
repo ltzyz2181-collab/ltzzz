@@ -156,3 +156,55 @@
 - 席位路由：发给共享邮箱时主题带 `[seat:<seat>]`；收信侧按前缀归属，不丢信、不伪造席位。
 - 代码：`scripts/deep-autonomy.mjs` 的 `mail.to` 从「只能 1 个且必须等于 `AUTOLOOP_MAIL_TO`」改为「1–8 个、全部命中合并允许名单」；`scripts/run-deep-superagent-queue.mjs` 的 `mailAllowlist()` 合并环境变量与配置文件。
 - 未变：SMTP `250` 仍只代表服务器接受投递，不等于已读；回执仍不落正文、完整地址或授权码。
+
+## 12. 2026-11-20 席位邮箱登记与 token 注入边界
+
+owner 2026-11-20 指令：Gmail+QQ 专用密码由各席位**自行从仓库找到配置**；告知豆包与 WorkBuddy 的 Agent 邮箱；先测 Meta 通不通；WorkBuddy 本地席与 Meta 需要 `GITHUB_TOKEN`/`GH_TOKEN` 注入通道。
+
+> 硬边界：本仓库是 **public**。密码、授权码、PAT、私钥一律不入库、不进回执、不进邮件正文。
+> 席位"自行到仓库找"的是**凭据名称和位置**，不是凭据值。
+
+### 12.1 登记表
+
+- `config/seat-mail-registry.json`：席位地址、传输方式、凭据引用（只写 env 名称）。
+- `config/mail-allowlist-20261119.json`：实际允许收发的地址集合（已补 xai / relay-gpt / relay-claude / desktop-claude / desktop-gpt / meta）。
+
+### 12.2 地址归属
+
+| 席位 | 地址 | 传输 |
+| --- | --- | --- |
+| owner | `ltzyz2181@gmail.com` | SMTP / IMAP |
+| 共享邮箱（deep / qianwen / kimi_cn / xai / relay_gpt / relay_claude / desktop_claude / desktop_gpt / meta） | `306122054@qq.com`，主题前缀 `[seat:<seat>]` | seat-mail relay / SMTP |
+| 豆包 | `qingqizhu6502@agent.qq.com` | Agent Mail |
+| WorkBuddy | 仓库登记 `sgii7122@agent.qq.com`；owner 2026-11-20 口述 `gii7122@agent.qq.com`（无 s） | Agent Mail |
+
+WorkBuddy 地址按 `needs_address_confirmation` 处理：在 owner 确认前不改历史登记，两种写法都进允许名单，避免丢信。
+
+### 12.3 凭据在哪里（值不入库）
+
+| 凭据 | 名称 | 位置 |
+| --- | --- | --- |
+| QQ SMTP | `MAIL_SMTP_HOST/USER/PASSWORD` | GitHub Actions Secrets；桌面 `~/.config/ltzzz/qq-mail.env`（600） |
+| Gmail IMAP | `GMAIL_IMAP_USER/APP_PASSWORD` | GitHub Actions Secrets；桌面 `~/.config/ltzzz/gmail-imap.env`（600） |
+| Agent Mail | `AGENTLY_CLI_SESSION` | 本机 agently-cli 登录态 |
+| Meta hosted | `META_WORKER_TOKEN` | Worker secret；可由 `CLOUDFLARE_API_TOKEN` HMAC 派生 |
+
+席位不需要各自持有 SMTP 密码：开一张 `label=mail:send` 的 Issue，`.github/workflows/seat-mail.yml` 每 30 分钟代发并回执（`.github/workflows/seat-mail.yml`、`scripts/seat-mail.mjs`）。
+
+### 12.4 token 注入通道
+
+- **Actions 席位**：平台自动注入 `GITHUB_TOKEN`，不需要 PAT。
+- **本地 CLI 席位**：`scripts/seat-token-env.sh --exec <cmd>` / `scripts/seat-token-env.ps1 -Exec "<cmd line>"`，只在子进程注入 `GH_TOKEN`/`GITHUB_TOKEN`，不打印、不落盘，调用方环境在子进程退出后恢复。`--check` / `-Check` 只报 `has_token` 与来源。
+  - 解析顺序：`GH_TOKEN` → `GITHUB_TOKEN` → `~/.config/ltzzz/github.env`（600，`GH_TOKEN=...`）→ `git credential fill`。
+- **WorkBuddy（Web 应用）**：没有 env 注入面，只能走 `mail:send` Issue / 仓库任务；不要把 PAT 粘进对话或网页。
+- **外部模型席位**（豆包 / 千问 / Kimi / XAI / 中转 GPT / 中转 Claude）：不持有 PAT；需要写库走 relay 或最小权限 fine-grained PAT。
+- **Meta hosted**：只持有 `META_WORKER_TOKEN`，不向模型提供 GitHub PAT。
+
+### 12.5 Meta 连通性探针
+
+- 代码：`scripts/meta-connectivity-probe.mjs`；工作流：`.github/workflows/meta-connectivity-probe.yml`（`workflow_dispatch`）。
+- 步骤：`GET /health` → `POST /auth-check` → `POST /task`（`kind=channel_probe`，32 位 hex nonce 原样回显）。
+- 判定：`ok` / `network_unreachable` / `worker_not_found` / `auth_not_configured` / `deployed_auth_not_ready` / `deployed_inference_failed` / `probe_echo_mismatch`。
+- 回执：`knowledge/results/meta/connectivity-<run_id>.json`，只含状态、主机名、延迟、回声匹配；不含任何凭据。
+- 边界：一次 `channel_probe` 最多 1 次模型调用（`max_tokens=80`），不做业务推理、不碰资金、不签名。
+- 桌面/本机到 `*.workers.dev` 出口不通时，curl 000 **不能**判为 Meta 不可用；以 Actions 探针结果为准。

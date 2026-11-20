@@ -1,0 +1,59 @@
+name: Seat mail config verify
+on:
+  push:
+    branches: [main]
+    paths:
+      - config/seat-mail-registry.json
+      - config/mail-allowlist-20261119.json
+      - scripts/seat-token-env.sh
+      - scripts/seat-token-env.ps1
+      - scripts/meta-connectivity-probe.mjs
+      - scripts/tests/seat-mail-registry.test.mjs
+      - scripts/tests/seat-token-env.test.mjs
+      - scripts/tests/meta-connectivity-probe.test.mjs
+      - docs/MAIL-CHANNEL-CURRENT.md
+      - .github/workflows/seat-config-verify.yml
+  pull_request:
+    paths:
+      - config/seat-mail-registry.json
+      - config/mail-allowlist-20261119.json
+      - scripts/seat-token-env.sh
+      - scripts/seat-token-env.ps1
+      - scripts/meta-connectivity-probe.mjs
+      - scripts/tests/seat-mail-registry.test.mjs
+      - scripts/tests/seat-token-env.test.mjs
+      - scripts/tests/meta-connectivity-probe.test.mjs
+      - docs/MAIL-CHANNEL-CURRENT.md
+      - .github/workflows/seat-config-verify.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: seat-config-verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          set -euo pipefail
+          node --check scripts/meta-connectivity-probe.mjs
+          bash -n scripts/seat-token-env.sh
+      - name: Run seat config tests
+        run: |
+          node --test scripts/tests/seat-mail-registry.test.mjs scripts/tests/seat-token-env.test.mjs scripts/tests/meta-connectivity-probe.test.mjs
+      - name: Reject credential-like values in tracked seat config
+        run: |
+          set -euo pipefail
+          if grep -rInE '(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' \
+            config/seat-mail-registry.json config/mail-allowlist-20261119.json docs/MAIL-CHANNEL-CURRENT.md; then
+            echo '::error::credential-like value found in tracked seat config'
+            exit 1
+          fi
+          echo 'no credential-like values found'
