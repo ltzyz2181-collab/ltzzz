@@ -77,7 +77,9 @@ export async function runDaily({root=process.cwd(),env=process.env,fetcher=fetch
   if(!env.LTZZZ_AGENT_TOKEN||!env.GITHUB_TOKEN)throw Error('existing_queue_executor_credentials_required');
   const store=new DeepQueueLatchStore({repository:REPOSITORY,token:env.GITHUB_TOKEN,baseCommit:context.source_commit,baseTree:git(['rev-parse',context.source_commit+'^{tree}']),fetcher,clock});
   const item=await runQueueCard({kind:'task',body:card.body,source_commit:context.source_commit,token:env.LTZZZ_AGENT_TOKEN,store,fetcher,clock,deadline:clock()+8*60*1000});
-  report.status=item.status==='job_terminal_observed'?dailyReportStatus(item.job):item.status;report.item={...item,path:'generated_from_trusted_readset',card_sha256:card.input_sha256};report.job_status=item.job?.status??null;report.model_calls=item.job?.model_calls??null;report.receipts=item.job?.receipts??[];report.plan=item.job?.plan??null;report.outputs=item.job?.outputs??[];report.review=item.job?.review??null;
+  const observedStatus=item.status==='job_terminal_observed'?dailyReportStatus(item.job):item.status;
+ report.status=observedStatus==='daily_result_readback_complete'?'daily_result_readback_complete':'blocked';
+ if(report.status==='blocked'&&observedStatus!=='blocked')report.blocked_reason=observedStatus;report.item={...item,path:'generated_from_trusted_readset',card_sha256:card.input_sha256};report.job_status=item.job?.status??null;report.model_calls=item.job?.model_calls??null;report.receipts=item.job?.receipts??[];report.plan=item.job?.plan??null;report.outputs=item.job?.outputs??[];report.review=item.job?.review??null;
  }catch(e){report.status='blocked';report.error=safeError(e);}
  finally{report.finished_at_utc=new Date().toISOString();save();console.log(JSON.stringify({status:report.status,error:report.error??null,receipt:out,task_id:report.task_id,model_calls:report.model_calls??null}));}
  return report;
