@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -5,6 +9,7 @@ import {
   adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns, waitForDeploy, waitForChecks,
   listAutoloopCandidates,
   githubRequest,
+  changedPaths,
 } from '../autoloop.mjs';
 
 const execs = loadExecutors();
@@ -237,4 +242,16 @@ test('githubRequest retries 503 but does not retry 400', async () => {
   calls = 0;
   await assert.rejects(() => githubRequest('t', 'GET', 'x', null, {fetcher: async () => { calls += 1; return {ok: false, status: 400, text: async () => 'bad'}; }, sleepFn: async () => {}}), /autoloop_github_400/);
   assert.equal(calls, 1);
+});
+
+test('changedPaths excludes .tmp relay prompts', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ltzzz-changed-'));
+  try {
+    spawnSync('git', ['init'], {cwd: dir, encoding: 'utf8'});
+    fs.writeFileSync(path.join(dir, 'keep.mjs'), 'x');
+    fs.writeFileSync(path.join(dir, '.tmp-relay-patch-prompt.txt'), 'x');
+    assert.deepEqual(changedPaths(dir), ['keep.mjs']);
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
 });

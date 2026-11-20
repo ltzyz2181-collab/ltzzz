@@ -339,7 +339,7 @@ export function runVerification(executor, {cwd = process.cwd(), env = null} = {}
 
 export function changedPaths(cwd = process.cwd()) {
   const r = runCmd(['git', 'status', '--porcelain'], {cwd});
-  return String(r.stdout || '').split('\n').filter(Boolean).map(l => l.slice(3).trim());
+  return String(r.stdout || '').split('\n').filter(Boolean).map(l => l.slice(3).trim()).filter(p => p && !p.startsWith('.tmp-') && !p.startsWith('node_modules/'));
 }
 
 export function adjudicationPrompt(issue, relay = DEFAULT_RELAY) {
