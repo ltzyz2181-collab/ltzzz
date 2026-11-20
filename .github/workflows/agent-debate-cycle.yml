@@ -36,6 +36,7 @@ jobs:
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      HAS_MAIL_SECRET: ${{ secrets.MAIL_SMTP_USER != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -108,7 +109,7 @@ jobs:
           gh issue comment "${{ steps.board.outputs.number }}" --body-file report.md
 
       - name: Send weekly mail (Gmail + QQ)
-        if: github.event_name == 'schedule' && steps.board.outputs.number != '' && secrets.MAIL_SMTP_USER != ''
+        if: github.event_name == 'schedule' && steps.board.outputs.number != '' && env.HAS_MAIL_SECRET == 'true'
         env:
           AUTOLOOP_SEND_MAIL: 'true'
           AUTOLOOP_MAIL_TO: ltzyz2181@gmail.com,${{ secrets.MAIL_SMTP_USER }}
