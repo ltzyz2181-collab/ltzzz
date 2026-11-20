@@ -6,7 +6,7 @@ import './deep-superagent-deploy-automation.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import worker,{DeepTask,normalizeJob,parsePlan,outputTokenLimit,verifyReview,sha256,unsupportedMetadataDeclarations,CONTENT_GUARD_REVISION,relaySeatState,relaySeatStates,availableWorkSeats} from '../../workers/deep-superagent/index.js';
+import worker,{DeepTask,normalizeJob,parsePlan,outputTokenLimit,dailyWorkSeats,verifyReview,sha256,unsupportedMetadataDeclarations,CONTENT_GUARD_REVISION,relaySeatState,relaySeatStates,availableWorkSeats} from '../../workers/deep-superagent/index.js';
 
 // Relay adjudication stage tests live in their own file, imported here so the
 // existing CI verify step (no workflow-scope token here) still runs them.
@@ -331,4 +331,9 @@ test('doubao seat honours the DOUBAO_SEAT_MODEL override and records it in the r
   assert.equal(receipt.request_options.seat_model,'doubao-seed-2-1-lite-260915');
   // 未配覆盖的席位不得凭空多带 model 字段，代理的全局默认模型不被本改动改掉。
   for(const other of f.calls.filter(v=>v.seat!=='doubao'))assert.equal(Object.hasOwn(other.body,'model'),false);
+});
+
+test('daily plan seats exclude doubao while ordinary seats keep it',()=>{
+ assert.deepEqual(dailyWorkSeats(['doubao','qianwen','kimi','grok','deepseek']),['qianwen','kimi','grok','deepseek']);
+ assert.deepEqual(dailyWorkSeats(null),[]);
 });
