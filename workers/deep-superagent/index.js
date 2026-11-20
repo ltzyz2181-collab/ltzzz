@@ -176,6 +176,9 @@ export function outputTokenLimit(taskId,seat){
     if(seat==='doubao')return 3072;
     if(seat==='qianwen'||seat==='deepseek')return 4096;
     if(seat==='kimi')return KIMI_PROFILE.default_output_tokens;
+    // 2026-11-20 实测 run 44658751282：日课第二席落到 grok，仍在 2048 上被截断
+    // （finish_reason=length）。grok 不在 90s CF 代理链路上，给 4096 与千问同档。
+    if(seat==='grok')return 4096;
     return 2048;
   }
   // 2026-11-10：豆包席经 CF 边缘转发方舟北京端点。实测 8192 输出预算下的生成

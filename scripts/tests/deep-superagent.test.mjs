@@ -80,6 +80,7 @@ test('native xAI is a registered work seat while the per-job three-worker limit 
  assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','qianwen'),4096);
  assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','kimi'),16384);
  assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','gpt'),2048);
+ assert.equal(outputTokenLimit('DEEP-DAILY-SUPERVISION','grok'),4096);
  assert.equal(outputTokenLimit('DEEP-ORDINARY','kimi'),16384);
  // 豆包席受 Cloudflare 100s 边缘窗口与方舟北京链路约束。2048 仍三次越时得到
  // 504 upstream_timeout，故 2026-11-10 二次下调到 1024；其他席位预算保持不变。
