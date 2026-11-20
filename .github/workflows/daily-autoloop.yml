@@ -73,7 +73,8 @@ jobs:
       - name: Persist run receipt
         if: always()
         run: |
-          git checkout -- . 2>/dev/null || true
+          # 只还原执行器留下的代码改动；relay 账本必须保留，否则成本会回退
+          git checkout -- . ':(exclude)knowledge/results/relay-seat' 2>/dev/null || true
           git config user.name "ltzzz-autoloop"
           git config user.email "bot@ltzzz.local"
           # 中转调用账本也要落库：git checkout -- . 会把它还原，成本与证据就丢了
