@@ -1,0 +1,103 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261119-owner-open-policy",
+  "target": "owner 2026-11-19 解禁：只保留六族给 GPT，中转/邮件/通道/部署放开（Worker 裁决 v3 + 授权文档上线）",
+  "platform": "github-actions+github-pages+cloudflare-worker",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "0b41cd96cf5e34e1339e8bde5e555930649d57fd",
+  "code_path": "workers/deep-superagent",
+  "deployed_at": "2026-11-20T02:18:11Z",
+  "owner_instruction": "2026-11-19 owner：其他限制全放开，中转 AI 也不能限制；邮件收读取全部和发必须自动发；各 AI 都能相互发邮件；各通道都要放开限制；资金、退款终态、签名、私钥、钱包、凭据仍归 GPT 决策席，其他以后裁决一律不能限制",
+  "financial_execution": false,
+  "secrets_included": false,
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "done",
+    "deployed": "done",
+    "submitted": "done",
+    "platform_accepted": "worker_deployment_health_and_auth_verified_pages_deploy_success"
+  },
+  "verified": [
+    {
+      "kind": "pull_request",
+      "result": "ok",
+      "evidence": "PR #479 https://github.com/ltzyz2181-collab/ltzzz/pull/479 merged 61b4974a6aafea9aa594c18bb1bd8f1cb8520a71；内容：owner-authority-20261119.json、deep-autonomy-20261119.json、mail-allowlist-20261119.json、relay-seat-policy=unrestricted、relay-adjudication-scopes v2、adjudicator v3、多收件人邮件"
+    },
+    {
+      "kind": "pr_ci",
+      "result": "ok",
+      "evidence": "deep-autonomy-verify.yml run 44658869794 conclusion success on branch feat/owner-open-policy-20261119, head_sha 35d0510a8fc670c6f66c44f7a692d9542439439b；首轮 44658578659 因多收件人大小写断言失败，修正后才合并"
+    },
+    {
+      "kind": "pull_request",
+      "result": "ok",
+      "evidence": "PR #483 https://github.com/ltzyz2181-collab/ltzzz/pull/483 merged 0b41cd96cf5e34e1339e8bde5e555930649d57fd；/health 的 scope_exclusion 标签从含 production_write 改为六族"
+    },
+    {
+      "kind": "pr_ci",
+      "result": "ok",
+      "evidence": "deep-superagent.yml pull_request run 44659597875 conclusion success, head_sha 2ceab302edc5e0f34dbc33586d9c419e8df60485"
+    },
+    {
+      "kind": "deployment_run",
+      "result": "ok",
+      "evidence": "首次合并后 push 部署 run 44658949181 被 fail-closed 拦下：error stale_deployment_source，source_commit 61b4974a 的 workers/deep-superagent/index.js blob 152b68e1 与并行 PR #482 合并后的 0b940b45 不一致；回执 knowledge/results/deep-superagent/deploy-44658949181-attempt-1.json 保留该失败证据"
+    },
+    {
+      "kind": "deployment_run",
+      "result": "ok",
+      "evidence": "在当时的 main 上 dispatch deep-superagent.yml，run 44659175891 conclusion success，status deployment_health_and_auth_verified，health.relay_adjudication.revision relay-bounded-adjudication-v3，scope_exclusion 仍含 production_write（随后由 #483 修正）"
+    },
+    {
+      "kind": "deployment_run",
+      "result": "ok",
+      "evidence": "最终 push 部署 run 44659676093 conclusion success，head_sha 0b41cd96，receipt deploy-44659676093-attempt-1.json：status deployment_health_and_auth_verified，source_readset_match true，observed_main_commit c2e1d10ea4ac9b1f99b861ff6979b2a5110ad7b0，source_readset_sha256 d11e71a1f5509012fa869024484e82c9958b386519b435d06399b435a4f5490c，deployments 1，model_calls 0"
+    },
+    {
+      "kind": "worker_health",
+      "result": "ok",
+      "evidence": "回执内 health.ok true；relay_adjudication.revision relay-bounded-adjudication-v3；scope_exclusion funds_refund_signing_private_keys_wallet_credentials；five_signature_escalation owner_multisig；auth_checks anonymous 401 / wrong 401 / valid 200；relay_seats gpt/claude relay_generation_enabled；financial_execution false、generation_verified false、external_submissions_enabled false"
+    },
+    {
+      "kind": "pages_run",
+      "result": "ok",
+      "evidence": "pages.yml push run 44659676061 conclusion success, head_sha 0b41cd96cf5e34e1339e8bde5e555930649d57fd"
+    },
+    {
+      "kind": "live_readback",
+      "result": "ok",
+      "evidence": "https://ltzzz.com/docs/OWNER-AUTHORITY-CURRENT.md HTTP 200, 7459 bytes, sha256 438c8539bf9b534c5da6fab6659244ee0657a181855a2369f83b36b0adbdaac2；正文含“2026-11-19 owner 最新指令”章节"
+    },
+    {
+      "kind": "opened_scope",
+      "result": "ok",
+      "evidence": "relay-seat-policy.json routing.mode unrestricted / min_input_tokens 0；relay-adjudication-scopes.json forbidden_families funds,refunds,signing,wallet_operations,keys_or_credentials；deep-autonomy.mjs mail.to 1–8 地址且命中合并允许名单；run-deep-superagent-queue.mjs mailAllowlist() 合并环境与配置；adjudicator 移除 production_write 家族"
+    },
+    {
+      "kind": "retained_boundaries",
+      "result": "ok",
+      "evidence": "仍只由 GPT 决策席处理：funds、refund_terminal、signing、private_keys、wallet_operations、credentials；凭据值不打印、不落仓库、不进日志；工作流、send-mail.py、run-mail-intake.mjs 与授权配置文件不由模型输出自动改写（凭据边界与防自授权，不是裁决门）"
+    }
+  ],
+  "blockers": [],
+  "next_action": "观察一次自然队列/定时运行确认读取新策略；如需“已读”而非 SMTP 250，另行邮箱回读；Worker 作业字段 accepted/deployed 保持 Worker 语义，不改成业务验收通过",
+  "harness": {
+    "command": "node scripts/harness.mjs before receipt,model_output,input_hash,external_platform",
+    "run_at": "2026-11-20T02:20:00Z",
+    "status": "retrieved_not_compliance_verified",
+    "lesson_ids": [
+      "L-20261117-006",
+      "L-20261030-007",
+      "L-20261030-002",
+      "L-20261030-001"
+    ],
+    "context_sha256": "7b2be851de6abea195765e90ef42dba4de55d9efc42ae120d3b9c956e723cad1",
+    "note": "检索是数据不是执行证明；本回执的 PR/CI/部署/线上回读证据另行记录"
+  },
+  "code_sha256": {
+    "accounting.mjs": "3be2e040d1ea4f14ad80b7d2c5ff74c44b4257789642404fd09b85d20c05ee6e",
+    "adjudicator.mjs": "ea776363c4f55b4d7c798202ef4054da11e73f4b9a63ac9a63af46cdc4f949a2",
+    "index.js": "09bc1ec4d03fc80b4a2329cc9af1b224be5f090e0d51ddb2d2909204e2700ff9"
+  }
+}
