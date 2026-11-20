@@ -1,0 +1,15 @@
+{
+ "task_id": "DEEP-SOURCE-INTEL-M1M4-20261120-01",
+ "package_id": "LTZZZ-SOURCE-INTELLIGENCE-MVP-M1-M4-20261119-01",
+ "prompt": "内部工程任务，只使用公开仓库内容，不含客户资料、邮件正文或账号信息。\n【目标】按 docs/SOURCE-INTELLIGENCE-MVP-PLAN-20261117.md 的 M1–M4 阶段，在仓库内落地只读采集的最小实现与确定性测试；M0 已完成，不要重复。\n【允许范围】新增 scripts/lib 下的采集与校验模块、scripts/tests 下的测试、必要的文档说明；只做本地确定性实现，不联网抓取。每条记录必须带 source_url、retrieved_at、content_sha256、parser_version、uncertainty 五字段。\n【输出契约】只输出整文件写入块，格式严格为：\n<<<FILE:path>>>\n内容\n<<<END>>>\n最多 6 个文件，单文件不超过 400KB。不要输出解释性长文。\n【禁止】不联网、不调用任何外部接口或模型、不新建账号、不改 .github/workflows/、不改 config/owner-authority 与 config/deep-autonomy、不做发布或生产写入、不删除或重写历史文件。\n【验收】新增测试覆盖：重复 URL、内容变化、缺失时间戳、私有来源拒绝、只追加更正；node --test 新增测试全绿；所有记录字段齐全。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [
+   "docs/SOURCE-INTELLIGENCE-MVP-PLAN-20261117.md",
+   "products/workbuddy/ltzzz-source-check/SKILL.md"
+  ],
+  "code_change": true
+ }
+}
