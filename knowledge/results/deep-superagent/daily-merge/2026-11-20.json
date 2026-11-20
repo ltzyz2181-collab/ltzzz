@@ -1,16 +1,8 @@
 {
  "schema": "ltzzz.deep-superagent.daily-merge.v1",
  "date": "2026-11-20",
- "generated_at_utc": "2026-11-20T02:08:19.447Z",
+ "generated_at_utc": "2026-11-20T02:10:00.588Z",
  "done": [
-  {
-   "task_id": "DEEP-DAILY-SUPERVISION",
-   "run_id": "44443485815",
-   "status": "daily_result_readback_complete",
-   "model_calls": 2,
-   "note": "日监督只读回执；不等于完成业务验收",
-   "source": "knowledge/results/deep-superagent/daily-44443485815-attempt-1.json"
-  },
   {
    "task_id": "DEEP-DAILY-SUPERVISION",
    "run_id": "44481811025",
@@ -55,7 +47,15 @@
   }
  ],
  "needs_owner_decision": [],
- "blocked": [],
+ "blocked": [
+  {
+   "task_id": "DEEP-DAILY-SUPERVISION",
+   "run_id": "44658751282",
+   "status": "blocked",
+   "reason": null,
+   "source": "knowledge/results/deep-superagent/daily-44658751282-attempt-1.json"
+  }
+ ],
  "dispatch": {
   "cards_today": [
    "DEEP-SUPERAGENT-20261120-DAILY-1.json",
@@ -83,13 +83,14 @@
   }
  },
  "counts": {
-  "done": 2,
+  "done": 1,
   "needs_gpt_decision": 2,
   "needs_owner_decision": 0,
-  "blocked": 0
+  "blocked": 1
  },
  "next_steps": [
   "已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
+  "有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。",
   "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
  ],
  "evidence": {
@@ -99,8 +100,8 @@
    "knowledge/results/deep-superagent/queue-44656121164-attempt-1.json"
   ],
   "daily_reports": [
-   "knowledge/results/deep-superagent/daily-44443485815-attempt-1.json",
-   "knowledge/results/deep-superagent/daily-44481811025-attempt-1.json"
+   "knowledge/results/deep-superagent/daily-44481811025-attempt-1.json",
+   "knowledge/results/deep-superagent/daily-44658751282-attempt-1.json"
   ],
   "mail_intake": "knowledge/results/deep-superagent/mail-intake/latest.json",
   "oversight": "knowledge/results/dispatch/oversight/latest.json"
@@ -112,7 +113,7 @@
  "secrets_included": false,
  "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
  "email": {
-  "subject": "[LTZZZ日报] 2026-11-20 完成=2 待GPT裁决=2 阻塞=0",
-  "body": "LTZZZ 每日合并 2026-11-20（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44443485815）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44481811025）\n\n二、需要 GPT 裁决\n- DEEP-AUTONOMY-PROBE-20261119-3（run=44503885577）：见 ASK\n  复核意见：qianwen 声称一致但无证据，doubao 声称创建但无执行证据，需 GPT 判定。\n  ASK DEEP-AUTONOMY-PROBE-20261119-3：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261120-DAILY-2（run=44656121164）：见 ASK\n  复核意见：qianwen证据不足，doubao格式错误，kimi部分判定需复核\n  ASK DEEP-SUPERAGENT-20261120-DAILY-2：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=ok，gmail=ok，agent_mail=ok\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-20.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+  "subject": "[LTZZZ日报] 2026-11-20 完成=1 待GPT裁决=2 阻塞=1",
+  "body": "LTZZZ 每日合并 2026-11-20（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44481811025）\n\n二、需要 GPT 裁决\n- DEEP-AUTONOMY-PROBE-20261119-3（run=44503885577）：见 ASK\n  复核意见：qianwen 声称一致但无证据，doubao 声称创建但无执行证据，需 GPT 判定。\n  ASK DEEP-AUTONOMY-PROBE-20261119-3：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261120-DAILY-2（run=44656121164）：见 ASK\n  复核意见：qianwen证据不足，doubao格式错误，kimi部分判定需复核\n  ASK DEEP-SUPERAGENT-20261120-DAILY-2：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=ok，gmail=ok，agent_mail=ok\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-20.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
  }
 }
