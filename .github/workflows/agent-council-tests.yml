@@ -1,0 +1,33 @@
+name: Agent council and innovation tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/lib/agent-*.mjs'
+      - 'scripts/tests/agent-*.test.mjs'
+      - '.github/workflows/agent-council-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/lib/agent-*.mjs'
+      - 'scripts/tests/agent-*.test.mjs'
+      - '.github/workflows/agent-council-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: |
+          node --check scripts/lib/agent-council.mjs
+          node --check scripts/lib/agent-innovation.mjs
+      - name: Unit tests
+        run: node --test scripts/tests/agent-council.test.mjs scripts/tests/agent-innovation.test.mjs
