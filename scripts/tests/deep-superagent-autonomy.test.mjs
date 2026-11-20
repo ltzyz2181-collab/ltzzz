@@ -15,6 +15,7 @@ import {
   normalizeAutonomy,
   readRepoContext,
   stripRepoEvidence,
+  syntaxGate,
   stripAutonomy,
   taskAutonomyMetadata,
   validateWrites,
@@ -87,6 +88,18 @@ test('stripRepoEvidence：仓库读取证据里的资金词不触发拦截，卡
   assert.equal(fiduciaryHit({prompt: stripRepoEvidence(prompt)}).hit, false);
   assert.equal(stripRepoEvidence('卡面直接写退款'), '卡面直接写退款');
   assert.equal(fiduciaryHit({prompt: stripRepoEvidence('卡面直接写退款')}).hit, true);
+});
+
+test('syntaxGate：带 markdown 围栏或语法错误的代码文件不得进入合并', () => {
+  const root = tmp();
+  fs.writeFileSync(path.join(root, 'ok.js'), 'export const a = 1;\n');
+  fs.writeFileSync(path.join(root, 'bad.js'), 'const = 1;\n');
+  fs.writeFileSync(path.join(root, 'fenced.mjs'), '```javascript\nexport const a = 1;\n```\n');
+  assert.deepEqual(syntaxGate(root, [{path: 'ok.js', content: ''}]), {ok: true});
+  assert.deepEqual(syntaxGate(root, [{path: 'docs/a.md', content: 'plain markdown' }]), {ok: true});
+  assert.equal(syntaxGate(root, [{path: 'fenced.mjs', content: '```javascript\nx\n```'}]).error, 'markdown_fence_in_code_file:fenced.mjs');
+  assert.equal(syntaxGate(root, [{path: 'bad.js', content: ''}]).error, 'syntax_error:bad.js');
+  assert.equal(syntaxGate(root, [{path: 'missing.js', content: ''}]).error, 'syntax_error:missing.js');
 });
 
 test('extractFileWrites：只认显式 FILE 块', () => {
