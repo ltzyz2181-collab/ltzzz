@@ -1,0 +1,150 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261118-task-hub-e2e-01",
+  "target": "task-hub-e2e-first-real-card",
+  "platform": "github-issues+github-actions",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "8452fa42bc8716253dea979c95ef99a3dd382015",
+  "code_path": "ops/deploy-receipts/DR-20261118-task-hub-e2e-01.json",
+  "deployed_at": null,
+  "deployment_status": "not_deployed",
+  "task_id": "LTZZZ-HUB-E2E-20261118-01",
+  "decision_id": "GPT-DECISION-20261118-HUB-E2E-01",
+  "issue": {
+    "number": 430,
+    "url": "https://github.com/ltzyz2181-collab/ltzzz/issues/430",
+    "title": "[TASK] LTZZZ-HUB-E2E-20261118-01",
+    "created_at": "2026-11-18T08:26:16Z"
+  },
+  "source_commit": {
+    "sha": "8452fa42bc8716253dea979c95ef99a3dd382015",
+    "role": "main HEAD when the task branch was created (2026-11-18T08:27:51Z); local branch test/task-hub-e2e-20261118-01 was reset to this commit",
+    "readback": "GitHub API git/ref/heads/main at 2026-11-18T08:27:51Z"
+  },
+  "harness": {
+    "command": "node scripts/harness.mjs before receipt,model_output,input_hash,external_platform",
+    "run_at": "2026-11-18T08:27:57Z",
+    "status": "retrieved_not_compliance_verified",
+    "lesson_ids": [
+      "L-20261030-002",
+      "L-20261030-003",
+      "L-20261117-006",
+      "L-20261030-001",
+      "L-20261030-004",
+      "L-20261101-001",
+      "L-20261030-007"
+    ],
+    "context_sha256": "d3ecad24593d09cd9ba882f77ef5dacf5720140b6f2b20369364ff7b0e249e60",
+    "note": "检索记录是数据，不是执行证明；本回执的 poll/claim/PR/CI 证据另行记录。"
+  },
+  "poll": {
+    "command": "node scripts/task-hub.mjs poll --seat desktop-claude",
+    "run_at": "2026-11-18T08:28:04Z",
+    "result": "task_visible",
+    "raw_output": {
+      "schema": "ltzzz.task-hub.v1",
+      "command": "poll",
+      "seat": "desktop-claude",
+      "tasks": [
+        {
+          "number": 430,
+          "title": "[TASK] LTZZZ-HUB-E2E-20261118-01",
+          "task_id": "LTZZZ-HUB-E2E-20261118-01",
+          "state": "new",
+          "lease_until": null,
+          "attempts": 0,
+          "url": "https://github.com/ltzyz2181-collab/ltzzz/issues/430",
+          "claimable": true
+        }
+      ]
+    }
+  },
+  "claim": {
+    "command": "node scripts/task-hub.mjs claim --issue 430 --seat desktop-claude --branch test/task-hub-e2e-20261118-01",
+    "run_at": "2026-11-18T08:28:08Z",
+    "result": "claimed",
+    "raw_output": {
+      "schema": "ltzzz.task-hub.v1",
+      "command": "claim",
+      "number": 430,
+      "seat": "desktop-claude",
+      "status": "claimed",
+      "lease_hours": 24
+    },
+    "readback": {
+      "comment_created_at": "2026-11-18T08:28:10Z",
+      "comment": "[claimed] seat=desktop-claude at=2026-11-18T08:28:08.773Z branch=test/task-hub-e2e-20261118-01 lease_until=2026-11-19T08:28:08.773Z",
+      "labels": [
+        "seat:desktop-claude",
+        "dispatch",
+        "hub:claimed"
+      ]
+    }
+  },
+  "executor": {
+    "seat": "desktop-claude",
+    "client": "Claude Code CLI (desktop, Windows 11, Git Bash + WSL node 20)",
+    "executed_by": null,
+    "provider": null,
+    "model": null,
+    "note": "席位名只是任务分配；provider/model/executed_by 无可靠响应元数据，按要求填 null，不凭记忆补写。"
+  },
+  "verified": [
+    {
+      "kind": "poll_task_visible",
+      "result": "ok",
+      "evidence": "2026-11-18T08:28:04Z poll 输出包含 task_id=LTZZZ-HUB-E2E-20261118-01、number=430、seat=desktop-claude、claimable=true"
+    },
+    {
+      "kind": "claim_accepted",
+      "result": "ok",
+      "evidence": "2026-11-18T08:28:08Z claim 返回 status=claimed、lease_hours=24"
+    },
+    {
+      "kind": "claim_comment_readback",
+      "result": "ok",
+      "evidence": "GitHub API 回读评论 created_at=2026-11-18T08:28:10Z：'[claimed] seat=desktop-claude at=2026-11-18T08:28:08.773Z branch=test/task-hub-e2e-20261118-01 lease_until=2026-11-19T08:28:08.773Z'；标签为 seat:desktop-claude, dispatch, hub:claimed"
+    },
+    {
+      "kind": "json_parse",
+      "result": "ok",
+      "evidence": "python3 -m json.tool 解析本回执成功"
+    },
+    {
+      "kind": "deploy_receipt_schema_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/deploy-receipt.test.mjs → tests 7 / pass 7 / fail 0"
+    },
+    {
+      "kind": "receipt_file_sha256_self_check",
+      "result": "ok",
+      "evidence": "按 receipt_file_sha256_rule 重算：将 receipt_file_sha256 的 64 位值替换为 64 个 ASCII '0' 后对文件字节取 sha256，结果与字段值一致"
+    }
+  ],
+  "blockers": [],
+  "next_action": "无需下一手：本单只验证任务流转，PR 的 CI 结论与 [delivered] 回执在 Issue 评论中回读；不合并、不部署。",
+  "boundaries": {
+    "merged": false,
+    "deployed": false,
+    "smoke": "not_applicable",
+    "email_sent": false,
+    "linear_connected": false,
+    "paid_model_calls": false,
+    "task_hub_code_changed": false
+  },
+  "status_layers": {
+    "draft": "completed",
+    "tested": "local deploy-receipt tests 7/7",
+    "merged": "not_merged_by_this_task",
+    "deployed": "not_deployed",
+    "submitted": "completed_via_issue_comment",
+    "platform_accepted": "pending_controller_readback"
+  },
+  "receipt_file_sha256": "8f61bc190d4335f264aff56d9a02380830c2c109f7a6cc6f6166b36da9bb98a5",
+  "receipt_file_sha256_rule": "sha256 over this file's UTF-8 bytes with LF newlines, after replacing the 64-hex value of receipt_file_sha256 with 64 ASCII '0' characters",
+  "notes": [
+    "本单由 Issue #430 卡片驱动，只验证 Task Hub 第一张真实任务卡的 poll/claim/交付回执链路。",
+    "PR 只新增本回执文件；未修改 Task Hub 代码、workflow、标签定义或权限。",
+    "未合并、未部署、未发邮件、未接 Linear、未调用付费模型或 API、未操作资金/钱包/退款/签名/Secrets。"
+  ]
+}
