@@ -1,0 +1,232 @@
+{
+  "schema": "ltzzz.seat-mail-registry.v1",
+  "effective_date": "2026-11-20",
+  "source": "owner instruction 2026-11-20 + config/deep-superagent.json + config/mail-allowlist-20261119.json",
+  "repo_visibility": "public",
+  "principle": "仓库只存地址、传输方式和凭据名称，不存密码/授权码/PAT。席位通过 seat-mail relay 发信，不需要各自持有 SMTP 凭据。",
+  "shared_mailbox": {
+    "address": "306122054@qq.com",
+    "routing": "[seat:<seat>]",
+    "note": "owner QQ 邮箱；桌面 GPT / 桌面 Claude 共用；未带前缀按公共收件处理"
+  },
+  "owner": {
+    "address": "ltzyz2181@gmail.com",
+    "kind": "owner"
+  },
+  "credential_refs": {
+    "smtp_shared_qq": {
+      "env": [
+        "MAIL_SMTP_HOST",
+        "MAIL_SMTP_USER",
+        "MAIL_SMTP_PASSWORD"
+      ],
+      "where": "GitHub Actions Secrets（仓库）或 ~/.config/ltzzz/qq-mail.env（桌面，chmod 600）",
+      "value_in_repo": false
+    },
+    "gmail_imap": {
+      "env": [
+        "GMAIL_IMAP_USER",
+        "GMAIL_IMAP_APP_PASSWORD"
+      ],
+      "where": "GitHub Actions Secrets",
+      "value_in_repo": false
+    },
+    "agent_mail_agently": {
+      "env": [
+        "AGENTLY_CLI_SESSION"
+      ],
+      "where": "本机 agently-cli 登录态，不入库",
+      "value_in_repo": false
+    },
+    "meta_hosted": {
+      "env": [
+        "META_WORKER_URL",
+        "META_WORKER_TOKEN",
+        "CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID"
+      ],
+      "where": "GitHub Actions Secrets + Cloudflare Worker secret；token 可由 CF token HMAC 派生",
+      "value_in_repo": false
+    },
+    "github_actions": {
+      "env": [
+        "GITHUB_TOKEN"
+      ],
+      "where": "GitHub Actions 自动注入；权限由 workflow permissions 决定",
+      "value_in_repo": false
+    },
+    "github_local": {
+      "env": [
+        "GH_TOKEN",
+        "GITHUB_TOKEN"
+      ],
+      "where": "仅本地进程 env；用 scripts/seat-token-env.sh|ps1 --exec 注入，不落盘",
+      "value_in_repo": false
+    }
+  },
+  "transports": {
+    "seat_mail_relay": {
+      "how": "开一张 label=mail:send 的 Issue，写 seat/to/subject/正文；.github/workflows/seat-mail.yml 每 30 分钟发信并回执",
+      "credentials_needed_by_seat": false
+    },
+    "agently_cli": {
+      "how": "腾讯 Agent Mail agently-cli，本机登录态读取/发送",
+      "credentials_needed_by_seat": true
+    },
+    "smtp_shared_qq": {
+      "how": "smtp.qq.com:465 SSL；凭据只在 Actions Secrets 或桌面 600 env 文件",
+      "credentials_needed_by_seat": false
+    }
+  },
+  "seats": [
+    {
+      "id": "owner",
+      "display": "Owner",
+      "address": "ltzyz2181@gmail.com",
+      "kind": "owner",
+      "transport": "smtp_shared_qq",
+      "status": "verified"
+    },
+    {
+      "id": "doubao",
+      "display": "豆包",
+      "address": "qingqizhu6502@agent.qq.com",
+      "kind": "agent_mail",
+      "transport": "agently_cli",
+      "status": "registered"
+    },
+    {
+      "id": "workbuddy",
+      "display": "WorkBuddy",
+      "address": "sgii7122@agent.qq.com",
+      "kind": "agent_mail",
+      "transport": "agently_cli",
+      "status": "needs_address_confirmation",
+      "owner_stated_address": "gii7122@agent.qq.com",
+      "note": "仓库登记为 sgii7122（带 s）；owner 本轮写作 gii7122，需一句确认后改登记"
+    },
+    {
+      "id": "deep",
+      "display": "DeepSeek",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:deep]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "qianwen",
+      "display": "千问",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:qianwen]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "kimi_cn",
+      "display": "国内 Kimi",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:kimi_cn]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "xai",
+      "display": "Grok / XAI",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:xai]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "relay_gpt",
+      "display": "中转 GPT",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:relay_gpt]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "relay_claude",
+      "display": "中转 Claude",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:relay_claude]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "desktop_claude",
+      "display": "桌面 Claude",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:desktop_claude]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "desktop_gpt",
+      "display": "桌面 GPT",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:desktop_gpt]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": ""
+    },
+    {
+      "id": "meta",
+      "display": "Meta",
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seat_prefix": "[seat:meta]",
+      "transport": "seat_mail_relay",
+      "status": "ready_via_relay",
+      "note": "外部 Meta 客户端无公开聊天 API；hosted Llama 走 Workers AI，不经邮箱"
+    }
+  ],
+  "token_injection": {
+    "github_actions_seats": {
+      "channel": "GITHUB_TOKEN",
+      "value_in_repo": false,
+      "note": "Actions 自动注入；不需要 PAT"
+    },
+    "local_cli_seats": {
+      "channel": "GH_TOKEN / GITHUB_TOKEN",
+      "value_in_repo": false,
+      "note": "scripts/seat-token-env.sh|ps1 --exec，从 git credential fill 或现有 env 读取，不打印"
+    },
+    "workbuddy_web": {
+      "channel": "none",
+      "value_in_repo": false,
+      "note": "Web 应用无法注入 env；只能走 mail:send Issue / 仓库任务，不要把 PAT 粘进对话"
+    },
+    "meta_hosted": {
+      "channel": "META_WORKER_TOKEN",
+      "value_in_repo": false,
+      "note": "Worker secret；不向模型提供 GitHub PAT"
+    },
+    "external_models": {
+      "channel": "none",
+      "value_in_repo": false,
+      "note": "外部模型席位不得持有 PAT；需要写库时用代理或 fine-grained PAT + 最小权限"
+    }
+  },
+  "limits": {
+    "max_recipients_per_mail": 8,
+    "no_credentials_in_body": true,
+    "no_customer_body_in_receipt": true,
+    "no_pat_in_prompt": true
+  }
+}

@@ -1,0 +1,63 @@
+name: Meta connectivity probe
+on:
+  workflow_dispatch:
+    inputs:
+      worker_url:
+        description: Optional explicit worker URL (defaults to Cloudflare API lookup)
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: meta-connectivity-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe hosted Meta worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          META_WORKER_URL: ${{ inputs.worker_url }}
+        run: |
+          set -euo pipefail
+          out="knowledge/results/meta/connectivity-${GITHUB_RUN_ID}.json"
+          node scripts/meta-connectivity-probe.mjs --out "$out"
+      - name: Summarize receipt
+        if: always()
+        run: |
+          f="knowledge/results/meta/connectivity-${GITHUB_RUN_ID}.json"
+          node -e '
+          const fs = require("fs");
+          const p = process.argv[1];
+          if (!fs.existsSync(p)) { console.log("no receipt written"); process.exit(0); }
+          const r = JSON.parse(fs.readFileSync(p, "utf8"));
+          console.log("verdict:", r.verdict, "ok:", r.ok, "host:", r.worker.host || "n/a");
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, "## Meta connectivity\n\n- verdict: `" + r.verdict + "`\n- host: `" + (r.worker.host || "n/a") + "`\n- model_calls: " + r.boundaries.model_calls + "\n");
+          ' "$f"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meta-connectivity-${{ github.run_id }}
+          path: knowledge/results/meta/
+          if-no-files-found: warn
+      - name: Persist receipt
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/meta/
+          if git diff --staged --quiet; then echo 'no receipt change'; exit 0; fi
+          git commit -m "chore(meta): connectivity probe ${GITHUB_RUN_ID} [skip ci]"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
