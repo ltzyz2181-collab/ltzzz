@@ -1,0 +1,142 @@
+name: Agent debate cycle (weekly + issue wake)
+
+# 每周一扫描方向提案板；Issue 评论触发的 marker 也会唤醒同一套判定。
+# 只读记忆文件，写入范围限于 Issue 评论与 Actions artifact；不碰资金、签名、Secrets。
+
+on:
+  schedule:
+    - cron: '20 1 * * 1'
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: '提案板 Issue 编号（留空自动查找 label=idea-board）'
+        required: false
+      max_per_cycle:
+        description: '本周期最多入选提案数'
+        default: '2'
+      post_comment:
+        description: '把报告回写到 Issue'
+        type: boolean
+        default: true
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: agent-debate-cycle
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    if: github.event_name != 'issue_comment' || (github.event.comment.user.login != 'github-actions[bot]' && (contains(github.event.comment.body, '[idea') || contains(github.event.comment.body, '[direction') || contains(github.event.comment.body, '[debate-')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      HAS_MAIL_SECRET: ${{ secrets.MAIL_SMTP_USER != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Verify debate contracts
+        run: |
+          node --check scripts/lib/agent-debate.mjs
+          node --check scripts/lib/memory-context.mjs
+          node --check scripts/agent-debate-report.mjs
+          node --test scripts/tests/agent-council.test.mjs scripts/tests/agent-innovation.test.mjs scripts/tests/agent-debate.test.mjs scripts/tests/memory-context.test.mjs
+
+      - name: Resolve board issue
+        id: board
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "${{ inputs.issue_number }}" ]; then
+            echo "number=${{ inputs.issue_number }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          NUMBER=$(gh api "repos/${{ github.repository }}/issues?labels=idea-board&state=open&per_page=1" --jq '.[0].number // empty')
+          if [ -z "$NUMBER" ]; then
+            echo "::notice::没有找到 label=idea-board 的开放 Issue；本次只生成空报告，不派单。"
+          fi
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Export comments
+        if: steps.board.outputs.number != ''
+        run: |
+          gh api "repos/${{ github.repository }}/issues/${{ steps.board.outputs.number }}/comments?per_page=100" --paginate > comments.json
+          node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('comments.json','utf8'));console.log('comments',a.length)"
+
+      - name: Evaluate debate cycle
+        if: steps.board.outputs.number != ''
+        run: |
+          node scripts/agent-debate-report.mjs \
+            --root=. \
+            --comments=comments.json \
+            --now="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --max-per-cycle="${{ inputs.max_per_cycle || '2' }}" \
+            --task-id="LTZZZ-AGENT-DEBATE-${{ github.run_id }}" \
+            --out-md=report.md \
+            --out-json=report.json \
+            --memory-briefing=memory-briefing.md
+
+      - name: Step summary
+        if: always()
+        run: |
+          {
+            echo "## 方向讨论周期"
+            if [ -f report.md ]; then
+              cat report.md
+            else
+              echo "未找到提案板 Issue 或未生成报告，已跳过。"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post report to board
+        if: steps.board.outputs.number != '' && (github.event_name == 'schedule' || github.event_name == 'issue_comment' || inputs.post_comment)
+        run: |
+          if [ ! -f report.md ]; then
+            echo "no report"
+            exit 0
+          fi
+          gh issue comment "${{ steps.board.outputs.number }}" --body-file report.md
+
+      - name: Send weekly mail (Gmail + QQ)
+        if: github.event_name == 'schedule' && steps.board.outputs.number != '' && env.HAS_MAIL_SECRET == 'true'
+        env:
+          AUTOLOOP_SEND_MAIL: 'true'
+          AUTOLOOP_MAIL_TO: ltzyz2181@gmail.com,${{ secrets.MAIL_SMTP_USER }}
+          MAIL_FROM: ${{ secrets.MAIL_SMTP_USER }}
+          MAIL_SMTP_HOST: smtp.qq.com
+          MAIL_SMTP_PORT: '465'
+          MAIL_SMTP_USER: ${{ secrets.MAIL_SMTP_USER }}
+          MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+        run: |
+          if [ ! -f report.md ]; then
+            echo "no report; skip mail"
+            exit 0
+          fi
+          WEEK=$(node -e "import('./scripts/lib/agent-debate.mjs').then(m=>process.stdout.write(m.isoWeekKey(Date.now())))")
+          export SUBJECT="LTZZZ 方向周报 ${WEEK}"
+          node -e "const fs=require('fs');fs.writeFileSync('mail-meta.json',JSON.stringify({schema:'ltzzz.deep-superagent.email-meta.v1',subject:process.env.SUBJECT,contains_mail_body:false,date:new Date().toISOString()}))"
+          python3 scripts/send-mail.py --meta mail-meta.json --body-file report.md --receipt mail-receipt.json || echo "mail_send_failed_do_not_block_debate_cycle"
+
+      - name: Upload cycle artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-debate-${{ github.run_id }}
+          path: |
+            report.md
+            report.json
+            memory-briefing.md
+            mail-meta.json
+            mail-receipt.json
+          if-no-files-found: ignore

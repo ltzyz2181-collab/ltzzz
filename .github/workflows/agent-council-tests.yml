@@ -5,12 +5,18 @@ on:
     paths:
       - 'scripts/lib/agent-*.mjs'
       - 'scripts/tests/agent-*.test.mjs'
+      - 'scripts/lib/memory-context.mjs'
+      - 'scripts/tests/memory-context.test.mjs'
+      - 'scripts/agent-debate-report.mjs'
       - '.github/workflows/agent-council-tests.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/lib/agent-*.mjs'
       - 'scripts/tests/agent-*.test.mjs'
+      - 'scripts/lib/memory-context.mjs'
+      - 'scripts/tests/memory-context.test.mjs'
+      - 'scripts/agent-debate-report.mjs'
       - '.github/workflows/agent-council-tests.yml'
 
 permissions:
@@ -29,5 +35,8 @@ jobs:
         run: |
           node --check scripts/lib/agent-council.mjs
           node --check scripts/lib/agent-innovation.mjs
+          node --check scripts/lib/agent-debate.mjs
+          node --check scripts/lib/memory-context.mjs
+          node --check scripts/agent-debate-report.mjs
       - name: Unit tests
-        run: node --test scripts/tests/agent-council.test.mjs scripts/tests/agent-innovation.test.mjs
+        run: node --test scripts/tests/agent-council.test.mjs scripts/tests/agent-innovation.test.mjs scripts/tests/agent-debate.test.mjs scripts/tests/memory-context.test.mjs
