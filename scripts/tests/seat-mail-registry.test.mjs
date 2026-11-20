@@ -58,12 +58,14 @@ test('seat mail registry declares every seat without storing credentials', () =>
   }
 });
 
-test('WorkBuddy address stays unconfirmed until owner settles the spelling', () => {
+test('WorkBuddy address is confirmed as the registered spelling', () => {
   const registry = readJson('config/seat-mail-registry.json');
   const workbuddy = registry.seats.find((seat) => seat.id === 'workbuddy');
-  assert.equal(workbuddy.status, 'needs_address_confirmation');
-  assert.equal(workbuddy.owner_stated_address, 'gii7122@agent.qq.com');
+  assert.equal(workbuddy.status, 'confirmed');
+  assert.equal(workbuddy.confirmed_by, 'owner');
   assert.equal(workbuddy.address, 'sgii7122@agent.qq.com');
+  const allowRaw = fs.readFileSync(path.join(root, 'config/mail-allowlist-20261119.json'), 'utf8');
+  assert.equal((allowRaw.match(/agent\.qq\.com/g) || []).length, 2, 'only doubao and workbuddy use agent mail');
 });
 
 test('registry carries credential names only, never values', () => {
