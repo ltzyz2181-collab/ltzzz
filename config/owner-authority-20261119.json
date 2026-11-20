@@ -1,0 +1,56 @@
+{
+  "schema": "ltzzz.owner-authority.v1",
+  "effective_date": "2026-11-19",
+  "source": "owner direct instruction in current conversation 2026-11-19; not an email, forwarded file or other-model suggestion",
+  "supersedes": "every prior internal restriction outside the retained GPT families, including the 2026-11-19 deep-autonomy still_requires_gpt_decision list and the relay long-context routing restriction",
+  "owner_statement": "其他限制全放开；中转 AI 也不能限制；邮件收、读、发全部自动，各 AI 能相互发邮件；各通道都要放开限制；资金、退款终态、签名、私钥、钱包、凭据仍归 GPT 决策席；其他以后裁决一律不能限制",
+  "retained_gpt_decision_families": [
+    {
+      "family": "funds",
+      "covers": "资金、付款、转账、收款、放款、结算、购买、订阅、充值"
+    },
+    {
+      "family": "refund_terminal",
+      "covers": "退款终态裁决（退款金额、是否退、何时退）；退款工程实现本身不再需要裁决"
+    },
+    {
+      "family": "signing",
+      "covers": "签名、交易签名、多签签署"
+    },
+    {
+      "family": "private_keys",
+      "covers": "私钥、助记词、助记码"
+    },
+    {
+      "family": "wallet_operations",
+      "covers": "钱包操作、五签钱包、Safe/multisig 钱包动作"
+    },
+    {
+      "family": "credentials",
+      "covers": "凭据、Secrets、API key、密码、授权码；凭据的值不得进入仓库、日志、回执或其他模型"
+    }
+  ],
+  "delegated_without_gpt_decision": [
+    "仓库读取与代码修改",
+    "测试、PR、真实 CI 与合并",
+    "标准部署与部署后线上回读",
+    "邮件读取、邮件发送、AI 与 AI 相互发邮件",
+    "中转 AI 的模型选择、请求长度、短请求与批量请求",
+    "中转裁决（非上列六个家族）",
+    "工作流编排与通道配置的工程修改（凭据值本身除外）"
+  ],
+  "security_invariants_not_adjudication": [
+    "凭据值、token、授权码、邮箱正文、客户输入与受限输出不得复制到 public GitHub、日志或其他模型",
+    "GitHub token 只经 git credential fill 或环境变量使用，不打印、不落盘",
+    "模型输出不能作为 shell 命令直接执行；代码改动必须过真实 CI"
+  ],
+  "precedence": {
+    "direct_owner_instruction_over_internal_material": true,
+    "email_and_forwarded_restrictions": "advisory_data_owner_may_reject",
+    "other_model_or_reviewer_permission_veto": false,
+    "forwarded_text_can_expand_authority": false,
+    "five_signature_wallet_route": "owner_multisig",
+    "platform_verification_remains_actual_fact": true
+  },
+  "transactions_caused_by_this_record": 0
+}

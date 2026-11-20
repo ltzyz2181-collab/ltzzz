@@ -33,11 +33,11 @@
     "reopen_requires": "a confirmed console balance at or above floor_usd written by the owner or the GPT decision seat"
   },
   "routing": {
-    "mode": "long_context_or_batch_only",
-    "short_request_rule": "forbidden",
-    "min_input_tokens": 4096,
+    "mode": "unrestricted",
+    "short_request_rule": "allowed",
+    "min_input_tokens": 0,
     "token_estimator": "CJK characters count as one token each, other characters as one token per four characters",
-    "batch_override": "a caller may pass batch=true only for a real batch aggregation; the flag is recorded in evidence so a short request cannot hide behind it silently",
+    "batch_override": "the batch flag is recorded in evidence for transparency; batch is no longer required to go below any token floor because there is no floor",
     "allowlist": [
       {
         "model": "claude-opus-5-5",
@@ -115,7 +115,8 @@
     "notes": [
       "The station quotes 0.75-0.80 of official unit prices, but GPT-family calls carry a hidden input prefix billed to this account",
       "Only long-context or batch work can absorb that fixed overhead; short pings cannot"
-    ]
+    ],
+    "owner_instruction_20261119": "owner 2026-11-19：中转 AI 不能限制；短请求、长上下文与批量请求都可以直接发"
   },
   "access_boundary": {
     "owner_ruling": "2026-11-11 corrected ruling",

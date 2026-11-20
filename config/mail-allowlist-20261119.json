@@ -1,0 +1,35 @@
+{
+  "schema": "ltzzz.mail-allowlist.v1",
+  "effective_date": "2026-11-19",
+  "source": "owner direct instruction 2026-11-19: 邮件收、读、发全部自动，各 AI 能相互发邮件，各通道都要放开限制",
+  "principle": "允许自动收发的地址只列真实存在的邮箱或已登记共享邮箱；不虚构席位专属地址。没有单独签发邮箱的席位共用共享邮箱，用主题前缀区分收件席位。",
+  "addresses": [
+    {
+      "address": "ltzyz2181@gmail.com",
+      "kind": "owner",
+      "seats": ["owner"]
+    },
+    {
+      "address": "306122054@qq.com",
+      "kind": "shared_mailbox",
+      "seats": ["gpt", "claude", "deep", "doubao", "qianwen", "kimi"],
+      "note": "owner QQ 邮箱；桌面 GPT 席与桌面 Claude 席共用，Deep/豆包/千问通过该箱转发或读取"
+    },
+    {
+      "address": "qingqizhu6502@agent.qq.com",
+      "kind": "agent_mail",
+      "seats": ["deep", "doubao", "qianwen"],
+      "note": "腾讯 Agent Mail 发件箱；收件箱可被 agently-cli 读取"
+    }
+  ],
+  "seat_routing": {
+    "subject_prefix": "[seat:<seat>]",
+    "rule": "发给共享邮箱时主题带 [seat:<seat>]；收信侧按前缀归属给对应席位，未带前缀按公共收件处理",
+    "unknown_seat": "保留为公共邮件，不丢信、不伪造席位"
+  },
+  "limits": {
+    "max_recipients_per_mail": 8,
+    "no_credentials_in_body": true,
+    "no_customer_body_in_receipt": true
+  }
+}

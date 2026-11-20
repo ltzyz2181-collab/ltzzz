@@ -1,34 +1,35 @@
 {
   "schema": "ltzzz.relay-adjudication-scopes.v1",
-  "revision": "relay-adjudication-scopes-v1",
+  "revision": "relay-adjudication-scopes-v2",
   "note": "中转裁决只能在下列具名范围内成立。每一条 permitted_actions 都必须命中本范围的 allowed_action_patterns，且不得命中任何禁区；范围外一律 needs_decision。范围本身来自已存在的 owner 授权文件，不因本文件新增任何权限。",
   "authority_sources": [
     "docs/OWNER-AUTHORITY-CURRENT.md",
     "config/owner-authority-20261105.json",
     "config/deploy-automation-authority-20261117.json"
   ],
-  "decision_id": "OWNER-AUTH-20261117-RELAY-ADJUDICATION",
-  "decided_at": "2026-11-17",
-  "allowed_scope_summary": "日常、低风险、可逆、内部仓库范围内的任务，由中转 GPT 作有界裁决。",
+  "decision_id": "OWNER-AUTH-20261119-RELAY-OPEN",
+  "decided_at": "2026-11-19",
+  "allowed_scope_summary": "除 owner 保留的六个家族外，中转 GPT 席可裁决；生产写入、发布、部署、权限与常规外部动作不再默认禁区。",
   "forbidden_families": [
     "funds",
     "refunds",
     "signing",
     "wallet_operations",
-    "keys_or_credentials",
-    "permission_changes",
-    "production_writes",
-    "external_irreversible_actions"
+    "keys_or_credentials"
   ],
   "relay_verdict_limits": {
     "relay_attested": false,
     "execution_authority": false,
-    "may_not_claim": ["merged", "deployed", "platform_accepted"],
+    "may_not_claim": [
+      "paid",
+      "signed",
+      "platform_accepted"
+    ],
     "escalation_recipient": "gpt_decision_seat",
     "five_signature_route": "owner_multisig",
     "owner_item_by_item_approval": false
   },
-  "execution_seat": "doubao continues to execute and deploy; a relay verdict is not an execution or deployment record",
+  "execution_seat": "doubao and the autonomous bridge continue to execute and deploy; a relay verdict is not an execution or deployment record",
   "funds_family_short_circuited": true,
   "scopes": [
     {

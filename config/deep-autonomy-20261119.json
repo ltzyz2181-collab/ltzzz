@@ -1,36 +1,64 @@
 {
   "schema": "ltzzz.deep-autonomy-authorization.v1",
   "effective_date": "2026-11-19",
-  "source": "owner direct instruction in current conversation 2026-11-19: 给 deep 安装仓库读权限、能改代码、能部署、必须自动、收发能发信、不用等 GPT 裁决",
+  "revision": "deep-autonomy-v2",
+  "source": "owner direct instruction in current conversation 2026-11-19: 其他限制全放开；中转 AI 也不能限制；邮件收、读、发全部自动，各 AI 能相互发邮件；各通道都要放开限制；资金、退款终态、签名、私钥、钱包、凭据仍归 GPT 决策席；其他以后裁决一律不能限制",
   "authority_holder": "Deep Superagent execution seat (GitHub Actions trusted bridge, scripts/deep-autonomy.mjs)",
+  "authority_record": "config/owner-authority-20261119.json",
   "permitted_without_gpt_decision": {
-    "repo_read": "读取卡面显式声明的仓库文件并注入提示词；不读凭据、Secrets、owner 授权文件",
-    "code_change": "把模型输出的受限整文件块 <<<FILE:path>>> 落盘，跑本地测试，开 PR，dispatch deep-autonomy-verify.yml 做真实 CI，CI 成功后才合并到 main",
-    "deploy": "合并后按卡面声明的 workflow 触发 workflow_dispatch",
-    "mail": "经 scripts/send-mail.py 向 owner 允许名单收件人发信，并落公开回执"
+    "repo_read": "读取卡面显式声明的仓库文件并注入提示词；owner 授权记录可读；凭据文件、Secrets 与授权码不可读",
+    "code_change": "把模型输出的受限整文件块 <<<FILE:path>>> 落盘，跑本地测试，开 PR，dispatch deep-autonomy-verify.yml 做真实 CI，CI 成功后才合并到 main；包括 docs/、scripts/、config/ 与通道配置",
+    "deploy": "合并后按卡面声明的 workflow 触发 workflow_dispatch，并回读部署结果",
+    "mail": "多收件人（每次最多 8 个）自动发信；收件人允许名单见 config/mail-allowlist-20261119.json；支持 AI 与 AI 相互发邮件",
+    "relay": "中转 AI 的模型选择、请求长度、短请求、批量请求不再限制；非保留家族事项可由中转席裁决"
   },
   "still_requires_gpt_decision": [
-    "资金、付款、转账、放款、退款终态裁决",
-    "签名、私钥、助记词、钱包操作",
-    "凭据、Secrets、owner 授权配置、工作流定义的改写",
-    "命中 FIDUCIARY_RE 的提示词或模型输出"
+    {
+      "family": "funds",
+      "covers": "资金、付款、转账、收款、放款、结算、购买、订阅、充值"
+    },
+    {
+      "family": "refund_terminal",
+      "covers": "退款终态裁决（是否退、退多少、何时退）；退款相关工程实现不属于本项"
+    },
+    {
+      "family": "signing",
+      "covers": "签名、交易签名、多签签署"
+    },
+    {
+      "family": "private_keys",
+      "covers": "私钥、助记词、助记码"
+    },
+    {
+      "family": "wallet_operations",
+      "covers": "钱包操作、五签钱包、Safe/multisig 钱包动作"
+    },
+    {
+      "family": "credentials",
+      "covers": "凭据、Secrets、API key、密码、授权码"
+    }
   ],
+  "no_other_adjudication_gate": true,
   "hard_guards": {
     "module": "scripts/deep-autonomy.mjs",
-    "revision": "deep-autonomy-v1",
+    "revision": "deep-autonomy-v2",
     "write_limits": "最多 6 个文件、总计 400KB、拒绝路径穿越与受保护路径",
     "receipts": "knowledge/results/deep-superagent/autonomy/（只落状态、哈希、PR/工作流编号，不落正文与完整收件人）",
     "model_output_is_not_executable": true,
     "ci_gate": "合并前必须由 .github/workflows/deep-autonomy-verify.yml 在该 PR 分支上真实跑完且成功；dispatch 失败、run 失败或超时都不合并",
-    "financial_execution": false
+    "financial_execution": false,
+    "credential_boundary": "处理凭据值的脚本（send-mail.py、run-mail-intake.mjs）、.env/secrets 路径与 .github/workflows/ 仍不可由模型输出自动改写：工作流能读取 Secrets，属于 owner 保留的凭据边界，不是额外裁决门",
+    "authority_provenance": "config/owner-authority-*.json 与 config/deep-autonomy-*.json 不可由模型输出自动改写，避免模型自授权限；修改它们需要 owner 直接指令"
   },
   "mail_allowlist": {
-    "env": "AUTOLOOP_MAIL_TO",
-    "rule": "收件人必须等于 owner 配置的 AUTOLOOP_MAIL_TO；未配置时只接受单个合法邮箱"
+    "config": "config/mail-allowlist-20261119.json",
+    "env": "LTZZZ_MAIL_ALLOWLIST 或 AUTOLOOP_MAIL_TO（逗号分隔）",
+    "rule": "配置地址与环境地址合并；至少一个地址时，收件人必须全部在合并允许名单内；名单为空时接受最多 8 个合法邮箱",
+    "max_recipients": 8
   },
   "relationship_to_owner_authority": {
-    "file": "config/owner-authority-20261105.json",
-    "note": "本记录只把 Deep 的工程执行（读仓库/改代码/部署/发信）从 GPT 裁决中解耦；不改变 GPT 对 LTZZZ 资金的自主决策权，也不触碰五签钱包排除项。"
+    "file": "config/owner-authority-20261119.json",
+    "note": "本记录把 Deep 的工程执行、邮件收发与中转裁决从 GPT 裁决中解耦；只保留 owner 指定的六个家族给 GPT 决策席，不触碰五签钱包排除项。"
   },
   "transactions_caused_by_this_record": 0
 }

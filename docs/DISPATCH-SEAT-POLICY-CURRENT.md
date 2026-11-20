@@ -75,3 +75,11 @@ CI 已挂：`.github/workflows/dispatch-seat-policy.yml` —— 动到 `ops/deep
 
 如实边界：这一步解决的是「每天有一张 Deep 卡被真实消费」，不等于业务验收、模型权重训练或平台已接受。
 
+
+## 2026-11-19 owner 最新指令：非保留家族不再设裁决门
+
+owner 原话：其他限制全放开，中转 AI 也不能限制；只保留**资金、退款终态、签名、私钥、钱包、凭据**给 GPT 决策席。
+
+- 中转席对非保留家族事项（文档、代码、测试、队列、部署、发布、邮件、通道配置）可以独立裁决，不再要求“结论回给 GPT 本人”。
+- `config/dispatch-seat-policy-20261117.json` 的 `hard_boundaries` 与 `config/relay-adjudication-scopes.json` 的 `forbidden_families` 已按此收窄。
+- 资金/退款终态/签名/私钥/钱包/凭据仍在 worker 裁决层短路给 GPT；五签钱包仍归 owner/multisig。
