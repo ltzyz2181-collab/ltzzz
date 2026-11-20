@@ -34,6 +34,7 @@
   relay-claude 只能改这些路径；钱包、`.env`、密钥、凭据路径即使在 `paths:` 里也会被拒绝。
   写完后由 `node scripts/relay-patch.mjs --verify-only` 自检，再走正常 PR/合并。
 - 邮件：卡片打 `mail:send`，见 `docs/AUTOLOOP-CURRENT.md`。
+- 每次中转调用按次记账，写入 knowledge/results/relay-seat/balance-ledger.json；余额低于 $3 自动关席。
 
 ## 边界
 

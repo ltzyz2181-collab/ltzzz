@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-20T03:05:24.285Z",
+  "requested_at": "2026-11-20T03:05:17.323Z",
+  "responded_at": "2026-11-20T03:05:24.285Z",
+  "request_id": "20261120030518732592029dajHX4o0",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "relay-claude",
+  "purpose": "code",
+  "generation_output": false,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "claude-sonnet-4-6",
+  "model_served": "claude-sonnet-4-6",
+  "model_tier": "claude",
+  "model_class": "claude",
+  "routing": {
+    "requested_model": "claude-sonnet-4-6",
+    "served_model": "claude-sonnet-4-6",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "ltzzz_proxy",
+  "boundary_exception": false,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 2000,
+  "batch": false,
+  "prompt": {
+    "chars": 1759,
+    "estimated_input_tokens": 1001,
+    "sha256": "90d92b9655618f76952827a5e29e429af3b2b14dd0d876d632c84a17fb6ae01a"
+  },
+  "http": 200,
+  "duration_ms": 6961,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 0,
+    "prompt_tokens_billed": 1001,
+    "usage_source": "estimated_floor",
+    "completion_tokens": 825,
+    "total_tokens": 825
+  },
+  "cost_usd": 0.012302,
+  "balance_before_usd": 12.811645,
+  "balance_after_usd": 12.799343,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 6961,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 1548,
+    "preview": "```json\n{\"files\":[{\"path\":\"docs/RELAY-SEATS-CURRENT.md\",\"content\":\"# 中转席位（relay-gpt / relay-claude）当前分工\\n\\n更新时间：2026-11-19\\n裁决依据：`config/owner-authority-2026111",
+    "text": "```json\n{\"files\":[{\"path\":\"docs/RELAY-SEATS-CURRENT.md\",\"content\":\"# 中转席位（relay-gpt / relay-claude）当前分工\\n\\n更新时间：2026-11-19\\n裁决依据：`config/owner-authority-20261119-open-execution.json`\\n\\n## 权限\\n\\n| 席位 | 读取 | 写入 | 裁决 | 资金类 |\\n|---|---|---|---|---|\\n| relay-gpt | 全仓 | 决策记录、Issue 评论 | 普通事项具约束力 | 不接触 |\\n| relay-claude | 全仓 | 代码/文档 PR（限卡上 `paths:`） | 只复核，不裁决 | 不接触 |\\n\\n中转调用的档位在 `config/relay-seat-policy.json` 的 `profiles` 里：\\n`adjudication`（≤900 输出 token，单次 ≤$0.05）与 `code`（≤2000 输出 token，单次 ≤$0.05）。\\n余额底线仍是 $3，低于底线自动关席。\\n\\n## 在 Deep 团队里的分工\\n\\n- **relay-gpt：日常裁决席。** Deep 团队每天产出的卡，凡不涉及资金/退款终态/签名/密钥/钱包/凭据，\\n  由它直接给 verdict（approve | reject | needs_more_evidence），回执写回原卡。\\n  它不再只出「建议」，除非卡片本身属于保留事项——那类卡在进 relay 前就被拦下转 GPT。\\n- **relay-claude：代码与证据席。** 更适合做这四件事：\\n  1. 补测试与回归用例（最擅长，风险最低）；\\n  2. 整理交付回执、把散落的证据写成结构化记录；\\n  3. 复核 PR diff，指出缺测试、命名不一致、边界漏判；\\n  4. 在卡上声明的小范围路径内改文档/注释/死代码清理。\\n  不适合：跨模块重构、涉及生产配置的改动、任何资金语义。\\n\\n## 怎么用\\n\\n- 裁决：卡片打 `autoloop:adjudicate`（默认 relay-gpt）或 `autoloop:adjudicate:claude`。\\n- 写代码：卡片打 `autoloop:exec:relay-patch`，并在正文写\\n  `paths: docs/a.md, scripts/tests/b.test.mjs`，`---` 之后写任务。\\n  relay-claude 只能改这些路径；钱包、`.env`、密钥、凭据路径即使在 `paths:` 里也会被拒绝。\\n  写完后由 `node scripts/relay-patch.mjs --verify-only` 自检，再走正常 PR/合并。\\n- 邮件：卡片打 `mail:send`，见 `docs/AUTOLOOP-CURRENT.md`。\\n- 每次中转调用按次记账，写入 knowledge/results/relay-seat/balance-ledger.json；余额低于 $3 自动关席。\\n\\n## 边界\\n\\n- 保留事项（资金、付款、放款、转账、退款终态、签名、私钥、助记词、钱包、五签 Safe、凭据与密钥）\\n  永远不送进中转席。\\n- 中转裁决产生的是「做不做、按什么范围做」，不等于执行结果；执行结果以仓库回执为准。\\n- 中转模型是第三方聚合站，提示词会经过其服务器；不得把凭据、客户敏感资料放进 prompt。\\n\"}]}\n```"
+  },
+  "key_fingerprint": null,
+  "failure": null,
+  "http_error": null
+}
