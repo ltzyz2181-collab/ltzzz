@@ -107,3 +107,14 @@ test('a missing file cannot be marked complete in the receipt', () => {
   assert.equal(missing.complete_read, false);
   assert.equal(receipt.complete, false);
 });
+
+test('full briefing includes complete bodies and an automated receipt', () => {
+  const longBody = `# 项目历史\n\n${'历史记录行。\n'.repeat(300)}`;
+  const root = workspace({'项目历史.md': longBody});
+  const context = loadMemoryContext({root});
+  const briefing = buildMemoryBriefing(context, {maxCharsPerFile: Infinity});
+  assert.ok(briefing.includes(longBody.slice(-40)));
+  assert.doesNotMatch(briefing, /摘录已截断/);
+  assert.match(briefing, /自动读取回执（脚本）/);
+  assert.match(briefing, /agent-debate-cycle\(automated\)/);
+});

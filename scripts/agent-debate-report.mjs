@@ -94,7 +94,8 @@ if (args['out-md']) {
 
 if (args['memory-briefing']) {
   fs.mkdirSync(path.dirname(path.resolve(args['memory-briefing'])), {recursive: true});
-  fs.writeFileSync(args['memory-briefing'], `${buildMemoryBriefing(memory, {maxCharsPerFile: numberArg(args['briefing-chars'], 800)})}\n`);
+  const briefingChars = args['briefing-chars'] ? numberArg(args['briefing-chars'], Infinity) : Infinity;
+  fs.writeFileSync(args['memory-briefing'], `${buildMemoryBriefing(memory, {maxCharsPerFile: briefingChars})}\n`);
 }
 
 console.log(JSON.stringify({

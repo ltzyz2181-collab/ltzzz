@@ -189,6 +189,28 @@ export function buildMemoryBriefing(context, {maxCharsPerFile = 1200, includeExc
   lines.push('');
   lines.push('只有逐文件读完并把 `complete_read` 改为 `true`、写明 reader 与 read_at，才算完成读取回执。');
   lines.push('');
+  lines.push('## 自动读取回执（脚本）');
+  lines.push('');
+  lines.push('> 脚本已把下列文件全文读入并计算 sha256；这不代表任何席位已理解或已表态。席位的阅读仍需上面的手动回执。');
+  lines.push('');
+  lines.push('```json');
+  lines.push(JSON.stringify({
+    schema: 'ltzzz.memory-read-receipt.v1',
+    reader: 'agent-debate-cycle(automated)',
+    read_at: context?.loaded_at || null,
+    commit: context?.commit || null,
+    digest: context?.digest || null,
+    complete: Boolean(context?.complete),
+    files: (context?.files || []).map(file => ({
+      name: file.name,
+      path: file.path,
+      sha256: file.sha256,
+      bytes: file.bytes,
+      complete_read: !file.missing
+    }))
+  }, null, 2));
+  lines.push('```');
+  lines.push('');
 
   return lines.join('\n');
 }
