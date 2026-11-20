@@ -12,6 +12,14 @@ const REPOSITORY='ltzyz2181-collab/ltzzz';
 const COMMIT=/^[a-f0-9]{40}$/;
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 export const DAILY_TASK_ID='DEEP-DAILY-SUPERVISION';
+// 2026-11-20: 终态回读不等于干成事。job 已 blocked 或没有任何席位输出时，日课必须
+// 以非 0 退出暴露红灯，否则工作流全绿但一整天零产出（11-19 run 44481811025 实测）。
+export function dailyReportStatus(job){
+ if(!job)return 'daily_report_missing_job';
+ if(job.status==='blocked')return 'daily_job_blocked';
+ if(!Array.isArray(job.outputs)||job.outputs.length===0)return 'daily_job_no_outputs';
+ return 'daily_result_readback_complete';
+}
 export const PUBLIC_READSET_PATHS=[
  'knowledge/results/daily-board/reviews/2026-11-06-qianwen-abbcda39edc4460c59b4e5f399a8c1eef09cd85a6dd89e43a854e357946ac224.json',
  'knowledge/results/daily-board/reviews/2026-11-06-grok-daf66ba612ccd5e0ec62f6415ad07c7f9181f4ac6fcb47381dbd77d53d8cbc3a.json',
@@ -69,7 +77,7 @@ export async function runDaily({root=process.cwd(),env=process.env,fetcher=fetch
   if(!env.LTZZZ_AGENT_TOKEN||!env.GITHUB_TOKEN)throw Error('existing_queue_executor_credentials_required');
   const store=new DeepQueueLatchStore({repository:REPOSITORY,token:env.GITHUB_TOKEN,baseCommit:context.source_commit,baseTree:git(['rev-parse',context.source_commit+'^{tree}']),fetcher,clock});
   const item=await runQueueCard({kind:'task',body:card.body,source_commit:context.source_commit,token:env.LTZZZ_AGENT_TOKEN,store,fetcher,clock,deadline:clock()+8*60*1000});
-  report.status=item.status==='job_terminal_observed'?'daily_result_readback_complete':item.status;report.item={...item,path:'generated_from_trusted_readset',card_sha256:card.input_sha256};report.job_status=item.job?.status??null;report.model_calls=item.job?.model_calls??null;report.receipts=item.job?.receipts??[];report.plan=item.job?.plan??null;report.outputs=item.job?.outputs??[];report.review=item.job?.review??null;
+  report.status=item.status==='job_terminal_observed'?dailyReportStatus(item.job):item.status;report.item={...item,path:'generated_from_trusted_readset',card_sha256:card.input_sha256};report.job_status=item.job?.status??null;report.model_calls=item.job?.model_calls??null;report.receipts=item.job?.receipts??[];report.plan=item.job?.plan??null;report.outputs=item.job?.outputs??[];report.review=item.job?.review??null;
  }catch(e){report.status='blocked';report.error=safeError(e);}
  finally{report.finished_at_utc=new Date().toISOString();save();console.log(JSON.stringify({status:report.status,error:report.error??null,receipt:out,task_id:report.task_id,model_calls:report.model_calls??null}));}
  return report;

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
-import {buildDailyCard,DAILY_TASK_ID,PUBLIC_READSET_PATHS,trustedDailyContext} from '../run-deep-superagent-daily.mjs';
+import {buildDailyCard,DAILY_TASK_ID,PUBLIC_READSET_PATHS,trustedDailyContext,dailyReportStatus} from '../run-deep-superagent-daily.mjs';
 import {validateJob} from '../run-deep-superagent-queue.mjs';
 import {normalizeJob,REVISION} from '../../workers/deep-superagent/index.js';
 
@@ -42,4 +42,11 @@ test('daily jobs are hard-capped at three receipts while ordinary jobs retain ex
  const base={...daily,input_sha256:hash(JSON.stringify(daily)),execution_id:'exec',source_commit:'b'.repeat(40),revision:REVISION,status:'blocked',terminal:true,financial_execution:false,external_submissions_enabled:false,paid:false,tx_hash:null};
  assert.throws(()=>validateJob({...base,model_calls:4,receipts:[{},{},{},{}]},{task_id:daily.task_id,package_id:daily.package_id,input_sha256:base.input_sha256}));
  assert.doesNotThrow(()=>validateJob({...base,model_calls:3,receipts:[{},{},{}]},{task_id:daily.task_id,package_id:daily.package_id,input_sha256:base.input_sha256}));
+});
+
+test('a blocked or output-less daily job must not report success',()=>{
+ assert.equal(dailyReportStatus({status:'blocked',outputs:[{seat:'doubao'}]}),'daily_job_blocked');
+ assert.equal(dailyReportStatus({status:'needs_gpt_decision',outputs:[]}),'daily_job_no_outputs');
+ assert.equal(dailyReportStatus({status:'needs_gpt_decision',outputs:[{seat:'deepseek',text:'x'}]}),'daily_result_readback_complete');
+ assert.equal(dailyReportStatus(null),'daily_report_missing_job');
 });
