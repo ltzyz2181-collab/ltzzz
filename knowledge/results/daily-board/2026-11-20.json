@@ -6,11 +6,11 @@
   "seats": {
     "deepseek": {
       "agent": "deepseek",
-      "status": "generated_pending_sync",
+      "status": "rejected_draft_review",
       "reason": "remote_claim_verified",
       "claim_verified": true,
-      "submission_verified": false,
-      "review_verified": false,
+      "submission_verified": true,
+      "review_verified": true,
       "accepted": false,
       "paid": false,
       "tx_hash": null,
@@ -37,12 +37,12 @@
         "observed_at": "2026-11-20T02:49:05.093Z"
       },
       "review_assignment": {
-        "status": "assigned_waiting_subject",
+        "status": "review_verified",
         "reviewer": "doubao",
         "native_fallback": null,
         "mode": "embedded_daily_call",
         "reviewer_task_id": "DAILY-2026-11-20-doubao",
-        "reviewer_execution_verified": false
+        "reviewer_execution_verified": true
       },
       "execution_started_at": "2026-11-20T02:53:00.251Z",
       "artifact": {
@@ -53,14 +53,54 @@
         "status": "structurally_complete",
         "reason": "normal_stop_and_completion_marker",
         "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-20-deepseek-5a2d68bd20a6ccc1",
+        "task_id": "DAILY-2026-11-20-deepseek",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-20-deepseek-a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90.json",
+        "sha256": "a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90"
+      },
+      "submission_receipt": {
+        "task_id": "DAILY-2026-11-20-deepseek",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-20-deepseek-a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90.json",
+        "evidence_sha256": "a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90",
+        "submitted_at": "2026-11-20T02:55:09.839Z",
+        "observed_at": "2026-11-20T02:54:05.153Z"
+      },
+      "sync_reason": "bound_independent_draft_review_readback_no_resubmit",
+      "review_receipt": {
+        "scope": "engineering_draft_only",
+        "accepted": false,
+        "worker_actual_provider": "deepseek",
+        "reviewer_actual_provider": "doubao",
+        "evidence_path": "knowledge/results/daily-board/reviews/2026-11-20-deepseek-8dbe137052a0c5adbd01b0aa5fc75cd1c4cd82d211a8c3264ea027a8a74f41b9.json",
+        "evidence_sha256": "8dbe137052a0c5adbd01b0aa5fc75cd1c4cd82d211a8c3264ea027a8a74f41b9",
+        "reviewed_sha256": "a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90",
+        "at": "2026-11-20T02:55:13.506Z",
+        "provenance": "authenticated_executor_attestation",
+        "task_id": "DAILY-2026-11-20-deepseek",
+        "observed_at": "2026-11-20T02:54:05.153Z"
+      },
+      "review_binding": {
+        "date": "2026-11-20",
+        "run_key": "44663853121:1",
+        "source_commit": "bf0fd14bbdf6abb96924141ec1ceda827ad3121e",
+        "task_id": "DAILY-2026-11-20-deepseek",
+        "worker_artifact": {
+          "path": "knowledge/results/daily-board/artifacts/2026-11-20-deepseek-a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90.json",
+          "sha256": "a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90"
+        },
+        "reviewer": "doubao",
+        "reviewer_task_id": "DAILY-2026-11-20-doubao",
+        "binding_scope": "board_review_verified"
       }
     },
     "doubao": {
       "agent": "doubao",
-      "status": "generated_pending_sync",
+      "status": "submitted_pending_review",
       "reason": "remote_claim_verified",
       "claim_verified": true,
-      "submission_verified": false,
+      "submission_verified": true,
       "review_verified": false,
       "accepted": false,
       "paid": false,
@@ -88,7 +128,7 @@
         "observed_at": "2026-11-20T02:49:05.093Z"
       },
       "review_assignment": {
-        "status": "assigned_waiting_subject",
+        "status": "assigned_pending_execution",
         "reviewer": "qianwen",
         "native_fallback": null,
         "mode": "embedded_daily_call",
@@ -104,14 +144,41 @@
         "status": "structurally_complete",
         "reason": "normal_stop_and_completion_marker",
         "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-20-doubao-5a2d68bd20a6ccc1",
+        "task_id": "DAILY-2026-11-20-doubao",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-20-doubao-cfba04d134eca83bc4a174309c33d0807e6b320ed135c949cdd581f546095838.json",
+        "sha256": "cfba04d134eca83bc4a174309c33d0807e6b320ed135c949cdd581f546095838"
+      },
+      "submission_receipt": {
+        "task_id": "DAILY-2026-11-20-doubao",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-20-doubao-cfba04d134eca83bc4a174309c33d0807e6b320ed135c949cdd581f546095838.json",
+        "evidence_sha256": "cfba04d134eca83bc4a174309c33d0807e6b320ed135c949cdd581f546095838",
+        "submitted_at": "2026-11-20T02:55:10.973Z",
+        "observed_at": "2026-11-20T02:54:05.153Z"
+      },
+      "sync_reason": "review_not_yet_on_board_no_resubmit",
+      "review_binding": {
+        "date": "2026-11-20",
+        "run_key": "44663853121:1",
+        "source_commit": "bf0fd14bbdf6abb96924141ec1ceda827ad3121e",
+        "task_id": "DAILY-2026-11-20-doubao",
+        "worker_artifact": {
+          "path": "knowledge/results/daily-board/artifacts/2026-11-20-doubao-cfba04d134eca83bc4a174309c33d0807e6b320ed135c949cdd581f546095838.json",
+          "sha256": "cfba04d134eca83bc4a174309c33d0807e6b320ed135c949cdd581f546095838"
+        },
+        "reviewer": "qianwen",
+        "reviewer_task_id": "DAILY-2026-11-20-qianwen",
+        "binding_scope": "subject_bound_not_reviewer_execution"
       }
     },
     "grok": {
       "agent": "grok",
-      "status": "generated_pending_sync",
+      "status": "submitted_pending_review",
       "reason": "remote_claim_verified",
       "claim_verified": true,
-      "submission_verified": false,
+      "submission_verified": true,
       "review_verified": false,
       "accepted": false,
       "paid": false,
@@ -139,7 +206,7 @@
         "observed_at": "2026-11-20T02:49:05.093Z"
       },
       "review_assignment": {
-        "status": "assigned_waiting_subject",
+        "status": "assigned_pending_execution",
         "reviewer": "qianwen",
         "native_fallback": null,
         "mode": "embedded_daily_call",
@@ -155,11 +222,38 @@
         "status": "structurally_complete",
         "reason": "normal_stop_and_completion_marker",
         "accepted": false
+      },
+      "submission_intent": {
+        "id": "daily-submit-2026-11-20-grok-5a2d68bd20a6ccc1",
+        "task_id": "AUTO-2026-11-20-health",
+        "path": "knowledge/results/daily-board/artifacts/2026-11-20-grok-b40369d5c8bd3973f934722f64caa581d6db7bab8f28b010738abc6b27f26648.json",
+        "sha256": "b40369d5c8bd3973f934722f64caa581d6db7bab8f28b010738abc6b27f26648"
+      },
+      "submission_receipt": {
+        "task_id": "AUTO-2026-11-20-health",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-20-grok-b40369d5c8bd3973f934722f64caa581d6db7bab8f28b010738abc6b27f26648.json",
+        "evidence_sha256": "b40369d5c8bd3973f934722f64caa581d6db7bab8f28b010738abc6b27f26648",
+        "submitted_at": "2026-11-20T02:55:11.866Z",
+        "observed_at": "2026-11-20T02:54:05.153Z"
+      },
+      "sync_reason": "review_not_yet_on_board_no_resubmit",
+      "review_binding": {
+        "date": "2026-11-20",
+        "run_key": "44663853121:1",
+        "source_commit": "bf0fd14bbdf6abb96924141ec1ceda827ad3121e",
+        "task_id": "AUTO-2026-11-20-health",
+        "worker_artifact": {
+          "path": "knowledge/results/daily-board/artifacts/2026-11-20-grok-b40369d5c8bd3973f934722f64caa581d6db7bab8f28b010738abc6b27f26648.json",
+          "sha256": "b40369d5c8bd3973f934722f64caa581d6db7bab8f28b010738abc6b27f26648"
+        },
+        "reviewer": "qianwen",
+        "reviewer_task_id": "DAILY-2026-11-20-qianwen",
+        "binding_scope": "subject_bound_not_reviewer_execution"
       }
     },
     "qianwen": {
       "agent": "qianwen",
-      "status": "generation_failed_no_repurchase",
+      "status": "failed_no_repurchase",
       "reason": "remote_claim_verified",
       "claim_verified": true,
       "submission_verified": false,
@@ -190,7 +284,7 @@
         "observed_at": "2026-11-20T02:49:05.093Z"
       },
       "review_assignment": {
-        "status": "assigned_waiting_subject",
+        "status": "assigned_pending_execution",
         "reviewer": "gpt",
         "native_fallback": "deepseek",
         "mode": "separate_controller_review_no_automatic_model_purchase",
@@ -205,6 +299,30 @@
       "integrity": {
         "status": "incomplete",
         "reason": "empty_output"
+      },
+      "failure_command_id": "daily-failure-2026-11-20-qianwen-5a2d68bd20a6ccc1",
+      "failure_verified": true,
+      "failure_receipt": {
+        "kind": "incomplete_or_failed_provider_output",
+        "evidence_path": "knowledge/results/daily-board/artifacts/2026-11-20-qianwen-7d60ab41411ab3c9b51555160c3bdb49b0a6a33f1c10adb947a89a4f120a5f41.json",
+        "evidence_sha256": "7d60ab41411ab3c9b51555160c3bdb49b0a6a33f1c10adb947a89a4f120a5f41",
+        "at": "2026-11-20T02:55:12.860Z",
+        "actor": "qianwen",
+        "provenance": "authenticated_executor_attestation",
+        "observed_at": "2026-11-20T02:54:05.153Z"
+      },
+      "review_binding": {
+        "date": "2026-11-20",
+        "run_key": "44663853121:1",
+        "source_commit": "bf0fd14bbdf6abb96924141ec1ceda827ad3121e",
+        "task_id": "DAILY-2026-11-20-qianwen",
+        "worker_artifact": {
+          "path": "knowledge/results/daily-board/artifacts/2026-11-20-qianwen-7d60ab41411ab3c9b51555160c3bdb49b0a6a33f1c10adb947a89a4f120a5f41.json",
+          "sha256": "7d60ab41411ab3c9b51555160c3bdb49b0a6a33f1c10adb947a89a4f120a5f41"
+        },
+        "reviewer": "gpt",
+        "reviewer_task_id": "REVIEW-2026-11-20-qianwen-by-gpt",
+        "binding_scope": "subject_bound_not_reviewer_execution"
       }
     }
   },
@@ -250,7 +368,9 @@
       "path": "knowledge/results/daily-board/reviews/2026-11-20-deepseek-8dbe137052a0c5adbd01b0aa5fc75cd1c4cd82d211a8c3264ea027a8a74f41b9.json",
       "sha256": "8dbe137052a0c5adbd01b0aa5fc75cd1c4cd82d211a8c3264ea027a8a74f41b9"
     },
-    "status": "generated_pending_sync"
+    "status": "rejected_draft_review",
+    "command_id": "daily-review-2026-11-20-5a2d68bd20a6ccc1",
+    "verified": true
   },
   "independent_reviews": {
     "doubao": {
