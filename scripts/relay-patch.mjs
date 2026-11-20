@@ -135,10 +135,12 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  let callMeta = {};
+  try { const parsed = JSON.parse(call.stdout); callMeta = {finish_reason: parsed.finish_reason ?? null, reply_chars: parsed.reply_chars ?? null, reply_preview: parsed.reply_preview ?? '', cost_usd: parsed.cost_usd ?? null}; } catch {}
   const payload = extractJson(call.stdout);
   const validation = validatePatch({declared: card.paths, files: payload?.files || []});
   if (!validation.ok) {
-    console.log(JSON.stringify({ok: false, ...validation, paths: card.paths}, null, 2));
+    console.log(JSON.stringify({ok: false, ...validation, paths: card.paths, relay: callMeta}, null, 2));
     process.exitCode = 1;
     return;
   }
