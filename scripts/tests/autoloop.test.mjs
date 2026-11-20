@@ -4,6 +4,7 @@ import {
   loadExecutors, classifyIssue, planWork, reservedTopics, buildEmailDigest,
   adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns, waitForDeploy, waitForChecks,
   listAutoloopCandidates,
+  githubRequest,
 } from '../autoloop.mjs';
 
 const execs = loadExecutors();
@@ -218,4 +219,22 @@ test('discovery picks up autoloop-labelled cards, not only dispatch cards', asyn
   assert.ok(asked.includes('dispatch'));
   assert.ok(asked.includes('autoloop:adjudicate'));
   assert.ok(asked.includes('autoloop:exec:relay-patch'));
+});
+
+test('githubRequest retries a transient network failure', async () => {
+  let calls = 0;
+  const fetcher = async () => { calls += 1; if (calls === 1) throw new TypeError('fetch failed'); return {ok: true, status: 200, text: async () => JSON.stringify({ok: true})}; };
+  const data = await githubRequest('t', 'GET', 'x', null, {fetcher, sleepFn: async () => {}});
+  assert.deepEqual(data, {ok: true});
+  assert.equal(calls, 2);
+});
+
+test('githubRequest retries 503 but does not retry 400', async () => {
+  let calls = 0;
+  const fetcher = async () => { calls += 1; return calls === 1 ? {ok: false, status: 503, text: async () => 'busy'} : {ok: true, status: 200, text: async () => '{"ok":true}'}; };
+  await githubRequest('t', 'GET', 'x', null, {fetcher, sleepFn: async () => {}});
+  assert.equal(calls, 2);
+  calls = 0;
+  await assert.rejects(() => githubRequest('t', 'GET', 'x', null, {fetcher: async () => { calls += 1; return {ok: false, status: 400, text: async () => 'bad'}; }, sleepFn: async () => {}}), /autoloop_github_400/);
+  assert.equal(calls, 1);
 });

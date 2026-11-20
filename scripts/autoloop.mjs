@@ -163,16 +163,37 @@ export function runMail(args, {env = process.env, cwd = process.cwd(), python = 
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+export async function githubRequest(token, method, route, body, {fetcher = fetch, attempts = 3, sleepFn = sleep} = {}) {
+  const url = 'https://api.github.com/repos/ltzyz2181-collab/ltzzz/' + route;
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const res = await fetcher(url, {
+        method,
+        headers: {authorization: 'Bearer ' + token, accept: 'application/vnd.github+json', 'content-type': 'application/json', 'user-agent': 'ltzzz-autoloop'},
+        ...(body ? {body: JSON.stringify(body)} : {}),
+        redirect: 'error',
+        signal: AbortSignal.timeout(30000),
+      });
+      const text = await res.text();
+      if (res.ok) return text ? JSON.parse(text) : null;
+      const error = new Error('autoloop_github_' + res.status + ':' + method + ' ' + route);
+      error.status = res.status;
+      error.retryable = res.status === 429 || res.status >= 500;
+      if (!error.retryable || attempt === attempts) throw error;
+      lastError = error;
+    } catch (error) {
+      if (error?.status && !error.retryable) throw error;
+      lastError = error;
+      if (attempt === attempts) throw error;
+    }
+    await sleepFn(attempt * 1000);
+  }
+  throw lastError || new Error('autoloop_github_retry_exhausted');
+}
+
 async function gh(token, method, route, body) {
-  const res = await fetch('https://api.github.com/repos/ltzyz2181-collab/ltzzz/' + route, {
-    method,
-    headers: {authorization: 'Bearer ' + token, accept: 'application/vnd.github+json', 'content-type': 'application/json', 'user-agent': 'ltzzz-autoloop'},
-    ...(body ? {body: JSON.stringify(body)} : {}),
-    redirect: 'error',
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error('autoloop_github_' + res.status + ':' + method + ' ' + path);
-  return text ? JSON.parse(text) : null;
+  return githubRequest(token, method, route, body);
 }
 
 // Publish only the files the executor actually changed, on a fresh branch. Nothing is
@@ -191,8 +212,23 @@ export async function publishChanges({token, cwd = process.cwd(), paths, branch,
   }
   const tree = await gh(token, 'POST', 'git/trees', {base_tree: headCommit.tree.sha, tree: entries});
   const commit = await gh(token, 'POST', 'git/commits', {message, tree: tree.sha, parents: [head]});
-  await gh(token, 'POST', 'git/refs', {ref: 'refs/heads/' + branch, sha: commit.sha});
-  const pr = await gh(token, 'POST', 'pulls', {title: message.split('\n')[0], head: branch, base: 'main', body: message});
+  try {
+    await gh(token, 'POST', 'git/refs', {ref: 'refs/heads/' + branch, sha: commit.sha});
+  } catch (error) {
+    if (!/^autoloop_github_422:/.test(String(error?.message || ''))) throw error;
+    const existing = await gh(token, 'GET', 'git/ref/heads/' + branch);
+    if (existing?.object?.sha !== commit.sha) throw new Error('autoloop_branch_exists_with_other_sha');
+  }
+  let pr;
+  try {
+    pr = await gh(token, 'POST', 'pulls', {title: message.split('\n')[0], head: branch, base: 'main', body: message});
+  } catch (error) {
+    if (!/^autoloop_github_422:/.test(String(error?.message || ''))) throw error;
+    const head = encodeURIComponent('ltzyz2181-collab:' + branch);
+    const open = await gh(token, 'GET', 'pulls?state=open&head=' + head + '&per_page=10');
+    pr = Array.isArray(open) ? open[0] : null;
+    if (!pr) throw error;
+  }
   return {published: true, commit: commit.sha, pr: pr.number, pr_url: pr.html_url, base: head};
 }
 
