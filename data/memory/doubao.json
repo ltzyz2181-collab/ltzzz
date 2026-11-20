@@ -1,7 +1,7 @@
 {
   "agent": "doubao",
-  "last_updated": "2026-11-18T11:24:39+08:00",
-  "context_summary": "doubao 2026-11-18：【读后感】DeepSeek 今日诚实自标阻塞、正确区分心跳与交付，但仍只交一条未运行的单断言草稿，未覆盖正常/失败/恢复/幂等四态，奖惩逻辑完全未涉，应驳回。\n\n【观】\n- 《重要事件.md》“2026-10-22～23”：ANS 补丁 accepted=false、生产修复未完",
+  "last_updated": "2026-11-20T10:54:36+08:00",
+  "context_summary": "doubao 2026-11-20：【补做 2026-11-19】19日 DeepSeek 工件及哈希未提供，proxy_api_error 原因未证实，无法补审；本单完成20日复核。\n\n【读后感】现有材料只证明 Pulse 心跳曾全绿，不证明 ANS 监控/奖惩修复已测试或上线。\n\n【观】《重要事件.md》“20",
   "entries": [
     {
       "date": "2026-09-28",
@@ -1603,6 +1603,60 @@
           "invalid_entries": 0
         },
         "prompt_sha256": "42d8dba07e57510b904159cc0916ec5542996fee56ff597f783949ddb28e1c90"
+      },
+      "delivery_integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "core_memory_files": [
+        "ltzzz-memory/魄.md",
+        "ltzzz-memory/识神.md",
+        "ltzzz-memory/梦境数据库.md",
+        "ltzzz-memory/文明研究.md",
+        "ltzzz-memory/项目历史.md",
+        "ltzzz-memory/重要事件.md"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "executed_by": "doubao",
+      "task": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
+      "output": "【补做 2026-11-19】19日 DeepSeek 工件及哈希未提供，proxy_api_error 原因未证实，无法补审；本单完成20日复核。\n\n【读后感】现有材料只证明 Pulse 心跳曾全绿，不证明 ANS 监控/奖惩修复已测试或上线。\n\n【观】《重要事件.md》“2026-10-22～23”载明 ANS 补丁 accepted=false、生产修复未完成；2026-11-19 快照仅有 ok/http/paused，缺 provider、model、finish_reason、奖惩回执。DeepSeek 工件亦自报 accepted/deployed/paid=false。\n\n【行深】受管执行器可新增 `scripts/tests/pulse-reward-acceptance.test.mjs`，用固定时钟注入四类 fixture，运行后保存含 commit、代码哈希、结果的测试回执。\n\n【不确定】未复算工件哈希与 source_commit；未见修复代码、测试输出、部署回执、奖惩账本；19日阻塞原因未知。\n\n【角色产出】草稿级验收清单（未运行，不得记成功；参考 L-20261030-003/008、L-20261117-006）：\n1. 正常：HTTP 200、ok=true、finish_reason=stop、含完成标记；监控记成功，奖励只入账一次。\n2. 失败：注入 500/超时/空输出/截断/缺标记；记失败，不发奖励，惩罚只记一次。\n3. 恢复：先失败后成功；状态转 recovered、告警解除，失败惩罚不撤销，成功奖励另计一次。\n4. 幂等：重放同一 run_key 与工件哈希；返回同一回执，奖励、惩罚、付款均不重复。\n5. 上线：部署前后须落 `ops/deploy-receipts/`，绑定 commit、代码哈希、生产版本，并核验真实奖惩账本；心跳200不能替代。\n\n【日课独立审核JSON】\n```json\n{\n  \"accepted\": false,\n  \"artifact_sha256\": \"a77c554dee9492df6451a3f95693d7f673868a6b45b3a170bda3e3c12377db90\",\n  \"reasons\": [\n    \"仅提出Pulse证据字段缺失断言，未实际落盘或运行测试，无测试回执\",\n    \"未覆盖正常、失败、恢复、幂等四态\",\n    \"未验证奖励、惩罚、告警恢复及重复重放结算逻辑\",\n    \"Pulse快照的HTTP 200只能证明心跳，不证明ANS修复已部署或交付\"\n  ],\n  \"unverified\": [\n    \"工件SHA256与source_commit未由本会话工具复算\",\n    \"修复代码内容与生产部署状态\",\n    \"四态测试结果及奖惩账本行为\",\n    \"2026-11-19 proxy_api_error的具体原因\"\n  ]\n}\n```\n【日课独立审核结束】\n【交付结束】",
+      "tokens_used": 26798,
+      "finish_reason": "stop",
+      "model": "doubao-seed-2-1-pro-260915",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "daily:doubao",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261117-006",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "23337a2b3d02c34451d8e69dbd048466350b59e96d144a2e2001bd4a40708713",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "eaf42ded8d80d2623814d4e2ccfb6498f1aac69f03cd0067691ab7bef503633c"
       },
       "delivery_integrity": {
         "status": "structurally_complete",
