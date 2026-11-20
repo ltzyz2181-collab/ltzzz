@@ -93,7 +93,7 @@ test('stripRepoEvidence：仓库读取证据里的资金词不触发拦截，卡
 test('syntaxGate：带 markdown 围栏或语法错误的代码文件不得进入合并', () => {
   const root = tmp();
   fs.writeFileSync(path.join(root, 'ok.js'), 'export const a = 1;\n');
-  fs.writeFileSync(path.join(root, 'bad.js'), 'export const a = ;\n');
+  fs.writeFileSync(path.join(root, 'bad.js'), 'const = 1;\n');
   fs.writeFileSync(path.join(root, 'fenced.mjs'), '```javascript\nexport const a = 1;\n```\n');
   assert.deepEqual(syntaxGate(root, [{path: 'ok.js', content: ''}]), {ok: true});
   assert.deepEqual(syntaxGate(root, [{path: 'docs/a.md', content: 'plain markdown' }]), {ok: true});
