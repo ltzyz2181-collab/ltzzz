@@ -63,3 +63,9 @@ test('the mapping record matches what was written', () => {
   const actual = catalog.items.filter(i => i.canonical_rule === 'suffix_strip_to_canonical').map(i => i.path).sort();
   assert.deepEqual(actual, [...mapped.mapped_paths].sort());
 });
+
+test('core-memory CI enforces the strict manifest check on manifest changes', () => {
+  const workflow = fs.readFileSync(new URL('../../.github/workflows/core-memory-integrity.yml', import.meta.url), 'utf8');
+  assert.match(workflow, /node scripts\/check-memory-manifest-consistency\.mjs --strict/);
+  assert.match(workflow, /ltzzz-memory\/manifest\.json/);
+});
