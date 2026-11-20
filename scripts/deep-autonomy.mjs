@@ -232,6 +232,23 @@ export function validateWrites(writes) {
   return {ok: true, writes};
 }
 
+// 2026-11-20 实测：Deep 把带 markdown 围栏的代码整块写进 .js，文件在 type=module 下
+// 既不是合法 JS 也用 require，仍被自动合并（PR #501）。合并前必须做本地语法闸。
+export const CODE_EXT = /\.(?:m?js|cjs)$/i;
+export function syntaxGate(root, writes, {check = null} = {}) {
+  for (const write of writes || []) {
+    if (!CODE_EXT.test(write.path)) continue;
+    if (/^\s*```/.test(write.content)) return {ok: false, error: 'markdown_fence_in_code_file:' + write.path};
+    try {
+      if (check) check(write.path);
+      else execFileSync(process.execPath, ['--check', path.join(root, write.path)], {stdio: 'pipe'});
+    } catch {
+      return {ok: false, error: 'syntax_error:' + write.path};
+    }
+  }
+  return {ok: true};
+}
+
 const defaultRunTests = (root) =>
   execFileSync('node', [
     '--test',
@@ -396,6 +413,8 @@ export async function executeAutonomy({
             fs.mkdirSync(path.dirname(abs), {recursive: true});
             fs.writeFileSync(abs, write.content);
           }
+          const syntax = syntaxGate(root, writes);
+          if (!syntax.ok) throw new Error(syntax.error);
           testResult = runTests(root);
           if (!token || !repository) throw new Error('github_token_missing');
           git(root, ['config', 'user.name', 'ltzzz-deep-autonomy']);
