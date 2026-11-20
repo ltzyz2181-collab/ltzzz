@@ -1,37 +1,72 @@
 import fs from 'node:fs';
-const url = String(process.env.META_WORKER_URL || '').replace(/\/+$/, '');
-const token = process.env.META_WORKER_TOKEN || '';
+import {createHmac} from 'node:crypto';
+
+async function resolveWorkerUrl() {
+  const direct = String(process.env.META_WORKER_URL || '').replace(/\/+$/, '');
+  if (direct) return direct;
+  const token = process.env.CLOUDFLARE_API_TOKEN;
+  const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+  if (!token || !account) return '';
+  const res = await fetch('https://api.cloudflare.com/client/v4/accounts/' + account + '/workers/subdomain', {headers: {Authorization: 'Bearer ' + token}, signal: AbortSignal.timeout(15000)});
+  const body = await res.json().catch(() => null);
+  const sub = body && body.result && body.result.subdomain;
+  return sub ? 'https://ltzzz-meta-hosted.' + sub + '.workers.dev' : '';
+}
+
+function resolveWorkerToken() {
+  if (process.env.META_WORKER_TOKEN) return process.env.META_WORKER_TOKEN;
+  const cf = process.env.CLOUDFLARE_API_TOKEN;
+  if (!cf) return '';
+  return createHmac('sha256', cf).update('ltzzz-meta-hosted-control-v1').digest('hex');
+}
+
+function writeReceipt(receipt) {
+  fs.mkdirSync('knowledge/results/meta', {recursive: true});
+  fs.writeFileSync('knowledge/results/meta/issue-route-' + (process.env.GITHUB_RUN_ID || 'local') + '.json', JSON.stringify(receipt, null, 2) + '\n');
+  console.log(JSON.stringify(receipt));
+}
+
+const url = await resolveWorkerUrl();
+const token = resolveWorkerToken();
 if (!url || !token) {
-  console.log(JSON.stringify({schema: 'ltzzz.meta-issue-route-verify.v1', error: 'worker_url_or_token_missing'}));
+  writeReceipt({schema: 'ltzzz.meta-issue-route-verify.v1', error: 'worker_url_or_token_missing', url_configured: Boolean(url), token_configured: Boolean(token)});
   process.exit(1);
 }
+
 const payload = {
   task_id: 'META-ISSUE-ROUTE-' + (process.env.GITHUB_RUN_ID || Date.now()),
   title: 'issue 通道连通性自检',
   body: 'dry_run 自检：不创建 Issue，只验证路由、策略与凭据状态。',
   dry_run: true,
 };
-const res = await fetch(url + '/issue', {
-  method: 'POST',
-  headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json'},
-  body: JSON.stringify(payload),
-  signal: AbortSignal.timeout(20000),
-});
-const text = await res.text();
-let data = null; try { data = JSON.parse(text); } catch { data = null; }
+
+let res = null;
+let data = null;
+let error = null;
+try {
+  res = await fetch(url + '/issue', {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(20000),
+  });
+  const text = await res.text();
+  try { data = JSON.parse(text); } catch { error = text.slice(0, 200); }
+} catch (e) {
+  error = String((e && e.message) || e).slice(0, 200);
+}
+
 const receipt = {
   schema: 'ltzzz.meta-issue-route-verify.v1',
   at: new Date().toISOString(),
   run_id: process.env.GITHUB_RUN_ID || null,
-  worker_host: new URL(url).host,
-  http: res.status,
+  worker_host: url.replace(/^https:\/\//, ''),
+  http: res ? res.status : 0,
   issues_configured: data ? data.issues_configured === true : null,
   dry_run: data ? data.dry_run === true : null,
   would_create: data && data.would_create ? {repo: data.would_create.repo, labels: data.would_create.labels} : null,
-  error: data ? data.error || null : text.slice(0, 200),
+  error: error || (data ? data.error || null : null),
   created_issues: 0,
 };
-fs.mkdirSync('knowledge/results/meta', {recursive: true});
-fs.writeFileSync('knowledge/results/meta/issue-route-' + (process.env.GITHUB_RUN_ID || 'local') + '.json', JSON.stringify(receipt, null, 2) + '\n');
-console.log(JSON.stringify(receipt));
-process.exit(res.status === 200 && receipt.dry_run === true ? 0 : 1);
+writeReceipt(receipt);
+process.exit(res && res.status === 200 && receipt.dry_run === true ? 0 : 1);
