@@ -2,10 +2,36 @@
   "order_id": "HIRE-SAMPLE-20261116-01",
   "idempotency_key": "HIRE-SAMPLE-20261116-01.attempt-1",
   "role": "repo_doc_audit_seat",
-  "objective": "列出 docs/ 下引用已不存在文件的 Markdown 行号，只报告不改动",
-  "acceptance_gate": "phase1-smoke",
-  "evidence_paths": ["docs/HIRE-AI-PHASE1-SPEC-20261116.md"],
-  "rollback": "删除本单与回执行，不改任何既有文件",
+  "objective": "核对 Phase1 规格文档与实现是否一致，输出差异清单，只报告不改动",
+  "acceptance_gate": "deliverable-audit",
+  "acceptance_criteria": [
+    {
+      "id": "report-size",
+      "kind": "file_min_bytes",
+      "path": "knowledge/results/hire/deliverables/HIRE-SAMPLE-20261116-01-report.md",
+      "min_bytes": 600
+    },
+    {
+      "id": "report-structure",
+      "kind": "markdown_headings",
+      "path": "knowledge/results/hire/deliverables/HIRE-SAMPLE-20261116-01-report.md",
+      "min_count": 3,
+      "headings": ["复核范围", "检查项", "结论"]
+    },
+    {
+      "id": "report-no-unfinished-marker",
+      "kind": "no_placeholder",
+      "path": "knowledge/results/hire/deliverables/HIRE-SAMPLE-20261116-01-report.md"
+    },
+    {
+      "id": "report-covers-gate",
+      "kind": "contains_all",
+      "path": "knowledge/results/hire/deliverables/HIRE-SAMPLE-20261116-01-report.md",
+      "needles": ["deliverable-audit", "acceptance_criteria", "amount_usd=0"]
+    }
+  ],
+  "evidence_paths": ["knowledge/results/hire/deliverables/HIRE-SAMPLE-20261116-01-report.md"],
+  "rollback": "删除本单、报告与对应回执行，不改任何既有文件",
   "salary": "none",
   "seat": "claude"
 }

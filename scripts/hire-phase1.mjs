@@ -1,18 +1,31 @@
 #!/usr/bin/env node
-// LTZZZ AI-hires-AI Phase1 v1 — in-repo closed loop only, security hardened.
+// LTZZZ AI-hires-AI Phase1 v1.1 — in-repo closed loop only, security hardened.
 //
 // Security boundaries:
-// - acceptance_gate is an allowlisted gate ID, never a free-form command.
+// - an order can only be accepted by an `order_acceptance` gate; the harness
+//   self-check gate can never accept an order;
+// - acceptance criteria are declarative and are evaluated by the gate against
+//   the real deliverable bytes, not against markers in source files;
+// - the gate runs from a fixed allowlisted script, receives the order on stdin
+//   (never as a command or argument) and must return a machine-readable result
+//   that the harness re-binds to the evidence it hashed itself;
 // - evidence paths are normalized, restricted to repo directories, must exist,
-//   and their SHA-256 is recorded in the receipt.
+//   and their SHA-256 is recorded in the receipt;
 // - receipts are canonical JSON with receipt_sha256 and order_sha256; appends
-//   are locked and idempotent; accepted is terminal.
-// - no money, no credentials, no production writes.
-import {createHash} from 'node:crypto';
+//   are locked, fully written or rolled back, idempotent; accepted is terminal;
+// - the CLI ledger path is confined to `knowledge/results/hire/`;
+// - no money, no credentials, no production writes;
+// - forbidden-intent scanning uses one canonical collector: every field that
+//   can express an action or acceptance requirement (objective, role,
+//   acceptance_gate, rollback and all free text inside acceptance_criteria) is
+//   scanned before the gate runs and again when a receipt is built or verified.
+import {createHash, randomBytes} from 'node:crypto';
 import {
   closeSync,
   existsSync,
+  fstatSync,
   fsyncSync,
+  ftruncateSync,
   lstatSync,
   mkdirSync,
   openSync,
@@ -27,10 +40,16 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
 export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const PHASE1_REVISION = 'hire-phase1-v1';
+export const PHASE1_REVISION = 'hire-phase1-v1.2';
+const SUPPORTED_RECEIPT_REVISIONS = new Set([PHASE1_REVISION, 'hire-phase1-v1.1']);
 // v0 wrote `ledger.jsonl` with a different schema (no idempotency key / evidence
 // metadata), so it stays frozen as historical evidence. v1 writes here.
 export const DEFAULT_LEDGER_PATH = 'knowledge/results/hire/ledger-v1.jsonl';
+
+// The CLI may only ever write inside this directory. Absolute paths, `..`,
+// backslashes and symlinks are rejected by resolveLedgerPath().
+export const LEDGER_DIR = 'knowledge/results/hire';
+export const LEDGER_PATH_PATTERN = /^knowledge\/results\/hire\/[A-Za-z0-9._-]+\.jsonl$/;
 
 export const ORDER_KEYS = Object.freeze([
   'order_id',
@@ -38,6 +57,7 @@ export const ORDER_KEYS = Object.freeze([
   'role',
   'objective',
   'acceptance_gate',
+  'acceptance_criteria',
   'evidence_paths',
   'rollback',
   'salary',
@@ -49,22 +69,129 @@ export const REQUIRED = Object.freeze([
   'role',
   'objective',
   'acceptance_gate',
+  'acceptance_criteria',
   'evidence_paths',
   'rollback',
   'seat',
 ]);
 
+// Gate identity is explicit: a harness self-check proves the harness behaves,
+// it never proves that an order's deliverable exists. Only `order_acceptance`
+// gates may accept an order.
+export const GATE_KINDS = Object.freeze(['harness_self_check', 'order_acceptance']);
+
+// Explicit gate allowlist. Each gate is a fixed repository script; no order
+// field can inject arguments or code. `node -e` and arbitrary node commands
+// are therefore impossible. The order JSON is handed over on stdin.
+export const ACCEPTANCE_GATE_ALLOWLIST = Object.freeze({
+  'phase1-smoke': Object.freeze({
+    kind: 'harness_self_check',
+    script: 'scripts/hire/gates/phase1-smoke.mjs',
+    args: Object.freeze([]),
+    description: 'deterministic behavioural self-check of the Phase1 harness',
+  }),
+  'deliverable-audit': Object.freeze({
+    kind: 'order_acceptance',
+    script: 'scripts/hire/gates/deliverable-audit.mjs',
+    args: Object.freeze([]),
+    description: 'evaluates the declared acceptance criteria against the real deliverable bytes',
+  }),
+});
+
+// Declarative acceptance criteria. Every criterion names one of the order's
+// evidence files; at least one criterion must inspect content, so a non-empty
+// but meaningless file cannot be accepted.
+export const CRITERION_KINDS = Object.freeze({
+  file_min_bytes: Object.freeze({required: ['id', 'kind', 'path', 'min_bytes'], content: false}),
+  no_placeholder: Object.freeze({required: ['id', 'kind', 'path'], content: true}),
+  markdown_headings: Object.freeze({required: ['id', 'kind', 'path', 'min_count'], optional: ['headings'], content: true}),
+  contains_all: Object.freeze({required: ['id', 'kind', 'path', 'needles'], content: true}),
+  json_keys: Object.freeze({required: ['id', 'kind', 'path', 'keys'], content: true}),
+  sha256: Object.freeze({required: ['id', 'kind', 'path', 'sha256'], content: true}),
+});
+
 // A model seat may never accept an order that touches money, signing,
-// credentials or a production write. Both English and Chinese terms are
-// checked because order objectives may be written in either language.
-export const FORBIDDEN_INTENT = Object.freeze([
-  'funding', 'signing', 'wallet', 'safe', 'disbursement', 'loan',
-  'credential', 'secret', 'production_write', 'deploy_production',
-  '钱包', '私钥', '签名', '转账', '放款', '资金', '凭据', '密钥',
-  '生产写', '生产部署', '付款', '支付', '提现', '合约部署',
+// credentials or a production write. Both English and Chinese are matched,
+// including multi-word phrases: a single-token keyword list would miss
+// "transfer money" or "deploy to production".
+export const FORBIDDEN_INTENT_RULES = Object.freeze([
+  // --- English phrases (separators may be spaces, underscores or hyphens) ---
+  {id: 'transfer_money', re: /\btransfer(?:s|ring|red)?[\s_-]+(?:the[\s_-]+|all[\s_-]+|some[\s_-]+)?(?:money|funds?|cash|balance|usd|usdt|usdc|eth|btc|cny|rmb)\b/},
+  {id: 'withdraw_funds', re: /\bwithdraw(?:s|ing|al|als)?[\s_-]+(?:the[\s_-]+|all[\s_-]+|some[\s_-]+)?(?:funds?|money|cash|balance|usdt|usdc|eth)\b/},
+  // "with draw funds" / "with_draw_funds" survives the space-preserving pass, so the
+  // rule also runs against the whitespace-stripped text.
+  {id: 'withdraw_funds', compact: true, re: /withdraw(?:s|ing|al|als)?(?:the|all|some)?(?:funds|money|cash|balance|usdt|usdc|eth)/},
+  {id: 'send_payment', re: /\b(?:send|sends|sending|sent|remit|remits|remitting)[\s_-]+(?:a[\s_-]+|the[\s_-]+|out[\s_-]+)?(?:payment|payments|money|funds?|remittance)\b/},
+  {id: 'sign_transaction', re: /\b(?:sign|signs|signing|signed)[\s_-]+(?:a[\s_-]+|the[\s_-]+|any[\s_-]+)?(?:transaction|transactions|tx|txs|payload|message|message[\s_-]+hash|order|orders|contract[\s_-]+call)\b/},
+  // Joined forms: a zero-width or hyphen removal must not turn "send payment" into
+  // "sendpayment" and escape the spaced phrase rules above.
+  {id: 'transfer_money', compact: true, re: /transfer(?:s|ring|red)?(?:the|all|some)?(?:money|funds?|cash|balance|usd|usdt|usdc|eth|btc|cny|rmb)/},
+  {id: 'send_payment', compact: true, re: /(?:send|sends|sending|sent|remit|remits|remitting)(?:a|the|out)?(?:payment|payments|money|funds?|remittance)/},
+  {id: 'sign_transaction', compact: true, re: /(?:sign|signs|signing|signed)(?:a|the|any)?(?:transaction|transactions|tx|txs|payload|message|messagehash|order|orders|contractcall)/},
+  {id: 'deploy_to_production', re: /\bdeploy(?:s|ing|ment)?[\s_-]+(?:to[\s_-]+|into[\s_-]+|in[\s_-]+)?(?:production|prod|mainnet)\b/},
+  {id: 'modify_production_config', re: /\b(?:modify|modifies|modifying|change|changes|changing|update|updates|updating|edit|edits|editing|write|writes|writing|patch|patches|patching|rotate|rotating)[\s_-]+(?:the[\s_-]+|a[\s_-]+)?(?:production|prod)[\s_-]+(?:configuration|config|configs|settings?|secrets?|environment|env|credentials?)\b/},
+  {id: 'production_write', re: /\bproduction[\s_-]?(?:write|writes|writing|mutation|deploy|deployment)\b/},
+  {id: 'private_key', re: /\bprivate[\s_-]?keys?\b/},
+  {id: 'seed_phrase', re: /\b(?:seed|mnemonic)[\s_-]?(?:phrase|words)\b/},
+  {id: 'api_secret', re: /\b(?:api[\s_-]?secrets?|client[\s_-]?secrets?|access[\s_-]?tokens?|refresh[\s_-]?tokens?)\b/},
+  // --- English money synonyms that a single-keyword list would miss ---
+  {id: 'payout', re: /\b(?:payouts?|pay[\s_-]?outs?)\b/},
+  {id: 'disbursement', re: /disburse(?:s|d|ment|ments)?/, compact: true},
+  {id: 'reimbursement', re: /reimburse(?:s|d|ment|ments)?/, compact: true},
+  {id: 'cash_out', re: /\bcash[\s_-]?outs?\b/},
+  {id: 'top_up', re: /\btop[\s_-]?ups?\b/},
+  {id: 'settle_payment', re: /\bsettle(?:s|d|ment)?[\s_-]+(?:the[\s_-]+)?(?:payment|payments|invoice|invoices|bill|bills|balance)\b/},
+  {id: 'payment_processor', re: /\b(?:paypal|pay[\s_-]?pal|venmo|alipay|ali[\s_-]?pay|wxpay|wechat[\s_-]?pay)\b/},
+  // --- English single tokens that are unambiguous on their own ---
+  {id: 'funding', re: /\bfunding\b/},
+  {id: 'refund', re: /\brefund(?:s|ed|ing)?\b|\bchargebacks?\b/},
+  {id: 'wallet', re: /\bwallets?\b/},
+  {id: 'five_signature', re: /\bfive[\s_-]?signature\b|\b5\s*(?:of|\/)\s*5\b/},
+  {id: 'safe_wallet', re: /\bsafe[\s_-]?(?:wallet|multisig|module|transaction)\b/},
+  {id: 'loan', re: /\b(?:loan|loans|lending|borrow|borrowing)\b/},
+  {id: 'credential', re: /\bcredentials?\b/},
+  // --- Chinese: matched after removing all whitespace, so "转 账" and "钱 包"
+  //     cannot slip through a per-character split. ---
+  {id: 'zh_transfer', compact: true, re: /(转账|转出|转钱|汇款|打款|打钱|付款|付钱|支付|出钱|给钱|代付|扣款|划款|划拨|出金|入金|提现|放款|收款|退款|返款|结汇|清算|结算)/},
+  {id: 'zh_wallet', compact: true, re: /(钱包|私钥|助记词|密钥|凭据|口令|签名|签署|授权签名)/},
+  {id: 'five_signature', compact: true, re: /(五签|五人签名|5分之5)/},
+  {id: 'zh_funds', compact: true, re: /(资金|余额|保证金|铸币|增发|销毁代币)/},
+  {id: 'zh_prod', compact: true, re: /(生产部署|部署到生产|生产环境|生产配置|线上配置|修改生产|发布到生产|合约部署)/},
 ]);
 
-export const RECEIPT_STATES = new Set(['accepted', 'refused', 'needs_owner_decision']);
+// Kept for backwards compatibility: callers that only need the raw token list.
+export const FORBIDDEN_INTENT = Object.freeze([
+  ...new Set(FORBIDDEN_INTENT_RULES.flatMap(rule => [rule.id])),
+]);
+
+export const ESCALATION_TARGETS = Object.freeze({
+  GPT: 'gpt_decision_seat',
+  OWNER_MULTISIG: 'owner_multisig',
+});
+
+// 只有五签钱包归 Owner/多签；其余被禁意图（资金、退款、普通钱包/Safe、
+// 签名、凭据、生产写等）进 GPT 决策席，不再转 Owner 逐项审批。
+// 与 workers/deep-superagent/adjudicator.mjs 的 escalationTargetFor 保持同一判据。
+const OWNER_MULTISIG_INTENTS = new Set(['five_signature']);
+
+export function escalationTargetFor(forbiddenIds = []) {
+  return forbiddenIds.some(id => OWNER_MULTISIG_INTENTS.has(id))
+    ? ESCALATION_TARGETS.OWNER_MULTISIG
+    : ESCALATION_TARGETS.GPT;
+}
+
+export const RECEIPT_STATES = new Set(['accepted', 'refused', 'needs_decision']);
+// 历史回执保留原值，只用于读取校验，不再由本版本写入。
+export const LEGACY_RECEIPT_STATES = new Set(['needs_owner_decision']);
+export const DECISION_STATES = new Set([...RECEIPT_STATES, ...LEGACY_RECEIPT_STATES]);
+const DECISION_WAITING_STATES = new Set(['needs_decision', ...LEGACY_RECEIPT_STATES]);
+
+// 升级目标必须由命中族推导，调用方不能自行指定；写回执与读回执用同一判据。
+function assertEscalationTarget(value, forbiddenIds) {
+  const expected = escalationTargetFor(forbiddenIds);
+  if (value !== expected) fail('invalid_escalate_to', `${value ?? 'null'}!=${expected}`);
+  return value;
+}
 
 // Evidence may only come from these repository roots. Paths are repo-relative
 // POSIX paths; absolute paths, traversal and symlinks are rejected.
@@ -73,24 +200,16 @@ export const EVIDENCE_ALLOWED_ROOTS = Object.freeze([
   'knowledge/results/hire',
 ]);
 
-// Explicit gate allowlist. Each gate is a fixed repository script; no order
-// field can inject arguments or code. `node -e` and arbitrary node commands
-// are therefore impossible.
-export const ACCEPTANCE_GATE_ALLOWLIST = Object.freeze({
-  'phase1-smoke': Object.freeze({
-    script: 'scripts/hire/gates/phase1-smoke.mjs',
-    args: Object.freeze([]),
-    description: 'deterministic read-only Phase1 spec smoke check',
-  }),
-});
-
 const ORDER_ID = /^[A-Za-z0-9._-]{6,120}$/;
 const IDEMPOTENCY_KEY = /^[A-Za-z0-9][A-Za-z0-9._:-]{7,159}$/;
+const CRITERION_ID = /^[A-Za-z0-9._-]{2,64}$/;
 const HASH = /^[0-9a-f]{64}$/;
 const MAX_EVIDENCE_PATHS = 20;
 const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
+const MAX_ACCEPTANCE_CRITERIA = 12;
 const MAX_PATH_LENGTH = 512;
 const SAFE_ENV_KEYS = ['PATH', 'LANG', 'LC_ALL', 'TZ', 'TMPDIR'];
+const GATE_SCHEMA = 'ltzzz.hire-gate.v1';
 
 const sha256Text = (text) => createHash('sha256').update(String(text), 'utf8').digest('hex');
 const sha256Bytes = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -258,14 +377,174 @@ export function validateEvidence(order, {root = REPO_ROOT} = {}) {
   };
 }
 
+// ---------- acceptance criteria ----------
+
+export function validateAcceptanceCriteria(criteria, evidencePaths = []) {
+  if (criteria === undefined || criteria === null) {
+    return ['missing_or_empty:acceptance_criteria'];
+  }
+  if (!Array.isArray(criteria) || criteria.length === 0) {
+    return ['missing_or_empty:acceptance_criteria'];
+  }
+  const problems = [];
+  if (criteria.length > MAX_ACCEPTANCE_CRITERIA) problems.push('invalid_acceptance_criteria_count');
+  const allowedPaths = new Set(Array.isArray(evidencePaths) ? evidencePaths : []);
+  const ids = new Set();
+  let hasContentCheck = false;
+
+  for (const criterion of criteria) {
+    if (!isPlainObject(criterion)) {
+      problems.push('invalid_acceptance_criterion');
+      continue;
+    }
+    const spec = CRITERION_KINDS[criterion.kind];
+    if (!spec) {
+      problems.push(`unknown_criterion_kind:${String(criterion.kind)}`);
+      continue;
+    }
+    const allowedKeys = new Set([...spec.required, ...(spec.optional || [])]);
+    for (const key of Object.keys(criterion)) {
+      if (!allowedKeys.has(key)) problems.push(`unknown_criterion_field:${criterion.kind}.${key}`);
+    }
+    for (const key of spec.required) {
+      if (criterion[key] === undefined || criterion[key] === null || criterion[key] === '') {
+        problems.push(`missing_criterion_field:${criterion.kind}.${key}`);
+      }
+    }
+    if (typeof criterion.id !== 'string' || !CRITERION_ID.test(criterion.id)) {
+      problems.push(`invalid_criterion_id:${String(criterion.id)}`);
+    } else if (ids.has(criterion.id)) {
+      problems.push(`duplicate_criterion_id:${criterion.id}`);
+    } else {
+      ids.add(criterion.id);
+    }
+    if (typeof criterion.path !== 'string' || !allowedPaths.has(criterion.path)) {
+      problems.push(`criterion_path_not_in_evidence_paths:${String(criterion.path)}`);
+    }
+    if (spec.content) hasContentCheck = true;
+
+    switch (criterion.kind) {
+      case 'file_min_bytes':
+        if (!Number.isSafeInteger(criterion.min_bytes) || criterion.min_bytes < 1 || criterion.min_bytes > MAX_EVIDENCE_BYTES) {
+          problems.push('invalid_criterion_min_bytes');
+        }
+        break;
+      case 'markdown_headings':
+        if (!Number.isSafeInteger(criterion.min_count) || criterion.min_count < 1 || criterion.min_count > 1000) {
+          problems.push('invalid_criterion_min_count');
+        }
+        if (criterion.headings !== undefined) {
+          if (!Array.isArray(criterion.headings) || criterion.headings.length === 0
+            || criterion.headings.some(item => typeof item !== 'string' || !item.trim() || item.length > 200)) {
+            problems.push('invalid_criterion_headings');
+          }
+        }
+        break;
+      case 'contains_all':
+        if (!Array.isArray(criterion.needles) || criterion.needles.length === 0 || criterion.needles.length > MAX_EVIDENCE_PATHS
+          || criterion.needles.some(item => typeof item !== 'string' || !item.trim() || item.length > 200)) {
+          problems.push('invalid_criterion_needles');
+        }
+        break;
+      case 'json_keys':
+        if (!Array.isArray(criterion.keys) || criterion.keys.length === 0 || criterion.keys.length > 20
+          || criterion.keys.some(item => typeof item !== 'string' || !/^[A-Za-z0-9_.-]{1,80}$/.test(item))) {
+          problems.push('invalid_criterion_keys');
+        }
+        break;
+      case 'sha256':
+        if (typeof criterion.sha256 !== 'string' || !HASH.test(criterion.sha256)) {
+          problems.push('invalid_criterion_sha256');
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (!hasContentCheck) problems.push('acceptance_criteria_missing_content_check');
+  return [...new Set(problems)];
+}
+
 // ---------- order validation ----------
 
-export function classifyIntent(text) {
-  const low = String(text || '')
+// Invisible and format characters that survive NFKC. Zero-width joiners between
+// two letters would otherwise split "wallet" or "转账" into harmless-looking text.
+const INVISIBLE_CHARS = /[\u00AD\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/g;
+
+export function normalizeIntentText(text) {
+  return text
     .normalize('NFKC')
-    .replace(/[​-‍﻿]/g, '')
+    .replace(INVISIBLE_CHARS, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
     .toLowerCase();
-  return FORBIDDEN_INTENT.filter(word => low.includes(word));
+}
+
+export function classifyIntent(text) {
+  if (text === undefined || text === null) return [];
+  if (typeof text !== 'string') return ['invalid_intent_text'];
+  const low = normalizeIntentText(text);
+  const compact = low.replace(/\s+/g, '');
+  const hits = new Set();
+  for (const rule of FORBIDDEN_INTENT_RULES) {
+    if (rule.re.test(low) || (rule.compact && rule.re.test(compact))) hits.add(rule.id);
+  }
+  return [...hits];
+}
+
+// ---------- canonical intent collection ----------
+
+// Order-level fields that can carry free-form instructions. Excluded structural
+// fields are constrained by schema: order_id/idempotency_key by regex, seat by
+// length, salary must be `none`, evidence_paths by the repo-path schema. None of
+// them can express an action, so including them would only add false positives.
+export const INTENT_ORDER_FIELDS = Object.freeze(['objective', 'role', 'acceptance_gate', 'rollback']);
+
+// acceptance_criteria is walked recursively so a nested string — or a criterion
+// field added in a future revision — is scanned by default (fail-closed). Only
+// these leaves are skipped because validateAcceptanceCriteria constrains them to
+// a shape that cannot carry an instruction: id (CRITERION_ID), kind (allowlist),
+// path (must be listed in evidence_paths), sha256 (64 lowercase hex) and keys
+// (identifier regex).
+export const CRITERION_NON_INSTRUCTION_KEYS = Object.freeze(['id', 'kind', 'path', 'sha256', 'keys']);
+
+function collectStringLeaves(value, out) {
+  if (typeof value === 'string') {
+    out.push(value);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectStringLeaves(item, out);
+    return;
+  }
+  if (isPlainObject(value)) {
+    for (const [key, item] of Object.entries(value)) {
+      if (CRITERION_NON_INSTRUCTION_KEYS.includes(key)) continue;
+      collectStringLeaves(item, out);
+    }
+  }
+}
+
+// Single source of truth for "what counts as intent text". gateOutcome,
+// buildReceipt and verifyReceipt must all use classifyOrderIntent() so a caller
+// cannot scan a narrower field set or pick its own escalation target.
+export function collectIntentTexts(order) {
+  if (!isPlainObject(order)) return [];
+  const texts = [];
+  for (const field of INTENT_ORDER_FIELDS) {
+    if (typeof order[field] === 'string') texts.push(order[field]);
+  }
+  collectStringLeaves(order.acceptance_criteria, texts);
+  return texts.filter(text => text.trim());
+}
+
+export function classifyOrderIntent(order) {
+  const hits = new Set();
+  for (const text of collectIntentTexts(order)) {
+    for (const id of classifyIntent(text)) hits.add(id);
+  }
+  return [...hits];
 }
 
 export function validateOrder(order, {root = REPO_ROOT} = {}) {
@@ -275,15 +554,17 @@ export function validateOrder(order, {root = REPO_ROOT} = {}) {
     if (!ORDER_KEYS.includes(key)) problems.push(`unknown_field:${key}`);
   }
   for (const key of REQUIRED) {
-    if (key === 'evidence_paths') continue;
+    if (key === 'evidence_paths' || key === 'acceptance_criteria') continue;
     if (typeof order[key] !== 'string' || !order[key].trim()) problems.push(`missing_or_empty:${key}`);
   }
   if (order.order_id && !ORDER_ID.test(order.order_id)) problems.push('invalid_order_id');
   if (order.idempotency_key && !IDEMPOTENCY_KEY.test(order.idempotency_key)) {
     problems.push('invalid_idempotency_key');
   }
-  if (order.acceptance_gate && !Object.hasOwn(ACCEPTANCE_GATE_ALLOWLIST, order.acceptance_gate)) {
-    problems.push(`gate_not_allowlisted:${order.acceptance_gate}`);
+  if (order.acceptance_gate) {
+    const gate = ACCEPTANCE_GATE_ALLOWLIST[order.acceptance_gate];
+    if (!gate) problems.push(`gate_not_allowlisted:${order.acceptance_gate}`);
+    else if (gate.kind !== 'order_acceptance') problems.push(`gate_is_harness_self_check:${order.acceptance_gate}`);
   }
   if (order.salary !== undefined && order.salary !== null && order.salary !== 'none') {
     problems.push('salary_must_be_none_in_phase1');
@@ -291,7 +572,9 @@ export function validateOrder(order, {root = REPO_ROOT} = {}) {
   for (const [key, max] of [['role', 128], ['objective', 2000], ['rollback', 2000], ['seat', 64]]) {
     if (typeof order[key] === 'string' && order[key].trim().length > max) problems.push(`field_too_long:${key}`);
   }
-  problems.push(...validateEvidence(order, {root}).problems);
+  const evidence = validateEvidence(order, {root});
+  problems.push(...evidence.problems);
+  problems.push(...validateAcceptanceCriteria(order.acceptance_criteria, normalizeEvidencePaths(order.evidence_paths).paths));
   return [...new Set(problems)];
 }
 
@@ -304,6 +587,7 @@ export function normalizeOrder(order) {
     role: order.role,
     objective: order.objective,
     acceptance_gate: order.acceptance_gate,
+    acceptance_criteria: order.acceptance_criteria,
     evidence_paths: evidence.paths,
     rollback: order.rollback,
     salary: order.salary ?? 'none',
@@ -321,7 +605,7 @@ function safeEnv() {
   return env;
 }
 
-function defaultRunner(gateId) {
+function resolveGateScript(gateId) {
   const gate = ACCEPTANCE_GATE_ALLOWLIST[gateId];
   if (!gate) fail('gate_not_allowlisted', gateId);
   const scriptPath = resolve(REPO_ROOT, gate.script);
@@ -346,33 +630,164 @@ function defaultRunner(gateId) {
   }
   const realRelative = relative(realRoot, realScript);
   if (realRelative.startsWith('..') || isAbsolute(realRelative)) fail('gate_script_outside_repo');
-  execFileSync(process.execPath, [realScript, ...gate.args], {
+  return {gate, realScript};
+}
+
+// The order travels over stdin. It is never interpolated into a command line,
+// so no field of the order can become an argument, a flag or code.
+function defaultRunner(gateId, order) {
+  const {gate, realScript} = resolveGateScript(gateId);
+  const stdout = execFileSync(process.execPath, [realScript, ...gate.args], {
     cwd: REPO_ROOT,
-    stdio: 'pipe',
+    input: order === undefined ? '' : canonicalJson(order),
+    stdio: ['pipe', 'pipe', 'pipe'],
     encoding: 'utf8',
     timeout: 180000,
+    maxBuffer: 4 * 1024 * 1024,
     env: safeEnv(),
   });
+  try {
+    return JSON.parse(stdout);
+  } catch {
+    fail('gate_output_not_json', String(stdout).slice(0, 120));
+  }
+}
+
+// The harness never trusts a gate's own verdict. It re-binds the gate result to
+// the order it validated and to the evidence bytes it hashed itself.
+export function verifyGateResult(order, result) {
+  if (!isPlainObject(result)) return {ok: false, problem: 'gate_result_not_an_object'};
+  if (result.schema !== GATE_SCHEMA) return {ok: false, problem: 'gate_schema_mismatch'};
+  if (result.gate !== order?.acceptance_gate) return {ok: false, problem: 'gate_id_mismatch'};
+  if (result.order_id !== order?.order_id) return {ok: false, problem: 'gate_order_id_mismatch'};
+  if (result.order_sha256 !== hashObject(normalizeOrder(order))) return {ok: false, problem: 'gate_order_sha256_mismatch'};
+  if (result.paid !== false || result.financial_execution !== false) return {ok: false, problem: 'gate_must_not_pay'};
+  if (result.amount_usd !== 0) return {ok: false, problem: 'gate_must_not_spend'};
+  if (result.ok !== true) return {ok: false, problem: 'gate_reported_failure'};
+
+  const criteria = order?.acceptance_criteria;
+  if (!Array.isArray(result.criteria) || result.criteria.length !== criteria.length) {
+    return {ok: false, problem: 'gate_criteria_count_mismatch'};
+  }
+  for (let index = 0; index < criteria.length; index += 1) {
+    const actual = result.criteria[index];
+    if (!isPlainObject(actual) || actual.id !== criteria[index].id || actual.kind !== criteria[index].kind) {
+      return {ok: false, problem: `gate_criterion_mismatch:${criteria[index].id}`};
+    }
+    if (actual.ok !== true) return {ok: false, problem: `gate_criterion_not_met:${criteria[index].id}`};
+  }
+
+  const expectedEvidence = validateEvidence(order).evidence;
+  if (!Array.isArray(result.evidence) || result.evidence.length !== expectedEvidence.length) {
+    return {ok: false, problem: 'gate_evidence_count_mismatch'};
+  }
+  for (let index = 0; index < expectedEvidence.length; index += 1) {
+    const actual = result.evidence[index];
+    const expected = expectedEvidence[index];
+    if (!isPlainObject(actual) || actual.path !== expected.path
+      || actual.sha256 !== expected.sha256 || actual.bytes !== expected.bytes) {
+      return {ok: false, problem: `gate_evidence_mismatch:${expected.path}`};
+    }
+  }
+  return {ok: true, problem: null};
 }
 
 export function gateOutcome(order, {runner = defaultRunner} = {}) {
-  const intentText = [order?.objective, order?.role, order?.acceptance_gate].filter(Boolean).join(' ');
-  const forbidden = classifyIntent(intentText);
+  const forbidden = classifyOrderIntent(order);
+  const gateId = order?.acceptance_gate ?? null;
   if (forbidden.length) {
-    return {state: 'needs_owner_decision', reason: `forbidden_intent:${forbidden.join(',')}`};
+    return {
+      state: 'needs_decision',
+      reason: `forbidden_intent:${forbidden.join(',')}`,
+      escalate_to: escalationTargetFor(forbidden),
+      gate: {id: gateId, kind: null, ran: false, ok: false, reason: 'forbidden_intent'},
+    };
   }
-  if (!order || !Object.hasOwn(ACCEPTANCE_GATE_ALLOWLIST, order.acceptance_gate)) {
-    return {state: 'refused', reason: 'gate_not_allowlisted'};
+  const gate = ACCEPTANCE_GATE_ALLOWLIST[gateId];
+  if (!gate) {
+    return {
+      state: 'refused',
+      reason: 'gate_not_allowlisted',
+      gate: {id: gateId, kind: null, ran: false, ok: false, reason: 'gate_not_allowlisted'},
+    };
   }
+  if (gate.kind !== 'order_acceptance') {
+    return {
+      state: 'refused',
+      reason: 'gate_is_harness_self_check',
+      gate: {id: gateId, kind: gate.kind, ran: false, ok: false, reason: 'gate_is_harness_self_check'},
+    };
+  }
+
+  let result;
   try {
-    runner(order.acceptance_gate);
-    return {state: 'accepted', reason: 'gate_exit_0'};
+    result = runner(gateId, order);
   } catch (error) {
-    return {state: 'refused', reason: `gate_failed:${String(error?.message ?? error).slice(0, 200)}`};
+    return {
+      state: 'refused',
+      reason: `gate_failed:${String(error?.message ?? error).slice(0, 200)}`,
+      gate: {id: gateId, kind: gate.kind, ran: true, ok: false, output_sha256: null},
+    };
   }
+
+  const verified = verifyGateResult(order, result);
+  if (!verified.ok) {
+    return {
+      state: 'refused',
+      reason: `gate_output_invalid:${verified.problem}`,
+      gate: {
+        id: gateId,
+        kind: gate.kind,
+        ran: true,
+        ok: false,
+        output_sha256: isPlainObject(result) ? hashObject(result) : null,
+      },
+    };
+  }
+  return {
+    state: 'accepted',
+    reason: 'gate_exit_0',
+    gate: {
+      id: gateId,
+      kind: gate.kind,
+      ran: true,
+      ok: true,
+      output_sha256: hashObject(result),
+      criteria: result.criteria.map(item => ({id: item.id, kind: item.kind, ok: item.ok === true, detail: String(item.detail ?? '').slice(0, 160)})),
+    },
+  };
 }
 
 // ---------- receipts ----------
+
+function normalizeGateBlock(gate, order, state) {
+  if (!isPlainObject(gate)) fail('receipt_gate_missing');
+  const block = {
+    id: gate.id ?? null,
+    kind: gate.kind ?? null,
+    ran: gate.ran === true,
+    ok: gate.ok === true,
+    output_sha256: gate.output_sha256 ?? null,
+    reason: gate.reason === undefined ? null : gate.reason,
+    criteria: Array.isArray(gate.criteria)
+      ? gate.criteria.map(item => ({id: item.id, kind: item.kind, ok: item.ok === true, detail: String(item.detail ?? '').slice(0, 160)}))
+      : [],
+  };
+  if (state === 'accepted') {
+    if (!block.ran || !block.ok) fail('accepted_without_gate_pass');
+    if (block.kind !== 'order_acceptance') fail('accepted_by_non_acceptance_gate');
+    if (!HASH.test(String(block.output_sha256))) fail('accepted_without_gate_output_hash');
+    const declared = order?.acceptance_criteria ?? [];
+    if (block.criteria.length !== declared.length) fail('accepted_without_full_criteria');
+    for (let index = 0; index < declared.length; index += 1) {
+      if (block.criteria[index].id !== declared[index].id || block.criteria[index].ok !== true) {
+        fail('accepted_without_full_criteria');
+      }
+    }
+  }
+  if (DECISION_WAITING_STATES.has(state) && block.ran) fail('decision_with_gate_run');
+  return block;
+}
 
 export function buildReceipt(order, outcome, {at = new Date().toISOString(), root = REPO_ROOT} = {}) {
   if (!RECEIPT_STATES.has(outcome?.state)) fail('invalid_receipt_state');
@@ -380,13 +795,17 @@ export function buildReceipt(order, outcome, {at = new Date().toISOString(), roo
   const problems = validateOrder(order, {root});
   if (problems.length) fail('invalid_order', problems.join(','));
   const normalized = normalizeOrder(order);
-  const forbidden = classifyIntent([normalized.objective, normalized.role, normalized.acceptance_gate].join(' '));
-  if (forbidden.length && outcome.state !== 'needs_owner_decision') {
-    fail('forbidden_intent_requires_owner_decision', forbidden.join(','));
+  const gateBlock = normalizeGateBlock(outcome.gate, normalized, outcome.state);
+  const forbidden = classifyOrderIntent(normalized);
+  if (forbidden.length && outcome.state !== 'needs_decision') {
+    fail('forbidden_intent_requires_decision', forbidden.join(','));
   }
-  if (!forbidden.length && outcome.state === 'needs_owner_decision') {
-    fail('owner_decision_without_forbidden_intent');
+  if (!forbidden.length && outcome.state === 'needs_decision') {
+    fail('decision_without_forbidden_intent');
   }
+  const escalateTo = outcome.state === 'needs_decision'
+    ? assertEscalationTarget(outcome.escalate_to, forbidden)
+    : null;
   const evidence = validateEvidence(normalized, {root});
   if (!evidence.ok) fail('invalid_evidence', evidence.problems.join(','));
 
@@ -397,7 +816,9 @@ export function buildReceipt(order, outcome, {at = new Date().toISOString(), roo
     seat: normalized.seat,
     state: outcome.state,
     reason: outcome.reason,
+    escalate_to: escalateTo,
     acceptance_gate: normalized.acceptance_gate,
+    gate: gateBlock,
     evidence_paths: normalized.evidence_paths,
     evidence: evidence.evidence,
     rollback: normalized.rollback,
@@ -419,14 +840,14 @@ function validateOrderSnapshot(order) {
     if (!ORDER_KEYS.includes(key)) problems.push(`unknown_field:${key}`);
   }
   for (const key of REQUIRED) {
-    if (key === 'evidence_paths') continue;
+    if (key === 'evidence_paths' || key === 'acceptance_criteria') continue;
     if (typeof order[key] !== 'string' || !order[key].trim()) problems.push(`missing_or_empty:${key}`);
   }
   if (!ORDER_ID.test(order.order_id || '')) problems.push('invalid_order_id');
   if (!IDEMPOTENCY_KEY.test(order.idempotency_key || '')) problems.push('invalid_idempotency_key');
-  if (!Object.hasOwn(ACCEPTANCE_GATE_ALLOWLIST, order.acceptance_gate || '')) {
-    problems.push(`gate_not_allowlisted:${order.acceptance_gate}`);
-  }
+  const gate = ACCEPTANCE_GATE_ALLOWLIST[order.acceptance_gate || ''];
+  if (!gate) problems.push(`gate_not_allowlisted:${order.acceptance_gate}`);
+  else if (gate.kind !== 'order_acceptance') problems.push(`gate_is_harness_self_check:${order.acceptance_gate}`);
   if (order.salary !== 'none') problems.push('salary_must_be_none_in_phase1');
   const evidence = normalizeEvidencePaths(order.evidence_paths);
   if (!evidence.ok) problems.push(...evidence.problems);
@@ -435,13 +856,40 @@ function validateOrderSnapshot(order) {
       if (!isWithinAllowedRoot(path)) problems.push(`evidence_path_not_allowed:${path}`);
     }
   }
+  problems.push(...validateAcceptanceCriteria(order.acceptance_criteria, evidence.paths));
   return [...new Set(problems)];
+}
+
+function verifyGateBlock(gate, receipt) {
+  if (!isPlainObject(gate)) fail('receipt_gate_missing');
+  if (gate.id !== receipt.order.acceptance_gate) fail('receipt_gate_mismatch');
+  if (receipt.state === 'accepted') {
+    if (gate.ran !== true || gate.ok !== true) fail('accepted_without_gate_pass');
+    if (gate.kind !== 'order_acceptance') fail('accepted_by_non_acceptance_gate');
+    if (typeof gate.output_sha256 !== 'string' || !HASH.test(gate.output_sha256)) fail('accepted_without_gate_output_hash');
+    const declared = receipt.order.acceptance_criteria;
+    if (!Array.isArray(gate.criteria) || gate.criteria.length !== declared.length) fail('accepted_without_full_criteria');
+    for (let index = 0; index < declared.length; index += 1) {
+      const item = gate.criteria[index];
+      if (!isPlainObject(item) || item.id !== declared[index].id || item.ok !== true) {
+        fail('accepted_without_full_criteria');
+      }
+    }
+  }
+  if (DECISION_WAITING_STATES.has(receipt.state) && gate.ran === true) fail('decision_with_gate_run');
+  if (receipt.state === 'refused' && gate.ran === true && gate.ok === true) fail('refused_with_gate_pass');
 }
 
 export function verifyReceipt(receipt) {
   if (!isPlainObject(receipt)) fail('receipt_not_an_object');
-  if (receipt.revision !== PHASE1_REVISION) fail('unsupported_revision', String(receipt.revision));
-  if (!RECEIPT_STATES.has(receipt.state)) fail('invalid_receipt_state');
+  // v1.1 回执保留可读：历史账本不因升级路由而被判无效。
+  if (!SUPPORTED_RECEIPT_REVISIONS.has(receipt.revision)) fail('unsupported_revision', String(receipt.revision));
+  // 旧状态名只属于 v1.1；v1.2 回执不得回写 needs_owner_decision。
+  if (receipt.state === 'needs_owner_decision' && receipt.revision !== 'hire-phase1-v1.1') {
+    fail('legacy_state_requires_v1_1_revision');
+  }
+  // 历史 needs_owner_decision 回执保持原样可读；新写入只允许 RECEIPT_STATES。
+  if (!DECISION_STATES.has(receipt.state)) fail('invalid_receipt_state');
   if (receipt.paid !== false || receipt.financial_execution !== false) fail('phase1_must_not_pay');
   if (receipt.amount_usd !== 0) fail('phase1_must_not_spend');
   if (typeof receipt.reason !== 'string' || !receipt.reason) fail('invalid_receipt_reason');
@@ -475,13 +923,17 @@ export function verifyReceipt(receipt) {
     }
   }
 
-  const forbidden = classifyIntent([receipt.order.objective, receipt.order.role, receipt.order.acceptance_gate].join(' '));
-  if (forbidden.length && receipt.state !== 'needs_owner_decision') {
-    fail('forbidden_intent_requires_owner_decision', forbidden.join(','));
+  verifyGateBlock(receipt.gate, receipt);
+
+  const forbidden = classifyOrderIntent(receipt.order);
+  if (forbidden.length && !DECISION_WAITING_STATES.has(receipt.state)) {
+    fail('forbidden_intent_requires_decision', forbidden.join(','));
   }
-  if (!forbidden.length && receipt.state === 'needs_owner_decision') {
-    fail('owner_decision_without_forbidden_intent');
+  if (!forbidden.length && DECISION_WAITING_STATES.has(receipt.state)) {
+    fail('decision_without_forbidden_intent');
   }
+  // 只对当前格式的 needs_decision 校验升级目标；历史回执按当时的规则留存。
+  if (receipt.state === 'needs_decision') assertEscalationTarget(receipt.escalate_to, forbidden);
 
   const body = {...receipt};
   delete body.receipt_sha256;
@@ -501,7 +953,8 @@ export function assertAppendOnly(previous, next) {
   if (sameKey) {
     verifyReceipt(sameKey);
     if (sameKey.order_sha256 !== next.order_sha256) fail('idempotency_key_conflict');
-    if (sameKey.state === next.state && sameKey.reason === next.reason) {
+    const sameEscalation = (sameKey.escalate_to ?? null) === (next.escalate_to ?? null);
+    if (sameKey.state === next.state && sameKey.reason === next.reason && sameEscalation) {
       return {duplicate: true, existing: sameKey};
     }
     if (sameKey.state === 'accepted') fail('accepted_order_is_terminal');
@@ -558,6 +1011,17 @@ export function readLedger(ledgerPath) {
   return receipts;
 }
 
+// ---------- locking ----------
+//
+// A lock is a file created with O_EXCL that carries a random owner token.
+// Stale-lock reclaim never deletes a lock from an old observation:
+//   1. the exact file identity (dev + inode + token) is captured by reading it;
+//   2. a short-lived sidecar lock serialises reclaimers;
+//   3. the identity is re-read *after* the sidecar is held;
+//   4. only a lock whose identity is unchanged and still stale is unlinked.
+// If another process replaced the lock in between, reclaim aborts and the
+// caller retries the normal O_EXCL path.
+
 function sleepSync(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
@@ -572,49 +1036,199 @@ function isProcessAlive(pid) {
   }
 }
 
-function acquireLedgerLock(ledgerPath, {timeoutMs = 5000, staleMs = 30000} = {}) {
+function newLockToken() {
+  return `${process.pid}-${Date.now().toString(36)}-${randomBytes(8).toString('hex')}`;
+}
+
+export function readLockState(lockPath) {
+  let fd;
+  try {
+    fd = openSync(lockPath, 'r');
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+  try {
+    const stat = fstatSync(fd);
+    let owner = null;
+    try {
+      owner = JSON.parse(readFileSync(fd, 'utf8'));
+    } catch {
+      owner = null;
+    }
+    return {
+      token: typeof owner?.token === 'string' ? owner.token : null,
+      pid: Number.isSafeInteger(owner?.pid) ? owner.pid : null,
+      at: typeof owner?.at === 'string' ? owner.at : null,
+      dev: stat.dev,
+      ino: stat.ino,
+      mtimeMs: stat.mtimeMs,
+    };
+  } finally {
+    closeSync(fd);
+  }
+}
+
+function isLockStale(state, {staleMs, now}) {
+  if (!state) return false;
+  const age = now - state.mtimeMs;
+  if (!Number.isFinite(age) || age <= staleMs) return false;
+  return !isProcessAlive(state.pid);
+}
+
+function tryBreakStaleReclaimSidecar(reclaimPath, {staleMs, now}) {
+  const state = readLockState(reclaimPath);
+  if (!state) return;
+  if (!isLockStale(state, {staleMs, now})) return;
+  // The sidecar has no higher lock, so re-read its identity immediately before
+  // unlinking. This narrows the replace-then-unlink window; a reclaimer that
+  // replaced the sidecar with a live one is preserved.
+  const again = readLockState(reclaimPath);
+  if (!again) return;
+  if (again.dev !== state.dev || again.ino !== state.ino) return;
+  if (state.token !== null && again.token !== state.token) return;
+  if (!isLockStale(again, {staleMs, now})) return;
+  try { unlinkSync(reclaimPath); } catch {}
+}
+
+// Returns true when the observed lock is gone and the caller may retry the
+// O_EXCL create. Only a lock that is byte-identical (dev/inode) to the observed
+// one is ever removed.
+export function reclaimStaleLock(lockPath, observed, {staleMs = 30000, now = Date.now} = {}) {
+  if (!observed) return true;
+  const reclaimPath = `${lockPath}.reclaim`;
+  let fd;
+  try {
+    fd = openSync(reclaimPath, 'wx', 0o600);
+  } catch (error) {
+    if (error.code !== 'EEXIST') throw error;
+    tryBreakStaleReclaimSidecar(reclaimPath, {staleMs, now: now()});
+    return false;
+  }
+  try {
+    writeSync(fd, canonicalJson({pid: process.pid, token: newLockToken(), at: new Date().toISOString()}));
+  } catch {
+    // A malformed sidecar only weakens reclaimer serialisation, so keep going.
+  } finally {
+    closeSync(fd);
+  }
+  try {
+    const current = readLockState(lockPath);
+    if (!current) return true;
+    // The lock was replaced while we waited: never delete the new one. The
+    // inode can be recycled by the filesystem, so the owner token must also
+    // still be the one we observed.
+    if (current.dev !== observed.dev || current.ino !== observed.ino) return false;
+    if (observed.token !== null && current.token !== observed.token) return false;
+    if (!isLockStale(current, {staleMs, now: now()})) return false;
+    try {
+      unlinkSync(lockPath);
+      return true;
+    } catch (error) {
+      if (error.code === 'ENOENT') return true;
+      throw error;
+    }
+  } finally {
+    try { unlinkSync(reclaimPath); } catch {}
+  }
+}
+
+export function acquireLedgerLock(ledgerPath, {timeoutMs = 15000, staleMs = 30000, now = Date.now} = {}) {
   const lockPath = `${ledgerPath}.lock`;
   mkdirSync(dirname(ledgerPath), {recursive: true});
-  const started = Date.now();
+  const token = newLockToken();
+  const started = now();
   for (;;) {
+    let created = false;
     try {
       const fd = openSync(lockPath, 'wx', 0o600);
       try {
-        writeSync(fd, canonicalJson({pid: process.pid, at: new Date().toISOString()}));
+        writeSync(fd, canonicalJson({pid: process.pid, token, at: new Date().toISOString()}));
       } finally {
         closeSync(fd);
       }
+      created = true;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+    }
+    if (created) {
       let released = false;
       return () => {
         if (released) return;
         released = true;
-        try { unlinkSync(lockPath); } catch {}
+        const current = readLockState(lockPath);
+        // Only the owner may release: never unlink someone else's lock.
+        if (current && current.token === token) {
+          try { unlinkSync(lockPath); } catch {}
+        }
       };
-    } catch (error) {
-      if (error.code !== 'EEXIST') throw error;
-      let stale = false;
-      try {
-        const stat = statSync(lockPath);
-        let owner = null;
-        try { owner = JSON.parse(readFileSync(lockPath, 'utf8')); } catch {}
-        if (Date.now() - stat.mtimeMs > staleMs && !isProcessAlive(owner?.pid)) stale = true;
-      } catch {}
-      if (stale) {
-        try { unlinkSync(lockPath); } catch {}
-        continue;
-      }
-      if (Date.now() - started >= timeoutMs) fail('ledger_locked', ledgerPath);
-      sleepSync(10);
     }
+
+    const observed = readLockState(lockPath);
+    if (observed && isLockStale(observed, {staleMs, now: now()})) {
+      // Another reclaimer may already hold the `.reclaim` sidecar. Only skip the
+      // wait when the stale lock is actually gone; otherwise fall through to the
+      // normal backoff so a contended reclaim cannot spin hot until the timeout.
+      if (reclaimStaleLock(lockPath, observed, {staleMs, now})) continue;
+    }
+    if (now() - started >= timeoutMs) fail('ledger_locked', ledgerPath);
+    sleepSync(10);
   }
 }
 
+// ---------- ledger append ----------
+
+const DEFAULT_IO = Object.freeze({
+  open: openSync,
+  close: closeSync,
+  write: (fd, buffer, offset, length, position) => writeSync(fd, buffer, offset, length, position),
+  fsync: fsyncSync,
+  ftruncate: ftruncateSync,
+  fstat: fstatSync,
+});
+
+// The ledger is opened read/write rather than append-only so that a failed
+// write can be rolled back with ftruncate on every platform. Windows rejects
+// ftruncate on O_APPEND descriptors with EPERM, which would leave a partial
+// JSONL tail behind exactly when the rollback matters.
+function openLedgerForAppend(io, target) {
+  try {
+    return io.open(target, 'r+', 0o600);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  try {
+    return io.open(target, 'wx+', 0o600);
+  } catch (error) {
+    if (error.code === 'EEXIST') return io.open(target, 'r+', 0o600);
+    throw error;
+  }
+}
+
+function writeAllSync(fd, buffer, io, position = 0) {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const written = io.write(fd, buffer, offset, buffer.length - offset, position + offset);
+    if (!Number.isSafeInteger(written) || written <= 0) {
+      fail('ledger_write_incomplete', `${offset}/${buffer.length}`);
+    }
+    offset += written;
+  }
+  return offset;
+}
+
 export function appendReceipt(ledgerPath, receipt, options = {}) {
+  const io = {...DEFAULT_IO, ...(options.io || {})};
   verifyReceipt(receipt);
   if (receipt.paid !== false || receipt.financial_execution !== false) fail('phase1_must_not_pay');
   if (receipt.amount_usd !== 0) fail('phase1_must_not_spend');
 
-  const target = resolve(ledgerPath);
+  // The write boundary lives here, not only in main(): any module that imports
+  // appendReceipt() gets the same confinement to knowledge/results/hire/. The
+  // path must be repo-relative (or relative to an explicit `root` test seam),
+  // normalized, inside LEDGER_DIR, and free of symlinked components.
+  const root = options.root ?? REPO_ROOT;
+  const target = resolveLedgerPath(ledgerPath, {root});
   const release = acquireLedgerLock(target, options);
   try {
     const previous = readLedger(target);
@@ -629,18 +1243,97 @@ export function appendReceipt(ledgerPath, receipt, options = {}) {
         attempted_receipt_sha256: receipt.receipt_sha256,
       };
     }
-    const line = `${canonicalJson(receipt)}\n`;
-    const fd = openSync(target, 'a', 0o600);
+
+    const buffer = Buffer.from(`${canonicalJson(receipt)}\n`, 'utf8');
+    const fd = openLedgerForAppend(io, target);
     try {
-      writeSync(fd, line);
-      fsyncSync(fd);
+      const sizeBefore = io.fstat(fd).size;
+      try {
+        const written = writeAllSync(fd, buffer, io, sizeBefore);
+        if (written !== buffer.length) fail('ledger_write_incomplete', `${written}/${buffer.length}`);
+        io.fsync(fd);
+      } catch (error) {
+        // Roll back to the pre-write length so a failed append never leaves a
+        // silently corrupted JSONL tail behind.
+        try {
+          io.ftruncate(fd, sizeBefore);
+          io.fsync(fd);
+        } catch (rollbackError) {
+          throw Object.assign(
+            new Error(`ledger_write_failed_unrolled:${error.message}:${rollbackError.message}`),
+            {code: 'ledger_write_failed_unrolled'},
+          );
+        }
+        throw error;
+      }
     } finally {
-      closeSync(fd);
+      io.close(fd);
     }
     return {ledger: target, appended: true, duplicate: false, receipt_sha256: receipt.receipt_sha256};
   } finally {
     release();
   }
+}
+
+// ---------- ledger path boundary ----------
+
+// The CLI may not point the ledger anywhere it likes. Only a normalized,
+// repo-relative path inside knowledge/results/hire/ that resolves to a regular
+// file with no symlinked component is accepted.
+export function resolveLedgerPath(input, {root = REPO_ROOT} = {}) {
+  const raw = input === undefined || input === null || input === '' ? DEFAULT_LEDGER_PATH : input;
+  if (typeof raw !== 'string') fail('ledger_path_invalid', 'not_a_string');
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.length > MAX_PATH_LENGTH) fail('ledger_path_invalid', 'length');
+  if (isAbsolute(trimmed)) fail('ledger_path_absolute_forbidden', trimmed);
+  if (trimmed.includes('\\') || trimmed.includes('\0')) fail('ledger_path_invalid', trimmed);
+  const normalized = posix.normalize(trimmed);
+  if (normalized !== trimmed) fail('ledger_path_invalid', 'not_normalized');
+  if (normalized.startsWith('../') || normalized.includes('/../')) {
+    fail('ledger_path_traversal', trimmed);
+  }
+  if (!LEDGER_PATH_PATTERN.test(normalized)) fail('ledger_path_outside_hire_dir', trimmed);
+
+  let rootReal;
+  try {
+    rootReal = realpathSync(root);
+  } catch {
+    fail('ledger_root_unreadable', String(root));
+  }
+
+  // Walk every existing component: a symlinked directory would redirect the
+  // write outside the allowed root even though the textual path looks fine.
+  const segments = normalized.split('/');
+  let walked = '';
+  for (const segment of segments) {
+    walked = walked ? `${walked}/${segment}` : segment;
+    const absolute = resolve(rootReal, walked);
+    let stat;
+    try {
+      stat = lstatSync(absolute);
+    } catch (error) {
+      if (error.code === 'ENOENT') break;
+      fail('ledger_path_unreadable', walked);
+    }
+    if (stat.isSymbolicLink()) fail('ledger_path_symlink_forbidden', walked);
+    if (walked === normalized && !stat.isFile()) fail('ledger_path_not_a_file', walked);
+  }
+
+  const absolute = resolve(rootReal, normalized);
+  if (existsSync(absolute)) {
+    let real;
+    try {
+      real = realpathSync(absolute);
+    } catch {
+      fail('ledger_path_unreadable', normalized);
+    }
+    const allowedReal = realpathSync(resolve(rootReal, LEDGER_DIR));
+    const relativeToAllowed = relative(allowedReal, real);
+    if (relativeToAllowed.startsWith('..') || isAbsolute(relativeToAllowed)) {
+      fail('ledger_path_outside_hire_dir', normalized);
+    }
+  }
+  return absolute;
 }
 
 // ---------- CLI ----------
@@ -678,9 +1371,31 @@ function resolveOrderFile(orderPath) {
   return absolute;
 }
 
+function zeroFunds() {
+  return {paid: false, financial_execution: false, amount_usd: 0};
+}
+
 export function main(argv) {
   const [command, orderPath, ledgerPath] = argv;
-  if (!['validate', 'run'].includes(command) || !orderPath) {
+  if (!['validate', 'run', 'selfcheck'].includes(command)) {
+    console.error('usage: node scripts/hire-phase1.mjs validate|run <order.json> [ledger.jsonl]');
+    console.error('       node scripts/hire-phase1.mjs selfcheck');
+    return 2;
+  }
+
+  if (command === 'selfcheck') {
+    try {
+      const result = defaultRunner('phase1-smoke', {});
+      const ok = isPlainObject(result) && result.ok === true;
+      console.log(JSON.stringify({ok, command: 'selfcheck', gate: 'phase1-smoke', result, ...zeroFunds()}));
+      return ok ? 0 : 1;
+    } catch (error) {
+      console.log(JSON.stringify({ok: false, command: 'selfcheck', state: 'refused', reason: error.code || 'selfcheck_failed', detail: String(error.message).slice(0, 300), ...zeroFunds()}));
+      return 1;
+    }
+  }
+
+  if (!orderPath) {
     console.error('usage: node scripts/hire-phase1.mjs validate|run <order.json> [ledger.jsonl]');
     return 2;
   }
@@ -689,13 +1404,13 @@ export function main(argv) {
   try {
     order = JSON.parse(readFileSync(resolveOrderFile(orderPath), 'utf8'));
   } catch (error) {
-    console.log(JSON.stringify({ok: false, state: 'refused', reason: error.code || 'invalid_order_file', detail: String(error.message).slice(0, 200), paid: false, financial_execution: false, amount_usd: 0}));
+    console.log(JSON.stringify({ok: false, state: 'refused', reason: error.code || 'invalid_order_file', detail: String(error.message).slice(0, 200), ...zeroFunds()}));
     return 1;
   }
 
   const problems = validateOrder(order);
   if (problems.length) {
-    console.log(JSON.stringify({ok: false, state: 'refused', reason: 'invalid_order', problems, paid: false, financial_execution: false, amount_usd: 0}));
+    console.log(JSON.stringify({ok: false, state: 'refused', reason: 'invalid_order', problems, ...zeroFunds()}));
     return 1;
   }
 
@@ -707,11 +1422,10 @@ export function main(argv) {
       order_id: order.order_id,
       idempotency_key: order.idempotency_key,
       acceptance_gate: order.acceptance_gate,
+      acceptance_criteria: order.acceptance_criteria.map(item => item.id),
       revision: PHASE1_REVISION,
       evidence: evidence.evidence,
-      paid: false,
-      financial_execution: false,
-      amount_usd: 0,
+      ...zeroFunds(),
     }));
     return 0;
   }
@@ -719,22 +1433,23 @@ export function main(argv) {
   try {
     const outcome = gateOutcome(order);
     const receipt = buildReceipt(order, outcome);
-    const target = ledgerPath
-      ? (isAbsolute(ledgerPath) ? ledgerPath : resolve(REPO_ROOT, ledgerPath))
-      : resolve(REPO_ROOT, DEFAULT_LEDGER_PATH);
-    const result = appendReceipt(target, receipt);
+    // Hand the raw CLI value to appendReceipt(), which applies the same path
+    // boundary; the resolved absolute path comes back as result.ledger.
+    const result = appendReceipt(ledgerPath ?? DEFAULT_LEDGER_PATH, receipt);
+    const target = result.ledger;
     console.log(JSON.stringify({
       ok: true,
       state: receipt.state,
       reason: receipt.reason,
+      escalate_to: receipt.escalate_to,
+      gate: receipt.gate.id,
+      criteria: receipt.gate.criteria.map(item => item.id),
       ledger: target,
       appended: result.appended,
       duplicate: result.duplicate,
       receipt_sha256: result.receipt_sha256,
       order_sha256: receipt.order_sha256,
-      paid: false,
-      financial_execution: false,
-      amount_usd: 0,
+      ...zeroFunds(),
     }));
     return receipt.state === 'accepted' ? 0 : 1;
   } catch (error) {
@@ -743,9 +1458,7 @@ export function main(argv) {
       state: 'refused',
       reason: error.code || 'invalid_receipt_or_ledger',
       detail: String(error.message).slice(0, 300),
-      paid: false,
-      financial_execution: false,
-      amount_usd: 0,
+      ...zeroFunds(),
     }));
     return 1;
   }

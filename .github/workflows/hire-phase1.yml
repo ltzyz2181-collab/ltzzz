@@ -1,0 +1,248 @@
+name: AI hire Phase1 acceptance (offline, zero funds)
+
+# Dedicated Phase1 CI: it runs the real Phase1 test suite and the real CLI
+# end-to-end. It is deliberately separate from the small-payment offline checks
+# so that "Phase1 passed" always means this file passed, with the TAP output and
+# the generated ledger uploaded as evidence.
+#
+# No secrets, no network services, no payment: amount_usd stays 0, paid stays
+# false and financial_execution stays false on every path.
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/hire-phase1.mjs'
+      - 'scripts/hire/gates/**'
+      - 'scripts/tests/hire-phase1.test.mjs'
+      - 'ops/hire/orders/**'
+      - 'knowledge/results/hire/deliverables/**'
+      - 'docs/HIRE-AI-PHASE1-SPEC-20261116.md'
+      - '.github/workflows/hire-phase1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/hire-phase1.mjs'
+      - 'scripts/hire/gates/**'
+      - 'scripts/tests/hire-phase1.test.mjs'
+      - 'ops/hire/orders/**'
+      - 'knowledge/results/hire/deliverables/**'
+      - 'docs/HIRE-AI-PHASE1-SPEC-20261116.md'
+      - '.github/workflows/hire-phase1.yml'
+  workflow_dispatch:
+
+permissions: {contents: read}
+
+concurrency:
+  group: ltzzz-hire-phase1-acceptance
+  cancel-in-progress: false
+
+jobs:
+  phase1:
+    name: Phase1 acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Syntax check the harness and both gates
+        run: |
+          node --check scripts/hire-phase1.mjs
+          node --check scripts/hire/gates/phase1-smoke.mjs
+          node --check scripts/hire/gates/deliverable-audit.mjs
+
+      - name: Run the dedicated Phase1 test suite
+        run: |
+          set -o pipefail
+          mkdir -p ci-artifacts
+          node --test --test-reporter=tap scripts/tests/hire-phase1.test.mjs | tee ci-artifacts/hire-phase1.tap
+
+      - name: Assert the suite really ran the mandated areas
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const tap = readFileSync('ci-artifacts/hire-phase1.tap', 'utf8');
+          const num = (label) => {
+            const m = tap.match(new RegExp(`^# ${label} (\\d+)$`, 'm'));
+            if (!m) throw new Error(`TAP summary missing: # ${label}`);
+            return Number(m[1]);
+          };
+          const tests = num('tests');
+          const pass = num('pass');
+          const fail = num('fail');
+          const skipped = num('skipped');
+          const todo = num('todo');
+          if (fail !== 0) throw new Error(`fail=${fail}`);
+          if (skipped !== 0) throw new Error(`skipped=${skipped}`);
+          if (todo !== 0) throw new Error(`todo=${todo}`);
+          if (pass < 40) throw new Error(`only ${pass} tests passed (expected at least 40)`);
+          if (tests !== pass) throw new Error(`tests=${tests} but pass=${pass}`);
+          // Deleting or renaming a mandated test must break CI.
+          const required = [
+            'order structure',
+            'a harness self-check gate can never accept an order',
+            'order acceptance reads the real deliverable and refuses an empty one',
+            'order acceptance refuses a wrong deliverable',
+            'a forged gate result is never accepted',
+            'cannot inject a command',
+            'a sensitive order never reaches the gate runner',
+            'only the five-signature wallet is routed to the owner multisig',
+            'English funding, signing and production phrases are refused',
+            'Chinese funding, signing and production phrases are refused',
+            'evidence must live in an allowed root',
+            'symlinked evidence is rejected',
+            'records the real byte hash and size',
+            're-running the same order does not double-book',
+            'accepted is terminal',
+            'concurrent processes appending the same order',
+            'an abnormally exited process does not lock the ledger forever',
+            'stale-lock reclaim never deletes a lock replaced',
+            'a lock owned by a live process is never reclaimed',
+            'a contended stale-lock reclaim never deletes the lock',
+            'concurrent reclaimers of one stale lock',
+            'a short write is completed',
+            'a write failure rolls the ledger back',
+            'an fsync failure fails explicitly',
+            'the ledger path is confined to knowledge/results/hire/',
+            'a symlinked or directory ledger path is refused',
+            'appendReceipt refuses an out-of-bound ledger path when called directly',
+            'appendReceipt confines an explicit root',
+            'paid, financial_execution and amount_usd invariants',
+          ];
+          for (const name of required) {
+            if (!tap.includes(name)) throw new Error(`missing mandated test: ${name}`);
+          }
+          console.log(JSON.stringify({tests, pass, fail, skipped, todo, required_tests_checked: required.length}));
+          JS
+
+      - name: End-to-end CLI acceptance with the zero-fund invariant
+        env:
+          GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          import {copyFileSync, existsSync, readFileSync, writeFileSync} from 'node:fs';
+          import {spawnSync} from 'node:child_process';
+
+          const CLI = 'scripts/hire-phase1.mjs';
+          const ACCEPTED = 'ops/hire/orders/HIRE-SAMPLE-20261116-01.json';
+          const FORBIDDEN = 'ops/hire/orders/HIRE-SAMPLE-20261116-02-forbidden.json';
+          const ledger = `knowledge/results/hire/ci-ledger-${process.env.GITHUB_RUN_ID || 'local'}.jsonl`;
+          const results = {};
+
+          const run = (label, args) => {
+            const result = spawnSync(process.execPath, [CLI, ...args], {encoding: 'utf8', timeout: 120000});
+            results[label] = {args, status: result.status, stdout: result.stdout, stderr: result.stderr};
+            let payload;
+            try {
+              payload = JSON.parse(result.stdout);
+            } catch {
+              throw new Error(`${label}: output is not JSON: ${result.stdout} ${result.stderr}`);
+            }
+            if (payload.paid !== false || payload.financial_execution !== false || payload.amount_usd !== 0) {
+              throw new Error(`${label}: zero-fund invariant violated`);
+            }
+            return {status: result.status, payload};
+          };
+
+          const selfcheck = run('selfcheck', ['selfcheck']);
+          if (selfcheck.status !== 0 || selfcheck.payload.ok !== true) throw new Error('selfcheck failed');
+
+          const validation = run('validate', ['validate', ACCEPTED]);
+          if (validation.status !== 0 || validation.payload.state !== 'spec_valid') throw new Error('validate failed');
+
+          const first = run('run-first', ['run', ACCEPTED, ledger]);
+          if (first.payload.state !== 'accepted' || first.payload.appended !== true) {
+            throw new Error(`first run was not appended-accepted: ${JSON.stringify(first.payload)}`);
+          }
+
+          const second = run('run-second', ['run', ACCEPTED, ledger]);
+          if (second.payload.appended !== false || second.payload.duplicate !== true) {
+            throw new Error(`second run was not an idempotent duplicate: ${JSON.stringify(second.payload)}`);
+          }
+
+          const forbidden = run('run-forbidden', ['run', FORBIDDEN, ledger]);
+          if (forbidden.payload.state !== 'needs_decision') {
+            throw new Error(`forbidden order was not escalated: ${JSON.stringify(forbidden.payload)}`);
+          }
+          if (forbidden.payload.escalate_to !== 'gpt_decision_seat') {
+            throw new Error(`non-five-signature wallet order was not routed to the GPT decision seat: ${JSON.stringify(forbidden.payload)}`);
+          }
+          if (!Array.isArray(forbidden.payload.criteria) || forbidden.payload.criteria.length !== 0) {
+            throw new Error('forbidden order ran the acceptance gate');
+          }
+
+          const escape = run('ledger-escape', ['run', ACCEPTED, '../escaped.jsonl']);
+          if (escape.payload.ok !== false || !/ledger_path/.test(escape.payload.reason)) {
+            throw new Error(`escaping ledger path was not refused: ${JSON.stringify(escape.payload)}`);
+          }
+          if (existsSync('escaped.jsonl')) throw new Error('escaping ledger path wrote a file');
+
+          const rows = readFileSync(ledger, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+          if (rows.length !== 2) throw new Error(`ledger rows=${rows.length} (expected accepted + decision)`);
+          const [accepted, decision] = rows;
+          if (accepted.state !== 'accepted' || accepted.revision !== 'hire-phase1-v1.2') throw new Error('accepted row invalid');
+          if (!/^[0-9a-f]{64}$/.test(accepted.receipt_sha256)) throw new Error('accepted receipt has no sha256');
+          if (!/^[0-9a-f]{64}$/.test(accepted.order_sha256)) throw new Error('accepted order has no sha256');
+          if (accepted.gate.ran !== true || accepted.gate.ok !== true || accepted.gate.kind !== 'order_acceptance') {
+            throw new Error('accepted row has no passing order-acceptance gate');
+          }
+          if (decision.state !== 'needs_decision' || decision.gate.ran !== false) {
+            throw new Error('decision row ran the gate');
+          }
+          if (decision.escalate_to !== 'gpt_decision_seat') {
+            throw new Error('non-five-signature wallet decision row was not routed to the GPT decision seat');
+          }
+          for (const row of rows) {
+            if (row.amount_usd !== 0 || row.paid !== false || row.financial_execution !== false) {
+              throw new Error(`ledger row ${row.order_id} violates the zero-fund invariant`);
+            }
+          }
+
+          copyFileSync(ledger, 'ci-artifacts/ledger.jsonl');
+          writeFileSync('ci-artifacts/e2e-summary.json', `${JSON.stringify({
+            run_id: process.env.GITHUB_RUN_ID || null,
+            commit: process.env.GITHUB_HEAD_SHA || process.env.GITHUB_SHA || null,
+            base_commit: process.env.GITHUB_BASE_SHA || null,
+            merge_commit: process.env.GITHUB_SHA || null,
+            ledger,
+            rows: rows.length,
+            accepted_order_id: accepted.order_id,
+            accepted_receipt_sha256: accepted.receipt_sha256,
+            decision_order_id: decision.order_id,
+            decision_escalate_to: decision.escalate_to,
+            amount_usd: 0,
+            paid: false,
+            financial_execution: false,
+            results,
+          }, null, 2)}\n`);
+          console.log(JSON.stringify({ok: true, rows: rows.length, ledger}));
+          JS
+
+      - name: Assert evidence is bound to the tested commit
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const summary = JSON.parse(readFileSync('ci-artifacts/e2e-summary.json', 'utf8'));
+          if (summary.commit !== process.env.EXPECTED_SHA) {
+            throw new Error(`commit mismatch: artifact=${summary.commit} expected=${process.env.EXPECTED_SHA}`);
+          }
+          console.log(JSON.stringify({commit: summary.commit, base_commit: summary.base_commit, merge_commit: summary.merge_commit}));
+          JS
+
+      - name: Upload Phase1 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hire-phase1-evidence
+          path: |
+            ci-artifacts/hire-phase1.tap
+            ci-artifacts/e2e-summary.json
+            ci-artifacts/ledger.jsonl
+          if-no-files-found: warn
+          retention-days: 30

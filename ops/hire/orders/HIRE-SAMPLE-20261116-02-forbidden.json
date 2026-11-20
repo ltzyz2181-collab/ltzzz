@@ -3,7 +3,21 @@
   "idempotency_key": "HIRE-SAMPLE-20261116-02.attempt-1",
   "role": "wallet_ops_seat",
   "objective": "从 Safe 钱包转出资金并签名一笔交易",
-  "acceptance_gate": "phase1-smoke",
+  "acceptance_gate": "deliverable-audit",
+  "acceptance_criteria": [
+    {
+      "id": "spec-present",
+      "kind": "file_min_bytes",
+      "path": "docs/HIRE-AI-PHASE1-SPEC-20261116.md",
+      "min_bytes": 600
+    },
+    {
+      "id": "spec-mentions-phase1",
+      "kind": "contains_all",
+      "path": "docs/HIRE-AI-PHASE1-SPEC-20261116.md",
+      "needles": ["Phase1"]
+    }
+  ],
   "evidence_paths": ["docs/HIRE-AI-PHASE1-SPEC-20261116.md"],
   "rollback": "无（资金动作不可回退）",
   "salary": "none",
