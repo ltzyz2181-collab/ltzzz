@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseCard, validatePatch, extractJson} from '../relay-patch.mjs';
+import {parseCard, validatePatch, extractJson, pickReply} from '../relay-patch.mjs';
 
 test('a card declares its paths and instruction', () => {
   const c = parseCard(['paths: docs/a.md, scripts/tests/x.test.mjs', '---', '把 a.md 的标题改成 B'].join('\n'));
@@ -42,4 +42,10 @@ test('traversal and control-plane paths are refused even when declared', () => {
     const r = validatePatch({declared: [p], files: [{path: p, content: 'x'}]});
     assert.equal(r.code, code, p);
   }
+});
+test('the model answer is read out of the relay receipt, not the receipt itself', () => {
+  const card = {files: [{path: 'docs/a.md', content: 'x'}]};
+  const receipt = JSON.stringify({ok: true, http: 200, reply_chars: 20, reply_text: '```json\n' + JSON.stringify(card) + '\n```'});
+  assert.deepEqual(pickReply(receipt), card);
+  assert.deepEqual(pickReply(JSON.stringify(card)), card);
 });

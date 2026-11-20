@@ -71,6 +71,12 @@ export function validatePatch({declared = [], files = []}) {
   return {ok: true, files: out};
 }
 
+// relay-seat prints its own receipt JSON; the model answer lives in reply_text.
+export function pickReply(stdout = '') {
+  const outer = (() => { try { return JSON.parse(String(stdout)); } catch { return null; } })();
+  return extractJson(outer?.reply_text || outer?.reply_preview || stdout);
+}
+
 export function extractJson(text) {
   const s = String(text || '');
   const start = s.indexOf('{');
@@ -137,7 +143,7 @@ async function main() {
   }
   let callMeta = {};
   try { const parsed = JSON.parse(call.stdout); callMeta = {finish_reason: parsed.finish_reason ?? null, reply_chars: parsed.reply_chars ?? null, reply_preview: parsed.reply_preview ?? '', cost_usd: parsed.cost_usd ?? null}; } catch {}
-  const payload = extractJson(call.stdout);
+  const payload = pickReply(call.stdout);
   const validation = validatePatch({declared: card.paths, files: payload?.files || []});
   if (!validation.ok) {
     console.log(JSON.stringify({ok: false, ...validation, paths: card.paths, relay: callMeta}, null, 2));
