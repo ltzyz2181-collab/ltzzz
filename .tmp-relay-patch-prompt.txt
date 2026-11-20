@@ -3,55 +3,52 @@
 输出必须是 JSON，且只有一个顶层对象：{"files":[{"path":"<允许的路径>","content":"<完整文件内容>"}]}
 不要输出解释、不要输出 diff、不要新增未列出的路径。
 
-允许路径：docs/RELAY-SEATS-CURRENT.md
+允许路径：scripts/lib/agent-council.mjs, scripts/tests/agent-council.test.mjs
 
 任务：
-在「## 怎么用」一节末尾追加一行：
-- 每次中转调用按次记账，写入 knowledge/results/relay-seat/balance-ledger.json；余额低于 $3 自动关席。
-其余内容保持不变，不要改动其他小节。
+在仓库内**新建**两个文件，只允许改这两个路径。纯 ESM，无第三方依赖，无网络，无文件写入。
+
+## 文件 1：scripts/lib/agent-council.mjs
+
+必须导出：
+
+1. `export const MARKERS = ['proposal','review','objection','concur','council','consensus','arbiter-request','arbiter-decision'];`
+2. `export function parseCouncilComments(comments)`：输入 `[{id, body}]`，返回 `[{marker, fields, comment_id, seat, round, raw}]`。只识别行首 `[marker]` 开头的标记行，一条评论可含多条；无法解析的评论跳过，不抛错。`fields` 是 `key=value` 键值对象。
+3. `export function evaluateCouncil({taskId, comments, requiredSeats = ['relay-claude','relay-gpt'], maxRounds = 2, reserved = false})`，返回 `{stage, round, consensus, blocking, next, reason}`，`stage ∈ ['wait','revision_required','approved','council','arbitrated']`，`next ∈ ['wait','revision_required','open_council','arbitrate','approve']`。
+   判定规则（按顺序）：
+   - `[objection] severity=blocking` 且之后没有同 round 的 `[proposal]`、也没有对该 objection 评论 id 的 `[concur]` → `stage=revision_required, next=revision_required`。
+   - 两席 `[review] verdict` 不一致（一 pass 一 fail），或只有一席 review 且 `reserved=false` → `next=open_council`；若已开 `[council] round>=maxRounds` → `next=arbitrate`。
+   - `[consensus] result=split` 且 round>=maxRounds → `next=arbitrate`。
+   - `reserved=true` 时，`requiredSeats` 每一席都必须有 `[review]`，否则 `next=wait`。
+   - 两席（或 requiredSeats 全员）verdict=pass 且无 blocking → `next=approve, stage=approved`。
+   - 其余 → `next=wait`。
+   `consensus` 表示当前是否所有 requiredSeats 都 pass；`blocking` 是未解决 blocking 异议数量。
+4. `export function wakeDecision({taskId, event, sourceId, now, recent = []})`，返回 `{wake, reason, dedupe_key, suppressed}`，`dedupe_key = taskId + ':' + event + ':' + sourceId`。规则：
+   - 同 `dedupe_key` 已存在 → `wake=false, reason='duplicate'`；
+   - 同 task 近 1 小时内已有 1 条 → `wake=false, reason='task_rate_limited'`；
+   - `recent` 总数 ≥6 → `wake=false, reason='global_rate_limited'`；
+   - 否则 `wake=true, reason='wake'`；`suppressed` 在 wake 为 false 时为 true。
+5. `export const WAKE_EVENTS = ['timeout','review_rejected','council_opened','council_split','arbiter_decision','urgent_alert'];`
+
+## 文件 2：scripts/tests/agent-council.test.mjs
+
+用 `node:test` + `node:assert/strict`，至少覆盖 10 条：一致通过、blocking 异议、异议被 concur 解除、两席不一致自动开合议、两轮分裂上送、reserved 缺一席不通过、重复评论幂等、超时事件唤醒、同事件去重、单任务限流、全局限流、未知标记忽略。
+
+## 输出格式
+
+严格返回 JSON，且只有一个顶层对象：
+
+{"files":[{"path":"scripts/lib/agent-council.mjs","content":"<完整内容>"},{"path":"scripts/tests/agent-council.test.mjs","content":"<完整内容>"}]}
+
+不要输出解释、不要 diff、不要新增其他路径。代码里不要写 markdown 围栏。
+
+## 验收
+
+`node --check scripts/lib/agent-council.mjs` 通过；`node --test scripts/tests/agent-council.test.mjs` 全绿。
+
+本卡不涉及资金、付款、退款、签名、私钥、钱包、五签 Safe、凭据、密钥或 Secrets。
 
 现有内容：
---- docs/RELAY-SEATS-CURRENT.md ---
-# 中转席位（relay-gpt / relay-claude）当前分工
+--- scripts/lib/agent-council.mjs ---
 
-更新时间：2026-11-19
-裁决依据：`config/owner-authority-20261119-open-execution.json`
-
-## 权限
-
-| 席位 | 读取 | 写入 | 裁决 | 资金类 |
-|---|---|---|---|---|
-| relay-gpt | 全仓 | 决策记录、Issue 评论 | 普通事项具约束力 | 不接触 |
-| relay-claude | 全仓 | 代码/文档 PR（限卡上 `paths:`） | 只复核，不裁决 | 不接触 |
-
-中转调用的档位在 `config/relay-seat-policy.json` 的 `profiles` 里：
-`adjudication`（≤900 输出 token，单次 ≤$0.05）与 `code`（≤2000 输出 token，单次 ≤$0.05）。
-余额底线仍是 $3，低于底线自动关席。
-
-## 在 Deep 团队里的分工
-
-- **relay-gpt：日常裁决席。** Deep 团队每天产出的卡，凡不涉及资金/退款终态/签名/密钥/钱包/凭据，
-  由它直接给 verdict（approve | reject | needs_more_evidence），回执写回原卡。
-  它不再只出「建议」，除非卡片本身属于保留事项——那类卡在进 relay 前就被拦下转 GPT。
-- **relay-claude：代码与证据席。** 更适合做这四件事：
-  1. 补测试与回归用例（最擅长，风险最低）；
-  2. 整理交付回执、把散落的证据写成结构化记录；
-  3. 复核 PR diff，指出缺测试、命名不一致、边界漏判；
-  4. 在卡上声明的小范围路径内改文档/注释/死代码清理。
-  不适合：跨模块重构、涉及生产配置的改动、任何资金语义。
-
-## 怎么用
-
-- 裁决：卡片打 `autoloop:adjudicate`（默认 relay-gpt）或 `autoloop:adjudicate:claude`。
-- 写代码：卡片打 `autoloop:exec:relay-patch`，并在正文写
-  `paths: docs/a.md, scripts/tests/b.test.mjs`，`---` 之后写任务。
-  relay-claude 只能改这些路径；钱包、`.env`、密钥、凭据路径即使在 `paths:` 里也会被拒绝。
-  写完后由 `node scripts/relay-patch.mjs --verify-only` 自检，再走正常 PR/合并。
-- 邮件：卡片打 `mail:send`，见 `docs/AUTOLOOP-CURRENT.md`。
-
-## 边界
-
-- 保留事项（资金、付款、放款、转账、退款终态、签名、私钥、助记词、钱包、五签 Safe、凭据与密钥）
-  永远不送进中转席。
-- 中转裁决产生的是「做不做、按什么范围做」，不等于执行结果；执行结果以仓库回执为准。
-- 中转模型是第三方聚合站，提示词会经过其服务器；不得把凭据、客户敏感资料放进 prompt。
+--- scripts/tests/agent-council.test.mjs ---
