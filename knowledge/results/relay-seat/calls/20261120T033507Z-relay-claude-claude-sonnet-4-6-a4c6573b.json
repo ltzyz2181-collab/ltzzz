@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-20T03:35:07.284Z",
+  "requested_at": "2026-11-20T03:34:35.549Z",
+  "responded_at": "2026-11-20T03:35:07.284Z",
+  "request_id": "20261120033436937227876lH13doKP",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "relay-claude",
+  "purpose": "code",
+  "generation_output": false,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "claude-sonnet-4-6",
+  "model_served": "claude-sonnet-4-6",
+  "model_tier": "claude",
+  "model_class": "claude",
+  "routing": {
+    "requested_model": "claude-sonnet-4-6",
+    "served_model": "claude-sonnet-4-6",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "ltzzz_proxy",
+  "boundary_exception": false,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 2000,
+  "batch": false,
+  "prompt": {
+    "chars": 2947,
+    "estimated_input_tokens": 1150,
+    "sha256": "a4c6573b5f28c9791e4eeb40f64e4aa5f242212ae16211212b4af45da036468b"
+  },
+  "http": 200,
+  "duration_ms": 31734,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 1380,
+    "prompt_tokens_billed": 1380,
+    "usage_source": "reported",
+    "completion_tokens": 3993,
+    "total_tokens": 5373
+  },
+  "cost_usd": 0.051228,
+  "balance_before_usd": 12.799343,
+  "balance_after_usd": 12.748115,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 31734,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 11210,
+    "preview": "```json\n{\n  \"files\": [\n    {\n      \"path\": \"scripts/lib/agent-council.mjs\",\n      \"content\": \"export const MARKERS = [\\n  'proposal',\\n  'review',\\n  'objection",
+    "text": "```json\n{\n  \"files\": [\n    {\n      \"path\": \"scripts/lib/agent-council.mjs\",\n      \"content\": \"export const MARKERS = [\\n  'proposal',\\n  'review',\\n  'objection',\\n  'concur',\\n  'council',\\n  'consensus',\\n  'arbiter-request',\\n  'arbiter-decision'\\n];\\n\\nexport const WAKE_EVENTS = [\\n  'timeout',\\n  'review_rejected',\\n  'council_opened',\\n  'council_split',\\n  'arbiter_decision',\\n  'urgent_alert'\\n];\\n\\nexport function parseCouncilComments(comments) {\\n  const results = [];\\n  for (const comment of comments) {\\n    const lines = comment.body.split('\\\\n');\\n    for (const line of lines) {\\n      const trimmed = line.trim();\\n      const match = trimmed.match(/^\\\\[(\\\\w+-?\\\\w*)\\\\](.*)$/);\\n      if (!match) continue;\\n      const marker = match[1];\\n      if (!MARKERS.includes(marker)) continue;\\n      const rest = match[2].trim();\\n      const fields = {};\\n      const pairs = rest.split(/\\\\s+/);\\n      for (const pair of pairs) {\\n        const eq = pair.indexOf('=');\\n        if (eq > 0) {\\n          const key = pair.substring(0, eq);\\n          const value = pair.substring(eq + 1);\\n          fields[key] = value;\\n        }\\n      }\\n      results.push({\\n        marker,\\n        fields,\\n        comment_id: comment.id,\\n        seat: fields.seat || null,\\n        round: fields.round ? parseInt(fields.round, 10) : null,\\n        raw: trimmed\\n      });\\n    }\\n  }\\n  return results;\\n}\\n\\nexport function evaluateCouncil({\\n  taskId,\\n  comments,\\n  requiredSeats = ['relay-claude', 'relay-gpt'],\\n  maxRounds = 2,\\n  reserved = false\\n}) {\\n  const parsed = parseCouncilComments(comments);\\n  const objections = parsed.filter(p => p.marker === 'objection');\\n  const proposals = parsed.filter(p => p.marker === 'proposal');\\n  const concurs = parsed.filter(p => p.marker === 'concur');\\n  const reviews = parsed.filter(p => p.marker === 'review');\\n  const councils = parsed.filter(p => p.marker === 'council');\\n  const consensuses = parsed.filter(p => p.marker === 'consensus');\\n\\n  let blocking = 0;\\n  for (const obj of objections) {\\n    if (obj.fields.severity === 'blocking') {\\n      const objRound = obj.round || 0;\\n      const hasLaterProposal = proposals.some(p => (p.round || 0) >= objRound && p.comment_id > obj.comment_id);\\n      const hasConcur = concurs.some(c => c.fields.target == obj.comment_id);\\n      if (!hasLaterProposal && !hasConcur) {\\n        blocking++;\\n      }\\n    }\\n  }\\n\\n  if (blocking > 0) {\\n    return {\\n      stage: 'revision_required',\\n      round: Math.max(...parsed.map(p => p.round || 0), 0),\\n      consensus: false,\\n      blocking,\\n      next: 'revision_required',\\n      reason: 'blocking objection unresolved'\\n    };\\n  }\\n\\n  const reviewsBySeats = {};\\n  for (const r of reviews) {\\n    if (r.seat) {\\n      if (!reviewsBySeats[r.seat]) reviewsBySeats[r.seat] = [];\\n      reviewsBySeats[r.seat].push(r);\\n    }\\n  }\\n\\n  const latestReviews = {};\\n  for (const seat of requiredSeats) {\\n    const seatReviews = reviewsBySeats[seat] || [];\\n    if (seatReviews.length > 0) {\\n      latestReviews[seat] = seatReviews[seatReviews.length - 1];\\n    }\\n  }\\n\\n  const reviewCount = Object.keys(latestReviews).length;\\n  if (reserved && reviewCount < requiredSeats.length) {\\n    return {\\n      stage: 'wait',\\n      round: Math.max(...parsed.map(p => p.round || 0), 0),\\n      consensus: false,\\n      blocking: 0,\\n      next: 'wait',\\n      reason: 'reserved mode requires all seats'\\n    };\\n  }\\n\\n  const verdicts = Object.values(latestReviews).map(r => r.fields.verdict);\\n  const allPass = verdicts.length > 0 && verdicts.every(v => v === 'pass');\\n  const allFail = verdicts.length > 0 && verdicts.every(v => v === 'fail');\\n  const split = verdicts.length > 0 && !allPass && !allFail;\\n\\n  const currentRound = Math.max(...parsed.map(p => p.round || 0), 0);\\n\\n  if (split || (reviewCount === 1 && !reserved)) {\\n    if (councils.length > 0 && currentRound >= maxRounds) {\\n      return {\\n        stage: 'council',\\n        round: currentRound,\\n        consensus: false,\\n        blocking: 0,\\n        next: 'arbitrate',\\n        reason: 'council rounds exhausted'\\n      };\\n    }\\n    return {\\n      stage: 'council',\\n      round: currentRound,\\n      consensus: false,\\n      blocking: 0,\\n      next: 'open_council',\\n      reason: 'reviews split or insufficient'\\n    };\\n  }\\n\\n  const latestConsensus = consensuses.length > 0 ? consensuses[consensuses.length - 1] : null;\\n  if (latestConsensus && latestConsensus.fields.result === 'split' && currentRound >= maxRounds) {\\n    return {\\n      stage: 'council',\\n      round: currentRound,\\n      consensus: false,\\n      blocking: 0,\\n      next: 'arbitrate',\\n      reason: 'consensus split at max rounds'\\n    };\\n  }\\n\\n  if (allPass && reviewCount === requiredSeats.length) {\\n    return {\\n      stage: 'approved',\\n      round: currentRound,\\n      consensus: true,\\n      blocking: 0,\\n      next: 'approve',\\n      reason: 'all required seats pass'\\n    };\\n  }\\n\\n  return {\\n    stage: 'wait',\\n    round: currentRound,\\n    consensus: allPass,\\n    blocking: 0,\\n    next: 'wait',\\n    reason: 'awaiting reviews'\\n  };\\n}\\n\\nexport function wakeDecision({ taskId, event, sourceId, now, recent = [] }) {\\n  const dedupe_key = `${taskId}:${event}:${sourceId}`;\\n\\n  if (recent.some(r => r.dedupe_key === dedupe_key)) {\\n    return {\\n      wake: false,\\n      reason: 'duplicate',\\n      dedupe_key,\\n      suppressed: true\\n    };\\n  }\\n\\n  const oneHourAgo = now - 3600000;\\n  const taskRecent = recent.filter(r => r.taskId === taskId && r.timestamp > oneHourAgo);\\n  if (taskRecent.length >= 1) {\\n    return {\\n      wake: false,\\n      reason: 'task_rate_limited',\\n      dedupe_key,\\n      suppressed: true\\n    };\\n  }\\n\\n  if (recent.length >= 6) {\\n    return {\\n      wake: false,\\n      reason: 'global_rate_limited',\\n      dedupe_key,\\n      suppressed: true\\n    };\\n  }\\n\\n  return {\\n    wake: true,\\n    reason: 'wake',\\n    dedupe_key,\\n    suppressed: false\\n  };\\n}\\n\"\n    },\n    {\n      \"path\": \"scripts/tests/agent-council.test.mjs\",\n      \"content\": \"import { test } from 'node:test';\\nimport assert from 'node:assert/strict';\\nimport {\\n  MARKERS,\\n  WAKE_EVENTS,\\n  parseCouncilComments,\\n  evaluateCouncil,\\n  wakeDecision\\n} from '../lib/agent-council.mjs';\\n\\ntest('parseCouncilComments - 一致通过场景', () => {\\n  const comments = [\\n    { id: 1, body: '[review] seat=relay-claude verdict=pass round=0' },\\n    { id: 2, body: '[review] seat=relay-gpt verdict=pass round=0' }\\n  ];\\n  const parsed = parseCouncilComments(comments);\\n  assert.equal(parsed.length, 2);\\n  assert.equal(parsed[0].marker, 'review');\\n  assert.equal(parsed[0].fields.verdict, 'pass');\\n  assert.equal(parsed[0].seat, 'relay-claude');\\n});\\n\\ntest('evaluateCouncil - 两席一致通过', () => {\\n  const comments = [\\n    { id: 1, body: '[review] seat=relay-claude verdict=pass round=0' },\\n    { id: 2, body: '[review] seat=relay-gpt verdict=pass round=0' }\\n  ];\\n  const result = evaluateCouncil({ taskId: 't1', comments });\\n  assert.equal(result.stage, 'approved');\\n  assert.equal(result.next, 'approve');\\n  assert.equal(result.consensus, true);\\n  assert.equal(result.blocking, 0);\\n});\\n\\ntest('evaluateCouncil - blocking 异议未解除', () => {\\n  const comments = [\\n    { id: 1, body: '[objection] severity=blocking round=0' },\\n    { id: 2, body: '[review] seat=relay-claude verdict=pass round=0' }\\n  ];\\n  const result = evaluateCouncil({ taskId: 't2', comments });\\n  assert.equal(result.stage, 'revision_required');\\n  assert.equal(result.next, 'revision_required');\\n  assert.equal(result.blocking, 1);\\n});\\n\\ntest('evaluateCouncil - blocking 异议被 concur 解除', () => {\\n  const comments = [\\n    { id: 1, body: '[objection] severity=blocking round=0' },\\n    { id: 2, body: '[concur] target=1 round=0' },\\n    { id: 3, body: '[review] seat=relay-claude verdict=pass round=0' },\\n    { id: 4, body: '[review] seat=relay-gpt verdict=pass roun"
+  },
+  "key_fingerprint": null,
+  "failure": null,
+  "http_error": null
+}
