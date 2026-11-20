@@ -31,6 +31,15 @@ const MAIL_RECIPIENT_LIMIT = 8;
 const allowlistSet = (value) => new Set((Array.isArray(value) ? value : String(value || '').split(','))
   .map((entry) => String(entry).trim().toLowerCase())
   .filter(Boolean));
+// 收件人按小写去重，但保留第一次出现的原始大小写，收件人看到的口径不变。
+const uniqueAddresses = (list) => {
+  const seen = new Map();
+  for (const addr of list) {
+    const key = String(addr).toLowerCase();
+    if (!seen.has(key)) seen.set(key, String(addr));
+  }
+  return [...seen.values()];
+};
 const WRITE_LIMIT_FILES = 6;
 const WRITE_LIMIT_BYTES = 400 * 1024;
 const REPO_READ_LIMIT_FILES = 8;
@@ -111,7 +120,7 @@ export function normalizeAutonomy(value, {allowedMailTo = null} = {}) {
     if (mail.body !== undefined && (typeof mail.body !== 'string' || mail.body.length > 20000)) fail('invalid_mail_body');
     if (mail.body_from_output !== undefined && typeof mail.body_from_output !== 'boolean') fail('invalid_mail_body_from_output');
     result.mail = {
-      to: [...new Map(mail.to.map((addr) => [String(addr).toLowerCase(), String(addr)])).values()],
+      to: uniqueAddresses(mail.to),
       subject: mail.subject.trim(),
       body: hasBody ? mail.body : null,
       body_from_output: mail.body_from_output === true,
