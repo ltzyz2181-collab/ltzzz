@@ -208,3 +208,13 @@ WorkBuddy 地址已于 2026-11-20 由 owner 确认：`sgii7122@agent.qq.com`；�
 - 回执：`knowledge/results/meta/connectivity-<run_id>.json`，只含状态、主机名、延迟、回声匹配；不含任何凭据。
 - 边界：一次 `channel_probe` 最多 1 次模型调用（`max_tokens=80`），不做业务推理、不碰资金、不签名。
 - 桌面/本机到 `*.workers.dev` 出口不通时，curl 000 **不能**判为 Meta 不可用；以 Actions 探针结果为准。
+
+### 12.6 Meta 的 Issue 写入通道（2026-11-20）
+
+owner 决定：给 Meta 一个仅 Issue 权限的 fine-grained PAT，让它能自己开卡，而不是只能输出文本等人转抄。
+
+- Worker 新增 `POST /issue`（与 `/task` 同一个 Bearer）：字段 `task_id` + `title` + `body` + `labels`；`dry_run=true` 只校验、不创建。
+- 策略在 `scripts/lib/meta-issue-policy.mjs`，Worker 与测试共用同一份：仓库写死 `ltzyz2181-collab/ltzzz`（调用方给 `repo` 无效）；标题自动加 `[meta]`；标签只允许 `meta-proposal` / `meta-review` / `meta-report` / `idea-board`，最多 3 个；按 `task_id` 去重；正文出现凭据形态直接 422 拒绝。
+- 令牌链路：仓库 secret `META_ISSUES_PAT` → 工作流 `Meta issue bridge` → Worker secret `GITHUB_ISSUES_TOKEN`。全程 `::add-mask::`，不写仓库、不进日志。
+- 验收入口：`scripts/verify-meta-issue-route.mjs`（dry_run，回执 `created_issues=0`）。
+- 仍未通：模型推理（Cloudflare 401/403）。在开通 Workers AI 之前，`/issue` 只能被外部调用，Meta 自己还产不出内容。

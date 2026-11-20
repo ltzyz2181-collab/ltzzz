@@ -13,6 +13,12 @@ on:
       - scripts/tests/meta-connectivity-probe.test.mjs
       - docs/MAIL-CHANNEL-CURRENT.md
       - .github/workflows/seat-config-verify.yml
+      - scripts/lib/meta-issue-policy.mjs
+      - scripts/tests/meta-issue-policy.test.mjs
+      - scripts/tests/meta-worker-issue-route.test.mjs
+      - scripts/verify-meta-issue-route.mjs
+      - workers/meta-worker/index.ts
+      - .github/workflows/meta-issue-bridge.yml
   pull_request:
     paths:
       - config/seat-mail-registry.json
@@ -25,6 +31,12 @@ on:
       - scripts/tests/meta-connectivity-probe.test.mjs
       - docs/MAIL-CHANNEL-CURRENT.md
       - .github/workflows/seat-config-verify.yml
+      - scripts/lib/meta-issue-policy.mjs
+      - scripts/tests/meta-issue-policy.test.mjs
+      - scripts/tests/meta-worker-issue-route.test.mjs
+      - scripts/verify-meta-issue-route.mjs
+      - workers/meta-worker/index.ts
+      - .github/workflows/meta-issue-bridge.yml
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,10 +56,11 @@ jobs:
         run: |
           set -euo pipefail
           node --check scripts/meta-connectivity-probe.mjs
+          node --check scripts/verify-meta-issue-route.mjs
           bash -n scripts/seat-token-env.sh
       - name: Run seat config tests
         run: |
-          node --test scripts/tests/seat-mail-registry.test.mjs scripts/tests/seat-token-env.test.mjs scripts/tests/meta-connectivity-probe.test.mjs
+          node --test scripts/tests/seat-mail-registry.test.mjs scripts/tests/seat-token-env.test.mjs scripts/tests/meta-connectivity-probe.test.mjs scripts/tests/meta-issue-policy.test.mjs scripts/tests/meta-worker-issue-route.test.mjs
       - name: Reject credential-like values in tracked seat config
         run: |
           set -euo pipefail

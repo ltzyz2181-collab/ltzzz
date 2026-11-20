@@ -1,0 +1,58 @@
+name: Meta issue bridge
+on:
+  workflow_dispatch:
+    inputs:
+      install_token:
+        description: Install META_ISSUES_PAT as the worker GITHUB_ISSUES_TOKEN secret
+        type: boolean
+        required: false
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: meta-issue-bridge
+  cancel-in-progress: false
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install wrangler
+        run: npm install --no-save wrangler@4
+      - name: Deploy meta worker with the issue route
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy -c wrangler.meta-hosted.toml
+      - name: Install issues token into the worker secret
+        if: ${{ inputs.install_token }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          META_ISSUES_PAT: ${{ secrets.META_ISSUES_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${META_ISSUES_PAT:-}" ]; then
+            echo "::error::repository secret META_ISSUES_PAT is missing; create the fine-grained PAT first"
+            exit 1
+          fi
+          echo "::add-mask::$META_ISSUES_PAT"
+          node -e 'const fs=require("fs");fs.writeFileSync("/tmp/issues.json",JSON.stringify({GITHUB_ISSUES_TOKEN:process.env.META_ISSUES_PAT}));'
+          npx wrangler secret bulk /tmp/issues.json -c wrangler.meta-hosted.toml
+          rm -f /tmp/issues.json
+      - name: Verify the route with a dry run
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          META_WORKER_TOKEN: ${{ secrets.META_WORKER_TOKEN }}
+        run: node scripts/verify-meta-issue-route.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meta-issue-bridge-${{ github.run_id }}
+          path: knowledge/results/meta/
+          if-no-files-found: warn
