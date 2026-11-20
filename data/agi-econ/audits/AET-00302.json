@@ -1,0 +1,63 @@
+{
+  "task_id": "AET-00302",
+  "auditor": "did:ltzzz:kimi",
+  "deliverable_sha256": "6312152457c9d03b3cbd5f7b3d5cead634e5680a521f21355066174dcf86ef93",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": true
+  },
+  "accepted": true,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "kimi-cn",
+    "did": "did:ltzzz:kimi",
+    "executed_by": "kimi-k3",
+    "status": "success",
+    "accepted": true,
+    "score": 88,
+    "issues": [
+      "依据材料的 JSON 在 CAP-00027 的 at 字段处被截断，无法确认提案总数恰为 8 条；交付物将『8 个提案』作为确定总数陈述（虽已注明最后一条 at 字段不完整），更严谨应限定为『可见/已提供的 8 条』。",
+      "『合计约 0.1535 USD、占余额 28.1%、剩余 0.3925 USD』等统计建立在被截断的数据集上，若存在未显示的后续提案则数字会变化；算术本身已核验无误（0.001+0.001+0.0145+0.0145+0.025+0.025+0.0355+0.037=0.1535，0.1535/0.546≈28.1%），但应注明统计口径仅限可见数据。",
+      "『gas 费或滑点吞噬』『Aave 稳定币借贷收益』等表述属外部常识推理，依据材料中并无 gas/滑点/收益率数据；作为分析判断可接受且已用『可能』限定，但不属于材料内事实。",
+      "其余核验通过：余额 0.546 USD、全部提案 status=shadow/executed=false/tx_hash=null、同一 DID 与资产、金额成对重复序列、时间范围 2026-10-10 至 10-12 均与材料一致；3 条建议（最小金额阈值、重复提案冷却、dry-run 模拟）均可测试；未声称资金已执行，且明确声明『不构成投资执行或建议』。"
+    ],
+    "tokens_used": 5845
+  },
+  "at": "2026-11-20T12:11:16.332Z",
+  "report_sha256": "e05239e99854136db60d53d1508cb0960ac5e391551cb8d6900b64216a2ad6f2"
+}
