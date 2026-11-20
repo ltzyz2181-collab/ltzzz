@@ -108,14 +108,14 @@ export function evaluateCouncil({
     };
   }
 
-  const reviewsBySteat = {};
+  const reviewsBySeat = {};
   for (const rev of reviews) {
     if (rev.seat && rev.fields.verdict) {
-      reviewsBySteat[rev.seat] = rev.fields.verdict;
+      reviewsBySeat[rev.seat] = rev.fields.verdict;
     }
   }
 
-  const requiredReviews = requiredSeats.map(s => reviewsBySteat[s]).filter(Boolean);
+  const requiredReviews = requiredSeats.map(s => reviewsBySeat[s]).filter(Boolean);
   const hasPass = requiredReviews.some(v => v === 'pass');
   const hasFail = requiredReviews.some(v => v === 'fail');
 
@@ -136,7 +136,7 @@ export function evaluateCouncil({
       : 0;
     if (maxCouncilRound >= maxRounds) {
       return {
-        stage: 'council',
+        stage: 'arbitrated',
         round: maxCouncilRound,
         consensus: false,
         blocking: 0,
@@ -146,7 +146,7 @@ export function evaluateCouncil({
     }
     return {
       stage: 'council',
-      round: maxCouncilRound,
+      round: Math.max(maxCouncilRound + 1, 1),
       consensus: false,
       blocking: 0,
       next: 'open_council',
@@ -154,13 +154,13 @@ export function evaluateCouncil({
     };
   }
 
-  if (!reserved && requiredReviews.length === 1 && !hasFail) {
+  if (!reserved && requiredReviews.length === 1) {
     const maxCouncilRound = councils.length > 0
       ? Math.max(...councils.map(c => c.round || 0))
       : 0;
     if (maxCouncilRound >= maxRounds) {
       return {
-        stage: 'council',
+        stage: 'arbitrated',
         round: maxCouncilRound,
         consensus: false,
         blocking: 0,
@@ -170,7 +170,7 @@ export function evaluateCouncil({
     }
     return {
       stage: 'council',
-      round: maxCouncilRound,
+      round: Math.max(maxCouncilRound + 1, 1),
       consensus: false,
       blocking: 0,
       next: 'open_council',
@@ -183,7 +183,7 @@ export function evaluateCouncil({
   );
   if (splitConsensus) {
     return {
-      stage: 'council',
+      stage: 'arbitrated',
       round: splitConsensus.round || 0,
       consensus: false,
       blocking: 0,
@@ -224,8 +224,14 @@ export function wakeDecision({
   recent = []
 }) {
   const dedupe_key = `${taskId}:${event}:${sourceId}`;
+  const eventKey = (r) => r.dedupe_key || [
+    r.taskId ?? r.task_id,
+    r.event,
+    r.sourceId ?? r.source_id
+  ].join(':');
+  const nowMs = typeof now === 'number' ? now : (Date.parse(now) || Date.now());
 
-  if (recent.some(r => r.dedupe_key === dedupe_key)) {
+  if (recent.some(r => eventKey(r) === dedupe_key)) {
     return {
       wake: false,
       reason: 'duplicate',
@@ -234,10 +240,13 @@ export function wakeDecision({
     };
   }
 
-  const oneHourAgo = now - 3600000;
-  const recentForTask = recent.filter(
-    r => r.taskId === taskId && r.timestamp > oneHourAgo
-  );
+  const oneHourAgo = nowMs - 3600000;
+  const recentForTask = recent.filter((r) => {
+    const rowTask = r.taskId ?? r.task_id;
+    const rawTime = r.timestamp ?? r.at;
+    const at = typeof rawTime === 'number' ? rawTime : Date.parse(rawTime);
+    return rowTask === taskId && Number.isFinite(at) && at > oneHourAgo;
+  });
   if (recentForTask.length >= 1) {
     return {
       wake: false,

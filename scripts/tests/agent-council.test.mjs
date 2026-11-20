@@ -113,7 +113,17 @@ describe('agent-council', () => {
     ];
     const result = evaluateCouncil({ taskId: 't5', comments, maxRounds: 2 });
     assert.equal(result.next, 'arbitrate');
+    assert.equal(result.stage, 'arbitrated');
+  });
+
+  it('evaluateCouncil: only one seat fails → open_council', () => {
+    const comments = [
+      { id: 1, body: '[review] seat=relay-claude verdict=fail round=1' }
+    ];
+    const result = evaluateCouncil({ taskId: 't4b', comments });
     assert.equal(result.stage, 'council');
+    assert.equal(result.next, 'open_council');
+    assert.equal(result.round, 1);
   });
 
   it('evaluateCouncil: reserved mode missing one seat → wait', () => {
@@ -210,4 +220,12 @@ describe('agent-council', () => {
     assert.equal(result.reason, 'global_rate_limited');
     assert.equal(result.suppressed, true);
   });
+});
+
+it('wakeDecision accepts an ISO time and snake_case recent fields', () => {
+  const now = '2026-11-20T04:00:00.000Z';
+  const recent = [{ dedupe_key: 't9:other:s0', task_id: 't9', at: '2026-11-20T03:50:00.000Z' }];
+  const result = wakeDecision({ taskId: 't9', event: 'timeout', sourceId: 's1', now, recent });
+  assert.equal(result.wake, false);
+  assert.equal(result.reason, 'task_rate_limited');
 });
