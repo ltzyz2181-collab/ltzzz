@@ -9,3 +9,25 @@
 Skill 固定入口是 commit `1e18c7064e339c8f2cc5ca12502a58bf38c229b5`。`reasoningHash` 不是 receipt-template 的必填字段；本文件单填 paid=false、tx_hash=null，并对实物另算 artifact.sha256。缓存/复述链接不证明客户端读过相应字节。
 
 “每半小时扫描并自动认领”只收到自述，未见可回读的调度配置、执行器连续运行与认领证明；不记为已部署。只可认领明确 assigned_to=meta / allowed_assignees 含 meta 的任务，不能凭 META/CLAUDE 文件名前缀自动抢单。支持中文记忆核对可沿现有 `META-HUBTEST-20261021`，正式岗位变更与链上签名资格另记，不自行改变。
+
+## 2026-11-20 托管 Llama 通道实测（与外部 Meta 客户端分开）
+
+运行 `Meta connectivity probe`（run `44694293952`，head `18bfd05d`）实测：
+
+| 检查 | 结果 |
+| --- | --- |
+| `GET /health` | 200，`service=ltzzz-meta-hosted`、`auth_configured=true`、`ai_binding=true`、`model=@cf/meta/llama-3.1-8b-instruct-fp8` |
+| `POST /auth-check` | 200，`authorized=true` |
+| `POST /task`（`channel_probe`） | 502 `upstream_inference_failed` |
+| 直连 `/ai/run/<model>`（同一 CF token） | 401 `Authentication error`，code `10000` |
+| `/ai/models/search` | 403 |
+
+结论：**通道与鉴权是通的，模型调用被 Cloudflare 侧拒绝**。不是 Worker 未部署，也不是桌面网络问题（桌面到 `*.workers.dev` 超时另有其事）。
+
+待外部动作：
+
+1. 在 Cloudflare 控制台为账号开通 / 启用 Workers AI；
+2. 或给 `CLOUDFLARE_API_TOKEN` 补 Workers AI 权限（当前 token 能读 workers subdomain，但 AI 端点 401/403）。
+
+开通前不把 hosted Llama 记为可用执行席；`deployed_inference_failed` 不等于已验收。
+回执：`knowledge/results/meta/connectivity-44694293952.json`（首次探测为 `connectivity-44694076687.json`）。
