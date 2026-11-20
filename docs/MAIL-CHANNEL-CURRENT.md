@@ -218,3 +218,11 @@ owner 决定：给 Meta 一个仅 Issue 权限的 fine-grained PAT，让它能�
 - 令牌链路：仓库 secret `META_ISSUES_PAT` → 工作流 `Meta issue bridge` → Worker secret `GITHUB_ISSUES_TOKEN`。全程 `::add-mask::`，不写仓库、不进日志。
 - 验收入口：`scripts/verify-meta-issue-route.mjs`（dry_run，回执 `created_issues=0`）。
 - 仍未通：模型推理（Cloudflare 401/403）。在开通 Workers AI 之前，`/issue` 只能被外部调用，Meta 自己还产不出内容。
+
+实测（2026-11-20，run `44700626476`）：
+
+- `dry_run`：200，`issues_configured=true`。
+- 真实创建：200，`status=created`，Issue **#520**（label `meta-report`）。
+- 写入身份是 PAT 所属账号（GitHub 显示为 `ltzyz2181-collab`），不是字面上的 meta；所以每条都用 `[meta]` 前缀 + `source: did:ltzzz:meta` 标注来源。
+- PAT 到期 **2027-02-18**。到期前必须换新并重跑 `Meta issue bridge`；过期后 `/issue` 返回 503 `issues_not_configured`，属 fail-closed，不会静默丢卡。
+
