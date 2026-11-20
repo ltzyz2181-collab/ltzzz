@@ -3,8 +3,8 @@
 //   1. An issue is only claimable when a human labelled it `autoloop:exec` AND
 //      `ops/autoloop/executors.json` has an executor for that label. Issue text is
 //      never executed; it is untrusted input.
-//   2. Merge is opt-in per executor (`auto_merge: true`) and re-checks the changed
-//      paths against an allowlist. Anything else stays an open PR.
+//   2. Merge is opt-in per executor (`auto_merge: true`). Any path may merge once a real
+//      check is green, or when no check exists at all and the executor's verify passed.
 //   3. Adjudication-class work goes to the relay seat as an advisory note and is
 //      never allowed to claim merged/deployed/platform_accepted.
 //   4. If AUTOLOOP_ENABLED is not exactly 'true', the run is plan-only.
@@ -17,7 +17,6 @@ import {derive, taskField, labelNames} from './lib/task-hub.mjs';
 
 export const SCHEMA = 'ltzzz.autoloop.v1';
 export const EXECUTOR_FILE = 'ops/autoloop/executors.json';
-export const MERGE_ALLOWLIST = [/^docs\//, /^ops\//, /^knowledge\/results\//, /^scripts\/tests\//];
 export const ACTIONS = Object.freeze(['exec', 'adjudicate', 'skip']);
 
 export function loadExecutors(fsImpl = fs, file = EXECUTOR_FILE) {
@@ -37,30 +36,46 @@ export function loadExecutors(fsImpl = fs, file = EXECUTOR_FILE) {
   return raw.executors;
 }
 
-const RISK_TERM = /(\u8d44\u91d1|\u9000\u6b3e|\u7b7e\u540d|\u79c1\u94a5|\u4e94\u7b7e|\u751f\u4ea7\u90e8\u7f72|Secrets?|\u5bc6\u94a5|\u51ed\u636e|\u52a9\u8bb0\u8bcd)/i;
+// Owner 2026-11-19: only the items below stay with the GPT decision seat.
+// Everything else executes, merges and deploys automatically.
+const GPT_RESERVED_TERM = /(\u8d44\u91d1|\u4ed8\u6b3e|\u4ed8\u85aa|\u8f6c\u8d26|\u653e\u6b3e|\u9000\u6b3e|\u7b7e\u540d|\u79c1\u94a5|\u52a9\u8bb0\u8bcd|\u94b1\u5305|\u4e94\u7b7e|Safe|\u51ed\u636e|\u5bc6\u94a5|Secrets?)/i;
 const NEGATED = /(\u4e0d\u6d89\u53ca|\u4e0d\u542b|\u4e0d\u78b0|\u65e0\u9700|\u4e0d\u6388\u6743|\u4e0d\u6267\u884c|\u4e0d\u5141\u8bb8|\u4e0d\u5f97|\u4e0d\u80fd|\u7981\u6b62|\u4e25\u7981|\u65e0\u8d44\u91d1|\u6ca1\u6709\u8d44\u91d1|\u4e0d\u8fdb\u884c|\u4e0d\u53d1\u8d77|\u4e0d\u505a|\u4e0d\u6539\u53d8)/;
+const CLAUSE_SPLIT = /[\u3002\uff1b;\uff01!\uff1f?\n]|\u4f46\u662f|\u4e0d\u8fc7|\u7136\u800c|\u4f46/;
 
-// A dispatch card that says "this does not touch funds or signing" must not be blocked by
-// the very words it uses to disclaim them. Clauses carrying a negation are dropped before
-// the risk scan; an un-negated mention of a high-risk term still stops the executor.
+function clauseList(text = '') {
+  return String(text).split(CLAUSE_SPLIT).map(c => c.trim()).filter(Boolean);
+}
+
+// A card that says "this does not touch funds or signing" must not be blocked by the
+// words it uses to disclaim them: negated clauses are dropped before the reserved scan.
 export function riskClauses(text = '') {
-  return String(text)
-    .split(/[\u3002\uff1b;\uff01!\uff1f?\n]|\u4f46\u662f|\u4e0d\u8fc7|\u7136\u800c|\u4f46/)
-    .map(c => c.trim())
-    .filter(Boolean)
-    .filter(c => RISK_TERM.test(c) && !NEGATED.test(c));
+  return clauseList(text).filter(c => GPT_RESERVED_TERM.test(c) && !NEGATED.test(c));
+}
+
+export function reservedTopics(text = '') {
+  const hits = new Set();
+  for (const clause of clauseList(text)) {
+    if (NEGATED.test(clause)) continue;
+    const scan = new RegExp(GPT_RESERVED_TERM.source, 'gi');
+    for (const m of clause.matchAll(scan)) hits.add(m[0].toLowerCase());
+  }
+  return [...hits];
 }
 
 export function classifyIssue(issue, executors = []) {
   const labels = labelNames(issue);
   if (!issue || issue.pull_request) return {action: 'skip', reason: 'not_an_issue'};
   if (issue.state && issue.state !== 'open') return {action: 'skip', reason: 'not_open'};
-  if (labels.some(l => /(^|:)human-only$|^no-autoloop$/.test(l)) || riskClauses(`${issue.title || ''}\n${issue.body || ''}`).length > 0) {
-    return {action: 'skip', reason: 'human_only'};
-  }
+  if (labels.some(l => /^no-autoloop$/.test(l))) return {action: 'skip', reason: 'explicitly_disabled'};
+  const humanOnly = labels.some(l => /(^|:)human-only$/.test(l));
   const exec = executors.find(e => labels.includes(e.match.label));
+  const topics = humanOnly ? ['human-only'] : reservedTopics(`${issue.title || ''}\n${issue.body || ''}`);
+  if (topics.length && exec) return {action: 'escalate', executor: exec, topics, reason: 'gpt_reserved_topic'};
   if (exec) return {action: 'exec', executor: exec, reason: 'labelled_exec'};
-  if (labels.includes('autoloop:adjudicate')) return {action: 'adjudicate', reason: 'labelled_adjudicate'};
+  if (labels.includes('autoloop:adjudicate')) {
+    if (topics.length) return {action: 'escalate', topics, reason: 'gpt_reserved_topic'};
+    return {action: 'adjudicate', reason: 'labelled_adjudicate'};
+  }
   return {action: 'skip', reason: 'no_autoloop_label'};
 }
 
@@ -75,24 +90,21 @@ export async function ensureSeatLabel({client, issue, seat}) {
 }
 
 export function planWork({issues = [], seat, executors = [], now = new Date().toISOString(), leaseHours = 24}) {
-  const claimable = [], adjudicable = [], skipped = [];
+  const claimable = [], adjudicable = [], escalations = [], skipped = [];
   for (const issue of issues) {
     const d = derive(issue, {now, leaseHours});
     if (d.seat && d.seat !== seat) { skipped.push({number: issue.number, reason: 'other_seat', seat: d.seat}); continue; }
     if (d.settled) { skipped.push({number: issue.number, reason: `settled_${d.settled.kind}`}); continue; }
     if (d.active && !d.expired) { skipped.push({number: issue.number, reason: 'leased_by_someone_else'}); continue; }
     const c = classifyIssue(issue, executors);
-    if (c.action === 'exec') claimable.push({number: issue.number, task_id: taskField(issue.body, 'task_id'), executor: c.executor});
-    else if (c.action === 'adjudicate') adjudicable.push({number: issue.number, task_id: taskField(issue.body, 'task_id')});
+    const task_id = taskField(issue.body, 'task_id');
+    if (c.action === 'exec') claimable.push({number: issue.number, task_id, executor: c.executor});
+    else if (c.action === 'adjudicate') adjudicable.push({number: issue.number, task_id});
+    else if (c.action === 'escalate') escalations.push({number: issue.number, task_id, topics: c.topics || ['human-only']});
     else skipped.push({number: issue.number, reason: c.reason});
   }
-  return {claimable, adjudicable, skipped};
+  return {claimable, adjudicable, escalations, skipped};
 }
-
-export function pathsAllowed(paths = []) {
-  return paths.length > 0 && paths.every(p => MERGE_ALLOWLIST.some(re => re.test(p)));
-}
-
 export function buildEmailDigest({done = [], needsGpt = [], nextActions = [], mail = null, run = {}}) {
   const bullet = (rows, empty) => (rows.length ? rows.map(r => `- ${r}`).join('\n') : `- ${empty}`);
   const subject = `【LTZZZ】自动循环 ${run.day || ''}：完成 ${done.length} / 待裁决 ${needsGpt.length}`;
@@ -209,6 +221,25 @@ export function discardChanges({cwd = process.cwd(), paths = []} = {}) {
   return restored;
 }
 
+// Auto-deploy is a consequence of merging to main: the repo's deploy-*.yml workflows are
+// already wired to push events. This reads back what actually got queued for the merge
+// commit, so a receipt never claims a deployment it did not observe.
+export async function recordDeployRuns({token, sha, fetcher = gh}) {
+  if (!sha) return {status: 'no_merge_commit', runs: []};
+  let data;
+  try {
+    data = await fetcher(token, 'GET', 'actions/runs?head_sha=' + sha + '&per_page=100');
+  } catch (error) {
+    return {status: 'readback_failed', detail: String(error?.message || error).slice(0, 120), runs: []};
+  }
+  const runs = (data?.workflow_runs || [])
+    .filter(r => /deploy/i.test(r.path || r.name || ''))
+    .map(r => ({workflow: r.name, run_id: r.id, status: r.status, conclusion: r.conclusion, url: r.html_url}));
+  if (runs.length === 0) return {status: 'no_deploy_workflow_matched', runs: []};
+  const failed = runs.filter(r => r.conclusion === 'failure');
+  return {status: failed.length ? 'deploy_run_failed' : 'deploy_queued', runs};
+}
+
 export function runVerification(executor, {cwd = process.cwd()} = {}) {
   if (!Array.isArray(executor?.verify) || executor.verify.length === 0) return {ran: false, ok: false};
   const r = runCmd(executor.verify, {cwd, timeout: 900000});
@@ -222,7 +253,8 @@ export function changedPaths(cwd = process.cwd()) {
 
 export function adjudicationPrompt(issue) {
   return [
-    '你是受限中转裁决席：只读、只给建议，不得声称已合并/已部署/已被平台接受。',
+    '你是中转裁决席。资金、退款、签名、私钥、钱包、凭据类事项不会送到你这里；这些之外的裁决由你直接作出。',
+    '不得声称已合并/已部署/已被平台接受——你只决定“做不做、按什么范围做”，执行结果以仓库回执为准。',
     '只能输出 JSON：{"verdict":"approve|reject|needs_more_evidence","reason":"<=200字","risks":["..."],"next_action":"<=120字"}',
     '',
     `标题：${issue.title || ''}`,
@@ -258,9 +290,26 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
     return 0;
   }
 
-  const result = {schema: SCHEMA, mode: 'apply', seat, run_id: env.GITHUB_RUN_ID || 'local', at: now, claimed: [], done: [], needsGpt: [], nextActions: [], errors: []};
+  const result = {schema: SCHEMA, mode: 'apply', seat, run_id: env.GITHUB_RUN_ID || 'local', at: now, claimed: [], done: [], escalated: [], needsGpt: [], nextActions: [], errors: []};
   const reaped = await cmdReap({client, apply: true, now, leaseHours: 24});
   result.reaped = reaped.reaped || [];
+
+  // Reserved-topic cards are not executed here; they are handed to the GPT decision seat
+  // once, tracked by the `gpt:decide` label so a daily re-run does not spam the thread.
+  for (const item of plan.escalations || []) {
+    try {
+      const issue = issues.find(i => i.number === item.number);
+      const already = labelNames(issue || {}).includes('gpt:decide');
+      if (!already) {
+        await client.comment(item.number, `[gpt-decision-request] topics=${item.topics.join(',')} reason=gpt_reserved_topic\n\n本卡涉及仍归 GPT 决策席的事项，自动循环不执行、不合并、不部署。请 GPT 席给出 decision_id 与允许范围后重新打标。`);
+        await client.addLabels(item.number, ['gpt:decide']);
+      }
+      result.escalated.push(`#${item.number} ${item.task_id || ''} → GPT（${item.topics.join(',')}）`);
+      result.needsGpt.push(`#${item.number} ${item.task_id || ''} 涉及 ${item.topics.join(',')}，待 GPT 裁决`);
+    } catch (error) {
+      result.errors.push({number: item.number, error: String(error?.message || error).slice(0, 200)});
+    }
+  }
   for (const item of plan.claimable) {
     try {
       await ensureSeatLabel({client, issue: issues.find(i => i.number === item.number), seat});
@@ -288,22 +337,25 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       const published = await publishChanges({token, cwd, paths: changed, branch, message: `chore(autoloop): ${item.task_id || '#' + item.number}\n\n${item.executor.id}`});
       discardChanges({cwd, paths: changed});
       let mergeState = 'not_merged';
-      if (item.executor.auto_merge === true && pathsAllowed(changed)) {
+      let deploy = {status: 'not_attempted', runs: []};
+      // No path allowlist any more: the owner opened repo-internal changes on 2026-11-19.
+      // A real failing check still blocks; silence only counts when the executor's own
+      // verify ran and passed, so nothing merges without any evidence at all.
+      if (item.executor.auto_merge === true) {
         const checks = await waitForChecks({token, sha: published.commit});
-        const silenceCovered = checks === 'none_or_pending' && verify.ran && verify.ok;
-        if (checks === 'success' || silenceCovered) {
-          await gh(token, 'PUT', `pulls/${published.pr}/merge`, {merge_method: 'squash'});
-          mergeState = silenceCovered ? 'merged_on_verify_no_checks' : 'merged';
+        const evidence = checks === 'success' || (checks === 'none_or_pending' && verify.ran && verify.ok);
+        if (evidence) {
+          const merged = await gh(token, 'PUT', `pulls/${published.pr}/merge`, {merge_method: 'squash'});
+          mergeState = checks === 'success' ? 'merged' : 'merged_on_verify_no_checks';
+          deploy = await recordDeployRuns({token, sha: merged?.sha});
         } else {
           mergeState = 'not_merged_' + checks;
           result.needsGpt.push(`#${item.number} 自动合并被拒：CI 状态 ${checks}`);
         }
-      } else if (item.executor.auto_merge === true) {
-        mergeState = 'not_merged_paths_outside_allowlist';
-        result.needsGpt.push(`#${item.number} 改动了白名单外路径，保留 PR 待人工`);
       }
-      await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState === 'merged' ? 'success' : 'not_run', tests: verify.ran ? (verify.ok ? 'verify_passed' : 'verify_failed') : 'executor_ok_only', deploy: 'not_deployed'});
-      result.done.push(`#${item.number} ${item.task_id || ''} 改动 ${changed.length} 个文件，PR #${published.pr}（${mergeState}）`);
+      await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState.startsWith('merged') ? 'success' : 'not_run', tests: verify.ran ? (verify.ok ? 'verify_passed' : 'verify_failed') : 'executor_ok_only', deploy: deploy.status, deploy_detail: deploy.runs.map(r => r.workflow + ':' + r.status + '/' + r.conclusion)});
+      const deployNote = deploy.status === 'not_attempted' ? '' : `；部署回读 ${deploy.status}${deploy.runs.length ? '(' + deploy.runs.map(r => r.workflow + ':' + r.conclusion).join(',') + ')' : ''}`;
+      result.done.push(`#${item.number} ${item.task_id || ''} 改动 ${changed.length} 个文件，PR #${published.pr}（${mergeState}${deployNote}）`);
     } catch (error) {
       result.errors.push({number: item.number, error: String(error?.message || error).slice(0, 200)});
     }
@@ -313,13 +365,13 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       await ensureSeatLabel({client, issue: issues.find(i => i.number === item.number), seat});
       await cmdClaim({client, number: item.number, seat, branch: 'adjudication_only', now, leaseHours: 12});
       const verdict = runAdjudication(issues.find(i => i.number === item.number), {cwd});
-      await client.comment(item.number, `[advisory] seat=relay verdict_is_not_approval=true ok=${verdict.ok}\n\n${verdict.stdout.slice(0, 4000)}`);
-      result.needsGpt.push(`#${item.number} ${item.task_id || ''} 中转已给建议，待 GPT 复核`);
+      await client.comment(item.number, `[relay-decision] seat=relay scope=non_reserved binding=true ok=${verdict.ok}\n\n${verdict.stdout.slice(0, 4000)}`);
+      result.done.push(`#${item.number} ${item.task_id || ''} 中转已裁决（ok=${verdict.ok}）`);
     } catch (error) {
       result.errors.push({number: item.number, error: String(error?.message || error).slice(0, 200)});
     }
   }
-  result.nextActions.push('复核中转建议并把结论写回 Issue');
+  result.nextActions.push('GPT 席可按需抽查中转裁决，但不再作为放行前置条件');
   result.nextActions.push('新增 autoloop:exec 任务时先在 executors.json 登记执行器');
   const out = path.join(cwd, 'knowledge/results/autoloop');
   fs.mkdirSync(out, {recursive: true});

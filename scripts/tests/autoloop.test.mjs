@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  loadExecutors, classifyIssue, planWork, pathsAllowed, buildEmailDigest,
-  adjudicationPrompt, executeExecutor, runVerification,
+  loadExecutors, classifyIssue, planWork, reservedTopics, buildEmailDigest,
+  adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns,
 } from '../autoloop.mjs';
 
 const execs = loadExecutors();
@@ -22,10 +22,11 @@ test('an issue with an executor label is claimable', () => {
   assert.equal(r.executor.id, 'task-hub-status');
 });
 
-test('human-only wording wins even when the executor label is present', () => {
+test('reserved wording escalates to the GPT seat instead of executing', () => {
   const r = classifyIssue(issue({title: '退款终判', labels: [{name: 'autoloop:exec:task-hub-status'}]}), execs);
-  assert.equal(r.action, 'skip');
-  assert.equal(r.reason, 'human_only');
+  assert.equal(r.action, 'escalate');
+  assert.equal(r.reason, 'gpt_reserved_topic');
+  assert.deepEqual(r.topics, ['退款']);
 });
 
 test('an unlabelled issue is never claimed automatically', () => {
@@ -55,10 +56,10 @@ test('planWork skips other seats, live leases and settled issues', () => {
   assert.deepEqual(plan.skipped.map(x => [x.number, x.reason]), [[2, 'other_seat'], [3, 'leased_by_someone_else'], [4, 'settled_delivered']]);
 });
 
-test('merge allowlist accepts docs and rejects product code', () => {
-  assert.equal(pathsAllowed(['docs/a.md', 'ops/task-continuity/board.json']), true);
-  assert.equal(pathsAllowed(['scripts/agi-econ/run-cycle.mjs']), false);
-  assert.equal(pathsAllowed([]), false);
+test('reserved topics never include production deploy, which is opened', () => {
+  assert.deepEqual(reservedTopics('生产部署 worker 并回读健康检查'), []);
+  assert.deepEqual(reservedTopics('清理 ops/ 下的临时文件'), []);
+  assert.deepEqual(reservedTopics('自动退款并签名'), ['退款', '签名']);
 });
 
 test('digest carries the three required sections and the mail status', () => {
@@ -95,12 +96,13 @@ test('a disclaimer clause does not trip the human-only gate', () => {
   assert.equal(r.action, 'exec');
 });
 
-test('an un-negated fund or signing instruction still stops the executor', () => {
+test('an un-negated fund or signing instruction escalates to GPT', () => {
   const refund = classifyIssue(issue({body: 'task_id: TASK-X\n\u81ea\u52a8\u9000\u6b3e 100 \u5143\u7ed9\u5ba2\u6237', labels: [{name: 'autoloop:exec:task-hub-status'}]}), execs);
-  assert.equal(refund.action, 'skip');
-  assert.equal(refund.reason, 'human_only');
+  assert.equal(refund.action, 'escalate');
+  assert.equal(refund.reason, 'gpt_reserved_topic');
   const sign = classifyIssue(issue({title: 'WEP3 \u7b7e\u540d\u6267\u884c', labels: [{name: 'autoloop:exec:task-hub-status'}]}), execs);
-  assert.equal(sign.reason, 'human_only');
+  assert.equal(sign.action, 'escalate');
+  assert.deepEqual(sign.topics, ['\u7b7e\u540d']);
 });
 
 test('an executor without verify is not treated as verified', () => {
@@ -112,4 +114,22 @@ test('an executor without verify is not treated as verified', () => {
 test('executor registry rejects a verify command outside the allowlist', () => {
   const fake = {readFileSync: () => JSON.stringify({schema: 'ltzzz.autoloop.executors.v1', executors: [{id: 'xx1', match: {label: 'a'}, command: ['node', '-v'], verify: ['sh', '-c', 'x']}]})};
   assert.throws(() => loadExecutors(fake, 'virtual.json'), /executor_verify_not_allowlisted/);
+});
+
+test('planWork separates escalations from claimable work', () => {
+  const plan = planWork({seat: 'desktop-claude', executors: execs, issues: [
+    issue({number: 10, labels: [{name: 'autoloop:exec:task-hub-status'}]}),
+    issue({number: 11, title: '\u94b1\u5305\u7b7e\u540d', labels: [{name: 'autoloop:exec:task-hub-status'}]}),
+  ]});
+  assert.deepEqual(plan.claimable.map(x => x.number), [10]);
+  assert.deepEqual(plan.escalations.map(x => x.number), [11]);
+});
+
+test('a deploy run is read back from the merge commit, not assumed', async () => {
+  const ok = await recordDeployRuns({token: 't', sha: 'abc', fetcher: async () => ({workflow_runs: [{id: 1, path: '.github/workflows/deploy-wep3.yml', name: 'deploy wep3', status: 'queued', conclusion: null, html_url: 'u'}]})});
+  assert.equal(ok.status, 'deploy_queued');
+  const none = await recordDeployRuns({token: 't', sha: 'abc', fetcher: async () => ({workflow_runs: [{id: 2, path: '.github/workflows/tests.yml', name: 'tests', status: 'completed', conclusion: 'success'}]})});
+  assert.equal(none.status, 'no_deploy_workflow_matched');
+  const failed = await recordDeployRuns({token: 't', sha: 'abc', fetcher: async () => ({workflow_runs: [{id: 3, path: '.github/workflows/deploy-x.yml', name: 'deploy x', status: 'completed', conclusion: 'failure'}]})});
+  assert.equal(failed.status, 'deploy_run_failed');
 });

@@ -1,0 +1,51 @@
+name: Seat mail relay (any seat to any seat)
+
+# 任何席位都能互相发邮件：开一张带 `mail:send` 标签的卡，写 seat/to/subject 和正文，
+# 这里每 30 分钟把队列发掉并回执。席位本身不需要持有 SMTP 凭据。
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: '真正发送（否则只列出队列）'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: seat-mail-relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MAIL_SMTP_HOST: ${{ vars.MAIL_SMTP_HOST || 'smtp.qq.com' }}
+      MAIL_SMTP_USER: ${{ secrets.MAIL_SMTP_USER }}
+      MAIL_SMTP_PASSWORD: ${{ secrets.MAIL_SMTP_PASSWORD }}
+      AUTOLOOP_PYTHON: python3
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Verify contracts
+        run: node --check scripts/seat-mail.mjs && node --test scripts/tests/seat-mail.test.mjs
+      - name: Drain queue
+        run: node scripts/seat-mail.mjs --queue --apply
+      - name: Persist receipt
+        if: always()
+        run: |
+          git config user.name "ltzzz-seat-mail"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/seat-mail 2>/dev/null || true
+          if git diff --staged --quiet; then echo "no receipt changes"; exit 0; fi
+          git commit -m "chore(seat-mail): relay run $(date -u +%F)"
+          node tools/push-receipt-commit.mjs
