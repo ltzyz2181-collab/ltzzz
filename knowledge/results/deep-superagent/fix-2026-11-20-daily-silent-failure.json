@@ -1,0 +1,78 @@
+{
+ "schema": "ltzzz.deep.daily-silent-failure-fix.v1",
+ "date": "2026-11-20",
+ "at": "2026-11-20T02:18:07Z",
+ "problem": "每日日课'全绿但零产出'：工作流 conclusion=success 而内部 job blocked、outputs 为空，表面看定时任务没干活；同时 worker 改动后自动部署因 main 前进撞 stale_deployment_source 需重跑一次。",
+ "root_causes": [
+  {
+   "id": "R1",
+   "desc": "终态回读被当成成功：runDaily 只要 job_terminal_observed 就写 daily_result_readback_complete，blocked/零输出也 exit 0",
+   "evidence": "run 44481811025（2026-11-19T07:43Z）job blocked / doubao truncated at 2048 / workflow success",
+   "fix": "dailyReportStatus()：job=blocked→daily_job_blocked，outputs=[]→daily_job_no_outputs，落盘 status=blocked+blocked_reason，CLI exit 1",
+   "commit": "a28c8808d, 25df710aa"
+  },
+  {
+   "id": "R2",
+   "desc": "日课预算只给了 doubao/qianwen/deepseek/kimi，grok 仍 2048 → 第二席换到 grok 时被截断",
+   "evidence": "run 44658751282 receipt: grok finish_reason=length completion_tokens=2048",
+   "fix": "DEEP-DAILY-SUPERVISION 分支 grok=4096",
+   "commit": "341ec26b4"
+  },
+  {
+   "id": "R3",
+   "desc": "日课幂等键只看 readset：同一天 code 修了也复用旧 blocked job，永远不重跑",
+   "evidence": "run 44481811025 的 job created_at=2026-11-19T02:15:29Z、source_commit=9291dd60（早于预算修复 4c17f0c40），07:43Z schedule 仅回读该 job",
+   "fix": "material 纳入 worker_sha256，worker 改码即新 attempt",
+   "commit": "341ec26b4"
+  },
+  {
+   "id": "R4",
+   "desc": "自动部署在 main 前进时 fail-closed 报 stale_deployment_source（保护机制，非故障）",
+   "evidence": "deploy-44658949181-attempt-1.json status=blocked error=stale_deployment_source（expected blob 152b68e1 vs observed 0b940b45）",
+   "fix": "在最新 head 重跑部署即通过：deploy-44659133172-attempt-1.json deployment_health_and_auth_verified deployments=1"
+  }
+ ],
+ "verification": {
+  "run": "44659359506",
+  "workflow": "deep-superagent-daily.yml",
+  "event": "workflow_dispatch",
+  "conclusion": "success",
+  "report": "knowledge/results/deep-superagent/daily-44659359506-attempt-1.json",
+  "status": "daily_result_readback_complete",
+  "job_status": "completed_pending_external_acceptance",
+  "model_calls": 3,
+  "receipts": [
+   {
+    "seat": "deepseek",
+    "completion_tokens": 236,
+    "finish_reason": "stop"
+   },
+   {
+    "seat": "grok",
+    "completion_tokens": 2481,
+    "finish_reason": "stop"
+   },
+   {
+    "seat": "deepseek",
+    "completion_tokens": 178,
+    "finish_reason": "stop"
+   }
+  ],
+  "outputs": 1,
+  "note": "grok 2481 tokens 已越过旧 2048 截断线并正常收尾"
+ },
+ "remaining": [
+  {
+   "item": "GitHub schedule 平台延迟",
+   "detail": "cron 00:30Z 历史实测延迟约 7h（44481811025 于 07:43Z 触发），非本仓库可控；补救：由 6:45 CST 的巡检席位在当日无 schedule run 时补一次 workflow_dispatch，自然 schedule 稍后到达时按幂等键只回读不重跑"
+  }
+ ],
+ "counts": {
+  "model_calls": 3,
+  "deploys": 1,
+  "merges": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null
+ }
+}
