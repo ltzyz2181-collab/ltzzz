@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   loadExecutors, classifyIssue, planWork, reservedTopics, buildEmailDigest,
-  adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns,
+  adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns, waitForDeploy,
 } from '../autoloop.mjs';
 
 const execs = loadExecutors();
@@ -132,4 +132,11 @@ test('a deploy run is read back from the merge commit, not assumed', async () =>
   assert.equal(none.status, 'no_deploy_workflow_matched');
   const failed = await recordDeployRuns({token: 't', sha: 'abc', fetcher: async () => ({workflow_runs: [{id: 3, path: '.github/workflows/deploy-x.yml', name: 'deploy x', status: 'completed', conclusion: 'failure'}]})});
   assert.equal(failed.status, 'deploy_run_failed');
+});
+
+test('a finished deploy run is reported as deployed, a queued one is not', async () => {
+  const done = await waitForDeploy({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: async () => ({workflow_runs: [{id: 1, path: '.github/workflows/deploy-x.yml', name: 'deploy x', status: 'completed', conclusion: 'success'}]})});
+  assert.equal(done.status, 'deployed');
+  const queued = await waitForDeploy({token: 't', sha: 'abc', attempts: 2, sleepFn: async () => {}, fetcher: async () => ({workflow_runs: [{id: 2, path: '.github/workflows/deploy-x.yml', name: 'deploy x', status: 'queued', conclusion: null}]})});
+  assert.equal(queued.status, 'deploy_pending');
 });

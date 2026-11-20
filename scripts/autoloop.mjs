@@ -240,6 +240,20 @@ export async function recordDeployRuns({token, sha, fetcher = gh}) {
   return {status: failed.length ? 'deploy_run_failed' : 'deploy_queued', runs};
 }
 
+// Deploy workflows are triggered by the merge itself, so the loop waits a bounded time for
+// them to finish instead of claiming a deployment it has not observed.
+export async function waitForDeploy({token, sha, attempts = 8, pauseMs = 30000, fetcher = gh, sleepFn = sleep} = {}) {
+  let last = {status: 'no_merge_commit', runs: []};
+  for (let i = 0; i < attempts; i++) {
+    last = await recordDeployRuns({token, sha, fetcher});
+    if (last.status === 'deploy_run_failed' || last.status === 'no_deploy_workflow_matched' || last.status === 'no_merge_commit') return last;
+    const settled = last.runs.every(r => r.status === 'completed');
+    if (settled) return {status: 'deployed', runs: last.runs};
+    if (i < attempts - 1) await sleepFn(pauseMs);
+  }
+  return {status: 'deploy_pending', runs: last.runs};
+}
+
 export function runVerification(executor, {cwd = process.cwd()} = {}) {
   if (!Array.isArray(executor?.verify) || executor.verify.length === 0) return {ran: false, ok: false};
   const r = runCmd(executor.verify, {cwd, timeout: 900000});
@@ -347,13 +361,13 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
         if (evidence) {
           const merged = await gh(token, 'PUT', `pulls/${published.pr}/merge`, {merge_method: 'squash'});
           mergeState = checks === 'success' ? 'merged' : 'merged_on_verify_no_checks';
-          deploy = await recordDeployRuns({token, sha: merged?.sha});
+          deploy = await waitForDeploy({token, sha: merged?.sha});
         } else {
           mergeState = 'not_merged_' + checks;
           result.needsGpt.push(`#${item.number} 自动合并被拒：CI 状态 ${checks}`);
         }
       }
-      await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState.startsWith('merged') ? 'success' : 'not_run', tests: verify.ran ? (verify.ok ? 'verify_passed' : 'verify_failed') : 'executor_ok_only', deploy: deploy.status, deploy_detail: deploy.runs.map(r => r.workflow + ':' + r.status + '/' + r.conclusion)});
+      await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState.startsWith('merged') ? 'success' : 'not_run', tests: verify.ran ? (verify.ok ? 'verify_passed' : 'verify_failed') : 'executor_ok_only', deploy: deploy.status === 'deployed' ? 'deployed' : 'not_deployed', deploy_detail: deploy.runs.map(r => r.workflow + ':' + r.status + '/' + r.conclusion)});
       const deployNote = deploy.status === 'not_attempted' ? '' : `；部署回读 ${deploy.status}${deploy.runs.length ? '(' + deploy.runs.map(r => r.workflow + ':' + r.conclusion).join(',') + ')' : ''}`;
       result.done.push(`#${item.number} ${item.task_id || ''} 改动 ${changed.length} 个文件，PR #${published.pr}（${mergeState}${deployNote}）`);
     } catch (error) {
