@@ -1,0 +1,373 @@
+{
+ "schema": "ltzzz.deep.daily.v1",
+ "date": "2026-11-21",
+ "at": "2026-11-20T22:52:30Z",
+ "timezone": "Asia/Shanghai",
+ "mail_intake": {
+  "status": "ok",
+  "at": "2026-11-20T22:47Z",
+  "agent_mail": {
+   "status": "ok",
+   "count": 39,
+   "open": 7
+  },
+  "gmail_fullbox": {
+   "status": "ok",
+   "count": 1207,
+   "open": 1170,
+   "full_box_total": 5121,
+   "full_box_unseen": 4296,
+   "bodies_read": 50
+  },
+  "ruling_tracker": {
+   "status": "ok",
+   "threads": 52,
+   "answered": 31,
+   "pending_no_reply": 21,
+   "answered_but_unread": 5,
+   "pending_over_24h": 21
+  }
+ },
+ "gpt_ruling_received": {
+  "status": "ok",
+  "received": false,
+  "today_count": 0,
+  "last_received_at_utc": "2026-11-20T20:51:14Z",
+  "days_since_last_ruling": 1,
+  "severity": "ok",
+  "note": "今日未见新回信；昨日 5 封 answered_but_unread 已逐封读完并消费"
+ },
+ "repo_observation": {
+  "oversight": {
+   "date": "2026-11-21",
+   "at": "2026-11-20T18:18:34Z",
+   "backlog": {
+    "open_warning_cases": 220,
+    "unique_original_tasks": 220,
+    "not_rechecked_in_current_window": 176,
+    "by_responsible_seat": {
+     "qianwen": 68,
+     "doubao": 49,
+     "deepseek": 56,
+     "grok": 35,
+     "gpt": 12
+    }
+   },
+   "run_id": "44791485537"
+  },
+  "failure_runs_24h": [
+   {
+    "run": "44811597606",
+    "at": "2026-11-20T20:27:56Z",
+    "name": "Autonomous funded LTZZZ orders"
+   }
+  ],
+  "open_prs": 0,
+  "open_issues": 28
+ },
+ "queue_run": {
+  "run_id": "44832018944",
+  "attempt": 1,
+  "receipt": "knowledge/results/deep-superagent/queue-44832018944-attempt-1.json",
+  "status": "queue_results_verified",
+  "task_id": "DEEP-SUPERAGENT-20261121-DAILY-1",
+  "job_status": "completed_pending_external_acceptance",
+  "model_calls": 5,
+  "outputs": 3
+ },
+ "daily_job": {
+  "run_id": "44832034564",
+  "event": "workflow_dispatch_补跑（当日无 schedule）",
+  "receipt": "knowledge/results/deep-superagent/daily-44832034564-attempt-1.json",
+  "status": "daily_result_readback_complete",
+  "job_status": "completed_pending_external_acceptance",
+  "model_calls": 3,
+  "seats": [
+   {
+    "seat": "deepseek",
+    "tokens": 232,
+    "finish": "stop"
+   },
+   {
+    "seat": "grok",
+    "tokens": 3154,
+    "finish": "stop"
+   },
+   {
+    "seat": "deepseek",
+    "tokens": 170,
+    "finish": "stop"
+   }
+  ],
+  "note": "doubao 已排除出日课工作席（commit d789ddb89）"
+ },
+ "seat_receipts": [
+  {
+   "seat": "doubao",
+   "status": "judged",
+   "note": "A1-A5 全部按 rule2/rule5 升级，未输出 close"
+  },
+  {
+   "seat": "qianwen",
+   "status": "judged",
+   "note": "B1/B3 gpt，B2 blocked"
+  },
+  {
+   "seat": "kimi",
+   "status": "judged",
+   "note": "C1 gpt，C2 blocked，C3 deploy_confirm"
+  }
+ ],
+ "routes": [
+  {
+   "id": "A1",
+   "ref": "ruling/OWNER-DIRECT-20261119-DEEP-EXECUTOR-DELEGATION",
+   "route": "needs_gpt_decision",
+   "seat_claim": "doubao=needs_gpt_decision",
+   "review": "同意：PR#501 合并早于同 head pull_request CI 1 秒，独立 dispatch 不可替代；是否接受该合并顺序要 GPT 口径",
+   "evidence": "msg_S1XN1G…; run 44667114313 03:21:19Z failed / merge 03:21:18Z"
+  },
+  {
+   "id": "A2",
+   "ref": "ruling/ISSUE-TO-DEEP-CARD-BRIDGE",
+   "route": "blocked_evidence_needed",
+   "seat_claim": "doubao=blocked_evidence_needed",
+   "review": "同意：自然 schedule PUSHED=0、无 claim/卡/PR/CI，精确 Message-ID in:inbox=0；先补执行链证据",
+   "evidence": "msg_uUPjsF…; #471 hub:blocked attempts=0"
+  },
+  {
+   "id": "A3",
+   "ref": "ruling/TASK-HUB-SNAPSHOT-CONCURRENCY",
+   "route": "needs_gpt_decision",
+   "seat_claim": "doubao=needs_gpt_decision",
+   "review": "改判理由：授权明确（append-only reopen 事件+拒收无效 delivered），但 route 集合没有 execute_authorized 一项，按 rule3 保守升级并作为路由缺口提案",
+   "evidence": "msg_PdVsFA…; #432"
+  },
+  {
+   "id": "A4",
+   "ref": "ruling/WALLET-P1-INCREMENTAL-VERIFY",
+   "route": "needs_gpt_decision",
+   "seat_claim": "doubao=needs_gpt_decision",
+   "review": "同上：owner 11-20 授权已 supersede 钱包闸，允许改 wallet core+合成测试；缺 execute_authorized 路由，升级",
+   "evidence": "msg_J-yTI1x…; #433"
+  },
+  {
+   "id": "A5",
+   "ref": "ruling/REFUND-F2-IDEMPOTENCY-DESIGN",
+   "route": "needs_gpt_decision",
+   "seat_claim": "doubao=needs_gpt_decision",
+   "review": "同上：设计文档+合成向量已授权；缺 execute_authorized 路由，升级",
+   "evidence": "msg__z_nkRn…; #434"
+  },
+  {
+   "id": "B1",
+   "ref": "oversight/backlog 220",
+   "route": "needs_gpt_decision",
+   "seat_claim": "qianwen=needs_gpt_decision",
+   "review": "同意：open_warning_cases 220 / not_rechecked 176，处置优先级与复核口径要 GPT 定",
+   "evidence": "oversight/latest.json at 2026-11-20T18:18Z"
+  },
+  {
+   "id": "B2",
+   "ref": "run/44811597606",
+   "route": "needs_gpt_decision",
+   "seat_claim": "qianwen=blocked_evidence_needed",
+   "review": "改判：run 存在且 failure 已知为 blocked_missing_signer，不属缺证据；涉及签名与资金必须 GPT",
+   "evidence": "gh run view 44811597606 failure; 历史 blocked_missing_signer"
+  },
+  {
+   "id": "B3",
+   "ref": "pr/open=0 issue=28",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "qianwen=needs_gpt_decision",
+   "review": "改判：只读观测，无待办动作，回执补写即闭合",
+   "evidence": "gh pr list=0; gh issue list=28"
+  },
+  {
+   "id": "C1",
+   "ref": "daily-run/44696091463 failure",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "kimi=needs_gpt_decision",
+   "review": "改判：根因已定位并修复（doubao 3072=length → 日课排除豆包，d789ddb89），今日复跑 44832034564 绿；回执补写后闭合",
+   "evidence": "daily-44696091463-attempt-1.json; commit d789ddb89"
+  },
+  {
+   "id": "C2",
+   "ref": "queue/daily-run/44659359506 success",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "kimi=blocked_evidence_needed",
+   "review": "改判：回执 daily-44659359506-attempt-1.json 已在库（outputs=1、三席 stop），不存在缺回执",
+   "evidence": "daily-44659359506-attempt-1.json"
+  },
+  {
+   "id": "C3",
+   "ref": "deploy/44831752082",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "kimi=deploy_confirm_only",
+   "review": "改判：部署 run 已成功且回读 deployment_health_and_auth_verified，属状态确认（非新部署）",
+   "evidence": "deploy-44831752082-attempt-1.json"
+  }
+ ],
+ "route_counts": {
+  "coordinator_close_with_receipt": 4,
+  "needs_gpt_decision": 5,
+  "needs_owner_decision": 0,
+  "blocked_evidence_needed": 1,
+  "deploy_confirm_only": 0
+ },
+ "review_summary": {
+  "agree": 2,
+  "overridden": 6,
+  "seats_changed": 3,
+  "route_gap": "固定 route 集合缺 execute_authorized：A3/A4/A5 已有裁决授权但无对应路由，本轮按 rule3 升级并作为提案"
+ },
+ "sections": {
+  "done": [
+   {
+    "item": "邮件摄入与裁决消费",
+    "evidence": "mail-intake at 2026-11-20T22:47Z status=ok（agent 39/7、gmail 1207/5121、tracker 52/31/21/5/21）；rulings-consumed-2026-11-21.json count=5、bodies_persisted=false",
+    "commit": "80932da45"
+   },
+   {
+    "item": "日卡 DAILY-1 被队列真实消费",
+    "evidence": "run 44832018944 status=queue_results_verified，job completed_pending_external_acceptance，model_calls=5，outputs=3（qianwen/doubao/kimi）"
+   },
+   {
+    "item": "日课补跑成功（巡检新增第 6 项首个执行）",
+    "evidence": "run 44832034564 success；job completed_pending_external_acceptance；三席 finish=stop（grok 3154 tokens）",
+    "note": "上一轮 44696091463 因 doubao 3072=length 失败，本次 doubao 已排除"
+   },
+   {
+    "item": "worker 部署（日课排除豆包席位）",
+    "evidence": "deploy run 44831752082 deployment_health_and_auth_verified，source d789ddb89"
+   },
+   {
+    "item": "B3/C1/C2/C3 四项回执补写并推送后闭合",
+    "evidence": "本文件 routes 中对应 route=coordinator_close_with_receipt，回执已随本次提交 push"
+   },
+   {
+    "item": "巡检七项落盘",
+    "evidence": "knowledge/results/patrol/2026-11-21.json（ok 3 / failed 1 / unknown 2 / partial 1）"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [
+    {
+     "id": "A1",
+     "blocker": "PR#501 合并早于同 head pull_request CI 1 秒，是否接受该顺序",
+     "if_not": "#464 证据链无法定论，后续同类合并无判据",
+     "deep_can_do_first": "不改历史，只固化时间线证据"
+    },
+    {
+     "id": "A3",
+     "blocker": "#432 delivered 假终态需 append-only reopen 事件；已授权但 route 缺 execute_authorized",
+     "if_not": "假终态继续污染 Task Hub 快照",
+     "deep_can_do_first": "可先写 reducer 变更与测试，不合并"
+    },
+    {
+     "id": "A4",
+     "blocker": "#433 钱包缓存完整性修复已授权；route 缺 execute_authorized",
+     "if_not": "HIGH 完整性缺陷留在 main",
+     "deep_can_do_first": "可先补 forged-folded 测试与 PR 草稿"
+    },
+    {
+     "id": "A5",
+     "blocker": "#434 设计文档+合成向量已授权；route 缺 execute_authorized",
+     "if_not": "退款幂等设计继续缺文档",
+     "deep_can_do_first": "可先写设计文档草稿"
+    },
+    {
+     "id": "B1",
+     "blocker": "oversight backlog 220 / not_rechecked 176 的处置优先级",
+     "if_not": "每日复核量继续堆积，backlog 不降",
+     "deep_can_do_first": "可先按席位最老 20 条列清单"
+    },
+    {
+     "id": "B2",
+     "blocker": "funded orders 缺签名（run 44811597606）",
+     "if_not": "该单持续阻断；无资金风险敞口",
+     "deep_can_do_first": "不签不重试，只记状态"
+    }
+   ],
+   "owner": []
+  },
+  "next_immediate": [
+   {
+    "action": "按 A3 写 Task Hub reducer 的 unblocked/reopened append-only 事件 + 拒收无效 delivered 的测试",
+    "done_when": "PR 有 head + CI 全绿，且测试覆盖 blocked/delivered reopen 与过期租约"
+   },
+   {
+    "action": "按 A4 补 forged-folded 合成回归测试并提 PR",
+    "done_when": "scripts/wallet/core.mjs 测试包含 forged folded/idempotency 用例且 CI 绿"
+   },
+   {
+    "action": "按 A5 起草 refund-notification 幂等设计文档 + 合成向量",
+    "done_when": "PR 内出现设计文档与 fixtures，未触碰 vpay-notify"
+   },
+   {
+    "action": "B1 先列最老 20 条未复核项清单",
+    "done_when": "patrol/oversight 附带按席位排序的前 20 条与缺失阶段"
+   }
+  ],
+  "later": [
+   {
+    "item": "#471 Issue→卡→队列→领取→Worker→PR→CI→merge→deploy 全链证据",
+    "depends_on": "需要真实 claim 与执行席位"
+   },
+   {
+    "item": "#464 同 head CI 顺序争议收口",
+    "depends_on": "GPT 对 A1 的口径"
+   },
+   {
+    "item": "oversight backlog 220 条逐条复核",
+    "depends_on": "GPT 优先级口径 + 席位产能"
+   },
+   {
+    "item": "三数回填 YouTube/RUM/进账",
+    "depends_on": "三后台凭据与 CF RUM 接入"
+   },
+   {
+    "item": "ltzzz.com 从云主机不可达（000），Pages 301 正常",
+    "depends_on": "出口/域名侧排查，不属本席权限"
+   }
+  ]
+ },
+ "patrol_summary": {
+  "file": "knowledge/results/patrol/2026-11-21.json",
+  "ok": 3,
+  "failed": 1,
+  "unknown": 2,
+  "partial": 1,
+  "blocking": false
+ },
+ "skipped_monthly_skill_iteration": {
+  "skipped": true,
+  "reason": "非每月 1 日，且 knowledge/results/skill-iteration/2026-11.json 已存在"
+ },
+ "writes_performed": 11,
+ "merges_performed": 0,
+ "deploys_performed": 0,
+ "counts": {
+  "model_calls": 8,
+  "writes": 11,
+  "merges": 0,
+  "deploys": 0,
+  "financial_execution": false,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null
+ },
+ "notes": [
+  "日报邮件正文不落盘",
+  "日课补跑为本轮新增巡检固定动作的首次执行"
+ ],
+ "email": {
+  "to": "ltzyz2181@gmail.com",
+  "from": "qingqizhu6502@agent.qq.com",
+  "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-21",
+  "message_id": "msg_6q6DXk2uS9xIjd3X5NXK5Y-mxWtEElZRX-Z9CodlWoYszw",
+  "sent_at_utc": "2026-11-20T22:52:57Z",
+  "confirmed_steps": 2,
+  "body_persisted": false
+ }
+}

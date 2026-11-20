@@ -1,0 +1,75 @@
+{
+ "schema": "ltzzz.patrol.v1",
+ "date": "2026-11-21",
+ "at": "2026-11-20T22:52:03Z",
+ "timezone": "Asia/Shanghai",
+ "source": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md",
+ "read_only": true,
+ "items": [
+  {
+   "id": 1,
+   "name": "记忆库六份核心记忆+总控交接单",
+   "status": "ok",
+   "evidence": "ltzzz-memory 现有文件；梦境数据库.md 待办 1 段（L54-L56：擎起柱语义待 owner 校准、每月增量提取）；文明研究.md / LTZZZ-OS.md 待办 0",
+   "new_unhandled_items": [
+    "擎起柱语义待 owner 一句话校准（既有）",
+    "月度增量提取（既有）"
+   ],
+   "changed_files": 0
+  },
+  {
+   "id": 2,
+   "name": "视频流水线最近 run",
+   "status": "ok",
+   "evidence": "gh run 44827145456 Daily YouTube prepared video or render with public verification / success / 2026-11-20T22:13:27Z",
+   "conclusion": "success"
+  },
+  {
+   "id": 3,
+   "name": "ltzzz.com 可访问性",
+   "status": "failed",
+   "evidence": "curl https://ltzzz.com 三次均 000（0.42s/0.02s/1.83s）；备用 https://ltzyz2181-collab.github.io/ltzzz/ 返回 301，说明 Pages 侧存活，是云主机出口到 ltzzz.com 不可达",
+   "http_code": 0,
+   "fallback": {
+    "url": "https://ltzyz2181-collab.github.io/ltzzz/",
+    "http_code": 301
+   },
+   "reason": "vm_egress_unreachable"
+  },
+  {
+   "id": 4,
+   "name": "WorkBuddy 只读巡检（skill os_f8a49bc830defb02）",
+   "status": "unknown",
+   "evidence": "本机无 WorkBuddy API 凭据，未发请求",
+   "reason": "credential_missing"
+  },
+  {
+   "id": 5,
+   "name": "微信公众平台只读巡检（AppID wx562bcb6057346fb2）",
+   "status": "unknown",
+   "evidence": "AppID 仅见 docs/2026-11-06/07/11 三份部署文档，无后台登录态与接口凭据",
+   "reason": "credential_missing"
+  },
+  {
+   "id": 6,
+   "name": "日课补跑（新增固定动作）",
+   "status": "ok",
+   "evidence": "当日（11-21）无 deep-superagent-daily schedule run → gh workflow run deep-superagent-daily.yml → run 44832034564 success；report daily-44832034564-attempt-1.json status=daily_result_readback_complete、job=completed_pending_external_acceptance、model_calls=3、三席 finish=stop",
+   "run": "44832034564"
+  },
+  {
+   "id": 7,
+   "name": "三数补记（前一日 2026-11-20）",
+   "status": "partial",
+   "evidence": "ltzzz-memory/daily-3nums.md 已有 '| 2026-11-20 | 未测 | 未测 | 未测 | 未测 | Actions 自动行（待 CF RUM 回填） | xai-actions |'，未重复追加",
+   "data_date": "2026-11-20",
+   "values": {
+    "youtube": null,
+    "rum": null,
+    "revenue": null
+   },
+   "reason": "YouTube Studio/CF RUM/进账凭据缺失且 Actions 自动行未回填"
+  }
+ ],
+ "blocking": false
+}
