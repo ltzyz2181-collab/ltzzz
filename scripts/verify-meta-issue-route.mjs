@@ -56,6 +56,43 @@ try {
   error = String((e && e.message) || e).slice(0, 200);
 }
 
+const probeRequested = process.env.META_CREATE_PROBE_ISSUE === '1';
+let created = null;
+if (probeRequested && res && res.status === 200 && data && data.dry_run === true) {
+  const createPayload = {
+    task_id: 'META-CHANNEL-SELFTEST-20261120',
+    title: '通道自检：Meta 可以直接开 Issue 了',
+    labels: ['meta-report'],
+    body: [
+      'Meta 席位 Issue 通道自检。',
+      '',
+      '- Worker `/issue`：dry_run 与真实创建各跑一次',
+      '- 权限：仅 Issues: Read and write，单仓库 ltzyz2181-collab/ltzzz',
+      '- 仍未通：Workers AI 推理 401/403，模型暂时还产不出内容',
+      '- 下一步：开通 Workers AI 后，Meta 才能自己写提案与复核',
+    ].join('\n'),
+  };
+  try {
+    const createRes = await fetch(url + '/issue', {
+      method: 'POST',
+      headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json'},
+      body: JSON.stringify(createPayload),
+      signal: AbortSignal.timeout(20000),
+    });
+    const text = await createRes.text();
+    let body = null;
+    try { body = JSON.parse(text); } catch { body = null; }
+    created = {
+      http: createRes.status,
+      status: body ? body.status : null,
+      number: body ? body.number || null : null,
+      url: body ? body.url || null : null,
+      error: body ? body.error || null : text.slice(0, 200),
+    };
+  } catch (e) {
+    created = {http: 0, status: null, number: null, url: null, error: String((e && e.message) || e).slice(0, 200)};
+  }
+}
 const receipt = {
   schema: 'ltzzz.meta-issue-route-verify.v1',
   at: new Date().toISOString(),
@@ -66,7 +103,10 @@ const receipt = {
   dry_run: data ? data.dry_run === true : null,
   would_create: data && data.would_create ? {repo: data.would_create.repo, labels: data.would_create.labels} : null,
   error: error || (data ? data.error || null : null),
-  created_issues: 0,
+  probe_issue_requested: probeRequested,
+  probe_issue: created,
+  created_issues: created && created.status === 'created' ? 1 : 0,
 };
 writeReceipt(receipt);
-process.exit(res && res.status === 200 && receipt.dry_run === true ? 0 : 1);
+const probeOk = !probeRequested || (created && (created.status === 'created' || created.status === 'duplicate_skipped'));
+process.exit(res && res.status === 200 && receipt.dry_run === true && probeOk ? 0 : 1);

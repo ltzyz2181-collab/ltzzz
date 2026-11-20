@@ -2,6 +2,11 @@ name: Meta issue bridge
 on:
   workflow_dispatch:
     inputs:
+      create_probe_issue:
+        description: Create one real Meta self-test issue (idempotent by task id)
+        type: boolean
+        required: false
+        default: false
       install_token:
         description: Install META_ISSUES_PAT as the worker GITHUB_ISSUES_TOKEN secret
         type: boolean
@@ -49,6 +54,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           META_WORKER_TOKEN: ${{ secrets.META_WORKER_TOKEN }}
+          META_CREATE_PROBE_ISSUE: ${{ inputs.create_probe_issue && '1' || '0' }}
         run: node scripts/verify-meta-issue-route.mjs
       - uses: actions/upload-artifact@v4
         if: always()
