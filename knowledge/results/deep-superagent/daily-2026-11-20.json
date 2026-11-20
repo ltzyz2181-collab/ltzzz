@@ -1,0 +1,383 @@
+{
+ "schema": "ltzzz.deep.daily.v1",
+ "date": "2026-11-20",
+ "at": "2026-11-20T01:51:58Z",
+ "timezone": "Asia/Shanghai",
+ "mail_intake": {
+  "status": "ok",
+  "at": "2026-11-20T01:40:41.669Z",
+  "agent_mail": {
+   "status": "ok",
+   "count": 41,
+   "open": 9
+  },
+  "gmail_fullbox": {
+   "status": "ok",
+   "count": 1116,
+   "open": 1078,
+   "full_box_total": 4946,
+   "full_box_unseen": 4122,
+   "bodies_read": 50
+  },
+  "ruling_tracker": {
+   "status": "ok",
+   "threads": 58,
+   "answered": 37,
+   "pending_no_reply": 21,
+   "answered_but_unread": 7,
+   "pending_over_24h": 21
+  },
+  "runs_entry_sha16": "4c10d453d238"
+ },
+ "gpt_ruling_received": {
+  "status": "ok",
+  "received": true,
+  "today_count": 5,
+  "last_received_at_utc": "2026-11-19T20:46:13Z",
+  "days_since_last_ruling": 0,
+  "severity": "ok",
+  "note": "迟到裁决已于 11-19 20:36-20:46Z 到达；口径为「收到了但此前未读」而非未收到"
+ },
+ "repo_observation": {
+  "oversight": {
+   "at": "2026-11-20T01:02:20Z",
+   "run_id": "44650537507",
+   "backlog": 6,
+   "stage_counts": 11,
+   "model_calls": 0
+  },
+  "failure_runs_24h": [
+   {
+    "run": "44611461148",
+    "at": "2026-11-19T20:42:50Z",
+    "note": "blocked_missing_signer"
+   },
+   {
+    "run": "44610747708",
+    "at": "2026-11-19T20:38:33Z"
+   },
+   {
+    "run": "44610348174",
+    "at": "2026-11-19T20:36:12Z"
+   }
+  ],
+  "open_prs": [
+   {
+    "number": 431,
+    "merge": "UNKNOWN"
+   },
+   {
+    "number": 408,
+    "merge": "UNKNOWN"
+   }
+  ],
+  "open_issues": {
+   "471": "OPEN dispatch,seat:deep,hub:new",
+   "475": "OPEN source-intel M1-M4"
+  }
+ },
+ "queue_run": {
+  "run_id": "44656121164",
+  "attempt": 1,
+  "receipt": "knowledge/results/deep-superagent/queue-44656121164-attempt-1.json",
+  "status": "queue_results_verified",
+  "task_id": "DEEP-SUPERAGENT-20261120-DAILY-2",
+  "card_sha256": "8ea361fd12bf9ff9181294981b79ab639c8ccefa4964a457420b975eba0a32f9",
+  "job_status": "needs_gpt_decision",
+  "model_calls": 5,
+  "accepted": false,
+  "platform_accepted": false,
+  "deployed": false,
+  "outputs": 3,
+  "rejected_card": {
+   "task_id": "DEEP-SUPERAGENT-20261120-DAILY-1",
+   "run": "44655791255",
+   "error": "card_contract_split_required:coordinator_reviewer",
+   "action": "保留不删，新建 DAILY-2 单角色契约"
+  }
+ },
+ "seat_receipts": [
+  {
+   "seat": "doubao",
+   "actual_provider": "volcengine_ark",
+   "status": "unjudged",
+   "note": "仅返回工具调用桩，无逐项 route，按 rule4 记未判不顶替"
+  },
+  {
+   "seat": "qianwen",
+   "actual_provider": "aliyun_dashscope",
+   "status": "judged",
+   "note": "A4-A6 全判 needs_gpt_decision"
+  },
+  {
+   "seat": "kimi",
+   "actual_provider": "moonshot",
+   "status": "judged",
+   "note": "B1 gpt，B2/B3 blocked，C1 blocked"
+  }
+ ],
+ "routes": [
+  {
+   "id": "A1",
+   "ref": "mail/agent_mail/补告知·已验收 虚拟支付沙箱首单",
+   "age_days": 8,
+   "status": "open",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "doubao 未返回有效 route（工具调用桩）",
+   "review": "本席复核：该告知事项无新增动作，按已验收事实补写回执后可关闭；不涉资金",
+   "evidence": "knowledge/results/deep-superagent/daily-2026-11-20.json#sections.done"
+  },
+  {
+   "id": "A2",
+   "ref": "mail/agent_mail/Deep 巡检五席全绿 七项判定",
+   "age_days": 8,
+   "status": "open",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "doubao 未返回有效 route",
+   "review": "审计结论已于 11-19 回执落盘并推送，属可补回执关闭项",
+   "evidence": "knowledge/results/deep-superagent/daily-2026-11-19.json"
+  },
+  {
+   "id": "A3",
+   "ref": "mail/agent_mail/千问监督核实+已部署2处闸门",
+   "age_days": 8,
+   "status": "open",
+   "route": "needs_gpt_decision",
+   "seat_claim": "qianwen=needs_gpt_decision",
+   "review": "复核同意：信内明列需 GPT 裁决 5 项，本席不得自裁",
+   "evidence": "mail-intake/latest.json"
+  },
+  {
+   "id": "A4",
+   "ref": "mail/agent_mail/中转执行席 传输层切 Worker 转发",
+   "age_days": 7,
+   "status": "open",
+   "route": "blocked_evidence_needed",
+   "seat_claim": "qianwen=needs_gpt_decision",
+   "review": "复核不同意：缺仓库内切换回执与 run id，不能判裁决；先补证据",
+   "evidence": "仓库内未见传输层切换回执文件"
+  },
+  {
+   "id": "A5",
+   "ref": "mail/agent_mail/AI雇佣AI改逐步验收 撤销固定期限",
+   "age_days": 6,
+   "status": "open",
+   "route": "needs_owner_decision",
+   "seat_claim": "qianwen=needs_gpt_decision",
+   "review": "复核改判：撤销固定期限属 owner 决定，非 GPT 口径",
+   "evidence": "mail-intake/latest.json"
+  },
+  {
+   "id": "A6",
+   "ref": "mail/agent_mail/豆包504修复已部署 工程部署限制放开",
+   "age_days": 0,
+   "status": "open",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "qianwen=needs_gpt_decision",
+   "review": "复核改判可关闭：504 修复与部署授权已有落地回执，属状态确认",
+   "evidence": "knowledge/results/deep-superagent/execution-receipt-2026-11-18-504-deploy-authority.json"
+  },
+  {
+   "id": "B1",
+   "ref": "run/44611461148 Autonomous funded orders",
+   "age_days": 0.1,
+   "status": "failure",
+   "route": "needs_gpt_decision",
+   "seat_claim": "kimi=needs_gpt_decision",
+   "review": "复核同意：blocked_missing_signer，涉签名与资金，本席不重试不签名",
+   "evidence": "gh run view 44611461148 failure"
+  },
+  {
+   "id": "B2",
+   "ref": "run/44610747708 Task Hub",
+   "age_days": 0.1,
+   "status": "failure",
+   "route": "blocked_evidence_needed",
+   "seat_claim": "kimi=blocked_evidence_needed",
+   "review": "复核同意：缺修复 PR head/CI/并发测试原始输出（#432 approved=false）",
+   "evidence": "queue-44500688824-attempt-1.json"
+  },
+  {
+   "id": "B3",
+   "ref": "run/44610348174 Task Hub",
+   "age_days": 0.1,
+   "status": "failure",
+   "route": "blocked_evidence_needed",
+   "seat_claim": "kimi=blocked_evidence_needed",
+   "review": "复核同意，与 B2 同因",
+   "evidence": "queue-44500688824-attempt-1.json"
+  },
+  {
+   "id": "C1",
+   "ref": "oversight/backlog=6",
+   "age_days": 0,
+   "status": "unknown",
+   "route": "coordinator_close_with_receipt",
+   "seat_claim": "kimi=blocked_evidence_needed",
+   "review": "复核改判：这是只读观测项，已记入 patrol 与本节；6 条 backlog 明细转入 later",
+   "evidence": "knowledge/results/dispatch/oversight/latest.json"
+  },
+  {
+   "id": "C2",
+   "ref": "pr/#408 #431 open",
+   "age_days": 1,
+   "status": "open",
+   "route": "needs_gpt_decision",
+   "seat_claim": "kimi 未覆盖",
+   "review": "复核：PR 合并/验收不在本席权限，按 rule3 交裁决",
+   "evidence": "gh pr list --state open -> 431,408 (mergeState UNKNOWN)"
+  },
+  {
+   "id": "C3",
+   "ref": "issue/#471 hub:new",
+   "age_days": 1,
+   "status": "open",
+   "route": "blocked_evidence_needed",
+   "seat_claim": "kimi 未覆盖",
+   "review": "复核：GPT 已授权 Deep 主执行但仓库无 claim/分支/PR 证据，先补执行证据再谈收尾",
+   "evidence": "gh issue view 471 -> OPEN dispatch,seat:deep,hub:new"
+  }
+ ],
+ "route_counts": {
+  "coordinator_close_with_receipt": 4,
+  "needs_gpt_decision": 3,
+  "needs_owner_decision": 1,
+  "blocked_evidence_needed": 5,
+  "deploy_confirm_only": 0
+ },
+ "review_summary": {
+  "agree": 6,
+  "overridden": 4,
+  "unjudged_items": [
+   "A1",
+   "A2",
+   "A3"
+  ],
+  "note": "豆包席三项未判；qianwen A4/A5/A6、kimi C1 经复核改判，理由见 routes"
+ },
+ "sections": {
+  "done": [
+   {
+    "item": "邮件摄入全日跑通",
+    "evidence": "mail-intake latest.json at 2026-11-20T01:40:41Z status=ok；agent 41/9、gmail 1116/全箱4946、tracker 58/37/21/7/21",
+    "commit": "9b32caf0b（mail-intake + rulings 消费）"
+   },
+   {
+    "item": "7 封 answered_but_unread 裁决逐封读完并落消费记录",
+    "evidence": "knowledge/results/deep-superagent/rulings-consumed-2026-11-20.json（count=7，bodies_persisted=false）"
+   },
+   {
+    "item": "日卡 DAILY-2 被队列真实消费",
+    "evidence": "queue run 44656121164 / queue-44656121164-attempt-1.json status=queue_results_verified，job needs_gpt_decision，model_calls=5"
+   },
+   {
+    "item": "合并巡检六项已跑并落盘",
+    "evidence": "knowledge/results/patrol/2026-11-20.json"
+   },
+   {
+    "item": "A1/A2/A6/C1 四项经复核补回执关闭",
+    "evidence": "本文件 routes.*.route=coordinator_close_with_receipt；A6 另有 execution-receipt-2026-11-18-504-deploy-authority.json"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [
+    {
+     "id": "A3",
+     "blocker": "信内 5 项需 GPT 口径",
+     "if_not": "闸门维持现状、5 项无法推进",
+     "deep_can_do_first": "可先整理 5 项证据清单"
+    },
+    {
+     "id": "B1",
+     "blocker": "funded orders 缺签名",
+     "if_not": "该单继续阻断，但无资金风险敞口",
+     "deep_can_do_first": "不签不重试，只记状态"
+    },
+    {
+     "id": "C2",
+     "blocker": "PR #408/#431 合并与验收",
+     "if_not": "两 PR 长期悬挂，Phase1 无法验收",
+     "deep_can_do_first": "不合并，只做只读复核"
+    }
+   ],
+   "owner": [
+    {
+     "id": "A5",
+     "blocker": "撤销固定期限/AI雇佣AI节奏",
+     "if_not": "固定期限条款继续生效",
+     "deep_can_do_first": "可先写变更草案，不擅自撤销"
+    }
+   ]
+  },
+  "next_immediate": [
+   {
+    "action": "补 #432 修复证据（PR head/CI/并发测试原始输出）",
+    "done_when": "#432 挂出 PR 链接与 CI run id，queue 证据齐"
+   },
+   {
+    "action": "#471 执行证据补齐：claim→分支→PR→CI",
+    "done_when": "Issue #471 出现 claim 记录与首个 PR"
+   },
+   {
+    "action": "A4 传输层切换回执补写",
+    "done_when": "仓库内出现含 run id 的切换回执"
+   }
+  ],
+  "later": [
+   {
+    "item": "oversight backlog 6 条逐条处置",
+    "depends_on": "各自 Issue 证据"
+   },
+   {
+    "item": "#475 Source Intel M1-M4",
+    "depends_on": "desktop Claude 执行，Deep 异源复核"
+   },
+   {
+    "item": "#408 Phase1 修复",
+    "depends_on": "desktop Claude 修全字段禁止意图扫描 + 新 CI"
+   },
+   {
+    "item": "三数回填 YouTube/RUM/进账",
+    "depends_on": "三后台凭据与 CF RUM 接入"
+   }
+  ]
+ },
+ "patrol_summary": {
+  "file": "knowledge/results/patrol/2026-11-20.json",
+  "ok": 3,
+  "unknown": 2,
+  "partial": 1,
+  "failed": 0,
+  "blocking": false
+ },
+ "skipped_monthly_skill_iteration": {
+  "skipped": true,
+  "reason": "非每月 1 日，且 knowledge/results/skill-iteration/2026-11.json 已存在"
+ },
+ "writes_performed": 12,
+ "merges_performed": 0,
+ "deploys_performed": 0,
+ "counts": {
+  "model_calls": 5,
+  "writes": 12,
+  "merges": 0,
+  "deploys": 0,
+  "financial_execution": false,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null
+ },
+ "notes": [
+  "日报邮件正文不落盘",
+  "豆包席 3 项未判已如实记录"
+ ],
+ "email": {
+  "to": "ltzyz2181@gmail.com",
+  "from": "qingqizhu6502@agent.qq.com",
+  "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-20",
+  "message_id": "msg_HFsj1Xj6o5j_YS-PODTZyjNmm2NvyfK-fZnx885ZKCTAyQ",
+  "sent_at_utc": "2026-11-20T01:52:30Z",
+  "confirmation_token_used": true,
+  "body_persisted_in_repo": false
+ }
+}
