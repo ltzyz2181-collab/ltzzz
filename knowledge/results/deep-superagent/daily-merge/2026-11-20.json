@@ -1,15 +1,23 @@
 {
  "schema": "ltzzz.deep-superagent.daily-merge.v1",
  "date": "2026-11-20",
- "generated_at_utc": "2026-11-20T08:26:56.736Z",
+ "generated_at_utc": "2026-11-20T22:50:46.098Z",
  "done": [
   {
+   "task_id": "DEEP-SUPERAGENT-20261121-DAILY-1",
+   "run_id": "44832018944",
+   "status": "completed_pending_external_acceptance",
+   "model_calls": 5,
+   "note": "内部执行回执；外部业务验收仍需原单证据",
+   "source": "knowledge/results/deep-superagent/queue-44832018944-attempt-1.json"
+  },
+  {
    "task_id": "DEEP-DAILY-SUPERVISION",
-   "run_id": "44659359506",
+   "run_id": "44832034564",
    "status": "daily_result_readback_complete",
    "model_calls": 3,
    "note": "日监督只读回执；不等于完成业务验收",
-   "source": "knowledge/results/deep-superagent/daily-44659359506-attempt-1.json"
+   "source": "knowledge/results/deep-superagent/daily-44832034564-attempt-1.json"
   }
  ],
  "needs_gpt_decision": [
@@ -50,10 +58,10 @@
   "note": "政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权"
  },
  "mail": {
-  "status": "partial",
-  "at": "2026-11-20T07:25:39.231Z",
+  "status": "ok",
+  "at": "2026-11-20T22:47:06.123Z",
   "gmail_status": "ok",
-  "agent_mail_status": "partial",
+  "agent_mail_status": "ok",
   "open_or_dispatch": 200,
   "gmail_rulings": {
    "status": "ok",
@@ -67,26 +75,25 @@
   }
  },
  "counts": {
-  "done": 1,
+  "done": 2,
   "needs_gpt_decision": 1,
   "needs_owner_decision": 0,
   "blocked": 1
  },
  "next_steps": [
-  "邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。",
   "已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
   "有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。",
   "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
  ],
  "evidence": {
   "queue_reports": [
-   "knowledge/results/deep-superagent/queue-44666805971-attempt-1.json",
    "knowledge/results/deep-superagent/queue-44666852775-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-44667955668-attempt-1.json"
+   "knowledge/results/deep-superagent/queue-44667955668-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-44832018944-attempt-1.json"
   ],
   "daily_reports": [
-   "knowledge/results/deep-superagent/daily-44659359506-attempt-1.json",
-   "knowledge/results/deep-superagent/daily-44696091463-attempt-1.json"
+   "knowledge/results/deep-superagent/daily-44696091463-attempt-1.json",
+   "knowledge/results/deep-superagent/daily-44832034564-attempt-1.json"
   ],
   "mail_intake": "knowledge/results/deep-superagent/mail-intake/latest.json",
   "oversight": "knowledge/results/dispatch/oversight/latest.json"
@@ -98,7 +105,7 @@
  "secrets_included": false,
  "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
  "email": {
-  "subject": "[LTZZZ日报] 2026-11-20 完成=1 待GPT裁决=1 阻塞=1",
-  "body": "LTZZZ 每日合并 2026-11-20（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44659359506）\n\n二、需要 GPT 裁决\n- DEEP-SOURCE-INTEL-M1M4-20261120-01（run=44666852775）：见 ASK\n  复核意见：Multiple correctness issues: incomplete timestamp validation, flawed private source detection, missing append-only correction logic, and no test coverage for required acceptance criteria.\n  ASK DEEP-SOURCE-INTEL-M1M4-20261120-01：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。\n- 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=partial，gmail=ok，agent_mail=partial\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-20.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+  "subject": "[LTZZZ日报] 2026-11-20 完成=2 待GPT裁决=1 阻塞=1",
+  "body": "LTZZZ 每日合并 2026-11-20（UTC）\n\n一、今天完成了什么\n- DEEP-SUPERAGENT-20261121-DAILY-1：completed_pending_external_acceptance（run=44832018944）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44832034564）\n\n二、需要 GPT 裁决\n- DEEP-SOURCE-INTEL-M1M4-20261120-01（run=44666852775）：见 ASK\n  复核意见：Multiple correctness issues: incomplete timestamp validation, flawed private source detection, missing append-only correction logic, and no test coverage for required acceptance criteria.\n  ASK DEEP-SOURCE-INTEL-M1M4-20261120-01：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=ok，gmail=ok，agent_mail=ok\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-20.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
  }
 }
