@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   loadExecutors, classifyIssue, planWork, reservedTopics, buildEmailDigest,
-  adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns, waitForDeploy,
+  adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns, waitForDeploy, waitForChecks,
   listAutoloopCandidates,
 } from '../autoloop.mjs';
 
@@ -140,6 +140,45 @@ test('a finished deploy run is reported as deployed, a queued one is not', async
   assert.equal(done.status, 'deployed');
   const queued = await waitForDeploy({token: 't', sha: 'abc', attempts: 2, sleepFn: async () => {}, fetcher: async () => ({workflow_runs: [{id: 2, path: '.github/workflows/deploy-x.yml', name: 'deploy x', status: 'queued', conclusion: null}]})});
   assert.equal(queued.status, 'deploy_pending');
+});
+
+const checksFetcher = (checkRuns, workflowRuns = []) => async (token, method, route) => {
+  if (route.includes('/check-runs')) return {check_runs: checkRuns};
+  if (route.includes('actions/runs')) return {workflow_runs: workflowRuns};
+  throw new Error('unexpected route ' + route);
+};
+
+test('zero check runs and zero PR workflow runs block the merge', async () => {
+  const state = await waitForChecks({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: checksFetcher([], [])});
+  assert.equal(state, 'none_or_pending');
+});
+
+test('a pending check run does not authorize a merge', async () => {
+  const state = await waitForChecks({token: 't', sha: 'abc', attempts: 2, sleepFn: async () => {}, fetcher: checksFetcher([{status: 'in_progress', conclusion: null}])});
+  assert.equal(state, 'none_or_pending');
+});
+
+test('any failed, cancelled or action_required check run blocks the merge', async () => {
+  for (const conclusion of ['failure', 'cancelled', 'action_required', 'timed_out']) {
+    const state = await waitForChecks({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: checksFetcher([{status: 'completed', conclusion}, {status: 'completed', conclusion: 'success'}])});
+    assert.equal(state, 'failed', conclusion);
+  }
+});
+
+test('all applicable check runs green is the only success path', async () => {
+  const state = await waitForChecks({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: checksFetcher([{status: 'completed', conclusion: 'success'}, {status: 'completed', conclusion: 'skipped'}])});
+  assert.equal(state, 'success');
+});
+
+test('zero check runs falls back to pull_request workflow runs instead of trusting silence', async () => {
+  const failed = await waitForChecks({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: checksFetcher([], [{event: 'pull_request', status: 'completed', conclusion: 'failure'}])});
+  assert.equal(failed, 'failed');
+  const pending = await waitForChecks({token: 't', sha: 'abc', attempts: 2, sleepFn: async () => {}, fetcher: checksFetcher([], [{event: 'pull_request', status: 'in_progress', conclusion: null}])});
+  assert.equal(pending, 'none_or_pending');
+  const passed = await waitForChecks({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: checksFetcher([], [{event: 'pull_request', status: 'completed', conclusion: 'success'}])});
+  assert.equal(passed, 'success');
+  const pushOnly = await waitForChecks({token: 't', sha: 'abc', sleepFn: async () => {}, fetcher: checksFetcher([], [{event: 'push', status: 'completed', conclusion: 'success'}])});
+  assert.equal(pushOnly, 'none_or_pending');
 });
 
 test('ordinary adjudication defaults to relay-gpt, claude label routes to relay-claude', () => {
