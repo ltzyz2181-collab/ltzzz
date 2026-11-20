@@ -76,7 +76,8 @@ jobs:
           git checkout -- . 2>/dev/null || true
           git config user.name "ltzzz-autoloop"
           git config user.email "bot@ltzzz.local"
-          git add knowledge/results/autoloop 2>/dev/null || true
+          # 中转调用账本也要落库：git checkout -- . 会把它还原，成本与证据就丢了
+          git add knowledge/results/autoloop knowledge/results/relay-seat 2>/dev/null || true
           if git diff --staged --quiet; then echo "no receipt changes"; exit 0; fi
           git commit -m "chore(autoloop): daily run $(date -u +%F)"
           node tools/push-receipt-commit.mjs
