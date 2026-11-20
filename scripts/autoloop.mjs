@@ -3,8 +3,9 @@
 //   1. An issue is only claimable when a human labelled it `autoloop:exec` AND
 //      `ops/autoloop/executors.json` has an executor for that label. Issue text is
 //      never executed; it is untrusted input.
-//   2. Merge is opt-in per executor (`auto_merge: true`). Any path may merge once a real
-//      check is green, or when no check exists at all and the executor's verify passed.
+//   2. Merge is opt-in per executor (`auto_merge: true`), and only after real GitHub
+//      evidence: non-empty check runs (or pull_request workflow runs) that all completed
+//      successfully. Executor self-verify never substitutes for CI (2026-11-19 audit).
 //   3. Adjudication-class work goes to the relay seat as an advisory note and is
 //      never allowed to claim merged/deployed/platform_accepted.
 //   4. If AUTOLOOP_ENABLED is not exactly 'true', the run is plan-only.
@@ -195,20 +196,37 @@ export async function publishChanges({token, cwd = process.cwd(), paths, branch,
   return {published: true, commit: commit.sha, pr: pr.number, pr_url: pr.html_url, base: head};
 }
 
-// Merge requires BOTH a path allowlist and an actually successful check run. A PR with
-// no checks is left open on purpose: silence is not evidence of health.
-export async function waitForChecks({token, sha, attempts = 18, pauseMs = 30000}) {
+// Merge requires REAL GitHub evidence. Local executor verify is only an extra check and
+// never stands in for CI (2026-11-19 audit: PR #446/#449 merged with zero check-runs while
+// their pull_request workflow runs had actually failed). Two GitHub sources count:
+// check-runs, or pull_request-triggered workflow runs on the same head SHA. Silence from
+// both is 'none_or_pending' and must block the merge.
+export async function waitForChecks({token, sha, attempts = 18, pauseMs = 30000, fetcher = gh, sleepFn = sleep}) {
   let empty = 0;
   for (let i = 0; i < attempts; i++) {
-    const runs = await gh(token, 'GET', 'commits/' + sha + '/check-runs');
-    const list = runs.check_runs || [];
-    // Nothing is ever attached on some branches; do not burn the whole window on silence.
-    empty = list.length === 0 ? empty + 1 : 0;
-    if (empty >= 2) return 'none_or_pending';
-    if (list.some(r => r.conclusion === 'failure' || r.conclusion === 'timed_out')) return 'failed';
-    const done = list.filter(r => r.status === 'completed');
-    if (list.length > 0 && done.length === list.length && done.every(r => ['success', 'neutral', 'skipped'].includes(r.conclusion))) return 'success';
-    if (i < attempts - 1) await sleep(pauseMs);
+    const runs = await fetcher(token, 'GET', 'commits/' + sha + '/check-runs');
+    const list = runs?.check_runs || [];
+    if (list.length > 0) {
+      empty = 0;
+      if (list.some(r => ['failure', 'timed_out', 'cancelled', 'action_required', 'stale'].includes(r.conclusion))) return 'failed';
+      const done = list.filter(r => r.status === 'completed');
+      if (done.length === list.length && done.every(r => ['success', 'neutral', 'skipped'].includes(r.conclusion))) return 'success';
+    } else {
+      // GitHub can report zero check-runs for a head SHA while real pull_request workflow
+      // runs exist (observed on PR #446/#449). Read those before concluding "no checks".
+      const actions = await fetcher(token, 'GET', 'actions/runs?head_sha=' + sha + '&per_page=100');
+      const prRuns = (actions?.workflow_runs || []).filter(r => r.event === 'pull_request');
+      if (prRuns.length > 0) {
+        empty = 0;
+        if (prRuns.some(r => r.conclusion && !['success', 'neutral', 'skipped'].includes(r.conclusion))) return 'failed';
+        if (prRuns.every(r => r.status === 'completed')) return 'success';
+      } else {
+        empty += 1;
+        // Nothing is ever attached on some branches; do not burn the whole window on silence.
+        if (empty >= 2) return 'none_or_pending';
+      }
+    }
+    if (i < attempts - 1) await sleepFn(pauseMs);
   }
   return 'none_or_pending';
 }
@@ -379,18 +397,17 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       let mergeState = 'not_merged';
       let deploy = {status: 'not_attempted', runs: []};
       // No path allowlist any more: the owner opened repo-internal changes on 2026-11-19.
-      // A real failing check still blocks; silence only counts when the executor's own
-      // verify ran and passed, so nothing merges without any evidence at all.
+      // But a merge needs non-empty, all-green GitHub evidence; local verify alone blocks.
       if (item.executor.auto_merge === true) {
         const checks = await waitForChecks({token, sha: published.commit});
-        const evidence = checks === 'success' || (checks === 'none_or_pending' && verify.ran && verify.ok);
-        if (evidence) {
+        if (checks === 'success') {
           const merged = await gh(token, 'PUT', `pulls/${published.pr}/merge`, {merge_method: 'squash'});
-          mergeState = checks === 'success' ? 'merged' : 'merged_on_verify_no_checks';
+          mergeState = 'merged';
           deploy = await waitForDeploy({token, sha: merged?.sha});
         } else {
           mergeState = 'not_merged_' + checks;
           result.needsGpt.push(`#${item.number} 自动合并被拒：CI 状态 ${checks}`);
+          await client.comment(item.number, `[ci-blocked] commit=${published.commit} check_state=${checks} 本地自检不能替代 GitHub CI，PR 保持开启`);
         }
       }
       await cmdSubmit({client, number: item.number, commit: published.commit, pr: published.pr_url, ci: mergeState.startsWith('merged') ? 'success' : 'not_run', tests: verify.ran ? (verify.ok ? 'verify_passed' : 'verify_failed') : 'executor_ok_only', deploy: deploy.status === 'deployed' ? 'deployed' : 'not_deployed', deploy_detail: deploy.runs.map(r => r.workflow + ':' + r.status + '/' + r.conclusion)});
