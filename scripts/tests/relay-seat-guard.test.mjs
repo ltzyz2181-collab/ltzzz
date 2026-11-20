@@ -15,6 +15,7 @@ import {
   openRelaySeat,
   readSeatState,
   seatStatusOf,
+  buildReplyRecord,
 } from '../lib/relay-seat-guard.mjs';
 
 const policy = {
@@ -275,4 +276,12 @@ test('an uncapped policy is unchanged: no ledger or output bound is required', (
   const decision = evaluateRelayCall({ policy, model: 'claude-opus-5-5', inputTokens: 4096, balanceUsd: 12, seatStatus: 'open' });
   assert.equal(decision.allowed, true);
   assert.equal(decision.cost_guard.enforced, false);
+});
+
+test('buildReplyRecord preserves the complete model reply', () => {
+  const text = '{"files":[{"path":"docs/a.md","content":"' + 'x'.repeat(12000) + '"}]}';
+  const reply = buildReplyRecord(text);
+  assert.equal(reply.chars, text.length);
+  assert.equal(reply.text, text);
+  assert.equal(reply.preview.length, 160);
 });

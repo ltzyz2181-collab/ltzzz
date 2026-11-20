@@ -23,6 +23,11 @@ export function findModel(policy, model) {
   return (policy?.routing?.allowlist || []).find((entry) => entry.model === model) || null;
 }
 
+export function buildReplyRecord(content) {
+  const text = String(content ?? '');
+  return {chars: text.length, preview: text.slice(0, 160), text};
+}
+
 function numberOrNull(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }

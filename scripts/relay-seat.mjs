@@ -15,6 +15,7 @@ import {
   openRelaySeat,
   appendSpend,
   setConfirmedBalance,
+  buildReplyRecord,
 } from './lib/relay-seat-guard.mjs';
 
 const root = process.cwd();
@@ -299,6 +300,8 @@ async function callModel(policy) {
   const servedName = String(servedModel || model);
   const modelClass = /^claude/i.test(servedName) ? 'claude' : /^gpt/i.test(servedName) ? 'gpt' : 'other';
 
+  const reply = buildReplyRecord(content);
+
   const evidence = writeEvidence(
     'knowledge/results/relay-seat/calls/' + stamp() + '-' + requestedAgent + '-' + model + '-' + promptSha.slice(0, 8) + '.json',
     {
@@ -357,7 +360,7 @@ async function callModel(policy) {
       guard: { code: decision.code, routing_reason: decision.routing_reason ?? null },
       attempts: attemptLog,
       retry_policy: 'retry only when no HTTP response arrived; a request that reached the station is never replayed',
-      reply: { chars: content.length, preview: content.slice(0, 160), text: content.slice(0, 8000) },
+      reply,
       key_fingerprint: transport.fingerprint,
       failure,
       http_error: http !== null && http !== 200 ? payload?.error ?? payload : null,
@@ -375,9 +378,9 @@ async function callModel(policy) {
     cost_usd: cost,
     balance_after_usd: balanceAfter,
     seat_state: seatAfter,
-    reply_preview: content.slice(0, 120),
-    reply_chars: content.length,
-    reply_text: content.slice(0, 8000),
+    reply_preview: reply.preview,
+    reply_chars: reply.chars,
+    reply_text: reply.text,
     http_error: http !== null && http !== 200 ? String(typeof payload?.error === 'string' ? payload.error : JSON.stringify(payload?.error ?? payload)).slice(0, 600) : null,
     evidence,
     failure,
