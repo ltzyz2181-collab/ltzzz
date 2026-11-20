@@ -11,7 +11,7 @@
 | relay-claude | 全仓 | 代码/文档 PR（限卡上 `paths:`） | 只复核，不裁决 | 不接触 |
 
 中转调用的档位在 `config/relay-seat-policy.json` 的 `profiles` 里：
-`adjudication`（≤900 输出 token，单次 ≤$0.05）与 `code`（≤4000 输出 token，单次 ≤$0.25）。
+`adjudication`（≤900 输出 token，单次 ≤$0.05）与 `code`（≤2000 输出 token，单次 ≤$0.05）。
 余额底线仍是 $3，低于底线自动关席。
 
 ## 在 Deep 团队里的分工

@@ -12,7 +12,7 @@
 - `POST /v1/chat/completions`（兼容 `/chat/completions`），其余路由 404，非 POST 405。
 - 鉴权：`x-ltzzz-seat-token` 必须等于 Worker Secret `PROXY_ACCESS_TOKEN`，不匹配 401，未配置 token 也一律 401。
 - 模型白名单固定五项：`claude-opus-5-5`、`claude-opus-5`、`claude-sonnet-4-6`、`claude-haiku-5-5`、`gpt-6.1-sol`；其余 403 `proxy_model_not_allowlisted`。
-- 长上下文闸门：按中文 1 字≈1 token、其他 4 字符≈1 token 估算，低于 4096 直接 400 `proxy_short_request_forbidden`，超过 1.1M 413。
+- 输入闸门：按中文 1 字≈1 token、其他 4 字符≈1 token 估算；owner 2026-11-19 起取消 4096 最小输入限制（短请求不再 400 `proxy_short_request_forbidden`），只保留 1.1M 上下文上限（413）。单次成本上限仍按 `max_tokens` 预扣，超过 $0.05 一律 403。
 - `stream:true` 拒绝（当前执行器不用流式）；`max_tokens` 非法或超 32768 拒绝。
 - 未配置站点 key 时返回 503 `proxy_key_missing`，不会带着空 key 去打上游。
 - 上游不可达/超时返回 504 `proxy_upstream_unreachable`。

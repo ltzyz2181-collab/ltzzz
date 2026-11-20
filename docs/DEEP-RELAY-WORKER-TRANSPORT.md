@@ -25,7 +25,7 @@ Deep Worker(仅持 RELAY_PROXY_TOKEN) → LTZZZ relay proxy /v1/chat/completions
 
 - 席位角色不变：relay 席只能 `work_<seat>`，不能做 planner、不能做独立复核；receipt 里 `decision_authority=false`。
 - 请求头用 `x-ltzzz-seat-token`，不带 `Authorization`，因此 Deep Worker 侧没有站点 key。
-- 每个 relay 调用显式声明 `x-ltzzz-batch: 1`：Deep 派的是批处理条目，不是交互短问。代理只对声明批处理的请求放宽最小输入闸门（4096 token），上下文上限 1.1M、`max_tokens` ≤32768 仍照旧生效；未声明的短请求继续 400 `proxy_short_request_forbidden`。
+- `x-ltzzz-batch: 1` 头仍被接受但不再改变判定：owner 2026-11-19 起最小输入闸门为 0，短请求直接放行；上下文上限 1.1M、`max_tokens` ≤32768、单次最坏成本 ≤$0.05 仍照旧生效。
 - receipt 新增 `relay_transport=ltzzz_proxy_seat_token`、`batch_declared=true`；`relay_host` 记的是 LTZZZ Worker 主机名，`official_provider_attestation=false`、`native_provider=false`，避免被误读成原厂调用。
 
 ## 4. 默认模型档
