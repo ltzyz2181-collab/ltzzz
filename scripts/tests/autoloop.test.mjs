@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   loadExecutors, classifyIssue, planWork, reservedTopics, buildEmailDigest,
   adjudicationPrompt, executeExecutor, runVerification, recordDeployRuns, waitForDeploy,
+  listAutoloopCandidates,
 } from '../autoloop.mjs';
 
 const execs = loadExecutors();
@@ -161,4 +162,21 @@ test('planWork carries the relay seat through the plan', () => {
     issue({number: 20, labels: [{name: 'autoloop:adjudicate:claude'}]}),
   ]});
   assert.deepEqual(plan.adjudicable.map(x => [x.number, x.relay]), [[20, 'relay-claude']]);
+});
+test('discovery picks up autoloop-labelled cards, not only dispatch cards', async () => {
+  const asked = [];
+  const client = {
+    api: async (route) => {
+      const label = decodeURIComponent(/labels=([^&]+)/.exec(route)[1]);
+      asked.push(label);
+      if (label === 'autoloop:adjudicate') return {data: [{number: 7, labels: [{name: 'autoloop:adjudicate'}]}]};
+      if (label === 'autoloop:exec:relay-patch') return {data: [{number: 8, labels: [{name: 'autoloop:exec:relay-patch'}]}]};
+      return {data: [{number: 7, labels: []}, {number: 9, labels: [], pull_request: {}}]};
+    },
+  };
+  const issues = await listAutoloopCandidates(client, [{match: {label: 'autoloop:exec:relay-patch'}}]);
+  assert.deepEqual(issues.map((i) => i.number).sort((a, b) => a - b), [7, 8]);
+  assert.ok(asked.includes('dispatch'));
+  assert.ok(asked.includes('autoloop:adjudicate'));
+  assert.ok(asked.includes('autoloop:exec:relay-patch'));
 });

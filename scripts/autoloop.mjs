@@ -97,6 +97,21 @@ export async function ensureSeatLabel({client, issue, seat}) {
   return true;
 }
 
+// Cards opt in either with the Deep `dispatch` label or with an autoloop label itself.
+// GitHub's label filter is AND-only, so fan out one query per label and dedupe by number.
+export async function listAutoloopCandidates(client, executors = []) {
+  const labels = ['dispatch', 'autoloop:adjudicate', 'autoloop:adjudicate:claude', ...executors.map(e => e.match.label)];
+  const seen = new Map();
+  for (const label of new Set(labels.filter(Boolean))) {
+    const {data} = await client.api(`issues?state=open&labels=${encodeURIComponent(label)}&per_page=100`);
+    for (const issue of Array.isArray(data) ? data : []) {
+      if (issue.pull_request) continue;
+      seen.set(issue.number, issue);
+    }
+  }
+  return [...seen.values()];
+}
+
 export function planWork({issues = [], seat, executors = [], now = new Date().toISOString(), leaseHours = 24}) {
   const claimable = [], adjudicable = [], escalations = [], skipped = [];
   for (const issue of issues) {
@@ -305,7 +320,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
     return 0;
   }
   const client = githubClient({token});
-  const issues = await Promise.all((await client.listOpenDispatches()).map(i => client.withComments(i)));
+  const issues = await Promise.all((await listAutoloopCandidates(client, executors)).map(i => client.withComments(i)));
   const plan = planWork({issues, seat, executors, now, leaseHours: 24});
 
   if (!apply || !enabled) {
