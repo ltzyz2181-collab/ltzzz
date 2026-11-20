@@ -13,6 +13,14 @@ owner 原话：**“其他限制全放开 中转AI也不能限制 不要这么�
 - **仍不放开的是凭据值本身**：token、授权码、密码不打印、不落仓库、不进日志；工作流与处理凭据的脚本可工程修改，但不得把凭据值写进任何可见产物。
 
 机器记录：[owner-authority-20261119.json](../config/owner-authority-20261119.json)、[deep-autonomy-20261119.json](../config/deep-autonomy-20261119.json)、[mail-allowlist-20261119.json](../config/mail-allowlist-20261119.json)、[relay-seat-policy.json](../config/relay-seat-policy.json)、[relay-adjudication-scopes.json](../config/relay-adjudication-scopes.json)。
+## 中转席位读写与日常裁决（2026-11-19，owner 原话“放开中转gpt 和 中转克劳德 写入 读取等权限 …… 以后普通裁决归中转gpt 不按建议按裁决”）
+
+- **普通裁决归 relay-gpt 且具约束力**：凡不属于下列保留家族的卡片，中转 GPT 直接出 verdict（approve / reject / needs_more_evidence），回执写 `[relay-decision] seat=relay-gpt binding=true`，不再只写“建议”。
+- **保留家族仍归 GPT 决策席**：资金、付款、放款、转账、退款终态、签名、私钥、助记词、钱包、五签 Safe、凭据与密钥。命中即在进 relay 之前上抛，不送第三方聚合站。
+- **relay-claude 写入权限**：可在卡片 `paths:` 声明的路径内改文件，产出走正常 PR/自检/合并；`.github/workflows/`、owner 授权与 relay 成本策略、执行器清单等控制面路径一律拒绝，钱包/密钥/凭据路径一律拒绝。
+- **仍不放开**：凭据值本身、真实签名、真实资金动作、未经授权的生产发布。中转裁决只决定“做不做、按什么范围做”，不等于执行结果。
+- 机器记录：[relay-seat-policy.json](../config/relay-seat-policy.json) 的 `profiles`、[relay-adjudication-scopes.json](../config/relay-adjudication-scopes.json)、[RELAY-SEATS-CURRENT.md](RELAY-SEATS-CURRENT.md)。
+
 ## 部署自动化重申（2026-11-18，owner 原话“有限制团队自动化部署的指令全部放开”）
 
 工程类合并与部署不再等 GPT 裁决、不再等中转席复核：CI 全绿即自动合入 main 并触发对应 `deploy-*.yml`，部署后必须回读 health 与写入部署回执（`knowledge/results/...`），未回读记为 unknown。仍被硬拒的是资金、放款、退款语义、钱包/Safe、签名、凭据访问与“带资金效果的生产写”；A0/A2/A3/publisher/pi-cloud 的 `automatic_deploy=false` 属阶段级 fail-closed 不变量，翻转会让校验器抛错，因此保持不动。机器记录见 [deploy-automation-authority-20261117.json](../config/deploy-automation-authority-20261117.json) 的 `owner_reaffirmation` 字段。

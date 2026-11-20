@@ -10,7 +10,7 @@
 // 任何状态都不会因为「没再看见」而自动完成；只有评论证据与 PR/commit 证据会改变状态。
 
 export const TASK_HUB_SCHEMA = 'ltzzz.task-hub.v1';
-export const SEATS = ['gpt', 'desktop-claude', 'doubao', 'deep', 'workbuddy', 'qianwen', 'deepseek'];
+export const SEATS = ['gpt', 'desktop-claude', 'doubao', 'deep', 'workbuddy', 'qianwen', 'deepseek', 'relay-gpt', 'relay-claude'];
 export const HUB_LABEL = {new: 'hub:new', claimed: 'hub:claimed', delivered: 'hub:delivered', blocked: 'hub:blocked', stale: 'hub:stale'};
 export const HUB_STATES = ['new', 'claimed', 'in_progress', 'submitted', 'review', 'approved', 'merged', 'deployed', 'verified', 'blocked'];
 export const DEFAULT_LEASE_HOURS = 24;

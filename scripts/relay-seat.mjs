@@ -106,7 +106,10 @@ async function callModel(policy) {
   const model = String(flag('model', 'claude-opus-5-5'));
   const requestedAgent = String(flag('requested-agent', policy.executor.default_requested_agent));
   const batch = flag('batch', false) === true;
-  const maxTokens = Number(flag('max-tokens', 128));
+  const profile = flag('profile', null);
+  const profileRule = profile ? (policy?.profiles?.[profile] || null) : null;
+  if (profile && !profileRule) throw new Error('relay_profile_unknown');
+  const maxTokens = Number(flag('max-tokens', profileRule?.max_output_tokens ?? 128));
   const promptFile = flag('prompt-file', null);
   if (!promptFile || promptFile === true) throw new Error('relay_prompt_file_required');
   const promptPath = path.resolve(root, String(promptFile));
@@ -116,7 +119,9 @@ async function callModel(policy) {
   const inputTokens = estimateInputTokens(prompt);
 
   const purpose = String(flag('purpose', 'generation'));
-  if (!['generation', 'acceptance_probe'].includes(purpose)) throw new Error('relay_purpose_invalid');
+  if (!['generation', 'acceptance_probe', 'adjudication', 'code'].includes(purpose)) throw new Error('relay_purpose_invalid');
+  // The acceptance verdict gates generation only; adjudication and code are bounded by
+  // their policy profile caps instead (owner 2026-11-19).
   if (purpose === 'generation') {
     const verdictPath = path.join(root, policy.access_boundary?.acceptance_verdict || 'knowledge/results/relay-seat/acceptance-verdict.json');
     let verdict = null;
@@ -164,6 +169,7 @@ async function callModel(policy) {
     seatStatus: status,
     ledger,
     maxCompletionTokens: maxTokens,
+    profile,
   });
 
   if (!decision.allowed && decision.requires_close) {

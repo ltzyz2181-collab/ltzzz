@@ -49,6 +49,28 @@
         "--test",
         "scripts/tests/merge-oversight-backlog.test.mjs"
       ]
+    },
+    {
+      "id": "relay-patch",
+      "match": {
+        "label": "autoloop:exec:relay-patch"
+      },
+      "command": [
+        "node",
+        "scripts/relay-patch.mjs",
+        "--apply"
+      ],
+      "verify": [
+        "node",
+        "scripts/relay-patch.mjs",
+        "--verify-only"
+      ],
+      "auto_merge": true,
+      "risk": "medium",
+      "produces": [
+        "paths declared in the card body"
+      ],
+      "note": "relay-claude 只能改卡上 paths: 声明的文件；钱包/密钥/凭据路径一律拒绝"
     }
   ]
 }

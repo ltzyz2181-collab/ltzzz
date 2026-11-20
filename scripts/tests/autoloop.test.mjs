@@ -140,3 +140,25 @@ test('a finished deploy run is reported as deployed, a queued one is not', async
   const queued = await waitForDeploy({token: 't', sha: 'abc', attempts: 2, sleepFn: async () => {}, fetcher: async () => ({workflow_runs: [{id: 2, path: '.github/workflows/deploy-x.yml', name: 'deploy x', status: 'queued', conclusion: null}]})});
   assert.equal(queued.status, 'deploy_pending');
 });
+
+test('ordinary adjudication defaults to relay-gpt, claude label routes to relay-claude', () => {
+  const gpt = classifyIssue(issue({labels: [{name: 'autoloop:adjudicate'}]}), execs);
+  assert.equal(gpt.action, 'adjudicate');
+  assert.equal(gpt.relay, 'relay-gpt');
+  const claude = classifyIssue(issue({labels: [{name: 'autoloop:adjudicate:claude'}]}), execs);
+  assert.equal(claude.action, 'adjudicate');
+  assert.equal(claude.relay, 'relay-claude');
+});
+
+test('a reserved topic never reaches a relay seat', () => {
+  const r = classifyIssue(issue({title: '\u94b1\u5305\u7b7e\u540d\u4f5c\u4e1a', labels: [{name: 'autoloop:adjudicate'}]}), execs);
+  assert.equal(r.action, 'escalate');
+  assert.equal(r.topics[0], '\u94b1\u5305');
+});
+
+test('planWork carries the relay seat through the plan', () => {
+  const plan = planWork({seat: 'desktop-claude', executors: execs, issues: [
+    issue({number: 20, labels: [{name: 'autoloop:adjudicate:claude'}]}),
+  ]});
+  assert.deepEqual(plan.adjudicable.map(x => [x.number, x.relay]), [[20, 'relay-claude']]);
+});

@@ -100,13 +100,15 @@ export function evaluateRelayCall({
   seatStatus,
   ledger = null,
   maxCompletionTokens = null,
+  profile = null,
   now = new Date().toISOString(),
 } = {}) {
   const floor = policy?.balance_guard?.floor_usd ?? 3;
   const minTokens = policy?.routing?.min_input_tokens ?? 4096;
   const balance = numberOrNull(balanceUsd);
   const guard = policy?.cost_guard || {};
-  const perCallCap = numberOrNull(guard.per_call_cost_cap_usd);
+  const profileRule = profile ? (policy?.profiles?.[profile] || null) : null;
+  const perCallCap = numberOrNull(profileRule?.per_call_cost_cap_usd ?? guard.per_call_cost_cap_usd);
   const dailyCap = numberOrNull(guard.daily_cost_cap_usd);
   const projectCap = numberOrNull(guard.project_cost_cap_usd);
   const capsEnforced = perCallCap !== null || dailyCap !== null || projectCap !== null;
@@ -125,6 +127,8 @@ export function evaluateRelayCall({
     estimated_input_tokens: numberOrNull(inputTokens),
     batch: batch === true,
     seat_status: seatStatus ?? 'unknown',
+    profile: profile || null,
+    profile_allow_short: profileRule?.allow_short === true,
     cost_guard: costGuardBase,
   };
   const denied = (code, detail, extra = {}) => ({
@@ -161,7 +165,10 @@ export function evaluateRelayCall({
       model_tier: entry.tier,
     };
   }
-  if (batch !== true && (numberOrNull(inputTokens) ?? 0) < minTokens) {
+  if (profile && !profileRule) {
+    return denied('relay_profile_unknown', 'no such profile in the relay policy');
+  }
+  if (batch !== true && profileRule?.allow_short !== true && (numberOrNull(inputTokens) ?? 0) < minTokens) {
     return {
       ...base,
       allowed: false,

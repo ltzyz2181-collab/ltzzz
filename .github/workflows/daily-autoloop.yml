@@ -55,7 +55,7 @@ jobs:
         with: {node-version: '22'}
 
       - name: Verify autoloop contracts
-        run: node --check scripts/autoloop.mjs && node --test scripts/tests/autoloop.test.mjs
+        run: node --check scripts/autoloop.mjs && node --check scripts/relay-patch.mjs && node --check scripts/seat-mail.mjs && node --test scripts/tests/autoloop.test.mjs scripts/tests/relay-patch.test.mjs scripts/tests/seat-mail.test.mjs
 
       - name: Run autoloop
         run: node scripts/autoloop.mjs --apply --seat "$AUTOLOOP_SEAT" | tee "$RUNNER_TEMP/autoloop.out"

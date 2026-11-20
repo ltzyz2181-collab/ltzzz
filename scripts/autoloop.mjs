@@ -17,7 +17,14 @@ import {derive, taskField, labelNames} from './lib/task-hub.mjs';
 
 export const SCHEMA = 'ltzzz.autoloop.v1';
 export const EXECUTOR_FILE = 'ops/autoloop/executors.json';
-export const ACTIONS = Object.freeze(['exec', 'adjudicate', 'skip']);
+export const ACTIONS = Object.freeze(['exec', 'adjudicate', 'escalate', 'skip']);
+// Owner 2026-11-19: ordinary rulings move to the relay GPT seat; relay Claude writes code
+// and reviews in the Deep team. Funds/refunds/signing/keys/wallet/credentials never reach them.
+export const RELAY_SEATS = Object.freeze({
+  'relay-gpt': {model: 'gpt-6.1-sol', profile: 'adjudication', purpose: 'adjudication'},
+  'relay-claude': {model: 'claude-sonnet-4-6', profile: 'code', purpose: 'code'},
+});
+export const DEFAULT_RELAY = 'relay-gpt';
 
 export function loadExecutors(fsImpl = fs, file = EXECUTOR_FILE) {
   const raw = JSON.parse(fsImpl.readFileSync(file, 'utf8'));
@@ -72,9 +79,10 @@ export function classifyIssue(issue, executors = []) {
   const topics = humanOnly ? ['human-only'] : reservedTopics(`${issue.title || ''}\n${issue.body || ''}`);
   if (topics.length && exec) return {action: 'escalate', executor: exec, topics, reason: 'gpt_reserved_topic'};
   if (exec) return {action: 'exec', executor: exec, reason: 'labelled_exec'};
-  if (labels.includes('autoloop:adjudicate')) {
+  if (labels.includes('autoloop:adjudicate') || labels.includes('autoloop:adjudicate:claude')) {
     if (topics.length) return {action: 'escalate', topics, reason: 'gpt_reserved_topic'};
-    return {action: 'adjudicate', reason: 'labelled_adjudicate'};
+    const relay = labels.includes('autoloop:adjudicate:claude') ? 'relay-claude' : DEFAULT_RELAY;
+    return {action: 'adjudicate', relay, reason: 'labelled_adjudicate'};
   }
   return {action: 'skip', reason: 'no_autoloop_label'};
 }
@@ -99,7 +107,7 @@ export function planWork({issues = [], seat, executors = [], now = new Date().to
     const c = classifyIssue(issue, executors);
     const task_id = taskField(issue.body, 'task_id');
     if (c.action === 'exec') claimable.push({number: issue.number, task_id, executor: c.executor});
-    else if (c.action === 'adjudicate') adjudicable.push({number: issue.number, task_id});
+    else if (c.action === 'adjudicate') adjudicable.push({number: issue.number, task_id, relay: c.relay || DEFAULT_RELAY});
     else if (c.action === 'escalate') escalations.push({number: issue.number, task_id, topics: c.topics || ['human-only']});
     else skipped.push({number: issue.number, reason: c.reason});
   }
@@ -192,8 +200,8 @@ export async function waitForChecks({token, sha, attempts = 18, pauseMs = 30000}
 
 const runCmd = (cmd, opts = {}) => spawnSync(cmd[0], cmd.slice(1), {encoding: 'utf8', timeout: opts.timeout || 600000, ...opts});
 
-export function executeExecutor(executor, {cwd = process.cwd()} = {}) {
-  const r = runCmd(executor.command, {cwd});
+export function executeExecutor(executor, {cwd = process.cwd(), env = null} = {}) {
+  const r = runCmd(executor.command, env ? {cwd, env} : {cwd});
   return {
     ok: r.status === 0,
     http_code: r.status,
@@ -254,9 +262,9 @@ export async function waitForDeploy({token, sha, attempts = 8, pauseMs = 30000, 
   return {status: 'deploy_pending', runs: last.runs};
 }
 
-export function runVerification(executor, {cwd = process.cwd()} = {}) {
+export function runVerification(executor, {cwd = process.cwd(), env = null} = {}) {
   if (!Array.isArray(executor?.verify) || executor.verify.length === 0) return {ran: false, ok: false};
-  const r = runCmd(executor.verify, {cwd, timeout: 900000});
+  const r = runCmd(executor.verify, env ? {cwd, env, timeout: 900000} : {cwd, timeout: 900000});
   return {ran: true, ok: r.status === 0, code: r.status, stdout_tail: String(r.stdout || '').slice(-1500), stderr_tail: String(r.stderr || '').slice(-1500)};
 }
 
@@ -265,9 +273,9 @@ export function changedPaths(cwd = process.cwd()) {
   return String(r.stdout || '').split('\n').filter(Boolean).map(l => l.slice(3).trim());
 }
 
-export function adjudicationPrompt(issue) {
+export function adjudicationPrompt(issue, relay = DEFAULT_RELAY) {
   return [
-    '你是中转裁决席。资金、退款、签名、私钥、钱包、凭据类事项不会送到你这里；这些之外的裁决由你直接作出。',
+    `你是 ${relay} 中转裁决席。资金、付款、放款、转账、退款终态、签名、私钥、助记词、钱包、五签 Safe、凭据与密钥不会送到你这里；这些之外的裁决由你直接作出。`,
     '不得声称已合并/已部署/已被平台接受——你只决定“做不做、按什么范围做”，执行结果以仓库回执为准。',
     '只能输出 JSON：{"verdict":"approve|reject|needs_more_evidence","reason":"<=200字","risks":["..."],"next_action":"<=120字"}',
     '',
@@ -277,9 +285,10 @@ export function adjudicationPrompt(issue) {
   ].join('\n');
 }
 
-export function runAdjudication(issue, {cwd = process.cwd(), promptFile = '.tmp-autoloop-prompt.txt'} = {}) {
-  fs.writeFileSync(path.join(cwd, promptFile), adjudicationPrompt(issue), 'utf8');
-  const r = runCmd(['node', 'scripts/relay-seat.mjs', '--call', '--prompt-file', promptFile], {cwd});
+export function runAdjudication(issue, {relay = DEFAULT_RELAY, cwd = process.cwd(), promptFile = '.tmp-autoloop-prompt.txt'} = {}) {
+  const seat = RELAY_SEATS[relay] || RELAY_SEATS[DEFAULT_RELAY];
+  fs.writeFileSync(path.join(cwd, promptFile), adjudicationPrompt(issue, relay), 'utf8');
+  const r = runCmd(['node', 'scripts/relay-seat.mjs', '--call', '--purpose', seat.purpose, '--profile', seat.profile, '--model', seat.model, '--requested-agent', relay, '--prompt-file', promptFile], {cwd});
   return {ok: r.status === 0, stdout: String(r.stdout || '').slice(-8000), stderr: String(r.stderr || '').slice(-2000)};
 }
 
@@ -329,13 +338,14 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       await ensureSeatLabel({client, issue: issues.find(i => i.number === item.number), seat});
       await cmdClaim({client, number: item.number, seat, branch: `autoloop/${item.number}`, now, leaseHours: 24});
       result.claimed.push(item.number);
-      const outcome = executeExecutor(item.executor, {cwd});
+      const issueEnv = {...process.env, ...env, AUTOLOOP_ISSUE: String(item.number)};
+      const outcome = executeExecutor(item.executor, {cwd, env: issueEnv});
       if (!outcome.ok) {
         await cmdBlock({client, number: item.number, reason: 'executor_failed', evidence: `exit=${outcome.http_code}`, need: 'gpt'});
         result.needsGpt.push(`#${item.number} ${item.task_id || ''} 执行器失败 exit=${outcome.http_code}`);
         continue;
       }
-      const verify = runVerification(item.executor, {cwd});
+      const verify = runVerification(item.executor, {cwd, env: issueEnv});
       if (verify.ran && !verify.ok) {
         await cmdBlock({client, number: item.number, reason: 'verify_failed', evidence: `exit=${verify.code}`, need: 'gpt'});
         result.needsGpt.push(`#${item.number} ${item.task_id || ''} 执行器自检失败 exit=${verify.code}`);
@@ -378,9 +388,10 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
     try {
       await ensureSeatLabel({client, issue: issues.find(i => i.number === item.number), seat});
       await cmdClaim({client, number: item.number, seat, branch: 'adjudication_only', now, leaseHours: 12});
-      const verdict = runAdjudication(issues.find(i => i.number === item.number), {cwd});
-      await client.comment(item.number, `[relay-decision] seat=relay scope=non_reserved binding=true ok=${verdict.ok}\n\n${verdict.stdout.slice(0, 4000)}`);
-      result.done.push(`#${item.number} ${item.task_id || ''} 中转已裁决（ok=${verdict.ok}）`);
+      const relay = item.relay || DEFAULT_RELAY;
+      const verdict = runAdjudication(issues.find(i => i.number === item.number), {relay, cwd});
+      await client.comment(item.number, `[relay-decision] seat=${relay} scope=non_reserved binding=true ok=${verdict.ok}\n\n${verdict.stdout.slice(0, 4000)}`);
+      result.done.push(`#${item.number} ${item.task_id || ''} ${relay} 已裁决（ok=${verdict.ok}）`);
     } catch (error) {
       result.errors.push({number: item.number, error: String(error?.message || error).slice(0, 200)});
     }

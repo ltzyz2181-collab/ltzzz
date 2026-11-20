@@ -211,5 +211,21 @@
     "unknown_ledger_policy": "refuse",
     "current_hard_ceiling": "min(cost_guard 三项上限, balance_guard.floor_usd)",
     "note": "任何一项超限都在发出 HTTP 前 fail closed；账本缺失或不可读同样拒绝；无成本字段的旧条目按单次上限预留。"
+  },
+  "profiles": {
+    "adjudication": {
+      "purpose": "daily adjudication by the relay decision seat",
+      "allow_short": true,
+      "max_output_tokens": 900,
+      "per_call_cost_cap_usd": 0.05,
+      "note": "owner 2026-11-19: ordinary rulings move to the relay GPT seat; reserved topics never reach it"
+    },
+    "code": {
+      "purpose": "relay Claude writing patches or reviews in the Deep team",
+      "allow_short": true,
+      "max_output_tokens": 4000,
+      "per_call_cost_cap_usd": 0.25,
+      "note": "owner 2026-11-19: relay Claude may write repo files through authenticated executors"
+    }
   }
 }
