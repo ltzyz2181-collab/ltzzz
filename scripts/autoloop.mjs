@@ -356,7 +356,8 @@ export async function main(argv = process.argv.slice(2), {env = process.env, cwd
       const issueEnv = {...process.env, ...env, AUTOLOOP_ISSUE: String(item.number)};
       const outcome = executeExecutor(item.executor, {cwd, env: issueEnv});
       if (!outcome.ok) {
-        await cmdBlock({client, number: item.number, reason: 'executor_failed', evidence: `exit=${outcome.http_code}`, need: 'gpt'});
+        const tail = String(outcome.stdout_tail || '').replace(/\s+/g, ' ').slice(-600);
+        await cmdBlock({client, number: item.number, reason: 'executor_failed', evidence: `exit=${outcome.http_code} ${tail}`.trim(), need: 'gpt'});
         result.needsGpt.push(`#${item.number} ${item.task_id || ''} 执行器失败 exit=${outcome.http_code}`);
         continue;
       }

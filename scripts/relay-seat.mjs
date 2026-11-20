@@ -377,6 +377,7 @@ async function callModel(policy) {
     seat_state: seatAfter,
     reply_preview: content.slice(0, 120),
     reply_chars: content.length,
+    http_error: http !== null && http !== 200 ? String(typeof payload?.error === 'string' ? payload.error : JSON.stringify(payload?.error ?? payload)).slice(0, 600) : null,
     evidence,
     failure,
   });
