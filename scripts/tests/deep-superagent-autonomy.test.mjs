@@ -103,15 +103,20 @@ test('syntaxGate：带 markdown 围栏或语法错误的代码文件不得进入
   assert.equal(syntaxGate(root, [{path: 'missing.js', content: ''}]).error, 'syntax_error:missing.js');
 });
 
-test('extractFileWrites：只认显式 FILE 块，内容相同的重复块合并，内容冲突仍拒绝', () => {
+test('extractFileWrites：只认显式 FILE 块，重复路径按后写覆盖先写并留下审计', () => {
   const writes = extractFileWrites('说明\n<<<FILE:docs/a.md>>>\n# A\n<<<END>>>\n尾巴');
   assert.deepEqual(writes, [{path: 'docs/a.md', content: '# A'}]);
   assert.deepEqual(extractFileWrites('没有文件块'), []);
-  // 2026-11-21 run 44879913406：模型把同一路径输出两遍，整单被 duplicate_file 拒绝。
+  // 2026-11-21 run 44879913406/44881730792：模型把同一路径输出两遍，整单被 duplicate_file 拒绝。
   const repeated = '<<<FILE:a.md>>>\n# A\n<<<END>>>\n<<<FILE:a.md>>>\n# A\n<<<END>>>';
-  assert.deepEqual(extractFileWrites(repeated), [{path: 'a.md', content: '# A'}]);
+  const same = extractFileWrites(repeated);
+  assert.deepEqual(same, [{path: 'a.md', content: '# A'}]);
+  assert.deepEqual(same.duplicates, [{path: 'a.md', identical: true}]);
   const conflicting = '<<<FILE:a.md>>>\n# A\n<<<END>>>\n<<<FILE:a.md>>>\n# B\n<<<END>>>';
-  assert.equal(validateWrites(extractFileWrites(conflicting)).error, 'duplicate_file:a.md');
+  const revised = extractFileWrites(conflicting);
+  assert.deepEqual(revised, [{path: 'a.md', content: '# B'}]);
+  assert.deepEqual(revised.duplicates, [{path: 'a.md', identical: false}]);
+  assert.deepEqual(validateWrites(revised), {ok: true, writes: revised});
 });
 
 test('validateWrites：拒绝空集、重复、超量、受保护路径', () => {

@@ -222,22 +222,26 @@ export function fiduciaryInstructionHit(prompt = '') {
 // <<<FILE:path>>>
 // ...content...
 // <<<END>>>
-// 模型偶尔把同一个路径的文件块输出两遍。内容完全一致时那是同一个写入意图，
-// 合并为一条（否则整单会被 duplicate_file 拒绝，白跑一次真实模型请求）；
-// 内容不一致才是歧义，保留两条交给 validateWrites 拒绝，绝不静默择一。
+// 模型经常把同一个路径输出两遍（初稿+修订版）。2026-11-21 连续两次探针都因
+// duplicate_file 整单被拒、白跑真实模型请求，故改为确定性“后写覆盖先写”，
+// 并把被覆盖的次数记进 duplicates（非枚举，不参与 deepEqual 与写入）供回执审计。
+// 最终内容仍要过 validateWrites（路径/大小/冲突）与 syntaxGate，闸门没有放松。
 export function extractFileWrites(text) {
   const source = String(text || '');
-  const writes = [];
-  const seen = new Map();
+  const byPath = new Map();
+  const order = [];
+  const duplicates = [];
   const re = /<<<FILE:([^>\n]+)>>>\r?\n([\s\S]*?)\r?\n<<<END>>>/g;
   let match;
   while ((match = re.exec(source))) {
-    const write = {path: match[1].trim(), content: match[2]};
-    const prior = seen.get(write.path);
-    if (prior !== undefined && writes[prior].content === write.content) continue;
-    seen.set(write.path, writes.length);
-    writes.push(write);
+    const writePath = match[1].trim();
+    const content = match[2];
+    if (byPath.has(writePath)) duplicates.push({path: writePath, identical: byPath.get(writePath) === content});
+    else order.push(writePath);
+    byPath.set(writePath, content);
   }
+  const writes = order.map((writePath) => ({path: writePath, content: byPath.get(writePath)}));
+  Object.defineProperty(writes, 'duplicates', {value: duplicates, enumerable: false});
   return writes;
 }
 
@@ -450,6 +454,7 @@ export async function executeAutonomy({
         startRef = null;
       }
       const writes = extractFileWrites(outputs.map((output) => output?.text || '').join('\n\n'));
+      const duplicateBlocks = writes.duplicates?.length ? writes.duplicates : null;
       const valid = validateWrites(writes);
       if (!valid.ok) {
         actions.push({action: 'code_change', status: 'rejected', error: valid.error});
@@ -488,6 +493,7 @@ export async function executeAutonomy({
               branch,
               pr: pr.number,
               files: writes.map((write) => write.path),
+              duplicate_blocks: duplicateBlocks,
               ci,
             });
           } else {
@@ -500,6 +506,7 @@ export async function executeAutonomy({
               merge_sha: merge.sha || null,
               merge_token_kind,
               files: writes.map((write) => write.path),
+              duplicate_blocks: duplicateBlocks,
               ci,
             };
             if (merge.merged && merge.sha) {
