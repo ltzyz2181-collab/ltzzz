@@ -14,6 +14,8 @@ import {
   WEEKLY_LABELS
 } from './lib/wake-weekly.mjs';
 import {registrySeatsFrom} from './lib/wake-intake.mjs';
+import {buildAutoAgenda} from './lib/wake-agenda.mjs';
+import {readLedger} from './lib/agent-wake.mjs';
 import {persistIntake} from './agent-wake-persist.mjs';
 
 const DEFAULT_REGISTRY = 'config/seat-mail-registry.json';
@@ -62,10 +64,32 @@ async function api(repo, token, route, method = 'GET', body) {
   return text ? JSON.parse(text) : null;
 }
 
+// 抓三类信号：未领取的卡、近 7 天失败的工作流、本地台账里的未收敛议题。
+async function autoAgenda(repo, token, week) {
+  const cards = await api(repo, token, 'issues?state=open&labels=hub:new&per_page=30')
+    .catch(() => []);
+  const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const runs = await api(repo, token, 'actions/runs?created=%3E%3D' + encodeURIComponent(since) + '&per_page=100')
+    .catch(() => ({workflow_runs: []}));
+  let events = [];
+  try {
+    const raw = fs.readFileSync('knowledge/results/agent-wake/ledger.json', 'utf8');
+    events = readLedger(raw).events;
+  } catch {
+    events = [];
+  }
+  return buildAutoAgenda({
+    week,
+    events,
+    cards: Array.isArray(cards) ? cards : [],
+    runs: Array.isArray(runs?.workflow_runs) ? runs.workflow_runs : []
+  });
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
-    process.stdout.write('node scripts/agent-wake-weekly.mjs [--week 2026-W47] [--seats a,b] [--agenda text] [--apply]\n');
+    process.stdout.write('node scripts/agent-wake-weekly.mjs [--week 2026-W47] [--seats a,b] [--agenda text|auto|none] [--apply]\n');
     return;
   }
   const repo = String(args.repo || process.env.GITHUB_REPOSITORY || 'ltzyz2181-collab/ltzzz');
@@ -75,9 +99,15 @@ async function main() {
     ? args.seats.split(',').map(seat => seat.trim()).filter(Boolean)
     : defaultSeats();
   const budgetUsd = Number.isFinite(Number(args.budget)) ? Number(args.budget) : 0.01;
-  const agenda = typeof args.agenda === 'string' && args.agenda.trim()
-    ? args.agenda
-    : (process.env.WAKE_AGENDA || '');
+  // 议程优先级：显式 --agenda > 环境变量 > 仓库信号自动生成；`--agenda none` 显式关掉。
+  let agenda = typeof args.agenda === 'string' ? args.agenda.trim() : '';
+  if (!agenda) agenda = (process.env.WAKE_AGENDA || '').trim();
+  const agendaDisabled = agenda.toLowerCase() === 'none' || args['no-agenda'] === true;
+  if (agendaDisabled) agenda = '';
+  if (!agenda) {
+    const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+    if (token) agenda = await autoAgenda(repo, token, week);
+  }
 
   if (seats.length === 0) throw new Error('weekly_missing_seats');
 

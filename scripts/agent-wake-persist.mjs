@@ -4,6 +4,9 @@
 // rebase 必然改同一段，冲突后只能人工处理。重跑是幂等的（event_id 固定），
 // 所以「reset → 重新推导 → 推送」既安全又能自愈。
 import {spawnSync} from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import {WAKE_SCHEMA, appendEvent, readLedger, serializeLedger} from './lib/agent-wake.mjs';
 
 export function buildIntakeArgs({issue, label, extra = []} = {}) {
   const args = ['scripts/agent-wake-intake.mjs'];
@@ -49,6 +52,62 @@ export function persistIntake({
       return {ok: true, pushed: true, attempt};
     }
     log(`attempt ${attempt}: push 未成功，重建后用最新 main 重试`);
+  }
+  throw new Error('wake_push_retry_exhausted');
+}
+
+export const LEDGER_REL = 'knowledge/results/agent-wake/ledger.json';
+
+/**
+ * 幂等追加一条事件并推送；冲突时用最新 main 重建后重试。
+ * event_id 已存在视为「已记录」，不重复写。
+ */
+export function persistEvent({
+  cwd = process.cwd(),
+  entry = {},
+  attempts = 5,
+  log = line => process.stdout.write(line + '\n')
+} = {}) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    if (git(cwd, ['fetch', 'origin', 'main']).status !== 0) throw new Error('wake_fetch_failed');
+    if (git(cwd, ['reset', '--hard', 'origin/main']).status !== 0) throw new Error('wake_reset_failed');
+
+    const file = path.join(cwd, LEDGER_REL);
+    let ledger = {schema: WAKE_SCHEMA, events: []};
+    if (fs.existsSync(file)) ledger = readLedger(fs.readFileSync(file, 'utf8'));
+
+    const last = ledger.events[ledger.events.length - 1];
+    const lastMs = last && last.at ? Date.parse(last.at) : NaN;
+    let at = new Date().toISOString();
+    if (Number.isFinite(lastMs) && Date.parse(at) <= lastMs) at = new Date(lastMs + 1).toISOString();
+
+    let result;
+    try {
+      result = appendEvent(ledger.events, {...entry, at}, {now: at});
+    } catch (error) {
+      if (String(error && error.message) === 'agent_wake_duplicate_event_id') {
+        log('attempt ' + attempt + ': 事件已存在，跳过');
+        return {ok: true, pushed: false, duplicate: true, attempt};
+      }
+      throw error;
+    }
+
+    fs.mkdirSync(path.dirname(file), {recursive: true});
+    fs.writeFileSync(file, serializeLedger({schema: ledger.schema, events: result.events}), 'utf8');
+
+    git(cwd, ['add', LEDGER_REL]);
+    if (git(cwd, ['diff', '--cached', '--quiet']).status === 0) {
+      log('attempt ' + attempt + ': 台账无变化');
+      return {ok: true, pushed: false, attempt};
+    }
+    if (git(cwd, ['commit', '-m', entry.commit_message || 'chore(agent-wake): verdict']).status !== 0) {
+      throw new Error('wake_commit_failed');
+    }
+    if (git(cwd, ['push', 'origin', 'HEAD:main']).status === 0) {
+      log('attempt ' + attempt + ': 已推送结论事件');
+      return {ok: true, pushed: true, event_id: result.entry.event_id, attempt};
+    }
+    log('attempt ' + attempt + ': push 未成功，重建后重试');
   }
   throw new Error('wake_push_retry_exhausted');
 }

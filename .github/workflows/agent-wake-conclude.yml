@@ -1,0 +1,54 @@
+name: Agent wake conclude (结论落地)
+
+# 席位在唤醒卡上写 [verdict] seat=... stance=agree|disagree reason=...
+# 本工作流读结论 → 收敛判定 → agreed 且有 ≥2 席 才自动建派单卡；分歧升级；六族只建议。
+# 不调模型、不发邮件、不碰资金。
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: '指定卡号（留空扫 wake:weekly）'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: agent-wake-conclude
+  cancel-in-progress: false
+
+jobs:
+  conclude:
+    if: github.event_name != 'issue_comment' || contains(github.event.comment.body, '[verdict]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: true}
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Verify contracts
+        run: |
+          node --check scripts/lib/wake-conclude.mjs
+          node --check scripts/agent-wake-conclude.mjs
+          node --test scripts/tests/wake-conclude.test.mjs
+
+      - name: Conclude
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WAKE_ISSUE: ${{ github.event_name == 'issue_comment' && github.event.issue.number || github.event.inputs.issue }}
+        run: |
+          git config user.name "ltzzz-agent-wake"
+          git config user.email "bot@ltzzz.local"
+          if [ -n "$WAKE_ISSUE" ]; then
+            node scripts/agent-wake-conclude.mjs --issue "$WAKE_ISSUE" --apply
+          else
+            node scripts/agent-wake-conclude.mjs --label wake:weekly --apply
+          fi
