@@ -1,0 +1,20 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-472",
+ "package_id": "LTZZZ-DEEP-ISSUE-472-20261121",
+ "prompt": "内部工程任务：GitHub Issue #472《[TASK][P0] AUTOLOOP-REQUIRE-REAL-CI-20261119-01》\n来源：https://github.com/ltzyz2181-collab/ltzzz/issues/472\n数据分级：public_distributable（Issue 正文本身公开；不得粘贴敏感认证信息、客户数据或邮件正文）\n\n【Issue 正文】\n### Task ID\nAUTOLOOP-REQUIRE-REAL-CI-20261119-01\n\n### decision_id\nGPT-RULING-20261119-AUTOLOOP-REQUIRE-CI-01\n\n### 执行席\ndesktop-claude\n\n### 目标\n修复 daily-autoloop 的合并门禁：没有真实 GitHub PR check runs 时，禁止以本地 executor self-test 代替 CI 并自动合并。\n\n### 证据\n- 当前 main: `9739cca9977c264a32c0578198597dcaf7036579`（本次审计结束时读取）。\n- `scripts/autoloop.mjs` 的 `silenceCovered` 分支在 check runs 为空时允许本地 verify 通过后合并。\n- PR #446 已合并：merge SHA `fe44a68e66c11eb17fcec19bb05f90445d1ede94`；daily-autoloop run #44450088196 报告 `merged_on_verify_no_checks`，整体 run failure（receipt persistence failure）。\n- PR #449 已合并：merge SHA `bfe52b29cf8c5dea9e3ec59c07bc1a772edd9095`；run #44450688124 报告 `merged_on_verify_no_checks`。\n- 以上是已发生的历史合并；不自动回滚、不改写历史记录。\n\n### 范围与允许的改动\n仅修改 `scripts/autoloop.mjs` 及其对应测试文件。将 GitHub PR check runs 的非空、全部完成且全部 success 作为合并必要条件；本地 verify 只能作为额外检查，不能替代 CI。新增测试覆盖零 checks、pending、failure、mixed、all-success。保留现有 allowlist、执行席和其他自动化能力。\n\n### 禁止项\n不得修改 workflow YAML、GitHub Actions permissions、Secrets、账户/应用权限、`executors.json`、deploy_scope、预算或资金策略；不得回滚 PR #446/#449；不得因本任务暂停其他 AI 席位或不冲突工程工作；不得新增模型调用或付费 API。\n\n### 验收标准\n1. 零 check runs → 明确 BLOCKED_EVIDENCE / keep PR open。\n2. 任一 check pending/failed/cancelled/unknown → 不合并。\n3. 至少一个适用的 GitHub PR check run，且所有 required/applicable checks 全部 success → 才允许沿用现有授权自动合并。\n4. 本地 self-test 通过但 GitHub checks 为空时，仍必须拒绝合并。\n5. PR 提供固定 commit SHA、测试结果、GitHub check run IDs；required CI 全绿后按 Owner 既有工程授权合并，不等待新的 GPT PASS。此脚本修改不触发生产部署。\n\n### 要求回报的证据\nPR URL、head SHA、修改文件、单测结果、实际 GitHub check run IDs 与结论、merge SHA、后续一次自然/手动审计的 no-check 拒绝证据。若无法取得真实 check runs，保持未合并并标 BLOCKED_EVIDENCE。\n\n### 失败处理与停止条件\n不自动回滚历史合并；不绕过 CI；若需要修改 workflow/permissions/Secrets 或执行策略文件，停止该子动作并另行提出具体提案，其他安全工程工作继续。\n\n\n### 2026-11-19 audit correction — confirmed PR workflow failures ignored by the merge gate\n\nThe earlier `merged_on_verify_no_checks` label is incomplete. The GitHub check-runs endpoint returned zero CheckRuns for these two PR heads, but the Actions API shows actual PR-triggered workflow runs with **failure**:\n- PR #446 head `00e274357b807967f132c2f9d43be634fff520ee`: [run #44450136830](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44450136830), event=`pull_request`, conclusion=`failure`, 2026-11-19T03:15:20Z.\n- PR #449 head `fbe897d5d9b5b5fd7a46db1bb09ef9edbf63f8ce`: [run #44450734013](https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44450734013), event=`pull_request`, conclusion=`failure`, 2026-11-19T03:20:24Z.\n\nThus the current gate did not merely miss an empty check set; it failed to account for PR-associated Actions workflow conclusions while its status/check-run view was empty, then merged anyway. This is a confirmed merge-gate defect. The fix must inspect both CheckRuns/status contexts and Actions workflow runs associated with the exact PR head SHA and `pull_request` event. Any failure/cancelled/unknown/pending result, or no applicable PR CI evidence, must keep the PR open. Local verify is supplementary only.\n\n【给 deepseek 的任务】\n按 Issue 描述做一件最小可合并的工程改动。只输出整文件写入块，每块格式：\n<<<FILE:相对路径>>>\n文件完整内容\n<<<END>>>\n\n规则（按顺序，命中即停）：\n1 只输出写入块；不输出解释段落、不输出计划、不加 markdown 围栏。\n2 不得修改 .github/workflows/、config/ 下的授权与自治策略文件，以及写入闸已拒绝的路径。\n3 若需求属于六个保留家族，只输出一行 BLOCKED_FIDUCIARY 并停止。\n4 若无法在边界内给出可验证改动，只输出一行 NO_SAFE_CHANGE 加不超过 20 个词的原因。\n5 最多 6 个文件；每个文件必须完整，且能通过 node --check 或对应格式校验。\n6 优先补测试；不得删除或弱化既有测试。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "medium",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  }
+ ],
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [],
+  "code_change": true
+ }
+}
