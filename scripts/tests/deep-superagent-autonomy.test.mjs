@@ -11,6 +11,7 @@ import {
   deniedWritePath,
   executeAutonomy,
   extractFileWrites,
+  readPostMergeRuns,
   fiduciaryHit,
   fiduciaryInstructionHit,
   normalizeAutonomy,
@@ -23,6 +24,30 @@ import {
 } from '../deep-autonomy.mjs';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'deep-autonomy-'));
+
+test('readPostMergeRuns：合并瞬间没有 run 时有界轮询，出现即返回', async () => {
+  let calls = 0;
+  const sleeps = [];
+  const fetcher = async () => {
+    calls += 1;
+    const workflow_runs = calls < 3 ? [] : [{id: 1, name: 'Deploy static site to GitHub Pages', event: 'push', status: 'completed', conclusion: 'success'}];
+    return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs})};
+  };
+  const result = await readPostMergeRuns({fetcher, token: 't', repository: 'o/r', sha: 'abc', attempts: 4, intervalMs: 7, sleep: async (ms) => { sleeps.push(ms); }});
+  assert.equal(result.count, 1);
+  assert.equal(result.attempts, 3);
+  assert.deepEqual(sleeps, [7, 7]);
+  assert.equal(result.runs[0].event, 'push');
+});
+
+test('readPostMergeRuns：始终没有 run 时按上限结束并如实返回 0', async () => {
+  let calls = 0;
+  const result = await readPostMergeRuns({fetcher: async () => { calls += 1; return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs: []})}; }, token: 't', repository: 'o/r', sha: 'abc', attempts: 3, intervalMs: 1, sleep: async () => {}});
+  assert.equal(calls, 3);
+  assert.equal(result.count, 0);
+  assert.equal(result.attempts, 3);
+  assert.deepEqual(result.runs, []);
+});
 
 test('normalizeAutonomy：缺省返回 null，非法字段一律拒绝', () => {
   assert.equal(normalizeAutonomy(undefined), null);
