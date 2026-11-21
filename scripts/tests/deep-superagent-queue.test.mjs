@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.js';
-import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,isIssueCardOnlyChange,isSingleNewDispatchCard,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
+import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,isIssueCardOnlyChange,isSingleNewDispatchCard,validateJob,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
 test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
@@ -80,6 +80,14 @@ test('new task persists an exclusive latch before the one POST, then uses GET re
  assert.equal(outcome.runtime_source_commit,RUNTIME);
  assert.equal(outcome.model_calls_original_task_total,3);
  assert.equal(outcome.job.platform_accepted,false);
+});
+
+test('队列校验接受一次 429 重试后的 6 次请求，但拒绝第 7 次',()=>{
+ const job=fixture({model_calls:6,seat_retries:1});
+ const binds={task_id:job.task_id,package_id:job.package_id,input_sha256:inputHash,execution_id:job.execution_id};
+ assert.equal(validateJob(job,binds).model_calls,6);
+ assert.throws(()=>validateJob({...job,model_calls:7},binds),/remote_job_binding_or_isolation_invalid/);
+ assert.throws(()=>validateJob({...job,receipts:Array.from({length:7},()=>({}))},binds),/remote_job_binding_or_isolation_invalid/);
 });
 
 test('an existing job is reused without touching latches or issuing POST',async()=>{

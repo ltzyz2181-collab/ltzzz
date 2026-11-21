@@ -29,7 +29,7 @@ function fixture({badSeat=null,transportFailure=null,planOverride=null,planText=
     assert.equal(request.headers.get('Authorization'),'Bearer '+TOKEN);
     const body=await request.json();calls.push({seat,body});
     if(seat===transportFailure)throw Error('secret-like transport text must not be persisted');
-    if(seat===transient429Seat&&calls.filter(v=>v.seat===seat).length===1)return Response.json({error:'rate_limited'},{status:429});
+    if([].concat(transient429Seat||[]).includes(seat)&&calls.filter(v=>v.seat===seat).length===1)return Response.json({error:'rate_limited'},{status:429});
     if(workerHttpFailure?.seat===seat)return Response.json({error:'upstream_timeout'},{status:workerHttpFailure.status});
     let output;
     if(seat==='deepseek'&&calls.filter(v=>v.seat==='deepseek').length===1)output=planText??JSON.stringify(planOverride??{summary:'Three verifiable tasks',tasks:['doubao','qianwen','kimi'].map(s=>({seat:s,task:'Provide '+s+' checklist contribution'})),needs_gpt_decision:false});
@@ -109,10 +109,18 @@ test('一次 429 在有界重试后恢复，不再把整单推成 partial_seat_c
   const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
   assert.equal(job.status,'completed_pending_external_acceptance');
   assert.equal(job.model_calls,6);
+  assert.equal(job.seat_retries,1);
   assert.equal(job.unjudged,undefined);
   assert.equal(f.calls.filter(v=>v.seat==='kimi').length,2);
   const r=job.receipts.find(v=>v.seat==='kimi');
   assert.equal(r.upstream_attempts,2);assert.equal(r.first_upstream_http,429);assert.equal(r.upstream_http,200);assert.equal(r.generation_verified,true);
+});
+test('整单只允许一次 429 重试，第二个 429 席位仍记为 unjudged',async()=>{
+  const f=fixture({transient429Seat:['kimi','qianwen']});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.model_calls,6);assert.equal(job.seat_retries,1);
+  assert.equal(job.unjudged.length,1);assert.equal(job.escalation.reason,'partial_seat_coverage');
+  assert.equal(job.outputs.length,2);assert.equal(job.status,'needs_gpt_decision');
 });
 test('concurrent enqueue claims exactly once; changed input under same original ID conflicts',async()=>{
   const f=fixture();const responses=await Promise.all([f.request(),f.request()]);const a=await responses[0].json(),b=await responses[1].json();
