@@ -273,3 +273,65 @@ export function buildDigest({seat, issues = [], now = new Date().toISOString(), 
   lines.push('', '以 GitHub Issue 为准；邮件只是提醒。领取：node scripts/task-hub.mjs claim --issue <N> --seat <seat>');
   return lines.join('\n');
 }
+
+
+// === 未领取自动改派（2026-11-21 owner 授权）===
+// 卡开出来超过 24h 仍无人 [claimed]，就换一个席位并把邮件叫醒发出去。
+// 只改「谁该做」，不改任何交付证据；已交付/已 blocked 的卡不参与。
+export const REASSIGN_AFTER_HOURS = 24;
+
+const REASSIGN_CHAIN = new Map([
+  ['desktop-claude', 'deep'],
+  ['deep', 'desktop-claude'],
+  ['doubao', 'deep'],
+  ['workbuddy', 'deep'],
+  ['qianwen', 'deep'],
+  ['deepseek', 'desktop-claude'],
+  ['relay-claude', 'desktop-claude'],
+  ['relay-gpt', 'gpt'],
+  ['gpt', 'deep']
+]);
+
+/** 改派目标：先走固定接力，再按 fallback 顺序找一个不等于原席位的。 */
+export function reassignTarget(seat, {fallbackSeats = ['deep', 'desktop-claude', 'doubao']} = {}) {
+  const from = normalizeSeat(seat) || seat;
+  const chained = REASSIGN_CHAIN.get(from);
+  if (chained && chained !== from) return chained;
+  const fallback = (Array.isArray(fallbackSeats) ? fallbackSeats : []).find(item => item && item !== from);
+  return fallback ?? null;
+}
+
+/**
+ * 选出「从没人领过、且已超时」的卡。
+ * 注意：只看从未 claim 的卡；claim 过又过期的由 reap 处理，两者不重叠。
+ */
+export function reassignPlan(issues, {now = new Date().toISOString(), afterHours = REASSIGN_AFTER_HOURS, fallbackSeats} = {}) {
+  const nowMs = Date.parse(now);
+  const plan = [];
+  for (const issue of Array.isArray(issues) ? issues : []) {
+    if (!issue || typeof issue.number !== 'number') continue;
+    const d = derive(issue, {now});
+    if (d.state !== 'new' || d.lastClaim) continue;
+    if (d.invalid_delivered) continue;
+    const createdMs = Date.parse(issue.created_at || '');
+    if (!Number.isFinite(createdMs)) continue;
+    const ageHours = (nowMs - createdMs) / 3600000;
+    if (!(ageHours >= afterHours)) continue;
+    const seat = d.seat || issueSeat(issue);
+    const to = reassignTarget(seat, {fallbackSeats});
+    if (!to) continue;
+    plan.push({
+      number: issue.number,
+      title: issue.title,
+      seat,
+      to,
+      age_hours: Math.round(ageHours * 10) / 10
+    });
+  }
+  return plan.sort((a, b) => b.age_hours - a.age_hours);
+}
+
+/** 改派评论：保留原席位与原因，便于事后追责与统计。 */
+export function reassignedComment({number, from, to, ageHours, by = 'task-hub'}) {
+  return '[reassigned] from=' + from + ' to=' + to + ' age_hours=' + ageHours + ' reason=no_claim_' + ageHours + 'h by=' + by + ' issue=' + number;
+}

@@ -25,6 +25,7 @@ import {
   labelNames, issueSeat, normalizeSeat, taskField, derive, expectedHubLabel, reapPlan,
   claimComment, deliveredComment, blockedComment, leaseExpiredComment, reopenedComment, unblockedComment,
   deliveredEvidenceProblems, renderTaskBody, buildDigest,
+  reassignPlan, reassignedComment, REASSIGN_AFTER_HOURS,
 } from './lib/task-hub.mjs';
 
 export const REPOSITORY = 'ltzyz2181-collab/ltzzz';
@@ -191,6 +192,38 @@ export async function cmdReap({client, apply = false, now = new Date().toISOStri
   return {schema: TASK_HUB_SCHEMA, command: 'reap', applied: apply, reaped: plan.length, plan};
 }
 
+export async function cmdReassign({client, apply = false, now = new Date().toISOString(), afterHours = REASSIGN_AFTER_HOURS, fallbackSeats, mailTo = null, repository = REPOSITORY}) {
+  const issues = await loadIssues(client);
+  const plan = reassignPlan(issues, {now, afterHours, fallbackSeats});
+  const notices = [];
+  if (apply) {
+    for (const item of plan) {
+      await client.removeLabel(item.number, 'seat:' + item.seat);
+      await client.addLabels(item.number, ['seat:' + item.to]);
+      await client.comment(item.number, reassignedComment({number: item.number, from: item.seat, to: item.to, ageHours: item.age_hours}));
+      if (mailTo) {
+        const body = [
+          'seat: task-hub',
+          'to: ' + mailTo,
+          'subject: [LTZZZ] #' + item.number + ' 派单 24h 无人领取，已改派给 ' + item.to,
+          '',
+          '---',
+          '卡：#' + item.number + ' ' + (item.title || ''),
+          '原席位：' + item.seat,
+          '新席位：' + item.to,
+          '已等待：' + item.age_hours + ' 小时',
+          '链接：https://github.com/' + repository + '/issues/' + item.number,
+          '',
+          '新席位请执行 [claimed] 开始执行；原席位无需动作。'
+        ].join('\n');
+        const created = await client.api('issues', {method: 'POST', body: {title: 'mail: 派单改派 #' + item.number, body, labels: ['mail:send']}});
+        notices.push(created?.data?.number ?? null);
+      }
+    }
+  }
+  return {schema: TASK_HUB_SCHEMA, command: 'reassign', applied: apply, after_hours: afterHours, reassigned: plan.length, plan, notices};
+}
+
 export async function cmdStatus({client, now = new Date().toISOString(), leaseHours = DEFAULT_LEASE_HOURS}) {
   const issues = await loadIssues(client);
   const rows = issues.map(issue => {
@@ -247,6 +280,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, roo
     case 'reopen': return print(await cmdReopen({client: client(), number: Number(argOf(argv, '--issue')), reason: argOf(argv, '--reason'), evidence: argOf(argv, '--evidence', 'not_applicable'), by: argOf(argv, '--by', 'not_specified'), now}));
     case 'unblock': return print(await cmdUnblock({client: client(), number: Number(argOf(argv, '--issue')), reason: argOf(argv, '--reason'), evidence: argOf(argv, '--evidence', 'not_applicable'), by: argOf(argv, '--by', 'not_specified'), now}));
     case 'reap': return print(await cmdReap({client: client(), apply, now, leaseHours, maxAttempts}));
+    case 'reassign': return print(await cmdReassign({client: client(), apply, now, afterHours: Number(argOf(argv, '--after-hours', REASSIGN_AFTER_HOURS)), mailTo: argOf(argv, '--mail-to')}));
     case 'digest': {
       const seat = normalizeSeat(argOf(argv, '--seat')) || argOf(argv, '--seat');
       const issues = await loadIssues(client());
@@ -266,7 +300,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, roo
       return print(await cmdCreate({client: client(), spec, now}));
     }
     default:
-      console.error('用法：init-labels|sync|poll|claim|submit|block|reopen|unblock|reap|digest|status|create（见文件头注释）');
+      console.error('用法：init-labels|sync|poll|claim|submit|block|reopen|unblock|reap|reassign|digest|status|create（见文件头注释）');
       return 2;
   }
 }
