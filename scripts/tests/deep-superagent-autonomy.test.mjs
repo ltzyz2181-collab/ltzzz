@@ -216,6 +216,15 @@ test('executeAutonomy：code_change 写盘、测试、开 PR 并合并', async (
     if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
     if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 7})};
     if (url.endsWith('/actions/workflows/deep-autonomy-verify.yml/dispatches')) return {status: 204, ok: true, text: async () => ''};
+    if (url.includes('/actions/runs?head_sha=deadbeef')) {
+      return {
+        status: 200,
+        ok: true,
+        text: async () => JSON.stringify({
+          workflow_runs: [{id: 300, name: 'Small payment policy offline validation (no payment)', event: 'push', status: 'completed', conclusion: 'success'}],
+        }),
+      };
+    }
     if (url.includes('/actions/workflows/deep-autonomy-verify.yml/runs')) {
       return {
         status: 200,
@@ -245,6 +254,11 @@ test('executeAutonomy：code_change 写盘、测试、开 PR 并合并', async (
   assert.equal(result.actions[0].merge_sha, 'deadbeef');
   assert.equal(result.actions[0].ci.status, 'ci_passed');
   assert.equal(result.actions[0].ci.run_id, 99);
+  // 无 PAT 时如实标 github_token，并回读合并后触发的 run。
+  assert.equal(result.actions[0].merge_token_kind, 'github_token');
+  assert.equal(result.actions[0].post_merge_runs.count, 1);
+  assert.equal(result.actions[0].post_merge_runs.runs[0].event, 'push');
+  assert.equal(result.actions[0].post_merge_runs_triggered, true);
   assert.ok(calls.some((call) => call.startsWith('POST ') && call.endsWith('/pulls')));
   assert.ok(calls.some((call) => call.includes('/actions/workflows/deep-autonomy-verify.yml/dispatches')));
   const receipt = JSON.parse(fs.readFileSync(path.join(work, result.receipt_path), 'utf8'));
@@ -253,6 +267,71 @@ test('executeAutonomy：code_change 写盘、测试、开 PR 并合并', async (
   assert.equal(receipt.secrets_included, false);
   // 合并后回到 main，回执落在 main 工作树。
   assert.equal(execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {cwd: work, encoding: 'utf8'}).trim(), 'main');
+});
+
+test('executeAutonomy：合并使用 LTZZZ_AGENT_TOKEN，避免 GITHUB_TOKEN 抑制 push 工作流', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  let mergeAuth = null;
+  const fetcher = async (url, options = {}) => {
+    if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+    if (url.endsWith('/pulls')) return {status: 201, ok: true, text: async () => JSON.stringify({number: 11})};
+    if (url.endsWith('/actions/workflows/deep-autonomy-verify.yml/dispatches')) return {status: 204, ok: true, text: async () => ''};
+    if (url.includes('/actions/workflows/deep-autonomy-verify.yml/runs')) {
+      return {
+        status: 200,
+        ok: true,
+        text: async () => JSON.stringify({
+          workflow_runs: [{id: 101, head_branch: 'deep-auto/deep-pat-55', status: 'completed', conclusion: 'success', html_url: 'https://example/run/101'}],
+        }),
+      };
+    }
+    if (url.endsWith('/pulls/11/merge')) {
+      mergeAuth = options.headers.authorization;
+      return {status: 200, ok: true, text: async () => JSON.stringify({merged: true, sha: 'cafebabe'})};
+    }
+    if (url.includes('/actions/runs?head_sha=cafebabe')) {
+      return {
+        status: 200,
+        ok: true,
+        text: async () => JSON.stringify({
+          workflow_runs: [
+            {id: 301, name: 'Deploy static site to GitHub Pages', event: 'push', status: 'completed', conclusion: 'success'},
+            {id: 302, name: 'Small payment policy offline validation (no payment)', event: 'push', status: 'completed', conclusion: 'success'},
+          ],
+        }),
+      };
+    }
+    throw new Error(`unexpected ${url}`);
+  };
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'DEEP-PAT', input_sha256: 'd'.repeat(64), prompt: '更新文档'},
+    outputs: [{text: '<<<FILE:a.md>>>\npat\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', LTZZZ_AGENT_TOKEN: 'pat-token', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '55'},
+    fetcher,
+    runTests: () => 'ok',
+  });
+
+  assert.equal(result.actions[0].status, 'merged');
+  assert.equal(result.actions[0].merge_token_kind, 'agent_token');
+  assert.equal(mergeAuth, 'Bearer pat-token');
+  assert.equal(result.actions[0].post_merge_runs.count, 2);
+  assert.equal(result.actions[0].post_merge_runs.runs[0].event, 'push');
+  assert.equal(result.actions[0].post_merge_runs_triggered, true);
 });
 
 test('executeAutonomy：CI 失败时不合并，回执记录实际 run', async () => {
