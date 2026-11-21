@@ -41,25 +41,19 @@ jobs:
         run: |
           node --check scripts/lib/wake-intake.mjs
           node --check scripts/agent-wake-intake.mjs
-          node --test scripts/tests/agent-wake.test.mjs scripts/tests/wake-intake.test.mjs
+          node --check scripts/agent-wake-persist.mjs
+          node --test scripts/tests/agent-wake.test.mjs scripts/tests/wake-intake.test.mjs scripts/tests/agent-wake-persist.test.mjs
 
-      - name: Run intake
+      # 落盘器每轮先 reset 到最新 origin/main 再幂等重跑，避免在 append-only 台账上 rebase。
+      - name: Run intake and persist ledger
         env:
           GITHUB_TOKEN: ${{ github.token }}
           WAKE_ISSUE: ${{ github.event_name == 'issues' && github.event.issue.number || github.event.inputs.issue }}
         run: |
-          if [ -n "$WAKE_ISSUE" ]; then
-            node scripts/agent-wake-intake.mjs --issue "$WAKE_ISSUE" --apply
-          else
-            node scripts/agent-wake-intake.mjs --label wake:request --apply
-          fi
-
-      - name: Persist ledger
-        if: always()
-        run: |
           git config user.name "ltzzz-agent-wake"
           git config user.email "bot@ltzzz.local"
-          git add knowledge/results/agent-wake 2>/dev/null || true
-          if git diff --staged --quiet; then echo "no ledger changes"; exit 0; fi
-          git commit -m "chore(agent-wake): intake $(date -u +%F)"
-          node tools/push-receipt-commit.mjs
+          if [ -n "$WAKE_ISSUE" ]; then
+            node scripts/agent-wake-persist.mjs --issue "$WAKE_ISSUE"
+          else
+            node scripts/agent-wake-persist.mjs --label wake:request
+          fi

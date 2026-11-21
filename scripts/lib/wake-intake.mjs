@@ -167,8 +167,11 @@ const ACTION_LABEL = {
 };
 
 /** 生成回写评论；只含判定与原因码，不含凭据与邮件正文。 */
-export function formatIntakeComment({issue, decisions = [], date} = {}) {
+export function formatIntakeComment({issue, decisions = [], date, eventIds = []} = {}) {
   const rows = decisions.filter(item => item.action !== 'already_recorded');
+  const ids = (Array.isArray(eventIds) ? eventIds : []).filter(Boolean);
+  // 隐藏标记：同一条事件重复处理时，按此标记跳过重复评论。
+  const marker = ids.length ? '\n\n<!-- wake-intake:' + ids.join(',') + ' -->' : '';
   const head = '### [wake-intake] `#' + issue + '` 判定结果 ' + (date ?? '');
   if (rows.length === 0) {
     return head + '\n\n没有新的 `[wake]` 行需要处理。';
@@ -182,7 +185,7 @@ export function formatIntakeComment({issue, decisions = [], date} = {}) {
     lines.push('| ' + item.line + ' | ' + label + ' | `' + item.reason + '` | ' + topic + ' | ' + seats + ' | ' + budget + ' |');
   }
   lines.push('', '> 本表只记录准入判定，未产生模型调用、未发送邮件、未发生任何资金动作。');
-  return lines.join('\n');
+  return lines.join('\n') + marker;
 }
 
 /** 读取 registry 里的席位 id，供 CLI 与工作流使用。 */

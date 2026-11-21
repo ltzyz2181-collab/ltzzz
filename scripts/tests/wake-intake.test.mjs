@@ -125,6 +125,20 @@ test('the intake comment lists verdicts and escapes table pipes', () => {
   assert.doesNotMatch(text, /password|smtp/i);
 });
 
+test('the intake comment carries a hidden event marker for replay detection', () => {
+  const text = formatIntakeComment({
+    issue: 12,
+    date: '2026-11-21',
+    decisions: [
+      {line: 3, action: 'wake', reason: 'wake', topic: 'a', seats: ['doubao'], budget_usd: 0.01, event_id: 'abc123'},
+      {line: 4, action: 'already_recorded', reason: 'event_id_present', event_id: 'skipme'}
+    ],
+    eventIds: ['abc123']
+  });
+  assert.match(text, /<!-- wake-intake:abc123 -->/);
+  assert.doesNotMatch(text, /skipme/, '被跳过的行不进标记');
+});
+
 test('registrySeatsFrom accepts id, name and seat keys', () => {
   assert.deepEqual(
     registrySeatsFrom({seats: [{id: 'a'}, {name: 'b'}, {seat: 'c'}, {}]}),
