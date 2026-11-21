@@ -322,6 +322,11 @@ test('a deep:task card belongs to the async deep queue and is never reassigned',
   const unqueued = issue({number: 22, labels: ['seat:deep', 'dispatch', HUB_LABEL.new]});
   unqueued.created_at = '2026-11-10T00:00:00Z';
   assert.deepEqual(reassignPlan([unqueued], {now: NOW}).map(item => item.number), [22]);
+  // #472/#474/#475 的实际情况：手工补 deep:task 后 seat 标签仍是 desktop-claude。
+  const handQueued = issue({number: 24, labels: ['seat:desktop-claude', 'dispatch', HUB_LABEL.new, HUB_LABEL.stale, 'deep:task']});
+  handQueued.created_at = '2026-11-10T00:00:00Z';
+  assert.equal(isDeepQueued(handQueued), true);
+  assert.deepEqual(reassignPlan([handQueued], {now: NOW}), []);
 });
 
 test('cmdReassign adds deep:task when the target seat is deep', async () => {
