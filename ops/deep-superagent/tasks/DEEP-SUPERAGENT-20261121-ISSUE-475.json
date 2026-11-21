@@ -1,0 +1,20 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-475",
+ "package_id": "LTZZZ-DEEP-ISSUE-475-20261121",
+ "prompt": "内部工程任务：GitHub Issue #475《[TASK] SOURCE-INTELLIGENCE-MVP-M1-M4-20261119-01》\n来源：https://github.com/ltzyz2181-collab/ltzzz/issues/475\n数据分级：public_distributable（Issue 正文本身公开；不得粘贴敏感认证信息、客户数据或邮件正文）\n\n【Issue 正文】\n### Task ID\nSOURCE-INTELLIGENCE-MVP-M1-M4-20261119-01\n\n### decision_id\nOWNER-AUTH-20261116-SOURCE-INTEL\n\n### seat\ndesktop-claude\n\n## Task identity\n- Task ID: SOURCE-INTELLIGENCE-MVP-M1-M4-20261119-01\n- decision_id: OWNER-AUTH-20261116-SOURCE-INTEL\n- Prior M0 record: PR #404 https://github.com/ltzyz2181-collab/ltzzz/pull/404\n- Execution seat: desktop Claude (implementation); independent review by Deep or Doubao on a separate commit.\n- Priority: P2\n\n## Current evidence\nPR #404 merged at 2026-11-17T06:07:29Z with M0 planning complete. Its body explicitly records M1–M4 as not started. This task covers only those remaining MVP stages; do not repeat M0.\n\n## Unique goal\nImplement the remaining Source Intelligence MVP stages inside the repository using read-only collection and local tests, with source provenance and reproducible evidence. This is not a production launch.\n\n## Allowed scope\n- Scope definition and repository-only implementation.\n- Read-only collection of explicitly public/distributable sources; retain source URL, retrieval time, content hash, parser/version, and uncertainty.\n- Local deterministic fixtures and tests; append-only evidence records.\n- No customer data; no authenticated/private sources; no model call unless a separately approved existing budget and receipt are available.\n\n## Forbidden\n- No new paid accounts, credential procurement, or new API keys.\n- No external release, public repository, production deployment, or automated external publishing.\n- No production writes, customer/private/payment data, signing, wallets, or funds.\n- No rewriting historical source records; append corrections only.\n- No expansion beyond the existing Owner authorization.\n\n## Acceptance evidence\n- PR with exact scope and changed-file list, commit SHA, local test output and required CI run IDs.\n- Source allowlist and read-only proof; every collected record has provenance and SHA-256.\n- Tests cover duplicate URL/content, changed source content, missing timestamp, unsupported/private source rejection, and append-only correction behavior.\n- Explicit statement that no paid accounts, credentials, external release, or production deployment were used.\n- No production smoke/deployment claim.\n\n## Failure / rollback / stop\nKeep the PR open if provenance, privacy, or scope tests fail. Revert only the specific PR merge commit if needed; no history rewrite. Stop only the out-of-scope source or action, not unrelated engineering work.\n\n【给 deepseek 的任务】\n按 Issue 描述做一件最小可合并的工程改动。只输出整文件写入块，每块格式：\n<<<FILE:相对路径>>>\n文件完整内容\n<<<END>>>\n\n规则（按顺序，命中即停）：\n1 只输出写入块；不输出解释段落、不输出计划、不加 markdown 围栏。\n2 不得修改 .github/workflows/、config/ 下的授权与自治策略文件，以及写入闸已拒绝的路径。\n3 若需求属于六个保留家族，只输出一行 BLOCKED_FIDUCIARY 并停止。\n4 若无法在边界内给出可验证改动，只输出一行 NO_SAFE_CHANGE 加不超过 20 个词的原因。\n5 最多 6 个文件；每个文件必须完整，且能通过 node --check 或对应格式校验。\n6 优先补测试；不得删除或弱化既有测试。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "medium",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  }
+ ],
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [],
+  "code_change": true
+ }
+}
