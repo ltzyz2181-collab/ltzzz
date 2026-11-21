@@ -312,9 +312,11 @@ export function reassignLabels(seat) {
 /**
  * 带 deep:task 的卡已交给 Deep 异步队列，不再参与 hub 改派；否则会出现
  * desktop-claude → deep → desktop-claude 的 15 分钟往返，把卡耗成 stale。
+ * 只看 deep:task：手工给一张 seat:desktop-claude 的卡补队列标签（#472/#474/#475）
+ * 同样已经进入 Deep 队列，不能因为 seat 标签没改就继续被 hub 改派。
  */
 export function isDeepQueued(issue) {
-  return issueSeat(issue) === 'deep' && labelNames(issue).includes('deep:task');
+  return labelNames(issue).includes('deep:task');
 }
 
 /**

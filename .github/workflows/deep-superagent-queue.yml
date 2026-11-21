@@ -12,6 +12,8 @@ on:
       - 'scripts/tests/dispatch-daily-card.test.mjs'
       - 'scripts/dispatch-issue-card.mjs'
       - 'scripts/tests/dispatch-issue-card.test.mjs'
+      - 'scripts/report-deep-issue-result.mjs'
+      - 'scripts/tests/report-deep-issue-result.test.mjs'
       - '.github/workflows/deep-issue-dispatch.yml'
       - 'config/dispatch-seat-policy-20261117.json'
       - '.github/workflows/deep-superagent-daily.yml'
@@ -39,6 +41,8 @@ on:
       - 'scripts/tests/dispatch-daily-card.test.mjs'
       - 'scripts/dispatch-issue-card.mjs'
       - 'scripts/tests/dispatch-issue-card.test.mjs'
+      - 'scripts/report-deep-issue-result.mjs'
+      - 'scripts/tests/report-deep-issue-result.test.mjs'
       - '.github/workflows/deep-issue-dispatch.yml'
       - 'config/dispatch-seat-policy-20261117.json'
       - '.github/workflows/deep-superagent-daily.yml'
@@ -61,6 +65,7 @@ jobs:
           node --check scripts/deep-autonomy.mjs
           node --check scripts/dispatch-seat-policy.mjs
           node --check scripts/dispatch-daily-card.mjs
+          node --check scripts/report-deep-issue-result.mjs
       - name: Queue and policy tests
         run: >-
           node --test
@@ -68,6 +73,8 @@ jobs:
           scripts/tests/deep-superagent-autonomy.test.mjs
           scripts/tests/dispatch-seat-policy.test.mjs
           scripts/tests/dispatch-daily-card.test.mjs
+          scripts/tests/dispatch-issue-card.test.mjs
+          scripts/tests/report-deep-issue-result.test.mjs
       - name: Dispatch seat policy gate (fail-closed before any POST)
         run: node scripts/dispatch-seat-policy.mjs check
 
@@ -81,7 +88,7 @@ jobs:
     timeout-minutes: 25
     # owner 2026-11-19：Deep 可以改代码、开/合并 PR、触发部署工作流并发信。
     # 资金/签名/退款/凭据仍在 deep-autonomy.mjs 内 fail-closed，不等同于放开钱包。
-    permissions: {contents: write, pull-requests: write, actions: write}
+    permissions: {contents: write, pull-requests: write, actions: write, issues: write}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -129,3 +136,9 @@ jobs:
           execFileSync('git',['commit','-m','Deep Superagent queue: '+receipt.status],{stdio:'inherit'});
           JS
           node tools/push-receipt-commit.mjs
+      - name: Report issue card results back to the source Issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/report-deep-issue-result.mjs
