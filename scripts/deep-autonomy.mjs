@@ -357,6 +357,24 @@ async function waitForCi({
   };
 }
 
+// 合并提交由 GITHUB_TOKEN 产生时，GitHub 会抑制 push 触发的下游工作流；
+// 用 PAT（LTZZZ_AGENT_TOKEN）合并才会像人工合并一样触发 main 上的 CI/部署。
+// 合并后回读该 SHA 上的 run，作为“是否真的触发”的公开证据，不靠假设。
+async function readPostMergeRuns({fetcher, token, repository, sha}) {
+  const data = await githubApi(fetcher, token, repository, `/actions/runs?head_sha=${encodeURIComponent(sha)}&per_page=20`);
+  const runs = Array.isArray(data?.workflow_runs) ? data.workflow_runs : [];
+  return {
+    count: runs.length,
+    runs: runs.slice(0, 20).map((run) => ({
+      id: run.id,
+      name: run.name,
+      event: run.event,
+      status: run.status,
+      conclusion: run.conclusion || null,
+    })),
+  };
+}
+
 export async function executeAutonomy({
   autonomy,
   job,
@@ -381,6 +399,9 @@ export async function executeAutonomy({
   }
 
   const token = env.GITHUB_TOKEN;
+  // 合并必须用不会抑制 push 事件的令牌；缺 PAT 时退回 GITHUB_TOKEN，并在回执里写明。
+  const pushToken = env.LTZZZ_AGENT_TOKEN || token;
+  const merge_token_kind = env.LTZZZ_AGENT_TOKEN ? 'agent_token' : 'github_token';
   const repository = env.GITHUB_REPOSITORY;
   const runId = env.GITHUB_RUN_ID || 'local';
   const taskId = job?.task_id || 'DEEP-UNKNOWN';
@@ -462,16 +483,27 @@ export async function executeAutonomy({
               ci,
             });
           } else {
-            const merge = await githubApi(fetcher, token, repository, `/pulls/${pr.number}/merge`, 'PUT', {merge_method: 'squash'});
-            actions.push({
+            const merge = await githubApi(fetcher, pushToken, repository, `/pulls/${pr.number}/merge`, 'PUT', {merge_method: 'squash'});
+            const action = {
               action: 'code_change',
               status: merge.merged ? 'merged' : 'merge_pending',
               branch,
               pr: pr.number,
               merge_sha: merge.sha || null,
+              merge_token_kind,
               files: writes.map((write) => write.path),
               ci,
-            });
+            };
+            if (merge.merged && merge.sha) {
+              try {
+                action.post_merge_runs = await readPostMergeRuns({fetcher, token, repository, sha: merge.sha});
+                action.post_merge_runs_triggered = action.post_merge_runs.count > 0;
+              } catch (error) {
+                action.post_merge_runs = {count: null, error: String(error?.message || error).slice(0, 160)};
+                action.post_merge_runs_triggered = null;
+              }
+            }
+            actions.push(action);
           }
         } catch (error) {
           for (const [file, content] of originals) {
