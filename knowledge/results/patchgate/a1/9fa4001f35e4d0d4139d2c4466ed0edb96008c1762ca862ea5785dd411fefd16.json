@@ -1,0 +1,100 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-548",
+  "head_sha": "70e8462ce76c3db6e78b74e909390133ceb14546",
+  "pr_number": 548,
+  "source_main_sha": "b8ad27649f1efe90285ffb4b1d7a233da1047aca",
+  "run_id": "44874058079",
+  "at_utc": "2026-11-21T06:07:54.019Z",
+  "idempotency_key": "PATCHGATE-PR-548:70e8462ce76c3db6e78b74e909390133ceb14546",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "b8ad27649f1efe90285ffb4b1d7a233da1047aca",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": ".github/workflows/relay-proxy-guard.yml",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/relay-proxy-worker.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workers/relay-proxy/worker.mjs",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-548",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-548",
+      "base_sha": "b8ad27649f1efe90285ffb4b1d7a233da1047aca",
+      "head_sha": "70e8462ce76c3db6e78b74e909390133ceb14546",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "0c9f63f40c96fc8cd6368c52d701b64889627f0d014abca04db3c6491af07b70"
+    },
+    "subject_sha256": "ef12859cf1e484c8268959cea3d0b323dfc5f27247eff239e1b90017646d30e0",
+    "idempotency_key": "PATCHGATE-PR-548:70e8462ce76c3db6e78b74e909390133ceb14546",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "scripts/tests/relay-proxy-worker.test.mjs",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "ltzzz-relay-proxy.example.workers.dev"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
