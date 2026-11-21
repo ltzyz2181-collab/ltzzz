@@ -5,7 +5,7 @@ import {
   derive, expectedHubLabel, reapPlan, claimComment, deliveredComment, blockedComment, renderTaskBody, buildDigest,
 } from '../lib/task-hub.mjs';
 import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdReassign, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
-import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignedComment} from '../lib/task-hub.mjs';
+import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignedComment, countReassignments, MAX_REASSIGNMENTS} from '../lib/task-hub.mjs';
 
 const NOW = '2026-11-18T12:00:00Z';
 const body = (fields = {}) => renderTaskBody({task_id: 'LTZZZ-DEMO-1', decision_id: 'GPT-X', seat: 'desktop-claude', goal: '把任务放进 Issue', scope: '只改 docs', forbidden: '不动资金', acceptance: '测试通过', evidence: '- PR', ...fields});
@@ -326,4 +326,40 @@ test('cmdReassign moves the seat label, comments and queues one mail card', asyn
   const comment = (client.calls || []).length;
   assert.ok(comment > 0);
   assert.match(reassignedComment({number: 11, from: 'desktop-claude', to: 'deep', ageHours: 60}), /reason=no_claim_60h/);
+});
+
+test('a card already reassigned twice escalates instead of ping-ponging', () => {
+  const card = issue({number: 12, comments: [
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=12'},
+    {body: '[reassigned] from=desktop-claude to=deep age_hours=28 reason=no_claim_28h by=task-hub issue=12'}
+  ]});
+  card.created_at = '2026-11-10T00:00:00Z';
+  const plan = reassignPlan([card], {now: NOW});
+  assert.equal(plan.length, 1);
+  assert.equal(plan[0].action, 'escalate_stale');
+  assert.equal(plan[0].to, null);
+  assert.equal(countReassignments(card), MAX_REASSIGNMENTS);
+});
+
+test('one reassignment still allows a second swap', () => {
+  const card = issue({number: 13, comments: [
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=13'}
+  ]});
+  card.created_at = '2026-11-10T00:00:00Z';
+  const plan = reassignPlan([card], {now: NOW});
+  assert.equal(plan[0].action, 'reassign');
+  assert.equal(plan[0].to, 'deep');
+});
+
+test('cmdReassign marks a stuck card stale without moving the seat', async () => {
+  const card = issue({number: 14, comments: [
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=14'},
+    {body: '[reassigned] from=desktop-claude to=deep age_hours=28 reason=no_claim_28h by=task-hub issue=14'}
+  ]});
+  card.created_at = '2026-11-10T00:00:00Z';
+  const client = fakeClient([card]);
+  const result = await cmdReassign({client, apply: true, now: NOW, mailTo: 'owner@example.com'});
+  assert.equal(result.reassigned, 1);
+  const created = client.calls.filter(([route, method]) => route === 'issues' && method === 'POST');
+  assert.equal(created.length, 0, '升级为 stale 时不再发邮件卡');
 });

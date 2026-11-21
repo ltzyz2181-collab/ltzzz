@@ -198,6 +198,11 @@ export async function cmdReassign({client, apply = false, now = new Date().toISO
   const notices = [];
   if (apply) {
     for (const item of plan) {
+      if (item.action === 'escalate_stale') {
+        await client.addLabels(item.number, [HUB_LABEL.stale]);
+        await client.comment(item.number, '[stale] reason=no_claim_after_' + item.reassignments + '_reassign from=' + item.seat + ' age_hours=' + item.age_hours + ' by=task-hub');
+        continue;
+      }
       await client.removeLabel(item.number, 'seat:' + item.seat);
       await client.addLabels(item.number, ['seat:' + item.to]);
       await client.comment(item.number, reassignedComment({number: item.number, from: item.seat, to: item.to, ageHours: item.age_hours}));

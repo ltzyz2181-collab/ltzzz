@@ -279,6 +279,8 @@ export function buildDigest({seat, issues = [], now = new Date().toISOString(), 
 // 卡开出来超过 24h 仍无人 [claimed]，就换一个席位并把邮件叫醒发出去。
 // 只改「谁该做」，不改任何交付证据；已交付/已 blocked 的卡不参与。
 export const REASSIGN_AFTER_HOURS = 24;
+// 同一张卡最多改派 2 次；再多就说明「换人」不是问题所在，应该升级给人看。
+export const MAX_REASSIGNMENTS = 2;
 
 const REASSIGN_CHAIN = new Map([
   ['desktop-claude', 'deep'],
@@ -305,7 +307,7 @@ export function reassignTarget(seat, {fallbackSeats = ['deep', 'desktop-claude',
  * 选出「从没人领过、且已超时」的卡。
  * 注意：只看从未 claim 的卡；claim 过又过期的由 reap 处理，两者不重叠。
  */
-export function reassignPlan(issues, {now = new Date().toISOString(), afterHours = REASSIGN_AFTER_HOURS, fallbackSeats} = {}) {
+export function reassignPlan(issues, {now = new Date().toISOString(), afterHours = REASSIGN_AFTER_HOURS, fallbackSeats, maxReassignments = MAX_REASSIGNMENTS} = {}) {
   const nowMs = Date.parse(now);
   const plan = [];
   for (const issue of Array.isArray(issues) ? issues : []) {
@@ -318,6 +320,19 @@ export function reassignPlan(issues, {now = new Date().toISOString(), afterHours
     const ageHours = (nowMs - createdMs) / 3600000;
     if (!(ageHours >= afterHours)) continue;
     const seat = d.seat || issueSeat(issue);
+    const reassignments = countReassignments(issue);
+    if (reassignments >= maxReassignments) {
+      plan.push({
+        number: issue.number,
+        title: issue.title,
+        seat,
+        to: null,
+        action: 'escalate_stale',
+        reassignments,
+        age_hours: Math.round(ageHours * 10) / 10
+      });
+      continue;
+    }
     const to = reassignTarget(seat, {fallbackSeats});
     if (!to) continue;
     plan.push({
@@ -325,6 +340,8 @@ export function reassignPlan(issues, {now = new Date().toISOString(), afterHours
       title: issue.title,
       seat,
       to,
+      action: 'reassign',
+      reassignments,
       age_hours: Math.round(ageHours * 10) / 10
     });
   }
@@ -332,6 +349,13 @@ export function reassignPlan(issues, {now = new Date().toISOString(), afterHours
 }
 
 /** 改派评论：保留原席位与原因，便于事后追责与统计。 */
+/** 数一数这张卡已经被改派过几次。 */
+export function countReassignments(issue) {
+  return (Array.isArray(issue?.comments) ? issue.comments : [])
+    .filter(comment => typeof comment?.body === 'string' && comment.body.trimStart().startsWith('[reassigned]'))
+    .length;
+}
+
 export function reassignedComment({number, from, to, ageHours, by = 'task-hub'}) {
   return '[reassigned] from=' + from + ' to=' + to + ' age_hours=' + ageHours + ' reason=no_claim_' + ageHours + 'h by=' + by + ' issue=' + number;
 }
