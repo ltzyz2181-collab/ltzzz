@@ -1,0 +1,20 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-560",
+ "package_id": "LTZZZ-DEEP-ISSUE-560-20261121",
+ "prompt": "内部工程任务：GitHub Issue #560《[TASK] E2E-PROBE-20261121-01 | Issue→卡→PR 闭环探针（零资金）》\n来源：https://github.com/ltzyz2181-collab/ltzzz/issues/560\n数据分级：public_distributable（Issue 正文本身公开；不得粘贴敏感认证信息、客户数据或邮件正文）\n\n【Issue 正文】\n### Task ID\nE2E-PROBE-20261121-01\n\n### decision_id\nOWNER-DIRECT-20261121-DEEP-AUTOMATION-E2E\n\n### package_id\nLTZZZ-E2E-PROBE-20261121\n\n### 执行席\ndeep\n\n### 目标\n用一处最小、可回滚的探针文件，验证「GitHub Issue → Deep 队列卡 → Worker → PR → 合并」真实闭环可用。只做工程探针，不涉及任何外部平台提交。\n\n### 允许改动（只允许这两个新文件）\n1. `scripts/lib/e2e-probe-20261121.mjs`：只含文件头注释与 `export function probeMarker() { return 'ltzzz-e2e-20261121'; }`，不引入依赖、不读写文件、不调用网络。\n2. `scripts/tests/e2e-probe-20261121.test.mjs`：用 `node:test` 与 `node:assert/strict`，断言 `probeMarker() === 'ltzzz-e2e-20261121'`。\n\n### 规则\n- 只输出两个 `<<<FILE:...>>>` 整文件块，不加解释、不加 markdown 围栏。\n- 不得修改其它文件，不得删除或弱化既有测试。\n- 若无法在边界内改动，只输出一行 `NO_SAFE_CHANGE` 加不超过 20 个词的原因。\n\n### 验收\n- 两个文件通过 `node --check` / `node --test`。\n- 合并后本 Issue 以 `[delivered]` 回写，记录 PR、CI、merge SHA。\n\n### 停止条件\n只做上述两个探针文件；不做任何外部平台动作。\n\n- [ ] 卡片已生成\n- [ ] Worker 已执行\n- [ ] PR 已合并\n\n【给 deepseek 的任务】\n按 Issue 描述做一件最小可合并的工程改动。只输出整文件写入块，每块格式：\n<<<FILE:相对路径>>>\n文件完整内容\n<<<END>>>\n\n规则（按顺序，命中即停）：\n1 只输出写入块；不输出解释段落、不输出计划、不加 markdown 围栏。\n2 不得修改 .github/workflows/、config/ 下的授权与自治策略文件，以及写入闸已拒绝的路径。\n3 若需求属于六个保留家族，只输出一行 BLOCKED_FIDUCIARY 并停止。\n4 若无法在边界内给出可验证改动，只输出一行 NO_SAFE_CHANGE 加不超过 20 个词的原因。\n5 最多 6 个文件；每个文件必须完整，且能通过 node --check 或对应格式校验。\n6 优先补测试；不得删除或弱化既有测试。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "medium",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  }
+ ],
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [],
+  "code_change": true
+ }
+}
