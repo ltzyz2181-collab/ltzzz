@@ -11,6 +11,8 @@
 //   node scripts/task-hub.mjs claim --issue <N> --seat <seat> [--branch b] [--lease-hours 24]
 //   node scripts/task-hub.mjs submit --issue <N> --commit <sha> --pr <url> [--ci ...] [--tests ...] [--deploy deployed|not_deployed] [--smoke ...]
 //   node scripts/task-hub.mjs block --issue <N> --reason "..." [--evidence ...] [--need gpt]
+//   node scripts/task-hub.mjs reopen --issue <N> --reason "..." [--evidence ...] [--by seat]
+//   node scripts/task-hub.mjs unblock --issue <N> --reason "..." [--evidence ...] [--by seat]
 //   node scripts/task-hub.mjs reap [--apply]            租约过期回收
 //   node scripts/task-hub.mjs digest --seat <seat>      纯文本摘要（供邮件）
 //   node scripts/task-hub.mjs status [--out knowledge/results/task-hub/latest.json]
@@ -21,7 +23,8 @@ import {pathToFileURL} from 'node:url';
 import {
   TASK_HUB_SCHEMA, SEATS, HUB_LABEL, DEFAULT_LEASE_HOURS, DEFAULT_MAX_ATTEMPTS,
   labelNames, issueSeat, normalizeSeat, taskField, derive, expectedHubLabel, reapPlan,
-  claimComment, deliveredComment, blockedComment, leaseExpiredComment, renderTaskBody, buildDigest,
+  claimComment, deliveredComment, blockedComment, leaseExpiredComment, reopenedComment, unblockedComment,
+  deliveredEvidenceProblems, renderTaskBody, buildDigest,
 } from './lib/task-hub.mjs';
 
 export const REPOSITORY = 'ltzyz2181-collab/ltzzz';
@@ -129,7 +132,18 @@ export async function cmdClaim({client, number, seat, branch = 'not_specified', 
 }
 
 export async function cmdSubmit({client, number, commit, pr, ci, tests, deploy, smoke, now = new Date().toISOString()}) {
+  // 先按 Issue 正文判定部署要求，再拒收缺证据的 delivered：
+  // 缺 PR / 缺部署证据的交付不得写入终态，也不得只留下一条会误导看板的评论。
+  const {data: issue} = await client.api(`issues/${number}`);
   const comment = deliveredComment({commit, pr, ci, tests, deploy, smoke});
+  const parsed = {
+    kind: 'delivered',
+    at: now,
+    fields: {commit, pr, ci, tests, deploy, smoke},
+    body: comment,
+  };
+  const problems = deliveredEvidenceProblems(issue || {}, parsed);
+  if (problems.length) throw Error(`task_hub_delivered_evidence_incomplete:${problems.join('+')}`);
   await client.comment(number, comment);
   await client.addLabels(number, [HUB_LABEL.delivered]);
   await client.removeLabel(number, HUB_LABEL.claimed);
@@ -142,6 +156,26 @@ export async function cmdBlock({client, number, reason, evidence, need}) {
   await client.addLabels(number, [HUB_LABEL.blocked]);
   await client.removeLabel(number, HUB_LABEL.claimed);
   return {schema: TASK_HUB_SCHEMA, command: 'block', number, status: 'blocked'};
+}
+
+export async function cmdReopen({client, number, reason, evidence, by, now = new Date().toISOString()}) {
+  const comment = reopenedComment({reason, evidence, by});
+  await client.comment(number, comment);
+  for (const label of [HUB_LABEL.delivered, HUB_LABEL.blocked, HUB_LABEL.claimed, HUB_LABEL.stale]) {
+    await client.removeLabel(number, label);
+  }
+  await client.addLabels(number, [HUB_LABEL.new]);
+  return {schema: TASK_HUB_SCHEMA, command: 'reopen', number, status: 'new', at: now};
+}
+
+export async function cmdUnblock({client, number, reason, evidence, by, now = new Date().toISOString()}) {
+  const comment = unblockedComment({reason, evidence, by});
+  await client.comment(number, comment);
+  for (const label of [HUB_LABEL.blocked, HUB_LABEL.claimed, HUB_LABEL.stale]) {
+    await client.removeLabel(number, label);
+  }
+  await client.addLabels(number, [HUB_LABEL.new]);
+  return {schema: TASK_HUB_SCHEMA, command: 'unblock', number, status: 'new', at: now};
 }
 
 export async function cmdReap({client, apply = false, now = new Date().toISOString(), leaseHours = DEFAULT_LEASE_HOURS, maxAttempts = DEFAULT_MAX_ATTEMPTS}) {
@@ -161,7 +195,9 @@ export async function cmdStatus({client, now = new Date().toISOString(), leaseHo
   const issues = await loadIssues(client);
   const rows = issues.map(issue => {
     const d = derive(issue, {now, leaseHours});
-    return {number: issue.number, task_id: taskField(issue.body, 'task_id') || null, seat: issueSeat(issue), state: d.expired ? 'lease_expired' : d.state, attempts: d.attempts, lease_until: d.leaseUntil, deploy: d.delivered?.fields?.deploy || null, pr: d.delivered?.fields?.pr || null, title: issue.title};
+    return {number: issue.number, task_id: taskField(issue.body, 'task_id') || null, seat: issueSeat(issue), state: d.expired ? 'lease_expired' : d.state, attempts: d.attempts, lease_until: d.leaseUntil, deploy: d.delivered?.fields?.deploy || null, pr: d.delivered?.fields?.pr || null, title: issue.title,
+      invalid_delivered: d.invalid_delivered, delivered_evidence_problems: d.delivered_evidence_problems,
+      reopened: d.reopened ? {kind: d.reopened.kind, at: d.reopened.at} : null};
   });
   const byState = rows.reduce((acc, row) => (acc[row.state] = (acc[row.state] || 0) + 1, acc), {});
   const bySeat = rows.reduce((acc, row) => (acc[row.seat || 'unassigned'] = (acc[row.seat || 'unassigned'] || 0) + 1, acc), {});
@@ -208,6 +244,8 @@ export async function main(argv = process.argv.slice(2), {env = process.env, roo
     case 'claim': return print(await cmdClaim({client: client(), number: Number(argOf(argv, '--issue')), seat: normalizeSeat(argOf(argv, '--seat')) || argOf(argv, '--seat'), branch: argOf(argv, '--branch', 'not_specified'), now, leaseHours}));
     case 'submit': return print(await cmdSubmit({client: client(), number: Number(argOf(argv, '--issue')), commit: argOf(argv, '--commit'), pr: argOf(argv, '--pr'), ci: argOf(argv, '--ci', 'not_run'), tests: argOf(argv, '--tests', 'not_run'), deploy: argOf(argv, '--deploy', 'not_deployed'), smoke: argOf(argv, '--smoke', 'not_applicable'), now}));
     case 'block': return print(await cmdBlock({client: client(), number: Number(argOf(argv, '--issue')), reason: argOf(argv, '--reason'), evidence: argOf(argv, '--evidence', 'not_applicable'), need: argOf(argv, '--need', 'gpt')}));
+    case 'reopen': return print(await cmdReopen({client: client(), number: Number(argOf(argv, '--issue')), reason: argOf(argv, '--reason'), evidence: argOf(argv, '--evidence', 'not_applicable'), by: argOf(argv, '--by', 'not_specified'), now}));
+    case 'unblock': return print(await cmdUnblock({client: client(), number: Number(argOf(argv, '--issue')), reason: argOf(argv, '--reason'), evidence: argOf(argv, '--evidence', 'not_applicable'), by: argOf(argv, '--by', 'not_specified'), now}));
     case 'reap': return print(await cmdReap({client: client(), apply, now, leaseHours, maxAttempts}));
     case 'digest': {
       const seat = normalizeSeat(argOf(argv, '--seat')) || argOf(argv, '--seat');
@@ -228,7 +266,7 @@ export async function main(argv = process.argv.slice(2), {env = process.env, roo
       return print(await cmdCreate({client: client(), spec, now}));
     }
     default:
-      console.error('用法：init-labels|sync|poll|claim|submit|block|reap|digest|status|create（见文件头注释）');
+      console.error('用法：init-labels|sync|poll|claim|submit|block|reopen|unblock|reap|digest|status|create（见文件头注释）');
       return 2;
   }
 }

@@ -46,12 +46,17 @@ NEW → DISPATCHED → CLAIMED → IN_PROGRESS → SUBMITTED → REVIEW → APPR
 [claimed] seat=<seat> at=<ISO8601> branch=<branch> lease_until=<ISO8601>
 [delivered] commit=<7-40 hex> pr=<http url> ci=<...> tests=<...> deploy=<deployed|not_deployed> smoke=<...>
 [blocked] reason=<一句话> evidence=<...> need=<谁、要什么>
+[reopened] reason=<为什么推翻> evidence=<...> by=<seat>
+[unblocked] reason=<阻塞解除依据> evidence=<...> by=<seat>
 [lease-expired] task=#<N> attempts=<n> lease_until=<...> action=<return_to_new|mark_stale>
 ```
 
 硬性约束（代码里强制，测试覆盖）：
 
-- `[delivered]` 必须有合法 commit SHA 与 http(s) PR 链接，才允许写入。
+- `[delivered]` 必须有合法 commit SHA、http(s) PR 链接、CI 结论和测试结论，才允许写入；缺任一项 `submit` 直接拒绝。
+- 任务范围（目标/验收标准）含部署语义，或正文 `### 部署要求` 写 `required` 时，`delivered` 还必须有 `deploy=deployed` 与 smoke 证据；否则不构成终态。
+- 历史评论里的无效 `[delivered]`（例如 `pr=n/a`）不会把任务写成 delivered：`derive` 判为 `invalid_delivered`，标签校正回 `hub:new`，看板不再出现假终态。
+- `[reopened]` 推翻 delivered/blocked，`[unblocked]` 只推翻 blocked；两者都是 append-only，历史评论一条不删。
 - `deploy=not_deployed` 时 `smoke` 必须是 `not_applicable`——没部署不许写 smoke 证据。
 - `claimed ≠ started`、`submitted ≠ accepted`、`merged ≠ deployed`、`deployed ≠ verified`，四个不等式在文档与摘要里都保留。
 

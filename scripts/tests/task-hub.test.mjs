@@ -4,7 +4,8 @@ import {
   HUB_LABEL, DEFAULT_LEASE_HOURS, issueSections, taskField, issueSeat, normalizeSeat, protocolEvents,
   derive, expectedHubLabel, reapPlan, claimComment, deliveredComment, blockedComment, renderTaskBody, buildDigest,
 } from '../lib/task-hub.mjs';
-import {cmdClaim, cmdSync, cmdCreate, cmdReap} from '../task-hub.mjs';
+import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
+import {deliveredEvidenceProblems, reopenedComment, unblockedComment} from '../lib/task-hub.mjs';
 
 const NOW = '2026-11-18T12:00:00Z';
 const body = (fields = {}) => renderTaskBody({task_id: 'LTZZZ-DEMO-1', decision_id: 'GPT-X', seat: 'desktop-claude', goal: '把任务放进 Issue', scope: '只改 docs', forbidden: '不动资金', acceptance: '测试通过', evidence: '- PR', ...fields});
@@ -148,4 +149,121 @@ test('digest orders lease-expired first and keeps the issue link as the authorit
   assert.match(text, /租约过期：1/);
   assert.ok(text.indexOf('#3') < text.indexOf('#2'));
   assert.match(text, /以 GitHub Issue 为准/);
+});
+
+const CLAIM = {body: '[claimed] seat=desktop-claude at=2026-11-18T00:00:00Z branch=main', created_at: '2026-11-18T00:00:00Z'};
+const DELIVERED_OK = {body: '[delivered] commit=abcdef1 pr=https://github.com/x/y/pull/1 ci=success tests=10/10 deploy=not_deployed smoke=not_applicable', created_at: '2026-11-18T02:00:00Z'};
+
+test('a delivered receipt without PR or deploy evidence never becomes a terminal state', () => {
+  const fakeDelivered = issue({comments: [CLAIM, {body: '[delivered] commit=d36f0c8 pr=n/a ci=success tests=ok deploy=not_deployed smoke=not_applicable', created_at: '2026-11-18T02:00:00Z'}]});
+  const d = derive(fakeDelivered, {now: '2026-11-18T03:00:00Z'});
+  assert.equal(d.invalid_delivered, true);
+  assert.ok(d.delivered_evidence_problems.includes('pr_url_missing'));
+  assert.equal(d.settled, null);
+  assert.notEqual(d.state, 'delivered');
+  assert.equal(expectedHubLabel(fakeDelivered, {now: '2026-11-18T03:00:00Z'}), HUB_LABEL.new);
+
+  const deployScoped = issue({body: body({acceptance: '合并后部署到生产并给出线上 smoke 证据'}), comments: [CLAIM, DELIVERED_OK]});
+  const deployProblems = derive(deployScoped, {now: '2026-11-18T03:00:00Z'}).delivered_evidence_problems;
+  assert.ok(deployProblems.includes('deploy_evidence_missing'));
+  assert.ok(deployProblems.includes('smoke_evidence_missing'));
+  assert.notEqual(derive(deployScoped, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+
+  const deployed = {...DELIVERED_OK, body: '[delivered] commit=abcdef1 pr=https://github.com/x/y/pull/1 ci=success tests=10/10 deploy=deployed smoke=health=200'};
+  assert.equal(derive(issue({body: body({acceptance: '合并后部署到生产'}), comments: [CLAIM, deployed]}), {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+});
+
+test('an explicit 部署要求 field overrides the scope heuristic', () => {
+  const notRequired = issue({body: body({acceptance: '合并后部署说明写进文档', deploy_requirement: 'not_required'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.equal(derive(notRequired, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+  const required = issue({body: body({acceptance: '只改脚本', deploy_requirement: 'required'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.ok(derive(required, {now: '2026-11-18T03:00:00Z'}).delivered_evidence_problems.includes('deploy_evidence_missing'));
+});
+
+test('reopened and unblocked supersede historical terminal comments without deleting them', () => {
+  const reopenedAfterDelivered = issue({labels: ['seat:desktop-claude', 'dispatch', HUB_LABEL.delivered], comments: [
+    CLAIM, DELIVERED_OK,
+    {body: reopenedComment({reason: 'fix regressed in run 44663674946', evidence: 'run:44663674946', by: 'deep'}), created_at: '2026-11-20T20:22:00Z'},
+  ]});
+  const d = derive(reopenedAfterDelivered, {now: '2026-11-21T00:00:00Z'});
+  assert.equal(d.state, 'new');
+  assert.equal(d.settled, null);
+  assert.equal(d.reopened.kind, 'reopened');
+  assert.equal(expectedHubLabel(reopenedAfterDelivered, {now: '2026-11-21T00:00:00Z'}), HUB_LABEL.new);
+  assert.equal(reopenedAfterDelivered.comments.length, 3);
+
+  const unblocked = issue({labels: ['seat:desktop-claude', 'dispatch', HUB_LABEL.blocked], comments: [
+    CLAIM,
+    {body: blockedComment({reason: '缺 owner 授权', evidence: 'n/a', need: 'gpt'}), created_at: '2026-11-18T01:00:00Z'},
+    {body: unblockedComment({reason: '授权到位', evidence: 'comment:1', by: 'gpt'}), created_at: '2026-11-18T05:00:00Z'},
+  ]});
+  assert.equal(derive(unblocked, {now: '2026-11-18T06:00:00Z'}).state, 'new');
+});
+
+test('duplicate protocol events are idempotent and expired leases still reap after a reopen', () => {
+  const duplicated = issue({comments: [CLAIM, CLAIM, DELIVERED_OK, DELIVERED_OK]});
+  const d = derive(duplicated, {now: '2026-11-18T03:00:00Z'});
+  assert.equal(d.state, 'delivered');
+  assert.equal(d.attempts, 0);
+
+  const reopenedThenStale = issue({comments: [CLAIM, {body: '[reopened] reason=regressed evidence=n/a by=deep', created_at: '2026-11-18T01:00:00Z'}]});
+  const plan = reapPlan({issues: [reopenedThenStale], now: '2026-11-20T00:00:00Z', leaseHours: 24, maxAttempts: 3});
+  assert.deepEqual(plan.map(row => row.action), []);
+  const reclaimed = issue({comments: [CLAIM, {body: '[reopened] reason=regressed evidence=n/a by=deep', created_at: '2026-11-18T01:00:00Z'}, {body: '[claimed] seat=desktop-claude at=2026-11-19T00:00:00Z branch=main', created_at: '2026-11-19T00:00:00Z'}]});
+  assert.deepEqual(reapPlan({issues: [reclaimed], now: '2026-11-21T00:00:00Z', leaseHours: 24, maxAttempts: 3}).map(row => row.action), ['return_to_new']);
+});
+
+test('submit refuses an incomplete receipt before writing any comment', async () => {
+  clock = NOW;
+  const deployScoped = issue({body: body({acceptance: '合并后部署到生产'})});
+  const client = fakeClient([deployScoped]);
+  await assert.rejects(
+    () => cmdSubmit({client, number: 1, commit: 'abcdef1', pr: 'https://github.com/x/y/pull/1', ci: 'success', tests: '10/10', now: NOW}),
+    /task_hub_delivered_evidence_incomplete:.*deploy_evidence_missing/,
+  );
+  assert.equal((await client.withComments({number: 1})).comments.length, 0);
+
+  await assert.rejects(
+    () => cmdSubmit({client, number: 1, commit: 'abcdef1', pr: 'n/a', ci: 'success', tests: '10/10', deploy: 'deployed', smoke: 'ok', now: NOW}),
+    /task_hub_pr_url_required/,
+  );
+
+  const ok = await cmdSubmit({client, number: 1, commit: 'abcdef1', pr: 'https://github.com/x/y/pull/1', ci: 'success', tests: '10/10', deploy: 'deployed', smoke: 'health=200', now: NOW});
+  assert.equal(ok.status, 'delivered');
+  const labels = (await client.api('issues/1')).data.labels.map(item => item.name);
+  assert.ok(labels.includes(HUB_LABEL.delivered));
+});
+
+test('reopen and unblock post append-only events and clear terminal labels', async () => {
+  clock = NOW;
+  const client = fakeClient([issue({labels: ['seat:desktop-claude', 'dispatch', HUB_LABEL.delivered]})]);
+  const reopened = await cmdReopen({client, number: 1, reason: 'ship regressed', evidence: 'run:1', by: 'deep', now: NOW});
+  assert.equal(reopened.status, 'new');
+  const afterReopen = await client.withComments({number: 1});
+  assert.ok(afterReopen.comments.some(item => item.body.startsWith('[reopened]')));
+  const labels = (await client.api('issues/1')).data.labels.map(item => item.name);
+  assert.ok(!labels.includes(HUB_LABEL.delivered));
+  assert.ok(labels.includes(HUB_LABEL.new));
+
+  const client2 = fakeClient([issue({labels: ['seat:desktop-claude', 'dispatch', HUB_LABEL.blocked]})]);
+  await cmdUnblock({client: client2, number: 1, reason: 'authorisation arrived', evidence: 'comment:1', by: 'gpt', now: NOW});
+  assert.ok((await client2.withComments({number: 1})).comments.some(item => item.body.startsWith('[unblocked]')));
+});
+
+test('sync demotes a stale hub:delivered label when the receipt is invalid', async () => {
+  clock = NOW;
+  const staleDelivered = issue({labels: ['seat:desktop-claude', 'dispatch', HUB_LABEL.delivered], comments: [
+    CLAIM, {body: '[delivered] commit=d36f0c8 pr=n/a ci=success tests=ok deploy=not_deployed smoke=not_applicable', created_at: '2026-11-18T02:00:00Z'},
+  ]});
+  const client = fakeClient([staleDelivered]);
+  const dry = await cmdSync({client, now: '2026-11-18T03:00:00Z'});
+  const change = dry.changes.find(item => item.action === 'set_state');
+  assert.ok(change);
+  assert.deepEqual(change.add, [HUB_LABEL.new]);
+  assert.deepEqual(change.remove, [HUB_LABEL.delivered]);
+});
+
+test('delivered evidence helper reports every missing family at once', () => {
+  const problems = deliveredEvidenceProblems(issue({body: body({acceptance: '部署'})}), {fields: {}});
+  assert.deepEqual(problems, ['commit_sha_missing', 'pr_url_missing', 'ci_result_missing', 'test_result_missing', 'deploy_evidence_missing', 'smoke_evidence_missing']);
 });
