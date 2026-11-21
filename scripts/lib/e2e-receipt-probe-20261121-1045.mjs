@@ -1,0 +1,1 @@
+export const E2E_RECEIPT_PROBE = 'ok-20261121T1045Z';
