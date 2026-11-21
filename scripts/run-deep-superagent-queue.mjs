@@ -161,9 +161,10 @@ export async function normalizationRecord(rawBody,card){
 }
 
 export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
- // 上界含一次“429 在生成前拒绝”的工作席重试（worker 侧 seat_retries ≤ 1）；
+ // 普通任务上界含一次“429 在生成前拒绝”的工作席重试（worker 侧 seat_retries ≤ 1）；
  // 2026-11-21 run 44881038471 因重试把 model_calls 推到 6 被旧上界 5 判为无效。
- const maxCalls=(task_id==='DEEP-DAILY-SUPERVISION'?3:5)+1;
+ // 日课仍保持三条回执硬上限，worker 侧对日课不重试。
+ const maxCalls=task_id==='DEEP-DAILY-SUPERVISION'?3:6;
  if(!job||job.task_id!==task_id||job.package_id!==package_id||!SHA.test(job.input_sha256||'')||(input_sha256&&job.input_sha256!==input_sha256)||typeof job.execution_id!=='string'||!job.execution_id||(execution_id&&job.execution_id!==execution_id)||!COMMIT.test(job.source_commit||'')||job.revision!==REVISION||!STATUSES.has(job.status)||typeof job.terminal!=='boolean'||!Number.isSafeInteger(job.model_calls)||job.model_calls<0||job.model_calls>maxCalls||!Array.isArray(job.receipts)||job.receipts.length>maxCalls||job.financial_execution!==false||job.external_submissions_enabled!==false||job.paid!==false||job.tx_hash!==null)throw Error('remote_job_binding_or_isolation_invalid');
  return job;
 }
