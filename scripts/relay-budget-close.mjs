@@ -62,7 +62,8 @@ export async function closeAndVerify({
   runAttempt = '1',
   sourceCommit = null,
 } = {}) {
-  const base = String(baseUrl || '').replace(/\\/+$/, '');
+  let base = String(baseUrl || '');
+  while (base.endsWith('/')) base = base.slice(0, -1);
   const result = {
     schema: 'ltzzz.relay-budget-close.v1',
     task_id: TASK_ID,
