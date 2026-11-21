@@ -25,6 +25,17 @@ async function request(fetchImpl, url, token, method, body) {
   }
 }
 
+function estimateTokens(text) {
+  let cjk = 0;
+  let other = 0;
+  for (const ch of String(text ?? '')) {
+    const code = ch.codePointAt(0);
+    if ((code >= 0x3000 && code <= 0x9fff) || (code >= 0xf900 && code <= 0xfaff) || (code >= 0xff00 && code <= 0xffef)) cjk += 1;
+    else other += 1;
+  }
+  return cjk + Math.ceil(other / 4);
+}
+
 function compactState(result) {
   const data = result?.data || {};
   return {
@@ -77,7 +88,7 @@ export async function closeAndVerify({
     result.error = 'proxy_token_missing';
     return result;
   }
-  if (!base || typeof promptText !== 'string' || promptText.length < 16384) {
+  if (!base || typeof promptText !== 'string' || estimateTokens(promptText) < 4096) {
     result.error = !base ? 'proxy_url_missing' : 'synthetic_probe_fixture_too_short';
     return result;
   }
