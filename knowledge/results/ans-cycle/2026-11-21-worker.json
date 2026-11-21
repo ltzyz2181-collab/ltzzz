@@ -1,0 +1,14 @@
+{
+  "finding": "syncDailyBoard 将未恢复的 generation_started 直接降级为 generation_unknown_no_repurchase，但该状态既不在 syncFailedSeat 的调用条件中，也不满足正常提交路径对 artifact 的要求，导致该席位永久卡在未核验状态，且不会生成任何失败证据或触发远端 fail_task。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs"
+  ],
+  "minimal_patch": "在 syncDailyBoard 的 syncFailedSeat 调用条件中增加 'generation_unknown_no_repurchase'：\n\n-        if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n+        if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase','generation_unknown_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n\n同时将 syncFailedSeat 的 artifact 校验分支改为允许该状态使用不可变失败证据：当 seat.status==='generation_unknown_no_repurchase' 且无 seat.artifact 时，生成一个本地失败证据文件 knowledge/results/daily-board/artifacts/${record.date}-${agent}-FAILED-${digest(JSON.stringify({date:record.date,run_key:record.run_key,task_id:seat.assignment.id,agent,status:'incomplete_or_failed',reason:'generation_unknown_no_complete_artifact'}))}.failed-evidence.json，内容包含 status:'incomplete_or_failed'、date、run_key、task_id、logical_seat、source_commit、failure_kind:'incomplete_or_failed_provider_output'，写入后将其路径与 sha256 存入 seat.failure_evidence，并继续以该证据调用远端 fail_task。若该证据已存在且哈希匹配，直接复用，不重复写盘。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const l={schema_version:2,date:'2026-11-20',run_key:'test',seats:{a:{agent:'a',status:'generation_unknown_no_repurchase',claim_verified:true,assignment:{id:'DAILY-2026-11-20-a',execution_date:'2026-11-20'}}}};console.log(Object.values(l.seats).some(s=>['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase','generation_unknown_no_repurchase'].includes(s.status)));})\""
+  ],
+  "remaining_blocker": "syncFailedSeat 当前针对所有失败状态强制要求座位已有完整 artifact，且远端 fail_task 的证据路径必须与板卡上的 failure.evidence_path 一致；需要为 generation_unknown_no_repurchase 引入专用的不可变失败证据生成与绑定流程，并确保远端回读验证该证据哈希后才可落 failed_no_repurchase。"
+}

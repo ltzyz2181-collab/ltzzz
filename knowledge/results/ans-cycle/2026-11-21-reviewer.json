@@ -1,0 +1,32 @@
+{
+  "accepted": false,
+  "artifact_sha256": "ee06373cc74c9835e4e15ddf33cbc9ce2037fe7dd1d30a4ee944112b01fd2c2d",
+  "reasons": [
+    "finding 的静态根因与 scripts/lib/daily-task-board.mjs 相符：syncDailyBoard 先调用 recoverArtifact；当席位停留在 generation_started、无 artifact，且目录中没有唯一可通过 validateArtifact 的 complete 产物时，recoverArtifact 返回 false。",
+    "随后 syncDailyBoard 将 generation_started 改写为 generation_unknown_no_repurchase 并保存；该状态没有出现在当前 syncFailedSeat 的调用条件 ['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'] 中。",
+    "generation_unknown_no_repurchase 也不满足正常提交路径：正常路径要求 seat.artifact 存在，且状态属于 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review。",
+    "hasUnverifiedBoard 明确把 generation_unknown_no_repurchase 计入未核验状态，因此当前实现下该席位会持续导致板卡未核验；finding 所述“不会触发远端 fail_task”也可由控制流静态支持。",
+    "但交付的 minimal_patch 不是可直接复核的完整代码补丁，只是自然语言规格加一处条件改动；没有给出 syncFailedSeat 内部所需的完整 diff、辅助函数、错误处理、状态迁移和幂等实现。",
+    "补丁要求生成 .failed-evidence.json，但现有 syncFailedSeat 的 artifact 路径契约严格要求 knowledge/results/daily-board/artifacts/${record.date}-${agent}-${a.sha256}.json；交付没有给出如何同时兼容普通 artifact 与 failed-evidence 路径的具体代码。",
+    "现有 syncFailedSeat 会读取 digest(await readRemote(a.path))，要求 fail_task 前证据已在远端可读；交付只描述本地生成 failure evidence，没有说明该文件如何上传或持久化到 readRemote 指向的位置，因此远端 fail_task 前置条件仍不可复核。",
+    "交付要求把路径和哈希存入 seat.failure_evidence，但现有 syncFailedSeat 实际使用 seat.artifact.path 和 seat.artifact.sha256 调用 fail_task；没有明确 seat.artifact 与 seat.failure_evidence 的绑定关系，补丁目标无法仅凭描述落地。",
+    "现有 recoverArtifact 会扫描 artifacts 目录下所有 .json 并调用 validateArtifact；新增 .failed-evidence.json 虽会因 body.status 不是 complete 而被忽略，但交付没有提供测试覆盖该交互，也没有说明是否应排除该后缀。",
+    "验证命令中的内联 node 命令只构造一个本地对象并检查状态字符串是否在数组中，不导入真实 syncDailyBoard 行为、不执行 syncFailedSeat、不验证证据生成、远端回读、幂等或最终 failed_no_repurchase 状态。",
+    "未提供任何实际测试输出或执行回执；本次只能确认 finding 的静态合理性和补丁草稿不足，不能声称建议代码已执行、上线或修复。"
+  ],
+  "unverified": [
+    "未获得交付物原始字节，无法独立重算 artifact_sha256，只能严格回传给定哈希。",
+    "未实际应用 minimal_patch，无法验证语法、行号、上下文、可合入性或 node --check 结果。",
+    "未执行 node --test scripts/tests/ans-cycle.test.mjs。",
+    "未执行 node --test scripts/tests/reflection-harness.test.mjs。",
+    "未审查现有测试是否覆盖 generation_started 崩溃、无 artifact、多 artifact、唯一不完整 artifact、generation_unknown_no_repurchase 重试等场景。",
+    "未验证新增 failure evidence 的 JSON schema、哈希算法、文件名、路径白名单、source_commit、run_key、task_id、logical_seat 和 failure_kind 的完整绑定。",
+    "未验证证据文件已存在但内容哈希不匹配、文件损坏、权限错误、目录不存在、并发写入、部分写入或重复同步时的行为。",
+    "未验证 failure evidence 在调用 fail_task 前如何上传并被 readRemote 成功读取。",
+    "未验证 Pulse 服务端 fail_task 对 .failed-evidence.json、证据内容 failure_kind 与命令 failure_kind 不完全同名的接受情况。",
+    "未验证网络瞬断、snapshot 过期、鉴权失败、任务 owner 冲突、远端任务状态变化、fail_task 重复投递后的状态恢复和幂等性。",
+    "未验证修复后席位能否从 generation_unknown_no_repurchase 经 failure_sync_unknown 最终稳定落为 failed_no_repurchase，并且 hasUnverifiedBoard 返回 false。",
+    "未验证 CI、合并提交、部署回执、目标环境、制品 SHA、生产版本或线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付或其他资金事项。"
+  ]
+}
