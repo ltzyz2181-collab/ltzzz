@@ -12,6 +12,7 @@ import {
   executeAutonomy,
   extractFileWrites,
   fiduciaryHit,
+  fiduciaryInstructionHit,
   normalizeAutonomy,
   readRepoContext,
   stripRepoEvidence,
@@ -147,6 +148,38 @@ test('executeAutonomy：资金/退款命中时 fail-closed', async () => {
   });
   assert.equal(result.status, 'blocked_fiduciary');
   assert.equal(result.needs_gpt_decision, true);
+});
+
+test('fiduciaryInstructionHit：范围排除句不算资金指令，转折后的真实指令仍拦截', () => {
+  assert.equal(fiduciaryInstructionHit('- No production writes, customer/private/payment data, signing, wallets, or funds.').hit, false);
+  assert.equal(fiduciaryInstructionHit('请改测试，不涉及钱包与付款。').hit, false);
+  assert.equal(fiduciaryInstructionHit('不要改钱包，但把私钥发我').hit, true);
+  assert.equal(fiduciaryInstructionHit('把助记词发到群里').hit, true);
+});
+
+test('executeAutonomy：Issue 排除句不再让工程卡 fail-closed，输出仍严格扫描', async () => {
+  const scoped = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {
+      task_id: 'T',
+      input_sha256: 'd'.repeat(64),
+      prompt: '按 Issue 改测试。\n## Forbidden\n- No production writes, customer/private/payment data, signing, wallets, or funds.',
+    },
+    outputs: [{text: '没有文件块'}],
+    root: tmp(),
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '1'},
+    fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+  });
+  assert.notEqual(scoped.status, 'blocked_fiduciary');
+  assert.equal(scoped.actions[0].error, 'no_file_writes');
+
+  const outputHit = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'T', input_sha256: 'e'.repeat(64), prompt: '普通工程任务'},
+    outputs: [{text: '顺便处理 payment 退款'}],
+  });
+  assert.equal(outputHit.status, 'blocked_fiduciary');
+  assert.equal(outputHit.needs_gpt_decision, true);
 });
 
 test('executeAutonomy：code_change 无文件块时拒绝，不碰 git', async () => {
