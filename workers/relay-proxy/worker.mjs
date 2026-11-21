@@ -231,6 +231,7 @@ function budgetSnapshot(state) {
     active_reservations: Object.keys(state.reservations || {}).length,
     closed: state.closed === true,
     closed_reason: state.closed_reason ?? null,
+    last_overrun: state.last_overrun ?? null,
     limits: {
       per_call_cost_cap_usd: MAX_CALL_COST_USD,
       daily_cost_cap_usd: DAILY_COST_CAP_USD,
@@ -238,6 +239,45 @@ function budgetSnapshot(state) {
       balance_floor_usd: BALANCE_FLOOR_USD,
     },
   };
+}
+
+// After every settled response the actual cost is reconciled against all caps.
+// A breach closes the seat durably, so the next reserve() is refused no matter
+// which caller or transport it comes from. This is the runtime enforcement the
+// 2026-11-20 relay audit found missing: pre-call estimates alone cannot catch a
+// station that reports more completion tokens than max_tokens.
+function enforcePostCallLimits(state, { callId = null, costUsd = null, at }) {
+  const totals = budgetTotals(state, at);
+  const base = numberOrNull(state.baseline?.balance_usd);
+  let reason = null;
+  let cap = null;
+  if (costUsd !== null && costUsd > MAX_CALL_COST_USD) {
+    reason = 'per_call_cap_breach_after_call';
+    cap = MAX_CALL_COST_USD;
+  } else if (totals.daily_spent_usd > DAILY_COST_CAP_USD) {
+    reason = 'daily_cap_breach_after_call';
+    cap = DAILY_COST_CAP_USD;
+  } else if (totals.spent_usd > PROJECT_COST_CAP_USD) {
+    reason = 'project_cap_breach_after_call';
+    cap = PROJECT_COST_CAP_USD;
+  } else if (base !== null && round6(base - totals.spent_usd) < BALANCE_FLOOR_USD) {
+    reason = 'balance_below_floor_after_call';
+    cap = BALANCE_FLOOR_USD;
+  }
+  if (!reason) return null;
+  state.closed = true;
+  state.closed_reason = reason;
+  state.closed_at = at;
+  state.last_overrun = {
+    at,
+    call_id: callId,
+    reason,
+    cost_usd: costUsd,
+    cap_usd: cap,
+    daily_spent_usd: totals.daily_spent_usd,
+    project_spent_usd: totals.spent_usd,
+  };
+  return reason;
 }
 
 export class RelayBudget {
@@ -252,6 +292,7 @@ export class RelayBudget {
       if (path === '/reserve' && request.method === 'POST') return Response.json(await this.reserve(await request.json()));
       if (path === '/settle' && request.method === 'POST') return Response.json(await this.settle(await request.json()));
       if (path === '/confirm' && request.method === 'POST') return Response.json(await this.confirm(await request.json()));
+      if (path === '/close' && request.method === 'POST') return Response.json(await this.close(await request.json()));
       if (path === '/state' && request.method === 'GET') {
         return Response.json(await this.state.storage.transaction(async tx => budgetSnapshot(await this.load(tx))));
       }
@@ -332,6 +373,7 @@ export class RelayBudget {
         existingEntry.settled_at = at;
         existingEntry.upstream_http = Number.isFinite(Number(payload?.upstream_http)) ? Number(payload.upstream_http) : existingEntry.upstream_http;
         existingEntry.request_id = typeof payload?.request_id === 'string' ? payload.request_id : existingEntry.request_id;
+        enforcePostCallLimits(state, { callId, costUsd: numberOrNull(existingEntry.cost_usd), at });
         state.updated_at = at;
         await tx.put('budget', state);
         return { ok: true, status: 200, duplicate: true, call_id: callId, snapshot: budgetSnapshot(state) };
@@ -354,16 +396,35 @@ export class RelayBudget {
         settled_at: at,
       });
       delete state.reservations[callId];
-      const totals = budgetTotals(state, at);
-      const base = numberOrNull(state.baseline?.balance_usd);
-      if (base !== null && round6(base - totals.spent_usd) < BALANCE_FLOOR_USD) {
-        state.closed = true;
-        state.closed_reason = 'balance_below_floor_after_call';
-        state.closed_at = at;
-      }
+      enforcePostCallLimits(state, { callId, costUsd: cost, at });
       state.updated_at = at;
       await tx.put('budget', state);
       return { ok: true, status: 200, duplicate: false, call_id: callId, cost_usd: cost, snapshot: budgetSnapshot(state) };
+    });
+  }
+
+  // Durable close: an operator or a guard can stop the seat without deleting
+  // history. Idempotent, append-only (the reason and time are kept).
+  async close(payload) {
+    const at = typeof payload?.at === 'string' ? payload.at : new Date().toISOString();
+    const reason = typeof payload?.reason === 'string' && payload.reason.trim()
+      ? payload.reason.trim().slice(0, 120)
+      : 'manual_close';
+    const by = typeof payload?.closed_by === 'string' && payload.closed_by.trim()
+      ? payload.closed_by.trim().slice(0, 120)
+      : null;
+    return this.state.storage.transaction(async tx => {
+      const state = await this.load(tx);
+      const duplicate = state.closed === true;
+      if (!duplicate) {
+        state.closed = true;
+        state.closed_reason = reason;
+        state.closed_at = at;
+        state.closed_by = by;
+        state.updated_at = at;
+        await tx.put('budget', state);
+      }
+      return { ok: true, status: 200, duplicate, call_id: null, snapshot: budgetSnapshot(state) };
     });
   }
 
@@ -429,7 +490,7 @@ export default {
     const url = new URL(request.url);
     const route = url.pathname.replace(/\/+$/, '');
     const budgetRoute = route.replace(/^\/v1(?=\/budget\/)/, '');
-    const known = ['/v1/chat/completions', '/chat/completions', '/budget/confirm', '/budget/state'];
+    const known = ['/v1/chat/completions', '/chat/completions', '/budget/confirm', '/budget/state', '/budget/close'];
     if (!known.includes(route) && !known.includes(budgetRoute)) return json(404, 'proxy_route_not_found');
     const method = budgetRoute === '/budget/state' ? 'GET' : 'POST';
     if (request.method !== method) return json(405, 'proxy_method_not_allowed');
@@ -445,6 +506,16 @@ export default {
       }
       const confirmed = await budgetRequest(env, '/confirm', confirmBody);
       return Response.json(confirmed, { status: confirmed.status && confirmed.status >= 400 ? confirmed.status : 200 });
+    }
+    if (budgetRoute === '/budget/close') {
+      let closeBody;
+      try {
+        closeBody = await request.json();
+      } catch {
+        return json(400, 'proxy_body_invalid');
+      }
+      const closed = await budgetRequest(env, '/close', closeBody);
+      return Response.json(closed, { status: closed.status && closed.status >= 400 ? closed.status : 200 });
     }
 
     const batch = request.headers.get('x-ltzzz-batch') === '1';
