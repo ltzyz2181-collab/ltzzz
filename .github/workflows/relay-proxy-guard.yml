@@ -1,0 +1,32 @@
+name: Relay proxy guard tests (no models)
+on:
+  pull_request:
+    paths:
+      - 'workers/relay-proxy/**'
+      - 'scripts/tests/relay-proxy-worker.test.mjs'
+      - 'scripts/tests/relay-seat-guard.test.mjs'
+      - 'scripts/lib/relay-seat-guard.mjs'
+      - 'config/relay-seat-policy.json'
+      - '.github/workflows/relay-proxy-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'workers/relay-proxy/**'
+      - 'scripts/lib/relay-seat-guard.mjs'
+      - 'config/relay-seat-policy.json'
+      - '.github/workflows/relay-proxy-guard.yml'
+  workflow_dispatch:
+permissions: {contents: read}
+concurrency:
+  group: relay-proxy-guard-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Guard and worker tests (synthetic only)
+        run: node --test scripts/tests/relay-seat-guard.test.mjs scripts/tests/relay-proxy-worker.test.mjs
