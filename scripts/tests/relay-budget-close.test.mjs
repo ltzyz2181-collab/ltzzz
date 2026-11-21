@@ -76,6 +76,7 @@ test('an already closed seat is verified without issuing another close write', a
   assert.equal(result.verified, true);
   assert.deepEqual(mock.calls.map(x => x.pathname), [
     '/v1/budget/state',
+    '/v1/budget/state',
     '/v1/chat/completions',
     '/v1/budget/state',
   ]);
