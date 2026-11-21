@@ -267,3 +267,21 @@ test('delivered evidence helper reports every missing family at once', () => {
   const problems = deliveredEvidenceProblems(issue({body: body({acceptance: '部署'})}), {fields: {}});
   assert.deepEqual(problems, ['commit_sha_missing', 'pr_url_missing', 'ci_result_missing', 'test_result_missing', 'deploy_evidence_missing', 'smoke_evidence_missing']);
 });
+
+test('a deployment requirement may carry a trailing note', () => {
+  const noted = issue({body: body({acceptance: '合并后部署说明写进文档', deploy_requirement: 'not_required（P1 只入库，不启用定时）'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.equal(derive(noted, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+  const stillRequired = issue({body: body({acceptance: '只改脚本', deploy_requirement: 'required（上线后验证）'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.ok(derive(stillRequired, {now: '2026-11-18T03:00:00Z'}).delivered_evidence_problems.includes('deploy_evidence_missing'));
+});
+
+test('chinese deployment requirement keeps word-edge semantics', () => {
+  const bare = issue({body: body({acceptance: '合并后部署说明写进文档', deploy_requirement: '不需要'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.equal(derive(bare, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+  const notedCn = issue({body: body({acceptance: '合并后部署说明写进文档', deploy_requirement: '不需要（P1 只入库）'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.equal(derive(notedCn, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+  const needCn = issue({body: body({acceptance: '只改脚本', deploy_requirement: '需要（上线后验证）'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.ok(derive(needCn, {now: '2026-11-18T03:00:00Z'}).delivered_evidence_problems.includes('deploy_evidence_missing'));
+  const ambiguous = issue({body: body({acceptance: '只改脚本', deploy_requirement: '是否需要待定'}), comments: [CLAIM, DELIVERED_OK]});
+  assert.equal(derive(ambiguous, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+});

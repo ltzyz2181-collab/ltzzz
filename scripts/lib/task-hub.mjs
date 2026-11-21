@@ -121,9 +121,13 @@ export function protocolEvents(comments = []) {
 // 交付证据闸：缺 commit / PR / CI / 测试的 delivered 不构成终态；
 // 任务范围含部署语义时还必须有 deploy 与 smoke 证据。
 export function taskDeployRequirement(issue) {
+  // 允许在声明后附说明（"not_required（P1 只入库）"），只按第一个词判定。
+  // 注意：JS 的 \b 在中文后面不成立（中文非 \w），中文分支改用显式后缀断言。
   const declared = String(taskField(issue?.body, 'deploy_requirement') || '').trim().toLowerCase();
-  if (/^(required|true|yes|需要|是)$/.test(declared)) return 'required';
-  if (/^(not_required|false|no|不需要|否)$/.test(declared)) return 'not_required';
+  if (/^(?:not_required|not required|false|no)\b/.test(declared)) return 'not_required';
+  if (/^(?:required|true|yes)\b/.test(declared)) return 'required';
+  if (/^(?:不需要|否)(?![\u4e00-\u9fff])/.test(declared)) return 'not_required';
+  if (/^(?:需要|是)(?![\u4e00-\u9fff])/.test(declared)) return 'required';
   const scope = `${taskField(issue?.body, 'acceptance')}\n${taskField(issue?.body, 'goal')}`;
   return DEPLOY_REQUIRED_RE.test(scope) ? 'required' : 'not_required';
 }
