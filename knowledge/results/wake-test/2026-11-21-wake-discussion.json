@@ -1,0 +1,216 @@
+{
+  "schema": "ltzzz.wake-discussion-receipt.v1",
+  "task_id": "wake-discussion-mwe-20261121",
+  "created_at": "2026-11-21",
+  "topic": "MWE (Minimum Wake Evidence) v0 → v1：主动唤醒与席位邮件的最小证据集",
+  "harness": {
+    "command": "node scripts/harness.mjs before receipt,model_output,input_hash,external_platform",
+    "status": "retrieved_not_compliance_verified",
+    "context_sha256": "7b2be851de6abea195765e90ef42dba4de55d9efc42ae120d3b9c956e723cad1",
+    "lesson_ids_considered": [
+      "L-20261030-002",
+      "L-20261030-003",
+      "L-20261117-006",
+      "L-20261030-001",
+      "L-20261030-004",
+      "L-20261101-001",
+      "L-20261030-007"
+    ],
+    "applied": [
+      {
+        "lesson_id": "L-20261030-004",
+        "how": "唤醒回执的 model_served 取自响应元数据（gpt-6.1-sol / deepseek-v4-pro），席位名只作为 requested_agent。"
+      },
+      {
+        "lesson_id": "L-20261030-003",
+        "how": "只接受 finish_reason=stop 的输出作为讨论结论；Claude 503 与 DeepSeek length 失败均保留为失败回执。"
+      },
+      {
+        "lesson_id": "L-20261030-002",
+        "how": "未知项写 unverified：未获得已读证据、未获得平台验收、未部署。"
+      },
+      {
+        "lesson_id": "L-20261030-007",
+        "how": "落盘 evidence 路径、run_id、request_id、output_sha256 与提交 commit。"
+      },
+      {
+        "lesson_id": "L-20261030-001",
+        "how": "状态行按回执自身状态字段生成，失败不写成成功。"
+      }
+    ]
+  },
+  "discussion": {
+    "rounds": [
+      {
+        "round": 1,
+        "seat": "relay_gpt",
+        "requested_agent": "gpt",
+        "model_served": "gpt-6.1-sol",
+        "workflow_run_id": 44858287305,
+        "request_id": "20261121025337187694903UZhgMjak",
+        "http": 200,
+        "finish_reason": "stop",
+        "usage": { "input_tokens": 1396, "output_tokens": 980 },
+        "cost_usd": 0.009934,
+        "evidence": "knowledge/results/relay-seat/calls/20261121T025402Z-desktop_claude-gpt-6.1-sol-f8bea7f8.json",
+        "status": "generated"
+      },
+      {
+        "round": 2,
+        "seat": "relay_claude",
+        "requested_agent": "claude",
+        "model_requested": "claude-sonnet-4-6",
+        "workflow_run_id": 44858403319,
+        "http": 503,
+        "error_code": "model_temporarily_unavailable",
+        "ok": false,
+        "evidence": "knowledge/results/relay-seat/calls/20261121T025502Z-desktop_claude-claude-sonnet-4-6-57ebe4ef.json",
+        "status": "failed_not_generated"
+      },
+      {
+        "round": 2,
+        "seat": "relay_claude",
+        "requested_agent": "claude",
+        "model_requested": "claude-opus-5-5",
+        "workflow_run_id": 44858463541,
+        "http": 503,
+        "error_code": "model_temporarily_unavailable",
+        "ok": false,
+        "evidence": "knowledge/results/relay-seat/calls/20261121T025543Z-desktop_claude-claude-opus-5-5-57ebe4ef.json",
+        "status": "failed_not_generated",
+        "note": "同一错误类别，按规则停止重试同一方法，改为 DeepSeek 直连复核。"
+      },
+      {
+        "round": 2,
+        "seat": "deepseek",
+        "requested_agent": "deepseek",
+        "model_served": "deepseek-v4-pro",
+        "attempt": "first",
+        "max_tokens": 900,
+        "thinking": "enabled(default)",
+        "finish_reason": "length",
+        "output_chars": 0,
+        "ok": false,
+        "status": "empty_output",
+        "evidence": "knowledge/results/wake-test/deepseek-round2-1795229813718.json",
+        "note": "方法失败证据：推理耗尽 token，不是模型拒绝。"
+      },
+      {
+        "round": 2,
+        "seat": "deepseek",
+        "requested_agent": "deepseek",
+        "model_served": "deepseek-v4-pro",
+        "attempt": "second",
+        "max_tokens": 4096,
+        "thinking": "disabled",
+        "finish_reason": "stop",
+        "tokens_used": 2586,
+        "output_chars": 2309,
+        "output_sha256": "1b5c9e3c4338c813d548ed0a7d1c5d8da293a68513b0b9ae6bf72ca7c82d11d2",
+        "ok": true,
+        "status": "generated",
+        "evidence": "knowledge/results/wake-test/deepseek-round2-1795229835627.json",
+        "output": "knowledge/results/wake-test/deepseek-round2-1795229835627.md"
+      }
+    ],
+    "prompt_fixtures": [
+      "fixtures/relay-seat/wake-mwe-20261121-gpt.txt",
+      "fixtures/relay-seat/wake-mwe-20261121-claude.txt"
+    ],
+    "convergence": {
+      "agreed": [
+        "MWE 只追加、不阻断",
+        "无证据的字段写 unverified",
+        "删除 read 级别（邮件侧没有可核验的已读证据）",
+        "删除 negative_claims（容易膨胀且无法证伪）",
+        "实验窗口 7 天，事件落 mwe/events.jsonl",
+        "验收要求零虚假升级"
+      ],
+      "disagreed": [
+        "GPT 主张回声检测需比较 output_sha256；DeepSeek 指出 LLM 非确定性会产生大量假阴性，改为主张旁路日志集合比对。"
+      ],
+      "merged_v1_fields": [
+        "event_id",
+        "from_seat/to_seat/channel",
+        "transport_evidence",
+        "actual_model",
+        "state(transport_accepted|generated|replied|acted)",
+        "evidence_ref"
+      ]
+    }
+  },
+  "mail_test": {
+    "workflow": ".github/workflows/seat-mail.yml",
+    "workflow_run_id": 44858747623,
+    "schema": "ltzzz.seat-mail.v1",
+    "apply": true,
+    "count": 2,
+    "messages": [
+      {
+        "issue": 524,
+        "seat": "relay_gpt",
+        "to_seat": "meta",
+        "subject": "[seat:meta] 唤醒测试：MWE 提案两轮讨论结果，请回一句",
+        "smtp_status": "sent",
+        "smtp_message_id": "<179522996079.2247.2192331134638409078@qq.com>",
+        "imap_delivered": true,
+        "imap_uid": "3066",
+        "imap_message_id": "<tencent_7000FBBD5A1D45BB409EB598F7FF5A39E40A@qq.com>",
+        "imap_date": "Sat, 21 Nov 2026 02:59:20 -0000",
+        "imap_seen": false
+      },
+      {
+        "issue": 525,
+        "seat": "meta",
+        "to_seat": "relay_gpt",
+        "subject": "[seat:relay_gpt] 唤醒测试：Meta 回程，请中转 GPT 席确认",
+        "smtp_status": "sent",
+        "smtp_message_id": "<179522995604.2244.17170372084639633252@qq.com>",
+        "imap_delivered": true,
+        "imap_uid": "3065",
+        "imap_message_id": "<tencent_92FC84AD38A309208D5A52FB83ADF6729209@qq.com>",
+        "imap_date": "Sat, 21 Nov 2026 02:59:16 -0000",
+        "imap_seen": false
+      }
+    ],
+    "imap_readback": {
+      "method": "IMAP4_SSL imap.qq.com:993, INBOX readonly, BODY.PEEK[HEADER] only",
+      "searched_since": "21-Nov-2026",
+      "candidate_count": 11,
+      "match_count": 2,
+      "body_read": false,
+      "credentials_printed": false,
+      "note": "QQ 在投递时把 Message-ID 改写为 tencent_*，SMTP 回执里的 message_id 不能直接当作邮箱内 ID。"
+    },
+    "issue_states": [
+      { "number": 524, "label_removed": true, "receipt_comment": "[mail-sent] seat=relay_gpt status=sent" },
+      { "number": 525, "label_removed": true, "receipt_comment": "[mail-sent] seat=meta status=sent" }
+    ]
+  },
+  "state_ladder": {
+    "draft": true,
+    "tested": true,
+    "committed": true,
+    "merged": true,
+    "deployed": false,
+    "submitted": true,
+    "platform_accepted": false,
+    "business_acceptance": false,
+    "read_proof": false,
+    "delivered_to_inbox": true
+  },
+  "negative_claims": [
+    "SMTP 250 / status=sent 只证明投递被接受，不证明已读。",
+    "IMAP 回读命中只证明邮件到达 INBOX，flagged_seen=false，不构成已读证据。",
+    "Claude 两次 503 未产生任何模型输出，讨论结论不含 Claude 的观点。",
+    "未部署到任何生产席位，未取得平台验收。",
+    "没有进行任何权重训练；本回执只是经验检索与真实调用。"
+  ],
+  "commits": [
+    "44af3f52",
+    "e9ac234e",
+    "8bf01d0a",
+    "d52e5665",
+    "315cb95f"
+  ]
+}
