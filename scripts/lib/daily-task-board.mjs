@@ -433,10 +433,18 @@ export async function syncReviewedSeats({root, date, snapshot, command, readRemo
       seat.accepted = review.accepted;
       seat.status = task.status;
       seat.sync_reason = 'bound_independent_draft_review_readback_no_resubmit';
+      // 本函数完成的是与 syncDailyBoard 终态分支同等的只读核验（产物字节、远端哈希、
+      // 评审证据哈希与语义、状态一致性全部通过）。当前核验状态必须同样落为 verified；
+      // 否则评审若在 syncDailyBoard 与 syncReviewedSeats 两次快照之间落板，终态会
+      // 缺少 revalidation，hasUnverifiedBoard 把已核验结果当成待核，sync 退出码为 1。
+      seat.revalidation = 'verified';
+      seat.revalidation_reason = 'final_review_revalidated_stable';
     } catch (error) {
       seat.status = 'review_unknown';
       seat.review_verified = false;
       seat.accepted = false;
+      seat.revalidation = undefined;
+      seat.revalidation_reason = undefined;
       seat.sync_reason = error?.message || 'review_readback_unverified';
     }
     saveLedger(root, record);
