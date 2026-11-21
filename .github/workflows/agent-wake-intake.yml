@@ -1,0 +1,65 @@
+name: Agent wake intake (自唤醒准入)
+
+# 席位自唤醒入口：带 `wake:request` 标签的卡里写 `[wake] topic=... why=... seats=... budget_usd=...`
+# 本工作流只做「解析 → 准入判定 → 台账 → 回写评论」。
+# 零模型调用、零邮件、零资金动作；真实唤醒的执行属于后续阶段，不在本工作流内。
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: '只处理指定卡号（留空则扫全部 wake:request 卡）'
+        required: false
+        type: string
+  schedule:
+    - cron: '40 3 * * *'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: agent-wake-intake
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    # 标签事件只处理带 wake:request 的卡，避免每次改卡都跑
+    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'wake:request')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: true}
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Verify contracts
+        run: |
+          node --check scripts/lib/wake-intake.mjs
+          node --check scripts/agent-wake-intake.mjs
+          node --test scripts/tests/agent-wake.test.mjs scripts/tests/wake-intake.test.mjs
+
+      - name: Run intake
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WAKE_ISSUE: ${{ github.event_name == 'issues' && github.event.issue.number || github.event.inputs.issue }}
+        run: |
+          if [ -n "$WAKE_ISSUE" ]; then
+            node scripts/agent-wake-intake.mjs --issue "$WAKE_ISSUE" --apply
+          else
+            node scripts/agent-wake-intake.mjs --label wake:request --apply
+          fi
+
+      - name: Persist ledger
+        if: always()
+        run: |
+          git config user.name "ltzzz-agent-wake"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/agent-wake 2>/dev/null || true
+          if git diff --staged --quiet; then echo "no ledger changes"; exit 0; fi
+          git commit -m "chore(agent-wake): intake $(date -u +%F)"
+          node tools/push-receipt-commit.mjs
