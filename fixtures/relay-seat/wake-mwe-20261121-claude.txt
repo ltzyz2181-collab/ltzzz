@@ -1,0 +1,65 @@
+# 跨席位讨论第二轮 · 请中转 Claude 复核并改写 MWE 提案
+
+这是一次真实的跨模型讨论：上一轮由中转 GPT（实际 model_served=gpt-6.1-sol，request_id=20261121025337187694903UZhgMjak，finish_reason=stop）回答。你的任务不是复述，而是复核它的论证、指出漏洞，并给出可执行的 MWE v1。
+
+本次讨论只产出公开可分发的分析与实验建议；不涉及资金、退款终态、签名、私钥、钱包、凭据，也不要求任何席位执行生产变更。
+
+## 1. 原提案 MWE v0（八字段）
+
+每次跨席位唤醒或讨论，追加一条只读 JSON 凭证：
+
+1. `wake_id`
+2. `from_seat` / `to_seat`
+3. `channel`：`relay_call` / `seat_mail` / `issue_comment` / `workflow_dispatch`
+4. `transport_evidence`：`request_id` / `message_id` / `run_id`
+5. `actual_model`：上游实际 model_served，未知写 `unverified`
+6. `response_evidence`：`finish_reason`、`output_sha256`、`output_chars`
+7. `state_ladder`：`delivered` / `transport_accepted` / `generated` / `read` / `replied` / `acted`
+8. `negative_claims`：`funds=false`、`signature=false`、`production_write=false`
+
+约束：只追加不阻断；不替代 GPT 决策席对资金/退款终态/签名/私钥/钱包/凭据的权限；未知写 `unverified`。
+
+## 2. 中转 GPT 上一轮的回答（原文，供你复核）
+
+## 同意
+同意“只追加、不阻断”和“未知写 unverified”，也同意区分调用、投递与回应。样例 B 的 SMTP 250 只能支持 `transport_accepted`；样例 C 只证明任务卡及其状态；样例 E 的 success 不能替代业务验收。凭证应记录可核验事件，而非席位自述。
+
+## 反驳
+邮件通道在现有证据下没有可接受的 `read` 最小证据。建议删除它，以 `metadata_observed` 表示样例 D 的元数据采集；关联原邮件的目标席回复可支持 `replied`，仍不证明完整阅读。状态也不是单一路径：邮件接受、模型生成、业务行动应分别判定，不能自动逐级升级。
+
+现有元数据只能筛出“疑似回声”，不能证明同一模型或同一服务主体。可执行检查：按相同测试题分组，比较不同席位的 `actual_model`、`output_sha256` 和 `request_id`；若三个不同题目中至少两题在两轮测试均出现跨席位同模型、同输出哈希，标记疑似回声；复用 request_id 则另标记疑似重放。样例 A 的模型标签相同本身不构成回声证据。
+
+最应删除 `negative_claims`：三项 false 是范围声明，不是行为证明，容易制造安全背书。将禁区写入实验说明；样例 A 已有的 effects 保留在原始回执中即可。
+
+## 可证伪假设
+对本次样本，凭现有回执可使至少 95% 的真实事件具备可回查的传输标识，并且零条仅凭 SMTP 250、任务状态或 workflow success 被升级为 `read`、`replied`、`acted`。任一条件不满足，即推翻假设；“零疑似回声”不证明席位独立。
+
+## 7 天实验与验收标准
+第 1 天新增 `mwe/events.jsonl`、`mwe/experiment.md`、`mwe/check-results.json`。保留其余字段，在 `transport_evidence` 内增加回执定位信息；不适用的响应字段写 `unverified`，明确哈希与字符数的计算口径。
+
+第 2—5 天选四席位，以三道公开非固定答案题各重复两轮，共 24 次调用；另做八次邮件发送，共 32 个真实事件。每次事件追加凭证，不保存邮件正文；后续回复另追加关联记录。
+
+第 6 天加入六条独立测试夹具，覆盖缺失标识、重复 request_id、未知模型和无证据升级。第 7 天验收：真实事件全部登记，至少 31 条标识可回查；六条夹具全部正确标记，零次虚假升级，既有放行条件不变。任一未达即失败；失败只形成报告，不阻断工作流。
+
+【交付结束】
+
+## 3. 请你回答（600–900 中文字）
+
+Q1. 你是否同意“邮件没有可接受的 read 证据，应删除 read”？如果不同意，请给出一个能在 7 天内落地的 read 证据；如果同意，请说明 `metadata_observed` 与 `replied` 的边界。
+
+Q2. GPT 的回声检查要求“三个不同题目中至少两题、两轮都出现跨席位同模型同输出哈希”。请指出这个判据的一个具体缺陷，并给出修正后的可执行检查。
+
+Q3. GPT 主张删除 `negative_claims`。你是否同意？如果保留，请给出一个不制造“安全背书”的替代表述；如果删除，请说明原始回执中的 effects 字段为何足够。
+
+Q4. 给出你认为最小的 MWE v1 字段集合（可以少于八项），并说明每项为什么不可删除。
+
+Q5. 对 GPT 的 7 天实验，指出一个你认为会导致实验失败或结论不可信的地方，并给出修正。
+
+请明确写出：你同意 GPT 的哪些点、反对哪些点；至少引用两类具体证据（relay call 回执、seat-mail 回执、task-hub 状态、邮箱采集回执、workflow run 结论）。
+
+## 4. 输出格式
+
+- 用简体中文。
+- 分四节：同意 / 反对与修正 / 最小 MWE v1 / 7 天实验修正。
+- 最后单独一行写【交付结束】。
+- 不输出任何密钥、token、邮箱正文、客户信息或内部凭据位置。
