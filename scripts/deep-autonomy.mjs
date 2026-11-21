@@ -372,15 +372,24 @@ async function waitForCi({
 // 合并提交由 GITHUB_TOKEN 产生时，GitHub 会抑制 push 触发的下游工作流；
 // 用 PAT（LTZZZ_AGENT_TOKEN）合并才会像人工合并一样触发 main 上的 CI/部署。
 // 合并后回读该 SHA 上的 run，作为“是否真的触发”的公开证据，不靠假设。
-export async function readPostMergeRuns({fetcher, token, repository, sha, attempts = 4, intervalMs = 2000, sleep = defaultSleep}) {
-  // 2026-11-21 #572：PAT 合并后下游 push 工作流已真实触发，但合并瞬间读取
-  // /actions/runs 仍返回 0，回执因此误记 post_merge_runs_triggered=false。
-  // 这里做有界轮询：一旦看到 run 就返回，最多 attempts 次，避免无端等待。
+export async function readPostMergeRuns({fetcher, token, repository, sha, attempts = 12, intervalMs = 3000, fallbackPerPage = 100, sleep = defaultSleep}) {
+  // 2026-11-21 #572/#575 两次实测：PAT 合并后下游 push 工作流确实触发，但
+  // /actions/runs?head_sha= 的过滤索引在最初几秒内可能尚未建立，回执曾两次误记
+  // count=0（#575：merge 08:42:07，push run created_at 08:42:10，4 次轮询仍读 0）。
+  // 因此改为两段式有界轮询：先按 head_sha 精确查询；查不到时回退到最近运行列表
+  // 并在本地按 head_sha 过滤，避免把索引延迟当成“没有触发”。看到 run 立即返回。
   let runs = [];
   let tried = 0;
+  let usedFallback = false;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const data = await githubApi(fetcher, token, repository, `/actions/runs?head_sha=${encodeURIComponent(sha)}&per_page=20`);
     runs = Array.isArray(data?.workflow_runs) ? data.workflow_runs : [];
+    if (!runs.length) {
+      const recent = await githubApi(fetcher, token, repository, `/actions/runs?per_page=${fallbackPerPage}`);
+      const all = Array.isArray(recent?.workflow_runs) ? recent.workflow_runs : [];
+      runs = all.filter((run) => run.head_sha === sha);
+      if (runs.length) usedFallback = true;
+    }
     tried = attempt + 1;
     if (runs.length || attempt === attempts - 1) break;
     await sleep(intervalMs);
@@ -388,6 +397,7 @@ export async function readPostMergeRuns({fetcher, token, repository, sha, attemp
   return {
     count: runs.length,
     attempts: tried,
+    used_fallback_list: usedFallback,
     runs: runs.slice(0, 20).map((run) => ({
       id: run.id,
       name: run.name,

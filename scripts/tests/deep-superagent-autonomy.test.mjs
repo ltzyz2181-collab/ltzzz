@@ -28,25 +28,56 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'deep-autonomy-'));
 test('readPostMergeRuns：合并瞬间没有 run 时有界轮询，出现即返回', async () => {
   let calls = 0;
   const sleeps = [];
-  const fetcher = async () => {
+  const fetcher = async (url) => {
     calls += 1;
-    const workflow_runs = calls < 3 ? [] : [{id: 1, name: 'Deploy static site to GitHub Pages', event: 'push', status: 'completed', conclusion: 'success'}];
+    const isFallback = !String(url).includes('head_sha=');
+    const workflow_runs = isFallback || calls < 2 ? [] : [{id: 1, name: 'Deploy static site to GitHub Pages', event: 'push', status: 'completed', conclusion: 'success', head_sha: 'abc'}];
     return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs})};
   };
   const result = await readPostMergeRuns({fetcher, token: 't', repository: 'o/r', sha: 'abc', attempts: 4, intervalMs: 7, sleep: async (ms) => { sleeps.push(ms); }});
   assert.equal(result.count, 1);
-  assert.equal(result.attempts, 3);
-  assert.deepEqual(sleeps, [7, 7]);
+  assert.equal(result.attempts, 2);
+  assert.deepEqual(sleeps, [7]);
   assert.equal(result.runs[0].event, 'push');
+  assert.equal(result.used_fallback_list, false);
+});
+
+test('readPostMergeRuns：head_sha 过滤未索引时回退最近列表并按 sha 本地过滤', async () => {
+  const fetcher = async (url) => {
+    const isFallback = !String(url).includes('head_sha=');
+    const workflow_runs = isFallback
+      ? [{id: 9, name: 'Deploy static site to GitHub Pages', event: 'push', status: 'queued', conclusion: null, head_sha: 'abc'},
+         {id: 10, name: 'Small payment policy offline validation (no payment)', event: 'push', status: 'queued', conclusion: null, head_sha: 'other'}]
+      : [];
+    return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs})};
+  };
+  const result = await readPostMergeRuns({fetcher, token: 't', repository: 'o/r', sha: 'abc', attempts: 3, intervalMs: 1, sleep: async () => {}});
+  assert.equal(result.count, 1);
+  assert.equal(result.attempts, 1);
+  assert.equal(result.used_fallback_list, true);
+  assert.equal(result.runs[0].id, 9);
+});
+
+test('readPostMergeRuns：回退列表里 sha 不匹配时不误记', async () => {
+  const fetcher = async (url) => {
+    const isFallback = !String(url).includes('head_sha=');
+    const workflow_runs = isFallback ? [{id: 10, name: 'X', event: 'push', status: 'queued', conclusion: null, head_sha: 'other'}] : [];
+    return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs})};
+  };
+  const result = await readPostMergeRuns({fetcher, token: 't', repository: 'o/r', sha: 'abc', attempts: 2, intervalMs: 1, sleep: async () => {}});
+  assert.equal(result.count, 0);
+  assert.equal(result.attempts, 2);
+  assert.equal(result.used_fallback_list, false);
 });
 
 test('readPostMergeRuns：始终没有 run 时按上限结束并如实返回 0', async () => {
   let calls = 0;
   const result = await readPostMergeRuns({fetcher: async () => { calls += 1; return {status: 200, ok: true, text: async () => JSON.stringify({workflow_runs: []})}; }, token: 't', repository: 'o/r', sha: 'abc', attempts: 3, intervalMs: 1, sleep: async () => {}});
-  assert.equal(calls, 3);
+  assert.equal(calls, 6);
   assert.equal(result.count, 0);
   assert.equal(result.attempts, 3);
   assert.deepEqual(result.runs, []);
+  assert.equal(result.used_fallback_list, false);
 });
 
 test('normalizeAutonomy：缺省返回 null，非法字段一律拒绝', () => {
