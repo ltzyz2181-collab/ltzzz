@@ -29,6 +29,19 @@
 
 - 它不是新的裁决席：一旦出现真实资金、签名、生产部署、权限、Secrets，仍必须先命中 `needs_gpt_decision`。
 - 它不能替代验收：执行后仍按原卡要求交 PR、测试与回执，不得写成已完成。
+### Issue 派单桥（2026-11-21 起）
+
+Issue 驱动的任务此前没有卡，队列 attempts 恒为 0。现在只有一种入口：
+
+1. Issue 打上 `deep:task` 标签（或手动 `workflow_dispatch` 指定编号）；
+2. `scripts/dispatch-issue-card.mjs` 生成 `DEEP-SUPERAGENT-<日期>-ISSUE-<编号>.json`；
+3. 工作流按每日卡同一条受信路径提交到 main，并显式派发队列；
+4. 结果（含被拦原因）回写到该 Issue 评论。
+
+四条硬闸，任一不过就不落卡：本仓 Issue、必须 open、必须带标签、正文不得含疑似凭据；
+命中六个保留家族的 Issue 直接 `blocked_fiduciary`，不自动执行。
+卡目录仍然 append-only：同名卡不覆盖，重试必须用 `-R1..R9` 新文件。
+
 ### 第三段：下一步马上做（next_immediate）
 
 本席或 Deep 在**下一个工作日窗口内**就能自行推进、不需要等裁决的动作。每条要可执行、有明确完成判据。

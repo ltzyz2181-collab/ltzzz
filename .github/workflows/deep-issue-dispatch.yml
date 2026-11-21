@@ -1,0 +1,187 @@
+name: Deep issue dispatch bridge
+# Task #471：Issue → Deep 队列卡。
+# 实测：队列只消费「main 上一次提交只新增一张卡」的提交，而每日调度只生成 DAILY 卡，
+# Issue 驱动的任务从来没有生成过卡，所以 attempts 恒为 0 —— 这是链路缺失，不是配置问题。
+# 本工作流只处理显式打上 deep:task 标签的公开 Issue：
+#   1) 生成受控卡（席位策略 / 单角色契约 / 凭据扫描 / 六个保留家族，任一不过即不落卡）；
+#   2) 用与每日卡相同的受信路径提交到 main；
+#   3) 显式 dispatch 队列（GITHUB_TOKEN 推送不会触发下游 push 工作流）；
+#   4) 把结果回写到 Issue，被拦时写明原因，不留沉默失败。
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Issue 编号'
+        required: true
+      retry:
+        description: '重试序号 0-9；首次填 0'
+        required: false
+        default: '0'
+  pull_request:
+    paths:
+      - 'scripts/dispatch-issue-card.mjs'
+      - 'scripts/tests/dispatch-issue-card.test.mjs'
+      - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/deep-autonomy.mjs'
+      - 'scripts/dispatch-seat-policy.mjs'
+      - 'scripts/check-card-contract.mjs'
+      - 'config/dispatch-seat-policy-20261117.json'
+      - '.github/workflows/deep-issue-dispatch.yml'
+permissions: {contents: read}
+concurrency:
+  group: deep-issue-dispatch-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax check
+        run: |
+          node --check scripts/dispatch-issue-card.mjs
+          node --check scripts/run-deep-superagent-queue.mjs
+      - name: Bridge, queue and policy tests
+        run: >-
+          node --test
+          scripts/tests/dispatch-issue-card.test.mjs
+          scripts/tests/deep-superagent-queue.test.mjs
+          scripts/tests/dispatch-seat-policy.test.mjs
+          scripts/tests/dispatch-daily-card.test.mjs
+      - name: Policy check (fail-closed)
+        run: node scripts/dispatch-seat-policy.mjs check
+
+  bridge:
+    if: >-
+      github.repository == 'ltzyz2181-collab/ltzzz' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'deep:task')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions: {contents: write, actions: write, issues: write}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: 'main', fetch-depth: 0, persist-credentials: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Build the issue card (fail-closed)
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue }}
+          ISSUE_RETRY: ${{ inputs.retry }}
+        run: |
+          mkdir -p .tmp
+          node scripts/dispatch-issue-card.mjs \
+            --issue "${ISSUE_NUMBER}" \
+            --retry "${ISSUE_RETRY:-0}" \
+            --out .tmp/issue-card.json
+
+      - name: Read the bridge result
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const file = '.tmp/issue-card.json';
+          if (!fs.existsSync(file)) throw Error('issue_card_result_missing');
+          const result = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const lines = [
+            `CARD_STATUS=${result.status || 'unknown'}`,
+            `CARD_PATH=${result.path || ''}`,
+            `CARD_TASK_ID=${result.task_id || ''}`,
+            `CARD_DETAIL=${JSON.stringify(result.detail || null)}`,
+          ];
+          fs.appendFileSync(process.env.GITHUB_ENV, lines.join('\n') + '\n');
+          console.log(JSON.stringify(result));
+          JS
+
+      - name: Commit the card (single new card per commit)
+        if: env.CARD_STATUS == 'created'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const card = process.env.CARD_PATH;
+          if (!card || !fs.existsSync(card)) throw Error('issue_card_missing:' + card);
+          execFileSync('git', ['config', 'user.name', 'ltzzz-bot']);
+          execFileSync('git', ['config', 'user.email', 'bot@ltzzz.com']);
+          execFileSync('git', ['add', '--', card]);
+          try { execFileSync('git', ['diff', '--staged', '--quiet']); process.exit(0); } catch {}
+          execFileSync('git', ['commit', '-m', 'Deep issue card ' + process.env.CARD_TASK_ID], {stdio: 'inherit'});
+          JS
+          node tools/push-receipt-commit.mjs
+          echo "CARD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Dispatch the queue for this card commit
+        if: env.CARD_STATUS == 'created'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const base = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/deep-superagent-queue.yml`;
+          const headers = {Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json'};
+          const since = Date.now() - 5000;
+          const response = await fetch(`${base}/dispatches`, {
+            method: 'POST',
+            headers: {...headers, 'Content-Type': 'application/json'},
+            body: JSON.stringify({ref: 'main', inputs: {card_commit: process.env.CARD_SHA}}),
+          });
+          if (response.status !== 204) throw Error('queue_dispatch_failed:' + response.status + ':' + (await response.text()).slice(0, 200));
+          for (let i = 0; i < 18; i += 1) {
+            const data = await (await fetch(`${base}/runs?event=workflow_dispatch&per_page=5`, {headers})).json();
+            const run = (data.workflow_runs || []).find((item) => Date.parse(item.created_at) >= since);
+            if (run) {
+              fs.appendFileSync(process.env.GITHUB_ENV, `QUEUE_RUN_URL=${run.html_url}\nQUEUE_RUN_ID=${run.id}\n`);
+              console.log(JSON.stringify({dispatched: true, run_id: run.id, status: run.status, url: run.html_url}));
+              process.exit(0);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+          }
+          throw Error('queue_dispatch_run_not_observed');
+          JS
+
+      - name: Report the outcome back to the issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue }}
+        run: |
+          node --input-type=module <<'JS'
+          const issue = process.env.ISSUE_NUMBER;
+          const status = process.env.CARD_STATUS || 'unknown';
+          if (!issue) { console.log('no issue to report to'); process.exit(0); }
+          const body = [
+            '### Deep 派单桥回执',
+            '',
+            `- 状态：\`${status}\``,
+            `- 卡：\`${process.env.CARD_PATH || 'none'}\``,
+            `- Task ID：\`${process.env.CARD_TASK_ID || 'none'}\``,
+            `- 队列运行：${process.env.QUEUE_RUN_URL || '未派发'}`,
+            process.env.CARD_DETAIL && process.env.CARD_DETAIL !== 'null' ? `- 拦截详情：\`${process.env.CARD_DETAIL}\`` : '',
+            '',
+            status === 'blocked_fiduciary'
+              ? '这条 Issue 命中六个保留家族，桥不会自动执行；需要 GPT 裁决席给出口径后再重开。'
+              : status === 'blocked_secret_in_issue'
+                ? 'Issue 正文疑似包含凭据，已拒绝落卡（卡会进入公开仓库）。请删除凭据后重新打标签或手动派发。'
+                : status === 'already_exists_different'
+                  ? '同名卡已存在且内容不同。卡目录 append-only，不覆盖；需要重试请用重试序号 1-9。'
+                  : '细节见本次 Actions 运行日志。',
+          ].filter(Boolean).join('\n');
+          const response = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/issues/${issue}/comments`, {
+            method: 'POST',
+            headers: {Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json'},
+            body: JSON.stringify({body}),
+          });
+          if (!response.ok) throw Error('issue_comment_failed:' + response.status);
+          console.log('comment posted');
+          JS
