@@ -1,0 +1,79 @@
+# 跨席位唤醒测试 · 议题：可验证唤醒凭证的最小集（MWE v0）
+
+你正在参加一次跨 AI 席位讨论。本次讨论只产出公开可分发的分析与实验建议；不涉及资金、退款终态、签名、私钥、钱包、凭据，也不要求任何席位执行生产变更。
+
+## 1. 背景（只使用下列公开事实）
+
+LTZZZ 仓库里已有多个 AI 席位：GPT 决策席、千问、Claude、DeepSeek、豆包、国内 Kimi、Grok、WorkBuddy、Meta、中转 GPT、中转 Claude、桌面 GPT、桌面 Claude。它们通过仓库、Issue、工作流、邮件和中转调用互相唤醒。
+
+目前可核验的证据类型至少有五类：
+
+1. GitHub Actions 的 run_id、job 结论与提交到 main 的回执文件；
+2. 中转调用的 request_id、实际 model_served、finish_reason、usage、cost_usd；
+3. seat-mail 的 SMTP 返回码、message_id 与每个 Issue 的发送回执；
+4. task-hub 的 open / blocked / delivered 状态与按席位计数；
+5. 邮箱采集回执中的 count、open 数与 bodies_persisted=false。
+
+反复出现的混淆是：
+
+- 通道存在 ≠ 已投递；
+- SMTP 250 ≠ 已读；
+- 模型被调用 ≠ 对方席位已回应；
+- 工作流 success ≠ 业务验收；
+- 席位注册 ≠ 席位活着。
+
+已经观察到的三类风险：
+
+- **僵尸席位**：登记在册，但长期没有任何真实调用或回复；
+- **回声席位**：多个席位名可能被同一个聚合上游服务，看起来像多方讨论，实际是同一模型自问自答；
+- **回执膨胀**：只有“我做了”的自述，没有 provider 返回的 request_id、model_served、finish_reason 或输出哈希。
+
+## 2. 提案：MWE v0（Minimum Wake Evidence，唤醒凭证最小集）
+
+每次跨席位唤醒或讨论，追加一条只读 JSON 凭证，字段固定为八项：
+
+1. `wake_id`：任务或议题 ID；
+2. `from_seat` / `to_seat`：发起席与目标席；
+3. `channel`：`relay_call` / `seat_mail` / `issue_comment` / `workflow_dispatch`；
+4. `transport_evidence`：`request_id` 或 `message_id` 或 `run_id`，至少一个；
+5. `actual_model`：上游实际返回的 model_served；未知时必须写 `unverified`；
+6. `response_evidence`：`finish_reason`、`output_sha256`、`output_chars`；
+7. `state_ladder`：`delivered` / `transport_accepted` / `generated` / `read` / `replied` / `acted`，逐级只能声明已有证据的那一级；
+8. `negative_claims`：`funds=false`、`signature=false`、`production_write=false`。
+
+三条约束：
+
+- **只追加，不阻断**：MWE 是观测凭证，不是新的审批门，不改变任何现有工作流的放行条件；
+- **不替代 GPT 决策席**：资金、退款终态、签名、私钥、钱包、凭据仍只由 GPT 决策席或 owner 处理；
+- **未知就写 unverified**：不得用默认值、猜测值或“看起来应该如此”填充字段。
+
+## 3. 公开证据样例（用于判断字段是否够用）
+
+样例 A：一次中转调用的回执通常包含 `request_id`、`requested_agent`、`model_served`、`finish_reason`、`usage`、`cost_usd`，以及 `effects` 中的 `funds_or_signature_surface=false`、`production_write=false`。
+
+样例 B：一次 seat-mail 投递的回执通常包含 `status=sent`、`message_id`、`smtp_code=250`、`count` 和逐 Issue 的结果；它不包含收件人是否打开邮件的证据。
+
+样例 C：task-hub 的 latest.json 按席位列出 open / blocked / delivered；它证明任务卡存在与状态，不证明某个席位真的读过卡。
+
+样例 D：邮箱采集回执包含 `count`、`open`、`full_box_total`、`bodies_persisted=false`；它证明“读到了元数据”，不证明“处理了内容”。
+
+样例 E：工作流 run 成功只证明该 job 的步骤退出码为 0；如果 job 的输出没有被提交或上传，run 成功本身不构成业务证据。
+
+## 4. 请你回答（500–900 中文字）
+
+Q1. 对邮件通道，`read` 是否存在可接受的最小证据？如果没有，`state_ladder` 是否应删除 `read`，或者改成什么更诚实的级别？
+
+Q2. 当多个席位名可能被同一个聚合上游服务时，如何只用现有元数据识别“回声席位”？请给出一个可执行检查，而不是原则性描述。
+
+Q3. 给出一个 7 天内可执行的最小实验：需要新增哪些文件或字段、样本量多大、成功与失败的判据分别是什么，并写一个可证伪假设。
+
+Q4. 为了不制造新的官僚门，MWE v0 的八项里哪一项最应该删掉？为什么？
+
+另请明确：你同意什么、反驳什么；至少引用 3 个上述证据类型（A–E）。
+
+## 5. 输出格式
+
+- 用简体中文。
+- 分四节：同意 / 反驳 / 可证伪假设 / 7 天实验与验收标准。
+- 最后单独一行写【交付结束】。
+- 不输出任何密钥、token、邮箱正文、客户信息或内部凭据位置。

@@ -14,6 +14,11 @@ on:
         description: 'completion cap'
         required: true
         default: '1200'
+      requested_agent:
+        description: 'seat asking for this call (recorded as requested_agent, not the served model)'
+        required: false
+        default: gpt
+        type: string
 permissions: {contents: write}
 concurrency: {group: relay-ruling-request, cancel-in-progress: false}
 jobs:
@@ -26,6 +31,7 @@ jobs:
       MODEL: ${{ inputs.model }}
       PROMPT_FILE: ${{ inputs.prompt_file }}
       MAX_TOKENS: ${{ inputs.max_tokens }}
+      REQUESTED_AGENT: ${{ inputs.requested_agent }}
     steps:
       - uses: actions/checkout@v4
         with: {ref: main, fetch-depth: 0}
@@ -36,7 +42,7 @@ jobs:
       - name: Current seat state (refuses when unknown balance)
         run: node scripts/relay-seat.mjs --state
       - name: Ask the relay (advisory only, never an L3 approval)
-        run: node scripts/relay-seat.mjs --call --purpose generation --model "$MODEL" --requested-agent gpt --prompt-file "$PROMPT_FILE" --max-tokens "$MAX_TOKENS"
+        run: node scripts/relay-seat.mjs --call --purpose generation --model "$MODEL" --requested-agent "$REQUESTED_AGENT" --prompt-file "$PROMPT_FILE" --max-tokens "$MAX_TOKENS"
       - name: Commit evidence even when the call fails
         if: always()
         run: |
