@@ -22,13 +22,14 @@ class Storage {
   async getAlarm(){return this.alarmTime;}
   transaction(fn){const result=this.tail.then(()=>fn(this));this.tail=result.catch(()=>{});return result;}
 }
-function fixture({badSeat=null,transportFailure=null,planOverride=null,planText=null,reviewOverride=null,reviewText=null,workerOutput={},workerHttpFailure=null,prompt=INPUT.prompt}={}){
+function fixture({badSeat=null,transportFailure=null,planOverride=null,planText=null,reviewOverride=null,reviewText=null,workerOutput={},workerHttpFailure=null,transient429Seat=null,prompt=INPUT.prompt}={}){
   const objects=new Map(),calls=[];
   const env={LTZZZ_AGENT_TOKEN:TOKEN,SUPERAGENT_SOURCE_COMMIT:'a'.repeat(40)};
   for(const [binding,seat] of Object.entries({DEEPSEEK:'deepseek',DOUBAO:'doubao',QIANWEN:'qianwen',KIMI:'kimi',GROK:'grok'}))env[binding]={async fetch(request){
     assert.equal(request.headers.get('Authorization'),'Bearer '+TOKEN);
     const body=await request.json();calls.push({seat,body});
     if(seat===transportFailure)throw Error('secret-like transport text must not be persisted');
+    if(seat===transient429Seat&&calls.filter(v=>v.seat===seat).length===1)return Response.json({error:'rate_limited'},{status:429});
     if(workerHttpFailure?.seat===seat)return Response.json({error:'upstream_timeout'},{status:workerHttpFailure.status});
     let output;
     if(seat==='deepseek'&&calls.filter(v=>v.seat==='deepseek').length===1)output=planText??JSON.stringify(planOverride??{summary:'Three verifiable tasks',tasks:['doubao','qianwen','kimi'].map(s=>({seat:s,task:'Provide '+s+' checklist contribution'})),needs_gpt_decision:false});
@@ -102,6 +103,16 @@ test('incomplete xAI output remains failed and is never relabelled as another na
  const f=fixture({badSeat:'grok',planOverride:{summary:'One xAI task',tasks:[{seat:'grok',task:'Check source'}],needs_gpt_decision:false}});
  await f.request();await [...f.objects.values()][0].alarm();const j=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
  assert.equal(j.status,'blocked');assert.equal(j.receipts.find(v=>v.seat==='grok').actual_provider,'xai');assert.equal(j.receipts.find(v=>v.seat==='grok').generation_verified,false);assert.equal(j.model_calls,2);await f.request();assert.equal(f.calls.length,2);
+});
+test('一次 429 在有界重试后恢复，不再把整单推成 partial_seat_coverage',async()=>{
+  const f=fixture({transient429Seat:'kimi'});await f.request();const task=[...f.objects.values()][0];await task.alarm();
+  const job=await (await f.request('/v1/jobs/'+INPUT.task_id,'GET')).json();
+  assert.equal(job.status,'completed_pending_external_acceptance');
+  assert.equal(job.model_calls,6);
+  assert.equal(job.unjudged,undefined);
+  assert.equal(f.calls.filter(v=>v.seat==='kimi').length,2);
+  const r=job.receipts.find(v=>v.seat==='kimi');
+  assert.equal(r.upstream_attempts,2);assert.equal(r.first_upstream_http,429);assert.equal(r.upstream_http,200);assert.equal(r.generation_verified,true);
 });
 test('concurrent enqueue claims exactly once; changed input under same original ID conflicts',async()=>{
   const f=fixture();const responses=await Promise.all([f.request(),f.request()]);const a=await responses[0].json(),b=await responses[1].json();
