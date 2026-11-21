@@ -161,7 +161,10 @@ export async function normalizationRecord(rawBody,card){
 }
 
 export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
- const maxCalls=task_id==='DEEP-DAILY-SUPERVISION'?3:5;
+ // 普通任务上界含一次“429 在生成前拒绝”的工作席重试（worker 侧 seat_retries ≤ 1）；
+ // 2026-11-21 run 44881038471 因重试把 model_calls 推到 6 被旧上界 5 判为无效。
+ // 日课仍保持三条回执硬上限，worker 侧对日课不重试。
+ const maxCalls=task_id==='DEEP-DAILY-SUPERVISION'?3:6;
  if(!job||job.task_id!==task_id||job.package_id!==package_id||!SHA.test(job.input_sha256||'')||(input_sha256&&job.input_sha256!==input_sha256)||typeof job.execution_id!=='string'||!job.execution_id||(execution_id&&job.execution_id!==execution_id)||!COMMIT.test(job.source_commit||'')||job.revision!==REVISION||!STATUSES.has(job.status)||typeof job.terminal!=='boolean'||!Number.isSafeInteger(job.model_calls)||job.model_calls<0||job.model_calls>maxCalls||!Array.isArray(job.receipts)||job.receipts.length>maxCalls||job.financial_execution!==false||job.external_submissions_enabled!==false||job.paid!==false||job.tx_hash!==null)throw Error('remote_job_binding_or_isolation_invalid');
  return job;
 }
@@ -169,7 +172,7 @@ export function validateJob(job,{task_id,package_id,input_sha256,execution_id}){
 // A public-own-input queue receipt includes actual outputs for the GPT decision
 // seat to inspect with GitHub tools. It excludes auth headers and unknown fields.
 export function publicJob(job){
- const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error','plan_source','plan_issues']);
+ const result=pick(job,['task_id','package_id','input_sha256','execution_id','source_commit','revision','content_guard_revision','created_at','started_at','completed_at','status','terminal','model_calls','model_calls_definition','seat_retries','accepted','platform_accepted','deployed','paid','tx_hash','financial_execution','external_submissions_enabled','weights_trained','error','plan_source','plan_issues']);
  result.unjudged=(job.unjudged||[]).map(v=>pick(v,['seat','error']));
  if(job.coordinator_parse)result.coordinator_parse=pick(job.coordinator_parse,['error','raw_preview','tokens_used','request_id']);
  result.receipts=(job.receipts||[]).map(r=>pick(r,['stage','seat','actual_provider','actual_model','task_id','execution_id','source_commit','started_at','completed_at','status','generation_verified','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','truncated','output_present','tokens_used','reasoning_tokens','completion_tokens','upstream_http','output_sha256','error','accepted','paid','tx_hash']));

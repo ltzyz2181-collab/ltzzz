@@ -505,9 +505,12 @@ export class DeepTask {
       // 429 是上游在生成前就拒绝的请求：没有已产出内容可丢，也不会把同一请求重放成两份产出。
       // 2026-11-21 实测 Kimi 一次 429 就把整单推成 partial_seat_coverage，故允许一次有界重试并
       // 把两次尝试都写进回执；超时/5xx 仍可能是“已生成但未回传”，保持 no_retry。
-      if(response.status===429){
+      // 重试只给普通任务的工作席，且整单最多一次：队列侧普通任务上界 6 与之对应；
+      // 日课三条回执是硬上限，故日课不重试。
+      const retryable=job.task_id!=='DEEP-DAILY-SUPERVISION'&&stage.startsWith('work_')&&(job.seat_retries||0)<1;
+      if(response.status===429&&retryable){
         receipt.upstream_attempts=2;receipt.retry_reason='upstream_http_error_429';receipt.first_upstream_http=429;
-        job.model_calls++;await this.state.storage.put('job',job);
+        job.seat_retries=(job.seat_retries||0)+1;job.model_calls++;await this.state.storage.put('job',job);
         await new Promise((resolve)=>setTimeout(resolve,1500));
         response=await post();
       }else receipt.upstream_attempts=1;
