@@ -1,16 +1,8 @@
 {
  "schema": "ltzzz.deep-superagent.daily-merge.v1",
- "date": "2026-11-20",
- "generated_at_utc": "2026-11-20T22:50:46.098Z",
+ "date": "2026-11-21",
+ "generated_at_utc": "2026-11-21T07:19:36.960Z",
  "done": [
-  {
-   "task_id": "DEEP-SUPERAGENT-20261121-DAILY-1",
-   "run_id": "44832018944",
-   "status": "completed_pending_external_acceptance",
-   "model_calls": 5,
-   "note": "内部执行回执；外部业务验收仍需原单证据",
-   "source": "knowledge/results/deep-superagent/queue-44832018944-attempt-1.json"
-  },
   {
    "task_id": "DEEP-DAILY-SUPERVISION",
    "run_id": "44832034564",
@@ -22,20 +14,36 @@
  ],
  "needs_gpt_decision": [
   {
-   "task_id": "DEEP-SOURCE-INTEL-M1M4-20261120-01",
-   "package_id": "LTZZZ-SOURCE-INTELLIGENCE-MVP-M1-M4-20261119-01",
-   "run_id": "44666852775",
+   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-475-R1",
+   "package_id": "LTZZZ-DEEP-ISSUE-475-20261121-R1",
+   "run_id": "44876251422",
    "reason": null,
-   "review_reason": "Multiple correctness issues: incomplete timestamp validation, flawed private source detection, missing append-only correction logic, and no test coverage for required acceptance criteria.",
+   "review_reason": "Unsupported runtime metadata declaration and code-owned correctness findings cannot be cleared by reviewer opinion.",
    "asks": [
     {
-     "ref": "DEEP-SOURCE-INTEL-M1M4-20261120-01",
+     "ref": "DEEP-SUPERAGENT-20261121-ISSUE-475-R1",
      "target": "gpt",
      "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
     }
    ],
    "related_asks": [],
-   "source": "knowledge/results/deep-superagent/queue-44666852775-attempt-1.json"
+   "source": "knowledge/results/deep-superagent/queue-44876251422-attempt-1.json"
+  },
+  {
+   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-560",
+   "package_id": "LTZZZ-DEEP-ISSUE-560-20261121",
+   "run_id": "44878476984",
+   "reason": null,
+   "review_reason": null,
+   "asks": [
+    {
+     "ref": "DEEP-SUPERAGENT-20261121-ISSUE-560",
+     "target": "gpt",
+     "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
+    }
+   ],
+   "related_asks": [],
+   "source": "knowledge/results/deep-superagent/queue-44878476984-attempt-1.json"
   }
  ],
  "needs_owner_decision": [],
@@ -50,18 +58,23 @@
  ],
  "dispatch": {
   "cards_today": [
-   "DEEP-SUPERAGENT-20261120-DAILY-1.json",
-   "DEEP-SUPERAGENT-20261120-DAILY-2.json"
+   "DEEP-SUPERAGENT-20261121-DAILY-1.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-472.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-474-R1.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-474.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-475-R1.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-475.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-560.json"
   ],
-  "card_count": 2,
+  "card_count": 7,
   "importance": "medium",
   "note": "政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权"
  },
  "mail": {
-  "status": "ok",
-  "at": "2026-11-20T22:47:06.123Z",
+  "status": "partial",
+  "at": "2026-11-21T07:19:10.604Z",
   "gmail_status": "ok",
-  "agent_mail_status": "ok",
+  "agent_mail_status": "partial",
   "open_or_dispatch": 200,
   "gmail_rulings": {
    "status": "ok",
@@ -75,21 +88,22 @@
   }
  },
  "counts": {
-  "done": 2,
-  "needs_gpt_decision": 1,
+  "done": 1,
+  "needs_gpt_decision": 2,
   "needs_owner_decision": 0,
   "blocked": 1
  },
  "next_steps": [
-  "已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
+  "邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。",
+  "已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
   "有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。",
   "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
  ],
  "evidence": {
   "queue_reports": [
-   "knowledge/results/deep-superagent/queue-44666852775-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-44667955668-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-44832018944-attempt-1.json"
+   "knowledge/results/deep-superagent/queue-44876251422-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-44876978714-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-44878476984-attempt-1.json"
   ],
   "daily_reports": [
    "knowledge/results/deep-superagent/daily-44696091463-attempt-1.json",
@@ -105,7 +119,7 @@
  "secrets_included": false,
  "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
  "email": {
-  "subject": "[LTZZZ日报] 2026-11-20 完成=2 待GPT裁决=1 阻塞=1",
-  "body": "LTZZZ 每日合并 2026-11-20（UTC）\n\n一、今天完成了什么\n- DEEP-SUPERAGENT-20261121-DAILY-1：completed_pending_external_acceptance（run=44832018944）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44832034564）\n\n二、需要 GPT 裁决\n- DEEP-SOURCE-INTEL-M1M4-20261120-01（run=44666852775）：见 ASK\n  复核意见：Multiple correctness issues: incomplete timestamp validation, flawed private source detection, missing append-only correction logic, and no test coverage for required acceptance criteria.\n  ASK DEEP-SOURCE-INTEL-M1M4-20261120-01：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 已生成 1 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=ok，gmail=ok，agent_mail=ok\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：2 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-20.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+  "subject": "[LTZZZ日报] 2026-11-21 完成=1 待GPT裁决=2 阻塞=1",
+  "body": "LTZZZ 每日合并 2026-11-21（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44832034564）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261121-ISSUE-475-R1（run=44876251422）：见 ASK\n  复核意见：Unsupported runtime metadata declaration and code-owned correctness findings cannot be cleared by reviewer opinion.\n  ASK DEEP-SUPERAGENT-20261121-ISSUE-475-R1：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261121-ISSUE-560（run=44878476984）：见 ASK\n  ASK DEEP-SUPERAGENT-20261121-ISSUE-560：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。\n- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=partial，gmail=ok，agent_mail=partial\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：7 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-21.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
  }
 }
