@@ -1,0 +1,101 @@
+name: GPT authorized relay budget close (no model calls)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/relay-budget-close.yml'
+      - 'scripts/relay-budget-close.mjs'
+      - 'scripts/tests/relay-budget-close.test.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/relay-budget-close.yml'
+      - 'scripts/relay-budget-close.mjs'
+      - 'scripts/tests/relay-budget-close.test.mjs'
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ltzzz-relay-budget-close-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    if: >-
+      github.event_name == 'pull_request' ||
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.number == 522 &&
+        github.event.comment.user.login == 'ltzyz2181-collab' &&
+        contains(github.event.comment.body, '[GPT-CLOSE-RELAY]') &&
+        contains(github.event.comment.body, 'GPT-DECISION-20261121-RELAY-PAID-LANE-CLOSE-01')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and mocked no-upstream close tests
+        run: node --check scripts/relay-budget-close.mjs && node --test scripts/tests/relay-budget-close.test.mjs
+
+  close:
+    needs: test
+    if: >-
+      github.event_name == 'issue_comment' &&
+      github.event.issue.number == 522 &&
+      github.event.comment.user.login == 'ltzyz2181-collab' &&
+      contains(github.event.comment.body, '[GPT-CLOSE-RELAY]') &&
+      contains(github.event.comment.body, 'GPT-DECISION-20261121-RELAY-PAID-LANE-CLOSE-01')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Execute the existing GPT HOLD + CLOSE decision; no model call
+        id: close
+        continue-on-error: true
+        env:
+          LTZZZ_RELAY_PROXY_URL: https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1
+          LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.RELAY_PROXY_ACCESS_TOKEN }}
+        run: node scripts/relay-budget-close.mjs
+      - name: Append the close/readback receipt to main
+        if: always()
+        run: |
+          if [ ! -d knowledge/results/relay-seat/close-receipts ]; then
+            echo "close_receipt_directory_missing"
+            exit 0
+          fi
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/relay-seat/close-receipts/
+          if git diff --staged --quiet; then
+            echo "no_close_receipt_to_commit"
+            exit 0
+          fi
+          git commit -m "chore(relay): append GPT paid-lane close receipt"
+          node tools/push-receipt-commit.mjs
+      - name: Preserve receipt artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relay-budget-close-${{ github.run_id }}-${{ github.run_attempt }}
+          path: knowledge/results/relay-seat/close-receipts/
+          if-no-files-found: warn
+      - name: Fail if live close/readback was not verified
+        if: steps.close.outcome != 'success'
+        run: exit 1
