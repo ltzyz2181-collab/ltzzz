@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import worker, { ALLOWED_MODELS, BALANCE_FLOOR_USD, DAILY_COST_CAP_USD, MODEL_PRICES, MAX_CALL_COST_USD, MIN_INPUT_TOKENS, PROJECT_COST_CAP_USD, RelayBudget, authorized, estimateTokens, validateRequest } from '../../workers/relay-proxy/worker.mjs';
+import worker, { ALLOWED_MODELS, BALANCE_FLOOR_USD, BUDGET_SCHEMA, DAILY_COST_CAP_USD, MODEL_PRICES, MAX_CALL_COST_USD, MIN_INPUT_TOKENS, PROJECT_COST_CAP_USD, RelayBudget, authorized, estimateTokens, validateRequest } from '../../workers/relay-proxy/worker.mjs';
 import { estimateInputTokens } from '../lib/relay-seat-guard.mjs';
 
 const longText = '长上下文验收文本。'.repeat(700); // > 4096 estimated tokens
@@ -310,6 +310,195 @@ test('gateway charges the worst case when the upstream connection fails', async 
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+// Seed the ledger with already-settled spend so the post-call reconciliation can
+// be tested without running hundreds of reservations first.
+function spendEntry({ at, callId, cost }) {
+  return {
+    at,
+    call_id: callId,
+    model: 'gpt-6.1-sol',
+    task_id: null,
+    estimated_cost_usd: MAX_CALL_COST_USD,
+    cost_usd: cost,
+    prompt_tokens: null,
+    completion_tokens: null,
+    upstream_http: 200,
+    request_id: null,
+    outcome: 'completed',
+    settled_at: at,
+  };
+}
+
+function seededBudget(entries, vars = { RELAY_CONFIRMED_BALANCE_USD: '100' }) {
+  const { instance, state } = budgetEnv({}, vars);
+  state.storage.map.set('budget', {
+    schema: BUDGET_SCHEMA,
+    currency: 'USD',
+    baseline: { balance_usd: Number(vars.RELAY_CONFIRMED_BALANCE_USD), confirmed_at: null, confirmed_by: 'test_seed', source: 'test_seed' },
+    entries,
+    reservations: {},
+    prior_periods: [],
+    closed: false,
+    closed_reason: null,
+    updated_at: null,
+  });
+  return { instance, state };
+}
+
+test('a settled call above the per-call cap closes the seat before the next reservation', async () => {
+  const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  const reserved = await budgetCall(instance, '/reserve', {
+    call_id: 'overrun-1', model: 'gpt-6.1-sol', estimated_cost_usd: 0.04, at: '2026-03-01T00:00:00.000Z',
+  });
+  assert.equal(reserved.ok, true);
+  const settled = await budgetCall(instance, '/settle', {
+    call_id: 'overrun-1', actual_cost_usd: 0.064951, at: '2026-03-01T00:01:00.000Z',
+  });
+  assert.equal(settled.ok, true);
+  assert.equal(settled.cost_usd, 0.064951);
+  assert.equal(settled.snapshot.closed, true);
+  assert.equal(settled.snapshot.closed_reason, 'per_call_cap_breach_after_call');
+  assert.equal(settled.snapshot.last_overrun.reason, 'per_call_cap_breach_after_call');
+  assert.equal(settled.snapshot.last_overrun.cap_usd, MAX_CALL_COST_USD);
+  assert.equal(settled.snapshot.last_overrun.cost_usd, 0.064951);
+  assert.equal(settled.snapshot.last_overrun.call_id, 'overrun-1');
+
+  const next = await budgetCall(instance, '/reserve', {
+    call_id: 'overrun-2', model: 'gpt-6.1-sol', estimated_cost_usd: 0.01, at: '2026-03-01T00:02:00.000Z',
+  });
+  assert.equal(next.ok, false);
+  assert.equal(next.status, 403);
+  assert.equal(next.code, 'relay_seat_closed');
+  assert.equal(next.detail, 'per_call_cap_breach_after_call');
+});
+
+test('a settled call that pushes the day over its cap closes the seat', async () => {
+  const at = '2026-03-02T00:00:00.000Z';
+  const { instance } = seededBudget([spendEntry({ at, callId: 'seed-day-1', cost: 0.47 })]);
+  const reserved = await budgetCall(instance, '/reserve', {
+    call_id: 'day-post-1', model: 'gpt-6.1-sol', estimated_cost_usd: 0.02, at,
+  });
+  assert.equal(reserved.ok, true);
+  const settled = await budgetCall(instance, '/settle', {
+    call_id: 'day-post-1', actual_cost_usd: 0.04, at: '2026-03-02T00:05:00.000Z',
+  });
+  assert.equal(settled.ok, true);
+  assert.equal(settled.snapshot.closed, true);
+  assert.equal(settled.snapshot.closed_reason, 'daily_cap_breach_after_call');
+  assert.equal(settled.snapshot.last_overrun.daily_spent_usd, 0.51);
+  assert.equal(settled.snapshot.last_overrun.cap_usd, DAILY_COST_CAP_USD);
+
+  const next = await budgetCall(instance, '/reserve', {
+    call_id: 'day-post-2', model: 'gpt-6.1-sol', estimated_cost_usd: 0.01, at: '2026-03-02T00:06:00.000Z',
+  });
+  assert.equal(next.code, 'relay_seat_closed');
+});
+
+test('a settled call that pushes lifetime spend over the project cap closes the seat', async () => {
+  const entries = [];
+  for (let day = 1; day <= 20; day += 1) {
+    entries.push(spendEntry({ at: '2026-04-' + String(day).padStart(2, '0') + 'T00:00:00.000Z', callId: 'seed-project-' + day, cost: 0.499 }));
+  }
+  const { instance } = seededBudget(entries);
+  const at = '2026-04-21T00:00:00.000Z';
+  const reserved = await budgetCall(instance, '/reserve', {
+    call_id: 'project-post-1', model: 'gpt-6.1-sol', estimated_cost_usd: 0.01, at,
+  });
+  assert.equal(reserved.ok, true);
+  assert.equal(reserved.snapshot.project_spent_usd, 9.98);
+  const settled = await budgetCall(instance, '/settle', {
+    call_id: 'project-post-1', actual_cost_usd: 0.03, at: '2026-04-21T00:01:00.000Z',
+  });
+  assert.equal(settled.ok, true);
+  assert.equal(settled.snapshot.project_spent_usd, 10.01);
+  assert.equal(settled.snapshot.closed, true);
+  assert.equal(settled.snapshot.closed_reason, 'project_cap_breach_after_call');
+  assert.equal(settled.snapshot.last_overrun.cap_usd, PROJECT_COST_CAP_USD);
+});
+
+test('settlement without a provider cost charges the reserved worst case', async () => {
+  const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  await budgetCall(instance, '/reserve', { call_id: 'no-actual-1', model: 'gpt-6.1-sol', estimated_cost_usd: 0.04 });
+  const settled = await budgetCall(instance, '/settle', { call_id: 'no-actual-1' });
+  assert.equal(settled.ok, true);
+  assert.equal(settled.cost_usd, 0.04);
+  assert.equal(settled.snapshot.closed, false);
+});
+
+test('the close endpoint stops the seat idempotently and keeps the first reason', async () => {
+  const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  const first = await budgetCall(instance, '/close', { reason: 'operator_stop', closed_by: 'test_operator' });
+  assert.equal(first.ok, true);
+  assert.equal(first.duplicate, false);
+  assert.equal(first.snapshot.closed, true);
+  assert.equal(first.snapshot.closed_reason, 'operator_stop');
+  const second = await budgetCall(instance, '/close', { reason: 'a_different_reason' });
+  assert.equal(second.ok, true);
+  assert.equal(second.duplicate, true);
+  assert.equal(second.snapshot.closed_reason, 'operator_stop');
+  const refused = await budgetCall(instance, '/reserve', { call_id: 'close-1', model: 'gpt-6.1-sol', estimated_cost_usd: 0.01 });
+  assert.equal(refused.code, 'relay_seat_closed');
+});
+
+test('gateway exposes budget close to authenticated callers only', async () => {
+  const budget = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  const env = { PROXY_ACCESS_TOKEN: 'proxy-token', RELAY_STATION_KEY: 'station-key', BUDGET: budget.binding };
+  const unauthenticated = await worker.fetch(new Request('https://ltzzz-relay-proxy.example.workers.dev/v1/budget/close', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ reason: 'owner_stop' }),
+  }), env);
+  assert.equal(unauthenticated.status, 401);
+  const response = await worker.fetch(request({ reason: 'owner_stop' }, { path: '/v1/budget/close' }), env);
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.snapshot.closed, true);
+  assert.equal(body.snapshot.closed_reason, 'owner_stop');
+});
+
+test('a response without provider-reported usage still settles at the worst-case estimate', async () => {
+  const budget = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  const env = { PROXY_ACCESS_TOKEN: 'proxy-token', RELAY_STATION_KEY: 'station-key', BUDGET: budget.binding };
+  const realFetch = globalThis.fetch;
+  // actual_provider is unavailable when the upstream omits usage; the call must
+  // not be treated as free.
+  globalThis.fetch = async () => Response.json({
+    id: 'req-no-usage',
+    choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }],
+  });
+  try {
+    const response = await worker.fetch(request({ model: 'gpt-6.1-sol', messages: [{ role: 'user', content: longText }], max_tokens: 512 }), env);
+    assert.equal(response.status, 200);
+    const cost = Number(response.headers.get('x-ltzzz-cost-usd'));
+    assert.ok(cost > 0);
+    const state = await budgetCall(budget.instance, '/state');
+    assert.equal(state.project_spent_usd, cost);
+    assert.equal(state.active_reservations, 0);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('a failed upstream is settled once as outcome-unknown and never replayed', async () => {
+  const budget = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  const env = { PROXY_ACCESS_TOKEN: 'proxy-token', RELAY_STATION_KEY: 'station-key', BUDGET: budget.binding };
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; throw new Error('network down'); };
+  try {
+    const response = await worker.fetch(request({ model: 'gpt-6.1-sol', messages: [{ role: 'user', content: longText }], max_tokens: 512 }), env);
+    assert.equal(response.status, 504);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.equal(calls, 1, 'the unreachable upstream must be attempted exactly once');
+  const stored = budget.state.storage.map.get('budget');
+  assert.equal(stored.entries.length, 1);
+  assert.equal(stored.entries[0].outcome, 'proxy_upstream_unreachable');
+  assert.ok(stored.entries[0].cost_usd > 0, 'the unknown outcome is charged at the worst case');
+  assert.equal(Object.keys(stored.reservations).length, 0);
 });
 
 test('unverified callers cannot confirm a new balance', async () => {
