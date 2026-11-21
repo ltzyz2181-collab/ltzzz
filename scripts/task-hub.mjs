@@ -25,7 +25,7 @@ import {
   labelNames, issueSeat, normalizeSeat, taskField, derive, expectedHubLabel, reapPlan,
   claimComment, deliveredComment, blockedComment, leaseExpiredComment, reopenedComment, unblockedComment,
   deliveredEvidenceProblems, renderTaskBody, buildDigest,
-  reassignPlan, reassignedComment, REASSIGN_AFTER_HOURS,
+  reassignPlan, reassignLabels, reassignedComment, REASSIGN_AFTER_HOURS,
 } from './lib/task-hub.mjs';
 
 export const REPOSITORY = 'ltzyz2181-collab/ltzzz';
@@ -204,7 +204,7 @@ export async function cmdReassign({client, apply = false, now = new Date().toISO
         continue;
       }
       await client.removeLabel(item.number, 'seat:' + item.seat);
-      await client.addLabels(item.number, ['seat:' + item.to]);
+      await client.addLabels(item.number, reassignLabels(item.to));
       await client.comment(item.number, reassignedComment({number: item.number, from: item.seat, to: item.to, ageHours: item.age_hours}));
       if (mailTo) {
         const body = [

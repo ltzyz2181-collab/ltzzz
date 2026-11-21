@@ -5,7 +5,7 @@ import {
   derive, expectedHubLabel, reapPlan, claimComment, deliveredComment, blockedComment, renderTaskBody, buildDigest,
 } from '../lib/task-hub.mjs';
 import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdReassign, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
-import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignedComment, countReassignments, MAX_REASSIGNMENTS} from '../lib/task-hub.mjs';
+import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignLabels, isDeepQueued, reassignedComment, countReassignments, MAX_REASSIGNMENTS} from '../lib/task-hub.mjs';
 
 const NOW = '2026-11-18T12:00:00Z';
 const body = (fields = {}) => renderTaskBody({task_id: 'LTZZZ-DEMO-1', decision_id: 'GPT-X', seat: 'desktop-claude', goal: '把任务放进 Issue', scope: '只改 docs', forbidden: '不动资金', acceptance: '测试通过', evidence: '- PR', ...fields});
@@ -306,6 +306,33 @@ test('a claimed or delivered card is never reassigned', () => {
   ]});
   delivered.created_at = '2026-11-10T00:00:00Z';
   assert.deepEqual(reassignPlan([claimed, delivered], {now: NOW}), []);
+});
+
+test('reassigning to deep also queues the Deep bridge label', () => {
+  assert.deepEqual(reassignLabels('deep'), ['seat:deep', 'deep:task']);
+  assert.deepEqual(reassignLabels('desktop-claude'), ['seat:desktop-claude']);
+  assert.deepEqual(reassignLabels('relay-gpt'), ['seat:relay-gpt']);
+});
+
+test('a deep:task card belongs to the async deep queue and is never reassigned', () => {
+  const queued = issue({number: 21, labels: ['seat:deep', 'dispatch', HUB_LABEL.new, 'deep:task']});
+  queued.created_at = '2026-11-10T00:00:00Z';
+  assert.equal(isDeepQueued(queued), true);
+  assert.deepEqual(reassignPlan([queued], {now: NOW}), []);
+  const unqueued = issue({number: 22, labels: ['seat:deep', 'dispatch', HUB_LABEL.new]});
+  unqueued.created_at = '2026-11-10T00:00:00Z';
+  assert.deepEqual(reassignPlan([unqueued], {now: NOW}).map(item => item.number), [22]);
+});
+
+test('cmdReassign adds deep:task when the target seat is deep', async () => {
+  const stale = issue({number: 23});
+  stale.created_at = '2026-11-16T00:00:00Z';
+  const client = fakeClient([stale]);
+  await cmdReassign({client, apply: true, now: NOW});
+  const after = await client.api('issues/23');
+  const labels = after.data.labels.map(item => item.name);
+  assert.ok(labels.includes('seat:deep'));
+  assert.ok(labels.includes('deep:task'));
 });
 
 test('reassignTarget never returns the same seat and falls back when the chain loops', () => {

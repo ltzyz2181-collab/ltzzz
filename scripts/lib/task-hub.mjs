@@ -303,6 +303,20 @@ export function reassignTarget(seat, {fallbackSeats = ['deep', 'desktop-claude',
   return fallback ?? null;
 }
 
+/** deep 席位不轮询 hub 卡片，只消费显式 deep:task 的桥接卡。 */
+export function reassignLabels(seat) {
+  const target = normalizeSeat(seat) || seat;
+  return target === 'deep' ? ['seat:deep', 'deep:task'] : ['seat:' + target];
+}
+
+/**
+ * 带 deep:task 的卡已交给 Deep 异步队列，不再参与 hub 改派；否则会出现
+ * desktop-claude → deep → desktop-claude 的 15 分钟往返，把卡耗成 stale。
+ */
+export function isDeepQueued(issue) {
+  return issueSeat(issue) === 'deep' && labelNames(issue).includes('deep:task');
+}
+
 /**
  * 选出「从没人领过、且已超时」的卡。
  * 注意：只看从未 claim 的卡；claim 过又过期的由 reap 处理，两者不重叠。
@@ -314,6 +328,7 @@ export function reassignPlan(issues, {now = new Date().toISOString(), afterHours
     if (!issue || typeof issue.number !== 'number') continue;
     const d = derive(issue, {now});
     if (d.state !== 'new' || d.lastClaim) continue;
+    if (isDeepQueued(issue)) continue;
     if (d.invalid_delivered) continue;
     const createdMs = Date.parse(issue.created_at || '');
     if (!Number.isFinite(createdMs)) continue;
