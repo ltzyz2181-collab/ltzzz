@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
+import policy from '../config/relay-seat-policy.json' with {type: 'json'};
+import {closeRelaySeat} from './lib/relay-seat-guard.mjs';
 
 export const TASK_ID = 'RELAY-BUDGET-POSTCALL-CAP-20261120-01';
 export const DECISION_ID = 'GPT-DECISION-20261121-RELAY-PAID-LANE-CLOSE-01';
@@ -81,6 +83,7 @@ export async function closeAndVerify({
     synthetic_reserve_probe: null,
     state_after_probe: null,
     verified: false,
+    local_state_updated: false,
     status: 'blocked_evidence',
   };
 
@@ -184,6 +187,30 @@ async function main() {
       source_commit: process.env.GITHUB_SHA || null,
     };
   }
+  if (result.verified === true) {
+    try {
+      const local = closeRelaySeat(root, policy, {
+        balanceUsd: null,
+        reason: result.close_reason,
+        detail: 'Live Durable Object close and closed-seat refusal verified; provider balance remains unverified.',
+        at: result.at,
+        actor: 'gpt-decision-seat',
+      });
+      result.local_state_updated = local.status === 'closed';
+      result.local_state = {
+        status: local.status,
+        balance_usd: local.balance_usd,
+        closed_at: local.closed_at,
+        close_reason: local.close_reason,
+        closed_by: local.closed_by,
+      };
+      if (!result.local_state_updated) result.status = 'closed_verified_local_state_sync_failed';
+    } catch (error) {
+      result.local_state_updated = false;
+      result.local_state_error = String(error?.message || error).slice(0, 160);
+      result.status = 'closed_verified_local_state_sync_failed';
+    }
+  }
   const receipt = writeReceipt(result, {root});
   console.log(JSON.stringify({
     status: result.status,
@@ -194,9 +221,10 @@ async function main() {
     synthetic_probe_http: result.synthetic_reserve_probe?.http ?? null,
     synthetic_probe_error: result.synthetic_reserve_probe?.error_code ?? null,
     paid_model_call_attempted: false,
+    local_state_updated: result.local_state_updated === true,
     official_provider_balance_verified: false,
   }));
-  if (result.verified !== true) process.exitCode = 1;
+  if (result.verified !== true || result.local_state_updated !== true) process.exitCode = 1;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
