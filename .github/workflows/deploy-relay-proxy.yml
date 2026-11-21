@@ -39,9 +39,9 @@ jobs:
         run: |
           set -e
           BASE=https://ltzzz-relay-proxy.ltzyz2181.workers.dev
-          for PATH in /v1/chat/completions /v1/budget/close; do
-            CODE=$(curl -s -o /tmp/smoke.json -w '%{http_code}' --max-time 20 -X POST "$BASE$PATH" -H 'content-type: application/json' -d '{"model":"gpt-6.1-sol","messages":[{"role":"user","content":"smoke"}]}')
-            echo "smoke_path=$PATH smoke_http=$CODE"
+          for ROUTE in /v1/chat/completions /v1/budget/close; do
+            CODE=$(curl -s -o /tmp/smoke.json -w '%{http_code}' --max-time 20 -X POST "$BASE$ROUTE" -H 'content-type: application/json' -d '{"model":"gpt-6.1-sol","messages":[{"role":"user","content":"smoke"}]}')
+            echo "smoke_path=$ROUTE smoke_http=$CODE"
             cat /tmp/smoke.json || true
             test "$CODE" = "401"
           done
