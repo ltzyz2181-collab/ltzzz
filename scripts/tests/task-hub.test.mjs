@@ -4,8 +4,8 @@ import {
   HUB_LABEL, DEFAULT_LEASE_HOURS, issueSections, taskField, issueSeat, normalizeSeat, protocolEvents,
   derive, expectedHubLabel, reapPlan, claimComment, deliveredComment, blockedComment, renderTaskBody, buildDigest,
 } from '../lib/task-hub.mjs';
-import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
-import {deliveredEvidenceProblems, reopenedComment, unblockedComment} from '../lib/task-hub.mjs';
+import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdReassign, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
+import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignedComment} from '../lib/task-hub.mjs';
 
 const NOW = '2026-11-18T12:00:00Z';
 const body = (fields = {}) => renderTaskBody({task_id: 'LTZZZ-DEMO-1', decision_id: 'GPT-X', seat: 'desktop-claude', goal: '把任务放进 Issue', scope: '只改 docs', forbidden: '不动资金', acceptance: '测试通过', evidence: '- PR', ...fields});
@@ -284,4 +284,46 @@ test('chinese deployment requirement keeps word-edge semantics', () => {
   assert.ok(derive(needCn, {now: '2026-11-18T03:00:00Z'}).delivered_evidence_problems.includes('deploy_evidence_missing'));
   const ambiguous = issue({body: body({acceptance: '只改脚本', deploy_requirement: '是否需要待定'}), comments: [CLAIM, DELIVERED_OK]});
   assert.equal(derive(ambiguous, {now: '2026-11-18T03:00:00Z'}).state, 'delivered');
+});
+
+test('a card nobody claimed for 24h is planned for reassignment', () => {
+  const stale = issue({number: 7});
+  stale.created_at = '2026-11-17T00:00:00Z';
+  const fresh = issue({number: 8});
+  fresh.created_at = '2026-11-18T11:00:00Z';
+  const plan = reassignPlan([stale, fresh], {now: NOW});
+  assert.deepEqual(plan.map(item => item.number), [7]);
+  assert.equal(plan[0].seat, 'desktop-claude');
+  assert.equal(plan[0].to, 'deep');
+});
+
+test('a claimed or delivered card is never reassigned', () => {
+  const claimed = issue({number: 9, comments: [{body: claimComment({seat: 'desktop-claude', at: '2026-11-17T01:00:00Z', leaseHours: 24})}]});
+  claimed.created_at = '2026-11-10T00:00:00Z';
+  const delivered = issue({number: 10, comments: [
+    {body: '[claimed] seat=desktop-claude at=2026-11-17T01:00:00Z lease_until=2026-11-18T01:00:00Z'},
+    {body: '[delivered] commit=abcdef1234567 pr=https://github.com/x/y/pull/1 ci=success tests=pass deploy=not_required smoke=none'}
+  ]});
+  delivered.created_at = '2026-11-10T00:00:00Z';
+  assert.deepEqual(reassignPlan([claimed, delivered], {now: NOW}), []);
+});
+
+test('reassignTarget never returns the same seat and falls back when the chain loops', () => {
+  assert.equal(reassignTarget('deep'), 'desktop-claude');
+  assert.equal(reassignTarget('workbuddy'), 'deep');
+  assert.equal(reassignTarget('unknown-seat', {fallbackSeats: ['deep']}), 'deep');
+  assert.equal(reassignTarget('deep', {fallbackSeats: ['deep']}), 'desktop-claude');
+});
+
+test('cmdReassign moves the seat label, comments and queues one mail card', async () => {
+  const stale = issue({number: 11});
+  stale.created_at = '2026-11-16T00:00:00Z';
+  const client = fakeClient([stale]);
+  const result = await cmdReassign({client, apply: true, now: NOW, mailTo: 'owner@example.com'});
+  assert.equal(result.reassigned, 1);
+  const target = client.calls.filter(([route, method]) => route === 'issues' && method === 'POST');
+  assert.equal(target.length, 1, '每张改派卡只发一封邮件卡');
+  const comment = (client.calls || []).length;
+  assert.ok(comment > 0);
+  assert.match(reassignedComment({number: 11, from: 'desktop-claude', to: 'deep', ageHours: 60}), /reason=no_claim_60h/);
 });

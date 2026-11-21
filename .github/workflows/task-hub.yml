@@ -70,6 +70,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/task-hub.mjs reap --apply
 
+      - name: 24h 未领取自动改派并邮件叫醒
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/task-hub.mjs reassign --after-hours 24 --mail-to ltzyz2181@gmail.com --apply
+
       - name: 落盘状态快照
         env:
           GITHUB_TOKEN: ${{ github.token }}
