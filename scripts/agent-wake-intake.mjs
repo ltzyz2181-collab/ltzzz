@@ -120,16 +120,30 @@ async function main() {
 
   const comments = [];
   for (const [issue, decisions] of byIssue) {
-    const body = formatIntakeComment({issue, decisions, date: plan.date});
-    comments.push({issue, body, pending: decisions.some(item => item.action !== 'already_recorded')});
+    const eventIds = decisions
+      .filter(item => item.action !== 'already_recorded')
+      .map(item => item.event_id)
+      .filter(Boolean);
+    const body = formatIntakeComment({issue, decisions, date: plan.date, eventIds});
+    const marker = eventIds.length ? `<!-- wake-intake:${eventIds.join(',')} -->` : '';
+    comments.push({issue, body, marker, pending: eventIds.length > 0});
   }
 
   if (apply) {
     fs.mkdirSync(path.dirname(ledgerPath), {recursive: true});
     fs.writeFileSync(ledgerPath, serializeLedger({schema: ledger.schema, events: plan.events}), 'utf8');
-    for (const comment of comments) {
+    for (let index = 0; index < comments.length; index += 1) {
+      const comment = comments[index];
       if (!comment.pending) continue;
+      const existing = await api(repo, token, `issues/${comment.issue}/comments?per_page=100`);
+      const already = (Array.isArray(existing) ? existing : [])
+        .some(item => item && typeof item.body === 'string' && item.body.includes(comment.marker));
+      if (already) {
+        comments[index] = {...comment, pending: false, skipped: 'marker_present'};
+        continue;
+      }
       await api(repo, token, `issues/${comment.issue}/comments`, 'POST', {body: comment.body});
+      comments[index] = {...comment, posted: true};
     }
   }
 
