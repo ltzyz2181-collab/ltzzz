@@ -10,6 +10,13 @@ on:
   workflow_dispatch:
   issues:
     types: [opened, edited, labeled, unlabeled]
+  # 2026-11-21：reducer 语义改动必须先过 PR 回归，不能等下一次 schedule 才发现。
+  pull_request:
+    paths:
+      - 'scripts/lib/task-hub.mjs'
+      - 'scripts/task-hub.mjs'
+      - 'scripts/tests/task-hub.test.mjs'
+      - '.github/workflows/task-hub.yml'
 
 permissions:
   contents: write
@@ -20,7 +27,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 回归测试（纯逻辑，无网络）
+        run: node --test scripts/tests/task-hub.test.mjs
+
   hub:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
