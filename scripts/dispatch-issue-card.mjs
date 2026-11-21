@@ -13,7 +13,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {checkCard, loadPolicy, buildCard} from './dispatch-seat-policy.mjs';
 import {analyzeCardPrompt} from './check-card-contract.mjs';
-import {fiduciaryHit, normalizeAutonomy} from './deep-autonomy.mjs';
+import {fiduciaryInstructionHit, normalizeAutonomy} from './deep-autonomy.mjs';
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_REPOSITORY = 'ltzyz2181-collab/ltzzz';
@@ -86,25 +86,8 @@ export function secretRisk(text) {
   return {hit: false, family: null};
 }
 
-// Issue 的范围声明经常出现「No changes to ... wallets/signing/payment」这类排除句。
-// 它们不是资金指令，按整行或分句剔除后再判断，避免把普通工程卡误杀。
-// 有对比转折（但/but/however）时只剔除否定分句，否定词不能遮住后半句的真实指令。
-const NEGATION_LEAD_RE = /^\s*(?:[-*]\s*)?(?:no|not|never|without|excluding|except|neither|nor)\b|^\s*(?:[-*]\s*)?(?:不得|不要|不涉及|不修改|不改动|不改|禁止|无需|无须|不含|不包括|排除|不处理|不动)/i;
-const CONTRAST_RE = /但|但是|然而|不过|\bbut\b|\bhowever\b|\byet\b/i;
-const CLAUSE_SPLIT_RE = /[，,；;。]|\.\s+/;
-
-export function fiduciaryInstructionHit(prompt = '') {
-  const kept = [];
-  for (const line of String(prompt || '').split('\n')) {
-    const startsNegated = NEGATION_LEAD_RE.test(line);
-    if (startsNegated && !CONTRAST_RE.test(line)) continue;
-    // 行内排除句（如「普通任务，不涉及钱包」）按分句剔除；没有转折时整行已在上面处理。
-    for (const clause of line.split(CLAUSE_SPLIT_RE)) {
-      if (!NEGATION_LEAD_RE.test(clause)) kept.push(clause);
-    }
-  }
-  return fiduciaryHit({prompt: kept.join('\n')});
-}
+// 排除句判定与执行层共用同一实现，避免桥放行、执行层又拦下的两套口径。
+export {fiduciaryInstructionHit};
 
 // 提示词刻意不出现指令关键字，也不复述六个保留家族的名字：
 // 既满足 check-card-contract 的单角色契约，也不会被自家的禁区词命中。

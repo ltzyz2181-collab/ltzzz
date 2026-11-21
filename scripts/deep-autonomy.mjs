@@ -199,6 +199,25 @@ export function fiduciaryHit({prompt = '', outputs = []} = {}) {
   return match ? {hit: true, token: match[0]} : {hit: false, token: null};
 }
 
+// Issue 卡的范围声明经常出现「No changes to ... wallets/signing/payment」这类排除句。
+// 它们不是资金指令，按整行或分句剔除后再判断；有对比转折（但/but/however）时只剔除
+// 否定分句，否定词不能遮住后半句的真实指令。只用于卡面指令；模型输出仍按原文严格扫描。
+const NEGATION_LEAD_RE = /^\s*(?:[-*]\s*)?(?:no|not|never|without|excluding|except|neither|nor)\b|^\s*(?:[-*]\s*)?(?:不得|不要|不涉及|不修改|不改动|不改|禁止|无需|无须|不含|不包括|排除|不处理|不动)/i;
+const CONTRAST_RE = /但|但是|然而|不过|\bbut\b|\bhowever\b|\byet\b/i;
+const CLAUSE_SPLIT_RE = /[，,；;。]|\.\s+/;
+
+export function fiduciaryInstructionHit(prompt = '') {
+  const kept = [];
+  for (const line of String(prompt || '').split('\n')) {
+    const startsNegated = NEGATION_LEAD_RE.test(line);
+    if (startsNegated && !CONTRAST_RE.test(line)) continue;
+    for (const clause of line.split(CLAUSE_SPLIT_RE)) {
+      if (!NEGATION_LEAD_RE.test(clause)) kept.push(clause);
+    }
+  }
+  return fiduciaryHit({prompt: kept.join('\n')});
+}
+
 // 只接受显式文件块：
 // <<<FILE:path>>>
 // ...content...
@@ -353,7 +372,10 @@ export async function executeAutonomy({
 } = {}) {
   if (!autonomy || autonomy.mode !== 'auto') return {status: 'not_requested', revision: AUTONOMY_REVISION};
   // 只扫卡面指令与模型输出；注入的仓库读取证据按数据处理。
-  const fiduciary = fiduciaryHit({prompt: stripRepoEvidence(job?.prompt), outputs});
+  // 卡面指令先剔除范围排除句（不是资金指令），模型输出保持原样严格扫描。
+  const promptHit = fiduciaryInstructionHit(stripRepoEvidence(job?.prompt));
+  const outputHit = fiduciaryHit({outputs});
+  const fiduciary = promptHit.hit ? promptHit : outputHit;
   if (fiduciary.hit) {
     return {status: 'blocked_fiduciary', revision: AUTONOMY_REVISION, token: fiduciary.token, actions: [], needs_gpt_decision: true};
   }
