@@ -13,6 +13,7 @@ import {callAgent as defaultCall} from './call-deepseek.mjs';
 
 export const ROUTES = Object.freeze([
   'coordinator_close_with_receipt',
+  'execute_authorized',
   'needs_gpt_decision',
   'needs_owner_decision',
   'blocked_evidence_needed',
