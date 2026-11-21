@@ -222,13 +222,21 @@ export function fiduciaryInstructionHit(prompt = '') {
 // <<<FILE:path>>>
 // ...content...
 // <<<END>>>
+// 模型偶尔把同一个路径的文件块输出两遍。内容完全一致时那是同一个写入意图，
+// 合并为一条（否则整单会被 duplicate_file 拒绝，白跑一次真实模型请求）；
+// 内容不一致才是歧义，保留两条交给 validateWrites 拒绝，绝不静默择一。
 export function extractFileWrites(text) {
   const source = String(text || '');
   const writes = [];
+  const seen = new Map();
   const re = /<<<FILE:([^>\n]+)>>>\r?\n([\s\S]*?)\r?\n<<<END>>>/g;
   let match;
   while ((match = re.exec(source))) {
-    writes.push({path: match[1].trim(), content: match[2]});
+    const write = {path: match[1].trim(), content: match[2]};
+    const prior = seen.get(write.path);
+    if (prior !== undefined && writes[prior].content === write.content) continue;
+    seen.set(write.path, writes.length);
+    writes.push(write);
   }
   return writes;
 }

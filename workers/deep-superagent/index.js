@@ -500,7 +500,17 @@ export class DeepTask {
     const receipt={stage,seat,actual_provider:spec.provider,actual_model:null,task_id:job.task_id,execution_id:job.execution_id,source_commit:job.source_commit,started_at:now(),status:'generation_started',generation_verified:false,request_options:{max_tokens:maxTokens,thinking_type:thinking?.type??null,seat_model:seatModel,source:'executor_request_not_provider_attestation'},accepted:false,paid:false,tx_hash:null};
     job.receipts.push(receipt);job.model_calls++;await this.state.storage.put('job',job);
     try{
-      const response=await binding.fetch(new Request('https://proxy.internal/',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+this.env.LTZZZ_AGENT_TOKEN},body:JSON.stringify({task_id:job.task_id,messages,max_tokens:maxTokens,...(thinking?{thinking}:{}),...(seatModel?{model:seatModel}:{})}),signal:AbortSignal.timeout(240000)}));
+      const post=()=>binding.fetch(new Request('https://proxy.internal/',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+this.env.LTZZZ_AGENT_TOKEN},body:JSON.stringify({task_id:job.task_id,messages,max_tokens:maxTokens,...(thinking?{thinking}:{}),...(seatModel?{model:seatModel}:{})}),signal:AbortSignal.timeout(240000)}));
+      let response=await post();
+      // 429 是上游在生成前就拒绝的请求：没有已产出内容可丢，也不会把同一请求重放成两份产出。
+      // 2026-11-21 实测 Kimi 一次 429 就把整单推成 partial_seat_coverage，故允许一次有界重试并
+      // 把两次尝试都写进回执；超时/5xx 仍可能是“已生成但未回传”，保持 no_retry。
+      if(response.status===429){
+        receipt.upstream_attempts=2;receipt.retry_reason='upstream_http_error_429';receipt.first_upstream_http=429;
+        job.model_calls++;await this.state.storage.put('job',job);
+        await new Promise((resolve)=>setTimeout(resolve,1500));
+        response=await post();
+      }else receipt.upstream_attempts=1;
       const data=await response.json();const r=data?.ltzzz_receipt,text=data?.choices?.[0]?.message?.content;
       receipt.upstream_http=response.status;receipt.completed_at=now();
       if(r&&typeof r==='object')for(const k of ['actual_model','model_source','model_identity_verification','request_id','upstream_request_id','upstream_request_id_source','provider_response_id','finish_reason','truncated','output_present','tokens_used','reasoning_tokens','completion_tokens'])receipt[k]=r[k]??null;
