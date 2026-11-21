@@ -1,0 +1,105 @@
+{
+  "observer_task_id": "PLAN-PATCHGATE-ESCROW-20261023",
+  "phase": "A1_shadow_readonly",
+  "task_id": "PATCHGATE-PR-564",
+  "head_sha": "3a01ca9d8dcbc8cabc653a33f5f966501a17df81",
+  "pr_number": 564,
+  "source_main_sha": "e19c23b16984683ee5dc4221b82a415e21654bf2",
+  "run_id": "44880730572",
+  "at_utc": "2026-11-21T07:32:50.635Z",
+  "idempotency_key": "PATCHGATE-PR-564:3a01ca9d8dcbc8cabc653a33f5f966501a17df81",
+  "automatic_merge": false,
+  "automatic_deploy": false,
+  "automatic_rollback": false,
+  "signing_admission": false,
+  "native_model_calls": 0,
+  "financial_execution": false,
+  "paid": false,
+  "tx_hash": null,
+  "status": "observation_complete_no_authorization",
+  "diff_base_sha": "e19c23b16984683ee5dc4221b82a415e21654bf2",
+  "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+  "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+  "changed_files": [
+    {
+      "path": "scripts/deep-autonomy.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/deep-superagent-autonomy.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "scripts/tests/deep-superagent.test.mjs",
+      "mode": "100644",
+      "binary": false
+    },
+    {
+      "path": "workers/deep-superagent/index.js",
+      "mode": "100644",
+      "binary": false
+    }
+  ],
+  "evaluation": {
+    "task_id": "PATCHGATE-PR-564",
+    "subject": {
+      "repository": "ltzyz2181-collab/ltzzz",
+      "task_id": "PATCHGATE-PR-564",
+      "base_sha": "e19c23b16984683ee5dc4221b82a415e21654bf2",
+      "head_sha": "3a01ca9d8dcbc8cabc653a33f5f966501a17df81",
+      "policy_sha256": "8acadb28d2eaa9278be129e0a6fc8c202a8ae7871ced8a74d32f152201526c33",
+      "trust_sha256": "f58f132e37ca6498fa972ff19156369735de63f5ea50f70e1e1f390bbefe99e8",
+      "files_sha256": "d2be006b26d704522a88c8735b8af70261ebdcef11af6d6551877a7a19ea0fb7"
+    },
+    "subject_sha256": "3307c0bdab9cac739515786735b9f05676b8f36d9f5a8495b8c1af9cd8cd5d57",
+    "idempotency_key": "PATCHGATE-PR-564:3a01ca9d8dcbc8cabc653a33f5f966501a17df81",
+    "risk_class": "L3",
+    "requires_canary": true,
+    "author_provider": null,
+    "author_executor": null,
+    "checks_executors": [],
+    "reviewer_providers": [],
+    "reviewer_executors": [],
+    "notification_executors": [],
+    "notification_readback_verified": false,
+    "required_independent_reviews": 2,
+    "additional_review_due_to_failures": 0,
+    "scan_findings": [
+      {
+        "path": "workers/deep-superagent/index.js",
+        "code": "unapproved_external_host",
+        "hosts": [
+          "proxy.internal"
+        ]
+      }
+    ],
+    "reasons": [
+      "diff_scan_requires_resolution",
+      "one_authenticated_author_required",
+      "trusted_base_checks_required",
+      "distinct_provider_reviews_required",
+      "owner_notification_evidence_required",
+      "signed_allowlisted_canary_verification_required"
+    ],
+    "validation_passed": false,
+    "status": "validation_blocked",
+    "phase": "A0",
+    "automatic_merge": false,
+    "automatic_deploy": false,
+    "automatic_rollback": false,
+    "deployment_verification": null,
+    "scan_safety_conclusion": false,
+    "paid": false,
+    "tx_hash": null
+  },
+  "readback_errors": [],
+  "attestations_loaded": 0,
+  "signing_keys_configured": false,
+  "limitations": [
+    "This is a shadow observer. Missing signatures remain missing; no model label grants execution authority.",
+    "Only the observation branch is written. Main, candidate code, PR state, wallets and deployments are not modified.",
+    "This readback collector does not mint or enroll signing keys. A2 remains blocked."
+  ]
+}
