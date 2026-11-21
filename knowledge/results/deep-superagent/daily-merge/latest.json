@@ -1,7 +1,7 @@
 {
  "schema": "ltzzz.deep-superagent.daily-merge.v1",
  "date": "2026-11-21",
- "generated_at_utc": "2026-11-21T07:34:21.766Z",
+ "generated_at_utc": "2026-11-21T08:14:05.209Z",
  "done": [
   {
    "task_id": "DEEP-DAILY-SUPERVISION",
@@ -22,40 +22,48 @@
  ],
  "needs_gpt_decision": [
   {
-   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-560",
-   "package_id": "LTZZZ-DEEP-ISSUE-560-20261121",
-   "run_id": "44878476984",
+   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-567",
+   "package_id": "LTZZZ-DEEP-ISSUE-567-20261121",
+   "run_id": "44883047237",
    "reason": null,
    "review_reason": null,
    "asks": [
     {
-     "ref": "DEEP-SUPERAGENT-20261121-ISSUE-560",
+     "ref": "DEEP-SUPERAGENT-20261121-ISSUE-567",
      "target": "gpt",
      "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
     }
    ],
    "related_asks": [],
-   "source": "knowledge/results/deep-superagent/queue-44878476984-attempt-1.json"
+   "source": "knowledge/results/deep-superagent/queue-44883047237-attempt-1.json"
   },
   {
-   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-563",
-   "package_id": "LTZZZ-DEEP-ISSUE-563-20261121",
-   "run_id": "44879913406",
+   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-569",
+   "package_id": "LTZZZ-DEEP-ISSUE-569-20261121",
+   "run_id": "44883372006",
    "reason": null,
    "review_reason": null,
    "asks": [
     {
-     "ref": "DEEP-SUPERAGENT-20261121-ISSUE-563",
+     "ref": "DEEP-SUPERAGENT-20261121-ISSUE-569",
      "target": "gpt",
      "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
     }
    ],
    "related_asks": [],
-   "source": "knowledge/results/deep-superagent/queue-44879913406-attempt-1.json"
+   "source": "knowledge/results/deep-superagent/queue-44883372006-attempt-1.json"
   }
  ],
  "needs_owner_decision": [],
- "blocked": [],
+ "blocked": [
+  {
+   "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-571",
+   "run_id": "44883654776",
+   "status": "blocked",
+   "reason": "existing_job_readback_not_verified",
+   "source": "knowledge/results/deep-superagent/queue-44883654776-attempt-1.json"
+  }
+ ],
  "dispatch": {
   "cards_today": [
    "DEEP-SUPERAGENT-20261121-DAILY-1.json",
@@ -65,9 +73,13 @@
    "DEEP-SUPERAGENT-20261121-ISSUE-475-R1.json",
    "DEEP-SUPERAGENT-20261121-ISSUE-475.json",
    "DEEP-SUPERAGENT-20261121-ISSUE-560.json",
-   "DEEP-SUPERAGENT-20261121-ISSUE-563.json"
+   "DEEP-SUPERAGENT-20261121-ISSUE-563.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-565.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-567.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-569.json",
+   "DEEP-SUPERAGENT-20261121-ISSUE-571.json"
   ],
-  "card_count": 8,
+  "card_count": 12,
   "importance": "medium",
   "note": "政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权"
  },
@@ -92,18 +104,19 @@
   "done": 2,
   "needs_gpt_decision": 2,
   "needs_owner_decision": 0,
-  "blocked": 0
+  "blocked": 1
  },
  "next_steps": [
   "邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。",
   "已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
+  "有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。",
   "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
  ],
  "evidence": {
   "queue_reports": [
-   "knowledge/results/deep-superagent/queue-44878476984-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-44879781200-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-44879913406-attempt-1.json"
+   "knowledge/results/deep-superagent/queue-44883047237-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-44883372006-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-44883654776-attempt-1.json"
   ],
   "daily_reports": [
    "knowledge/results/deep-superagent/daily-44832034564-attempt-1.json",
@@ -119,7 +132,7 @@
  "secrets_included": false,
  "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
  "email": {
-  "subject": "[LTZZZ日报] 2026-11-21 完成=2 待GPT裁决=2 阻塞=0",
-  "body": "LTZZZ 每日合并 2026-11-21（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44832034564）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44880646472）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261121-ISSUE-560（run=44878476984）：见 ASK\n  ASK DEEP-SUPERAGENT-20261121-ISSUE-560：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261121-ISSUE-563（run=44879913406）：见 ASK\n  ASK DEEP-SUPERAGENT-20261121-ISSUE-563：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。\n- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=partial，gmail=ok，agent_mail=partial\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：8 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-21.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+  "subject": "[LTZZZ日报] 2026-11-21 完成=2 待GPT裁决=2 阻塞=1",
+  "body": "LTZZZ 每日合并 2026-11-21（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44832034564）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=44880646472）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261121-ISSUE-567（run=44883047237）：见 ASK\n  ASK DEEP-SUPERAGENT-20261121-ISSUE-567：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261121-ISSUE-569（run=44883372006）：见 ASK\n  ASK DEEP-SUPERAGENT-20261121-ISSUE-569：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。\n- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 1 条 blocked/unknown：先补原始凭证或换通道，不原样重试。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=partial，gmail=ok，agent_mail=partial\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：12 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-21.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
  }
 }
