@@ -1,0 +1,20 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261121-ISSUE-567",
+ "package_id": "LTZZZ-DEEP-ISSUE-567-20261121",
+ "prompt": "内部工程任务：GitHub Issue #567《[TASK] E2E-CHAIN-20261121-03 | Deep 自动闭环复测》\n来源：https://github.com/ltzyz2181-collab/ltzzz/issues/567\n数据分级：public_distributable（Issue 正文本身公开；不得粘贴敏感认证信息、客户数据或邮件正文）\n\n【Issue 正文】\n### Task ID\nE2E-CHAIN-20261121-03\n\n### 目标\n端到端复测：确认 Deep 自动链路能在同一次运行里产出可评审改动并完成合并。\n\n### 允许改动\n只新增两个文件：\n- `scripts/lib/e2e-chain-probe-20261121-0815.mjs`\n- `scripts/tests/e2e-chain-probe-20261121-0815.test.mjs`\n\n### 内容\n在首个文件导出常量 `E2E_CHAIN_PROBE = 'ok-20261121T0815Z'`；测试断言该常量等于 'ok-20261121T0815Z'。只新增这两个文件，不改动其他任何文件。\n\n【给 deepseek 的任务】\n按 Issue 描述做一件最小可合并的工程改动。只输出整文件写入块，每块格式：\n<<<FILE:相对路径>>>\n文件完整内容\n<<<END>>>\n\n规则（按顺序，命中即停）：\n1 只输出写入块；不输出解释段落、不输出计划、不加 markdown 围栏。\n2 不得修改 .github/workflows/、config/ 下的授权与自治策略文件，以及写入闸已拒绝的路径。\n3 若需求属于六个保留家族，只输出一行 BLOCKED_FIDUCIARY 并停止。\n4 若无法在边界内给出可验证改动，只输出一行 NO_SAFE_CHANGE 加不超过 20 个词的原因。\n5 最多 6 个文件；每个文件必须完整，且能通过 node --check 或对应格式校验。\n6 优先补测试；不得删除或弱化既有测试。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "medium",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  }
+ ],
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [],
+  "code_change": true
+ }
+}
