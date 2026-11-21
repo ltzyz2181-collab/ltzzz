@@ -59,6 +59,15 @@
 - `seats` 必须是 `config/seat-mail-registry.json` 或 Task Hub `SEATS` 里的席位，未知席位拒绝；
 - 席位不能自选预算超过单次上限；超过当日累计直接 `blocked_budget`。
 
+### 3.1 每周节奏（2026-11-21 新增）
+
+- 触发：`.github/workflows/agent-wake-weekly.yml`，每周一 `00:40 UTC` 开一张 `wake:weekly` 卡。
+- 归属：调度席 `deep` 负责周节奏与催办；议程可由中转席（`relay_claude`）写入，缺失时按四周轮换模板兜底。
+- 卡里的 `[wake]` 行与日常请求走同一套准入闸；`dedupe_key=weekly:<ISO 周>`，同一周不会重复记账。
+- 为什么不全靠 AI 自写：外部席位没有自发心跳，cron 是保证「每周一定发生」的唯一稳定触发点。
+  AI 负责内容，cron 负责准时；两者缺一都会退化成「没人叫就不开会」。
+- 四周主题轮转：项目发展路线 → 新能力与新通道 → 产品形态 → 调度机制优化。
+
 ## 4. 预算与熔断
 
 沿用已批准的中转预算口径：

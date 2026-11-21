@@ -1,0 +1,64 @@
+name: Agent weekly innovation wake (每周创新讨论)
+
+# 每周一次「各席主动提出创新方向」的唤醒：开一张 wake:weekly 卡，卡里的 [wake] 行
+# 走与日常完全相同的准入闸（席位/当日议题数/去重/预算），再记台账。
+# 归属：调度席 deep 负责周节奏；议程可由中转席写入，缺失时用轮换模板兜底。
+# 本工作流零模型调用、零邮件、零资金动作。
+
+on:
+  schedule:
+    # 周一 00:40 UTC（周日 16:40 美西），卡在周初，留出整周讨论时间
+    - cron: '40 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      week:
+        description: 'ISO 周号，如 2026-W47（留空取当前周）'
+        required: false
+        type: string
+      agenda:
+        description: '本周议程（留空用轮换模板兜底）'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: agent-wake-weekly
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0, persist-credentials: true}
+
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      - name: Verify contracts
+        run: |
+          node --check scripts/lib/wake-weekly.mjs
+          node --check scripts/agent-wake-weekly.mjs
+          node --test scripts/tests/wake-weekly.test.mjs scripts/tests/wake-intake.test.mjs
+
+      - name: Open weekly card and record intake
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WEEK: ${{ github.event.inputs.week }}
+          AGENDA: ${{ github.event.inputs.agenda }}
+        run: |
+          git config user.name "ltzzz-agent-wake"
+          git config user.email "bot@ltzzz.local"
+          if [ -n "$WEEK" ] && [ -n "$AGENDA" ]; then
+            node scripts/agent-wake-weekly.mjs --week "$WEEK" --agenda "$AGENDA" --apply
+          elif [ -n "$WEEK" ]; then
+            node scripts/agent-wake-weekly.mjs --week "$WEEK" --apply
+          elif [ -n "$AGENDA" ]; then
+            node scripts/agent-wake-weekly.mjs --agenda "$AGENDA" --apply
+          else
+            node scripts/agent-wake-weekly.mjs --apply
+          fi
