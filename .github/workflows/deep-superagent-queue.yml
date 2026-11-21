@@ -10,12 +10,15 @@ on:
       - 'scripts/tests/deep-superagent-queue.test.mjs'
       - 'scripts/tests/dispatch-seat-policy.test.mjs'
       - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'scripts/dispatch-issue-card.mjs'
+      - 'scripts/tests/dispatch-issue-card.test.mjs'
+      - '.github/workflows/deep-issue-dispatch.yml'
       - 'config/dispatch-seat-policy-20261117.json'
       - '.github/workflows/deep-superagent-daily.yml'
       - '.github/workflows/deep-superagent-queue.yml'
       - '.github/workflows/deep-dispatch-daily.yml'
-  # 只补「每日调度工作流用 GITHUB_TOKEN 推卡、GitHub 抑制其 push 事件」这一条路径。
-  # 脚本会校验 card_commit 在 main 上，且该提交只新增一张 DAILY 卡。
+  # 只补「每日调度 / Issue 桥用 GITHUB_TOKEN 推卡、GitHub 抑制其 push 事件」这一条路径。
+  # 脚本会校验 card_commit 在 main 上，且该提交只新增一张卡（DAILY 或 ISSUE 形态）。
   workflow_dispatch:
     inputs:
       card_commit:
@@ -34,6 +37,9 @@ on:
       - 'scripts/tests/deep-superagent-queue.test.mjs'
       - 'scripts/tests/dispatch-seat-policy.test.mjs'
       - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'scripts/dispatch-issue-card.mjs'
+      - 'scripts/tests/dispatch-issue-card.test.mjs'
+      - '.github/workflows/deep-issue-dispatch.yml'
       - 'config/dispatch-seat-policy-20261117.json'
       - '.github/workflows/deep-superagent-daily.yml'
       - '.github/workflows/deep-superagent-queue.yml'

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.js';
-import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
+import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,isIssueCardOnlyChange,isSingleNewDispatchCard,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
 test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
@@ -259,4 +259,24 @@ test('a single-role route card passes the contract gate', () => {
     '协调席输出：每项一行 <ref> | <route> | <理由一句>',
   ].join('\n');
   assert.doesNotThrow(() => assertCardContract({prompt}));
+});
+
+test('issue bridge cards use the same single-new-card dispatch window as daily cards', () => {
+  const issueCard = 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-ISSUE-471.json';
+  assert.equal(isIssueCardOnlyChange([issueCard]), true);
+  assert.equal(isSingleNewDispatchCard([issueCard]), true);
+  assert.equal(isSingleNewDispatchCard(['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-ISSUE-471-R1.json']), true);
+  assert.equal(isSingleNewDispatchCard(['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-DAILY-3.json']), true);
+  for (const bad of [
+    [],
+    [issueCard, 'README.md'],
+    [issueCard, 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-ISSUE-472.json'],
+    ['scripts/run-deep-superagent-queue.mjs'],
+    ['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-ISSUE-0471.json'],
+    ['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-ISSUE-471-R10.json'],
+    ['ops/deep-superagent/tasks/../evil.json'],
+    ['ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261121-ISSUE-471.json.bak'],
+  ]) {
+    assert.equal(isSingleNewDispatchCard(bad), false, JSON.stringify(bad));
+  }
 });

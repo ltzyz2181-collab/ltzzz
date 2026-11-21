@@ -53,6 +53,16 @@ export function isDailyCardOnlyChange(names){
  return Array.isArray(names)&&names.length>0&&names.every(name=>typeof name==='string'&&/^ops\/deep-superagent\/tasks\/DEEP-SUPERAGENT-\d{8}-DAILY-[1-9]\.json$/.test(name));
 }
 
+// Task #471：Issue 桥用同一条受信路径（卡提交 + workflow_dispatch），因此手动派发
+// 校验必须承认 Issue 卡，但仍是「一次提交只新增一张卡」——不放宽为任意文件。
+export function isIssueCardOnlyChange(names){
+ return Array.isArray(names)&&names.length===1&&typeof names[0]==='string'&&/^ops\/deep-superagent\/tasks\/DEEP-SUPERAGENT-\d{8}-ISSUE-[1-9]\d{0,6}(?:-R[1-9])?\.json$/.test(names[0]);
+}
+
+export function isSingleNewDispatchCard(names){
+ return isDailyCardOnlyChange(names)||isIssueCardOnlyChange(names);
+}
+
 // Only newly added top-level JSON cards are consumable. Modifying an old card
 // cannot silently become another execution attempt on a later push.
 export function selectQueueCards(changes){
@@ -340,7 +350,7 @@ export async function main({env=process.env}={}){
    try{execFileSync('git',['merge-base','--is-ancestor',context.source_commit,'origin/main'],{stdio:'ignore'});}catch{throw Error('manual_dispatch_commit_not_on_main');}
    before=execFileSync('git',['rev-parse',context.source_commit+'^'],{encoding:'utf8'}).trim();
    const names=execFileSync('git',['diff','--no-renames','--name-only',before,context.source_commit],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
-   if(!isDailyCardOnlyChange(names))throw Error('manual_dispatch_requires_daily_card_only');
+   if(!isSingleNewDispatchCard(names))throw Error('manual_dispatch_requires_single_new_card');
   }else{
    if(event.after!==context.source_commit||!COMMIT.test(event.before||'')||/^0+$/.test(event.before))throw Error('trusted_push_range_required');
    before=event.before;
