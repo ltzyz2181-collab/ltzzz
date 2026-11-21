@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-21T02:54:02.410Z",
+  "requested_at": "2026-11-21T02:53:35.298Z",
+  "responded_at": "2026-11-21T02:54:02.410Z",
+  "request_id": "20261121025337187694903UZhgMjak",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "desktop_claude",
+  "purpose": "generation",
+  "generation_output": true,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "model_tier": "gpt",
+  "model_class": "gpt",
+  "routing": {
+    "requested_model": "gpt-6.1-sol",
+    "served_model": "gpt-6.1-sol",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "ltzzz_proxy",
+  "boundary_exception": false,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 900,
+  "batch": false,
+  "prompt": {
+    "chars": 2618,
+    "estimated_input_tokens": 1494,
+    "sha256": "f8bea7f83d02f4907007dbfcd5645416421b5fb9985ca65781dbd3606904d2d7"
+  },
+  "http": 200,
+  "duration_ms": 27112,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 1396,
+    "prompt_tokens_billed": 1396,
+    "usage_source": "reported",
+    "completion_tokens": 980,
+    "total_tokens": 2376
+  },
+  "cost_usd": 0.009934,
+  "balance_before_usd": 12.568348,
+  "balance_after_usd": 12.558414,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 27112,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 1120,
+    "preview": "## 同意\n同意“只追加、不阻断”和“未知写 unverified”，也同意区分调用、投递与回应。样例 B 的 SMTP 250 只能支持 `transport_accepted`；样例 C 只证明任务卡及其状态；样例 E 的 success 不能替代业务验收。凭证应记录可核验事件，而非席位自述。\n\n## 反驳\n邮件通",
+    "text": "## 同意\n同意“只追加、不阻断”和“未知写 unverified”，也同意区分调用、投递与回应。样例 B 的 SMTP 250 只能支持 `transport_accepted`；样例 C 只证明任务卡及其状态；样例 E 的 success 不能替代业务验收。凭证应记录可核验事件，而非席位自述。\n\n## 反驳\n邮件通道在现有证据下没有可接受的 `read` 最小证据。建议删除它，以 `metadata_observed` 表示样例 D 的元数据采集；关联原邮件的目标席回复可支持 `replied`，仍不证明完整阅读。状态也不是单一路径：邮件接受、模型生成、业务行动应分别判定，不能自动逐级升级。\n\n现有元数据只能筛出“疑似回声”，不能证明同一模型或同一服务主体。可执行检查：按相同测试题分组，比较不同席位的 `actual_model`、`output_sha256` 和 `request_id`；若三个不同题目中至少两题在两轮测试均出现跨席位同模型、同输出哈希，标记疑似回声；复用 request_id 则另标记疑似重放。样例 A 的模型标签相同本身不构成回声证据。\n\n最应删除 `negative_claims`：三项 false 是范围声明，不是行为证明，容易制造安全背书。将禁区写入实验说明；样例 A 已有的 effects 保留在原始回执中即可。\n\n## 可证伪假设\n对本次样本，凭现有回执可使至少 95% 的真实事件具备可回查的传输标识，并且零条仅凭 SMTP 250、任务状态或 workflow success 被升级为 `read`、`replied`、`acted`。任一条件不满足，即推翻假设；“零疑似回声”不证明席位独立。\n\n## 7 天实验与验收标准\n第 1 天新增 `mwe/events.jsonl`、`mwe/experiment.md`、`mwe/check-results.json`。保留其余字段，在 `transport_evidence` 内增加回执定位信息；不适用的响应字段写 `unverified`，明确哈希与字符数的计算口径。\n\n第 2—5 天选四席位，以三道公开非固定答案题各重复两轮，共 24 次调用；另做八次邮件发送，共 32 个真实事件。每次事件追加凭证，不保存邮件正文；后续回复另追加关联记录。\n\n第 6 天加入六条独立测试夹具，覆盖缺失标识、重复 request_id、未知模型和无证据升级。第 7 天验收：真实事件全部登记，至少 31 条标识可回查；六条夹具全部正确标记，零次虚假升级，既有放行条件不变。任一未达即失败；失败只形成报告，不阻断工作流。\n\n【交付结束】"
+  },
+  "key_fingerprint": null,
+  "failure": null,
+  "http_error": null
+}
