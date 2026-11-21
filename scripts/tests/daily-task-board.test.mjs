@@ -380,6 +380,11 @@ test('reviewed seat readback completes via syncReviewedSeats without resubmissio
   assert.equal(final.status,'completed_draft_review');
   assert.equal(final.review_verified,true);
   assert.equal(final.submission_verified,true);
+  // 评审在两次快照之间落板时，本条路径是唯一的核验出口；必须同时落 revalidation，
+  // 否则 hasUnverifiedBoard 会把已核验终态判为待核，daily sync 误退出 1。
+  assert.equal(final.revalidation,'verified');
+  assert.equal(final.revalidation_reason,'final_review_revalidated_stable');
+  assert.equal(hasUnverifiedBoard(readLedger(f.options.root,date)),false);
   assert.equal(f.posts, postsBefore, 'review readback must not resubmit');
   assert.equal(f.calls,1);
 });
