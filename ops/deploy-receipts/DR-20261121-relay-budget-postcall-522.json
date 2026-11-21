@@ -1,0 +1,85 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261121-relay-budget-postcall-522",
+  "target": "relay-budget-postcall-cap-and-close-endpoint",
+  "platform": "github-actions + cloudflare-workers",
+  "env_id": "ltzyz2181-collab/ltzzz@main + ltzzz-relay-proxy",
+  "code_commit": "390afe1494961135e9386803b787684cee28d27b",
+  "code_commit_head": "70e8462ce76c3db6e78b74e909390133ceb14546",
+  "code_path": "workers/relay-proxy/worker.mjs, scripts/tests/relay-proxy-worker.test.mjs, .github/workflows/relay-proxy-guard.yml, .github/workflows/deploy-relay-proxy.yml",
+  "deployed_at": "2026-11-21T06:13:20Z",
+  "deployment_status": "deployed",
+  "task": {
+    "issue": 522,
+    "task_id": "RELAY-BUDGET-POSTCALL-CAP-20261120-01",
+    "decision_id": "GPT-DECISION-20261120-RELAY-BUDGET-POSTCALL-CAP-01",
+    "pull_request": 548
+  },
+  "states": {
+    "draft": "done：worker.mjs 增加 settle 后实际成本对账 + /close",
+    "tested": "done：node --test scripts/tests/relay-proxy-worker.test.mjs → 34 pass / 0 fail（WSL Ubuntu-24.04）；seat guard 17 pass / 0 fail",
+    "merged": "done：PR #548 merge commit 390afe1494961135e9386803b787684cee28d27b，代码 head 70e8462ce76c3db6e78b74e909390133ceb14546",
+    "deployed": "done：Cloudflare Worker ltzzz-relay-proxy，当前版本 a7c8dc9c-9965-4289-a63b-c9d480a06007（run 44874468275）；首个部署版本 43fa03b5-8fa3-4738-b3d7-cb1a3b2e9bec（run 44874125850）",
+    "submitted": "done：GitHub Actions run 44874468275 success，run 44874125850 success",
+    "platform_accepted": "GitHub Actions deployment job success；这只表示平台执行成功，不等于业务/客户验收，也不等于官方供应商余额或账单"
+  },
+  "verified": [
+    {
+      "kind": "local_tests_worker",
+      "result": "ok",
+      "evidence": "cd 临时最小树（main 版 worker + 本补丁 + main 版 config/relay-seat-policy.json）node --test scripts/tests/relay-proxy-worker.test.mjs → tests 34 / pass 34 / fail 0，duration 320 ms；含新增 9 个回归用例：per-call 超限关闭、daily 超限关闭、project 超限关闭、无 actual cost 按 worst case 结算、/close 幂等、网关 close 仅鉴权可用、缺 provider usage 仍按 worst case、outcome_unknown 只结算一次不重放、下一笔 reserve 被 relay_seat_closed 拒绝"
+    },
+    {
+      "kind": "local_tests_guard",
+      "result": "ok",
+      "evidence": "同一临时树 node --test scripts/tests/relay-seat-guard.test.mjs → tests 17 / pass 17 / fail 0；未改动该文件"
+    },
+    {
+      "kind": "ci_pull_request",
+      "result": "ok",
+      "evidence": "PR #548 head 70e8462c 上 workflow 'Relay proxy guard tests (no models)' run 44874060814 success；同 head 其余 check-runs 均 success/skipped，mergeable_state=clean 后合并"
+    },
+    {
+      "kind": "ci_main",
+      "result": "ok",
+      "evidence": "main 390afe14 上同 workflow run 44874125893 success"
+    },
+    {
+      "kind": "deploy_relay_proxy",
+      "result": "ok",
+      "evidence": "run 44874125850 'Deploy LTZZZ relay proxy' success，head_sha=390afe14，checkout main；wrangler 'Uploaded ltzzz-relay-proxy'，Current Version ID 43fa03b5-8fa3-4738-b3d7-cb1a3b2e9bec；secrets RELAY_STATION_KEY 与 PROXY_ACCESS_TOKEN 上传成功（值未回显）"
+    },
+    {
+      "kind": "deploy_relay_proxy_final",
+      "result": "ok",
+      "evidence": "run 44874468275 success，head_sha=5ac04543（只改部署工作流 smoke 循环变量，不改 worker），Current Version ID a7c8dc9c-9965-4289-a63b-c9d480a06007"
+    },
+    {
+      "kind": "live_auth_readback",
+      "result": "ok",
+      "evidence": "run 44874468275 日志：smoke_path=/v1/chat/completions smoke_http=401；smoke_path=/v1/budget/close smoke_http=401；两次响应体 {\"error\":{\"code\":\"proxy_unauthorized\"}}。/v1/budget/close 返回 401 而非 404，证明新路由已在线上版本生效且被同一鉴权闸门保护"
+    },
+    {
+      "kind": "policy_unchanged",
+      "result": "ok",
+      "evidence": "未改 config/relay-seat-policy.json：per-call 0.05 / daily 0.5 / project 10 / floor 3 / auto_topup=false 全部保持"
+    }
+  ],
+  "failed_attempts": [
+    {
+      "kind": "deploy_smoke_shadowed_PATH",
+      "run_id": 44874393298,
+      "result": "failure",
+      "evidence": "新增双路由 smoke 第一版把循环变量命名为 PATH，覆盖 shell PATH，curl 找不到，job step 退出码 127；部署本身已成功（version 9c867800-610b-421d-a4fa-dd33bbd3b169）。修复 commit 5ac04543 将变量改名为 ROUTE，复跑 run 44874468275 success。未重复同一错误写法。"
+    }
+  ],
+  "blockers": [],
+  "next_action": "GPT 席复核本回执与 PR #548 后可解除 #522 的付费 relay HOLD。解除前无需再发付费调用；若要补线上预算拦截实测，应使用一笔允许额度内的合成调用，并在调用后回读 /v1/budget/state，确认 actual 成本超 0.05 时 closed=true 且下一笔 reserve 返回 403 relay_seat_closed。",
+  "known_issues": [
+    "本机（Windows 与 WSL）到 ltzzz-relay-proxy.ltzyz2181.workers.dev 直连均超时（curl 000 / fetch failed），因此健康与鉴权证据取自 GitHub Actions runner 的 smoke 日志，而非本机实时探针。",
+    "部署 smoke 只验证无 token 的 401 与路由存在性；带 proxy token 的 /v1/budget/state 回读和真实超限关闭未在线上执行，运行时行为由 34 个合成测试覆盖。",
+    "Worker 当前没有独立 /health 或源码 SHA 端点；源码版本对应关系由部署 run 的 head_sha、wrangler 输出与 GitHub commit 记录共同确定。",
+    "未做任何付费 relay 调用；本回执不声称官方供应商余额或账单，也不声称 GPT 席已解除 HOLD。",
+    "未改每日看板 daily-agent-tasks.yml 的常态红与 hub:new→deep:task 结构断点；这两项不在 #522 允许范围内，需另开任务。"
+  ]
+}
