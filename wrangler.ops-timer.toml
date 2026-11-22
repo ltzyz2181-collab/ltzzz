@@ -1,0 +1,15 @@
+name = "ltzzz-ops-timer"
+main = "workers/ops-timer/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+# 外部定时器：Cloudflare Cron Trigger -> GitHub workflow_dispatch。
+# 只持有两个 secret：
+#   LTZZZ_AGENT_TOKEN   GitHub PAT，仅用于 workflow_dispatch（Actions: write）
+#   TIMER_TRIGGER_TOKEN 本 Worker /tick 的调用口令，由部署脚本随机生成后写入
+# 这里没有模型密钥、没有资金绑定、不读邮件正文、不接触任何钱包/签名材料。
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+REPO = "ltzyz2181-collab/ltzzz"
