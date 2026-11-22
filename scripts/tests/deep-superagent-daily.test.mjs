@@ -17,6 +17,8 @@ test('daily card binds a fixed public readset to stable idempotent package ident
  assert.equal(first.body.task_id,DAILY_TASK_ID);assert.equal(first.body.platform,'internal');assert.equal(first.body.data_classification,'public_distributable');
  assert.equal(first.body.package_id,second.body.package_id);assert.equal(first.input_sha256,second.input_sha256);assert.equal(first.source_readset.length,PUBLIC_READSET_PATHS.length);
  assert.match(first.body.prompt,/ANS-OLD-01/);assert.match(first.body.prompt,/SHA-256/);assert.doesNotMatch(first.body.prompt,/API_KEY|Bearer /);
+ // 2026-11-23：grok 在 4096 预算上 finish_reason=length 导致整单 blocked，日卡须写死有界输出
+ assert.match(first.body.prompt,/最多复核 5 项/);assert.match(first.body.prompt,/不超过 900 字/);
 });
 test('changed readset or oversight snapshot changes package key; an identical day cannot hide changed inputs',()=>{
  const a=buildDailyCard({businessDate:'2026-11-09',latestBytes:snapshot(),sourceBytes:sourceBytes()});

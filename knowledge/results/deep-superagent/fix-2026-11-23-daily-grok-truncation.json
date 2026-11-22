@@ -1,0 +1,12 @@
+{
+ "schema":"ltzzz.deep-superagent.fix.v1",
+ "date":"2026-11-23",
+ "run_id":"45080425824",
+ "finding":"日课补跑 blocked：blocked_reason=daily_job_blocked、job=null、model_calls=2、outputs=[]；plan 由 deepseek 正常 stop 收尾，工作席落到 grok 后 finish_reason=length（output_truncated_at_output_budget，4096 预算用满），整单被判 blocked",
+ "root_cause":"日卡 prompt 达 21740 字节，工作席任务未给输出上限；grok 按『审计最老 5 项 + p1_tasks + ANS 多态』展开后超出 4096 输出预算",
+ "fix":"scripts/run-deep-superagent-daily.mjs buildDailyCard 增加有界输出约束：工作席最多复核 5 项、每项≤2 行且≤25 词、全文≤900 字、不得复述来源正文与 SHA 列表、超限视为未完成",
+ "not_changed":["未提高 grok 输出预算（沿用 2026-11-19 决定的 4096，避免静默加预算）","未把截断改成静默降级（owner 明令禁止把未完成写成完成）"],
+ "tests":"node --test scripts/tests/deep-superagent-daily.test.mjs scripts/tests/dispatch-daily-card.test.mjs → 15 pass / 0 fail；新增断言匹配『最多复核 5 项』『不超过 900 字』",
+ "verification_pending":"改码后 input_sha256 变化会产生新 attempt，需重跑 workflow_dispatch 验证 status=daily_result_readback_complete",
+ "financial_execution":false,"transactions":0,"paid":false,"deploys":0,"merges":0
+}

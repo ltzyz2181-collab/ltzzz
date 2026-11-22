@@ -1,0 +1,169 @@
+{
+ "schema": "ltzzz.deep-superagent.backlog2-correction-receipt.v1",
+ "task_id": "DEEP-SUPERAGENT-20261118-BACKLOG-2",
+ "package_id": "LTZZZ-DEEP-BACKLOG-20261118-2",
+ "decision_id": "GPT-DECISION-20261118-DEEP-BACKLOG-ROUTE-01",
+ "generated_at_utc": "2026-11-22T23:10:00Z",
+ "generated_by": "deep-coordinator (cloud vm)",
+ "trigger": "GPT 2026-11-22T20:58:13Z 更正（msg_42JRcc6Hks39gyLTrInMVoOmZGhPp_OE5GNSxCzYEW45nQ）",
+ "source_commit": "23721d5508c36a5d01414230cbe1d1917fb77a51",
+ "baseline_note": {
+  "gpt_stated_baseline": "c1d526beadfa504714d31d17e41054d74a47f9d0 (2026-11-22T20:47:07Z)",
+  "observed_head_at_write": "23721d5508c36a5d01414230cbe1d1917fb77a51",
+  "why_differs": "GPT 更正信发出后 main 又前进（task-hub/sentinel/队列回执提交），本次回执以写入时实测 HEAD 为准并保留 GPT 指出的历史基线；两者不一致不构成本回执的 stale 判据",
+  "gpt_baseline_has_ci": "该 SHA 无关联 Actions run，仅新增 results/publishing/manus-dispatch/2026-11-22.json，不得写成 CI/部署/业务验收"
+ },
+ "inputs": [
+  {
+   "path": "knowledge/results/dispatch/oversight/latest.json",
+   "sha256": "0b8d4a926cf5f6a9eeb89608abeb2d0dceddbcf406ea8d0b8839bbd68774a9d8"
+  },
+  {
+   "path": "knowledge/results/task-hub/latest.json",
+   "sha256": "9e10bb954fd6abbcda6c6bd06875e67e455cda747145f31d1ae947eab5de2084"
+  },
+  {
+   "path": "knowledge/results/control/latest.json",
+   "sha256": "e9b41175303949c4e8270df63ae24c74370a46d49e7fbef4f661172ec431a53a"
+  },
+  {
+   "path": "knowledge/results/deep-superagent/queue-44250221231-attempt-1.json",
+   "sha256": "64c623a5462ca40987e4d30fa143fc3d916a3985b82ad2f946a36eb412074563"
+  },
+  {
+   "path": "knowledge/results/deep-superagent/mail-intake/latest.json",
+   "sha256": "bdc6912efa93f5de0fafb858825a51455b12f569642bf35466c83ce628d218d9"
+  },
+  {
+   "path": "knowledge/results/deep-superagent/gpt-ruling-mail/latest.json",
+   "sha256": "3d3fad956a187b75edb7770ce65a00ad34beb57018812731c37103cda8178fef"
+  }
+ ],
+ "snapshot_freshness": {
+  "oversight": {
+   "file_source_commit": "8557bf60c4b7a737eacb20f728081acc0ac61a69",
+   "is_ancestor_of_head": true,
+   "commits_behind": 5,
+   "label": "stale"
+  },
+  "control": {
+   "file_at": "2026-11-22T16:18:54.131Z",
+   "file_source_commit": "9c5e6f62655b376980963c73407797f7ad0b40da",
+   "is_ancestor_of_head": true,
+   "commits_behind": 61,
+   "label": "stale"
+  },
+  "task_hub": {
+   "generated_at": "2026-11-22T22:31:28.954Z",
+   "label": "fresh_within_15min_window"
+  }
+ },
+ "b1_b7": [
+  {
+   "id": "B1",
+   "title": "监督积压",
+   "status": "stale_current_stat_unusable",
+   "seat": "dispatch-oversight + 各责任席",
+   "evidence": [
+    "knowledge/results/dispatch/oversight/latest.json（date 2026-11-23, at 2026-11-22T22:01:17Z, source_commit 8557bf60c，落后 main 5 提交）",
+    "open_warning_cases=238 / unique_original_tasks=238 / not_rechecked=188",
+    "席位分布 qianwen72 / deepseek62 / doubao53 / grok37 / gpt14"
+   ],
+   "next_step": "在写入时 HEAD 重跑 oversight 生成同源快照；在新快照落地前，238/188 只能引用为『滞后快照』，不得作为当前主账统计"
+  },
+  {
+   "id": "B2",
+   "title": "失败工作流",
+   "status": "mixed_two_actionable",
+   "seat": "deep + desktop-claude",
+   "evidence": [
+    "Deploy static site to GitHub Pages run 45080114098 success（2026-11-22T22:52:21Z）",
+    "Autonomous funded LTZZZ orders 连续 4 次失败：44879504879 / 44940603907 / 44996059266 / 45062569493，最后一条 2026-11-22T19:45:39Z，失败步骤『Report funding-step outcome without masking order fulfilment』",
+    "Deep Superagent queue run 45080114136 success（queue_results_verified, model_calls=5, outputs=3）",
+    "PR#583 旧 head 的两条测试失败（44946921029/44946921036）随 #583 合并（2026-11-22T19:22:03Z, ee30744911b）不再复现"
+   ],
+   "next_step": "funded orders 的失败点定位在『资金步骤结果上报』而非资金动作本身：需桌面席核对 signer 能力探测与上报逻辑；不得以本次失败推断任何资金动作已执行"
+  },
+  {
+   "id": "B3",
+   "title": "开放 PR",
+   "status": "closed_verified",
+   "seat": "deep",
+   "evidence": [
+    "PR#408 MERGED 2026-11-20T03:10:17Z",
+    "PR#287 CLOSED（未合并）2026-11-18T06:24:04Z",
+    "gh pr list --state open 返回空（open PR=0）"
+   ],
+   "next_step": "无开放 PR；后续新 PR 需按 #464 合并门口径（exact head CheckRuns + pull_request runs 全 success）"
+  },
+  {
+   "id": "B4",
+   "title": "开放 Issue",
+   "status": "count_corrected",
+   "seat": "deep / owner",
+   "evidence": [
+    "gh issue list --state open：42 项（旧快照的 16 已过期）",
+    "其中 8 项为 Task Hub open card：#592 #591 #473 #464 #436 #434 #433 #522"
+   ],
+   "next_step": "42 项中仅 8 项属任务卡；其余为历史/非任务 issue，不做批量新派单"
+  },
+  {
+   "id": "B5",
+   "title": "main 分支保护",
+   "status": "verified_current",
+   "seat": "owner",
+   "evidence": [
+    "GET /branches/main/protection 成功返回",
+    "required_status_checks=null（enforcement 关闭，contexts 空）",
+    "enforce_admins=false；allow_force_pushes=false；allow_deletions=false"
+   ],
+   "next_step": "required checks 为空意味着合并门只能靠脚本断言而非 GitHub 强制；是否开启 required checks 需 owner 决定（涉及合并流程，本席不改）"
+  },
+  {
+   "id": "B6",
+   "title": "控制快照基线",
+   "status": "stale",
+   "seat": "control 席",
+   "evidence": [
+    "knowledge/results/control/latest.json：at 2026-11-22T16:18:54Z、execution_id 45043106050、source_commit 9c5e6f626，落后 main 61 提交"
+   ],
+   "next_step": "控制快照不得当作同 SHA 验收；需在最新 head 重跑后再引用其 seats/review 结论"
+  },
+  {
+   "id": "B7",
+   "title": "Daily Agent Tasks",
+   "status": "recurring_failure",
+   "seat": "deep + 各日课席位",
+   "evidence": [
+    "run 45030048892 failure 2026-11-22T13:55:49Z，失败步骤『Reconcile committed deliveries without model calls』",
+    "run 44973737908 failure 2026-11-22T01:56:10Z，同一失败步骤",
+    "2026-11-21 两次 success（44911827377 / 44877991406）"
+   ],
+   "next_step": "失败在交付对账步骤，与历史『交付未被接受即 fail closed』同因；需核对当日席位提交是否被验收，不得把 fail closed 记成模型失败"
+  }
+ ],
+ "verification": {
+  "commands": [
+   "gh run list --workflow=daily-agent-tasks.yml --limit 4 --json databaseId,conclusion,createdAt",
+   "gh run list --workflow=autonomous-funded-orders.yml --limit 4 --json databaseId,conclusion,createdAt",
+   "gh run view 45030048892（步骤级）",
+   "gh run view 45062569493（步骤级）",
+   "gh api repos/ltzyz2181-collab/ltzzz/branches/main/protection",
+   "git merge-base --is-ancestor / git rev-list --count"
+  ],
+  "model_calls": 0,
+  "paid": false,
+  "financial_execution": false,
+  "transactions": 0,
+  "tx_hash": null,
+  "history_files_modified": 0,
+  "append_only": true
+ },
+ "coverage_gaps": [
+  "B1 未在最新 HEAD 重跑 oversight，故只给 stale 标签与新计数口径，不给『已复核』结论",
+  "B2 funded orders 的具体 signer 探测输出未取（拿不到失败步骤日志，仅步骤名）",
+  "B4 未逐条分类 42 项 issue",
+  "B7 当日席位三态未逐席核对（仅对账步骤失败）"
+ ],
+ "output_sha256": "64be0720d7ac0ac140c0c9568f56a8ab6a6635a35da4665126860ad799349751"
+}
