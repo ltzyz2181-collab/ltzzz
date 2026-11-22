@@ -1,0 +1,50 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261122-ops-timer-44971116347",
+  "target": "external-ops-timer",
+  "platform": "cloudflare-workers-cron + github-actions-workflow-dispatch",
+  "env_id": "ltzyz2181-collab/ltzzz@main + ltzzz-ops-timer",
+  "code_commit": "46e55e34a425b26e630e4c0d0f9a79a70ba43dde",
+  "code_path": "workers/ops-timer",
+  "deployed_at": "2026-11-22T01:22:37.777Z",
+  "deployment_status": "deployed_with_blockers",
+  "worker_revision": "ops-timer-v1",
+  "cron": "*/15 * * * *",
+  "task": {
+    "task_id": "OPS-TIMER-20261122",
+    "run_id": "44971116347"
+  },
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "done",
+    "deployed": "blocked",
+    "submitted": "done",
+    "platform_accepted": "blocked"
+  },
+  "verified": [
+    {
+      "kind": "secrets_bound",
+      "result": "ok",
+      "evidence": "wrangler secret put LTZZZ_AGENT_TOKEN / TIMER_TRIGGER_TOKEN 完成（值未打印）"
+    },
+    {
+      "kind": "worker_unit_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/ops-timer-worker.test.mjs：pass=17 fail=0"
+    },
+    {
+      "kind": "worker_deployed",
+      "result": "failed",
+      "evidence": "wrangler deploy 失败：⛅️ wrangler 4.166.0 ──────────────────── Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md Total Upload: 8.24 KiB / gzip: 2"
+    }
+  ],
+  "blockers": [
+    "wrangler_deploy_failed"
+  ],
+  "next_action": "按下一条 blocker 修复后重新部署；不得把本次部署描述为已验收",
+  "evidence_ref": "knowledge/results/ops-timer/deploy-44971116347.json",
+  "code_sha256": {
+    "index.js": "948a5edab38d285ed7ca69382fee9756d47bd2fb8419a7e989486bb670f4d211"
+  }
+}

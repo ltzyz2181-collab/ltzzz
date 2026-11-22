@@ -1,0 +1,37 @@
+{
+  "schema": "ltzzz.ops-timer.deploy.v1",
+  "at": "2026-11-22T01:22:37.777Z",
+  "run_id": "44971116347",
+  "source_commit": "46e55e34a425b26e630e4c0d0f9a79a70ba43dde",
+  "worker": "ltzzz-ops-timer",
+  "revision": "ops-timer-v1",
+  "cron": "*/15 * * * *",
+  "status": "deployment_with_blockers",
+  "version_id": null,
+  "health": null,
+  "tick": null,
+  "dispatch_run": null,
+  "evidence": [
+    {
+      "kind": "secrets_bound",
+      "result": "ok",
+      "evidence": "wrangler secret put LTZZZ_AGENT_TOKEN / TIMER_TRIGGER_TOKEN 完成（值未打印）"
+    },
+    {
+      "kind": "worker_unit_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/ops-timer-worker.test.mjs：pass=17 fail=0"
+    },
+    {
+      "kind": "worker_deployed",
+      "result": "failed",
+      "evidence": "wrangler deploy 失败：⛅️ wrangler 4.166.0 ──────────────────── Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md Total Upload: 8.24 KiB / gzip: 2"
+    }
+  ],
+  "blockers": [
+    "wrangler_deploy_failed"
+  ],
+  "secrets_included": false,
+  "model_calls": 0,
+  "financial_actions": 0
+}
