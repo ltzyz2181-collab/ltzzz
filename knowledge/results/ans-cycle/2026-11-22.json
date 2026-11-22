@@ -4,7 +4,7 @@
   "run_id": "44995904670",
   "source_commit": "3777faf79be8627f934e03b075ab677067183da3",
   "at": "2026-11-22T06:55:58.161Z",
-  "status": "claimed_before_model_calls",
+  "status": "draft_rejected",
   "generation_policy": "ans_short_non_thinking_v2",
   "priority": "ANS autonomous dispatch and feedback",
   "tasks": [
@@ -19,8 +19,44 @@
       "role": "independent_reviewer"
     }
   ],
-  "calls": [],
-  "artifacts": [],
+  "calls": [
+    {
+      "requested_agent": "DeepSeek",
+      "status": "success",
+      "at": "2026-11-22T06:56:01.738Z",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "finish_reason": "stop",
+      "tokens_used": 32859
+    },
+    {
+      "requested_agent": "Doubao",
+      "status": "success",
+      "at": "2026-11-22T06:56:09.236Z",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "finish_reason": "stop",
+      "tokens_used": 34272
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "worker",
+      "task_id": "ANS-2026-11-22-deepseek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "sha256": "1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5",
+      "path": "knowledge/results/ans-cycle/2026-11-22-worker.json"
+    },
+    {
+      "role": "reviewer",
+      "task_id": "ANS-2026-11-22-doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "sha256": "c26d4c0cad31edf74db28c08287919293bdf81b9b0d0dbfe38d91e3fc959a400",
+      "path": "knowledge/results/ans-cycle/2026-11-22-reviewer.json"
+    }
+  ],
   "openai_calls": 0,
   "financial_execution": false,
   "paid": false,
@@ -35,5 +71,210 @@
     },
     "subject_sha256": "511d777321c0a0079027b4c678dd447dc5eab0817b34ba0b982a82eea875bdd0",
     "source_text": "# Grok 每日观察与代码审查 · 2026-09-22\n\n## 一、装备论可验证观察\n\n**观察：当系统把“观察—执行—结果—验证”写成固定链路时，重复解释和重复启动的成本会下降；但只有在日志真正被读取、任务真正执行、结果真正落盘时，这个观察才成立。**\n\n### 可验证方式\n连续 7 天记录三类任务：\n1. 只有自然语言提醒的任务；\n2. 有任务 ID、执行记录和失败原因的任务；\n3. 使用统一 LTZZZ 状态快照后再执行的任务。\n\n比较：重复创建/重复索取凭证次数、成功率、失败定位时间、人工介入次数。今天的仓库证据只能支持“链路已被设计并部分落盘”，不能直接证明行为改进已经发生。\n\n### 对心理健康议题的实际启发\n- **焦虑**：把模糊担忧拆成“已知事实、可控动作、等待项、验证结果”，可能减少不确定性带来的反复确认；这是行为组织假设，不是焦虑症治疗证据。\n- **抑郁**：把行动拆成低门槛步骤并保留完成记录，可能增加可见的行动反馈；不能据此诊断抑郁，也不能替代心理治疗或药物治疗。\n- **双相相关议题**：记录睡眠、精力、活动量和情绪变化可帮助形成时间序列，但不能凭记录或 AI 自动诊断双相障碍。NIMH 说明，诊断需要结合症状的严重程度、持续时间、频率、既往病程和家族史，由医疗专业人员综合评估；规律作息和情绪/生活图表可作为辅助管理工具，但不是诊断工具。参考：NIMH《Bipolar Disorder》。\n\n## 二、APP / Web3 代码审查\n\n### 审查对象\n- `ltzzz-daily-automation-worker.js`\n- `wrangler.daily.toml`\n- `wallet-lab.html`\n- 今日新增 `knowledge/daily/doubao/2026-09-22.md`\n\n### 真实发现\n`ltzzz-daily-automation-worker.js` 的 `renderScanSection()` 仍把 `scan.manifest` 中的对象直接插入模板字符串：\n\n```js\nconst fileLines = scan.manifest.map((f) => `  - ${f}`).join(\"\\\\n\");\n```\n\n这会把清单渲染成 `[object Object]`，导致每日记录看不到真实文件路径和 `readable` 状态，属于可维护性和可验证性问题，不是为了凑字数的修改。\n\n### 本次处理\n本次没有直接改生产 Worker，因为当前连接返回的源码是超长单行 JSON 内容，无法在不重新取完整文件并逐字核对的情况下安全提交替换；不应凭片段覆盖整份 Worker。问题已留下记录，下一次应做最小改动：\n\n```js\nconst fileLines = scan.manifest\n  .map((f) => `  - ${f.path} (readable=${f.readable})`)\n  .join(\"\\\\n\");\n```\n\n这项修改不涉及密钥、真实资金、支付或生产权限。\n\n## 三、状态\n\n### 已上线\n- 今日装备论观察与可验证方法已写入本文件。\n- 心理健康讨论与医学诊断/治疗证据边界已区分。\n- 今日豆包装备论整理和视频脚本已在 `knowledge/daily/doubao/2026-09-22.md` 留痕；对应提交为 `61c8e757d9b750faf1f57ab9a09287a005189b7f`。\n- 今日 Memory promotion candidates 已更新；对应提交为 `34770a5568334cefd480abb2b3bc15f93b5d6275`。\n\n### 等人工凭证\n- `renderScanSection()` 的最小修复需要完整源码核对后再提交，避免误覆盖 Worker。\n- APP/Web3 的真实交易路径仍不能由 AI 代替用户确认；本次未修改真实资金、支付或生产权限。\n- 任何外部平台 OAuth/发布权限仍以实际平台授权和运行证据为准。\n"
-  }
+  },
+  "pulse_observed_at": "2026-11-22T06:53:34.535Z",
+  "actual_autonomic_feedback": {
+    "version": 1,
+    "observed_at": "2026-11-22T06:53:34.535Z",
+    "cases": [],
+    "open_cases": 0,
+    "action_taken": {
+      "type": "apply_health_dispatch_controls",
+      "paused_agents": [],
+      "dispatch_paused": false
+    },
+    "follow_up_receipt": {
+      "previous_observation_at": "2026-11-22T06:48:31.453Z",
+      "current_observation_at": "2026-11-22T06:53:34.535Z",
+      "next_probe_due_at": "2026-11-22T06:58:34.535Z"
+    },
+    "scope": "actual_health_dispatch_reflexes_not_arbitrary_patch_deployment",
+    "financial_execution": false,
+    "model_generation_proven": false,
+    "real_money_penalty": false
+  },
+  "remote_claims": true,
+  "inputs": [
+    {
+      "file": "scripts/lib/daily-task-board.mjs",
+      "sha256": "bcea2392acfcec3ffab05ae60172f66c41276e11582c0943cf7e1486cd88039a",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "scripts/daily-task-board.mjs",
+      "sha256": "a3416d4f6f70d161fbfbaec4e3e64c1e4d84c2146b80b85d68a6a63e54a222fb",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "scripts/lib/pulse-client.mjs",
+      "sha256": "74678862d82f618f87abc0111319903100ea69a61857b6e87f4adde87906b4a7",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "workers/pulse-worker/index.js",
+      "sha256": "3b3bceabedbeb3c4b19f7d011d51a4a2d9ef02b2ded84a00c34f24f334106e1f",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "workers/pulse-worker/engine.js",
+      "sha256": "b46053c7f73001ef110a3260930ce2a642b136444b7856a77b8fef1a85872d0e",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "workers/pulse-worker/tasks.js",
+      "sha256": "9577bcec2bd2716dc276fe7c5b9ebd5f19392dd5979ba621190c4895f3fb54cf",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "scripts/lib/daily-assignment.mjs",
+      "sha256": "149bf53f6daa890ba86ce45c515a5dc158fe3be6ad1f7252a5e77c5bf2f48813",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "scripts/run-autonomous-control.mjs",
+      "sha256": "944d60d024a0a51388c020fa43e7f9d3cb6a85f3cdeaee00d0d770594d87b7ba",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "scripts/run-daily-tasks.mjs",
+      "sha256": "9c0504514f2987cae6477ead43fa994be70eda8aa569a78d34b3e0c378a8e63a",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "docs/ANS-AUTONOMOUS-PULSE.md",
+      "sha256": "7c8e34b2186faa1da46936c60f9c9002ab1fd93ba324d532e5c11dc46f4b5722",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    },
+    {
+      "file": "knowledge/results/ans-cycle/2026-11-21-reviewer.json",
+      "sha256": "a74ae2da98d597ec3280c8d31ebc26e8f3837dcca1840d68bef6a133efe98ca8",
+      "commit": "1c95962ac5606989be52956a4dae54316a355e68"
+    }
+  ],
+  "execution_source_commit": "1c95962ac5606989be52956a4dae54316a355e68",
+  "skill": {
+    "applied": true,
+    "status": "active_context_injected",
+    "version": "1.0.0",
+    "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+    "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+    "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+    "scope": "ans-worker-and-independent-review",
+    "reflection": {
+      "version": 1,
+      "status": "retrieved_not_compliance_verified",
+      "lesson_ids": [
+        "L-20261030-002",
+        "L-20261030-003",
+        "L-20261030-008",
+        "L-20261117-006",
+        "L-20261030-004",
+        "L-20261030-001",
+        "L-20261101-001",
+        "L-20261030-007"
+      ],
+      "strategy_ids": [
+        "draft_rejected",
+        "execution_blocked",
+        "region_ineligible",
+        "unpinned_input"
+      ],
+      "context_sha256": "541d4351f8a8c685e58b7e06e6fc87425eb8ff2b7b5975ede2db31deb02f6356",
+      "invalid_entries": 0
+    }
+  },
+  "execution_expectation": {
+    "expected_status": "draft_independently_reviewed",
+    "source": "controller_fixed_expectation_not_model_prediction",
+    "verification": "bound independent artifact review only; no deployment or platform acceptance"
+  },
+  "provider_attempts": [
+    {
+      "requested_agent": "DeepSeek",
+      "executed_by": "DeepSeek",
+      "model": "deepseek-v4-pro",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 32859,
+      "request_id": null,
+      "completion_id": "cf3b72a1-a15e-42bf-9d0c-fd5141534e43",
+      "stream_complete": true,
+      "error": null
+    },
+    {
+      "requested_agent": "Doubao",
+      "executed_by": "Doubao",
+      "model": "doubao-seed-2-1-pro-260915",
+      "model_source": "provider_response",
+      "status": "success",
+      "finish_reason": "stop",
+      "tokens_used": 34272,
+      "request_id": null,
+      "completion_id": null,
+      "stream_complete": null,
+      "error": null
+    }
+  ],
+  "worker_raw_output": "```json\n{\n  \"finding\": \"syncDailyBoard 将无 artifact 的 generation_started 席位改写为 generation_unknown_no_repurchase 后，该状态未进入 syncFailedSeat 的处理条件，也未进入正常提交路径，导致席卡永久卡在 hasUnverifiedBoard=true，且不会向 Pulse 提交 fail_task，形成派单消费断点。\",\n  \"evidence_paths\": [\n    \"scripts/lib/daily-task-board.mjs\",\n    \"knowledge/results/ans-cycle/2026-11-21-reviewer.json\"\n  ],\n  \"minimal_patch\": \"在 scripts/lib/daily-task-board.mjs 的 syncDailyBoard 中，将 generation_unknown_no_repurchase 加入 syncFailedSeat 调用条件，并允许 recoverArtifact 从 generation_unknown_no_repurchase 状态恢复唯一完整 artifact。具体修改：\\n\\n1. 将 recoverArtifact 的状态判断改为：\\n   if (!['generation_started','generation_unknown_no_repurchase'].includes(seat.status) || seat.artifact || !seat.assignment || !seat.claim_verified) return false;\\n\\n2. 将 syncDailyBoard 中 syncFailedSeat 的条件改为：\\n   if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','generation_unknown_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\\n\\n3. 在 syncFailedSeat 中，当 seat.artifact 不存在时，生成失败证据文件 knowledge/results/daily-board/artifacts/${record.date}-${agent}-${seat.assignment.id}.failed-evidence.json，内容包含 schema_version、date、task_id、logical_seat、run_key、source_commit、status:'incomplete_or_failed'、failure_kind:'incomplete_or_failed_provider_output'、at、failure_reason。计算其 SHA-256，写入 seat.artifact = {path, sha256}，然后走既有 fail_task 提交与回读逻辑。\",\n  \"verification_commands\": [\n    \"node --check scripts/lib/daily-task-board.mjs\",\n    \"node --test scripts/tests/ans-cycle.test.mjs\",\n    \"node --test scripts/tests/reflection-harness.test.mjs\",\n    \"node -e \\\"import('./scripts/lib/daily-task-board.mjs').then(m=>{const r={run_key:'test',seats:{a:{status:'generation_unknown_no_repurchase',assignment:{id:'DAILY-2026-11-21-a'},claim_verified:true}}}; console.log(m.hasUnverifiedBoard(r));})\\\"\"\n  ],\n  \"remaining_blocker\": \"远端 readRemote 必须先读到失败证据文件，才能完成 fail_task 回读验证；需将该 failed-evidence.json 提交并推送至仓库 main 后才可端到端验证。\"\n}\n```",
+  "worker_raw_sha256": "1022c9e233758c496f9698a1142ad0c330da31e9a0cd4db3cba81686f4b3ed00",
+  "worker_format": "json_engineering_draft",
+  "action_taken": {
+    "type": "engineering_draft_created_not_deployed",
+    "artifact_sha256": "1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5"
+  },
+  "follow_up_receipt": {
+    "artifact_sha256": "1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5",
+    "reviewer_provider": "Doubao",
+    "reviewer_model": "doubao-seed-2-1-pro-260915",
+    "accepted": false,
+    "scope": "independent_engineering_draft_review_not_production_execution"
+  },
+  "audit_raw_output": "{\"accepted\":false,\"artifact_sha256\":\"1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5\",\"reasons\":[\"finding 的核心控制流判断与 scripts/lib/daily-task-board.mjs 相符：syncDailyBoard 每轮先调用 recoverArtifact；若 generation_started 席位没有 artifact，且没有唯一可通过 validateArtifact 的完整产物，recoverArtifact 返回 false。\",\"当前 syncDailyBoard 在失败同步条件之后才把 generation_started 改写为 generation_unknown_no_repurchase；而 syncFailedSeat 调用条件仅包含 missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase，不包含 generation_unknown_no_repurchase。\",\"generation_unknown_no_repurchase 不进入正常提交路径，因为正常路径要求 seat.artifact 存在，并且状态属于 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review。\",\"hasUnverifiedBoard 明确将 generation_unknown_no_repurchase 计入未核验状态，因此该席位会持续使板卡保持未核验；在该状态下也不会执行 syncFailedSeat 内的 fail_task command，静态上支持 finding 所述派单消费断点。\",\"但 minimal_patch 第1项已经部分体现在所给源码中：recoverArtifact 当前确实接受 generation_started 和 generation_unknown_no_repurchase；交付却把该项表述为待应用修改，未准确区分现状与补丁，降低补丁可复核性。\",\"minimal_patch 第2项与当前源码不一致且缺少完整 diff：当前 syncFailedSeat 条件没有 generation_unknown_no_repurchase，但交付只给自然语言替换，没有给出可直接应用的补丁文本、上下文行、导入变化或回归测试改动。\",\"minimal_patch 第3项不可直接落地：syncFailedSeat 当前强制 seat.artifact.path 必须匹配 knowledge/results/daily-board/artifacts/${date}-${agent}-${sha256}.json，而建议文件名为 ${date}-${agent}-${assignment.id}.failed-evidence.json；交付没有修改该校验契约，也没有说明普通 artifact 与失败证据如何共用 seat.artifact。\",\"建议在 syncFailedSeat 内本地生成失败证据，但该函数在提交 fail_task 前会执行 digest(await readRemote(a.path))；交付没有实现或说明证据文件如何提交到 Git 并在远端 main 可读，因此按描述执行仍会在远端证据校验处失败。\",\"失败证据 JSON 只列字段，没有给出可复核的完整序列化格式、schema_version 取值、failure_reason 来源、at 注入方式、JSON 键顺序、换行、哈希计算字节、异常处理、原子写入和重复运行幂等策略。\",\"将 generation_unknown_no_repurchase 加入 syncFailedSeat 条件后，若远端证据暂不可读，函数会把状态置为 failure_sync_unknown；但交付没有提供测试证明后续重试可复用同一证据、同一 failure_command_id，并最终回读为 failed_no_repurchase。\",\"验证命令中的内联 node 命令只验证 hasUnverifiedBoard 对 generation_unknown_no_repurchase 返回 true，不能验证 syncDailyBoard 状态迁移、失败证据生成、readRemote 回读、fail_task 提交、幂等或最终 failed_no_repurchase。\",\"未提供补丁后的测试文件内容，尤其缺少 generation_started 崩溃后无 artifact、首次同步生成 unknown、再次同步生成失败证据、远端可读、fail_task 回读、重复同步不重复派单等端到端回归用例。\",\"evidence_paths 引用 knowledge/results/ans-cycle/2026-11-21-reviewer.json，但该文件自身是另一份评审材料，不能替代对 scripts/lib/daily-task-board.mjs 的独立验证；其 artifact_sha256 也不同于本次给定 hash。\",\"本次交付可接受为问题发现和修复方向草稿，但不是可直接验收的工程补丁；没有证据表明建议代码已执行、测试通过、合并、部署或上线。\"],\"unverified\":[\"未获得本次交付物原始字节，无法重算给定 artifact_sha256，只能严格回传 1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5。\",\"未实际应用 minimal_patch，无法验证补丁上下文、可合入性、语法或 node --check scripts/lib/daily-task-board.mjs 结果。\",\"未执行 node --test scripts/tests/ans-cycle.test.mjs。\",\"未执行 node --test scripts/tests/reflection-harness.test.mjs。\",\"未验证交付列出的内联 node 命令在当前模块导出和调用方式下的实际输出。\",\"未验证 recoverArtifact 对 generation_unknown_no_repurchase 的恢复语义是否应存在；当前代码允许该状态，但 validateArtifact 只接受 status 为 complete 的产物，失败证据不会被恢复为正常 artifact。\",\"未验证 artifacts 目录中存在多个 .json、唯一不完整 .failed-evidence.json、损坏 JSON、哈希不符文件名、并发写入或部分写入时 recoverArtifact 的行为。\",\"未验证失败证据文件的路径白名单、文件名冲突、assignment.id 字符安全性、schema、字段绑定、JSON 序列化字节和 SHA-256 计算。\",\"未验证失败证据如何从执行环境持久化到 readRemote 使用的 https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/ 地址。\",\"未验证 Pulse taskCommand 对建议证据路径和证据内容的接受情况；服务端只校验路径前缀和哈希，不校验 failure_kind 字段是否存在于文件内容。\",\"未验证 snapshot 过期、Pulse 不可用、鉴权失败、任务 owner 冲突、任务状态已变化、网络瞬断、fail_task 响应丢失和重复命令下的恢复与幂等。\",\"未验证修复后席位是否能稳定迁移到 failed_no_repurchase、failure_verified=true，并且 hasUnverifiedBoard 对该终态返回 false。\",\"未验证 CI 全量结果、合并提交、部署回执、目标环境、制品 SHA、生产版本或线上关键行为。\",\"未验证模型调用次数、API 费用、采购、支付、转账或其他资金事项。\"]}",
+  "audit": {
+    "accepted": false,
+    "artifact_sha256": "1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5",
+    "reasons": [
+      "finding 的核心控制流判断与 scripts/lib/daily-task-board.mjs 相符：syncDailyBoard 每轮先调用 recoverArtifact；若 generation_started 席位没有 artifact，且没有唯一可通过 validateArtifact 的完整产物，recoverArtifact 返回 false。",
+      "当前 syncDailyBoard 在失败同步条件之后才把 generation_started 改写为 generation_unknown_no_repurchase；而 syncFailedSeat 调用条件仅包含 missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase，不包含 generation_unknown_no_repurchase。",
+      "generation_unknown_no_repurchase 不进入正常提交路径，因为正常路径要求 seat.artifact 存在，并且状态属于 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review。",
+      "hasUnverifiedBoard 明确将 generation_unknown_no_repurchase 计入未核验状态，因此该席位会持续使板卡保持未核验；在该状态下也不会执行 syncFailedSeat 内的 fail_task command，静态上支持 finding 所述派单消费断点。",
+      "但 minimal_patch 第1项已经部分体现在所给源码中：recoverArtifact 当前确实接受 generation_started 和 generation_unknown_no_repurchase；交付却把该项表述为待应用修改，未准确区分现状与补丁，降低补丁可复核性。",
+      "minimal_patch 第2项与当前源码不一致且缺少完整 diff：当前 syncFailedSeat 条件没有 generation_unknown_no_repurchase，但交付只给自然语言替换，没有给出可直接应用的补丁文本、上下文行、导入变化或回归测试改动。",
+      "minimal_patch 第3项不可直接落地：syncFailedSeat 当前强制 seat.artifact.path 必须匹配 knowledge/results/daily-board/artifacts/${date}-${agent}-${sha256}.json，而建议文件名为 ${date}-${agent}-${assignment.id}.failed-evidence.json；交付没有修改该校验契约，也没有说明普通 artifact 与失败证据如何共用 seat.artifact。",
+      "建议在 syncFailedSeat 内本地生成失败证据，但该函数在提交 fail_task 前会执行 digest(await readRemote(a.path))；交付没有实现或说明证据文件如何提交到 Git 并在远端 main 可读，因此按描述执行仍会在远端证据校验处失败。",
+      "失败证据 JSON 只列字段，没有给出可复核的完整序列化格式、schema_version 取值、failure_reason 来源、at 注入方式、JSON 键顺序、换行、哈希计算字节、异常处理、原子写入和重复运行幂等策略。",
+      "将 generation_unknown_no_repurchase 加入 syncFailedSeat 条件后，若远端证据暂不可读，函数会把状态置为 failure_sync_unknown；但交付没有提供测试证明后续重试可复用同一证据、同一 failure_command_id，并最终回读为 failed_no_repurchase。",
+      "验证命令中的内联 node 命令只验证 hasUnverifiedBoard 对 generation_unknown_no_repurchase 返回 true，不能验证 syncDailyBoard 状态迁移、失败证据生成、readRemote 回读、fail_task 提交、幂等或最终 failed_no_repurchase。",
+      "未提供补丁后的测试文件内容，尤其缺少 generation_started 崩溃后无 artifact、首次同步生成 unknown、再次同步生成失败证据、远端可读、fail_task 回读、重复同步不重复派单等端到端回归用例。",
+      "evidence_paths 引用 knowledge/results/ans-cycle/2026-11-21-reviewer.json，但该文件自身是另一份评审材料，不能替代对 scripts/lib/daily-task-board.mjs 的独立验证；其 artifact_sha256 也不同于本次给定 hash。",
+      "本次交付可接受为问题发现和修复方向草稿，但不是可直接验收的工程补丁；没有证据表明建议代码已执行、测试通过、合并、部署或上线。"
+    ],
+    "unverified": [
+      "未获得本次交付物原始字节，无法重算给定 artifact_sha256，只能严格回传 1ef725c9d1d3de978df0001d87c234229b71398312499b9e7f9f71a7cc8c27e5。",
+      "未实际应用 minimal_patch，无法验证补丁上下文、可合入性、语法或 node --check scripts/lib/daily-task-board.mjs 结果。",
+      "未执行 node --test scripts/tests/ans-cycle.test.mjs。",
+      "未执行 node --test scripts/tests/reflection-harness.test.mjs。",
+      "未验证交付列出的内联 node 命令在当前模块导出和调用方式下的实际输出。",
+      "未验证 recoverArtifact 对 generation_unknown_no_repurchase 的恢复语义是否应存在；当前代码允许该状态，但 validateArtifact 只接受 status 为 complete 的产物，失败证据不会被恢复为正常 artifact。",
+      "未验证 artifacts 目录中存在多个 .json、唯一不完整 .failed-evidence.json、损坏 JSON、哈希不符文件名、并发写入或部分写入时 recoverArtifact 的行为。",
+      "未验证失败证据文件的路径白名单、文件名冲突、assignment.id 字符安全性、schema、字段绑定、JSON 序列化字节和 SHA-256 计算。",
+      "未验证失败证据如何从执行环境持久化到 readRemote 使用的 https://raw.githubusercontent.com/ltzyz2181-collab/ltzzz/main/ 地址。",
+      "未验证 Pulse taskCommand 对建议证据路径和证据内容的接受情况；服务端只校验路径前缀和哈希，不校验 failure_kind 字段是否存在于文件内容。",
+      "未验证 snapshot 过期、Pulse 不可用、鉴权失败、任务 owner 冲突、任务状态已变化、网络瞬断、fail_task 响应丢失和重复命令下的恢复与幂等。",
+      "未验证修复后席位是否能稳定迁移到 failed_no_repurchase、failure_verified=true，并且 hasUnverifiedBoard 对该终态返回 false。",
+      "未验证 CI 全量结果、合并提交、部署回执、目标环境、制品 SHA、生产版本或线上关键行为。",
+      "未验证模型调用次数、API 费用、采购、支付、转账或其他资金事项。"
+    ],
+    "executed_by": "Doubao",
+    "model": "doubao-seed-2-1-pro-260915",
+    "scope": "engineering_draft_only"
+  },
+  "deployed": false,
+  "completed_at": "2026-11-22T06:56:47.094Z"
 }

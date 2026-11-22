@@ -1,0 +1,15 @@
+{
+  "finding": "syncDailyBoard 将无 artifact 的 generation_started 席位改写为 generation_unknown_no_repurchase 后，该状态未进入 syncFailedSeat 的处理条件，也未进入正常提交路径，导致席卡永久卡在 hasUnverifiedBoard=true，且不会向 Pulse 提交 fail_task，形成派单消费断点。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-21-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 的 syncDailyBoard 中，将 generation_unknown_no_repurchase 加入 syncFailedSeat 调用条件，并允许 recoverArtifact 从 generation_unknown_no_repurchase 状态恢复唯一完整 artifact。具体修改：\n\n1. 将 recoverArtifact 的状态判断改为：\n   if (!['generation_started','generation_unknown_no_repurchase'].includes(seat.status) || seat.artifact || !seat.assignment || !seat.claim_verified) return false;\n\n2. 将 syncDailyBoard 中 syncFailedSeat 的条件改为：\n   if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','generation_unknown_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n\n3. 在 syncFailedSeat 中，当 seat.artifact 不存在时，生成失败证据文件 knowledge/results/daily-board/artifacts/${record.date}-${agent}-${seat.assignment.id}.failed-evidence.json，内容包含 schema_version、date、task_id、logical_seat、run_key、source_commit、status:'incomplete_or_failed'、failure_kind:'incomplete_or_failed_provider_output'、at、failure_reason。计算其 SHA-256，写入 seat.artifact = {path, sha256}，然后走既有 fail_task 提交与回读逻辑。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const r={run_key:'test',seats:{a:{status:'generation_unknown_no_repurchase',assignment:{id:'DAILY-2026-11-21-a'},claim_verified:true}}}; console.log(m.hasUnverifiedBoard(r));})\""
+  ],
+  "remaining_blocker": "远端 readRemote 必须先读到失败证据文件，才能完成 fail_task 回读验证；需将该 failed-evidence.json 提交并推送至仓库 main 后才可端到端验证。"
+}
