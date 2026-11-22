@@ -13,11 +13,14 @@
 //   - 不携带任何模型密钥，不调用任何模型；
 //   - 响应与日志只输出计划键与状态，绝不回显 token。
 
-export const REVISION = 'ops-timer-v2';
+export const REVISION = 'ops-timer-v3';
 export const DEFAULT_REPOSITORY = 'ltzyz2181-collab/ltzzz';
 export const DISPATCH_REF = 'main';
 export const TIMER_MODE = 'durable_object_alarm_every_15m';
 export const QUARTER_MS = 15 * 60 * 1000;
+// 错开 1 分钟：槽位为 :01/:16/:31/:46，避开 GitHub 自身 cron 的 :00/:15/:30/:45。
+// 2026-11-22 实测：同一分钟两路派发会挤进同一 concurrency 组，排队的 run 被取消。
+export const SLOT_OFFSET_MS = 60 * 1000;
 
 // 计划表：每个条目只声明「哪个工作流、在哪个整刻触发」。
 // 触发时刻与各工作流自身声明的 cron 对齐，避免两套时钟互相打架。
@@ -25,41 +28,41 @@ export const PLAN = [
   {
     key: 'task-hub',
     workflow: 'task-hub.yml',
-    at: 'every-15m',
+    at: 'every-15m (:01/:16/:31/:46)',
     purpose: 'Task Hub 15 分钟节拍（标签校正 / 租约回收 / 状态快照）',
-    when: ({minute}) => minute % 15 === 0,
+    when: ({minute}) => minute % 15 === 1,
     inputs: {},
   },
   {
     key: 'dispatch-sentinel',
     workflow: 'dispatch-sentinel.yml',
-    at: 'hourly',
+    at: 'hourly (:01)',
     purpose: '派单哨兵每小时扫描',
-    when: ({minute}) => minute === 0,
+    when: ({minute}) => minute === 1,
     inputs: {},
   },
   {
     key: 'deep-daily-card',
     workflow: 'deep-dispatch-daily.yml',
-    at: '00:30',
+    at: '00:31',
     purpose: '每日 Deep 主办卡生成并派发队列',
-    when: ({hour, minute}) => hour === 0 && minute === 30,
+    when: ({hour, minute}) => hour === 0 && minute === 31,
     inputs: {date: '', suffix: '1'},
   },
   {
     key: 'deep-daily-evidence',
     workflow: 'deep-superagent-daily.yml',
-    at: '00:30',
+    at: '00:31',
     purpose: 'Deep 每日证据巡检',
-    when: ({hour, minute}) => hour === 0 && minute === 30,
+    when: ({hour, minute}) => hour === 0 && minute === 31,
     inputs: {},
   },
   {
     key: 'ops-report',
     workflow: 'daily-ops-report.yml',
-    at: '01:15',
+    at: '01:16',
     purpose: '每日运营日报兜底（缺证据写 unknown，不假装成功）',
-    when: ({hour, minute}) => hour === 1 && minute === 15,
+    when: ({hour, minute}) => hour === 1 && minute === 16,
     inputs: {date: '', send: 'if_ready'},
   },
 ];
@@ -75,9 +78,10 @@ export function decideTick(date = new Date()) {
   }));
 }
 
-// 下一个 15 分钟整刻（严格大于 now），保证 alarm 不会在同刻自旋。
-export function nextQuarterMs(nowMs) {
-  return Math.floor(nowMs / QUARTER_MS) * QUARTER_MS + QUARTER_MS;
+// 下一个槽位（:01/:16/:31/:46，严格大于 now），保证 alarm 不会在同刻自旋。
+export function nextSlotMs(nowMs) {
+  const shifted = nowMs - SLOT_OFFSET_MS;
+  return Math.floor(shifted / QUARTER_MS) * QUARTER_MS + SLOT_OFFSET_MS + QUARTER_MS;
 }
 
 // 手动补跑：只允许计划表里已声明的键，防止把任意工作流当作派发目标。
@@ -195,7 +199,7 @@ export class OpsTimer {
   }
 
   async arm(nowMs = Date.now()) {
-    const next = nextQuarterMs(nowMs);
+    const next = nextSlotMs(nowMs);
     await this.state.storage.setAlarm(next);
     return {ok: true, doctype: 'ops-timer', armed: true, next_alarm: new Date(next).toISOString()};
   }
@@ -286,7 +290,7 @@ export class OpsTimer {
     } catch (error) {
       summary = {planned: 0, dispatched: 0, failed: 1, error: String(error?.message || error).slice(0, 120)};
     }
-    const next = nextQuarterMs(now.getTime());
+    const next = nextSlotMs(now.getTime());
     try {
       await this.state.storage.setAlarm(next);
     } catch {

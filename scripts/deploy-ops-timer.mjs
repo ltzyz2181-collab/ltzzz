@@ -16,7 +16,7 @@ import fs from 'node:fs';
 
 const WORKER = 'ltzzz-ops-timer';
 const CFG = 'wrangler.ops-timer.toml';
-const REVISION = 'ops-timer-v2';
+const REVISION = 'ops-timer-v3';
 const TIMER_MODE = 'durable_object_alarm_every_15m';
 const REPOSITORY = process.env.REPO || 'ltzyz2181-collab/ltzzz';
 const BASE = `https://${WORKER}.ltzyz2181.workers.dev`;
@@ -160,7 +160,7 @@ function appendLedger(receiptId, green) {
     '| 事项 | 状态 |',
     '|---|---|',
     `| 回执 | \`ops/deploy-receipts/${receiptId}.json\` |`,
-    `| 目标 | Cloudflare Durable Object alarm（15 分钟整刻，不占 cron 配额）→ GitHub \`workflow_dispatch\`（\`${WORKER}\`） |`,
+    `| 目标 | Cloudflare Durable Object alarm（15 分钟槽位 :01/:16/:31/:46，不占 cron 配额）→ GitHub \`workflow_dispatch\`（\`${WORKER}\`） |`,
     `| 结果 | ${green ? '健康回读 + alarm 排程 + 真实 alarm 触发派发全部验证通过' : `存在阻碍：${blockers.join('；')}`} |`,
     '| 状态分层 | draft/tested/merged/deployed/submitted 由回执记录；platform_accepted 仅指 Cloudflare 部署与 GitHub run 被观测到，不代表业务验收或任何资金动作 |',
     '',
@@ -331,10 +331,10 @@ async function main() {
     const nextMs = Date.parse(started.body?.next_alarm || '');
     const quarterAligned =
       Number.isFinite(nextMs) &&
-      new Date(nextMs).getUTCMinutes() % 15 === 0 &&
+      new Date(nextMs).getUTCMinutes() % 15 === 1 &&
       new Date(nextMs).getUTCSeconds() === 0;
     if (started.status === 200 && started.body?.armed === true && quarterAligned) {
-      ok('alarm_armed', `POST /start 200：armed=true next_alarm=${started.body.next_alarm}（15 分钟整刻）`);
+      ok('alarm_armed', `POST /start 200：armed=true next_alarm=${started.body.next_alarm}（槽位 :01/:16/:31/:46）`);
     } else {
       failed(
         'alarm_armed',
@@ -397,7 +397,7 @@ async function main() {
       if (status.status === 200 && Number.isFinite(lastMs) && lastMs >= testStart - 3000) {
         state.firedStatus = status.body;
         const nextMs = Date.parse(status.body?.next_alarm || '');
-        const aligned = Number.isFinite(nextMs) && new Date(nextMs).getUTCMinutes() % 15 === 0;
+        const aligned = Number.isFinite(nextMs) && new Date(nextMs).getUTCMinutes() % 15 === 1;
         ok(
           'alarm_fired',
           `GET /status 200：last_alarm_at=${status.body.last_alarm_at} next_alarm=${status.body.next_alarm}（${aligned ? '整刻' : '非整刻'}）`,

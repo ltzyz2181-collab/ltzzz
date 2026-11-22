@@ -6,9 +6,10 @@ import worker, {
   PLAN,
   TIMER_MODE,
   QUARTER_MS,
+  SLOT_OFFSET_MS,
   OpsTimer,
   decideTick,
-  nextQuarterMs,
+  nextSlotMs,
   planByKeys,
   dispatchWorkflow,
   runTick,
@@ -79,9 +80,9 @@ function fakeNamespace(seen) {
         const path = new URL(url).pathname;
         const payload =
           path === '/arm'
-            ? {ok: true, armed: true, next_alarm: '2026-11-21T00:15:00.000Z'}
+            ? {ok: true, armed: true, next_alarm: '2026-11-21T00:16:00.000Z'}
             : path === '/status'
-              ? {ok: true, next_alarm: '2026-11-21T00:15:00.000Z', last_alarm_at: null}
+              ? {ok: true, next_alarm: '2026-11-21T00:16:00.000Z', last_alarm_at: null}
               : {ok: true, test_alarm_armed: true, fire_at: '2026-11-21T00:00:08.000Z'};
         return new Response(JSON.stringify(payload), {
           status: 200,
@@ -92,28 +93,33 @@ function fakeNamespace(seen) {
   };
 }
 
-test('decideTick 用注入时钟选择计划（按 UTC 整刻触发）', () => {
+test('decideTick 用注入时钟选择计划（槽位错开 GitHub 的 :00/:15/:30/:45）', () => {
   const keys = (iso) => decideTick(new Date(iso)).map((item) => item.key);
-  assert.deepEqual(keys('2026-11-21T00:00:00Z'), ['task-hub', 'dispatch-sentinel']);
-  assert.deepEqual(keys('2026-11-21T00:15:00Z'), ['task-hub']);
-  assert.deepEqual(keys('2026-11-21T00:30:00Z'), ['task-hub', 'deep-daily-card', 'deep-daily-evidence']);
-  assert.deepEqual(keys('2026-11-21T00:45:00Z'), ['task-hub']);
-  assert.deepEqual(keys('2026-11-21T01:15:00Z'), ['task-hub', 'ops-report']);
-  assert.deepEqual(keys('2026-11-21T02:15:00Z'), ['task-hub']);
+  // GitHub 自身 cron 的整刻不派发，避免同一并发组撞车。
+  assert.deepEqual(keys('2026-11-21T00:00:00Z'), []);
+  assert.deepEqual(keys('2026-11-21T00:15:00Z'), []);
+  assert.deepEqual(keys('2026-11-21T00:30:00Z'), []);
+  assert.deepEqual(keys('2026-11-21T00:01:00Z'), ['task-hub', 'dispatch-sentinel']);
+  assert.deepEqual(keys('2026-11-21T00:16:00Z'), ['task-hub']);
+  assert.deepEqual(keys('2026-11-21T00:31:00Z'), ['task-hub', 'deep-daily-card', 'deep-daily-evidence']);
+  assert.deepEqual(keys('2026-11-21T00:46:00Z'), ['task-hub']);
+  assert.deepEqual(keys('2026-11-21T01:16:00Z'), ['task-hub', 'ops-report']);
+  assert.deepEqual(keys('2026-11-21T02:16:00Z'), ['task-hub']);
   assert.deepEqual(keys('2026-11-21T01:07:00Z'), []);
 });
 
-test('nextQuarterMs 严格取下一个整刻，避免同刻自旋', () => {
-  const q = QUARTER_MS;
-  assert.equal(q, 15 * 60 * 1000);
-  assert.equal(nextQuarterMs(Date.parse('2026-11-21T00:00:00Z')), Date.parse('2026-11-21T00:15:00Z'));
-  assert.equal(nextQuarterMs(Date.parse('2026-11-21T00:14:59.999Z')), Date.parse('2026-11-21T00:15:00Z'));
-  assert.equal(nextQuarterMs(Date.parse('2026-11-21T00:15:00Z')), Date.parse('2026-11-21T00:30:00Z'));
-  assert.equal(nextQuarterMs(Date.parse('2026-11-21T23:59:59Z')), Date.parse('2026-11-22T00:00:00Z'));
+test('nextSlotMs 严格取下一个槽位，避免同刻自旋', () => {
+  assert.equal(QUARTER_MS, 15 * 60 * 1000);
+  assert.equal(SLOT_OFFSET_MS, 60 * 1000);
+  assert.equal(nextSlotMs(Date.parse('2026-11-21T00:00:00Z')), Date.parse('2026-11-21T00:01:00Z'));
+  assert.equal(nextSlotMs(Date.parse('2026-11-21T00:00:59.999Z')), Date.parse('2026-11-21T00:01:00Z'));
+  assert.equal(nextSlotMs(Date.parse('2026-11-21T00:01:00Z')), Date.parse('2026-11-21T00:16:00Z'));
+  assert.equal(nextSlotMs(Date.parse('2026-11-21T00:15:59Z')), Date.parse('2026-11-21T00:16:00Z'));
+  assert.equal(nextSlotMs(Date.parse('2026-11-21T23:59:59Z')), Date.parse('2026-11-22T00:01:00Z'));
 });
 
 test('PLAN 只声明已核实支持 workflow_dispatch 的工作流', () => {
-  assert.equal(REVISION, 'ops-timer-v2');
+  assert.equal(REVISION, 'ops-timer-v3');
   assert.equal(TIMER_MODE, 'durable_object_alarm_every_15m');
   const byKey = new Map(PLAN.map((item) => [item.key, item]));
   assert.equal(byKey.get('task-hub').workflow, 'task-hub.yml');
@@ -208,19 +214,19 @@ test('runTick 无 force 时按注入时钟派发，整点同时触发 task-hub �
   const result = await runTick({
     env: {LTZZZ_AGENT_TOKEN: GH},
     fetcher,
-    now: new Date('2026-11-21T04:00:00Z'),
+    now: new Date('2026-11-21T04:01:00Z'),
   });
   assert.equal(result.repository, 'ltzyz2181-collab/ltzzz');
   assert.deepEqual(result.results.map((row) => row.key), ['task-hub', 'dispatch-sentinel']);
 });
 
-test('OpsTimer.arm 把 alarm 排到下一个整刻', async () => {
+test('OpsTimer.arm 把 alarm 排到下一个槽位', async () => {
   const state = fakeState();
   const timer = new OpsTimer(state, {});
   const result = await timer.arm(Date.parse('2026-11-21T00:07:00Z'));
   assert.equal(result.armed, true);
-  assert.equal(result.next_alarm, '2026-11-21T00:15:00.000Z');
-  assert.equal(state.storage.alarm, Date.parse('2026-11-21T00:15:00.000Z'));
+  assert.equal(result.next_alarm, '2026-11-21T00:16:00.000Z');
+  assert.equal(state.storage.alarm, Date.parse('2026-11-21T00:16:00.000Z'));
 });
 
 test('OpsTimer.status 回读下一次 alarm 与最后一次结果', async () => {
@@ -233,7 +239,7 @@ test('OpsTimer.status 回读下一次 alarm 与最后一次结果', async () => 
   await state.storage.put('last_alarm_at', '2026-11-21T01:00:00.000Z');
   await state.storage.put('last_result', {planned: 1, dispatched: 1, failed: 0});
   const filled = await timer.status();
-  assert.equal(filled.next_alarm, '2026-11-21T01:15:00.000Z');
+  assert.equal(filled.next_alarm, '2026-11-21T01:01:00.000Z');
   assert.equal(filled.last_alarm_at, '2026-11-21T01:00:00.000Z');
   assert.equal(filled.last_result.dispatched, 1);
 });
@@ -263,7 +269,7 @@ test('OpsTimer.alarm 派发后清掉 force 并排下一次整刻', async () => {
     assert.match(fetcher.calls[0].url, /task-hub\.yml\/dispatches$/);
     assert.equal(await state.storage.get('force'), undefined);
     assert.ok(state.storage.alarm > Date.now());
-    assert.equal(state.storage.alarm % QUARTER_MS, 0);
+    assert.equal(state.storage.alarm % QUARTER_MS, SLOT_OFFSET_MS);
     assert.ok(await state.storage.get('last_alarm_at'));
     assert.equal((await state.storage.get('last_result')).dispatched, 1);
   } finally {
@@ -306,7 +312,7 @@ test('/health 回读修订、DO 绑定与配置状态，不回显任何 token', 
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.equal(body.revision, 'ops-timer-v2');
+  assert.equal(body.revision, 'ops-timer-v3');
   assert.equal(body.timer_mode, 'durable_object_alarm_every_15m');
   assert.equal(body.credential_configured, true);
   assert.equal(body.trigger_configured, true);
@@ -357,7 +363,7 @@ test('/status 未授权 401；授权后回读 DO 状态', async () => {
   const response = await handleRequest(request('/status', {token: SECRET}), env);
   assert.equal(response.status, 200);
   const body = await response.json();
-  assert.equal(body.next_alarm, '2026-11-21T00:15:00.000Z');
+  assert.equal(body.next_alarm, '2026-11-21T00:16:00.000Z');
   assert.match(seen[0].url, /\/status$/);
   assert.equal(seen[0].init.method, 'GET');
 });
@@ -433,7 +439,7 @@ test('scheduled 入口保留：用注入时钟触发并通过 waitUntil 注册',
   let pending = null;
   try {
     await worker.scheduled(
-      {scheduledTime: Date.parse('2026-11-21T00:15:00Z')},
+      {scheduledTime: Date.parse('2026-11-21T00:16:00Z')},
       {LTZZZ_AGENT_TOKEN: GH, TIMER_TRIGGER_TOKEN: SECRET, REPO: 'owner/repo'},
       {waitUntil: (promise) => { pending = promise; }},
     );
