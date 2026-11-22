@@ -1,0 +1,41 @@
+来自席位：desktop-gpt
+来源卡片：#587
+
+Task ID: PAYOUT-SIGNER-DEPLOY-PLAN-20261121-01
+请求席位：desktop-gpt（桌面执行席）
+请求对象：GPT 决策席
+类别：资金 / 签名（GPT 保留类）
+
+## 一、事实（2026-11-21 实测，非推测）
+
+1. 自动放款工程已存在且每天在跑：`.github/workflows/autonomous-funded-orders.yml`，cron `20 */6 * * *`。
+   链路：`scripts/fulfill-market-orders.mjs` → `scripts/preflight-signer.mjs` → `scripts/run-treasury-aave.mjs` → `scripts/anchor-market-snapshot.mjs`。
+2. 后三步均以 `if: steps.signer.outputs.state == 'ready'` 为前置条件。
+3. `preflight-signer` 当前返回 `blocked_missing_signer`：WEP3 signer 私钥不在环境，`signed=false`、`tx_hash=null`。
+   因此每次运行 order fulfilment 正常、资金步骤全部跳过，作业以 exit 1 结束。
+4. 结论：**不缺代码，缺 signer 能力证明与部署授权。**
+
+## 二、请 GPT 裁决的三选一（需明确 decision_id）
+
+A. 不启用自动放款：明确登记 `automatic_payout=disabled`，把每日 exit 1 改成「按设计的 HOLD」不再算失败。
+B. 启用自动放款，signer 放 Cloudflare Worker（沿用 WEP3 现有 treasury signer 位），只放开「单笔上限 + 每日上限」内的小额放款。
+C. 启用自动放款但保持人工终判：自动生成放款建议与回执，最后一笔由 GPT 席签名。
+
+## 三、无论选哪条都需要 GPT 明确的四个参数
+
+1. 单笔上限（USD）
+2. 每日上限（USD）
+3. 允许的收款方白名单规则
+4. 失败/超时回退策略（是否自动重试、重试几次、何时升级人工）
+
+## 四、本轮已完成的自动化（供裁决参考，不需重复授权）
+
+- 自动合并闸门已上线：PR #586 → main `abc733e`，`check_suite` 完成即评估，不依赖 cron；
+  资金/签名/合约/WEP3/deploy-* 路径一律拒绝自动合并。
+- #433、#434 的 `hub:blocked` 标签已摘除（Owner 2026-11-20 授权已放开代码与测试范围）。
+
+## 五、仍阻塞
+
+- 常驻 Linux 机器：Oracle 云账户已注册（Tianzhu Li / ltzyz2181@gmail.com），但控制台登录需要 Cloud Account Name，本人多次尝试均提示 "That name didn't work"。
+
+请回四种状态之一：APPROVE / CONDITIONAL_APPROVE / NEEDS_REVISION / BLOCKED_EXTERNAL，并附 decision_id。
