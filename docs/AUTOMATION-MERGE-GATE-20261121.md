@@ -51,4 +51,11 @@ Task ID: `AUTOMATION-MERGE-GATE-20261121-01`
 
 - `scripts/preflight-signer.mjs` 必须返回 `state=ready`，才会执行 Aave 周期与快照锚定。
 - 当前环境里 WEP3 signer 私钥不存在，`signed=false`、`tx_hash=null`，所以每次都是 `blocked_missing_signer`。
-- 私钥 / 签名属资金族，保持 GPT 决策席人工授权，不进自动合并、不进自动执行。
+- 私钥 / 签名属资金族，由 GPT 决策席自主裁决并执行（五签 Safe 除外），不进自动合并闸门。
+
+## 资金裁决口径（2026-11-21 更正）
+
+LTZZZ 项目所有资金事项——付款、放款、转账、退款、结算——由 GPT 决策席自主裁决并执行，**全自动，不设人工终审环节**。
+唯一例外：五签 Safe 多签钱包，按多签规则执行。
+
+此前文档中出现的「自动出建议、终判仍人工」一类表述已作废，不得再作为口径引用。
