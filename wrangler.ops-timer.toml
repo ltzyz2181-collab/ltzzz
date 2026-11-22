@@ -3,13 +3,22 @@ main = "workers/ops-timer/index.js"
 compatibility_date = "2026-11-01"
 workers_dev = true
 
-# 外部定时器：Cloudflare Cron Trigger -> GitHub workflow_dispatch。
+# 外部定时器：Durable Object 自调度 alarm -> GitHub workflow_dispatch。
+# 不使用 cron 触发器：Cloudflare 免费档每账号仅 5 个 cron，本账号已用满
+# （wrangler 错误码 10072）；DO alarm 不占该配额，仍是 15 分钟整刻节拍。
 # 只持有两个 secret：
 #   LTZZZ_AGENT_TOKEN   GitHub PAT，仅用于 workflow_dispatch（Actions: write）
-#   TIMER_TRIGGER_TOKEN 本 Worker /tick 的调用口令，由部署脚本随机生成后写入
+#   TIMER_TRIGGER_TOKEN 本 Worker /tick、/start 的调用口令，由部署脚本随机生成后写入
 # 这里没有模型密钥、没有资金绑定、不读邮件正文、不接触任何钱包/签名材料。
-[triggers]
-crons = ["*/15 * * * *"]
+# 刻意不声明 [triggers]：wrangler 不调用 schedules API，避免再次撞上 cron 配额。
 
 [vars]
 REPO = "ltzyz2181-collab/ltzzz"
+
+[[durable_objects.bindings]]
+name = "OPS_TIMER"
+class_name = "OpsTimer"
+
+[[migrations]]
+tag = "ops-timer-v1"
+new_sqlite_classes = ["OpsTimer"]

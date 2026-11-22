@@ -4,7 +4,11 @@ import assert from 'node:assert/strict';
 import worker, {
   REVISION,
   PLAN,
+  TIMER_MODE,
+  QUARTER_MS,
+  OpsTimer,
   decideTick,
+  nextQuarterMs,
   planByKeys,
   dispatchWorkflow,
   runTick,
@@ -40,7 +44,55 @@ function request(path, {method = 'GET', token, body} = {}) {
   });
 }
 
-test('decideTick 用注入时钟选择计划（免费档 cron 只按整刻触发）', () => {
+class FakeStorage {
+  constructor() {
+    this.data = new Map();
+    this.alarm = null;
+  }
+  async setAlarm(ms) {
+    this.alarm = ms;
+  }
+  async getAlarm() {
+    return this.alarm;
+  }
+  async get(key) {
+    return this.data.get(key);
+  }
+  async put(key, value) {
+    this.data.set(key, value);
+  }
+  async delete(key) {
+    this.data.delete(key);
+  }
+}
+
+function fakeState() {
+  return {storage: new FakeStorage()};
+}
+
+function fakeNamespace(seen) {
+  return {
+    idFromName: (name) => `id:${name}`,
+    get: (id) => ({
+      async fetch(url, init = {}) {
+        seen.push({url, init});
+        const path = new URL(url).pathname;
+        const payload =
+          path === '/arm'
+            ? {ok: true, armed: true, next_alarm: '2026-11-21T00:15:00.000Z'}
+            : path === '/status'
+              ? {ok: true, next_alarm: '2026-11-21T00:15:00.000Z', last_alarm_at: null}
+              : {ok: true, test_alarm_armed: true, fire_at: '2026-11-21T00:00:08.000Z'};
+        return new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: {'content-type': 'application/json'},
+        });
+      },
+    }),
+  };
+}
+
+test('decideTick 用注入时钟选择计划（按 UTC 整刻触发）', () => {
   const keys = (iso) => decideTick(new Date(iso)).map((item) => item.key);
   assert.deepEqual(keys('2026-11-21T00:00:00Z'), ['task-hub', 'dispatch-sentinel']);
   assert.deepEqual(keys('2026-11-21T00:15:00Z'), ['task-hub']);
@@ -48,12 +100,21 @@ test('decideTick 用注入时钟选择计划（免费档 cron 只按整刻触发
   assert.deepEqual(keys('2026-11-21T00:45:00Z'), ['task-hub']);
   assert.deepEqual(keys('2026-11-21T01:15:00Z'), ['task-hub', 'ops-report']);
   assert.deepEqual(keys('2026-11-21T02:15:00Z'), ['task-hub']);
-  // 非整刻不派发：避免同一分钟被 Cloudflare 抖动重复触发。
   assert.deepEqual(keys('2026-11-21T01:07:00Z'), []);
 });
 
+test('nextQuarterMs 严格取下一个整刻，避免同刻自旋', () => {
+  const q = QUARTER_MS;
+  assert.equal(q, 15 * 60 * 1000);
+  assert.equal(nextQuarterMs(Date.parse('2026-11-21T00:00:00Z')), Date.parse('2026-11-21T00:15:00Z'));
+  assert.equal(nextQuarterMs(Date.parse('2026-11-21T00:14:59.999Z')), Date.parse('2026-11-21T00:15:00Z'));
+  assert.equal(nextQuarterMs(Date.parse('2026-11-21T00:15:00Z')), Date.parse('2026-11-21T00:30:00Z'));
+  assert.equal(nextQuarterMs(Date.parse('2026-11-21T23:59:59Z')), Date.parse('2026-11-22T00:00:00Z'));
+});
+
 test('PLAN 只声明已核实支持 workflow_dispatch 的工作流', () => {
-  assert.equal(REVISION, 'ops-timer-v1');
+  assert.equal(REVISION, 'ops-timer-v2');
+  assert.equal(TIMER_MODE, 'durable_object_alarm_every_15m');
   const byKey = new Map(PLAN.map((item) => [item.key, item]));
   assert.equal(byKey.get('task-hub').workflow, 'task-hub.yml');
   assert.equal(byKey.get('dispatch-sentinel').workflow, 'dispatch-sentinel.yml');
@@ -153,6 +214,81 @@ test('runTick 无 force 时按注入时钟派发，整点同时触发 task-hub �
   assert.deepEqual(result.results.map((row) => row.key), ['task-hub', 'dispatch-sentinel']);
 });
 
+test('OpsTimer.arm 把 alarm 排到下一个整刻', async () => {
+  const state = fakeState();
+  const timer = new OpsTimer(state, {});
+  const result = await timer.arm(Date.parse('2026-11-21T00:07:00Z'));
+  assert.equal(result.armed, true);
+  assert.equal(result.next_alarm, '2026-11-21T00:15:00.000Z');
+  assert.equal(state.storage.alarm, Date.parse('2026-11-21T00:15:00.000Z'));
+});
+
+test('OpsTimer.status 回读下一次 alarm 与最后一次结果', async () => {
+  const state = fakeState();
+  const timer = new OpsTimer(state, {});
+  const empty = await timer.status();
+  assert.equal(empty.next_alarm, null);
+  assert.equal(empty.timer_mode, TIMER_MODE);
+  await timer.arm(Date.parse('2026-11-21T01:00:00Z'));
+  await state.storage.put('last_alarm_at', '2026-11-21T01:00:00.000Z');
+  await state.storage.put('last_result', {planned: 1, dispatched: 1, failed: 0});
+  const filled = await timer.status();
+  assert.equal(filled.next_alarm, '2026-11-21T01:15:00.000Z');
+  assert.equal(filled.last_alarm_at, '2026-11-21T01:00:00.000Z');
+  assert.equal(filled.last_result.dispatched, 1);
+});
+
+test('OpsTimer.testAlarm 只接受计划内键，并把 alarm 提前到测试时刻', async () => {
+  const state = fakeState();
+  const timer = new OpsTimer(state, {});
+  const before = Date.now();
+  const result = await timer.testAlarm({delay_seconds: 5, force: ['task-hub']});
+  assert.equal(result.test_alarm_armed, true);
+  assert.deepEqual(result.force, ['task-hub']);
+  assert.ok(state.storage.alarm >= before + 5000);
+  assert.deepEqual(await state.storage.get('force'), ['task-hub']);
+  await assert.rejects(() => timer.testAlarm({delay_seconds: 5, force: ['other']}), /unknown_plan_keys:other/);
+});
+
+test('OpsTimer.alarm 派发后清掉 force 并排下一次整刻', async () => {
+  const state = fakeState();
+  await state.storage.put('force', ['task-hub']);
+  const fetcher = fakeFetch(() => reply(204));
+  const original = globalThis.fetch;
+  globalThis.fetch = fetcher;
+  try {
+    const timer = new OpsTimer(state, {LTZZZ_AGENT_TOKEN: GH, REPO: 'owner/repo'});
+    await timer.alarm();
+    assert.equal(fetcher.calls.length, 1);
+    assert.match(fetcher.calls[0].url, /task-hub\.yml\/dispatches$/);
+    assert.equal(await state.storage.get('force'), undefined);
+    assert.ok(state.storage.alarm > Date.now());
+    assert.equal(state.storage.alarm % QUARTER_MS, 0);
+    assert.ok(await state.storage.get('last_alarm_at'));
+    assert.equal((await state.storage.get('last_result')).dispatched, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('OpsTimer.alarm 即使派发失败也会排下一次，链条不停摆', async () => {
+  const state = fakeState();
+  await state.storage.put('force', ['task-hub']);
+  const fetcher = async () => {
+    throw new Error('network down');
+  };
+  const original = globalThis.fetch;
+  globalThis.fetch = fetcher;
+  try {
+    const timer = new OpsTimer(state, {LTZZZ_AGENT_TOKEN: GH});
+    await timer.alarm();
+    assert.ok(state.storage.alarm > Date.now());
+    assert.equal((await state.storage.get('last_result')).failed, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test('authorized 只认正确口令：匿名/错误/缺失配置全部拒绝', async () => {
   const env = {TIMER_TRIGGER_TOKEN: SECRET};
   assert.equal(await authorized(request('/tick', {token: SECRET}), env), true);
@@ -161,18 +297,20 @@ test('authorized 只认正确口令：匿名/错误/缺失配置全部拒绝', a
   assert.equal(await authorized(request('/tick', {token: SECRET}), {}), false);
 });
 
-test('/health 回读修订与配置状态，不回显任何 token', async () => {
+test('/health 回读修订、DO 绑定与配置状态，不回显任何 token', async () => {
   const response = await handleRequest(request('/health'), {
     LTZZZ_AGENT_TOKEN: GH,
     TIMER_TRIGGER_TOKEN: SECRET,
+    OPS_TIMER: {},
   });
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.ok, true);
-  assert.equal(body.revision, 'ops-timer-v1');
-  assert.equal(body.cron, '*/15 * * * *');
+  assert.equal(body.revision, 'ops-timer-v2');
+  assert.equal(body.timer_mode, 'durable_object_alarm_every_15m');
   assert.equal(body.credential_configured, true);
   assert.equal(body.trigger_configured, true);
+  assert.equal(body.durable_object_configured, true);
   assert.equal(body.token_echo, false);
   const text = JSON.stringify(body);
   assert.equal(text.includes(GH), false);
@@ -190,32 +328,81 @@ test('/auth/check 三态：匿名 401、错误 401、有效 200', async () => {
   assert.equal((await valid.json()).authenticated, true);
 });
 
-test('/tick 未授权 401 且不派发', async () => {
-  const fetcher = fakeFetch(() => reply(204));
-  const response = await handleRequest(
-    request('/tick', {method: 'POST', body: {force: ['task-hub']}}),
-    {LTZZZ_AGENT_TOKEN: GH, TIMER_TRIGGER_TOKEN: SECRET},
-    {},
-    {fetcher},
-  );
-  assert.equal(response.status, 401);
-  assert.equal(fetcher.calls.length, 0);
+test('/start 未授权 401；授权后只向 DO 发 /arm', async () => {
+  const seen = [];
+  const env = {
+    LTZZZ_AGENT_TOKEN: GH,
+    TIMER_TRIGGER_TOKEN: SECRET,
+    OPS_TIMER: fakeNamespace(seen),
+  };
+  const denied = await handleRequest(request('/start', {method: 'POST'}), env);
+  assert.equal(denied.status, 401);
+  assert.equal(seen.length, 0);
+  const granted = await handleRequest(request('/start', {method: 'POST', token: SECRET}), env);
+  assert.equal(granted.status, 200);
+  assert.equal((await granted.json()).armed, true);
+  assert.equal(seen.length, 1);
+  assert.match(seen[0].url, /\/arm$/);
+  assert.equal(seen[0].init.method, 'POST');
 });
 
-test('/tick 授权后真实派发计划内工作流', async () => {
+test('/status 未授权 401；授权后回读 DO 状态', async () => {
+  const seen = [];
+  const env = {
+    LTZZZ_AGENT_TOKEN: GH,
+    TIMER_TRIGGER_TOKEN: SECRET,
+    OPS_TIMER: fakeNamespace(seen),
+  };
+  assert.equal((await handleRequest(request('/status'), env)).status, 401);
+  const response = await handleRequest(request('/status', {token: SECRET}), env);
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.next_alarm, '2026-11-21T00:15:00.000Z');
+  assert.match(seen[0].url, /\/status$/);
+  assert.equal(seen[0].init.method, 'GET');
+});
+
+test('/test-alarm 未授权 401 且不触达 DO；授权后把 force 转发给 DO', async () => {
+  const seen = [];
+  const env = {
+    LTZZZ_AGENT_TOKEN: GH,
+    TIMER_TRIGGER_TOKEN: SECRET,
+    OPS_TIMER: fakeNamespace(seen),
+  };
+  const denied = await handleRequest(
+    request('/test-alarm', {method: 'POST', body: {force: ['task-hub']}}),
+    env,
+  );
+  assert.equal(denied.status, 401);
+  assert.equal(seen.length, 0);
+  const granted = await handleRequest(
+    request('/test-alarm', {method: 'POST', token: SECRET, body: {force: ['task-hub'], delay_seconds: 5}}),
+    env,
+  );
+  assert.equal(granted.status, 200);
+  assert.equal(JSON.parse(seen[0].init.body).force[0], 'task-hub');
+});
+
+test('/tick 未授权 401 且不派发；授权后真实派发计划内工作流', async () => {
   const fetcher = fakeFetch(() => reply(204));
-  const response = await handleRequest(
-    request('/tick', {method: 'POST', token: SECRET, body: {force: ['task-hub']}}),
-    {LTZZZ_AGENT_TOKEN: GH, TIMER_TRIGGER_TOKEN: SECRET},
+  const env = {LTZZZ_AGENT_TOKEN: GH, TIMER_TRIGGER_TOKEN: SECRET};
+  const denied = await handleRequest(
+    request('/tick', {method: 'POST', body: {force: ['task-hub']}}),
+    env,
     {},
     {fetcher},
   );
-  assert.equal(response.status, 200);
-  const body = await response.json();
-  assert.equal(body.ok, true);
-  assert.equal(body.dispatched, 1);
+  assert.equal(denied.status, 401);
+  assert.equal(fetcher.calls.length, 0);
+  const granted = await handleRequest(
+    request('/tick', {method: 'POST', token: SECRET, body: {force: ['task-hub']}}),
+    env,
+    {},
+    {fetcher},
+  );
+  assert.equal(granted.status, 200);
+  assert.equal((await granted.json()).dispatched, 1);
   assert.equal(fetcher.calls.length, 1);
-  assert.match(fetcher.calls[0].url, /task-hub\.yml\/dispatches$/);
 });
 
 test('/tick 拒绝计划外键，绝不派发任意工作流', async () => {
@@ -239,7 +426,7 @@ test('GET /tick 返回 405', async () => {
   assert.equal(response.status, 405);
 });
 
-test('scheduled 用注入时钟触发，并通过 waitUntil 注册任务', async () => {
+test('scheduled 入口保留：用注入时钟触发并通过 waitUntil 注册', async () => {
   const fetcher = fakeFetch(() => reply(204));
   const original = globalThis.fetch;
   globalThis.fetch = fetcher;

@@ -1,26 +1,30 @@
 #!/usr/bin/env node
-// 部署外部定时器 Worker（Cloudflare Cron -> GitHub workflow_dispatch），并落可回读的部署回执。
+// 部署外部定时器 Worker（Cloudflare Durable Object alarm -> GitHub workflow_dispatch），
+// 并落可回读的部署回执。
+//
+// 为什么不是 Cloudflare cron：
+//   免费档每账号只有 5 个 cron 触发器，本账号已用满（wrangler 错误码 10072）。
+//   Durable Object alarm 不占该配额，仍是 15 分钟整刻节拍。
 //
 // 设计边界：
 //   - 凭据只从环境读取，经 wrangler secret put 的 stdin 注入，绝不打印；
-//   - 验收只做健康回读、cron 配置回读、鉴权三态、真实派发一次并观察 GitHub run；
+//   - 验收只做健康回读、alarm 排程回读、鉴权三态、真实 alarm 触发并观察 GitHub run；
 //   - 任何一步没有证据就写 blocker，不把 draft/tested/merged 说成 deployed。
-//
-// 用法（在仓库根目录）：
-//   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... LTZZZ_AGENT_TOKEN=... TIMER_TRIGGER_TOKEN=... \
-//     node scripts/deploy-ops-timer.mjs
 
 import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 
 const WORKER = 'ltzzz-ops-timer';
 const CFG = 'wrangler.ops-timer.toml';
-const REVISION = 'ops-timer-v1';
-const CRON = '*/15 * * * *';
+const REVISION = 'ops-timer-v2';
+const TIMER_MODE = 'durable_object_alarm_every_15m';
 const REPOSITORY = process.env.REPO || 'ltzyz2181-collab/ltzzz';
-const HEALTH_URL = `https://${WORKER}.ltzyz2181.workers.dev/health`;
-const AUTH_URL = `https://${WORKER}.ltzyz2181.workers.dev/auth/check`;
-const TICK_URL = `https://${WORKER}.ltzyz2181.workers.dev/tick`;
+const BASE = `https://${WORKER}.ltzyz2181.workers.dev`;
+const HEALTH_URL = `${BASE}/health`;
+const AUTH_URL = `${BASE}/auth/check`;
+const START_URL = `${BASE}/start`;
+const STATUS_URL = `${BASE}/status`;
+const TEST_ALARM_URL = `${BASE}/test-alarm`;
 
 const account = process.env.CLOUDFLARE_ACCOUNT_ID;
 const cfToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -43,7 +47,7 @@ if (!/^[0-9a-f]{40}$/.test(sourceCommit)) {
 
 const evidence = [];
 const blockers = [];
-const state = {health: null, tickResult: null, dispatchRun: null, versionId: null, deployOutput: ''};
+const state = {health: null, alarm: null, firedStatus: null, dispatchRun: null, versionId: null, deployOutput: ''};
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function ok(kind, text) {
@@ -88,14 +92,7 @@ async function getJson(url, options = {}) {
   return {status: response.status, ok: response.ok, body};
 }
 
-async function cloudflare(route) {
-  const {status, ok: httpOk, body} = await getJson(
-    `https://api.cloudflare.com/client/v4/accounts/${account}${route}`,
-    {headers: {authorization: `Bearer ${cfToken}`}},
-  );
-  if (!httpOk || !body?.success) throw new Error(`cloudflare_${status}`);
-  return body.result;
-}
+const timerHeaders = {authorization: `Bearer ${triggerToken}`, 'content-type': 'application/json'};
 
 async function healthReadback() {
   for (let attempt = 0; attempt < 18; attempt += 1) {
@@ -105,8 +102,10 @@ async function healthReadback() {
         httpOk &&
         body?.ok === true &&
         body.revision === REVISION &&
+        body.timer_mode === TIMER_MODE &&
         body.credential_configured === true &&
         body.trigger_configured === true &&
+        body.durable_object_configured === true &&
         body.token_echo === false
       ) {
         return body;
@@ -119,23 +118,13 @@ async function healthReadback() {
   return null;
 }
 
-async function readCronSchedules() {
-  try {
-    const result = await cloudflare(`/workers/scripts/${WORKER}/schedules`);
-    const list = Array.isArray(result) ? result : Array.isArray(result?.schedules) ? result.schedules : [];
-    return list.map((item) => item.cron).filter(Boolean);
-  } catch {
-    return null;
-  }
-}
-
-async function githubRunSince(workflow, sinceMs) {
+async function githubRunSince(workflow, sinceMs, attempts = 18, intervalMs = 5000) {
   const headers = {
     authorization: `Bearer ${ghToken}`,
     accept: 'application/vnd.github+json',
     'user-agent': 'ltzzz-ops-timer-deploy',
   };
-  for (let attempt = 0; attempt < 18; attempt += 1) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       const {ok: httpOk, body} = await getJson(
         `https://api.github.com/repos/${REPOSITORY}/actions/workflows/${encodeURIComponent(workflow)}/runs?event=workflow_dispatch&per_page=20`,
@@ -154,7 +143,7 @@ async function githubRunSince(workflow, sinceMs) {
     } catch {
       /* 索引延迟，继续轮询 */
     }
-    if (attempt < 17) await sleep(5000);
+    if (attempt < attempts - 1) await sleep(intervalMs);
   }
   return null;
 }
@@ -171,8 +160,8 @@ function appendLedger(receiptId, green) {
     '| 事项 | 状态 |',
     '|---|---|',
     `| 回执 | \`ops/deploy-receipts/${receiptId}.json\` |`,
-    `| 目标 | Cloudflare Cron \`${CRON}\` → GitHub \`workflow_dispatch\`（\`${WORKER}\`） |`,
-    `| 结果 | ${green ? '健康回读 + cron 配置 + 真实派发全部验证通过' : `存在阻碍：${blockers.join('；')}`} |`,
+    `| 目标 | Cloudflare Durable Object alarm（15 分钟整刻，不占 cron 配额）→ GitHub \`workflow_dispatch\`（\`${WORKER}\`） |`,
+    `| 结果 | ${green ? '健康回读 + alarm 排程 + 真实 alarm 触发派发全部验证通过' : `存在阻碍：${blockers.join('；')}`} |`,
     '| 状态分层 | draft/tested/merged/deployed/submitted 由回执记录；platform_accepted 仅指 Cloudflare 部署与 GitHub run 被观测到，不代表业务验收或任何资金动作 |',
     '',
   ].join('\n');
@@ -192,11 +181,12 @@ function finalize() {
     source_commit: sourceCommit,
     worker: WORKER,
     revision: REVISION,
-    cron: CRON,
-    status: green ? 'deployment_health_cron_dispatch_verified' : 'deployment_with_blockers',
+    timer_mode: TIMER_MODE,
+    status: green ? 'deployment_health_alarm_dispatch_verified' : 'deployment_with_blockers',
     version_id: state.versionId,
     health: state.health,
-    tick: state.tickResult,
+    alarm: state.alarm,
+    fired_status: state.firedStatus,
     dispatch_run: state.dispatchRun,
     evidence,
     blockers,
@@ -211,14 +201,14 @@ function finalize() {
     schema: 'ltzzz.deploy.receipt.v1',
     receipt_id: receiptId,
     target: 'external-ops-timer',
-    platform: 'cloudflare-workers-cron + github-actions-workflow-dispatch',
+    platform: 'cloudflare-durable-object-alarm + github-actions-workflow-dispatch',
     env_id: `${REPOSITORY}@main + ${WORKER}`,
     code_commit: sourceCommit,
     code_path: 'workers/ops-timer',
     deployed_at: new Date().toISOString(),
     deployment_status: green ? 'deployed_verified' : 'deployed_with_blockers',
     worker_revision: REVISION,
-    cron: CRON,
+    timer_mode: TIMER_MODE,
     task: {task_id: `OPS-TIMER-${stamp}`, run_id: runId},
     states: {
       draft: 'done',
@@ -249,13 +239,13 @@ function finalize() {
   appendLedger(receiptId, green);
 
   const commitMessage = green
-    ? `ops-timer: external cron deployed, health+cron+dispatch verified (${receiptId})`
+    ? `ops-timer: external alarm timer deployed, health+alarm+dispatch verified (${receiptId})`
     : `ops-timer: deploy blockers recorded (${receiptId})`;
   fs.writeFileSync(
     'knowledge/results/ops-timer/latest.json',
     `${JSON.stringify(
       {
-        status: green ? 'deployment_health_cron_dispatch_verified' : 'deployment_with_blockers',
+        status: green ? 'deployment_health_alarm_dispatch_verified' : 'deployment_with_blockers',
         receipt_id: receiptId,
         receipt_path: `ops/deploy-receipts/${receiptId}.json`,
         commit_message: commitMessage,
@@ -268,7 +258,7 @@ function finalize() {
 
   console.log(
     JSON.stringify({
-      status: green ? 'deployment_health_cron_dispatch_verified' : 'deployment_with_blockers',
+      status: green ? 'deployment_health_alarm_dispatch_verified' : 'deployment_with_blockers',
       receipt_id: receiptId,
       blockers,
       evidence: evidence.map((row) => `${row.result}:${row.kind}`),
@@ -316,7 +306,7 @@ async function main() {
       /(?:Current\s+)?Version ID:\s*([0-9a-f-]{20,})/i.exec(state.deployOutput)?.[1] || null;
     ok(
       'worker_deployed',
-      `wrangler deploy 完成：service=${WORKER}${state.versionId ? ` version=${state.versionId}` : ''}（cron 由 ${CFG} 声明）`,
+      `wrangler deploy 完成：service=${WORKER}${state.versionId ? ` version=${state.versionId}` : ''}（无 cron 触发器，timer 由 DO alarm 驱动）`,
     );
   } catch (error) {
     failed('worker_deployed', `wrangler deploy 失败：${wranglerError(error)}`, 'wrangler_deploy_failed');
@@ -328,24 +318,32 @@ async function main() {
   if (state.health) {
     ok(
       'health_readback',
-      `GET /health 200：revision=${state.health.revision} credential_configured=${state.health.credential_configured} trigger_configured=${state.health.trigger_configured} token_echo=${state.health.token_echo}`,
+      `GET /health 200：revision=${state.health.revision} timer_mode=${state.health.timer_mode} credential_configured=${state.health.credential_configured} trigger_configured=${state.health.trigger_configured} durable_object_configured=${state.health.durable_object_configured} token_echo=${state.health.token_echo}`,
     );
   } else {
     failed('health_readback', 'GET /health 18 次轮询未达到预期修订与配置状态', 'worker_health_readback_failed');
   }
 
-  // 5) cron 配置回读（Cloudflare API 优先，wrangler 部署输出兜底）
-  const cronList = await readCronSchedules();
-  if (cronList && cronList.includes(CRON)) {
-    ok('cron_schedule_configured', `Cloudflare API 回读 schedules：[${cronList.join(', ')}] 含 ${CRON}`);
-  } else if (state.deployOutput.includes(CRON)) {
-    ok('cron_schedule_configured', `Cloudflare schedules API 未回读，但 wrangler 部署输出含 ${CRON}`);
-  } else {
-    failed(
-      'cron_schedule_configured',
-      `未能回读 ${CRON}：schedules API=${cronList ? `[${cronList.join(', ')}]` : 'unavailable'}；wrangler 输出${state.deployOutput.includes('schedule') ? '含 schedule 行但未匹配表达式' : '无 schedule 行'}`,
-      'cron_schedule_unverified',
-    );
+  // 5) 启动 alarm 链条：排到下一个 15 分钟整刻
+  try {
+    const started = await getJson(START_URL, {method: 'POST', headers: timerHeaders});
+    state.alarm = started.body;
+    const nextMs = Date.parse(started.body?.next_alarm || '');
+    const quarterAligned =
+      Number.isFinite(nextMs) &&
+      new Date(nextMs).getUTCMinutes() % 15 === 0 &&
+      new Date(nextMs).getUTCSeconds() === 0;
+    if (started.status === 200 && started.body?.armed === true && quarterAligned) {
+      ok('alarm_armed', `POST /start 200：armed=true next_alarm=${started.body.next_alarm}（15 分钟整刻）`);
+    } else {
+      failed(
+        'alarm_armed',
+        `POST /start 未排上整刻：http=${started.status} armed=${started.body?.armed} next_alarm=${started.body?.next_alarm || 'null'}`,
+        'alarm_arm_failed',
+      );
+    }
+  } catch (error) {
+    failed('alarm_armed', `POST /start 异常：${String(error?.message || error).slice(0, 160)}`, 'alarm_arm_transport_failed');
   }
 
   // 6) 鉴权三态：匿名 401 / 错误口令 401 / 有效口令 200
@@ -365,43 +363,70 @@ async function main() {
     failed('auth_three_state', `鉴权回读异常：${String(error?.message || error).slice(0, 160)}`, 'worker_auth_transport_failed');
   }
 
-  // 7) 真实派发一次 task-hub，并确认 GitHub 上出现新的 workflow_dispatch run
+  // 7) 真实触发一次 alarm（8 秒后，强制派发 task-hub），证明 alarm -> dispatch 全链路
+  let testStart = Date.now();
   try {
-    const tickAt = Date.now();
-    const tick = await getJson(TICK_URL, {
+    const armed = await getJson(TEST_ALARM_URL, {
       method: 'POST',
-      headers: {authorization: `Bearer ${triggerToken}`, 'content-type': 'application/json'},
-      body: JSON.stringify({force: ['task-hub']}),
+      headers: timerHeaders,
+      body: JSON.stringify({force: ['task-hub'], delay_seconds: 8}),
     });
-    state.tickResult = {
-      status: tick.status,
-      ok: tick.body?.ok === true,
-      dispatched: tick.body?.dispatched ?? null,
-      failed: tick.body?.failed ?? null,
-    };
-    if (tick.status === 200 && tick.body?.dispatched === 1) {
-      state.dispatchRun = await githubRunSince('task-hub.yml', tickAt);
-      if (state.dispatchRun) {
-        ok(
-          'github_dispatch_observed',
-          `POST /tick 强制派发 task-hub.yml 成功（204）；GitHub run ${state.dispatchRun.id} ${state.dispatchRun.status} ${state.dispatchRun.html_url}`,
-        );
-      } else {
-        failed(
-          'github_dispatch_observed',
-          'POST /tick 返回 dispatched=1，但 90 秒内未在 GitHub 观察到新的 task-hub workflow_dispatch run',
-          'github_dispatch_run_not_observed',
-        );
-      }
+    if (armed.status === 200 && armed.body?.test_alarm_armed === true) {
+      testStart = Date.now();
+      ok('alarm_test_armed', `POST /test-alarm 200：fire_at=${armed.body.fire_at} force=task-hub`);
     } else {
       failed(
-        'github_dispatch_observed',
-        `POST /tick 未成功：http=${tick.status} ok=${tick.body?.ok} dispatched=${tick.body?.dispatched} failed=${tick.body?.failed} error=${String(tick.body?.error || '').slice(0, 120)}`,
-        'worker_tick_dispatch_failed',
+        'alarm_test_armed',
+        `POST /test-alarm 未排上：http=${armed.status} armed=${armed.body?.test_alarm_armed} error=${String(armed.body?.error || '').slice(0, 120)}`,
+        'test_alarm_arm_failed',
       );
+      return finalize();
     }
   } catch (error) {
-    failed('github_dispatch_observed', `POST /tick 异常：${String(error?.message || error).slice(0, 160)}`, 'worker_tick_transport_failed');
+    failed('alarm_test_armed', `POST /test-alarm 异常：${String(error?.message || error).slice(0, 160)}`, 'test_alarm_transport_failed');
+    return finalize();
+  }
+
+  // 7a) 等待 alarm 真实醒来（/status 的 last_alarm_at 前移）
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    try {
+      const status = await getJson(STATUS_URL, {
+        headers: {authorization: `Bearer ${triggerToken}`},
+      });
+      const lastMs = Date.parse(status.body?.last_alarm_at || '');
+      if (status.status === 200 && Number.isFinite(lastMs) && lastMs >= testStart - 3000) {
+        state.firedStatus = status.body;
+        const nextMs = Date.parse(status.body?.next_alarm || '');
+        const aligned = Number.isFinite(nextMs) && new Date(nextMs).getUTCMinutes() % 15 === 0;
+        ok(
+          'alarm_fired',
+          `GET /status 200：last_alarm_at=${status.body.last_alarm_at} next_alarm=${status.body.next_alarm}（${aligned ? '整刻' : '非整刻'}）`,
+        );
+        break;
+      }
+    } catch {
+      /* 继续等 */
+    }
+    await sleep(3000);
+  }
+  if (!state.firedStatus) {
+    failed('alarm_fired', '90 秒内未观察到 alarm 醒来（last_alarm_at 未前移）', 'alarm_not_observed');
+    return finalize();
+  }
+
+  // 7b) 确认 alarm 派发在 GitHub 上出现
+  state.dispatchRun = await githubRunSince('task-hub.yml', testStart);
+  if (state.dispatchRun) {
+    ok(
+      'alarm_dispatch_observed',
+      `alarm 触发后 GitHub 出现 task-hub workflow_dispatch run ${state.dispatchRun.id} ${state.dispatchRun.status} ${state.dispatchRun.html_url}`,
+    );
+  } else {
+    failed(
+      'alarm_dispatch_observed',
+      'alarm 已醒来，但 90 秒内未在 GitHub 观察到新的 task-hub workflow_dispatch run',
+      'alarm_dispatch_run_not_observed',
+    );
   }
 
   return finalize();
