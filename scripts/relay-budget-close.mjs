@@ -155,7 +155,7 @@ export function writeReceipt(result, {root = process.cwd()} = {}) {
   const stamp = String(result.at || new Date().toISOString()).replace(/[:.]/g, '-');
   const name = `RELAY-CLOSE-${stamp}-run-${result.workflow_run_id}-attempt-${result.workflow_run_attempt}.json`;
   const file = path.join(dir, name);
-  fs.writeFileSync(file, JSON.stringify(result, null, 2) + '\\n', {flag: 'wx'});
+  fs.writeFileSync(file, JSON.stringify(result, null, 2) + '\n', {flag: 'wx'});
   return path.relative(root, file);
 }
 
