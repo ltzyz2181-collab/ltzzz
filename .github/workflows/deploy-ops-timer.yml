@@ -1,0 +1,72 @@
+name: Deploy external ops timer (Cloudflare Cron -> GitHub dispatch)
+
+# 2026-11-21 业主指令：自动链路不再依赖 GitHub 免费档 cron。
+# 本工作流部署 workers/ops-timer：Cloudflare 每 15 分钟触发一次，
+# 由 Worker 用自己的时钟调用各工作流的 workflow_dispatch。
+# 部署边界：只绑 GitHub 派发 PAT 与 /tick 口令，不含模型密钥、不碰资金/签名/钱包/凭据内容。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'workers/ops-timer/**'
+      - 'wrangler.ops-timer.toml'
+      - 'scripts/deploy-ops-timer.mjs'
+      - 'scripts/tests/ops-timer-worker.test.mjs'
+      - '.github/workflows/deploy-ops-timer.yml'
+  pull_request:
+    paths:
+      - 'workers/ops-timer/**'
+      - 'wrangler.ops-timer.toml'
+      - 'scripts/deploy-ops-timer.mjs'
+      - 'scripts/tests/ops-timer-worker.test.mjs'
+      - '.github/workflows/deploy-ops-timer.yml'
+  workflow_dispatch:
+
+permissions: {contents: read}
+concurrency: {group: deploy-ops-timer, cancel-in-progress: false}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Syntax check
+        run: |
+          node --check workers/ops-timer/index.js
+          node --check scripts/deploy-ops-timer.mjs
+      - name: Worker unit tests (injected clock, both allow and deny paths)
+        run: node --test scripts/tests/ops-timer-worker.test.mjs
+
+  deploy:
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions: {contents: write}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
+      TIMER_TRIGGER_TOKEN: ${{ secrets.TIMER_TRIGGER_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: '${{ github.sha }}', fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Bind secrets and deploy, then verify health + cron + real dispatch
+        run: node scripts/deploy-ops-timer.mjs
+      - name: Keep deploy receipt and blocker evidence
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add ops/deploy-receipts knowledge/results/ops-timer "docs/2026-11-16-已闭环事项登记与勿重复清单.md"
+          if git diff --staged --quiet; then exit 0; fi
+          MSG=$(node -e "const fs=require('fs');const p='knowledge/results/ops-timer/latest.json';console.log(fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')).commit_message:'ops-timer: deploy evidence update')")
+          git commit -m "$MSG"
+          node tools/push-receipt-commit.mjs
