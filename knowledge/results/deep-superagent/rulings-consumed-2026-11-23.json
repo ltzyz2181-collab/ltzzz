@@ -1,0 +1,75 @@
+{
+ "schema": "ltzzz.deep-superagent.rulings-consumed.v1",
+ "business_date": "2026-11-23",
+ "generated_at_utc": "2026-11-22T22:55:00Z",
+ "source": "agent_mail_inbox + ruling-tracker/consume_gate",
+ "consume_gate_count": 3,
+ "consumed_count": 3,
+ "bodies_persisted": false,
+ "bodies_read": true,
+ "model_calls": 0,
+ "paid": false,
+ "items": [
+  {
+   "thread_key": "task:DEEP-SUPERAGENT-20261118-BACKLOG-2",
+   "message_id": "msg_42JRcc6Hks39gyLTrInMVoOmZGhPp_OE5GNSxCzYEW45nQ",
+   "received_at_utc": "2026-11-22T20:58:13Z",
+   "kind": "append_only_correction",
+   "new_decision_id": false,
+   "task_ids": [
+    "DEEP-SUPERAGENT-20261118-BACKLOG-2"
+   ],
+   "issue_refs": [
+    "#436"
+   ],
+   "summary": "GPT 更正 main 基线：上一封写的 2b3af0d55ded 过时，应改以 c1d526beadfa（2026-11-22T20:47:07Z，仅新增 results/publishing/manus-dispatch/2026-11-22.json）为本次修正回执基线；该 SHA 无关联 workflow run，不得写成 CI/部署/业务验收。Task Hub 快照 20:46:26Z 为 8 open（new4/blocked3/lease_expired1），#464 seat=desktop-claude lease_expired attempts=62 无 claim，#436 seat=deep new attempts=0 无 claim。要求按原 Task ID 做 B1–B7 append-only 修正回执，唯一新文件名；oversight source_commit 与 main 不同必须标 stale，不得把 238 warnings / 188 not_rechecked 冒充当前主账。model_calls=0、paid=false、transactions=0。",
+   "scope_effect": "requires_new_append_only_receipt_no_new_scope"
+  },
+  {
+   "thread_key": "task:REFUND-DEFENSE-F2-IDEMPOTENCY-DESIGN-20261118-01",
+   "message_id": "msg_E306NvRsFaSEXuY8hZfoiZJTxhdDcwU6HYHa9m2YccV9xw",
+   "received_at_utc": "2026-11-22T19:57:42Z",
+   "kind": "authority_correction",
+   "new_decision_id": false,
+   "task_ids": [
+    "REFUND-DEFENSE-F2-IDEMPOTENCY-DESIGN-20261118-01"
+   ],
+   "issue_refs": [
+    "#434"
+   ],
+   "summary": "Owner 2026-11-20 已 supersede「普通设计/测试任务等 GPT PASS」的通用门槛；本任务只做退款通知幂等设计与合成向量，不是退款终态裁决，不需要新 GPT 审批。允许新增设计文档与 synthetic fixtures/tests 并提 PR、按现有工程授权跑 required CI 与合并；仍禁止改生产 vpay-notify 累计逻辑、部署云函数、真实订单/支付/退款、微信商户 API、客户资料、新凭据。",
+   "scope_effect": "authorized_engineering_no_gpt_gate"
+  },
+  {
+   "thread_key": "subject:wallet-p<amount>-incremental-verify",
+   "message_id": "msg_BsFHhnuu33-Y_w3nTvouuSNnEig3pVBKCYacbXI3_M0vcA",
+   "received_at_utc": "2026-11-22T19:57:39Z",
+   "kind": "authority_correction",
+   "new_decision_id": false,
+   "task_ids": [
+    "WALLET-P1-INCREMENTAL-VERIFY"
+   ],
+   "issue_refs": [
+    "#433"
+   ],
+   "summary": "Owner 2026-11-20 已 supersede 普通代码任务等 GPT 最终 PASS/独立签字门槛；本任务为钱包账本缓存完整性代码与合成测试，不是钱包操作，不得把 wallet 关键词本身当作审批条件。允许改 ledger cache 验证与合成测试、提 PR、按现有工程授权合并；HIGH finding 未修复前仍不得合并（属实际安全缺陷而非授权门槛）。仍禁止真实钱包/资金/转账/签名/结算/退款/RPC 写入/Safe/真实余额地址/Secrets/新凭据/付费模型调用/生产部署。",
+   "scope_effect": "authorized_engineering_no_gpt_gate"
+  }
+ ],
+ "residual_answered_but_unread": {
+  "count": 1,
+  "thread_key": "subject:<amount>-<amount>-<amount>豆包<amount>修复已部署 + 工程类部署限制放开",
+  "message_id": "msg_S1XN1G1rI35-AHYRK9vKRalPZasrctIgzOsjMuNOsoSrag",
+  "note": "2026-11-20T20:51Z，已在 2026-11-22 轮读正文并消费；tracker 的 read 标记未刷新，保留为已消费不重复读正文"
+ },
+ "corrections": [
+  {
+   "id": "check-gpt-ruling-mail-subject-filter",
+   "finding": "check-gpt-ruling-mail.mjs 只按主题关键词（裁决/ruling/disposition/...）过滤，今日三封 GPT 回信主题为「Re: [GPT总控派单] …」不含关键词，脚本输出 received=false、days_since_last_ruling=3，与事实不符",
+   "impact": "会再次产生「邮件没收到」错误口径，与 owner 明令禁止的口径冲突",
+   "fix": "放宽为：GPT 发件人 + (主题匹配裁决关键词 或 主题为 Re: 回复) 计入当日裁决回信；补单测",
+   "status": "fixed_in_this_run"
+  }
+ ],
+ "note": "本轮三封均为权限口径修正/基线更正，均不新增 decision_id；原 Task ID 与 scope 不变，均属 owner 2026-11-20 常设授权下的普通工程。"
+}

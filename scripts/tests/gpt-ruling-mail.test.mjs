@@ -35,3 +35,23 @@ test('窗口内一封裁决都没有：不得报成已收到', () => {
   assert.equal(r.last_message_id, null);
   assert.equal(r.severity, 'unknown');
 });
+
+test('GPT 主题为「Re: [GPT总控派单]」的回信必须计入，不得漏成没收到', () => {
+  const r = summarize([
+    msg('2026-11-22T20:58:13Z', 'Re: [LTZZZ][GPT总控派单] DEEP-SUPERAGENT-20261118-BACKLOG-2｜#436 当前证据修正'),
+    msg('2026-11-22T19:57:42Z', 'Re: [GPT总控派单] REFUND-DEFENSE-F2-IDEMPOTENCY-DESIGN-20261118-01'),
+    msg('2026-11-22T19:57:39Z', 'Re: [GPT总控派单] WALLET-P1-INCREMENTAL-VERIFY'),
+    msg('2026-11-22T19:00:00Z', '自动通知：构建完成')
+  ], new Date('2026-11-22T23:00:00Z'));
+  assert.equal(r.received, true);
+  assert.equal(r.today_count, 3);
+  assert.equal(r.matched_by.keyword, 0);
+  assert.equal(r.matched_by.reply_prefix, 3);
+  assert.equal(r.severity, 'ok');
+});
+
+test('非 GPT 的 Re: 回信不计入', () => {
+  const r = summarize([msg('2026-11-22T20:00:00Z', 'Re: [GPT总控派单] 某任务', 'other@agent.qq.com')], new Date('2026-11-22T23:00:00Z'));
+  assert.equal(r.received, false);
+  assert.equal(r.today_count, 0);
+});
