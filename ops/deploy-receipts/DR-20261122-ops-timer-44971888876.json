@@ -1,0 +1,78 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261122-ops-timer-44971888876",
+  "target": "external-ops-timer",
+  "platform": "cloudflare-durable-object-alarm + github-actions-workflow-dispatch",
+  "env_id": "ltzyz2181-collab/ltzzz@main + ltzzz-ops-timer",
+  "code_commit": "04f0476e66177ab14610e669bee5b81d6e2c22b6",
+  "code_path": "workers/ops-timer",
+  "deployed_at": "2026-11-22T01:32:54.587Z",
+  "deployment_status": "deployed_verified",
+  "worker_revision": "ops-timer-v3",
+  "timer_mode": "durable_object_alarm_every_15m",
+  "task": {
+    "task_id": "OPS-TIMER-20261122",
+    "run_id": "44971888876"
+  },
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "done",
+    "deployed": "done",
+    "submitted": "done",
+    "platform_accepted": "done"
+  },
+  "verified": [
+    {
+      "kind": "secrets_bound",
+      "result": "ok",
+      "evidence": "wrangler secret put LTZZZ_AGENT_TOKEN / TIMER_TRIGGER_TOKEN 完成（值未打印）"
+    },
+    {
+      "kind": "worker_unit_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/ops-timer-worker.test.mjs：pass=25 fail=0"
+    },
+    {
+      "kind": "worker_deployed",
+      "result": "ok",
+      "evidence": "wrangler deploy 完成：service=ltzzz-ops-timer version=ad6fdc83-039d-471a-b32f-ac36b4684825（无 cron 触发器，timer 由 DO alarm 驱动）"
+    },
+    {
+      "kind": "health_readback",
+      "result": "ok",
+      "evidence": "GET /health 200：revision=ops-timer-v3 timer_mode=durable_object_alarm_every_15m credential_configured=true trigger_configured=true durable_object_configured=true token_echo=false"
+    },
+    {
+      "kind": "alarm_armed",
+      "result": "ok",
+      "evidence": "POST /start 200：armed=true next_alarm=2026-11-22T01:46:00.000Z（槽位 :01/:16/:31/:46）"
+    },
+    {
+      "kind": "auth_three_state",
+      "result": "ok",
+      "evidence": "anonymous=401 wrong=401 valid=200 authenticated=true"
+    },
+    {
+      "kind": "alarm_test_armed",
+      "result": "ok",
+      "evidence": "POST /test-alarm 200：fire_at=2026-11-22T01:32:47.407Z force=task-hub"
+    },
+    {
+      "kind": "alarm_fired",
+      "result": "ok",
+      "evidence": "GET /status 200：last_alarm_at=2026-11-22T01:32:47.408Z next_alarm=2026-11-22T01:46:00.000Z（整刻）"
+    },
+    {
+      "kind": "alarm_dispatch_observed",
+      "result": "ok",
+      "evidence": "alarm 触发后 GitHub 出现 task-hub workflow_dispatch run 44971959490 in_progress https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44971959490"
+    }
+  ],
+  "blockers": [],
+  "next_action": null,
+  "evidence_ref": "knowledge/results/ops-timer/deploy-44971888876.json",
+  "code_sha256": {
+    "index.js": "4c453a8ff505037e3765524c79ba8b45970fc1c4c5d374fad9c13a99e3b392ba"
+  }
+}
