@@ -1,0 +1,93 @@
+{
+  "schema": "ltzzz.relay-budget-close.v1",
+  "task_id": "RELAY-BUDGET-POSTCALL-CAP-20261120-01",
+  "decision_id": "GPT-DECISION-20261121-RELAY-PAID-LANE-CLOSE-01",
+  "at": "2026-11-22T19:22:35.198Z",
+  "workflow_run_id": "45060361340",
+  "workflow_run_attempt": "1",
+  "source_commit": "ee30744911bd132941508e02bc5322581958ebe2",
+  "worker_url": "https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1",
+  "action": "durable_paid_relay_seat_close",
+  "close_reason": "gpt_decision_hold_pending_balance_reconciliation",
+  "closed_by": "gpt-decision-seat",
+  "paid_model_call_attempted": false,
+  "official_provider_balance_verified": false,
+  "state_before": {
+    "http": 200,
+    "ok": true,
+    "closed": false,
+    "closed_reason": null,
+    "active_reservations": 0,
+    "daily_spent_usd": 0,
+    "project_spent_usd": 0.279746,
+    "error": null
+  },
+  "close_response": {
+    "http": 200,
+    "ok": true,
+    "data": {
+      "ok": true,
+      "status": 200,
+      "duplicate": false,
+      "call_id": null,
+      "snapshot": {
+        "ok": true,
+        "schema": "ltzzz.relay-budget.v1",
+        "baseline_usd": 12.737087,
+        "balance_usd": 12.457341,
+        "available_usd": 12.457341,
+        "daily_spent_usd": 0,
+        "daily_reserved_usd": 0,
+        "project_spent_usd": 0.279746,
+        "project_reserved_usd": 0,
+        "active_reservations": 0,
+        "closed": true,
+        "closed_reason": "gpt_decision_hold_pending_balance_reconciliation",
+        "last_overrun": null,
+        "limits": {
+          "per_call_cost_cap_usd": 0.05,
+          "daily_cost_cap_usd": 0.5,
+          "project_cost_cap_usd": 10,
+          "balance_floor_usd": 3
+        }
+      }
+    }
+  },
+  "state_after_close": {
+    "http": 200,
+    "ok": true,
+    "closed": true,
+    "closed_reason": "gpt_decision_hold_pending_balance_reconciliation",
+    "active_reservations": 0,
+    "daily_spent_usd": 0,
+    "project_spent_usd": 0.279746,
+    "error": null
+  },
+  "synthetic_reserve_probe": {
+    "http": 403,
+    "ok": false,
+    "error_code": "proxy_budget_refused_relay_seat_closed",
+    "expected_error_code": "proxy_budget_refused_relay_seat_closed",
+    "upstream_generation_reached": false
+  },
+  "state_after_probe": {
+    "http": 200,
+    "ok": true,
+    "closed": true,
+    "closed_reason": "gpt_decision_hold_pending_balance_reconciliation",
+    "active_reservations": 0,
+    "daily_spent_usd": 0,
+    "project_spent_usd": 0.279746,
+    "error": null
+  },
+  "verified": true,
+  "local_state_updated": true,
+  "status": "closed_verified",
+  "local_state": {
+    "status": "closed",
+    "balance_usd": null,
+    "closed_at": "2026-11-22T19:22:35.198Z",
+    "close_reason": "gpt_decision_hold_pending_balance_reconciliation",
+    "closed_by": "gpt-decision-seat"
+  }
+}
