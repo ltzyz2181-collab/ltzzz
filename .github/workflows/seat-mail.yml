@@ -2,6 +2,7 @@ name: Seat mail relay (any seat to any seat)
 
 # 任何席位都能互相发邮件：开一张带 `mail:send` 标签的卡，写 seat/to/subject 和正文，
 # 这里每 30 分钟把队列发掉并回执。席位本身不需要持有 SMTP 凭据。
+# P4：卡片可选带 in_reply_to / references / dedupe_key —— 回信接进原线程，同 dedupe_key 24h 内不重发。
 
 on:
   schedule:
@@ -12,6 +13,19 @@ on:
         description: '真正发送（否则只列出队列）'
         type: boolean
         default: false
+  pull_request:
+    paths:
+      - 'scripts/seat-mail.mjs'
+      - 'scripts/lib/mail-thread.mjs'
+      - 'scripts/tests/seat-mail.test.mjs'
+      - 'scripts/tests/mail-thread.test.mjs'
+      - '.github/workflows/seat-mail.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/seat-mail.mjs'
+      - 'scripts/lib/mail-thread.mjs'
+      - '.github/workflows/seat-mail.yml'
 
 permissions:
   contents: write
@@ -22,7 +36,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: |
+          node --check scripts/seat-mail.mjs
+          node --check scripts/lib/mail-thread.mjs
+      - name: Unit tests (pure logic, no network)
+        run: node --test scripts/tests/seat-mail.test.mjs scripts/tests/mail-thread.test.mjs
+
   relay:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -37,7 +70,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Verify contracts
-        run: node --check scripts/seat-mail.mjs && node --test scripts/tests/seat-mail.test.mjs
+        run: node --check scripts/seat-mail.mjs && node --test scripts/tests/seat-mail.test.mjs scripts/tests/mail-thread.test.mjs
       - name: Drain queue
         run: node scripts/seat-mail.mjs --queue --apply
       - name: Persist receipt

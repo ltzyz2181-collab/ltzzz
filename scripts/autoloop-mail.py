@@ -144,7 +144,7 @@ def read_headers(days, limit, out):
     except Exception as exc:  # network faults are expected on restricted runners
         return {"status": "blocked_imap_transport", "detail": type(exc).__name__}
 
-def send(subject, body_file, to):
+def send(subject, body_file, to, in_reply_to="", references=""):
     c = _smtp_env()
     if not c["user"] or not c["password"] or not to:
         return {"status": "blocked_missing_credentials", "required": ["MAIL_SMTP_USER", "MAIL_SMTP_PASSWORD", "recipient"]}
@@ -156,6 +156,10 @@ def send(subject, body_file, to):
     msg["Subject"] = subject
     msg["Date"] = email.utils.formatdate(localtime=False)
     msg["Message-ID"] = email.utils.make_msgid(domain="qq.com")
+    if in_reply_to:
+        msg["In-Reply-To"] = in_reply_to
+    if references or in_reply_to:
+        msg["References"] = references or in_reply_to
     msg.set_content(body)
     try:
         with smtplib.SMTP_SSL(c["host"], c["port"], timeout=45, context=ssl.create_default_context()) as s:
@@ -166,6 +170,8 @@ def send(subject, body_file, to):
             "message_id": msg["Message-ID"],
             "to": to,
             "body_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+            "in_reply_to": msg["In-Reply-To"] or "",
+            "references": msg["References"] or "",
         }
     except smtplib.SMTPException as exc:
         return {"status": "failed_smtp", "detail": type(exc).__name__}
@@ -183,11 +189,13 @@ def main():
     ps.add_argument("--subject", required=True)
     ps.add_argument("--body-file", required=True)
     ps.add_argument("--to", required=True)
+    ps.add_argument("--in-reply-to", default="")
+    ps.add_argument("--references", default="")
     a = p.parse_args()
     if a.cmd == "read":
         _out(read_headers(a.days, a.limit, a.out))
     else:
-        _out(send(a.subject, a.body_file, a.to))
+        _out(send(a.subject, a.body_file, a.to, a.in_reply_to, a.references))
 
 if __name__ == "__main__":
     main()
