@@ -1,0 +1,37 @@
+{
+  "schema": "ltzzz.ops-timer.deploy.v1",
+  "at": "2026-11-22T01:24:41.229Z",
+  "run_id": "44971271799",
+  "source_commit": "076ba93afd17bb48cae53771b3fcae2ef1d73c19",
+  "worker": "ltzzz-ops-timer",
+  "revision": "ops-timer-v1",
+  "cron": "*/15 * * * *",
+  "status": "deployment_with_blockers",
+  "version_id": null,
+  "health": null,
+  "tick": null,
+  "dispatch_run": null,
+  "evidence": [
+    {
+      "kind": "secrets_bound",
+      "result": "ok",
+      "evidence": "wrangler secret put LTZZZ_AGENT_TOKEN / TIMER_TRIGGER_TOKEN 完成（值未打印）"
+    },
+    {
+      "kind": "worker_unit_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/ops-timer-worker.test.mjs：pass=17 fail=0"
+    },
+    {
+      "kind": "worker_deployed",
+      "result": "failed",
+      "evidence": "wrangler deploy 失败：aded ltzzz-ops-timer (1.30 sec) Deployed ltzzz-ops-timer triggers (0.56 sec) https://ltzzz-ops-timer.ltzyz2181.workers.dev \u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1mTrigger configuration for \"ltzzz-ops-timer\" was only partially updated:\u001b[0m Cron schedules: - A request to the Cloudflare API (/accounts/44acab6e47bc1efd0e86b2f5b6bc1972/workers/scripts/ltzzz-ops-timer/schedules) failed. - This account has reached the Workers Free limit of 5 cron triggers per account. Upgrade to Workers Paid to increase this limit to 1,000: \u001b[4mhttps://dash.cloudflare.com/44acab6e47bc1efd0e86b2f5b6bc1972/workers/plans\u001b[0m [code: 10072] To learn more about this error, visit: \u001b[4mhttps://developers.cloudflare.com/workers/platform/limits/#account-plan-limits\u001b[0m Successful trigger changes were not rolled back. 🪵 Logs were written to \"/home/runner/.config/.wrangler/logs/wrangler-2026-11-22_01-24-38_656.log\""
+    }
+  ],
+  "blockers": [
+    "wrangler_deploy_failed"
+  ],
+  "secrets_included": false,
+  "model_calls": 0,
+  "financial_actions": 0
+}
