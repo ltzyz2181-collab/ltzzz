@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {closeAndVerify} from '../relay-budget-close.mjs';
+import {closeAndVerify, writeReceipt} from '../relay-budget-close.mjs';
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 const promptText = 'a'.repeat(16384);
 const baseUrl = 'https://relay.example/v1';
@@ -103,4 +107,23 @@ test('a response other than the closed-seat refusal is not accepted as a success
   const result = await closeAndVerify({fetchImpl: mock.fetchImpl, baseUrl, token, promptText});
   assert.equal(result.verified, false);
   assert.equal(result.status, 'blocked_evidence');
+});
+
+test('writeReceipt writes parseable JSON with a newline and refuses overwrite', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ltzzz-relay-close-'));
+  try {
+    const receipt = {
+      at: '2026-11-22T19:00:00.000Z',
+      workflow_run_id: 'test-run',
+      workflow_run_attempt: '1',
+      status: 'blocked_evidence',
+    };
+    const relative = writeReceipt(receipt, {root});
+    const raw = fs.readFileSync(path.join(root, relative), 'utf8');
+    assert.equal(raw.endsWith('\n'), true);
+    assert.deepEqual(JSON.parse(raw), receipt);
+    assert.throws(() => writeReceipt(receipt, {root}), {code: 'EEXIST'});
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+  }
 });
