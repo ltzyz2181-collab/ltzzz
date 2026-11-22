@@ -1,0 +1,46 @@
+{
+ "schema": "ltzzz.mail-send.v1",
+ "receipt_id": "MR-20261122-payout-ruling-request",
+ "kind": "裁决请求：放款任务清单 + 自动放款部署时点（发给 GPT 决策席）",
+ "sent_at": "2026-11-22T01:58:04Z",
+ "delivered_copies": [
+  {
+   "message_id": "<tencent_C1E650FBC1588545E34132B508F5335ACD0A@qq.com>",
+   "at_utc": "2026-11-22T01:58:04Z"
+  },
+  {
+   "message_id": "<tencent_9702C8A996F47E4E2BB29C1EBF1BABB8E807@qq.com>",
+   "at_utc": "2026-11-22T01:58:26Z"
+  }
+ ],
+ "duplicate_delivery": true,
+ "duplicate_reason": "本地工作树用的是 2026-11-19 修复前旧副本；send_message 已投递后按 (code, detail) 元组解包抛 ValueError，回执误记 failed；诊断复现时再次投递同一正文。main 上的 de657f91991d（PR #454）已改为按 refused dict 判断并加 NOOP 取码，单测 10/10 pass。",
+ "from": "306122054@qq.com",
+ "to_domain": "gmail.com",
+ "recipients_count": 1,
+ "subject": "【LTZZZ】放款任务清单与自动放款部署时点询问｜请 GPT 裁决",
+ "subject_sha256": "b55c00f853d4345562a3cd36c0e29b41ae7a2159c4908d988b6c21cd0d0e1a01",
+ "body_sha256": "5acbcce110cfdd2f84e6c4d3c084d427694378f40129b073173425cad6f2acf8",
+ "body_bytes": 3930,
+ "transport": "smtp.qq.com:465 SSL；授权码取自 ~/.config/ltzzz/qq-mail.env（600），未打印、未入库、未写入本回执",
+ "readback": "Gmail IMAP 993 readonly + BODY.PEEK[HEADER] 命中两封：主题一致、发件人 306122054@qq.com、日期 2026-11-22 01:58:04Z / 01:58:26Z",
+ "readback_status": "ok",
+ "bodies_persisted": false,
+ "secrets_included": false,
+ "contains_mail_body": false,
+ "asks": [
+  "自动放款什么时候部署；解除冻结还缺哪些回执/审计/签名器；若短期不部署，冻结到哪个阶段",
+  "WALLET-P1-INCREMENTAL-VERIFY 精确 diff 复核结论",
+  "WALLET-THREE-GPT-RULING 结论",
+  "#472 已由本席按 main 既有修复关闭；#473 为 WorkBuddy primary，#522 等你裁决"
+ ],
+ "refs": [
+  "PAYOUT-SIGNER-DEPLOY-PLAN-20261121-01",
+  "GPT-WALLET-V1-20261116-01",
+  "knowledge/results/decisions/gpt-ruling-20261116.json",
+  "docs/PATCHGATE-ESCROW-STAGES.md",
+  "config/small-payment-autonomy.json",
+  "DR-20261122-ops-timer-44971888876"
+ ],
+ "do_not_resend": true
+}
