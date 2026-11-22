@@ -66,8 +66,15 @@ function wranglerError(error) {
   const parts = [];
   if (error?.stdout) parts.push(String(error.stdout));
   if (error?.stderr) parts.push(String(error.stderr));
-  const text = parts.join('\n').replace(/\s+/g, ' ').trim();
-  return text ? text.slice(0, 240) : String(error?.message || error).slice(0, 240);
+  const text = parts.join('\n').trim();
+  // 把失败尾部打进 job log，便于定位；这里只有 wrangler 输出，不含环境变量值。
+  if (text) {
+    console.error('--- wrangler failure output (captured; environment values not printed) ---');
+    console.error(text.slice(-3000));
+    console.error('--- end wrangler failure output ---');
+  }
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat ? flat.slice(-900) : String(error?.message || error).slice(0, 900);
 }
 
 async function getJson(url, options = {}) {
