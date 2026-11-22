@@ -21,5 +21,11 @@
   "status": "blocked",
   "detail": "改 prompt 后 package_id 未变（attempt_key 与 45080425824 相同、post_attempted=false），服务端按 task_id+package_id 命中上次 blocked 终态，改码无效",
   "fix": "material 纳入 prompt_sha256，prompt 一变即新 package/attempt"
- }
+ },
+ "third_finding": {
+  "run_id": "45081093751",
+  "status": "blocked",
+  "detail": "prompt 改动后已产生新 attempt（幂等键修复生效），但 planner 仍把工作席给 grok，grok 240s upstream_request_timeout，续 2 次失败"
+ },
+ "third_fix": "日卡 prompt 显式限定工作席只能取千问/DeepSeek/Kimi，排除 grok 与 doubao；不改 worker、不做生产部署"
 }
