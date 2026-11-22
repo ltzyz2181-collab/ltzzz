@@ -1,0 +1,132 @@
+{
+  "schema": "ltzzz.ops-timer.deploy.v1",
+  "at": "2026-11-22T01:28:10.260Z",
+  "run_id": "44971525596",
+  "source_commit": "b01b312200b347e2e2cddd2d443656a413acd0d5",
+  "worker": "ltzzz-ops-timer",
+  "revision": "ops-timer-v2",
+  "timer_mode": "durable_object_alarm_every_15m",
+  "status": "deployment_health_alarm_dispatch_verified",
+  "version_id": "d8c5350a-bc2a-476b-b789-1583b3b3c75c",
+  "health": {
+    "ok": true,
+    "revision": "ops-timer-v2",
+    "repository": "ltzyz2181-collab/ltzzz",
+    "timer_mode": "durable_object_alarm_every_15m",
+    "dispatch_ref": "main",
+    "plan": [
+      {
+        "key": "task-hub",
+        "workflow": "task-hub.yml",
+        "at": "every-15m"
+      },
+      {
+        "key": "dispatch-sentinel",
+        "workflow": "dispatch-sentinel.yml",
+        "at": "hourly"
+      },
+      {
+        "key": "deep-daily-card",
+        "workflow": "deep-dispatch-daily.yml",
+        "at": "00:30"
+      },
+      {
+        "key": "deep-daily-evidence",
+        "workflow": "deep-superagent-daily.yml",
+        "at": "00:30"
+      },
+      {
+        "key": "ops-report",
+        "workflow": "daily-ops-report.yml",
+        "at": "01:15"
+      }
+    ],
+    "credential_configured": true,
+    "trigger_configured": true,
+    "durable_object_configured": true,
+    "token_echo": false
+  },
+  "alarm": {
+    "ok": true,
+    "doctype": "ops-timer",
+    "armed": true,
+    "next_alarm": "2026-11-22T01:30:00.000Z"
+  },
+  "fired_status": {
+    "ok": true,
+    "revision": "ops-timer-v2",
+    "timer_mode": "durable_object_alarm_every_15m",
+    "next_alarm": "2026-11-22T01:30:00.000Z",
+    "last_alarm_at": "2026-11-22T01:28:05.720Z",
+    "last_result": {
+      "planned": 1,
+      "dispatched": 1,
+      "failed": 0,
+      "results": [
+        {
+          "key": "task-hub",
+          "ok": true,
+          "status": 204
+        }
+      ]
+    }
+  },
+  "dispatch_run": {
+    "id": 44971592966,
+    "html_url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44971592966",
+    "event": "workflow_dispatch",
+    "status": "queued",
+    "created_at": "2026-11-22T01:28:06Z"
+  },
+  "evidence": [
+    {
+      "kind": "secrets_bound",
+      "result": "ok",
+      "evidence": "wrangler secret put LTZZZ_AGENT_TOKEN / TIMER_TRIGGER_TOKEN 完成（值未打印）"
+    },
+    {
+      "kind": "worker_unit_tests",
+      "result": "ok",
+      "evidence": "node --test scripts/tests/ops-timer-worker.test.mjs：pass=25 fail=0"
+    },
+    {
+      "kind": "worker_deployed",
+      "result": "ok",
+      "evidence": "wrangler deploy 完成：service=ltzzz-ops-timer version=d8c5350a-bc2a-476b-b789-1583b3b3c75c（无 cron 触发器，timer 由 DO alarm 驱动）"
+    },
+    {
+      "kind": "health_readback",
+      "result": "ok",
+      "evidence": "GET /health 200：revision=ops-timer-v2 timer_mode=durable_object_alarm_every_15m credential_configured=true trigger_configured=true durable_object_configured=true token_echo=false"
+    },
+    {
+      "kind": "alarm_armed",
+      "result": "ok",
+      "evidence": "POST /start 200：armed=true next_alarm=2026-11-22T01:30:00.000Z（15 分钟整刻）"
+    },
+    {
+      "kind": "auth_three_state",
+      "result": "ok",
+      "evidence": "anonymous=401 wrong=401 valid=200 authenticated=true"
+    },
+    {
+      "kind": "alarm_test_armed",
+      "result": "ok",
+      "evidence": "POST /test-alarm 200：fire_at=2026-11-22T01:28:05.720Z force=task-hub"
+    },
+    {
+      "kind": "alarm_fired",
+      "result": "ok",
+      "evidence": "GET /status 200：last_alarm_at=2026-11-22T01:28:05.720Z next_alarm=2026-11-22T01:30:00.000Z（整刻）"
+    },
+    {
+      "kind": "alarm_dispatch_observed",
+      "result": "ok",
+      "evidence": "alarm 触发后 GitHub 出现 task-hub workflow_dispatch run 44971592966 queued https://github.com/ltzyz2181-collab/ltzzz/actions/runs/44971592966"
+    }
+  ],
+  "blockers": [],
+  "secrets_included": false,
+  "model_calls": 0,
+  "financial_actions": 0
+}
