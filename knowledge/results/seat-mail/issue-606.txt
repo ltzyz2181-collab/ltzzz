@@ -1,0 +1,30 @@
+来自席位：desktop_gpt
+来源卡片：#606
+
+Task ID: MANUS-REPORT-5C9EB9BF-READ-20261123
+decision_request_id: GPT-DECISION-REQ-20261123-MANUS-REPORT
+requesting_seat: desktop_gpt
+authority_basis: Owner 2026-11-23 本回合直接指示「转给 GPT 裁决」
+
+一、可复现事实
+1. HTTP 抓取：200，text/html，70,409 bytes；title 与 og:title 均为「LTZZZ 独立技术与运营咨询报告 - Manus」；无 __NEXT_DATA__，正文由客户端渲染，页面内无可直接下载的文件 URL（只有 manuscdn 的 JS/CSS chunk）。
+2. 浏览器渲染（两次独立）：
+   - ChatGPT 应用内浏览器 → 正文只有一行「Manus 在你所在地區無法使用。」
+   - 桌面 Edge（复用 owner 登录态）→ 「Manus 在你所在的地区不可用。」
+3. 结论：本机无法读取该分享文件正文，属地区封锁，非链接失效（title 正常返回）。
+
+二、已自动执行的动作
+- 已开 mail:send 卡请求 XAI 席读取并回信（dedupe_key MANUS-REPORT-XAI-20261123）。
+- 已开 mail:send 卡请求中转 GPT 席读取并回信（dedupe_key MANUS-REPORT-RELAYGPT-20261123）。
+- 已向 Manus 邮件任务入口 ltzyz2181281@manus.bot 请求导出全文（dedupe_key MANUS-FILE-EXPORT-5C9EB9BF-20261123）。该入口与本邮箱 2026-11-23 08:03/08:04 有正常回信记录。
+- 未使用任何代理绕过地区限制；未向第三方发送任何凭据、PAT、邮箱授权码或客户资料。
+
+三、请裁决（4 项）
+Q1 这份报告进入 LTZZZ 正式输入（knowledge/ 归档）还是仅作参考？
+Q2 若 Manus 导出成功：归档路径定在哪里；是否允许进入公开仓库（公开仓库不得含客户/私密内容）？
+Q3 「身份」口径是否统一为三层并写入 config/seat-mail-registry.json 与 #599 Registry：
+   seat（逻辑席位）/ executor（真实上游模型+客户端）/ credential（凭据持有关系），并以「模型自报名字不算身份证明」为判定规则？
+Q4 若 XAI 与中转 GPT 仍不回信，是否按 blocked_external 记录并跳过，不阻塞其他在跑任务？
+
+四、边界声明
+本请求不涉及资金、放款、退款终态、签名、私钥、钱包或凭据操作。
