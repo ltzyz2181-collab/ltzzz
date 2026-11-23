@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-23",
+  "timezone": "Asia/Shanghai",
+  "source_commit": "d510ed99bcfcd55bbbcc85bbac6aa4486c771ded",
+  "execution_id": "45158249314",
+  "status": "rejected_by_coordinator",
+  "seats": [
+    {
+      "seat": "gpt",
+      "executor": "gpt"
+    },
+    {
+      "seat": "microsoft",
+      "executor": "gpt",
+      "delegated": true
+    }
+  ],
+  "inputs": [
+    {
+      "file": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "file": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "file": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "file": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "file": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "file": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "file": "ltzzz-memory/装备论.md",
+      "sha256": "757c84ddbb5c8267f7b86420400a4d2c3b71858d387abb85edf739c2644bcf20"
+    },
+    {
+      "file": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    }
+  ],
+  "proposals": [
+    {
+      "seat": "gpt",
+      "executor": "gpt",
+      "execution": null,
+      "model_source": "provider_response",
+      "executed_by": "DeepSeek",
+      "logical_agent": "gpt",
+      "delegated": true,
+      "status": "submitted",
+      "output": "{\"first_thought\":\"先读六篇与旧回执，考虑L-20261117-006和L-20261030-002。初始念头是把一次性转账拆成可撤销的因果证据流，不沿用WEP3报价退款。\",\"title\":\"证据流式托管：执行器每步工具调用按哈希证据线性解锁，审计者黑盒复核后才完全释放\",\"hypothesis\":\"若托管金只随可回放证据步进释放，失败边界触发撤销，AI支付就由一次性结果对赌转为可审计过程支付；失败反馈进入再雇佣先验。\",\"novelty\":\"不同于WEP3的报价-封金-中标-退款一次性订单，本点把支付拆成每步工具调用后的证据增量与独立审计复核，预算可中途撤销，并把失败边界反馈为下一轮预算先验。\",\"experiment_kind\":\"intent_schema_trial\",\"measurements\":\"本地固定样本下，记录schema字段误用数、证据步进回放数、撤销阈值触发数、审计拒绝数；仅报告固定样本，不声称真实支付/交易。\",\"next_patch\":\"新增escrow_release_event、revoke_threshold、审计复核字段，配回归测试和部署回执；仍需独立复核与未验证标记。\"}",
+      "tokens_used": 23372,
+      "model": "deepseek-v4-pro",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "autonomy:gpt",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261117-006",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "42fbc4f4f5b185731482b5e6dbb46bdfca5dc169a97846000c74db10b26a568f",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "1e428d7ddc75e6bc60cf212de14968f4279e8d20f28d60483ab9983ef5dd1c03"
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "reject",
+      "reason": "假设是托管金随可回放哈希证据步进释放、失败撤销、审计黑盒通过后才完全释放，并把失败写入再雇佣先验；这与WEP3一次性报价-封金-退款的对照未附原字节哈希，标unverified。已实现执行器只跑本地固定样本，可部署种类仅receipt_hash_benchmark/intent_schema_trial/hire_acceptance_trial，且预算不移动资金。receipt_hash_benchmark只改一条fixture的status比哈希；intent_schema_trial即使清点schema误用、回放、阈值、审计拒绝，也不能验证释放/撤销/支付形态转变。next_patch要新增escrow_release_event、revoke_threshold与审计字段，说明该机制未实现，故不能deploy_experiment。在不可动资金的模拟器上加字段名不等于证据流托管，创新与可验证边界不匹配，论据不足。",
+      "experiment_kind": "intent_schema_trial",
+      "task_instruction": "无编码或部署任务。本JSON不是deploy_experiment、生产回执或写盘授权。",
+      "execution_scope": {
+        "validation_scope": "local_fixture_only",
+        "real_delivery_count": 0,
+        "quality_validation_performed": false
+      }
+    }
+  ],
+  "financial_execution": false,
+  "judge": {
+    "executor": "gpt",
+    "execution": null,
+    "model_source": "provider_response",
+    "executed_by": "Grok",
+    "logical_agent": "gpt",
+    "delegated": true,
+    "status": "submitted",
+    "output": "{\"decision\":\"reject\",\"reason\":\"假设是托管金随可回放哈希证据步进释放、失败撤销、审计黑盒通过后才完全释放，并把失败写入再雇佣先验；这与WEP3一次性报价-封金-退款的对照未附原字节哈希，标unverified。已实现执行器只跑本地固定样本，可部署种类仅receipt_hash_benchmark/intent_schema_trial/hire_acceptance_trial，且预算不移动资金。receipt_hash_benchmark只改一条fixture的status比哈希；intent_schema_trial即使清点schema误用、回放、阈值、审计拒绝，也不能验证释放/撤销/支付形态转变。next_patch要新增escrow_release_event、revoke_threshold与审计字段，说明该机制未实现，故不能deploy_experiment。在不可动资金的模拟器上加字段名不等于证据流托管，创新与可验证边界不匹配，论据不足。\",\"experiment_kind\":\"intent_schema_trial\",\"task_instruction\":\"无编码或部署任务。本JSON不是deploy_experiment、生产回执或写盘授权。\"}",
+    "tokens_used": 8541,
+    "model": "grok-4.6",
+    "skill": {
+      "applied": true,
+      "status": "active_context_injected",
+      "version": "1.0.0",
+      "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+      "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+      "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+      "scope": "autonomy:gpt",
+      "reflection": {
+        "version": 1,
+        "status": "retrieved_not_compliance_verified",
+        "lesson_ids": [
+          "L-20261030-002",
+          "L-20261030-003",
+          "L-20261030-008",
+          "L-20261117-006",
+          "L-20261030-004",
+          "L-20261030-001",
+          "L-20261101-001",
+          "L-20261030-007"
+        ],
+        "strategy_ids": [
+          "draft_rejected",
+          "execution_blocked",
+          "region_ineligible",
+          "unpinned_input"
+        ],
+        "context_sha256": "42fbc4f4f5b185731482b5e6dbb46bdfca5dc169a97846000c74db10b26a568f",
+        "invalid_entries": 0
+      },
+      "prompt_sha256": "8c0839073d947df8c7766f59a6c010acbaa1cb6cd2cc7aeb4d8607c3771474cc"
+    }
+  }
+}
