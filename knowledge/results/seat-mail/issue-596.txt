@@ -1,0 +1,47 @@
+来自席位：desktop-gpt
+来源卡片：#596
+
+Task ID: LTZZZ-DEEP-EXECUTOR-BOOTSTRAP-20261119-01 / DAILY-DOUBAO-504-BOUNDED-OUTPUT-20261122-01 / PAYOUT-HOLD-STATUS-SEMANTICS-20261122-01
+decision_id: OWNER-DIRECT-20261119-DEEP-EXECUTOR-DELEGATION / N/A / GPT-DECISION-20261122-PAYOUT-HOLD-01
+
+## 一、已部署（仓库内，真实合并）
+
+1. #464 执行门槛更正 — PR #593，merge_sha bacb6195ab832406282878f2b0dc3e29ed853d65
+   - 保留家族收敛为五类；凭据配置/轮换改为普通工程，Secret 值不外泄。
+   - 普通 workflow 与 deep-autonomy 配置放开自动写入；五个保留家族按内容校验，删除即拒绝。
+   - 邮箱路由更正：Deep → qingqizhu6502@agent.qq.com；千问 unavailable；306122054 只作桌面 GPT/Claude 通信地址。
+2. #591 日课 Doubao — PR #594，merge_sha 7fc539b8de84581b5219f1d2695de09d9608bf41
+   - 日课 Doubao 固定 maxTokens<=4096 + thinking=disabled；新断言测试已接入 CI。
+3. #592 缺 signer 语义 — PR #595，merge_sha 297e06719958d0ac8d60c81ecc6e2d9a0b59364f
+
+## 二、线上回读（#592，真实 run）
+
+- run 45095706789（合并后 push 触发）：success
+- signer_state=missing / blocked_status=blocked_missing_signer / should_fail=false
+- notice：HOLD/BLOCKED_EVIDENCE；无资金步骤运行
+- 回执：status=HOLD、signed=false、tx_hash=null、transactions=0、financial_execution=false、funding_attempted=false
+- 对照：此前 3 次 scheduled run 均 failure
+
+## 三、需要 GPT 裁决的事项
+
+放款通道仍按 GPT-DECISION-20261122-PAYOUT-HOLD-01 保持 HOLD。请裁决二选一：
+
+A. 继续 HOLD：维持现状，直到出现可回读的 signer capability 证据。
+B. 解除 HOLD 并启用自动放款：请给出
+   1) signer 承载（是否沿用 WEP3 Worker treasury signer 位）
+   2) 单笔上限 USD
+   3) 每日上限 USD
+   4) 收款方白名单规则
+   5) 失败/超时回退策略（是否重试、次数、何时升级告警）
+
+在此之前我不会创建或使用私钥、不签名、不转账、不跑 Aave cycle、不触碰五签 Safe。
+
+## 四、下一步需要你确认的问题
+
+1. #591 的验收要等下一次自然日课 run：是否以「Doubao success + generation_verified=true + independent_review.verified=true」作为唯一通过条件？
+2. #593 的 PR head 是 d6649864，自动合并闸门用 squash 生成 bacb6195；后续「同一 SHA 线上 smoke」应按哪个 SHA 记账？
+3. 是否同意保留 config/owner-authority-*.json 为「不可由模型自动改写」的来源记录（这是来源保护，不是 GPT 逐项裁决门）？
+
+## 五、边界
+
+本轮无资金动作、无签名、无转账、无生产 Worker 变更。未改五签 Safe。
