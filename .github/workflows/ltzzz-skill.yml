@@ -3,10 +3,10 @@ on:
   issues:
     types: [opened]
   pull_request:
-    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','config/ltzzz-skill-release.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/run-ltzzz-skill-distribution.mjs','scripts/tests/ltzzz-skill.test.mjs','scripts/tests/ltzzz-skill-distribution.test.mjs','docs/LTZZZ-SKILL-DISTRIBUTION-20261022.md','ops/dispatch/inbox/**/LTZZZ-SKILL-DISTRIBUTION-*.md','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','config/ltzzz-skill-release.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/run-ltzzz-skill-distribution.mjs','scripts/tests/ltzzz-skill.test.mjs','scripts/tests/ltzzz-skill-distribution.test.mjs','docs/LTZZZ-SKILL-DISTRIBUTION-20261022.md','ops/dispatch/inbox/**/LTZZZ-SKILL-DISTRIBUTION-*.md','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/tests/daily-call-options.test.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
   push:
     branches: [main]
-    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','config/ltzzz-skill-release.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/run-ltzzz-skill-distribution.mjs','scripts/tests/ltzzz-skill.test.mjs','scripts/tests/ltzzz-skill-distribution.test.mjs','docs/LTZZZ-SKILL-DISTRIBUTION-20261022.md','ops/dispatch/inbox/**/LTZZZ-SKILL-DISTRIBUTION-*.md','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
+    paths: ['skills/ltzzz-task-execution/**','config/ltzzz-skill.json','config/ltzzz-skill-release.json','scripts/lib/ltzzz-skill*.mjs','scripts/ltzzz-skill.mjs','scripts/run-ltzzz-skill-review.mjs','scripts/run-ltzzz-skill-distribution.mjs','scripts/tests/ltzzz-skill.test.mjs','scripts/tests/ltzzz-skill-distribution.test.mjs','docs/LTZZZ-SKILL-DISTRIBUTION-20261022.md','ops/dispatch/inbox/**/LTZZZ-SKILL-DISTRIBUTION-*.md','.github/workflows/ltzzz-skill.yml','.github/skills/**','.claude/skills/**','.agents/skills/**','scripts/run-daily-tasks.mjs','scripts/tests/daily-call-options.test.mjs','scripts/lib/daily-task-board.mjs','scripts/autonomy-core.mjs','scripts/run-ans-cycle.mjs','scripts/run-qwen-dispatch.mjs']
 permissions: {contents: read}
 concurrency: {group: ltzzz-skill-review, cancel-in-progress: false}
 jobs:
@@ -18,7 +18,7 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
-      - run: node --test scripts/tests/ltzzz-skill.test.mjs scripts/tests/ltzzz-skill-distribution.test.mjs scripts/tests/qwen-dispatch.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/autonomy.test.mjs
+      - run: node --test scripts/tests/ltzzz-skill.test.mjs scripts/tests/ltzzz-skill-distribution.test.mjs scripts/tests/qwen-dispatch.test.mjs scripts/tests/ans-cycle.test.mjs scripts/tests/daily-task-board.test.mjs scripts/tests/autonomy.test.mjs scripts/tests/daily-call-options.test.mjs
       - run: node scripts/ltzzz-skill.mjs check
       - run: node scripts/run-ltzzz-skill-distribution.mjs check
   review:
