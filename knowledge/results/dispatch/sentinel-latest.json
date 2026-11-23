@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-23T13:01:18.579Z",
+  "at": "2026-11-23T14:01:21.107Z",
   "date": "2026-11-23",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -37,8 +37,8 @@
       "related_formal_daily_task_id": "DAILY-2026-11-23-qianwen",
       "formal_daily_cannot_satisfy_this_task": true,
       "issue": "external_return_claim_missing",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/dispatch/qianwen-return-2026-11-23.json"
     },
     {
@@ -62,8 +62,8 @@
       "engineering_closeout": null,
       "requires_engineering_followup": false,
       "issue": "review_missing",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/daily-board/2026-11-23.json"
     },
     {
@@ -78,8 +78,8 @@
       ],
       "instruction": "复用原 Task ID `AUTO-2026-11-21-health`，读取 `ops/dispatch/oversight/AUTO-2026-11-21-health.md` 及近期心跳回执，修复 revision_required。只改监控/自动恢复脚本，保持真实心跳 200、自动恢复状态不造假，不允许用 mock 当生产。交付：实际 diff、测试命令与通过/失败数、`knowledge/results/dispatch/oversight/AUTO-2026-11-21-health-reconcile.receipt.json`。回执必须含 source_commit、executed_by/model、sha256、blockers、paid=false、tx_hash=null；未通过就列 blockers，不写已部署。不新增付费定时。",
       "issue": "claim_missing",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/control/2026-11-22.json",
       "claim_verified": false
     },
@@ -95,8 +95,8 @@
       ],
       "instruction": "复用原 Task ID `ANS-2026-11-19-doubao`，读取 `ops/dispatch/oversight/ANS-2026-11-19-doubao.md` 及对应 ans-cycle 回执，消除 blocked_reconcile_existing_attempt。只做工程与任务板对账，不做人体/脑区实验。交付：`knowledge/results/ans-cycle/2026-11-19-doubao-reconcile.receipt.json`，列明实际 claim/交付状态、provider/model、缺失凭证或网络根因。量测：含 sha256、blockers、paid=false，无新模型调用；未接通外部席就如实标 blocked，不把内部积分当交付。",
       "issue": "claim_missing",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/control/2026-11-22.json",
       "claim_verified": false
     },
@@ -170,8 +170,8 @@
       "engineering_closeout": null,
       "requires_engineering_followup": true,
       "issue": "revision_required",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/daily-board/2026-11-23.json"
     },
     {
@@ -195,8 +195,8 @@
       "engineering_closeout": null,
       "requires_engineering_followup": true,
       "issue": "revision_required",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/daily-board/2026-11-23.json"
     },
     {
@@ -220,8 +220,8 @@
       "engineering_closeout": null,
       "requires_engineering_followup": true,
       "issue": "revision_required",
-      "overdue": false,
-      "status": "not_due",
+      "overdue": true,
+      "status": "warning_required",
       "file": "knowledge/results/daily-board/2026-11-23.json"
     },
     {
@@ -289,10 +289,10 @@
       "claim_verified": false
     }
   ],
-  "overdue_count": 2,
+  "overdue_count": 9,
   "deadline_unverified_count": 12,
   "claim_verified": false,
-  "run_id": "45179747895",
+  "run_id": "45189690175",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -312,7 +312,7 @@
       "item": "投资观察回执(T2)",
       "state": "OK",
       "evidence": "knowledge/results/invest / knowledge/results/funded-invest / knowledge/results/defi",
-      "note": "knowledge/results/funded-invest/inspection-45103742781-attempt-1.json:receipt_present_status_unspecified;paid=null。只记录回执存在与状态，不据此推断本日新付款/投资。"
+      "note": "knowledge/results/funded-invest/confirmed-cex-resume-45186845114.json:fixed_round_already_terminal;paid=null；knowledge/results/funded-invest/inspection-45103742781-attempt-1.json:receipt_present_status_unspecified;paid=null；knowledge/results/funded-invest/run-45186845114-attempt-1.json:receipt_present_status_unspecified;paid=false；knowledge/results/defi/45185659453.json:quarantined_read_only;paid=null。只记录回执存在与状态，不据此推断本日新付款/投资。"
     },
     {
       "item": "历史派单台账·执行中（参考）",
@@ -336,13 +336,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "240 个原任务/240 条警告；验证认领 28、提交 24、独立审核 22、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "247 个原任务/247 条警告；验证认领 28、提交 24、独立审核 22、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
       "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "QIANWEN-RETURN-2026-11-23:not_due；DAILY-2026-11-23-qianwen:not_due；CONTROL-2026-11-23-deepseek:not_due；CONTROL-2026-11-23-doubao:not_due；CONTROL-REVIEW-2026-11-23:evidence_present_scope_limited；DAILY-2026-11-23-claude:delivery_channel_reference_not_completion；DAILY-2026-11-23-deepseek:not_due；DAILY-2026-11-23-doubao:not_due；AUTO-2026-11-23-health:not_due；ANS-2026-11-23-doubao:evidence_present_scope_limited；ANS-2026-11-23-deepseek:warning_required；REAL-HIRE-20261123-CLAUDE-01:warning_required"
+      "note": "QIANWEN-RETURN-2026-11-23:warning_required；DAILY-2026-11-23-qianwen:warning_required；CONTROL-2026-11-23-deepseek:warning_required；CONTROL-2026-11-23-doubao:warning_required；CONTROL-REVIEW-2026-11-23:evidence_present_scope_limited；DAILY-2026-11-23-claude:delivery_channel_reference_not_completion；DAILY-2026-11-23-deepseek:warning_required；DAILY-2026-11-23-doubao:warning_required；AUTO-2026-11-23-health:warning_required；ANS-2026-11-23-doubao:evidence_present_scope_limited；ANS-2026-11-23-deepseek:warning_required；REAL-HIRE-20261123-CLAUDE-01:warning_required"
     }
   ],
   "business_alerts": [
@@ -359,6 +359,6 @@
       "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/45179747895-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/45189690175-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
