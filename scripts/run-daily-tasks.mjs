@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import {callWithSkill} from './lib/ltzzz-skill.mjs';
+import {dailyCallOptions} from './lib/daily-call-options.mjs';
 import {qianwenOversightContext} from './lib/dispatch-oversight.mjs';
 /**
  * run-daily-tasks.mjs — LTZZZ 核心记忆读后感与每日任务编排
@@ -205,7 +206,7 @@ async function main() {
       continue;
     }
 
-    const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>callWithSkill({root:ROOT,scope:"daily:"+ch.agent,prompt},input=>mod.callAgent({apiKey:process.env[ch.key]||"",prompt:input}))});
+    const res = await runReservedSeat({root:ROOT,date:today,runKey,agent:ch.agent,call:()=>callWithSkill({root:ROOT,scope:"daily:"+ch.agent,prompt},input=>mod.callAgent(dailyCallOptions({agent:ch.agent,apiKey:process.env[ch.key]||"",prompt:input})))});
     if (res.ok) {
       const output = String(res.output || "").trimEnd();
       const integrity = assessDelivery({output,finish_reason:res.finish_reason,required_sections:requiredSectionsForAgent(ch.agent)});
