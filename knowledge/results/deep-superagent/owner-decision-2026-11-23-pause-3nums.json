@@ -1,0 +1,26 @@
+{
+ "schema": "ltzzz.owner-decision.patrol.v1",
+ "decision_id": "OWNER-20261123-PAUSE-3NUMS",
+ "instruction": "owner 会话原话「三数 暂时不用测了」",
+ "effective": "2026-11-23 起暂停，恢复需 owner 另行指示",
+ "scope": [
+  "YouTube 播放数",
+  "CF RUM 站点点数/加购结算",
+  "进账（USDT/USDC/法币）"
+ ],
+ "changes": [
+  "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md 第 7 项：改为 status=skipped + reason=owner_paused_20261123，不再列入待裁决",
+  "docs/OWNER-AUTHORITY-CURRENT.md 新增 2026-11-23 章节"
+ ],
+ "unchanged": [
+  "ltzzz-memory/daily-3nums.md 既有行保留，不删除不改写",
+  "不把缺测写成 0 或估算"
+ ],
+ "side_effect_to_watch": ".github/workflows/ltzzz-min-automation.yml 仍会在无今日行时自动追加一行「未测」；该文件改动需 workflow scope，本次未改，按限制如实记录",
+ "counts": {
+  "writes_performed": 2,
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "transactions": 0
+ }
+}

@@ -12,7 +12,7 @@
 4. WorkBuddy（skill id `os_f8a49bc830defb02`）：只读巡检，记录可用状态；无凭据时记 unknown，不得伪造。
 5. 微信公众平台（AppID `wx562bcb6057346fb2`）：只读巡检，记录状态；无凭据时记 unknown。
 6. 日课补跑：查当日（Asia/Shanghai）是否已有 `deep-superagent-daily.yml` 的 `event=schedule` run；没有就立刻 `gh workflow run deep-superagent-daily.yml -r main` 补一次。日课幂等键含 readset+worker 源码哈希，晚到的自然 schedule 只会回读、不重复计费。补跑属巡检份内固定动作，不需要请示 owner。
-7. 三数日报：把**前一日**的 YouTube / RUM / 进账三数追加到 `ltzzz-memory/daily-3nums.md`，每行标注 `data_date=<前一日>`；缺项写 null 与原因，不得用估算或当日值充当前一日。
+7. 三数日报：把**前一日**的 YouTube / RUM / 进账三数追加到 `ltzzz-memory/daily-3nums.md`，每行标注 `data_date=<前一日>`；缺项写 null 与原因，不得用估算或当日值充当前一日。**（2026-11-23 owner 指令：三数暂停，不再采集与补记；本项改为记 `status=skipped` + reason=owner_paused_20261123，不列入待裁决，恢复须 owner 另行指示。）**
 
 ## 输出
 

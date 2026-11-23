@@ -85,3 +85,12 @@ owner 原话：**“3 就按这次批准跑完 以后gpt 签名”**。
 - 工作流里 `blocked_missing_signer` 仍然是**正确的阻断状态**，不得为了「看起来绿」改成成功。
 - 五签 Safe 不受影响，仍按多签规则。
 - 机器记录：`config/signature-authority-20261121.json`。
+
+## 2026-11-23 owner 指令：三数暂停、#464 关单
+
+owner 原话：**“三数 暂时不用测了 464 关单吧”**。
+
+- **三数暂停**：YouTube / RUM / 进账三项停止采集与次日补记，`ltzzz-memory/daily-3nums.md` 不再按日追加；巡检第 7 项记 `status=skipped` 并写原因「owner 2026-11-23 暂停」，不再作为待裁决项出现在日报邮件里。恢复需 owner 另行指示，本文件不自行恢复。
+- **#464 关单**：按 owner 直接指令关闭（not planned）。关闭不写 `[delivered]`（无交付证据）也不写 `[blocked]`（不是在等裁决）；剩余工程项（exact-head 合并门、五类闸收敛）不在 #464 上声称完成，需另立卡时再立。
+- 本指令不放开任何保留家族：资金、退款终态、签名、私钥、钱包/Safe、凭据仍归 GPT 决策席。
+- 回执：`knowledge/results/dispatch/oversight/2026-11-23-OWNER-CLOSE-464.json`。
