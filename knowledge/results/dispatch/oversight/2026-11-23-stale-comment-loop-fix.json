@@ -1,0 +1,88 @@
+{
+ "schema": "ltzzz.oversight.record.v1",
+ "record_id": "2026-11-23-stale-comment-loop-fix",
+ "at_utc": "2026-11-23T01:49:00Z",
+ "kind": "repeat_notification_loop_fix",
+ "observed": {
+  "symptom": "Task Hub 每 15 分钟给同一批卡追加 [stale] 评论，GitHub 把每条评论发成一封通知邮件",
+  "issues": {
+   "436": {
+    "stale_comments": 152,
+    "total_comments_before": 164
+   },
+   "473": {
+    "stale_comments": 153,
+    "total_comments_before": 161
+   },
+   "464": {
+    "lease_expired_comments": 79,
+    "closed_at": "2026-11-23T00:59:06Z",
+    "state_reason": "not_planned"
+   }
+  },
+  "sample_comment": "[stale] reason=no_claim_after_2_reassign from=deep age_hours=100.5 by=task-hub",
+  "cadence": "每 15 分钟一次；#436/#473 合计约 192 封/天",
+  "prior_partial_fix": "commit 7ffc169e5 只给 lease-expired 路径加了幂等；[stale] 升级路径未加，所以 01:31 之前仍在刷"
+ },
+ "root_cause": "scripts/lib/task-hub.mjs 的 reassignPlan 在 reassignments>=MAX_REASSIGNMENTS 时无条件产出 escalate_stale；cmdReassign 每轮都贴评论并加 hub:stale 标签，没有已处理判断",
+ "change": {
+  "commit": "0a75972b48f2c5ff5b2755cae1f00d565a5e1e0c",
+  "files": [
+   "scripts/lib/task-hub.mjs",
+   "scripts/tests/task-hub.test.mjs"
+  ],
+  "rule": "新增 hasStaleEscalation：最后一条 [stale] 之后没有新的 [reassigned] 事件时跳过；重新改派后才允许再升级一次",
+  "tests": "node --test scripts/tests/task-hub.test.mjs = 34 pass / 0 fail（新增 3 条回归）"
+ },
+ "verification": {
+  "real_data_plan": "7 张 open dispatch 卡（#592/#591/#522/#473/#436/#434/#433）输入 reassignPlan 返回 []；#436/#473 命中跳过",
+  "live_runs": [
+   {
+    "run": 45094995048,
+    "at": "2026-11-23T01:31:00Z",
+    "head": "0a75972b",
+    "result": "success",
+    "log": "reassign plan []"
+   },
+   {
+    "run": 45096402738,
+    "at": "2026-11-23T01:46:01Z",
+    "head": "131f116a",
+    "result": "success",
+    "comments_after": {
+     "436": 164,
+     "473": 161
+    }
+   }
+  ],
+  "comments_unchanged": "01:16 与 01:48 两次核对：#436=164、#473=161，均未新增"
+ },
+ "remaining_email_sources": {
+  "not_a_loop": [
+   {
+    "workflow": "Deep Superagent daily evidence supervision",
+    "failures": [
+     "2026-11-22T22:55:53Z",
+     "2026-11-22T23:00:56Z",
+     "2026-11-22T23:03:16Z"
+    ],
+    "after": "23:09:10Z success、00:31:03Z success；为三次手动 dispatch 的失败告警，不是循环"
+   },
+   {
+    "workflow": "Deploy static site to GitHub Pages",
+    "failure": "2026-11-22T23:17:38Z",
+    "after": "23:12Z/01:00Z/01:19Z 成功，单次失败"
+   }
+  ],
+  "separate_open": "Daily Agent Tasks 对账每天一次失败（doubao 504 → deepseek 复核缺失），见 #591；属每日一次，不是 15 分钟循环",
+  "untouched": "GitHub 账号通知订阅与 Task Hub 15 分钟节拍均未改；min-automation 的「未测」自动行未改（需 owner 决定）"
+ },
+ "actions": {
+  "merges": 1,
+  "deploys": 0,
+  "transactions": 0,
+  "model_calls": 0,
+  "funds_touched": false,
+  "credentials_touched": false
+ }
+}
