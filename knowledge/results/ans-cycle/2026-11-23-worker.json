@@ -1,0 +1,15 @@
+{
+  "finding": "syncDailyBoard 中 recoverArtifact 无法恢复 generation_unknown_no_repurchase 状态的失败证据，导致该席位永久卡在未核验状态且不触发 fail_task 命令",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-22-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 的 syncFailedSeat 函数中增加对 generation_unknown_no_repurchase 状态的失败证据生成与提交逻辑。具体修改：\n\n1. 在 syncDailyBoard 的失败同步条件中增加 generation_unknown_no_repurchase：\n   if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase','generation_unknown_no_repurchase'].includes(seat.status)){await syncFailedSeat({root,record,agent,seat,snapshot,command,readRemote,now});continue;}\n\n2. 修改 syncFailedSeat 内 artifact 校验逻辑，区分正常 artifact 与失败证据：\n   - 当 seat.status === 'generation_unknown_no_repurchase' 且 seat.artifact 为空时，在本地生成失败证据文件：\n     const failureArtifact = {\n       schema_version: 1,\n       date: record.date,\n       run_key: record.run_key,\n       task_id: seat.assignment.id,\n       logical_seat: agent,\n       status: 'incomplete_or_failed',\n       failure_reason: 'provider_result_unknown_no_replay',\n       source_commit: record.source_commit,\n       at: new Date().toISOString()\n     };\n     const failureBytes = JSON.stringify(failureArtifact, null, 2) + '\\n';\n     const failureHash = digest(failureBytes);\n     const failurePath = `knowledge/results/daily-board/artifacts/${record.date}-${agent}-${seat.assignment.id}.failed-evidence.json`;\n     写入文件并设置 seat.artifact = {path: failurePath, sha256: failureHash};\n\n3. 在 syncFailedSeat 内增加对失败证据路径的校验分支：\n   当路径以 .failed-evidence.json 结尾时，校验 JSON 内容中的 task_id、date、run_key、logical_seat、status 字段，不强制要求路径匹配标准 artifact 命名格式。\n\n4. 在 fail_task 命令提交前，确认证据文件已通过 git 提交到远端 main 分支（或在 submit 前执行 git add/commit/push）。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m => { const record = {seats:{test:{status:'generation_unknown_no_repurchase',assignment:{id:'DAILY-2026-11-22-test'},claim_verified:true}}}; console.log(m.hasUnverifiedBoard(record)); })\"",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs"
+  ],
+  "remaining_blocker": "失败证据文件需要先通过 git 提交到远端 main 分支，readRemote 才能读取到该文件进行哈希校验；当前 syncFailedSeat 在生成证据后直接调用 readRemote 会因文件尚未推送而失败，需要增加 git 提交推送步骤或调整证据持久化时序"
+}
