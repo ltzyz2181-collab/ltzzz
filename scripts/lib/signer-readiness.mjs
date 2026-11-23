@@ -184,6 +184,17 @@ export async function probeSignerCapability({
   return evidence;
 }
 
+// 2026-11-22 GPT 更正：明确的 blocked_missing_signer 是设计内 HOLD，不是泛化失败。
+// 只有 unexpected 状态（auth_blocked/unknown）才让 workflow 失败并升级处理。
+export function fundingOutcome(gate) {
+  const blocked = gate && gate.blocked_status ? gate.blocked_status : null;
+  if (gate && gate.allowed) return { verdict: 'PROCEED', is_hold: false, should_fail: false, blocked_status: null };
+  if (blocked === 'blocked_missing_signer') {
+    return { verdict: 'HOLD', is_hold: true, should_fail: false, blocked_status: blocked };
+  }
+  return { verdict: 'BLOCKED_EVIDENCE', is_hold: true, should_fail: true, blocked_status: blocked || 'blocked_signer_unverified' };
+}
+
 // Shared gate used by both funding scripts so the two can never disagree about
 // what "not ready" means.
 export function fundingGate(evidence) {

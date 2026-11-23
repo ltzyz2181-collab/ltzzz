@@ -67,9 +67,15 @@ jobs:
         run: |
           state="${{ steps.signer.outputs.state }}"
           blocked="${{ steps.signer.outputs.blocked_status }}"
-          echo "signer_state=${state:-missing-output} blocked_status=${blocked:-unknown}"
-          if [ "$state" != "ready" ]; then
-            echo "::error::Funding steps skipped (${blocked:-blocked_signer_unverified}); signer capability not proven. Order fulfilment receipt is preserved separately and is not a green funding result."
+          should_fail="${{ steps.signer.outputs.should_fail }}"
+          echo "signer_state=${state:-missing-output} blocked_status=${blocked:-unknown} should_fail=${should_fail:-unknown}"
+          if [ "$state" = "ready" ]; then
+            echo "Signer capability proven; funding steps were allowed to run."
+          elif [ "$should_fail" = "false" ]; then
+            # 2026-11-22 GPT 更正：明确的 blocked_missing_signer 是设计内 HOLD，不是泛化故障。
+            echo "::notice::HOLD/BLOCKED_EVIDENCE (${blocked:-blocked_missing_signer}); signer capability is not configured. No funding step ran and no transaction was attempted."
+          else
+            echo "::error::Funding steps skipped (${blocked:-blocked_signer_unverified}); signer capability not proven and the state is unexpected. Order fulfilment receipt is preserved separately and is not a green funding result."
             exit 1
           fi
       - name: Save actual receipts

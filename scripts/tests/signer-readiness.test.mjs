@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifySignerResponse, probeSignerCapability, fundingGate } from '../lib/signer-readiness.mjs';
+import { classifySignerResponse, probeSignerCapability, fundingGate, fundingOutcome } from '../lib/signer-readiness.mjs';
 
 const origin = 'https://fixture.example';
 const pin = 'fixture-private-pin';
@@ -227,4 +227,23 @@ test('non-JSON body is unknown, not a silent pass', async () => {
   const e = await probeSignerCapability({ origin, pin, fetcher: async () => new Response('<html>oops</html>', { status: 200 }) });
   assert.equal(e.state, 'unknown');
   assert.equal(e.http, 200);
+});
+
+// 2026-11-22 GPT 更正（#592）：明确的 missing 是设计内 HOLD，unexpected 仍必须失败。
+test('missing signer is a HOLD receipt, not a generic workflow failure', () => {
+  const gate = fundingGate({ state: 'missing', blocked_status: 'blocked_missing_signer' });
+  const outcome = fundingOutcome(gate);
+  assert.deepEqual(outcome, { verdict: 'HOLD', is_hold: true, should_fail: false, blocked_status: 'blocked_missing_signer' });
+});
+
+test('unexpected signer states still fail closed', () => {
+  for (const [state, blocked] of [['unknown', 'blocked_signer_unverified'], ['auth_blocked', 'blocked_signer_auth']]) {
+    const outcome = fundingOutcome(fundingGate({ state, blocked_status: blocked }));
+    assert.equal(outcome.verdict, 'BLOCKED_EVIDENCE');
+    assert.equal(outcome.should_fail, true);
+    assert.equal(outcome.blocked_status, blocked);
+  }
+  const ready = fundingOutcome(fundingGate({ state: 'ready', blocked_status: null }));
+  assert.equal(ready.verdict, 'PROCEED');
+  assert.equal(ready.should_fail, false);
 });
