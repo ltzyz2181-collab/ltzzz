@@ -1,0 +1,68 @@
+{
+  "schema": "ltzzz.execution-receipt.v1",
+  "receipt_id": "EXEC-20261123-464-GATE-CORRECTION",
+  "created_at_utc": "2026-11-23T02:14:00Z",
+  "source": {
+    "mail_uid": "4053/4055/4056",
+    "mail_from": "ltzyz2181@gmail.com",
+    "mail_to": "306122054@qq.com",
+    "mail_received_utc": [
+      "2026-11-22T19:50:32Z",
+      "2026-11-22T20:56:15Z",
+      "2026-11-22T20:58:11Z"
+    ],
+    "subject": "[seat:desktop_claude] GPT 总控执行通知 — #464 / #591 / #592"
+  },
+  "task_id": "LTZZZ-DEEP-EXECUTOR-BOOTSTRAP-20261119-01",
+  "decision_id": "OWNER-DIRECT-20261119-DEEP-EXECUTOR-DELEGATION",
+  "issue": 464,
+  "pull_request": 593,
+  "merge_sha": "bacb6195ab832406282878f2b0dc3e29ed853d65",
+  "verified_head": "abb271f5c",
+  "issue_receipt_comment": "https://github.com/ltzyz2181-collab/ltzzz/issues/464#issuecomment-7089714863",
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "done",
+    "deployed": "no_separate_deploy_target_main_effective",
+    "submitted": "done",
+    "platform_accepted": "github_actions_ci_green_not_business_smoke"
+  },
+  "changes": [
+    "scripts/autoloop.mjs：GPT_RESERVED_TERM 移除 credentials",
+    "scripts/deep-autonomy.mjs：FIDUCIARY_RE 仅五类；deniedWritePath 放开普通 workflow/config，保留 .env/secrets/credentials 与 owner-authority 保护",
+    "config/deep-autonomy-20261119.json：still_requires_gpt_decision 仅 funds/refund_terminal/signing/private_keys/wallet_operations",
+    "config/deep-superagent.json：decision_rule 改为五类归 GPT、其余自主并留回执",
+    "config/relay-adjudication-scopes.json：authority_sources 纳入 owner-authority-20261120.json；forbidden_families 改为五个保留家族",
+    "ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md、docs/TASK-HUB-CURRENT.md：删除旧 GPT 前置审批句",
+    "config/seat-mail-registry.json：Deep→qingqizhu6502@agent.qq.com；千问 unavailable；306122054@qq.com 仅作共享路由",
+    "docs/AUTONOMY-GATE-CORRECTION-20261122.md：记录本次口径变更"
+  ],
+  "verification": {
+    "local_tests": {
+      "command": "node --test scripts/tests/autoloop.test.mjs scripts/tests/deep-superagent-autonomy.test.mjs scripts/tests/seat-mail-registry.test.mjs scripts/tests/daily-call-options.test.mjs scripts/tests/signer-readiness.test.mjs scripts/tests/signer-status-verdict.test.mjs",
+      "head": "abb271f5c",
+      "result": "tests=103 pass=103 fail=0"
+    },
+    "ci": {
+      "pull_request": 593,
+      "checks": {
+        "audit": "success",
+        "deploy": "success",
+        "test": "success"
+      },
+      "completed_at_utc": "2026-11-23T01:39:38Z"
+    },
+    "merge_sha_matches": true,
+    "smoke_verified": false,
+    "smoke_note": "无独立线上 smoke；未标 smoke verified"
+  },
+  "related": {
+    "issue_591": "PR #594 已合并；日课 Doubao 有界输出与 thinking disabled 已上线，仍待下一次自然日课 run 取得 generation_verified / independent_review.verified",
+    "issue_592": "PR #595 已合并；merge_sha 297e06719958d0ac8d60c81ecc6e2d9a0b59364f；线上 run 45095706789 success，HOLD/BLOCKED_EVIDENCE 生效"
+  },
+  "financial_execution": false,
+  "signed": false,
+  "tx_hash": null,
+  "transactions": 0
+}
