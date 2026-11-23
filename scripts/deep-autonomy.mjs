@@ -8,8 +8,9 @@
 //   4) mail       —— 用模型输出或卡面正文，经既有 send-mail.py 发信并留回执。
 //
 // 边界（仍然保留，不扩大）：
-//   - owner 2026-11-19 只保留六个家族给 GPT 决策席：资金、退款终态、签名、私钥/助记词、钱包、凭据/Secrets。
-//     其余工程动作（读仓库、改代码、部署、邮件、中转）不再逐项裁决。
+//   - owner 2026-11-22 / GPT 2026-11-22 更正：只有五类给 GPT 决策席——资金动作、退款终态、
+//     签名、私钥/助记词/根密钥、钱包操作。凭据配置与轮换属于普通工程；Secret 值仍不得
+//     打印、提交或写入日志。其余工程动作（读仓库、改代码、工作流、部署、邮件、中转）不逐项裁决。
 //   - 模型输出永远不会被当作可执行代码直接运行；只接受受限的整文件写入块。
 //   - 所有动作都写公开回执；不落邮件正文、不落凭据、不落客户输入。
 import fs from 'node:fs';
@@ -21,7 +22,11 @@ export const AUTONOMY_REVISION = 'deep-autonomy-v1';
 export const AUTONOMY_SCHEMA = 'ltzzz.deep-superagent.autonomy.v1';
 
 // 触发后一律不自动执行的领域。只拦“钱与密钥”，不拦代码、部署、邮件。
-export const FIDUCIARY_RE = /(?:私钥|助记词|助记码|密钥|凭据|转账|放款|退款|签名|钱包|提现|付款|收款地址|five[_-]?signature|private[ _-]?key|seed[ _-]?phrase|mnemonic|wallet|withdraw|transfer\s+funds|refund|payment|sign(?:ing|ature)?|0x[0-9a-fA-F]{40})/i;
+export const FIDUCIARY_RE = /(?:私钥|助记词|助记码|根密钥|转账|放款|退款|签名|钱包|提现|付款|收款地址|five[_-]?signature|private[ _-]?key|seed[ _-]?phrase|mnemonic|wallet|withdraw|transfer\s+funds|refund|payment|sign(?:ing|ature)?|0x[0-9a-fA-F]{40})/i;
+
+// 模型输出不得移除的五个保留家族。config/deep-autonomy-*.json 可由执行席通过 PR 修订，
+// 但不能在自动写入里把保留家族改成普通工程；这条在 validateWrites 里按内容校验。
+export const RESERVED_FAMILIES = Object.freeze(['funds', 'refund_terminal', 'signing', 'private_keys', 'wallet_operations']);
 
 // 允许以点开头（.github/、.env），这样 deniedWritePath 能给出具体原因而不是笼统的 invalid_path。
 const ID = /^[a-z0-9.][a-z0-9._/-]{0,200}$/i;
@@ -62,13 +67,13 @@ const safePath = (value) => {
   return !normalized.startsWith('../') && !normalized.startsWith('/') && !normalized.includes('/../');
 };
 
-// 禁止自动改写的路径：授权、凭据、工作流、钱包/资金、锁文件。
+// 禁止自动改写的路径：owner 授权来源、凭据文件、钱包/资金目录、通道脚本。
+// 普通 workflow/config 由 owner 2026-11-22 授权放开；Secret 值仍受保护。
 export function deniedWritePath(file) {
   const value = String(file || '').replaceAll('\\', '/');
   if (!safePath(value)) return 'invalid_path';
   if (value.startsWith('.git/') || value === '.git') return 'git_metadata';
-  if (value.startsWith('.github/workflows/')) return 'workflow_definition';
-  if (/^config\/(?:owner-authority|deep-autonomy)/.test(value)) return 'authority_config';
+  if (/^config\/owner-authority/.test(value)) return 'authority_config';
   if (/^(?:wallet|treasury|escrow|contracts)\//.test(value)) return 'funds_path';
   if (/(?:^|\/)(?:\.env|secrets?|credentials?)(?:$|\/|\.)/i.test(value)) return 'credential_path';
   // send-mail.py 是发信通道本身；run-mail-intake / deploy-receipt 是收信与部署回执工具。
@@ -253,6 +258,14 @@ export function validateWrites(writes) {
   for (const write of writes) {
     const denied = deniedWritePath(write.path);
     if (denied) return {ok: false, error: `denied_path:${denied}:${write.path}`};
+    if (/^config\/deep-autonomy-[^/]+\.json$/.test(write.path)) {
+      let parsed;
+      try { parsed = JSON.parse(write.content); } catch { return {ok: false, error: `reserved_family_unparseable:${write.path}`}; }
+      const families = new Set((parsed?.still_requires_gpt_decision || []).map((entry) => entry && entry.family));
+      for (const family of RESERVED_FAMILIES) {
+        if (!families.has(family)) return {ok: false, error: `reserved_family_removed:${family}:${write.path}`};
+      }
+    }
     if (seen.has(write.path)) return {ok: false, error: `duplicate_file:${write.path}`};
     seen.add(write.path);
     const bytes = Buffer.byteLength(write.content, 'utf8');

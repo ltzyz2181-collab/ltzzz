@@ -41,12 +41,18 @@ test('seat mail registry declares every seat without storing credentials', () =>
   for (const id of expected) {
     const seat = seats.get(id);
     assert.ok(seat, 'missing seat ' + id);
-    assert.match(seat.address, EMAIL, 'bad address for ' + id);
+    if (seat.status === 'unavailable') assert.equal(seat.address, null, 'unavailable seat must not claim a mailbox: ' + id);
+    else assert.match(seat.address, EMAIL, 'bad address for ' + id);
     assert.ok(seat.transport, 'missing transport for ' + id);
     assert.ok(seat.status, 'missing status for ' + id);
   }
 
   assert.equal(seats.get('doubao').address, 'qingqizhu6502@agent.qq.com');
+  assert.equal(seats.get('deep').address, 'qingqizhu6502@agent.qq.com', 'Deep uses Agent Mail, not the shared QQ mailbox');
+  assert.equal(seats.get('qianwen').address, null, 'Qianwen has no verified mailbox');
+  assert.equal(seats.get('qianwen').status, 'unavailable');
+  assert.notEqual(seats.get('deep').address, '306122054@qq.com');
+  assert.notEqual(seats.get('qianwen').address, '306122054@qq.com');
   assert.equal(seats.get('owner').address, 'ltzyz2181@gmail.com');
   assert.equal(registry.shared_mailbox.address, '306122054@qq.com');
 
