@@ -27,11 +27,33 @@
   "states": {
     "draft": "done",
     "tested": "done",
-    "merged": "pending",
-    "deployed": "not_applicable",
-    "submitted": "pending",
-    "platform_accepted": "pending"
+    "merged": "80a1a7ec583abbb121d71c2b32329569594e4b9f, 68c28f4651c23c183e8b776b35ea83801c3c9553, 3e44702686906b1989e374b59168cfdf7124c022",
+    "deployed": "Deploy LTZZZ relay proxy run 45102360002 completed success; relay-budget-reopen run 45102608229 returned {ok:true, closed:false, baseline_usd:0, floor:0, floor_enabled:false}",
+    "submitted": "issue #598 comments 7090337522 (relay GPT) and 7090337807 (relay Claude)",
+    "platform_accepted": "GitHub API returned 201 for both comments; relay calls returned HTTP 200 with finish_reason stop"
   },
+  "relay_discuss_calls": [
+    {
+      "requested_agent": "relay_gpt",
+      "model": "gpt-6.1-sol",
+      "run_id": 45102683093,
+      "completed_at": "2026-11-23T02:53:30Z",
+      "cost_usd": 0.012273,
+      "balance_after_usd": 12.546141,
+      "evidence": "knowledge/results/relay-seat/calls/20261123T025330Z-relay_gpt-gpt-6.1-sol-2f6f1559.json",
+      "comment_id": 7090337522
+    },
+    {
+      "requested_agent": "relay_claude",
+      "model": "claude-opus-5-5",
+      "run_id": 45102685986,
+      "completed_at": "2026-11-23T02:54:14Z",
+      "cost_usd": 0.03156,
+      "balance_after_usd": 12.514581,
+      "evidence": "knowledge/results/relay-seat/calls/20261123T025414Z-relay_claude-claude-opus-5-5-2f6f1559.json",
+      "comment_id": 7090337807
+    }
+  ],
   "tests": {
     "command": "node --test scripts/tests/relay-proxy-worker.test.mjs scripts/tests/relay-seat-guard.test.mjs scripts/tests/relay-seat-acceptance.test.mjs scripts/tests/agent-wake.test.mjs",
     "total": 88,
