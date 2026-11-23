@@ -9,7 +9,7 @@
 // workflow so the funding steps can be skipped explicitly.
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { probeSignerCapability, fundingGate } from './lib/signer-readiness.mjs';
+import { probeSignerCapability, fundingGate, fundingOutcome } from './lib/signer-readiness.mjs';
 
 const origin = process.env.WEP3_ORIGIN || 'https://ltzzz-wep3.ltzyz2181.workers.dev';
 const pin = process.env.WEP3_RUNNER_TOKEN
@@ -21,6 +21,7 @@ const attempt = process.env.GITHUB_RUN_ATTEMPT || '1';
 
 const evidence = await probeSignerCapability({ origin, pin });
 const gate = fundingGate(evidence);
+const outcome = fundingOutcome(gate);
 const receiptPath = `knowledge/results/wep3/signer-preflight-${runId}-attempt-${attempt}.json`;
 const receipt = {
   ...evidence,
@@ -28,6 +29,14 @@ const receipt = {
   run_attempt: attempt,
   gate_allowed: gate.allowed,
   blocked_status: gate.blocked_status,
+  status: outcome.verdict,
+  hold: outcome.is_hold,
+  execution: {
+    signed: false,
+    tx_hash: null,
+    transactions: 0,
+    financial_execution: false,
+  },
   note: 'Read-only capability check. No funding request was sent by this step.',
 };
 
@@ -37,7 +46,9 @@ fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
 if (process.env.GITHUB_OUTPUT) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `state=${gate.state}\n`);
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `blocked_status=${gate.blocked_status || 'none'}\n`);
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `hold=${outcome.is_hold}\n`);
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `should_fail=${outcome.should_fail}\n`);
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `path=${receiptPath}\n`);
 }
 
-console.log(JSON.stringify({ signer_state: gate.state, allowed: gate.allowed, receipt: receiptPath }));
+console.log(JSON.stringify({ signer_state: gate.state, allowed: gate.allowed, status: outcome.verdict, hold: outcome.is_hold, receipt: receiptPath }));
