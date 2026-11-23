@@ -1,0 +1,296 @@
+{
+ "schema": "ltzzz.deep-superagent.daily.v1",
+ "date": "2026-11-24",
+ "business_date": "2026-11-24",
+ "generated_at_utc": "2026-11-23T23:02:00Z",
+ "mail_intake": {
+  "status": "partial",
+  "agent_mail": {
+   "status": "partial",
+   "count": 39,
+   "open_count": 5,
+   "error": "refresh_token invalid_grant; token expired 2026-11-23T05:09Z"
+  },
+  "gmail_fullbox": {
+   "status": "ok",
+   "count": 1747,
+   "open_count": 1653,
+   "full_box_total": 5792,
+   "full_box_unseen": 4902,
+   "bodies_read": 50,
+   "window_truncated": false
+  },
+  "counts": {
+   "unified": 1786,
+   "open_or_dispatch": 200,
+   "duplicates_removed": 676
+  }
+ },
+ "repo_observation": {
+  "oversight": {
+   "date": "2026-11-24",
+   "at": "2026-11-23T22:01:17Z",
+   "source_commit": "00c70a54a",
+   "commits_behind_main": 12,
+   "open_warning_cases": 247,
+   "not_rechecked": 195,
+   "by_seat": {
+    "qianwen": 74,
+    "doubao": 55,
+    "grok": 38,
+    "deepseek": 65,
+    "gpt": 15
+   }
+  },
+  "open_pr": 0,
+  "open_issue": 52,
+  "task_hub": {
+   "open": 10,
+   "new": 9,
+   "blocked": 1
+  },
+  "workflow_failures_24h": 0
+ },
+ "gpt_ruling_received": {
+  "status": "unknown",
+  "received": "unknown",
+  "today_count": 0,
+  "last_received_at_utc": "2026-11-17T08:51:17Z",
+  "days_since_last_ruling": 7,
+  "severity": "high",
+  "source": "gmail_metadata_only（agent_mail 读不到，裁决口不可用）",
+  "note": "Gmail 元数据旁证：今日 0 封、最近一封 11-17；不得据此写成已收到裁决"
+ },
+ "ruling_tracker": {
+  "status": "unknown",
+  "run_code": 2,
+  "counts": null,
+  "answered_but_unread_consumed_today": 0,
+  "note": "tracker 读不到；上次数 22 条 answered_but_unread 本轮无法核，不写成已消费"
+ },
+ "queue_run": {
+  "run_id": "45283983175",
+  "attempt": 1,
+  "status": "queue_results_verified",
+  "receipt_path": "knowledge/results/deep-superagent/queue-45283983175-attempt-1.json",
+  "task_id": "DEEP-SUPERAGENT-20261124-DAILY-1",
+  "model_calls": 5
+ },
+ "daily_run": {
+  "run_id": "45284097237",
+  "event": "workflow_dispatch",
+  "status": "success",
+  "receipt_path": "knowledge/results/deep-superagent/daily-45284097237-attempt-1.json",
+  "model_calls": 3
+ },
+ "seat_receipts": [
+  {
+   "seat": "doubao",
+   "actual_provider": "volcengine_ark",
+   "actual_model": "doubao-seed-2-1-pro-260915",
+   "scope": "A1-A5",
+   "sha256": "dbbb8dca4713e9166a3770c22cbf99e2a401ce7aec3d6a69205de5bcb908b375"
+  },
+  {
+   "seat": "qianwen",
+   "actual_provider": "aliyun_dashscope",
+   "scope": "B1-B3",
+   "sha256": "b3010f3167897a5c026fc7f07fa78f627240083acc796380b7fc4447128e4ee7"
+  },
+  {
+   "seat": "kimi",
+   "scope": "C1-C3",
+   "sha256": "730ebad3c7c96419eaac176dbe8c745160ca5f2c59e50db940ebea59dc54d2fa"
+  },
+  {
+   "seat": "deepseek",
+   "actual_provider": "deepseek",
+   "actual_model": "deepseek-v4-pro",
+   "scope": "review",
+   "sha256": "5afe69effa51e8540d199d22bf8f11562b5a4ecd08d62ab7774e57419910dbc9",
+   "approved": true
+  }
+ ],
+ "routes": [
+  {
+   "ref": "mail/agent_mail-oauth",
+   "worker_route": "needs_owner_decision",
+   "final_route": "needs_owner_decision",
+   "review": "确认：refresh_token invalid_grant，需 owner 重新授权，本席不可修复"
+  },
+  {
+   "ref": "mail/intake/gmail",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt",
+   "review": "复核 status=ok、全箱 5792、21 天 1747、open 1653，窗口未截断；回执补写后可 close（只记录）"
+  },
+  {
+   "ref": "mail/intake/agent_mail",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "blocked_evidence_needed",
+   "review": "改判：195 项 unknown 属通道缺证据（rule5），不是需 GPT 给口径；不得批量判 open 或贴 rule6 关闭"
+  },
+  {
+   "ref": "ruling/gmail-metadata",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "needs_owner_decision",
+   "review": "改判：缺的是裁决口读取能力（owner 授权），不是 GPT 裁决内容；Gmail 旁证不得替代裁决口"
+  },
+  {
+   "ref": "ruling/tracker",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "blocked_evidence_needed",
+   "review": "改判：tracker run_code=2，证据缺失（rule5）；未消费不得写进待裁决"
+  },
+  {
+   "ref": "oversight/2026-11-24",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "blocked_evidence_needed",
+   "review": "改判：source_commit 落后 main 12 提交，当前主账证据不可得；非合并/部署类，无须 GPT"
+  },
+  {
+   "ref": "repo/open",
+   "worker_route": "needs_gpt_decision",
+   "final_route": "coordinator_close_with_receipt",
+   "review": "改判：纯观测项（PR=0、issue=52、Task Hub 10 open），只记录不动作"
+  },
+  {
+   "ref": "ci/24h",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt",
+   "review": "复核 24h failure=0（2026-11-22T22:00Z 后 100 条 run 中 0 失败）"
+  },
+  {
+   "ref": "daily-run/2026-11-24",
+   "worker_route": "blocked_evidence_needed",
+   "final_route": "coordinator_close_with_receipt",
+   "review": "改判：补跑已执行，run 45284097237 success（2026-11-23T22:54:45Z），证据已存在"
+  },
+  {
+   "ref": "daily-run/45134904917",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt",
+   "review": "确认 2026-11-23T07:57Z schedule success"
+  },
+  {
+   "ref": "skill-iteration/2026-11",
+   "worker_route": "coordinator_close_with_receipt",
+   "final_route": "coordinator_close_with_receipt",
+   "review": "确认 knowledge/results/skill-iteration/2026-11.json 存在，今日非 1 日，月度巡查按规则跳过"
+  }
+ ],
+ "corrections_count": 8,
+ "writes_performed": 8,
+ "merges_performed": 0,
+ "deploys_performed": 0,
+ "financial_actions": 0,
+ "wrote": [
+  "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261124-DAILY-1.json",
+  "knowledge/results/patrol/2026-11-24.json",
+  "knowledge/results/deep-superagent/daily-2026-11-24.json",
+  "knowledge/results/deep-superagent/mail-intake/latest.json",
+  "knowledge/results/deep-superagent/mail-intake/runs.jsonl",
+  "knowledge/results/deep-superagent/mail-fullbox/latest.json",
+  "knowledge/results/deep-superagent/mail-fullbox/last-ok.json",
+  "knowledge/results/deep-superagent/gpt-ruling-mail/latest.json"
+ ],
+ "not_written": [
+  "任何 ltzzz-memory 改动",
+  "任何 skill 文件",
+  "任何 allowedAgents",
+  "任何 PR 合并",
+  "任何生产部署"
+ ],
+ "sections": {
+  "done": [
+   {
+    "item": "今日任务卡已推送并触发队列",
+    "evidence": "commit 0ef5b12fc；run 45283983175 queue_results_verified；回执 knowledge/results/deep-superagent/queue-45283983175-attempt-1.json",
+    "status": "done"
+   },
+   {
+    "item": "日课补跑已执行并成功",
+    "evidence": "run 45284097237 success（2026-11-23T22:54:45Z），回执 daily-45284097237-attempt-1.json，model_calls=3",
+    "status": "done"
+   },
+   {
+    "item": "Gmail 全箱采集 ok",
+    "evidence": "mail-intake/latest.json gmail_fullbox status=ok，全箱 5792、21 天 1747、open 1653、bodies_read 50",
+    "status": "done"
+   },
+   {
+    "item": "今日巡检七项已落盘",
+    "evidence": "knowledge/results/patrol/2026-11-24.json（ok4/unknown2/skipped1/failed0）",
+    "status": "done"
+   },
+   {
+    "item": "席位 11 项路由已逐条复核，改判 8 条",
+    "evidence": "daily-2026-11-24.json routes[].review；worker 原判见 queue-45283983175 的 outputs",
+    "status": "done"
+   }
+  ],
+  "awaiting_decision": {
+   "gpt": [],
+   "owner": [
+    {
+     "item": "Agent Mail 重新授权（refresh_token invalid_grant）",
+     "blocker": "收件箱、发件箱、GPT 裁决回信三项全断，工作流只能靠 Gmail 只读旁证",
+     "consequence": "每日汇总邮件无法从 qingqizhu6502@agent.qq.com 发出；裁决回信无法读取，待裁决清单会持续失真",
+     "deep_can_do_partially": "已用 Gmail SMTP 旁路发出今日汇总；已把断点、token 到期时间、impact 写进回执；不能替 owner 完成扫码授权"
+    }
+   ]
+  },
+  "next_immediate": [
+   {
+    "item": "把 195 项 unknown 按 Gmail 全箱逐条比对去重，产出可判/不可判两栏",
+    "criteria": "knowledge/results/deep-superagent/mail-intake/unknown-triage-2026-11-24.json 生成，unknown 从 195 降到可核范围"
+   },
+   {
+    "item": "oversight 快照落后 12 提交，重跑生成器对齐 main",
+    "criteria": "新 latest.json source_commit 等于当次 main HEAD，backlog 数字随之刷新"
+   },
+   {
+    "item": "确认视频流水线调度是否被停用",
+    "criteria": "gh workflow list 或 runs API 能给出该 workflow 状态；若 disabled 则记入待裁决，不擅自启用"
+   }
+  ],
+  "later": [
+   {
+    "item": "裁决口恢复后消费 answered_but_unread",
+    "depends_on": "owner 重新授权 Agent Mail",
+    "precondition": "tracker run_code=0 且能与收件箱逐条配对"
+   },
+   {
+    "item": "月度技能迭代（2026-12）",
+    "depends_on": "12-01 或 knowledge/results/skill-iteration/2026-12.json 不存在",
+    "precondition": "按 DEEP-SKILL-ITERATION-AUTHORITY-20261112.md monthly_flow"
+   },
+   {
+    "item": "oversight backlog 247 项收敛",
+    "depends_on": "各席位补外部回执",
+    "precondition": "not_rechecked 195 项逐条重检"
+   }
+  ]
+ },
+ "patrol": {
+  "path": "knowledge/results/patrol/2026-11-24.json",
+  "ok": 4,
+  "unknown": 2,
+  "skipped": 1,
+  "failed": 0,
+  "unknown_items": [
+   "WorkBuddy 无凭据",
+   "微信公众平台无登录态"
+  ],
+  "note": "三数按 owner 2026-11-23 指令 skipped"
+ },
+ "skipped_monthly_skill_iteration": true,
+ "skip_reason": "knowledge/results/skill-iteration/2026-11.json 已存在且今日非 1 日",
+ "email": {
+  "channel": "gmail_smtp_fallback（agent_mail 不可用）",
+  "to": "ltzyz2181@gmail.com",
+  "from": "ltzyz2181@gmail.com",
+  "subject": "[LTZZZ][每日] Deep 巡检与分流",
+  "status": "pending_send"
+ }
+}

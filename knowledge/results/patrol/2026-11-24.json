@@ -1,0 +1,85 @@
+{
+ "schema": "ltzzz.patrol.v1",
+ "date": "2026-11-24",
+ "business_date": "2026-11-24",
+ "generated_at_utc": "2026-11-23T22:55:19Z",
+ "source": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md 七项只读/补跑",
+ "summary": {
+  "items": 7,
+  "ok": 4,
+  "failed": 0,
+  "unknown": 2,
+  "skipped": 1
+ },
+ "items": [
+  {
+   "id": 1,
+   "name": "记忆库",
+   "status": "ok",
+   "evidence": [
+    "ltzzz-memory 六份核心文件均在（装备论/魄/识神/梦境数据库/文明研究/重要事件/项目历史）",
+    "git log --since=2026-11-23 -- ltzzz-memory：仅新增 tasks/control/2026-11-24.md、tasks/control/2026-11-23.md、tasks/innovation/2026-11-23-{gpt,microsoft}.md，均属任务派单非记忆条目"
+   ],
+   "new_unprocessed": [
+    "擎起柱语义待 owner 一句话校准（自 2026-11-17 起未变）"
+   ],
+   "note": "只列不改记忆库"
+  },
+  {
+   "id": 2,
+   "name": "视频流水线",
+   "status": "ok",
+   "evidence": [
+    "run 45069706479 'Daily YouTube prepared video or render with public verification' success（2026-11-22T21:01:28Z）",
+    "gh run list -L 40 未见该 workflow 新 run；工作流已不在 active workflow 列表（Deploy 类三条仍在）"
+   ],
+   "note": "最近一次为成功，但 11-22 后无新 run，需确认调度是否被停用"
+  },
+  {
+   "id": 3,
+   "name": "ltzzz.com 可达性",
+   "status": "ok",
+   "evidence": [
+    "curl -s -o /dev/null -w '%{http_code} %{time_total}' https://ltzzz.com → 200 / 1.441s"
+   ],
+   "note": "连续三日 200"
+  },
+  {
+   "id": 4,
+   "name": "WorkBuddy 只读巡检",
+   "status": "unknown",
+   "evidence": [
+    "本机无 WorkBuddy API 凭据（~/.config 与仓库内均无可用 token）"
+   ],
+   "note": "不伪造可用状态"
+  },
+  {
+   "id": 5,
+   "name": "微信公众平台只读巡检",
+   "status": "unknown",
+   "evidence": [
+    "仓库仅有 AppID wx562bcb6057346fb2 记录，无后台登录态与接口凭据"
+   ],
+   "note": "不伪造可用状态"
+  },
+  {
+   "id": 6,
+   "name": "日课补跑",
+   "status": "ok",
+   "evidence": [
+    "业务日 2026-11-24 无 event=schedule run（最新 schedule 45134904917 为 2026-11-23T07:57Z）",
+    "gh workflow run deep-superagent-daily.yml -r main → run 45284097237（2026-11-23T22:54:45Z）"
+   ],
+   "note": "补跑属巡检份内固定动作；晚到 schedule 只回读不重复计费"
+  },
+  {
+   "id": 7,
+   "name": "三数次日补记",
+   "status": "skipped",
+   "evidence": [
+    "MERGED-PATROL-INSTRUCTIONS.md 第 7 项：owner 2026-11-23 指令暂停三数采集与补记"
+   ],
+   "note": "reason=owner_paused_20261123，不列入待裁决；恢复须 owner 另行指示"
+  }
+ ]
+}
