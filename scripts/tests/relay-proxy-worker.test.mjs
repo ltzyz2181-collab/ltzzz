@@ -164,12 +164,13 @@ test('proxy refuses an unbounded max_tokens because the call cost cannot be capp
   assert.equal(verdict.code, 'proxy_max_tokens_required_for_cost_cap');
 });
 
-test('budget ledger refuses every call until a confirmed balance exists', async () => {
-  const env = { PROXY_ACCESS_TOKEN: 'proxy-token', RELAY_STATION_KEY: 'station-key', BUDGET: budgetEnv({}, {}).binding };
-  const response = await worker.fetch(request({ model: 'gpt-6.1-sol', messages: [{ role: 'user', content: longText }], max_tokens: 512 }), env);
-  const body = await response.json();
-  assert.equal(response.status, 503);
-  assert.equal(body.error.code, 'proxy_budget_refused_relay_balance_unverified');
+test('owner 2026-11-23: budget allows a call without a confirmed balance', async () => {
+  const { instance } = budgetEnv({}, {});
+  const reserved = await budgetCall(instance, '/reserve', { call_id: 'no-balance-1', model: 'gpt-6.1-sol', estimated_cost_usd: MAX_CALL_COST_USD });
+  assert.equal(reserved.ok, true);
+  assert.equal(reserved.snapshot.baseline_usd, null);
+  assert.equal(reserved.snapshot.closed, false);
+  assert.equal(reserved.snapshot.limits.balance_floor_enabled, false);
 });
 
 test('gateway fails closed when the budget binding is missing', async () => {
@@ -210,21 +211,24 @@ test('budget enforces the project lifetime cap across days', async () => {
   assert.equal(over.snapshot.project_spent_usd, PROJECT_COST_CAP_USD);
 });
 
-test('budget refuses to reserve across the balance floor and closes the seat', async () => {
-  const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '3.04' });
-  const reserved = await budgetCall(instance, '/reserve', { call_id: 'floor-1', model: 'gpt-6.1-sol', estimated_cost_usd: MAX_CALL_COST_USD });
-  assert.equal(reserved.ok, false);
-  assert.equal(reserved.code, 'relay_balance_below_floor');
-  const state = await budgetCall(instance, '/state');
-  assert.equal(state.baseline_usd, 3.04);
-  assert.equal(state.closed, false);
+test('owner 2026-11-23: a low or zero balance does not block reservation or close the seat', async () => {
+  for (const balance of ['3.04', '2.99', '0']) {
+    const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: balance });
+    const reserved = await budgetCall(instance, '/reserve', { call_id: 'floor-' + balance, model: 'gpt-6.1-sol', estimated_cost_usd: MAX_CALL_COST_USD });
+    assert.equal(reserved.ok, true, 'balance ' + balance);
+    const state = await budgetCall(instance, '/state');
+    assert.equal(state.baseline_usd, Number(balance));
+    assert.equal(state.closed, false);
+  }
+});
 
-  const closed = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '2.99' });
-  const refused = await budgetCall(closed.instance, '/reserve', { call_id: 'floor-2', model: 'gpt-6.1-sol', estimated_cost_usd: MAX_CALL_COST_USD });
-  assert.equal(refused.code, 'relay_balance_below_floor');
-  const closedState = await budgetCall(closed.instance, '/state');
-  assert.equal(closedState.closed, true);
-  assert.equal(closedState.closed_reason, 'balance_below_floor');
+test('an explicitly closed seat is still refused', async () => {
+  const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  const closed = await budgetCall(instance, '/close', { reason: 'operator_stop', closed_by: 'test_operator' });
+  assert.equal(closed.snapshot.closed, true);
+  const refused = await budgetCall(instance, '/reserve', { call_id: 'after-close-1', model: 'gpt-6.1-sol', estimated_cost_usd: MAX_CALL_COST_USD });
+  assert.equal(refused.ok, false);
+  assert.equal(refused.code, 'relay_seat_closed');
 });
 
 test('an expired reservation is charged at its worst-case estimate, never forgotten', async () => {

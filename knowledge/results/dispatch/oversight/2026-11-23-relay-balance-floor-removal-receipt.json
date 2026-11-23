@@ -13,8 +13,10 @@
     "config/relay-seat-policy.json: balance_guard.floor_enabled=false, floor_usd=0, unknown_balance_policy=allow, on_below_floor=none",
     "scripts/lib/relay-seat-guard.mjs: skip balance-unverified and below-floor refusal when floor is disabled; open a seat without a confirmed balance",
     "scripts/relay-seat.mjs: no automatic close after a call or on provider insufficient balance when the floor is disabled; state output shows floor_enabled",
+    "workers/relay-proxy/worker.mjs: the live proxy no longer refuses an unverified balance or a low balance when floor_enabled=false; explicit close still refuses",
+    ".github/workflows/relay-budget-reopen.yml: explicit dispatch tool to confirm the budget baseline and clear a closed latch",
     "knowledge/results/relay-seat/seat-state.json: reopened with balance_usd=null, balance_verified=false, floor_enabled=false",
-    "scripts/tests/relay-seat-guard.test.mjs: 3 new tests for unknown/low balance, explicit close, and floorless reopen"
+    "scripts/tests/relay-seat-guard.test.mjs and scripts/tests/relay-proxy-worker.test.mjs: tests for unknown/low balance, explicit close, and floorless reopen"
   ],
   "unchanged": [
     "cost_guard per-call 0.05 USD / daily 0.50 USD / project 10 USD",
@@ -31,9 +33,9 @@
     "platform_accepted": "pending"
   },
   "tests": {
-    "command": "node --test scripts/tests/relay-seat-guard.test.mjs scripts/tests/relay-seat-acceptance.test.mjs scripts/tests/agent-wake.test.mjs",
-    "total": 53,
-    "passed": 53,
+    "command": "node --test scripts/tests/relay-proxy-worker.test.mjs scripts/tests/relay-seat-guard.test.mjs scripts/tests/relay-seat-acceptance.test.mjs scripts/tests/agent-wake.test.mjs",
+    "total": 88,
+    "passed": 88,
     "failed": 0
   },
   "boundaries": {

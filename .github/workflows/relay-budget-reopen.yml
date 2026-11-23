@@ -1,0 +1,45 @@
+name: Reopen relay budget seat
+on:
+  workflow_dispatch:
+    inputs:
+      balance_usd:
+        description: 'confirmed console balance in USD; use 0 when the balance is unverified and the owner will top up later'
+        required: true
+        default: '0'
+      confirmed_by:
+        description: 'owner or gpt_decision_seat'
+        required: true
+        default: 'owner'
+      basis:
+        description: 'why this confirmation is authoritative'
+        required: true
+        default: 'owner instruction 2026-11-23: the 3 USD confirmed-balance precondition no longer applies; owner tops up when the balance runs out'
+permissions: {contents: read}
+concurrency: {group: relay-budget-reopen, cancel-in-progress: false}
+jobs:
+  reopen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LTZZZ_RELAY_PROXY_URL: https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1
+      LTZZZ_RELAY_PROXY_TOKEN: ${{ secrets.RELAY_PROXY_ACCESS_TOKEN }}
+      BALANCE_USD: ${{ inputs.balance_usd }}
+      CONFIRMED_BY: ${{ inputs.confirmed_by }}
+      BASIS: ${{ inputs.basis }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main, fetch-depth: 1}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Show local seat state before the runtime confirmation
+        run: node scripts/relay-seat.mjs --state
+      - name: Confirm the budget baseline and clear the closed latch
+        run: |
+          set -euo pipefail
+          BODY=$(node -e 'console.log(JSON.stringify({balance_usd: Number(process.env.BALANCE_USD), confirmed_by: process.env.CONFIRMED_BY, basis: process.env.BASIS, at: new Date().toISOString()}))')
+          RESP=$(curl -sS --max-time 20 -X POST "$LTZZZ_RELAY_PROXY_URL/budget/confirm" \
+            -H 'content-type: application/json' \
+            -H "x-ltzzz-seat-token: $LTZZZ_RELAY_PROXY_TOKEN" \
+            -d "$BODY")
+          echo "$RESP" > /tmp/relay-reopen.json
+          node -e 'const r=require("/tmp/relay-reopen.json"); console.log(JSON.stringify({ok:r.ok, closed:r.snapshot&&r.snapshot.closed, baseline_usd:r.snapshot&&r.snapshot.baseline_usd, floor:r.snapshot&&r.snapshot.limits&&r.snapshot.limits.balance_floor_usd, floor_enabled:r.snapshot&&r.snapshot.limits&&r.snapshot.limits.balance_floor_enabled})); if(!r.ok||!r.snapshot||r.snapshot.closed===true) process.exit(1)'

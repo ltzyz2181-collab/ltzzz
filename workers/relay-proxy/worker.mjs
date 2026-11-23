@@ -16,7 +16,8 @@ export const MAX_INPUT_TOKENS = 1100000;
 export const MAX_CALL_COST_USD = policy.cost_guard?.per_call_cost_cap_usd ?? 0.05;
 export const DAILY_COST_CAP_USD = policy.cost_guard?.daily_cost_cap_usd ?? 0.5;
 export const PROJECT_COST_CAP_USD = policy.cost_guard?.project_cost_cap_usd ?? 10;
-export const BALANCE_FLOOR_USD = policy.balance_guard?.floor_usd ?? 3;
+export const BALANCE_FLOOR_ENABLED = policy.balance_guard?.floor_enabled !== false;
+export const BALANCE_FLOOR_USD = BALANCE_FLOOR_ENABLED ? (policy.balance_guard?.floor_usd ?? 3) : 0;
 export const RESERVATION_TTL_MS = 10 * 60 * 1000;
 export const BUDGET_SCHEMA = 'ltzzz.relay-budget.v1';
 
@@ -237,6 +238,7 @@ function budgetSnapshot(state) {
       daily_cost_cap_usd: DAILY_COST_CAP_USD,
       project_cost_cap_usd: PROJECT_COST_CAP_USD,
       balance_floor_usd: BALANCE_FLOOR_USD,
+      balance_floor_enabled: BALANCE_FLOOR_ENABLED,
     },
   };
 }
@@ -260,7 +262,7 @@ function enforcePostCallLimits(state, { callId = null, costUsd = null, at }) {
   } else if (totals.spent_usd > PROJECT_COST_CAP_USD) {
     reason = 'project_cap_breach_after_call';
     cap = PROJECT_COST_CAP_USD;
-  } else if (base !== null && round6(base - totals.spent_usd) < BALANCE_FLOOR_USD) {
+  } else if (BALANCE_FLOOR_ENABLED && base !== null && round6(base - totals.spent_usd) < BALANCE_FLOOR_USD) {
     reason = 'balance_below_floor_after_call';
     cap = BALANCE_FLOOR_USD;
   }
@@ -320,10 +322,10 @@ export class RelayBudget {
       const refuse = (status, code, detail) => ({ ok: false, status, code, detail, snapshot: budgetSnapshot(state) });
       if (state.closed === true) return refuse(403, 'relay_seat_closed', state.closed_reason || 'the relay seat is closed');
       const base = numberOrNull(state.baseline?.balance_usd);
-      if (base === null) return refuse(503, 'relay_balance_unverified', 'no confirmed balance is configured for the relay budget ledger');
+      if (BALANCE_FLOOR_ENABLED && base === null) return refuse(503, 'relay_balance_unverified', 'no confirmed balance is configured for the relay budget ledger');
       const totals = budgetTotals(state, at);
-      const balance = round6(base - totals.spent_usd);
-      if (balance < BALANCE_FLOOR_USD) {
+      const balance = base === null ? null : round6(base - totals.spent_usd);
+      if (BALANCE_FLOOR_ENABLED && balance !== null && balance < BALANCE_FLOOR_USD) {
         state.closed = true;
         state.closed_reason = 'balance_below_floor';
         state.closed_at = at;
@@ -338,8 +340,8 @@ export class RelayBudget {
       if (round6(totals.spent_usd + totals.reserved_usd + estimated) > PROJECT_COST_CAP_USD) {
         return refuse(429, 'relay_project_cap_exceeded', 'this call would exceed the project lifetime spend cap');
       }
-      const availableAfter = round6(base - totals.spent_usd - totals.reserved_usd - estimated);
-      if (availableAfter < BALANCE_FLOOR_USD) {
+      const availableAfter = base === null ? null : round6(base - totals.spent_usd - totals.reserved_usd - estimated);
+      if (BALANCE_FLOOR_ENABLED && availableAfter !== null && availableAfter < BALANCE_FLOOR_USD) {
         return refuse(403, 'relay_balance_below_floor', 'reserving this call would push the available balance below the floor');
       }
       if (state.reservations[callId]) return { ok: true, status: 200, duplicate: true, call_id: callId, snapshot: budgetSnapshot(state) };
@@ -447,7 +449,7 @@ export class RelayBudget {
       state.prior_periods = [...(state.prior_periods || []), ...(state.baseline ? [prior] : [])].slice(-24);
       state.baseline = { balance_usd: balance, confirmed_at: at, confirmed_by: confirmedBy, source: basis };
       state.entries = [];
-      state.closed = balance < BALANCE_FLOOR_USD;
+      state.closed = BALANCE_FLOOR_ENABLED && balance < BALANCE_FLOOR_USD;
       state.closed_reason = state.closed ? 'balance_below_floor' : null;
       state.closed_at = state.closed ? at : null;
       state.updated_at = at;
