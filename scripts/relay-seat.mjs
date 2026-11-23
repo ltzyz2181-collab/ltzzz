@@ -277,7 +277,8 @@ async function callModel(policy) {
       failure = { name: 'ledger_write_failed', message: String(error?.message || error).slice(0, 200) };
     }
   }
-  if (ok && balanceAfter !== null && balanceAfter < policy.balance_guard.floor_usd) {
+  const floorEnabled = policy?.balance_guard?.floor_enabled !== false;
+  if (floorEnabled && ok && balanceAfter !== null && balanceAfter < policy.balance_guard.floor_usd) {
     const state = closeRelaySeat(root, policy, {
       balanceUsd: balanceAfter,
       reason: 'balance_below_floor_after_call',
@@ -285,7 +286,7 @@ async function callModel(policy) {
       actor: 'relay_seat_executor',
     });
     seatAfter = state.status;
-  } else if (insufficient) {
+  } else if (insufficient && floorEnabled) {
     const state = closeRelaySeat(root, policy, {
       balanceUsd: balanceAfter,
       reason: 'provider_insufficient_balance',
@@ -436,7 +437,7 @@ async function setBalance(policy) {
   });
   const proxy = await syncProxyBalance(policy, { balanceUsd: result.balance_usd, actor: String(actor), basis: String(basis) });
   if (proxy.ok === false) process.exitCode = 3;
-  if (result.balance_usd < policy.balance_guard.floor_usd) {
+  if (policy?.balance_guard?.floor_enabled !== false && result.balance_usd < policy.balance_guard.floor_usd) {
     const state = closeRelaySeat(root, policy, {
       balanceUsd: result.balance_usd,
       reason: 'balance_below_floor',
@@ -459,7 +460,8 @@ function showState(policy) {
   print({
     policy_id: policy.policy_id,
     station: policy.station.name,
-    floor_usd: policy.balance_guard.floor_usd,
+    floor_usd: policy.balance_guard.floor_enabled === false ? 0 : policy.balance_guard.floor_usd,
+    floor_enabled: policy.balance_guard.floor_enabled !== false,
     min_input_tokens: policy.routing.min_input_tokens,
     allowlist: policy.routing.allowlist.map((entry) => entry.model),
     seat_status: status,

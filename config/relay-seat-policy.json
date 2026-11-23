@@ -11,6 +11,17 @@
       "short requests must not be sent to this station at all"
     ]
   },
+  "owner_decision_20261123": {
+    "decided_by": "owner",
+    "decided_at": "2026-11-23",
+    "source": "owner session instruction",
+    "terms": [
+      "the 3 USD confirmed-balance precondition no longer applies to this relay seat",
+      "no automatic close and no refusal when the balance is unknown, unverified, or below 3 USD",
+      "the owner will top up the station when the balance runs out"
+    ],
+    "supersedes": "owner_decision.terms[0] (balance below 3 USD automatically closes this relay seat)"
+  },
   "station": {
     "name": "APIsRouter",
     "kind": "third_party_aggregator_relay",
@@ -22,15 +33,16 @@
     "data_egress": "prompts and parameters transit the station to upstream vendors; logs are retained on its servers"
   },
   "balance_guard": {
-    "floor_usd": 3,
+    "floor_usd": 0,
+    "floor_enabled": false,
     "currency": "USD",
-    "on_below_floor": "close_seat",
-    "closed_seat_effect": "every relay call is refused before any HTTP request until an owner or GPT decision seat reopens the seat",
+    "on_below_floor": "none",
+    "closed_seat_effect": "a seat closed explicitly by the owner or the GPT decision seat is refused before any HTTP request; an open seat is not closed automatically for balance reasons",
     "ledger_path": "knowledge/results/relay-seat/balance-ledger.json",
     "state_path": "knowledge/results/relay-seat/seat-state.json",
-    "balance_basis": "last confirmed console balance minus recorded call cost; the station exposes no key-authenticated balance endpoint (GET /api/user/self returns 'access token invalid'), so an unverified ledger refuses calls instead of assuming a balance",
-    "unknown_balance_policy": "refuse",
-    "reopen_requires": "a confirmed console balance at or above floor_usd written by the owner or the GPT decision seat"
+    "balance_basis": "the station exposes no key-authenticated balance endpoint, so the ledger is informational only when floor_enabled is false; the owner tops up when the balance runs out",
+    "unknown_balance_policy": "allow",
+    "reopen_requires": "owner instruction 2026-11-23: no confirmed-balance precondition; a seat closed explicitly by the owner or the GPT decision seat may be reopened by either of them with a stated basis"
   },
   "routing": {
     "mode": "unrestricted",
@@ -193,7 +205,7 @@
     "on_proxy_error": "fail_closed_refuse",
     "on_upstream_5xx": "record_error_and_return，不重试",
     "on_429": "不自动重试，记证据",
-    "on_unknown_balance": "refuse（沿用 balance_guard.unknown_balance_policy）",
+    "on_unknown_balance": "allow（沿用 balance_guard.unknown_balance_policy=allow；owner 2026-11-23 取消余额前置条件）",
     "fallback_to_direct_key": false,
     "fallback_to_other_station": false,
     "blocks_other_independent_tasks": false
@@ -206,10 +218,10 @@
     "cap_status": "set_by_gpt_ruling_20261117_03",
     "authorized_by": "GPT-HIRE-PHASE1-REVIEW-20261117-03",
     "authorized_at": "2026-11-17",
-    "basis": "GPT 预算裁决：单次 $0.05、每日 $0.50、项目累计 $10、余额底线 $3、禁止自动充值",
+    "basis": "GPT 预算裁决：单次 $0.05、每日 $0.50、项目累计 $10、禁止自动充值；owner 2026-11-23 取消余额底线 $3",
     "estimate_rule": "调用前按 allowlist 单价 × (输入 token 估算 + max_tokens) 计最坏成本；等于上限放行，超过上限在发出 HTTP 前拒绝",
     "unknown_ledger_policy": "refuse",
-    "current_hard_ceiling": "min(cost_guard 三项上限, balance_guard.floor_usd)",
+    "current_hard_ceiling": "min(cost_guard 三项上限)；owner 2026-11-23 起 balance_guard.floor_usd 不再计入",
     "note": "任何一项超限都在发出 HTTP 前 fail closed；账本缺失或不可读同样拒绝；无成本字段的旧条目按单次上限预留。"
   },
   "profiles": {

@@ -108,7 +108,10 @@ export function evaluateRelayCall({
   profile = null,
   now = new Date().toISOString(),
 } = {}) {
-  const floor = policy?.balance_guard?.floor_usd ?? 3;
+  // owner 2026-11-23: the confirmed-balance floor is opt-in again, so an
+  // unknown or low balance no longer closes the seat or blocks a call.
+  const floorEnabled = policy?.balance_guard?.floor_enabled !== false;
+  const floor = floorEnabled ? (policy?.balance_guard?.floor_usd ?? 3) : 0;
   const minTokens = policy?.routing?.min_input_tokens ?? 4096;
   const balance = numberOrNull(balanceUsd);
   const guard = policy?.cost_guard || {};
@@ -127,6 +130,7 @@ export function evaluateRelayCall({
   const base = {
     model,
     floor_usd: floor,
+    floor_enabled: floorEnabled,
     balance_usd: balance,
     min_input_tokens: minTokens,
     estimated_input_tokens: numberOrNull(inputTokens),
@@ -147,19 +151,19 @@ export function evaluateRelayCall({
   });
 
   if (seatStatus === 'closed') {
-    return denied('relay_seat_closed', 'the relay seat is closed; reopen it with a confirmed balance first');
+    return denied('relay_seat_closed', 'the relay seat was closed explicitly; reopen it with a stated basis first');
   }
   if (seatStatus !== 'open') {
     return denied('relay_seat_state_unverified', 'no readable open seat state; fail closed instead of assuming the seat is open');
   }
-  if (balance === null) {
+  if (floorEnabled && balance === null) {
     return denied('relay_balance_unverified', 'no confirmed balance plus recorded cost ledger; fail closed');
   }
   const entry = findModel(policy, model);
   if (!entry) {
     return denied('relay_model_not_allowlisted', 'this model is outside the owner-approved allowlist for the station');
   }
-  if (balance < floor) {
+  if (floorEnabled && balance !== null && balance < floor) {
     return {
       ...base,
       allowed: false,
@@ -274,12 +278,14 @@ export function seatStatusOf(state) {
 export function closeRelaySeat(root, policy, { balanceUsd, reason, detail, at = new Date().toISOString(), actor = 'relay_seat_guard' }) {
   const file = path.join(root, policy.balance_guard.state_path);
   const prior = readJson(file, null) || {};
+  const floorEnabled = policy?.balance_guard?.floor_enabled !== false;
   const state = {
     schema_version: 1,
     seat: 'relay_paid_lane',
     status: 'closed',
     balance_usd: numberOrNull(balanceUsd),
-    floor_usd: policy.balance_guard.floor_usd,
+    floor_usd: floorEnabled ? policy.balance_guard.floor_usd : 0,
+    floor_enabled: floorEnabled,
     closed_at: at,
     close_reason: reason,
     close_detail: detail ?? null,
@@ -294,7 +300,10 @@ export function closeRelaySeat(root, policy, { balanceUsd, reason, detail, at = 
 
 export function openRelaySeat(root, policy, { balanceUsd, actor, basis, at = new Date().toISOString() }) {
   const balance = numberOrNull(balanceUsd);
-  if (balance === null || balance < policy.balance_guard.floor_usd) {
+  const floorEnabled = policy?.balance_guard?.floor_enabled !== false;
+  // With the floor disabled (owner 2026-11-23) a seat may be opened without a
+  // confirmed balance; the balance field stays null instead of being invented.
+  if (floorEnabled && (balance === null || balance < policy.balance_guard.floor_usd)) {
     throw new Error('relay_seat_reopen_balance_below_floor');
   }
   if (!actor || !basis) throw new Error('relay_seat_reopen_requires_actor_and_basis');
@@ -305,7 +314,9 @@ export function openRelaySeat(root, policy, { balanceUsd, actor, basis, at = new
     seat: 'relay_paid_lane',
     status: 'open',
     balance_usd: balance,
-    floor_usd: policy.balance_guard.floor_usd,
+    balance_verified: balance !== null,
+    floor_usd: floorEnabled ? policy.balance_guard.floor_usd : 0,
+    floor_enabled: floorEnabled,
     closed_at: null,
     close_reason: null,
     close_detail: null,

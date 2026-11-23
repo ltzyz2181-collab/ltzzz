@@ -1,0 +1,48 @@
+{
+  "schema": "ltzzz.execution-receipt.v1",
+  "receipt_id": "EXEC-20261123-RELAY-BALANCE-FLOOR-REMOVAL",
+  "task_id": "OWNER-20261123-RELAY-NO-BALANCE-PRECONDITION",
+  "type": "POLICY_CHANGE",
+  "authority": {
+    "actor": "owner",
+    "source": "owner session instruction 2026-11-23",
+    "text": ">=3 USD confirmed balance no longer applies; the owner tops up when the balance runs out",
+    "scope": "relay seat balance precondition only; cost caps and explicit close remain"
+  },
+  "changed": [
+    "config/relay-seat-policy.json: balance_guard.floor_enabled=false, floor_usd=0, unknown_balance_policy=allow, on_below_floor=none",
+    "scripts/lib/relay-seat-guard.mjs: skip balance-unverified and below-floor refusal when floor is disabled; open a seat without a confirmed balance",
+    "scripts/relay-seat.mjs: no automatic close after a call or on provider insufficient balance when the floor is disabled; state output shows floor_enabled",
+    "knowledge/results/relay-seat/seat-state.json: reopened with balance_usd=null, balance_verified=false, floor_enabled=false",
+    "scripts/tests/relay-seat-guard.test.mjs: 3 new tests for unknown/low balance, explicit close, and floorless reopen"
+  ],
+  "unchanged": [
+    "cost_guard per-call 0.05 USD / daily 0.50 USD / project 10 USD",
+    "an explicitly closed seat is still refused before any HTTP request",
+    "model allowlist and data-egress boundary",
+    "no automatic top-up"
+  ],
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "pending",
+    "deployed": "not_applicable",
+    "submitted": "pending",
+    "platform_accepted": "pending"
+  },
+  "tests": {
+    "command": "node --test scripts/tests/relay-seat-guard.test.mjs scripts/tests/relay-seat-acceptance.test.mjs scripts/tests/agent-wake.test.mjs",
+    "total": 53,
+    "passed": 53,
+    "failed": 0
+  },
+  "boundaries": {
+    "financial_execution": false,
+    "signing": false,
+    "wallet_operations": false,
+    "topup_initiated": false,
+    "balance_confirmed": false,
+    "confidential_content_included": false
+  },
+  "note": "Reopening does not assert a balance. The provider balance stays unverified until the owner reads the console; calls still fail closed if the station reports insufficient balance, but the seat is not closed automatically for that reason."
+}

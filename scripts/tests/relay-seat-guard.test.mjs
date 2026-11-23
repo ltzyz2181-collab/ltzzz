@@ -60,6 +60,25 @@ const cappedPolicy = {
   },
 };
 
+const floorlessPolicy = {
+  policy_id: 'TEST-POLICY-FLOORLESS',
+  station: { key_env: 'TEST_KEY', local_key_file: 'nokey.txt' },
+  balance_guard: {
+    floor_usd: 0,
+    floor_enabled: false,
+    ledger_path: 'knowledge/results/relay-seat/balance-ledger.json',
+    state_path: 'knowledge/results/relay-seat/seat-state.json',
+    unknown_balance_policy: 'allow',
+    reopen_requires: 'owner 2026-11-23: no confirmed-balance precondition',
+  },
+  routing: {
+    min_input_tokens: 4096,
+    allowlist: [
+      { model: 'claude-opus-5-5', tier: 'claude', price_input_usd_per_1m: 3, price_output_usd_per_1m: 16 },
+    ],
+  },
+};
+
 const NOW = '2026-11-17T12:00:00.000Z';
 
 function cappedCall(overrides = {}) {
@@ -152,6 +171,61 @@ test('balance below the 3 USD floor requests a close, and the close persists', (
   const after = evaluateRelayCall({ policy, model: 'claude-opus-5-5', inputTokens: 9000, balanceUsd: balance, seatStatus: seatStatusOf(readSeatState(root, policy)) });
   assert.equal(after.code, 'relay_seat_closed');
   assert.equal(after.sent_http_request, false);
+  fs.rmSync(root, { recursive: true });
+});
+
+test('owner 2026-11-23: floorless policy allows unknown and low balances without closing', () => {
+  for (const balanceUsd of [null, 0, 2.99]) {
+    const decision = evaluateRelayCall({
+      policy: floorlessPolicy,
+      model: 'claude-opus-5-5',
+      inputTokens: 9000,
+      balanceUsd,
+      seatStatus: 'open',
+    });
+    assert.equal(decision.allowed, true, 'balance ' + balanceUsd + ' should be allowed');
+    assert.equal(decision.code, 'relay_call_allowed');
+    assert.equal(decision.floor_enabled, false);
+    assert.equal(decision.floor_usd, 0);
+    assert.equal(decision.requires_close, false);
+  }
+});
+
+test('floorless policy still refuses an explicitly closed seat', () => {
+  const decision = evaluateRelayCall({
+    policy: floorlessPolicy,
+    model: 'claude-opus-5-5',
+    inputTokens: 9000,
+    balanceUsd: null,
+    seatStatus: 'closed',
+  });
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.code, 'relay_seat_closed');
+  assert.equal(decision.sent_http_request, false);
+});
+
+test('floorless policy reopens without a confirmed balance and records it as unverified', () => {
+  const root = sandbox();
+  const opened = openRelaySeat(root, floorlessPolicy, {
+    balanceUsd: null,
+    actor: 'owner',
+    basis: 'owner instruction 2026-11-23',
+  });
+  assert.equal(opened.status, 'open');
+  assert.equal(opened.balance_usd, null);
+  assert.equal(opened.balance_verified, false);
+  assert.equal(opened.floor_enabled, false);
+  const low = openRelaySeat(root, floorlessPolicy, {
+    balanceUsd: 0.5,
+    actor: 'owner',
+    basis: 'owner instruction 2026-11-23',
+  });
+  assert.equal(low.status, 'open');
+  assert.equal(low.balance_usd, 0.5);
+  assert.throws(
+    () => openRelaySeat(root, floorlessPolicy, { balanceUsd: null, actor: '', basis: 'owner' }),
+    /relay_seat_reopen_requires_actor_and_basis/,
+  );
   fs.rmSync(root, { recursive: true });
 });
 
