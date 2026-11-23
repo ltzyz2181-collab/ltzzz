@@ -60,6 +60,18 @@
     "passed": 88,
     "failed": 0
   },
+  "observed_failures": [
+    {
+      "run_id": 45101942162,
+      "workflow": ".github/workflows/relay-proxy-guard.yml",
+      "head_sha": "80a1a7ec583abbb121d71c2b32329569594e4b9f",
+      "conclusion": "failure",
+      "observed": "not ok 20 - budget refuses to reserve across the balance floor and closes the seat; tests 55, pass 54, fail 1",
+      "cause": "the first commit already carried the new policy and guard tests but the old worker test still asserted the removed balance floor",
+      "resolution": "68c28f4651c23c183e8b776b35ea83801c3c9553 updated the worker and its test together; run 45102360025 then passed",
+      "status": "resolved"
+    }
+  ],
   "boundaries": {
     "financial_execution": false,
     "signing": false,
