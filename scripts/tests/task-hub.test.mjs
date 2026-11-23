@@ -83,6 +83,16 @@ test('reaping returns an expired claim to new, then marks it stale after the att
   assert.deepEqual(third.map(row => row.action), ['mark_stale']);
 });
 
+test('reap stops re-commenting once a lease was marked stale, and resumes on a new claim', () => {
+  const claimA = {body: '[claimed] seat=doubao at=2026-11-18T00:00:00Z branch=main', created_at: '2026-11-18T00:00:00Z'};
+  const staleReap = {body: '[lease-expired] task=#1 attempts=66 lease_until=2026-11-19T00:00:00.000Z action=mark_stale', created_at: '2026-11-21T00:00:00Z'};
+  const reapedOnly = issue({labels: ['seat:doubao'], comments: [claimA, staleReap]});
+  assert.deepEqual(reapPlan({issues: [reapedOnly], now: '2026-11-22T00:00:00Z', leaseHours: 24, maxAttempts: 3}).map(row => row.action), []);
+  const reclaimedB = {body: '[claimed] seat=doubao at=2026-11-22T00:00:00Z branch=main', created_at: '2026-11-22T00:00:00Z'};
+  const reclaimed = issue({labels: ['seat:doubao'], comments: [claimA, staleReap, reclaimedB]});
+  assert.deepEqual(reapPlan({issues: [reclaimed], now: '2026-11-23T06:00:00Z', leaseHours: 24, maxAttempts: 3}).map(row => row.action), ['return_to_new']);
+});
+
 test('claim and delivery comments refuse incomplete receipts', () => {
   assert.match(claimComment({seat: 'deep', now: NOW, branch: 'feat/y', leaseHours: 2}), /^\[claimed\] seat=deep at=2026-11-18T12:00:00Z branch=feat\/y lease_until=2026-11-18T14:00:00(?:\.000)?Z$/);
   assert.throws(() => claimComment({seat: 'nobody', now: NOW}), /task_hub_unknown_seat/);

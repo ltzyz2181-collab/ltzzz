@@ -200,6 +200,12 @@ export function reapPlan({issues = [], now = new Date().toISOString(), leaseHour
     const d = derive(issue, {now, leaseHours});
     if (!d.active || !d.expired) return [];
     const action = d.attempts + 1 >= maxAttempts ? 'mark_stale' : 'return_to_new';
+    // 同一个 lease 只处理一次：已判 mark_stale 的不再每轮重发，
+    // 否则每 15 分钟的 reap 会无限给同一张卡追加评论并触发通知邮件（#464 实测 65 条）。
+    const lastReap = protocolEvents(issue?.comments).filter(e => e.kind === 'lease-expired').at(-1);
+    if (lastReap
+      && String(lastReap.fields.lease_until || '') === String(d.leaseUntil || '')
+      && (lastReap.fields.action === 'mark_stale' || (Number(lastReap.fields.attempts) || 0) >= maxAttempts)) return [];
     return [{number: issue.number, task_id: taskField(issue.body, 'task_id') || null, seat: d.seat, attempts: d.attempts, action, lease_until: d.leaseUntil}];
   });
 }

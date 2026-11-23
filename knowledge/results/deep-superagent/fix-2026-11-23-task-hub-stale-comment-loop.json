@@ -1,0 +1,41 @@
+{
+ "schema": "ltzzz.deep-superagent.fix.v1",
+ "id": "fix-2026-11-23-task-hub-stale-comment-loop",
+ "found_by": "owner，（手机 Gmail 通知）连续收到 github-actions[bot] 对 #464 的 [lease-expired] 评论邮件",
+ "finding": {
+  "issue": 464,
+  "title": "[TASK] LTZZZ-DEEP-EXECUTOR-BOOTSTRAP-20261119-01",
+  "symptom": "Task Hub 每 15 分钟 cron '*/15 * * * *' 跑 node scripts/task-hub.mjs reap --apply，对同一张卡同一条已过期 lease 反复追加 [lease-expired] 评论，每次评论触发一封 GitHub 通知邮件",
+  "evidence": {
+   "total_comments": 113,
+   "lease_expired_comments": 65,
+   "first": "2026-11-22T07:50Z 前后",
+   "last": "2026-11-23T00:31:21Z",
+   "interval_minutes": 15,
+   "attempts_at_last": 66,
+   "lease_until": "2026-11-22T07:35:00Z",
+   "actor": "github-actions[bot] / workflow Task Hub (任务中心 · 每 15 分钟)"
+  },
+  "root_cause": "reapPlan 只判 active && expired，不判该 lease 是否已被 reap 过；mark_stale 之后没有终态，下一轮仍命中同一条件，形成无限追加"
+ },
+ "fix": {
+  "file": "scripts/lib/task-hub.mjs",
+  "change": "reapPlan 增加同 lease 幂等：若最近一条 lease-expired 事件的 lease_until 与当前 lease 相同，且 action=mark_stale（或 attempts>=maxAttempts），则本轮不再重复评论",
+  "test": "scripts/tests/task-hub.test.mjs 新增 1 条（已 mark_stale 不再重发 / 新 claim 后可再次 reap），合计 31 pass"
+ },
+ "live_verification": {
+  "method": "用 gh api 拉 8 张 open dispatch 卡真实 comments 注入 reapPlan",
+  "result": "still_would_comment=0；仅 #464 为 active+expired 且被新规则命中跳过",
+  "note": "其余 7 张 active=false，本来就不会被 reap"
+ },
+ "not_done": [
+  "未关闭 #464（仍未有人领取，attempts 累计，需 owner/GPT 决定重派或关单）",
+  "未改 GitHub 通知订阅设置（属 owner 账号侧）",
+  "未取消 Task Hub 15 分钟 cron"
+ ],
+ "writes_performed": 1,
+ "merges_performed": 0,
+ "deploys_performed": 0,
+ "transactions": 0,
+ "at_utc": "2026-11-23T00:37:27Z"
+}
