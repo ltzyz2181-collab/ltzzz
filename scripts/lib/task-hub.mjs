@@ -345,6 +345,10 @@ export function reassignPlan(issues, {now = new Date().toISOString(), afterHours
     const seat = d.seat || issueSeat(issue);
     const reassignments = countReassignments(issue);
     if (reassignments >= maxReassignments) {
+      // 同一张卡只升级一次：已经贴过 [stale] 且之后没有新的 [reassigned] 事件，
+      // 就跳过。否则任务中心每 15 分钟追加一条评论，每条评论都会触发一封通知邮件
+      //（#436/#473 各自累计 150+ 条，属同类循环，和 #464 的 lease-expired 一样）。
+      if (hasStaleEscalation(issue)) continue;
       plan.push({
         number: issue.number,
         title: issue.title,
@@ -369,6 +373,15 @@ export function reassignPlan(issues, {now = new Date().toISOString(), afterHours
     });
   }
   return plan.sort((a, b) => b.age_hours - a.age_hours);
+}
+
+/** 是否已经升级过 stale：最后一条 [stale] 之后没有新的 [reassigned] 事件。 */
+export function hasStaleEscalation(issue) {
+  const comments = Array.isArray(issue?.comments) ? issue.comments : [];
+  const bodies = comments.map(comment => String(comment?.body || '').trimStart());
+  const lastStale = bodies.map(body => body.startsWith('[stale]')).lastIndexOf(true);
+  if (lastStale === -1) return false;
+  return !bodies.slice(lastStale + 1).some(body => body.startsWith('[reassigned]'));
 }
 
 /** 改派评论：保留原席位与原因，便于事后追责与统计。 */

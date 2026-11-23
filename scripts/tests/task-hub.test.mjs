@@ -5,7 +5,7 @@ import {
   derive, expectedHubLabel, reapPlan, claimComment, deliveredComment, blockedComment, renderTaskBody, buildDigest,
 } from '../lib/task-hub.mjs';
 import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdReassign, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
-import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignLabels, isDeepQueued, reassignedComment, countReassignments, MAX_REASSIGNMENTS} from '../lib/task-hub.mjs';
+import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignLabels, isDeepQueued, reassignedComment, countReassignments, hasStaleEscalation, MAX_REASSIGNMENTS} from '../lib/task-hub.mjs';
 
 const NOW = '2026-11-18T12:00:00Z';
 const body = (fields = {}) => renderTaskBody({task_id: 'LTZZZ-DEMO-1', decision_id: 'GPT-X', seat: 'desktop-claude', goal: '把任务放进 Issue', scope: '只改 docs', forbidden: '不动资金', acceptance: '测试通过', evidence: '- PR', ...fields});
@@ -381,6 +381,46 @@ test('a card already reassigned twice escalates instead of ping-ponging', () => 
   assert.equal(plan[0].action, 'escalate_stale');
   assert.equal(plan[0].to, null);
   assert.equal(countReassignments(card), MAX_REASSIGNMENTS);
+});
+
+test('a card already escalated stale is not escalated again on the next 15-minute cycle', () => {
+  const card = issue({number: 15, comments: [
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=15'},
+    {body: '[reassigned] from=desktop-claude to=deep age_hours=28 reason=no_claim_28h by=task-hub issue=15'},
+    {body: '[stale] reason=no_claim_after_2_reassign from=deep age_hours=100 by=task-hub'}
+  ]});
+  card.created_at = '2026-11-10T00:00:00Z';
+  assert.equal(hasStaleEscalation(card), true);
+  assert.deepEqual(reassignPlan([card], {now: NOW}), [], 'stale already escalated: no repeat comment and no repeat mail');
+});
+
+test('a new reassignment after the stale escalation re-arms exactly one fresh escalation', () => {
+  const card = issue({number: 16, comments: [
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=16'},
+    {body: '[reassigned] from=desktop-claude to=deep age_hours=28 reason=no_claim_28h by=task-hub issue=16'},
+    {body: '[stale] reason=no_claim_after_2_reassign from=deep age_hours=100 by=task-hub'},
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=101 reason=owner_manual_retry by=owner issue=16'}
+  ]});
+  card.created_at = '2026-11-10T00:00:00Z';
+  assert.equal(hasStaleEscalation(card), false);
+  assert.equal(reassignPlan([card], {now: NOW})[0].action, 'escalate_stale');
+  card.comments.push({body: '[stale] reason=no_claim_after_3_reassign from=desktop-claude age_hours=120 by=task-hub'});
+  assert.deepEqual(reassignPlan([card], {now: NOW}), []);
+});
+
+test('cmdReassign posts the stale escalation comment once, not on every cycle', async () => {
+  const card = issue({number: 17, comments: [
+    {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=17'},
+    {body: '[reassigned] from=desktop-claude to=deep age_hours=28 reason=no_claim_28h by=task-hub issue=17'}
+  ]});
+  card.created_at = '2026-11-10T00:00:00Z';
+  const client = fakeClient([card]);
+  await cmdReassign({client, apply: true, now: NOW});
+  const first = await client.withComments((await client.api('issues/17')).data);
+  assert.equal(first.comments.filter(item => item.body.startsWith('[stale]')).length, 1);
+  await cmdReassign({client, apply: true, now: '2026-11-18T12:15:00Z'});
+  const second = await client.withComments((await client.api('issues/17')).data);
+  assert.equal(second.comments.filter(item => item.body.startsWith('[stale]')).length, 1, 'second cycle must not add another notification comment');
 });
 
 test('one reassignment still allows a second swap', () => {
