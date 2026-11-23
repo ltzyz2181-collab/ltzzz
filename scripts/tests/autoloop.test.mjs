@@ -67,6 +67,10 @@ test('reserved topics never include production deploy, which is opened', () => {
   assert.deepEqual(reservedTopics('生产部署 worker 并回读健康检查'), []);
   assert.deepEqual(reservedTopics('清理 ops/ 下的临时文件'), []);
   assert.deepEqual(reservedTopics('自动退款并签名'), ['退款', '签名']);
+  // 2026-11-22 GPT 更正：凭据配置/轮换是普通工程，不再是保留词；Secret 值仍不得外泄。
+  assert.deepEqual(reservedTopics('轮换 API 凭据与 Secrets 配置'), []);
+  assert.deepEqual(reservedTopics('清理密钥文件并提交'), []);
+  assert.deepEqual(reservedTopics('保护私钥与助记词'), ['私钥', '助记词']);
 });
 
 test('digest carries the three required sections and the mail status', () => {

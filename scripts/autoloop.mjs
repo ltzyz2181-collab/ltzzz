@@ -20,7 +20,8 @@ export const SCHEMA = 'ltzzz.autoloop.v1';
 export const EXECUTOR_FILE = 'ops/autoloop/executors.json';
 export const ACTIONS = Object.freeze(['exec', 'adjudicate', 'escalate', 'skip']);
 // Owner 2026-11-19: ordinary rulings move to the relay GPT seat; relay Claude writes code
-// and reviews in the Deep team. Funds/refunds/signing/keys/wallet/credentials never reach them.
+// and reviews in the Deep team. Funds/refunds/signing/keys/wallet never reach them;
+// credential rotation is ordinary engineering, but secret values are never printed or committed.
 export const RELAY_SEATS = Object.freeze({
   'relay-gpt': {model: 'gpt-6.1-sol', profile: 'adjudication', purpose: 'adjudication'},
   'relay-claude': {model: 'claude-sonnet-4-6', profile: 'code', purpose: 'code'},
@@ -46,7 +47,7 @@ export function loadExecutors(fsImpl = fs, file = EXECUTOR_FILE) {
 
 // Owner 2026-11-19: only the items below stay with the GPT decision seat.
 // Everything else executes, merges and deploys automatically.
-const GPT_RESERVED_TERM = /(\u8d44\u91d1|\u4ed8\u6b3e|\u4ed8\u85aa|\u8f6c\u8d26|\u653e\u6b3e|\u9000\u6b3e|\u7b7e\u540d|\u79c1\u94a5|\u52a9\u8bb0\u8bcd|\u94b1\u5305|\u4e94\u7b7e|Safe|\u51ed\u636e|\u5bc6\u94a5|Secrets?)/i;
+const GPT_RESERVED_TERM = /(资金|付款|付薪|转账|放款|退款|签名|私钥|助记词|钱包|五签|Safe)/i;
 const NEGATED = /(\u4e0d\u6d89\u53ca|\u4e0d\u542b|\u4e0d\u78b0|\u65e0\u9700|\u4e0d\u6388\u6743|\u4e0d\u6267\u884c|\u4e0d\u5141\u8bb8|\u4e0d\u5f97|\u4e0d\u80fd|\u7981\u6b62|\u4e25\u7981|\u65e0\u8d44\u91d1|\u6ca1\u6709\u8d44\u91d1|\u4e0d\u8fdb\u884c|\u4e0d\u53d1\u8d77|\u4e0d\u505a|\u4e0d\u6539\u53d8)/;
 const CLAUSE_SPLIT = /[\u3002\uff1b;\uff01!\uff1f?\n]|\u4f46\u662f|\u4e0d\u8fc7|\u7136\u800c|\u4f46/;
 

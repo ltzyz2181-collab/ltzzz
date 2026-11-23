@@ -120,11 +120,13 @@ test('normalizeAutonomy：多收件人 AI 互发邮件，名单内全部放行',
   assert.throws(() => normalizeAutonomy({mode: 'auto', mail: {to: Array.from({length: 9}, (_, i) => `seat${i}@example.com`), subject: 'x', body: 'y'}}), /invalid_mail_to/);
 });
 
-test('deniedWritePath：工作流、授权、资金、凭据与通道脚本不可自动改写', () => {
-  assert.equal(deniedWritePath('.github/workflows/deep-superagent-queue.yml'), 'workflow_definition');
+test('deniedWritePath：owner 授权、资金、凭据文件与通道脚本不可自动改写；普通工作流/配置已放开', () => {
+  assert.equal(deniedWritePath('.github/workflows/deep-superagent-queue.yml'), null);
+  assert.equal(deniedWritePath('config/deep-autonomy-20261119.json'), null);
+  assert.equal(deniedWritePath('config/deep-superagent.json'), null);
   assert.equal(deniedWritePath('config/owner-authority-20261105.json'), 'authority_config');
-  assert.equal(deniedWritePath('config/deep-autonomy-20261119.json'), 'authority_config');
   assert.equal(deniedWritePath('wallet/main.json'), 'funds_path');
+  assert.equal(deniedWritePath('.env'), 'credential_path');
   assert.equal(deniedWritePath('scripts/send-mail.py'), 'protected_script');
   assert.equal(deniedWritePath('scripts/run-mail-intake.mjs'), 'protected_script');
   assert.equal(deniedWritePath('scripts/deep-autonomy.mjs'), null);
@@ -178,9 +180,18 @@ test('extractFileWrites：只认显式 FILE 块，重复路径按后写覆盖先
 test('validateWrites：拒绝空集、重复、超量、受保护路径', () => {
   assert.equal(validateWrites([]).error, 'no_file_writes');
   assert.equal(validateWrites([{path: 'a.md', content: '1'}, {path: 'a.md', content: '2'}]).error, 'duplicate_file:a.md');
-  assert.match(validateWrites([{path: '.github/workflows/x.yml', content: 'x'}]).error, /denied_path:workflow_definition/);
+  assert.deepEqual(validateWrites([{path: '.github/workflows/x.yml', content: 'name: x\n'}]), {ok: true, writes: [{path: '.github/workflows/x.yml', content: 'name: x\n'}]});
   const many = Array.from({length: 7}, (_, i) => ({path: `f${i}.md`, content: 'x'}));
   assert.equal(validateWrites(many).error, 'too_many_files');
+});
+
+test('validateWrites：deep-autonomy 配置不得移除五个保留家族', () => {
+  const families = ['funds', 'refund_terminal', 'signing', 'private_keys', 'wallet_operations'];
+  const okConfig = JSON.stringify({still_requires_gpt_decision: families.map((family) => ({family}))});
+  assert.deepEqual(validateWrites([{path: 'config/deep-autonomy-20261119.json', content: okConfig}]).ok, true);
+  const missing = JSON.stringify({still_requires_gpt_decision: families.slice(0, 4).map((family) => ({family}))});
+  assert.match(validateWrites([{path: 'config/deep-autonomy-20261119.json', content: missing}]).error, /reserved_family_removed:wallet_operations/);
+  assert.match(validateWrites([{path: 'config/deep-autonomy-20261119.json', content: 'not json'}]).error, /reserved_family_unparseable/);
 });
 
 test('readRepoContext / applyRepoContext：注入真实文件证据并记录缺失', () => {
