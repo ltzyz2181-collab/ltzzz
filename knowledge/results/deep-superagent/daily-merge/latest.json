@@ -1,7 +1,7 @@
 {
  "schema": "ltzzz.deep-superagent.daily-merge.v1",
  "date": "2026-11-23",
- "generated_at_utc": "2026-11-23T01:16:19.389Z",
+ "generated_at_utc": "2026-11-23T07:49:13.942Z",
  "done": [
   {
    "task_id": "DEEP-DAILY-SUPERVISION",
@@ -22,38 +22,6 @@
  ],
  "needs_gpt_decision": [
   {
-   "task_id": "DEEP-SUPERAGENT-20261122-DAILY-1",
-   "package_id": "LTZZZ-DEEP-SUPERAGENT-20261122-DAILY-1",
-   "run_id": "44958851732",
-   "reason": null,
-   "review_reason": "格式不符且多处路由判定违反规则，需GPT裁决。",
-   "asks": [
-    {
-     "ref": "DEEP-SUPERAGENT-20261122-DAILY-1",
-     "target": "gpt",
-     "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
-    }
-   ],
-   "related_asks": [],
-   "source": "knowledge/results/deep-superagent/queue-44958851732-attempt-1.json"
-  },
-  {
-   "task_id": "DEEP-SUPERAGENT-20261122-ISSUE-522",
-   "package_id": "LTZZZ-DEEP-ISSUE-522-20261122",
-   "run_id": "45061625474",
-   "reason": null,
-   "review_reason": "No output meets the required complete file write block format; kimi's paths are unverified and lack file contents.",
-   "asks": [
-    {
-     "ref": "DEEP-SUPERAGENT-20261122-ISSUE-522",
-     "target": "gpt",
-     "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
-    }
-   ],
-   "related_asks": [],
-   "source": "knowledge/results/deep-superagent/queue-45061625474-attempt-1.json"
-  },
-  {
    "task_id": "DEEP-SUPERAGENT-20261123-DAILY-1",
    "package_id": "LTZZZ-DEEP-SUPERAGENT-20261123-DAILY-1",
    "run_id": "45080114136",
@@ -68,6 +36,38 @@
    ],
    "related_asks": [],
    "source": "knowledge/results/deep-superagent/queue-45080114136-attempt-1.json"
+  },
+  {
+   "task_id": "DEEP-DISCUSS-20261123-01",
+   "package_id": "LTZZZ-DEEP-DISCUSS-20261123-01",
+   "run_id": "45098032610",
+   "reason": "coordinator_plan_unparseable",
+   "review_reason": null,
+   "asks": [
+    {
+     "ref": "DEEP-DISCUSS-20261123-01",
+     "target": "gpt",
+     "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
+    }
+   ],
+   "related_asks": [],
+   "source": "knowledge/results/deep-superagent/queue-45098032610-attempt-1.json"
+  },
+  {
+   "task_id": "DEEP-DISCUSS-20261123-02",
+   "package_id": "LTZZZ-DEEP-DISCUSS-20261123-02",
+   "run_id": "45098300475",
+   "reason": null,
+   "review_reason": "qianwen 未按四行格式输出，且引用缺乏具体篇名或原文短句，需 GPT 决定是否采纳。",
+   "asks": [
+    {
+     "ref": "DEEP-DISCUSS-20261123-02",
+     "target": "gpt",
+     "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
+    }
+   ],
+   "related_asks": [],
+   "source": "knowledge/results/deep-superagent/queue-45098300475-attempt-1.json"
   }
  ],
  "needs_owner_decision": [],
@@ -81,10 +81,10 @@
   "note": "政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权"
  },
  "mail": {
-  "status": "ok",
-  "at": "2026-11-22T22:45:54.261Z",
+  "status": "partial",
+  "at": "2026-11-23T07:48:42.964Z",
   "gmail_status": "ok",
-  "agent_mail_status": "ok",
+  "agent_mail_status": "partial",
   "open_or_dispatch": 200,
   "gmail_rulings": {
    "status": "ok",
@@ -104,14 +104,15 @@
   "blocked": 0
  },
  "next_steps": [
+  "邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。",
   "已生成 3 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
   "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
  ],
  "evidence": {
   "queue_reports": [
-   "knowledge/results/deep-superagent/queue-44958851732-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-45061625474-attempt-1.json",
-   "knowledge/results/deep-superagent/queue-45080114136-attempt-1.json"
+   "knowledge/results/deep-superagent/queue-45080114136-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-45098032610-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-45098300475-attempt-1.json"
   ],
   "daily_reports": [
    "knowledge/results/deep-superagent/daily-45081663810-attempt-1.json",
@@ -128,6 +129,6 @@
  "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
  "email": {
   "subject": "[LTZZZ日报] 2026-11-23 完成=2 待GPT裁决=3 阻塞=0",
-  "body": "LTZZZ 每日合并 2026-11-23（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=45081663810）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=45089235572）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261122-DAILY-1（run=44958851732）：见 ASK\n  复核意见：格式不符且多处路由判定违反规则，需GPT裁决。\n  ASK DEEP-SUPERAGENT-20261122-DAILY-1：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261122-ISSUE-522（run=45061625474）：见 ASK\n  复核意见：No output meets the required complete file write block format; kimi's paths are unverified and lack file contents.\n  ASK DEEP-SUPERAGENT-20261122-ISSUE-522：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261123-DAILY-1（run=45080114136）：见 ASK\n  复核意见：qianwen violates rule1/rule3 with unsupported close routes; doubao format non-compliant; all outputs lack executor-observed verification.\n  ASK DEEP-SUPERAGENT-20261123-DAILY-1：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 已生成 3 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=ok，gmail=ok，agent_mail=ok\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：1 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-23.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+  "body": "LTZZZ 每日合并 2026-11-23（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=45081663810）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=45089235572）\n\n二、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261123-DAILY-1（run=45080114136）：见 ASK\n  复核意见：qianwen violates rule1/rule3 with unsupported close routes; doubao format non-compliant; all outputs lack executor-observed verification.\n  ASK DEEP-SUPERAGENT-20261123-DAILY-1：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-DISCUSS-20261123-01（run=45098032610）：coordinator_plan_unparseable\n  ASK DEEP-DISCUSS-20261123-01：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-DISCUSS-20261123-02（run=45098300475）：见 ASK\n  复核意见：qianwen 未按四行格式输出，且引用缺乏具体篇名或原文短句，需 GPT 决定是否采纳。\n  ASK DEEP-DISCUSS-20261123-02：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n\n三、下一步\n- 邮件摄入为 partial：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。\n- 已生成 3 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n四、证据与边界\n- 邮件摄入：status=partial，gmail=ok，agent_mail=partial\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- Deep 队列卡：1 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-23.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
  }
 }
