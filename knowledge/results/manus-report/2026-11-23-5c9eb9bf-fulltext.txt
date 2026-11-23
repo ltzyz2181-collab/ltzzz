@@ -1,0 +1,93 @@
+# LTZZZ 独立技术与运营咨询报告 - Manus
+
+**URL:** https://manus.im/share/file/5c9eb9bf-d104-4414-a860-ab270c730c7f
+
+---
+
+LTZZZ 独立技术与运营咨询报告
+
+Log in
+LTZZZ 独立技术与运营咨询报告
+仓库架构、权限与工作流
+检查基线。本报告主要依据 main 的 5fe83ec0b1731af98630a83ddf937f3e0cf2ac4c 快照（2026-11-23 03:16:20Z）。并行审阅早期阶段有结果基于 551abc5677e74ec6f2fd7f3f3474ea38e7c637dd；审阅期间分支前进，因此旧 SHA 的观察只作为发现冲突的线索，不应视为对新 SHA 的逐项复核。GitHub 仓库是公开检查对象；本文未访问 Actions 实际运行历史、生产 Worker、账户密钥/余额或实际邮件送达状态。
+LTZZZ 的协调核心是 GitHub Issues 与 Actions。Issue 模板承载任务信封；队列、收件、同步、租约回收和快照由多个 Actions workflow 与脚本驱动。Pages 从 main 构建静态站点；Cloudflare Workers 则按服务分开配置，包括编排器和绑定 R2 的记忆网关。Linear 有定时只读导出和手动、allowlist 限定的 triage 工作流；邮件则分为只读收件与不同级别的通知/发送路径。关键仓库证据包括 .github/workflows/task-hub.yml、.github/workflows/execute-task-queue.yml、.github/workflows/pages.yml、.github/workflows/linear-board-export.yml、.github/workflows/linear-board-triage.yml、wrangler.orchestrator.toml、wrangler.memory-gateway.toml 与 docs/DISPATCH-CHANNELS-CURRENT.md。﻿ ﻿ ﻿
+记录描述的生命周期是：GPT 形成决定和任务信封，GitHub Issue 成为主要任务记录，执行席认领和执行，交付后通过 PR/CI 审查，再合并、部署并单独验证。Linear 是镜像而非权威任务源，邮件通知也不等于授权。状态阶段不能互相推定：提交不等于批准，合并不等于部署，部署不等于 smoke 验证。Task Hub 记录了 24 小时租约、超时回收和三次过期后的 stale 处理；同步/回收 workflow 以 15 分钟间隔运行。部署回执要求记录目标环境、commit/路径、时间、验证证据、阻塞项和下一步。具体可查 docs/TASK-HUB-CURRENT.md、knowledge/results/task-hub/latest.json、docs/DEPLOY-RECEIPT-CURRENT.md 和 ops/deploy-receipts/。﻿ ﻿
+权限边界。较新的 owner authority 记录将资金/财务处置、退款最终裁定、签名、私钥/助记词/root key、钱包操作列为 GPT 决策范围；五签名 Safe 仍遵循其既有多签要求。其余工程和运营执行原则上不应新增逐项 GPT、relay、peer 或 Owner 审批门。签名非自动化；机密值保护应作为安全处理要求，而不是泛化为所有普通工作的审批门。对应记录为 config/owner-authority-20261120.json、docs/OWNER-AUTHORITY-CURRENT.md 与 config/signature-authority-20261121.json。﻿
+有需要清理的权威文档漂移：AGENTS.md 和 config/autonomy-authority.json 仍指向 2026-11-05 权威文件；较新的 11 月 20 日/21 日记录说明旧冲突已被覆盖。旧 agent-wallet/spending-policy.json 对 Track A 支出、额度和审批的表述，与 GPT 作为资金决策席之间的实际执行关系没有被清楚调和。不能仅凭该旧文件推定当前资金权限或额度。多签合同中的概括性旧措辞与后续非 Safe 签名规定，也应由维护者标明当前适用范围，而不应由观察员自行裁决。﻿ ﻿
+运营瓶颈与风险。记录显示多个并行状态面可能过期或不一致：2026-11-23 的 Task Hub 快照记录 9 个 open issues（6 new、3 blocked），而 ops/task-continuity/board.json 更新时间较早；监督汇总文件报告过大量 warning 案例，但它不证明这些条目现在仍处于打开状态。另有一条 2026-11-22 的 payout-ruling 邮件回执记录了重复发送，并标记 do_not_resend。这说明发送成功与回执写入失败的窗口会造成非幂等副作用。GitHub Actions 的配置文件只能证明“配置了什么”，不能证明某日实际运行或外部交付成功；仓库文档还提醒 GitHub token 合并可能不触发 push workflow，且 CI 门不等同于 branch protection。﻿ ﻿ ﻿
+Manus 可以承担的工作
+Manus 可作为独立观察/研究席，读取公开仓库和用户提供的资料，整理 Issues、PR、workflow 与回执证据，分析状态差异，起草报告、测试计划或操作文档。它也可以在适当授权和专用工具下制作网站/应用、幻灯片或视频。本任务实际核实到当前 Manus 会话存在 GitHub、Gmail、Linear 连接器目录项，但三者都处于 enabled=false；Gmail 显示的账号未授权给当前任务。故本次能做公开仓库检查，但不能声称已读取私有 Issues、邮箱或 Linear 实时数据。当前连接器状态来自只读目录查询；没有启用或修改连接器。
+Manus 文档说明当前任务可通过 manus-config schedule create/status/update 管理原生 ScheduleTask，并且一个 task 限一个 schedule；本次只读 schedule status 返回空对象 {}，即当前会话没有显示现存计划。ScheduleTask 能否访问目标仓库、Actions 历史或私有数据，仍取决于之后运行任务中的授权连接器。Trigger 是另一类条件自动化，不应拿来构造轮询循环。本文未创建任何计划或 Trigger。﻿
+直接可做的是观察、归纳、建议与草拟；需相应授权/API 的工作包括读取私有邮件/Linear、查询 GitHub 私有或实时运行数据。需要写入、发布、部署、发送消息或更改任务状态的工作需要适当连接器与用户授权，本咨询均未执行。凭证、私钥、钱包、签名和资金操作不属于此观察席职责；它们仍受现行 GPT 决策权限和 Safe 规则约束。
+每日 Manus 观察任务提案
+建议定位为独立的只读观察员/研究席，补充而非复制 GPT 的日审。建议每天固定 UTC 时间运行，目标耗时 30 分钟；访问超时或缺少授权时明确记为“未验证”，不因此重试任何有副作用的工作。除非用户另行授权，它不改写 Issue、状态板、仓库、邮件或 Linear，不触发重跑，不自动派发任务。
+每日清单：
+1.
+记录输入基线：仓库默认分支 SHA、Task Hub 快照时间、观察窗口 UTC、连接器是否启用，以及各数据源最后成功读取时间。区分代码配置、提交的快照和实时运行证据。
+2.
+读取 Task Hub 最新快照，列出 NEW、blocked、超期未更新、缺 owner/next action 的任务；用稳定 Task ID 对照 Issue、PR、CI run 和回执链接。若 Issue/PR/快照存在冲突，保留各自状态和来源，不擅自选一个状态覆盖其他记录。
+3.
+检查阶段证据是否完整：claim、交付、review/CI、merge、deploy、smoke 分开核对；部署任务检查 commit SHA、环境、部署时间、验证与回执，非部署任务确认是否明确标为 not_applicable。不得从前一阶段成功推定后一阶段完成。
+4.
+在 GitHub 连接器获授权时读取相关 Actions run 的实际结论、时间和 run ID，特别检查 daily tasks、controller review、task-hub、daily ops 与观察 workflow。仅能读 workflow YAML 时，报告“已配置但本次运行未验证”。现有 GPT controller review workflow 的触发以手动/相关 push 为主，并非自身的 daily cron；不要把模型生成的监督段落称为 GPT API 审计。﻿
+5.
+对照 task-continuity board、oversight 汇总和 Linear 导出时间戳，寻找状态冲突、旧快照、缺少负责人/下一步和长期未结 warning。Linear 当前状态须以最近成功导出/读回为准；仓库中一处“未连接”描述与导出/triage workflow 文档并存，须将其作为待核实冲突，而非断言连接可用。
+6.
+核对 ops/mail-receipts/ 以及授权可读的邮件回执是否存在重复 message ID、发送结果不明或 do_not_resend 标记。结果不确定时仅建议只读核对 provider 状态，绝不自动重发。
+7.
+推荐下一件最高价值的普通工程/运营工作，说明依据、预期影响、依赖和证据缺口。建议不是审批请求；执行席可按现有权限继续普通工作。
+严重度与升级。P1：资金/凭证/签名/Safe 风险提示、可能重复副作用、生产中断、任务被错误终结，或关键部署证据缺失。立即向 GPT/owner 及相关责任执行席报告事实与证据；观察员不做资金、签名或钱包决策。P2：任务/台账漂移、延迟或一般证据缺口，当日通知责任人。P3：文档和可观测性改进，汇入周报。告警包含 UTC 时间、数据源、source SHA/Issue/PR/run/receipt ID、严重度、事实、建议和未验证项。告警本身不阻止普通工作。
+幂等与输出。按日期 + 输入仓库 SHA + Task ID 生成报告身份；按 workflow run ID、receipt ID、邮件 message ID 去重。发生不确定外部读取时只保留“未确认”状态，不重复触发副作用。输出为一个按日保存的观察报告，保留上次报告链接；若同一身份重跑，只更新观察证据，不创建重复任务或通知。建议格式：窗口 / 仓库SHA / 数据源可用性；进展（带证据）；P1/P2/P3；陈旧或冲突记录；下一件高价值工作；未验证/访问失败。超出 30 分钟则停止深挖，先交付已核实结果及未完成清单。
+输入源优先次序：公开仓库文件及提交；获授权的 GitHub Issues/PR/checks/Actions；仓库内 Task Hub、receipt、mail receipt 和 Linear export artifacts；在 Gmail/Linear 连接器经授权启用后才读相关只读证据。不要要求或输出 secrets、tokens、private keys、seed phrases 或钱包凭证。
+触发与送达选择
+选项
+	
+已验证能力与适配方式
+	
+限制及建议
+
+
+Manus 原生 ScheduleTask
+	
+manus-config schedule 文档支持 recurring 计划；本会话的只读状态查询返回 {}，当前未显示已有计划
+	
+可用于定时启动观察任务，但不能假设它自动拥有 GitHub、邮箱或 Linear 权限，也不能视为 GitHub Actions 运行凭证。若由所有者选择，先确保目标会话有只读数据源，再配置一个每日计划。
+
+
+GitHub Actions 定时 workflow
+	
+仓库已有定时 Actions、artifact/receipt 和 GitHub 任务记录，适合将结果贴近源数据并保留 run ID
+	
+需要在仓库另行实现/配置；本报告不做修改。必须监测实际 run，不以 YAML 存在代替成功；注意 GitHub token 合并触发限制及邮件凭证依赖。
+
+
+外部 GitHub/Manus API 或创建 Issue
+	
+只有在具体 API、授权方式和调用入口已核实后，才可用于启动/交付
+	
+本会话没有核实用于此任务的 Manus API 端点或用户 API 凭证，也没有启用 GitHub 连接器；因此不提供虚构 endpoint、payload 或创建步骤。Issue 创建会写仓库，需另行明确授权。
+建议决策：七日试点先以手动只读日检验证清单和数据可用性；试点通过后，若主要输入仍是 GitHub，优先评估仓库 Actions 产物；若需要 Manus 在每次执行中综合研究，则评估由任务所有者配置的原生 ScheduleTask。不要同时叠加两个每日调度器而造成重复报告。
+七日试点与职责
+第 1 日定下观察窗口、范围、读权限、模板及 SHA/Task ID 对账规则，记下不可访问来源。第 2–3 日按清单手动观察，记录耗时、冲突、误报和缺失回执，不修改系统。第 4 日由 GPT/owner 检视严重度、证据质量和是否误把普通工作变成审批事项。第 5–6 日继续日检，重点验证新鲜度、重复邮件标记及阶段证据链。第 7 日汇总结果、权限缺口和失败处理建议；由 GPT/owner 决定是否采用一个 recurring 交付渠道。试点本身不创建 Trigger、schedule 或 GitHub Issue。
+可衡量成功标准：7/7 天有带窗口、SHA、来源时间的观察报告；每个 P1 有可追溯证据和通知责任人；报告区分配置与实际运行、五类任务阶段无混淆；无观察席导致的状态更改、重复发送或执行；日常核对不超过 30 分钟，超时则留下明确未完成项。失败标准：把未验证数据写成成功、漏报重复副作用、P1 无责任接收人、观察警告阻塞普通执行，或越权处理资金/签名/Safe。失败时停止相关检查并报告原因，不盲目重跑。
+职责划分：GPT 保持项目裁决席和资金决策席，处理 P1 中涉及保留权限的事项；五签名 Safe 始终走既有多签规则。执行席继续按现有委派推进普通工作，不因观察报告等待额外许可。Reviewer 独立核验交付质量但不获得额外权限。Manus 观察席只研究、比对、记录、分级、建议；其意见不覆盖 GPT 裁决或任务执行权限。
+参考
+[1] GitHub Actions workflows at inspected commit
+[2] Cloudflare orchestrator Worker configuration
+[3] Current dispatch channels documentation
+[4] Task Hub lifecycle and evidence requirements
+[5] Deployment receipt requirements
+[6] Owner authority and signature authority configuration records
+[7] Legacy agent wallet spending policy
+[8] Committed Task Hub snapshot
+[9] Committed operational receipts and continuity artifacts
+[10] Automation merge gate constraints
+[11] Repository workflow definitions; read with live run history before assuming execution
+[12] Controller daily review workflow trigger configuration
+LTZZZ 独立技术与运营咨询报告
+仓库架构、权限与工作流
+Manus 可以承担的工作
+每日 Manus 观察任务提案
+触发与送达选择
+七日试点与职责
+参考
