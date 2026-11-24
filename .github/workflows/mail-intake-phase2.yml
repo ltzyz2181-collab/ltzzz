@@ -137,7 +137,9 @@ jobs:
             rows.push(`status=${p.status}`);
             rows.push(`gmail=${p.gmail_fullbox?.status ?? 'unknown'}`);
             rows.push(`qq=${p.qq_fullbox?.status ?? 'unknown'} qq_count=${p.qq_fullbox?.count ?? 0} qq_skipped=${p.qq_fullbox?.skipped ?? 'n/a'}`);
-            rows.push(`agent_mail=${p.agent_mail?.status ?? 'unknown'}`);
+            rows.push(`agent_mail=${p.agent_mail?.status ?? 'unknown'}${p.agent_mail?.deferred_to ? ` (deferred_to=${p.agent_mail.deferred_to})` : ''}`);
+            rows.push(`ruling_tracker=${p.ruling_tracker?.status ?? 'unknown'}${p.ruling_tracker?.deferred_to ? ` (deferred_to=${p.ruling_tracker.deferred_to})` : ''}`);
+            rows.push(`coverage=${p.coverage ? JSON.stringify(p.coverage) : 'n/a'}`);
             rows.push(`counts=${JSON.stringify(p.counts ?? {})}`);
             rows.push(`window=${p.gmail_fullbox?.window_since ?? 'n/a'} truncated=${p.gmail_fullbox?.window_truncated ?? 'n/a'}`);
             rows.push(`read_only=${p.read_only ?? 'n/a'} bodies_persisted=${p.bodies_persisted ?? 'n/a'}`);
@@ -149,12 +151,12 @@ jobs:
           if (out) fs.appendFileSync(out, text);
           JS
 
-      - name: Commit redacted result (ok/partial only)
+      - name: Commit redacted result (ok/partial/ok_deferred_channels only)
         if: always()
         run: |
           status=$(node -p "JSON.parse(require('fs').readFileSync('knowledge/results/deep-superagent/mail-intake/latest.json','utf8')).status" 2>/dev/null || echo missing)
           case "$status" in
-            ok|partial) ;;
+            ok|partial|ok_deferred_channels) ;;
             *) echo "status=$status; result not committed"; exit 0 ;;
           esac
           git config user.name 'ltzzz-mail-bot'
