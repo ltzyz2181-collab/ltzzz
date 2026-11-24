@@ -59,3 +59,12 @@ status_tag:    [NEEDS_DEPLOY] / [NEEDS_SMOKE] / [NEEDS_SIGN]
 4. 24h 内无回执按第 4 节 SLA 重发与升级，不得把 fallback 记成 relay 已完成。
 
 判定：中转席回执缺失时，任何"已复核/已裁决"的表述都视为伪造。
+
+## 8. CI 与席位在邮件采集上的分工（2026-11-24 定稿）
+
+1. 邮箱凭据（Agent Mail OAuth / refresh token）**只存云主机席位**，不进 GitHub Actions secrets，也不进 workflow 日志面。理由：同一 refresh token 被两地轮换会互相作废（`invalid_grant` 竞态），且 CI 属第三方运行环境。
+2. ubuntu-latest 没有 `agently-cli`，CI 的邮箱通道只能记 `not_configured_deferred`（`deferred_to=vm_seat`），不得写成 ok、也不得把整轮判成 partial。
+3. 总状态新增 `ok_deferred_channels`：仅当**所有已配置通道**成功时成立，并附 `coverage` 块列出 configured / deferred 通道；`note` 固定写明"延后不等于读过"。
+4. 若 CI 里显式提供了 `AGENTLY_CLI_SESSION` 却仍失败，按真实故障判 partial/failed，不得借延后语义掩盖。
+5. `ok_deferred_channels` 的 CI 快照只有部分通道覆盖，**不落库**，只留 step summary 与 artifact，禁止覆盖云主机席位的全通道 `mail-intake/latest.json`。
+6. 裁决跟踪（tracker）只在 Agent Mail 本身被延后时随之延后；Agent Mail 跑通而 tracker 读不到，是真故障。
