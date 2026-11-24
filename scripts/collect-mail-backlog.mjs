@@ -6,8 +6,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {extractTaskIds} from './mail/dedupe.mjs';
+import {classifyAgentlyError, resolveAgentlyCli} from './mail/agently-cli.mjs';
 
 const OUT='knowledge/results/deep-superagent/mail-backlog/latest.json';
+const LAST_OK='knowledge/results/deep-superagent/mail-backlog/last-ok.json';
+const SCHEMA='ltzzz.deep-superagent.mail-backlog.v1';
 const WINDOW_DAYS=21;
 const LIMIT=50;
 // 派单类关键词：命中任一即视为"有遗留任务语义"
@@ -15,10 +19,9 @@ const DISPATCH=/^\[?[\s]*?(gpt)?[\s]*(派单|裁决|待决|待处置|待办|未�
 // 已闭环关键词：命中即视为该邮件所述已收口
 const CLOSED=/验收通过|已合并|已部署|部署完成|已闭环|已收口|已修复并部署|already merged|accepted/;
 
-function run(args){
-  const bin=process.env.AGENTLY_CLI||'agently-cli';
-  const env={...process.env,PATH:process.env.PATH+':'+(process.env.HOME||'')+'/.npm-global/bin'};
-  return execFileSync(bin,args,{encoding:'utf8',env,maxBuffer:4*1024*1024,timeout:60000});
+function run(args,{cli=resolveAgentlyCli().bin}={}){
+  const env={...process.env,PATH:(process.env.PATH||'')+':'+(process.env.HOME||'')+'/.npm-global/bin'};
+  return execFileSync(cli,args,{encoding:'utf8',env,maxBuffer:4*1024*1024,timeout:60000});
 }
 
 export function parseList(raw){
@@ -44,13 +47,56 @@ export function toPublicItem(m){
   const closedHit=CLOSED.test(subject)||CLOSED.test(snippet);
   const openHit=/等待|待补|待回|待裁决|阻塞|未回|缺口|尚未|未完成|请据此|请回|pending|required/i.test(subject+snippet);
   const status=closedHit&&!openHit?'closed':openHit?'open':'unknown';
+  const messageId=String(m?.message_id||'');
   return {
-    ref:createHash('sha256').update(String(m?.message_id||'')).digest('hex').slice(0,16),
+    ref:createHash('sha256').update(messageId).digest('hex').slice(0,16),
+    // message_id 是归并键：三层去重必须用它，不能再拿 sha256 前缀冒充原始 ID。
+    message_id:messageId||null,
+    thread_id:m?.thread_id||m?.threadId||null,
+    task_ids:extractTaskIds(subject),
+    created_at:created||null,
     has_dispatch_wording:DISPATCH.test(subject),
     status,
     read:Boolean(m?.is_read),
     age_days:ageDays,
     subject_public:subject
+  };
+}
+
+function writeBacklog(doc,root){
+  const out=path.join(root,OUT);
+  fs.mkdirSync(path.dirname(out),{recursive:true});
+  // 失败重跑不得把上一份 ok 读集覆盖掉：先另存 last-ok.json。
+  try{
+    if(fs.existsSync(out)){
+      const prev=JSON.parse(fs.readFileSync(out,'utf8'));
+      if(prev?.status==='ok'||(!prev?.status&&Array.isArray(prev?.items))){
+        const lastOk=path.join(root,LAST_OK);
+        fs.mkdirSync(path.dirname(lastOk),{recursive:true});
+        fs.writeFileSync(lastOk,JSON.stringify(prev,null,2)+'\n');
+      }
+    }
+  }catch{/* 旧文件损坏时保留原样，不阻断本次写盘 */}
+  fs.writeFileSync(out,JSON.stringify(doc,null,2)+'\n');
+}
+
+export function failureBacklog(error,{bin='agently-cli',now=new Date()}={}){
+  const failure=classifyAgentlyError(error,{bin});
+  return {
+    schema:SCHEMA,
+    status:failure.status,
+    block_code:failure.block_code,
+    error_class:failure.error_class,
+    error:failure.error,
+    install_hint:failure.install_hint,
+    generated_at:now.toISOString(),
+    window_days:WINDOW_DAYS,
+    count:0,
+    open_count:0,
+    items:[],
+    contains_mail_body:false,
+    external_model_safe:true,
+    note:'Agent Mail 通道不可用：items 为空是“读不到”，不是“没有邮件”。',
   };
 }
 
@@ -73,17 +119,24 @@ export function buildBacklog(messages){
     const rank=x=>x.status==='open'?0:1;                    // 明确进行中的排前面
     return rank(a)-rank(b)||(b.age_days??0)-(a.age_days??0);
   });
-  const material=JSON.stringify(items.map(x=>[x.ref,x.subject_public,x.age_days,x.status]));
-  return {schema:'ltzzz.deep-superagent.mail-backlog.v1',generated_at:new Date().toISOString(),window_days:WINDOW_DAYS,count:items.length,open_count:items.filter(x=>x.status==='open').length,items,readset_sha256:createHash('sha256').update(material).digest('hex'),contains_mail_body:false,external_model_safe:true};
+  const material=JSON.stringify(items.map(x=>[x.ref,x.message_id,x.thread_id,x.task_ids,x.subject_public,x.age_days,x.status]));
+  return {schema:SCHEMA,status:'ok',generated_at:new Date().toISOString(),window_days:WINDOW_DAYS,count:items.length,open_count:items.filter(x=>x.status==='open').length,items,readset_sha256:createHash('sha256').update(material).digest('hex'),contains_mail_body:false,external_model_safe:true};
 }
 
-export function collect({root=process.cwd(),raw=null}={}){
-  const messages=raw?parseList(raw):parseList(run(['message','+list','--dir','inbox','--limit',String(LIMIT)]));
-  const backlog=buildBacklog(messages);
-  const out=path.join(root,OUT);
-  fs.mkdirSync(path.dirname(out),{recursive:true});
-  fs.writeFileSync(out,JSON.stringify(backlog,null,2)+'\n');
-  return {backlog,path:OUT};
+export function collect({root=process.cwd(),raw=null,cli=resolveAgentlyCli().bin,now=new Date()}={}){
+  try{
+    const messages=raw?parseList(raw):parseList(run(['message','+list','--dir','inbox','--limit',String(LIMIT)],{cli}));
+    const backlog=buildBacklog(messages);
+    writeBacklog(backlog,root);
+    return {backlog,path:OUT};
+  }catch(error){
+    // 读不到不等于没有邮件：落 blocked/failed 文档，并清空 items，避免旧 ok 读集继续冒充今天的结果。
+    const doc=failureBacklog(error,{bin:cli,now});
+    writeBacklog(doc,root);
+    const wrapped=new Error(doc.error);
+    wrapped.failure=doc;
+    throw wrapped;
+  }
 }
 
 if(import.meta.url===`file://${process.argv[1]}`){
@@ -91,7 +144,8 @@ if(import.meta.url===`file://${process.argv[1]}`){
     const {backlog,path:outPath}=collect({});
     console.log(JSON.stringify({ok:true,status:'mail_backlog_written',path:outPath,count:backlog.count,sha256:backlog.readset_sha256,contains_mail_body:false},null,2));
   }catch(e){
-    console.log(JSON.stringify({ok:false,status:'mail_backlog_failed',error:String(e?.message||e).slice(0,120)},null,2));
-    process.exitCode=1;
+    const failure=e?.failure||failureBacklog(e);
+    console.log(JSON.stringify({ok:false,status:failure.status,block_code:failure.block_code||null,error_class:failure.error_class,error:failure.error,path:OUT,contains_mail_body:false},null,2));
+    process.exitCode=failure.status==='blocked'?2:1;
   }
 }

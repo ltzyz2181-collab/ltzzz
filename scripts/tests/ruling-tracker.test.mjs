@@ -6,12 +6,15 @@ import {
   EXTERNAL_DECIDER,
   SELF,
   TRACKER_SCHEMA,
+  buildConsumedLedger,
   buildTracker,
   collectMessages,
   extractDecisionIds,
+  isAskMessage,
   listMessages,
   redactSubject,
 } from '../track-gpt-rulings.mjs';
+import {classifyAgentlyError, resolveAgentlyCli} from '../mail/agently-cli.mjs';
 
 const NOW = new Date('2026-11-17T12:00:00Z');
 
@@ -132,4 +135,138 @@ test('collectMessages 只保留可公开字段，不把正文带进来', () => {
 
 test('收件箱读取失败时抛错，由调用方写 unknown 而不是 0', () => {
   assert.throws(() => listMessages('inbox', 10, {cli: '/nonexistent/agently-cli', root: '/tmp'}));
+});
+
+test('原始问信「Re: [GPT总控派单]」没有裁决关键词也计入提问', () => {
+  assert.equal(isAskMessage({subject: 'Re: [GPT总控派单] LTZZZ-MAIL-INTAKE-RECONCILIATION-20261123-01'}), true);
+  assert.equal(isAskMessage({subject: 'Re: [LTZZZ][GPT总控派单] 口径修正'}), true);
+  assert.equal(isAskMessage({subject: '日常同步'}), false);
+});
+
+test('thread_id 优先于主题：改主题的回复仍挂回同一线程', () => {
+  const sent = [sentMessage({
+    id: 'ask-1',
+    subject: 'Re: [GPT总控派单] 邮件摄入对账',
+    subject_short: 'Re: [GPT总控派单] 邮件摄入对账',
+  })];
+  // 主题完全不同，但 thread_id 相同。
+  const inbox = [{
+    dir: 'inbox',
+    id: 'reply-1',
+    at: '2026-11-16T19:51:49Z',
+    from: EXTERNAL_DECIDER,
+    subject: 'Re: 另一个标题',
+    subject_short: 'Re: 另一个标题',
+    read: true,
+    inReplyTo: null,
+    thread_id: 'thread-abc',
+    task_ids: [],
+    decision_ids: ['GPT-MAIL-20261123-01'],
+  }];
+  sent[0].thread_id = 'thread-abc';
+  const doc = buildTracker({inbox, sent, now: NOW, windowDays: 21});
+  assert.equal(doc.items.length, 1);
+  assert.equal(doc.items[0].thread, 'thread:thread-abc');
+  assert.equal(doc.items[0].reply_count, 1);
+  assert.equal(doc.items[0].status, 'answered');
+});
+
+test('已消费账本按 message_id 精确命中：不再进 consume_gate，也不误伤同线程新回复', () => {
+  const ledger = buildConsumedLedger([{
+    ledger_file: 'rulings-consumed-2026-11-22.json',
+    items: [{
+      message_id: '<REPLY-1@X>',
+      thread_key: 'thread:thread-abc',
+      task_ids: ['LTZZZ-MAIL-INTAKE-RECONCILIATION-20261123-01'],
+      consumed_at: '2026-11-22T12:00:00Z',
+    }],
+  }]);
+  const sent = [sentMessage({id: 'ask-1', thread_id: 'thread-abc'})];
+  const consumedReply = {
+    dir: 'inbox', id: '<reply-1@x>', at: '2026-11-22T10:00:00Z', from: EXTERNAL_DECIDER,
+    subject: 'Re: 裁决', subject_short: 'Re: 裁决', read: false, inReplyTo: 'ask-1',
+    thread_id: 'thread-abc', task_ids: [], decision_ids: ['GPT-MAIL-20261123-01'],
+  };
+  const doc = buildTracker({inbox: [consumedReply], sent, now: NOW, windowDays: 21, consumedLedger: ledger});
+  const item = doc.items[0];
+  assert.equal(item.await_evidence, 'reply_consumed');
+  assert.equal(item.last_reply_consumed, true);
+  assert.equal(item.replies[0].consumed, true);
+  assert.equal(item.replies[0].consumed_match, 'message_id');
+  assert.equal(doc.counts.answered_consumed, 1);
+  assert.equal(doc.consume_gate.length, 0);
+
+  // 同 thread_id/thread_key 的新回复：只给审计提示，不得自动标已消费。
+  const newReply = {...consumedReply, id: '<reply-2@x>', at: '2026-11-23T10:00:00Z'};
+  const fresh = buildTracker({inbox: [consumedReply, newReply], sent, now: NOW, windowDays: 21, consumedLedger: ledger});
+  const freshItem = fresh.items[0];
+  assert.equal(freshItem.last_reply_consumed, false);
+  assert.equal(freshItem.replies.find((r) => r.id === '<reply-2@x>').consumed, false);
+  assert.equal(freshItem.await_evidence, 'reply_unread');
+  assert.equal(fresh.consume_gate.length, 1);
+});
+
+test('messages 形状的已消费账本（2026-11-19..22）也被识别，thread 字段不当作 thread_key', () => {
+  const ledger = buildConsumedLedger([{
+    ledger_file: 'rulings-consumed-2026-11-22.json',
+    count: 1,
+    messages: [{
+      message_id: 'msg_S1XN1G1rI35-AHYRK9vKRalPZasrctIgzOsjMuNOsoSrag',
+      thread: 'Re: [LTZZZ][回执] 2026-11-18 豆包504修复已部署',
+      at: '2026-11-20T20:51:14Z',
+      decision_id: 'OWNER-DIRECT-20261119-DEEP-EXECUTOR-DELEGATION',
+      status: 'consumed',
+    }],
+  }]);
+  assert.equal(ledger.count, 1);
+  const id = 'msg_s1xn1g1ri35-ahyrk9vkralpzasrctigzosjmunososrag';
+  const hit = ledger.byMessageId.get(id);
+  assert.ok(hit, 'messages 数组里的 message_id 必须进入索引');
+  assert.equal(hit.ledger_file, 'rulings-consumed-2026-11-22.json');
+  assert.equal(hit.consumed_at, '2026-11-20T20:51:14Z');
+  assert.equal(hit.thread_key, null, 'thread 是主题，不是 thread_id，不能当审计键');
+  assert.equal(ledger.files[0].consumed_count, 1);
+  assert.equal(ledger.byThreadKey.size, 0);
+});
+
+test('items 与 messages 两种账本混合时都生效，同一条不重复计数', () => {
+  const ledger = buildConsumedLedger([
+    {ledger_file: 'rulings-consumed-2026-11-23.json', items: [
+      {message_id: '<A@x>', task_ids: ['TASK-A'], consumed_at: '2026-11-23T01:00:00Z'},
+      {message_id: '<B@x>', task_ids: ['TASK-B'], consumed_at: '2026-11-23T02:00:00Z'},
+    ]},
+    {ledger_file: 'rulings-consumed-2026-11-22.json', count: 3, messages: [
+      {message_id: '<A@x>', at: '2026-11-22T01:00:00Z'},
+      {message_id: '<C@x>', at: '2026-11-22T02:00:00Z'},
+      {message_id: '<D@x>', at: '2026-11-22T03:00:00Z'},
+    ]},
+  ]);
+  assert.deepEqual([...ledger.byMessageId.keys()].sort(), ['a@x', 'b@x', 'c@x', 'd@x']);
+  assert.equal(ledger.files.length, 2);
+  assert.equal(ledger.files[1].consumed_count, 3);
+});
+
+test('agently-cli 缺失分类为 BLOCKED_EVIDENCE，不伪装成成功或普通失败', () => {
+  const error = Object.assign(new Error('spawnSync agently-cli ENOENT'), {code: 'ENOENT'});
+  const blocked = classifyAgentlyError(error, {bin: 'agently-cli'});
+  assert.equal(blocked.status, 'blocked');
+  assert.equal(blocked.block_code, 'BLOCKED_EVIDENCE');
+  assert.equal(blocked.error_class, 'ENOENT');
+  const timeout = classifyAgentlyError(Object.assign(new Error('timed out'), {killed: true}), {bin: 'agently-cli'});
+  assert.equal(timeout.status, 'failed');
+  assert.equal(timeout.error_class, 'timeout');
+});
+
+test('resolveAgentlyCli 优先 AGENTLY_CLI，其次 npm 全局目录，最后 PATH', () => {
+  const envHit = resolveAgentlyCli({env: {AGENTLY_CLI: '/opt/bin/agently-cli'}, exists: () => false});
+  assert.deepEqual(envHit, {bin: '/opt/bin/agently-cli', source: 'env', found: true});
+  const npmHit = resolveAgentlyCli({
+    env: {}, home: '/home/user', platform: 'linux',
+    exists: (candidate) => candidate === '/home/user/.npm-global/bin/agently-cli',
+  });
+  assert.equal(npmHit.source, 'npm-global');
+  assert.equal(npmHit.found, true);
+  const missing = resolveAgentlyCli({env: {}, home: '/home/user', platform: 'linux', exists: () => false});
+  assert.equal(missing.found, false);
+  assert.equal(missing.source, 'unresolved');
 });

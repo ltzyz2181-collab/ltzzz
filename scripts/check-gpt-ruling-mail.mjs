@@ -7,12 +7,14 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {redactSubject} from './track-gpt-rulings.mjs';
+import {classifyAgentlyError, resolveAgentlyCli} from './mail/agently-cli.mjs';
 
 const run = promisify(execFile);
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// 不写死云主机路径：优先显式配置，其次该主机上已知的全局安装位置，最后交给 PATH。
-const CLI = process.env.AGENTLY_CLI
-  || (fs.existsSync('/home/user/.npm-global/bin/agently-cli') ? '/home/user/.npm-global/bin/agently-cli' : 'agently-cli');
+// 结果写入根：CI 与代码根一致；本地联调可用 LTZZZ_ROOT 指到独立目录。
+const OUTPUT_ROOT = path.resolve(process.env.LTZZZ_ROOT || REPO_ROOT);
+// 不写死云主机路径：env → 已知 npm 全局目录 → PATH。
+const CLI = resolveAgentlyCli().bin;
 const GPT_SENDER = 'ltzyz2181@gmail.com';
 // 主题关键词。
 const RULING = /(裁决|ruling|disposition|keep_blocked|return_for_revision|needs_decision|approve_in_scope|conditional_approve|已落库)/i;
@@ -24,7 +26,7 @@ export function isRulingMessage(message) {
   const subject = (message?.subject || '').trim();
   return RULING.test(subject) || REPLY_PREFIX.test(subject);
 }
-const OUT = path.join(REPO_ROOT, 'knowledge/results/deep-superagent/gpt-ruling-mail/latest.json');
+const OUT = path.join(OUTPUT_ROOT, 'knowledge/results/deep-superagent/gpt-ruling-mail/latest.json');
 const SCHEMA = 'ltzzz.gpt-ruling-mail.v1';
 
 function shanghaiDate(iso) {
@@ -76,7 +78,22 @@ async function main() {
   try {
     record = {schema: SCHEMA, status: 'ok', source: 'agent_mail_inbox', model_calls: 0, paid: false, generated_at_utc: now.toISOString(), ...summarize(await inbox(), now)};
   } catch (error) {
-    record = {schema: SCHEMA, status: 'unknown', source: 'agent_mail_inbox', received: 'unknown', severity: 'unknown', note: '收件箱读取失败：' + String(error.message).slice(0, 200), model_calls: 0, paid: false, generated_at_utc: now.toISOString()};
+    const failure = classifyAgentlyError(error, {bin: CLI});
+    record = {
+      schema: SCHEMA,
+      status: failure.status === 'blocked' ? 'blocked' : 'unknown',
+      block_code: failure.block_code,
+      error_class: failure.error_class,
+      error: failure.error,
+      install_hint: failure.install_hint || null,
+      source: 'agent_mail_inbox',
+      received: 'unknown',
+      severity: 'unknown',
+      note: '收件箱读取失败：' + failure.error,
+      model_calls: 0,
+      paid: false,
+      generated_at_utc: now.toISOString(),
+    };
   }
   const dir = path.dirname(OUT);
   fs.mkdirSync(dir, {recursive: true});

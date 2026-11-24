@@ -313,3 +313,140 @@ test('退出码区分 ok/partial/failed，partial 不得当成功', () => {
   assert.notEqual(exitCodeFor('partial'), 0, '部分失败必须有非零退出码');
   assert.notEqual(exitCodeFor('failed'), exitCodeFor('partial'), '两种失败必须可区分');
 });
+
+function repoSignalsDoc(overrides = {}) {
+  return {
+    schema: 'ltzzz.deep-superagent.repo-signals.v1',
+    status: 'ok',
+    generated_at_utc: '2026-11-17T00:00:00Z',
+    issues: {
+      open_count: 1,
+      recent_count: 1,
+      open: [{
+        number: 592,
+        title_short: `[TASK] ${T1}`,
+        task_ids: [T1],
+        labels: ['dispatch'],
+        updated_at: '2026-11-17T00:00:00Z',
+        age_days: 0,
+      }],
+    },
+    pulls: {
+      open_count: 1,
+      open: [{number: 700, title_short: 'fix(mail): intake', task_ids: [], draft: false, updated_at: '2026-11-17T00:00:00Z', age_days: 0}],
+    },
+    actions: {
+      failed_count: 1,
+      success_count: 2,
+      failed: [{id: 45304047832, name: 'pages build', conclusion: 'failure', created_at: '2026-11-17T00:00:00Z', html_url: 'https://github.com/x/y/actions/runs/45304047832'}],
+    },
+    comments: {issue_comments_recent: 100, pr_review_comments_recent: 15, bodies_collected: false},
+    deploy_receipts: {
+      scanned: 2,
+      unresolved_count: 1,
+      unresolved: [{receipt_id: 'DR-1', path: 'ops/deploy-receipts/DR-1.json', status: 'blocked', task_id: null, blockers_count: 1}],
+    },
+    ...overrides,
+  };
+}
+
+test('Agent Mail 缺失：BLOCKED_EVIDENCE 单独记录，绝不冒充 ok', () => {
+  const payload = buildIntake({
+    backlog: {
+      status: 'blocked',
+      block_code: 'BLOCKED_EVIDENCE',
+      error_class: 'ENOENT',
+      install_hint: 'Set AGENTLY_CLI to an existing binary',
+      count: 0,
+      open_count: 0,
+      items: [],
+    },
+    fullbox: fullbox({body_queue: {status: 'ok', pending_count: 3}}),
+    tracker: trackerDoc(),
+    backlogRun: {code: 2},
+    gmailRun: OK_RUN,
+    trackerRun: OK_RUN,
+    now: NOW,
+  });
+  assert.notEqual(payload.status, 'ok');
+  assert.equal(payload.agent_mail.status, 'blocked');
+  assert.equal(payload.agent_mail.block_code, 'BLOCKED_EVIDENCE');
+  assert.equal(payload.agent_mail.error_class, 'ENOENT');
+  assert.equal(payload.agent_mail.items_are_current, false);
+  assert.equal(payload.reconciliation.channels.agent_mail.block_code, 'BLOCKED_EVIDENCE');
+  assert.equal(payload.counts.body_pending, 3);
+});
+
+test('正文队列写盘失败：Gmail 降为 partial，body_pending 不消失', () => {
+  const payload = buildIntake({
+    backlog: {status: 'ok', count: 0, open_count: 0, items: []},
+    fullbox: fullbox({
+      messages: [],
+      count: 0,
+      open_count: 0,
+      body_reads: 50,
+      body_pending_count: 12,
+      body_queue: {status: 'write_failed', pending_count: 12, selected_count: 50, completed_count: 50, max_reads: 50},
+    }),
+    tracker: trackerDoc(),
+    backlogRun: OK_RUN,
+    gmailRun: OK_RUN,
+    trackerRun: OK_RUN,
+    now: NOW,
+  });
+  assert.equal(payload.status, 'partial');
+  assert.equal(payload.gmail_fullbox.status, 'partial');
+  assert.equal(payload.gmail_fullbox.source_status, 'ok');
+  assert.equal(payload.gmail_fullbox.body_queue_status, 'write_failed');
+  assert.equal(payload.gmail_fullbox.body_queue.pending_count, 12);
+  assert.equal(payload.gmail_fullbox.body_pending_count, 12);
+  assert.equal(payload.counts.body_pending, 12);
+  assert.match(payload.reconciliation.definitions.body_pending, /未读取不等于已消费/);
+});
+
+test('仓库信号并入待办：issue/PR/Actions 失败/部署回执都进统一台账', () => {
+  const payload = buildIntake({
+    backlog: {status: 'ok', count: 0, open_count: 0, items: []},
+    fullbox: fullbox({messages: [], count: 0, open_count: 0}),
+    tracker: trackerDoc(),
+    repoSignals: repoSignalsDoc(),
+    backlogRun: OK_RUN,
+    gmailRun: OK_RUN,
+    trackerRun: OK_RUN,
+    now: NOW,
+  });
+  assert.equal(payload.status, 'ok');
+  assert.deepEqual(
+    payload.open_items.map((item) => item.channel).sort(),
+    ['deploy_receipt', 'github_actions', 'github_pr', 'github_repo'],
+  );
+  const issue = payload.open_items.find((item) => item.channel === 'github_repo');
+  assert.equal(issue.ref, 'issue:592');
+  assert.ok(issue.task_ids.includes(T1));
+  assert.equal(payload.counts.repo_open_issues, 1);
+  assert.equal(payload.counts.repo_open_pulls, 1);
+  assert.equal(payload.counts.repo_failed_runs, 1);
+  assert.equal(payload.counts.open_items_total, 4);
+  assert.equal(payload.reconciliation.unified_input, 4);
+  assert.equal(payload.reconciliation.open_items_total, 4);
+  assert.equal(payload.reconciliation.open_items_emitted, 4);
+  assert.equal(payload.reconciliation.channels.repo_signals.status, 'ok');
+});
+
+test('仓库信号读取失败：保留 partial 状态，不把缺失块当成零待办', () => {
+  const payload = buildIntake({
+    backlog: {status: 'ok', count: 0, open_count: 0, items: []},
+    fullbox: fullbox({messages: [], count: 0, open_count: 0}),
+    tracker: trackerDoc(),
+    repoSignals: repoSignalsDoc({status: 'partial', collection_errors: ['actions:github_http_403']}),
+    backlogRun: OK_RUN,
+    gmailRun: OK_RUN,
+    trackerRun: OK_RUN,
+    now: NOW,
+  });
+  assert.equal(payload.status, 'partial');
+  assert.equal(payload.repo_signals.status, 'partial');
+  assert.equal(payload.open_items.length, 0);
+  assert.equal(payload.counts.repo_open_issues, null);
+  assert.equal(payload.counts.open_items_total, 0);
+});

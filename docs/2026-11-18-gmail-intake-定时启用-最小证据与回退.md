@@ -95,3 +95,15 @@
 - `contract` 仍保持旧约束（无 secrets、无写仓库）；
 - `intake` 是经 Owner 指令与裁决 §六启用的生产定时任务，允许读两个 Gmail secrets、允许提交脱敏结果；
 - 新增回归断言：只允许这两个 secret、只允许固定结果路径、缺 secret 必须 fail-closed、不得强推、不得合并 PR、不得部署。
+
+## 6. 2026-11-23 对账补强（不改变定时策略与权限）
+
+本次只改采集/对账代码和契约测试，**不改 cron、不改 Secrets、不改 workflow 权限、不改生产 Worker、不合并 PR、不部署**。
+
+- 正文 50 封上限：新增 `mail-fullbox/body-queue.json` 持久队列，按 `first_seen` FIFO 续批；`done` 不重读，失败转 `retry`，超龄转 `expired`，窗口外保留为 `not_in_window`。写盘失败时 `body_queue.status=write_failed`，intake 记 `partial`，绝不再把未读正文当已消费。
+- Agent Mail：`agently-cli` 缺失统一记 `BLOCKED_EVIDENCE`，backlog 写失败文档并保留 `last-ok.json`；不再让旧 `latest.json` 看起来像本轮结果。
+- 裁决回信：`Re: [GPT总控派单]` 计入提问；`rulings-consumed-*.json` 的 `message_id` 精确命中才标已消费，同线程新回复不会被误杀。
+- 仓库回执：新增手工 `collect-repo-signals.mjs`，把 open issue、open PR、失败 Actions、未决部署回执并入统一待办；因 intake job 仅有 `contents: write`，该采集器**不接 schedule**。
+- 统一对账：`counts` 单列各通道计数，`reconciliation` 给出三层去重后的 `open_items_total` / `open_items_emitted`；日报带 `run_id` / `run_key` / `source_commit` / `body_pending`。
+- 回退：关闭对应 PR 即回滚代码；`body-queue.json` 为新增产物，删除后下一轮会按当前窗口重建候选，但会丢失“已读正文”进度，回退前应先备份。`last-ok.json` 保留用于人工比对，不自动回填。
+- 验收边界：本地单测与真实邮箱回执分开记录；本段不宣称定时 run 已通过。

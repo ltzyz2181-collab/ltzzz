@@ -244,3 +244,16 @@ owner 2026-11-23 指令：**同意开 mail:send relay 限权给 Meta，不给 PA
 - 验收入口：`scripts/verify-meta-issue-route.mjs` 在 `/issue` dry-run 之后追加 `/mail` dry-run，回执写 `mail_dry_run`；`/health` 增加 `mail_relay_configured` 与 `mail_relay_transport=seat-mail-relay`。
 - 边界：`queued` 只代表「卡片已排队」，不代表邮件已发出；是否真发出，以 `seat-mail` 回执里的 `[mail-sent]` / `status=sent` 和 `message_id` 为准。Meta 仍然拿不到 PAT，也拿不到 SMTP 凭据。
 
+## 十三、2026-11-23 邮件摄入对账（LTZZZ-MAIL-INTAKE-RECONCILIATION-20261123-01）
+
+本节只描述代码与产物语义，不声称定时工作流已验收。
+
+1. **Agent Mail 缺失不再写进旧结果**：`scripts/mail/agently-cli.mjs` 统一解析 CLI（`env.AGENTLY_CLI` → npm 全局目录 → `PATH`）。`ENOENT` 归类为 `status=blocked` + `block_code=BLOCKED_EVIDENCE` + `error_class=ENOENT`，`collect-mail-backlog.mjs` 会写一份失败文档而不是保留旧 `latest.json`；上一次 `ok` 另存 `mail-backlog/last-ok.json`。`track-gpt-rulings.mjs` 与 `check-gpt-ruling-mail.mjs` 同样分类，退出码 2。
+2. **Gmail 正文 50 封上限有持久续批**：`collect-gmail-imap.py` 新增 `mail-fullbox/body-queue.json`（schema `ltzzz.mail-body-queue.v1`）。候选按 `first_seen` FIFO 选批，`GMAIL_MAX_BODY_READS` 默认 50；成功/空正文标 `done` 且不再重读；失败 `attempts+1` 后 `retry`，达到上限 `failed`；本轮不在窗口内的项标 `not_in_window` 保留，重新出现会回到 `pending`；超过 30 天未完成标 `expired`，不伪造 `done`。队列写盘失败时 `body_queue.status=write_failed`，intake 将 Gmail 降为 `partial`，不把未读正文当已消费。
+3. **已消费裁决账本真正生效**：`track-gpt-rulings.mjs` 读取 `knowledge/results/deep-superagent/rulings-consumed-*.json`。只有 `message_id` 精确命中才标 `consumed`，`thread_key` 仅作审计提示，避免同一线程的新回复被历史账本误杀。已消费的回复不再进入 `consume_gate`。
+4. **提问识别覆盖 `Re: [GPT总控派单]`**：`isAskMessage` 接受裁决词、`[GPT…]`/`[LTZZZ…]` 标签或已提取的 decision_id，避免 GPT 已回信但账本里没有对应问题线程。
+5. **仓库信号可并入统一待办**：`scripts/collect-repo-signals.mjs` 手工采集 open issues、open PR、窗口内失败 Actions、部署回执未决项与评论计数，输出 `knowledge/results/deep-superagent/repo-signals/latest.json`（只采元数据，评论正文不落盘）。`run-mail-intake.mjs` 将其映射为 `github_repo` / `github_pr` / `github_actions` / `deploy_receipt` 待办，并在 `counts` / `reconciliation` 中分别给出单通道计数与三层去重后的 `open_items_total`。**本采集器不接入定时工作流**：intake job 的 `permissions` 固定为 `contents: write`，无权读 issues/actions；按本任务边界不得改权限。
+6. **回指同一轮运行**：intake 产物新增 `run.source_commit` / `workflow_run_id` / `workflow_run_attempt` / `event` / `ref`，`runs.jsonl` 同步记录 `source_commit`；`daily-ops-summary.mjs` 的 `mail` 块带 `run_id` / `run_key` / `source_commit` / `open_items_total` / `body_pending` / `body_queue_status`。
+7. **状态语义**：`ok` 仅在 Gmail（含正文队列）、Agent Mail、裁决跟踪、仓库信号四路都可用时为真；任一失败至少 `partial`；全部不可用才 `failed`。通道各自保留 `source_status`、`block_code`、`error_class`、`install_hint`，不合并成一个 `ok`。
+8. **测试**：`ruling-tracker.test.mjs`（Re: 派单、已消费抑制、thread_id 关联、ENOENT）、`mail-intake-pipeline.test.mjs`（Agent Mail blocked、正文队列写盘失败、仓库信号并入、缺失信号不零待办）、`repo-signals.test.mjs`（脱敏、窗口、缺 token）、`test_gmail_imap_body.py`（50 封续批、失败重试、done 不重读、not_in_window 保留、隐私）、`daily-ops-summary.test.mjs`（运行回指与正文积压）。
+

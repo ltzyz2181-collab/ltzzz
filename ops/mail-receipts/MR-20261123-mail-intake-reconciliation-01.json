@@ -1,0 +1,334 @@
+{
+ "schema": "ltzzz.mail.receipt.v1",
+ "receipt_id": "MR-20261123-mail-intake-reconciliation-01",
+ "task_id": "LTZZZ-MAIL-INTAKE-RECONCILIATION-20261123-01",
+ "decision_id": "GPT-AUDIT-20261123-MAIL-INTAKE-RECONCILIATION-01",
+ "dispatch_seat": "desktop-claude",
+ "repo": "ltzyz2181-collab/ltzzz",
+ "generated_at_utc": "2026-11-24T02:21:58Z",
+ "business_date_asia_shanghai": "2026-11-24",
+ "status": "partial",
+ "status_reason": "Gmail fullbox 与 repo signals 可用且正文队列健康；Agent Mail 与 ruling tracker 因 agently-cli ENOENT 真实阻塞（BLOCKED_EVIDENCE）。按验收口径，任一通道失败不得把整体记为 ok。",
+ "executed_by": {
+  "logical_seat": "desktop-claude",
+  "client": "Claude Code CLI，Windows 工作树 + WSL2 Ubuntu-24.04",
+  "actual_provider": null,
+  "model": null,
+  "metadata_source": "会话环境横幅自称 deepseek-chat，但未取得独立 provider 元数据；按 L-20261030-004 不把自报名称当执行器证据，故记 null/unverified。",
+  "runtime": {
+   "node": "v22.23.5",
+   "python": "3.12.3",
+   "git_push": "Windows 原生 git 到 github.com 被阻断，代码与 PR 通过 GitHub REST/Git Data API 推送",
+   "work_root": "独立快照 /mnt/c/ltzzz-temp/mail-recon-latest（来自 main tarball，非整树覆盖）",
+   "live_run_root": "/mnt/c/ltzzz-temp/mail-live-run（LTZZZ_ROOT 模式，真实只读采集）"
+  }
+ },
+ "channels": {
+  "gmail_fullbox": {
+   "status": "ok",
+   "provider": "gmail_imap",
+   "read_only": true,
+   "count": 1796,
+   "open_count": 1701,
+   "body_pending_count": 89,
+   "body_queue_status": "ok",
+   "body_reads_this_run": 50,
+   "body_failed_this_run": 0,
+   "body_reconnects_this_run": 0,
+   "credential_source": "既有受保护 Secrets / 本机 600 权限凭据文件；本任务未索要、未生成、未读取、未记录秘密值"
+  },
+  "agent_mail": {
+   "status": "blocked",
+   "block_code": "BLOCKED_EVIDENCE",
+   "error_class": "ENOENT",
+   "error": "agently-cli unavailable (ENOENT): agently-cli",
+   "count": 0,
+   "open_count": 0,
+   "note": "items 为空表示读不到，不是没有邮件；未伪造成功。"
+  },
+  "ruling_tracker": {
+   "status": "blocked",
+   "block_code": "BLOCKED_EVIDENCE",
+   "error_class": "ENOENT",
+   "threads": null,
+   "pending_no_reply": null,
+   "answered_but_unread": null,
+   "answered_consumed": null,
+   "note": "tracker 依赖 Agent Mail 收件箱；CLI 缺失时不计任何裁决结论。已消费账本读取不依赖 CLI，单独复核见 consumed_ledger_check。"
+  },
+  "repo_signals": {
+   "status": "ok",
+   "generated_at_utc": "2026-11-24T01:58:29.639Z",
+   "open_issues": 38,
+   "open_pulls": 0,
+   "recent_issues_scanned": 100,
+   "actions_recent": 50,
+   "actions_success": 13,
+   "actions_failed": 3,
+   "issue_comments_recent": 100,
+   "pr_review_comments_recent": 15,
+   "comment_bodies_collected": false,
+   "deploy_receipts_scanned": 32,
+   "deploy_receipts_unresolved": 32
+  }
+ },
+ "unified_run": {
+  "run_id": "9b2442b14ad2",
+  "run_key": "2026-11-24:438d86eaefe9ba74",
+  "input_sha256": "438d86eaefe9ba7478a20e709ad0ef3a1ada6794c4e68a9b0d745318f7bb9d04",
+  "previous_run_key": "2026-11-24:756175c556e0cd18",
+  "status": "partial",
+  "counts": {
+   "unified": 1869,
+   "open_or_dispatch": 200,
+   "open_items_total": 1184,
+   "open_items_capped": true,
+   "duplicates_removed": 685,
+   "ruling_conflicts": 0,
+   "agent_mail_open": 0,
+   "gmail_open_or_unread": 1701,
+   "body_pending": 89,
+   "repo_open_issues": 38,
+   "repo_open_pulls": 0,
+   "repo_failed_runs": 3
+  },
+  "source_commit": null,
+  "source_commit_note": "本地 LTZZZ_ROOT 实跑没有 GITHUB_SHA；CI 内由 workflow 上下文填写。本地不伪造 source_commit。"
+ },
+ "mail_intake_before_after": {
+  "method": "连续多轮真实只读运行，轮次账本 mail-intake/runs.jsonl",
+  "runs": [
+   {"run_key": "2026-11-24:e01e53b33cf23e6e", "run_id": "25966996e990", "body_pending": 191, "unified": 1854},
+   {"run_key": "2026-11-24:b4211d428ef932af", "run_id": "cee2734bbdaf", "body_pending": 189, "unified": 1869},
+   {"run_key": "2026-11-24:756175c556e0cd18", "run_id": "e48b15d7beaa", "body_pending": 139, "unified": 1869},
+   {"run_key": "2026-11-24:438d86eaefe9ba74", "run_id": "9b2442b14ad2", "body_pending": 89, "unified": 1869}
+  ],
+  "body_queue": {
+   "entries": 293,
+   "done": 204,
+   "pending": 89,
+   "attempts_0": 247,
+   "attempts_1": 46,
+   "note": "46 个曾因连接重置失败的条目在启用重连+retry 优先后全部转为 done；retry 不再被同批 pending 饿死。"
+  },
+  "continuation_mechanism": "每轮最多读取 50 封正文，未读条目留在队列（pending/not_selected_cap），不标记已消费；下一轮继续。期间新增邮件导致 total 增长，但 pending 持续下降。"
+ },
+ "consumed_ledger_check": {
+  "loader": "scripts/track-gpt-rulings.mjs loadConsumedLedger/buildConsumedLedger",
+  "files": 8,
+  "parse_errors": 0,
+  "unique_message_ids": 30,
+  "thread_keys_indexed": 3,
+  "shapes_supported": ["items", "messages"],
+  "nov22_23_expected_ids": {
+   "msg_42JRcc6Hks39gyLTrInMVoOmZGhPp_OE5GNSxCzYEW45nQ": true,
+   "msg_E306NvRsFaSEXuY8hZfoiZJTxhdDcwU6HYHa9m2YccV9xw": true,
+   "msg_BsFHhnuu33-Y_w3nTvouuSNnEig3pVBKCYacbXI3_M0vcA": true,
+   "msg_S1XN1G1rI35-AHYRK9vKRalPZasrctIgzOsjMuNOsoSrag": true
+  },
+  "nov23_details": {
+   "ledger_file": "knowledge/results/deep-superagent/rulings-consumed-2026-11-23.json",
+   "consumed_count": 3,
+   "consume_gate_count": 3,
+   "bodies_read": true,
+   "bodies_persisted": false,
+   "items": [
+    {"message_id": "msg_42JRcc6Hks39gyLTrInMVoOmZGhPp_OE5GNSxCzYEW45nQ", "thread_key": "task:DEEP-SUPERAGENT-20261118-BACKLOG-2", "task_ids": ["DEEP-SUPERAGENT-20261118-BACKLOG-2"], "issue_refs": ["#436"]},
+    {"message_id": "msg_E306NvRsFaSEXuY8hZfoiZJTxhdDcwU6HYHa9m2YccV9xw", "thread_key": "task:REFUND-DEFENSE-F2-IDEMPOTENCY-DESIGN-20261118-01", "task_ids": ["REFUND-DEFENSE-F2-IDEMPOTENCY-DESIGN-20261118-01"], "issue_refs": ["#434"]},
+    {"message_id": "msg_BsFHhnuu33-Y_w3nTvouuSNnEig3pVBKCYacbXI3_M0vcA", "thread_key": "subject:wallet-p<amount>-incremental-verify", "task_ids": ["WALLET-P1-INCREMENTAL-VERIFY"], "issue_refs": ["#433"]}
+   ],
+   "note": "三封 received_at_utc 均在 2026-11-22（19:57–20:58Z），业务账本按 Asia/Shanghai 记 2026-11-23。只有 message_id 精确命中才标 consumed；thread_key 仅作审计提示，避免同线程新回复被误判已消费。"
+  },
+  "nov22_details": {
+   "ledger_file": "knowledge/results/deep-superagent/rulings-consumed-2026-11-22.json",
+   "consumed_count": 1,
+   "re_read_same_reply": true,
+   "message_id": "msg_S1XN1G1rI35-AHYRK9vKRalPZasrctIgzOsjMuNOsoSrag",
+   "task_id": "OWNER-DIRECT-20261119-DEEP-EXECUTOR-DELEGATION",
+   "note": "同一封回复不重复消费；11-23 账本 residual_answered_but_unread 已记录该条为已消费不重读。"
+  },
+  "fix": "loadConsumedLedger 原先只识别 items 形状；11-19..11-22 真实账本使用 messages 形状，导致已消费回信被当未读。现已同时识别两种形状并保留 count/consumed_count 两种计数字段。"
+ },
+ "dedupe": {
+  "layers": ["message_id", "thread_id", "task_id（union-find 聚类）"],
+  "duplicates_removed": 685,
+  "history_preserved": "重复项保留 duplicates/history 字段中的原始 ID，不删除历史关联。",
+  "unknown_status": "读不到的通道记 blocked/unknown，不按空集处理。"
+ },
+ "repo_signals_detail": {
+  "failed_actions": [
+   {"id": 45308827278, "name": "Deploy static site to GitHub Pages", "head_sha": "6195d724e1c7d79d9db78d68456293eba48171c3", "url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/45308827278"},
+   {"id": 45306476095, "name": "Deploy static site to GitHub Pages", "head_sha": "8b59373ddb279e328ff33c4f0725ada4d107ddde", "url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/45306476095"},
+   {"id": 45306397751, "name": "Deploy static site to GitHub Pages", "head_sha": "fa915fa3fd2a82f5bb34bc4c51f16b1fc198783a", "url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/45306397751"}
+  ],
+  "note": "只采集 issue/PR 编号与状态，不采评论正文；Actions 失败与未决部署回执进入待办台账，不只按邮件标题判断。"
+ },
+ "changes": {
+  "modified": [
+   ".github/workflows/mail-intake-phase2.yml",
+   "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md",
+   "docs/MAIL-CHANNEL-CURRENT.md",
+   "docs/MAIL-INTAKE-PHASE2-20261117.md",
+   "scripts/check-gpt-ruling-mail.mjs",
+   "scripts/collect-gmail-imap.py",
+   "scripts/collect-mail-backlog.mjs",
+   "scripts/daily-ops-summary.mjs",
+   "scripts/mail/dedupe.mjs",
+   "scripts/run-mail-intake.mjs",
+   "scripts/tests/daily-ops-summary.test.mjs",
+   "scripts/tests/mail-intake-pipeline.test.mjs",
+   "scripts/tests/ruling-tracker.test.mjs",
+   "scripts/tests/test_gmail_imap_body.py",
+   "scripts/track-gpt-rulings.mjs"
+  ],
+  "added": [
+   "scripts/collect-repo-signals.mjs",
+   "scripts/mail/agently-cli.mjs",
+   "scripts/tests/repo-signals.test.mjs",
+   "knowledge/results/deep-superagent/repo-signals/latest.json",
+   "ops/maintenance/2026-11-23-repo-cleanup-inventory.json",
+   "ops/maintenance/2026-11-23-repo-cleanup-inventory.md",
+   "ops/mail-receipts/MR-20261123-mail-intake-reconciliation-01.json"
+  ],
+  "deleted": [],
+  "workflow_change_scope": "mail-intake-phase2.yml 仅把 repo-signals/daily-ops-summary 测试加入 contract job 的测试清单；未改 cron、secrets、permissions、生产部署。",
+  "upstream_drift_check": "对最新 main 逐文件比较：19 个交付文件中 0 个被上游改动（upstream_changed=0），可安全基于最新 main 提交，不覆盖他人改动。"
+ },
+ "input_hashes": {
+  "note": "path + sha256（提交前工作树字节）；commit 级绑定见 PR 描述中的 implementation commit SHA。",
+  "files": {
+   ".github/workflows/mail-intake-phase2.yml": "2121b5df65cabc233395e324ad40f5943659c156bbc4afcbc2f3a15d12379876",
+   "docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md": "43199d9c6f2d8c347f0349d5fc3cc3fa8e4b88fe0b10859c69dd88a4b074618f",
+   "docs/MAIL-CHANNEL-CURRENT.md": "6db23194d71088895e4a4ad3c9b09971e9ca14d9b617c5da2132112cd8c7c64f",
+   "docs/MAIL-INTAKE-PHASE2-20261117.md": "6076e69d3b95f2e1474dbe7210836eda5314f952eb2b3372b31923e731d4363d",
+   "scripts/check-gpt-ruling-mail.mjs": "87a2d1260613987cce3bcf7a34cf5ba3b72d1c734bc08b37764fa925b766f898",
+   "scripts/collect-gmail-imap.py": "4e6b3f10a6a4b74e54f3d751896f546baf8940f73f3bc838a90c09e554f773a7",
+   "scripts/collect-mail-backlog.mjs": "f147d4b3de583c38a5506cfa2950cc3a70b8c25a7d10bfc892dbd0115ebed53d",
+   "scripts/collect-repo-signals.mjs": "7f2300908955dca94fec9d02bc2ba7a074ad4410246ef2727c94ded1cebe004a",
+   "scripts/daily-ops-summary.mjs": "7a734b21f8fc7997d6a7e72e3d4fd18b622f3cea826e274ff6ad5153e69805b3",
+   "scripts/mail/agently-cli.mjs": "85873d1b50b1d87ee27aa117f45609d62d89cbb5d9ca77e53f0f6861f0e60bb2",
+   "scripts/mail/dedupe.mjs": "7b0fa9ed30a20f2242e4687e85c695fb49a6aa068ef548c0c6139f94c291bdbc",
+   "scripts/run-mail-intake.mjs": "d313dc451af05544e63cb9902160e99e04d2c5e821ecc6dd2f7de09754263439",
+   "scripts/tests/daily-ops-summary.test.mjs": "b4b85d90cb09ba915e26124edfc859b35e79c9fa5178b83c746aaf3c8b51b812",
+   "scripts/tests/mail-intake-pipeline.test.mjs": "dea8acd21033ca30cb4fd312d86e34ba2425a518aea42a193189447b57c9253a",
+   "scripts/tests/repo-signals.test.mjs": "4436b8f90db4bf259228605801309b976319ed015b01ef9ff5ba3f59d896536b",
+   "scripts/tests/ruling-tracker.test.mjs": "f678edbdf81d4870020221942afaf315a33ea1de5354d997e1599cf80d707e2b",
+   "scripts/tests/test_gmail_imap_body.py": "8eb7c6f597b65add40d6c05bffdb2cfd66bbfdf44ca4d9ccfc4f037ff0eaacd3",
+   "scripts/track-gpt-rulings.mjs": "d16b501a67afc49da88d7525f4e19ca430b30db6c8fd08272c8bf3faaba88c3d",
+   "knowledge/results/deep-superagent/repo-signals/latest.json": "ef9566f25d15e469d9a71ba0ef42a3ff1eccfc9c68023f8f302289b02d73b2f7",
+   "ops/maintenance/2026-11-23-repo-cleanup-inventory.json": "1e485a27067b628500b05160492b3c18263f951b4a39b0464f656025d722bcfb",
+   "ops/maintenance/2026-11-23-repo-cleanup-inventory.md": "fa7c91c9f11073e61c08a3da779f1e931802fbd4a1ac1fb10dba9a589e216385"
+  }
+ },
+ "tests": {
+  "node_unit": {
+   "command": "node --test scripts/tests/mail-dedupe.test.mjs scripts/tests/mail-thread.test.mjs scripts/tests/mail-intake-pipeline.test.mjs scripts/tests/mail-intake.test.mjs scripts/tests/ruling-tracker.test.mjs scripts/tests/gpt-ruling-mail.test.mjs scripts/tests/repo-signals.test.mjs scripts/tests/daily-ops-summary.test.mjs scripts/tests/mail-workflow-policy.test.mjs scripts/tests/gmail-redact.test.mjs scripts/tests/gmail-body-peek.test.mjs scripts/tests/gmail-credentials.test.mjs",
+   "result": "tests 122 / pass 122 / fail 0 / skipped 0 / todo 0"
+  },
+  "python_body_peek": {
+   "command": "python3 scripts/tests/test_gmail_imap_body.py",
+   "result": "Ran 45 tests — OK"
+  },
+  "ledger_verify": {
+   "command": "node scripts/record-task-state-correction.mjs --verify",
+   "result": "verify ok ledger=ops/deep-superagent/corrections/2026-11-17-task-state.jsonl count=6；6 条全 ok"
+  },
+  "coverage": [
+   "Re: 裁决回复识别（GPT 发件人 + Re:/回复前缀，keywords 与 reply_prefix 分开计数）",
+   "50 封正文上限与续批：未选中项不标 consumed，下轮继续",
+   "连接重置重连：只重试当前一封，预算 3 次，失败记录 reconnect_failed:*",
+   "retry 优先于同批 pending，避免饿死",
+   "三层去重与 duplicates/history 保留",
+   "幂等 run_key 与 runs.jsonl 哈希链",
+   "unknown/blocked 状态不被当作空集",
+   "单通道失败隔离（partial 而非 ok）",
+   "隐私脱敏（主题/金额/令牌）与 bodies_persisted=false",
+   "只读边界（BODY.PEEK、readonly SELECT、不移动邮件）"
+  ],
+  "fixed_test_gap": "test_gmail_imap_body.py 原先 unittest.main() 写在 BodyQueueTest 之前，8 个续批测试从未执行；移到文件末尾后覆盖 45 个。"
+ },
+ "harness": {
+  "command": "node scripts/harness.mjs before receipt,model_output,input_hash,external_platform",
+  "status": "retrieved_not_compliance_verified",
+  "context_sha256": "3c7151ab52fb8b46509c52fc0f118166f661f7b1c5510ad1ce9e7bda9a5ca0d2",
+  "lesson_ids": ["L-20261030-002", "L-20261030-003", "L-20261030-001", "L-20261030-004", "L-20261101-001", "L-20261030-007"],
+  "applied": [
+   {"lesson": "L-20261030-002", "change": "actual_provider/model 无法独立验证时写 null 并注明 unverified，不按环境横幅猜测。"},
+   {"lesson": "L-20261030-004", "change": "executed_by 分离 logical_seat 与实际元数据来源；席位名只作派单标识。"},
+   {"lesson": "L-20261030-007", "change": "input_hashes 逐文件记录 path+sha256，commit 级绑定放入 PR 描述。"},
+   {"lesson": "L-20261030-001", "change": "提交标题从本回执 status=partial 派生，不使用成功语气。"},
+   {"lesson": "L-20261101-001", "change": "续批/上限与 Re: 识别测试显式覆盖允许与拒绝两侧；连接错误的允许重试/禁止重试两类都测。"},
+   {"lesson": "L-20261030-003", "change": "未改六个核心记忆文件；未把模型输出写入核心记忆。"}
+  ]
+ },
+ "cleanup": {
+  "inventory": "ops/maintenance/2026-11-23-repo-cleanup-inventory.json",
+  "report": "ops/maintenance/2026-11-23-repo-cleanup-inventory.md",
+  "mode": "inventory_only_no_deletion",
+  "deletion_performed": false,
+  "stats": {
+   "branches_total": 1077,
+   "contained_in_main_checked": 18,
+   "delete_eligible_listed": 15,
+   "kept_for_reference": 3,
+   "diverged_kept": 348,
+   "compare_unavailable_kept": 710,
+   "files_deleted": 0,
+   "bytes_freed": 0,
+   "duplicate_groups_inspected": 579,
+   "duplicate_files_inspected": 1219,
+   "duplicate_bytes_inspected": 43138991
+  },
+  "safety": "仅 ahead_by=0 且无 open PR/Issue/仓库文本引用的分支进入删除候选；deploy/release/gh-pages/backup/archive 前缀一律保留；本任务不执行删除。"
+ },
+ "privacy": {
+  "bodies_persisted": false,
+  "secrets_read_or_printed": false,
+  "mail_marked_read_or_deleted": false,
+  "customer_data_copied": false,
+  "public_repo_content": "仅项目标题、issue/PR 编号、run ID、哈希与状态；不含邮箱正文、凭据或客户资料。"
+ },
+ "boundaries_respected": [
+  "未修改 GitHub Actions Secrets、定时 cron、工作流权限（workflow permissions 仍为 contents: read）",
+  "未修改生产 Worker / Cloudflare 生产配置 / 资金策略",
+  "未调用新付费模型、未新增第三方凭据、未充值",
+  "未付款、未转账、未签名、未操作钱包",
+  "未合并 PR、未部署生产"
+ ],
+ "corrections": [
+  {
+   "id": "exit-code-measurement",
+   "finding": "首轮 WSL 复测把 $? 写在未转义的外层命令串里，得到 BACKLOG_EXIT=0 / TRACKER_EXIT=0 的假结果。",
+   "fix": "用转义后的内层退出码复测：false_code=1、node_exitcode=2、BACKLOG_EXIT=2、TRACKER_EXIT=2；脚本本身无需修改。",
+   "impact": "避免把真实 blocked 误报为成功。"
+  },
+  {
+   "id": "python-unittest-placement",
+   "finding": "test_gmail_imap_body.py 的 unittest.main() 位于测试类定义之前，8 个续批测试从未运行。",
+   "fix": "移到文件末尾，测试数 31→45。"
+  },
+  {
+   "id": "consumed-ledger-shape",
+   "finding": "loadConsumedLedger 只识别 items 形状，而 11-19..11-22 真实账本使用 messages 形状。",
+   "fix": "新增 consumedEntries() 同时识别 items/messages；真实数据复测 8 文件、30 唯一 message_id、0 parse_error。"
+  }
+ ],
+ "unresolved": [
+  "agently-cli ENOENT：该命令不在公共 npm registry（npm view agently-cli → 404），也不在 PATH。需 Agent Mail 管理员提供二进制或私有包并设置 AGENTLY_CLI；在此之前 Agent Mail 与 ruling tracker 保持 BLOCKED_EVIDENCE。",
+  "整体 status=partial 会持续到 Agent Mail 通道恢复；不得把 partial 说成完全修复。",
+  "3 个 GitHub Pages 部署失败（run 45308827278 / 45306476095 / 45306397751）已进入待办台账，本任务不修改部署工作流。",
+  "32 个部署回执仍为 unresolved/unknown，需要部署席逐项对账，本任务不判定其真实状态。",
+  "710 个分支 compare 不可用、348 个 diverged 分支有独有提交；均保留，需后续人工裁决。",
+  "本任务派单原文标注“等待通过 GitHub Issue 正式派发”，但仓库内不存在该 Task ID 的正式 Issue，因此无法按原单要求在 Issue 回复 SUBMITTED；改以 PR + 邮件报告，PR 保持 open/unmerged。",
+  "本地 LTZZZ_ROOT 实跑的 source_commit 为 null（无 GITHUB_SHA）；CI 内的运行才带 source_commit。"
+ ],
+ "submission": {
+  "pr": null,
+  "implementation_commit_sha": null,
+  "receipt_commit_sha": null,
+  "ci_run_id": null,
+  "ci_run_url": null,
+  "state": "draft_until_pr_created",
+  "note": "PR 创建后由第二个提交回填；CI 结果写入 PR 描述/评论，不在此文件伪造。"
+ }
+}

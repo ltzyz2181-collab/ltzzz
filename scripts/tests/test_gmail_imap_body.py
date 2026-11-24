@@ -114,7 +114,7 @@ class BodySummaryTest(unittest.TestCase):
     def test_fetch_failure_isolated(self):
         conn = FakeConn(status='NO')
         summary = cg.fetch_body_summary(conn, 8)
-        self.assertEqual(summary, {'body_status': 'fetch_failed'})
+        self.assertEqual(summary, {'body_status': 'fetch_failed', 'body_error_class': 'imap_no'})
 
     def test_empty_body_not_counted_as_ok(self):
         conn = FakeConn(b'')
@@ -212,6 +212,215 @@ class SourceDisciplineTest(unittest.TestCase):
             self.assertNotIn('json.dump', line, '密码不得进入产物')
             self.assertNotIn('write(', line, '密码不得被写出')
             self.assertNotIn('print(', line, '密码不得被打印')
+
+
+class BodyQueueTest(unittest.TestCase):
+    """50 封正文上限的续批机制：未处理项必须保留，已完成项不得重复读。"""
+
+    NOW = '2026-11-23T12:00:00Z'
+
+    def candidate(self, ref, **overrides):
+        record = {
+            'ref': ref,
+            'date': '2026-11-23T00:00:00Z',
+            'from_domain': 'gmail.com',
+            'subject_short': 'Re: 请裁决',
+            'subject_sha256': 'a' * 64,
+            'thread_id': 'thread-' + ref,
+            'task_ids': ['LTZZZ-MAIL-INTAKE-RECONCILIATION-20261123-01'],
+            'body_candidate': True,
+        }
+        record.update(overrides)
+        return record
+
+    def test_merge_preserves_done_and_not_in_window(self):
+        previous = [
+            {'ref': 'done-1', 'status': 'done', 'first_seen': '2026-11-20T00:00:00Z', 'attempts': 1},
+            {'ref': 'old-1', 'status': 'pending', 'first_seen': '2026-11-21T00:00:00Z', 'attempts': 0},
+            {'ref': 'back-1', 'status': 'not_in_window', 'first_seen': '2026-11-22T00:00:00Z', 'attempts': 0},
+        ]
+        messages = [
+            self.candidate('new-1'),
+            self.candidate('done-1'),
+            self.candidate('back-1'),
+        ]
+        merged = {entry['ref']: entry for entry in cg.merge_body_queue(previous, messages, self.NOW, 30)}
+        self.assertEqual(merged['done-1']['status'], 'done')
+        self.assertEqual(merged['old-1']['status'], 'not_in_window')
+        self.assertEqual(merged['back-1']['status'], 'pending', '重新出现的项必须恢复待处理')
+        self.assertEqual(merged['new-1']['status'], 'pending')
+
+    def test_merge_expires_old_pending_without_faking_done(self):
+        previous = [{'ref': 'old-2', 'status': 'pending', 'first_seen': '2026-09-01T00:00:00Z', 'attempts': 2}]
+        merged = cg.merge_body_queue(previous, [], self.NOW, 30)
+        self.assertEqual(merged[0]['status'], 'expired')
+        self.assertNotEqual(merged[0]['status'], 'done')
+
+    def test_select_is_fifo_and_capped_at_50(self):
+        entries = [
+            {'ref': 'ref-%02d' % i, 'status': 'pending', 'first_seen': '2026-11-22T00:%02d:00Z' % i, 'attempts': 0}
+            for i in range(60)
+        ]
+        refs = {entry['ref'] for entry in entries}
+        selected = cg.select_body_batch(entries, refs, 50)
+        self.assertEqual(len(selected), 50)
+        self.assertEqual(selected[0]['ref'], 'ref-00')
+        self.assertEqual(selected[-1]['ref'], 'ref-49')
+        deferred = [entry for entry in entries if entry['ref'] not in {s['ref'] for s in selected}]
+        self.assertEqual(len(deferred), 10, '未选中的 10 封必须留在队列里')
+
+    def test_retry_is_selected_before_same_batch_pending(self):
+        """早期失败的项不能被同批 pending 永久挤后：retry 先选。"""
+        entries = [
+            {'ref': 'p-%02d' % i, 'status': 'pending', 'first_seen': '2026-11-24T01:56:22Z', 'attempts': 0}
+            for i in range(10)
+        ] + [
+            {'ref': 'r-%02d' % i, 'status': 'retry', 'first_seen': '2026-11-24T01:56:22Z', 'attempts': 1}
+            for i in range(3)
+        ]
+        refs = {entry['ref'] for entry in entries}
+        selected = cg.select_body_batch(entries, refs, 3)
+        self.assertEqual([entry['ref'] for entry in selected], ['r-00', 'r-01', 'r-02'])
+
+    def test_select_skips_done_expired_and_absent(self):
+        entries = [
+            {'ref': 'a', 'status': 'done', 'first_seen': '2026-11-22T00:00:00Z'},
+            {'ref': 'b', 'status': 'expired', 'first_seen': '2026-11-22T00:00:00Z'},
+            {'ref': 'c', 'status': 'retry', 'first_seen': '2026-11-22T00:00:00Z'},
+            {'ref': 'd', 'status': 'pending', 'first_seen': '2026-11-22T00:00:00Z'},
+        ]
+        selected = cg.select_body_batch(entries, {'a', 'b', 'c'}, 10)
+        self.assertEqual([entry['ref'] for entry in selected], ['c'])
+
+    def test_finalize_marks_done_and_retries_failures(self):
+        entries = [
+            {'ref': 'ok-1', 'status': 'pending', 'attempts': 0},
+            {'ref': 'empty-1', 'status': 'pending', 'attempts': 0},
+            {'ref': 'fail-1', 'status': 'pending', 'attempts': 0},
+            {'ref': 'fail-2', 'status': 'pending', 'attempts': 4},
+            {'ref': 'not-selected', 'status': 'pending', 'attempts': 0},
+        ]
+        outcomes = {
+            'ok-1': {'body_status': 'ok'},
+            'empty-1': {'body_status': 'empty'},
+            'fail-1': {'body_status': 'fetch_failed'},
+            'fail-2': {'body_status': 'fetch_failed'},
+        }
+        finalized, stats = cg.finalize_body_queue(entries, outcomes, self.NOW, 5)
+        by_ref = {entry['ref']: entry for entry in finalized}
+        self.assertEqual(by_ref['ok-1']['status'], 'done')
+        self.assertEqual(by_ref['empty-1']['status'], 'done')
+        self.assertEqual(by_ref['fail-1']['status'], 'retry')
+        self.assertEqual(by_ref['fail-1']['attempts'], 1)
+        self.assertEqual(by_ref['fail-2']['status'], 'failed')
+        self.assertEqual(by_ref['not-selected']['status'], 'pending')
+        self.assertEqual(stats, {'completed': 2, 'failed': 1, 'retry': 1})
+
+    def test_queue_stats_explains_pending(self):
+        entries = [
+            {'ref': 'p', 'status': 'pending'},
+            {'ref': 'r', 'status': 'retry'},
+            {'ref': 'f', 'status': 'failed'},
+            {'ref': 'd', 'status': 'done'},
+            {'ref': 'e', 'status': 'expired'},
+            {'ref': 'n', 'status': 'not_in_window'},
+        ]
+        stats = cg.queue_stats(entries)
+        self.assertEqual(stats['pending_count'], 3)
+        self.assertEqual(stats['retry_count'], 1)
+        self.assertEqual(stats['failed_count'], 1)
+        self.assertEqual(stats['not_in_window_count'], 1)
+        self.assertEqual(stats['total_count'], 6)
+
+    def test_load_queue_marks_corruption(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = os.path.join(tmp, 'missing.json')
+            self.assertEqual(cg.load_body_queue(missing)[1], 'created')
+            bad = os.path.join(tmp, 'bad.json')
+            with open(bad, 'w', encoding='utf-8') as fh:
+                fh.write('not json')
+            self.assertEqual(cg.load_body_queue(bad)[1], 'read_failed')
+            good = os.path.join(tmp, 'good.json')
+            with open(good, 'w', encoding='utf-8') as fh:
+                fh.write('{"entries": [{"ref": "x", "status": "pending"}]}')
+            entries, status, _ = cg.load_body_queue(good)
+            self.assertEqual(status, 'ok')
+            self.assertEqual(entries[0]['ref'], 'x')
+
+    def test_merge_keeps_only_metadata_fields(self):
+        merged = cg.merge_body_queue([], [self.candidate('m-1', body='SECRET')], self.NOW, 30)
+        entry = merged[0]
+        for forbidden in ('body', 'text', 'snippet', 'html'):
+            self.assertNotIn(forbidden, entry)
+        self.assertEqual(entry['thread_id'], 'thread-m-1')
+
+
+class BrokenConn:
+    def __init__(self, error):
+        self.error = error
+        self.closed = False
+
+    def fetch(self, seq, query):
+        raise self.error
+
+    def close(self):
+        self.closed = True
+
+
+class ConnectionRecoveryTest(unittest.TestCase):
+    """Gmail 连续 BODY.PEEK 后重置连接：重建会话并只重试当前这封一次。"""
+
+    def test_reset_is_retried_once_after_reconnect(self):
+        broken = BrokenConn(ConnectionResetError('reset by peer'))
+        fresh = FakeConn(b'hello')
+        calls = []
+
+        def reconnect():
+            calls.append(1)
+            return fresh, None
+
+        outcome, conn, used = cg.fetch_with_reconnect(broken, 7, reconnect)
+        self.assertEqual(outcome['body_status'], 'ok')
+        self.assertIs(conn, fresh)
+        self.assertEqual(used, 1)
+        self.assertTrue(broken.closed, '旧连接必须关闭，避免半开连接堆积')
+        self.assertEqual(len(calls), 1)
+
+    def test_reconnect_failure_is_recorded_not_swallowed(self):
+        broken = BrokenConn(ConnectionResetError('reset'))
+        outcome, conn, used = cg.fetch_with_reconnect(
+            broken, 7, lambda: (None, 'TimeoutError'),
+        )
+        self.assertEqual(outcome['body_status'], 'fetch_failed')
+        self.assertEqual(outcome['body_error_class'], 'reconnect_failed:TimeoutError')
+        self.assertIs(conn, broken)
+        self.assertEqual(used, 1)
+
+    def test_non_connection_error_is_not_retried(self):
+        broken = BrokenConn(ValueError('bad'))
+        calls = []
+        outcome, conn, used = cg.fetch_with_reconnect(
+            broken, 7, lambda: (calls.append(1), (FakeConn(), None))[1],
+        )
+        self.assertEqual(outcome['body_status'], 'fetch_failed')
+        self.assertEqual(outcome['body_error_class'], 'ValueError')
+        self.assertEqual(used, 0)
+        self.assertEqual(calls, [])
+
+    def test_reconnect_budget_exhausted_keeps_failure_isolated(self):
+        broken = BrokenConn(ConnectionResetError('x'))
+        outcome, conn, used = cg.fetch_with_reconnect(
+            broken, 7, lambda: (FakeConn(), None), allow_reconnect=False,
+        )
+        self.assertEqual(outcome['body_error_class'], 'ConnectionResetError')
+        self.assertEqual(used, 0)
+
+    def test_non_ok_fetch_records_status_class_without_body(self):
+        outcome = cg.fetch_body_summary(FakeConn(status='NO'), 1)
+        self.assertEqual(outcome['body_status'], 'fetch_failed')
+        self.assertEqual(outcome['body_error_class'], 'imap_no')
+        self.assertNotIn('body', outcome)
 
 
 if __name__ == '__main__':

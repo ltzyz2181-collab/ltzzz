@@ -130,3 +130,11 @@ python3 scripts/collect-gmail-imap.py             # 保留真实退出码与产�
 ## 7. 回滚
 
 本分支未合并、未部署、未启用定时；关闭 PR 即回滚。账本是新增文件，删除不影响既有日回执；`latest.json` 等产物未被本 PR 改写。
+
+## 8. 2026-11-23 对账补强
+
+- 3.4 的正文上限不再是“本轮截断就丢失”：`collect-gmail-imap.py` 维护 `mail-fullbox/body-queue.json`，按 `first_seen` FIFO 续批；`done`/`retry`/`failed`/`expired`/`not_in_window` 六态可解释。未读取的候选在 `payload.body_pending_count` 与 intake `counts.body_pending` 中保留，不得标 closed。
+- `track-gpt-rulings.mjs` 读取 `rulings-consumed-*.json`：`message_id` 精确命中才标 `consumed`，已消费回信不再进 `consume_gate`；`Re: [GPT总控派单]` 计入提问。
+- `collect-mail-backlog.mjs` 在 `agently-cli` 缺失时写 `status=blocked` + `BLOCKED_EVIDENCE`，并把上一次 `ok` 另存 `last-ok.json`；不再用旧结果冒充本轮。
+- 新增 `collect-repo-signals.mjs`（手工，不接 schedule）把 open issue/PR、失败 Actions、未决部署回执并入 intake 待办；intake job 权限仍是 `contents: write`，未改 cron/Secrets/权限。
+- 新增测试：`repo-signals.test.mjs`、`ruling-tracker.test.mjs` 的 Re:/已消费/thread_id/ENOENT 用例、`mail-intake-pipeline.test.mjs` 的 blocked/body queue/repo signals 用例、`test_gmail_imap_body.py` 的续批队列用例、`daily-ops-summary.test.mjs` 的运行回指用例。

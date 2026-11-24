@@ -126,6 +126,8 @@ function collectRulings(members) {
         at: ruling.at || ruling.replied_at || null,
         verdict: ruling.verdict || ruling.disposition || null,
         source: ruling.source || null,
+        consumed: ruling.consumed === true,
+        consumed_at: ruling.consumed_at || null,
       });
     }
   }
@@ -211,6 +213,8 @@ export function dedupeMessages(messages) {
       duplicates.push({
         ref: member.ref,
         channel: member.channel,
+        message_id: member.message_id,
+        thread_id: member.thread_id,
         duplicate_of: canonical.ref,
         matched_layer: layer,
         original_status: member.status,
@@ -230,7 +234,9 @@ export function dedupeMessages(messages) {
       ref: canonical.ref,
       channel: canonical.channel,
       message_id: canonical.message_id,
+      message_ids: [...new Set(members.map((m) => m.message_id).filter(Boolean))].sort(),
       thread_id: canonical.thread_id || members.map((m) => m.thread_id).find(Boolean) || null,
+      thread_ids: [...new Set(members.map((m) => m.thread_id).filter(Boolean))].sort(),
       task_ids: clusterTaskIds,
       status: inheritedStatus(members),
       unread: members.some((m) => m.unread),
