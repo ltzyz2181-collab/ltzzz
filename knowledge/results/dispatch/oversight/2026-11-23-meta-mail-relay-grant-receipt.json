@@ -48,11 +48,17 @@
   "states": {
     "draft": "done",
     "tested": "done",
-    "merged": "pending",
-    "deployed": "pending",
-    "submitted": "pending",
-    "platform_accepted": "pending"
+    "merged": "done: commit eb4bc8c04e0f37ec5ea89cda4451148a160d3028 → main",
+    "deployed": "done: run 45303677708 success; /health 路由已更新，/mail dry-run 200",
+    "submitted": "pending: 尚未在 Issue #601 向 Meta 公告",
+    "platform_accepted": "dry_run_accepted: /issue 与 /mail dry-run 均 200；真实邮件发送未验收"
   },
+  "deploy_receipt": "ops/deploy-receipts/DR-20261124-meta-mail-relay-01.json",
+  "ci_runs": [
+    {"run_id": 45303450352, "name": "Seat mail config verify", "conclusion": "success"},
+    {"run_id": 45303450336, "name": "Seat mail relay (any seat to any seat)", "conclusion": "success"},
+    {"run_id": 45303677708, "name": "Meta issue bridge", "conclusion": "success", "mail_dry_run": {"http": 200, "dry_run": true, "label": "mail:send", "to": "owner"}}
+  ],
   "test_evidence": {
     "command": "node --test scripts/tests/seat-mail.test.mjs scripts/tests/meta-mail-policy.test.mjs scripts/tests/meta-worker-issue-route.test.mjs scripts/tests/seat-mail-registry.test.mjs",
     "result": "29 tests, 29 pass, 0 fail",

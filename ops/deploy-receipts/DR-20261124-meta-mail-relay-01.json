@@ -1,0 +1,103 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261124-meta-mail-relay-01",
+  "target": "meta-worker-mail-relay",
+  "platform": "cloudflare-workers+github-actions",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "eb4bc8c04e0f37ec5ea89cda4451148a160d3028",
+  "code_path": "workers/meta-worker",
+  "deployed_at": "2026-11-24T01:16:02Z",
+  "deployment_status": "deployed_verified_dry_run",
+  "task_id": "META-MAIL-RELAY-GRANT-20261123",
+  "owner_instruction": "同意开 mail:send relay 限权给 Meta，不给 PAT",
+  "grant_receipt": "knowledge/results/dispatch/oversight/2026-11-23-meta-mail-relay-grant-receipt.json",
+  "harness": {
+    "command": "node scripts/harness.mjs before receipt,model_output,input_hash,external_platform",
+    "run_at": "2026-11-23T23:50:00Z",
+    "status": "retrieved_not_compliance_verified",
+    "lesson_ids": [
+      "L-20261030-002",
+      "L-20261030-003",
+      "L-20261117-006",
+      "L-20261030-001",
+      "L-20261030-004",
+      "L-20261101-001",
+      "L-20261030-007"
+    ],
+    "context_sha256": "55dfd8f98695494e3f51997e6833ee3b5f372725c79a186eb524fb1c2c708445",
+    "applied": {
+      "L-20261117-006": "本回执绑定 code_commit 与逐文件 sha256，并附 verified/blockers/next_action",
+      "L-20261030-002": "无法从证据确认的字段不填；executor 元数据与发送结果分开记录",
+      "L-20261101-001": "relay 权限测试使用注入时钟 now，分别断言允许与拒绝两侧"
+    }
+  },
+  "code_hashes": {
+    "rule": "sha256 over LF-normalized file bytes",
+    "workers/meta-worker/index.ts": "ae45d2c93275bba3aee3b437ca3f4ac8604d3b1f54967bb8afc1ace6306f933a",
+    "scripts/lib/meta-mail-policy.mjs": "aa8b5bfbcfac323c2791bc53e29f285f03e4ed4554d148b1acd8549bda190d79",
+    "scripts/tests/meta-mail-policy.test.mjs": "9548822aadf2e26fc83b5c14181a884ff25d2c5a9573a653d05da9ab134f111a",
+    "scripts/seat-mail.mjs": "e2bb8471fdfc6283f694964cd31977ee11a9583aa8e39471f03c949048c13ccf",
+    "scripts/tests/seat-mail.test.mjs": "3d5623fa3beb1f7a9bd373d5b5c7c0f0ab3e601588bd2be115a03defd1c5a818",
+    "scripts/tests/meta-worker-issue-route.test.mjs": "67a4377995ea07225fad2d0ef8c5ed83387f4304e0af5014256e5e3ca75bb164",
+    "scripts/verify-meta-issue-route.mjs": "40ae9fcab3ef1ef9f4981b495b937c19e1853aa86f77d3a73e3464d0f79ff820",
+    "config/seat-mail-registry.json": "187aefafee89f3296e1999beadabe530b0e722df3f5397d30de7d3f10b023ad2",
+    ".github/workflows/seat-config-verify.yml": "124cd6571b565c03a256595a5ec3901310be44e48c3e207c1cfffcc8b44a4375",
+    ".github/workflows/meta-issue-bridge.yml": "767dbede0388a968e866f407e3da67b442b3ff22b27ae7e40e829e3a407920e4",
+    ".github/workflows/seat-mail.yml": "6284a4470101a803a5efdcaded0cc63ce8b035ad096c2dc1e4a0eb293a880b95"
+  },
+  "ci_runs": [
+    {"run_id": 45303450352, "name": "Seat mail config verify", "conclusion": "success", "head_sha": "eb4bc8c0"},
+    {"run_id": 45303450336, "name": "Seat mail relay (any seat to any seat)", "conclusion": "success", "event": "push", "head_sha": "eb4bc8c0"}
+  ],
+  "deploy_run": {
+    "run_id": 45303677708,
+    "name": "Meta issue bridge",
+    "event": "workflow_dispatch",
+    "conclusion": "success",
+    "pre_deploy_tests": "meta-issue-policy / meta-mail-policy / meta-worker-issue-route 全部通过（步骤 Unit tests before deploy）"
+  },
+  "verified": [
+    {
+      "kind": "ci_config_tests",
+      "result": "ok",
+      "evidence": "run 45303450352 success：seat-config-verify 含新增 meta-mail-policy.test.mjs 与 seat-mail.test.mjs"
+    },
+    {
+      "kind": "ci_relay_tests",
+      "result": "ok",
+      "evidence": "run 45303450336 success：seat-mail.test.mjs 在 Ubuntu LF 检出下通过，确认本地 4 项失败仅为 CRLF 检出问题"
+    },
+    {
+      "kind": "worker_deployed",
+      "result": "ok",
+      "evidence": "run 45303677708 success，wrangler deploy -c wrangler.meta-hosted.toml 完成并安装 GITHUB_ISSUES_TOKEN"
+    },
+    {
+      "kind": "issue_route_dry_run",
+      "result": "ok",
+      "evidence": "回执 run_id=45303677708 http=200 issues_configured=true dry_run=true would_create.repo=ltzyz2181-collab/ltzzz"
+    },
+    {
+      "kind": "mail_route_dry_run",
+      "result": "ok",
+      "evidence": "同一回执 mail_dry_run={http:200,dry_run:true,label:mail:send,to:owner,error:null}；未创建卡片、未发信"
+    }
+  ],
+  "blockers": [],
+  "next_action": "在 Issue #601 向 Meta 公告 /mail 用法与上限；真实发送是否成功以 seat-mail relay 回执 [mail-sent]/status=sent/message_id 为准，不以 queued 代替。",
+  "status_layers": {
+    "draft": "completed",
+    "tested": "completed：29/29 单元测试 + CI 两处 success",
+    "merged": "completed：commit eb4bc8c04e0f37ec5ea89cda4451148a160d3028 直推 main",
+    "deployed": "completed：run 45303677708 success",
+    "submitted": "pending：尚未在 #601 向 Meta 公告",
+    "platform_accepted": "dry_run_accepted：/mail 与 /issue dry-run 均 200；真实邮件发送未验收"
+  },
+  "boundaries": {
+    "pat_to_meta": false,
+    "smtp_credential_to_meta": false,
+    "real_mail_sent_by_this_receipt": false,
+    "paid_model_calls": false,
+    "money_or_signature_actions": false
+  }
+}
