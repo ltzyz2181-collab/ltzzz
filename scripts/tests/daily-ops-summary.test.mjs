@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {
+import {buildTodoReport, 
   REQUEST_SCHEMA,
   SUMMARY_SCHEMA,
   buildEmail,
@@ -97,8 +97,8 @@ test('每日合并只汇总公开回执并生成三段式邮件', () => {
   assert.match(summary.email.subject, /完成=2/);
   assert.match(summary.email.subject, /待GPT裁决=1/);
   assert.match(summary.email.body, /一、今天完成了什么/);
-  assert.match(summary.email.body, /二、需要 GPT 裁决/);
-  assert.match(summary.email.body, /三、下一步/);
+  assert.match(summary.email.body, /三、需要 GPT 裁决/);
+  assert.match(summary.email.body, /四、下一步/);
   assert.match(summary.email.body, /ASK B2：请裁决签名边界与范围/);
   assert.doesNotMatch(summary.email.body, /password|app_password|authorization/i);
 });
@@ -255,4 +255,40 @@ test('ASK 行只从公开输出提取，限制长度并忽略非 ASK 文本', ()
   ]);
   assert.equal(extractAsks([{text: 'ROUTE | X | needs_gpt_decision'}]).length, 0);
   assert.equal(buildEmail({date: '2026-11-19', counts: {done: 0, needs_gpt_decision: 0, blocked: 0}, done: [], needs_gpt_decision: [], next_steps: [], mail: {gmail_rulings: {}}, dispatch: {card_count: 0}}).body.includes('今天没有新的 Deep 终态回执'), true);
+});
+
+test('待办区把超 24h 未回和已回未消费列出来，不只给计数', () => {
+  const tracker = {
+    counts: {threads: 43, answered: 25, pending_no_reply: 18, answered_but_unread: 1, pending_over_24h: 2},
+    alerts: [
+      {kind: 'no_reply_over_24h', thread: 'subject:短等待', waiting_hours: 25.5},
+      {kind: 'no_reply_over_24h', thread: 'subject:长等待', waiting_hours: 161.2},
+      {kind: 'other', thread: 'subject:忽略我', waiting_hours: 999},
+    ],
+    consume_gate: [{thread: 'task:DEEP-01', note: '裁决已到但未读'}],
+  };
+  const todo = buildTodoReport(tracker);
+  assert.equal(todo.available, true);
+  assert.equal(todo.over24h, 2);
+  assert.equal(todo.consumeGate, 1);
+  assert.equal(todo.top[0].thread, 'subject:长等待', '按等待时长降序');
+  assert.equal(todo.top.length, 2, '非 no_reply_over_24h 的告警不计入待办');
+});
+
+test('裁决追踪缺失时写 unknown，不写成“没有待回”', () => {
+  const todo = buildTodoReport(null);
+  assert.equal(todo.available, false);
+  const summary = buildSummary({date: '2026-11-19', evidence: evidence({rulingTracker: null})});
+  assert.match(summary.email.body, /二、今日必须回（待办）/);
+  assert.match(summary.email.body, /记为 unknown/);
+});
+
+test('待办会进入邮件正文并按等待时长列出', () => {
+  const summary = buildSummary({date: '2026-11-19', evidence: evidence({
+    rulingTracker: {counts: {threads: 43, answered: 25, pending_no_reply: 18, answered_but_unread: 1, pending_over_24h: 1},
+      alerts: [{kind: 'no_reply_over_24h', thread: 'subject:老线程', waiting_hours: 161.2}], consume_gate: []},
+  })});
+  assert.equal(summary.counts.todo_over_24h, 1);
+  assert.match(summary.email.body, /等待 161h｜subject:老线程/);
+  assert.match(summary.email.body, /有 1 条裁决请求超过 24h 无回信/);
 });
