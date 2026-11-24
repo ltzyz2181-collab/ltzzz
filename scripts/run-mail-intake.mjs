@@ -362,7 +362,9 @@ export function buildIntake({
   const ciHost = env?.GITHUB_ACTIONS === 'true';
   const ciSessionProvided = Boolean(String(env?.AGENTLY_CLI_SESSION ?? '').trim());
   const agentDeferred = ciHost && !ciSessionProvided && !backlogOk;
-  const trackerDeferred = ciHost && !ciSessionProvided && !trackerOk;
+  // 裁决跟踪与 Agent Mail 共用同一份邮箱凭据：只有前者本身被延后时，后者才随之延后。
+  // Agent Mail 已跑通、仅 tracker 读不到时，那是真故障，必须照旧判 partial。
+  const trackerDeferred = agentDeferred && !trackerOk;
   const deferredChannels = [agentDeferred ? 'agent_mail' : null, trackerDeferred ? 'ruling_tracker' : null].filter(Boolean);
   const deferredReason = 'deferred by deployment split: mailbox credential stays on the cloud-host seat, CI is repository-side observer only';
   // 未配置的 QQ 通道整条不参与推导：既不算成功，也不算失败。
