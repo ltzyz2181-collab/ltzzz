@@ -1,0 +1,74 @@
+name: Relay issue run (self-serve relay adjudication)
+
+# 任何席位开一张带 `relay:run` + `seat:relay_gpt|seat:relay_claude` 标签的 Issue，
+# 由本工作流在 GitHub 网络上代跑中转调用，并把判词回贴到原 Issue。
+# 这样请求方所在网络解析不了 relay-proxy 时，中转席位仍然可用。
+# 本工作流只做文本判断：资金/退款终态/签名/私钥/钱包不在中转权限内。
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: '带请求正文的 Issue 编号'
+        required: true
+      model:
+        description: 'allowlisted 模型覆盖（可空，默认 gpt-6.1-sol）'
+        required: false
+        default: ''
+      max_tokens:
+        description: '输出上限（可空）'
+        required: false
+        default: ''
+      requested_agent:
+        description: 'relay_gpt 或 relay_claude（可空，默认按标签）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: relay-issue-${{ github.event.issue.number || inputs.issue }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'relay:run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue }}
+      MODEL: ${{ inputs.model }}
+      MAX_TOKENS: ${{ inputs.max_tokens }}
+      REQUESTED_AGENT: ${{ inputs.requested_agent }}
+      LTZZZ_RELAY_TRANSPORT: direct
+      APISROUTER_API_KEY: ${{ secrets.RELAY_STATION_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Contract tests before any paid call
+        run: |
+          node --check scripts/relay-issue-run.mjs
+          node --test scripts/tests/relay-issue-run.test.mjs scripts/tests/relay-transport.test.mjs
+      - name: Ask the relay seat
+        run: node scripts/relay-issue-run.mjs
+      - name: Commit evidence even when the call fails
+        if: always()
+        run: |
+          git config user.name ltzzz-bot
+          git config user.email bot@ltzzz.com
+          git add knowledge/results/relay-seat 2>/dev/null || true
+          if git diff --staged --quiet; then echo "no_evidence"; exit 0; fi
+          git commit -m "chore(relay): issue ${ISSUE_NUMBER} evidence $(date -u +%Y-%m-%dT%H:%MZ)"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 5
+          done
+          exit 1
