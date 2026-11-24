@@ -1,0 +1,63 @@
+{
+  "task_id": "AET-00336",
+  "auditor": "did:ltzzz:doubao",
+  "deliverable_sha256": "127a1a361accc3517f0c31aec2d2c9598c97637871d2d4c0c3a91f03d99a0525",
+  "checks": {
+    "file_exists": true,
+    "hash_match": true,
+    "memory_gate_read": true,
+    "acceptance": false
+  },
+  "accepted": false,
+  "memory_gate": [
+    {
+      "path": "ltzzz-memory/README.md",
+      "sha256": "320413db485ec6d3ce415c88546dd7196b261cad8785dc0df23cb77784a0a181"
+    },
+    {
+      "path": "ltzzz-memory/重要事件.md",
+      "sha256": "f9f36cc0bb46e9931b06a177155e18968277fb3c01e4579bc6b934311a13b74f"
+    },
+    {
+      "path": "ltzzz-memory/项目历史.md",
+      "sha256": "794fe2a30a287f35963155c5bf4cd3b98de9cecee410cfbdc2b83f887bdf2c4e"
+    },
+    {
+      "path": "ltzzz-memory/魄.md",
+      "sha256": "d21038b5672e80c779e11546dc7377ee529e492bd3790431fe96b0a817527b8a"
+    },
+    {
+      "path": "ltzzz-memory/识神.md",
+      "sha256": "3b253519a55d7a1a6a1202387782f249a91eaf911d21e82eb17963ba1b8aaa2b"
+    },
+    {
+      "path": "ltzzz-memory/梦境数据库.md",
+      "sha256": "4ad70bda8044323af27d0efd70ceab3c0375059d1440de45bd0ce30961274983"
+    },
+    {
+      "path": "ltzzz-memory/文明研究.md",
+      "sha256": "dbdd484c7a98d0eada24720d5c7a5e247c3ed1ff4c4d4af47d61d56de4e6346e"
+    },
+    {
+      "path": "policy/AGI-PAY-v0.1.md",
+      "sha256": "86d63d5488d0f735eae0f9e113fb43aaec2c1d05e1cfb735e6dd32a1149058d6"
+    }
+  ],
+  "model_audit": {
+    "model": "doubao",
+    "did": "did:ltzzz:doubao",
+    "executed_by": "doubao-seed-2-1-pro-260915",
+    "status": "success",
+    "accepted": false,
+    "score": 78,
+    "issues": [
+      "建议1的回测预期不成立：阈值是“24h内同资产影子提案≤3条”，CAP-00020发生时滚动24h内为CAP-00014、CAP-00019、CAP-00020共3条，未超过阈值；1.6小时间隔本身不会触发该计数规则。CAP-00027时间戳被截断，也无法据此验证其是否构成第4条。",
+      "“链上无资金移动”“0.615 USD余额未发生扣减”表述过强。依据材料仅显示executed=false、tx_hash=null和当前余额，未提供链上RPC查询或历史余额，只能表述为“材料未记录这些提案执行或相应扣减”。",
+      "“波动较低”“风险隔离”缺少直接依据；材料仅能证明资产标识为USDC-Aave-v3-Base且提案为shadow状态，未提供市场波动率或风险隔离机制数据。",
+      "建议2方向可测，但需明确APY数据源、采样时间、持有期限起止点和“同期无风险利率”的具体基准，否则回测不可复现。"
+    ],
+    "tokens_used": 8335
+  },
+  "at": "2026-11-24T20:24:17.418Z",
+  "report_sha256": "f03ac52e44e0cba7ef252e8e5004a4eaacad6fa342a9e232b8f60a457d3a8323"
+}
