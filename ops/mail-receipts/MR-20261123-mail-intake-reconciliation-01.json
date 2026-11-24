@@ -327,10 +327,28 @@
   "pr_url": "https://github.com/ltzyz2181-collab/ltzzz/pull/622",
   "base_commit_sha": "51de5b9783e8769a2464ff71837558fe7513e602",
   "implementation_commit_sha": "2d292c0f644f3b20db9be414c9675e13e90651c5",
-  "receipt_commit_sha": null,
-  "ci_run_id": null,
-  "ci_run_url": null,
-  "state": "pr_open_unmerged_ci_pending",
-  "note": "本回执由第二个提交写入，因此无法自指 receipt_commit_sha；PR head commit 见 PR #622。CI 结果在 PR 描述/评论中更新，本文件不伪造 run ID。"
+  "receipt_commit_sha": "3cc84cb86cdd3067796b08784850e6f54a7b675c",
+  "ci_run_id": 45312085400,
+  "ci_run_url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/45312085400",
+  "ci_head_sha": "3cc84cb86cdd3067796b08784850e6f54a7b675c",
+  "ci_state": "success",
+  "ci_contract_job": {
+   "id": 138170027352,
+   "conclusion": "success",
+   "steps": ["checkout", "setup-node", "Unit tests", "Python BODY.PEEK tests", "Correction ledger verify", "Credential check fails closed"]
+  },
+  "ci_intake_job": "skipped（PR 事件按设计只跑 contract，不连邮箱、不读 secrets）",
+  "ci_artifacts": 0,
+  "ci_other_runs": [
+   {"name": "PatchGate A1 shadow observer", "id": 45312082478, "conclusion": "success"},
+   {"name": "PatchGate A2 trusted base checks", "id": 45312082860, "conclusion": "success"},
+   {"name": "Small payment policy offline validation", "id": 45312085342, "conclusion": "success"},
+   {"name": "Seat mail config verify", "id": 45312085345, "conclusion": "success"},
+   {"name": "Daily ops merge and report mail", "id": 45312085426, "conclusion": "success"},
+   {"name": "Daily Pulse lineage regression", "id": 45312085496, "conclusion": "success"},
+   {"name": "Workpool deterministic checks and claims", "id": 45312082538, "conclusion": "skipped"}
+  ],
+  "state": "pr_open_unmerged_ci_success",
+  "note": "CI 结果对应 PR head 3cc84cb8（回执提交）；本文件的第三次提交只把该结果写回回执，head 会前移并重跑同一 contract 测试，结果写入 PR 描述。workflow 不上传 artifact，故无 CI artifact 哈希。"
  }
 }
