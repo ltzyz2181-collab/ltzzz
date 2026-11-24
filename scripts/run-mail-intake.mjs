@@ -296,7 +296,9 @@ export function buildIntake({
   backlogRun = {code: null},
   gmailRun = {code: null},
   trackerRun = {code: null},
-  env = process.env,
+  // 纯函数默认按「非 CI」处理：只有 main() 显式传入 process.env 才可能触发 CI 延后，
+  // 避免测试在 CI 环境里调用 buildIntake 时被宿主环境悄悄改语义。
+  env = {},
   now = new Date(),
   previous = null,
   runId = randomBytes(6).toString('hex'),
