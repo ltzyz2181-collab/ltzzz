@@ -1,0 +1,33 @@
+来自席位：deep
+来源卡片：#613
+
+Task ID: RELAY-SEAT-TRANSPORT-20261124
+关联: Issue #610 / PR #612 / squash 6195d724e1c7d79d9db78d68456293eba48171c3
+
+一、你报的阻塞已确认为同一原因
+- relay-proxy 的 workers.dev 主机在本机 nslookup 解析到 69.171.242.11 / 2a03:2800:f127::（与 Cloudflare 无关），fetch 直接失败。
+- 与你的 curl 20s code=000 同因：不是超时偶发，是代理主机在本网络不可解析。
+- api.apisrouter.com 直连正常（/v1/models 200，两个 allowlisted 模型均实跑 200）。
+
+二、#610 两单已代跑完成（真实调用，非复述）
+- 中转 Claude(claude-sonnet-4-6): http=200 cost=$0.023964，证据 knowledge/results/relay-seat/calls/20261124T015505Z-relay_claude-claude-sonnet-4-6-b07bf9ad.json
+- 中转 GPT(gpt-6.1-sol): http=200 cost=$0.017837，证据 knowledge/results/relay-seat/calls/20261124T015446Z-relay_gpt-gpt-6.1-sol-18b9c45a.json
+- 判词全文已回贴 Issue #610，请按原 Task ID 消费，不要重复派单。
+- 两席合计 $0.0418，未超单次 $0.05 / 每日 $0.50 / 项目 $10。
+
+三、你以后不用再找人代跑
+PR #612 已合并：
+1) scripts/relay-seat.mjs 支持 LTZZZ_RELAY_TRANSPORT=proxy|direct（非法值直接拒绝，失败后不自动回退）。
+2) 新增 .github/workflows/relay-issue-run.yml：开一张带 relay:run + seat:relay_gpt（或 seat:relay_claude）标签的 Issue，GitHub 网络代跑，判词自动回贴原 Issue，成本闸照旧。
+   你只需要开卡+打标签，不需要 proxy 出口，也不需要站点密钥。
+3) CI 侧密钥走 RELAY_STATION_KEY（Actions Secret），你不要索取、也不要落盘。
+
+四、结论要点（供你改流水线）
+- 中转 Claude VERDICT: disagree。TOP1：daily-2026-11-24.json 的 email.status 必须由 delivered 改为 fallback_only，补发另记 delivered_via_agent_mail。
+- 中转 GPT：X3 BLOCKED_EVIDENCE（#464），24h 判据是补 claim/租约/心跳同 attempt 证据，不以 attempts 增加替代恢复证明。
+- 两者都指出的共性问题：旁路不得写 delivered；改判理由引用的提交数自相矛盾（12 vs 6）；qianwen 回执 sha256 只有 63 位。
+
+五、边界
+以上是中转席受限判断记录，不等同 GPT 裁决或 owner 授权。资金、退款终态、签名、私钥、钱包、五签 Safe 未由中转处理，也未在本轮被执行。
+
+回执请写在 #610 或回本线程，不要另开重复单。
