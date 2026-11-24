@@ -146,12 +146,38 @@ export function collectEvidence(root = REPO_ROOT, date) {
   }));
   const intake = readJson(root, 'knowledge/results/deep-superagent/mail-intake/latest.json', null);
   const oversight = readJson(root, 'knowledge/results/dispatch/oversight/latest.json', null);
+  const rulingTracker = readJson(root, 'knowledge/results/deep-superagent/ruling-tracker/latest.json', null);
   const tasksDir = path.join(root, 'ops/deep-superagent/tasks');
   const stamp = String(date).replaceAll('-', '');
   const cardsToday = fs.existsSync(tasksDir)
     ? fs.readdirSync(tasksDir).filter((name) => new RegExp(`^DEEP-SUPERAGENT-${stamp}-`).test(name)).sort()
     : [];
-  return {queueReports, dailyReports, intake, oversight, cardsToday};
+  return {queueReports, dailyReports, intake, oversight, cardsToday, rulingTracker};
+}
+
+// 把裁决追踪里“发出去了但对方没回”的线程变成可执行待办，而不是只留计数。
+// 只读 latest.json 的脱敏字段；不含正文、不含地址、不含凭据。
+export function buildTodoReport(tracker, {limit = 12} = {}) {
+  if (!tracker || typeof tracker !== 'object' || !tracker.counts) {
+    return {available: false, counts: null, over24h: 0, consumeGate: 0, top: [], consume: []};
+  }
+  const alerts = Array.isArray(tracker.alerts) ? tracker.alerts : [];
+  const consumeGate = Array.isArray(tracker.consume_gate) ? tracker.consume_gate : [];
+  const over24 = alerts
+    .filter((item) => item && item.kind === 'no_reply_over_24h')
+    .map((item) => ({thread: short(item.thread, 90), waiting_hours: Number(item.waiting_hours) || 0}))
+    .sort((left, right) => right.waiting_hours - left.waiting_hours);
+  return {
+    available: true,
+    counts: tracker.counts,
+    over24h: Number(tracker.counts.pending_over_24h) || over24.length,
+    consumeGate: Number(tracker.counts.answered_but_unread) || consumeGate.length,
+    top: over24.slice(0, limit),
+    consume: consumeGate.slice(0, limit).map((item) => ({
+      thread: plain(item.thread, 90),
+      note: short(item.note, 80),
+    })),
+  };
 }
 
 export function buildSummary({date, now = new Date(), evidence}) {
@@ -238,6 +264,9 @@ export function buildSummary({date, now = new Date(), evidence}) {
   if (needsGpt.length) nextSteps.push(`已生成 ${needsGpt.length} 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。`);
   if (needsOwner.length) nextSteps.push(`有 ${needsOwner.length} 条需要 owner 给值或拍板；未拍板前保持原状态。`);
   if (blocked.length) nextSteps.push(`有 ${blocked.length} 条 blocked/unknown：先补原始凭证或换通道，不原样重试。`);
+  const todo = buildTodoReport(evidence.rulingTracker);
+  if (todo.available && todo.over24h > 0) nextSteps.push(`有 ${todo.over24h} 条裁决请求超过 24h 无回信：按席位点名催办或改派，不要重复发同类请求。`);
+  if (todo.available && todo.consumeGate > 0) nextSteps.push(`有 ${todo.consumeGate} 条裁决已到但未消费：当天读正文并写 awaiting_decision，不得当作未裁决重发。`);
   nextSteps.push('本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。');
 
   const summary = {
@@ -255,17 +284,21 @@ export function buildSummary({date, now = new Date(), evidence}) {
       note: evidence.cardsToday.length ? '政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权' : null,
     },
     mail,
+    todo,
     counts: {
       done: done.length + dailyDone.length,
       needs_gpt_decision: needsGpt.length,
       needs_owner_decision: needsOwner.length,
       blocked: blocked.length,
+      todo_over_24h: todo.over24h,
+      todo_consume_gate: todo.consumeGate,
     },
     next_steps: nextSteps,
     evidence: {
       queue_reports: evidence.queueReports.map((report) => report.path),
       daily_reports: evidence.dailyReports.map((report) => report.path),
       mail_intake: 'knowledge/results/deep-superagent/mail-intake/latest.json',
+      ruling_tracker: 'knowledge/results/deep-superagent/ruling-tracker/latest.json',
       oversight: 'knowledge/results/dispatch/oversight/latest.json',
     },
     financial_execution: false,
@@ -291,7 +324,21 @@ export function buildEmail(summary) {
   } else {
     lines.push('- 今天没有新的 Deep 终态回执。');
   }
-  lines.push('', '二、需要 GPT 裁决');
+  lines.push('', '二、今日必须回（待办）');
+  if (summary.todo?.available) {
+    const todoCounts = summary.todo.counts || {};
+    lines.push(`- 线程 ${todoCounts.threads ?? 'unknown'}：已回 ${todoCounts.answered ?? 'unknown'}，待回 ${todoCounts.pending_no_reply ?? 'unknown'}，超 24h ${todoCounts.pending_over_24h ?? 'unknown'}，已回未消费 ${todoCounts.answered_but_unread ?? 'unknown'}`);
+    if (summary.todo.top.length) {
+      lines.push(`- 超 24h 未回（按等待时长排序，最多列 ${summary.todo.top.length} 条）：`);
+      for (const todoItem of summary.todo.top) lines.push(`  · 等待 ${Math.round(todoItem.waiting_hours)}h｜${todoItem.thread}`);
+    } else {
+      lines.push('- 没有超 24h 未回的线程。');
+    }
+    for (const todoItem of summary.todo.consume) lines.push(`  · 已回未消费｜${todoItem.thread}（${todoItem.note}）`);
+  } else {
+    lines.push('- 裁决追踪不可用（latest.json 缺失或未生成）：记为 unknown，不要写成“没有待回”。');
+  }
+  lines.push('', '三、需要 GPT 裁决');
   if (summary.needs_gpt_decision.length) {
     for (const item of summary.needs_gpt_decision) {
       lines.push(`- ${item.task_id}（run=${item.run_id ?? 'unknown'}）：${item.reason || '见 ASK'}`);
@@ -303,11 +350,12 @@ export function buildEmail(summary) {
   } else {
     lines.push('- 今天没有需要 GPT 裁决的项。');
   }
-  lines.push('', '三、下一步');
+  lines.push('', '四、下一步');
   for (const step of summary.next_steps) lines.push(`- ${step}`);
-  lines.push('', '四、证据与边界');
+  lines.push('', '五、证据与边界');
   lines.push(`- 邮件摄入：status=${summary.mail.status}，gmail=${summary.mail.gmail_status}，agent_mail=${summary.mail.agent_mail_status}`);
   lines.push(`- 今日 Gmail 裁决类回信（仅元数据）：${summary.mail.gmail_rulings?.today_count ?? 'unknown'}`);
+  lines.push(`- 待办来源：knowledge/results/deep-superagent/ruling-tracker/latest.json（超24h=${summary.counts?.todo_over_24h ?? 'unknown'}，已回未消费=${summary.counts?.todo_consume_gate ?? 'unknown'}）`);
   lines.push(`- Deep 队列卡：${summary.dispatch.card_count} 张；合并回执：knowledge/results/deep-superagent/daily-merge/${summary.date}.json`);
   lines.push('- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。');
   return {subject, body: lines.join('\n') + '\n'};
