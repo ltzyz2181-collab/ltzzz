@@ -84,9 +84,10 @@ test('intake 只提交脱敏结果到固定路径，用 rebase 推送助手而�
   assert.ok(!/git push\s+-f/.test(source), '不得强推');
 });
 
-test('intake 只在 ok/partial/ok_deferred_channels 时落库，失败态不得覆盖上次可核验结果', () => {
-  // ok_deferred_channels：已配置通道全成功、邮箱通道按部署分工延后到云主机，允许落库。
-  assert.match(intake, /ok\|partial\|ok_deferred_channels\)/);
+test('intake 只在 ok/partial 时落库，失败态与 CI 延后快照都不得覆盖上次可核验结果', () => {
+  assert.match(intake, /ok\|partial\)/);
+  // CI 的 ok_deferred_channels 只有 Gmail 覆盖，不能覆盖云主机席位写下的全通道结果。
+  assert.match(intake, /ok_deferred_channels\) echo .*not committed/);
   assert.match(intake, /result not committed/);
 });
 
