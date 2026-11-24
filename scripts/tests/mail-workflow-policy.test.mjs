@@ -67,8 +67,10 @@ test('intake 只在定时或手动 read-only-intake 模式运行，不在 PR 运
 });
 
 test('intake 只提交脱敏结果到固定路径，用 rebase 推送助手而非强推', () => {
-  const addBlock = intake.split('git add')[1]?.split('if git diff')[0] || '';
-  const added = [...addBlock.matchAll(/(knowledge\/results\/deep-superagent\/[A-Za-z0-9._\/-]+)/g)].map((m) => m[1]);
+  // 提交步骤改成逐文件 add（缺失的 last-ok.json 不会拖垮整条 git add），
+  // 因此路径要从整个提交步骤里提取，而不是只看 git add 之后的行。
+  const commitStep = intake.split('- name: Commit redacted result')[1]?.split('if git diff')[0] || '';
+  const added = [...commitStep.matchAll(/(knowledge\/results\/deep-superagent\/[A-Za-z0-9._\/-]+)/g)].map((m) => m[1]);
   assert.ok(added.length >= 4, '必须显式列出要提交的结果文件');
   for (const file of added) {
     assert.ok(
