@@ -180,7 +180,7 @@
   }
  ],
  "corrections_count": 8,
- "writes_performed": 14,
+ "writes_performed": 16,
  "merges_performed": 0,
  "deploys_performed": 0,
  "financial_actions": 0,
@@ -412,5 +412,36 @@
   "agents_md_referenced": true,
   "at_utc": "2026-11-24T01:2xZ",
   "rule": "主通道未发即失败；seat 邮件 24h 未读进 mail_unhandled；部署任务必须发唤醒信封，2h 重发/6h 升级"
+ },
+ "relay_dispatch": {
+  "at_utc": "2026-11-24T01:35Z",
+  "seat_reopen": {
+   "from": "closed",
+   "to": "open",
+   "actor": "owner-instruction-20261124",
+   "balance_usd": null,
+   "balance_verified": false,
+   "basis": "owner 2026-11-24 指令必须分流；owner 2026-11-23 取消余额底线，余额未核验留 null",
+   "prior_close": {
+    "closed_at": "2026-11-23T20:28:35Z",
+    "closed_by": "gpt-decision-seat",
+    "reason": "gpt_decision_hold_pending_balance_reconciliation"
+   }
+  },
+  "transport_block": {
+   "probe": "curl --max-time 20 https://ltzzz-relay-proxy.ltzyz2181.workers.dev",
+   "result": "code=000 timeout，两个 workers.dev 域名同样超时，DNS 返回 IPv6",
+   "direct_key": "无 .secrets-local/apisrouter-key.txt，直连站点路径不可用"
+  },
+  "calls_attempted": 2,
+  "calls_billed": 0,
+  "cost_usd": 0,
+  "fallback": {
+   "github_issue": "610",
+   "mail_message_id": "msg_Cz7JR6ilwUEEVKGqMSSE3VJQkKd9CTPM61BC_uACz0lAsw",
+   "to": "306122054@qq.com"
+  },
+  "status": "dispatched_pending_geo_capable_seat",
+  "note": "不是席位拒接，也不是未派；是出口断。中转席位本身已按 owner 指令重开，未产生任何模型调用与费用"
  }
 }
