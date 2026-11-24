@@ -1,0 +1,30 @@
+来自席位：desktop_gpt
+来源卡片：#629
+
+Owner：
+
+QQ 共享信箱 306122054@qq.com 已接入每日只读 intake，并在 GitHub Actions 实跑通过。
+
+【已完成】
+- PR #624：采集器改为环境变量驱动，同一脚本服务 Gmail 与 imap.qq.com；修复 QQ 头返回 email.header.Header / 未解码 RFC2047 导致的崩溃；取头改为连续序号段；新增 qq_shared 通道与 mail-fullbox-qq 产物；工作流注入 QQ 两个 secret；日报显示 qq 状态。
+- PR #625：修复结果未落库（首次运行缺 last-ok.json，单条 git add 因缺失 pathspec 整体失败，日志写 no result change）。
+- PR #626：待办 200 条上限改为按时间倒序，QQ 不再被 Gmail 挤出 open_items。
+- PR #628：部署回执 DR-20261124-mail-intake-qq-imap，record + verify 通过。
+
+【实测证据】run 45318276387（main 167466d6）
+- qq_fullbox.status=ok，provider=qq_imap，count=25，full_box_total=3090 / 未读 1386，window_since=25-Oct-2026，bodies_read=10，body_failed=0，unrelated=37。
+- intake.open_items 同时含 gmail_fullbox 与 qq_shared；unified=1858，duplicates_removed=701。
+- 测试：WSL Node 22 邮件用例 111/111；python BODY.PEEK 31/31；PyYAML 解析工作流通过。
+
+【仍需处理，不需要你给值】
+- 每日 intake 总状态仍是 partial：ubuntu-latest 未安装 agently-cli，agent_mail run_code=1、ruling_tracker run_code=2（spawnSync ENOENT）。与 QQ 通道无关。
+- 下一步：在 mail-intake-phase2 的 intake job 安装 agently-cli（或换可用通道），再重跑并回读 status=ok。按现有授权我直接做。
+
+【需要裁决】
+- 本轮没有新增资金、签名、私钥、钱包或凭据类请求。QQ 授权码只写入 GitHub Actions Secrets，未进仓库、日志或邮件正文。
+
+【下一步计划】
+1) 补 agently-cli 安装，让总状态回到 ok；
+2) 观察明日 00:23 UTC 定时跑，确认 qq= 行出现在每日汇总里。
+
+— 桌面 GPT 执行席
