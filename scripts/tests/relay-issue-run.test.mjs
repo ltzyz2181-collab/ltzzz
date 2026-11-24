@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {seatRouteFromLabels, extractPrompt, buildPromptFile, SEAT_MODELS} from '../relay-issue-run.mjs';
+import {seatRouteFromLabels, extractPrompt, buildPromptFile, parseRelayOutput, SEAT_MODELS} from '../relay-issue-run.mjs';
 
 test('按标签路由到两个中转席位', () => {
   assert.equal(seatRouteFromLabels([{name: 'relay:run'}, {name: 'seat:relay_gpt'}]), 'relay_gpt');
@@ -38,4 +38,16 @@ test('提示词带边界声明且保留原正文', () => {
 
 test('未知席位直接报错，不猜模型', () => {
   assert.equal(buildPromptFile({number: 1, body: 'x'}, {seat: 'relay_other'}).error, 'relay_issue_seat_unknown');
+});
+
+test('多行 JSON 输出整段解析，不会被 "}" 误导', () => {
+  const raw = JSON.stringify({ok: true, http: 200, reply_text: 'RELAY_CHANNEL_OK'}, null, 2);
+  const parsed = parseRelayOutput(raw + '\n');
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.http, 200);
+});
+
+test('完全不可解析时返回 null，不伪造成功', () => {
+  assert.equal(parseRelayOutput(''), null);
+  assert.equal(parseRelayOutput('Segmentation fault'), null);
 });

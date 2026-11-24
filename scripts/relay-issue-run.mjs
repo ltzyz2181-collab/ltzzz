@@ -53,6 +53,16 @@ export function buildPromptFile(issue, {seat, maxChars = MAX_PROMPT_CHARS} = {})
   return {header, route, truncated, chars};
 }
 
+// relay-seat.mjs 用 pretty JSON 打印，整段解析；退化时才取最后一行，避免把 "}" 当成结果。
+export function parseRelayOutput(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { /* 继续退化 */ }
+  const last = text.split('\n').map((line) => line.trim()).filter(Boolean).at(-1);
+  if (!last) return null;
+  try { return JSON.parse(last); } catch { return null; }
+}
+
 function githubClient(token) {
   const base = 'https://api.github.com/repos/' + process.env.GITHUB_REPOSITORY;
   const headers = {Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json'};
@@ -92,9 +102,8 @@ export async function main({env = process.env, cwd = process.cwd()} = {}) {
   const profile = env.PROFILE || built.route.profile;
   const maxTokens = String(env.MAX_TOKENS || (profile === 'adjudication' ? 900 : 1500));
   const r = spawnSync(process.execPath, ['scripts/relay-seat.mjs', '--call', '--purpose', profile === 'code' ? 'code' : 'adjudication', '--profile', profile, '--model', model, '--requested-agent', seat, '--prompt-file', promptFile, '--max-tokens', maxTokens], {cwd, encoding: 'utf8', timeout: 300000, env});
-  const last = String(r.stdout || '').trim().split('\n').filter(Boolean).at(-1);
-  let call = null;
-  try { call = JSON.parse(last); } catch { call = null; }
+  const call = parseRelayOutput(r.stdout) || parseRelayOutput(r.stderr);
+  if (!call) console.error((r.stderr || r.stdout || '').slice(0, 2000));
   const lines = [
     '[relay-result] seat=' + seat + ' model=' + model + ' http=' + (call?.http ?? 'none') + ' cost_usd=' + (call?.cost_usd ?? 'none') + ' evidence=' + (call?.evidence || 'none'),
     '',
