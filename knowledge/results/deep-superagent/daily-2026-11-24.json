@@ -180,7 +180,7 @@
   }
  ],
  "corrections_count": 8,
- "writes_performed": 8,
+ "writes_performed": 11,
  "merges_performed": 0,
  "deploys_performed": 0,
  "financial_actions": 0,
@@ -257,6 +257,20 @@
    {
     "item": "确认视频流水线调度是否被停用",
     "criteria": "gh workflow list 或 runs API 能给出该 workflow 状态；若 disabled 则记入待裁决，不擅自启用"
+   },
+   {
+    "item": "按 GPT 治理派单重跑 daily-merge 分类器：三条普通 needs_gpt_decision 改用真实质量状态",
+    "evidence": "knowledge/results/deep-superagent/rulings-consumed-2026-11-24.json#0",
+    "deadline": "24h"
+   },
+   {
+    "item": "修 #608 派单领取链路（run 45251546689 skipped、attempts=0 无 claim）",
+    "evidence": "同上 #0",
+    "deadline": "24h"
+   },
+   {
+    "item": "出 #436 append-only correction receipt（source_commit 标 stale）",
+    "evidence": "同上 #1"
    }
   ],
   "later": [
@@ -300,5 +314,45 @@
   "evidence": "smtp.gmail.com:587 STARTTLS 250 accepted；IMAP INBOX UID 5794，Date Mon, 23 Nov 2026 15:02:46 -0800 (PST)",
   "message_id": null,
   "message_id_note": "未走 agently-cli，无 message_id；以 IMAP UID 5794 为回读证据"
+ },
+ "post_reauth_backfill": {
+  "at_utc": "2026-11-24T00:52:00Z",
+  "trigger": "owner 扫码重授权后补测（Agent Mail OAuth）",
+  "agent_mail_auth": {
+   "status": "ok",
+   "logged_in": true,
+   "alias": "qingqizhu6502@agent.qq.com",
+   "granted_at": "2026-11-24T00:42:37Z",
+   "access_expires_at": "2026-11-24T01:43:19Z",
+   "refresh_test": "auth refresh 成功，token bundle 重写（2026-11-24T00:43Z）"
+  },
+  "gpt_ruling_received_after_reauth": {
+   "status": "ok",
+   "received": false,
+   "days_since_last_ruling": 1,
+   "note": "今日无新裁决回信；最近一封 2026-11-23（治理对齐派单）"
+  },
+  "ruling_tracker_after_reauth": {
+   "status": "ok",
+   "run_code": 0,
+   "counts": {
+    "threads": 43,
+    "answered": 25,
+    "pending_no_reply": 18,
+    "answered_but_unread": 3,
+    "pending_over_24h": 17
+   }
+  },
+  "rulings_consumed": {
+   "path": "knowledge/results/deep-superagent/rulings-consumed-2026-11-24.json",
+   "count": 3,
+   "ids": [
+    "LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01",
+    "DEEP-SUPERAGENT-20261118-BACKLOG-2",
+    "LTZZZ-DEEP-EXECUTOR-BOOTSTRAP-20261119-01"
+   ]
+  },
+  "retained_original_fields": true,
+  "note": "原 gpt_ruling_received/ruling_tracker 的 unknown 值保留不改，本块为授权恢复后的同源补测证据"
  }
 }

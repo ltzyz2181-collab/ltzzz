@@ -1,0 +1,73 @@
+{
+ "schema": "ltzzz.deep-superagent.rulings-consumed.v1",
+ "date": "2026-11-24",
+ "consumed_at_utc": "2026-11-24T00:52:00Z",
+ "note": "Agent Mail 重授权后首次可读；正文只读不落盘，仅记录脱敏字段（无金额、无凭据、无正文）",
+ "source": {
+  "channel": "agent_mail",
+  "inbox_scan_limit": 50,
+  "tracker_run_code": 0,
+  "tracker_counts": {
+   "threads": 43,
+   "answered": 25,
+   "pending_no_reply": 18,
+   "answered_but_unread": 3,
+   "pending_over_24h": 17
+  }
+ },
+ "items": [
+  {
+   "message_id": "msg_HXrMAeNUvJGZECj-ua3yLNcRmUrgNLyevhYNlgsyIbZvEg",
+   "received_at": "2026-11-23T20:29:08Z",
+   "kind": "gpt_dispatch",
+   "subject_short": "GPT总控定向派单｜每日治理对齐",
+   "task_id": "LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01",
+   "decision_id": null,
+   "verdict": "directive_effective_no_gpt_pass_required",
+   "scope": "修正把普通工程/凭据配置/工作流权限误升级为 GPT 前置裁决的旧门槛；仅五类保留事项可产 NEEDS_GPT_DECISION；修复 #608 派单领取",
+   "constraints": "不改资金/退款/签名/私钥/钱包策略；不建重复任务卡；不打印 secret",
+   "deadline": "24h 内回 claim/lease 与修复方案",
+   "issue": "608",
+   "consumed": true,
+   "action_for_deep": "下一工作日按此重跑 daily-merge 分类器并修 #608 claim 链路"
+  },
+  {
+   "message_id": "msg_42JRcc6Hks39gyLTrInMVoOmZGhPp_OE5GNSxCzYEW45nQ",
+   "received_at": "2026-11-22T20:58:13Z",
+   "kind": "gpt_correction",
+   "subject_short": "BACKLOG-2｜#436 当前证据修正",
+   "task_id": "DEEP-SUPERAGENT-20261118-BACKLOG-2",
+   "decision_id": "GPT-DECISION-20261118-DEEP-BACKLOG-ROUTE-01",
+   "verdict": "correction_baseline_reset",
+   "scope": "以 main HEAD c1d526beadfa 为纠正基线；oversight/latest.json 的 source_commit 属 stale，不得当主账统计；只新增一份 append-only correction receipt（B1–B7）",
+   "constraints": "model_calls=0；不重放 outcome_unknown；不改历史文件",
+   "issue": "436",
+   "consumed": true,
+   "action_for_deep": "出 #436 correction receipt，标明 source_commit 与 stale 关系"
+  },
+  {
+   "message_id": "msg_uAlGqQbagIxdIj8WQ54DHCcX1XN93LAbSz5qKT4svTGYPw",
+   "received_at": "2026-11-19T09:51:32Z",
+   "kind": "owner_direct_delegation",
+   "subject_short": "Deep 执行器能力安装与部署",
+   "task_id": "LTZZZ-DEEP-EXECUTOR-BOOTSTRAP-20261119-01",
+   "decision_id": "OWNER-DIRECT-20261119-DEEP-EXECUTOR-DELEGATION",
+   "verdict": "delegation_effective",
+   "scope": "普通工程的分流/改码/测试/PR/合并/标准部署不等 GPT 逐项 PASS；须落到真实执行器（Issue 领取、仓库读写、CI 绿后自动合并部署、部署回读、项目邮件收发、端到端验收）",
+   "constraints": "不授权资金/支付/退款/钱包签名/五签/根密钥；不得改 external_submissions_enabled 冒充代码能力",
+   "issue": "464",
+   "consumed": true,
+   "status_note": "#464 在 2026-11-23 Task Hub 快照中仍 lease_expired/attempts=62、无 claim，属未执行状态，不等于已完成"
+  }
+ ],
+ "counts": {
+  "consumed": 3,
+  "unread_remaining_from_decider": 4,
+  "unread_remaining_note": "剩余 4 封为历史答复（11-08/11-07 两封 PROVIDER-MODEL 线程 + 2 封 Agent Mail 接入通知），不属本轮裁决消费范围"
+ },
+ "redaction": {
+  "bodies_persisted": false,
+  "amounts_persisted": false,
+  "credentials_persisted": false
+ }
+}
