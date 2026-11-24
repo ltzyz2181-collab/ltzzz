@@ -1,6 +1,6 @@
 // CI 策略测试：邮件摄入工作流分两个 job，权限互不借用。
 // - contract：仅仓库内契约测试，不读 secrets、不写仓库（PR 默认跑这个）。
-// - intake：每日只读采集，只允许用两个 Gmail secrets，只允许提交脱敏结果到固定路径。
+// - intake：每日只读采集，只允许用 Gmail 与 QQ 两组 IMAP secrets，只允许提交脱敏结果到固定路径。
 // 依据：GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二、§六，以及
 // docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md。
 import test from 'node:test';
@@ -40,10 +40,12 @@ test('contract job 只读仓库，不读取任何 secret', () => {
   assert.ok(!/GMAIL_IMAP_APP_PASSWORD/.test(contract), 'contract job 不得注入邮箱密码');
 });
 
-test('intake job 只允许两个 Gmail secret，并显式声明写权限', () => {
+test('intake job 只允许四个邮箱 secret，并显式声明写权限', () => {
   assert.match(intake, /permissions:\s*\{contents:\s*write\}/);
   const names = [...intake.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
-  assert.deepEqual([...new Set(names)].sort(), ['GMAIL_IMAP_APP_PASSWORD', 'GMAIL_IMAP_USER']);
+  assert.deepEqual([...new Set(names)].sort(), [
+    'GMAIL_IMAP_APP_PASSWORD', 'GMAIL_IMAP_USER', 'QQ_IMAP_PASSWORD', 'QQ_IMAP_USER',
+  ]);
 });
 
 test('intake job 不得把凭据写进日志或文件', () => {
@@ -127,6 +129,12 @@ test('工作流能被真正的 YAML 解析器读通', (t) => {
     ['-c', 'import sys,yaml;d=yaml.safe_load(open(sys.argv[1]));assert isinstance(d.get("jobs"),dict) and d["jobs"]', WORKFLOW],
     {encoding: 'utf8'},
   );
+  // Windows 的 python3 是 Store 别名：探测可能返回 0，真正执行却 9009。
+  // 只在本机跳过，CI（Linux）仍要求真实解析通过。
+  if (parsed.error || parsed.status === 9009) {
+    t.skip('本机 python3 是 Windows Store 别名（9009），跳过真实解析校验');
+    return;
+  }
   assert.equal(parsed.status, 0, `YAML 解析失败：\n${parsed.stderr || ''}`);
 });
 

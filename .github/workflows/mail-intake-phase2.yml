@@ -1,8 +1,10 @@
 name: Mail intake phase 2
 # 两个独立 job：
 # - contract：仅仓库内契约测试，不连邮箱、不读 secrets、不写仓库；PR 与手动默认跑这个。
-# - intake：每日只读采集，只用 GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD 两个 secrets，
-#   把脱敏后的 latest.json 等结果提交回 main。缺 secrets 时 fail-closed，不读邮箱。
+# - intake：每日只读采集，覆盖 Gmail 全箱（GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD）
+#   与 QQ 共享项目信箱 306122054@qq.com（QQ_IMAP_USER / QQ_IMAP_PASSWORD），
+#   把脱敏后的 latest.json 等结果提交回 main。Gmail 缺 secrets 时 fail-closed；
+#   QQ 缺 secrets 只记 not_configured 并 warn，不阻断其他通道。
 # 依据：GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二、§六（部署席负责定时触发/并发锁/失败告警）。
 # 最小证据集与回退方案：docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md
 on:
@@ -87,6 +89,8 @@ jobs:
     env:
       GMAIL_IMAP_USER: ${{ secrets.GMAIL_IMAP_USER }}
       GMAIL_IMAP_APP_PASSWORD: ${{ secrets.GMAIL_IMAP_APP_PASSWORD }}
+      QQ_IMAP_USER: ${{ secrets.QQ_IMAP_USER }}
+      QQ_IMAP_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD }}
       LTZZZ_ROOT: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +106,15 @@ jobs:
           fi
           node scripts/check-gmail-credentials.mjs --json
 
-      - name: Read-only intake (Gmail IMAP + existing channels)
+      - name: QQ channel is optional (warn when secrets are absent)
+        run: |
+          if [ -z "${QQ_IMAP_USER:-}" ] || [ -z "${QQ_IMAP_PASSWORD:-}" ]; then
+            echo "::warning::QQ_IMAP_USER / QQ_IMAP_PASSWORD absent; QQ recorded as not_configured, other channels continue."
+          else
+            echo "QQ IMAP configured (read-only)."
+          fi
+
+      - name: Read-only intake (Gmail + QQ IMAP + existing channels)
         run: |
           set +e
           node scripts/run-mail-intake.mjs
@@ -124,6 +136,7 @@ jobs:
             const p = JSON.parse(fs.readFileSync(file, 'utf8'));
             rows.push(`status=${p.status}`);
             rows.push(`gmail=${p.gmail_fullbox?.status ?? 'unknown'}`);
+            rows.push(`qq=${p.qq_fullbox?.status ?? 'unknown'} qq_count=${p.qq_fullbox?.count ?? 0} qq_skipped=${p.qq_fullbox?.skipped ?? 'n/a'}`);
             rows.push(`agent_mail=${p.agent_mail?.status ?? 'unknown'}`);
             rows.push(`counts=${JSON.stringify(p.counts ?? {})}`);
             rows.push(`window=${p.gmail_fullbox?.window_since ?? 'n/a'} truncated=${p.gmail_fullbox?.window_truncated ?? 'n/a'}`);
@@ -151,6 +164,8 @@ jobs:
             knowledge/results/deep-superagent/mail-intake/runs.jsonl \
             knowledge/results/deep-superagent/mail-fullbox/latest.json \
             knowledge/results/deep-superagent/mail-fullbox/last-ok.json \
+            knowledge/results/deep-superagent/mail-fullbox-qq/latest.json \
+            knowledge/results/deep-superagent/mail-fullbox-qq/last-ok.json \
             knowledge/results/deep-superagent/mail-backlog/latest.json \
             knowledge/results/deep-superagent/ruling-tracker/latest.json 2>/dev/null || true
           if git diff --cached --quiet; then
@@ -167,6 +182,7 @@ jobs:
           path: |
             knowledge/results/deep-superagent/mail-intake/
             knowledge/results/deep-superagent/mail-fullbox/
+            knowledge/results/deep-superagent/mail-fullbox-qq/
             knowledge/results/deep-superagent/mail-backlog/latest.json
             knowledge/results/deep-superagent/ruling-tracker/latest.json
           if-no-files-found: ignore
@@ -175,7 +191,7 @@ jobs:
       - name: Warn when a channel failed (partial)
         if: env.INTAKE_EXIT == '2'
         run: |
-          echo "::warning::Mail intake partial: at least one channel failed; Gmail status is recorded in latest.json."
+          echo "::warning::Mail intake partial: at least one channel failed; Gmail and QQ statuses are recorded in latest.json."
 
       - name: Alarm when the run failed
         if: env.INTAKE_EXIT != '0' && env.INTAKE_EXIT != '2'

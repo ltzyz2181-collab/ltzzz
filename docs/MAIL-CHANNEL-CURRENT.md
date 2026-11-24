@@ -79,11 +79,27 @@
   任何非 ok 结果写盘前会把上一次 ok 另存 `last-ok.json`，避免把可核验结果覆盖成废态。
 - 已知限制：单次约 2.5 分钟（1400 封量级），偶发云主机到 993 的 TCP 握手超时（重试可过）。
 
+### 6.1 QQ 共享项目信箱 306122054@qq.com（2026-11-24 接入 intake）
+
+- 脚本：同一个 `scripts/collect-gmail-imap.py`，只靠环境变量切换通道：
+  `MAIL_IMAP_HOST_OVERRIDE=imap.qq.com`、`MAIL_PROVIDER=qq_imap`、
+  `MAIL_IMAP_USER` / `MAIL_IMAP_PASSWORD`、`MAIL_FULLBOX_OUT_DIR=knowledge/results/deep-superagent/mail-fullbox-qq`。
+- 凭据：CI 用仓库 secrets `QQ_IMAP_USER` / `QQ_IMAP_PASSWORD`；本机可取 `~/.config/ltzzz/qq-mail.env`（600）。
+- 隐私与脱敏规则与 Gmail 完全一致：只落 `ref`、日期、发件域、短标题、标题哈希、未读标记；
+  正文只在命中项目规则时用 `BODY.PEEK` 读取派生字段，正文不落盘。
+- 兼容修正：QQ 返回 `email.header.Header` 或未解码的 RFC2047 串，统一走 `as_text()`；
+  不统一会在 `.strip()`/`re.search()` 上抛 `AttributeError`，让整次采集崩溃。
+- 取头修正：QQ 命中稀疏（30 天约 63 封），旧实现按首尾序号区间 FETCH 会把窗口外邮件头也拉进来；
+  现按连续序号段取，取到的集合与 SEARCH 结果严格一致。
+- 可选通道语义：缺 `QQ_IMAP_*` 时 `qq_fullbox.status=not_configured`、`skipped=true`，不拖累其他通道；
+  一旦配置，登录或采集失败与 Gmail 同等计入 `partial`。
+
 ## 7. 每日流水线的唯一入口
 
-- 命令：`node scripts/run-mail-intake.mjs`（先 Agent Mail，再 Gmail 全箱，最后合并）。
+- 命令：`node scripts/run-mail-intake.mjs`（先 Agent Mail，再 Gmail 全箱、QQ 共享信箱，最后合并）。
 - 产物：`knowledge/results/deep-superagent/mail-intake/latest.json`（`schema=ltzzz.mail-intake.v1`）。
-- 语义：`status` 只由两条通道的真实结果推导（ok / partial / failed）；任一通道失败都不许写成读过。
+- 通道产物：Gmail `mail-fullbox/latest.json`，QQ `mail-fullbox-qq/latest.json`（同 schema）。
+- 语义：`status` 只由已配置通道的真实结果推导（ok / partial / failed）；任一通道失败都不许写成读过。
 - 校验：`scripts/tests/mail-intake.test.mjs` 在 CI 里校验结构、状态推导与脱敏约束，不重跑采集。
 
 ## 8. 2026-11-17 六项验收实跑回执（勿再重复问、勿再要密码）
@@ -116,6 +132,13 @@
 - 2026-17:31 云主机侧曾按 owner 转发的同一授权码落过一份 `~/.config/ltzzz/qq-mail.env`，实测 `imap.qq.com:993 LOGIN OK / INBOX 3045`（只读，未取正文）。owner 澄清"发错了，是桌面 GPT 和桌面 Claude 用的"后，**云主机副本已 `shred` 删除，不保留**。
 - 记录口径：本条只记归属与所在机器，不记值、不留副本；云主机侧任何脚本读该邮箱都应 fail-closed (`creds_missing`)，不得据此推断通道不可用。
 - 若以后云主机确实需要 QQ 收信，应让 owner 单独为该机器签发新授权码，不复用桌面两席那一份。
+
+### 9.1 2026-11-24 修订：QQ 信箱正式纳入每日 intake
+
+- Owner 明确指令「把 QQ IMAP 也接进 intake」，§9 原「云主机不得读该信箱」的限制按新授权解除。
+- 凭据存为 GitHub Actions secrets（`QQ_IMAP_USER` / `QQ_IMAP_PASSWORD`），仓库、日志、邮件正文均不落值。
+- 采集范围：INBOX 最近 30 天，`SELECT readonly` + `BODY.PEEK`，只取头与派生字段；口径同 §6.1。
+- §9 保留作历史记录，不得再据此把 QQ 通道判成不可用或 blocked。
 
 ## 10. 每日合并与发信接线（2026-11-18）
 

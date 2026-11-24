@@ -96,6 +96,45 @@ test('两条通道 + 裁决跟踪都正常时 status=ok，并带上三层去重�
   assert.equal(payload.open_items[0].history.length, 2);
 });
 
+test('QQ 通道：未配置不拖成 partial，配置后按 qq_shared 入去重，失败计入 partial', () => {
+  const skipped = buildIntake({
+    backlog: backlog(), fullbox: fullbox(), tracker: trackerDoc(),
+    qqFullbox: {status: 'not_configured', messages: [], count: 0},
+    backlogRun: OK_RUN, gmailRun: OK_RUN, qqRun: {code: 'blocked_missing_credentials', skipped: true},
+    trackerRun: OK_RUN, now: NOW,
+  });
+  assert.equal(skipped.status, 'ok');
+  assert.equal(skipped.qq_fullbox.status, 'not_configured');
+  assert.equal(skipped.qq_fullbox.skipped, true);
+  assert.equal(skipped.counts.unified, 2, '未配置时不得虚增 QQ 条目');
+
+  const live = buildIntake({
+    backlog: backlog(), fullbox: fullbox(), tracker: trackerDoc(),
+    qqFullbox: {
+      status: 'ok', count: 1, open_count: 1, provider: 'qq_imap',
+      messages: [{
+        ref: 'qq-ref-9', thread_id: 'thread-qq', status: 'open', unread: false,
+        date: '2026-11-17T02:30:00Z', subject_short: 'QQ 项目同步',
+      }],
+    },
+    backlogRun: OK_RUN, gmailRun: OK_RUN, qqRun: OK_RUN, trackerRun: OK_RUN, now: NOW,
+  });
+  assert.equal(live.status, 'ok');
+  assert.equal(live.qq_fullbox.status, 'ok');
+  assert.equal(live.qq_fullbox.count, 1);
+  assert.equal(live.qq_fullbox.provider, 'qq_imap');
+  assert.equal(live.sources.qq_fullbox, 'knowledge/results/deep-superagent/mail-fullbox-qq/latest.json');
+  assert.ok(live.open_items.some((item) => item.channel === 'qq_shared'));
+
+  const failed = buildIntake({
+    backlog: backlog(), fullbox: fullbox(), tracker: trackerDoc(),
+    qqFullbox: {status: 'creds_missing', messages: [], count: 0},
+    backlogRun: OK_RUN, gmailRun: OK_RUN, qqRun: {code: 3}, trackerRun: OK_RUN, now: NOW,
+  });
+  assert.equal(failed.status, 'partial');
+  assert.equal(failed.qq_fullbox.status, 'creds_missing');
+});
+
 test('重复触发：同输入 run_key 稳定，previous 相同则 replay=true', () => {
   const first = buildIntake({
     backlog: backlog(), fullbox: fullbox(), tracker: trackerDoc(),
@@ -275,8 +314,13 @@ test('凭据加载：从 600 文件读但不覆盖已有环境变量，缺失文
   assert.equal(env.GMAIL_IMAP_APP_PASSWORD, 'secret-value');
   const existing = {GMAIL_IMAP_APP_PASSWORD: 'from-process'};
   const second = loadGmailEnv(existing, envFile);
-  assert.equal(second.reason, 'already_in_env');
+  // 新语义：已存在的键不覆盖，但缺失的键仍然补齐（QQ 通道与 Gmail 共用这份文件）。
+  assert.equal(second.loaded, true);
+  assert.equal(second.keys, 1);
   assert.equal(existing.GMAIL_IMAP_APP_PASSWORD, 'from-process');
+  assert.equal(existing.GMAIL_IMAP_USER, 'ltzyz2181@gmail.com');
+  const third = loadGmailEnv({...existing}, envFile);
+  assert.equal(third.reason, 'already_in_env');
   const missing = loadGmailEnv({}, path.join(dir, 'nope.env'));
   assert.equal(missing.loaded, false);
   assert.equal(missing.reason, 'file_missing');

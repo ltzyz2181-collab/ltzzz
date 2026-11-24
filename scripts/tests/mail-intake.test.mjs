@@ -21,11 +21,15 @@ test('mail intake never claims success when a channel failed', () => {
   assert.ok(['ok', 'partial', 'failed'].includes(doc.status));
   const gmailOk = doc.gmail_fullbox?.status === 'ok';
   const agentOk = doc.agent_mail?.run_code === 0;
+  // QQ 未配置时记 not_configured，不参与总状态推导；已配置则与 Gmail 同等计入。
+  const qqOk = doc.qq_fullbox && doc.qq_fullbox.status !== 'not_configured'
+    ? doc.qq_fullbox.status === 'ok'
+    : null;
   // Phase 2 起裁决跟踪也计入总状态；旧产物没有该块时按不参与推导处理。
   const tracker = doc.ruling_tracker;
   const trackerOk = tracker ? tracker.status === 'ok' : null;
-  const okCount = [gmailOk, agentOk, trackerOk].filter((value) => value === true).length;
-  const known = [gmailOk, agentOk, trackerOk].filter((value) => value !== null);
+  const okCount = [gmailOk, agentOk, qqOk, trackerOk].filter((value) => value === true).length;
+  const known = [gmailOk, agentOk, qqOk, trackerOk].filter((value) => value !== null);
   const expected = okCount === known.length ? 'ok' : (okCount > 0 ? 'partial' : 'failed');
   assert.equal(doc.status, expected, 'status 必须由各通道的真实结果推导，不得写死 ok');
 });
@@ -50,7 +54,7 @@ test('open items carry only desensitized fields', () => {
   const rulingFields = new Set(['message_id', 'at', 'decision_id', 'verdict']);
   for (const item of doc.open_items || []) {
     for (const key of Object.keys(item)) assert.ok(allowed.has(key), `多余字段 ${key}：待办项只允许脱敏字段`);
-    assert.ok(['agent_mail', 'gmail_fullbox'].includes(item.channel));
+    assert.ok(['agent_mail', 'gmail_fullbox', 'qq_shared'].includes(item.channel));
     assert.ok(String(item.subject_short || '').length <= 72, '短标题不得超过 72 字');
     for (const ruling of item.rulings || []) {
       for (const key of Object.keys(ruling)) assert.ok(rulingFields.has(key), `裁决项多余字段 ${key}`);
