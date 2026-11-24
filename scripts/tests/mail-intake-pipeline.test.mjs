@@ -135,6 +135,23 @@ test('QQ 通道：未配置不拖成 partial，配置后按 qq_shared 入去重�
   assert.equal(failed.qq_fullbox.status, 'creds_missing');
 });
 
+test('Gmail/QQ 条目按日期补算 age_days，缺日期保持 null', () => {
+  const payload = buildIntake({
+    backlog: {status: 'ok', items: [], count: 0},
+    fullbox: {status: 'ok', count: 1, messages: [{
+      ref: 'g1', thread_id: 't1', status: 'open', unread: false,
+      date: '2026-11-14T03:00:00Z', subject_short: '三天前',
+    }]},
+    qqFullbox: {status: 'ok', count: 1, messages: [{
+      ref: 'q1', thread_id: 't2', status: 'open', unread: false, subject_short: '没有日期',
+    }]},
+    tracker: trackerDoc(),
+    backlogRun: OK_RUN, gmailRun: OK_RUN, qqRun: OK_RUN, trackerRun: OK_RUN, now: NOW,
+  });
+  assert.equal(payload.open_items.find((item) => item.ref === 'g1').age_days, 3);
+  assert.equal(payload.open_items.find((item) => item.ref === 'q1').age_days, null);
+});
+
 test('待办 200 条上限按时间倒序：QQ 新邮件不会被 Gmail 挤掉', () => {
   const gmailMessages = Array.from({length: 260}, (_, i) => ({
     ref: `g-${i}`, thread_id: `gt-${i}`, status: 'open', unread: true,
