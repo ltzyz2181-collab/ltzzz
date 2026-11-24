@@ -33,12 +33,40 @@ import os
 import re
 import sys
 
-OUT_DIR = 'knowledge/results/deep-superagent/mail-fullbox'
+# 同一份采集器同时服务两个信箱：Gmail 全箱与 QQ 共享项目信箱（306122054@qq.com）。
+# 通道差异只来自环境变量，采集/脱敏/隐私自检逻辑完全相同。
+OUT_DIR = os.environ.get('MAIL_FULLBOX_OUT_DIR', 'knowledge/results/deep-superagent/mail-fullbox')
 OUT = os.path.join(OUT_DIR, 'latest.json')
+IMAP_HOST = os.environ.get('MAIL_IMAP_HOST_OVERRIDE', 'imap.gmail.com')
+PROVIDER = os.environ.get('MAIL_PROVIDER', 'gmail_imap')
 WINDOW_DAYS = int(os.environ.get('GMAIL_LOOKBACK_DAYS', '30'))
 MAX_WINDOW_MESSAGES = int(os.environ.get('GMAIL_MAX_WINDOW_MESSAGES', '2500'))
-USER = os.environ.get('GMAIL_IMAP_USER', 'ltzyz2181@gmail.com')
-PASSWORD = os.environ.get('GMAIL_IMAP_APP_PASSWORD', '')
+USER = os.environ.get('MAIL_IMAP_USER') or os.environ.get('GMAIL_IMAP_USER', 'ltzyz2181@gmail.com')
+PASSWORD = os.environ.get('MAIL_IMAP_PASSWORD') or os.environ.get('GMAIL_IMAP_APP_PASSWORD', '')
+REQUIRED_ENV = (
+    ['MAIL_IMAP_USER', 'MAIL_IMAP_PASSWORD']
+    if os.environ.get('MAIL_IMAP_PASSWORD') or os.environ.get('MAIL_IMAP_USER')
+    else ['GMAIL_IMAP_USER', 'GMAIL_IMAP_APP_PASSWORD']
+)
+
+
+def as_text(value):
+    """IMAP 头在 QQ 等服务器上可能返回 email.header.Header 而不是 str。
+
+    Gmail 返回纯 str；QQ 的中文 From/Subject 返回 Header。不统一成 str 会在
+    .strip()/re.search() 上抛 AttributeError，让整次采集直接崩溃。
+    """
+    if value is None:
+        return ''
+    text = value if isinstance(value, str) else str(value)
+    # QQ 有时把从未解码的 RFC2047 原串直接当成 str 返回（=?utf-8?B?...?=），
+    # 只有真正是 str 且不含编码词时才原样返回，否则统一解码一次。
+    if '=?' not in text:
+        return text
+    try:
+        return str(email.header.make_header(email.header.decode_header(text)))
+    except Exception:  # noqa: BLE001
+        return text
 
 # Phase 2 正文按需读取
 BODY_ENABLED = os.environ.get('GMAIL_BODY_READ', '1') != '0'
@@ -61,6 +89,7 @@ PROJECT_DOMAINS = {
     'tencent.com',
     'cloud.tencent.com',
     'x.ai',                    # Grok 席位
+    'manus.bot',               # Manus 邮件任务入口（项目内使用）
 }
 # 裁决席从 Gmail 本人地址来信：只按精确地址放行，不把整个 gmail.com 加入白名单。
 PROJECT_SENDERS = {'ltzyz2181@gmail.com'}
@@ -105,19 +134,19 @@ def status_of(subject):
 
 
 def sender_address(from_header):
-    raw = (from_header or '').strip()
+    raw = as_text(from_header).strip()
     match = re.search(r'<([^>]+)>', raw)
     return (match.group(1) if match else raw).strip().lower()
 
 
 def thread_root(msg):
     """IMAP 没有 threadId：用 References 根 / In-Reply-To / Message-ID 归并线程。"""
-    references = (msg.get('References', '') or '').split()
+    references = as_text(msg.get('References', '')).split()
     root = references[0] if references else ''
     if not root:
-        root = (msg.get('In-Reply-To', '') or '').strip()
+        root = as_text(msg.get('In-Reply-To', '')).strip()
     if not root:
-        root = (msg.get('Message-ID', '') or '').strip()
+        root = as_text(msg.get('Message-ID', '')).strip()
     return sha256(root)[:16] if root else None
 
 
@@ -231,7 +260,7 @@ def base(status_code, **extra):
         'mailbox': USER,
         'lookback_days': WINDOW_DAYS,
         'status': status_code,
-        'provider': 'gmail_imap',
+        'provider': PROVIDER,
         'read_only': True,
         'bodies_persisted': False,
         'contains_mail_body': False,
@@ -256,14 +285,26 @@ def status_counts(conn):
     return (int(total.group(1)) if total else None, int(unseen.group(1)) if unseen else None, typ)
 
 
+def sequence_runs(ids):
+    """把 SEARCH 返回的序号列表压成连续区间，保持与命中集合严格一致。"""
+    runs = []
+    for raw in ids:
+        value = int(raw.decode('ascii') if isinstance(raw, (bytes, bytearray)) else raw)
+        if runs and value == runs[-1][1] + 1:
+            runs[-1][1] = value
+        else:
+            runs.append([value, value])
+    return runs
+
+
 def fetch_headers(conn, ids):
-    """批量取头，返回 ([(seq, message_object, meta_bytes)], failed_batches)。"""
+    """按连续序号段取头；命中稀疏时不用首尾大区间。"""
     out = []
     failed = 0
-    batch = 100
-    for start in range(0, len(ids), batch):
-        chunk = ids[start:start + batch]
-        rng = b'%s:%s' % (chunk[0], chunk[-1])
+    # 不能拿首尾序号直接 FETCH：命中稀疏时（QQ 30 天只有几十封）首尾范围会把
+    # 窗口外的整段邮件头也拉进来。按连续段取，取到的集合与 SEARCH 结果严格一致。
+    for start, end in sequence_runs(ids):
+        rng = b'%d:%d' % (start, end)
         typ, fetched = conn.fetch(rng, BODY_HEADER_FIELDS)
         if typ != 'OK' or not fetched:
             failed += 1
@@ -278,18 +319,18 @@ def fetch_headers(conn, ids):
 
 def main():
     if not PASSWORD:
-        die('creds_missing', required_env=['GMAIL_IMAP_USER', 'GMAIL_IMAP_APP_PASSWORD'],
+        die('creds_missing', required_env=REQUIRED_ENV,
             note='IMAP app password absent; fail-closed, no mailbox read attempted')
         return 3
 
-    # 云主机到 imap.gmail.com 偶发 TCP 握手超时，按有限退避重试三次。
+    # 云主机到 imap 主机偶发 TCP 握手超时，按有限退避重试三次。
     import socket
     import time
     conn = None
     attempts = []
     for i in range(3):
         try:
-            conn = imaplib.IMAP4_SSL('imap.gmail.com', 993, timeout=45)
+            conn = imaplib.IMAP4_SSL(IMAP_HOST, 993, timeout=45)
             conn.login(USER, PASSWORD)
             break
         except Exception as exc:  # noqa: BLE001
@@ -325,22 +366,18 @@ def main():
         unrelated = 0
         headers, header_batch_failures = fetch_headers(conn, ids)
         for seq, msg, meta in headers:
-            subject = msg.get('Subject', '') or ''
-            try:
-                subject = str(email.header.make_header(email.header.decode_header(subject)))
-            except Exception:  # noqa: BLE001
-                pass
-            sender = msg.get('From', '') or ''
+            subject = as_text(msg.get('Subject', ''))
+            sender = as_text(msg.get('From', ''))
             address = sender_address(sender)
             domain_match = re.search(r'@([^\s>]+)', sender)
             domain = domain_match.group(1).lower() if domain_match else None
             if address not in PROJECT_SENDERS and domain not in PROJECT_DOMAINS:
                 unrelated += 1
                 continue
-            message_id = msg.get('Message-ID', '') or subject
+            message_id = as_text(msg.get('Message-ID', '')) or subject
             record = {
                 'ref': sha256(message_id)[:16],
-                'date': (msg.get('Date', '') or '')[:40],
+                'date': as_text(msg.get('Date', ''))[:40],
                 'from_domain': domain,
                 'subject_short': redact(subject),
                 'subject_sha256': sha256(subject),
@@ -387,7 +424,7 @@ def main():
             window_truncated=len(ids) >= MAX_WINDOW_MESSAGES,
             header_batch_failures=header_batch_failures,
             dispatch_wording_count=dispatch_count,
-            channel_check={'imap_tls': 'ok', 'https_google': 'unreachable_from_vm'},
+            channel_check={'imap_tls': 'ok', 'imap_host': IMAP_HOST, 'provider': PROVIDER},
             subject_scope='project_domains_only',
             project_unrelated_count=unrelated,
             body_scope='project_matched_only',

@@ -60,6 +60,7 @@ const dailyReport = {
 const intake = {
   status: 'partial', at: '2026-11-19T00:23:00.000Z',
   gmail_fullbox: {status: 'ok'}, agent_mail: {status: 'missing'},
+  qq_fullbox: {status: 'ok', count: 3},
   counts: {open_or_dispatch: 12},
   gmail_rulings: {status: 'ok', today_count: 1, decision_ids: ['GPT-TEST-20261119-01']},
 };
@@ -94,6 +95,7 @@ test('每日合并只汇总公开回执并生成三段式邮件', () => {
   assert.equal(summary.deploy_performed, false);
   assert.equal(summary.secrets_included, false);
   assert.equal(summary.mail.gmail_rulings.today_count, 1);
+  assert.match(summary.email.body, /qq=ok/);
   assert.match(summary.email.subject, /完成=2/);
   assert.match(summary.email.subject, /待GPT裁决=1/);
   assert.match(summary.email.body, /一、今天完成了什么/);

@@ -2,7 +2,8 @@
 // 每日邮件摄入总入口：一次跑完两条收信通道 + 裁决跟踪，合并成一份可核验结果。
 //   1) Agent Mail（agently-cli，qingqizhu6502@agent.qq.com 收件箱）
 //   2) Gmail 全箱（ltzyz2181@gmail.com，IMAP 应用专用密码，见 docs/MAIL-CHANNEL-CURRENT.md 第 6 节）
-//   3) GPT 裁决回执跟踪（track-gpt-rulings.mjs，Phase 2 起纳入每日流程）
+//   3) QQ 共享项目信箱（306122054@qq.com，IMAP 993，同一采集器的 QQ 通道）
+//   4) GPT 裁决回执跟踪（track-gpt-rulings.mjs，Phase 2 起纳入每日流程）
 // 只落脱敏状态与短标题；正文永不落盘。任一通道失败都不伪装成功：分别记状态，
 // 合并结果的 status 取 ok / partial / failed。
 //
@@ -36,6 +37,7 @@ export function resolvePaths(root = process.env.LTZZZ_ROOT || REPO_ROOT) {
     out: path.join(base, 'mail-intake/latest.json'),
     backlog: path.join(base, 'mail-backlog/latest.json'),
     fullbox: path.join(base, 'mail-fullbox/latest.json'),
+    qqFullbox: path.join(base, 'mail-fullbox-qq/latest.json'),
     tracker: path.join(base, 'ruling-tracker/latest.json'),
     runs: path.join(base, 'mail-intake/runs.jsonl'),
     lock: path.join(base, 'mail-intake/.run-lock'),
@@ -45,12 +47,14 @@ export function resolvePaths(root = process.env.LTZZZ_ROOT || REPO_ROOT) {
 
 // 凭据只从仓库外的 600 权限文件读，缺失就交给脚本自己 fail-closed。
 export function loadGmailEnv(env = process.env, envFile = resolvePaths().envFile) {
-  if (env.GMAIL_IMAP_APP_PASSWORD) return {loaded: false, reason: 'already_in_env'};
+  // 同一份 600 文件也承载 QQ 通道（QQ_IMAP_USER / QQ_IMAP_PASSWORD）：
+  // 已存在的环境变量不覆盖，缺哪个补哪个；不能因为 Gmail 已在环境里就整份跳过。
+  const complete = env.GMAIL_IMAP_APP_PASSWORD && env.QQ_IMAP_PASSWORD;
   let raw;
   try {
     raw = fs.readFileSync(envFile, 'utf8');
   } catch {
-    return {loaded: false, reason: 'file_missing'};
+    return {loaded: false, reason: complete ? 'already_in_env' : 'file_missing'};
   }
   let count = 0;
   for (const line of raw.split('\n')) {
@@ -60,7 +64,8 @@ export function loadGmailEnv(env = process.env, envFile = resolvePaths().envFile
       count += 1;
     }
   }
-  return {loaded: count > 0, keys: count};
+  if (count === 0) return {loaded: false, reason: 'already_in_env'};
+  return {loaded: true, keys: count};
 }
 
 export function runCommand(cmd, args, {cwd = REPO_ROOT, timeoutMs = 15 * 60 * 1000, env = process.env} = {}) {
@@ -126,9 +131,9 @@ export function mapBacklogItems(backlog) {
   }));
 }
 
-export function mapFullboxMessages(fullbox) {
+export function mapFullboxMessages(fullbox, channel = 'gmail_fullbox') {
   return (fullbox?.messages || []).map((message) => ({
-    channel: 'gmail_fullbox',
+    channel,
     ref: message.ref,
     message_id: message.ref,
     thread_id: message.thread_id || null,
@@ -283,6 +288,8 @@ function channelState(run, expectedStatus) {
 export function buildIntake({
   backlog = {status: 'missing', items: []},
   fullbox = {status: 'missing', messages: []},
+  qqFullbox = {status: 'missing', messages: []},
+  qqRun = null,
   tracker = null,
   backlogRun = {code: null},
   gmailRun = {code: null},
@@ -293,12 +300,19 @@ export function buildIntake({
 } = {}) {
   const agent = channelState(backlogRun, backlog?.status ?? (Array.isArray(backlog?.items) ? 'ok' : 'missing'));
   const gmail = channelState(gmailRun, fullbox?.status ?? 'missing');
+  // QQ 是可选通道：未配置凭据记 not_configured，不把其他通道拖成 partial；
+  // 一旦配置，登录或采集失败与 Gmail 同等计入总状态。
+  const qqSkipped = !qqRun || qqRun.skipped === true || qqRun.code === 'blocked_missing_credentials';
+  const qq = qqSkipped
+    ? {ok: true, run_code: qqRun?.code ?? null, timeout: false, error: null, stderr_tail: null}
+    : channelState(qqRun, qqFullbox?.status ?? 'missing');
   const trackerOk = trackerRun?.code === 0 && tracker?.schema === TRACKER_SCHEMA && tracker?.status !== 'unknown';
   const trackerStatus = trackerOk ? 'ok' : (!tracker || tracker.status === 'unknown' ? 'unknown' : 'stale');
 
   const unified = attachTrackerRulings([
     ...mapBacklogItems(backlog),
-    ...mapFullboxMessages(fullbox),
+    ...mapFullboxMessages(fullbox, 'gmail_fullbox'),
+    ...mapFullboxMessages(qqFullbox, 'qq_shared'),
   ], tracker);
 
   const dedupe = dedupeMessages(unified);
@@ -322,6 +336,11 @@ export function buildIntake({
       count: fullbox?.count ?? 0,
       messages: fullbox?.messages || [],
     },
+    qq_fullbox: {
+      status: qqFullbox?.status ?? null,
+      count: qqFullbox?.count ?? 0,
+      messages: qqFullbox?.messages || [],
+    },
     tracker: tracker
       ? {generated_at: tracker.generated_at_utc, counts: tracker.counts, items: tracker.items || []}
       : 'missing',
@@ -331,7 +350,9 @@ export function buildIntake({
 
   const gmailOk = gmail.ok;
   const backlogOk = agent.ok;
-  const status = gmailOk && backlogOk && trackerOk ? 'ok' : (gmailOk || backlogOk || trackerOk ? 'partial' : 'failed');
+  // 未配置的 QQ 通道整条不参与推导：既不算成功，也不算失败。
+  const channelOks = [gmailOk, backlogOk, trackerOk, ...(qqSkipped ? [] : [qq.ok])];
+  const status = channelOks.every(Boolean) ? 'ok' : (channelOks.some(Boolean) ? 'partial' : 'failed');
 
   const shanghaiDay = (value) => {
     const parsed = Date.parse(value || '');
@@ -411,6 +432,21 @@ export function buildIntake({
       error: gmail.error,
       stderr_tail: gmail.stderr_tail,
     },
+    qq_fullbox: {
+      status: qqSkipped ? 'not_configured' : (qqFullbox?.status ?? 'missing'),
+      count: qqSkipped ? 0 : (qqFullbox?.count || 0),
+      open_count: qqSkipped ? 0 : (qqFullbox?.open_count || 0),
+      full_box_total: qqSkipped ? null : (qqFullbox?.full_box_total ?? null),
+      full_box_unseen: qqSkipped ? null : (qqFullbox?.full_box_unseen ?? null),
+      provider: qqSkipped ? null : (qqFullbox?.provider ?? null),
+      window_truncated: qqSkipped ? null : (qqFullbox?.window_truncated ?? null),
+      bodies_read: qqSkipped ? 0 : (qqFullbox?.body_reads ?? 0),
+      skipped: qqSkipped,
+      run_code: qq.run_code,
+      timeout: qq.timeout,
+      error: qq.error,
+      stderr_tail: qq.stderr_tail,
+    },
     ruling_tracker: {
       status: trackerStatus,
       path: 'knowledge/results/deep-superagent/ruling-tracker/latest.json',
@@ -453,6 +489,7 @@ export function buildIntake({
     sources: {
       agent_mail: 'knowledge/results/deep-superagent/mail-backlog/latest.json',
       gmail_fullbox: 'knowledge/results/deep-superagent/mail-fullbox/latest.json',
+      qq_fullbox: 'knowledge/results/deep-superagent/mail-fullbox-qq/latest.json',
       ruling_tracker: 'knowledge/results/deep-superagent/ruling-tracker/latest.json',
     },
   };
@@ -473,15 +510,36 @@ export async function main() {
     const credentials = loadGmailEnv(process.env, paths.envFile);
     const backlogRun = runCommand('node', ['scripts/collect-mail-backlog.mjs'], {cwd: paths.root});
     const gmailRun = runCommand('python3', ['scripts/collect-gmail-imap.py'], {cwd: paths.root});
+    // QQ 共享项目信箱走同一采集器，只是换 host/provider/凭据与输出目录。
+    // 凭据缺失时不跑采集、记 blocked_missing_credentials；其他通道照常完成。
+    const qqUser = process.env.QQ_IMAP_USER || '';
+    const qqPass = process.env.QQ_IMAP_PASSWORD || '';
+    const qqRun = qqUser && qqPass
+      ? runCommand('python3', ['scripts/collect-gmail-imap.py'], {
+          cwd: paths.root,
+          env: {
+            ...process.env,
+            MAIL_FULLBOX_OUT_DIR: 'knowledge/results/deep-superagent/mail-fullbox-qq',
+            MAIL_IMAP_HOST_OVERRIDE: 'imap.qq.com',
+            MAIL_PROVIDER: 'qq_imap',
+            MAIL_IMAP_USER: qqUser,
+            MAIL_IMAP_PASSWORD: qqPass,
+          },
+        })
+      : {code: 'blocked_missing_credentials', skipped: true};
     const trackerRun = runCommand('node', ['scripts/track-gpt-rulings.mjs', '--limit', '50', '--window-days', '14', '--write'], {cwd: paths.root});
 
     const backlog = readJson(paths.backlog, {status: 'missing', items: [], count: 0, open_count: 0});
     const fullbox = readJson(paths.fullbox, {status: 'missing', messages: [], count: 0, open_count: 0});
+    // 跳过时不能复用旧文件：上一次的 ok 结果会被误当成今天的读取。
+    const qqFullbox = qqRun.skipped
+      ? {status: 'not_configured', messages: [], count: 0, open_count: 0}
+      : readJson(paths.qqFullbox, {status: 'missing', messages: [], count: 0, open_count: 0});
     const tracker = readJson(paths.tracker, null);
     const previous = readJson(paths.out, null);
 
     const payload = buildIntake({
-      backlog, fullbox, tracker, backlogRun, gmailRun, trackerRun, now: startedAt, previous,
+      backlog, fullbox, qqFullbox, tracker, backlogRun, gmailRun, qqRun, trackerRun, now: startedAt, previous,
     });
     payload.credentials = credentials;
 
@@ -510,6 +568,7 @@ export async function main() {
       status: payload.status,
       agent: payload.agent_mail,
       gmail: payload.gmail_fullbox,
+      qq: payload.qq_fullbox,
       tracker: payload.ruling_tracker,
       open: payload.counts.open_or_dispatch,
       duplicates: payload.counts.duplicates_removed,

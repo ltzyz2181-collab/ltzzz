@@ -253,14 +253,15 @@ export function buildSummary({date, now = new Date(), evidence}) {
     status: evidence.intake.status ?? 'unknown',
     at: evidence.intake.at ?? null,
     gmail_status: evidence.intake.gmail_fullbox?.status ?? 'unknown',
+    qq_status: evidence.intake.qq_fullbox?.status ?? 'unknown',
     agent_mail_status: evidence.intake.agent_mail?.status ?? 'unknown',
     open_or_dispatch: evidence.intake.counts?.open_or_dispatch ?? null,
     gmail_rulings: evidence.intake.gmail_rulings ?? {status: 'unknown', today_count: null},
-  } : {status: 'unknown', at: null, gmail_status: 'unknown', agent_mail_status: 'unknown', open_or_dispatch: null, gmail_rulings: {status: 'unknown', today_count: null}};
+  } : {status: 'unknown', at: null, gmail_status: 'unknown', qq_status: 'unknown', agent_mail_status: 'unknown', open_or_dispatch: null, gmail_rulings: {status: 'unknown', today_count: null}};
 
   const nextSteps = [];
   if (!evidence.cardsToday.length) nextSteps.push('今日没有新的 Deep 队列卡：检查 deep-dispatch-daily 定时是否触达，必要时手动 workflow_dispatch。');
-  if (mail.status !== 'ok') nextSteps.push(`邮件摄入为 ${mail.status}：确认 Gmail IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。`);
+  if (mail.status !== 'ok') nextSteps.push(`邮件摄入为 ${mail.status}：确认 Gmail / QQ IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。`);
   if (needsGpt.length) nextSteps.push(`已生成 ${needsGpt.length} 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。`);
   if (needsOwner.length) nextSteps.push(`有 ${needsOwner.length} 条需要 owner 给值或拍板；未拍板前保持原状态。`);
   if (blocked.length) nextSteps.push(`有 ${blocked.length} 条 blocked/unknown：先补原始凭证或换通道，不原样重试。`);
@@ -353,7 +354,7 @@ export function buildEmail(summary) {
   lines.push('', '四、下一步');
   for (const step of summary.next_steps) lines.push(`- ${step}`);
   lines.push('', '五、证据与边界');
-  lines.push(`- 邮件摄入：status=${summary.mail.status}，gmail=${summary.mail.gmail_status}，agent_mail=${summary.mail.agent_mail_status}`);
+  lines.push(`- 邮件摄入：status=${summary.mail.status}，gmail=${summary.mail.gmail_status}，qq=${summary.mail.qq_status}，agent_mail=${summary.mail.agent_mail_status}`);
   lines.push(`- 今日 Gmail 裁决类回信（仅元数据）：${summary.mail.gmail_rulings?.today_count ?? 'unknown'}`);
   lines.push(`- 待办来源：knowledge/results/deep-superagent/ruling-tracker/latest.json（超24h=${summary.counts?.todo_over_24h ?? 'unknown'}，已回未消费=${summary.counts?.todo_consume_gate ?? 'unknown'}）`);
   lines.push(`- Deep 队列卡：${summary.dispatch.card_count} 张；合并回执：knowledge/results/deep-superagent/daily-merge/${summary.date}.json`);
