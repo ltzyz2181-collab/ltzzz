@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-24T01:55:05.082Z",
+  "requested_at": "2026-11-24T01:54:51.345Z",
+  "responded_at": "2026-11-24T01:55:05.082Z",
+  "request_id": "20261124015454297480952nzAXVGBP",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "relay_claude",
+  "purpose": "code",
+  "generation_output": false,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "claude-sonnet-4-6",
+  "model_served": "claude-sonnet-4-6",
+  "model_tier": "claude",
+  "model_class": "claude",
+  "routing": {
+    "requested_model": "claude-sonnet-4-6",
+    "served_model": "claude-sonnet-4-6",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "direct_station_key_dev_exception",
+  "boundary_exception": true,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 1500,
+  "batch": false,
+  "prompt": {
+    "chars": 20229,
+    "estimated_input_tokens": 7200,
+    "sha256": "b07bf9ad29d3a27e931a2f2808f4c477f8aafc6bc7bc75a059cbda085e9fea0a"
+  },
+  "http": 200,
+  "duration_ms": 13735,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 0,
+    "prompt_tokens_billed": 7200,
+    "usage_source": "estimated_floor",
+    "completion_tokens": 557,
+    "total_tokens": 557
+  },
+  "cost_usd": 0.023964,
+  "balance_before_usd": 12.496744,
+  "balance_after_usd": 12.47278,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 13735,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 1104,
+    "preview": "FINDINGS\nCRITICAL / daily-2026-11-24.json email.status / 主通道当日未发标 \"delivered\" / Protocol §1 明确旁路只能写 fallback_only；email.channel=\"gmail_smtp_fallback\" 却写 status=",
+    "text": "FINDINGS\nCRITICAL / daily-2026-11-24.json email.status / 主通道当日未发标 \"delivered\" / Protocol §1 明确旁路只能写 fallback_only；email.channel=\"gmail_smtp_fallback\" 却写 status=delivered，channel_resend 是事后补发，不能回填原状态\nCRITICAL / daily-2026-11-24.json protocol_change.at_utc / 字段值 \"2026-11-24T01:2xZ\" 格式损坏 / 无法做时序核验，回执三计数可信度连带存疑\nHIGH / B.json routes[5] oversight/2026-11-24 / 改判理由写 \"落后 main 12 提交\" 但 prompt 写 6 提交 / 两份材料数字不一致，改判依据引用了错误字段值\nHIGH / C.md §1 vs rule6 / rule6 禁止把多项贴 rule6 后关闭，但协议 §1 \"旁路不得写 delivered\" 本身就是一条可被 worker 误读为独立路由的否决规则 / 措辞未与 rule6 隔离，worker 可能把\"主通道未发\"贴成 rule6 → blocked_evidence_needed 而非 needs_owner_decision\nMEDIUM / B.json seat_receipts[1] qianwen / sha256 长度 63 位，标准 SHA-256 应为 64 位 / 回执完整性存疑\nMEDIUM / B.json routes[3] ruling/gmail-metadata / 改判为 needs_owner_decision 而 prompt 补充约束第一条明确 \"A4 不得用 Gmail 旁证替代裁决口判成已收到\"，但未说路由应为 needs_owner_decision / 改判缺正面规则支撑，仅靠推断\n\nVERDICT: disagree\n\nTOP1: email.status 必须由 delivered 改为 fallback_only，channel_resend 补写 delivered_via_agent_mail；验收标准：daily-2026-11-24.json 中 email.status=\"fallback_only\"，channel_resend 新增 status=\"delivered\"，且 Protocol §1 检查脚本对该字段不报违规。"
+  },
+  "key_fingerprint": "sha256:16=337045a6032e9386",
+  "failure": null,
+  "http_error": null
+}

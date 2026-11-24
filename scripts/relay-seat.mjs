@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 import {
   loadPolicy,
   estimateInputTokens,
@@ -56,10 +57,15 @@ function requestIdFrom(headers, payload) {
   return { id: null, source: null };
 }
 
-function resolveTransport(policy) {
+export function resolveTransport(policy) {
   const boundary = policy.access_boundary || {};
   const proxyEnv = boundary.proxy_env || 'LTZZZ_RELAY_PROXY_URL';
-  const proxyUrl = process.env[proxyEnv] || boundary.proxy_url || null;
+  const transportEnv = boundary.transport_env || 'LTZZZ_RELAY_TRANSPORT';
+  const selected = String(process.env[transportEnv] || boundary.transport || '').trim().toLowerCase();
+  if (selected && selected !== 'proxy' && selected !== 'direct') throw new Error('relay_transport_invalid');
+  // 代理主机在某些网络里不可解析（实测被解析到无关地址），不设显式选择时两个席位会一起变成死路。
+  // 因此允许 owner 显式钉住传输方式；钉住的选择会写进调用证据，不构成静默回退。
+  const proxyUrl = selected === 'direct' ? null : (process.env[proxyEnv] || boundary.proxy_url || null);
   if (proxyUrl) {
     // The proxy access token is a scoped gateway credential, never the station key.
     const tokenEnv = boundary.proxy_token_env || 'LTZZZ_RELAY_PROXY_TOKEN';
@@ -70,6 +76,7 @@ function resolveTransport(policy) {
       headers: proxyToken ? { 'x-ltzzz-seat-token': proxyToken } : {},
       fingerprint: null,
       boundaryException: false,
+      transport: selected || 'policy_default',
     };
   }
   // The owner ruling keeps the station key in a server secret: a seat may not hold it directly.
@@ -79,6 +86,7 @@ function resolveTransport(policy) {
   if (!key) throw new Error('relay_key_missing_env_or_local_file');
   return {
     mode: 'direct_station_key_dev_exception',
+    transport: selected || 'policy_default',
     url: policy.station.base_url.replace(/\/$/, '') + '/chat/completions',
     headers: { Authorization: 'Bearer ' + key.key },
     fingerprint: fingerprint(key.raw),
@@ -484,9 +492,13 @@ function main() {
   process.exitCode = 2;
 }
 
-try {
-  await main();
-} catch (error) {
-  print({ ok: false, error: String(error?.message || error) });
-  process.exitCode = 2;
+// 只有被当作 CLI 直接执行时才跑 main；被测试 import 时不执行，也不改 process.exitCode。
+const invokedDirectly = Boolean(process.argv[1]) && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (invokedDirectly) {
+  try {
+    await main();
+  } catch (error) {
+    print({ ok: false, error: String(error?.message || error) });
+    process.exitCode = 2;
+  }
 }

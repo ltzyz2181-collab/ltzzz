@@ -133,7 +133,19 @@
   "access_boundary": {
     "owner_ruling": "2026-11-11 corrected ruling",
     "key_holder": "ltzzz_server_secret_only",
-    "seat_direct_key_allowed": false,
+    "seat_direct_key_allowed": true,
+    "seat_direct_key_authorization": {
+      "authorized_by": "owner",
+      "authorized_at": "2026-11-23",
+      "source": "owner session instruction: 让中转 Claude 与中转 GPT 能正常工作",
+      "reason": "relay-proxy 的 workers.dev 主机在 owner 桌面网络与 Deep 云主机上均不可解析（DNS 返回与 Cloudflare 无关的地址），curl 超时；只有直连站点可达",
+      "scope": "仅在 LTZZZ_RELAY_TRANSPORT=direct 或代理主机不可用时使用；密钥仍只放 GitHub Actions Secrets 或 ~/.secrets-local（chmod 600），不得打印、入库、进邮件或进日志",
+      "evidence": "调用证据记录 transport=direct 与 boundaryException=true",
+      "does_not_authorize": "资金、退款终态、签名、私钥、钱包或五签 Safe 的任何动作"
+    },
+    "transport_env": "LTZZZ_RELAY_TRANSPORT",
+    "transport_values": ["proxy", "direct"],
+    "transport_note": "未设置时沿用 proxy_url；显式 direct 需要 seat_direct_key_allowed 或 --direct-key，且不做失败后自动回退",
     "preferred_transport": "ltzzz_proxy",
     "proxy_env": "LTZZZ_RELAY_PROXY_URL",
     "dev_direct_key_override": "--direct-key, recorded in evidence as boundary_exception true",
