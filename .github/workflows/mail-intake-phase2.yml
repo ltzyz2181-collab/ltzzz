@@ -121,7 +121,7 @@ jobs:
           code=$?
           set -e
           echo "INTAKE_EXIT=$code" >> "$GITHUB_ENV"
-          # 退出码 0=ok，2=partial，3=failed，4=并发被拒；先不在这里中断，留证据再判。
+          # 退出码 0=ok / ok_deferred_channels，2=partial，3=failed，4=并发被拒；先不在这里中断，留证据再判。
           exit 0
 
       - name: Redacted summary (status and counts only)
@@ -151,12 +151,15 @@ jobs:
           if (out) fs.appendFileSync(out, text);
           JS
 
-      - name: Commit redacted result (ok/partial/ok_deferred_channels only)
+      # ok_deferred_channels 只在 CI 内成立（邮箱凭据留在云主机席位）：这类快照只有 Gmail 覆盖，
+      # 不能覆盖云主机席位写下的全通道 latest.json，因此不落库，只留在 step summary 与 artifact。
+      - name: Commit redacted result (ok/partial only)
         if: always()
         run: |
           status=$(node -p "JSON.parse(require('fs').readFileSync('knowledge/results/deep-superagent/mail-intake/latest.json','utf8')).status" 2>/dev/null || echo missing)
           case "$status" in
-            ok|partial|ok_deferred_channels) ;;
+            ok|partial) ;;
+            ok_deferred_channels) echo "status=$status; CI-only snapshot kept in artifact, not committed"; exit 0 ;;
             *) echo "status=$status; result not committed"; exit 0 ;;
           esac
           git config user.name 'ltzzz-mail-bot'
