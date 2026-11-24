@@ -297,6 +297,7 @@ export function buildIntake({
   now = new Date(),
   previous = null,
   runId = randomBytes(6).toString('hex'),
+  env = process.env,
 } = {}) {
   const agent = channelState(backlogRun, backlog?.status ?? (Array.isArray(backlog?.items) ? 'ok' : 'missing'));
   const gmail = channelState(gmailRun, fullbox?.status ?? 'missing');
@@ -353,9 +354,29 @@ export function buildIntake({
 
   const gmailOk = gmail.ok;
   const backlogOk = agent.ok;
+
+  // 部署分工：CI（ubuntu-latest）只做仓库侧观测，邮箱凭据留在云主机席位。
+  // 未提供 AGENTLY_CLI_SESSION 时的失败一律是"未配置"，记 not_configured_deferred
+  // 并给出 deferred_to，而不是让整轮停在 partial；一旦提供了会话却仍失败，
+  // 就是真故障，必须照旧判 partial/failed。
+  const ciHost = env?.GITHUB_ACTIONS === 'true';
+  const ciSessionProvided = Boolean(String(env?.AGENTLY_CLI_SESSION ?? '').trim());
+  const agentDeferred = ciHost && !ciSessionProvided && !backlogOk;
+  const trackerDeferred = ciHost && !ciSessionProvided && !trackerOk;
+  const deferredChannels = [agentDeferred ? 'agent_mail' : null, trackerDeferred ? 'ruling_tracker' : null].filter(Boolean);
+  const deferredReason = 'deferred by deployment split: mailbox credential stays on the cloud-host seat, CI is repository-side observer only';
   // 未配置的 QQ 通道整条不参与推导：既不算成功，也不算失败。
-  const channelOks = [gmailOk, backlogOk, trackerOk, ...(qqSkipped ? [] : [qq.ok])];
-  const status = channelOks.every(Boolean) ? 'ok' : (channelOks.some(Boolean) ? 'partial' : 'failed');
+  // 延后通道与"未配置的 QQ"同理：既不算成功也不算失败，但必须被记录。
+  const channelOks = [
+    gmailOk,
+    agentDeferred ? null : backlogOk,
+    trackerDeferred ? null : trackerOk,
+    ...(qqSkipped ? [] : [qq.ok]),
+  ].filter((value) => value !== null);
+  const configuredOk = channelOks.length > 0 && channelOks.every(Boolean);
+  const status = configuredOk
+    ? (deferredChannels.length ? 'ok_deferred_channels' : 'ok')
+    : (channelOks.some(Boolean) ? 'partial' : 'failed');
 
   const shanghaiDay = (value) => {
     const parsed = Date.parse(value || '');
@@ -413,7 +434,11 @@ export function buildIntake({
     agent_mail: {
       // backlog 采集产物不写 status 字段（只有 items），旧写法 backlog?.status ?? 'missing'
       // 会把已成功采集的通道误报成 missing。按实际内容派生，不用缺失字段判死。
-      status: agent.ok ? 'ok' : (Array.isArray(backlog?.items) && backlog.items.length ? 'partial' : 'missing'),
+      status: agentDeferred
+        ? 'not_configured_deferred'
+        : (agent.ok ? 'ok' : (Array.isArray(backlog?.items) && backlog.items.length ? 'partial' : 'missing')),
+      deferred_to: agentDeferred ? 'vm_seat' : null,
+      deferred_reason: agentDeferred ? deferredReason : null,
       count: backlog?.count || 0,
       open_count: backlog?.open_count || 0,
       run_code: agent.run_code,
@@ -453,7 +478,9 @@ export function buildIntake({
       stderr_tail: qq.stderr_tail,
     },
     ruling_tracker: {
-      status: trackerStatus,
+      status: trackerDeferred ? 'not_configured_deferred' : trackerStatus,
+      deferred_to: trackerDeferred ? 'vm_seat' : null,
+      deferred_reason: trackerDeferred ? deferredReason : null,
       path: 'knowledge/results/deep-superagent/ruling-tracker/latest.json',
       generated_at_utc: tracker?.generated_at_utc ?? null,
       counts: tracker?.counts ?? null,
@@ -465,6 +492,17 @@ export function buildIntake({
       note: tracker?.note ?? null,
     },
     gmail_rulings: gmailRulings,
+    coverage: {
+      configured_channels: [
+        'gmail_fullbox',
+        ...(agentDeferred ? [] : ['agent_mail']),
+        ...(trackerDeferred ? [] : ['ruling_tracker']),
+        ...(qqSkipped ? [] : ['qq_shared']),
+      ],
+      deferred_channels: deferredChannels,
+      deferred_reason: deferredChannels.length ? deferredReason : null,
+      note: 'ok_deferred_channels means every configured channel succeeded; it does not mean the deferred mailbox was read.',
+    },
     dedupe: {
       version: dedupe.version,
       layers: ['message_id', 'thread_id', 'task_id'],

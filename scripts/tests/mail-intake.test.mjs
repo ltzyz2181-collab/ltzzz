@@ -18,7 +18,15 @@ test('mail intake artifact exists and is parseable', () => {
 });
 
 test('mail intake never claims success when a channel failed', () => {
-  assert.ok(['ok', 'partial', 'failed'].includes(doc.status));
+  assert.ok(['ok', 'partial', 'failed', 'ok_deferred_channels'].includes(doc.status));
+  if (doc.status === 'ok_deferred_channels') {
+    // 已配置通道全成功 + 未配置通道显式延后到云主机席位，不等于"邮箱已读过"。
+    assert.equal(doc.agent_mail?.status, 'not_configured_deferred');
+    assert.equal(doc.agent_mail?.deferred_to, 'vm_seat');
+    assert.ok((doc.coverage?.deferred_channels || []).includes('agent_mail'));
+    assert.equal(doc.gmail_fullbox?.status, 'ok');
+    return;
+  }
   const gmailOk = doc.gmail_fullbox?.status === 'ok';
   const agentOk = doc.agent_mail?.run_code === 0;
   // QQ 未配置时记 not_configured，不参与总状态推导；已配置则与 Gmail 同等计入。
