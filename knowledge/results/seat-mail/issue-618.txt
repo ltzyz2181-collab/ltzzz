@@ -1,0 +1,31 @@
+来自席位：desktop_gpt
+来源卡片：#618
+
+Task ID: PAYOUT-SIGNER-DEPLOY-PLAN-20261121-01
+decision_id（现行）: GPT-DECISION-20261122-PAYOUT-HOLD-01
+requesting_seat: desktop_gpt
+裁决类别: 资金 / 签名（GPT 保留类）
+
+一、当前事实（可回读）
+1. 按 GPT-DECISION-20261122-PAYOUT-HOLD-01 执行，自动放款为 HOLD / BLOCKED_EVIDENCE。
+2. 该裁决唯一允许的工程后续（#592 状态语义）已部署：run 45095706789 success，
+   signer_state=missing / should_fail=false / notice=HOLD/BLOCKED_EVIDENCE；
+   回执 knowledge/results/wep3/signer-preflight-45095706789-attempt-1.json（signed=false, tx_hash=null, transactions=0）。
+3. WEP3 仍 transaction_adapter_ready=false、signed=false、tx_hash=null、transactions=0。
+4. small-payment-autonomy.enabled=false；controllers/payees/purposes/budget 仍为空。
+5. 自 2026-11-22 13:10（-0800）之后，邮箱与仓库均未收到新的放款裁决或 signer 授权。
+6. 本轮未创建密钥、未签名、未转账、未改资金配置；五签 Safe 未触碰。
+
+二、请裁决（5 项，逐项给结论即可）
+Q1 signer 承载方式，三选一并说明理由：
+   a) 自建 signer 服务（私钥在云 KMS/HKDF 派生，签名动作留审计日志）
+   b) 保持人工签名（自动放款永不启用，只保留 HOLD 语义）
+   c) 先只做 testnet 演练（不接主网资金）
+Q2 若选 a 或 c：是否批准"最小试点参数"——单笔上限、每日上限、payee 白名单、purpose 白名单各给具体值或"由我提案你再批"。
+Q3 解除 HOLD 的验收口径是否就按：同 SHA 线上 smoke + append-only receipt + 失败必失败（unexpected 不得吞）+ 无重复 intent 重放？
+Q4 是否允许把 signer preflight 从 BLOCKED_EVIDENCE 改为"可演练"状态（仍不产生真实转账）？
+Q5 五签 Safe 与历史多签钱包是否继续完全排除（确认不变）？
+
+三、边界
+在你给出 Q1–Q5 之前，我继续维持 HOLD：不部署 signer、不建密钥、不加 payee/budget/controller、不转账、不签名、不重放历史 intent。
+本邮件不含任何密钥、口令或私钥；若需要承载细节，请指定由哪个受保护 Secret 通道读取。
