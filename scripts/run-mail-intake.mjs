@@ -103,6 +103,8 @@ function canonical(value) {
 
 // 退出码必须能区分三态，不能把 partial 当成功。
 export function exitCodeFor(status) {
+  // ok_deferred_channels：已配置通道全成功、未配置通道显式延后到云主机席位，按成功处理。
+  if (status === 'ok_deferred_channels') return 0;
   if (status === 'failed') return 3;
   if (status === 'partial') return 2;
   return 0;
@@ -294,6 +296,7 @@ export function buildIntake({
   backlogRun = {code: null},
   gmailRun = {code: null},
   trackerRun = {code: null},
+  env = process.env,
   now = new Date(),
   previous = null,
   runId = randomBytes(6).toString('hex'),
@@ -307,7 +310,15 @@ export function buildIntake({
     ? {ok: true, run_code: qqRun?.code ?? null, timeout: false, error: null, stderr_tail: null}
     : channelState(qqRun, qqFullbox?.status ?? 'missing');
   const trackerOk = trackerRun?.code === 0 && tracker?.schema === TRACKER_SCHEMA && tracker?.status !== 'unknown';
-  const trackerStatus = trackerOk ? 'ok' : (!tracker || tracker.status === 'unknown' ? 'unknown' : 'stale');
+  // CI（ubuntu-latest）没有 agently-cli，也没有 AGENTLY_CLI_SESSION：Agent Mail 与裁决跟踪按部署分工
+  // 由云主机席位负责。这种情况必须写成「延后到 vm_seat」：既不记成 ok（没读过就是没读过），也不把
+  // 已配置通道拖成 partial。已配置却失败的 Agent Mail 仍按原规则计入，延后不能掩盖真故障。
+  const agentMailConfigured = Boolean(env?.AGENTLY_CLI_SESSION || env?.AGENTLY_CLI);
+  const agentDeferred = env?.GITHUB_ACTIONS === 'true' && !agentMailConfigured;
+  const deferredChannels = agentDeferred ? ['agent_mail', 'ruling_tracker'] : [];
+  const trackerStatus = agentDeferred
+    ? 'not_configured_deferred'
+    : (trackerOk ? 'ok' : (!tracker || tracker.status === 'unknown' ? 'unknown' : 'stale'));
 
   const unified = attachTrackerRulings([
     ...mapBacklogItems(backlog),
@@ -347,6 +358,7 @@ export function buildIntake({
     tracker: tracker
       ? {generated_at: tracker.generated_at_utc, counts: tracker.counts, items: tracker.items || []}
       : 'missing',
+    channels_deferred: agentDeferred ? ['agent_mail', 'ruling_tracker'] : [],
   });
   const day = now.toISOString().slice(0, 10);
   const runKey = `${day}:${inputSha256.slice(0, 16)}`;
@@ -354,8 +366,14 @@ export function buildIntake({
   const gmailOk = gmail.ok;
   const backlogOk = agent.ok;
   // 未配置的 QQ 通道整条不参与推导：既不算成功，也不算失败。
-  const channelOks = [gmailOk, backlogOk, trackerOk, ...(qqSkipped ? [] : [qq.ok])];
-  const status = channelOks.every(Boolean) ? 'ok' : (channelOks.some(Boolean) ? 'partial' : 'failed');
+  const channelOks = [
+    gmailOk,
+    ...(agentDeferred ? [] : [backlogOk, trackerOk]),
+    ...(qqSkipped ? [] : [qq.ok]),
+  ];
+  const status = channelOks.every(Boolean)
+    ? (deferredChannels.length ? 'ok_deferred_channels' : 'ok')
+    : (channelOks.some(Boolean) ? 'partial' : 'failed');
 
   const shanghaiDay = (value) => {
     const parsed = Date.parse(value || '');
@@ -418,12 +436,25 @@ export function buildIntake({
     bodies_persisted: false,
     contains_mail_body: false,
     external_model_safe: true,
+    coverage: {
+      configured_channels: [
+        'gmail_fullbox',
+        ...(qqSkipped ? [] : ['qq_shared']),
+        ...(agentDeferred ? [] : ['agent_mail', 'ruling_tracker']),
+      ],
+      deferred_channels: deferredChannels,
+      deferred_to: agentDeferred ? 'vm_seat' : null,
+    },
     agent_mail: {
       // backlog 采集产物不写 status 字段（只有 items），旧写法 backlog?.status ?? 'missing'
       // 会把已成功采集的通道误报成 missing。按实际内容派生，不用缺失字段判死。
-      status: agent.ok ? 'ok' : (Array.isArray(backlog?.items) && backlog.items.length ? 'partial' : 'missing'),
-      count: backlog?.count || 0,
-      open_count: backlog?.open_count || 0,
+      status: agentDeferred
+        ? 'not_configured_deferred'
+        : (agent.ok ? 'ok' : (Array.isArray(backlog?.items) && backlog.items.length ? 'partial' : 'missing')),
+      count: agentDeferred ? 0 : (backlog?.count || 0),
+      open_count: agentDeferred ? 0 : (backlog?.open_count || 0),
+      skipped: agentDeferred,
+      deferred_to: agentDeferred ? 'vm_seat' : null,
       run_code: agent.run_code,
       timeout: agent.timeout,
       error: agent.error,
@@ -462,6 +493,8 @@ export function buildIntake({
     },
     ruling_tracker: {
       status: trackerStatus,
+      skipped: agentDeferred,
+      deferred_to: agentDeferred ? 'vm_seat' : null,
       path: 'knowledge/results/deep-superagent/ruling-tracker/latest.json',
       generated_at_utc: tracker?.generated_at_utc ?? null,
       counts: tracker?.counts ?? null,
@@ -521,7 +554,13 @@ export async function main() {
   try {
     const startedAt = new Date();
     const credentials = loadGmailEnv(process.env, paths.envFile);
-    const backlogRun = runCommand('node', ['scripts/collect-mail-backlog.mjs'], {cwd: paths.root});
+    // CI 没有 agently-cli / AGENTLY_CLI_SESSION 时不要白跑两条必然 ENOENT 的命令，
+    // 更不能用上一次提交的 backlog / tracker 冒充今天的读取结果。
+    const agentMailConfigured = Boolean(process.env.AGENTLY_CLI_SESSION || process.env.AGENTLY_CLI);
+    const agentDeferred = process.env.GITHUB_ACTIONS === 'true' && !agentMailConfigured;
+    const backlogRun = agentDeferred
+      ? {code: null, skipped: true}
+      : runCommand('node', ['scripts/collect-mail-backlog.mjs'], {cwd: paths.root});
     const gmailRun = runCommand('python3', ['scripts/collect-gmail-imap.py'], {cwd: paths.root});
     // QQ 共享项目信箱走同一采集器，只是换 host/provider/凭据与输出目录。
     // 凭据缺失时不跑采集、记 blocked_missing_credentials；其他通道照常完成。
@@ -540,19 +579,24 @@ export async function main() {
           },
         })
       : {code: 'blocked_missing_credentials', skipped: true};
-    const trackerRun = runCommand('node', ['scripts/track-gpt-rulings.mjs', '--limit', '50', '--window-days', '14', '--write'], {cwd: paths.root});
+    const trackerRun = agentDeferred
+      ? {code: null, skipped: true}
+      : runCommand('node', ['scripts/track-gpt-rulings.mjs', '--limit', '50', '--window-days', '14', '--write'], {cwd: paths.root});
 
-    const backlog = readJson(paths.backlog, {status: 'missing', items: [], count: 0, open_count: 0});
+    const backlog = agentDeferred
+      ? {status: 'not_configured_deferred', items: [], count: 0, open_count: 0}
+      : readJson(paths.backlog, {status: 'missing', items: [], count: 0, open_count: 0});
     const fullbox = readJson(paths.fullbox, {status: 'missing', messages: [], count: 0, open_count: 0});
     // 跳过时不能复用旧文件：上一次的 ok 结果会被误当成今天的读取。
     const qqFullbox = qqRun.skipped
       ? {status: 'not_configured', messages: [], count: 0, open_count: 0}
       : readJson(paths.qqFullbox, {status: 'missing', messages: [], count: 0, open_count: 0});
-    const tracker = readJson(paths.tracker, null);
+    const tracker = agentDeferred ? null : readJson(paths.tracker, null);
     const previous = readJson(paths.out, null);
 
     const payload = buildIntake({
       backlog, fullbox, qqFullbox, tracker, backlogRun, gmailRun, qqRun, trackerRun, now: startedAt, previous,
+      env: process.env,
     });
     payload.credentials = credentials;
 

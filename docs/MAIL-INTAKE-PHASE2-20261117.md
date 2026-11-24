@@ -102,6 +102,16 @@ python3 scripts/collect-gmail-imap.py             # 保留真实退出码与产�
 - 记账：`runs.jsonl` 按 `run_key` 去重，每行带 `prev_sha256` / `entry_sha256`。
 - 失败：单通道失败记 `partial`，全失败记 `failed`；超时记录 `ETIMEDOUT`/`SIGTERM`；`stderr_tail` 原样保留（截断 200 字符）。裁决跟踪读不到 → `unknown`，不是 0。
 
+### 3.6 CI 无 Agent Mail 能力时的显式延后（`ok_deferred_channels`）
+
+CI 跑在 `ubuntu-latest`，既没有 `agently-cli`，也没有 `AGENTLY_CLI_SESSION`。按部署分工，Agent Mail 与裁决跟踪由云主机席位负责，所以这两路在 CI 里：
+
+- 不执行必然 `ENOENT` 的采集命令，也不读取上一次提交的 `mail-backlog` / `ruling-tracker` 冒充今天的读取；
+- 在产物里显式写 `status=not_configured_deferred`、`deferred_to=vm_seat`，并列入 `coverage.deferred_channels`；
+- 整条通道不参与总状态推导：已配置通道全成功时总状态为 `ok_deferred_channels`（退出码 0），不会把 Gmail 成功拖成 `partial`；
+- 该快照只留在 step summary 与 artifact，**不落库**，避免只有 Gmail 覆盖的 CI 结果覆盖云主机席位写下的全通道结果；
+- 非 CI 环境（云主机席位）出现同样的凭据缺失仍是真实失败（`partial`/`failed`），不做静默延后；CI 里已配置却失败的 Agent Mail 也照常计入失败，延后不掩盖真故障。
+
 ## 4. 测试
 
 命令与原始输出见 PR 描述。测试文件：
