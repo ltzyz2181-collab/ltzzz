@@ -1,0 +1,50 @@
+{
+  "schema": "ltzzz.deep-superagent.rulings-consumed.v1",
+  "date": "2026-11-25",
+  "consumed_at_utc": "2026-11-24T22:55:00Z",
+  "note": "正文只读不落盘；仅记录脱敏字段（无金额、无凭据、无正文）",
+  "source": {
+    "channel": "agent_mail",
+    "inbox_scan_limit": 50,
+    "tracker_run_code": 0,
+    "tracker_counts": {
+      "threads": 41,
+      "answered": 25,
+      "pending_no_reply": 16,
+      "answered_but_unread": 3,
+      "pending_over_24h": 16
+    }
+  },
+  "items": [
+    {
+      "message_id": "msg_pcGW-v_Y_ff-GL-yh8EpKdNXasEB7dJBF1BMeal_1LVxmA",
+      "received_at": "2026-11-24T20:28:32Z",
+      "kind": "gpt_dispatch",
+      "subject_short": "[seat:deep] 定向派单｜原 Task ID #599 / #591 / #522",
+      "task_ids": [
+        "LTZZ-CREDENTIAL-IDENTITY-REGISTRY-20261122",
+        "DAILY-DOUBAO-504-BOUNDED-OUTPUT-20261122-01",
+        "RELAY-BUDGET-POSTCALL-CAP-20261120-01"
+      ],
+      "decision_id": "GPT-DECISION-20261124-RELAY-BALANCE-GUARD-01",
+      "verdict": "directive_effective_existing_ids_no_new_card",
+      "scope": "三单定向到 Deep：#599 凭据身份登记表 schema/validator/测试/文档（禁读任何 token/密码/私钥）；#591 日课 Doubao 显式有界 maxTokens 与 thinking=disabled + 回归；#522 relay 预算闸门非付费修复（恢复 3 USD 底线、余额未知 fail closed、保持 0.05/次 0.50/日 10/项目上限、不回填充值）",
+      "constraints": "禁止新的付费 relay 调用/自动充值/无限额 key；不得把第三方 APIsRouter 冒称原厂直连",
+      "deadline": "4h 内 claim/lease；24h 内 PR/CI 证据或单项 BLOCKED_EVIDENCE",
+      "consumed": true
+    },
+    {
+      "message_id": "msg_Y-5_9_qWWpLZiyDbzP7IRyFLv2cCV_DO4kSWVOVJx-Xt-A",
+      "received_at": "2026-11-24T20:28:19Z",
+      "kind": "gpt_directive",
+      "subject_short": "[seat:deep] 治理对齐跟进 / GitHub #608",
+      "task_id": "LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01",
+      "decision_id": null,
+      "verdict": "owner_standing_authority_no_gpt_pass_required",
+      "scope": "按 #608 comment 7143538494 修四件：Task ID 解析/幂等识别；重派邮件按 seat registry 发给真实执行席；旧 11/19、11/17 L3、六类与普通 GPT PASS 文字追加 superseded 不删历史；对齐 AI-START-HERE/OWNER-AUTHORITY-CURRENT/MAIL-CHANNEL-CURRENT/email-authority/relay-seat-policy 旧审批语义",
+      "constraints": "仅五类保留（资金/退款终态/签名/私钥助记词根密钥/钱包）需 GPT；不得新建 Task ID；不因单项阻塞停摆",
+      "deadline": "4h claim；24h PR/CI 或 BLOCKED_EVIDENCE",
+      "consumed": true
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-25",
+  "timezone": "Asia/Shanghai",
+  "at_utc": "2026-11-24T22:58:00Z",
+  "source": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md",
+  "items": [
+    {
+      "id": "memory",
+      "status": "ok",
+      "evidence": [
+        "/home/user/ltzzz/ltzzz-memory",
+        "梦境数据库.md",
+        "文明研究.md",
+        "manifest.json"
+      ],
+      "note": "六份核心记忆与总控交接单目录可读；本轮只列不改，未发现新增未处理项需立即处置（daily-3nums.md 最近修改 2026-11-24 09:37）"
+    },
+    {
+      "id": "video-pipeline",
+      "status": "unknown",
+      "evidence": [
+        "gh run list --limit 30"
+      ],
+      "note": "近 30 条 run 中无视频流水线 run，且不在 active workflow 列表；不判定为失败，记未知"
+    },
+    {
+      "id": "ltzzz.com",
+      "status": "ok",
+      "evidence": [
+        "curl -s -o /dev/null -w '%{http_code} %{time_total}' --max-time 15 https://ltzzz.com/"
+      ],
+      "note": "HTTP 200，耗时 1.55s"
+    },
+    {
+      "id": "workbuddy",
+      "status": "unknown",
+      "evidence": [],
+      "note": "skill os_f8a49bc830defb02 无可用凭据，只读巡检不可达；不伪造状态"
+    },
+    {
+      "id": "wechat-mp",
+      "status": "unknown",
+      "evidence": [],
+      "note": "AppID wx562bcb6057346fb2 无可用凭据，未做只读探测"
+    },
+    {
+      "id": "daily-backfill",
+      "status": "ok",
+      "evidence": [
+        "gh run view 45504644188"
+      ],
+      "note": "当日无 schedule run，已 workflow_dispatch 补跑 45504644188，conclusion=success"
+    },
+    {
+      "id": "three-numbers",
+      "status": "skipped",
+      "reason": "owner_paused_20261123",
+      "note": "owner 2026-11-23 指令暂停三数采集与补记；不列入待裁决"
+    }
+  ],
+  "blocking": false
+}
