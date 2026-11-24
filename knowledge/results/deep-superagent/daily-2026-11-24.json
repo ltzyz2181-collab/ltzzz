@@ -180,7 +180,7 @@
   }
  ],
  "corrections_count": 8,
- "writes_performed": 12,
+ "writes_performed": 14,
  "merges_performed": 0,
  "deploys_performed": 0,
  "financial_actions": 0,
@@ -394,5 +394,23 @@
    },
    "note": "原 partial（agent_mail 失败）记录保留不改；本块为重授权后同源重跑的 ok 结果"
   }
+ },
+ "mail_unhandled": [
+  {
+   "from": "306122054@qq.com",
+   "subject_short": "[seat:doubao] 讨论邀请 LTZZZ-TKT-20261123-001",
+   "received_at": "2026-11-23T02:30:59Z",
+   "handled_at": "2026-11-24T01:29:25Z",
+   "delay_hours": 22.98,
+   "reply_message_id": "msg_PL4Um88PaiF2aoc5yAJBzuwVAd-5zOcM6y4lFdV32TL7oA",
+   "reason": "OAuth refresh token 于 2026-11-23T04:09Z 到期，收件链路静默中断且无未读告警",
+   "status": "handled_late"
+  }
+ ],
+ "protocol_change": {
+  "file": "ops/deep-superagent/MAIL-AND-WAKE-PROTOCOL.md",
+  "agents_md_referenced": true,
+  "at_utc": "2026-11-24T01:2xZ",
+  "rule": "主通道未发即失败；seat 邮件 24h 未读进 mail_unhandled；部署任务必须发唤醒信封，2h 重发/6h 升级"
  }
 }
