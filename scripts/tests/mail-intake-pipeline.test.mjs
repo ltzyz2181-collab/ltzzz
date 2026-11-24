@@ -135,6 +135,26 @@ test('QQ 通道：未配置不拖成 partial，配置后按 qq_shared 入去重�
   assert.equal(failed.qq_fullbox.status, 'creds_missing');
 });
 
+test('待办 200 条上限按时间倒序：QQ 新邮件不会被 Gmail 挤掉', () => {
+  const gmailMessages = Array.from({length: 260}, (_, i) => ({
+    ref: `g-${i}`, thread_id: `gt-${i}`, status: 'open', unread: true,
+    date: `2026-11-0${1 + (i % 9)}T00:00:00Z`, subject_short: `gmail ${i}`,
+  }));
+  const qqMessages = Array.from({length: 5}, (_, i) => ({
+    ref: `q-${i}`, thread_id: `qt-${i}`, status: 'open', unread: true,
+    date: `2026-11-19T0${i}:00:00Z`, subject_short: `qq ${i}`,
+  }));
+  const payload = buildIntake({
+    backlog: {status: 'ok', items: [], count: 0},
+    fullbox: {status: 'ok', messages: gmailMessages, count: 260},
+    qqFullbox: {status: 'ok', messages: qqMessages, count: 5},
+    tracker: trackerDoc(),
+    backlogRun: OK_RUN, gmailRun: OK_RUN, qqRun: OK_RUN, trackerRun: OK_RUN, now: NOW,
+  });
+  assert.equal(payload.open_items.length, 200);
+  assert.equal(payload.open_items.filter((item) => item.channel === 'qq_shared').length, 5);
+});
+
 test('重复触发：同输入 run_key 稳定，previous 相同则 replay=true', () => {
   const first = buildIntake({
     backlog: backlog(), fullbox: fullbox(), tracker: trackerDoc(),
