@@ -5,6 +5,9 @@ import {seatRouteFromLabels, extractPrompt, buildPromptFile, SEAT_MODELS} from '
 test('按标签路由到两个中转席位', () => {
   assert.equal(seatRouteFromLabels([{name: 'relay:run'}, {name: 'seat:relay_gpt'}]), 'relay_gpt');
   assert.equal(seatRouteFromLabels(['seat:relay_claude']), 'relay_claude');
+  // 连字符标签是仓库既有写法，必须同样命中，否则工作流永远不会触发。
+  assert.equal(seatRouteFromLabels(['seat:relay-claude']), 'relay_claude');
+  assert.equal(seatRouteFromLabels(['seat:relay-gpt']), 'relay_gpt');
   assert.equal(seatRouteFromLabels(['relay:run']), null);
 });
 
