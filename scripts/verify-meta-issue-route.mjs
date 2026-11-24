@@ -56,6 +56,34 @@ try {
   error = String((e && e.message) || e).slice(0, 200);
 }
 
+let mailDry = null;
+try {
+  const mailRes = await fetch(url + '/mail', {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      request_id: 'META-MAIL-ROUTE-' + (process.env.GITHUB_RUN_ID || Date.now()),
+      to: 'owner',
+      subject: 'mail:send relay 自检',
+      text: 'dry_run 自检：不创建卡片，只验证收件人白名单、标签与凭据状态。',
+      dry_run: true,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  const mailText = await mailRes.text();
+  let mailData = null;
+  try { mailData = JSON.parse(mailText); } catch { /* keep null */ }
+  mailDry = {
+    http: mailRes.status,
+    dry_run: mailData ? mailData.dry_run === true : false,
+    label: mailData?.would_create?.labels?.[0] || null,
+    to: mailData?.would_create?.to || null,
+    error: mailData ? mailData.error || null : mailText.slice(0, 200),
+  };
+} catch (e) {
+  mailDry = {http: 0, dry_run: false, label: null, to: null, error: String((e && e.message) || e).slice(0, 200)};
+}
+
 const probeRequested = process.env.META_CREATE_PROBE_ISSUE === '1';
 let created = null;
 if (probeRequested && res && res.status === 200 && data && data.dry_run === true) {
@@ -103,10 +131,12 @@ const receipt = {
   dry_run: data ? data.dry_run === true : null,
   would_create: data && data.would_create ? {repo: data.would_create.repo, labels: data.would_create.labels} : null,
   error: error || (data ? data.error || null : null),
+  mail_dry_run: mailDry,
   probe_issue_requested: probeRequested,
   probe_issue: created,
   created_issues: created && created.status === 'created' ? 1 : 0,
 };
 writeReceipt(receipt);
 const probeOk = !probeRequested || (created && (created.status === 'created' || created.status === 'duplicate_skipped'));
-process.exit(res && res.status === 200 && receipt.dry_run === true && probeOk ? 0 : 1);
+const mailOk = mailDry && mailDry.http === 200 && mailDry.dry_run === true && mailDry.label === 'mail:send';
+process.exit(res && res.status === 200 && receipt.dry_run === true && probeOk && mailOk ? 0 : 1);

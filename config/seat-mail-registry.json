@@ -78,6 +78,39 @@
       "credentials_needed_by_seat": false
     }
   },
+  "relay_permissions": {
+    "source": "owner 2026-11-23: 同意开 mail:send relay 限权给 Meta，不给 PAT",
+    "principle": "席位只拿到「排队一张 mail:send 卡」的权限；SMTP 凭据和 GitHub PAT 都不下放，发送由定时 relay 完成。",
+    "default": {
+      "enabled": true,
+      "note": "既有席位维持原行为；本段只给 Meta 增加明确上限。"
+    },
+    "seats": {
+      "meta": {
+        "enabled": true,
+        "granted_by": "owner",
+        "granted_at": "2026-11-23",
+        "scope": "outbound mail only via label=mail:send; no PAT, no SMTP credential, no attachments",
+        "entry": "Meta worker POST /mail（Bearer META_WORKER_TOKEN）创建受限卡片",
+        "recipients": [
+          "owner",
+          "doubao",
+          "workbuddy",
+          "deep",
+          "desktop_gpt",
+          "desktop_claude",
+          "relay_gpt",
+          "relay_claude",
+          "kimi_cn",
+          "xai"
+        ],
+        "daily_cap": 10,
+        "max_body_bytes": 24576,
+        "max_body_bytes_note": "策略上限 6000 字符；按 UTF-8 最坏 4 字节/字符约 24000 字节，留出卡片头余量",
+        "self_recipient_allowed": false
+      }
+    }
+  },
   "seats": [
     {
       "id": "owner",

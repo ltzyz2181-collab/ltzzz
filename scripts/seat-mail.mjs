@@ -55,6 +55,54 @@ export function runSend({seat, to, subject, bodyFile, thread, env = process.env,
   try { return JSON.parse(last); } catch { return {status: 'failed_unparseable', code: r.status, seat}; }
 }
 
+const normalizeSeatId = (value) => String(value || '').trim().toLowerCase().replace(/^did:ltzzz:/, '').replace(/_/g, '-');
+
+export function loadSeatMailRegistry(cwd = process.cwd()) {
+  const file = path.join(cwd, 'config/seat-mail-registry.json');
+  if (!fs.existsSync(file)) {
+    return {schema: 'ltzzz.seat-mail-registry.v1', seats: [], relay_permissions: {default: {enabled: true}, seats: {}}};
+  }
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+// Owner 2026-11-23: Meta may queue mail through this relay, but only to the registered
+// recipients, at most daily_cap per UTC day, and never above max_body_bytes. A seat with
+// no explicit entry keeps the historical behaviour.
+export function evaluateRelayPermission({registry, seat, to, bodyBytes = 0, ledger = null, now = new Date().toISOString()}) {
+  const perms = registry?.relay_permissions || {};
+  const defaultPolicy = perms.default || {enabled: true};
+  const id = normalizeSeatId(seat);
+  const seats = Array.isArray(registry?.seats) ? registry.seats : [];
+  const known = seats.some((entry) => normalizeSeatId(entry.id) === id);
+  const entries = perms.seats || {};
+  const key = Object.keys(entries).find((name) => normalizeSeatId(name) === id) || null;
+  const policy = key ? entries[key] : null;
+
+  if (!known && defaultPolicy.enabled !== true) return {allowed: false, reason: 'seat_not_registered'};
+  if (policy && policy.enabled !== true) return {allowed: false, reason: 'seat_not_permitted'};
+
+  if (policy && Array.isArray(policy.recipients)) {
+    const allowed = new Set();
+    for (const name of policy.recipients) {
+      const target = seats.find((entry) => normalizeSeatId(entry.id) === normalizeSeatId(name));
+      if (target?.address) allowed.add(String(target.address).trim().toLowerCase());
+    }
+    if (!allowed.has(String(to || '').trim().toLowerCase())) return {allowed: false, reason: 'recipient_not_allowed'};
+  }
+
+  const cap = Number(policy?.daily_cap);
+  if (Number.isFinite(cap)) {
+    const day = String(now).slice(0, 10);
+    const sentToday = (ledger?.entries || []).filter((entry) => normalizeSeatId(entry.seat) === id && String(entry.ts || '').slice(0, 10) === day).length;
+    if (sentToday >= cap) return {allowed: false, reason: 'daily_cap_reached'};
+  }
+
+  const maxBody = Number(policy?.max_body_bytes);
+  if (Number.isFinite(maxBody) && bodyBytes > maxBody) return {allowed: false, reason: 'body_too_large'};
+
+  return {allowed: true, reason: 'ok', policy_id: key};
+}
+
 export function loadLedger(cwd = process.cwd()) {
   const file = path.join(cwd, LEDGER_RELATIVE_PATH);
   if (!fs.existsSync(file)) return {ledger: emptyLedger(), file};
@@ -73,10 +121,25 @@ export async function drainQueue({token, env = process.env, cwd = process.cwd(),
   const {data} = await client.api(`issues?state=open&labels=${encodeURIComponent(QUEUE_LABEL)}&per_page=50`);
   const issues = (Array.isArray(data) ? data : []).filter(i => !i.pull_request);
   let {ledger} = loadLedger(cwd);
+  const registry = loadSeatMailRegistry(cwd);
   const out = [];
   for (const issue of issues) {
     const mail = parseMailIssue(issue);
     if (!apply) { out.push({number: issue.number, ...mail, status: 'planned'}); continue; }
+    const permission = evaluateRelayPermission({
+      registry,
+      seat: mail.seat,
+      to: mail.to,
+      bodyBytes: Buffer.byteLength(mail.body || '', 'utf8'),
+      ledger,
+      now: new Date().toISOString(),
+    });
+    if (!permission.allowed) {
+      await client.comment(issue.number, `[mail-blocked] seat=${mail.seat} to=${mail.to} reason=${permission.reason}`);
+      try { await client.removeLabel(issue.number, QUEUE_LABEL); } catch { /* 标签已不在，忽略 */ }
+      out.push({number: issue.number, seat: mail.seat, to: mail.to, status: 'blocked', reason: permission.reason});
+      continue;
+    }
     const tmp = path.join(cwd, 'knowledge/results/seat-mail', `issue-${issue.number}.txt`);
     fs.mkdirSync(path.dirname(tmp), {recursive: true});
     const text = `来自席位：${mail.seat}\n来源卡片：#${issue.number}\n\n${mail.body}\n`;

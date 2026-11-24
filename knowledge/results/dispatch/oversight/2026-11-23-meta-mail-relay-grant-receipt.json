@@ -1,0 +1,84 @@
+{
+  "schema": "ltzzz.execution-receipt.v1",
+  "receipt_id": "2026-11-23-meta-mail-relay-grant",
+  "task_id": "META-MAIL-RELAY-GRANT-20261123",
+  "owner_instruction": "同意开 mail:send relay 限权给 Meta，不给 PAT",
+  "owner_instruction_date": "2026-11-23",
+  "executor": {
+    "seat": "did:ltzzz:claude",
+    "runtime": "Claude Code (Claude Agent SDK)",
+    "host": "desktop-windows",
+    "workdir": "C:\\ltzzz-temp\\relay-guard"
+  },
+  "intent": "让 Meta 能在不持有 GitHub PAT、不持有 SMTP 凭据的前提下，通过受控通道排队发信。",
+  "design": {
+    "entry": "Worker POST /mail（Bearer META_WORKER_TOKEN）",
+    "worker_write_credential": "Worker secret GITHUB_ISSUES_TOKEN（仓库 secret META_ISSUES_PAT 注入），Meta 不接触",
+    "smtp_credential": "只在 GitHub Actions Secrets；Meta 不接触",
+    "transport": "Worker 只创建 label=mail:send 的受限卡片；.github/workflows/seat-mail.yml 定时 relay 发送",
+    "policy_module": "scripts/lib/meta-mail-policy.mjs",
+    "relay_guard": "scripts/seat-mail.mjs#evaluateRelayPermission",
+    "registry": "config/seat-mail-registry.json#relay_permissions.seats.meta"
+  },
+  "bounds": {
+    "recipients": ["owner", "doubao", "workbuddy", "deep", "desktop_gpt", "desktop_claude", "relay_gpt", "relay_claude", "kimi_cn", "xai"],
+    "self_recipient_allowed": false,
+    "subject_chars": "4-80",
+    "text_chars": "1-6000",
+    "daily_cap": 10,
+    "max_body_bytes": 24576,
+    "credential_like_content": "422 credential_like_content_rejected",
+    "attachments": false
+  },
+  "changed_files": [
+    "workers/meta-worker/index.ts",
+    "scripts/lib/meta-mail-policy.mjs",
+    "scripts/tests/meta-mail-policy.test.mjs",
+    "scripts/seat-mail.mjs",
+    "scripts/tests/seat-mail.test.mjs",
+    "scripts/tests/meta-worker-issue-route.test.mjs",
+    "scripts/verify-meta-issue-route.mjs",
+    "config/seat-mail-registry.json",
+    "docs/MAIL-CHANNEL-CURRENT.md",
+    ".github/workflows/seat-config-verify.yml",
+    ".github/workflows/meta-issue-bridge.yml",
+    ".github/workflows/seat-mail.yml",
+    "knowledge/results/dispatch/oversight/2026-11-23-meta-mail-relay-grant-receipt.json"
+  ],
+  "states": {
+    "draft": "done",
+    "tested": "done",
+    "merged": "pending",
+    "deployed": "pending",
+    "submitted": "pending",
+    "platform_accepted": "pending"
+  },
+  "test_evidence": {
+    "command": "node --test scripts/tests/seat-mail.test.mjs scripts/tests/meta-mail-policy.test.mjs scripts/tests/meta-worker-issue-route.test.mjs scripts/tests/seat-mail-registry.test.mjs",
+    "result": "29 tests, 29 pass, 0 fail",
+    "at": "2026-11-23",
+    "workflow_command": "node --test scripts/tests/seat-mail-registry.test.mjs scripts/tests/seat-token-env.test.mjs scripts/tests/meta-connectivity-probe.test.mjs scripts/tests/meta-issue-policy.test.mjs scripts/tests/meta-mail-policy.test.mjs scripts/tests/meta-worker-issue-route.test.mjs scripts/tests/seat-mail.test.mjs",
+    "workflow_command_result_local": "40 pass / 4 fail（均为 seat-token-env.sh 的 CRLF 本地检出问题）",
+    "workflow_command_result_lf_copy": "scripts/tests/seat-token-env.test.mjs 在 LF 副本中 4 pass / 0 fail / 2 skipped"
+  },
+  "observed_failures": [
+    {
+      "where": "workflow 全量命令（7 个测试文件）在本地 Windows 工作区运行",
+      "symptom": "46 tests, 40 pass, 4 fail, 2 skipped；4 个失败全部来自 scripts/tests/seat-token-env.test.mjs",
+      "cause": "本地 core.autocrlf=true 使 scripts/seat-token-env.sh 工作区为 CRLF（git ls-files --eol: i/lf w/crlf），bash 报 'set: pipefail: invalid option name'。索引内为 LF，Ubuntu runner 检出不受影响；与本轮改动无关。",
+      "status": "已在 LF 副本中复跑排除"
+    },
+    {
+      "where": "scripts/tests/meta-mail-policy.test.mjs",
+      "symptom": "首轮失败：recipient id missing from registry: gpt",
+      "cause": "策略常量 RECIPIENTS 含 gpt/claude，但登记表没有这两个席位 id；同时 max_body_bytes=8192 小于 6000 字符的最坏 UTF-8 字节数",
+      "fix": "RECIPIENTS 与登记表有地址的席位对齐（去掉 gpt/claude）；max_body_bytes 改为 24576 并加 note",
+      "status": "修复后 29/29 通过"
+    }
+  ],
+  "boundaries": [
+    "queued 只代表卡片已排队，不代表邮件已发出；以 seat-mail 的 [mail-sent] / status=sent / message_id 为准",
+    "Meta 仍不持有 GitHub PAT 与 SMTP 凭据",
+    "本回执不包含任何凭据值、邮箱正文或客户输入"
+  ]
+}

@@ -226,3 +226,21 @@ owner 决定：给 Meta 一个仅 Issue 权限的 fine-grained PAT，让它能�
 - 写入身份是 PAT 所属账号（GitHub 显示为 `ltzyz2181-collab`），不是字面上的 meta；所以每条都用 `[meta]` 前缀 + `source: did:ltzzz:meta` 标注来源。
 - PAT 到期 **2027-02-18**。到期前必须换新并重跑 `Meta issue bridge`；过期后 `/issue` 返回 503 `issues_not_configured`，属 fail-closed，不会静默丢卡。
 
+### 12.7 Meta 的 mail:send relay 限权（owner 2026-11-23）
+
+owner 2026-11-23 指令：**同意开 mail:send relay 限权给 Meta，不给 PAT**。落点是把「发信」和「持有凭据」继续分开：
+
+- 入口：Worker `POST /mail`（同一个 `META_WORKER_TOKEN` Bearer）。Meta 不拿 GitHub PAT，也不拿 SMTP 授权码。
+- Worker 只做一件事：校验通过后用 Worker secret `GITHUB_ISSUES_TOKEN` 开一张 `label=mail:send` 的受限卡片，返回 `status=queued`、卡片号、`transport=seat-mail-relay`。真正的发送仍由 `.github/workflows/seat-mail.yml` 定时 relay 完成。
+- 策略与 Worker/测试共用同一份：`scripts/lib/meta-mail-policy.mjs`。
+  - 收件人只能是登记表里有地址的席位：`owner` / `doubao` / `workbuddy` / `deep` / `desktop_gpt` / `desktop_claude` / `relay_gpt` / `relay_claude` / `kimi_cn` / `xai`；给 `meta` 自己发信直接拒绝（`self_recipient_not_allowed`）。
+  - `subject` 4–80 字符，正文 1–6000 字符；正文出现凭据形态（`gh*_`、`github_pat_`、`sk-`、`xox*`、`AKIA*`、私钥头）直接 422 `credential_like_content_rejected`。
+  - 按 `mail_request_id` 去重，避免同一请求开多张卡。
+- relay 侧二次校验：`scripts/seat-mail.mjs` 的 `evaluateRelayPermission` 读 `config/seat-mail-registry.json` 的 `relay_permissions.seats.meta`：
+  - 白名单外的地址 → `recipient_not_allowed`，回 `[mail-blocked]` 并摘掉 `mail:send` 标签；
+  - UTC 当日最多 10 封 → `daily_cap_reached`；
+  - 正文最多 24576 字节 → `body_too_large`（6000 字符按 UTF-8 最坏 4 字节/字符约 24000 字节，留卡片头余量）。
+- 其它席位没有显式条目，维持原行为；本段只给 Meta 增加上限，不收紧既有席位。
+- 验收入口：`scripts/verify-meta-issue-route.mjs` 在 `/issue` dry-run 之后追加 `/mail` dry-run，回执写 `mail_dry_run`；`/health` 增加 `mail_relay_configured` 与 `mail_relay_transport=seat-mail-relay`。
+- 边界：`queued` 只代表「卡片已排队」，不代表邮件已发出；是否真发出，以 `seat-mail` 回执里的 `[mail-sent]` / `status=sent` 和 `message_id` 为准。Meta 仍然拿不到 PAT，也拿不到 SMTP 凭据。
+
