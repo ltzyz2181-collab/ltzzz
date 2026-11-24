@@ -48,3 +48,14 @@ status_tag:    [NEEDS_DEPLOY] / [NEEDS_SMOKE] / [NEEDS_SIGN]
 2. 发件箱是否有当日主通道邮件（无 → 当日判 failed，补发后改回）。
 3. 是否存在未读 `seat:` 邮件超 24h（有 → 进 `mail_unhandled`）。
 4. 是否存在部署任务未发唤醒信封（有 → 立即补齐并记录）。
+
+## 7. 中转席位（claude-relay / gpt-relay）不可用时的强制降级
+
+高重要性任务（fund/payment/refund/signature/safe_multisig/deploy/credentials/compliance/customer_notice）默认三席：Deep 主办 + 中转 Claude 复核 + 中转 GPT 裁决。若中转席因**席位关闭**或**出口不可达**无法调用，不得静默跳过，必须：
+
+1. 先按 owner 或 GPT 决策席的明示依据重开席位，并把 `seat_state` 变更写入回执（余额未核验时 `balance_usd=null`，不得编造数字）；
+2. 立即走 fallback：GitHub issue 派单（保留 task_id 与两单原文）+ 邮件唤醒有出口的席位，两件都要留 message_id / issue 号；
+3. 回执写 `status=dispatched_pending_geo_capable_seat`、`calls_billed=0`、`cost_usd=0`，并写明"未调用"与"未响应"的区别；
+4. 24h 内无回执按第 4 节 SLA 重发与升级，不得把 fallback 记成 relay 已完成。
+
+判定：中转席回执缺失时，任何"已复核/已裁决"的表述都视为伪造。
