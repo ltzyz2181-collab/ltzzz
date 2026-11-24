@@ -322,6 +322,9 @@ export function buildIntake({
     || item.has_dispatch_wording
     || item.unread
     || item.ruling_status === 'conflict'
+  )).sort((a, b) => (
+    // 200 条上限按时间倒序取：Gmail 每天上千条，先入通道会把 QQ 整段挤出待办。
+    (Date.parse(b.at || '') || 0) - (Date.parse(a.at || '') || 0)
   ));
 
   // 幂等键覆盖真实输入：状态、条数与条目本身，任何一项变化都算新一天的新输入。
