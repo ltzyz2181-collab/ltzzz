@@ -18,7 +18,11 @@ export const SEAT_MODELS = {
 };
 
 export function seatRouteFromLabels(labels = []) {
-  const names = labels.map((l) => (typeof l === 'string' ? l : l?.name)).filter(Boolean);
+  // 仓库既有标签用连字符（seat:relay-claude），席位 id 用下划线（relay_claude），两者都认。
+  const names = labels
+    .map((l) => (typeof l === 'string' ? l : l?.name))
+    .filter(Boolean)
+    .map((name) => String(name).replace(/-/g, '_'));
   for (const seat of Object.keys(SEAT_MODELS)) {
     if (names.includes('seat:' + seat) || names.includes(seat)) return seat;
   }
