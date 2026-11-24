@@ -1,0 +1,16 @@
+{
+  "finding": "syncDailyBoard 中 generation_unknown_no_repurchase 状态无法进入失败同步路径：失败同步条件列表不包含该状态，后续提交路径又因无 artifact 被跳过，使席位永久停留在 hasUnverifiedBoard 视为未核验的状态。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-23-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 中，将 syncDailyBoard 的失败同步条件改为：if(seat.assignment&&seat.claim_verified&&['generation_unknown_no_repurchase','missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){...}。同时修改 syncFailedSeat，使其在 seat.artifact 不存在且状态为 generation_unknown_no_repurchase 时，生成一个本地失败证据文件而非强制要求标准 artifact 路径：构造 evidence={schema_version:1,date,run_key:record.run_key,task_id:seat.assignment.id,logical_seat:agent,status:'incomplete_or_failed',provider_status:'generation_unknown',error:'provider_result_unknown_no_artifact',source_commit:record.source_commit}，通过 digest(JSON.stringify(evidence,null,2)+'\\n') 计算 sha256，写入 knowledge/results/daily-board/artifacts/${date}-${agent}-${sha256}.failed-evidence.json，设置 seat.artifact={path:该相对路径,sha256}，将 seat.status 改为 'generation_failed_no_repurchase' 后 saveLedger，再调用 syncFailedSeat 现有逻辑。对 syncFailedSeat 中的 artifact 路径校验，需允许标准 JSON 与 .failed-evidence.json 两种后缀，但保持路径前缀与哈希绑定不变。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const r={seats:{gpt:{status:'generation_unknown_no_repurchase',assignment:{id:'x'},claim_verified:true}}};console.log(m.hasUnverifiedBoard(r))})\"",
+    "git diff -- scripts/lib/daily-task-board.mjs"
+  ],
+  "remaining_blocker": "未应用补丁、未执行测试、未提交合并、未部署回读；失败证据文件从本地写入到远端 main 的持久化时序未验证，无法确认 fail_task 的 readRemote 哈希比对能在实际 CI 中通过。"
+}
