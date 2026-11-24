@@ -180,7 +180,7 @@
   }
  ],
  "corrections_count": 8,
- "writes_performed": 11,
+ "writes_performed": 12,
  "merges_performed": 0,
  "deploys_performed": 0,
  "financial_actions": 0,
@@ -231,6 +231,11 @@
    {
     "item": "今日汇总邮件已送达 owner 邮箱",
     "evidence": "SMTP 250 accepted；IMAP INBOX UID 5794（2026-11-23T23:02Z）",
+    "status": "done"
+   },
+   {
+    "item": "主通道补发日报（Agent Mail）",
+    "evidence": "message_id msg_V45qlw1TIDr0YaD1JeALA-JX2rNZs__UhuhmyDQowdivBw，发件箱回读 00:59:58Z",
     "status": "done"
    }
   ],
@@ -313,7 +318,17 @@
   "status": "delivered",
   "evidence": "smtp.gmail.com:587 STARTTLS 250 accepted；IMAP INBOX UID 5794，Date Mon, 23 Nov 2026 15:02:46 -0800 (PST)",
   "message_id": null,
-  "message_id_note": "未走 agently-cli，无 message_id；以 IMAP UID 5794 为回读证据"
+  "message_id_note": "未走 agently-cli，无 message_id；以 IMAP UID 5794 为回读证据",
+  "channel_resend": {
+   "at_utc": "2026-11-24T00:59:58Z",
+   "channel": "agent_mail（agently-cli，主通道补发）",
+   "message_id": "msg_V45qlw1TIDr0YaD1JeALA-JX2rNZs__UhuhmyDQowdivBw",
+   "subject": "[LTZZZ][每日] Deep 巡检与分流 2026-11-24（补发）",
+   "to": "ltzyz2181@gmail.com",
+   "from": "qingqizhu6502@agent.qq.com",
+   "evidence": "smtp 不需要；发件箱回读 created_at 2026-11-24T00:59:58Z",
+   "gap_note": "原第一封仅在 agently 不可用时走 Gmail SMTP 自寄旁路（非主通道、不进 agent 发件箱）；重授权后未及时补发，属流程缺口，已补"
+  }
  },
  "post_reauth_backfill": {
   "at_utc": "2026-11-24T00:52:00Z",
