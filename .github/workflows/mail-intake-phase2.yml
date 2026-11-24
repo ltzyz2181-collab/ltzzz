@@ -140,7 +140,7 @@ jobs:
             rows.push(`agent_mail=${p.agent_mail?.status ?? 'unknown'}`);
             rows.push(`counts=${JSON.stringify(p.counts ?? {})}`);
             rows.push(`window=${p.gmail_fullbox?.window_since ?? 'n/a'} truncated=${p.gmail_fullbox?.window_truncated ?? 'n/a'}`);
-            rows.push(`read_only=${p.gmail_fullbox?.read_only ?? 'n/a'} bodies_persisted=${p.gmail_fullbox?.bodies_persisted ?? 'n/a'}`);
+            rows.push(`read_only=${p.read_only ?? 'n/a'} bodies_persisted=${p.bodies_persisted ?? 'n/a'}`);
           } catch (error) {
             rows.push(`latest.json unreadable: ${error.message}`);
           }
@@ -159,7 +159,9 @@ jobs:
           esac
           git config user.name 'ltzzz-mail-bot'
           git config user.email 'bot@ltzzz.com'
-          git add \
+          # 只 add 真实存在的文件：last-ok.json 首次运行不存在，单条 git add 会因
+          # 一个缺失 pathspec 整体失败（2026-11-24 实测 no result change）。
+          for file in \
             knowledge/results/deep-superagent/mail-intake/latest.json \
             knowledge/results/deep-superagent/mail-intake/runs.jsonl \
             knowledge/results/deep-superagent/mail-fullbox/latest.json \
@@ -167,7 +169,9 @@ jobs:
             knowledge/results/deep-superagent/mail-fullbox-qq/latest.json \
             knowledge/results/deep-superagent/mail-fullbox-qq/last-ok.json \
             knowledge/results/deep-superagent/mail-backlog/latest.json \
-            knowledge/results/deep-superagent/ruling-tracker/latest.json 2>/dev/null || true
+            knowledge/results/deep-superagent/ruling-tracker/latest.json; do
+            if [ -e "$file" ]; then git add "$file"; fi
+          done
           if git diff --cached --quiet; then
             echo 'no result change'
             exit 0
