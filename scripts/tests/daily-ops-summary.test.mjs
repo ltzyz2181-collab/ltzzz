@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {buildTodoReport, 
+import {buildMailTodo,
+  buildTodoReport,
   REQUEST_SCHEMA,
   SUMMARY_SCHEMA,
   buildEmail,
@@ -293,4 +294,59 @@ test('待办会进入邮件正文并按等待时长列出', () => {
   assert.equal(summary.counts.todo_over_24h, 1);
   assert.match(summary.email.body, /等待 161h｜subject:老线程/);
   assert.match(summary.email.body, /有 1 条裁决请求超过 24h 无回信/);
+});
+
+const openItems = () => [
+  {channel: 'gmail_fullbox', ref: 'aaa111', status: 'unknown', age_days: null, subject_short: '普通通知', task_ids: [], has_dispatch_wording: false, ruling_unread: false},
+  {channel: 'agent_mail', ref: 'msg_x', status: 'open', age_days: 2.4, subject_short: 'ASK 关于 ghp_abcdefghijklmnopqrstuvwxyz0123456789', task_ids: ['TASK-1'], has_dispatch_wording: false, ruling_unread: false},
+  {channel: 'gmail_fullbox', ref: 'bbb222', status: 'open', age_days: 10, subject_short: '裁决已到', task_ids: [], has_dispatch_wording: false, ruling_unread: true},
+  {channel: 'gmail_fullbox', ref: 'ccc333', status: 'open', age_days: 5, subject_short: '请部署 worker', task_ids: [], has_dispatch_wording: true, ruling_unread: false},
+];
+
+test('邮件/仓库 open_items 生成 Top N 待办：裁决未读 > 派单词 > 带 Task > 时长', () => {
+  const todo = buildTodoReport(null, {intake: {open_items: openItems(), counts: {open_or_dispatch: 4}}});
+  assert.equal(todo.available, false, '追踪器缺失仍是 unknown');
+  const open = todo.mail_open;
+  assert.equal(open.available, true);
+  assert.equal(open.total, 4);
+  assert.equal(open.items[0].ref, 'bbb222', '裁决已到未读排最前');
+  assert.equal(open.items[1].ref, 'ccc333', '含派单词其次');
+  assert.equal(open.items[2].ref, 'msg_x', '带 Task ID 再次');
+  assert.equal(open.items[2].task_id, 'TASK-1');
+  assert.equal(open.items[2].age_days, 2.4);
+  assert.equal(open.items[2].subject.includes('ghp_'), false, '主题里的凭据必须打码');
+  assert.equal(open.items[3].age_days, null, '缺失时长保持 null，不编造');
+  assert.equal(open.items[0].flags.includes('裁决已到未读'), true);
+});
+
+test('Top N 截断时声明总数，不假装列全', () => {
+  const open = buildMailTodo({open_items: openItems(), counts: {open_or_dispatch: 1184}}, {limit: 2});
+  assert.equal(open.shown, 2);
+  assert.equal(open.total, 1184);
+  assert.match(open.note, /另有 1182 条未列/);
+});
+
+test('邮件正文列出待办 Top N（通道/Task/时长），不含邮件正文', () => {
+  const summary = buildSummary({date: '2026-11-19', evidence: evidence({
+    intake: {...intake, open_items: openItems(), counts: {open_or_dispatch: 4}},
+  })});
+  assert.equal(summary.counts.todo_open_items, 4);
+  assert.equal(summary.counts.todo_open_unread, 1);
+  assert.match(summary.email.body, /邮件\/仓库待办 Top 4/);
+  assert.match(summary.email.body, /\[gmail\] bbb222｜未处理 10天｜裁决已到未读/);
+  assert.match(summary.email.body, /\[agent_mail\] msg_x task=TASK-1｜未处理 2\.4天/);
+  assert.match(summary.email.body, /\[gmail\] aaa111｜时长未标注/);
+  assert.match(summary.email.body, /先读正文并写 awaiting_decision/);
+});
+
+test('latest.json 缺 open_items 时写“无法列”，不写成“没有待办”', () => {
+  const summary = buildSummary({date: '2026-11-19', evidence: evidence()});
+  assert.match(summary.email.body, /缺 open_items 字段/);
+  assert.doesNotMatch(summary.email.body, /没有待办/);
+  assert.equal(summary.counts.todo_open_items, null);
+});
+
+test('邮件摄入整体缺失时不冒充“缺 open_items”', () => {
+  const summary = buildSummary({date: '2026-11-19', evidence: evidence({intake: null})});
+  assert.doesNotMatch(summary.email.body, /缺 open_items 字段/);
 });

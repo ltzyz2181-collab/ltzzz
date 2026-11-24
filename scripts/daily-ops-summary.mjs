@@ -155,11 +155,72 @@ export function collectEvidence(root = REPO_ROOT, date) {
   return {queueReports, dailyReports, intake, oversight, cardsToday, rulingTracker};
 }
 
+const CHANNEL_LABEL = {gmail_fullbox: 'gmail', qq_fullbox: 'qq', agent_mail: 'agent_mail'};
+// Number(null) 是 0，会把“未标注时长”伪造成 0 天；这里只接受真实数值。
+const ageOf = (value) => {
+  if (value === null || value === undefined || value === '') return NaN;
+  const age = Number(value);
+  return Number.isFinite(age) ? age : NaN;
+};
+
+// 邮件/仓库的 open_items 是跨通道统一后的未处理项。这里只取脱敏元数据：
+// 通道、引用、Task/Issue 号、未处理时长；主题摘要仍过 redactText，防止主题夹带 token/金额。
+// 排序只影响“先看哪 20 条”，不改变任何原始状态，也不代表已读或已裁决。
+export function buildMailTodo(intake, {limit = 20} = {}) {
+  if (!intake) return {available: false, reason: 'no_intake', total: null, shown: 0, items: [], note: null};
+  const items = Array.isArray(intake.open_items) ? intake.open_items : null;
+  const declared = Number(intake.counts?.open_or_dispatch);
+  const total = Number.isFinite(declared) ? declared : (items ? items.length : null);
+  if (!items) return {available: false, reason: 'no_open_items', total, shown: 0, items: [], note: null};
+  const rank = (item) => {
+    let score = 0;
+    if (item?.ruling_unread === true) score += 1000;
+    if (item?.has_dispatch_wording === true) score += 200;
+    if (Array.isArray(item?.task_ids) && item.task_ids.length) score += 100;
+    const age = ageOf(item?.age_days);
+    if (Number.isFinite(age)) score += Math.min(Math.max(age, 0), 90);
+    return score;
+  };
+  const picked = items
+    .filter((item) => item && typeof item === 'object')
+    .map((item, index) => ({item, index, score: rank(item)}))
+    .sort((left, right) => (right.score - left.score) || (left.index - right.index))
+    .slice(0, limit)
+    .map(({item}) => {
+      const age = ageOf(item.age_days);
+      const flags = [];
+      if (item.ruling_unread === true) flags.push('裁决已到未读');
+      if (item.has_dispatch_wording === true) flags.push('含派单词');
+      if (item.status && item.status !== 'unknown') flags.push(plain(item.status, 40));
+      return {
+        channel: plain(item.channel, 40),
+        channel_label: CHANNEL_LABEL[item.channel] || plain(item.channel, 40),
+        ref: plain(item.ref || item.thread_id, 40),
+        task_id: Array.isArray(item.task_ids) && item.task_ids.length ? plain(item.task_ids[0], 120) : null,
+        age_days: Number.isFinite(age) ? Math.round(age * 10) / 10 : null,
+        status: plain(item.status || 'unknown', 40),
+        ruling_status: plain(item.ruling_status || 'none', 40),
+        ruling_unread: item.ruling_unread === true,
+        subject: short(item.subject_short || '', 90),
+        flags: flags.join('/') || null,
+      };
+    });
+  return {
+    available: true,
+    reason: null,
+    total,
+    shown: picked.length,
+    items: picked,
+    note: total !== null && total > picked.length ? `只列优先级最高的 ${picked.length} 条，另有 ${total - picked.length} 条未列` : null,
+  };
+}
+
 // 把裁决追踪里“发出去了但对方没回”的线程变成可执行待办，而不是只留计数。
 // 只读 latest.json 的脱敏字段；不含正文、不含地址、不含凭据。
-export function buildTodoReport(tracker, {limit = 12} = {}) {
+export function buildTodoReport(tracker, {limit = 12, intake = null, openLimit = 20} = {}) {
+  const mailOpen = buildMailTodo(intake, {limit: openLimit});
   if (!tracker || typeof tracker !== 'object' || !tracker.counts) {
-    return {available: false, counts: null, over24h: 0, consumeGate: 0, top: [], consume: []};
+    return {available: false, counts: null, over24h: 0, consumeGate: 0, top: [], consume: [], mail_open: mailOpen};
   }
   const alerts = Array.isArray(tracker.alerts) ? tracker.alerts : [];
   const consumeGate = Array.isArray(tracker.consume_gate) ? tracker.consume_gate : [];
@@ -177,6 +238,7 @@ export function buildTodoReport(tracker, {limit = 12} = {}) {
       thread: plain(item.thread, 90),
       note: short(item.note, 80),
     })),
+    mail_open: mailOpen,
   };
 }
 
@@ -265,9 +327,11 @@ export function buildSummary({date, now = new Date(), evidence}) {
   if (needsGpt.length) nextSteps.push(`已生成 ${needsGpt.length} 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。`);
   if (needsOwner.length) nextSteps.push(`有 ${needsOwner.length} 条需要 owner 给值或拍板；未拍板前保持原状态。`);
   if (blocked.length) nextSteps.push(`有 ${blocked.length} 条 blocked/unknown：先补原始凭证或换通道，不原样重试。`);
-  const todo = buildTodoReport(evidence.rulingTracker);
+  const todo = buildTodoReport(evidence.rulingTracker, {intake: evidence.intake});
   if (todo.available && todo.over24h > 0) nextSteps.push(`有 ${todo.over24h} 条裁决请求超过 24h 无回信：按席位点名催办或改派，不要重复发同类请求。`);
   if (todo.available && todo.consumeGate > 0) nextSteps.push(`有 ${todo.consumeGate} 条裁决已到但未消费：当天读正文并写 awaiting_decision，不得当作未裁决重发。`);
+  const openUnread = todo.mail_open?.available ? todo.mail_open.items.filter((item) => item.ruling_unread).length : 0;
+  if (openUnread > 0) nextSteps.push(`邮件/仓库待办里有 ${openUnread} 条标记“裁决已到未读”：先读正文并写 awaiting_decision，再排其他 open 项。`);
   nextSteps.push('本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。');
 
   const summary = {
@@ -293,6 +357,8 @@ export function buildSummary({date, now = new Date(), evidence}) {
       blocked: blocked.length,
       todo_over_24h: todo.over24h,
       todo_consume_gate: todo.consumeGate,
+      todo_open_items: todo.mail_open?.available ? todo.mail_open.total : null,
+      todo_open_unread: todo.mail_open?.available ? todo.mail_open.items.filter((item) => item.ruling_unread).length : null,
     },
     next_steps: nextSteps,
     evidence: {
@@ -339,6 +405,23 @@ export function buildEmail(summary) {
   } else {
     lines.push('- 裁决追踪不可用（latest.json 缺失或未生成）：记为 unknown，不要写成“没有待回”。');
   }
+  const mailOpen = summary.todo?.mail_open;
+  if (mailOpen?.available) {
+    lines.push(`- 邮件/仓库待办 Top ${mailOpen.shown}（open 共 ${mailOpen.total ?? 'unknown'} 条；只列元数据，不含正文）：`);
+    if (mailOpen.items.length) {
+      for (const item of mailOpen.items) {
+        const task = item.task_id ? ` task=${item.task_id}` : '';
+        const age = item.age_days === null ? '时长未标注' : `未处理 ${item.age_days}天`;
+        const extra = item.flags ? `｜${item.flags}` : '';
+        lines.push(`  · [${item.channel_label}] ${item.ref}${task}｜${age}${extra}｜${item.subject || '(无主题摘要)'}`);
+      }
+    } else {
+      lines.push('  · 本次 latest.json 的 open_items 为空。');
+    }
+    if (mailOpen.note) lines.push(`  · ${mailOpen.note}`);
+  } else if (mailOpen?.reason === 'no_open_items') {
+    lines.push('- 邮件待办：本次 latest.json 缺 open_items 字段，无法列 Top N，保持 unknown，不据此判断已清空。');
+  }
   lines.push('', '三、需要 GPT 裁决');
   if (summary.needs_gpt_decision.length) {
     for (const item of summary.needs_gpt_decision) {
@@ -357,6 +440,7 @@ export function buildEmail(summary) {
   lines.push(`- 邮件摄入：status=${summary.mail.status}，gmail=${summary.mail.gmail_status}，qq=${summary.mail.qq_status}，agent_mail=${summary.mail.agent_mail_status}`);
   lines.push(`- 今日 Gmail 裁决类回信（仅元数据）：${summary.mail.gmail_rulings?.today_count ?? 'unknown'}`);
   lines.push(`- 待办来源：knowledge/results/deep-superagent/ruling-tracker/latest.json（超24h=${summary.counts?.todo_over_24h ?? 'unknown'}，已回未消费=${summary.counts?.todo_consume_gate ?? 'unknown'}）`);
+  lines.push(`- 邮件待办来源：knowledge/results/deep-superagent/mail-intake/latest.json 的 open_items（open=${summary.counts?.todo_open_items ?? 'unknown'}，裁决未读=${summary.counts?.todo_open_unread ?? 'unknown'}）`);
   lines.push(`- Deep 队列卡：${summary.dispatch.card_count} 张；合并回执：knowledge/results/deep-superagent/daily-merge/${summary.date}.json`);
   lines.push('- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。');
   return {subject, body: lines.join('\n') + '\n'};
