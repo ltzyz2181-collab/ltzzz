@@ -1,8 +1,8 @@
-# LTZZZ 每日报告 · 2026-11-24
+# LTZZZ 每日报告 · 2026-11-25
 
-- 执行 ID：gha-45224601645-attempt-1
+- 执行 ID：gha-45442094840-attempt-1
 - 核心记忆读取：**complete**（6/6 个文件，57949 字节）
-- 完整读后感：[data/reflections/2026-11-24.md](../reflections/2026-11-24.md)
+- 完整读后感：[data/reflections/2026-11-25.md](../reflections/2026-11-25.md)
 
 ## 核心记忆读取审计
 
@@ -21,19 +21,13 @@
 
 | AI | 执行状态 | 交付状态 | 经济状态 | 产出预览 |
 |---|---|---|---|---|
-| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】核心记忆把 owner 原话、AI 解释与验证状态分层，符合面性先事实后解释。 【观】`ltzzz-memory/重要事件.md`“2026-10-22～23”节：ANS 补丁 `accepted=false`、生产修复未完成；本 |
-| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】材料支持“仅草稿/受阻”，不能把心跳或结构完整升格为修复交付。 【观】`重要事件.md`“2026-10-22～23”：ANS 补丁 accepted=false、生产修复未完成；DeepSeek 工件自报 task_accept |
-| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】心跳200只证明通道应答，不能宣布模型已生成。 【观】Pulse（材料自标非生成验收）`ran_at=2026-11-23T12:49:15.224Z`，六席 http=200/ok/paused=false。《项目历史》10-1 |
-| qianwen | api_error | not_produced | not_applicable_no_financial_action | 调用失败，见 failures |
+| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】核心记忆始终把心跳、生成与交付验收分开，今日 Pulse 只有 200，仍不能当作 ANS 已交付。 【观】`ltzzz-memory/重要事件.md`“2026-10-22～23”：ANS 补丁 `accepted=false` |
+| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】DeepSeek 明确交付的是“未写盘草稿/受阻”，不能升格为验收通过。 【观】工件 `execution.accepted=false`、`deployed=false`、`task_acceptance_verified=fa |
+| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】心跳200只证明通道应答，不能宣布模型已生成。 【观】Pulse（材料自标非生成验收）`ran_at=2026-11-24T10:53:10.344Z`，六席 http=200/ok/paused=false。《项目历史》10-1 |
+| qianwen | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】本轮材料强调了Pulse 200仅证明通道存活，不能代替生成或交付验收。核心记忆文件严格区分观察、主张、AI解释和验证状态，确保系统自净。 【观】 - `魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉 |
 | gpt | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | GPT总控在任；停用的仅为原厂OpenAI付费日课，逻辑总控执行另查control回执，不能据此推断余额。 |
 | claude | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | Claude独立审计＋规划在任；本栏不安排自动API日课，外部PR及审计单独验收，不代表没有工作或没有写权限。 |
 | microsoft | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | Microsoft暂时除名；不再运行旧GPT委托，不产生待补日课。 |
 
-## 失败/未配置
 
-- qianwen: api_error — HTTP 400: invalid_parameter_error <400> InternalError.Algo.InvalidParameter: Range of input length should be [1, 30720]
-
-## 催办中（未完成任务，下次运行自动注入 prompt）
-
-- qianwen: 2026-11-24 api_error — HTTP 400: invalid_parameter_error <400> InternalError.Algo.InvalidParameter: Range of input length should be [1, 30720]
 
