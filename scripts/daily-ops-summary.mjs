@@ -311,19 +311,29 @@ export function buildSummary({date, now = new Date(), evidence}) {
     })),
   ];
 
+  // 快照新鲜度：latest.json 是席位写入的产物，日报可能读到几天前的数据。
+  // 超过 30h 就明确标 stale，避免把旧待办当成今天的新待办。
+  const intakeAtMs = Date.parse(evidence.intake?.at || '');
+  const intakeAgeHours = Number.isFinite(intakeAtMs)
+    ? Math.round(((now.getTime() - intakeAtMs) / 3600000) * 10) / 10
+    : null;
+  const intakeStale = intakeAgeHours !== null && intakeAgeHours > 30;
   const mail = evidence.intake ? {
     status: evidence.intake.status ?? 'unknown',
     at: evidence.intake.at ?? null,
+    age_hours: intakeAgeHours,
+    stale: intakeStale,
     gmail_status: evidence.intake.gmail_fullbox?.status ?? 'unknown',
     qq_status: evidence.intake.qq_fullbox?.status ?? 'unknown',
     agent_mail_status: evidence.intake.agent_mail?.status ?? 'unknown',
     open_or_dispatch: evidence.intake.counts?.open_or_dispatch ?? null,
     gmail_rulings: evidence.intake.gmail_rulings ?? {status: 'unknown', today_count: null},
-  } : {status: 'unknown', at: null, gmail_status: 'unknown', qq_status: 'unknown', agent_mail_status: 'unknown', open_or_dispatch: null, gmail_rulings: {status: 'unknown', today_count: null}};
+  } : {status: 'unknown', at: null, age_hours: null, stale: false, gmail_status: 'unknown', qq_status: 'unknown', agent_mail_status: 'unknown', open_or_dispatch: null, gmail_rulings: {status: 'unknown', today_count: null}};
 
   const nextSteps = [];
   if (!evidence.cardsToday.length) nextSteps.push('今日没有新的 Deep 队列卡：检查 deep-dispatch-daily 定时是否触达，必要时手动 workflow_dispatch。');
   if (mail.status !== 'ok') nextSteps.push(`邮件摄入为 ${mail.status}：确认 Gmail / QQ IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。`);
+  if (intakeStale) nextSteps.push(`邮件摄入快照距今 ${intakeAgeHours} 小时（>30h）：席位可能没跑 intake，日报待办可能不是今天的数据。`);
   if (needsGpt.length) nextSteps.push(`已生成 ${needsGpt.length} 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。`);
   if (needsOwner.length) nextSteps.push(`有 ${needsOwner.length} 条需要 owner 给值或拍板；未拍板前保持原状态。`);
   if (blocked.length) nextSteps.push(`有 ${blocked.length} 条 blocked/unknown：先补原始凭证或换通道，不原样重试。`);
@@ -359,6 +369,8 @@ export function buildSummary({date, now = new Date(), evidence}) {
       todo_consume_gate: todo.consumeGate,
       todo_open_items: todo.mail_open?.available ? todo.mail_open.total : null,
       todo_open_unread: todo.mail_open?.available ? todo.mail_open.items.filter((item) => item.ruling_unread).length : null,
+      todo_intake_age_hours: intakeAgeHours,
+      todo_intake_stale: intakeStale,
     },
     next_steps: nextSteps,
     evidence: {
@@ -438,6 +450,7 @@ export function buildEmail(summary) {
   for (const step of summary.next_steps) lines.push(`- ${step}`);
   lines.push('', '五、证据与边界');
   lines.push(`- 邮件摄入：status=${summary.mail.status}，gmail=${summary.mail.gmail_status}，qq=${summary.mail.qq_status}，agent_mail=${summary.mail.agent_mail_status}`);
+  lines.push(`- 邮件摄入快照：${summary.mail.at ?? 'unknown'}（距今 ${summary.counts?.todo_intake_age_hours ?? 'unknown'} 小时）${summary.counts?.todo_intake_stale ? '——超过 30h，席位可能未运行 intake' : ''}`);
   lines.push(`- 今日 Gmail 裁决类回信（仅元数据）：${summary.mail.gmail_rulings?.today_count ?? 'unknown'}`);
   lines.push(`- 待办来源：knowledge/results/deep-superagent/ruling-tracker/latest.json（超24h=${summary.counts?.todo_over_24h ?? 'unknown'}，已回未消费=${summary.counts?.todo_consume_gate ?? 'unknown'}）`);
   lines.push(`- 邮件待办来源：knowledge/results/deep-superagent/mail-intake/latest.json 的 open_items（open=${summary.counts?.todo_open_items ?? 'unknown'}，裁决未读=${summary.counts?.todo_open_unread ?? 'unknown'}）`);
