@@ -1,0 +1,15 @@
+{
+  "finding": "syncDailyBoard 对 generation_unknown_no_repurchase 状态无失败证据落盘与 fail_task 派单路径，导致崩溃/恢复后该席位永久停留在未核验状态，阻塞每日板闭环。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "knowledge/results/ans-cycle/2026-11-24-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 的 syncDailyBoard 中，把 generation_unknown_no_repurchase 加入 syncFailedSeat 调用条件；并新增失败证据文件写入函数 writeFailureEvidence，在 syncFailedSeat 调用前同步落盘固定 JSON 到 artifacts 目录，使用确定性序列化（JSON.stringify 后统一加 \\n），文件名采用 `${record.date}-${agent}-failed-${digest(bytes).slice(0,16)}.json`，并将 seat.artifact 指向该证据文件；syncFailedSeat 的路径与哈希绑定同步支持 failed 证据文件，去掉对 body.status==='incomplete_or_failed' 的单一强制要求，改为校验 failure_kind 与 date/run_key/task_id/logical_seat 一致性；写失败时保持 failure_sync_unknown，不进入 fail_task 派单。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>console.log(m.hasUnverifiedBoard({schema_version:2,date:'2026-11-24',run_key:'test:1',seats:{test:{status:'generation_unknown_no_repurchase',claim_verified:true,assignment:{id:'DAILY-2026-11-24-test',execution_date:'2026-11-24'}}}})))\""
+  ],
+  "remaining_blocker": "fail_task 后的远端 raw.githubusercontent.com 回读要求 main 分支已包含失败证据文件；本地写盘与远端可读之间的时序未验证，需在实际 GitHub 工作流中完成持久化回读测试。"
+}
