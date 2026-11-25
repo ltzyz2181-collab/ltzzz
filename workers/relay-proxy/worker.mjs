@@ -168,6 +168,7 @@ function emptyBudgetState(env) {
 export function budgetTotals(state, now = new Date().toISOString()) {
   const day = utcDayOf(now);
   let spent = 0;
+  let priorSpent = 0;
   let daily = 0;
   let reserved = 0;
   let dailyReserved = 0;
@@ -175,6 +176,10 @@ export function budgetTotals(state, now = new Date().toISOString()) {
     const cost = numberOrNull(entry?.cost_usd) ?? 0;
     spent += cost;
     if (day !== null && utcDayOf(entry?.at) === day) daily += cost;
+  }
+  for (const period of Array.isArray(state.prior_periods) ? state.prior_periods : []) {
+    const cost = numberOrNull(period?.recorded_cost_usd);
+    if (cost !== null && cost > 0) priorSpent += cost;
   }
   for (const reservation of Object.values(state.reservations || {})) {
     const cost = numberOrNull(reservation?.estimated_cost_usd) ?? 0;
@@ -184,6 +189,7 @@ export function budgetTotals(state, now = new Date().toISOString()) {
   return {
     day,
     spent_usd: round6(spent),
+    project_spent_usd: round6(priorSpent + spent),
     daily_spent_usd: round6(daily),
     reserved_usd: round6(reserved),
     daily_reserved_usd: round6(dailyReserved),
@@ -227,7 +233,7 @@ function budgetSnapshot(state) {
     available_usd: base === null ? null : round6(base - totals.spent_usd - totals.reserved_usd),
     daily_spent_usd: totals.daily_spent_usd,
     daily_reserved_usd: totals.daily_reserved_usd,
-    project_spent_usd: totals.spent_usd,
+    project_spent_usd: totals.project_spent_usd,
     project_reserved_usd: totals.reserved_usd,
     active_reservations: Object.keys(state.reservations || {}).length,
     closed: state.closed === true,
@@ -259,7 +265,7 @@ function enforcePostCallLimits(state, { callId = null, costUsd = null, at }) {
   } else if (totals.daily_spent_usd > DAILY_COST_CAP_USD) {
     reason = 'daily_cap_breach_after_call';
     cap = DAILY_COST_CAP_USD;
-  } else if (totals.spent_usd > PROJECT_COST_CAP_USD) {
+  } else if (totals.project_spent_usd > PROJECT_COST_CAP_USD) {
     reason = 'project_cap_breach_after_call';
     cap = PROJECT_COST_CAP_USD;
   } else if (BALANCE_FLOOR_ENABLED && base !== null && round6(base - totals.spent_usd) < BALANCE_FLOOR_USD) {
@@ -277,7 +283,7 @@ function enforcePostCallLimits(state, { callId = null, costUsd = null, at }) {
     cost_usd: costUsd,
     cap_usd: cap,
     daily_spent_usd: totals.daily_spent_usd,
-    project_spent_usd: totals.spent_usd,
+    project_spent_usd: totals.project_spent_usd,
   };
   return reason;
 }
@@ -337,7 +343,7 @@ export class RelayBudget {
       if (round6(totals.daily_spent_usd + totals.daily_reserved_usd + estimated) > DAILY_COST_CAP_USD) {
         return refuse(429, 'relay_daily_cap_exceeded', 'this call would exceed the daily spend cap');
       }
-      if (round6(totals.spent_usd + totals.reserved_usd + estimated) > PROJECT_COST_CAP_USD) {
+      if (round6(totals.project_spent_usd + totals.reserved_usd + estimated) > PROJECT_COST_CAP_USD) {
         return refuse(429, 'relay_project_cap_exceeded', 'this call would exceed the project lifetime spend cap');
       }
       const availableAfter = base === null ? null : round6(base - totals.spent_usd - totals.reserved_usd - estimated);
@@ -446,7 +452,8 @@ export class RelayBudget {
         recorded_cost_usd: totals.spent_usd,
         closed_at: at,
       };
-      state.prior_periods = [...(state.prior_periods || []), ...(state.baseline ? [prior] : [])].slice(-24);
+      const hasPriorPeriod = Boolean(state.baseline) || (Array.isArray(state.entries) && state.entries.length > 0);
+      state.prior_periods = [...(Array.isArray(state.prior_periods) ? state.prior_periods : []), ...(hasPriorPeriod ? [prior] : [])];
       state.baseline = { balance_usd: balance, confirmed_at: at, confirmed_by: confirmedBy, source: basis };
       state.entries = [];
       state.closed = BALANCE_FLOOR_ENABLED && balance < BALANCE_FLOOR_USD;
