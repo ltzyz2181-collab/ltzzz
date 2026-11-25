@@ -1,7 +1,7 @@
 {
   "agent": "doubao",
-  "last_updated": "2026-11-25T00:53:22+08:00",
-  "context_summary": "doubao 2026-11-25：【读后感】DeepSeek 明确交付的是“未写盘草稿/受阻”，不能升格为验收通过。\n\n【观】工件 `execution.accepted=false`、`deployed=false`、`task_acceptance_verified=false`；`integrity.sta",
+  "last_updated": "2026-11-26T00:41:50+08:00",
+  "context_summary": "doubao 2026-11-26：【读后感】材料反复要求“证据分级”，心跳200与结构完整均不能冒充监控/奖惩修复已验收。\n\n【观】\n- `重要事件.md`“2026-10-22～23”：ANS错误补丁 `accepted=false`，生产修复未完成。\n- 本次DeepSeek工件：`accepted=fals",
   "entries": [
     {
       "date": "2026-09-28",
@@ -1873,6 +1873,60 @@
           "invalid_entries": 0
         },
         "prompt_sha256": "42ac68d50afffa55ba7326405be35777eedf818f08bfa45339e4bf3f70dc4852"
+      },
+      "delivery_integrity": {
+        "status": "structurally_complete",
+        "reason": "normal_stop_and_completion_marker",
+        "accepted": false
+      },
+      "core_memory_files": [
+        "ltzzz-memory/魄.md",
+        "ltzzz-memory/识神.md",
+        "ltzzz-memory/梦境数据库.md",
+        "ltzzz-memory/文明研究.md",
+        "ltzzz-memory/项目历史.md",
+        "ltzzz-memory/重要事件.md"
+      ]
+    },
+    {
+      "date": "2026-11-26",
+      "executed_by": "doubao",
+      "task": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
+      "output": "【读后感】材料反复要求“证据分级”，心跳200与结构完整均不能冒充监控/奖惩修复已验收。\n\n【观】\n- `重要事件.md`“2026-10-22～23”：ANS错误补丁 `accepted=false`，生产修复未完成。\n- 本次DeepSeek工件：`accepted=false`、`deployed=false`、`task_acceptance_verified=false`；输出仅给“检查回执字段”的断言草稿，未提交正常/失败/恢复/幂等测试实物。\n- Pulse快照仅证明6个代理 `ok:true/http:200/paused:false`，未覆盖奖惩、恢复或幂等。\n\n【行深】受管执行器新增/运行四态回归：正常200不奖惩；失败连续达阈值触发pause/记penalty；恢复成功解除pause并只奖一次；重复同一run_key不重复奖惩，断言账本计数与事件ID幂等。\n\n【不确定】未见DeepSeek修复代码、测试输出、部署record/verify回执；工件哈希、源commit我无法在本会话实际回读计算。\n\n【角色产出】验收清单（当前状态：草稿，未通过不得写成功）：\n1. 正常：单次健康200→无奖惩。状态：未验证。\n2. 失败：注入5xx/超时达阈值→pause+penalty落账。未验证。\n3. 恢复：后续成功→resume，奖励仅一次。未验证。\n4. 幂等：重放同run_key→账本/事件不重复。未验证。\n阻塞：无工具、无修复commit与测试/部署回执；最高证据状态为draft。无资金动作。\n\n【日课独立审核JSON】\n```json\n{\"accepted\":true,\"artifact_sha256\":\"6aa2c661bdc77b6d2972b41caf7b112a9aa1c41d16ae1880fe51683df4b1a815\",\"reasons\":[\"工件如实标注accepted=false、deployed=false、task_acceptance_verified=false，未把心跳200或结构完整冒充修复验收\",\"输出明确区分Pulse健康与ANS监控/奖惩修复，并保留未证实字段，符合草稿可接受标准\"],\"unverified\":[\"工件字节SHA256与source_commit未由本会话工具回读计算\",\"DeepSeek修复代码、四态测试输出、部署record/verify回执均不存在或未提供\",\"actual_model/upstream元数据仅来自provider_response，非加密证明\"]}\n```\n【日课独立审核结束】\n【交付结束】",
+      "tokens_used": 24677,
+      "finish_reason": "stop",
+      "model": "doubao-seed-2-1-pro-260915",
+      "skill": {
+        "applied": true,
+        "status": "active_context_injected",
+        "version": "1.0.0",
+        "core_sha256": "c80745f46cfec5f0d641b6c2c134566920d92626a34be1f019d8c2361606280f",
+        "runtime_sha256": "53ff4508b18e683d03d5aa4bc1bf952ce19fc66d13e1aa64cb5e94cf248920bb",
+        "activation_path": "knowledge/results/skill-review/c80745f46cfec5f0/activation.json",
+        "scope": "daily:doubao",
+        "reflection": {
+          "version": 1,
+          "status": "retrieved_not_compliance_verified",
+          "lesson_ids": [
+            "L-20261030-002",
+            "L-20261030-003",
+            "L-20261030-008",
+            "L-20261117-006",
+            "L-20261030-004",
+            "L-20261030-001",
+            "L-20261101-001",
+            "L-20261030-007"
+          ],
+          "strategy_ids": [
+            "draft_rejected",
+            "execution_blocked",
+            "region_ineligible",
+            "unpinned_input"
+          ],
+          "context_sha256": "7af5af1eb2cf41d8d01b98bd2bb284258fc7973318e6373aa2540ff54d4d5d02",
+          "invalid_entries": 0
+        },
+        "prompt_sha256": "5fb935d2d355b6b5f997d16b229e03593bd2bc1c23fbe9dc8b9a8dea29a6fb90"
       },
       "delivery_integrity": {
         "status": "structurally_complete",
