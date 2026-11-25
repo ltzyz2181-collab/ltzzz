@@ -106,6 +106,31 @@ test('每日合并只汇总公开回执并生成三段式邮件', () => {
   assert.doesNotMatch(summary.email.body, /password|app_password|authorization/i);
 });
 
+test('邮件摄入快照超过 30h 时标 stale，并在邮件里写明', () => {
+  const oldIntake = {...intake, at: '2026-11-17T00:00:00.000Z'};
+  const summary = buildSummary({
+    date: '2026-11-19',
+    now: new Date('2026-11-19T02:10:00.000Z'),
+    evidence: evidence({intake: oldIntake}),
+  });
+  assert.equal(summary.counts.todo_intake_stale, true);
+  assert.ok(summary.counts.todo_intake_age_hours > 30);
+  assert.match(summary.email.body, /超过 30h，席位可能未运行 intake/);
+  assert.ok(summary.next_steps.some((step) => /席位可能没跑 intake/.test(step)));
+});
+
+test('邮件摄入新鲜时不标 stale；缺 at 时写 unknown 而不是 0 小时', () => {
+  const fresh = buildSummary({date: '2026-11-19', now: new Date('2026-11-19T02:10:00.000Z'), evidence: evidence()});
+  assert.equal(fresh.counts.todo_intake_stale, false);
+  assert.ok(fresh.counts.todo_intake_age_hours > 1 && fresh.counts.todo_intake_age_hours < 3);
+
+  const noAt = {...intake};
+  delete noAt.at;
+  const missing = buildSummary({date: '2026-11-19', evidence: evidence({intake: noAt})});
+  assert.equal(missing.counts.todo_intake_age_hours, null);
+  assert.match(missing.email.body, /距今 unknown 小时/);
+});
+
 test('没有 GPT 待裁决项时也明确写“没有”，不伪造裁决', () => {
   const report = queueReport();
   report.items = report.items.filter((item) => item.task_id !== 'DSA-GPT-01');
