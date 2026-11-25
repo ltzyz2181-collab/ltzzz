@@ -634,3 +634,17 @@ test('executeAutonomy：mail 正文为空时失败', async () => {
   assert.equal(result.actions[0].status, 'failed');
   assert.equal(result.actions[0].error, 'empty_mail_body');
 });
+
+test('fiduciaryInstructionHit：design/assign/signal 等含 sign 子串的普通词不误报（#640 假阳性）', () => {
+  assert.equal(fiduciaryInstructionHit('design the dispatcher priority mapping').hit, false);
+  assert.equal(fiduciaryInstructionHit('assign seats to Claude and GPT').hit, false);
+  assert.equal(fiduciaryInstructionHit('signal handling for CI failure').hit, false);
+  assert.equal(fiduciaryInstructionHit('resign the lease after merge').hit, false);
+});
+
+test('fiduciaryInstructionHit：真实签名/钱包/付款词仍拦截（未放宽）', () => {
+  assert.equal(fiduciaryInstructionHit('sign the transaction with the wallet').hit, true);
+  assert.equal(fiduciaryInstructionHit('signature verification of the payload').hit, true);
+  assert.equal(fiduciaryInstructionHit('请签名后转账').hit, true);
+  assert.equal(fiduciaryInstructionHit('wallet operations for Safe').hit, true);
+});

@@ -22,7 +22,7 @@ export const AUTONOMY_REVISION = 'deep-autonomy-v1';
 export const AUTONOMY_SCHEMA = 'ltzzz.deep-superagent.autonomy.v1';
 
 // 触发后一律不自动执行的领域。只拦“钱与密钥”，不拦代码、部署、邮件。
-export const FIDUCIARY_RE = /(?:私钥|助记词|助记码|根密钥|转账|放款|退款|签名|钱包|提现|付款|收款地址|five[_-]?signature|private[ _-]?key|seed[ _-]?phrase|mnemonic|wallet|withdraw|transfer\s+funds|refund|payment|sign(?:ing|ature)?|0x[0-9a-fA-F]{40})/i;
+export const FIDUCIARY_RE = /(?:私钥|助记词|助记码|根密钥|转账|放款|退款|签名|钱包|提现|付款|收款地址|five[_-]?signature|private[ _-]?key|seed[ _-]?phrase|mnemonic|wallet|withdraw|transfer\s+funds|refund|payment|\bsign(?:ing|ature)?s?\b|0x[0-9a-fA-F]{40})/i;
 
 // 模型输出不得移除的五个保留家族。config/deep-autonomy-*.json 可由执行席通过 PR 修订，
 // 但不能在自动写入里把保留家族改成普通工程；这条在 validateWrites 里按内容校验。

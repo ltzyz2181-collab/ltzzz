@@ -1,0 +1,64 @@
+{
+  "schema": "ltzzz.deep-superagent.rulings-consumed.v1",
+  "date": "2026-11-26",
+  "timezone": "Asia/Shanghai",
+  "generated_at_utc": "2026-11-25T23:05:00Z",
+  "bodies_persisted": false,
+  "source": "ruling-tracker/latest.json consume_gate",
+  "consumed": [
+    {
+      "message_id": "msg_-H3ibkAOpWYiQjUHujp4j_eO4PcBTPxoh3CSFQVn6yJGdQ",
+      "replied_at_utc": "2026-11-25T19:46:19Z",
+      "thread": "task:LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+      "task_id": "LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+      "issue_ref": "#640",
+      "decision_id": null,
+      "kind": "既有 Task ID 的执行补充（不新增 decision_id）",
+      "summary_redacted": "首卡已建（SHA e69bff9…），队列 run 45688324667 verify 通过、无 claim/lease；下一步修 Issue-card 误报与五类措辞、P1→high 映射，retry=1 生成 -R1 卡，恢复 relay lane 后分派 Claude/GPT",
+      "requires_action": "claim/lease + 代码修复 + relay 分派",
+      "consumed": true
+    },
+    {
+      "message_id": "msg_MC-hs0LBMRtyHHyC68vorv0iIun7TLNCiS3bPd4UcpEjoQ",
+      "replied_at_utc": "2026-11-25T19:51:26Z",
+      "thread": "task:LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+      "task_id": "LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+      "issue_ref": "#640",
+      "decision_id": null,
+      "kind": "既有 Task ID 的执行补充（不新增 decision_id）",
+      "summary_redacted": "队列 run 45688324667 workflow jobs success 但 Deep 回执 partial、代码动作 failed（markdown_fence_in_code_file: scripts/dispatch-issue-card.mjs）；无 PR/提交/CI/merge；relay_paid_lane 仍 closed，按 relay-budget-reopen.yml 以 0 USD 未核实占位、confirmed_by=owner 恢复并回读 live /budget/state",
+      "requires_action": "修 classifier 假阳性 + markdown fence 合同 + reopen lane + 两席真实调用",
+      "consumed": true
+    },
+    {
+      "message_id": "msg_EVwFGzzAIr7lsBhO9J94rfbodm6SuPwUXxq90veVAIn1wQ",
+      "replied_at_utc": "2026-11-25T19:51:27Z",
+      "thread": "task:LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01",
+      "task_id": "LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01",
+      "issue_ref": "#608",
+      "decision_id": null,
+      "kind": "既有 Task ID 的执行补充（不新增 decision_id）",
+      "summary_redacted": "审计更正：DAILY-RECEIPT-CONTRACT.md 后段旧句与 Owner 2026-11-18/2026-11-20 工程授权冲突，需在 #608 下追加修正与测试、保留历史原文；#640 负责共享分类器与 dispatcher，#608 负责日报合同/authority pointers/Gmail coverage",
+      "requires_action": "文档修正 + 测试 + 保留历史",
+      "consumed": true
+    },
+    {
+      "message_id": "msg_I-MIaxdfu8QSNePTjVD2sYDF069HppPs8xku7-AwDODGMQ",
+      "replied_at_utc": "2026-11-25T21:22:08Z",
+      "thread": "task:LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+      "task_id": "LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+      "issue_ref": "#640 / #522",
+      "decision_id": null,
+      "kind": "Owner 2026-11-25 最新指示的补充派单（既有 Task ID）",
+      "summary_redacted": "#522 已建修复 PR #641，要求完成 required CI 后按 Owner 工程授权合并并触发 deploy-relay-proxy.yml、回读 version/health/budget/state；#640 Deep 主编排、relay Claude 实现、relay GPT 架构/评审；Deep 先修 bridge/card 与 priority/sign 误判；余额不足由 Owner 充值，不因余额未知关闭席位，per-call/daily/project 上限与 no-auto-topup 不变",
+      "requires_action": "PR #641 required CI 完成度核查 + #640 桥/卡修复",
+      "consumed": true
+    }
+  ],
+  "counts": {"consume_gate_before": 2, "consumed": 4, "unread_in_thread": 0, "answered_but_unread_after": 0},
+  "notes": [
+    "四封均为既有 Task ID 的补充，未新增 decision_id；不新建平行队列",
+    "正文未落盘；仅保留脱敏摘要与行动指向",
+    "PR #641 当前部分检查 SKIPPED、mergeable=UNKNOWN，未达 CI 全绿，故未合并"
+  ]
+}

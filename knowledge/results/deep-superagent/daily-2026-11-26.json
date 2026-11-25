@@ -1,0 +1,437 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "date": "2026-11-26",
+  "timezone": "Asia/Shanghai",
+  "generated_at_utc": "2026-11-25T23:06:00Z",
+  "mail_intake": {
+    "status": "ok",
+    "at_utc": "2026-11-25T22:46:00Z",
+    "path": "knowledge/results/deep-superagent/mail-intake/latest.json",
+    "agent_mail": {
+      "status": "ok",
+      "count": 42,
+      "open_count": 5
+    },
+    "gmail_fullbox": {
+      "status": "ok",
+      "count": 1765,
+      "open_count": 1676,
+      "full_box_total": 5939,
+      "full_box_unseen": 5048,
+      "bodies_read": 50,
+      "window_since": "27-Oct-2026",
+      "window_truncated": false
+    },
+    "qq_fullbox": {
+      "status": "not_configured",
+      "reason": "blocked_missing_credentials",
+      "count": 0
+    },
+    "unified": {
+      "count": 1807,
+      "open_or_dispatch": 200,
+      "duplicates_removed": 709,
+      "ruling_conflicts": 0,
+      "unknown_items_deduped": false
+    },
+    "policy": "外发只含脱敏状态标签与短标题；正文不落盘"
+  },
+  "gpt_ruling_received": {
+    "received": true,
+    "today_count": 4,
+    "matched_by": {
+      "keyword": 0,
+      "reply_prefix": 4
+    },
+    "last_received_at_utc": "2026-11-25T21:22:08Z",
+    "days_since_last_ruling": 0,
+    "severity": "ok"
+  },
+  "ruling_tracker": {
+    "status": "ok",
+    "counts": {
+      "threads": 37,
+      "answered": 21,
+      "pending_no_reply": 16,
+      "answered_but_unread": 3,
+      "pending_over_24h": 16
+    },
+    "consume_gate_before": 2,
+    "consumed": 4,
+    "consumed_file": "knowledge/results/deep-superagent/rulings-consumed-2026-11-26.json"
+  },
+  "repo_observation": {
+    "oversight": {
+      "date": "2026-11-26",
+      "at_utc": "2026-11-25T22:01:18Z",
+      "source_commit": "964f1c62e8d80cf54d630b87b9c2657b47a6e551",
+      "head_at_check": "ee0190e4f…",
+      "stale": true,
+      "backlog": {
+        "open_warning_cases": 261,
+        "not_rechecked_in_current_window": 214,
+        "by_responsible_seat": {
+          "qianwen": 78,
+          "doubao": 57,
+          "grok": 40,
+          "deepseek": 69,
+          "gpt": 17
+        }
+      },
+      "stage_counts": {
+        "tasks_observed": 75,
+        "claims_verified": 28,
+        "submissions_verified": 25,
+        "independent_reviews_verified": 25,
+        "drafts_accepted": 5,
+        "engineering_deliveries_verified": 0,
+        "production_deployments_verified": 0
+      }
+    },
+    "open_pr": 1,
+    "open_issues": 68,
+    "task_hub": {
+      "open": 12,
+      "new": 10,
+      "blocked": 2,
+      "by_seat": {
+        "deep": 11,
+        "workbuddy": 1
+      }
+    },
+    "failures_24h": [
+      {
+        "run_id": 45716467067,
+        "name": "Deploy static site to GitHub Pages",
+        "branch": "main",
+        "created_at": "2026-11-25T22:49:31Z",
+        "conclusion": "failure",
+        "root_cause": "actions/deploy-pages 返回 Deployment failed, try again later（服务端瞬时错误，非内容缺陷）",
+        "action": "未手动重跑；仅状态确认"
+      }
+    ]
+  },
+  "queue_run": {
+    "run_id": 45716467070,
+    "attempt": 1,
+    "task_id": "DEEP-SUPERAGENT-20261126-DAILY-1",
+    "status": "queue_results_verified",
+    "source_commit": "ee0190e4f",
+    "execution_id": "2c464b50-a3ef-4fd6-b769-c4c4de5e4aef",
+    "model_calls": 5,
+    "paid": false,
+    "financial_execution": false,
+    "unjudged": [],
+    "job_status": "completed_pending_external_acceptance",
+    "receipt": "knowledge/results/deep-superagent/queue-45716467070-attempt-1.json"
+  },
+  "seat_receipts": [
+    {
+      "seat": "qianwen",
+      "covers": "B1-B6",
+      "format": "ok"
+    },
+    {
+      "seat": "doubao",
+      "covers": "A1-A6",
+      "format": "ok"
+    },
+    {
+      "seat": "kimi",
+      "covers": "C1-C3",
+      "format": "ok"
+    },
+    {
+      "seat": "independent_review",
+      "provider": "deepseek-v4-pro",
+      "approved": true,
+      "note": "判 qianwen B3 close 违反 rule1；其余格式合规；未发现运行时元数据声明"
+    }
+  ],
+  "routes": [
+    {
+      "ref": "A1",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "doubao:needs_gpt_decision",
+      "review": "agent_mail ok 42/open5 已核实并记账；通道状态可关，open 项进 backlog",
+      "reviewed": true
+    },
+    {
+      "ref": "A2",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "doubao:needs_gpt_decision",
+      "review": "gmail ok 全箱 5939/unseen 5048/窗口 1765/open1676/未截断 已核实；不逐条处理 open",
+      "reviewed": true
+    },
+    {
+      "ref": "A3",
+      "route": "needs_owner_decision",
+      "seat_route": "doubao:needs_gpt_decision",
+      "review": "改判：QQ IMAP 缺凭据是 owner 配置问题，不是 GPT 裁决；不写成已读",
+      "reviewed": true
+    },
+    {
+      "ref": "A4",
+      "route": "blocked_evidence_needed",
+      "seat_route": "doubao:needs_gpt_decision",
+      "review": "unified 1807 中 unknown 未逐条去重，证据不足；不得批量贴 rule6 关闭",
+      "reviewed": true
+    },
+    {
+      "ref": "A5",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "doubao:needs_gpt_decision",
+      "review": "今日 4 封已逐条读正文并消费，记录 rulings-consumed-2026-11-26.json；可关",
+      "reviewed": true
+    },
+    {
+      "ref": "A6",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "doubao:needs_gpt_decision",
+      "review": "tracker 已消费 3 条 unread；16 条 pending_over_24h 归入跟踪，不重复追问已答",
+      "reviewed": true
+    },
+    {
+      "ref": "B1",
+      "route": "blocked_evidence_needed",
+      "seat_route": "qianwen:needs_gpt_decision",
+      "review": "改判：stale 快照属证据时效问题，非 GPT 事项；需重跑到 HEAD 才可作主账",
+      "reviewed": true
+    },
+    {
+      "ref": "B2",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "qianwen:needs_gpt_decision",
+      "review": "改判：PR/issue/TaskHub 计数是观测事实，按 owner 2026-11-20 普通工程不升 GPT",
+      "reviewed": true
+    },
+    {
+      "ref": "B3",
+      "route": "deploy_confirm_only",
+      "seat_route": "qianwen:coordinator_close_with_receipt",
+      "review": "不采纳席位 close：近 60 条 main run 无 failure 的结论不完整，实际 22:49Z 有一条 Pages deploy failure；只做状态确认，不自行部署",
+      "reviewed": true
+    },
+    {
+      "ref": "B4",
+      "route": "blocked_evidence_needed",
+      "seat_route": "qianwen:blocked_evidence_needed",
+      "review": "维持，但补记：markdown fence 与 design/assign 误报两项已修并有测试；仍缺 claim/lease 与真实 relay 调用",
+      "reviewed": true
+    },
+    {
+      "ref": "B5",
+      "route": "deploy_confirm_only",
+      "seat_route": "qianwen:needs_gpt_decision",
+      "review": "改判：PR #641 是工程门禁问题；required checks 未全绿即不得合并，不升 GPT，本席不合并",
+      "reviewed": true
+    },
+    {
+      "ref": "B6",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "qianwen:needs_gpt_decision",
+      "review": "改判：按 GPT 指示已完成合同生效范围限定 + 4 项测试，push 后进 done",
+      "reviewed": true
+    },
+    {
+      "ref": "C1",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "kimi:blocked_evidence_needed",
+      "review": "巡检已落盘并随本回执 push，证据成立",
+      "reviewed": true
+    },
+    {
+      "ref": "C2",
+      "route": "coordinator_close_with_receipt",
+      "seat_route": "kimi:needs_gpt_decision",
+      "review": "改判：非 1 日且 2026-11 文件已在，按规则跳过并写明原因，属记账不属裁决",
+      "reviewed": true
+    },
+    {
+      "ref": "C3",
+      "route": "needs_owner_decision",
+      "seat_route": "kimi:needs_owner_decision",
+      "review": "维持：付费 lane 恢复涉钱，本席不自行开启，等 owner 直接确认",
+      "reviewed": true
+    }
+  ],
+  "review_conclusion": {
+    "items_total": 15,
+    "changed_by_coordinator": 12,
+    "kept": 3,
+    "false_close_caught": 1,
+    "escalated_to_gpt": 0,
+    "escalated_to_owner": 2,
+    "key_note": "三席位均未给出 close；qianwen 对 B3 的 close 因缺回执证据被否，且实际存在 Pages deploy failure。普通工程项按 owner 2026-11-20 授权不升 GPT。"
+  },
+  "writes_performed": 0,
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "financial_actions": 0,
+  "skills_modified": 0,
+  "task_cards_added": 1,
+  "files_written": [
+    "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261126-DAILY-1.json",
+    "knowledge/results/deep-superagent/rulings-consumed-2026-11-26.json",
+    "knowledge/results/deep-superagent/mail-intake/latest.json（及 runs.jsonl、mail-backlog、mail-fullbox、ruling-tracker、gpt-ruling-mail）",
+    "knowledge/results/patrol/2026-11-26.json",
+    "ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md（追加生效范围限定，原文保留）",
+    "scripts/deep-autonomy.mjs（sign 词边界，消除 design/assign/signal 误报）",
+    "scripts/tests/deep-superagent-autonomy.test.mjs（+2 用例）",
+    "scripts/tests/daily-receipt-contract-scope.test.mjs（新文件 4 用例）",
+    "knowledge/results/deep-superagent/daily-2026-11-26.json"
+  ],
+  "sections": {
+    "done": [
+      {
+        "item": "今日日卡已推送并触发队列",
+        "evidence": "card commit ee0190e4f；queue run 45716467070；回执 queue-45716467070-attempt-1.json；model_calls=5、paid=false",
+        "status": "done"
+      },
+      {
+        "item": "双通道邮件采集",
+        "evidence": "mail-intake/latest.json status=ok；agent 42/open5；gmail 全箱 5939/unseen 5048/窗口 1765/open 1676/bodies_read 50/未截断；QQ not_configured 如实记录",
+        "status": "done"
+      },
+      {
+        "item": "今日 4 封 GPT 补充裁决全部读正文并消费",
+        "evidence": "msg_-H3ibkA… / msg_MC-hs0L… / msg_EVwFGz… / msg_I-MIaxd…；落盘 rulings-consumed-2026-11-26.json（正文不落盘）",
+        "status": "done"
+      },
+      {
+        "item": "#608 合同旧句修正（原文保留、追加生效范围限定）",
+        "evidence": "ops/deep-superagent/DAILY-RECEIPT-CONTRACT.md；scripts/tests/daily-receipt-contract-scope.test.mjs 4/4 通过",
+        "status": "done"
+      },
+      {
+        "item": "#640 分类器假阳性修复（sign 词边界）",
+        "evidence": "scripts/deep-autonomy.mjs FIDUCIARY_RE；design/assign/signal/resign 不再命中，sign/signature/签名/钱包仍命中；deep-superagent-autonomy.test.mjs 34/34 通过",
+        "status": "done"
+      },
+      {
+        "item": "六项合并巡检落盘",
+        "evidence": "knowledge/results/patrol/2026-11-26.json（ok3/unknown3/skipped1）",
+        "status": "done"
+      },
+      {
+        "item": "日课补跑",
+        "evidence": "2026-11-26 无 schedule run；workflow_dispatch 45716539599 conclusion=success",
+        "status": "done"
+      },
+      {
+        "item": "席位 15 项逐条复核，改判 12 条",
+        "evidence": "routes[] 15 条含 seat_route 与 review；拦下 qianwen 对 B3 的无证据 close",
+        "status": "done"
+      },
+      {
+        "item": "月度 skill 迭代按规则跳过",
+        "evidence": "knowledge/results/skill-iteration/2026-11.json 已存在（awaiting_gpt_decision），今日非 1 日 → skipped_monthly_skill_iteration",
+        "status": "done"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "item": "#522 修复 PR #641 的合并/部署放行口径",
+          "blocker": "required checks 有 SKIPPED、mergeable=UNKNOWN，未达全绿；本席按任务纪律不合并 PR",
+          "consequence": "#522 修复停在分支，relay 预算归档缺陷继续影响计量",
+          "partial_work": "可继续跑测试与补充证据，但不能合并或部署"
+        },
+        {
+          "item": "付费 relay lane 恢复的授权形式",
+          "blocker": "GPT 指示以 0 USD 未核实占位 + confirmed_by=owner 恢复；本席视其为资金相邻动作，不自行开启",
+          "consequence": "#640 的 Claude/GPT 真实分派无法启动，scorecard 无数据",
+          "partial_work": "可先完成桥/卡与分类器修复（今日已做两项）"
+        }
+      ],
+      "owner": [
+        {
+          "item": "QQ 共享信箱 IMAP 凭据",
+          "blocker": "qq_fullbox 长期 not_configured",
+          "consequence": "QQ 侧邮件持续盲区，每日只能报未配置",
+          "partial_work": "其余两通道照常采集并如实标注"
+        },
+        {
+          "item": "Pages 部署瞬时失败是否允许本席重跑",
+          "blocker": "actions/deploy-pages 返回 try again later；重跑属生产面部署动作",
+          "consequence": "静态站内容停在上一版，站点仍 200 可用",
+          "partial_work": "已记录 run 与错误原文，等下一次 push 自然重试"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "action": "重跑 oversight 到当前 HEAD",
+        "done_criteria": "oversight/latest.json source_commit == 当次 main HEAD",
+        "why": "消除 stale 主账（今日 964f1c62e 落后）"
+      },
+      {
+        "action": "把 #640 修复推到 PR 并跑 required checks",
+        "done_criteria": "存在 PR + checks 记录；不合并",
+        "why": "今日已修分类器与合同，缺 PR 载体"
+      },
+      {
+        "action": "申请 #640 claim/lease 并写回 Issue",
+        "done_criteria": "Task Hub 出现 claim/lease 记录",
+        "why": "首卡 partial 且 Task Hub 仍 blocked"
+      },
+      {
+        "action": "unified 1807 中 unknown 项逐条去重",
+        "done_criteria": "去重清单落盘且数量与 unified 对得上",
+        "why": "A4 blocked 的根因"
+      },
+      {
+        "action": "68 open issue + Task Hub 12 open 常规分诊",
+        "done_criteria": "分诊结论落盘、无重复派单",
+        "why": "避免重复造卡"
+      }
+    ],
+    "later": [
+      {
+        "item": "2026-11 skill 迭代提案复审",
+        "depends_on": "GPT 对 2026-11 提案的裁决",
+        "precondition": "verify-skill-iteration-decision.mjs exit 0"
+      },
+      {
+        "item": "三数（YouTube/RUM/进账）恢复",
+        "depends_on": "owner 撤销 2026-11-23 暂停",
+        "precondition": "owner 明确指示"
+      },
+      {
+        "item": "QQ 通道补采",
+        "depends_on": "owner 提供 QQ IMAP 凭据",
+        "precondition": "仓库外 600 权限文件"
+      },
+      {
+        "item": "relay Claude/GPT 真实分派",
+        "depends_on": "付费 lane 恢复获准",
+        "precondition": "/budget/state 回读正常、上限不变"
+      }
+    ]
+  },
+  "patrol": {
+    "path": "knowledge/results/patrol/2026-11-26.json",
+    "counts": {
+      "ok": 3,
+      "unknown": 3,
+      "skipped": 1,
+      "failed": 0
+    },
+    "blocking": false
+  },
+  "skipped_monthly_skill_iteration": {
+    "skipped": true,
+    "reason": "2026-11 skill-iteration 文件已存在且今日非每月 1 日",
+    "existing_status": "awaiting_gpt_decision",
+    "sha256": "f46b562a0a04…（沿用 11 月记录）"
+  },
+  "email": {
+    "status": "pending_send"
+  },
+  "answers": {
+    "deployed_or_done": "今日无部署；已完成见 sections.done 9 条",
+    "awaiting": "GPT 2 项（PR #641 放行、付费 lane 授权形式）；owner 2 项（QQ 凭据、Pages 重跑许可）",
+    "next_now": "见 next_immediate 5 条",
+    "later": "见 later 4 条"
+  }
+}

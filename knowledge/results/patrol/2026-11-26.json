@@ -1,0 +1,60 @@
+{
+  "schema": "ltzzz.patrol.v1",
+  "date": "2026-11-26",
+  "timezone": "Asia/Shanghai",
+  "generated_at_utc": "2026-11-25T23:02:00Z",
+  "source": "ops/deep-superagent/MERGED-PATROL-INSTRUCTIONS.md",
+  "items": [
+    {
+      "id": "memory",
+      "name": "记忆库只读巡检",
+      "status": "ok",
+      "evidence": "ltzzz-memory 28 份 md + manifest.json 可读；梦境数据库.md、文明研究.md、重要事件.md、项目历史.md 均在；最新改动 daily-3nums.md 2026-11-24",
+      "unprocessed_notes_only": [
+        "重要事件.md:126 千问回归自 2026-10-15 起连续为 delivered_pending_independent_review，未闭环",
+        "项目历史.md:32 AGI-ECON Phase-1 仍为 proposed：链上出金/Worker 部署/真实 API 交付未做"
+      ],
+      "writes_to_memory": 0
+    },
+    {
+      "id": "video-pipeline",
+      "name": "视频流水线最近 run",
+      "status": "unknown",
+      "evidence": "repos/actions/runs 最近 60 条中无 name 匹配 video/视频 的 run；无法据现有证据判定最近一次结论"
+    },
+    {
+      "id": "ltzzz-com",
+      "name": "站点可访问性",
+      "status": "ok",
+      "evidence": "curl https://ltzzz.com -> HTTP 200，1.360s（2026-11-25T22:59Z）"
+    },
+    {
+      "id": "workbuddy",
+      "name": "WorkBuddy skill os_f8a49bc830defb02",
+      "status": "unknown",
+      "evidence": "仓库内无 .secrets-local；config/deep-superagent.json 仅记 existing_submission_id；无调用凭据，不伪造可用状态"
+    },
+    {
+      "id": "wechat-mp",
+      "name": "微信公众平台 AppID wx562bcb6057346fb2",
+      "status": "unknown",
+      "evidence": "~/.config/ltzzz 仅 gmail-imap.env；仓库内无该 AppID 的可用 secret，无凭据"
+    },
+    {
+      "id": "daily-run",
+      "name": "日课补跑",
+      "status": "ok",
+      "evidence": "2026-11-26 无 event=schedule run（最后 schedule 45580808214 为 2026-11-25T08:57Z）；已 workflow_dispatch 45716539599，conclusion=success（22:50:40Z）"
+    },
+    {
+      "id": "three-numbers",
+      "name": "三数次日补记",
+      "status": "skipped",
+      "reason": "owner_paused_20261123",
+      "evidence": "owner 2026-11-23 指令暂停采集与补记；未写 ltzzz-memory/daily-3nums.md"
+    }
+  ],
+  "counts": {"ok": 3, "unknown": 3, "skipped": 1, "failed": 0},
+  "blocking": false,
+  "notes": ["合并项为低优先，未动用资金、未写凭据、未做生产写、未改记忆库与 skill"]
+}
