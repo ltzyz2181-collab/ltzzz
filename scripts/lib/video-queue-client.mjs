@@ -24,7 +24,7 @@ export async function publishQueuedVideo({bytes,meta,name,token,receipt={},save=
   if(!bytes.length||bytes.length>25*1024*1024)throw Error('invalid_video_size');
   if(meta.video_sha256&&meta.video_sha256!==hash)throw Error('video_hash_mismatch');
   const status=await request('/youtube/status',{publicRead:true,timeout:30000});
-  if(!status.connected||status.channel_id!==CHANNEL)throw Error('expected_LTZZZ_channel_not_connected');
+  if(!status.connected||status.channel_id!==CHANNEL)throw Error('expected_LTZZZ_channel_not_connected:'+JSON.stringify({connected:status.connected===true,channel_id:status.channel_id||null,channel_name:status.channel_name||null,has_token_refresh:Boolean(status.last_error||status.reason||null),scope:status.scope||null,last_publish:status.last_publish||null}));
   const form=new FormData();form.set('video',new Blob([bytes],{type:'video/mp4'}),name+'.mp4');form.set('meta',JSON.stringify({...meta,video_sha256:hash}));
   receipt.phase='queue_upload_started';save(receipt);
   const queued=await request('/queue/upload/'+name,{body:form});
