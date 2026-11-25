@@ -107,7 +107,13 @@
         "created_at": "2026-11-25T22:49:31Z",
         "conclusion": "failure",
         "root_cause": "actions/deploy-pages 返回 Deployment failed, try again later（服务端瞬时错误，非内容缺陷）",
-        "action": "未手动重跑；仅状态确认"
+        "action": "未手动重跑；仅状态确认",
+        "recovery": {
+          "run_id": 45717379862,
+          "created_at": "2026-11-25T22:56:25Z",
+          "conclusion": "success",
+          "note": "后续 push 自然重试成功，确认瞬时错误，非内容缺陷"
+        }
       }
     ]
   },
@@ -207,10 +213,11 @@
     },
     {
       "ref": "B3",
-      "route": "deploy_confirm_only",
+      "route": "coordinator_close_with_receipt",
       "seat_route": "qianwen:coordinator_close_with_receipt",
-      "review": "不采纳席位 close：近 60 条 main run 无 failure 的结论不完整，实际 22:49Z 有一条 Pages deploy failure；只做状态确认，不自行部署",
-      "reviewed": true
+      "review": "不采纳席位 close 的理由（其证据不全）；实际核验：22:49Z Pages 失败为瞬时错误，22:56Z 自然重试成功 run 45717379862，现可带证据收口",
+      "reviewed": true,
+      "status_evidence": "run 45716467067 failure -> run 45717379862 success"
     },
     {
       "ref": "B4",
@@ -331,6 +338,11 @@
       {
         "item": "今日汇总邮件已发并从发件箱回读",
         "evidence": "message_id msg_cmdr6uNNIphC35AHQvdN3IlsGWirsJO95XD0oUbiDnVlqw；created_at 2026-11-25T22:56:41Z；两步确认 queued:true",
+        "status": "done"
+      },
+      {
+        "item": "Pages 部署瞬时失败已核验恢复",
+        "evidence": "run 45716467067 failure（Deployment failed, try again later）→ 后续 push run 45717379862 success（2026-11-25T22:56:25Z）；未手动重跑",
         "status": "done"
       }
     ],
