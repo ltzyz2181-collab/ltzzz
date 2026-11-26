@@ -261,7 +261,9 @@ test('a console confirmation resets the baseline and keeps prior spend as histor
   const confirmed = await budgetCall(instance, '/confirm', { balance_usd: 90.5, confirmed_by: 'owner_console_read', basis: 'console dashboard 2026-02-02' });
   assert.equal(confirmed.ok, true);
   assert.equal(confirmed.snapshot.baseline_usd, 90.5);
-  assert.equal(confirmed.snapshot.project_spent_usd, 0);
+  assert.equal(confirmed.snapshot.project_spent_usd, 0.02);
+  assert.equal(confirmed.snapshot.balance_usd, 90.5);
+  assert.equal(confirmed.snapshot.daily_spent_usd, 0);
   const stored = state.storage.map.get('budget');
   assert.equal(stored.entries.length, 0);
   assert.equal(stored.prior_periods.length, 1);
@@ -350,6 +352,91 @@ function seededBudget(entries, vars = { RELAY_CONFIRMED_BALANCE_USD: '100' }) {
   });
   return { instance, state };
 }
+
+test('project lifetime cap includes archived spend after a balance confirmation', async () => {
+  const entries = [];
+  for (let day = 1; day <= 20; day += 1) {
+    entries.push(spendEntry({
+      at: '2026-04-' + String(day).padStart(2, '0') + 'T00:00:00.000Z',
+      callId: 'archive-' + day,
+      cost: 0.499,
+    }));
+  }
+  const { instance, state } = seededBudget(entries);
+  const confirmed = await budgetCall(instance, '/confirm', {
+    balance_usd: 100,
+    confirmed_by: 'owner_console_read',
+    basis: 'verified current balance readback',
+    at: '2026-04-21T00:00:00.000Z',
+  });
+  assert.equal(confirmed.ok, true);
+  assert.equal(confirmed.snapshot.project_spent_usd, 9.98);
+  assert.equal(confirmed.snapshot.balance_usd, 100);
+  assert.equal(confirmed.snapshot.daily_spent_usd, 0);
+
+  const over = await budgetCall(instance, '/reserve', {
+    call_id: 'archive-cap-over',
+    model: 'gpt-6.1-sol',
+    estimated_cost_usd: 0.05,
+    at: '2026-04-21T00:00:01.000Z',
+  });
+  assert.equal(over.ok, false);
+  assert.equal(over.code, 'relay_project_cap_exceeded');
+  assert.equal(over.snapshot.project_spent_usd, 9.98);
+  assert.equal(state.storage.map.get('budget').prior_periods.length, 1);
+});
+
+test('confirmation archives prior spend even when the previous balance was unverified', async () => {
+  const { instance, state } = budgetEnv({}, {});
+  state.storage.map.set('budget', {
+    schema: BUDGET_SCHEMA,
+    currency: 'USD',
+    baseline: null,
+    entries: [spendEntry({ at: '2026-05-01T00:00:00.000Z', callId: 'unknown-balance-1', cost: 0.02 })],
+    reservations: {},
+    prior_periods: [],
+    closed: false,
+    closed_reason: null,
+    updated_at: null,
+  });
+  const confirmed = await budgetCall(instance, '/confirm', {
+    balance_usd: 10,
+    confirmed_by: 'owner',
+    basis: 'owner top-up instruction',
+    at: '2026-05-02T00:00:00.000Z',
+  });
+  assert.equal(confirmed.snapshot.project_spent_usd, 0.02);
+  assert.equal(confirmed.snapshot.balance_usd, 10);
+  assert.equal(state.storage.map.get('budget').prior_periods.length, 1);
+});
+
+test('project spend history is not truncated after 24 confirmations', async () => {
+  const { instance, state } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
+  state.storage.map.set('budget', {
+    schema: BUDGET_SCHEMA,
+    currency: 'USD',
+    baseline: { balance_usd: 100, confirmed_at: null, confirmed_by: 'test_seed', source: 'test_seed' },
+    entries: [],
+    reservations: {},
+    prior_periods: Array.from({ length: 24 }, (_, index) => ({
+      baseline_usd: 100,
+      entries: 1,
+      recorded_cost_usd: 0.01,
+      closed_at: '2026-01-' + String(index + 1).padStart(2, '0') + 'T00:00:00.000Z',
+    })),
+    closed: false,
+    closed_reason: null,
+    updated_at: null,
+  });
+  const confirmed = await budgetCall(instance, '/confirm', {
+    balance_usd: 100,
+    confirmed_by: 'owner',
+    basis: 'verified current balance readback',
+    at: '2026-02-01T00:00:00.000Z',
+  });
+  assert.equal(state.storage.map.get('budget').prior_periods.length, 25);
+  assert.equal(confirmed.snapshot.project_spent_usd, 0.24);
+});
 
 test('a settled call above the per-call cap closes the seat before the next reservation', async () => {
   const { instance } = budgetEnv({}, { RELAY_CONFIRMED_BALANCE_USD: '100' });
