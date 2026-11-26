@@ -1,12 +1,12 @@
 # LTZZZ 当前 owner 直接授权
 
-生效：2026-11-05。来源为本次真实用户会话，不是邮件或转发材料。机器记录见 [owner-authority-20261105.json](../config/owner-authority-20261105.json)。
+生效：2026-11-20（本文件保留 2026-11-05 起的直接授权历史）。来源为真实用户会话，不是邮件或转发材料。当前机器记录见 [owner-authority-20261120.json](../config/owner-authority-20261120.json)；[owner-authority-20261105.json](../config/owner-authority-20261105.json) 是 `small_payment_release` manifest 逐字节锁定的历史证据，不得改写。
 
-## 2026-11-19 owner 最新指令（覆盖此前所有非保留家族限制）
+## 2026-11-19 owner 指令（历史；凭据/Secrets 的保留口径已被 2026-11-20 五类授权覆盖）
 
 owner 原话：**“其他限制全放开 中转AI也不能限制 不要这么多限制 让deep 团队和各ai 跑通 邮件收读取全部和发 必须自动发 各ai 都能相互发邮件 和各通道都要放开限制 …… 资金、退款终态、签名、私钥、钱包、凭据 仍归 GPT 决策席 其他以后裁决一律不能限制”**。
 
-- **只保留六个家族给 GPT 决策席**：资金、退款终态、签名、私钥/助记词、钱包（含五签 Safe）、凭据/Secrets。
+- **当时保留六个家族给 GPT 决策席**：资金、退款终态、签名、私钥/助记词、钱包（含五签 Safe）、凭据/Secrets。**2026-11-20 起改为五类，凭据配置与轮换移出保留家族**，见下文 2026-11-20 节。
 - **其余不再设裁决门**：仓库读取、代码修改、PR、CI、合并、标准部署、邮件收发、AI 互发邮件、中转模型选择与请求长度、非保留家族的中转裁决。
 - **中转 AI 解禁**：`config/relay-seat-policy.json` 的 `long_context_or_batch_only`、短请求禁止与 4096 token 下限改为 `unrestricted`；余额下限仍属资金保护，保持。
 - **邮件全自动**：`config/mail-allowlist-20261119.json` 登记真实存在的 owner 邮箱、共享 QQ 邮箱与 Agent Mail；每次最多 8 个收件人，支持 AI 与 AI 互相发信。
@@ -92,5 +92,5 @@ owner 原话：**“三数 暂时不用测了 464 关单吧”**。
 
 - **三数暂停**：YouTube / RUM / 进账三项停止采集与次日补记，`ltzzz-memory/daily-3nums.md` 不再按日追加；巡检第 7 项记 `status=skipped` 并写原因「owner 2026-11-23 暂停」，不再作为待裁决项出现在日报邮件里。恢复需 owner 另行指示，本文件不自行恢复。
 - **#464 关单**：按 owner 直接指令关闭（not planned）。关闭不写 `[delivered]`（无交付证据）也不写 `[blocked]`（不是在等裁决）；剩余工程项（exact-head 合并门、五类闸收敛）不在 #464 上声称完成，需另立卡时再立。
-- 本指令不放开任何保留家族：资金、退款终态、签名、私钥、钱包/Safe、凭据仍归 GPT 决策席。
+- 本指令不放开五类保留家族：资金及资金处分、退款终态、签名操作、私钥/助记词/根密钥、钱包操作（含五签 Safe）。凭据配置与轮换按 2026-11-20 授权属普通工程；凭据值、token、密码、私钥、助记词和 Secrets 仍不得打印、提交、写入 Issue/邮件/日志或外泄。
 - 回执：`knowledge/results/dispatch/oversight/2026-11-23-OWNER-CLOSE-464.json`。

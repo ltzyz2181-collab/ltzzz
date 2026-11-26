@@ -34,12 +34,12 @@ async function adjudicate(jobRecord,{env=relayEnv(),body={adjudication_id:'ADJ-2
 
 // --- pure rules -----------------------------------------------------------
 test('funds family is recognized before any relay call across zh/en phrasings',()=>{
-  for(const [prompt,family] of [['请把退款展示防御改成自动','refund_semantics'],['放款额度自动下发','loan_disbursement'],['给钱包加一次 multisig 签名','wallet_or_safe_ops'],['用私钥签这笔交易','signing'],['购买订阅并自动续费','funding_moves'],['执行五签 5-of-5 放款','five_signature_safe'],['five-signature wallet approval','five_signature_safe']]){
+  for(const [prompt,family] of [['请把退款展示防御改成自动','refund_semantics'],['放款额度自动下发','loan_disbursement'],['给钱包加一次 multisig 签名','wallet_or_safe_ops'],['用私钥签这笔交易','private_keys_seed_phrases_root_keys'],['购买订阅并自动续费','funding_moves'],['执行五签 5-of-5 放款','five_signature_safe'],['five-signature wallet approval','five_signature_safe']]){
     const hit=fundFamilyHit({task_id:'DEEP-X',prompt});
     assert.equal(hit.hit,true,prompt);assert.equal(hit.family,family,prompt);
   }
   assert.deepEqual(fundFamilyHit({task_id:'DEEP-SUPERAGENT-20261117-ADJ',prompt:'补充口径文档并确认已合并状态，保持现有行为，只补文档与状态确认。'}).hit,false);
-  for(const prompt of ['production deploy 到生产环境','灰度发布并上线新版本','正式环境切流推全']){assert.equal(fundFamilyHit({task_id:'DEEP-X',prompt}).hit,false,prompt);}
+  for(const prompt of ['production deploy 到生产环境','灰度发布并上线新版本','正式环境切流推全','配置并轮换 API token']){assert.equal(fundFamilyHit({task_id:'DEEP-X',prompt}).hit,false,prompt);}
 });
 test('short-circuit record never claims a call, money or execution',()=>{
   const r=fundShortCircuit({task_id:'DEEP-X',input_sha256:HASH,family:'refund_semantics'});

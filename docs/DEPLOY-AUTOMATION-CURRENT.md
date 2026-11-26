@@ -12,7 +12,9 @@
 | 生产部署（Workers / 流水线 / 文档与测试产物） | 合并后自动部署，不再请示 | 本授权 `automatic_deploy=true` |
 | 部署验证 | 必须回读 health 并落盘回执；`model_calls=0` | 本授权 `preconditions` |
 | 回滚 | 保留入口但不自动触发 | `automatic_rollback=false` |
-| 资金 / 放款 / 退款终判 / 钱包 / Safe / 签名 / 凭据 | **仍然人工**，走 GPT 决策席（5 签 Safe 由人） | 本授权 `excluded_families` |
+| 资金及资金处分 / 放款 / 退款终判 / 钱包 / Safe / 签名 / 私钥与根密钥 | **仍然人工**，走 GPT 决策席（5 签 Safe 由人） | 本授权 `excluded_families` + owner 2026-11-20 五类授权 |
+
+凭据配置与轮换自 2026-11-20 起属于普通工程，不再因“凭据”二字默认拦截；但 token、密码、私钥、助记词和 Secrets 的值仍不得打印、提交、写入 Issue/邮件/日志。
 
 被排除的族是硬边界：即使代码已经写好、测试已经绿，也不得由本席自动执行。
 
