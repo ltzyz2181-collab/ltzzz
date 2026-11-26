@@ -1,0 +1,17 @@
+{
+  "finding": "scripts/lib/daily-task-board.mjs 的 syncDailyBoard 存在真实故障断点：当席位状态为 generation_started 且 recoverArtifact 未能恢复出唯一 complete artifact 时，席位被置为 generation_unknown_no_repurchase。该状态既不在后续正常提交路径允许状态列表中，也不在 syncFailedSeat 的失败同步状态列表中，导致该席位永远不会调用 fail_task，也不会进入 failed_no_repurchase 终态。hasUnverifiedBoard 将其视为未核验，使每日板持续阻塞。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "scripts/daily-task-board.mjs",
+    "workers/pulse-worker/tasks.js",
+    "knowledge/results/ans-cycle/2026-11-25-reviewer.json"
+  ],
+  "minimal_patch": "在 syncDailyBoard 中，将 generation_unknown_no_repurchase 纳入失败同步分支，并为该状态生成绑定失败证据后调用 fail_task。具体修改：\n\n1. 在 syncDailyBoard 的循环中，将条件：\n   if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat(...);continue;}\n   改为：\n   if(seat.assignment&&seat.claim_verified&&['missing_required_section','generation_failed_no_repurchase','generation_unknown_no_repurchase','failure_sync_unknown','failed_no_repurchase'].includes(seat.status)){await syncFailedSeat(...);continue;}\n\n2. 修改 syncFailedSeat 内部：将 body.status 的校验从仅允许 'incomplete_or_failed' 改为允许 'incomplete_or_failed' 或 'unknown_failed'。新增一个常量 UNKNOWN_FAILED_STATUS='unknown_failed'。\n\n3. 在 runReservedSeat 之后、syncDailyBoard 运行前，为 generation_unknown_no_repurchase 状态构造失败 artifact：新增函数 writeUnknownFailureArtifact(root, record, agent, seat)，生成确定性 JSON：\n   {\n     schema_version: 1,\n     date: record.date,\n     task_id: seat.assignment.id,\n     logical_seat: agent,\n     actual_provider: null,\n     actual_model: null,\n     source_commit: record.source_commit,\n     run_key: record.run_key,\n     status: 'unknown_failed',\n     integrity: {status: 'unknown_outcome', reason: 'provider_result_unknown'},\n     finish_reason: null,\n     output: ''\n   }\n   计算 sha256 后以路径 knowledge/results/daily-board/artifacts/${record.date}-${agent}-${hash}.json 原子写入（tmp 文件 + rename），并设置 seat.artifact = {path, sha256}。\n\n4. 修改 syncFailedSeat 中 body.status 校验：\n   if(body.status !== 'incomplete_or_failed' && body.status !== 'unknown_failed') throw Error('failure_binding_invalid');\n\n5. 修改 validateArtifact 只用于 complete artifact 的路径不变；unknown_failed 证据不被 validateArtifact 接受，仅被 syncFailedSeat 使用。\n\n6. 在 tasks.js 的 fail_task 分支中，允许 failure_kind 为 'incomplete_or_failed_provider_output' 或 'unknown_provider_outcome'。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs",
+    "node -e \"import('./scripts/lib/daily-task-board.mjs').then(m=>{const record={schema_version:2,date:'2026-11-25',run_key:'test',source_commit:'a'.repeat(40),seats:{test:{agent:'test',status:'generation_unknown_no_repurchase',claim_verified:true,assignment:{id:'DAILY-2026-11-25-test',execution_date:'2026-11-25'},artifact:null}}}; console.log(m.hasUnverifiedBoard(record))})\""
+  ],
+  "remaining_blocker": "本地写盘与 fail_task 前远端 raw.githubusercontent.com 回读之间的时序未验证：需要实际提交并推送失败证据到 GitHub main 分支，等待 raw 可读后再调用 fail_task，否则远端回读哈希不一致会阻塞闭环。"
+}

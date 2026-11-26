@@ -1,0 +1,40 @@
+{
+  "accepted": false,
+  "artifact_sha256": "fbc2745edc990635960483e1624583665fbbdb26b7cad5080ca4ba9824e5f303",
+  "reasons": [
+    "对照 scripts/lib/daily-task-board.mjs，finding 所述核心故障成立：syncDailyBoard 先调用 recoverArtifact；若 generation_started 未恢复出唯一 complete artifact，则席位被置为 generation_unknown_no_repurchase。",
+    "generation_unknown_no_repurchase 未包含在 syncFailedSeat 的触发状态列表中；该列表仅含 missing_required_section、generation_failed_no_repurchase、failure_sync_unknown、failed_no_repurchase。",
+    "generation_unknown_no_repurchase 也不满足正常提交路径的状态白名单 generated_pending_sync、sync_unknown、submitted_pending_review、review_unknown、completed_draft_review、rejected_draft_review，因此不会提交 complete artifact。",
+    "syncFailedSeat 当前只接受 body.status === 'incomplete_or_failed'，且 fail_task 固定发送 failure_kind='incomplete_or_failed_provider_output'；workers/pulse-worker/tasks.js 也只允许该 failure_kind。",
+    "hasUnverifiedBoard 明确把 generation_unknown_no_repurchase 计入未核验状态，因此该席位会持续使每日板保持未闭环。",
+    "recoverArtifact 虽接受 generation_unknown_no_repurchase 作为恢复入口，但它只通过 validateArtifact 查找 body.status === 'complete' 的唯一完整产物；缺少 artifact 时不会创建失败证据。",
+    "交付中的 minimal_patch 是自然语言方案，不是可直接应用的完整 diff；未提供实际修改后的 scripts/lib/daily-task-board.mjs、workers/pulse-worker/tasks.js 或回归测试代码。",
+    "建议新增 writeUnknownFailureEvidence，但未给出完整函数实现、确定性序列化规则、原子写细节、重复运行复用策略、写入失败处理、损坏文件处理、并发冲突处理和与现有 artifact 命名规则的完整兼容方案。",
+    "补丁第 1 项把 generation_unknown_no_repurchase 纳入 syncFailedSeat，但第 3 项又要求在 runReservedSeat 之后、syncDailyBoard 运行前另写证据；当前交付没有展示实际调用点和编排代码，无法确认证据一定在 syncFailedSeat 前生成。",
+    "建议的 unknown_failed 证据路径仍采用 date-agent-hash.json，而 syncFailedSeat 现有路径校验可复用该形式；但交付未提供完整校验代码，无法确认 unknown_failed 与 incomplete_or_failed 的字段、完整性和 failure_kind 映射均正确。",
+    "补丁要求 validateArtifact 继续只接受 complete artifact，这一方向正确；但未给出针对 unknown_failed 的独立验证函数或完整 syncFailedSeat 实现，无法复核是否会误把未知失败证据送入正常提交路径。",
+    "workers/pulse-worker/tasks.js 中 fail_task 当前明确拒绝除 incomplete_or_failed_provider_output 外的 failure_kind；交付仅文字要求增加 unknown_provider_outcome，未提供服务端代码修改和测试。",
+    "verification_commands 只是待执行命令，没有执行输出；其中内联 node 命令只能证明当前 hasUnverifiedBoard 会阻塞该状态，不能证明补丁实现、证据写入、fail_task、幂等恢复或终态迁移有效。",
+    "scripts/daily-task-board.mjs 的 readRemote 直接读取 raw.githubusercontent.com 主分支；syncFailedSeat 在 fail_task 前要求远端哈希等于本地哈希。交付承认提交、推送、等待 raw 可读和重试时序未解决，因此端到端闭环仍不可复核。",
+    "evidence_paths 中 knowledge/results/ans-cycle/2026-11-25-reviewer.json 是一份拒绝性评审材料，不是补丁或测试实物；不能替代代码交付。",
+    "本次只能验收为问题定位与修复方向草稿，不能验收为代码修复完成；没有证据表明建议代码已写盘、测试通过、提交、合并、部署或上线。"
+  ],
+  "unverified": [
+    "无法从提供材料中取得交付对象原始字节并重算 SHA-256，只能严格回传给定 artifact_sha256。",
+    "未实际应用补丁，无法验证 node --check scripts/lib/daily-task-board.mjs。",
+    "未执行 node --test scripts/tests/ans-cycle.test.mjs。",
+    "未执行 node --test scripts/tests/reflection-harness.test.mjs。",
+    "未执行交付列出的内联 node 命令，也未验证其输出。",
+    "未验证 writeUnknownFailureEvidence 的完整实现、JSON schema、确定性字节、换行、哈希、路径白名单、tmp 文件加 rename 原子写入和异常处理。",
+    "未验证同一 generation_unknown_no_repurchase 席位重复运行时是否复用同一失败证据，以及文件缺失、文件损坏、哈希不一致或存在多个候选证据时是否安全失败。",
+    "未验证 unknown_failed 证据不会被 validateArtifact 或正常 submit_task 路径接受。",
+    "未验证 syncFailedSeat 对 unknown_failed 的绑定字段、完整性状态、failure_kind 选择和旧 incomplete_or_failed artifact 兼容性。",
+    "未验证 workers/pulse-worker/tasks.js 对 unknown_provider_outcome 的服务端接受、重复 fail_task 幂等性和 owner/date/status 冲突处理。",
+    "未验证失败证据如何提交并推送到 GitHub main 分支，也未验证 raw.githubusercontent.com 在 fail_task 前可回读到相同 SHA-256。",
+    "未验证远端回读失败、网络瞬断、snapshot 过期、401/403、429、5xx、命令响应丢失等场景下的恢复行为。",
+    "未验证席位最终能否到达 failed_no_repurchase、failure_verified=true，并从 hasUnverifiedBoard 的阻塞集合中消除。",
+    "未验证新增或修改的回归测试是否覆盖正常失败、未知 provider 结果、无 artifact、证据写入失败、远端回读失败、重复同步、响应丢失和终态恢复。",
+    "未验证 CI 全量结果、合并提交、部署回执、目标环境、制品 SHA、生产版本或线上关键行为。",
+    "未验证模型调用次数、API 费用、采购、支付、转账或其他资金事项。"
+  ]
+}
