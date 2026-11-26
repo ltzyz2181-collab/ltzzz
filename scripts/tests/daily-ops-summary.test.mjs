@@ -16,6 +16,7 @@ import {buildMailTodo,
   summarizeQueueReport,
   writeSummary,
 } from '../daily-ops-summary.mjs';
+import {classifyReservedFamily} from '../lib/decision-families.mjs';
 
 const queueReport = (run = '50000000001') => ({
   schema: 'ltzzz.deep-superagent.queue.v1',
@@ -80,6 +81,8 @@ test('队列回执被分为完成、待 GPT、待 owner、阻塞四类', () => {
   assert.equal(items.length, 4);
   assert.equal(items[0].needs_gpt_decision, false);
   assert.equal(items[1].needs_gpt_decision, true);
+  assert.equal(items[1].reserved_family.key, 'signing_operations');
+  assert.equal(items[1].decision_reclassified, false);
   assert.deepEqual(items[1].asks, [{ref: 'B2', target: 'gpt', ask: '请裁决签名边界与范围'}]);
   assert.equal(items[2].needs_owner_decision, true);
   assert.equal(items[3].status, 'blocked');
@@ -141,6 +144,63 @@ test('没有 GPT 待裁决项时也明确写“没有”，不伪造裁决', () 
   assert.match(summary.email.body, /今天没有需要 GPT 裁决的项/);
 });
 
+test('五类保留家族可分类；凭据配置与普通英文词不误判', () => {
+  assert.equal(classifyReservedFamily('资金放款 100 USDC').key, 'funds_and_financial_asset_disposition');
+  assert.equal(classifyReservedFamily('退款终态裁决').key, 'refund_finality');
+  assert.equal(classifyReservedFamily('需要签名确认').key, 'signing_operations');
+  assert.equal(classifyReservedFamily('私钥与助记词保管').key, 'private_keys_seed_phrases_root_keys');
+  assert.equal(classifyReservedFamily('五签钱包操作').key, 'wallet_operations_including_five_signature_wallet');
+  assert.equal(classifyReservedFamily('配置新的 API token 并轮换'), null);
+  assert.equal(classifyReservedFamily('design review and assignment'), null);
+});
+
+test('非五类 needs_gpt_decision 降级为普通工程跟进，不再进裁决队列', () => {
+  const report = {
+    schema: 'ltzzz.deep-superagent.queue.v1', run_id: '50000000010',
+    items: [{
+      task_id: 'DSA-ORDINARY-01', package_id: 'PKG-ORDINARY', status: 'job_terminal_observed',
+      job: {
+        status: 'needs_gpt_decision', model_calls: 1,
+        plan: {needs_gpt_decision: true, reason: 'coordinator_plan_unparseable'},
+        review: {needs_gpt_decision: true, reason: '输出格式不合规，需补充字段'},
+        outputs: [{text: 'ASK | B1 | gpt | 请提供邮件通道回执'}],
+      },
+    }],
+  };
+  const items = summarizeQueueReport(report);
+  assert.equal(items[0].gpt_decision_requested, true);
+  assert.equal(items[0].needs_gpt_decision, false);
+  assert.equal(items[0].decision_reclassified, true);
+  assert.equal(items[0].reserved_family, null);
+
+  const summary = buildSummary({
+    date: '2026-11-19',
+    evidence: evidence({queueReports: [{path: 'queue.json', body: report}], dailyReports: []}),
+  });
+  assert.equal(summary.counts.needs_gpt_decision, 0);
+  assert.equal(summary.counts.ordinary_in_progress, 1);
+  assert.equal(summary.counts.done, 0, '降级项不是完成项');
+  assert.equal(summary.ordinary_in_progress[0].task_id, 'DSA-ORDINARY-01');
+  assert.match(summary.email.body, /普通工程跟进/);
+  assert.match(summary.email.body, /DSA-ORDINARY-01/);
+  assert.match(summary.email.body, /今天没有需要 GPT 裁决的项/);
+  assert.ok(summary.next_steps.some((step) => /已降级为普通工程跟进/.test(step)));
+});
+
+test('needs_gpt_decision 没有任何说明时保持 GPT 复核，不自动放行', () => {
+  const report = {
+    schema: 'ltzzz.deep-superagent.queue.v1', run_id: '50000000011',
+    items: [{
+      task_id: 'DSA-NO-REASON', package_id: 'PKG-NO-REASON', status: 'job_terminal_observed',
+      job: {status: 'needs_gpt_decision'},
+    }],
+  };
+  const items = summarizeQueueReport(report);
+  assert.equal(items[0].needs_gpt_decision, true);
+  assert.equal(items[0].decision_reclassified, false);
+  assert.equal(items[0].reserved_family, null);
+});
+
 test('邮件摄入缺失时写 unknown，不写成“没有邮件”', () => {
   const summary = buildSummary({date: '2026-11-19', evidence: evidence({intake: null})});
   assert.equal(summary.mail.status, 'unknown');
@@ -171,15 +231,16 @@ test('needs_gpt_decision 没有 ASK | gpt 行时补裁决问题，并带上复�
       task_id: 'DSA-GPT-FALLBACK', package_id: 'PKG-FALLBACK', status: 'job_terminal_observed',
       job: {
         status: 'needs_gpt_decision', model_calls: 3,
-        plan: {reason: 'coordinator_plan_unparseable'},
+        plan: {reason: '涉及资金放款路径，需 GPT 裁决'},
         review: {needs_gpt_decision: true, reason: 'C2 and C4 incorrectly routed as coordinator_close_with_receipt'},
         outputs: [{text: 'ASK | B1 | evidence | 需要邮件通道回执'}],
       },
     }],
   };
   const items = summarizeQueueReport(report);
-  assert.equal(items[0].reason, 'coordinator_plan_unparseable');
+  assert.equal(items[0].reason, '涉及资金放款路径，需 GPT 裁决');
   assert.equal(items[0].review_reason, 'C2 and C4 incorrectly routed as coordinator_close_with_receipt');
+  assert.equal(items[0].reserved_family.key, 'funds_and_financial_asset_disposition');
   const summary = buildSummary({
     date: '2026-11-19', evidence: evidence({queueReports: [{path: 'queue.json', body: report}]}),
   });
@@ -195,7 +256,7 @@ test('needs_gpt_decision 没有 ASK | gpt 行时补裁决问题，并带上复�
   try {
     const written = writeSummary({root, summary});
     const record = JSON.parse(fs.readFileSync(path.join(root, written.ruling_requests[0].path), 'utf8'));
-    assert.equal(record.reason, 'coordinator_plan_unparseable');
+    assert.equal(record.reason, '涉及资金放款路径，需 GPT 裁决');
     assert.equal(record.asks.length, 1);
     assert.equal(record.asks[0].target, 'gpt');
     assert.equal(record.related_asks.length, 1);

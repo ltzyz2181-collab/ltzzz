@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {classifyReservedFamily} from './lib/decision-families.mjs';
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const SUMMARY_SCHEMA = 'ltzzz.deep-superagent.daily-merge.v1';
@@ -107,6 +108,19 @@ export function summarizeQueueReport(report, sourcePath = null) {
     const status = statusOf(item);
     const gptAsk = asks.filter((ask) => ask.target === 'gpt');
     const ownerAsk = asks.filter((ask) => ask.target === 'owner');
+    // 2026-11-20 owner 授权：只有五类保留事项才进 GPT 裁决队列。
+    // 上游把普通格式/邮件/证据问题也标成 needs_gpt_decision 时，这里降级为
+    // 普通工程跟进，避免把“等 GPT”当成不处理普通工作的理由。
+    const gptRequested = status === 'needs_gpt_decision' || job.plan?.needs_gpt_decision === true
+      || review.needs_gpt_decision === true || gptAsk.length > 0;
+    const decisionText = [
+      job.plan?.reason,
+      review.reason,
+      ...gptAsk.map((ask) => ask.ask),
+    ].filter(Boolean).join('\n');
+    const reservedFamily = gptRequested ? classifyReservedFamily(decisionText) : null;
+    // 没有留下任何可分类说明时不自动放行，保持 GPT 复核；有说明但不在五类内才降级。
+    const needsGpt = gptRequested && (reservedFamily !== null || !decisionText.trim());
     return {
       task_id: plain(item.task_id, 120),
       package_id: plain(item.package_id, 160),
@@ -117,8 +131,10 @@ export function summarizeQueueReport(report, sourcePath = null) {
       // 独立复核的否决理由不是长 token，必须原意保留给 GPT 决策席。
       review_reason: redactReason(review.reason || '', 240) || null,
       model_calls: Number.isFinite(job.model_calls) ? job.model_calls : null,
-      needs_gpt_decision: status === 'needs_gpt_decision' || job.plan?.needs_gpt_decision === true
-        || review.needs_gpt_decision === true || gptAsk.length > 0,
+      needs_gpt_decision: needsGpt,
+      gpt_decision_requested: gptRequested,
+      reserved_family: reservedFamily,
+      decision_reclassified: gptRequested && !needsGpt,
       needs_owner_decision: status === 'needs_owner_decision' || ownerAsk.length > 0,
       asks,
     };
@@ -255,7 +271,7 @@ export function buildSummary({date, now = new Date(), evidence}) {
   }));
 
   const done = queueItems
-    .filter((item) => !item.needs_gpt_decision && !item.needs_owner_decision
+    .filter((item) => !item.needs_gpt_decision && !item.needs_owner_decision && !item.decision_reclassified
       && !/^(blocked|unknown|queued|running|pending_reconcile_get_only)$/.test(item.status))
     .map((item) => ({
       task_id: item.task_id,
@@ -294,6 +310,17 @@ export function buildSummary({date, now = new Date(), evidence}) {
       source: item.source,
     };
   });
+  const ordinaryInProgress = queueItems.filter((item) => item.decision_reclassified).map((item) => ({
+    task_id: item.task_id,
+    package_id: item.package_id,
+    run_id: item.run_id,
+    status: item.status,
+    reason: item.reason,
+    review_reason: item.review_reason,
+    asks: item.asks,
+    note: '非五类保留事项，按 2026-11-20 owner 授权由执行席继续处理；不再等 GPT decision_id。',
+    source: item.source,
+  }));
   const needsOwner = queueItems.filter((item) => item.needs_owner_decision && !item.needs_gpt_decision).map((item) => ({
     task_id: item.task_id,
     package_id: item.package_id,
@@ -335,6 +362,7 @@ export function buildSummary({date, now = new Date(), evidence}) {
   if (mail.status !== 'ok') nextSteps.push(`邮件摄入为 ${mail.status}：确认 Gmail / QQ IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。`);
   if (intakeStale) nextSteps.push(`邮件摄入快照距今 ${intakeAgeHours} 小时（>30h）：席位可能没跑 intake，日报待办可能不是今天的数据。`);
   if (needsGpt.length) nextSteps.push(`已生成 ${needsGpt.length} 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。`);
+  if (ordinaryInProgress.length) nextSteps.push(`有 ${ordinaryInProgress.length} 条上游标成 needs_gpt_decision、但不属于五类保留事项：已降级为普通工程跟进，由执行席按测试与回滚继续处理，不占用 GPT 裁决队列。`);
   if (needsOwner.length) nextSteps.push(`有 ${needsOwner.length} 条需要 owner 给值或拍板；未拍板前保持原状态。`);
   if (blocked.length) nextSteps.push(`有 ${blocked.length} 条 blocked/unknown：先补原始凭证或换通道，不原样重试。`);
   const todo = buildTodoReport(evidence.rulingTracker, {intake: evidence.intake});
@@ -350,6 +378,7 @@ export function buildSummary({date, now = new Date(), evidence}) {
     generated_at_utc: now.toISOString(),
     done: [...done, ...dailyDone],
     needs_gpt_decision: needsGpt,
+    ordinary_in_progress: ordinaryInProgress,
     needs_owner_decision: needsOwner,
     blocked,
     dispatch: {
@@ -363,6 +392,7 @@ export function buildSummary({date, now = new Date(), evidence}) {
     counts: {
       done: done.length + dailyDone.length,
       needs_gpt_decision: needsGpt.length,
+      ordinary_in_progress: ordinaryInProgress.length,
       needs_owner_decision: needsOwner.length,
       blocked: blocked.length,
       todo_over_24h: todo.over24h,
@@ -385,7 +415,7 @@ export function buildSummary({date, now = new Date(), evidence}) {
     merge_performed: false,
     deploy_performed: false,
     secrets_included: false,
-    policy: 'GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。',
+    policy: '仅五类保留给 GPT 决策席：资金及资金处分、退款终态、签名操作、私钥/助记词/根密钥、钱包操作（含五签）；凭据配置/轮换属普通工程，但秘密值不得打印、提交或外泄。',
   };
   summary.email = buildEmail(summary);
   return summary;
@@ -435,6 +465,13 @@ export function buildEmail(summary) {
     lines.push('- 邮件待办：本次 latest.json 缺 open_items 字段，无法列 Top N，保持 unknown，不据此判断已清空。');
   }
   lines.push('', '三、需要 GPT 裁决');
+  if (summary.ordinary_in_progress?.length) {
+    lines.push(`- 另有 ${summary.ordinary_in_progress.length} 条非五类事项已降级为普通工程跟进（不再等 GPT decision_id）：`);
+    for (const item of summary.ordinary_in_progress) {
+      lines.push(`  · ${item.task_id}（run=${item.run_id ?? 'unknown'}）：${item.reason || '见执行回执'}`);
+      if (item.review_reason) lines.push(`    复核意见：${item.review_reason}`);
+    }
+  }
   if (summary.needs_gpt_decision.length) {
     for (const item of summary.needs_gpt_decision) {
       lines.push(`- ${item.task_id}（run=${item.run_id ?? 'unknown'}）：${item.reason || '见 ASK'}`);
