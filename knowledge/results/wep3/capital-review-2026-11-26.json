@@ -1,0 +1,82 @@
+{
+  "at": "2026-11-26T04:20:18.207Z",
+  "run_id": "45754304356",
+  "model": "deepseek-v4-pro",
+  "model_status": "success",
+  "finish_reason": "stop",
+  "tokens_used": 18554,
+  "snapshot_sha256": "8a77e1e233b9c644c0644a0155ac37350911e85d233c45e5bb96bfbc09167093",
+  "treasury_status": {
+    "ok": true,
+    "chain_id": 8453,
+    "pool": "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
+    "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "ausdc": "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB",
+    "address": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+    "beneficiary_principal_raw": "4496788",
+    "beneficiary_positions": {
+      "0xbc24b9a2d0c61705602257565d8c0064effe253e": {
+        "principal_raw": "4496788",
+        "allocations": {
+          "INV-fe28aa6c968aaa540cba74b1b4f158e4f436d9e3": {
+            "round": "OWNER-FUNDED-20261017-01",
+            "amount_raw": "4496788",
+            "tx_hash": "0x9b274424ace3329c2dfda53a3f86e7b61a49b09a5e1f47865e4f197c5d9e0db2",
+            "funding_treasury": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+            "position_owner": "0xbc24b9a2d0c61705602257565d8c0064effe253e",
+            "gas_payer": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d"
+          }
+        },
+        "treasury_can_withdraw": false
+      }
+    },
+    "block_number": 62381724,
+    "rpc_url": "https://base.drpc.org",
+    "rpc_attempts": [
+      {
+        "url": "https://mainnet.base.org",
+        "ok": false,
+        "code": "SERVER_ERROR",
+        "detail": "exceeded maximum retry limit"
+      },
+      {
+        "url": "https://base.drpc.org",
+        "ok": true
+      }
+    ],
+    "usdc_raw": "210869201",
+    "ausdc_raw": "115140962",
+    "eth_raw": "1985282821867975",
+    "allowance_raw": "9115782",
+    "principal_raw": "114526347",
+    "interest_raw": "614615",
+    "principal_basis": "tracked_supply_receipts",
+    "first_supply_confirmed": true,
+    "exit_test_confirmed": true,
+    "paused": false,
+    "active_intent": "AAVE-AUTO-bounded_supply-2026-10-20",
+    "storage_status": {
+      "ok": true,
+      "status": "active_intent_pending",
+      "active_intent": "AAVE-AUTO-bounded_supply-2026-10-20",
+      "intent_status": "pending_confirmations",
+      "already_signed_steps": true,
+      "signed": false
+    },
+    "limit_policy": "reputation_and_actual_equity",
+    "capital_agent": "DeepSeek",
+    "capital_reputation": 105,
+    "allocation_share_bps": 4000,
+    "single_cap_usdc": 32.101016,
+    "exposure_cap_usdc": 128.404065,
+    "cash_floor_raw": "5000000",
+    "withdraw_receiver": "0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d",
+    "owner_return_enabled": false,
+    "aave_runtime_revision": "aave-guard-v9"
+  },
+  "execution_status": "ready_for_bounded_auto",
+  "transactions_sent": 0,
+  "tx_hash": null,
+  "output": "审查结论：当前新金库 `0x5df57a78E0A13df2aE983BDAD69cFCBD3DD7a32d` 已通过 1 USDC 首供/首退（`first_supply_confirmed=true`，`exit_test_confirmed=true`）。当前没有可立即新开的新仓位；存在待确认意图 `AAVE-AUTO-bounded_supply-2026-10-20`，状态 `pending_confirmations`，且 `already_signed_steps=true`。注意：`signed=false` 只表示本次 API 未新签名，不代表没有已保存签名 raw。不要混用 `beneficiary_positions` 下的 owner-child 仓位与金库自身 `principal_raw/ausdc_raw`。\n\n下一步检查单（按序执行）：\n\n1. 自动只读对账：调用 `reconcileAaveTransactions` 或同源诊断，读取 `intents[active_intent].steps[*]` 的 `raw/tx_hash/status`。验收字段：每步 `tx_hash === keccak256(raw)`，`receipt.transactionHash === tx_hash`，`receipt.status === 0x1`，确认数 ≥ 2；owner-child supply 还需 `child_supply_proof.verified`。\n2. 若已签名步骤已有确认，可自动调用 `executeAave` 继续推进，不会创建新交易，只回放相同持久化字节。若 receipt 未发现且 `paused=false`，只允许 `broadcastAaveRaw` 广播原 raw，禁止替换或重建。\n3. 新资金/签名准备：未来新意图需 `TREASURY_EXECUTOR_KEY` 签名（不公开私钥）；当前 Base ETH 余额约 0.001985 ETH，执行前必须验证 `getFeeData/estimateGas` 是否够 gas；当前 USDC allowance 9.115782，若下一步 supply 金额不超过 allowance 则无需 approve。\n4. 待当前 `active_intent` 清空后，自动金额上限为 `exposure_cap - ausdc_raw - beneficiary_principal_raw`，按当前余额约 8.766315 USDC；`single_cap_usdc` 32.101016 不构成硬顶。这只是限额计算，不是收益承诺。\n\n至少 4 个失败条件：\n\n- `stored_transaction_mismatch`：预期机器状态 `blocked_reconciliation`；可读 `step.raw/tx_hash/to/data`；迁移路径为人工对账重建意图，确认无已确认步骤前禁止广播；验收无 txHash。\n- `base_rpc_unavailable` 或 `base_rpc_reconciliation_failed`：预期 `rpc_attempts` 收集失败，状态不变化；可读 `rpc_attempts[{url,ok,code,detail}]`；迁移路径为切换剩余 RPC、保持同一 raw 重试；验收 txHash 仍为已存 `step.tx_hash`。\n- `latest_cash_or_exposure_limit` / `hire_cash_reserve`：预期 `blocked_policy`；可读 `usdc_raw、cash_floor_raw、ausdc_raw、beneficiary_principal_raw、exposure_cap_usdc`；迁移路径为等待 USDC 补充或降低金额；通过后才有验收 txHash。\n- `treasury_eth_gas_missing` / `insufficient_eth_gas` / `gas_cap`：预期 `blocked_configuration`；可读 `eth_raw、getFeeData、estimateGas`；迁移路径为向金库地址补充 Base ETH；验收 txHash 仅存在于 gas 充值后的新 Aave 交易。\n- `sensor_two_independent_RPCs_required` 或 `sensor_child_Supply_and_aUSDC_mint_not_verified`：预期 `pending_confirmations`；可读 `attestAaveReceipt` 入参中两个独立 RPC 的 receipt、`receipt.logs`、`block_hash`、`status`；迁移路径为提供两个独立且一致的链上 receipt 证明；验收 txHash 必须匹配已存签名步骤。\n\n禁止混淆：当前金库自身 `principal_raw=114526347`、`ausdc_raw=115140962`；owner-child 仓位 `0xbc24...` 的 `principal_raw=4496788` 且 `treasury_can_withdraw=false`，不可计为金库可提取余额。旧 Vault 或个人 Aave 地址不得参与新金库限额与验收。  \n【交付结束】",
+  "error": null
+}
