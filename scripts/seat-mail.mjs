@@ -17,6 +17,12 @@ export const SCHEMA = 'ltzzz.seat-mail.v1';
 export const QUEUE_LABEL = 'mail:send';
 export const LEDGER_RELATIVE_PATH = 'knowledge/results/seat-mail/ledger.json';
 
+export function issueClosure(status) {
+  if (status === 'sent') return {state: 'closed', state_reason: 'completed'};
+  if (status === 'duplicate') return {state: 'closed', state_reason: 'not_planned'};
+  return null;
+}
+
 // Any seat can mail any other seat: it opens an issue with the `mail:send` label and the
 // fields below. The queue is drained by a scheduled workflow, so a seat never needs
 // SMTP credentials of its own. Reserved topics stay with GPT; this script only transports.
@@ -150,6 +156,8 @@ export async function drainQueue({token, env = process.env, cwd = process.cwd(),
     if (dup.duplicate) {
       await client.comment(issue.number, `[mail-skipped-duplicate] reason=${dup.reason} previous=${dup.entry?.smtp_message_id || 'none'} dedupe_key=${mail.dedupeKey || 'none'}`);
       try { await client.removeLabel(issue.number, QUEUE_LABEL); } catch { /* 标签已不在，忽略 */ }
+      const closure = issueClosure('duplicate');
+      if (closure) await client.api(`issues/${issue.number}`, {method: 'PATCH', body: closure});
       out.push({number: issue.number, seat: mail.seat, to: mail.to, status: 'duplicate', reason: dup.reason});
       continue;
     }
@@ -173,6 +181,8 @@ export async function drainQueue({token, env = process.env, cwd = process.cwd(),
       });
       saveLedger(ledger, cwd);
       await client.removeLabel(issue.number, QUEUE_LABEL);
+      const closure = issueClosure(sent.status);
+      if (closure) await client.api(`issues/${issue.number}`, {method: 'PATCH', body: closure});
     }
     out.push({number: issue.number, seat: mail.seat, to: mail.to, status: sent.status, message_id: sent.message_id || null});
   }

@@ -12,7 +12,7 @@ import {fileURLToPath} from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const WORKFLOW = path.join(ROOT, '.github/workflows/mail-intake-phase2.yml');
-const source = fs.readFileSync(WORKFLOW, 'utf8');
+const source = fs.readFileSync(WORKFLOW, 'utf8').replace(/\r\n/g, '\n');
 
 function job(name) {
   const marker = `\n  ${name}:\n`;
@@ -44,8 +44,15 @@ test('intake job 只允许四个邮箱 secret，并显式声明写权限', () =>
   assert.match(intake, /permissions:\s*\{contents:\s*write\}/);
   const names = [...intake.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
   assert.deepEqual([...new Set(names)].sort(), [
-    'GMAIL_IMAP_APP_PASSWORD', 'GMAIL_IMAP_USER', 'QQ_IMAP_PASSWORD', 'QQ_IMAP_USER',
+    'GMAIL_IMAP_APP_PASSWORD', 'GMAIL_IMAP_USER',
+    'MAIL_SMTP_PASSWORD', 'MAIL_SMTP_USER',
+    'QQ_IMAP_PASSWORD', 'QQ_IMAP_USER',
   ]);
+});
+
+test('QQ IMAP falls back to the existing shared-mailbox SMTP credentials', () => {
+  assert.ok(intake.includes('QQ_IMAP_USER: ${{ secrets.QQ_IMAP_USER || secrets.MAIL_SMTP_USER }}'));
+  assert.ok(intake.includes('QQ_IMAP_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD || secrets.MAIL_SMTP_PASSWORD }}'));
 });
 
 test('intake job 不得把凭据写进日志或文件', () => {

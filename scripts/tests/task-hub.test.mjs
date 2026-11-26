@@ -370,6 +370,19 @@ test('cmdReassign moves the seat label, comments and queues one mail card', asyn
   assert.match(reassignedComment({number: 11, from: 'desktop-claude', to: 'deep', ageHours: 60}), /reason=no_claim_60h/);
 });
 
+test('cmdReassign routes the wake mail by target seat and adds a dedupe key', async () => {
+  const stale = issue({number: 21});
+  stale.created_at = '2026-11-16T00:00:00Z';
+  const client = fakeClient([stale]);
+  const registry = {seats: [{id: 'deep', address: 'qingqizhu6502@agent.qq.com', kind: 'agent_mail', transport: 'agently_cli'}]};
+  await cmdReassign({client, apply: true, now: NOW, registry});
+  const card = (await client.api('issues/99')).data;
+  assert.match(card.body, /to: 306122054@qq\.com/);
+  assert.match(card.body, /subject: \[seat:deep\] \[LTZZZ\] #21/);
+  assert.match(card.body, /dedupe_key: task-hub-reassign-21-deep/);
+  assert.match(card.body, /delivery: shared_mailbox_fallback/);
+});
+
 test('a card already reassigned twice escalates instead of ping-ponging', () => {
   const card = issue({number: 12, comments: [
     {body: '[reassigned] from=deep to=desktop-claude age_hours=30 reason=no_claim_30h by=task-hub issue=12'},

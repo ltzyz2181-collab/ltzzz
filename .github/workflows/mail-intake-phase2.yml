@@ -4,7 +4,8 @@ name: Mail intake phase 2
 # - intake：每日只读采集，覆盖 Gmail 全箱（GMAIL_IMAP_USER / GMAIL_IMAP_APP_PASSWORD）
 #   与 QQ 共享项目信箱 306122054@qq.com（QQ_IMAP_USER / QQ_IMAP_PASSWORD），
 #   把脱敏后的 latest.json 等结果提交回 main。Gmail 缺 secrets 时 fail-closed；
-#   QQ 缺 secrets 只记 not_configured 并 warn，不阻断其他通道。
+#   QQ 优先用 QQ_IMAP_*，缺失时回退到已在用的 MAIL_SMTP_*（同一共享 QQ 邮箱），
+#   两者都没有才记 not_configured 并 warn，不阻断其他通道。
 # 依据：GPT-LTZZZ-AUTONOMY-RULING-20261117-01 §二、§六（部署席负责定时触发/并发锁/失败告警）。
 # 最小证据集与回退方案：docs/2026-11-18-gmail-intake-定时启用-最小证据与回退.md
 on:
@@ -89,8 +90,8 @@ jobs:
     env:
       GMAIL_IMAP_USER: ${{ secrets.GMAIL_IMAP_USER }}
       GMAIL_IMAP_APP_PASSWORD: ${{ secrets.GMAIL_IMAP_APP_PASSWORD }}
-      QQ_IMAP_USER: ${{ secrets.QQ_IMAP_USER }}
-      QQ_IMAP_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD }}
+      QQ_IMAP_USER: ${{ secrets.QQ_IMAP_USER || secrets.MAIL_SMTP_USER }}
+      QQ_IMAP_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD || secrets.MAIL_SMTP_PASSWORD }}
       LTZZZ_ROOT: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
