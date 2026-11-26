@@ -6,7 +6,7 @@
   "platform": "github-default-branch",
   "env_id": "ltzyz2181-collab/ltzzz@main",
   "code_commit": "pending_merge",
-  "code_path": "AGENTS.md,config/,docs/,scripts/daily-ops-summary.mjs,scripts/lib/decision-families.mjs,scripts/tests/daily-ops-summary.test.mjs",
+  "code_path": "AGENTS.md,config/,docs/,scripts/daily-ops-summary.mjs,scripts/lib/decision-families.mjs,scripts/tests/,workers/deep-superagent/",
   "recorded_at_utc": "2026-11-25T00:00:00Z",
   "deployment_status": "recorded_pending_ci_merge",
   "authority": {
@@ -20,26 +20,36 @@
     "新增 scripts/lib/decision-families.mjs：五类保留家族文本分类器。",
     "scripts/daily-ops-summary.mjs：上游 needs_gpt_decision 只在命中五类时进入 GPT 裁决队列；非五类降级为 ordinary_in_progress，并由执行席继续处理；无说明的保留状态仍 fail-closed 交 GPT。",
     "scripts/tests/daily-ops-summary.test.mjs：覆盖五类命中、凭据/格式/证据类降级、无说明保持 GPT。",
-    "AGENTS.md、config/autonomy-authority.json、config/review-delegation.json：当前授权指针改到 owner-authority-20261120.json，并登记五类。",
+    "AGENTS.md：当前授权指向 owner-authority-20261120.json，并登记五类保留家族；config/autonomy-authority.json 与 config/review-delegation.json 仍被 small_payment_release manifest 逐字节锁定，保持原字节不改，授权依据记录在 AGENTS.md 与 docs/OWNER-AUTHORITY-CURRENT.md。",
     "config/dispatch-seat-policy-20261117.json、config/deploy-automation-authority-20261117.json、config/deep-superagent.json、config/relay-seat-policy.json：移除“凭据/生产写默认归 GPT”的冲突口径，保留五类硬边界与秘密值处理规则。",
+    "workers/deep-superagent/adjudicator.mjs、workers/deep-superagent/index.js：运行时裁决器从六族改为五类，private_keys_seed_phrases_root_keys 独立成族，删除 credential_access 与 production_write 保留位；health scope_exclusion 同步收敛。",
+    "scripts/tests/deep-superagent-adjudicator.test.mjs、scripts/tests/deep-superagent-deploy-automation.test.mjs：更新为五类断言，并断言 credential_access 不再属于保留族。",
     "docs/OWNER-AUTHORITY-CURRENT.md、docs/DEPLOY-AUTOMATION-CURRENT.md：标注 2026-11-19 六族为历史，当前按 2026-11-20 五类执行。"
   ],
   "content_sha256": {
     "AGENTS.md": "20a02a18b48d72e9798f6b6675dc3750c1bc78e38f80abacc8122a48d9ed054a",
-    "config/autonomy-authority.json": "a4e15a8fab52c95f8b650acb56b69729fb58834a52cf78cdd01a8ef151413021",
-    "config/review-delegation.json": "ca84d5da710b260fde4e2b1eb69ce64e551b27f5b47b5adf6a8485539257f014",
     "config/dispatch-seat-policy-20261117.json": "22f7cfaf4d16fe7e42bb77287263db91a93601bfb49a1400febab9432dad244d",
-    "config/deploy-automation-authority-20261117.json": "91fb234955354ac2b04328fc59ebf1506a065add3c6adb67685fb6774bc4676c",
+    "config/deploy-automation-authority-20261117.json": "d07ba2f438afbde14037bffe1b89ce613d2770c183a8705caa8c2697b702d559",
     "config/deep-superagent.json": "76ba19a13ecf9f370fe6466329c7e5a4c4aa6cab0bba9a0735b89cf3b8b06b6e",
-    "config/relay-seat-policy.json": "372621d2b0579879cf0e988f7f8a78fb7b8c0482a2f26c0a20580fb788e206f1",
+    "config/relay-seat-policy.json": "9c8723c7ebb458c2659b1c34a746318a00aa41cfb942010045f34feb14a2666b",
     "docs/DEPLOY-AUTOMATION-CURRENT.md": "1172036515ae6c67429999e53ff600f1a71a4bbaf017f5dc35a0d4caaefe103f",
     "docs/OWNER-AUTHORITY-CURRENT.md": "1f679c183997bea4d02eeb738ad8a4b0b56ce5d8a81706c40d1f993fe58d639d",
     "scripts/lib/decision-families.mjs": "0aa2c655bb2913e78495f204afe3d16ac374daa754d1ff9d6dfabda8d0cd7802",
     "scripts/daily-ops-summary.mjs": "8849ff11e7721a874947130bbc97a15c49e654c182b81b0bb0ec08791bdb7652",
-    "scripts/tests/daily-ops-summary.test.mjs": "7f4eea26c23b8bc87bd0460051cae976d1684b342f7c3f24b0cd7b1d0d55c3b2"
+    "scripts/tests/daily-ops-summary.test.mjs": "7f4eea26c23b8bc87bd0460051cae976d1684b342f7c3f24b0cd7b1d0d55c3b2",
+    "workers/deep-superagent/adjudicator.mjs": "a5a7de78d9e5975ae8eb52e127244d1c74a57f27d0c164075f017bc4f975720b",
+    "workers/deep-superagent/index.js": "b19c2008c514e4402f61b1fe1f0f8a84c6531efeec0aee6036f449dad99822d1",
+    "scripts/tests/deep-superagent-adjudicator.test.mjs": "290337e69de299fff8ecc28f6b96305bce929972648cbf85bb9b6544abebab18",
+    "scripts/tests/deep-superagent-deploy-automation.test.mjs": "7b8c80616550e6e1bbf43965012bad4b0a27a8711cc737df5394c79387f2b0e1"
+  },
+  "locked_files_untouched": {
+    "config/autonomy-authority.json": "d2d8dd49258790a0b786b24facb751d8f4e264e785fa068498df1e2dd4869fa9",
+    "config/review-delegation.json": "1cf71cf66e186f330b8461033c7a7a9d2e400eda74cea5162d3a970d0e946e71",
+    "reason": "两者被 knowledge/results/patchgate/post271/artifact-manifest.json 的 small_payment_release.files 逐字节锁定，改动会触发 manifest_source_bytes_changed。"
   },
   "verification": {
-    "local_tests": "wsl node --test scripts/tests/daily-ops-summary.test.mjs scripts/tests/deploy-authority-gate.test.mjs → 33/33 pass",
+    "local_tests": "wsl node --test scripts/tests/daily-ops-summary.test.mjs scripts/tests/deploy-authority-gate.test.mjs scripts/tests/deep-superagent-adjudicator.test.mjs scripts/tests/deep-superagent-deploy-automation.test.mjs → 58/58 pass；Harness 五件套 71/71 pass",
+    "manifest_check": "node scripts/verify-small-payment-manifest.mjs → manifest_verified_not_payment_authorization，source_files=42，locked files 未变",
     "json_parse": "config/*.json 全部通过 JSON.parse",
     "pending": [
       "PR CI 全绿",

@@ -1,11 +1,14 @@
-// Bounded relay adjudication stage (owner authorization 2026-11-19).
-// The relay GPT seat may adjudicate every matter except the six owner-retained
-// families: funds, refund terminal decisions, signing, private keys, wallet
-// operations and credentials. Those are structurally short-circuited before any
+// Bounded relay adjudication stage (owner authorization 2026-11-20).
+// The relay GPT seat may adjudicate every matter except the five owner-retained
+// families: funds and financial-asset disposition, refund terminal decisions,
+// signing, private keys/seed phrases/root keys, and wallet operations including
+// the five-signature wallet. Those are structurally short-circuited before any
 // relay call. The five-signature wallet stays with the owner/multisig and is
-// never escalated to the GPT seat. Production writes, releases and deploys are
-// delegated and no longer short-circuited. This module is pure: no network, no
-// storage, no side effects, so the rules can be tested without provider calls.
+// never escalated to the GPT seat. Credential setup/rotation, production writes,
+// releases and deploys are delegated and no longer short-circuited; credential
+// values still must never be printed, committed or logged. This module is pure:
+// no network, no storage, no side effects, so the rules can be tested without
+// provider calls.
 
 import scopeRegistry from '../../config/relay-adjudication-scopes.json' with {type: 'json'};
 
@@ -22,8 +25,8 @@ const FUND_FAMILY = [
   {family: 'loan_disbursement', pattern: /放款|放贷|贷款|借款|额度|授信|disburse|loan|credit line|borrow/i},
   {family: 'refund_semantics', pattern: /退款|退货退款|退单|refund|chargeback|对账口径/i},
   {family: 'wallet_or_safe_ops', pattern: /钱包|多签|safe\b|wallet|multisig/i},
-  {family: 'signing', pattern: /签名|私钥|助记词|signer|private[ _-]?key|sign(?:ed|ing)?\b/i},
-  {family: 'credential_access', pattern: /凭据|密钥|token\b|secret\b|password|credential/i},
+  {family: 'signing', pattern: /签名|签署|签字|signer|sign(?:ed|ing)?\b/i},
+  {family: 'private_keys_seed_phrases_root_keys', pattern: /私钥|助记词|种子短语|根密钥|签名密钥|private[ _-]?key|seed[ _-]?phrase|root[ _-]?key|mnemonic/i},
 ];
 
 export function fundFamilyHit({task_id = '', prompt = '', outputs = []} = {}) {
@@ -52,7 +55,7 @@ export function fundShortCircuit({ task_id, input_sha256, family }) {
     disposition: 'needs_decision',
     why_out_of_scope: escalate_to === 'owner_multisig'
       ? 'owner_multisig_excludes_five_signature_safe: the five-signature wallet is reserved to the owner/multisig, not the GPT decision seat and never the relay'
-      : `owner_scope_excludes_${family}: funds/signing family is reserved to the GPT decision seat as a manual decision`,
+      : `owner_scope_excludes_${family}: reserved five-family item is decided by the GPT decision seat as a manual decision`,
     escalate_to,
     five_signature_owner_required: escalate_to === 'owner_multisig',
     task_id,

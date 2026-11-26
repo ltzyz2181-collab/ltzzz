@@ -26,9 +26,10 @@ test('deploy automation never enables funds, signing or real money', () => {
 
 test('funds family stays manual and is exhaustively excluded', () => {
   const families = new Set(authority.excluded_families);
-  for (const f of ['funding_moves', 'loan_disbursement', 'refund_semantics', 'wallet_or_safe_ops', 'signing', 'credential_access', 'five_signature_safe']) {
+  for (const f of ['funding_moves', 'loan_disbursement', 'refund_semantics', 'wallet_or_safe_ops', 'signing', 'private_keys_seed_phrases_root_keys', 'five_signature_safe']) {
     assert.ok(families.has(f), `missing excluded family ${f}`);
   }
+  assert.equal(families.has('credential_access'), false, 'credential setup/rotation is no longer a reserved family');
 });
 
 test('deploy automation preconditions require green tests and health readback', () => {
