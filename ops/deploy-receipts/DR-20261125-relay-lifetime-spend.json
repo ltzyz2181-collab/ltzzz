@@ -1,0 +1,50 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261125-relay-lifetime-spend",
+  "target": "relay-proxy-lifetime-spend",
+  "platform": "cloudflare-workers",
+  "env_id": "ltzzz-relay-proxy@production",
+  "code_commit": "1608651c84dfdf4096f8b89c540bb1e4f22c76fd",
+  "code_path": "workers/relay-proxy",
+  "deployed_at": "2026-11-26T01:48:58Z",
+  "deployment_status": "deployed_health_and_auth_verified",
+  "task_id": "RELAY-BUDGET-POSTCALL-CAP-20261120-01",
+  "owner_instruction": "普通工程不等待裁决；合并后自动部署并留回执。",
+  "verified": [
+    {
+      "kind": "github_pull_request_merge",
+      "result": "ok",
+      "evidence": "PR #641 squash 合并为 1608651c84dfdf4096f8b89c540bb1e4f22c76fd，Issue #522 已关闭"
+    },
+    {
+      "kind": "github_actions_checks",
+      "result": "ok",
+      "evidence": "PR head 9b102aef：Small payment policy success、PatchGate A1 success、PatchGate A2 success、Relay proxy guard tests success、Workpool skipped(path)；0 failure"
+    },
+    {
+      "kind": "workflow_deploy",
+      "result": "ok",
+      "evidence": "push 触发的 Deploy LTZZZ relay proxy run 45738155498 completed/success，wrangler deploy 与 secret bind 步骤 success"
+    },
+    {
+      "kind": "production_smoke",
+      "result": "ok",
+      "evidence": "部署工作流 smoke：https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1/chat/completions 与 /v1/budget/close 无 token 均返回 401，证明可达且鉴权门生效"
+    },
+    {
+      "kind": "targeted_tests",
+      "result": "ok",
+      "evidence": "本地 node --test scripts/tests/relay-proxy-worker.test.mjs：35 pass / 0 fail；覆盖 lifetime project cap、余额确认后保留 prior spend、预算 reservation/settlement、401 鉴权"
+    },
+    {
+      "kind": "no_financial_action",
+      "result": "ok",
+      "evidence": "未提高单次/每日/项目上限；未做 provider 调用、付款、放款、转账、签名、私钥、钱包或五签 Safe 操作；model_calls=0"
+    }
+  ],
+  "blockers": [],
+  "next_action": "无需为本 PR 再部署。后续若调整预算上限或接真实资金，属于 GPT 五类裁决范围，须另开裁决与回执。",
+  "code_sha256": {
+    "worker.mjs": "8e522835439471f1d3abb774842eaf74d89b982d6e5870e024d7a4fbe0d3fae7"
+  }
+}
