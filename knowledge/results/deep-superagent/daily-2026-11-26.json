@@ -273,7 +273,7 @@
   },
   "writes_performed": 10,
   "merges_performed": 0,
-  "deploys_performed": 0,
+  "deploys_performed": 1,
   "financial_actions": 0,
   "skills_modified": 0,
   "task_cards_added": 1,
@@ -343,6 +343,11 @@
       {
         "item": "Pages 部署瞬时失败已核验恢复",
         "evidence": "run 45716467067 failure（Deployment failed, try again later）→ 后续 push run 45717379862 success（2026-11-25T22:56:25Z）；未手动重跑",
+        "status": "done"
+      },
+      {
+        "item": "Pages 部署按 owner 授权手动重跑并确认在线",
+        "evidence": "run 45733717552 success（workflow_dispatch, sha b79f80692）；deployment 8073659513 github-pages；ltzzz.com 200/1.639s",
         "status": "done"
       }
     ],
@@ -460,5 +465,18 @@
     "next_now": "见 next_immediate 5 条",
     "later": "见 later 4 条"
   },
-  "commit": "8edb96ccc"
+  "commit": "8edb96ccc",
+  "pages_manual_recovery": {
+    "authorized_by": "owner 2026-11-26（明确授权手动重跑部署）",
+    "action": "workflow_dispatch pages.yml on ref main",
+    "run_id": 45733717552,
+    "run_url": "https://github.com/ltzyz2181-collab/ltzzz/actions/runs/45733717552",
+    "head_sha": "b79f80692",
+    "run_conclusion": "success",
+    "deployment_id": 8073659513,
+    "environment": "github-pages",
+    "deployed_sha": "b79f80692",
+    "site_probe": "https://ltzzz.com HTTP 200, 1.639s（部署后实测）",
+    "note": "22:49Z 的 45716467067 为瞬时错误，本已由 22:56Z 自然重试恢复；本次按 owner 授权再显式触发一次，确认当前 main 已在线"
+  }
 }
