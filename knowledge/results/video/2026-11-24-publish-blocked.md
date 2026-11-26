@@ -37,3 +37,11 @@
 
 - 未注册/登录任何账号，未改动 YouTube 频道设置，未上传替换任何技能包。
 - 未触碰主钱包、无转出、`paid=false`、`tx_hash=null`。
+
+## 解除（2026-11-25）
+
+- 授权：owner 在 uploader worker 重新完成 YouTube OAuth（`/auth/youtube`），`/youtube/status` 恢复 `connected=true`。
+- 鉴权：重新部署 `deploy-publish-workers.yml` 与 `deploy-video-scheduler.yml`，两侧 worker 的 `LTZZZ_AGENT_TOKEN` 由仓库 Secret 重新注入，与 CI 对齐（未轮换凭据值）。
+- 发布：run `45747484441` 成功，`video_id=B6Xwi39VuRE`，`privacyStatus=public`，`uploadStatus=processed`，频道 `UCnKqseQ7uivSc7FN38ccRUA`。
+- URL：https://www.youtube.com/watch?v=B6Xwi39VuRE
+- 说明：成片与 2026-11-24 同源（sha256 `0fffccdba3fba6db2136f4825282221e96ae350116d738f9bd9d60dec30bb0dc`），仅发布位日期为 2026-11-25，未重渲染。
