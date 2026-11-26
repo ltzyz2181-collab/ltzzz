@@ -152,15 +152,24 @@ jobs:
           if (out) fs.appendFileSync(out, text);
           JS
 
-      # ok_deferred_channels 只在 CI 内成立（邮箱凭据留在云主机席位）：这类快照只有 Gmail 覆盖，
-      # 不能覆盖云主机席位写下的全通道 latest.json，因此不落库，只留在 step summary 与 artifact。
-      - name: Commit redacted result (ok/partial only)
+      # ok_deferred_channels 只有在 QQ 也未配置、仅有 Gmail 覆盖时才不能覆盖上次全通道结果。
+      # 若 QQ 已实跑成功，说明这份快照至少同时覆盖 Gmail + QQ，应落库；Agent Mail 的延后状态
+      # 会原样保留在 coverage.deferred_channels 中，不会被伪装成全通道完成。
+      - name: Commit redacted result (ok/partial/QQ-covered deferred)
         if: always()
         run: |
           status=$(node -p "JSON.parse(require('fs').readFileSync('knowledge/results/deep-superagent/mail-intake/latest.json','utf8')).status" 2>/dev/null || echo missing)
           case "$status" in
             ok|partial) ;;
-            ok_deferred_channels) echo "status=$status; CI-only snapshot kept in artifact, not committed"; exit 0 ;;
+            ok_deferred_channels)
+              qq=$(node -p "JSON.parse(require('fs').readFileSync('knowledge/results/deep-superagent/mail-intake/latest.json','utf8')).qq_fullbox?.status || 'unknown'" 2>/dev/null || echo unknown)
+              if [ "$qq" = "ok" ]; then
+                echo "status=$status; qq=ok; committing configured-channel snapshot"
+              else
+                echo "status=$status; qq=$qq; CI-only snapshot kept in artifact, not committed"
+                exit 0
+              fi
+              ;;
             *) echo "status=$status; result not committed"; exit 0 ;;
           esac
           git config user.name 'ltzzz-mail-bot'
