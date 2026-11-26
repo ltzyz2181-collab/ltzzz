@@ -1,0 +1,109 @@
+{
+  "schema": "ltzzz.meta-hosted-wrapup.v1",
+  "date": "2026-11-26",
+  "timezone": "Asia/Shanghai",
+  "seat": "workbuddy",
+  "assisted_by": "main_agent_deep_patrol",
+  "workbuddy_reported": {
+    "email_message_id": "msg_zSOmCgs（首 10 位，完整值见其席位回执）",
+    "email_created_at_utc": "2026-11-26T02:31:47Z",
+    "quota_after": 46,
+    "red_line_actions": 0,
+    "plaintext_leaks": 0,
+    "deliverables": [
+      "DEPLOY-RESULT-20261126.json",
+      "RUNBOOK-20261126.md",
+      "verify-meta-hosted-200.mjs"
+    ],
+    "deliverables_in_repo": false,
+    "blocked_items": [
+      "account_workers_ai_enabled",
+      "model_id_validity",
+      "quota_and_permissions",
+      "meta_email_provisioning"
+    ]
+  },
+  "verified_by_this_seat": {
+    "probe_run_id": 45745278511,
+    "probe_at_utc": "2026-11-26T02:52:40.278Z",
+    "receipt": "knowledge/results/meta/connectivity-45745278511.json",
+    "receipt_commit": "511ca4a71",
+    "health": {
+      "http": 200,
+      "service": "ltzzz-meta-hosted",
+      "ai_binding": true,
+      "model": "@cf/meta/llama-3.1-8b-instruct-fp8"
+    },
+    "auth_check": {
+      "http": 200,
+      "authorized": true
+    },
+    "channel_probe": {
+      "http": 502,
+      "error": "upstream_inference_failed"
+    },
+    "ai_run": {
+      "http": 401,
+      "error_code": 10000
+    },
+    "ai_models_search": {
+      "http": 403,
+      "meta_models": []
+    },
+    "verdict": "deployed_inference_failed",
+    "ok": false
+  },
+  "conclusion": {
+    "deployed": true,
+    "auth_ok": true,
+    "acceptance_200": false,
+    "blocker_layer": "cloudflare_ai_permission",
+    "why_not_separable": "401/403 均发生在模型解析之前，本次证据无法区分账号未启用 / token 缺 AI 权限 / 模型 ID 变更",
+    "fabricated": false
+  },
+  "unblock_one_of": [
+    "console: enable Workers AI for the account",
+    "token: add Workers AI Read + Run scope (account-level)",
+    "console: confirm current meta llama model id and update META_MODEL"
+  ],
+  "after_unblock": {
+    "action": "重跑 meta-connectivity-probe.yml",
+    "done_criteria": "verdict=ok",
+    "then": "更新 #609 与 docs/META-EXTERNAL-STATUS-CURRENT.md"
+  },
+  "owner_pending": {
+    "meta_email": "meta@ltzzz.com 开通入口未提供，未记已开通"
+  },
+  "boundaries": {
+    "financial_execution": false,
+    "signing": false,
+    "credentials_persisted": false,
+    "model_calls": 0
+  },
+  "sections": {
+    "done": [
+      "WorkBuddy 三段式回执已送达并回读（msg_zSOmCgs…，02:31:47Z）",
+      "本席独立跑原生探针，今日 CF 侧症状以 API 回执固化（run 45745278511 / commit 511ca4a71）",
+      "docs 状态文档补 2026-11-26 复测段，三问改为可执行的一步解锁"
+    ],
+    "awaiting_decision": [
+      {
+        "seat": "owner",
+        "item": "Cloudflare 控制台核实并启用 Workers AI / 给 token 补 AI 权限 / 确认模型 ID",
+        "consequence_if_not": "hosted Llama 永远停在 deployed_inference_failed，200 无法达成，Meta 席不能计为可用执行席"
+      },
+      {
+        "seat": "owner",
+        "item": "meta@ltzzz.com 开通入口",
+        "consequence_if_not": "邮箱侧交付无法开始"
+      }
+    ],
+    "next_immediate": [
+      "解锁后重跑探针并回读 verdict",
+      "更新 #609 与状态文档"
+    ],
+    "later": [
+      "Meta 外部客户端自述调度仍需可回读证据，不并入本次验收"
+    ]
+  }
+}

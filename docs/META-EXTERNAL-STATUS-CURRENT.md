@@ -31,3 +31,24 @@ Skill 固定入口是 commit `1e18c7064e339c8f2cc5ca12502a58bf38c229b5`。`reaso
 
 开通前不把 hosted Llama 记为可用执行席；`deployed_inference_failed` 不等于已验收。
 回执：`knowledge/results/meta/connectivity-44694293952.json`（首次探测为 `connectivity-44694076687.json`）。
+
+## 2026-11-26 部署后复测（WorkBuddy 收尾，本席独立跑原生探针）
+
+WorkBuddy 当日交付（DEPLOY-RESULT-20261126.json / RUNBOOK-20261126.md / verify-meta-hosted-200.mjs，均在其席位工作区，未入库）报告三项 CF 侧问题待外部核实。为避免停在“本机无控制台会话”，本席用仓库原生探针 `scripts/meta-connectivity-probe.mjs`（CI 内使用 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secrets）实跑一次：
+
+- 触发：`gh workflow run meta-connectivity-probe.yml --ref main`，run `45745278511`（2026-11-26T02:52Z）
+- 回执：`knowledge/results/meta/connectivity-45745278511.json`（commit `511ca4a71`）
+
+| 检查 | 结果 |
+| --- | --- |
+| `GET /health` | 200 / 171ms，`ai_binding=true`、`model=@cf/meta/llama-3.1-8b-instruct-fp8` |
+| `POST /auth-check` | 200，`authorized=true`，`model_calls=0` |
+| `POST /task`（`channel_probe`） | 502 `upstream_inference_failed` |
+| 直连 `/ai/run/<model>` | 401 `Authentication error`，code `10000`（与 2026-11-20 一致） |
+| `/ai/models/search` | 403，`meta_models=[]`（与 2026-11-20 一致） |
+
+判读：Worker 已部署、鉴权与 AI binding 配置正确，失败发生在 Cloudflare 侧 AI 权限层，**且 401/403 都早于模型解析**——因此本次证据无法区分“账号未启用 Workers AI”“token 缺 Workers AI Read/Run 权限”“模型 ID 下线/改名”三者，仍需一次控制台或带 AI 权限的凭据操作才能定性。不得把 `deployed_inference_failed` 记为已验收或 200 达成。
+
+解锁只需其一：① Cloudflare 控制台为该账户启用 Workers AI；② 给 `CLOUDFLARE_API_TOKEN` 增补 Workers AI:Read + Run（账户级）；③ 若模型已改名，在控制台确认新 ID 后改 `wrangler.meta-hosted.toml` 的 `META_MODEL`。任一生效后本席可直接重跑 `meta-connectivity-probe.yml`，verdict=`ok` 即完成 200 验收并更新 #609。
+
+另：`meta@ltzzz.com` 的开通入口仍缺，需 Owner 提供（域名邮箱管理入口或转发规则），此前不记已开通。
