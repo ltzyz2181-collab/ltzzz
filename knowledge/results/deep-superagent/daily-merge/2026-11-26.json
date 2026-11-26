@@ -1,0 +1,475 @@
+{
+ "schema": "ltzzz.deep-superagent.daily-merge.v1",
+ "date": "2026-11-26",
+ "generated_at_utc": "2026-11-26T00:32:13.911Z",
+ "done": [
+  {
+   "task_id": "DEEP-DAILY-SUPERVISION",
+   "run_id": "45716539599",
+   "status": "daily_result_readback_complete",
+   "model_calls": 3,
+   "note": "日监督只读回执；不等于完成业务验收",
+   "source": "knowledge/results/deep-superagent/daily-45716539599-attempt-1.json"
+  },
+  {
+   "task_id": "DEEP-DAILY-SUPERVISION",
+   "run_id": "45729297398",
+   "status": "daily_result_readback_complete",
+   "model_calls": 3,
+   "note": "日监督只读回执；不等于完成业务验收",
+   "source": "knowledge/results/deep-superagent/daily-45729297398-attempt-1.json"
+  }
+ ],
+ "needs_gpt_decision": [
+  {
+   "task_id": "DEEP-SUPERAGENT-20261125-ISSUE-640",
+   "package_id": "LTZZZ-DEEP-ISSUE-640-20261125",
+   "run_id": "45688324667",
+   "reason": null,
+   "review_reason": "Qianwen output uses markdown fences and snippets instead of required full-file write blocks; format violation requires correction.",
+   "asks": [
+    {
+     "ref": "DEEP-SUPERAGENT-20261125-ISSUE-640",
+     "target": "gpt",
+     "ask": "任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。"
+    }
+   ],
+   "related_asks": [],
+   "source": "knowledge/results/deep-superagent/queue-45688324667-attempt-1.json"
+  },
+  {
+   "task_id": "DEEP-SUPERAGENT-20261126-DAILY-1",
+   "package_id": "LTZZZ-DEEP-SUPERAGENT-20261126-DAILY-1",
+   "run_id": "45716467070",
+   "reason": null,
+   "review_reason": null,
+   "asks": [
+    {
+     "ref": "mail/intake/agent_mail",
+     "target": "gpt",
+     "ask": "请裁决该已读但仍有 open 项的邮件通道后续分流口径，并确认关闭前所需回执与复核标准。"
+    },
+    {
+     "ref": "mail/intake/gmail",
+     "target": "gpt",
+     "ask": "请裁决 Gmail 大量 open/unseen 项的处理范围，以及是否需要逐项证据后再分流。"
+    },
+    {
+     "ref": "mail/intake/qq",
+     "target": "gpt",
+     "ask": "请在不索取或创建凭据的前提下，裁决 QQ 未配置通道的记录口径与后续分流。"
+    },
+    {
+     "ref": "mail/intake/unified",
+     "target": "gpt",
+     "ask": "请裁决 unknown 项如何补证或保留，不得批量按拒绝项关闭。"
+    },
+    {
+     "ref": "ruling/gpt_today",
+     "target": "gpt",
+     "ask": "请提供这 4 封补充裁决对应 Task ID 的明确处置结论或关闭条件。"
+    },
+    {
+     "ref": "ruling/tracker",
+     "target": "gpt",
+     "ask": "请裁决 16 个超时待回复线程及 3 个 answered_but_unread 项的后续分流。"
+    }
+   ],
+   "related_asks": [],
+   "source": "knowledge/results/deep-superagent/queue-45716467070-attempt-1.json"
+  }
+ ],
+ "needs_owner_decision": [],
+ "blocked": [],
+ "dispatch": {
+  "cards_today": [
+   "DEEP-SUPERAGENT-20261126-DAILY-1.json"
+  ],
+  "card_count": 1,
+  "importance": "medium",
+  "note": "政策卡由 dispatch-seat-policy 生成，Deep 主办；中转席不持裁决权"
+ },
+ "mail": {
+  "status": "ok",
+  "at": "2026-11-25T22:46:14.193Z",
+  "age_hours": 1.8,
+  "stale": false,
+  "gmail_status": "ok",
+  "qq_status": "not_configured",
+  "agent_mail_status": "ok",
+  "open_or_dispatch": 200,
+  "gmail_rulings": {
+   "status": "ok",
+   "source": "gmail_metadata_only",
+   "today_count": 0,
+   "window_count": 3,
+   "latest_at": "Tue, 24 Nov 2026 20:31:54 -0600",
+   "latest_subject_short": "[seat:meta] 按GPT裁决部署回执：<amount>项已启动 /<amount>已隔离 / 独立邮箱已纠正",
+   "decision_ids": [],
+   "bodies_read": false
+  }
+ },
+ "todo": {
+  "available": true,
+  "counts": {
+   "threads": 37,
+   "answered": 21,
+   "pending_no_reply": 16,
+   "answered_but_unread": 3,
+   "pending_over_24h": 16
+  },
+  "over24h": 16,
+  "consumeGate": 3,
+  "top": [
+   {
+    "thread": "subject:owner 已定 q<amount>：原厂充值受限，原厂可用前 gpt 与 claude 一律走中转",
+    "waiting_hours": 302.6
+   },
+   {
+    "thread": "subject:本周未裁决<amount>项 + 中转与 claude app 两处口径冲突",
+    "waiting_hours": 301.4
+   },
+   {
+    "thread": "subject:【裁决请求】豆包 api 接入：agent plan 未开通 / seed-evolving 未激活，现走 lite 按量且已上线 api-orch.ltzzz.c",
+    "waiting_hours": 283.8
+   },
+   {
+    "thread": "subject:【裁决请求】小程序客服/交付闭环三项已落地（commit<amount>dd<amount>dc<amount>f），请裁部署与白名单",
+    "waiting_hours": 282.3
+   },
+   {
+    "thread": "subject:【裁决请求】世章客服收发闭环已真机跑通（<amount>:<amount>自动回复达成），请裁<amount>项",
+    "waiting_hours": 278.5
+   },
+   {
+    "thread": "subject:结构框架与各 ai 职能安排（gpt+claude 合并稿，<amount>项待裁决）",
+    "waiting_hours": 277.1
+   },
+   {
+    "thread": "subject:<amount>-<amount>提案待裁决",
+    "waiting_hours": 263.9
+   },
+   {
+    "thread": "subject:【ltzzz】<amount>-<amount>-<amount>部署回执：仓库已同步 / workbuddy v<amount>送审 / 小程序<amount>已",
+    "waiting_hours": 227.6
+   },
+   {
+    "thread": "subject:<amount>-<amount>-<amount>日回执：<amount>条已裁决被误判 + 裁决回执跟踪上线",
+    "waiting_hours": 215.1
+   },
+   {
+    "thread": "subject:第<amount>项中转裁决已上线 / 第<amount>项phase<amount>并入main / 桌面出口受阻",
+    "waiting_hours": 211.1
+   },
+   {
+    "thread": "subject:【ltzzz】<amount>-<amount>-<amount>已闭环事项入库 + 退款口径更正（附<amount>项待裁决 r<amount>-r<amount",
+    "waiting_hours": 210.8
+   },
+   {
+    "thread": "subject:【ltzzz】<amount>-<amount>-<amount>服务号签名链路进展 + r<amount>-r<amount>请裁决",
+    "waiting_hours": 209.5
+   }
+  ],
+  "consume": [
+   {
+    "thread": "task:LTZZZ-RELAY-SKILL-ROUTING-20261124-01",
+    "note": "裁决已到但未读：当天必须读正文再写 awaiting_decision"
+   },
+   {
+    "thread": "task:LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01",
+    "note": "裁决已到但未读：当天必须读正文再写 awaiting_decision"
+   }
+  ],
+  "mail_open": {
+   "available": true,
+   "reason": null,
+   "total": 200,
+   "shown": 20,
+   "items": [
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "df39bf10e36c7ca0",
+     "task_id": "LTZZZ-MANUS-SECRETARY-OPS-20261123-01",
+     "age_days": 1.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [LTZZZ GPT总控派单] Manus秘书席启动｜<token>",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "2b08c8a7f427b576",
+     "task_id": "LTZZZ-MAIL-INTAKE-QQ-20261124",
+     "age_days": 1.8,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] feat(mail): 把 QQ 共享信箱接入每日 intak",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "65b5f37bc034e074",
+     "task_id": "DR-20261124-MAIL-INTAKE-CI-DEFERRED",
+     "age_days": 1.7,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] fix(mail): CI 无 agently-cli 时把",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "39e7588545dfb6b8",
+     "task_id": "LTZZZ-MAIL-TODO-AGE-20261124",
+     "age_days": 1.7,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] fix(mail): 给 Gmail/QQ 待办补算 age_",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "0c4abc8f679e0fb2",
+     "task_id": "WB-AUTONOMY-RULING-20261124",
+     "age_days": 1.6,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "WB-AUTONOMY-RULING-20261124 · Owner 重划自治边界（三类全自动化/六族 GPT 裁决）",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "fdf5472bd9d6196e",
+     "task_id": null,
+     "age_days": 4.8,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] feat(deep): Issue→队列卡派单桥，补 #471",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "149c2e17df568e50",
+     "task_id": null,
+     "age_days": 4.7,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] feat(agent-wake): 自动议程 + P3 结论落",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "fac6f528a4b27d6d",
+     "task_id": null,
+     "age_days": 3.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] docs(automation): 更正资金裁决口径为 GPT",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "d0e71557d297d4e3",
+     "task_id": null,
+     "age_days": 3.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] mail: [更正] 自动放款方案 — 资金裁决归 GPT 席",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "1769ab87956e6b4b",
+     "task_id": null,
+     "age_days": 3.9,
+     "status": "open",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] mail: [裁决请求] 自动放款部署方案 — signer",
+     "flags": "含派单词/open"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "312600adb5b71f95",
+     "task_id": null,
+     "age_days": 2.8,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] mail: [seat:relay_claude] 派单唤醒",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "ed3ef68bd0bfd584",
+     "task_id": null,
+     "age_days": 2.6,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] mail: [转裁决][seat:desktop_gpt] M",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "712e4f912d48abab",
+     "task_id": null,
+     "age_days": 1.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] feat(daily): 日报新增「今日必须回」待办区，把裁决",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "78db9a615c0de6a6",
+     "task_id": null,
+     "age_days": 1.9,
+     "status": "open",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] [relay:run][seat:relay-gpt] MET",
+     "flags": "含派单词/open"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "d6c83302a2a85113",
+     "task_id": null,
+     "age_days": 1.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] mail: [裁决请求] 自动放款 HOLD 解除路径（5 项",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "8d742f0383a632c8",
+     "task_id": null,
+     "age_days": 1.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] fix(relay): 中转席位支持显式直连传输，并新增 Is",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "abcf92dbe7b9e629",
+     "task_id": null,
+     "age_days": 1.8,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] META 席位操作确认：收单/派单/邮件（回帖即确认） (Is",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "9f2740bbd330125c",
+     "task_id": null,
+     "age_days": 1.7,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "Re: [ltzyz2181-collab/ltzzz] feat(daily): 日报待办增加邮件/仓库 Top N（",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "c7fe09266da6b044",
+     "task_id": null,
+     "age_days": 0.9,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "[seat:meta] 给GPT总控：我的强项+自动付款/真实收入建议，请裁决更多事项",
+     "flags": "含派单词"
+    },
+    {
+     "channel": "gmail_fullbox",
+     "channel_label": "gmail",
+     "ref": "c517ade2460463d8",
+     "task_id": null,
+     "age_days": 0.8,
+     "status": "unknown",
+     "ruling_status": "none",
+     "ruling_unread": false,
+     "subject": "[seat:meta] 按GPT裁决部署回执：20项已启动 / 401已隔离 / 独立邮箱已纠正",
+     "flags": "含派单词"
+    }
+   ],
+   "note": "只列优先级最高的 20 条，另有 180 条未列"
+  }
+ },
+ "counts": {
+  "done": 2,
+  "needs_gpt_decision": 2,
+  "needs_owner_decision": 0,
+  "blocked": 0,
+  "todo_over_24h": 16,
+  "todo_consume_gate": 3,
+  "todo_open_items": 200,
+  "todo_open_unread": 0,
+  "todo_intake_age_hours": 1.8,
+  "todo_intake_stale": false
+ },
+ "next_steps": [
+  "已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。",
+  "有 16 条裁决请求超过 24h 无回信：按席位点名催办或改派，不要重复发同类请求。",
+  "有 3 条裁决已到但未消费：当天读正文并写 awaiting_decision，不得当作未裁决重发。",
+  "本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。"
+ ],
+ "evidence": {
+  "queue_reports": [
+   "knowledge/results/deep-superagent/queue-45688324667-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-45716467070-attempt-1.json",
+   "knowledge/results/deep-superagent/queue-45717379715-attempt-1.json"
+  ],
+  "daily_reports": [
+   "knowledge/results/deep-superagent/daily-45716539599-attempt-1.json",
+   "knowledge/results/deep-superagent/daily-45729297398-attempt-1.json"
+  ],
+  "mail_intake": "knowledge/results/deep-superagent/mail-intake/latest.json",
+  "ruling_tracker": "knowledge/results/deep-superagent/ruling-tracker/latest.json",
+  "oversight": "knowledge/results/dispatch/oversight/latest.json"
+ },
+ "financial_execution": false,
+ "paid": false,
+ "merge_performed": false,
+ "deploy_performed": false,
+ "secrets_included": false,
+ "policy": "GPT 仍持资金/签名/生产/凭据裁决权；中转模型只出意见。",
+ "email": {
+  "subject": "[LTZZZ日报] 2026-11-26 完成=2 待GPT裁决=2 阻塞=0",
+  "body": "LTZZZ 每日合并 2026-11-26（UTC）\n\n一、今天完成了什么\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=45716539599）\n- DEEP-DAILY-SUPERVISION：daily_result_readback_complete（run=45729297398）\n\n二、今日必须回（待办）\n- 线程 37：已回 21，待回 16，超 24h 16，已回未消费 3\n- 超 24h 未回（按等待时长排序，最多列 12 条）：\n  · 等待 303h｜subject:owner 已定 q<amount>：原厂充值受限，原厂可用前 gpt 与 claude 一律走中转\n  · 等待 301h｜subject:本周未裁决<amount>项 + 中转与 claude app 两处口径冲突\n  · 等待 284h｜subject:【裁决请求】豆包 api 接入：agent plan 未开通 / seed-evolving 未激活，现走 lite 按量且已上线 api-orch.ltzzz.c\n  · 等待 282h｜subject:【裁决请求】小程序客服/交付闭环三项已落地（commit<amount>dd<amount>dc<amount>f），请裁部署与白名单\n  · 等待 279h｜subject:【裁决请求】世章客服收发闭环已真机跑通（<amount>:<amount>自动回复达成），请裁<amount>项\n  · 等待 277h｜subject:结构框架与各 ai 职能安排（gpt+claude 合并稿，<amount>项待裁决）\n  · 等待 264h｜subject:<amount>-<amount>提案待裁决\n  · 等待 228h｜subject:【ltzzz】<amount>-<amount>-<amount>部署回执：仓库已同步 / workbuddy v<amount>送审 / 小程序<amount>已\n  · 等待 215h｜subject:<amount>-<amount>-<amount>日回执：<amount>条已裁决被误判 + 裁决回执跟踪上线\n  · 等待 211h｜subject:第<amount>项中转裁决已上线 / 第<amount>项phase<amount>并入main / 桌面出口受阻\n  · 等待 211h｜subject:【ltzzz】<amount>-<amount>-<amount>已闭环事项入库 + 退款口径更正（附<amount>项待裁决 r<amount>-r<amount\n  · 等待 210h｜subject:【ltzzz】<amount>-<amount>-<amount>服务号签名链路进展 + r<amount>-r<amount>请裁决\n  · 已回未消费｜task:LTZZZ-RELAY-SKILL-ROUTING-20261124-01（裁决已到但未读：当天必须读正文再写 awaiting_decision）\n  · 已回未消费｜task:LTZZZ-DAILY-GOVERNANCE-ALIGNMENT-20261123-01（裁决已到但未读：当天必须读正文再写 awaiting_decision）\n- 邮件/仓库待办 Top 20（open 共 200 条；只列元数据，不含正文）：\n  · [gmail] df39bf10e36c7ca0 task=LTZZZ-MANUS-SECRETARY-OPS-20261123-01｜未处理 1.9天｜含派单词｜Re: [LTZZZ GPT总控派单] Manus秘书席启动｜<token>\n  · [gmail] 2b08c8a7f427b576 task=LTZZZ-MAIL-INTAKE-QQ-20261124｜未处理 1.8天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] feat(mail): 把 QQ 共享信箱接入每日 intak\n  · [gmail] 65b5f37bc034e074 task=DR-20261124-MAIL-INTAKE-CI-DEFERRED｜未处理 1.7天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] fix(mail): CI 无 agently-cli 时把\n  · [gmail] 39e7588545dfb6b8 task=LTZZZ-MAIL-TODO-AGE-20261124｜未处理 1.7天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] fix(mail): 给 Gmail/QQ 待办补算 age_\n  · [gmail] 0c4abc8f679e0fb2 task=WB-AUTONOMY-RULING-20261124｜未处理 1.6天｜含派单词｜WB-AUTONOMY-RULING-20261124 · Owner 重划自治边界（三类全自动化/六族 GPT 裁决）\n  · [gmail] fdf5472bd9d6196e｜未处理 4.8天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] feat(deep): Issue→队列卡派单桥，补 #471\n  · [gmail] 149c2e17df568e50｜未处理 4.7天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] feat(agent-wake): 自动议程 + P3 结论落\n  · [gmail] fac6f528a4b27d6d｜未处理 3.9天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] docs(automation): 更正资金裁决口径为 GPT\n  · [gmail] d0e71557d297d4e3｜未处理 3.9天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] mail: [更正] 自动放款方案 — 资金裁决归 GPT 席\n  · [gmail] 1769ab87956e6b4b｜未处理 3.9天｜含派单词/open｜Re: [ltzyz2181-collab/ltzzz] mail: [裁决请求] 自动放款部署方案 — signer\n  · [gmail] 312600adb5b71f95｜未处理 2.8天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] mail: [seat:relay_claude] 派单唤醒\n  · [gmail] ed3ef68bd0bfd584｜未处理 2.6天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] mail: [转裁决][seat:desktop_gpt] M\n  · [gmail] 712e4f912d48abab｜未处理 1.9天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] feat(daily): 日报新增「今日必须回」待办区，把裁决\n  · [gmail] 78db9a615c0de6a6｜未处理 1.9天｜含派单词/open｜Re: [ltzyz2181-collab/ltzzz] [relay:run][seat:relay-gpt] MET\n  · [gmail] d6c83302a2a85113｜未处理 1.9天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] mail: [裁决请求] 自动放款 HOLD 解除路径（5 项\n  · [gmail] 8d742f0383a632c8｜未处理 1.9天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] fix(relay): 中转席位支持显式直连传输，并新增 Is\n  · [gmail] abcf92dbe7b9e629｜未处理 1.8天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] META 席位操作确认：收单/派单/邮件（回帖即确认） (Is\n  · [gmail] 9f2740bbd330125c｜未处理 1.7天｜含派单词｜Re: [ltzyz2181-collab/ltzzz] feat(daily): 日报待办增加邮件/仓库 Top N（\n  · [gmail] c7fe09266da6b044｜未处理 0.9天｜含派单词｜[seat:meta] 给GPT总控：我的强项+自动付款/真实收入建议，请裁决更多事项\n  · [gmail] c517ade2460463d8｜未处理 0.8天｜含派单词｜[seat:meta] 按GPT裁决部署回执：20项已启动 / 401已隔离 / 独立邮箱已纠正\n  · 只列优先级最高的 20 条，另有 180 条未列\n\n三、需要 GPT 裁决\n- DEEP-SUPERAGENT-20261125-ISSUE-640（run=45688324667）：见 ASK\n  复核意见：Qianwen output uses markdown fences and snippets instead of required full-file write blocks; format violation requires correction.\n  ASK DEEP-SUPERAGENT-20261125-ISSUE-640：任务以 needs_gpt_decision 结束但执行输出没有 ASK | gpt 行；请给出 decision_id 并裁决：接受该输出并关闭、退回重跑、或补证据后再复核。\n- DEEP-SUPERAGENT-20261126-DAILY-1（run=45716467070）：见 ASK\n  ASK mail/intake/agent_mail：请裁决该已读但仍有 open 项的邮件通道后续分流口径，并确认关闭前所需回执与复核标准。\n  ASK mail/intake/gmail：请裁决 Gmail 大量 open/unseen 项的处理范围，以及是否需要逐项证据后再分流。\n  ASK mail/intake/qq：请在不索取或创建凭据的前提下，裁决 QQ 未配置通道的记录口径与后续分流。\n  ASK mail/intake/unified：请裁决 unknown 项如何补证或保留，不得批量按拒绝项关闭。\n  ASK ruling/gpt_today：请提供这 4 封补充裁决对应 Task ID 的明确处置结论或关闭条件。\n  ASK ruling/tracker：请裁决 16 个超时待回复线程及 3 个 answered_but_unread 项的后续分流。\n\n四、下一步\n- 已生成 2 条 GPT 裁决请求：等 GPT 回信中的 decision_id 与原 Task ID 绑定后再执行，模型不得自行裁决。\n- 有 16 条裁决请求超过 24h 无回信：按席位点名催办或改派，不要重复发同类请求。\n- 有 3 条裁决已到但未消费：当天读正文并写 awaiting_decision，不得当作未裁决重发。\n- 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。\n\n五、证据与边界\n- 邮件摄入：status=ok，gmail=ok，qq=not_configured，agent_mail=ok\n- 邮件摄入快照：2026-11-25T22:46:14.193Z（距今 1.8 小时）\n- 今日 Gmail 裁决类回信（仅元数据）：0\n- 待办来源：knowledge/results/deep-superagent/ruling-tracker/latest.json（超24h=16，已回未消费=3）\n- 邮件待办来源：knowledge/results/deep-superagent/mail-intake/latest.json 的 open_items（open=200，裁决未读=0）\n- Deep 队列卡：1 张；合并回执：knowledge/results/deep-superagent/daily-merge/2026-11-26.json\n- 本邮件不含邮件正文、金额、凭据或客户数据；不声称任何业务验收或生产部署。\n"
+ }
+}
