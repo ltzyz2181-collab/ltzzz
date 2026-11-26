@@ -91,10 +91,15 @@ test('intake 只提交脱敏结果到固定路径，用 rebase 推送助手而�
   assert.ok(!/git push\s+-f/.test(source), '不得强推');
 });
 
-test('intake 只在 ok/partial 时落库，失败态与 CI 延后快照都不得覆盖上次可核验结果', () => {
+test('intake 在 ok/partial 或 QQ 已成功的延后快照时落库，其余延后/失败态不得覆盖上次结果', () => {
   assert.match(intake, /ok\|partial\)/);
-  // CI 的 ok_deferred_channels 只有 Gmail 覆盖，不能覆盖云主机席位写下的全通道结果。
-  assert.match(intake, /ok_deferred_channels\) echo .*not committed/);
+  // QQ 已实跑成功时，ok_deferred_channels 至少覆盖 Gmail + QQ，可以落库。
+  assert.match(intake, /ok_deferred_channels\)/);
+  assert.match(intake, /qq_fullbox\?\.status/);
+  assert.match(intake, /if \[ "\$qq" = "ok" \]/);
+  assert.match(intake, /committing configured-channel snapshot/);
+  // QQ 未配置或失败时仍只留 artifact，不覆盖上次可核验结果。
+  assert.match(intake, /CI-only snapshot kept in artifact, not committed/);
   assert.match(intake, /result not committed/);
 });
 
