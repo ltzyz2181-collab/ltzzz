@@ -1,0 +1,38 @@
+{
+  "schema": "ltzzz.payout-network-status.v1",
+  "effective_date": "2026-11-24",
+  "source_task_id": "PAYOUT-SIGNER-DEPLOY-PLAN-20261121-01",
+  "decision_id": "GPT-DECISION-20261122-PAYOUT-HOLD-01",
+  "authority_ref": "GPT ruling received 2026-11-24: Base Sepolia isolated rehearsal only; mainnet remains HOLD",
+  "networks": {
+    "mainnet": {
+      "status": "HOLD",
+      "reason": "BLOCKED_EVIDENCE",
+      "blocked_status": "blocked_missing_signer",
+      "automatic_payout_enabled": false,
+      "funding_attempted": false,
+      "transactions": 0,
+      "signer_configured": false,
+      "five_signature_wallet": "excluded",
+      "note": "Production preflight stays HOLD/BLOCKED_EVIDENCE. No mainnet recipient, budget or payout controller is configured."
+    },
+    "base_sepolia": {
+      "status": "NOT_STARTED",
+      "reason": "BLOCKED_EVIDENCE",
+      "blocked_status": "blocked_missing_testnet_evidence",
+      "testnet_rehearsal_ready": false,
+      "automatic_payout_enabled": false,
+      "funding_attempted": false,
+      "transactions": 0,
+      "missing": ["testnet_signer", "faucet_funding", "testnet_recipient", "testnet_policy_snapshot"],
+      "note": "Isolated rehearsal status only. It cannot change, replace or imply the mainnet status."
+    }
+  },
+  "invariants": [
+    "mainnet status is independent of base_sepolia",
+    "testnet rehearsal can never set mainnet ready",
+    "no mainnet recipient, budget or payout controller is configured by this record",
+    "five-signature wallets remain excluded"
+  ],
+  "real_money_actions": false
+}

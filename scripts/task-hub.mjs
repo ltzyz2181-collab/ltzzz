@@ -27,6 +27,7 @@ import {
   deliveredEvidenceProblems, renderTaskBody, buildDigest,
   reassignPlan, reassignLabels, reassignedComment, REASSIGN_AFTER_HOURS,
 } from './lib/task-hub.mjs';
+import {loadSeatMailRegistry, seatMailRoute} from './lib/seat-mail-routing.mjs';
 
 export const REPOSITORY = 'ltzyz2181-collab/ltzzz';
 const STATE_LABELS = Object.values(HUB_LABEL);
@@ -192,11 +193,12 @@ export async function cmdReap({client, apply = false, now = new Date().toISOStri
   return {schema: TASK_HUB_SCHEMA, command: 'reap', applied: apply, reaped: plan.length, plan};
 }
 
-export async function cmdReassign({client, apply = false, now = new Date().toISOString(), afterHours = REASSIGN_AFTER_HOURS, fallbackSeats, mailTo = null, repository = REPOSITORY}) {
+export async function cmdReassign({client, apply = false, now = new Date().toISOString(), afterHours = REASSIGN_AFTER_HOURS, fallbackSeats, mailTo = null, registry = null, repository = REPOSITORY}) {
   const issues = await loadIssues(client);
   const plan = reassignPlan(issues, {now, afterHours, fallbackSeats});
   const notices = [];
   if (apply) {
+    const seatRegistry = registry || loadSeatMailRegistry(process.cwd());
     for (const item of plan) {
       if (item.action === 'escalate_stale') {
         await client.addLabels(item.number, [HUB_LABEL.stale]);
@@ -206,11 +208,18 @@ export async function cmdReassign({client, apply = false, now = new Date().toISO
       await client.removeLabel(item.number, 'seat:' + item.seat);
       await client.addLabels(item.number, reassignLabels(item.to));
       await client.comment(item.number, reassignedComment({number: item.number, from: item.seat, to: item.to, ageHours: item.age_hours}));
-      if (mailTo) {
+      if (mailTo !== false) {
+        const route = mailTo
+          ? {seat: item.to, to: mailTo, subject_prefix: '', transport: 'manual_override', delivery: 'manual_override', reason: 'mail_to_override'}
+          : seatMailRoute(item.to, {registry: seatRegistry});
+        const subject = (route.subject_prefix ? route.subject_prefix + ' ' : '') + '[LTZZZ] #' + item.number + ' 派单 24h 无人领取，已改派给 ' + item.to;
         const body = [
           'seat: task-hub',
-          'to: ' + mailTo,
-          'subject: [LTZZZ] #' + item.number + ' 派单 24h 无人领取，已改派给 ' + item.to,
+          'to: ' + route.to,
+          'subject: ' + subject,
+          'dedupe_key: task-hub-reassign-' + item.number + '-' + route.seat,
+          'transport: ' + route.transport,
+          'delivery: ' + route.delivery,
           '',
           '---',
           '卡：#' + item.number + ' ' + (item.title || ''),

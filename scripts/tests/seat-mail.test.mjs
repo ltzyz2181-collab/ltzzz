@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseMailIssue, evaluateRelayPermission} from '../seat-mail.mjs';
+import {parseMailIssue, evaluateRelayPermission, issueClosure} from '../seat-mail.mjs';
+
+test('sent and duplicate mail cards close; blocked cards stay open', () => {
+  assert.deepEqual(issueClosure('sent'), {state: 'closed', state_reason: 'completed'});
+  assert.deepEqual(issueClosure('duplicate'), {state: 'closed', state_reason: 'not_planned'});
+  assert.equal(issueClosure('blocked'), null);
+  assert.equal(issueClosure('failed_smtp'), null);
+});
 
 test('parses seat, recipient, subject and body from a relay card', () => {
   const m = parseMailIssue({
