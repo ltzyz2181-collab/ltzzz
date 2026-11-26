@@ -1,0 +1,83 @@
+{
+  "schema": "ltzzz.deploy.receipt.v1",
+  "receipt_id": "DR-20261125-five-family-alignment-verify",
+  "task_id": "LTZZZ-608-FIVE-FAMILY-ALIGNMENT",
+  "target": "repo-policy-five-family-alignment",
+  "platform": "github-default-branch",
+  "env_id": "ltzyz2181-collab/ltzzz@main",
+  "code_commit": "9eee5c3c024cfd798664eeb05c3379584b7d7730",
+  "code_path": "AGENTS.md,config/,docs/,scripts/daily-ops-summary.mjs,scripts/lib/decision-families.mjs,scripts/tests/,workers/deep-superagent/",
+  "recorded_at_utc": "2026-11-25T18:00:00Z",
+  "deployment_status": "deployed_and_verified",
+  "authority": {
+    "effective": "2026-11-20",
+    "source": "config/owner-authority-20261120.json",
+    "owner_instruction": "Owner 2026-11-20：GPT 决策席只保留五类；凭据配置与轮换属普通工程，秘密值不得打印/提交/外泄。",
+    "correction": "GPT 2026-11-25 纠偏信（WorkBuddy 回读已执行）：把六族中的“凭据”移出保留范围，落实为五类。",
+    "deploy_authorization": "Owner 本轮会话明确“直接部署”，覆盖普通工程合并/部署等待；不覆盖五类保留事项与凭据值保护。"
+  },
+  "merge": {
+    "pr": 642,
+    "pr_title": "fix(policy): 收敛为五类 GPT 保留事项并降级普通 needs_gpt_decision",
+    "branch": "fix/five-family-alignment-20261125-01",
+    "head_before_second_commit": "6fe589d7ef01377cf26a6265bb40fca9fba49d01",
+    "head_merged": "60083e0e9b1e8e81603961b0dd0d60366d0927b5",
+    "merge_commit": "9eee5c3c024cfd798664eeb05c3379584b7d7730",
+    "base_main": "0397c953376c239583a58674aecbdd6f99c9c95e",
+    "merge_method": "merge",
+    "url": "https://github.com/ltzyz2181-collab/ltzzz/pull/642"
+  },
+  "pre_merge_ci": {
+    "head": "60083e0e9b1e8e81603961b0dd0d60366d0927b5",
+    "check_runs": 25,
+    "failures": 0,
+    "pending": 0,
+    "mergeable_state": "clean"
+  },
+  "ci_runs_on_merge_commit": [
+    {"id": 45737968294, "name": "Small payment policy offline validation (no payment)", "conclusion": "success"},
+    {"id": 45737968278, "name": "Deep Superagent queue and GPT decision bridge", "conclusion": "success"},
+    {"id": 45737968321, "name": "Dispatch seat policy gate", "conclusion": "success"},
+    {"id": 45737968349, "name": "Email authority record", "conclusion": "success"},
+    {"id": 45737968275, "name": "Daily Pulse lineage regression", "conclusion": "success"},
+    {"id": 45737968292, "name": "Relay proxy guard tests (no models)", "conclusion": "success"},
+    {"id": 45737968393, "name": "Deep Superagent isolated deployment and explicit bootstrap", "conclusion": "success"},
+    {"id": 45737968314, "name": "Deploy static site to GitHub Pages", "conclusion": "cancelled"}
+  ],
+  "post_merge_verification": {
+    "source": "api.github.com tarball main @ 9eee5c3c024cfd798664eeb05c3379584b7d7730",
+    "policy_tests": "node --test scripts/tests/daily-ops-summary.test.mjs scripts/tests/deploy-authority-gate.test.mjs scripts/tests/deep-superagent-adjudicator.test.mjs scripts/tests/deep-superagent-deploy-automation.test.mjs → 58/58 pass",
+    "harness_tests": "node --test lessons/reflection-harness/ltzzz-skill/ans-cycle/workpool → 71/71 pass",
+    "manifest_check": "node scripts/verify-small-payment-manifest.mjs → manifest_verified_not_payment_authorization, source_files=42",
+    "locked_files": {
+      "config/autonomy-authority.json": "d2d8dd49258790a0b786b24facb751d8f4e264e785fa068498df1e2dd4869fa9",
+      "config/review-delegation.json": "1cf71cf66e186f330b8461033c7a7a9d2e400eda74cea5162d3a970d0e946e71",
+      "note": "合并后仍与 manifest 锁定字节一致，manifest_source_bytes_changed 已消除。"
+    },
+    "runtime_behavior": "workers/deep-superagent/adjudicator.mjs 保留族为五类，private_keys_seed_phrases_root_keys 独立；credential_access 与 production_write 不再短路到 GPT 决策席。"
+  },
+  "blockers": [
+    {
+      "item": "GitHub Pages run 45737968314 cancelled",
+      "impact": "只影响静态站点发布，不影响本策略变更与 Workers 部署；待下次 push 或手动 workflow_dispatch 重跑。",
+      "next_action": "由普通工程跟进，不阻塞本回执。"
+    }
+  ],
+  "next_action": "五类收敛已在 main 生效；下一步把创新项目咨询与 LTZZZ 前沿方向草案交 GPT 裁决席。",
+  "out_of_scope": [
+    "未修改任何凭据值、Secrets、钱包、签名器或资金策略",
+    "未发起付款、转账、退款、签名或钱包操作",
+    "未调用付费模型",
+    "未修改 GitHub Actions Secrets、cron 或五签 Safe"
+  ],
+  "rollback": "git revert 9eee5c3c024cfd798664eeb05c3379584b7d7730（保留 manifest 锁定文件原字节）",
+  "operator": {
+    "seat": "desktop-claude",
+    "client": "Claude Code",
+    "env": "windows-desktop worktree orders-empty-copy-20261115",
+    "recorded_by": "desktop-claude"
+  },
+  "financial_execution": false,
+  "paid": false,
+  "secrets_included": false
+}
