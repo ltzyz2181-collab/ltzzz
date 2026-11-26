@@ -1,0 +1,74 @@
+{
+  "schema": "ltzzz.meta-connectivity-probe.v1",
+  "at": "2026-11-26T02:52:40.278Z",
+  "worker": {
+    "name": "ltzzz-meta-hosted",
+    "host": "ltzzz-meta-hosted.ltzyz2181.workers.dev",
+    "url_source": "cloudflare_api"
+  },
+  "checks": {
+    "health": {
+      "http": 200,
+      "ms": 171,
+      "json": {
+        "service": "ltzzz-meta-hosted",
+        "provider": "cloudflare-workers-ai",
+        "model": "@cf/meta/llama-3.1-8b-instruct-fp8",
+        "did": "did:ltzzz:meta",
+        "auth_configured": true,
+        "ai_binding": true,
+        "issues_configured": true,
+        "mail_relay_configured": true,
+        "mail_relay_transport": "seat-mail-relay",
+        "issues_repo": "ltzyz2181-collab/ltzzz",
+        "onchain_registered": false
+      },
+      "text": null
+    },
+    "auth_check": {
+      "http": 200,
+      "ms": 68,
+      "json": {
+        "ok": true,
+        "service": "ltzzz-meta-hosted",
+        "authorized": true,
+        "model_calls": 0
+      },
+      "text": null
+    },
+    "channel_probe": {
+      "http": 502,
+      "ms": 173,
+      "json": {
+        "error": "upstream_inference_failed"
+      },
+      "text": null
+    },
+    "inference_diagnosis": {
+      "model": "@cf/meta/llama-3.1-8b-instruct-fp8",
+      "run": {
+        "http": 401,
+        "success": false,
+        "error": "Authentication error",
+        "error_code": 10000
+      },
+      "meta_models": [],
+      "meta_models_http": 403
+    }
+  },
+  "boundaries": {
+    "financial_execution": false,
+    "signing": false,
+    "model_calls": 0,
+    "credentials_persisted": false
+  },
+  "evidence": {
+    "request_nonce": "ffbb7b4457d41f31f098fcf63c796fd5",
+    "echo_matched": false,
+    "executor": null,
+    "provider": null,
+    "model": null
+  },
+  "verdict": "deployed_inference_failed",
+  "ok": false
+}
