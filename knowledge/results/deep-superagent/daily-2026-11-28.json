@@ -1,0 +1,168 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "date": "2026-11-28",
+  "business_date": "2026-11-28",
+  "generated_at_utc": "2026-11-27T22:50:15Z",
+  "mail_intake": {
+    "status": "ok",
+    "agent_mail": {
+      "status": "ok",
+      "count": 44,
+      "open_count": 5
+    },
+    "gmail_fullbox": {
+      "status": "ok",
+      "count": 1743,
+      "open_count": 1663,
+      "full_box_total": 6093,
+      "full_box_unseen": 5202,
+      "bodies_read": 50,
+      "window_since": "29-Oct-2026"
+    },
+    "qq_shared": {
+      "status": "not_configured",
+      "reason": "blocked_missing_credentials"
+    }
+  },
+  "gpt_ruling_received": {
+    "status": "ok",
+    "received": true,
+    "today_count": 3,
+    "days_since_last_ruling": 0,
+    "source": "agent_mail_inbox"
+  },
+  "ruling_tracker": {
+    "threads": 38,
+    "answered": 18,
+    "pending_no_reply": 20,
+    "answered_but_unread": 9,
+    "pending_over_24h": 17,
+    "consume_gate": 8,
+    "consumed_today": 8,
+    "file": "knowledge/results/deep-superagent/rulings-consumed-2026-11-28.json"
+  },
+  "repo_observation": {
+    "oversight_date": "2026-11-27",
+    "tasks_observed": 73,
+    "overdue_tasks": 45,
+    "backlog": {
+      "open_warning_cases": 268,
+      "not_rechecked": 223,
+      "by_seat": {
+        "qianwen": 80,
+        "deepseek": 71,
+        "doubao": 58,
+        "grok": 41,
+        "gpt": 18
+      }
+    },
+    "workflow_failures_24h": 0,
+    "open_pr": 0
+  },
+  "dispatch": {
+    "status": "skipped",
+    "reason": "owner 2026-11-27 指令：不插手收发派单与部署任务；本轮不新建任务卡、不派单"
+  },
+  "queue_run": null,
+  "patrol": {
+    "path": "knowledge/results/patrol/2026-11-28.json",
+    "ok": 3,
+    "unknown": 3,
+    "skipped": 1,
+    "failed": 0
+  },
+  "monthly_skill_iteration": {
+    "status": "skipped",
+    "reason": "非每月1日且 2026-11 记录已存在"
+  },
+  "writes_performed": 3,
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "financial_actions": 0,
+  "sections": {
+    "done": [
+      {
+        "item": "邮件摄入刷新",
+        "evidence": "mail-intake/latest.json：agent 44/5，gmail ok 1743/6093，qq not_configured"
+      },
+      {
+        "item": "8 封裁决/派单回信正文读完并消费",
+        "evidence": "knowledge/results/deep-superagent/rulings-consumed-2026-11-28.json"
+      },
+      {
+        "item": "日课补跑",
+        "evidence": "run 46078956558（2026-11-27T22:49:38Z workflow_dispatch）"
+      },
+      {
+        "item": "巡检六项落盘",
+        "evidence": "knowledge/results/patrol/2026-11-28.json"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "item": "XAI 实盘 key 与 1U 放款仍 HOLD",
+          "blocker": "需 GPT 决策席放行",
+          "if_not": "实盘通道继续空转",
+          "can_deep_do_part": "只能记录状态，不能代裁"
+        },
+        {
+          "item": "APISROUTER 储备下限 issue #522",
+          "blocker": "资金闸门裁决",
+          "if_not": "预算闸门维持现状",
+          "can_deep_do_part": "不涉及资金，本席不动"
+        }
+      ],
+      "owner": [
+        {
+          "item": "收派与部署是否恢复由谁执行",
+          "blocker": "owner 2026-11-27 已禁本席插手",
+          "if_not": "队列 268 条待办无人派单会继续堆",
+          "can_deep_do_part": "只出清单，不派单"
+        },
+        {
+          "item": "QQ 共享箱 306122054 凭据是否补",
+          "blocker": "缺凭据",
+          "if_not": "第三箱长期 unknown",
+          "can_deep_do_part": "可先做只读探测，需凭据才可读"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "item": "明天 6:45 继续只读巡检并按同一格式报",
+        "criteria": "daily-2026-11-29.json 落盘且 push 成功"
+      },
+      {
+        "item": "把 268 条待办按席位出清单（只列不派）",
+        "criteria": "清单文件落盘，writes_performed 计数不变"
+      }
+    ],
+    "later": [
+      {
+        "item": "中转 Claude/GPT 席位任务",
+        "depends": "席位由谁调度（本席已停手）"
+      },
+      {
+        "item": "#655 16 项合并裁决",
+        "depends": "GPT 决策席出面"
+      },
+      {
+        "item": "skill 月度迭代",
+        "depends": "每月 1 日窗口"
+      }
+    ]
+  },
+  "plain_summary": {
+    "done": [
+      "邮件两箱读到：Agent 44 封、Gmail 全箱 6093",
+      "8 封裁决回信读完并落盘",
+      "日课补跑 run 46078956558 成功启动"
+    ],
+    "awaiting": [
+      "GPT：XAI 实盘 key 与 1U 放款仍 HOLD",
+      "GPT：APISROUTER 储备下限 #522 待裁",
+      "owner：收派与部署由谁执行"
+    ]
+  }
+}
