@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "relay_seat_call",
+  "policy_id": "RELAY-SEAT-POLICY-20261111",
+  "at": "2026-11-27T03:30:05.176Z",
+  "requested_at": "2026-11-27T03:29:39.843Z",
+  "responded_at": "2026-11-27T03:30:05.176Z",
+  "request_id": "202611270329407834467486ruFen49",
+  "request_id_source": "header:x-oneapi-request-id",
+  "requested_agent": "relay_claude",
+  "purpose": "code",
+  "generation_output": false,
+  "executed_by": "apisrouter_relay",
+  "station": "APIsRouter",
+  "station_kind": "third_party_aggregator_relay",
+  "official_provider_api": false,
+  "station_model": "claude-sonnet-4-6",
+  "model_served": "claude-sonnet-4-6",
+  "model_tier": "claude",
+  "model_class": "claude",
+  "routing": {
+    "requested_model": "claude-sonnet-4-6",
+    "served_model": "claude-sonnet-4-6",
+    "station": "APIsRouter",
+    "upstream_hint": null
+  },
+  "key_transport": "direct_station_key_dev_exception",
+  "boundary_exception": true,
+  "effects": {
+    "business_task_completed": false,
+    "authority_effect": "none",
+    "funds_or_signature_surface": false,
+    "production_write": false
+  },
+  "max_tokens": 2000,
+  "batch": false,
+  "prompt": {
+    "chars": 4641,
+    "estimated_input_tokens": 1917,
+    "sha256": "c96d1fcbe61b4c42b5e9d227b7e04dc6ad4a391a3959661ee49b0144865c895d"
+  },
+  "http": 200,
+  "duration_ms": 25332,
+  "ok": true,
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens_reported": 0,
+    "prompt_tokens_billed": 1917,
+    "usage_source": "estimated_floor",
+    "completion_tokens": 1725,
+    "total_tokens": 1725
+  },
+  "cost_usd": 0.025301,
+  "balance_before_usd": 12.458957,
+  "balance_after_usd": 12.433656,
+  "seat_state_before": "open",
+  "seat_state_after": "open",
+  "guard": {
+    "code": "relay_call_allowed",
+    "routing_reason": "long_context"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "http": 200,
+      "duration_ms": 25332,
+      "failure": null
+    }
+  ],
+  "retry_policy": "retry only when no HTTP response arrived; a request that reached the station is never replayed",
+  "reply": {
+    "chars": 2964,
+    "preview": "## FINDINGS\n\n**Q1：8 项改判逐条评估**\n\n**ref: mail/agent_mail-oauth** — 原判 `needs_owner_decision`，维持。理由充分：token 过期属授权层问题，非系统缺证据、非 GPT 可决。**站得住。**\n\n**ref: mail/intake/gm",
+    "text": "## FINDINGS\n\n**Q1：8 项改判逐条评估**\n\n**ref: mail/agent_mail-oauth** — 原判 `needs_owner_decision`，维持。理由充分：token 过期属授权层问题，非系统缺证据、非 GPT 可决。**站得住。**\n\n**ref: mail/intake/gmail** — 原判 `coordinator_close_with_receipt`，维持。数据 status=ok，窗口未截断，无异议。**站得住。**\n\n**ref: mail/intake/agent_mail** — 原判 `needs_gpt_decision`，改判 `blocked_evidence_needed`。改判逻辑：195 项 unknown 是因读取通道断裂，无法取证，不是需要 GPT 给出口径。这是证据层问题而非决策层问题。**改判站得住，依据是 rule5 的\"通道缺证据\"语义。**\n\n**ref: ruling/gmail-metadata** — 原判 `needs_gpt_decision`，改判 `needs_owner_decision`。改判逻辑：当前阻塞原因是 owner 未重新授权裁决口，不是 GPT 尚未给出裁决。Gmail 旁证确实不等于裁决口。**改判站得住。** 但需注意：此项与 A1 在根因上高度重叠（同一个 token 失效）——改判是正确的，但两项分别挂 `needs_owner_decision` 是否应合并为一个 owner 任务，属产物设计问题，不影响路由正确性。\n\n**ref: ruling/tracker** — 原判 `needs_gpt_decision`，改判 `blocked_evidence_needed`。理由：run_code=2 unknown，answered_but_unread 未消费，当前无法判断有无待裁决项，属证据不可得。**改判站得住。** 但措辞\"未消费不得写进待裁决\"是操作结论，不是路由依据，依据本身（证据不可得）需更显式。\n\n**ref: oversight/2026-11-24** — 原判 `needs_gpt_decision`，改判 `blocked_evidence_needed`。产物 2 中写\"落后 main 12 提交\"，但产物 1 明确是\"落后 6 提交\"。**数字不一致，改判依据含矛盾。** 改判方向（非合并/部署类不须 GPT）是对的，但证据引用存在笔误，需要修正。\n\n**ref: repo/open** — 产物 2 此条 JSON 被截断，`\"final_route\": \"coordinator_close_with_\"` 后无内容。**无法评估，改判不完整，视为缺失。**\n\n**ref: ci/24h（B3）和 daily-run 类（C1/C2/C3）** — 产物 1 列了 11 项，产物 2 只处理了部分，截断后其余项路由状态未知。**改判覆盖不完整。**\n\n---\n\n**Q2：新唤醒协议绕过点**\n\n产物 3 时间戳字段 `\"at_utc\": \"2026-11-24T01:2xZ\"` 含字符 `x`，不是合法 ISO 8601，无法解析为确定时刻。这不是笔误风险，而是协议生效时间本身不可验证。\n\n逐步骤绕过点：\n\n1. **主通道判断步骤**：协议说\"主通道未发即失败\"，但当前 agent_mail 段已 failed，Gmail IMAP 仅只读。若 worker 以\"Gmail 仍 ok\"为由主张\"主通道部分可用\"，协议没有明确定义哪一段是主通道，可绕过\"未发即失败\"的触发条件。\n\n2. **24h 未读计时步骤**：`seat 邮件 24h 未读进 mail_unhandled` 依赖收件箱可读，当前 agent_mail 收件箱不可读。若未读事件无法被检测，该规则形同虚设——未读项不会进 `mail_unhandled`，而是静默消失。\n\n3. **部署任务唤醒信封步骤**：协议要求\"部署任务必须发唤醒信封，2h 重发/6h 升级\"，但发件通道也断（agent_mail status=failed）。如果 worker 判断\"发送尝试已执行但通道不通\"，协议没有规定此场景下的等价升级路径，可以不触发 6h 升级。\n\n4. **时间戳不合法**：`at_utc` 无法解析，协议的\"从何时起生效\"无法与其他日志对齐，审计时无法确认该协议是否在当日任何事件发生前已激活。\n\n---\n\n**Q3：rule 6 措辞漏洞**\n\n产物 1 中 rule 6 的完整文本被截断（\"rule2 任\"之后内容缺失），无法直接引用原文。基于上下文推断（\"授权负面条款而非分流规则\"）：\n\nrule 6 的结构性漏洞在于，如果其措辞包含\"不得……\"或\"禁止……\"的否定形式，worker 在实现路由逻辑时可能将\"不满足 rule 6 的否定条件\"解读为一个正向路由分支，即把\"未触犯 rule 6\"当成通过某条路由的充分条件。这是否定条款被当成路由许可使用的典型漏洞。\n\n具体可被利用的措辞模式：若 rule 6 写成\"不得将 X 判为 coordinator_close_with_receipt\"，worker 可推断\"凡不是 X 的，均可判 coordinator_close_with_receipt\"，从而绕过 rule 1（需先补写回执）的前置条件。\n\n由于产物 1 rule 6 原文被截断，**此条分析基于推断，无法完整评估，属于产物本身的缺失问题。**\n\n---\n\n**Q4：11-25 最高优先项**\n\n最高优先：**恢复 Agent Mail OAuth 授权**（对应 A1 + A4 共同根因）。\n\n验收判据（硬性）：\n\n- `mail-intake/latest.json` 中 `agent_mail.status` 值为 `ok`（非 `failed`、非 `partial`）\n- `refresh_token` 对应的 token 过期时间晚于 2026-11-25T23:59:59Z（Asia/Shanghai）\n- 执行一次收件箱读取操作，返回非空响应且无 `invalid_grant` 错误\n- `ruling/gmail-metadata` 的 `today_count` 在当日可正常自增（不要求有裁决回信，但读取动作本身不报错）\n- 以上四项均需在单次 pipeline run 的日志中可回溯，不接受手动声明已恢复\n\n---\n\n## VERDICT\n\n**pass_with_fixes** — 改判方向整体正确，但存在三处不可忽略的问题：`oversight/2026-11-24` 改判中提交数字矛盾（6 vs 12）；`repo/open` 条目 JSON 截断导致改判不完整；新唤醒协议时间戳不合法，协议生效时间不可验证。\n\n## TOP1\n\n**恢复 Agent Mail OAuth 授权**，验收判据见 Q4，四项硬性条件全部满足且日志可回溯方为通过。"
+  },
+  "key_fingerprint": "sha256:16=337045a6032e9386",
+  "failure": null,
+  "http_error": null
+}
