@@ -1,0 +1,37 @@
+{
+  "schema": "ltzzz.seat-roles.v1",
+  "authority": "owner 2026-11-27 口述分工",
+  "updated_at_utc": "2026-11-27T03:30:00Z",
+  "seats": {
+    "deep": {
+      "role": "团队经理",
+      "owns": ["任务队列与持续轮询", "派单与跟踪", "收集证据与状态汇总", "按规则复核席位结论"],
+      "must_not": ["裁决", "合并 PR", "生产部署", "资金动作", "改合约或支付语义"],
+      "note": "队列与轮询归 Deep，不得把这些交给 GPT 席位"
+    },
+    "claude": {
+      "role": "主力工程师",
+      "owns": ["多文件代码实现", "重构", "疑难 Bug", "测试编写", "代码审查"],
+      "must_not": ["范围模糊的总控任务", "没有验收边界的长期任务"]
+    },
+    "gpt": {
+      "role": "架构师兼审计专家",
+      "owns": ["架构设计", "复杂推理", "接口规划", "测试矩阵", "故障分析", "独立审计"],
+      "must_not": ["接管持续轮询", "接管整个任务队列"],
+      "note": "资金/预算类裁决仍由 GPT 决策席出，不走普通审计通道"
+    }
+  },
+  "routing_rules": [
+    "任务先归 Deep 做经理层拆解与跟踪，不直接丢给 GPT 或 Claude",
+    "可验收的多文件代码/重构/Bug/测试/审查 → Claude",
+    "架构、接口、测试矩阵、故障分析、独立审计 → GPT",
+    "范围模糊或没有验收边界 → 先由 Deep 补验收边界，再按上面两条分派",
+    "持续轮询与队列扫描不进入 GPT 通道"
+  ],
+  "channel_status": {
+    "relay_seat": "closed",
+    "closed_at_utc": "2026-11-24T20:25:16.780Z",
+    "close_reason": "gpt_decision_hold_pending_balance_reconciliation",
+    "impact": "Claude/GPT 中转通道当前不可调用；角色分工已登记，恢复须 owner 或 GPT 席位给依据"
+  }
+}
