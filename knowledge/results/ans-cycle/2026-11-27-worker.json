@@ -1,0 +1,16 @@
+{
+  "finding": "syncFailedSeat 无法处理 generation_unknown_no_repurchase 状态：该状态被 hasUnverifiedBoard 视为未闭环，但既不在 syncFailedSeat 的输入状态集合中，也不在正常提交路径的白名单中，且没有可用失败证据可提交；席位会永远卡在 generation_unknown_no_repurchase，阻塞每日任务板闭环。",
+  "evidence_paths": [
+    "scripts/lib/daily-task-board.mjs",
+    "workers/pulse-worker/tasks.js",
+    "knowledge/results/ans-cycle/2026-11-26-reviewer.json"
+  ],
+  "minimal_patch": "在 scripts/lib/daily-task-board.mjs 中新增 writeUnknownFailureEvidence 函数：当席位处于 generation_unknown_no_repurchase 且无 artifact 时，生成一个 body.status='incomplete_or_failed'、body.run_key=record.run_key、body.date=record.date、body.task_id=seat.assignment.id、body.logical_seat=agent、body.source_commit=record.source_commit 的不可变失败证据文件，路径为 knowledge/results/daily-board/artifacts/{date}-{agent}-{sha256}.json，以 wx 标志原子写入并返回 {path,sha256}。修改 syncDailyBoard 中 generation_unknown_no_repurchase 分支：优先调用 recoverArtifact；若 recoverArtifact 返回 false，则调用 writeUnknownFailureEvidence 并写回 seat.artifact，然后将 seat.status 置为 'generation_failed_no_repurchase' 再进入 syncFailedSeat。syncFailedSeat 现有绑定校验会接受 body.status='incomplete_or_failed' 且字段匹配的证据，并触发 fail_task action='fail_task' failure_kind='incomplete_or_failed_provider_output'，服务端 tasks.js 已支持该 failure_kind，无需修改 tasks.js。",
+  "verification_commands": [
+    "node --check scripts/lib/daily-task-board.mjs",
+    "node --check scripts/daily-task-board.mjs",
+    "node --test scripts/tests/ans-cycle.test.mjs",
+    "node --test scripts/tests/reflection-harness.test.mjs"
+  ],
+  "remaining_blocker": "远端 raw.githubusercontent.com 回读要求该不可变失败证据已推送到 GitHub main 分支；若 syncFailedSeat 在 fail_task 前无法回读到相同 SHA-256，状态仍会退化为 failure_sync_unknown，因此需要验证生成证据与推送、raw 缓存刷新之间的实际时序。"
+}
