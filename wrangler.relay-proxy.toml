@@ -3,6 +3,13 @@ main = "workers/relay-proxy/worker.mjs"
 compatibility_date = "2026-09-17"
 workers_dev = true
 
+# Mainland-reachable entry: *.workers.dev is DNS-poisoned on CN networks
+# (measured 2026-11-27: resolves to 199.59.149.244, TCP 443 closed), while the
+# owner zone custom domains answer normally. Keep workers_dev for non-CN CI.
+routes = [
+  { pattern = "relay.ltzzz.com", custom_domain = true },
+]
+
 # Runtime budget gate shared by every transport (CLI seat and Deep Worker).
 # The Durable Object is the authoritative ledger for the per-call, daily,
 # project and balance-floor caps in config/relay-seat-policy.json.

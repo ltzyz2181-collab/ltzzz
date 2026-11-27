@@ -90,3 +90,11 @@ npx wrangler secret put PROXY_ACCESS_TOKEN -c wrangler.relay-proxy.toml
 - 验收判定 `accepted`（7/7），证据在 `knowledge/results/relay-seat/calls/20261112T0131*.json`，回执见 `docs/RELAY-SEAT-LIVE-ACCEPTANCE-20261112.md`。
 - 仍未覆盖：Worker 侧 504 上游超时未真实触发；Deep Worker 自身仍以 `RELAY_API_KEY` 直连站点，尚未改为经本 Worker 转发，故 Deep 席仍关闭。
 - 复跑方式：`gh workflow run relay-acceptance.yml -f reason="<原因>"`，令牌由 CI 从 `LTZZZ_AGENT_TOKEN` 注入，不落地到任何机器。
+
+## 6. 2026-11-27 境内可达性切换（workers.dev → relay.ltzzz.com）
+
+- 现象：`*.workers.dev` 在境内被污染。2026-11-27 实测解析为 `199.59.149.244`，443 端口关闭；桌面（广州）与云主机两侧均不可达，Worker 部署记录却是绿色。
+- 处置：`wrangler.relay-proxy.toml` 增加自有域名路由 `relay.ltzzz.com`（custom_domain，复用已验证可达的 ltzzz.com 区域）；`RELAY_HOST` 改为 `relay.ltzzz.com`，`RELAY_HOSTS` 在切换期同时保留 workers.dev 旧名，避免境外 CI 断链。
+- 消费方同步：`config/deep-superagent.json`、`config/relay-seat-policy.json`、`scripts/relay-budget-close.mjs` 与 relay-* 工作流的 `LTZZZ_RELAY_PROXY_URL` 全部改为 `https://relay.ltzzz.com/v1`。
+- 验证口径：部署工作流冒烟改为对新域名发无令牌 POST，必须返回 `401` 才算可达；部署后再从云主机与桌面各测一次 `/health`。
+- 未改历史：第 5 节 2026-11-11 的记录保留原域名，作为当时事实，不做回写。

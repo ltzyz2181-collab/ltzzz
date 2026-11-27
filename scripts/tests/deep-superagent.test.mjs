@@ -259,7 +259,7 @@ test('existing terminal jobs remain byte-equivalent after the new guard is insta
 });
 test('relay execution seats fail closed until proxy token, allowlisted proxy, model name and acceptance all exist',()=>{
  const base={LTZZZ_AGENT_TOKEN:TOKEN};
- const PROXY='https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1';
+ const PROXY='https://relay.ltzzz.com/v1';
  assert.equal(relaySeatState(base,'gpt'),'relay_proxy_token_missing');
  assert.deepEqual(relaySeatStates(base),{gpt:'relay_proxy_token_missing',claude:'relay_proxy_token_missing'});
  assert.deepEqual(availableWorkSeats(base),['doubao','qianwen','kimi','grok']);
@@ -271,6 +271,8 @@ test('relay execution seats fail closed until proxy token, allowlisted proxy, mo
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'http://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/chat/completions',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_path_not_allowlisted');
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY},'gpt'),'relay_model_not_configured');
+ // The legacy workers.dev host stays allowlisted during cutover, so GitHub Actions runners keep working.
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_generation_enabled');
  const on={...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY,RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'};
  assert.equal(relaySeatState(on,'gpt'),'relay_generation_enabled');
  assert.equal(relaySeatState(on,'claude'),'relay_generation_enabled');

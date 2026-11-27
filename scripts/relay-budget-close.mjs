@@ -6,7 +6,7 @@ import {closeRelaySeat} from './lib/relay-seat-guard.mjs';
 
 export const TASK_ID = 'RELAY-BUDGET-POSTCALL-CAP-20261120-01';
 export const DECISION_ID = 'GPT-DECISION-20261121-RELAY-PAID-LANE-CLOSE-01';
-export const DEFAULT_PROXY_URL = 'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1';
+export const DEFAULT_PROXY_URL = 'https://relay.ltzzz.com/v1';
 
 async function request(fetchImpl, url, token, method, body) {
   try {
