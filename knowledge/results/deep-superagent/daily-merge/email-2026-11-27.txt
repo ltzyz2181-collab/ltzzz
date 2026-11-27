@@ -45,23 +45,26 @@ LTZZZ 每日合并 2026-11-27（UTC）
   · 只列优先级最高的 20 条，另有 180 条未列
 
 三、需要 GPT 裁决
-- 另有 2 条非五类事项已降级为普通工程跟进（不再等 GPT decision_id）：
+- 另有 3 条非五类事项已降级为普通工程跟进（不再等 GPT decision_id）：
   · DEEP-SUPERAGENT-20261126-ISSUE-522（run=45891876156）：见执行回执
     复核意见：Qianwen patch contains placeholder logic and fabricated pricing; tests do not verify required behavior. Code-owned content findings require GPT decision.
   · DEEP-SUPERAGENT-20261126-ISSUE-640（run=45891879437）：见执行回执
     复核意见：Markdown fences inside FILE block violate output format; script rewrite is unverified against repo and embeds tests in production code.
+  · DEEP-SUPERAGENT-20261127-DAILY-1（run=45917197881）：见执行回执
+    复核意见：B1/B2 violate rule 4: receipt_consistent=no must route blocked_evidence_needed, not needs_gpt_decision.
 - 今天没有需要 GPT 裁决的项。
 
 四、下一步
 - 邮件摄入为 ok_deferred_channels：确认 Gmail / QQ IMAP 与 Agent Mail 通道；读不到时保持 unknown，不写成“没有裁决”。
-- 有 2 条上游标成 needs_gpt_decision、但不属于五类保留事项：已降级为普通工程跟进，由执行席按测试与回滚继续处理，不占用 GPT 裁决队列。
+- 有 3 条上游标成 needs_gpt_decision、但不属于五类保留事项：已降级为普通工程跟进，由执行席按测试与回滚继续处理，不占用 GPT 裁决队列。
+- 有 1 条需要 owner 给值或拍板；未拍板前保持原状态。
 - 有 16 条裁决请求超过 24h 无回信：按席位点名催办或改派，不要重复发同类请求。
 - 有 3 条裁决已到但未消费：当天读正文并写 awaiting_decision，不得当作未裁决重发。
 - 本日报只汇总公开回执；不合并 PR、不生产部署、不发起资金动作。
 
 五、证据与边界
 - 邮件摄入：status=ok_deferred_channels，gmail=ok，qq=ok，agent_mail=not_configured_deferred
-- 邮件摄入快照：2026-11-26T08:30:21.699Z（距今 16 小时）
+- 邮件摄入快照：2026-11-26T08:30:21.699Z（距今 16.8 小时）
 - 今日 Gmail 裁决类回信（仅元数据）：5
 - 待办来源：knowledge/results/deep-superagent/ruling-tracker/latest.json（超24h=16，已回未消费=3）
 - 邮件待办来源：knowledge/results/deep-superagent/mail-intake/latest.json 的 open_items（open=200，裁决未读=0）
