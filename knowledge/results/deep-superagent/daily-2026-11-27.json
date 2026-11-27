@@ -1,0 +1,145 @@
+{
+  "schema": "ltzzz.deep-superagent.daily.v1",
+  "task_id": "DEEP-DAILY-SUPERVISION",
+  "date": "2026-11-27",
+  "at_utc": "2026-11-27T02:49:16Z",
+  "status": "completed_pending_external_acceptance",
+  "mail_intake": {
+    "status": "ok",
+    "agent_mail": {
+      "count": 42,
+      "open_count": 5
+    },
+    "gmail": {
+      "status": "ok",
+      "window_count": 1811,
+      "full_box_total": 6061,
+      "full_box_unseen": 5170,
+      "bodies_read": 50,
+      "window_since": "28-Oct-2026"
+    },
+    "qq": {
+      "status": "not_configured"
+    },
+    "path": "knowledge/results/deep-superagent/mail-intake/latest.json"
+  },
+  "gpt_ruling_received": {
+    "received": true,
+    "today_count": 6,
+    "days_since_last_ruling": 0,
+    "severity": "ok"
+  },
+  "rulings_consumed": {
+    "count": 5,
+    "path": "knowledge/results/deep-superagent/rulings-consumed-2026-11-27.json"
+  },
+  "repo_observation": {
+    "open_warning_cases": 268,
+    "not_rechecked": 223,
+    "by_seat": {
+      "qianwen": 80,
+      "doubao": 58,
+      "grok": 41,
+      "deepseek": 71,
+      "gpt": 18
+    },
+    "failed_runs_24h": 0,
+    "open_prs": 0,
+    "source": "knowledge/results/dispatch/oversight/latest.json"
+  },
+  "queue_run": {
+    "run_id": "45917197881",
+    "card": "DEEP-SUPERAGENT-20261127-DAILY-1",
+    "card_source_commit": "a9bddf6134d17b3f63c16c2e0ae0907458e602db",
+    "job_status": "needs_gpt_decision",
+    "model_calls": 3,
+    "receipt": "knowledge/results/deep-superagent/queue-45917197881-attempt-1.json"
+  },
+  "review": {
+    "reviewed": "needs_gpt_decision 无可执行 coordinator_close；未执行任何收尾动作"
+  },
+  "writes_performed": 3,
+  "merges_performed": 0,
+  "deploys_performed": 0,
+  "sections": {
+    "done": [
+      {
+        "item": "每日邮件摄入已刷新",
+        "evidence": "agent_mail 42 封/5 未处理；gmail ok 窗口 1811、全箱 6061、读正文 50",
+        "path": "knowledge/results/deep-superagent/mail-intake/latest.json"
+      },
+      {
+        "item": "GPT 裁决邮件检查",
+        "evidence": "received=true，今日 6 封裁决类回信，days_since_last_ruling=0"
+      },
+      {
+        "item": "未读裁决逐条消费",
+        "evidence": "consume_gate 5 封正文已读，落盘 count=5",
+        "path": "knowledge/results/deep-superagent/rulings-consumed-2026-11-27.json"
+      },
+      {
+        "item": "今日巡检卡执行",
+        "evidence": "queue run 45917197881，卡 DEEP-SUPERAGENT-20261127-DAILY-1，3 次模型调用，判 needs_gpt_decision",
+        "path": "knowledge/results/deep-superagent/queue-45917197881-attempt-1.json"
+      }
+    ],
+    "awaiting_decision": {
+      "gpt": [
+        {
+          "item": "APISROUTER 储备下限（资金/预算闸门）",
+          "decision_id": "GPT-DECISION-20261126-APISROUTER-RESERVE-FLOOR-01",
+          "issue": "#522",
+          "if_not": "Deep 不得动资金，中转预算维持现状不追加",
+          "partial": "可先核对余额与台账，不动账"
+        },
+        {
+          "item": "DEEP-DAILY-OVERSIGHT-REALTIME-20261125-01 催办",
+          "issue": "#653",
+          "if_not": "监督口径继续沿用旧回执",
+          "partial": "可先补回执与证据"
+        }
+      ],
+      "owner": [
+        {
+          "item": "巡检日历口径",
+          "detail": "6:45 保留、08:30 与 22:00 两条保持暂停是否继续",
+          "if_not": "继续按现口径，08:30 不占用名额",
+          "partial": "可先记录不改日历"
+        },
+        {
+          "item": "19 封待回邮件中 16 封超 24 小时是否升级为事故",
+          "if_not": "维持 pending，逐日累积",
+          "partial": "可先按席位归因"
+        }
+      ]
+    },
+    "next_immediate": [
+      {
+        "action": "把 mail-intake 与 relay 探活并入日检三段必答（新邮件/回了几封/relay 是否可达）",
+        "judge": "daily 回执出现三个字段且非 unknown"
+      },
+      {
+        "action": "修正日卡 prompt 骨架：不得携带 needs_gpt_decision:true，按角色声明输出格式",
+        "judge": "下次 queue 回执 model_calls>1 且 outputs 非空"
+      },
+      {
+        "action": "清理 19 条 pending 中的重复线程，保留唯一 thread_key",
+        "judge": "tracker counts.pending_no_reply 下降且无新增重复"
+      }
+    ],
+    "later": [
+      {
+        "item": "uSMART 实盘 key 下发",
+        "depends": "盈立审核（申请时间 2026-11-26 17:24，状态审核中）"
+      },
+      {
+        "item": "APISROUTER 预算执行",
+        "depends": "GPT 裁决 GPT-DECISION-20261126-APISROUTER-RESERVE-FLOOR-01"
+      },
+      {
+        "item": "巡检频次调整",
+        "depends": "owner 确认日历口径"
+      }
+    ]
+  }
+}
