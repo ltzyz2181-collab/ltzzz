@@ -60,8 +60,11 @@
     "open_pr": 0
   },
   "dispatch": {
-    "status": "skipped",
-    "reason": "owner 2026-11-27 指令：不插手收发派单与部署任务；本轮不新建任务卡、不派单"
+    "status": "card_created",
+    "card": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261128-DAILY-1.json",
+    "generator": "scripts/dispatch-daily-card.mjs --date 2026-11-28",
+    "note": "派单由 Deep 自带工具生成并经 main push 触发既有队列工作流；豆包对话席不再人工写卡",
+    "correction": "此前 dispatch=skipped 的写法错误：owner 2026-11-28 澄清『不插手』仅指豆包对话席，原厂 Deep 全权执行且不受限"
   },
   "queue_run": null,
   "patrol": {
@@ -96,6 +99,10 @@
       {
         "item": "巡检六项落盘",
         "evidence": "knowledge/results/patrol/2026-11-28.json"
+      },
+      {
+        "item": "当日队列卡已生成",
+        "evidence": "ops/deep-superagent/tasks/DEEP-SUPERAGENT-20261128-DAILY-1.json（status=created）"
       }
     ],
     "awaiting_decision": {
