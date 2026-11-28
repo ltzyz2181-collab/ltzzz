@@ -1,0 +1,165 @@
+{
+  "schema": "ltzzz.deep-superagent.executor.v1",
+  "task_id": "DEEP-SUPERAGENT-20261103",
+  "source_commit": "436939262fbc80715363461baf0228848c90ed12",
+  "run_id": "46097675953",
+  "run_attempt": "1",
+  "at_utc": "2026-11-28T02:22:00.845Z",
+  "mode": "deploy",
+  "status": "deployment_health_and_auth_verified",
+  "financial_execution": false,
+  "transactions": 0,
+  "paid": false,
+  "tx_hash": null,
+  "api_bill_verified": false,
+  "paid_field_scope": "No financial settlement; paid=false does not mean a native model request has zero API cost.",
+  "new_paid_schedules": false,
+  "native_gpt_claude_enabled": false,
+  "model_calls": 0,
+  "observed_main_commit": "09f9f7270b6c5e74d1e3da327fb2afc87491d07a",
+  "source_readset_match": true,
+  "source_readset": [
+    {
+      "path": ".github/workflows/deep-superagent.yml",
+      "git_blob_sha": "54f2b3e69c107b04bcb49d31055e1cc2fe059ef9"
+    },
+    {
+      "path": "config/deep-superagent.json",
+      "git_blob_sha": "b319df0f51b88dea8ba8b0d4c61a78dc4a9040ba"
+    },
+    {
+      "path": "config/relay-adjudication-scopes.json",
+      "git_blob_sha": "da8ee73d0a3c66866d5d2ba94e52706462f06e91"
+    },
+    {
+      "path": "config/relay-seat-policy.json",
+      "git_blob_sha": "db606f32f976ba34165b70863ad7a216d8f81859"
+    },
+    {
+      "path": "knowledge/lessons/L-20261030-004.json",
+      "git_blob_sha": "754f348a7b1433c8adead3b6e77e977d9d8879f4"
+    },
+    {
+      "path": "knowledge/lessons/L-20261030-007.json",
+      "git_blob_sha": "926c7fd59271b5290963ce48f093c7e37a4f0080"
+    },
+    {
+      "path": "knowledge/lessons/L-20261030-008.json",
+      "git_blob_sha": "a7567290d696ec7a6ada211ffab8ddfec3a7db8a"
+    },
+    {
+      "path": "lib/kimi-profile.js",
+      "git_blob_sha": "fe2151ec3dec396b996e3ef64a3832ae2bb0e857"
+    },
+    {
+      "path": "lib/proxy-auth.js",
+      "git_blob_sha": "8266c5680af61e4042d0bf2ad5a3ec390c6098c3"
+    },
+    {
+      "path": "scripts/deploy-deep-superagent.mjs",
+      "git_blob_sha": "85e119897bade48254663768aac936259460a5f4"
+    },
+    {
+      "path": "scripts/lib/deep-release-reconcile.mjs",
+      "git_blob_sha": "03931bb8e78cb4e4567b18e31dbe47db952ce596"
+    },
+    {
+      "path": "tools/push-receipt-commit.mjs",
+      "git_blob_sha": "2372d20dae8d8f1a1742a9f8212d7ac62d7b585b"
+    },
+    {
+      "path": "workers/deep-superagent/accounting.mjs",
+      "git_blob_sha": "24ddd9e228fb5249f7bcec188c6c95bcad74c424"
+    },
+    {
+      "path": "workers/deep-superagent/adjudicator.mjs",
+      "git_blob_sha": "4f017a2c55a50a5bff4519f1e805e40e8785e083"
+    },
+    {
+      "path": "workers/deep-superagent/index.js",
+      "git_blob_sha": "14acfd82dce87fb862dc69069eac3837eece032d"
+    },
+    {
+      "path": "wrangler.deep-superagent.toml",
+      "git_blob_sha": "998fc619dd968e3d692eca0ffcf54ccb2498abf8"
+    }
+  ],
+  "source_readset_sha256": "d1df67fb47ef3d87c08ec7473ec04c691e5f14ee61d071a5d5114ec8ea3f3893",
+  "metadata_only_main_advance": true,
+  "source_validation_before_initial": {
+    "observed_main_commit": "722aaec8773e6d1028d2ff0c757e57b126ae8099",
+    "source_readset_sha256": "d1df67fb47ef3d87c08ec7473ec04c691e5f14ee61d071a5d5114ec8ea3f3893"
+  },
+  "stage": "production_readback",
+  "verification": {
+    "health": {
+      "ok": true,
+      "service": "ltzzz-deep-superagent",
+      "revision": "ltzzz.deep-superagent.v1",
+      "content_guard_revision": "executor-metadata-declarations-v1",
+      "relay_revision": "relay-execution-seats-v2-proxy-transport",
+      "source_commit": "436939262fbc80715363461baf0228848c90ed12",
+      "source_readset_sha256": "d1df67fb47ef3d87c08ec7473ec04c691e5f14ee61d071a5d5114ec8ea3f3893",
+      "auth_configured": true,
+      "profile": "deep_superagent",
+      "coordinator": "deepseek",
+      "available_worker_seats": [
+        "doubao",
+        "qianwen",
+        "kimi",
+        "grok",
+        "gpt",
+        "claude"
+      ],
+      "relay_seats": {
+        "gpt": "relay_generation_enabled",
+        "claude": "relay_generation_enabled"
+      },
+      "relay_seats_definition": "third_party_relay_execution_seats_owner_delegated_except_funds",
+      "relay_adjudication": {
+        "revision": "relay-bounded-adjudication-v3",
+        "enabled": true,
+        "seat": "gpt",
+        "scope_exclusion": "funds_refund_signing_private_keys_wallet",
+        "five_signature_escalation": "owner_multisig",
+        "scope_registry": "config/relay-adjudication-scopes.json",
+        "scope_count": 4,
+        "data_classification_required": "public_distributable",
+        "claim_lease_seconds": 180,
+        "budget_gate": "relay_proxy_durable_object",
+        "budget_limits": {
+          "per_call_usd": 0.05,
+          "daily_usd": 0.5,
+          "project_usd": 10,
+          "balance_floor_usd": 0
+        },
+        "records_execution": false,
+        "relay_attested": false
+      },
+      "decision_seat": "gpt",
+      "decision_seat_kind": "AI_manual_intervention",
+      "generation_verified": false,
+      "financial_execution": false,
+      "external_submissions_enabled": false
+    },
+    "auth_checks": [
+      {
+        "kind": "anonymous",
+        "http": 401
+      },
+      {
+        "kind": "wrong",
+        "http": 401
+      },
+      {
+        "kind": "valid",
+        "http": 200
+      }
+    ],
+    "anonymous_job_post_http": 401,
+    "model_calls": 0,
+    "generation_verified": false
+  },
+  "deployments": 1,
+  "finished_at_utc": "2026-11-28T02:22:24.793Z"
+}
