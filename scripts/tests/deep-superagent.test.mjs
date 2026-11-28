@@ -268,11 +268,13 @@ test('relay execution seats fail closed until proxy token, allowlisted proxy, mo
  const keyed={...base,RELAY_PROXY_TOKEN:'test-only-proxy-token'};
  assert.equal(relaySeatState(keyed,'gpt'),'relay_acceptance_pending');
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://api.apisrouter.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'http://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/chat/completions',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_path_not_allowlisted');
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'http://relay.ltzzz.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://relay.ltzzz.com/chat/completions',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_path_not_allowlisted');
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY},'gpt'),'relay_model_not_configured');
- // The legacy workers.dev host stays allowlisted during cutover, so GitHub Actions runners keep working.
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_generation_enabled');
+ // 2026-11-27 收口：旧 workers.dev 主机默认不再放行（境内 DNS 污染，实测 443 closed）。
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
+ // 截止 2026-12-31 前，可显式开关临时放行；不设开关就等于永久关闭。
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_ALLOW_RETIRED_HOST:'1',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_generation_enabled');
  const on={...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY,RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'};
  assert.equal(relaySeatState(on,'gpt'),'relay_generation_enabled');
  assert.equal(relaySeatState(on,'claude'),'relay_generation_enabled');
@@ -294,10 +296,10 @@ test('closed relay seat is never offered or dispatched; an invalid plan falls ba
 });
 test('relay dispatch without an explicit relay request is recorded as a deviation, not blocked',async()=>{
  const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false},prompt:'Create a concise source-checking checklist; exercise all three workers.'});
- Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
+ Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
  const realFetch=globalThis.fetch;
  globalThis.fetch=async(url,opts)=>{
-  const u=new URL(String(url));assert.equal(u.hostname,'ltzzz-relay-proxy.ltzyz2181.workers.dev');assert.equal(u.pathname,'/v1/chat/completions');
+  const u=new URL(String(url));assert.equal(u.hostname,'relay.ltzzz.com');assert.equal(u.pathname,'/v1/chat/completions');
   assert.equal(opts.headers['x-ltzzz-seat-token'],'test-only-proxy-token');assert.equal(opts.headers['x-ltzzz-batch'],'1');
   return Response.json({id:'relay-req-audit',model:'gpt-6.1-sol',choices:[{message:{content:'relay draft: bounded, keeps source caveats.'},finish_reason:'stop'}],usage:{prompt_tokens:4387,completion_tokens:8,total_tokens:4395}});
  };
@@ -313,7 +315,7 @@ test('relay dispatch without an explicit relay request is recorded as a deviatio
 });
 test('relay seat refuses planning and independent review even when enabled',async()=>{
  const f=fixture();
- Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol'});
+ Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol'});
  const task=new DeepTask({storage:new Storage()},f.env);
  const job={task_id:'DEEP-RELAY-STAGE-TEST',execution_id:'e1',source_commit:null,receipts:[],model_calls:0,outputs:[]};
  await assert.rejects(()=>task.callSeat(job,'plan','gpt',[]),/relay_seat_generation_only/);
@@ -322,10 +324,10 @@ test('relay seat refuses planning and independent review even when enabled',asyn
 });
 test('verified relay seat generates a third-party receipt with bounded budget; review stays native',async()=>{
  const f=fixture({planOverride:{summary:'relay drafting',tasks:[{seat:'gpt',task:'Draft a bounded memo'}],needs_gpt_decision:false},prompt:'Use the relay gpt seat to draft a bounded memo; this is a long-context/batch probe.'});
- Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
+ Object.assign(f.env,{RELAY_PROXY_TOKEN:'test-only-proxy-token',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'});
  const realFetch=globalThis.fetch,seen=[];
  globalThis.fetch=async(url,opts)=>{
-  const u=new URL(String(url));assert.equal(u.hostname,'ltzzz-relay-proxy.ltzyz2181.workers.dev');assert.equal(u.pathname,'/v1/chat/completions');
+  const u=new URL(String(url));assert.equal(u.hostname,'relay.ltzzz.com');assert.equal(u.pathname,'/v1/chat/completions');
   assert.equal(opts.headers.Authorization,undefined);assert.equal(opts.headers['x-ltzzz-seat-token'],'test-only-proxy-token');assert.equal(opts.headers['x-ltzzz-batch'],'1');seen.push(JSON.parse(opts.body));
   return Response.json({id:'relay-req-1',model:'gpt-6.1-sol',choices:[{message:{content:'relay draft: bounded, keeps source caveats and uncertainty.'},finish_reason:'stop'}],usage:{prompt_tokens:4387,completion_tokens:9,total_tokens:4396}});
  };

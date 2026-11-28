@@ -38,7 +38,8 @@ jobs:
       - name: Smoke test deployed gateway (401 without token proves reachability and auth gate)
         run: |
           set -e
-          BASE=https://ltzzz-relay-proxy.ltzyz2181.workers.dev
+          # 规范入口是 owner 域名；旧 workers.dev 在境内被 DNS 污染（2026-11-27 实测 443 closed）。
+          BASE=https://relay.ltzzz.com
           for ROUTE in /v1/chat/completions /v1/budget/close; do
             CODE=$(curl -s -o /tmp/smoke.json -w '%{http_code}' --max-time 20 -X POST "$BASE$ROUTE" -H 'content-type: application/json' -d '{"model":"gpt-6.1-sol","messages":[{"role":"user","content":"smoke"}]}')
             echo "smoke_path=$ROUTE smoke_http=$CODE"

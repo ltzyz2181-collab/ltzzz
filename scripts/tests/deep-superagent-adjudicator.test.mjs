@@ -22,7 +22,7 @@ function job(overrides={}){
 }
 function relayEnv({enabled=true}={}){
   const env={LTZZZ_AGENT_TOKEN:TOKEN};
-  if(enabled){env.RELAY_PROXY_TOKEN='scoped-proxy-token';env.RELAY_ACCEPTANCE_VERIFIED='1';env.RELAY_PROXY_URL='https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1';env.RELAY_MODEL_GPT='gpt-6.1-sol';}
+  if(enabled){env.RELAY_PROXY_TOKEN='scoped-proxy-token';env.RELAY_ACCEPTANCE_VERIFIED='1';env.RELAY_PROXY_URL='https://relay.ltzzz.com/v1';env.RELAY_MODEL_GPT='gpt-6.1-sol';}
   return env;
 }
 async function adjudicate(jobRecord,{env=relayEnv(),body={adjudication_id:'ADJ-20261117-01'}}= {}){
