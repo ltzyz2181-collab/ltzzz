@@ -1,0 +1,157 @@
+{
+ "task_id": "LTZZZ-GPT-CONTROL-CAPABILITY-UPGRADE-20261128",
+ "date": "2026-11-27",
+ "issue": 694,
+ "issue_url": "https://github.com/ltzyz2181-collab/ltzzz/issues/694",
+ "author": "deep-original",
+ "model": "deepseek-v4-pro",
+ "usage": {
+  "prompt_tokens": 768,
+  "completion_tokens": 1684,
+  "total_tokens": 2452,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  },
+  "prompt_cache_hit_tokens": 0,
+  "prompt_cache_miss_tokens": 768
+ },
+ "verdict": {
+  "free_equals_openai": "no",
+  "one_line": "免费/低付费无法达到 OpenAI 原厂订阅账户能力，只能通过工程手段逼近 DeepSeek 底座上限，且 OpenAI 订阅账户的程序化调用按 ToS 不允许。"
+ },
+ "capability_matrix": [
+  {
+   "capability": "基础对话",
+   "free": "yes",
+   "method": "保持 DeepSeek 上游，优化参数（max_tokens 提升至 4096，temperature 按场景调整），增加超时与重试。",
+   "risk": "low",
+   "acceptance": "连续 100 次请求无断流，平均响应时间 < 8s。"
+  },
+  {
+   "capability": "流式输出",
+   "free": "yes",
+   "method": "修改 deepseek-proxy-worker-v2.js，将 stream:false 改为支持 stream:true，透传 SSE，客户端增加保活与重连。",
+   "risk": "medium",
+   "acceptance": "首 token 时间 < 2s，流式过程无中断，断网重连后能恢复。"
+  },
+  {
+   "capability": "长文本生成",
+   "free": "partial",
+   "method": "max_tokens 提升至 4096，并增加分段生成与拼接逻辑（客户端或 Worker 内）。",
+   "risk": "medium",
+   "acceptance": "能稳定生成 3000+ token 内容，不截断。"
+  },
+  {
+   "capability": "多模型路由",
+   "free": "partial",
+   "method": "在 Worker 中增加模型参数透传，允许客户端指定 deepseek-chat 或 deepseek-reasoner。",
+   "risk": "low",
+   "acceptance": "同一接口可调用不同 DeepSeek 模型。"
+  },
+  {
+   "capability": "缓存常见响应",
+   "free": "yes",
+   "method": "在 Worker 中增加 KV 缓存，对相同 prompt 的确定性响应缓存 1 小时。",
+   "risk": "low",
+   "acceptance": "缓存命中时延迟 < 500ms，成本降低 20%。"
+  },
+  {
+   "capability": "并发限流",
+   "free": "yes",
+   "method": "在 Worker 中增加简单令牌桶或计数限流，防止超预算。",
+   "risk": "low",
+   "acceptance": "超过阈值时返回 429，不影响已有请求。"
+  },
+  {
+   "capability": "OpenAI 原厂能力（GPT-4 级推理、多模态、工具调用）",
+   "free": "no",
+   "method": "无法通过 DeepSeek 底座实现，需更换上游或使用原厂 API。",
+   "risk": "high",
+   "acceptance": "不适用。"
+  },
+  {
+   "capability": "订阅账户程序化调用",
+   "free": "no",
+   "method": "按 OpenAI 服务条款，ChatGPT Plus/Pro 订阅账户不允许程序化自动化调用，只能人工在官方客户端使用。",
+   "risk": "high",
+   "acceptance": "合规结论明确，不实施。"
+  }
+ ],
+ "tiers": [
+  {
+   "tier": "A 合规零成本",
+   "items": [
+    "修改 deepseek-proxy-worker-v2.js：stream:true 支持 SSE 透传",
+    "增加超时控制（fetch 超时 30s）与重试（最多 2 次）",
+    "max_tokens 默认提升至 4096，temperature 按场景调整",
+    "增加 KV 缓存常见确定性响应",
+    "增加简单并发限流"
+   ],
+   "monthly_cost": "$0"
+  },
+  {
+   "tier": "B 低成本",
+   "items": [
+    "增加多模型路由（deepseek-chat / deepseek-reasoner）",
+    "客户端增加保活与断线重连逻辑",
+    "增加请求日志与成本监控（可选）"
+   ],
+   "monthly_cost": "约 $0.50"
+  },
+  {
+   "tier": "C 需裁决（有 ToS 或合规风险）",
+   "items": [
+    "使用免费额度池或逆向接口",
+    "程序化调用 ChatGPT Plus/Pro 订阅账户",
+    "更换上游为 OpenAI 原厂 API（需单独付费）"
+   ],
+   "why_ruling": "免费额度池/逆向接口违反服务条款且不稳定；订阅账户程序化调用按 OpenAI ToS 不允许；更换上游涉及预算与合规，必须 GPT 裁决。"
+  }
+ ],
+ "cannot": [
+  "无法达到 OpenAI 原厂 GPT-4 级推理、多模态、工具调用能力，因为底座是 DeepSeek。",
+  "无法程序化调用 ChatGPT Plus/Pro 订阅账户，OpenAI 服务条款明确禁止自动化调用。",
+  "无法在 Cloudflare Worker 上实现真正的长连接保活，Worker 有 CPU 时间限制（免费版 10ms，付费版 30s），SSE 长连接可能被切断。",
+  "无法保证 100% 不断流，DeepSeek 上游或网络波动仍可能导致中断。"
+ ],
+ "stream_fix": {
+  "root_cause": "当前 Worker 硬编码 stream:false，且无超时、无重试，客户端无保活，导致长时间请求易断流。",
+  "fix": "1. 修改 deepseek-proxy-worker-v2.js：请求体支持 stream:true，透传 SSE 响应。2. 客户端使用 fetch + ReadableStream 读取，增加心跳检测（如 15s 无数据则重连）。3. Worker 增加 fetch 超时 30s，超时后重试 1 次。4. 注意 Cloudflare Worker 免费版 CPU 时间限制，SSE 长连接可能被切断，需客户端快速重连。",
+  "test": "使用 curl 或浏览器测试流式响应，观察首 token 时间、数据连续性；模拟断网后重连，确认能恢复。"
+ },
+ "plan_30d": [
+  {
+   "week": "W1",
+   "deliverable": "修改 deepseek-proxy-worker-v2.js 支持 stream:true 并部署，验证 SSE 透传。",
+   "owner": "deep"
+  },
+  {
+   "week": "W2",
+   "deliverable": "增加超时与重试逻辑，客户端增加保活与断线重连，完成断流修复验证。",
+   "owner": "deep"
+  },
+  {
+   "week": "W3",
+   "deliverable": "增加 KV 缓存与并发限流，部署并验证成本降低与稳定性。",
+   "owner": "deep"
+  },
+  {
+   "week": "W4",
+   "deliverable": "完成多模型路由与参数优化，输出最终测试报告与成本评估。",
+   "owner": "deep"
+  }
+ ],
+ "openai_gap": {
+  "what_is_truly_missing": "OpenAI 原厂 GPT-4 级推理能力、多模态输入、工具调用、代码解释器、联网搜索等高级功能。",
+  "what_is_closeable": "通过工程优化（流式、缓存、重试、参数调整）提升 DeepSeek 底座的使用体验和稳定性。",
+  "what_is_not": "无法通过 DeepSeek 底座实现 OpenAI 原厂的高级能力，也无法程序化调用订阅账户。"
+ },
+ "states": {
+  "draft": true,
+  "tested": false,
+  "merged": false,
+  "deployed": false,
+  "platform_accepted": false
+ },
+ "no_code_changed": true
+}
