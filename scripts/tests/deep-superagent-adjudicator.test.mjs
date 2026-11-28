@@ -22,7 +22,7 @@ function job(overrides={}){
 }
 function relayEnv({enabled=true}={}){
   const env={LTZZZ_AGENT_TOKEN:TOKEN};
-  if(enabled){env.RELAY_PROXY_TOKEN='scoped-proxy-token';env.RELAY_ACCEPTANCE_VERIFIED='1';env.RELAY_PROXY_URL='https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1';env.RELAY_MODEL_GPT='gpt-6.1-sol';}
+  if(enabled){env.RELAY_PROXY_TOKEN='scoped-proxy-token';env.RELAY_ACCEPTANCE_VERIFIED='1';env.RELAY_PROXY_URL='https://relay.ltzzz.com/v1';env.RELAY_MODEL_GPT='gpt-6.1-sol';}
   return env;
 }
 async function adjudicate(jobRecord,{env=relayEnv(),body={adjudication_id:'ADJ-20261117-01'}}= {}){
@@ -128,7 +128,7 @@ test('a non-configured relay seat fails closed instead of falling back',async()=
 });
 test('a valid relay verdict is stored bound, labelled third-party and without execution flags',async()=>{
   let calls=0;globalThis.fetch=async(url,init)=>{
-    calls++;assert.match(String(url),/ltzzz-relay-proxy\.ltzyz2181\.workers\.dev\/v1\/chat\/completions/);
+    calls++;assert.match(String(url),/relay\.ltzzz\.com\/v1\/chat\/completions/);
     assert.equal(init.headers['x-ltzzz-batch'],'1');
     const body=JSON.parse(init.body);assert.equal(body.model,'gpt-6.1-sol');
     return Response.json({id:'relay-req-1',model:'gpt-6.1-sol',usage:{total_tokens:900,prompt_tokens:700,completion_tokens:200},choices:[{finish_reason:'stop',message:{content:JSON.stringify({disposition:'approve_in_scope',reason:'在授权范围内，证据路径完整',task_id:'DEEP-SUPERAGENT-20261117-ADJ',input_sha256:HASH,scope_ref:'SCOPE-INTERNAL-DOCS-20261117',permitted_actions:['补写口径文档'],evidence_refs:['docs/OWNER-AUTHORITY-CURRENT.md'],rollback:'revert commit'})}}]},{headers:{'x-ltzzz-cost-usd':'0.004321','x-ltzzz-balance-after-usd':'12.732766','x-ltzzz-budget-reservation':'res-1'}});

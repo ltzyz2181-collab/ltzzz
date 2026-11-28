@@ -31,9 +31,16 @@ const SEAT_MODEL_OVERRIDE=seatModelOverride;
 export const RELAY_REVISION='relay-execution-seats-v2-proxy-transport';
 export const RELAY_HOST='relay.ltzzz.com';
 // *.workers.dev is DNS-poisoned on mainland networks (measured 2026-11-27: 199.59.149.244, 443 closed),
-// so the owner zone custom domain is canonical. The workers.dev name stays allowlisted during cutover
-// because GitHub Actions runners (outside CN) still reach it.
-export const RELAY_HOSTS=[RELAY_HOST,'ltzzz-relay-proxy.ltzyz2181.workers.dev'];
+// so the owner zone custom domain is canonical. The retired workers.dev host is no longer allowlisted
+// by default; a single explicit switch may re-enable it until a hard sunset date, then it dies for good.
+export const RELAY_RETIRED_HOST='ltzzz-relay-proxy.ltzyz2181.workers.dev';
+export const RELAY_RETIRED_HOST_SUNSET='2026-12-31';
+export const RELAY_HOSTS=[RELAY_HOST];
+export function relayAllowedHosts(env){
+ const today=new Date().toISOString().slice(0,10);
+ const temporary=env?.RELAY_ALLOW_RETIRED_HOST==='1'&&today<=RELAY_RETIRED_HOST_SUNSET;
+ return temporary?[...RELAY_HOSTS,RELAY_RETIRED_HOST]:RELAY_HOSTS;
+}
 const RELAY_PROXY_PATH='/v1';
 const RELAY_SEATS={gpt:{model_var:'RELAY_MODEL_GPT'},claude:{model_var:'RELAY_MODEL_CLAUDE'}};
 export function relaySeatState(env,seat){
@@ -43,7 +50,7 @@ export function relaySeatState(env,seat){
  if(!env?.RELAY_PROXY_TOKEN)return 'relay_proxy_token_missing';
  if(env.RELAY_ACCEPTANCE_VERIFIED!=='1')return 'relay_acceptance_pending';
  let base;try{base=new URL(env.RELAY_PROXY_URL||'');}catch{return 'relay_proxy_url_invalid';}
- if(base.protocol!=='https:'||!RELAY_HOSTS.includes(base.hostname))return 'relay_proxy_host_not_allowlisted';
+ if(base.protocol!=='https:'||!relayAllowedHosts(env).includes(base.hostname))return 'relay_proxy_host_not_allowlisted';
  if([...base.search,...base.hash].length)return 'relay_proxy_url_not_allowlisted';
  if(base.pathname.replace(/\/+$/,'')!==RELAY_PROXY_PATH)return 'relay_proxy_path_not_allowlisted';
  if(typeof env[RELAY_SEATS[seat].model_var]!=='string'||!env[RELAY_SEATS[seat].model_var])return 'relay_model_not_configured';
