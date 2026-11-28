@@ -1,0 +1,36 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261128-OPS-1",
+ "package_id": "LTZZZ-DEEP-OPS-20261128-1",
+ "prompt": "内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。\n\n【目标】完成当天 Deep 运营闭环：把公开积压逐条分流、把邮件公开元数据并回原任务、必要时提交可回读的代码或文档修复，并调度中转席参与实现与第二意见。\n具体输入、规则与输出格式都在下方任务块内；执行席只按该块执行，外层不另发指令。\n\n【给 deep 的任务】\n【输入事实（只来自公开回执）】\n- backlog_open=275 unique=275 not_rechecked=232 triaged=unknown reserved_escalations=0\n- backlog_by_seat={\"qianwen\":82,\"doubao\":59,\"grok\":42,\"deepseek\":73,\"gpt\":19}\n- backlog_oldest=[]\n- mail_open_or_dispatch=200 unified=1813 qq_status=unknown gmail_status=ok sampled=unknown\n- last_queue_run=46080085685 status=queue_results_verified items=1 pending_gpt_decisions=0\n- last_daily_merge=done=2 needs_gpt_decision=0 pending_gpt_decisions=0\n\n【给 deep 的任务】\n1 受信桥接层已注入 knowledge/results/deep-superagent/backlog/latest.json（逐条分流）和 summary.json（计数与最老 20 条）。按其中的 action 逐条核对：只用原任务 ID，不新开单，不把“已派发”写成“已完成”。\n2 对最老 20 条给出当天可执行的下一步；结论必须带 task_id / 缺的阶段 / 下一步；没有一手证据的写 blocked_evidence_needed。\n3 邮件公开摘要逐条归类：带 task_ids 的并回原任务；无主的记为 evidence_gap；has_dispatch_wording=true 的优先核对是否重复派单。不要读取或复制邮件正文。\n4 需要实现或第二意见时，明确请求 claude-relay 与 gpt-relay 各出一次有界产物；中转输出按第三方通道标注，不得自证 provider/model，也不得当作独立复核。\n5 如发现可确定修复的代码或文档问题，输出整文件块；改动只落在公开仓库代码与文档，并且必须通过 deep-autonomy-verify 的测试后才能合并。\n6 把当天结论写成 knowledge/results/deep-superagent/backlog/triage-2026-11-28.json：包含 counts / top_actions / mail_actions / relay_requests / escalations。\n7 状态分开写 draft / tested / merged / deployed；没有实际回读的不写已完成。\n\n【输出格式】\n先用不超过 250 字写当天结论，然后给出整文件块：\n<<<FILE:knowledge/results/deep-superagent/backlog/triage-2026-11-28.json>>>\n...\n<<<END>>>\n当天没有代码修复时只写这一个文件。\n\n【边界】\n不得处理资金及资金处分、退款终态、签名、私钥/助记词/根密钥、钱包操作（含五签）五类；遇到只记录 escalate_to=gpt。\n不得打印、提交或外发任何秘密值。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "high",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  },
+  {
+   "seat": "claude-relay",
+   "role": "independent_review",
+   "decision_authority": false
+  },
+  {
+   "seat": "gpt-relay",
+   "role": "independent_review",
+   "decision_authority": false
+  }
+ ],
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [
+   "knowledge/results/deep-superagent/backlog/latest.json",
+   "knowledge/results/deep-superagent/backlog/summary.json"
+  ],
+  "code_change": true,
+  "deploy": {
+   "workflow": "deep-superagent.yml"
+  }
+ }
+}
