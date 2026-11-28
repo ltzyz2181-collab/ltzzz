@@ -4,7 +4,7 @@ import {
   HUB_LABEL, DEFAULT_LEASE_HOURS, issueSections, taskField, issueSeat, normalizeSeat, protocolEvents,
   derive, expectedHubLabel, reapPlan, claimComment, deliveredComment, blockedComment, renderTaskBody, buildDigest,
 } from '../lib/task-hub.mjs';
-import {cmdClaim, cmdSync, cmdCreate, cmdReap, cmdReassign, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
+import {githubClient, cmdClaim, cmdSync, cmdCreate, cmdReap, cmdReassign, cmdSubmit, cmdReopen, cmdUnblock} from '../task-hub.mjs';
 import {deliveredEvidenceProblems, reopenedComment, unblockedComment, reassignPlan, reassignTarget, reassignLabels, isDeepQueued, reassignedComment, countReassignments, hasStaleEscalation, MAX_REASSIGNMENTS} from '../lib/task-hub.mjs';
 
 const NOW = '2026-11-18T12:00:00Z';
@@ -457,4 +457,24 @@ test('cmdReassign marks a stuck card stale without moving the seat', async () =>
   assert.equal(result.reassigned, 1);
   const created = client.calls.filter(([route, method]) => route === 'issues' && method === 'POST');
   assert.equal(created.length, 0, '升级为 stale 时不再发邮件卡');
+});
+
+
+test('githubClient.withComments reads protocol events beyond the first 100 comments', async () => {
+  const total = 167;
+  const requestedPages = [];
+  const fetcher = async (url) => {
+    const parsed = new URL(url);
+    const page = Number(parsed.searchParams.get('page'));
+    requestedPages.push(page);
+    const from = (page - 1) * 100;
+    const size = Math.min(100, Math.max(0, total - from));
+    const data = Array.from({length: size}, (_, i) => ({id: from + i + 1, body: 'comment-' + (from + i + 1)}));
+    return {ok: true, status: 200, text: async () => JSON.stringify(data)};
+  };
+  const client = githubClient({token: 'unit-test-token', fetcher});
+  const result = await client.withComments({number: 473});
+  assert.equal(result.comments.length, total);
+  assert.equal(result.comments.at(-1).id, total);
+  assert.deepEqual(requestedPages, [1, 2]);
 });
