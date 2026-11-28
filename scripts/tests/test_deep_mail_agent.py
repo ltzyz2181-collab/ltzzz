@@ -46,5 +46,28 @@ class DeepMailAgentTests(unittest.TestCase):
         self.assertIn("read_uids", prompt)
 
 
+    def test_imap_send_id_issues_id_command(self):
+        class FakeConn:
+            def __init__(self):
+                self.sent = []
+
+            def _simple_command(self, cmd, args):
+                self.sent.append((cmd, args))
+                return "OK", [b"ID completed"]
+
+        conn = FakeConn()
+        self.assertTrue(agent.imap_send_id(conn, "qwe2181@126.com"))
+        self.assertEqual(conn.sent[0][0], "ID")
+        self.assertIn("qwe2181@126.com", conn.sent[0][1])
+        self.assertIn("ID", agent.imaplib.Commands)
+
+    def test_imap_send_id_failure_is_not_fatal(self):
+        class BadConn:
+            def _simple_command(self, *args, **kwargs):
+                raise RuntimeError("server said no")
+
+        self.assertFalse(agent.imap_send_id(BadConn(), "x@y.z"))
+
+
 if __name__ == "__main__":
     unittest.main()
