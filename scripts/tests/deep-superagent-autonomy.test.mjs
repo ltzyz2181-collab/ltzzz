@@ -161,6 +161,17 @@ test('syntaxGate：带 markdown 围栏或语法错误的代码文件不得进入
   assert.equal(syntaxGate(root, [{path: 'missing.js', content: ''}]).error, 'syntax_error:missing.js');
 });
 
+test('extractFileWrites：整份代码被围栏包住时去掉围栏，非代码文件保持原样（Issue #640）', () => {
+  const fenced = extractFileWrites('<<<FILE:scripts/x.mjs>>>\n```javascript\nexport const a = 1;\n```\n<<<END>>>');
+  assert.deepEqual(fenced, [{path: 'scripts/x.mjs', content: 'export const a = 1;'}]);
+  // .md 里整段就是代码示例时，围栏是内容本身，不能去掉。
+  const doc = extractFileWrites('<<<FILE:docs/a.md>>>\n```js\nconst = 1;\n```\n<<<END>>>');
+  assert.deepEqual(doc, [{path: 'docs/a.md', content: '```js\nconst = 1;\n```'}]);
+  // 围栏只在中间（不是整块包裹）时保持原文，仍由 syntaxGate 判定。
+  const middle = extractFileWrites('<<<FILE:a.mjs>>>\nconst s = "```";\nexport default s;\n<<<END>>>');
+  assert.deepEqual(middle, [{path: 'a.mjs', content: 'const s = "```";\nexport default s;'}]);
+});
+
 test('extractFileWrites：只认显式 FILE 块，重复路径按后写覆盖先写并留下审计', () => {
   const writes = extractFileWrites('说明\n<<<FILE:docs/a.md>>>\n# A\n<<<END>>>\n尾巴');
   assert.deepEqual(writes, [{path: 'docs/a.md', content: '# A'}]);
