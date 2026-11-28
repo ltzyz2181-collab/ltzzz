@@ -9,8 +9,10 @@ import {
   assessIssue,
   buildIssueCard,
   buildIssuePrompt,
+  extractIssueTaskIds,
   fiduciaryInstructionHit,
   issueCardPath,
+  issueImportance,
   issueTaskId,
   parseRepoRead,
   secretRisk,
@@ -155,4 +157,45 @@ test('retry cards get their own path and never overwrite the first attempt', () 
   assert.notEqual(retry.path, first.path);
   assert.ok(retry.path.endsWith('-ISSUE-471-R1.json'));
   assert.ok(ISSUE_CARD_RE.test(retry.path));
+});
+
+test('Issue 原 Task ID、P1 优先级和普通 workflow/config 修改权进入卡面（#640）', () => {
+  const body = [
+    'Task ID: LTZZZ-RELAY-SKILL-ROUTING-20261124-01',
+    'Priority: P1',
+    '修动作意图分类器、Task ID 提取和 fence 写入；允许改 scripts/、普通 workflow 与 config。',
+  ].join('\n');
+  const built = buildIssueCard({
+    issue: issue({number: 640, title: '[P1] Skill-based workload routing', body}),
+    date: '2026-11-28',
+  });
+  assert.equal(built.card.importance, 'high');
+  assert.deepEqual(built.card.source_task_ids, ['LTZZZ-RELAY-SKILL-ROUTING-20261124-01']);
+  assert.match(built.card.prompt, /原 Task ID：LTZZZ-RELAY-SKILL-ROUTING-20261124-01/);
+  assert.deepEqual(built.card.seats.map((seat) => seat.seat), ['deep', 'claude-relay', 'gpt-relay']);
+  assert.deepEqual(checkCard(loadPolicy(), built.card), []);
+  assert.doesNotMatch(built.card.prompt, /不得修改 \.github\/workflows\//);
+  assert.match(built.card.prompt, /五个保留家族/);
+  assert.doesNotMatch(built.card.prompt, /六个保留家族/);
+  assert.match(built.card.prompt, /普通 workflow、config、scripts、docs、tests 可改/);
+});
+
+test('issueImportance：P1→high、P2→medium、P3→low、无标记→medium', () => {
+  assert.equal(issueImportance(issue({title: '[P1] x'})), 'high');
+  assert.equal(issueImportance(issue({title: 'x', labels: [{name: 'deep:task'}, {name: 'P1'}]})), 'high');
+  assert.equal(issueImportance(issue({title: '[P2] x'})), 'medium');
+  assert.equal(issueImportance(issue({title: '[P3] x'})), 'low');
+  assert.equal(issueImportance(issue({})), 'medium');
+});
+
+test('extractIssueTaskIds：按出现顺序提取，忽略普通日期与低长度片段', () => {
+  assert.deepEqual(
+    extractIssueTaskIds('Task ID: LTZZZ-RELAY-SKILL-ROUTING-20261124-01', '2026-11-24 与 #640 不是任务号'),
+    ['LTZZZ-RELAY-SKILL-ROUTING-20261124-01'],
+  );
+  assert.deepEqual(
+    extractIssueTaskIds('LTZZZ-A-20261124-01 和 LTZZZ-B-20261124-02，重复 LTZZZ-A-20261124-01'),
+    ['LTZZZ-A-20261124-01', 'LTZZZ-B-20261124-02'],
+  );
+  assert.deepEqual(extractIssueTaskIds('2026-11-24'), []);
 });
