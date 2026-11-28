@@ -7,10 +7,18 @@ on:
     paths:
       - 'scripts/run-deep-superagent-daily.mjs'
       - 'scripts/run-deep-superagent-queue.mjs'
+      - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/build-deep-backlog-triage.mjs'
+      - 'scripts/dispatch-card-queue.mjs'
+      - 'scripts/publish-daily-cards.mjs'
       - 'workers/deep-superagent/index.js'
       - 'scripts/tests/deep-superagent-daily.test.mjs'
       - 'scripts/tests/deep-superagent-queue.test.mjs'
       - 'scripts/tests/deep-superagent.test.mjs'
+      - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'scripts/tests/build-deep-backlog-triage.test.mjs'
+      - 'scripts/tests/dispatch-card-queue.test.mjs'
+      - 'scripts/tests/publish-daily-cards.test.mjs'
       - '.github/workflows/deep-superagent-daily.yml'
       - 'config/deep-superagent.json'
 permissions: {contents: read}
@@ -28,17 +36,25 @@ jobs:
       - run: >-
           node --check scripts/run-deep-superagent-daily.mjs &&
           node --check scripts/run-deep-superagent-queue.mjs &&
+          node --check scripts/dispatch-daily-card.mjs &&
+          node --check scripts/build-deep-backlog-triage.mjs &&
+          node --check scripts/dispatch-card-queue.mjs &&
+          node --check scripts/publish-daily-cards.mjs &&
           node --test scripts/tests/deep-superagent-daily.test.mjs
           scripts/tests/deep-superagent-queue.test.mjs
           scripts/tests/deep-superagent.test.mjs
+          scripts/tests/dispatch-daily-card.test.mjs
+          scripts/tests/build-deep-backlog-triage.test.mjs
+          scripts/tests/dispatch-card-queue.test.mjs
+          scripts/tests/publish-daily-cards.test.mjs
   execute:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
-    permissions: {contents: write}
+    timeout-minutes: 30
+    permissions: {contents: write, actions: write}
     steps:
       - uses: actions/checkout@v4
-        with: {ref: '${{ github.sha }}', fetch-depth: 1, persist-credentials: true}
+        with: {ref: '${{ github.sha }}', fetch-depth: 0, persist-credentials: true}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
       - name: Build trusted evidence readset, reserve idempotent daily attempt, and reconcile
@@ -46,6 +62,35 @@ jobs:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/run-deep-superagent-daily.mjs
+      # Deep 自己读共享信箱（Gmail 全箱 + QQ 306122054@qq.com 只读 IMAP）。
+      # 凭据沿用既有 secrets；QQ_IMAP_* 缺失时回退到同一邮箱的 MAIL_SMTP_*。
+      # 并发锁被 mail-intake-phase2 占用或单通道失败时不阻断当日派单，证据照常写出。
+      - name: Read the shared mailboxes before triage
+        continue-on-error: true
+        env:
+          GMAIL_IMAP_USER: ${{ secrets.GMAIL_IMAP_USER }}
+          GMAIL_IMAP_APP_PASSWORD: ${{ secrets.GMAIL_IMAP_APP_PASSWORD }}
+          QQ_IMAP_USER: ${{ secrets.QQ_IMAP_USER || secrets.MAIL_SMTP_USER }}
+          QQ_IMAP_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD || secrets.MAIL_SMTP_PASSWORD }}
+          LTZZZ_ROOT: ${{ github.workspace }}
+        run: node scripts/run-mail-intake.mjs
+      # 写卡与派单原本只在人工的 6:45 流水线里；这里让每日证据监督 run 自己完成：
+      # 公开积压分流单 -> DAILY 分诊卡 + OPS 执行卡 -> 两次纯净提交 -> 补派未消费卡。
+      # 卡已存在但从未进队列时，旧逻辑会 PUSHED=0 永久跳过；现在按首次新增提交补派。
+      - name: Build the backlog triage brief
+        run: |
+          DATE=$(date -u +%F)
+          echo "CARD_DATE=$DATE" >> "$GITHUB_ENV"
+          node scripts/build-deep-backlog-triage.mjs --date "$DATE"
+      - name: Write the DAILY and OPS cards
+        run: node scripts/dispatch-daily-card.mjs --date "$CARD_DATE" --suffix 1
+      - name: Commit the brief and cards, then dispatch every unconsumed card
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node scripts/publish-daily-cards.mjs
+          --date "$CARD_DATE" --suffix 1 --skip-generate
       - uses: actions/upload-artifact@v4
         if: always()
         with:

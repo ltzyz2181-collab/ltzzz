@@ -577,14 +577,50 @@ test('executeAutonomy：code_change 测试失败会恢复原文件且不合并',
   assert.equal(fs.readFileSync(path.join(work, 'a.md'), 'utf8'), 'old\n');
 });
 
-test('executeAutonomy：code_change 未合并时 deploy 跳过', async () => {
+test('executeAutonomy：当天无需改文件时 deploy 仍按声明的 workflow 派发', async () => {
+  const calls = [];
   const result = await executeAutonomy({
-    autonomy: {mode: 'auto', code_change: true, deploy: {workflow: 'deep-superagent-daily.yml'}},
-    job: {task_id: 'DEEP-3', input_sha256: 'e'.repeat(64), prompt: '改代码'},
-    outputs: [{text: '没有文件块'}],
+    autonomy: {mode: 'auto', code_change: true, deploy: {workflow: 'deep-superagent.yml'}},
+    job: {task_id: 'DEEP-3', input_sha256: 'e'.repeat(64), prompt: '分诊积压'},
+    outputs: [{text: '没有需要改的文件，只有分诊结果'}],
     root: tmp(),
     env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '44'},
+    fetcher: async (url, options = {}) => {
+      calls.push(`${options.method} ${url}`);
+      if (url.includes('/contents/')) return {status: 404, ok: false, text: async () => ''};
+      return {status: 200, ok: true, text: async () => '{}'};
+    },
+  });
+  assert.equal(result.actions[0].error, 'no_file_writes');
+  const deploy = result.actions.find((action) => action.action === 'deploy');
+  assert.equal(deploy.status, 'dispatched');
+  assert.ok(calls.some((call) => call.includes('/actions/workflows/deep-superagent.yml/dispatches')));
+});
+
+test('executeAutonomy：code_change 实际失败时 deploy 跳过', async () => {
+  const root = tmp();
+  const origin = path.join(root, 'origin.git');
+  const work = path.join(root, 'work');
+  execFileSync('git', ['init', '--bare', origin]);
+  execFileSync('git', ['init', '-b', 'main', work]);
+  execFileSync('git', ['config', 'user.name', 'test'], {cwd: work});
+  execFileSync('git', ['config', 'user.email', 't@example.com'], {cwd: work});
+  fs.writeFileSync(path.join(work, 'a.md'), 'old\n');
+  execFileSync('git', ['add', 'a.md'], {cwd: work});
+  execFileSync('git', ['commit', '-m', 'init'], {cwd: work});
+  execFileSync('git', ['remote', 'add', 'origin', origin], {cwd: work});
+  execFileSync('git', ['push', '-u', 'origin', 'main'], {cwd: work});
+
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true, deploy: {workflow: 'deep-superagent.yml'}},
+    job: {task_id: 'DEEP-3B', input_sha256: '9'.repeat(64), prompt: '改代码'},
+    outputs: [{text: '<<<FILE:a.md>>>\nnew\n<<<END>>>'}],
+    root: work,
+    env: {GITHUB_TOKEN: 't', GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: '44'},
     fetcher: async () => ({status: 404, ok: false, text: async () => ''}),
+    runTests: () => {
+      throw new Error('boom');
+    },
   });
   const deploy = result.actions.find((action) => action.action === 'deploy');
   assert.equal(deploy.status, 'skipped');
@@ -647,4 +683,13 @@ test('fiduciaryInstructionHit：真实签名/钱包/付款词仍拦截（未放�
   assert.equal(fiduciaryInstructionHit('signature verification of the payload').hit, true);
   assert.equal(fiduciaryInstructionHit('请签名后转账').hit, true);
   assert.equal(fiduciaryInstructionHit('wallet operations for Safe').hit, true);
+});
+
+test('fiduciaryInstructionHit：分类/负向样例语境不算执行指令（#640）', () => {
+  assert.equal(fiduciaryInstructionHit('“sign”不等于执行签名；“退款人工终判”不等于执行退款').hit, false);
+  assert.equal(fiduciaryInstructionHit('增加两个负向回归：“sign”不等于执行签名；“退款人工终判”不等于执行退款').hit, false);
+  assert.equal(fiduciaryInstructionHit('以 #645 作退款词负向样例').hit, false);
+  // 否定分类句里出现地址/金额/收款对象时仍按指令处理。
+  assert.equal(fiduciaryInstructionHit('退款不等于执行转账给 0x1111111111111111111111111111111111111111').hit, true);
+  assert.equal(fiduciaryInstructionHit('这不是样例：退款 100 USDC').hit, true);
 });
