@@ -1,0 +1,127 @@
+{
+ "task_id": "DEEP-DAILY-OVERSIGHT-REALTIME-20261125-01",
+ "kind": "deep_seat_processing_receipt",
+ "date": "2026-11-27",
+ "executor": {
+  "seat": "deep-original",
+  "model": "deepseek-v4-pro",
+  "thinking": "disabled",
+  "usage": {
+   "prompt_tokens": 1929,
+   "completion_tokens": 2834,
+   "total_tokens": 4763,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 1929
+  }
+ },
+ "source_message": {
+  "given_id": "1a22015d73ca4432",
+  "resolution": "hex -> decimal -> Gmail X-GM-MSGID exact hit",
+  "gmail_uid": "6827",
+  "message_id": "<CAHGtFJgADY9EBV3Yub-XMJRVorHQBhrjRM4xhgbUou5RD+bOLQ@mail.gmail.com>",
+  "subject": "Re: 【LTZZZ】【Deep 专用邮箱启用】处理回执：20封分诊 A10/B6/C4｜派单闭环已验证",
+  "from": "LTZZZ <ltzyz2181@gmail.com>",
+  "verified": true
+ },
+ "e2e_delivery_test": {
+  "from": "qwe2181@126.com",
+  "to": "ltzyz2181@gmail.com",
+  "message_id": "<179583516413.501.3804569200971786272@126.com>",
+  "gmail_uid": "6828",
+  "x_gm_msgid": "1883069657677820609",
+  "x_gm_msgid_hex": "1a2201e07133f2c1",
+  "message_id_match": true,
+  "note": "delivery proven by Gmail readback, not by SMTP 235"
+ },
+ "reply_sent": {
+  "to": [
+   "ltzyz2181@gmail.com",
+   "306122054@qq.com"
+  ],
+  "subject": "DEEP-DAILY-OVERSIGHT-REALTIME-20261125-01 调度器状态与部署计划回报",
+  "message_id": "<179583519456.518.2358058893991662297@126.com>",
+  "gmail_uid": "6829",
+  "x_gm_msgid": "1883069692366547135",
+  "x_gm_msgid_hex": "1a2201e884cfe8bf",
+  "threaded_in_reply_to": "<CAHGtFJgADY9EBV3Yub-XMJRVorHQBhrjRM4xhgbUou5RD+bOLQ@mail.gmail.com>"
+ },
+ "blockers": [
+  {
+   "no": 1,
+   "name": "126 IMAP Unsafe Login",
+   "automatable": "no",
+   "where": "qwe2181@126.com 的 IMAP imap.126.com 登录成功但 SELECT 返回 Unsafe Login，被网易风控挡",
+   "unblock": "需要网易侧解除风控，或改用 POP3 只读通道作为邮件读取路径；当前 POP3 可用，可继续用 POP3 收件",
+   "evidence": "IMAP 登录成功但 SELECT 返回 Unsafe Login，不是口令错；POP3 pop.126.com:995 可用，9 封只读不删"
+  },
+  {
+   "no": 2,
+   "name": "云主机 /home/user/ltzzz 定时器无法部署",
+   "automatable": "no",
+   "where": "本机不存在 /home/user/ltzzz 目录，当前没有 VM SSH 凭据，无法在云主机落地定时任务",
+   "unblock": "需要获得原厂 Deep 云主机的 SSH 访问凭据或 VM 访问权限，由执行席或运维提供；在此之前不能声称已部署主机定时器",
+   "evidence": "已验证 NO_VM_DIR，本机不存在该目录；当前没有 VM SSH 凭据"
+  },
+  {
+   "no": 3,
+   "name": "唯一主触发源未最终确认",
+   "automatable": "partial",
+   "where": "现有 GitHub schedule 为 .github/workflows/deep-mail-read.yml 06:25 Asia/Shanghai，但主机定时器无法核对，唯一主触发源与 watchdog/fallback 尚未最终确认",
+   "unblock": "先以 GitHub schedule 为唯一主触发源，设计 watchdog/fallback；待获得 VM 访问后再核对主机定时器，避免重复付费调用",
+   "evidence": "现有每日触发 run 46095565385 success；主机定时器因无 VM 访问无法核对"
+  },
+  {
+   "no": 4,
+   "name": "Gmail 端到端回读测试未完成",
+   "automatable": "partial",
+   "where": "SMTP 465 认证 235 成功，但尚未从 qwe2181@126.com 发测试邮件到 ltzyz2181@gmail.com 并回读 message_id",
+   "unblock": "执行席需发送测试邮件并用 Gmail IMAP X-GM-MSGID 回读，确认端到端收件；若未收到则回报未送达",
+   "evidence": "SMTP 认证成功不等于送达；ltzyz2181@gmail.com IMAP 可读，All Mail 文件夹可用 X-GM-MSGID 精确定位"
+  },
+  {
+   "no": 5,
+   "name": "#653 回执未完成",
+   "automatable": "partial",
+   "where": "回报需写入原 Task ID / #653，但当前尚未完成 2 小时调度器状态与部署计划回报，以及 24 小时证据回报",
+   "unblock": "执行席需在 2 小时内回报调度器状态与部署计划，24 小时内提供主机定时器启用证据、首次自然触发、调度快照、邮箱测试 message_id 与 Gmail inbox readback",
+   "evidence": "当前无 #653 回执证据；派单闭环 #668 已验证，但 #653 回执未完成"
+  },
+  {
+   "no": 6,
+   "name": "邮件分诊续办未完成",
+   "automatable": "partial",
+   "where": "GPT 要求邮件分诊续办，但当前仅完成 20 封邮件分诊，后续续办动作未完成",
+   "unblock": "执行席需按 GPT 裁决意见对 HOLD 事项放行或继续阻塞，并同步更新可部署清单及巡检状态",
+   "evidence": "本轮已处理 20 封邮件，分类 A 10 / B 6 / C 4；需 GPT 裁决事项包括 3118、3121、3130、3137 等"
+  }
+ ],
+ "full_automation": {
+  "verdict": "partial",
+  "can": [
+   "GitHub Actions 每日触发 deep-mail-read.yml 可全自动运行",
+   "POP3 读取 qwe2181@126.com 邮件可全自动",
+   "SMTP 发送邮件可全自动",
+   "Gmail IMAP 回读 message_id 可全自动",
+   "GitHub API 读取 Issues/PR/Actions 可全自动"
+  ],
+  "cannot": [
+   "云主机 /home/user/ltzzz 定时器部署需 VM SSH 凭据，当前无法全自动",
+   "126 IMAP 读取被网易风控挡，无法全自动",
+   "主机定时器启用证据需 VM 访问，当前无法提供"
+  ],
+  "reason": "GitHub Actions 侧可全自动，但云主机定时器因无 VM 访问被阻塞，只能以 GH schedule 为唯一主触发并加 watchdog"
+ },
+ "states": {
+  "mailbox_channel": "tested+delivery_confirmed",
+  "daily_scheduler_gh": "draft(running)",
+  "host_timer": "blocked_no_vm_access",
+  "merged": false,
+  "deployed": false,
+  "paid": false,
+  "signed": false
+ },
+ "github_receipt": "https://github.com/ltzyz2181-collab/ltzzz/issues/653#issuecomment-7232811188"
+}
