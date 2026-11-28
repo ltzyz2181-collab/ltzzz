@@ -56,8 +56,18 @@ export function githubClient({token, repository = REPOSITORY, fetcher = fetch}) 
       return out;
     },
     async withComments(issue) {
-      const {data} = await api(`issues/${issue.number}/comments?per_page=100`);
-      return {...issue, comments: Array.isArray(data) ? data : []};
+      // GitHub caps comment lists at 100 items per page. Long-lived dispatch
+      // issues can carry the newest protocol event on a later page, so walk
+      // all pages (bounded) instead of trusting only the first one.
+      const comments = [];
+      const MAX_COMMENT_PAGES = 50;
+      for (let page = 1; page <= MAX_COMMENT_PAGES; page++) {
+        const {data} = await api(`issues/${issue.number}/comments?per_page=100&page=${page}`);
+        if (!Array.isArray(data) || data.length === 0) break;
+        comments.push(...data);
+        if (data.length < 100) break;
+      }
+      return {...issue, comments};
     },
     async comment(number, body) { return api(`issues/${number}/comments`, {method: 'POST', body: {body}}); },
     async addLabels(number, labels) { const add = labels.filter(Boolean); if (!add.length) return null; return api(`issues/${number}/labels`, {method: 'POST', body: {labels: add}}); },
