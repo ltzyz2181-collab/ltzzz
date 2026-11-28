@@ -158,12 +158,29 @@ def build_triage_prompt(headers, bodies):
     )
 
 
+def build_compose_prompt(headers, triage):
+    rows = []
+    by_uid = {h["uid"]: h for h in headers}
+    for it in triage.get("items", []):
+        h = by_uid.get(it.get("uid"), {})
+        rows.append(f'{it.get("uid")} | {h.get("subject","")[:70]} | {it.get("category")} | {it.get("seat")} | {it.get("action")}')
+    rulings = "\n".join("- " + str(x) for x in triage.get("needs_rulings") or [])
+    return (
+        "根据下面的邮件分诊结果，写一封给 GPT 决策席的中文邮件。四段：做了什么 / 分流结论 / 下一步 / 需要裁决。\n"
+        "要求：不超过 900 字；不写凭据、邮箱密码、邮件正文原文、客户隐私；不写已经完成但实际没做的动作。\n"
+        '只输出 JSON：{"subject":"...","body":"..."}\n\n'
+        + "分诊行（序号 | 主题 | 类别 | 席位 | 动作）：\n" + "\n".join(rows)
+        + "\n\n待裁决：\n" + (rulings or "(无)")
+    )
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=7)
     ap.add_argument("--limit", type=int, default=20)
     ap.add_argument("--read-max", type=int, default=12)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--compose-out", default="")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     args = ap.parse_args()
 
@@ -236,6 +253,17 @@ def main():
             read_err = (read_err + ";" if read_err else "") + "triage_stage_" + type(exc).__name__
     else:
         triage = {"items": [], "next_steps": [], "needs_rulings": []}
+
+    if args.compose_out and triage.get("items"):
+        try:
+            raw, used_model, usage = chat(api_key, args.model, build_compose_prompt(headers, triage), 2000)
+            calls.append({"stage": "compose", "model": used_model, "usage": usage})
+            draft = extract_json(raw)
+            with open(args.compose_out, "w", encoding="utf-8") as fh:
+                json.dump(draft, fh, ensure_ascii=False, indent=1)
+                fh.write("\n")
+        except Exception as exc:
+            meta["compose_error"] = type(exc).__name__
 
     try:
         conn.logout()
