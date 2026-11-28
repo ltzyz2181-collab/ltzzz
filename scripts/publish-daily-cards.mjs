@@ -51,14 +51,42 @@ export function commitAndPush({root, paths, message, exec = execFileSync, push =
   return {status: 'pushed', commit: result.commit};
 }
 
-const readSummary = (root, date) => {
-  const rel = `knowledge/results/deep-superagent/backlog/summary.json`;
-  try {
-    const summary = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
-    return {summary};
-  } catch {
-    return null;
+// `--skip-generate` 复用的是同一 run 前一步已写盘、但还没提交的分流单。
+// 只回读 summary 而不带回文件路径，会让 brief 提交拿到空路径（run 46094118691
+// 的 brief=no_files），Deep 的 repo_read 里就没有 275 条逐项分流，只能编 T001…
+// 所以这里必须把实际存在的文件路径和字节数一起带回去。
+const reuseTriage = (root, date) => {
+  const candidates = {
+    latest: 'knowledge/results/deep-superagent/backlog/latest.json',
+    summary: 'knowledge/results/deep-superagent/backlog/summary.json',
+    dated: `knowledge/results/deep-superagent/backlog/${date}.json`,
+  };
+  const files = {};
+  const bytes = {};
+  for (const [key, rel] of Object.entries(candidates)) {
+    try {
+      const stat = fs.statSync(path.join(root, rel));
+      if (!stat.isFile()) continue;
+      files[key] = rel;
+      bytes[key] = stat.size;
+    } catch {
+      /* 缺哪个就只提交存在的，全部缺失时退回重新生成。 */
+    }
   }
+  if (!files.summary && !files.latest) return null;
+  let summary = null;
+  for (const key of ['summary', 'latest']) {
+    if (!files[key]) continue;
+    try {
+      const parsed = JSON.parse(fs.readFileSync(path.join(root, files[key]), 'utf8'));
+      summary = key === 'summary' ? parsed : parsed.summary;
+      break;
+    } catch {
+      /* 解析失败时退回重新生成。 */
+    }
+  }
+  if (!summary) return null;
+  return {status: 'reused', date, files, bytes, summary};
 };
 
 export async function publishDailyCards({
@@ -72,15 +100,7 @@ export async function publishDailyCards({
   push = pushReceiptCommit,
   skipGenerate = false,
 } = {}) {
-  let triage;
-  if (skipGenerate) {
-    const existing = readSummary(root, date);
-    triage = existing
-      ? {status: 'reused', date, files: {}, bytes: {}, summary: existing.summary}
-      : writeTriage({root, date});
-  } else {
-    triage = writeTriage({root, date});
-  }
+  const triage = (skipGenerate && reuseTriage(root, date)) || writeTriage({root, date});
   const evidence = collectEvidence(root);
   const cards = writeDailyCards({root, date, evidence, suffix, triage});
   const brief = commitAndPush({

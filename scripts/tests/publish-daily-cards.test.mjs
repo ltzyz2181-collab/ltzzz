@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {publishDailyCards} from '../publish-daily-cards.mjs';
+import {writeTriage} from '../build-deep-backlog-triage.mjs';
 
 const git = (cwd, args) => execFileSync('git', args, {cwd, encoding: 'utf8'}).trim();
 
@@ -74,6 +75,60 @@ test('分流单与卡分两次提交，卡提交只含两张卡，推送后按�
     assert.equal(dirty.commits.card.status, 'pushed');
     assert.match(git(root, ['status', '--porcelain']), /M README\.md/);
     assert.doesNotMatch(git(origin, ['show', 'main:README.md']), /dirty intake output/);
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+    fs.rmSync(origin, {recursive: true, force: true});
+  }
+});
+
+// run 46094118691：前一步已写盘的分流单在 --skip-generate 下只回读了 summary，
+// files 为空，brief 提交变成 no_files，Deep 读不到逐项分流。这里锁住“已写盘但
+// 未提交”的分流单必须被 brief 提交带上，且卡提交仍然只含两张卡。
+test('--skip-generate 复用已写盘的分流单时仍提交 latest/summary/dated', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-reuse-'));
+  const origin = fs.mkdtempSync(path.join(os.tmpdir(), 'publish-reuse-origin-'));
+  try {
+    git(origin, ['init', '--bare', '-b', 'main']);
+    git(root, ['init', '-b', 'main']);
+    fs.writeFileSync(path.join(root, 'README.md'), 'seed\n');
+    git(root, ['add', '--', 'README.md']);
+    git(root, ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-m', 'seed']);
+    git(root, ['remote', 'add', 'origin', origin]);
+    git(root, ['push', '-u', 'origin', 'main']);
+
+    fs.mkdirSync(path.join(root, 'knowledge/results/dispatch/oversight'), {recursive: true});
+    fs.mkdirSync(path.join(root, 'knowledge/results/deep-superagent/mail-intake'), {recursive: true});
+    fs.writeFileSync(path.join(root, 'knowledge/results/dispatch/oversight/latest.json'), JSON.stringify({
+      backlog: {open_warning_cases: 1, unique_original_tasks: 1, not_rechecked_in_current_window: 1},
+      warnings: [
+        {case_id: 'case-1', task_id: 'CONTROL-9', issue: 'claim_missing', assigned_to: 'deepseek', first_observed_at: '2026-10-01T00:00:00Z', severity: 'warning'},
+      ],
+    }));
+    fs.writeFileSync(path.join(root, 'knowledge/results/deep-superagent/mail-intake/latest.json'), JSON.stringify({counts: {open_or_dispatch: 0, unified: 0}, open_items: []}));
+
+    // 模拟 workflow 的“Build the backlog triage brief”步骤：只写盘，不提交。
+    writeTriage({root, date: '2026-11-27'});
+    assert.ok(fs.existsSync(path.join(root, 'knowledge/results/deep-superagent/backlog/latest.json')));
+    assert.match(git(root, ['status', '--porcelain', '--untracked-files=all']), /knowledge\/results\/deep-superagent\/backlog\/latest\.json/);
+
+    const result = await publishDailyCards({root, date: '2026-11-27', suffix: 1, env: {}, skipGenerate: true});
+    assert.equal(result.triage.status, 'reused');
+    assert.equal(result.commits.brief.status, 'pushed');
+    assert.equal(result.commits.card.status, 'pushed');
+    assert.equal(result.triage.files.summary, 'knowledge/results/deep-superagent/backlog/summary.json');
+
+    const briefFiles = git(root, ['show', '--pretty=format:', '--name-only', result.commits.brief.commit]).split('\n').filter(Boolean).sort();
+    assert.deepEqual(briefFiles, [
+      'knowledge/results/deep-superagent/backlog/2026-11-27.json',
+      'knowledge/results/deep-superagent/backlog/latest.json',
+      'knowledge/results/deep-superagent/backlog/summary.json',
+    ]);
+    const cardFiles = git(root, ['show', '--pretty=format:', '--name-only', result.commits.card.commit]).split('\n').filter(Boolean);
+    assert.ok(!cardFiles.some((name) => name.includes('/backlog/')));
+
+    // 再复用一次：文件已在 git 里，brief 不应产生新提交。
+    const again = await publishDailyCards({root, date: '2026-11-27', suffix: 1, env: {}, skipGenerate: true});
+    assert.equal(again.commits.brief.status, 'unchanged');
   } finally {
     fs.rmSync(root, {recursive: true, force: true});
     fs.rmSync(origin, {recursive: true, force: true});
