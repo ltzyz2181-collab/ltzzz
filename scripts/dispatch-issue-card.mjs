@@ -65,6 +65,33 @@ export function issueTaskId({date = businessDate(), issueNumber, retry = 0} = {}
   return `DEEP-SUPERAGENT-${String(date).replaceAll('-', '')}-ISSUE-${Number(issueNumber)}${attempt ? `-R${attempt}` : ''}`;
 }
 
+// Issue 正文里的原 Task ID（如 LTZZZ-RELAY-SKILL-ROUTING-20261124-01）必须进入卡面，
+// 否则队列回执只留下 DEEP-SUPERAGENT-... 的桥接单号，原单无法对账（#640）。
+const ISSUE_TASK_ID_RE = /\b[A-Z][A-Z0-9]*(?:-[A-Za-z0-9]+)*-\d{8}(?:-[A-Za-z0-9]+)*\b/g;
+export function extractIssueTaskIds(...texts) {
+  const found = [];
+  for (const text of texts) {
+    if (text === null || text === undefined) continue;
+    for (const match of String(text).matchAll(ISSUE_TASK_ID_RE)) {
+      const id = match[0].replace(/[.,;:]+$/, '').toUpperCase();
+      if (id.length >= 12 && !found.includes(id)) found.push(id);
+    }
+  }
+  return found;
+}
+
+// [P1] 在标题或标签里表示高优先级；按现有政策映射到 high（多席），P2 → medium，P3 → low。
+export function issueImportance(issue) {
+  const labels = (issue?.labels || []).map((item) => (typeof item === 'string' ? item : item?.name)).filter(Boolean);
+  const texts = [issue?.title || '', ...labels].join(' ');
+  const match = /\bP([0-3])\b/i.exec(texts) || /\[P([0-3])\]/i.exec(texts);
+  if (!match) return 'medium';
+  const level = Number(match[1]);
+  if (level <= 1) return 'high';
+  if (level === 2) return 'medium';
+  return 'low';
+}
+
 // Issue 正文里用 <!-- deep:repo_read ... --> 显式声明要给模型看的文件。
 // 不写就不注入任何仓库正文；写超量直接拒绝，不静默截断。
 export function parseRepoRead(body) {
@@ -89,9 +116,9 @@ export function secretRisk(text) {
 // 排除句判定与执行层共用同一实现，避免桥放行、执行层又拦下的两套口径。
 export {fiduciaryInstructionHit};
 
-// 提示词刻意不出现指令关键字，也不复述六个保留家族的名字：
+// 提示词刻意不出现指令关键字，也不复述五个保留家族的名字：
 // 既满足 check-card-contract 的单角色契约，也不会被自家的禁区词命中。
-export function buildIssuePrompt({number, title, url = '', body = '', repoRead = []} = {}) {
+export function buildIssuePrompt({number, title, url = '', body = '', repoRead = [], sourceTaskIds = []} = {}) {
   const clean = String(body || '').replace(/\r\n/g, '\n').trim();
   const excerpt = clean.length > MAX_ISSUE_BODY_CHARS
     ? `${clean.slice(0, MAX_ISSUE_BODY_CHARS)}\n（正文已截断，完整内容以 Issue 链接为准）`
@@ -99,6 +126,7 @@ export function buildIssuePrompt({number, title, url = '', body = '', repoRead =
   const lines = [
     `内部工程任务：GitHub Issue #${number}《${title}》`,
     url ? `来源：${url}` : '',
+    sourceTaskIds.length ? `原 Task ID：${sourceTaskIds.join('、')}` : '',
     '数据分级：public_distributable（Issue 正文本身公开；不得粘贴敏感认证信息、客户数据或邮件正文）',
     '',
     '【Issue 正文】',
@@ -117,8 +145,8 @@ export function buildIssuePrompt({number, title, url = '', body = '', repoRead =
     '',
     '规则（按顺序，命中即停）：',
     '1 只输出写入块；不输出解释段落、不输出计划、不加 markdown 围栏。',
-    '2 不得修改 .github/workflows/、config/ 下的授权与自治策略文件，以及写入闸已拒绝的路径。',
-    '3 若需求属于六个保留家族，只输出一行 BLOCKED_FIDUCIARY 并停止。',
+    '2 不得修改 owner 授权来源、凭据文件、资金目录与写入闸已拒绝的路径；普通 workflow、config、scripts、docs、tests 可改。',
+    '3 若需求属于五个保留家族，只输出一行 BLOCKED_FIDUCIARY 并停止。',
     '4 若无法在边界内给出可验证改动，只输出一行 NO_SAFE_CHANGE 加不超过 20 个词的原因。',
     '5 最多 6 个文件；每个文件必须完整，且能通过 node --check 或对应格式校验。',
     '6 优先补测试；不得删除或弱化既有测试。',
@@ -153,12 +181,14 @@ export function buildIssueCard({issue, date = businessDate(), retry = 0, root = 
   const assessed = assessIssue(issue);
   if (!assessed.ok) throw new IssueCardBlocked(assessed.status, assessed);
   const number = Number(issue.number);
+  const sourceTaskIds = extractIssueTaskIds(issue.title, issue.body);
   const prompt = buildIssuePrompt({
     number,
     title: assessed.title,
     url: String(issue.html_url || ''),
     body: assessed.body,
     repoRead: assessed.repoRead,
+    sourceTaskIds,
   });
   const fiduciary = fiduciaryInstructionHit(prompt);
   if (fiduciary.hit) throw new IssueCardBlocked('blocked_fiduciary', {token: fiduciary.token});
@@ -173,10 +203,12 @@ export function buildIssueCard({issue, date = businessDate(), retry = 0, root = 
     policy: activePolicy,
     taskId: issueTaskId({date, issueNumber: number, retry}),
     packageId: `LTZZZ-DEEP-ISSUE-${number}-${String(date).replaceAll('-', '')}${Number(retry) ? `-R${Number(retry)}` : ''}`,
-    importance: 'medium',
+    importance: issueImportance(issue),
     prompt,
   });
   card.autonomy = autonomy;
+  // 原 Task ID 只做溯源元数据，不进入 worker 请求体；队列回执与 PR 可按它回到原单。
+  card.source_task_ids = sourceTaskIds;
   const problems = checkCard(activePolicy, card);
   if (problems.length) throw new IssueCardBlocked('issue_card_policy_invalid', {problems});
   const contract = analyzeCardPrompt(card.prompt);
