@@ -210,6 +210,11 @@ export function fiduciaryHit({prompt = '', outputs = []} = {}) {
 const NEGATION_LEAD_RE = /^\s*(?:[-*]\s*)?(?:no|not|never|without|excluding|except|neither|nor)\b|^\s*(?:[-*]\s*)?(?:不得|不要|不涉及|不修改|不改动|不改|禁止|无需|无须|不含|不包括|排除|不处理|不动)/i;
 const CONTRAST_RE = /但|但是|然而|不过|\bbut\b|\bhowever\b|\byet\b/i;
 const CLAUSE_SPLIT_RE = /[，,；;。]|\.\s+/;
+// 分类/测试语境里的词不是执行指令（#640）：「“sign”不等于执行签名」「退款人工终判
+// 不等于执行退款」「以 #645 作退款词负向样例」。只剔除确实没有执行对象的分句：
+// 出现地址、金额或“转给/支付给”等对象时仍按指令扫描，否定词不能遮住真实动作。
+const CLASSIFICATION_CLAUSE_RE = /不等于|不是|并非|不构成|不代表|负向样例|反例|测试样例|negative\s+sample/i;
+const EXECUTION_TARGET_RE = /0x[0-9a-fA-F]{40}|\d+(?:\.\d+)?\s*(?:usdc|usdt|eth|btc|usd|元|美元|人民币)|转给|打给|支付给|发送给|转入|转至|提到|withdraw\s+to|send\s+to|transfer\s+to/i;
 
 export function fiduciaryInstructionHit(prompt = '') {
   const kept = [];
@@ -217,7 +222,9 @@ export function fiduciaryInstructionHit(prompt = '') {
     const startsNegated = NEGATION_LEAD_RE.test(line);
     if (startsNegated && !CONTRAST_RE.test(line)) continue;
     for (const clause of line.split(CLAUSE_SPLIT_RE)) {
-      if (!NEGATION_LEAD_RE.test(clause)) kept.push(clause);
+      if (NEGATION_LEAD_RE.test(clause)) continue;
+      if (CLASSIFICATION_CLAUSE_RE.test(clause) && !EXECUTION_TARGET_RE.test(clause)) continue;
+      kept.push(clause);
     }
   }
   return fiduciaryHit({prompt: kept.join('\n')});
@@ -585,10 +592,13 @@ export async function executeAutonomy({
       }
     }
 
-    // 2) deploy：只允许显式声明的部署工作流，且代码动作已合并或未请求。
+    // 2) deploy：只允许显式声明的部署工作流。
+    // 当天没有需要改的文件（no_file_writes）时按“无改动”处理：部署只是把 main 上
+    // 已合并的版本重新发布一次，不是绕过验证；真正失败/未过 CI 的代码动作仍然跳过。
     if (autonomy.deploy) {
       const codeAction = actions.find((action) => action.action === 'code_change');
-      if (codeAction && codeAction.status !== 'merged') {
+      const noChangeNeeded = codeAction?.status === 'rejected' && codeAction?.error === 'no_file_writes';
+      if (codeAction && codeAction.status !== 'merged' && !noChangeNeeded) {
         actions.push({action: 'deploy', status: 'skipped', error: 'code_change_not_merged'});
       } else if (!token || !repository) {
         actions.push({action: 'deploy', status: 'failed', error: 'github_token_missing'});

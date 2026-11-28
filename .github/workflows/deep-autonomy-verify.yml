@@ -24,12 +24,19 @@ jobs:
         run: |
           node --check scripts/deep-autonomy.mjs
           node --check scripts/run-deep-superagent-queue.mjs
+          node --check scripts/dispatch-daily-card.mjs
+          node --check scripts/build-deep-backlog-triage.mjs
+          node --check scripts/dispatch-card-queue.mjs
+          node --check scripts/publish-daily-cards.mjs
       - name: Autonomy and queue tests
         run: >-
           node --test
           scripts/tests/check-card-contract.test.mjs
           scripts/tests/dispatch-seat-policy.test.mjs
           scripts/tests/dispatch-daily-card.test.mjs
+          scripts/tests/build-deep-backlog-triage.test.mjs
+          scripts/tests/dispatch-card-queue.test.mjs
+          scripts/tests/publish-daily-cards.test.mjs
           scripts/tests/deep-superagent-queue.test.mjs
           scripts/tests/deep-superagent-autonomy.test.mjs
           scripts/tests/deep-superagent-adjudicator.test.mjs

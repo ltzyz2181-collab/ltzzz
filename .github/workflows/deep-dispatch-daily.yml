@@ -24,9 +24,15 @@ on:
   pull_request:
     paths:
       - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/build-deep-backlog-triage.mjs'
+      - 'scripts/dispatch-card-queue.mjs'
+      - 'scripts/publish-daily-cards.mjs'
       - 'scripts/dispatch-seat-policy.mjs'
       - 'scripts/run-deep-superagent-queue.mjs'
       - 'scripts/tests/dispatch-daily-card.test.mjs'
+      - 'scripts/tests/build-deep-backlog-triage.test.mjs'
+      - 'scripts/tests/dispatch-card-queue.test.mjs'
+      - 'scripts/tests/publish-daily-cards.test.mjs'
       - 'scripts/tests/dispatch-seat-policy.test.mjs'
       - 'scripts/tests/deep-superagent-queue.test.mjs'
       - 'config/dispatch-seat-policy-20261117.json'
@@ -47,12 +53,18 @@ jobs:
       - name: Syntax check
         run: |
           node --check scripts/dispatch-daily-card.mjs
+          node --check scripts/build-deep-backlog-triage.mjs
+          node --check scripts/dispatch-card-queue.mjs
+          node --check scripts/publish-daily-cards.mjs
           node --check scripts/dispatch-seat-policy.mjs
           node --check scripts/run-deep-superagent-queue.mjs
       - name: Policy, card contract and queue tests
         run: >-
           node --test
           scripts/tests/dispatch-daily-card.test.mjs
+          scripts/tests/build-deep-backlog-triage.test.mjs
+          scripts/tests/dispatch-card-queue.test.mjs
+          scripts/tests/publish-daily-cards.test.mjs
           scripts/tests/dispatch-seat-policy.test.mjs
           scripts/tests/deep-superagent-queue.test.mjs
       - name: Policy check (fail-closed)
@@ -69,7 +81,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
 
-      - name: Generate daily card and run the policy gate
+      - name: Generate backlog brief and both daily cards, then run the policy gate
         env:
           INPUT_DATE: ${{ inputs.date }}
           INPUT_SUFFIX: ${{ inputs.suffix }}
@@ -79,67 +91,25 @@ jobs:
           SUFFIX="${INPUT_SUFFIX:-1}"
           echo "CARD_DATE=$DATE" >> "$GITHUB_ENV"
           echo "CARD_SUFFIX=$SUFFIX" >> "$GITHUB_ENV"
+          node scripts/build-deep-backlog-triage.mjs --date "$DATE"
           node scripts/dispatch-daily-card.mjs --date "$DATE" --suffix "$SUFFIX"
           node scripts/dispatch-seat-policy.mjs check
 
-      - name: Commit the daily card and dispatch the queue consumer
+      - name: Commit brief and cards, then dispatch every unconsumed card
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          node --input-type=module <<'JS'
-          import fs from 'node:fs';
-          import {execFileSync} from 'node:child_process';
-          const card = 'ops/deep-superagent/tasks/DEEP-SUPERAGENT-' + process.env.CARD_DATE.replaceAll('-', '') + '-DAILY-' + (process.env.CARD_SUFFIX || '1') + '.json';
-          if (!fs.existsSync(card)) throw Error('daily_card_missing:' + card);
-          execFileSync('git', ['config', 'user.name', 'ltzzz-bot']);
-          execFileSync('git', ['config', 'user.email', 'bot@ltzzz.com']);
-          execFileSync('git', ['add', '--', card]);
-          try { execFileSync('git', ['diff', '--staged', '--quiet']); process.exit(0); } catch {}
-          execFileSync('git', ['commit', '-m', 'Deep dispatch daily card ' + process.env.CARD_DATE], {stdio: 'inherit'});
-          JS
-          if git diff --quiet HEAD~1 -- "ops/deep-superagent/tasks/DEEP-SUPERAGENT-${CARD_DATE//-/}-DAILY-${CARD_SUFFIX}.json" 2>/dev/null; then
-            echo "PUSHED=0" >> "$GITHUB_ENV"
-            echo "::notice::Daily card already exists unchanged; no push, no dispatch."
-            exit 0
-          fi
-          # GITHUB_TOKEN 可以推送，但 GitHub 会抑制它触发的下游 push 工作流，队列不会自动启动。
-          # 因此推完后用 workflow_dispatch 显式派发（workflow_dispatch 是官方允许的例外）。
-          # 队列脚本不会信任任意 dispatch：card_commit 必须在 main 上，且该提交只新增一张 DAILY 卡。
-          node tools/push-receipt-commit.mjs
-          echo "NEW_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo "PUSHED=1" >> "$GITHUB_ENV"
-
-      - name: Dispatch the queue for this card commit
-        if: env.PUSHED == '1'
-        env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          node --input-type=module <<'JS'
-          const base = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/deep-superagent-queue.yml`;
-          const headers = {Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json'};
-          const since = Date.now() - 5000;
-          const response = await fetch(`${base}/dispatches`, {
-            method: 'POST',
-            headers: {...headers, 'Content-Type': 'application/json'},
-            body: JSON.stringify({ref: 'main', inputs: {card_commit: process.env.NEW_SHA}}),
-          });
-          if (response.status !== 204) throw Error('queue_dispatch_failed:' + response.status + ':' + (await response.text()).slice(0, 200));
-          for (let i = 0; i < 18; i += 1) {
-            const data = await (await fetch(`${base}/runs?event=workflow_dispatch&per_page=5`, {headers})).json();
-            const run = (data.workflow_runs || []).find((item) => Date.parse(item.created_at) >= since);
-            if (run) {
-              console.log(JSON.stringify({dispatched: true, run_id: run.id, status: run.status, url: run.html_url}));
-              process.exit(0);
-            }
-            await new Promise((resolve) => setTimeout(resolve, 10000));
-          }
-          throw Error('queue_dispatch_run_not_observed');
-          JS
+        run: >-
+          node scripts/publish-daily-cards.mjs
+          --date "$CARD_DATE" --suffix "$CARD_SUFFIX" --skip-generate
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: deep-dispatch-daily-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ops/deep-superagent/tasks/DEEP-SUPERAGENT-*-DAILY-*.json
+          path: |
+            ops/deep-superagent/tasks/DEEP-SUPERAGENT-*-DAILY-*.json
+            ops/deep-superagent/tasks/DEEP-SUPERAGENT-*-OPS-*.json
+            knowledge/results/deep-superagent/backlog/*.json
           if-no-files-found: warn
           retention-days: 30

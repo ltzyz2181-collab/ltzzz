@@ -204,6 +204,28 @@ export function cardPath(date, suffix = 1) {
   return `ops/deep-superagent/tasks/DEEP-SUPERAGENT-${date.replaceAll('-', '')}-DAILY-${suffix}.json`;
 }
 
+export function opsCardPath(date, suffix = 1) {
+  return `ops/deep-superagent/tasks/DEEP-SUPERAGENT-${date.replaceAll('-', '')}-OPS-${suffix}.json`;
+}
+
+const BRIEF_FILES = ['knowledge/results/deep-superagent/backlog/latest.json', 'knowledge/results/deep-superagent/backlog/summary.json'];
+// 只注入受信桥接层真正能读到的文件；总量留在 repo_read 的 64KB 预算内。
+export function selectOpsRepoRead(root = REPO_ROOT, limit = 60 * 1024) {
+  const chosen = [];
+  let total = 0;
+  for (const rel of BRIEF_FILES) {
+    try {
+      const size = fs.statSync(path.join(root, rel)).size;
+      if (total + size > limit) continue;
+      total += size;
+      chosen.push(rel);
+    } catch {
+      /* 缺文件就跳过；模型会在 prompt 里看到来源状态。 */
+    }
+  }
+  return chosen;
+}
+
 export function writeDailyCard({root = REPO_ROOT, date = businessDate(), evidence = collectEvidence(root), policy = loadPolicy(), suffix = 1} = {}) {
   const card = buildDailyCard({date, evidence, policy, suffix});
   const rel = cardPath(date, suffix);
@@ -218,6 +240,96 @@ export function writeDailyCard({root = REPO_ROOT, date = businessDate(), evidenc
   return {status: 'created', path: rel, card};
 }
 
+// 执行卡：Deep 主办，按公开分流单逐条处理；可自动补丁/合并/部署，中转席出实现与第二意见。
+// 卡面只写工程动作；五类保留家族由 deep-autonomy.mjs 在运行时短路，卡面不写任何资金类指令。
+export function buildOpsCard({date, evidence, policy = loadPolicy(), suffix = 1, triage = null, repoRead = null}) {
+  if (!DATE_RE.test(String(date || ''))) throw new Error('invalid_daily_card_date');
+  if (!Number.isInteger(suffix) || suffix < 1 || suffix > 9) throw new Error('invalid_daily_card_suffix');
+  const stamp = date.replaceAll('-', '');
+  const taskId = `DEEP-SUPERAGENT-${stamp}-OPS-${suffix}`;
+  const packageId = `LTZZZ-DEEP-OPS-${stamp}-${suffix}`;
+  const backlog = evidence.backlog || {};
+  const mail = evidence.mail || {};
+  const queue = evidence.queue || {};
+  const daily = evidence.daily || {};
+  const summary = triage?.summary || triage || null;
+  const totals = summary?.totals || {};
+  const oldest = Array.isArray(summary?.oldest) ? summary.oldest.slice(0, 5) : [];
+  const mailCounts = summary?.mail || {};
+  const workerTask = [
+    '【输入事实（只来自公开回执）】',
+    `- backlog_open=${backlog.open_warning_cases ?? totals.open_warning_cases ?? 'unknown'} unique=${backlog.unique_original_tasks ?? totals.unique_original_tasks ?? 'unknown'} not_rechecked=${backlog.not_rechecked_in_current_window ?? totals.not_rechecked_in_current_window ?? 'unknown'} triaged=${totals.triaged_cases ?? 'unknown'} reserved_escalations=${totals.reserved_family_escalations ?? 0}`,
+    `- backlog_by_seat=${JSON.stringify(backlog.by_responsible_seat ?? summary?.by_seat ?? 'unknown')}`,
+    `- backlog_oldest=${JSON.stringify(oldest)}`,
+    `- mail_open_or_dispatch=${mail.open_or_dispatch ?? mailCounts.open_or_dispatch ?? 'unknown'} unified=${mail.unified ?? mailCounts.unified ?? 'unknown'} qq_status=${mail.qq_status ?? 'unknown'} gmail_status=${mail.gmail_status ?? 'unknown'} sampled=${mailCounts.sampled ?? 'unknown'}`,
+    `- last_queue_run=${queue.run_id ?? 'unknown'} status=${queue.status ?? 'unknown'} items=${queue.items ?? 0} pending_gpt_decisions=${queue.pending_gpt_decisions ?? 0}`,
+    `- last_daily_merge=${daily.status ?? 'unknown'} pending_gpt_decisions=${daily.pending_gpt_decisions ?? 0}`,
+    '',
+    '【给 deep 的任务】',
+    '1 受信桥接层已注入 knowledge/results/deep-superagent/backlog/latest.json（逐条分流）和 summary.json（计数与最老 20 条）。按其中的 action 逐条核对：只用原任务 ID，不新开单，不把“已派发”写成“已完成”。',
+    '2 对最老 20 条给出当天可执行的下一步；结论必须带 task_id / 缺的阶段 / 下一步；没有一手证据的写 blocked_evidence_needed。',
+    '3 邮件公开摘要逐条归类：带 task_ids 的并回原任务；无主的记为 evidence_gap；has_dispatch_wording=true 的优先核对是否重复派单。不要读取或复制邮件正文。',
+    '4 需要实现或第二意见时，明确请求 claude-relay 与 gpt-relay 各出一次有界产物；中转输出按第三方通道标注，不得自证 provider/model，也不得当作独立复核。',
+    '5 如发现可确定修复的代码或文档问题，输出整文件块；改动只落在公开仓库代码与文档，并且必须通过 deep-autonomy-verify 的测试后才能合并。',
+    `6 把当天结论写成 knowledge/results/deep-superagent/backlog/triage-${date}.json：包含 counts / top_actions / mail_actions / relay_requests / escalations。`,
+    '7 状态分开写 draft / tested / merged / deployed；没有实际回读的不写已完成。',
+    '',
+    '【输出格式】',
+    '先用不超过 250 字写当天结论，然后给出整文件块：',
+    `<<<FILE:knowledge/results/deep-superagent/backlog/triage-${date}.json>>>`,
+    '...',
+    '<<<END>>>',
+    '当天没有代码修复时只写这一个文件。',
+    '',
+    '【边界】',
+    '不得处理资金及资金处分、退款终态、签名、私钥/助记词/根密钥、钱包操作（含五签）五类；遇到只记录 escalate_to=gpt。',
+    '不得打印、提交或外发任何秘密值。',
+  ].join('\n');
+  const prompt = [
+    '内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。',
+    '',
+    '【目标】完成当天 Deep 运营闭环：把公开积压逐条分流、把邮件公开元数据并回原任务、必要时提交可回读的代码或文档修复，并调度中转席参与实现与第二意见。',
+    '具体输入、规则与输出格式都在下方任务块内；执行席只按该块执行，外层不另发指令。',
+    '',
+    '【给 deep 的任务】',
+    workerTask,
+  ].join('\n');
+  // 重要任务按 owner 2026-11-17 的多席政策：deep 主办，claude-relay / gpt-relay 各出第二意见。
+  const card = buildCard({policy, taskId, packageId, importance: 'high', prompt});
+  const problems = checkCard(policy, card);
+  if (problems.length) throw new Error(`ops_card_policy_invalid:${problems.join(';')}`);
+  const contract = analyzeCardPrompt(card.prompt);
+  if (contract.mixed) throw new Error(`ops_card_contract_mixed:${contract.reasons.join('+')}`);
+  card.autonomy = {
+    mode: 'auto',
+    repo_read: repoRead ?? selectOpsRepoRead(),
+    code_change: true,
+    deploy: {workflow: 'deep-superagent.yml'},
+  };
+  return card;
+}
+
+export function writeOpsCard({root = REPO_ROOT, date = businessDate(), evidence = collectEvidence(root), policy = loadPolicy(), suffix = 1, triage = null, repoRead = null} = {}) {
+  const card = buildOpsCard({date, evidence, policy, suffix, triage, repoRead: repoRead ?? selectOpsRepoRead(root)});
+  const rel = opsCardPath(date, suffix);
+  const abs = path.join(root, rel);
+  if (fs.existsSync(abs)) {
+    const existing = fs.readFileSync(abs, 'utf8');
+    const identical = JSON.stringify(JSON.parse(existing)) === JSON.stringify(card);
+    return {status: identical ? 'already_exists' : 'already_exists_different', path: rel, card};
+  }
+  fs.mkdirSync(path.dirname(abs), {recursive: true});
+  fs.writeFileSync(abs, JSON.stringify(card, null, 1) + '\n');
+  return {status: 'created', path: rel, card};
+}
+
+// 每日一次写两张卡：DAILY 是 qianwen 分诊，OPS 是 Deep 执行。
+export function writeDailyCards({root = REPO_ROOT, date = businessDate(), evidence = collectEvidence(root), policy = loadPolicy(), suffix = 1, triage = null} = {}) {
+  const daily = writeDailyCard({root, date, evidence, policy, suffix});
+  const ops = writeOpsCard({root, date, evidence, policy, suffix, triage});
+  return {daily, ops, cards: [daily, ops]};
+}
+
 function main(argv = process.argv.slice(2)) {
   const get = (flag) => {
     const index = argv.indexOf(flag);
@@ -229,20 +341,20 @@ function main(argv = process.argv.slice(2)) {
   const suffix = get('--suffix') ? Number(get('--suffix')) : 1;
   try {
     const evidence = collectEvidence(root);
-    const card = buildDailyCard({date, evidence, suffix});
     if (dryRun) {
-      process.stdout.write(JSON.stringify({status: 'dry_run', date, path: cardPath(date, suffix), card}, null, 1) + '\n');
+      const daily = buildDailyCard({date, evidence, suffix});
+      const ops = buildOpsCard({date, evidence, suffix});
+      process.stdout.write(JSON.stringify({status: 'dry_run', date, cards: [{path: cardPath(date, suffix), card: daily}, {path: opsCardPath(date, suffix), card: ops}]}, null, 1) + '\n');
       return 0;
     }
-    const result = writeDailyCard({root, date, evidence, suffix});
-    const different = result.status === 'already_exists_different';
+    const result = writeDailyCards({root, date, evidence, suffix});
     process.stdout.write(JSON.stringify({
-      status: result.status,
+      status: 'written',
       date,
-      path: result.path,
-      ...(different ? {warning: 'existing daily card preserved; queue will consume the existing card'} : {}),
+      cards: result.cards.map((item) => ({path: item.path, status: item.status})),
+      warnings: result.cards.filter((item) => item.status === 'already_exists_different').map((item) => `${item.path}:existing_card_preserved`),
     }, null, 1) + '\n');
-    // 同一天已有别的流程写入的卡时不覆盖，但也不阻断消费：队列读取既有卡并按内容执行。
+    // 同一天已有卡时不覆盖，但也不阻断消费：补派脚本会按首次新增提交补发未消费的卡。
     return 0;
   } catch (error) {
     process.stderr.write(`[dispatch-daily-card] ${String(error?.message || error).slice(0, 300)}\n`);

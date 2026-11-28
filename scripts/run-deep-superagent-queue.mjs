@@ -49,8 +49,11 @@ export function trustedQueueContext(env=process.env,{sourceCommit=env.GITHUB_SHA
 
 // workflow_dispatch 路径只接受「一次提交只新增一张每日卡」的 diff，防止把人工 dispatch
 // 变成绕过 push 校验的通用入口。返回 true 表示可用，false 表示路径/状态不合规。
+// 每日提交可以同时包含两张卡：DAILY 是分诊卡，OPS 是 Deep 执行卡。
+// 两者都必须是当日卡的固定命名，仍然不允许把任意文件混进派发提交。
+export const DAILY_CARD_ONLY_RE=/^ops\/deep-superagent\/tasks\/DEEP-SUPERAGENT-\d{8}-(?:DAILY|OPS)-[1-9]\.json$/;
 export function isDailyCardOnlyChange(names){
- return Array.isArray(names)&&names.length>0&&names.every(name=>typeof name==='string'&&/^ops\/deep-superagent\/tasks\/DEEP-SUPERAGENT-\d{8}-DAILY-[1-9]\.json$/.test(name));
+ return Array.isArray(names)&&names.length>0&&names.every(name=>typeof name==='string'&&DAILY_CARD_ONLY_RE.test(name));
 }
 
 // Task #471：Issue 桥用同一条受信路径（卡提交 + workflow_dispatch），因此手动派发

@@ -5,13 +5,18 @@ import os from 'node:os';
 import path from 'node:path';
 import {analyzeCardPrompt} from '../check-card-contract.mjs';
 import {checkCard, loadPolicy} from '../dispatch-seat-policy.mjs';
-import {normalizeTaskCard} from '../run-deep-superagent-queue.mjs';
+import {normalizeTaskCard, parseTaskCard} from '../run-deep-superagent-queue.mjs';
+import {fiduciaryInstructionHit, normalizeAutonomy} from '../deep-autonomy.mjs';
 import {
   DATE_RE,
   buildDailyCard,
+  buildOpsCard,
   cardPath,
   collectEvidence,
+  opsCardPath,
+  selectOpsRepoRead,
   writeDailyCard,
+  writeDailyCards,
 } from '../dispatch-daily-card.mjs';
 
 const policy = loadPolicy();
@@ -182,4 +187,77 @@ test('带 seats 但不带 importance 的卡在队列入口被 fails closed 拒�
   const broken = {...card};
   delete broken.importance;
   assert.throws(() => normalizeTaskCard(broken), /dispatch_seat_policy_violation/);
+});
+
+test('每日执行卡通过政策/合同/队列规范，并带可执行 autonomy', () => {
+  const card = buildOpsCard({
+    date: '2026-11-27',
+    evidence: evidence(),
+    policy,
+    repoRead: ['knowledge/results/deep-superagent/backlog/latest.json'],
+  });
+  assert.equal(card.task_id, 'DEEP-SUPERAGENT-20261127-OPS-1');
+  assert.equal(card.package_id, 'LTZZZ-DEEP-OPS-20261127-1');
+  assert.equal(card.importance, 'high');
+  assert.deepEqual(card.seats.map((seat) => seat.seat), ['deep', 'claude-relay', 'gpt-relay']);
+  assert.deepEqual(checkCard(policy, card), []);
+  assert.equal(analyzeCardPrompt(card.prompt).mixed, false);
+  assert.deepEqual(card.autonomy, {
+    mode: 'auto',
+    repo_read: ['knowledge/results/deep-superagent/backlog/latest.json'],
+    code_change: true,
+    deploy: {workflow: 'deep-superagent.yml'},
+  });
+  assert.equal(fiduciaryInstructionHit(card.prompt).hit, false);
+  const parsed = parseTaskCard(card);
+  assert.equal(parsed.job.task_id, card.task_id);
+  assert.equal(parsed.autonomy.mode, 'auto');
+  assert.equal(parsed.autonomy.code_change, true);
+  assert.deepEqual(Object.keys(parsed.job).sort(), ['data_classification', 'package_id', 'platform', 'prompt', 'task_id']);
+});
+
+test('执行卡要求中转席参与，但不在卡面写保留家族指令', () => {
+  const card = buildOpsCard({date: '2026-11-27', evidence: evidence(), policy, repoRead: []});
+  assert.match(card.prompt, /claude-relay 与 gpt-relay/);
+  assert.match(card.prompt, /不得自证 provider\/model/);
+  assert.match(card.prompt, /escalate_to=gpt/);
+  // 边界句以“不得”开头，资金域扫描会整句剔除；模型输出仍按原文严格扫描。
+  assert.equal(fiduciaryInstructionHit(card.prompt).hit, false);
+});
+
+test('repo_read 只选受信桥接层能读且总量在预算内的文件', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deep-ops-read-'));
+  try {
+    const dir = path.join(root, 'knowledge/results/deep-superagent/backlog');
+    fs.mkdirSync(dir, {recursive: true});
+    fs.writeFileSync(path.join(dir, 'latest.json'), 'x'.repeat(50 * 1024));
+    fs.writeFileSync(path.join(dir, 'summary.json'), 'x'.repeat(5 * 1024));
+    assert.deepEqual(selectOpsRepoRead(root), [
+      'knowledge/results/deep-superagent/backlog/latest.json',
+      'knowledge/results/deep-superagent/backlog/summary.json',
+    ]);
+    fs.writeFileSync(path.join(dir, 'latest.json'), 'x'.repeat(59 * 1024));
+    assert.deepEqual(selectOpsRepoRead(root), ['knowledge/results/deep-superagent/backlog/latest.json']);
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+  }
+});
+
+test('同日一次写入分诊卡与执行卡，重复运行保持幂等', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deep-daily-cards-'));
+  try {
+    const triage = {summary: {totals: {triaged_cases: 275, reserved_family_escalations: 0}, oldest: [], mail: {sampled: 120}}};
+    const first = writeDailyCards({root, date: '2026-11-27', evidence: evidence(), policy, triage});
+    assert.deepEqual(first.cards.map((item) => item.status), ['created', 'created']);
+    assert.ok(fs.existsSync(path.join(root, cardPath('2026-11-27'))));
+    assert.ok(fs.existsSync(path.join(root, opsCardPath('2026-11-27'))));
+    const second = writeDailyCards({root, date: '2026-11-27', evidence: evidence(), policy, triage});
+    assert.deepEqual(second.cards.map((item) => item.status), ['already_exists', 'already_exists']);
+  } finally {
+    fs.rmSync(root, {recursive: true, force: true});
+  }
+});
+
+test('执行卡的 autonomy 规范化后仍拒绝保留家族写路径', () => {
+  assert.throws(() => normalizeAutonomy({mode: 'auto', repo_read: ['.env']}), /denied_repo_read_path/);
 });
