@@ -11,6 +11,7 @@ import hashlib
 import imaplib
 import json
 import os
+import poplib
 import re
 import ssl
 import sys
@@ -123,6 +124,33 @@ def fetch_headers(conn, uids):
     return out
 
 
+def pop3_headers(conn, ids):
+    out = []
+    for mid in ids:
+        try:
+            _resp, lines, _octets = conn.top(mid, 0)
+        except Exception:
+            continue
+        msg = email.message_from_bytes(b"\r\n".join(lines))
+        out.append({
+            "uid": str(mid),
+            "from": decode_header_value(msg.get("From")),
+            "subject": decode_header_value(msg.get("Subject")),
+            "date": decode_header_value(msg.get("Date")),
+            "message_id": decode_header_value(msg.get("Message-Id")),
+        })
+    return out
+
+
+def pop3_body(conn, uid):
+    try:
+        _resp, lines, _octets = conn.retr(str(uid))
+    except Exception:
+        return "", ""
+    raw = b"\r\n".join(lines)
+    return message_text(raw), body_sha256(raw)
+
+
 def fetch_body(conn, uid):
     typ, data = conn.fetch(str(uid), "(BODY.PEEK[])")
     if typ != "OK" or not data or not isinstance(data[0], tuple):
@@ -181,6 +209,7 @@ def main():
     ap.add_argument("--read-max", type=int, default=12)
     ap.add_argument("--out", required=True)
     ap.add_argument("--compose-out", default="")
+    ap.add_argument("--transport", choices=["imap", "pop3"], default="imap")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     args = ap.parse_args()
 
@@ -210,20 +239,42 @@ def main():
         _write(args.out, meta, [])
         return 0
 
-    conn = imaplib.IMAP4_SSL(host, 993, ssl_context=ssl.create_default_context(), timeout=30)
-    try:
-        conn.login(address, password)
-    except Exception as exc:
-        meta.update(status="blocked_imap_auth", detail=type(exc).__name__)
-        _write(args.out, meta, [])
-        return 0
-    conn.select(folder, readonly=True)
+    if args.transport == "pop3":
+        meta["mode"] = "upstream_deep_readonly_pop3"
+        meta["id_kind"] = "pop3_message_number"
+        pop_host = os.environ.get("MAIL_POP3_HOST", "pop.126.com")
+        pop_port = int(os.environ.get("MAIL_POP3_PORT", "995"))
+        try:
+            conn = poplib.POP3_SSL(pop_host, pop_port, timeout=30, context=ssl.create_default_context())
+            conn.user(address)
+            conn.pass_(password)
+        except Exception as exc:
+            meta.update(status="blocked_pop3_auth", detail=type(exc).__name__)
+            _write(args.out, meta, [])
+            return 0
+        total = len(conn.list()[1])
+        meta["messages_total"] = total
+        ids = [str(i) for i in range(1, total + 1)][-args.limit:]
+        headers = pop3_headers(conn, ids)
+        reader = lambda uid: pop3_body(conn, uid)
+        close = conn.quit
+    else:
+        conn = imaplib.IMAP4_SSL(host, 993, ssl_context=ssl.create_default_context(), timeout=30)
+        try:
+            conn.login(address, password)
+        except Exception as exc:
+            meta.update(status="blocked_imap_auth", detail=type(exc).__name__)
+            _write(args.out, meta, [])
+            return 0
+        conn.select(folder, readonly=True)
 
-    since = __import__("datetime").datetime.utcnow() - __import__("datetime").timedelta(days=args.days)
-    typ, data = conn.search(None, f'(SINCE {since.strftime("%d-%b-%Y")})')
-    raw_ids = data[0].split() if typ == "OK" and data and data[0] else []
-    uids = [x.decode() if isinstance(x, bytes) else str(x) for x in raw_ids][-args.limit:]
-    headers = fetch_headers(conn, uids)
+        since = __import__("datetime").datetime.utcnow() - __import__("datetime").timedelta(days=args.days)
+        typ, data = conn.search(None, f'(SINCE {since.strftime("%d-%b-%Y")})')
+        raw_ids = data[0].split() if typ == "OK" and data and data[0] else []
+        uids = [x.decode() if isinstance(x, bytes) else str(x) for x in raw_ids][-args.limit:]
+        headers = fetch_headers(conn, uids)
+        reader = lambda uid: fetch_body(conn, uid)
+        close = conn.logout
 
     calls = []
     bodies = {}
@@ -241,7 +292,7 @@ def main():
         for uid in [str(u) for u in picked][:args.read_max]:
             if uid not in allowed:
                 continue
-            body, digest = fetch_body(conn, uid)
+            body, digest = reader(uid)
             bodies[uid] = body
             hashes[uid] = digest
         try:
@@ -266,7 +317,7 @@ def main():
             meta["compose_error"] = type(exc).__name__
 
     try:
-        conn.logout()
+        close()
     except Exception:
         pass
 
