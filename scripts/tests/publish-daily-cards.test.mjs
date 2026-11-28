@@ -65,6 +65,15 @@ test('分流单与卡分两次提交，卡提交只含两张卡，推送后按�
     const again = await publishDailyCards({root, date: '2026-11-27', suffix: 1, env: {}});
     assert.equal(again.commits.brief.status, 'unchanged');
     assert.equal(again.commits.card.status, 'unchanged');
+
+    // 同一 run 里邮件采集会留下未提交的公开证据；rebase 必须 autostash，
+    // 不能把“工作区不干净”误判成并发冲突（run 46093726815）。
+    fs.writeFileSync(path.join(root, 'README.md'), 'dirty intake output\n');
+    const dirty = await publishDailyCards({root, date: '2026-11-28', suffix: 1, env: {}});
+    assert.equal(dirty.commits.brief.status, 'pushed');
+    assert.equal(dirty.commits.card.status, 'pushed');
+    assert.match(git(root, ['status', '--porcelain']), /M README\.md/);
+    assert.doesNotMatch(git(origin, ['show', 'main:README.md']), /dirty intake output/);
   } finally {
     fs.rmSync(root, {recursive: true, force: true});
     fs.rmSync(origin, {recursive: true, force: true});
