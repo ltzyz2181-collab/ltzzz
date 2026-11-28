@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {normalizeJob,sha256,REVISION} from '../../workers/deep-superagent/index.js';
-import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,isIssueCardOnlyChange,isSingleNewDispatchCard,validateJob,runQueueCard,runQueue} from '../run-deep-superagent-queue.mjs';
+import {assertCardContract,ORIGIN,MAX_WAIT_MS,MAX_NEW_CARDS,MAX_NEW_CARDS_PER_KIND,selectQueueCards,normalizeDecision,decisionPayload,publicJob,redactKnownSecrets,DeepQueueLatchStore,trustedQueueContext,isDailyCardOnlyChange,isIssueCardOnlyChange,isSingleNewDispatchCard,validateJob,runQueueCard,runQueue,stripDispatchMetadata,taskDispatchMetadata} from '../run-deep-superagent-queue.mjs';
 
 const SOURCE='a'.repeat(40),RUNTIME='b'.repeat(40),TOKEN='mock-only-service-identity';
 test('queue preserves truncation and bounded request options without provider-attestation claims or extra fields',()=>{
@@ -319,4 +319,13 @@ test('issue bridge cards use the same single-new-card dispatch window as daily c
   ]) {
     assert.equal(isSingleNewDispatchCard(bad), false, JSON.stringify(bad));
   }
+});
+
+test('source_task_ids 是桥接元数据：不进 worker 请求体，回执保留原单号（run 46098445715）',()=>{
+ const body={task_id:'DEEP-SUPERAGENT-20261128-ISSUE-640-R3',package_id:'LTZZZ-DEEP-ISSUE-640-20261128-R3',prompt:'p',data_classification:'public_distributable',platform:'internal',importance:'medium',seats:[{seat:'deep',role:'primary_executor',decision_authority:false}],source_task_ids:['LTZZZ-RELAY-SKILL-ROUTING-20261124-01']};
+ const stripped=stripDispatchMetadata(body);
+ assert.equal('source_task_ids' in stripped,false);
+ assert.deepEqual(Object.keys(normalizeJob(stripped)).sort(),['data_classification','package_id','platform','prompt','task_id']);
+ assert.deepEqual(taskDispatchMetadata(body),{importance:'medium',seats:[{seat:'deep',role:'primary_executor',decision_authority:false}],source_task_ids:['LTZZZ-RELAY-SKILL-ROUTING-20261124-01']});
+ assert.throws(()=>taskDispatchMetadata({...body,source_task_ids:['bad id']}),/invalid_source_task_ids/);
 });
