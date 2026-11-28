@@ -14,6 +14,7 @@ import {
   readPostMergeRuns,
   fiduciaryHit,
   fiduciaryInstructionHit,
+  fiduciaryOutputHit,
   normalizeAutonomy,
   readRepoContext,
   repoContextBudget,
@@ -319,6 +320,26 @@ test('executeAutonomy：Issue 排除句不再让工程卡 fail-closed，输出�
   });
   assert.equal(outputHit.status, 'blocked_fiduciary');
   assert.equal(outputHit.needs_gpt_decision, true);
+});
+
+test('fiduciaryOutputHit：工程文件块里声明保留家族不算执行，评审说明不拦（#640 R4）', () => {
+  const r4 = JSON.stringify({
+    status: 'completed',
+    needs_gpt_decision: true,
+    reason: 'Reserved-family list omits wallet and private-key families required by the five-family rule.',
+    text: "<<<FILE:scripts/dispatch-issue-card.mjs>>>\nconst RESERVED_FAMILIES = ['fund', 'payment', 'refund', 'signature', 'safe_multisig'];\n<<<END>>>",
+  });
+  assert.equal(fiduciaryOutputHit([{text: r4}]).hit, false);
+  assert.equal(fiduciaryOutputHit([{text: "<<<FILE:scripts/x.mjs>>>\n// refund 与 wallet 只是词表\n<<<END>>>"}]).hit, false);
+  // 文件块之外的行动文本仍按原文扫描。
+  assert.equal(fiduciaryOutputHit([{text: '顺便处理 payment 退款'}]).hit, true);
+  // 敏感路径文件块仍严格扫描。
+  assert.equal(fiduciaryOutputHit([{text: "<<<FILE:wallet/transfer.mjs>>>\nconst mode = 'payment';\n<<<END>>>"}]).hit, true);
+  // 普通工程文件块里的真实动作 API 与链上地址仍拦截。
+  assert.equal(fiduciaryOutputHit([{text: "<<<FILE:scripts/x.mjs>>>\nawait sendTransaction({to});\n<<<END>>>"}]).hit, true);
+  assert.equal(fiduciaryOutputHit([{text: "<<<FILE:scripts/x.mjs>>>\nconst to = '0x1111111111111111111111111111111111111111';\n<<<END>>>"}]).hit, true);
+  // 没有可执行字段的 JSON 输出回退为原文扫描，避免把说明字段当免检通道。
+  assert.equal(fiduciaryOutputHit([{text: '{"reason":"transfer funds"}'}]).hit, true);
 });
 
 test('executeAutonomy：code_change 无文件块时拒绝，不碰 git', async () => {

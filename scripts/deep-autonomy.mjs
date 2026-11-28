@@ -276,6 +276,54 @@ export function fiduciaryInstructionHit(prompt = '') {
   return fiduciaryHit({prompt: kept.join('\n')});
 }
 
+// 模型输出里可执行的部分只有显式文件块（会落盘并开 PR）和结构化 actions；
+// 评审说明里提到保留家族（例如“Reserved-family list omits wallet…”）不是执行指令。
+// 因此：普通工程文件块只拦真实动作（交易/签名 API、密钥赋值、链上地址），
+// 敏感路径（wallet/treasury/escrow/contracts、凭据等）文件块仍按原文严格扫描；
+// 文件块之外的自由文本也按原文扫描，避免把“顺便处理 payment 退款”当说明放过。
+// 2026-11-28 run 46098944435（#640 R4）：模型在 scripts/dispatch-issue-card.mjs
+// 里声明 RESERVED_FAMILIES 数组即被 blocked_fiduciary，整卡白跑。
+const OUTPUT_FILE_BLOCK_RE = /<<<FILE:([^>\n]+)>>>\r?\n([\s\S]*?)\r?\n<<<END>>>/g;
+const EXECUTABLE_FIDUCIARY_RE = /0x[0-9a-fA-F]{40}|\b(?:sendTransaction|sendRawTransaction|eth_sendTransaction|signTransaction|signMessage|personal_sign|execTransaction|transferOwnership)\b|(?:privateKey|mnemonic|seedPhrase)\s*[:=]/i;
+
+function outputActionText(output) {
+  const raw = String(output?.text || '');
+  if (!raw.trim().startsWith('{')) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return raw;
+    const parts = [];
+    if (typeof parsed.text === 'string') parts.push(parsed.text);
+    if (Array.isArray(parsed.actions)) {
+      parts.push(parsed.actions.map((action) => (typeof action === 'string' ? action : JSON.stringify(action))).join('\n'));
+    }
+    return parts.length ? parts.join('\n') : raw;
+  } catch {
+    return raw;
+  }
+}
+
+export function fiduciaryOutputHit(outputs = []) {
+  const actionText = outputs.map(outputActionText).join('\n');
+  let prose = actionText;
+  let sensitive = '';
+  let executable = '';
+  for (const match of actionText.matchAll(OUTPUT_FILE_BLOCK_RE)) {
+    const writePath = match[1].trim();
+    let denied = 'invalid_path';
+    try { denied = deniedWritePath(writePath); } catch { denied = 'invalid_path'; }
+    prose = prose.replace(match[0], '\n');
+    if (denied) sensitive += `\n${match[2]}`;
+    else executable += `\n${match[2]}`;
+  }
+  const proseHit = fiduciaryInstructionHit(prose);
+  if (proseHit.hit) return proseHit;
+  const sensitiveHit = fiduciaryHit({prompt: sensitive});
+  if (sensitiveHit.hit) return sensitiveHit;
+  const match = executable.match(EXECUTABLE_FIDUCIARY_RE);
+  return match ? {hit: true, token: match[0]} : {hit: false, token: null};
+}
+
 // 只接受显式文件块：
 // <<<FILE:path>>>
 // ...content...
@@ -502,7 +550,7 @@ export async function executeAutonomy({
   // 只扫卡面指令与模型输出；注入的仓库读取证据按数据处理。
   // 卡面指令先剔除范围排除句（不是资金指令），模型输出保持原样严格扫描。
   const promptHit = fiduciaryInstructionHit(stripRepoEvidence(job?.prompt));
-  const outputHit = fiduciaryHit({outputs});
+  const outputHit = fiduciaryOutputHit(outputs);
   const fiduciary = promptHit.hit ? promptHit : outputHit;
   if (fiduciary.hit) {
     return {status: 'blocked_fiduciary', revision: AUTONOMY_REVISION, token: fiduciary.token, actions: [], needs_gpt_decision: true};
