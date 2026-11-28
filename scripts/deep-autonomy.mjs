@@ -243,6 +243,17 @@ export function fiduciaryInstructionHit(prompt = '') {
 // duplicate_file 整单被拒、白跑真实模型请求，故改为确定性“后写覆盖先写”，
 // 并把被覆盖的次数记进 duplicates（非枚举，不参与 deepEqual 与写入）供回执审计。
 // 最终内容仍要过 validateWrites（路径/大小/冲突）与 syntaxGate，闸门没有放松。
+// 2026-11-26 run 45891879437（Issue #640）实测：模型把整份代码包在 ```javascript ...
+// ``` 里再放进 FILE 块，syntaxGate 以 markdown_fence_in_code_file 整卡拒绝，白跑一次
+// 真实模型请求。若整块内容就是单个围栏代码块，去掉首尾两行围栏是确定性的传输噪声，
+// 不改变代码本身；围栏只出现在中间或非代码文件时仍按原文保留，闸门照常校验。
+const FENCE_WRAPPED_FILE = /^\s*```[^\n]*\r?\n([\s\S]*?)\r?\n```\s*$/;
+const unwrapWholeFileFence = (writePath, content) => {
+  if (!CODE_EXT.test(writePath)) return content;
+  const match = FENCE_WRAPPED_FILE.exec(content);
+  return match ? match[1] : content;
+};
+
 export function extractFileWrites(text) {
   const source = String(text || '');
   const byPath = new Map();
@@ -252,7 +263,7 @@ export function extractFileWrites(text) {
   let match;
   while ((match = re.exec(source))) {
     const writePath = match[1].trim();
-    const content = match[2];
+    const content = unwrapWholeFileFence(writePath, match[2]);
     if (byPath.has(writePath)) duplicates.push({path: writePath, identical: byPath.get(writePath) === content});
     else order.push(writePath);
     byPath.set(writePath, content);
