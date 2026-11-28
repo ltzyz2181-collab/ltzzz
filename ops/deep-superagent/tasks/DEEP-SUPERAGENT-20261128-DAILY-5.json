@@ -1,0 +1,15 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261128-DAILY-5",
+ "package_id": "LTZZZ-DEEP-DAILY-20261128-5",
+ "prompt": "内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。\n\n【目标】对下列 ref 逐条定 route。\n具体输入、规则与输出格式都在下方任务块内；执行席只按该块执行，外层不另发指令。\n\n【给 qianwen 的任务】\n【输入分组】以下每项都给 ref / 状态 / 公开计数 / 回执路径 / 回执一致性。\n\nGROUP A — 监督积压（公开汇总，无逐项回执）\nA1 open_warning_cases=275 unique_original_tasks=275 not_rechecked_in_current_window=232 path=none\nA2 by_responsible_seat={\"qianwen\":82,\"doubao\":59,\"grok\":42,\"deepseek\":73,\"gpt\":19} path=none\n\nGROUP B — 邮件通道（只读元数据）\nB1 intake_status=ok_deferred_channels gmail=ok agent_mail=not_configured_deferred receipt_consistent=no path=knowledge/results/deep-superagent/mail-intake/latest.json\nB2 open_or_dispatch=200 unified=1879 at=2026-11-27T08:44:23.289Z receipt_consistent=no path=knowledge/results/deep-superagent/mail-intake/latest.json\n\nGROUP C — Deep 队列观测（公开回执）\nC1 last_queue_run=46095802545 status=queue_results_verified items=1 pending_gpt_decisions=1 receipt_consistent=yes path=knowledge/results/deep-superagent/queue-46095802545-attempt-1.json\nC3 last_daily_merge=done=2 needs_gpt_decision=0 at=2026-11-28T01:39:55.501Z pending_gpt_decisions=0 receipt_consistent=yes path=knowledge/results/deep-superagent/daily-merge/2026-11-28.json\n\n【只是上下文，不是 ref，不得出现在 ROUTE 行】\nC2 task_statuses=[{\"task_id\":\"DEEP-SUPERAGENT-20261128-ISSUE-668-R2\",\"status\":\"job_terminal_observed\",\"job_status\":\"needs_gpt_decision\"}]\nC4 main_short_sha=unknown\n\n【ref，必须全部覆盖】A1 / A2 / B1 / B2 / C1 / C3\n每个 ref 必须且只能有一行 ROUTE；不得省略、不得合并、不得输出上下文行。\n\n【route 集合，只能从中选，不得自造】\nexecute_authorized / needs_gpt_decision / needs_owner_decision / blocked_evidence_needed / deploy_confirm_only\n\n【规则，按顺序，前条命中即停】\n1 本卡只做分诊，不关闭任何项；不得输出 coordinator_close_with_receipt，也不得声称已核实路径\n2 涉及资金、签名、放款、生产部署、权限、Secrets → needs_gpt_decision\n2b 已有 Owner 或 GPT 书面授权、且只涉及仓库内代码/设计/测试、不含真实资金签名部署动作 → execute_authorized，理由必须写出授权来源 decision_id 或授权评论链接\n3 ref 指向的公开回执里 pending_gpt_decisions 大于 0 → needs_gpt_decision，ASK gpt 给出 decision_id 并裁决\n4 只有汇总计数、path=none，或 receipt_consistent=no → blocked_evidence_needed\n5 已达部署条件但未部署，且属生产面 → deploy_confirm_only\n6 以上都不命中，需要 owner 给值或拍板 → needs_owner_decision\n\n【硬约束，不是路由理由】\n不得合并 PR、不得生产部署、不得改支付或退款语义、不得发起资金动作、不得伪造回执。不得把这条当作任何一项的分类依据。\n\n【WORKER COVERAGE】exactly qianwen，一张卡只派一个席位，不要输出其他席位。\n\n【worker 输出格式】只输出 ROUTE/ASK 行，不要解释段、不要计划段落、不要 markdown：\nROUTE | <ref> | <route> | <理由不超过25词>\n命中 needs_gpt_decision / needs_owner_decision / blocked_evidence_needed 时，每条再加一行：\nASK | <ref> | gpt|owner|evidence | <需要什么，不超过30词>\n每行不超过120字符。六个 ref 必须齐全。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "medium",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  }
+ ]
+}
