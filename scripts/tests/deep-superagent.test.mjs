@@ -272,7 +272,7 @@ test('relay execution seats fail closed until proxy token, allowlisted proxy, mo
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://relay.ltzzz.com/chat/completions',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_path_not_allowlisted');
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY},'gpt'),'relay_model_not_configured');
  // 2026-11-27 收口：旧 workers.dev 主机默认不再放行（境内 DNS 污染，实测 443 closed）。
- assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
+ assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:'https://ltzzz-relay-proxy.ltzyz2181.workers.dev/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_proxy_host_not_allowlisted');
  // 截止 2026-12-31 前，可显式开关临时放行；不设开关就等于永久关闭。
  assert.equal(relaySeatState({...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_ALLOW_RETIRED_HOST:'1',RELAY_PROXY_URL:'https://relay.ltzzz.com/v1',RELAY_MODEL_GPT:'gpt-6.1-sol'},'gpt'),'relay_generation_enabled');
  const on={...keyed,RELAY_ACCEPTANCE_VERIFIED:'1',RELAY_PROXY_URL:PROXY,RELAY_MODEL_GPT:'gpt-6.1-sol',RELAY_MODEL_CLAUDE:'claude-sonnet-4-6'};
