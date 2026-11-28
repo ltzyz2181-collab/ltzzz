@@ -1,8 +1,8 @@
-# LTZZZ 每日报告 · 2026-11-27
+# LTZZZ 每日报告 · 2026-11-28
 
-- 执行 ID：gha-45856815370-attempt-1
+- 执行 ID：gha-46104352620-attempt-1
 - 核心记忆读取：**complete**（6/6 个文件，57949 字节）
-- 完整读后感：[data/reflections/2026-11-27.md](../reflections/2026-11-27.md)
+- 完整读后感：[data/reflections/2026-11-28.md](../reflections/2026-11-28.md)
 
 ## 核心记忆读取审计
 
@@ -21,9 +21,9 @@
 
 | AI | 执行状态 | 交付状态 | 经济状态 | 产出预览 |
 |---|---|---|---|---|
-| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】核心记忆始终坚持把心跳、生成与交付验收分层，杜绝用 200 当交付。 【观】`ltzzz-memory/重要事件.md`“2026-10-22～23”节：ANS 补丁 `accepted=false`、生产修复未完成；本轮 Pul |
-| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】材料只支持“草稿受阻”，不能把结构完整或心跳200升格为验收。 【观】`重要事件.md`“2026-10-22～23”：ANS补丁 `accepted=false`、生产修复未完成；DeepSeek工件亦自报 `accepted= |
-| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】心跳200只证明通道应答，不能宣布模型已生成。 【观】Pulse（材料自标非生成验收）`ran_at=2026-11-26T08:26:35.807Z`，六席 http=200/ok/paused=false。《项目历史》10-1 |
+| deepseek | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】核心记忆坚持把心跳、原生生成与交付验收分层，今日 Pulse 200 只证明代理健康，不证明 ANS 交付。 【观】`ltzzz-memory/重要事件.md`“2026-10-22～23”节：ANS 补丁 `accepted=f |
+| doubao | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】材料只支持“DeepSeek 草稿完整但未验收”，Pulse 200 不能证明监控/奖惩修复。 【观】`重要事件.md`“2026-10-22～23”：ANS 错误补丁 `accepted=false`、生产修复未完成。当日工件亦 |
+| grok | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】心跳200只证明通道应答，不能宣布模型已生成。 【观】Pulse（材料自标非生成验收）`ran_at=2026-11-28T02:43:25.403Z`，六席 http=200/ok/paused=false。《项目历史》10-1 |
 | qianwen | succeeded | pending_review | not_applicable_no_financial_action | 【读后感】本轮材料强调了Pulse 200仅证明通道存活，不能代替生成或交付验收。核心记忆文件严格区分观察、主张、AI解释和验证状态，确保系统自净。 【观】 - `魄.md`条目2/4/5与`识神.md`条目1/4/6均标“待补”多AI交叉 |
 | gpt | not_executed_owner_disabled | not_applicable | not_applicable_no_financial_action | GPT总控在任；停用的仅为原厂OpenAI付费日课，逻辑总控执行另查control回执，不能据此推断余额。 |
 | claude | not_scheduled_external_seat | not_submitted | not_applicable_no_financial_action | Claude独立审计＋规划在任；本栏不安排自动API日课，外部PR及审计单独验收，不代表没有工作或没有写权限。 |

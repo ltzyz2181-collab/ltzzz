@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "accepted": true,
+  "reasons": [
+    "工件结构完整且 finish_reason=stop，含完成标记；输出如实自报 accepted=false、deployed=false、task_acceptance_verified=false，未把候选补丁或心跳200写成已验收。",
+    "其结论与核心记忆中 ANS 补丁 accepted=false、生产修复未完成的边界一致，并明确仍需隔离测试与回执哈希复算。"
+  ],
+  "unverified": [
+    "未使用工具复算 artifact_sha256 或读取 source_commit 对应文件。",
+    "未执行 node --test scripts/tests/ans-cycle.test.mjs，无法确认测试是否全绿。",
+    "未核验 DeepSeek 候选断言已写入代码、生成 reconcile 回执或部署；Pulse 快照不包含 provider/model/finish_reason/completion_marker。"
+  ],
+  "scope": "engineering_draft_only",
+  "artifact_sha256": "1f8cc293dc1f9839c4ff1e5c109786d69ce3f9152a8362f908820b937e730104",
+  "task_id": "DAILY-2026-11-28-doubao",
+  "date": "2026-11-28",
+  "run_key": "46104352620:1",
+  "source_commit": "f701ba79f60e3d1b863cc752871a7a248bd56fe2",
+  "actual_provider": "qianwen",
+  "actual_model": "qwen-max",
+  "reviewer_task_id": "DAILY-2026-11-28-qianwen",
+  "reviewer_artifact_path": "knowledge/results/daily-board/artifacts/2026-11-28-qianwen-7892e14779fa9d20f894c60d2f805aedc2f08ecfc7c8f8dc4fdf9acc53f2457d.json",
+  "reviewer_artifact_sha256": "7892e14779fa9d20f894c60d2f805aedc2f08ecfc7c8f8dc4fdf9acc53f2457d",
+  "deployed": false,
+  "paid": false,
+  "tx_hash": null
+}
