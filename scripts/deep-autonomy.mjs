@@ -48,7 +48,12 @@ const uniqueAddresses = (list) => {
 const WRITE_LIMIT_FILES = 6;
 const WRITE_LIMIT_BYTES = 400 * 1024;
 const REPO_READ_LIMIT_FILES = 8;
-const REPO_READ_LIMIT_BYTES = 64 * 1024;
+// 读入的证据会追加到发给 deep-superagent worker 的 prompt 末尾；worker 的真实上限是
+// 请求体 32,768 字节、prompt 20,000 字符（workers/deep-superagent/index.js）。
+// 曾经的 64KB 预算让 53KB 的 latest.json 也通过本地检查，POST 后才被 worker 拒绝
+// （run 46096350431 → invalid_prompt），整张 OPS 卡不执行。这里按最紧的通道预算
+// 截断，超额文件写 size_budget_exceeded 审计而不是让请求失败。
+const REPO_READ_LIMIT_BYTES = 16 * 1024;
 // GITHUB_TOKEN 创建的 PR 不会触发 pull_request 工作流（GitHub 抑制递归事件），
 // 所以代码动作不能假设“PR 已开就有 CI”。桥接层显式 dispatch 一个独立验证工作流，
 // 等它真实跑完且成功后才合并；没有 CI 或 CI 失败都保持未合并。

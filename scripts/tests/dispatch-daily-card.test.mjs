@@ -243,7 +243,10 @@ test('执行卡把分流单里的真实任务 ID 带进卡面，并要求按注�
   const card = buildOpsCard({date: '2026-11-27', evidence: evidence(), policy, repoRead: [], triage});
   assert.match(card.prompt, /QIANWEN-RETURN-2026-10-16/);
   assert.match(card.prompt, /【仓库读取证据】/);
-  assert.match(card.prompt, /唯一权威/);
+  assert.match(card.prompt, /summary\.json/);
+  // latest.json 是完整记录，但超过注入预算时不会进 prompt；卡面不能谎称它已被注入。
+  assert.match(card.prompt, /size_budget_exceeded/);
+  assert.doesNotMatch(card.prompt, /latest\.json（逐条分流）和 summary\.json/);
   assert.match(card.prompt, /blocked_bridge_evidence_missing/);
   // 不允许用 T001… 占位 ID 冒充逐项分流。
   assert.doesNotMatch(card.prompt, /T001/);
