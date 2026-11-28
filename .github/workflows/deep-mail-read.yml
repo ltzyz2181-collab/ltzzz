@@ -1,0 +1,52 @@
+name: Deep mail read (upstream model, read-only IMAP)
+
+# owner 2026-11-27 决定：把 IMAP 只读凭据交给原厂 Deep，由它自己决定读哪些邮件并做分诊。
+# 只读：BODY.PEEK，不标已读、不删除、不移动；本工作流没有发信能力。
+# 每次固定 2 次模型调用（选信 + 分诊），成本远低于单次 $0.05 上限。
+
+on:
+  schedule:
+    - cron: '25 22 * * *'   # 06:25 Asia/Shanghai
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-deep-mail-read
+  cancel-in-progress: false
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s scripts/tests -p "test_deep_mail_agent.py" -v
+
+      - name: Read and triage (upstream DeepSeek drives the IMAP reads)
+        env:
+          MAIL_ADDRESS: ${{ secrets.QQ_IMAP_USER }}
+          MAIL_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD }}
+          MAIL_IMAP_HOST: imap.qq.com
+          MAIL_IMAP_FOLDER: INBOX
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          OUT="knowledge/results/deep-superagent/mail-imap-deep-$(TZ=Asia/Shanghai date +%F).json"
+          python3 scripts/deep-mail-agent.py --days 1 --limit 20 --read-max 10 --out "$OUT"
+
+      - name: Persist receipt
+        run: |
+          git config user.name "ltzzz-deep-mail"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/deep-superagent/mail-imap-deep-*.json
+          if git diff --staged --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "deep-mail: 原厂 Deep 只读分诊 $(TZ=Asia/Shanghai date +%F' '%H:%M)"
+          node tools/push-receipt-commit.mjs
