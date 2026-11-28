@@ -215,10 +215,15 @@ const CLAUSE_SPLIT_RE = /[，,；;。]|\.\s+/;
 // 出现地址、金额或“转给/支付给”等对象时仍按指令扫描，否定词不能遮住真实动作。
 const CLASSIFICATION_CLAUSE_RE = /不等于|不是|并非|不构成|不代表|负向样例|反例|测试样例|negative\s+sample/i;
 const EXECUTION_TARGET_RE = /0x[0-9a-fA-F]{40}|\d+(?:\.\d+)?\s*(?:usdc|usdt|eth|btc|usd|元|美元|人民币)|转给|打给|支付给|发送给|转入|转至|提到|withdraw\s+to|send\s+to|transfer\s+to/i;
+// 卡面里由本仓库生成器写入的分流数据行（- backlog_oldest=... / - backlog_by_seat=...）
+// 是待核对的公开任务引用，不是执行指令。任务 ID/stage 可能包含 refund/wallet 等词，
+// 但整行是 JSON 数据；模型输出仍按原文严格扫描，不受此豁免影响（OPS-3 误拦截）。
+const TRUSTED_TRIAGE_LINE_RE = /^\s*-\s*(?:backlog_oldest|backlog_by_seat)\s*=/i;
 
 export function fiduciaryInstructionHit(prompt = '') {
   const kept = [];
   for (const line of String(prompt || '').split('\n')) {
+    if (TRUSTED_TRIAGE_LINE_RE.test(line)) continue;
     const startsNegated = NEGATION_LEAD_RE.test(line);
     if (startsNegated && !CONTRAST_RE.test(line)) continue;
     for (const clause of line.split(CLAUSE_SPLIT_RE)) {
