@@ -54,6 +54,38 @@ const REPO_READ_LIMIT_FILES = 8;
 // （run 46096350431 → invalid_prompt），整张 OPS 卡不执行。这里按最紧的通道预算
 // 截断，超额文件写 size_budget_exceeded 审计而不是让请求失败。
 const REPO_READ_LIMIT_BYTES = 16 * 1024;
+// 固定 16KB 只覆盖“证据本身”，没算卡面 prompt。Issue #640 的卡面已有 9,852 字符，
+// 再加 13,726 字符证据 = 23,578 字符，POST 后 worker 拒绝（run 46097201873 →
+// invalid_prompt）。证据预算必须按剩余空间计算；这两个软上限留出 JSON 信封与
+// 文件分隔符的余量。
+const PROMPT_SOFT_LIMIT_CHARS = 19000;
+const PROMPT_SOFT_LIMIT_BYTES = 29 * 1024;
+const CONTEXT_HEADER = '\n\n【仓库读取证据（由受信桥接层读取，不是模型自述）】\n';
+const CONTEXT_TRUNCATED_MARKER = '\n…[bridge truncated evidence to fit prompt budget]';
+
+export function repoContextBudget(prompt) {
+  const text = typeof prompt === 'string' ? prompt : '';
+  const chars = PROMPT_SOFT_LIMIT_CHARS - text.length - CONTEXT_HEADER.length - 1024;
+  const bytes = PROMPT_SOFT_LIMIT_BYTES - Buffer.byteLength(text, 'utf8') - Buffer.byteLength(CONTEXT_HEADER, 'utf8') - 2048;
+  return Math.max(0, Math.min(REPO_READ_LIMIT_BYTES, chars, bytes));
+}
+
+function fitContextText(text, prompt) {
+  const charRoom = PROMPT_SOFT_LIMIT_CHARS - prompt.length;
+  const byteRoom = PROMPT_SOFT_LIMIT_BYTES - Buffer.byteLength(prompt, 'utf8');
+  if (charRoom <= 0 || byteRoom <= 0) return {text: '', truncated: true};
+  if (text.length <= charRoom && Buffer.byteLength(text, 'utf8') <= byteRoom) return {text, truncated: false};
+  const markerChars = charRoom - CONTEXT_TRUNCATED_MARKER.length;
+  const markerBytes = byteRoom - Buffer.byteLength(CONTEXT_TRUNCATED_MARKER, 'utf8');
+  if (markerChars <= 0 || markerBytes <= 0) return {text: '', truncated: true};
+  let cut = Math.min(text.length, markerChars);
+  let slice = text.slice(0, cut);
+  while (slice && Buffer.byteLength(slice, 'utf8') > markerBytes) {
+    cut = Math.floor(cut * 0.9);
+    slice = text.slice(0, cut);
+  }
+  return {text: slice ? slice + CONTEXT_TRUNCATED_MARKER : '', truncated: true};
+}
 // GITHUB_TOKEN 创建的 PR 不会触发 pull_request 工作流（GitHub 抑制递归事件），
 // 所以代码动作不能假设“PR 已开就有 CI”。桥接层显式 dispatch 一个独立验证工作流，
 // 等它真实跑完且成功后才合并；没有 CI 或 CI 失败都保持未合并。
@@ -153,7 +185,8 @@ export function taskAutonomyMetadata(body, options = {}) {
 
 // 读取 repo_read 指定的文件。返回 {text, files, skipped}；任何越界/缺失文件只记录，
 // 不阻断整张卡（模型可以看到缺少哪些证据）。
-export function readRepoContext(root, files) {
+export function readRepoContext(root, files, options = {}) {
+  const limitBytes = Number.isFinite(options.limitBytes) ? Math.max(0, options.limitBytes) : REPO_READ_LIMIT_BYTES;
   const parts = [];
   const evidence = [];
   let total = 0;
@@ -170,7 +203,7 @@ export function readRepoContext(root, files) {
       evidence.push({path: file, status: 'not_a_file'});
       continue;
     }
-    if (total + stat.size > REPO_READ_LIMIT_BYTES) {
+    if (total + stat.size > limitBytes) {
       evidence.push({path: file, status: 'size_budget_exceeded', bytes: stat.size});
       continue;
     }
@@ -181,17 +214,20 @@ export function readRepoContext(root, files) {
     evidence.push({path: file, status: 'read', bytes: raw.length, sha256: createHash('sha256').update(raw).digest('hex')});
   }
   return {
-    text: parts.length
-      ? '\n\n【仓库读取证据（由受信桥接层读取，不是模型自述）】\n' + parts.join('\n\n')
-      : '',
+    text: parts.length ? CONTEXT_HEADER + parts.join('\n\n') : '',
     files: evidence,
+    limit_bytes: limitBytes,
     revision: AUTONOMY_REVISION,
   };
 }
 
 export function applyRepoContext(body, repoContext) {
   if (!repoContext?.text) return body;
-  return {...body, prompt: `${body.prompt}${repoContext.text}`};
+  const prompt = typeof body?.prompt === 'string' ? body.prompt : '';
+  const fitted = fitContextText(repoContext.text, prompt);
+  repoContext.truncated = fitted.truncated;
+  if (!fitted.text) return body;
+  return {...body, prompt: `${prompt}${fitted.text}`};
 }
 
 // 仓库读取证据是“参考数据”，不是授权也不是执行指令。它由受信桥接层注入到 prompt 末尾，

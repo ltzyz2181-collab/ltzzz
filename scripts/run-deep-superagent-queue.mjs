@@ -9,7 +9,7 @@ import {normalizeJob,sha256,REVISION} from '../workers/deep-superagent/index.js'
 import {WorkpoolGitHubStore} from './lib/workpool-github.mjs';
 import {analyzeCardPrompt} from './check-card-contract.mjs';
 import {checkCard,loadPolicy} from './dispatch-seat-policy.mjs';
-import {AUTONOMY_REVISION,applyRepoContext,executeAutonomy,normalizeAutonomy,readRepoContext,stripAutonomy,taskAutonomyMetadata} from './deep-autonomy.mjs';
+import {AUTONOMY_REVISION,applyRepoContext,executeAutonomy,normalizeAutonomy,readRepoContext,repoContextBudget,stripAutonomy,taskAutonomyMetadata} from './deep-autonomy.mjs';
 
 export const ORIGIN='https://ltzzz-deep-superagent.ltzyz2181.workers.dev';
 export const MAX_WAIT_MS=480000;
@@ -255,6 +255,8 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
  // 公开审计：记录受信桥接层实际读到的证据文件（路径/状态/字节/哈希），
  // 让“模型说没看到”与“桥接层确实没注入”可以区分（OPS-2 曾无法区分）。
  if(Array.isArray(repoEvidence?.files))outcome.repo_read=repoEvidence.files.map(({path,status,bytes,sha256})=>({path,status,...(bytes===undefined?{}:{bytes}),...(sha256===undefined?{}:{sha256})}));
+ // 证据超出剩余 prompt 预算时只截断注入文本，不改卡面；审计里明确标记，避免把截断当成完整读取。
+ if(repoEvidence?.truncated)outcome.repo_read_truncated=true;
  const route='/v1/jobs/'+card.task_id+'?package_id='+encodeURIComponent(card.package_id);
  const req=(url,options={})=>requestJson(fetcher,url,{token,deadline,clock,...options});
  const observe=job=>{
@@ -381,7 +383,9 @@ export async function main({env=process.env}={}){
    if(card.kind==='task'){
     assertCardContract(body);
     const parsed=parseTaskCard(body,{allowedMailTo:mailAllowlist(env)});
-    const repoContext=parsed.autonomy?.repo_read?.length?readRepoContext(process.cwd(),parsed.autonomy.repo_read):null;
+    // 证据预算按卡面 prompt 的剩余空间算：worker 限制 prompt≤20,000 字符、body≤32,768 字节，
+    // 固定 16KB 证据会与长卡面叠加越界（Issue #640 卡：9,852 + 13,726 字符）。
+    const repoContext=parsed.autonomy?.repo_read?.length?readRepoContext(process.cwd(),parsed.autonomy.repo_read,{limitBytes:repoContextBudget(body.prompt)}):null;
     cards.push({...card,body,autonomy:parsed.autonomy,repo_context:repoContext,card_sha256:createHash('sha256').update(bytes).digest('hex')});
    }else{
     normalizeDecision(body);
