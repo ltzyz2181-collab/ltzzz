@@ -1,102 +1,38 @@
 {
-  "date": "2026-11-28",
-  "assignment": "mail_public_metadata_classification",
-  "states": {
-    "draft": true,
-    "tested": false,
-    "merged": false,
-    "deployed": false
-  },
-  "executed_by": "unknown/unverified",
-  "model": "unknown/unverified",
-  "input_receipts": {
-    "latest.json": {
-      "path": "knowledge/results/deep-superagent/backlog/latest.json",
-      "sha256": "unknown/unverified",
-      "commit": "unknown/unverified",
-      "executor_observed": false
-    },
-    "summary.json": {
-      "path": "knowledge/results/deep-superagent/backlog/summary.json",
-      "sha256": "unknown/unverified",
-      "commit": "unknown/unverified",
-      "executor_observed": false
-    },
-    "mail_public_metadata": {
-      "path": "unknown/unverified",
-      "sha256": "unknown/unverified",
-      "commit": "unknown/unverified",
-      "executor_observed": false
-    }
-  },
-  "source_claims_unverified": {
-    "backlog_open": 275,
-    "unique": 275,
-    "not_rechecked": 232,
-    "triaged": "unknown",
-    "reserved_escalations": 0,
-    "backlog_by_seat": {
-      "qianwen": 82,
-      "doubao": 59,
-      "grok": 42,
-      "deepseek": 73,
-      "gpt": 19
-    },
-    "backlog_oldest": [],
-    "mail_open_or_dispatch": 200,
-    "unified": 1879,
-    "qq_status": "unknown",
-    "gmail_status": "ok",
-    "sampled": "unknown",
-    "last_queue_run": {
-      "id": "46094187838",
-      "status": "queue_results_verified",
-      "items": 1,
-      "pending_gpt_decisions": 1
-    },
-    "last_daily_merge": {
-      "done": 2,
-      "needs_gpt_decision": 0,
-      "pending_gpt_decisions": 0
-    }
-  },
-  "executor_observed_facts": {
-    "per_item_backlog_actions": false,
-    "oldest_20_items": false,
-    "per_item_mail_public_metadata": false,
-    "mail_bodies_read": false,
-    "code_or_doc_fix": false,
-    "verify_or_merge_executed": false
-  },
   "counts": {
-    "mail_items_executor_observed": 0,
-    "mail_merged_to_original_task": 0,
-    "mail_evidence_gap": "source_claim_mail_open_or_dispatch=200_unverified",
-    "has_dispatch_wording_true_observed": 0,
-    "duplicate_dispatch_checked": 0,
-    "new_tickets_opened": 0
+    "mail_open_or_dispatch": 200,
+    "unified": 1879
   },
-  "top_actions": [
-    {
-      "task_id": null,
-      "missing_stage": "public_mail_metadata_readback",
-      "next": "blocked_evidence_needed",
-      "note": "No original task_id available; do not open a new ticket. backlog_oldest source claim is []."
-    }
-  ],
   "mail_actions": [
     {
-      "task_ids": [],
-      "classification": "evidence_gap",
-      "has_dispatch_wording": "unknown/unverified",
-      "duplicate_dispatch_check": "blocked_evidence_needed",
-      "merged_to_original_task": false,
-      "dispatched_not_marked_complete": true,
-      "source_claim_corpus": "mail_open_or_dispatch=200",
-      "note": "Per-item public metadata not executor-observed this turn; cannot merge by task_id or verify duplicate dispatch. Email bodies not read."
+      "task_id": "ANS-2026-10-22-doubao",
+      "action": "reconcile_existing_attempt_before_any_retry"
+    },
+    {
+      "task_id": "AUTO-2026-10-17-health",
+      "action": "attach_independent_review_to_existing_artifact"
+    },
+    {
+      "task_id": "AUTO-2026-10-18-health",
+      "action": "attach_independent_review_to_existing_artifact"
+    },
+    {
+      "task_id": "AUTO-2026-10-19-health",
+      "action": "attach_independent_review_to_existing_artifact"
+    },
+    {
+      "task_id": "AUTO-2026-10-20-health",
+      "action": "attach_independent_review_to_existing_artifact"
+    },
+    {
+      "description": "邮件中提到的任务没有对应的 task_id",
+      "action": "evidence_gap"
+    },
+    {
+      "has_dispatch_wording": true,
+      "action": "check_for_duplicate_dispatch"
     }
   ],
   "relay_requests": [],
-  "escalations": [],
-  "uncertainty": "Injected latest.json/summary.json and per-mail public metadata were not present in executor-observed input. All numeric mail/backlog figures remain source claims, not readback."
+  "escalations": []
 }
