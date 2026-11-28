@@ -99,14 +99,34 @@ test('an existing job is reused without touching latches or issuing POST',async(
  assert.deepEqual(methods,['GET','GET']);
 });
 
-test('queue receipt records which repo_read evidence the bridge actually injected',async()=>{
- const store={read(){throw Error('must_not_reserve');},compareAndSwap(){throw Error('must_not_reserve');}};
- const repoContext={text:'',files:[
+test('queue injects repo_context evidence into the prompt and records it (snake_case bridge field)',async()=>{
+ const store=latchStore();
+ // 真实调用链里 runQueue 只给 runQueueCard 传 repo_context（snake_case），
+ // 历史代码只读 repoContext，导致 53KB 分流单从未进入模型 prompt（OPS-2/OPS-4）。
+ const repoContext={text:'\n\n【仓库读取证据（由受信桥接层读取，不是模型自述）】\n===== FILE: knowledge/results/deep-superagent/backlog/summary.json =====\n{"date":"2026-11-28","rows":[]}\n===== END FILE: knowledge/results/deep-superagent/backlog/summary.json =====',files:[
   {path:'knowledge/results/deep-superagent/backlog/latest.json',status:'missing'},
   {path:'knowledge/results/deep-superagent/backlog/summary.json',status:'read',bytes:7008,sha256:'a'.repeat(64)},
  ]};
- const outcome=await runQueueCard(base({store,repoContext,fetcher:async()=>http(fixture())}));
+ let current=null,postedBody=null;
+ const outcome=await runQueueCard(base({store,repo_context:repoContext,fetcher:async(url,o)=>{
+  if(o.method==='POST'){
+   postedBody=JSON.parse(o.body);
+   const hash=await sha256(JSON.stringify(normalizeJob(postedBody)));
+   current=fixture({input_sha256:hash});
+   return http(fixture({input_sha256:hash,status:'queued',terminal:false,model_calls:0,receipts:[]}),202);
+  }
+  return current?http(current):http({error:'task_not_found'},404);
+ }}));
  assert.deepEqual(outcome.repo_read,repoContext.files);
+ assert.match(postedBody.prompt,/【仓库读取证据/);
+ assert.match(postedBody.prompt,/backlog\/summary\.json/);
+ assert.equal(outcome.status,'job_terminal_observed');
+});
+test('queue receipt records repo_read evidence without inventing bytes for missing files',async()=>{
+ const store={read(){throw Error('must_not_reserve');},compareAndSwap(){throw Error('must_not_reserve');}};
+ const repoContext={text:'',files:[{path:'knowledge/results/deep-superagent/backlog/latest.json',status:'missing'}]};
+ const outcome=await runQueueCard(base({store,repoContext,fetcher:async()=>http(fixture())}));
+ assert.deepEqual(outcome.repo_read,[{path:'knowledge/results/deep-superagent/backlog/latest.json',status:'missing'}]);
 });
 
 test('changed input for an existing original task blocks before reservation or model trigger',async()=>{
