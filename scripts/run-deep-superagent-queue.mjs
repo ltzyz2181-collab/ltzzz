@@ -91,21 +91,24 @@ export function assertCardContract(body){
  if(contract.mixed)throw Error('card_contract_split_required:'+contract.reasons.join('_'));
 }
 
-// 政策元数据只用于派单审计，不进入 worker 请求体。带 importance/seats 的卡
+// 政策元数据只用于派单审计，不进入 worker 请求体。带 importance/seats/source_task_ids 的卡
 // 先过 dispatch-seat-policy 的 fail-closed 校验，再剥离元数据按既有 5 字段规范执行；
-// 历史卡（无这两个字段）仍走原路径，不改变已执行卡的行为。
+// 历史卡（无这些字段）仍走原路径，不改变已执行卡的行为。
+// Issue 桥的 source_task_ids 也必须剥离：worker 的 normalizeJob 只接受 5 个键，
+// 多一个就返回 unknown_job_field（run 46098445715）。
 export function stripDispatchMetadata(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return body;
- const {importance,seats,...rest}=body;
+ const {importance,seats,source_task_ids,...rest}=body;
  return rest;
 }
 
 export function taskDispatchMetadata(body){
  if(!body||typeof body!=='object'||Array.isArray(body))return null;
- if(body.importance===undefined&&body.seats===undefined)return null;
+ if(body.importance===undefined&&body.seats===undefined&&body.source_task_ids===undefined)return null;
+ if(body.source_task_ids!==undefined&&(!Array.isArray(body.source_task_ids)||!body.source_task_ids.every((id)=>typeof id==='string'&&ID.test(id))))throw Error('invalid_source_task_ids');
  const problems=checkCard(loadPolicy(),body);
  if(problems.length)throw Error('dispatch_seat_policy_violation:'+problems.join(';').slice(0,400));
- return {importance:body.importance,seats:body.seats};
+ return {importance:body.importance,seats:body.seats,...(body.source_task_ids===undefined?{}:{source_task_ids:body.source_task_ids})};
 }
 
 // owner 2026-11-19：卡可以带 autonomy 元数据。它只影响受信桥接层的后置动作，
@@ -244,6 +247,7 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
  // 导致 readRepoContext 的结果从未真正注入 prompt（OPS-2/OPS-4 都只看到卡面）。
  // 两种写法都接受，避免再次静默丢证据。
  const repoEvidence=repoContext??repo_context;
+ const dispatchMeta=kind==='task'?taskDispatchMetadata(body):null;
  const preparedBody=kind==='task'?applyRepoContext(body,repoEvidence):body;
  const card=kind==='task'?normalizeTaskCard(preparedBody,{allowedMailTo}):normalizeDecision(preparedBody);
  const normalization=kind==='task'?await normalizationRecord(body,card):null;
@@ -257,6 +261,8 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
  if(Array.isArray(repoEvidence?.files))outcome.repo_read=repoEvidence.files.map(({path,status,bytes,sha256})=>({path,status,...(bytes===undefined?{}:{bytes}),...(sha256===undefined?{}:{sha256})}));
  // 证据超出剩余 prompt 预算时只截断注入文本，不改卡面；审计里明确标记，避免把截断当成完整读取。
  if(repoEvidence?.truncated)outcome.repo_read_truncated=true;
+ // 原 Task ID 是桥接元数据，不进 worker 请求体，但必须留在队列回执里可回原单。
+ if(dispatchMeta?.source_task_ids?.length)outcome.source_task_ids=dispatchMeta.source_task_ids;
  const route='/v1/jobs/'+card.task_id+'?package_id='+encodeURIComponent(card.package_id);
  const req=(url,options={})=>requestJson(fetcher,url,{token,deadline,clock,...options});
  const observe=job=>{
