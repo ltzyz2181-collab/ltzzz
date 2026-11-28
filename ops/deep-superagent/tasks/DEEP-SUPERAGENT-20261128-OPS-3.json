@@ -1,0 +1,36 @@
+{
+ "task_id": "DEEP-SUPERAGENT-20261128-OPS-3",
+ "package_id": "LTZZZ-DEEP-OPS-20261128-3",
+ "prompt": "内部任务，仅公开仓库事实；不含客户数据、不含邮件正文、不含金额与凭据。\n\n【目标】完成当天 Deep 运营闭环：把公开积压逐条分流、把邮件公开元数据并回原任务、必要时提交可回读的代码或文档修复，并调度中转席参与实现与第二意见。\n具体输入、规则与输出格式都在下方任务块内；执行席只按该块执行，外层不另发指令。\n\n【给 deep 的任务】\n【输入事实（只来自公开回执）】\n- backlog_open=275 unique=275 not_rechecked=232 triaged=275 reserved_escalations=0\n- backlog_by_seat={\"qianwen\":82,\"doubao\":59,\"grok\":42,\"deepseek\":73,\"gpt\":19}\n- backlog_oldest=[{\"case_id\":\"c349f31a789ea8c0c3574fc7\",\"task_id\":\"ANS-2026-10-22-doubao\",\"seat\":\"doubao\",\"stage\":\"blocked_reconcile_existing_attempt\",\"severity\":\"repeated_warning\",\"since\":\"2026-10-22\",\"action\":\"reconcile_existing_attempt_before_any_retry\"},{\"case_id\":\"a2873c4acdeef507f2bfab31\",\"task_id\":\"AUTO-2026-10-17-health\",\"seat\":\"grok\",\"stage\":\"review_missing\",\"severity\":\"repeated_warning\",\"since\":\"2026-10-22\",\"action\":\"attach_independent_review_to_existing_artifact\"},{\"case_id\":\"c1618e57e679e031495a848e\",\"task_id\":\"AUTO-2026-10-18-health\",\"seat\":\"grok\",\"stage\":\"review_missing\",\"severity\":\"repeated_warning\",\"since\":\"2026-10-22\",\"action\":\"attach_independent_review_to_existing_artifact\"},{\"case_id\":\"9f3d39d4e9b87dec07cafc4c\",\"task_id\":\"AUTO-2026-10-19-health\",\"seat\":\"grok\",\"stage\":\"review_missing\",\"severity\":\"repeated_warning\",\"since\":\"2026-10-22\",\"action\":\"attach_independent_review_to_existing_artifact\"},{\"case_id\":\"9a89769c655f12953c61b304\",\"task_id\":\"AUTO-2026-10-20-health\",\"seat\":\"grok\",\"stage\":\"review_missing\",\"severity\":\"repeated_warning\",\"since\":\"2026-10-22\",\"action\":\"attach_independent_review_to_existing_artifact\"}]\n- mail_open_or_dispatch=200 unified=1879 qq_status=unknown gmail_status=ok sampled=120\n- last_queue_run=46094679726 status=queue_results_verified items=2 pending_gpt_decisions=1\n- last_daily_merge=done=2 needs_gpt_decision=0 pending_gpt_decisions=0\n\n【给 deep 的任务】\n1 受信桥接层已把 knowledge/results/deep-superagent/backlog/latest.json（逐条分流）和 summary.json（计数与最老 20 条）的原文追加在本 prompt 末尾的【仓库读取证据】里；那是唯一权威的逐项输入，不是外部声明。按 rows 里的 task / action 逐条核对：只用 rows 中的原任务 ID，不新开单，不把“已派发”写成“已完成”。\n2 对 rows 中最老的 20 条给出当天可执行的下一步；结论必须带 task_id / 缺的阶段 / 下一步；没有一手证据的写 blocked_evidence_needed。不得用顺序占位流水号冒充 task_id；若末尾没有【仓库读取证据】或读取状态不是 read，只输出 blocked_bridge_evidence_missing。\n3 邮件公开摘要逐条归类：带 task_ids 的并回原任务；无主的记为 evidence_gap；has_dispatch_wording=true 的优先核对是否重复派单。不要读取或复制邮件正文。\n4 需要实现或第二意见时，明确请求 claude-relay 与 gpt-relay 各出一次有界产物；中转输出按第三方通道标注，不得自证 provider/model，也不得当作独立复核。\n5 如发现可确定修复的代码或文档问题，输出整文件块；改动只落在公开仓库代码与文档，并且必须通过 deep-autonomy-verify 的测试后才能合并。\n6 把当天结论写成 knowledge/results/deep-superagent/backlog/triage-2026-11-28.json：包含 counts / top_actions / mail_actions / relay_requests / escalations；top_actions 的 task_id 必须来自 rows。\n7 状态分开写 draft / tested / merged / deployed；没有实际回读的不写已完成。\n\n【输出格式】\n先用不超过 250 字写当天结论，然后给出整文件块：\n<<<FILE:knowledge/results/deep-superagent/backlog/triage-2026-11-28.json>>>\n...\n<<<END>>>\n当天没有代码修复时只写这一个文件。\n\n【边界】\n不得处理资金及资金处分、退款终态、签名、私钥/助记词/根密钥、钱包操作（含五签）五类；遇到只记录 escalate_to=gpt。\n不得打印、提交或外发任何秘密值。",
+ "data_classification": "public_distributable",
+ "platform": "internal",
+ "importance": "high",
+ "seats": [
+  {
+   "seat": "deep",
+   "role": "primary_executor",
+   "decision_authority": false
+  },
+  {
+   "seat": "claude-relay",
+   "role": "independent_review",
+   "decision_authority": false
+  },
+  {
+   "seat": "gpt-relay",
+   "role": "independent_review",
+   "decision_authority": false
+  }
+ ],
+ "autonomy": {
+  "mode": "auto",
+  "repo_read": [
+   "knowledge/results/deep-superagent/backlog/latest.json",
+   "knowledge/results/deep-superagent/backlog/summary.json"
+  ],
+  "code_change": true,
+  "deploy": {
+   "workflow": "deep-superagent.yml"
+  }
+ }
+}
