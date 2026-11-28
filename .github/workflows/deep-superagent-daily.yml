@@ -8,6 +8,10 @@ on:
       - 'scripts/run-deep-superagent-daily.mjs'
       - 'scripts/run-deep-superagent-queue.mjs'
       - 'scripts/dispatch-daily-card.mjs'
+      - 'scripts/dispatch-daily.mjs'
+      - 'scripts/lib/task-hub.mjs'
+      - 'scripts/task-hub.mjs'
+      - 'config/seat-mail-registry.json'
       - 'scripts/build-deep-backlog-triage.mjs'
       - 'scripts/dispatch-card-queue.mjs'
       - 'scripts/publish-daily-cards.mjs'
@@ -19,6 +23,7 @@ on:
       - 'scripts/tests/build-deep-backlog-triage.test.mjs'
       - 'scripts/tests/dispatch-card-queue.test.mjs'
       - 'scripts/tests/publish-daily-cards.test.mjs'
+      - 'scripts/tests/dispatch-wiring.test.mjs'
       - '.github/workflows/deep-superagent-daily.yml'
       - 'config/deep-superagent.json'
 permissions: {contents: read}
@@ -40,6 +45,7 @@ jobs:
           node --check scripts/build-deep-backlog-triage.mjs &&
           node --check scripts/dispatch-card-queue.mjs &&
           node --check scripts/publish-daily-cards.mjs &&
+          node --check scripts/dispatch-daily.mjs &&
           node --test scripts/tests/deep-superagent-daily.test.mjs
           scripts/tests/deep-superagent-queue.test.mjs
           scripts/tests/deep-superagent.test.mjs
@@ -47,16 +53,24 @@ jobs:
           scripts/tests/build-deep-backlog-triage.test.mjs
           scripts/tests/dispatch-card-queue.test.mjs
           scripts/tests/publish-daily-cards.test.mjs
+          scripts/tests/dispatch-wiring.test.mjs
   execute:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && github.repository == 'ltzyz2181-collab/ltzzz'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions: {contents: write, actions: write}
+    permissions: {contents: write, actions: write, issues: write}
     steps:
       - uses: actions/checkout@v4
         with: {ref: '${{ github.sha }}', fetch-depth: 0, persist-credentials: true}
       - uses: actions/setup-node@v4
         with: {node-version: '22'}
+      # 每日席位卡独立于模型日报：即使下面监督步骤失败，卡仍会发出；
+      # 24h 无人 [claimed] 时由 task-hub.yml 的 reassign 自动改派并用 mail:send 叫醒。
+      - name: Dispatch daily seat cards through Task Hub
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/dispatch-daily.mjs --apply
       - name: Build trusted evidence readset, reserve idempotent daily attempt, and reconcile
         env:
           LTZZZ_AGENT_TOKEN: ${{ secrets.LTZZZ_AGENT_TOKEN }}
