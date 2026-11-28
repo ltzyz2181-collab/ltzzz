@@ -216,6 +216,19 @@ test('readRepoContext / applyRepoContext：注入真实文件证据并记录缺�
   assert.match(body.prompt, /仓库读取证据/);
 });
 
+test('readRepoContext：超过桥接预算的文件不注入，只记 size_budget_exceeded（run 46096350431）', () => {
+  const root = tmp();
+  // worker 的 prompt 上限是 20,000 字符；53KB 的 latest.json 曾在 POST 后才被拒绝。
+  fs.writeFileSync(path.join(root, 'latest.json'), 'x'.repeat(53 * 1024));
+  fs.writeFileSync(path.join(root, 'summary.json'), '{"oldest":[]}');
+  const context = readRepoContext(root, ['latest.json', 'summary.json']);
+  assert.deepEqual(context.files.map((file) => file.status), ['size_budget_exceeded', 'read']);
+  assert.doesNotMatch(context.text, /x{100}/);
+  assert.match(context.text, /summary\.json/);
+  const body = applyRepoContext({prompt: 'P'.repeat(3500)}, context);
+  assert.ok(body.prompt.length < 20000, 'prompt 必须落在 worker 的 20,000 字符上限内');
+});
+
 test('stripAutonomy / taskAutonomyMetadata：元数据与任务体分离', () => {
   const body = {task_id: 'T', prompt: 'p', autonomy: {mode: 'auto', code_change: true}};
   assert.deepEqual(stripAutonomy(body), {task_id: 'T', prompt: 'p'});
