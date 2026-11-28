@@ -388,6 +388,22 @@ export function validateWrites(writes) {
   return {ok: true, writes};
 }
 
+// 2026-11-28 run 46099541900（#640 R5）：repo_read 对 scripts/dispatch-issue-card.mjs
+// 返回 size_budget_exceeded，模型没看到原文仍整文件重写，PR #687 把 15KB 桥脚本覆盖成
+// 991 B 的桩，main 上的 Issue 桥测试直接失败。整文件替换必须建立在“确实读到原文”之上：
+// 已存在的文件只有在 repo_read 状态为 read、且最终注入未被截断时才允许写。
+export function unreadExistingWrites(writes, repoRead = null, {root = process.cwd(), truncated = false} = {}) {
+  // 调用方未提供 repo_read 证据（null）时无法判定，保持旧行为；队列路径总是传入数组，
+  // 空数组表示“没有任何文件被读到”，此时已有文件一律拒绝整文件重写。
+  if (!Array.isArray(repoRead)) return [];
+  const read = new Set((truncated ? [] : repoRead)
+    .filter((item) => item?.status === 'read')
+    .map((item) => String(item.path)));
+  return (writes || [])
+    .filter((write) => fs.existsSync(path.join(root, write.path)) && !read.has(write.path))
+    .map((write) => write.path);
+}
+
 // 2026-11-20 实测：Deep 把带 markdown 围栏的代码整块写进 .js，文件在 type=module 下
 // 既不是合法 JS 也用 require，仍被自动合并（PR #501）。合并前必须做本地语法闸。
 export const CODE_EXT = /\.(?:m?js|cjs)$/i;
@@ -537,6 +553,8 @@ export async function executeAutonomy({
   autonomy,
   job,
   outputs = [],
+  repoRead = null,
+  repoReadTruncated = false,
   root = process.cwd(),
   env = process.env,
   fetcher = fetch,
@@ -602,8 +620,11 @@ export async function executeAutonomy({
       const writes = extractFileWrites(outputs.map((output) => output?.text || '').join('\n\n'));
       const duplicateBlocks = writes.duplicates?.length ? writes.duplicates : null;
       const valid = validateWrites(writes);
+      const unread = valid.ok ? unreadExistingWrites(writes, repoRead, {root, truncated: repoReadTruncated}) : [];
       if (!valid.ok) {
         actions.push({action: 'code_change', status: 'rejected', error: valid.error});
+      } else if (unread.length) {
+        actions.push({action: 'code_change', status: 'rejected', error: `unread_existing_file:${unread.join(',')}`, files: unread});
       } else {
         const branch = `deep-auto/${String(taskId).toLowerCase().replace(/[^a-z0-9/-]/g, '-')}-${runId}`.slice(0, 120);
         const originals = new Map();

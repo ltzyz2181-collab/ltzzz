@@ -326,6 +326,8 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
      autonomy,
      job:{...job,prompt:card.prompt},
      outputs:job.outputs||[],
+     repoRead:repoEvidence?.files||[],
+     repoReadTruncated:Boolean(repoEvidence?.truncated),
      root:autonomyRoot,
      env:autonomyEnv,
      fetcher:autonomyFetcher,
