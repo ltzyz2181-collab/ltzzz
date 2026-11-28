@@ -22,6 +22,7 @@ import {
   syntaxGate,
   stripAutonomy,
   taskAutonomyMetadata,
+  unreadExistingWrites,
   validateWrites,
 } from '../deep-autonomy.mjs';
 
@@ -340,6 +341,35 @@ test('fiduciaryOutputHit：工程文件块里声明保留家族不算执行，�
   assert.equal(fiduciaryOutputHit([{text: "<<<FILE:scripts/x.mjs>>>\nconst to = '0x1111111111111111111111111111111111111111';\n<<<END>>>"}]).hit, true);
   // 没有可执行字段的 JSON 输出回退为原文扫描，避免把说明字段当免检通道。
   assert.equal(fiduciaryOutputHit([{text: '{"reason":"transfer funds"}'}]).hit, true);
+});
+
+test('unreadExistingWrites：没读到原文的既有文件不允许整文件重写（#640 R5）', () => {
+  const root = tmp();
+  fs.mkdirSync(path.join(root, 'scripts'), {recursive: true});
+  fs.writeFileSync(path.join(root, 'scripts/existing.mjs'), 'export const a = 1;\n');
+  const writes = [{path: 'scripts/existing.mjs', content: 'stub'}, {path: 'scripts/new.mjs', content: 'new'}];
+  assert.deepEqual(unreadExistingWrites(writes, [], {root}), ['scripts/existing.mjs']);
+  assert.deepEqual(unreadExistingWrites(writes, [{path: 'scripts/existing.mjs', status: 'size_budget_exceeded'}], {root}), ['scripts/existing.mjs']);
+  assert.deepEqual(unreadExistingWrites(writes, [{path: 'scripts/existing.mjs', status: 'read'}], {root}), []);
+  assert.deepEqual(unreadExistingWrites(writes, [{path: 'scripts/existing.mjs', status: 'read'}], {root, truncated: true}), ['scripts/existing.mjs']);
+});
+
+test('executeAutonomy：未读到原文的既有文件整文件重写被拒，文件保持不变（#640 R5）', async () => {
+  const root = tmp();
+  fs.mkdirSync(path.join(root, 'scripts'), {recursive: true});
+  const original = 'export const keep = true;\n';
+  fs.writeFileSync(path.join(root, 'scripts/existing.mjs'), original);
+  const result = await executeAutonomy({
+    autonomy: {mode: 'auto', code_change: true},
+    job: {task_id: 'T', input_sha256: 'f'.repeat(64), prompt: '改脚本'},
+    repoRead: [{path: 'scripts/existing.mjs', status: 'size_budget_exceeded', bytes: 15074}],
+    outputs: [{text: '<<<FILE:scripts/existing.mjs>>>\nexport const stub = true;\n<<<END>>>'}],
+    root,
+    env: {},
+  });
+  assert.equal(result.actions[0].status, 'rejected');
+  assert.match(result.actions[0].error, /unread_existing_file:scripts\/existing\.mjs/);
+  assert.equal(fs.readFileSync(path.join(root, 'scripts/existing.mjs'), 'utf8'), original);
 });
 
 test('executeAutonomy：code_change 无文件块时拒绝，不碰 git', async () => {

@@ -128,6 +128,13 @@ test('queue receipt records repo_read evidence without inventing bytes for missi
  const outcome=await runQueueCard(base({store,repoContext,fetcher:async()=>http(fixture())}));
  assert.deepEqual(outcome.repo_read,[{path:'knowledge/results/deep-superagent/backlog/latest.json',status:'missing'}]);
 });
+test('repo_read 状态传给自治层，供未读文件整文件重写防护使用（#640 R5）',async()=>{
+ const repoContext={text:'',files:[{path:'scripts/dispatch-issue-card.mjs',status:'size_budget_exceeded',bytes:15074}]};
+ let received=null;
+ await runQueueCard(base({autonomy:{mode:'auto',code_change:true},repo_context:repoContext,fetcher:async()=>http(fixture()),execute:async(args)=>{received=args;return {status:'stub'};}}));
+ assert.deepEqual(received.repoRead,repoContext.files);
+ assert.equal(received.repoReadTruncated,false);
+});
 
 test('changed input for an existing original task blocks before reservation or model trigger',async()=>{
  const store=latchStore(),methods=[];
