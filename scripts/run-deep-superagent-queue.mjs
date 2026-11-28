@@ -248,6 +248,9 @@ export async function runQueueCard({kind,body,source_commit,token,store,fetcher=
  const payloadHash=await sha256(JSON.stringify(payload));
  const key=await sha256(JSON.stringify(['deep_superagent_queue',kind,card.task_id,card.package_id]));
  const outcome={kind,task_id:card.task_id,package_id:card.package_id,queue_card_source_commit:source_commit,input_sha256:inputHash,raw_input_sha256:normalization?.raw_body_sha256??null,normalization,payload_sha256:payloadHash,attempt_key:key,post_attempted:false,reused_existing:false,first_post_outcome:'not_attempted',status:'started',financial_execution:false,paid:false,tx_hash:null};
+ // 公开审计：记录受信桥接层实际读到的证据文件（路径/状态/字节/哈希），
+ // 让“模型说没看到”与“桥接层确实没注入”可以区分（OPS-2 曾无法区分）。
+ if(Array.isArray(repoContext?.files))outcome.repo_read=repoContext.files.map(({path,status,bytes,sha256})=>({path,status,...(bytes===undefined?{}:{bytes}),...(sha256===undefined?{}:{sha256})}));
  const route='/v1/jobs/'+card.task_id+'?package_id='+encodeURIComponent(card.package_id);
  const req=(url,options={})=>requestJson(fetcher,url,{token,deadline,clock,...options});
  const observe=job=>{

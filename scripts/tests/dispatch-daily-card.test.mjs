@@ -225,6 +225,31 @@ test('执行卡要求中转席参与，但不在卡面写保留家族指令', ()
   assert.equal(fiduciaryInstructionHit(card.prompt).hit, false);
 });
 
+test('执行卡把分流单里的真实任务 ID 带进卡面，并要求按注入证据核对', () => {
+  const triage = {
+    summary: {
+      totals: {triaged_cases: 275, reserved_family_escalations: 0},
+      by_seat: {qianwen: 82, deepseek: 73},
+      oldest: [{
+        task_id: 'QIANWEN-RETURN-2026-10-16',
+        case_id: 'case-1',
+        seat: 'qianwen',
+        action: 'reconcile_external_return_with_original_claim',
+        since: '2026-10-16',
+      }],
+      mail: {sampled: 60},
+    },
+  };
+  const card = buildOpsCard({date: '2026-11-27', evidence: evidence(), policy, repoRead: [], triage});
+  assert.match(card.prompt, /QIANWEN-RETURN-2026-10-16/);
+  assert.match(card.prompt, /【仓库读取证据】/);
+  assert.match(card.prompt, /唯一权威/);
+  assert.match(card.prompt, /blocked_bridge_evidence_missing/);
+  // 不允许用 T001… 占位 ID 冒充逐项分流。
+  assert.doesNotMatch(card.prompt, /T001/);
+  assert.equal(fiduciaryInstructionHit(card.prompt).hit, false);
+});
+
 test('repo_read 只选受信桥接层能读且总量在预算内的文件', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deep-ops-read-'));
   try {
