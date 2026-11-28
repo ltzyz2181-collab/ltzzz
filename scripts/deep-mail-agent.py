@@ -159,6 +159,20 @@ def fetch_body(conn, uid):
     return message_text(raw), body_sha256(raw)
 
 
+def imap_send_id(conn, address):
+    """NetEase (126/163/yeah.net) answers SELECT with 'Unsafe Login' when the
+    client never sends an IMAP ID command. imaplib does not send one, so send it."""
+    try:
+        imaplib.Commands.setdefault("ID", ("NONAUTH", "AUTH", "SELECTED"))
+        conn._simple_command(
+            "ID",
+            '("name" "LTZZZ-Deep" "version" "1.0.0" "vendor" "ltzzz" "contact" "%s")' % address,
+        )
+        return True
+    except Exception:
+        return False
+
+
 def build_select_prompt(headers, limit):
     lines = [f"{h['uid']}\t{h['date']}\t{h['from']}\t{h['subject'][:90]}" for h in headers]
     return (
@@ -266,7 +280,13 @@ def main():
             meta.update(status="blocked_imap_auth", detail=type(exc).__name__)
             _write(args.out, meta, [])
             return 0
-        conn.select(folder, readonly=True)
+        imap_send_id(conn, address)
+        typ, sel = conn.select(folder, readonly=True)
+        if typ != "OK":
+            detail = sel[0].decode(errors="replace") if sel and isinstance(sel[0], bytes) else str(sel)
+            meta.update(status="blocked_imap_select", detail=detail[:160])
+            _write(args.out, meta, [])
+            return 0
 
         since = __import__("datetime").datetime.utcnow() - __import__("datetime").timedelta(days=args.days)
         typ, data = conn.search(None, f'(SINCE {since.strftime("%d-%b-%Y")})')
