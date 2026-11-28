@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "routing_matrix": {
+    "code_implementation": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Please implement the following code task. Ensure the solution is consistent with the specifications and integrates well with the existing codebase. Task details: {{task_details}}"
+    },
+    "multi_file_refactors": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Please perform the multi-file refactoring as described. Pay attention to maintain code consistency and avoid introducing new bugs. Task details: {{task_details}}"
+    },
+    "bug_root_cause_analysis": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Analyze the root cause of the following bug. Provide a detailed report on the findings and suggest potential fixes. Task details: {{task_details}}"
+    },
+    "code_review": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Please review the following code changes. Check for any issues, inconsistencies, or improvements. Task details: {{task_details}}"
+    },
+    "test_authoring": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Write tests for the following code. Ensure the tests cover all edge cases and validate the functionality. Task details: {{task_details}}"
+    },
+    "repository_context_synthesis": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Synthesize the context from the repository for the following task. Provide a summary and relevant information. Task details: {{task_details}}"
+    },
+    "technical_documentation": {
+      "primary_seat": "relay_claude",
+      "fallback_seat": "deep",
+      "prompt_template": "Create technical documentation for the following task. Ensure the documentation is clear, concise, and accurate. Task details: {{task_details}}"
+    },
+    "complex_task_decomposition": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Decompose the following complex task into smaller, manageable sub-tasks. Provide a structured plan. Task details: {{task_details}}"
+    },
+    "architecture_and_interface_planning": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Plan the architecture and interfaces for the following task. Provide a detailed design and rationale. Task details: {{task_details}}"
+    },
+    "structured_reasoning": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Provide a structured reasoning for the following problem. Break down the problem and provide a logical solution. Task details: {{task_details}}"
+    },
+    "competing_solution_analysis": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Analyze the competing solutions for the following problem. Compare and contrast the solutions, and recommend the best approach. Task details: {{task_details}}"
+    },
+    "test_strategy": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Develop a test strategy for the following task. Outline the types of tests, coverage, and execution plan. Task details: {{task_details}}"
+    },
+    "ci_failure_analysis": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Analyze the CI failure for the following build. Identify the root cause and suggest corrective actions. Task details: {{task_details}}"
+    },
+    "threat_model_review": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Review the threat model for the following task. Identify any security risks and suggest mitigations. Task details: {{task_details}}"
+    },
+    "evidence_based_acceptance_audit": {
+      "primary_seat": "relay_gpt",
+      "fallback_seat": "deep",
+      "prompt_template": "Perform an evidence-based acceptance audit for the following task. Verify that all requirements are met and provide a detailed report. Task details: {{task_details}}"
+    }
+  },
+  "fallback_rules": {
+    "balance_unknown_or_low": {
+      "action": "route_to_fallback_seat",
+      "description": "If the balance for the primary seat is unknown or low, route the task to the fallback seat."
+    },
+    "seat_unavailable": {
+      "action": "route_to_fallback_seat",
+      "description": "If the primary seat is unavailable, route the task to the fallback seat."
+    }
+  }
+}
