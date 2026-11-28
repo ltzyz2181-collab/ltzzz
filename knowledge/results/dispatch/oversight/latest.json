@@ -1,272 +1,8 @@
 {
-  "date": "2026-11-28",
-  "at": "2026-11-28T15:01:16.587Z",
+  "date": "2026-11-29",
+  "at": "2026-11-28T16:01:19.490Z",
   "timezone": "Asia/Shanghai",
   "tasks": [
-    {
-      "id": "CONTROL-REVIEW-2026-11-22",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "gpt",
-      "phase": "recorded_dispatches",
-      "due_at": "2026-11-22T17:00:00+08:00",
-      "evidence": [
-        "knowledge/results/control/2026-11-22.json"
-      ],
-      "instruction": "读取真实回执，签发下一轮任务；先查已有派单，不重复调用已预留模型或重新采购。",
-      "issue": "recorded_dispatches",
-      "overdue": false,
-      "status": "evidence_present_scope_limited"
-    },
-    {
-      "id": "CONTROL-2026-11-23-deepseek",
-      "date": "2026-11-23",
-      "issuer": "gpt",
-      "assigned_to": "deepseek",
-      "phase": "claim_missing",
-      "due_at": "2026-11-23T22:00:00+08:00",
-      "evidence": [
-        "knowledge/results/control/2026-11-22.json"
-      ],
-      "instruction": "复用原 Task ID `AUTO-2026-11-21-health`，读取 `ops/dispatch/oversight/AUTO-2026-11-21-health.md` 及近期心跳回执，修复 revision_required。只改监控/自动恢复脚本，保持真实心跳 200、自动恢复状态不造假，不允许用 mock 当生产。交付：实际 diff、测试命令与通过/失败数、`knowledge/results/dispatch/oversight/AUTO-2026-11-21-health-reconcile.receipt.json`。回执必须含 source_commit、executed_by/model、sha256、blockers、paid=false、tx_hash=null；未通过就列 blockers，不写已部署。不新增付费定时。",
-      "issue": "claim_missing",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "CONTROL-2026-11-23-doubao",
-      "date": "2026-11-23",
-      "issuer": "gpt",
-      "assigned_to": "doubao",
-      "phase": "claim_missing",
-      "due_at": "2026-11-23T22:00:00+08:00",
-      "evidence": [
-        "knowledge/results/control/2026-11-22.json"
-      ],
-      "instruction": "复用原 Task ID `ANS-2026-11-19-doubao`，读取 `ops/dispatch/oversight/ANS-2026-11-19-doubao.md` 及对应 ans-cycle 回执，消除 blocked_reconcile_existing_attempt。只做工程与任务板对账，不做人体/脑区实验。交付：`knowledge/results/ans-cycle/2026-11-19-doubao-reconcile.receipt.json`，列明实际 claim/交付状态、provider/model、缺失凭证或网络根因。量测：含 sha256、blockers、paid=false，无新模型调用；未接通外部席就如实标 blocked，不把内部积分当交付。",
-      "issue": "claim_missing",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "DAILY-2026-11-22-claude",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "claude",
-      "phase": "external_pr_route_reference_only",
-      "due_at": "2026-11-22T22:00:00+08:00",
-      "evidence": [
-        "ops/dispatch/DAILY-2026-11-22-claude.md"
-      ],
-      "instruction": "Claude在任的外部规划与独立审计席；按原Task ID查PR/回执。没有原生自动接单通道不等于停用；国内代执行须同任务证据，不得从别单推断。",
-      "native_generation_verified": false,
-      "delivery_channel": "repo_pr_only",
-      "role_status": "active_external_audit_and_planning",
-      "native_api_status": "blocked_insufficient_api_credits",
-      "native_claim_required": false,
-      "reference_only": true,
-      "delegated": false,
-      "actual_provider": null,
-      "model": null,
-      "submission_verified": false,
-      "independent_review_verified": false,
-      "pr_url": null,
-      "automatic_reexecution": false,
-      "delivery_evidence_status": "not_linked",
-      "repair_origin": null,
-      "issue": "external_pr_route_reference_only",
-      "overdue": false,
-      "status": "delivery_channel_reference_not_completion"
-    },
-    {
-      "id": "QIANWEN-RETURN-2026-11-22",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "qianwen",
-      "phase": "external_return_claim_missing",
-      "acceptance_reference_verified": false,
-      "submission_verified": false,
-      "independent_review_verified": false,
-      "accepted": false,
-      "evidence": [
-        "knowledge/results/dispatch/qianwen-return-2026-11-22.json"
-      ],
-      "actual_provider": null,
-      "model": null,
-      "claim_verified": false,
-      "claim_status": "authenticated_claim_unverified",
-      "missing_stages": [
-        "authenticated_claim"
-      ],
-      "delivery_status": "not_verified",
-      "native_generation_verified": false,
-      "scope": "repository_evidence_attestation_not_native_claim_or_production_deployment",
-      "due_at": "2026-11-22T22:00:00+08:00",
-      "instruction": "每日监督总控与Claude派单：核对原任务认领、交付、审核与上线；遗漏立即提醒、复用原Task ID补派，跨日反复遗漏给警告，不减总控权限、不重复采购付款。状态见knowledge/results/dispatch/oversight/latest.json。每日回归：读AI-START-HERE、六文件变更和最新Pulse/ANS/WEP3回执；复核一项真实阻塞，交零模型状态检查或最小补丁/测试。算力不足时只回报已检查项、准确阻塞和下次入口，不重复购买模型。千问具有同等总控运维权限；认领、交付、验收分开记录。",
-      "separate_external_return": true,
-      "issued_by": "coordinator_rules_no_model",
-      "native_qianwen_dispatch": false,
-      "deployed": false,
-      "related_formal_daily_task_id": "DAILY-2026-11-22-qianwen",
-      "formal_daily_cannot_satisfy_this_task": true,
-      "issue": "external_return_claim_missing",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "DAILY-2026-11-22-deepseek",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "deepseek",
-      "phase": "review_missing",
-      "due_at": "2026-11-22T22:00:00+08:00",
-      "evidence": [
-        "knowledge/results/daily-board/2026-11-22.json",
-        "knowledge/results/daily-board/artifacts/2026-11-22-deepseek-e4aa18d85ad7ce836751598168612d6f23a7e8b6f17a78baa8512d32e2729ab1.json"
-      ],
-      "instruction": "ANS/Pulse首要任务：读取最新真实监控与奖惩回执，区分代理健康、原生生成和交付验收；定位一个真实阻塞并交代码补丁或可运行断言，附来源，不执行资金。",
-      "claim_verified": true,
-      "submission_verified": true,
-      "independent_review_verified": false,
-      "deployed": false,
-      "draft_accepted": false,
-      "engineering_completion_verified": false,
-      "engineering_closeout": null,
-      "requires_engineering_followup": true,
-      "issue": "review_missing",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "DAILY-2026-11-22-doubao",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "doubao",
-      "phase": "blocked_reconcile_existing_attempt",
-      "due_at": "2026-11-22T22:00:00+08:00",
-      "evidence": [
-        "knowledge/results/daily-board/2026-11-22.json",
-        "knowledge/results/daily-board/artifacts/2026-11-22-doubao-c30f382c0a82d634ec0f40877b1c272c2978485a2dfdd815bd1c39ab438fa529.json"
-      ],
-      "instruction": "ANS/Pulse首要任务：独立复核DeepSeek的监控/奖惩修复；交一个包含正常、失败、恢复、幂等的验收清单或测试实物，禁止把未通过写成功。",
-      "claim_verified": true,
-      "submission_verified": false,
-      "independent_review_verified": false,
-      "deployed": false,
-      "draft_accepted": false,
-      "engineering_completion_verified": false,
-      "engineering_closeout": null,
-      "requires_engineering_followup": true,
-      "issue": "blocked_reconcile_existing_attempt",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "AUTO-2026-11-22-health",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "grok",
-      "phase": "draft_reviewed_not_deployed",
-      "due_at": "2026-11-22T22:00:00+08:00",
-      "evidence": [
-        "knowledge/results/daily-board/2026-11-22.json",
-        "knowledge/results/daily-board/artifacts/2026-11-22-grok-cbfed98d0933cf6dbef8a1d2bf9f0597bbb77ce6507a82ea97e0a81f6304c672.json"
-      ],
-      "instruction": "自主检查最新Pulse心跳与实际生成回执是否混淆，交可核验证据或修复，不能凭健康200宣布模型已生成。",
-      "claim_verified": true,
-      "submission_verified": true,
-      "independent_review_verified": true,
-      "deployed": false,
-      "draft_accepted": true,
-      "engineering_completion_verified": false,
-      "engineering_closeout": null,
-      "requires_engineering_followup": true,
-      "issue": "engineering_completion_unverified",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "DAILY-2026-11-22-qianwen",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "qianwen",
-      "phase": "review_missing",
-      "due_at": "2026-11-22T22:00:00+08:00",
-      "evidence": [
-        "knowledge/results/daily-board/2026-11-22.json",
-        "knowledge/results/daily-board/artifacts/2026-11-22-qianwen-460c647358522857aab89ef52893bae75bc5c0753114362c90881f55940c024f.json"
-      ],
-      "instruction": "交叉审阅其他席当日产出及证据，识别系统风险或记忆不一致，提出可验证改进；结合月度模型目录检查提出更新建议，未实测不得称已恢复或已部署。",
-      "claim_verified": true,
-      "submission_verified": true,
-      "independent_review_verified": false,
-      "deployed": false,
-      "draft_accepted": false,
-      "engineering_completion_verified": false,
-      "engineering_closeout": null,
-      "requires_engineering_followup": false,
-      "issue": "review_missing",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "ANS-2026-11-22-doubao",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "doubao",
-      "phase": "independent_draft_review_completed",
-      "due_at": "2026-11-22T03:00:00+08:00",
-      "evidence": [
-        "knowledge/results/ans-cycle/2026-11-22.json",
-        "knowledge/results/ans-cycle/2026-11-22-worker.json",
-        "knowledge/results/ans-cycle/2026-11-22-reviewer.json"
-      ],
-      "independent_review_verified": true,
-      "draft_accepted": false,
-      "deployed": false,
-      "actual_provider": "Doubao",
-      "instruction": "独立草稿审核及远端回读已完成；拒绝不等于生产完成，作者修复仍按原工作单跟进。",
-      "issue": "independent_draft_review_completed",
-      "overdue": false,
-      "status": "evidence_present_scope_limited"
-    },
-    {
-      "id": "ANS-2026-11-22-deepseek",
-      "date": "2026-11-22",
-      "issuer": "gpt",
-      "assigned_to": "deepseek",
-      "phase": "engineering_completion_unverified",
-      "due_at": "2026-11-22T03:00:00+08:00",
-      "evidence": [
-        "knowledge/results/ans-cycle/2026-11-22.json",
-        "knowledge/results/ans-cycle/2026-11-22-worker.json",
-        "knowledge/results/ans-cycle/2026-11-22-reviewer.json"
-      ],
-      "independent_review_verified": true,
-      "draft_accepted": false,
-      "deployed": false,
-      "engineering_completion_verified": false,
-      "engineering_closeout": null,
-      "instruction": "原草稿拒收保留；仅以绑定原工件的新工程实物、测试、PR及不同提供商复核关闭工程交付，不重复购买旧作者请求，不将审核完成写成生产完成。",
-      "issue": "engineering_completion_unverified",
-      "overdue": true,
-      "status": "warning_required"
-    },
-    {
-      "id": "REAL-HIRE-20261122-CLAUDE-01",
-      "date": "2026-11-22",
-      "issuer": "claude",
-      "assigned_to": "gpt",
-      "phase": "blocked_reconcile_existing_attempt",
-      "due_at": "2026-11-22T12:00:00+08:00",
-      "evidence": [
-        "knowledge/results/claude-team/real-hire-20261122.json"
-      ],
-      "instruction": "跟进现有每日 AI 雇佣订单及独立验收，复用原任务和已预留 ANS 交付；内部数据无需真钱，不重复采购或结算，不把规则派单归为原生 Claude 调用。",
-      "issue": "blocked_reconcile_existing_attempt",
-      "overdue": true,
-      "status": "warning_required"
-    },
     {
       "id": "CONTROL-REVIEW-2026-11-23",
       "date": "2026-11-23",
@@ -1440,6 +1176,36 @@
       "status": "evidence_present_scope_limited"
     },
     {
+      "id": "CONTROL-2026-11-29-deepseek",
+      "date": "2026-11-29",
+      "issuer": "gpt",
+      "assigned_to": "deepseek",
+      "phase": "claim_missing",
+      "due_at": "2026-11-29T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/control/2026-11-28.json"
+      ],
+      "instruction": "复用 ANS-2026-11-27-deepseek / AUTO-2026-11-27-health 原Task ID，读 pulse-worker、health 回执与 run-ans-cycle 源码，定位 engineering_completion_unverified 断点；隔离分支最小修复+回归测试，回执写 source commit、代码 sha256、blockers。不真实模型、不链上、不 deployed。量测：diff文件、测试通过/失败数、回执sha256。",
+      "issue": "claim_missing",
+      "overdue": false,
+      "status": "not_due"
+    },
+    {
+      "id": "CONTROL-2026-11-29-doubao",
+      "date": "2026-11-29",
+      "issuer": "gpt",
+      "assigned_to": "doubao",
+      "phase": "claim_missing",
+      "due_at": "2026-11-29T22:00:00+08:00",
+      "evidence": [
+        "knowledge/results/control/2026-11-28.json"
+      ],
+      "instruction": "独立审核明日 DeepSeek 的 ANS/Pulse 心跳修复 diff 与测试回执，对照源码与源 commit，逐项给 accepted/revision_required，落 ops/dispatch/oversight/ 回执：被审sha256、结论、未完成项。不生成、不付费、不链上；DeepSeek未落地则写 blocked。量测：回执路径+sha256、缺陷条数。",
+      "issue": "claim_missing",
+      "overdue": false,
+      "status": "not_due"
+    },
+    {
       "id": "DAILY-2026-11-28-claude",
       "date": "2026-11-28",
       "issuer": "gpt",
@@ -1631,6 +1397,51 @@
       "status": "warning_required"
     },
     {
+      "id": "CONTROL-REVIEW-2026-11-29",
+      "date": "2026-11-29",
+      "issuer": "gpt",
+      "assigned_to": "gpt",
+      "phase": "dispatch_missing",
+      "due_at": "2026-11-29T17:00:00+08:00",
+      "evidence": [
+        "knowledge/results/control/2026-11-29.json"
+      ],
+      "instruction": "读取真实回执，签发下一轮任务；先查已有派单，不重复调用已预留模型或重新采购。",
+      "issue": "dispatch_missing",
+      "overdue": false,
+      "status": "not_due"
+    },
+    {
+      "id": "DAILY-2026-11-29-claude",
+      "date": "2026-11-29",
+      "issuer": "gpt",
+      "assigned_to": "claude",
+      "phase": "external_pr_route_reference_only",
+      "due_at": "2026-11-29T09:00:00+08:00",
+      "evidence": [
+        "ops/dispatch/DAILY-2026-11-29-claude.md"
+      ],
+      "instruction": "Claude在任的外部规划与独立审计席；按原Task ID查PR/回执。没有原生自动接单通道不等于停用；国内代执行须同任务证据，不得从别单推断。",
+      "native_generation_verified": false,
+      "delivery_channel": "repo_pr_only",
+      "role_status": "active_external_audit_and_planning",
+      "native_api_status": "blocked_insufficient_api_credits",
+      "native_claim_required": false,
+      "reference_only": true,
+      "delegated": false,
+      "actual_provider": null,
+      "model": null,
+      "submission_verified": false,
+      "independent_review_verified": false,
+      "pr_url": null,
+      "automatic_reexecution": false,
+      "delivery_evidence_status": "not_linked",
+      "repair_origin": null,
+      "issue": "external_pr_route_reference_only",
+      "overdue": false,
+      "status": "delivery_channel_reference_not_completion"
+    },
+    {
       "id": "CONTROL-CLAIM-REPAIR-20261018",
       "date": "2026-10-18",
       "issuer": "claude",
@@ -1710,8 +1521,8 @@
   "supervisor": "qianwen",
   "executed_by": "repository_rules",
   "native_qianwen_call": false,
-  "source_commit": "0470e2cb2b534134650168c86338647c19eca897",
-  "run_id": "46157609814",
+  "source_commit": "9ea9a0813fea63a0f5524720d23984030cdace27",
+  "run_id": "46162874326",
   "model_calls": 0,
   "new_paid_schedules": 0,
   "paid": false,
@@ -8053,15 +7864,16 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261123.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:REAL-HIRE-20261123-CLAUDE-01",
       "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261123-CLAUDE-01.md"
@@ -8079,17 +7891,18 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-11-23.json",
         "knowledge/results/ans-cycle/2026-11-23-worker.json",
         "knowledge/results/ans-cycle/2026-11-23-reviewer.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:ANS-2026-11-23-deepseek",
       "repair_file": "ops/dispatch/oversight/ANS-2026-11-23-deepseek.md"
@@ -8159,15 +7972,16 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-11-23.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:QIANWEN-RETURN-2026-11-23",
       "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-11-23.md"
@@ -8185,16 +7999,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-23.json",
         "knowledge/results/daily-board/artifacts/2026-11-23-deepseek-ad285f6b37c4e6d9d36378141f3381937fe7426c83c70f04adae1ac96d72aff1.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-23-deepseek",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-23-deepseek.md"
@@ -8212,16 +8027,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-23.json",
         "knowledge/results/daily-board/artifacts/2026-11-23-doubao-971dad6446b7d6993996221eb1fc79a299f172bdc4a8f92438ee9f704612564c.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-23-doubao",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-23-doubao.md"
@@ -8239,16 +8055,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-23.json",
         "knowledge/results/daily-board/artifacts/2026-11-23-grok-f1f1d25b45a11c104990d467f576678e5b7a1e5f463a25997997bfa2a815c777.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:AUTO-2026-11-23-health",
       "repair_file": "ops/dispatch/oversight/AUTO-2026-11-23-health.md"
@@ -8266,16 +8083,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-23.json",
         "knowledge/results/daily-board/artifacts/2026-11-23-qianwen-a1123ccc7020e32883cf420c6d9373c4d2221263b9c788e29fe5b0e2579462af.json"
       ],
       "original_task_date": "2026-11-23",
-      "warning_days": 6,
+      "warning_days": 7,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-23-qianwen",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-23-qianwen.md"
@@ -8292,15 +8110,16 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261124.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:REAL-HIRE-20261124-CLAUDE-01",
       "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261124-CLAUDE-01.md"
@@ -8317,17 +8136,18 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-11-24.json",
         "knowledge/results/ans-cycle/2026-11-24-worker.json",
         "knowledge/results/ans-cycle/2026-11-24-reviewer.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:ANS-2026-11-24-deepseek",
       "repair_file": "ops/dispatch/oversight/ANS-2026-11-24-deepseek.md"
@@ -8344,15 +8164,16 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-11-24.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:QIANWEN-RETURN-2026-11-24",
       "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-11-24.md"
@@ -8369,16 +8190,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-24.json",
         "knowledge/results/daily-board/artifacts/2026-11-24-deepseek-16e135d67fed25f3e39c6c666f9813c617a2554135b902216e158530fe5769d7.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-24-deepseek",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-24-deepseek.md"
@@ -8395,16 +8217,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-24.json",
         "knowledge/results/daily-board/artifacts/2026-11-24-doubao-d6b487dabb10f55fa43cee34e02bac908527116053db6c9726813354c5aeaf93.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-24-doubao",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-24-doubao.md"
@@ -8421,16 +8244,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-24.json",
         "knowledge/results/daily-board/artifacts/2026-11-24-grok-5a37f17c27b4d30a4a856391f1808e2edee6f0ea14cbc2b72202d122f57d65a1.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:AUTO-2026-11-24-health",
       "repair_file": "ops/dispatch/oversight/AUTO-2026-11-24-health.md"
@@ -8447,16 +8271,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-24.json",
         "knowledge/results/daily-board/artifacts/2026-11-24-qianwen-ca28e8c972cde957efc7147217304725b83eea11d04f03d342769cde5d06b611.json"
       ],
       "original_task_date": "2026-11-24",
-      "warning_days": 5,
+      "warning_days": 6,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-24-qianwen",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-24-qianwen.md"
@@ -8472,15 +8297,16 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261125.json"
       ],
       "original_task_date": "2026-11-25",
-      "warning_days": 4,
+      "warning_days": 5,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:REAL-HIRE-20261125-CLAUDE-01",
       "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261125-CLAUDE-01.md"
@@ -8519,15 +8345,16 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-11-25.json"
       ],
       "original_task_date": "2026-11-25",
-      "warning_days": 4,
+      "warning_days": 5,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:QIANWEN-RETURN-2026-11-25",
       "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-11-25.md"
@@ -8543,16 +8370,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-25.json",
         "knowledge/results/daily-board/artifacts/2026-11-25-deepseek-7e74ab7ad075a2f87e850a56b28ebce12f15ff24c9e55e07d4674b054cf1a9cc.json"
       ],
       "original_task_date": "2026-11-25",
-      "warning_days": 4,
+      "warning_days": 5,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-25-deepseek",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-25-deepseek.md"
@@ -8568,16 +8396,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-25.json",
         "knowledge/results/daily-board/artifacts/2026-11-25-doubao-c2a01c67073901eebcc141c83b50d346205501a654ad01d0465f7b46d10b5d7f.json"
       ],
       "original_task_date": "2026-11-25",
-      "warning_days": 4,
+      "warning_days": 5,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-25-doubao",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-25-doubao.md"
@@ -8593,16 +8422,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-25.json",
         "knowledge/results/daily-board/artifacts/2026-11-25-grok-8ae621a44a95733cf3f760a3685d274a9b5187702ddb1c57fa9bcdc9a87c4fa4.json"
       ],
       "original_task_date": "2026-11-25",
-      "warning_days": 4,
+      "warning_days": 5,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:AUTO-2026-11-25-health",
       "repair_file": "ops/dispatch/oversight/AUTO-2026-11-25-health.md"
@@ -8618,16 +8448,17 @@
         "2026-11-25",
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-25.json",
         "knowledge/results/daily-board/artifacts/2026-11-25-qianwen-4a4f304acdf52e92ac4d45b230bb63759da2e877d6dbac5bbd3d6c93c833edce.json"
       ],
       "original_task_date": "2026-11-25",
-      "warning_days": 4,
+      "warning_days": 5,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-25-qianwen",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-25-qianwen.md"
@@ -8642,15 +8473,16 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261126.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:REAL-HIRE-20261126-CLAUDE-01",
       "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261126-CLAUDE-01.md"
@@ -8665,17 +8497,18 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-11-26.json",
         "knowledge/results/ans-cycle/2026-11-26-worker.json",
         "knowledge/results/ans-cycle/2026-11-26-reviewer.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:ANS-2026-11-26-deepseek",
       "repair_file": "ops/dispatch/oversight/ANS-2026-11-26-deepseek.md"
@@ -8690,15 +8523,16 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-11-26.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:QIANWEN-RETURN-2026-11-26",
       "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-11-26.md"
@@ -8713,16 +8547,17 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-26.json",
         "knowledge/results/daily-board/artifacts/2026-11-26-deepseek-6aa2c661bdc77b6d2972b41caf7b112a9aa1c41d16ae1880fe51683df4b1a815.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-26-deepseek",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-26-deepseek.md"
@@ -8737,16 +8572,17 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-26.json",
         "knowledge/results/daily-board/artifacts/2026-11-26-doubao-a145d3d7c6c20e616c99869dde74dc4eafd7864ce2c6a816136a47785bebafe8.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-26-doubao",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-26-doubao.md"
@@ -8761,16 +8597,17 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-26.json",
         "knowledge/results/daily-board/artifacts/2026-11-26-grok-f13c08d499f265983a94adc5137fa7cac18359d6e1bd1a67c1406067e0bcbee5.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:AUTO-2026-11-26-health",
       "repair_file": "ops/dispatch/oversight/AUTO-2026-11-26-health.md"
@@ -8785,16 +8622,17 @@
       "warning_dates": [
         "2026-11-26",
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-26.json",
         "knowledge/results/daily-board/artifacts/2026-11-26-qianwen-34eaad39219b23d0d885b4e9ab070f49f8a72467b63732864661e40f53bd4add.json"
       ],
       "original_task_date": "2026-11-26",
-      "warning_days": 3,
+      "warning_days": 4,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-26-qianwen",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-26-qianwen.md"
@@ -8808,15 +8646,16 @@
       "first_observed_at": "2026-11-27T04:01:16.508Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261127.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:REAL-HIRE-20261127-CLAUDE-01",
       "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261127-CLAUDE-01.md"
@@ -8830,17 +8669,18 @@
       "first_observed_at": "2026-11-27T09:01:23.953Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-11-27.json",
         "knowledge/results/ans-cycle/2026-11-27-worker.json",
         "knowledge/results/ans-cycle/2026-11-27-reviewer.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:ANS-2026-11-27-deepseek",
       "repair_file": "ops/dispatch/oversight/ANS-2026-11-27-deepseek.md"
@@ -8854,15 +8694,16 @@
       "first_observed_at": "2026-11-27T14:01:16.400Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-11-27.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:QIANWEN-RETURN-2026-11-27",
       "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-11-27.md"
@@ -8876,16 +8717,17 @@
       "first_observed_at": "2026-11-27T14:01:16.400Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-27.json",
         "knowledge/results/daily-board/artifacts/2026-11-27-deepseek-60b0c5765959e769ee0f1d2dd26892ddfa468e313de381221031c2909590b747.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-27-deepseek",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-27-deepseek.md"
@@ -8899,16 +8741,17 @@
       "first_observed_at": "2026-11-27T14:01:16.400Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-27.json",
         "knowledge/results/daily-board/artifacts/2026-11-27-doubao-dd61c4cb5453243f4ce4bb639c31273e355d9aa11d879215c067975078fea2d7.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-27-doubao",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-27-doubao.md"
@@ -8922,16 +8765,17 @@
       "first_observed_at": "2026-11-27T14:01:16.400Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-27.json",
         "knowledge/results/daily-board/artifacts/2026-11-27-grok-08e97c3ab82870a41deae26d7fdedc7ae2944cde2dcdbca010cd10d1f6501297.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:AUTO-2026-11-27-health",
       "repair_file": "ops/dispatch/oversight/AUTO-2026-11-27-health.md"
@@ -8945,16 +8789,17 @@
       "first_observed_at": "2026-11-27T14:01:16.400Z",
       "warning_dates": [
         "2026-11-27",
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-27.json",
         "knowledge/results/daily-board/artifacts/2026-11-27-qianwen-3d3da537138698fd64c4a9f6a5f4daed2bc9cb81337907d4adbcd756a532e098.json"
       ],
       "original_task_date": "2026-11-27",
-      "warning_days": 2,
+      "warning_days": 3,
       "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-27-qianwen",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-27-qianwen.md"
@@ -8967,16 +8812,17 @@
       "assigned_to": "gpt",
       "first_observed_at": "2026-11-28T04:01:16.039Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/claude-team/real-hire-20261128.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:REAL-HIRE-20261128-CLAUDE-01",
       "repair_file": "ops/dispatch/oversight/REAL-HIRE-20261128-CLAUDE-01.md"
     },
@@ -8988,16 +8834,17 @@
       "assigned_to": "doubao",
       "first_observed_at": "2026-11-28T08:01:16.301Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/ans-cycle/2026-11-28.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:ANS-2026-11-28-doubao",
       "repair_file": "ops/dispatch/oversight/ANS-2026-11-28-doubao.md"
     },
@@ -9009,16 +8856,17 @@
       "assigned_to": "deepseek",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/control/2026-11-27.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:CONTROL-2026-11-28-deepseek",
       "repair_file": "ops/dispatch/oversight/CONTROL-2026-11-28-deepseek.md"
     },
@@ -9030,16 +8878,17 @@
       "assigned_to": "doubao",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/control/2026-11-27.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:CONTROL-2026-11-28-doubao",
       "repair_file": "ops/dispatch/oversight/CONTROL-2026-11-28-doubao.md"
     },
@@ -9051,16 +8900,17 @@
       "assigned_to": "qianwen",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/dispatch/qianwen-return-2026-11-28.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:QIANWEN-RETURN-2026-11-28",
       "repair_file": "ops/dispatch/oversight/QIANWEN-RETURN-2026-11-28.md"
     },
@@ -9072,17 +8922,18 @@
       "assigned_to": "deepseek",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-28.json",
         "knowledge/results/daily-board/artifacts/2026-11-28-deepseek-fcb862adaba6ca0f074956db27cba3f67fdc7f0f1babfed6760df29e636458a5.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-28-deepseek",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-28-deepseek.md"
     },
@@ -9094,17 +8945,18 @@
       "assigned_to": "doubao",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-28.json",
         "knowledge/results/daily-board/artifacts/2026-11-28-doubao-1f8cc293dc1f9839c4ff1e5c109786d69ce3f9152a8362f908820b937e730104.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-28-doubao",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-28-doubao.md"
     },
@@ -9116,17 +8968,18 @@
       "assigned_to": "grok",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-28.json",
         "knowledge/results/daily-board/artifacts/2026-11-28-grok-44c5b55ae97d2a1513e6de37aef53e5d5269a9a9683701bbe4a6c9800bba39e9.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:AUTO-2026-11-28-health",
       "repair_file": "ops/dispatch/oversight/AUTO-2026-11-28-health.md"
     },
@@ -9138,17 +8991,18 @@
       "assigned_to": "qianwen",
       "first_observed_at": "2026-11-28T14:01:18.619Z",
       "warning_dates": [
-        "2026-11-28"
+        "2026-11-28",
+        "2026-11-29"
       ],
       "state": "open",
-      "last_observed_at": "2026-11-28T15:01:16.587Z",
+      "last_observed_at": "2026-11-28T16:01:19.490Z",
       "evidence": [
         "knowledge/results/daily-board/2026-11-28.json",
         "knowledge/results/daily-board/artifacts/2026-11-28-qianwen-7892e14779fa9d20f894c60d2f805aedc2f08ecfc7c8f8dc4fdf9acc53f2457d.json"
       ],
       "original_task_date": "2026-11-28",
-      "warning_days": 1,
-      "severity": "warning",
+      "warning_days": 2,
+      "severity": "repeated_warning",
       "idempotency_key": "oversight:DAILY-2026-11-28-qianwen",
       "repair_file": "ops/dispatch/oversight/DAILY-2026-11-28-qianwen.md"
     }
@@ -9158,42 +9012,35 @@
     "fb123b376bde9cdf327e0150",
     "174fca1ac72999ad7cf90353"
   ],
-  "qianwen_daily_task_id": "DAILY-2026-11-28-qianwen",
+  "qianwen_daily_task_id": "DAILY-2026-11-29-qianwen",
   "native_qianwen_review_verified": false,
   "native_qianwen_supervision": {
-    "date": "2026-11-28",
-    "status": "native_supervision_draft_pending_independent_review",
-    "generation_verified": true,
+    "date": "2026-11-29",
+    "status": "no_verified_native_supervision_delivery",
+    "generation_verified": false,
     "independent_review_verified": false,
     "evidence": [
-      "knowledge/results/daily-board/2026-11-28.json",
-      "knowledge/results/daily-board/artifacts/2026-11-28-qianwen-7892e14779fa9d20f894c60d2f805aedc2f08ecfc7c8f8dc4fdf9acc53f2457d.json"
-    ],
-    "actual_provider": "qianwen",
-    "model": "qwen-max",
-    "artifact": {
-      "path": "knowledge/results/daily-board/artifacts/2026-11-28-qianwen-7892e14779fa9d20f894c60d2f805aedc2f08ecfc7c8f8dc4fdf9acc53f2457d.json",
-      "sha256": "7892e14779fa9d20f894c60d2f805aedc2f08ecfc7c8f8dc4fdf9acc53f2457d"
-    }
+      "knowledge/results/daily-board/2026-11-29.json"
+    ]
   },
   "scope": "repository_evidence_and_reminder_dispatch_not_execution_or_independent_native_audit",
   "stage_counts": {
     "scope": "verified_in_scanned_sources_not_total_project_completion",
-    "tasks_observed": 74,
-    "dispatch_records": 74,
-    "claims_verified": 28,
-    "submissions_verified": 26,
-    "independent_reviews_verified": 27,
-    "drafts_accepted": 11,
+    "tasks_observed": 66,
+    "dispatch_records": 65,
+    "claims_verified": 24,
+    "submissions_verified": 23,
+    "independent_reviews_verified": 24,
+    "drafts_accepted": 10,
     "engineering_deliveries_verified": 0,
     "production_deployments_verified": 0,
-    "scope_limited_evidence_records": 15,
-    "not_due": 0
+    "scope_limited_evidence_records": 13,
+    "not_due": 3
   },
   "backlog": {
     "open_warning_cases": 284,
     "unique_original_tasks": 284,
-    "not_rechecked_in_current_window": 232,
+    "not_rechecked_in_current_window": 241,
     "by_responsible_seat": {
       "qianwen": 84,
       "doubao": 62,
@@ -9332,5 +9179,5 @@
     ],
     "policy": "reuse_original_ids_review_existing_artifacts_no_new_order_or_model_replay; dispatch_count_is_not_completion"
   },
-  "assignment_file": "ops/dispatch/oversight/QIANWEN-OVERSIGHT-2026-11-28.md"
+  "assignment_file": "ops/dispatch/oversight/QIANWEN-OVERSIGHT-2026-11-29.md"
 }
