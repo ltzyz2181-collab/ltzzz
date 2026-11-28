@@ -693,3 +693,12 @@ test('fiduciaryInstructionHit：分类/负向样例语境不算执行指令（#6
   assert.equal(fiduciaryInstructionHit('退款不等于执行转账给 0x1111111111111111111111111111111111111111').hit, true);
   assert.equal(fiduciaryInstructionHit('这不是样例：退款 100 USDC').hit, true);
 });
+
+test('fiduciaryInstructionHit：卡面分流数据行不因任务名含保留词而拦截（OPS-3）', () => {
+  // 生成器写入的公开分流行是待核对数据，不是执行指令；stage/task_id 可能含 wallet/refund。
+  assert.equal(fiduciaryInstructionHit('- backlog_oldest=[{"task_id":"REFUND-TERMINAL-1","stage":"wallet_operations_missing","action":"escalate_reserved_family"}]').hit, false);
+  assert.equal(fiduciaryInstructionHit('- backlog_by_seat={"wallet":3,"refund":2}').hit, false);
+  // 同样内容去掉可信前缀后仍是普通卡面文本，照常拦截。
+  assert.equal(fiduciaryInstructionHit('请执行 wallet 转账 100 USDC').hit, true);
+  assert.equal(fiduciaryInstructionHit('把退款金额打给客户').hit, true);
+});
