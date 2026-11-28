@@ -99,6 +99,16 @@ test('an existing job is reused without touching latches or issuing POST',async(
  assert.deepEqual(methods,['GET','GET']);
 });
 
+test('queue receipt records which repo_read evidence the bridge actually injected',async()=>{
+ const store={read(){throw Error('must_not_reserve');},compareAndSwap(){throw Error('must_not_reserve');}};
+ const repoContext={text:'',files:[
+  {path:'knowledge/results/deep-superagent/backlog/latest.json',status:'missing'},
+  {path:'knowledge/results/deep-superagent/backlog/summary.json',status:'read',bytes:7008,sha256:'a'.repeat(64)},
+ ]};
+ const outcome=await runQueueCard(base({store,repoContext,fetcher:async()=>http(fixture())}));
+ assert.deepEqual(outcome.repo_read,repoContext.files);
+});
+
 test('changed input for an existing original task blocks before reservation or model trigger',async()=>{
  const store=latchStore(),methods=[];
  const result=await runQueueCard(base({store,body:{...input,prompt:input.prompt+' changed'},fetcher:async(url,o)=>{methods.push(o.method);return http(fixture());}}));
