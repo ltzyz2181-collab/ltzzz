@@ -1,5 +1,5 @@
 {
-  "at": "2026-11-28T07:01:18.364Z",
+  "at": "2026-11-28T08:01:16.427Z",
   "date": "2026-11-28",
   "executed_by": "workbuddy_dispatch_automation",
   "execution_source": "repository_rules_not_WorkBuddy_client",
@@ -123,7 +123,7 @@
       "issuer": "gpt",
       "assigned_to": "claude",
       "phase": "external_pr_route_reference_only",
-      "due_at": "2026-11-28T09:00:00+08:00",
+      "due_at": "2026-11-28T22:00:00+08:00",
       "evidence": [
         "ops/dispatch/DAILY-2026-11-28-claude.md"
       ],
@@ -225,6 +225,23 @@
       "file": "knowledge/results/daily-board/2026-11-28.json"
     },
     {
+      "id": "ANS-2026-11-28-doubao",
+      "date": "2026-11-28",
+      "issuer": "gpt",
+      "assigned_to": "doubao",
+      "phase": "blocked_reconcile_existing_attempt",
+      "due_at": "2026-11-28T03:00:00+08:00",
+      "evidence": [
+        "knowledge/results/ans-cycle/2026-11-28.json"
+      ],
+      "instruction": "核对现有 ANS 失败/未知审核请求、错误码与已有输出；修复后交测试和部署回执。不得因补派自动重购未知请求或重复付款。",
+      "issue": "blocked_reconcile_existing_attempt",
+      "overdue": true,
+      "status": "warning_required",
+      "file": "knowledge/results/ans-cycle/2026-11-28.json",
+      "claim_verified": false
+    },
+    {
       "id": "REAL-HIRE-20261128-CLAUDE-01",
       "date": "2026-11-28",
       "issuer": "claude",
@@ -242,10 +259,10 @@
       "claim_verified": false
     }
   ],
-  "overdue_count": 1,
-  "deadline_unverified_count": 10,
+  "overdue_count": 2,
+  "deadline_unverified_count": 11,
   "claim_verified": false,
-  "run_id": "46119231589",
+  "run_id": "46123821748",
   "run_attempt": "1",
   "scan_status": "completed_with_business_alerts",
   "checks": [
@@ -259,7 +276,7 @@
       "item": "AI雇AI回执(T1)",
       "state": "OK",
       "evidence": "knowledge/results/hire / knowledge/results/claude-team",
-      "note": "knowledge/results/claude-team/real-hire-20261128.json:waiting_same_day_ANS_assignment;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
+      "note": "knowledge/results/claude-team/real-hire-20261128.json:waiting_existing_ANS_delivery_no_extra_generation;paid=false。只记录回执存在与状态，不据此推断本日新付款/投资。"
     },
     {
       "item": "投资观察回执(T2)",
@@ -289,13 +306,13 @@
       "item": "千问·总控与Claude漏单监督",
       "state": "BLOCKED",
       "evidence": "knowledge/results/dispatch/oversight/latest.json",
-      "note": "276 个原任务/276 条警告；验证认领 28、提交 26、独立审核 27、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
+      "note": "277 个原任务/277 条警告；验证认领 28、提交 26、独立审核 27、代码交付 0、上线 0（仅本扫描证据）；派单数不计闭环，千问回归单与正式日课分开。"
     },
     {
       "item": "今日派单跟踪",
       "state": "BLOCKED",
       "evidence": "ops/dispatch/",
-      "note": "QIANWEN-RETURN-2026-11-28:not_due；DAILY-2026-11-28-qianwen:not_due；CONTROL-2026-11-28-deepseek:not_due；CONTROL-2026-11-28-doubao:not_due；CONTROL-REVIEW-2026-11-28:evidence_present_scope_limited；DAILY-2026-11-28-claude:delivery_channel_reference_not_completion；DAILY-2026-11-28-deepseek:not_due；DAILY-2026-11-28-doubao:not_due；AUTO-2026-11-28-health:not_due；REAL-HIRE-20261128-CLAUDE-01:warning_required"
+      "note": "QIANWEN-RETURN-2026-11-28:not_due；DAILY-2026-11-28-qianwen:not_due；CONTROL-2026-11-28-deepseek:not_due；CONTROL-2026-11-28-doubao:not_due；CONTROL-REVIEW-2026-11-28:evidence_present_scope_limited；DAILY-2026-11-28-claude:delivery_channel_reference_not_completion；DAILY-2026-11-28-deepseek:not_due；DAILY-2026-11-28-doubao:not_due；AUTO-2026-11-28-health:not_due；ANS-2026-11-28-doubao:warning_required；REAL-HIRE-20261128-CLAUDE-01:warning_required"
     }
   ],
   "business_alerts": [
@@ -312,6 +329,6 @@
       "state": "BLOCKED"
     }
   ],
-  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/46119231589-1.json",
+  "unique_receipt": "knowledge/results/dispatch/sentinel-runs/46123821748-1.json",
   "repository_persistence": "verify_by_committed_receipt_path"
 }
