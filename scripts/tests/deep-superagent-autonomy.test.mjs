@@ -16,6 +16,7 @@ import {
   fiduciaryInstructionHit,
   normalizeAutonomy,
   readRepoContext,
+  repoContextBudget,
   stripRepoEvidence,
   syntaxGate,
   stripAutonomy,
@@ -227,6 +228,43 @@ test('readRepoContext：超过桥接预算的文件不注入，只记 size_budge
   assert.match(context.text, /summary\.json/);
   const body = applyRepoContext({prompt: 'P'.repeat(3500)}, context);
   assert.ok(body.prompt.length < 20000, 'prompt 必须落在 worker 的 20,000 字符上限内');
+});
+
+test('repoContextBudget：证据预算按卡面 prompt 剩余空间收缩（run 46097201873）', () => {
+  // Issue #640 卡面 9,852 字符；固定 16KB 证据叠加后 23,578 字符，POST 被 worker 拒绝。
+  const longPrompt = 'P'.repeat(9852);
+  const budget = repoContextBudget(longPrompt);
+  assert.ok(budget > 0);
+  assert.ok(budget < 16 * 1024);
+  assert.equal(repoContextBudget('P'.repeat(19500)), 0);
+  assert.equal(repoContextBudget('P'.repeat(20000)), 0);
+});
+
+test('readRepoContext：长卡面下只注入放得下的文件，整条 prompt 不越界', () => {
+  const root = tmp();
+  // 用 #640 的真实大小模拟：12,439 B 放不下，2,599 B 与 758 B 放得下。
+  fs.writeFileSync(path.join(root, 'policy.json'), 'p'.repeat(12439));
+  fs.writeFileSync(path.join(root, 'seats.md'), `# seats\n${'s'.repeat(2599 - 8)}`);
+  fs.writeFileSync(path.join(root, 'state.json'), `{"open":true}`);
+  const prompt = 'P'.repeat(9852);
+  const context = readRepoContext(root, ['policy.json', 'seats.md', 'state.json'], {limitBytes: repoContextBudget(prompt)});
+  assert.deepEqual(context.files.map((file) => file.status), ['size_budget_exceeded', 'read', 'read']);
+  assert.doesNotMatch(context.text, /p{100}/);
+  assert.match(context.text, /seats\.md/);
+  const body = applyRepoContext({prompt}, context);
+  assert.ok(body.prompt.length <= 19000, `prompt chars ${body.prompt.length}`);
+  assert.ok(Buffer.byteLength(body.prompt) <= 29 * 1024, `prompt bytes ${Buffer.byteLength(body.prompt)}`);
+  assert.ok(Buffer.byteLength(JSON.stringify({prompt: body.prompt})) <= 32768);
+});
+
+test('applyRepoContext：外部构造的超长证据被截断并标记，不产生 worker 必拒的请求', () => {
+  const prompt = 'P'.repeat(15000);
+  const context = {text: `\n\n【仓库读取证据】\n${'e'.repeat(30000)}`};
+  const body = applyRepoContext({prompt}, context);
+  assert.equal(context.truncated, true);
+  assert.ok(body.prompt.length <= 19000);
+  assert.match(body.prompt, /bridge truncated evidence/);
+  assert.doesNotMatch(body.prompt, /e{20000}/);
 });
 
 test('stripAutonomy / taskAutonomyMetadata：元数据与任务体分离', () => {
