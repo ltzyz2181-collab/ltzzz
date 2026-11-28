@@ -10,7 +10,7 @@
 // 任何状态都不会因为「没再看见」而自动完成；只有评论证据与 PR/commit 证据会改变状态。
 
 export const TASK_HUB_SCHEMA = 'ltzzz.task-hub.v1';
-export const SEATS = ['gpt', 'desktop-claude', 'doubao', 'deep', 'workbuddy', 'qianwen', 'deepseek', 'relay-gpt', 'relay-claude'];
+export const SEATS = ['gpt', 'desktop-claude', 'desktop-codex', 'doubao', 'deep', 'workbuddy', 'qianwen', 'deepseek', 'relay-gpt', 'relay-claude'];
 export const HUB_LABEL = {new: 'hub:new', claimed: 'hub:claimed', delivered: 'hub:delivered', blocked: 'hub:blocked', stale: 'hub:stale'};
 export const HUB_STATES = ['new', 'claimed', 'in_progress', 'submitted', 'review', 'approved', 'merged', 'deployed', 'verified', 'blocked'];
 export const DEFAULT_LEASE_HOURS = 24;
@@ -20,6 +20,8 @@ const SEAT_ALIASES = new Map([
   ['gpt', 'gpt'], ['chatgpt', 'gpt'], ['gpt-总控', 'gpt'], ['gpt总控', 'gpt'], ['中转gpt', 'gpt'],
   ['claude', 'desktop-claude'], ['desktop-claude', 'desktop-claude'], ['desktopclaude', 'desktop-claude'],
   ['桌面claude', 'desktop-claude'], ['桌面-claude', 'desktop-claude'], ['桌面克劳德', 'desktop-claude'],
+  ['codex', 'desktop-codex'], ['desktop-codex', 'desktop-codex'], ['desktopcodex', 'desktop-codex'],
+  ['桌面codex', 'desktop-codex'], ['桌面-codex', 'desktop-codex'],
   ['doubao', 'doubao'], ['豆包', 'doubao'],
   ['deep', 'deep'], ['deep-superagent', 'deep'], ['deep团队', 'deep'], ['deep团队席', 'deep'],
   ['workbuddy', 'workbuddy'], ['work-buddy', 'workbuddy'], ['wb', 'workbuddy'],
@@ -290,6 +292,7 @@ export const MAX_REASSIGNMENTS = 2;
 
 const REASSIGN_CHAIN = new Map([
   ['desktop-claude', 'deep'],
+  ['desktop-codex', 'desktop-claude'],
   ['deep', 'desktop-claude'],
   ['doubao', 'deep'],
   ['workbuddy', 'deep'],
