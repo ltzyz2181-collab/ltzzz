@@ -1,0 +1,68 @@
+name: Deep mail read watchdog (fallback only)
+
+# 兜底，不是第二主触发源。
+# 06:45 主工作流若未产出当日回执，本工作流在 08:15 补跑一次；当日产物已存在则直接跳过，不重复付费。
+
+on:
+  schedule:
+    - cron: '15 0 * * *'   # 08:15 Asia/Shanghai
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ltzzz-deep-mail-read
+  cancel-in-progress: false
+
+jobs:
+  fallback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Decide whether fallback is needed
+        id: gate
+        run: |
+          TODAY="$(TZ=Asia/Shanghai date +%F)"
+          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
+          if [ -f "knowledge/results/deep-superagent/mail-imap-deep-${TODAY}.json" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo "primary already produced mail-imap-deep-${TODAY}.json; skipping"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            echo "no receipt for ${TODAY}; running fallback"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.needed == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        if: steps.gate.outputs.needed == 'true'
+        run: python3 -m unittest discover -s scripts/tests -p "test_deep_mail_agent.py" -v
+
+      - name: Fallback read and triage
+        if: steps.gate.outputs.needed == 'true'
+        env:
+          MAIL_ADDRESS: ${{ secrets.QQ_IMAP_USER }}
+          MAIL_PASSWORD: ${{ secrets.QQ_IMAP_PASSWORD }}
+          MAIL_IMAP_HOST: imap.qq.com
+          MAIL_IMAP_FOLDER: INBOX
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          OUT="knowledge/results/deep-superagent/mail-imap-deep-${{ steps.gate.outputs.today }}.json"
+          python3 scripts/deep-mail-agent.py --days 1 --limit 20 --read-max 10 --out "$OUT"
+
+      - name: Persist fallback receipt
+        if: steps.gate.outputs.needed == 'true'
+        run: |
+          git config user.name "ltzzz-deep-mail"
+          git config user.email "bot@ltzzz.local"
+          git add knowledge/results/deep-superagent/mail-imap-deep-*.json
+          if git diff --staged --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "deep-mail: watchdog 补跑 $(TZ=Asia/Shanghai date +%F' '%H:%M)"
+          node tools/push-receipt-commit.mjs

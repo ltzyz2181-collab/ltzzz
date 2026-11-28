@@ -3,10 +3,14 @@ name: Deep mail read (upstream model, read-only IMAP)
 # owner 2026-11-27 决定：把 IMAP 只读凭据交给原厂 Deep，由它自己决定读哪些邮件并做分诊。
 # 只读：BODY.PEEK，不标已读、不删除、不移动；本工作流没有发信能力。
 # 每次固定 2 次模型调用（选信 + 分诊），成本远低于单次 $0.05 上限。
+#
+# 唯一主触发源 = 下面的 schedule（06:45 Asia/Shanghai）。
+# 主机 /home/user/ltzzz 定时器暂不可用（无 VM 访问），不设第二主触发，避免重复付费。
+# 漏触发兜底见 deep-mail-watchdog.yml：只在当日产物缺失时补跑一次。
 
 on:
   schedule:
-    - cron: '25 22 * * *'   # 06:25 Asia/Shanghai
+    - cron: '45 22 * * *'   # 06:45 Asia/Shanghai
   workflow_dispatch:
 
 permissions:
